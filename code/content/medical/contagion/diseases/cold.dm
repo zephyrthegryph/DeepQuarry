@@ -11,8 +11,9 @@
 	max_stages = 3
 	spread_text = "Airborne"
 	spread_flags = DISEASE_SPREAD_AIRBORNE
-	cure_text = "Rest, fluids (" + REAGENT_IRONSALINE + ") or " + REAGENT_SPACEACILLIN
-	cures = list(REAGENT_ID_SPACEACILLIN, REAGENT_ID_IRONSALINE)
+	cure_text = "Rest, fluids (" + REAGENT_ELECTROLYTE + ") or " + REAGENT_SPACEACILLIN
+	cures = list(REAGENT_ID_SPACEACILLIN)
+	treated_by = list(TREAT_REGENERATION = CONTAGION_IMMUNE_BASE, TREAT_ANTIMICROBIAL = CONTAGION_IMMUNE_ANTIMICROBIAL, TREAT_HYDRATION = CONTAGION_IMMUNE_HYDRATION)
 	virus_modifiers = NONE //Does NOT have needs_all_cures
 	agent = "XY-rhinovirus"
 	permeability_mod = 0.5

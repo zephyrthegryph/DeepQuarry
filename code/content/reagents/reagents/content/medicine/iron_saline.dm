@@ -1,7 +1,7 @@
 /// Iron saline: iron in a saline carrier. Every unit metabolised in the blood adds blood volume, up to what the species holds.
 /// Carthatoline weakens it (pharmacology/interactions.dm).
 /datum/reagent/iron_saline
-	treatment_tags = list(TREAT_BLOOD_RESTORE = 1.5)
+	treatment_tags = list(TREAT_BLOOD_RESTORE = 1.5, TREAT_HYDRATION = 0.5)
 	name = REAGENT_IRONSALINE
 	id = REAGENT_ID_IRONSALINE
 	description = "Iron in a saline carrier, given to a patient who has bled. Restores blood volume quickly. Carthatoline binds the iron and weakens it."

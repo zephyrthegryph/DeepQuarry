@@ -45,6 +45,13 @@ CAPABILITIES(/transformation/chem/instant/ironsaline)
 		takes = list(reagent(REAGENT_ID_IRON, 1), reagent(REAGENT_ID_SODIUMCHLORIDE, 1), reagent(REAGENT_ID_WATER, 2)),
 		makes = list(reagent(REAGENT_ID_IRONSALINE, 4))))
 
+/transformation/chem/instant/electrolyte
+
+CAPABILITIES(/transformation/chem/instant/electrolyte)
+	configure(transformation(name = REAGENT_ELECTROLYTE, id = REAGENT_ID_ELECTROLYTE,
+		takes = list(reagent(REAGENT_ID_WATER, 4), reagent(REAGENT_ID_SODIUMCHLORIDE, 1), reagent(REAGENT_ID_SUGAR, 1)),
+		makes = list(reagent(REAGENT_ID_ELECTROLYTE, 6))))
+
 /transformation/chem/instant/calciumcarbonate
 
 CAPABILITIES(/transformation/chem/instant/calciumcarbonate)

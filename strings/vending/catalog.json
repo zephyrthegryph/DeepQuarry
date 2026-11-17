@@ -398,6 +398,7 @@
 		"products": {
 			"/obj/item/reagent_containers/glass/bottle/antitoxin": 4,
 			"/obj/item/reagent_containers/glass/bottle/inaprovaline": 4,
+			"/obj/item/reagent_containers/food/drinks/cans/electrolyte": 8,
 			"/obj/item/reagent_containers/glass/bottle/stoxin": 4,
 			"/obj/item/reagent_containers/glass/bottle/toxin": 4,
 			"/obj/item/reagent_containers/syringe/antiviral": 4,

@@ -233,4 +233,69 @@
 	TEST_ASSERT(findtext(analyzer_guidance_line(TREAT_OPIOID_ANTAGONIST), "Naloxone"), "the opioid overdose guidance names naloxone")
 	TEST_ASSERT(findtext(analyzer_guidance_line(TREAT_CARDIAC), "Tricordrazine"), "the heart guidance names the mid-tier drug")
 
+// --- Electrolyte drink: the cold's fluids cure ---------------------------------------------------------
+
+/// The electrolyte drink is made from water, salt and sugar, and is the strongest provider of the rehydration tag; iron saline provides it more slowly.
+/datum/unit_test/dq_cures_electrolyte_is_the_rehydration_provider
+
+/datum/unit_test/dq_cures_electrolyte_is_the_rehydration_provider/Run()
+	var/datum/reagent/drink = SSchemistry.ready().chemical_reagents[REAGENT_ID_ELECTROLYTE]
+	TEST_ASSERT_NOTNULL(drink, "the electrolyte drink is a real reagent")
+	TEST_ASSERT(istype(drink, /datum/reagent/drink), "and a drink")
+	var/datum/reagent/saline = SSchemistry.ready().chemical_reagents[REAGENT_ID_IRONSALINE]
+	TEST_ASSERT(drink.treatment_tags[TREAT_HYDRATION] > saline.treatment_tags[TREAT_HYDRATION], "the drink rehydrates faster than iron saline")
+	TEST_ASSERT(saline.treatment_tags[TREAT_HYDRATION] > 0, "iron saline still provides the tag")
+	var/datum/xform/X = xform_of(/transformation/chem/instant/electrolyte)
+	TEST_ASSERT_NOTNULL(X, "the recipe compiled")
+	for(var/id in list(REAGENT_ID_WATER, REAGENT_ID_SODIUMCHLORIDE, REAGENT_ID_SUGAR))
+		TEST_ASSERT(id in X.reagent_takes, "the recipe takes [id]")
+
+/// The cold names the electrolyte drink, is treated by the rehydration tag, and no longer lists iron saline as a reagent cure.
+/datum/unit_test/dq_cures_cold_fluids_are_electrolyte
+
+/datum/unit_test/dq_cures_cold_fluids_are_electrolyte/Run()
+	var/datum/affliction/contagion/cold/proto = dq_proto(/datum/affliction/contagion/cold)
+	TEST_ASSERT(proto.treated_by[TREAT_HYDRATION] > 0, "the cold is treated by rehydration")
+	TEST_ASSERT(!(REAGENT_ID_IRONSALINE in proto.cures), "iron saline is no longer a listed cold cure")
+	TEST_ASSERT(findtext(proto.cure_text, REAGENT_ELECTROLYTE), "the cure text names the electrolyte drink")
+	TEST_ASSERT(!findtext(proto.cure_text, REAGENT_IRONSALINE), "and not iron saline")
+	var/list/cures = proto.effective_cures()
+	TEST_ASSERT(cures[REAGENT_ID_ELECTROLYTE] > cures[REAGENT_ID_IRONSALINE], "the drink is the faster provider")
+	TEST_ASSERT(cures[REAGENT_ID_IRONSALINE] > 0, "iron saline still helps, by the tag")
+	TEST_ASSERT(findtext(analyzer_guidance_line(TREAT_HYDRATION), "Electrolyte"), "the analyzer guidance names the drink")
+
+/// A host who has the drink in the blood builds immunity to a cold faster than one who has not.
+/datum/unit_test/dq_cures_electrolyte_speeds_cold_recovery
+
+/datum/unit_test/dq_cures_electrolyte_speeds_cold_recovery/Run()
+	var/mob/living/carbon/human/treated = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/control = allocate(/mob/living/carbon/human)
+	var/datum/affliction/contagion/cold/template = new
+	treated.force_contagion(template)
+	control.force_contagion(template)
+	qdel(template)
+	var/datum/affliction/contagion/cold/a = contagion_of(treated, /datum/affliction/contagion/cold)
+	var/datum/affliction/contagion/cold/b = contagion_of(control, /datum/affliction/contagion/cold)
+	TEST_ASSERT_NOTNULL(a, "setup: the treated host has a cold")
+	TEST_ASSERT_NOTNULL(b, "setup: the control has a cold")
+	treated.bloodstr.add_reagent(REAGENT_ID_ELECTROLYTE, 10)
+	treated.body.invalidate(BODY_DIRTY_TREATMENT)
+	TEST_ASSERT(treated.body.treatment_levels()?[TREAT_HYDRATION] > 0, "the drink provides rehydration")
+	for(var/datum/affliction/contagion/cold/D in list(a, b))
+		D.stage_prob = 0
+		D.cure_chance = 0
+	var/before_a = a.immunity
+	var/before_b = b.immunity
+	a.tick()
+	b.tick()
+	TEST_ASSERT((a.immunity - before_a) > (b.immunity - before_b), "the cold clears faster with the drink: [a.immunity - before_a] against [b.immunity - before_b]")
+
+/// Halogenating frees real hydrochloric acid and the separate trace contaminant is gone.
+/datum/unit_test/dq_chem_hcl_trace_is_merged
+
+/datum/unit_test/dq_chem_hcl_trace_is_merged/Run()
+	TEST_ASSERT_NULL(SSchemistry.ready().chemical_reagents["contaminant_hydrochloric"], "the hydrogen chloride trace is no longer a reagent")
+	TEST_ASSERT_NOTNULL(SSchemistry.ready().chemical_reagents[REAGENT_ID_HYDROCHLORIC], "hydrochloric acid is a real reagent")
+	TEST_ASSERT_EQUAL(melt_trace_of(REAGENT_ID_HYDROCHLORIC)?[1], "hydrogen", "real hydrochloric acid takes up in a melt as the trace the contaminant used to")
+
 #endif

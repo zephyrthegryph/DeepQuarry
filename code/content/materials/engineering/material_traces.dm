@@ -38,7 +38,7 @@
 	effects = list(MATERIAL_STAT_TOUGHNESS = -6) // embrittlement
 	degasses = TRUE
 	contaminant = REAGENT_ID_CONTAMINANT_ACID_RESIDUE
-	absorbs = list(REAGENT_ID_CONTAMINANT_HYDROCHLORIC = 0.5)
+	absorbs = list(REAGENT_ID_HYDROCHLORIC = 0.5)
 	floors = list(MATERIAL_REFINE_DEGAS = 0.04)
 
 /datum/material_trace/lead

@@ -307,6 +307,19 @@
 	nutriment_factor = 1.5
 	cup_prefix = "grape soda"
 
+/// Oral rehydration: water, salt and sugar. Provides the rehydration treatment (TREAT_HYDRATION), which feeds the immune response to a cold.
+/datum/reagent/drink/electrolyte
+	treatment_tags = list(TREAT_HYDRATION = 1.0)
+	name = REAGENT_ELECTROLYTE
+	id = REAGENT_ID_ELECTROLYTE
+	description = "A mild oral rehydration drink of water, salt and sugar. It replaces what a fever or a long shift sweats out, and helps the body fight off a cold."
+	taste_description = "salty-sweet water"
+	color = "#9fd8e8"
+	nutrition = 0.2
+
+	glass_name = "electrolyte drink"
+	glass_desc = "A rehydration drink of water, salt and sugar. Bland, but it works."
+
 /datum/reagent/drink/soda/tonic
 	name = REAGENT_TONIC
 	id = REAGENT_ID_TONIC

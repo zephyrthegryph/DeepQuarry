@@ -200,18 +200,6 @@
 
 // ---- the trace-potent contaminants: made by processes (code/content/reagents/blocks/processes.dm), carried by no source, one clear symptom each, strong at a trace ----
 
-/// Hydrochloric acid: freed by a halogenation. Burns.
-/datum/reagent/contaminant/reactive/hydrochloric_acid
-	name = REAGENT_CONTAMINANT_HYDROCHLORIC
-	id = REAGENT_ID_CONTAMINANT_HYDROCHLORIC
-	description = "Hydrogen chloride freed when a halogen takes the place of a hydrogen."
-	boiling_point = T0C - 85
-	effect_text = "Burns tissue, most of the time, at a trace."
-	source_weight = 0
-	filter_floor = 0.004
-	rate = 6
-	burn_chance = 80
-
 /// Peroxide: left by a hot, uncatalysed oxidation. Detonates when the container is heated (detonate_peroxide()).
 /datum/reagent/contaminant/reactive/peroxide
 	name = REAGENT_CONTAMINANT_PEROXIDE

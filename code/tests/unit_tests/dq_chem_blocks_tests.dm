@@ -334,13 +334,13 @@
 
 /datum/unit_test/dq_chem_blocks_trace_effects/Run()
 	var/datum/reagents/holder = dq_pur_beaker().reagents
-	for(var/id in list(REAGENT_ID_CONTAMINANT_HYDROCHLORIC, REAGENT_ID_CONTAMINANT_DIOXIN, REAGENT_ID_CONTAMINANT_NITROSAMINE, REAGENT_ID_CONTAMINANT_METHANOL, REAGENT_ID_CONTAMINANT_TAR, REAGENT_ID_CONTAMINANT_PLASTICISER, REAGENT_ID_CONTAMINANT_PEROXIDE))
+	for(var/id in list(REAGENT_ID_CONTAMINANT_DIOXIN, REAGENT_ID_CONTAMINANT_NITROSAMINE, REAGENT_ID_CONTAMINANT_METHANOL, REAGENT_ID_CONTAMINANT_TAR, REAGENT_ID_CONTAMINANT_PLASTICISER, REAGENT_ID_CONTAMINANT_PEROXIDE))
 		holder.add_reagent(id, 1, safety = 1)
 	var/mob/living/carbon/human/burned = allocate(/mob/living/carbon/human)
-	var/datum/reagent/contaminant/reactive/acid = holder.get_reagent(REAGENT_ID_CONTAMINANT_HYDROCHLORIC)
-	acid.burn_chance = 100
-	acid.affect_blood(burned, 0, 0.05)
-	TEST_ASSERT(burned.injury_load(INJURY_CATEGORY_THERMAL) > 0.1, "0.05u of hydrochloric acid burns")
+	var/datum/reagent/contaminant/reactive/peroxide = holder.get_reagent(REAGENT_ID_CONTAMINANT_PEROXIDE)
+	peroxide.burn_chance = 100
+	peroxide.affect_blood(burned, 0, 0.05)
+	TEST_ASSERT(burned.injury_load(INJURY_CATEGORY_THERMAL) > 0.01, "a trace of peroxide burns")
 	var/mob/living/carbon/human/blinded = allocate(/mob/living/carbon/human)
 	holder.get_reagent(REAGENT_ID_CONTAMINANT_METHANOL).affect_blood(blinded, 0, 0.5)
 	TEST_ASSERT(blinded.organ_in(O_EYES).damage > 0, "half a unit of methanol damages the eyes")
