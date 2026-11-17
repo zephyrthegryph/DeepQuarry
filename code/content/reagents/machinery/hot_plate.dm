@@ -163,6 +163,7 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 		return
 	C.vessel_leach(seconds) // hot contents take up a trace of the vessel for every second on the plate
 	C.reagents.handle_reactions() // the temperature moved: what could not react a second ago may now
+	C.solids_step() // and what lies in it dissolves the faster
 	var/list/vapour = C.reagents.boil_step(seconds)
 	if(length(vapour))
 		vent_vapour(vapour)

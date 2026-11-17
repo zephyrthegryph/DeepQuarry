@@ -384,7 +384,7 @@
 	TEST_ASSERT(tungsten.heat_resistance >= CHEM_REFRACTORY_HEAT, "and heat-resistant")
 	var/obj/item/reagent_containers/glass/beaker/vessel = allocate(/obj/item/reagent_containers/glass/beaker, test_floor())
 	var/obj/item/stack/material/tungsten/sheet = allocate(/obj/item/stack/material/tungsten, test_floor(), 1)
-	rel_set(vessel, nameof(vessel.catalyst), sheet)
+	rel_add(vessel, nameof(vessel.solids), sheet)
 	TEST_ASSERT_EQUAL(vessel.catalyst_kind(), CHEM_CATALYST_SOLID_REFRACTORY, "a tungsten sheet in the glass is a refractory catalyst")
 	var/found_crack = FALSE
 	var/found_reduce = FALSE
