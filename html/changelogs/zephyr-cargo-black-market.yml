@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Black-market trade ships dock unannounced, dealing contraband arms and drugs to unlocked supply consoles; every deal risks a customs interdiction reported to Security, costing NanoTrasen standing."
+  - rscadd: "Station Wiki guide to black-market ships."
+  - code_imp: "Removed duplicate contraband and freezer supply pack definitions (live values kept)."

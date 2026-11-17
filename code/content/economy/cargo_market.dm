@@ -547,6 +547,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			admin_order.set_paid_amount(order.paid_amount)
 			admin_order.set_market_contract_funded(order.market_contract_funded)
 			break
+	black_market_exposure(trade_ship(listing.visit_id), user, "a purchase of [listing.pack.name]")
 	return order
 
 /datum/system/supply/proc/release_market_contract_funding(datum/supply_order/order)
@@ -1032,7 +1033,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		"transactions" = transactions,
 		"outbound_crates" = outbound_crates,
 		"is_auditor" = is_auditor,
-		"trade_ships" = trade_ship_ui_data(user, station_trade_authorized),
+		"trade_ships" = trade_ship_ui_data(user, station_trade_authorized, console_unlocked),
 	)
 
 

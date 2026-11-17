@@ -43,7 +43,10 @@ const SpecialOrders = (props: { ship: TradeShip }) => {
         </Table.Row>
         {specials.map((special) => (
           <Table.Row key={special.name}>
-            <Table.Cell>{special.name}</Table.Cell>
+            <Table.Cell color={special.contraband ? 'bad' : undefined}>
+              {special.name}
+              {special.contraband ? ' (restricted)' : ''}
+            </Table.Cell>
             <Table.Cell>{special.group}</Table.Cell>
             <Table.Cell collapsing>{special.catalog}₮</Table.Cell>
             <Table.Cell collapsing bold>
@@ -194,6 +197,14 @@ export const SupplyConsoleTradeShips = () => {
       {traffic.ships.map((ship) => (
         <Section key={ship.id} title={ship.name}>
           <Box mb={0.5}>{ship.description}</Box>
+          {!!ship.covert && (
+            <NoticeBox danger>
+              Off-the-books dealer. Customs watches these lanes: each deal has
+              about a {ship.heat}% chance of being caught, rising with every
+              deal. A caught deal is reported to Security under the paying
+              account holder and costs NanoTrasen standing.
+            </NoticeBox>
+          )}
           <LabeledList>
             <LabeledList.Item label="Trading for">
               {ship.counterparty} · {ship.standing_tier} ({ship.standing})

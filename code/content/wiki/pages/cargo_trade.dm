@@ -34,3 +34,19 @@
 - Far above: it rejects, and its mood sours for every crate.
 - Each crate gets limited patience. Run it out and the ship stops negotiating for that crate.
 > Asking too little is accepted too. Appraise before you name a price."}
+
+/datum/wiki_page/guide/cargo_black_market
+	id = "guide/cargo/black_market"
+	title = "Black-market ships"
+	path = "Cargo/Guides"
+	summary = "Dark freighters dealing arms and drugs, and the customs risk of dealing with them."
+	body = {"Some ships dock without announcing themselves. They deal in weapons, restricted munitions and unlicensed drugs, sell contraband packs and pay very well for weapons and medical goods.
+
+## Finding them
+- A black-market ship appears on the Trade ships tab only of a supply console whose restrictions are lifted (an emagged or contraband-authorised console), or for an agent the ship's faction trusts. Its cargo and bids appear on the Market tab the same way.
+- It trades under a cover name and leaves sooner than a lawful ship.
+
+## The risk
+- Customs watches the lanes. Every deal (a purchase, a special order, a haggled sale) may be caught. The ship's panel shows the current chance, which rises with every deal struck during its stay.
+- A caught deal is reported to Security on the Security channel, naming the paying account holder. The station, Cargo and the dealer lose standing with NanoTrasen, and the dealer's exposure to investigators rises.
+- Even uncaught, black-market settlements leave encrypted records that a security auditor can trace (see \[\[guide/cargo/trade_ships|trade ships]])."}

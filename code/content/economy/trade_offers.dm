@@ -120,8 +120,8 @@ CAPABILITIES(/datum/trade_offer)
 
 /// `user` offers `crate` to `visit` for `ask` Thalers. The ship accepts (the deal settles at once), counters or rejects.
 /// Returns the offer, or null when no offer could be made.
-/datum/system/supply/proc/make_trade_offer(datum/trade_ship_visit/visit, obj/structure/closet/crate/crate, ask, mob/living/user)
-	if(!visit || trade_ship_visits?[visit.id] != visit || !crate_is_on_supply_shuttle(crate) || crate.anchored)
+/datum/system/supply/proc/make_trade_offer(datum/trade_ship_visit/visit, obj/structure/closet/crate/crate, ask, mob/living/user, console_unlocked = FALSE)
+	if(!visit || trade_ship_visits?[visit.id] != visit || !crate_is_on_supply_shuttle(crate) || crate.anchored || !trade_ship_access(visit, user, console_unlocked))
 		return null
 	return negotiate_trade_offer(visit, crate, ask, user)
 
@@ -175,8 +175,8 @@ CAPABILITIES(/datum/trade_offer)
 	return offer
 
 /// `user` takes the ship's standing counteroffer on `offer`.
-/datum/system/supply/proc/accept_trade_counter(datum/trade_ship_visit/visit, datum/trade_offer/offer, mob/living/user)
-	if(!visit || trade_ship_visits?[visit.id] != visit || offer?.status != TRADE_OFFER_COUNTERED || offer.counter <= 0)
+/datum/system/supply/proc/accept_trade_counter(datum/trade_ship_visit/visit, datum/trade_offer/offer, mob/living/user, console_unlocked = FALSE)
+	if(!visit || trade_ship_visits?[visit.id] != visit || offer?.status != TRADE_OFFER_COUNTERED || offer.counter <= 0 || !trade_ship_access(visit, user, console_unlocked))
 		return FALSE
 	if(!crate_is_on_supply_shuttle(offer.crate) || offer.crate.anchored)
 		return FALSE
@@ -240,6 +240,7 @@ CAPABILITIES(/datum/trade_offer)
 	offer.last_reply = "Sold for [price] Thalers."
 	rel_clear(offer, nameof(offer.crate))
 	log_game("Trade offers: [visit.name] bought [crate.name] for [price] Thalers (spot [spot], premium [premium]) from [key_name(user)].")
+	black_market_exposure(visit, user, "the sale of [crate.name]")
 	spent(crate)
 	return TRUE
 

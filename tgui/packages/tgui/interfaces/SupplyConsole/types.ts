@@ -102,6 +102,7 @@ export type TradeShipSpecial = {
   group: string;
   price: number;
   catalog: number;
+  contraband: BooleanLike;
 };
 
 export type TradeShip = {
@@ -109,6 +110,8 @@ export type TradeShip = {
   name: string;
   description: string;
   counterparty: string;
+  covert: BooleanLike;
+  heat: number;
   standing: number;
   standing_tier: string;
   departs: string;

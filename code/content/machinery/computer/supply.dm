@@ -316,8 +316,9 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 
 /// req: the ship is docked and this console may spend the way the button asked (the pack is checked when the order is placed).
 /obj/machinery/computer/supplycomp/proc/special_order_ok(datum/act/op/A)
-	if(!SSsupply.trade_ship(ui_text(A.arg("ship"), 128)))
-		return MSG(supply/no_trade_ship)
+	. = trade_ship_docked(A)
+	if(.)
+		return
 	if(!A.arg("personal") && !can_trade_market(A.actor))
 		return MSG(supply/no_market_trade)
 	return null
@@ -334,7 +335,7 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 		return FALSE
 	var/datum/trade_ship_visit/visit = target[1]
 	var/datum/supply_pack/ordered = target[2]
-	if(!SSsupply.request_special_order(visit, ordered, user, reason, !!personal))
+	if(!SSsupply.request_special_order(visit, ordered, user, reason, !!personal, contraband_ok()))
 		to_chat(user, span_warning("[visit.name] could not take that order."))
 		return FALSE
 	to_chat(user, span_notice("[visit.name] will ship in [ordered.name][personal ? ", paid from your account" : "; the order awaits departmental approval"]."))
@@ -350,9 +351,10 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 		return MSG(supply/no_crate)
 	return null
 
-/// req: the ship named is docked.
+/// req: the ship named is docked and this console may deal with it (a black-market ship needs an unlocked console or the faction's access).
 /obj/machinery/computer/supplycomp/proc/trade_ship_docked(datum/act/op/A)
-	if(!SSsupply.trade_ship(ui_text(A.arg("ship"), 128)))
+	var/datum/trade_ship_visit/visit = SSsupply.trade_ship(ui_text(A.arg("ship"), 128))
+	if(!visit || !SSsupply.trade_ship_access(visit, A.actor, contraband_ok()))
 		return MSG(supply/no_trade_ship)
 	return null
 
@@ -375,7 +377,7 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 	var/ask = A.step_value("ask")
 	if(!visit || !offered || !isnum(ask))
 		return FALSE
-	var/datum/trade_offer/offer = SSsupply.make_trade_offer(visit, offered, ask, user)
+	var/datum/trade_offer/offer = SSsupply.make_trade_offer(visit, offered, ask, user, contraband_ok())
 	if(!offer)
 		to_chat(user, span_warning("[visit.name] can't take an offer for that crate."))
 		return FALSE
@@ -387,7 +389,7 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 	supply_touched(A)
 	var/datum/trade_ship_visit/visit = SSsupply.trade_ship(ui_text(ship, 128))
 	var/datum/trade_offer/countered = SSsupply.trade_offer(visit, ui_text(offer, 128))
-	if(!SSsupply.accept_trade_counter(visit, countered, user))
+	if(!SSsupply.accept_trade_counter(visit, countered, user, contraband_ok()))
 		to_chat(user, span_warning("That counteroffer no longer stands."))
 		return FALSE
 	to_chat(user, span_notice("[visit.name] bought [countered.crate_name] for [countered.settled_price] Thalers."))

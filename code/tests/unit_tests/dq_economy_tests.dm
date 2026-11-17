@@ -1856,3 +1856,54 @@
 	SSsupply.depart_trade_ship(visit)
 	qdel(second)
 	qdel(trader)
+
+/// Black-market ships: hidden from an ordinary console, deal contraband through an unlocked one, and a caught deal costs
+/// NanoTrasen standing; heat rises with every deal.
+/datum/unit_test/dq_black_market_ship
+
+/datum/unit_test/dq_black_market_ship/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	var/mob/living/carbon/human/dealer = new(test_turf)
+	var/datum/trade_ship_visit/visit = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/black_market)
+	TEST_ASSERT_NOTNULL(visit, "the black-market ship did not dock")
+	TEST_ASSERT(!SSsupply.trade_ship_visible(visit, dealer, FALSE), "an ordinary console saw a black-market ship")
+	TEST_ASSERT(SSsupply.trade_ship_visible(visit, dealer, TRUE), "an unlocked console could not see the black-market ship")
+	var/list/ui = SSsupply.trade_ship_ui_data(dealer, TRUE, FALSE)
+	for(var/list/row in ui["ships"])
+		TEST_ASSERT(row["id"] != visit.id, "the black-market ship was listed on an ordinary console")
+
+	var/datum/supply_pack/contraband_pack
+	for(var/datum/supply_pack/pack as anything in SSsupply.trade_ship_special_packs(visit))
+		if(pack.contraband)
+			contraband_pack = pack
+			break
+	TEST_ASSERT_NOTNULL(contraband_pack, "the black-market ship offered no contraband")
+	visit.profile.catch_chance = 0
+	visit.profile.heat_per_deal = 0
+	TEST_ASSERT(!SSsupply.request_special_order(visit, contraband_pack, dealer, "test", FALSE, FALSE), "a locked console special-ordered from the black market")
+	var/datum/supply_order/order = SSsupply.request_special_order(visit, contraband_pack, dealer, "test", FALSE, TRUE)
+	TEST_ASSERT_NOTNULL(order, "an unlocked console could not special-order contraband")
+	TEST_ASSERT_EQUAL(visit.heat, 1, "a black-market deal did not raise the heat")
+
+	var/standing_before = get_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN)
+	visit.profile.catch_chance = 100
+	TEST_ASSERT(SSsupply.black_market_exposure(visit, dealer, "a test deal"), "a certain interdiction was not caught")
+	TEST_ASSERT(get_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN) < standing_before, "a caught deal cost no NanoTrasen standing")
+	adjust_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN, standing_before - get_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN))
+
+	var/datum/trade_ship_visit/lawful = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/guild_trader)
+	TEST_ASSERT(!SSsupply.black_market_exposure(lawful, dealer, "a lawful deal"), "a lawful ship's deal risked interdiction")
+	TEST_ASSERT(SSsupply.trade_ship_visible(lawful, dealer, FALSE), "a lawful ship was hidden")
+
+	SSsupply.depart_trade_ship(visit)
+	SSsupply.depart_trade_ship(lawful)
+	var/datum/supply_order/admin_order
+	for(var/datum/supply_order/candidate in SSsupply.adm_order_history)
+		if(candidate.ordernum == order.ordernum)
+			admin_order = candidate
+			break
+	own_take_member(SSsupply, nameof(/datum/system/supply::order_history), order)
+	own_take_member(SSsupply, nameof(/datum/system/supply::adm_order_history), admin_order)
+	qdel(admin_order)
+	qdel(order)
+	qdel(dealer)
