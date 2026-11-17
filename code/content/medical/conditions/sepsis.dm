@@ -3,8 +3,8 @@
 	category = "Infection"
 	clinical_description = "A systemic inflammatory response to bacterial invasion of the bloodstream. The whole body is fighting, and losing."
 	progression_rate = 0.7
-	// Sepsis needs aggressive antibiotic coverage: corophizine's wide
-	// spectrum + spaceacillin together. Inaprovaline supports BP.
+	// Any antimicrobial cures sepsis (a tag provider of any tier works); the higher tiers are faster:
+	// spaceacillin slowly, panacillin and corophizine quickly. Inaprovaline supports BP.
 	treated_by = list(TREAT_ANTIMICROBIAL = 1.05, TREAT_CIRCULATORY = 0.3)
 	symptom_pool = list(
 		/datum/affliction_symptom/fever_sensation = 80,

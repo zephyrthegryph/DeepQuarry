@@ -2,7 +2,7 @@
 //
 // wound_infection → cellulitis → sepsis → septic_shock → cardiac_arrest
 //
-// Spaceacillin is the universal cure but the further down the chain,
+// Any antimicrobial cures it (spaceacillin, panacillin, corophizine: a provider of any tier works and the higher tiers are faster), but the further down the chain,
 // the harder it gets to push severity back down. Septic shock is
 // nearly terminal and only modern care + active antibiotics + fluids
 // can pull a patient back.

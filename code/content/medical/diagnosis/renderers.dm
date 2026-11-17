@@ -46,6 +46,7 @@
 		TREAT_DIGESTIVE = "digestive repair",
 		TREAT_ANTIEMETIC = "antiemetic",
 		TREAT_ANTICONVULSANT = "anticonvulsant",
+		TREAT_OPIOID_ANTAGONIST = "opioid antagonist",
 		TREAT_BURN_DEEP = "deep burn care",
 		TREAT_ANTIEDEMA = "anti-edema",
 		TREAT_SOULMEND = "soul mending",

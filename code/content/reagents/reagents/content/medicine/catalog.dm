@@ -156,9 +156,11 @@
 // Healing nanites' repair (organic and synthetic) is their treatment_tags profile.
 
 /datum/reagent/menthol
+	// A second antiemetic, slower than calcium carbonate.
+	treatment_tags = list(TREAT_ANTIEMETIC = 0.5)
 	name = REAGENT_MENTHOL
 	id = REAGENT_ID_MENTHOL
-	description = "Tastes naturally minty, and imparts a very mild numbing sensation."
+	description = "Tastes naturally minty, imparts a very mild numbing sensation and settles nausea (more slowly than Calcium Carbonate), without the poisoning that calcium carbonate causes when injected."
 	taste_description = "mint"
 	reagent_state = LIQUID
 	color = "#80af9c"

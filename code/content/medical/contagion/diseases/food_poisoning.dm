@@ -15,9 +15,9 @@
 	stage_prob = 5
 	spread_text = "Non-Contagious"
 	spread_flags = DISEASE_SPREAD_NON_CONTAGIOUS
-	cure_text = "Sleep"
+	cure_text = "Sleep, fluids (" + REAGENT_IRONSALINE + "), " + REAGENT_SPACEACILLIN + " or " + REAGENT_ANTITOXIN
 	agent = REAGENT_SALMONELLA
-	cures = list(REAGENT_ID_CHICKENNOODLESOUP)
+	cures = list(REAGENT_ID_IRONSALINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_ANTITOXIN)
 	virus_modifiers = NONE // Does NOT need all the cures
 	cure_chance = 10
 	desc = "Nausea, sickness, and vomiting."

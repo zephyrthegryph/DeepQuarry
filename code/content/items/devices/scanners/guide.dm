@@ -21,7 +21,7 @@ GLOBAL_LIST_INIT(analyzer_guidance, list( \
 	TREAT_HEMOSTATIC = "Bleeding - Apply bandages or administer Bicaridine. Internal bleeds need coagulants such as Myelamine or vein repair surgery.", \
 	TREAT_TISSUE_REPAIR = "Physical trauma - Bandage the wounded body part. Administer Bicaridine.", \
 	TREAT_BURN_CARE = "Burns - Salve the wound in ointment. Administer Kelotane or Dermaline. Check for infections.", \
-	TREAT_BURN_DEEP = "Deep burns - Administer Dermaline; Kelotane barely reaches them. Check for infections and keep the airway open.", \
+	TREAT_BURN_DEEP = "Deep burns - Administer Dermaline (Bullvalene also works, slowly, but poisons); Kelotane barely reaches them. Check for infections and keep the airway open.", \
 	TREAT_BONE_REPAIR = "Bone fracture - Splint the area and set the bone with bone repair surgery. Osteodaxon on an unset fracture knits the bone crooked.", \
 	TREAT_BONE_SETTING = "Unset bone - Perform Set Bone surgery with a bone setter or bone gel, then splint the limb.", \
 	TREAT_ANTIMICROBIAL = "Infection - Administer Spaceacillin. If severe, use Corophizine and monitor until well.", \
@@ -33,17 +33,18 @@ GLOBAL_LIST_INIT(analyzer_guidance, list( \
 	TREAT_GENETIC_REPAIR = "Genetic damage - Use a cryogenic pod with Cryoxadone below 70 K, or give Rezadone.", \
 	TREAT_BLOOD_RESTORE = "Low blood volume - Transfuse blood via IV drip or give blood-restorative chemicals (copper for zorren and skrell, iron for the rest).", \
 	TREAT_HEPATORENAL = "Liver or kidney damage - Administer Peridaxon; perform a full body scan for targeted surgery.", \
-	TREAT_CARDIAC = "Heart damage - Administer Peridaxon; perform a full body scan for targeted surgery.", \
-	TREAT_RESPIRATORY = "Lung damage - Administer Peridaxon; perform a full body scan for targeted surgery.", \
-	TREAT_OCULAR = "Eye damage - Administer Imidazoline or Peridaxon. Shield the eyes from light until they recover.", \
+	TREAT_CARDIAC = "Heart damage - Administer Cordradaxon, or Peridaxon or Tricordrazine (both slower); perform a full body scan for targeted surgery.", \
+	TREAT_RESPIRATORY = "Lung damage - Administer Respirodaxon, or Peridaxon or Tricordrazine (both slower); perform a full body scan for targeted surgery.", \
+	TREAT_OCULAR = "Eye damage - Administer Imidazoline, or Peridaxon or Tricordrazine (both slower). Shield the eyes from light until they recover.", \
 	TREAT_DIGESTIVE = "Stomach or bowel damage - Administer Gastirodaxon. A swollen appendix needs the appendix removed.", \
 	TREAT_THERMOREGULATION = "Abnormal body temperature - Administer Leporazine. Warm a cold patient with a blanket or a warm room, cool an overheated one, and treat any burns.", \
 	TREAT_CIRCULATORY = "Weak circulation - Administer Inaprovaline or use a stabiliser autoinjector, lay the patient down and stop any bleeding.", \
 	TREAT_VASOPRESSOR = "Collapsed pressure or swollen airway - Use a stabiliser autoinjector or Adrenaline. Adrenaline also helps restart a stopped heart during CPR.", \
 	TREAT_STIMULANT = "Slowed or stopped breathing - Ventilate with a bag-valve mask and give a stimulant such as Adrenaline. Do not give stimulants to a bleeding patient.", \
 	TREAT_ANALGESIC = "Pain - Administer Paracetamol, Tramadol or Oxycodone.", \
-	TREAT_ANTIEMETIC = "Nausea - Administer Calcium Carbonate.", \
-	TREAT_ANTICONVULSANT = "Seizure - Administer Anticonvulsant, move hard objects away and protect the head.", \
+	TREAT_ANTIEMETIC = "Nausea - Administer Calcium Carbonate (orally) or Menthol.", \
+	TREAT_ANTICONVULSANT = "Seizure - Administer Anticonvulsant or Adranol, move hard objects away and protect the head.", \
+	TREAT_OPIOID_ANTAGONIST = "Opioid overdose - Administer Naloxone at once, support the breathing and watch the patient until the opioid has cleared.", \
 	TREAT_ANTIEDEMA = "Airway swelling - Administer Dermaline, keep the airway open and watch the patient's breathing.", \
 	TREAT_WOUND_PACKING = "Open bleeding wound - Pack it with hemostatic gauze or press on a pressure bandage from a field stabilisation kit.", \
 	TREAT_OCCLUSIVE_SEAL = "Open chest wound - Apply a chest seal from a field stabilisation kit, then check the lungs.", \
@@ -81,8 +82,19 @@ GLOBAL_LIST_INIT(analyzer_guidance, list( \
 		for(var/datum/affliction/contagion/D in H.get_contagions())
 			if((D.visibility_flags & HIDDEN_SCANNER) || !global_flag_check(D.virus_modifiers, DISCOVERED))
 				continue
-			lines += "Viral infection - Inform a Virologist or the Chief Medical Officer and administer antiviral chemicals such as Spaceacillin. Limit exposure to other personnel."
+			lines += "Viral infection - Inform a Virologist or the Chief Medical Officer and administer antiviral chemicals such as Spaceacillin; rest, fluids (Iron Saline) and sleep help too. Limit exposure to other personnel."
 			break
+		if(H.ear_damage >= EAR_DAMAGE_IMPAIRED)
+			lines += H.ear_damage >= EAR_DAMAGE_PERMANENT ? "Destroyed eardrum - Perform Repair Eardrum surgery on the head, then administer Cochlexine." : "Ear damage - Administer Cochlexine and keep the patient out of loud places."
+		var/datum/diagnostic_profile/P = diagnostic_profile(active_profile())
+		if(P.senses & PRESENT_INTERNAL)
+			if(H.sdisabilities & BLIND)
+				lines += "Cataracts - Perform Remove Cataracts surgery on the head. Imidazoline mends the eye but not a clouded lens."
+			for(var/obj/item/organ/internal/malignant/growth in H.internal_organ_list())
+				if(istype(growth, /obj/item/organ/internal/malignant/tumor))
+					lines |= "Abnormal tissue mass - Cut it out with Resect Necrotic Tissue surgery; a full body scan shows where it is."
+				else if(istype(growth, /obj/item/organ/internal/malignant/parasite))
+					lines |= "Parasitic organism - Administer Anthelmin, or cut it out with Resect Necrotic Tissue surgery."
 		for(var/obj/item/organ/external/E as anything in H.organs)
 			if(E.is_robotic())
 				lines += "Robotic body parts - Inform the Robotics department."

@@ -3,7 +3,7 @@
 	factors = alist(STAT_ANTIMICROBIAL = ANTIBIO_NORM)
 	name = REAGENT_SPACEACILLIN
 	id = REAGENT_ID_SPACEACILLIN
-	description = "A mild all-purpose antibiotic for common infections. Low potency and slow to metabolise: it works gently over a long time, and is not enough for sepsis."
+	description = "A mild all-purpose antibiotic for common infections. Low potency and slow to metabolise: it works gently over a long time. It will clear a serious infection such as sepsis only slowly; Panacillin and Corophizine are faster."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

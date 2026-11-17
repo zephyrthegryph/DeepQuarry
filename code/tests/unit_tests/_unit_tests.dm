@@ -452,6 +452,7 @@
 #include "dq_medical_med8_tests.dm"
 #include "dq_medical_k_c_tests.dm"
 #include "dq_medical_k_a_tests.dm"
+#include "dq_medical_cures_tests.dm"
 #include "dq_medical_k_b_tests.dm"
 #include "dq_msg_limb_token_tests.dm"
 #include "dq_mutation_tests.dm"

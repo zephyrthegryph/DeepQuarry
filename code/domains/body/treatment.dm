@@ -73,6 +73,7 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 	TREAT_DIGESTIVE        = "Digestive repair", \
 	TREAT_ANTIEMETIC       = "Antiemetic", \
 	TREAT_ANTICONVULSANT   = "Anticonvulsant", \
+	TREAT_OPIOID_ANTAGONIST = "Opioid antagonist", \
 	TREAT_WOUND_PACKING    = "Wound packing", \
 	TREAT_OCCLUSIVE_SEAL   = "Occlusive seal", \
 	TREAT_REGENERATION     = "Natural regeneration", \

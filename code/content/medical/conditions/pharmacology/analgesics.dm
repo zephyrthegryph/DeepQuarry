@@ -47,12 +47,14 @@
 
 /datum/affliction/overdose/oxycodone
 	name = "opioid overdose"
-	clinical_description = "Oxycodone at overdose causes profound CNS depression — the patient may stop breathing entirely. Pinpoint pupils, slow heart, shallow respirations. The same effect produces near-total pain immunity and significant stun resistance — sometimes worth the risk when working through a major procedure under fire."
+	clinical_description = "Oxycodone at overdose causes profound CNS depression — the patient may stop breathing entirely. Naloxone reverses it within seconds. Pinpoint pupils, slow heart, shallow respirations. The same effect produces near-total pain immunity and significant stun resistance — sometimes worth the risk when working through a major procedure under fire."
 	symptom_pool = list(
 		/datum/affliction_symptom/drowsy            = 95,
 		/datum/affliction_symptom/labored_breathing = 85,
 		/datum/affliction_symptom/cyanosis          = 60,
 	)
+	// Naloxone strips the opioid out of the blood, so the overdose ends within a few ticks of the dose (reagents/content/medicine/naloxone.dm).
+	treated_by = list(TREAT_OPIOID_ANTAGONIST = 1)
 	min_symptoms = 2
 	max_symptoms = 3
 	factors = alist(STAT_SLOWDOWN = 2, STAT_ACCURACY = -40, STAT_MOTOR_CONTROL = 0.9, STAT_DISABLE_DURATION = 0.5, STAT_ANALGESIA = 50, STAT_HEART_RATE = -15, STAT_O2_SAT = -20, STAT_RESP_RATE = -10)

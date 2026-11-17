@@ -69,7 +69,7 @@
 	name = "Resect Necrotic Tissue"
 	finds = TRUE
 	book_category = "Organs"
-	about = "Cutting dead tissue out of one organ. Sutures do not touch necrosis; only resection removes it."
+	about = "Cutting dead tissue out of one organ, or a tumour or parasitic growth out of the limb that holds it (the body scanner reads these as an abnormal tissue mass or a parasitic organism). Sutures do not touch necrosis; only resection removes it."
 	allowed_tools = list(
 		/obj/item/surgical/scalpel = 100,
 		/obj/item/material/knife = 50,
@@ -84,6 +84,32 @@
 	complication_kind = INJURY_CUT
 	complication_amount = 8
 	complication_affliction = /datum/affliction/lesion/laceration
+
+/// A tumour or parasitic growth: cut out by resection, whole (the engineered glands are implants, not growths).
+/proc/is_resectable_growth(atom/thing)
+	return istype(thing, /obj/item/organ/internal/malignant/tumor) || istype(thing, /obj/item/organ/internal/malignant/parasite)
+
+/datum/surgical_step/treat/organ/resection/location_needs_treatment(mob/living/carbon/human/target, location)
+	return is_resectable_growth(location) || ..()
+
+/datum/surgical_step/treat/organ/resection/findings(mob/living/carbon/human/target, obj/item/organ/external/part, full)
+	. = ..()
+	if(!full)
+		return
+	for(var/obj/item/organ/internal/I as anything in part.held_organs())
+		if(I.owner == target && is_resectable_growth(I))
+			. += list(surgical_finding_row(istype(I, /obj/item/organ/internal/malignant/tumor) ? "abnormal tissue mass" : "parasitic organism", I, I, src))
+
+/datum/surgical_step/treat/organ/resection/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
+	if(!is_resectable_growth(work_target))
+		return ..()
+	var/obj/item/organ/internal/growth = work_target
+	if(growth.owner != target)
+		return
+	log_game("SURGERY: [key_name(user)] cut [growth] ([growth.type]) out of [key_name(target)]'s [part]")
+	add_attack_logs(user, target, "Resected [growth.name]")
+	growth.removed(user)
+	spent(growth)
 
 /datum/surgical_step/treat/organ/system_restore
 	name = "Repair Prosthetic Organ"
