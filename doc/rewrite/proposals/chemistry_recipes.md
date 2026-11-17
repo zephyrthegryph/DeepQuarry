@@ -451,7 +451,7 @@ Where the build differs from the draft above. The engine is `code/domains/world_
 - Condense writes only the joins that make a chemical (no route to residue for every acid and alcohol pair: that was thousands of rows).
 - Polymerise: two silanols make lube, hot (85 to 110 C). The workshop polymers stay with the materials lane.
 - Electrolyse: a `/obj/item/chem_electrode` clipped on the container, on a plate that is on (the conductive sheet stand-in is gone).
-- Byproducts: the hydrogen chloride of a halogenation is real hydrochloric acid (the contaminant of the same name is kept for sources). Polytrinic acid is a mixture of sulphuric, nitric and hydrochloric acid and has no structure; nitric acid is what a nitration takes.
+- Byproducts: the hydrogen chloride of a halogenation is real hydrochloric acid. Polytrinic acid is a mixture of sulphuric, nitric and hydrochloric acid and has no structure; nitric acid is what a nitration takes.
 
 ### Tier 1 changes against the draft
 | Chemical | Draft | Built |

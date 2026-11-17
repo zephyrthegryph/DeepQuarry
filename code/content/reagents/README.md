@@ -398,8 +398,7 @@ Block structures and processes
   residue), solid metal or solid acid (a sheet in the container: its catalytic activity lowers the band and raises the selectivity; porous material is a solid
   acid; sulfur and heavy metals poison it), enzyme (gentle heat only, spent into endotoxin, killed by heavy metals). The share of a product a catalyst was not
   selective for is organic residue: that and the fallout are the natural purity.
-* **Trace-potent contaminants**, one clear symptom each, strong at a trace, made by processes and carried by no source: hydrochloric acid (burns; freed by
-  halogenation), dioxin (skin lesions; hot halogenation of a ring with a hydroxyl), nitrosamine (slow genetic damage; nitrating an amine), peroxide (detonates when
+* **Trace-potent contaminants**, one clear symptom each, strong at a trace, made by processes and carried by no source: dioxin (skin lesions; hot halogenation of a ring with a hydroxyl), nitrosamine (slow genetic damage; nitrating an amine), peroxide (detonates when
   its container is heated: `detonate_peroxide()` in `boil_step()`; a hot uncatalysed oxidation), methanol (blindness; fermentation), plasticiser (slows the
   metabolism; hot condensation of a ring), tar (strains the lungs; cracking, decarboxylating), plus heavy metals (liver) and endotoxin (toxin and fever), now
   stronger.

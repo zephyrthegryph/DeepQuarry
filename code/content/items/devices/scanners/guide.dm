@@ -37,6 +37,7 @@ GLOBAL_LIST_INIT(analyzer_guidance, list( \
 	TREAT_STIMULANT = "Slowed or stopped breathing - Ventilate with a bag-valve mask and give a stimulant such as Adrenaline. Do not give stimulants to a bleeding patient.", \
 	TREAT_ANALGESIC = "Pain - Administer Paracetamol, Tramadol or Oxycodone.", \
 	TREAT_ANTIEMETIC = "Nausea - Administer Calcium Carbonate (orally) or Menthol.", \
+	TREAT_HYDRATION = "Dehydration or a cold - Give an Electrolyte drink (Iron Saline helps more slowly), keep the patient resting and let them sleep.", \
 	TREAT_ANTICONVULSANT = "Seizure - Administer Anticonvulsant or Adranol, move hard objects away and protect the head.", \
 	TREAT_OPIOID_ANTAGONIST = "Opioid overdose - Administer Naloxone at once, support the breathing and watch the patient until the opioid has cleared.", \
 	TREAT_ANTIEDEMA = "Airway swelling - Administer Dermaline, keep the airway open and watch the patient's breathing.", \
@@ -76,7 +77,7 @@ GLOBAL_LIST_INIT(analyzer_guidance, list( \
 		for(var/datum/affliction/contagion/D in H.get_contagions())
 			if((D.visibility_flags & HIDDEN_SCANNER) || !global_flag_check(D.virus_modifiers, DISCOVERED))
 				continue
-			lines += "Viral infection - Inform a Virologist or the Chief Medical Officer and administer antiviral chemicals such as Spaceacillin; rest, fluids (Iron Saline) and sleep help too. Limit exposure to other personnel."
+			lines += "Viral infection - Inform a Virologist or the Chief Medical Officer and administer antiviral chemicals such as Spaceacillin; rest, fluids (an Electrolyte drink) and sleep help too. Limit exposure to other personnel."
 			break
 		if(H.ear_damage >= EAR_DAMAGE_IMPAIRED)
 			lines += H.ear_damage >= EAR_DAMAGE_PERMANENT ? "Destroyed eardrum - Perform Repair Eardrum surgery on the head, then administer Cochlexine." : "Ear damage - Administer Cochlexine and keep the patient out of loud places."

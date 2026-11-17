@@ -111,6 +111,7 @@
 #define TREAT_DIGESTIVE        "digestive"  // stomach / intestine / appendix tissue repair
 #define TREAT_ANTIEMETIC       "antiemetic"  // settles nausea (calcium carbonate)
 #define TREAT_ANTICONVULSANT   "anticonvulsant"  // stops and prevents seizures
+#define TREAT_HYDRATION        "hydration"  // oral/IV rehydration: water, salts and sugar (electrolyte drink); feeds the immune response to a cold
 /// Ear damage (mob.ear_damage): at 15 hearing is impaired; at 100 the ears are destroyed and do not heal without surgery (surgery/ears.dm).
 #define EAR_DAMAGE_IMPAIRED    15
 #define EAR_DAMAGE_PERMANENT   100

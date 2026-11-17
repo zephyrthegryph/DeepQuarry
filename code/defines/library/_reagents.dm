@@ -789,6 +789,8 @@
 #define REAGENT_ID_VIENNA "vienna"
 #define REAGENT_SODAWATER "Soda Water"
 #define REAGENT_ID_SODAWATER "sodawater"
+#define REAGENT_ELECTROLYTE "Electrolyte Drink"
+#define REAGENT_ID_ELECTROLYTE "electrolyte"
 #define REAGENT_TONIC "Tonic Water"
 #define REAGENT_ID_TONIC "tonic"
 #define REAGENT_LEMONADE "Lemonade"

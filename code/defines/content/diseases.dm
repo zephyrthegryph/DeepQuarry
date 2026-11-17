@@ -53,6 +53,8 @@
 #define CONTAGION_IMMUNE_BASE 0.06
 /// Immunity per tick at a standard dose of an antimicrobial (spaceacillin).
 #define CONTAGION_IMMUNE_ANTIMICROBIAL 0.15
+/// Immunity per tick at a standard dose of rehydration (an electrolyte drink).
+#define CONTAGION_IMMUNE_HYDRATION 0.1
 /// Extra immunity per tick while the host lies down (bed rest).
 #define CONTAGION_IMMUNE_BEDREST 0.04
 

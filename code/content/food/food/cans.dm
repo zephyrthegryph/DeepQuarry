@@ -82,6 +82,18 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/waterbottle)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
 	configure(reagents(add = list(REAGENT_ID_WATER = 30)))
 
+/obj/item/reagent_containers/food/drinks/cans/electrolyte
+	name = "electrolyte drink"
+	desc = "A can of oral rehydration drink: water, salt and sugar. Good for a cold, a hangover or a hard shift."
+	icon_state = "waterbottle"
+	cant_chance = 0
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/electrolyte)
+	configure(atom_rules(price_tag = 3))
+	configure(item_handling(center_x = 16, center_y = 8))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
+	configure(reagents(add = list(REAGENT_ID_ELECTROLYTE = 30)))
+
 /obj/item/reagent_containers/food/drinks/cans/space_mountain_wind
 	name = "\improper Space Mountain Wind"
 	desc = "Blows right through you like a space wind. Contains caffeine."
