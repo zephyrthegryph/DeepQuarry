@@ -25,7 +25,7 @@
 	desc = "A weapon favored by mercenary infiltration teams."
 	icon_state = "crossbowlarge"
 	w_class = ITEMSIZE_LARGE
-	MATERIAL_BULK(MAT_STEEL, 200000)
+	MATERIAL_BULK(MAT_STEEL, 4000)
 	projectile_type = /obj/item/projectile/energy/bolt/large
 
 CAPABILITIES(/obj/item/gun/energy/crossbow/largecrossbow)

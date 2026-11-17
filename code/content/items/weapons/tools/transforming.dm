@@ -36,7 +36,7 @@ CAPABILITIES(/obj/item/tool/transforming)
 /obj/item/tool/transforming/proc/on_tool_switch(mob/user)
 	return
 
-MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SILVER=50))
+MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_STEEL=150, MAT_SILVER=50))
 /obj/item/tool/transforming/jawsoflife
 	name = "jaws of life"
 	desc = "A set of jaws of life, compressed through the magic of science."

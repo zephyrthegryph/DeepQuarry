@@ -161,7 +161,7 @@
 	icon_state = "casinomanual"
 	item_state = "casinomanual"
 	unique = TRUE
-	w_class = 2 // To allow it to be stuffed away into wallets for easy readings during events
+	w_class = ITEMSIZE_SMALL // To allow it to be stuffed away into wallets for easy readings during events
 	root_type = /datum/lore/codex/category/casinomanual
 	libcategory = "Reference"
 

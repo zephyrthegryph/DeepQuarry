@@ -1,4 +1,4 @@
-MATERIAL_MIX(/obj/item/geiger, list(/datum/material/steel = SHEET_MATERIAL_AMOUNT * 1.5, /datum/material/glass = SHEET_MATERIAL_AMOUNT * 1.5))
+MATERIAL_MIX(/obj/item/geiger, list(MAT_STEEL = SHEET_MATERIAL_AMOUNT * 1.5, MAT_GLASS = SHEET_MATERIAL_AMOUNT * 1.5))
 /obj/item/geiger //DISCLAIMER: I know nothing about how real-life Geiger counters work. This will not be realistic. ~Xhuis
 	name = "\improper Geiger counter"
 	desc = "A handheld device used for detecting and measuring radiation pulses."

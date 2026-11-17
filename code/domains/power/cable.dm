@@ -447,7 +447,7 @@ CAPABILITIES(/obj/structure/cable)
 
 /obj/item/stack/cable_coil
 	material_template = /datum/material_template/cable
-	material_total = SHEET_MATERIAL_AMOUNT
+	material_total = 70
 	name = "cable coil"
 	icon = 'icons/obj/power.dmi'
 	icon_state = "coil"

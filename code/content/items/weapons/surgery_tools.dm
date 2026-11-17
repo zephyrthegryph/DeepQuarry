@@ -47,7 +47,7 @@ CAPABILITIES(/obj/item/surgical/bioregen)
 	name = "retractor"
 	desc = "Retracts stuff."
 	icon_state = "retractor"
-	material_total = 10000 + 5000
+	material_total = 500
 
 CAPABILITIES(/obj/item/surgical/retractor)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SCRAP))
@@ -59,7 +59,7 @@ CAPABILITIES(/obj/item/surgical/retractor)
 	name = "hemostat"
 	desc = "You think you have seen this before."
 	icon_state = "hemostat"
-	material_total = 5000 + 2500
+	material_total = 1000
 
 CAPABILITIES(/obj/item/surgical/hemostat)
 	configure(item_combat(attack_verbs = list("attacked", "pinched")))
@@ -72,7 +72,7 @@ CAPABILITIES(/obj/item/surgical/hemostat)
 	name = "cautery"
 	desc = "This stops bleeding."
 	icon_state = "cautery"
-	material_total = 5000 + 2500
+	material_total = 500
 
 CAPABILITIES(/obj/item/surgical/cautery)
 	configure(item_combat(attack_verbs = list("burnt")))
@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/surgical/cautery)
 	name = "surgical drill"
 	desc = "You can drill using this item. You dig?"
 	icon_state = "drill"
-	material_total = 15000 + 10000
+	material_total = 500
 	w_class = ITEMSIZE_NORMAL
 
 CAPABILITIES(/obj/item/surgical/surgicaldrill)
@@ -100,7 +100,7 @@ CAPABILITIES(/obj/item/surgical/surgicaldrill)
 	desc = "Cut, cut, and once more cut."
 	icon_state = "scalpel"
 	w_class = ITEMSIZE_TINY
-	material_total = 10000 + 5000
+	material_total = 500
 	var/clamp_chance = 0 // chance that the scalpel will perform cautery on its own
 
 CAPABILITIES(/obj/item/surgical/scalpel)
@@ -117,6 +117,7 @@ CAPABILITIES(/obj/item/surgical/scalpel)
 /obj/item/surgical/scalpel/laser1
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks basic and could be improved."
+	material_total = 20000
 	icon_state = "scalpel_laser1"
 	clamp_chance = 75
 
@@ -127,6 +128,7 @@ CAPABILITIES(/obj/item/surgical/scalpel/laser1)
 /obj/item/surgical/scalpel/laser2
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks somewhat advanced."
+	material_total = 22500
 	icon_state = "scalpel_laser2"
 	clamp_chance = 85
 
@@ -138,6 +140,7 @@ CAPABILITIES(/obj/item/surgical/scalpel/laser2)
 /obj/item/surgical/scalpel/laser3
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks to be the pinnacle of precision energy cutlery!"
+	material_total = 23500
 	icon_state = "scalpel_laser3"
 	clamp_chance = 95
 
@@ -149,6 +152,7 @@ CAPABILITIES(/obj/item/surgical/scalpel/laser3)
 /obj/item/surgical/scalpel/manager
 	name = "incision management system"
 	desc = "A true extension of the surgeon's body, this marvel instantly and completely prepares an incision allowing for the immediate commencement of therapeutic steps."
+	material_total = 23750
 	icon_state = "scalpel_manager"
 	clamp_chance = 100
 
@@ -158,6 +162,7 @@ CAPABILITIES(/obj/item/surgical/scalpel/manager)
 /obj/item/surgical/scalpel/ripper
 	name = "jagged scalpel"
 	desc = "A horrifying bladed tool with a large metal spike in its center. The tool is used for rapidly removing organs or medical malpractice."
+	material_total = 23000
 	icon_state = "organ_ripper"
 	item_state = "bone_setter"
 
@@ -173,7 +178,7 @@ CAPABILITIES(/obj/item/surgical/scalpel/ripper)
 	desc = "For heavy duty cutting."
 	icon_state = "saw"
 	w_class = ITEMSIZE_NORMAL
-	material_total = 20000 + 10000
+	material_total = 1000
 
 CAPABILITIES(/obj/item/surgical/circular_saw)
 	configure(item_combat(injury_kind = INJURY_CUT))
@@ -188,7 +193,7 @@ CAPABILITIES(/obj/item/surgical/circular_saw)
 	icon_state = "adv_saw"
 	item_state = "saw3"
 	w_class = ITEMSIZE_NORMAL
-	material_total = 25000 + 20000
+	material_total = 17300
 
 CAPABILITIES(/obj/item/surgical/circular_saw/manager)
 	configure(item_combat(injury_kind = INJURY_CUT, injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)))
