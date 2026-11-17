@@ -2,7 +2,7 @@
 //
 // A reagent that is a real gas (GLOB.reagent_vapour_gases: hydrogen, oxygen, nitrogen, water, phoron, welding fuel, chlorine, ammonia) becomes that atmos gas on the
 // tile of the heater: CHEM_GAS_MOLES_PER_UNIT moles a unit, at the temperature it left the container at, so it carries its heat into the room's air and the air's own
-// behaviour (breathing, fire, visibility, pressure) takes over. Any other reagent's vapour is not a gas the air has a slot for.
+// behaviour (breathing, fire, visibility, pressure) takes over. Any other reagent's vapour goes into the sparse vapour layer (code/world/systems/chem_vapour.dm).
 // Everything is written to the world log under GLOB.chem_trace.
 
 /// Puts `moles` of the atmos gas `gas` at `kelvin` into this turf's air, mixing by heat capacity. Returns the moles the air took (0 for a turf with no air).
@@ -23,7 +23,7 @@
 	return moles
 
 /// Lets boiled-off vapour (boil_step()'s list: reagent id => list(units, data, kelvin)) out at `where`. A reagent that is a gas enters the air of the tile as that gas;
-/// the rest is not simulated. Returns the units that went into the air.
+/// the rest goes into the vapour layer. Returns the units that were let out (into the air or the layer).
 /proc/vent_vapour_at(turf/where, list/vapour, source)
 	. = 0
 	if(!where || !length(vapour))
@@ -32,8 +32,10 @@
 		var/list/row = vapour[id]
 		var/gas = GLOB.reagent_vapour_gases[id]
 		if(isnull(gas))
+			var/layered = chem_vapour_add(where, id, row[1], row[3])
+			. += layered
 			if(GLOB.chem_trace)
-				log_world("CHEM: [source] vented [round(row[1], 0.001)]u of [id] at [where]: not a gas the air has, so it is gone")
+				log_world("CHEM: [source] vented [round(row[1], 0.001)]u of [id] at [where] into the vapour layer ([round(layered, 0.001)]u taken)")
 			continue
 		var/taken = where.vent_gas(gas, row[1] * CHEM_GAS_MOLES_PER_UNIT, row[3])
 		if(taken <= 0)

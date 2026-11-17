@@ -98,6 +98,14 @@ GLOBAL_LIST_INIT(reagent_vapour_gases, list(
 	REAGENT_ID_AMMONIA = GAS_AMMONIA,
 ))
 
+/// reagent id => joules a unit of its vapour releases when it burns (code/world/systems/chem_vapour.dm): the flammable vapours that are not atmos gases.
+GLOBAL_LIST_INIT(reagent_vapour_fuels, list(
+	REAGENT_ID_ETHANOL = 12000,
+	REAGENT_ID_PYRIDINE = 9000,
+	REAGENT_ID_DIETHYLAMINE = 9000,
+	REAGENT_ID_PHENOL = 8000,
+))
+
 /// The boiling point of a reagent type's category, K: the first row its type belongs to, so a narrower category goes above a wider one.
 /// Anything else is an organic compound of the lab shelf (BOILING_POINT_DEFAULT).
 GLOBAL_LIST_INIT(reagent_boiling_categories, list(

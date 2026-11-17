@@ -473,6 +473,7 @@
 #include "dq_chem_hijack_tests.dm"
 #include "dq_chem_gas_tests.dm"
 #include "dq_chem_hot_plate_tests.dm"
+#include "dq_chem_vapour_tests.dm"
 #include "dq_chem_ice_tests.dm"
 #include "dq_book_chem_tests.dm"
 #include "dq_stabilisation_tests.dm"

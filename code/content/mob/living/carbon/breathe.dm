@@ -147,6 +147,34 @@
 			//maybe check air pressure here or something to see if breathing in smoke is even possible.
 			// I dunno, maybe the reagents enter the blood stream through the lungs?
 			break // If they breathe in the nasty stuff once, no need to continue checking
+	life_breathing_inhale_vapour()
+
+/// Vapour of a reagent that is not an atmos gas (code/world/systems/chem_vapour.dm) on the breather's tile goes into the blood a breath at a time, where the reagent acts as
+/// it normally does; a tile with a lot of it tints the breather's view. Same masks as smoke: the callers return before this when one blocks it.
+/mob/living/carbon/proc/life_breathing_inhale_vapour()
+	var/turf/T = src.loc
+	if(!isturf(T))
+		set_fullscreen(FALSE, "chem_vapour")
+		return
+	var/present = chem_vapour_total_at(T)
+	if(present <= 0)
+		set_fullscreen(FALSE, "chem_vapour")
+		return
+	if(present >= VAPOUR_TINT_UNITS)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[chem_vapour_main_reagent_at(T)]
+		var/atom/movable/screen/fullscreen/vapour/tint = src.overlay_fullscreen("chem_vapour", /atom/movable/screen/fullscreen/vapour)
+		if(tint && R)
+			tint.set_color(R.color)
+	else
+		set_fullscreen(FALSE, "chem_vapour")
+	var/list/taken = chem_vapour_take(T, VAPOUR_INHALE_FRACTION, VAPOUR_INHALE_MAX)
+	if(!length(taken) || !src.bloodstr)
+		return
+	for(var/id in taken)
+		src.bloodstr.add_reagent(id, taken[id], safety = 1)
+	src.bloodstr.handle_reactions()
+	if(GLOB.chem_trace)
+		log_world("CHEM: [src] breathed vapour into the blood ([present] units on the tile)")
 
 /// Gas exchange for one breath (species breath and poison gases, oxygenation).
 /mob/living/carbon/proc/life_breathing_exchange(datum/gas_mixture/breath)

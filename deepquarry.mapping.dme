@@ -2392,6 +2392,8 @@
 #include "code\world\systems\behaviours.dm"
 #include "code\world\systems\behaviours_api.dm"
 #include "code\world\systems\behaviours_profiler.dm"
+#include "code\world\systems\chem_vapour.dm"
+#include "code\world\systems\chem_vapour_api.dm"
 #include "code\world\systems\contracts.dm"
 #include "code\world\systems\contracts_agent_fieldwork_api.dm"
 #include "code\world\systems\contracts_api.dm"

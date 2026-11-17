@@ -30,6 +30,8 @@
 	// after apply_fire_protection() was called.
 	if(fire_protection && (ELAPSED(src, fire_protection, CLOCK_WORLD) < FIRE_PROTECTION_DURATION))
 		return
+	// Flammable chem vapour on the tile (code/world/systems/chem_vapour.dm) burns when a flame is hot enough, whatever else the air holds.
+	chem_vapour_ignite_at(src, exposed_temperature)
 	//If the air doesn't exist we just return false
 	if(!turf_air())
 		return

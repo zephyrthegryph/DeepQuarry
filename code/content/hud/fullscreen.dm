@@ -89,6 +89,14 @@
 /atom/movable/screen/fullscreen/impaired
 	icon_state = "impairedoverlay"
 
+/// The light tint of a lot of chem vapour on the breather's tile (code/content/mob/living/carbon/breathe.dm): a flat wash, coloured as the main reagent.
+/atom/movable/screen/fullscreen/vapour
+	icon = 'icons/mob/screen1.dmi'
+	icon_state = "flash_static"
+	alpha = 45
+	layer = DAMAGE_LAYER
+	screen_loc = "WEST,SOUTH to EAST,NORTH"
+
 /atom/movable/screen/fullscreen/blurry
 	icon = 'icons/mob/screen1.dmi'
 	screen_loc = "WEST,SOUTH to EAST,NORTH"

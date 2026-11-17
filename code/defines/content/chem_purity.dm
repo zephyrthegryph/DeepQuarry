@@ -89,6 +89,32 @@
 /// Moles of atmos gas a unit of boiled-off reagent makes when its reagent is a real gas (GLOB.reagent_vapour_gases): 60 units of chlorine are 6 moles, a twentieth of a room tile's air.
 #define CHEM_GAS_MOLES_PER_UNIT 0.1
 
+// The vapour layer of the reagents that are not atmos gases (code/world/systems/chem_vapour.dm).
+/// Seconds between the layer's steps.
+#define VAPOUR_STEP_SECONDS 2
+/// The most tiles that hold vapour at once.
+#define VAPOUR_MAX_TILES 200
+/// The most units of vapour one tile holds.
+#define VAPOUR_TILE_MAX_UNITS 120
+/// A tile holding fewer units than this in all is cleared (and a reagent under a quarter of it is dropped from the tile).
+#define VAPOUR_EPSILON 0.05
+/// The share of a tile's vapour that spreads to the neighbours the air reaches each step.
+#define VAPOUR_DIFFUSE 0.4
+/// The share of a reagent that condenses out each step when hot, and the most when far under its boiling point (it rises by 1 per 300 K under it).
+#define VAPOUR_CONDENSE_MIN 0.04
+#define VAPOUR_CONDENSE_MAX 0.4
+/// The share of the gap to the tile's air temperature the vapour closes each step.
+#define VAPOUR_COOL_RATE 0.3
+/// A breath takes this share of the vapour on its tile into the blood, and no more than VAPOUR_INHALE_MAX units.
+#define VAPOUR_INHALE_FRACTION 0.25
+#define VAPOUR_INHALE_MAX 2
+/// A tile with this many units of vapour tints its breathers' view.
+#define VAPOUR_TINT_UNITS 8
+/// Flammable vapour needs this many units in a tile to ignite, a flame at least this hot (K), and burns into a flash fire at VAPOUR_FLASH_TEMPERATURE.
+#define VAPOUR_FLAMMABLE_UNITS 3
+#define VAPOUR_IGNITION_TEMPERATURE 600
+#define VAPOUR_FLASH_TEMPERATURE 1000
+
 /// The most band edges a container senses at once (the sensing takes 24 levels: verdigris/ffi/src/sense.rs MAX_LEVELS): the ones nearest its temperature, moved as it crosses them.
 #define REACTION_WATCH_MAX_LEVELS 24
 
