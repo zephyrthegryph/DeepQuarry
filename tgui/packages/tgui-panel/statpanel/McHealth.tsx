@@ -735,7 +735,7 @@ export function McHealthPanel(props: {
     <div className="mch">
       <Ticks data={data} />
       <PanelFps />
-      <Health data={data} />
+      {data.window_5s && <Health data={data} />}
       {ledger && <LedgerMemo data={ledger} />}
       {uses && <UsesMemo data={uses} />}
       {overruns && <OverrunsMemo data={overruns} />}
