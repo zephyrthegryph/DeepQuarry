@@ -39,4 +39,9 @@
 	if(GLOB.chem_trace)
 		log_world("CHEM: [src] crossed a reaction band edge at [round(get_temperature() - T0C, 0.1)] C (band [was] -> [band]): its contents react")
 	reagents.handle_reactions()
+	solids_step() // what lies in it dissolves at the speed of the temperature it has now
 	watch_reaction_bands() // the window of edges moves with the temperature
+
+/// Steps the solids lying in the container (a glass container's: code/content/reagents/purification/solids.dm); no other container holds any.
+/obj/item/reagent_containers/proc/solids_step(seconds)
+	return

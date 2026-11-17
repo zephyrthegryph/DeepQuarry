@@ -253,9 +253,10 @@
 	TEST_ASSERT(sheets.material.trait(MT_CATALYTIC) > 0, "etching ceramic is catalytic")
 	var/material_name = sheets.material.name
 	rc_click(H, B, sheets)
-	TEST_ASSERT_NOTNULL(B.catalyst, "the sheet went into the beaker")
+	TEST_ASSERT_EQUAL(length(B.solids), 1, "the sheet went into the beaker")
+	var/obj/item/stack/material/lying = B.solids[1]
 	TEST_ASSERT_EQUAL(sheets.get_amount(), 2, "one sheet of three")
-	TEST_ASSERT_EQUAL(B.catalyst.material.name, material_name, "of the material")
+	TEST_ASSERT_EQUAL(lying.material.name, material_name, "of the material")
 	TEST_ASSERT(dq_pur_near(B.catalyst_activity(), sheets.material.trait(MT_CATALYTIC)), "its activity is the beaker's")
 	var/list/solid = B.reagents.solid_catalyst()
 	TEST_ASSERT_EQUAL(solid[1], B.catalyst_kind(), "its kind is the beaker's")
@@ -265,11 +266,13 @@
 	B.reagents.add_reagent(REAGENT_ID_CONTAMINANT_SULFUR, 2, safety = 1)
 	var/list/poisoned = B.reagents.solid_catalyst()
 	TEST_ASSERT(poisoned[2] < solid[2], "sulfur poisons the sheet")
-	// A sheet that is no catalyst is refused.
+	// A sheet that is no catalyst lies in the glass and does nothing.
 	var/obj/item/reagent_containers/glass/beaker/large/plain = allocate(/obj/item/reagent_containers/glass/beaker/large, run_loc_floor_bottom_left)
 	var/obj/item/stack/material/steel/plate = allocate(/obj/item/stack/material/steel, run_loc_floor_bottom_left)
 	rc_click(H, plain, plate)
-	TEST_ASSERT_NULL(plain.catalyst, "a steel sheet is not a catalyst")
+	TEST_ASSERT_EQUAL(length(plain.solids), 1, "a steel sheet goes in like any solid")
+	TEST_ASSERT_NULL(plain.catalyst_kind(), "but it is not a catalyst")
+	TEST_ASSERT_NULL(plain.reagents.solid_catalyst(), "so no route runs on it")
 
 // ---- boiling ----
 

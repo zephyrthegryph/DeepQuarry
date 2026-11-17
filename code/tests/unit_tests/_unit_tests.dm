@@ -842,6 +842,7 @@
 #include "dq_hc_computers_batch4.dm"
 #include "dq_hc_computers_batch5.dm"
 #include "dq_p2_reagent_behaviour.dm"
+#include "dq_chem_solids_tests.dm"
 #include "dq_reagent_machines_behaviour.dm"
 #include "dq_reagent_starting_template.dm"
 #include "dq_board_on_first_use.dm"

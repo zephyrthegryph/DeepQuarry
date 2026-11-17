@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Beakers take any small item (up to three). A solid dissolves when the liquid can dissolve it (metals in acid, soap, sugar and salts in water, waxes in ethanol), faster when hot, into the feedstock a grinder gives; one that does not dissolve and is made of a catalytic material works as the solid catalyst."
+  - qol: "One option takes all the solids out of a beaker; examine lists them."
