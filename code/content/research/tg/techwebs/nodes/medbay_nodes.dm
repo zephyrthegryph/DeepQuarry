@@ -58,6 +58,7 @@
 	design_ids = list(
 		"chemmaster",
 		"chem_hot_plate",
+		"chem_ice_machine",
 		"chem_condenser",
 		"reagent_scanner",
 		"mass_spectrometer",

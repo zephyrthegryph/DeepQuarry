@@ -175,7 +175,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
 /// (doc/rewrite/proposals/chemistry_recipes.md, "Chemistry lab stock"). Tier 4 exotic inputs are not here: they come from expeditions, xenobiology and creatures.
 /obj/structure/closet/secure_closet/chemical_supplies
 	name = "chemistry supplies closet"
-	desc = "Filters, funnels, electrodes, catalyst sheets and process stock for the chemistry lab."
+	desc = "Filters, funnels, electrodes, catalyst sheets, baths and process stock for the chemistry lab."
 	req_access = list(ACCESS_CHEMISTRY)
 	closet_appearance = /datum/decl/closet_appearance/secure_closet/medical/chemistry
 	storage_capacity = 80
@@ -185,6 +185,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
 		/obj/item/storage/box/chem_electrodes,
 		/obj/item/storage/box/chem_catalysts,
 		/obj/item/storage/box/chem_large_beakers,
+		/obj/item/storage/box/chem_baths,
 		/obj/item/storage/box/chem_process_stock)
 
 

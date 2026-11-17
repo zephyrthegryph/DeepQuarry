@@ -39,6 +39,16 @@ CAPABILITIES(/obj/item/storage/box/chem_catalysts)
 	icon_state = "beaker"
 	starts_with = list(/obj/item/reagent_containers/glass/beaker/large = 4)
 
+/// The basins that make a bath: a small beaker stands in one, with ice or warm water round it (code/content/reagents/purification/nesting.dm). A basin is a normal-sized item.
+/obj/item/storage/box/chem_baths
+	name = "box of basins"
+	desc = "Two steel basins for ice and water baths."
+	icon_state = "box"
+	starts_with = list(/obj/item/reagent_containers/glass/basin = 2)
+
+CAPABILITIES(/obj/item/storage/box/chem_baths)
+	configure(storage(max_size = ITEMSIZE_NORMAL))
+
 /// Boron-11 and the foaming and fermenting agents the process chemicals use.
 /obj/item/storage/box/chem_process_stock
 	name = "box of process stock"

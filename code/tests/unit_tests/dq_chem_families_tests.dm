@@ -853,7 +853,7 @@
 /datum/unit_test/dq_chem_lab_boxes_fit_their_contents
 
 /datum/unit_test/dq_chem_lab_boxes_fit_their_contents/Run()
-	for(var/box_type in list(/obj/item/storage/box/chem_funnels, /obj/item/storage/box/chem_electrodes, /obj/item/storage/box/chem_catalysts, /obj/item/storage/box/chem_large_beakers, \
+	for(var/box_type in list(/obj/item/storage/box/chem_funnels, /obj/item/storage/box/chem_electrodes, /obj/item/storage/box/chem_catalysts, /obj/item/storage/box/chem_large_beakers, /obj/item/storage/box/chem_baths, \
 			/obj/item/storage/box/chem_process_stock, /obj/item/storage/box/chem_bench_bottles))
 		var/obj/item/storage/box/B = allocate(box_type, test_floor())
 		var/declared = initial(B.max_storage_space)
@@ -877,7 +877,7 @@
 			refilled += I.get_storage_cost()
 		TEST_ASSERT(refilled && refilled <= declared, "[box_type] holds its stock again within [declared] units")
 
-/// On the live map the chemistry lab has three hot plates and one condenser, beside one plate; nothing but the plate stands on a plate's tile; and the lab has the supplies closet and the chemical closet.
+/// On the live map the chemistry lab has three hot plates, one condenser, an ice machine and a basin, beside one plate; nothing but the plate stands on a plate's tile; and the lab has the supplies closet and the chemical closet.
 /datum/unit_test/dq_chem_lab_map_is_stocked
 
 /datum/unit_test/dq_chem_lab_map_is_stocked/Run()
@@ -887,6 +887,8 @@
 	var/plates = 0
 	var/supplies = 0
 	var/chemical = 0
+	var/ice_machines = 0
+	var/basins = 0
 	var/list/plate_turfs = list()
 	var/list/condenser_turfs = list()
 	for(var/turf/T as anything in turfs)
@@ -899,6 +901,12 @@
 		for(var/obj/machinery/chem_condenser/condenser in T)
 			TEST_ASSERT(condenser.anchored, "the map-placed condenser at [T.x],[T.y] is bolted")
 			condenser_turfs += T
+		for(var/obj/machinery/chem_ice_machine/ice_machine in T)
+			TEST_ASSERT(ice_machine.anchored, "the map-placed ice machine at [T.x],[T.y] is bolted")
+			TEST_ASSERT(!(locate(/obj/machinery/chem_hot_plate) in T), "the ice machine at [T.x],[T.y] is not on a plate's tile")
+			ice_machines++
+		if(locate(/obj/item/reagent_containers/glass/basin) in T)
+			basins++
 		if(locate(/obj/structure/closet/secure_closet/chemical_supplies) in T)
 			supplies++
 		if(locate(/obj/structure/closet/secure_closet/chemical) in T)
@@ -911,6 +919,8 @@
 		if(get_dist(T, home) <= 1)
 			beside++
 	TEST_ASSERT_EQUAL(beside, 1, "exactly one hot plate is beside the condenser")
+	TEST_ASSERT_EQUAL(ice_machines, 1, "one ice machine in the chemistry lab")
+	TEST_ASSERT(basins >= 1, "and a basin to make a bath in")
 	TEST_ASSERT(supplies >= 1, "the chemistry lab has its supplies closet")
 	TEST_ASSERT(chemical >= 1, "the chemistry lab has its chemical closet")
 

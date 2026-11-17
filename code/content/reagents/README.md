@@ -341,8 +341,15 @@ How a mixture is made clean again (or dirty), all of it logged under `GLOB.chem_
 * **Catalyst.** A catalyst belongs to a process (see "Block structures and processes"). A sheet of a material with catalytic activity dropped into a glass
   container (click it on the container; "Take out the catalyst" from the menu) is the solid catalyst of the routes that run on one; it no longer widens the band of
   every recipe.
-* **Hot plate** (`/obj/machinery/chem_hot_plate`): stand a glass container on it, set the dial in Celsius (radial menu), switch it on. Each second it feeds the
-  container's heat body up to `HOT_PLATE_POWER` joules, never past the dial (a dial below the container's temperature, down to 0 C, cools it the same way: the nitrating mix is mixed at 12 C or below), draws its active power while on, lets the contents react and boils them.
+* **Hot plate** (`/obj/machinery/chem_hot_plate`): stand a glass container on it, set the dial in Celsius (radial menu, room temperature up to `HOT_PLATE_MAX_TEMP`), switch it on. Each second it feeds the
+  container's heat body up to `HOT_PLATE_POWER` joules, never past the dial, draws its active power while on, lets the contents react and boils them. It only heats; a container
+  hotter than the dial cools on its own. A bath on the plate heats the container standing in it (the readout shows both temperatures).
+* **Ice and baths** (`code/domains/world_model/reagents/freezing.dm`, `code/content/reagents/machinery/ice_machine.dm`, `code/content/reagents/purification/nesting.dm`): water below
+  0 C freezes into the ice reagent and ice above 0 C melts into water, in lab glassware, each unit carrying `ICE_MELT_LATENT_HEAT` joules through the container's heat body, so ice and
+  water hold a container at 0 C while any ice is left. The **ice machine** (`/obj/machinery/chem_ice_machine`, a tabletop machine) chills a container of water at `ICE_MACHINE_COOLING` watts
+  (drawing `ICE_MACHINE_POWER`) until it is ice. A smaller open glass container stands in a larger one (grab-stance click, "Stand it in the bath"; one inner container; "Take the inner
+  container out" from the menu): the two heat bodies are coupled at `NEST_CONDUCTANCE` W/K, so an ice bath chills the inner container into the band of a cold recipe (the nitrating
+  mix) and a warm bath on the hot plate warms it. A pour into a bath goes into the bath, never the inner container.
 * **Boiling** (`code/domains/world_model/reagents/boiling.dm`, points in `code/content/reagents/reagents/boiling_points.dm`): every reagent has `boiling_point_k()`.
   `boil_step(seconds)` removes what is above its point, gradually, taking latent heat out of the container; it returns the vapour. Nothing boils by itself: the
   hot plate and the bunsen burner ask for it. Vapour is deleted unless a **condenser** (`/obj/machinery/chem_condenser`) on or next to the hot plate collects it into
