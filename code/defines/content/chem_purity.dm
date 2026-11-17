@@ -39,7 +39,7 @@
 #define REAGENT_CONTAMINANT_REACTIVE "Reactive impurity"
 #define REAGENT_ID_CONTAMINANT_REACTIVE "contaminant_reactive"
 // The trace-potent contaminants: made by processes, strong at a trace (code/content/reagents/blocks/).
-#define REAGENT_CONTAMINANT_HYDROCHLORIC "Hydrochloric acid"
+#define REAGENT_CONTAMINANT_HYDROCHLORIC "Hydrogen chloride trace"
 #define REAGENT_ID_CONTAMINANT_HYDROCHLORIC "contaminant_hydrochloric"
 #define REAGENT_CONTAMINANT_DIOXIN "Dioxin"
 #define REAGENT_ID_CONTAMINANT_DIOXIN "contaminant_dioxin"
