@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Salvage smelter (Supplies catalog): Cargo melts scrap and unwanted freight into material sheets from what each item is made of, recovering 75% with partial sheets kept in its melt."
+  - rscadd: "Station Wiki guide to salvage smelting."

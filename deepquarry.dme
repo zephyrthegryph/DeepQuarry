@@ -6451,6 +6451,7 @@
 #include "code\content\recycling\disposal_trunk.dm"
 #include "code\content\recycling\packagewrap.dm"
 #include "code\content\recycling\recycling.dm"
+#include "code\content\recycling\salvage_smelter.dm"
 #include "code\content\recycling\sortingmachinery.dm"
 #include "code\content\recycling\tagger_locations.dm"
 #include "code\content\recycling\v_garbosystem.dm"

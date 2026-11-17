@@ -50,3 +50,19 @@
 - Customs watches the lanes. Every deal (a purchase, a special order, a haggled sale) may be caught. The ship's panel shows the current chance, which rises with every deal struck during its stay.
 - A caught deal is reported to Security on the Security channel, naming the paying account holder. The station, Cargo and the dealer lose standing with NanoTrasen, and the dealer's exposure to investigators rises.
 - Even uncaught, black-market settlements leave encrypted records that a security auditor can trace (see \[\[guide/cargo/trade_ships|trade ships]])."}
+
+/datum/wiki_page/guide/cargo_salvage
+	id = "guide/cargo/salvage"
+	title = "Salvage smelting"
+	path = "Cargo/Guides"
+	summary = "Melt scrap and unwanted freight back into material sheets."
+	body = {"Cargo can turn junk into stock with a salvage smelter, ordered as the Salvage smelter crate from the Supplies catalog. Open the crate, set the smelter on a powered floor and feed it by hand or from a conveyor.
+
+## What it does
+- It melts anything that is recorded as made of something (tools, scrap, broken equipment, a box and everything in it) into sheets of those materials, with alloys broken into their parts.
+- It recovers about three quarters of what a thing is made of. The rest is lost to slag, so smelting never pays back more than the thing cost to make.
+- Partial sheets stay in its melt until there is enough for a whole sheet; examine the smelter to see what it holds.
+- It refuses material sheets (they are already processed) and anything with no recorded materials. On a conveyor, refused things pass out the back.
+
+## Selling the output
+Sheets go to the lathes, or out on the shuttle: bulk materials are one of the things \[\[guide/cargo/trade_ships|visiting trade ships]] often want."}

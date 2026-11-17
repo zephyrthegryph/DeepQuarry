@@ -1907,3 +1907,36 @@
 	qdel(admin_order)
 	qdel(order)
 	qdel(dealer)
+
+/// The salvage smelter returns exactly its efficiency share of what things are made of, never more, keeps partial sheets in
+/// its melt, and refuses material sheets.
+/datum/unit_test/dq_salvage_smelter_conserves
+
+/datum/unit_test/dq_salvage_smelter_conserves/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	var/obj/machinery/recycling/salvage_smelter/smelter = new(test_turf)
+	smelter.set_dir(EAST)
+	var/obj/item/stack/material/steel/sheet = new(test_turf, 5)
+	TEST_ASSERT_EQUAL(smelter.recycle_refusal(sheet), /datum/msg/recycling/wrong_input, "the smelter took material sheets (a free re-melt)")
+	var/list/paid = list()
+	var/list/poured = list()
+	for(var/i in 1 to 12)
+		var/obj/item/tool/wrench/scrap = new(test_turf)
+		var/list/composition = smelter.salvage_composition(scrap)
+		TEST_ASSERT(length(composition), "a wrench had no recorded composition")
+		for(var/material_name in composition)
+			paid[material_name] += composition[material_name]
+		var/list/sheets = smelter.smelt(scrap)
+		TEST_ASSERT(QDELETED(scrap) || scrap.loc != test_turf, "a smelted wrench survived")
+		for(var/material_name in sheets)
+			poured[material_name] += sheets[material_name]
+	for(var/material_name in paid)
+		var/recovered = poured[material_name] * SHEET_MATERIAL_AMOUNT + (smelter.salvage_melt?[material_name] || 0)
+		var/expected = paid[material_name] * smelter.efficiency
+		TEST_ASSERT(abs(recovered - expected) < 0.01, "[material_name]: the smelter recovered [recovered] units of [paid[material_name]] (expected [expected])")
+		TEST_ASSERT(poured[material_name] * SHEET_MATERIAL_AMOUNT <= paid[material_name], "[material_name]: the smelter poured more than the scrap was made of")
+		TEST_ASSERT((smelter.salvage_melt?[material_name] || 0) < SHEET_MATERIAL_AMOUNT, "[material_name]: a whole sheet stayed in the melt")
+	qdel(sheet)
+	for(var/obj/item/stack/material/output in get_step(smelter, EAST))
+		qdel(output)
+	qdel(smelter)

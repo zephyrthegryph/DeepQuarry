@@ -170,6 +170,6 @@
 
 /datum/unit_test/dq_wiki_guides/Run()
 	var/list/index = wiki_index()
-	for(var/id in list("guide/chemistry/lab", "guide/medical/triage", "guide/medical/surgery", "guide/engineering/power", "guide/engineering/atmos", "guide/research/basics", "guide/cargo/ordering", "guide/cargo/trade_ships", "guide/cargo/haggling", "guide/cargo/black_market"))
+	for(var/id in list("guide/chemistry/lab", "guide/medical/triage", "guide/medical/surgery", "guide/engineering/power", "guide/engineering/atmos", "guide/research/basics", "guide/cargo/ordering", "guide/cargo/trade_ships", "guide/cargo/haggling", "guide/cargo/black_market", "guide/cargo/salvage"))
 		TEST_ASSERT(index[id], "no guide [id]")
 		TEST_ASSERT(findtext(index[id]["path"], "/Guides"), "[id] is filed at [index[id]["path"]], not under a department's guides")

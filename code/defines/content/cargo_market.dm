@@ -77,3 +77,6 @@
 #define BLACK_MARKET_STATION_PENALTY 10
 #define BLACK_MARKET_PERSONAL_PENALTY 40
 #define BLACK_MARKET_EXPOSURE 15
+
+// Cargo salvage smelter (code/content/recycling/salvage_smelter.dm): the share of a thing's materials it recovers.
+#define SALVAGE_SMELTER_EFFICIENCY 0.75

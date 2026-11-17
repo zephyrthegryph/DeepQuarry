@@ -310,3 +310,11 @@
 	cost = 15
 	containertype = /obj/structure/closet/crate
 	containername = "Cargo appraiser crate"
+
+/datum/supply_pack/supply/salvage_smelter
+	name = "Salvage smelter"
+	desc = "A Cargo induction smelter that melts salvage and junk down to material sheets. Set it up on a power line and feed it by hand or conveyor."
+	contains = list(/obj/machinery/recycling/salvage_smelter)
+	cost = 60
+	containertype = /obj/structure/largecrate
+	containername = "Salvage smelter crate"
