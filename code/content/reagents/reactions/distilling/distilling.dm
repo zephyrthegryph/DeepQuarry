@@ -16,7 +16,7 @@ CAPABILITIES(/transformation/chem/distilling)
 CAPABILITIES(/transformation/chem/distilling/biomass)
 	configure(transformation(name = "Distilling Biomass", id = "distill_biomass",
 		takes = list(reagent(REAGENT_ID_BLOOD, 1), reagent(REAGENT_ID_SUGAR, 1), reagent(REAGENT_ID_PHORON, 0.5)),
-		makes = list(reagent(REAGENT_ID_BIOMASS, 6)), energy = per_step(-2 * 1000), holds = temperature_in(T20C + 80, T20C + 130)))
+		makes = list(reagent(REAGENT_ID_BIOMASS, 2.5)), energy = per_step(-2 * 1000), holds = temperature_in(T20C + 80, T20C + 130)))
 
 // Medicinal
 
@@ -67,7 +67,7 @@ CAPABILITIES(/transformation/chem/distilling/cryogel)
 CAPABILITIES(/transformation/chem/distilling/hydrogen)
 	configure(transformation(name = "Distilling Hydrogen", id = "distill_hydrogen", takes = list(reagent(REAGENT_ID_WATER, 1)),
 		catalysts = list(reagent(REAGENT_ID_PLATINUM, 1)), blocked_by = list(reagent(REAGENT_ID_CARBON, 1)),
-		makes = list(reagent(REAGENT_ID_HYDROGEN, 2)), energy = per_step(1 * 1000),
+		makes = list(reagent(REAGENT_ID_HYDROGEN, 1)), energy = per_step(1 * 1000),
 		holds = xform_all(temperature_in(T20C + 110, T20C + 290), ambient_gas_over(GAS_N2, 10), ambient_gas_under(GAS_O2, 1))))
 
 /transformation/chem/distilling/oxygen

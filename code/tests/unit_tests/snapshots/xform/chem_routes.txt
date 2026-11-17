@@ -1681,7 +1681,6 @@ displace:tramadol+sodaash:none>sizeoxadone => takes tramadol 1, sodaash 1 | cata
 displace:tramadol+sodiumchloride:none>sizeoxadone => takes tramadol 1, sodiumchloride 1 | catalysts none | blocked by none | makes sizeoxadone 1, contaminant_acid_residue 1 | product | band 0..15..40..75 C
 electrolyse:dryagent:none>calcium+chlorine => takes dryagent 1 | catalysts none | blocked by none | makes calcium 1, chlorine 1 | product | band -30..-10..60..120 C
 electrolyse:lithiumsalt:none>lithium+chlorine => takes lithiumsalt 1 | catalysts none | blocked by none | makes lithium 1, chlorine 1 | product | band -30..-10..60..120 C
-electrolyse:lye:none>sodium+oxygen => takes lye 1 | catalysts none | blocked by none | makes sodium 1, oxygen 1 | product | band -30..-10..60..120 C
 electrolyse:potassium_chloride:none>potassium+chlorine => takes potassium_chloride 1 | catalysts none | blocked by none | makes potassium 1, chlorine 1 | product | band -30..-10..60..120 C
 electrolyse:sodiumchloride:none>sodium+chlorine => takes sodiumchloride 1 | catalysts none | blocked by none | makes sodium 1, chlorine 1 | product | band -30..-10..60..120 C
 electrolyse:water:none>hydrogen+oxygen => takes water 1 | catalysts none | blocked by none | makes hydrogen 1, oxygen 1 | product | band -30..-10..60..120 C
