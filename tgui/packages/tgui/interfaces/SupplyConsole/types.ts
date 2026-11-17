@@ -116,12 +116,37 @@ export type TradeShip = {
   buy_rate: number;
   special_markup: number;
   specials: TradeShipSpecial[];
+  mood: string;
+  offers: TradeOffer[];
   can_department: BooleanLike;
   can_personal: BooleanLike;
 };
 
+export type TradeOffer = {
+  id: string;
+  crate: string;
+  crate_ref?: string;
+  offered_by: string;
+  ask: number;
+  counter: number;
+  status: 'open' | 'countered' | 'walked' | 'settled';
+  patience: number;
+  reply: string;
+  price: number;
+};
+
+export type TradeCrate = {
+  ref: string;
+  name: string;
+  contents: number;
+  appraisal: number;
+  spread: number;
+  appraiser?: string;
+};
+
 export type TradeShips = {
   ships: TradeShip[];
+  crates: TradeCrate[];
   next_ship: string;
 };
 

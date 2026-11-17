@@ -1797,3 +1797,62 @@
 	qdel(admin_order)
 	qdel(order)
 	qdel(buyer)
+
+/// Haggling: a ship accepts at or under its valuation, counters a reasonable ask, rejects a greedy one, walks away when out of
+/// patience, and an accepted deal pays Cargo once and removes the crate.
+/datum/unit_test/dq_trade_ship_haggling
+
+/datum/unit_test/dq_trade_ship_haggling/Run()
+	var/turf/shuttle_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	var/datum/trade_ship_visit/visit = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/union_hauler)
+	TEST_ASSERT_NOTNULL(visit, "no trade ship docked")
+	visit.mood = 1
+	var/mob/living/carbon/human/trader = new(shuttle_turf)
+
+	var/obj/structure/closet/crate/crate = new(shuttle_turf)
+	var/spot = SSsupply.trade_crate_spot_value(crate)
+	TEST_ASSERT(spot > 0, "an empty crate had no spot value (the crate fee)")
+	// The test floor is not the supply shuttle: the console's entry points refuse the crate; the negotiation is tested directly.
+	TEST_ASSERT_NULL(SSsupply.make_trade_offer(visit, crate, 1, trader), "a crate off the supply shuttle was offered to a ship")
+	TEST_ASSERT_NULL(SSsupply.appraise_trade_crate(crate, trader), "a crate off the supply shuttle was appraised")
+	var/estimate = SSsupply.estimate_trade_crate(crate, trader)
+	TEST_ASSERT(abs(estimate - spot) <= spot * TRADE_APPRAISAL_SPREAD_UNTRAINED + 1, "an appraisal ([estimate]) fell outside its spread of [spot]")
+	TEST_ASSERT_EQUAL(SSsupply.estimate_trade_crate(crate, trader), estimate, "appraising again changed the estimate (it would average away)")
+
+	var/valuation = SSsupply.trade_ship_valuation(visit, crate)
+	TEST_ASSERT(valuation > 0, "the ship valued the crate at nothing")
+	var/datum/trade_offer/offer = SSsupply.negotiate_trade_offer(visit, crate, valuation * 3, trader)
+	TEST_ASSERT_EQUAL(offer.status, TRADE_OFFER_OPEN, "a greedy ask was not rejected")
+	TEST_ASSERT_EQUAL(offer.patience, TRADE_OFFER_PATIENCE - 2, "a rejection did not cost patience")
+	TEST_ASSERT(visit.mood < 1, "an insulting ask did not sour the ship's mood")
+	valuation = SSsupply.trade_ship_valuation(visit, crate)
+	var/ask = round(valuation * 1.2)
+	SSsupply.negotiate_trade_offer(visit, crate, ask, trader)
+	TEST_ASSERT_EQUAL(offer.status, TRADE_OFFER_COUNTERED, "a reasonable ask was not countered")
+	TEST_ASSERT(offer.counter >= valuation && offer.counter < ask, "the counter [offer.counter] was not between the valuation [valuation] and the ask [ask]")
+
+	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]
+	var/cargo_before = cargo.money
+	var/counter = offer.counter
+	TEST_ASSERT(SSsupply.take_trade_counter(visit, offer, trader), "taking the counter failed")
+	TEST_ASSERT_EQUAL(offer.status, TRADE_OFFER_SETTLED, "the deal did not settle")
+	TEST_ASSERT(QDELETED(crate) || isnull(crate.loc), "the sold crate stayed aboard")
+	TEST_ASSERT(cargo.money - cargo_before >= counter - 1 && cargo.money - cargo_before <= counter + 1, "Cargo was paid [cargo.money - cargo_before], not the agreed [counter]")
+	TEST_ASSERT(!SSsupply.take_trade_counter(visit, offer, trader), "a settled deal paid twice")
+
+	var/obj/structure/closet/crate/second = new(shuttle_turf)
+	var/datum/trade_offer/stubborn = SSsupply.negotiate_trade_offer(visit, second, 1000000, trader)
+	SSsupply.negotiate_trade_offer(visit, second, 1000000, trader)
+	TEST_ASSERT_EQUAL(stubborn.status, TRADE_OFFER_WALKED, "the ship kept negotiating past its patience")
+	var/datum/trade_offer/again = SSsupply.negotiate_trade_offer(visit, second, 1, trader)
+	TEST_ASSERT_EQUAL(again, stubborn, "a ship that walked away took a new offer for the same crate")
+	TEST_ASSERT_EQUAL(again.status, TRADE_OFFER_WALKED, "a ship that walked away reopened")
+
+	var/obj/structure/closet/crate/accepted = new(shuttle_turf)
+	var/datum/trade_offer/fair = SSsupply.negotiate_trade_offer(visit, accepted, 1, trader)
+	TEST_ASSERT_EQUAL(fair.status, TRADE_OFFER_SETTLED, "an ask under the valuation was not accepted")
+	TEST_ASSERT_EQUAL(fair.settled_price, 1, "an accepted ask paid other than the ask")
+
+	SSsupply.depart_trade_ship(visit)
+	qdel(second)
+	qdel(trader)

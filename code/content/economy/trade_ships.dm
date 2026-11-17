@@ -107,6 +107,7 @@ TYPE_TABLE(/datum/trade_ship_profile/chimera_tender, ship_special_groups, list("
 
 CAPABILITIES(/datum/trade_ship_visit)
 	owns_one(nameof(profile), /datum/trade_ship_profile)
+	owns_many(nameof(trade_offers))
 
 /datum/cargo_market_listing
 	/// The visiting ship (its visit id) selling this, or null for a fixed counterparty.
@@ -188,6 +189,7 @@ CAPABILITIES(/datum/trade_ship_visit)
 	rel_set(visit, nameof(visit.profile), profile)
 	visit.name = profile.name
 	visit.counterparty_id = counterparty.id
+	visit.mood = rand(85, 115) / 100
 	STAMP(visit, arrived_at, CLOCK_WORLD)
 	COOLDOWN_START(visit, departs_at, profile.stay_time)
 	rel_add(src, nameof(trade_ship_visits), visit, visit.id)
@@ -306,10 +308,13 @@ CAPABILITIES(/datum/trade_ship_visit)
 			"buy_rate" = visit.profile.buy_rate,
 			"special_markup" = visit.profile.special_markup,
 			"specials" = specials,
+			"mood" = trade_ship_mood_text(visit),
+			"offers" = trade_offer_ui_data(visit, user),
 			"can_department" = station_trade_authorized,
 			"can_personal" = !!viewer_account,
 		)))
 	return list(
 		"ships" = ships,
+		"crates" = trade_crates_ui_data(),
 		"next_ship" = DisplayTimeText(max(0, next_trade_ship - world.time), 1),
 	)

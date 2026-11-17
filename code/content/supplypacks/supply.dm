@@ -310,3 +310,11 @@
 	cost = 20
 	containertype = /obj/structure/closet/crate/freezer
 	containername = "Freezer crate"
+
+/datum/supply_pack/supply/cargo_appraisers
+	name = "Cargo appraiser crate"
+	desc = "Two handheld cargo appraisers for estimating freight value before haggling with trade ships."
+	contains = list(/obj/item/cargo_appraiser = 2)
+	cost = 15
+	containertype = /obj/structure/closet/crate
+	containername = "Cargo appraiser crate"

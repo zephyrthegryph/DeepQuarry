@@ -55,3 +55,19 @@
 #define TRADE_SHIP_MAX_DOCKED 2
 #define TRADE_SHIP_ARRIVED "arrived"
 #define TRADE_SHIP_DEPARTED "departed"
+
+// Haggling with trade ships (code/content/economy/trade_offers.dm).
+#define TRADE_OFFER_OPEN "open"
+#define TRADE_OFFER_COUNTERED "countered"
+#define TRADE_OFFER_WALKED "walked"
+#define TRADE_OFFER_SETTLED "settled"
+/// Rounds of haggling a ship sits through for one crate (a counter costs 1, a rejection 2).
+#define TRADE_OFFER_PATIENCE 4
+/// Asks up to this multiple of the ship's valuation draw a counteroffer; above it, a rejection.
+#define TRADE_OFFER_COUNTER_CEILING 1.35
+/// How much an insulting ask sours the ship's mood.
+#define TRADE_OFFER_INSULT_MOOD 0.04
+#define TRADE_SHIP_MOOD_MIN 0.7
+#define TRADE_APPRAISAL_SPREAD_UNTRAINED 0.4
+#define TRADE_APPRAISAL_SPREAD_TRAINED 0.2
+#define TRADE_APPRAISAL_TOOL_FACTOR 0.35

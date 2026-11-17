@@ -10,7 +10,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { SupplyConsoleActions } from '../generated/SupplyConsole';
-import type { Data, TradeShip } from './types';
+import type { Data, TradeCrate, TradeShip } from './types';
 
 const percent = (rate: number) => `${Math.round(rate * 100)}%`;
 
@@ -82,6 +82,99 @@ const SpecialOrders = (props: { ship: TradeShip }) => {
   );
 };
 
+const statusColor = {
+  open: 'average',
+  countered: 'good',
+  walked: 'bad',
+  settled: 'label',
+};
+
+const Haggling = (props: { ship: TradeShip; crates: TradeCrate[] }) => {
+  const { act, data } = useBackend<Data, SupplyConsoleActions>();
+  const { ship, crates } = props;
+  const canTrade = !!data.market_auth;
+  return (
+    <Section title={`Sell to ${ship.name} · mood: ${ship.mood}`}>
+      {!canTrade && (
+        <NoticeBox info>
+          A Cargo control console and Cargo access are needed to haggle.
+        </NoticeBox>
+      )}
+      {!crates.length && (
+        <Box color="label">
+          Load a crate onto the supply shuttle to offer it to this ship.
+        </Box>
+      )}
+      <Table>
+        {crates.map((crate) => {
+          const offer = ship.offers.find(
+            (candidate) =>
+              candidate.crate_ref === crate.ref &&
+              candidate.status !== 'settled',
+          );
+          return (
+            <Table.Row key={crate.ref}>
+              <Table.Cell>
+                {crate.name} ({crate.contents} items)
+              </Table.Cell>
+              <Table.Cell>
+                {crate.appraiser
+                  ? `~${crate.appraisal}₮ ±${crate.spread}% (${crate.appraiser})`
+                  : 'Not appraised'}
+              </Table.Cell>
+              <Table.Cell>
+                {offer && (
+                  <Box color={statusColor[offer.status]}>
+                    Asked {offer.ask}₮ · {offer.reply}
+                    {offer.status !== 'walked' &&
+                      ` · patience ${offer.patience}`}
+                  </Box>
+                )}
+              </Table.Cell>
+              <Table.Cell collapsing>
+                <Button
+                  icon="magnifying-glass-dollar"
+                  disabled={!canTrade}
+                  tooltip="Appraise the crate (an appraiser in hand helps)"
+                  onClick={() => act('trade_appraise', { crate: crate.ref })}
+                />
+                <Button
+                  icon="comments-dollar"
+                  disabled={!canTrade || offer?.status === 'walked'}
+                  onClick={() =>
+                    act('trade_offer', { ship: ship.id, crate: crate.ref })
+                  }
+                >
+                  Offer
+                </Button>
+                {offer?.status === 'countered' && (
+                  <Button
+                    icon="handshake"
+                    color="good"
+                    disabled={!canTrade}
+                    onClick={() =>
+                      act('trade_accept', { ship: ship.id, offer: offer.id })
+                    }
+                  >
+                    Take {offer.counter}₮
+                  </Button>
+                )}
+              </Table.Cell>
+            </Table.Row>
+          );
+        })}
+      </Table>
+      {ship.offers
+        .filter((offer) => offer.status === 'settled')
+        .map((offer) => (
+          <Box key={offer.id} color="good">
+            Sold {offer.crate} for {offer.price}₮ ({offer.offered_by})
+          </Box>
+        ))}
+    </Section>
+  );
+};
+
 export const SupplyConsoleTradeShips = () => {
   const { data } = useBackend<Data, SupplyConsoleActions>();
   const traffic = data.market?.trade_ships;
@@ -114,6 +207,7 @@ export const SupplyConsoleTradeShips = () => {
               {ship.special_markup.toFixed(2)}
             </LabeledList.Item>
           </LabeledList>
+          <Haggling ship={ship} crates={traffic.crates} />
           <SpecialOrders ship={ship} />
         </Section>
       ))}

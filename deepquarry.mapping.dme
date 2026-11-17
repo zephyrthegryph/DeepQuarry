@@ -4536,6 +4536,7 @@
 #include "code\content\economy\supply_service.dm"
 #include "code\content\economy\till.dm"
 #include "code\content\economy\trade_destinations.dm"
+#include "code\content\economy\trade_offers.dm"
 #include "code\content\economy\trade_ships.dm"
 #include "code\content\economy\trader.dm"
 #include "code\content\economy\vending.dm"
