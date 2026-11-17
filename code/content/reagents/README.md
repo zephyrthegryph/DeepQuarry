@@ -342,7 +342,7 @@ How a mixture is made clean again (or dirty), all of it logged under `GLOB.chem_
   container (click it on the container; "Take out the catalyst" from the menu) is the solid catalyst of the routes that run on one; it no longer widens the band of
   every recipe.
 * **Hot plate** (`/obj/machinery/chem_hot_plate`): stand a glass container on it, set the dial in Celsius (radial menu), switch it on. Each second it feeds the
-  container's heat body up to `HOT_PLATE_POWER` joules, never past the dial, draws its active power while on, lets the contents react and boils them.
+  container's heat body up to `HOT_PLATE_POWER` joules, never past the dial (a dial below the container's temperature, down to 0 C, cools it the same way: the nitrating mix is mixed at 12 C or below), draws its active power while on, lets the contents react and boils them.
 * **Boiling** (`code/domains/world_model/reagents/boiling.dm`, points in `code/content/reagents/reagents/boiling_points.dm`): every reagent has `boiling_point_k()`.
   `boil_step(seconds)` removes what is above its point, gradually, taking latent heat out of the container; it returns the vapour. Nothing boils by itself: the
   hot plate and the bunsen burner ask for it. Vapour is deleted unless a **condenser** (`/obj/machinery/chem_condenser`) on or next to the hot plate collects it into

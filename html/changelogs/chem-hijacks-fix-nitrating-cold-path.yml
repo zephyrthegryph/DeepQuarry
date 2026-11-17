@@ -1,0 +1,4 @@
+author: "deepquarry"
+delete-after: true
+changes:
+  - qol: "The chem hot plate cools a container down to a dial set below its temperature (down to 0 C), so the nitrating mix can be mixed on a chilled plate"

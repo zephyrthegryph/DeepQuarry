@@ -158,6 +158,11 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 		var/watts = min(HOT_PLATE_POWER, HOT_PLATE_COUPLING * (target - current))
 		var/joules = min(watts * seconds, (target - current) * properties[THERMAL_CAPACITY])
 		C.add_heat(joules)
+	else if(current > target + 0.25)
+		// A dial set below the container cools it the same way, down to the dial and never past it (the mixed acids of the nitrating mix are made on a plate dialled to 5 C).
+		var/list/chill = C.thermal_properties()
+		var/removed = min(HOT_PLATE_POWER, HOT_PLATE_COUPLING * (current - target)) * seconds
+		C.add_heat(-min(removed, (current - target) * chill[THERMAL_CAPACITY]))
 	update_readout()
 	if(!C.reagents?.total_volume)
 		return
