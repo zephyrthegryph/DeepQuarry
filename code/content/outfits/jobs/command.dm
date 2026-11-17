@@ -3,7 +3,7 @@
 	glasses = /obj/item/clothing/glasses/sunglasses
 	uniform = /obj/item/clothing/under/rank/captain
 
-	shoes = /obj/item/clothing/shoes/brown
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	backpack = /obj/item/storage/backpack/captain
 	satchel_one = /obj/item/storage/backpack/satchel/cap
 	messenger_bag = /obj/item/storage/backpack/messenger/com
@@ -30,7 +30,7 @@
 /datum/decl/hierarchy/outfit/job/hop
 	name = OUTFIT_JOB_NAME(JOB_HEAD_OF_PERSONNEL)
 	uniform = VARIANT(/obj/item/clothing/under/rank/head_of_personnel)
-	shoes = /obj/item/clothing/shoes/brown
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	id_type = /obj/item/card/id/silver/hop
 	pda_type = /obj/item/pda/heads/hop
 
@@ -40,7 +40,7 @@
 
 /datum/decl/hierarchy/outfit/job/secretary
 	name = OUTFIT_JOB_NAME(JOB_COMMAND_SECRETARY)
-	shoes = /obj/item/clothing/shoes/brown
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	id_type = /obj/item/card/id/silver/secretary
 	pda_type = /obj/item/pda/heads
 	r_hand = /obj/item/clipboard

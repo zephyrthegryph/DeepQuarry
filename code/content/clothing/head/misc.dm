@@ -106,11 +106,6 @@ CAPABILITIES(/obj/item/clothing/head/pin)
 	name = "red ribbon"
 	addblends = null
 
-/obj/item/clothing/head/powdered_wig
-	name = "powdered wig"
-	desc = "A powdered wig."
-	icon_state = "pwig"
-
 /obj/item/clothing/head/redcoat
 	name = "redcoat's hat"
 	icon_state = "redcoat"
@@ -509,11 +504,6 @@ CAPABILITIES(/obj/item/clothing/head/fedora)
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
 	desc = "A sharp, stylish hat with a feather."
 
-/obj/item/clothing/head/fez
-	name = "fez"
-	icon_state = "fez"
-	desc = "You should wear a fez. Fezzes are cool."
-
 //Cowboy Hats
 
 /obj/item/clothing/head/cowboy
@@ -568,11 +558,6 @@ CAPABILITIES(/obj/item/clothing/head/cowboy)
 	name = "small cowboy hat"
 	desc = "For the tiniest of cowboys."
 	icon_state = "cowboy_small"
-
-/obj/item/clothing/head/wheat
-	name = "straw hat"
-	desc = "It's a hat made from synthetic straw. Brought to you by \"Country Girls LLC.\" the choice brand for the galaxy's working class."
-	icon_state = "wheat"
 
 //Ruin Marine (Doom Marine)
 /obj/item/clothing/head/marine
@@ -769,11 +754,6 @@ CAPABILITIES(/obj/item/clothing/head/fish)
 	desc = "How regal!"
 	icon_state = "crown"
 
-/obj/item/clothing/head/fancy_crown
-	name = "fancy crown"
-	desc = "How extraordinarily regal!"
-	icon_state = "fancycrown"
-
 /obj/item/clothing/head/shiny_hood
 	icon_override = 'icons/mob/modular_shiny_vr.dmi'
 	icon = 'icons/obj/clothing/modular_shiny_vr.dmi'
@@ -840,22 +820,11 @@ CAPABILITIES(/obj/item/clothing/head/shiny_hood/closed)
 	icon_state = "tigerpelt_pink"
 	item_state = "tigerpelt_pink"
 
-/obj/item/clothing/head/pizzaguy
-	name = "pizza delivery visor"
-	desc = "A fancy visor showing alignment to pizza delivery service. Extremely risky career choice."
-	icon_state = "pizzadelivery"
-	item_state = "pizzadelivery"
-
 /obj/item/clothing/head/fluff/names_pizza
 	name = "pizza delivery hat"
 	desc = "A hat fit for delivering pizzas! Smells of pepperoni and unpaid student debt."
 	icon_state = "pizzadelivery_fluff"
 	item_state = "pizzadelivery_fluff"
-
-/obj/item/clothing/head/wedding
-	name = "wedding veil"
-	desc = "A lace veil worn over the face, typically by a bride during their wedding."
-	icon_state = "weddingveil"
 
 /obj/item/clothing/head/halo/alt
 	name = "metal halo"
@@ -864,16 +833,6 @@ CAPABILITIES(/obj/item/clothing/head/shiny_hood/closed)
 
 CAPABILITIES(/obj/item/clothing/head/halo/alt)
 	configure(item_worn(worn_icon = 'icons/inventory/head/mob.dmi'))
-
-/obj/item/clothing/head/buckethat
-	name = "bucket hat"
-	desc = "Turns out these are actually called 'gatsby caps' but telling people you wear a bucket is slightly more interesting, so that's what it's called."
-	icon_state = "buckethat"
-
-/obj/item/clothing/head/nonla
-	name = "non la"
-	desc = "A conical hat typically woven from leaves, good for keeping the sun AND rain off your head, in case it happens to be sunny while raining."
-	icon_state = "nonla"
 
 //////////TALON HATS//////////
 
@@ -946,11 +905,6 @@ CAPABILITIES(/obj/item/clothing/head/halo/alt)
 
 // tiny tophat
 
-/obj/item/clothing/head/tinytophat
-	name = "tiny tophat"
-	desc = "A tophat that is far too small to properly sit on someone's head!"
-	icon_state = "tiny_tophat"
-
 /obj/item/clothing/head/halo
 	name = "holographic demonic halo"
 	desc = "A hologram displaying a demonic halo."
@@ -961,11 +915,6 @@ CAPABILITIES(/obj/item/clothing/head/halo/alt)
 	icon = 'icons/inventory/head/item.dmi'
 
 //Replikant Hat
-
-/obj/item/clothing/head/eulrhat
-	name = "sleek side cap"
-	desc = "A simple wedge cap with red accents, popular with biosynthetic personnel."
-	icon_state = "eulrhat"
 
 CAPABILITIES(/obj/item/clothing/head/fedora/brown)
 	suit_storage(list(POCKET_SLEUTH))

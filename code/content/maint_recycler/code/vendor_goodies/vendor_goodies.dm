@@ -87,7 +87,7 @@ CAPABILITIES(/obj/random/fromList/sexy_costumes)
 			/obj/item/clothing/suit/shrine_maiden = 1,
 			/obj/item/clothing/suit/iasexy = 1,
 			/obj/item/clothing/suit/sumo = 1,
-			/obj/item/clothing/under/dress/wench = 1,
+			VARIANT(/obj/item/clothing/under/dress/wench) = 1,
 			/obj/item/clothing/under/schoolgirl = 1,
 			/obj/item/clothing/suit/stripper/stripper_pink = 1,
 			/obj/item/clothing/suit/stripper/stripper_green = 1))

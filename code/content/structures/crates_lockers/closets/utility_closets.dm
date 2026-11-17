@@ -201,7 +201,7 @@ CAPABILITIES(/obj/structure/closet/toolcloset)
 	starts_with = list(
 		/obj/item/clothing/suit/bomb_suit/security,
 		/obj/item/clothing/under/rank/security,
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/clothing/head/bomb_hood/security)
 
 /*

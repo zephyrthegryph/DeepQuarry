@@ -63,6 +63,7 @@ MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
 MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
 
 CAPABILITIES(/obj/item/clothing/under)
+	variants(nameof(variant), PROC_REF(variant_table))
 	configure(atom_rules(armor_spec = ""))
 	configure(obj_rules(show_messages = 1))
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_ICLOTHING))
@@ -329,11 +330,11 @@ CAPABILITIES(/obj/item/clothing/under)
 	worn_protection_changed()
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).
-/obj/item/clothing/under/rank/proc/variant_table()
+/obj/item/clothing/under/rank/proc/own_variant_table()
 	return GLOB.dq_variants_under_rank
 
 CAPABILITIES(/obj/item/clothing/under/rank)
-	variants(nameof(variant), PROC_REF(variant_table))
+	variants(nameof(variant), PROC_REF(own_variant_table)) // its own rows replace the parent family's
 	rolls(nameof(sensor_mode), pick_one(list(0, 1, 2, 3)))
 
 /obj/item/clothing/under/equipped(mob/user, slot)

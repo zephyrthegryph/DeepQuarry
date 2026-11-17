@@ -122,7 +122,7 @@ CAPABILITIES(/obj/item/clothing/under/tactical)
 	desc = "A rumpled white dress shirt paired with well-worn grey slacks."
 	icon_state = "detective"
 	rolled_sleeves = 0
-	starting_accessories = list(/obj/item/clothing/accessory/tie/blue_clip)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/blue_clip))
 
 CAPABILITIES(/obj/item/clothing/under/det)
 	configure(atom_rules(armor_spec = "melee=10"))
@@ -131,13 +131,13 @@ CAPABILITIES(/obj/item/clothing/under/det)
 /obj/item/clothing/under/det/grey
 	icon_state = "detective2"
 	desc = "A serious-looking tan dress shirt paired with freshly-pressed black slacks."
-	starting_accessories = list(/obj/item/clothing/accessory/tie/red_long)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/red_long))
 
 /obj/item/clothing/under/det/black
 	icon_state = "detective3"
 	item_state_slots = list(slot_r_hand_str = "sl_suit", slot_l_hand_str = "sl_suit")
 	desc = "An immaculate white dress shirt, paired with a pair of dark grey dress pants, a red tie, and a charcoal vest."
-	starting_accessories = list(/obj/item/clothing/accessory/tie/red_long, /obj/item/clothing/accessory/vest)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/red_long), /obj/item/clothing/accessory/vest)
 
 /obj/item/clothing/under/det/corporate
 	name = "detective's jumpsuit"
@@ -148,17 +148,17 @@ CAPABILITIES(/obj/item/clothing/under/det)
 /obj/item/clothing/under/det/waistcoat
 	icon_state = "detective"
 	desc = "A rumpled white dress shirt paired with well-worn grey slacks, complete with a blue striped tie, faux-gold tie clip, and waistcoat."
-	starting_accessories = list(/obj/item/clothing/accessory/tie/blue_clip, /obj/item/clothing/accessory/wcoat)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/blue_clip), /obj/item/clothing/accessory/wcoat)
 
 /obj/item/clothing/under/det/grey/waistcoat
 	icon_state = "detective2"
 	desc = "A serious-looking tan dress shirt paired with freshly-pressed black slacks, complete with a red striped tie and waistcoat."
-	starting_accessories = list(/obj/item/clothing/accessory/tie/red_long, /obj/item/clothing/accessory/wcoat)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/red_long), /obj/item/clothing/accessory/wcoat)
 
 /obj/item/clothing/under/det/black/waistcoat
 	icon_state = "detective3"
 	desc = "A serious-looking tan dress shirt paired with freshly-pressed black slacks, a red tie, and a charcoal vest."
-	starting_accessories = list(/obj/item/clothing/accessory/tie/red_long, /obj/item/clothing/accessory/wcoat)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/red_long), /obj/item/clothing/accessory/wcoat)
 
 /obj/item/clothing/under/det/skirt
 	name = "detective's skirt"

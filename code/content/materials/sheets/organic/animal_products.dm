@@ -104,7 +104,7 @@ CAPABILITIES(/transformation/stack/fur__gloves)
 
 /transformation/stack/fur__wig
 CAPABILITIES(/transformation/stack/fur__wig)
-	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/clothing/head/powdered_wig, 1)),
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(VARIANT(/obj/item/clothing/head/powdered_wig), 1)),
 		chosen = chosen(title = "wig",
 			subject = /datum/material/fur,
 			build_time = 10 SECONDS,

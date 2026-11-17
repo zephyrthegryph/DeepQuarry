@@ -45,8 +45,8 @@
 
 /datum/decl/hierarchy/outfit/job/mime
 	name = OUTFIT_JOB_NAME(JOB_MIME)
-	uniform = /obj/item/clothing/under/mime
-	shoes = /obj/item/clothing/shoes/mime
+	uniform = VARIANT(/obj/item/clothing/under/mime)
+	shoes = VARIANT(/obj/item/clothing/shoes/mime)
 	head = /obj/item/clothing/head/soft/mime
 	mask = /obj/item/clothing/mask/gas/mime
 	backpack_contents = list(/obj/item/pen/crayon/mime = 1)

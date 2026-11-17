@@ -139,57 +139,57 @@
 	..()
 	var/list/labcoats = list(
 	"White labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat,
-	"Blue-edge labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/blue_edge,
-	"Green labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/green,
-	"Orange labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/orange,
-	"Purple labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/purple,
-	"Pink labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/pink,
-	"Red labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/red,
-	"Yellow labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/yellow,
+	"Blue-edge labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/blue_edge),
+	"Green labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/green),
+	"Orange labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/orange),
+	"Purple labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/purple),
+	"Pink labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/pink),
+	"Red labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/red),
+	"Yellow labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/yellow),
 	"Modern labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/modern,
-	"Long labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_labcoat
+	"Long labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_labcoat)
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(labcoats))
 
 /datum/gear/suit/labcoat_cmo
 	display_name = "labcoat selection, cmo"
-	path = /obj/item/clothing/suit/storage/toggle/labcoat/cmo
+	path = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmo)
 	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER)
 	show_roles = FALSE
 
 /datum/gear/suit/labcoat_cmo/New()
 	..()
 	var/list/labcoats = list(
-	"CMO labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/cmo,
-	"CMO labcoat (alt)" = /obj/item/clothing/suit/storage/toggle/labcoat/cmoalt,
+	"CMO labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmo),
+	"CMO labcoat (alt)" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt),
 	"CMO labcoat (modern)" = /obj/item/clothing/suit/storage/toggle/labcoat/modern/cmo
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(labcoats))
 
 /datum/gear/suit/labcoat_emt
 	display_name = "labcoat selection, EMT"
-	path = /obj/item/clothing/suit/storage/toggle/labcoat/emt
+	path = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/emt)
 	allowed_roles = list(JOB_MEDICAL_DOCTOR,JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST, JOB_PSYCHIATRIST)
 
 /datum/gear/suit/labcoat_emt/New()
 	..()
 	var/list/labcoats_emt = list(
-	"EMT labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/emt,
-	"Neo Highvis" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_highvis,
-	"Neo Red" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_redemt,
-	"Neo Blue" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_blueemt
+	"EMT labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/emt),
+	"Neo Highvis" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_highvis),
+	"Neo Red" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_redemt),
+	"Neo Blue" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_blueemt)
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(labcoats_emt))
 
 /datum/gear/suit/labcoat_rd
 	display_name = "labcoat, research director"
-	path = /obj/item/clothing/suit/storage/toggle/labcoat/rd
+	path = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/rd)
 	allowed_roles = list(JOB_RESEARCH_DIRECTOR)
 	show_roles = FALSE
 
 /datum/gear/suit/miscellaneous/labcoat
 	display_name = "plague doctor's coat"
-	path = /obj/item/clothing/suit/storage/toggle/labcoat/plaguedoctor
+	path = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/plaguedoctor)
 
 /datum/gear/suit/roles/surgical_apron
 	display_name = "surgical apron"
@@ -256,61 +256,61 @@
 
 /datum/gear/suit/roles/cloak
 	display_name = "cloak selection, departments"
-	path = /obj/item/clothing/accessory/poncho/roles/cloak/cargo
+	path = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/cargo)
 	cost = 1
 
 /datum/gear/suit/roles/cloak/New()
 	..()
 	var/list/cloaks = list(
-		"Cargo cloak" = /obj/item/clothing/accessory/poncho/roles/cloak/cargo,
-		"Mining cloak" = /obj/item/clothing/accessory/poncho/roles/cloak/mining,
-		"Security cloak" = /obj/item/clothing/accessory/poncho/roles/cloak/security,
-		"Service cloak" = /obj/item/clothing/accessory/poncho/roles/cloak/service,
-		"Engineer cloak" = /obj/item/clothing/accessory/poncho/roles/cloak/engineer,
-		"Atmos cloak" = /obj/item/clothing/accessory/poncho/roles/cloak/atmos,
-		"Research cloak" = /obj/item/clothing/accessory/poncho/roles/cloak/research,
-		"Medical cloak" = /obj/item/clothing/accessory/poncho/roles/cloak/medical
+		"Cargo cloak" = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/cargo),
+		"Mining cloak" = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/mining),
+		"Security cloak" = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/security),
+		"Service cloak" = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/service),
+		"Engineer cloak" = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/engineer),
+		"Atmos cloak" = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/atmos),
+		"Research cloak" = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/research),
+		"Medical cloak" = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/medical)
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(cloaks))
 
 /datum/gear/suit/roles/cloak_hos
 	display_name = "cloak, head of security"
-	path = /obj/item/clothing/accessory/poncho/roles/cloak/hos
+	path = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/hos)
 	allowed_roles = list(JOB_HEAD_OF_SECURITY)
 	show_roles = FALSE
 	cost = 1
 
 /datum/gear/suit/roles/cloak_cmo
 	display_name = "cloak, chief medical officer"
-	path = /obj/item/clothing/accessory/poncho/roles/cloak/cmo
+	path = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/cmo)
 	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER)
 	show_roles = FALSE
 	cost = 1
 
 /datum/gear/suit/roles/cloak_ce
 	display_name = "cloak, chief engineer"
-	path = /obj/item/clothing/accessory/poncho/roles/cloak/ce
+	path = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/ce)
 	allowed_roles = list(JOB_CHIEF_ENGINEER)
 	show_roles = FALSE
 	cost = 1
 
 /datum/gear/suit/roles/cloak_rd
 	display_name = "cloak, research director"
-	path = /obj/item/clothing/accessory/poncho/roles/cloak/rd
+	path = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/rd)
 	allowed_roles = list(JOB_RESEARCH_DIRECTOR)
 	show_roles = FALSE
 	cost = 1
 
 /datum/gear/suit/roles/cloak_qm
 	display_name = "cloak, quartermaster"
-	path = /obj/item/clothing/accessory/poncho/roles/cloak/qm
+	path = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/qm)
 	allowed_roles = list(JOB_QUARTERMASTER)
 	show_roles = FALSE
 	cost = 1
 
 /datum/gear/suit/roles/cloak_captain
 	display_name = "cloak, site manager"
-	path = /obj/item/clothing/accessory/poncho/roles/cloak/captain
+	path = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/captain)
 	allowed_roles = list(JOB_SITE_MANAGER)
 	show_roles = FALSE
 	cost = 1
@@ -855,14 +855,14 @@
 /datum/gear/suit/roles/neo_robo_coat
 	display_name = "robotics labcoat"
 	description = "A black version of the classic labcoat for roboticists."
-	path = /obj/item/clothing/suit/storage/toggle/labcoat/neo_robo_coat
+	path = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_robo_coat)
 	allowed_roles = list(JOB_RESEARCH_DIRECTOR, JOB_ROBOTICIST)
 	show_roles = FALSE
 
 /datum/gear/suit/traffic_jacket
 	display_name = "traffic officer's jacket"
 	description = "A high visibility jacket for security personnel inclined to direct vehicles rather than people."
-	path = /obj/item/clothing/suit/storage/toggle/labcoat/neo_police
+	path = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_police)
 	allowed_roles = list(JOB_SECURITY_OFFICER, JOB_HEAD_OF_SECURITY, JOB_WARDEN, JOB_DETECTIVE)
 	show_roles = FALSE
 
@@ -899,10 +899,10 @@
 		"First responder jacket" = /obj/item/clothing/suit/storage/toggle/fr_jacket,
 		"First responder jacket, alt." = /obj/item/clothing/suit/storage/toggle/fr_jacket/ems,
 		"Paramedic vest" = /obj/item/clothing/suit/storage/toggle/paramedic,
-		"EMT's labcoat" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_emt,
-		"High visibility jacket" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_highvis,
-		"Red EMT jacket" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_redemt,
-		"Dark Blue EMT jacket" = /obj/item/clothing/suit/storage/toggle/labcoat/neo_blueemt
+		"EMT's labcoat" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_emt),
+		"High visibility jacket" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_highvis),
+		"Red EMT jacket" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_redemt),
+		"Dark Blue EMT jacket" = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/neo_blueemt)
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(paramedicCoats))
 
@@ -968,7 +968,7 @@ Talon winter coat
 //Antediluvian cloak
 /datum/gear/suit/cloak_ante
 	display_name = "cloak, antediluvian"
-	path = /obj/item/clothing/accessory/poncho/roles/cloak/antediluvian
+	path = VARIANT(/obj/item/clothing/accessory/poncho/roles/cloak/antediluvian)
 	cost = 1
 
 //Chaplain cloaks

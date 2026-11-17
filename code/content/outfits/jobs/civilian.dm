@@ -5,7 +5,7 @@
 /datum/decl/hierarchy/outfit/job/assistant/visitor
 	name = OUTFIT_JOB_NAME(JOB_ALT_VISITOR)
 	id_pda_assignment = JOB_ALT_VISITOR
-	uniform = /obj/item/clothing/under/assistantformal
+	uniform = VARIANT(/obj/item/clothing/under/assistantformal)
 
 // Interns
 /datum/decl/hierarchy/outfit/job/assistant/intern
@@ -47,7 +47,7 @@
 	name = OUTFIT_JOB_NAME(JOB_CHEF)
 	uniform = /obj/item/clothing/under/rank/chef
 	suit = /obj/item/clothing/suit/chef
-	head = /obj/item/clothing/head/chefhat
+	head = VARIANT(/obj/item/clothing/head/chefhat)
 	id_type = /obj/item/card/id/civilian/service/chef
 	pda_type = /obj/item/pda/chef
 
@@ -59,7 +59,7 @@
 
 /datum/decl/hierarchy/outfit/job/service/server
 	name = OUTFIT_JOB_NAME(JOB_ALT_SERVER)
-	uniform = /obj/item/clothing/under/waiter
+	uniform = VARIANT(/obj/item/clothing/under/waiter)
 
 // End Outfit addition
 
@@ -96,7 +96,7 @@
 	name = OUTFIT_JOB_NAME("Internal affairs agent")
 	uniform = /obj/item/clothing/under/rank/internalaffairs
 	suit = /obj/item/clothing/suit/storage/toggle/internalaffairs
-	shoes = /obj/item/clothing/shoes/brown
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	glasses = /obj/item/clothing/glasses/sunglasses/big
 	l_hand = /obj/item/clipboard
 	id_type = /obj/item/card/id/civilian/internal_affairs
@@ -172,7 +172,7 @@
 /datum/decl/hierarchy/outfit/job/assistant/entrepreneur/bodyguard
 	glasses = /obj/item/clothing/glasses/sunglasses
 	l_pocket = VARIANT(/obj/item/reagent_containers/spray/pepper)
-	suit = /obj/item/clothing/accessory/sweater/blackneck
+	suit = VARIANT(/obj/item/clothing/accessory/sweater/blackneck)
 
 /datum/decl/hierarchy/outfit/job/assistant/entrepreneur/personal_physician
 	suit = /obj/item/clothing/suit/storage/toggle/labcoat

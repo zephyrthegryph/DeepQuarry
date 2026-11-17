@@ -13497,8 +13497,12 @@
 "aCf" = (
 /obj/item/clothing/head/soft/mime,
 /obj/item/clothing/mask/gas/mime,
-/obj/item/clothing/shoes/mime,
-/obj/item/clothing/under/mime,
+/obj/item/clothing/shoes{
+	variant = "mime"
+	},
+/obj/item/clothing/under{
+	variant = "mime"
+	},
 /obj/random/crate,
 /turf/simulated/floor,
 /area/construction/firstdeck/construction3)
@@ -71116,7 +71120,9 @@
 	c_tag = "Second Deck - Center Five";
 	dir = 1
 	},
-/obj/item/clothing/accessory/scarf/christmas,
+/obj/item/clothing/accessory/scarf{
+	variant = "christmas"
+	},
 /turf/simulated/floor/tiled/hydro,
 /area/hallway/primary/seconddeck/apcenter)
 "cJp" = (
@@ -88200,7 +88206,9 @@
 "dqn" = (
 /obj/item/clothing/gloves/rainbow,
 /obj/item/clothing/head/soft/rainbow,
-/obj/item/clothing/shoes/rainbow,
+/obj/item/clothing/shoes{
+	variant = "rainbow"
+	},
 /obj/item/clothing/under/color/rainbow,
 /obj/item/bedsheet/rainbow,
 /obj/item/pen/crayon/rainbow,
@@ -94344,8 +94352,12 @@
 "dCm" = (
 /obj/item/clothing/head/soft/mime,
 /obj/item/clothing/mask/gas/mime,
-/obj/item/clothing/shoes/mime,
-/obj/item/clothing/under/mime,
+/obj/item/clothing/shoes{
+	variant = "mime"
+	},
+/obj/item/clothing/under{
+	variant = "mime"
+	},
 /obj/random/crate,
 /turf/simulated/floor/plating,
 /area/construction/seconddeck/construction2)

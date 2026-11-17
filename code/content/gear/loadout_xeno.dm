@@ -169,17 +169,17 @@
 
 /datum/gear/uniform/dept/undercoat/cap
 	display_name = "site manager undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/cap
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/cap)
 	allowed_roles = list(JOB_SITE_MANAGER)
 
 /datum/gear/uniform/dept/undercoat/hop
 	display_name = "head of personnel undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/hop
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/hop)
 	allowed_roles = list(JOB_HEAD_OF_PERSONNEL)
 
 /datum/gear/uniform/dept/undercoat/rd
 	display_name = "research director undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/rd
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/rd)
 	allowed_roles = list(JOB_RESEARCH_DIRECTOR)
 
 /datum/gear/uniform/dept/undercoat/hos
@@ -189,27 +189,27 @@
 
 /datum/gear/uniform/dept/undercoat/ce
 	display_name = "chief engineer undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/ce
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/ce)
 	allowed_roles = list(JOB_CHIEF_ENGINEER)
 
 /datum/gear/uniform/dept/undercoat/cmo
 	display_name = "chief medical officer undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/cmo
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/cmo)
 	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER)
 
 /datum/gear/uniform/dept/undercoat/qm
 	display_name = "quartermaster undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/qm
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/qm)
 	allowed_roles = list(JOB_QUARTERMASTER)
 
 /datum/gear/uniform/dept/undercoat/cargo
 	display_name = "cargo undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/cargo
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/cargo)
 	allowed_roles = list(JOB_CARGO_TECHNICIAN,JOB_QUARTERMASTER,JOB_SHAFT_MINER)
 
 /datum/gear/uniform/dept/undercoat/mining
 	display_name = "mining undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/mining
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/mining)
 	allowed_roles = list(JOB_QUARTERMASTER,JOB_SHAFT_MINER)
 
 /datum/gear/uniform/dept/undercoat/security
@@ -219,57 +219,57 @@
 
 /datum/gear/uniform/dept/undercoat/service
 	display_name = "service undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/service
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/service)
 	allowed_roles = list(JOB_HEAD_OF_PERSONNEL,JOB_BARTENDER,JOB_BOTANIST,JOB_JANITOR,JOB_CHEF,JOB_LIBRARIAN,JOB_CHAPLAIN)
 
 /datum/gear/uniform/dept/undercoat/engineer
 	display_name = "engineering undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/engineer
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/engineer)
 	allowed_roles = list(JOB_CHIEF_ENGINEER,JOB_ENGINEER)
 
 /datum/gear/uniform/dept/undercoat/atmos
 	display_name = "atmospherics undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/atmos
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/atmos)
 	allowed_roles = list(JOB_CHIEF_ENGINEER,JOB_ATMOSPHERIC_TECHNICIAN)
 
 /datum/gear/uniform/dept/undercoat/research
 	display_name = "scientist undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/sci
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/sci)
 	allowed_roles = list(JOB_RESEARCH_DIRECTOR,JOB_SCIENTIST, JOB_ROBOTICIST, JOB_XENOBIOLOGIST, JOB_XENOBOTANIST)
 
 /datum/gear/uniform/dept/undercoat/robo
 	display_name = "roboticist undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/robo
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/robo)
 	allowed_roles = list(JOB_RESEARCH_DIRECTOR,JOB_ROBOTICIST)
 
 /datum/gear/uniform/dept/undercoat/medical
 	display_name = "medical undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/medical
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/medical)
 	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER,JOB_MEDICAL_DOCTOR,JOB_CHEMIST,JOB_PARAMEDIC,JOB_GENETICIST,JOB_PSYCHIATRIST)
 
 /datum/gear/uniform/dept/undercoat/chemistry
 	display_name = "chemist undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/chemistry
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/chemistry)
 	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER,JOB_CHEMIST)
 
 /datum/gear/uniform/dept/undercoat/virology
 	display_name = "virologist undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/viro
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/viro)
 	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER,JOB_MEDICAL_DOCTOR)
 
 /datum/gear/uniform/dept/undercoat/psych
 	display_name = "psychiatrist undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/psych
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/psych)
 	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER,JOB_PSYCHIATRIST)
 
 /datum/gear/uniform/dept/undercoat/paramedic
 	display_name = "paramedic undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/para
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/para)
 	allowed_roles = list(JOB_CHIEF_MEDICAL_OFFICER,JOB_PARAMEDIC)
 
 /datum/gear/uniform/dept/undercoat/iaa
 	display_name = "internal affairs undercoat (Teshari)"
-	path = /obj/item/clothing/under/teshari/undercoat/jobs/iaa
+	path = VARIANT(/obj/item/clothing/under/teshari/undercoat/jobs/iaa)
 	allowed_roles = list(JOB_INTERNAL_AFFAIRS_AGENT)
 
 /datum/gear/suit/dept/cloak
@@ -619,7 +619,7 @@
 
 /datum/gear/suit/cloakcolor
 	display_name = "cloak, recolorable (Teshari)"
-	path = /obj/item/clothing/suit/storage/teshari/cloak/standard/white_grey
+	path = VARIANT(/obj/item/clothing/suit/storage/teshari/cloak/standard/white_grey)
 	whitelisted = SPECIES_TESHARI
 	sort_category = "Xenowear"
 

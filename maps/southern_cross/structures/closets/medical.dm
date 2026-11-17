@@ -11,12 +11,12 @@
 	starts_with = list(
 		/obj/item/clothing/under/rank/chief_medical_officer,
 		/obj/item/clothing/under/rank/chief_medical_officer/skirt,
-		/obj/item/clothing/suit/storage/toggle/labcoat/cmo,
-		/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt,
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmo),
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt),
 		/obj/item/clothing/suit/storage/toggle/labcoat/modern/cmo,
 		/obj/item/cartridge/cmo,
 		/obj/item/clothing/gloves/sterile/latex,
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/radio/headset/heads/cmo,
 		/obj/item/clothing/suit/storage/hooded/wintercoat/medical,
 		/obj/item/clothing/shoes/white)

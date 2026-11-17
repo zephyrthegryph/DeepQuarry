@@ -32,7 +32,7 @@
 
 /datum/decl/hierarchy/outfit/costume/horrorcop
 	name = OUTFIT_COSTUME("Slasher Movie Cop")
-	uniform = /obj/item/clothing/under/corp/pcrc{ starting_accessories=list(/obj/item/clothing/accessory/holster/hip) }
+	uniform = VARIANT(/obj/item/clothing/under/corp/pcrc)
 	shoes = /obj/item/clothing/shoes/black
 	gloves = /obj/item/clothing/gloves/black
 	glasses = /obj/item/clothing/glasses/fakesunglasses
@@ -42,6 +42,8 @@
 
 /datum/decl/hierarchy/outfit/costume/horrorcop/post_equip(mob/living/carbon/human/H)
 	var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_UNIFORM)
+	var/obj/item/clothing/accessory/holster/hip/holster = new(U)
+	U.attach_accessory(null, holster)
 	if(LAZYLEN(U.accessories))
 		for(var/obj/item/clothing/accessory/A in U.accessories)
 			if(istype(A, /obj/item/clothing/accessory/holster))
@@ -67,7 +69,7 @@
 
 /datum/decl/hierarchy/outfit/costume/lumberjack
 	name = OUTFIT_COSTUME("Lumberjack")
-	uniform = /obj/item/clothing/under/pants{ starting_accessories=list(/obj/item/clothing/accessory/sweater/blackneck) }
+	uniform = /obj/item/clothing/under/pants{ starting_accessories=list(VARIANT(/obj/item/clothing/accessory/sweater/blackneck)) }
 	shoes = /obj/item/clothing/shoes/boots/workboots
 	head = /obj/item/clothing/head/beanie
 	gloves = /obj/item/clothing/gloves/fingerless
@@ -108,7 +110,7 @@
 /datum/decl/hierarchy/outfit/costume/pirate
 	name = OUTFIT_COSTUME("Pirate")
 	uniform = /obj/item/clothing/under/pirate
-	shoes = /obj/item/clothing/shoes/brown
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	head = /obj/item/clothing/head/pirate
 	suit = /obj/item/clothing/suit/pirate
 	glasses = /obj/item/clothing/glasses/eyepatch
@@ -124,7 +126,7 @@
 /datum/decl/hierarchy/outfit/costume/marine
 	name = OUTFIT_COSTUME("Ruin Marine")
 	uniform = /obj/item/clothing/under/color/grey
-	shoes = /obj/item/clothing/shoes/brown
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	head = /obj/item/clothing/head/marine
 	suit = /obj/item/clothing/suit/marine
 	r_hand = /obj/item/gun/projectile/revolver/toy/sawnoff

@@ -41,7 +41,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/cargotech)
 		/obj/item/clothing/under/rank/cargo/skirt,
 		/obj/item/clothing/under/rank/cargo/jeans,
 		/obj/item/clothing/under/rank/cargo/jeans/female,
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/radio/headset/qm,
 		/obj/item/radio/headset/alt/qm,
 		/obj/item/radio/headset/earbud/qm,

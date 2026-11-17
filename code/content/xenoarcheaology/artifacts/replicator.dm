@@ -682,7 +682,7 @@ CAPABILITIES(/datum/prompt/choice/replicator_consent)
 		/obj/item/clothing/shoes/boots/jackboots,
 		/obj/item/clothing/shoes/boots/workboots,
 		/obj/item/clothing/shoes/boots/workboots/toeless,
-		/obj/item/clothing/shoes/flipflop,
+		VARIANT(/obj/item/clothing/shoes/flipflop),
 		/obj/item/clothing/shoes/boots/duty,
 		/obj/item/clothing/shoes/footwraps,
 		/obj/item/storage/smolebrickcase,

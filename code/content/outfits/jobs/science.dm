@@ -16,7 +16,7 @@
 /datum/decl/hierarchy/outfit/job/science/rd
 	name = OUTFIT_JOB_NAME("Research Director")
 	uniform = /obj/item/clothing/under/rank/research_director
-	shoes = /obj/item/clothing/shoes/brown
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	l_hand = /obj/item/clipboard
 	id_type = /obj/item/card/id/science/head
 	pda_type = /obj/item/pda/heads/rd
@@ -30,14 +30,14 @@
 	name = OUTFIT_JOB_NAME(JOB_SCIENTIST)
 	uniform = /obj/item/clothing/under/rank/scientist
 	id_type = /obj/item/card/id/science
-	suit = /obj/item/clothing/suit/storage/toggle/labcoat/science
+	suit = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/science)
 	l_pocket = /obj/item/experi_scanner
 
 /datum/decl/hierarchy/outfit/job/science/xenobiologist
 	name = OUTFIT_JOB_NAME(JOB_XENOBIOLOGIST)
 	uniform = /obj/item/clothing/under/rank/scientist
 	id_type = /obj/item/card/id/science
-	suit = /obj/item/clothing/suit/storage/toggle/labcoat/science
+	suit = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/science)
 
 /datum/decl/hierarchy/outfit/job/science/roboticist
 	name = OUTFIT_JOB_NAME(JOB_ROBOTICIST)
@@ -49,7 +49,7 @@
 	pda_type = /obj/item/pda/roboticist
 	backpack = /obj/item/storage/backpack
 	satchel_one = /obj/item/storage/backpack/satchel/norm
-	suit = /obj/item/clothing/suit/storage/toggle/labcoat/roboticist
+	suit = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/roboticist)
 
 /datum/decl/hierarchy/outfit/job/science/scientist/anomalist
 	name = OUTFIT_JOB_NAME(JOB_ALT_ANOMALIST)
@@ -63,4 +63,4 @@
 	name = OUTFIT_JOB_NAME(JOB_XENOBOTANIST)
 	uniform = /obj/item/clothing/under/rank/scientist
 	id_type = /obj/item/card/id/science/xenobotanist
-	suit = /obj/item/clothing/suit/storage/toggle/labcoat/science
+	suit = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/science)

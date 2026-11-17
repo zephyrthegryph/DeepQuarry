@@ -23,7 +23,7 @@
 /obj/item/storage/box/casino/costume_commie
 	name = "communist costume"
 	starts_with = list(
-	/obj/item/clothing/under/soviet,
+	VARIANT(/obj/item/clothing/under/soviet),
 	/obj/item/clothing/head/ushanka
 	)
 

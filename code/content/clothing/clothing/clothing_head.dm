@@ -25,6 +25,7 @@
 	helmet_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head)
+	variants(nameof(variant), PROC_REF(variant_table))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(atom_rules(light_system = MOVABLE_LIGHT_DIRECTIONAL))
 	configure(movable_motion(cone_y = 11))

@@ -20,11 +20,11 @@
 
 	// Heist overrides check_victory() and doesn't need victory or loss strings/tags.
 	var/static/list/raider_uniforms = list(
-		/obj/item/clothing/under/soviet,
+		VARIANT(/obj/item/clothing/under/soviet),
 		/obj/item/clothing/under/pirate,
-		/obj/item/clothing/under/redcoat,
-		/obj/item/clothing/under/serviceoveralls,
-		/obj/item/clothing/under/captain_fly,
+		VARIANT(/obj/item/clothing/under/redcoat),
+		VARIANT(/obj/item/clothing/under/serviceoveralls),
+		VARIANT(/obj/item/clothing/under/captain_fly),
 		/obj/item/clothing/under/det,
 		/obj/item/clothing/under/color/brown,
 		)
@@ -32,7 +32,7 @@
 	var/static/list/raider_shoes = list(
 		/obj/item/clothing/shoes/boots/jackboots,
 		/obj/item/clothing/shoes/boots/workboots,
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/clothing/shoes/laceup
 		)
 
@@ -57,7 +57,7 @@
 		/obj/item/clothing/suit/storage/toggle/leather_jacket,
 		/obj/item/clothing/suit/storage/toggle/brown_jacket,
 		/obj/item/clothing/suit/storage/toggle/hoodie,
-		/obj/item/clothing/suit/storage/toggle/hoodie/black,
+		VARIANT(/obj/item/clothing/suit/storage/toggle/hoodie/black),
 		/obj/item/clothing/suit/unathi/mantle,
 		/obj/item/clothing/accessory/poncho,
 		)
