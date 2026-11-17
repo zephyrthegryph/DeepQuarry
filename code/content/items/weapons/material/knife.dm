@@ -8,7 +8,6 @@
 	desc = "A general purpose " + JOB_CHEF + "'s Knife made by SpaceCook Incorporated. Guaranteed to stay sharp for years to come."
 	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave.
 	force_divisor = 0.15 // 9 when wielded with hardness 60 (steel)
-	MATERIAL_BULK(MAT_STEEL, 12000)
 
 CAPABILITIES(/obj/item/material/knife)
 	configure(item_combat(injury_kind = INJURY_CUT))

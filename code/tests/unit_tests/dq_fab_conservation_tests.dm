@@ -293,3 +293,48 @@
 
 /datum/unit_test/dq_fab_conservation/recipes/representative/stride()
 	return 13
+
+/// Stacks by amount: a stack's declared composition is per unit, recycling it returns that times the amount, and one unit is never worth more than a sheet.
+/datum/unit_test/dq_fab_conservation/stacks
+	tier = TEST_TIER_NORMAL
+	is_sweep_test = FALSE
+
+/datum/unit_test/dq_fab_conservation/stacks/Run()
+	gains = list()
+	var/list/bad = list()
+	for(var/path in subtypesof(/obj/item/stack))
+		var/list/declared = dq_type_material_totals(path)
+		if(!length(declared))
+			continue
+		var/per_unit = dq_fab_total(declared)
+		if(per_unit > SHEET_MATERIAL_AMOUNT)
+			gains += "[path]: one unit is worth [round(per_unit)] units of material, more than a sheet"
+			continue
+		var/obj/item/stack/stack_type = path
+		var/amount = max(initial(stack_type.amount), 1)
+		var/obj/item/stack/made
+		try
+			made = new stack_type(null, amount)
+		catch(var/exception/e)
+			errored++
+			log_world("CONSERVATION: stack [path] could not be made: [e.name] at [e.file]:[e.line]")
+			continue
+		if(!istype(made))
+			skipped++
+			if(made)
+				qdel(made)
+			continue
+		if(!length(made.material_totals())) // a synthesiser is not made of what it makes
+			skipped++
+			qdel(made)
+			continue
+		checked++
+		var/back = dq_fab_total(dq_fab_recovered(made))
+		var/expected = dq_fab_total(dq_fab_basic(declared)) * made.amount
+		if(abs(back - expected) > 1 + made.amount)
+			bad += "[path] x[made.amount] recovers [round(back)] units, per unit [round(per_unit)] says [round(expected)]"
+		qdel(made)
+	TEST_ASSERT(checked > 0, "no stack declares a composition")
+	TEST_NOTICE(src, "stacks: [checked] checked, [skipped] skipped, [errored] could not be made")
+	TEST_ASSERT(!length(bad), "[length(bad)] stacks do not recover their per-unit composition times their amount: [jointext(bad.Copy(1, min(length(bad), 12) + 1), " | ")]")
+	TEST_ASSERT(!length(gains), "[length(gains)] stacks are worth more per unit than a sheet: [jointext(gains.Copy(1, min(length(gains), 12) + 1), " | ")]")

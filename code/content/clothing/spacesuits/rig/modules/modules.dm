@@ -8,7 +8,7 @@
 	var/product_type = "undefined"
 	var/charges = 0
 
-MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, MAT_GLASS = 5000))
+MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 800, MAT_PLASTIC = 1000, MAT_GLASS = 200))
 /obj/item/rig_module
 	name = "hardsuit upgrade"
 	desc = "It looks pretty sciency."

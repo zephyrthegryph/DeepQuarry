@@ -327,7 +327,7 @@ MATERIAL_MIX(/obj/item/weldingtool/hugetank, list(MAT_STEEL = 70, MAT_GLASS = 12
 	max_fuel = 80
 	w_class = ITEMSIZE_NORMAL
 
-MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_METAL = 30, MAT_GLASS = 10))
+MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_STEEL = 30, MAT_GLASS = 10))
 /obj/item/weldingtool/mini
 	name = "emergency welding tool"
 	desc = "A miniature welder used during emergencies."

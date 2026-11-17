@@ -658,7 +658,7 @@ CAPABILITIES(/obj/item/gun/energy/gun/burst/mg42)
 	item_state = "gauss"
 	desc = "An older model of the experimental Gauss weapon series produced by Hephaestus industries. As it is unable to pass through glass, it was phased out during the mars-sol conflict due to the invention of laser carbines.Nevertheless, it still packs a punch and is easy to maintain, making it a favorite amongst sol privateers."
 	fire_sound = SFX_WEAPONS_LASER4 //lighter damage sound //CHMOMPEdit - Sound moved to modular files to prevent conflict with an upstream laser sound file
-	w_class = 2
+	w_class = ITEMSIZE_SMALL
 	projectile_type = /obj/item/projectile/energy/gauss
 	charge_cost = 250
 	self_recharge = 1

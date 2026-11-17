@@ -7,7 +7,7 @@
 #define DESTROY_MODE (1<<2)
 #define PAINT_MODE (1<<3)
 
-MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000))
+MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 4000, MAT_GLASS = 2000))
 /obj/item/pipe_dispenser
 	name = "Rapid Piping Device (RPD)"
 	desc = "A device used to rapidly pipe things."
