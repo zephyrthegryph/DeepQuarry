@@ -102,10 +102,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	var/pda_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
 	started = TICK_USAGE_REAL
 
-	for(var/path in backpack_contents)
-		var/number = LAZYACCESS(backpack_contents, path)
-		for(var/i=0,i<number,i++)
-			H.equip_to_slot_or_del(new path(H), SLOT_ID_IN_BACKPACK)
+	wear_many(backpack_contents, H, SLOT_ID_IN_BACKPACK, "backpack_contents")
 	var/pack_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
 	started = TICK_USAGE_REAL
 
@@ -116,54 +113,73 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	log_world("JOIN_TIMING_OUTFIT: [name]: worn items [round(base_ms, 0.1)] ms, ID [round(id_ms, 0.1)] ms, PDA [round(pda_ms, 0.1)] ms, backpack contents [round(pack_ms, 0.1)] ms, post equip and ID info [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.1)] ms")
 	return 1
 
+/// One thing this outfit hands out: `ref` is a type or a VARIANT() reference (a collapsed family's old path), so it is made with variant_new(), never `new`.
+/// A ref that makes nothing is skipped and logged, so one stale entry does not abort the rest of the join (a joiner once spawned with nothing).
+/datum/decl/hierarchy/outfit/proc/make_item(ref, mob/living/carbon/human/H, source)
+	var/atom/movable/made = variant_new(ref, H)
+	if(!made)
+		WARNING("outfit [type] ([name]) [source] names [ref ? "[ref]" : "null"], which makes nothing; skipped so the rest of the outfit still goes on")
+	return made
+
+/// Wears what this outfit puts in `slot`, if `ref` makes something.
+/datum/decl/hierarchy/outfit/proc/wear_item(ref, mob/living/carbon/human/H, slot, source)
+	var/obj/item/made = make_item(ref, H, source)
+	if(made)
+		H.equip_to_slot_or_del(made, slot)
+
+/datum/decl/hierarchy/outfit/proc/wear_many(list/refs, mob/living/carbon/human/H, slot, source)
+	for(var/ref in refs)
+		var/number = LAZYACCESS(refs, ref)
+		for(var/i=0,i<number,i++)
+			wear_item(ref, H, slot, source)
+
 /datum/decl/hierarchy/outfit/proc/equip_base(mob/living/carbon/human/H)
 	pre_equip(H)
 
 	//Start with uniform,suit,backpack for additional slots
 	if(uniform)
-		H.equip_to_slot_or_del(variant_new(uniform, H), SLOT_ID_UNIFORM)
+		wear_item(uniform, H, SLOT_ID_UNIFORM, "uniform")
 	if(suit)
 		// no_jacket pref deleted; always equip the default suit. Players who don't
 		// want it pick an alternate uniform via the regular loadout system.
-		H.equip_to_slot_or_del(new suit(H),SLOT_ID_SUIT)
+		wear_item(suit, H, SLOT_ID_SUIT, "suit")
 	if(back)
-		H.equip_to_slot_or_del(new back(H),SLOT_ID_BACK)
+		wear_item(back, H, SLOT_ID_BACK, "back")
 	if(belt)
-		H.equip_to_slot_or_del(new belt(H),SLOT_ID_BELT)
+		wear_item(belt, H, SLOT_ID_BELT, "belt")
 	if(gloves)
-		H.equip_to_slot_or_del(new gloves(H),SLOT_ID_GLOVES)
+		wear_item(gloves, H, SLOT_ID_GLOVES, "gloves")
 	if(shoes)
-	// remove RS No shoes
-		H.equip_to_slot_or_del(new shoes(H),SLOT_ID_SHOES)
-	// remove RS No Shoes
+		wear_item(shoes, H, SLOT_ID_SHOES, "shoes")
 	if(mask)
-		H.equip_to_slot_or_del(new mask(H),SLOT_ID_MASK)
+		wear_item(mask, H, SLOT_ID_MASK, "mask")
 	if(head)
-		H.equip_to_slot_or_del(new head(H),SLOT_ID_HEAD)
+		wear_item(head, H, SLOT_ID_HEAD, "head")
 	if(l_ear)
-		H.equip_to_slot_or_del(new l_ear(H),SLOT_ID_EAR_L)
+		wear_item(l_ear, H, SLOT_ID_EAR_L, "l_ear")
 	if(r_ear)
-		H.equip_to_slot_or_del(new r_ear(H),SLOT_ID_EAR_R)
+		wear_item(r_ear, H, SLOT_ID_EAR_R, "r_ear")
 	if(glasses)
-		H.equip_to_slot_or_del(new glasses(H),SLOT_ID_EYES)
+		wear_item(glasses, H, SLOT_ID_EYES, "glasses")
 	if(id)
-		H.equip_to_slot_or_del(new id(H),SLOT_ID_ID)
+		wear_item(id, H, SLOT_ID_ID, "id")
 	if(l_pocket)
-		H.equip_to_slot_or_del(variant_new(l_pocket, H),SLOT_ID_POCKET_L)
+		wear_item(l_pocket, H, SLOT_ID_POCKET_L, "l_pocket")
 	if(r_pocket)
-		H.equip_to_slot_or_del(new r_pocket(H),SLOT_ID_POCKET_R)
+		wear_item(r_pocket, H, SLOT_ID_POCKET_R, "r_pocket")
 	if(suit_store)
-		H.equip_to_slot_or_del(new suit_store(H),SLOT_ID_SUIT_STORAGE)
+		wear_item(suit_store, H, SLOT_ID_SUIT_STORAGE, "suit_store")
 
 	if(l_hand)
-		H.put_in_l_hand(new l_hand(H))
+		var/obj/item/held_l = make_item(l_hand, H, "l_hand")
+		if(held_l)
+			H.put_in_l_hand(held_l)
 	if(r_hand)
-		H.put_in_r_hand(new r_hand(H))
+		var/obj/item/held_r = make_item(r_hand, H, "r_hand")
+		if(held_r)
+			H.put_in_r_hand(held_r)
 
-	for(var/path in uniform_accessories)
-		var/number = LAZYACCESS(uniform_accessories, path)
-		for(var/i=0,i<number,i++)
-			H.equip_to_slot_or_del(new path(H), SLOT_ID_TIE)
+	wear_many(uniform_accessories, H, SLOT_ID_TIE, "uniform_accessories")
 
 	if(H.species)
 		H.species.equip_survival_gear(H, flags&OUTFIT_EXTENDED_SURVIVAL, flags&OUTFIT_COMPREHENSIVE_SURVIVAL)
@@ -179,7 +195,9 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 /datum/decl/hierarchy/outfit/proc/equip_id(mob/living/carbon/human/H, rank, assignment)
 	if(!id_slot || !id_type)
 		return
-	var/obj/item/card/id/W = new id_type(H)
+	var/obj/item/card/id/W = make_item(id_type, H, "id_type")
+	if(!W)
+		return
 	if(id_desc)
 		W.desc = id_desc
 	if(rank)
@@ -193,7 +211,9 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 /datum/decl/hierarchy/outfit/proc/equip_pda(mob/living/carbon/human/H, rank, assignment)
 	if(!pda_slot || !pda_type)
 		return
-	var/obj/item/pda/pda = new pda_type(H)
+	var/obj/item/pda/pda = make_item(pda_type, H, "pda_type")
+	if(!pda)
+		return
 	if(H.equip_to_slot_or_del(pda, pda_slot))
 		pda.set_owner(H.real_name)
 		pda.set_ownjob(assignment)

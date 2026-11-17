@@ -15,7 +15,8 @@
 
 /datum/decl/hierarchy/outfit/costume/professional
 	name = OUTFIT_COSTUME("Professional")
-	uniform = /obj/item/clothing/under/suit_jacket{ starting_accessories=list(/obj/item/clothing/accessory/wcoat) }
+	uniform = /obj/item/clothing/under/suit_jacket
+	uniform_accessories = list(/obj/item/clothing/accessory/wcoat = 1)
 	shoes = /obj/item/clothing/shoes/black
 	gloves = /obj/item/clothing/gloves/black
 	glasses = /obj/item/clothing/glasses/fakesunglasses
@@ -52,7 +53,8 @@
 
 /datum/decl/hierarchy/outfit/costume/cowboy
 	name = OUTFIT_COSTUME("Cowboy")
-	uniform = /obj/item/clothing/under/pants{ starting_accessories=list(/obj/item/clothing/accessory/holster/hip) }
+	uniform = /obj/item/clothing/under/pants
+	uniform_accessories = list(/obj/item/clothing/accessory/holster/hip = 1)
 	shoes = /obj/item/clothing/shoes/boots/cowboy
 	head = /obj/item/clothing/head/cowboy
 	gloves = /obj/item/clothing/gloves/fingerless
@@ -69,7 +71,8 @@
 
 /datum/decl/hierarchy/outfit/costume/lumberjack
 	name = OUTFIT_COSTUME("Lumberjack")
-	uniform = /obj/item/clothing/under/pants{ starting_accessories=list(VARIANT(/obj/item/clothing/accessory/sweater/blackneck)) }
+	uniform = /obj/item/clothing/under/pants
+	uniform_accessories = list(VARIANT(/obj/item/clothing/accessory/sweater/blackneck) = 1)
 	shoes = /obj/item/clothing/shoes/boots/workboots
 	head = /obj/item/clothing/head/beanie
 	gloves = /obj/item/clothing/gloves/fingerless
@@ -117,7 +120,8 @@
 
 /datum/decl/hierarchy/outfit/costume/whiteout
 	name = OUTFIT_COSTUME("Snow Ghost")
-	uniform = /obj/item/clothing/under/color/white{ starting_accessories=list(/obj/item/clothing/accessory/scarf/white) }
+	uniform = /obj/item/clothing/under/color/white
+	uniform_accessories = list(/obj/item/clothing/accessory/scarf/white = 1)
 	shoes = /obj/item/clothing/shoes/white
 	suit = /obj/item/clothing/suit/storage/hooded/chaplain_hoodie/whiteout
 	gloves = /obj/item/clothing/gloves/white

@@ -42,7 +42,8 @@
 
 /datum/decl/hierarchy/outfit/professional
 	name = "Professional"
-	uniform = /obj/item/clothing/under/suit_jacket{ starting_accessories=list(/obj/item/clothing/accessory/wcoat) }
+	uniform = /obj/item/clothing/under/suit_jacket
+	uniform_accessories = list(/obj/item/clothing/accessory/wcoat = 1)
 	shoes = /obj/item/clothing/shoes/black
 	gloves = /obj/item/clothing/gloves/black
 	glasses = /obj/item/clothing/glasses/sunglasses

@@ -531,6 +531,8 @@ CAPABILITIES(/datum/system/job)
 				if(gaar_thing.slot == "implant")
 					var/item_started = TICK_USAGE_REAL
 					var/obj/item/implant/gear_implant = gaar_thing.spawn_item(human_mob, active_gear_list[gaar_thing.display_name])
+					if(!gear_implant)
+						continue
 					gear_implant.set_invisibility(INVISIBILITY_MAXIMUM)
 					gear_implant.implant_loadout(human_mob)
 					join_note_slow_item(slow_items, gaar_thing.type, item_started)
@@ -550,7 +552,10 @@ CAPABILITIES(/datum/system/job)
 					//if(G.slot == SLOT_ID_MASK || G.slot == SLOT_ID_SUIT || G.slot == SLOT_ID_HEAD)
 					//	custom_equip_leftovers += thing
 					//else
-					if(human_mob.equip_to_slot_or_del(gaar_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs), gaar_thing.slot))
+					var/obj/item/made_gear = gaar_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs)
+					if(!made_gear)
+						continue
+					if(human_mob.equip_to_slot_or_del(made_gear, gaar_thing.slot))
 						to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
 						if(gaar_thing.slot != SLOT_ID_TIE)
 							custom_equip_slots.Add(gaar_thing.slot)
@@ -592,7 +597,10 @@ CAPABILITIES(/datum/system/job)
 			else
 				var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // per-job loadout (was: gear_list[gear_slot])
 				var/metadata = active_gear_list[gear_thing.display_name]
-				if(human_mob.equip_to_slot_or_del(gear_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs), gear_thing.slot))
+				var/obj/item/made_leftover = gear_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs)
+				if(!made_leftover)
+					continue
+				if(human_mob.equip_to_slot_or_del(made_leftover, gear_thing.slot))
 					to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
 					custom_equip_slots.Add(gear_thing.slot)
 				else
