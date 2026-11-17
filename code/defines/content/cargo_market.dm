@@ -47,3 +47,11 @@
 #define AGENT_INVESTIGATION_REPUTATION_PENALTY 20
 
 #define CONTRACT_OPERATIVE_ANTAG_ID "contract_operative"
+
+// Visiting trade ships (code/content/economy/trade_ships.dm).
+#define TRADE_SHIP_FIRST_ARRIVAL (4 MINUTES)
+#define TRADE_SHIP_MIN_INTERVAL (8 MINUTES)
+#define TRADE_SHIP_MAX_INTERVAL (14 MINUTES)
+#define TRADE_SHIP_MAX_DOCKED 2
+#define TRADE_SHIP_ARRIVED "arrived"
+#define TRADE_SHIP_DEPARTED "departed"

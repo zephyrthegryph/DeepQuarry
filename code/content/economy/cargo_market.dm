@@ -361,6 +361,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	rel_take_all(src, nameof(market_transactions))
 	serial_reset(market)
 	market_generation = 0
+	initialize_trade_ships()
 	for(var/counterparty_type as anything in subtypesof(/datum/cargo_market_counterparty))
 		if(is_abstract(counterparty_type))
 			continue
@@ -394,11 +395,15 @@ CAPABILITIES(/datum/cargo_market_bid)
 	var/list/listing_ids = market_listings?.Copy()
 	for(var/listing_id in listing_ids)
 		var/datum/cargo_market_listing/existing_listing = market_listings?[listing_id]
+		if(trade_ship_holds(existing_listing.visit_id))
+			continue
 		if(!(existing_listing.reservation_key && existing_listing.stock > 0 && COOLDOWN_RUNNING(existing_listing, expires_at)))
 			rel_add(src, nameof(market_listings), null, listing_id) // disposes of the owned listing
 	var/list/bid_ids = market_bids?.Copy()
 	for(var/bid_id in bid_ids)
 		var/datum/cargo_market_bid/existing_bid = market_bids?[bid_id]
+		if(trade_ship_holds(existing_bid.visit_id))
+			continue
 		if(!(existing_bid.reservation_key && !existing_bid.completed_at && COOLDOWN_RUNNING(existing_bid, expires_at)))
 			rel_add(src, nameof(market_bids), null, bid_id) // disposes of the owned bid
 	market_generation++
@@ -440,6 +445,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	next_market_refresh = expiry
 
 /datum/system/supply/proc/process_cargo_market()
+	process_trade_ships()
 	if(COOLDOWN_LAPSED(src, next_market_refresh))
 		refresh_cargo_market()
 
@@ -948,6 +954,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			"name" = listing.pack.name,
 			"description" = listing.pack.desc,
 			"group" = listing.pack.group,
+			"ship" = trade_ship(listing.visit_id)?.name,
 			"price" = listing.unit_price,
 			"stock" = listing.stock,
 			"contraband" = !!listing.pack.contraband,
@@ -973,6 +980,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 			"target" = bid.target_units,
 			"remaining" = bid.remaining_units(),
 			"multiplier" = bid.price_multiplier,
+			"ship" = trade_ship(bid.visit_id)?.name,
 			"reserved" = !!bid.reservation_key,
 			"can_route" = !bid.reservation_key && (station_trade_authorized || has_faction_market_access(user, counterparty.faction_id)),
 			"expires" = DisplayTimeText(max(0, bid.expires_at - world.time), 1),
@@ -1024,6 +1032,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		"transactions" = transactions,
 		"outbound_crates" = outbound_crates,
 		"is_auditor" = is_auditor,
+		"trade_ships" = trade_ship_ui_data(user, station_trade_authorized),
 	)
 
 

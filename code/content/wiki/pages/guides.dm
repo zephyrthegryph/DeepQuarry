@@ -113,9 +113,11 @@ See \[\[manual/researchanddevelopment101|Research and Development 101]] for the 
 	id = "guide/cargo/ordering"
 	title = "Ordering supplies"
 	path = "Cargo/Guides"
-	summary = "Supply packs, points and the shuttle."
+	summary = "Supply packs, Thalers and the shuttle."
 	body = {"Cargo buys what the station needs in supply packs. Every pack has a page under Cargo/Supply packs listing its cost, whether it is locked to an access, and what is inside, each item linked to its catalogue page.
 1. A department asks for what it needs at a supply console.
-2. Cargo approves the order against its points and sends for it.
+2. The department's budget (or the requester's own account) pays in Thalers, and Cargo sends for it.
 3. The crate arrives on the supply shuttle. A locked crate opens only for the access it names.
-Mining brings ore back for the station's materials; the mining tools are under Cargo in the index."}
+Mining brings ore back for the station's materials; the mining tools are under Cargo in the index.
+
+Beyond the catalog, see \[\[guide/cargo/trade_ships|visiting trade ships]] for cheaper stock, better buyers and special orders."}

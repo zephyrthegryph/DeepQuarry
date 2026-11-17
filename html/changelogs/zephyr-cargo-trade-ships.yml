@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Visiting trade ships now dock on a schedule, selling cargo below catalog price, buying wanted goods at a premium and shipping in special orders at a markup (Supply console, Trade ships tab)."
+  - rscadd: "Station Wiki: a Cargo guide to visiting trade ships."

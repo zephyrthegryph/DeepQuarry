@@ -107,6 +107,7 @@ export const SupplyConsoleMarket = () => {
                   }
                 >
                   <Label>
+                    {listing.ship ? `${listing.ship} (docked) · ` : ''}
                     {listing.counterparty} · {listing.group} · {listing.stock}{' '}
                     in stock · {listing.expires}
                   </Label>
@@ -135,6 +136,7 @@ export const SupplyConsoleMarket = () => {
               {market.bids.map((bid) => (
                 <Section key={bid.id} title={bid.name}>
                   <Label>
+                    {bid.ship ? `${bid.ship} (docked) · ` : ''}
                     {bid.counterparty} · pays ×{bid.multiplier.toFixed(2)} ·{' '}
                     {bid.expires}
                   </Label>

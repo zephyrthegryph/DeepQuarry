@@ -1732,3 +1732,68 @@
 		own_turf_contents(T) // the delivered crate lands on a clear turf of the area: the test owns it
 	SSsupply.shuttle = real_shuttle
 	qdel(fake_shuttle, TRUE) // shuttles are kept for the round unless forced
+
+/datum/unit_test/dq_trade_ship_visit
+
+/datum/unit_test/dq_trade_ship_visit/Run()
+	var/fixed_listings = 0
+	for(var/listing_id in SSsupply.market_listings)
+		var/datum/cargo_market_listing/fixed = SSsupply.market_listings[listing_id]
+		if(!fixed.visit_id)
+			fixed_listings++
+	var/datum/trade_ship_visit/visit = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/guild_trader)
+	TEST_ASSERT_NOTNULL(visit, "a trade ship did not dock")
+	TEST_ASSERT(LAZYLEN(visit.listing_ids) > 0, "a docked trade ship listed no cargo")
+	TEST_ASSERT(LAZYLEN(visit.bid_ids) > 0, "a docked trade ship wanted nothing")
+	for(var/listing_id in visit.listing_ids)
+		var/datum/cargo_market_listing/listing = SSsupply.market_listing(listing_id)
+		TEST_ASSERT_NOTNULL(listing, "a trade ship listing was not on the market")
+		TEST_ASSERT(listing.unit_price < SSsupply.pack_price(listing.pack), "a trade ship sold [listing.pack.name] at or above the catalog price")
+		TEST_ASSERT_EQUAL(listing.visit_id, visit.id, "a trade ship listing lost its ship")
+	for(var/bid_id in visit.bid_ids)
+		var/datum/cargo_market_bid/bid = SSsupply.market_bid(bid_id)
+		TEST_ASSERT(bid.price_multiplier >= 1.25, "a trade ship bid paid only x[bid.price_multiplier]")
+
+	SSsupply.refresh_cargo_market()
+	for(var/listing_id in visit.listing_ids)
+		TEST_ASSERT_NOTNULL(SSsupply.market_listing(listing_id), "a market refresh closed a docked ship's listing")
+	var/fixed_after = 0
+	for(var/listing_id in SSsupply.market_listings)
+		var/datum/cargo_market_listing/fixed = SSsupply.market_listings[listing_id]
+		if(!fixed.visit_id)
+			fixed_after++
+	TEST_ASSERT(fixed_after > 0 && fixed_listings > 0, "the fixed counterparties lost their listings beside the ship")
+
+	var/list/specials = SSsupply.trade_ship_special_packs(visit)
+	TEST_ASSERT(length(specials) > 0, "a trade ship offered no special orders")
+	var/datum/supply_pack/special = specials[1]
+	TEST_ASSERT(!special.contraband, "a trade ship offered contraband as a special order")
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	var/mob/living/carbon/human/buyer = new(test_turf)
+	var/datum/supply_order/order = SSsupply.request_special_order(visit, special, buyer, "Focused special order test")
+	TEST_ASSERT_NOTNULL(order, "a special order was refused")
+	TEST_ASSERT(order.quoted_price > SSsupply.pack_price(special), "a special order was not priced above the catalog")
+	TEST_ASSERT_EQUAL(order.market_counterparty_id, visit.counterparty_id, "a special order lost the ship's counterparty")
+	TEST_ASSERT_EQUAL(order.market_cover_name, visit.name, "a special order lost the ship's name")
+
+	var/list/listing_ids = visit.listing_ids.Copy()
+	var/list/bid_ids = visit.bid_ids.Copy()
+	var/visit_id = visit.id
+	TEST_ASSERT(SSsupply.depart_trade_ship(visit), "a docked trade ship would not depart")
+	TEST_ASSERT_NULL(SSsupply.trade_ship(visit_id), "a departed trade ship stayed docked")
+	for(var/listing_id in listing_ids)
+		TEST_ASSERT_NULL(SSsupply.market_listing(listing_id), "a departed ship's listing stayed open")
+	for(var/bid_id in bid_ids)
+		TEST_ASSERT_NULL(SSsupply.market_bid(bid_id), "a departed ship's bid stayed open")
+	TEST_ASSERT(!SSsupply.request_special_order(visit, special, buyer, "late"), "a departed ship took a special order")
+
+	var/datum/supply_order/admin_order
+	for(var/datum/supply_order/candidate in SSsupply.adm_order_history)
+		if(candidate.ordernum == order.ordernum)
+			admin_order = candidate
+			break
+	own_take_member(SSsupply, nameof(/datum/system/supply::order_history), order)
+	own_take_member(SSsupply, nameof(/datum/system/supply::adm_order_history), admin_order)
+	qdel(admin_order)
+	qdel(order)
+	qdel(buyer)

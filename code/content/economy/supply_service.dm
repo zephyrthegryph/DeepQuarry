@@ -65,6 +65,7 @@ CAPABILITIES(/datum/system/supply)
 	owns_many(nameof(market_bids))
 	owns_many(nameof(market_counterparties))
 	owns_many(nameof(market_listings))
+	owns_many(nameof(trade_ship_visits))
 
 /// The cargo market and department payroll (was SSsupply, 20 s).
 /datum/system/supply/reactions()

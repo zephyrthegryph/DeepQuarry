@@ -35,6 +35,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	extend("ui_open", needs(req(PROC_REF(lets_in))))
 	extend(TAG_UI, needs(req(PROC_REF(supply_ready), silent = TRUE)))
 	op("market_request", ui_act("market_request", arg("id", schema_text(128)), arg("contract", bool(), optional = TRUE), arg("personal", bool(), optional = TRUE)), needs(req(PROC_REF(market_request_ok))), asks(/datum/prompt/text, fields = list("question" = "Procurement justification", "title" = "Why should the station purchase this market listing?", "default" = "External market procurement", "timeout" = 0), step = "reason"), then(PROC_REF(ui_act_market_request)))
+	op("special_order", ui_act("special_order", arg("ship", schema_text(128)), arg("pack", schema_text(256)), arg("personal", bool(), optional = TRUE)), needs(req(PROC_REF(special_order_ok))), asks(/datum/prompt/text, fields = list("question" = "Procurement justification", "title" = "Why should this be shipped in?", "default" = "Special order from a visiting trade ship", "timeout" = 0), step = "reason"), then(PROC_REF(ui_act_special_order)), logs(LOG_GAME))
 	op("market_route", ui_act("market_route", arg("bid", schema_text(128)), arg("crate", schema_text(4096))), needs(req(PROC_REF(market_route_ok))), then(PROC_REF(ui_act_market_route)), logs(LOG_GAME))
 	op("view_crate", ui_act("view_crate", arg("crate", schema_text(4096))), needs(req(PROC_REF(crate_listed))), then(PROC_REF(ui_act_view_crate)))
 	op("request_crate", ui_act("request_crate", arg("ref", schema_text(4096)), arg("personal", bool(), optional = TRUE)), needs(req(PROC_REF(pack_orderable))), asks(/datum/prompt/text, fields = list("question" = "Reason:", "title" = "Why do you require this item?", "timeout" = 0), step = "reason"), then(PROC_REF(ui_act_request_crate)))
@@ -239,6 +240,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 MSG_DEF_SELF(supply/offline, "The supply system is offline.")
 MSG_DEF_SELF(supply/no_market_listing, "That listing is gone.")
 MSG_DEF_SELF(supply/no_market_trade, "This console can't trade on the market for you.")
+MSG_DEF_SELF(supply/no_trade_ship, "That trade ship has left.")
 MSG_DEF_SELF(supply/no_route, "You can't route crates to that buyer.")
 MSG_DEF_SELF(supply/no_crate, "That crate is gone.")
 MSG_DEF_SELF(supply/pack_unavailable, "That pack isn't available from this console.")
@@ -297,6 +299,42 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 		to_chat(user, span_warning("The market listing is no longer available."))
 		return FALSE
 	to_chat(user, span_notice("The quoted market order was submitted[contract ? " against the contract allowance" : (personal ? " with personal funding" : " for departmental approval")]."))
+	return TRUE
+
+/// The docked ship and the special-order pack a button names, if the ship still takes that order.
+/obj/machinery/computer/supplycomp/proc/special_order_target(datum/act/op/A)
+	var/datum/trade_ship_visit/visit = SSsupply.trade_ship(ui_text(A.arg("ship"), 128))
+	if(!visit)
+		return null
+	var/datum/supply_pack/pack = SSsupply.catalog_pack_named(ui_text(A.arg("pack"), 256))
+	if(!(pack in SSsupply.trade_ship_special_packs(visit)))
+		return null
+	return list(visit, pack)
+
+/// req: the ship is docked and this console may spend the way the button asked (the pack is checked when the order is placed).
+/obj/machinery/computer/supplycomp/proc/special_order_ok(datum/act/op/A)
+	if(!SSsupply.trade_ship(ui_text(A.arg("ship"), 128)))
+		return MSG(supply/no_trade_ship)
+	if(!A.arg("personal") && !can_trade_market(A.actor))
+		return MSG(supply/no_market_trade)
+	return null
+
+/obj/machinery/computer/supplycomp/proc/ui_act_special_order(datum/act/op/A, ship, pack, personal)
+	var/mob/user = A.actor
+	supply_touched(A)
+	var/list/target = special_order_target(A)
+	var/reason = A.step_value("reason")
+	if(!target)
+		to_chat(user, span_warning("That ship will not ship that in."))
+		return FALSE
+	if(!reason)
+		return FALSE
+	var/datum/trade_ship_visit/visit = target[1]
+	var/datum/supply_pack/ordered = target[2]
+	if(!SSsupply.request_special_order(visit, ordered, user, reason, !!personal))
+		to_chat(user, span_warning("[visit.name] could not take that order."))
+		return FALSE
+	to_chat(user, span_notice("[visit.name] will ship in [ordered.name][personal ? ", paid from your account" : "; the order awaits departmental approval"]."))
 	return TRUE
 
 /// req: the bid's buyer may be routed to by this console or this person, and the crate named is still there.

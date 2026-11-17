@@ -44,6 +44,7 @@ export type CargoMarketListing = {
   can_contract: BooleanLike;
   contract_allowance: number;
   expires: string;
+  ship?: string;
 };
 
 export type CargoMarketBid = {
@@ -59,6 +60,7 @@ export type CargoMarketBid = {
   reserved: BooleanLike;
   can_route: BooleanLike;
   expires: string;
+  ship?: string;
 };
 
 export type CargoMarketTransaction = {
@@ -92,6 +94,35 @@ export type CargoMarket = {
   transactions: CargoMarketTransaction[];
   outbound_crates: CargoMarketCrate[];
   is_auditor: BooleanLike;
+  trade_ships: TradeShips;
+};
+
+export type TradeShipSpecial = {
+  name: string;
+  group: string;
+  price: number;
+  catalog: number;
+};
+
+export type TradeShip = {
+  id: string;
+  name: string;
+  description: string;
+  counterparty: string;
+  standing: number;
+  standing_tier: string;
+  departs: string;
+  sell_rate: number;
+  buy_rate: number;
+  special_markup: number;
+  specials: TradeShipSpecial[];
+  can_department: BooleanLike;
+  can_personal: BooleanLike;
+};
+
+export type TradeShips = {
+  ships: TradeShip[];
+  next_ship: string;
 };
 
 export type ModalData = {

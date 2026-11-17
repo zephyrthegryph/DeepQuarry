@@ -38,6 +38,10 @@ SETTER(/datum/system/supply, shuttle)
 /datum/system/supply/proc/pack_from_ref(reference)
 	return ui_member(reference, catalog_packs(), /datum/supply_pack)
 
+/// The catalog pack named `pack_name`, or null.
+/datum/system/supply/proc/catalog_pack_named(pack_name) as /datum/supply_pack
+	return supply_pack[pack_name]
+
 /// Every pack in the catalog.
 /datum/system/supply/proc/catalog_packs()
 	var/list/packs = list()
