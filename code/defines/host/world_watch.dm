@@ -40,6 +40,9 @@
 #define CH_GAS_O2_CO2_KPA 16
 // Nitrous oxide and volatile fuel partial pressures summed (kPa): an air alarm's trace-gas limit.
 #define CH_GAS_TRACE_KPA 17
+// Chlorine and ammonia partial pressures (kPa): the chemistry gases a breather's lungs react to.
+#define CH_GAS_CL2_KPA 18
+#define CH_GAS_NH3_KPA 19
 
 // --- Watch handles: what a watch names, as list(code, cell). `code` is a component kind
 // (VG_KIND_*, cells are vg_entity values) or VG_GAS_HANDLES (cells are gas arena ids).

@@ -8,7 +8,7 @@
 // Put a beaker on it, set the dial (Celsius), switch it on. Each second it feeds the container's heat body HOT_PLATE_COUPLING watts for every kelvin between the dial and the container (up to HOT_PLATE_POWER), never past the setting
 // (the container warms over seconds and cools on its own when the plate is off), draws its active power while the element is on, lets the container's reagents react at the new
 // temperature and boils off what is above its boiling point. The vapour is collected by a condenser next to the plate (code/content/reagents/machinery/condenser.dm)
-// or deleted. It heats nothing without power. Everything it does is written to the world log under GLOB.chem_trace.
+// or let out into the air of its tile (code/domains/world_model/reagents/vapour.dm). It heats nothing without power. Everything it does is written to the world log under GLOB.chem_trace.
 
 /obj/machinery/chem_hot_plate
 	name = "hot plate"
@@ -193,7 +193,7 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 	if(length(vapour))
 		vent_vapour(vapour)
 
-/// The vapour of the boiling container: a condenser next to the plate collects what it can; the rest is gone (vapour is not simulated).
+/// The vapour of the boiling container: a condenser next to the plate collects what it can; the rest goes into the air of the plate's tile.
 /obj/machinery/chem_hot_plate/proc/vent_vapour(list/vapour)
 	for(var/direction in GLOB.alldirs + 0)
 		var/turf/T = direction ? get_step(src, direction) : get_turf(src)
@@ -203,7 +203,8 @@ MSG_DEF_SELF(hot_plate/occupied, "There is a container on the plate already.")
 			if(condenser.collect(vapour))
 				return
 	if(GLOB.chem_trace)
-		log_world("CHEM: [src] boiled off vapour with no condenser to catch it: it is deleted")
+		log_world("CHEM: [src] boiled off vapour with no condenser to catch it: it goes into the air")
+	vent_vapour_at(get_turf(src), vapour, src)
 
 /obj/machinery/chem_hot_plate/examine(mob/user)
 	. = ..()

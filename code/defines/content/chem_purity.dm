@@ -86,6 +86,8 @@
 #define BOIL_RATE_DISSOLVED_GAS 0.05
 /// Joules a unit of boiled-off reagent carries away from the container.
 #define BOIL_LATENT_HEAT 1800
+/// Moles of atmos gas a unit of boiled-off reagent makes when its reagent is a real gas (GLOB.reagent_vapour_gases): 60 units of chlorine are 6 moles, a twentieth of a room tile's air.
+#define CHEM_GAS_MOLES_PER_UNIT 0.1
 
 /// The most band edges a container senses at once (the sensing takes 24 levels: verdigris/ffi/src/sense.rs MAX_LEVELS): the ones nearest its temperature, moved as it crosses them.
 #define REACTION_WATCH_MAX_LEVELS 24

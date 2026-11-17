@@ -99,9 +99,19 @@ pub const GAS_METHANE: usize = 20;
 /// @dm-define GAS_ID_VOLATILE_FUEL
 pub const GAS_VOLATILE_FUEL: usize = 21;
 
-/// Number of registered gases.
+/// `/datum/gas/chlorine`: a chemistry gas (a boiled-off chlorine reagent enters the air as this).
+/// @dm-define GAS_ID_CHLORINE
+pub const GAS_CHLORINE: usize = 22;
+
+/// `/datum/gas/ammonia`: a chemistry gas (a boiled-off ammonia reagent enters the air as this).
+/// @dm-define GAS_ID_AMMONIA
+pub const GAS_AMMONIA: usize = 23;
+
+/// Number of registered gases. DM holds a gas filter's mask as a float, whose 24-bit
+/// mantissa keeps `0xFFFFFF` exact and nothing wider, so 24 is the most gases DM can
+/// mask: another gas needs a wider mask on the DM side first.
 /// @dm-define GAS_ID_COUNT
-pub const GAS_COUNT: usize = 22;
+pub const GAS_COUNT: usize = 24;
 
 /// DM type path of each gas, indexed by its ID.
 pub const GAS_PATHS: [&str; GAS_COUNT] = [
@@ -127,6 +137,8 @@ pub const GAS_PATHS: [&str; GAS_COUNT] = [
 	"/datum/gas/antinoblium",
 	"/datum/gas/methane",
 	"/datum/gas/volatile_fuel",
+	"/datum/gas/chlorine",
+	"/datum/gas/ammonia",
 ];
 
 /// The ID of the gas with this DM type path.
@@ -152,8 +164,11 @@ mod tests {
 			gas_id_for_path("/datum/gas/volatile_fuel"),
 			Some(GAS_VOLATILE_FUEL)
 		);
+		assert_eq!(gas_id_for_path("/datum/gas/chlorine"), Some(GAS_CHLORINE));
+		assert_eq!(gas_id_for_path("/datum/gas/ammonia"), Some(GAS_AMMONIA));
 		assert_eq!(gas_path(GAS_PLASMA), Some("/datum/gas/plasma"));
 		assert_eq!(gas_path(GAS_COUNT), None);
+		assert!(GAS_COUNT <= 24, "DM masks gases in a float: 24 bits at most");
 		for (idx, path) in GAS_PATHS.iter().enumerate() {
 			assert_eq!(gas_id_for_path(path), Some(idx));
 		}

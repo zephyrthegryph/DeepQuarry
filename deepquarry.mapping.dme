@@ -6219,6 +6219,7 @@
 #include "code\content\reagents\reagents\boiling_points.dm"
 #include "code\domains\world_model\reagents\reagents.dm"
 #include "code\domains\world_model\reagents\trace_sources.dm"
+#include "code\domains\world_model\reagents\vapour.dm"
 #include "code\domains\world_model\reagents\blocks\agents.dm"
 #include "code\domains\world_model\reagents\blocks\process.dm"
 #include "code\domains\world_model\reagents\blocks\routes.dm"

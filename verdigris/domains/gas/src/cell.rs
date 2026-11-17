@@ -69,6 +69,8 @@ pub const SPECIFIC_HEATS: [f32; N] = [
 	1.0,    // antinoblium
 	34.0,   // methane
 	30.0,   // volatile fuel
+	34.0,   // chlorine
+	36.0,   // ammonia
 ];
 
 /// Bulk-flow conductance, mol/(s kPa) per unit `p/n`: the pair's pressure
@@ -525,7 +527,7 @@ vg_core::channels! { pub mod gas_ch for TurfGas {
 	OXYGEN: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_OXYGEN],
 	PLASMA: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_PLASMA],
 	CARBON_DIOXIDE: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_CARBON_DIOXIDE],
-	COMPOSITION: Vector(22)<Moles> hysteresis 0.05 => |c, o| o.copy_from_slice(&c.moles),
+	COMPOSITION: Vector(24)<Moles> hysteresis 0.05 => |c, o| o.copy_from_slice(&c.moles),
 	// Partial pressures (kPa) of the gases a breather's lungs and skin react to: what a breather's band watch
 	// (code/modules/mob/living/carbon/breath_watch.dm) follows, so a turf reports only the crossings of the levels
 	// its breathers care about. Appended after COMPOSITION: the channels above keep their ids (CH_GAS_* in DM).
@@ -544,8 +546,11 @@ vg_core::channels! { pub mod gas_ch for TurfGas {
 	O2_CO2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_OXYGEN) + c.partial_pressure(crate::gas::ids::GAS_CARBON_DIOXIDE),
 	// Nitrous oxide and volatile fuel partial pressures summed: an air alarm's "other" trace-gas limit (code/content/machinery/air_alarm.dm).
 	TRACE_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_NITROUS_OXIDE) + c.partial_pressure(crate::gas::ids::GAS_VOLATILE_FUEL),
+	// The chemistry gases a breather's lungs react to (code/domains/body/breath_profile.dm breathe_irritant_gases()).
+	CL2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_CHLORINE),
+	NH3_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_AMMONIA),
 }}
-const _: () = assert!(N == 22, "gas_ch::COMPOSITION's width is the gas count");
+const _: () = assert!(N == 24, "gas_ch::COMPOSITION's width is the gas count");
 
 /// Visible-gas signature: which gases are visible and at which step. The
 /// thresholds are registry data (`gate.rs`); a zero signature is "nothing

@@ -19,7 +19,7 @@
 			return mixture.get_moles(/datum/gas/nitrogen)
 		if(CH_GAS_METHANE)
 			return mixture.get_moles(/datum/gas/methane)
-		if(CH_GAS_O2_KPA, CH_GAS_N2_KPA, CH_GAS_CO2_KPA, CH_GAS_PLASMA_KPA, CH_GAS_N2O_KPA, CH_GAS_CH4_KPA, CH_GAS_FUEL_KPA, CH_GAS_O2_CO2_KPA, CH_GAS_TRACE_KPA)
+		if(CH_GAS_O2_KPA, CH_GAS_N2_KPA, CH_GAS_CO2_KPA, CH_GAS_PLASMA_KPA, CH_GAS_N2O_KPA, CH_GAS_CH4_KPA, CH_GAS_FUEL_KPA, CH_GAS_O2_CO2_KPA, CH_GAS_TRACE_KPA, CH_GAS_CL2_KPA, CH_GAS_NH3_KPA)
 			return gas_reading_kpa(mixture, channel)
 	CRASH("gas_reading: unknown channel [channel]")
 
@@ -45,4 +45,8 @@
 			return S.partial_pressure(GAS_O2) + S.partial_pressure(GAS_CO2)
 		if(CH_GAS_TRACE_KPA)
 			return S.partial_pressure(GAS_N2O) + S.partial_pressure(GAS_VOLATILE_FUEL)
+		if(CH_GAS_CL2_KPA)
+			return S.partial_pressure(GAS_CHLORINE)
+		if(CH_GAS_NH3_KPA)
+			return S.partial_pressure(GAS_AMMONIA)
 	CRASH("gas_reading_kpa: not a partial pressure channel [channel]")
