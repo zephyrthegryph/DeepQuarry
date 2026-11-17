@@ -61,26 +61,38 @@
 	..()
 
 //mob verbs are faster than object verbs. See mob/verb/examine.
+/// Pull: the target named (ctrl-click, the context menu's Pull, a hardsuit's control click) is pulled at once, with no question. The bare verb (the Pull
+/// keybind, which names nothing) pulls what is in front of the mob, else the first mob, else the first object within reach.
 /mob/living/verb/pulled()
 	set name = "Pull"
 	set hidden = TRUE
 
-	var/list/pullable = list()
-	for(var/atom/movable/candidate in oview(1, src))
-		if(ismob(candidate) || isobj(candidate))
-			pullable[candidate.name] = candidate
-	if(!length(pullable))
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(pull_target_chosen), answerer = src, title = "Pull", question = "Pull what?", choices = pullable, timeout = 0)
+	var/atom/movable/AM = pull_candidate()
+	if(AM)
+		pull_target(AM)
 
-/// The mob or object the puller picked, if it is still within reach.
-/mob/living/proc/pull_target_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/prompt = A.answer
-	var/atom/movable/AM = prompt.choices[A.answer.value]
-	if(istype(AM) && AM.Adjacent(src))
-		src.start_pulling(AM)
+/// What the bare Pull verb pulls: the mob or object in front of the mob, else the first adjacent mob, else the first adjacent object.
+/mob/living/proc/pull_candidate()
+	var/turf/ahead = get_step(src, dir)
+	var/atom/movable/first_obj
+	var/atom/movable/first_mob
+	for(var/atom/movable/candidate in oview(1, src))
+		if(!ismob(candidate) && !isobj(candidate))
+			continue
+		if(candidate.anchored)
+			continue
+		if(candidate.loc == ahead)
+			return candidate
+		if(ismob(candidate))
+			first_mob ||= candidate
+		else
+			first_obj ||= candidate
+	return first_mob || first_obj
+
+/// Pulls `AM` if it is in reach.
+/mob/living/proc/pull_target(atom/movable/AM)
+	if(istype(AM) && AM != src && AM.Adjacent(src))
+		start_pulling(AM)
 
 //mob verbs are faster than object verbs. See above.
 /mob/living/pointed(atom/A as mob|obj|turf in view(client.view, src))

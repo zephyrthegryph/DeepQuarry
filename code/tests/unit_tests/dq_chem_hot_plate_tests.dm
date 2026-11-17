@@ -105,34 +105,43 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT(B.reagents.get_reagent_amount(REAGENT_ID_LIPOZINE) > 0, "warmed into the band the reaction runs by itself ([B.get_temperature()] K, watch [B.reaction_watch ? "yes" : "no"], heard [SSsense.records_heard])")
 
-/// The plate's readout and examine text show the beaker's temperature and the dial.
-/datum/unit_test/dq_hp_shows_the_temperature
+/// The plate shows nothing over itself: its window shows the beaker's temperature, the dial, the element and what boils; examine shows the dial.
+/datum/unit_test/dq_hp_window_shows_the_temperature
 
-/datum/unit_test/dq_hp_shows_the_temperature/Run()
-	var/obj/machinery/chem_hot_plate/P = dq_hp_plate(20)
-	P.set_dial(T0C + 90)
+/datum/unit_test/dq_hp_window_shows_the_temperature/Run()
+	var/obj/machinery/chem_hot_plate/P = dq_hp_plate(60)
+	P.set_dial(T0C + 150)
 	P.switch_element(null, TRUE)
-	test_time(5 SECONDS)
-	TEST_ASSERT(findtext(P.maptext, "/90C"), "the readout shows the dial ([P.maptext])")
+	test_time(20 SECONDS)
+	TEST_ASSERT_EQUAL(P.maptext, null, "no readout over the plate ([P.maptext])")
+	var/list/data = P.ui_data(null)
+	TEST_ASSERT(data["has_container"], "the window sees the beaker")
+	TEST_ASSERT_EQUAL(data["target"], 150, "the window shows the dial")
+	TEST_ASSERT(data["heating"], "the window shows the element on")
+	TEST_ASSERT(data["temperature"] > 30, "the window shows the beaker's temperature ([data["temperature"]])")
+	var/list/rows = data["reagents"]
+	TEST_ASSERT_EQUAL(length(rows), 1, "one reagent row")
+	var/list/row = rows[1]
+	TEST_ASSERT_EQUAL(row["boiling_point"], 100, "the row shows water's boiling point")
+	TEST_ASSERT(row["boiling"] == (data["temperature"] > 100), "the row is boiling exactly when the beaker is past it ([data["temperature"]] C)")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
-	TEST_ASSERT(findtext(jointext(P.examine(H), " "), "90 C"), "examining it shows the dial")
+	TEST_ASSERT(findtext(jointext(P.examine(H), " "), "150 C"), "examining it shows the dial")
 
-/// The readout keeps following a hot beaker after the element is switched off, and clears when the beaker is taken off.
-/datum/unit_test/dq_hp_readout_follows_cooling_beaker
+/// The window's buttons work through the op path a player's press takes: switch, dial, take the beaker.
+/datum/unit_test/dq_hp_window_controls
 
-/datum/unit_test/dq_hp_readout_follows_cooling_beaker/Run()
+/datum/unit_test/dq_hp_window_controls/Run()
 	var/obj/machinery/chem_hot_plate/P = dq_hp_plate(20)
-	P.set_dial(T0C + 90)
-	P.switch_element(null, TRUE)
-	test_time(60 SECONDS)
-	P.switch_element(null, FALSE)
-	test_time(2 SECONDS)
-	var/first = P.maptext
-	TEST_ASSERT(length(first), "the readout is still up with the element off ([first])")
-	for(var/block in 1 to 30)
-		heat_test_world_seconds(10)
-		test_time(10 SECONDS)
-	TEST_ASSERT(length(P.maptext) && P.maptext != first, "and it follows the cooling beaker ([first] -> [P.maptext])")
-	P.remove_container(null)
-	P.update_readout()
-	TEST_ASSERT_EQUAL(P.maptext, "", "taking the beaker off clears it")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/reagent_containers/glass/B = P.held_container
+	var/datum/op_result/R = test_ui(H, P, "set_dial", list("celsius" = 85))
+	TEST_ASSERT_EQUAL(round(P.target_temp - T0C), 85, "the dial is set from the window ([R?.reason])")
+	test_ui(H, P, "set_dial", list("celsius" = 9000))
+	TEST_ASSERT_EQUAL(P.target_temp, HOT_PLATE_MAX_TEMP, "the dial is clamped")
+	test_ui(H, P, "toggle", list())
+	TEST_ASSERT(P.heating, "the window switches the element on")
+	test_ui(H, P, "toggle", list())
+	TEST_ASSERT(!P.heating, "and off")
+	test_ui(H, P, "remove", list())
+	TEST_ASSERT_NULL(P.held_container, "the window takes the beaker off")
+	TEST_ASSERT(B.loc == H || B.loc == get_turf(P), "into the hand or onto the floor")

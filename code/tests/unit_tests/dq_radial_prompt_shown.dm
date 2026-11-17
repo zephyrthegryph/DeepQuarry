@@ -5,17 +5,16 @@
 
 /datum/unit_test/dq_p2_engine/radial_ring_holder_shows_every_part/run_gate()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/machinery/chem_hot_plate/P = allocate(/obj/machinery/chem_hot_plate)
 	var/datum/radial_menu/menu = new
 	rel_set(menu, nameof(menu.anchor), H)
-	menu.set_choices(P.radial_choices(null), FALSE, FALSE)
+	menu.set_choices(list("switch" = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_use"), "dial" = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_temp")), FALSE, FALSE)
 	var/shown = menu.build_holder()
 	TEST_ASSERT_EQUAL(shown, length(menu.elements) + 1, "the ring's image shows every slice and the centre button")
 	TEST_ASSERT_EQUAL(length(menu.menu_holder.vis_contents), shown, "the parts are in the image's vis_contents")
 	var/list/states = icon_states_fast('icons/mob/radial.dmi')
 	for(var/state in list("radial_slice", "radial_slice_focus", "radial_center", "radial_use", "radial_temp", "radial_eject_input"))
 		TEST_ASSERT(state in states, "radial.dmi has the state [state]")
-	TEST_ASSERT_EQUAL(length(menu.choices_icons), 2, "each choice of the plate (no container: switch and dial) has a picture")
+	TEST_ASSERT_EQUAL(length(menu.choices_icons), 2, "each choice has a picture")
 	for(var/id in menu.choices_icons)
 		var/mutable_appearance/MA = menu.choices_icons[id]
 		TEST_ASSERT(MA.icon == 'icons/mob/radial.dmi' && (MA.icon_state in states), "the picture of [id] names a real state ([MA.icon_state])")

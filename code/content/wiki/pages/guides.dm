@@ -18,7 +18,7 @@
 ## 2. Mix at the right temperature
 - Most recipes are clean at room temperature. Some want warmth, heat or cold: the Temperature tab of \[\[chem/purity|the purity guide]] lists every recipe with its ideal band and its working range.
 - Inside the ideal band the product is clean. Off the band but in range it still reacts and leaves residue (too cold) or a reactive impurity and less product (too hot). Outside the range nothing happens.
-- **Heat:** stand the beaker on the hot plate, set the dial in Celsius and switch it on. It heats up to the dial and never past it; it does not cool.
+- **Heat:** stand the beaker on the hot plate and open it with an empty hand: its window shows the beaker's temperature, the dial (Celsius), whether the element is on and which contents are boiling. Set the dial and switch it on. It heats up to the dial and never past it; it does not cool.
 - **Cold:** the ice machine turns water into ice. Stand a small open container in a larger one holding ice and water (grab-stance click, "Stand it in the bath"): the bath holds the inner container near 0 C while any ice is left. A warm bath on the hot plate warms its inner container the same way.
 - **Catalysts:** a process may want a dissolved acid or base (spent into residue), an enzyme (gentle heat, leaves endotoxin) or a sheet of a catalytic material dropped into the container.
 ## 3. Take out what you can

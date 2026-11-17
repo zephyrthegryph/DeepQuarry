@@ -138,6 +138,10 @@ include = ["/obj/machinery/ion_engine::on", "/obj/machinery/shieldwall::active",
 # (PURITY). It is a memo of time, not state anything publishes.
 exclude_memo = ["/obj/item/cell::material_discharge_credit", "/atom::flags"]
 # (atom flags: lifecycle bits (ATOM_INITIALIZED, ATOM_MATERIALIZED) set while an atom is materialized, which can happen inside a draw.)
+# Temperatures a window reads through get_temperature() (the ambient chain: a turf's resting temperature, a distilling or bath vessel's own): the hot
+# plate's window (code/content/reagents/machinery/hot_plate.dm ui_data) refreshes every tick (interface(autoupdate = TRUE)) because a heat body's
+# temperature is native and never tracked, so a setter on these would mark nothing the window does not already redraw.
+exclude_heat = ["/turf::initial_temperature", "/obj/distilling_tester::current_temp", "/obj/item/reagent_containers/glass/beaker/recipe_bath::bath_temperature"]
 # Test fixtures that count their own draws from inside draw(): an output must not write tracked state (PURITY), and the counter is the test's probe.
 exclude_fixtures = ["/obj/gdeps_probe::raw_ok", "/obj/dq_small_look_composer::draws", "/obj/machinery/dq_idle_redraw_probe::draws", "/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting::draws", "/obj/cap_fixture/dx_deps_derive::draw_calls", "/obj/cap_fixture/dx_deps_laser::draw_calls", "/obj/cap_fixture/dx_deps_legacy::draw_calls", "/obj/cap_fixture/dx_deps_watcher::draw_calls"]
 
