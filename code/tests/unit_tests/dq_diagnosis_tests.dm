@@ -56,7 +56,13 @@
 	TEST_ASSERT(LAZYLEN(scanner.parts), "the body scanner should report per-limb bands")
 	TEST_ASSERT(!LAZYLEN(basic.parts), "a basic analyzer should not report per-limb bands")
 
-	TEST_ASSERT(LAZYLEN(advanced.findings) > LAZYLEN(basic.findings), "the advanced report should hold more findings than the basic one")
+	var/advanced_described = FALSE
+	for(var/datum/diagnosis_finding/F as anything in advanced.findings)
+		if(F.description)
+			advanced_described = TRUE
+	TEST_ASSERT(advanced_described, "the advanced report should describe its findings")
+	for(var/datum/diagnosis_finding/F as anything in basic.findings)
+		TEST_ASSERT(!F.description, "a basic analyzer finding carries no clinical description")
 	TEST_ASSERT(LAZYLEN(scanner.hints), "the body scanner should give treatment hints")
 	TEST_ASSERT(!LAZYLEN(basic.hints), "a basic analyzer gives no treatment hints")
 

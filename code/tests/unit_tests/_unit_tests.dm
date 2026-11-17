@@ -298,6 +298,7 @@
 #include "dq_audit_tests.dm"
 #include "dq_bodyscanner_tests.dm"
 #include "dq_diagnosis_tests.dm"
+#include "dq_medical_access_tests.dm"
 #include "dq_combat_ai_tests.dm"
 #include "dq_ai_tests.dm"
 #include "dq_ai_tactics_tests.dm"

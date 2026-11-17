@@ -211,6 +211,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	for(var/path in subtypesof(/obj/item/book/codex/lore))
 		var/obj/item/book/C = path
 		.[initial(C.name)] = library_archive_row(path)
+	var/obj/item/book/reference = /obj/item/book/dq_medical_reference
+	.[initial(reference.name)] = library_archive_row(/obj/item/book/dq_medical_reference) // printed from the library like any lore codex
 	for(var/path in subtypesof(/obj/item/book/custom_library) - base_genre_books)
 		var/obj/item/book/B = path
 		.[initial(B.title)] = library_archive_row(path)

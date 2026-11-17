@@ -79,12 +79,14 @@ CAPABILITIES(/obj/item/storage/firstaid/surgery)
 
 /obj/item/storage/firstaid/clotting
 	name = "clotting kit"
+	icon_state = "clottingkit"
 	desc = "Contains chemicals to stop bleeding."
 	max_storage_space = ITEMSIZE_COST_SMALL * 7
 	starts_with = list(/obj/item/reagent_containers/hypospray/autoinjector/biginjector/clotting = 8)
 
 /obj/item/storage/firstaid/bonemed
 	name = "bone repair kit"
+	icon_state = "pinky"
 	desc = "Contains chemicals to mend broken bones."
 	max_storage_space = ITEMSIZE_COST_SMALL * 7
 	starts_with = list(/obj/item/reagent_containers/hypospray/autoinjector/bonemed = 8)
@@ -328,12 +330,6 @@ MSG_DEF_SELF(pill_bottle/label_too_long, "The label can be at most 50 characters
 		/obj/item/surgical/bioregen
 		)
 
-
-/obj/item/storage/firstaid/clotting
-	icon_state = "clottingkit"
-
-/obj/item/storage/firstaid/bonemed
-	icon_state = "pinky"
 
 /obj/item/storage/pill_bottle/antitox
 	starts_with = list(/obj/item/reagent_containers/pill/antitox = 14)

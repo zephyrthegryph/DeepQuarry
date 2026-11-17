@@ -151,13 +151,22 @@ CAPABILITIES(/obj/item/healthanalyzer)
 		if(scan_level < SCANNABLE_DIFFICULT && level > 120)
 			continue
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[addic]
+		var/withdrawing = level < 80 && !M.reading_hidden(HIDE_SYMPTOM_SUPPRESSION) // a masking drug hides the withdrawal itself; the dependence still reads
 		if(scan_level < SCANNABLE_ADVANCED)
-			. += span_warning("Chemical dependance detected.")
+			. += span_warning(withdrawing ? "Chemical dependance detected, with signs of withdrawal." : "Chemical dependance detected.")
 			break
-		if(scan_level >= SCANNABLE_DIFFICULT && level <= 80 && !M.reading_hidden(HIDE_SYMPTOM_SUPPRESSION)) // a masking drug hides the withdrawal itself; the dependence still reads
-			. += span_warning("Experiencing withdrawls from [R.name], [REAGENT_INAPROVALINE] treatment recomended.")
+		if(withdrawing)
+			. += span_warning("Experiencing withdrawal from [R.name][scan_level >= SCANNABLE_DIFFICULT ? ", [REAGENT_INAPROVALINE] treatment recommended" : ""].")
 		else
 			. += span_warning("Chemical dependance detected: [R.name].")
+	if(H.sdisabilities & DEAF)
+		. += span_warning("Auditory function absent: the patient is deaf.")
+	else if(H.ear_damage >= 100)
+		. += span_warning("Severe, permanent-looking damage to the ears.")
+	else if(H.ear_damage >= 15)
+		. += span_warning("Significant ear damage: hearing impaired.")
+	else if(H.ear_damage >= 5)
+		. += span_notice("Mild ear damage: ringing and muffled hearing.")
 	var/datum/xenochimera/xc = H.get_xenochimera_state()
 	if(xc)
 		if(H.stat == DEAD && xc.revive_ready == REVIVING_READY && !H.hasnutriment())

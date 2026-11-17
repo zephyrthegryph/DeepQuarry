@@ -23,13 +23,14 @@
 	// interference, see the chemical side-effect conditions.
 	treated_by = list(TREAT_ANTIMICROBIAL = 1.2, TREAT_RESECTION = 1)
 	symptom_pool = list(
+		/datum/affliction_symptom/localised_inflammation = 100,
 		/datum/affliction_symptom/throbbing_pain  = 80,
 		/datum/affliction_symptom/fever_sensation = 70,
 		/datum/affliction_symptom/chills          = 50,
 		/datum/affliction_symptom/fatigue         = 60,
 	)
 	min_symptoms = 1
-	max_symptoms = 3
+	max_symptoms = 4
 	// Pulse derives from body state; tachycardia comes from raised
 	// body temp (handled in tick below). We only need to
 	// fudge temp readings if we want a discrepancy between actual and

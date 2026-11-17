@@ -1397,6 +1397,8 @@
 
 /// Ears: disability deafness holds; ear damage heals, faster under earmuffs.
 /mob/living/carbon/human/proc/life_status_update_hearing()
+	if(src.ear_damage >= 5 && src.stat == CONSCIOUS && prob(2)) // a patient cue: damaged ears ring and muffle
+		to_chat(src, span_warning(src.ear_damage >= 15 ? pick("Your ears ring painfully and everything sounds muffled.", "You can barely hear anything over the ringing.") : pick("Your ears are ringing.", "Sounds seem faint and far away.")))
 	if(src.sdisabilities & DEAF)	//disabled-deaf, doesn't get better on its own
 		src.status_at_least(STAT_DEAFENED, 1)
 		src.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness

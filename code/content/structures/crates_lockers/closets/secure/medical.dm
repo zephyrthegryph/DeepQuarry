@@ -10,7 +10,9 @@
 		/obj/item/reagent_containers/dropper = 2,
 		/obj/item/reagent_containers/glass/beaker = 2,
 		/obj/item/reagent_containers/glass/bottle/inaprovaline = 2,
-		/obj/item/reagent_containers/glass/bottle/antitoxin = 2)
+		/obj/item/reagent_containers/glass/bottle/antitoxin = 2,
+		/obj/item/storage/firstaid/stabilisation,
+		/obj/item/storage/firstaid/resuscitation)
 
 /obj/structure/closet/secure_closet/medical2
 	name = "anesthetics closet"
@@ -46,6 +48,7 @@
 		/obj/item/clothing/under/rank/nursesuit,
 		/obj/item/clothing/head/nursehat,
 		/obj/item/storage/box/freezer = 3,
+		/obj/item/storage/firstaid/diagnostic,
 		/obj/item/storage/belt/medical)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
@@ -81,6 +84,9 @@ CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
 		/obj/item/tank/emergency/oxygen/engi,
 		/obj/item/clothing/glasses/hud/health,
 		/obj/item/healthanalyzer,
+		/obj/item/storage/firstaid/stabilisation,
+		/obj/item/storage/firstaid/resuscitation,
+		/obj/item/storage/firstaid/diagnostic,
 		/obj/item/radio/off,
 		/obj/random/medical,
 		/obj/item/tool/crowbar,
@@ -127,6 +133,9 @@ CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
 		/obj/item/clothing/shoes/white,
 		/obj/item/reagent_containers/glass/beaker/vial,
 		/obj/item/storage/belt/medical,
+		/obj/item/book/dq_medical_reference,
+		/obj/item/storage/firstaid/resuscitation,
+		/obj/item/storage/firstaid/diagnostic,
 		/obj/item/personal_shield_generator/belt/medical/loaded)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)

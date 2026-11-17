@@ -39,7 +39,6 @@
 		TREAT_SURGICAL_REPAIR = "surgical repair",
 		TREAT_RESECTION = "surgical resection",
 		TREAT_AIRWAY = "airway management",
-		TREAT_VENTILATION = "assisted ventilation",
 		TREAT_DECOMPRESSION = "chest decompression",
 		TREAT_DEFIBRILLATION = "defibrillation",
 		TREAT_CHEST_COMPRESSION = "chest compressions",

@@ -128,6 +128,15 @@
 				F.trend = _dq_trend_for_condition(A, baseline_key)
 				if(update_baseline || isnull(A.scan_baselines?[baseline_key]))
 					A.set_scan_baselines_at(baseline_key, A.severity)
+		else if(P.signs && band != DIAG_BAND_NONE && (biology_of(A.location) & P.biology))
+			// Not imaged by this instrument, but it reads the vitals-level sign of the condition (no name, level or lab detail).
+			var/sign_label = A.signs_label()
+			if(sign_label)
+				D.add_finding(new /datum/diagnosis_finding(sign_label, DIAG_FINDING_CONDITION, band))
+		if(eyes && band != DIAG_BAND_NONE)
+			var/seen = A.visible_sign()
+			if(seen)
+				D.add_finding(new /datum/diagnosis_finding(seen, DIAG_FINDING_SIGN, band))
 		if(!A.active_symptoms || !(biology_of(A.location) & P.biology))
 			continue
 		for(var/datum/affliction_symptom/S as anything in affliction_symptoms_of(A))
