@@ -102,14 +102,6 @@
 	target_turf.visible_message(span_warning("\The [src] appears!"))
 	s2.start()
 
-/obj/item/grenade/spawnergrenade/riftwallers
-	name = "manhack delivery grenade"
-	spawner_type = /mob/living/simple_mob/vore/demonAI
-	deliveryamt = 1
-	icon = 'icons/obj/device.dmi'
-	icon_state = "implant_melted"
-	color = "#f50202"
-
 /obj/item/projectile/energy/plasma/vepr/inversion
 	name = "inversion bolt"
 	damage = 20

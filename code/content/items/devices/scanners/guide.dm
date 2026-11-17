@@ -4,12 +4,6 @@
 	to_chat(A.actor, span_notice("You toggle \the [src]'s guidance system [guide ? "on" : "off"]."))
 	return OP_OK
 
-/obj/item/healthanalyzer/guide
-	name = "Instructional health analyzer"
-	desc = "A hand-held body scanner able to distinguish vital signs of the subject. It shows extra information to medical personnel!"
-	guide = TRUE
-	icon_state = "health-g"
-
 /// Beginner advice per treatment mechanism the patient's detected afflictions
 /// respond to (the analyzer's own treatment_demand()). Every TREAT_* tag has a line
 /// that names a treatment a medic can get: the dispenser and chemistry lab, a medical

@@ -68,11 +68,6 @@
 					   /obj/machinery/vending/sovietsoda,
 					   /obj/machinery/vending/bepis)
 
-/obj/item/refill_cartridge/multitype/smokes			//Multitype version in case multiple smoke machine vendors exist in future.
-	name = "smoking vendor refill cartridge"
-	icon_state = "rc_generic"
-	refill_type = list(/obj/machinery/vending/cigarette)
-
 /obj/item/refill_cartridge/multitype/clothing
 	name = "clothing vendor refill cartridge"
 	icon_state = "rc_clothes"

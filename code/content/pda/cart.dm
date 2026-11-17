@@ -298,12 +298,6 @@ CAPABILITIES(/obj/item/cartridge/syndicate)
 
 	frequency.post_signal(src, status_signal)
 
-/obj/item/cartridge/frame
-	name = "F.R.A.M.E. cartridge"
-	icon_state = "cart"
-	charges = 5
-	messenger_plugins = list(new/datum/data/pda/messenger_plugin/virus/frame)
-
 /obj/item/cartridge
 
 /obj/item/cartridge/explorer
@@ -368,24 +362,3 @@ CAPABILITIES(/obj/item/cartridge/storage)
 		hold.remove_from_storage(I, T, user)
 	add_fingerprint(user)
 	return OP_OK
-
-/obj/item/cartridge/storage/deluxe
-	name = "\improper BLU-PAK DELUXE cartridge"
-	programs = list(
-		new/datum/data/pda/app/power,
-		new/datum/data/pda/utility/scanmode/halogen,
-
-		new/datum/data/pda/utility/scanmode/gas,
-
-		new/datum/data/pda/app/crew_records/medical,
-		new/datum/data/pda/utility/scanmode/medical,
-
-		new/datum/data/pda/utility/scanmode/reagent,
-
-		new/datum/data/pda/app/crew_records/security,
-
-		new/datum/data/pda/app/janitor,
-
-		new/datum/data/pda/app/supply,
-
-		new/datum/data/pda/app/status_display)

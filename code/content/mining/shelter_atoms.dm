@@ -515,40 +515,15 @@ CAPABILITIES(/obj/item/survivalcapsule)
 	desc = "A luxury cabin and kitchen in a capsule. There's a license for use printed on the bottom."
 	template_id = "shelter_cab_deluxe"
 
-/obj/item/survivalcapsule/luxurycafe
-	name = "luxury surfluid cafe capsule"
-	desc = "A luxury cafe in a capsule. There's a license for use printed on the bottom."
-	template_id = "shelter_cafe"
-
 /obj/item/survivalcapsule/luxuryrecroom
 	name = "luxury rec room cafe capsule"
 	desc = "A luxury rec room in a capsule. There's a license for use printed on the bottom."
 	template_id = "shelter_luxury_recroom"
 
-/obj/item/survivalcapsule/military
-	name = "military surfluid shelter capsule"
-	desc = "A prefabricated firebase in a capsule. Contains basic weapons, building materials, and combat suits. There's a license for use printed on the bottom."
-	template_id = "shelter_delta"
-
-/obj/item/survivalcapsule/escapepod
-	name = "escape surfluid shelter capsule"
-	desc = "A prefabricated escape pod in a capsule. Contains a basic escape pod for survival purposes. There's a license for use printed on the bottom."
-	template_id = "shelter_epsilon"
-	unique_id = "shelter_5"
-	is_ship = TRUE
-
 /obj/item/survivalcapsule/popcabin
 	name = "pop-out cabin shelter capsule"
 	desc = "A cozy cabin; crammed into a survival capsule."
 	template_id = "shelter_cab"
-
-/obj/item/survivalcapsule/dropship
-	name = "dropship surfluid shelter capsule"
-	desc = "A military dropship in a capsule. Contains everything an assault squad would need, minus the squad itself. This capsule is significantly larger than most. There's a license for use printed on the bottom."
-	template_id = "shelter_zeta"
-	unique_id = "shelter_6"
-	is_ship = TRUE
-	w_class = ITEMSIZE_SMALL
 
 /obj/item/survivalcapsule/recroom
 	name = "pop-out rec room shelter capsule"
@@ -572,33 +547,7 @@ CAPABILITIES(/obj/item/survivalcapsule)
 	template_id = "shelter_phi"
 	unique_id = "shelter_a"
 
-/obj/item/survivalcapsule/holly
-	name = "vaguely festive surfluid shelter capsule"
-	desc = "A \"homemade\" luxury suite crammed into a capsule. There's a license for use printed on the bottom. For some reason, the license's text is written in festive colors."
-	template_id = "shelter_chi"
-	unique_id = "shelter_h"
-
 //Stupid
-/obj/item/survivalcapsule/loss_1
-	name = "clinical surfluid shelter capsule"
-	desc = "A strange-looking shelter capsule. It looks rather crudely thrown together..."
-	template_id = "shelter_loss1"
-
-/obj/item/survivalcapsule/loss_2
-	name = "clinical surfluid shelter capsule"
-	desc = "A strange-looking shelter capsule. It looks rather crudely thrown together..."
-	template_id = "shelter_loss2"
-
-/obj/item/survivalcapsule/loss_3
-	name = "clinical surfluid shelter capsule"
-	desc = "A strange-looking shelter capsule. It looks rather crudely thrown together..."
-	template_id = "shelter_loss3"
-
-/obj/item/survivalcapsule/loss_4
-	name = "clinical surfluid shelter capsule"
-	desc = "A strange-looking shelter capsule. It looks rather crudely thrown together..."
-	template_id = "shelter_loss4"
-
 //Redspace Capsule
 //Spawns a randomized shelter from a curated selection of possibilities
 /obj/item/survivalcapsule/randomized

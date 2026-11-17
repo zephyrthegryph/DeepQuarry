@@ -236,9 +236,6 @@ CAPABILITIES(/obj/item/telecube)
 /obj/item/telecube/randomized
 	randomize_colors = TRUE
 
-/obj/item/telecube/randomized/mated
-	start_paired = TRUE
-
 /obj/item/telecube/precursor
 	glow_color = "#FF1D8E"
 	color = "#2F1B26"

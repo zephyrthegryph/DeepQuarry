@@ -201,35 +201,8 @@ CAPABILITIES(/obj/item/dnainjector)
 	random_labeled = TRUE
 	random_disable = TRUE
 
-/obj/item/dnainjector/random_bad
-	random_pools = DNA_POOL_NEUTRAL | DNA_POOL_BAD
-	random_disable = TRUE
-
-/obj/item/dnainjector/random_bad_labeled
-	random_pools = DNA_POOL_NEUTRAL | DNA_POOL_BAD
-	random_labeled = TRUE
-	random_disable = TRUE
-
 // Purely good/bad genes, intended to be usually good rewards or punishments
-/obj/item/dnainjector/random_verygood
-	random_pools = DNA_POOL_GOOD
-
-/obj/item/dnainjector/random_verygood_labeled
-	random_pools = DNA_POOL_GOOD
-	random_labeled = TRUE
-
-/obj/item/dnainjector/random_verybad
-	random_pools = DNA_POOL_BAD
-
-/obj/item/dnainjector/random_verybad_labeled
-	random_pools = DNA_POOL_BAD
-	random_labeled = TRUE
-
 // Random neutral traits
-/obj/item/dnainjector/random_neutral
-	random_pools = DNA_POOL_NEUTRAL
-	random_disable = TRUE
-
 /obj/item/dnainjector/random_neutral_labeled
 	random_pools = DNA_POOL_NEUTRAL
 	random_labeled = TRUE

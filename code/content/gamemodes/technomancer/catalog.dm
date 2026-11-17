@@ -60,11 +60,6 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 	budget = 700
 	max_budget = 700
 
-/obj/item/technomancer_catalog/master //for badmins, I suppose
-	name = "master's catalog"
-	budget = 2000
-	max_budget = 2000
-
 /obj/item/technomancer_catalog/universal
 	name = "universal catalog"
 	desc = "A catalog to be used with the 'Universal Core', its contents shamelessly \

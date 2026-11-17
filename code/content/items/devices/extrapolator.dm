@@ -379,6 +379,3 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 	LAZYSET(extracted_ids, disease.GetDiseaseID(), TRUE)
 	return TRUE
 
-/obj/item/extrapolator/tier5
-	default_scanning_module = /obj/item/stock_parts/scanning_module
-

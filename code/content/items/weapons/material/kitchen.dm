@@ -157,9 +157,6 @@ CAPABILITIES(/obj/item/material/kitchen/utensil/foon)
 	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_combat(sharp = TRUE, edge = FALSE))
 
-/obj/item/material/kitchen/utensil/foon/plastic
-	default_material = MAT_PLASTIC
-
 /obj/item/material/kitchen/utensil/spork
 	name = "spork"
 	desc = "It's a spork. The (un)holy merger of a spoon and fork."
@@ -168,9 +165,6 @@ CAPABILITIES(/obj/item/material/kitchen/utensil/foon)
 CAPABILITIES(/obj/item/material/kitchen/utensil/spork)
 	configure(item_combat(injury_kind = INJURY_PIERCE))
 	configure(item_combat(sharp = TRUE, edge = FALSE))
-
-/obj/item/material/kitchen/utensil/spork/plastic
-	default_material = MAT_PLASTIC
 
 /obj/item/material/kitchen/utensil/spoon
 	name = "spoon"

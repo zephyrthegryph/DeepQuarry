@@ -340,9 +340,6 @@ MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_STEEL = 20, MAT_GLASS = 5))
 CAPABILITIES(/obj/item/weldingtool/mini)
 	configure(item_tooling(speed = 2))
 
-/obj/item/weldingtool/mini/two
-	icon_state = "miniwelder2"
-
 /datum/category_item/catalogue/anomalous/precursor_a/alien_welder
 	name = "Precursor Alpha Object - Self Refueling Exothermic Tool"
 	desc = "An unwieldly tool which somewhat resembles a weapon, due to \

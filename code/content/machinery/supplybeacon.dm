@@ -7,10 +7,6 @@
 	var/deploy_path = /obj/machinery/power/supply_beacon
 	var/deploy_time = 3 SECONDS
 
-/obj/item/supply_beacon/supermatter
-	name = "inactive supermatter supply beacon"
-	deploy_path = /obj/machinery/power/supply_beacon/supermatter
-
 CAPABILITIES(/obj/item/supply_beacon)
 	op("self", in_hand(), starts(PROC_REF(interaction_self)), wait(PROC_REF(deployment_duration)), then(PROC_REF(attack_self_timed_done)))
 

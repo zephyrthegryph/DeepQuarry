@@ -413,17 +413,6 @@ CAPABILITIES(/obj/item/disk/nifsoft/compliance)
 	stored_organic = /datum/nifsoft/sizechange
 	stored_synthetic = /datum/nifsoft/sizechange
 
-/obj/item/storage/box/nifsofts_sizechange
-	name = "mass alteration nifsoft uploaders"
-	desc = "A box of free nifsofts for special purposes."
-	icon = 'icons/obj/boxes.dmi'
-	icon_state = "nifsoft_kit_mining"
-
-/obj/item/storage/box/nifsofts_sizechange
-	starts_with = list(
-		/obj/item/disk/nifsoft/sizechange = 8,
-	)
-
 /// LC-refs: The NIF that the software is stored in -- a relation view: null once it is deleted.
 /datum/nifsoft/proc/nif() as /obj/item/nif
 	return nif

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscdel: "Removed 428 item types nothing referenced anywhere (no map, loadout, vendor, loot table, recipe, spawner, string or registry), such as unused magazines, casings, commcards, headsets, GPS units, books, flags, survival capsules and toy variants"

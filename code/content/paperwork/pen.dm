@@ -100,10 +100,6 @@ CAPABILITIES(/obj/item/pen)
 	desc = "A well made and expensive fountain pen."
 	icon_state = "black_fountain"
 
-/obj/item/pen/fountain9
-	desc = "A well made and expensive fountain pen made for gesturing."
-	icon_state = "mime_fountain"
-
 
 /*
  * Multi Pen

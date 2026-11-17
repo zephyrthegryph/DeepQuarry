@@ -193,24 +193,6 @@ CAPABILITIES(/obj/item/implanter/compressed)
 		scanned_item.moveToNullspace()
 		update()
 
-/obj/item/implanter/restrainingbolt
-	name = "implanter (bolt)"
-
-CAPABILITIES(/obj/item/implanter/restrainingbolt)
-	owns_one(nameof(imp), starts = /obj/item/implant/restrainingbolt, on_destroy = ON_DESTROY_CONTAINED)
-
-/obj/item/implanter/restrainingbolt
-	icon_state = "implanter1_1" // loaded: what update() would show
-
 
 // universal translator implant.
-
-/obj/item/implanter/vrlanguage
-	name = "implanter-language"
-
-CAPABILITIES(/obj/item/implanter/vrlanguage)
-	owns_one(nameof(imp), starts = /obj/item/implant/vrlanguage, on_destroy = ON_DESTROY_CONTAINED)
-
-/obj/item/implanter/vrlanguage
-	icon_state = "implanter1_1" // loaded: what update() would show
 

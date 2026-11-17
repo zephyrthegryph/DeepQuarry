@@ -305,11 +305,6 @@ MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 	if(appearance_has_honey() == 1)
 		look.overlay("honeycomb")
 
-/obj/item/honey_frame/filled
-	name = "filled beehive frame"
-	desc = "A frame for the beehive that the bees have filled with honeycombs."
-	honey = 20
-
 /obj/item/beehive_assembly
 	name = "beehive assembly"
 	desc = "Contains everything you need to build a beehive."

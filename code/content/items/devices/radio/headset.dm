@@ -534,27 +534,6 @@ CAPABILITIES(/obj/item/radio/headset)
 	centComm = 1
 	ks2type = /obj/item/encryptionkey/ert
 
-/obj/item/radio/headset/alt/centcom
-	name = "centcom bowman headset"
-	desc = "The bowman headset of the boss's boss."
-	icon_state = "com_headset_alt"
-	centComm = 1
-	ks2type = /obj/item/encryptionkey/ert
-
-/obj/item/radio/headset/nanotrasen
-	name = "\improper NT radio headset"
-	desc = "The headset of a Nanotrasen corporate employee."
-	icon_state = "nt_headset"
-	centComm = 1
-	ks2type = /obj/item/encryptionkey/ert
-
-/obj/item/radio/headset/alt/nanotrasen
-	name = "\improper NT bowman headset"
-	desc = "The bowman headset of a Nanotrasen corporate employee."
-	icon_state = "nt_headset_alt"
-	centComm = 1
-	ks2type = /obj/item/encryptionkey/ert
-
 /obj/item/radio/headset/pathfinder
 	name = "pathfinder's headset"
 	desc = "Headset used by pathfinders for exploring. Access to the explorer and command channels."
@@ -609,33 +588,6 @@ CAPABILITIES(/obj/item/radio/headset)
 	adhoc_fallback = TRUE
 	ks2type = /obj/item/encryptionkey/sar
 
-/obj/item/radio/headset/talon
-	name = "talon headset"
-	desc = "A headset for communication between the crew of the ITV Talon."
-	adhoc_fallback = TRUE
-	icon_state = "pilot_headset"
-	ks2type = /obj/item/encryptionkey/talon
-
-/obj/item/radio/headset/alt/talon
-	name = "talon bowman headset"
-	desc = "A bowman headset for communication between the crew of the ITV Talon."
-	adhoc_fallback = TRUE
-	icon_state = "pilot_headset_alt"
-	ks2type = /obj/item/encryptionkey/talon
-
-/obj/item/radio/headset/earbud/talon
-	name = "talon earbud"
-	desc = "A tiny earbud for communication between the crew of the ITV Talon."
-	adhoc_fallback = TRUE
-	icon_state = "pilot_headset"
-	ks2type = /obj/item/encryptionkey/talon
-
-/obj/item/radio/headset/headset_rob
-	name = "robotics radio headset"
-	desc = "Made specifically for the roboticists who cannot decide between departments."
-	icon_state = "rob_headset"
-	ks2type = /obj/item/encryptionkey/headset_rob
-
 // Special Antag/Admin/Event/Other headsets
 
 /obj/item/radio/headset/syndicate
@@ -658,9 +610,6 @@ CAPABILITIES(/obj/item/radio/headset)
 	syndie = 1
 	ks1type = /obj/item/encryptionkey/raider
 	frequency = RAID_FREQ // just the data; on_materialize() (C5) registers it with SSradio
-
-/obj/item/radio/headset/binary
-	ks1type = /obj/item/encryptionkey/binary
 
 /obj/item/radio/headset/omni		//Only for the admin intercoms
 	ks2type = /obj/item/encryptionkey/omni

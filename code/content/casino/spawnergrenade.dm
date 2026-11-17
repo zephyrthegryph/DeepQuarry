@@ -1,7 +1,3 @@
-/obj/item/grenade/spawnergrenade/casino/goose
-	desc = "It is set to detonate in 5 seconds. It will release a goose that has been won from the golden goose casino!"
-	name = "Casino Creature Container (Goose)"
-	spawner_type = /mob/living/simple_mob/animal/space/goose/domesticated
 /obj/item/grenade/spawnergrenade/casino/goat
 	desc = "It is set to detonate in 5 seconds. It will release a goat that has been won from the golden goose casino!"
 	name = "Casino Creature Container (Goat)"
@@ -107,10 +103,6 @@
 /obj/item/grenade/spawnergrenade/casino/gygax/scarab
 	name = "Casino Mech Container (Scarab)"
 	spawner_type = /obj/mecha/combat/scarab
-
-/obj/item/grenade/spawnergrenade/casino/gygax/gorilla
-	name = "Casino Mech Container (Gorilla)"
-	spawner_type = /obj/mecha/combat/gorilla
 
 /obj/item/grenade/spawnergrenade/casino/gygax/shuttlepod
 	name = "Casino Mech Container (Shuttlepod)"

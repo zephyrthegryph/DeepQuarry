@@ -79,17 +79,3 @@ CAPABILITIES(/obj/item/lockpick)
 				to_chat(user, span_notice("Your nose isn't locked. If you're feeling stuffy, maybe you should talk to a doctor..?"))
 			else
 				act_message(user, src, MSG_SELF(span_notice("You try to [pick_verb] [H]'s nose. It doesn't seem to be working.")), MSG_OTHERS(span_notice("%U% tries to [pick_verb] [H]'s nose with %T%! They don't seem to be having much success.")))
-
-/obj/item/lockpick/pick_gun
-	name = "pick gun"
-	desc = "A more sophisticated and automated alternative to traditional lockpicking methods. Contains a dazzling array of tools in a simple-to-use housing: just press the face plate against the lock face and hold the trigger down until it goes click."
-	icon_state = "pick_gun"
-	pick_time = 3 SECONDS
-
-/obj/item/lockpick/mag_sequencer
-	name = "magnetic sequencer"
-	desc = "A deceptively simple gadget that brute-forces magnetic locks using a small electromagnet. A predecessor to the cryptographic sequencer, a more complicated device that is considered contraband in most jurisdictions. Not that these aren't illegal either, mind you!"
-	icon_state = "mag_sequencer"
-	pick_type = "maglock"
-	pick_time = 5 SECONDS
-	pick_verb = "bypass"

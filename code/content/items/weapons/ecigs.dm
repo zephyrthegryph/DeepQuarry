@@ -197,10 +197,6 @@ CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge)
 	. += "The cartridge has [reagents.total_volume] units of liquid remaining."
 
 //flavours
-/obj/item/reagent_containers/ecig_cartridge/blank
-	name = "ecigarette cartridge"
-	desc = "A small metal cartridge which contains an atomizing coil."
-
 /obj/item/reagent_containers/ecig_cartridge/blanknico
 	name = "flavorless nicotine cartridge"
 	desc = "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label says you can add whatever flavoring agents you want."

@@ -182,10 +182,6 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 	icon_state = "doublesheetmime"
 	item_state = "sheetmime"
 
-/obj/item/bedsheet/clowndouble
-	icon_state = "doublesheetclown"
-	item_state = "sheetrainbow"
-
 /obj/item/bedsheet/captaindouble
 	icon_state = "doublesheetcaptain"
 	item_state = "sheetcaptain"
@@ -327,10 +323,6 @@ CAPABILITIES(/obj/structure/bedsheetbin)
 /obj/item/bedsheet/cosmos
 	icon = 'icons/obj/items.dmi'
 	icon_state = "sheetcosmos"
-
-/obj/item/bedsheet/cosmosdouble
-	icon = 'icons/obj/items.dmi'
-	icon_state = "doublesheetcosmos"
 
 /obj/item/bedsheet/pirate
 	icon = 'icons/obj/items.dmi'

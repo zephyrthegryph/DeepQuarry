@@ -94,17 +94,6 @@ CAPABILITIES(/obj/item/storage/bible)
 	set_item_state(user.mind.my_religion.bible_item_state)
 	to_chat(user, span_notice("You invoke [user.mind.my_religion.deity] and prepare a copy of [src]."))
 
-/obj/item/storage/bible/booze
-	name = "bible"
-	desc = "To be applied to the head repeatedly."
-	icon_state ="bible"
-	starts_with = list(
-		/obj/item/reagent_containers/food/drinks/bottle/small/beer,
-		/obj/item/reagent_containers/food/drinks/bottle/small/beer,
-		/obj/item/spacecash/c100,
-		/obj/item/spacecash/c100,
-		/obj/item/spacecash/c100)
-
 /obj/item/storage/bible/afterattack(atom/A, mob/user as mob, proximity)
 	if(!proximity) return
 	if(user.mind && (user.mind.assigned_role == JOB_CHAPLAIN))

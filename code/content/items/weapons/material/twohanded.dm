@@ -162,20 +162,6 @@ CAPABILITIES(/obj/item/material/twohanded/spear)
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, throw_hit = SFX_WEAPONS_PIERCE))
 
 //This is mostly for centaurs.
-/obj/item/material/twohanded/spear/lance
-	name = "lance"
-	desc = "End him rightly"
-	icon = 'icons/obj/weapons_vr.dmi'
-	icon_state = "lance"
-	item_state = "lance"
-	force_divisor = 0.3
-	thrown_force_divisor = 1
-	default_material = "MAT_STEEL"
-	fragile = 0
-
-CAPABILITIES(/obj/item/material/twohanded/spear/lance)
-	configure(item_combat(force = 10, sharp = TRUE, edge = FALSE))
-
 /obj/item/material/twohanded/riding_crop
 	name = "riding crop"
 	desc = "A rod, a little over a foot long with a widened grip and a thick, leather patch at the end. Used since the dawn of the West to control animals."
@@ -295,15 +281,6 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
 
 // === merged from twohanded_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //1R1S: Malady Blanche
-/obj/item/material/twohanded/riding_crop/malady
-	name = "Malady's riding crop"
-	icon = 'icons/vore/custom_items_vr.dmi'
-	item_icons = list(
-				slot_l_hand_str = 'icons/vore/custom_items_left_hand_vr.dmi',
-				slot_r_hand_str = 'icons/vore/custom_items_right_hand_vr.dmi',
-				)
-	desc = "An infernum made riding crop with Malady Blanche engraved in the shaft. It's a little worn from how many butts it has spanked."
-
 /obj/item/material/twohanded/longsword
 	w_class = ITEMSIZE_NORMAL
 	name = "longsword"

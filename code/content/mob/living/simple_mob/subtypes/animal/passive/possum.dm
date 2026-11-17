@@ -32,13 +32,6 @@ CAPABILITIES(/obj/item/animal_spawner)
 		M.put_in_hands(critter_holder)
 	return TRUE
 
-/obj/item/animal_spawner/possum
-	name = "possum"
-	desc = "The abstract concept of possum, embodied in physical form. If you witness the majesty of abstract possum, please make a bug report on the tracker."
-	icon = 'icons/mob/animal.dmi'
-	icon_state = "possum"
-	critter_type = /mob/living/simple_mob/animal/passive/opossum
-
 // Possum AI holder, mostly just handles playing dead.
 /datum/say_list/possum
 	speak = list("Hiss!","Aaa!","Aaa?")

@@ -750,11 +750,6 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 	icon_state = "gripper-sci"
 	desc = "A simple grasping tool suited to assist in a wide array of research applications."
 
-/obj/item/gripper/circuit
-	name = "circuit assembly gripper"
-	icon_state = "gripper-circ"
-	desc = "A complex grasping tool used for working with circuitry."
-
 /obj/item/gripper/service //Used to handle food, drinks, seeds, and cards.
 	name = "service gripper"
 	icon_state = "gripper-sheet"
@@ -794,13 +789,6 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 	name = "robotics organ gripper"
 	icon_state = "gripper-flesh"
 	desc = "A specialized grasping tool used in robotics work."
-
-/obj/item/gripper/no_use/mech
-	name = "exosuit gripper"
-	icon_state = "gripper-mech"
-	desc = "A large, heavy-duty grasping tool used in construction of mechs."
-
-	special_handling = TRUE
 
 /obj/item/gripper/no_use //Used when you want to hold and put items in other things, but not able to 'use' the item
 
@@ -901,9 +889,6 @@ CAPABILITIES(/obj/item/gripper/research)
 	holder_takes(req_type(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER), because = MSG(slot/doesnt_take)))
 
 
-CAPABILITIES(/obj/item/gripper/circuit)
-	holder_takes(req_type(list(CIRCUIT_GRIPPER), because = MSG(slot/doesnt_take)))
-
 
 CAPABILITIES(/obj/item/gripper/service)
 	holder_takes(req_type(list(SERVICE_GRIPPER), because = MSG(slot/doesnt_take)))
@@ -924,9 +909,6 @@ CAPABILITIES(/obj/item/gripper/no_use/organ)
 CAPABILITIES(/obj/item/gripper/no_use/organ/robotics)
 	holder_takes(req_type(list(ROBOTICS_ORGAN_GRIPPER), because = MSG(slot/doesnt_take)))
 
-
-CAPABILITIES(/obj/item/gripper/no_use/mech)
-	holder_takes(req_type(list(EXOSUIT_GRIPPER), because = MSG(slot/doesnt_take)))
 
 
 CAPABILITIES(/obj/item/gripper/no_use/loader)

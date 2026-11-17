@@ -158,18 +158,6 @@ CAPABILITIES(/obj/item/spacecasinocash)
 	desc = "It's worth 10 credits."
 	worth = 10
 
-/obj/item/spacecasinocash/c20
-	name = "20 credit casino chip"
-	icon_state = "spacecasinocash20"
-	desc = "It's worth 20 credits."
-	worth = 20
-
-/obj/item/spacecasinocash/c50
-	name = "50 credit casino chip"
-	icon_state = "spacecasinocash50"
-	desc = "It's worth 50 credits."
-	worth = 50
-
 /obj/item/spacecasinocash/c100
 	name = "100 credit casino chip"
 	icon_state = "spacecasinocash100"
@@ -330,47 +318,11 @@ CAPABILITIES(/obj/item/spacecasinocash_fake)
 	user.put_in_hands(SC)
 	return OP_OK
 
-/obj/item/spacecasinocash_fake/c1
-	name = "1 replica casino chip"
-	icon_state = "spacecasinocash1"
-	desc = "It's worth 1 credit."
-	worth = 1
-
-/obj/item/spacecasinocash_fake/c10
-	name = "10 replica casino chip"
-	icon_state = "spacecasinocash10"
-	desc = "It's worth 10 credits."
-	worth = 10
-
-/obj/item/spacecasinocash_fake/c20
-	name = "20 replica casino chip"
-	icon_state = "spacecasinocash20"
-	desc = "It's worth 20 credits."
-	worth = 20
-
-/obj/item/spacecasinocash_fake/c50
-	name = "50 replica casino chip"
-	icon_state = "spacecasinocash50"
-	desc = "It's worth 50 credits."
-	worth = 50
-
-/obj/item/spacecasinocash_fake/c100
-	name = "100 replica casino chip"
-	icon_state = "spacecasinocash100"
-	desc = "It's worth 100 credits."
-	worth = 100
-
 /obj/item/spacecasinocash_fake/c200
 	name = "200 replica casino chip"
 	icon_state = "spacecasinocash200"
 	desc = "It's worth 200 credits."
 	worth = 200
-
-/obj/item/spacecasinocash_fake/c500
-	name = "500 replica casino chip"
-	icon_state = "spacecasinocash500"
-	desc = "It's worth 500 credits."
-	worth = 500
 
 /obj/item/spacecasinocash_fake/c1000
 	name = "1000 replica casino chip"

@@ -316,18 +316,6 @@ CAPABILITIES(/obj/item/flashlight/maglight)
 	configure(item_combat(force = 10, attack_verbs = list ("smacked", "thwacked", "thunked")))
 	configure(item_sounds(hit = SFX_SWING_HIT))
 
-/obj/item/flashlight/drone
-	name = "low-power flashlight"
-	desc = "A miniature lamp, that might be used by small robots."
-	icon_state = "penlight"
-	item_state = null
-	w_class = ITEMSIZE_TINY
-	power_use = 0
-	cell_type = null
-
-CAPABILITIES(/obj/item/flashlight/drone)
-	configure(light_glow(range = 2))
-
 /*
  * Lamps
  */

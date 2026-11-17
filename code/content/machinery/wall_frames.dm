@@ -210,11 +210,3 @@ CAPABILITIES(/datum/prompt/choice/frame_type_wall)
 	icon_state = "mirror_frame"
 	refund_amt = 1
 	build_machine_type = /obj/structure/mirror
-
-/obj/item/frame/fireaxe_cabinet
-	name = "fire axe cabinet frame"
-	desc = "Used for building fire axe cabinets."
-	icon = 'icons/obj/closet.dmi'
-	icon_state = "fireaxe0101"
-	refund_amt = 4
-	build_machine_type = /obj/structure/fireaxecabinet

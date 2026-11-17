@@ -90,9 +90,6 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	tape_type = /obj/item/tape/engineering
 	color = COLOR_YELLOW
 
-/obj/item/taperoll/engineering/applied
-	apply_tape = TRUE
-
 /obj/item/tape/engineering
 	name = "engineering tape"
 	desc = "A length of engineering tape. Better not cross it."

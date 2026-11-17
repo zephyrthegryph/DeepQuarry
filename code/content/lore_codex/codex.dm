@@ -65,17 +65,6 @@ CAPABILITIES(/obj/item/book/codex/lore/news)
 
 /* // REMOVAL
 // Combines SOP/Regs/Law
-/obj/item/book/codex/corp_regs
-	name = "NanoTrasen Regulatory Compendium"
-	desc = "Contains large amounts of information on Standard Operating Procedure, Corporate Regulations, and important regional laws.  The best friend of \
-	Internal Affairs."
-	icon_state = "corp_regs"
-	item_state = "book10"
-	root_type = /datum/lore/codex/category/main_corp_regs
-	libcategory = "Reference"
-
-CAPABILITIES(/obj/item/book/codex/corp_regs)
-	configure(item_thrown(force = 5))
 */
 
 

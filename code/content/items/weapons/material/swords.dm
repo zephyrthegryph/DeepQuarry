@@ -55,16 +55,6 @@ CAPABILITIES(/obj/item/material/sword/longsword)
 	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 	configure(item_combat(can_cleave = TRUE))
 
-/obj/item/material/sword/sabre
-	name = "sabre"
-	desc = "A sharp curved sword, a favored weapon of pirates far in the past."
-	icon_state = "sabre"
-	item_state = "sabre"
-	applies_material_colour = 0 //messes up the hilt color otherwise
-
-CAPABILITIES(/obj/item/material/sword/sabre)
-	configure(item_worn(slots = SLOT_BELT))
-
 /obj/item/material/sword/battleaxe
 	name = "battleaxe"
 	desc = "A one handed battle axe, still a deadly weapon."
@@ -83,13 +73,3 @@ CAPABILITIES(/obj/item/material/sword/battleaxe)
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
-
-/obj/item/material/sword/gladius
-	name = "gladius"
-	desc = "An ancient short sword, designed to stab and cut."
-	icon_state = "gladius"
-	item_state = "gladius"
-	applies_material_colour = 0
-
-CAPABILITIES(/obj/item/material/sword/gladius)
-	configure(item_worn(slots = SLOT_BELT))
