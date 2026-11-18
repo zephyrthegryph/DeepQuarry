@@ -17,7 +17,7 @@
 		var/datum/gas/G = gas_type
 		if(!initial(G.name))
 			continue
-		wiki_set_swatch(wiki_add(index, wiki_gas_id(gas_type), initial(G.name), "Engineering/Atmospherics/Gases", initial(G.dangerous) ? "Dangerous to breathe or handle." : null, null, GLOBAL_PROC_REF(wiki_gas_body), gas_type), initial(G.primary_color))
+		wiki_set_swatch(wiki_add(index, wiki_gas_id(gas_type), initial(G.name), "Engineering/Atmospherics/Gases", null, null, GLOBAL_PROC_REF(wiki_gas_body), gas_type), initial(G.primary_color))
 	for(var/name in GLOB.name_to_material)
 		var/datum/material/M = GLOB.name_to_material[name]
 		if(!M?.name || index[wiki_material_id(M)])
@@ -39,13 +39,8 @@
 	var/datum/gas/G = gas_type
 	var/list/blocks = list(wiki_p(initial(G.desc) || "A gas."))
 	var/list/facts = list(list("Specific heat", "[initial(G.specific_heat)] J/(mol K)"))
-	facts += list(list("Dangerous", initial(G.dangerous) ? "Yes" : "No"))
-	if(initial(G.purchaseable))
-		facts += list(list("Cargo", "Sold in canisters"))
-	if(initial(G.base_value))
-		facts += list(list("Sells for", "[initial(G.base_value)] per mole"))
-	if(initial(G.fusion_power))
-		facts += list(list("Fusion power", "[initial(G.fusion_power)]"))
+	// The gas type's dangerous, purchaseable, base_value and fusion_power vars are carried from another codebase and nothing here reads
+	// them, so the page does not state them.
 	blocks += list(wiki_kv(facts))
 	var/list/reactions = list()
 	for(var/datum/xform/X as anything in xform_rules_in(MEDIUM_GAS, REGIME_GAS))
@@ -81,7 +76,7 @@
 	if(M.opacity < 1)
 		facts += list(list("See-through", "Yes"))
 	if(M.supply_conversion_value)
-		facts += list(list("Sells for", "[M.supply_conversion_value] per sheet"))
+		facts += list(list("Exports for", "[SSsupply.export_price(M.supply_conversion_value)] Thalers per sheet"))
 	if(M.is_fusion_fuel)
 		facts += list(list("Fusion fuel", "Yes"))
 	blocks += list(wiki_kv(facts))
@@ -93,8 +88,8 @@
 	if(length(M.composite_material))
 		var/list/parts = list()
 		for(var/part in M.composite_material)
-			parts += "[M.composite_material[part]] [part]"
-		blocks += list(wiki_h("Made of"), wiki_p("Each sheet holds [english_list(parts)]."))
+			parts += "[round(M.composite_material[part] / SHEET_MATERIAL_AMOUNT, 0.01)] sheet\s of [part]"
+		blocks += list(wiki_h("Made of"), wiki_p("Each sheet is made of [english_list(parts)]."))
 	if(M.stack_type)
 		var/stack_id = wiki_cat_id(M.stack_type)
 		if(wiki_title(stack_id))
@@ -108,9 +103,11 @@
 	var/datum/seed/S = plants_seeds()[name]
 	var/list/blocks = list(wiki_p("[capitalize(S.display_name || S.name)]: a plant grown in a hydroponics tray from [S.seed_name || S.name] [S.seed_noun]."))
 	var/list/facts = list()
-	facts += list(list("Matures in", "[S.get_trait(TRAIT_MATURATION)] growth cycles"))
+	var/minutes_per_age = wiki_plant_seconds_per_age() / 60
+	var/maturation = S.get_trait(TRAIT_MATURATION)
+	facts += list(list("Ripens", "Past age [maturation]: about [round((maturation + 1) * minutes_per_age, 0.5)] minutes in a tray"))
 	facts += list(list("Yield", S.get_trait(TRAIT_YIELD) > 0 ? "[S.get_trait(TRAIT_YIELD)]" : "Nothing to harvest"))
-	facts += list(list("Harvests", S.get_trait(TRAIT_HARVEST_REPEAT) ? "Again and again (every [S.get_trait(TRAIT_PRODUCTION)] cycles)" : "Once"))
+	facts += list(list("Harvests", S.get_trait(TRAIT_HARVEST_REPEAT) ? "Again and again (about every [round((S.get_trait(TRAIT_PRODUCTION) + 1) * minutes_per_age, 0.5)] minutes)" : "Once"))
 	facts += list(list("Potency", "[S.get_trait(TRAIT_POTENCY)]"))
 	facts += list(list("Ideal light", "[S.get_trait(TRAIT_IDEAL_LIGHT)] (tolerates [S.get_trait(TRAIT_LIGHT_TOLERANCE)] either way)"))
 	facts += list(list("Ideal temperature", "[S.get_trait(TRAIT_IDEAL_HEAT)] K (tolerates [S.get_trait(TRAIT_HEAT_TOLERANCE)] either way)"))
@@ -200,3 +197,9 @@
 		facts += list(list("Stun weapons", "Hurt by them (an electrical injury, not a stun)"))
 	blocks += list(wiki_kv(facts))
 	return blocks
+
+/// How long a tray takes, on average, to age its plant by one: a growth cycle every cycledelay, which ages the plant with a 30% chance
+/// (tray_process.dm: prob(30), by HYDRO_SPEED_MULTIPLIER). Without age reagents.
+/proc/wiki_plant_seconds_per_age()
+	var/obj/machinery/portable_atmospherics/hydroponics/T = /obj/machinery/portable_atmospherics/hydroponics
+	return (initial(T.cycledelay) / 10) / (0.3 * HYDRO_SPEED_MULTIPLIER)
