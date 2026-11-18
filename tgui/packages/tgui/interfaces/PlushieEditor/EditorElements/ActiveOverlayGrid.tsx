@@ -1,6 +1,7 @@
 import type React from 'react';
 import { memo } from 'react';
 import { ImageButton, Stack } from 'tgui-core/components';
+import { EmptyState } from '../../common/EmptyState';
 import type { Overlay } from '../types';
 
 type ActiveOverlaysGridProps = {
@@ -13,6 +14,9 @@ type ActiveOverlaysGridProps = {
 export const ActiveOverlaysGrid = memo<ActiveOverlaysGridProps>(
   ({ icon, overlays, selectedOverlay, onSelect }) => (
     <Stack wrap="wrap" justify="center">
+      {overlays.length === 0 && (
+        <EmptyState>No overlays yet: add one with the picker above.</EmptyState>
+      )}
       {overlays.map((ov) => (
         <Stack.Item key={ov.icon_state}>
           <ImageButton

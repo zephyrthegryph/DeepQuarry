@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Section, Stack } from 'tgui-core/components';
 import { formatUnits } from '../common/BeakerContents';
+import { EmptyState } from '../common/EmptyState';
 import type { BorgHypoActions } from '../generated/BorgHypo';
 import type { Data } from './types';
 
@@ -31,6 +32,11 @@ export const BorgHypoRecipeDisplay = (props) => {
         )
       }
     >
+      {!recording && (
+        <EmptyState>
+          Start recording to make a recipe from what you dispense.
+        </EmptyState>
+      )}
       {recording && (
         <Stack align="start" justify="space-between" direction="column">
           {recordedContents.map((reagent, i) => (

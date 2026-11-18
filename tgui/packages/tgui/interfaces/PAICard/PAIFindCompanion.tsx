@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Section, Stack } from 'tgui-core/components';
+import { EmptyState } from '../common/EmptyState';
 import type { PAICardActions } from '../generated/PAICard';
 import { PAIDataEntry } from './PAIDataEntry';
 import type { Data, InvitePAIData } from './types';
@@ -15,6 +16,11 @@ export const PAIFindCompanion = (props: { availablePais: InvitePAIData[] }) => {
       {!waiting_for_response ? (
         !selected_pai_data ? (
           <Stack vertical>
+            {availablePais.length === 0 && (
+              <EmptyState>
+                No personalities are offering themselves right now.
+              </EmptyState>
+            )}
             {availablePais.map((paiEntry) => (
               <Stack.Item grow key={paiEntry.ref}>
                 <PAIDataEntry paiEntry={paiEntry} />

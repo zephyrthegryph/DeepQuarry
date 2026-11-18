@@ -11,6 +11,7 @@ import {
   TextArea,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { EmptyState } from './common/EmptyState';
 
 type data = {
   mode_select: BooleanLike; // Data for emote/talk. 0 for talk, 1 for emote
@@ -76,6 +77,9 @@ export const EntitySelection = (props) => {
         </Button>
       }
     >
+      {entity_names.length === 0 && (
+        <EmptyState>No entities to narrate as.</EmptyState>
+      )}
       <Tabs vertical>
         {entity_names.map((name) => (
           <Tabs.Tab

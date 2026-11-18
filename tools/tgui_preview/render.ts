@@ -358,6 +358,18 @@ const PROBE = `(() => {
       offenders.push(el);
     }
   }
+  // Sections with a title and nothing in them: an empty list with no word saying so (the wiki style says it: EmptyState).
+  const emptySections = [];
+  for (const sec of app.querySelectorAll('.Section')) {
+    const title = sec.querySelector(':scope > .Section__title .Section__titleText');
+    const content = sec.querySelector(':scope > .Section__rest > .Section__content');
+    // A title-only section (a header bar with buttons, content collapsed) is a design, not an empty list.
+    if (!title || !content || content.getBoundingClientRect().height < 20) continue;
+    const hasText = (content.innerText || '').trim().length > 0;
+    const hasThing = content.querySelector('img, canvas, svg, input, textarea, .Button, .ProgressBar, .NumberInput, .Knob, .ColorBox, .Slider, .Dropdown, .Tab, [class*="32x32"], [class*="64x64"]');
+    if (!hasText && !hasThing && emptySections.length < 3) emptySections.push((title.textContent || '').trim().slice(0, 24));
+    else if (!hasText && !hasThing) emptySections.push('');
+  }
   // Broken images (a sprite or asset that did not load) and text drawn under 10px (unreadable on a game client).
   let brokenImg = 0;
   for (const img of app.querySelectorAll('img')) if (img.complete && !img.naturalWidth && img.getBoundingClientRect().width) brokenImg++;
@@ -370,7 +382,7 @@ const PROBE = `(() => {
     if (r.width && parseFloat(getComputedStyle(n.parentElement).fontSize) < 10) { tiny++; if (tinyAt.length < 3) tinyAt.push(String(n.parentElement.className).split(' ')[0] || n.parentElement.tagName.toLowerCase()); }
   }
   return {
-    brokenImg, tiny, tinyAt,
+    brokenImg, tiny, tinyAt, emptySections,
     text: (app.innerText || '').trim().length,
     nodes: app.querySelectorAll('*').length,
     missing: !!document.getElementById('preview-missing'),
@@ -473,14 +485,17 @@ async function runJob(page: { sessionId: string }, job: Job): Promise<Result> {
       await Bun.sleep(300);
     }
   }
-  const probe =
-    (
-      await send(
-        'Runtime.evaluate',
-        { expression: PROBE, returnByValue: true },
-        page.sessionId,
-      )
-    ).result.value ?? {};
+  const probed = await send(
+    'Runtime.evaluate',
+    { expression: PROBE, returnByValue: true },
+    page.sessionId,
+  );
+  // The checks themselves failing (a syntax error in PROBE) must not read as a clean window.
+  if (probed.exceptionDetails)
+    throw new Error(
+      `the page checks failed: ${probed.exceptionDetails.exception?.description ?? probed.exceptionDetails.text}`,
+    );
+  const probe = probed.result.value ?? {};
   const shot = await send(
     'Page.captureScreenshot',
     { format: 'png' },
@@ -518,6 +533,11 @@ async function runJob(page: { sessionId: string }, job: Job): Promise<Result> {
     problems.push('blank');
   if (probe.hOverflow) problems.push('h-overflow');
   if (probe.sideScroll) problems.push('h-scroll');
+  if (process.env.DQ_PREVIEW_DEBUG) console.log(job.tag, JSON.stringify(probe));
+  if (probe.emptySections?.length)
+    problems.push(
+      `empty-section:${probe.emptySections.length}(${probe.emptySections.filter(Boolean).join(',')})`,
+    );
   if (probe.brokenImg) problems.push(`broken-img:${probe.brokenImg}`);
   if (probe.tiny)
     problems.push(`tiny-text:${probe.tiny}(${probe.tinyAt.join(',')})`);
@@ -634,7 +654,10 @@ process.exit(
   bad.some((r) =>
     r.problems.some(
       (p) =>
-        p !== 'console-error' && p !== 'h-scroll' && !p.startsWith('off-right'),
+        p !== 'console-error' &&
+        p !== 'h-scroll' &&
+        !p.startsWith('off-right') &&
+        !p.startsWith('empty-section'),
     ),
   )
     ? 1

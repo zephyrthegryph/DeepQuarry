@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import { EmptyState } from '../common/EmptyState';
 import type { DestinationTaggerActions } from '../generated/DestinationTagger';
 import type { Data } from './types';
 
@@ -16,6 +17,13 @@ export const DestintationTaggerTags = (props: { tagSearch: string }) => {
     .sort((a, b) => a.localeCompare(b));
   return (
     <Stack wrap="wrap" justify="center">
+      {toDisplay.length === 0 && (
+        <EmptyState>
+          {tagSearch
+            ? 'No location matches the search.'
+            : 'No tagger locations.'}
+        </EmptyState>
+      )}
       {toDisplay.map((tag) => (
         <Stack.Item key={tag}>
           <Button.Checkbox
