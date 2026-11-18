@@ -3,6 +3,7 @@ import { Window } from 'tgui/layouts';
 import {
   Button,
   LabeledList,
+  NoticeBox,
   NumberInput,
   Section,
 } from 'tgui-core/components';
@@ -68,9 +69,11 @@ export const AssemblyProx = (props) => {
               >
                 {scanning ? 'ARMED' : 'Unarmed'}
               </Button>
-              Movement sensor is active when armed!
             </LabeledList.Item>
           </LabeledList>
+          <NoticeBox info mt={1} mb={0}>
+            The movement sensor is active while armed.
+          </NoticeBox>
         </Section>
       </Window.Content>
     </Window>

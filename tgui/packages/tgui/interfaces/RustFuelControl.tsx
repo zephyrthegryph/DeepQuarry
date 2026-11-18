@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Table } from 'tgui-core/components';
+import { EmptyState } from './common/EmptyState';
 import type {
   RustFuelControlActions,
   RustFuelControlData,
@@ -30,6 +31,11 @@ export const RustFuelContent = (props) => {
         </Button>
       }
     >
+      {fuels.length === 0 && (
+        <EmptyState>
+          No fuel injectors are linked. Set the tag to match one.
+        </EmptyState>
+      )}
       <Table>
         <Table.Row header>
           <Table.Cell>Name</Table.Cell>

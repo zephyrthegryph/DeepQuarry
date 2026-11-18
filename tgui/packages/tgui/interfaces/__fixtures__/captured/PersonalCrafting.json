@@ -1,0 +1,816 @@
+{
+	"crafting_recipes": {
+		"Weaponry": {
+			"Weapons": [
+				{
+					"name": "Spear",
+					"ref": 1,
+					"req_text": "1 cable restraints, 1 metal rod, 1 shard OR 1 knife blade",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "Wooden Shovel",
+					"ref": 2,
+					"req_text": "5 wooden stick, 1 wood plank, 3 plant fiber, 1 flint piece",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "stone blade",
+					"ref": 3,
+					"req_text": "",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": [
+						{
+							"role": "body",
+							"label": "Material",
+							"amount": 4000,
+							"defaultMaterial": "steel",
+							"optional": 0,
+							"description": "The single continuous material from which this object is formed."
+						}
+					]
+				},
+				{
+					"name": "stone knife",
+					"ref": 4,
+					"req_text": "1 stone blade",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": [
+						{
+							"role": "body",
+							"label": "Material",
+							"amount": 10000,
+							"defaultMaterial": "steel",
+							"optional": 0,
+							"description": "The single continuous material from which this object is formed."
+						}
+					]
+				},
+				{
+					"name": "stone knife",
+					"ref": 5,
+					"req_text": "1 stone blade, 1 bone",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": [
+						{
+							"role": "body",
+							"label": "Material",
+							"amount": 8000,
+							"defaultMaterial": "steel",
+							"optional": 0,
+							"description": "The single continuous material from which this object is formed."
+						}
+					]
+				},
+				{
+					"name": "stone axe",
+					"ref": 6,
+					"req_text": "1 stone blade",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": [
+						{
+							"role": "body",
+							"label": "Material",
+							"amount": 10000,
+							"defaultMaterial": "steel",
+							"optional": 0,
+							"description": "The single continuous material from which this object is formed."
+						}
+					]
+				},
+				{
+					"name": "stone axe",
+					"ref": 7,
+					"req_text": "1 stone blade, 1 bone",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": [
+						{
+							"role": "body",
+							"label": "Material",
+							"amount": 8000,
+							"defaultMaterial": "steel",
+							"optional": 0,
+							"description": "The single continuous material from which this object is formed."
+						}
+					]
+				},
+				{
+					"name": "stone spear",
+					"ref": 8,
+					"req_text": "1 stone blade, 1 flint piece, 2 wood plank, 3 plant fiber",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "stone spear",
+					"ref": 9,
+					"req_text": "1 stone blade, 1 flint piece, 2 bone, 3 plant fiber",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "Stunprod",
+					"ref": 10,
+					"req_text": "1 cable restraints, 1 metal rod, 1 wirecutters",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "Shortbow",
+					"ref": 11,
+					"req_text": "",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": [
+						{
+							"role": "structure",
+							"label": "Receiver",
+							"amount": 13500,
+							"defaultMaterial": "steel",
+							"optional": 0,
+							"description": "Controls integrity, recoil tolerance, and mass."
+						},
+						{
+							"role": "barrel",
+							"label": "Barrel",
+							"amount": 12000,
+							"defaultMaterial": "steel",
+							"optional": 0,
+							"description": "Controls pressure tolerance, accuracy retention, and heat handling."
+						},
+						{
+							"role": "grip",
+							"label": "Grip and furniture",
+							"amount": 4500,
+							"defaultMaterial": "plastic",
+							"optional": 0,
+							"description": "Controls handling, insulation, and weight."
+						}
+					]
+				},
+				{
+					"name": "Primitive Shield",
+					"ref": 12,
+					"req_text": "2 wood plank, 1 wooden bucket, 5 cloth",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "Bolt scope to bolt-action (cannot be removed)",
+					"ref": 13,
+					"req_text": "1 rifle scope, 1 bolt-action rifle",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "Ziplaser",
+					"ref": 14,
+					"req_text": "1 high-capacity power cell, 2 metal rod, 2 device power cell",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": [
+						{
+							"role": "emitter element",
+							"label": "Energy emitter",
+							"amount": 7800,
+							"defaultMaterial": "glass",
+							"optional": 0,
+							"description": "Converts stored power into the weapon's emitted field or beam."
+						},
+						{
+							"role": "optical element",
+							"label": "Beam-forming assembly",
+							"amount": 5200,
+							"defaultMaterial": "glass",
+							"optional": 0,
+							"description": "Focuses and stabilizes the emitted energy."
+						},
+						{
+							"role": "conductor",
+							"label": "Power bus",
+							"amount": 5200,
+							"defaultMaterial": "copper",
+							"optional": 0,
+							"description": "Carries discharge current from the cell to the emitter."
+						},
+						{
+							"role": "thermal buffer",
+							"label": "Heat sink",
+							"amount": 3900,
+							"defaultMaterial": "copper",
+							"optional": 0,
+							"description": "Absorbs and spreads waste heat between shots."
+						},
+						{
+							"role": "structure",
+							"label": "Chassis",
+							"amount": 3900,
+							"defaultMaterial": "steel",
+							"optional": 0,
+							"description": "Maintains alignment and protects the power train."
+						}
+					]
+				},
+				{
+					"name": "Strange Weapon",
+					"ref": 15,
+					"req_text": "1 device power cell",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": [
+						{
+							"role": "emitter element",
+							"label": "Energy emitter",
+							"amount": 7800,
+							"defaultMaterial": "glass",
+							"optional": 0,
+							"description": "Converts stored power into the weapon's emitted field or beam."
+						},
+						{
+							"role": "optical element",
+							"label": "Beam-forming assembly",
+							"amount": 5200,
+							"defaultMaterial": "glass",
+							"optional": 0,
+							"description": "Focuses and stabilizes the emitted energy."
+						},
+						{
+							"role": "conductor",
+							"label": "Power bus",
+							"amount": 5200,
+							"defaultMaterial": "copper",
+							"optional": 0,
+							"description": "Carries discharge current from the cell to the emitter."
+						},
+						{
+							"role": "thermal buffer",
+							"label": "Heat sink",
+							"amount": 3900,
+							"defaultMaterial": "copper",
+							"optional": 0,
+							"description": "Absorbs and spreads waste heat between shots."
+						},
+						{
+							"role": "structure",
+							"label": "Chassis",
+							"amount": 3900,
+							"defaultMaterial": "steel",
+							"optional": 0,
+							"description": "Maintains alignment and protects the power train."
+						}
+					]
+				},
+				{
+					"name": "Solar Rapier",
+					"ref": 16,
+					"req_text": "15 steel, 3 leather, 2 Strange Wisp",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "Gravity Hammer",
+					"ref": 17,
+					"req_text": "15 steel, 3 leather, 2 Shell Chitin, 1 high-capacity power cell",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "Harvester",
+					"ref": 18,
+					"req_text": "15 steel, 3 leather, 2 Dream Scale",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "agate blade",
+					"ref": 19,
+					"req_text": "2 wood plank, 6 energized agate",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "agate hammer",
+					"ref": 20,
+					"req_text": "4 wood plank, 2 energized agate",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "agate spear",
+					"ref": 21,
+					"req_text": "3 wood plank, 3 energized agate",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				}
+			],
+			"has_subcats": 1,
+			"Ammunition": [
+				{
+					"name": "Wood arrow (sandstone tip)",
+					"ref": 22,
+					"req_text": "2 wood plank, 2 sandstone brick",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "Wood arrow (marble tip)",
+					"ref": 23,
+					"req_text": "2 wood plank, 2 marble brick",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				},
+				{
+					"name": "Wood arrow (agate tip)",
+					"ref": 24,
+					"req_text": "2 wood plank, 2 energized agate",
+					"catalyst_text": "",
+					"tool_text": "",
+					"material_slots": []
+				}
+			]
+		},
+		"Misc": [
+			{
+				"name": "surgery table",
+				"ref": 25,
+				"req_text": "12 silver, 10 metal rod, 1 leather",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "toilet",
+				"ref": 26,
+				"req_text": "5 steel, 1 bucket",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "sticks",
+				"ref": 27,
+				"req_text": "1 wood plank",
+				"catalyst_text": "",
+				"tool_text": "kitchen knife",
+				"material_slots": []
+			},
+			{
+				"name": "rope bindings",
+				"ref": 28,
+				"req_text": "3 plant fiber",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "cable leash",
+				"ref": 29,
+				"req_text": "3 cable coil",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "pillow (pink)",
+				"ref": 30,
+				"req_text": "6 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "pillow (teal)",
+				"ref": 31,
+				"req_text": "6 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "pillow (white)",
+				"ref": 32,
+				"req_text": "6 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "pillow (black)",
+				"ref": 33,
+				"req_text": "6 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "pillow (green)",
+				"ref": 34,
+				"req_text": "6 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "pillow (yellow)",
+				"ref": 35,
+				"req_text": "6 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "pillow (red)",
+				"ref": 36,
+				"req_text": "6 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "pillow (orange)",
+				"ref": 37,
+				"req_text": "6 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "tent (green)",
+				"ref": 38,
+				"req_text": "10 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "tent (tan)",
+				"ref": 39,
+				"req_text": "10 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "butterfly net",
+				"ref": 40,
+				"req_text": "2 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			}
+		],
+		"Tribal": [
+			{
+				"name": "Cloth bolt",
+				"ref": 41,
+				"req_text": "3 plant fiber",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "Crude bandages (x10)",
+				"ref": 42,
+				"req_text": "2 cloth",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "sandstone brick",
+				"ref": 43,
+				"req_text": "4 sand",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			},
+			{
+				"name": "marble brick",
+				"ref": 44,
+				"req_text": "4 recrystallized carbonate",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": []
+			}
+		],
+		"Clothing": [
+			{
+				"name": "primitive clothes",
+				"ref": 45,
+				"req_text": "",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": [
+					{
+						"role": "fabric",
+						"label": "Fabric panels",
+						"amount": 14000,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Forms the flexible body and controls comfort, mass, and thermal behavior."
+					},
+					{
+						"role": "structure",
+						"label": "Reinforcement",
+						"amount": 4000,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Carries loads around seams and attachment points."
+					},
+					{
+						"role": "fasteners",
+						"label": "Fasteners",
+						"amount": 2000,
+						"defaultMaterial": "steel",
+						"optional": 0,
+						"description": "Joins panels and secures closures."
+					}
+				]
+			},
+			{
+				"name": "primitive shoes",
+				"ref": 46,
+				"req_text": "",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": [
+					{
+						"role": "fabric",
+						"label": "Fabric panels",
+						"amount": 7000,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Forms the flexible body and controls comfort, mass, and thermal behavior."
+					},
+					{
+						"role": "structure",
+						"label": "Reinforcement",
+						"amount": 2000,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Carries loads around seams and attachment points."
+					},
+					{
+						"role": "fasteners",
+						"label": "Fasteners",
+						"amount": 1000,
+						"defaultMaterial": "steel",
+						"optional": 0,
+						"description": "Joins panels and secures closures."
+					}
+				]
+			},
+			{
+				"name": "primitive plate carrier",
+				"ref": 47,
+				"req_text": "4 metal rod",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": [
+					{
+						"role": "fabric",
+						"label": "Fabric panels",
+						"amount": 21000,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Forms the flexible body and controls comfort, mass, and thermal behavior."
+					},
+					{
+						"role": "structure",
+						"label": "Reinforcement",
+						"amount": 6000,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Carries loads around seams and attachment points."
+					},
+					{
+						"role": "fasteners",
+						"label": "Fasteners",
+						"amount": 3000,
+						"defaultMaterial": "steel",
+						"optional": 0,
+						"description": "Joins panels and secures closures."
+					}
+				]
+			},
+			{
+				"name": "solar cloak",
+				"ref": 48,
+				"req_text": "",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": [
+					{
+						"role": "fabric",
+						"label": "Fabric panels",
+						"amount": 16800,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Forms the flexible body and controls comfort, mass, and thermal behavior."
+					},
+					{
+						"role": "structure",
+						"label": "Reinforcement",
+						"amount": 4800,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Carries loads around seams and attachment points."
+					},
+					{
+						"role": "fasteners",
+						"label": "Fasteners",
+						"amount": 2400,
+						"defaultMaterial": "steel",
+						"optional": 0,
+						"description": "Joins panels and secures closures."
+					}
+				]
+			},
+			{
+				"name": "solar cloak",
+				"ref": 49,
+				"req_text": "",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": [
+					{
+						"role": "fabric",
+						"label": "Fabric panels",
+						"amount": 16800,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Forms the flexible body and controls comfort, mass, and thermal behavior."
+					},
+					{
+						"role": "structure",
+						"label": "Reinforcement",
+						"amount": 4800,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Carries loads around seams and attachment points."
+					},
+					{
+						"role": "fasteners",
+						"label": "Fasteners",
+						"amount": 2400,
+						"defaultMaterial": "steel",
+						"optional": 0,
+						"description": "Joins panels and secures closures."
+					}
+				]
+			},
+			{
+				"name": "purging gloves",
+				"ref": 50,
+				"req_text": "1 capacitor",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": [
+					{
+						"role": "fabric",
+						"label": "Fabric panels",
+						"amount": 28000,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Forms the flexible body and controls comfort, mass, and thermal behavior."
+					},
+					{
+						"role": "structure",
+						"label": "Reinforcement",
+						"amount": 8000,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Carries loads around seams and attachment points."
+					},
+					{
+						"role": "fasteners",
+						"label": "Fasteners",
+						"amount": 4000,
+						"defaultMaterial": "steel",
+						"optional": 0,
+						"description": "Joins panels and secures closures."
+					}
+				]
+			},
+			{
+				"name": "frost boots",
+				"ref": 51,
+				"req_text": "1 winter boots",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": [
+					{
+						"role": "fabric",
+						"label": "Fabric panels",
+						"amount": 2800,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Forms the flexible body and controls comfort, mass, and thermal behavior."
+					},
+					{
+						"role": "structure",
+						"label": "Reinforcement",
+						"amount": 800,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Carries loads around seams and attachment points."
+					},
+					{
+						"role": "fasteners",
+						"label": "Fasteners",
+						"amount": 400,
+						"defaultMaterial": "steel",
+						"optional": 0,
+						"description": "Joins panels and secures closures."
+					}
+				]
+			},
+			{
+				"name": "tyr leaf cloak",
+				"ref": 52,
+				"req_text": "1 strange leaves",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": [
+					{
+						"role": "fabric",
+						"label": "Fabric panels",
+						"amount": 12600,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Forms the flexible body and controls comfort, mass, and thermal behavior."
+					},
+					{
+						"role": "structure",
+						"label": "Reinforcement",
+						"amount": 3600,
+						"defaultMaterial": "cloth",
+						"optional": 0,
+						"description": "Carries loads around seams and attachment points."
+					},
+					{
+						"role": "fasteners",
+						"label": "Fasteners",
+						"amount": 1800,
+						"defaultMaterial": "steel",
+						"optional": 0,
+						"description": "Joins panels and secures closures."
+					}
+				]
+			}
+		],
+		"Tool": [
+			{
+				"name": "wooden bucket",
+				"ref": 53,
+				"req_text": "",
+				"catalyst_text": "",
+				"tool_text": "",
+				"material_slots": [
+					{
+						"role": "structure",
+						"label": "Vessel wall",
+						"amount": 5600,
+						"defaultMaterial": "glass",
+						"optional": 0,
+						"description": "Controls integrity, mass, and temperature tolerance."
+					},
+					{
+						"role": "liner",
+						"label": "Wetted surface",
+						"amount": 2400,
+						"defaultMaterial": "glass",
+						"optional": 0,
+						"description": "The surface touching the contents; controls corrosion, contamination, and chemical interaction."
+					}
+				]
+			}
+		]
+	},
+	"display_craftable_only": 0,
+	"busy": 0,
+	"materialChoices": [],
+	"craftability": []
+}

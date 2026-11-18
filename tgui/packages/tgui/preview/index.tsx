@@ -1,8 +1,12 @@
 /**
- * Renders one tgui window from the renderAll fixtures in an ordinary browser, for screenshots
- * (tools/tgui_preview/shoot.ts builds this bundle and drives it). `index.html?w=<Window>` shows
- * that window with its hand-written fixture, else the captured ui_data, else empty data; `&data=<url>` loads its data from that
- * JSON file instead.
+ * Renders one tgui window from fixtures in an ordinary browser, for screenshots (tools/tgui_preview/render.ts builds this
+ * bundle and drives it; doc/tgui_preview.md). `index.html?w=<Window>` shows that window with, first found: its hand-written
+ * fixture (`__fixtures__/windows/<Window>.json`), the census capture (`__fixtures__/captured/<Window>.json`, written by
+ * tools/tgui_preview/capture.ts), the unit-test capture (`__fixtures__/ui_data.json`), else {}.
+ * `&v=<variant>` picks a preset (`__fixtures__/windows/<Window>.<variant>.json`, e.g. empty/full/error states) laid over the
+ * base data, so a preset only names the keys it changes; `&v=captured` forces the census capture. `&data=<url>` loads the
+ * data from that JSON file instead. `&theme=<name>` draws the window in that theme. When the server has the sprite cache
+ * (`sprites/index.json`), spritesheet classes, resolveAsset() names and DmIcon show real game sprites.
  */
 import './byond';
 import '../styles/main.scss';
@@ -11,6 +15,7 @@ import '../embeddedStyles';
 import { Provider } from 'jotai';
 import { type ComponentType, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
+import { loadedMappings } from '../assets';
 import {
   configAtom,
   gameDataAtom,
@@ -33,6 +38,14 @@ const requireWritten = require.context(
   /\.json$/,
   'sync',
 );
+const requireCaptured = require.context(
+  '../interfaces/__fixtures__/captured',
+  false,
+  /\.json$/,
+  'sync',
+);
+
+type Data = Record<string, unknown>;
 
 function findInterface(name: string): ComponentType | undefined {
   for (const key of [
@@ -49,14 +62,55 @@ function findInterface(name: string): ComponentType | undefined {
   return undefined;
 }
 
-function dataFor(name: string): Record<string, unknown> {
-  const key = `./${name}.json`;
-  if (requireWritten.keys().includes(key)) {
-    return requireWritten(key);
-  }
+function load(ctx: any, key: string): Data | undefined {
+  return ctx.keys().includes(key) ? ctx(key) : undefined;
+}
+
+function baseDataFor(name: string): Data {
   return (
-    (captured as unknown as Record<string, Record<string, unknown>>)[name] ?? {}
+    load(requireWritten, `./${name}.json`) ??
+    load(requireCaptured, `./${name}.json`) ??
+    (captured as unknown as Record<string, Data>)[name] ??
+    {}
   );
+}
+
+/**
+ * A hand-written fixture names a game sprite as `"dmi:<icon path>:<state>[:<dir>]"` where the window expects an image (a base64
+ * icon, an <img> src): the render server crops that frame out of the .dmi, so presets show real sprites without a capture.
+ */
+function withSprites(v: unknown): any {
+  if (typeof v === 'string') {
+    // Optionally quoted, for the windows that strip the quotes BYOND's photo refs carry.
+    const m = v.match(/^('?)dmi:([^:]+\.dmi):([^:']*)(?::(\d+))?'?$/);
+    return m
+      ? `${m[1]}dmi/${m[2]}?state=${encodeURIComponent(m[3])}&dir=${m[4] ?? 2}${m[1]}`
+      : v;
+  }
+  if (Array.isArray(v)) return v.map(withSprites);
+  if (v && typeof v === 'object') {
+    return Object.fromEntries(
+      Object.entries(v).map(([k, x]) => [k, withSprites(x)]),
+    );
+  }
+  return v;
+}
+
+function dataFor(name: string, variant: string | null): Data {
+  return withSprites(rawDataFor(name, variant));
+}
+
+function rawDataFor(name: string, variant: string | null): Data {
+  if (variant === 'captured') {
+    return load(requireCaptured, `./${name}.json`) ?? {};
+  }
+  if (variant) {
+    return {
+      ...baseDataFor(name),
+      ...(load(requireWritten, `./${name}.${variant}.json`) ?? {}),
+    };
+  }
+  return baseDataFor(name);
 }
 
 /** Names of every window this bundle can show, for the driver. */
@@ -69,8 +123,34 @@ function dataFor(name: string): Record<string, unknown> {
         .replace(/(\/index)?\.[tj]sx$/, ''),
     );
 
-const name = new URLSearchParams(location.search).get('w') ?? '';
+/** Every render target, [window, variant | null], one per fixture this bundle holds, for the driver. */
+(window as any).previewFixtures = () => {
+  const out: Array<[string, string | null]> = [];
+  const seen = new Set<string>();
+  const add = (w: string, v: string | null) => {
+    if (!seen.has(`${w}.${v}`)) {
+      seen.add(`${w}.${v}`);
+      out.push([w, v]);
+    }
+  };
+  for (const k of requireWritten.keys()) {
+    const m = k.match(/^\.\/([^.]+)(?:\.([^.]+))?\.json$/);
+    if (m) add(m[1], m[2] ?? null);
+  }
+  for (const k of requireCaptured.keys()) {
+    const m = k.match(/^\.\/([^.]+)\.json$/);
+    if (m) add(m[1], null);
+  }
+  for (const w of Object.keys(captured)) add(w, null);
+  return out.filter(([w]) => findInterface(w));
+};
+
+const params = new URLSearchParams(location.search);
+const name = params.get('w') ?? '';
+const variant = params.get('v');
 const Routed = findInterface(name);
+const themeOverride = params.get('theme');
+if (themeOverride) (globalThis as any).__TGUI_PREVIEW_THEME__ = themeOverride;
 
 store.set(suspendedAtom, false);
 store.set(configAtom, {
@@ -78,7 +158,7 @@ store.set(configAtom, {
   status: 2,
   interface: { name, layout: 'default' },
   window: {
-    key: 'preview',
+    key: `preview-${name}`,
     size: [560, 640],
     fancy: false,
     locked: false,
@@ -87,8 +167,7 @@ store.set(configAtom, {
   user: { name: 'tester', observer: 0 },
 } as any);
 store.set(gameStaticDataAtom, {});
-store.set(gameDataAtom, dataFor(name));
-// ?data=<url>: the window's data from a JSON file served beside the bundle (more than one sample per window, e.g. one per article).
+store.set(gameDataAtom, dataFor(name, variant));
 // useBackend reads the store without subscribing, so the data is in place before the first render.
 function renderWindow() {
   createRoot(document.getElementById('app')!).render(
@@ -101,20 +180,72 @@ function renderWindow() {
     </StrictMode>,
   );
 }
-const dataUrl = new URLSearchParams(location.search).get('data');
-if (dataUrl) {
-  fetch(dataUrl)
-    .then((r) => r.json())
-    .then((d) => store.set(gameDataAtom, d))
-    .finally(renderWindow);
-} else {
-  renderWindow();
-}
-(window as any).previewReady = true;
 
-// ?check=1: once the window has settled, run the alignment checks and hand the findings to the parent frame;
-// ?mark=1 outlines them (for the per-issue screenshot).
-const params = new URLSearchParams(location.search);
+/** The sprite cache, when the server has one (tools/tgui_preview/capture.ts): asset names -> URLs, and every spritesheet's CSS. */
+async function loadSprites() {
+  try {
+    const r = await fetch('sprites/index.json');
+    if (!r.ok) return;
+    const index = await r.json();
+    // Names only: loadMappings() would also inject every .css/.js asset the game ships (old panel styles); the sheets are linked below.
+    Object.assign(loadedMappings, index.mappings ?? {});
+    await Promise.all(
+      (index.css ?? []).map(
+        (href: string) =>
+          new Promise<void>((done) => {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            link.onload = () => done();
+            link.onerror = () => done();
+            document.head.appendChild(link);
+          }),
+      ),
+    );
+  } catch {
+    // No cache: sprites stay blank.
+  }
+}
+
+// A window that wraps its base64 icon in a data: URL wraps a `dmi:` sprite too: unwrap it to the server's frame URL.
+const unwrapSprite = (img: HTMLImageElement) => {
+  const m = img.getAttribute('src')?.match(/^data:[^,]*,(dmi\/.+)$/);
+  if (m) img.setAttribute('src', m[1]);
+};
+new MutationObserver((records) => {
+  for (const r of records) {
+    if (r.type === 'attributes' && r.target instanceof HTMLImageElement) {
+      unwrapSprite(r.target);
+    }
+    for (const n of r.addedNodes) {
+      if (n instanceof HTMLElement) {
+        if (n instanceof HTMLImageElement) unwrapSprite(n);
+        n.querySelectorAll('img').forEach(unwrapSprite);
+      }
+    }
+  }
+}).observe(document.documentElement, {
+  subtree: true,
+  childList: true,
+  attributes: true,
+  attributeFilter: ['src'],
+});
+
+// ?data=<url>: the window's data from a JSON file served beside the bundle (more than one sample per window, e.g. one per article).
+const dataUrl = params.get('data');
+(async () => {
+  await loadSprites();
+  if (dataUrl) {
+    try {
+      store.set(gameDataAtom, await (await fetch(dataUrl)).json());
+    } catch {
+      // keep the fixture
+    }
+  }
+  renderWindow();
+  (window as any).previewReady = true;
+})();
+
 // ?css=<rules> injects a stylesheet: the checker's self-test breaks the layout on purpose to prove each rule fires.
 const injected = params.get('css');
 if (injected) {
@@ -122,6 +253,8 @@ if (injected) {
   style.textContent = injected;
   document.head.appendChild(style);
 }
+// ?check=1: once the window has settled, run the alignment checks and hand the findings to the parent frame;
+// ?mark=1 outlines them (for the per-issue screenshot).
 if (params.get('check') || params.get('mark')) {
   setTimeout(async () => {
     await document.fonts?.ready;

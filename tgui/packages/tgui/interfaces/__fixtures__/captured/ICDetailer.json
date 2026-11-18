@@ -1,0 +1,21 @@
+{
+	"detail_color": "#E2E2E2",
+	"color_list": {
+		"dark gray": "#545454",
+		"machine gray": "#9497AB",
+		"white": "#E2E2E2",
+		"red": "#CC4242",
+		"orange": "#E39751",
+		"beige": "#AF9366",
+		"brown": "#97670E",
+		"gold": "#AA9100",
+		"yellow": "#CECA2B",
+		"gurkha": "#999875",
+		"light green": "#789876",
+		"green": "#44843C",
+		"light blue": "#5D99BE",
+		"blue": "#38559E",
+		"purple": "#6F6192",
+		"hot pink": "#FF69B4"
+	}
+}

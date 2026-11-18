@@ -1,0 +1,16 @@
+{
+	"showing_archived": 0,
+	"article": null,
+	"all_articles": [
+		{
+			"name": "Starfire Report: Year 2564",
+			"uid": 561,
+			"archived": null
+		},
+		{
+			"name": "Starfire Report: Year 2565",
+			"uid": 562,
+			"archived": null
+		}
+	]
+}

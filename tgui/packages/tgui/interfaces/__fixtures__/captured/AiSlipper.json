@@ -1,0 +1,9 @@
+{
+	"area_name": "Space",
+	"locked": 1,
+	"is_silicon": 0,
+	"disabled": 1,
+	"cooldown_on": 0,
+	"uses": 20,
+	"cooldown_timeleft": 0
+}

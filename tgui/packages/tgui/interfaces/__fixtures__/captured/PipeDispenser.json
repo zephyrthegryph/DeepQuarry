@@ -1,0 +1,223 @@
+{
+	"disposals": 0,
+	"p_layer": 2,
+	"pipe_layers": {
+		"Regular": 2,
+		"Supply": 1,
+		"Scrubber": 3,
+		"Fuel": 4,
+		"Aux": 5
+	},
+	"categories": [
+		{
+			"cat_name": "Pipes",
+			"recipes": [
+				{
+					"pipe_name": "Pipe",
+					"ref": 1,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Bent Pipe",
+					"ref": 1,
+					"bent": 1
+				},
+				{
+					"pipe_name": "Manifold",
+					"ref": 2,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Manual Valve",
+					"ref": 3,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Digital Valve",
+					"ref": 4,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Pipe cap",
+					"ref": 5,
+					"bent": 0
+				},
+				{
+					"pipe_name": "4-Way Manifold",
+					"ref": 6,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Manual T-Valve",
+					"ref": 7,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Digital T-Valve",
+					"ref": 8,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Upward Pipe",
+					"ref": 9,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Downward Pipe",
+					"ref": 10,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Universal Pipe Adaptor",
+					"ref": 11,
+					"bent": 0
+				}
+			]
+		},
+		{
+			"cat_name": "Devices",
+			"recipes": [
+				{
+					"pipe_name": "Connector",
+					"ref": 12,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Unary Vent",
+					"ref": 13,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Aux Vent",
+					"ref": 14,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Passive Vent",
+					"ref": 15,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Injector",
+					"ref": 16,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Gas Pump",
+					"ref": 17,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Fuel Pump",
+					"ref": 18,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Aux Pump",
+					"ref": 19,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Pressure Regulator",
+					"ref": 20,
+					"bent": 0
+				},
+				{
+					"pipe_name": "High Power Gas Pump",
+					"ref": 21,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Volumetric Gas Pump",
+					"ref": 22,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Automatic Shutoff Valve",
+					"ref": 23,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Scrubber",
+					"ref": 24,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Meter",
+					"ref": 25,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Gas Filter",
+					"ref": 26,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Gas Mixer",
+					"ref": 27,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Gas Mixer 'T'",
+					"ref": 28,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Omni Gas Mixer",
+					"ref": 29,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Omni Gas Filter",
+					"ref": 30,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Gas Sensor",
+					"ref": 31,
+					"bent": 0
+				}
+			]
+		},
+		{
+			"cat_name": "Heat Exchange",
+			"recipes": [
+				{
+					"pipe_name": "Pipe",
+					"ref": 32,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Bent Pipe",
+					"ref": 32,
+					"bent": 1
+				},
+				{
+					"pipe_name": "Junction",
+					"ref": 33,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Heat Exchanger",
+					"ref": 34,
+					"bent": 0
+				}
+			]
+		},
+		{
+			"cat_name": "Insulated pipes",
+			"recipes": [
+				{
+					"pipe_name": "Pipe",
+					"ref": 35,
+					"bent": 0
+				},
+				{
+					"pipe_name": "Bent Pipe",
+					"ref": 35,
+					"bent": 1
+				}
+			]
+		}
+	]
+}

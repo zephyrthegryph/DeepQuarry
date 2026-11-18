@@ -1,0 +1,52 @@
+{
+	"tgui_construction": [
+		{
+			"key": "a purple, human shaped switch",
+			"background": "purple",
+			"icon": "user",
+			"foreground": "yellow"
+		},
+		{
+			"key": "a yellow, human shaped pad",
+			"background": "yellow",
+			"icon": "user",
+			"foreground": "white"
+		},
+		{
+			"key": "a yellow, dog shaped switch",
+			"background": "yellow",
+			"icon": "dog",
+			"foreground": "yellow"
+		},
+		{
+			"key": "a orange, heart shaped lever",
+			"background": "orange",
+			"icon": "heart",
+			"foreground": "red"
+		},
+		{
+			"key": "a yellow, round shaped switch",
+			"background": "yellow",
+			"icon": "circle",
+			"foreground": "yellow"
+		},
+		{
+			"key": "a red, heart shaped switch",
+			"background": "red",
+			"icon": "heart",
+			"foreground": "yellow"
+		},
+		{
+			"key": "a white, dog shaped hole",
+			"background": "white",
+			"icon": "dog",
+			"foreground": "black"
+		},
+		{
+			"key": "a yellow, square shaped hole",
+			"background": "yellow",
+			"icon": "square",
+			"foreground": "black"
+		}
+	]
+}

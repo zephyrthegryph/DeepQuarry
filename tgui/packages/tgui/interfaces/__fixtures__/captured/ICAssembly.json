@@ -1,0 +1,12 @@
+{
+	"max_components": 20,
+	"max_complexity": 60,
+	"assembly_name": "electronic assembly",
+	"total_parts": 0,
+	"total_complexity": 0,
+	"battery_charge": 480,
+	"battery_max": 480,
+	"net_power": 0,
+	"circuits": [],
+	"component_positions": []
+}

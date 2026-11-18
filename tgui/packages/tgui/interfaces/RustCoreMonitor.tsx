@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Knob, Section, Table } from 'tgui-core/components';
+import { EmptyState } from './common/EmptyState';
 import type {
   RustCoreMonitorActions,
   RustCoreMonitorData,
@@ -30,18 +31,21 @@ export const RustCoreMonitorContent = (props) => {
         </Button>
       }
     >
+      {cores.length === 0 && (
+        <EmptyState>
+          No fusion cores are linked. Set the tag to match a core.
+        </EmptyState>
+      )}
       <Table>
         <Table.Row header>
           <Table.Cell>Name</Table.Cell>
           <Table.Cell>Position</Table.Cell>
-          <Table.Cell>Field Status</Table.Cell>
-          <Table.Cell>Reactant Mode</Table.Cell>
-          <Table.Cell>Field Instability</Table.Cell>
-          <Table.Cell>Field Temperature</Table.Cell>
-          <Table.Cell style={{ textAlign: 'center' }}>
-            Field Strength
-          </Table.Cell>
-          <Table.Cell>Plasma Content</Table.Cell>
+          <Table.Cell>Field</Table.Cell>
+          <Table.Cell>Reactants</Table.Cell>
+          <Table.Cell>Instability</Table.Cell>
+          <Table.Cell>Temp.</Table.Cell>
+          <Table.Cell style={{ textAlign: 'center' }}>Strength</Table.Cell>
+          <Table.Cell>Plasma</Table.Cell>
         </Table.Row>
         {cores.map((core) => (
           <Table.Row key={core.name}>

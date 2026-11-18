@@ -1,0 +1,19 @@
+{
+	"safety": 0,
+	"selected_option": null,
+	"on": 0,
+	"containersRemovable": 1,
+	"output_options": [],
+	"our_contents": [
+		{
+			"progress": 0,
+			"progressText": [
+				"average",
+				"Not Cooking."
+			],
+			"prediction": "",
+			"container": " 1 - empty"
+		}
+	],
+	"icon_used": null
+}

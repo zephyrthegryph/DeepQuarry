@@ -1,0 +1,42 @@
+{
+	"wire_view": 0,
+	"lighthack": 0,
+	"wires": [
+		{
+			"name": "Red",
+			"cut": 0
+		},
+		{
+			"name": "Blue",
+			"cut": 0
+		},
+		{
+			"name": "Green",
+			"cut": 0
+		},
+		{
+			"name": "Marigold",
+			"cut": 0
+		},
+		{
+			"name": "Fuschia",
+			"cut": 0
+		},
+		{
+			"name": "Black",
+			"cut": 0
+		},
+		{
+			"name": "Pearl",
+			"cut": 0
+		}
+	],
+	"auth": 0,
+	"yes_code": 0,
+	"timing": 0,
+	"safety": 1,
+	"anchored": 0,
+	"status_label": "Auth. S1-Safe",
+	"code_display": "AUTH",
+	"timeleft": 60
+}

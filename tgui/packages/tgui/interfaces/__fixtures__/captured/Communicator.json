@@ -1,0 +1,155 @@
+{
+	"manifest": [
+		{
+			"cat": "Command",
+			"elems": []
+		},
+		{
+			"cat": "Security",
+			"elems": []
+		},
+		{
+			"cat": "Engineering",
+			"elems": []
+		},
+		{
+			"cat": "Medical",
+			"elems": []
+		},
+		{
+			"cat": "Science",
+			"elems": []
+		},
+		{
+			"cat": "Cargo",
+			"elems": []
+		},
+		{
+			"cat": "Exploration",
+			"elems": []
+		},
+		{
+			"cat": "Civilian",
+			"elems": []
+		},
+		{
+			"cat": "Silicon",
+			"elems": []
+		},
+		{
+			"cat": "Miscellaneous",
+			"elems": []
+		}
+	],
+	"mapRef": "communicator_[0x0000001]_map",
+	"visible": 1,
+	"targetAddress": "",
+	"targetAddressName": "",
+	"currentTab": 1,
+	"ring": 1,
+	"note": "Thank you for choosing the T-14.2 Communicator, this is your notepad!",
+	"flashlight": 0,
+	"selfie_mode": 0,
+	"owner": "Unset",
+	"occupation": "Swipe ID to set.",
+	"connectionStatus": 0,
+	"address": "Unallocated",
+	"knownDevices": [],
+	"invitesSent": [],
+	"requestsReceived": [],
+	"voice_mobs": [],
+	"communicating": [],
+	"video_comm": null,
+	"phone_video_comm": null,
+	"imContacts": [],
+	"imList": [],
+	"time": "00:01",
+	"homeScreen": [
+		{
+			"module": "Phone",
+			"icon": "phone",
+			"number": 2
+		},
+		{
+			"module": "Contacts",
+			"icon": "user",
+			"number": 3
+		},
+		{
+			"module": "Messaging",
+			"icon": "comment-alt",
+			"number": 4
+		},
+		{
+			"module": "News",
+			"icon": "newspaper",
+			"number": 5
+		},
+		{
+			"module": "Note",
+			"icon": "sticky-note",
+			"number": 6
+		},
+		{
+			"module": "Weather",
+			"icon": "sun",
+			"number": 7
+		},
+		{
+			"module": "Crew Manifest",
+			"icon": "crown",
+			"number": 8
+		},
+		{
+			"module": "Settings",
+			"icon": "cog",
+			"number": 9
+		}
+	],
+	"weather": [],
+	"aircontents": [
+		{
+			"entry": "Pressure",
+			"val": 0,
+			"units": " kPa",
+			"bad_low": 20,
+			"poor_low": 80,
+			"poor_high": 120,
+			"bad_high": 300
+		},
+		{
+			"entry": "Temperature",
+			"val": -270.4,
+			"units": "&deg;C",
+			"bad_low": -100,
+			"poor_low": 10,
+			"poor_high": 40,
+			"bad_high": 100
+		}
+	],
+	"feeds": [
+		{
+			"name": "Station Announcements",
+			"censored": 0,
+			"author": "NanoTrasen",
+			"messages": [],
+			"index": 1
+		},
+		{
+			"name": "The Gibson Gazette",
+			"censored": 0,
+			"author": "Editor Mike Hammers",
+			"messages": [],
+			"index": 2
+		},
+		{
+			"name": "Oculum Content Aggregator",
+			"censored": 0,
+			"author": "Oculus v6rev7",
+			"messages": [],
+			"index": 3
+		}
+	],
+	"latest_news": [],
+	"target_feed": null
+}

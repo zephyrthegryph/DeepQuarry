@@ -1,0 +1,22 @@
+{
+	"aircontents": [
+		{
+			"entry": "Pressure",
+			"val": 0,
+			"units": " kPa",
+			"bad_low": 20,
+			"poor_low": 80,
+			"poor_high": 120,
+			"bad_high": 300
+		},
+		{
+			"entry": "Temperature",
+			"val": -270.4,
+			"units": "&deg;C",
+			"bad_low": -100,
+			"poor_low": 10,
+			"poor_high": 40,
+			"bad_high": 100
+		}
+	]
+}

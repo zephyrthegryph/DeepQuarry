@@ -17,6 +17,7 @@ import {
 import { flow } from 'tgui-core/fp';
 import type { BooleanLike } from 'tgui-core/react';
 import { capitalizeAll, createSearch } from 'tgui-core/string';
+import { EmptyState } from './common/EmptyState';
 import { getLayoutState, LAYOUT, LayoutToggle } from './common/LayoutToggle';
 import type { VendingActions } from './generated/Vending';
 
@@ -140,6 +141,13 @@ export const VendingMain = (props) => {
         </Stack>
       }
     >
+      {myproducts.length === 0 && (
+        <EmptyState>
+          {products.length
+            ? 'Nothing here matches the search.'
+            : 'This machine is empty.'}
+        </EmptyState>
+      )}
       <VendingProducts layout={toggleLayout} products={myproducts} />
     </Section>
   );

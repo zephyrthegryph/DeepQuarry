@@ -1,0 +1,6 @@
+{
+	"enabled": 1,
+	"dos_capacity": 500,
+	"dos_overload": 0,
+	"dos_crashed": 0
+}

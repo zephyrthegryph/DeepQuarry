@@ -1,0 +1,87 @@
+{
+	"current_flavor": "vanilla",
+	"icecrem_data": [
+		{
+			"index": 1,
+			"name": "vanilla",
+			"amount_left": 5,
+			"ingredients": [
+				"milk",
+				"ice"
+			]
+		},
+		{
+			"index": 3,
+			"name": "strawberry",
+			"amount_left": 5,
+			"ingredients": [
+				"milk",
+				"ice",
+				"berryjuice"
+			]
+		},
+		{
+			"index": 2,
+			"name": "chocolate",
+			"amount_left": 5,
+			"ingredients": [
+				"milk",
+				"ice",
+				"coco"
+			]
+		},
+		{
+			"index": 4,
+			"name": "blue",
+			"amount_left": 5,
+			"ingredients": [
+				"milk",
+				"ice",
+				"singulo"
+			]
+		}
+	],
+	"cone_data": [
+		{
+			"index": 5,
+			"name": "waffle",
+			"amount_left": 5,
+			"ingredients": [
+				"flour",
+				"sugar"
+			]
+		},
+		{
+			"index": 6,
+			"name": "chocolate",
+			"amount_left": 5,
+			"ingredients": [
+				"flour",
+				"sugar",
+				"coco"
+			]
+		}
+	],
+	"reagent_data": [
+		{
+			"name": "Milk",
+			"volume": 5,
+			"id": "milk"
+		},
+		{
+			"name": "Flour",
+			"volume": 5,
+			"id": "flour"
+		},
+		{
+			"name": "Sugar",
+			"volume": 5,
+			"id": "sugar"
+		},
+		{
+			"name": "Ice",
+			"volume": 5,
+			"id": "ice"
+		}
+	]
+}

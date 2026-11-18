@@ -1,0 +1,9 @@
+{
+	"eftpos_name": "Default EFTPOS scanner",
+	"machine_id": "NSS Ade-testing EFTPOS #6",
+	"transaction_purpose": "Default charge",
+	"transaction_amount": 0,
+	"transaction_locked": 0,
+	"transaction_paid": 0,
+	"linked_account_name": "NSS Ade-testing Station Account"
+}

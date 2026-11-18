@@ -1,0 +1,9 @@
+{
+	"current_toner": 30,
+	"num_copies": 1,
+	"has_item": 0,
+	"isAI": 0,
+	"can_AI_print": 1,
+	"has_toner": 1,
+	"max_toner": 40
+}

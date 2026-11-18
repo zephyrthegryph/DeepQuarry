@@ -20,13 +20,13 @@
 			{
 				"name": "Standard Tools",
 				"ref": 9001,
-				"icon": "wrench",
+				"icon": "dmi:icons/obj/tools.dmi:wrench",
 				"desc": "Standard Tools module"
 			},
 			{
 				"name": "Fire Extinguisher",
 				"ref": 9002,
-				"icon": "wrench",
+				"icon": "dmi:icons/obj/tools.dmi:wrench",
 				"desc": "Fire Extinguisher module"
 			}
 		],
@@ -156,7 +156,7 @@
 			{
 				"name": "Welder",
 				"ref": 9401,
-				"icon": "wrench",
+				"icon": "dmi:icons/obj/tools.dmi:wrench",
 				"desc": "Welder module"
 			}
 		]

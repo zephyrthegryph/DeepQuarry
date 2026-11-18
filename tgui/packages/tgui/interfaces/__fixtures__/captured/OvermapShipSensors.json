@@ -1,0 +1,11 @@
+{
+	"viewing": 0,
+	"on": 0,
+	"range": null,
+	"health": 0,
+	"max_health": 0,
+	"heat": 0,
+	"critical_heat": 0,
+	"status": "MISSING",
+	"contacts": []
+}

@@ -1,0 +1,82 @@
+{
+	"view": "main",
+	"title": "Mecha",
+	"main": {
+		"smoke_reserve": 5,
+		"damage_reports": [],
+		"high_pressure": 0,
+		"has_armor": 1,
+		"armor_percent": 100,
+		"has_hull": 1,
+		"hull_percent": 100,
+		"integrity_percent": 100,
+		"cell_percent": 100,
+		"use_internal_tank": 0,
+		"tank_pressure": 607.95,
+		"tank_temp_k": 293.2,
+		"tank_temp_c": 20,
+		"cabin_pressure": 0,
+		"cabin_temp_k": 2.7,
+		"cabin_temp_c": -270.4,
+		"lights": 0,
+		"dna_lock": "",
+		"defence_mode_possible": 0,
+		"defence_mode": 0,
+		"overload_possible": 0,
+		"overload": 0,
+		"smoke_possible": 0,
+		"thrusters_possible": 0,
+		"thrusters": 0,
+		"cargo": [],
+		"radio_mic": 0,
+		"radio_spk": 1,
+		"radio_freq": "145.9",
+		"airtank_disconnect": 0,
+		"airtank_connect": 1,
+		"id_upload_locked": 1,
+		"maint_access": 1,
+		"equipment": [],
+		"commands": [],
+		"slots": [
+			{
+				"label": "Hull",
+				"used": 0,
+				"max": 2
+			},
+			{
+				"label": "Weapon",
+				"used": 0,
+				"max": 2
+			},
+			{
+				"label": "Micro Weapon",
+				"used": 0,
+				"max": 0
+			},
+			{
+				"label": "Utility",
+				"used": 0,
+				"max": 2
+			},
+			{
+				"label": "Micro Utility",
+				"used": 0,
+				"max": 0
+			},
+			{
+				"label": "Universal",
+				"used": 0,
+				"max": 2
+			},
+			{
+				"label": "Special",
+				"used": 0,
+				"max": 1
+			}
+		],
+		"can_eject": 0
+	},
+	"log_entries": null,
+	"access": null,
+	"maint": null
+}

@@ -1,0 +1,167 @@
+{
+	"alarms": [
+		{
+			"name": "Engine Room Air Alarm [4660]",
+			"ref": 1,
+			"danger": 0,
+			"x": 65,
+			"y": 16,
+			"z": 1
+		},
+		{
+			"name": "Engine Gas Storage Air Alarm [4442]",
+			"ref": 2,
+			"danger": 0,
+			"x": 79,
+			"y": 17,
+			"z": 1
+		},
+		{
+			"name": "Engineering Workshop Air Alarm [9754]",
+			"ref": 3,
+			"danger": 0,
+			"x": 86,
+			"y": 17,
+			"z": 1
+		},
+		{
+			"name": "Particle Accelerator Room Air Alarm [3848]",
+			"ref": 4,
+			"danger": 0,
+			"x": 63,
+			"y": 20,
+			"z": 1
+		},
+		{
+			"name": "Engine Monitoring Room Air Alarm [6769]",
+			"ref": 5,
+			"danger": 0,
+			"x": 73,
+			"y": 20,
+			"z": 1
+		},
+		{
+			"name": "Bridge Air Alarm [630]",
+			"ref": 6,
+			"danger": 0,
+			"x": 16,
+			"y": 24,
+			"z": 1
+		},
+		{
+			"name": "Engine Monitoring Room Air Alarm [329]",
+			"ref": 7,
+			"danger": 0,
+			"x": 72,
+			"y": 25,
+			"z": 1
+		},
+		{
+			"name": "Engine Monitoring Room Air Alarm [4367]",
+			"ref": 8,
+			"danger": 0,
+			"x": 77,
+			"y": 29,
+			"z": 1
+		},
+		{
+			"name": "Engine Room Air Alarm [9928]",
+			"ref": 9,
+			"danger": 0,
+			"x": 66,
+			"y": 31,
+			"z": 1
+		},
+		{
+			"name": "Civilian Hallway Fore Air Alarm [6130]",
+			"ref": 10,
+			"danger": 0,
+			"x": 74,
+			"y": 35,
+			"z": 1
+		},
+		{
+			"name": "Fore Primary Hallway Air Alarm [6571]",
+			"ref": 11,
+			"danger": 0,
+			"x": 37,
+			"y": 36,
+			"z": 1
+		},
+		{
+			"name": "Bar Air Alarm [6566]",
+			"ref": 12,
+			"danger": 0,
+			"x": 71,
+			"y": 43,
+			"z": 1
+		},
+		{
+			"name": "Medbay Hallway - Starboard Air Alarm [8318]",
+			"ref": 13,
+			"danger": 0,
+			"x": 48,
+			"y": 48,
+			"z": 1
+		},
+		{
+			"name": "Kitchen Air Alarm [383]",
+			"ref": 14,
+			"danger": 0,
+			"x": 22,
+			"y": 49,
+			"z": 1
+		},
+		{
+			"name": "Civilian Hallway Aft Air Alarm [7253]",
+			"ref": 15,
+			"danger": 0,
+			"x": 65,
+			"y": 52,
+			"z": 1
+		},
+		{
+			"name": "Medbay Hallway - Starboard Air Alarm [5879]",
+			"ref": 16,
+			"danger": 0,
+			"x": 58,
+			"y": 53,
+			"z": 1
+		},
+		{
+			"name": "Medbay Hallway - Port Air Alarm [1890]",
+			"ref": 17,
+			"danger": 0,
+			"x": 41,
+			"y": 57,
+			"z": 1
+		},
+		{
+			"name": "Engineering Primary Hallway Air Alarm [1420]",
+			"ref": 18,
+			"danger": 0,
+			"x": 38,
+			"y": 63,
+			"z": 1
+		},
+		{
+			"name": "Engineering SMES Air Alarm [6296]",
+			"ref": 19,
+			"danger": 0,
+			"x": 35,
+			"y": 69,
+			"z": 1
+		},
+		{
+			"name": "Telecomms Control Room Air Alarm [9869]",
+			"ref": 20,
+			"danger": 0,
+			"x": 26,
+			"y": 75,
+			"z": 1
+		}
+	],
+	"map_levels": [
+		1
+	]
+}

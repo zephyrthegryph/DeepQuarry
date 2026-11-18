@@ -1,0 +1,47 @@
+{
+	"maintenance": 0,
+	"generator": 0,
+	"gridstatus": 3,
+	"tankmax": 30,
+	"power_cell_status": 0,
+	"cell_status": null,
+	"bruteheal_charge": 0,
+	"burnheal_charge": 0,
+	"toxheal_charge": 0,
+	"bruteheal_vol": 0,
+	"burnheal_vol": 0,
+	"toxheal_vol": 0,
+	"patient_name": null,
+	"patient_health": 0,
+	"patient_diagnosis": null,
+	"blood_status": [],
+	"patient_status": 0,
+	"organ_damage": 0,
+	"inner_bleeding": 0,
+	"examine_data": {
+		"smodule": {
+			"name": "scanning module",
+			"range": 3,
+			"rating": 1
+		},
+		"smanipulator": {
+			"name": "micro-manipulator",
+			"rating": 1
+		},
+		"slaser": {
+			"name": "micro-laser",
+			"rating": 1
+		},
+		"scapacitor": {
+			"name": "capacitor",
+			"chargecap": 1000,
+			"rating": 1
+		},
+		"sbin": {
+			"name": "matter bin",
+			"chemcap": 60,
+			"tankmax": 30,
+			"rating": 1
+		}
+	}
+}

@@ -151,9 +151,9 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 		portData[++portData.len] = list("dir" = dir_name(P.dir, capitalize = 1), "concentration" = P.concentration, "input" = P.mode == ATM_INPUT, "output" = P.mode == ATM_OUTPUT, "con_lock" = P.con_lock)
 	if(portData.len)
 		data["ports"] = portData
-	if(output)
-		data["set_flow_rate"] = round(set_flow_rate)
-		data["last_flow_rate"] = round(last_flow_rate)
+	// Always sent: the window shows both rates whether or not an output port is set.
+	data["set_flow_rate"] = round(set_flow_rate)
+	data["last_flow_rate"] = round(last_flow_rate)
 	return data
 
 /// The ports, the rate and the shares are changed only while configuring with the mixer off (silent, as the old early returns were).

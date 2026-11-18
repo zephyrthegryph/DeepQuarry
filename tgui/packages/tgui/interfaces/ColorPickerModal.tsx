@@ -55,7 +55,8 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = () => {
   const { act, data } = useBackend<ColorPickerData, ColorPickerModalActions>();
   const { timeout, message, autofocus, presets } = data;
   let { title } = data;
-  const default_color = data.default_color ?? '#000000';
+  // The server sends '' when the prompt has no starting colour: '' would parse to NaN in every channel.
+  const default_color = data.default_color || '#000000';
 
   const [selectedColor, setSelectedColor] = useState<HsvaColor>(
     hexToHsva(default_color),

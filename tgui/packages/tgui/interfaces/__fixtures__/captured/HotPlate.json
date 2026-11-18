@@ -1,0 +1,8 @@
+{
+	"temperature": null,
+	"target": 60,
+	"min_target": 20,
+	"max_target": 300,
+	"heating": 0,
+	"powered": 0
+}

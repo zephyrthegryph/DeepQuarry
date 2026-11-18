@@ -375,6 +375,11 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
 `ui_data(datum/act/eval/A)` output and ops with `ui_act()`; each op keeps its old action name so TSX does
 not change (doc §13, §19).
 
+**Render a window in one command:** `bun tools/tgui_preview/render.ts <Window>` (headless Chrome, real sprites, standard and narrow
+width; PNGs and a contact sheet in `E:/dq-cache/tgui-preview/runs/latest/`; no name renders every window; `--baseline <dir>` diffs).
+Presets are `tgui/packages/tgui/interfaces/__fixtures__/windows/<Window>.<variant>.json`; `bun tools/tgui_preview/capture.ts`
+recaptures every window's real data and the spritesheets. `doc/tgui_preview.md`.
+
 ## 6. Changelogs
 
 Every user-visible PR adds one `html/changelogs/<author>-<branch>.yml`:

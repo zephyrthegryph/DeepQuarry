@@ -1,7 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
-import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import {
+  Box,
+  Button,
+  LabeledList,
+  NoticeBox,
+  Section,
+  Stack,
+} from 'tgui-core/components';
 import type {
   OvermapShipSensorsActions,
   OvermapShipSensorsData,
@@ -89,16 +96,20 @@ export const OvermapShipSensorsContent = (props) => {
             value={heat}
             maxValue={critical_heat}
           >
-            {(heat < critical_heat * 0.5 && <Box>Temperature low.</Box>) ||
-              (heat < critical_heat * 0.75 && (
-                <Box>Sensor temperature high!</Box>
-              )) || (
-                <Box>
-                  TEMPERATURE CRITICAL: Disable or reduce power immediately!
-                </Box>
-              )}
+            {(typeof heat !== 'number' && 'No reading') ||
+              (heat < critical_heat * 0.5 && 'Low') ||
+              (heat < critical_heat * 0.75 && 'High') ||
+              'Critical'}
           </StatBar>
         </LabeledList>
+        {typeof heat === 'number' &&
+          critical_heat > 0 &&
+          heat >= critical_heat * 0.75 && (
+            <NoticeBox danger mt={1}>
+              Temperature critical: disable the sensors or reduce their power
+              now.
+            </NoticeBox>
+          )}
       </Section>
       <Section title="Contacts">
         {(contacts.length &&

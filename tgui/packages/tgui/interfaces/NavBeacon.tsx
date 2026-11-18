@@ -19,7 +19,7 @@ export const NavBeacon = (props) => {
   const [newVal, setNewVal] = useState('');
 
   return (
-    <Window width={420} height={300}>
+    <Window width={470} height={300}>
       <Window.Content>
         <Section fill scrollable>
           <Stack fill vertical>

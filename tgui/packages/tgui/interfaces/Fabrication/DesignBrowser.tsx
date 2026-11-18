@@ -9,6 +9,7 @@ import {
   VirtualList,
 } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
+import { EmptyState } from '../common/EmptyState';
 import { SearchBar } from '../common/SearchBar';
 import type { Design, MaterialMap } from './Types';
 
@@ -315,6 +316,9 @@ export const DesignBrowser = <T extends Design = Design>(
                   style={{ overflowY: 'auto', overflowX: 'hidden' }}
                 >
                   <Section fill>
+                    {Object.keys(root.descendants).length === 0 && (
+                      <EmptyState>No designs are available here.</EmptyState>
+                    )}
                     {searchText.length > 0 ? (
                       <VirtualList>
                         {sortBy(Object.values(root.descendants), [

@@ -1,0 +1,15 @@
+{
+	"condi": 0,
+	"pillsprite": "1",
+	"bottlesprite": "1",
+	"printing": 0,
+	"loaded_pill_bottle": 0,
+	"loaded_pill_bottle_name": null,
+	"loaded_pill_bottle_contents_len": null,
+	"loaded_pill_bottle_storage_slots": null,
+	"beaker": 0,
+	"beaker_reagents": [],
+	"buffer_reagents": [],
+	"mode": 0,
+	"modal": null
+}

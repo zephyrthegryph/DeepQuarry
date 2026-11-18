@@ -1,0 +1,9 @@
+{
+	"vessel": "Unlinked vessel",
+	"vessel_destination_id": null,
+	"docked_port_id": null,
+	"destinations": [],
+	"plan": null,
+	"expedition": null,
+	"server_time": 0
+}

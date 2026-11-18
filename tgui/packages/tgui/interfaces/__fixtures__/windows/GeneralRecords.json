@@ -461,7 +461,10 @@
 				"edit": null
 			}
 		],
-		"photos": ["'data:image/png;base64,AAAA'", "'data:image/png;base64,BBBB'"],
+		"photos": [
+			"'dmi:icons/mob/human_races/r_human.dmi:torso_m'",
+			"'dmi:icons/mob/human_races/r_human.dmi:torso_m:4'"
+		],
 		"has_photos": 1,
 		"skills": "Experienced station engineer.",
 		"comments": [

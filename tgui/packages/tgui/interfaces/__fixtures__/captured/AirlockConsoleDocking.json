@@ -1,0 +1,17 @@
+{
+	"chamber_pressure": 0,
+	"exterior_status": {
+		"state": "closed",
+		"lock": "locked"
+	},
+	"interior_status": {
+		"state": "closed",
+		"lock": "locked"
+	},
+	"processing": 0,
+	"docking_status": "undocked",
+	"airlock_disabled": null,
+	"override_enabled": 0,
+	"docking_codes": null,
+	"name": null
+}

@@ -1,0 +1,17 @@
+{
+	"capacity": 5000000,
+	"capacityPercent": 20,
+	"charge": 1000000,
+	"inputAttempt": 0,
+	"inputting": 0,
+	"inputLevel": 50000,
+	"inputLevel_text": "50 kW",
+	"inputLevelMax": 200000,
+	"inputAvailable": 0,
+	"outputAttempt": 1,
+	"outputting": 0,
+	"outputLevel": 50000,
+	"outputLevel_text": "50 kW",
+	"outputLevelMax": 200000,
+	"outputUsed": 0
+}

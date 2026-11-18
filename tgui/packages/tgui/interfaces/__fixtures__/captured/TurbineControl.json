@@ -1,0 +1,10 @@
+{
+	"compressor_broke": 1,
+	"turbine_broke": 1,
+	"broken": 1,
+	"door_status": 0,
+	"online": 0,
+	"power": 0,
+	"rpm": 0,
+	"temp": 0
+}

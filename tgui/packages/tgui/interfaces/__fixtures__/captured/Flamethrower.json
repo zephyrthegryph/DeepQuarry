@@ -1,0 +1,9 @@
+{
+	"lit": 0,
+	"constructed": 0,
+	"throw_amount": 50,
+	"has_tank": 0,
+	"throw_min": 50,
+	"throw_max": 1000,
+	"fuel_kpa": 0
+}

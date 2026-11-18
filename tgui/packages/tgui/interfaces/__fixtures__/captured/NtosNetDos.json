@@ -1,0 +1,13 @@
+{
+	"error": "",
+	"target": 0,
+	"speed": 0,
+	"overload": 0,
+	"capacity": 0,
+	"relays": [
+		{
+			"id": 37
+		}
+	],
+	"focus": null
+}

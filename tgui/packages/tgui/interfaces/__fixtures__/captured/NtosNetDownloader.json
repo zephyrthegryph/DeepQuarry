@@ -1,0 +1,15 @@
+{
+	"downloading": 0,
+	"error": null,
+	"downloadname": null,
+	"downloaddesc": null,
+	"downloadsize": null,
+	"downloadspeed": null,
+	"downloadcompletion": null,
+	"disk_size": 0,
+	"disk_used": 0,
+	"hackedavailable": 0,
+	"hacked_programs": [],
+	"downloadable_programs": [],
+	"downloads_queue": []
+}

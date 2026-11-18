@@ -1,0 +1,135 @@
+{
+	"busy": 0,
+	"production_mode": 0,
+	"panel_open": 0,
+	"use_catalyst": 1,
+	"drug_substance": 1,
+	"bottle_icon": 4,
+	"pill_icon": 2,
+	"patch_icon": 2,
+	"queue": [],
+	"recipes": [],
+	"rxn_vessel": [],
+	"catalyst": 1,
+	"catalyst_reagents": [],
+	"catalystCurrentVolume": 0,
+	"catalystMaxVolume": 60,
+	"chemicals": [
+		{
+			"title": "Aluminum",
+			"id": "Aluminum",
+			"amount": 500
+		},
+		{
+			"title": "Calcium",
+			"id": "Calcium",
+			"amount": 500
+		},
+		{
+			"title": "Carbon",
+			"id": "Carbon",
+			"amount": 500
+		},
+		{
+			"title": "Chlorine",
+			"id": "Chlorine",
+			"amount": 500
+		},
+		{
+			"title": "Copper",
+			"id": "Copper",
+			"amount": 500
+		},
+		{
+			"title": "Ethanol",
+			"id": "Ethanol",
+			"amount": 500
+		},
+		{
+			"title": "Fluorine",
+			"id": "Fluorine",
+			"amount": 500
+		},
+		{
+			"title": "Hydrogen",
+			"id": "Hydrogen",
+			"amount": 500
+		},
+		{
+			"title": "Iron",
+			"id": "Iron",
+			"amount": 500
+		},
+		{
+			"title": "Lithium",
+			"id": "Lithium",
+			"amount": 500
+		},
+		{
+			"title": "Mercury",
+			"id": "Mercury",
+			"amount": 500
+		},
+		{
+			"title": "Nitrogen",
+			"id": "Nitrogen",
+			"amount": 500
+		},
+		{
+			"title": "Oxygen",
+			"id": "Oxygen",
+			"amount": 500
+		},
+		{
+			"title": "Phosphorus",
+			"id": "Phosphorus",
+			"amount": 500
+		},
+		{
+			"title": "Potassium",
+			"id": "Potassium",
+			"amount": 500
+		},
+		{
+			"title": "Radium",
+			"id": "Radium",
+			"amount": 500
+		},
+		{
+			"title": "Silicon",
+			"id": "Silicon",
+			"amount": 500
+		},
+		{
+			"title": "Sodium",
+			"id": "Sodium",
+			"amount": 500
+		},
+		{
+			"title": "Sugar",
+			"id": "Sugar",
+			"amount": 500
+		},
+		{
+			"title": "Sulfur",
+			"id": "Sulfur",
+			"amount": 500
+		},
+		{
+			"title": "Sulphuric acid",
+			"id": "Sulphuric acid",
+			"amount": 500
+		},
+		{
+			"title": "Tungsten",
+			"id": "Tungsten",
+			"amount": 500
+		},
+		{
+			"title": "Water",
+			"id": "Water",
+			"amount": 500
+		}
+	],
+	"modal": null
+}

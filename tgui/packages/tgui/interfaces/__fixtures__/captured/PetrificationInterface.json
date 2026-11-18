@@ -1,0 +1,11 @@
+{
+	"t": 1,
+	"target": "None",
+	"can_remote": 0,
+	"material": "stone",
+	"identifier": "statue",
+	"adjective": "hardens",
+	"tint": "#ffffff",
+	"able_to_unpetrify": 1,
+	"discard_clothes": 1
+}

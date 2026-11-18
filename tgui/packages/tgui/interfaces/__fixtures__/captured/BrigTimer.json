@@ -1,0 +1,10 @@
+{
+	"timing": 0,
+	"time_left": 0,
+	"max_time_left": 36000,
+	"flash_found": 0,
+	"flash_charging": 0,
+	"preset_short": 600,
+	"preset_medium": 3000,
+	"preset_long": 6000
+}

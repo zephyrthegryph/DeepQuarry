@@ -1,0 +1,126 @@
+{
+	"target_name": "jopark",
+	"target_ref": 1,
+	"departments": [
+		{
+			"title": "Command",
+			"color": "#ccccff",
+			"dept_bantype": "commanddept",
+			"is_dept_banned": false,
+			"jobs": [
+				{
+					"title": "Site Director",
+					"display": null,
+					"is_banned": false
+				},
+				{
+					"title": "Head of Personnel",
+					"display": null,
+					"is_banned": false
+				},
+				{
+					"title": "Head of Security",
+					"display": null,
+					"is_banned": true
+				},
+				{
+					"title": "Chief Engineer",
+					"display": null,
+					"is_banned": false
+				}
+			]
+		},
+		{
+			"title": "Security",
+			"color": "#ffddf0",
+			"dept_bantype": "securitydept",
+			"is_dept_banned": false,
+			"jobs": [
+				{
+					"title": "Warden",
+					"display": null,
+					"is_banned": true
+				},
+				{
+					"title": "Detective",
+					"display": null,
+					"is_banned": false
+				},
+				{
+					"title": "Security Officer",
+					"display": null,
+					"is_banned": true
+				}
+			]
+		},
+		{
+			"title": "Engineering",
+			"color": "#fff5cc",
+			"dept_bantype": "engineeringdept",
+			"is_dept_banned": false,
+			"jobs": [
+				{
+					"title": "Station Engineer",
+					"display": null,
+					"is_banned": false
+				},
+				{
+					"title": "Atmospheric Technician",
+					"display": null,
+					"is_banned": false
+				}
+			]
+		},
+		{
+			"title": "Medical",
+			"color": "#ffeef0",
+			"dept_bantype": "medicaldept",
+			"is_dept_banned": false,
+			"jobs": [
+				{
+					"title": "Medical Doctor",
+					"display": null,
+					"is_banned": false
+				},
+				{
+					"title": "Chemist",
+					"display": null,
+					"is_banned": false
+				},
+				{
+					"title": "Paramedic",
+					"display": null,
+					"is_banned": false
+				},
+				{
+					"title": "Psychiatrist",
+					"display": null,
+					"is_banned": false
+				}
+			]
+		},
+		{
+			"title": "Non-human",
+			"color": "#ccffcc",
+			"dept_bantype": null,
+			"is_dept_banned": false,
+			"jobs": [
+				{
+					"title": "pAI",
+					"display": null,
+					"is_banned": false
+				},
+				{
+					"title": "Cyborg",
+					"display": null,
+					"is_banned": false
+				},
+				{
+					"title": "AI",
+					"display": null,
+					"is_banned": false
+				}
+			]
+		}
+	]
+}

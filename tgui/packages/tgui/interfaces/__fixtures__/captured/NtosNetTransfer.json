@@ -1,0 +1,14 @@
+{
+	"error": "",
+	"downloading": 0,
+	"download_size": null,
+	"download_progress": null,
+	"download_netspeed": null,
+	"download_name": null,
+	"uploading": 0,
+	"upload_clients": 0,
+	"upload_haspassword": 0,
+	"upload_filename": null,
+	"upload_filelist": [],
+	"servers": []
+}

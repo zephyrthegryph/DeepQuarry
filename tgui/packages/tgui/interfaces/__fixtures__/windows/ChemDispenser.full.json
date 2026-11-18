@@ -1,0 +1,142 @@
+{
+	"isBeakerLoaded": 1,
+	"glass": 0,
+	"beakerCurrentVolume": 45,
+	"beakerMaxVolume": 60,
+	"beakerContents": [
+		{
+			"name": "Water",
+			"id": "water",
+			"volume": 30
+		},
+		{
+			"name": "Sugar",
+			"id": "sugar",
+			"volume": 15
+		}
+	],
+	"chemicals": [
+		{
+			"name": "Hydrogen",
+			"id": "hydrogen",
+			"volume": 100
+		},
+		{
+			"name": "Lithium",
+			"id": "lithium",
+			"volume": 100
+		},
+		{
+			"name": "Carbon",
+			"id": "carbon",
+			"volume": 100
+		},
+		{
+			"name": "Nitrogen",
+			"id": "nitrogen",
+			"volume": 100
+		},
+		{
+			"name": "Oxygen",
+			"id": "oxygen",
+			"volume": 100
+		},
+		{
+			"name": "Fluorine",
+			"id": "fluorine",
+			"volume": 100
+		},
+		{
+			"name": "Sodium",
+			"id": "sodium",
+			"volume": 100
+		},
+		{
+			"name": "Aluminium",
+			"id": "aluminum",
+			"volume": 100
+		},
+		{
+			"name": "Silicon",
+			"id": "silicon",
+			"volume": 100
+		},
+		{
+			"name": "Phosphorus",
+			"id": "phosphorus",
+			"volume": 100
+		},
+		{
+			"name": "Sulfur",
+			"id": "sulfur",
+			"volume": 100
+		},
+		{
+			"name": "Chlorine",
+			"id": "chlorine",
+			"volume": 100
+		},
+		{
+			"name": "Potassium",
+			"id": "potassium",
+			"volume": 100
+		},
+		{
+			"name": "Iron",
+			"id": "iron",
+			"volume": 100
+		},
+		{
+			"name": "Copper",
+			"id": "copper",
+			"volume": 100
+		},
+		{
+			"name": "Mercury",
+			"id": "mercury",
+			"volume": 100
+		},
+		{
+			"name": "Radium",
+			"id": "radium",
+			"volume": 100
+		},
+		{
+			"name": "Water",
+			"id": "water",
+			"volume": 100
+		},
+		{
+			"name": "Ethanol",
+			"id": "ethanol",
+			"volume": 100
+		},
+		{
+			"name": "Sugar",
+			"id": "sugar",
+			"volume": 100
+		},
+		{
+			"name": "Sulphuric Acid",
+			"id": "sacid",
+			"volume": 100
+		},
+		{
+			"name": "Tungsten",
+			"id": "tungsten",
+			"volume": 100
+		}
+	],
+	"recipes": {
+		"Space Cleaner": [
+			{
+				"id": "ammonia",
+				"amount": 10
+			},
+			{
+				"id": "water",
+				"amount": 10
+			}
+		]
+	}
+}

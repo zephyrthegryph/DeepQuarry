@@ -1,0 +1,23 @@
+{
+	"colors": [
+		"red",
+		"yellow",
+		"green",
+		"orange",
+		"blue",
+		"cyan"
+	],
+	"player_one": null,
+	"player_two": null,
+	"placed_chips_pone": [],
+	"placed_chips_ptwo": [],
+	"game_state": 0,
+	"grid_x_size": 7,
+	"grid_y_size": 6,
+	"player_one_color": "yellow",
+	"player_two_color": "red",
+	"win_count": 4,
+	"winner": null,
+	"has_won": 0,
+	"winning_tiles": []
+}

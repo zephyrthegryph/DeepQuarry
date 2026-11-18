@@ -1,0 +1,28 @@
+{
+	"ship_sizes": {
+		"Carrier": 6,
+		"Cruiser": 4,
+		"Corvette": 3,
+		"Figher": 2
+	},
+	"total_ships": {
+		"Carrier": 1,
+		"Cruiser": 2,
+		"Corvette": 3,
+		"Figher": 4
+	},
+	"current_player": "Test Subject",
+	"player_one": null,
+	"player_two": null,
+	"all_placed": 0,
+	"shots_fired_pone": [],
+	"shots_fired_ptwo": [],
+	"destroyed_ships_pone": [],
+	"destroyed_ships_ptwo": [],
+	"visible_ships": [],
+	"ship_count_pone": [],
+	"ship_count_ptwo": [],
+	"game_state": 0,
+	"winner": null,
+	"has_won": 0
+}

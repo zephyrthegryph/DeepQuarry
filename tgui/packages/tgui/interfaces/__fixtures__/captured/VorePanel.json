@@ -1,0 +1,127 @@
+{
+	"vore_words": {
+		"%goo": [
+			"muck",
+			"goo",
+			"sludge",
+			"slime",
+			"mire",
+			"ectoplasm",
+			"quagmire",
+			"glop",
+			"jelly",
+			"ooze",
+			"slush",
+			"mush",
+			"quicksand"
+		],
+		"%happybelly": [
+			"gurgle",
+			"gloorp",
+			"squelch",
+			"gloosh",
+			"squish",
+			"groan",
+			"grrrrrrn",
+			"sloooooOrp",
+			"slooosh",
+			"grrrbles",
+			"worbles"
+		],
+		"%fat": [
+			"love handles",
+			"fat",
+			"pudge",
+			"plumpness",
+			"squish",
+			"chunk",
+			"meat",
+			"softness",
+			"blubber",
+			"flab",
+			"paunch",
+			"hip dip",
+			"mass",
+			"dough",
+			"chub",
+			"marshmellowy goodness",
+			"girth",
+			"fluff",
+			"thickness",
+			"jello",
+			"adipose "
+		],
+		"%grip": [
+			"grip",
+			"grasp",
+			"clutch",
+			"hold"
+		],
+		"%cozy": [
+			"soft",
+			"cozy",
+			"comfortable",
+			"gentle",
+			"snug",
+			"safe",
+			"restful",
+			"snuggly",
+			"intimate",
+			"secure"
+		],
+		"%angry": [
+			"hated",
+			"unsafe",
+			"angry"
+		],
+		"%acid": [
+			"acid",
+			"burbling goo",
+			"angry slop",
+			"chime",
+			"devouring liquid",
+			"slop",
+			"liquid",
+			"goo",
+			"mush",
+			"boiling liquid",
+			"hot oil"
+		],
+		"%snack": [
+			"snack",
+			"lunch",
+			"meat",
+			"calories",
+			"food",
+			"meal",
+			"dinner",
+			"chow",
+			"future pudge",
+			"fuel"
+		],
+		"%hot": [
+			"sweltering",
+			"hot",
+			"boiling",
+			"sizzling",
+			"burning",
+			"steaming",
+			"firey"
+		],
+		"%snake": [
+			"snake",
+			"serpent",
+			"reptilian",
+			"noodle",
+			"snek",
+			"noperope",
+			"throattube",
+			"armless mouth"
+		]
+	},
+	"min_belly_name": 2,
+	"max_belly_name": 40,
+	"unsaved_changes": 0,
+	"active_tab": 0,
+	"presets": ""
+}

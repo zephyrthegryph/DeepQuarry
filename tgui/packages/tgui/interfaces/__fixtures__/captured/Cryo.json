@@ -1,0 +1,9 @@
+{
+	"isOperating": 0,
+	"occupant": null,
+	"cellTemperature": 2,
+	"cellTemperatureStatus": "good",
+	"isBeakerLoaded": 0,
+	"beakerLabel": null,
+	"beakerVolume": 0
+}

@@ -1,0 +1,29 @@
+{
+	"locked": 1,
+	"siliconUser": 0,
+	"remoteUser": 0,
+	"danger_level": 0,
+	"target_temperature": "20C",
+	"rcon": 2,
+	"atmos_alarm": 0,
+	"fire_alarm": 0,
+	"mode": null,
+	"vents": [],
+	"scrubbers": [],
+	"modes": [],
+	"thresholds": [],
+	"environment_data": [
+		{
+			"name": "Pressure",
+			"value": 0,
+			"unit": "kPa",
+			"danger_level": 2
+		},
+		{
+			"name": "Temperature",
+			"value": 2.7,
+			"unit": "K (-270.4C)",
+			"danger_level": 2
+		}
+	]
+}

@@ -23,6 +23,7 @@
 			"!tgui/packages/tgfont/dist",
 			"!tgui/packages/tgui-setup/helpers.js",
 			"!tgui/packages/tgui/interfaces/generated",
+			"!tgui/packages/tgui/interfaces/__fixtures__/captured",
 			"!**/bun.lock"
 		]
 	},

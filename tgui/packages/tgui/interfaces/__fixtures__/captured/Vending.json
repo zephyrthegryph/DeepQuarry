@@ -1,0 +1,10 @@
+{
+	"chargesMoney": 0,
+	"products": [],
+	"coin": 0,
+	"actively_vending": null,
+	"panel": 0,
+	"guestNotice": "No valid ID card detected. Wear your ID, or present cash.",
+	"userMoney": 0,
+	"user": null
+}

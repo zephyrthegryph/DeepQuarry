@@ -1,0 +1,32 @@
+{
+	"currentProgram": "Turn Off",
+	"safetyDisabled": 0,
+	"supportedPrograms": [
+		"Empty Court",
+		"Boxing Ring",
+		"Basketball",
+		"Thunderdome",
+		"Beach",
+		"Desert",
+		"Snowfield",
+		"Space",
+		"Picnic Area",
+		"Theatre",
+		"Meetinghall",
+		"Courtroom",
+		"Chessboard",
+		"Micro Building Area",
+		"Gym",
+		"Game Room",
+		"Patient Ward",
+		"Inside",
+		"Turn Off"
+	],
+	"restrictedPrograms": [
+		"Burnoff Test Simulation",
+		"Wildlife Simulation"
+	],
+	"isSilicon": 0,
+	"emagged": 0,
+	"gravity": 1
+}

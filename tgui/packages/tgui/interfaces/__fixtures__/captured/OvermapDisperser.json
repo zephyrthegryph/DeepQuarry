@@ -1,0 +1,11 @@
+{
+	"faillink": 1,
+	"calibration": null,
+	"overmapdir": null,
+	"cal_accuracy": 0,
+	"strength": 0,
+	"range": 0,
+	"next_shot": -1,
+	"nopower": 1,
+	"chargeload": null
+}

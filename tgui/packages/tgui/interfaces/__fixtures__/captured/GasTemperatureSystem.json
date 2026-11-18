@@ -1,0 +1,13 @@
+{
+	"powerSetting": 100,
+	"reagentPower": 0,
+	"on": 0,
+	"gasPressure": 0,
+	"gasTemperature": 2,
+	"minGasTemperature": 0,
+	"maxGasTemperature": 793,
+	"targetGasTemperature": 293,
+	"reagentVolume": 0,
+	"reagentMaximum": 120,
+	"gasTemperatureClass": "good"
+}
