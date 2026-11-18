@@ -72,7 +72,8 @@ export const GameArea = (props) => {
           <Stack vertical>
             <Stack.Item>
               {Array.from({ length: grid_size }, (_, row) => (
-                <Stack key={row}>
+                // A gap under each row as between the columns: without it the rows ran together into tall bars.
+                <Stack key={row} mb={0.5}>
                   {Array.from({ length: grid_size }, (_, col) => {
                     const x = col + 1;
                     const y = row + 1;
