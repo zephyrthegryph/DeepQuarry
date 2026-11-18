@@ -329,22 +329,33 @@ const PROBE = `(() => {
   const app = document.getElementById('app');
   const W = innerWidth;
   let offRight = 0;
+  let sideScroll = 0;
   const offenders = [];
   for (const el of app.querySelectorAll('*')) {
     const r = el.getBoundingClientRect();
     if (!(r.width && r.height && r.right > W + 2)) continue;
+    // A LabeledList is 1em wider than its box by design (negative margins line its rows up with the section edge).
+    const list = el.closest('.LabeledList');
+    if (list && r.right <= W + 2 + parseFloat(getComputedStyle(list).fontSize)) continue;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.pointerEvents === 'none') continue; // decoration (scanlines, vignettes)
     // Inside a scroll or clip box that itself fits, it is scrolled content (a carousel, a scrollable table), not overflow.
     let clipped = false;
+    let scrolled = false;
     for (let p = el.parentElement; p && p !== app.parentElement; p = p.parentElement) {
       const o = getComputedStyle(p);
-      if (/Layout|Window|Section__content/.test(String(p.className))) continue; // the window's own scroller clips everything
+      if (/Layout|Window/.test(String(p.className))) continue; // the window's own scroller clips everything
+      if (/Section__content/.test(String(p.className))) {
+        // A section that scrolls sideways (the narrow-window fallback, styles/dq/narrow.scss): reachable, but worth a look.
+        if (o.overflowX !== 'visible' && o.overflowX !== 'hidden' && p.getBoundingClientRect().right <= W + 2) { scrolled = true; break; }
+        continue;
+      }
       if (o.overflowX !== 'visible' && p.getBoundingClientRect().right <= W + 2) { clipped = true; break; }
     }
-    if (!clipped) {
+    if (scrolled) sideScroll++;
+    else if (!clipped) {
       offRight++;
-      if (offenders.length < 3) offenders.push((el.className && String(el.className).split(' ')[0]) || el.tagName.toLowerCase());
+      offenders.push(el);
     }
   }
   // Broken images (a sprite or asset that did not load) and text drawn under 10px (unreadable on a game client).
@@ -365,7 +376,13 @@ const PROBE = `(() => {
     missing: !!document.getElementById('preview-missing'),
     crashed: /An error has occurred|Uncaught|TypeError/.test(app.innerText || '') && !!app.querySelector('.Layout__content, .Window') === false,
     hOverflow: document.documentElement.scrollWidth > W + 1,
-    offRight, offenders,
+    offRight,
+    sideScroll,
+    // The innermost elements that run off (an ancestor only runs off because they do): the ones to fix.
+    offenders: offenders
+      .filter((el) => !offenders.some((o) => o !== el && el.contains(o)))
+      .slice(0, 3)
+      .map((el) => [el.className && String(el.className).split(' ')[0], el.tagName.toLowerCase(), (el.textContent || '').trim().slice(0, 18)].filter(Boolean).join(':')),
   };
 })()`;
 
@@ -500,6 +517,7 @@ async function runJob(page: { sessionId: string }, job: Job): Promise<Result> {
   )
     problems.push('blank');
   if (probe.hOverflow) problems.push('h-overflow');
+  if (probe.sideScroll) problems.push('h-scroll');
   if (probe.brokenImg) problems.push(`broken-img:${probe.brokenImg}`);
   if (probe.tiny)
     problems.push(`tiny-text:${probe.tiny}(${probe.tinyAt.join(',')})`);
@@ -614,7 +632,10 @@ console.log(
 );
 process.exit(
   bad.some((r) =>
-    r.problems.some((p) => p !== 'console-error' && !p.startsWith('off-right')),
+    r.problems.some(
+      (p) =>
+        p !== 'console-error' && p !== 'h-scroll' && !p.startsWith('off-right'),
+    ),
   )
     ? 1
     : 0,

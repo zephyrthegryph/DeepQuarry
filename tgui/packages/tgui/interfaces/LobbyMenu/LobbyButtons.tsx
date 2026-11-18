@@ -30,7 +30,7 @@ export const LobbyButtons = (props: {
 
   return (
     <Section
-      p={3}
+      p={2}
       className="sectionLoad"
       style={{ opacity: hidden ? '0' : '1' }}
     >
@@ -47,7 +47,8 @@ export const LobbyButtons = (props: {
                 />
               </Box>
             </Stack.Item>
-            <Stack.Item minWidth="200px">
+            {/* Grows into the space beside the logo and cuts a long line with an ellipsis instead of running off the edge. */}
+            <Stack.Item grow basis={0} style={{ minWidth: 0 }}>
               <Stack vertical fill>
                 <Stack.Item>
                   <Box className="typeEffect">Welcome to {server_name}.</Box>
@@ -60,8 +61,9 @@ export const LobbyButtons = (props: {
                 </Stack.Item>
                 <Stack.Item>
                   <Box className="typeEffect">
-                    Round Duration:{' '}
-                    {round_start ? 'Initializing...' : round_time}{' '}
+                    Round Time: {round_start
+                      ? 'Initializing...'
+                      : round_time}{' '}
                   </Box>
                 </Stack.Item>
               </Stack>

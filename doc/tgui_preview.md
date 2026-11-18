@@ -20,7 +20,7 @@ every window in one theme (`console` is the default dark look; `ntos`, `paper`, 
 rebuild (about 40 s; rebuild after editing TSX/SCSS).
 
 Each shot is checked for: a JS exception or console error, a blank render (one colour over 99% of the shot, or no text), a
-window that has no export, horizontal page overflow, and elements running off the right edge (`off-right:N(first classes)`).
+window that has no export, horizontal page overflow, elements running off the right edge (`off-right:N(innermost offenders)`; a LabeledList's designed 1em overhang is not counted), and content a section scrolls sideways (`h-scroll`, the narrow fallback of `styles/dq/narrow.scss`; reported, not a failure).
 Exit status is 1 on exceptions, blank renders, missing exports or overflow.
 
 ## Regression mode
