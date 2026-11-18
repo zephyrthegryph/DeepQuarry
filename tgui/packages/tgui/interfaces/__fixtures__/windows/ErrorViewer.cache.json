@@ -1,0 +1,25 @@
+{
+	"view_kind": "cache",
+	"title": "Runtime viewer",
+	"back_ref": null,
+	"linear": 0,
+	"total_runtimes": 14,
+	"total_skipped": 3,
+	"items": [
+		{
+			"ref": "a",
+			"name": "code/domains/atmos/pipe_device.dm,88: Cannot read null.air (x9)",
+			"is_skip_count": false
+		},
+		{
+			"ref": "b",
+			"name": "code/content/economy/vending.dm,291: list index out of bounds (x4)",
+			"is_skip_count": false
+		},
+		{
+			"ref": "c",
+			"name": "3 more runtimes skipped",
+			"is_skip_count": true
+		}
+	]
+}

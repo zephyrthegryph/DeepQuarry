@@ -1,0 +1,15 @@
+{
+	"active": 1,
+	"SM_area": "Engine Room",
+	"SM_integrity": 98,
+	"SM_power": 1850,
+	"SM_ambienttemp": 412,
+	"SM_ambientpressure": 3920,
+	"SM_EPR": 1.42,
+	"SM_gas_O2": 12,
+	"SM_gas_CO2": 30,
+	"SM_gas_N2": 48,
+	"SM_gas_PH": 2,
+	"SM_gas_CH4": 0,
+	"SM_gas_N2O": 8
+}

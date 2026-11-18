@@ -4,7 +4,7 @@
  * fixture (`__fixtures__/windows/<Window>.json`), the census capture (`__fixtures__/captured/<Window>.json`, written by
  * tools/tgui_preview/capture.ts), the unit-test capture (`__fixtures__/ui_data.json`), else {}.
  * `&v=<variant>` picks a preset (`__fixtures__/windows/<Window>.<variant>.json`, e.g. empty/full/error states) laid over the
- * base data, so a preset only names the keys it changes; `&v=captured` forces the census capture. `&data=<url>` loads the
+ * base data, so a preset only names the keys it changes; `&v=captured` forces the census capture. A preset's `__shared` object presets useSharedState values (an intro already played). `&data=<url>` loads the
  * data from that JSON file instead. `&theme=<name>` draws the window in that theme. When the server has the sprite cache
  * (`sprites/index.json`), spritesheet classes, resolveAsset() names and DmIcon show real game sprites.
  */
@@ -20,6 +20,7 @@ import {
   configAtom,
   gameDataAtom,
   gameStaticDataAtom,
+  sharedAtom,
   store,
   suspendedAtom,
 } from '../events/store';
@@ -167,7 +168,12 @@ store.set(configAtom, {
   user: { name: 'tester', observer: 0 },
 } as any);
 store.set(gameStaticDataAtom, {});
-store.set(gameDataAtom, dataFor(name, variant));
+// A preset's `__shared` key presets the window's useSharedState values (an intro already seen, a tab already open).
+const { __shared, ...windowData } = dataFor(name, variant) as Data & {
+  __shared?: Record<string, unknown>;
+};
+store.set(sharedAtom, __shared ?? {});
+store.set(gameDataAtom, windowData);
 // useBackend reads the store without subscribing, so the data is in place before the first render.
 function renderWindow() {
   createRoot(document.getElementById('app')!).render(

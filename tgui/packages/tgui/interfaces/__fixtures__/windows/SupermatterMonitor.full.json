@@ -1,0 +1,14 @@
+{
+	"supermatters": [
+		{
+			"area_name": "Engine Room",
+			"integrity": 98,
+			"uid": 1
+		},
+		{
+			"area_name": "Research Test Chamber",
+			"integrity": 61,
+			"uid": 2
+		}
+	]
+}

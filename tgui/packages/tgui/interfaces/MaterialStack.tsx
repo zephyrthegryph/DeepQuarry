@@ -11,6 +11,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import { EmptyState } from './common/EmptyState';
 import type {
   MaterialStackActions,
   MaterialStackData,
@@ -45,6 +46,9 @@ export const MaterialStack = (props) => {
               />
             </Stack.Item>
             <Stack.Item>
+              {Object.keys(recipes).length === 0 && (
+                <EmptyState>Nothing can be made from this stack.</EmptyState>
+              )}
               <RecipeList recipes={recipes} searchText={searchText} />
             </Stack.Item>
           </Stack>
@@ -81,7 +85,7 @@ const RecipeList = (props: { recipes: RecipeTree; searchText: string }) => {
     const recipe = recipes[title];
     if (!isRecipe(recipe)) {
       return (
-        <Collapsible key={index} ml={1} mb={-0.7} color="label" title={title}>
+        <Collapsible key={index} title={title}>
           <Box ml={1}>
             <RecipeList recipes={recipe} searchText={searchText} />
           </Box>
@@ -119,6 +123,7 @@ const Multipliers = (props) => {
     if (maxM >= multiplier) {
       finalResult.push(
         <Button
+          key={multiplier}
           onClick={() =>
             act('make', {
               ref: recipe.ref,
@@ -135,6 +140,7 @@ const Multipliers = (props) => {
   if (multipliers.indexOf(maxM) === -1) {
     finalResult.push(
       <Button
+        key="max"
         onClick={() =>
           act('make', {
             ref: recipe.ref,
@@ -178,6 +184,7 @@ const Recipe = (props: { recipe: recipe; title: string }) => {
           <Table.Cell>
             <Button
               fluid
+              textAlign="left"
               disabled={!maxMultiplier}
               icon="wrench"
               onClick={() =>
@@ -191,7 +198,7 @@ const Recipe = (props: { recipe: recipe; title: string }) => {
             </Button>
           </Table.Cell>
           {max_res_amount > 1 && maxMultiplier > 1 && (
-            <Table.Cell collapsing>
+            <Table.Cell collapsing style={{ whiteSpace: 'nowrap' }}>
               <Multipliers recipe={recipe} maxMultiplier={maxMultiplier} />
             </Table.Cell>
           )}
