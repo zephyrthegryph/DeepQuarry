@@ -47,3 +47,24 @@ impl Lint for Cooldown {
 pub fn register(reg: &mut Registry) {
     reg.add(Cooldown { p: policy::Patterns::new() });
 }
+
+#[cfg(feature="native-policy")]
+struct NativeCooldown{legacy:std::sync::OnceLock<Cooldown>}
+#[cfg(feature="native-policy")]
+impl Lint for NativeCooldown{
+ fn meta(&self)->&Meta{&policy::META}
+ fn scan_tree(&self,cx:&Cx,out:&mut Sink){
+  let Some(fixture)=cx.fixture else{return self.legacy.get_or_init(||Cooldown{p:policy::Patterns::new()}).scan_tree(cx,out)};
+  let patterns=match policy::native_patterns(fixture){Ok(actual)=>actual,Err(error)=>{fixture.note_scan(Err(error));return}};
+  let files=cx.files();
+  let result=recorded_into(out,||->Result<Vec<Vec<u32>>,String>{
+   let mut found=Vec::new();
+   for file in &files{let rows=fixture.cooldown_lines(file,&patterns,|number|crate::dm::sys::kept_recorded(file,number,"cooldown"))?;fixture.push(&mut found,rows)?;}
+   Ok(found)
+  });
+  match result{Ok(found)=>for(file,rows)in files.iter().zip(found){for line in rows{out.site_in("raw_compare",&file.rel,line as usize)}},Err(error)=>fixture.note_scan(Err(error))}
+ }
+ fn parity(&self)->Option<Parity>{self.legacy.get_or_init(||Cooldown{p:policy::Patterns::new()}).parity()}
+}
+#[cfg(feature="native-policy")]
+pub fn register_native(reg:&mut Registry){reg.add(NativeCooldown{legacy:std::sync::OnceLock::new()})}

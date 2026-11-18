@@ -3,7 +3,7 @@
 use crate::{lint::{Registry,Cx,Run,Site},tree::Tree,scopes::Scopes};
 #[test]fn boundary_observed_ceiling_report_matches_complete_independent_original(){
  let root=scratch::dir("boundary-original-custom-report");let path=root.join("tools/ci/system_boundary_baseline.txt");std::fs::create_dir_all(path.parent().unwrap()).unwrap();
- let mut tree=Tree::from_files(Vec::new());tree.root=root;let mut registry=Registry::default();frozen::register(&mut registry);let lint=registry.find("system_boundary").unwrap();let scope=Scopes::default().for_lint("system_boundary","");let cx=Cx{tree:&tree,meta:lint.meta(),scope:&scope};
+ let mut tree=Tree::from_files(Vec::new());tree.root=root;let mut registry=Registry::default();frozen::register(&mut registry);let lint=registry.find("system_boundary").unwrap();let scope=Scopes::default().for_lint("system_boundary","");let cx=Cx{ fixture:None,tree:&tree,meta:lint.meta(),scope:&scope};
  let site=|rule:&str,key:&str,line:u32|Site{rule:rule.into(),rel:"code/probe.dm".into(),line,msg:format!("code/probe.dm:{line}: exact old message"),key:key.into(),ident:String::new()};
  for sites in [Vec::new(),vec![site("B1","B1:code/probe.dm:SSmachines",1)],(1..=8).map(|line|site("B2","B2:code/probe.dm:/datum/system/probe",line)).collect(),vec![site("B5","B5:cycle:/datum/system/a+/datum/system/b",0),site("B7","B7:/datum/system/unused",0)]]{
   let run=Run{sites,notes:Vec::new()};

@@ -1,4 +1,5 @@
 //! Shared declaration-block policy; facts and sinks carry no source completion authority.
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Meta,Policy,RuleMeta,ScanKind};
 use crate::tree::{SourceFile,CODE_DM};
 use crate::raw_tree_report::Reporter;
@@ -19,10 +20,11 @@ pub static META: Meta = Meta {
     lists: crate::allow_registry_fields::declaration_block::SCOPE_META_0.lists,
 };
 
-pub fn scan_file(f:&SourceFile,out:&mut impl Reporter){
-        let head = crate::pat_match!(r"^(CAPABILITIES|STATE_GRAPH)\(");
-        let inline = crate::pat_match!(r"^(?:CAPABILITIES|STATE_GRAPH)\([^,()]*,");
-        let bundle = crate::pat_match!(r"^BUNDLE\(");
+pub fn scan_file(f:&SourceFile,out:&mut impl Reporter){scan_file_with_fixture(f,out,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn scan_file_with_fixture(f:&SourceFile,out:&mut impl Reporter,fixture:&crate::raw_fixture_policy::Fixture<'_>){
+        let head = fixture.pattern(r"^(CAPABILITIES|STATE_GRAPH)\(",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"^(CAPABILITIES|STATE_GRAPH)\("));
+        let inline = fixture.pattern(r"^(?:CAPABILITIES|STATE_GRAPH)\([^,()]*,",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"^(?:CAPABILITIES|STATE_GRAPH)\([^,()]*,"));
+        let bundle = fixture.pattern(r"^BUNDLE\(",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"^BUNDLE\("));
         for (number, line) in f.raw().numbered() {if !out.checkpoint(){return}
             if bundle.is_match(line) {
                 out.site_in_msg("bundle", &f.rel, number, "BUNDLE(...) is no longer a declaration form".to_string());
@@ -38,9 +40,10 @@ pub fn scan_file(f:&SourceFile,out:&mut impl Reporter){
         }
 }
 pub fn blocks(f:&SourceFile,mut visit:impl FnMut(&str,usize)){blocks_using(f,visit,&mut crate::key_policy_control::Compatibility).expect("original declaration_block source index")}
-pub fn blocks_using<C:crate::key_policy_control::Control>(f:&SourceFile,mut visit:impl FnMut(&str,usize),c:&mut C)->Result<(),C::Error>{c.checkpoint()?;
+pub fn blocks_using<C:crate::key_policy_control::Control>(f:&SourceFile,mut visit:impl FnMut(&str,usize),c:&mut C)->Result<(),C::Error>{blocks_using_with_fixture(f,visit,c,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn blocks_using_with_fixture<C:crate::key_policy_control::Control>(f:&SourceFile,mut visit:impl FnMut(&str,usize),c:&mut C,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),C::Error>{c.checkpoint()?;
  if !f.rel.ends_with(".dm")||f.rel.starts_with("code/engine/_generated/"){return Ok(())}
- let head=crate::pat_match!(r"^CAPABILITIES\((/[\w/]+)\)");
+ let head=fixture.pattern(r"^CAPABILITIES\((/[\w/]+)\)",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"^CAPABILITIES\((/[\w/]+)\)"));
  for(number,line)in f.code().numbered(){c.checkpoint()?;if let Some(m)=head.captures(line){visit(m.s(1),number)}}
 c.checkpoint()?;Ok(())}
 pub fn assemble<'a>(rows:impl IntoIterator<Item=(&'a str,&'a str,usize)>,out:&mut impl Reporter){

@@ -293,7 +293,8 @@ pub(crate) fn trivia<T: ParameterToken>(t: &T) -> bool {
         TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
     )
 }
-#[derive(Clone,Copy,Eq,PartialEq)]enum FormalPathProfile{Compiler,Original0290,NativeObserved}
+#[derive(Clone,Copy,Eq,PartialEq)]enum FormalPathProfile{Compiler,Original0290,NativeObserved,OriginalNativeObserved}
+impl FormalPathProfile{fn original(self)->bool{matches!(self,Self::Original0290|Self::OriginalNativeObserved)}fn observed(self)->bool{matches!(self,Self::NativeObserved|Self::OriginalNativeObserved)}}
 fn one<T: ParameterToken>(
     source: &str,
     tokens: &[T],
@@ -314,7 +315,7 @@ fn one<T: ParameterToken>(
         .peek()
         .is_some_and(|(_, t)| t.text(source) == "/")
     {
-        if profile!=FormalPathProfile::Original0290{return Err("absolute parameter-header declaration is outside pinned parameter issuance");}
+        if !profile.original(){return Err("absolute parameter-header declaration is outside pinned parameter issuance");}
         significant.next();
     }
     // Primary lexing retains punctuation one byte at a time. The pinned
@@ -345,7 +346,7 @@ fn one<T: ParameterToken>(
             variadic: true,
             type_components: Box::default(),
             source_modifiers: 0,
-            native_children: if profile==FormalPathProfile::NativeObserved {9} else {0},
+            native_children: if profile.observed() {9} else {0},
             array_brackets: Box::default(),
             expressions: Ok(None),
         });
@@ -364,7 +365,7 @@ fn one<T: ParameterToken>(
                 variadic: true,
                 type_components: Box::default(),
                 source_modifiers: 0,
-            native_children: if profile==FormalPathProfile::NativeObserved {9} else {0},
+            native_children: if profile.observed() {9} else {0},
                 array_brackets: Box::default(),
                 expressions: Ok(None),
             });
@@ -382,7 +383,17 @@ fn one<T: ParameterToken>(
             .peek()
             .is_some_and(|(_, t)| t.text(source) == "/")
         {
-            significant.next();
+            let (_, slash)=significant.next().unwrap();
+            // Pinned tree_path accepts a trailing slash without another ident;
+            // proc_parameter still pops the last actual ident as the name.
+            // This narrow Original receipt covers only the terminal separator.
+            if profile.original() && significant.peek().is_none(){
+                let span=slash.span();
+                if slash.kind()!=TokenKind::Punctuation || span.end.checked_sub(span.start)!=Some(1) || t.span().end>span.start || span.end>following.start{
+                    return Err("original trailing parameter slash occurrence differs");
+                }
+                break;
+            }
             continue;
         }
         break;
@@ -444,7 +455,7 @@ fn one<T: ParameterToken>(
         }
     }
     let mut native_no_child=false;
-    let expressions = if profile==FormalPathProfile::Original0290{crate::parameter_expressions::issue_original_with_default_provider(source,tokens,&brackets,base,ordinal,defaults)}else if profile==FormalPathProfile::NativeObserved{let(result,observed)=crate::parameter_expressions::issue_native_observed(source,tokens,&brackets,base,ordinal,defaults);native_no_child=observed;result}else{crate::parameter_expressions::issue_with_default_provider(source,tokens,&brackets,base,ordinal,defaults)};
+    let expressions = if profile==FormalPathProfile::OriginalNativeObserved{let(result,observed)=crate::parameter_expressions::issue_original_native_observed(source,tokens,&brackets,base,ordinal,defaults);native_no_child=observed;result}else if profile==FormalPathProfile::Original0290{crate::parameter_expressions::issue_original_with_default_provider(source,tokens,&brackets,base,ordinal,defaults)}else if profile==FormalPathProfile::NativeObserved{let(result,observed)=crate::parameter_expressions::issue_native_observed(source,tokens,&brackets,base,ordinal,defaults);native_no_child=observed;result}else{crate::parameter_expressions::issue_with_default_provider(source,tokens,&brackets,base,ordinal,defaults)};
     let native_children=match (&expressions,defaults.as_mut()){
         (Ok(expressions),Some(provider))=>match provider.native_child_observation(ordinal,expressions.as_deref())?{Some((complete,recovered,deferred))=>8|u8::from(complete && !recovered && !deferred)|(u8::from(recovered)<<1)|(u8::from(deferred)<<2),None=>0},
         _ if native_no_child=>9,
@@ -523,7 +534,7 @@ fn append<T: ParameterToken>(
     if rows.iter().any(ParameterSyntax::variadic) {
         return Err("original header entry follows variadic marker");
     }
-    if profile!=FormalPathProfile::Original0290 && tokens
+    if !profile.original() && tokens
         .iter()
         .find(|t| !trivia(*t))
         .is_some_and(|t| t.text(source) == "/")
@@ -577,6 +588,8 @@ pub fn parameter_signature_with_default_roots(source:&str,tokens:&[SpanToken],he
 /// Original syntax DATA only. The current genuine frontend/header owner must
 /// independently select and authenticate its role; this issues no model grant.
 pub fn parameter_signature_original_with_default_roots(source:&str,tokens:&[SpanToken],header:Span,base:usize,defaults:&mut Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->ParameterSignature{issue_tokens_with_defaults(source,tokens,header,base,defaults,FormalPathProfile::Original0290)}
+/// Native completion DATA on the SAME Original grammar productions. No source/current grant.
+pub fn parameter_signature_original_with_native_observation(source:&str,tokens:&[SpanToken],header:Span,base:usize,defaults:&mut Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->ParameterSignature{issue_tokens_with_defaults(source,tokens,header,base,defaults,FormalPathProfile::OriginalNativeObserved)}
 /// Checker DATA for an already-issued plain empty formal interval. This is a
 /// strict subset of the Original token parser below. All trivia except plain
 /// horizontal space and every ambiguous interval stay on that parser.
@@ -812,4 +825,95 @@ mod native_parameter_observation_tests{
  }
  let named="/proc/test(value=1)";let tokens=crate::lex(named).tokens.into_iter().map(|t|SpanToken{kind:t.kind,span:t.span}).collect::<Vec<_>>();
  let named_signature=parameter_signature_original_with_default_roots(named,&tokens,Span::new(0,named.len()),0,&mut provider);assert!(named_signature.entries().unwrap()[0].expressions().is_err(),"missing actual named/default clauses remain refused");
+}
+
+#[cfg(test)]mod original_observed_parameter_production_controls{
+ use super::*;
+ #[test]fn original_native_observation_records_only_actual_no_child_productions(){
+  for source in["/proc/p(value)","/proc/p(...)"]{let tokens=crate::lex(source).tokens.into_iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect::<Vec<_>>();let legacy=parameter_signature_original_with_default_roots(source,&tokens,Span::new(0,source.len()),0,&mut None);let observed=parameter_signature_original_with_native_observation(source,&tokens,Span::new(0,source.len()),0,&mut None);let old=&legacy.entries().unwrap()[0];let new=&observed.entries().unwrap()[0];assert_eq!(old,new,"native metadata does not change parameter semantics");assert_eq!(old.native_child_observation(),None);assert_eq!(new.native_child_observation(),Some((true,false,false)));}
+ }
+ #[test]fn original_observed_constructor_cannot_lend_completion_to_compatibility_or_failed_children(){
+  for source in["/proc/p(value=1)","/proc/p(value=(1+))"]{let tokens=crate::lex(source).tokens.into_iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect::<Vec<_>>();let observed=parameter_signature_original_with_native_observation(source,&tokens,Span::new(0,source.len()),0,&mut None);let entry=&observed.entries().unwrap()[0];assert_eq!(entry.native_child_observation(),None,"a real produced child loan remains required");if source.contains("1+"){assert!(entry.expressions().is_err())}}
+ }
+}
+
+/// Resource DATA for the existing Original0290 producer with an authenticated
+/// count of already-produced formal clauses. Every optional child must be a
+/// SAME-admission root/input alias; other callers keep their old envelope.
+/// This path allocates no source strings or child ASTs.
+pub fn original_parameter_metadata_envelope(source:&str,tokens:TokenWindow<'_>,parameters:usize,a:&crate::SettingAdmission<'_>)->std::io::Result<usize>{
+ use std::{io,mem::size_of};
+ let overflow=||io::Error::new(io::ErrorKind::OutOfMemory,"parameter metadata geometry overflow");
+ let poll=||a.checkpoint().map_err(|proxy|a.take_operational_error().unwrap_or(proxy));poll()?;
+ let(mut identifiers,mut brackets,mut openings)=(0usize,0usize,0usize);
+ for(index,token)in tokens.iter().enumerate(){
+  if index%64==0{poll()?;}
+  let spelling=source.get(token.span.range()).ok_or(io::ErrorKind::InvalidInput)?;
+  if token.kind==TokenKind::Ident{identifiers=identifiers.checked_add(1).ok_or_else(overflow)?;}
+  // SAME parameter producer spelling checks; conservative allocation DATA,
+  // not a second delimiter grammar or a source/parameter receipt.
+  if spelling=="["{brackets=brackets.checked_add(1).ok_or_else(overflow)?;}
+  if matches!(spelling,"("|"["|"{"){openings=openings.checked_add(1).ok_or_else(overflow)?;}
+ }
+ let mul=|x:usize,y:usize|x.checked_mul(y).ok_or_else(overflow);
+ let add=|x:usize,y:usize|x.checked_add(y).ok_or_else(overflow);
+ // Native produced clauses omit the optional variadic marker, while this
+ // syntax receipt retains it as one row. Reserve that one possible extra row.
+ let parameters=parameters.checked_add(1).ok_or_else(overflow)?;
+ // Four-slot envelopes cover the established Vec allocator/growth and old/new
+ // Vec-to-box overlap. Per-row minimum capacities are named, not source bytes.
+ let rows=mul(mul(parameters.max(4),4)?,size_of::<ParameterSyntax>())?;
+ let minimum_spans=mul(parameters,4)?;
+ let paths=mul(mul(add(identifiers,minimum_spans)?,4)?,size_of::<Span>())?;
+ let suffixes=mul(mul(add(brackets,minimum_spans)?,4)?,size_of::<Span>())?;
+ let dimensions=mul(mul(brackets,4)?,size_of::<Option<crate::SettingExpression>>())?;
+ let expression_boxes=mul(parameters,size_of::<crate::ParameterExpressions>())?;
+ // Outer header stack and one current suffix stack can coexist. Other suffix
+ // scratch dies before the next formal is constructed. Original declares no
+ // separate absolute-declaration Vec (those entries use the same formal rows).
+ let delimiter_scratch=mul(mul(add(openings,4)?,8)?,size_of::<&str>())?;
+ let mut bytes=crate::SharedParameterSignature::retention_envelope();
+ for next in[rows,paths,suffixes,dimensions,expression_boxes,delimiter_scratch]{bytes=add(bytes,next)?;}
+ poll()?;Ok(bytes)
+}
+
+#[cfg(test)]mod metadata_geometry_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn parameter_geometry_counts_named_storage_not_opaque_source_bytes(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));
+  let short="/proc/p(x=\"text\")";let long=format!("/proc/p(x=\"{}\")","x".repeat(128*1024));
+  let bound=|s:&str,r|{let tokens=crate::lex_spans(s).tokens;original_parameter_metadata_envelope(s,TokenWindow::from_slice(&tokens),r,&a).unwrap()};
+  assert_eq!(bound(short,1),bound(&long,1));assert!(bound(&long,1)<16384);
+  assert!(bound("/proc/p(datum/a/x[1][2],datum/b/y,...)",3)>bound(short,1));
+  assert_eq!(counter.load(Ordering::Acquire),fixed);
+ }
+ #[test]fn parameter_geometry_overflow_first_io_and_cancel_preserve_exact_failure(){
+  let tokens=crate::lex_spans("/proc/p(x)").tokens;let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();
+  let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));assert_eq!(original_parameter_metadata_envelope("/proc/p(x)",TokenWindow::from_slice(&tokens),usize::MAX,&a).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);
+  let fail=||Err(std::io::Error::from_raw_os_error(1450));let a=crate::SettingAdmission::new(&counter,1<<20,&fail);assert_eq!(original_parameter_metadata_envelope("/proc/p(x)",TokenWindow::from_slice(&tokens),1,&a).unwrap_err().raw_os_error(),Some(1450));
+  let cancel=||Err(std::io::Error::new(std::io::ErrorKind::Interrupted,"actual metadata cancellation"));let a=crate::SettingAdmission::new(&counter,1<<20,&cancel);let error=original_parameter_metadata_envelope("/proc/p(x)",TokenWindow::from_slice(&tokens),1,&a).unwrap_err();assert_eq!(error.kind(),std::io::ErrorKind::Interrupted);assert_eq!(error.to_string(),"actual metadata cancellation");assert_eq!(counter.load(Ordering::Acquire),fixed);
+ }
+}
+
+#[cfg(test)]mod original_trailing_parameter_path_controls{
+ use super::*;
+ #[test]fn actual_original_terminal_parameter_slash_keeps_last_identifier_type_and_following_cursor(){
+  for source in["/proc/p(obj/instance/)","/proc/p(obj/instance/ /* actual trivia */)","/proc/p(/obj/instance/,datum/other/)"]{
+   let tokens=crate::lex_spans(source).tokens;let header=Span::new(0,source.len());
+   let ordinary=parameter_signature_original_with_default_roots(source,&tokens,header,0,&mut None);
+   let observed=parameter_signature_original_with_native_observation(source,&tokens,header,0,&mut None);
+   let rows=ordinary.entries().unwrap();let native=observed.entries().unwrap();assert_eq!(rows,native,"observed metadata never changes parameter semantics");
+   assert_eq!(&source[rows[0].name().range()],"instance");assert_eq!(rows[0].type_path(source).unwrap().as_deref(),Some("/obj"));assert!(!rows[0].variadic());assert!(rows[0].array_brackets().is_empty());assert_eq!(rows[0].expressions(),Ok(None));
+   let following=source.find(',').unwrap_or_else(||source.rfind(')').unwrap());assert_eq!(rows[0].declaration_cursor(),Span::new(following,following+1));
+   if rows.len()==2{assert_eq!(&source[rows[1].name().range()],"other");assert_eq!(rows[1].type_path(source).unwrap().as_deref(),Some("/datum"));}
+  }
+ }
+ #[test]fn actual_original_terminal_parameter_slash_refuses_forged_occurrences_and_keeps_native_scope(){
+  let source="/proc/p(obj/instance/)";let tokens=crate::lex_spans(source).tokens;let header=Span::new(0,source.len());let slash=source.rfind('/').unwrap();let index=tokens.iter().position(|t|t.span==Span::new(slash,slash+1)).unwrap();
+  assert_eq!(tokens[index].kind,TokenKind::Punctuation);
+  for mutation in 0..3{let mut changed=tokens.clone();match mutation{0=>changed[index].kind=TokenKind::Operator,1=>changed[index].span.end+=1,_=>{changed[index].span.start+=1000;changed[index].span.end+=1000;}}assert!(parameter_signature_original_with_default_roots(source,&changed,header,0,&mut None).entries().is_err(),"forged terminal slash {mutation}");}
+  assert!(issue_spans(source,&tokens,header,0).entries().is_err(),"this actual Original-only receipt does not grant Native compatibility grammar");
+  assert!(parameter_signature_original_with_default_roots(source,&tokens,header,usize::MAX,&mut None).entries().is_err(),"original coordinate overflow remains refused");
+  for source in["/proc/p(/)","/proc/p(obj/instance/+)"]{let tokens=crate::lex_spans(source).tokens;assert!(parameter_signature_original_with_default_roots(source,&tokens,Span::new(0,source.len()),0,&mut None).entries().is_err(),"no identifier/unfinished nonterminal path cannot borrow this receipt");}
+ }
 }

@@ -48,6 +48,14 @@ impl<V> ScopeMap<V> {
             Err(index) => { self.rows.insert(index, (key, value)); None }
         }
     }
+    /// SAME lexical insertion; native fixture callers fund actual row growth.
+    pub(crate) fn insert_using<C:crate::key_policy_control::Control>(&mut self,key:String,value:V,control:&mut C)->Result<Option<V>,C::Error>{
+        control.checkpoint()?;
+        match self.index(&key){
+            Ok(index)=>Ok(Some(std::mem::replace(&mut self.rows[index].1,value))),
+            Err(index)=>{crate::key_policy_control::row(control,&mut self.rows)?;self.rows.insert(index,(key,value));Ok(None)}
+        }
+    }
     fn from_unique_rows(rows: impl Iterator<Item = (String, V)>) -> Self {
         let mut rows: Vec<_> = rows.collect();
         rows.sort_unstable_by(|(left, _), (right, _)| left.cmp(right));
@@ -295,8 +303,14 @@ fn toml_key(name: &str) -> String {
 
 /// Sets `[lint.<lint>.ceilings] <rule> = <n>` in the scopes file, editing only that line (comments
 /// and every other table are left byte for byte); appends the table when it is missing.
-pub fn write_ceiling(path: &Path, lint: &str, rule: &str, n: i64) -> std::io::Result<()> {
-    let text = std::fs::read_to_string(path).unwrap_or_default();
+pub fn write_ceiling(path:&Path,lint:&str,rule:&str,n:i64)->std::io::Result<()>{
+    let text=std::fs::read_to_string(path).unwrap_or_default();
+    std::fs::write(path,render_ceiling(&text,lint,rule,n))
+}
+
+/// SAME exact line-preserving ceiling edit over captured configuration DATA.
+/// No path/currentness/producer grant; caller must fund all output/scratch.
+pub fn render_ceiling(text:&str,lint:&str,rule:&str,n:i64)->String{
     let header = format!("[lint.{}.ceilings]", toml_key(lint));
     let mut lines: Vec<String> = text.split('\n').map(|l| l.to_string()).collect();
     let had_trailing_newline = text.ends_with('\n');
@@ -340,7 +354,7 @@ pub fn write_ceiling(path: &Path, lint: &str, rule: &str, n: i64) -> std::io::Re
     }
     let mut out = lines.join("\n");
     out.push('\n');
-    std::fs::write(path, out)
+    out
 }
 
 #[cfg(test)]

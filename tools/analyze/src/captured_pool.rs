@@ -32,7 +32,12 @@ impl<'a> BorrowedPool<'a> {
         budget: Arc<Budget>,
         remaining_sites: usize,
         mut checkpoint: impl FnMut() -> Result<(), String>,
-    ) -> Result<RawRun, String> {
+    ) -> Result<RawRun, String> {self.scan_using(budget,remaining_sites,checkpoint,&crate::raw_fixture_policy::Fixture::legacy())}
+    fn scan_using(
+        &self,
+        budget: Arc<Budget>,
+        remaining_sites: usize,
+        mut checkpoint: impl FnMut() -> Result<(), String>,fixture:&crate::raw_fixture_policy::Fixture<'_>) -> Result<RawRun, String> {
         use std::fmt::Write;
         checkpoint()?;
         budget.require()?;
@@ -61,7 +66,7 @@ impl<'a> BorrowedPool<'a> {
         for f in &files {
             checkpoint()?;
             intact(self.raw)?;
-            let facts = pool_policy::facts_of(f, Some(&budget), &mut checkpoint)?;
+            let facts = pool_policy::facts_of_with_fixture(f,Some(&budget),&mut checkpoint,fixture)?;
             for ty in facts.pooled {
                 checkpoint()?;
                 budget.charge(
@@ -78,7 +83,7 @@ impl<'a> BorrowedPool<'a> {
         for f in &files {
             checkpoint()?;
             intact(self.raw)?;
-            pool_policy::judge(
+            pool_policy::judge_with_fixture(
                 f,
                 &pooled,
                 scope.list("exempt_prefixes"),
@@ -108,8 +113,7 @@ impl<'a> BorrowedPool<'a> {
                         ident: String::new(),
                     });
                     Ok(())
-                },
-            )?;
+                },fixture)?;
             intact(self.raw)?;
         }
         let mut note = BudgetedText::new(&budget);
@@ -130,4 +134,15 @@ impl<'a> BorrowedPool<'a> {
             allow_used: Vec::new(),
         })
     }
+}
+
+#[cfg(feature="native-policy")]
+impl BorrowedPool<'_>{
+ pub fn scan_with_patterns(&self,budget:Arc<Budget>,remaining_sites:usize,patterns:&dyn crate::native_pattern::Provider,poll:&dyn Fn()->std::io::Result<()>)->Result<RawRun,crate::captured_reactive_reads::Failure>{
+  use crate::captured_reactive_reads::Failure;
+  let fixture=crate::raw_fixture_policy::Fixture::native_patterns(&budget,poll,patterns);
+  let pending=self.scan_using(Arc::clone(&budget),remaining_sites,||fixture.check(),&fixture);
+  if let Some(actual)=fixture.take_scan_failure(){return Err(match actual{crate::derived_selftest_policy::Failure::Operational(actual)=>Failure::Operational(actual),crate::derived_selftest_policy::Failure::Assertion(message)=>Failure::Unsupported(message)})}
+  let value=pending.map_err(Failure::Unsupported)?;fixture.finish_scan().map_err(|actual|match actual{crate::derived_selftest_policy::Failure::Operational(actual)=>Failure::Operational(actual),crate::derived_selftest_policy::Failure::Assertion(message)=>Failure::Unsupported(message)})?;Ok(value)
+ }
 }

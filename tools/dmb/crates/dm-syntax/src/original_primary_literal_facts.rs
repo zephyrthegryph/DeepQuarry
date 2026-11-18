@@ -143,6 +143,12 @@ impl CompactLiteralCodes {
         }
     }
 
+    fn remap_projections(&mut self,indexes:&[u8;LITERAL_PAGE_LEN]){
+        match self{
+            Self::Wide(codes)=>for code in codes{if *code>>8==PROJECTED_COMPACT_ORDINAL{*code=(*code&!255)|u32::from(indexes[(*code&255)as usize]);}},
+            Self::Narrow{cells,..}=>for code in cells{if u32::from(*code>>8)==SHORT_CODE_PROJECTED{*code=(*code&!255)|u16::from(indexes[(*code&255)as usize]);}},
+        }
+    }
     fn project(&mut self, index: usize, descriptor: usize) {
         let descriptor = u32::from(u8::try_from(descriptor).expect("bounded literal descriptor column"));
         match self {
@@ -170,6 +176,14 @@ struct ProjectedLiteralData{
  full:Vec<crate::OriginalLiteralData>,
  descriptors:Vec<crate::original_literal_projection::ProjectedLiteral>,
  credit:crate::SettingRootLease,
+}
+// Paid bounded producer scratch. Identity remains (output owner, row ordinal).
+struct DescriptorPalette{rows:[ProjectedLiteral;LITERAL_PAGE_LEN],len:usize}
+impl DescriptorPalette{
+ fn new()->Self{Self{rows:[ProjectedLiteral{bits:0,kind:0,mode:crate::OriginalStringMode::Unknown,alias:[0;2]};LITERAL_PAGE_LEN],len:0}}
+ fn find(&self,value:ProjectedLiteral)->Option<usize>{self.rows[..self.len].iter().position(|old|old.bits==value.bits&&old.kind==value.kind&&old.mode==value.mode&&old.alias==value.alias)}
+ fn insert(&mut self,value:ProjectedLiteral)->io::Result<usize>{if let Some(index)=self.find(value){return Ok(index)}if self.len==LITERAL_PAGE_LEN{return Err(io::ErrorKind::InvalidData.into())}let index=self.len;self.rows[index]=value;self.len+=1;Ok(index)}
+ fn values(&self)->&[ProjectedLiteral]{&self.rows[..self.len]}
 }
 const PROJECTED_BIT:u16=1<<15;
 const WIDE_LITERAL_ORDINAL: u32 = 0x00ff_ffff;
@@ -533,7 +547,7 @@ impl LiteralPage {
    if !a.matches_lease_domain(credit) { return Err(io::ErrorKind::InvalidInput.into()); }
   }
   if delivered && self.body.iter().all(|word| *word == 0) { return Ok(None); }
-  let Some(_scratch)=a.try_reserve_optimization(LITERAL_PAGE_LEN+LITERAL_PAGE_LEN*std::mem::size_of::<u16>()).map_err(|e|a.take_operational_error().unwrap_or(e))?else{
+  let Some(_scratch)=a.try_reserve_optimization(LITERAL_PAGE_LEN+LITERAL_PAGE_LEN*std::mem::size_of::<u16>()+mem::size_of::<DescriptorPalette>()).map_err(|e|a.take_operational_error().unwrap_or(e))?else{
    #[cfg(debug_assertions)] if let Some(attempt)=_attempt.as_deref_mut(){attempt.scratch_credit_declines+=1;}
    return Ok(None)
   };
@@ -565,8 +579,10 @@ impl LiteralPage {
   let full_count = prior.map_or(len, |data| data.full.len()).checked_sub(count)
    .ok_or(io::ErrorKind::InvalidData)?;
   let full_layout=Layout::array::<crate::OriginalLiteralData>(full_count).map_err(|_|io::ErrorKind::OutOfMemory)?;
-  let prior_count = prior.map_or(0, |data| data.descriptors.len());
-  let descriptor_layout=Layout::array::<crate::original_literal_projection::ProjectedLiteral>(count + prior_count).map_err(|_|io::ErrorKind::OutOfMemory)?;
+  let mut palette=DescriptorPalette::new();
+  if let Some(prior)=prior{for descriptor in &prior.descriptors{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;palette.insert(*descriptor)?;}}
+  for at in 0..len{if candidates[at]{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;let(_,data)=self.get_data(at,base,None,Some(owner)).ok_or(io::ErrorKind::InvalidData)?;let(descriptor,_)=data.projection_candidate().ok_or(io::ErrorKind::InvalidData)?;palette.insert(descriptor)?;}}
+  let descriptor_layout=Layout::array::<ProjectedLiteral>(palette.len).map_err(|_|io::ErrorKind::OutOfMemory)?;
   let bytes=code_layout.size()+full_layout.size()+descriptor_layout.size();
   let old_rows=self.data.reservation_bytes();
   if bytes>=old_rows.saturating_add(released){
@@ -580,20 +596,20 @@ impl LiteralPage {
   let mut next=ProjectedLiteralData{
    codes:alloc_funded_literal_rows(len,code_layout)?,
    full:alloc_funded_literal_rows(full_count,full_layout)?,
-   descriptors:alloc_funded_literal_rows(count + prior_count,descriptor_layout)?,
+   descriptors:alloc_funded_literal_rows(palette.len,descriptor_layout)?,
    credit,
   };
-  if let Some(data) = prior { next.descriptors.extend_from_slice(&data.descriptors); }
+  next.descriptors.extend_from_slice(palette.values());
   for at in 0..len{
    if let Some(code) = prior.map(|data| data.codes[at]).filter(|code| code & PROJECTED_BIT != 0) {
-    next.codes.push(code);
+    let descriptor=prior.expect("existing projected row").descriptors[(code&!PROJECTED_BIT)as usize];
+    next.codes.push(PROJECTED_BIT|u16::try_from(palette.find(descriptor).expect("planned prior descriptor")).expect("bounded palette"));
     continue;
    }
    let(_,data)=self.get_data(at,base,None,Some(owner)).ok_or(io::ErrorKind::InvalidData)?;
    if candidates[at]{
     let (descriptor,_)=data.projection_candidate().ok_or(io::ErrorKind::InvalidData)?;
-    next.codes.push(PROJECTED_BIT|u16::try_from(next.descriptors.len()).map_err(|_|io::ErrorKind::InvalidData)?);
-    next.descriptors.push(descriptor);
+    next.codes.push(PROJECTED_BIT|u16::try_from(palette.find(descriptor).expect("planned projected descriptor")).expect("bounded palette"));
    }else{
     next.codes.push(u16::try_from(next.full.len()).map_err(|_|io::ErrorKind::InvalidData)?);
     next.full.push(data.detach_using(a)?);
@@ -670,7 +686,8 @@ impl LiteralPage {
             }
         }
         let scratch_bytes = mem::size_of::<[Group; LITERAL_PAGE_LEN]>()
-            + mem::size_of::<[Option<ProjectedLiteral>; LITERAL_PAGE_LEN]>();
+            + mem::size_of::<[Option<ProjectedLiteral>; LITERAL_PAGE_LEN]>()
+            + mem::size_of::<DescriptorPalette>() + mem::size_of::<[u8;LITERAL_PAGE_LEN]>();
         let Some(_scratch) = a.try_reserve_optimization(scratch_bytes)
             .map_err(|error| a.take_operational_error().unwrap_or(error))? else {
             #[cfg(debug_assertions)]
@@ -760,10 +777,13 @@ impl LiteralPage {
             }
         }
         let prior = compact.projections.as_deref();
-        let prior_len = prior.map_or(0, Vec::len);
         let prior_bytes = prior.map_or(0, |rows| rows.capacity() * mem::size_of::<ProjectedLiteral>());
-        let size = prior_len + count;
-        if size > LITERAL_PAGE_LEN { return Err(io::ErrorKind::InvalidData.into()); }
+        // A prior interrupted withdrawal may already own these candidates.
+        // Only the exact unique palette bound applies on a genuine retry.
+        let mut palette=DescriptorPalette::new();let mut prior_indexes=[0u8;LITERAL_PAGE_LEN];
+        if let Some(prior)=prior{for(index,descriptor)in prior.iter().enumerate(){a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;prior_indexes[index]=u8::try_from(palette.insert(*descriptor)?).expect("bounded prior palette");}}
+        for(index,candidate)in candidates.iter().enumerate(){if let Some(descriptor)=candidate{let code=compact.codes.at(index);if groups[(code&255)as usize].includes(index,code>>8){a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;palette.insert(*descriptor)?;}}}
+        let size=palette.len;
         let layout = Layout::array::<ProjectedLiteral>(size).map_err(|_| io::ErrorKind::OutOfMemory)?;
         let control = Layout::new::<Vec<ProjectedLiteral>>();
         let metadata_bytes = layout.size() + if prior.is_none() { control.size() } else { 0 };
@@ -788,22 +808,16 @@ impl LiteralPage {
             return Ok(None);
         };
         let mut descriptors = alloc_funded_literal_rows(size, layout)?;
-        if let Some(prior) = prior { descriptors.extend_from_slice(prior); }
-        for (index, candidate) in candidates.iter().enumerate() {
-            let code = compact.codes.at(index);
-            let group = &groups[(code & 255) as usize];
-            if let Some(descriptor) = candidate {
-                if group.includes(index, code >> 8) {
-                    descriptors.push(*descriptor);
-                }
-            }
-        }
-        debug_assert_eq!(descriptors.len(), size);
+        descriptors.extend_from_slice(palette.values());
+        debug_assert_eq!(descriptors.len(),size);
         let LiteralPageData::Compact(compact) = &mut self.data else { unreachable!() };
         let old_bytes = compact.credit.bytes();
         if let Some(prior) = compact.projections.as_deref_mut() {
             a.absorb(&mut compact.credit, &mut credit)?;
-            drop(mem::replace(prior, descriptors));
+            // No fallible work or poll between new buffer and prior-code remap.
+            let retired=mem::replace(prior,descriptors);
+            compact.codes.remap_projections(&prior_indexes);
+            drop(retired);
             compact.credit.release_retired_bytes(prior_bytes)?;
         } else {
             let pointer = NonNull::new(unsafe { alloc(control) }.cast::<Vec<ProjectedLiteral>>())
@@ -829,24 +843,11 @@ impl LiteralPage {
             } else {
                 owner.withdraw_packed_using(group.eligible, group.eligible == group.references, a)?
             };
-            let mut descriptor_index = prior_len;
-            for (index, candidate) in candidates.iter().enumerate() {
-                let code = compact.codes.at(index);
-                let old_bank = (code & 255) as usize;
-                let ordinal = code >> 8;
-                if candidate.is_none() {
-                    continue;
-                }
-                if ordinal == PROJECTED_COMPACT_ORDINAL {
-                    // Already projected by an earlier bank. Its descriptor
-                    // still occupies this ordinal in the common column.
-                    descriptor_index += 1;
-                } else if groups[old_bank].includes(index, ordinal) {
-                    if old_bank == bank {
-                        compact.codes.project(index, descriptor_index);
-                    }
-                    descriptor_index += 1;
-                }
+            for(index,candidate)in candidates.iter().enumerate(){
+                let code=compact.codes.at(index);let ordinal=code>>8;
+                if ordinal==PROJECTED_COMPACT_ORDINAL{continue}
+                let old_bank=(code&255)as usize;
+                if let Some(descriptor)=candidate{if old_bank==bank&&groups[old_bank].includes(index,ordinal){compact.codes.project(index,palette.find(*descriptor).expect("planned candidate descriptor"));}}
             }
         }
         debug_assert_eq!(released, gross);
@@ -1556,10 +1557,11 @@ impl Clone for OriginalPrimaryLiteralFacts{fn clone(&self)->Self{Self(Some(self.
 impl Drop for OriginalPrimaryLiteralFacts{fn drop(&mut self){if let Some(owner)=self.0.take(){if let Some(payload)=Arc::into_inner(owner){drop(payload)}}}}
 /// DATA projection only. Actual source-view/backing authorization belongs to
 /// the sealed preprocessing/header installer, not these numeric bounds.
-pub struct OriginalLiteralFactsView<'a>{rows:OriginalLiteralRows<'a>,colons:OriginalColonRows<'a>,origin:usize,owner:&'a Payload}
+#[derive(Clone,Copy)]
+pub struct OriginalLiteralFactsView<'a>{rows:OriginalLiteralRows<'a>,colons:OriginalColonRows<'a>,origin:usize,extent:usize,owner:&'a Payload}
 impl<'a>OriginalLiteralFactsView<'a>{
  pub fn with_source_data(mut self,source:&'a str)->io::Result<Self>{
-  let extent=self.owner.extent.ok_or(io::ErrorKind::NotConnected)?;
+  let extent=self.extent;
   if self.origin.checked_add(source.len()).is_none_or(|end|end>extent){return Err(io::ErrorKind::InvalidInput.into())}
   self.rows.loan=Some(ProjectionLoan{source,origin:self.origin});Ok(self)
  }
@@ -1649,7 +1651,13 @@ impl OriginalPrimaryLiteralFacts{
     _ => page.settle_body_projection_using(source, 0, projection, a, None, true)?
      .map_or(0, |(_, payload, before, after)| payload + before - after),
    };
-   released = released.checked_add(saved).ok_or(io::ErrorKind::InvalidData)?;
+   // Delivery can keep an alias through the earlier body-page settlement.
+   // Cooked/escaped text is not descriptor-projectable, but after that alias
+   // dies its exact expanded RAW spelling can retire through the SAME bank.
+   // This helper validates source/domain/unique last owner and frees actual
+   // Strings before refunding; cooked bytes and original owner/ordinal stay.
+   let raw_saved = page.withdraw_compact_source_raw(source, a)?;
+   released = released.checked_add(saved).and_then(|n| n.checked_add(raw_saved)).ok_or(io::ErrorKind::InvalidData)?;
    if let Some((before, after)) = page.compact_delivered_owner_bank(a)? {
     bank_pages += 1;
     bank_before += before;
@@ -1671,13 +1679,24 @@ impl OriginalPrimaryLiteralFacts{
  /// Bounds are DATA, not source authorization. Source installer must first
  /// match the SAME real source backing/view, then borrow this no-copy window.
  pub fn checked_data_window(&self,window:Span)->io::Result<OriginalLiteralFactsView<'_>>{
-  let owner=self.payload();let extent=owner.extent.ok_or(io::ErrorKind::NotConnected)?;if window.start>window.end||window.end>extent{return Err(io::ErrorKind::InvalidInput.into())}
+  let extent=self.payload().extent.ok_or(io::ErrorKind::NotConnected)?;
+  self.data_window_with_extent(window,extent)
+ }
+ /// Literal/token DATA loan during the actual primary callback. This does not
+ /// seal the owner or claim actual source EOF/current model completeness.
+ pub(super) fn checked_live_data_window(&self,window:Span,frontier:usize,a:&crate::SettingAdmission<'_>)->io::Result<OriginalLiteralFactsView<'_>>{
+  a.checkpoint().map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
+  if self.payload().extent.is_some()||!self.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}
+  self.data_window_with_extent(window,frontier)
+ }
+ fn data_window_with_extent(&self,window:Span,extent:usize)->io::Result<OriginalLiteralFactsView<'_>>{
+  let owner=self.payload();if window.start>window.end||window.end>extent{return Err(io::ErrorKind::InvalidInput.into())}
   let mut rows=owner.rows.window();rows.owner=owner.projection.as_ref();let first=rows.partition_point(|(span,_)|span.end<=window.start);let last=rows.partition_point(|(span,_)|span.start<window.end);
   if first<last&&(rows.get(first).unwrap().0.start<window.start||rows.get(last-1).unwrap().0.end>window.end){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual source view cuts an issued literal occurrence"))}
   let colons=owner.colons.rows();
   let cf=colons.partition_point(|(span,_)|span.end<=window.start);let cl=colons.partition_point(|(span,_)|span.start<window.end);
   if cf<cl&&(colons.get(cf).unwrap().0.start<window.start||colons.get(cl-1).unwrap().0.end>window.end){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual source view cuts an issued colon occurrence"))}
-  Ok(OriginalLiteralFactsView{rows:rows.range(first..last).ok_or(io::ErrorKind::InvalidData)?,colons:colons.range(cf..cl),origin:window.start,owner})
+  Ok(OriginalLiteralFactsView{rows:rows.range(first..last).ok_or(io::ErrorKind::InvalidData)?,colons:colons.range(cf..cl),origin:window.start,extent,owner})
  }
  #[cfg(debug_assertions)]
  pub(crate) fn trace_retention(&self)->impl std::fmt::Debug{
@@ -1813,6 +1832,42 @@ impl OriginalPrimaryLiteralFacts{
   }}
   Snapshot{rows:owner.rows.len,colons:owner.colons.rows().len(),fixed:owner.fixed_credit.bytes(),row_capacity:owner.rows.reservation_bytes(),colon_capacity:owner.colons.reservation_bytes(),census,numeric,body_projection:owner.body_projection,rejections,first_attempts:owner.first_projection_attempts,short_spans,settled_span_pages}
  }
+
+ /// Borrowed resource observation only. Intrinsic structural grants below own
+ /// distinct producer buffers; visitor columns may repeat external references
+ /// and deliberately remain reference upper bounds, never unique lease sums.
+ #[doc(hidden)]
+ pub fn resource_summary_for_trace(&self,domain:&crate::SettingRootLease)->Option<impl std::fmt::Debug>{
+  fn counter(lease:&crate::SettingRootLease)->usize{let mut address=0;lease.visit_counter_storage(|p,_|address=p);address}
+  fn add(sum:&mut Option<usize>,value:usize){*sum=sum.and_then(|old|old.checked_add(value));}
+  let expected=counter(domain);let owner=self.payload();
+  if counter(&owner.fixed_credit)!=expected||counter(&owner.colon_credit)!=expected{return None}
+  let(mut directory,mut pages,mut spans,mut wide,mut indexes,mut colon_directories,mut colon_pages)=(Some(owner.rows.directory_credit.bytes()),Some(0usize),Some(0usize),Some(0usize),Some(0usize),Some(0usize),Some(0usize));
+  let mut valid=counter(&owner.rows.directory_credit)==expected;
+  for chunk in &owner.rows.chunks{
+   valid&=counter(&chunk.credit)==expected;add(&mut pages,chunk.credit.bytes());
+   for page in &chunk.pages{
+    valid&=counter(&page.span_credit)==expected;add(&mut spans,page.span_credit.bytes());
+    if let Some(lease)=&page.wide_credit{valid&=counter(lease)==expected;add(&mut wide,lease.bytes());}
+    // Each page owns its own index buffers/lease. VALUE payloads reached by
+    // these rows are separate and observed only by the existing visitor below.
+    let data_credit=match &page.data{LiteralPageData::Dense(data)=>&data.credit,LiteralPageData::Compact(data)=>&data.credit,LiteralPageData::Projected(data)=>&data.credit};
+    valid&=counter(data_credit)==expected;add(&mut indexes,data_credit.bytes());
+   }
+  }
+  macro_rules! colon {($column:expr)=>{{let column=$column;if let Some(lease)=&column.directory_credit{valid&=counter(lease)==expected;add(&mut colon_directories,lease.bytes());}for page in column.first.iter().chain(&column.pages){valid&=counter(&page.credit)==expected;add(&mut colon_pages,page.credit.bytes());}}}}
+  colon!(&owner.colons.compact);colon!(&owner.colons.wide);
+  if !valid{return None}
+  let(mut observations,mut foreign,mut funded_capacity,mut unclassified_capacity)=(0usize,0usize,Some(0usize),Some(0usize));
+  let mut visit=|_:usize,_:usize,capacity:usize,lease:Option<&crate::SettingRootLease>|{
+   observations=observations.saturating_add(1);
+   if lease.is_some_and(|lease|counter(lease)==expected){add(&mut funded_capacity,capacity)}else{if lease.is_some(){foreign=foreign.saturating_add(1);}add(&mut unclassified_capacity,capacity)}
+  };
+  owner.rows.visit_storage(owner.projection.as_ref(),&mut visit);owner.colons.visit_storage(&mut visit);
+  struct Snapshot{fixed_grant:usize,colon_metadata_grant:usize,literal_directory_grant:Option<usize>,literal_page_directory_grants:Option<usize>,literal_span_grants:Option<usize>,literal_wide_span_grants:Option<usize>,literal_value_index_grants:Option<usize>,colon_directory_grants:Option<usize>,colon_page_grants:Option<usize>,storage_observations:usize,foreign_lease_observations:usize,funded_capacity_reference_upper:Option<usize>,unclassified_capacity_reference_upper:Option<usize>}
+  impl std::fmt::Debug for Snapshot{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("PrimaryLiteralResourceSummary").field("fixed_grant",&self.fixed_grant).field("colon_metadata_grant",&self.colon_metadata_grant).field("literal_directory_grant",&self.literal_directory_grant).field("literal_page_directory_grants",&self.literal_page_directory_grants).field("literal_span_grants",&self.literal_span_grants).field("literal_wide_span_grants",&self.literal_wide_span_grants).field("literal_value_index_grants",&self.literal_value_index_grants).field("colon_directory_grants",&self.colon_directory_grants).field("colon_page_grants",&self.colon_page_grants).field("storage_observations",&self.storage_observations).field("foreign_lease_observations",&self.foreign_lease_observations).field("funded_capacity_reference_upper",&self.funded_capacity_reference_upper).field("unclassified_capacity_reference_upper",&self.unclassified_capacity_reference_upper).finish()}}
+  Some(Snapshot{fixed_grant:owner.fixed_credit.bytes(),colon_metadata_grant:owner.colon_credit.bytes(),literal_directory_grant:directory.take(),literal_page_directory_grants:pages,literal_span_grants:spans,literal_wide_span_grants:wide,literal_value_index_grants:indexes,colon_directory_grants:colon_directories,colon_page_grants:colon_pages,storage_observations:observations,foreign_lease_observations:foreign,funded_capacity_reference_upper:funded_capacity,unclassified_capacity_reference_upper:unclassified_capacity})
+ }
  pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
   self.visit_storage_classified(None, |p,n,c,_| visit(p,n,c));
  }
@@ -1915,6 +1970,10 @@ impl OriginalPrimaryLiteralFacts{
  }
  struct BodySource<'a>{source:&'a str,tokens:&'a[crate::SpanToken],facts:&'a OriginalPrimaryLiteralFacts,a:&'a crate::SettingAdmission<'a>}
  impl crate::SettingSyntaxProvider for BodySource<'_>{
+  fn original_statement_block_open(&self,gap:Span)->io::Result<bool>{
+   let gap=self.source.get(gap.range()).ok_or(io::ErrorKind::InvalidData)?;
+   Ok(gap.contains('\n')&&gap.bytes().all(|byte|matches!(byte,b' '|b'\t'|b'\r'|b'\n')))
+  }
   fn setting(&self,_:&crate::Item)->Result<crate::SettingStatement,crate::Diagnostic>{panic!("no initial settings in fixture")}
   fn original_expression(&self,source:&str,offset:usize)->io::Result<Option<crate::ParsedExpr>>{
    if self.source.get(offset..offset+source.len())!=Some(source){return Err(io::ErrorKind::InvalidData.into())}let end=offset+source.len();let first=self.tokens.partition_point(|token|token.span.end<=offset);let last=self.tokens.partition_point(|token|token.span.start<end);
@@ -1924,6 +1983,38 @@ impl OriginalPrimaryLiteralFacts{
  #[test]fn actual_same_body_statement_parser_lends_one_primary_numeric_fact_to_its_original_root_and_coordinates(){
   let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,1<<24,&poll);let source="/proc/p()\n    return 1.23457\n";let start=source.find("1.23457").unwrap();let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();let data=crate::OriginalLiteralData::from_value_using("1.23457".into(),crate::OriginalTokenValue::Float(f32::from_bits(0x3f9e0651)),&a).unwrap();facts.append_actual(Span::new(start,start+7),data,&a).unwrap();facts.seal_actual_frontier(source.len(),&a).unwrap();let tokens=crate::lex_spans(source);let ast=crate::parse(source);let provider=BodySource{source,tokens:&tokens.tokens,facts:&facts,a:&a};let parsed=crate::parse_body_items_with_context_and_settings(&ast.items[0].children,source,&|_|None,&provider,&a);assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);
   let crate::StatementKind::Return(Some(root))=&parsed.statements[0].kind else{panic!("return")};assert_eq!(root.span,Span::new(start,start+7));let crate::ExprKind::Literal(literal)=&root.kind else{panic!("literal")};assert!(matches!(literal.original_value(),Some(crate::OriginalTokenValue::Float(value))if value.to_bits()==0x3f9e0651));assert!(literal.original_data().unwrap().same_owner(facts.rows().get(0).unwrap().1));drop(parsed);drop(facts);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+
+ #[test]
+ fn actual_original_control_assignments_require_issued_complete_children_and_exact_body_boundaries(){
+  for(header,expected)in[
+   ("while(argument)",true),("while(!argument)",true),
+   ("while(sink=argument)",true),("if(sink=argument)",true),
+   ("for(var/item in sink=list())",true),
+   ("while(sink=)",false),("while(sink=argument))",false),
+   ("while(sink=argument) ;",false),("if(sink=argument) ;",false),
+   ("for(item in sink=list())",false),("for(var/item in sink=)",false),
+  ]{
+   let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+   let poll=||Ok(());let a=crate::SettingAdmission::new(&used,1<<24,&poll);
+   let source=format!("/proc/p(argument)\n    {header}\n        return argument\n");
+   let tokens=crate::lex_spans(&source);let ast=crate::parse(&source);
+   let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();facts.seal_actual_frontier(source.len(),&a).unwrap();
+   let provider=BodySource{source:&source,tokens:&tokens.tokens,facts:&facts,a:&a};
+   let parsed=crate::parse_body_items_with_context_and_settings(&ast.items[0].children,&source,&|_|None,&provider,&a);
+   assert_eq!(parsed.original_grammar.is_some(),expected,"{header}: diagnostics={:?}",parsed.diagnostics);
+   if expected{assert!(parsed.diagnostics.is_empty(),"{header}: {:?}",parsed.diagnostics);}
+   drop(parsed);drop(facts);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes(),"{header}");
+  }
+ }
+ #[test]
+ fn compatibility_control_assignment_cannot_borrow_an_original_condition_receipt(){
+  for header in ["while(sink=argument)","if(sink=argument)","for(var/item in sink=list())"]{
+   let source=format!("/proc/p(argument)\n    {header}\n        return argument\n");
+   let ast=crate::parse(&source);
+   let parsed=crate::parse_body_items_with_source(&ast.items[0].children,&source);
+   assert!(parsed.original_grammar.is_none(),"ordinary compatibility syntax cannot manufacture the Original assignment receipt: {header}");
+  }
  }
 }
 
@@ -2700,7 +2791,13 @@ mod literal_page_controls {
         crate::OriginalLiteralData::pack_delivery_batch_using(&mut slots, &a).unwrap();
         let packed_key = slots[0].as_ref().unwrap().as_view().page_storage_identity().unwrap();
         let survivor_pointer = slots[0].as_ref().unwrap().raw().as_ptr();
-        let total_owner_bytes = slots[0].as_ref().unwrap().as_view().trace_payload().1;
+        // Observe the real intrinsic lease in release tests too; debug tracing
+        // is deliberately absent from the optimized production configuration.
+        let mut owner_bytes = None;
+        slots[0].as_ref().unwrap().as_view().visit_storage_funding(&mut |_, _, _, credit| {
+            if let Some(credit) = credit { owner_bytes.get_or_insert(credit.bytes()); }
+        });
+        let total_owner_bytes = owner_bytes.expect("packed literal has its actual owner lease");
         let raw_bytes: usize = slots[1..].iter().map(|data| data.as_ref().unwrap().raw_storage().capacity()).sum();
         for ((span, _), data) in issued.into_iter().zip(slots) {
             facts.append_actual(span, data.unwrap(), &a).unwrap();
@@ -2754,7 +2851,7 @@ mod literal_page_controls {
         assert_eq!(page.get(1).unwrap().1.raw().unwrap().as_ptr(), second_pointer);
 
         let released = if whole_group { total_owner_bytes } else { raw_bytes };
-        let added = if whole_group { 4 } else { 3 };
+        let added = 1usize; // Normal string descriptors coalesce; prior Int stays distinct.
         let saved = released - added * mem::size_of::<ProjectedLiteral>();
         assert_eq!(page.settle_delivered_compact(&source, &a).unwrap(), saved);
         assert_eq!(used.load(Ordering::Acquire), before - saved);
@@ -2861,4 +2958,76 @@ fn literal_storage_classifies_each_actual_lease_without_changing_full_census() {
     drop(facts);
     assert_eq!(own.load(Ordering::Acquire),floor);
     assert_eq!(foreign.load(Ordering::Acquire),floor);
+}
+
+#[cfg(test)]mod committed_live_literal_loan_tests{
+ use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]fn committed_live_literal_loan_is_finite_unsealed_and_releases_before_next_append(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+  let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();let data=crate::OriginalLiteralData::from_value_using("123".to_owned(),crate::OriginalTokenValue::Int(123),&a).unwrap();
+  facts.append_actual(Span::new(0,3),data,&a).unwrap();facts.append_actual_colon(Span::new(3,4),true,&a).unwrap();
+  assert_eq!(facts.checked_data_window(Span::new(0,4)).err().unwrap().kind(),io::ErrorKind::NotConnected);
+  {let view=facts.checked_live_data_window(Span::new(0,4),4,&a).unwrap().with_source_data("123:").unwrap();let(rows,origin)=view.raw_parts();assert_eq!(origin,0);assert_eq!(rows.len(),1);assert!(rows.get(0).unwrap().1.same_owner(facts.rows().get(0).unwrap().1));let(colons,_)=view.raw_colons();assert_eq!(colons.get(0),Some((Span::new(3,4),true)));assert!(view.with_source_data("123").is_ok(),"a shorter DATA spelling loan is not whole-prefix authority");assert!(view.with_source_data("12345").is_err());}
+  assert_eq!(facts.consumed_extent(),None);assert!(facts.checked_live_data_window(Span::new(0,5),4,&a).is_err());assert!(facts.checked_live_data_window(Span::new(1,4),4,&a).is_err());
+  facts.append_actual_colon(Span::new(4,5),false,&a).unwrap();facts.seal_actual_frontier(5,&a).unwrap();assert_eq!(facts.consumed_extent(),Some(5));assert!(facts.checked_live_data_window(Span::new(0,5),5,&a).is_err());assert!(facts.checked_data_window(Span::new(0,5)).is_ok());drop(facts);assert_eq!(used.load(Ordering::Acquire),fixed);
+ }
+ #[test]fn committed_live_literal_loan_keeps_foreign_domain_and_first_actual_io_refusals(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let other=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let foreign=crate::SettingAdmission::new(&other,1<<20,&||Ok(()));let facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();
+  assert_eq!(facts.checked_live_data_window(Span::new(0,0),0,&foreign).err().unwrap().kind(),io::ErrorKind::InvalidInput);
+  let polls=AtomicUsize::new(0);let checkpoint=||{polls.fetch_add(1,Ordering::AcqRel);Err(io::Error::from_raw_os_error(1450))};let fail=crate::SettingAdmission::new(&used,1<<20,&checkpoint);let error=facts.checked_live_data_window(Span::new(0,0),0,&fail).err().unwrap();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(facts.checked_live_data_window(Span::new(0,0),0,&fail).err().unwrap().kind(),error.kind());assert_eq!(polls.load(Ordering::Acquire),1);assert_eq!(facts.consumed_extent(),None);drop(facts);assert_eq!(used.load(Ordering::Acquire),fixed);
+ }
+}
+
+#[cfg(test)]
+#[path="original_literal_eof_raw_tests.rs"]mod eof_raw_tests;
+
+#[cfg(test)]#[test]
+fn actual_literal_resource_trace_borrows_same_domain_without_charging_or_resetting_failure(){
+ use std::sync::atomic::Ordering;
+ let floor=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(floor).unwrap();let foreign=crate::SettingChargeCounter::try_new(floor).unwrap();
+ let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let other=crate::SettingAdmission::new(&foreign,1<<20,&||Ok(()));
+ let anchor=a.reserve(0).unwrap();let wrong=other.reserve(0).unwrap();let mut facts=OriginalPrimaryLiteralFacts::new(&a).unwrap();
+ let value=crate::OriginalLiteralData::from_value_using("111".into(),crate::OriginalTokenValue::Int(111),&a).unwrap();facts.append_actual(Span::new(0,3),value,&a).unwrap();facts.seal_actual_frontier(3,&a).unwrap();
+ let retained=used.load(Ordering::Acquire);assert!(facts.resource_summary_for_trace(&anchor).is_some());assert!(facts.resource_summary_for_trace(&wrong).is_none());assert_eq!(used.load(Ordering::Acquire),retained);
+ let fail=||Err(std::io::Error::from_raw_os_error(1450));let stopped=crate::SettingAdmission::new(&used,1<<20,&fail);assert!(stopped.checkpoint().is_err());assert!(facts.resource_summary_for_trace(&anchor).is_some());assert_eq!(stopped.take_operational_error().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),retained);
+ drop((facts,anchor,wrong));assert_eq!(used.load(Ordering::Acquire),floor);assert_eq!(foreign.load(Ordering::Acquire),floor);
+}
+
+#[cfg(test)]mod descriptor_palette_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ struct Output{credit:crate::SettingRootLease}
+ impl crate::OriginalLiteralOutputOwner for Output{
+  fn as_any(&self)->&dyn std::any::Any{self}
+  fn release(self:Arc<Self>){drop(Arc::into_inner(self));}
+  fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize,usize)){let n=mem::size_of::<Self>()+2*mem::size_of::<usize>();visit(self as *const _ as usize,n,n);self.credit.visit_counter_storage(|p,n|visit(p,n,n));}
+ }
+ fn strings(a:&crate::SettingAdmission<'_>,compact:bool)->(OriginalPrimaryLiteralFacts,String){
+  let output=crate::OriginalLiteralProjectionOwner::from_output_data(Arc::new(Output{credit:a.reserve(mem::size_of::<Output>()+2*mem::size_of::<usize>()).unwrap()}));let mut facts=OriginalPrimaryLiteralFacts::new(a).unwrap();facts.enable_projection(output).unwrap();let mut source=String::new();
+  for index in 0..LITERAL_PAGE_LEN{let raw=format!("\"descriptor-{index}-{}\"","z".repeat(48));let start=source.len();source.push_str(&raw);source.push('\n');let data=crate::OriginalLiteralData::from_value_with_mode_using(raw.clone(),crate::OriginalTokenValue::String(&raw[1..raw.len()-1]),crate::OriginalStringMode::Normal,a).unwrap();facts.append_actual(Span::new(start,start+raw.len()),data,a).unwrap();}
+  if compact{Arc::get_mut(facts.0.as_mut().unwrap()).unwrap().rows.chunks[0].pages[0].data.settle_full_using(a).unwrap();}(facts,source)
+ }
+ #[test]fn literal_descriptor_palette_physically_coalesces_strings_without_coalescing_occurrences(){
+  for compact in[false,true]{let root=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(root).unwrap();let peak=std::cell::Cell::new(root);let poll=||{peak.set(peak.get().max(used.load(Ordering::Acquire)));Ok(())};let a=crate::SettingAdmission::new(&used,8<<20,&poll);let(mut facts,source)=strings(&a,compact);let before=used.load(Ordering::Acquire);peak.set(before);let extent=Span::new(0,source.len());facts.project_body_line(extent,true,&source,&a).unwrap();
+   let page=&facts.payload().rows.chunks[0].pages[0];let(descriptors,credit)=match &page.data{LiteralPageData::Projected(data)=>(&data.descriptors,&data.credit),LiteralPageData::Compact(data)=>(data.projections.as_ref().unwrap().as_ref(),&data.credit),_=>panic!("real projected page")};assert_eq!(descriptors.len(),1);assert_eq!(descriptors.capacity(),1);let physical=descriptors.capacity()*mem::size_of::<ProjectedLiteral>();assert_eq!(physical,8);assert_eq!(LITERAL_PAGE_LEN*mem::size_of::<ProjectedLiteral>()-physical,2040,"exact former per-row descriptor layout minus actual retained buffer");let mut observed=false;page.data.visit_storage(&mut|address,_,capacity,lease|{if address==descriptors.as_ptr()as usize{observed=true;assert_eq!(capacity,physical);assert!(std::ptr::eq(lease.unwrap(),credit));}});assert!(observed);assert!(peak.get()>before,"old payload and paid new index/scratch overlap before physical retirement");
+   facts.seal_actual_frontier(source.len(),&a).unwrap();let view=facts.checked_data_window(extent).unwrap().with_source_data(&source).unwrap();let rows=view.raw_parts().0;for index in 0..LITERAL_PAGE_LEN{let(span,value)=rows.get(index).unwrap();assert!(value.is_projected());assert_eq!(value.raw().unwrap(),&source[span.range()]);let expected=format!("descriptor-{index}-{}","z".repeat(48));assert!(matches!(value.value().unwrap(),crate::OriginalTokenValue::String(text)if text==expected));}let first=rows.get(13).unwrap().1;let second=rows.get(14).unwrap().1;assert!(!first.same_owner(second),"equal descriptors never merge actual occurrence ordinals");let alias=first.detach_using(&a).unwrap();assert!(alias.as_view().same_owner(first));drop(view);drop(facts);assert!(alias.raw().contains("descriptor-13-"));assert!(used.load(Ordering::Acquire)>root);drop(alias);assert_eq!(used.load(Ordering::Acquire),root);
+  }
+ }
+ #[test]fn literal_descriptor_palette_uses_all_bits_and_remaps_only_projected_selectors(){
+  let base=ProjectedLiteral{bits:0,kind:0,mode:crate::OriginalStringMode::Unknown,alias:[0,0]};let mut palette=DescriptorPalette::new();assert_eq!(palette.insert(base).unwrap(),0);assert_eq!(palette.insert(base).unwrap(),0);
+  for value in[ProjectedLiteral{bits:0x80000000,kind:1,..base},ProjectedLiteral{bits:0x7fc00001,kind:1,..base},ProjectedLiteral{bits:0x7fc00002,kind:1,..base},ProjectedLiteral{kind:1,..base},ProjectedLiteral{mode:crate::OriginalStringMode::Normal,..base},ProjectedLiteral{alias:[1,0],..base},ProjectedLiteral{alias:[0,1],..base}]{let old=palette.len;assert_eq!(palette.insert(value).unwrap(),old);assert_eq!(palette.find(value),Some(old));}
+  let mut full=DescriptorPalette::new();for bits in 0..256{assert_eq!(full.insert(ProjectedLiteral{bits,..base}).unwrap(),bits as usize);}assert!(full.insert(ProjectedLiteral{bits:256,..base}).is_err());assert_eq!(full.len,256);
+  let mut indexes=[0u8;LITERAL_PAGE_LEN];indexes[3]=1;let ordinary=(1u32<<8)|7;let wide=(WIDE_LITERAL_ORDINAL<<8)|2;let projected=(PROJECTED_COMPACT_ORDINAL<<8)|3;let mut codes=CompactLiteralCodes::Wide(vec![ordinary,wide,projected]);codes.remap_projections(&indexes);assert_eq!(codes.iter().collect::<Vec<_>>(),[ordinary,wide,(PROJECTED_COMPACT_ORDINAL<<8)|1]);let mut codes=CompactLiteralCodes::Narrow{cells:vec![(1<<8)|7,((SHORT_CODE_WIDE<<8)|2)as u16,((SHORT_CODE_PROJECTED<<8)|3)as u16],bases:[0;2]};codes.remap_projections(&indexes);assert_eq!(codes.iter().collect::<Vec<_>>(),[ordinary,wide,(PROJECTED_COMPACT_ORDINAL<<8)|1]);
+ }
+ #[test]fn literal_descriptor_palette_installed_before_first_bank_error_retries_full_distinct_page(){
+  for raw in[Some(1450),Some(995),None]{let root=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(root).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut page=LiteralPage::new(0,&a).unwrap();let mut source=String::new();for index in 0..LITERAL_PAGE_LEN{let raw=(100000+index).to_string();let start=source.len();source.push_str(&raw);source.push('\n');let data=crate::OriginalLiteralData::from_value_using(raw.clone(),crate::OriginalTokenValue::Int(100000+index as i32),&a).unwrap();page.push((Span::new(start,start+raw.len()),data),&a).unwrap();}page.body=[u64::MAX;4];page.data.settle_full_using(&a).unwrap();let before=used.load(Ordering::Acquire);
+   // Detect the already-paid scratch phase, then the two real checkpoints at
+   // metadata absorption and first bank withdrawal. No mutable-owner borrowing.
+   let scratch=std::cell::Cell::new(None);let metadata_polls=std::cell::Cell::new(0);let poll=||{let current=used.load(Ordering::Acquire);if current>before{if let Some(scratch)=scratch.get(){if current>scratch{let n=metadata_polls.get()+1;metadata_polls.set(n);if n==2{return Err(match raw{Some(raw)=>io::Error::from_raw_os_error(raw),None=>io::ErrorKind::Interrupted.into()})}}}else{scratch.set(Some(current));}}Ok(())};let fault=crate::SettingAdmission::new(&used,8<<20,&poll);let error=page.settle_delivered_compact(&source,&fault).unwrap_err();if let Some(raw)=raw{assert_eq!(error.raw_os_error(),Some(raw));}else{assert_eq!(error.kind(),io::ErrorKind::Interrupted);}assert_eq!(metadata_polls.get(),2);drop(fault);
+   let LiteralPageData::Compact(data)=&page.data else{panic!("actual compact state")};assert_eq!(data.projections.as_ref().unwrap().len(),256,"real planned palette already installed");assert!(data.codes.iter().all(|code|code>>8!=PROJECTED_COMPACT_ORDINAL),"first actual bank has not retired");assert!(used.load(Ordering::Acquire)>before,"installed real metadata remains funded after scratch retirement");
+   page.settle_delivered_compact(&source,&a).unwrap();let output=crate::OriginalLiteralProjectionOwner::from_output_data(Arc::new(Output{credit:a.reserve(mem::size_of::<Output>()+2*mem::size_of::<usize>()).unwrap()}));let loan=ProjectionLoan{source:&source,origin:0};for index in 0..LITERAL_PAGE_LEN{let(span,value)=page.get_data(index,0,Some(loan),Some(&output)).unwrap();assert!(value.is_projected());assert_eq!(value.raw().unwrap(),&source[span.range()]);assert!(matches!(value.value().unwrap(),crate::OriginalTokenValue::Int(v)if v==100000+index as i32));}drop((page,output));assert_eq!(used.load(Ordering::Acquire),root);
+  }
+ }
+ #[test]fn literal_descriptor_palette_optional_quota_keeps_real_rows_and_delivered_retry(){
+  let root=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(root).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let(mut facts,source)=strings(&a,false);let before=used.load(Ordering::Acquire);let low=crate::SettingAdmission::new(&used,before,&||Ok(()));facts.project_body_line(Span::new(0,source.len()),true,&source,&low).unwrap();assert_eq!(used.load(Ordering::Acquire),before);assert!(facts.rows().iter().all(|(_,value)|!value.is_projected()));drop(low);facts.seal_actual_frontier(source.len(),&a).unwrap();facts.settle_delivered_body_payloads(&source,&a).unwrap();assert!(facts.rows().iter().all(|(_,value)|value.is_projected()));drop(facts);assert_eq!(used.load(Ordering::Acquire),root);
+ }
 }

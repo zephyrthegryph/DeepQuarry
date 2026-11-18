@@ -8,6 +8,10 @@ use dm_ir::SymbolTable;
 use dm_preprocess::SourceText;
 use dm_syntax::{Item,Span,SettingAdmission,OriginalDeclarationHeaderObserver,OriginalPrimaryHeader,OriginalHeaderFlow};
 use std::sync::Arc;
+#[path="original_committed_parameters.rs"]mod committed_parameters;
+#[path="original_committed_consumer.rs"]mod committed_consumer;
+pub(crate)use committed_consumer::{CommittedBodySyntaxConsumer,CommittedSignatureConsumer};
+
 // One active parser still needs the original conservative scratch envelope.
 // This is separate from the completed product's allocation layout below.
 const ACTIVE_HEADER_FIXED: usize = 1024;
@@ -214,16 +218,16 @@ impl SignatureSlot {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct HeaderGeometry {
-    header: Span,
-    argument_offset: usize,
+pub(in crate::procedure) struct HeaderGeometry {
+    pub(in crate::procedure) header: Span,
+    pub(in crate::procedure) argument_offset: usize,
 }
 
-struct PackedHeader([u32; 2]);
+pub(in crate::procedure) struct PackedHeader([u32; 2]);
 impl PackedHeader {
-    const WIDE: Self = Self([u32::MAX, 0]);
+    pub(in crate::procedure) const WIDE: Self = Self([u32::MAX, 0]);
 
-    fn pack(geometry: HeaderGeometry) -> Option<Self> {
+    pub(in crate::procedure) fn pack(geometry: HeaderGeometry) -> Option<Self> {
         let start = u32::try_from(geometry.header.start).ok()?;
         if start == u32::MAX { return None; }
         let length = u16::try_from(geometry.header.end.checked_sub(geometry.header.start)?).ok()?;
@@ -231,7 +235,7 @@ impl PackedHeader {
         Some(Self([start, u32::from(length) | (u32::from(arguments) << 16)]))
     }
 
-    fn unpack(&self) -> Option<HeaderGeometry> {
+    pub(in crate::procedure) fn unpack(&self) -> Option<HeaderGeometry> {
         let [start, tail] = self.0;
         if start == u32::MAX { return None; }
         let start = start as usize;
@@ -243,9 +247,9 @@ impl PackedHeader {
     }
 }
 
-struct WideHeader {
-    ordinal: usize,
-    geometry: HeaderGeometry,
+pub(in crate::procedure) struct WideHeader {
+    pub(in crate::procedure) ordinal: usize,
+    pub(in crate::procedure) geometry: HeaderGeometry,
 }
 
 struct Row<Geometry = PackedHeader, Producer = ()> {
@@ -257,7 +261,7 @@ struct Row<Geometry = PackedHeader, Producer = ()> {
 }
 struct EarlyFormals{live:dm_syntax::OriginalPrimaryLiveHeader,accumulator:super::FormalParameterAccumulator,next_start:usize,closed:Option<Span>,head_assignment:Option<Span>,head_bytes:usize,symbol_shape:dm_ir::LocalSymbolStorage,credit:dm_syntax::SettingRootLease}
 struct PendingInput{live:dm_syntax::OriginalPrimaryLiveHeader,parameter:usize,marker:Span,input:dm_syntax::RetainedParameterInput}
-struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::CompletedFormalRoot,native_children:u8}
+struct PendingDefault{live:dm_syntax::OriginalPrimaryLiveHeader,root:Option<super::CompletedFormalRoot>,native_children:u8}
 pub(crate) struct OriginalSignatureObserver<'a,'b>{a:&'a SettingAdmission<'b>,symbols:SymbolTable,rows:CompletedSignatureRows,failure:Option<SignatureError>,failure_storage:Option<dm_syntax::SettingRootLease>,unsupported:Option<String>,early:Option<EarlyFormals>,defaults:PendingDefaultPages<PendingDefault>,inputs:Vec<PendingInput>,input_storage:Option<dm_syntax::SettingRootLease>,stream_failed:bool,failure_live:Option<dm_syntax::OriginalPrimaryLiveHeader>,failure_head_data:Option<(Span,dm_syntax::OriginalLiteralData)>,notices:Option<super::original_formal_notices::FormalNotices>,notices_complete:bool,pub(crate) reader_registration:Option<dm_preprocess::regions::OriginalNoticeRegistration>,reader_commits:Option<dm_preprocess::regions::OriginalReaderRegistrationTable>,reader_committed:usize}
 /// Borrowed accounting from existing unique observer leases. The floor is
 /// the existing post-header reconciliation, including its fixed allowance,
@@ -358,7 +362,7 @@ impl OriginalSignatureObserver<'_, '_> {
             pending_defaults: self.defaults.len(),
             pending_default_buffer_bytes: self.defaults.buffer_bytes(),
             pending_default_root_bytes: self.defaults.iter().fold(0usize, |n, d| {
-                n.saturating_add(d.root.syntax.retained_bytes_for_trace())
+                n.saturating_add(d.root.as_ref().map_or(0,|root|root.syntax.retained_bytes_for_trace()))
             }),
             pending_inputs: self.inputs.len(),
             pending_input_buffer_bytes: bytes(self.input_storage.as_ref()),
@@ -390,15 +394,14 @@ impl OriginalSignatureObserver<'_, '_> {
     /// owners are excluded; the admission error already carries its own
     /// allocation-time sample. Do not replace that error or open another query.
     pub(crate) fn trace_failed_stream_retention(&self, stage: &'static str) {
-        if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_none() {
-            return;
-        }
         use std::io::Write as _;
         let trace = self.retention_for_trace();
         let counter_after_unwind = self.a.retained_bytes_for_trace();
+        let symbols = self.symbols.visit_storage(|_, _| {});
         let _ = writeln!(
             std::io::stderr().lock(),
-            "ORIGINAL_RETAINED_STAGE={stage} counter_after_unwind={counter_after_unwind} observer={trace:?}"
+            "ORIGINAL_RETAINED_STAGE={stage} counter_after_unwind={counter_after_unwind} observer={trace:?} symbols_local_len={} symbols_local_capacity={} symbols_parent={} pending_default_capacity={} pending_input_capacity={}",
+            symbols.local_len, symbols.local_capacity, symbols.parent.is_some(), self.defaults.capacity(), self.inputs.capacity()
         );
     }
 }
@@ -439,6 +442,7 @@ impl OriginalDeclarationHeaderObserver for OriginalSignatureObserver<'_,'_>{
 }
 /// Fund the replacement Vec while its old buffer still owns its credit.
 /// This accounts for storage only; each moved row keeps its payload leases.
+#[track_caller]
 pub(crate) fn grow_funded_rows<T>(
     rows: &mut Vec<T>,
     storage: &mut Option<dm_syntax::SettingRootLease>,
@@ -447,6 +451,7 @@ pub(crate) fn grow_funded_rows<T>(
     ensure_funded_rows(rows, storage, a, 1)
 }
 
+#[track_caller]
 fn ensure_funded_rows<T>(
     rows: &mut Vec<T>,
     storage: &mut Option<dm_syntax::SettingRootLease>,
@@ -456,7 +461,9 @@ fn ensure_funded_rows<T>(
     use std::io::ErrorKind;
     let needed = rows.len().checked_add(additional).ok_or(ErrorKind::OutOfMemory)?;
     if needed <= rows.capacity() { return Ok(()); }
-    let capacity = rows.capacity().max(2).checked_mul(2).ok_or(ErrorKind::OutOfMemory)?.max(needed);
+    let capacity = if rows.capacity() == 0 { needed } else {
+        rows.capacity().checked_mul(2).ok_or(ErrorKind::OutOfMemory)?.max(needed)
+    };
     if storage.as_ref().is_some_and(|credit| !a.matches_lease_domain(credit)) {
         return Err(ErrorKind::InvalidInput.into());
     }
@@ -467,24 +474,45 @@ fn ensure_funded_rows<T>(
     Ok(())
 }
 
+#[track_caller]
 pub(crate) fn allocate_funded_rows<T>(
     capacity: usize,
     a: &SettingAdmission<'_>,
 ) -> std::io::Result<(Vec<T>, dm_syntax::SettingRootLease)> {
     use std::{alloc::{alloc, Layout}, io::{Error, ErrorKind}, ptr::NonNull};
+    let caller = std::panic::Location::caller();
     let layout = Layout::array::<T>(capacity).map_err(|_| Error::from(ErrorKind::OutOfMemory))?;
     if layout.size() == 0 {
         return Err(ErrorKind::InvalidInput.into());
     }
-    let next_storage = a.reserve(layout.size()).map_err(|error| a.take_operational_error().unwrap_or(error))?;
+    let next_storage = a.reserve(layout.size()).map_err(|error| {
+        let actual = a.take_operational_error().unwrap_or(error);
+        if actual.kind() == ErrorKind::OutOfMemory {
+            trace_funded_row_oom::<T>(capacity, &layout, "admission", caller);
+        }
+        actual
+    })?;
     // SAFETY: T is nonzero-sized and capacity is positive. The checked
     // layout is funded above; the Global allocation becomes a standard Vec
     // with the same layout. No element is initialized yet.
     let raw = unsafe { alloc(layout) };
-    let raw = NonNull::new(raw.cast::<T>()).ok_or_else(|| Error::new(ErrorKind::OutOfMemory, "native prepared row allocation denied"))?;
+    let raw = NonNull::new(raw.cast::<T>()).ok_or_else(|| {
+        trace_funded_row_oom::<T>(capacity, &layout, "allocator", caller);
+        Error::new(ErrorKind::OutOfMemory, "native prepared row allocation denied")
+    })?;
     let next = unsafe { Vec::from_raw_parts(raw.as_ptr(), 0, capacity) };
     checkpoint(a)?;
     Ok((next, next_storage))
+}
+
+
+/// Failure-only scalar context. This neither grants memory nor replaces IO.
+#[cold]
+fn trace_funded_row_oom<T>(capacity: usize, layout: &std::alloc::Layout, stage: &'static str, caller: &std::panic::Location<'_>) {
+    use std::io::Write as _;
+    let _ = writeln!(std::io::stderr().lock(),
+        "ORIGINAL_FUNDED_ROWS_OOM stage={stage} caller={caller} type={} capacity={capacity} element_bytes={} layout_bytes={} layout_align={}",
+        std::any::type_name::<T>(), std::mem::size_of::<T>(), layout.size(), layout.align());
 }
 
 const PENDING_DEFAULT_PAGE_LEN: usize = 64;
@@ -1373,17 +1401,34 @@ impl PlainProcedureMetadataBank {
 
 /// Unique once-consumed metadata results, bound to the exact native header owner.
 /// Coordinate/source equality cannot substitute another header owner.
-pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,empty_settings:Option<Arc<[dm_ir::ProcedureSettingNode]>>,plain_metadata:Option<PlainProcedureMetadataBank>,plain_metadata_attempted:bool,
+pub(crate) struct PreparedOriginalSignatures{headers:Arc<OriginalProcedureHeaders>,rows:CompletedSignatureRows,input_failure_message:Option<(super::OriginalInputParameterFatal,String)>,spellings:OriginalSignatureSpellings,deferred_spellings:bool,failure_storage:Option<Arc<dm_syntax::SettingRootLease>>,interrupted_storage:Option<Arc<dm_syntax::SettingRootLease>>,empty_settings:Option<Arc<[dm_ir::ProcedureSettingNode]>>,plain_metadata:Option<PlainProcedureMetadataBank>,plain_metadata_attempted:bool,
  #[cfg(debug_assertions)]
  plain_metadata_hits:usize,
  trivial_metadata:[Option<Arc<dm_ir::ProcedureMetadata>>;2],trivial_suffixes:[Option<TrivialCanonicalSuffix>;2],adapter_storage:Option<dm_syntax::SettingRootLease>}
 impl PreparedOriginalSignatures{
+ #[cfg(debug_assertions)]
+ pub(crate) fn trace_failed_adapter_categories(&self,symbols:&SymbolTable,facts:&crate::AdaptedDeclarations,a:&SettingAdmission<'_>){
+  use std::io::Write as _;
+  let payload_grants=self.rows.payload_pages.iter().fold(0usize,|sum,row|sum.saturating_add(row.bytes()));
+  let(mut members,mut procedures,mut canonical_reference_upper,mut parameter_rows_reference,mut settings_nodes_reference)=(0usize,0usize,0usize,0usize,0usize);
+  for row in &facts.skeletons{if let crate::Skeleton::Member{metadata,..}=row{
+   members+=1;canonical_reference_upper=canonical_reference_upper.saturating_add(metadata.canonical.storage_arc().len());
+   if let Some(procedure)=&metadata.procedure{procedures+=1;parameter_rows_reference=parameter_rows_reference.saturating_add(procedure.signature.parameters.len());settings_nodes_reference=settings_nodes_reference.saturating_add(procedure.settings.len());}
+  }}
+  let symbol_shape=symbols.visit_storage(|_,_|{});
+  // The failed item's locals have unwound before this hook. The actual error
+  // retains its allocation-time sample; this counter is labeled separately.
+  let _=writeln!(std::io::stderr().lock(),"ORIGINAL_ADAPTER_OWNER_CATEGORIES phase=after_item_unwind counter={} adapter_grant={} signature_payload_page_grants={payload_grants} signature_payload_directory_grant={} remaining_signature_rows={} row_store_grants={} payload_store_grants={} tail_store_grants={} wide_store_grants={} plain_metadata_bank_grant={} failure_grant={} interrupted_grant={} spelling_observation_grants={} observations_deferred={} adapted_rows={} adapted_member_refs={members} adapted_procedure_refs={procedures} skeleton_vec_capacity_bytes={} origin_vec_capacity_bytes={} canonical_backing_reference_upper={canonical_reference_upper} parameter_rows_reference={parameter_rows_reference} setting_nodes_reference={settings_nodes_reference} symbols_local_len={} symbols_local_capacity={} compact_spellings={}",a.retained_bytes_for_trace(),self.adapter_storage.as_ref().map_or(0,dm_syntax::SettingRootLease::bytes),self.rows.payload_directory.as_ref().map_or(0,dm_syntax::SettingRootLease::bytes),self.rows.iter().filter(|row|!matches!(row.slot.value(),SlotValue::Taken)).count(),self.rows.rows.buffer_bytes(),self.rows.payloads.buffer_bytes(),self.rows.payload_tails.buffer_bytes(),self.rows.wide_headers.buffer_bytes(),self.plain_metadata.as_ref().map_or(0,|bank|bank._credit.bytes()),self.failure_storage.as_ref().map_or(0,|lease|lease.bytes()),self.interrupted_storage.as_ref().map_or(0,|lease|lease.bytes()),self.spellings.rows.buffer_bytes(),self.deferred_spellings,facts.skeletons.len(),facts.skeletons.capacity()*std::mem::size_of::<crate::Skeleton>(),facts.origins.capacity()*std::mem::size_of::<crate::Provenance>(),symbol_shape.local_len,symbol_shape.local_capacity,symbols.compact_spelling_len());
+  self.headers.trace_owned_parameter_categories("adapter_after_item_unwind",a);
+ }
+
  pub(crate) fn append_procedure_canonical(&mut self,header:FundedCanonicalHeader<'_>,procedure:&dm_ir::ProcedureMetadata,a:&SettingAdmission<'_>)->std::io::Result<(dm_ir::CanonicalBytes, u128)>{
   let slot=usize::from(procedure.signature.variadic);
   let cache=self.trivial_metadata[slot].as_deref().is_some_and(|owner|std::ptr::eq(owner,procedure))
    .then(||&mut self.trivial_suffixes[slot]);
   append_procedure_canonical(header,procedure,&mut self.adapter_storage,cache,a)
  }
+ #[track_caller]
  pub(crate) fn admit_adapter_storage(&mut self,bytes:usize,a:&SettingAdmission<'_>)->std::io::Result<()>{
   if let Some(lease)=&mut self.adapter_storage{
    a.grow(lease,bytes).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
@@ -1466,11 +1511,11 @@ impl PreparedOriginalSignatures{
   &mut self,symbols:&mut SymbolTable,text:&str,a:&SettingAdmission<'_>,
  )->std::io::Result<Result<dm_ir::SymbolId,dm_ir::SymbolCollision>>{
   let result=symbols.intern_funding_spare_spelling(text,|bytes|{
-   self.spellings.rows.ensure_slot(a)?;
+   if !self.deferred_spellings{self.spellings.rows.ensure_slot(a)?;}
    self.admit_adapter_storage(bytes,a)
   })?;
   Ok(result.map(|(id,backing)|{
-   if let Some(backing)=backing{self.spellings.rows.push_reserved(Arc::downgrade(backing));}
+   if !self.deferred_spellings{if let Some(backing)=backing{self.spellings.rows.push_reserved(Arc::downgrade(backing));}}
    id
   }))
  }
@@ -1484,7 +1529,16 @@ impl PreparedOriginalSignatures{
  pub(crate) fn retain_input_failure_message(&mut self,reason:super::OriginalInputParameterFatal,message:String)->std::io::Result<()>{let mut in_source=false;self.headers.visit_source(|source|in_source=reason.token_span().end<=source.len());if self.input_failure_message.is_some()||self.failure_storage.as_ref().is_none_or(|credit|credit.bytes()<message.capacity())||!in_source{return Err(std::io::ErrorKind::InvalidInput.into())}self.input_failure_message=Some((reason,message));Ok(())}
  pub(crate) fn input_failure_message(&self,reason:super::OriginalInputParameterFatal)->Option<&str>{self.input_failure_message.as_ref().filter(|(actual,_)|*actual==reason).map(|(_,message)|message.as_str())}
 
- pub(crate) fn take_spellings(&mut self)->OriginalSignatureSpellings{std::mem::take(&mut self.spellings)}
+ /// Only the private streamed adapter handoff can defer observations. Its
+ /// actual SymbolTable remains owned until this completes, before progress is
+ /// exposed. Retire taken row directories, never payload/adapter reservations.
+ pub(crate) fn finish_deferred_spelling_observations(&mut self,symbols:&SymbolTable,a:&SettingAdmission<'_>)->std::io::Result<()>{
+  if !self.deferred_spellings{return Ok(())}
+  self.release_consumed_row_storage().map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+  let spellings=OriginalSignatureSpellings::capture(symbols,a)?;
+  self.spellings=spellings;self.deferred_spellings=false;Ok(())
+ }
+ pub(crate) fn take_spellings(&mut self)->std::io::Result<OriginalSignatureSpellings>{if self.deferred_spellings{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"deferred spelling observations cannot publish before actual adapter completion"))}Ok(std::mem::take(&mut self.spellings))}
  pub(crate) fn visit_signature_reservations(&self,mut visit:impl FnMut(&Arc<dm_syntax::SettingRootLease>)){
   for lease in &self.rows.payload_pages{visit(lease)}
   // A fatal or interrupted header can intern a prefix of real symbols before
@@ -1616,6 +1670,47 @@ mod signature_row_storage_tests {
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }
 
+
+    #[test]
+    fn first_funded_row_uses_one_actual_slot_and_keeps_order_across_doubling() {
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let unit = std::mem::size_of::<[usize; 7]>();
+        let old_first = 4 * unit;
+        let one = SettingAdmission::new(&used, root + unit, &|| Ok(()));
+        let mut rows = Vec::<[usize; 7]>::new();
+        let mut storage = None;
+        grow_funded_rows(&mut rows, &mut storage, &one).unwrap();
+        assert_eq!(rows.capacity(), 1);
+        assert_eq!(storage.as_ref().unwrap().bytes(), rows.capacity() * unit);
+        assert_eq!(used.load(Ordering::Acquire), root + unit);
+        eprintln!("FUNDED_FIRST_ROW old_capacity=4 current_capacity={} element_bytes={unit} old_allocation={old_first} current_allocation={}", rows.capacity(), storage.as_ref().unwrap().bytes());
+        rows.push([11; 7]);
+        let before = rows.as_ptr();
+        let denied = SettingAdmission::new(&used, root + 3 * unit - 1, &|| Ok(()));
+        assert_eq!(grow_funded_rows(&mut rows, &mut storage, &denied).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);
+        assert_eq!(rows.as_ptr(), before);assert_eq!(rows.as_slice(), [[11; 7]]);assert_eq!(used.load(Ordering::Acquire), root + unit);
+        let two = SettingAdmission::new(&used, root + 3 * unit, &|| Ok(()));
+        grow_funded_rows(&mut rows, &mut storage, &two).unwrap();rows.push([22; 7]);
+        assert_eq!((rows.len(), rows.capacity()), (2, 2));assert_eq!(storage.as_ref().unwrap().bytes(), 2 * unit);
+        let four = SettingAdmission::new(&used, root + 6 * unit, &|| Ok(()));
+        grow_funded_rows(&mut rows, &mut storage, &four).unwrap();rows.push([33; 7]);
+        assert_eq!(rows.capacity(), 4);assert_eq!(rows.as_slice(), [[11; 7], [22; 7], [33; 7]]);assert_eq!(used.load(Ordering::Acquire), root + 4 * unit);
+        drop(rows);drop(storage);assert_eq!(used.load(Ordering::Acquire), root);
+    }
+
+    #[test]
+    fn initial_one_row_postallocation_first_io_refunds_and_retries_without_publishing() {
+        let root = dm_syntax::SettingChargeCounter::root_allocation_bytes();
+        let used = dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+        let unit = std::mem::size_of::<[usize; 7]>();
+        let calls = std::cell::Cell::new(0);
+        let fail = || {let next = calls.get()+1;calls.set(next);if next == 2 {assert_eq!(used.load(Ordering::Acquire),root+unit);Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};
+        let a = SettingAdmission::new(&used, root + unit, &fail);
+        let mut rows=Vec::<[usize;7]>::new();let mut storage=None;
+        assert_eq!(grow_funded_rows(&mut rows,&mut storage,&a).unwrap_err().raw_os_error(),Some(1450));assert_eq!(calls.get(),2);assert_eq!(rows.capacity(),0);assert!(rows.is_empty());assert!(storage.is_none());assert_eq!(used.load(Ordering::Acquire),root);
+        let healthy=SettingAdmission::new(&used,root+unit,&||Ok(()));grow_funded_rows(&mut rows,&mut storage,&healthy).unwrap();rows.push([44;7]);assert_eq!(rows.capacity(),1);assert_eq!(rows[0],[44;7]);drop(rows);drop(storage);assert_eq!(used.load(Ordering::Acquire),root);
+    }
     #[test]
     fn pending_row_replacement_preserves_actual_peak_and_first_io() {
         use std::cell::Cell;
@@ -1632,8 +1727,10 @@ mod signature_row_storage_tests {
         let healthy = SettingAdmission::new(&used, 32 << 20, &|| Ok(()));
         let mut storage = None;
         let mut rows = Vec::new();
-        grow_funded_rows(&mut rows, &mut storage, &healthy).unwrap();
         for _ in 0..4 {
+            if rows.len() == rows.capacity() {
+                grow_funded_rows(&mut rows, &mut storage, &healthy).unwrap();
+            }
             rows.push(Payload(Arc::clone(&dropped)));
         }
         let old = rows.as_ptr();
@@ -2133,15 +2230,27 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  pub(crate) fn finish_primary(self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
   self.finish_primary_with_lazy_parameter_mode(source,primary,literal_source,false,None)
  }
- pub(crate) fn finish_primary_with_lazy_parameter_mode(mut self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,lazy_parameters:bool,geometry:Option<&dm_preprocess::regions::OriginalHeaderTokenGeometry>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
+ pub(crate) fn finish_primary_with_lazy_parameter_mode(self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,lazy_parameters:bool,geometry:Option<&dm_preprocess::regions::OriginalHeaderTokenGeometry>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{self.finish_primary_with_committed_body_adoption(source,primary,literal_source,lazy_parameters,geometry,None).map(|(input,_)|input)}
+ pub(crate) fn finish_primary_with_committed_body_adoption(self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,lazy_parameters:bool,geometry:Option<&dm_preprocess::regions::OriginalHeaderTokenGeometry>,committed:Option<crate::frontend::committed_bodies::CommittedHeaderAdoption>)->Result<(OriginalSignatureInput,Option<Box<std::sync::Mutex<Option<crate::frontend::committed_bodies::FinalCommittedBodyInputs>>>>),OriginalHeaderFailure>{self.finish_primary_with_spelling_handoff(source,primary,literal_source,lazy_parameters,geometry,committed,None,false)}
+ /// Resource-only private handoff: caller must move the result directly into
+ /// OrderedOriginalDeclarations; standalone parse/finish remains eager.
+ pub(crate) fn finish_primary_for_ordered_adapter(self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,lazy_parameters:bool,geometry:Option<&dm_preprocess::regions::OriginalHeaderTokenGeometry>,committed:Option<crate::frontend::committed_bodies::CommittedHeaderAdoption>)->Result<(OriginalSignatureInput,Option<Box<std::sync::Mutex<Option<crate::frontend::committed_bodies::FinalCommittedBodyInputs>>>>),OriginalHeaderFailure>{self.finish_primary_with_spelling_handoff(source,primary,literal_source,lazy_parameters,geometry,committed,None,true)}
+ pub(crate) fn has_actual_formal_fatal(&self)->bool{!self.stream_failed&&self.unsupported.is_none()&&self.failure_live.is_some()&&self.failure.as_ref().is_some_and(|failure|failure.original_fatal.is_some()||failure.original_input_fatal.is_some())}
+ pub(crate) fn finish_primary_with_body_handoffs(self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,lazy_parameters:bool,geometry:Option<&dm_preprocess::regions::OriginalHeaderTokenGeometry>,committed:Option<crate::frontend::committed_bodies::CommittedHeaderAdoption>,prefix:Option<crate::frontend::committed_bodies::CommittedPrefixAdoption>)->Result<(OriginalSignatureInput,Option<Box<std::sync::Mutex<Option<crate::frontend::committed_bodies::FinalCommittedBodyInputs>>>>),OriginalHeaderFailure>{self.finish_primary_with_spelling_handoff(source,primary,literal_source,lazy_parameters,geometry,committed,prefix,false)}
+ /// SAME ordered-adapter handoff, including an authentic report-only formal-fatal prefix.
+ pub(crate) fn finish_primary_for_ordered_adapter_with_body_handoffs(self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,lazy_parameters:bool,geometry:Option<&dm_preprocess::regions::OriginalHeaderTokenGeometry>,committed:Option<crate::frontend::committed_bodies::CommittedHeaderAdoption>,prefix:Option<crate::frontend::committed_bodies::CommittedPrefixAdoption>)->Result<(OriginalSignatureInput,Option<Box<std::sync::Mutex<Option<crate::frontend::committed_bodies::FinalCommittedBodyInputs>>>>),OriginalHeaderFailure>{self.finish_primary_with_spelling_handoff(source,primary,literal_source,lazy_parameters,geometry,committed,prefix,true)}
+ fn finish_primary_with_spelling_handoff(mut self,source:SourceText,primary:impl Into<dm_preprocess::regions::OriginalStreamPrimary>,literal_source:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,lazy_parameters:bool,geometry:Option<&dm_preprocess::regions::OriginalHeaderTokenGeometry>,mut committed:Option<crate::frontend::committed_bodies::CommittedHeaderAdoption>,mut prefix:Option<crate::frontend::committed_bodies::CommittedPrefixAdoption>,deferred_spellings:bool)->Result<(OriginalSignatureInput,Option<Box<std::sync::Mutex<Option<crate::frontend::committed_bodies::FinalCommittedBodyInputs>>>>),OriginalHeaderFailure>{
+ let mut committed_inputs=None;let mut prefix_installed=false;
  use dm_preprocess::regions::OriginalStreamPrimary;
  let primary=primary.into();
  // Every retained reference has moved to an actual completed core. The
  // optional lookup bank no longer participates in the current header proof.
  drop(self.rows.plain_parameter_bank.take());
  let a=self.a;
+ #[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_SIGNATURE_FINISH_STAGE stage=entry counter={}",a.retained_bytes_for_trace());}
  if self.stream_failed{return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"failed actual formal stream cannot issue a primary model")))}
  let observer_stop=primary.observer_stop();
+ if prefix.is_some()&&(committed.is_some()||lazy_parameters||observer_stop.is_none()||!self.has_actual_formal_fatal()){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"report-only prefix requires actual formal-fatal ownership")))}
  std::mem::take(&mut self.rows.producers)
   .require(literal_source.is_some(), |producer| primary.same_primary_producer(producer))
   .map_err(OriginalHeaderFailure::Operational)?;
@@ -2170,19 +2279,22 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  if !a.matches_lease_domain(&primary_lease){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"streamed primary belongs to another actual resource owner")))}
  let item_view=items.view(&source).map_err(OriginalHeaderFailure::Operational)?;
  let headers=OriginalProcedureHeaders::for_declaration_profile_item_view_with_geometry(source.clone(),item_view,0,tokens,a,true,geometry)?;
+ #[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_SIGNATURE_FINISH_STAGE stage=header_inventory counter={}",a.retained_bytes_for_trace());}
  if let Some(binding)=literal_source{
-  headers.retain_original_literal_facts(literal_view,Some(binding),a)?;
+  if let Some(adoption)=committed.take(){let view=literal_view.ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed BODY adoption lacks actual final literal view")))?;committed_inputs=Some(headers.install_committed_body_products(adoption,view,binding,a).map_err(OriginalHeaderFailure::Operational)?);}else if let Some(adoption)=prefix.take(){let view=literal_view.ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"report-only prefix literal view absent")))?;headers.install_committed_prefix_products(adoption,view,binding,a).map_err(OriginalHeaderFailure::Operational)?;prefix_installed=true;}else{headers.retain_original_literal_facts(literal_view,Some(binding),a)?;}
   if let Some((span,data))=self.failure_head_data.take(){let facts=headers.original_literal_facts()?.ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual rejected head has no final neutral-value binding")))?;let(rows,origin)=facts.raw_parts();let span=Span::new(span.start.checked_add(origin).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?,span.end.checked_add(origin).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?);let at=rows.partition_point(|(p,_)|p.start<span.start);if rows.get(at).filter(|(p,_)|*p==span).is_none_or(|(_,actual)|!data.same_owner(actual)){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"rejected formal VALUE belongs to another actual primary occurrence")))}}
 
-  let mut roots=headers.new_default_roots(self.defaults.len(),binding,a).map_err(OriginalHeaderFailure::Operational)?;
+  let mut remaining=0usize;for pending in self.defaults.iter(){checkpoint(a)?;if pending.root.is_some(){remaining=remaining.checked_add(1).ok_or_else(||OriginalHeaderFailure::Operational(std::io::ErrorKind::OutOfMemory.into()))?;}}
+  let mut roots=headers.new_default_roots(remaining,binding,a).map_err(OriginalHeaderFailure::Operational)?;
   self.rows.publish_clauses(&headers,&mut roots,a).map_err(OriginalHeaderFailure::Operational)?;
 
   self.defaults.try_consume(|pending| {
    checkpoint(a)?;let found=self.rows.find(pending.live.start());
    let index=match found{Some(index)=>index,None if observer_stop.is_some_and(|span|span.start==pending.live.start())=>return Ok(()),None=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"demanded default has no actual completed header or genuine stop frontier")))};
    let row=self.rows.get(index).expect("located default signature");let geometry=self.rows.geometry(index,row);
-   let parameters=self.rows.parameters(row).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual default metadata was consumed before primary publication")))?;let parameter=parameters.get(pending.root.parameter).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual demanded parameter slot is absent")))?;
-   headers.add_default_root(&mut roots,geometry.header,geometry.argument_offset,parameter,&self.symbols,pending.root,pending.native_children,a).map_err(OriginalHeaderFailure::Operational)
+   let root=match pending.root{Some(root)=>root,None if headers.has_committed_parameter_header(geometry.header)=>return Ok(()),None=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"consumed committed parameter lacks its actual final adoption")))};
+   let parameters=self.rows.parameters(row).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual default metadata was consumed before primary publication")))?;let parameter=parameters.get(root.parameter).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual demanded parameter slot is absent")))?;
+   headers.add_default_root(&mut roots,geometry.header,geometry.argument_offset,parameter,&self.symbols,root,pending.native_children,a).map_err(OriginalHeaderFailure::Operational)
   })?;
   for pending in self.inputs{
    checkpoint(a)?;let index=match self.rows.find(pending.live.start()){Some(index)=>index,None if observer_stop.is_some_and(|span|span.start==pending.live.start())=>continue,None=>return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"input annotation has no actual completed header or genuine stop frontier")))};let row=self.rows.get(index).expect("located input signature");let parameter=self.rows.parameters(row).and_then(|parameters|parameters.get(pending.parameter)).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual native input parameter metadata absent")))?;
@@ -2192,6 +2304,8 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
   self.input_storage = None;
   headers.install_default_roots(roots,a).map_err(OriginalHeaderFailure::Operational)?;
  }else if !self.defaults.is_empty()||!self.inputs.is_empty()||self.failure_head_data.is_some(){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"demanded default stream has no genuine final literal/source binding")))}
+ if prefix.is_some(){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"report-only prefix lost actual literal association")))}
+ if committed.is_some(){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed BODY adoption lost actual final literal association")))}
  if self.notices.is_none(){self.notices=Some(super::original_formal_notices::FormalNotices::new(a)?)}
  headers.install_original_formal_notices(self.notices.take().expect("actual formal event ledger"),self.notices_complete,a).map_err(OriginalHeaderFailure::Operational)?;
  if literal_source.is_some(){
@@ -2202,7 +2316,8 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
  }
  // In a bound stream each successful row's actual live producer was checked
  // against this exact primary before the token/source handoff above.
- if lazy_parameters {
+ #[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_SIGNATURE_FINISH_STAGE stage=roots_notices_readers counter={}",a.retained_bytes_for_trace());}
+ if committed_inputs.is_some()||prefix_installed{if lazy_parameters{return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed BODY cannot replace lazy compound demand")))}}else if lazy_parameters {
   headers.enable_lazy_parameter_signatures(a).map_err(OriginalHeaderFailure::Operational)?;
  } else {
  headers.install_parameter_signatures(a, |header| {
@@ -2216,19 +2331,20 @@ impl<'a,'b> OriginalSignatureObserver<'a,'b>{
     header.start.checked_add(geometry.argument_offset)
  }).map_err(OriginalHeaderFailure::Operational)?;
  }
+ #[cfg(debug_assertions)]if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){headers.trace_owned_parameter_categories("finished_parameter_headers",a);}
  drop(self.input_storage);
  checkpoint(a)?;
- let spellings=OriginalSignatureSpellings::capture(&self.symbols,a).map_err(OriginalHeaderFailure::Operational)?;
+ let spellings=if deferred_spellings{OriginalSignatureSpellings::default()}else{OriginalSignatureSpellings::capture(&self.symbols,a).map_err(OriginalHeaderFailure::Operational)?};
  let interrupted_storage=self.early.take().and_then(|early|{
     let changed= self.symbols.local_storage().spelling_delta_without_bucket_growth(early.symbol_shape)!=Some(0);
     if changed { Some(Arc::new(early.credit)) } else { None }
  });
- let prepared=PreparedOriginalSignatures{headers:Arc::clone(&headers),rows:self.rows,spellings,
+ let prepared=PreparedOriginalSignatures{headers:Arc::clone(&headers),rows:self.rows,spellings,deferred_spellings,
    failure_storage:self.failure_storage.map(Arc::new),interrupted_storage,input_failure_message:None,empty_settings:None,plain_metadata:None,plain_metadata_attempted:false,
    #[cfg(debug_assertions)]
    plain_metadata_hits:0,
    trivial_metadata:[None,None],trivial_suffixes:[None,None],adapter_storage:None};
- Ok(OriginalSignatureInput{items,diagnostics,comma_fatal,unavailable,observer_stop,signature_failure:self.failure,signature_unsupported:self.unsupported,source,headers,symbols:self.symbols,prepared,primary_lease})
+ Ok((OriginalSignatureInput{items,diagnostics,comma_fatal,unavailable,observer_stop,signature_failure:self.failure,signature_unsupported:self.unsupported,source,headers,symbols:self.symbols,prepared,primary_lease},committed_inputs))
  }
 }
 pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmission<'_>)->Result<OriginalSignatureInput,OriginalHeaderFailure>{
@@ -2271,7 +2387,7 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   let alias=Arc::clone(input.symbols.shared_text(id).unwrap());
   let weak=Arc::downgrade(&alias);
   assert!(input.prepared.spellings.rows.iter().any(|row|std::sync::Weak::ptr_eq(row,&weak)));
-  let observed=input.prepared.take_spellings();
+  let observed=input.prepared.take_spellings().unwrap();
   let credit=input.prepared.take_adapter_storage().unwrap();
   drop(input);
   assert!(observed.live());
@@ -2296,12 +2412,16 @@ pub(crate) fn parse_original_signatures_using(source:SourceText,a:&SettingAdmiss
   assert_eq!(observed.rows.pages.len(),1);
   let before=counter.load(Ordering::Acquire);
   let page=SPELLING_PAGE_LEN*std::mem::size_of::<std::sync::Weak<str>>();
+  let directory_before=observed.rows.directory.as_ref().unwrap().bytes();
+  assert_eq!(directory_before,observed.rows.pages.capacity()*std::mem::size_of::<FundedRowPage<std::sync::Weak<str>>>());
   let low=SettingAdmission::new(&counter,before+page-1,&||Ok(()));
   assert_eq!(observed.rows.ensure_slot(&low).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);
   assert_eq!(counter.load(Ordering::Acquire),before);
   assert_eq!(observed.rows.len(),SPELLING_PAGE_LEN);
   observed.rows.ensure_slot(&good).unwrap();
-  assert_eq!(counter.load(Ordering::Acquire),before+page);
+  let directory_after=observed.rows.directory.as_ref().unwrap().bytes();
+  assert_eq!(directory_after,observed.rows.pages.capacity()*std::mem::size_of::<FundedRowPage<std::sync::Weak<str>>>());
+  assert_eq!(counter.load(Ordering::Acquire),before+page+directory_after-directory_before);
   drop(symbols);
   assert!(observed.live());
   drop(detached);
@@ -2646,13 +2766,13 @@ impl OriginalSignatureObserver<'_,'_>{
  pub(crate) fn observe_formal_outcome_notices(&mut self,source:&dyn dm_preprocess::regions::OriginalFormalTokenStream,actual:&super::DemandedFormalDefault)->std::io::Result<()>{match actual{super::DemandedFormalDefault::Complete{root,..}=>self.observe_stream_expression_notices(source,&root.syntax),super::DemandedFormalDefault::ExpectedTerm(failure)=>self.observe_stream_expression_notices(source,&failure.syntax),super::DemandedFormalDefault::NativeSyntax{syntax,..}=>self.observe_stream_expression_notices(source,syntax)}}
  pub(crate) fn retain_formal_expression(&mut self,root:super::DemandedFormalRoot)->std::io::Result<()>{let live=self.early.as_ref().ok_or(std::io::ErrorKind::InvalidInput)?.live.clone();self.retain_default(live,root)}
  fn retain_default(&mut self,live:dm_syntax::OriginalPrimaryLiveHeader,root:super::DemandedFormalRoot)->std::io::Result<()>{
-  checkpoint(self.a)?;if self.defaults.last().is_some_and(|row|(row.live.start(),row.root.parameter,row.root.role)>=(live.start(),root.parameter,root.role)){return Err(std::io::ErrorKind::InvalidInput.into())}
+  checkpoint(self.a)?;if self.defaults.last().is_some_and(|row|match row.root.as_ref(){Some(prior)=>(row.live.start(),prior.parameter,prior.role)>=(live.start(),root.parameter,root.role),None=>row.live.start()>=live.start()}){return Err(std::io::ErrorKind::InvalidInput.into())}
   let super::DemandedFormalRoot{role,enclosure,parameter,assignment,syntax}=root;
   let (syntax,observation)=syntax.into_completed_syntax_with_native_observation(self.a)?;
   if (observation.is_complete()&&observation.complete_span()!=Some(syntax.expression().span))||observation.complete_span().is_some_and(|span|span!=syntax.expression().span){return Err(std::io::ErrorKind::InvalidData.into())}
   let native_children=8|u8::from(observation.is_complete())|(u8::from(observation.recovered())<<1)|(u8::from(observation.deferred())<<2);
   let root=super::DemandedFormalRoot{role,enclosure,parameter,assignment,syntax};
-  self.defaults.push(PendingDefault{live,root,native_children},self.a)
+  self.defaults.push(PendingDefault{live,root:Some(root),native_children},self.a)
  }
  /// No source borrow survives this call. The actual driver supplies a completed
  /// formal and already-consumed delimiter while the SAME live owner is active.
@@ -2969,4 +3089,59 @@ mod native_pending_default_footprint_tests{
  use super::*;
  #[allow(dead_code)]struct PriorPending{live:dm_syntax::OriginalPrimaryLiveHeader,root:super::super::CompletedFormalRoot}
  #[test]fn native_pending_default_observation_reports_actual_row_cost(){let prior=std::mem::size_of::<PriorPending>();let current=std::mem::size_of::<PendingDefault>();eprintln!("NATIVE_PENDING_DEFAULT_SIZE prior={prior} current={current}");assert!(current<=prior+std::mem::size_of::<usize>());}
+}
+
+#[cfg(test)]mod deferred_spelling_handoff_controls{
+ use super::*;
+ use std::sync::atomic::Ordering;
+ fn actual_input(text:&str,a:&SettingAdmission<'_>)->OriginalSignatureInput{
+  let source=SourceText::from(text);let mut observer=OriginalSignatureObserver::new(a).unwrap();
+  let primary=dm_syntax::parse_original_declaration_skeleton_with_observer_using(&source,a,Some(&mut observer)).unwrap();
+  observer.finish_primary_for_ordered_adapter(source,primary,None,false,None,None).unwrap().0
+ }
+ fn adapt(input:&mut OriginalSignatureInput,a:&SettingAdmission<'_>)->crate::adapter::DeclarationAdapterProgress{
+  let symbols=std::mem::take(&mut input.symbols);
+  crate::adapter::from_original_primary_progress_checked(input.items.view(&input.source).unwrap(),&input.diagnostics,symbols,dm_ir::FileId(0),0,0,input.source.as_str(),&input.headers,0,a,true,&mut input.prepared).unwrap()
+ }
+ #[test]fn actual_deferred_spelling_capture_retires_consumed_directories_before_exact_capacity_admission(){
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let a=SettingAdmission::new(&used,32<<20,&||Ok(()));
+  let mut text=String::new();for n in 0..160{use std::fmt::Write;writeln!(text,"/proc/actual_{n}(argument_{n})\n    return argument_{n}").unwrap();}
+  let mut input=actual_input(&text,&a);assert!(input.prepared.deferred_spellings);assert!(input.prepared.spellings.rows.is_empty());assert!(input.prepared.take_spellings().is_err());
+  let progress=adapt(&mut input,&a);assert!(progress.errors().is_empty());input.prepared.require_consumed().unwrap();
+  let before=used.load(Ordering::Acquire);let observed=OriginalSignatureSpellings::capture(&progress.facts().symbols,&a).unwrap();let observation_bytes=used.load(Ordering::Acquire)-before;assert!(observation_bytes>0);drop(observed);assert_eq!(used.load(Ordering::Acquire),before);
+  let exact=SettingAdmission::new(&used,before+observation_bytes-1,&||Ok(()));
+  assert_eq!(OriginalSignatureSpellings::capture(&progress.facts().symbols,&exact).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),before);
+  assert!(exact.is_stopped(),"terminal admission remains stopped even after its original error is extracted");
+  let next_operation=SettingAdmission::new(&used,before+observation_bytes-1,&||Ok(()));
+  input.prepared.finish_deferred_spelling_observations(&progress.facts().symbols,&next_operation).unwrap();
+  assert!(input.prepared.rows.rows.pages.is_empty());assert!(!input.prepared.deferred_spellings);assert!(used.load(Ordering::Acquire)<before+observation_bytes);
+  let mut expected=0;progress.facts().symbols.try_visit_local_spellings(|_|{expected+=1;Ok::<_,()>(())}).unwrap();assert_eq!(input.prepared.spellings.rows.len(),expected);
+  let completed=used.load(Ordering::Acquire);input.prepared.finish_deferred_spelling_observations(&progress.facts().symbols,&next_operation).unwrap();assert_eq!(used.load(Ordering::Acquire),completed,"never capture or charge the completed roster twice");
+  drop(progress);drop(input);assert_eq!(used.load(Ordering::Acquire),root);
+ }
+ #[test]fn actual_deferred_spelling_failure_preserves_first_io_and_refunds_without_publishing(){
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let fail=std::cell::Cell::new(false);let poll=||if fail.get(){Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())};let a=SettingAdmission::new(&used,8<<20,&poll);
+  let mut input=actual_input("/proc/p(value)\n    return value\n",&a);let progress=adapt(&mut input,&a);assert!(progress.errors().is_empty());
+  fail.set(true);assert_eq!(input.prepared.finish_deferred_spelling_observations(&progress.facts().symbols,&a).unwrap_err().raw_os_error(),Some(1450));assert!(input.prepared.deferred_spellings);assert!(input.prepared.take_spellings().is_err());drop(progress);drop(input);assert_eq!(used.load(Ordering::Acquire),root);
+  assert!(a.is_stopped(),"original failed operation cannot be restarted by taking its actual1450");
+  fail.set(false);let recovered=SettingAdmission::new(&used,8<<20,&poll);let mut input=actual_input("/proc/p(value)\n    return value\n",&recovered);let progress=adapt(&mut input,&recovered);input.prepared.finish_deferred_spelling_observations(&progress.facts().symbols,&recovered).unwrap();drop(progress);drop(input);assert_eq!(used.load(Ordering::Acquire),root);
+ }
+ #[test]fn standalone_primary_keeps_eager_observations_and_actual_partial_handoff_completes_before_exposure(){
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let eager=parse_original_signatures_using(SourceText::from("/proc/p(value)\n    return value\n"),&a).unwrap();assert!(!eager.prepared.deferred_spellings);assert!(!eager.prepared.spellings.rows.is_empty());drop(eager);assert_eq!(used.load(Ordering::Acquire),root);
+  let mut input=actual_input("/datum/kept\n    var/value\n/proc/bad(value=)\n    return\n",&a);assert!(input.signature_failure.is_some());let progress=adapt(&mut input,&a);assert!(progress.errors().is_empty());input.prepared.finish_deferred_spelling_observations(&progress.facts().symbols,&a).unwrap();assert!(!input.prepared.deferred_spellings);assert!(progress.facts().symbols.text(dm_ir::SymbolId::of("/datum/kept")).is_some());drop(progress);drop(input);assert_eq!(used.load(Ordering::Acquire),root);
+ }
+}
+
+#[cfg(test)]mod deferred_adapter_added_spelling_control{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn deferred_adapter_added_spelling_is_observed_once_with_same_allocation_and_grant(){
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let a=SettingAdmission::new(&used,8<<20,&||Ok(()));
+  let source=SourceText::from("/proc/early(native_argument)\n    return native_argument\n");let mut observer=OriginalSignatureObserver::new(&a).unwrap();let primary=dm_syntax::parse_original_declaration_skeleton_with_observer_using(&source,&a,Some(&mut observer)).unwrap();let mut input=observer.finish_primary_for_ordered_adapter(source,primary,None,false,None,None).unwrap().0;
+  let geometry=input.symbols.visit_storage(|_,_|{});assert!(geometry.local_len>0&&geometry.local_len<geometry.local_capacity,"actual formal producer must leave genuine spare spelling buckets");let before=input.symbols.local_storage();
+  let id=input.prepared.intern_adapter_spelling(&mut input.symbols,"late_native_symbol",&a).unwrap().unwrap();let added=input.symbols.local_storage().spelling_delta_without_bucket_growth(before).expect("actual funded spare-capacity insertion must preserve bucket geometry");assert!(added>0);assert_eq!(input.prepared.adapter_storage.as_ref().unwrap().bytes(),added);let alias=Arc::clone(input.symbols.shared_text(id).unwrap());let weak=Arc::downgrade(&alias);assert!(input.prepared.spellings.rows.is_empty());
+  let symbols=std::mem::take(&mut input.symbols);let progress=crate::adapter::from_original_primary_progress_checked(input.items.view(&input.source).unwrap(),&input.diagnostics,symbols,dm_ir::FileId(0),0,0,input.source.as_str(),&input.headers,0,&a,true,&mut input.prepared).unwrap();assert!(progress.errors().is_empty());
+  input.prepared.finish_deferred_spelling_observations(&progress.facts().symbols,&a).unwrap();assert!(Arc::ptr_eq(&alias,progress.facts().symbols.shared_text(id).unwrap()));assert_eq!(input.prepared.spellings.rows.iter().filter(|row|std::sync::Weak::ptr_eq(row,&weak)).count(),1);
+  let observations=input.prepared.take_spellings().unwrap();let credit=input.prepared.take_adapter_storage().unwrap();drop(progress);drop(input);assert!(observations.live());assert!(used.load(Ordering::Acquire)>root);drop(alias);assert!(!observations.live());drop((weak,observations,credit));assert_eq!(used.load(Ordering::Acquire),root);
+ }
 }

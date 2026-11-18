@@ -70,10 +70,11 @@ fn main() {
 
     let mut native_registry = String::from("{\n");
     for (module, _) in native_policy_roster::MODULES {
+        let module_name:&str=module;
         let _ = writeln!(
             native_registry,
-            "crate::lints::{}::register(&mut reg);",
-            module
+            "crate::lints::{}::{}(&mut reg);",
+            module, if matches!(module_name,"dcs"|"breakpoint"|"door_gates"|"entity_ids"|"scheduler"|"containment"|"saved_handle"|"ref_text"|"cooldown"|"silent_catch"|"duplicate_input_key"){"register_native"}else{"register"}
         );
     }
     native_registry.push_str("}\n");
@@ -104,6 +105,7 @@ fn main() {
                         "check_grep".to_string(),
                     ])
                     .collect(),
+                "codemods" => discover(&dir),
                 "dm" => vec![
                     "dx".to_string(),
                     "sys".to_string(),

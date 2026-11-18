@@ -262,3 +262,27 @@ impl QueryDb{
   let pending=dm_analysis::checks_proc_visibility::visit_original_declaration_redeclarations(input,&admission,&mut work,&crate::daemon::control::checkpoint,|row|consume(row).map_err(PolicyFailure::Operational));if let Err(PolicyFailure::Operational(actual))=pending{return Err(actual)}pending.map_err(|failure|match failure{PolicyFailure::Operational(actual)=>actual,PolicyFailure::Unsupported(reason)=>std::io::Error::other(reason.0)})?;current()?;validate()
  }
 }
+
+impl QueryDb{
+ pub(crate) fn visit_parser_declaration_rows(&self,source:&dm_tree::frontend::ParseOnlySyntaxSource<'_>,mut consume:impl FnMut(dm_analysis::checks_proc_visibility::ParserDeclarationEvent<'_>)->std::io::Result<()>)->std::io::Result<()>{
+  use dm_analysis::policy_body_demand::PolicyFailure;crate::daemon::control::checkpoint()?;let view=source.source_view()?;self.prune_purity();let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());{let mut ledger=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());ledger.denied=false;ledger.aborted=None;}
+  let mut work=graph_work::GraphWork::new(Arc::clone(&self.purity.ledger),Key::new(PAGE,view.tree().identity()));work.reserve(ExecutionAdmission::fixed_control_charge())?;let admission=page_execution_admission(&self.purity.ledger).map_err(|reason|std::io::Error::new(std::io::ErrorKind::OutOfMemory,reason))?;
+  let result=dm_analysis::checks_proc_visibility::visit_parser_declaration_rows(source,&admission,&mut work,&crate::daemon::control::checkpoint,|finding|consume(finding).map_err(PolicyFailure::Operational));if let Err(PolicyFailure::Operational(actual))=result{return Err(actual)}result.map_err(|failure|match failure{PolicyFailure::Operational(actual)=>actual,PolicyFailure::Unsupported(reason)=>std::io::Error::new(std::io::ErrorKind::Unsupported,reason.0)})?;source.source_view()?;crate::daemon::control::checkpoint()
+ }
+}
+
+impl QueryDb{
+ pub(crate) fn visit_parser_parent_rows(&self,source:&dm_tree::frontend::ParseOnlySyntaxSource<'_>,mut consume:impl FnMut(dm_analysis::checks_proc_visibility::Finding<'_>)->std::io::Result<()>)->std::io::Result<()>{
+  use dm_analysis::policy_body_demand::PolicyFailure;crate::daemon::control::checkpoint()?;let view=source.source_view()?;self.prune_purity();let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());{let mut ledger=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());ledger.denied=false;ledger.aborted=None;}
+  let mut work=graph_work::GraphWork::new(Arc::clone(&self.purity.ledger),Key::new(PAGE,view.tree().identity()));work.reserve(ExecutionAdmission::fixed_control_charge())?;let admission=page_execution_admission(&self.purity.ledger).map_err(|reason|std::io::Error::new(std::io::ErrorKind::OutOfMemory,reason))?;
+  let result=dm_analysis::checks_proc_visibility::visit_parser_parent_rows(source,&admission,&mut work,&crate::daemon::control::checkpoint,|finding|consume(finding).map_err(PolicyFailure::Operational));if let Err(PolicyFailure::Operational(actual))=result{return Err(actual)}result.map_err(|failure|match failure{PolicyFailure::Operational(actual)=>actual,PolicyFailure::Unsupported(reason)=>std::io::Error::new(std::io::ErrorKind::Unsupported,reason.0)})?;source.source_view()?;crate::daemon::control::checkpoint()
+ }
+}
+
+impl QueryDb{
+ pub(crate) fn visit_utility_parent_rows(&self,source:&dm_tree::frontend::DiagnosticSourceView<'_>,mut consume:impl FnMut(dm_analysis::checks_proc_visibility::Finding<'_>)->std::io::Result<()>)->std::io::Result<()>{
+  use dm_analysis::policy_body_demand::PolicyFailure;crate::daemon::control::checkpoint()?;source.require_original_utility_owner()?;let view=source;self.prune_purity();let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());{let mut ledger=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());ledger.denied=false;ledger.aborted=None;}
+  let mut work=graph_work::GraphWork::new(Arc::clone(&self.purity.ledger),Key::new(PAGE,view.tree().identity()));work.reserve(ExecutionAdmission::fixed_control_charge())?;let admission=page_execution_admission(&self.purity.ledger).map_err(|reason|std::io::Error::new(std::io::ErrorKind::OutOfMemory,reason))?;
+  let result=dm_analysis::checks_proc_visibility::visit_utility_parent_rows(source,&admission,&mut work,&crate::daemon::control::checkpoint,|finding|consume(finding).map_err(PolicyFailure::Operational));if let Err(PolicyFailure::Operational(actual))=result{return Err(actual)}result.map_err(|failure|match failure{PolicyFailure::Operational(actual)=>actual,PolicyFailure::Unsupported(reason)=>std::io::Error::new(std::io::ErrorKind::Unsupported,reason.0)})?;source.require_original_utility_owner()?;crate::daemon::control::checkpoint()
+ }
+}

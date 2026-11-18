@@ -140,6 +140,15 @@ impl Ledger {
             + std::mem::size_of::<std::sync::atomic::AtomicBool>() as u128;
         usize::try_from(bytes).unwrap_or(usize::MAX)
     }
+    // Only the first actual refusal is observed. Existing operational error
+    // ownership and refusal state are unchanged; stderr failure is ignored.
+    fn trace_first_denial(&self, reason:&str, extra:Option<usize>, execution_available:Option<usize>, key:Option<Key>, caller:&std::panic::Location<'_>){
+        if self.denied || std::env::var_os("DMB_ORIGINAL_TRACE_EFFECT_DENIAL").is_none(){return}
+        let _=std::io::Write::write_fmt(&mut std::io::stderr().lock(),format_args!(
+            "NATIVE_EFFECT_FIRST_DENIAL reason={reason} key={key:?} caller={}:{}:{} budget={} extra={extra:?} execution_available={execution_available:?} nodes={} contexts={} live_rows={} live_capacity={} live_bytes_upper={} node_bytes={} context_bytes={} completion_bytes={} active_policy={} active_graph_work={} fixed_request_inputs={} metadata={}\n",
+            caller.file(),caller.line(),caller.column(),BUDGET,self.nodes.len(),self.contexts.len(),self.live.len(),self.live.capacity(),self.live_bytes_upper,self.node_bytes,self.context_bytes,self.live_completion_bytes,self.active_policy,self.active_graph_work,self.fixed_request_inputs,self.metadata()));
+    }
+    #[track_caller]
     fn admit(&mut self, extra: usize) -> Result<(), String> {
         let fits = |ledger: &Self| {
             ledger.live_bytes_upper + ledger.metadata() as u128 + extra as u128 <= BUDGET as u128
@@ -150,6 +159,7 @@ impl Ledger {
         if fits {
             Ok(())
         } else {
+            self.trace_first_denial("retained_family_bytes",Some(extra),None,None,std::panic::Location::caller());
             self.denied = true;
             Err("native purity retained metadata/result budget exhausted before publication".into())
         }
@@ -223,6 +233,7 @@ fn node_admission(
         bytes
     } else {
         if l.nodes.len() >= MAX_NODES {
+            l.trace_first_denial("immutable_node_count",Some(NODE_BOUND.saturating_add(bytes)),None,Some(key),std::panic::Location::caller());
             l.denied = true;
             return Err("purity immutable query-node bound exceeded".into());
         }
@@ -342,7 +353,9 @@ fn execution_admission(ledger: &Arc<Mutex<Ledger>>) -> ExecutionAdmission {
 }
 fn latch_transient_denial(ledger: &Arc<Mutex<Ledger>>, admission: &ExecutionAdmission) {
     if admission.is_denied() {
-        ledger.lock().unwrap_or_else(|e| e.into_inner()).denied = true
+        let mut ledger=ledger.lock().unwrap_or_else(|e|e.into_inner());
+        ledger.trace_first_denial("transient_execution",None,Some(admission.available()),None,std::panic::Location::caller());
+        ledger.denied = true
     }
 }
 fn size_error<T>(value: &Result<Arc<T>, String>, size: impl FnOnce(&T) -> usize) -> usize {
@@ -460,6 +473,13 @@ impl From<String> for ReadFailure {
 impl From<&str> for ReadFailure {
     fn from(e: &str) -> Self {
         Self::Semantic(e.into())
+    }
+}
+fn syntax_input_error(key: Key, error: dm_tree::frontend::BodySyntaxFailure) -> QueryError {
+    match error {
+        dm_tree::frontend::BodySyntaxFailure::Operational(actual) => QueryError::operational(key, actual),
+        dm_tree::frontend::BodySyntaxFailure::Syntax(actual) => QueryError::operational(key,
+            std::io::Error::new(std::io::ErrorKind::Unsupported, actual.message)),
     }
 }
 fn policy_read_failure(
@@ -625,13 +645,11 @@ impl Resolver for Observed<'_, '_> {
                 match value {
                     ResolvedMeaning::Declaration { identity, .. } => {
                         if let Some(ordinal) = input.ordinal_for(*identity) {
-                            let s = input
-                                .archive()
-                                .syntax_inputs()
-                                .and_then(|v| v.get(ordinal))
-                                .ok_or("purity source settings input missing")?;
+                            let s = input.archive()
+                                .syntax_input_checked(ordinal, &||crate::daemon::control::checkpoint())
+                                .map_err(|actual|ReadFailure::Query(syntax_input_error(parent, actual)))?;
                             edge(ledger, parent)?;
-                            body_syntax::observe(ctx, s).map_err(ReadFailure::Query)?
+                            body_syntax::observe(ctx, &s).map_err(ReadFailure::Query)?
                         }
                     }
                     ResolvedMeaning::Members(rows) => {
@@ -698,19 +716,17 @@ fn compute_body_in_query(
     let input = p.input.upgrade().ok_or(QueryError::Missing(p.key))?;
     checked_sources(&input, &p.sources, registry).map_err(|_| QueryError::Missing(p.key))?;
     observe_program(ctx, ledger, p.key, &input, &p.sources)?;
-    let syntax = input
-        .archive()
-        .syntax_inputs()
-        .and_then(|v| v.get(ordinal))
-        .ok_or(QueryError::Missing(p.key))?;
+    let syntax = input.archive()
+        .syntax_input_checked(ordinal, &||crate::daemon::control::checkpoint())
+        .map_err(|actual|syntax_input_error(p.key, actual))?;
     let canonical=input.uses_current_original_bodies();
     if !canonical{edge(ledger,p.key).map_err(|_|QueryError::Missing(p.key))?;}
     let original_primary = if canonical {
         None
     } else if input.is_original_checker_source() {
-        Some(body_syntax::obtain_issued(ctx, syntax)?)
+        Some(body_syntax::obtain_issued(ctx, &syntax)?)
     } else {
-        body_syntax::observe(ctx, syntax)?;
+        body_syntax::observe(ctx, &syntax)?;
         None
     };
     let resolver = Observed {
@@ -743,7 +759,7 @@ fn compute_body_in_query(
             &|requested, _| {
                 // A setting read can ask for this same caller body too.
                 // Only the exact active child may consume the saved value.
-                if Arc::ptr_eq(requested, syntax) {
+                if Arc::ptr_eq(requested, &syntax) {
                     primary.clone().map_err(dm_tree::frontend::BodySyntaxFailure::Syntax)
                 } else {
                     host.syntax_checked(requested)
@@ -994,24 +1010,24 @@ impl QueryDb {
         let result = (|| -> Result<Arc<Vec<Produced>>, ReadFailure> {
             let sources = self.purity_sources(input)?;
             let k = key(report_kind, input, scope.policy_key());
-            let syntax = input
-                .archive()
-                .syntax_inputs()
-                .ok_or("purity original syntax inputs unavailable")?;
-            syntax
-                .iter()
-                .try_fold(0usize, |n, s| {
-                    n.checked_add(s.budget_charge())
-                        .filter(|&n| n <= body_syntax::BUDGET)
-                })
-                .ok_or("purity syntax cohort exceeds existing parser budget")?;
-            {
+            // This legacy full-family entry deliberately observes every body.
+            // Demand each real input without fabricating an eager slice or holding
+            // the registry lock while the archive admits a sparse input.
+            let mut syntax_charge = 0usize;
+            for ordinal in 0..input.archive().len() {
+                let syntax = input.archive()
+                    .syntax_input_checked(ordinal, &||crate::daemon::control::checkpoint())
+                    .map_err(|actual|ReadFailure::Query(syntax_input_error(k, actual)))?;
+                syntax_charge = syntax_charge.checked_add(syntax.budget_charge())
+                    .filter(|&n| n <= body_syntax::BUDGET)
+                    .ok_or("purity syntax cohort exceeds existing parser budget")?;
+            }
+            for ordinal in 0..input.archive().len() {
+                let syntax = input.archive()
+                    .syntax_input_checked(ordinal, &||crate::daemon::control::checkpoint())
+                    .map_err(|actual|ReadFailure::Query(syntax_input_error(k, actual)))?;
                 let mut inputs = self.body_inputs.lock().unwrap_or_else(|e| e.into_inner());
-                for s in syntax {
-                    inputs
-                        .entry(Key::new(body_syntax::BODY_SYNTAX, s.key().into()))
-                        .or_insert_with(|| Arc::downgrade(s));
-                }
+                if let std::collections::btree_map::Entry::Vacant(slot)=inputs.entry(Key::new(body_syntax::BODY_SYNTAX,syntax.key().into())){slot.insert(body_syntax::registered_body_input(&syntax,&self.body_charge).map_err(|actual|ReadFailure::Query(QueryError::operational(k,actual)))?);}
             }
             let size = policy_charge(scope.policy());
             {
@@ -1067,6 +1083,7 @@ impl QueryDb {
 }
 impl QueryDb {
     pub(crate) fn purity_census(&self, census: &mut crate::heap_census::HeapCensus) {
+        self.body_input_registry_census(census);
         use dm_analysis::checker_effects::Storage;
         let _gate = self.purity.gate.lock().unwrap_or_else(|e| e.into_inner());
         let mut l = self.purity.ledger.lock().unwrap_or_else(|e| e.into_inner());
@@ -1091,7 +1108,8 @@ impl QueryDb {
                 capacity: c.keys.capacity().saturating_mul(std::mem::size_of::<Key>()),
             });
         }
-        for node in l.nodes.values() {
+        for (key,node) in &l.nodes {
+            current_variables::visit_code_locator_storage(*key,node,&mut visit);
             if let Some(params) = node.params.as_ref().and_then(Weak::upgrade) {
                 visit(Storage::Buffer {
                     owner: "purity.immutable_params",
@@ -1405,6 +1423,28 @@ impl QueryDb {
                     *ordinal = order.ordinal(start + offset).ok_or("census Checker rank omitted body ordinal")?;
                 }
                 Ok(())
+            },
+        )
+    }
+    pub(super) fn checker_order_rank_for_census(
+        &self,
+        archive: &dm_tree::frontend::BodyArchive,
+        target: usize,
+    ) -> Result<usize, dm_analysis::policy_body_demand::PolicyFailure> {
+        use dm_analysis::policy_body_demand::PolicyFailure;
+        let mut work = graph_work::GraphWork::new(Arc::clone(&self.purity.ledger), Key::new(REPORT, archive.tree().identity()));
+        work.reserve(ExecutionAdmission::fixed_control_charge()).map_err(PolicyFailure::Operational)?;
+        let admission = pages::page_execution_admission(&self.purity.ledger)
+            .map_err(|message| PolicyFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory, message)))?;
+        dm_analysis::checker_order::with_archived_order_using(
+            archive, &admission, &mut work, &crate::daemon::control::checkpoint,
+            |order, _| {
+                if order.len() != archive.len() || target >= archive.len() { return Err("source census ordinal escapes actual archive".into()); }
+                for rank in 0..order.len() {
+                    crate::daemon::control::checkpoint().map_err(PolicyFailure::Operational)?;
+                    if order.ordinal(rank) == Some(target) { return Ok(rank); }
+                }
+                Err("source census ordinal absent from actual Checker order".into())
             },
         )
     }

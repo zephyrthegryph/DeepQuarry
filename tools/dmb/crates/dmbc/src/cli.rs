@@ -278,7 +278,7 @@ mod tests;
 // This opt-in diagnostic shares the exact existing private census implementation.
 fn original_grammar_census_arguments(arguments: &[String]) -> Result<(PathBuf, usize, usize), String> {
     if arguments.len() != 4 || arguments[0] != "--original-grammar-census" {
-        return Err("usage: dmbc --original-grammar-census <absolute.dme> <start> <count:1..1024>".into());
+        return Err("usage: dmbc --original-grammar-census <absolute.dme> <start> <count:1..8192>".into());
     }
     let project = PathBuf::from(&arguments[1]);
     let decimal = |text: &str| !text.is_empty() && text.bytes().all(|byte| byte.is_ascii_digit());
@@ -287,16 +287,46 @@ fn original_grammar_census_arguments(arguments: &[String]) -> Result<(PathBuf, u
     }
     let start = arguments[2].parse::<usize>().map_err(|_| "Original grammar census start is out of range")?;
     let count = arguments[3].parse::<usize>().map_err(|_| "Original grammar census count is out of range")?;
-    if !(1..=1024).contains(&count) || start.checked_add(count).is_none() {
-        return Err("Original grammar census count must be 1..1024 and start+count must not overflow".into());
+    if !(1..=8192).contains(&count) || start.checked_add(count).is_none() {
+        return Err("Original grammar census count must be 1..8192 and start+count must not overflow".into());
     }
     Ok((project, start, count))
 }
 
 #[doc(hidden)]
 pub fn run_original_grammar_census(arguments: &[String]) -> Result<(), String> {
+    // Source anchors select an actual captured occurrence, never a guessed rank.
+    if arguments.len() == 4 && arguments[0] == "--original-grammar-census" {
+        if let Some(anchor) = arguments[2].strip_prefix("source=") {
+            let (path, line) = anchor.rsplit_once(':').ok_or("source census selector requires source=<relative/path>:<line>")?;
+            let decimal = |text: &str| !text.is_empty() && text.bytes().all(|b| b.is_ascii_digit());
+            if path.is_empty() || path.len() > 4096 || path.contains('\\') || path.split('/').any(|part| part.is_empty() || part == "." || part == "..") || PathBuf::from(path).is_absolute() || !decimal(line) || !decimal(&arguments[3]) {
+                return Err("invalid relative source census anchor or decimal bounds".into());
+            }
+            let line = line.parse::<usize>().map_err(|_| "source census line overflow")?;
+            let count = arguments[3].parse::<usize>().map_err(|_| "source census count overflow")?;
+            let project = PathBuf::from(&arguments[1]);
+            if !project.is_absolute() || line == 0 || !(1..=8192).contains(&count) { return Err("invalid bounded source census request".into()); }
+            return crate::query_db::run_original_grammar_census_at_source(project, path.to_owned(), line, count);
+        }
+    }
     let (project, start, count) = original_grammar_census_arguments(arguments)?;
     crate::query_db::run_original_grammar_census(project, start, count)
+}
+
+
+#[cfg(test)]mod original_census_window_boundary_controls{
+ use super::*;
+ #[test]fn original_census_8192_boundary_is_diagnostic_only_and_native_stays_1024(){
+  let project=std::env::temp_dir().join("original-census-boundary-no-capture.dme").to_string_lossy().into_owned();
+  let args=|start:&str,count:&str|vec!["--original-grammar-census".to_owned(),project.clone(),start.to_owned(),count.to_owned()];
+  assert_eq!(original_grammar_census_arguments(&args("0","8192")).unwrap().2,8192);
+  assert_eq!(original_grammar_census_arguments(&args("123","1")).unwrap().1,123);
+  for(start,count)in[("0","0"),("0","8193"),("-1","1"),("0","1x")]{assert!(original_grammar_census_arguments(&args(start,count)).is_err());}
+  assert!(original_grammar_census_arguments(&args(&usize::MAX.to_string(),"1")).is_err());
+  let mut relative=args("0","8192");relative[1]="relative.dme".into();assert!(original_grammar_census_arguments(&relative).is_err());
+  let native=vec!["--native-grammar-census".to_owned(),project,"0".into(),"1025".into()];assert!(run_native_grammar_census(&native).is_err(),"Native bounds reject before any source capture");
+ }
 }
 
 // Native-only diagnostic over the SAME authenticated capture/order/BODY parser.

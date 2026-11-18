@@ -6,6 +6,28 @@ use std::io;
 use super::committed_items::{OriginalCommittedItems, OriginalItems};
 use super::{demand_frames::NativeOriginalPrimaryFrames,demand_layout::NativeDemandLayoutCursor};
 
+/// The loan ends before the primary appends/projects another literal page.
+struct CommittedBodyObserver<'observe,'facts,'budget>{
+ inner:&'observe mut dyn OriginalDeclarationHeaderObserver,
+ facts:&'facts OriginalPrimaryLiteralFacts,
+ admission:&'facts crate::SettingAdmission<'budget>,
+ issued:bool,actual_end:bool,primary:Option<&'facts demand_layout::NativePrimaryLayoutIdentity>,
+}
+impl OriginalDeclarationHeaderObserver for CommittedBodyObserver<'_,'_,'_>{
+ fn header(&mut self,event:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{self.inner.header(event)}
+ fn declaration_committed(&mut self,event:OriginalPrimaryCommit<'_>)->io::Result<()>{
+  if !matches!(event.item().kind,ItemKind::Proc|ItemKind::Verb)||!self.inner.wants_committed_body_input(){return self.inner.declaration_committed(event)}
+  if !self.issued||self.facts.projection_owner().is_none(){return Err(io::Error::new(io::ErrorKind::Unsupported,"committed BODY requires genuine delivered literal projection DATA"))}
+  let facts=self.facts.checked_live_data_window(Span::new(0,event.source().len()),event.source().len(),self.admission)?.with_source_data(event.source())?;
+  let primary=self.primary.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"committed BODY actual primary identity is absent"))?;
+  self.inner.committed_body_input(event.with_body_input(facts,self.actual_end,OriginalPrimaryProducerIdentity(primary.clone()))?)?;
+  // Local BODY syntax failures are retained DATA and continue here; actual
+  // operational failure stops before the existing declaration registration.
+  self.inner.declaration_committed(event)
+ }
+}
+
+
 /// Owned SAME live primary-header locator. It shares the existing actual
 /// layout resource owner (no new nonce/cache), never an arena/token borrow.
 /// It is parser DATA only; frontend source/model grants remain separate.
@@ -23,11 +45,14 @@ impl Default for OriginalPrimaryProducerIdentity {
  }
 }
 impl OriginalPrimaryProducerIdentity {
+ /// Borrowed allocation census DATA; an unbound sentinel owns no allocation.
+ pub fn visit_storage(&self,visit:impl FnMut(usize,usize,usize)){if self.0.matches_completed(&self.0){self.0.visit_storage(visit)}}
  /// Move a bound owner out, leaving the compact unbound sentinel in place.
  /// The existing LayoutOwner still frees the Arc before its final lease.
  pub fn take(&mut self) -> Option<Self> { self.0.take_completed().map(Self) }
  /// Exact producer identity only. Neither unbound sentinel matches.
  pub fn same_producer(&self, other:&Self)->bool { self.0.matches_completed(&other.0) }
+ pub fn same_header_producer(&self,header:&OriginalPrimaryLiveHeader)->bool{self.0.matches_completed(&header.owner)}
  pub(super) fn matches_owner(&self,owner:&super::demand_layout::NativePrimaryLayoutIdentity)->bool{self.0.matches_completed(owner)}
 }
 impl OriginalPrimaryLiveHeader{
@@ -323,16 +348,18 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   let status=self.advance_inner(source,actual_eof,Some(observer));if status.is_err(){self.failed=true}status
  }
  fn advance_inner(&mut self,source:&str,actual_eof:bool,mut observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<bool>{
+  if observer.is_none()&&self.original.observer.as_ref().is_some_and(|observer|observer.borrow().wants_committed_body_input()){return Err(io::Error::new(io::ErrorKind::Unsupported,"committed BODY demand requires scoped actual primary observer"))}
   if self.ended||source.len()<self.frontier{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual primary frontier regressed or was sealed"))}
   if self.original.stopped(){return Ok(false)}
   if self.last_token_end>source.len(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual native token exceeds current arena frontier"))}
+  let committed_identity=if observer.as_ref().is_some_and(|observer|observer.wants_committed_body_input()){Some(self.layout.as_ref().ok_or(io::ErrorKind::InvalidInput)?.identity())}else{None};
   let tokens = self.tokens.window();
   let mut batch=self.layout.as_mut().ok_or(io::ErrorKind::InvalidInput)?.advance_with_literal_facts(source,tokens,&self.original,actual_eof,Some(self.literal_facts.rows()))?;
   for line in batch.iter(){
    // Line is scalar geometry; no header/source String is copied or reparsed.
    let line=Line{indent:line.indent,header_start:line.header_start,header_end:line.header_end,end:line.end,explicit_block_opener:line.explicit_block_opener,same_line_body:line.same_line_body};
    let line_span = Span::new(line.header_start, line.end);
-   let continuing=match observer.as_mut(){Some(actual)=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line_scoped(source,tokens,line,&self.original,&mut self.diagnostics,Some(&mut **actual))?,None=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line(source,tokens,line,&self.original,&mut self.diagnostics)?};
+   let continuing=match observer.as_mut(){Some(actual)=>{let mut input=CommittedBodyObserver{inner:&mut **actual,facts:&self.literal_facts,admission:self.original.storage.a,issued:self.literal_facts_issued,actual_end:actual_eof,primary:committed_identity.as_ref()};self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line_scoped(source,tokens,line,&self.original,&mut self.diagnostics,Some(&mut input))?},None=>self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?.line(source,tokens,line,&self.original,&mut self.diagnostics)?};
    if !continuing{break}
    let in_body=self.frames.as_ref().is_some_and(|frames|frames.trace_current_body_line(line_span));
    #[cfg(debug_assertions)]
@@ -344,8 +371,9 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   }
   let continuing = if !self.original.stopped() {
    if let Some(start) = batch.take_header_start() {
+    let mut input=observer.as_mut().map(|actual|CommittedBodyObserver{inner:&mut **actual,facts:&self.literal_facts,admission:self.original.storage.a,issued:self.literal_facts_issued,actual_end:actual_eof,primary:committed_identity.as_ref()});
     self.frames.as_mut().ok_or(io::ErrorKind::InvalidInput)?
-     .begin_early_header(source, tokens, start, &self.original, &mut self.diagnostics,match observer.as_mut(){Some(actual)=>Some(&mut **actual),None=>None})?
+     .begin_early_header(source, tokens, start, &self.original, &mut self.diagnostics,match input.as_mut(){Some(actual)=>Some(actual as &mut dyn OriginalDeclarationHeaderObserver),None=>None})?
    } else { true }
   } else { false };
   // Resolving the previous frame from a partial header can return false
@@ -391,7 +419,11 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  }
  fn finish_using(mut self,source:&str,actual_eof:bool,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<OriginalDeclarationSkeleton>{
   self.validate_finish(source,actual_eof)?;
-  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish_using(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof,observer)?;
+  if observer.is_none()&&self.original.observer.as_ref().is_some_and(|observer|observer.borrow().wants_committed_body_input()){return Err(io::Error::new(io::ErrorKind::Unsupported,"committed BODY demand requires scoped actual primary observer"))}
+  let committed_identity=if observer.as_ref().is_some_and(|observer|observer.wants_committed_body_input()){Some(self.layout.as_ref().ok_or(io::ErrorKind::InvalidInput)?.identity())}else{None};
+  let items={let mut input=observer.map(|inner|CommittedBodyObserver{inner,facts:&self.literal_facts,admission:self.original.storage.a,issued:self.literal_facts_issued,actual_end:actual_eof,primary:committed_identity.as_ref()});
+   self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish_using(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof,input.as_mut().map(|actual|actual as &mut dyn OriginalDeclarationHeaderObserver))?
+  };
   let FinishedPrimary{tokens,diagnostics,literal_facts,primary_owner,fatal,unavailable,observer_stop,storage}=self.finish_parts(source)?;
   let lease=storage.finish(&items,0,&diagnostics)?;
   Ok(OriginalDeclarationSkeleton{syntax:OriginalDeclarationSyntax{items,tokens:tokens.into(),diagnostics},literal_facts,primary_owner:Some(primary_owner),fatal,unavailable,observer_stop,_lease:lease})
@@ -403,7 +435,11 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
  }
  fn finish_committed_using(mut self,source:&str,actual_eof:bool,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->io::Result<OriginalCommittedPrimary>{
   self.validate_finish(source,actual_eof)?;
-  let items=self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish_committed_using(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof,observer)?;
+  if observer.is_none()&&self.original.observer.as_ref().is_some_and(|observer|observer.borrow().wants_committed_body_input()){return Err(io::Error::new(io::ErrorKind::Unsupported,"committed BODY demand requires scoped actual primary observer"))}
+  let committed_identity=if observer.as_ref().is_some_and(|observer|observer.wants_committed_body_input()){Some(self.layout.as_ref().ok_or(io::ErrorKind::InvalidInput)?.identity())}else{None};
+  let items={let mut input=observer.map(|inner|CommittedBodyObserver{inner,facts:&self.literal_facts,admission:self.original.storage.a,issued:self.literal_facts_issued,actual_end:actual_eof,primary:committed_identity.as_ref()});
+   self.frames.take().ok_or(io::ErrorKind::InvalidInput)?.finish_committed_using(source,self.tokens.window(),&self.original,&mut self.diagnostics,actual_eof,input.as_mut().map(|actual|actual as &mut dyn OriginalDeclarationHeaderObserver))?
+  };
   let FinishedPrimary{tokens,diagnostics,literal_facts,primary_owner,fatal,unavailable,observer_stop,storage}=self.finish_parts(source)?;
   let item_bytes=items.bytes(&storage).ok_or_else(||storage.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))?;
   let (item_lease,lease)=storage.finish_committed(item_bytes,&diagnostics)?;
@@ -748,5 +784,43 @@ impl<'a,'observer,'budget> OriginalPrimaryDemand<'a,'observer,'budget>{
   for committed in [false,true]{let source="/proc/last()\n    return 1\n";let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut observer=Observer;let mut primary=if committed{OriginalPrimaryDemand::new_committed(&a,None)}else{OriginalPrimaryDemand::new(&a,None)}.unwrap();for token in lex_spans(source).tokens{primary.token(token).unwrap();}
    assert!(primary.advance_with_observer(source,true,&mut observer).unwrap());let error=if committed{primary.finish_committed_with_observer(source,true,&mut observer).err().unwrap()}else{primary.finish_with_observer(source,true,&mut observer).err().unwrap()};assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
   }
+ }
+}
+
+#[cfg(test)]mod committed_body_input_loan_tests{
+ use super::*;use std::sync::{Arc,atomic::Ordering};
+ struct Output;impl crate::OriginalLiteralOutputOwner for Output{fn as_any(&self)->&dyn std::any::Any{self}fn release(self:Arc<Self>){drop(Arc::into_inner(self));}fn visit_storage(&self,_:&mut dyn FnMut(usize,usize,usize)){}}
+ fn deliver(primary:&mut OriginalPrimaryDemand<'_,'_,'_>,source:&str,a:&crate::SettingAdmission<'_>){for token in crate::lex_spans(source).tokens{if token.kind==TokenKind::Number{let data=crate::OriginalLiteralData::from_value_using(source[token.span.range()].to_owned(),crate::OriginalTokenValue::Int(123),a).unwrap();primary.token_with_original_literal(token,data).unwrap()}else{primary.token(token).unwrap()}}}
+ struct Observer{events:Vec<(&'static str,usize)>,fail:bool}
+ impl OriginalDeclarationHeaderObserver for Observer{
+  fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}fn wants_committed_body_input(&self)->bool{true}
+  fn committed_body_input(&mut self,input:OriginalCommittedBodyInput<'_,'_>)->io::Result<()>{self.events.push(("body",input.item().header_span.start));assert_eq!(input.source().get(input.item().header_span.range()),Some(input.item().header.as_str()));assert!(!input.token_window().is_empty());assert!(input.literal_facts().with_source_data(input.source()).is_ok());if self.fail{return Err(io::Error::from_raw_os_error(1450))}Ok(())}
+  fn declaration_committed(&mut self,event:OriginalPrimaryCommit<'_>)->io::Result<()>{if matches!(event.item().kind,ItemKind::Proc|ItemKind::Verb){self.events.push(("commit",event.item().header_span.start));}Ok(())}
+ }
+ #[test]fn actual_scoped_committed_body_loan_precedes_same_declaration_registration(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let source="/proc/p()\n    return 123\n/proc/q()\n    return 123\n";let mut observer=Observer{events:Vec::new(),fail:false};let mut primary=OriginalPrimaryDemand::new_committed(&a,None).unwrap();primary.enable_body_spelling_projection(crate::OriginalLiteralProjectionOwner::from_output_data(Arc::new(Output))).unwrap();deliver(&mut primary,source,&a);assert!(primary.advance_with_observer(source,true,&mut observer).unwrap());let actual=primary.finish_committed_with_observer(source,true,&mut observer).unwrap();assert_eq!(observer.events.len(),4);for pair in observer.events.chunks_exact(2){assert_eq!(pair[0].0,"body");assert_eq!(pair[1],("commit",pair[0].1));}drop(actual);assert_eq!(used.load(Ordering::Acquire),fixed);
+ }
+ #[test]fn committed_body_loan_actual_io_stops_before_declaration_and_requested_unbound_routes_refuse(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let source="/proc/p()\n    return 123\n/proc/q()\n    return 123\n";let mut observer=Observer{events:Vec::new(),fail:true};let mut primary=OriginalPrimaryDemand::new_committed(&a,None).unwrap();primary.enable_body_spelling_projection(crate::OriginalLiteralProjectionOwner::from_output_data(Arc::new(Output))).unwrap();deliver(&mut primary,source,&a);assert_eq!(primary.advance_with_observer(source,true,&mut observer).unwrap_err().raw_os_error(),Some(1450));assert_eq!(observer.events.len(),1);assert_eq!(observer.events[0].0,"body");assert!(primary.advance_with_observer(source,true,&mut observer).is_err());assert_eq!(observer.events.len(),1);drop(primary);
+  let mut observer=Observer{events:Vec::new(),fail:false};assert_eq!(parse_original_declaration_skeleton_with_observer_using(source,&a,Some(&mut observer)).err().unwrap().kind(),io::ErrorKind::Unsupported);assert!(observer.events.is_empty());let mut primary=OriginalPrimaryDemand::new_committed(&a,Some(&mut observer)).unwrap();deliver(&mut primary,source,&a);assert_eq!(primary.advance(source,true).unwrap_err().kind(),io::ErrorKind::Unsupported);drop(primary);assert!(observer.events.is_empty());assert_eq!(used.load(Ordering::Acquire),fixed);
+ }
+}
+
+#[cfg(test)]mod committed_body_primary_identity_tests{
+ use super::*;use std::sync::{Arc,atomic::Ordering};
+ struct Output;impl crate::OriginalLiteralOutputOwner for Output{fn as_any(&self)->&dyn std::any::Any{self}fn release(self:Arc<Self>){drop(Arc::into_inner(self));}fn visit_storage(&self,_:&mut dyn FnMut(usize,usize,usize)){}}
+ struct Observe{producer:Option<OriginalPrimaryProducerIdentity>,seen:usize,expected_match:bool}
+ impl OriginalDeclarationHeaderObserver for Observe{
+  fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}fn wants_committed_body_input(&self)->bool{true}
+  fn committed_body_input(&mut self,mut input:OriginalCommittedBodyInput<'_,'_>)->io::Result<()>{
+   if let Some(producer)=&self.producer{assert_eq!(input.primary_producer().same_producer(producer),self.expected_match);}else{let producer=input.take_primary_producer().expect("actual same primary owner");assert!(!input.primary_producer().same_producer(&producer),"taken sentinel must not match");assert!(input.take_primary_producer().is_none());self.producer=Some(producer);}
+   self.seen+=1;Ok(())
+  }
+ }
+ fn produce<'a,'budget>(a:&'a crate::SettingAdmission<'budget>,observer:&mut Observe)->OriginalCommittedPrimary{
+  let source="/proc/p()\n    return\n/proc/q()\n    return\n";let mut primary=OriginalPrimaryDemand::new_committed(a,None).unwrap();primary.enable_body_spelling_projection(crate::OriginalLiteralProjectionOwner::from_output_data(Arc::new(Output))).unwrap();for token in crate::lex_spans(source).tokens{primary.token(token).unwrap()}assert!(primary.advance_with_observer(source,true,observer).unwrap());primary.finish_committed_with_observer(source,true,observer).unwrap()
+ }
+ #[test]fn committed_body_product_identity_is_same_primary_epoch_and_not_equal_source(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&counter,4<<20,&||Ok(()));let mut first=Observe{producer:None,seen:0,expected_match:true};let primary=produce(&a,&mut first);assert_eq!(first.seen,2);assert!(primary.same_primary_producer(first.producer.as_ref().unwrap()));let mut other=Observe{producer:first.producer.take(),seen:0,expected_match:false};let foreign=produce(&a,&mut other);assert_eq!(other.seen,2);assert!(!foreign.same_primary_producer(other.producer.as_ref().unwrap()));drop((primary,foreign,first,other));assert_eq!(counter.load(Ordering::Acquire),fixed);
  }
 }

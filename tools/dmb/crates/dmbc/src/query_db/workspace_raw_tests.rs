@@ -64,7 +64,7 @@ fn page(
     let end = (start + PAGE_FILES).min(owners.len());
     db.set_input(
         input,
-        PageInput {
+        PageInput { scoped_patterns:false,
             graph,
             root: root(),
             configuration: root().join("scopes.toml"),
@@ -198,7 +198,7 @@ fn page_error_drops_input_payload_and_publishes_no_clean_result() {
     files[0].path = root().parent().unwrap().join("foreign.dm");
     db.set_input(
         input,
-        PageInput {
+        PageInput { scoped_patterns:false,
             graph: 1,
             root: root(),
             configuration: root().join("scopes.toml"),
@@ -234,7 +234,7 @@ fn one_changed_scope_recomputes_only_that_family() {
     let config = Config::capture(Configuration::ProvenMissing).unwrap();
     let a = Arc::new(config.scope("scheduler").unwrap());
     let b = Arc::new(config.scope("qdel_src").unwrap());
-    let first = PageInput {
+    let first = PageInput { scoped_patterns:false,
         graph: 1,
         root: root(),
         configuration: root().join("scopes.toml"),
@@ -250,7 +250,7 @@ fn one_changed_scope_recomputes_only_that_family() {
     };
     let old: Arc<Result<Arc<PageResult>, String>> = Arc::new(compute(&first).map(Arc::new));
     assert_eq!(counter.load(Ordering::Relaxed), 4);
-    let next = PageInput {
+    let next = PageInput { scoped_patterns:false,
         scopes: vec![
             policy(Some(b"[lint.scheduler]\nexempt_files=['code/0000.dm']\n")),
             b,
@@ -343,7 +343,7 @@ fn excluded_workspace_sources_need_no_text_but_any_live_scope_requires_real_text
     let bytes = originals(1);
     let scans = Arc::new(AtomicUsize::new(0));
     let excluded = policy(Some(b"[lint.scheduler]\nexempt_prefixes=['code/']\n"));
-    let make = |scopes: Vec<Arc<Scope>>, names: Vec<&'static str>| PageInput {
+    let make = |scopes: Vec<Arc<Scope>>, names: Vec<&'static str>| PageInput { scoped_patterns:false,
         graph: 1,
         root: root(),
         configuration: root().join("scopes.toml"),
@@ -382,7 +382,7 @@ fn excluded_workspace_sources_need_no_text_but_any_live_scope_requires_real_text
 #[test]
 fn page_scan_respects_remaining_family_bytes_before_retaining_findings() {
     let owners = originals(3);
-    let p = PageInput {
+    let p = PageInput { scoped_patterns:false,
         graph: 1,
         root: root(),
         configuration: root().join("scopes.toml"),
@@ -432,7 +432,7 @@ fn new_query_frees_incompatible_partial_pages_but_preserves_compatible_contribut
         let result = Key::new(PAGE_RESULT, id);
         q.db.set_input(
             input,
-            PageInput {
+            PageInput { scoped_patterns:false,
                 graph: q.id,
                 root: root(),
                 configuration: root().join("scopes.toml"),
@@ -509,7 +509,7 @@ fn denied_page_error_envelope_is_not_cached_as_a_small_or_clean_result() {
     let result = Key::new(PAGE_RESULT, 995);
     q.db.set_input(
         input,
-        PageInput {
+        PageInput { scoped_patterns:false,
             graph: q.id,
             root: root(),
             configuration: root().join("scopes.toml"),
@@ -543,7 +543,7 @@ fn workspace_page_cancellation_after_first_scan_never_retains_partial_page() {
     let result = Key::new(PAGE_RESULT, 1188);
     q.db.set_input(
         input,
-        PageInput {
+        PageInput { scoped_patterns:false,
             graph: q.id,
             root: root(),
             configuration: root().join("scopes.toml"),
@@ -689,7 +689,7 @@ fn operation_pins_and_weak_input_inventory_drop_after_success_error_and_abort() 
         // inventory token cannot retain operation pins or any derived payload.
         q.db.set_input(
             input,
-            PageInput {
+            PageInput { scoped_patterns:false,
                 graph: q.id,
                 root: root(),
                 configuration: root().join("scopes.toml"),
@@ -811,4 +811,199 @@ fn terminal_coordinate_retirement_prefers_empty_bulk_page_and_respects_pins() {
     assert!(!q.retire_bulk_page_coordinate_locked());
     assert!(q.db.value_bytes_at(key(0))>0 && q.db.value_bytes_at(key(3))>0);
     drop(pinned);
+}
+
+
+#[test]
+fn actual_scoped_source_scan_uses_same_db_held_ledger_and_existing_policy_output(){
+ let _binding=crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ let db=QueryDb::default();let budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();
+ let mut ledger=raw_input_credits::Ledger::default();let root=root();
+ let file=File::capture_budgeted(&root,&root.join("code/actor.dm"),"/proc/a()\n\tattack_ai()\n".into(),INPUT_BOUND).unwrap();
+ let scope=Config::capture(Configuration::ProvenMissing).unwrap().scope("actor_forwarding").unwrap();
+ let expected=file.scan(&scope).unwrap();
+ source_arena::with_held_source_work(&db,&mut ledger,&budget,|work|{
+  let provider=crate::query_db::PatternProvider::new(&db,work);
+  let actual=file.scan_with_pattern_resources(&scope,10000,RESULT_BOUND,false,&budget,&provider,&crate::daemon::control::checkpoint).map_err(|error|match error{captured_raw_file::ScanFailure::Operational(actual)=>actual,other=>invalid(other.into_message())})?;
+  assert_eq!(actual.fingerprint(),expected.fingerprint());assert_eq!(actual.run.sites.len(),1);Ok(())
+ }).unwrap();
+}
+#[test]
+fn actual_scoped_source_scan_retains_compile_1450_before_later_cancel_then_recovers(){
+ use dm_preprocess::source_arena_credit::{SourceArenaCredit,SourceArenaWork};
+ struct Stop<'a>{actual:&'a dyn SourceArenaWork}
+ impl SourceArenaWork for Stop<'_>{
+  fn checkpoint(&self)->io::Result<()>{self.actual.checkpoint()}
+  fn reserve(&self,n:usize)->io::Result<SourceArenaCredit>{self.actual.reserve(n)}
+  fn grow(&self,_:&mut SourceArenaCredit,_:usize)->io::Result<()>{Err(io::Error::from_raw_os_error(1450))}
+  fn shrink(&self,credit:&mut SourceArenaCredit,n:usize)->io::Result<()>{self.actual.shrink(credit,n)}
+ }
+ let cancel=crate::daemon::control::Cancellation::default();
+ let _binding=crate::daemon::control::bind_with_deadline(cancel.clone(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ let db=QueryDb::default();let budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();let mut ledger=raw_input_credits::Ledger::default();let root=root();
+ let file=File::capture_budgeted(&root,&root.join("code/actor.dm"),"/proc/a()\n\tattack_ai()\n".into(),INPUT_BOUND).unwrap();let scope=Config::capture(Configuration::ProvenMissing).unwrap().scope("actor_forwarding").unwrap();
+ source_arena::with_held_source_work(&db,&mut ledger,&budget,|work|{
+  let stopped=Stop{actual:work};let provider=crate::query_db::PatternProvider::new(&db,&stopped);
+  let error=file.scan_with_pattern_resources(&scope,10000,RESULT_BOUND,false,&budget,&provider,&crate::daemon::control::checkpoint).unwrap_err();
+  cancel.cancel();assert!(matches!(error,captured_raw_file::ScanFailure::Operational(ref actual)if actual.raw_os_error()==Some(1450)));Ok(())
+ }).unwrap();drop(_binding);
+ let _recovery=crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ source_arena::with_held_source_work(&db,&mut ledger,&budget,|work|{
+  let provider=crate::query_db::PatternProvider::new(&db,work);let actual=file.scan_with_pattern_resources(&scope,10000,RESULT_BOUND,false,&budget,&provider,&crate::daemon::control::checkpoint).map_err(|error|invalid(error.into_message()))?;assert_eq!(actual.run.sites.len(),1);Ok(())
+ }).unwrap();
+}
+
+#[test]
+fn scoped_page_input_refuses_registered_unadmitted_fallback_before_empty_policy_result(){
+ let db=QueryDb::default();let input=Key::new(PAGE_INPUT,918273);let result=Key::new(PAGE_RESULT,918273);let live=Arc::new(Mutex::new(Owners::default()));
+ db.db.set_input(input,PageInput{scoped_patterns:true,graph:db.id,root:root(),configuration:root().join("scopes.toml"),scopes:vec![],names:vec![],files:vec![],previous:Weak::new(),scans:Arc::new(AtomicUsize::new(0)),result_budget:RESULT_BOUND,input_budget:INPUT_BOUND,live:Arc::downgrade(&live),remaining_sites:MAX_SITES},1);
+ let error=db.db.get::<Result<Arc<PageResult>,String>>(result,Arc::new(Params{input})).err().expect("scoped input must refuse unadmitted fallback");
+ let actual=error.into_operational().unwrap().into_io();assert_eq!(actual.kind(),io::ErrorKind::NotConnected);assert_eq!(db.db.value_bytes_at(result),0);
+}
+
+
+#[test]
+fn actual_native_static_owner_policies_use_scoped_program_queries_and_match_original_rows(){
+ let _binding=crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ let db=QueryDb::default();let budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();let mut ledger=raw_input_credits::Ledger::default();let root=root();
+ for(name,text)in [
+  ("breakpoint","/obj/probe/atom_break()\n\tstat |= BROKEN\n"),
+  ("door_gates","CAPABILITIES(/obj/probe)\n\twhen(COVER_OPEN)\n"),
+  ("entity_ids","/proc/p()\n\tnext_id++\n"),
+  ("scheduler","/proc/p()\n\tsleep(1)\n"),
+  ("containment","/proc/p()\n\tloc = destination\n"),
+  ("sys/grants","/proc/p()\n\tverbs += /mob/proc/foo\n"),
+  ("saved_handle","/proc/p()\n\tS[1] << handle_of(src)\n"),
+  ("ref_text","/proc/p()\n\tstored = REF(src)\n"),
+  ("silent_catch","/proc/p()\n\ttry\n\t\tthrow 1\n\tcatch(var/exception/e)\n\t\treturn\n"),
+ ]{
+  let file=File::capture_budgeted(&root,&root.join("code/owner.dm"),text.into(),INPUT_BOUND).unwrap();let scope=Config::capture(Configuration::ProvenMissing).unwrap().scope(name).unwrap();
+  let expected=file.scan(&scope).unwrap();assert!(!expected.run.sites.is_empty(),"actual reference must exercise {name}");
+  let before=db.db.stats(super::super::native_patterns::NATIVE_PATTERN).computed;
+  source_arena::with_held_source_work(&db,&mut ledger,&budget,|work|{
+   let provider=crate::query_db::PatternProvider::new(&db,work);let actual=file.scan_with_pattern_resources(&scope,10000,RESULT_BOUND,false,&budget,&provider,&crate::daemon::control::checkpoint).map_err(|error|match error{captured_raw_file::ScanFailure::Operational(actual)=>actual,other=>invalid(other.into_message())})?;
+   assert_eq!(actual.fingerprint(),expected.fingerprint(),"actual source policy {name}");Ok(())
+  }).unwrap();
+  assert!(db.db.stats(super::super::native_patterns::NATIVE_PATTERN).computed>before,"{name} must use actual admitted query program, not the compatibility constructor");
+ }
+}
+
+
+#[test]
+fn actual_scoped_pattern_scratch_returns_same_zero_slot_and_refunds_only_disposed_payload(){
+ use dq_analyze::native_pattern::{Provider as _,Spec,Mode};
+ let _binding=crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ let db=QueryDb::default();let budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();let mut ledger=raw_input_credits::Ledger::default();
+ let spec=Spec{pattern:r"([A-Z]+)=(\d+)",mode:Mode::Search};
+ source_arena::with_held_pattern_work(&db,&mut ledger,&budget,|work,scratch|{
+  let provider=crate::query_db::PatternProvider::scoped(&db,work,scratch);assert_eq!(provider.capture_len(spec)?,3);
+  let before=budget.used();let fixed=std::mem::size_of::<dq_analyze::captured_generator_budget::Budget>()+2*std::mem::size_of::<usize>();
+  for turn in 1..=3{
+   let mut visited=false;assert!(provider.capture(spec,"KEY=42",0,&mut|groups|{visited=true;assert_eq!(groups[0],Some((0,6)));Ok(())})?);assert!(visited);
+   assert_eq!(budget.used(),before+turn*fixed,"actual child payload and execution buffers must refund; existing fixed child metadata policy remains");
+  }
+  assert_eq!(db.db.stats(super::super::native_patterns::NATIVE_PATTERN).computed,1);Ok(())
+ }).unwrap();
+}
+#[test]
+fn actual_scoped_pattern_visitor_1450_precedes_cancel_and_new_real_frame_recovers(){
+ use dq_analyze::native_pattern::{Provider as _,Spec,Mode};
+ let cancel=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(cancel.clone(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ let db=QueryDb::default();let budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();let mut ledger=raw_input_credits::Ledger::default();let spec=Spec{pattern:"KEY",mode:Mode::Search};
+ let error=source_arena::with_held_pattern_work(&db,&mut ledger,&budget,|work,scratch|{
+  let provider=crate::query_db::PatternProvider::scoped(&db,work,scratch);
+  provider.find(spec,"KEY",0,&mut|_|{cancel.cancel();Err(io::Error::from_raw_os_error(1450))}).map(|_|())
+ }).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));drop(binding);
+ let _retry=crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ source_arena::with_held_pattern_work(&db,&mut ledger,&budget,|work,scratch|{
+  let provider=crate::query_db::PatternProvider::scoped(&db,work,scratch);assert!(provider.find(spec,"KEY",0,&mut|_|Ok(()))?);Ok(())
+ }).unwrap();
+}
+#[test]
+fn actual_scoped_pattern_one_byte_short_child_metadata_denies_before_search_then_reprepares(){
+ use dq_analyze::native_pattern::{Provider as _,Spec,Mode};
+ let _binding=crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ let db=QueryDb::default();let mut ledger=raw_input_credits::Ledger::default();let spec=Spec{pattern:"KEY",mode:Mode::Search};
+ let denied=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();let called=std::cell::Cell::new(false);
+ let error=source_arena::with_held_pattern_work(&db,&mut ledger,&denied,|work,scratch|{
+  let provider=crate::query_db::PatternProvider::scoped(&db,work,scratch);provider.capture_len(spec)?;
+  let fixed=std::mem::size_of::<dq_analyze::captured_generator_budget::Budget>()+2*std::mem::size_of::<usize>();
+  denied.charge(denied.remaining()-(fixed-1)).map_err(invalid)?;
+  provider.find(spec,"KEY",0,&mut|_|{called.set(true);Ok(())}).map(|_|())
+ }).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert!(!called.get());assert!(denied.denied());
+ let recovered=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();
+ source_arena::with_held_pattern_work(&db,&mut ledger,&recovered,|work,scratch|{
+  let provider=crate::query_db::PatternProvider::scoped(&db,work,scratch);assert!(provider.find(spec,"KEY",0,&mut|_|Ok(()))?);Ok(())
+ }).unwrap();
+}
+
+#[test]
+fn actual_native_dynamic_helper_policies_match_legacy_rows_and_reuse_same_db_programs(){
+ let _binding=crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ let db=QueryDb::default();let budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();let mut ledger=raw_input_credits::Ledger::default();let root=root();
+ for(name,text)in [
+  ("sys/messages","/mob/proc/a(mob/actor)\n\tactor.visible_message(\"[actor.name] waves\")\n"),
+  ("sys/damage_reactions","/obj/probe/bullet_act(obj/projectile/P, def_zone)\n\treturn FALSE\n/obj/probe/ex_act(severity)\n\tseverity++\n/obj/probe/hitby(atom/movable/AM)\n\treturn AM.redirect(AM.starting)\n"),
+ ]{
+  let file=File::capture_budgeted(&root,&root.join("code/dynamic.dm"),text.into(),INPUT_BOUND).unwrap();let scope=Config::capture(Configuration::ProvenMissing).unwrap().scope(name).unwrap();let expected=file.scan(&scope).unwrap();
+  assert!(!expected.run.sites.is_empty(),"actual reference must exercise {name}");let mut computed=None;
+  for turn in 0..2{source_arena::with_held_pattern_work(&db,&mut ledger,&budget,|work,scratch|{
+   let provider=crate::query_db::PatternProvider::scoped(&db,work,scratch);let actual=file.scan_with_pattern_resources(&scope,10000,RESULT_BOUND,false,&budget,&provider,&crate::daemon::control::checkpoint).map_err(|error|match error{captured_raw_file::ScanFailure::Operational(actual)=>actual,other=>invalid(other.into_message())})?;
+   assert_eq!(actual.fingerprint(),expected.fingerprint(),"actual dynamic helper policy {name}");Ok(())
+  }).unwrap();let now=db.db.stats(super::super::native_patterns::NATIVE_PATTERN).computed;if turn==0{assert!(now>0);computed=Some(now)}else{assert_eq!(Some(now),computed,"warm real helper programs must share the same Db values")}}
+ }
+}
+
+#[test]
+fn actual_funded_ownership_event_scanner_uses_same_db_programs_and_exact_legacy_order(){
+ use dq_analyze::{key_policy_control::Control,raw_ownership_policy as ownership};
+ struct Work<'a>{budget:&'a dq_analyze::captured_generator_budget::Budget,patterns:&'a dyn dq_analyze::native_pattern::Provider,peak:usize}
+ impl Control for Work<'_>{
+  type Error=io::Error;const CHECKED:bool=true;
+  fn native_patterns(&self)->Option<&dyn dq_analyze::native_pattern::Provider>{Some(self.patterns)}
+  fn native_pattern_failed(&mut self,actual:io::Error)->io::Error{actual}
+  fn checkpoint(&mut self)->io::Result<()>{crate::daemon::control::checkpoint()}
+  fn reserve(&mut self,bytes:usize)->io::Result<()>{self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))}
+  fn temporary(&mut self,_slot:usize,bytes:usize)->io::Result<()>{if bytes>self.peak{self.reserve(bytes-self.peak)?;self.peak=bytes}Ok(())}
+  fn overflow(&mut self)->io::Error{self.budget.deny();io::ErrorKind::OutOfMemory.into()}
+  fn allocation_failed(&mut self)->io::Error{self.budget.deny();io::ErrorKind::OutOfMemory.into()}
+ }
+ let _binding=crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ let db=QueryDb::default();let budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();let mut ledger=raw_input_credits::Ledger::default();
+ // Literal legacy declaration DATA exercises the unchanged extraction algorithm;
+ // this control grants no complete Original source or runtime declaration role.
+ let file=dq_analyze::tree::SourceFile::from_text("code/events.dm","REGISTRY_TYPE(/datum/registry, x)\nGLOBAL_DATUM(holder, /datum)\n/datum/holder\n    var/static/list/datum/refs\n/datum/holder/relations()\n    . += owns(nameof(annotation))\n    . += rel_one(nameof(owned), kind = RELK_OWNED)\n    . += owns(nameof(copy), policy = OWN_PRIVATE_COPY)\nSYSTEM_DEF(grid)\n    var/tick\n");
+ let expected=ownership::file_events(&file.rel,file.raw(),file.code());assert_eq!(expected.len(),7);let mut computed=None;
+ for turn in 0..2{source_arena::with_held_pattern_work(&db,&mut ledger,&budget,|actual,scratch|{
+  let provider=crate::query_db::PatternProvider::scoped(&db,actual,scratch);let mut work=Work{budget:&budget,patterns:&provider,peak:0};let mut rows=Vec::new();
+  ownership::try_visit_file_events_funded(&file.rel,file.raw(),file.code(),&mut work,|event|{rows.push(event);Ok(())})?;assert_eq!(rows,expected);Ok(())
+ }).unwrap();let now=db.db.stats(super::super::native_patterns::NATIVE_PATTERN).computed;if turn==0{assert!(now>=10);computed=Some(now)}else{assert_eq!(Some(now),computed)}}
+}
+
+#[test]
+fn actual_native_annotation_query_matches_legacy_and_reuses_same_admitted_programs(){
+ let _binding=crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ let db=QueryDb::default();let budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();let mut ledger=raw_input_credits::Ledger::default();let root=root();
+ let text="/proc/p()\n\tsleep(1) // ALLOW(scheduler): the original blocking external operation\n";
+ let file=File::capture_budgeted(&root,&root.join("code/annotation.dm"),text.into(),INPUT_BOUND).unwrap();let scope=Config::capture(Configuration::ProvenMissing).unwrap().scope("scheduler").unwrap();let expected=file.scan(&scope).unwrap();assert_eq!(expected.run.sites.len(),0);let mut computed=None;
+ for turn in 0..2{source_arena::with_held_pattern_work(&db,&mut ledger,&budget,|work,scratch|{
+  let provider=crate::query_db::PatternProvider::scoped(&db,work,scratch);let actual=file.scan_with_pattern_resources(&scope,10000,RESULT_BOUND,false,&budget,&provider,&crate::daemon::control::checkpoint).map_err(|error|match error{captured_raw_file::ScanFailure::Operational(actual)=>actual,other=>invalid(other.into_message())})?;
+  assert_eq!(actual.fingerprint(),expected.fingerprint());assert_eq!(actual.allow_used.len(),1);Ok(())
+ }).unwrap();let now=db.db.stats(super::super::native_patterns::NATIVE_PATTERN).computed;if turn==0{assert!(now>0);computed=Some(now)}else{assert_eq!(Some(now),computed)}}
+}
+
+#[test]
+fn actual_native_dispatcher_preparation_uses_same_db_programs_and_rejects_real_bad_pattern_then_recovers(){
+ let _binding=crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120));
+ let db=QueryDb::default();let budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024).unwrap();let mut ledger=raw_input_credits::Ledger::default();let text=dq_analyze::ui_selftest_policy::DISPATCHER_FIXTURE;
+ let expected=dq_analyze::ui_actions_policy::prepare_dispatcher(Some(text),&budget,&crate::daemon::control::checkpoint).unwrap();assert!(expected.needs_sources());let mut computed=None;
+ for turn in 0..2{source_arena::with_held_pattern_work(&db,&mut ledger,&budget,|work,scratch|{
+  let provider=crate::query_db::PatternProvider::scoped(&db,work,scratch);let actual=dq_analyze::ui_actions_policy::prepare_dispatcher_with_patterns(Some(text),&budget,&crate::daemon::control::checkpoint,&provider).map_err(|failure|match failure{dq_analyze::captured_reactive_reads::Failure::Operational(actual)=>actual,dq_analyze::captured_reactive_reads::Failure::Unsupported(message)=>invalid(message)})?;
+  assert_eq!(actual.needs_sources(),expected.needs_sources());assert_eq!(actual.first_source_line(),expected.first_source_line());Ok(())
+ }).unwrap();let now=db.db.stats(super::super::native_patterns::NATIVE_PATTERN).computed;if turn==0{assert!(now>=9);computed=Some(now)}else{assert_eq!(Some(now),computed)}}
+ let broken=text.replace("^[A-Za-z0-9_-]+$","(");assert_ne!(broken,text);
+ source_arena::with_held_pattern_work(&db,&mut ledger,&budget,|work,scratch|{
+  let provider=crate::query_db::PatternProvider::scoped(&db,work,scratch);assert!(matches!(dq_analyze::ui_actions_policy::prepare_dispatcher_with_patterns(Some(&broken),&budget,&crate::daemon::control::checkpoint,&provider),Err(dq_analyze::captured_reactive_reads::Failure::Unsupported(_))));
+  assert!(dq_analyze::ui_actions_policy::prepare_dispatcher_with_patterns(Some(text),&budget,&crate::daemon::control::checkpoint,&provider).map_err(|_|invalid("actual good dispatcher must recover after real syntax refusal"))?.needs_sources());Ok(())
+ }).unwrap();
 }

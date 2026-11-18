@@ -185,3 +185,21 @@ fn not_found_from_resource_lender_is_never_an_absent_source_fact() {
 #[test]fn original_callback_path_replacement_cannot_make_payload_reopen_a_different_file(){
  let root=crate::test_scratch::dir("original-open-single-handle");let path=root.join("actual.dm");let moved=root.join("opened-old.dm");std::fs::write(&path,b"/datum/x\n").unwrap();let result=filesystem_original_open_read_admitted(&path,128,&mut||{std::fs::rename(&path,&moved)?;std::fs::write(&path,b"replacement payload").unwrap();Ok(dm_preprocess::OriginalRawOpenDecision::Read)},&mut |size|{assert_eq!(size,9,"size belongs to already opened descriptor, not replaced pathname");Ok(())});assert_eq!(result.err().unwrap().kind(),io::ErrorKind::Interrupted,"same descriptor sees old bytes and detects changed path; a second open would incorrectly accept replacement");
 }
+
+#[test]
+fn policy_read_budget_refusal_names_actual_file_before_allocation_and_keeps_healthy_read() {
+    let root=crate::test_scratch::dir("policy-read-budget-context");
+    let path=root.join("probe.dat");
+    std::fs::write(&path,b"12345678").unwrap();
+    let allocated=std::cell::Cell::new(0usize);
+    let error=filesystem_bounded_read_admitted(&path,4,&mut |bytes|{allocated.set(allocated.get()+bytes);Ok(())}).unwrap_err();
+    assert_eq!(error.kind(),io::ErrorKind::InvalidData);
+    assert_eq!(allocated.get(),0,"actual file size is checked before allocation admission");
+    let message=error.to_string();
+    assert!(message.contains("policy original exceeds remaining capture budget"));
+    assert!(message.contains(&path.display().to_string()));
+    assert!(message.contains("size=8, limit=4"));
+    let read=filesystem_bounded_read_admitted(&path,8,&mut |bytes|{allocated.set(allocated.get()+bytes);Ok(())}).unwrap();
+    assert_eq!(allocated.get(),8);
+    assert_eq!(read.bytes(),b"12345678");
+}

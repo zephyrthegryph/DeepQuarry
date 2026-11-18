@@ -45,3 +45,23 @@ pub(crate) fn drain(reader:&mut dyn std::io::Read)->io::Result<u64>{let mut bloc
  struct ReadStop{reads:usize}impl std::io::Read for ReadStop{fn read(&mut self,_:&mut[u8])->io::Result<usize>{self.reads+=1;Err(io::Error::from_raw_os_error(1450))}}
  #[test]fn schema_spool_drain_preserves_first_read_io_and_expired_original_context(){let mut failed=ReadStop{reads:0};assert_eq!(drain(&mut failed).unwrap_err().raw_os_error(),Some(1450));assert_eq!(failed.reads,1);let _binding=crate::daemon::control::bind_with_deadline(crate::daemon::control::Cancellation::default(),std::time::Instant::now());let mut untouched=ReadStop{reads:0};assert_eq!(drain(&mut untouched).unwrap_err().kind(),io::ErrorKind::Interrupted);assert_eq!(untouched.reads,0);}
 }
+
+impl Inputs{
+ pub(crate)fn require_closure_report_step(&self,next:&Self,root:&Path,transition:&crate::native_author_fix_transaction::Transition,work:&dyn SourceArenaWork)->io::Result<()>{if self.project!=next.project||!self.inputs.same_closure_report_step(&next.inputs,root,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"closure write changed another captured input or namespace"))}Ok(())}
+}
+
+impl Inputs{
+ /// Called only on two actual source-bound prepared attempts. Repreparation
+ /// may mint a new mapping owner; exact source/configuration facts must remain
+ /// unchanged, while ONLY the writer's one directory step may advance.
+ pub(crate)fn require_codemod_directory_step(&self,next:&Self,transition:&crate::native_author_fix_transaction::DirectoryTransition,work:&dyn SourceArenaWork)->io::Result<()>{
+  work.checkpoint()?;
+  if self.project!=next.project||!self.inputs.same_directory_step(&next.inputs,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"codemod directory creation changed another captured input or namespace"))}Ok(())
+ }
+}
+
+impl Inputs{
+ pub(crate)fn require_codemod_authored_step(&self,next:&Self,transition:&crate::native_author_fix_transaction::Transition,work:&dyn SourceArenaWork)->io::Result<()>{if self.project!=next.project||!self.inputs.same_codemod_authored_step(&next.inputs,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"codemod authored write changed another captured input"))}Ok(())}
+ pub(crate)fn require_codemod_output_step(&self,next:&Self,target:&crate::runner_host::codemod_targets::CapturedCodemodTarget<'_>,transition:&crate::native_author_fix_transaction::Transition,work:&dyn SourceArenaWork)->io::Result<()>{if self.project!=next.project||!self.inputs.same_codemod_output_step(&next.inputs,target,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"codemod output changed another captured input or namespace"))}Ok(())}
+ pub(crate)fn require_codemod_removal_step(&self,next:&Self,target:&crate::runner_host::codemod_targets::CapturedCodemodTarget<'_>,removal:&crate::native_author_fix_transaction::Removal,work:&dyn SourceArenaWork)->io::Result<()>{if self.project!=next.project||!self.inputs.same_codemod_removal_step(&next.inputs,target,removal,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"codemod removal changed another captured input or namespace"))}Ok(())}
+}

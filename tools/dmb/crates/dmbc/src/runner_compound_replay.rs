@@ -150,7 +150,11 @@ impl Drop for RetainedSlot {
     }
 }
 
-pub(super) struct Entry {
+pub(super) enum Entry { Compiled(CompiledEntry), ReportOnly(super::check_report_replay::Loan) }
+impl Entry {
+ #[cfg(test)] pub(super) fn compiled(&self)->&CompiledEntry{match self{Self::Compiled(actual)=>actual,Self::ReportOnly(_)=>panic!("report-only owner is not a compiled publication")}}
+}
+pub(super) struct CompiledEntry {
     pub(super) key: Key,
     pub(super) reports: Reports,
     pub(super) joined: JoinedSelectedInputs,
@@ -158,7 +162,7 @@ pub(super) struct Entry {
     pub(super) _slot: RetainedSlot,
 }
 
-impl Entry {
+impl CompiledEntry {
     pub(super) fn matches(&self, candidate: &Candidate, exclusions: &[String]) -> bool {
         self.key.candidate == *candidate && self.key.exclusions.as_slice() == exclusions
     }

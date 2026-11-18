@@ -47,11 +47,11 @@ opt-level 2 for the workspace crates and 3 for dependencies) and linked with `ru
 `release` with thin LTO is still what CI (`CI` set), `build.sh` (all-up build), the server and benchmarks build.
 `DQ_VERDIGRIS_PROFILE=release` makes a test run use the production profile. The shared cache key and the
 `verdigris.dll.profile` stamp next to the DLL carry the profile, so a lane DLL is never reused as a production one.
-Incremental policy: lane and dev cargo runs are incremental where their profile says so (`lib/cargo_ice.ts`);
-`DQ_CARGO_INCREMENTAL=0` forces `CARGO_INCREMENTAL=0` for any run; CI and the one-shot gate builds
-(`analyze_test_cache`, the `*_equiv.sh` scripts) are non-incremental. Never export `CARGO_INCREMENTAL=1` yourself: sccache
-(the machine's rustc wrapper) refuses to run when it is set. If rustc panics on a corrupt incremental directory, the tooling
-deletes the target's incremental directories and retries once (tested in `lib/cargo_ice.test.ts`).
+Incremental policy: every maintained Cargo entry point forces `CARGO_INCREMENTAL=1`, including CI, gates and retries.
+Earlier `DQ_CARGO_INCREMENTAL=0` and caller opt-outs are ignored. The incompatible `RUSTC_WRAPPER` is cleared;
+workspace instrumentation (`RUSTC_WORKSPACE_WRAPPER`) is preserved. Keep the same target and profile between builds.
+If rustc panics on a corrupt incremental directory, the tooling deletes only that target's incremental directories
+and retries once, still incrementally (tested in `lib/cargo_ice.test.ts`).
 Measured on this machine with other lanes building (noisy), one-line edit then `cargo build` of the DLL for i686:
 
 | Edit in | `release` (non-incremental, thin LTO, link.exe) | `lane` (incremental, lld) |

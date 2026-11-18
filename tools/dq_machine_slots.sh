@@ -365,17 +365,59 @@ slots_acquire() { # class [label]: waits for a slot; sets the SLOTS_* globals
 	return "$rc"
 }
 
-_slots_heartbeat() { # owner file: touch it every 15 s while this shell lives
-	local owner="$1" parent="$$"
-	(
-		while kill -0 "$parent" 2>/dev/null; do
-			sleep "${DQ_SLOTS_HEARTBEAT_SEC:-15}"
-			[ -f "$owner" ] || exit 0
-			touch "$owner" 2>/dev/null || exit 0
+# These PIDs come only from this shell's direct $! children, retained as
+# waitable jobs. Keep the existing exact-child signal, then join before release.
+# No process-name/PID discovery, jobspec/job-control dependency or wait-all.
+_slots_join_background_child() {
+	local child="${1:-}"
+	[ -n "$child" ] || return 0
+	kill "$child" 2>/dev/null || true
+	wait "$child" 2>/dev/null || true
+	return 0
+}
+
+_slots_heartbeat_join_sleep() {
+	_slots_join_background_child "${SLOTS_HEARTBEAT_SLEEP:-}"
+	SLOTS_HEARTBEAT_SLEEP=""
+}
+
+# The heartbeat owns and joins its timer, including an interrupted wait. Traps
+# only set a flag, so TERM between fork and saving $! cannot bypass ownership.
+_slots_heartbeat_loop() {
+	local parent="$1" mode="$2" owner rc
+	shift 2
+	set +e
+	SLOTS_HEARTBEAT_SLEEP=""
+	SLOTS_HEARTBEAT_STOP=0
+	trap 'SLOTS_HEARTBEAT_STOP=1' TERM INT HUP
+	trap '_slots_heartbeat_join_sleep' EXIT
+	while [ "$SLOTS_HEARTBEAT_STOP" -eq 0 ] && kill -0 "$parent" 2>/dev/null; do
+		sleep "${DQ_SLOTS_HEARTBEAT_SEC:-15}" &
+		SLOTS_HEARTBEAT_SLEEP=$!
+		if [ "$SLOTS_HEARTBEAT_STOP" -ne 0 ]; then break; fi
+		wait "$SLOTS_HEARTBEAT_SLEEP"
+		rc=$?
+		# A completed timer no longer needs a signal, even if TERM just arrived.
+		if [ "$rc" -le 128 ]; then SLOTS_HEARTBEAT_SLEEP=""; fi
+		if [ "$SLOTS_HEARTBEAT_STOP" -ne 0 ]; then break; fi
+		SLOTS_HEARTBEAT_SLEEP=""
+		[ "$rc" -eq 0 ] || break
+		for owner in "$@"; do
+			if [ -f "$owner" ]; then
+				touch "$owner" 2>/dev/null || { [ "$mode" = single ] && return 0; }
+			elif [ "$mode" = single ]; then return 0
+			fi
 		done
-	) >/dev/null 2>&1 &
+	done
+	_slots_heartbeat_join_sleep
+	trap - EXIT TERM INT HUP
+	return 0
+}
+
+_slots_heartbeat() { # owner file: touch it every 15 s while this shell lives
+	_slots_heartbeat_loop "$$" single "$1" >/dev/null 2>&1 &
 	SLOTS_HB_PID=$!
-	disown "$SLOTS_HB_PID" 2>/dev/null || true
+	# Keep the direct child waitable until slots_release joins it.
 }
 
 # One line per release goes to the machine log (events.tsv) and to the releasing worktree's data/slot-waits.log (time, class, slot,
@@ -400,7 +442,7 @@ _slots_event() { # reads one line on stdin
 _slots_release() {
 	local now owner worktree label started
 	now="$EPOCHSECONDS"
-	if [ -n "$SLOTS_HB_PID" ]; then kill "$SLOTS_HB_PID" 2>/dev/null; SLOTS_HB_PID=""; fi
+	if [ -n "$SLOTS_HB_PID" ]; then _slots_join_background_child "$SLOTS_HB_PID"; SLOTS_HB_PID=""; fi
 	if [ -n "$SLOTS_HELD" ]; then
 		owner="$SLOTS_HELD/owner"
 		worktree="$(_slots_field "$owner" worktree)"
@@ -505,14 +547,9 @@ _slots_group_acquire() {
 				rm -f "$SLOTS_QUEUE"
 				SLOTS_QUEUE=""
 				# One heartbeat for the whole group; a released slot's owner file is gone and is skipped.
-				(
-					while kill -0 "$$" 2>/dev/null; do
-						sleep "${DQ_SLOTS_HEARTBEAT_SEC:-15}"
-						for o in "${owners[@]}"; do [ -f "$o" ] && touch "$o" 2>/dev/null; done
-					done
-				) >/dev/null 2>&1 &
+				_slots_heartbeat_loop "$$" group "${owners[@]}" >/dev/null 2>&1 &
 				SLOTS_GROUP_HB=$!
-				disown "$SLOTS_GROUP_HB" 2>/dev/null || true
+				# Keep the group heartbeat waitable until its final release joins it.
 				echo "== machine slots: $cls group of $want (of $max) after ${waited}s"
 				return 0
 			fi
@@ -542,7 +579,7 @@ slots_group_release_one() { # hand back one slot of the group; the last one stop
 		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$SLOTS_GROUP_CLASS" "${dir##*.}" "$(_slots_field "$owner" worktree)" "$(_slots_field "$owner" label)" "$((SLOTS_GROUP_T_GOT - SLOTS_GROUP_T_QUEUED))" "$((now - SLOTS_GROUP_T_GOT))" | _slots_event
 		rm -rf "$dir"
 	fi
-	if [ "$left" -eq 0 ] && [ -n "$SLOTS_GROUP_HB" ]; then kill "$SLOTS_GROUP_HB" 2>/dev/null; SLOTS_GROUP_HB=""; fi
+	if [ "$left" -eq 0 ] && [ -n "$SLOTS_GROUP_HB" ]; then _slots_join_background_child "$SLOTS_GROUP_HB"; SLOTS_GROUP_HB=""; fi
 	_slots_errexit_back
 	return 0
 }
@@ -552,7 +589,7 @@ slots_group_release() { # hand back all of them (an EXIT trap calls this), and l
 	for i in "${!SLOTS_GROUP_DIRS[@]}"; do slots_group_release_one; done
 	if [ -n "$SLOTS_QUEUE" ]; then rm -f "$SLOTS_QUEUE"; SLOTS_QUEUE=""; fi
 	_slots_clear_waiting
-	if [ -n "$SLOTS_GROUP_HB" ]; then kill "$SLOTS_GROUP_HB" 2>/dev/null; SLOTS_GROUP_HB=""; fi
+	if [ -n "$SLOTS_GROUP_HB" ]; then _slots_join_background_child "$SLOTS_GROUP_HB"; SLOTS_GROUP_HB=""; fi
 	return 0
 }
 

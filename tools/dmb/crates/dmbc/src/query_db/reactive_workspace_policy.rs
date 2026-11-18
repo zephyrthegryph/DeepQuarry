@@ -27,12 +27,13 @@ pub(super) struct Dependencies{data:UnsealedDependencyData,witness:WorkspaceCode
 pub(super) struct Policy{data:reads::UnsealedPolicyFacts,witness:WorkspaceCodeWitness}
 impl Policy{pub(super) fn retained_charge(&self)->Option<usize>{self.data.retained_charge()?.checked_add(witness_charge(&self.witness)?)}pub(super) fn fingerprint(&self,poll:&dyn Fn()->io::Result<()>)->io::Result<u128>{match self.data.fingerprint(poll){Ok(hash)=>Ok(hash),Err(Failure::Operational(actual))=>Err(actual),Err(Failure::Unsupported(message))=>Err(io::Error::new(io::ErrorKind::Unsupported,message))}}}
 fn witness_charge(witness:&WorkspaceCodeWitness)->Option<usize>{let mut sum=Some(std::mem::size_of::<WorkspaceCodeWitness>());witness.visit_storage(|_,bytes|sum=sum.and_then(|n|n.checked_add(bytes)));sum}
-impl Read{pub(super) fn retained_charge(&self)->Option<usize>{self.data.retained_charge()?.checked_add(witness_charge(&self.witness)?)}pub(super) fn facts(&self)->&reads::FrozenReadSet{self.data.facts()}}
+impl Read{pub(super) fn retained_charge(&self)->Option<usize>{self.data.retained_charge()?.checked_add(witness_charge(&self.witness)?)}pub(super) fn facts(&self)->&reads::FrozenReadSet{self.data.facts()}pub(super) fn utility_data(&self)->&reads::UnsealedReadData{&self.data}pub(super) fn serialize_data<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{self.data.serialize_data(serializer)}}
 impl Dependencies{pub(super) fn retained_charge(&self)->Option<usize>{self.data.retained_charge()?.checked_add(witness_charge(&self.witness)?)}pub(super) fn serialize_facts<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{self.data.serialize_facts(serializer)}}
 fn split<T>(result:Result<T,Failure>)->io::Result<Result<T,String>>{match result{Ok(value)=>Ok(Ok(value)),Err(Failure::Operational(actual))=>Err(actual),Err(Failure::Unsupported(message))=>Ok(Err(message))}}
 fn flatten<T>(result:io::Result<Result<T,String>>)->Result<T,Failure>{match result{Ok(Ok(value))=>Ok(value),Ok(Err(message))=>Err(Failure::Unsupported(message)),Err(actual)=>Err(Failure::Operational(actual))}}
 fn actual(value:&Value,p:&Params,loan:&super::reactive_workspace_operation::Loan,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>)->Result<bool,Failure>{if let Some(name)=p.semantic{return match value{Value::SemanticPolicy(value)=>Ok(value.name==name&&value.witness.matches(&loan.workspace,scope,loan.capture.policy())?),_=>Ok(false)}}if p.policy{return match value{Value::PolicyFacts(value)=>Ok(value.data.matches_compiled(loan.capture.policy())&&value.witness.matches(&loan.workspace,scope,loan.capture.policy())?),_=>Ok(false)}}if let Some(name)=p.generator{return match value{Value::FullArtifact(value)=>value.matches(name,loan,scope),_=>Ok(false)}}match(value,&p.request){
  (Value::Globals(value),Request::Globals)=>Ok(value.matches(loan.capture.policy())),
+ (Value::Globals(value),Request::UtilityGlobals)=>Ok(value.matches_utility(loan.capture.policy())),
  (Value::RawReads(value),Request::Read{receiver,procedure,context,flavor})=>Ok(value.data.matches_compiled(loan.capture.policy())&&value.data.matches_request(receiver,procedure,context.as_deref(),*flavor)&&value.witness.matches(&loan.workspace,scope,loan.capture.policy())?),
  (Value::RawDependencies(value),Request::Dependencies)=>Ok(value.data.matches_compiled(loan.capture.policy())&&value.witness.matches(&loan.workspace,scope,loan.capture.policy())?),_=>Ok(false)}}
 struct Pages<'reader,'capture,'scope>{reader:&'reader WorkspaceCodeReader<'capture,'scope>,inputs:&'reader dm_analysis::policy_inputs::PolicyInputs,witness:RefCell<Option<WorkspaceCodeWitness>>}
@@ -47,7 +48,7 @@ fn get_current(ctx:&mut dm_query::Ctx<'_>,p:Params,loan:&super::reactive_workspa
  // with_child delta transfer here would double charge these same allocations.
  ctx.get::<Result<Value,String>>(key,Arc::new(p)).map_err(finite::graph_failure)
 }
-fn policy_result(ctx:&mut dm_query::Ctx<'_>,p:&Params,loan:&super::reactive_workspace_operation::Loan,admission:&Admission)->Result<Arc<Result<Value,String>>,Failure>{let bytes=metadata(p,&Request::Globals).and_then(|n|n.checked_mul(4)).ok_or_else(||{loan.budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"shared policy parameters overflow"))})?;loan.budget.charge(bytes)?;let mut child=Params{semantic:None,generator:None,policy:true,selected_setter_tree:false,key:p.key,issuance:p.issuance,evidence:p.evidence,locator:p.locator,configuration:p.configuration,configuration_path:p.configuration_path.clone(),root:p.root.clone(),request:Request::Globals};child.key=key_for(&child,&child.request)?;get_current(ctx,child,loan,admission)}
+fn policy_result(ctx:&mut dm_query::Ctx<'_>,p:&Params,loan:&super::reactive_workspace_operation::Loan,admission:&Admission)->Result<Arc<Result<Value,String>>,Failure>{let bytes=metadata(p,&Request::Globals).and_then(|n|n.checked_mul(4)).ok_or_else(||{loan.budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"shared policy parameters overflow"))})?;loan.budget.charge(bytes)?;let mut child=Params{semantic:None,generator:None,policy:true,selected_setter_tree:false,key:p.key,issuance:p.issuance,evidence:p.evidence,locator:p.locator,configuration:p.configuration,configuration_path:p.configuration_path.clone(),root:p.root.clone(),request:if p.request.utility_contract(){Request::UtilityGlobals}else{Request::Globals}};child.key=key_for(&child,&child.request)?;get_current(ctx,child,loan,admission)}
 pub(super) fn compute(ctx:&mut dm_query::Ctx<'_>,p:&Params,charge:&AtomicUsize,admission:&Admission)->Result<Outcome,QueryError>{
  admission.abort.before_outcome(p.key)?;let loan=admission.current_workspace_operation(p.issuance,p.evidence).map_err(|actual|QueryError::operational(p.key,actual))?;
  let produced=flatten(loan.scope.with_context(ctx,&loan.workspace,loan.capture.policy(),|queries,scope,ctx|split(queries.with_workspace_code_pages_budget_locked(&loan.workspace,scope,&loan.budget,|reader|{
@@ -56,12 +57,13 @@ pub(super) fn compute(ctx:&mut dm_query::Ctx<'_>,p:&Params,charge:&AtomicUsize,a
   let config=ctx.input::<ConfigData>(p.configuration).map_err(finite::graph_failure)?;config.require_original(loan.capture.configuration_bytes(&p.configuration_path)?)?;
   if reader.configuration().1!=loan.capture.configuration_bytes(&p.configuration_path)?{return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"workspace/captured configuration differs")))}
   let poll=||crate::daemon::control::checkpoint();let context=RefCell::new(ctx);let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>|super::super::body_syntax::obtain(&mut context.borrow_mut(),input);
+  let utility_body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>|super::super::body_syntax::obtain_original_product(&mut context.borrow_mut(),input);
   if let Some(name @ (SemanticPolicyName::Tracked|SemanticPolicyName::TrackedTests))=p.semantic{let(data,witness)=reader.tracked_data(loan.capture.policy(),&config.config,name==SemanticPolicyName::TrackedTests,&body)?;return Ok(Value::SemanticPolicy(SemanticPolicy{name,data:SemanticData::Tracked(data),witness:SemanticWitness::Tracked(witness)}))}
   let order=if loan.capture.original_analysis_subject().is_some(){let manifest=loan.capture.untyped_manifest(reader.root())?;let bytes=match manifest{dq_analyze::captured_untyped::ManifestRead::CompiledOriginalBytes(bytes)|dq_analyze::captured_untyped::ManifestRead::OriginalBytes(bytes)=>Some(bytes),dq_analyze::captured_untyped::ManifestRead::ProvenUnavailable=>None,dq_analyze::captured_untyped::ManifestRead::Compiled=>return Err("Original generation marker order lacks actual original bytes".into())};reads::scoped_original_include_order_bytes(bytes,reader.budget(),&poll)?}else if loan.capture.policy().mapping().initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{let question=loan.workspace.semantic_order_question().ok_or("original semantic child has no selected fixed-manifest role")?;loan.workspace.with_semantic_manifest(scope,question,|bytes|reads::scoped_original_include_order_bytes(bytes,reader.budget(),&poll))?}else{reads::scoped_original_include_order(loan.capture.policy(),reader.root(),reader.budget())?};
   if p.semantic==Some(SemanticPolicyName::Lifeforms){let(data,witness)=reader.lifeforms_data(loan.capture.policy(),&order,&config.config,&poll,&body)?;return Ok(Value::SemanticPolicy(SemanticPolicy{name:SemanticPolicyName::Lifeforms,data:SemanticData::Lifeforms(data),witness:SemanticWitness::Code(witness)}))}
   let held=RefCell::new(None::<Arc<Result<Value,String>>>);let globals=|consume:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>|->Result<bool,Failure>{
    if held.borrow().is_none(){let bytes=metadata(p,&Request::Globals).and_then(|n|n.checked_mul(4)).ok_or_else(||{loan.budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"full globals child metadata overflow"))})?;loan.budget.charge(bytes)?;
-    let mut child=Params{semantic:None,generator:None,policy:false,selected_setter_tree:false,key:p.key,issuance:p.issuance,evidence:p.evidence,locator:p.locator,configuration:p.configuration,configuration_path:p.configuration_path.clone(),root:p.root.clone(),request:Request::Globals};child.key=key_for(&child,&child.request)?;
+    let mut child=Params{semantic:None,generator:None,policy:false,selected_setter_tree:false,key:p.key,issuance:p.issuance,evidence:p.evidence,locator:p.locator,configuration:p.configuration,configuration_path:p.configuration_path.clone(),root:p.root.clone(),request:if p.request.utility_contract(){Request::UtilityGlobals}else{Request::Globals}};child.key=key_for(&child,&child.request)?;
     let value=get_current(&mut context.borrow_mut(),child,&loan,admission)?;*held.borrow_mut()=Some(value);
    }let held=held.borrow();let value=held.as_ref().expect("actual globals child").as_ref().as_ref().map_err(|message|Failure::Unsupported(message.clone()))?;let Value::Globals(value)=value else{return Err("full globals child returned wrong role".into())};consume(value)
   };
@@ -120,12 +122,12 @@ pub(super) fn compute(ctx:&mut dm_query::Ctx<'_>,p:&Params,charge:&AtomicUsize,a
   };let witness=pages.witness.into_inner().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"semantic-read policy omitted original CODE EOF")))?;return Ok(Value::SemanticPolicy(SemanticPolicy{name,data:SemanticData::Read(data),witness:SemanticWitness::Code(witness)}))}
   if let Some(name)=p.generator{return full_generator::produce_generator(name,p,&loan,reader,scope,&pages,&order,&config.config,&dependencies,&policy,&read_provider,&poll,&body)}
   match &p.request{
-   Request::Read{receiver,procedure,context:binding,flavor}=>{let data=reads::read_data_from_pages_with_policy(loan.capture.policy(),reader.root(),&pages,&order,reader.budget(),&globals,&policy,receiver,procedure,binding.as_deref(),*flavor,&poll,&body)?;let held=held_policy.borrow();let value=held.as_ref().expect("policy loan retained while deriving read receipt").as_ref().as_ref().map_err(|message|Failure::Unsupported(message.clone()))?;let Value::PolicyFacts(value)=value else{return Err("read policy child role differs".into())};let witness=value.witness.reissue(&loan.workspace,scope,loan.capture.policy(),&mut|bytes|reader.budget().charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?;Ok(Value::RawReads(Read{data,witness}))},
+   Request::Read{receiver,procedure,context:binding,flavor}=>{let data=if p.request.utility_contract(){reads::utility_read_data_from_pages_with_policy(loan.capture.policy(),reader.root(),&pages,&order,reader.budget(),&globals,&policy,receiver,procedure,binding.as_deref(),*flavor,&poll,&utility_body)?}else{reads::read_data_from_pages_with_policy(loan.capture.policy(),reader.root(),&pages,&order,reader.budget(),&globals,&policy,receiver,procedure,binding.as_deref(),*flavor,&poll,&body)?};let held=held_policy.borrow();let value=held.as_ref().expect("policy loan retained while deriving read receipt").as_ref().as_ref().map_err(|message|Failure::Unsupported(message.clone()))?;let Value::PolicyFacts(value)=value else{return Err("read policy child role differs".into())};let witness=value.witness.reissue(&loan.workspace,scope,loan.capture.policy(),&mut|bytes|reader.budget().charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?;Ok(Value::RawReads(Read{data,witness}))},
    Request::Dependencies=>{
     let data=match selected_setter_files.as_ref(){
      Some(files)=>reads::dependency_data_from_pages_with_selected_setter_files(loan.capture.policy(),reader.root(),&pages,&order,reader.budget(),&globals,&read_provider,&policy,&poll,&body,files)?,
      None=>reads::dependency_data_from_pages_with_policy(loan.capture.policy(),reader.root(),&pages,&order,reader.budget(),&globals,&read_provider,&policy,&poll,&body)?,
-    };let witness=pages.witness.into_inner().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"dependency fold omitted actual completed raw traversal")))?;Ok(Value::RawDependencies(Dependencies{data,witness}))},Request::Globals=>reads::globals_native(loan.capture.policy(),reader.root(),reader.budget(),&poll,&body).map(Value::Globals)
+    };let witness=pages.witness.into_inner().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"dependency fold omitted actual completed raw traversal")))?;Ok(Value::RawDependencies(Dependencies{data,witness}))},Request::Globals=>reads::globals_native(loan.capture.policy(),reader.root(),reader.budget(),&poll,&body).map(Value::Globals),Request::UtilityGlobals=>reads::globals_native_utility(loan.capture.policy(),reader.root(),reader.budget(),&poll,&utility_body).map(Value::Globals)
   }
  }))));
  let result:Result<Value,String>=match produced{Ok(value)=>Ok(value),Err(Failure::Operational(actual))=>return Err(QueryError::operational(p.key,actual)),Err(Failure::Unsupported(message))=>return Err(QueryError::operational(p.key,semantic_failure(message,&loan.budget,&crate::daemon::control::checkpoint)))};
@@ -502,5 +504,66 @@ impl QueryDb{
   self.with_workspace_code_pages_limit_locked(workspace,guard,None,|reader|{reader.require_policy_inputs(capture.policy())?;capture.semantic_source_evidence().check(capture.policy().mapping())?;reader.budget().charge(2*std::mem::size_of::<usize>())?;let scope=Arc::new(guard.query_receipt(&mut|bytes|reader.budget().charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message)))?);
    flatten(scope.with_guard(self,workspace,capture.policy(),|_|split((||{let _operation=self.raw_policy.admission.bind_workspace_operation(reader.budget(),&scope,workspace,capture)?;let key=configuration_input(self,reader,capture)?;let config=self.db.input::<ConfigData>(key).ok_or("native FIX actual configuration absent")?;config.require_original(capture.configuration_bytes(reader.configuration().0)?)?;let targets=reader.tracked_fix_targets(capture.policy(),&config.config,mode,prefixes)?;let result=reader.with_held_source_work(|work|consume(targets,reader.budget(),work)).map_err(Failure::Operational)?;reader.require_policy_inputs(capture.policy())?;Ok(result)})())))
   }).map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
+ }
+}
+
+
+// Read-only ordinary utility: SAME Kind12 Targeted read, exact workspace/capture and active family admission.
+impl QueryDb{
+ pub(crate) fn with_original_sem_utility_read<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,receiver:&str,procedure:&str,consume:impl FnOnce(&reads::UnsealedReadData,&Arc<Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<T>)->io::Result<T>{
+  use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+  crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;
+  if !guard.uses_queries(self)||!workspace.matches_auxiliary_questions(&[Q::SemReads])||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(io::Error::new(io::ErrorKind::InvalidInput,"native sem reads needs its exact current Original workspace/QueryDb"))}
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_prune_locked(Instant::now());self.begin_result_admission_locked()?;
+  let pending=self.with_workspace_code_pages_limit_locked(workspace,guard,None,|reader|{
+   reader.require_policy_inputs(capture.policy())?;capture.semantic_source_evidence().check(capture.policy().mapping())?;
+   let bytes=receiver.len().checked_add(procedure.len()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(std::mem::size_of::<Request>()+2*std::mem::size_of::<usize>())).ok_or_else(||Failure::Operational(io::Error::from(io::ErrorKind::OutOfMemory)))?;
+   reader.budget().charge(bytes).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+   let scope=Arc::new(guard.query_receipt(&mut|n|reader.budget().charge(n).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m)))?);
+   let request=Request::Read{receiver:receiver.to_owned(),procedure:procedure.to_owned(),context:None,flavor:reads::Flavor::UtilityTargeted};
+   let produced=flatten(scope.with_guard(self,workspace,capture.policy(),|current|split(self.with_workspace_job_reader(workspace,&scope,capture,request,None,reader,current,|value|{
+    let Value::RawReads(value)=value else{return Err(io::Error::new(io::ErrorKind::InvalidData,"ordinary sem reads received another native result role"))};
+    reader.with_held_source_work(|work|consume(value.utility_data(),reader.budget(),work))
+   }))));
+   if matches!(&produced,Err(Failure::Operational(_))){return produced}reader.require_policy_inputs(capture.policy())?;if reader.budget().denied(){return Err(Failure::Operational(io::Error::from(io::ErrorKind::OutOfMemory)))}produced
+  });pending.map_err(|e|match e{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
+ }
+}
+
+
+/// Non-retained utility fact computation over the actual current workspace.
+/// Only the normal Kind4 product borrower is lent; callers must own their paid
+/// result buffers and keep the moved utility recorder through delivery.
+impl QueryDb{
+ pub(crate) fn with_original_utility_model<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,markers:bool,consume:impl FnOnce(&dm_analysis::policy_inputs::PolicyInputs,&std::path::Path,&Arc<Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork,&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::OriginalBodySyntaxProduct>,dm_tree::frontend::BodySyntaxFailure>,Option<(usize,std::time::Duration)>)->Result<T,Failure>)->io::Result<T>{
+  crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;
+  if !guard.uses_queries(self)||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(io::Error::new(io::ErrorKind::InvalidInput,"utility model loan differs from actual Original query owner"))}
+  let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_prune_locked(Instant::now());self.begin_result_admission_locked()?;
+  let pending=self.with_workspace_code_pages_limit_locked(workspace,guard,None,|reader|{
+   reader.require_policy_inputs(capture.policy())?;capture.semantic_source_evidence().check(capture.policy().mapping())?;
+   let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>|dm_tree::frontend::BodySyntaxQueries::syntax_product_checked(self,input);
+   // Raw pages use the same input ledger for current headroom and must finish
+   // before its resource-only mutable loan takes raw_sources. Only the completed
+   // count/timing crosses that loan; no file, view or traversal alias does.
+   let marker=if markers{
+    let started=Instant::now();let pages=Pages{reader,inputs:capture.policy(),witness:RefCell::new(None)};
+    let count=dq_analyze::captured_sem_utility_prelude::marker_count_pages(&pages,reader.budget(),&||crate::daemon::control::checkpoint())?;
+    if pages.witness.borrow().is_none(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"utility marker raw traversal omitted actual completion")))}
+    drop(pages);Some((count,started.elapsed()))
+   }else{None};
+   let produced=flatten(reader.with_held_source_work(|work|split(consume(capture.policy(),reader.root(),reader.budget(),work,&body,marker))));
+   if matches!(&produced,Err(Failure::Operational(_))){return produced}reader.require_policy_inputs(capture.policy())?;capture.semantic_source_evidence().check(capture.policy().mapping())?;
+   if reader.budget().denied(){return Err(Failure::Operational(io::ErrorKind::OutOfMemory.into()))}produced
+  });pending.map_err(|e|match e{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
+ }
+}
+
+
+impl QueryDb{
+ pub(crate)fn with_original_utility_pages<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,consume:impl FnOnce(&dm_analysis::policy_inputs::PolicyInputs,&std::path::Path,&dyn dq_analyze::reactive_raw_policy_pages::RawPolicyPages,&std::collections::HashMap<String,usize>,&Arc<Budget>,&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::OriginalBodySyntaxProduct>,dm_tree::frontend::BodySyntaxFailure>,&dyn dq_analyze::native_pattern::Provider)->Result<T,Failure>)->io::Result<T>{
+  crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;if !guard.uses_queries(self)||capture.policy().mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(io::Error::new(io::ErrorKind::InvalidInput,"utility pages differ from actual Original host"))}let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());self.raw_prune_locked(Instant::now());self.begin_result_admission_locked()?;
+  let result=self.with_workspace_code_pages_limit_locked(workspace,guard,None,|reader|{reader.require_policy_inputs(capture.policy())?;capture.semantic_source_evidence().check(capture.policy().mapping())?;let poll=||crate::daemon::control::checkpoint();let manifest=capture.untyped_manifest(reader.root())?;let bytes=match manifest{dq_analyze::captured_untyped::ManifestRead::CompiledOriginalBytes(bytes)|dq_analyze::captured_untyped::ManifestRead::OriginalBytes(bytes)=>Some(bytes),dq_analyze::captured_untyped::ManifestRead::ProvenUnavailable=>None,dq_analyze::captured_untyped::ManifestRead::Compiled=>return Err("utility marker order lacks actual original manifest bytes".into())};let order=reads::scoped_original_include_order_bytes(bytes,reader.budget(),&poll)?;let pages=Pages{reader,inputs:capture.policy(),witness:RefCell::new(None)};let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>|dm_tree::frontend::BodySyntaxQueries::syntax_product_checked(self,input);
+   let result=reader.with_utility_patterns(|patterns|consume(capture.policy(),reader.root(),&pages,&order,reader.budget(),&body,patterns));if matches!(&result,Err(Failure::Operational(_))){return result}if pages.witness.borrow().is_none(){return Err("utility raw facts did not reach actual selected source EOF".into())}reader.require_policy_inputs(capture.policy())?;capture.semantic_source_evidence().check(capture.policy().mapping())?;result
+  });result.map_err(|error|match error{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
  }
 }

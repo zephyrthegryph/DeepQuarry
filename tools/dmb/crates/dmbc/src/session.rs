@@ -11,7 +11,9 @@ use std::sync::Arc;
 
 // Schema 4 also carries successful diagnostic bytes for unchanged replay. Older
 // immutable records remain on disk and are rejected as disposable cache hints.
-const SCHEMA: u32 = 5;
+// Schema 6 adds the separate optional-callback read role to embedded
+// InputSnapshot binary layouts; prior immutable records are disposable misses.
+const SCHEMA: u32 = 6;
 const MAX_RECORD_BYTES: u64 = 32 * 1024 * 1024;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -908,5 +910,42 @@ mod tests {
             3
         )
         .is_err());
+    }
+}
+
+
+#[cfg(test)]
+mod optional_snapshot_format_tests {
+    use super::*;
+
+    #[test]
+    fn actual_session_reader_refuses_previous_snapshot_envelope_and_recovers_current() {
+        let root = crate::test_scratch::dir("optional-snapshot-session-schema");
+        let manifest = root.join("project.dme");
+        fs::write(&manifest, b"/datum/example\n").unwrap();
+        let configuration = Configuration::new(&root, &manifest, BTreeMap::new(), 1, 2, 3).unwrap();
+        let records = SessionRecords::open(configuration.clone()).unwrap();
+        let recording = crate::input_snapshot::RecordingInputs::new(
+            crate::input_snapshot::FileSystemInputs, 0);
+        recording.read_binary(&configuration.manifest).unwrap();
+        let record = Record { warnings: Vec::new(), inputs: recording.into_snapshot().unwrap(),
+            pair: 19, outputs: None, resource_manifest: None };
+        let mut envelope = Envelope { schema: 5, configuration, record };
+        // The old outer format is rejected before interpreting the positional
+        // snapshot payload, even if a payload happens to decode in this image.
+        let old = dm_wire::encode(5, &envelope).unwrap();
+        let old_id = xxhash_rust::xxh3::xxh3_128(&old);
+        fs::write(records.directory.join(format!("{old_id:032x}.bin")), old).unwrap();
+        assert!(records.prior(old_id).unwrap().is_none());
+        // A forged current wire tag cannot bypass the independent envelope pin.
+        let mismatched = dm_wire::encode(SCHEMA, &envelope).unwrap();
+        let mismatched_id = xxhash_rust::xxh3::xxh3_128(&mismatched);
+        fs::write(records.directory.join(format!("{mismatched_id:032x}.bin")), mismatched).unwrap();
+        assert!(records.prior(mismatched_id).unwrap().is_none());
+        envelope.schema = SCHEMA;
+        let current = dm_wire::encode(SCHEMA, &envelope).unwrap();
+        let current_id = xxhash_rust::xxh3::xxh3_128(&current);
+        fs::write(records.directory.join(format!("{current_id:032x}.bin")), current).unwrap();
+        assert_eq!(records.prior(current_id).unwrap().unwrap().pair, 19);
     }
 }

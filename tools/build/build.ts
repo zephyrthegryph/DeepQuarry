@@ -97,7 +97,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
-import { cargoWithIceRetry as runCargoWithIceRetry } from './lib/cargo_ice';
+import { cargoIncrementalEnv, cargoWithIceRetry as runCargoWithIceRetry } from './lib/cargo_ice';
 import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 import { planPrewarm, runPrewarmBuild, warmAndPromote, type PrewarmDecision } from './lib/dmbc_prewarm';
 
@@ -119,7 +119,7 @@ export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 const cargoExec = (args: string[], options?: any) =>
   withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => cargoWithIceRetry(args, options), (m) => Juke.logger.info(m));
 
-/** One cargo run under the lane incremental policy (lib/cargo_ice.ts): the profile decides, a rustc panic deletes the target's incremental
+/** One cargo run under the lane incremental policy (lib/cargo_ice.ts): always incremental, a rustc panic deletes the target's incremental
  * directories and retries once. */
 const cargoWithIceRetry = (args: string[], options?: any): Promise<void> =>
   runCargoWithIceRetry(args, options, {
@@ -1034,6 +1034,24 @@ export const AnalyzeTestTarget = new Juke.Target({
   },
 });
 
+// Explicit opt-in qualification route. The ordinary production Analyze target
+// and cache/default binary selection remain unchanged until qualification.
+const ANALYZE_NATIVE_BIN = `${ANALYZE_DIR}/${ANALYZE_PROFILE}/${process.platform === 'win32' ? 'analyze-native.exe' : 'analyze-native'}`;
+export const AnalyzeNativeBuildTarget = new Juke.Target({
+  executes: async () => {
+    await cargoExec(['build', '--profile', ANALYZE_PROFILE, '--manifest-path', 'tools/analyze/Cargo.toml', '-p', 'dq-analyze-client', '--bin', 'analyze-native']);
+    if (!fs.existsSync(ANALYZE_NATIVE_BIN)) throw new Error('native Analyze client artifact missing after successful build');
+  },
+});
+export const AnalyzeNativeTarget = new Juke.Target({
+  dependsOn: () => [AnalyzeNativeBuildTarget, DmbcTarget],
+  executes: async ({ args }) => {
+    const compiler = dmbcBinOverride() || process.env.DQ_NATIVE_COMPILER || sharedDmbcExe('dmbc');
+    if (!path.isAbsolute(compiler) || !fs.existsSync(compiler)) throw new Error('actual resolved native compiler is not an existing absolute executable');
+    await Juke.exec(ANALYZE_NATIVE_BIN, ['ordinary', ...(args || [])], { env: { ...process.env, DQ_DMBC_BIN: compiler } });
+  },
+});
+
 export const AnalyzeTarget = new Juke.Target({
   dependsOn: [AnalyzeBuildTarget, GenTarget], // some lints read the generated DM (sem/reads)
   executes: async ({ args }) => {
@@ -1148,13 +1166,13 @@ export const DmbcTarget = new Juke.Target({
     const target = privateBuild ? devCompilerDir() : sharedDmbcBuildTarget();
     const runCargo = (args: string[], extraEnv: Record<string, string> = {}) =>
       fs.existsSync(slots)
-        ? Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...args], { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv }, throw: false })
-        : Juke.exec(args[0], args.slice(1), { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv }, throw: false });
+        ? Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...args], { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv, ...cargoIncrementalEnv(process.env, 'lane') }, throw: false })
+        : Juke.exec(args[0], args.slice(1), { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv, ...cargoIncrementalEnv(process.env, 'lane') }, throw: false });
     let result = await runCargo(cargo);
     if (result.code !== 0 && staleCargoArtifactSignature(result.combined ?? '')) {
       // The one shared target is written by builds of different checkouts and revisions. A compile error that says a method or item
       // that exists in the source is missing ("no method named evict_to_budget") is stale incremental or fingerprint state, not a
-      // code error: drop the workspace crates' artifacts and the incremental cache and build once more, non-incrementally.
+      // code error: drop the workspace crates' artifacts and the incremental cache and build once more with the same always-incremental policy.
       Juke.logger.warn('dmbc: the cargo build failed with a stale-artifact signature; cleaning the workspace crates and retrying once');
       const meta = spawnSync('cargo', ['metadata', '--no-deps', '--format-version', '1', '--manifest-path', 'tools/dmb/Cargo.toml'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, CARGO_TARGET_DIR: target } });
       let names: string[] = [];
@@ -1165,7 +1183,7 @@ export const DmbcTarget = new Juke.Target({
       }
       fs.rmSync(`${target}/release/incremental`, { recursive: true, force: true });
       if (names.length) await runCargo(['cargo', 'clean', '--release', '--manifest-path', 'tools/dmb/Cargo.toml', ...names.flatMap((n) => ['-p', n])]);
-      result = await runCargo(cargo, { CARGO_INCREMENTAL: '0' });
+      result = await runCargo(cargo);
     }
     if (result.code !== 0) throw new Error(`dmbc: cargo build failed (exit ${result.code})`);
     if (privateBuild) {

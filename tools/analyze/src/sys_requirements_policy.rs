@@ -1,4 +1,5 @@
 //! Unique original inline-refusal lexical effects, merge and judge; no source authority.
+use crate::raw_fixture_policy::PatternApi as _;
 use std::collections::{BTreeMap,BTreeSet};
 use crate::{incr,tree::{SourceFile,Tree},util::{is_py_space,py_rstrip,py_strip},pat,pat_match,pat::Pat,key_policy_control::Control};
 fn decl_re() -> &'static Pat {
@@ -63,19 +64,20 @@ fn related(a: &str, b: &str) -> bool {
 
 /// proc name -> set of declaring types.
 pub fn effects_of(f:&SourceFile)->Vec<(String,String)>{effects_of_using(f,&mut crate::key_policy_control::Compatibility,&mut crate::key_policy_control::Compatibility).expect("original requirements effects")}
-pub fn effects_of_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T)->Result<Vec<(String,String)>,C::Error>{keep.checkpoint()?;crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(256)?.checked_add(4096))?;
+pub fn effects_of_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T)->Result<Vec<(String,String)>,C::Error>{effects_of_using_with_fixture(f,keep,temp,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn effects_of_using_with_fixture<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<Vec<(String,String)>,C::Error>{keep.checkpoint()?;crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(256)?.checked_add(4096))?;
     let mut found: BTreeSet<(&str,&str)> = BTreeSet::new();
     {
         let mut decl: Option<&str> = None;
         let mut datum = false;
         for line in f.raw().lines() {
             keep.checkpoint()?;
-            if let Some(m) = decl_re().captures(line) {
+            if let Some(m) = fixture.pattern(r"\b(?:DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\(\s*(/[\w/]+)",crate::raw_fixture_policy::PatternMode::Search,decl_re).captures(line) {
                 decl = Some(m.s(1));
             }
             if let Some(d) = &decl {
-                if pat!(r"\bINTERACT_[A-Z_]+\(").is_match(line) || decl_re().is_match(line) {
-                    for r in pat!(r"\b(?:PROC_REF|TYPE_PROC_REF\([^,]*,)\s*\(?\s*(\w+)\s*\)|\.proc/(\w+)").captures_iter(line) {
+                if fixture.pattern(r"\bINTERACT_[A-Z_]+\(",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"\bINTERACT_[A-Z_]+\(")).is_match(line) || fixture.pattern(r"\b(?:DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\(\s*(/[\w/]+)",crate::raw_fixture_policy::PatternMode::Search,decl_re).is_match(line) {
+                    for r in fixture.pattern(r"\b(?:PROC_REF|TYPE_PROC_REF\([^,]*,)\s*\(?\s*(\w+)\s*\)|\.proc/(\w+)",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"\b(?:PROC_REF|TYPE_PROC_REF\([^,]*,)\s*\(?\s*(\w+)\s*\)|\.proc/(\w+)")).captures_iter(line) {
                         keep.checkpoint()?;
                         let name = if r.matched(1) && !r.s(1).is_empty() { r.s(1) } else { r.s(2) };
                         if !found.contains(&(name,*d)){crate::key_policy_control::reserve(temp,||Some(2048))?;found.insert((name,*d));}
@@ -86,10 +88,10 @@ pub fn effects_of_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:
                 decl = None;
             }
             if !line.is_empty() && !line.chars().next().map(is_py_space).unwrap_or(false) {
-                datum = pat_match!(r"^(/datum/interaction[\w/]*)\s*$").is_match(line);
+                datum = fixture.pattern(r"^(/datum/interaction[\w/]*)\s*$",crate::raw_fixture_policy::PatternMode::Match,||pat_match!(r"^(/datum/interaction[\w/]*)\s*$")).is_match(line);
             }
             if datum {
-                if let Some(m) = pat_match!(r"^\s+effect\s*=\s*(/[\w/]+?)/(?:proc/)?(\w+)\s*(?://.*)?$").captures(line) {
+                if let Some(m) = fixture.pattern(r"^\s+effect\s*=\s*(/[\w/]+?)/(?:proc/)?(\w+)\s*(?://.*)?$",crate::raw_fixture_policy::PatternMode::Match,||pat_match!(r"^\s+effect\s*=\s*(/[\w/]+?)/(?:proc/)?(\w+)\s*(?://.*)?$")).captures(line) {
                     if !found.contains(&(m.s(2),m.s(1))){crate::key_policy_control::reserve(temp,||Some(2048))?;found.insert((m.s(2),m.s(1)));}
                 }
             }
@@ -120,25 +122,25 @@ fn statements(body: &[(usize, &str)]) -> Vec<Stmt> {
 }
 
 /// TRUE when the statements only say no (a message, maybe a sound) and end in return.
-fn only_refusal(parts: &[String]) -> bool {
-    if parts.is_empty() || !return_re().is_match(&parts[parts.len() - 1]) {
+fn only_refusal(parts: &[String],fixture:&crate::raw_fixture_policy::Fixture<'_>) -> bool {
+    if parts.is_empty() || !fixture.pattern(r"^return\b",crate::raw_fixture_policy::PatternMode::Match,return_re).is_match(&parts[parts.len() - 1]) {
         return false;
     }
     let mut told = false;
     for part in parts {
-        if message_re().is_match(part) {
+        if fixture.pattern(r"\b(?:to_chat|balloon_alert|visible_message|audible_message|show_message|balloon_alert_to_viewers)\s*\(",crate::raw_fixture_policy::PatternMode::Search,message_re).is_match(part) {
             told = true;
-            if !pat_match!(
+            if !fixture.pattern(r"^[\w.?\[\]]*\s*(?:to_chat|balloon_alert|visible_message|audible_message|show_message|balloon_alert_to_viewers)\s*\(",crate::raw_fixture_policy::PatternMode::Match,||pat_match!(
                 r"^[\w.?\[\]]*\s*(?:to_chat|balloon_alert|visible_message|audible_message|show_message|balloon_alert_to_viewers)\s*\("
-            )
+            ))
             .is_match(part)
-                && !return_re().is_match(part)
+                && !fixture.pattern(r"^return\b",crate::raw_fixture_policy::PatternMode::Match,return_re).is_match(part)
             {
                 return false;
             }
-        } else if return_re().is_match(part) {
+        } else if fixture.pattern(r"^return\b",crate::raw_fixture_policy::PatternMode::Match,return_re).is_match(part) {
             continue;
-        } else if !quiet_re().is_match(part) {
+        } else if !fixture.pattern(r"^(?:playsound|SEND_SOUND)\s*\(",crate::raw_fixture_policy::PatternMode::Match,quiet_re).is_match(part) {
             return false;
         }
     }
@@ -184,14 +186,15 @@ fn guard_parts(stmt: &Stmt) -> Option<(String, Vec<String>)> {
 }
 
 pub fn judge(f:&SourceFile,effects:&Effects)->Vec<(&'static str,String,usize)>{judge_using(f,effects,&mut crate::key_policy_control::Compatibility,&mut crate::key_policy_control::Compatibility).expect("original requirements judge")}
-pub fn judge_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,effects:&Effects,keep:&mut C,temp:&mut T)->Result<Vec<(&'static str,String,usize)>,C::Error>{keep.checkpoint()?;let mut width=0usize;for types in effects.values(){for ty in types{keep.checkpoint()?;width=width.max(ty.len());}}crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(256)?.checked_add(width.checked_mul(8)?)?.checked_add(4096))?;
+pub fn judge_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,effects:&Effects,keep:&mut C,temp:&mut T)->Result<Vec<(&'static str,String,usize)>,C::Error>{judge_using_with_fixture(f,effects,keep,temp,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn judge_using_with_fixture<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,effects:&Effects,keep:&mut C,temp:&mut T,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<Vec<(&'static str,String,usize)>,C::Error>{keep.checkpoint()?;let mut width=0usize;for types in effects.values(){for ty in types{keep.checkpoint()?;width=width.max(ty.len());}}crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(256)?.checked_add(width.checked_mul(8)?)?.checked_add(4096))?;
     let mut out: Vec<(&'static str, String, usize)> = Vec::new();
     {
         let rel = f.rel.as_str();
         let lines = f.raw().lines_vec();
         for (idx, line) in lines.iter().enumerate() {
             keep.checkpoint()?;
-            if pat!(r"\bREFUSE_IF\s*\(").is_match(&strip(line)) && !line.contains("#define") {
+            if fixture.pattern(r"\bREFUSE_IF\s*\(",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"\bREFUSE_IF\s*\(")).is_match(&strip(line)) && !line.contains("#define") {
                 crate::raw_tree_report::row(keep,&mut out)?;out.push(("inline_refusal",crate::raw_tree_report::own(keep,rel)?,idx+1));
             }
         }
@@ -200,7 +203,7 @@ pub fn judge_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,effects:&E
         while i < n {
             keep.checkpoint()?;
             let line = lines[i];
-            let Some(m) = pat_match!(r"^(/[\w/]+?)/(?:proc/|verb/)?(\w+)\s*\(").captures(line) else {
+            let Some(m) = fixture.pattern(r"^(/[\w/]+?)/(?:proc/|verb/)?(\w+)\s*\(",crate::raw_fixture_policy::PatternMode::Match,||pat_match!(r"^(/[\w/]+?)/(?:proc/|verb/)?(\w+)\s*\(")).captures(line) else {
                 i += 1;
                 continue;
             };
@@ -222,28 +225,28 @@ pub fn judge_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,effects:&E
             for (k, stmt) in stmts.iter().enumerate() {
                 keep.checkpoint()?;
                 let code = stmt[0].1.as_str();
-                if code.starts_with("var/") && acting_re().is_match(code) {
+                if code.starts_with("var/") && fixture.pattern(r"\b(?:drop_from_inventory|unEquip|drop_item|drop_held_item|put_in_\w+|remove_from_mob|use|use_charge|checked_use|use_tool|do_after|do_mob|tgui_\w+|input|alert|forceMove|try_\w+|attempt_\w+|consume\w*|transfer\w*|insert_item|user_unbuckle_mob|buckle_mob|Move|rerun_ask|om_ask|prob|rand|CLUMSY_FAIL_CHANCE|remove_fuel|use_resource|spend\w*|pay\w*|charge|om_task_timed)\s*\(",crate::raw_fixture_policy::PatternMode::Search,acting_re).is_match(code) {
                     break; // a local that asks the player or acts: what follows validates the outcome
                 }
                 if code.starts_with("var/") || code.starts_with("set ") || code.starts_with("SHOULD_") || code.starts_with("SIGNAL_HANDLER") {
                     continue;
                 }
-                if !pat_match!(r"^if\s*\(").is_match(code) {
+                if !fixture.pattern(r"^if\s*\(",crate::raw_fixture_policy::PatternMode::Match,||pat_match!(r"^if\s*\(")).is_match(code) {
                     break;
                 }
-                if k + 1 < stmts.len() && pat_match!(r"^else\b").is_match(&stmts[k + 1][0].1) {
+                if k + 1 < stmts.len() && fixture.pattern(r"^else\b",crate::raw_fixture_policy::PatternMode::Match,||pat_match!(r"^else\b")).is_match(&stmts[k + 1][0].1) {
                     break;
                 }
                 let Some((cond, parts)) = guard_parts(stmt) else { break };
-                if acting_re().is_match(&cond) {
+                if fixture.pattern(r"\b(?:drop_from_inventory|unEquip|drop_item|drop_held_item|put_in_\w+|remove_from_mob|use|use_charge|checked_use|use_tool|do_after|do_mob|tgui_\w+|input|alert|forceMove|try_\w+|attempt_\w+|consume\w*|transfer\w*|insert_item|user_unbuckle_mob|buckle_mob|Move|rerun_ask|om_ask|prob|rand|CLUMSY_FAIL_CHANCE|remove_fuel|use_resource|spend\w*|pay\w*|charge|om_task_timed)\s*\(",crate::raw_fixture_policy::PatternMode::Search,acting_re).is_match(&cond) {
                     continue;
                 }
-                if parts.is_empty() || (!return_re().is_match(&parts[parts.len() - 1]) && !return_re().is_match(&parts[0])) {
+                if parts.is_empty() || (!fixture.pattern(r"^return\b",crate::raw_fixture_policy::PatternMode::Match,return_re).is_match(&parts[parts.len() - 1]) && !fixture.pattern(r"^return\b",crate::raw_fixture_policy::PatternMode::Match,return_re).is_match(&parts[0])) {
                     break;
                 }
-                if only_refusal(&parts) || (parts.len() == 1 && return_re().is_match(&parts[0]) && message_re().is_match(&parts[0])) {
+                if only_refusal(&parts,fixture) || (parts.len() == 1 && fixture.pattern(r"^return\b",crate::raw_fixture_policy::PatternMode::Match,return_re).is_match(&parts[0]) && fixture.pattern(r"\b(?:to_chat|balloon_alert|visible_message|audible_message|show_message|balloon_alert_to_viewers)\s*\(",crate::raw_fixture_policy::PatternMode::Search,message_re).is_match(&parts[0])) {
                     crate::raw_tree_report::row(keep,&mut out)?;out.push(("inline_refusal",crate::raw_tree_report::own(keep,rel)?,stmt[0].0));
-                } else if !parts.iter().all(|p| return_re().is_match(p) || quiet_re().is_match(p)) {
+                } else if !parts.iter().all(|p| fixture.pattern(r"^return\b",crate::raw_fixture_policy::PatternMode::Match,return_re).is_match(p) || fixture.pattern(r"^(?:playsound|SEND_SOUND)\s*\(",crate::raw_fixture_policy::PatternMode::Match,quiet_re).is_match(p)) {
                     // A branch that does work (another action of a multi-purpose effect) ends the head.
                     break;
                 }

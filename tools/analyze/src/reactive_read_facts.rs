@@ -58,20 +58,9 @@ pub struct Read {
 
 impl Read {
     /// `cell.charge` on the holder, `@actor:hands[].name` through a context hop.
-    pub fn key(&self) -> String {
-        let mut s = String::new();
-        if self.root != "holder" {
-            s.push('@');
-            s.push_str(&self.root);
-            s.push(':');
-        }
-        for h in &self.hops {
-            s.push_str(h);
-            s.push('.');
-        }
-        s.push_str(&self.var);
-        s
-    }
+    pub fn key(&self) -> String { self.key_display().to_string() }
+    /// Same key text, streamed without a temporary owned formatting buffer.
+    pub fn key_display(&self) -> ReadKey<'_> { ReadKey(self) }
 }
 
 /// Something the analysis could not resolve, or a rule violation found while walking a body.
@@ -213,3 +202,7 @@ pub fn try_narrow_candidates<E>(narrow:&std::collections::HashMap<String,Vec<Str
  for list in narrow.values(){for candidate in list{if subtype(candidate,ty)?{if let Some(admit)=admit.as_mut(){admit(&mut out,candidate)?;}out.push(candidate.clone());}}}
  Ok((!out.is_empty()).then_some(out))
 }
+
+/// Borrowed DATA formatter over the actual shared read record.
+pub struct ReadKey<'a>(&'a Read);
+impl std::fmt::Display for ReadKey<'_>{fn fmt(&self,out:&mut std::fmt::Formatter<'_>)->std::fmt::Result{let value=self.0;if value.root!="holder"{write!(out,"@{}:",value.root)?}for hop in &value.hops{write!(out,"{hop}.")?}out.write_str(&value.var)}}

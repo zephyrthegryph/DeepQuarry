@@ -1,5 +1,5 @@
 """Compare only captured private artifacts. Never open source/oracle after the observation."""
-from pathlib import Path,PureWindowsPath
+from pathlib import Path,PureWindowsPath,PurePosixPath
 import argparse,hashlib,json,re,struct
 BOUND=64*1024*1024
 NAMES=['actions','auto_tracked','declare_ids','declare','deps','derived_reads','plans','reads','stats','system_accessors','tracked_lists','ui_types']
@@ -68,7 +68,9 @@ def analyze(c,expected_bodies):
  require(h['analysis_context']=='original_analyze0290','actual Original Analyze environment')
  require(h['full_checker_parity']is False and h['full_policy_parity']is False,'producer cannot assert independent parity')
  binding=h['binding'];require(binding['options']==dict(raw=mode=='raw',ci=mode=='ci',unused=True),'actual options differ')
- scope=checker['scope_completion'];require(scope['scope']=='whole_input_current_ordered_producers'and scope['visited_bodies']==expected_bodies and scope['completed_phase_order']==PHASES,'whole actual BODY/phase traversal not completed')
+ roster=binding['original_archive_bodies'];require(type(roster)is int and roster>0,'actual original archive input roster count absent or invalid')
+ if expected_bodies is not None:require(roster==expected_bodies,'independently supplied original archive count differs from observed input roster')
+ scope=checker['scope_completion'];require(scope['scope']=='whole_input_current_ordered_producers'and scope['visited_bodies']==roster and scope['completed_phase_order']==PHASES,'whole actual BODY/phase traversal not completed')
  for key in ['semantic_revision','source_revision']:
   require(binding['frame'][key]==binding['checker_frame'][key]==checker[key],'mixed native report/Checker frame')
  inputs=c.json('combined-preparation-inputs.json');require('policy_directories'in inputs and 'files'in inputs and 'negative_files'in inputs,'actual combined closure categories absent')
@@ -78,13 +80,25 @@ def analyze(c,expected_bodies):
  require((invocation['status']==0)==c.capture['native_clean']==binding['clean'],'dirty/clean status differs')
  equal=old==new and old_err==new_err
  return dict(scope='whole actual observed input frame; independent Analyze '+mode+' only',completed=True,exact_stdout_equal=old==new,exact_stderr_equal=old_err==new_err,all_rows_equal=equal,reference=old_rows,native=new_rows,actual_visited_bodies=scope['visited_bodies'],full_checker_parity=False,whole_policy_qualified=equal)
-def expected_generator_text(rows,diags,names):
+def expected_generator_text(rows,diags,names,diagnostic_only_ui_root=None):
  out=[]
  for name in names:
   group=[row for row in rows if row['generator']==name];findings=[d for d in diags if d['generator']==name]
   # Ordinary GenOut.diags attaches to the last files() result for these two producers.
   position=len(group)-1 if name in ('derived_reads','ui_types')else 0
-  require(bool(group)or not findings,'missing real synthetic diagnostic row')
+  if not group and findings:
+   require(name=='ui_types' and diagnostic_only_ui_root is not None,'missing real generator output row')
+   # The caller supplies this DATA label only AFTER all12 sealed journal
+   # witnesses, exact desired/target roster and diagnostics have validated.
+   # Match PathBuf::join display without normalizing captured root spelling.
+   root=diagnostic_only_ui_root
+   require(isinstance(root,str) and (PureWindowsPath(root).is_absolute()or PurePosixPath(root).is_absolute()),'captured absolute UI display root absent')
+   separator='\\'if PureWindowsPath(root).is_absolute()else'/'
+   has_separator=root.endswith(('\\','/'))if separator=='\\'else root.endswith('/')
+   display=root+(''if has_separator else separator)+'tgui/packages/tgui/interfaces/generated'
+   for d in findings:out.append(f"{d['relative']}:{d['line']}: [gen/{name}] {d['message']}\n")
+   out.append(f'fresh {display}\n')
+   continue
   for i,row in enumerate(group):
    if i==position:
     for d in findings:out.append(f"{d['relative']}:{d['line']}: [gen/{name}] {d['message']}\n")
@@ -126,18 +140,20 @@ def generation(c):
  require(len(final_names)==12 and set(final_names)==set(NAMES),'final phase witnesses do not complete exactly all12')
  require(sorted(final_diagnostics,key=lambda row:row['generator'])==diags,'whole ordered generation diagnostics differ from actual final journals')
  require(set(journal_files)=={(row['generator'],row['path'])for row in rows},'report/desired file roster mismatch')
+ # No physical row may be invented: this label is only legacy report text.
+ diagnostic_only_ui_root=c.capture['root']if 'ui_types'in final_names and not any(row['generator']=='ui_types'for row in rows)and any(d['generator']=='ui_types'for d in diags)else None
  comparisons=[];all_equal=True;stderr_empty=True
  for index in range(6):
   names=NAMES[index*2:index*2+2];label=f'legacy-gen-{index}';invocation=c.invocation(label)
   require(invocation['arguments']==['gen','--check','--root',c.capture['root'],*names],'missing/changed actual reference generator names')
-  expected=expected_generator_text(rows,diags,names);actual=c.data(label+'.stdout');error=c.data(label+'.stderr')
+  expected=expected_generator_text(rows,diags,names,diagnostic_only_ui_root);actual=c.data(label+'.stdout');error=c.data(label+'.stderr')
   expected_status=int(any(row['state']!='fresh'for row in rows if row['generator']in names)or any(d['generator']in names for d in diags))
   equal=actual==expected and invocation['status']==expected_status;all_equal &= equal;stderr_empty &= not error
   comparisons.append(dict(names=names,exact_stdout_equal=actual==expected,status_equal=invocation['status']==expected_status,stderr_empty=not error,expected_stdout=expected.decode('utf8'),actual_stdout=actual.decode('utf8'),actual_stderr=error.decode('utf8')))
  qualified=all_equal and stderr_empty and not byte_gaps
  return dict(scope='all12 actual CHECK source/target/desired journal observations',completed=True,all12_roles_completed=True,all_ordered_state_finding_output_bytes_equal=all_equal,reference_preparation_stderr_empty=stderr_empty,exact_desired_bytes_qualified=qualified,whole_generation_qualified=qualified,target_checks=target_checks,desired_byte_gaps=byte_gaps,comparisons=comparisons,full_checker_parity=False,universal_parity=False)
 def main():
- a=argparse.ArgumentParser();a.add_argument('capture',type=Path);a.add_argument('--expected-bodies',type=int,required=True);a=a.parse_args();require(a.expected_bodies>0,'positive actual frozen roster count required')
+ a=argparse.ArgumentParser();a.add_argument('capture',type=Path);a.add_argument('--expected-bodies',type=int);a=a.parse_args();require(a.expected_bodies is None or a.expected_bodies>0,'positive independently supplied roster count required')
  try:
   c=Captured(a.capture);result=generation(c)if c.capture['mode']=='gen'else analyze(c,a.expected_bodies);c.verify_again();result['capture_sha256']=c.capture_sha256;result['qualification_only']=True
  except(Exception)as error:

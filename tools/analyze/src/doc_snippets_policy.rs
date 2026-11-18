@@ -120,7 +120,7 @@ fn blocks_in_using<C:Control>(rel:&str,text:&str,control:&mut C)->Result<Vec<Blo
     let mut i = 0usize;
     while i < lines.len() {
         control.checkpoint()?;
-        let Some(m) = pat_match!(r"(\s*)```dm(?:\s+(\w+))?\s*$").captures(lines[i]) else {
+        let Some(m) = crate::key_policy_control::captures_match_static(control,r"(\s*)```dm(?:\s+(\w+))?\s*$",lines[i],||pat_match!(r"(\s*)```dm(?:\s+(\w+))?\s*$"))? else {
             i += 1;
             continue;
         };
@@ -128,7 +128,7 @@ fn blocks_in_using<C:Control>(rel:&str,text:&str,control:&mut C)->Result<Vec<Blo
         let tag = match m.get(2){Some(value)=>Some(crate::key_policy_control::own(control,value)?),None=>None};
         let mut j = i + 1;
         let mut body = Vec::new();
-        while j < lines.len() && !pat_match!(r"\s*```\s*$").is_match(lines[j]) {
+        while j < lines.len() && !crate::key_policy_control::is_match_match_static(control,r"\s*```\s*$",lines[j],||pat_match!(r"\s*```\s*$"))? {
             control.checkpoint()?;
             let line = lines[j];
             crate::key_policy_control::reserve(control,||line.len().checked_mul(8)?.checked_add(256))?;crate::key_policy_control::row(control,&mut body)?;
@@ -214,14 +214,14 @@ fn unknown_names_using<C:Control>(block:&Block,names:&Names,control:&mut C)->Res
     let mut own_defines: HashSet<String> = HashSet::new();
     for line in &block.lines {
         control.checkpoint()?;
-        if let Some(m) = pat_match!(r"\s*#define\s+(\w+)").captures(line) {
+        if let Some(m) = crate::key_policy_control::captures_match_static(control,r"\s*#define\s+(\w+)",line,||pat_match!(r"\s*#define\s+(\w+)"))? {
             own_defines.insert(m.s(1).to_string());
         }
     }
     let mut heads: HashMap<usize, String> = HashMap::new();
     for (k, code) in clean.iter().enumerate() {
         control.checkpoint()?;
-        let Some(m) = pat_match!(r"(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\((.*)\)\s*(?:as\s+[\w/|]+\s*)?$").captures(py_rstrip(code)) else { continue };
+        let Some(m) = crate::key_policy_control::captures_match_static(control,r"(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\((.*)\)\s*(?:as\s+[\w/|]+\s*)?$",py_rstrip(code),||pat_match!(r"(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\((.*)\)\s*(?:as\s+[\w/|]+\s*)?$"))? else { continue };
         if !flush_left(code) {
             continue;
         }
@@ -245,13 +245,13 @@ fn unknown_names_using<C:Control>(block:&Block,names:&Names,control:&mut C)->Res
         if py_lstrip(code).starts_with("#define") {
             continue;
         }
-        for m in pat!(r"(?<![\w./:@$#])([A-Za-z_]\w*)\s*\(").captures_iter(code) {
+        for m in crate::key_policy_control::captures_all_static(control,r"(?<![\w./:@$#])([A-Za-z_]\w*)\s*\(",code,||pat!(r"(?<![\w./:@$#])([A-Za-z_]\w*)\s*\("))? {
             control.checkpoint()?;
             let name = m.s(1);
             if KEYWORDS.contains(&name) || BUILTINS.contains(&name) || own_procs.contains(name) || own_defines.contains(name) {
                 continue;
             }
-            if pat!(r"\bnew\s+$").is_match(&code[..m.start(0)]) {
+            if crate::key_policy_control::is_match_static(control,r"\bnew\s+$",&code[..m.start(0)],||pat!(r"\bnew\s+$"))? {
                 continue; // `new some_type_var(args)`: a type held in a var, not a call
             }
             if names.global_procs.contains(name) || names.defines.contains(name) {
@@ -274,7 +274,7 @@ fn unknown_names_using<C:Control>(block:&Block,names:&Names,control:&mut C)->Res
             }
             out.push((block.code_start + k, name.to_string()));
         }
-        for m in pat!(r"(?:(?:\?\.|\.)\s*|(?<=[\w\])]):)([A-Za-z_]\w*)\s*\(").captures_iter(code) {
+        for m in crate::key_policy_control::captures_all_static(control,r"(?:(?:\?\.|\.)\s*|(?<=[\w\])]):)([A-Za-z_]\w*)\s*\(",code,||pat!(r"(?:(?:\?\.|\.)\s*|(?<=[\w\])]):)([A-Za-z_]\w*)\s*\("))? {
             control.checkpoint()?;
             let name = m.s(1);
             if MEMBER_BUILTINS.contains(&name) || names.type_procs.contains_key(name) || own_procs.contains(name) || names.global_procs.contains(name) {
@@ -444,8 +444,8 @@ pub fn is_productive_path(relative:&str)->bool{!relative.strip_prefix(DOCS).is_s
 pub fn is_doc_path(relative:&str)->bool{relative.strip_prefix("doc/rewrite/").is_some_and(|r|!r.contains('/')&&r.ends_with(".md")&&!r.starts_with('.'))}
 fn set_add<C:Control>(set:&mut HashSet<String>,value:&str,c:&mut C)->Result<(),C::Error>{c.checkpoint()?;if set.contains(value){return Ok(())}if C::CHECKED&&set.len()==set.capacity(){let target=set.capacity().checked_mul(2).map(|n|n.max(4)).ok_or_else(||c.overflow())?;crate::key_policy_control::reserve(c,||target.checked_mul(4*std::mem::size_of::<String>())?.checked_add(4096))?;set.try_reserve(target-set.len()).map_err(|_|c.allocation_failed())?;if set.capacity()>target.saturating_mul(4){return Err(c.allocation_failed())}}set.insert(crate::raw_tree_report::own(c,value)?);Ok(())}
 pub fn empty_names()->Names{Names{global_procs:HashSet::new(),type_procs:HashMap::new(),defines:HashSet::new()}}
-pub fn queries_file_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,queries:&mut HashSet<String>,keep:&mut C,temp:&mut T)->Result<(),C::Error>{keep.checkpoint()?;let mut peak=0usize;for block in blocks_in_using(&f.rel,f.text(),temp)?{if block.kind()=="before"{continue}crate::raw_tree_report::peak(temp,&mut peak,||block.lines.iter().try_fold(block.lines.len(),|n,line|n.checked_add(line.len()))?.checked_mul(128)?.checked_add(4096))?;let clean=sanitize(&block.lines.join("\n"));for m in pat!(r"[A-Za-z_]\w*").find_iter(&clean){keep.checkpoint()?;set_add(queries,&clean[m.start..m.end],keep)?;}}keep.checkpoint()}
-pub fn names_file_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,queries:&HashSet<String>,names:&mut Names,keep:&mut C,temp:&mut T)->Result<(),C::Error>{keep.checkpoint()?;crate::key_policy_control::reserve(temp,||Some(4096))?;crate::dm::dx::visit_proc_names_using(f,temp,|path,name|{keep.checkpoint()?;if !queries.contains(name){return Ok(())}if path=="/"{set_add(&mut names.global_procs,name,keep)?;}else{if !names.type_procs.contains_key(name){if names.type_procs.len()==names.type_procs.capacity(){let target=names.type_procs.capacity().checked_mul(2).map(|n|n.max(4)).ok_or_else(||keep.overflow())?;crate::key_policy_control::reserve(keep,||target.checked_mul(4*std::mem::size_of::<(String,HashSet<String>)>())?.checked_add(4096))?;names.type_procs.try_reserve(target-names.type_procs.len()).map_err(|_|keep.allocation_failed())?;if names.type_procs.capacity()>target.saturating_mul(4){return Err(keep.allocation_failed())}}names.type_procs.insert(crate::raw_tree_report::own(keep,name)?,HashSet::new());}set_add(names.type_procs.get_mut(name).expect("admitted doc name"),path,keep)?;}Ok(())})?;if f.text().contains("#define"){for line in f.raw().lines(){keep.checkpoint()?;if let Some(m)=pat_match!(r"\s*#define\s+(\w+)").captures(line){if queries.contains(m.s(1)){set_add(&mut names.defines,m.s(1),keep)?;}}}}keep.checkpoint()}
+pub fn queries_file_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,queries:&mut HashSet<String>,keep:&mut C,temp:&mut T)->Result<(),C::Error>{keep.checkpoint()?;let mut peak=0usize;for block in blocks_in_using(&f.rel,f.text(),temp)?{if block.kind()=="before"{continue}crate::raw_tree_report::peak(temp,&mut peak,||block.lines.iter().try_fold(block.lines.len(),|n,line|n.checked_add(line.len()))?.checked_mul(128)?.checked_add(4096))?;let clean=sanitize(&block.lines.join("\n"));for m in crate::key_policy_control::find_all_static(temp,r"[A-Za-z_]\w*",&clean,||pat!(r"[A-Za-z_]\w*"))?{keep.checkpoint()?;set_add(queries,&clean[m.start..m.end],keep)?;}}keep.checkpoint()}
+pub fn names_file_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,queries:&HashSet<String>,names:&mut Names,keep:&mut C,temp:&mut T)->Result<(),C::Error>{keep.checkpoint()?;crate::key_policy_control::reserve(temp,||Some(4096))?;crate::dm::dx::visit_proc_names_using(f,temp,|path,name|{keep.checkpoint()?;if !queries.contains(name){return Ok(())}if path=="/"{set_add(&mut names.global_procs,name,keep)?;}else{if !names.type_procs.contains_key(name){if names.type_procs.len()==names.type_procs.capacity(){let target=names.type_procs.capacity().checked_mul(2).map(|n|n.max(4)).ok_or_else(||keep.overflow())?;crate::key_policy_control::reserve(keep,||target.checked_mul(4*std::mem::size_of::<(String,HashSet<String>)>())?.checked_add(4096))?;names.type_procs.try_reserve(target-names.type_procs.len()).map_err(|_|keep.allocation_failed())?;if names.type_procs.capacity()>target.saturating_mul(4){return Err(keep.allocation_failed())}}names.type_procs.insert(crate::raw_tree_report::own(keep,name)?,HashSet::new());}set_add(names.type_procs.get_mut(name).expect("admitted doc name"),path,keep)?;}Ok(())})?;if f.text().contains("#define"){for line in f.raw().lines(){keep.checkpoint()?;if let Some(m)=crate::key_policy_control::captures_match_static(temp,r"\s*#define\s+(\w+)",line,||pat_match!(r"\s*#define\s+(\w+)"))?{if queries.contains(m.s(1)){set_add(&mut names.defines,m.s(1),keep)?;}}}}keep.checkpoint()}
 pub fn judge_file_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,names:&Names,keep:&mut C,temp:&mut T)->Result<(Vec<usize>,Vec<SummaryBlock>),C::Error>{keep.checkpoint()?;let mut peak=0usize;let mut sites=Vec::new();let mut summaries=Vec::new();for block in blocks_in_using(&f.rel,f.text(),temp)?{keep.checkpoint()?;crate::raw_tree_report::row(keep,&mut summaries)?;let first=block.first_line();summaries.push(SummaryBlock{kind:crate::raw_tree_report::own(keep,block.kind())?,rel:crate::raw_tree_report::own(keep,&block.rel)?,first:crate::raw_tree_report::own(keep,&first)?});if block.kind()=="before"{continue}crate::raw_tree_report::peak(temp,&mut peak,||block.lines.iter().try_fold(block.lines.len(),|n,line|n.checked_add(line.len()))?.checked_mul(192)?.checked_add(4096))?;for(line,_)in unknown_names_using(&block,names,temp)?{crate::raw_tree_report::row(keep,&mut sites)?;sites.push(line);}}keep.checkpoint()?;Ok((sites,summaries))}
 
 #[cfg(test)]mod productive_registered_source_controls{

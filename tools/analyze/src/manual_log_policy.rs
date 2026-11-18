@@ -1,4 +1,5 @@
 //! Unique original manual-fingerprint/log algorithm. Native control owns no source authority.
+use crate::raw_fixture_policy::PatternApi as _;
 use serde::{Serialize,Deserialize};
 use crate::{dm::dx::{call_args,is_subtype,pick_arg,proc_ref,procs_in,related},tree::{SourceFile,Tree},key_policy_control::Control,pat};
 /// A handler named in a constructor call: kind ("src"/"type"/"global"), the type for "type", the
@@ -39,9 +40,19 @@ pub fn facts_of_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&m
  keep.checkpoint()?;crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(f.rel.len().checked_mul(4)?.checked_add(512)?)?.checked_add(4096))?;
     let ctor = pat!(r"(?<![\w./:])(cap_entry|cap_hand|cap_insert|cap_tool|cap_use_on)\s*\(");
     let manual = pat!(r"(?<![\w./:])(?:add_fingerprint|log_game|log_admin|message_admins|log_and_message_admins)\s*\(");
-    let clean = f.clean();
+facts_body(f,keep,temp,ctor,manual)
+}
+#[cfg(feature="native-policy")]
+pub fn facts_with_fixture<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<Facts,C::Error>{
+ keep.checkpoint()?;crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(f.rel.len().checked_mul(4)?.checked_add(512)?)?.checked_add(4096))?;
+
+let ctor=fixture.pattern(r"(?<![\w./:])(cap_entry|cap_hand|cap_insert|cap_tool|cap_use_on)\s*\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w./:])(cap_entry|cap_hand|cap_insert|cap_tool|cap_use_on)\s*\("));
+let manual=fixture.pattern(r"(?<![\w./:])(?:add_fingerprint|log_game|log_admin|message_admins|log_and_message_admins)\s*\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w./:])(?:add_fingerprint|log_game|log_admin|message_admins|log_and_message_admins)\s*\("));
+facts_body(f,keep,temp,&ctor,&manual)
+}
+fn facts_body<P:crate::raw_fixture_policy::PatternApi,C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T,ctor:&P,manual:&P)->Result<Facts,C::Error>{    let clean = f.clean();
     let mut out = Facts::default();
-    for proc in procs_in(f) {
+    for proc in crate::dm::dx::procs_in_using(f,temp)? {
         keep.checkpoint()?;
         let mut hits: Vec<u32> = Vec::new();
         for k in 0..proc.body_len {
@@ -56,12 +67,12 @@ pub fn facts_of_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&m
             }
             for m in ctor.captures_iter(text) {
                 keep.checkpoint()?;
-                let Some(args) = call_args(text, m.end(0) - 1) else { continue };
+                let Some(args) = crate::dm::dx::call_args_using(text,m.end(0)-1,temp)? else { continue };
                 if args.is_empty() {
                     continue;
                 }
-                let Some(arg) = pick_arg(&args, Some(handler_index(m.s(1))), "handler") else { continue };
-                if let Some((kind, of_type, name)) = proc_ref(&arg) {
+                let Some(arg) = crate::dm::dx::pick_arg_using(&args,Some(handler_index(m.s(1))),"handler",temp)? else { continue };
+                if let Some((kind, of_type, name)) = crate::dm::dx::proc_ref_using(&arg,temp)? {
                     let code = match kind {
                         "src" => 0,
                         "type" => 1,

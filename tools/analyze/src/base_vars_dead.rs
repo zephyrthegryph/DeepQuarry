@@ -11,7 +11,7 @@
 //! over-approximates reads and never lists a var that is read. Rows: `dead` (no occurrence at all) and `write_only` (written,
 //! never read); `--few` adds `few_reads` (one or two reads by name) for a hand review. `--tsv` prints `kind TAB owner TAB var TAB file:line TAB writes`.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::process::ExitCode;
 
@@ -21,122 +21,7 @@ use crate::lints::base_vars::BASE_TYPES;
 use crate::sem::decls::strip_comments_keep_strings;
 use crate::sem::Sem;
 
-struct BaseVar {
-    owner: String,
-    name: String,
-    rel: String,
-    line: u32,
-}
-
-#[derive(Default, Clone, Copy)]
-struct Uses {
-    reads: u32,
-    writes: u32,
-}
-
-fn is_ident(b: u8) -> bool {
-    b.is_ascii_alphanumeric() || b == b'_'
-}
-
-/// Classify the occurrence at `[s, e)` of a name in `t` (comments stripped, strings kept).
-fn classify(t: &[u8], s: usize, e: usize, in_string: bool) -> Option<bool> {
-    if in_string {
-        return Some(false);
-    }
-    // A declaration: preceded by `var/` or `var/<type path>/`, or by `/` inside a typed proc argument (`obj/item/x`).
-    let mut i = s;
-    if i > 0 && t[i - 1] == b'/' {
-        // walk back over the path to see whether it starts with `var`, or is a proc argument type (`/obj/item/x,`).
-        let mut j = i - 1;
-        while j > 0 && (is_ident(t[j - 1]) || t[j - 1] == b'/') {
-            j -= 1;
-        }
-        let path = &t[j..s];
-        if path.starts_with(b"var/") || path.windows(5).any(|w| w == b"/var/") {
-            return None;
-        }
-        // `/obj/item/x` (an absolute path: a typed argument or a type): not a use. `a/x` (a division) is a read.
-        if t[j] == b'/' {
-            return None;
-        }
-    }
-    // `.x` is a field access on something: still a use of the name.
-    i = e;
-    while i < t.len() && (t[i] == b' ' || t[i] == b'\t') {
-        i += 1;
-    }
-    // skip an index `x[...]`
-    if i < t.len() && t[i] == b'[' {
-        let mut depth = 0i32;
-        while i < t.len() {
-            match t[i] {
-                b'[' => depth += 1,
-                b']' => {
-                    depth -= 1;
-                    if depth == 0 {
-                        i += 1;
-                        break;
-                    }
-                }
-                b'\n' => break,
-                _ => {}
-            }
-            i += 1;
-        }
-        while i < t.len() && (t[i] == b' ' || t[i] == b'\t') {
-            i += 1;
-        }
-    }
-    let rest = &t[i..t.len().min(i + 3)];
-    let write = match rest {
-        [b'=', b'=', ..] => false,
-        [b'=', ..] => true,
-        [b'+' | b'-' | b'*' | b'/' | b'|' | b'&' | b'^' | b'%', b'=', ..] => true,
-        [b'<', b'<', b'='] | [b'>', b'>', b'='] => true,
-        _ => false,
-    };
-    if write {
-        return Some(true);
-    }
-    // `x++`, `++x` and `x--` are reads and writes at once (the value is often used): counted as reads.
-    Some(false)
-}
-
-/// Every occurrence of a watched name in `text` (comments stripped, strings kept): (name, line, is_write).
-fn scan(text: &str, names: &HashSet<&str>, mut f: impl FnMut(&str, u32, bool)) {
-    let t = text.as_bytes();
-    let n = t.len();
-    let mut line = 1u32;
-    let mut in_string = false;
-    let mut i = 0;
-    while i < n {
-        let c = t[i];
-        if c == b'\n' {
-            line += 1;
-            i += 1;
-            continue;
-        }
-        if c == b'"' && (i == 0 || t[i - 1] != b'\\') {
-            in_string = !in_string;
-            i += 1;
-            continue;
-        }
-        if is_ident(c) && (i == 0 || !is_ident(t[i - 1])) {
-            let s = i;
-            while i < n && is_ident(t[i]) {
-                i += 1;
-            }
-            let w = &text[s..i];
-            if names.contains(w) {
-                if let Some(wr) = classify(t, s, i, in_string) {
-                    f(w, line, wr);
-                }
-            }
-            continue;
-        }
-        i += 1;
-    }
-}
+use crate::base_vars_dead_policy::{BaseVar,Uses,scan};
 
 fn walk(dir: &Path, ext: &str, out: &mut Vec<std::path::PathBuf>) {
     let Ok(rd) = std::fs::read_dir(dir) else { return };
@@ -218,33 +103,7 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
         });
     }
 
-    let mut rows: BTreeMap<(String, String), (&'static str, String, u32)> = BTreeMap::new();
-    for v in &vars {
-        let u = uses.get(&v.name).copied().unwrap_or_default();
-        let kind = if u.reads == 0 && u.writes == 0 {
-            "dead"
-        } else if u.reads == 0 {
-            "write_only"
-        } else if few && u.reads <= 2 {
-            "few_reads"
-        } else {
-            continue;
-        };
-        rows.insert((v.owner.clone(), v.name.clone()), (kind, format!("{}:{}", v.rel, v.line), u.writes));
-    }
-    let (mut dead, mut wo) = (0, 0);
-    for ((owner, name), (kind, at, writes)) in &rows {
-        match *kind {
-            "dead" => dead += 1,
-            "write_only" => wo += 1,
-            _ => {}
-        }
-        if tsv {
-            println!("{}\t{}\t{}\t{}\t{}", kind, owner, name, at, writes);
-        } else {
-            println!("{:<10} {}/var/{}  ({}, {} writes)", kind, owner, name, at, writes);
-        }
-    }
-    eprintln!("analyze base-vars-dead: {} base vars, {} dead, {} write-only", vars.len(), dead, wo);
+    let result=crate::base_vars_dead_policy::report(&vars,&uses,tsv,few,&mut crate::key_policy_control::Compatibility,|channel,args|{match channel{crate::base_vars_dead_policy::Channel::Stdout=>println!("{}",args),crate::base_vars_dead_policy::Channel::Stderr=>eprintln!("{}",args)}Ok(())});
+    match result{Ok(())=>(),Err(never)=>match never{}}
     ExitCode::SUCCESS
 }

@@ -764,7 +764,7 @@ fn report_source_headroom_and_sink_denials_never_cache_and_same_query_recovers()
     let file_key=Key::new(RAW_FILE,1994);
     q.db.set_input(file_key,FileData{file:file.clone(),hash:2},2);
     let result_key=Key::new(RAW_FINDINGS,1995);
-    let params=Arc::new(FileParams{file:file_key,scope:scope_key,scope_params});
+    let params=Arc::new(FileParams{scoped_patterns:false,file:file_key,scope:scope_key,scope_params});
     let prior=q.raw_policy.charge.load(Ordering::Relaxed);
     // The same query first hits the old Sink admission and then the report evidence admission.
     for available in [64,16384] {

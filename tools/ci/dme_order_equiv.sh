@@ -54,7 +54,7 @@ echo "dme_order_equiv: $(grep -c '^#include "' "$gen_dme") includes, $moved line
 
 equiv_target="$(bash tools/dq_cargo_target.sh dmb-equiv)"
 if [ ! -x "$equiv_target/release/dmb-equiv" ] && [ ! -x "$equiv_target/release/dmb-equiv.exe" ]; then
-	CARGO_INCREMENTAL=0 CARGO_TARGET_DIR="$equiv_target" bash tools/dq_machine_slots.sh run cargo -- \
+	CARGO_INCREMENTAL=1 RUSTC_WRAPPER='' CARGO_TARGET_DIR="$equiv_target" bash tools/dq_machine_slots.sh run cargo -- \
 		cargo build --release --manifest-path tools/dmb/Cargo.toml -p dmb-equiv || exit 2
 fi
 equiv="$equiv_target/release/dmb-equiv"

@@ -19,6 +19,7 @@
 //!   * the `bare`/`dotted` regexes use `(?!=)` after `=`; implemented as a plain regex plus a
 //!     post-check that is exactly equivalent (see [`write_matches`]).
 
+use crate::raw_fixture_policy::{Fixture,PatternApi,PatternMode};
 use std::collections::{BTreeMap, HashMap};
 #[cfg(feature="legacy-sem")]use std::sync::Arc;
 
@@ -96,8 +97,9 @@ pub struct ProcDef {
     pub params: String,
 }
 
-pub fn proc_def(line: &str) -> Option<ProcDef> {
-    let c = pat!(r"\A(?:(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\((.*))").captures(line)?;
+pub fn proc_def(line:&str)->Option<ProcDef>{proc_def_with_fixture(line,&Fixture::legacy())}
+pub fn proc_def_with_fixture(line:&str,fixture:&Fixture<'_>)->Option<ProcDef>{
+    let c = fixture.pattern(r"\A(?:(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\((.*))",PatternMode::Search,||pat!(r"\A(?:(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\((.*))")).captures(line)?;
     Some(ProcDef { owner: c.s(1).to_string(), name: c.s(2).to_string(), params: c.s(3).to_string() })
 }
 
@@ -109,8 +111,9 @@ pub struct TypedName {
     pub name: String,
 }
 
-pub fn typed_names(text: &str) -> Vec<TypedName> {
-    pat!(r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b")
+pub fn typed_names(text:&str)->Vec<TypedName>{typed_names_with_fixture(text,&Fixture::legacy())}
+pub fn typed_names_with_fixture(text:&str,fixture:&Fixture<'_>)->Vec<TypedName>{
+    fixture.pattern(r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b",PatternMode::Search,||pat!(r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b"))
         .captures_iter(text)
         .into_iter()
         .map(|c| TypedName { start: c.start(0), ty: c.s(1).to_string(), name: c.s(2).to_string() })
@@ -123,17 +126,19 @@ pub fn is_var_decl(line: &str, start: usize) -> bool {
 }
 
 /// The untyped params of a proc head (`UNTYPED_PARAM_RE`).
-pub fn untyped_params(params: &str) -> Vec<String> {
-    pat!(r"(?:^|,)\s*(\w+)\s*(?==|,|\)|$)").captures_iter(params).into_iter().map(|c| c.s(1).to_string()).collect()
+pub fn untyped_params(params:&str)->Vec<String>{untyped_params_with_fixture(params,&Fixture::legacy())}
+pub fn untyped_params_with_fixture(params:&str,fixture:&Fixture<'_>)->Vec<String>{
+    fixture.pattern(r"(?:^|,)\s*(\w+)\s*(?==|,|\)|$)",PatternMode::Search,||pat!(r"(?:^|,)\s*(\w+)\s*(?==|,|\)|$)")).captures_iter(params).into_iter().map(|c| c.s(1).to_string()).collect()
 }
 
 /// `Locals` seeded from a proc head's params (`TYPED_NAME_RE` then `UNTYPED_PARAM_RE`).
-pub fn locals_from_params(params: &str) -> Locals {
+pub fn locals_from_params(params:&str)->Locals{locals_from_params_with_fixture(params,&Fixture::legacy())}
+pub fn locals_from_params_with_fixture(params:&str,fixture:&Fixture<'_>)->Locals{
     let mut locals = Locals::new();
-    for tm in typed_names(params) {
+    for tm in typed_names_with_fixture(params,fixture) {
         locals.insert(tm.name, Some(norm(&tm.ty)));
     }
-    for name in untyped_params(params) {
+    for name in untyped_params_with_fixture(params,fixture) {
         locals.entry(name).or_insert(None);
     }
     locals
@@ -148,10 +153,10 @@ pub fn local_or_member(index: &FwlIndex, locals: &Locals, owner: &str, name: &st
 }
 
 /// The declared fields a lint checks: name -> declaring types, plus the compiled write patterns.
-pub struct Fields {
+pub struct Fields<P=Pat> {
     pub map: HashMap<String, Vec<String>>,
-    bare: Option<Pat>,
-    dotted: Option<Pat>,
+    bare: Option<P>,
+    dotted: Option<P>,
 }
 
 impl Fields {
@@ -173,14 +178,17 @@ impl Fields {
         Fields { map: ordered.into_iter().collect(), bare, dotted }
     }
 
-    pub fn is_empty(&self) -> bool {
+
+}
+
+impl<P> Fields<P>{    pub fn is_empty(&self) -> bool {
         self.map.is_empty()
     }
 }
 
 /// `finditer` of a write pattern whose op is the LAST capture group: a bare `=` followed by `=`
 /// is `==` (Python's `=(?!=)`), so that candidate is rejected and the scan resumes one char on.
-fn write_matches<'h>(pat: &Pat, line: &'h str) -> Vec<Caps<'h>> {
+fn write_matches<'h,P:crate::raw_fixture_policy::PatternApi>(pat: &P, line: &'h str) -> Vec<Caps<'h>> {
     let mut out = Vec::new();
     let mut pos = 0;
     while pos <= line.len() {
@@ -221,7 +229,7 @@ pub struct PerFile {
     pub globals: Vec<(String, String)>,
 }
 
-fn scan_member_types(code: &str, out: &mut Vec<(String, String, String)>) {
+fn scan_member_types(code: &str, out: &mut Vec<(String, String, String)>,fixture:&Fixture<'_>) {
     let mut add = |owner: &str, path: &str, name: &str| {
         let parts: Vec<&str> = path.split('/').filter(|p| !p.is_empty() && !MODIFIERS.contains(p)).collect();
         if !parts.is_empty() {
@@ -233,12 +241,12 @@ fn scan_member_types(code: &str, out: &mut Vec<(String, String, String)>) {
         let first = line.chars().next();
         if let Some(ch) = first {
             if !is_py_space(ch) {
-                if let Some(c) = pat!(r"\A(?:(/[\w/]+?)/var/((?:[\w]+/)*)(\w+)\b)").captures(line) {
+                if let Some(c) = fixture.pattern(r"\A(?:(/[\w/]+?)/var/((?:[\w]+/)*)(\w+)\b)",PatternMode::Search,||pat!(r"\A(?:(/[\w/]+?)/var/((?:[\w]+/)*)(\w+)\b)")).captures(line) {
                     add(c.s(1), c.s(2), c.s(3));
                     current = None;
                     continue;
                 }
-                let m = pat!(r"\A(?:(/[\w/]+)\s*(?:\{.*)?$)").captures(py_rstrip(line));
+                let m = fixture.pattern(r"\A(?:(/[\w/]+)\s*(?:\{.*)?$)",PatternMode::Search,||pat!(r"\A(?:(/[\w/]+)\s*(?:\{.*)?$)")).captures(py_rstrip(line));
                 current = match m {
                     Some(c) if !line.contains('(') => Some(c.s(1).to_string()),
                     _ => None,
@@ -247,7 +255,7 @@ fn scan_member_types(code: &str, out: &mut Vec<(String, String, String)>) {
             }
         }
         if let Some(cur) = &current {
-            if let Some(c) = pat!(r"\A(?:\s+var/((?:[\w]+/)*)(\w+)\b)").captures(line) {
+            if let Some(c) = fixture.pattern(r"\A(?:\s+var/((?:[\w]+/)*)(\w+)\b)",PatternMode::Search,||pat!(r"\A(?:\s+var/((?:[\w]+/)*)(\w+)\b)")).captures(line) {
                 add(cur, c.s(1), c.s(2));
             }
         }
@@ -256,23 +264,24 @@ fn scan_member_types(code: &str, out: &mut Vec<(String, String, String)>) {
 
 impl FwlIndex {
     /// Same unique lexical facts from callback-local original views.
-    pub fn facts_from_views(raw:&crate::tree::View,code:&crate::tree::View)->PerFile{
+    pub fn facts_from_views(raw:&crate::tree::View,code:&crate::tree::View)->PerFile{Self::facts_from_views_with_fixture(raw,code,&Fixture::legacy())}
+    pub fn facts_from_views_with_fixture(raw:&crate::tree::View,code:&crate::tree::View,fixture:&Fixture<'_>)->PerFile{
             let mut p = PerFile { fields: Vec::new(), members: Vec::new(), globals: Vec::new() };
             for line in raw.lines() {
                 if !line.starts_with("OM_") {
                     continue;
                 }
-                let m = pat!(r"\A(?:OM_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,)").captures(line)
-                    .or_else(|| pat!(r"\A(?:OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)\s*,)").captures(line))
-                    .or_else(|| pat!(r"\A(?:OM_(?:FLAG_FIELD(?:_BITS)?|FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,)").captures(line));
+                let m = fixture.pattern(r"\A(?:OM_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,)",PatternMode::Search,||pat!(r"\A(?:OM_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,)")).captures(line)
+                    .or_else(|| fixture.pattern(r"\A(?:OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)\s*,)",PatternMode::Search,||pat!(r"\A(?:OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)\s*,)")).captures(line))
+                    .or_else(|| fixture.pattern(r"\A(?:OM_(?:FLAG_FIELD(?:_BITS)?|FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,)",PatternMode::Search,||pat!(r"\A(?:OM_(?:FLAG_FIELD(?:_BITS)?|FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,)")).captures(line));
                 if let Some(c) = m {
                     p.fields.push((c.s(2).to_string(), c.s(1).to_string()));
                 }
             }
-            scan_member_types(&code.text, &mut p.members);
+            scan_member_types(&code.text, &mut p.members,fixture);
             let text = &raw.text;
             if text.contains("GLOBAL_DATUM") {
-                for c in pat!(r"GLOBAL_DATUM(?:_INIT)?\(\s*(\w+)\s*,\s*(/[\w/]+)").captures_iter(text) {
+                for c in fixture.pattern(r"GLOBAL_DATUM(?:_INIT)?\(\s*(\w+)\s*,\s*(/[\w/]+)",PatternMode::Search,||pat!(r"GLOBAL_DATUM(?:_INIT)?\(\s*(\w+)\s*,\s*(/[\w/]+)")).captures_iter(text) {
                     p.globals.push((c.s(1).to_string(), c.s(2).to_string()));
                 }
             }
@@ -357,8 +366,9 @@ impl FwlIndex {
 
     /// The type of `recv` in `a.b.recv` (`before` = the text up to `recv`), walking typed members
     /// from the head; None when a link is unknown.
-    pub fn chain_type(&self, owner: &str, locals: &Locals, before: &str, recv: &str) -> Option<String> {
-        let c = pat!(r"((?:\w+\??\.)+)$").captures(before)?;
+    pub fn chain_type(&self,owner:&str,locals:&Locals,before:&str,recv:&str)->Option<String>{self.chain_type_with_fixture(owner,locals,before,recv,&Fixture::legacy())}
+    pub fn chain_type_with_fixture(&self,owner:&str,locals:&Locals,before:&str,recv:&str,fixture:&Fixture<'_>)->Option<String>{
+        let c = fixture.pattern(r"((?:\w+\??\.)+)$",PatternMode::Search,||pat!(r"((?:\w+\??\.)+)$")).captures(before)?;
         let mut links: Vec<String> = c.s(1).split('.').filter(|x| !x.is_empty()).map(|x| x.trim_end_matches('?').to_string()).collect();
         links.push(recv.to_string());
         let head = links[0].clone();
@@ -382,7 +392,8 @@ impl FwlIndex {
     }
 
     /// Every write to a declared field in `text` (a file's code view) outside its setter.
-    pub fn violations(&self, fields: &Fields, text: &str) -> Vec<Violation> {
+    pub fn violations(&self,fields:&Fields,text:&str)->Vec<Violation>{self.violations_with_fixture(fields,text,&Fixture::legacy())}
+    pub fn violations_with_fixture<P:PatternApi>(&self,fields:&Fields<P>,text:&str,fixture:&Fixture<'_>)->Vec<Violation>{
         let mut out = Vec::new();
         let (Some(bare), Some(dotted)) = (&fields.bare, &fields.dotted) else { return out };
         let mut owner: Option<String> = None;
@@ -391,10 +402,10 @@ impl FwlIndex {
         for (no, line) in text.split('\n').enumerate().map(|(i, l)| (i + 1, l)) {
             if let Some(ch) = line.chars().next() {
                 if !is_py_space(ch) {
-                    if let Some(m) = proc_def(line) {
+                    if let Some(m) = proc_def_with_fixture(line,fixture) {
                         owner = Some(norm(&m.owner));
                         proc = m.name;
-                        locals = locals_from_params(&m.params);
+                        locals = locals_from_params_with_fixture(&m.params,fixture);
                         continue;
                     }
                     owner = None;
@@ -403,11 +414,11 @@ impl FwlIndex {
             }
             let Some(owner) = owner.as_deref() else { continue };
             if line.contains("var/") {
-                for c in pat!(r"\bvar/(?:(?:tmp|static|global|const)/)?(\w+)\b(?!/)").captures_iter(line) {
+                for c in fixture.pattern(r"\bvar/(?:(?:tmp|static|global|const)/)?(\w+)\b(?!/)",PatternMode::Search,||pat!(r"\bvar/(?:(?:tmp|static|global|const)/)?(\w+)\b(?!/)")).captures_iter(line) {
                     locals.entry(c.s(1).to_string()).or_insert(None);
                 }
             }
-            for tm in typed_names(line) {
+            for tm in typed_names_with_fixture(line,fixture) {
                 if is_var_decl(line, tm.start) {
                     locals.insert(tm.name, Some(norm(&tm.ty)));
                 }
@@ -417,7 +428,7 @@ impl FwlIndex {
                 let start = m.start(0);
                 let end = m.end(0);
                 let prefix = &line[..start];
-                if py_rstrip(prefix).ends_with("var") || pat!(r"var/(?:[\w/]+/)?$").is_match(prefix) {
+                if py_rstrip(prefix).ends_with("var") || fixture.pattern(r"var/(?:[\w/]+/)?$",PatternMode::Search,||pat!(r"var/(?:[\w/]+/)?$")).is_match(prefix) {
                     continue;
                 }
                 if locals.contains_key(field) {
@@ -443,7 +454,7 @@ impl FwlIndex {
                 }
                 let start = m.start(0);
                 let rtype = if start > 0 && line.as_bytes()[start - 1] == b'.' {
-                    self.chain_type(owner, &locals, &line[..start], recv)
+                    self.chain_type_with_fixture(owner, &locals, &line[..start], recv,fixture)
                 } else {
                     local_or_member(self, &locals, owner, recv)
                 };
@@ -463,4 +474,32 @@ impl FwlIndex {
     pub fn check(&self, fields: &Fields, text: &str) -> Vec<usize> {
         self.violations(fields, text).into_iter().map(|v| v.line).collect()
     }
+}
+
+impl<'f,'a> Fields<crate::raw_fixture_policy::Pattern<'f,'a>>{
+ pub fn new_with_fixture(ordered:Vec<(String,Vec<String>)>,fixture:&'f Fixture<'a>)->Result<Self,String>{
+  let names=fixture.collect(ordered.iter().map(|(name,_)|name))?;
+  // Exact stable descending character-count order used by the original constructor.
+  let names=fixture.stable_by_key(names,|name|std::cmp::Reverse(name.chars().count()))?;
+  let(bare,dotted)=if names.is_empty(){(None,None)}else{
+   let names=fixture.collect(names.iter().map(|name|name.as_str()))?;let alt=fixture.join(&names,"|")?;
+   let ops=r"(=|\+=|-=|\|=|&=|\^=|\*=|/=|\+\+|--)";
+   let bare=fixture.formatted_pattern(format_args!(r"(?<![\w./])(?:src\.)?({})\s*{}",alt,ops),PatternMode::Search)?;
+   let _=bare.capture_group_count();fixture.check()?;
+   let dotted=fixture.formatted_pattern(format_args!(r"(?<![\w])(\w+)(?:\?)?\.({})\s*{}",alt,ops),PatternMode::Search)?;
+   let _=dotted.capture_group_count();fixture.check()?;(Some(bare),Some(dotted))
+  };
+  let mut map=HashMap::new();for(name,types)in ordered{fixture.hash_insert(&mut map,name,types)?;}
+  Ok(Self{map,bare,dotted})
+ }
+}
+
+impl FwlIndex{
+ pub fn all_fields_with_fixture<'f,'a>(&self,fixture:&'f Fixture<'a>)->Result<Fields<crate::raw_fixture_policy::Pattern<'f,'a>>,String>{self.fields_with_fixture(None,fixture)}
+ pub fn fields_named_with_fixture<'f,'a>(&self,names:&[&str],fixture:&'f Fixture<'a>)->Result<Fields<crate::raw_fixture_policy::Pattern<'f,'a>>,String>{self.fields_with_fixture(Some(names),fixture)}
+ fn fields_with_fixture<'f,'a>(&self,names:Option<&[&str]>,fixture:&'f Fixture<'a>)->Result<Fields<crate::raw_fixture_policy::Pattern<'f,'a>>,String>{
+  let mut ordered=Vec::new();for(name,types)in &self.fields{if names.is_some_and(|names|!names.contains(&name.as_str())){continue}let mut copied=Vec::new();for ty in types{fixture.push(&mut copied,fixture.own(ty)?)?;}fixture.push(&mut ordered,(fixture.own(name)?,copied))?;}
+  Fields::new_with_fixture(ordered,fixture)
+ }
+ pub fn check_with_fixture<P:PatternApi>(&self,fields:&Fields<P>,text:&str,fixture:&Fixture<'_>)->Vec<usize>{self.violations_with_fixture(fields,text,fixture).into_iter().map(|value|value.line).collect()}
 }

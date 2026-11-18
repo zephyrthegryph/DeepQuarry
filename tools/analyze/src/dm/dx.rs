@@ -110,7 +110,7 @@ pub fn split_top_using<C:crate::key_policy_control::Control>(text:&str,sep:char,
 fn controlled_char<C:crate::key_policy_control::Control>(out:&mut String,ch:char,c:&mut C)->Result<(),C::Error>{if C::CHECKED{let need=out.len().checked_add(ch.len_utf8()).ok_or_else(||c.overflow())?;if need>out.capacity(){let cap=need.max(out.capacity().saturating_mul(2)).max(64);crate::key_policy_control::reserve(c,||cap.checked_add(64))?;out.try_reserve_exact(cap-out.len()).map_err(|_|c.allocation_failed())?;}}out.push(ch);Ok(())}
 /// Original parameter normalization, including its raw '='/'as' quirks.
 pub fn param_names(params:&str)->Vec<String>{match param_names_using(params,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}
-pub fn param_names_using<C:crate::key_policy_control::Control>(params:&str,c:&mut C)->Result<Vec<String>,C::Error>{use crate::key_policy_control as kc;let mut names=Vec::new();for part in split_top_using(params,',',c)?{c.checkpoint()?;let name=py_strip(part.split('=').next().unwrap_or(""));kc::reserve(c,||name.len().checked_add(64))?;let pattern=pat!(r"\bas\b.*$");let mut normalized=String::with_capacity(name.len());let(mut last,mut pos)=(0,0);while pos<=name.len(){c.checkpoint()?;let Some(found)=pattern.find_at(name,pos)else{break};normalized.push_str(&name[last..found.start]);last=found.end;pos=if found.start==found.end{found.end+name[found.end..].chars().next().map(|ch|ch.len_utf8()).unwrap_or(1)}else{found.end};}normalized.push_str(&name[last..]);let value=py_strip(py_strip(&normalized).rsplit('/').next().unwrap_or(""));let value=kc::own(c,value)?;if !value.is_empty()&&value!="..."{kc::row(c,&mut names)?;names.push(value);}}Ok(names)}
+pub fn param_names_using<C:crate::key_policy_control::Control>(params:&str,c:&mut C)->Result<Vec<String>,C::Error>{use crate::key_policy_control as kc;let mut names=Vec::new();for part in split_top_using(params,',',c)?{c.checkpoint()?;let name=py_strip(part.split('=').next().unwrap_or(""));kc::reserve(c,||name.len().checked_add(64))?;let mut normalized=String::with_capacity(name.len());let(mut last,mut pos)=(0,0);while pos<=name.len(){c.checkpoint()?;let Some(found)=kc::find_static(c,r"\bas\b.*$",name,pos,||crate::pat!(r"\bas\b.*$"))?else{break};normalized.push_str(&name[last..found.start]);last=found.end;pos=if found.start==found.end{found.end+name[found.end..].chars().next().map(|ch|ch.len_utf8()).unwrap_or(1)}else{found.end};}normalized.push_str(&name[last..]);let value=py_strip(py_strip(&normalized).rsplit('/').next().unwrap_or(""));let value=kc::own(c,value)?;if !value.is_empty()&&value!="..."{kc::row(c,&mut names)?;names.push(value);}}Ok(names)}
 
 /// A proc definition: `/T/proc/name(args)`, `/T/verb/name(args)`, `/T/name(args)` (an override)
 /// or `/proc/name(args)`. Bodies are line ranges into the file's sanitized view.
@@ -221,8 +221,7 @@ fn walk_proc_headers<C:crate::key_policy_control::Control>(f:&SourceFile,control
                 last = k;
             }
         }
-        let Some(m) = pat!(r"^(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\((.*)\)\s*(?:as\s+[\w/|]+\s*)?$")
-            .captures(&head)
+        let Some(m) = crate::key_policy_control::captures_static(control,r"^(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\((.*)\)\s*(?:as\s+[\w/|]+\s*)?$",&head,0,||crate::pat!(r"^(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\((.*)\)\s*(?:as\s+[\w/|]+\s*)?$"))?
         else {
             i += 1;
             continue;
@@ -526,43 +525,52 @@ pub fn call_args(text:&str,i:usize)->Option<Vec<String>>{match call_args_using(t
 pub fn call_args_using<C:crate::key_policy_control::Control>(text:&str,i:usize,c:&mut C)->Result<Option<Vec<String>>,C::Error>{use crate::key_policy_control as kc;c.checkpoint()?;let Some(end)=match_paren(text,i)else{return Ok(None)};let mut out=Vec::new();for arg in split_top_using(&text[i+1..end],',',c)?{c.checkpoint()?;kc::row(c,&mut out)?;out.push(kc::own(c,py_strip(&arg))?);}c.checkpoint()?;Ok(Some(out))}
 
 /// `(start, end)` byte offsets of each argument of the call whose `(` is at `text[i]`.
-pub fn call_arg_spans(text: &str, i: usize) -> Option<Vec<(usize, usize)>> {
-    let end = match_paren(text, i)?;
+pub fn call_arg_spans(text:&str,i:usize)->Option<Vec<(usize,usize)>>{
+    match call_arg_spans_using(text,i,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}
+}
+pub fn call_arg_spans_using<C:crate::key_policy_control::Control>(text:&str,i:usize,control:&mut C)->Result<Option<Vec<(usize,usize)>>,C::Error>{
+    control.checkpoint()?;
+    let Some(end) = match_paren(text,i) else{return Ok(None)};
     let b = text.as_bytes();
     let mut spans = Vec::new();
     let mut depth = 0i32;
     let mut start = i + 1;
     for k in i + 1..end {
+        control.checkpoint()?;
         match b[k] {
             b'(' | b'[' | b'{' => depth += 1,
             b')' | b']' | b'}' => depth -= 1,
             b',' if depth == 0 => {
+                crate::key_policy_control::row(control,&mut spans)?;
                 spans.push((start, k));
                 start = k + 1;
             }
             _ => {}
         }
     }
+    crate::key_policy_control::row(control,&mut spans)?;
     spans.push((start, end));
-    Some(spans)
+    Ok(Some(spans))
 }
 
 /// The argument at positional `index` (counting only positional args before any named one) or
 /// named `name`, from [`call_args`] output.
-pub fn pick_arg(args: &[String], index: Option<usize>, name: &str) -> Option<String> {
+pub fn pick_arg(args:&[String],index:Option<usize>,name:&str)->Option<String>{match pick_arg_using(args,index,name,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}
+pub fn pick_arg_using<C:crate::key_policy_control::Control>(args:&[String],index:Option<usize>,name:&str,control:&mut C)->Result<Option<String>,C::Error>{
+    control.checkpoint()?;
     let mut positional: Vec<&String> = Vec::new();
     for arg in args {
-        if let Some(m) = pat!(r"^\s*([A-Za-z_]\w*)\s*=(?!=)").captures(arg) {
+        if let Some(m) = crate::key_policy_control::captures_static(control,r"^\s*([A-Za-z_]\w*)\s*=(?!=)",arg,0,||crate::pat!(r"^\s*([A-Za-z_]\w*)\s*=(?!=)"))? {
             if m.s(1) == name {
-                return Some(py_strip(&arg[m.end(0)..]).to_string());
+                return Ok(Some(crate::key_policy_control::own(control,py_strip(&arg[m.end(0)..]))?));
             }
             continue;
         }
-        positional.push(arg);
+        crate::key_policy_control::row(control,&mut positional)?;positional.push(arg);
     }
     match index {
-        Some(i) if i < positional.len() => Some(positional[i].clone()),
-        _ => None,
+        Some(i) if i < positional.len() => Ok(Some(crate::key_policy_control::own(control,positional[i])?)),
+        _ => Ok(None),
     }
 }
 
@@ -582,29 +590,27 @@ pub fn enclosing_call(text:&str,i:usize)->Option<Enclosing>{match enclosing_call
 /// Actual typed failure returns immediately and never becomes a missing call.
 pub fn enclosing_call_using<C:crate::key_policy_control::Control>(text:&str,i:usize,c:&mut C)->Result<Option<Enclosing>,C::Error>{
  use crate::key_policy_control as kc;c.checkpoint()?;let b=text.as_bytes();let mut depth=0i32;let mut commas=0usize;let mut j=i as isize-1;
- while j>=0{c.checkpoint()?;let ju=j as usize;let ch=b[ju];if ch==b')'||ch==b']'{depth+=1;}else if ch==b'('||ch==b'['{if depth==0{if ch==b'['{return Ok(None)}let before=&text[..ju];let pattern=pat!(r"([A-Za-z_]\w*)\s*$");kc::reserve(c,||pattern.capture_group_count().checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(128))?;let Some(m)=pattern.captures(before)else{return Ok(None)};let mut seg_start=ju+1;let mut d2=0i32;for k in ju+1..i{c.checkpoint()?;match b[k]{b'('|b'['=>d2+=1,b')'|b']'=>d2-=1,b',' if d2==0=>seg_start=k+1,_=>{}}}let pattern=pat!(r"\A\s*([A-Za-z_]\w*)\s*=(?!=)");kc::reserve(c,||pattern.capture_group_count().checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(128))?;c.checkpoint()?;let key=match pattern.captures(&text[seg_start..i]){Some(k)=>Some(kc::own(c,k.s(1))?),None=>None};let head=py_rstrip(&text[..m.start(0)]);let name=kc::own(c,m.s(1))?;c.checkpoint()?;return Ok(Some(Enclosing{name,index:commas,key,member:head.ends_with('.')||head.ends_with(':')}));}depth-=1;}else if ch==b','&&depth==0{commas+=1;}j-=1;}Ok(None)
+ while j>=0{c.checkpoint()?;let ju=j as usize;let ch=b[ju];if ch==b')'||ch==b']'{depth+=1;}else if ch==b'('||ch==b'['{if depth==0{if ch==b'['{return Ok(None)}let before=&text[..ju];let Some(m)=kc::captures_static(c,r"([A-Za-z_]\w*)\s*$",before,0,||crate::pat!(r"([A-Za-z_]\w*)\s*$"))?else{return Ok(None)};let mut seg_start=ju+1;let mut d2=0i32;for k in ju+1..i{c.checkpoint()?;match b[k]{b'('|b'['=>d2+=1,b')'|b']'=>d2-=1,b',' if d2==0=>seg_start=k+1,_=>{}}}c.checkpoint()?;let key=match kc::captures_static(c,r"\A\s*([A-Za-z_]\w*)\s*=(?!=)",&text[seg_start..i],0,||crate::pat!(r"\A\s*([A-Za-z_]\w*)\s*=(?!=)"))?{Some(k)=>Some(kc::own(c,k.s(1))?),None=>None};let head=py_rstrip(&text[..m.start(0)]);let name=kc::own(c,m.s(1))?;c.checkpoint()?;return Ok(Some(Enclosing{name,index:commas,key,member:head.ends_with('.')||head.ends_with(':')}));}depth-=1;}else if ch==b','&&depth==0{commas+=1;}j-=1;}Ok(None)
 }
 
 /// `proc_ref`: `(kind, type, name)` for a PROC_REF-family argument. `kind` is "src" (PROC_REF,
 /// VERB_REF: the calling type), "type" (TYPE_PROC_REF/TYPE_VERB_REF) or "global".
-pub fn proc_ref(arg: &str) -> Option<(&'static str, Option<String>, String)> {
-    let m = pat!(
-        r"^\s*(?:PROC_REF\(\s*(\w+)\s*\)|TYPE_PROC_REF\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)|GLOBAL_PROC_REF\(\s*(\w+)\s*\)|TYPE_VERB_REF\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)|VERB_REF\(\s*(\w+)\s*\))\s*$"
-    )
-    .captures(arg)?;
+pub fn proc_ref(arg:&str)->Option<(&'static str,Option<String>,String)>{match proc_ref_using(arg,&mut crate::key_policy_control::Compatibility){Ok(actual)=>actual,Err(never)=>match never{}}}
+pub fn proc_ref_using<C:crate::key_policy_control::Control>(arg:&str,c:&mut C)->Result<Option<(&'static str,Option<String>,String)>,C::Error>{
+    let Some(m)=crate::key_policy_control::captures_static(c,r"^\s*(?:PROC_REF\(\s*(\w+)\s*\)|TYPE_PROC_REF\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)|GLOBAL_PROC_REF\(\s*(\w+)\s*\)|TYPE_VERB_REF\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)|VERB_REF\(\s*(\w+)\s*\))\s*$",arg,0,||crate::pat!(r"^\s*(?:PROC_REF\(\s*(\w+)\s*\)|TYPE_PROC_REF\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)|GLOBAL_PROC_REF\(\s*(\w+)\s*\)|TYPE_VERB_REF\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)|VERB_REF\(\s*(\w+)\s*\))\s*$"))?else{return Ok(None)};
     if m.matched(1) {
-        return Some(("src", None, m.s(1).to_string()));
+        return Ok(Some(("src", None, crate::key_policy_control::own(c,m.s(1))?)));
     }
     if m.matched(3) {
-        return Some(("type", Some(m.s(2).to_string()), m.s(3).to_string()));
+        return Ok(Some(("type", Some(crate::key_policy_control::own(c,m.s(2))?), crate::key_policy_control::own(c,m.s(3))?)));
     }
     if m.matched(4) {
-        return Some(("global", None, m.s(4).to_string()));
+        return Ok(Some(("global", None, crate::key_policy_control::own(c,m.s(4))?)));
     }
     if m.matched(6) {
-        return Some(("type", Some(m.s(5).to_string()), m.s(6).to_string()));
+        return Ok(Some(("type", Some(crate::key_policy_control::own(c,m.s(5))?), crate::key_policy_control::own(c,m.s(6))?)));
     }
-    Some(("src", None, m.s(7).to_string()))
+    Ok(Some(("src", None, crate::key_policy_control::own(c,m.s(7))?)))
 }
 
 #[cfg(test)]

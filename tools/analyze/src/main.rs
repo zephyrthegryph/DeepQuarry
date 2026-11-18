@@ -15,34 +15,7 @@ use dq_analyze::run::{self, Engine, Options};
 /// engine now, so every annotation's usage is visible to it).
 const NATIVE_UNUSED_DEFAULT: bool = true;
 
-const HELP: &str = "analyze: DeepQuarry's lint/analysis engine
-
-USAGE
-  analyze check [--lint NAME...] [--changed-only] [--no-cache] [--rehash] [--raw] [--ci] [--root DIR]
-      Run lints (default: all). Exit 1 if any fails. --raw ignores baselines (every site is new);
-      --changed-only judges only files changed against origin/master and the working tree.
-  analyze check --native-dmbc ABSOLUTE_EXE --no-selftest --lint sem/reads untracked_inputs setter_publishes
-      Run the three native read policies together. Optional: --root DIR, --raw, --ci.
-  analyze baseline --update|--seed|--migrate [--lint NAME...]
-      Rewrite ratchet baselines: --update only ever drops fixed sites; --seed records every site;
-      --migrate rewrites line-text rows as identity rows (@owner::...) without adding or dropping one.
-  analyze parity [NAME... | --all] [--bless] [--fixtures-only]
-      Run the legacy Python lint and the engine port on this tree (and on tools/analyze/fixtures/)
-      and diff the findings. --bless writes expected.txt from a clean fixture comparison.
-  analyze timing [--lint NAME...] [--no-cache]
-      A full check with a per-lint timing table.
-  analyze selftest [--lint NAME...]     Run each lint's fixture tests.
-  analyze list                          The registered lints.
-  analyze frontend-diff                 Compare the text scanner with the dreammaker parser.
-  analyze native-query --dmbc ABSOLUTE_EXE REQUEST.json [--jsonl]\n      Delegate a pinned source request to the existing native daemon client.\n  analyze gen [--check] [NAME...]       Write (or check) the generated DM under code/engine/_generated/.
-  analyze codemod list | NAME [--check|--apply|--revert] [--path PREFIX...] [--write-residue]
-      AST-aware rewriters (phase 2.5); `analyze codemod help`.
-  analyze base-vars-dead [--tsv] [--few]
-      Base-type vars nothing reads (dead or write-only), by name over code/ and maps/.
-  analyze sem reads /type proc | oracle [--all]
-                                        Semantic queries: a handler's reads; the reads spike oracle.
-
-A lint is selected by its name or its group (`sys` selects every sys/* lint).";
+use dq_analyze::cli_usage::HELP;
 
 use dq_analyze::cli_arguments::{Args,parse,find_root};
 
@@ -125,6 +98,7 @@ fn options(args: &Args, root: &Path) -> Options {
 fn main() -> ExitCode {
     let native_args=std::env::args().collect::<Vec<_>>();
     if native_args.get(1).is_some_and(|arg|arg=="native-checker"){return dq_analyze::native_cli_client::checker_text_cli(&native_args[2..]);}
+    if native_args.get(1).is_some_and(|arg|arg=="list")&&native_args.iter().skip(2).any(|arg|arg=="--native-dmbc"){if let Some(exit)=dq_analyze::native_cli_client::metadata_utility_cli(&native_args[1..]){return exit;}}
     if let Some(exit) = dq_analyze::native_cli_client::workspace_check(&native_args[1..]) {
         return exit;
     }

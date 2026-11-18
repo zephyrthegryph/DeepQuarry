@@ -10,6 +10,7 @@
 //! contains the text `ALLOW(organ_slots)` is skipped (a substring test, not the `allowed()` helper:
 //! no comment-line-above form, and any prefix of a comment counts).
 
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
@@ -65,12 +66,13 @@ impl Lint for OrganSlots {
         &META
     }
 
-    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
+    fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
         for (i, line) in py_splitlines(&f.raw().text).into_iter().enumerate() {
             if line.contains("ALLOW(organ_slots)") {
                 continue;
             }
-            if pat!(r"(?<![\w])internal_organs(_by_name)?\b").is_match(line) {
+            if fixture.pattern(r"(?<![\w])internal_organs(_by_name)?\b",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"(?<![\w])internal_organs(_by_name)?\b")).is_match(line) {
                 out.site_msg("internal_organs", i + 1, py_strip(line));
             }
         }

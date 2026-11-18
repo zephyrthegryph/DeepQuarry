@@ -51,6 +51,7 @@ pub(super) struct RawBuiltin {
 }
 #[path = "checker_builtin_data.rs"]
 mod data;
+#[path="checker_builtin_original_utility.rs"]pub mod original_utility;
 
 /// One native semantic metadata row, preserving fixed-DSL source provenance.
 /// No executable body, alternative parser or runtime class/slot is created.

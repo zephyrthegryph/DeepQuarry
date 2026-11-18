@@ -199,6 +199,20 @@ pub fn write_sites<S:SiteText+?Sized>(
     mode: Mode,
 ) -> std::io::Result<usize> {
     let old = read_sites(path);
+    let (out, count) = render_sites(&old, header, tree, by_rule, rules, mode)?;
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    std::fs::write(path, out)?;
+    Ok(count)
+}
+
+/// Pure baseline DATA rendering over supplied captured old counters and SiteText.
+/// This grants no filesystem target/currentness or permission to publish.
+pub fn render_sites<S:SiteText+?Sized>(
+    old: &BTreeMap<String, Counter>, header: &[&str], tree: &S,
+    by_rule: &[(&str, Vec<&Site>)], rules: &[&str], mode: Mode,
+) -> std::io::Result<(String, usize)> {
     let mut rows: Vec<String> = Vec::new();
     let lookup: HashMap<&str, &Vec<&Site>> = by_rule.iter().map(|(r, s)| (*r, s)).collect();
     let mut rule_list: Vec<&str> = rules.to_vec();
@@ -267,11 +281,7 @@ pub fn write_sites<S:SiteText+?Sized>(
     lines.extend(rows.iter().cloned());
     out.push_str(&lines.join("\n"));
     out.push('\n');
-    if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    std::fs::write(path, out)?;
-    Ok(rows.len())
+    Ok((out, rows.len()))
 }
 
 /// The ratchet check against a fingerprint baseline (`check_sites`). Appends the report to `out`
@@ -386,15 +396,19 @@ pub(crate) fn parse_ceilings_text(text: &str) -> BTreeMap<String, i64> {
 }
 
 /// `write_baseline`.
-pub fn write_ceilings(path: &Path, header: &[&str], counts: &BTreeMap<String, i64>) -> std::io::Result<()> {
+/// Pure count-baseline rendering over captured DATA. No target/currentness grant.
+pub fn render_ceilings(header:&[&str],counts:&BTreeMap<String,i64>)->String {
     let mut lines: Vec<String> = header.iter().map(|h| format!("# {}", h)).collect();
-    for (name, count) in counts {
-        lines.push(format!("{} {}", name, count));
-    }
+    for (name, count) in counts { lines.push(format!("{} {}", name, count)); }
+    lines.join("\n") + "\n"
+}
+
+pub fn write_ceilings(path: &Path, header: &[&str], counts: &BTreeMap<String, i64>) -> std::io::Result<()> {
+    let text = render_ceilings(header, counts);
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
-    std::fs::write(path, lines.join("\n") + "\n")
+    std::fs::write(path, text)
 }
 
 /// Counts of sites per `Site::key`.
@@ -446,15 +460,27 @@ pub(crate) fn check_ceilings_with_base(
     failed
 }
 
-/// `--update` for ceilings: lower each ceiling to the current count, drop keys with none.
-pub fn update_ceilings(path: &Path, header: &[&str], sites: &[Site]) -> std::io::Result<usize> {
-    let base = read_ceilings(path);
+fn lowered_ceilings(base:&BTreeMap<String,i64>,sites:&[Site])->BTreeMap<String,i64>{
     let counts = key_counts(sites);
     let kept: BTreeMap<String, i64> = base
         .iter()
         .filter(|(k, _)| counts.get(*k).copied().unwrap_or(0) > 0)
         .map(|(k, v)| (k.clone(), (*v).min(counts[k])))
         .collect();
+    kept
+}
+
+/// Exact shrink-only old-key update over supplied captured counts. The caller
+/// owns source completion, target identity and output allocation admission.
+pub fn render_updated_ceilings(base:&BTreeMap<String,i64>,header:&[&str],sites:&[Site])->(String,usize){
+    let kept=lowered_ceilings(base,sites);let count=kept.len();
+    (render_ceilings(header,&kept),count)
+}
+
+/// `--update` for ceilings: lower each ceiling to the current count, drop keys with none.
+pub fn update_ceilings(path: &Path, header: &[&str], sites: &[Site]) -> std::io::Result<usize> {
+    let base = read_ceilings(path);
+    let kept = lowered_ceilings(&base, sites);
     write_ceilings(path, header, &kept)?;
     Ok(kept.len())
 }
@@ -707,3 +733,51 @@ r	code/a.dm	stale text
 
 #[cfg(test)]
 #[path="baseline_source_tests.rs"]mod source_contract_tests;
+
+#[cfg(test)]
+mod captured_baseline_render_controls {
+    use super::*;
+    struct CapturedText;
+    impl SiteText for CapturedText {
+        fn site_text(&self,relative:&str,line:usize)->String {
+            assert_eq!(relative,"code/a.dm");
+            match line {1|2=>"spawn(1)".into(),3=>"spawn(2)".into(),_=>panic!("uncaptured source row")}
+        }
+    }
+    fn found(line:u32)->Site {Site{rule:"spawn".into(),rel:"code/a.dm".into(),line,msg:String::new(),key:String::new(),ident:String::new()}}
+    #[test]
+    fn captured_baseline_render_update_keeps_only_old_multiplicity_and_never_adds_new_sites() {
+        let old=parse_sites_text("spawn\tcode/a.dm\tspawn(1)\nspawn\tcode/a.dm\tspawn(1)\nspawn\tcode/gone.dm\tspawn(9)\n".into());
+        let sites=[found(1),found(2),found(3)];let groups=[("spawn",sites.iter().collect())];
+        let(text,count)=render_sites(&old,&["captured"],&CapturedText,&groups,&["spawn"],Mode::Update).unwrap();
+        assert_eq!(count,2);assert_eq!(text,"# captured\nspawn\tcode/a.dm\tspawn(1)\nspawn\tcode/a.dm\tspawn(1)\n");
+        let(text,count)=render_sites(&BTreeMap::new(),&[],&CapturedText,&groups,&["spawn"],Mode::Update).unwrap();
+        assert_eq!((text.as_str(),count),("\n",0));
+    }
+    #[test]
+    fn captured_baseline_render_migrate_keeps_unclaimed_old_rows_and_seed_remains_explicit() {
+        let old=parse_sites_text("spawn\tcode/gone.dm\tspawn(9)\n".into());let sites=[found(3)];let groups=[("spawn",sites.iter().collect())];
+        let(text,count)=render_sites(&old,&[],&CapturedText,&groups,&["spawn"],Mode::Migrate).unwrap();assert_eq!((text.as_str(),count),("spawn\tcode/gone.dm\tspawn(9)\n",1));
+        let(text,count)=render_sites(&old,&[],&CapturedText,&groups,&["spawn"],Mode::Seed).unwrap();assert_eq!((text.as_str(),count),("spawn\tcode/a.dm\tspawn(2)\n",1));
+    }
+}
+
+#[cfg(test)]mod captured_ceilings_render_controls{
+ use super::*;
+ fn found(key:&str)->Site{Site{rule:"r".into(),rel:"code/a.dm".into(),line:1,msg:String::new(),key:key.into(),ident:String::new()}}
+ #[test]fn captured_count_update_lowers_only_old_keys_preserves_min_and_drops_zero(){
+  let old=BTreeMap::from([("a".into(),5),("b".into(),1),("gone".into(),9)]);
+  let sites=[found("a"),found("a"),found("b"),found("b"),found("new"),found("new")];
+  let(text,count)=render_updated_ceilings(&old,&["captured count baseline"],&sites);
+  assert_eq!(count,2);assert_eq!(text,"# captured count baseline\na 2\nb 1\n");
+  assert_eq!(render_updated_ceilings(&BTreeMap::new(),&[],&sites),("\n".into(),0));
+ }
+ #[test]fn captured_count_update_keeps_original_negative_ceiling_and_exact_empty_header_bytes(){
+  let old=BTreeMap::from([("a".into(),-1),("gone".into(),0)]);
+  assert_eq!(render_updated_ceilings(&old,&[],&[found("a")]),("a -1\n".into(),1));
+  let counts=BTreeMap::from([("b".into(),2),("a".into(),1)]);
+  let mut legacy:Vec<String>=["first","second"].iter().map(|h|format!("# {}",h)).collect();
+  for(name,count)in &counts{legacy.push(format!("{} {}",name,count));}
+  assert_eq!(render_ceilings(&["first","second"],&counts),legacy.join("\n")+"\n");
+ }
+}

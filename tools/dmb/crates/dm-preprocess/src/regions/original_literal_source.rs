@@ -56,6 +56,12 @@ impl OriginalLiteralSourceView{
  pub fn checked_facts<'a>(&'a self,actual_source:&'a SourceText)->io::Result<OriginalLiteralFactsView<'a>>{
   require_source_view(&self.binding.payload().source,actual_source,self.window)?;self.binding.payload().facts.checked_data_window(self.window)?.with_source_data(actual_source.as_str())
  }
+ /// Observe only the SAME actual funding domain; never upgrade source or issue facts.
+ #[doc(hidden)]
+ pub fn resource_summary_for_trace(&self,domain:&SettingRootLease)->Option<impl std::fmt::Debug>{
+  let mut expected=0;domain.visit_counter_storage(|p,_|expected=p);let owner=self.binding.payload();let mut actual=0;owner.credit.visit_counter_storage(|p,_|actual=p);
+  if actual!=expected{return None}owner.facts.resource_summary_for_trace(domain)
+ }
  pub fn visit_storage(&self,visit:impl FnMut(usize,usize,usize)){self.binding.visit_storage(visit)}
  /// Keep the private binding and external source controls charged. Only the
  /// actual nested syntax products may borrow their current native lease.

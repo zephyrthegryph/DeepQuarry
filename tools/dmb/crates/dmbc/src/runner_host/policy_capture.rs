@@ -1172,3 +1172,40 @@ mod tests;
 #[cfg(test)]
 #[path = "policy_capture_alias_tests.rs"]
 mod acquired_alias_tests;
+
+/// Parser-report sibling over its actual borrowed source and the SAME exact
+/// standalone Checker source/configuration intent (admission sorts paths). This syntax-only source
+/// cannot satisfy the complete joined Checker capture guard.
+fn require_parser_report_scope(requested:&[RequestedPolicyFile],search_folders:&[PathBuf])->io::Result<()>{
+ let invalid=||io::Error::new(io::ErrorKind::InvalidInput,"parser-report requires the actual standalone source and optional configuration scope");
+ let(source,configuration)=match requested{[source,configuration]if source.role==PolicyRole::DmSource&&configuration.role==PolicyRole::Configuration=>(source,configuration),[configuration,source]if source.role==PolicyRole::DmSource&&configuration.role==PolicyRole::Configuration=>(source,configuration),_=>return Err(invalid())};
+ if source.role!=PolicyRole::DmSource||!source.required||!source.path.is_absolute()||configuration.role!=PolicyRole::Configuration||configuration.required||!configuration.path.is_absolute()||!search_folders.is_empty(){return Err(invalid())}Ok(())
+}
+pub(crate) fn capture_parser_report<P:SnapshotProvider>(source:&dm_tree::frontend::ParseOnlySyntaxSource<'_>,inputs:&RecordingInputs<P>,requested:&[RequestedPolicyFile],search_folders:&[PathBuf])->io::Result<CapturedPolicyInputs>{
+ require_parser_report_scope(requested,search_folders)?;let view=source.source_view()?;capture_diagnostic_using(&view,inputs,requested,search_folders,CompiledViews::CheckerDecoded,None)
+}
+
+
+/// Private config-free semantic child on the actual Analyze subject. It uses
+/// the SAME source capture loop, with NO interpreted configuration request.
+pub(crate) fn capture_semantic_utility<P:SnapshotProvider>(frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,subject:&Arc<crate::input_snapshot::OriginalAnalysisSubject>)->io::Result<CapturedPolicyInputs>{
+ if frontend.original_analysis_completeness().is_none()||inputs.original_analysis_subject().is_none_or(|actual|!Arc::ptr_eq(actual,subject)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"semantic-only capture lacks actual complete/prefix Analyze subject"))}
+ frontend.require_original_analysis_seed().map_err(io::Error::other)?;subject.bind_frontend(frontend)?;
+ capture_source(CaptureSource::Diagnostic(frontend),inputs,&[],&[],CompiledViews::AllRaw,None,Some(subject))
+}
+
+#[cfg(test)]mod parser_report_scope_controls{
+ use super::*;
+ #[test]fn parser_report_accepts_exact_standalone_pair_and_refuses_partial_or_wider_roles(){
+  let root=PathBuf::from(if cfg!(windows){"E:/actual/parser"}else{"/actual/parser"});let source=RequestedPolicyFile{path:root.join("project.dme"),role:PolicyRole::DmSource,required:true};let config=RequestedPolicyFile{path:root.join("SpacemanDMM.toml"),role:PolicyRole::Configuration,required:false};let pair=[source,config];
+  require_parser_report_scope(&pair,&[]).unwrap();let reversed=[pair[1].clone(),pair[0].clone()];require_parser_report_scope(&reversed,&[]).unwrap();
+  assert!(require_parser_report_scope(&pair[1..],&[]).is_err());assert!(require_parser_report_scope(&pair[..1],&[]).is_err());assert!(require_parser_report_scope(&pair,&[root.clone()]).is_err());
+  for case in 0..6{let mut changed=pair.clone();match case{0=>changed[0].role=PolicyRole::Configuration,1=>changed[0].required=false,2=>changed[1].role=PolicyRole::DmSource,3=>changed[1].required=true,4=>changed[0].path=PathBuf::from("relative.dme"),5=>changed[1].path=PathBuf::from("relative.toml"),_=>unreachable!()};assert!(require_parser_report_scope(&changed,&[]).is_err());}
+ }
+
+ #[test]fn parser_report_scope_accepts_actual_admitted_path_sorted_request(){
+  use crate::policy_request::{PolicyInputRequest,PolicyInputFile,PolicyInputRole,AnalysisContext};
+  let root=PathBuf::from(if cfg!(windows){"E:/actual/parser"}else{"/actual/parser"});let request=PolicyInputRequest{analysis_context:Some(AnalysisContext::OriginalChecker0290),files:vec![PolicyInputFile{path:root.join("project.dme"),role:PolicyInputRole::DmSource,required:true},PolicyInputFile{path:root.join("SpacemanDMM.toml"),role:PolicyInputRole::Configuration,required:false}],..Default::default()};
+  let admitted=request.admit().unwrap();let requested=admitted.capture_files();assert_eq!(requested.len(),2);require_parser_report_scope(&requested,admitted.search_folders()).unwrap();
+ }
+}

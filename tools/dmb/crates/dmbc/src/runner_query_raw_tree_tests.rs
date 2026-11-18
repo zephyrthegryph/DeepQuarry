@@ -100,3 +100,29 @@ let partial_inputs=RecordingInputs::new(FileSystemInputs,6_000_000_000);let part
  let partial_inputs=RecordingInputs::new(FileSystemInputs,6_000_000_000);let partial_front=frontend(&root,&partial_inputs,&db);let receipt=Arc::new(workspace_discovery::discover(&partial_inputs,DiscoveryContract{root:root.clone(),recursive_roots:vec![root.join("code")]}).unwrap());let partial=workspace_capture::capture(&partial_front,&partial_inputs,receipt,&configuration).unwrap();let partial=snapshot(&partial_front,&db,&partial_inputs,&partial);let called=std::cell::Cell::new(false);assert!(partial.with_native_raw_tree(&partial.tree,selected,|_,_,_|{called.set(true);Ok(())}).is_err());assert!(!called.get());
  }
 }
+
+
+#[test]
+fn actual_recorded_cooldown_tree_uses_same_db_pattern_owner_without_extra_source_reads_or_body_parse(){
+ let root=root();let physical=Physical{reads:Mutex::new(BTreeMap::new()),fail_policy:Mutex::new(None)};
+ let inputs=RecordingInputs::new(&physical,5_000_000_000);let db=Arc::new(crate::query_db::QueryDb::default());let front=frontend(&root,&inputs,&db);let configuration=root.join("tools/ci/lint_scopes.toml");
+ let capture=workspace_capture::capture(&front,&inputs,discovery(&root,&inputs),&configuration).unwrap();let current=snapshot(&front,&db,&inputs,&capture);
+ let reads=physical.reads();let bodies=db.db().stats(dm_query::Kind(4)).computed;
+ // Kind33 is the source-declared native compiled-pattern family, not a source
+ // grant or a replacement for the actual traversal and currentness barriers.
+ let before=db.db().stats(dm_query::Kind(33)).computed;
+ let cold=current.with_native_raw_tree(&current.tree,Policy::Cooldown,|data,_,_|{assert!(!data.sites().is_empty());Ok(record(data))}).unwrap();
+ let compiled=db.db().stats(dm_query::Kind(33)).computed;assert!(compiled>before);
+ let warm=current.with_native_raw_tree(&current.tree,Policy::Cooldown,|data,_,_|Ok(record(data))).unwrap();assert_eq!(cold,warm);
+ assert_eq!(db.db().stats(dm_query::Kind(33)).computed,compiled);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,bodies);assert_eq!(physical.reads(),reads);
+}
+
+
+#[test]
+fn actual_recorded_duplicate_key_tree_uses_same_db_programs_and_real_phase_results(){
+ let root=root();let physical=Physical{reads:Mutex::new(BTreeMap::new()),fail_policy:Mutex::new(None)};
+ let inputs=RecordingInputs::new(&physical,5_000_000_000);let db=Arc::new(crate::query_db::QueryDb::default());let front=frontend(&root,&inputs,&db);let configuration=root.join("tools/ci/lint_scopes.toml");
+ let capture=workspace_capture::capture(&front,&inputs,discovery(&root,&inputs),&configuration).unwrap();let current=snapshot(&front,&db,&inputs,&capture);let reads=physical.reads();let bodies=db.db().stats(dm_query::Kind(4)).computed;let before=db.db().stats(dm_query::Kind(33)).computed;
+ let cold=current.with_native_raw_tree(&current.tree,Policy::DuplicateInputKey,|data,_,_|{assert!(!data.sites().is_empty());Ok(record(data))}).unwrap();let compiled=db.db().stats(dm_query::Kind(33)).computed;assert!(compiled>before);
+ let warm=current.with_native_raw_tree(&current.tree,Policy::DuplicateInputKey,|data,_,_|Ok(record(data))).unwrap();assert_eq!(cold,warm);assert_eq!(db.db().stats(dm_query::Kind(33)).computed,compiled);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,bodies);assert_eq!(physical.reads(),reads);
+}

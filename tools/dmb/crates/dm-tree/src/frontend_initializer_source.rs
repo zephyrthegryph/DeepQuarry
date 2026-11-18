@@ -4,6 +4,7 @@ use super::*;
 use dm_ir::{InitializerValue, SymbolicExpression};
 #[path="frontend_initializer_scalar_source.rs"]
 mod scalar_source;
+#[path="frontend_initializer_debug.rs"]mod original_debug;
 #[path="frontend_initializer_provenance.rs"]
 mod provenance;
 pub use provenance::OriginalInitializerRootProvenance;
@@ -228,8 +229,8 @@ impl<'source> OriginalInitializerExpressionInput<'source> {
     }
 }
 fn prepare_original_expression<'source>(frontend:&'source ColdFrontend,expression:&'source SymbolicExpression,i:&relative_declarations::OriginalInitializerTokenInput<'source>,a:&dm_syntax::SettingAdmission<'_>)->Result<OriginalInitializerExpression<'source>,BodySyntaxFailure>{
-        let produce=||i.tokens.with_dense_using(a,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts_and_native_observation(i.source,dense,i.value,a,i.owner.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?;
-        let pending=if i.dimension{i.slots.obtain_dimension(i.ordinal,i.count,i.dimension_index,i.dimension_count,i.value,a,||produce().map(|(root,_)|root))}else{i.slots.obtain_with_native_observation(i.ordinal,i.count,a,produce).map(|(root,_)|root)};
+        let produce=||i.tokens.with_dense_using(a,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_products(i.source,dense,i.value,a,i.owner.original_literal_facts()?))).map_err(dm_syntax::SettingSyntaxFailure::Operational)?;
+        let pending=if i.dimension{i.slots.obtain_dimension_with_original_products(i.ordinal,i.count,i.dimension_index,i.dimension_count,i.value,a,produce).map(|(root,_,_)|root)}else{i.slots.obtain_with_original_products(i.ordinal,i.count,a,produce).map(|(root,_,_)|root)};
         let result=pending
             .and_then(|root| {
                 root.project_current(i.offset, i.source.len())
@@ -333,6 +334,7 @@ pub struct OriginalDeclarationExpressionContext<'source>{
 }
 impl std::fmt::Debug for OriginalDeclarationExpressionContext<'_>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("OriginalDeclarationExpressionContext")}}
 impl<'source> OriginalDeclarationExpressionContext<'source>{
+ pub fn require_utility_archive(&self,archive:&BodyArchive)->Result<(),BodySyntaxFailure>{archive.require_utility_frontend(self.frontend)}
     /// The context has already authenticated the complete immutable source mapping.
     pub fn abi_source_input(&self,body:&BodyOccurrence,metadata:&dm_ir::ProcedureMetadata)->Result<OriginalAbiSourceInput<'source>,BodySyntaxFailure>{abi_source::OriginalAbiSourceInput::issue(self.frontend,body,metadata)}
 
@@ -1425,3 +1427,49 @@ mod tests {
   let(owner,weak)=provider(Mode::Once);let result=original_admission_using(Some(&weak),|a|{let lease=a.reserve(256).map_err(BodySyntaxFailure::Operational)?;owner.cancel.store(true,Ordering::Release);Ok(lease)});assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::Interrupted));assert_eq!(owner.counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());owner.cancel.store(false,Ordering::Release);assert_eq!(original_admission_using(Some(&weak),|_|Ok(17)).unwrap(),17);
  }
 }
+
+impl<'source> OriginalDeclarationExpressionContext<'source>{
+ /// Current source-clause expression only; this is NOT an effective-variable
+ /// selector. Utility value selection is separately bound to the actual last
+ /// source row. Genuine authored absence comes from the SAME header producer.
+ pub fn source_member_value_admitted(&self,member_id:crate::MemberId,a:&dm_syntax::SettingAdmission<'_>)->Result<Option<OriginalDeclarationExpressionInput<'source>>,BodySyntaxFailure>{
+  let pending=(||{
+   a.checkpoint().map_err(BodySyntaxFailure::Operational)?;let reject=|text:&str|BodySyntaxFailure::Syntax(internal(text));let frontend=self.frontend;let tree=&frontend.snapshot.tree;
+   let member=tree.member(member_id).filter(|node|node.kind==crate::MemberKind::Var).ok_or_else(||reject("utility source variable member unavailable"))?;
+   let ids=frontend.snapshot.occurrences.for_target_admitted(crate::Target::Member(member_id),a).map_err(BodySyntaxFailure::Operational)?;let ordinal=*ids.last().ok_or_else(||reject("utility source variable has no actual occurrence"))?;let occurrence=frontend.snapshot.occurrences.get(ordinal).ok_or_else(||reject("utility source variable occurrence unavailable"))?;if occurrence.target!=crate::Target::Member(member_id){return Err(reject("utility source variable target differs"))}
+   let cursor=match self.mapping.initializer_declaration_cursor(ordinal){
+    Ok(cursor)=>cursor,
+    Err(strict)=>{
+     // Final included declarations can observe the actual root EOF delimiter.
+     // Only the existing terminal receipt plus real header-authored absence
+     // may return None. A value/unproved header keeps the original refusal;
+     // this exception never yields an expression/token initializer product.
+     if matches!(self.mapping.terminal_declaration_is_authored_absence(ordinal,&frontend.issued_syntax),Ok(true)){return Ok(None)}
+     return Err(reject(&strict));
+    }
+   };
+   if !frontend.issued_syntax.initializer_has_authored_value(cursor).map_err(|message|reject(&message))?{return Ok(None)}
+   let expression=member.metadata.initializer.as_ref().ok_or_else(||reject("authored utility variable initializer is unissued"))?;let input=frontend.issued_syntax.initializer_token_input(cursor,expression,tree.symbols()).map_err(|message|reject(&message))?;
+   a.checkpoint().map_err(BodySyntaxFailure::Operational)?;Ok(Some(OriginalDeclarationExpressionInput{frontend,expression,input:OriginalInitializerSource::Header(input)}))
+  })();match a.take_operational_error(){Some(first)=>Err(BodySyntaxFailure::Operational(first)),None=>pending}
+ }
+}
+
+
+/// One pass over SAME authored suffix roots, including empty slots as DATA.
+pub struct OriginalDeclarationDimensions<'source>{frontend:&'source ColdFrontend,array:&'source dm_ir::ArrayDeclaration,header:relative_declarations::OriginalInitializerDimensionTokens<'source>,next:usize,finished:bool}
+impl<'source>Iterator for OriginalDeclarationDimensions<'source>{type Item=Result<(usize,Option<OriginalDeclarationExpressionInput<'source>>),BodySyntaxFailure>;fn next(&mut self)->Option<Self::Item>{if self.finished{return None}match self.header.next_input(self.array,self.frontend.snapshot.tree.symbols()){
+ Err(message)=>{self.finished=true;Some(Err(BodySyntaxFailure::Syntax(internal(&message))))},Ok(None)=>{self.finished=true;None},Ok(Some((index,input)))=>{self.next=index+1;let value=input.map(|input|OriginalDeclarationExpressionInput{frontend:self.frontend,expression:self.array.dimensions[index].as_ref().expect("actual suffix cursor proves dimension presence"),input:OriginalInitializerSource::Header(input)});Some(Ok((index,value)))}
+}}}
+impl<'source>OriginalDeclarationExpressionContext<'source>{
+ pub fn source_member_dimensions_admitted(&self,member_id:crate::MemberId,a:&dm_syntax::SettingAdmission<'_>)->Result<Option<OriginalDeclarationDimensions<'source>>,BodySyntaxFailure>{let pending=(||{a.checkpoint().map_err(BodySyntaxFailure::Operational)?;let reject=|message:&str|BodySyntaxFailure::Syntax(internal(message));let frontend=self.frontend;let member=frontend.snapshot.tree.member(member_id).filter(|row|row.kind==crate::MemberKind::Var).ok_or_else(||reject("utility array variable member unavailable"))?;let Some(array)=member.metadata.array.as_ref()else{return Ok(None)};
+  let ids=frontend.snapshot.occurrences.for_target_admitted(crate::Target::Member(member_id),a).map_err(BodySyntaxFailure::Operational)?;let ordinal=*ids.last().ok_or_else(||reject("utility array has no actual occurrence"))?;let occurrence=frontend.snapshot.occurrences.get(ordinal).ok_or_else(||reject("utility array occurrence unavailable"))?;if occurrence.target!=crate::Target::Member(member_id){return Err(reject("utility array occurrence target differs"))}let cursor=self.mapping.initializer_declaration_cursor(ordinal).map_err(|message|reject(&message))?;let header=frontend.issued_syntax.initializer_dimension_cursor(cursor).map_err(|message|reject(&message))?;a.checkpoint().map_err(BodySyntaxFailure::Operational)?;Ok(Some(OriginalDeclarationDimensions{frontend,array,header,next:0,finished:false}))})();match a.take_operational_error(){Some(first)=>Err(BodySyntaxFailure::Operational(first)),None=>pending}}
+}
+
+
+impl OriginalDeclarationExpressionContext<'_>{
+ pub fn source_member_constant_point(&self,member:crate::MemberId,a:&dm_syntax::SettingAdmission<'_>)->Result<BorrowedSourceNoteOrigin<'_>,BodySyntaxFailure>{let pending=(||{a.checkpoint().map_err(BodySyntaxFailure::Operational)?;let reject=|message:&str|BodySyntaxFailure::Syntax(internal(message));let ordinal=self.frontend.snapshot.occurrences.last_native_target(crate::Target::Member(member)).map_err(reject)?.ok_or_else(||reject("utility constant origin has no source occurrence"))?;let cursor=self.mapping.initializer_declaration_cursor(ordinal).map_err(|message|reject(&message))?;let at=self.frontend.issued_syntax.initializer_constant_location(cursor).map_err(|message|reject(&message))?;self.mapping.borrowed_source_note_point(at).map_err(|message|reject(&message))})();match a.take_operational_error(){Some(first)=>Err(BodySyntaxFailure::Operational(first)),None=>pending}}
+}
+
+#[path="frontend_utility_values.rs"]mod utility_values;
+pub use utility_values::{OriginalUtilityValues,UtilityVariableOrigin,UtilityConstantError,OriginalUtilityErrors};

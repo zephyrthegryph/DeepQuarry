@@ -32,6 +32,7 @@ macro_rules! typed_aliases {
     Ok(())
    }
    fn counts(&self)->AliasCounts{AliasCounts{$($field:self.$field.len()),+}}
+   fn live_counts(&self)->AliasCounts{AliasCounts{$($field:self.$field.iter().filter(|owner|owner.strong_count()!=0).count()),+}}
    fn len(&self)->usize{0$(+self.$field.len())+}
    fn live(&self)->bool{false$(||self.$field.iter().any(|row|row.strong_count()!=0))+}
    fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
@@ -64,7 +65,9 @@ pub struct OriginalSignatureAliasGroup{
  _adapter:Option<dm_syntax::SettingRootLease>,
  _coordination:dm_syntax::SettingRootLease,
 }
-impl std::fmt::Debug for OriginalSignatureAliasGroup{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalSignatureAliasGroup").field("weak_observations",&self.aliases.len()).field("signature_reservations",&self.reservations.len()).finish_non_exhaustive()}}
+struct ReservationDebug<'a>(&'a[Arc<dm_syntax::SettingRootLease>]);
+impl std::fmt::Debug for ReservationDebug<'_>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_list().entries(self.0.iter().map(|lease|(Arc::as_ptr(lease),lease.bytes(),Arc::strong_count(lease)))).finish()}}
+impl std::fmt::Debug for OriginalSignatureAliasGroup{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalSignatureAliasGroup").field("weak_observations",&self.aliases.len()).field("live_weak_observations",&self.aliases.live_counts()).field("spellings_live",&self.spellings.live()).field("reservation_address_bytes_strong_count",&ReservationDebug(&self.reservations)).field("adapter_reservation",&self._adapter.as_ref().map(|lease|lease.bytes())).field("coordination_reservation",&self._coordination.bytes()).finish_non_exhaustive()}}
 impl OriginalSignatureAliasGroup{
  fn live(&self)->bool{self.aliases.live()||self.spellings.live()}
  fn require_domain(&self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<()>{if !a.matches_lease_domain(&self._coordination)||!self.spellings.admitted_by(a)||self.reservations.iter().any(|row|!a.matches_lease_domain(row))||self._adapter.as_ref().is_some_and(|row|!a.matches_lease_domain(row)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original signature resource census belongs to another native counter"))}Ok(())}
@@ -96,7 +99,7 @@ impl OriginalSignatureAliasGroup{
    return Err(io::Error::new(io::ErrorKind::InvalidData,"actual signature alias roster changed during capture"));
   }
   checkpoint(a)?;
-  let group=Arc::new(Self{aliases,spellings:prepared.take_spellings(),reservations,_adapter:prepared.take_adapter_storage(),_coordination:coordination});
+  let group=Arc::new(Self{aliases,spellings:prepared.take_spellings()?,reservations,_adapter:prepared.take_adapter_storage(),_coordination:coordination});
   prepared.release_consumed_rows();
   Ok(group)
  }
@@ -240,7 +243,7 @@ impl OriginalSignatureAliasCensus{
  pub fn visit_resource_storage(&self,mut visit:impl FnMut(usize,usize,usize)){if self.rows.capacity()!=0{visit(self.rows.as_ptr()as usize,self.rows.capacity()*std::mem::size_of::<Arc<OriginalSignatureAliasGroup>>(),std::mem::align_of::<Arc<OriginalSignatureAliasGroup>>())}for row in &self.rows{row.visit_storage(&mut visit)}}
 }
 
-impl std::fmt::Debug for OriginalSignatureAliasCensus{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalSignatureAliasCensus").field("resource_groups",&self.rows.len()).finish_non_exhaustive()}}
+impl std::fmt::Debug for OriginalSignatureAliasCensus{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalSignatureAliasCensus").field("resource_groups",&self.rows.len()).field("groups",&self.rows).finish_non_exhaustive()}}
 
 #[cfg(test)]
 mod exact_capacity_controls {

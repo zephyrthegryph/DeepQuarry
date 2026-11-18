@@ -132,7 +132,7 @@ pub(crate) fn original_prefix_into_body_work<W:crate::checker_effects::EffectRep
 /// responsibility; a CodeID match alone is never a declaration/model grant.
 #[derive(Debug)]
 pub struct CurrentInvalidSettingRecipes {
- code:std::sync::Weak<dm_tree::frontend::BodyCodeIdentity>,
+ code:dm_tree::frontend::BodyCodeWeak,
  window:Span,
  identity:ProcedureIdentity,
  ordinals:Vec<usize>,
@@ -144,14 +144,14 @@ impl CurrentInvalidSettingRecipes {
  pub fn is_empty(&self)->bool{self.ordinals.is_empty()}
  pub fn retained_charge(&self)->Option<usize>{self.ordinals.capacity().checked_mul(std::mem::size_of::<usize>()).and_then(|n|n.checked_add(std::mem::size_of::<Self>()))}
  pub fn fingerprint_parts(&self,mut part:impl FnMut(&[u8])){part(&[self.skipped as u8]);part(&(self.ordinals.len()as u64).to_le_bytes());for ordinal in &self.ordinals{part(&(*ordinal as u64).to_le_bytes());}}
- pub fn visit_storage(&self,mut visit:impl FnMut(crate::checker_effects::Storage)){visit(crate::checker_effects::Storage::Buffer{owner:"current_setting.invalid_ordinals",address:self.ordinals.as_ptr()as usize,logical:self.ordinals.len()*std::mem::size_of::<usize>(),capacity:self.ordinals.capacity()*std::mem::size_of::<usize>()});}
+ pub fn visit_storage(&self,mut visit:impl FnMut(crate::checker_effects::Storage)){self.code.visit_allocation_storage(&mut |address,logical,capacity|visit(crate::checker_effects::Storage::Buffer{owner:"current_setting.weak_code",address,logical,capacity}));visit(crate::checker_effects::Storage::Buffer{owner:"current_setting.invalid_ordinals",address:self.ordinals.as_ptr()as usize,logical:self.ordinals.len()*std::mem::size_of::<usize>(),capacity:self.ordinals.capacity()*std::mem::size_of::<usize>()});}
  /// Current presentation only: no insertion, expression evaluation or parse.
  /// The SAME original Debug formatter renders the actual current registry's
  /// FileId/line/byte-column, not an old message with guessed replacements.
  pub fn visit_current<W:crate::checker_effects::EffectReportWork>(&self,body:&dm_tree::frontend::CurrentArchivedBody<'_,'_>,syntax_admission:&dm_syntax::SettingAdmission<'_>,work:&mut W,checkpoint:&dyn Fn()->std::io::Result<()>,mut emit:impl FnMut(&Diagnostic)->std::io::Result<()>)->Result<(),PolicyFailure>{
   use dm_tree::frontend::BodySyntaxFailure;
   checkpoint().map_err(PolicyFailure::Operational)?;
-  if !std::sync::Weak::ptr_eq(&self.code,&std::sync::Arc::downgrade(body.syntax().original_code_owner()))||self.window!=body.syntax().canonical_window(){return Err("setting recipes belong to another canonical BODY".into())}
+  if !self.code.matches(body.syntax().original_code_owner())||self.window!=body.syntax().canonical_window(){return Err("setting recipes belong to another canonical BODY".into())}
   let pending=body.with_initial_setting_prefix(self.identity,syntax_admission,|prefix|{
    if self.skipped {if !prefix.settings().is_empty()||prefix.first_non_setting().is_some(){return Err("skipped Original setting recipe rebound to available code".into())}return Ok(())}
    for ordinal in &self.ordinals{
@@ -201,7 +201,7 @@ pub fn current_invalid_setting_recipes<W:crate::checker_effects::EffectReportWor
  let result=match pending{Ok(value)=>value,Err(BodySyntaxFailure::Operational(actual))=>Err(PolicyFailure::Operational(actual)),Err(BodySyntaxFailure::Syntax(actual))=>Err(actual.message.into())};
  if let Err(actual)=result{drop(ordinals);let cleanup=work.reconcile(marker,0);if matches!(&actual,PolicyFailure::Operational(_)){return Err(actual)}cleanup.map_err(PolicyFailure::Operational)?;return Err(actual)}
  let bytes=ordinals.capacity().checked_mul(std::mem::size_of::<usize>()).ok_or_else(oom)?;work.reconcile(marker,bytes).map_err(PolicyFailure::Operational)?;
- Ok(CurrentInvalidSettingRecipes{code:std::sync::Arc::downgrade(body.syntax().original_code_owner()),window:body.syntax().canonical_window(),identity,ordinals,skipped})
+ Ok(CurrentInvalidSettingRecipes{code:dm_tree::frontend::BodyCodeIdentity::downgrade(body.syntax().original_code_owner()),window:body.syntax().canonical_window(),identity,ordinals,skipped})
 }
 
 #[path="checker_current_prefix_recipes.rs"]mod current_prefix_recipes;
@@ -217,4 +217,15 @@ pub(crate) use current_prefix_recipes::current_prelude_diagnostic_backing;
   for(raw,value,expected)in[("1",V::Float(1.0),None),("garbage",V::Int(0),Some(false)),("0",V::Int(1),Some(true)),("1",V::String("1"),None)]{let root=Expr{span:Span::new(0,raw.len()),kind:ExprKind::Literal(LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap())};assert_eq!(truth(&root).unwrap(),expected);}
   assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
+}
+
+#[cfg(test)]#[test]fn actual_weak_code_locator_owner_widths_are_measured(){
+ {#[allow(dead_code)]struct Prior{
+ code:std::sync::Weak<dm_tree::frontend::BodyCodeIdentity>,
+ window:Span,
+ identity:ProcedureIdentity,
+ ordinals:Vec<usize>,
+ skipped:bool,
+}
+let old=std::mem::size_of::<Prior>();let new=std::mem::size_of::<CurrentInvalidSettingRecipes>();eprintln!("WEAK_CODE_OWNER CurrentInvalidSettingRecipes prior={old} current={new} delta={}",new as isize-old as isize);assert!(new<=old+std::mem::size_of::<usize>());}
 }

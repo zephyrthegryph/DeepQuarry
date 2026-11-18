@@ -369,7 +369,7 @@ pub fn propose_cli(root: &std::path::Path) -> std::process::ExitCode {
         }
     };
     let scope = engine.scopes.for_lint(META.name, META.group);
-    let cx = Cx {
+    let cx = Cx { fixture:None,
         tree: &engine.tree,
         meta: &META,
         scope: &scope,

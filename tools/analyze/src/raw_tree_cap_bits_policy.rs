@@ -60,17 +60,17 @@ pub fn facts_of_using<C:crate::key_policy_control::Control,T:crate::key_policy_c
     for (number, line) in f.raw().numbered() {
         keep.checkpoint()?;crate::raw_tree_report::peak(temp,&mut temporary_peak,||line.len().checked_mul(8)?.checked_add(1024))?;
         let mut define = None;
-        if let Some(m) = pat!(r"^\s*#define\s+(CAP_[A-Z0-9_]+)\s+\(1\s*<<\s*(\d+)\)").captures(line) {
+        if let Some(m) = crate::key_policy_control::captures_static(temp,r"^\s*#define\s+(CAP_[A-Z0-9_]+)\s+\(1\s*<<\s*(\d+)\)",line,0,||crate::pat!(r"^\s*#define\s+(CAP_[A-Z0-9_]+)\s+\(1\s*<<\s*(\d+)\)"))? {
             let shift: u128 = m.s(2).parse().unwrap_or(u128::MAX);
             define = Some((crate::raw_tree_report::own(keep,m.s(1))?, shift));
         }
-        let code = pat!(r#""[^"]*""#).replace_all(before_slashes(line), "\"\"");
+        let code=crate::key_policy_control::replace_static(temp,r#""[^"]*""#,before_slashes(line),"\"\"",||crate::pat!(r#""[^"]*""#))?;
         let mut raw_write = false;
-        if pat!(r"\bcap_state\s*(\|=|&=|\^=|=(?!=))").is_match(&code) && !writer_using(writers,rel,keep)? && !exempt_using(rel,write_exempt,keep)? {
-            let var_line = pat!(r"^\s*var/").is_match(&code);
-            let tab_assign = pat!(r"^\t+cap_state\s*=").is_match(&code);
+        if crate::key_policy_control::is_match_static(temp,r"\bcap_state\s*(\|=|&=|\^=|=(?!=))",&code,||crate::pat!(r"\bcap_state\s*(\|=|&=|\^=|=(?!=))"))? && !writer_using(writers,rel,keep)? && !exempt_using(rel,write_exempt,keep)? {
+            let var_line = crate::key_policy_control::is_match_static(temp,r"^\s*var/",&code,||crate::pat!(r"^\s*var/"))?;
+            let tab_assign = crate::key_policy_control::is_match_static(temp,r"^\t+cap_state\s*=",&code,||crate::pat!(r"^\t+cap_state\s*="))?;
             // `A or B and C` in the Python: `and` binds tighter.
-            let type_default = (var_line || (tab_assign && !code.contains('/'))) && pat!(r"^\tcap_state\s*=").is_match(&code);
+            let type_default = (var_line || (tab_assign && !code.contains('/'))) && crate::key_policy_control::is_match_static(temp,r"^\tcap_state\s*=",&code,||crate::pat!(r"^\tcap_state\s*="))?;
             // a type default (`cap_state = CAP_X` under a type) is configuration, not a write
             raw_write = !type_default;
         }
@@ -83,31 +83,37 @@ pub fn facts_of_using<C:crate::key_policy_control::Control,T:crate::key_policy_c
 
 /// The findings, from every file's events in file order (the shared `seen` table is the only
 /// cross-file state).
-pub fn assemble<'a>(pairs:impl IntoIterator<Item=(&'a str,&'a Facts)>,registry:&[String],out:&mut impl Reporter) {
+pub fn assemble<'a>(pairs:impl IntoIterator<Item=(&'a str,&'a Facts)>,registry:&[String],out:&mut impl Reporter){
+    match assemble_using(pairs,registry,out,&mut crate::key_policy_control::Compatibility){Ok(())=>{},Err(never)=>match never{}}
+}
+pub fn assemble_using<'a,C:crate::key_policy_control::Control>(pairs:impl IntoIterator<Item=(&'a str,&'a Facts)>,registry:&[String],out:&mut impl Reporter,control:&mut C)->Result<(),C::Error>{
     let registry_path = registry.first().map(|s| s.as_str()).unwrap_or("");
     let mut seen: HashMap<u128, String> = HashMap::new();
     for (rel, fa) in pairs {
-        if !out.checkpoint(){return}
+        control.checkpoint()?;
+        if !out.checkpoint(){return Ok(())}
         for ev in &fa.events {
-            if !out.checkpoint(){return}
+            control.checkpoint()?;
+            if !out.checkpoint(){return Ok(())}
             let number = ev.line as usize;
             if let Some((name, shift)) = &ev.define {
                 if rel != registry_path {
-                    out.site_in_msg("outside_registry", rel, number, format!("{} is allocated outside {}", name, registry_path));
+                    out.site_in_msg("outside_registry", rel, number, crate::key_policy_control::format(control,format_args!("{} is allocated outside {}", name, registry_path))?);
                 }
                 if *shift >= 24 {
-                    out.site_in_msg("bit_range", rel, number, format!("{} uses bit {} (max 23)", name, shift));
+                    out.site_in_msg("bit_range", rel, number, crate::key_policy_control::format(control,format_args!("{} uses bit {} (max 23)", name, shift))?);
                 }
                 if let Some(prev) = seen.get(shift) {
-                    out.site_in_msg("bit_shared", rel, number, format!("{} shares bit {} with {}", name, shift, prev));
+                    out.site_in_msg("bit_shared", rel, number, crate::key_policy_control::format(control,format_args!("{} shares bit {} with {}", name, shift, prev))?);
                 }
-                seen.insert(*shift, name.to_string());
+                crate::key_policy_control::hash_room(control,&mut seen)?;let owned=crate::key_policy_control::own(control,name)?;seen.insert(*shift,owned);
             }
             if ev.raw_write {
                 out.site_in_msg("raw_write", rel, number, "write cap_state through cap_set()");
             }
         }
     }
+    Ok(())
 }
 
 

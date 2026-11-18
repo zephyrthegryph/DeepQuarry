@@ -332,92 +332,7 @@ pub fn register(reg: &mut Registry) {
 
 // ---- selftest ---------------------------------------------------------------------------------
 
-const DISPATCHER_FIXTURE: &str = r#"
-/proc/ui_action_key(raw)
-	if(!istext(raw) || !length(raw) || length(raw) > 64 || !GLOB.ui_action_raw_regex.Find(raw))
-		return null
-	var/out = GLOB.ui_action_camel_regex.Replace(raw, "$1_$2")
-	out = replacetext(lowertext(out), "-", "_")
-	return out
-GLOBAL_DATUM_INIT(ui_action_raw_regex, /regex, regex(@"^[A-Za-z0-9_-]+$"))
-GLOBAL_DATUM_INIT(ui_action_camel_regex, /regex, regex(@"([a-z0-9])([A-Z])", "g"))
-GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state", "holder"))
-"#;
-
-const DM_FIXTURE: &str = "/datum/proc/act_modal_close(mob/user, id)
-\treturn TRUE
-/obj/thing
-\ttgui_id = \"Thing\"
-/obj/thing/proc/act_go(mob/user, speed, force)
-\tspeed = ui_number(speed, 0, 10)
-\tif(!speed)
-\t\treturn
-/obj/thing/proc/act_pick(mob/user, mode, ref, flag)
-\tvar/datum/D = find_ref(user, ref)
-\tif(!!flag)
-\t\treturn
-\tswitch(mode)
-\t\tif(\"a\")
-\t\t\treturn
-/obj/thing/proc/find_ref(mob/user, ref)
-\treturn ui_ref(ref, null, /datum)
-/obj/thing/proc/act_raw(mob/user, amount, name, kind, when, extra)
-\tif(!amount)
-\t\treturn
-\tvar/x = amount + 1
-\tto_chat(user, name)
-\tif(kind == MODE_FAST)
-\t\treturn
-\thelper(when)
-\tsrc.helper(extra)
-/obj/thing/proc/helper(value)
-\tworld << value
-/obj/thing/subtype/proc/act_sub(mob/user, level, list/items)
-\tvar/obj/level/marker = null
-\tlevel = ui_bool(level)
-\tfor(var/i in islist(items) ? items : list())
-\t\treturn
-/obj/thing/proc/act_bolt_toggle(mob/user, target_state)
-\treturn ui_bool(target_state)
-/obj/old
-\ttgui_id = \"Old\"
-DECLARE_UI(/obj/old, UI_TITLE(\"Old\"))
-/obj/old/proc/act_whatever(mob/user, anything)
-\treturn anything
-/datum/capability/breakers
-/proc/cap_breakers()
-\treturn new /datum/capability/breakers
-/obj/thing/capabilities()
-\t. = ..()
-\t. += thing_bundle()
-/datum/capability/breakers/proc/act_breaker(mob/user, atom/holder, channel, force)
-\tchannel = ui_number(channel, 1, 3)
-\tif(!channel)
-\t\treturn
-/datum/capability/unused/proc/act_unused(mob/user, atom/holder, level)
-\tworld << level
-";
-
-const BUNDLE_FIXTURE: &str = "/proc/thing_bundle()
-\t. = list(cap_breakers())
-";
-
-const TSX_FIXTURE: &str = "
-      <Button onClick={() => act('go', { speed: 5 })} />
-      <Button onClick={() => act(\"pick\", {mode: 'a', 'ref': x.ref, flag})} />
-      act('raw', { amount: 1, name: `n`, kind, when: a ? b : c, extra: { nested: 1 } });
-      act('sub', {level: true, items: [1, 2]});
-      act('bolt-toggle', { targetState: true });
-      act(dynamicName, { a: 1 });
-      act('pick', { ...params });
-      act('modal_close', params);
-      act('bogus');
-      act('go', { speed: 1, bogus: 2 });
-      act('go', { user: 'x' });
-      act('go', { 'bad key': 1 });
-      act('bad name!');
-      act('breaker', { channel: 2 });
-    ";
+use crate::ui_selftest_policy::{DISPATCHER_FIXTURE,DM_FIXTURE,BUNDLE_FIXTURE,TSX_FIXTURE};
 
 fn ensure(cond: bool, what: impl FnOnce() -> String) -> Result<(), String> {
     if cond {
@@ -428,34 +343,14 @@ fn ensure(cond: bool, what: impl FnOnce() -> String) -> Result<(), String> {
 }
 
 fn selftest() -> Result<(), String> {
-    let norm = normaliser_from(DISPATCHER_FIXTURE)?;
-    let k = |s: &str| norm.key(s);
-    ensure(k("bolt-toggle").as_deref() == Some("bolt_toggle") && k("boltToggle").as_deref() == Some("bolt_toggle"), || format!("{:?}", k("boltToggle")))?;
-    ensure(k("setScreen").as_deref() == Some("set_screen") && k("targetState").as_deref() == Some("target_state"), || "camel".to_string())?;
-    ensure(k("bad key").is_none() && k(&"x".repeat(65)).is_none() && k("").is_none(), || "rejects".to_string())?;
-    let want: HashSet<String> = ["user", "src", "usr", "ui", "state", "holder"].iter().map(|s| s.to_string()).collect();
-    ensure(norm.reserved == want, || format!("reserved {:?}", norm.reserved))?;
-    ensure(normaliser_from("nothing here").is_err(), || "a dispatcher without the regexes must fail".to_string())?;
-    // The live dispatcher must still parse (lint/dispatcher parity), where the source is reachable.
-    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    for cand in [std::path::PathBuf::from(DISPATCHER), manifest.join("../..").join(DISPATCHER)] {
-        if let Ok(text) = std::fs::read_to_string(&cand) {
-            let live = normaliser_from(&text)?;
-            ensure(live.key("bolt-toggle").as_deref() == Some("bolt_toggle"), || "the live ui_action_key() no longer matches".to_string())?;
-            break;
-        }
-    }
-
-    let calls = tsx_calls(TSX_FIXTURE);
-    let strs = |v: &[&str]| Some(v.iter().map(|s| s.to_string()).collect::<Vec<_>>());
-    let is = |c: &RawCall, a: &str, keys: Option<Vec<String>>| c.action == a && c.keys == keys;
-    ensure(is(&calls[0], "go", strs(&["speed"])), || format!("{:?}", calls[0]))?;
-    ensure(is(&calls[1], "pick", strs(&["mode", "ref", "flag"])), || format!("{:?}", calls[1]))?;
-    ensure(is(&calls[2], "raw", strs(&["amount", "name", "kind", "when", "extra"])), || format!("{:?}", calls[2]))?;
-    ensure(is(&calls[4], "bolt-toggle", strs(&["targetState"])), || format!("{:?}", calls[4]))?;
-    ensure(is(&calls[5], "pick", None) && is(&calls[6], "modal_close", None), || format!("{:?}", &calls[5..7]))?;
-    ensure(is(&calls[7], "bogus", strs(&[])), || format!("{:?}", calls[7]))?;
-
+    let error=|failure|match failure{crate::derived_selftest_policy::Failure::Assertion(text)=>text,crate::derived_selftest_policy::Failure::Operational(error)=>error.to_string()};
+    let mut control=crate::derived_selftest_policy::LegacyAssertions;
+    let norm=crate::ui_selftest_policy::normalizer(&mut control).map_err(error)?;
+    let manifest=std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut live=None;
+    for candidate in [std::path::PathBuf::from(DISPATCHER),manifest.join("../..").join(DISPATCHER)]{if let Ok(text)=std::fs::read_to_string(candidate){live=Some(text);break;}}
+    crate::ui_selftest_policy::live(live.as_deref(),&mut control).map_err(error)?;
+    let calls=crate::ui_selftest_policy::calls(&mut control).map_err(error)?;
     let caps_rel = format!("{}library/fixture.dm", CAPS_DIR);
     let tree = Tree::from_files(vec![SourceFile::from_text("x.dm", DM_FIXTURE), SourceFile::from_text(&caps_rel, BUNDLE_FIXTURE)]);
     let files: Vec<&SourceFile> = tree.files.iter().collect();
@@ -469,33 +364,10 @@ fn selftest() -> Result<(), String> {
     let acts = Acts::fixed(table);
     let an = Analysis { tree: &tree, hosts: &hosts, norm: &norm, acts: &acts, pats: RefCell::new(HashMap::new()), helpers: &helpers, c2: None };
     let problems = an.check();
-    let msgs: Vec<&str> = problems.iter().map(|p| p.2.as_str()).collect();
-    ensure(problems.len() == 5, || format!("{:?}", msgs))?;
-    // act('breaker') is answered by the capability the host declares through a bundle.
-    ensure(
-        hosts.actions_of("/obj/thing").contains_key("breaker")
-            && hosts.caps_of("/obj/thing") == BTreeSet::from(["/datum/capability/breakers".to_string()]),
-        || "breaker through the bundle".to_string(),
-    )?;
-    ensure(msgs[0].contains("act('bogus') has no act_bogus"), || format!("{:?}", msgs))?;
-    ensure(msgs[1].contains("passes bogus") && msgs[2].contains("reserved") && msgs[3].contains("'bad key' is rejected"), || format!("{:?}", msgs))?;
-    ensure(msgs[4].contains("rejects this action name"), || format!("{:?}", msgs))?;
-
-    let (unsent, unvalidated) = an.dx_sites(&mut |_, _| false);
-    let lines: Vec<&str> = DM_FIXTURE.split('\n').collect();
-    let at = |snippet: &str| lines.iter().position(|l| l.contains(snippet)).unwrap() + 1;
-    // C1: `force` on act_go is sent by no act(); act_modal_close's params arrive as a variable.
-    let mut got: Vec<usize> = unsent.iter().map(|s| s.1).collect();
-    got.sort();
-    let mut want = vec![at("act_go("), at("act_breaker(")];
-    want.sort();
-    ensure(got == want, || format!("C1 {:?} want {:?}", got, want))?;
-    // C2: act_raw's amount, name, when and extra; act_unused's level.
-    let mut got: Vec<usize> = unvalidated.iter().map(|s| s.1).collect();
-    got.sort();
-    let mut want = vec![at("var/x = amount + 1"), at("to_chat(user, name)"), at("helper(when)"), at("src.helper(extra)"), at("world << level")];
-    want.sort();
-    ensure(got == want, || format!("C2 {:?} want {:?}", got, want))?;
+    let breaker=||hosts.actions_of("/obj/thing").contains_key("breaker")&&hosts.caps_of("/obj/thing")==BTreeSet::from(["/datum/capability/breakers".to_string()]);
+    crate::ui_selftest_policy::problems(problems.iter().map(|row|row.2.as_str()),breaker,&mut control).map_err(|failure|match failure{crate::derived_selftest_policy::Failure::Assertion(text)=>text,crate::derived_selftest_policy::Failure::Operational(error)=>error.to_string()})?;
+    let(unsent,unvalidated)=an.dx_sites(&mut|_,_|false);
+    crate::ui_selftest_policy::dx_rows(unsent.iter().map(|row|row.1),unvalidated.iter().map(|row|row.1),&mut control).map_err(|failure|match failure{crate::derived_selftest_policy::Failure::Assertion(text)=>text,crate::derived_selftest_policy::Failure::Operational(error)=>error.to_string()})?;
     Ok(())
 }
 

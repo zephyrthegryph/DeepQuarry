@@ -77,7 +77,7 @@ mod tests {
     fn allow_is_asked_only_for_a_qdel_src_line() {
         let tree = Tree::from_files(vec![]);
         let scope = crate::scopes::LintScope::default();
-        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
+        let cx = Cx { fixture:None, tree: &tree, meta: &META, scope: &scope };
         let f = SourceFile::from_text(
             "code/a.dm",
             "qdel(src) qdel(src) // ALLOW(lifecycle): the grenade must vanish this instant\nqdel(src) qdel(src)\nqdel(M) // ALLOW(lifecycle): that is another lint's site, not this one\n",

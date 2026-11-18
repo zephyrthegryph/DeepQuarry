@@ -63,7 +63,7 @@ impl<'a> BorrowedRequirementBool<'a> {
         )?;
         let meta = crate::lints::requirement_bool::captured_metadata();
         let scope = self.raw.scopes.for_lint(meta.name, meta.group);
-        let cx = Cx {
+        let cx = Cx { fixture:None,
             tree: &self.raw.tree,
             meta,
             scope: &scope,

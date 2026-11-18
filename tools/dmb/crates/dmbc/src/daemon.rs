@@ -26,6 +26,8 @@ pub mod analyze;
 mod selected_exclusions;
 mod selected_compilation;
 mod full_registry_check;
+mod baseline_update;
+pub use baseline_update::run_cli as run_baseline_update_cli;
 mod schema_proposals;
 #[path="daemon/daemon_native_fix.rs"]mod native_fix;
 pub use schema_proposals::run_cli as run_schema_proposals_cli;
@@ -417,3 +419,14 @@ pub fn write_retained_preparation_rejection(output:&mut impl std::io::Write,erro
 
 mod checker_text;
 pub use checker_text::run_cli as run_checker_text_cli;
+
+mod native_selftests;
+pub use native_selftests::run_cli as run_standalone_selftests_cli;
+
+mod native_utility;
+
+mod native_sem_utility;
+pub use native_sem_utility::run_cli as run_native_sem_utility_cli;
+
+mod native_codemod_fixture;
+pub use native_codemod_fixture::run_cli as run_native_codemod_fixture_cli;

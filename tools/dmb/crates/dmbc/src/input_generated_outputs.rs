@@ -19,6 +19,8 @@ impl<'a, P> GeneratedOutputInputs<P, &'a BTreeSet<PathBuf>> {
 }
 impl<P: SnapshotProvider, Paths: std::borrow::Borrow<BTreeSet<PathBuf>>> SnapshotProvider for GeneratedOutputInputs<P, Paths> {
     fn original_open_status(&self,path:&Path)->io::Result<crate::input_snapshot::OriginalReadOpenStatus>{self.provider.original_open_status(path)}
+    fn optional_read_status(&self,path:&Path)->io::Result<OptionalReadStatus>{self.provider.optional_read_status(path)}
+    fn read_optional_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,fund:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OptionalInputRead>{self.provider.read_optional_admitted(path,limit,work,fund)}
     fn read_original_open_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OriginalOpenedRead>{self.provider.read_original_open_admitted(path,limit,work,after_open,before_allocate)}
 
     fn path_presence(&self,path:&Path)->io::Result<bool>{self.provider.path_presence(path)}

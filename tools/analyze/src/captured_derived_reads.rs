@@ -316,18 +316,70 @@ fn prepare_selected_pages_observed(
 pub(crate) fn collect(source:&ReadSource<'_>,all_source:&ReadSource<'_>,mut index:Index,globals:&GlobalResult,test_types:&BTreeSet<String>,poll:&dyn Fn()->io::Result<()>)->Result<DerivedReadData,Failure>{
  let b=source.budget();check(b,poll)?;if !globals.matches(source.inputs())||!globals.matches(all_source.inputs()){return Err("derived Globals belong to another original source".into())}
  let writes=CompleteWrites{source,globals,poll};let lexical=crate::reactive_raw_lexical_source::SemanticLoan::borrow(source);
- collect_pages(&SemanticPages(source),&SemanticPages(all_source),&lexical,index,&writes,test_types,poll)
+ collect_pages(&SemanticPages(source),&SemanticPages(all_source),&lexical,index,&writes,test_types,poll,None,JudgeMode::Ordinary)
 }
-fn collect_pages(source:&dyn DerivedPages,all_source:&dyn DerivedPages,lexical:&dyn crate::reactive_raw_lexical_source::Source,mut index:Index,writes:&dyn WriteKnowledge,test_types:&BTreeSet<String>,poll:&dyn Fn()->io::Result<()>)->Result<DerivedReadData,Failure>{
+/// Borrow actual typed rows before the ordinary Site reduction. No source
+/// receipt, retained finding clone, writer or query completion is exposed.
+pub struct FixtureFinding<'a>(&'a Finding);
+impl FixtureFinding<'_>{
+ pub fn rule(&self)->&'static str{self.0.rule}
+ pub fn relative(&self)->&str{&self.0.rel}
+ pub fn line(&self)->usize{self.0.line}
+ pub fn owner(&self)->&str{&self.0.owner}
+ pub fn procedure(&self)->&str{&self.0.proc}
+ pub fn variable(&self)->Option<&str>{self.0.var.as_deref()}
+ pub fn kind(&self)->Option<&str>{self.0.kind.as_deref()}
+}
+/// This borrow cannot escape the actual collect phase. It does not turn the
+/// fixture result or caller callback into a current-workspace authority.
+pub struct Fixture<'a>{findings:&'a[Finding],source:&'a dyn DerivedPages,lexical:&'a dyn crate::reactive_raw_lexical_source::Source,poll:&'a dyn Fn()->io::Result<()>}
+pub type FixtureVisitor<'a>=dyn for<'f> FnMut(Fixture<'f>)->Result<(),Failure>+'a;
+impl Fixture<'_>{
+ pub fn findings(&self)->impl Iterator<Item=FixtureFinding<'_>>{self.findings.iter().map(FixtureFinding)}
+ pub fn generated_text(&self,test_types:&BTreeSet<String>)->Result<String,Failure>{crate::reactive_derived_generator_native::generate_raw(self.lexical,test_types)}
+ pub fn inspect(&self)->Result<crate::derived_selftest_policy::Outcome,Failure>{
+  let b=self.source.budget();let mut c=Operation{budget:b,poll:self.poll};c.checkpoint()?;
+  struct Owned{relative:String,owner:String,name:String,start:usize,body:Vec<usize>}
+  let mut files_data=Vec::new();let mut owned=Vec::new();
+  files(self.source,|file|{
+   kc::row(&mut c,&mut files_data)?;files_data.push((kc::own(&mut c,&file.rel)?,kc::own(&mut c,file.text())?));
+   procedures(file,&mut c,|header,proc,c|{
+    let mut body=Vec::new();for(number,line)in proc.lines.iter(){c.checkpoint()?;if !crate::util::py_strip(line).is_empty(){kc::row(c,&mut body)?;body.push(number)}}
+    kc::row(c,&mut owned)?;owned.push(Owned{relative:kc::own(c,proc.relative)?,owner:kc::own(c,proc.owner)?,name:kc::own(c,proc.name)?,start:header,body});Ok(())
+   })?;Ok(true)
+  })?;
+  let mut coordinates=Vec::new();for proc in &owned{c.checkpoint()?;let mut body=Vec::new();for number in &proc.body{kc::row(&mut c,&mut body)?;body.push(*number)}kc::row(&mut c,&mut coordinates)?;coordinates.push(crate::derived_fix_policy::Procedure{relative:&proc.relative,owner:&proc.owner,name:&proc.name,start:proc.start,body});}
+  struct Input<'a>{files:&'a[(String,String)],procs:Vec<crate::derived_fix_policy::Procedure<'a>>}
+  impl crate::derived_fix_policy::Source for Input<'_>{fn procedures(&self)->&[crate::derived_fix_policy::Procedure<'_>]{&self.procs}fn raw_text(&self,relative:&str)->Option<&str>{self.files.iter().find(|(rel,_)|rel==relative).map(|(_,text)|text.as_str())}}
+  let fixed=crate::derived_fix_policy::fix_texts(&Input{files:&files_data,procs:coordinates},self.findings,&mut c)?;
+  let generated=self.generated_text(&BTreeSet::new())?;
+  let mut findings=Vec::new();for row in self.findings{c.checkpoint()?;kc::row(&mut c,&mut findings)?;findings.push(Finding{rel:kc::own(&mut c,&row.rel)?,line:row.line,rule:row.rule,owner:kc::own(&mut c,&row.owner)?,proc:kc::own(&mut c,&row.proc)?,var:row.var.as_deref().map(|value|kc::own(&mut c,value)).transpose()?,kind:row.kind.as_deref().map(|value|kc::own(&mut c,value)).transpose()?});}
+  c.checkpoint()?;Ok(crate::derived_selftest_policy::Outcome{fixed,generated,findings})
+ }
+
+}
+// The historical callback intentionally tests explicit declarations with
+// generated_covers=false and no semantic never-written exemption. This mode
+// changes fixture DATA judgment only; it is not a failed-source witness.
+#[derive(Clone,Copy)]enum JudgeMode{Ordinary,ExplicitFixture}
+struct FixtureDeclaredOnly;
+impl WriteKnowledge for FixtureDeclaredOnly{fn never_written(&self,_:&Index,_:&str,_:&str)->Result<bool,Failure>{Ok(false)}fn collects_set_calls(&self)->bool{false}}
+pub(crate) fn collect_with_fixture(source:&ReadSource<'_>,all_source:&ReadSource<'_>,index:Index,globals:&GlobalResult,test_types:&BTreeSet<String>,poll:&dyn Fn()->io::Result<()>,visit:&mut FixtureVisitor<'_>)->Result<DerivedReadData,Failure>{
+ let b=source.budget();check(b,poll)?;if !globals.matches(source.inputs())||!globals.matches(all_source.inputs()){return Err("derived fixture Globals belong to another original source".into())}
+ let writes=FixtureDeclaredOnly;let lexical=crate::reactive_raw_lexical_source::SemanticLoan::borrow(source);
+ collect_pages(&SemanticPages(source),&SemanticPages(all_source),&lexical,index,&writes,test_types,poll,Some(visit),JudgeMode::ExplicitFixture)
+}
+
+fn collect_pages(source:&dyn DerivedPages,all_source:&dyn DerivedPages,lexical:&dyn crate::reactive_raw_lexical_source::Source,mut index:Index,writes:&dyn WriteKnowledge,test_types:&BTreeSet<String>,poll:&dyn Fn()->io::Result<()>,fixture:Option<&mut FixtureVisitor<'_>>,mode:JudgeMode)->Result<DerivedReadData,Failure>{
  let b=source.budget();let mut c=Operation{budget:b,poll};
  // Old Model is already built. Now genuine Globals/writes precede eager setter
  // names from ALL CODE, including files exempt from this lint's model.
  if writes.collects_set_calls(){files(all_source,|file|{for call in crate::auto_setter_calls_policy::collect_file(&mut c,&file.rel,file.text(),||file.code().text.as_str())?{if !index.set_calls.contains(&call){kc::reserve(&mut c,||Some(512))?;index.set_calls.insert(call);}}Ok(true)})?;}
  let data=RefCell::new(DerivedReadData::default());let mut findings=Vec::new();
- for exact in [false,true]{files(source,|file|{let facts=Judge{index:&index,writes,file,data:&data,budget:b,poll};procedures(file,&mut c,|header,proc,c|{let mut output=|finding|{kc::row(&mut Operation{budget:b,poll},&mut findings)?;findings.push(finding);Ok(())};if exact{judge::exact(&facts,proc,header,c,&mut output)}else{judge::reactive(&facts,proc,true,c,&mut output)}})?;Ok(true)})?;}
+ for exact in [false,true]{files(source,|file|{let facts=Judge{index:&index,writes,file,data:&data,budget:b,poll};procedures(file,&mut c,|header,proc,c|{let mut output=|finding|{kc::row(&mut Operation{budget:b,poll},&mut findings)?;findings.push(finding);Ok(())};if exact{judge::exact(&facts,proc,header,c,&mut output)}else{judge::reactive(&facts,proc,matches!(mode,JudgeMode::Ordinary),c,&mut output)}})?;Ok(true)})?;}
  for owner in &index.entry_order{for e in index.entries(strip(owner)).ok_or("derived entry-order owner absent from its index")?{find_file(source,&e.rel,|file|{let facts=Judge{index:&index,writes,file,data:&data,budget:b,poll};judge::entry(&facts,owner,e,&mut c,&mut|finding|{kc::row(&mut Operation{budget:b,poll},&mut findings)?;findings.push(finding);Ok(())})})?;}}
  for r in crate::reactive_reaction_native::reaction_reads_raw(lexical)?{let OwnedProcedureKey::Raw{relative,header}=r.procedure else{return Err("native derived reaction lacks authentic raw coordinates".into())};find_file(source,&relative,|file|{let line=file.code().line(header);let Some(h)=reaction::header_admitted(line,|groups|kc::reserve(&mut c,||groups.checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+64)))?else{return Err("derived reaction original header absent".into())};let proc=Procedure{owner:&r.owner,name:h.name,relative:&relative,args:h.args,lines:Lines::IndentedCode{view:file.code(),first:header.checked_add(1).ok_or_else(||oom(b,"derived reaction header overflow"))?}};let facts=Judge{index:&index,writes,file,data:&data,budget:b,poll};judge::reaction(&facts,proc,r.kind,&r.reads,&mut c,&mut|finding|{kc::row(&mut Operation{budget:b,poll},&mut findings)?;findings.push(finding);Ok(())})})?;}
- kc::sort_data(&mut findings,&mut|a,b|{c.checkpoint()?;Ok::<_,Failure>(judge::compare(a,b))})?;let mut data=data.into_inner();for f in findings{find_file(source,&f.rel,|file|{let line=u32::try_from(f.line).map_err(|_|oom(b,"derived finding line overflow"))?;kc::row(&mut c,&mut data.sites)?;data.sites.push(Site{rule:kc::own(&mut c,f.rule)?,rel:kc::own(&mut c,&f.rel)?,line,msg:String::new(),key:String::new(),ident:String::new()});kc::row(&mut c,&mut data.source_text)?;kc::reserve(&mut c,||file.raw().line(f.line).len().checked_mul(4)?.checked_add(128))?;data.source_text.push(crate::util::normalize_ws(file.raw().line(f.line)));Ok(())})?;}
+ kc::sort_data(&mut findings,&mut|a,b|{c.checkpoint()?;Ok::<_,Failure>(judge::compare(a,b))})?;if let Some(visit)=fixture{c.checkpoint()?;visit(Fixture{findings:&findings,source,lexical,poll})?;c.checkpoint()?;}let mut data=data.into_inner();for f in findings{find_file(source,&f.rel,|file|{let line=u32::try_from(f.line).map_err(|_|oom(b,"derived finding line overflow"))?;kc::row(&mut c,&mut data.sites)?;data.sites.push(Site{rule:kc::own(&mut c,f.rule)?,rel:kc::own(&mut c,&f.rel)?,line,msg:String::new(),key:String::new(),ident:String::new()});kc::row(&mut c,&mut data.source_text)?;kc::reserve(&mut c,||file.raw().line(f.line).len().checked_mul(4)?.checked_add(128))?;data.source_text.push(crate::util::normalize_ws(file.raw().line(f.line)));Ok(())})?;}
  let want=crate::reactive_derived_generator_native::generate_raw(lexical,test_types)?;data.stale=true;files(all_source,|file|{if file.rel==reaction::GENERATED_REL{data.stale=file.text()!=want}Ok(true)})?;check(b,poll)?;Ok(data)
 }
 
@@ -460,7 +512,7 @@ impl crate::baseline::SiteText for DerivedReadData{fn site_text(&self,relative:&
 /// and selected/all-CODE EOF, and must never cache this as a current source.
 pub fn derived_reads_data_without_semantic_from_preflight_pages(preflight:UnsealedDerivedIndexData,selected_pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,test_types:&BTreeSet<String>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<DerivedReadData,Failure>{
  check(budget,poll)?;let phase=Budget::scoped_temporaries(budget).map_err(|m|oom(budget,m))?;let mut held=Some(preflight);
- let pending=(||{let selected=RawPages{pages:selected_pages,budget:&phase,poll};let all=RawPages{pages,budget:&phase,poll};let UnsealedDerivedIndexData{index,funding,..}=held.take().expect("single actual raw index");let pending=collect_pages(&selected,&all,&selected,index,&NoSemanticWrites,test_types,poll);drop(funding);pending})();
+ let pending=(||{let selected=RawPages{pages:selected_pages,budget:&phase,poll};let all=RawPages{pages,budget:&phase,poll};let UnsealedDerivedIndexData{index,funding,..}=held.take().expect("single actual raw index");let pending=collect_pages(&selected,&all,&selected,index,&NoSemanticWrites,test_types,poll,None,JudgeMode::Ordinary);drop(funding);pending})();
  let pending=finish(pending,&phase,poll);let pending=match pending{Ok(data)=>{let n=data.retained_charge().ok_or_else(||oom(budget,"raw-only Derived retention overflow"))?;match budget.charge(n){Ok(())=>Ok(data),Err(m)=>{drop(data);Err(oom(budget,m))}}},Err(e)=>Err(e)};
  drop(held);if pending.is_err(){phase.keep_failed_scratch()}drop(phase);finish(pending,budget,poll)
 }

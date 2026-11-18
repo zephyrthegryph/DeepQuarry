@@ -6,8 +6,14 @@ pub fn visit_legacy_line(t:&str,emit:impl FnMut(&str,&str)->Result<(),String>)->
 }
 /// SAME literal matcher; typed native callback failures do not become strings.
 pub fn try_visit_legacy_line<E>(t:&str,mut emit:impl FnMut(&str,&str)->Result<(),E>)->Result<(),E>{
-    if let Some(m)=crate::pat_match!(r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t){emit(m.s(1),m.s(2))?;}
-    Ok(())
+    let mut rows=None;
+    let result=try_visit_legacy_line_using(t,&mut crate::key_policy_control::Compatibility,|owner,var|{rows=Some((owner,var));Ok(())});
+    match result{Ok(())=>{},Err(never)=>match never{}}
+    if let Some((owner,var))=rows{emit(owner,var)?;}Ok(())
+}
+const LEGACY_PAIR:&str=r"\A(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)";
+pub fn try_visit_legacy_line_using<'a,C:crate::key_policy_control::Control>(t:&'a str,work:&mut C,mut emit:impl FnMut(&'a str,&'a str)->Result<(),C::Error>)->Result<(),C::Error>{
+    if let Some(m)=crate::key_policy_control::captures_static(work,LEGACY_PAIR,t,0,||crate::pat!(LEGACY_PAIR))?{emit(m.s(1),m.s(2))?;}work.checkpoint()
 }
 pub fn legacy_line(t: &str) -> Option<(String, String)> {
     let mut pair = None;
@@ -27,25 +33,18 @@ pub fn visit_capability_pairs(
     try_visit_capability_pairs(ty,body,&mut||Ok::<(),String>(()),emit)
 }
 pub fn try_visit_capability_pairs<E>(ty:&str,body:&str,checkpoint:&mut impl FnMut()->Result<(),E>,mut emit:impl FnMut(&str,&str)->Result<(),E>)->Result<(),E>{
-    static OWN: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
-        regex::Regex::new(
-            r"\b(?:owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)",
-        )
-        .unwrap()
-    });
-    static LINK: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
-        regex::Regex::new(r"\blinks?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").unwrap()
-    });
-    for c in OWN.captures_iter(body) {
-        checkpoint()?;
-        emit(ty, &c[1])?;
-    }
-    for c in LINK.captures_iter(body) {
-        checkpoint()?;
-        emit(&c[1], &c[2])?;
-        emit(&c[3], &c[4])?;
-    }
-    Ok(())
+    struct Poll<'a,E,F>{poll:&'a mut F,_error:std::marker::PhantomData<E>}
+    impl<E,F:FnMut()->Result<(),E>>crate::key_policy_control::Control for Poll<'_,E,F>{type Error=E;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),E>{(self.poll)()}fn reserve(&mut self,_:usize)->Result<(),E>{Ok(())}fn overflow(&mut self)->E{unreachable!()}fn allocation_failed(&mut self)->E{unreachable!()}}
+    try_visit_capability_pairs_using(ty,body,&mut Poll{poll:checkpoint,_error:std::marker::PhantomData},emit)
+}
+const OWN_PAIR:&str=r"\b(?:owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)";
+const LINK_PAIR:&str=r"\blinks?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)";
+pub fn try_visit_capability_pairs_using<C:crate::key_policy_control::Control>(ty:&str,body:&str,work:&mut C,mut emit:impl FnMut(&str,&str)->Result<(),C::Error>)->Result<(),C::Error>{
+    let mut at=0;
+    while let Some(c)=crate::key_policy_control::captures_static(work,OWN_PAIR,body,at,||crate::pat!(OWN_PAIR))?{work.checkpoint()?;emit(ty,c.s(1))?;at=c.end(0);}
+    let mut at=0;
+    while let Some(c)=crate::key_policy_control::captures_static(work,LINK_PAIR,body,at,||crate::pat!(LINK_PAIR))?{work.checkpoint()?;emit(c.s(1),c.s(2))?;emit(c.s(3),c.s(4))?;at=c.end(0);}
+    work.checkpoint()
 }
 pub fn capability_pairs(ty: &str, body: &str) -> Vec<(String, String)> {
     let mut out = Vec::new();
@@ -124,7 +123,7 @@ impl Projection{
             retained_work.checkpoint()?;
             let t = line.trim_start();
             if !t.starts_with('#') && !t.is_empty() {
-                try_visit_legacy_line(t, |owner, var| {
+                try_visit_legacy_line_using(t, temporary_work, |owner, var| {
                     add_using(&mut out, owner, var, &mut retained, 64 * 1024 * 1024,retained_work)
                 })?;
                 if let Some(m) = crate::raw_marker_policy::statement_marker(
@@ -161,13 +160,13 @@ impl Projection{
                         crate::raw_marker_policy::mask_capability_part(&mut body, &mut args);
                     }
                     if let Some(owner) = args.first() {
-                        let controlled=std::cell::RefCell::new(&mut *retained_work);try_visit_capability_pairs(owner, &body,&mut||controlled.borrow_mut().checkpoint(), |owner, var| {
+                        try_visit_capability_pairs_using(owner, &body,temporary_work, |owner, var| {
                             add_using(
                                 &mut out,
                                 owner,
                                 var,
                                 &mut retained,
-                                (64usize * 1024 * 1024).saturating_sub(bytes),&mut **controlled.borrow_mut(),
+                                (64usize * 1024 * 1024).saturating_sub(bytes),retained_work,
                             )
                         })?;
                     }
@@ -184,7 +183,7 @@ impl Projection{
         if !C::CHECKED&&retained.saturating_add(temporary) > 64 * 1024 * 1024 {
             return Err("relation event projection exceeds admission before allocation".into());
         }
-        let controlled=std::cell::RefCell::new(&mut *retained_work);crate::raw_ownership_policy::try_visit_file_events(&f.rel, f.raw(), f.code(),&mut||controlled.borrow_mut().checkpoint(), |ev| {
+        crate::raw_ownership_policy::try_visit_file_events_funded(&f.rel, f.raw(), f.code(),temporary_work, |ev| {
             if let crate::raw_ownership_policy::IdxEv::Decl {
                 owner,
                 name,
@@ -201,21 +200,21 @@ impl Projection{
                     .saturating_add(256);
                 retained = retained
                     .checked_add(bytes)
-                    .ok_or_else(||if C::CHECKED{controlled.borrow_mut().overflow()}else{"relation legacy table accounting overflow".into()})?;
+                    .ok_or_else(||if C::CHECKED{retained_work.overflow()}else{"relation legacy table accounting overflow".into()})?;
                 if !C::CHECKED&&retained > 64 * 1024 * 1024 - temporary {
                     return Err("relation legacy table exceeds admission".into());
                 }
-                crate::key_policy_control::reserve(&mut **controlled.borrow_mut(),||bytes.checked_add(2048))?;
+                crate::key_policy_control::reserve(retained_work,||bytes.checked_add(2048))?;
                 legacy.insert((owner, name), macro_name);
             } else if let crate::raw_ownership_policy::IdxEv::Registry(ty) = ev {
                 if include_registry {
                     retained = retained
                         .checked_add(ty.len().saturating_mul(4).saturating_add(128))
-                        .ok_or_else(||if C::CHECKED{controlled.borrow_mut().overflow()}else{"registry accounting overflow".into()})?;
+                        .ok_or_else(||if C::CHECKED{retained_work.overflow()}else{"registry accounting overflow".into()})?;
                     if !C::CHECKED&&retained > 64 * 1024 * 1024 - temporary {
                         return Err("registry projection admission exceeded".into());
                     }
-                    crate::key_policy_control::reserve(&mut **controlled.borrow_mut(),||ty.len().checked_mul(4)?.checked_add(128))?;
+                    crate::key_policy_control::reserve(retained_work,||ty.len().checked_mul(4)?.checked_add(128))?;
                     registry.push(ty);
                 }
             }
@@ -265,3 +264,58 @@ mod tests {
 }
 
 #[cfg(test)]mod projection_order_control_tests{#[test]fn exact_shared_sort_stops_at_first_io_and_recovers_in_ordinary_and_native_builds(){for limit in [false,true]{let mut values=(0..10000).rev().collect::<Vec<_>>();let mut comparisons=0usize;let error=crate::key_policy_control::sort_data(&mut values,&mut|a,b|->Result<std::cmp::Ordering,std::io::Error>{comparisons+=1;if comparisons==17{Err(if limit{std::io::ErrorKind::OutOfMemory.into()}else{std::io::Error::from_raw_os_error(1450)})}else{Ok(a.cmp(b))}}).unwrap_err();assert_eq!(comparisons,17);if limit{assert_eq!(error.kind(),std::io::ErrorKind::OutOfMemory)}else{assert_eq!(error.raw_os_error(),Some(1450))}crate::key_policy_control::sort_data(&mut values,&mut|a,b|Ok::<_,std::io::Error>(a.cmp(b))).unwrap();assert_eq!(values,(0..10000).collect::<Vec<_>>());}}}
+
+#[cfg(all(test,feature="native-policy"))]
+mod native_relation_pattern_port_tests{
+ use super::*;
+ use crate::{captured_allow_annotations::Operation,captured_generator_budget::Budget,captured_reactive_reads::Failure,native_pattern::{Provider,Spec}};
+ use std::sync::atomic::{AtomicUsize,Ordering};
+ struct Refusing{width:bool,lengths:AtomicUsize,captures:AtomicUsize}
+ impl Provider for Refusing{
+  fn capture_len(&self,_:Spec)->std::io::Result<usize>{self.lengths.fetch_add(1,Ordering::Relaxed);if self.width{Ok(5)}else{Err(std::io::Error::from_raw_os_error(1450))}}
+  fn find(&self,_:Spec,_:&str,_:usize,_:&mut dyn FnMut((usize,usize))->std::io::Result<()>)->std::io::Result<bool>{panic!("capture policy must use the capture port")}
+  fn capture(&self,_:Spec,_:&str,_:usize,_:&mut dyn FnMut(&[Option<(usize,usize)>])->std::io::Result<()>)->std::io::Result<bool>{self.captures.fetch_add(1,Ordering::Relaxed);Err(std::io::Error::from_raw_os_error(1450))}
+ }
+ fn provider(width:bool)->Refusing{Refusing{width,lengths:AtomicUsize::new(0),captures:AtomicUsize::new(0)}}
+ struct Late<'a>{stopped:&'a std::sync::atomic::AtomicBool,actual_io:bool}
+ impl Provider for Late<'_>{
+  fn capture_len(&self,_:Spec)->std::io::Result<usize>{Ok(5)}
+  fn find(&self,_:Spec,_:&str,_:usize,_:&mut dyn FnMut((usize,usize))->std::io::Result<()>)->std::io::Result<bool>{panic!("capture policy must use the capture port")}
+  fn capture(&self,_:Spec,_:&str,_:usize,_:&mut dyn FnMut(&[Option<(usize,usize)>])->std::io::Result<()>)->std::io::Result<bool>{self.stopped.store(true,Ordering::Release);if self.actual_io{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(false)}}
+ }
+ #[test]
+ fn native_relation_pattern_uses_provider_and_preserves_first_actual_io(){
+  let budget=Budget::new(1<<20).unwrap();let p=provider(false);let mut c=Operation{budget:&budget,poll:&||Ok(())}.with_patterns(&p);
+  let error=try_visit_capability_pairs_using("/datum/holder","ref_one(nameof(x))",&mut c,|_,_|panic!("no row after actual program IO")).unwrap_err();
+  assert!(matches!(error,Failure::Operational(ref actual)if actual.raw_os_error()==Some(1450)));assert_eq!(p.lengths.load(Ordering::Relaxed),1);assert_eq!(p.captures.load(Ordering::Relaxed),0);
+ }
+ #[test]
+ fn native_relation_capture_reservation_precedes_execution(){
+  let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();let budget=Budget::new(fixed).unwrap();let p=provider(true);let mut c=Operation{budget:&budget,poll:&||Ok(())}.with_patterns(&p);
+  let error=try_visit_legacy_line_using("OWN(/datum/holder, x)",&mut c,|_,_|panic!("no row after actual reservation refusal")).unwrap_err();
+  assert!(matches!(error,Failure::Operational(ref actual)if actual.kind()==std::io::ErrorKind::OutOfMemory));assert_eq!(p.lengths.load(Ordering::Relaxed),1);assert_eq!(p.captures.load(Ordering::Relaxed),0);
+ }
+ #[test]
+ fn native_relation_projection_borrows_file_pattern_control(){
+  let budget=Budget::new(4<<20).unwrap();let scratch=Budget::new(4<<20).unwrap();let p=provider(false);let mut retained=Operation{budget:&budget,poll:&||Ok(())};let mut temporary=Operation{budget:&scratch,poll:&||Ok(())}.with_patterns(&p);
+  let file=SourceFile::from_text("code/probe.dm","CAPABILITIES(/datum/holder)\n    ref_one(nameof(x))\n");
+  let mut projection=Projection::new_using(false,0,&mut retained).unwrap();let error=projection.file_using(&file,&mut retained,&mut temporary).unwrap_err();
+  assert!(matches!(error,Failure::Operational(ref actual)if actual.raw_os_error()==Some(1450)));assert_eq!(p.lengths.load(Ordering::Relaxed),1);
+ }
+ #[test]
+ fn native_relation_final_cancel_and_first_actual_provider_io_have_distinct_channels(){
+  for actual_io in [false,true]{
+   let stopped=std::sync::atomic::AtomicBool::new(false);let p=Late{stopped:&stopped,actual_io};let budget=Budget::new(1<<20).unwrap();
+   let poll=||if stopped.load(Ordering::Acquire){Err(std::io::ErrorKind::Interrupted.into())}else{Ok(())};let mut c=Operation{budget:&budget,poll:&poll}.with_patterns(&p);
+   let error=try_visit_capability_pairs_using("/datum/holder","ref_one(nameof(x))",&mut c,|_,_|panic!("no row on failed/canceled provider")).unwrap_err();
+   match error{Failure::Operational(actual)if actual_io=>assert_eq!(actual.raw_os_error(),Some(1450)),Failure::Operational(actual)=>assert_eq!(actual.kind(),std::io::ErrorKind::Interrupted),Failure::Unsupported(reason)=>panic!("operational failure became unsupported: {reason}")}
+  }
+ }
+ #[test]
+ fn original_relation_pair_order_and_cross_link_ends_are_unchanged(){
+  let rows=capability_pairs("/datum/holder","links(/datum/a::left, /datum/b::right), ref_many(nameof(second)), owns_one(nameof(first))");
+  assert_eq!(rows,vec![("/datum/holder".into(),"second".into()),("/datum/holder".into(),"first".into()),("/datum/a".into(),"left".into()),("/datum/b".into(),"right".into())]);
+  assert_eq!(legacy_line("REL_PAIR_LIST(/datum/holder, members)"),Some(("/datum/holder".into(),"members".into())));
+  for rejected in ["prefix OWN(/datum/holder, x)"," OWN(/datum/holder, x)","\nOWN(/datum/holder, x)"]{assert_eq!(legacy_line(rejected),None,"old pat_match never searches after a prefix");}
+ }
+}

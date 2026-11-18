@@ -70,7 +70,7 @@ pub(in crate::lowering) struct Certificate {
     policy: u128,
     termination: u8,
     key: Option<SharedKey>,
-    code: std::sync::Weak<dm_tree::frontend::BodyCodeIdentity>,
+    code: dm_tree::frontend::BodyCodeWeak,
 }
 #[cfg(test)]
 #[path = "symbolic_local_modified_tests.rs"]
@@ -112,7 +112,7 @@ impl Certificate {
             identity: row.source().identity,
             policy,
             termination: row.termination().canonical_tag(),
-            code: Arc::downgrade(row.code_identity()),
+            code: dm_tree::frontend::BodyCodeIdentity::downgrade(row.code_identity()),
             key: None,
         })
     }
@@ -216,7 +216,7 @@ impl Certificate {
                 bytes,
             );
         }
-        shell(census, &self.code);
+        self.code.visit_allocation_storage(&mut |address,logical,capacity|{census.exposed_buffer("procedure.local_weak_code",address,logical,capacity);});
         shell(census, &self.inputs);
         shell(census, &self.abi);
         if let Some(selected) = &self.selected {
@@ -370,4 +370,19 @@ impl SessionSymbolicMemo {
         }
         Ok(None)
     }
+}
+
+#[cfg(test)]#[test]fn actual_weak_code_locator_owner_widths_are_measured(){
+ {#[allow(dead_code)]struct Prior{
+    selected: Option<std::sync::Weak<crate::driver_facts::abi_artifacts::UnitArtifact>>,
+    graph: Option<std::sync::Weak<dm_tree::frontend::CallableAbiGraph>>,
+    inputs: std::sync::Weak<dm_codegen_byond::lower_resolver::ProcedureInputs>,
+    abi: std::sync::Weak<crate::procedure_policy::PreparedAbi>,
+    identity: UnitIdentity,
+    policy: u128,
+    termination: u8,
+    key: Option<SharedKey>,
+    code: std::sync::Weak<dm_tree::frontend::BodyCodeIdentity>,
+}
+let old=std::mem::size_of::<Prior>();let new=std::mem::size_of::<Certificate>();eprintln!("WEAK_CODE_OWNER Certificate prior={old} current={new} delta={}",new as isize-old as isize);assert!(new<=old+std::mem::size_of::<usize>());}
 }

@@ -172,18 +172,41 @@ pub(super) fn filesystem_original_open_read_admitted(path:&Path,limit:usize,afte
     if after_open()?==dm_preprocess::OriginalRawOpenDecision::Suppress{return Ok(OriginalOpenedRead::Suppressed)}
     read_opened_handle_admitted(file,path,limit,before_allocate).map(OriginalOpenedRead::Read)
 }
-fn read_opened_handle_admitted(mut file:std::fs::File,path:&Path,limit:usize,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<CapturedInputRead>{
+enum OptionalKernelProduct{Read(CapturedInputRead),Readable,NoText(OptionalReadStatus)}
+/// Keep the existing regular-file topology refusal before opening arbitrary
+/// special inputs. Environmental lookup failure still asks the actual legacy
+/// OS open for its real NoText cause; unrelated operational IO is preserved.
+fn optional_file(path:&Path)->io::Result<Result<std::fs::File,OptionalReadStatus>>{
+ match std::fs::metadata(path){Ok(metadata)if !metadata.is_file()&&!metadata.is_dir()=>return Err(invalid("optional special input has no finite regular-file grant")),Ok(_)=>{},Err(error)if original_source_open_failure(&error)=>{},Err(actual)=>return Err(actual)}
+ match std::fs::File::open(path){Ok(file)=>Ok(Ok(file)),Err(error)=>Ok(Err(OptionalReadStatus::os_failure(OptionalReadPhase::Open,error)?))}
+}
+fn read_opened_handle_admitted(file:std::fs::File,path:&Path,limit:usize,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<CapturedInputRead>{match read_opened_handle_mode(file,path,limit,before_allocate,false,true)?{OptionalKernelProduct::Read(actual)=>Ok(actual),_=>Err(invalid("required policy reader returned optional product"))}}
+/// ONLY actual OS open/read errors become NoText. Every funding, allocation,
+/// deadline, cancellation, stamp and stability error keeps its real Err path.
+pub(super) fn filesystem_optional_read_admitted(path:&Path,limit:usize,fund:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OptionalInputRead>{
+ crate::daemon::control::checkpoint()?;let file=match optional_file(path)?{Ok(file)=>file,Err(actual)=>return Ok(OptionalInputRead::NoText(actual))};
+ match read_opened_handle_mode(file,path,limit,fund,true,true)?{OptionalKernelProduct::Read(actual)=>Ok(OptionalInputRead::Read(actual)),OptionalKernelProduct::NoText(actual)=>Ok(OptionalInputRead::NoText(actual)),OptionalKernelProduct::Readable=>Err(invalid("optional payload reader omitted its actual bytes"))}
+}
+pub(super) fn filesystem_optional_probe(path:&Path)->io::Result<OptionalReadStatus>{
+ crate::daemon::control::checkpoint()?;let file=match optional_file(path)?{Ok(file)=>file,Err(actual)=>return Ok(actual)};
+ match read_opened_handle_mode(file,path,dq_analyze::captured_raw_policy::MAX_FIXTURE_FILE_BYTES,&mut |_|Err(invalid("optional probe must not allocate payload")),true,false)?{OptionalKernelProduct::Readable=>Ok(OptionalReadStatus::Readable),OptionalKernelProduct::NoText(actual)=>Ok(actual),OptionalKernelProduct::Read(_)=>Err(invalid("optional probe retained unexpected payload"))}
+}
+fn read_opened_handle_mode(mut file:std::fs::File,path:&Path,limit:usize,before_allocate:&mut dyn FnMut(usize)->io::Result<()>,optional:bool,keep:bool)->io::Result<OptionalKernelProduct>{
     use std::io::Read;
+    // Unix permits opening a directory, then issues its actual read errno.
+    // Observe that errno rather than fabricating source absence from stamp's
+    // non-regular-file refusal. Other successful special readers stay closed.
+    if optional && file.metadata()?.is_dir(){let mut byte=[0u8;1];loop{match file.read(&mut byte){Err(error)if error.kind()==io::ErrorKind::Interrupted=>{crate::daemon::control::checkpoint()?;continue},Err(error)=>return Ok(OptionalKernelProduct::NoText(OptionalReadStatus::os_failure(OptionalReadPhase::Read,error)?)),Ok(_)=>return Err(invalid("optional non-regular readable input has no finite captured file grant"))}}}
     let before = stamp_handle(&file)?;
     let size = usize::try_from(before.size)
         .map_err(|_| invalid("policy file size exceeds address space"))?;
     if size > limit {
-        return Err(invalid("policy original exceeds remaining capture budget"));
+        return Err(invalid(&format!("policy original exceeds remaining capture budget: {} (size={size}, limit={limit})",path.display())));
     }
-    before_allocate(size)?;
+    if keep{before_allocate(size)?;}
     // Allocate the exact admitted layout; try_reserve_exact permits a larger
     // reported capacity, which would allocate bytes the callback never funded.
-    let mut bytes = if size == 0 { Vec::new() } else {
+    let mut bytes = if !keep||size == 0 { Vec::new() } else {
         let layout = std::alloc::Layout::array::<u8>(size)
             .map_err(|_| invalid("policy original allocation refused"))?;
         let pointer = std::ptr::NonNull::new(unsafe { std::alloc::alloc(layout) })
@@ -192,22 +215,23 @@ fn read_opened_handle_admitted(mut file:std::fs::File,path:&Path,limit:usize,bef
         // elements. Vec owns and frees it; extend below never exceeds size.
         unsafe { Vec::from_raw_parts(pointer.as_ptr(), 0, size) }
     };
+    let mut count=0usize;
     let mut chunk = [0u8; 16384];
     loop {
         crate::daemon::control::checkpoint()?;
-        let n = file.read(&mut chunk)?;
+        let n=match file.read(&mut chunk){Ok(n)=>n,Err(error)if optional&&error.kind()==io::ErrorKind::Interrupted=>continue,Err(error)if optional=>return Ok(OptionalKernelProduct::NoText(OptionalReadStatus::os_failure(OptionalReadPhase::Read,error)?)),Err(error)=>return Err(error)};
         if n == 0 {
             break;
         }
-        if bytes.len().checked_add(n).is_none_or(|next| next > size) {
+        if count.checked_add(n).is_none_or(|next| next > size) {
             return Err(io::Error::new(
                 io::ErrorKind::Interrupted,
                 "policy original grew beyond observed size",
             ));
         }
-        bytes.extend_from_slice(&chunk[..n]);
+        count+=n;if keep{bytes.extend_from_slice(&chunk[..n]);}
     }
-    if bytes.len() != size
+    if count != size
         || stamp_handle(&file)? != before
         || FileSystemInputs.stamp(path)? != before
     {
@@ -216,7 +240,7 @@ fn read_opened_handle_admitted(mut file:std::fs::File,path:&Path,limit:usize,bef
             "policy original changed during bounded read",
         ));
     }
-    Ok(CapturedInputRead::new(before, bytes))
+    Ok(if keep{OptionalKernelProduct::Read(CapturedInputRead::new(before,bytes))}else{OptionalKernelProduct::Readable})
 }
 impl<P: SnapshotProvider> RecordingInputs<P> {
     pub(crate) fn read_policy_candidate(&self,path:&Path,limit:usize)->io::Result<Option<dm_resources::SharedBytes>>{self.read_policy_vec(path,limit).map(|bytes|bytes.map(Into::into))}
@@ -321,3 +345,19 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
 #[cfg(test)]
 #[path = "input_policy_read_tests.rs"]
 mod tests;
+
+impl<P:SnapshotProvider> RecordingInputs<P>{
+ pub(super) fn read_optional_callback_payload(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,fund:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<Option<Vec<u8>>>{
+  let before=self.snapshot.lock().map_err(|_|invalid("callback recorder poisoned"))?.optional_reads.clone();let prepaid=work.reserve(before.probe_pregrant(path)?)?;
+  let first=std::cell::RefCell::new(None);let admitted=std::cell::Cell::new(None);
+  let read=self.provider.read_optional_admitted(path,limit,work,&mut|size|{let next=(||{if admitted.replace(Some(size)).is_some()||size>limit{return Err(invalid("optional provider repeated or exceeded payload admission"))}work.checkpoint()?;fund(size)})();match next{Ok(())=>Ok(()),Err(error)=>{if first.borrow().is_none(){*first.borrow_mut()=Some(error)}Err(io::ErrorKind::Other.into())}}});
+  if let Some(actual)=first.into_inner(){return Err(actual)}
+  let(status,bytes)=match read?{
+   OptionalInputRead::Read(actual)=>{let size=admitted.get().ok_or_else(||invalid("optional payload omitted actual admission"))?;(OptionalReadStatus::Readable,self.record_policy_read_result(path,size,Ok(Some(actual)))?)},
+   OptionalInputRead::NoText(actual@OptionalReadStatus::NoText{phase, ..})=>{if phase==OptionalReadPhase::Open&&admitted.get().is_some(){return Err(invalid("optional open failure followed an impossible payload admission"))}(actual,None)},
+   OptionalInputRead::NoText(OptionalReadStatus::Readable)=>return Err(invalid("optional NoText cannot claim readable payload")),
+  };
+  let next=before.recorded_using(path,status,prepaid,work)?;
+  let mut snapshot=self.snapshot.lock().map_err(|_|invalid("callback recorder poisoned"))?;if !snapshot.optional_reads.same_owner(&before){return Err(io::Error::new(io::ErrorKind::Interrupted,"optional callback observations changed before commit"))}snapshot.optional_reads=next;Ok(bytes)
+ }
+}

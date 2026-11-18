@@ -49,6 +49,16 @@ fn actual_io(error:Box<dyn Error>)->io::Error{
  match error.downcast::<io::Error>(){Ok(error)=>*error,Err(error)=>io::Error::new(io::ErrorKind::Interrupted,error.to_string())}
 }
 impl NativeSourceCheckInputs{
+ pub(crate) fn require_fixture_step(&self,next:&Self,project:&Path,root:&Path,transition:&crate::native_author_fix_transaction::Transition,work:&dyn SourceArenaWork)->io::Result<()>{
+  work.checkpoint()?;
+  if self.project!=project||next.project!=project||self.plan.fixture_scope().is_none_or(|scope|scope.root()!=root)||next.plan.fixture_scope().is_none()||!Arc::ptr_eq(&self.plan,&next.plan)||std::mem::discriminant(&self.purpose)!=std::mem::discriminant(&next.purpose){return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected source fixture step differs from its actual plan/purpose/namespace"))}
+  if !self.inputs.same_fixture_step(&next.inputs,root,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"selected source input closure changed beyond its actual fixture expected write"))}Ok(())
+ }
+ pub(crate) fn require_baseline_step(&self,next:&Self,project:&Path,transition:&crate::native_author_fix_transaction::Transition,work:&dyn SourceArenaWork)->io::Result<()>{
+  work.checkpoint()?;
+  if self.project!=project||next.project!=project||!self.plan.is_baseline_update()||!next.plan.is_baseline_update()||!Arc::ptr_eq(&self.plan,&next.plan)||std::mem::discriminant(&self.purpose)!=std::mem::discriminant(&next.purpose){return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected source baseline step differs from its actual plan/purpose/namespace"))}
+  if !self.inputs.same_baseline_step(&next.inputs,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"selected source input closure changed beyond its actual baseline write"))}Ok(())
+ }
  pub(crate) fn require_binding(&self,snapshot:&RawWorkspaceSnapshot,plan:&Arc<NativeCheckSelection>)->io::Result<()>{
   match self.purpose{SourcePurpose::Registered=>self.snapshot.require_same_registered_frame(snapshot,plan),SourcePurpose::EngineUnselected=>{if !Arc::ptr_eq(&self.plan,plan){return Err(io::Error::new(io::ErrorKind::InvalidInput,"empty Engine ledger belongs to another actual selector plan"))}self.snapshot.require_same_engine_unselected_frame(snapshot,plan)}}
  }
@@ -91,7 +101,7 @@ impl Preparation{
  pub(super) fn source_plan(&self)->Option<&Arc<NativeCheckSelection>>{match self{Self::Source{plan,..}=>Some(plan),_=>None}}
  pub(super) fn model_plan(&self)->Option<&Arc<NativeCheckSelection>>{match self{Self::Model{plan,..}=>Some(plan),_=>None}}
  pub(super) fn handlers_plan(&self)->Option<&Arc<NativeCheckSelection>>{match self{Self::Handlers{plan,..}=>Some(plan),_=>None}}
- pub(super) fn begin_attempt(&mut self)->io::Result<()>{match self{Self::SourceHandlers{prepared,..}=>*prepared=None,Self::Source{prepared,..}=>*prepared=None,Self::Model{prepared,..}=>*prepared=None,Self::Engine{prepared,..}=>*prepared=None,Self::Handlers{prepared,failed,failure_staging,..}=>{*prepared=None;*failed=None;failure_staging.restart()?;}}Ok(())}
+ pub(super) fn begin_attempt(&mut self)->io::Result<()>{let plan=match &*self{Self::Source{plan,..}|Self::Engine{plan,..}|Self::Model{plan,..}|Self::Handlers{plan,..}=>Some(plan),Self::SourceHandlers{..}=>None};if let Some(scope)=plan.and_then(|p|p.fixture_scope()){scope.begin_attempt()?;}match self{Self::SourceHandlers{prepared,..}=>*prepared=None,Self::Source{prepared,..}=>*prepared=None,Self::Model{prepared,..}=>*prepared=None,Self::Engine{prepared,..}=>*prepared=None,Self::Handlers{prepared,failed,failure_staging,..}=>{*prepared=None;*failed=None;failure_staging.restart()?;}}Ok(())}
  pub(super) fn record_source(&mut self,snapshot:RawWorkspaceSnapshot,inputs:NativeSourceCheckInputs)->io::Result<()>{match self{Self::Source{prepared,..}=>{*prepared=Some((snapshot,inputs));Ok(())},_=>Err(io::Error::new(io::ErrorKind::InvalidInput,"non-raw preparation cannot receive a raw-only frame"))}}
  pub(super) fn record_model(&mut self,inputs:super::checker_capture::Inputs)->io::Result<()>{match self{Self::Model{prepared,..}=>{*prepared=Some(inputs);Ok(())},_=>Err(io::Error::new(io::ErrorKind::InvalidInput,"non-model preparation cannot receive a semantic model ledger"))}}
  pub(super) fn record_handlers(&mut self,inputs:super::native_check_handlers::Inputs)->io::Result<()>{match self{Self::Handlers{prepared,failed,..}=>{if prepared.is_some()||failed.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"Handler recorder transfer repeated or follows failed-full"))}*prepared=Some(inputs);Ok(())},_=>Err(io::Error::new(io::ErrorKind::InvalidInput,"non-handler preparation cannot receive a Handler ledger"))}}
@@ -103,7 +113,9 @@ impl Preparation{
  fn take_handlers(&mut self)->Option<super::native_check_handlers::Inputs>{match self{Self::Handlers{prepared,..}=>prepared.take(),_=>None}}
 }
 
-pub(crate) fn prepare_registered_source_check(mut request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>)->Result<(BuildOutcome,RawWorkspaceSnapshot,NativeSourceCheckInputs),Box<dyn Error>>{
+pub(crate) fn prepare_registered_source_check(request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>)->Result<(BuildOutcome,RawWorkspaceSnapshot,NativeSourceCheckInputs),Box<dyn Error>>{prepare_registered_source_check_using_baseline(request,host,plan,false,None)}
+pub(crate) fn prepare_registered_source_baseline(request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,domain:Option<&runner_freshness::GenerationInputClosure>)->Result<(BuildOutcome,RawWorkspaceSnapshot,NativeSourceCheckInputs),Box<dyn Error>>{prepare_registered_source_check_using_baseline(request,host,plan,true,domain)}
+fn prepare_registered_source_check_using_baseline(mut request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,baseline:bool,domain:Option<&runner_freshness::GenerationInputClosure>)->Result<(BuildOutcome,RawWorkspaceSnapshot,NativeSourceCheckInputs),Box<dyn Error>>{
  use crate::request::BuildCommand;
  if request.command!=BuildCommand::PrepareQuery||!host.retains_artifacts()||!plan.source_only()
   ||request.record_inputs.is_some()||request.replay_inputs.is_some()||request.no_daemon
@@ -112,12 +124,13 @@ pub(crate) fn prepare_registered_source_check(mut request:BuildRequest,host:&mut
   ||request.policy_inputs.as_ref().is_none_or(|input|input.analysis_context!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)||input.workspace.is_none()||!input.workspace_auxiliary.is_empty()||!input.workspace_generators.is_empty()||!input.files.is_empty()||!input.search_folders.is_empty()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected source CHECK requires its actual retained source-only preparation").into())}
  request.exact_inputs=true;
  request.no_cache|=plan.format().no_cache;
- let mut preparation=Preparation::Source{plan,prepared:None};
- let mut writer=crate::daemon::stderr_writer();let mut output=super::PreparationDiagnosticOutput::immediate(&mut writer);
+ let selftest_plan=Arc::clone(&plan);let mut preparation=Preparation::Source{plan,prepared:None};
+ let mut writer=crate::daemon::stderr_writer();let mut output=super::PreparationDiagnosticOutput::immediate(&mut writer);output.retain_native_selftests(&selftest_plan)?;
+ if baseline{output.require_registered_baseline_update(domain)?;}
  let outcome=super::run_build_with_selected_publication(request,host,None,None,&mut output,None,None,false,Some(&mut preparation))?;
  if !matches!(outcome,BuildOutcome::RawQueryPrepared{..}){return Err(io::Error::new(io::ErrorKind::InvalidData,"source CHECK preparation returned a model/compiler outcome").into())}
  let(snapshot,inputs)=preparation.take_source().ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"source CHECK did not transfer its actual raw snapshot and recorder"))?;
- Ok((outcome,snapshot,inputs))
+ output.finish_native_selftests(inputs.native_selftest_epoch())?;Ok((outcome,snapshot,inputs))
 }
 
 // Source-only ownership definitions. Private metadata controls remain UNRUN;
@@ -156,12 +169,15 @@ pub(crate) fn prepare_registered_source_check(mut request:BuildRequest,host:&mut
   let(_,new_snapshot,current)=prepare_registered_source_check(request.clone(),&mut host,Arc::clone(&plan)).unwrap();current.require_binding(&new_snapshot,&plan).unwrap();current.require_current(&request.project).unwrap();assert_eq!(inputs.require_binding(&new_snapshot,&plan).unwrap_err().kind(),io::ErrorKind::InvalidInput);
  }
 }
-pub(crate) fn prepare_registered_model_check(request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,diagnostics:&mut crate::selected_report_spool::Stage,checker:Option<&mut crate::selected_report_spool::Stage>)->Result<(BuildOutcome,super::checker_capture::Inputs,Option<super::PreparedCheckerTranscript>),Box<dyn Error>>{
+pub(crate) fn prepare_registered_model_check(request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,diagnostics:&mut crate::selected_report_spool::Stage,checker:Option<&mut crate::selected_report_spool::Stage>)->Result<(BuildOutcome,super::checker_capture::Inputs,Option<super::PreparedCheckerTranscript>),Box<dyn Error>>{prepare_registered_model_check_using_baseline(request,host,plan,diagnostics,checker,false,None)}
+pub(crate) fn prepare_registered_model_baseline(request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,diagnostics:&mut crate::selected_report_spool::Stage,checker:Option<&mut crate::selected_report_spool::Stage>,domain:Option<&runner_freshness::GenerationInputClosure>)->Result<(BuildOutcome,super::checker_capture::Inputs,Option<super::PreparedCheckerTranscript>),Box<dyn Error>>{prepare_registered_model_check_using_baseline(request,host,plan,diagnostics,checker,true,domain)}
+fn prepare_registered_model_check_using_baseline(request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,diagnostics:&mut crate::selected_report_spool::Stage,checker:Option<&mut crate::selected_report_spool::Stage>,baseline:bool,domain:Option<&runner_freshness::GenerationInputClosure>)->Result<(BuildOutcome,super::checker_capture::Inputs,Option<super::PreparedCheckerTranscript>),Box<dyn Error>>{
  if request.command!=crate::request::BuildCommand::PrepareQuery||!host.retains_artifacts()||plan.source_only()||checker.is_some()!=plan.needs_checker(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected model CHECK requires its actual report-only demand").into())}
- let mut preparation=Preparation::Model{plan,prepared:None};let mut output=match checker{Some(checker)=>super::PreparationDiagnosticOutput::selected_combined(diagnostics,checker),None=>super::PreparationDiagnosticOutput::selected_report(diagnostics)};
+ let selftest_plan=Arc::clone(&plan);let mut preparation=Preparation::Model{plan,prepared:None};let mut output=match checker{Some(checker)=>super::PreparationDiagnosticOutput::selected_combined(diagnostics,checker),None=>super::PreparationDiagnosticOutput::selected_report(diagnostics)};output.retain_native_selftests(&selftest_plan)?;
+ if baseline{output.require_registered_baseline_update(domain)?;}
  let result=super::run_build_with_selected_publication(request,host,None,None,&mut output,None,None,false,Some(&mut preparation));let outcome=source_handler_preparation_result(result,&mut output)?;let transcript=output.take_checker_frame();
  if !matches!(outcome,BuildOutcome::QueryPrepared{..}){return Err(io::Error::new(io::ErrorKind::InvalidData,"registered model CHECK did not issue its actual model frame").into())}
- let inputs=preparation.take_model().ok_or_else(||io::Error::other("registered model CHECK omitted actual recorder transfer"))?;Ok((outcome,inputs,transcript))
+ let inputs=preparation.take_model().ok_or_else(||io::Error::other("registered model CHECK omitted actual recorder transfer"))?;output.finish_native_selftests(inputs.native_selftest_epoch())?;Ok((outcome,inputs,transcript))
 }
 
 /// Actual exclusive Handler preparation: Current and failed-full one-shot
@@ -174,8 +190,13 @@ pub(crate) fn prepare_registered_handlers_check(request:BuildRequest,host:&mut B
  plan:Arc<NativeCheckSelection>)->Result<PreparedHandlers,Box<dyn Error>>{
  prepare_registered_handlers_check_using(request,host,plan,None)
 }
+pub(crate) fn prepare_registered_handlers_baseline(request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,domain:Option<&runner_freshness::GenerationInputClosure>)->Result<PreparedHandlers,Box<dyn Error>>{prepare_registered_handlers_check_using_baseline(request,host,plan,None,true,domain)}
+
 pub(super) fn prepare_registered_handlers_check_using(mut request:BuildRequest,host:&mut BuildHost,
- plan:Arc<NativeCheckSelection>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>)->Result<PreparedHandlers,Box<dyn Error>>{
+ plan:Arc<NativeCheckSelection>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>)->Result<PreparedHandlers,Box<dyn Error>>{prepare_registered_handlers_check_using_baseline(request,host,plan,source_override,false,None)}
+fn prepare_registered_handlers_check_using_baseline(mut request:BuildRequest,host:&mut BuildHost,
+ plan:Arc<NativeCheckSelection>,source_override:Option<&(dyn crate::input_snapshot::SnapshotProvider+Sync)>,baseline_update:bool,domain:Option<&runner_freshness::GenerationInputClosure>)->Result<PreparedHandlers,Box<dyn Error>>{
+ if baseline_update&&!plan.is_baseline_update(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Handler baseline requires its actual private selected purpose").into())}
  use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
  if request.command!=crate::request::BuildCommand::PrepareQuery||!host.retains_artifacts()||!plan.handlers_only()
   ||request.record_inputs.is_some()||request.replay_inputs.is_some()||request.no_daemon
@@ -189,12 +210,13 @@ pub(super) fn prepare_registered_handlers_check_using(mut request:BuildRequest,h
  request.exact_inputs=true;request.no_cache|=plan.format().no_cache;
  let cache=request.cache_root.as_deref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"Handler CHECK requires explicit external cache"))?;
  let failure_staging=super::native_check_handlers::FailureStaging::new(Arc::clone(&plan),cache,host.source_arena_work())?;
- let mut preparation=Preparation::Handlers{plan,prepared:None,failed:None,failure_staging};
+ let selftest_plan=Arc::clone(&plan);let mut preparation=Preparation::Handlers{plan,prepared:None,failed:None,failure_staging};
  // Semantic notices are replayed exactly once by the real current Handler
  // report API. Ordinary preparation tracing remains in its lifecycle stream.
- let mut trace=crate::daemon::stderr_writer();let mut output=super::PreparationDiagnosticOutput::immediate(&mut trace);
+ let mut trace=crate::daemon::stderr_writer();let mut output=super::PreparationDiagnosticOutput::immediate(&mut trace);output.retain_native_selftests(&selftest_plan)?;
+if baseline_update{output.require_registered_baseline_update(domain)?;}
  let pending=super::run_build_with_selected_publication(request,host,None,None,&mut output,source_override,None,false,Some(&mut preparation));
- let output_error=output.take_error();let outcome=match pending{
+ let mut output_error=output.take_error();if baseline_update{if let Some(first)=output_error.take(){return Err(first.into())}}let outcome=match pending{
   Ok(outcome)=>outcome,
   Err(actual)=>return match preparation.take_failed_handlers(){Some(report)=>Ok(PreparedHandlers::FailedFullOneShot{actual,report}),None=>Err(actual)},
  };if let Some(actual)=output_error{return Err(actual.into())}
@@ -202,17 +224,21 @@ pub(super) fn prepare_registered_handlers_check_using(mut request:BuildRequest,h
   return Err(io::Error::new(io::ErrorKind::InvalidData,"Handler CHECK preparation returned another source role").into())
  }
  let inputs=preparation.take_handlers().ok_or_else(||io::Error::other("Handler CHECK did not move its actual recorder ledger"))?;
- Ok(PreparedHandlers::Current{outcome,inputs})
+ output.finish_native_selftests(inputs.native_selftest_epoch())?;Ok(PreparedHandlers::Current{outcome,inputs})
 }
 
 /// Exact exclusive selected Engine; actual preflight chooses a real Raw or Model result.
-pub(crate) fn prepare_registered_engine_check(mut request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,diagnostics:&mut crate::selected_report_spool::Stage)->Result<(BuildOutcome,EnginePrepared),Box<dyn Error>>{
+pub(crate) fn prepare_registered_engine_check(mut request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,diagnostics:&mut crate::selected_report_spool::Stage)->Result<(BuildOutcome,EnginePrepared),Box<dyn Error>>{prepare_registered_engine_check_using_baseline(request,host,plan,diagnostics,false,None)}
+pub(crate) fn prepare_registered_engine_baseline(mut request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,diagnostics:&mut crate::selected_report_spool::Stage,domain:Option<&runner_freshness::GenerationInputClosure>)->Result<(BuildOutcome,EnginePrepared),Box<dyn Error>>{prepare_registered_engine_check_using_baseline(request,host,plan,diagnostics,true,domain)}
+fn prepare_registered_engine_check_using_baseline(mut request:BuildRequest,host:&mut BuildHost,plan:Arc<NativeCheckSelection>,diagnostics:&mut crate::selected_report_spool::Stage,baseline_update:bool,domain:Option<&runner_freshness::GenerationInputClosure>)->Result<(BuildOutcome,EnginePrepared),Box<dyn Error>>{
  if request.command!=crate::request::BuildCommand::PrepareQuery||!host.retains_artifacts()||!plan.exclusive_engine_layering()||request.record_inputs.is_some()||request.replay_inputs.is_some()||request.no_daemon||request.engine_template.is_some()||request.bootstrap_catalog||request.diagnostic_declarations||request.source_questions.is_some()||!request.defines.is_empty()||request.policy_inputs.as_ref().is_none_or(|p|p.workspace_auxiliary.as_slice()!=[crate::policy_request::WorkspaceAuxiliaryQuestion::EngineLayering]||p.analysis_context!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)||p.workspace.is_none()||!p.files.is_empty()||!p.search_folders.is_empty()||!p.workspace_generators.is_empty()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"exclusive selected Engine actual purpose required").into())}
  request.exact_inputs=true;request.no_cache|=plan.format().no_cache;
- let mut preparation=Preparation::Engine{plan,prepared:None};let mut output=super::PreparationDiagnosticOutput::selected_report(diagnostics);
+ if baseline_update&&!plan.is_baseline_update(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Engine baseline requires actual selected baseline purpose").into())}
+ let selftest_plan=Arc::clone(&plan);let mut preparation=Preparation::Engine{plan,prepared:None};let mut output=super::PreparationDiagnosticOutput::selected_report(diagnostics);output.retain_native_selftests(&selftest_plan)?;
+if baseline_update{output.require_registered_baseline_update(domain)?;}
  let pending=super::run_build_with_selected_publication(request,host,None,None,&mut output,None,None,false,Some(&mut preparation));let outcome=source_handler_preparation_result(pending,&mut output)?;let checker=output.take_checker_frame();if checker.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"exclusive Engine must not run Checker").into())}
  let prepared=preparation.take_engine().ok_or_else(||io::Error::other("actual selected Engine frame/recorder transfer absent"))?;
- if !matches!((&outcome,&prepared),(BuildOutcome::RawQueryPrepared{..},EnginePrepared::Unselected{..})|(BuildOutcome::QueryPrepared{..},EnginePrepared::Model{..})){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual Engine outcome was relabelled").into())}Ok((outcome,prepared))
+ if !matches!((&outcome,&prepared),(BuildOutcome::RawQueryPrepared{..},EnginePrepared::Unselected{..})|(BuildOutcome::QueryPrepared{..},EnginePrepared::Model{..})){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual Engine outcome was relabelled").into())}let epoch=match &prepared{EnginePrepared::Unselected{inputs,..}=>inputs.native_selftest_epoch(),EnginePrepared::Model{inputs}=>inputs.native_selftest_epoch()};output.finish_native_selftests(epoch)?;Ok((outcome,prepared))
 }
 
 #[cfg(test)]mod selected_engine_owner_controls{
@@ -233,15 +259,23 @@ pub(crate) fn prepare_registered_engine_check(mut request:BuildRequest,host:&mut
 /// under another host/compiler or fallback semantic role is permitted.
 pub(crate) fn prepare_registered_source_handlers_check(mut request:BuildRequest,host:&mut BuildHost,
  projection:Arc<crate::runner_host::query_snapshot::SourceHandlerProjection>,diagnostics:&mut crate::selected_report_spool::Stage,
-)->Result<(BuildOutcome,PreparedSourceHandlers),Box<dyn Error>>{
+)->Result<(BuildOutcome,PreparedSourceHandlers),Box<dyn Error>>{prepare_registered_source_handlers_check_using_baseline(request,host,projection,diagnostics,false,None)}
+pub(crate) fn prepare_registered_source_handlers_baseline(mut request:BuildRequest,host:&mut BuildHost,
+ projection:Arc<crate::runner_host::query_snapshot::SourceHandlerProjection>,diagnostics:&mut crate::selected_report_spool::Stage,
+domain:Option<&runner_freshness::GenerationInputClosure>)->Result<(BuildOutcome,PreparedSourceHandlers),Box<dyn Error>>{prepare_registered_source_handlers_check_using_baseline(request,host,projection,diagnostics,true,domain)}
+fn prepare_registered_source_handlers_check_using_baseline(mut request:BuildRequest,host:&mut BuildHost,
+ projection:Arc<crate::runner_host::query_snapshot::SourceHandlerProjection>,diagnostics:&mut crate::selected_report_spool::Stage,
+baseline_update:bool,domain:Option<&runner_freshness::GenerationInputClosure>)->Result<(BuildOutcome,PreparedSourceHandlers),Box<dyn Error>>{
  if request.command!=crate::request::BuildCommand::PrepareQuery||!host.retains_artifacts()||request.record_inputs.is_some()||request.replay_inputs.is_some()||request.no_daemon||request.engine_template.is_some()||request.bootstrap_catalog||request.diagnostic_declarations||request.source_questions.is_some()||!request.defines.is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"conditional Source/Handler requires its actual retained report-only runner").into())}
+ if baseline_update&&!projection.parent().is_baseline_update(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Source/Handler baseline requires actual selected baseline parent").into())}
  projection.require_parent(projection.parent())?;let namespace=request.policy_inputs.as_ref().and_then(|input|input.workspace.as_ref()).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"conditional operation workspace absent"))?;
- let intents=Arc::new(super::source_handler_intent::ChildIntents::derive(projection,&namespace.root,&namespace.configuration,host.source_arena_work())?);
+ let selftest_plan=Arc::clone(projection.parent());let intents=Arc::new(super::source_handler_intent::ChildIntents::derive(projection,&namespace.root,&namespace.configuration,host.source_arena_work())?);
  request.exact_inputs=true;request.no_cache|=intents.projection().parent().format().no_cache;
- let mut preparation=Preparation::SourceHandlers{intents,prepared:None};let mut output=super::PreparationDiagnosticOutput::selected_report(diagnostics);
+ let mut preparation=Preparation::SourceHandlers{intents,prepared:None};let mut output=super::PreparationDiagnosticOutput::selected_report(diagnostics);output.retain_native_selftests(&selftest_plan)?;
+if baseline_update{output.require_registered_baseline_update(domain)?;}
  let result=super::run_build_with_selected_publication(request,host,None,None,&mut output,None,None,false,Some(&mut preparation));let outcome=source_handler_preparation_result(result,&mut output)?;if output.take_checker_frame().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidData,"conditional Source/Handler did not request a Checker transcript").into())}
  if !matches!(outcome,BuildOutcome::RawQueryPrepared{retained:true,..}|BuildOutcome::HandlersQueryPrepared{retained:true,..}){return Err(io::Error::new(io::ErrorKind::InvalidData,"conditional operation did not retain its actual source owners").into())}
- let actual=preparation.take_source_handlers().ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"conditional operation omitted its actual one-ledger transfer"))?;Ok((outcome,actual))
+ let actual=preparation.take_source_handlers().ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"conditional operation omitted its actual one-ledger transfer"))?;output.finish_native_selftests(actual.inputs.native_selftest_epoch())?;Ok((outcome,actual))
 }
 
 /// The real captured writer may latch an IO and return Ok so the native attempt
@@ -278,5 +312,13 @@ fn source_handler_preparation_result<T>(result:Result<T,Box<dyn Error>>,output:&
   let actual=std::fs::read(&path).unwrap_err();let kind=actual.kind();let os=actual.raw_os_error();assert_eq!(kind,io::ErrorKind::NotFound);
   let mut writer=Never;let mut output=super::super::PreparationDiagnosticOutput::captured(&mut writer);
   let pending:Result<(),Box<dyn Error>>=Err(actual.into());let first=source_handler_preparation_result(pending,&mut output).unwrap_err();let first=first.downcast_ref::<io::Error>().unwrap();assert_eq!(first.kind(),kind);assert_eq!(first.raw_os_error(),os);assert!(output.take_error().is_none());
+ }
+}
+
+impl NativeSourceCheckInputs{pub(crate) fn native_selftest_epoch(&self)->&crate::input_snapshot::JoinedReportEpoch{&self._epoch}}
+
+impl NativeSourceCheckInputs{
+ pub(crate) fn with_report_input_observation<T>(&self,project:&std::path::Path,observe:impl FnOnce(&crate::input_snapshot::InputSnapshot)->std::io::Result<T>)->Result<T,Box<dyn std::error::Error>>{
+  self.require_current(project)?;let result=observe(&self.inputs)?;self.require_current(project)?;Ok(result)
  }
 }

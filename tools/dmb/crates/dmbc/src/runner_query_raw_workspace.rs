@@ -138,3 +138,11 @@ impl super::QueryAttempt{
   if self.enabled{state.raw_snapshot=Some(raw);state.publication_pair=None;}Ok(pins)
  }
 }
+
+impl RawWorkspaceSnapshot{pub(crate) fn with_registered_ui_fixture(&self,plan:&Arc<crate::runner_host::NativeCheckSelection>,visit:&mut dq_analyze::captured_ui_actions::FixtureVisitor<'_>)->io::Result<()>{
+ self.require_registered_source_plan(plan)?;
+ if plan.names().len()!=1||!plan.metadata().all(|meta|std::ptr::eq(meta,dq_analyze::ui_actions_policy::metadata())){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native UI fixture requires its exact actual UI producer selection"))}
+ let guard=super::workspace_native_guard::NativeReadGuard::raw_owned(&self.capture,&self.source,&self.queries)?;
+ self.queries.with_workspace_ui_fixture(&self.capture,&guard,visit).map_err(|failure|match failure{dq_analyze::captured_reactive_reads::Failure::Operational(actual)=>actual,dq_analyze::captured_reactive_reads::Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})?;
+ self.require_registered_source_plan(plan)
+}}

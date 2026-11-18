@@ -96,8 +96,9 @@ pub(crate) fn demanded_completed_owned_bytes(root: &Expr) -> Option<usize> {
     fn vec_capacity<T>(rows: &Vec<T>) -> Option<usize> {
         rows.capacity().checked_mul(size_of::<T>())
     }
-    fn measure(root: &Expr, remaining: &mut usize) -> Option<usize> {
+    fn measure(root: &Expr, remaining: &mut usize, cleanup_nodes: &mut usize) -> Option<usize> {
         *remaining = remaining.checked_sub(1)?;
+        if crate::setting_drop::needs_drop_coordination(root) { *cleanup_nodes = cleanup_nodes.checked_add(1)?; }
         if let Some(leaf) = demanded_leaf_owned_bytes(root) {
             return Some(leaf);
         }
@@ -109,7 +110,7 @@ pub(crate) fn demanded_completed_owned_bytes(root: &Expr) -> Option<usize> {
         macro_rules! boxed {
             ($child:expr) => {{
                 charge(size_of::<Expr>())?;
-                charge(measure($child, remaining)?)?;
+                charge(measure($child, remaining, cleanup_nodes)?)?;
             }};
         }
         match &root.kind {
@@ -131,7 +132,7 @@ pub(crate) fn demanded_completed_owned_bytes(root: &Expr) -> Option<usize> {
                 boxed!(callee);
                 charge(vec_capacity(args)?)?;
                 for value in args {
-                    charge(measure(value, remaining)?)?;
+                    charge(measure(value, remaining, cleanup_nodes)?)?;
                 }
             }
             ExprKind::Member { object, selector, .. }
@@ -153,7 +154,7 @@ pub(crate) fn demanded_completed_owned_bytes(root: &Expr) -> Option<usize> {
                 charge(vec_capacity(fields)?)?;
                 for (name, value) in fields {
                     charge(name.capacity())?;
-                    charge(measure(value, remaining)?)?;
+                    charge(measure(value, remaining, cleanup_nodes)?)?;
                 }
             }
             ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
@@ -170,12 +171,12 @@ pub(crate) fn demanded_completed_owned_bytes(root: &Expr) -> Option<usize> {
     }
 
     let mut remaining = LIMIT;
-    let retained = measure(root, &mut remaining)?;
-    let nodes = LIMIT - remaining;
+    let mut cleanup_nodes = 0;
+    let retained = measure(root, &mut remaining, &mut cleanup_nodes)?;
     // The later Unpublished failure guard can still use iterative destruction
     // before the final SettingExpression anchor exists. Keep the same
     // cleanup worklist envelope used by that final owner until it commits.
-    let cleanup = nodes.checked_mul(4 * (size_of::<Expr>() + size_of::<SharedSettingRetention>()))?;
+    let cleanup = cleanup_nodes.checked_mul(4 * (size_of::<Expr>() + size_of::<SharedSettingRetention>()))?;
     retained.checked_add(cleanup)
 }
 
@@ -203,6 +204,8 @@ fn vec_bytes<T>(v: &Vec<T>) -> usize {
 pub(crate) struct Measured {
     pub(crate) bytes: usize,
     pub(crate) nodes: usize,
+    // Only nodes actually scheduled by setting_drop; payload still counts all.
+    pub(crate) cleanup_nodes: usize,
 }
 // ONE original-AST worklist prepares every genuinely issued literal's children
 // and counts exposed retained capacities. It never parses a second root/model.
@@ -215,9 +218,11 @@ fn prepare_measure_using(root:&Expr,a:&SettingAdmission<'_>,body_fresh:bool)->io
     pending.push(root)?;
     let mut bytes = 0usize;
     let mut nodes = 0usize;
+    let mut cleanup_nodes = 0usize;
     while let Some(e) = pending.pop() {
         a.checkpoint()?;
         nodes = add(a, nodes, 1)?;
+        if crate::setting_drop::needs_drop_coordination(e) { cleanup_nodes = add(a, cleanup_nodes, 1)?; }
         macro_rules! charge {
             ($n:expr) => {{
                 bytes = add(a, bytes, $n)?;
@@ -227,6 +232,13 @@ fn prepare_measure_using(root:&Expr,a:&SettingAdmission<'_>,body_fresh:bool)->io
         match &e.kind {
             ExprKind::Ident(s) | ExprKind::TypePath(s) => charge!(s.capacity()),
             ExprKind::Literal(l) => {
+                if l.independently_owned_original_template(){
+                    // Complete typed templates already own their child AST and
+                    // cleanup. Count the outer scheduling slot above, not their
+                    // separately funded payload/subtree a second time.
+                    l.require_fresh_body_owner(a)?;
+                    continue;
+                }
                 if body_fresh {l.require_fresh_body_owner(a)?;}
                 l.prepare_parts_admitted(a)?;
                 // Neutral typed DATA is already independently owned/funded;
@@ -304,7 +316,7 @@ fn prepare_measure_using(root:&Expr,a:&SettingAdmission<'_>,body_fresh:bool)->io
             ExprKind::Group(v) => boxed!(v),
         }
     }
-    Ok(Measured { bytes, nodes })
+    Ok(Measured { bytes, nodes, cleanup_nodes })
 }
 pub(crate) fn attach(
     root: &Expr,
@@ -317,6 +329,7 @@ pub(crate) fn attach(
         a.checkpoint()?;
         match &e.kind {
             ExprKind::Literal(l) => {
+                if l.independently_owned_original_template(){l.require_fresh_body_owner(a)?;continue;}
                 l.attach_setting_retention(anchor).map_err(|e| {
                     let kind = e.kind();
                     a.record_operational_error(e);
@@ -383,7 +396,14 @@ pub fn prepare_setting_expression_with_original_literal_facts(
 pub fn prepare_setting_expression_with_original_literal_facts_and_native_observation(
  source:&str,tokens:&[SpanToken],value_span:Span,a:&SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,
 )->Result<(SettingExpression,Option<crate::NativeExpressionParserFacts>),SettingSyntaxFailure>{
-    let produce = || -> Result<(SettingExpression,Option<crate::NativeExpressionParserFacts>), SettingSyntaxFailure> {
+ prepare_setting_expression_with_original_products(source,tokens,value_span,a,facts).map(|(root,native,_)|(root,native))
+}
+/// Same first parser/root publication, retaining actual constructor DATA for
+/// its existing source slot. This grants no Original completeness/source role.
+pub fn prepare_setting_expression_with_original_products(
+ source:&str,tokens:&[SpanToken],value_span:Span,a:&SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,
+)->Result<(SettingExpression,Option<crate::NativeExpressionParserFacts>,crate::OriginalSettingProducts),SettingSyntaxFailure>{
+    let produce = || -> Result<(SettingExpression,Option<crate::NativeExpressionParserFacts>,crate::OriginalSettingProducts), SettingSyntaxFailure> {
         a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
         for token in tokens {
             if token.span.start > token.span.end
@@ -420,6 +440,8 @@ pub fn prepare_setting_expression_with_original_literal_facts_and_native_observa
             source,tokens,0,a,facts,
         );
         guard.expression = parsed.expr.take();
+        let constructors=parsed.original_constructor_facts.take().unwrap_or_default();
+        let original_value=parsed.original_simple_expression;
         a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
         if let Some(error) = parsed.diagnostics.into_iter().next() {
             return Err(SettingSyntaxFailure::Syntax(error));
@@ -436,7 +458,7 @@ pub fn prepare_setting_expression_with_original_literal_facts_and_native_observa
         // their coordination headroom now, not after the remaining budget fills.
         let cleanup = mul(
             a,
-            measured.nodes,
+            measured.cleanup_nodes,
             4 * (size_of::<Expr>() + size_of::<SharedSettingRetention>()),
         )
         .map_err(SettingSyntaxFailure::Operational)?;
@@ -455,7 +477,8 @@ pub fn prepare_setting_expression_with_original_literal_facts_and_native_observa
         a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
         let expression = guard.expression.take().expect("prepared original root");
         let native_facts=native_facts.filter(|facts|facts.complete_span().is_none_or(|span|span==expression.span));
-        Ok((SettingExpression::retained_with_anchor(expression,anchor),native_facts))
+        let products=crate::OriginalSettingProducts::from_actual(original_value,expression.span,native_facts,constructors);
+        Ok((SettingExpression::retained_with_anchor(expression,anchor),native_facts,products))
     };
     produce()
 }
@@ -598,7 +621,7 @@ fn check_demanded_retention(guard: &Unpublished<'_, '_>, a: &SettingAdmission<'_
 fn retain_demanded_root(guard: &mut Unpublished<'_, '_>, a: &SettingAdmission<'_>) -> Result<SettingExpression, SettingSyntaxFailure> {
  let expression=guard.expression.as_ref().ok_or_else(||SettingSyntaxFailure::Operational(fail(a,io::ErrorKind::InvalidData,"demanded default has no native root")))?;
  let measured=prepare_measure(expression,a).map_err(SettingSyntaxFailure::Operational)?;
- let cleanup=mul(a,measured.nodes,4*(size_of::<Expr>()+size_of::<SharedSettingRetention>())).map_err(SettingSyntaxFailure::Operational)?;
+ let cleanup=mul(a,measured.cleanup_nodes,4*(size_of::<Expr>()+size_of::<SharedSettingRetention>())).map_err(SettingSyntaxFailure::Operational)?;
  let final_bytes=add(a,add(a,measured.bytes,cleanup).map_err(SettingSyntaxFailure::Operational)?,crate::setting_expression::root_storage_envelope()).map_err(SettingSyntaxFailure::Operational)?;
  let anchor=SharedSettingRetention::new(a.reserve(final_bytes).map_err(SettingSyntaxFailure::Operational)?);guard.anchor=Some(anchor.clone());attach(expression,&anchor,a).map_err(SettingSyntaxFailure::Operational)?;a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
  Ok(SettingExpression::retained_with_anchor(guard.expression.take().expect("checked demanded root"),anchor))

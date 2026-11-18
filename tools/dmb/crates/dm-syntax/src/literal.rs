@@ -372,6 +372,9 @@ impl LiteralText {
     }
     /// Attach only the SAME original source-free lease anchor. A second root
     /// cannot silently claim a literal cache already held by another lease.
+    // Set only by the typed builder after all private child payload and cleanup
+    // storage is retained by this immutable template's SAME existing anchor.
+    pub(crate) fn independently_owned_original_template(&self)->bool{matches!(&self.0,Backing::Text(owner)if owner.original_prepared)}
     pub(crate) fn attach_setting_retention(
         &self,
         anchor: &crate::SharedSettingRetention,

@@ -78,6 +78,33 @@ impl Output{
 }
 /// Same unique original custom finish over completed as-of delivery. No source I/O.
 pub fn finish_report_after_delivery(scope:&LintScope,macro_ceiling:i64,run:&Run,source:&impl crate::baseline::SiteText,text:&mut String)->bool{policy().finish_data(scope,macro_ceiling,run,text,&mut|rel,line|source.site_text(rel,line))}
+
+/// Rejudge a requested changed-file subset of THIS actual captured output.
+/// The caller keeps this SAME budget alive until returned report DATA drops.
+/// Count and encode use the unique existing finisher and fixed writer; the
+/// original unfiltered report's truncation is never an allocation bound.
+pub fn finish_changed_report_after_delivery(scope:&LintScope,data:&Output,changed:&std::collections::HashSet<String>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<(bool,String),Failure>{
+ checked_for(budget,poll)?;
+ let mut run=Run{sites:Vec::new(),notes:Vec::new()};
+ for site in data.run.sites.iter().filter(|site|changed.contains(&site.rel)){
+  checked_for(budget,poll)?;if !budget.row(&mut run.sites){return Err(oom(budget,"changed check_grep site rows refused"))}
+  let copied=Site{rule:own(budget,&site.rule)?,rel:own(budget,&site.rel)?,line:site.line,msg:own(budget,&site.msg)?,key:own(budget,&site.key)?,ident:own(budget,&site.ident)?};run.sites.push(copied);
+ }
+ for note in &data.run.notes{checked_for(budget,poll)?;if !budget.row(&mut run.notes){return Err(oom(budget,"changed check_grep notes refused"))}run.notes.push(own(budget,note)?);}
+ // Exact selected captured content, including previously unprinted source
+ // lines. Fund the existing finisher's clone/group/format temporaries before
+ // either counting or encoding; these same immutable rows serve both passes.
+ let widths=run.sites.iter().try_fold(0usize,|n,row|n.checked_add(row.rule.len())?.checked_add(row.rel.len())?.checked_add(row.msg.len())?.checked_add(row.key.len())?.checked_add(row.ident.len()));
+ let line_width=run.sites.iter().filter(|row|row.msg.is_empty()).try_fold(0usize,|n,row|n.checked_add(data.source_line(&row.rel,row.line).unwrap_or_default().len()));
+ let policy=policy();let fixed=policy.meta.rules.len().checked_add(policy.groups.len()).and_then(|n|n.checked_add(policy.parts.len()));
+ let rows=run.sites.len().checked_add(4).and_then(|rows|std::mem::size_of::<Site>().checked_add(std::mem::size_of::<&Site>()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_mul(rows)));
+ reserve(budget,widths.and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(line_width?.checked_mul(8)?)).and_then(|n|n.checked_add(rows?)).and_then(|n|n.checked_add(fixed?.checked_mul(2048)?)))?;
+ let lookup=|relative:&str,line:usize|u32::try_from(line).ok().and_then(|line|data.source_line(relative,line)).unwrap_or_default().to_owned();
+ checked_for(budget,poll)?;let mut count=Count{bytes:0,denied:false};let failed=policy.finish_data(scope,data.macro_ceiling,&run,&mut count,&mut|r,l|lookup(r,l));if count.denied{return Err(oom(budget,"changed check_grep report count overflow"))}
+ checked_for(budget,poll)?;reserve(budget,count.bytes.checked_mul(4).and_then(|n|n.checked_add(128)))?;let mut report=String::new();report.try_reserve_exact(count.bytes).map_err(|e|oom(budget,e.to_string()))?;if report.capacity()>count.bytes.saturating_mul(4).saturating_add(128){return Err(oom(budget,"changed check_grep report exposed excess capacity"))}
+ let mut writer=FixedWriter{text:&mut report,limit:count.bytes,denied:false};let repeated=policy.finish_data(scope,data.macro_ceiling,&run,&mut writer,&mut|r,l|lookup(r,l));if writer.denied||writer.text.len()!=count.bytes||failed!=repeated{return Err(oom(budget,"changed check_grep report count/encoding differs"))}std::mem::drop(writer);checked_for(budget,poll)?;Ok((failed,report))
+}
+
 /// Only the original baseline/config publisher, after completed delivery.
 pub fn update_baseline_after_delivery(root:&Path,scope:&LintScope,run:&Run,mode:Mode)->io::Result<String>{policy().update_baseline_data(root,scope,run,mode)}
 
@@ -90,7 +117,7 @@ fn checked_for(budget:&Budget,poll:&dyn Fn()->io::Result<()>)->Result<(),Failure
  budget.require().map_err(|message|oom(budget,message))
 }
 fn checked(source:&dyn Inputs)->Result<(),Failure>{checked_for(source.budget(),&||source.checkpoint())}
-fn sink(source:&dyn Inputs)->Result<Sink,Failure>{Sink::bounded_budget(source.budget()).map_err(|m|oom(source.budget(),m))}
+fn sink(source:&dyn Inputs)->Result<Sink<'static>,Failure>{Sink::bounded_budget(source.budget()).map_err(|m|oom(source.budget(),m))}
 fn pending_sink(source:&dyn Inputs,out:&Sink)->Result<(),Failure>{if let Some(message)=out.admission_error(){return Err(oom(source.budget(),message))}checked(source)}
 fn remember_for(budget:&Budget,poll:&dyn Fn()->io::Result<()>,file:&SourceFile,sites:&[Site],lines:&mut Vec<Line>)->Result<(),Failure>{
  for site in sites{checked_for(budget,poll)?;if !site.msg.is_empty(){continue}if !budget.row(lines){return Err(oom(budget,"check_grep report-line vector refused"))}let raw=file.raw();let line=site.line as usize;let original=if line>=1&&line<=raw.num_lines(){raw.line(line)}else{""};reserve(budget,original.len().checked_mul(8).and_then(|n|n.checked_add(128)))?;lines.push(Line{relative:own(budget,&site.rel)?,line:site.line,text:crate::util::normalize_ws(original)});}
@@ -125,7 +152,7 @@ impl StaticFileData {
 fn scan_static_file_into(
  scope:&LintScope,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,file:&SourceFile,
  lines:&mut Vec<Line>,allow_digests:&mut std::collections::BTreeMap<String,[u8;20]>,
-)->Result<Sink,Failure>{
+)->Result<Sink<'static>,Failure>{
  let mut local=Sink::bounded_budget(budget).map_err(|message|oom(budget,message))?;
  local.set_current(&file.rel);
  for part in policy().compiled(){
@@ -323,5 +350,51 @@ pub fn is_effective_body(archive:&dm_tree::frontend::BodyArchive,ordinal:usize,b
 
  #[test]fn semantic_provider_stop_runs_final_control_but_actual_first_io_survives_late_cancellation(){
  for actual in [false,true]{let source=Refusal{budget:Budget::new(4*1024*1024).unwrap(),scope:LintScope::default(),late:Cell::new(false),actual};let error=judge(&source).err().expect("provider refusal cannot produce an output");match error{Failure::Operational(error)if actual=>assert_eq!(error.raw_os_error(),Some(1450)),Failure::Operational(error)=>assert_eq!(error.kind(),io::ErrorKind::Interrupted),Failure::Unsupported(message)=>panic!("late current control must precede semantic refusal: {message}")}}
+ }
+}
+
+/// SAME custom first-hit grouping and update kernel over captured DATA.
+pub fn plan_baseline_update(scope:&LintScope,run:&Run,budget:&Budget,poll:&dyn Fn()->io::Result<()>,apply:&mut dyn FnMut(&str,i64)->io::Result<()>)->io::Result<String>{plan_baseline_mode(scope,run,Mode::Update,budget,poll,apply)}
+pub fn plan_baseline_mode(scope:&LintScope,run:&Run,mode:Mode,budget:&Budget,poll:&dyn Fn()->io::Result<()>,apply:&mut dyn FnMut(&str,i64)->io::Result<()>)->io::Result<String>{
+ let policy=policy();let mut bytes=policy.groups.len().checked_mul(1024).and_then(|n|n.checked_add(run.sites.len().checked_mul(4*std::mem::size_of::<Site>())?)).ok_or(io::ErrorKind::OutOfMemory)?;
+ for site in &run.sites{poll()?;for value in [&site.rule,&site.rel,&site.msg,&site.key,&site.ident]{bytes=bytes.checked_add(value.len().checked_mul(4).ok_or(io::ErrorKind::OutOfMemory)?).ok_or(io::ErrorKind::OutOfMemory)?;}}
+ for(rule,_)in scope.ceilings.iter(){bytes=bytes.checked_add(rule.len().checked_add(64).and_then(|n|n.checked_mul(16)).ok_or(io::ErrorKind::OutOfMemory)?).ok_or(io::ErrorKind::OutOfMemory)?;}
+ budget.charge(bytes).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;poll()?;policy.plan_baseline_data(scope,run,mode,apply)
+}
+
+#[cfg(test)]mod changed_finish_resource_controls{
+ use super::*;
+ struct Captured<'a>(&'a Output);impl crate::baseline::SiteText for Captured<'_>{fn site_text(&self,relative:&str,line:usize)->String{u32::try_from(line).ok().and_then(|line|self.0.source_line(relative,line)).unwrap_or_default().to_owned()}}
+ // Neutral captured-output DATA exercises only actual finisher allocations, never source/current publication.
+ fn data()->(Output,LintScope,std::collections::HashSet<String>){let rule=policy().meta.rules.iter().find(|row|row.name!=RULE_MACROS).unwrap().name;let mut scope=LintScope::default();scope.ceilings.insert(rule.into(),0);let mut sites=Vec::new();let mut lines=Vec::new();for i in 0..61{let relative=if i==60{"code/late.dm"}else{"code/early.dm"};let line=if i==60{1}else{i+1};sites.push(Site{rule:rule.into(),rel:relative.into(),line,msg:String::new(),key:String::new(),ident:String::new()});lines.push(Line{relative:relative.into(),line,text:format!("actual source line {i}")});}lines.sort_unstable_by(|a,b|(&a.relative,a.line).cmp(&(&b.relative,b.line)));let mut data=Output{run:Run{sites,notes:Vec::new()},allow_used:Vec::new(),report:String::new(),failed:false,macro_ceiling:0,source_lines:lines,allow_digests:std::collections::BTreeMap::new()};let mut report=String::new();data.failed=finish_report_after_delivery(&scope,0,&data.run,&Captured(&data),&mut report);data.report=report;(data,scope,["code/late.dm".to_owned()].into_iter().collect())}
+ #[test]fn actual_changed_finisher_admits_previously_truncated_captured_line_and_counted_encoding_before_growth(){
+  let(mut data,scope,changed)=data();let fixed=(policy().meta.rules.len()+policy().groups.len()+policy().parts.len())*2048;let small=Budget::new(fixed+65536).unwrap();let(_,short)=finish_changed_report_after_delivery(&scope,&data,&changed,&small,&||Ok(())).unwrap();assert!(short.contains("actual source line 60"));let original=data.report.clone();data.source_lines.last_mut().unwrap().text="x".repeat(256*1024);let mut unfiltered=String::new();finish_report_after_delivery(&scope,0,&data.run,&Captured(&data),&mut unfiltered);assert_eq!(unfiltered,original,"old first60 report cannot bound this selected later source line");
+  let denied=Budget::new(fixed+65536).unwrap();let polls=std::cell::Cell::new(0);let later=||{polls.set(polls.get()+1);if polls.get()>=3{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};assert!(matches!(finish_changed_report_after_delivery(&scope,&data,&changed,&denied,&later),Err(Failure::Operational(error))if error.kind()==io::ErrorKind::OutOfMemory));assert_eq!(polls.get(),2,"actual selected-line denial precedes later framework IO");let healthy=Budget::new(16*1024*1024).unwrap();let(failed,actual)=finish_changed_report_after_delivery(&scope,&data,&changed,&healthy,&||Ok(())).unwrap();assert!(failed);assert!(actual.contains(&"x".repeat(256*1024)));let filtered=Run{sites:data.run.sites.iter().filter(|site|changed.contains(&site.rel)).cloned().collect(),notes:data.run.notes.clone()};let mut expected=String::new();let expected_failed=finish_report_after_delivery(&scope,0,&filtered,&Captured(&data),&mut expected);assert_eq!((failed,actual),(expected_failed,expected));
+ }
+ #[test]fn actual_changed_finisher_keeps_first_framework_io_before_clone_or_count_then_fresh_owner_recovers(){let(data,scope,changed)=data();let parent=Budget::new(16*1024*1024).unwrap();let base=parent.used();{let scratch=Budget::scoped_temporaries(&parent).unwrap();let(_,text)=finish_changed_report_after_delivery(&scope,&data,&changed,&scratch,&||Ok(())).unwrap();assert!(parent.used()>base+text.capacity());std::mem::drop(text);std::mem::drop(scratch);}assert_eq!(parent.used(),base);let budget=Budget::new(16*1024*1024).unwrap();let before=budget.used();let polls=std::cell::Cell::new(0);let stop=||{polls.set(polls.get()+1);Err(io::Error::from_raw_os_error(1450))};assert!(matches!(finish_changed_report_after_delivery(&scope,&data,&changed,&budget,&stop),Err(Failure::Operational(error))if error.raw_os_error()==Some(1450)));assert_eq!(polls.get(),1);assert_eq!(budget.used(),before);assert!(finish_changed_report_after_delivery(&scope,&data,&changed,&budget,&||Ok(())).is_ok());}
+}
+
+/// Shared old parity transformation over already delivered raw observations.
+/// No reads, parser, second lint scan or source-currentness grant.
+pub fn write_fixture_expected<C:crate::key_policy_control::Control<Error=Failure>>(scope:&LintScope,data:&Output,control:&mut C,out:&mut impl std::io::Write)->Result<(),Failure>{
+ use crate::key_policy_control as kc;
+ control.checkpoint()?;
+ let width=data.run.sites.iter().try_fold(0usize,|n,s|n.checked_add(s.rule.len()).and_then(|n|n.checked_add(s.rel.len())).ok_or_else(||control.overflow()))?;
+ // Covers original Finding vector, first_hit_only's Site copies, normalized
+ // strings and count/group tree nodes simultaneously, before any allocation.
+ kc::reserve(control,||width.checked_add(1)?.checked_mul(128)?.checked_add(data.run.sites.len().checked_add(policy().groups.len())?.checked_add(1)?.checked_mul(4096)?))?;
+ let mut findings:Vec<_>=data.run.sites.iter().map(|s|crate::parity_types::Finding{rule:s.rule.clone(),rel:s.rel.clone(),line:s.line}).collect();
+ findings.sort();let normalized=policy().fixture_normalize_data(scope,data.macro_ceiling,findings);
+ crate::fixture_report_policy::write_expected(&normalized,control,out)
+}
+#[cfg(test)]mod fixture_normalization_controls{
+ use super::*;
+ #[test]fn fixture_normalization_keeps_first_group_counts_single_file_dme_and_duplicates(){
+  use crate::parity_types::Finding;
+  let policy=policy();let first=policy.groups.iter().find(|(_,group)|policy.groups.values().filter(|g|*g==*group).count()>1).unwrap();let loser=policy.groups.iter().find(|(rule,group)|*group==first.1&&*rule>first.0).or_else(||policy.groups.iter().find(|(rule,group)|*group==first.1&&*rule!=first.0)).unwrap();let(winner,loser)=if first.0<loser.0{(first.0,loser.0)}else{(loser.0,first.0)};
+  let single=policy.single_file.first().unwrap();let rows=[(winner.to_string(),"winner.dm".to_owned(),1),(loser.to_string(),"loser.dm".to_owned(),2),("counted".into(),"a.dm".into(),3),("counted".into(),"b.dm".into(),4),((*single).to_owned(),"real/file.dm".into(),5),(RULE_DME.into(),"deepquarry.dme".into(),6),("duplicate".into(),"dupe.dm".into(),7),("duplicate".into(),"dupe.dm".into(),7),("zero".into(),"zero.dm".into(),0),("zero".into(),"zero.dm".into(),0)];
+  let mut scope=LintScope::default();scope.ceilings.insert("counted".into(),1);
+  let input=rows.into_iter().map(|(rule,rel,line)|Finding{rule,rel,line}).collect();let normalized=policy.fixture_normalize_data(&scope,0,input);
+  assert!(normalized.iter().any(|f|f.rel=="winner.dm"));assert!(!normalized.iter().any(|f|f.rel=="loser.dm"));assert!(normalized.iter().any(|f|f.rule=="counted"&&f.rel=="(count)"&&f.line==2));assert!(normalized.iter().any(|f|f.rel=="(file)"&&f.line==5));assert!(normalized.iter().any(|f|f.rel=="(dme)"&&f.line==6));assert_eq!(normalized.iter().filter(|f|f.rule=="duplicate").count(),1);assert_eq!(normalized.iter().filter(|f|f.rule=="zero").count(),2);assert!(normalized.windows(2).all(|w|w[0]<=w[1]));
  }
 }

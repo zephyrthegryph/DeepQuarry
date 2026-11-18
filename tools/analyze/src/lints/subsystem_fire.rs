@@ -7,6 +7,7 @@
 //! on `/datum/controller/subsystem`) is skipped. The `--report` listing of allowed fires is not
 //! reproduced (it is not a finding).
 
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::tree::{SourceFile, CODE_DM};
@@ -34,7 +35,8 @@ impl Lint for SubsystemFire {
     }
 
     fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let fire = crate::pat_match!(r"/datum/controller/subsystem/(\w+)(?:/\w+)*/fire\(");
+        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
+        let fire = fixture.pattern(r"/datum/controller/subsystem/(\w+)(?:/\w+)*/fire\(",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"/datum/controller/subsystem/(\w+)(?:/\w+)*/fire\("));
         let core = cx.list("core");
         for (number, line) in f.raw().numbered() {
             let Some(m) = fire.captures(line) else { continue };

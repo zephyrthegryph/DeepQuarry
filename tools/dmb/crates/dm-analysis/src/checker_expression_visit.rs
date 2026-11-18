@@ -301,6 +301,35 @@ impl<'a> CodeSource<'a>{
  }
  fn canonical_parameter_cursor(self,current:Span)->Result<Span,String>{match self.projection{Some(projection)=>projection.inverse().span(current).ok_or_else(||"current parameter cursor escaped actual canonical body binding".into()),None=>Ok(current)}}
 }
+// Error-path DATA only. Borrow this actual evaluator's current source/tree and
+// AST nodes; never infer a failing body from an externally held query value.
+fn write_primitive_context_trace(tree:&SemanticTree,archive:Option<&BodyArchive>,source:CodeSource<'_>,member:MemberId,expression:&Expr,callee:&Expr,root:Option<&Expr>,output:&mut dyn std::io::Write){
+    fn clipped(value:&str)->&str{let end=value.char_indices().nth(512).map_or(value.len(),|(at,_)|at);&value[..end]}
+    let callee_name=match &callee.kind{ExprKind::Ident(name)=>Some(name.as_str()),_=>None};
+    let node=tree.member(member);
+    let member_name=node.and_then(|node|tree.symbols().text(node.name));
+    let owner_name=node.and_then(|node|tree.type_node(node.owner)).and_then(|owner|tree.symbols().text(owner.path));
+    let expanded=source.expanded_span(expression.span);
+    let current_callee=source.expanded_span(callee.span);
+    let context=root.map(|root|(source.expanded_span(root.span),source.get(root.span.range()).map(clipped)));
+    let _=write!(output,"ORIGINAL_CHECKER_PRIMITIVE_CONTEXT callee={callee_name:?} member={member:?} member_name={member_name:?} owner={owner_name:?} canonical_expression={:?} current_expression={expanded:?} current_callee={current_callee:?} source={:?} statement_root={context:?}",expression.span,source.get(expression.span.range()).map(clipped));
+    if let Some(point)=archive.and_then(|archive|expanded.ok().and_then(|span|archive.borrowed_source_note_point(span.start).ok())){
+        let(path,line,column)=point.reported_coordinates();let _=write!(output," file={path:?} line={line} column={column}");
+    }else{let _=write!(output," source_point=unavailable");}
+    let _=writeln!(output);
+}
+
+// Failure-only borrowed DATA. No new query, checkpoint, owner, or error authority.
+fn write_unknown_field_context_trace(tree:&SemanticTree,archive:Option<&BodyArchive>,source:CodeSource<'_>,member:MemberId,expression:&Expr,object:&Expr,selector:&str,base:TypeFact,output:&mut dyn std::io::Write){
+ fn clip(value:&str,limit:usize)->&str{let end=value.char_indices().nth(limit).map_or(value.len(),|(at,_)|at);&value[..end]}
+ let node=tree.member(member);let name=node.and_then(|node|tree.symbols().text(node.name)).map(|value|clip(value,256));let owner=node.and_then(|node|tree.type_node(node.owner)).and_then(|owner|tree.symbols().text(owner.path)).map(|value|clip(value,512));
+ let object_kind=match &object.kind{ExprKind::Ident(_)=>"Ident",ExprKind::Call{..}=>"Call",ExprKind::Literal(_)=>"Literal",ExprKind::TypePath(_)=>"TypePath",ExprKind::Member{..}=>"Member",ExprKind::SafeMember{..}=>"SafeMember",ExprKind::Index{..}=>"Index",ExprKind::Group(_)=>"Group",_=>"Other"};
+ let expanded=source.expanded_span(expression.span);let current_object=source.expanded_span(object.span);
+ let _=write!(output,"ORIGINAL_CHECKER_UNKNOWN_FIELD_CONTEXT base={base:?} object_kind={object_kind} selector={:?} member={member:?} member_name={name:?} owner={owner:?} canonical_expression={:?} current_expression={expanded:?} canonical_object={:?} current_object={current_object:?} expression_source={:?} object_source={:?}",clip(selector,128),expression.span,object.span,source.get(expression.span.range()).map(|value|clip(value,256)),source.get(object.span.range()).map(|value|clip(value,256)));
+ if let Some(point)=archive.and_then(|archive|expanded.ok().and_then(|span|archive.borrowed_source_note_point(span.start).ok())){let(path,line,column)=point.reported_coordinates();let _=write!(output," file={:?} line={line} column={column}",path.to_str().map(|value|clip(value,512)));}else{let _=write!(output," source_point=unavailable");}
+ let _=writeln!(output);
+}
+
 struct Walker<'a, 'r, R: ?Sized,D:PrefixDemand=PrefixCompatibility> {
     prefix_demand:D,
     original_events:Option<&'r mut dyn OriginalEvents<'a,D::Error>>,
@@ -529,6 +558,16 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         self.warning_anchor=old;
         result
     }
+    // The traversal supplies the actual enclosing source header, never an
+    // invented expression fallback. Restore it even when evaluation refuses.
+    fn with_evaluation_source<T>(
+        &mut self, at:Span, evaluate:impl FnOnce(&mut Self)->Result<T,D::Error>,
+    )->Result<T,D::Error>{
+        let old=self.evaluation_anchor.replace(crate::checker_effects::CallOrigin::Source(at));
+        let result=evaluate(self);
+        self.evaluation_anchor=old;
+        result
+    }
     fn warning_source(at:Span)->Option<crate::checker_evaluated_observer::ExpressionOrigin>{
         Some(crate::checker_evaluated_observer::ExpressionOrigin::Source(at))
     }
@@ -674,9 +713,9 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         if let Some(value) = value {
             let hint=ty.receiver()?;
             let warning_at = fact.checker_statement_anchor().unwrap_or(at);
-            self.with_warning_anchor(Self::warning_source(warning_at), |this| {
+            self.with_evaluation_source(warning_at,|this|this.with_warning_anchor(Self::warning_source(warning_at), |this| {
                 this.expression(value, hint)
-            })?;
+            }))?;
         } else if let Some(initializer) = fact.implicit_list_initializer() {
             self.implicit_list_constructor(initializer)?;
         }
@@ -998,6 +1037,11 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         )?;
         self.call_with_actual_fact(site,at,name,receiver,args,member_follow,exact,fact,false)
     }
+    // Only already-diagnosed branches whose pinned result is Analysis::empty.
+    // Compatibility Unknown remains unproved; no general Unknown conversion.
+    fn diagnosed_empty_result(&mut self)->TypeFact{
+        if self.original_events.is_some(){self.last_impurity=None;self.original_value=None;TypeFact::Unhinted}else{TypeFact::Unknown}
+    }
     fn call_with_actual_fact(
         &mut self,
         site: EvaluationCallSite<'a>,
@@ -1033,7 +1077,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             let expression=self.source.expanded_span(expression)?;
             let origin=origin.map(|at|self.source.expanded_span(at)).transpose()?;
             let abort=access.call(&fact,receiver,member_follow,origin,expression,self.resolver,self.profile,&self.prefix_demand)?;
-            self.flush_access_rows()?;if abort{return Ok(TypeFact::Unknown)}
+            self.flush_access_rows()?;if abort{return Ok(self.diagnosed_empty_result())}
         }
         if member_follow && self.access.is_none() {
             // Pinned Follow::Call checks inherited private directives BEFORE
@@ -1277,7 +1321,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             let CallableFact::Source{identity,..}=&fact else{unreachable!()};let archive=self.prefix_archive.ok_or("original return binding archive absent")?;let demand=self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient));let observer=&mut self.type_errors;
             match crate::checker_return_binding::for_call(archive,self.resolver,*identity,&return_arguments,&demand,|path|{if let Some(observer)=observer.as_deref_mut(){observer.undefined_type(path,at)}else{Err("dynamic return needs its actual undefined-type observer".into())}})?{
                 crate::checker_return_binding::Binding::Bound(value)=>return Ok(if matches!(value,TypeFact::Unknown|TypeFact::Unhinted){TypeFact::ReturnHint(crate::checker_return_facts::ReturnFixHint::EvaluatedNone,at)}else{value}),
-                crate::checker_return_binding::Binding::DiagnosedNone=>return Ok(TypeFact::Unknown),
+                crate::checker_return_binding::Binding::DiagnosedNone=>return Ok(self.diagnosed_empty_result()),
                 crate::checker_return_binding::Binding::InvalidOnly=>skip_return_prefix=true,
                 crate::checker_return_binding::Binding::Absent=>(),
             }
@@ -1407,7 +1451,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             Constructor::Implicit { args } => {
                 let Some(owner) = hint else {
                     self.event(Event::MissingImplicitNewHint { expression })?;
-                    return Ok(TypeFact::Unknown);
+                    return Ok(self.diagnosed_empty_result());
                 };
                 (owner, args)
             }
@@ -1776,6 +1820,9 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         && matches!(op.as_str(), "+" | "-" | "|" | "&" | "^")
                     {
                         left
+                    } else if self.original_events.is_some() {
+                        // Pinned Analysis::empty has no declaration/fix-hint origin.
+                        TypeFact::Unhinted
                     } else {
                         TypeFact::Unknown
                     },
@@ -1810,7 +1857,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             at: callee.span,
                             display: fact.display,
                         })?;
-                        return Ok(TypeFact::Unknown);
+                        return Ok(self.diagnosed_empty_result());
                     }
                     self.explicit_source_call(expression,callee.span,args,true)
                 }
@@ -1836,6 +1883,21 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     self.arguments(args)?;
                     Ok(TypeFact::Unknown)
                 }
+                ExprKind::Ident(name) if name == "SpacemanDMM_unlint" => {
+                    // Pinned Term::Call checks the actual proc first. Only a
+                    // genuine miss is the escape hatch; its arguments are not
+                    // visited (not even src in a global macro expansion).
+                    let fact=checker_call_facts::callable_any_using(
+                        self.tree,self.resolver,self.profile,self.owner,SymbolId::of(name),
+                        &mut||self.prefix_demand.checkpoint(),
+                    )?;
+                    if !matches!(fact,CallableFact::Missing){
+                        return self.call_with_actual_fact(EvaluationCallSite::Written(expression),callee.span,name,self.owner,args,false,false,fact,false);
+                    }
+                    self.last_impurity=None;
+                    self.original_value=None;
+                    Ok(TypeFact::Unhinted)
+                }
                 ExprKind::Ident(name)
                     if matches!(
                         name.as_str(),
@@ -1852,6 +1914,12 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             | "SpacemanDMM_debug"
                     ) =>
                 {
+                    if std::env::var_os("DMB_ORIGINAL_TRACE_BODY_PRESSURE").is_some(){
+                        let mut output=std::io::stderr().lock();
+                        write_primitive_context_trace(self.tree,self.prefix_archive,self.source,self.member,expression,callee,self.statement_root,&mut output);
+                        use std::io::Write as _;
+                        let _=writeln!(output,"ORIGINAL_CHECKER_PRIMITIVE_MODE original_events={} original_values={} effects={} new_context={} profile={:?}",self.original_events.is_some(),self.original_values,self.effects.is_some(),self.new_context,self.profile);
+                    }
                     Err(
                         "call needs a primary syntax-primitive context, not ordinary proc lookup"
                             .into(),
@@ -1934,7 +2002,14 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         TypeFact::AuthoredVariableHint(formal)=>Some(FixHint::AuthoredVariable(formal)),
                         TypeFact::LocalVariableHint(anchor) => Some(FixHint::LocalVariable(anchor)),
                         TypeFact::ParameterHint(member) => Some(FixHint::Parameter(member)),
-                        _=>return Err("unknown-receiver field access needs pinned fix-hint/declaration origins".into()),
+                        _=>{
+                            if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value|value=="1")||std::env::var_os("DMB_ORIGINAL_TRACE_BODY_PRESSURE").is_some(){
+                                use std::io::Write;let stderr=std::io::stderr();let mut output=stderr.lock();
+                                write_unknown_field_context_trace(self.tree,self.prefix_archive,self.source,self.member,expression,object,selector,base,&mut output);
+                                let _=writeln!(output,"ORIGINAL_CHECKER_UNKNOWN_FIELD_MODE original_events={} original_values={} effects={} new_context={}",self.original_events.is_some(),self.original_values,self.effects.is_some(),self.new_context);
+                            }
+                            return Err("unknown-receiver field access needs pinned fix-hint/declaration origins".into())
+                        },
                     };
                     let at = member_origin_source(self.source, expression, object, selector, false)?;
                     self.event(Event::FieldWithoutStaticType {
@@ -2224,10 +2299,14 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
         Walker::expression(self, expression, None).map(|_| ())
     }
     fn expression_at(&mut self,expression:&'a Expr,at:Option<crate::checker_evaluated_observer::ExpressionOrigin>)->Result<(),D::Error>{
-        self.with_warning_anchor(at,|this|Walker::expression(this,expression,None).map(|_|()))
+        if let Some(crate::checker_evaluated_observer::ExpressionOrigin::Source(source))=at{
+            self.with_evaluation_source(source,|this|this.with_warning_anchor(at,|this|Walker::expression(this,expression,None).map(|_|())))
+        }else{
+            self.with_warning_anchor(at,|this|Walker::expression(this,expression,None).map(|_|()))
+        }
     }
     fn statement_expression_at(&mut self,expression:&'a Expr,at:Span)->Result<(),D::Error>{
-        self.with_warning_anchor(Self::warning_source(at),|this|this.statement_expression(expression))
+        self.with_evaluation_source(at,|this|this.with_warning_anchor(Self::warning_source(at),|this|this.statement_expression(expression)))
     }
     fn statement_expression(&mut self, expression: &'a Expr) -> Result<(), D::Error> {
         let old_root = self.statement_root.replace(expression);
@@ -2252,19 +2331,14 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
         result
     }
     fn initializer(&mut self, initializer: &'a ForInitializer, at: Span) -> Result<(), D::Error> {
+        self.with_evaluation_source(at,|this|{
         match initializer {
             ForInitializer::Declare { declaration, value } => {
-                self.binding(declaration, value.as_ref(), false, at)
+                this.binding(declaration, value.as_ref(), false, at)
             }
-            ForInitializer::Expr(value) => {
-                let previous = self
-                    .evaluation_anchor
-                    .replace(crate::checker_effects::CallOrigin::Source(at));
-                let result = self.statement_expression_at(value,at);
-                self.evaluation_anchor = previous;
-                result
-            }
+            ForInitializer::Expr(value) => this.statement_expression_at(value,at),
         }
+        })
     }
     fn binding(
         &mut self,
@@ -2273,28 +2347,30 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
         always_untyped: bool,
         at: Span,
     ) -> Result<(), D::Error> {
+        self.with_evaluation_source(at,|this|{
         if dm_syntax::local_name(binding).is_some() {
-            return self.declaration(binding, value, at);
+            return this.declaration(binding, value, at);
         }
         if always_untyped {
             if binding.is_empty() || !binding.chars().all(|c| c.is_alphanumeric() || c == '_') {
                 return Err("pair/catch binding lacks native simple-name projection".into());
             }
             if let Some(value) = value {
-                Walker::expression(self, value, None)?;
+                Walker::expression(this, value, None)?;
             }
-            self.insert_local(
+            this.insert_local(
                 SymbolId::of(binding),
                 LocalFact::unproved(TypeFact::Unknown),
             )?;
         }
         // Existing (nondeclared) range bindings deliberately skip their start.
         Ok(())
+        })
     }
     fn do_while_unreachable(&mut self,at:Span,condition:Span)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;observer.do_while_unreachable(at,condition)?;}Ok(())}
     fn switch_started(&mut self,selector:&'a Expr,cases:&'a [dm_syntax::SwitchCase],default_present:bool,at:Span)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;observer.switch_started(selector,cases,default_present,at)?;}Ok(())}
     fn switch_case(&mut self,case:&'a dm_syntax::SwitchCase)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;if let [dm_syntax::SwitchAlternative::Exact(value)]=case.alternatives.as_slice(){if matches!(&value.kind,ExprKind::Binary{op,..}if op=="||"){observer.logical_or(case.original_site,value.span)?;}}}Ok(())}
-    fn iterable(&mut self,expression:&'a Expr,at:Span)->Result<(),D::Error>{let ty=self.with_warning_anchor(Self::warning_source(at),|this|Walker::expression(this,expression,None))?;self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.iterable(ty,at)?;}Ok(())}
+    fn iterable(&mut self,expression:&'a Expr,at:Span)->Result<(),D::Error>{let ty=self.with_evaluation_source(at,|this|this.with_warning_anchor(Self::warning_source(at),|this|Walker::expression(this,expression,None)))?;self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.iterable(ty,at)?;}Ok(())}
     fn invalid_range(&mut self,at:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.invalid_range(at)?;}Ok(())}
     fn catch_parameters(&mut self,count:usize,at:Span,catch_header:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.catch_errors.as_mut(){observer.parameters(count,at,catch_header)?;}Ok(())}
     fn catch_binding(&mut self,binding:Option<&'a str>,at:Span,try_at:Span)->Result<(),D::Error>{

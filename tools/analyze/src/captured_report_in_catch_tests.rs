@@ -94,7 +94,7 @@ fn report_in_catch_keeps_authored_code_ranges_frozen_sites_and_no_allow_usage() 
         let tree=crate::tree::Tree::from_files(pages.files);
         let scope=config.borrowed_report_scope(legacy.meta().name,legacy.meta().group).unwrap();
         let mut old=crate::lint::Sink::new();
-        legacy.scan_tree(&crate::lint::Cx{tree:&tree,meta:legacy.meta(),scope},&mut old);
+        legacy.scan_tree(&crate::lint::Cx{ fixture:None,tree:&tree,meta:legacy.meta(),scope},&mut old);
         assert_eq!(old.sites.as_slice(),data.sites());
         assert!(old.allow_used.is_empty());
     }

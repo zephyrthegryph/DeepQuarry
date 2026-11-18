@@ -39,8 +39,8 @@ pub struct Findings {
 }
 /// Operation-local failures never become reusable source findings.
 #[derive(Debug)]
-pub enum ScanFailure { Policy(String), Admission(String) }
-impl ScanFailure { pub fn into_message(self)->String { match self { Self::Policy(s)|Self::Admission(s)=>s } } }
+pub enum ScanFailure { Policy(String), Admission(String), Operational(std::io::Error) }
+impl ScanFailure { pub fn into_message(self)->String { match self { Self::Policy(s)|Self::Admission(s)=>s,Self::Operational(actual)=>actual.to_string() } } }
 impl From<String> for ScanFailure { fn from(s:String)->Self {Self::Policy(s)} }
 impl From<&str> for ScanFailure { fn from(s:&str)->Self {Self::Policy(s.into())} }
 pub fn ordered_names(names: &[String]) -> Result<Vec<&'static str>, String> {
@@ -243,7 +243,7 @@ impl File {
         self.scan_budgeted_checked(scope,rows,bytes).map_err(ScanFailure::into_message)
     }
     pub fn scan_budgeted_checked(&self,scope:&Scope,rows:usize,bytes:usize)->Result<Findings,ScanFailure> {
-        self.scan_selected(scope, rows, bytes, false)
+        self.scan_selected(scope, rows, bytes, false,None)
     }
 
     /// The genuine single-scope capture already performed the same
@@ -251,10 +251,16 @@ impl File {
     /// is issued by this DATA-only scanner.
     #[doc(hidden)]
     pub fn scan_preselected_budgeted_checked(&self,scope:&Scope,rows:usize,bytes:usize)->Result<Findings,ScanFailure> {
-        self.scan_selected(scope, rows, bytes, true)
+        self.scan_selected(scope, rows, bytes, true,None)
     }
 
-    fn scan_selected(&self,scope:&Scope,rows:usize,bytes:usize,selected:bool)->Result<Findings,ScanFailure> {
+    #[cfg(feature="native-policy")]
+    pub fn scan_with_pattern_resources(&self,scope:&Scope,rows:usize,bytes:usize,selected:bool,budget:&Arc<crate::captured_generator_budget::Budget>,patterns:&dyn crate::native_pattern::Provider,poll:&dyn Fn()->std::io::Result<()>)->Result<Findings,ScanFailure>{
+        self.require_view_budget().map_err(ScanFailure::Admission)?;
+        let fixture=crate::raw_fixture_policy::Fixture::scanned(budget,poll,patterns,&self.tree.files[0]).map_err(|actual|match actual{crate::derived_selftest_policy::Failure::Operational(actual)=>ScanFailure::Operational(actual),crate::derived_selftest_policy::Failure::Assertion(message)=>ScanFailure::Policy(message)})?;
+        self.scan_selected(scope,rows,bytes,selected,Some(&fixture))
+    }
+    fn scan_selected(&self,scope:&Scope,rows:usize,bytes:usize,selected:bool,fixture:Option<&crate::raw_fixture_policy::Fixture<'_>>)->Result<Findings,ScanFailure> {
         self.require_view_budget().map_err(ScanFailure::Admission)?;
         let lint = captured_raw_policy::registry()
             .find(scope.name)
@@ -262,15 +268,18 @@ impl File {
         if lint.meta().scan != ScanKind::File {
             return Err("raw lint changed its per-file contract".into());
         }
-        let cx = Cx {
+        let cx = Cx { fixture,
             tree: &self.tree,
             meta: lint.meta(),
             scope: &scope.scope,
         };
-        let mut sink = Sink::bounded(
-            rows.min(captured_raw_policy::MAX_FIXTURE_SITES),
-            bytes.min(64 * 1024 * 1024),
-        );
+        let mut sink = {
+            #[cfg(feature="native-policy")]
+            if let Some(fixture)=fixture{Sink::bounded_budget_limits(rows.min(captured_raw_policy::MAX_FIXTURE_SITES),bytes.min(64*1024*1024),fixture.scan_budget()).map_err(ScanFailure::Admission)?.with_pattern_loan(fixture.sink_pattern_loan())}
+            else{Sink::bounded(rows.min(captured_raw_policy::MAX_FIXTURE_SITES),bytes.min(64*1024*1024))}
+            #[cfg(not(feature="native-policy"))]
+            {Sink::bounded(rows.min(captured_raw_policy::MAX_FIXTURE_SITES),bytes.min(64*1024*1024))}
+        };
         let result = catch_unwind(AssertUnwindSafe(|| {
             if selected {
                 let file = &self.tree.files[0];
@@ -283,6 +292,11 @@ impl File {
                 }
             }
         }));
+        #[cfg(feature="native-policy")]
+        if let Some(fixture)=fixture{if let Some(message)=sink.admission_error(){fixture.note_scan_admission(message)}fixture.finish_scan().map_err(|actual|match actual{
+            crate::derived_selftest_policy::Failure::Operational(actual)=>ScanFailure::Operational(actual),
+            crate::derived_selftest_policy::Failure::Assertion(message)=>ScanFailure::Policy(message),
+        })?;}
         // A denied lazy must never escape as an empty clean scan, including
         // callers that do not otherwise demand any view on this invocation.
         self.require_view_budget().map_err(ScanFailure::Admission)?;
@@ -940,7 +954,7 @@ fn with_original_policy_file_prepared_demand(root:&Path,path:&Path,live_page_byt
 /// Exact original ALLOW fingerprint; called only inside an actual source loan.
 pub(crate) fn source_allow_digest(source:&SourceFile)->[u8;20]{source_allow_digest_text(source.text())}
 /// Exact old whole-file annotation digest over an actual borrowed original view.
-pub(crate) fn source_allow_digest_text(text:&str)->[u8;20]{use sha1::{Digest,Sha1};Sha1::digest(text.trim_end_matches('\n').as_bytes()).into()}
+pub fn source_allow_digest_text(text:&str)->[u8;20]{use sha1::{Digest,Sha1};Sha1::digest(text.trim_end_matches('\n').as_bytes()).into()}
 
 impl Config{
  /// Full original registry metadata against THIS same captured configuration.

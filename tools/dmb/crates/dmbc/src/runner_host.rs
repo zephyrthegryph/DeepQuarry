@@ -1593,11 +1593,14 @@ fn original_exclusions_shape<'a>(request: &'a crate::request::BuildRequest, root
 
 #[path="runner_compound_replay.rs"]
 mod compound_replay;
+#[path="runner_baseline_update.rs"]
+pub(crate) mod baseline_update;
+pub use baseline_update::{Request as BaselineUpdateRequest,Outcome as BaselineUpdateOutcome};
 #[path="runner_full_registry_check.rs"]
 mod full_registry_check;
-pub use full_registry_check::FullRegistryCheckOptions;
+pub use full_registry_check::{FullRegistryCheckOptions,SelftestedRegistryCheck,CheckCliOutcome};
 pub(crate) use query_snapshot::{NativeCheckSelection,prepare_native_check_selection,SourceHandlerProjection,derive_source_handler_projection,prepare_native_source_handler_selection,prepare_native_registered_check_selection};
-pub(crate) use full_registry_check::FullRegistryCheckReport;
+pub(crate) use full_registry_check::{FullRegistryCheckReport,FullRegistryCheckInputs};
 
 impl BuildHost {
     /// Preflight the wire request before it may supersede another caller. The
@@ -1885,7 +1888,7 @@ impl BuildHost {
         let (candidate,observation_cache)=if observed {(None,Some(physical_cache))} else {
             (compound_replay::Candidate::closed(&prepare,root,physical_cache,roster,compact_checker),None)
         };
-        if let Some(entry) = self.joined_report_replay.take().filter(|_|!observed) {
+        if let Some(compound_replay::Entry::Compiled(entry)) = self.joined_report_replay.take().filter(|_|!observed) {
             if candidate.as_ref().is_some_and(|candidate|entry.matches(candidate, exclusions))
                 && entry.joined.replay_inputs_current(
                     &crate::policy_request::canonical_analysis_project(
@@ -1899,7 +1902,7 @@ impl BuildHost {
                         return Err(io::Error::other("exact native compilation did not publish a pair").into());
                     }
                     let delivered = finish(output.with_publication(compiled, roster, None))?;
-                    self.joined_report_replay = Some(entry);
+                    self.joined_report_replay = Some(compound_replay::Entry::Compiled(entry));
                     return Ok(delivered);
                 }
             }
@@ -1952,7 +1955,7 @@ impl BuildHost {
         };
         let delivered = finish(output.with_publication(compiled, roster, send_scratch))?;
         self.joined_report_replay = retain.zip(slot).map(|((key, reports), slot)|
-            compound_replay::Entry { key, reports, joined, _slot: slot });
+            compound_replay::Entry::Compiled(compound_replay::CompiledEntry { key, reports, joined, _slot: slot }));
         Ok(delivered)
     }
 
@@ -1965,17 +1968,43 @@ impl BuildHost {
         (dq_analyze::selected_exclusions_wire::Frame,crate::selected_report_spool::Verified),
         crate::selected_report_spool::Verified, dm_preprocess::source_arena_credit::SourceArenaCredit,
     ),Box<dyn std::error::Error>>{
-        self.stage_full_registry_report_using(request,compact_checker,full_ci,None)
+        self.stage_full_registry_report_using(request,compact_checker,full_ci,None,None)
     }
 
     fn stage_full_registry_report_using(
-        &mut self, mut request:crate::request::BuildRequest, compact_checker:bool, full_ci:bool, format:Option<FullRegistryCheckOptions>,
+        &mut self, request:crate::request::BuildRequest, compact_checker:bool, full_ci:bool, format:Option<FullRegistryCheckOptions>, selftest_plan:Option<&std::sync::Arc<NativeCheckSelection>>,
     )->Result<(
         crate::request_runner::JoinedSelectedInputs,
         crate::daemon::selected_report_wire::Frame, bool,
         Option<crate::selected_report_spool::Verified>,
         (dq_analyze::selected_exclusions_wire::Frame,crate::selected_report_spool::Verified),
         crate::selected_report_spool::Verified, dm_preprocess::source_arena_credit::SourceArenaCredit,
+    ),Box<dyn std::error::Error>>{
+        self.stage_full_registry_report_using_allocation(request,compact_checker,full_ci,format,selftest_plan,false,None,|credit,_|Ok(credit),|_,_,_,_,_,_,_|unreachable!("ordinary report has no baseline callback"))
+    }
+
+    pub(crate) fn stage_full_registry_baseline_plan(
+        &mut self, request:crate::request::BuildRequest,generation_domain:Option<&crate::request_runner::runner_freshness::GenerationInputClosure>,mode:dq_analyze::native_baseline_update_wire::Mode,
+    )->Result<(
+        crate::request_runner::JoinedSelectedInputs,
+        crate::daemon::selected_report_wire::Frame, bool,
+        Option<crate::selected_report_spool::Verified>,
+        (dq_analyze::selected_exclusions_wire::Frame,crate::selected_report_spool::Verified),
+        crate::selected_report_spool::Verified, baseline_update::Builder,
+    ),Box<dyn std::error::Error>>{
+        self.stage_full_registry_report_using_allocation(request,true,true,None,None,true,generation_domain,|credit,budget|baseline_update::Builder::new(credit,budget,mode),|builder,meta,scope,rows,budget,capture,guard|builder.observe(meta,scope,rows,budget,capture,guard))
+    }
+
+    fn stage_full_registry_report_using_allocation<C>(
+        &mut self, mut request:crate::request::BuildRequest, compact_checker:bool, full_ci:bool, format:Option<FullRegistryCheckOptions>,
+        selftest_plan:Option<&std::sync::Arc<NativeCheckSelection>>, baseline_update:bool,generation_domain:Option<&crate::request_runner::runner_freshness::GenerationInputClosure>,make:impl FnOnce(dm_preprocess::source_arena_credit::SourceArenaCredit,std::sync::Arc<dq_analyze::captured_generator_budget::Budget>)->Result<C,Box<dyn std::error::Error>>,
+        mut plan:impl FnMut(&mut C,&dq_analyze::lint::Meta,&dq_analyze::scopes::LintScope,query_snapshot::BaselineProjectionRows<'_>,&std::sync::Arc<dq_analyze::captured_generator_budget::Budget>,&std::sync::Arc<workspace_capture::WorkspaceCapture>,&query_snapshot::workspace_native_guard::NativeReadGuard<'_>)->std::io::Result<()>,
+    )->Result<(
+        crate::request_runner::JoinedSelectedInputs,
+        crate::daemon::selected_report_wire::Frame, bool,
+        Option<crate::selected_report_spool::Verified>,
+        (dq_analyze::selected_exclusions_wire::Frame,crate::selected_report_spool::Verified),
+        crate::selected_report_spool::Verified, C,
     ),Box<dyn std::error::Error>>{
         use crate::{daemon::selected_report_wire::{CompoundRoster,Frame},policy_request::WorkspaceAuxiliaryQuestion as Q,
             selected_report_spool::Stage};
@@ -1992,25 +2021,32 @@ impl BuildHost {
         let credit=self.source_arena_work().reserve(SELECTED_REPORT_RETAINED.checked_add(metadata)
             .ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?)?;
         let retained=Budget::new(SELECTED_REPORT_RETAINED).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+        let mut allocation=make(credit,std::sync::Arc::clone(&retained))?;
         request.policy_inputs.as_mut().ok_or_else(original_exclusions_invalid)?.workspace_auxiliary=Q::PRIVATE_FULL_REGISTRY.to_vec();
         let mut diagnostics=Stage::new(&cache)?;
         let mut checker=Stage::new(&cache)?;
         let report=Stage::new(&cache)?;
         let mut joined=None;
-        let(result,transcript)=crate::request_runner::prepare_compound_full_registry(
-            request,self,&mut diagnostics,&mut checker,&mut joined,compact_checker.then_some(cache.as_path()),full_ci,
-        )?;
+        let cli_started=selftest_plan.and_then(|plan|plan.cli_observations()).filter(|actual|actual.request().timing).map(|_|std::time::Instant::now());
+        let(result,transcript)=if baseline_update{
+            crate::request_runner::prepare_compound_baseline_update(request,self,&mut diagnostics,&mut checker,&mut joined,generation_domain,compact_checker.then_some(cache.as_path()))
+        }else{crate::request_runner::prepare_compound_full_registry(request,self,&mut diagnostics,&mut checker,&mut joined,compact_checker.then_some(cache.as_path()),full_ci,selftest_plan)}?;
+        if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() { eprintln!("ORIGINAL_FULL_REPORT_PHASE stage=compound_returned preparation_ok={} diagnostics_ok={}", result.preparation.is_ok(), result.diagnostics.is_ok()); }
         let prepared=result.preparation?;
         result.diagnostics?;
+        if let Some(started)=cli_started{selftest_plan.and_then(|plan|plan.cli_observations()).expect("actual optional timing request").prepared(started.elapsed())?;}
         let transcript=transcript.ok_or_else(||io::Error::other("full registry Checker transcript absent"))?;
         let frame=Frame::from_prepared(&prepared)?;
         frame.require_checker_frame(transcript.frame)?;
+        if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() { eprintln!("ORIGINAL_FULL_REPORT_PHASE stage=checker_ready report_used={} report_remaining={}",retained.used(),retained.remaining()); }
         let(clean,report)={
             let state=self.query_state.try_lock().map_err(|_|io::Error::new(io::ErrorKind::WouldBlock,"full registry query state is already borrowed"))?;
             let snapshot=state.snapshot.as_ref().ok_or_else(||io::Error::other("full registry current source absent"))?;
             let handlers=state.handlers_snapshot.as_ref().ok_or_else(||io::Error::other("full registry handler source absent"))?;
-            if let Some(format)=format {
-                snapshot.stage_private_full_registry_check(&prepared,&retained,&root,report,&transcript,handlers,format)?
+            if baseline_update{
+                snapshot.stage_private_full_registry_baseline_projection(&prepared,&retained,&root,report,&transcript,handlers,&mut|meta,scope,rows,budget,capture,guard|plan(&mut allocation,meta,scope,rows,budget,capture,guard))?
+            }else if let Some(format)=format {
+                match selftest_plan{Some(plan) if plan.selftest_request().is_some()||plan.cli_observations().is_some()=>snapshot.stage_private_full_registry_check_with_selftests(&prepared,&retained,&root,report,&transcript,handlers,format,plan)?,_=>snapshot.stage_private_full_registry_check(&prepared,&retained,&root,report,&transcript,handlers,format)?}
             } else if full_ci {
                 snapshot.stage_private_full_registry_ci(&prepared,&retained,&root,report,&transcript,handlers)?
             } else {
@@ -2025,7 +2061,7 @@ impl BuildHost {
             return Err(io::Error::new(io::ErrorKind::OutOfMemory,"full registry compound reports exceed the aggregate stream bound").into());
         }
         let joined=joined.ok_or_else(||io::Error::other("full registry joined input closure absent"))?;
-        Ok((joined,frame,if format.is_some(){clean}else{clean&&transcript.clean},diagnostics,(transcript.frame,checker),report,credit))
+        Ok((joined,frame,if format.is_some(){clean}else{clean&&transcript.clean},diagnostics,(transcript.frame,checker),report,allocation))
     }
 
     pub(crate) fn stage_selected_original_reports_using<T>(
@@ -2224,7 +2260,7 @@ mod joined_selected_publication_control {
                 member.name == dm_ir::SymbolId::of("save")
             })
         }).unwrap();
-        let syntax = &archive.syntax_inputs().unwrap()[ordinal];
+        let syntax = &archive.syntax_input_checked(ordinal,&||crate::daemon::control::checkpoint()).unwrap();
         let product = db.syntax_product_checked(syntax).unwrap();
         let bodies = db.db().stats(dm_query::Kind(4)).computed;
         let proofs = db.db().stats(dm_query::Kind(5)).computed;
@@ -2334,7 +2370,7 @@ mod joined_selected_publication_control {
         assert!(std::str::from_utf8(&checker_bytes).unwrap().contains("undefined field"));
         assert!(std::str::from_utf8(&analyze_bytes).unwrap().contains("[reads/dynamic_read]"));
 
-        let cached = host.joined_report_replay.as_ref().expect("admitted compound replay");
+        let cached = host.joined_report_replay.as_ref().expect("admitted compound replay").compiled();
         let exact_spool = cached.reports.report.replay_alias().unwrap();
         let mut warm_diagnostics = Vec::new();
         let mut warm_checker_bytes = Vec::new();
@@ -2346,7 +2382,7 @@ mod joined_selected_publication_control {
         assert!(matches!(outcome, BuildOutcome::Published { session_hit:false, .. }));
         assert_eq!((warm_clean,warm_diagnostics,warm_checker_bytes,warm_analyze_bytes),
             (clean,diagnostics.clone(),checker_bytes.clone(),analyze_bytes.clone()));
-        assert!(exact_spool.same_replay_backing(&host.joined_report_replay.as_ref().unwrap().reports.report),
+        assert!(exact_spool.same_replay_backing(&host.joined_report_replay.as_ref().unwrap().compiled().reports.report),
             "unchanged compound used the exact prior report rather than rebuilding it");
 
         let shared = root.join("code/common.dm");
@@ -2366,7 +2402,7 @@ mod joined_selected_publication_control {
         ).unwrap();
         assert!(matches!(outcome, BuildOutcome::Published { session_hit:false, .. }));
         assert_ne!(edited_checker,checker_bytes);
-        assert!(!exact_spool.same_replay_backing(&host.joined_report_replay.as_ref().unwrap().reports.report),
+        assert!(!exact_spool.same_replay_backing(&host.joined_report_replay.as_ref().unwrap().compiled().reports.report),
             "same-size and same-stamp source edit must issue new Original report backing");
 
         // The real publication left the Strict variant active. The next
@@ -2412,3 +2448,45 @@ pub(crate) use schema_proposals_report::SchemaReport;
 
 #[path="runner_standalone_checker_report.rs"]mod standalone_checker_report;
 pub(crate) use standalone_checker_report::StandaloneCheckerReport;
+
+#[path="runner_ui_fixture_selftest.rs"]mod ui_fixture_selftest;
+
+#[path="runner_sys_reactive_fixture_selftest.rs"]mod sys_reactive_fixture_selftest;
+
+#[path="runner_native_selftests.rs"]mod native_selftests;
+
+pub(crate) use native_selftests::{NativeSelftestRequest,NativeSelftestPending};
+
+pub(crate) use query_snapshot::NativeSelftestCompletion;
+#[path="runner_check_report_replay.rs"]mod check_report_replay;
+
+/// Static native registry utility; no host/model preparation or source authority.
+pub fn write_registered_metadata_list(out:&mut impl std::io::Write)->std::io::Result<()>{query_snapshot::write_registered_metadata_list(out)}
+
+#[path="runner_check_cli_observations.rs"]mod check_cli_observations;
+
+#[path="runner_standalone_selftests.rs"]mod standalone_selftests;
+pub(crate) use standalone_selftests::StandaloneSelftestReport;
+
+#[path="runner_native_sem_prelude.rs"]mod native_sem_prelude;
+#[path="runner_base_vars_capture.rs"]mod base_vars_capture;
+#[path="runner_native_sem_utility.rs"]pub(crate)mod native_sem_utility;
+pub(crate)use native_sem_utility::NativeSemReport;
+
+#[path="runner_sem_closure_capture.rs"]pub(crate)mod sem_closure_capture;
+
+#[path="runner_fixture_scope.rs"] pub(crate) mod fixture_scope;
+
+#[path="runner_native_fixture.rs"] pub(crate) mod native_fixture;
+
+#[path="runner_codemod_targets.rs"]pub(crate)mod codemod_targets;
+
+#[path="runner_native_codemod.rs"]pub(crate)mod native_codemod;
+
+#[path="runner_native_utility_binding.rs"]pub(crate)mod native_utility_binding;
+
+#[path="runner_native_utility_delivery.rs"]mod native_utility_delivery;
+pub(crate)use native_utility_delivery::NativeCodemodFixtureReport;
+
+#[path="runner_legacy_analyze_oracle.rs"]pub(crate)mod legacy_analyze_oracle;
+#[path="runner_native_parity.rs"]pub(crate)mod native_parity;

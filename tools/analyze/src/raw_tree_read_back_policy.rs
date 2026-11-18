@@ -1,4 +1,5 @@
 //! Shared read-back schema and selected-file judgment.
+use crate::raw_fixture_policy::PatternApi as _;
 use std::collections::{BTreeMap,BTreeSet};
 use crate::lint::{Meta,Policy,RuleMeta,ScanKind};
 use crate::pat::Pat;
@@ -20,11 +21,11 @@ pub static META: Meta = Meta {
     lists: crate::allow_registry_fields::read_back::SCOPE_META_0.lists,
 };
 
-pub struct ReadBack {
-    type_head: Pat,
-    read_back_decl: Pat,
-    notice_var: Pat,
-    list_alias: Pat,
+pub struct ReadBack<P=Pat> {
+    type_head: P,
+    read_back_decl: P,
+    notice_var: P,
+    list_alias: P,
 }
 
 impl ReadBack {
@@ -46,8 +47,8 @@ fn declared_using<C:crate::key_policy_control::Control>(types:&BTreeSet<String>,
 
 
 
-pub fn schema(f:&SourceFile,p:&ReadBack,mut visit:impl FnMut(&str)){schema_using(f,p,visit,&mut crate::key_policy_control::Compatibility).expect("original read_back source index")}
-pub fn schema_using<C:crate::key_policy_control::Control>(f:&SourceFile,p:&ReadBack,mut visit:impl FnMut(&str),c:&mut C)->Result<(),C::Error>{c.checkpoint()?;
+pub fn schema<P:crate::raw_fixture_policy::PatternApi>(f:&SourceFile,p:&ReadBack<P>,mut visit:impl FnMut(&str)){schema_using(f,p,visit,&mut crate::key_policy_control::Compatibility).expect("original read_back source index")}
+pub fn schema_using<P:crate::raw_fixture_policy::PatternApi,C:crate::key_policy_control::Control>(f:&SourceFile,p:&ReadBack<P>,mut visit:impl FnMut(&str),c:&mut C)->Result<(),C::Error>{c.checkpoint()?;
             let mut current: Option<&str> = None;
             for (_, text) in f.code().numbered() {c.checkpoint()?;
                 if !text.starts_with('\t') && !text.starts_with(' ') && !text.trim().is_empty() {
@@ -61,8 +62,9 @@ pub fn schema_using<C:crate::key_policy_control::Control>(f:&SourceFile,p:&ReadB
                 }
             }
 c.checkpoint()?;Ok(())}
-pub fn judge_file(f:&SourceFile,p:&ReadBack,read_back:&BTreeSet<String>,out:&mut impl Reporter){judge_file_using(f,p,read_back,out,&mut crate::key_policy_control::Compatibility).expect("original read-back judge")}
-pub fn judge_file_using<C:crate::key_policy_control::Control>(f:&SourceFile,p:&ReadBack,read_back:&BTreeSet<String>,out:&mut impl Reporter,c:&mut C)->Result<(),C::Error>{c.checkpoint()?;crate::key_policy_control::reserve(c,||f.text().len().checked_mul(8)?.checked_add(1024))?;
+pub fn judge_file<P:crate::raw_fixture_policy::PatternApi>(f:&SourceFile,p:&ReadBack<P>,read_back:&BTreeSet<String>,out:&mut impl Reporter){judge_file_using(f,p,read_back,out,&mut crate::key_policy_control::Compatibility).expect("original read-back judge")}
+pub fn judge_file_using<P:crate::raw_fixture_policy::PatternApi,C:crate::key_policy_control::Control>(f:&SourceFile,p:&ReadBack<P>,read_back:&BTreeSet<String>,out:&mut impl Reporter,c:&mut C)->Result<(),C::Error>{judge_file_using_with_fixture(f,p,read_back,out,c,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn judge_file_using_with_fixture<P:crate::raw_fixture_policy::PatternApi,C:crate::key_policy_control::Control>(f:&SourceFile,p:&ReadBack<P>,read_back:&BTreeSet<String>,out:&mut impl Reporter,c:&mut C,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),C::Error>{c.checkpoint()?;crate::key_policy_control::reserve(c,||f.text().len().checked_mul(8)?.checked_add(1024))?;
             crate::key_policy_control::reserve(c,||f.text().len().checked_add(1)?.checked_mul(4*std::mem::size_of::<(usize,&str)>())?.checked_add(128))?;let lines:Vec<(usize,&str)>=f.code().numbered().collect();if C::CHECKED&&lines.capacity()>f.text().len().saturating_add(1).saturating_mul(4){return Err(c.allocation_failed())}
             let mut i = 0;
             while i < lines.len() {c.checkpoint()?;
@@ -103,12 +105,12 @@ pub fn judge_file_using<C:crate::key_policy_control::Control>(f:&SourceFile,p:&R
                     }
                     let mut hit: Option<&String> = None;
                     for (v, t) in &notices {c.checkpoint()?;
-                        if writes(text, v, true) {
+                        if crate::raw_name_match::writes_with_fixture(text,v,true,fixture) {
                             hit = Some(t);
                         }
                     }
                     for (a, t) in &aliases {c.checkpoint()?;
-                        if writes(text, a, false) {
+                        if crate::raw_name_match::writes_with_fixture(text,a,false,fixture) {
                             hit = Some(t);
                         }
                     }
@@ -131,3 +133,7 @@ pub fn action_notice(args: &[String]) -> Option<String> {
         .unwrap_or_else(|| format!("/datum/notice/{}", crate::actions_policy::past_tense(name)));
     notice.strip_prefix("/datum/notice/").map(str::to_string)
 }
+
+const PATTERN_SOURCES:&[&str]=&[r"^/datum/notice/([A-Za-z0-9_/]+?)/?\s*$",r"^\s+read_back\s*=\s*(TRUE|1)\b",r"(?:var/)?datum/notice/([A-Za-z0-9_/]+)/([A-Za-z_]\w*)\s*(=\s*([^\n]*))?",r"var/list/([A-Za-z_]\w*)\s*=\s*([A-Za-z_]\w*)\.([A-Za-z_]\w*)\s*(?:\|\|.*)?$"];
+#[cfg(feature="native-policy")]
+pub(crate) fn native_patterns<'f,'a>(fixture:&'f crate::raw_fixture_policy::Fixture<'a>)->ReadBack<crate::raw_fixture_policy::Pattern<'f,'a>>{ReadBack{type_head:fixture.pattern(PATTERN_SOURCES[0],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(PATTERN_SOURCES[0])),read_back_decl:fixture.pattern(PATTERN_SOURCES[1],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(PATTERN_SOURCES[1])),notice_var:fixture.pattern(PATTERN_SOURCES[2],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(PATTERN_SOURCES[2])),list_alias:fixture.pattern(PATTERN_SOURCES[3],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(PATTERN_SOURCES[3]))}}

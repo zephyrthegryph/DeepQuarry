@@ -78,7 +78,7 @@ fn shared_judge_keeps_notes_changed_filter_rule_and_source_order() {
     let (tree, run) = tree_run();
     let probe = Probe::new(Policy::Hard);
     let scope = LintScope::default();
-    let cx = Cx {
+    let cx = Cx { fixture:None,
         tree: &tree,
         meta: probe.meta(),
         scope: &scope,
@@ -98,7 +98,7 @@ fn shared_judge_ceiling_raw_and_custom_keep_distinct_protocols() {
     let probe = Probe::new(Policy::Hard);
     let mut scope = LintScope::default();
     scope.ceilings.insert("first".into(), 2);
-    let cx = Cx {
+    let cx = Cx { fixture:None,
         tree: &tree,
         meta: probe.meta(),
         scope: &scope,
@@ -109,7 +109,7 @@ fn shared_judge_ceiling_raw_and_custom_keep_distinct_protocols() {
     assert!(!text.contains("code/b.dm:"));
     assert!(judge(&probe, &cx, &run, Path::new(""), &None, true).0);
     let custom = Probe::new(Policy::Custom);
-    let cx = Cx {
+    let cx = Cx { fixture:None,
         tree: &tree,
         meta: custom.meta(),
         scope: &scope,
@@ -142,7 +142,7 @@ fn shared_judge_sites_uses_existing_fingerprint_and_raw_ignores_it() {
         banned: &[],
     });
     let scope = LintScope::default();
-    let cx = Cx {
+    let cx = Cx { fixture:None,
         tree: &tree,
         meta: probe.meta(),
         scope: &scope,
@@ -171,7 +171,7 @@ fn delivered_source_report_matches_entire_legacy_judgement_for_all_standard_poli
         let probe=Probe::new(policy);
         for ceiling in [false,true] {
             let mut scope=LintScope::default();if ceiling{scope.ceilings.insert("first".into(),1);}
-            let cx=Cx{tree:&tree,meta:probe.meta(),scope:&scope};
+            let cx=Cx{ fixture:None,tree:&tree,meta:probe.meta(),scope:&scope};
             for raw in [false,true] {for changed in [None,Some(HashSet::from(["code/a.dm".into()])),Some(HashSet::new())] {
                 let expected=original_policy::judge(&probe,&cx,&run,&root,&changed,raw);
                 let actual=judge_report(probe.meta(),&scope,&DeliveredSource,&run,&root,&changed,raw,
@@ -185,7 +185,7 @@ fn delivered_source_report_matches_entire_legacy_judgement_for_all_standard_poli
 #[test]
 fn delivered_source_custom_and_post_protocols_remain_explicit_and_distinct(){
     let (tree,run)=tree_run();let scope=LintScope::default();let probe=Probe::new(Policy::Custom);
-    let cx=Cx{tree:&tree,meta:probe.meta(),scope:&scope};
+    let cx=Cx{ fixture:None,tree:&tree,meta:probe.meta(),scope:&scope};
     for changed in [None,Some(HashSet::new())] {
         let expected=original_policy::judge(&probe,&cx,&run,Path::new(""),&changed,true);
         let actual=judge_report(probe.meta(),&scope,&DeliveredSource,&run,Path::new(""),&changed,true,
@@ -228,7 +228,7 @@ fn captured_ci_baselines_match_independent_original_without_live_reads() {
     ] {
         let mut probe = Probe::new(policy);
         probe.meta.rules = &[RuleMeta { name: "init_lines", hint: "use the native form" }];
-        let cx = Cx { tree: &tree, meta: probe.meta(), scope: &scope };
+        let cx = Cx { fixture:None, tree: &tree, meta: probe.meta(), scope: &scope };
         for (ordinal, text) in fixtures.into_iter().enumerate() {
             std::fs::write(oracle.join("policy.txt"), text).unwrap();
             std::fs::write(unrelated.join("policy.txt"), "different current bytes").unwrap();

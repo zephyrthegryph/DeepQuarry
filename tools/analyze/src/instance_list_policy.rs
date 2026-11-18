@@ -36,11 +36,8 @@ fn candidate<C:Control>(c:&mut C,peak:&mut usize,args:std::fmt::Arguments<'_>)->
 }
 
 /// `var/[mods/]list/[typed/path/]name = list(...) | new/list(...) | new(...) | new`.
-fn init_re() -> &'static Pat {
-    pat_match!(
-        r"^(?:var/)?((?:\w+/)*?)list/(?:\w+/)*?(\w+)\s*(?:=\s*(?:list\s*\(|alist\s*\(|new\s*/list|new\s*\(|new\s*$)|\[\s*\w+\s*\])"
-    )
-}
+const INIT_PATTERN_SOURCE:&str=r"^(?:var/)?((?:\w+/)*?)list/(?:\w+/)*?(\w+)\s*(?:=\s*(?:list\s*\(|alist\s*\(|new\s*/list|new\s*\(|new\s*$)|\[\s*\w+\s*\])";
+fn init_re()->&'static Pat{pat_match!(INIT_PATTERN_SOURCE)}
 
 /// `strip_comment`: cut a `//` that is not inside a string (an escaped quote is skipped, as the
 /// Python's `text[i - 1] != "\\"` does).
@@ -76,7 +73,7 @@ pub fn scan_decls_using<C:Control>(f:&SourceFile,c:&mut C)->Result<Vec<(String,S
     let mut proc_indent = 0usize;
     let mut var_block: Option<(usize, &str)> = None; // (indent, modifiers) of an open `var` block
     let mut in_comment = false;
-    let head=pat_match!(r"^(/[\w/]+?)/var/(.*)$");kc::reserve(c,||head.capture_group_count().checked_add(init_re().capture_group_count())?.checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(256))?;
+    let native={#[cfg(feature="native-policy")]{c.native_patterns().is_some()}#[cfg(not(feature="native-policy"))]{false}};if !native{let head=pat_match!(r"^(/[\w/]+?)/var/(.*)$");kc::reserve(c,||head.capture_group_count().checked_add(init_re().capture_group_count())?.checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(256))?;}
     for (number, raw) in f.raw().numbered() {c.checkpoint()?;
         let line = raw.trim_end_matches('\r');
         let stripped = py_strip(line);
@@ -106,9 +103,9 @@ pub fn scan_decls_using<C:Control>(f:&SourceFile,c:&mut C)->Result<Vec<(String,S
             if !body.starts_with('/') {
                 continue;
             }
-            if let Some(m) = pat_match!(r"^(/[\w/]+?)/var/(.*)$").captures(body) {
+            if let Some(m) = kc::captures_match_static(c,r"^(/[\w/]+?)/var/(.*)$",body,||pat_match!(r"^(/[\w/]+?)/var/(.*)$"))? {
                 let candidate = candidate(c,&mut candidate_peak,format_args!("var/{}",m.s(2)))?;
-                if let Some(decl) = init_re().captures(&candidate) {
+                if let Some(decl) = kc::captures_match_static(c,INIT_PATTERN_SOURCE,&candidate,init_re)? {
                     // A substring test on the modifier text, not a segment test.
                     if !SHARED_MODS.iter().any(|s| decl.s(1).contains(s)) {
                         row(c,&mut found)?;found.push((kc::own(c,m.s(1))?,kc::own(c,decl.s(2))?,number));
@@ -131,12 +128,12 @@ pub fn scan_decls_using<C:Control>(f:&SourceFile,c:&mut C)->Result<Vec<(String,S
                 var_block = None;
             }
         }
-        if var_block.is_none() && pat_match!(r"^(?:(?:proc|verb)/)?\w+\(.*\)\s*$").is_match(body) {
+        if var_block.is_none() && kc::is_match_match_static(c,r"^(?:(?:proc|verb)/)?\w+\(.*\)\s*$",body,||pat_match!(r"^(?:(?:proc|verb)/)?\w+\(.*\)\s*$"))? {
             in_proc = true;
             proc_indent = depth;
             continue;
         }
-        if var_block.is_none() && pat_match!(r"^var(?:/(?:static|global|tmp|const))*$").is_match(body) {
+        if var_block.is_none() && kc::is_match_match_static(c,r"^var(?:/(?:static|global|tmp|const))*$",body,||pat_match!(r"^var(?:/(?:static|global|tmp|const))*$"))? {
             var_block = Some((depth,body[3..].trim_matches('/')));
             continue;
         }
@@ -147,7 +144,7 @@ pub fn scan_decls_using<C:Control>(f:&SourceFile,c:&mut C)->Result<Vec<(String,S
         } else {
             continue;
         };
-        if let Some(decl) = init_re().captures(&candidate) {
+        if let Some(decl) = kc::captures_match_static(c,INIT_PATTERN_SOURCE,&candidate,init_re)? {
             if !decl.s(1).split('/').any(|m| SHARED_MODS.contains(&m)) {
                 row(c,&mut found)?;found.push((kc::own(c,tp)?,kc::own(c,decl.s(2))?,number));
             }
@@ -172,7 +169,7 @@ pub struct Judged {
     pub uses: Vec<AllowUse>,
 }
 
-pub fn globals_of_using<C:Control>(f:&SourceFile,c:&mut C)->Result<Vec<String>,C::Error>{let mut globals=Vec::new();if f.rel.starts_with("code/"){let text=f.raw().text.as_str();let global=pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\b");let system=pat!(r"(?m)^SYSTEM_DEF\((\w+)\)");kc::reserve(c,||global.capture_group_count().checked_add(system.capture_group_count())?.checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(256))?;if text.contains("GLOBAL_DATUM_INIT"){for m in global.captures_iter(text){c.checkpoint()?;row(c,&mut globals)?;globals.push(kc::own(c,m.s(1))?);}}if text.contains("SYSTEM_DEF("){for m in system.captures_iter(text){c.checkpoint()?;row(c,&mut globals)?;globals.push(kc::format(c,format_args!("/datum/system/{}",m.s(1)))?);}}}kc::reserve(c,||globals.len().checked_mul(std::mem::size_of::<String>())?.checked_add(128))?;globals.sort();globals.dedup();c.checkpoint()?;Ok(globals)}
+pub fn globals_of_using<C:Control>(f:&SourceFile,c:&mut C)->Result<Vec<String>,C::Error>{let mut globals=Vec::new();if f.rel.starts_with("code/"){let text=f.raw().text.as_str();let native={#[cfg(feature="native-policy")]{c.native_patterns().is_some()}#[cfg(not(feature="native-policy"))]{false}};let legacy=if native{None}else{let global=pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\b");let system=pat!(r"(?m)^SYSTEM_DEF\((\w+)\)");kc::reserve(c,||global.capture_group_count().checked_add(system.capture_group_count())?.checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(256))?;Some((global,system))};if text.contains("GLOBAL_DATUM_INIT"){for m in (if let Some(programs)=legacy{programs.0.captures_iter(text)}else{kc::captures_all_static(c,r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\b",text,||pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\b"))?}){c.checkpoint()?;row(c,&mut globals)?;globals.push(kc::own(c,m.s(1))?);}}if text.contains("SYSTEM_DEF("){for m in (if let Some(programs)=legacy{programs.1.captures_iter(text)}else{kc::captures_all_static(c,r"(?m)^SYSTEM_DEF\((\w+)\)",text,||pat!(r"(?m)^SYSTEM_DEF\((\w+)\)"))?}){c.checkpoint()?;row(c,&mut globals)?;globals.push(kc::format(c,format_args!("/datum/system/{}",m.s(1)))?);}}}kc::reserve(c,||globals.len().checked_mul(std::mem::size_of::<String>())?.checked_add(128))?;globals.sort();globals.dedup();c.checkpoint()?;Ok(globals)}
 pub fn facts_of(f:&SourceFile)->Facts{Facts{decls:scan_decls(f).into_iter().map(|(t,v,n)|(t,v,n as u32)).collect(),globals:globals_of_using(f,&mut kc::Compatibility).unwrap_or_else(|never|match never{})}}
 /// Input order is the SAME actual NTFS walk-key order supplied by both adapters.
 /// Ordered results/ALLOW uses remain unsealed, no whole-source grant is made.

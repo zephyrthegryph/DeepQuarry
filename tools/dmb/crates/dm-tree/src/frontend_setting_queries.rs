@@ -225,9 +225,7 @@ impl ColdFrontend {
         item: &mut Item,
         supported: fn(&[dm_syntax::Statement]) -> bool,
     ) -> Result<Arc<StatementBody>, BodySyntaxFailure> {
-        let code = self
-            .body_code(occurrence)
-            .map_err(BodySyntaxFailure::Syntax)?;
+        let code = self.body_code(occurrence).map_err(BodySyntaxFailure::Syntax)?;
         let provider = self
             .setting_expression_queries
             .as_ref()
@@ -374,14 +372,10 @@ impl ColdFrontend {
                 "original return metadata copied or foreign",
             )));
         }
-        let code = self
-            .body_code(occurrence)
-            .map_err(BodySyntaxFailure::Syntax)?;
         let input = self
             .issued_syntax
-            .return_annotation_token_input(
+            .return_annotation_token_input_header_only(
                 occurrence.expanded_span,
-                code.identity(),
                 fragment,
                 metadata,
                 self.snapshot.tree.symbols(),

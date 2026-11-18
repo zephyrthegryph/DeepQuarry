@@ -1,4 +1,5 @@
 //! Unique original accessor discovery/fallback and literal-argument judge; no source authority.
+use crate::raw_fixture_policy::PatternApi as _;
 use std::{collections::HashMap,sync::OnceLock};
 use crate::{dm::dx::{call_arg_spans,DxIndex,Proc},incr,pat::Pat,tree::{SourceFile,Tree},pat_match,key_policy_control::Control};
 /// name -> positional indexes of var-name arguments (fallback when the tree defines none).
@@ -35,11 +36,11 @@ pub fn fallback_using<C:Control>(c:&mut C)->Result<Accessors,C::Error>{let mut m
 /// `accessors_from`: `{name: indexes}` for every global accessor proc with a var-name parameter.
 pub(crate) fn accessors_from(procs:&[Proc])->Accessors{accessors_from_using(procs,&mut crate::key_policy_control::Compatibility).expect("original accessor table")}
 pub fn accessors_from_using<C:Control>(procs:&[Proc],c:&mut C)->Result<Accessors,C::Error>{c.checkpoint()?;
-    let name_re = pat_match!(r"(?:own_\w+|rel_\w+|om_set|timed_\w+|time_left)$");
+
     let mut out = Accessors::new();
     for proc in procs {
         c.checkpoint()?;
-        if !proc.is_global() || !name_re.is_match(&proc.name) {
+        if !proc.is_global() || !crate::key_policy_control::is_match_match_static(c,r"(?:own_\w+|rel_\w+|om_set|timed_\w+|time_left)$",&proc.name,||pat_match!(r"(?:own_\w+|rel_\w+|om_set|timed_\w+|time_left)$"))? {
             continue;
         }
         let om_set = proc.name == "om_set";
@@ -61,9 +62,10 @@ pub fn call_pattern_using<C:Control>(accessors:&Accessors,c:&mut C)->Result<Pat,
 
 /// `scan_file` of the Python: a call whose var-name argument, in the raw text, is a string literal.
 pub(crate) fn scan_lines(f:&SourceFile,accessors:&Accessors,pattern:&Pat,out:&mut Vec<(&'static str,usize)>){scan_lines_using(f,accessors,pattern,out,&mut crate::key_policy_control::Compatibility,&mut crate::key_policy_control::Compatibility).expect("original string-name judge")}
-pub fn scan_lines_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,accessors:&Accessors,pattern:&Pat,out:&mut Vec<(&'static str,usize)>,keep:&mut C,temp:&mut T)->Result<(),C::Error>{keep.checkpoint()?;crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(128)?.checked_add(4096))?;
-    let named_arg = pat_match!(r"\s*([A-Za-z_]\w*)\s*=(?!=)");
-    let string_arg = pat_match!(r#"\s*(?:"|\{")"#);
+pub fn scan_lines_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,accessors:&Accessors,pattern:&Pat,out:&mut Vec<(&'static str,usize)>,keep:&mut C,temp:&mut T)->Result<(),C::Error>{scan_lines_programs_using(f,accessors,pattern,out,keep,temp,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn scan_lines_programs_using<P:crate::raw_fixture_policy::PatternApi,C:Control,T:Control<Error=C::Error>>(f:&SourceFile,accessors:&Accessors,pattern:&P,out:&mut Vec<(&'static str,usize)>,keep:&mut C,temp:&mut T,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),C::Error>{keep.checkpoint()?;crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(128)?.checked_add(4096))?;
+    let named_arg=fixture.pattern(r"\s*([A-Za-z_]\w*)\s*=(?!=)",crate::raw_fixture_policy::PatternMode::Match,||pat_match!(r"\s*([A-Za-z_]\w*)\s*=(?!=)"));
+    let string_arg=fixture.pattern(r#"\s*(?:"|\{")"#,crate::raw_fixture_policy::PatternMode::Match,||pat_match!(r#"\s*(?:"|\{")"#));
     let raw = f.raw();
     for (number, code) in f.clean().numbered() {
         keep.checkpoint()?;
@@ -123,6 +125,16 @@ pub fn scan(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, us
 
 
 fn put<C:Control>(map:&mut Accessors,name:&str,idx:&[usize],c:&mut C)->Result<(),C::Error>{c.checkpoint()?;if C::CHECKED&&map.len()==map.capacity()&&!map.contains_key(name){let target=map.capacity().checked_mul(2).map(|n|n.max(4)).ok_or_else(||c.overflow())?;let bound=target.checked_mul(4).ok_or_else(||c.overflow())?;crate::key_policy_control::reserve(c,||bound.checked_mul(std::mem::size_of::<(String,Vec<usize>)>())?.checked_add(4096))?;map.try_reserve(target-map.len()).map_err(|_|c.allocation_failed())?;if map.capacity()>bound{return Err(c.allocation_failed())}}let mut values=Vec::new();for &index in idx{c.checkpoint()?;crate::raw_tree_report::row(c,&mut values)?;values.push(index);}map.insert(crate::raw_tree_report::own(c,name)?,values);Ok(())}
-pub fn file_accessors<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,c:&mut C,temp:&mut T)->Result<Accessors,C::Error>{c.checkpoint()?;crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(f.rel.len().checked_mul(4)?.checked_add(512)?)?.checked_add(4096))?;let procs=crate::dm::dx::procs_in(f);accessors_from_using(&procs,c)}
+pub fn file_accessors<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,c:&mut C,temp:&mut T)->Result<Accessors,C::Error>{c.checkpoint()?;crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(f.rel.len().checked_mul(4)?.checked_add(512)?)?.checked_add(4096))?;let procs=crate::dm::dx::procs_in_using(f,temp)?;accessors_from_using(&procs,c)}
 pub fn merge<'a,C:Control>(rows:impl IntoIterator<Item=&'a Accessors>,c:&mut C)->Result<Accessors,C::Error>{let mut map=HashMap::new();for row in rows{c.checkpoint()?;for(name,idx)in row{put(&mut map,name,idx,c)?;}}if map.is_empty(){map=fallback_using(c)?;}c.checkpoint()?;Ok(map)}
 pub fn selected(text:&str)->bool{text.contains("own_")||text.contains("rel_")||text.contains("om_set")||text.contains("time")}
+
+/// The exact sorted original recipe retained as DATA; same-Db owns its compiled
+/// program. Native preparation asks for that program at the original point.
+#[cfg(feature="native-policy")]
+pub fn call_pattern_with_fixture<'f,'a>(accessors:&Accessors,fixture:&'f crate::raw_fixture_policy::Fixture<'a>)->Result<crate::raw_fixture_policy::Pattern<'f,'a>,String>{
+ let mut names=fixture.collect(accessors.keys().map(String::as_str))?;names.sort();
+ let mut joined=String::new();for name in names{if !joined.is_empty(){fixture.append(&mut joined,"|")?;}fixture.append(&mut joined,name)?;}
+ let pattern=fixture.formatted_pattern(format_args!(r"(?<![\w./:])({})\s*\(",joined),crate::raw_fixture_policy::PatternMode::Search)?;
+ let _=pattern.capture_group_count();fixture.check()?;Ok(pattern)
+}

@@ -405,8 +405,8 @@ impl Model {
 // ---- the rules --------------------------------------------------------------------------------
 
 use crate::derived_reads_judge::{self as judge,Finding,Table,Facts};
-struct JudgeFacts<'a>{model:&'a Model,tree:&'a Tree,sink:std::cell::RefCell<&'a mut Sink>,never_written:&'a dyn Fn(&str,&str)->bool}
-impl Facts for JudgeFacts<'_>{
+struct JudgeFacts<'a,'patterns>{model:&'a Model,tree:&'a Tree,sink:std::cell::RefCell<&'a mut Sink<'patterns>>,never_written:&'a dyn Fn(&str,&str)->bool}
+impl Facts for JudgeFacts<'_,'_>{
  type Error=std::convert::Infallible;type Known<'a>=HashSet<String> where Self:'a;
  fn known<'a>(&'a self,owner:&'a str)->Result<Self::Known<'a>,Self::Error>{Ok(self.model.union(&self.model.vars,owner))}
  fn has(&self,t:Table,owner:&str,name:&str)->Result<bool,Self::Error>{Ok(match t{Table::Tracked=>self.model.union(&self.model.tracked,owner).contains(name),Table::Relation=>self.model.union(&self.model.relations,owner).contains(name),Table::Object=>self.model.union(&self.model.object_vars,owner).contains(name),Table::Derived=>self.model.declared_derive(owner).contains_key(name)})}
@@ -598,113 +598,15 @@ fn generated_text(model: &Model, test_types: &BTreeSet<String>) -> String {
 
 // ---- --fix (ported for the self-test only) ----------------------------------------------------
 
-enum Op {
-    Merge(String),
-    After(String),
-    Before(Vec<String>),
-}
-
 fn fix_texts(model: &Model, tree: &Tree, findings: &[Finding]) -> BTreeMap<String, String> {
-    type Key = (String, String, Option<String>);
-    let mut wanted: Vec<(Key, Vec<String>)> = Vec::new();
-    for f in findings {
-        if f.rule != "undeclared_read" {
-            continue;
-        }
-        let kind = f.kind.clone().unwrap_or_default();
-        let derive_name = if kind == "derive" { Some(f.proc["derive_".len()..].to_string()) } else { None };
-        let key: Key = (f.owner.clone(), kind, derive_name);
-        let pos = match wanted.iter().position(|(k, _)| *k == key) {
-            Some(p) => p,
-            None => {
-                wanted.push((key, Vec::new()));
-                wanted.len() - 1
-            }
-        };
-        let var = f.var.clone().unwrap_or_default();
-        if !wanted[pos].1.contains(&var) {
-            wanted[pos].1.push(var);
-        }
+    struct Input<'a>{model:&'a Model,tree:&'a Tree,procs:Vec<crate::derived_fix_policy::Procedure<'a>>}
+    impl crate::derived_fix_policy::Source for Input<'_>{
+        fn procedures(&self)->&[crate::derived_fix_policy::Procedure<'_>]{&self.procs}
+        fn raw_text(&self,rel:&str)->Option<&str>{self.tree.get(rel).map(|file|file.text())}
+        fn derived(&self,owner:&str)->Option<&crate::derived_fix_policy::Procedure<'_>>{self.model.derived_procs.get(owner).map(|index|&self.procs[*index])}
     }
-    let mut by_owner: Vec<(String, Vec<(String, Option<String>, Vec<String>)>)> = Vec::new();
-    for ((owner, kind, derive_name), names) in wanted {
-        match by_owner.iter_mut().find(|(o, _)| *o == owner) {
-            Some((_, v)) => v.push((kind, derive_name, names)),
-            None => by_owner.push((owner, vec![(kind, derive_name, names)])),
-        }
-    }
-    let raw_lines_of = |rel: &str| -> Vec<String> { tree.get(rel).map(|f| f.text().split('\n').map(|s| s.to_string()).collect()).unwrap_or_default() };
-    let mut edits: BTreeMap<String, Vec<(usize, Op)>> = BTreeMap::new();
-    for (owner, wants) in &by_owner {
-        if let Some(&bi) = model.derived_procs.get(owner) {
-            let block = &model.procs[bi];
-            let raw_lines = raw_lines_of(&block.rel);
-            for (kind, derive_name, names) in wants {
-                let call = if kind == "derive" { "derive" } else { kind_call(kind).unwrap_or("") };
-                let head = Pat::new_match(&format!(r"(\s*\. \+= ({})\()(.*)\)\s*$", call));
-                let mut target: Option<(usize, String, String)> = None;
-                for (number, _) in &block.body {
-                    let text = raw_lines.get(number - 1).map(|s| s.as_str()).unwrap_or("");
-                    if let Some(m) = head.captures(text) {
-                        let ok = kind != "derive"
-                            || Pat::new_match(&format!(r"nameof\(\s*(?:/[\w/]+::)?{}\s*\)", derive_name.as_deref().unwrap_or(""))).is_match(m.s(3));
-                        if ok {
-                            target = Some((*number, m.s(1).to_string(), m.s(3).to_string()));
-                            break;
-                        }
-                    }
-                }
-                let extra = names.iter().map(|n| format!("nameof({})", n)).collect::<Vec<_>>().join(", ");
-                if let Some((number, g1, g3)) = target {
-                    edits.entry(block.rel.clone()).or_default().push((number, Op::Merge(format!("{}{}, {})", g1, g3, extra))));
-                } else {
-                    let line = match kind_call(kind) {
-                        Some(c) => format!("\t. += {}({})", c, extra),
-                        None => format!("\t. += derive(nameof({}), {})", derive_name.as_deref().unwrap_or(""), extra),
-                    };
-                    edits.entry(block.rel.clone()).or_default().push((block.body.last().unwrap().0, Op::After(line)));
-                }
-            }
-        } else {
-            let first = model
-                .procs
-                .iter()
-                .filter(|p| p.owner == *owner && (proc_kind(&p.name).is_some() || p.name.starts_with("derive_")))
-                .min_by(|a, b| (a.rel.as_str(), a.start).cmp(&(b.rel.as_str(), b.start)));
-            let Some(first) = first else { continue };
-            let mut lines = vec![format!("{}/derived()", owner), "\t. = ..()".to_string()];
-            for (kind, derive_name, names) in wants {
-                let extra = names.iter().map(|n| format!("nameof({})", n)).collect::<Vec<_>>().join(", ");
-                if kind == "derive" {
-                    lines.push(format!("\t. += derive(nameof({}), {})", derive_name.as_deref().unwrap_or(""), extra));
-                } else {
-                    lines.push(format!("\t. += {}({})", kind_call(kind).unwrap_or(""), extra));
-                }
-            }
-            lines.push(String::new());
-            edits.entry(first.rel.clone()).or_default().push((first.start, Op::Before(lines)));
-        }
-    }
-    let mut out = BTreeMap::new();
-    for (rel, mut todo) in edits {
-        let mut raw_lines = raw_lines_of(&rel);
-        todo.sort_by_key(|(n, _)| std::cmp::Reverse(*n));
-        for (number, op) in todo {
-            match op {
-                Op::Merge(p) => raw_lines[number - 1] = p,
-                Op::After(p) => {
-                    let at = number.min(raw_lines.len());
-                    raw_lines.insert(at, p);
-                }
-                Op::Before(p) => {
-                    let at = (number - 1).min(raw_lines.len());
-                    raw_lines.splice(at..at, p);
-                }
-            }
-        }
-        out.insert(rel, raw_lines.join("\n"));
-    }
-    out
+    let procs=model.procs.iter().map(|p|crate::derived_fix_policy::Procedure{relative:&p.rel,owner:&p.owner,name:&p.name,start:p.start,body:p.body.iter().map(|(n,_)|*n).collect()}).collect();
+    match crate::derived_fix_policy::fix_texts(&Input{model,tree,procs},findings,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}
 }
 
 // ---- the lint ---------------------------------------------------------------------------------
@@ -766,237 +668,13 @@ pub fn register(reg: &mut Registry) {
 
 // ---- self-test --------------------------------------------------------------------------------
 
-const FIXTURE_BASE: &str = "
-/obj/pointer
-»var/energy = 8
-»var/max_energy = 8
-»var/pointing = FALSE
-»var/spare = 0
-
-TRACKED(/obj/pointer, energy)
-TRACKED(/obj/pointer, pointing)
-
-/obj/pointer/should_run()
-»return energy < max_energy
-
-/obj/pointer/draw(datum/look/look)
-»..()
-»if(pointing)
-»»look.state(\"on\")
-";
-
-const FIXTURE_DECLARED_TAIL: &str = "
-/obj/pointer/derived()
-». = ..()
-». += runs_while(nameof(energy), nameof(max_energy))
-». += drawn_from(nameof(pointing))
-";
-
-const FIXTURE_SUBTYPE_TAIL: &str = "
-/obj/pointer/big
-»var/glow = FALSE
-
-/obj/pointer/big/draw(datum/look/look)
-»..()
-»if(pointing && glow)
-»»look.state(\"big\")
-
-/obj/pointer/big/derived()
-». = ..()
-». += drawn_from(nameof(glow))
-";
-
-const FIXTURE_MISC: &str = "
-/obj/thing
-»var/level = 0
-»var/extra = 0
-»var/total = 0
-»var/spare = 0
-»var/obj/thing/parent
-»var/list/kids
-
-TRACKED(/obj/thing, level)
-REL(/obj/thing, parent)
-
-/obj/thing/derived()
-». = ..()
-». += derive(nameof(total), nameof(level))
-». += drawn_from(nameof(total), nameof(spare), rel(nameof(parent), nameof(/obj/thing::level)), rel(nameof(kids), nameof(/obj/thing::mystery)))
-». += ui_from(nameof(cap_state))
-
-/obj/thing/derive_total()
-»return level + extra
-
-/obj/thing/on_state_changed(bits)
-»return
-
-/obj/thing/tgui_data(mob/user)
-»var/level = 5
-»// ALLOW(derived_reads): fixture keep
-». = list(\"level\" = level, \"n\" = total)
-». += total
-";
-
-fn tabs(s: &str) -> String {
-    s.replace('»', "\t")
-}
-
-fn model_of(texts: &[(&str, String)]) -> (Tree, Model) {
-    let tree = Tree::from_files(texts.iter().map(|(rel, t)| SourceFile::from_text(rel, t)).collect());
-    let files: Vec<&SourceFile> = tree.files.iter().collect();
-    let model = Model::build(&files);
-    (tree, model)
-}
-
-fn run_analyze(texts: &[(&str, String)]) -> (Tree, Model, Vec<Finding>) {
-    let (tree, model) = model_of(texts);
-    let mut sink = Sink::new();
-    let found = analyze(&model, &tree, &mut sink, false);
-    (tree, model, found)
-}
-
-fn undeclared(found: &[Finding]) -> Vec<&Finding> {
-    found.iter().filter(|f| f.rule == "undeclared_read").collect()
-}
-
-fn selftest() -> Result<String, String> {
-    let mut bad: Vec<String> = Vec::new();
-    let mut check = |name: &str, ok: bool, detail: String| {
-        if !ok {
-            bad.push(format!("{} {}", name, detail));
-        }
-    };
-    let base = tabs(FIXTURE_BASE);
-    let declared = format!("{}{}", base, tabs(FIXTURE_DECLARED_TAIL));
-    let subtype = format!("{}{}", declared, tabs(FIXTURE_SUBTYPE_TAIL));
-    let tr = |f: &Finding| (f.rule, f.var.clone(), f.proc.clone());
-    // 1
-    let (_, _, found) = run_analyze(&[("code/a.dm", base.clone())]);
-    let got: Vec<_> = found.iter().map(tr).collect();
-    check(
-        "missing declaration",
-        got.contains(&("undeclared_read", Some("energy".into()), "should_run".into())) && got.contains(&("undeclared_read", Some("pointing".into()), "draw".into())),
-        format!("{:?}", got),
-    );
-    check(
-        "only the read vars",
-        found.iter().all(|f| matches!(f.var.as_deref(), Some("energy" | "pointing" | "max_energy"))),
-        format!("{:?}", got),
-    );
-    // 2
-    let (_, _, found) = run_analyze(&[("code/a.dm", declared.clone())]);
-    check("declared is clean", undeclared(&found).is_empty(), format!("{:?}", found));
-    let (_, _, found) = run_analyze(&[("code/a.dm", subtype.clone())]);
-    check("inherited declarations", undeclared(&found).is_empty(), format!("{:?}", found));
-    // 3
-    let text = subtype.replace("\t. += drawn_from(nameof(glow))\n", "");
-    let (tree, model, found) = run_analyze(&[("code/a.dm", text.clone())]);
-    let got: Vec<_> = found.iter().map(|f| (f.rule, f.var.clone())).collect();
-    check("subtype missing", got.contains(&("undeclared_read", Some("glow".into()))), format!("{:?}", got));
-    // 4
-    let fixed = fix_texts(&model, &tree, &found);
-    check("fix edits the derived block", fixed.get("code/a.dm").map(|t| t.contains("drawn_from(nameof(glow))")).unwrap_or(false), format!("{:?}", fixed));
-    let fixed_in: Vec<(&str, String)> = fixed.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
-    let (t2, m2, again) = run_analyze(&fixed_in);
-    check("fixed text is clean", !fixed.is_empty() && undeclared(&again).is_empty(), format!("{:?}", again));
-    check("fix is stable", fix_texts(&m2, &t2, &again).is_empty(), String::new());
-    // 5
-    let (tree, model, found) = run_analyze(&[("code/a.dm", base.clone())]);
-    let fixed = fix_texts(&model, &tree, &found);
-    check("fix creates the block", fixed.get("code/a.dm").map(|t| t.contains("/obj/pointer/derived()")).unwrap_or(false), format!("{:?}", fixed));
-    let fixed_in: Vec<(&str, String)> = fixed.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
-    let (_, _, again) = run_analyze(&fixed_in);
-    check("created block is clean", undeclared(&again).is_empty(), format!("{:?}", again));
-    // 6
-    let (_, _, found) = run_analyze(&[("code/b.dm", tabs(FIXTURE_MISC))]);
-    let rules: HashSet<(&str, Option<String>)> = found.iter().map(|f| (f.rule, f.var.clone())).collect();
-    let has = |r: &str, v: Option<&str>| rules.iter().any(|(rr, vv)| *rr == r && vv.as_deref() == v);
-    check("hop through a plain var", has("hop_not_relation", Some("kids")), format!("{:?}", rules));
-    check("relation hop is fine", !has("hop_not_relation", Some("parent")), format!("{:?}", rules));
-    check("untracked declared var", has("declared_untracked", Some("spare")), format!("{:?}", rules));
-    check("untracked remote var", has("declared_untracked", Some("/obj/thing::mystery")), format!("{:?}", rules));
-    check(
-        "tracked, derived and exempt reads are fine",
-        !has("declared_untracked", Some("total")) && !has("declared_untracked", Some("cap_state")) && !has("declared_untracked", Some("level")),
-        format!("{:?}", rules),
-    );
-    check("exact type overriding on_state_changed", has("exact_on_state_changed", None), format!("{:?}", rules));
-    check(
-        "derive body read past its reads",
-        has("undeclared_read", Some("extra")) && found.iter().any(|f| f.rule == "undeclared_read" && f.proc == "derive_total"),
-        format!("{:?}", rules),
-    );
-    // 7
-    check("locals and ALLOW", !found.iter().any(|f| f.rule == "undeclared_read" && f.proc == "tgui_data"), format!("{:?}", found));
-    // 8
-    let (_, _, found) = run_analyze(&[("code/a.dm", base.clone())]);
-    check("legacy type reports", found.iter().any(|f| f.rule == "undeclared_read"), String::new());
-    // 9
-    let (_, model) = model_of(&[("code/a.dm", declared.clone())]);
-    let text = generated_text(&model, &BTreeSet::new());
-    check(
-        "generated reads",
-        text.contains("/obj/pointer/generated_reads()")
-            && text.contains("runs_while(nameof(energy), nameof(max_energy))")
-            && text.contains("drawn_from(nameof(pointing))"),
-        text.clone(),
-    );
-    let (_, model2) = model_of(&[("code/a.dm", declared.clone())]);
-    check("generated is stable", generated_text(&model2, &BTreeSet::new()) == text, String::new());
-    // 10: a draw reads what the procs it calls read, transitively; a subtype's override is a read of the subtype; recursion ends
-    let helper_fixture = tabs("
-/obj/lamp
-	var/lit = FALSE
-	var/spare = 0
-/obj/lamp/draw(datum/look/look)
-	..()
-	draw_state(look)
-/obj/lamp/proc/draw_state(datum/look/look)
-	look.state(state_name())
-	draw_state(look)
-/obj/lamp/proc/state_name()
-	return lit ? \"on\" : \"off\"
-/obj/lamp/big
-	var/extra = 0
-/obj/lamp/big/state_name()
-	return extra ? \"x\" : \"y\"
-");
-    let (_, hmodel) = model_of(&[("code/h.dm", helper_fixture)]);
-    let htext = generated_text(&hmodel, &BTreeSet::new());
-    let lamp = htext.split("/obj/lamp/big/generated_reads()").next().unwrap_or("");
-    let big = htext.split("/obj/lamp/big/generated_reads()").nth(1).unwrap_or("");
-    check(
-        "a draw follows the procs it calls",
-        lamp.contains("drawn_from(nameof(lit))") && !htext.contains("nameof(spare)"),
-        htext.clone(),
-    );
-    check("an override on a subtype is that subtype's read", big.contains("drawn_from(nameof(extra))"), htext.clone());
-    // 11: a window host's ui_data() reads must be tracked
-    let ui_fixture = tabs("
-/obj/panel
-»var/screen = 1
-»var/label = \"x\"
-»var/obj/thing/target
-»var/note = \"\"
-
-TRACKED(/obj/panel, screen)
-REL(/obj/panel, target)
-
-/obj/panel/ui_data(datum/act/eval/A)
-»var/note = 3
-»return list(\"screen\" = screen, \"label\" = label, \"t\" = target, \"n\" = note)
-");
-    let (_, _, found) = run_analyze(&[("code/a.dm", ui_fixture)]);
-    let ui_got: Vec<_> = found.iter().filter(|f| f.rule == "untracked_ui_read").map(|f| f.var.clone()).collect();
-    check("ui_data untracked read is flagged", ui_got == vec![Some("label".to_string())], format!("{:?}", ui_got));
-    // 10
-    let fixture = "/obj/pump/reactions()\n\t. = ..()\n\t. += every(1 SECONDS, PROC_REF(step), members = /datum/capability/pumped)\n\t. += on_notice(/datum/notice/x, PROC_REF(h))\n".to_string();
-    let (_, model) = model_of(&[("code/a.dm", fixture)]);
-    let boot = generated_text(&model, &BTreeSet::new());
-    check("boot types", boot.contains("/obj/pump = RXB_EVERY | RXB_NOTICE,") && boot.contains("/datum/capability/pumped,"), boot);
-    if bad.is_empty() {
-        Ok("derived_reads_lint selftest passed".to_string())
-    } else {
-        Err(bad.join("; "))
-    }
+fn selftest() -> Result<String,String>{
+ struct Actual;
+ impl crate::derived_selftest_policy::Backend for Actual{
+  fn inspect(&mut self,texts:&[(&str,String)])->Result<crate::derived_selftest_policy::Outcome,crate::derived_selftest_policy::Failure>{
+   let tree=Tree::from_files(texts.iter().map(|(rel,text)|SourceFile::from_text(rel,text)).collect());let files:Vec<_>=tree.files.iter().collect();let model=Model::build(&files);let mut sink=Sink::new();let findings=analyze(&model,&tree,&mut sink,false);
+   Ok(crate::derived_selftest_policy::Outcome{fixed:fix_texts(&model,&tree,&findings),generated:generated_text(&model,&BTreeSet::new()),findings})
+  }
+ }
+ crate::derived_selftest_policy::run(&mut Actual,&mut crate::derived_selftest_policy::LegacyAssertions).map_err(|failure|match failure{crate::derived_selftest_policy::Failure::Assertion(text)=>text,crate::derived_selftest_policy::Failure::Operational(actual)=>actual.to_string()})
 }

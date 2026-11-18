@@ -6,6 +6,7 @@ use crate::{
     tree::View,
     util::{is_py_space, py_rstrip, py_strip},
 };
+use crate::key_policy_control as kc;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -29,31 +30,26 @@ pub const FLYWEIGHT_TYPES: &[&str] = &[
 ];
 pub const MODIFIERS: &[&str] = &["tmp", "static", "global", "const", "final"];
 
-re_m!(TYPE_LINE, r"^(/[\w/]+)\s*(?:\{.*)?$");
+const TYPE_LINE_SOURCE:&str=r"^(/[\w/]+)\s*(?:\{.*)?$";
+re_m!(TYPE_LINE,TYPE_LINE_SOURCE);
 
-re_m!(
-    MEMBER,
-    r"^\s+(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b"
-);
+const MEMBER_SOURCE:&str=r"^\s+(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b";
+re_m!(MEMBER,MEMBER_SOURCE);
 
-re_m!(
-    ABS_MEMBER,
-    r"^(/[\w/]+?)/(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b"
-);
+const ABS_MEMBER_SOURCE:&str=r"^(/[\w/]+?)/(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b";
+re_m!(ABS_MEMBER,ABS_MEMBER_SOURCE);
 
-re_m!(DECLARE_HEAD, r"^(/[\w/]+)/(?:ownership|relations)\(\)");
+const DECLARE_HEAD_SOURCE:&str=r"^(/[\w/]+)/(?:ownership|relations)\(\)";
+re_m!(DECLARE_HEAD,DECLARE_HEAD_SOURCE);
 
-re_m!(
-    DECLARE_CALL,
-    r"^\s+\.\s*\+=\s*(owns|shares|proto|rel_one|rel_many)\(\s*nameof\((\w+)\)\s*(?:,\s*(.*?))?\)\s*(?://.*)?$"
-);
+const DECLARE_CALL_SOURCE:&str=r"^\s+\.\s*\+=\s*(owns|shares|proto|rel_one|rel_many)\(\s*nameof\((\w+)\)\s*(?:,\s*(.*?))?\)\s*(?://.*)?$";
+re_m!(DECLARE_CALL,DECLARE_CALL_SOURCE);
 
-re_m!(
-    GLOBAL_DECL,
-    r"^GLOBAL_(DATUM_INIT|DATUM|LIST_INIT_TYPED|LIST_EMPTY_TYPED|LIST_INIT|LIST_EMPTY|LIST|ALIST_INIT|ALIST_EMPTY|ALIST|VAR_INIT|VAR_CONST|VAR)\(\s*(\w+)\s*(?:,\s*(/[\w/]+))?"
-);
+const GLOBAL_DECL_SOURCE:&str=r"^GLOBAL_(DATUM_INIT|DATUM|LIST_INIT_TYPED|LIST_EMPTY_TYPED|LIST_INIT|LIST_EMPTY|LIST|ALIST_INIT|ALIST_EMPTY|ALIST|VAR_INIT|VAR_CONST|VAR)\(\s*(\w+)\s*(?:,\s*(/[\w/]+))?";
+re_m!(GLOBAL_DECL,GLOBAL_DECL_SOURCE);
 
-re_m!(REGISTRY, r"^REGISTRY_TYPE\(\s*(/[\w/]+)\s*,");
+pub const REGISTRY_SOURCE:&str=r"^REGISTRY_TYPE\(\s*(/[\w/]+)\s*,";
+re_m!(REGISTRY,REGISTRY_SOURCE);
 
 /// One structural fact a file contributes to the legacy structural index, in file order. Replaying every file's
 /// events in path order rebuilds the index exactly as walking the files did.
@@ -101,16 +97,17 @@ pub(crate) fn member_parts(segs: &str) -> (String, bool) {
 }
 
 /// The kind a declaration entry is recorded under (its old macro name).
-fn decl_macro(func: &str, opts: &str) -> String {
-    let own_private = pat_search(r"\bpolicy\s*=\s*OWN_PRIVATE_COPY\b", opts);
-    if func == "owns" && own_private {
+fn decl_macro(func:&str,opts:&str)->String{decl_macro_using(func,opts,&mut kc::Compatibility).expect("original ownership declaration policy")}
+fn decl_macro_using<C:kc::Control>(func:&str,opts:&str,c:&mut C)->Result<String,C::Error>{
+    let own_private = pat_search_using(r"\bpolicy\s*=\s*OWN_PRIVATE_COPY\b",opts,c)?;
+    Ok(if func == "owns" && own_private {
         "PROTO".into()
     } else if func == "owns" {
         if opts.contains("policy_proc") {
             "OWN_POLICY".into()
         } else if opts.contains("if_var") {
             "OWN_IF".into()
-        } else if pat_search(r"\bpolicy\s*=\s*OWN_NONE\b", opts) {
+        } else if pat_search_using(r"\bpolicy\s*=\s*OWN_NONE\b",opts,c)? {
             "ANNOTATE".into()
         } else {
             "OWN".into()
@@ -118,7 +115,7 @@ fn decl_macro(func: &str, opts: &str) -> String {
     } else if func == "shares" {
         "SHARED".into()
     } else if func == "rel_one" || func == "rel_many" {
-        if pat_search(r"\bkind\s*=\s*RELK_OWNED\b", opts) {
+        if pat_search_using(r"\bkind\s*=\s*RELK_OWNED\b",opts,c)? {
             if own_private {
                 "PROTO".into()
             } else {
@@ -129,7 +126,7 @@ fn decl_macro(func: &str, opts: &str) -> String {
         }
     } else {
         func.to_uppercase()
-    }
+    })
 }
 
 /// Every structural fact `code`/`raw` (one file) contributes to the index, in order.
@@ -167,34 +164,34 @@ pub fn try_visit_file_events_funded<C:crate::key_policy_control::Control>(rel:&s
             continue; // the tail of a multi-line string, not a new top-level line
         }
         if declaring.is_some() && first.map(is_py_space).unwrap_or(false) {
-            if let Some(m) = DECLARE_CALL.captures(raw.line(no)) {
+            if let Some(m) = kc::captures_static(c,DECLARE_CALL_SOURCE,raw.line(no),0,||&DECLARE_CALL)? {
                 crate::key_policy_control::temporary(c,0,||declaring.as_ref()?.len().checked_add(m.s(1).len())?.checked_add(m.s(2).len())?.checked_add(m.s(3).len())?.checked_add(rel.len())?.checked_mul(16)?.checked_add(1024))?;
                 let owner = declaring.clone().unwrap();
-                emit(decl_ev(&owner, m.s(1), m.s(2), m.s(3), rel, no))?;
+                emit(decl_ev_using(&owner,m.s(1),m.s(2),m.s(3),rel,no,c)?)?;
             }
             continue;
         }
         declaring = None;
         if first.map(|c| !is_py_space(c)).unwrap_or(false) {
-            if let Some(m) = DECLARE_HEAD.captures(line) {
+            if let Some(m) = kc::captures_static(c,DECLARE_HEAD_SOURCE,line,0,||&DECLARE_HEAD)? {
                 crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_mul(4)?.checked_add(128))?;
                 declaring = Some(m.s(1).to_string());
                 current = None;
                 continue;
             }
-            if let Some(m) = REGISTRY.captures(py_strip(raw.line(no))) {
+            if let Some(m) = kc::captures_static(c,REGISTRY_SOURCE,py_strip(raw.line(no)),0,||&REGISTRY)? {
                 crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_mul(4)?.checked_add(128))?;
                 emit(IdxEv::Registry(m.s(1).to_string()))?;
                 continue;
             }
-            if let Some(m) = ABS_MEMBER.captures(line) {
+            if let Some(m) = kc::captures_static(c,ABS_MEMBER_SOURCE,line,0,||&ABS_MEMBER)? {
                 crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_add(m.s(2).len())?.checked_add(m.s(3).len())?.checked_mul(32)?.checked_add(1024))?;
                 emit(member_ev(m.s(1), m.s(2), m.s(3)))?;
                 current = None;
                 continue;
             }
             // GLOBAL_*(x, ...) declares a var of /datum/controller/global_vars through a macro.
-            if let Some(m) = GLOBAL_DECL.captures(line) {
+            if let Some(m) = kc::captures_static(c,GLOBAL_DECL_SOURCE,line,0,||&GLOBAL_DECL)? {
                 crate::key_policy_control::temporary(c,0,||m.whole().len().checked_mul(32)?.checked_add(1024))?;
                 let (kind, name) = (m.s(1), m.s(2));
                 let ty = if m.matched(3) {
@@ -221,12 +218,12 @@ pub fn try_visit_file_events_funded<C:crate::key_policy_control::Control>(rel:&s
                 continue;
             }
             // SYSTEM_DEF(x) declares /datum/system/x through a macro: its indented body is that type's block.
-            if let Some(m) = crate::pat!(r"^SYSTEM_DEF\((\w+)\)\s*$").captures(py_rstrip(line)) {
+            if let Some(m) = kc::captures_static(c,r"^SYSTEM_DEF\((\w+)\)\s*$",py_rstrip(line),0,||crate::pat!(r"^SYSTEM_DEF\((\w+)\)\s*$"))? {
                 crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_mul(4)?.checked_add(256))?;
                 current = Some(format!("/datum/system/{}", m.s(1)));
                 continue;
             }
-            let m = TYPE_LINE.captures(py_rstrip(line));
+            let m = kc::captures_static(c,TYPE_LINE_SOURCE,py_rstrip(line),0,||&TYPE_LINE)?;
             if let Some(m)=&m{crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_mul(4)?.checked_add(128))?;}
             current = match m {
                 Some(m) if !line.contains('(') => Some(m.s(1).to_string()),
@@ -236,7 +233,7 @@ pub fn try_visit_file_events_funded<C:crate::key_policy_control::Control>(rel:&s
         }
         if let Some(cur)=current.as_ref(){crate::key_policy_control::temporary(c,0,||cur.len().checked_mul(4)?.checked_add(128))?;}
         if let Some(cur) = current.clone() {
-            if let Some(m) = MEMBER.captures(line) {
+            if let Some(m) = kc::captures_static(c,MEMBER_SOURCE,line,0,||&MEMBER)? {
                 crate::key_policy_control::temporary(c,0,||cur.len().checked_add(m.s(1).len())?.checked_add(m.s(2).len())?.checked_mul(32)?.checked_add(1024))?;
                 emit(member_ev(&cur, m.s(1), m.s(2)))?;
             }
@@ -271,6 +268,17 @@ pub(crate) fn decl_ev(
         rel: rel.to_string(),
         line: no as u32,
     }
+}
+
+pub(crate) fn decl_ev_using<C:kc::Control>(owner:&str,func:&str,name:&str,opts:&str,rel:&str,no:usize,c:&mut C)->Result<IdxEv,C::Error>{
+    Ok(IdxEv::Decl {
+        owner: owner.to_string(),
+        name: name.to_string(),
+        macro_name: decl_macro_using(func,opts,c)?,
+        opts: opts.to_string(),
+        rel: rel.to_string(),
+        line: no as u32,
+    })
 }
 
 fn pat_search(p: &str, hay: &str) -> bool {
@@ -336,10 +344,14 @@ mod tests {
 }
 
 // Same original accessor pattern, shared with the lexical schema consumer.
-pub const VAR_ARG: &str = r#"(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))"#;
+macro_rules! var_arg_source{($name:expr)=>{concat!(r#"(?:"|nameof\((?:/[\w/]+::|\w+\.)?)"#,$name,r#"(?:"|\))"#)}}
+pub(crate) use var_arg_source;
+pub const VAR_ARG:&str=var_arg_source!(r"(\w+)");
+macro_rules! accessor_source{($var:expr)=>{concat!(r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_clear|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|proto_set|proto_private|shared_set)\(\s*([\w.]+)\s*,\s*",$var)}}
+pub const ACCESSOR_SOURCE:&str=accessor_source!(var_arg_source!(r"(\w+)"));
 pub static ACCESSOR: LazyLock<Pat> = LazyLock::new(|| {
     Pat::new(&format!(
-        r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_clear|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|proto_set|proto_private|shared_set)\(\s*([\w.]+)\s*,\s*{}",
+        accessor_source!("{}"),
         VAR_ARG
     ))
 });
@@ -348,3 +360,12 @@ pub static ACCESSOR: LazyLock<Pat> = LazyLock::new(|| {
 /// of rebuilding a second parent roster. No semantic hierarchy is inferred.
 pub fn visit_parents_using<C:crate::key_policy_control::Control>(path:&str,c:&mut C,emit:&mut dyn FnMut(&str,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{visit_parents_until_using(path,c,&mut|parent,c|{emit(parent,c)?;Ok(true)}).map(|_|())}
 pub fn visit_parents_until_using<C:crate::key_policy_control::Control>(path:&str,c:&mut C,emit:&mut dyn FnMut(&str,&mut C)->Result<bool,C::Error>)->Result<bool,C::Error>{let mut current=path;let mut slashes=path.bytes().filter(|byte|*byte==b'/').count();let mut root=None;while !current.is_empty()&&slashes>=1{c.checkpoint()?;if !emit(current,c)?{return Ok(false)}if slashes==1{root=Some(current);break}let cut=current.rfind('/').expect("actual counted slash");current=&current[..cut];slashes-=1;}let implicit:&[&str]=match root{Some("/obj"|"/mob")=>&["/atom/movable","/atom","/datum"],Some("/turf"|"/area")=>&["/atom","/datum"],Some("/atom")=>&["/datum"],_=>&[]};for parent in implicit{c.checkpoint()?;if !emit(parent,c)?{return Ok(false)}}Ok(true)}
+
+fn pat_search_using<C:kc::Control>(pattern:&'static str,hay:&str,c:&mut C)->Result<bool,C::Error>{
+ #[cfg(feature="native-policy")]if c.native_patterns().is_some(){
+  c.checkpoint()?;let spec=crate::native_pattern::Spec{pattern,mode:crate::native_pattern::Mode::Search};
+  let actual=c.native_patterns().unwrap().find(spec,hay,0,&mut|_|Ok(())).map_err(|actual|c.native_pattern_failed(actual))?;
+  c.checkpoint()?;return Ok(actual)
+ }
+ Ok(pat_search(pattern,hay))
+}

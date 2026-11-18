@@ -5,7 +5,8 @@ use dq_analyze::{captured_generator_budget::Budget,captured_reactive_reads::{sel
 use std::cell::RefCell;
 pub(super) const REACTIVE_RESULT:Kind=Kind(12);
 #[derive(Clone,Debug,serde::Serialize)]
-pub(crate) enum Request{Globals,Dependencies,Read{receiver:String,procedure:String,context:Option<String>,flavor:Flavor}}
+pub(crate) enum Request{Globals,UtilityGlobals,Dependencies,Read{receiver:String,procedure:String,context:Option<String>,flavor:Flavor}}
+impl Request{pub(super) fn utility_contract(&self)->bool{match self{Self::UtilityGlobals=>true,Self::Read{flavor,..}=>matches!(flavor,Flavor::UtilityClosed|Flavor::UtilityTargeted),_=>false}}}
 #[derive(Clone)]
 pub(super) struct Params{
  pub(super) locator:(bool,u128),pub(super) capture:Weak<CapturedPolicyInputs>,pub(super) evidence:u64,pub(super) configuration:Key,
@@ -19,7 +20,7 @@ impl Value{
   struct HashWriter<'a>{hash:xxhash_rust::xxh3::Xxh3,poll:&'a dyn Fn()->io::Result<()>,first:Option<io::Error>}
   impl io::Write for HashWriter<'_>{fn write(&mut self,s:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::Error::other("reactive hash stopped"))}if let Err(actual)=(self.poll)(){self.first=Some(actual);return Err(io::Error::other("reactive hash stopped"))}self.hash.update(s);Ok(s.len())}fn flush(&mut self)->io::Result<()>{Ok(())}}
   let mut writer=HashWriter{hash:xxhash_rust::xxh3::Xxh3::new(),poll,first:None};writer.hash.update(b"native-reactive-result-v1\0");
-  let result=match self{Self::SemanticPolicy(v)=>{writer.hash.update(b"full-current-context-semantic-policy");v.serialize_data(&mut serde_json::Serializer::new(&mut writer))},Self::Globals(v)=>{writer.hash.update(b"globals");let mut serializer=serde_json::Serializer::new(&mut writer);v.serialize_dependency_facts(&mut serializer)},Self::Reads(v)=>{writer.hash.update(b"reads");serde_json::to_writer(&mut writer,v.facts())},Self::Dependencies(v)=>{writer.hash.update(b"dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))},Self::RawReads(v)=>{writer.hash.update(b"full-code-reads");serde_json::to_writer(&mut writer,v.facts())},Self::RawDependencies(v)=>{writer.hash.update(b"full-code-dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))},Self::FullArtifact(v)=>{writer.hash.update(b"full-workspace-generator");writer.hash.update(&v.fingerprint().to_le_bytes());Ok(())},Self::PolicyFacts(v)=>{writer.hash.update(b"shared-source-policy");writer.hash.update(&v.fingerprint(poll)?.to_le_bytes());Ok(())}};
+  let result=match self{Self::SemanticPolicy(v)=>{writer.hash.update(b"full-current-context-semantic-policy");v.serialize_data(&mut serde_json::Serializer::new(&mut writer))},Self::Globals(v)=>{writer.hash.update(if v.utility_contract(){b"utility-globals"}else{b"globals"});let mut serializer=serde_json::Serializer::new(&mut writer);v.serialize_dependency_facts(&mut serializer)},Self::Reads(v)=>{writer.hash.update(b"reads");serde_json::to_writer(&mut writer,v.facts())},Self::Dependencies(v)=>{writer.hash.update(b"dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))},Self::RawReads(v)=>{writer.hash.update(b"full-code-reads");v.serialize_data(&mut serde_json::Serializer::new(&mut writer))},Self::RawDependencies(v)=>{writer.hash.update(b"full-code-dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))},Self::FullArtifact(v)=>{writer.hash.update(b"full-workspace-generator");writer.hash.update(&v.fingerprint().to_le_bytes());Ok(())},Self::PolicyFacts(v)=>{writer.hash.update(b"shared-source-policy");writer.hash.update(&v.fingerprint(poll)?.to_le_bytes());Ok(())}};
   if let Some(actual)=writer.first.take(){return Err(actual)}result.map_err(io::Error::other)?;poll()?;Ok(writer.hash.digest128())
  }
 }
@@ -31,6 +32,11 @@ pub(super) fn graph_failure(error:QueryError)->Failure{Failure::Operational(matc
 /// original roster without copying it; every answer still needs the upgraded
 /// original owner witness and current semantic acquisition evidence.
 pub(super) fn source_locator(capture:&CapturedPolicyInputs)->io::Result<(bool,u128)>{
+ // An actual sparse native attachment has no complete eager Input-ID roster.
+ // Use the existing current evidence locator rather than allocating all Code
+ // and Input owners for a cache key, or hashing a changing issued subset.
+ // Actual result admission still authenticates the current owner and evidence.
+ if capture.policy().archive().uses_ordinary_body_demand(){crate::daemon::control::checkpoint()?;return Ok((false,capture.semantic_source_evidence().key() as u128))}
  let Some(inputs)=capture.policy().archive().syntax_inputs().filter(|v|!v.is_empty())else{return Ok((false,capture.semantic_source_evidence().key() as u128))};
  let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"reactive-original-body-input-roster-v1\0");hash.update(&(inputs.len() as u64).to_le_bytes());for input in inputs{crate::daemon::control::checkpoint()?;hash.update(&input.key().to_le_bytes());}Ok((true,hash.digest128()))
 }
@@ -72,6 +78,7 @@ pub(super) fn register(db:&Db,charge:Arc<AtomicUsize>,admission:Arc<Admission>){
   if let Some(p)=params.downcast_ref::<super::reactive_ui_actions::Params>(){return super::reactive_ui_actions::compute(ctx,p,&charge,&admission)}
   if let Some(p)=params.downcast_ref::<super::reactive_workspace_policy::Params>(){return super::reactive_workspace_policy::compute(ctx,p,&charge,&admission)}
   let p=params.downcast_ref::<Params>().expect("reactive params");admission.abort.before_outcome(p.result)?;
+  if p.request.utility_contract(){return Err(QueryError::operational(p.result,io::Error::new(io::ErrorKind::InvalidInput,"utility semantic mode requires actual full workspace capture")))}
   let capture=p.capture.upgrade().ok_or(QueryError::Missing(p.result))?;let config=ctx.input::<ConfigData>(p.configuration)?;
   let available=admission.limit.load(Ordering::Acquire).saturating_sub(charge.load(Ordering::Acquire));
   let budget=Budget::new(available).map_err(|message|{admission.denied.store(true,Ordering::Release);QueryError::operational(p.result,io::Error::new(io::ErrorKind::OutOfMemory,message))})?;
@@ -88,6 +95,7 @@ pub(super) fn register(db:&Db,charge:Arc<AtomicUsize>,admission:Arc<Admission>){
    config.require_original(capture.configuration_bytes(&p.configuration_path)?)?;
    budget.charge(sources.iter().try_fold(0usize,|n,s|n.checked_add(s.file.path().as_os_str().len().checked_mul(16)?.checked_add(1024)?)).ok_or_else(||{budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"reactive source coordination overflow"))})?)?;
    match &p.request{
+    Request::UtilityGlobals=>Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"utility globals cannot enter finite ordinary producer"))),
     Request::Globals=>captured_reactive_reads::globals_native(capture.policy(),&p.root,&budget,&poll,&body).map(Value::Globals),
     Request::Read{..}|Request::Dependencies=>{
      let files=sources.iter().map(|s|Arc::clone(&s.file)).collect::<Vec<_>>();
@@ -118,7 +126,7 @@ pub(super) fn register(db:&Db,charge:Arc<AtomicUsize>,admission:Arc<Admission>){
         loan.with_value(|value|consume(value))
        };
        captured_reactive_reads::dependencies(&raw,capture.policy(),&budget,&provider,&reads,&poll,&body).map(Value::Dependencies)
-      },Request::Globals=>unreachable!("native semantic-only branch selected above"),
+      },Request::Globals|Request::UtilityGlobals=>unreachable!("native semantic-only branch selected above"),
      }
     }
    }
@@ -185,7 +193,7 @@ impl QueryDb{
   let prepared=match self.raw_prepare_locked(cohort,&[],now){Ok(value)=>value,Err(error)=>{self.discard_poisoned_generator_files_locked(cohort);return Err(error)}};
   // Existing source/config key roster is finite and admitted by raw_prepare.
   // Reserve the request metadata before allocating its key/owned Params.
-  let width=match &request{Request::Globals|Request::Dependencies=>0,Request::Read{receiver,procedure,context,..}=>receiver.len().checked_add(procedure.len()).and_then(|n|n.checked_add(context.as_ref().map_or(0,String::len))).ok_or_else(||invalid("reactive request metadata overflow"))?};
+  let width=match &request{Request::Globals|Request::UtilityGlobals|Request::Dependencies=>0,Request::Read{receiver,procedure,context,..}=>receiver.len().checked_add(procedure.len()).and_then(|n|n.checked_add(context.as_ref().map_or(0,String::len))).ok_or_else(||invalid("reactive request metadata overflow"))?};
   let metadata=width.checked_add(cohort.root.as_os_str().len().checked_mul(4).ok_or_else(||invalid("reactive root width overflow"))?).and_then(|n|n.checked_add(cohort.configuration.as_os_str().len().checked_mul(4)?)).and_then(|n|n.checked_add(prepared.sources.len().checked_mul(std::mem::size_of::<Key>())?)).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(std::mem::size_of::<Params>()+4096)).filter(|n|*n<=INPUT_BUDGET).ok_or_else(||invalid("reactive request metadata exceeds unchanged input budget"))?;
   let locator=source_locator(&cohort.capture)?;
   let result=metadata_key(&(locator,cohort.capture.policy_revision(),&cohort.root,&cohort.configuration,KeyRows(prepared.sources.iter().map(|(key,_,_)|key)),&request))?;

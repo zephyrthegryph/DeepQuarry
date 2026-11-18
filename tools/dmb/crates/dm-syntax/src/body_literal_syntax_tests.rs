@@ -148,7 +148,7 @@ fn native_membership_child_cancellation_never_publishes_different_normalization(
 }
 
 #[test]
-fn body_peak_skips_paid_template_but_keeps_fresh_nested_literal_and_foreign_refusal() {
+fn body_peak_skips_fully_owned_template_children_and_keeps_foreign_and_first_io_refusal() {
  let fixed = crate::SettingChargeCounter::root_allocation_bytes();
  let counter = crate::SettingChargeCounter::try_new(fixed).unwrap();
  let a = SettingAdmission::new(&counter, 16 << 20, &|| Ok(()));
@@ -180,8 +180,8 @@ fn body_peak_skips_paid_template_but_keeps_fresh_nested_literal_and_foreign_refu
  let root = Expr { kind: ExprKind::Literal(value), span: crate::Span::new(0, raw.len()) };
  let prior_parses = crate::literal::literal_child_parses_for_test();
  let actual = input_peak(&root, &a).unwrap();
- assert!(actual > 0, "fresh nested literal still needs a parser permit");
- assert_eq!(actual, crate::setting_prepare::literal_parser_peak(inner, &a).unwrap());
+ assert!(input_peak_with_contract(&root,&a).unwrap().1,"independent Original templates retain the old final aggregate contract");
+ assert_eq!(actual,0,"complete typed builder prepared and owns the nested literal before escape");
  assert_eq!(crate::literal::literal_child_parses_for_test(), prior_parses);
 
  let foreign_counter = crate::SettingChargeCounter::try_new(fixed).unwrap();
@@ -195,7 +195,7 @@ fn body_peak_skips_paid_template_but_keeps_fresh_nested_literal_and_foreign_refu
 
  let permit = a.reserve(actual).unwrap();
  crate::setting_prepare::prepare_body_measure(&root, &a).unwrap();
- assert_eq!(crate::literal::literal_child_parses_for_test() - prior_parses, 1);
+ assert_eq!(crate::literal::literal_child_parses_for_test() - prior_parses, 0,"body never reparses an already owned child");
  let ExprKind::Literal(value) = &root.kind else { panic!("actual Original template"); };
  assert_eq!(value.prepared_syntax_parts().unwrap().unwrap().unwrap().expressions.as_ptr(), children);
  drop(root);
@@ -255,4 +255,88 @@ fn delete_operand_literal_children_reuse_existing_admission_and_refund(){
  let prepared=prepare(source,&a).unwrap();let(parsed,admission)=prepared.into_parts();let StatementKind::Delete(Expr{kind:ExprKind::Group(value),..})=&parsed.statements[0].kind else{panic!("same canonical grouped delete operand")};let ExprKind::Literal(literal)=&value.kind else{panic!("actual literal")};assert_eq!(literal.parts().unwrap().unwrap().expressions.len(),1);
  drop_body_literal_syntax(parsed,Some(admission));assert_eq!(used.load(Ordering::Acquire),SettingChargeCounter::root_allocation_bytes());
  let tiny=SettingAdmission::new(&used,SettingChargeCounter::root_allocation_bytes(),&||Ok(()));let error=prepare(source,&tiny).err().expect("actual cleanup/resource reservation must refuse");assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),SettingChargeCounter::root_allocation_bytes());
+}
+
+#[test]
+fn body_cleanup_uses_disjoint_native_worklists_and_refunds_after_physical_drop(){
+ for source in ["/proc/p()\n    return call(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)\n",
+                "/proc/p()\n    call(a+b,c+d)\n    call(e+f,g+h)\n    return call(i+j,k+l)\n",
+                "/proc/p()\n    if(a)\n        if(b)\n            if(c)\n                return call(d,e,f)\n"]{
+  let fixed=SettingChargeCounter::root_allocation_bytes();let counter=SettingChargeCounter::try_new(fixed).unwrap();
+  let a=SettingAdmission::new(&counter,32<<20,&||Ok(()));
+  let expected=body(source);
+  let (payload,statements,expressions,all_expressions)={let collected=collect(&expected,&a).unwrap();let mut bytes=collected.bytes;let mut expressions=0usize;let mut all_expressions=0;
+   for root in collected.roots.as_slice(){let measured=crate::setting_prepare::prepare_body_measure(root,&a).unwrap();bytes+=measured.bytes;expressions=expressions.max(measured.cleanup_nodes);all_expressions+=measured.nodes;}
+   (bytes,collected.statements,expressions,all_expressions)
+  };
+  assert!(statements>0&&expressions>0&&all_expressions>expressions,"real leaves are payload but never enter cleanup worklists");
+  assert_eq!(counter.load(Ordering::Acquire),fixed,"measurement scratch physically retired");
+  let disjoint=4*(statements*size_of::<Vec<Statement>>()+expressions*(size_of::<Expr>()+size_of::<SharedSettingRetention>()));
+  let crossed=4*(statements+all_expressions)*(size_of::<Statement>()+size_of::<Expr>()+size_of::<SharedSettingRetention>());
+  assert!(disjoint<crossed);
+  let prepared=prepare(source,&a).unwrap();let(parsed,admission)=prepared.into_parts();assert_eq!(parsed,expected);
+  let retained=payload+disjoint+crate::setting_expression::root_storage_envelope();
+  assert_eq!(counter.load(Ordering::Acquire),fixed+retained,"one measured payload plus its actual cleanup worklists");
+  // The retained admission can outlive its caller; no early refund is issued.
+  drop(expected);drop_body_literal_syntax(parsed,Some(admission));assert_eq!(counter.load(Ordering::Acquire),fixed);
+ }
+}
+
+#[path="body_cleanup_startup_geometry_tests.rs"]
+mod startup_geometry_controls;
+
+#[test]fn actual_escaped_literal_roots_share_one_serialized_cleanup_peak_and_refund(){
+ let fixed=SettingChargeCounter::root_allocation_bytes();let counter=SettingChargeCounter::try_new(fixed).unwrap();let a=SettingAdmission::new(&counter,64<<20,&||Ok(()));
+ for concurrent_body in[false,true]{
+  let source="/proc/p()\n    return \"first [call(1+2)]\"\n    return \"second [call(3+4)]\"\n";
+  let prepared=prepare_native(source,&a).unwrap();let(body,admission)=prepared.into_parts();let aliases=body.statements.iter().map(|statement|{let StatementKind::Return(Some(root))=&statement.kind else{panic!("actual return")};let ExprKind::Literal(value)=&root.kind else{panic!("actual template")};value.clone()}).collect::<Vec<_>>();assert_eq!(aliases.len(),2);
+  let barrier=std::sync::Arc::new(std::sync::Barrier::new(if concurrent_body{3}else{2}));
+  if !concurrent_body{drop_body_literal_syntax(body,Some(admission));counter.reset_cleanup_peak();let mut threads=Vec::new();for alias in aliases{let barrier=barrier.clone();threads.push(std::thread::spawn(move||{barrier.wait();drop(alias)}));}for thread in threads{thread.join().unwrap();}}
+  else{counter.reset_cleanup_peak();let mut threads=Vec::new();for alias in aliases{let barrier=barrier.clone();threads.push(std::thread::spawn(move||{barrier.wait();drop(alias)}));}let gate=barrier.clone();threads.push(std::thread::spawn(move||{gate.wait();drop_body_literal_syntax(body,Some(admission))}));for thread in threads{thread.join().unwrap();}}
+  assert_eq!(counter.cleanup_activity(),(0,1));assert_eq!(counter.load(Ordering::Acquire),fixed);
+ }
+}
+#[test]fn actual_cleanup_gate_poison_unwind_recovers_without_polling_or_credit_loss(){
+ let fixed=SettingChargeCounter::root_allocation_bytes();let counter=SettingChargeCounter::try_new(fixed).unwrap();let a=SettingAdmission::new(&counter,32<<20,&||Ok(()));
+ let result=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{let _guard=counter.cleanup_guard();panic!("actual cleanup gate unwind");}));assert!(result.is_err());
+ let source="/proc/p()\n    return call(alpha,beta)\n";let prepared=prepare_native(source,&a).unwrap();let(body,admission)=prepared.into_parts();counter.reset_cleanup_peak();drop_body_literal_syntax(body,Some(admission));assert_eq!(counter.cleanup_activity(),(0,1));assert_eq!(counter.load(Ordering::Acquire),fixed);
+}
+
+#[test]fn unqualified_body_keeps_original_template_aggregate_cleanup_despite_complete_private_custody(){
+ let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=SettingAdmission::new(&counter,16<<20,&||Ok(()));let raw="\"outer[]tail\"";let mut builder=crate::literal::OriginalTemplateBuilder::new(&a).unwrap();
+ for(text,value,span)in[("\"outer[",crate::OriginalTokenValue::InterpBegin("outer"),crate::Span::new(0,7)),("]tail\"",crate::OriginalTokenValue::InterpEnd("tail"),crate::Span::new(7,13))]{builder.push(crate::OriginalLiteralData::from_value_with_mode_using(text.into(),value,crate::OriginalStringMode::Normal,&a).unwrap(),span,None,&[],&a).unwrap();}
+ let value=builder.finish(raw,0,&a).unwrap();let source="/proc/p()\n    return 0\n    return 0\n";let ast=crate::parse(source);let mut body=crate::parse_body_items_with_context(&ast.items[0].children,source,&|_|None);assert!(body.original_grammar.is_none());
+ for statement in &mut body.statements{statement.kind=crate::StatementKind::Return(Some(Expr{kind:ExprKind::Literal(value.clone()),span:crate::Span::new(0,raw.len())}));}
+ let collected=collect(&body,&a).unwrap();let bytes=collected.bytes;let statements=collected.statements;drop(collected);let slot=4*(std::mem::size_of::<Expr>()+std::mem::size_of::<SharedSettingRetention>());let expected=bytes+statements*4*std::mem::size_of::<Vec<crate::Statement>>()+2*slot+crate::setting_expression::root_storage_envelope();
+ let prepared=prepare_body_literal_syntax(body,a.reserve(2<<20).unwrap(),&a).unwrap();let(body,admission)=prepared.into_parts();assert_eq!(admission.anchor.bytes(),expected,"missing native grammar cannot convert the previous SUM of two template wrappers to MAX");drop_body_literal_syntax(body,Some(admission));drop(value);assert_eq!(counter.load(Ordering::Acquire),fixed);
+}
+
+#[test]
+fn donor_statement_cleanup_physically_reuses_wide_parser_vectors_under_same_tight_cap(){
+ let mut source=String::from("/proc/p()\n");for _ in 0..1000{source.push_str("    return 1\n");}
+ let parsed=body(&source);assert!(parsed.diagnostics.is_empty());assert_eq!(parsed.statements.len(),1000);
+ let counter=SettingChargeCounter::try_new(SettingChargeCounter::root_allocation_bytes()).unwrap();let fixed=SettingChargeCounter::root_allocation_bytes();let healthy=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&healthy);
+ let c=collect(&parsed,&a).unwrap();let old=c.statements*4*size_of::<Statement>();let new=c.statements*4*size_of::<Vec<Statement>>();let payload=c.bytes;drop(c);
+ assert!(old+payload>1<<20,"old full-Statement scratch cannot fit this unchanged cap");assert!(new+payload<1<<20);
+ let prepared=prepare_body_literal_syntax(parsed,a.reserve(new+8192).unwrap(),&a).unwrap();let(parsed,credit)=prepared.into_parts();let held=counter.load(Ordering::Acquire);assert!(held<=1<<20);assert!(held>=fixed+payload+new);
+ drop_body_literal_syntax(parsed,Some(credit));assert_eq!(DONOR_QUEUE_PEAK.with(|p|p.get()),1,"wide root donor is moved once, never flattened/copied");assert_eq!(counter.load(Ordering::Acquire),fixed);
+}
+#[test]
+fn donor_statement_cleanup_keeps_empty_switch_vectors_out_of_queue_and_all_branches_stack_safe(){
+ let mut source=String::from("/proc/p()\n    switch(value)\n");for i in 0..128{source.push_str(&format!("        if({i})\n"));}source.push_str("    return 1\n");
+ let parsed=body(&source);assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);let StatementKind::Switch{cases,else_branch,..}=&parsed.statements[0].kind else{panic!("real switch")};assert_eq!(cases.len(),128);assert!(cases.iter().all(|c|c.body.is_empty())&&else_branch.is_empty());
+ let counter=SettingChargeCounter::try_new(SettingChargeCounter::root_allocation_bytes()).unwrap();let fixed=SettingChargeCounter::root_allocation_bytes();let a=SettingAdmission::new(&counter,8<<20,&||Ok(()));let prepared=prepare_body_literal_syntax(parsed,a.reserve(1<<20).unwrap(),&a).unwrap();drop(prepared);assert_eq!(DONOR_QUEUE_PEAK.with(|p|p.get()),1);assert_eq!(counter.load(Ordering::Acquire),fixed);
+ let mut branch=body("/proc/p()\n    return 1\n").statements.pop().unwrap();for _ in 0..2048{branch=Statement{kind:StatementKind::Label{name:String::new(),body:vec![branch]},span:crate::Span::new(0,0),header_span:crate::Span::new(0,0),raw_header:String::new()};}
+ let mut deep=body("/proc/p()\n    return 1\n");deep.statements=vec![branch];let prepared=prepare_body_literal_syntax(deep,a.reserve(1<<20).unwrap(),&a).unwrap();drop(prepared);assert_eq!(DONOR_QUEUE_PEAK.with(|p|p.get()),1);assert_eq!(counter.load(Ordering::Acquire),fixed);
+}
+#[test]
+fn donor_statement_cleanup_first_io_and_checkpoint_panic_release_payload_before_credit(){
+ for panic_mode in [false,true]{
+  let counter=SettingChargeCounter::try_new(SettingChargeCounter::root_allocation_bytes()).unwrap();let fixed=SettingChargeCounter::root_allocation_bytes();let calls=std::cell::Cell::new(0usize);
+  let checkpoint=||{calls.set(calls.get()+1);if calls.get()==2{if panic_mode{panic!("actual body preflight checkpoint")}return Err(io::Error::from_raw_os_error(1450))}Ok(())};
+  let a=SettingAdmission::new(&counter,8<<20,&checkpoint);let parsed=body("/proc/p()\n    if(value)\n        return 1\n    else\n        return 2\n");let cleanup=a.reserve(1<<20).unwrap();
+  let result=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||prepare_body_literal_syntax(parsed,cleanup,&a)));
+  if panic_mode{assert!(result.is_err());}else{assert_eq!(result.unwrap().err().unwrap().raw_os_error().or_else(||a.take_operational_error().and_then(|e|e.raw_os_error())),Some(1450));}
+  assert_eq!(counter.load(Ordering::Acquire),fixed);let retry=SettingAdmission::new(&counter,8<<20,&||Ok(()));let done=prepare("/proc/p()\n    return 1\n",&retry).unwrap();drop(done);assert_eq!(counter.load(Ordering::Acquire),fixed);
+ }
 }

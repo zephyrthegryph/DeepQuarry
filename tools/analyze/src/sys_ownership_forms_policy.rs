@@ -16,40 +16,38 @@ pub struct Facts {
 }
 
 pub fn facts_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,c:&mut C,temporary:&mut T)->Result<Facts,C::Error>{
-    let old_macro = pat!(
+    let native={#[cfg(feature="native-policy")]{temporary.native_patterns().is_some()}#[cfg(not(feature="native-policy"))]{false}};
+    let legacy=if native{None}else{Some([pat!(
         r"(?<![\w#])(OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEYED_TARGET|KEEP_AFTER_DESTROY|POOL_RESET|FORWARD_STATE)\s*\(|/declare_ownership\(|\b(own|shared|proto|rel)\(\s*decl\b"
-    );
-    let old_destroy = pat!(r"\b(DESTROY_STEP|DESTROY_CAPTURE|DESTROY_AFTER)\b");
-    let string_accessor = pat!(r#"\b(own|rel|proto)_[a-z_]+\(\s*[^,()"]+,\s*"[A-Za-z_][A-Za-z0-9_]*""#);
-    let proc_head = pat!(r"^(/[\w/]+)/(capabilities|ownership)\(\)");
-    let cap_owns = pat!(r"\b(cap_slot|cap_cell_holder)\(\s*nameof\((\w+)\)");
-    let type_owns = pat!(r"^\s*\.\s*\+=\s*owns\(\s*nameof\((\w+)\)");
+    ),pat!(r"\b(DESTROY_STEP|DESTROY_CAPTURE|DESTROY_AFTER)\b"),pat!(r#"\b(own|rel|proto)_[a-z_]+\(\s*[^,()"]+,\s*"[A-Za-z_][A-Za-z0-9_]*""#),pat!(r"^(/[\w/]+)/(capabilities|ownership)\(\)"),pat!(r"\b(cap_slot|cap_cell_holder)\(\s*nameof\((\w+)\)"),pat!(r"^\s*\.\s*\+=\s*owns\(\s*nameof\((\w+)\)")])};
 
     let mut out = Facts::default();
     let mut head: Option<(&str,&str)> = None;
-    let groups=proc_head.capture_group_count().checked_add(cap_owns.capture_group_count()).and_then(|n|n.checked_add(type_owns.capture_group_count()));kc::reserve(temporary,||groups?.checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(256))?;
+    if let Some(programs)=legacy{let groups=programs[3].capture_group_count().checked_add(programs[4].capture_group_count()).and_then(|n|n.checked_add(programs[5].capture_group_count()));kc::reserve(temporary,||groups?.checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(256))?;}
     for (number, line) in f.raw().numbered() {c.checkpoint()?;temporary.checkpoint()?;
         let code = before_slashes(line);
-        if old_macro.is_match(code) {
+        if (if let Some(programs)=legacy{programs[0].is_match(code)}else{kc::is_match_static(temporary,r"(?<![\w#])(OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEYED_TARGET|KEEP_AFTER_DESTROY|POOL_RESET|FORWARD_STATE)\s*\(|/declare_ownership\(|\b(own|shared|proto|rel)\(\s*decl\b",code,||pat!(
+        r"(?<![\w#])(OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEYED_TARGET|KEEP_AFTER_DESTROY|POOL_RESET|FORWARD_STATE)\s*\(|/declare_ownership\(|\b(own|shared|proto|rel)\(\s*decl\b"
+    ))?}) {
             row(c,&mut out.sites)?;out.sites.push((0, line_number(number,c)?));
         }
-        if old_destroy.is_match(code) {
+        if (if let Some(programs)=legacy{programs[1].is_match(code)}else{kc::is_match_static(temporary,r"\b(DESTROY_STEP|DESTROY_CAPTURE|DESTROY_AFTER)\b",code,||pat!(r"\b(DESTROY_STEP|DESTROY_CAPTURE|DESTROY_AFTER)\b"))?}) {
             row(c,&mut out.sites)?;out.sites.push((1, line_number(number,c)?));
         }
-        if string_accessor.is_match(code) {
+        if (if let Some(programs)=legacy{programs[2].is_match(code)}else{kc::is_match_static(temporary,r#"\b(own|rel|proto)_[a-z_]+\(\s*[^,()"]+,\s*"[A-Za-z_][A-Za-z0-9_]*""#,code,||pat!(r#"\b(own|rel|proto)_[a-z_]+\(\s*[^,()"]+,\s*"[A-Za-z_][A-Za-z0-9_]*""#))?}) {
             row(c,&mut out.sites)?;out.sites.push((2, line_number(number,c)?));
         }
         if line.chars().next().map(|c| !is_py_space(c)).unwrap_or(false) {
             // `re.match` (anchored at the start): the pattern carries its own `^`.
-            head = proc_head.captures(line).map(|m| (m.s(1),m.s(2)));
+            head = (if let Some(programs)=legacy{programs[3].captures(line)}else{kc::captures_static(temporary,r"^(/[\w/]+)/(capabilities|ownership)\(\)",line,0,||pat!(r"^(/[\w/]+)/(capabilities|ownership)\(\)"))?}).map(|m| (m.s(1),m.s(2)));
             continue;
         }
         let Some((htype, hkind)) = &head else { continue };
         if *hkind == "capabilities" {
-            for m in cap_owns.captures_iter(code) {
+            for m in (if let Some(programs)=legacy{programs[4].captures_iter(code)}else{kc::captures_all_static(temporary,r"\b(cap_slot|cap_cell_holder)\(\s*nameof\((\w+)\)",code,||pat!(r"\b(cap_slot|cap_cell_holder)\(\s*nameof\((\w+)\)"))?}) {
                 c.checkpoint()?;row(c,&mut out.cap)?;out.cap.push((kc::own(c,m.s(2))?,kc::own(c,htype)?));
             }
-        } else if let Some(m) = type_owns.captures(code) {
+        } else if let Some(m) = (if let Some(programs)=legacy{programs[5].captures(code)}else{kc::captures_static(temporary,r"^\s*\.\s*\+=\s*owns\(\s*nameof\((\w+)\)",code,0,||pat!(r"^\s*\.\s*\+=\s*owns\(\s*nameof\((\w+)\)"))?}) {
             row(c,&mut out.typ)?;out.typ.push((kc::own(c,htype)?,kc::own(c,m.s(1))?,line_number(number,c)?));
         }
     }

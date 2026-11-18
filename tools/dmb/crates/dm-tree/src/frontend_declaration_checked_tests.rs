@@ -80,3 +80,8 @@ fn checked_frontend_invalid_rhs_keeps_original_eager_fold_source_policy_and_empt
 
 /// Reuse the existing checked native fixture host; never manufacture a successful model.
 pub(super) fn original_test_host()->Arc<dyn SettingExpressionQueries>{Host::new()}
+
+pub(super) fn with_original_test_host_controls<T>(f:impl FnOnce(Arc<dyn SettingExpressionQueries>,&AtomicUsize,&AtomicBool,&dm_syntax::SettingChargeCounter)->T)->T{let raw=Host::new();f(raw.clone()as Arc<dyn SettingExpressionQueries>,&raw.limit,&raw.fail,&raw.counter)}
+
+/// SAME existing resource fixture, with its actual Arc for a caller checkpoint probe.
+pub(super) fn with_original_test_host_shared_counter_controls<T>(f:impl FnOnce(Arc<dyn SettingExpressionQueries>,&AtomicUsize,&Arc<dm_syntax::SettingChargeCounter>)->T)->T{let raw=Host::new();f(raw.clone()as Arc<dyn SettingExpressionQueries>,&raw.limit,&raw.counter)}

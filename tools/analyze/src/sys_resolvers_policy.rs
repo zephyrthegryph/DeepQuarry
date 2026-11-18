@@ -9,6 +9,7 @@ use crate::dm::sys::{col0, in_family, register_module, SysModule};
 #[cfg(feature="legacy-sem")] use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat;
+use crate::key_policy_control::{self as kc,Control};
 use crate::tree::SourceFile;
 #[cfg(feature="legacy-sem")] use crate::tree::Tree;
 use crate::util::before_slashes;
@@ -21,12 +22,13 @@ pub(crate) const RULES: &[RuleMeta] = &[
     },
 ];
 
-pub(crate) fn roots_of(f: &SourceFile) -> Vec<String> {
+pub(crate) fn roots_of(f:&SourceFile)->Vec<String>{roots_of_using(f,&mut kc::Compatibility).unwrap_or_else(|never|match never{})}
+pub(crate) fn roots_of_using<C:Control>(f:&SourceFile,control:&mut C)->Result<Vec<String>,C::Error>{
     let mut roots: BTreeSet<String> = BTreeSet::new();
     let mut cur: Option<String> = None;
-    for line in f.raw().lines() {
-        if let Some(c) = pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]").captures(line) {
-            cur = Some(c.s(1).to_string());
+    for line in f.raw().lines() {control.checkpoint()?;
+        if let Some(c) = kc::captures_static(control,r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]",line,0,||pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]"))? {
+            cur = Some(kc::own(control,c.s(1))?);
             continue;
         }
         if col0(line) {
@@ -34,20 +36,21 @@ pub(crate) fn roots_of(f: &SourceFile) -> Vec<String> {
             continue;
         }
         if let Some(t) = &cur {
-            if pat!(r"^	(configure\()?map_resolver\(").is_match(line) {
-                roots.insert(t.clone());
+            if kc::is_match_static(control,r"^	(configure\()?map_resolver\(",line,||pat!(r"^	(configure\()?map_resolver\("))? {
+                if !roots.contains(t){kc::reserve(control,||Some(1024+std::mem::size_of::<String>()))?;roots.insert(kc::own(control,t)?);}
             }
         }
     }
-    roots.into_iter().collect()
+    let mut out=Vec::new();for value in roots{kc::row(control,&mut out)?;out.push(value);}Ok(out)
 }
 
-pub(crate) fn judge(f: &SourceFile, roots: &HashSet<String>, out: &mut Vec<(&'static str, usize)>) {
+pub(crate) fn judge(f:&SourceFile,roots:&HashSet<String>,out:&mut Vec<(&'static str,usize)>){judge_using(f,roots,out,&mut kc::Compatibility).unwrap_or_else(|never|match never{})}
+pub(crate) fn judge_using<C:Control>(f:&SourceFile,roots:&HashSet<String>,out:&mut Vec<(&'static str,usize)>,control:&mut C)->Result<(),C::Error>{
     {
         let mut cur: Option<String> = None;
-        for (number, line) in f.raw().numbered() {
-            if let Some(c) = pat!(r"^(/[\w/]+?)/(Initialize|LateInitialize)\(").captures(line) {
-                cur = Some(c.s(1).to_string());
+        for (number, line) in f.raw().numbered() {control.checkpoint()?;
+            if let Some(c) = kc::captures_static(control,r"^(/[\w/]+?)/(Initialize|LateInitialize)\(",line,0,||pat!(r"^(/[\w/]+?)/(Initialize|LateInitialize)\("))? {
+                cur = Some(kc::own(control,c.s(1))?);
                 continue;
             }
             if col0(line) {
@@ -56,15 +59,16 @@ pub(crate) fn judge(f: &SourceFile, roots: &HashSet<String>, out: &mut Vec<(&'st
             }
             let Some(c) = &cur else { continue };
             let code = before_slashes(line);
-            if pat!(r"^\t(return|\.\s*=)\s*INITIALIZE_HINT_QDEL\b").is_match(code)
-                || (pat!(r"\bINITIALIZE_HINT_QDEL\b").is_match(code) && in_family(c, roots))
+            if kc::is_match_static(control,r"^\t(return|\.\s*=)\s*INITIALIZE_HINT_QDEL\b",code,||pat!(r"^\t(return|\.\s*=)\s*INITIALIZE_HINT_QDEL\b"))?
+                || (kc::is_match_static(control,r"\bINITIALIZE_HINT_QDEL\b",code,||pat!(r"\bINITIALIZE_HINT_QDEL\b"))? && in_family(c, roots))
             {
-                out.push(("init_qdel", number));
-            } else if pat!(r"^\t(qdel\(src\)|expire\(0\)|replace_with\(src\b|qdel_self\(\))").is_match(code) {
-                out.push(("init_self_delete", number));
+                kc::row(control,out)?;out.push(("init_qdel", number));
+            } else if kc::is_match_static(control,r"^\t(qdel\(src\)|expire\(0\)|replace_with\(src\b|qdel_self\(\))",code,||pat!(r"^\t(qdel\(src\)|expire\(0\)|replace_with\(src\b|qdel_self\(\))"))? {
+                kc::row(control,out)?;out.push(("init_self_delete", number));
             }
         }
     }
+    Ok(())
 }
 
 #[cfg(feature="legacy-sem")]

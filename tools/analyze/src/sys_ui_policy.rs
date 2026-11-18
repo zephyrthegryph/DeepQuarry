@@ -22,7 +22,7 @@ fn calls_of<C:Control>(code:&str,control:&mut C)->Result<Vec<(String,String)>,C:
     control.checkpoint()?;
     let b = code.as_bytes();
     let mut out = Vec::new();
-    for c in pat!(r"\b(\w+)\s*\(").captures_iter(code) {
+    for c in crate::key_policy_control::captures_all_static(control,r"\b(\w+)\s*\(",code,||pat!(r"\b(\w+)\s*\("))? {
         control.checkpoint()?;
         let callee = c.s(1).to_string();
         let mut depth = 1i32;
@@ -134,12 +134,12 @@ fn bodies<'a,C:Control>(lines:&[&'a str],control:&mut C)->Result<Vec<Body<'a>>,C
         let line = lines[i];
         let kind;
         let (owner, name, args);
-        if let Some(c) = pat_match!(r"UI_(?:ACT|SUBACT)_(?:PROC|OVERRIDE|PREF_PROC)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)").captures(line) {
+        if let Some(c) = crate::key_policy_control::captures_match_static(control,r"UI_(?:ACT|SUBACT)_(?:PROC|OVERRIDE|PREF_PROC)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)",line,||pat_match!(r"UI_(?:ACT|SUBACT)_(?:PROC|OVERRIDE|PREF_PROC)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)"))? {
             kind = Kind::Handler;
             owner = c.s(1).to_string();
             name = c.s(2).to_string();
             args = String::new();
-        } else if let Some(c) = pat_match!(r"(/[\w/]+?)/(?:proc/)?(\w+)\s*\(([^)]*)\)").captures(line) {
+        } else if let Some(c) = crate::key_policy_control::captures_match_static(control,r"(/[\w/]+?)/(?:proc/)?(\w+)\s*\(([^)]*)\)",line,||pat_match!(r"(/[\w/]+?)/(?:proc/)?(\w+)\s*\(([^)]*)\)"))? {
             kind = Kind::Proc;
             owner = c.s(1).to_string();
             name = c.s(2).to_string();
@@ -161,7 +161,7 @@ fn bodies<'a,C:Control>(lines:&[&'a str],control:&mut C)->Result<Vec<Body<'a>>,C
     control.checkpoint()?;Ok(out)
 }
 
-fn arg_names<C:Control>(text:&str,control:&mut C)->Result<Vec<String>,C::Error>{let mut out=Vec::new();for c in pat!(r#"UI_ARG_\w+\(\s*"([^"]+)""#).captures_iter(text){control.checkpoint()?;out.push(c.s(1).to_string());}control.checkpoint()?;Ok(out)}
+fn arg_names<C:Control>(text:&str,control:&mut C)->Result<Vec<String>,C::Error>{let mut out=Vec::new();for c in crate::key_policy_control::captures_all_static(control,r#"UI_ARG_\w+\(\s*"([^"]+)""#,text,||pat!(r#"UI_ARG_\w+\(\s*"([^"]+)""#))?{control.checkpoint()?;out.push(c.s(1).to_string());}control.checkpoint()?;Ok(out)}
 
 /// One file's UI_ACT rows: `(type, handler, declared arg names)`, sorted by `(type, handler)`.
 fn declared_rows_of<C:Control>(f:&SourceFile,control:&mut C)->Result<Vec<(String,String,BTreeSet<String>)>,C::Error>{
@@ -169,11 +169,11 @@ fn declared_rows_of<C:Control>(f:&SourceFile,control:&mut C)->Result<Vec<(String
     let mut rows: BTreeMap<(String, String), BTreeSet<String>> = BTreeMap::new();
     for line in f.raw().lines() {
         control.checkpoint()?;
-        let m = pat_match!(r#"UI_SUBACT\(\s*(/[\w/]+)\s*,\s*"[^"]*"\s*,\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$"#)
-            .captures(line)
-            .or_else(|| {
-                pat_match!(r#"UI_(?:ACT|SUBACT)\(\s*(/[\w/]+)\s*,(?:\s*"[^"]*"\s*,(?=\s*"))?\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$"#).captures(line)
-            });
+        let m = crate::key_policy_control::captures_match_static(control,r#"UI_SUBACT\(\s*(/[\w/]+)\s*,\s*"[^"]*"\s*,\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$"#,line,||pat_match!(r#"UI_SUBACT\(\s*(/[\w/]+)\s*,\s*"[^"]*"\s*,\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$"#))?;
+        let m = match m {
+            Some(found) => Some(found),
+            None => crate::key_policy_control::captures_match_static(control,r#"UI_(?:ACT|SUBACT)\(\s*(/[\w/]+)\s*,(?:\s*"[^"]*"\s*,(?=\s*"))?\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$"#,line,||pat_match!(r#"UI_(?:ACT|SUBACT)\(\s*(/[\w/]+)\s*,(?:\s*"[^"]*"\s*,(?=\s*"))?\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$"#))?,
+        };
         if let Some(m) = m {
             rows.entry((m.s(1).to_string(), m.s(2).to_string())).or_default().extend(arg_names(m.s(3),control)?);
         } else if line.starts_with("#define") && line.contains("TYPE_PROC_REF(/datum,") {
@@ -223,9 +223,6 @@ fn keys_for<C:Control>(rows:&ByHandler,owner:&str,handler:&str,control:&mut C)->
     control.checkpoint()?;Ok(out)
 }
 
-fn count(p: &Pat, text: &str) -> usize {
-    p.find_iter(text).len()
-}
 
 /// Procs taking `list/params` that may receive a handler's typed params: name -> keys it reads
 /// (itself and the helpers it calls).
@@ -237,7 +234,7 @@ fn helper_cands_of<C:Control>(f:&SourceFile,control:&mut C)->Result<Vec<Cand>,C:
         let lines = f.raw().lines_vec();
         for b in bodies(&lines,control)? {
             control.checkpoint()?;
-            if b.kind != Kind::Proc || !pat!(r"(?:^|,)\s*(?:list/)?params\s*(?:,|$)").is_match(&b.args) {
+            if b.kind != Kind::Proc || !crate::key_policy_control::is_match_static(control,r"(?:^|,)\s*(?:list/)?params\s*(?:,|$)",&b.args,||pat!(r"(?:^|,)\s*(?:list/)?params\s*(?:,|$)"))? {
                 continue;
             }
             let mut keys = BTreeSet::new();
@@ -246,23 +243,23 @@ fn helper_cands_of<C:Control>(f:&SourceFile,control:&mut C)->Result<Vec<Cand>,C:
             for (_n, line) in &b.body {
                 control.checkpoint()?;
                 let text = strip_comment(line,control)?;
-                if !pat!(r"\bparams\b").is_match(text) {
+                if !crate::key_policy_control::is_match_static(control,r"\bparams\b",text,||pat!(r"\bparams\b"))? {
                     continue;
                 }
-                if raw_re().is_match(text) || dynamic_re().is_match(text) {
+                if crate::key_policy_control::is_match_static(control,r"\b(?:text2num|locate|text2path|json_decode|params2list)\s*\(\s*params\s*\??\[|\blocate_in_list\s*\([^;]*,\s*params\s*\??\[|\blocate_within\s*\([^;]*,\s*params\s*\??\[",text,raw_re)? || crate::key_policy_control::is_match_static(control,r#"\bparams\s*\??\[\s*(?!")"#,text,dynamic_re)? {
                     ok = false;
                     break;
                 }
-                for c in keyread_re().captures_iter(text) {
+                for c in crate::key_policy_control::captures_all_static(control,r#"\bparams\s*\??\[\s*"([^"]+)"\s*\]"#,text,keyread_re)? {
                     control.checkpoint()?;
                     keys.insert(c.s(1).to_string());
                 }
-                let rest = code_of(&keyread_re().replace_all(text, ""),control)?;
-                let total = count(pat!(r"\bparams\b"), &rest);
+                let rest = code_of(&crate::key_policy_control::replace_static(control,r#"\bparams\s*\??\[\s*"([^"]+)"\s*\]"#,text, "",keyread_re)?,control)?;
+                let total = crate::key_policy_control::find_all_static(control,r"\bparams\b",&rest,||pat!(r"\bparams\b"))?.len();
                 let mut covered = 0;
                 for (callee, argtext) in calls_of(&rest,control)? {
                     control.checkpoint()?;
-                    let hits = count(pat!(r"(?:^|,)\s*params\s*(?=,|$)"), &argtext);
+                    let hits = crate::key_policy_control::find_all_static(control,r"(?:^|,)\s*params\s*(?=,|$)",&argtext,||pat!(r"(?:^|,)\s*params\s*(?=,|$)"))?.len();
                     if hits == 0 {
                         continue;
                     }
@@ -360,10 +357,10 @@ fn judge<C:Control>(f:&SourceFile,rows:&ByHandler,helpers:&BTreeMap<String,BTree
             control.checkpoint()?;
             let number = idx + 1;
             let code = code_of(line,control)?;
-            if pat_match!(r"/[\w/]+?/(?:proc/)?tgui_data\s*\(").is_match(line) && !line.starts_with("/datum/proc/tgui_data(") {
+            if crate::key_policy_control::is_match_match_static(control,r"/[\w/]+?/(?:proc/)?tgui_data\s*\(",line,||pat_match!(r"/[\w/]+?/(?:proc/)?tgui_data\s*\("))? && !line.starts_with("/datum/proc/tgui_data(") {
                 out.push(("tgui_data_override", rel.to_string(), number));
             }
-            if pat_match!(r"(/[\w/]+?)/(?:proc/)?tgui_state\s*\(").is_match(line) && !line.starts_with("/datum/proc/tgui_state(") {
+            if crate::key_policy_control::is_match_match_static(control,r"(/[\w/]+?)/(?:proc/)?tgui_state\s*\(",line,||pat_match!(r"(/[\w/]+?)/(?:proc/)?tgui_state\s*\("))? && !line.starts_with("/datum/proc/tgui_state(") {
                 let mut body: Vec<String> = Vec::new();
                 for follow in &lines[number..] {
                     control.checkpoint()?;
@@ -375,18 +372,19 @@ fn judge<C:Control>(f:&SourceFile,rows:&ByHandler,helpers:&BTreeMap<String,BTree
                         body.push(c.trim_end_matches(is_py_space).to_string());
                     }
                 }
-                if body.len() == 1 && pat_match!(r"\treturn\s+(GLOB\.\w+|ADMIN_STATE\([^)]*\))\s*$").is_match(&body[0]) {
+                if body.len() == 1 && crate::key_policy_control::is_match_match_static(control,r"\treturn\s+(GLOB\.\w+|ADMIN_STATE\([^)]*\))\s*$",&body[0],||pat_match!(r"\treturn\s+(GLOB\.\w+|ADMIN_STATE\([^)]*\))\s*$"))? {
                     out.push(("tgui_state_override", rel.to_string(), number));
                 }
             }
-            if pat_match!(r"/[\w/]+?/(?:proc/)?tgui_interact\s*\(").is_match(line) && !line.starts_with("/datum/proc/tgui_interact(") {
+            if crate::key_policy_control::is_match_match_static(control,r"/[\w/]+?/(?:proc/)?tgui_interact\s*\(",line,||pat_match!(r"/[\w/]+?/(?:proc/)?tgui_interact\s*\("))? && !line.starts_with("/datum/proc/tgui_interact(") {
                 out.push(("tgui_interact_boilerplate", rel.to_string(), number));
             } else if !exempt_open
-                && pat!(r"\bSStgui\.try_update_ui\s*\(|\bnew\s*/datum/tgui\s*\(|\bui\s*=\s*new\s*\(|var/datum/tgui/\w+\s*=\s*new\s*\(").is_match(&code)
+                && crate::key_policy_control::is_match_static(control,r"\bSStgui\.try_update_ui\s*\(|\bnew\s*/datum/tgui\s*\(|\bui\s*=\s*new\s*\(|var/datum/tgui/\w+\s*=\s*new\s*\(",&code,||pat!(r"\bSStgui\.try_update_ui\s*\(|\bnew\s*/datum/tgui\s*\(|\bui\s*=\s*new\s*\(|var/datum/tgui/\w+\s*=\s*new\s*\("))?
             {
                 out.push(("tgui_interact_boilerplate", rel.to_string(), number));
             }
-            if raw_re().is_match(strip_comment(line,control)?) {
+            let without_comment = strip_comment(line,control)?;
+            if crate::key_policy_control::is_match_static(control,r"\b(?:text2num|locate|text2path|json_decode|params2list)\s*\(\s*params\s*\??\[|\blocate_in_list\s*\([^;]*,\s*params\s*\??\[|\blocate_within\s*\([^;]*,\s*params\s*\??\[",without_comment,raw_re)? {
                 out.push(("text2num_params", rel.to_string(), number));
             }
         }
@@ -397,7 +395,7 @@ fn judge<C:Control>(f:&SourceFile,rows:&ByHandler,helpers:&BTreeMap<String,BTree
                 for (number, line) in &b.body {
                     control.checkpoint()?;
                     let text = strip_comment(line,control)?;
-                    if pat!(r"\bparams\s*\??\[").is_match(text) && !raw_re().is_match(text) {
+                    if crate::key_policy_control::is_match_static(control,r"\bparams\s*\??\[",text,||pat!(r"\bparams\s*\??\["))? && !crate::key_policy_control::is_match_static(control,r"\b(?:text2num|locate|text2path|json_decode|params2list)\s*\(\s*params\s*\??\[|\blocate_in_list\s*\([^;]*,\s*params\s*\??\[|\blocate_within\s*\([^;]*,\s*params\s*\??\[",text,raw_re)? {
                         out.push(("text2num_params", rel.to_string(), *number));
                     }
                 }
@@ -411,20 +409,20 @@ fn judge<C:Control>(f:&SourceFile,rows:&ByHandler,helpers:&BTreeMap<String,BTree
             for (number, line) in &b.body {
                 control.checkpoint()?;
                 let text = strip_comment(line,control)?;
-                if raw_re().is_match(text) {
+                if crate::key_policy_control::is_match_static(control,r"\b(?:text2num|locate|text2path|json_decode|params2list)\s*\(\s*params\s*\??\[|\blocate_in_list\s*\([^;]*,\s*params\s*\??\[|\blocate_within\s*\([^;]*,\s*params\s*\??\[",text,raw_re)? {
                     continue; // already counted
                 }
                 let mut flagged = false;
-                for c in keyread_re().captures_iter(text) {
+                for c in crate::key_policy_control::captures_all_static(control,r#"\bparams\s*\??\[\s*"([^"]+)"\s*\]"#,text,keyread_re)? {
                     control.checkpoint()?;
                     if !allowed_keys.contains(c.s(1)) {
                         flagged = true;
                     }
                 }
-                if dynamic_re().is_match(text) {
+                if crate::key_policy_control::is_match_static(control,r#"\bparams\s*\??\[\s*(?!")"#,text,dynamic_re)? {
                     flagged = true;
                 }
-                if let Some(m) = pat!(r#"var/(?:[\w/]+/)?(\w+)\s*=\s*params\s*\??\[\s*"([^"]+)"\s*\]\s*$"#).captures(py_strip(text)) {
+                if let Some(m) = crate::key_policy_control::captures_static(control,r#"var/(?:[\w/]+/)?(\w+)\s*=\s*params\s*\??\[\s*"([^"]+)"\s*\]\s*$"#,py_strip(text),0,||pat!(r#"var/(?:[\w/]+/)?(\w+)\s*=\s*params\s*\??\[\s*"([^"]+)"\s*\]\s*$"#))? {
                     let alias = m.s(1).to_string();
                     if !aliases.contains(&alias) {
                         aliases.push(alias);
@@ -432,7 +430,7 @@ fn judge<C:Control>(f:&SourceFile,rows:&ByHandler,helpers:&BTreeMap<String,BTree
                 }
                 for alias in &aliases {
                     control.checkpoint()?;
-                    if Pat::cached(&format!(r"\b(?:text2num|locate|text2path|json_decode)\s*\(\s*{}\s*\)", alias)).is_match(text) {
+                    if alias_converted_using(text,alias,control)? {
                         flagged = true;
                     }
                 }
@@ -447,7 +445,7 @@ fn judge<C:Control>(f:&SourceFile,rows:&ByHandler,helpers:&BTreeMap<String,BTree
                             continue;
                         }
                     }
-                    if pat!(r"(?:^|,)\s*params\s*(?:,|$)").is_match(&argtext) {
+                    if crate::key_policy_control::is_match_static(control,r"(?:^|,)\s*params\s*(?:,|$)",&argtext,||pat!(r"(?:^|,)\s*params\s*(?:,|$)"))? {
                         flagged = true;
                     }
                 }
@@ -501,3 +499,12 @@ pub fn facts_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&mut 
 #[cfg(feature="legacy-sem")]fn facts_of(f:&SourceFile)->Facts{facts_using(f,&mut crate::key_policy_control::Compatibility,&mut crate::key_policy_control::Compatibility).expect("original UI facts")}
 pub fn context_using<C:Control,T:Control<Error=C::Error>>(facts:&[&Facts],keep:&mut C,temp:&mut T)->Result<Merged,C::Error>{keep.checkpoint()?;let mut width=0usize;let mut count=0usize;for f in facts{keep.checkpoint()?;width=width.checked_add(facts_bound(f).ok_or_else(||keep.overflow())?).ok_or_else(||keep.overflow())?;count=count.checked_add(f.cands.len()).ok_or_else(||keep.overflow())?;}crate::key_policy_control::reserve(temp,||width.checked_mul(count.checked_add(1)?)?.checked_mul(8)?.checked_add(facts.len().checked_mul(4*std::mem::size_of::<&Facts>())?)?.checked_add(4096))?;let rows_of:Vec<_>=facts.iter().map(|f|&f.rows).collect();let cands_of:Vec<_>=facts.iter().map(|f|&f.cands).collect();let merged=Merged{rows:declared_keys(&rows_of,temp)?,helpers:typed_param_helpers(&cands_of,temp)?};crate::key_policy_control::reserve(keep,||context_bound(&merged))?;keep.checkpoint()?;Ok(merged)}
 pub fn judge_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,ctx:&Merged,keep:&mut C,temp:&mut T)->Result<Vec<(&'static str,usize)>,C::Error>{keep.checkpoint()?;let text=f.text();if starts_any(&f.rel,NOT_TGUI)||(!text.contains("ui")&&!text.contains("params")&&!text.contains("UI_")){return Ok(Vec::new())}crate::key_policy_control::reserve(temp,||text.len().checked_mul(f.rel.len().checked_mul(4)?.checked_add(512)?)?.checked_add(context_bound(ctx)?.checked_mul(4)?)?.checked_add(4096))?;let found=judge(f,&ctx.rows,&ctx.helpers,temp)?;let mut rows=Vec::new();for(rule,path,line)in found{keep.checkpoint()?;if path!=f.rel{return Err(keep.allocation_failed())}crate::raw_tree_report::row(keep,&mut rows)?;rows.push((rule,line));}keep.checkpoint()?;Ok(rows)}
+
+/// Alias is the original \w+ producer output. The fixed capture compares that
+/// same whole word, so no dynamically compiled private program is required.
+fn alias_converted_using<C:Control>(text:&str,alias:&str,control:&mut C)->Result<bool,C::Error>{
+ #[cfg(feature="native-policy")]if control.native_patterns().is_some(){
+  for found in crate::key_policy_control::captures_all_static(control,r"\b(?:text2num|locate|text2path|json_decode)\s*\(\s*(\w+)\s*\)",text,||pat!(r"\b(?:text2num|locate|text2path|json_decode)\s*\(\s*(\w+)\s*\)"))?{if found.s(1)==alias{return Ok(true)}}return Ok(false)
+ }
+ Ok(Pat::cached(&format!(r"\b(?:text2num|locate|text2path|json_decode)\s*\(\s*{}\s*\)",alias)).is_match(text))
+}

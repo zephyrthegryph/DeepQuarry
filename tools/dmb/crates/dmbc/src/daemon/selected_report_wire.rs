@@ -21,6 +21,8 @@ pub(crate) use dq_analyze::selected_exclusions_wire::Roster;
 
 #[path="schema_report_wire.rs"]mod schema_report;
 #[path="native_fix_report_wire.rs"]mod fix_report;
+#[path="baseline_update_report_wire.rs"]mod baseline_update_report;
+pub(crate) use baseline_update_report::{send_baseline_update,receive_baseline_update};
 pub(crate) use fix_report::{send_fix,receive_fix};
 pub(crate) use schema_report::{send_schema,receive_schema};
 const FRAGMENT: usize = 8192;
@@ -254,6 +256,7 @@ enum Channel {
     Diagnostics,
     Checker,
     Report,
+    Usage,
 }
 
 fn seal_of(file: &Verified) -> Seal {
@@ -262,6 +265,8 @@ fn seal_of(file: &Verified) -> Seal {
 
 #[derive(Serialize)]
 enum SendReply<'a> {
+    NativeCodemodFixtureFinished(dq_analyze::native_codemod_fixture_wire::Terminal),
+    NativeSemUtilityFinished(dq_analyze::native_sem_utility_wire::Terminal),
     SelectedReportFragment { channel: Channel, sequence: u32, offset: u64, bytes: &'a [u8] },
     SelectedReportFinished(Terminal),
     RawSelectedReportFinished(RawSelectedTerminal),
@@ -271,8 +276,11 @@ enum SendReply<'a> {
     NamedImageDirReportFinished(NamedImageDirTerminal),
     NamedImageDirRejected(NamedRejection),
     FullRegistryCheckFinished(dq_analyze::full_registry_check_wire::Terminal),
+    NativeSelftestsFinished(dq_analyze::native_selftest_wire::Terminal),
+    FullRegistryCheckCliFinished(dq_analyze::native_check_cli_wire::Terminal),
     SchemaProposalsFinished(dq_analyze::schema_proposals_wire::Terminal),
     NativeFixFinished(dq_analyze::native_fix_wire::Terminal),
+    BaselineUpdateFinished(dq_analyze::native_baseline_update_wire::Terminal),
     CheckerTextFinished(dq_analyze::native_checker_wire::Terminal),
 }
 
@@ -497,6 +505,8 @@ struct Rejection {
 
 #[derive(Deserialize)]
 enum ReceiveReply {
+    NativeCodemodFixtureFinished(dq_analyze::native_codemod_fixture_wire::Terminal),
+    NativeSemUtilityFinished(dq_analyze::native_sem_utility_wire::Terminal),
     Accepted,
     Rejected(Rejection),
     SelectedReportFragment(Fragment),
@@ -508,8 +518,11 @@ enum ReceiveReply {
     NamedImageDirReportFinished(NamedImageDirTerminal),
     NamedImageDirRejected(NamedRejection),
     FullRegistryCheckFinished(dq_analyze::full_registry_check_wire::Terminal),
+    NativeSelftestsFinished(dq_analyze::native_selftest_wire::Terminal),
+    FullRegistryCheckCliFinished(dq_analyze::native_check_cli_wire::Terminal),
     SchemaProposalsFinished(dq_analyze::schema_proposals_wire::Terminal),
     NativeFixFinished(dq_analyze::native_fix_wire::Terminal),
+    BaselineUpdateFinished(dq_analyze::native_baseline_update_wire::Terminal),
     CheckerTextFinished(dq_analyze::native_checker_wire::Terminal),
 }
 
@@ -717,7 +730,7 @@ pub(crate) fn receive_named_image_dir(stream:&mut impl Read,cache:&Path)->Result
                 if let Some(code)=error.os_code{return Err(io::Error::from_raw_os_error(code).into())}
                 return Err(error.failure.into());
             }
-            ReceiveReply::SelectedReportFragment(fragment) if accepted&&fragment.channel==Channel::Report=>
+            ReceiveReply::SelectedReportFragment(fragment) if accepted&&matches!(fragment.channel,Channel::Report)=>
                 report.push(cache,&fragment)?,
             ReceiveReply::NamedImageDirReportFinished(terminal) if accepted=>{
                 terminal.require()?;
@@ -850,44 +863,92 @@ mod wire_controls;
 /// Report-only full-registry delivery retains the actual preparation ledger.
 /// It has no irreversible source/output mutation, so keep cancellation and the
 /// SAME request deadline active throughout fragments AND final freshness.
-pub(crate) fn send_full_check(stream:&mut impl Write,completed:crate::runner_host::FullRegistryCheckReport,work:&dyn SourceArenaWork)->Result<(),SendFailure>{
+pub(crate) fn send_full_check(stream:&mut impl Write,completed:crate::runner_host::FullRegistryCheckReport,work:&dyn SourceArenaWork)->Result<crate::runner_host::FullRegistryCheckInputs,SendFailure>{
  use dq_analyze::full_registry_check_wire::{Terminal,Schema,Scope};
- let crate::runner_host::FullRegistryCheckReport{project,inputs,frame,selection,selected,registered,format,clean,diagnostics,report,_credit}=completed;
+ let crate::runner_host::FullRegistryCheckReport{project,inputs,frame,selection,selected,registered,format,clean,selftests,cli,diagnostics,report,_credit,..}=completed;
  let convert=|error:Box<dyn Error>|match error.downcast::<io::Error>(){Ok(actual)=>*actual,Err(other)=>io::Error::other(other.to_string())};
  inputs.require_report_current(&project).map_err(convert).map_err(SendFailure::BeforePublication)?;
- let terminal=Terminal{schema:Schema::V2,complete:true,full_policy_parity:false,scope:if selected==registered{Scope::FullRegistry}else{Scope::RegistrySelection},options:format,selection,selected,registered,frame,clean,diagnostics:diagnostics.as_ref().map(seal_of),report:seal_of(&report)};
- terminal.require(format,selection).map_err(SendFailure::BeforePublication)?;encode_header(&terminal).map_err(SendFailure::BeforePublication)?;
+ let terminal=Terminal{schema:if selftests.is_some(){Schema::V3}else{Schema::V2},complete:true,full_policy_parity:false,scope:if selected==registered{Scope::FullRegistry}else{Scope::RegistrySelection},options:format,selection,selected,registered,frame,clean,selftests,diagnostics:diagnostics.as_ref().map(seal_of),report:seal_of(&report)};
+ terminal.require_selftests(format,selection,selftests.is_some()).map_err(SendFailure::BeforePublication)?;
+ let usage_seal=cli.as_ref().filter(|cli|cli.usage_requested).map(|cli|cli.usage.as_ref().map(seal_of).unwrap_or(Seal{length:0,hash:Hex128(xxhash_rust::xxh3::xxh3_128(b""))}));
+ let total=terminal.report.length.checked_add(terminal.diagnostics.as_ref().map_or(0,|seal|seal.length)).and_then(|n|n.checked_add(usage_seal.as_ref().map_or(0,|seal|seal.length)));
+ if total.is_none_or(|n|n>MAX_STREAM){return Err(SendFailure::BeforePublication(invalid("CHECK CLI streams exceed the existing aggregate report bound")))}
+ let outer=cli.as_ref().map(|cli|dq_analyze::native_check_cli_wire::Terminal{schema:dq_analyze::native_check_cli_wire::Schema::V1,requested:cli.binding,terminal:terminal.clone(),usage:usage_seal});
+ if let Some(outer)=&outer{encode_header(outer).map_err(SendFailure::BeforePublication)?;}else{encode_header(&terminal).map_err(SendFailure::BeforePublication)?;}
  let _scratch=work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?;
  let sent=(||{
   control::checkpoint()?;
   if let Some(stage)=diagnostics{stage.publish(&mut FragmentWriter{stream:&mut *stream,channel:Channel::Diagnostics,sequence:0,offset:0})?;}
   report.publish(&mut FragmentWriter{stream:&mut *stream,channel:Channel::Report,sequence:0,offset:0})?;
-  inputs.require_report_current(&project).map_err(convert)?;control::checkpoint()?;
-  protocol::send(stream,&SendReply::FullRegistryCheckFinished(terminal))
- })();sent.map_err(SendFailure::AfterPublication)
+  // Consume only the genuine producer-owned usage stream; retain its resource
+  // owner, final input ledger and all other output grants through the terminal.
+  if let Some(mut cli)=cli{if let Some(stage)=cli.usage.take(){stage.publish(&mut FragmentWriter{stream:&mut *stream,channel:Channel::Usage,sequence:0,offset:0})?;}inputs.require_report_current(&project).map_err(convert)?;control::checkpoint()?;protocol::send(stream,&SendReply::FullRegistryCheckCliFinished(outer.ok_or_else(||invalid("CHECK CLI owner omitted its terminal"))?))}
+  else{inputs.require_report_current(&project).map_err(convert)?;control::checkpoint()?;protocol::send(stream,&SendReply::FullRegistryCheckFinished(terminal))}
+  ?;control::checkpoint()
+ })();sent.map_err(SendFailure::AfterPublication)?;Ok(inputs)
 }
-pub(crate) struct DeliveredFullCheck{terminal:dq_analyze::full_registry_check_wire::Terminal,diagnostics:Option<Verified>,report:Verified}
+pub(crate) struct DeliveredFullCheck{terminal:dq_analyze::full_registry_check_wire::Terminal,cli:Option<dq_analyze::native_check_cli_wire::Terminal>,timing_only:bool,diagnostics:Option<Verified>,report:Verified,usage:Option<Verified>}
 impl DeliveredFullCheck{
  pub(crate) fn publish(self,output:&mut impl Write)->io::Result<bool>{
-  let(header,length)=encode_header(&self.terminal)?;
-  output.write_all(&header[..length])?;if let Some(stage)=self.diagnostics{stage.publish(output)?;}self.report.publish(output)?;Ok(self.terminal.clean)
+  let(header,length)=if let Some(cli)=&self.cli{encode_header(cli)?}else{encode_header(&self.terminal)?};
+  output.write_all(&header[..length])?;if let Some(stage)=self.diagnostics{stage.publish(output)?;}self.report.publish(output)?;if let Some(stage)=self.usage{stage.publish(output)?;}Ok(self.terminal.clean||self.timing_only)
  }
 }
-pub(crate) fn receive_full_check(stream:&mut impl Read,cache:&Path,expected:crate::runner_host::FullRegistryCheckOptions,selection:dq_analyze::full_registry_check_selection_wire::SelectionBinding)->Result<DeliveredFullCheck,Box<dyn Error>>{
- let(mut accepted,mut diagnostics,mut report)=(false,Collector::default(),Collector::default());
+pub(crate) fn receive_full_check(stream:&mut impl Read,cache:&Path,expected:crate::runner_host::FullRegistryCheckOptions,selection:dq_analyze::full_registry_check_selection_wire::SelectionBinding)->Result<DeliveredFullCheck,Box<dyn Error>>{ receive_full_check_selftests(stream,cache,expected,selection,false) }
+pub(crate) fn receive_full_check_selftests(stream:&mut impl Read,cache:&Path,expected:crate::runner_host::FullRegistryCheckOptions,selection:dq_analyze::full_registry_check_selection_wire::SelectionBinding,selftests:bool)->Result<DeliveredFullCheck,Box<dyn Error>>{receive_full_check_cli(stream,cache,expected,selection,selftests,None)}
+pub(crate) fn receive_full_check_cli(stream:&mut impl Read,cache:&Path,expected:crate::runner_host::FullRegistryCheckOptions,selection:dq_analyze::full_registry_check_selection_wire::SelectionBinding,selftests:bool,cli:Option<&dq_analyze::native_check_cli_wire::Request>)->Result<DeliveredFullCheck,Box<dyn Error>>{
+ if let Some(cli)=cli{cli.qualify(expected,selftests)?;}
+ let(mut accepted,mut diagnostics,mut report,mut usage)=(false,Collector::default(),Collector::default(),Collector::default());let mut total=0u64;
  loop{control::checkpoint()?;match protocol::receive_bounded::<ReceiveReply>(stream,protocol::MAX_FRAME)?{
   ReceiveReply::Accepted if !accepted=>accepted=true,
-  ReceiveReply::Rejected(error) if diagnostics.next==0&&report.next==0=>return Err(RequestFailure{kind:error.kind,message:error.message}.into()),
-  ReceiveReply::SelectedReportFragment(fragment) if accepted=>match fragment.channel{Channel::Diagnostics=>diagnostics.push(cache,&fragment)?,Channel::Report=>report.push(cache,&fragment)?,_=>return Err(invalid("report-only check cannot receive Checker/compile channels").into())},
-  ReceiveReply::FullRegistryCheckFinished(terminal) if accepted=>{
-   terminal.require(expected,selection)?;require_end(stream)?;
-   let diagnostics=diagnostics.finish(terminal.diagnostics)?;
-   let report=report.finish(Some(terminal.report))?.ok_or_else(||invalid("full check terminal has no actual report body"))?;
-   return Ok(DeliveredFullCheck{terminal,diagnostics,report})
+  ReceiveReply::Rejected(error) if diagnostics.next==0&&report.next==0&&usage.next==0=>return Err(RequestFailure{kind:error.kind,message:error.message}.into()),
+  ReceiveReply::SelectedReportFragment(fragment) if accepted=>{total=total.checked_add(fragment.bytes.length as u64).filter(|n|*n<=MAX_STREAM).ok_or_else(||invalid("CHECK received streams exceed the existing aggregate report bound"))?;match fragment.channel{Channel::Diagnostics if report.next==0&&usage.next==0=>diagnostics.push(cache,&fragment)?,Channel::Report if usage.next==0=>report.push(cache,&fragment)?,Channel::Usage if cli.is_some_and(|cli|cli.allow_usage)&&report.next!=0=>usage.push(cache,&fragment)?,_=>return Err(invalid("report-only CHECK received an unexpected or out-of-order channel").into())}},
+  ReceiveReply::FullRegistryCheckFinished(terminal) if accepted&&cli.is_none()=>{
+   terminal.require_selftests(expected,selection,selftests)?;require_end(stream)?;
+   let diagnostics=diagnostics.finish(terminal.diagnostics)?;let report=report.finish(Some(terminal.report))?.ok_or_else(||invalid("full CHECK terminal has no actual report body"))?;
+   return Ok(DeliveredFullCheck{terminal,cli:None,timing_only:false,diagnostics,report,usage:None})
   },
-  _=>return Err(invalid("unexpected full native check report-only frame").into()),
+  ReceiveReply::FullRegistryCheckCliFinished(outer) if accepted&&cli.is_some()=>{
+   let requested=cli.ok_or_else(||invalid("CHECK CLI terminal has no request"))?;outer.require(expected,selection,selftests,requested)?;require_end(stream)?;
+   let diagnostics=diagnostics.finish(outer.terminal.diagnostics)?;let report=report.finish(Some(outer.terminal.report))?.ok_or_else(||invalid("CHECK CLI terminal has no actual report body"))?;
+   let usage=match outer.usage{Some(seal)if seal.length==0=>{if usage.next!=0||seal.hash.0!=xxhash_rust::xxh3::xxh3_128(b""){return Err(invalid("empty CHECK usage terminal differs from its actual bytes").into())}usage.finish(None)?},seal=>usage.finish(seal)?};
+   return Ok(DeliveredFullCheck{terminal:outer.terminal.clone(),cli:Some(outer),timing_only:requested.timing_only,diagnostics,report,usage})
+  },
+  _=>return Err(invalid("unexpected full native CHECK report-only frame").into()),
  }}
 }
 
 #[path="checker_text_wire.rs"]mod checker_text_wire;
 pub(crate) use checker_text_wire::{send_checker_text,receive_checker_text};
+
+/// Callback-only stream: no CHECK frame or policy/model claims.
+pub(crate) fn send_standalone_selftests(stream:&mut impl Write,completed:crate::runner_host::StandaloneSelftestReport,work:&dyn SourceArenaWork)->Result<(),SendFailure>{
+ let convert=|e:Box<dyn Error>|match e.downcast::<io::Error>(){Ok(e)=>*e,Err(e)=>io::Error::other(e.to_string())};
+ completed.require_current().map_err(convert).map_err(SendFailure::BeforePublication)?;
+ let crate::runner_host::StandaloneSelftestReport{inputs,report,plan,queries,_credit}=completed;
+ let actual=plan.native_selftest_result().map_err(SendFailure::BeforePublication)?.ok_or_else(||SendFailure::BeforePublication(invalid("standalone callbacks missing actual result")))?;
+ let terminal=dq_analyze::native_selftest_wire::Terminal{schema:dq_analyze::native_selftest_wire::Schema::V1,complete:true,selection:plan.binding(),selected:plan.names().len()as u64,completed:actual.completed()as u64,failed:actual.failed()as u64,report:seal_of(&report)};
+ terminal.require(plan.binding()).map_err(SendFailure::BeforePublication)?;encode_header(&terminal).map_err(SendFailure::BeforePublication)?;
+ let scratch=work.reserve(SEND_SCRATCH).map_err(SendFailure::BeforePublication)?;
+ let result=(||{control::checkpoint()?;report.publish(&mut FragmentWriter{stream:&mut *stream,channel:Channel::Report,sequence:0,offset:0})?;crate::request_runner::runner_freshness::require_native_callback_inputs_current(&inputs).map_err(convert)?;control::checkpoint()?;protocol::send(stream,&SendReply::NativeSelftestsFinished(terminal))?;control::checkpoint()})();
+ drop(inputs);drop(plan);drop(queries);drop(scratch);drop(_credit);result.map_err(SendFailure::AfterPublication)
+}
+pub(crate) struct DeliveredStandaloneSelftests{terminal:dq_analyze::native_selftest_wire::Terminal,report:Verified}
+impl DeliveredStandaloneSelftests{pub(crate)fn publish(self,output:&mut impl Write)->io::Result<bool>{let(header,n)=encode_header(&self.terminal)?;output.write_all(&header[..n])?;self.report.publish(output)?;Ok(self.terminal.failed==0)}}
+pub(crate) fn receive_standalone_selftests(stream:&mut impl Read,cache:&Path,selection:dq_analyze::full_registry_check_selection_wire::SelectionBinding)->Result<DeliveredStandaloneSelftests,Box<dyn Error>>{
+ let(mut accepted,mut report,mut total)=(false,Collector::default(),0u64);
+ loop{control::checkpoint()?;match protocol::receive_bounded::<ReceiveReply>(stream,protocol::MAX_FRAME)?{
+  ReceiveReply::Accepted if !accepted=>accepted=true,
+  ReceiveReply::Rejected(error)if report.next==0=>return Err(RequestFailure{kind:error.kind,message:error.message}.into()),
+  ReceiveReply::SelectedReportFragment(fragment)if accepted&&matches!(fragment.channel,Channel::Report)=>{total=total.checked_add(fragment.bytes.length as u64).filter(|n|*n<=MAX_STREAM).ok_or_else(||invalid("standalone callback stream exceeds report bound"))?;report.push(cache,&fragment)?;},
+  ReceiveReply::NativeSelftestsFinished(terminal)if accepted=>{terminal.require(selection)?;require_end(stream)?;let report=report.finish(Some(terminal.report))?.ok_or_else(||invalid("standalone terminal has no transcript"))?;return Ok(DeliveredStandaloneSelftests{terminal,report})},
+  _=>return Err(invalid("unexpected standalone callback frame").into()),
+ }}
+}
+
+#[path="native_utility_streams.rs"]pub(super) mod utility_streams;
+#[path="native_sem_utility_wire.rs"]mod sem_utility;
+pub(crate) use sem_utility::{send_native_sem_utility,receive_native_sem_utility};
+
+#[path="native_codemod_fixture_wire.rs"]mod codemod_fixture_utility;
+pub(crate)use codemod_fixture_utility::{send_native_codemod_fixture,receive_native_codemod_fixture};

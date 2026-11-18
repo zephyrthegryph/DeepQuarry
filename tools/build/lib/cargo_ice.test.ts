@@ -5,16 +5,24 @@ import path from 'node:path';
 import { cargoIncrementalEnv, cargoTargetDir, cargoWithIceRetry, clearIncremental, compilerPanicSignature, incrementalDirs } from './cargo_ice';
 
 describe('cargo ICE handling', () => {
-  test('gate builds are non-incremental unless a dev build opts in', () => {
-    expect(cargoIncrementalEnv({})).toEqual({ CARGO_INCREMENTAL: '0' });
-    expect(cargoIncrementalEnv({ DQ_CARGO_INCREMENTAL: '1' })).toEqual({});
+  test('lane, gate and CI builds force incremental despite profile and caller opt-outs', () => {
+    for (const kind of ['lane', 'gate'] as const) {
+      for (const env of [{}, { CI: 'true' }, { DQ_CARGO_INCREMENTAL: '0' }, { DQ_CARGO_INCREMENTAL: '1' }, { CARGO_INCREMENTAL: '0', RUSTC_WRAPPER: 'sccache' }]) {
+        expect(cargoIncrementalEnv(env, kind)).toEqual({ CARGO_INCREMENTAL: '1', RUSTC_WRAPPER: '' });
+      }
+    }
   });
 
-  test('lane builds leave incremental to the profile unless CI or the opt-out says otherwise', () => {
-    expect(cargoIncrementalEnv({}, 'lane')).toEqual({});
-    expect(cargoIncrementalEnv({ CI: 'true' }, 'lane')).toEqual({ CARGO_INCREMENTAL: '0' });
-    expect(cargoIncrementalEnv({ DQ_CARGO_INCREMENTAL: '0' }, 'lane')).toEqual({ CARGO_INCREMENTAL: '0' });
-    expect(cargoIncrementalEnv({ DQ_CARGO_INCREMENTAL: '1', CI: 'true' }, 'lane')).toEqual({});
+  test('actual Cargo execution overrides opt-out and retains workspace instrumentation', async () => {
+    const runs: NodeJS.ProcessEnv[] = [];
+    await cargoWithIceRetry(['build'], { env: { CI: 'true', CARGO_INCREMENTAL: '0', RUSTC_WRAPPER: 'sccache', RUSTC_WORKSPACE_WRAPPER: 'workspace-instrumentation', CARGO_BUILD_RUSTC_WRAPPER: 'configured-wrapper' } }, {
+      kind: 'gate', warn: () => {}, exec: async (_args, env) => { runs.push(env); return { code: 0 }; },
+    });
+    expect(runs).toHaveLength(1);
+    expect(runs[0].CARGO_INCREMENTAL).toBe('1');
+    expect(runs[0].RUSTC_WRAPPER).toBe('');
+    expect(runs[0].RUSTC_WORKSPACE_WRAPPER).toBe('workspace-instrumentation');
+    expect(runs[0].CARGO_BUILD_RUSTC_WRAPPER).toBe('configured-wrapper');
   });
 
   test('a rustc panic clears the incremental directories and retries once without the rustc wrapper', async () => {
@@ -31,7 +39,7 @@ describe('cargo ICE handling', () => {
         },
       });
       expect(runs).toHaveLength(2);
-      expect(runs[1].env.RUSTC_WRAPPER).toBe('');
+      for (const run of runs) { expect(run.env.CARGO_INCREMENTAL).toBe('1'); expect(run.env.RUSTC_WRAPPER).toBe(''); }
       expect(incrementalDirs(target)).toHaveLength(0);
       expect(warnings[0]).toContain('removed 1 incremental dir');
     } finally {

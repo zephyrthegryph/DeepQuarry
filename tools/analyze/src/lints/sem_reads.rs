@@ -41,8 +41,8 @@ pub fn register(reg: &mut Registry) {
     reg.add(SemReads);
 }
 
-struct Legacy<'cx,'tree,'out>{cx:&'cx Cx<'tree>,sem:Option<&'cx crate::sem::Sem>,out:&'out mut Sink,seen:std::collections::HashSet<(String,String,u32,String)>}
-impl crate::sem_reads_policy::Reporter<crate::key_policy_control::Compatibility> for Legacy<'_,'_,'_>{
+struct Legacy<'cx,'tree,'out,'patterns>{cx:&'cx Cx<'tree>,sem:Option<&'cx crate::sem::Sem>,out:&'out mut Sink<'patterns>,seen:std::collections::HashSet<(String,String,u32,String)>}
+impl crate::sem_reads_policy::Reporter<crate::key_policy_control::Compatibility> for Legacy<'_,'_,'_,'_>{
  fn reader(&mut self,rel:&str,line:u32,_:&mut crate::key_policy_control::Compatibility)->Result<String,std::convert::Infallible>{Ok(self.sem.map(|sem|sem.reader_ident(rel,line)).unwrap_or_else(||"?".to_owned()))}
  fn put(&mut self,rule:&'static str,rel:&str,line:u32,key:String,ident:String,message:String,_:&mut crate::key_policy_control::Compatibility)->Result<(),std::convert::Infallible>{if rel.is_empty()||!self.seen.insert((rule.to_owned(),rel.to_owned(),line,key)){return Ok(())}if self.cx.tree.get(rel).is_some_and(|file|self.out.allowed(file,line as usize,"reads")){return Ok(())}self.out.site_decl(rule,rel,line as usize,message,ident);Ok(())}
 }

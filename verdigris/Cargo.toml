@@ -50,6 +50,8 @@ eyre = "0.6.12"
 tracing = "0.1.41"
 
 [profile.release]
+# Direct Cargo invocations follow the same always-incremental policy.
+incremental = true
 debug = "full"
 lto = "thin"
 split-debuginfo = "packed"
@@ -84,4 +86,4 @@ codegen-units = 256
 [profile.lane.package."*"]
 opt-level = 3
 codegen-units = 16
-incremental = false
+incremental = true

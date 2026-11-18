@@ -64,7 +64,7 @@ pub fn prepare_generation_question_declarations<P:SourceProvider>(
 
 /// Actual directive planning before declaration selection; no syntax/model/body is parsed.
 pub fn prepare_generation_declaration_plan<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,omissions:dm_preprocess::regions::GenerationOmissions,host:&Arc<dyn SettingExpressionQueries>,read:&dyn Fn(&Path)->std::io::Result<Option<Arc<dm_preprocess::regions::prepared_source::PreparedSource>>>)->Result<dm_preprocess::regions::GenerationDirectivePlan,GenerationPreparationFailure>{
- let demand=super::declaration_demand::Checked{host,type_loan:None};let result=(||{demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;let plan=dm_preprocess::regions::GenerationDirectivePlan::prepare(project,provider,defines,omissions,read).map_err(|actual|GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(actual)))?;if !plan.diagnostics().is_empty(){return Err(GenerationPreparationFailure::Preprocess(plan.diagnostics().to_vec()))}Ok(plan)})();if matches!(&result,Err(GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(_)))){return result}demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;result
+ let demand=super::declaration_demand::Checked{parse_only_reporting:false,host,body_host:None,type_loan:None};let result=(||{demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;let plan=dm_preprocess::regions::GenerationDirectivePlan::prepare(project,provider,defines,omissions,read).map_err(|actual|GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(actual)))?;if !plan.diagnostics().is_empty(){return Err(GenerationPreparationFailure::Preprocess(plan.diagnostics().to_vec()))}Ok(plan)})();if matches!(&result,Err(GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(_)))){return result}demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;result
 }
 
 fn prepare_generation_declarations_inner<P:SourceProvider>(
@@ -85,7 +85,7 @@ pub fn prepare_generation_declarations_from_plan(
     host:&Arc<dyn SettingExpressionQueries>,
     questions:bool,
 )->Result<GenerationDeclarationFrame,GenerationPreparationFailure>{
-    let demand=super::declaration_demand::Checked{host,type_loan:None};
+    let demand=super::declaration_demand::Checked{parse_only_reporting:false,host,body_host:None,type_loan:None};
     let result=(||{
         demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;
         if !plan.diagnostics().is_empty(){return Err(GenerationPreparationFailure::Preprocess(plan.diagnostics().to_vec()))}
@@ -138,6 +138,11 @@ impl std::fmt::Debug for GenerationQuestionGeometry {
     fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {f.debug_struct("GenerationQuestionGeometry").field("files",&self.files.len()).finish_non_exhaustive()}
 }
 impl GenerationQuestionGeometry {
+    pub(super) fn original_note_point(&self,offset:usize)->Result<GenerationSourcePoint<'_>,&'static str>{
+        let plan=self.plan.source_geometry();
+        let point=super::source_export_mapping::original_note_point_in(&self.expanded.origins,offset,|region|{let include=plan.regions.get(region).ok_or("note region unavailable")?.occurrence;let lease=plan.source_acquisitions.get(&include).ok_or("note original acquisition unavailable")?;Ok((include,lease))},|include|Ok(&plan.occurrences.get(include).ok_or("note include coordinates unavailable")?.path))?;Ok(GenerationSourcePoint{path:point.path.as_path(),line:point.line,byte_column:point.byte_column,include:point.include,owner:self})
+    }
+
     pub(super) fn output(&self,offset:usize)->Option<SourceLocation>{
         Mapping{projection:Default::default(),plan:self.plan.source_geometry(),expanded:&self.expanded,files:&self.files,by_path:&self.by_path,hints:Default::default()}.output(offset)
     }
@@ -171,7 +176,7 @@ impl GenerationDeclarationFrame {
         control: &Arc<dyn SettingExpressionQueries>,
         declare_type_probe: bool,
     ) -> Result<GenerationNativeQuestions, GenerationPreparationFailure> {
-        let demand=super::declaration_demand::Checked{host:control,type_loan:None};
+        let demand=super::declaration_demand::Checked{parse_only_reporting:false,host:control,body_host:None,type_loan:None};
         let result=(||{
             demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;
             let Self{plan,parsed,question_expansion,question_host}=self;
@@ -233,7 +238,7 @@ impl GenerationDeclarationFrame {
                 // type-only overlay is nested in that state's operation gate.
                 host.begin_revision();
             }
-            let inputs=bodies.iter().zip(codes).map(|(body,code)|super::body_queries::issue_generation_body(&geometry,&syntax,body,code)).collect();
+            let inputs=bodies.iter().zip(codes).map(|(body,code)|{let code=code.ok_or_else(||GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual generation BODY Code is unissued"))))?;Ok(super::body_queries::issue_generation_body(&geometry,&syntax,body,code))}).collect::<Result<Vec<_>,GenerationPreparationFailure>>()?;
             Ok(GenerationNativeQuestions{geometry,snapshot,syntax,bodies,expanded_spans:spans,inputs,bodies_in_span_order,metadata_queries:question_host,host,allocation_ledger,retained_metadata})
         })();
         if matches!(&result,Err(GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(_)))){return result}
@@ -305,7 +310,7 @@ impl GenerationNativeQuestions {
         if !std::ptr::eq(Arc::as_ptr(&host).cast::<()>(),Arc::as_ptr(&self.host).cast::<()>()){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"original declaration and body admission owners differ")))}
         super::initializer_source::original_admission_using(Some(&self.metadata_queries),|admission|{
             admission.checkpoint().map_err(BodySyntaxFailure::Operational)?;
-            if let Some(first)=self.snapshot.occurrences.source_order().first(){self.snapshot.occurrences.for_target_admitted(first.target,admission).map_err(BodySyntaxFailure::Operational)?;}
+            self.snapshot.occurrences.prepare_member_groups_admitted(admission).map_err(BodySyntaxFailure::Operational)?;
             Ok(())
         })
     }
@@ -339,10 +344,7 @@ impl GenerationNativeQuestions {
     pub fn body_source_text(&self,ordinal:usize)->Result<&str,&'static str>{let body=self.bodies.get(ordinal).ok_or("generation body ordinal absent")?;self.geometry.expanded.text.get(body.expanded_span.range()).ok_or("generation body source outside actual arena")}
     pub fn variable_source_point_original_at(&self,formal:MemberId,ordinal:OccurrenceId,profile:dm_ir::PackedU128,proof:&crate::checker_builtins::ValidatedCheckerProfile<'_>)->Result<GenerationSourcePoint<'_>,String>{self.variable_qualifiers_original_at(formal,ordinal,profile,proof)?;let span=self.expanded_spans.get(ordinal.0 as usize).ok_or("generation variable original span missing")?;let offset=usize::try_from(span.start).map_err(|_|"generation variable original start exceeds address space")?;let cursor=self.syntax.declaration_cursor_at_for_policy(offset).ok_or("generation variable original cursor unissued")?;self.original_note_point(cursor).map_err(str::to_owned)}
     pub fn source_point(&self,offset:usize)->Option<SourceLocation>{self.geometry.output(offset)}
-    pub fn original_note_point(&self,offset:usize)->Result<GenerationSourcePoint<'_>,&'static str>{
-        let plan=self.geometry.plan.source_geometry();
-        let point=super::source_export_mapping::original_note_point_in(&self.geometry.expanded.origins,offset,|region|{let include=plan.regions.get(region).ok_or("note region unavailable")?.occurrence;let lease=plan.source_acquisitions.get(&include).ok_or("note original acquisition unavailable")?;Ok((include,lease))},|include|Ok(&plan.occurrences.get(include).ok_or("note include coordinates unavailable")?.path))?;Ok(GenerationSourcePoint{path:point.path.as_path(),line:point.line,byte_column:point.byte_column,include:point.include,owner:self.geometry.as_ref()})
-    }
+    pub fn original_note_point(&self,offset:usize)->Result<GenerationSourcePoint<'_>,&'static str>{self.geometry.original_note_point(offset)}
     pub fn with_body_checked_using<R>(&self,ordinal:usize,obtain:impl FnOnce(&Arc<BodySyntaxInput>,&dyn BodySyntaxQueries)->Result<Arc<BodySyntax>,BodySyntaxFailure>,consume:impl for<'body>FnOnce(GenerationBodyLoan<'body>)->Result<R,BodySyntaxFailure>)->Result<R,BodySyntaxFailure>{
         let input=self.inputs.get(ordinal).ok_or_else(||BodySyntaxFailure::Syntax(internal("generation body ordinal is outside actual callable roster")))?;
         self.host.prepare_checked_input(input)?;

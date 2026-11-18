@@ -28,6 +28,15 @@ name = "byond_dmb"
 path = "src/lib.rs"
 
 [profile.release]
+# Persistent user policy also covers direct Cargo invocations.
+incremental = true
 lto = "thin"
 debug = "line-tables-only"
 codegen-units = 16
+
+# Repo-local pinned original engines; native hooks are opt-in, legacy defaults unchanged.
+[patch.crates-io]
+regex = { path = "../analyze/vendor/native-regex/regex-1.13.1" }
+regex-automata = { path = "../analyze/vendor/native-regex/regex-automata-0.4.18" }
+regex-syntax = { path = "../analyze/vendor/native-regex/regex-syntax-0.8.11" }
+fancy-regex = { path = "../analyze/vendor/native-regex/fancy-regex-0.14.0" }

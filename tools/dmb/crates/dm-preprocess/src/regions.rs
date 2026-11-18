@@ -338,6 +338,12 @@ impl DirectivePlan {
 /// silently drops an external relative path component.
 pub fn canonical_path(path: &Path) -> PathBuf {
     let mut out = PathBuf::new();
+    canonical_path_into(path, &mut out);
+    out
+}
+/// SAME lexical component fold, lent into an already admitted output buffer.
+fn canonical_path_into(path: &Path, out: &mut PathBuf) {
+    out.clear();
     for component in path.components() {
         match component {
             Component::CurDir => {}
@@ -351,8 +357,11 @@ pub fn canonical_path(path: &Path) -> PathBuf {
             other => out.push(other.as_os_str()),
         }
     }
-    out
 }
+
+#[path="regions/funded_path.rs"]
+mod funded_path;
+pub use funded_path::{FundedPath,canonical_path_using,copy_path_into_credit,copy_string_into_credit,joined_path_into_credit,joined_path_using,relative_slash_into_credit,relative_slash_only_into_credit,slash_path_into_credit};
 
 /// Compare lexical filesystem containment without changing provider keys or
 /// authored provenance. Only equivalent ordinary Windows drive spellings unify.
@@ -415,7 +424,7 @@ pub use original_stream_consumer::{OriginalDemandDelivery,OriginalFormalTokenStr
 pub use original_formal_source::{OriginalFormalMemberRecovery,OriginalFormalActualEnd};
 
 // The shared value judge consumes already-issued roots; it has no source producer.
-mod original_condition_value;
+pub(crate) mod original_condition_value;
 
 mod original_raw_frame;
 
@@ -482,3 +491,15 @@ pub use original_generation::{OriginalGenerationProduct,OriginalHeaderTokenGeome
 
 mod original_conditional_history;
 pub use original_conditional_history::OriginalConditionalRange;
+
+/// The original slash/dot display fold. Shared by old Analyze formatting and
+/// funded native utility paths; never a filesystem/source authority.
+pub fn normalize_slash_dots(path:&str)->String{
+ let mut parts=Vec::new();let mut out=String::new();normalize_slash_dots_into(path,&mut parts,&mut out);out
+}
+fn normalize_slash_dots_into<'a>(path:&'a str,parts:&mut Vec<&'a str>,out:&mut String){
+ out.clear();parts.clear();
+ if !path.contains("/."){out.push_str(path);return}
+ for seg in path.split('/') {match seg{"."=>{},".." if parts.last().is_some_and(|l|*l!="..")=>{parts.pop();},_=>parts.push(seg)}}
+ for (i,part) in parts.iter().enumerate(){if i!=0{out.push('/')}out.push_str(part)}
+}

@@ -8,12 +8,14 @@ use std::sync::{Arc, OnceLock};
 #[path = "setting_input.rs"]
 mod setting_input;
 #[path="original_default_roots.rs"]mod default_roots;
+pub(super) use default_roots::{Row as RetainedFormalRoot,retain_completed_formal_root};
 pub(crate) use default_roots::OriginalDefaultRoots;
 pub(crate) use setting_input::SettingFootprint;
 struct HeaderParameterSignatures{rows:Vec<dm_syntax::SharedParameterSignature>,_credit:dm_syntax::SettingRootLease}
 impl std::fmt::Debug for HeaderParameterSignatures{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("HeaderParameterSignatures").field("rows",&self.rows).finish_non_exhaustive()}}
-struct HeaderLiteralSourceHold(Option<dm_preprocess::regions::OriginalLiteralSourceView>);
-impl std::fmt::Debug for HeaderLiteralSourceHold{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str(if self.0.is_some(){"issued neutral primary literal view"}else{"unissued neutral primary literal view"})}}
+enum HeaderLiteralSourceHold{Absent,Literal(dm_preprocess::regions::OriginalLiteralSourceView),Observed(Arc<crate::frontend::committed_bodies::CommittedHeaderProducts>),Prefix(Arc<crate::frontend::committed_bodies::CommittedPrefixProducts>)}
+impl HeaderLiteralSourceHold{pub(super) fn view(&self)->Option<&dm_preprocess::regions::OriginalLiteralSourceView>{match self{Self::Absent=>None,Self::Literal(view)=>Some(view),Self::Observed(products)=>Some(products.literal_view()),Self::Prefix(products)=>Some(products.literal_view())}}}
+impl std::fmt::Debug for HeaderLiteralSourceHold{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str(if self.view().is_some(){"issued neutral primary literal view"}else{"unissued neutral primary literal view"})}}
 #[derive(Debug)]
 pub(crate) struct OriginalProcedureHeaders {
     source: SourceText,
@@ -31,6 +33,8 @@ pub(crate) struct OriginalProcedureHeaders {
     formal_notices:OnceLock<(super::original_formal_notices::FormalNotices,bool)>,
     reader_registrations:OnceLock<(Option<dm_preprocess::regions::OriginalReaderRegistrationTable>,usize,dm_preprocess::regions::OriginalNoticeRegistration)>,
     original_literal_source:OnceLock<HeaderLiteralSourceHold>,
+    // New fixed lexical DATA is separately funded by the coordinate admission.
+    case_layout_checkpoints:std::sync::Mutex<OriginalCaseLayoutCheckpoints>,
     // Last: actual token/header payload drops before its SAME resource credit.
     original_primary_resource:OnceLock<OriginalPrimaryResourceHold>,
 }
@@ -249,7 +253,8 @@ impl OriginalInitializerCoordinates {
                 std::mem::size_of::<Self>()
                     + std::mem::size_of::<OnceLock<OriginalInitializerFactsAdmission>>()
                     + std::mem::size_of::<OnceLock<OriginalPrimaryResourceHold>>()
-                    + std::mem::size_of::<OnceLock<()>>(),
+                    + std::mem::size_of::<OnceLock<()>>()
+                    + std::mem::size_of::<std::sync::Mutex<OriginalCaseLayoutCheckpoints>>(),
             )?,
         })
     }
@@ -361,9 +366,6 @@ fn spans(
                     .get(span.range())
                     .ok_or("original declaration header extent unavailable")?;
             }
-            if let (Some(coordinates), Some(admission)) = (coordinates.as_mut(), admission) {
-                coordinates.push(span, admission)?;
-            }
             span
         } else {
             Span::new(0, 0)
@@ -387,6 +389,12 @@ fn spans(
             reserve(out, 1)?;
             out.push(span);
         } else {
+            // Initializer consumers accept declaration Var/Unknown/Statement
+            // nodes, never callable headers. The separate headers roster above
+            // owns that exact callable span; do not allocate it a second time.
+            if let (Some(coordinates), Some(admission)) = (coordinates.as_mut(), admission) {
+                coordinates.push(span, admission)?;
+            }
             spans(item.children(), offset, source, tokens, procedure_context, out, coordinates, admission)?;
         }
     }
@@ -589,6 +597,7 @@ impl OriginalProcedureHeaders {
             initializer_facts: OnceLock::new(),
             demanded_defaults:OnceLock::new(),parameter_signatures:OnceLock::new(),lazy_parameter_signatures:OnceLock::new(),formal_notices:OnceLock::new(),reader_registrations:OnceLock::new(),
             original_literal_source:OnceLock::new(),
+            case_layout_checkpoints:std::sync::Mutex::new(OriginalCaseLayoutCheckpoints::new()),
             original_primary_resource:OnceLock::new(),
         }))
     }
@@ -781,6 +790,12 @@ impl OriginalProcedureHeaders {
     }
     fn initializer_rhs(&self,header:Span,variable:bool)->Result<HeaderView<'_>,String>{self.initializer_rhs_optional(header,variable)?.ok_or_else(||"original initializer assignment unavailable".into())}
     pub(crate) fn has_authored_initializer(&self,header:Span,variable:bool)->Result<bool,String>{Ok(self.initializer_rhs_optional(header,variable)?.is_some())}
+    /// ConstantFolder saves its current actual '=' token after consuming it.
+    /// Return that token itself; no RHS/column or guessed end coordinate.
+    pub(crate) fn initializer_assignment_token(&self,header:Span)->Result<Option<Span>,String>{
+     self.source.get(header.range()).ok_or("initializer header outside original source")?;let first=self.tokens.window().partition_point(|token|token.span.start<header.start);let last=self.tokens.window().partition_point(|token|token.span.start<header.end);let tokens=self.token_window(first,last)?;let view=HeaderView::original_window(&self.source,tokens,header)?;let Some(index)=view.assignment_index()else{return Ok(None)};let at=header.start.checked_add(index).ok_or("initializer assignment coordinate overflow")?;let token=tokens.iter().find(|token|token.span.start==at).ok_or("initializer actual assignment token absent")?;if self.source.get(token.span.range())!=Some("="){return Err("initializer assignment token differs".into())}Ok(Some(token.span))
+    }
+
     fn initializer_rhs_optional(&self, header: Span, variable: bool) -> Result<Option<HeaderView<'_>>, String> {
         self.source
             .get(header.range())
@@ -871,6 +886,8 @@ impl OriginalProcedureHeaders {
         if index>=*count{return Err("actual callable commit registration unissued".into())}
         rows.as_ref().ok_or("actual callable commit table absent")?.get(index).map_err(|error|error.to_string())
     }
+    // Parser frontier DATA does not create or authenticate actual EOF.
+    pub(crate) fn optional_parser_reader_frontier_registration(&self)->Option<dm_preprocess::regions::OriginalNoticeRegistration>{self.reader_registrations.get().map(|(_,_,end)|end.clone())}
     pub(crate) fn reader_end_registration(&self)->Result<dm_preprocess::regions::OriginalNoticeRegistration,String>{
         let(_,_,end)=self.reader_registrations.get().ok_or("actual reader final registration unissued")?;
         end.require_after_actual_end().map_err(|error|error.to_string())?;Ok(end.clone())
@@ -999,17 +1016,7 @@ impl OriginalProcedureHeaders {
       self.original_body_expression_with_native_facts(source,original_start,a).map(|value|value.map(|(parsed,_)|parsed))
     }
     pub(crate) fn original_body_expression_with_native_facts(&self,source:&str,original_start:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>)>>{
-      let facts=self.original_literal_facts()?;
-      // An actual Original profile still requires its actual Original facts.
-      // The separate native-default contract has no such profile permission.
-      if self.checker_diagnostic_settings&&facts.is_none(){return Ok(None)}
-      let end=original_start.checked_add(source.len()).ok_or(std::io::ErrorKind::InvalidInput)?;
-      if self.source.get(original_start..end)!=Some(source){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"current BODY expression differs from actual original source view"))}
-      let first=self.tokens.window().partition_point(|token|token.span.end<=original_start);let last=self.tokens.window().partition_point(|token|token.span.start<end);
-      let cut=||std::io::Error::new(std::io::ErrorKind::InvalidInput,"current BODY expression cuts actual primary token occurrence");
-      let tokens=self.tokens.window().range(first,last).ok_or_else(cut)?;
-      if tokens.iter().any(|token|token.span.start<original_start||token.span.end>end){return Err(cut())}
-      tokens.with_dense_using(a,|dense|Ok(Some(dm_syntax::parse_expression_token_view_with_native_facts(&self.source,dense,original_start,a,facts))))
+      parse_actual_primary_body_expression(&self.source,self.tokens.window(),self.original_literal_facts()?,self.checker_diagnostic_settings,source,original_start,a)
     }
     /// Publish header DATA after the genuine streaming observer has installed
     /// its actual default/source/dimension/input roots and clause partitions.
@@ -1071,8 +1078,14 @@ impl OriginalProcedureHeaders {
        // One conservative envelope precedes all metadata vectors and scratch.
        // Existing root aliases retain their own original shared root credit.
        let envelope=width.checked_mul(512).and_then(|n|n.checked_add(8192)).and_then(|n|n.checked_add(dm_syntax::SharedParameterSignature::retention_envelope())).ok_or(std::io::ErrorKind::OutOfMemory)?;
-       let lease=a.reserve(envelope)?;
        let tokens = match inspected { Some(tokens) => tokens, None => header_tokens()? };
+       let envelope=if self.checker_diagnostic_settings {
+        match roots.produced_parameter_count(self,header,a)? {
+         Some(parameters)=>envelope.min(dm_syntax::original_parameter_metadata_envelope(&self.source,tokens,parameters,a)?),
+         None=>envelope,
+        }
+       }else{envelope};
+       let lease=a.reserve(envelope).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
        for _ in (0..tokens.len()).step_by(64){original_checkpoint(a)?;}
        let mut loan=roots.loan(header,self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));
        let mut signature=tokens.with_dense_using(a,|dense|Ok(dm_syntax::parameter_signature_original_with_default_roots(&self.source,dense,header,0,&mut Some(&mut loan))))
@@ -1123,15 +1136,24 @@ impl OriginalProcedureHeaders {
         return Ok((Err(fail("native procedure token range is outside source")),false))
       }
       let all=self.tokens.window();
+      let logical_span=span;
+      let span=if self.checker_diagnostic_settings&&offset==0{
+       let index=self.headers.binary_search_by_key(&span.start,|header|header.start).map_err(|_|std::io::ErrorKind::InvalidInput)?;
+       dm_syntax::original_callable_syntax_extent_using(&self.source,span,self.headers[index],all,self.original_literal_facts()?,a)?.map_err(|reason|std::io::Error::new(std::io::ErrorKind::Unsupported,reason))?
+      }else{span};
+      let _syntax_tail=if span.end>logical_span.end{Some(a.reserve(span.end.checked_sub(logical_span.end).and_then(|n|n.checked_mul(512)).ok_or(std::io::ErrorKind::OutOfMemory)?).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?)}else{None};
+      let validate=|result:(Result<dm_syntax::ProcedureWithOrigins,dm_syntax::Diagnostic>,bool)|->std::io::Result<_>{
+       if span!=logical_span&&result.0.as_ref().is_ok_and(|issued|issued.item.span!=logical_span){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual syntax extent changed its logical BODY identity"))}Ok(result)
+      };
       let first=all.partition_point(|token|token.span.end<=span.start);
       let last=all.partition_point(|token|token.span.start<span.end);
       let Some(tokens)=all.range(first,last)else{return Ok((Err(fail("native procedure token range differs")),false))};
       if self.parameter_signatures.get().is_some()||self.lazy_parameter_signatures.get().is_some(){
         if offset!=0{return Ok((Err(fail("shared parameter metadata requires its canonical original source window")),false))}
-        let signature=self.parameter_signature_admitted(span,a)?;
+        let signature=self.parameter_signature_admitted(logical_span,a)?;
         let facts=self.original_literal_facts()?;
         let result=dm_syntax::parse_proc_with_native_consumption_from_window(&self.source,span,tokens,offset,None,true,Some(signature),facts);
-        original_checkpoint(a)?;return Ok(result)
+        original_checkpoint(a)?;return validate(result)
       }
       let result=if let Some(roots)=self.demanded_defaults.get(){
         if offset!=0{return Ok((Err(fail("streamed default root requires its canonical original source window")),false))}
@@ -1141,9 +1163,23 @@ impl OriginalProcedureHeaders {
       }else{
         dm_syntax::parse_proc_with_native_consumption_from_window(&self.source,span,tokens,offset,None,self.checker_diagnostic_settings,None,None)
       };
-      original_checkpoint(a)?;Ok(result)
+      original_checkpoint(a)?;validate(result)
     }
 
+    /// Same canonical primary parser, with its allocation-only native owner.
+    /// Unavailable shared-parameter cohorts keep the existing coarse path.
+    pub(crate) fn parse_body_owned_admitted(&self,body:Span,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<dm_syntax::AdmittedProcedureWithOrigins>>{
+      original_checkpoint(a)?;
+      if offset!=0||self.source.get(body.range()).is_none()||self.parameter_signatures.get().is_none()&&self.lazy_parameter_signatures.get().is_none(){return Ok(None)}
+      let all=self.tokens.window();let index=self.headers.binary_search_by_key(&body.start,|span|span.start).map_err(|_|std::io::ErrorKind::InvalidInput)?;
+      let facts=self.original_literal_facts()?;
+      let syntax_span=if self.checker_diagnostic_settings{dm_syntax::original_callable_syntax_extent_using(&self.source,body,self.headers[index],all,facts,a)?.map_err(|reason|std::io::Error::new(std::io::ErrorKind::Unsupported,reason))?}else{body};
+      // Preserve the existing conservative extent-tail resource contract.
+      let _syntax_tail=if syntax_span.end>body.end{Some(a.reserve(syntax_span.end.checked_sub(body.end).and_then(|n|n.checked_mul(512)).ok_or(std::io::ErrorKind::OutOfMemory)?).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?)}else{None};
+      let signature=self.parameter_signature_admitted(body,a)?;
+      let parsed=dm_syntax::parse_proc_with_native_consumption_from_window_admitted(&self.source,syntax_span,all,offset,None,true,Some(signature),facts,a)?;
+      original_checkpoint(a)?;Ok(Some(parsed))
+    }
     pub(crate) fn parse_body_admitted(
         &self, span: Span, offset: usize, a: &dm_syntax::SettingAdmission<'_>,
     ) -> std::io::Result<Result<dm_syntax::ProcedureWithOrigins, dm_syntax::Diagnostic>> {
@@ -1170,6 +1206,25 @@ impl OriginalProcedureHeaders {
         let last = tokens.partition_point(|token| token.span.start < span.end);
         let tokens = tokens.range(first, last).ok_or_else(|| fail("original procedure token range differs".into()))?;
         dm_syntax::parse_original_proc_with_shared_parameters_from_window(&self.source, span, tokens, offset, signature, facts)
+    }
+
+    /// Diagnostic only. Lease columns are actual stored grants. Existing visit
+    /// columns include shared child/counter references and are NOT additive.
+    #[cfg(debug_assertions)]
+    pub(crate) fn trace_owned_parameter_categories(&self,stage:&'static str,a:&dm_syntax::SettingAdmission<'_>){
+      use std::io::Write as _;
+      let(mut rows,mut table_grant,mut signature_grants,mut empty,mut refused,mut owner_reference_upper,mut child_reference_upper)=(0usize,0usize,0usize,0usize,0usize,0usize,0usize);
+      if let Some(cohort)=self.parameter_signatures.get(){
+       rows=cohort.rows.len();table_grant=cohort._credit.bytes();
+       for signature in &cohort.rows{
+        signature_grants=signature_grants.saturating_add(signature.retained_lease_bytes_for_trace().unwrap_or(0));
+        match signature.entries(){Ok(entries)if entries.is_empty()=>empty+=1,Err(_)=>refused+=1,_=>()}
+        signature.visit_owner_storage(|_,_,capacity|owner_reference_upper=owner_reference_upper.saturating_add(capacity));
+        signature.visit_storage(|_,bytes|child_reference_upper=child_reference_upper.saturating_add(bytes));
+       }
+      }
+      let coordinates=self.initializer_coordinates.as_ref().map_or((0,0),|row|(row.lease.bytes(),row.buffer_credit.as_ref().map_or(0,dm_syntax::SettingRootLease::bytes)));
+      let _=writeln!(std::io::stderr().lock(),"ORIGINAL_HEADER_OWNER_CATEGORIES stage={stage} counter={} header_rows={} header_vec_capacity_bytes={} initializer_coordinate_grant={} initializer_coordinate_buffer_grant={} eager_parameter_rows={rows} parameter_table_grant={table_grant} parameter_payload_lease_sum={signature_grants} empty_parameter_rows={empty} refused_parameter_rows={refused} parameter_owner_visit_reference_upper={owner_reference_upper} parameter_child_visit_reference_upper={child_reference_upper} lazy_parameter_mode={}",a.retained_bytes_for_trace(),self.headers.len(),self.headers.capacity()*std::mem::size_of::<Span>(),coordinates.0,coordinates.1,self.lazy_parameter_signatures.get().is_some());
     }
     pub(crate) fn parameter_signature(&self,body:Span)->Result<&dm_syntax::SharedParameterSignature,&'static str>{
       let index=self.headers.binary_search_by_key(&body.start,|header|header.start).map_err(|_|"actual original header is absent")?;
@@ -1227,12 +1282,14 @@ impl OriginalProcedureHeaders {
         self.visit_storage_classified(None, |p,n,c,_|visit(p,n,c), skip);
     }
     pub(crate) fn visit_storage_classified(&self, a:Option<&dm_syntax::SettingAdmission<'_>>, mut classified:impl FnMut(usize,usize,usize,bool), skip:&mut dyn FnMut(&dyn std::any::Any)->bool) {
-        if let Some(HeaderLiteralSourceHold(Some(facts)))=self.original_literal_source.get(){
+        if let Some(facts)=self.original_literal_source.get().and_then(HeaderLiteralSourceHold::view){
             match a {
                 Some(a)=>facts.visit_storage_classified(a,&mut classified),
                 None=>facts.visit_storage(|p,n,c|classified(p,n,c,false)),
             }
         }
+        if let Some(products)=self.committed_products(){products.visit_storage(a,&mut classified);}
+        if let Some(products)=self.committed_prefix_products(){products.visit_storage(a,&mut classified);}
         let mut visit=|p,n,c|classified(p,n,c,false);
         if let Some(roots)=self.demanded_defaults.get(){roots.visit_storage(&mut visit);}
         if let Some((notices,_))=self.formal_notices.get(){notices.visit_storage(&mut visit);}
@@ -1874,6 +1931,19 @@ mod initializer_coordinate_tests {
         );
         assert!(spans.is_empty());
     }
+    #[test]
+    fn actual_initializer_inventory_excludes_only_callable_headers_and_preserves_other_ordinals() {
+        let source="/proc/before()\n    var/local=9\n    return local\n/datum/probe\n    var/value=1+2\n    value=3+4\n    proc/ordinary()\n        return 5\n";
+        let parsed=dm_syntax::parse_declaration_skeleton(source);assert!(parsed.diagnostics.is_empty());
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&used,4<<20,&||Ok(()));
+        let owner=OriginalProcedureHeaders::from_primary_admitted(source.into(),&parsed.items,0,parsed.tokens,&a).ok().unwrap();
+        let coordinates=owner.initializer_coordinates.as_ref().unwrap();assert_eq!(owner.headers.len(),2);
+        for header in &owner.headers{assert!(coordinates.spans.find_start(header.start).is_none(),"actual callable span belongs only to headers roster");assert!(owner.initializer_coordinate(*header,0,&a).is_err());assert!(owner.required_initializer_slot_coordinate(*header).is_err());}
+        assert_eq!(coordinates.spans.len(),3,"type plus actual Var and Statement declarations remain in source order");
+        assert_eq!(coordinates.buffer_credit.as_ref().unwrap().bytes(),coordinates.spans.len()*std::mem::size_of::<ShortInitializerCoordinate>(),"only physically retained rows are charged after exact finish");
+        for(index,span)in coordinates.spans.iter().enumerate(){assert_eq!(owner.initializer_coordinate(span,0,&a).ok(),Some((index,coordinates.spans.len())));assert_eq!(owner.required_initializer_slot_coordinate(span).unwrap(),(index,coordinates.spans.len()));assert!(!source[span.range()].contains("local"));}
+        drop(owner);assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+    }
     const TEXT:&str="/datum/probe\n    var\n        const/value=1+2\n/proc/p()\n    var/local=4\n    return local\n";
     fn parsed() -> dm_syntax::DeclarationSkeleton {
         dm_syntax::parse_declaration_skeleton(TEXT)
@@ -2415,23 +2485,146 @@ impl OriginalProcedureHeaders{
 
 /// Borrowed original primary tokens for ONE authenticated current body. This
 /// is diagnostic text/location DATA; it issues no parser or semantic receipt.
-pub struct OriginalBodyTokens<'source>{owner:&'source OriginalProcedureHeaders,body:Span,offset:usize}
+
+// Both completed Headers and the actual scoped commit borrow this SAME parser
+// operation; neither path reconstructs a source owner or re-lexes primary rows.
+fn parse_actual_primary_body_expression(actual_source:&str,tape:dm_syntax::TokenWindow<'_>,facts:Option<dm_syntax::OriginalLiteralFactsView<'_>>,original_profile:bool,source:&str,original_start:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>)>>{
+ if original_profile&&facts.is_none(){return Ok(None)}
+ let end=original_start.checked_add(source.len()).ok_or(std::io::ErrorKind::InvalidInput)?;
+ if actual_source.get(original_start..end)!=Some(source){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"current BODY expression differs from actual original source view"))}
+ let first=tape.partition_point(|token|token.span.end<=original_start);let last=tape.partition_point(|token|token.span.start<end);
+ let cut=||std::io::Error::new(std::io::ErrorKind::InvalidInput,"current BODY expression cuts actual primary token occurrence");
+ let tokens=tape.range(first,last).ok_or_else(cut)?;if tokens.iter().any(|token|token.span.start<original_start||token.span.end>end){return Err(cut())}
+ tokens.with_dense_using(a,|dense|Ok(Some(dm_syntax::parse_expression_token_view_with_native_facts(actual_source,dense,original_start,a,facts))))
+}
+#[derive(Clone,Copy)]
+enum OriginalBodyTokenOwner<'source>{
+ Completed(&'source OriginalProcedureHeaders),
+ Committed{source:&'source str,tokens:dm_syntax::TokenWindow<'source>,facts:dm_syntax::OriginalLiteralFactsView<'source>,actual_end:bool},
+}
+impl<'source> OriginalBodyTokenOwner<'source>{
+ fn source(&self)->&'source str{match *self{Self::Completed(owner)=>owner.source.as_str(),Self::Committed{source,..}=>source}}
+ fn tokens(&self)->dm_syntax::TokenWindow<'source>{match *self{Self::Completed(owner)=>owner.tokens.window(),Self::Committed{tokens,..}=>tokens}}
+ fn original_literal_facts(&self)->std::io::Result<Option<dm_syntax::OriginalLiteralFactsView<'source>>>{match *self{Self::Completed(owner)=>owner.original_literal_facts(),Self::Committed{facts,..}=>Ok(Some(facts))}}
+ fn original_profile(&self)->bool{match self{Self::Completed(owner)=>owner.checker_diagnostic_settings,Self::Committed{..}=>true}}
+ fn actual_terminal_extent(&self)->Result<usize,&'static str>{match self{Self::Completed(owner)=>Ok(owner.source.len()),Self::Committed{source,actual_end:true,..}=>Ok(source.len()),Self::Committed{actual_end:false,..}=>Err("committed BODY prefix has not consumed the actual source end")}}
+}
+#[derive(Clone,Copy)]
+pub struct OriginalBodyTokens<'source>{owner:OriginalBodyTokenOwner<'source>,body:Span,offset:usize,case_prefix:Option<&'source std::cell::Cell<Option<OriginalCaseLayoutPrefix>>>}
+// Per-parse stack state only. The SAME old layout walk authenticates this
+// prefix before publication; no owner, token buffer, parser or error is cached.
+#[derive(Clone,Copy,Debug)]
+struct OriginalCaseLayoutPrefix{ordinal:usize,current:Option<(usize,usize)>,spaces:Option<usize>,parentheses:usize,eol:Option<Span>,last:Span}
+// Bounded acceleration DATA on the existing immutable owner, never authority.
+const ORIGINAL_CASE_LAYOUT_CHECKPOINT_CAPACITY:usize=64;
+#[derive(Debug)]struct OriginalCaseLayoutCheckpoints{rows:[Option<OriginalCaseLayoutPrefix>;ORIGINAL_CASE_LAYOUT_CHECKPOINT_CAPACITY],next:usize}
+impl OriginalCaseLayoutCheckpoints{
+ const fn new()->Self{Self{rows:[None;ORIGINAL_CASE_LAYOUT_CHECKPOINT_CAPACITY],next:0}}
+ fn best(&self,before:usize)->Option<OriginalCaseLayoutPrefix>{self.rows.iter().flatten().filter(|row|row.ordinal<=before).max_by_key(|row|row.ordinal).copied()}
+ fn remember(&mut self,row:OriginalCaseLayoutPrefix){
+  // Duplicate hits retain their FIFO position; physical storage never grows.
+  if self.rows.iter().flatten().any(|old|old.ordinal==row.ordinal){return}
+  self.rows[self.next]=Some(row);self.next=(self.next+1)%ORIGINAL_CASE_LAYOUT_CHECKPOINT_CAPACITY;
+ }
+}
+pub(crate) struct OriginalCaseLayoutReplay<'source>{input:OriginalBodyTokens<'source>,prefix:std::cell::Cell<Option<OriginalCaseLayoutPrefix>>}
+impl<'source> OriginalBodyTokens<'source>{
+ pub(crate) fn case_layout_replay(&self)->OriginalCaseLayoutReplay<'source>{OriginalCaseLayoutReplay{input:OriginalBodyTokens{owner:self.owner,body:self.body,offset:self.offset,case_prefix:None},prefix:std::cell::Cell::new(None)}}
+}
+impl OriginalCaseLayoutReplay<'_>{
+ pub(crate) fn attach<'loan>(&'loan self,actual:OriginalBodyTokens<'loan>)->Result<OriginalBodyTokens<'loan>,String>{
+  let same=match(self.input.owner,actual.owner){
+   (OriginalBodyTokenOwner::Completed(left),OriginalBodyTokenOwner::Completed(right))=>std::ptr::eq(left,right),
+   (OriginalBodyTokenOwner::Committed{source:left,tokens:lt,actual_end:le,..},OriginalBodyTokenOwner::Committed{source:right,tokens:rt,actual_end:re,..})=>left.as_ptr()==right.as_ptr()&&left.len()==right.len()&&lt.same_interval(rt)&&le==re,
+   _=>false,
+  };
+  if !same||self.input.body!=actual.body||self.input.offset!=actual.offset{return Err("case layout replay belongs to another actual BODY token loan".into())}
+  // Return the freshly authenticated actual loan, including its exact literal facts.
+  // The bookmark certifies only the independent lexical-layout prefix.
+  Ok(OriginalBodyTokens{owner:actual.owner,body:actual.body,offset:actual.offset,case_prefix:Some(&self.prefix)})
+ }
+}
+// Resource observations only. Never print source text, parse a default/literal,
+// create a query, or treat an address/count as a current source grant.
+impl std::fmt::Debug for OriginalBodyTokens<'_>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{
+ let mut out=f.debug_struct("OriginalBodyTokenOwner");out.field("body",&self.body).field("offset",&self.offset);
+ match self.owner{
+  OriginalBodyTokenOwner::Completed(owner)=>{
+   let(mut token_buffers,mut token_capacity_reference_upper)=(0usize,0usize);owner.tokens.visit_storage(|_,_,capacity|{token_buffers+=1;token_capacity_reference_upper=token_capacity_reference_upper.saturating_add(capacity);});
+   let primary=owner.original_primary_resource.get().map(|root|(Arc::as_ptr(&root.0),root.0.bytes(),Arc::strong_count(&root.0)));
+   let parameters=owner.parameter_signatures.get().map(|rows|(rows.rows.len(),rows._credit.bytes()));
+   // Resource-only same-domain loan; no source upgrade/query/parser/admission.
+   let literal_resources=owner.original_primary_resource.get().and_then(|anchor|owner.original_literal_source.get().and_then(HeaderLiteralSourceHold::view).and_then(|view|view.resource_summary_for_trace(&anchor.0)));
+   out.field("primary_literal_resource_summary",&literal_resources);
+
+   let(mut initializer_rows,mut initializer_grants)=(0usize,0usize);
+   owner.initializer_roots.visit_storage(|_,_,_|{},|root|{initializer_rows+=1;initializer_grants=initializer_grants.saturating_add(root.retained_charge().unwrap_or(0));});
+   let(mut default_rows,mut default_grants)=(0usize,0usize);
+   if let Some(defaults)=owner.demanded_defaults.get(){defaults.visit_roots(|root|{default_rows+=1;default_grants=default_grants.saturating_add(root.retained_charge().unwrap_or(0));});}
+   out.field("initializer_rows_reference_grants",&(initializer_rows,initializer_grants)).field("default_rows_reference_grants",&(default_rows,default_grants)).field("default_directory",&owner.demanded_defaults.get()).field("settings_resource_summary",&owner.settings.get().map(|rows|rows.resource_summary()));
+   let coordinates=owner.initializer_coordinates.as_ref().map(|row|(row.lease.bytes(),row.buffer_credit.as_ref().map(|credit|credit.bytes())));
+   out.field("source_bytes",&owner.source.len()).field("headers",&owner.headers.len()).field("header_capacity_bytes",&(owner.headers.capacity()*std::mem::size_of::<Span>())).field("token_buffer_observations",&token_buffers).field("token_capacity_reference_upper",&token_capacity_reference_upper).field("primary_address_bytes_strong_count",&primary).field("eager_parameter_rows_table_grant",&parameters).field("lazy_parameter_mode",&owner.lazy_parameter_signatures.get().is_some()).field("initializer_coordinate_grants",&coordinates).field("original_profile",&owner.checker_diagnostic_settings);
+  },
+  OriginalBodyTokenOwner::Committed{source,..}=>{out.field("committed_source_bytes",&source.len());},
+ }out.finish()
+}}
+
 impl OriginalProcedureHeaders{
  pub(crate) fn body_tokens(&self,body:Span,offset:usize)->Result<OriginalBodyTokens<'_>,&'static str>{
   if self.headers.binary_search_by_key(&body.start,|span|span.start).is_err()||body.start>body.end||body.end>self.source.len()||body.end.checked_add(offset).is_none(){return Err("original body primary token bounds differ")}
-  Ok(OriginalBodyTokens{owner:self,body,offset})
+  Ok(OriginalBodyTokens{owner:OriginalBodyTokenOwner::Completed(self),body,offset,case_prefix:None})
  }
 }
 impl<'source> OriginalBodyTokens<'source>{
+ /// Actual scoped procedure-commit loan only; no completed Header/source grant.
+ pub(crate) fn from_committed_input<'input:'source,'facts:'source>(input:dm_syntax::OriginalCommittedBodyInput<'input,'facts>)->Result<Self,&'static str>{
+  let(commit,facts,actual_end)=input.into_parts();let body=commit.item().span;let source=commit.source();
+  if body.start>body.end||body.end>source.len(){return Err("committed BODY span escapes its actual primary source")}
+  Ok(Self{owner:OriginalBodyTokenOwner::Committed{source,tokens:commit.token_window(),facts,actual_end},body,offset:0,case_prefix:None})
+ }
+
+ /// SAME immutable fact binding as expression parsing; absent native/default
+ /// facts never masquerade as Original-prepared template backing.
+ pub(crate) fn expression_geometry(&self)->std::io::Result<dm_syntax::BodyExpressionGeometry>{
+  match self.owner.original_literal_facts()?{
+   Some(_)=>Ok(dm_syntax::BodyExpressionGeometry::OriginalUnpublished),
+   None if !self.owner.original_profile()=>Ok(dm_syntax::BodyExpressionGeometry::NativeUnpublished),
+   None=>Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original BODY expression literal facts are unissued")),
+  }
+ }
+ pub(crate) fn expression_with_native_facts(&self,source:&str,original_start:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>)>>{
+  {let relative_start=original_start.checked_sub(self.offset).ok_or(std::io::ErrorKind::InvalidInput)?;parse_actual_primary_body_expression(self.owner.source(),self.owner.tokens(),self.owner.original_literal_facts()?,self.owner.original_profile(),source,relative_start,a)}
+ }
+ /// Early setting grammar uses the same actual HeaderView and expression
+ /// producers. The immutable root must later seed the SAME installed slot;
+ /// this entry alone issues no final metadata/footprint/current grant.
+ pub(crate) fn committed_setting_with_native_observation(&self,item:&Item,a:&dm_syntax::SettingAdmission<'_>,roots:&crate::frontend::committed_bodies::CommittedSettingRoots)->Result<(dm_syntax::SettingStatement,Option<dm_syntax::NativeExpressionParserFacts>),dm_syntax::SettingSyntaxFailure>{
+  use dm_syntax::SettingSyntaxFailure as Failure;
+  a.checkpoint().map_err(|proxy|Failure::Operational(a.take_operational_error().unwrap_or(proxy)))?;
+  if !matches!(self.owner,OriginalBodyTokenOwner::Committed{..}){return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"early setting grammar requires its actual committed BODY input")))}
+  let source=self.owner.source();let header=item.header_span;
+  let syntax=|message:String|Failure::Syntax(dm_syntax::Diagnostic{span:header,kind:dm_syntax::DiagnosticKind::Unsupported,message});
+  if header.start<self.body.start||header.end>self.body.end||source.get(header.range())!=Some(item.header.as_str()){return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed setting differs from its actual BODY header")))}
+  let tape=self.owner.tokens();let first=tape.partition_point(|token|token.span.end<=header.start);let last=tape.partition_point(|token|token.span.start<header.end);
+  let tokens=tape.range(first,last).ok_or_else(||syntax("committed setting actual token window unavailable".into()))?;
+  let view=HeaderView::original_window(source,tokens,header).map_err(syntax)?;
+  let parts=super::setting_parts(view).map_err(syntax)?;
+  let value=Span::new(header.start.checked_add(parts.value_span.start).ok_or_else(||Failure::Operational(std::io::ErrorKind::InvalidInput.into()))?,header.start.checked_add(parts.value_span.end).ok_or_else(||Failure::Operational(std::io::ErrorKind::InvalidInput.into()))?);
+  let relation=match parts.operation{dm_ir::SettingOperation::Assign=>"=",dm_ir::SettingOperation::In=>"in"};
+  let first=tape.partition_point(|token|token.span.end<=value.start);let last=tape.partition_point(|token|token.span.start<value.end);
+  let tokens=tape.range(first,last).ok_or_else(||syntax("committed setting actual value token window unavailable".into()))?;
+  let facts=self.owner.original_literal_facts().map_err(Failure::Operational)?;
+  let(root,native)=roots.obtain(header,a,||tokens.with_dense_using(a,|dense|Ok(dm_syntax::prepare_setting_expression_with_original_literal_facts_and_native_observation(source,dense,value,a,facts))).map_err(Failure::Operational)?)?;
+  Ok((dm_syntax::SettingStatement{attribute:parts.name.text().to_owned(),relation:relation.to_owned(),value:root},native))
+ }
  pub fn current_span(&self)->Span{Span::new(self.body.start+self.offset,self.body.end+self.offset)}
  pub fn tokens(&self,current:Span)->Result<impl Iterator<Item=(TokenKind,Span,&'source str)>+'source,&'static str>{
   let body=self.current_span();if current.start>current.end||current.start<body.start||current.end>body.end{return Err("requested primary tokens escape original body")}
-  let relative=Span::new(current.start-self.offset,current.end-self.offset);let owner=self.owner;
-  let tokens=owner.tokens.window();
+  let relative=Span::new(current.start-self.offset,current.end-self.offset);let tokens=self.owner.tokens();
   let first=tokens.partition_point(|token|token.span.end<=relative.start);let last=tokens.partition_point(|token|token.span.start<relative.end);
   let tokens=tokens.range(first,last).ok_or("requested primary token boundary splits a token")?;
   if tokens.get(0).is_some_and(|token|token.span.start<relative.start)||tokens.last().is_some_and(|token|token.span.end>relative.end){return Err("requested primary token boundary splits a token")}
-  let source:&'source str=&owner.source;let offset=self.offset;
+  let source=self.owner.source();let offset=self.offset;
   Ok(tokens.iter().map(move|token|(token.kind,Span::new(token.span.start+offset,token.span.end+offset),token.text(source))))
  }
 }
@@ -2460,7 +2653,7 @@ impl OriginalBodyTokens<'_>{
    if continuation_mode==OriginalCaseContinuation::StatementTerminator{
     if at.start<after&&!(terminal&&at.end>=after){return Ok(None)}
     if !matches!(text,";"|"}"){return Err("do-while actual statement terminator unavailable".into())}
-    return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("do-while terminal cursor overflow")?,fallback:global_span(at)?}}
+    return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.actual_terminal_extent().map_err(E::from)?.checked_add(self.offset).ok_or("do-while terminal cursor overflow")?,fallback:global_span(at)?}}
      else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}));
    }
    match continuation.get(){
@@ -2472,15 +2665,35 @@ impl OriginalBodyTokens<'_>{
     22=>{match text{"("=>continuation_depth.set(continuation_depth.get().checked_add(1).ok_or("do condition depth overflow")?),")"=>{let n=continuation_depth.get().checked_sub(1).ok_or("do condition opening unavailable")?;continuation_depth.set(n);if n==0{continuation.set(23)}},_=>()}return Ok(None)},
     23=>{if !matches!(text,";"|"}"){return Err("inline do condition terminator unavailable".into())}},_=>()
    }
-   if continuation.get()==11||continuation.get()==23{return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}}else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}))}
+   if continuation.get()==11||continuation.get()==23{return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.actual_terminal_extent().map_err(E::from)?.checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}}else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}))}
    if else_mode.get()==2{match text{"("=>else_parens.set(else_parens.get().checked_add(1).ok_or("inline else-if depth overflow")?),")"=>{let n=else_parens.get().checked_sub(1).ok_or("inline else-if opening unavailable")?;else_parens.set(n);if n==0{else_mode.set(1)}},_=>()}return Ok(None)}
    if else_mode.get()==1{match text{"if"=>{else_if.set(true);else_mode.set(2);return Ok(None)},"{"=>{else_mode.set(0);active.set(true);depth=1;final_else.set(!else_if.get());return Ok(None)},_=>return Err("inline else simple statement continuation unavailable".into())}}
-   if waiting.get(){if text=="else"{waiting.set(false);else_if.set(false);else_mode.set(1);return Ok(None)}if text==";"{return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}}else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}))}
+   if waiting.get(){if text=="else"{waiting.set(false);else_if.set(false);else_mode.set(1);return Ok(None)}if text==";"{return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.actual_terminal_extent().map_err(E::from)?.checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}}else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}))}
    if !active.get() {if at.start<after{return Ok(None)}if text==";"{return Ok(None)}decided.set(true);if text!="{"{return Ok(None)}active.set(true);depth=1;return Ok(None)}
-   if text=="{"{depth=depth.checked_add(1).ok_or("case layout depth overflow")?;}else if text=="}"{depth=depth.checked_sub(1).ok_or("case layout close underflow")?;if depth==0{if continuation_mode==OriginalCaseContinuation::Try&&continuation.get()==0{continuation.set(10);return Ok(None)}if continuation_mode==OriginalCaseContinuation::Do&&continuation.get()==0{continuation.set(20);return Ok(None)}if continuation_mode==OriginalCaseContinuation::If&&!final_else.get(){waiting.set(true);return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}}else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}))}}Ok(None)
+   if text=="{"{depth=depth.checked_add(1).ok_or("case layout depth overflow")?;}else if text=="}"{depth=depth.checked_sub(1).ok_or("case layout close underflow")?;if depth==0{if continuation_mode==OriginalCaseContinuation::Try&&continuation.get()==0{continuation.set(10);return Ok(None)}if continuation_mode==OriginalCaseContinuation::Do&&continuation.get()==0{continuation.set(20);return Ok(None)}if continuation_mode==OriginalCaseContinuation::If&&!final_else.get(){waiting.set(true);return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.actual_terminal_extent().map_err(E::from)?.checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}}else{dm_syntax::OriginalCaseCursor::Token(global_span(at)?)}))}}Ok(None)
   };
-  let source=self.owner.source.as_str();let mut last=Span::new(0,0);
-  for token in self.owner.tokens.window().iter() {checkpoint()?;let text=token.text(source);last=token.span;
+  let source=self.owner.source();let mut last=Span::new(0,0);
+  // Before the authenticated body's first token, emit is inactive in every
+  // mode: all such points precede `after`. Reuse only the SAME validated
+  // lexical layout state; suffix processing and actual TU EOF stay unchanged.
+  let tape=self.owner.tokens();let body_first=tape.partition_point(|token|token.span.end<=self.body.start);
+  let replay=self.case_prefix.filter(|_|after>=self.body.start);
+  let mut first=0usize;
+  // Every operation polls before consulting validated lexical-prefix DATA.
+  if replay.is_some(){checkpoint()?;}
+  let local=replay.and_then(|slot|slot.get());
+  let shared=if local.is_none()&&replay.is_some(){match self.owner{OriginalBodyTokenOwner::Completed(owner)=>owner.case_layout_checkpoints.try_lock().ok().and_then(|slot|slot.best(body_first)),_=>None}}else{None};
+  if let Some(saved)=local.or(shared){
+   first=saved.ordinal;current=saved.current;spaces=saved.spaces;parentheses=saved.parentheses;eol=saved.eol;last=saved.last;
+  }
+  for (ordinal,token) in tape.iter().enumerate().skip(first) {
+   if ordinal==body_first{if let Some(slot)=replay{if slot.get().is_none(){
+    let saved=OriginalCaseLayoutPrefix{ordinal,current,spaces,parentheses,eol,last};slot.set(Some(saved));
+    // Prefix validation is complete BEFORE this token. Never cache continuation,
+    // suffix errors, EOF authority or literal facts with this lexical DATA.
+    if let OriginalBodyTokenOwner::Completed(owner)=self.owner{if let Ok(mut checkpoints)=owner.case_layout_checkpoints.try_lock(){checkpoints.remember(saved);}}
+   }}}
+   checkpoint()?;let text=token.text(source);last=token.span;
    let documentation=token.kind==TokenKind::Comment&&(text.starts_with("///")||text.starts_with("//!")||text.starts_with("/**")||text.starts_with("/*!"));if token.kind==TokenKind::Comment&&!documentation{continue}
    if token.kind==TokenKind::Newline{if parentheses==0{spaces=Some(0)}if eol.is_none(){eol=Some(token.span)}continue}
    if token.kind==TokenKind::Whitespace{if let Some(width)=spaces.as_mut(){*width=width.checked_add(text.len()).ok_or("case indentation width overflow")?}continue}
@@ -2493,7 +2706,7 @@ impl OriginalBodyTokens<'_>{
    if current.is_some_and(|(_,count)|count>0){let at=eol.unwrap_or(last);checkpoint()?;return emit("}",at,true)}
    return Err("do-while source end has no actual enclosing layout close".into())
   }
-  if active.get(){if let Some((_,count))=current{let at=eol.unwrap_or(last);for _ in 0..count{checkpoint()?;if let Some(point)=emit("}",at,true)?{return Ok(Some(point))}}}if waiting.get(){let at=eol.unwrap_or(last);return Ok(Some(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}))}return Err("case original block close unavailable".into())}Ok(None)
+  if active.get(){if let Some((_,count))=current{let at=eol.unwrap_or(last);for _ in 0..count{checkpoint()?;if let Some(point)=emit("}",at,true)?{return Ok(Some(point))}}}if waiting.get(){let at=eol.unwrap_or(last);return Ok(Some(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.actual_terminal_extent().map_err(E::from)?.checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:global_span(at)?}))}return Err("case original block close unavailable".into())}Ok(None)
  }
 
  // Consume only the real WHILE close and then ask the SAME owned
@@ -2572,6 +2785,24 @@ impl OriginalBodyTokens<'_>{
    // An unavailable grammar delimiter is Deferred, never fabricated EOF.
    Ok(actual.ok().flatten())
   }
+ /// Exact name/as/anything/in prefix DATA on the SAME primary body tokens.
+ /// Empty type components mean a reused name, never a declaration or source grant.
+ pub(crate) fn bare_for_each_anything_prefix_using(&self,prefix:Span,name:Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+  a.checkpoint()?;
+  if prefix.start!=name.start||name.start>=name.end||name.end>prefix.end{return Ok(false)}
+  let Ok(tokens)=self.tokens(prefix)else{return Ok(false)};let mut stage=0;
+  for(kind,at,text)in tokens{
+   a.checkpoint()?;
+   if matches!(kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment){continue}
+   if at.end.checked_sub(at.start)!=Some(text.len()){return Ok(false)}
+   match(stage,kind,text){
+    (0,TokenKind::Ident,_)if at==name=>stage=1,
+    (1,TokenKind::Ident,"as")|(2,TokenKind::Ident,"anything")|(3,TokenKind::Ident,"in")=>stage+=1,
+    _=>return Ok(false),
+   }
+  }
+  Ok(stage==4)
+ }
  /// Exact bare keyword plus the SAME owned statement-delimiter production.
  /// Token/end DATA only; the actual current BODY retains source authority.
  pub(crate) fn bare_loop_control_using(&self,head:Span,keyword:&'static str,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
@@ -2607,8 +2838,19 @@ impl OriginalBodyTokens<'_>{
   self.switch_case_cursor_profile_using(header,case,checkpoint,true)
  }
  fn switch_case_cursor_profile_using<E:From<&'static str>>(&self,header:Span,case:Span,checkpoint:&mut impl FnMut()->Result<(),E>,simple_inline:bool)->Result<dm_syntax::OriginalCaseCursor,E>{
-  checkpoint()?;let start=header.start.checked_sub(self.offset).ok_or("case header before current source")?;let end=header.end.checked_sub(self.offset).ok_or("case header end before current source")?;let case_end=case.end.checked_sub(self.offset).ok_or("case body before current source")?;if start<self.body.start||start>=end||end>case_end||case_end>self.body.end||case_end>self.owner.source.len(){return Err("case cursor escapes original body/header".into())}
-  let tokens=self.owner.tokens.window();let source=self.owner.source.as_str();let mut i=tokens.partition_point(|token|token.span.end<=start);let trivia=|token:SpanToken|matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment);while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.span.start!=start||token.text(source)!="if"){return Err("case cursor lacks original if token".into())}i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("case cursor lacks original opening token".into())}let mut depth=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>end{return Err("case condition escapes original header".into())}match token.text(source){"("=>depth=depth.checked_add(1).ok_or("case condition depth overflow")?,")"=>{depth-=1;if depth==0{break}},_=>()}i+=1;}if depth!=0{return Err("case condition close unavailable".into())}let condition_end=tokens.get(i).ok_or("case condition close unavailable")?.span.end;i+=1;let mut newline=false;while let Some(token)=tokens.get(i){checkpoint()?;if token.kind==TokenKind::Newline{newline=true;}if !trivia(token){break}i+=1;}
+  checkpoint()?;let start=header.start.checked_sub(self.offset).ok_or("case header before current source")?;let end=header.end.checked_sub(self.offset).ok_or("case header end before current source")?;let case_end=case.end.checked_sub(self.offset).ok_or("case body before current source")?;if start<self.body.start||start>=end||end>case_end||case_end>self.body.end||case_end>self.owner.source().len(){return Err("case cursor escapes original body/header".into())}
+  let tokens=self.owner.tokens();let source=self.owner.source();let mut i=tokens.partition_point(|token|token.span.end<=start);let trivia=|token:SpanToken|matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment);while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}
+  if simple_inline&&tokens.get(i).is_some_and(|token|token.kind==TokenKind::Ident&&token.span.start==start&&token.text(source)=="else"){
+   let keyword=tokens.get(i).ok_or("default ELSE token unavailable")?;
+   if keyword.span.end.checked_sub(keyword.span.start)!=Some(4)||end!=case_end{return Err("inline default header extent differs from actual leaf".into())}i+=1;
+   while let Some(token)=tokens.get(i){checkpoint()?;if !trivia(token){break}if token.kind==TokenKind::Newline{return Err("default inline child crossed physical line".into())}i+=1;}
+   let child=tokens.get(i).ok_or("default inline child unavailable")?;
+   if child.span.start>=end||child.span.end>end||matches!(child.text(source),";"|"{"|"}"){return Err("default inline child escapes header".into())}
+   let last=tokens.partition_point(|token|token.span.end<=end);let last=tokens.get(last.checked_sub(1).ok_or("default last token unavailable")?).ok_or("default last token unavailable")?;
+   if last.span.end!=end||matches!(last.text(source),";"|"{"|"}"){return Err("default header includes an unconsumed delimiter".into())}
+   return self.original_case_block_cursor_using(case_end,OriginalCaseContinuation::StatementTerminator,checkpoint)?.ok_or_else(||E::from("inline default actual statement terminator unavailable"))
+  }
+  if tokens.get(i).is_none_or(|token|token.span.start!=start||token.text(source)!="if"){return Err("case cursor lacks original if token".into())}i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("case cursor lacks original opening token".into())}let mut depth=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>end{return Err("case condition escapes original header".into())}match token.text(source){"("=>depth=depth.checked_add(1).ok_or("case condition depth overflow")?,")"=>{depth-=1;if depth==0{break}},_=>()}i+=1;}if depth!=0{return Err("case condition close unavailable".into())}let condition_end=tokens.get(i).ok_or("case condition close unavailable")?.span.end;i+=1;let mut newline=false;while let Some(token)=tokens.get(i){checkpoint()?;if token.kind==TokenKind::Newline{newline=true;}if !trivia(token){break}i+=1;}
   if let Some(cursor)=self.original_case_block_cursor_using(condition_end,OriginalCaseContinuation::Block,checkpoint)?{return Ok(cursor)}
   if !newline&&tokens.get(i).is_some_and(|token|matches!(token.text(source),"if"|"for"|"while"|"switch"|"spawn")){
    let follow=tokens.get(i).ok_or("inline compound keyword unavailable")?.text(source)=="if";i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("inline compound case opening condition unavailable".into())}let mut nested=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>case_end{return Err("inline compound condition escapes case".into())}match token.text(source){"("=>nested=nested.checked_add(1).ok_or("inline condition depth overflow")?,")"=>{nested-=1;if nested==0{break}},_=>()}i+=1;}if nested!=0{return Err("inline compound close unavailable".into())}let after=tokens.get(i).ok_or("inline compound close unavailable")?.span.end;if let Some(cursor)=self.original_case_block_cursor_using(after,if follow{OriginalCaseContinuation::If}else{OriginalCaseContinuation::Block},checkpoint)?{return Ok(cursor)}return Err("inline compound simple statement continuation unavailable".into())
@@ -2628,7 +2870,7 @@ impl OriginalBodyTokens<'_>{
   // excludes that delimiter; never cross a physical newline/other statement.
   if !newline{let after=tokens.partition_point(|token|token.span.end<=case_end);for token in tokens.iter().skip(after){checkpoint()?;if (token.span.start>=self.body.end&&case_end!=self.body.end)||token.kind==TokenKind::Newline{break}if matches!(token.kind,TokenKind::Whitespace|TokenKind::Comment){if token.text(source).contains(['\r','\n']){break}continue}if token.span.start>=case_end&&token.text(source)==";"{let at=token.span;let start=at.start.checked_add(self.offset).ok_or("case terminator cursor overflow")?;let end=at.end.checked_add(self.offset).ok_or("case terminator cursor overflow")?;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(start,end)))}break}}
   if !newline{let before=tokens.partition_point(|token|token.span.start<case_end);let mut significant=None;for token in tokens.iter().take(before).rev(){checkpoint()?;if !trivia(token){significant=Some(token);break}}if let Some(token)=significant{if token.text(source)==";"{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}}}
-  let after=tokens.partition_point(|token|token.span.end<=case_end);let mut has_after=false;for token in tokens.iter().skip(after){checkpoint()?;if !trivia(token){has_after=true;break}}if !has_after{let before=tokens.partition_point(|token|token.span.start<case_end);let mut newline=None;for token in tokens.iter().take(before).rev(){checkpoint()?;if token.span.start<start{break}if token.kind==TokenKind::Newline{newline=Some(token.span);break}}let newline=newline.ok_or("case terminal newline token unavailable")?;return Ok(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(newline.start+self.offset,newline.end+self.offset)})}
+  let after=tokens.partition_point(|token|token.span.end<=case_end);let mut has_after=false;for token in tokens.iter().skip(after){checkpoint()?;if !trivia(token){has_after=true;break}}if !has_after{let before=tokens.partition_point(|token|token.span.start<case_end);let mut newline=None;for token in tokens.iter().take(before).rev(){checkpoint()?;if token.span.start<start{break}if token.kind==TokenKind::Newline{newline=Some(token.span);break}}let newline=newline.ok_or("case terminal newline token unavailable")?;return Ok(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.actual_terminal_extent().map_err(E::from)?.checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(newline.start+self.offset,newline.end+self.offset)})}
   let before=tokens.partition_point(|token|token.span.start<case_end);let mut last=None;for token in tokens.iter().take(before).rev(){checkpoint()?;if token.span.end<=start{break}if token.kind==TokenKind::Newline{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}if !trivia(token)&&last.is_none(){last=Some(token);if !newline&&token.text(source)==";"{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}}}Err("case original line boundary unavailable".into())
  }
 }
@@ -2705,7 +2947,7 @@ impl OriginalProcedureHeaders{
    },
    _=>return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual header literal outcome binding is missing").into()),
   };
-  self.original_literal_source.set(HeaderLiteralSourceHold(checked)).map_err(|_|OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual header literal facts were already published")))?;
+  self.original_literal_source.set(match checked{Some(view)=>HeaderLiteralSourceHold::Literal(view),None=>HeaderLiteralSourceHold::Absent}).map_err(|_|OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual header literal facts were already published")))?;
   original_checkpoint(a)?;Ok(())
  }
  /// Returned row spans are in the sealed primary/TU coordinate frame. The
@@ -2713,7 +2955,7 @@ impl OriginalProcedureHeaders{
  /// TU-global/chunk-local comparison or copied/rebased tuple Vec is possible.
  /// None is unissued, while any actual binding/cut error remains Err.
  pub(crate) fn original_literal_facts(&self)->std::io::Result<Option<dm_syntax::OriginalLiteralFactsView<'_>>>{
-  match self.original_literal_source.get(){Some(HeaderLiteralSourceHold(Some(view)))=>view.checked_facts(&self.source).map(Some),Some(HeaderLiteralSourceHold(None))|None=>Ok(None)}
+  match self.original_literal_source.get().and_then(HeaderLiteralSourceHold::view){Some(view)=>view.checked_facts(&self.source).map(Some),None=>Ok(None)}
  }
 }
 
@@ -2926,4 +3168,188 @@ mod original_do_while_terminator_cursor_tests{
   let source="/proc/p()\n    continue\n";let parsed=dm_syntax::parse(source);let p=&parsed.items[0];let owner=OriginalProcedureHeaders::from_primary(source.into(),&parsed.items,0,parsed.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();let tokens=owner.body_tokens(p.span,0).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let calls=std::cell::Cell::new(0);let fail=||{calls.set(calls.get()+1);Err(std::io::Error::from_raw_os_error(1450))};let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&fail);
   let proxy=tokens.bare_loop_control_using(p.children[0].header_span,"continue",&a).unwrap_err();let actual=a.take_operational_error().expect("same real admission owns initial1450");assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(proxy.kind(),actual.kind());assert!(a.is_stopped());assert!(a.checkpoint().is_err());assert_eq!(calls.get(),1);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
+}
+
+#[cfg(test)]mod committed_body_token_input_tests{
+ use super::*;use dm_syntax::{OriginalDeclarationHeaderObserver,OriginalPrimaryHeader,OriginalHeaderFlow,OriginalCommittedBodyInput};
+ struct Output;impl dm_syntax::OriginalLiteralOutputOwner for Output{fn as_any(&self)->&dyn std::any::Any{self}fn release(self:Arc<Self>){drop(Arc::into_inner(self));}fn visit_storage(&self,_:&mut dyn FnMut(usize,usize,usize)){}}
+ struct Observe<'a,'budget>{a:&'a dm_syntax::SettingAdmission<'budget>,seen:usize,prefix:usize,ends:usize}
+ impl OriginalDeclarationHeaderObserver for Observe<'_,'_>{
+  fn header(&mut self,_:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}fn wants_committed_body_input(&self)->bool{true}
+  fn committed_body_input(&mut self,input:OriginalCommittedBodyInput<'_,'_>)->std::io::Result<()>{
+   let source=input.source();let body=input.item().span;let view=OriginalBodyTokens::from_committed_input(input).map_err(std::io::Error::other)?;assert_eq!(view.current_span(),body);
+   match view.owner.actual_terminal_extent(){Ok(end)=>{assert_eq!(end,source.len());self.ends+=1;},Err(_)=>self.prefix+=1}
+   if let Some(start)=source[body.range()].find("123").map(|at|at+body.start){let(parsed,facts)=view.expression_with_native_facts("123",start,self.a)?.expect("actual typed child parser is borrowed");assert!(parsed.diagnostics.is_empty());assert_eq!(parsed.expr.as_ref().unwrap().span,Span::new(0,3));assert!(facts.is_some_and(|facts|facts.is_complete()));}
+   self.seen+=1;Ok(())
+  }
+ }
+ #[test]fn actual_committed_body_tokens_borrow_same_tape_and_keep_prefix_end_unissued(){
+  let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();let counter=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();let a=dm_syntax::SettingAdmission::new(&counter,4<<20,&||Ok(()));let source="/proc/p()\n    return 123\n/proc/q()\n    return 123\n";let mut primary=dm_syntax::OriginalPrimaryDemand::new_committed(&a,None).unwrap();primary.enable_body_spelling_projection(dm_syntax::OriginalLiteralProjectionOwner::from_output_data(Arc::new(Output))).unwrap();for token in dm_syntax::lex_spans(source).tokens{if token.kind==TokenKind::Number{let data=dm_syntax::OriginalLiteralData::from_value_using("123".to_owned(),dm_syntax::OriginalTokenValue::Int(123),&a).unwrap();primary.token_with_original_literal(token,data).unwrap()}else{primary.token(token).unwrap()}}
+  let mut observe=Observe{a:&a,seen:0,prefix:0,ends:0};assert!(primary.advance_with_observer(source,false,&mut observe).unwrap());assert!(observe.prefix>0,"next callable actually commits the preceding BODY without EOF");assert!(primary.advance_with_observer(source,true,&mut observe).unwrap());let primary=primary.finish_committed_with_observer(source,true,&mut observe).unwrap();assert_eq!(observe.seen,2);assert!(observe.ends>0);drop(primary);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),fixed);
+ }
+}
+
+impl OriginalProcedureHeaders{
+ pub(crate) fn install_committed_body_products(&self,adoption:crate::frontend::committed_bodies::CommittedHeaderAdoption,view:dm_preprocess::regions::OriginalLiteralSourceView,actual:&dm_preprocess::regions::OriginalLiteralSourceBinding,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Box<std::sync::Mutex<Option<crate::frontend::committed_bodies::FinalCommittedBodyInputs>>>>{
+  original_checkpoint(a)?;
+  if self.original_literal_source.get().is_some()||self.parameter_signatures.get().is_some()||!view.same_producer(actual){return Err(std::io::ErrorKind::InvalidInput.into())}
+  // Repeat the same checked physical source/resource association as ordinary
+  // literal retention before installing the optional weak-product envelope.
+  let facts=view.checked_facts(&self.source)?;let(_,origin)=facts.raw_parts();let end=origin.checked_add(self.source.len()).ok_or(std::io::ErrorKind::InvalidInput)?;
+  let view=actual.checked_view(&self.source,Span::new(origin,end),actual,a)?;
+  let installation=adoption.install(&self.source,&self.headers,view,a)?;
+  if installation.parameters.len()!=self.headers.len(){return Err(std::io::ErrorKind::InvalidInput.into())}
+  self.parameter_signatures.set(HeaderParameterSignatures{rows:installation.parameters,_credit:installation.parameter_credit}).map_err(|_|std::io::Error::from(std::io::ErrorKind::AlreadyExists))?;
+  self.original_literal_source.set(HeaderLiteralSourceHold::Observed(installation.products)).map_err(|_|std::io::Error::from(std::io::ErrorKind::AlreadyExists))?;
+  original_checkpoint(a)?;Ok(installation.inputs)
+ }
+ pub(crate) fn has_committed_parameter_header(&self,header:Span)->bool{matches!(self.original_literal_source.get(),Some(HeaderLiteralSourceHold::Observed(_)|HeaderLiteralSourceHold::Prefix(_)))&&self.headers.binary_search_by_key(&header.start,|span|span.start).ok().and_then(|index|self.headers.get(index)).is_some_and(|actual|*actual==header)&&self.parameter_signatures.get().is_some()}
+ pub(crate) fn committed_body_code(&self,body:Span)->std::io::Result<Option<Arc<crate::frontend::BodyCodeIdentity>>>{
+  match self.original_literal_source.get(){Some(HeaderLiteralSourceHold::Observed(products))=>{let index=self.headers.binary_search_by_key(&body.start,|span|span.start).map_err(|_|std::io::Error::from(std::io::ErrorKind::InvalidInput))?;products.body_code(index,body)},_=>Ok(None)}
+ }
+ pub(crate) fn committed_products(&self)->Option<&Arc<crate::frontend::committed_bodies::CommittedHeaderProducts>>{match self.original_literal_source.get(){Some(HeaderLiteralSourceHold::Observed(products))=>Some(products),_=>None}}
+}
+#[cfg(test)]#[test]fn committed_product_envelope_preserves_actual_ordinary_header_hold_size(){assert_eq!(std::mem::size_of::<HeaderLiteralSourceHold>(),std::mem::size_of::<Option<dm_preprocess::regions::OriginalLiteralSourceView>>());assert_eq!(std::mem::size_of::<OnceLock<HeaderLiteralSourceHold>>(),std::mem::size_of::<OnceLock<Option<dm_preprocess::regions::OriginalLiteralSourceView>>>());}
+
+#[cfg(test)]#[test]fn committed_product_preserves_actual_whole_header_layout(){
+ #[allow(dead_code)]struct PriorHeaderLiteralHold(Option<dm_preprocess::regions::OriginalLiteralSourceView>);
+ #[allow(dead_code)]struct PriorOriginalProcedureHeaders {
+    source: SourceText,
+    headers: Vec<Span>,
+    first_outer_block: Option<usize>,
+    tokens: dm_syntax::SpanTokenStorage,
+    settings: OnceLock<setting_input::SettingsRoster>,
+    checker_diagnostic_settings: bool,
+    initializer_coordinates: Option<OriginalInitializerCoordinates>,
+    initializer_roots: dm_syntax::SettingExpressionSlots,
+    initializer_facts: OnceLock<OriginalInitializerFactsAdmission>,
+    demanded_defaults:OnceLock<OriginalDefaultRoots>,
+    parameter_signatures:OnceLock<HeaderParameterSignatures>,
+    lazy_parameter_signatures:OnceLock<()>,
+    formal_notices:OnceLock<(super::original_formal_notices::FormalNotices,bool)>,
+    reader_registrations:OnceLock<(Option<dm_preprocess::regions::OriginalReaderRegistrationTable>,usize,dm_preprocess::regions::OriginalNoticeRegistration)>,
+    original_literal_source:OnceLock<PriorHeaderLiteralHold>,
+    // New fixed lexical DATA is separately funded by the coordinate admission.
+    case_layout_checkpoints:std::sync::Mutex<OriginalCaseLayoutCheckpoints>,
+    // Last: actual token/header payload drops before its SAME resource credit.
+    original_primary_resource:OnceLock<OriginalPrimaryResourceHold>,
+}
+ assert_eq!(std::mem::size_of::<OriginalProcedureHeaders>(),std::mem::size_of::<PriorOriginalProcedureHeaders>());
+ assert_eq!(std::mem::align_of::<OriginalProcedureHeaders>(),std::mem::align_of::<PriorOriginalProcedureHeaders>());
+}
+
+#[cfg(test)]mod actual_body_expression_geometry_profile_controls{
+ use super::*;
+ #[test]fn actual_original_unissued_facts_refuse_geometry_while_native_default_tokens_remain_native(){
+  for checker in [false,true]{
+   let source:SourceText="/proc/probe()\n    return 1\n".into();let mut ast=dm_syntax::parse_declaration_skeleton(&source);
+   let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<24,&||Ok(()));
+   let headers=OriginalProcedureHeaders::for_declaration_profile_tokens(source.clone(),&ast.items,0,std::mem::take(&mut ast.tokens).into(),&a,checker).ok().unwrap();
+   assert!(headers.original_literal_facts().unwrap().is_none(),"genuine uninitialized header owner");
+   let view=OriginalBodyTokens{owner:OriginalBodyTokenOwner::Completed(&headers),body:ast.items[0].span,offset:0,case_prefix:None};
+   let start=source.rfind('1').unwrap();
+   if checker{
+    assert_eq!(view.expression_geometry().unwrap_err().kind(),std::io::ErrorKind::InvalidInput);
+    assert!(view.expression_with_native_facts("1",start,&a).unwrap().is_none(),"existing Original parser refusal stays unchanged");
+   }else{
+    assert_eq!(view.expression_geometry().unwrap(),dm_syntax::BodyExpressionGeometry::NativeUnpublished);
+    let(parsed,native)=view.expression_with_native_facts("1",start,&a).unwrap().unwrap();assert!(parsed.diagnostics.is_empty());assert!(native.unwrap().is_complete());
+   }
+  }
+ }
+}
+
+impl OriginalProcedureHeaders{
+ pub(crate) fn install_committed_prefix_products(&self,adoption:crate::frontend::committed_bodies::CommittedPrefixAdoption,view:dm_preprocess::regions::OriginalLiteralSourceView,actual:&dm_preprocess::regions::OriginalLiteralSourceBinding,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+  original_checkpoint(a)?;if self.original_literal_source.get().is_some()||self.parameter_signatures.get().is_some()||!view.same_producer(actual){return Err(std::io::ErrorKind::InvalidInput.into())}
+  let facts=view.checked_facts(&self.source)?;let(_,origin)=facts.raw_parts();let end=origin.checked_add(self.source.len()).ok_or(std::io::ErrorKind::InvalidInput)?;let view=actual.checked_view(&self.source,Span::new(origin,end),actual,a)?;
+  let installation=adoption.install(&self.source,&self.headers,view,a)?;if installation.parameters.len()!=self.headers.len(){return Err(std::io::ErrorKind::InvalidInput.into())}
+  self.parameter_signatures.set(HeaderParameterSignatures{rows:installation.parameters,_credit:installation.parameter_credit}).map_err(|_|std::io::Error::from(std::io::ErrorKind::AlreadyExists))?;
+  self.original_literal_source.set(HeaderLiteralSourceHold::Prefix(installation.products)).map_err(|_|std::io::Error::from(std::io::ErrorKind::AlreadyExists))?;original_checkpoint(a)
+ }
+ pub(crate) fn committed_prefix_products(&self)->Option<&Arc<crate::frontend::committed_bodies::CommittedPrefixProducts>>{match self.original_literal_source.get(){Some(HeaderLiteralSourceHold::Prefix(products))=>Some(products),_=>None}}
+}
+
+#[cfg(test)]mod bare_anything_primary_prefix_controls{
+ use super::*;
+ #[test]fn actual_bare_anything_prefix_keeps_same_name_tokens_offsets_and_foreign_refusals(){
+  let source="/proc/p(items)\n    for(copying as anything in items)\n        return copying\n/proc/q(items)\n    for(copying as anything in items)\n        return copying\n";let parsed=dm_syntax::parse(source);assert!(parsed.diagnostics.is_empty());let p=&parsed.items[0];let owner=OriginalProcedureHeaders::from_primary(source.into(),&parsed.items,0,parsed.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();let root=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&root,1<<20,&||Ok(()));let start=source.find("copying as").unwrap();let end=source.find(" in items").unwrap()+4;
+  for offset in [0,37]{let tokens=owner.body_tokens(p.span,offset).unwrap();let prefix=Span::new(start+offset,end+offset);let name=Span::new(start+offset,start+7+offset);assert!(tokens.bare_for_each_anything_prefix_using(prefix,name,&a).unwrap());assert!(!tokens.bare_for_each_anything_prefix_using(prefix,Span::new(name.start,name.end-1),&a).unwrap());assert!(!tokens.bare_for_each_anything_prefix_using(Span::new(prefix.start,prefix.end-2),name,&a).unwrap());let foreign=source.rfind("copying as").unwrap();assert!(!tokens.bare_for_each_anything_prefix_using(Span::new(foreign+offset,foreign+(end-start)+offset),Span::new(foreign+offset,foreign+7+offset),&a).unwrap());}
+  let mut changed=parsed.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect::<Vec<_>>();changed.iter_mut().find(|token|token.text(source)=="as").unwrap().kind=TokenKind::Punctuation;let changed=OriginalProcedureHeaders::from_primary(source.into(),&parsed.items,0,changed).unwrap();assert!(!changed.body_tokens(p.span,0).unwrap().bare_for_each_anything_prefix_using(Span::new(start,end),Span::new(start,start+7),&a).unwrap());assert_eq!(root.load(std::sync::atomic::Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+ #[test]fn actual_bare_anything_prefix_preserves_first_io_latch_and_no_second_poll(){
+  let source="/proc/p(items)\n    for(copying as anything in items)\n        return copying\n";let parsed=dm_syntax::parse(source);let p=&parsed.items[0];let owner=OriginalProcedureHeaders::from_primary(source.into(),&parsed.items,0,parsed.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();let root=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let calls=std::cell::Cell::new(0);let fail=||{calls.set(calls.get()+1);Err(std::io::Error::from_raw_os_error(1450))};let a=dm_syntax::SettingAdmission::new(&root,1<<20,&fail);let start=source.find("copying as").unwrap();let end=source.find(" in items").unwrap()+4;let proxy=owner.body_tokens(p.span,0).unwrap().bare_for_each_anything_prefix_using(Span::new(start,end),Span::new(start,start+7),&a).unwrap_err();let actual=a.take_operational_error().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(proxy.kind(),actual.kind());assert!(a.checkpoint().is_err());assert_eq!(calls.get(),1);
+ }
+}
+
+#[cfg(test)]mod original_default_inline_statement_cursor_controls{
+ use super::*;#[derive(Debug)]enum Failure{Source(&'static str),Io(std::io::Error)}impl From<&'static str>for Failure{fn from(s:&'static str)->Self{Self::Source(s)}}
+ #[test]fn actual_default_inline_cursor_keeps_current_else_header_terminator_and_first_io(){
+  let source="/proc/probe(mode,output,value)\n    switch(mode)\n        if(0) output+=value\n        else output+=value\n";let syntax=dm_syntax::parse(source);let procedure=&syntax.items[0];let default=&procedure.children[0].children[1];let owner=OriginalProcedureHeaders::from_primary(source.into(),&syntax.items,0,syntax.tokens.iter().map(|t|SpanToken{kind:t.kind,span:t.span}).collect()).unwrap();let tokens=owner.body_tokens(procedure.span,0).unwrap();
+  assert!(tokens.switch_inline_statement_cursor_using(default.header_span,default.span,&mut||Ok::<(),Failure>(())).is_ok());assert!(tokens.switch_case_cursor_using(default.header_span,default.span,&mut||Ok::<(),Failure>(())).is_err(),"normal IF-case proof does not become an ELSE proof");
+  for header in[Span::new(default.header_span.start+1,default.header_span.end),Span::new(default.header_span.start,default.header_span.end+1)]{assert!(tokens.switch_inline_statement_cursor_using(header,default.span,&mut||Ok::<(),Failure>(())).is_err());}
+  for stop in[1,2,3]{let mut calls=0;let result=tokens.switch_inline_statement_cursor_using(default.header_span,default.span,&mut||{calls+=1;if calls==stop{Err(Failure::Io(std::io::Error::from_raw_os_error(1450)))}else{Ok(())}});assert!(matches!(result,Err(Failure::Io(ref e))if e.raw_os_error()==Some(1450)));assert_eq!(calls,stop);}
+ }
+}
+
+#[cfg(test)]
+mod original_case_layout_replay_controls{
+ use super::*;
+ #[derive(Debug)]enum Failure{Source(&'static str),Io(std::io::Error)}
+ impl From<&'static str>for Failure{fn from(value:&'static str)->Self{Self::Source(value)}}
+ const BODY:&str="/proc/probe(value)\n    switch(value)\n        if(1)\n            return 1\n        if(2) return 2\n    return 3\n";
+ fn fixture(source:&str)->(Arc<OriginalProcedureHeaders>,Span,Vec<(Span,Span)>){
+  let ast=dm_syntax::parse(source);let body=ast.items.iter().find(|item|item.header.starts_with("/proc/probe(")).expect("actual probe declaration retained");
+  let cases=body.children[0].children.iter().map(|row|(row.header_span,row.span)).collect();let span=body.span;
+  let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();(owner,span,cases)
+ }
+ #[test]fn case_layout_replay_preserves_exact_shifted_answers_and_refuses_foreign_loan(){
+  let source=format!("/datum/prefix\n    var/a=1\n{BODY}/proc/follow()\n    return 0\n");let(owner,span,cases)=fixture(&source);let tokens=owner.body_tokens(span,17).unwrap();let replay=tokens.case_layout_replay();
+  for(header,case)in cases{let shift=|p:Span|Span::new(p.start+17,p.end+17);let old=tokens.switch_inline_statement_cursor_using(shift(header),shift(case),&mut||Ok::<(),Failure>(()));let loan=replay.attach(tokens).unwrap();let current=loan.switch_inline_statement_cursor_using(shift(header),shift(case),&mut||Ok::<(),Failure>(()));assert_eq!(format!("{old:?}"),format!("{current:?}"));assert!(old.is_ok(),"genuine case cursor");}
+  assert!(replay.prefix.get().is_some());let(foreign,other,_)=fixture(&source);assert!(replay.attach(foreign.body_tokens(other,17).unwrap()).is_err());assert!(replay.attach(owner.body_tokens(span,18).unwrap()).is_err());
+ }
+ #[test]fn case_layout_replay_preserves_invalid_prefix_errors_without_caching_them(){
+  let source=format!("}}\n{BODY}");let(owner,span,cases)=fixture(&source);let tokens=owner.body_tokens(span,0).unwrap();let replay=tokens.case_layout_replay();let(header,case)=cases[0];
+  let old=tokens.switch_case_cursor_using(header,case,&mut||Ok::<(),Failure>(()));assert!(matches!(old,Err(Failure::Source("case original unmatched right brace"))));
+  for _ in 0..2{let current=replay.attach(tokens).unwrap().switch_case_cursor_using(header,case,&mut||Ok::<(),Failure>(()));assert_eq!(format!("{old:?}"),format!("{current:?}"));assert!(replay.prefix.get().is_none(),"a failed prefix never becomes a bookmark");}
+ }
+ #[test]fn case_layout_replay_keeps_first_operational_error_after_warm_prefix_and_retries(){
+  let source=format!("/datum/prefix\n    var/a=1\n{BODY}");let(owner,span,cases)=fixture(&source);let tokens=owner.body_tokens(span,0).unwrap();let replay=tokens.case_layout_replay();let(header,case)=cases[0];let loan=replay.attach(tokens).unwrap();let expected=loan.switch_case_cursor_using(header,case,&mut||Ok::<(),Failure>(())).unwrap();assert!(replay.prefix.get().is_some());
+  for raw in[1450,995]{for stop in[1,3,9]{let mut calls=0;let result=loan.switch_case_cursor_using(header,case,&mut||{calls+=1;if calls==stop{Err(Failure::Io(std::io::Error::from_raw_os_error(raw)))}else{Ok(())}});match result{Err(Failure::Io(actual))=>assert_eq!(actual.raw_os_error(),Some(raw)),other=>panic!("first operational failure lost: {other:?}")};assert_eq!(calls,stop);}}
+  assert_eq!(loan.switch_case_cursor_using(header,case,&mut||Ok::<(),Failure>(())).unwrap(),expected);
+ }
+}
+
+#[cfg(test)]mod original_case_layout_checkpoints_controls{
+ use super::*;
+ #[derive(Debug)]enum Failure{Source(&'static str),Io(std::io::Error)}
+ impl From<&'static str>for Failure{fn from(s:&'static str)->Self{Self::Source(s)}}
+ fn fixture()->(Arc<OriginalProcedureHeaders>,Vec<(Span,Span,Span)>){
+  let source=format!("{}{}{}", "/datum/prefix\n    var/a=1\n".repeat(32), "/proc/one(v)\n    switch(v)\n        if(1)\n            return 1\n", "/proc/two(v)\n    switch(v)\n        if(2)\n            return 2\n");
+  let ast=dm_syntax::parse(&source);let rows=ast.items.iter().filter(|i|i.header.starts_with("/proc/")).map(|i|{let c=&i.children[0].children[0];(i.span,c.header_span,c.span)}).collect();
+  let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens.iter().map(|t|SpanToken{kind:t.kind,span:t.span}).collect()).unwrap();(owner,rows)
+ }
+ #[test]fn same_owner_layout_checkpoint_cache_reuses_forward_and_backward_refills(){
+  let(owner,rows)=fixture();assert_eq!(rows.len(),2);let mut cold_calls=0;let mut warm_calls=0;
+  for &(body,head,case)in &rows{let tokens=owner.body_tokens(body,0).unwrap();let expected=tokens.switch_case_cursor_using(head,case,&mut||{cold_calls+=1;Ok::<(),Failure>(())}).unwrap();let replay=tokens.case_layout_replay();let actual=replay.attach(tokens).unwrap().switch_case_cursor_using(head,case,&mut||{warm_calls+=1;Ok::<(),Failure>(())}).unwrap();assert_eq!(actual,expected);}
+  assert!(warm_calls<cold_calls,"forward BODY must reuse validated owner prefix");
+
+  for i in[0,1,1,0]{let(body,head,case)=rows[i];let tokens=owner.body_tokens(body,0).unwrap();let expected=tokens.switch_case_cursor_using(head,case,&mut||Ok::<(),Failure>(())).unwrap();let replay=tokens.case_layout_replay();assert_eq!(replay.attach(tokens).unwrap().switch_case_cursor_using(head,case,&mut||Ok::<(),Failure>(())).unwrap(),expected);assert!(owner.case_layout_checkpoints.lock().unwrap().best(usize::MAX).is_some());}
+  let(body,head,case)=rows[0];let tokens=owner.body_tokens(body,0).unwrap();let mut cold=0;let expected=tokens.switch_case_cursor_using(head,case,&mut||{cold+=1;Ok::<(),Failure>(())}).unwrap();let fresh=tokens.case_layout_replay();let mut warm=0;let actual=fresh.attach(tokens).unwrap().switch_case_cursor_using(head,case,&mut||{warm+=1;Ok::<(),Failure>(())}).unwrap();assert_eq!(actual,expected);assert!(warm<cold,"backward repeated hotspot must use its retained checkpoint");
+  let(foreign,_)=fixture();assert!(foreign.case_layout_checkpoints.lock().unwrap().best(usize::MAX).is_none(),"same text is not same owner");
+ }
+ #[test]fn same_owner_layout_checkpoint_cache_preserves_first_failure_and_paid_storage(){
+  let(owner,rows)=fixture();let(body,head,case)=rows[1];let tokens=owner.body_tokens(body,0).unwrap();let replay=tokens.case_layout_replay();let expected=replay.attach(tokens).unwrap().switch_case_cursor_using(head,case,&mut||Ok::<(),Failure>(())).unwrap();
+  for raw in[1450,995]{for stop in[1,3,9]{let fresh=tokens.case_layout_replay();let mut calls=0;let result=fresh.attach(tokens).unwrap().switch_case_cursor_using(head,case,&mut||{assert!(owner.case_layout_checkpoints.try_lock().is_ok(),"callback must be outside owner lock");calls+=1;if calls==stop{Err(Failure::Io(std::io::Error::from_raw_os_error(raw)))}else{Ok(())}});match result{Err(Failure::Io(e))=>assert_eq!(e.raw_os_error(),Some(raw)),other=>panic!("lost first operational cause: {other:?}")};assert_eq!(calls,stop);}}
+  let held=owner.case_layout_checkpoints.lock().unwrap();let fresh=tokens.case_layout_replay();assert_eq!(fresh.attach(tokens).unwrap().switch_case_cursor_using(head,case,&mut||Ok::<(),Failure>(())).unwrap(),expected,"busy slot retains old scan");drop(held);
+  let poisoned=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{let _held=owner.case_layout_checkpoints.lock().unwrap();panic!("intentional owner-slot poison")}));assert!(poisoned.is_err());let fresh=tokens.case_layout_replay();assert_eq!(fresh.attach(tokens).unwrap().switch_case_cursor_using(head,case,&mut||Ok::<(),Failure>(())).unwrap(),expected,"poisoned slot retains old scan");
+  use std::sync::atomic::Ordering;let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&used,1<<20,&check);let coordinates=OriginalInitializerCoordinates::new(10,&a).unwrap();
+  let exact=std::mem::size_of::<OriginalInitializerCoordinates>()+std::mem::size_of::<OnceLock<OriginalInitializerFactsAdmission>>()+std::mem::size_of::<OnceLock<OriginalPrimaryResourceHold>>()+std::mem::size_of::<OnceLock<()>>()+std::mem::size_of::<std::sync::Mutex<OriginalCaseLayoutCheckpoints>>();assert_eq!(coordinates.lease.bytes(),exact);drop(coordinates);assert_eq!(used.load(Ordering::Acquire),root);
+ }
+}
+
+#[cfg(test)]#[test]fn same_owner_layout_checkpoint_cache_is_fixed_fifo_and_selects_nearest_prefix(){
+ let row=OriginalCaseLayoutPrefix{ordinal:0,current:None,spaces:Some(0),parentheses:0,eol:None,last:Span::new(0,0)};let mut cache=OriginalCaseLayoutCheckpoints::new();assert!(cache.best(usize::MAX).is_none());
+ for ordinal in 1..=64{cache.remember(OriginalCaseLayoutPrefix{ordinal,..row});}assert_eq!(cache.rows.iter().flatten().count(),64);assert_eq!(cache.best(0).map(|r|r.ordinal),None);assert_eq!(cache.best(37).unwrap().ordinal,37);let next=cache.next;cache.remember(OriginalCaseLayoutPrefix{ordinal:37,..row});assert_eq!(cache.next,next,"duplicate must not consume replacement slot");
+ cache.remember(OriginalCaseLayoutPrefix{ordinal:65,..row});assert!(cache.best(1).is_none(),"oldest checkpoint evicted");assert_eq!(cache.best(2).unwrap().ordinal,2);assert_eq!(cache.best(usize::MAX).unwrap().ordinal,65);assert_eq!(cache.rows.iter().flatten().count(),64);
 }

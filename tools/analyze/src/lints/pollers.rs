@@ -86,10 +86,10 @@ mod tests {
     use crate::scopes::LintScope;
     use crate::tree::Tree;
 
-    fn scan(text: &str) -> Sink {
+    fn scan(text: &str) -> Sink<'static> {
         let tree = Tree::from_files(vec![]);
         let scope = LintScope::default();
-        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
+        let cx = Cx { fixture:None, tree: &tree, meta: &META, scope: &scope };
         let f = SourceFile::from_text("code/modules/x.dm", text);
         let mut out = Sink::new();
         out.cur = f.rel.clone();

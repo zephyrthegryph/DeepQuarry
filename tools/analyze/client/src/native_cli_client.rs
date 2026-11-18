@@ -8,6 +8,7 @@ use std::{ffi::OsString,io::{self,Read,Write},path::PathBuf,process::{Child,Chil
 #[path="native_full_check.rs"]mod native_full_check;
 #[path="native_schema_proposals.rs"]mod native_schema_proposals;
 #[path="native_fix.rs"]mod native_fix;
+#[path="native_baseline_update.rs"]mod native_baseline_update;
 pub fn exclusions_cli(args:&[String])->std::process::ExitCode{native_exclusions::cli(args)}
 pub fn image_dir_cli(args:&[String])->std::process::ExitCode{native_exclusions::image_dir_cli(args)}
 const OUTER_WATCHDOG:Duration=Duration::from_secs(30*60);
@@ -79,27 +80,30 @@ fn execute_command_for(command:Command,watchdog:Duration,mode:Mode)->io::Result<
  }, |stderr|bounded(stderr,MAX_STDERR))?;
  Ok(Response{status,stdout:out.bytes,stderr,policy_work:out.policy_work})
 }
-fn capture_command<O: Send + 'static, E: Send + 'static>(
- mut command: Command, watchdog: Duration,
+fn capture_command<O:Send+'static,E:Send+'static>(command:Command,watchdog:Duration,read_stdout:impl FnOnce(ChildStdout)->io::Result<O>+Send+'static,read_stderr:impl FnOnce(ChildStderr)->io::Result<E>+Send+'static)->io::Result<(ExitStatus,O,E)>{let(status,out,err,input)=capture_command_input_inner(command,None,watchdog,read_stdout,read_stderr)?;debug_assert!(input.is_none());Ok((status,out,err))}
+fn capture_command_with_input<O:Send+'static,E:Send+'static>(command:Command,input:FundedInput,watchdog:Duration,read_stdout:impl FnOnce(ChildStdout)->io::Result<O>+Send+'static,read_stderr:impl FnOnce(ChildStderr)->io::Result<E>+Send+'static)->io::Result<(ExitStatus,O,E,Option<io::Error>)>{capture_command_input_inner(command,Some(input),watchdog,read_stdout,read_stderr)}
+fn capture_command_input_inner<O: Send + 'static, E: Send + 'static>(
+ mut command: Command, input:Option<FundedInput>, watchdog: Duration,
  read_stdout: impl FnOnce(ChildStdout) -> io::Result<O> + Send + 'static,
  read_stderr: impl FnOnce(ChildStderr) -> io::Result<E> + Send + 'static,
-) -> io::Result<(ExitStatus, O, E)> {
- command.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
+) -> io::Result<(ExitStatus, O, E, Option<io::Error>)> {
+ let input_requested=input.is_some();command.stdin(if input_requested{Stdio::piped()}else{Stdio::null()}).stdout(Stdio::piped()).stderr(Stdio::piped());
  #[cfg(windows)]{use std::os::windows::process::CommandExt;const CREATE_NO_WINDOW:u32=0x0800_0000;const BELOW_NORMAL_PRIORITY_CLASS:u32=0x0000_4000;command.creation_flags(CREATE_NO_WINDOW|BELOW_NORMAL_PRIORITY_CLASS);}
  let child=command.spawn()?;
  let mut running=Running{child,finished:false};
  let stdout=running.child.stdout.take().ok_or_else(||io::Error::other("native client stdout pipe unavailable"))?;
  let stderr=running.child.stderr.take().ok_or_else(||io::Error::other("native client stderr pipe unavailable"))?;
- enum Pipe<O,E>{Output(io::Result<O>),Diagnostics(io::Result<E>)}
+ enum Pipe<O,E>{Output(io::Result<O>),Diagnostics(io::Result<E>),Input(io::Result<()>)}
  let (send,receive)=mpsc::channel();let out_send=send.clone();
+ if let Some(input)=input{let stdin=running.child.stdin.take().ok_or_else(||io::Error::other("native request stdin pipe unavailable"))?;let input_send=send.clone();thread::Builder::new().name("native-check-request".into()).spawn(move||{let result=write_funded_input(stdin,input);let _=input_send.send(Pipe::Input(result));})?;}
  thread::Builder::new().name("native-query-stdout".into()).spawn(move||{let _=out_send.send(Pipe::Output(read_stdout(stdout)));})?;
  thread::Builder::new().name("native-query-stderr".into()).spawn(move||{let _=send.send(Pipe::Diagnostics(read_stderr(stderr)));})?;
- let until=Instant::now()+watchdog;let mut out=None;let mut err=None;let mut status=None;
+ let until=Instant::now()+watchdog;let mut out=None;let mut err=None;let mut status=None;let mut input_done=!input_requested;let mut input_error=None;
  loop{
-  loop{match receive.try_recv(){Ok(Pipe::Output(result))=>out=Some(result?),Ok(Pipe::Diagnostics(result))=>err=Some(result?),Err(mpsc::TryRecvError::Empty)=>break,Err(mpsc::TryRecvError::Disconnected)=>{if out.is_none()||err.is_none(){return Err(io::Error::new(io::ErrorKind::BrokenPipe,"native client output reader ended without a complete response"));}break}}}
-  if status.is_none(){status=running.child.try_wait()?;}
-  if status.is_some()&&out.is_some()&&err.is_some(){running.finished=true;return Ok((status.unwrap(),out.unwrap(),err.unwrap()));}
-  if Instant::now()>=until{return Err(io::Error::new(io::ErrorKind::TimedOut,"native query client exceeded its separate outer startup/queue/cleanup watchdog"));}
+  loop{match receive.try_recv(){Ok(Pipe::Output(result))=>match result{Ok(value)=>out=Some(value),Err(actual)=>return Err(input_error.take().unwrap_or(actual))},Ok(Pipe::Diagnostics(result))=>match result{Ok(value)=>err=Some(value),Err(actual)=>return Err(input_error.take().unwrap_or(actual))},Ok(Pipe::Input(result))=>{input_done=true;input_error=result.err();},Err(mpsc::TryRecvError::Empty)=>break,Err(mpsc::TryRecvError::Disconnected)=>{if out.is_none()||err.is_none()||!input_done{return Err(input_error.take().unwrap_or_else(||io::Error::new(io::ErrorKind::BrokenPipe,"native client output reader ended without a complete response")));}break}}}
+  if status.is_none(){status=match running.child.try_wait(){Ok(status)=>status,Err(actual)=>return Err(input_error.take().unwrap_or(actual))};}
+  if status.is_some()&&out.is_some()&&err.is_some()&&input_done{running.finished=true;return Ok((status.unwrap(),out.unwrap(),err.unwrap(),input_error));}
+  if Instant::now()>=until{return Err(input_error.take().unwrap_or_else(||io::Error::new(io::ErrorKind::TimedOut,"native query client exceeded its separate outer startup/queue/cleanup watchdog")));}
   thread::sleep(Duration::from_millis(10));
  }
 }
@@ -225,15 +229,27 @@ impl<'de> serde::Deserialize<'de> for ReportUsageRows{fn deserialize<D:serde::De
 }
 // SAME existing metadata allowance; physical old/new backing and later parser
 // scratch are admitted before growth. This is not a native/source counter.
-struct NativeReportWork{slots:std::cell::RefCell<[usize;3]>,denied:std::cell::Cell<bool>}
-impl NativeReportWork{fn new()->Self{Self{slots:std::cell::RefCell::new([0;3]),denied:std::cell::Cell::new(false)}}fn for_buffer(capacity:usize)->io::Result<Self>{let work=Self::new();crate::report_work::Work::temporary(&work,1,capacity)?;Ok(work)}}
-impl crate::report_work::Work for NativeReportWork{
- fn checkpoint(&self)->io::Result<()>{if self.denied.get(){Err(io::ErrorKind::OutOfMemory.into())}else{Ok(())}}
- fn reserve(&self,n:usize)->io::Result<()>{let current=self.slots.borrow()[2];self.temporary(2,current.checked_add(n).ok_or_else(||self.overflow())?)}
- fn temporary(&self,slot:usize,n:usize)->io::Result<()>{self.checkpoint()?;let mut slots=self.slots.borrow_mut();if slot>=slots.len(){return Err(self.overflow())}let previous=slots[slot];let required=n.max(previous);let other=slots.iter().enumerate().filter(|(i,_)|*i!=slot).try_fold(0usize,|sum,(_,n)|sum.checked_add(*n)).ok_or_else(||self.overflow())?;if required.checked_add(other).is_none_or(|n|n>MAX_POLICY_OUTPUT){return Err(self.overflow())}slots[slot]=required;Ok(())}
- fn overflow(&self)->io::Error{self.denied.set(true);io::Error::new(io::ErrorKind::OutOfMemory,"native report physical transient envelope exhausted")}
+struct NativeReportAllowance{slots:std::sync::Mutex<[usize;3]>,denied:std::sync::atomic::AtomicBool}
+#[derive(Clone)]struct NativeReportWork{allocation:std::sync::Arc<NativeReportAllowance>}
+impl NativeReportWork{
+ fn allocation_bytes()->usize{std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<NativeReportAllowance>()).expect("fixed report allowance layout").0.pad_to_align().size()}
+ fn new()->Self{let fixed=Self::allocation_bytes();assert!(fixed<=MAX_POLICY_OUTPUT,"fixed report allowance exceeds its existing envelope");Self{allocation:std::sync::Arc::new(NativeReportAllowance{slots:std::sync::Mutex::new([0,0,fixed]),denied:false.into()})}}
+ fn for_buffer(capacity:usize)->io::Result<Self>{let work=Self::new();crate::report_work::Work::temporary(&work,1,capacity)?;Ok(work)}
+ fn admit(&self,slot:usize,n:usize,cumulative:bool)->io::Result<()>{use crate::report_work::Work;self.checkpoint()?;let mut slots=self.allocation.slots.lock().map_err(|_|self.overflow())?;if slot>=slots.len(){return Err(self.overflow())}let previous=slots[slot];let required=if cumulative{previous.checked_add(n).ok_or_else(||self.overflow())?}else{n.max(previous)};let other=slots.iter().enumerate().filter(|(i,_)|*i!=slot).try_fold(0usize,|sum,(_,n)|sum.checked_add(*n)).ok_or_else(||self.overflow())?;if required.checked_add(other).is_none_or(|n|n>MAX_POLICY_OUTPUT){return Err(self.overflow())}slots[slot]=required;Ok(())}
 }
-fn policy_stdout_work(mut input:impl Read)->io::Result<StreamOutput>{use crate::report_work::Work;let work=NativeReportWork::new();let mut bytes=Vec::new();let mut chunk=[0u8;8192];loop{let count=input.read(&mut chunk)?;if count==0{return Ok(StreamOutput{bytes,policy_work:Some(work)})}let needed=bytes.len().checked_add(count).filter(|n|*n<=MAX_POLICY_OUTPUT).ok_or_else(||work.overflow())?;if needed>bytes.capacity(){let target=needed.max(bytes.capacity().saturating_mul(2)).max(8192);let peak=target.checked_mul(4).and_then(|n|n.checked_add(bytes.capacity())).and_then(|n|n.checked_add(64)).ok_or_else(||work.overflow())?;work.temporary(1,peak)?;bytes.try_reserve_exact(target-bytes.len()).map_err(|_|work.overflow())?;if bytes.capacity()>target.saturating_mul(4){return Err(work.overflow())}}bytes.extend_from_slice(&chunk[..count]);}}
+impl crate::report_work::Work for NativeReportWork{
+ fn checkpoint(&self)->io::Result<()>{if self.allocation.denied.load(std::sync::atomic::Ordering::Acquire){Err(io::ErrorKind::OutOfMemory.into())}else{Ok(())}}
+ fn reserve(&self,n:usize)->io::Result<()>{self.admit(2,n,true)}
+ fn temporary(&self,slot:usize,n:usize)->io::Result<()>{self.admit(slot,n,false)}
+ fn overflow(&self)->io::Error{self.allocation.denied.store(true,std::sync::atomic::Ordering::Release);io::Error::new(io::ErrorKind::OutOfMemory,"native report physical transient envelope exhausted")}
+}
+// The actual encoded bytes drop BEFORE the SAME finite allowance alias. A
+// detached writer therefore cannot outlive its paid operation-local owner.
+struct FundedInput{bytes:Vec<u8>,_work:NativeReportWork}
+fn write_funded_input(mut output:impl Write,input:FundedInput)->io::Result<()>{let result=output.write_all(&input.bytes);drop(output);result}
+fn funded_check_input(request:&crate::native_check_cli_wire::Request,work:&NativeReportWork)->io::Result<FundedInput>{let bytes=crate::native_check_cli_wire::encode_request(request,work)?;Ok(FundedInput{bytes,_work:work.clone()})}
+fn policy_stdout_work(input:impl Read)->io::Result<StreamOutput>{policy_stdout_work_using(input,NativeReportWork::new())}
+fn policy_stdout_work_using(mut input:impl Read,work:NativeReportWork)->io::Result<StreamOutput>{use crate::report_work::Work;let mut bytes=Vec::new();let mut chunk=[0u8;8192];loop{let count=input.read(&mut chunk)?;if count==0{return Ok(StreamOutput{bytes,policy_work:Some(work)})}let needed=bytes.len().checked_add(count).filter(|n|*n<=MAX_POLICY_OUTPUT).ok_or_else(||work.overflow())?;if needed>bytes.capacity(){let target=needed.max(bytes.capacity().saturating_mul(2)).max(8192);let peak=target.checked_mul(4).and_then(|n|n.checked_add(bytes.capacity())).and_then(|n|n.checked_add(64)).ok_or_else(||work.overflow())?;work.temporary(1,peak)?;bytes.try_reserve_exact(target-bytes.len()).map_err(|_|work.overflow())?;if bytes.capacity()>target.saturating_mul(4){return Err(work.overflow())}}bytes.extend_from_slice(&chunk[..count]);}}
 #[cfg(test)]fn policy_stdout(input:impl Read)->io::Result<Vec<u8>>{policy_stdout_work(input).map(|out|out.bytes)}
 #[cfg(test)]fn validate_policy(bytes:&[u8],code:i32,baseline:bool)->io::Result<()>{let work=NativeReportWork::for_buffer(bytes.len())?;validate_policy_work(bytes,code,baseline,&work)}
 fn validate_policy_work(bytes:&[u8],code:i32,baseline:bool,work:&NativeReportWork)->io::Result<()>{
@@ -371,6 +387,13 @@ fn run_workspace_check(args: &[String], stdout: &mut impl Write, stderr: &mut im
 /// An explicit opt-in to one resident policy cohort. A recognized opt-in
 /// returns a verdict or a refusal before the legacy engine can start.
 pub fn workspace_check(args: &[String]) -> Option<std::process::ExitCode> {
+ let utility=matches!(args.first().map(String::as_str),Some("codemod"|"parity"))||args.first().is_some_and(|arg|arg=="sem")&&args.get(1).is_some_and(|arg|arg=="fixture");
+ if utility&&args.iter().any(|arg|arg=="--native-dmbc"||arg.starts_with("--native-dmbc=")){return Some(codemod_fixture_cli(args))}
+
+ if matches!(args.first().map(String::as_str),Some("sem"|"base-vars-dead"))&&args.iter().any(|arg|arg=="--native-dmbc"){return Some(sem_utility_cli(args))}
+    // Reuse the existing ordinary native GEN path before the generic CHECK opt-in.
+    if args.first().is_some_and(|arg|arg=="gen") && args.iter().any(|arg|arg=="--native-dmbc"||arg.starts_with("--native-dmbc=")){return Some(ordinary_generation_cli(&args[1..]));}
+    if args.first().is_some_and(|a|a=="baseline")&&args.iter().any(|a|a=="--native-dmbc"||a.starts_with("--native-dmbc=")){return Some(native_baseline_update::cli(args))}
     if args.iter().any(|a|a=="--propose-schema")&&args.iter().any(|a|a=="--native-dmbc"||a.starts_with("--native-dmbc=")){return Some(native_schema_proposals::cli(args))}
     if args.first().is_some_and(|arg|arg=="fix")&&args.iter().any(|arg|arg=="--native-dmbc"||arg.starts_with("--native-dmbc=")){return Some(native_fix::cli(args))}
     if args.iter().any(|arg|arg=="--native-full-registry"||arg.starts_with("--native-full-registry=")){return Some(native_full_check::cli(args))}
@@ -391,6 +414,17 @@ pub fn workspace_check(args: &[String]) -> Option<std::process::ExitCode> {
 #[cfg(test)]
 mod workspace_check_tests {
     use super::*;
+
+    #[test]
+    fn shared_ordinary_generation_dispatch_keeps_legacy_default_and_refuses_malformed_native_without_fallback() {
+        let plain=vec!["gen".to_owned(),"--check".to_owned(),"reads".to_owned()];
+        assert!(workspace_check(&plain).is_none());
+        for arguments in [
+            vec!["gen".to_owned(),"--native-dmbc".to_owned()],
+            vec!["gen".to_owned(),"--native-dmbc=/not-started/dmbc".to_owned()],
+            vec!["gen".to_owned(),"--native-dmbc".to_owned(),"/not-started/dmbc".to_owned(),"--selftest".to_owned()],
+        ] { assert_eq!(workspace_check(&arguments),Some(std::process::ExitCode::from(2))); }
+    }
 
     #[test]
     fn normal_check_only_accepts_the_exact_opt_in_cohort_and_supported_flags() {
@@ -678,3 +712,38 @@ mod workspace_check_tests {
 
 #[path="native_checker_text.rs"]mod native_checker_text;
 pub fn checker_text_cli(arguments:&[String])->std::process::ExitCode{native_checker_text::cli(arguments)}
+
+#[path="native_generation_cli.rs"]mod native_generation_cli;
+pub fn ordinary_generation_cli(args:&[String])->std::process::ExitCode{native_generation_cli::cli(args)}
+
+#[path="native_metadata_utility.rs"]mod metadata_utility;
+pub fn metadata_utility_cli(args:&[String])->Option<std::process::ExitCode>{metadata_utility::cli(args)}
+
+#[path="native_changed_paths.rs"]mod changed_paths;
+
+#[cfg(test)]mod funded_request_owner_controls{
+ use super::*;use crate::report_work::Work;
+ fn request()->crate::native_check_cli_wire::Request{crate::native_check_cli_wire::Request{changed:Some(vec!["code/actual.dm".into()]),timing:true,timing_only:false,allow_usage:false}}
+ #[test]fn actual_request_writer_keeps_same_paid_allowance_after_caller_and_reader_aliases_drop(){
+  struct Held{ready:mpsc::Sender<()>,release:mpsc::Receiver<()>}impl Write for Held{fn write(&mut self,bytes:&[u8])->io::Result<usize>{self.ready.send(()).map_err(io::Error::other)?;self.release.recv().map_err(io::Error::other)?;Ok(bytes.len())}fn flush(&mut self)->io::Result<()>{Ok(())}}
+  struct Release(Option<mpsc::Sender<()>>);impl Drop for Release{fn drop(&mut self){if let Some(send)=self.0.take(){let _=send.send(());}}}
+  let work=NativeReportWork::new();let reader=work.clone();let input=funded_check_input(&request(),&work).unwrap();assert!(std::sync::Arc::ptr_eq(&work.allocation,&input._work.allocation));assert!(work.allocation.slots.lock().unwrap()[2]>=NativeReportWork::allocation_bytes()+input.bytes.capacity());let weak=std::sync::Arc::downgrade(&work.allocation);let(ready_send,ready)=mpsc::channel();let(release_send,release)=mpsc::channel();let mut release_guard=Release(Some(release_send));let writer=thread::spawn(move||write_funded_input(Held{ready:ready_send,release},input));ready.recv_timeout(Duration::from_secs(30)).unwrap();drop(reader);drop(work);assert!(weak.upgrade().is_some(),"actual in-flight encoded Vec must retain SAME allowance owner on detached/caller-error paths");release_guard.0.take().unwrap().send(()).unwrap();writer.join().unwrap().unwrap();assert!(weak.upgrade().is_none());
+ }
+ #[test]fn actual_request_owner_counts_its_padded_allocation_shares_denial_and_preserves_first_output_io(){
+  struct Stop;impl Write for Stop{fn write(&mut self,_:&[u8])->io::Result<usize>{Err(io::Error::from_raw_os_error(1450))}fn flush(&mut self)->io::Result<()>{panic!("no later flush after actual write failure")}}
+  let work=NativeReportWork::new();assert_eq!(work.allocation.slots.lock().unwrap()[2],NativeReportWork::allocation_bytes());let clone=work.clone();work.temporary(1,MAX_POLICY_OUTPUT-NativeReportWork::allocation_bytes()-1).unwrap();assert_eq!(clone.reserve(2).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(work.checkpoint().unwrap_err().kind(),io::ErrorKind::OutOfMemory);drop(clone);drop(work);
+  let healthy=NativeReportWork::new();let input=funded_check_input(&request(),&healthy).unwrap();let weak=std::sync::Arc::downgrade(&healthy.allocation);drop(healthy);assert_eq!(write_funded_input(Stop,input).unwrap_err().raw_os_error(),Some(1450));assert!(weak.upgrade().is_none());
+ }
+}
+
+#[path="native_standalone_selftests.rs"]mod standalone_selftests;
+pub fn standalone_selftest_cli(args:&[String])->std::process::ExitCode{standalone_selftests::cli(args)}
+#[path="native_ordinary_cli.rs"]mod ordinary_cli;
+pub fn ordinary_native_cli(args:&[String])->std::process::ExitCode{ordinary_cli::cli(args)}
+
+#[path="native_utility_streams.rs"]mod utility_streams;
+#[path="native_sem_utility.rs"]mod native_sem_utility;
+pub fn sem_utility_cli(args:&[String])->std::process::ExitCode{native_sem_utility::cli(args)}
+
+#[path="native_codemod_fixture_client.rs"]mod native_codemod_fixture_client;
+pub fn codemod_fixture_cli(args:&[String])->std::process::ExitCode{native_codemod_fixture_client::cli(args)}

@@ -170,7 +170,11 @@ fn file(root: &Path, source: &SourceLocation) -> String {
 /// issued coordinates; lone-CR display correction belongs to a captured raw
 /// source projection, never a fresh filesystem read.
 pub fn base_var_declarations<'a>(archive:&'a BodyArchive,base_types:&[&str],root:&Path)->Result<Vec<BaseVarDeclaration<'a>>,Unsupported>{base_var_declarations_using(archive,base_types,root,&mut Compatibility)}
-pub fn base_var_declarations_using<'a,W:DeclarationWork>(archive:&'a BodyArchive,base_types:&[&str],root:&Path,work:&mut W)->Result<Vec<BaseVarDeclaration<'a>>,W::Error>{
+pub fn base_var_declarations_using<'a,W:DeclarationWork>(archive:&'a BodyArchive,base_types:&[&str],root:&Path,work:&mut W)->Result<Vec<BaseVarDeclaration<'a>>,W::Error>{base_var_declarations_selected_using(archive,base_types,root,false,work)}
+/// Utility declaration projection on the SAME authored grouping/flags/source cursor.
+/// Unrelated list initializer syntax is not a prerequisite for base-variable name usage.
+pub fn base_type_declarations_using<'a,W:DeclarationWork>(archive:&'a BodyArchive,base_types:&[&str],root:&Path,work:&mut W)->Result<Vec<BaseVarDeclaration<'a>>,W::Error>{base_var_declarations_selected_using(archive,base_types,root,true,work)}
+fn base_var_declarations_selected_using<'a,W:DeclarationWork>(archive:&'a BodyArchive,base_types:&[&str],root:&Path,only_base:bool,work:&mut W)->Result<Vec<BaseVarDeclaration<'a>>,W::Error>{
     work.checkpoint()?;
     let tree = archive.tree();
     // Runtime dispatch normalizes a formal before overrides. Legacy Analyze's
@@ -217,6 +221,7 @@ pub fn base_var_declarations_using<'a,W:DeclarationWork>(archive:&'a BodyArchive
         if owner == SymbolId::of("/") {
             continue;
         }
+        if only_base{let owner_text=tree.symbols().text(owner).ok_or_else(||Unsupported("base-var owner spelling unavailable".into()))?;if !base_types.contains(&owner_text){continue}}
         if member.metadata.inherited_opaque().is_some() {
             return Err(Unsupported("base-var declared flags are opaque".into()).into());
         }
@@ -240,7 +245,7 @@ pub fn base_var_declarations_using<'a,W:DeclarationWork>(archive:&'a BodyArchive
                 "base-var authored initializer is incomplete or foreign".into(),
             ).into());
         }
-        let list_init = empty_list_using(tree,value.metadata.initializer.as_ref(),work)?;
+        let list_init = if only_base{false}else{empty_list_using(tree,value.metadata.initializer.as_ref(),work)?};
         if !base && !list_init {
             continue;
         }

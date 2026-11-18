@@ -319,6 +319,8 @@ impl SnapshotProvider for BulkFileSystemProofs {
     fn read_original_open_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<crate::input_snapshot::OriginalOpenedRead>{FileSystemInputs.read_original_open_admitted(path,limit,work,after_open,before_allocate)}
 
     fn original_open_status(&self,path:&Path)->io::Result<crate::input_snapshot::OriginalReadOpenStatus>{FileSystemInputs.original_open_status(path)}
+    fn optional_read_status(&self,path:&Path)->io::Result<crate::input_snapshot::OptionalReadStatus>{FileSystemInputs.optional_read_status(path)}
+    fn read_optional_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,fund:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<crate::input_snapshot::OptionalInputRead>{FileSystemInputs.read_optional_admitted(path,limit,work,fund)}
 
     /// Presence follows symlink targets live; parent bulk proofs cannot stand in.
     fn path_presence(&self,path:&Path)->io::Result<bool>{FileSystemInputs.path_presence(path)}

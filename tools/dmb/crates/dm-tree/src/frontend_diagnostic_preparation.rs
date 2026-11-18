@@ -107,6 +107,7 @@ impl DiagnosticFrontend {
         })
     }
     pub fn with_body_queries(self, host: Arc<dyn BodySyntaxQueries>) -> Result<Self, String> {
+        if self.inner.issued_syntax.has_parser_report_prefix(){return Err("report-only parser prefix cannot attach or export BODY query Inputs".into())}
         let Self {
             purpose,
             inner,
@@ -125,6 +126,18 @@ impl DiagnosticFrontend {
             archive,
             retained_records,
         })
+    }
+    /// Attach the explicit issued native demand mode using the same actual host.
+    pub fn with_body_queries_checked(self, host: Arc<dyn BodySyntaxQueries>, settings: Arc<dyn super::SettingExpressionQueries>) -> Result<Self, super::BodySyntaxFailure> {
+        if !self.inner.original_primary.as_ref().is_some_and(|p|p.ordinary_code_demand()) {
+            return self.with_body_queries(host).map(|prepared|{prepared.inner.trace_attached_body_owners("checked_eager_attachment");prepared}).map_err(|message|super::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,message)));
+        }
+        let Self{purpose,inner,receipt,retained_records,..}=self;
+        let inner=inner.with_ordinary_body_demand_queries_checked(host,settings)?;
+        let archive=inner.body_archive().ok_or_else(||super::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"diagnostic current demand archive unavailable")))?;
+        let prepared=Self{purpose,inner,receipt,retained_records,archive};
+        prepared.inner.trace_attached_body_owners("checked_demand_attachment");
+        Ok(prepared)
     }
     pub fn source_view(&self) -> Result<DiagnosticSourceView<'_>, String> {
         if !self.receipt.authenticates(&self.inner.snapshot.tree)
@@ -742,3 +755,94 @@ mod authored_callable_anchor_loan_tests {
         ).is_err());
     }
 }
+
+/// A real commit-produced BODY error on the same current primary source.
+/// Reader timing is the opaque commit loan, never inferred from its anchor.
+pub struct OriginalCommittedBodyDiagnostic<'a>{native:&'a dm_syntax::Diagnostic,point:BorrowedSourceNoteOrigin<'a>,registration:&'a dm_preprocess::regions::OriginalNoticeRegistration,header:dm_syntax::Span}
+impl OriginalCommittedBodyDiagnostic<'_>{
+ pub fn native(&self)->&dm_syntax::Diagnostic{self.native}
+ pub fn point(&self)->BorrowedSourceNoteOrigin<'_>{self.point}
+ pub fn reader_registration(&self)->&dm_preprocess::regions::OriginalNoticeRegistration{self.registration}
+ pub fn header(&self)->dm_syntax::Span{self.header}
+}
+impl DiagnosticFrontend{
+ pub fn original_committed_body_counts(&self)->std::io::Result<(usize,usize)>{
+  if self.purpose!=DiagnosticPreparationPurpose::OriginalSharedComplete{return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"committed BODY syntax requires its actual completed Original preparation"))}
+  self.inner.original_primary.as_ref().ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?.committed_body_counts()
+ }
+ pub fn visit_original_committed_body_diagnostics<'a>(&'a self,checkpoint:&dyn Fn()->std::io::Result<()>,consume:&mut dyn FnMut(OriginalCommittedBodyDiagnostic<'a>)->std::io::Result<()>)->std::io::Result<()>{
+  self.original_committed_body_counts()?;self.source_view().map_err(std::io::Error::other)?;
+  let primary=self.inner.original_primary.as_ref().ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?;
+  primary.visit_committed_body_diagnostics(checkpoint,&mut|offset,header,native,registration|{
+   let at=offset.checked_add(native.span.start).ok_or(std::io::ErrorKind::InvalidInput)?;let end=offset.checked_add(usize::try_from(header.end).map_err(|_|std::io::ErrorKind::InvalidInput)?).ok_or(std::io::ErrorKind::InvalidInput)?;let start=offset.checked_add(usize::try_from(header.start).map_err(|_|std::io::ErrorKind::InvalidInput)?).ok_or(std::io::ErrorKind::InvalidInput)?;
+   let point=self.inner.source_export_mapping.borrowed_source_note_point(at).map_err(|reason|std::io::Error::new(std::io::ErrorKind::Unsupported,reason))?;
+   consume(OriginalCommittedBodyDiagnostic{native,point,registration,header:dm_syntax::Span::new(start,end)})
+  })
+ }
+}
+
+impl DiagnosticFrontend{pub fn original_committed_body_input_key(&self,ordinal:usize)->std::io::Result<u64>{self.original_committed_body_counts()?;self.inner.original_primary.as_ref().ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?.committed_body_input_key(ordinal)}}
+
+impl DiagnosticFrontend{
+ /// Actual committed syntax counts only, including a separately typed formal-fatal prefix.
+ /// This grants neither Checker source nor complete/current BODY Inputs.
+ pub fn parse_only_body_counts(&self)->std::io::Result<(usize,usize)>{
+  if !matches!(self.purpose,DiagnosticPreparationPurpose::OriginalSharedComplete|DiagnosticPreparationPurpose::OriginalAnalyzePrefix){return Err(std::io::Error::from(std::io::ErrorKind::Unsupported))}
+  self.source_view().map_err(std::io::Error::other)?;self.inner.original_primary.as_ref().ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?.parse_only_body_counts()
+ }
+ pub fn visit_parse_only_body_diagnostics<'a>(&'a self,checkpoint:&dyn Fn()->std::io::Result<()>,consume:&mut dyn FnMut(OriginalCommittedBodyDiagnostic<'a>)->std::io::Result<()>)->std::io::Result<()>{
+  self.parse_only_body_counts()?;let primary=self.inner.original_primary.as_ref().ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?;
+  primary.visit_parse_only_body_diagnostics(checkpoint,&mut|offset,header,native,registration|{let at=offset.checked_add(native.span.start).ok_or(std::io::ErrorKind::InvalidInput)?;let start=offset.checked_add(header.start).ok_or(std::io::ErrorKind::InvalidInput)?;let end=offset.checked_add(header.end).ok_or(std::io::ErrorKind::InvalidInput)?;let point=self.inner.source_export_mapping.borrowed_source_note_point(at).map_err(|reason|std::io::Error::new(std::io::ErrorKind::Unsupported,reason))?;consume(OriginalCommittedBodyDiagnostic{native,point,registration,header:dm_syntax::Span::new(start,end)})})
+ }
+}
+
+/// Borrowed parser-report purpose, issued only after actual committed syntax
+/// coverage. It cannot stand for EffectInput's completed Checker source.
+pub struct ParseOnlySyntaxSource<'a>{owner:&'a DiagnosticFrontend}
+impl DiagnosticFrontend{pub fn parse_only_syntax_source(&self)->std::io::Result<ParseOnlySyntaxSource<'_>>{self.parse_only_body_counts()?;Ok(ParseOnlySyntaxSource{owner:self})}}
+impl<'a> ParseOnlySyntaxSource<'a>{
+ /// The real parser producer's consumed frontier. A formal fatal remains
+ /// before EOF; complete syntax must have consumed EOF. This grants no full
+ /// Checker input and does not replace its strict end-only accessor.
+ pub fn reader_frontier_registration(&self)->std::io::Result<dm_preprocess::regions::OriginalNoticeRegistration>{
+  self.source_view()?;
+  let end=self.owner.inner.issued_syntax.original_parser_reader_frontier_registration().map_err(std::io::Error::other)?.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual parser reader frontier is unissued"))?;
+  if self.is_fatal(){if end.require_after_actual_end().is_ok(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"fatal parser prefix cannot carry actual EOF"))}}else{end.require_after_actual_end()?;}Ok(end)
+ }
+
+ pub fn source_view(&self)->std::io::Result<DiagnosticSourceView<'a>>{self.owner.parse_only_body_counts()?;self.owner.source_view().map_err(std::io::Error::other)}
+ pub fn body_counts(&self)->std::io::Result<(usize,usize)>{self.owner.parse_only_body_counts()}
+ pub fn is_fatal(&self)->bool{self.owner.purpose==DiagnosticPreparationPurpose::OriginalAnalyzePrefix}
+ pub fn visit_formal_notices(&self,checkpoint:&dyn Fn()->std::io::Result<()>,consume:&mut dyn FnMut(OriginalParserFormalNotice<'a>)->std::io::Result<()>)->std::io::Result<()>{
+  self.owner.parse_only_body_counts()?;let primary=self.owner.inner.original_primary.as_ref().ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?;
+  primary.visit_parser_formal_notices(checkpoint,&mut|notice,value,registration|{let point=self.owner.inner.source_export_mapping.borrowed_source_note_point(notice.span().start).map_err(|reason|std::io::Error::new(std::io::ErrorKind::Unsupported,reason))?;consume(OriginalParserFormalNotice{notice,value,registration,point})})
+ }
+}
+pub struct OriginalParserFormalNotice<'a>{pub notice:crate::OriginalFormalNotice,pub value:Option<&'a str>,pub registration:&'a dm_preprocess::regions::OriginalNoticeRegistration,pub point:BorrowedSourceNoteOrigin<'a>}
+
+impl DiagnosticFrontend{
+ /// Reuse the canonical typed fatal-report producer on the actual prefix
+ /// mapping; successful-header notices are separately merged by registration.
+ pub fn parse_only_fatal_report(&self,host:&Arc<dyn SettingExpressionQueries>)->Result<Option<FrontendDiagnostics>,FrontendBuildFailure>{
+  self.parse_only_body_counts().map_err(FrontendBuildFailure::Operational)?;self.original_primary_fatal_report_using(host)
+ }
+ fn original_primary_fatal_report_using(&self,host:&Arc<dyn SettingExpressionQueries>)->Result<Option<FrontendDiagnostics>,FrontendBuildFailure>{
+  use super::declaration_demand::Demand;if self.purpose!=DiagnosticPreparationPurpose::OriginalAnalyzePrefix{return Ok(None)}
+  let primary=self.inner.original_primary.as_ref().ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::from(std::io::ErrorKind::InvalidInput)))?;
+  // Same existing borrowed Mapping projection as ColdFrontend::location. It
+  // borrows actual final-prefix owners, and creates no SourceExportMapping.
+  let mapping=Mapping{projection:Default::default(),plan:self.inner.plan.source_geometry(),expanded:&self.inner.expanded,files:&self.inner.files,by_path:&self.inner.source_by_path,hints:Default::default()};
+  let demand=super::declaration_demand::Checked{parse_only_reporting:true,host,body_host:None,type_loan:None};
+  let result=(||{let failure=demand.run(|permit|permit.original_primary_failure_only(primary,&self.inner.syntax,&mapping,&self.inner.plan))?;match failure{FrontendBuildFailure::Diagnostics(report)=>Ok(Some(report)),FrontendBuildFailure::Operational(actual)=>Err(FrontendBuildFailure::Operational(actual))}})();demand.finish(result)
+ }
+}
+
+impl DiagnosticFrontend{
+ pub fn require_original_utility_owner(&self)->std::io::Result<OriginalAnalysisCompleteness>{let complete=self.original_analysis_completeness().ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"utility requires its actual Original analysis purpose"))?;if self.inner.issued_syntax.has_parser_report_prefix(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"parser-report prefix cannot grant a semantic utility model"))}self.source_view().map_err(std::io::Error::other)?.require_original_analysis_seed().map_err(std::io::Error::other)?;Ok(complete)}
+ pub fn original_utility_declaration_context(&self)->Result<OriginalDeclarationExpressionContext<'_>,BodySyntaxFailure>{self.require_original_utility_owner().map_err(BodySyntaxFailure::Operational)?;self.inner.original_declaration_expression_context()}
+ pub fn visit_original_utility_formal_notices<'a>(&'a self,checkpoint:&dyn Fn()->std::io::Result<()>,consume:&mut dyn FnMut(OriginalParserFormalNotice<'a>)->std::io::Result<()>)->std::io::Result<()>{self.require_original_utility_owner()?;let primary=self.inner.original_primary.as_ref().ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?;primary.visit_original_utility_formal_notices(checkpoint,&mut|notice,value,registration|{let point=self.inner.source_export_mapping.borrowed_source_note_point(notice.span().start).map_err(|reason|std::io::Error::new(std::io::ErrorKind::Unsupported,reason))?;consume(OriginalParserFormalNotice{notice,value,registration,point})})}
+}
+
+impl DiagnosticFrontend{pub fn original_utility_fatal_report(&self,host:&Arc<dyn SettingExpressionQueries>)->Result<Option<FrontendDiagnostics>,FrontendBuildFailure>{self.require_original_utility_owner().map_err(FrontendBuildFailure::Operational)?;self.original_primary_fatal_report_using(host)}}
+
+impl DiagnosticSourceView<'_>{pub fn require_original_utility_owner(&self)->std::io::Result<OriginalAnalysisCompleteness>{self.owner.require_original_utility_owner()}}

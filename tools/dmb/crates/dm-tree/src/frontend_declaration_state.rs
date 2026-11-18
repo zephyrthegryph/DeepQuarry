@@ -190,13 +190,13 @@ impl DeclarationClaims {
         Ok(bound)
     }
     pub(super) fn capture_source_headers_checked(&self,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
-        let Some(mut current)=CurrentContribution::fresh_source_headers(source,offset,items,facts,ledger,Some(headers))else{return Ok(None)};
+        let pending=CurrentContribution::fresh_source_headers_using(source,offset,items,facts,ledger,Some(headers),Some(a));if let Some(actual)=a.take_operational_error(){return Err(actual)}let Some(mut current)=pending else{return Ok(None)};
         if !current.value.syntax.initializer_admission_matches(a)?{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"fresh checked contribution lacks original producer admission"));}
         if !self.values.is_shared() && self.values.publish_checked(key,&mut current,a)?.is_none(){return Ok(None);}
         Ok(Some(current))
     }
     pub(super) fn capture_source_headers_converged_checked(&self,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,previous:&super::relative_declarations::BodyCodeCandidates,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
-        let Some(mut value)=Contribution::capture_source(source,offset,items,facts,ledger,Some(headers))else{return Ok(None)};
+        let pending=Contribution::capture_source_with_admission(source,offset,items,facts,ledger,Some(headers),Some(a));if let Some(actual)=a.take_operational_error(){return Err(actual)}let Some(mut value)=pending else{return Ok(None)};
         let syntax=Arc::get_mut(&mut value.syntax).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"fresh actual syntax escaped before code convergence"))?;
         syntax.converge_body_codes(previous,a)?;
         let text=value.source.clone();let Some(mut current)=CurrentContribution::bind(Arc::new(value),&text,offset)else{return Ok(None)};
@@ -744,11 +744,13 @@ impl CurrentContribution {
         facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
         headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
-    ) -> Option<Self> {
+    ) -> Option<Self> {Self::fresh_source_headers_using(source,offset,items,facts,ledger,headers,None)}
+    pub(super) fn fresh_source_headers_using(source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Option<Arc<crate::procedure::OriginalProcedureHeaders>>,a:Option<&dm_syntax::SettingAdmission<'_>>)->Option<Self>{Self::fresh_source_headers_mode(source,offset,items,facts,ledger,headers,a,false)}
+    pub(super) fn fresh_source_headers_mode(source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Option<Arc<crate::procedure::OriginalProcedureHeaders>>,a:Option<&dm_syntax::SettingAdmission<'_>>,ordinary_demand:bool)->Option<Self>{
         let text = source.clone();
         Self::bind(
-            Arc::new(Contribution::capture_source(
-                source, offset, items, facts, ledger, headers,
+            Arc::new(Contribution::capture_source_with_mode(
+                source, offset, items, facts, ledger, headers,a,ordinary_demand,
             )?),
             &text,
             offset,
@@ -758,10 +760,12 @@ impl CurrentContribution {
         source:dm_preprocess::SourceText, items:dm_syntax::OriginalCommittedItems,
         facts:crate::AdaptedDeclarations, ledger:AllocationLedger,
         headers:Arc<crate::procedure::OriginalProcedureHeaders>,
-    )->Option<Self>{
+        a:&dm_syntax::SettingAdmission<'_>,
+    )->Option<Self>{Self::adopt_original_items_mode(source,items,facts,ledger,headers,a,false)}
+    pub(super) fn adopt_original_items_mode(source:dm_preprocess::SourceText,items:dm_syntax::OriginalCommittedItems,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,a:&dm_syntax::SettingAdmission<'_>,ordinary_demand:bool)->Option<Self>{
         let text=source.clone();
         let value=Contribution::capture_source_using(source,0,facts,ledger,|source,settings|
-            RelativeSyntax::adopt_original_items(items,source.clone(),settings,headers))?;
+            RelativeSyntax::adopt_original_items_mode(items,source.clone(),settings,headers,a,ordinary_demand))?;
         Self::bind(Arc::new(value),&text,0)
     }
     pub(super) fn symbols(&self) -> &SymbolTable {
@@ -792,10 +796,12 @@ impl Contribution {
         facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
         headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
-    ) -> Option<Self> {
+    ) -> Option<Self> {Self::capture_source_with_admission(source,offset,items,facts,ledger,headers,None)}
+    fn capture_source_with_admission(source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Option<Arc<crate::procedure::OriginalProcedureHeaders>>,a:Option<&dm_syntax::SettingAdmission<'_>>)->Option<Self>{Self::capture_source_with_mode(source,offset,items,facts,ledger,headers,a,false)}
+    fn capture_source_with_mode(source:dm_preprocess::SourceText,offset:usize,mut items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Option<Arc<crate::procedure::OriginalProcedureHeaders>>,a:Option<&dm_syntax::SettingAdmission<'_>>,ordinary_demand:bool)->Option<Self>{
         items_spans(&mut items,source.as_ref(),offset,0)?;
         Self::capture_source_using(source,offset,facts,ledger,|source,settings|
-            RelativeSyntax::capture_with_settings_headers(items,source.clone(),settings,headers))
+            RelativeSyntax::capture_with_settings_headers_mode(items,source.clone(),settings,headers,a,ordinary_demand))
     }
     fn capture_source_using(
         source:dm_preprocess::SourceText,offset:usize,mut facts:crate::AdaptedDeclarations,ledger:AllocationLedger,

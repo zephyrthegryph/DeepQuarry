@@ -111,5 +111,24 @@ fn put_pair(
 /// SAME old raw keep/init-only/schema policy; private source loan stays with host.
 #[cfg(feature="native-policy")]
 pub(crate) fn read_extra_file_using<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(f:&crate::tree::SourceFile,schemas:&mut crate::value_schema_policy::SchemaHints,registry:&mut Vec<String>,init_only:&mut Vec<(String,String)>,retained:&mut C,temporary:&mut T)->Result<(),C::Error>where C::Error:From<String>{
- use crate::key_policy_control as kc;kc::reserve(temporary,||f.raw().text.len().checked_mul(64)?.checked_add(8192))?;schemas.read_with_control(f,temporary)?;let keep=crate::pat!(r"(?m)^LIFECYCLE_KEEP_(?:UNLESS_FORCED|ALWAYS)\((/[\w/]+)\)");let head=crate::pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]");let param=crate::pat!(r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE");let successor=crate::pat!(r"\bsuccessor\s*=\s*nameof\((\w+)\)");let code=f.code();for cap in keep.captures_iter(&code.text){retained.checkpoint()?;kc::row(retained,registry)?;registry.push(kc::own(retained,cap.s(1))?);}let mut owner=None;for line in code.lines(){retained.checkpoint()?;if let Some(cap)=head.captures(line){owner=Some(kc::own(temporary,cap.s(1))?);continue}if !(line.starts_with('\t')||line.starts_with(' '))&&!line.trim().is_empty(){owner=None}if let Some(ty)=owner.as_deref(){if let Some(cap)=param.captures(line){kc::row(retained,init_only)?;init_only.push((kc::own(retained,ty)?,kc::own(retained,cap.s(1))?));}for cap in successor.captures_iter(line){retained.checkpoint()?;kc::row(retained,init_only)?;init_only.push((kc::own(retained,ty)?,kc::own(retained,cap.s(1))?));}}}retained.checkpoint()
+ use crate::key_policy_control as kc;
+ kc::reserve(temporary,||f.raw().text.len().checked_mul(64)?.checked_add(8192))?;schemas.read_with_control(f,temporary)?;
+ const KEEP:&str=r"(?m)^LIFECYCLE_KEEP_(?:UNLESS_FORCED|ALWAYS)\((/[\w/]+)\)";
+ const HEAD:&str=r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]";
+ const PARAM:&str=r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE";
+ const SUCCESSOR:&str=r"\bsuccessor\s*=\s*nameof\((\w+)\)";
+ let code=f.code();let mut at=0;
+ while let Some(cap)=kc::captures_static(temporary,KEEP,&code.text,at,||crate::pat!(KEEP))?{retained.checkpoint()?;kc::row(retained,registry)?;registry.push(kc::own(retained,cap.s(1))?);at=cap.end(0);}
+ let mut owner=None;
+ for line in code.lines(){
+  retained.checkpoint()?;
+  if let Some(cap)=kc::captures_static(temporary,HEAD,line,0,||crate::pat!(HEAD))?{owner=Some(kc::own(temporary,cap.s(1))?);continue}
+  if !(line.starts_with('\t')||line.starts_with(' '))&&!line.trim().is_empty(){owner=None}
+  if let Some(ty)=owner.as_deref(){
+   if let Some(cap)=kc::captures_static(temporary,PARAM,line,0,||crate::pat!(PARAM))?{kc::row(retained,init_only)?;init_only.push((kc::own(retained,ty)?,kc::own(retained,cap.s(1))?));}
+   let mut at=0;
+   while let Some(cap)=kc::captures_static(temporary,SUCCESSOR,line,at,||crate::pat!(SUCCESSOR))?{retained.checkpoint()?;kc::row(retained,init_only)?;init_only.push((kc::own(retained,ty)?,kc::own(retained,cap.s(1))?));at=cap.end(0);}
+  }
+ }
+ retained.checkpoint()
 }

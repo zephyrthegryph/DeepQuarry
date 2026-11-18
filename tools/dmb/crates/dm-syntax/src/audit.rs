@@ -238,17 +238,42 @@ pub fn parse_original_proc_with_shared_parameters_from_window(source:&str,span:S
 /// reacquire that owner merely by carrying equal bytes or this scalar.
 pub fn parse_proc_with_native_consumption_from_window(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->(Result<ProcedureWithOrigins,Diagnostic>,bool){
  let mut complete=false;
- let result=parse_proc_with_parameter_profile_and_native_consumption(source,span,tokens,base,defaults,original,preissued,facts,Some(&mut complete));
+ let result=parse_proc_with_parameter_profile_and_native_consumption(source,span,tokens,base,defaults,original,preissued,facts,Some(&mut complete),false,None);
  (result,complete)
 }
-fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->Result<ProcedureWithOrigins,Diagnostic>{
-    parse_proc_with_parameter_profile_and_native_consumption(source,span,tokens,base,defaults,original,preissued,facts,None)
+/// Same canonical parser with transient typed collection completion. DATA only;
+/// the private commit factory must supply its pre-funded cleanup and actual loan.
+pub fn parse_proc_with_committed_native_consumption_from_window(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,preissued:crate::SharedParameterSignature,facts:crate::OriginalLiteralFactsView<'_>)->(Result<ProcedureWithOrigins,Diagnostic>,bool){let mut complete=false;let result=parse_proc_with_parameter_profile_and_native_consumption(source,span,tokens,base,None,true,Some(preissued),Some(facts),Some(&mut complete),true,None);(result,complete)}
+
+/// Actual result DATA precedes the SAME Storage credit. On any ordinary drop,
+/// the Item/diagnostic payload dies before its physical allocation is released.
+/// No Current/source/Original grammar authority is issued by this wrapper.
+pub struct AdmittedProcedureWithOrigins{result:Option<Result<ProcedureWithOrigins,Diagnostic>>,complete:bool,credit:Option<crate::SettingRootLease>}
+impl AdmittedProcedureWithOrigins{
+ pub fn complete(&self)->bool{self.complete}
+ pub fn take_result(&mut self)->Result<ProcedureWithOrigins,Diagnostic>{self.result.take().expect("actual canonical result taken once")}
+ pub fn into_credit(mut self)->crate::SettingRootLease{assert!(self.result.is_none(),"take actual result before transferring its storage credit");self.credit.take().expect("actual canonical credit taken once")}
 }
-fn parse_proc_with_parameter_profile_and_native_consumption(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>,native_consumption:Option<&mut bool>)->Result<ProcedureWithOrigins,Diagnostic>{
-    let failure = |message: &str| Diagnostic {
-        span,
-        kind: DiagnosticKind::Unsupported,
-        message: message.into(),
+fn parse_admitted_procedure(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>,typed:bool,a:&crate::SettingAdmission<'_>)->std::io::Result<AdmittedProcedureWithOrigins>{
+ if !preissued.as_ref().is_some_and(|parameters|parameters.is_admitted_by(a)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"canonical allocation-only parser requires its admitted shared parameter owner"))}
+ let storage=crate::declaration_parser::CanonicalPrimaryStorage::new(a)?;
+ let mut complete=false;
+ // Storage is declared BEFORE result, so all failure paths destroy actual
+ // Item/header/diagnostic backing before the grant, including failed finish.
+ let result=parse_proc_with_parameter_profile_and_native_consumption(source,span,tokens,base,defaults,original,preissued,facts,Some(&mut complete),typed,Some(&storage));
+ if let Some(actual)=storage.take_failure().or_else(||a.take_operational_error()){return Err(actual)}
+ let credit=storage.finish(&result)?;
+ Ok(AdmittedProcedureWithOrigins{result:Some(result),complete,credit:Some(credit)})
+}
+pub fn parse_proc_with_native_consumption_from_window_admitted(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>,a:&crate::SettingAdmission<'_>)->std::io::Result<AdmittedProcedureWithOrigins>{parse_admitted_procedure(source,span,tokens,base,defaults,original,preissued,facts,false,a)}
+pub fn parse_proc_with_committed_native_consumption_from_window_admitted(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,preissued:crate::SharedParameterSignature,facts:crate::OriginalLiteralFactsView<'_>,a:&crate::SettingAdmission<'_>)->std::io::Result<AdmittedProcedureWithOrigins>{parse_admitted_procedure(source,span,tokens,base,None,true,Some(preissued),Some(facts),true,a)}
+fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->Result<ProcedureWithOrigins,Diagnostic>{
+    parse_proc_with_parameter_profile_and_native_consumption(source,span,tokens,base,defaults,original,preissued,facts,None,false,None)
+}
+fn parse_proc_with_parameter_profile_and_native_consumption(source:&str,span:Span,tokens:crate::TokenWindow<'_>,base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>,facts:Option<crate::OriginalLiteralFactsView<'_>>,native_consumption:Option<&mut bool>,typed:bool,allocation:Option<&crate::declaration_parser::CanonicalPrimaryStorage<'_,'_>>)->Result<ProcedureWithOrigins,Diagnostic>{
+    let failure = |message: &str| match allocation {
+        Some(storage)=>storage.diagnostic(span,DiagnosticKind::Unsupported,message),
+        None=>Diagnostic {span,kind:DiagnosticKind::Unsupported,message:message.into()},
     };
     if source.get(span.range()).is_none() || span.end.checked_add(base).is_none() {
         return Err(failure("original procedure token range is outside source"));
@@ -266,7 +291,7 @@ fn parse_proc_with_parameter_profile_and_native_consumption(source:&str,span:Spa
     }
     let mut consumed=false;
     let (mut items, diagnostics) =
-        crate::declaration_parser::parse_original_body_span_range_with_native_consumption(source, span, tokens, facts,&mut consumed);
+        if let Some(storage)=allocation{storage.parse(source,span,tokens,facts,&mut consumed,typed)}else{if typed{crate::declaration_parser::parse_original_body_span_range_with_typed_native_consumption(source,span,tokens,facts,&mut consumed)}else{crate::declaration_parser::parse_original_body_span_range_with_native_consumption(source,span,tokens,facts,&mut consumed)}};
     let observe_native_parameters=native_consumption.is_some()&&!original;
     if let Some(complete)=native_consumption{*complete=consumed;}
     if let Some(mut diagnostic) = diagnostics.into_iter().next() {
@@ -814,3 +839,6 @@ mod native_structural_consumption_controls{
   }
  }
 }
+
+#[cfg(test)]
+#[path="canonical_primary_allocation_controls.rs"]mod canonical_primary_allocation_controls;

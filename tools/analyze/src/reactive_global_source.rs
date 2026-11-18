@@ -7,20 +7,31 @@ pub(crate) struct Callable<'a>{pub owner:&'a str,pub name:&'a str,pub ordinal:us
 pub(crate) enum SelectedCallable<'a>{Source(Callable<'a>),Builtin,Missing}
 pub(crate) trait Body{
  fn statement_body(&self)->&dm_tree::frontend::StatementBody;
- fn source_locals(&self)->Result<dm_tree::frontend::SourceLocalView<'_>,String>;
- fn source_parameters(&self)->Result<dm_tree::frontend::SourceParameterView<'_>,String>;
+ fn source_locals(&self)->Result<dm_tree::frontend::SourceLocalView<'_>,Failure>;
+ fn source_parameters(&self)->Result<dm_tree::frontend::SourceParameterView<'_>,Failure>;
+ fn current_offset(&self,offset:usize)->Result<usize,Failure>{Ok(offset)}
 }
 impl Body for dm_tree::frontend::ArchivedBody<'_>{
  fn statement_body(&self)->&dm_tree::frontend::StatementBody{self.statement_body()}
- fn source_locals(&self)->Result<dm_tree::frontend::SourceLocalView<'_>,String>{self.source_locals()}
- fn source_parameters(&self)->Result<dm_tree::frontend::SourceParameterView<'_>,String>{self.source_parameters()}
+ fn source_locals(&self)->Result<dm_tree::frontend::SourceLocalView<'_>,Failure>{self.source_locals().map_err(Failure::from)}
+ fn source_parameters(&self)->Result<dm_tree::frontend::SourceParameterView<'_>,Failure>{self.source_parameters().map_err(Failure::from)}
 }
 impl Body for dm_tree::frontend::GenerationBodyLoan<'_>{
  fn statement_body(&self)->&dm_tree::frontend::StatementBody{self.statements()}
- fn source_locals(&self)->Result<dm_tree::frontend::SourceLocalView<'_>,String>{self.source_locals()}
- fn source_parameters(&self)->Result<dm_tree::frontend::SourceParameterView<'_>,String>{self.source_parameters()}
+ fn source_locals(&self)->Result<dm_tree::frontend::SourceLocalView<'_>,Failure>{self.source_locals().map_err(Failure::from)}
+ fn source_parameters(&self)->Result<dm_tree::frontend::SourceParameterView<'_>,Failure>{self.source_parameters().map_err(Failure::from)}
+}
+
+struct UtilityBodyLoan<'loan,'archive,'syntax,'op>{body:&'loan dm_tree::frontend::CurrentArchivedBody<'archive,'syntax>,a:&'loan dm_syntax::SettingAdmission<'op>}
+fn utility_body_failure(error:dm_tree::frontend::BodySyntaxFailure)->Failure{match error{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>Failure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(actual)=>Failure::Unsupported(actual.message)}}
+impl Body for UtilityBodyLoan<'_,'_,'_,'_>{
+ fn statement_body(&self)->&dm_tree::frontend::StatementBody{self.body.syntax().canonical_statement_storage()}
+ fn source_locals(&self)->Result<dm_tree::frontend::SourceLocalView<'_>,Failure>{self.body.source_locals(self.a).map_err(utility_body_failure)}
+ fn source_parameters(&self)->Result<dm_tree::frontend::SourceParameterView<'_>,Failure>{self.body.source_parameters(self.a).map_err(utility_body_failure)}
+ fn current_offset(&self,offset:usize)->Result<usize,Failure>{self.body.syntax().projection().span(dm_syntax::Span::new(offset,offset)).map(|at|at.start).ok_or_else(||Failure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"utility read offset escaped current canonical body")))}
 }
 pub(crate) trait Source{
+ fn utility_body_contract(&self)->bool{false}
  fn occurrences(&self)->&[dm_tree::frontend::BodyOccurrence];
  fn raw_body_text(&self,ordinal:usize)->Result<&str,Failure>;
  fn variable(&self,owner:&str,name:&str)->Result<Option<crate::reactive_original_source::ReadVariable<'_>>,Failure>;
@@ -70,6 +81,8 @@ pub(crate) trait Source{
  fn with_budget(&self,budget:&Arc<Budget>,consume:&mut dyn FnMut(&dyn Source)->Result<(),Failure>)->Result<(),Failure>;
 }
 impl Source for ReadSource<'_>{
+ fn operation_budget(&self)->&Arc<Budget>{ReadSource::operation_budget(self)}
+ fn utility_body_contract(&self)->bool{self.utility_body_borrower().is_some()}
  fn plans_marker_rows(&self)->Result<crate::captured_marker_rows::Rows<'_>,Failure>{self.plans_marker_rows()}
  fn with_plan_metadata_files(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>,bool)->Result<bool,Failure>)->Result<bool,Failure>{self.with_plan_metadata_files(visit)}
  fn with_plan_reader_file(&self,ordinal:usize,name:&str,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{self.with_plan_reader_file(ordinal,name,visit)}
@@ -108,7 +121,17 @@ impl Source for ReadSource<'_>{
  fn body_count(&self)->usize{self.inputs().archive().len()}
  fn visit_callables<'source>(&'source self,names:Option<&[&str]>,poll:&mut dyn FnMut()->Result<(),Failure>,emit:&mut dyn FnMut(Callable<'source>)->Result<(),Failure>)->Result<(),Failure>{match names{Some(names)=>self.visit_callables(names,poll,|call|emit(Callable{owner:call.owner,name:call.name,ordinal:call.ordinal,member:call.member,header:call.header})),None=>self.visit_all_callables(poll,|call|emit(Callable{owner:call.owner,name:call.name,ordinal:call.ordinal,member:call.member,header:call.header}))}}
  fn relative_body_file(&self,ordinal:usize)->Result<String,Failure>{Ok(self.site_line(ordinal,1)?.0)}
- fn with_body(&self,ordinal:usize,consume:&mut dyn FnMut(&dyn Body)->Result<(),Failure>)->Result<(),Failure>{let body=self.parse_body(ordinal).map_err(|e|match e{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>Failure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>Failure::Unsupported(error.message)})?;consume(&body)}
+ fn with_body(&self,ordinal:usize,consume:&mut dyn FnMut(&dyn Body)->Result<(),Failure>)->Result<(),Failure>{
+  if let Some(obtain)=self.utility_body_borrower(){
+   if self.has_absolute_body_borrower(){return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"utility source cannot carry absolute and canonical body consumers")))}
+   self.checkpoint()?;self.require()?;let archive=self.inputs().archive();
+   return archive.with_original_syntax_admission(|a|archive.with_utility_current_body_checked_in(ordinal,a,&mut(),|_,input|obtain(input),|_,body|{
+    let pending=match body{None=>Ok(()),Some(body)=>consume(&UtilityBodyLoan{body:&body,a})};
+    match pending{Err(Failure::Operational(actual))=>Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual)),other=>Ok(other)}
+   })).map_err(utility_body_failure)?
+  }
+  let body=self.parse_body(ordinal).map_err(utility_body_failure)?;consume(&body)
+ }
  fn with_budget(&self,budget:&Arc<Budget>,consume:&mut dyn FnMut(&dyn Source)->Result<(),Failure>)->Result<(),Failure>{self.with_budget(budget,|source|consume(source))}
 }
 

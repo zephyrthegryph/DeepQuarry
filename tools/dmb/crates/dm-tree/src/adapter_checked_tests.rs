@@ -31,3 +31,14 @@ fn checked_adapter_actual_quota_and_os_failure_never_complete_producer_and_retry
 fn checked_adapter_native_override_rhs_preserves_current_original_token_geometry(){
     let source="/datum/probe\n    var/num/value=1\n    value=2+3\n";let(ast,tokens)=parsed(source);let old=from_ast(&ast,SymbolTable::default(),FileId(0),0,0).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let checkpoint=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,4*1024*1024,&checkpoint);let headers=crate::procedure::OriginalProcedureHeaders::from_primary_admitted(source.into(),&ast.items,0,tokens,&a).ok().unwrap();let(current,_)=from_ast_with_source_headers_checked(&ast,SymbolTable::default(),FileId(0),0,0,source,&headers,0,&a).unwrap().unwrap();assert_eq!(current.skeletons,old.skeletons);assert_eq!(current.origins,old.origins);
 }
+
+#[test]
+fn actual_checked_initializer_var_unknown_statement_metadata_matches_without_callable_slots(){
+ let source="/proc/before()\n    return 9\n/datum/probe\n    var\n        value=1+2\n        array[2]\n    value=3+4\n    proc/ordinary()\n        return 5\n";
+ let(ast,tokens)=parsed(source);assert!(ast.diagnostics.is_empty());
+ fn declaration_kinds(items:&[dm_syntax::Item],out:&mut Vec<dm_syntax::ItemKind>){for item in items{out.push(item.kind);if !matches!(item.kind,dm_syntax::ItemKind::Proc|dm_syntax::ItemKind::Verb){declaration_kinds(&item.children,out)}}}
+ let mut kinds=Vec::new();declaration_kinds(&ast.items,&mut kinds);assert!(kinds.contains(&dm_syntax::ItemKind::Unknown),"real original array declarator exercises Unknown input kind");assert!(kinds.contains(&dm_syntax::ItemKind::Statement));
+ let old=from_ast(&ast,SymbolTable::default(),FileId(0),0,0).unwrap();let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&counter,4<<20,&||Ok(()));
+ let headers=crate::procedure::OriginalProcedureHeaders::from_primary_admitted(source.into(),&ast.items,0,tokens,&a).ok().unwrap();
+ let(current,_)=from_ast_with_source_headers_checked(&ast,SymbolTable::default(),FileId(0),0,0,source,&headers,0,&a).unwrap().unwrap();assert_eq!(current.skeletons,old.skeletons);assert_eq!(current.origins,old.origins);assert!(headers.initializer_admission_matches(&a).unwrap());
+}

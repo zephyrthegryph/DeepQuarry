@@ -389,7 +389,10 @@ fn actual_original_contentless_reference_delimiter_keeps_dme_eof_and_authored_so
         if next {
             put(&root, "code/after.dm", "/datum/after_queues\n");
         }
-        let front = prepare(&root);
+        // Native admitted queries intentionally borrow a Weak host. Keep this
+        // actual provider alive through every EOF/absence/ordinal query below.
+        let db = Arc::new(dmbc::query_db::QueryDb::default());
+        let front = prepare_using(&root, &db);
         let view = front.source_view().unwrap();
         assert_eq!(view.original_analysis_completeness(), Some(frontend::OriginalAnalysisCompleteness::Complete), "{case}");
         let archive = view.archive();
@@ -430,6 +433,19 @@ fn actual_original_contentless_reference_delimiter_keeps_dme_eof_and_authored_so
 
         let profile = tree.checker_builtin_profile().unwrap();
         let flags = if case == "private-eof" { dm_syntax::CHECKER_VAR_PRIVATE } else { 0 };
+        assert_eq!(archive.checker_variable_qualifiers_admitted(member, profile).unwrap(), flags, "{case}: SAME native Member index admission");
+        let first=archive.member_original_first_source_order(member).unwrap().expect("actual authored first encounter");
+        let last=archive.member_original_source_order(member).unwrap().expect("actual authored last encounter");
+        assert!(first<=last,"{case}");
+        for ordinal in [first,last]{assert_eq!(archive.original_declaration_occurrences().get(dm_tree::OccurrenceId(u32::try_from(ordinal).unwrap())).unwrap().target,dm_tree::Target::Member(member),"{case}: ordinal must remain actual same-member source DATA");}
+        assert_eq!(archive.member_original_source_order(dm_tree::MemberId(u32::MAX)).unwrap(),None,"forged member cannot borrow another target's encounter");
+        let context=front.original_utility_declaration_context().unwrap();let mut queried=false;
+        context.with_admission(&mut|admission|{
+            assert!(context.source_member_value_admitted(dm_tree::MemberId(u32::MAX),admission).is_err(),"forged member cannot become authored absence");
+            let value=context.source_member_value_admitted(member,admission)?;
+            assert_eq!(value.is_some(),case.ends_with("initialized"),"{case}: real authored RHS must never become None at EOF");
+            queried=true;Ok(())
+        }).unwrap();assert!(queried,"actual original admission must run");
         assert_eq!(archive.checker_variable_qualifiers(member, profile).unwrap(), flags, "{case}");
         let note = archive.member_source_note_point(member).unwrap();
         assert_eq!(note, location, "{case}: declaration diagnostic must use the issued token");

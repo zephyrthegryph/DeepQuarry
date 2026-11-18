@@ -4,24 +4,72 @@
 use super::*;
 use dm_tree::frontend::{
     BodySyntax, BodySyntaxFailure, BodySyntaxInput, BodySyntaxQueries, Diagnostic, DiagnosticKind,
-    DiagnosticStage,OriginalBodySyntaxProduct,BodyCodeIdentity,
+    DiagnosticStage,OriginalBodySyntaxProduct,BodyCodeIdentity,BodySyntaxInputWeak,
 };
 use std::sync::{
     atomic::Ordering,
     Weak,
 };
 
+#[path="body_pressure_trace.rs"]
+mod pressure_trace;
+// Keep scalar argument evaluation, formatting, buffering and final flush
+// inside the SAME stderr lock, exactly as the former writeln invocation.
+macro_rules! pressure_trace_row {
+    ($($arg:tt)*) => {{
+        let mut output = std::io::stderr().lock();
+        pressure_trace::write_row(&mut output, format_args!($($arg)*))
+    }};
+}
+
 pub(super) const BODY_SYNTAX: Kind = Kind(4);
 pub(super) const BUDGET: usize = 128 * 1024 * 1024;
 
+// Opt-in wall durations only. No shared sums, heap buffer, query/owner loan or
+// admission/checkpoint lives in this guard. Its first-declared local drops after
+// the scope's existing locals on success, `?`, early return or unwinding.
+struct BodyPhaseTiming { phase:&'static str, key:Key, started:std::time::Instant }
+impl BodyPhaseTiming {
+ fn start(phase:&'static str,key:Key)->Option<Self>{
+  dm_profile::detail_enabled().then(||Self{phase,key,started:std::time::Instant::now()})
+ }
+}
+impl Drop for BodyPhaseTiming {
+ fn drop(&mut self){
+  let elapsed_ns=self.started.elapsed().as_nanos();
+  use std::io::Write as _;
+  let _=writeln!(std::io::stderr().lock(),"ORIGINAL_BODY_PHASE_TIMING phase={} key_kind={} key_id={} elapsed_ns={elapsed_ns}",self.phase,self.key.kind.0,self.key.id);
+ }
+}
+
+// Borrow only the already-upgraded current Input. Declared after that Arc,
+// this guard dies first; no additional strong/weak owner or source model lives.
+struct HeavyBodyIdentityTiming<'input>{phase:&'static str,key:Key,input:&'input BodySyntaxInput,started:std::time::Instant}
+impl<'input> HeavyBodyIdentityTiming<'input>{
+ fn start(phase:&'static str,key:Key,input:&'input BodySyntaxInput)->Option<Self>{
+  dm_profile::detail_enabled().then(||Self{phase,key,input,started:std::time::Instant::now()})
+ }
+}
+impl Drop for HeavyBodyIdentityTiming<'_>{
+ fn drop(&mut self){
+  let elapsed=self.started.elapsed();if elapsed<std::time::Duration::from_millis(100){return}
+  use std::io::Write as _;let mut output=std::io::stderr().lock();
+  let _=write!(output,"ORIGINAL_BODY_HEAVY_CONTEXT phase={} key_kind={} key_id={} elapsed_ns={} ",self.phase,self.key.kind.0,self.key.id,elapsed.as_nanos());
+  self.input.write_captured_identity_context(&mut output);
+ }
+}
+
 #[derive(Debug)]
 struct Params {
-    input: Weak<BodySyntaxInput>,
+    input: Arc<BodySyntaxInputWeak>,
     key: Key,
     // Tiny code owner prevents pointer-locator ABA while graph metadata lives.
     // No source/input/tree/model is retained strongly through Params.
     code:Option<Arc<BodyCodeIdentity>>,
 }
+
+#[cfg(test)]thread_local!{static ACTUAL_BODY_PARAMS_TEST_CAPTURE:std::cell::RefCell<Option<Vec<Arc<Params>>>>=const{std::cell::RefCell::new(None)};}
+#[cfg(test)]fn capture_actual_body_params_for_test(params:&Arc<Params>){ACTUAL_BODY_PARAMS_TEST_CAPTURE.with(|slot|{if let Some(rows)=slot.borrow_mut().as_mut(){rows.push(Arc::clone(params));}})}
 const CANONICAL_DOMAIN:u128=1u128<<127;
 pub(super) fn code_key(input:&BodySyntaxInput)->Result<Key,BodySyntaxFailure>{
  let code=input.original_code_owner().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"actual canonical BODY code owner absent")))?;
@@ -43,34 +91,69 @@ impl std::fmt::Display for CanonicalBodyContractDiagnostic{fn fmt(&self,f:&mut s
 impl std::error::Error for CanonicalBodyContractDiagnostic{}
 
 
+
+
+// Deterministic cfg(test) resource pressure at the real canonical publication.
+// No production policy/owner/limit changes, and no replacement parser result.
+#[cfg(test)]struct PublicationPaidBallast{payload:Vec<u8>,credit:dm_syntax::SettingRootLease}
+#[cfg(test)]struct PublicationPressure{key:Key,counter:Arc<dm_syntax::SettingChargeCounter>,ballast:Option<PublicationPaidBallast>,escaped:Option<Arc<OriginalBodySyntaxProduct>>,before_leased:usize,after_aggregate:usize,soft:usize,old_binding_failed:bool}
+#[cfg(test)]thread_local!{static PUBLICATION_PRESSURE:std::cell::RefCell<Option<PublicationPressure>>=const{std::cell::RefCell::new(None)};}
+#[cfg(test)]struct PublicationPressureGuard;
+#[cfg(test)]impl Drop for PublicationPressureGuard{fn drop(&mut self){PUBLICATION_PRESSURE.with(|slot|{let retired=slot.borrow_mut().take();drop(retired);});}}
+#[cfg(test)]fn publication_pressure_before(params:&Params,result:&Result<Arc<OriginalBodySyntaxProduct>,Diagnostic>,charged:&dm_syntax::SettingChargeCounter,soft:usize){
+ PUBLICATION_PRESSURE.with(|slot|{let mut state=slot.borrow_mut();let Some(state)=state.as_mut().filter(|state|state.key==params.key)else{return};assert!(state.ballast.is_none(),"one real target computation");assert_eq!(soft,4096,"real already-funded canonical payload metadata allowance");
+  assert_eq!(charged.load(Ordering::Acquire),charged.allocation_lease_reserved(),"no unaccounted prior soft cache values in fixture");let bytes=BUDGET.checked_sub(3072).unwrap().checked_sub(charged.load(Ordering::Acquire)).unwrap();
+  assert!(std::ptr::eq(charged,state.counter.as_ref()));let credit=dm_syntax::SettingRootLease::reserve(&state.counter,BUDGET,bytes).unwrap();let mut payload=Vec::new();payload.try_reserve_exact(bytes).unwrap();assert_eq!(payload.capacity(),bytes);payload.resize(bytes,0x5au8);let ballast=PublicationPaidBallast{payload,credit};assert_eq!(ballast.payload.len(),ballast.credit.bytes());state.ballast=Some(ballast);state.escaped=Some(Arc::clone(result.as_ref().expect("actual genuine successful canonical parser product")));state.before_leased=charged.allocation_lease_reserved();state.soft=soft;
+ });
+}
+#[cfg(test)]fn publication_pressure_after(params:&Params,charged:&dm_syntax::SettingChargeCounter){
+ PUBLICATION_PRESSURE.with(|slot|{let mut state=slot.borrow_mut();let Some(state)=state.as_mut().filter(|state|state.key==params.key)else{return};state.after_aggregate=charged.load(Ordering::Acquire);assert_eq!(state.after_aggregate,state.before_leased+state.soft);assert!(state.after_aggregate>BUDGET);assert_eq!(charged.allocation_lease_reserved(),state.before_leased);
+  // Probe the unchanged old direct-binding order AFTER the real soft add. A
+  // separate test admission retains the actual failed40-byte request cause.
+  let input=params.input.upgrade().unwrap();let a=dm_syntax::SettingAdmission::new(&state.counter,BUDGET,&||Ok(()));let failure=input.bind_original_product_checked(state.escaped.as_ref().unwrap().parsed().unwrap(),&a).err().expect("old direct bind must reject aggregate above cap");let BodySyntaxFailure::Operational(error)=failure else{panic!("real resource refusal")};assert_eq!(error.kind(),std::io::ErrorKind::OutOfMemory);assert!(error.to_string().contains("40 requested"),"actual BindingWork ingress: {error}");state.old_binding_failed=true;assert_eq!(charged.allocation_lease_reserved(),state.before_leased);
+ });
+}
+fn canonical_outcome(params:&Params,parsed:Result<OriginalBodySyntaxProduct,BodySyntaxFailure>,charged:&dm_syntax::SettingChargeCounter)->Result<Outcome,QueryError>{
+ let result=match parsed{
+  Ok(product)=>Ok(Arc::new(product)),
+  Err(BodySyntaxFailure::Operational(error))=>{
+   if error.kind()==std::io::ErrorKind::OutOfMemory&&(std::env::var_os("DMB_ORIGINAL_TRACE_BODY_PRESSURE").is_some()||dm_profile::detail_enabled()){
+    use std::io::Write as _;
+    let input=params.input.upgrade();let mut output=std::io::stderr().lock();
+    let _=writeln!(output,"ORIGINAL_BODY_ADMISSION_FAILURE key={:?} aggregate={} leased={} input_estimate={:?}",params.key,charged.load(Ordering::Acquire),charged.allocation_lease_reserved(),input.as_ref().map(|input|input.budget_charge()));
+    if let Some(input)=input{input.write_admission_failure_context(&mut output);}
+   }
+   return Err(QueryError::operational(params.key,error))
+  },
+  Err(BodySyntaxFailure::Syntax(error))=>{
+   if error.location.is_some()||error.kind!=DiagnosticKind::Internal{return Err(QueryError::operational(params.key,std::io::Error::other(CanonicalBodyContractDiagnostic(error))))}
+   Err(error)
+  }
+ };
+ let bytes=result.as_ref().map_or(1024,|product|product.budget_charge());
+ #[cfg(test)]publication_pressure_before(params,&result,charged,bytes);
+ charged.add_soft_estimate(bytes);
+ #[cfg(test)]publication_pressure_after(params,charged);
+ Ok(Outcome::new(BodyQueryValue::Canonical(result),params.key.id,bytes))
+}
+
 pub(super) fn register(db: &Db, charged: Arc<dm_syntax::SettingChargeCounter>) {
     db.define(BODY_SYNTAX, "native-body-syntax", move |_, params| {
         let params = params
             .downcast_ref::<Params>()
             .expect("body query parameter type");
+        let _phase_timing=BodyPhaseTiming::start(if params.code.is_some(){"canonical_registered_compute"}else{"issued_registered_compute"},params.key);
         let input = params
             .input
             .upgrade()
             .ok_or(QueryError::Missing(params.key))?;
+        let _heavy_identity=HeavyBodyIdentityTiming::start(if params.code.is_some(){"canonical_registered_compute"}else{"issued_registered_compute"},params.key,&input);
         #[cfg(test)]
         body_failure_test_checkpoint(params.key)?;
         if let Some(code)=&params.code{
             if !input.original_code_owner().is_some_and(|actual|Arc::ptr_eq(actual,code)){return Err(QueryError::operational(params.key,std::io::Error::new(std::io::ErrorKind::InvalidData,"actual canonical BODY Params code/input differ")))}
             let parsed=setting_syntax::with_setting_admission(&charged,|a|input.parse_original_product_with_setting_admission(a));
-            let result=match parsed{
-                Ok(product)=>Ok(Arc::new(product)),
-                Err(BodySyntaxFailure::Operational(error))=>return Err(QueryError::operational(params.key,error)),
-                Err(BodySyntaxFailure::Syntax(error))=>{
-                    // All authored native grammar errors were retained BEFORE
-                    // location translation. An unlocated Internal contract fault
-                    // is invariant code DATA; a bound error without that actual
-                    // issuer is an infrastructure failure, never stale source.
-                    if error.location.is_some()||error.kind!=DiagnosticKind::Internal{return Err(QueryError::operational(params.key,std::io::Error::other(CanonicalBodyContractDiagnostic(error))))}
-                    Err(error)
-                }
-            };
-            let bytes=result.as_ref().map_or(1024,|product|product.budget_charge());charged.add_soft_estimate(bytes);
-            return Ok(Outcome::new(BodyQueryValue::Canonical(result),params.key.id,bytes))
+            return canonical_outcome(params,parsed,&charged)
         }
         // Existing Kind4 owns the in-scope permit. Setting leaves never call
         // host.syntax/Db.get or reacquire/reset any family admission here.
@@ -102,15 +185,53 @@ impl std::fmt::Debug for QueryDb {
     }
 }
 impl BodySyntaxQueries for QueryDb {
+    fn syntax_product_at_committed_input(
+      &self,input:&Arc<BodySyntaxInput>,admission:&dm_syntax::SettingAdmission<'_>,
+      produce:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<OriginalBodySyntaxProduct,BodySyntaxFailure>,
+    )->Result<Arc<OriginalBodySyntaxProduct>,BodySyntaxFailure>{
+      let first=admission.checkpoint();if let Some(actual)=admission.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}first.map_err(BodySyntaxFailure::Operational)?;
+      if !admission.uses_counter(&self.body_charge){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed BODY loan belongs to another query budget")))}
+      let key=code_key(input)?;self.prepare_body_input_key(input,key).map_err(checked_query_failure)?;
+      let code=Arc::clone(input.original_code_owner().expect("actual canonical code locator checked"));
+      let params=Arc::new(Params{input:input.weak_allocation_owner(),key,code:Some(code)});
+      let value=self.db.get_with_scoped_computation::<BodyQueryValue>(key,params,|_,params|{
+       let params=params.downcast_ref::<Params>().expect("same BODY parameter type");
+       let _phase_timing=BodyPhaseTiming::start("canonical_scoped_compute",key);
+       let actual=params.input.upgrade().ok_or(QueryError::Missing(key))?;
+       let _heavy_identity=HeavyBodyIdentityTiming::start("canonical_scoped_compute",key,&actual);
+       #[cfg(test)]body_failure_test_checkpoint(params.key)?;
+       if !Arc::ptr_eq(&actual,input)||!params.code.as_ref().is_some_and(|code|actual.original_code_owner().is_some_and(|owner|Arc::ptr_eq(code,owner))){return Err(QueryError::operational(key,std::io::Error::new(std::io::ErrorKind::InvalidData,"committed BODY key/Params/input owner differ")))}
+       let parsed=(||{let product=produce(admission)?;actual.require_product_issuance(&product)?;Ok(product)})();
+       let parsed=match admission.take_operational_error(){Some(first)=>Err(BodySyntaxFailure::Operational(first)),None=>parsed};
+       canonical_outcome(params,parsed,&self.body_charge)
+      }).map_err(checked_query_failure)?;
+      let last=admission.checkpoint();if let Some(actual)=admission.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}last.map_err(BodySyntaxFailure::Operational)?;
+      match value.as_ref(){BodyQueryValue::Canonical(result)=>result.clone().map_err(BodySyntaxFailure::Syntax),BodyQueryValue::Issued(_)=>Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"committed BODY returned another parser issuance domain")))}
+    }
+
     fn prepare_syntax_product_input(&self,input:&Arc<BodySyntaxInput>)->Result<(),BodySyntaxFailure>{let key=code_key(input)?;self.prepare_body_input_key(input,key).map_err(checked_query_failure)}
+    fn supports_ordinary_input_demand(&self)->bool{true}
+    fn has_registered_body_code(&self,code:&Arc<BodyCodeIdentity>)->bool{
+        let key=Key::new(BODY_SYNTAX,CANONICAL_DOMAIN|Arc::as_ptr(code)as usize as u128);
+        self.body_inputs.lock().is_ok_and(|inputs|inputs.contains_key(&key))
+    }
+    fn rebind_registered_body_input(&self,input:&Arc<BodySyntaxInput>)->Result<bool,BodySyntaxFailure>{
+        let key=code_key(input)?;
+        let mut inputs=self.body_inputs.lock().map_err(|_|BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"native body registry poisoned during actual rebind")))?;
+        let Some(slot)=inputs.get_mut(&key)else{return Ok(false)};
+        if !rebind_registered_body_input(slot,input,&self.body_charge){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native demand Input belongs to another syntax counter")))}
+        Ok(true)
+    }
     fn begin_revision_inputs(&self,current:&[Arc<BodySyntaxInput>]){
-        {let mut inputs=self.body_inputs.lock().unwrap_or_else(|error|error.into_inner());for input in current{if let Ok(key)=code_key(input){if let Some(slot)=inputs.get_mut(&key){*slot=Arc::downgrade(input);}}}}
+        {let mut inputs=self.body_inputs.lock().unwrap_or_else(|error|error.into_inner());for input in current{if let Ok(key)=code_key(input){if let Some(slot)=inputs.get_mut(&key){rebind_registered_body_input(slot,input,&self.body_charge);}}}}
         self.begin_revision();
     }
     fn syntax_product_checked(&self,input:&Arc<BodySyntaxInput>)->Result<Arc<OriginalBodySyntaxProduct>,BodySyntaxFailure>{
         let key=code_key(input)?;self.prepare_body_input_key(input,key).map_err(checked_query_failure)?;
         let code=Arc::clone(input.original_code_owner().expect("actual code locator checked"));
-        let value=self.db.get::<BodyQueryValue>(key,Arc::new(Params{input:Arc::downgrade(input),key,code:Some(code)})).map_err(checked_query_failure)?;
+        let params=Arc::new(Params{input:input.weak_allocation_owner(),key,code:Some(code)});
+        #[cfg(test)]capture_actual_body_params_for_test(&params);
+        let value=self.db.get::<BodyQueryValue>(key,params).map_err(checked_query_failure)?;
         match value.as_ref(){BodyQueryValue::Canonical(result)=>result.clone().map_err(BodySyntaxFailure::Syntax),BodyQueryValue::Issued(_)=>Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"issued BODY parser result cannot masquerade as a canonical product")))}
     }
     fn begin_revision(&self) {
@@ -171,10 +292,12 @@ impl QueryDb {
         self.prepare_body_input_key(input,Key::new(BODY_SYNTAX,input.key().into()))
     }
     fn prepare_body_input_key(&self,input:&Arc<BodySyntaxInput>,key:Key)->Result<(),QueryError>{
+        let _phase_timing=BodyPhaseTiming::start("prepare_body_input_key",key);
+        setting_syntax::with_setting_admission(&self.body_charge,|a|input.admit_native_allocation(a).map_err(BodySyntaxFailure::Operational)).map_err(|actual|match actual{BodySyntaxFailure::Operational(actual)=>QueryError::operational(key,actual),BodySyntaxFailure::Syntax(actual)=>QueryError::operational(key,std::io::Error::new(std::io::ErrorKind::InvalidData,actual.message))})?;
         #[cfg(test)]self.record_pressure_trace_for_test(0,0);
         crate::daemon::control::checkpoint().map_err(|actual|QueryError::operational(key,actual))?;
         let mut inputs=self.body_inputs.lock().unwrap_or_else(|e|e.into_inner());
-        inputs.insert(key,Arc::downgrade(input));
+        inputs.insert(key,registered_body_input(input,&self.body_charge).map_err(|actual|QueryError::operational(key,actual))?);
         // Both actual retained setting/literal leases and the existing SOFT
         // syntax estimate share body_charge. Waiting for used>BUDGET is too
         // late: the next real parse needs its cleanup/parser work first.
@@ -189,12 +312,27 @@ impl QueryDb {
         }
         let headroom=input.budget_charge().saturating_mul(8).saturating_add(dm_exec::COMPILER_STACK_BYTES/16);
         if self.body_charge.load(Ordering::Acquire).saturating_add(headroom)<=BUDGET{return Ok(())}
+        // A frontend can retire after the last declaration operation. Its
+        // weak-only signature census must not keep dead allocation grants
+        // until the next request's declaration preparation. Reuse that SAME
+        // owner-based prune before trying to evict still-live BODY products.
+        let before_alias_prune=self.body_charge.load(Ordering::Acquire);
+        setting_syntax::with_setting_admission(&self.body_charge,|a|{
+            self.original_signature_aliases.lock().map_err(|_|BodySyntaxFailure::Operational(std::io::Error::other("original signature census poisoned during BODY pressure")))?
+                .prune(a).map_err(BodySyntaxFailure::Operational)
+        }).map_err(|actual|match actual{BodySyntaxFailure::Operational(actual)=>QueryError::operational(key,actual),BodySyntaxFailure::Syntax(actual)=>QueryError::operational(key,std::io::Error::new(std::io::ErrorKind::InvalidData,actual.message))})?;
+        if self.body_charge.load(Ordering::Acquire)<before_alias_prune&&std::env::var_os("DMB_ORIGINAL_TRACE_BODY_PRESSURE").is_some(){
+            let _=pressure_trace_row!("ORIGINAL_BODY_RETIRED_SIGNATURES before={before_alias_prune} after={} leased={}",self.body_charge.load(Ordering::Acquire),self.body_charge.allocation_lease_reserved());
+        }
+        if self.body_charge.load(Ordering::Acquire).saturating_add(headroom)<=BUDGET{return Ok(())}
         let mut cursor=self.body_eviction_cursor.lock().unwrap_or_else(|e|e.into_inner());
         let after=*cursor;
         use std::ops::Bound::{Excluded,Included,Unbounded};
         let tail=inputs.range((after.map_or(Unbounded,Excluded),Unbounded));
         let wrap=inputs.range((Unbounded,after.map_or(Unbounded,Included))).take(if after.is_some(){usize::MAX}else{0});
+        let(mut scanned,mut cached,mut externally_held,mut retired)=(0usize,0usize,0usize,0usize);
         for(&candidate,_)in tail.chain(wrap){
+            scanned+=1;
             #[cfg(test)]self.record_pressure_trace_for_test(1,0);
             crate::daemon::control::checkpoint().map_err(|actual|QueryError::operational(key,actual))?;
             if self.body_charge.load(Ordering::Acquire).saturating_add(headroom)<=BUDGET{break}
@@ -203,14 +341,30 @@ impl QueryDb {
             // exact currently cached Result/BodySyntax owner may be retired.
             if candidate==key{continue}
             let Some(value)=self.db.retained_value::<BodyQueryValue>(candidate)else{continue};
+            cached+=1;
             let consumed=Arc::strong_count(&value)==2&&value.consumed();
-            if !consumed{continue}
+            if !consumed{
+                externally_held+=1;
+                if std::env::var_os("DMB_ORIGINAL_TRACE_BODY_PRESSURE").is_some(){
+                    match value.as_ref(){
+                        BodyQueryValue::Issued(result)=>{let _=pressure_trace_row!("ORIGINAL_BODY_EXTERNAL_OWNER key={candidate:?} graph_aliases={} issued={result:?}",Arc::strong_count(&value));},
+                        BodyQueryValue::Canonical(result)=>{let _=pressure_trace_row!("ORIGINAL_BODY_EXTERNAL_OWNER key={candidate:?} graph_aliases={} parsed={:?}",Arc::strong_count(&value),result.as_ref().ok().and_then(|product|product.parsed()));},
+                    }
+                }
+                continue
+            }
             let freed=self.db.evict_value_if_current(candidate,&value);
             // Free the actual body/retention guards before crediting its soft
             // estimate. Escaped children keep their own real leases alive.
             drop(value);
             #[cfg(test)]if freed!=0{self.record_pressure_trace_for_test(2,freed);}
-            if freed!=0{self.body_charge.release_soft_estimate(freed);}
+            if freed!=0{retired+=1;self.body_charge.release_soft_estimate(freed);}
+        }
+        if self.body_charge.load(Ordering::Acquire).saturating_add(headroom)>BUDGET&&std::env::var_os("DMB_ORIGINAL_TRACE_BODY_PRESSURE").is_some(){
+            let _=pressure_trace_row!("ORIGINAL_BODY_PRESSURE_UNRESOLVED key={key:?} aggregate={} leased={} headroom={headroom} registry={} scanned={scanned} cached={cached} externally_held={externally_held} retired={retired} stats={:?}",self.body_charge.load(Ordering::Acquire),self.body_charge.allocation_lease_reserved(),inputs.len(),self.db.stats(BODY_SYNTAX));
+            if let Ok(aliases)=self.original_signature_aliases.try_lock(){
+                let _=pressure_trace_row!("ORIGINAL_LIVE_SIGNATURE_RESERVATIONS {aliases:?}");
+            }
         }
         // No retry after a real parser IO/refusal, and no cap change: after
         // retiring available cache owners the SAME actual admission decides.
@@ -225,7 +379,7 @@ impl QueryDb {
         let result = self.db.get::<BodyQueryValue>(
             key,
             Arc::new(Params {
-                input: Arc::downgrade(input),
+                input: input.weak_allocation_owner(),
                 key,code:None,
             }),
         )?;
@@ -250,7 +404,7 @@ pub(super) fn obtain_issued(
  ctx:&mut dm_query::Ctx<'_>,input:&Arc<BodySyntaxInput>,
 )->Result<Result<Arc<BodySyntax>,Diagnostic>,QueryError>{
  let key=Key::new(BODY_SYNTAX,input.key().into());
- Ok(ctx.get::<BodyQueryValue>(key,Arc::new(Params{input:Arc::downgrade(input),key,code:None}))?.issued())
+ Ok(ctx.get::<BodyQueryValue>(key,Arc::new(Params{input:input.weak_allocation_owner(),key,code:None}))?.issued())
 }
 
 /// Record a real syntax dependency of a derived policy query. The archive's
@@ -263,7 +417,7 @@ pub(super) fn observe(
     ctx.get::<BodyQueryValue>(
         key,
         Arc::new(Params {
-            input: Arc::downgrade(input),
+            input: input.weak_allocation_owner(),
             key,code:None,
         }),
     )?;
@@ -419,6 +573,22 @@ pub(super) mod body_syntax_census_tests;
  fn input(front:&dm_tree::frontend::ColdFrontend,name:&str)->Arc<BodySyntaxInput>{
   let archive=front.body_archive().unwrap();let ordinal=archive.occurrences().iter().enumerate().find(|(_,row)|front.snapshot.tree.member(row.member).unwrap().name==dm_ir::SymbolId::of(name)).unwrap().0;Arc::clone(&archive.syntax_inputs().unwrap()[ordinal])
  }
+
+ #[test]fn actual_same_code_new_input_rebind_preserves_old_params_shell_credit_until_real_retirement(){
+  let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let text="/proc/p()\n    return 1\n";
+  let old=frontend(&mut state,&db,&format!("/proc/q()\n    return 2222\n{text}"));let old_input=input(&old,"p");let key=code_key(&old_input).unwrap();
+  ACTUAL_BODY_PARAMS_TEST_CAPTURE.with(|slot|*slot.borrow_mut()=Some(Vec::new()));
+  let old_product=db.syntax_product_checked(&old_input).unwrap();
+  let kept=ACTUAL_BODY_PARAMS_TEST_CAPTURE.with(|slot|slot.borrow_mut().take().unwrap());assert_eq!(kept.len(),1);let old_params=Arc::clone(&kept[0]);drop(kept);
+  let prior_owner=Arc::downgrade(&old_params.input);let prior_pointer=old_params.input.as_ptr();let code_keeper=Arc::clone(old_params.code.as_ref().unwrap());let input_paid=old_params.input.allocation_credit().expect("actual old Input grant").bytes();assert!(dm_syntax::SettingAdmission::new(&db.body_charge,BUDGET,&||Ok(())).matches_lease_domain(old_params.input.allocation_credit().unwrap()));
+  let next=frontend(&mut state,&db,&format!("/proc/q()\n    return 1\n    // actual earlier source change\n{text}"));let current=input(&next,"p");assert_ne!(old_input.key(),current.key());assert_eq!(key,code_key(&current).unwrap());assert!(Arc::ptr_eq(old_input.original_code_owner().unwrap(),current.original_code_owner().unwrap()));
+  let product=db.syntax_product_checked(&current).unwrap();assert!(Arc::ptr_eq(&old_product,&product));
+  assert_eq!(db.body_inputs.lock().unwrap().get(&key).unwrap().as_ptr(),Arc::as_ptr(&current));assert_ne!(prior_pointer,Arc::as_ptr(&current));
+  drop(old_input);drop(old);assert!(old_params.input.upgrade().is_none(),"old Params locator must preserve original Weak expiry");assert!(prior_owner.upgrade().is_some(),"actual old Params still owns its paid weak shell");
+  drop(current);drop(next);drop(state);drop(product);drop(old_product);db.begin_revision();assert!(!db.body_inputs.lock().unwrap().contains_key(&key));
+  let fail=setting_syntax::with_setting_admission(&db.body_charge,|a|a.reserve(BUDGET-dm_syntax::SettingChargeCounter::root_allocation_bytes()).map_err(BodySyntaxFailure::Operational));assert!(matches!(fail,Err(BodySyntaxFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::OutOfMemory));
+  drop(prior_owner);let before=db.body_charge.load(Ordering::Acquire);drop(old_params);let after=db.body_charge.load(Ordering::Acquire);assert_eq!(before.checked_sub(after),Some(input_paid),"same CodeArc stays alive while only the actual old Input+holder credit retires");assert!(code_keeper.committed_allocation_credit().is_some());drop(code_keeper);setting_syntax::with_setting_admission(&db.body_charge,|a|{let all=a.reserve(BUDGET-dm_syntax::SettingChargeCounter::root_allocation_bytes()).map_err(BodySyntaxFailure::Operational)?;drop(all);Ok::<(),BodySyntaxFailure>(())}).unwrap();
+ }
  #[test]fn actual_same_graph_kind4_reuses_one_canonical_product_after_same_chunk_length_change_and_current_offset_shift(){
   let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let p="/proc/p(value=list(1,2))\n    set name = \"p\"\n    var/local[2]=list(1,2)\n    return \"a[value]z\"\n";
   let old=frontend(&mut state,&db,&format!("/proc/q()\n    return 22222222\n{p}"));let old_input=input(&old,"p");let before=db.db.stats(BODY_SYNTAX).computed;
@@ -497,6 +667,41 @@ pub(super) mod body_syntax_census_tests;
   let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let front=frontend(&mut state,&db,"/proc/p()\n    return \"[1]\"\n");let input=input(&front,"p");let before=db.db.stats(BODY_SYNTAX).computed;
   let injected=db.fail_body_syntax_after_for_test(0,std::io::Error::from_raw_os_error(1450));let Err(BodySyntaxFailure::Operational(error))=db.syntax_product_checked(&input)else{panic!("actual native Kind4 injected operation must fail")};assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before);drop(injected);
   let result=db.syntax_product_checked(&input).unwrap();assert!(result.parsed().is_some());assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);let again=db.syntax_product_checked(&input).unwrap();assert!(Arc::ptr_eq(&result,&again));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);
+ }
+
+ fn arm_publication_pressure(db:&Arc<QueryDb>,key:Key)->PublicationPressureGuard{
+  PUBLICATION_PRESSURE.with(|slot|{assert!(slot.borrow().is_none());*slot.borrow_mut()=Some(PublicationPressure{key,counter:Arc::clone(&db.body_charge),ballast:None,escaped:None,before_leased:0,after_aggregate:0,soft:0,old_binding_failed:false});});PublicationPressureGuard
+ }
+ #[test]fn actual_post_product_pressure_keeps_flat_and_active_current_binding_and_graph_identity(){
+  for active in[false,true]{
+   let db=Arc::new(QueryDb::default());let counter=Arc::clone(&db.body_charge);let front=issued_original_fixture(&db,"/proc/p()\n    return 1\n");let archive=Arc::clone(front.source_view().unwrap().archive());let input=original_input(&front,"p");let key=code_key(&input).unwrap();let guard=arm_publication_pressure(&db,key);let computed=db.db.stats(BODY_SYNTAX).computed;
+   if active{
+    let parent=Key::new(Kind(247),19);let weak=Arc::downgrade(&archive);let charged=Arc::clone(&counter);let code=Arc::clone(input.original_code_owner().unwrap());
+    db.db.define(parent.kind,"actual post-publication parent",move|ctx,_|{
+     let archive=weak.upgrade().expect("real archive still held");let value=setting_syntax::with_setting_admission(&charged,|a|archive.with_current_body_checked_in(0,a,ctx,obtain_product,|_,body|{
+      assert!(Arc::ptr_eq(body.syntax().original_code_owner(),&code));assert!(matches!(body.syntax().original_code_disposition()?,dm_tree::frontend::OriginalBodyDisposition::Available(_)));
+      PUBLICATION_PRESSURE.with(|slot|{let state=slot.borrow();let state=state.as_ref().unwrap();assert!(state.old_binding_failed);assert!(Arc::ptr_eq(body.syntax().canonical_statement_storage(),state.escaped.as_ref().unwrap().parsed().unwrap().statement_storage()));assert_eq!(charged.allocation_lease_reserved(),state.before_leased,"actual escaped AST grants survive cache detachment");assert_eq!(charged.load(Ordering::Acquire),state.before_leased,"only real graph soft estimate retired");});Ok(7usize)
+     })).map_err(|error|match error{BodySyntaxFailure::Operational(actual)=>QueryError::operational(parent,actual),BodySyntaxFailure::Syntax(actual)=>QueryError::operational(parent,std::io::Error::other(actual.message))})?;Ok(Outcome::new(value,17,std::mem::size_of::<usize>()))
+    });
+    let first=db.db.get::<usize>(parent,Arc::new(())).unwrap();assert_eq!(*first,7);assert!(db.db.dependants(&[key]).contains(&parent));assert_eq!(db.db.value_bytes_at(key),0);
+    let unrelated=Key::new(Kind(248),1);db.db.define_input(unrelated.kind,"actual unrelated revision");db.db.set_input(unrelated,1usize,1);let again=db.db.get::<usize>(parent,Arc::new(())).unwrap();assert!(Arc::ptr_eq(&first,&again),"preserved child hash/dependencies validate parent without reparsing");
+   }else{
+    setting_syntax::with_setting_admission(&counter,|a|archive.with_current_body_checked(0,a,|body|{
+     assert!(Arc::ptr_eq(body.syntax().original_code_owner(),input.original_code_owner().unwrap()));assert!(matches!(body.syntax().original_code_disposition()?,dm_tree::frontend::OriginalBodyDisposition::Available(_)));
+     PUBLICATION_PRESSURE.with(|slot|{let state=slot.borrow();let state=state.as_ref().unwrap();assert!(state.old_binding_failed);assert!(Arc::ptr_eq(body.syntax().canonical_statement_storage(),state.escaped.as_ref().unwrap().parsed().unwrap().statement_storage()));assert_eq!(counter.allocation_lease_reserved(),state.before_leased);assert_eq!(counter.load(Ordering::Acquire),state.before_leased);});Ok(())
+    })).unwrap();
+   }
+   assert_eq!(db.db.stats(BODY_SYNTAX).computed,computed+1,"no new BODY get/retry/reparse from post pressure");assert_eq!(db.db.value_bytes_at(key),0);assert!(db.db.retained_value::<BodyQueryValue>(key).is_none());assert!(db.body_inputs.lock().unwrap().contains_key(&key),"actual rebind registry survives");
+   drop(guard);assert!(PUBLICATION_PRESSURE.with(|slot|slot.borrow().is_none()));drop(input);drop(archive);drop(front);drop(db);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  }
+ }
+ #[test]fn actual_post_product_pressure_keeps_first_io_cancel_and_all_real_owner_cleanup(){
+  for raw in[Some(1450),Some(995),None]{
+   let db=Arc::new(QueryDb::default());let counter=Arc::clone(&db.body_charge);let front=issued_original_fixture(&db,"/proc/p()\n    return 1\n");let archive=Arc::clone(front.source_view().unwrap().archive());let input=original_input(&front,"p");let guard=arm_publication_pressure(&db,code_key(&input).unwrap());let fail=std::cell::Cell::new(false);let first=std::cell::Cell::new(false);let consumed=std::cell::Cell::new(false);let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));
+   let poll=||{if fail.get(){assert!(!first.replace(true),"no extra outer poll after first real IO");Err(std::io::Error::from_raw_os_error(raw.unwrap()))}else{crate::daemon::control::checkpoint()}};let a=dm_syntax::SettingAdmission::new(&counter,BUDGET,&poll);
+   let result=archive.with_current_body_checked_in(0,&a,&mut(),|_,input|{let product=db.syntax_product_checked(input)?;if raw.is_some(){fail.set(true)}else{token.cancel()}Ok(product)},|_,_|{consumed.set(true);Ok(())});
+   let Err(BodySyntaxFailure::Operational(error))=result else{panic!("actual operational failure before semantic consumer")};let error=a.take_operational_error().unwrap_or(error);if let Some(raw)=raw{assert_eq!(error.raw_os_error(),Some(raw));assert!(first.get());}else{assert_eq!(error.kind(),std::io::ErrorKind::Interrupted);}assert!(!consumed.get());drop(a);drop(binding);drop(guard);assert!(PUBLICATION_PRESSURE.with(|slot|slot.borrow().is_none()));let freed=db.db.evict_values(&[BODY_SYNTAX]);db.body_charge.release_soft_estimate(freed);drop(input);drop(archive);drop(front);drop(db);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  }
  }
  fn issued_original_fixture(db: &Arc<QueryDb>, text: &str) -> dm_tree::frontend::DiagnosticFrontend {
      let project = crate::test_scratch::dir("admin-coordinate-original-body").join("project.dme");
@@ -4065,7 +4270,6 @@ pub(super) mod body_syntax_census_tests;
  }
 
  #[test]
- #[test]
  fn actual_original_else_if_chain_authenticates_every_link() {
      let fixture = r#"
 /proc/probe(a, b)
@@ -4405,7 +4609,7 @@ pub(super) mod body_syntax_census_tests;
 /// binding and real current source/error projection AFTER this one get.
 pub(super) fn obtain_product(ctx:&mut dm_query::Ctx<'_>,input:&Arc<BodySyntaxInput>)->Result<Arc<OriginalBodySyntaxProduct>,BodySyntaxFailure>{
  let key=code_key(input)?;let code=Arc::clone(input.original_code_owner().expect("actual canonical code locator checked"));
- let result=ctx.get::<BodyQueryValue>(key,Arc::new(Params{input:Arc::downgrade(input),key,code:Some(code)})).map_err(checked_query_failure)?;
+ let result=ctx.get::<BodyQueryValue>(key,Arc::new(Params{input:input.weak_allocation_owner(),key,code:Some(code)})).map_err(checked_query_failure)?;
  match result.as_ref(){BodyQueryValue::Canonical(result)=>result.clone().map_err(BodySyntaxFailure::Syntax),BodyQueryValue::Issued(_)=>Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"active native context returned issued syntax for canonical key")))}
 }
 
@@ -4419,4 +4623,68 @@ impl QueryDb{
    })
   }))
  }
+}
+
+/// The existing weak registry now owns its exact metadata extent and any
+/// intrinsic code/Input tail grant. Box keeps the map's old one-word value
+/// width and exclusive mutation; this is not a second registry/cache.
+pub(super) type RegisteredBodyInput=Arc<BodySyntaxInputWeak>;
+fn rebind_registered_body_input(slot:&mut RegisteredBodyInput,input:&Arc<BodySyntaxInput>,counter:&Arc<dm_syntax::SettingChargeCounter>)->bool{
+ // Clone the new exact holder before retiring the prior association. Old
+ // Params/Header holders retain their own Weak and grant until they retire.
+ if !input.committed_allocation_credit().is_some_and(|credit|dm_syntax::SettingAdmission::new(counter,BUDGET,&||Ok(())).matches_lease_domain(credit)){return false}
+ let next=input.weak_allocation_owner();let old=std::mem::replace(slot,next);drop(old);true
+}
+pub(super) fn registered_body_input(input:&Arc<BodySyntaxInput>,counter:&Arc<dm_syntax::SettingChargeCounter>)->std::io::Result<RegisteredBodyInput>{
+ crate::daemon::control::checkpoint()?;
+ setting_syntax::with_setting_admission(counter,|a|input.admit_native_allocation(a).map_err(BodySyntaxFailure::Operational)).map_err(|actual|match actual{BodySyntaxFailure::Operational(actual)=>actual,BodySyntaxFailure::Syntax(actual)=>std::io::Error::new(std::io::ErrorKind::InvalidData,actual.message)})
+}
+#[cfg(test)]#[test]fn actual_weak_registry_keeps_prior_map_value_width_with_intrinsic_shell_credit(){assert_eq!(std::mem::size_of::<Weak<BodySyntaxInput>>(),std::mem::size_of::<RegisteredBodyInput>());eprintln!("COMMITTED_WEAK_REGISTRY prior_value={} current_value={} shared_owner={}",std::mem::size_of::<Weak<BodySyntaxInput>>(),std::mem::size_of::<RegisteredBodyInput>(),std::mem::size_of::<BodySyntaxInputWeak>());}
+impl QueryDb{pub(super) fn body_input_registry_census(&self,census:&mut crate::heap_census::HeapCensus){
+ let inputs=self.body_inputs.lock().unwrap_or_else(|error|error.into_inner());
+ census.unknown("query.body_input_registry_map",&format!("{} entries; unchanged private BTree node capacity and allocator overhead are not exposed",inputs.len()));
+ for row in inputs.values(){row.visit_allocation_storage(&mut|p,n,c|{census.exposed_buffer("query.body_input_registry_weak",p,n,c);});if let Some(input)=row.upgrade(){if let Some(code)=input.original_code_owner(){code.visit_allocation_storage(&mut|p,n,c|{census.exposed_buffer("query.body_input_registry_code",p,n,c);});}}}
+}}
+
+#[cfg(test)]#[test]fn actual_kind4_params_weak_resource_locator_has_prior_pointer_width(){#[allow(dead_code)]struct Prior{input:Weak<BodySyntaxInput>,key:Key,code:Option<Arc<BodyCodeIdentity>>}assert_eq!(std::mem::size_of::<Prior>(),std::mem::size_of::<Params>());eprintln!("BODY_PARAMS_SIZE prior={} current={} input_holder={}",std::mem::size_of::<Prior>(),std::mem::size_of::<Params>(),std::mem::size_of::<BodySyntaxInputWeak>());}
+
+#[cfg(test)]mod staged_handler_body_retirement_controls{
+ use super::*;
+ use crate::{input_snapshot::{RecordingInputs,FileSystemInputs,HandlerPreparedCapture},policy_request::{AnalysisContext,PolicyInputRequest,WorkspacePolicyRequest,WorkspaceAuxiliaryQuestion as Q}};
+ use dq_analyze::{captured_allow_annotations::{Operation,full_unused::SelectedTreePlanData},captured_generator_budget::Budget,tree::CODE_MAPS_DM};
+ #[test]fn actual_staged_handler_kind4_retirement_releases_dead_only_and_keeps_live_owner_and_sealed_rows(){
+  let root=std::fs::canonicalize(crate::test_scratch::dir("staged-handler-body-retirement")).unwrap();
+  for(relative,text)in[("code/__defines/context.dm","/datum/act\n"),("code/candidate.dm","/proc/leak(datum/act/A)\n    return list(A)\n/proc/held(datum/act/A)\n    return list(A)\n"),("code/demand.dm","READS_AS(/datum/ordinary, value)\n")]{let path=root.join(relative);std::fs::create_dir_all(path.parent().unwrap()).unwrap();std::fs::write(path,text).unwrap();}
+  std::fs::create_dir(root.join("maps")).unwrap();
+  let intent=PolicyInputRequest{analysis_context:Some(AnalysisContext::OriginalAnalyze0290),workspace_auxiliary:Q::PRIVATE_FULL_REGISTRY.to_vec(),workspace:Some(WorkspacePolicyRequest{root:root.clone(),recursive_roots:Q::authored_doc_ui_roots(Q::PRIVATE_FULL_REGISTRY).unwrap().iter().map(|name|root.join(name)).collect(),configuration:root.join("tools/ci/lint_scopes.toml")}),..Default::default()}.admit_private_authored_doc_ui().unwrap();
+  let inputs=RecordingInputs::new(FileSystemInputs,0).with_initial_environment(dm_preprocess::InitialEnvironment::OriginalChecker0290);
+  let queries=Arc::new(QueryDb::default());let budget=Budget::new(1<<20).unwrap();let mut work=Operation{budget:&budget,poll:&||Ok(())};let plan=SelectedTreePlanData::new([CODE_MAPS_DM],&mut work).unwrap();
+  let donor=queries.prepare_derived_preflight(&inputs,&intent).unwrap();let subject=queries.prepare_joined_handlers_preflight(&inputs,&intent,&plan,Some(&donor)).unwrap();assert!(subject.is_selected_full()&&subject.requires_full_model());
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();let prepared=inputs.prepare_handlers_structural(subject,&executor,&queries,true).unwrap();let capture=inputs.capture_handlers_prepared(prepared,&queries,true).unwrap();
+  let proof=crate::request_runner::runner_freshness::admit_handlers_structural_staging(&inputs,Arc::clone(&capture),&queries).unwrap();
+  let expected=queries.with_handlers_structural(&capture,&proof,|data,_|Ok(data.rows().iter().map(|row|(row.rule.to_owned(),row.relative.clone(),row.line,row.message.clone())).collect::<Vec<_>>())).unwrap();
+  assert!(!expected.is_empty());assert!(queries.db.stats(BODY_SYNTAX).computed>=2,"actual Handler traversal must have computed both real Kind4 children");
+  let(held_input,dead_weak,dead_key)={let archive=capture.structural_inputs().unwrap().archive();let locate=|name|archive.occurrences().iter().enumerate().find(|(ordinal,_)|archive.callables().identity(*ordinal).is_some_and(|identity|identity.name==dm_ir::SymbolId::of(name))).unwrap().0;let held=Arc::clone(&archive.syntax_inputs().unwrap()[locate("held")]);let dead=&archive.syntax_inputs().unwrap()[locate("leak")];(held,Arc::downgrade(dead),code_key(dead).unwrap())};
+  let held_key=code_key(&held_input).unwrap();let held_product=queries.syntax_product_checked(&held_input).unwrap();assert!(queries.db.value_bytes_at(dead_key)>0&&queries.db.value_bytes_at(held_key)>0);
+  let staged=queries.stage_handler_structural_rows(&capture,&proof,&crate::test_scratch::dir("staged-handler-body-rows")).unwrap();drop(proof);
+  let capture=HandlerPreparedCapture::detach_staged(capture,Ok(staged)).unwrap();let facts=inputs.snapshot().unwrap();capture.require_bound().unwrap();assert!(capture.is_recorded_in(&facts));
+  assert!(dead_weak.upgrade().is_none(),"the retired partial archive must not remain a strong Input owner");drop(dead_weak);
+  let before=queries.body_charge.load(Ordering::Acquire);let groups_before=queries.original_signature_aliases.lock().unwrap().live_groups();assert!(groups_before>0,"actual signature resource census must still contain the completed partial group");
+  let revision_before=queries.db.revision();BodySyntaxQueries::begin_revision(queries.as_ref());let after=queries.body_charge.load(Ordering::Acquire);assert!(queries.db.revision()>revision_before,"normal expired-node retirement advances the actual graph revision");
+  assert_eq!(queries.db.value_bytes_at(dead_key),0,"expired partial child must retire before independent full parsing");assert!(after<before,"actual same-counter product retention must decrease");assert!(queries.db.value_bytes_at(held_key)>0,"a live independent Input must not be retired");
+  setting_syntax::with_setting_admission(&queries.body_charge,|a|{let current=held_input.bind_original_product_checked(held_product.parsed().unwrap(),a)?;match current.original_code_disposition()?{dm_tree::frontend::OriginalBodyDisposition::Available(grant)=>assert!(grant.belongs_to(&current)),_=>panic!("real live Handler child lost its availability")};Ok::<(),BodySyntaxFailure>(())}).unwrap();
+  capture.require_bound().unwrap();assert!(capture.is_recorded_in(&inputs.snapshot().unwrap()));let mut replay=Vec::new();capture.take_staged_rows().unwrap().unwrap().replay(&queries,capture.issuance(),capture.joined_model_present().unwrap(),&Budget::new(1<<20).unwrap(),|rule,relative,line,message|{replay.push((rule.to_owned(),relative.to_owned(),line,message.to_owned()));Ok(())}).unwrap();assert_eq!(replay,expected,"actual sealed Handler findings and order survive BODY retirement");
+  drop(held_product);drop(held_input);drop(capture);drop(donor);BodySyntaxQueries::begin_revision(queries.as_ref());
+  let host=Arc::clone(&queries)as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;host.with_declaration_admission(&mut|_|Ok(())).unwrap();assert_eq!(queries.original_signature_aliases.lock().unwrap().live_groups(),0);assert_eq!(queries.body_charge.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes(),"all actual partial syntax/alias credit refunds after last real owner and standard prune");
+ }
+}
+
+
+/// SAME canonical Kind4 dependency edge, preserving typed Parsed/Rejected and actual operational failure.
+/// Utility-only callers must authenticate the returned product against their current Input/code before using NoCode.
+pub(super) fn obtain_original_product(ctx:&mut dm_query::Ctx<'_>,input:&Arc<BodySyntaxInput>)->Result<Arc<OriginalBodySyntaxProduct>,BodySyntaxFailure>{
+ let key=code_key(input)?;let code=Arc::clone(input.original_code_owner().expect("actual canonical code locator checked"));
+ let params=Arc::new(Params{input:input.weak_allocation_owner(),key,code:Some(code)});
+ let value=ctx.get::<BodyQueryValue>(key,params).map_err(checked_query_failure)?;
+ match value.as_ref(){BodyQueryValue::Canonical(result)=>result.clone().map_err(BodySyntaxFailure::Syntax),BodyQueryValue::Issued(_)=>Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"absolute parser issuance is not a canonical utility product")))}
 }

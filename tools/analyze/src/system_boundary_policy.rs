@@ -3,6 +3,7 @@ use std::collections::{BTreeMap,BTreeSet,HashMap,HashSet};
 use serde::{Deserialize,Serialize};
 use crate::{lint::Sink,pat::Pat,tree::SourceFile,util::py_strip};
 use crate::system_boundary_report::LINT;
+use crate::raw_fixture_policy::{Fixture,PatternApi,PatternMode};
 fn folder_of(rel: &str) -> &str {
     match rel.rfind('/') {
         Some(i) => &rel[..i],
@@ -43,7 +44,7 @@ struct Decl {
 }
 
 /// `list_arg`: the typepaths of the `name = list(...)` whose first line is `start` (0-based).
-fn list_arg(lines: &[&str], start: usize) -> Vec<String> {
+fn list_arg(lines: &[&str], start: usize,fixture:&Fixture<'_>) -> Vec<String> {
     let mut text = String::new();
     let mut depth: i64 = 0;
     for line in &lines[start..] {
@@ -55,11 +56,11 @@ fn list_arg(lines: &[&str], start: usize) -> Vec<String> {
         }
     }
     let tail = text.split("list(").last().unwrap_or("");
-    pat_paths().find_iter(tail).iter().map(|m| m.as_str().to_string()).collect()
+    pat_paths(fixture).find_iter(tail).iter().map(|m| m.as_str().to_string()).collect()
 }
 
-fn pat_paths() -> &'static Pat {
-    crate::pat!(r"/[\w/]+")
+fn pat_paths<'f,'a>(fixture:&'f Fixture<'a>)->crate::raw_fixture_policy::Pattern<'f,'a>{
+    fixture.pattern(r"/[\w/]+",PatternMode::Search,||crate::pat!(r"/[\w/]+"))
 }
 
 /// Tarjan's SCCs of size > 1 (or a self-loop), as sorted vectors, in discovery order.
@@ -130,11 +131,12 @@ pub(crate) struct Facts {
     api_procs: Vec<String>,
 }
 
-pub(crate) fn facts_of(f: &SourceFile) -> Facts {
+pub(crate) fn facts_of(f:&SourceFile)->Facts{facts_with_fixture(f,&Fixture::legacy())}
+pub(crate) fn facts_with_fixture(f:&SourceFile,fixture:&Fixture<'_>)->Facts{
     let mut fa = Facts::default();
-    let ss_def = crate::pat!(r"(?m)^\s*(?:VERB_MANAGER_)?(?:SUBSYSTEM|SYSTEM)_DEF\((\w+)\)");
-    let service_def = crate::pat!(r"(?m)^\s*GLOBAL_DATUM_INIT\((\w+_service),\s*(/datum/world_service[\w/]*)");
-    let system_type = crate::pat!(r"(?m)^/datum/system/(\w+)\s*$");
+    let ss_def = fixture.pattern(r"(?m)^\s*(?:VERB_MANAGER_)?(?:SUBSYSTEM|SYSTEM)_DEF\((\w+)\)",PatternMode::Search,||crate::pat!(r"(?m)^\s*(?:VERB_MANAGER_)?(?:SUBSYSTEM|SYSTEM)_DEF\((\w+)\)"));
+    let service_def = fixture.pattern(r"(?m)^\s*GLOBAL_DATUM_INIT\((\w+_service),\s*(/datum/world_service[\w/]*)",PatternMode::Search,||crate::pat!(r"(?m)^\s*GLOBAL_DATUM_INIT\((\w+_service),\s*(/datum/world_service[\w/]*)"));
+    let system_type = fixture.pattern(r"(?m)^/datum/system/(\w+)\s*$",PatternMode::Search,||crate::pat!(r"(?m)^/datum/system/(\w+)\s*$"));
     let raw = f.text();
     for c in ss_def.captures_iter(raw) {
         fa.ss_defs.push(c.s(1).to_string());
@@ -146,10 +148,10 @@ pub(crate) fn facts_of(f: &SourceFile) -> Facts {
         fa.system_types.push(format!("/datum/system/{}", c.s(1)));
     }
 
-    let typedef = crate::pat_match!(r"(/[\w/]+)\s*$");
-    let var_needs = crate::pat_match!(r"\s+(?:var/list/)?needs\s*=\s*list\(");
-    let var_uses = crate::pat_match!(r"\s+(?:var/list/)?uses\s*=\s*list\(");
-    let var_emits = crate::pat_match!(r"\s+(?:var/list/)?emits\s*=\s*list\(");
+    let typedef = fixture.pattern(r"(/[\w/]+)\s*$",PatternMode::Match,||crate::pat_match!(r"(/[\w/]+)\s*$"));
+    let var_needs = fixture.pattern(r"\s+(?:var/list/)?needs\s*=\s*list\(",PatternMode::Match,||crate::pat_match!(r"\s+(?:var/list/)?needs\s*=\s*list\("));
+    let var_uses = fixture.pattern(r"\s+(?:var/list/)?uses\s*=\s*list\(",PatternMode::Match,||crate::pat_match!(r"\s+(?:var/list/)?uses\s*=\s*list\("));
+    let var_emits = fixture.pattern(r"\s+(?:var/list/)?emits\s*=\s*list\(",PatternMode::Match,||crate::pat_match!(r"\s+(?:var/list/)?emits\s*=\s*list\("));
     let code = f.code().lines_vec();
     let mut types: BTreeSet<String> = BTreeSet::new();
     let mut current: Option<String> = None;
@@ -161,16 +163,16 @@ pub(crate) fn facts_of(f: &SourceFile) -> Facts {
             continue;
         }
         let Some(cur) = &current else { continue };
-        for (kind, pat) in [(0u8, var_needs), (1u8, var_uses), (2u8, var_emits)] {
+        for (kind, pat) in [(0u8, &var_needs), (1u8, &var_uses), (2u8, &var_emits)] {
             if pat.is_match(line) {
-                fa.entries.push((cur.clone(), kind, list_arg(&code, number)));
+                fa.entries.push((cur.clone(), kind, list_arg(&code, number,fixture)));
             }
         }
     }
     fa.types = types.into_iter().collect();
 
     if f.rel.ends_with("/api.dm") {
-        let api_proc = crate::pat!(r"(?m)^/[\w/]+/(?:proc/)?(\w+)\s*\(");
+        let api_proc = fixture.pattern(r"(?m)^/[\w/]+/(?:proc/)?(\w+)\s*\(",PatternMode::Search,||crate::pat!(r"(?m)^/[\w/]+/(?:proc/)?(\w+)\s*\("));
         let procs: BTreeSet<String> = api_proc.captures_iter(&f.code().text).iter().map(|c| c.s(1).to_string()).collect();
         fa.api_procs = procs.into_iter().collect();
     }
@@ -205,19 +207,19 @@ struct Look<'a> {
     systems: HashMap<&'a str, &'a str>,
 }
 
-fn judge(f: &SourceFile, ctx: &Ctx, look: &Look) -> FileOut {
-    let ss_access = crate::pat!(r"(?<![\w.])SS(\w+)\.(\w+)(\s*\()?");
-    let service_access = crate::pat!(r"(?<![\w.])GLOB\.(\w+_service)\.(\w+)(\s*\()?");
-    let system_access = crate::pat!(r"(?<![\w.])system\(\s*(/datum/system/\w+)\s*\)\.(\w+)(\s*\()?");
-    let proc_def = crate::pat_match!(r"/datum/(controller/subsystem|world_service|system)/(\w+)/(?:proc/)?(\w+)\s*\(");
-    let emit = crate::pat!(r"OM_EMIT\w*\(\s*(/datum/om/event/[\w/]+)");
+fn judge(f: &SourceFile, ctx: &Ctx, look: &Look,fixture:&Fixture<'_>) -> FileOut {
+    let ss_access = fixture.pattern(r"(?<![\w.])SS(\w+)\.(\w+)(\s*\()?",PatternMode::Search,||crate::pat!(r"(?<![\w.])SS(\w+)\.(\w+)(\s*\()?"));
+    let service_access = fixture.pattern(r"(?<![\w.])GLOB\.(\w+_service)\.(\w+)(\s*\()?",PatternMode::Search,||crate::pat!(r"(?<![\w.])GLOB\.(\w+_service)\.(\w+)(\s*\()?"));
+    let system_access = fixture.pattern(r"(?<![\w.])system\(\s*(/datum/system/\w+)\s*\)\.(\w+)(\s*\()?",PatternMode::Search,||crate::pat!(r"(?<![\w.])system\(\s*(/datum/system/\w+)\s*\)\.(\w+)(\s*\()?"));
+    let proc_def = fixture.pattern(r"/datum/(controller/subsystem|world_service|system)/(\w+)/(?:proc/)?(\w+)\s*\(",PatternMode::Match,||crate::pat_match!(r"/datum/(controller/subsystem|world_service|system)/(\w+)/(?:proc/)?(\w+)\s*\("));
+    let emit = fixture.pattern(r"OM_EMIT\w*\(\s*(/datum/om/event/[\w/]+)",PatternMode::Search,||crate::pat!(r"OM_EMIT\w*\(\s*(/datum/om/event/[\w/]+)"));
     let rel = f.rel.as_str();
     let code = f.code().lines_vec();
     let mut out = FileOut::default();
     let mut called: BTreeSet<String> = BTreeSet::new();
     for (i, line) in code.iter().enumerate() {
         let number = i + 1;
-        if crate::dm::sys::kept_recorded(f, number, LINT) {
+        if fixture.kept_recorded_scan(f, number, LINT) {
             continue;
         }
         let where_ = format!("{}:{}: {}", rel, number, py_strip(f.raw().line(number)));
@@ -293,7 +295,7 @@ fn judge(f: &SourceFile, ctx: &Ctx, look: &Look) -> FileOut {
         for (i, line) in code.iter().enumerate() {
             let number = i + 1;
             for m in emit.captures_iter(line) {
-                if !emits.iter().any(|e| e == m.s(1)) && !crate::dm::sys::kept_recorded(f, number, LINT) {
+                if !emits.iter().any(|e| e == m.s(1)) && !fixture.kept_recorded_scan(f, number, LINT) {
                     out.b6.push((ti as u32, number as u32, m.s(1).to_string()));
                 }
             }
@@ -367,13 +369,14 @@ pub(crate) fn prepare(files:&[(&str,&Facts)])->Prepared{
         };
  Prepared{ctx,decl_order,decls,known,file_paths:files.iter().map(|(rel,_)|(*rel).to_owned()).collect()}
 }
-pub(crate) fn judge_file(file:&SourceFile,prepared:&Prepared)->FileOut{let ctx=&prepared.ctx;
+pub(crate) fn judge_file(file:&SourceFile,prepared:&Prepared)->FileOut{judge_file_with_fixture(file,prepared,&Fixture::legacy())}
+pub(crate) fn judge_file_with_fixture(file:&SourceFile,prepared:&Prepared,fixture:&Fixture<'_>)->FileOut{let ctx=&prepared.ctx;
         let look = Look {
             ss: ctx.ss_owner.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect(),
             services: ctx.service_owner.iter().map(|(k, d, t)| (k.as_str(), (d.as_str(), t.as_str()))).collect(),
             systems: ctx.system_owner.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect(),
         };
- judge(file,ctx,&look)
+ judge(file,ctx,&look,fixture)
 }
 pub(crate) fn finish(prepared:&Prepared,results:&[(String,FileOut)],out:&mut Sink){
  let ctx=&prepared.ctx;let decl_order=&prepared.decl_order;let decls=&prepared.decls;let known=&prepared.known;

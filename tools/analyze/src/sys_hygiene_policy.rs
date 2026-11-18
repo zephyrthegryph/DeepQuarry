@@ -15,6 +15,7 @@ use crate::tree::SourceFile;
 #[cfg(feature="legacy-sem")] use crate::tree::Tree;
 use crate::util::{is_py_space, py_strip};
 use crate::{pat, pat_match};
+use crate::raw_fixture_policy::{Fixture,PatternApi,PatternMode};
 
 pub(crate) const RULES: &[RuleMeta] = &[
     RuleMeta {
@@ -67,10 +68,10 @@ fn strip_comment(line: &str) -> &str {
     line
 }
 
-fn deadline_re() -> &'static Pat {
-    pat!(
+fn deadline_re<'f,'a>(fixture:&'f Fixture<'a>)->crate::raw_fixture_policy::Pattern<'f,'a>{
+    fixture.pattern(r"(?<![\w.])(?:world\.time|REALTIMEOFDAY)\s*(?:>=|<=|>|<)\s*(?!\d)([A-Za-z_][\w.\[\]?]*)|(?<![\w.])([A-Za-z_][\w.\[\]?]*)\s*(?:>=|<=|>|<)\s*(?:world\.time|REALTIMEOFDAY)(?![\w])",PatternMode::Search,||pat!(
         r"(?<![\w.])(?:world\.time|REALTIMEOFDAY)\s*(?:>=|<=|>|<)\s*(?!\d)([A-Za-z_][\w.\[\]?]*)|(?<![\w.])([A-Za-z_][\w.\[\]?]*)\s*(?:>=|<=|>|<)\s*(?:world\.time|REALTIMEOFDAY)(?![\w])"
-    )
+    ))
 }
 
 fn is_periodic(type_path: &str, name: &str) -> bool {
@@ -82,7 +83,7 @@ fn indent_of(line: &str) -> usize {
 }
 
 /// `scan_lines`: line numbers of every deadline comparison in a periodic body.
-fn deadline_hits(lines: &[&str]) -> Vec<usize> {
+fn deadline_hits(lines: &[&str],fixture:&Fixture<'_>) -> Vec<usize> {
     let mut out = Vec::new();
     let mut current_type: Option<String> = None;
     let mut i = 0;
@@ -90,20 +91,20 @@ fn deadline_hits(lines: &[&str]) -> Vec<usize> {
         let line = lines[i];
         let mut body_indent = 0usize;
         let mut found = false;
-        if let Some(m) = pat_match!(r"^(/[\w/]+?)/(?:proc/)?(process|periodic_step|machine_step|service_step|tick)\(").captures(line) {
+        if let Some(m) = fixture.pattern(r"^(/[\w/]+?)/(?:proc/)?(process|periodic_step|machine_step|service_step|tick)\(",PatternMode::Match,||pat_match!(r"^(/[\w/]+?)/(?:proc/)?(process|periodic_step|machine_step|service_step|tick)\(")).captures(line) {
             if is_periodic(m.s(1), m.s(2)) {
                 found = true;
                 body_indent = 1;
             }
         }
         if !found {
-            if let Some(tb) = pat_match!(r"^(/[\w/]+)\s*(?://.*)?$").captures(line) {
+            if let Some(tb) = fixture.pattern(r"^(/[\w/]+)\s*(?://.*)?$",PatternMode::Match,||pat_match!(r"^(/[\w/]+)\s*(?://.*)?$")).captures(line) {
                 current_type = Some(tb.s(1).to_string());
             } else if !line.is_empty() && !(line.starts_with('\t') || line.starts_with(' ') || line.starts_with('#') || line.starts_with("//")) {
                 current_type = None;
             }
             if let Some(ct) = &current_type {
-                if let Some(n) = pat_match!(r"^\t(?:proc/)?(process|periodic_step|machine_step|service_step|tick)\(").captures(line) {
+                if let Some(n) = fixture.pattern(r"^\t(?:proc/)?(process|periodic_step|machine_step|service_step|tick)\(",PatternMode::Match,||pat_match!(r"^\t(?:proc/)?(process|periodic_step|machine_step|service_step|tick)\(")).captures(line) {
                     if is_periodic(ct, n.s(1)) {
                         found = true;
                         body_indent = 2;
@@ -121,7 +122,7 @@ fn deadline_hits(lines: &[&str]) -> Vec<usize> {
             if !py_strip(body).is_empty() && indent_of(body) < body_indent {
                 break;
             }
-            if deadline_re().is_match(strip_comment(body)) {
+            if deadline_re(fixture).is_match(strip_comment(body)) {
                 out.push(j + 1);
             }
             j += 1;
@@ -134,9 +135,9 @@ fn deadline_hits(lines: &[&str]) -> Vec<usize> {
 // ---- hygiene.py ------------------------------------------------------------------------------
 
 /// The type path the line at 0-based `index` belongs to (nearest column-0 path above it).
-fn owner_type(lines: &[&str], index: usize) -> String {
+fn owner_type(lines: &[&str], index: usize,fixture:&Fixture<'_>) -> String {
     for j in (0..=index).rev() {
-        if let Some(m) = pat_match!(r"^(/(?!/)[\w/]+)").captures(lines[j]) {
+        if let Some(m) = fixture.pattern(r"^(/(?!/)[\w/]+)",PatternMode::Match,||pat_match!(r"^(/(?!/)[\w/]+)")).captures(lines[j]) {
             let mut path = m.s(1).to_string();
             if path.contains("/proc/") || path.contains("/verb/") {
                 path = path.split("/proc/").next().unwrap_or("").split("/verb/").next().unwrap_or("").to_string();
@@ -147,17 +148,17 @@ fn owner_type(lines: &[&str], index: usize) -> String {
     String::new()
 }
 
-fn scan_boilerplate(rel: &str, lines: &[&str], out: &mut Vec<(&'static str, String, usize)>) {
+fn scan_boilerplate(rel: &str, lines: &[&str], out: &mut Vec<(&'static str, String, usize)>,fixture:&Fixture<'_>) {
     for (idx, line) in lines.iter().enumerate() {
         let number = idx + 1;
-        let Some(m) = pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,]*?)\s*\)\s*:\s*(.*?)\s*(?:\*/.*)?$").captures(line) else { continue };
+        let Some(m) = fixture.pattern(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,]*?)\s*\)\s*:\s*(.*?)\s*(?:\*/.*)?$",PatternMode::Search,||pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,]*?)\s*\)\s*:\s*(.*?)\s*(?:\*/.*)?$")).captures(line) else { continue };
         let reason = py_strip(m.s(2)).to_lowercase();
         if PLACEHOLDERS.iter().any(|p| reason.contains(p)) {
             out.push(("annotation_boilerplate", rel.to_string(), number));
             continue;
         }
-        if let Some(kind) = pat_match!(r"^(mob|obj|item|machine|turf|area)s?:").captures(&reason) {
-            let owner = owner_type(lines, idx);
+        if let Some(kind) = fixture.pattern(r"^(mob|obj|item|machine|turf|area)s?:",PatternMode::Match,||pat_match!(r"^(mob|obj|item|machine|turf|area)s?:")).captures(&reason) {
+            let owner = owner_type(lines, idx,fixture);
             if !owner.is_empty() && !owner.starts_with(kind_path(kind.s(1))) {
                 out.push(("annotation_boilerplate", rel.to_string(), number));
             }
@@ -166,16 +167,16 @@ fn scan_boilerplate(rel: &str, lines: &[&str], out: &mut Vec<(&'static str, Stri
 }
 
 /// `[(0-based index, name)]` of cached_* instance var declarations.
-fn cached_decls(lines: &[&str]) -> Vec<(usize, String)> {
+fn cached_decls(lines: &[&str],fixture:&Fixture<'_>) -> Vec<(usize, String)> {
     let mut found = Vec::new();
     let mut in_type = false;
     let mut in_nested_proc = false;
     for (i, line) in lines.iter().enumerate() {
         if !line.is_empty() && !line.chars().next().map(is_py_space).unwrap_or(false) {
-            in_type = pat_match!(r"^(/(?!/)[\w/]+)\s*(?://.*)?$").is_match(line) || pat_match!(r"^[A-Z][A-Z0-9_]*_DEF\(").is_match(line);
+            in_type = fixture.pattern(r"^(/(?!/)[\w/]+)\s*(?://.*)?$",PatternMode::Match,||pat_match!(r"^(/(?!/)[\w/]+)\s*(?://.*)?$")).is_match(line) || fixture.pattern(r"^[A-Z][A-Z0-9_]*_DEF\(",PatternMode::Match,||pat_match!(r"^[A-Z][A-Z0-9_]*_DEF\(")).is_match(line);
             in_nested_proc = false;
-            if let Some(m) = pat_match!(r"^/(?!/)[\w/]*?/var/((?:\w+/)*?)(cached_\w+)\b").captures(line) {
-                if !pat!(r"(?:^|/)(static|global|const)/").is_match(m.s(1)) {
+            if let Some(m) = fixture.pattern(r"^/(?!/)[\w/]*?/var/((?:\w+/)*?)(cached_\w+)\b",PatternMode::Match,||pat_match!(r"^/(?!/)[\w/]*?/var/((?:\w+/)*?)(cached_\w+)\b")).captures(line) {
+                if !fixture.pattern(r"(?:^|/)(static|global|const)/",PatternMode::Search,||pat!(r"(?:^|/)(static|global|const)/")).is_match(m.s(1)) {
                     found.push((i, m.s(2).to_string()));
                 }
             }
@@ -184,15 +185,15 @@ fn cached_decls(lines: &[&str]) -> Vec<(usize, String)> {
         if !in_type {
             continue;
         }
-        if pat_match!(r"^\t(?:proc/|verb/)?\w+\(").is_match(line) {
+        if fixture.pattern(r"^\t(?:proc/|verb/)?\w+\(",PatternMode::Match,||pat_match!(r"^\t(?:proc/|verb/)?\w+\(")).is_match(line) {
             in_nested_proc = true;
             continue;
         }
         if line.starts_with('\t') && !line.starts_with("\t\t") && !py_strip(line).is_empty() {
             in_nested_proc = false;
         }
-        if let Some(m) = pat_match!(r"^\tvar/((?:\w+/)*?)(cached_\w+)\b").captures(line) {
-            if !in_nested_proc && !pat!(r"(?:^|/)(static|global|const)/").is_match(m.s(1)) {
+        if let Some(m) = fixture.pattern(r"^\tvar/((?:\w+/)*?)(cached_\w+)\b",PatternMode::Match,||pat_match!(r"^\tvar/((?:\w+/)*?)(cached_\w+)\b")).captures(line) {
+            if !in_nested_proc && !fixture.pattern(r"(?:^|/)(static|global|const)/",PatternMode::Search,||pat!(r"(?:^|/)(static|global|const)/")).is_match(m.s(1)) {
                 found.push((i, m.s(2).to_string()));
             }
         }
@@ -202,17 +203,19 @@ fn cached_decls(lines: &[&str]) -> Vec<(usize, String)> {
 
 /// One file's sites, in the original emission order within each phase: boilerplate (rule 0),
 /// cached_var (rule 1) and deadline_poll (rule 2).
-pub(crate) fn judge(f: &SourceFile) -> Vec<(u8, u32)> {
+pub(crate) fn judge(f:&SourceFile)->Vec<(u8,u32)>{judge_with_fixture(f,&Fixture::legacy())}
+pub(crate) fn judge_with_fixture(f:&SourceFile,fixture:&Fixture<'_>)->Vec<(u8,u32)>{
     let mut out: Vec<(&'static str, String, usize)> = Vec::new();
     let rel = f.rel.as_str();
     let lines = f.raw().lines_vec();
-    scan_boilerplate(rel, &lines, &mut out);
+    scan_boilerplate(rel, &lines, &mut out,fixture);
     // cached_var: a hand-maintained cache (its declaration and every write). Writes are looked for in the declaring file
     // (these vars are type-private).
     if !VENDORED.iter().any(|p| rel.starts_with(p)) {
-        let decls = cached_decls(&lines);
+        let decls = cached_decls(&lines,fixture);
         for (index, name) in &decls {
-            let write = Pat::cached(&format!(r"(?<![\w.])(?:src\.)?{}\s*(?:=(?!=)|\+=|-=|\|=)\s*(.*)$", regex::escape(name)));
+            let native_write=if fixture.has_native_patterns(){let escaped=match fixture.escape_pattern(name){Ok(value)=>value,Err(error)=>{fixture.note_scan(Err(error));return Vec::new()}};match fixture.formatted_pattern(format_args!(r"(?<![\w.])(?:src\.)?{}\s*(?:=(?!=)|\+=|-=|\|=)\s*(.*)$",escaped),PatternMode::Search){Ok(value)=>Some(value),Err(error)=>{fixture.note_scan(Err(error));return Vec::new()}}}else{None};
+            let legacy_write=if native_write.is_none(){Some(Pat::cached(&format!(r"(?<![\w.])(?:src\.)?{}\s*(?:=(?!=)|\+=|-=|\|=)\s*(.*)$",regex::escape(name))))}else{None};
             out.push(("cached_var", rel.to_string(), index + 1));
             for (idx, line) in lines.iter().enumerate() {
                 let number = idx + 1;
@@ -222,7 +225,7 @@ pub(crate) fn judge(f: &SourceFile) -> Vec<(u8, u32)> {
                 if !line.contains(name.as_str()) {
                     continue;
                 }
-                if write.captures(strip_comment(line)).is_none() {
+                if native_write.as_ref().map_or_else(||legacy_write.expect("actual legacy cached-var pattern").captures(strip_comment(line)),|write|write.captures(strip_comment(line))).is_none() {
                     continue;
                 }
                 out.push(("cached_var", rel.to_string(), number));
@@ -230,15 +233,15 @@ pub(crate) fn judge(f: &SourceFile) -> Vec<(u8, u32)> {
         }
     }
     // deadline_poll: the poll, and the writes that store its deadline.
-    let hits = deadline_hits(&lines);
+    let hits = deadline_hits(&lines,fixture);
     if !hits.is_empty() {
         let mut idents: BTreeSet<String> = BTreeSet::new();
         for number in hits {
-            if crate::dm::sys::kept_recorded(f, number, "sys_deadline_poll") {
+            if fixture.kept_recorded_scan(f, number, "sys_deadline_poll") {
                 continue;
             }
             out.push(("deadline_poll", rel.to_string(), number));
-            for m in deadline_re().captures_iter(strip_comment(lines[number - 1])) {
+            for m in deadline_re(fixture).captures_iter(strip_comment(lines[number - 1])) {
                 let ident = if m.matched(1) && !m.s(1).is_empty() { m.s(1) } else { m.s(2) };
                 if !ident.is_empty() {
                     let last = ident.rsplit('.').next().unwrap_or("");
@@ -248,11 +251,10 @@ pub(crate) fn judge(f: &SourceFile) -> Vec<(u8, u32)> {
         }
         let mut cache: HashMap<&str, &Pat> = HashMap::new();
         for ident in &idents {
-            let store = cache.entry(ident.as_str()).or_insert_with(|| {
-                Pat::cached(&format!(r"(?<![\w]){}\s*(?:=(?!=)|\+=)[^=]*world\.time", regex::escape(ident)))
-            });
+            let native_store=if fixture.has_native_patterns(){let escaped=match fixture.escape_pattern(ident){Ok(value)=>value,Err(error)=>{fixture.note_scan(Err(error));return Vec::new()}};match fixture.formatted_pattern(format_args!(r"(?<![\w]){}\s*(?:=(?!=)|\+=)[^=]*world\.time",escaped),PatternMode::Search){Ok(value)=>Some(value),Err(error)=>{fixture.note_scan(Err(error));return Vec::new()}}}else{None};
+            let legacy_store=if native_store.is_none(){Some(*cache.entry(ident.as_str()).or_insert_with(||Pat::cached(&format!(r"(?<![\w]){}\s*(?:=(?!=)|\+=)[^=]*world\.time",regex::escape(ident)))))}else{None};
             for (idx, line) in lines.iter().enumerate() {
-                if store.is_match(strip_comment(line)) {
+                if native_store.as_ref().map_or_else(||legacy_store.expect("actual legacy deadline-store pattern").is_match(strip_comment(line)),|store|store.is_match(strip_comment(line))) {
                     out.push(("deadline_poll", rel.to_string(), idx + 1));
                 }
             }

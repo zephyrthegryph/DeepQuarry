@@ -36,15 +36,16 @@ pub(crate) fn untracked(source:&dyn OriginalSource,facts:&PolicyFacts,globals:&d
 
 /// Separate data-only full-page reads from existing finite verified results.
 /// A host full-result wrapper supplies current raw proof before either loan.
-pub(crate) enum ReadQuestions<'a>{Captured(&'a dyn crate::captured_reactive_reads::ReadProvider),RawData(&'a dyn crate::captured_reactive_reads::RawPolicyReadProvider),Generation{source:&'a dyn OriginalSource,facts:&'a PolicyFacts,globals:&'a dyn GlobalFacts}}
-impl ReadQuestions<'_>{pub(crate) fn with_facts<T>(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs,receiver:&str,procedure:&str,context:Option<&str>,flavor:crate::captured_reactive_reads::Flavor,poll:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&FrozenReadSet)->Result<T,Failure>)->Result<T,Failure>{match self{Self::Captured(provider)=>crate::captured_reactive_reads::with_read_facts(*provider,inputs,receiver,procedure,context,flavor,poll,consume),Self::RawData(provider)=>crate::captured_reactive_reads::with_raw_read_facts(*provider,inputs,receiver,procedure,context,flavor,poll,consume),Self::Generation{..}=>Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation read data requires its actual purpose source loan")))}}}
+pub(crate) enum ReadQuestions<'a>{Captured(&'a dyn crate::captured_reactive_reads::ReadProvider),RawData(&'a dyn crate::captured_reactive_reads::RawPolicyReadProvider),Generation{source:&'a dyn OriginalSource,facts:&'a PolicyFacts,globals:&'a dyn GlobalFacts},Utility{source:&'a dyn OriginalSource,facts:&'a PolicyFacts,globals:&'a dyn GlobalFacts,closed:bool}}
+impl ReadQuestions<'_>{pub(crate) fn with_facts<T>(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs,receiver:&str,procedure:&str,context:Option<&str>,flavor:crate::captured_reactive_reads::Flavor,poll:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&FrozenReadSet)->Result<T,Failure>)->Result<T,Failure>{match self{Self::Captured(provider)=>crate::captured_reactive_reads::with_read_facts(*provider,inputs,receiver,procedure,context,flavor,poll,consume),Self::RawData(provider)=>crate::captured_reactive_reads::with_raw_read_facts(*provider,inputs,receiver,procedure,context,flavor,poll,consume),Self::Generation{..}|Self::Utility{..}=>Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation read data requires its actual purpose source loan")))}}}
 
 impl ReadQuestions<'_>{
  pub(crate) fn with_source_facts<T>(&self,current:&dyn OriginalSource,receiver:&str,procedure:&str,context:Option<&str>,flavor:crate::captured_reactive_reads::Flavor,poll:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&FrozenReadSet)->Result<T,Failure>)->Result<T,Failure>{
-  if let Self::Generation{source,facts,globals}=self{
+  if let Self::Generation{source,facts,globals}|Self::Utility{source,facts,globals,..}=self{
+   let closed=match self{Self::Utility{closed,..}=>{if !current.utility_body_contract(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"closure utility requires its actual optional BODY contract")))}*closed},_=>flavor==crate::captured_reactive_reads::Flavor::Closed};
    current.require()?;if !std::ptr::eq((*source as *const dyn OriginalSource).cast::<()>(),(current as *const dyn OriginalSource).cast::<()>()){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation read source differs from actual operation owner")))}
    let scratch=crate::captured_generator_budget::Budget::scoped_temporaries(current.operation_budget()).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;let mut action=Some(consume);let mut completed=None;
-   let pending=current.with_budget(&scratch,&mut|page|{let mut checkpoint=||poll();let reads=crate::reactive_reads_native::original_request(page,crate::reactive_reads_native::Directives{facts,globals:Some(*globals)},receiver,procedure,context,flavor==crate::captured_reactive_reads::Flavor::Closed,&mut checkpoint)?;let frozen=FrozenReadSet::freeze(reads,&scratch,&mut checkpoint)?;let consume=action.take().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"generation read callback repeated")))?;completed=Some(consume(&frozen)?);drop(frozen);Ok(())});
+   let pending=current.with_budget(&scratch,&mut|page|{let mut checkpoint=||poll();let reads=crate::reactive_reads_native::original_request(page,crate::reactive_reads_native::Directives{facts,globals:Some(*globals)},receiver,procedure,context,closed,&mut checkpoint)?;let frozen=FrozenReadSet::freeze(reads,&scratch,&mut checkpoint)?;let consume=action.take().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"generation read callback repeated")))?;completed=Some(consume(&frozen)?);drop(frozen);Ok(())});
    if pending.is_err(){scratch.keep_failed_scratch()}drop(scratch);let pending=match pending{Err(Failure::Operational(actual))=>return Err(Failure::Operational(actual)),other=>other};current.require()?;pending?;return completed.ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"generation read callback omitted")))
   }
   let inputs=current.complete_inputs().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"ordinary read provider cannot serve generation-only source questions")))?;self.with_facts(inputs,receiver,procedure,context,flavor,poll,consume)
@@ -56,12 +57,21 @@ impl ReadQuestions<'_>{
 /// later inputs to completion, not empty fallback implementations here.
 pub(crate) fn fold_read_roots(source:&dyn OriginalSource,facts:&PolicyFacts,globals:&dyn GlobalFacts,provider:&ReadQuestions<'_>,markers:&[crate::declare_policy::Marker<'_>],defines:&std::collections::BTreeSet<String>,poll:&dyn Fn()->io::Result<()>)->Result<crate::reactive_dependency_fold::Fold,Failure>{
  use crate::{reactive_dependency_fold::Fold,reactive_hooks_policy::{self as hooks,Role},captured_reactive_reads::{with_read_facts,Flavor},reactive_read_facts::ReadKind};use std::collections::BTreeSet;
+ let closed=!matches!(provider,ReadQuestions::Utility{closed:false,..});
+ let utility=matches!(provider,ReadQuestions::Utility{..});
  let mut control=Native{source,facts,globals,poll};kc::Control::checkpoint(&mut control)?;
  let handlers=hooks::discover_admitted(markers,&mut control)?;let extra=hooks::discover_in_admitted(markers,&["CAP_ENTRIES"],&mut control)?;let mut out=Fold::default();
- for h in handlers{kc::Control::checkpoint(&mut control)?;if !h.role.reads_covered()||h.cap_proc||h.owner.is_empty(){continue}if !matches!(source.callable(&h.owner,&h.proc)?,SelectedCallable::Source(_)){continue}
-  let id=kc::format(&mut control,format_args!("{}::{}",h.owner,h.proc))?;let first=!out.analysis.consumers.contains_key(&id);if !first&&h.role!=Role::Contribution{continue}
+ for h in handlers{kc::Control::checkpoint(&mut control)?;if !h.role.reads_covered()||h.cap_proc||h.owner.is_empty(){continue}let SelectedCallable::Source(call)=source.callable(&h.owner,&h.proc)? else{continue};
+  if utility{
+   // The pinned handler catalog first requires an actual code-bearing closed
+   // handler even for the legacy comparison. Genuine Rejected yields no body
+   // callback; unissued/operational input still fails through the same borrower.
+   let mut code=false;source.with_body(call.ordinal,&mut|_|{code=true;Ok(())})?;
+   if !code{continue}
+  }
+  let id=kc::format(&mut control,format_args!("{}::{}",h.owner,h.proc))?;let first=!out.analysis.consumers.contains_key(&id);if !first&&(!closed||h.role!=Role::Contribution){continue}
   provider.with_source_facts(source,&h.owner,&h.proc,Some(h.ctx.type_path()),Flavor::Closed,poll,|read|{
-   if h.role==Role::Contribution{out.sample(&id,View::Frozen(read),&mut control)?;}if first{let gaps=untracked(source,facts,globals,read,h.role==Role::Output,poll)?;out.consumer(&id,View::Frozen(read),gaps,matches!(h.role,Role::Contribution|Role::Condition),false,&mut control)?;}Ok(())
+   if closed&&h.role==Role::Contribution{out.sample(&id,View::Frozen(read),&mut control)?;}if first{let gaps=untracked(source,facts,globals,read,h.role==Role::Output,poll)?;out.consumer(&id,View::Frozen(read),gaps,matches!(h.role,Role::Contribution|Role::Condition),false,&mut control)?;}Ok(())
   })?;
  }
  for h in extra{kc::Control::checkpoint(&mut control)?;if !h.role.reads_covered()||h.cap_proc||h.owner.is_empty(){continue}let id=kc::format(&mut control,format_args!("{}::{}",h.owner,h.proc))?;if out.analysis.consumers.contains_key(&id)||matches!(source.callable(&h.owner,&h.proc)?,SelectedCallable::Missing){continue}
@@ -134,3 +144,23 @@ impl crate::reactive_dependency_fold::Candidates for crate::auto_tracking_native
 
 /// SAME original variable classification for the semantic-read consumer.
 pub(crate) fn classify_original(source:&dyn OriginalSource,facts:&PolicyFacts,globals:&dyn GlobalFacts,owner:&str,name:&str,poll:&dyn Fn()->io::Result<()>)->Result<VarClass,Failure>{source.budget().require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;let pending=reactive_variable_policy::classify(&mut Native{source,facts,globals,poll},owner,name);if matches!(&pending,Err(Failure::Operational(_))){return pending}if source.budget().denied(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"semantic-read classification admission denied")))}pending}
+
+/// Both closure answers are operation-owned DATA over the SAME current model,
+/// facts, globals and actual utility BODY borrower. This path never publishes a
+/// targeted answer into the ordinary closed dependency memo.
+pub(crate) fn analyze_utility_pair<A:crate::reactive_dependency_fold::Candidates<Error=Failure>>(
+ source:&dyn OriginalSource,facts:&PolicyFacts,globals:&dyn GlobalFacts,
+ markers:&[crate::declare_policy::Marker<'_>],defines:&std::collections::BTreeSet<String>,auto:&A,
+ poll:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&crate::reactive_facts::DepsAnalysis,&crate::reactive_facts::DepsAnalysis)->Result<(),Failure>
+)->Result<(),Failure>{
+ source.require()?;poll()?;
+ if !source.utility_body_contract()||source.complete_inputs().is_none(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"closure utility lacks its actual complete model/BODY owner")))}
+ let targeted=analyze_questions(source,facts,globals,&ReadQuestions::Utility{source,facts,globals,closed:false},markers,defines,auto,poll)?;
+ source.require()?;poll()?;
+ let closed=analyze_questions(source,facts,globals,&ReadQuestions::Utility{source,facts,globals,closed:true},markers,defines,auto,poll)?;
+ source.require()?;poll()?;
+ let pending=consume(&targeted,&closed);
+ // Preserve actual operational IO before later currentness/cancellation checks.
+ if matches!(&pending,Err(Failure::Operational(_))){return pending}
+ source.require()?;poll()?;pending
+}

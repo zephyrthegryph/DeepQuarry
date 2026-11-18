@@ -8,8 +8,8 @@ const PRIVATE_IMAGE_DIR_ROSTER: &[&str] = &["allow_annotations","image_dir_after
 fn operational(error:Failure)->io::Error{match error{Failure::Operational(error)=>error,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)}}
 /// Borrowed only while this SAME execution's data and allocation budgets live.
 /// This type has no public constructor and no independent source/run authority.
-pub(crate) struct CompleteAllowRun<'a>{selected:&'a[String],validation:Option<&'a ValidationData>,unused:Option<&'a[String]>}
-impl CompleteAllowRun<'_>{pub(crate) fn selected(&self)->&[String]{self.selected}pub(crate) fn validation(&self)->Option<&ValidationData>{self.validation}pub(crate) fn unused(&self)->io::Result<&[String]>{self.unused.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"unused-ALLOW audit was not requested for this producer run"))}}
+pub(crate) struct CompleteAllowRun<'a>{usage:Option<&'a full_unused::UsageData<'a>>,selected:&'a[String],validation:Option<&'a ValidationData>,unused:Option<&'a[String]>}
+impl CompleteAllowRun<'_>{pub(crate) fn usage(&self)->io::Result<&full_unused::UsageData<'_>>{self.usage.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual selected producer usage union was not lent"))}pub(crate) fn selected(&self)->&[String]{self.selected}pub(crate) fn validation(&self)->Option<&ValidationData>{self.validation}pub(crate) fn unused(&self)->io::Result<&[String]>{self.unused.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"unused-ALLOW audit was not requested for this producer run"))}}
 /// A private staged report may borrow completed findings from these exact
 /// producer calls. The final callback still owns authorization to publish.
 enum UnionRows<'a,'rows>{
@@ -80,6 +80,30 @@ fn copy_validation(data:&ValidationData,c:&mut impl Control<Error=Failure>)->Res
  for(site,text)in data.sites.iter().zip(&data.source_text){c.checkpoint()?;let width=[site.rule.len(),site.rel.len(),site.msg.len(),site.key.len(),site.ident.len(),text.len()].into_iter().try_fold(0usize,|n,x|n.checked_add(x)).ok_or_else(||c.overflow())?;kc::reserve(c,||width.checked_mul(4)?.checked_add(1024))?;kc::row(c,&mut out.sites)?;kc::row(c,&mut out.source_text)?;out.sites.push(site.clone());out.source_text.push(text.clone());}c.checkpoint()?;Ok(out)
 }
 impl SourceSnapshot{
+ pub(in crate::runner_host) fn baseline_update_path(meta:&dq_analyze::lint::Meta)->Option<&'static str>{
+  if !Self::is_registered_baseline_metadata(meta){return None}
+  match meta.policy{
+   dq_analyze::lint::Policy::Sites{baseline,..}|dq_analyze::lint::Policy::Ceilings{baseline,..}=>Some(baseline),
+   _ if std::ptr::eq(meta,dq_analyze::captured_system_boundary_pages::metadata())=>Some(dq_analyze::captured_system_boundary_pages::baseline_update_target().0),
+   _=>None,
+  }
+ }
+ pub(in crate::runner_host) fn registered_update_baselines(control:&mut Operation<'_>)->Result<Vec<&'static str>,Failure>{
+  let mut paths=Self::registered_full_baselines(control)?;
+  let selection=full_unused::registered_full_selection(&[],control)?;
+  for name in selection.names(){control.checkpoint()?;let producer=Producer::from_name(name).ok_or("unissued baseline update producer")?;
+   if let Some(path)=Self::baseline_update_path(producer.metadata()){
+    let leaf=path.strip_prefix("tools/ci/").ok_or("baseline update target outside tools/ci")?;
+    if !leaf.ends_with(".txt")||!leaf.bytes().all(|b|b.is_ascii_alphanumeric()||matches!(b,b'_'|b'-'|b'.')){return Err("baseline update target is not ordinary registered txt".into())}
+    if !paths.contains(&path){kc::row(control,&mut paths)?;paths.push(path);}
+   }
+  }Ok(paths)
+ }
+
+ /// Identity check against the SAME closed producer metadata used by execution.
+ pub(in crate::runner_host) fn is_registered_baseline_metadata(meta:&dq_analyze::lint::Meta)->bool{
+  Producer::from_name(meta.name).is_some_and(|producer|std::ptr::eq(producer.metadata(),meta))
+ }
  pub(in crate::runner_host) fn registered_full_baselines(
   control: &mut Operation<'_>,
  ) -> Result<Vec<&'static str>, Failure> {
@@ -117,10 +141,15 @@ impl SourceSnapshot{
  fn with_native_allow_full_run_using<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],retained:Option<&Arc<Budget>>,handlers:Option<&super::HandlerWorkspaceSnapshot>,private_checker_body:bool,stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>,consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
   self.with_native_allow_registered_using(tree,exclusions,retained,handlers,private_checker_body,None,true,stage,consume)
  }
- fn with_native_allow_registered_using<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],retained:Option<&Arc<Budget>>,handlers:Option<&super::HandlerWorkspaceSnapshot>,private_checker_body:bool,registered:Option<&Arc<NativeCheckSelection>>,audit_requested:bool,mut stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>,consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+ fn with_native_allow_registered_using<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],retained:Option<&Arc<Budget>>,handlers:Option<&super::HandlerWorkspaceSnapshot>,private_checker_body:bool,registered:Option<&Arc<NativeCheckSelection>>,audit_requested:bool,stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>,consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{self.with_native_allow_registered_observed_using(tree,exclusions,retained,handlers,private_checker_body,registered,audit_requested,registered.and_then(|plan|plan.cli_observations()),stage,consume)}
+ fn with_native_allow_registered_observed_using<R>(&self,tree:&dm_tree::SemanticTree,exclusions:&[String],retained:Option<&Arc<Budget>>,handlers:Option<&super::HandlerWorkspaceSnapshot>,private_checker_body:bool,registered:Option<&Arc<NativeCheckSelection>>,audit_requested:bool,observations:Option<&crate::runner_host::check_cli_observations::Observations>,mut stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>,consume:impl FnOnce(&CompleteAllowRun<'_>,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
   crate::daemon::control::checkpoint()?;if !self.matches_tree(tree){return Err("full ALLOW actual tree differs".into())}self.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;if registered.is_none(){self.require_original_fixed_report_subject(tree)?;}
-  let capture=self.native_workspace.as_ref().ok_or("full ALLOW actual workspace absent")?;let queries=self.native_raw_queries.as_ref().ok_or("full ALLOW actual QueryDb absent")?;let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;queries.require_workspace_report_configuration(capture,&guard)?;
+  let capture=self.native_workspace.as_ref().ok_or("full ALLOW actual workspace absent")?;let queries=self.native_raw_queries.as_ref().ok_or("full ALLOW actual QueryDb absent")?;let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;
   if let Some(plan)=registered{capture.require_registered_plan(plan)?;self.require_original_analyze_subject(capture)?;}
+  // Only the SAME authenticated sem-fixture plan bypasses CHECK's whole-registry
+  // required-list judgment. Selected producer configuration parsing/currentness
+  // and its exact root/configuration/selection proofs remain mandatory.
+  if !registered.is_some_and(|plan|plan.fixture_scope().is_some()){queries.require_workspace_report_configuration(capture,&guard)?;}
   let owned_budget;
   let budget=match retained{Some(budget)=>budget,None=>{owned_budget=queries.workspace_allow_run_budget(capture,&guard)?;&owned_budget}};
   let poll=||{budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;crate::daemon::control::checkpoint()?;capture.require_scope(&guard)};
@@ -149,21 +178,29 @@ impl SourceSnapshot{
   let selected_tree=full_unused::SelectedTreePlanData::new(producers.iter().map(|producer|producer.metadata().select),&mut c)?;
   let frame=FrameData{owner:FrameOwner::Semantic(tree.identity()),source:self.source_revision,configuration:capture.policy_revision()};let mut usage=UsageJoinData::new(&selection,frame);let mut validation=None;
   for producer in producers{poll()?;let name=producer.name();
+   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FULL_REPORT_PRODUCER stage=enter name={name} used={} remaining={}",budget.used(),budget.remaining());}
+   let timing=if let Some(actual)=observations.filter(|actual|actual.request().timing){Some((actual,std::time::Instant::now(),queries.cli_observation_stats()?))}else{None};
+   let original_stage=stage.as_deref_mut();let has_stage=original_stage.is_some();let mut original_stage=original_stage;
+   let mut timed_stage=|meta:&dq_analyze::lint::Meta,rows:UnionRows<'_,'_>,scope:&dq_analyze::scopes::LintScope,child:&Arc<Budget>|->io::Result<()>{
+    if let Some((actual,started,before))=&timing{if !actual.has_timing(meta.name)?{let after=queries.cli_observation_stats()?;actual.record_timing(crate::runner_host::check_cli_observations::TimingRow{name:meta.name,total:started.elapsed(),files:0,rescanned:0,memo:after.computed==before.computed&&after.green>before.green})?;}}
+    original_stage.as_deref_mut().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"timed report consumer disappeared"))?(meta,rows,scope,child)
+   };
+   let mut stage:Option<&mut dyn FnMut(&dq_analyze::lint::Meta,UnionRows<'_,'_>,&dq_analyze::scopes::LintScope,&Arc<Budget>)->io::Result<()>>=if has_stage{Some(&mut timed_stage)}else{None};
    // Only these concrete callbacks reach record_fold. No public record method,
    // registry name count or externally supplied UsageData can certify this run.
    let mut record=|used:&[AllowUse]|->io::Result<()>{usage.record_fold(name,frame,used,&mut c).map_err(operational)};
    match producer{
     Producer::Raw(_)=>{
      if let Some(stage)=stage.as_deref_mut(){
-      queries.with_workspace_raw_union_rows(capture,&guard,name,budget,true,|rows,allows,report|{
+      let consume=|rows:&mut dyn Iterator<Item=&dq_analyze::captured_raw_file::Findings>,allows:&mut dyn Iterator<Item=&AllowUse>,report:Option<(&dq_analyze::scopes::LintScope,&Arc<Budget>)>|{
        let (scope,child)=report.ok_or_else(||io::Error::other("raw union report has no actual child render budget"))?;
        let rows=if name=="deadline_polling"{
         let(path,bytes)=capture.deadline_observation()?;
         UnionRows::Deadline(rows,path,bytes)
        }else{UnionRows::Raw(rows)};
        stage(producer.metadata(),rows,scope,child)?;
-       usage.record_fold_iter(name,frame,allows,&mut c).map_err(operational)})?;
-     }else{
+       usage.record_fold_iter(name,frame,allows,&mut c).map_err(operational)};
+      if let Some((actual,_,_))=&timing{queries.with_workspace_raw_union_rows_observed(capture,&guard,name,budget,consume,&mut|files,rescanned,total|actual.record_timing(crate::runner_host::check_cli_observations::TimingRow{name:producer.metadata().name,total,files,rescanned,memo:false}))?;}else{queries.with_workspace_raw_union_rows(capture,&guard,name,budget,true,consume)?;}     }else{
       queries.with_workspace_raw_allow_usage(capture,&guard,name,budget,|rows|usage.record_fold_iter(name,frame,rows,&mut c).map_err(operational))?;
      }
     },
@@ -546,10 +583,11 @@ impl SourceSnapshot{
     Producer::Special(_)=>return Err("closed full ALLOW producer dispatch differs".into()),
    }
    poll()?;
+   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("ORIGINAL_FULL_REPORT_PRODUCER stage=complete name={name} used={} remaining={}",budget.used(),budget.remaining());}
   }
   let completed=usage.finish_data(&mut c)?;
-  if !audit_requested{poll()?;let data=CompleteAllowRun{selected:selection.names(),validation:validation.as_ref(),unused:None};let borrowed=match registered{Some(plan)=>Some(capture.registered_check_configuration(plan)?),None=>capture.productive_ui_configuration()?};let config;let configuration=if let Some(borrowed)=borrowed{borrowed}else{let (_,bytes)=capture.configuration();let bound=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||c.overflow())?;c.reserve(bound)?;config=Config::capture(bytes.map_or(dq_analyze::captured_raw_policy::Configuration::ProvenMissing,dq_analyze::captured_raw_policy::Configuration::Captured))?;&config};let value=consume(&data,configuration,budget).map_err(Failure::Operational)?;poll()?;return Ok(value);}
-  queries.with_workspace_full_allow_unused(capture,&guard,&selected_tree,&completed,|problems,config,unused_budget|{poll()?;let data=CompleteAllowRun{selected:selection.names(),validation:validation.as_ref(),unused:Some(problems)};let pending=consume(&data,config,if retained.is_some(){unused_budget}else{budget});if pending.is_err(){return pending}poll()?;pending})
+  if !audit_requested{poll()?;let data=CompleteAllowRun{usage:Some(&completed),selected:selection.names(),validation:validation.as_ref(),unused:None};let borrowed=match registered{Some(plan)=>Some(capture.registered_check_configuration(plan)?),None=>capture.productive_ui_configuration()?};let config;let configuration=if let Some(borrowed)=borrowed{borrowed}else{let (_,bytes)=capture.configuration();let bound=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||c.overflow())?;c.reserve(bound)?;config=Config::capture(bytes.map_or(dq_analyze::captured_raw_policy::Configuration::ProvenMissing,dq_analyze::captured_raw_policy::Configuration::Captured))?;&config};let value=consume(&data,configuration,budget).map_err(Failure::Operational)?;poll()?;return Ok(value);}
+  queries.with_workspace_full_allow_unused(capture,&guard,&selected_tree,&completed,|problems,config,unused_budget|{poll()?;let data=CompleteAllowRun{usage:Some(&completed),selected:selection.names(),validation:validation.as_ref(),unused:Some(problems)};let pending=consume(&data,config,if retained.is_some(){unused_budget}else{budget});if pending.is_err(){return pending}poll()?;pending})
  }
 }
 
@@ -567,11 +605,15 @@ mod union_tests;
 
 #[path="runner_query_selected_report.rs"]
 mod selected_report;
-pub(crate) use selected_report::{NativeCheckSelection,prepare_native_check_selection,SourceHandlerProjection,derive_source_handler_projection,prepare_native_source_handler_selection,prepare_native_registered_check_selection};
+pub(crate) use selected_report::{NativeSelftestCompletion,NativeCheckSelection,prepare_native_check_selection,SourceHandlerProjection,derive_source_handler_projection,prepare_native_source_handler_selection,prepare_native_registered_check_selection};
 pub(crate) use selected_report::{stage_registered_handlers_current,stage_registered_handlers_failed_full};
+pub(in crate::runner_host) use selected_report::stage_registered_handlers_current_baseline;
+pub(in crate::runner_host) use selected_report::{BaselineProjectionRows,BaselinePlanner};
 pub(in crate::runner_host) use selected_report::{checked_stage,stage_named_image_dir,validate_selection,validate_selection_v2,SelectedReportPlan};
 
 #[cfg(test)]mod requested_audit_data_controls{
  use super::*;
- #[test]fn unrequested_unused_audit_cannot_impersonate_a_completed_empty_audit(){let names=vec!["scheduler".to_owned()];let absent=CompleteAllowRun{selected:&names,validation:None,unused:None};assert_eq!(absent.unused().unwrap_err().kind(),io::ErrorKind::InvalidInput);let complete=CompleteAllowRun{selected:&names,validation:None,unused:Some(&[])};assert!(complete.unused().unwrap().is_empty());}
+ #[test]fn unrequested_unused_audit_cannot_impersonate_a_completed_empty_audit(){let names=vec!["scheduler".to_owned()];let absent=CompleteAllowRun{usage:None,selected:&names,validation:None,unused:None};assert_eq!(absent.unused().unwrap_err().kind(),io::ErrorKind::InvalidInput);let complete=CompleteAllowRun{usage:None,selected:&names,validation:None,unused:Some(&[])};assert!(complete.unused().unwrap().is_empty());}
 }
+
+pub(crate) use selected_report::write_registered_metadata_list;

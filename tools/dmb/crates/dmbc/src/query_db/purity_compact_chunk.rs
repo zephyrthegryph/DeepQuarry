@@ -147,11 +147,16 @@ struct BodyStageSlot {
     ready: Option<VerifiedBodyPhases>,
 }
 
+#[derive(Clone,Copy,PartialEq,Eq)]
+enum BodyFormat{OrderedArray,RegisteredText}
+
 struct VerifiedBodyPhases {
     prelude: crate::selected_report_spool::Verified,
     body: crate::selected_report_spool::Verified,
     clean: bool,
     bodies: usize,
+    counts:crate::runner_host::query_snapshot::DiagnosticCounts,
+    emitted:usize,
 }
 
 /// Issued only after actual body stage sealing and both final graph walks.
@@ -172,6 +177,9 @@ struct BodyPhases {
     input: u64,
     policy: CheckerPolicy,
     render: BodyRenderer,
+    format:BodyFormat,
+    counts:crate::runner_host::query_snapshot::DiagnosticCounts,
+    emitted:usize,
     prelude: crate::selected_report_spool::Stage,
     body: crate::selected_report_spool::Stage,
     first_prelude: bool,
@@ -194,17 +202,32 @@ impl io::Write for PhaseWrite<'_> {
     fn flush(&mut self) -> io::Result<()> { io::Write::flush(self.phase) }
 }
 
+/// Copy exact configured keys under the SAME live graph work before allocating.
+/// NODE_BOUND is this ledger's existing conservative BTree/Db node envelope;
+/// key backing uses the existing four-capacity std allocation frontier.
+fn funded_body_policy(policy:&CheckerPolicy,work:&mut graph_work::GraphWork)->io::Result<CheckerPolicy>{
+    let mut copy=CheckerPolicy{display_error_level:policy.display_error_level,diagnostics:Default::default()};
+    for(name,level)in &policy.diagnostics{
+        let bound=name.len().checked_mul(4).ok_or_else(||oom("checker policy key capacity overflow"))?;
+        work.reserve(NODE_BOUND.checked_add(bound).ok_or_else(||oom("checker policy copy admission overflow"))?)?;
+        let mut key=String::new();key.try_reserve_exact(name.len()).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;
+        if key.capacity()>bound{return Err(oom("checker policy key exposed excess capacity"))}key.push_str(name);
+        copy.diagnostics.insert(key,*level);
+    }Ok(copy)
+}
 impl BodyPhases {
-    fn new(input: &EffectInput, policy: &CheckerPolicy, cache: &Path, render: BodyRenderer) -> io::Result<Self> {
-        use std::io::Write as _;
+    fn next_id()->io::Result<u64>{
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
-        let id = NEXT.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| value.checked_add(1))
-            .map_err(|_| oom("checker body staging issuance exhausted"))?;
+        NEXT.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| value.checked_add(1))
+            .map_err(|_| oom("checker body staging issuance exhausted"))
+    }
+    fn new_using(input:&EffectInput,policy:&CheckerPolicy,cache:&Path,render:BodyRenderer,format:BodyFormat,id:u64,work:&mut graph_work::GraphWork)->io::Result<Self>{
+        use std::io::Write as _;
+        let policy=funded_body_policy(policy,work)?;
         let mut prelude = crate::selected_report_spool::Stage::new(cache)?;
         let mut body = crate::selected_report_spool::Stage::new(cache)?;
-        prelude.write_all(b"[")?;
-        body.write_all(b"[")?;
-        Ok(Self { id, input: input.key(), policy: policy.clone(), render, prelude, body,
+        if format==BodyFormat::OrderedArray{prelude.write_all(b"[")?;body.write_all(b"[")?;}
+        Ok(Self { id, input: input.key(), policy, render, format, counts:Default::default(),emitted:0,prelude, body,
             first_prelude: true, first_body: true, rows: 0, clean: true })
     }
 
@@ -220,15 +243,17 @@ impl BodyPhases {
         body.with_original_diagnostics_proven(input, proof, |rows| {
             for row in rows {
                 crate::daemon::control::checkpoint()?;
-                let Some(severity) = self.policy.register(row.registration_tag(), row.default_level())
-                    .filter(|severity| *severity <= Severity::Info) else { continue; };
+                let Some(severity) = self.policy.register(row.registration_tag(), row.default_level()) else { continue; };
+                if self.format==BodyFormat::RegisteredText{self.counts.register(severity)?;}
+                if !dm_analysis::check_policy::cli_printed(severity){continue;}
                 let (mut stage, first) = match row.phase() {
                     OriginalDiagnosticPhase::Prelude => (PhaseWrite { phase: &mut self.prelude, other: self.body.length() }, &mut self.first_prelude),
                     OriginalDiagnosticPhase::Body => (PhaseWrite { phase: &mut self.body, other: self.prelude.length() }, &mut self.first_body),
                 };
-                if !*first { stage.write_all(b",")?; }
+                if self.format==BodyFormat::OrderedArray && !*first { stage.write_all(b",")?; }
                 (self.render)(input, row, severity, &mut stage)?;
                 *first = false;
+                self.emitted=self.emitted.checked_add(1).ok_or_else(||oom("registered checker body count overflow"))?;
                 self.clean &= severity > Severity::Info;
             }
             Ok::<(), io::Error>(())
@@ -242,13 +267,16 @@ impl BodyPhases {
         if self.rows != expected {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "checker body stage lacks completed chunk coverage"));
         }
-        PhaseWrite { phase: &mut self.prelude, other: self.body.length() }.write_all(b"]")?;
-        PhaseWrite { phase: &mut self.body, other: self.prelude.length() }.write_all(b"]")?;
-        fn verified(stage: crate::selected_report_spool::Stage) -> io::Result<crate::selected_report_spool::Verified> {
-            let (verified, _) = stage.seal()?.validate(|source| io::copy(source, &mut io::sink()))?;
+        if self.format==BodyFormat::OrderedArray{
+            PhaseWrite { phase: &mut self.prelude, other: self.body.length() }.write_all(b"]")?;
+            PhaseWrite { phase: &mut self.body, other: self.prelude.length() }.write_all(b"]")?;
+        }
+        fn verified(stage: crate::selected_report_spool::Stage,format:BodyFormat) -> io::Result<crate::selected_report_spool::Verified> {
+            let sealed=if format==BodyFormat::RegisteredText{stage.seal_allow_empty()?}else{stage.seal()?};
+            let (verified, _) = sealed.validate(|source| io::copy(source, &mut io::sink()))?;
             Ok(verified)
         }
-        Ok(VerifiedBodyPhases { prelude: verified(self.prelude)?, body: verified(self.body)?, clean: self.clean, bodies: self.rows })
+        Ok(VerifiedBodyPhases { prelude: verified(self.prelude,self.format)?, body: verified(self.body,self.format)?, clean: self.clean, bodies: self.rows,counts:self.counts,emitted:self.emitted })
     }
 }
 
@@ -372,7 +400,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, body_charge: Arc<dm_
 impl QueryDb {
     #[cfg(test)]
     pub(crate) fn compact_original_chunk_body_key_for_test(input: &EffectInput, ordinal: usize) -> Key {
-        body_syntax::code_key(&input.archive().syntax_inputs().unwrap()[ordinal]).unwrap()
+        body_syntax::code_key(&input.archive().syntax_input_checked(ordinal,&||crate::daemon::control::checkpoint()).unwrap()).unwrap()
     }
 
     #[cfg(test)]
@@ -400,8 +428,10 @@ impl QueryDb {
         body: &mut impl io::Write,
     ) -> io::Result<()> {
         scope.validate(self, input).map_err(io::Error::other)?;
-        let pending = BodyPhases::new(input, scope.policy(), cache, render)?;
-        let id = pending.id;
+        let id=BodyPhases::next_id()?;
+        let mut work=graph_work::GraphWork::new(Arc::clone(&self.purity.ledger),key(CHUNK,input,id as u128));
+        work.reserve(ExecutionAdmission::fixed_control_charge().checked_add(std::mem::size_of::<Mutex<BodyStageSlot>>()+2*std::mem::size_of::<usize>()+64).ok_or_else(||oom("registered checker stage control overflow"))?)?;
+        let pending=BodyPhases::new_using(input,scope.policy(),cache,render,BodyFormat::OrderedArray,id,&mut work)?;
         let stage = Arc::new(Mutex::new(BodyStageSlot { id, start, total: count, pending: Some(pending), ready: None }));
         let (_, _, result) = self.compact_original_chunk(input, start, count, Some(&stage), None)?;
         let result = result.as_ref().as_ref().map_err(|message| io::Error::other(message.clone()))?;
@@ -426,25 +456,38 @@ impl QueryDb {
         prelude: &mut impl io::Write,
         body: &mut impl io::Write,
     ) -> io::Result<()> {
-        let phases = self.with_archived_compact_body_phases(input, scope, width, cache, render, |_,_| Ok(()))?;
+        let phases = self.with_archived_compact_body_phases(input, scope, width, cache, render,BodyFormat::OrderedArray, |_,_| Ok(()))?;
         phases.prelude.publish(prelude)?;
         phases.body.publish(body)
     }
 
     pub(crate) fn with_archived_compact_report_completed<'a>(
+        &self,input:&'a Arc<EffectInput>,scope:&crate::runner_host::query_snapshot::PurityScope<'_>,width:usize,cache:&Path,render:BodyRenderer,
+        keyword:impl FnMut(&dm_analysis::checks_keyword_overrides::Findings<'_>)->io::Result<()>,graph_row:impl FnMut(&Produced)->io::Result<()>,
+    )->io::Result<(crate::selected_report_spool::Verified,crate::selected_report_spool::Verified,bool,CompletedCompactReport<'a>)>{
+        let(a,b,clean,_,_,complete)=self.with_archived_compact_report_completed_using(input,scope,width,cache,render,BodyFormat::OrderedArray,keyword,graph_row)?;Ok((a,b,clean,complete))
+    }
+    pub(crate) fn with_archived_compact_cli_report_completed<'a>(
+        &self,input:&'a Arc<EffectInput>,scope:&crate::runner_host::query_snapshot::PurityScope<'_>,width:usize,cache:&Path,render:BodyRenderer,
+        keyword:impl FnMut(&dm_analysis::checks_keyword_overrides::Findings<'_>)->io::Result<()>,graph_row:impl FnMut(&Produced)->io::Result<()>,
+    )->io::Result<(crate::selected_report_spool::Verified,crate::selected_report_spool::Verified,crate::runner_host::query_snapshot::DiagnosticCounts,usize,CompletedCompactReport<'a>)>{
+        let(a,b,_,counts,emitted,complete)=self.with_archived_compact_report_completed_using(input,scope,width,cache,render,BodyFormat::RegisteredText,keyword,graph_row)?;Ok((a,b,counts,emitted,complete))
+    }
+    fn with_archived_compact_report_completed_using<'a>(
         &self,
         input: &'a Arc<EffectInput>,
         scope: &crate::runner_host::query_snapshot::PurityScope<'_>,
         width: usize,
         cache: &Path,
         render: BodyRenderer,
+        format:BodyFormat,
         mut keyword: impl FnMut(&dm_analysis::checks_keyword_overrides::Findings<'_>) -> io::Result<()>,
         mut graph_row: impl FnMut(&Produced) -> io::Result<()>,
-    ) -> io::Result<(crate::selected_report_spool::Verified, crate::selected_report_spool::Verified, bool, CompletedCompactReport<'a>)> {
+    ) -> io::Result<(crate::selected_report_spool::Verified, crate::selected_report_spool::Verified, bool,crate::runner_host::query_snapshot::DiagnosticCounts,usize, CompletedCompactReport<'a>)> {
         use dm_analysis::checker_effects::{CompactEffectGraph, CompactEffectScc, CompactGraphReplay, EffectReportPhase, EffectSource, ProducedPhase};
         let mut graph_visits=[0usize;2];
         let mut graph_targets=None;
-        let phases = self.with_archived_compact_body_phases(input, scope, width, cache, render, |chunks, work| {
+        let phases = self.with_archived_compact_body_phases(input, scope, width, cache, render,format, |chunks, work| {
             let _gate = self.purity.gate.lock().unwrap_or_else(|error| error.into_inner());
             let validate = || scope.validate(self, input).map_err(io::Error::other);
             validate()?;
@@ -533,7 +576,7 @@ impl QueryDb {
         let completion=CompletedCompactReport{input:input.as_ref(),bodies:phases.bodies,
             graph_visits,graph_targets:graph_targets.ok_or_else(||io::Error::other("compact graph traversal did not complete"))?};
         completion.body_count_for(input.as_ref())?;
-        Ok((phases.prelude, phases.body, phases.clean,completion))
+        Ok((phases.prelude, phases.body, phases.clean,phases.counts,phases.emitted,completion))
     }
 
     fn with_archived_compact_body_phases(
@@ -543,17 +586,18 @@ impl QueryDb {
         width: usize,
         cache: &Path,
         render: BodyRenderer,
+        format:BodyFormat,
         replay: impl FnOnce(&[Arc<Chunk>], &mut graph_work::GraphWork)->io::Result<()>,
     ) -> io::Result<VerifiedBodyPhases> {
         scope.validate(self, input).map_err(io::Error::other)?;
         if width == 0 || width > WIDTH { return Err(io::ErrorKind::InvalidInput.into()); }
-        let pending = BodyPhases::new(input, scope.policy(), cache, render)?;
-        let id = pending.id;
+        let id = BodyPhases::next_id()?;
         let total = input.archive().len();
+        let mut work = graph_work::GraphWork::new(Arc::clone(&self.purity.ledger), key(CHUNK, input, id as u128));
+        work.reserve(ExecutionAdmission::fixed_control_charge().checked_add(std::mem::size_of::<Mutex<BodyStageSlot>>()+2*std::mem::size_of::<usize>()+64).ok_or_else(||oom("registered checker stage control overflow"))?)?;
+        let pending = BodyPhases::new_using(input, scope.policy(), cache, render,format,id,&mut work)?;
         let stage = Arc::new(Mutex::new(BodyStageSlot { id, start: 0, total, pending: Some(pending), ready: None }));
         let validate = || scope.validate(self, input).map_err(io::Error::other);
-        let mut work = graph_work::GraphWork::new(Arc::clone(&self.purity.ledger), key(CHUNK, input, id as u128));
-        work.reserve(ExecutionAdmission::fixed_control_charge())?;
         let admission = pages::page_execution_admission(&self.purity.ledger).map_err(oom_string)?;
         let mut chunks = reserve_chunk_list(total.div_ceil(width), &mut work)?;
         let trace = trace_compact_checker().then(std::time::Instant::now);
@@ -677,4 +721,15 @@ fn reserve_chunk_list<T>(count:usize,work:&mut graph_work::GraphWork)->io::Resul
     if rows.capacity()>capacity { return Err(oom("compact window list exposed excess capacity")); }
     work.reconcile(mark,rows.capacity()*std::mem::size_of::<T>())?;
     Ok(rows)
+}
+
+#[cfg(test)]mod funded_policy_controls{
+ use super::*;
+ #[test]fn actual_body_policy_copy_reserves_before_owned_keys_and_same_ledger_recovers(){
+  let mut policy=CheckerPolicy::default();policy.diagnostics.insert("unknown_linter_setting".into(),dm_analysis::check_policy::WarningLevel::Hint);policy.diagnostics.insert("case_sensitive_é".into(),dm_analysis::check_policy::WarningLevel::Disabled);
+  let ledger=Arc::new(Mutex::new(Ledger::default()));let mut denied=graph_work::GraphWork::new(ledger.clone(),Key::new(CHUNK,1));
+  let base=ledger.lock().unwrap().metadata();denied.reserve(BUDGET-base-NODE_BOUND/2).unwrap();let held=ledger.lock().unwrap().active_graph_work;
+  assert_eq!(funded_body_policy(&policy,&mut denied).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(ledger.lock().unwrap().active_graph_work,held);assert_eq!(policy.diagnostics.len(),2);drop(denied);assert_eq!(ledger.lock().unwrap().active_graph_work,0);
+  let fresh=Arc::new(Mutex::new(Ledger::default()));let mut work=graph_work::GraphWork::new(fresh.clone(),Key::new(CHUNK,2));let actual=funded_body_policy(&policy,&mut work).unwrap();assert_eq!(actual,policy);assert!(fresh.lock().unwrap().active_graph_work>=2*NODE_BOUND);drop(actual);drop(work);assert_eq!(fresh.lock().unwrap().active_graph_work,0);
+ }
 }

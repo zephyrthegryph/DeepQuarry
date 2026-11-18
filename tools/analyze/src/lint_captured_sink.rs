@@ -24,6 +24,11 @@ impl Bound {
             #[cfg(feature="native-policy")] budget:None,
         }
     }
+    fn fail(&mut self,message:String){
+        #[cfg(feature="native-policy")]
+        if let Some(budget)=self.budget.as_ref().and_then(std::sync::Weak::upgrade){budget.deny()}
+        self.error.get_or_insert(message);
+    }
     fn admit(&mut self, strings: usize, slots: usize) -> bool {
         if self.error.is_some() {
             return false;
@@ -33,11 +38,11 @@ impl Bound {
             .checked_add(strings)
             .and_then(|n| n.checked_add(slots));
         if self.records >= self.rows || next.is_none_or(|n| n > self.bytes) {
-            self.error = Some("captured raw findings exceed count/retained-byte admission".into());
+            self.fail("captured raw findings exceed count/retained-byte admission".into());
             return false;
         }
         #[cfg(feature="native-policy")]
-        if let Some(owner)=&self.budget{let Some(budget)=owner.upgrade()else{self.error=Some("captured output operation budget expired".into());return false};if let Err(actual)=budget.charge(strings.checked_add(slots).unwrap_or(usize::MAX)){self.error=Some(actual);return false}}
+        if let Some(owner)=&self.budget{let Some(budget)=owner.upgrade()else{self.fail("captured output operation budget expired".into());return false};if let Err(actual)=budget.charge(strings.checked_add(slots).unwrap_or(usize::MAX)){self.fail(actual);return false}}
         self.used = next.unwrap();
         self.records += 1;
         true
@@ -67,7 +72,7 @@ fn allocate<T>(vector: &mut Vec<T>, bytes: usize) -> Result<(), String> {
     }
     Ok(())
 }
-impl Sink {
+impl<'patterns> Sink<'patterns> {
     pub(crate) fn bounded(rows: usize, bytes: usize) -> Self {
         Self {
             bound: Some(Bound::new(rows, bytes)),
@@ -84,6 +89,12 @@ impl Sink {
         value.bound.as_mut().expect("bounded output").budget=Some(std::sync::Arc::downgrade(budget));Ok(value)
     }
 
+    #[cfg(feature="native-policy")]
+    pub(crate) fn bounded_budget_limits(rows:usize,bytes:usize,budget:&std::sync::Arc<crate::captured_generator_budget::Budget>)->Result<Self,String>{
+        budget.charge(1024)?;let mut actual=Self::bounded(rows,bytes);
+        actual.bound.as_mut().expect("bounded output").budget=Some(std::sync::Arc::downgrade(budget));Ok(actual)
+    }
+
     /// Equivalent to a fresh legacy Sink for annotation dedup, while retaining
     /// all preceding output in the same admitted vectors and row/byte family.
     pub(crate) fn begin_captured_phase(&mut self, rel: &str) {
@@ -95,7 +106,7 @@ impl Sink {
         if let Some(bound) = &mut self.bound {
             let used = bound.used.saturating_sub(self.cur.capacity());
             let Some(next) = used.checked_add(rel.len()).filter(|n| *n <= bound.bytes) else {
-                bound.error = Some("captured finding path exceeds byte admission".into());
+                bound.fail("captured finding path exceeds byte admission".into());
                 return;
             };
             bound.used = next;
@@ -140,7 +151,7 @@ impl Sink {
             let slots = match grow(&mut self.sites, bound.rows) {
                 Ok(n) => n,
                 Err(e) => {
-                    bound.error = Some(e);
+                    bound.fail(e);
                     return;
                 }
             };
@@ -148,14 +159,14 @@ impl Sink {
                 .iter()
                 .try_fold(0usize, |n, v| n.checked_add(v.capacity()));
             let Some(strings) = strings else {
-                bound.error = Some("captured finding string accounting overflow".into());
+                bound.fail("captured finding string accounting overflow".into());
                 return;
             };
             if !bound.admit(strings, slots) {
                 return;
             }
             if let Err(error) = allocate(&mut self.sites, slots) {
-                bound.error = Some(error);
+                bound.fail(error);
                 return;
             }
         }
@@ -166,7 +177,7 @@ impl Sink {
             let slots = match grow(&mut self.notes, bound.rows) {
                 Ok(n) => n,
                 Err(e) => {
-                    bound.error = Some(e);
+                    bound.fail(e);
                     return;
                 }
             };
@@ -174,7 +185,7 @@ impl Sink {
                 return;
             }
             if let Err(error) = allocate(&mut self.notes, slots) {
-                bound.error = Some(error);
+                bound.fail(error);
                 return;
             }
         }
@@ -185,7 +196,7 @@ impl Sink {
             let slots = match grow(&mut self.allow_used, bound.rows) {
                 Ok(n) => n,
                 Err(e) => {
-                    bound.error = Some(e);
+                    bound.fail(e);
                     return;
                 }
             };
@@ -195,14 +206,14 @@ impl Sink {
                 .checked_add(row.name.capacity())
                 .and_then(|n| n.checked_add(row.code.capacity()))
             else {
-                bound.error = Some("captured allow accounting overflow".into());
+                bound.fail("captured allow accounting overflow".into());
                 return;
             };
             if !bound.admit(strings, slots) {
                 return;
             }
             if let Err(error) = allocate(&mut self.allow_used, slots) {
-                bound.error = Some(error);
+                bound.fail(error);
                 return;
             }
         }

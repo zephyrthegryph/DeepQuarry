@@ -128,6 +128,7 @@ struct ScopeParams {
 }
 #[derive(Clone)]
 struct FileParams {
+    scoped_patterns:bool,
     file: Key,
     scope: Key,
     scope_params: ScopeParams,
@@ -256,11 +257,16 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
     db.define(
         RAW_FINDINGS,
         "native-raw-per-file-findings",
-        move |ctx, params| {
+        move |ctx,params|produce_file(ctx,params,&admission,&charge,None),
+    );
+}
+struct RawPatternResources<'a>{budget:&'a Arc<dq_analyze::captured_generator_budget::Budget>,provider:&'a dyn dq_analyze::native_pattern::Provider}
+fn produce_file(ctx:&mut dm_query::Ctx<'_>,params:&dm_query::Value,admission:&Admission,charge:&AtomicUsize,patterns:Option<&RawPatternResources<'_>>)->Result<Outcome,QueryError>{
             let params = params
                 .downcast_ref::<FileParams>()
                 .expect("raw file params");
             admission.abort.before_outcome(params.file)?;
+            if params.scoped_patterns!=patterns.is_some(){return Err(QueryError::operational(params.file,io::Error::new(io::ErrorKind::NotConnected,"raw finding requires its actual scoped pattern lender")))}
             let file = ctx.input::<FileData>(params.file)?;
             let scope = ctx.get::<Result<Arc<Scope>, String>>(
                 params.scope,
@@ -271,9 +277,10 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                 .load(Ordering::Relaxed)
                 .saturating_sub(charge.load(Ordering::Relaxed));
             let result = match scope.as_ref() {
-                Ok(scope) => match file.file.scan_budgeted_checked(scope, MAX_FIXTURE_SITES, available.saturating_sub(512)) {
+                Ok(scope) => match if let Some(resources)=patterns{file.file.scan_with_pattern_resources(scope,MAX_FIXTURE_SITES,available.saturating_sub(512),false,resources.budget,resources.provider,&crate::daemon::control::checkpoint)}else{file.file.scan_budgeted_checked(scope,MAX_FIXTURE_SITES,available.saturating_sub(512))} {
                     Ok(rows) => Ok(Arc::new(rows)),
                     Err(captured_raw_file::ScanFailure::Policy(error)) => Err(error),
+                    Err(captured_raw_file::ScanFailure::Operational(actual))=>{if patterns.is_some_and(|resources|resources.budget.denied()){admission.denied.store(true,Ordering::Relaxed);}return Err(QueryError::operational(params.file,actual))},
                     Err(captured_raw_file::ScanFailure::Admission(_)) => {
                         admission.denied.store(true,Ordering::Relaxed);
                         return Err(QueryError::Missing(params.file));
@@ -291,8 +298,6 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
             retain_derived(&charge, bytes, &admission, params.file)?;
             admission.abort.before_outcome(params.file)?;
             Ok(Outcome::new(result, hash, bytes))
-        },
-    );
 }
 impl QueryDb {
     fn begin_result_admission_locked(&self) -> io::Result<()> {
@@ -708,7 +713,7 @@ impl QueryDb {
             for name in ordered {
                 let scope = key(RAW_SCOPE, &(config_key.id, name));
                 planned.insert(scope, 1024);
-                planned.insert(key(RAW_FINDINGS, &(file_key.id, scope.id)), 1024);
+                planned.insert(key(RAW_FINDINGS, &(file_key.id, scope.id,true)), 1024);
             }
         }
         self.raw_admit_locked(cohort, &planned, now)?;
@@ -777,17 +782,16 @@ impl QueryDb {
                         |v| Some(v.saturating_sub(freed)),
                     );
                 }
-                let result = self
-                    .db
-                    .get::<Result<Arc<Findings>, String>>(
-                        key(RAW_FINDINGS, &(file_key.id, scope.id)),
-                        Arc::new(FileParams {
-                            file: *file_key,
-                            scope,
-                            scope_params: scope_params.clone(),
-                        }),
-                    )
-                    .map_err(|e| self.derived_query_error("native raw query", e))?;
+                let result_key=key(RAW_FINDINGS,&(file_key.id,scope.id,true));
+                let available=self.raw_policy.admission.limit.load(Ordering::Relaxed).saturating_sub(self.raw_policy.charge.load(Ordering::Relaxed));
+                let budget=dq_analyze::captured_generator_budget::Budget::new(available).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;
+                let result={
+                 self.with_held_raw_pattern_work(&budget,|work,scratch|{
+                  let provider=crate::query_db::PatternProvider::scoped(self,work,scratch);let resources=RawPatternResources{budget:&budget,provider:&provider};
+                  self.db.get_with_scoped_computation::<Result<Arc<Findings>,String>>(result_key,Arc::new(FileParams{scoped_patterns:true,file:*file_key,scope,scope_params:scope_params.clone()}),|ctx,params|produce_file(ctx,params,&self.raw_policy.admission,&self.raw_policy.charge,Some(&resources)))
+                   .map_err(|actual|match actual.into_operational(){Ok(actual)=>actual.into_io(),Err(other)=>self.derived_query_error("native raw query",other)})
+                 })?
+                };
                 self.workspace_trim_locked(
                     MAX_NODES,
                     RESULT_BUDGET.saturating_sub(self.raw_policy.charge.load(Ordering::Relaxed)),

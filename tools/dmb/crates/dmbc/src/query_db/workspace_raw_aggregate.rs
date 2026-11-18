@@ -512,7 +512,7 @@ impl QueryDb {
             cached
         } else {
             let (pages,scopes) =
-                self.build_workspace_pages_locked(capture, scope, names, scans, &inventory, false)?;
+                self.build_workspace_pages_locked(capture, scope, names, scans, &inventory, false, None)?;
             let remaining = RESULT_BOUND
                 .checked_sub(inventory.bytes())
                 .and_then(|n| n.checked_sub(self.raw_policy.charge.load(Ordering::Relaxed)))
@@ -764,7 +764,7 @@ mod tests {
             .unwrap(),
         );
         assert_eq!(findings.run.sites.len(), 2);
-        Arc::new(PageResult {
+        Arc::new(PageResult { scoped_patterns:false,
             graph: 1,
             root: root.clone(),
             configuration: root.join("scopes.toml"),

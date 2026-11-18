@@ -357,3 +357,4 @@ impl SourceSnapshot{
 }
 
 #[path="runner_query_original_checker_cli.rs"]mod original_checker_cli;
+pub(crate) use original_checker_cli::DiagnosticCounts;

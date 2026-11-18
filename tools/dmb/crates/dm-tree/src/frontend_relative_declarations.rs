@@ -27,15 +27,104 @@ pub struct RelativeSyntax {
     primary_header_reissues: AtomicUsize,
     // Last: AST/body buffers free before the shared primary parser reservation.
     original_headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
+    // LAST: intrinsic grant covers the added field and actual storage owner.
+    code_storage:Option<Arc<OrdinaryCodeStorage>>,
+}
+
+struct OrdinaryCodeStorage{
+ demand:bool,slots:Option<Arc<dm_syntax::AdmittedOrdinalSlots<BodyCodeIdentity>>>,
+ // LAST: both actual owner Arc and containing RelativeSyntax fixed delta.
+ fixed:dm_syntax::SettingRootLease,
+}
+impl std::fmt::Debug for OrdinaryCodeStorage{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OrdinaryCodeStorage").field("demand",&self.demand).field("slots",&self.slots).field("funded_bytes",&self.fixed.bytes()).finish()}}
+impl OrdinaryCodeStorage{
+ fn new(a:Option<&dm_syntax::SettingAdmission<'_>>,demand:bool)->Result<Option<Arc<Self>>,BindingError>{
+  let Some(a)=a else{return if demand{Err(BindingError::InvalidRelativeSpan)}else{Ok(None)}};
+  // This pregrant exists on EVERY admitted constructor, including eager None
+  // slots. Portable no-admission construction remains explicitly unqualified.
+  a.checkpoint().map_err(|_|BindingError::InvalidRelativeSpan)?;
+  let(layout,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<Self>()).map_err(|_|BindingError::InvalidRelativeSpan)?;
+  let bytes=layout.pad_to_align().size().checked_add(std::mem::size_of::<Option<Arc<Self>>>()).ok_or(BindingError::InvalidRelativeSpan)?;
+  let fixed=a.reserve(bytes).map_err(|_|BindingError::InvalidRelativeSpan)?;
+  let slots=if demand{Some(dm_syntax::AdmittedOrdinalSlots::new_shared(a,0).map_err(|_|BindingError::InvalidRelativeSpan)?)}else{None};
+  Ok(Some(Arc::new(Self{demand,slots,fixed})))
+ }
 }
 /// Exact source-capture capability. Only this parser-owned producer can mint it.
-#[derive(Debug)]
 pub struct BodyCodeIdentity {
-    _private: u8,
+    // This SAME owner follows every strong CodeArc and resource-only weak loan.
+    allocation_credit:Arc<BodyCodeWeakAllocation>,
 }
+// The existing Code credit owner also holds its actual weak locator. A weak
+// loan aliases this one allocation rather than adding two pointers to each
+// consumer. Its Weak remains first and real resource lease remains LAST.
+struct BodyCodeWeakAllocation {
+    code: std::sync::Weak<BodyCodeIdentity>,
+    credit: OnceLock<dm_syntax::SettingRootLease>,
+}
+impl BodyCodeWeakAllocation {
+    fn get(&self)->Option<&dm_syntax::SettingRootLease>{self.credit.get()}
+    fn set(&self,credit:dm_syntax::SettingRootLease)->Result<(),dm_syntax::SettingRootLease>{self.credit.set(credit)}
+}
+/// Resource-only weak code locator. It preserves standard Weak liveness;
+/// retaining this value cannot keep code or any source/model/AST alive.
+#[derive(Clone)]
+pub struct BodyCodeWeak {
+    credit: Arc<BodyCodeWeakAllocation>,
+}
+impl std::fmt::Debug for BodyCodeWeak { fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{std::fmt::Debug::fmt(&self.credit.code,f)} }
+impl BodyCodeWeak {
+    pub fn upgrade(&self)->Option<Arc<BodyCodeIdentity>>{self.credit.code.upgrade()}
+    pub fn strong_count(&self)->usize{self.credit.code.strong_count()}
+    pub fn as_ptr(&self)->*const BodyCodeIdentity{self.credit.code.as_ptr()}
+    pub fn ptr_eq(&self,other:&Self)->bool{std::sync::Weak::ptr_eq(&self.credit.code,&other.credit.code)}
+    pub fn matches(&self,other:&Arc<BodyCodeIdentity>)->bool{self.credit.code.as_ptr()==Arc::as_ptr(other)}
+    pub fn visit_allocation_storage(&self,visit:&mut dyn FnMut(usize,usize,usize)){
+        let(layout,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<BodyCodeIdentity>()).expect("actual Code Arc layout");
+        visit(self.credit.code.as_ptr() as usize,if self.credit.code.strong_count()>0{std::mem::size_of::<BodyCodeIdentity>()}else{0},layout.pad_to_align().size());
+        let(layout,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<BodyCodeWeakAllocation>()).expect("actual Code credit Arc layout");visit(Arc::as_ptr(&self.credit) as usize,std::mem::size_of::<BodyCodeWeakAllocation>(),layout.pad_to_align().size());if let Some(credit)=self.credit.get(){credit.visit_counter_storage(|p,n|visit(p,n,n));}
+    }
+}
+impl BodyCodeIdentity {
+    pub fn downgrade(code:&Arc<Self>)->BodyCodeWeak{BodyCodeWeak{credit:Arc::clone(&code.allocation_credit)}}
+}
+// SAME Code allocation identity is lent by Arc itself during its actual
+// construction. No numeric key, source span or equal-value comparison binds it.
+fn body_code_with_credit(credit:OnceLock<dm_syntax::SettingRootLease>)->Arc<BodyCodeIdentity>{
+    Arc::new_cyclic(move|code|BodyCodeIdentity{allocation_credit:Arc::new(BodyCodeWeakAllocation{code:code.clone(),credit})})
+}
+
+/// Actual early producer allocation only. This is not a source/current frame.
+/// The actual CodeArc owns its exact allocation grant intrinsically through
+/// every existing capture/convergence/query/product owner.
+pub(super) struct CommittedBodyCodeIssue<'producer>{
+ pub(super) identity:Arc<BodyCodeIdentity>,
+ pub(super) header:Span,pub(super) body:Span,
+ pub(super) producer:&'producer dm_syntax::OriginalPrimaryProducerIdentity,
+}
+// Keep the original first error latched while a BindingError-only caller
+// crosses the legacy Option boundary. The direct IO entry below still returns
+// the actual error payload to its existing callers.
+fn funded_body_code_preserving_error(a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Arc<BodyCodeIdentity>>{
+ a.checkpoint()?;
+ let(layout,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<BodyCodeIdentity>()).map_err(|_|std::io::ErrorKind::OutOfMemory)?;
+ let(lease_layout,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<BodyCodeWeakAllocation>()).map_err(|_|std::io::ErrorKind::OutOfMemory)?;
+ let bytes=layout.pad_to_align().size().checked_add(lease_layout.pad_to_align().size()).ok_or(std::io::ErrorKind::OutOfMemory)?;
+ Ok(body_code_with_credit(OnceLock::from(a.reserve(bytes)?)))
+}
+fn funded_body_code(a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Arc<BodyCodeIdentity>>{
+ let pending=funded_body_code_preserving_error(a);
+ if let Some(actual)=a.take_operational_error(){return Err(actual)}pending
+}
+pub(super) fn issue_committed_body_code<'producer>(input:&dm_syntax::OriginalCommittedBodyInput<'_,'_>,producer:&'producer dm_syntax::OriginalPrimaryProducerIdentity,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<CommittedBodyCodeIssue<'producer>>{
+ if !input.literal_facts().admitted_by(a)||!producer.same_producer(input.primary_producer()){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"early code has no actual primary resource loan"))}
+ let identity=funded_body_code(a)?;Ok(CommittedBodyCodeIssue{identity,header:input.item().header_span,body:input.item().span,producer})
+}
+fn ordinary_body_code(a:Option<&dm_syntax::SettingAdmission<'_>>)->Result<Arc<BodyCodeIdentity>,BindingError>{match a{None=>Ok(body_code_with_credit(OnceLock::new())),Some(a)=>funded_body_code_preserving_error(a).map_err(|_proxy|BindingError::InvalidRelativeSpan)}}
+
 #[derive(Debug)]
 struct RelativeBody {
-    code: Arc<BodyCodeIdentity>,
+    code: Option<Arc<BodyCodeIdentity>>,
     path: Arc<[usize]>,
     span: Span,
     settings: Arc<[Span]>,
@@ -50,7 +139,9 @@ fn capture_bodies(
     output: &mut Vec<RelativeBody>,
     owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
     headers: Option<&crate::procedure::OriginalProcedureHeaders>,
-) {
+    admission:Option<&dm_syntax::SettingAdmission<'_>>,
+    ordinary_demand:bool,
+)->Result<(),BindingError> {
     for (index, item) in items.iter().enumerate() {
         path.push(index);
         if matches!(item.kind(), ItemKind::Proc | ItemKind::Verb) {
@@ -60,7 +151,7 @@ fn capture_bodies(
             // another metadata extraction or expression parse.
             setting_spans_in_items(item.children(), &mut settings);
             output.push(RelativeBody {
-                code: Arc::new(BodyCodeIdentity { _private: 0 }),
+                code: match headers{Some(headers)=>match headers.committed_body_code(item.span()).map_err(|_|BindingError::InvalidRelativeSpan)?{Some(actual)=>Some(actual),None if ordinary_demand=>None,None=>Some(ordinary_body_code(admission)?)},None if ordinary_demand=>None,None=>Some(ordinary_body_code(admission)?)},
                 path: path.clone().into(),
                 span: item.span(),
                 settings: settings.into(),
@@ -92,16 +183,19 @@ fn capture_bodies(
                 ),
             });
         } else {
-            capture_bodies(item.children(), source, path, output, owners, headers);
+            capture_bodies(item.children(), source, path, output, owners, headers,admission,ordinary_demand)?;
         }
         path.pop();
     }
+    Ok(())
 }
-fn setting_spans_in_items(items:OriginalItems<'_>, output:&mut Vec<Span>){
+pub(super) fn setting_spans_in_items(items:OriginalItems<'_>, output:&mut Vec<Span>){
     for item in items.iter(){output.push(item.header_span());setting_spans_in_items(item.children(),output);}
 }
 pub(crate) struct CurrentBodyRecipe<'a> {
     relative: &'a RelativeBody,
+    relative_owner:&'a RelativeSyntax,
+    ordinal:usize,
     offset: usize,
     root_prefix: usize,
     headers: Option<&'a Arc<crate::procedure::OriginalProcedureHeaders>>,
@@ -113,6 +207,9 @@ impl CurrentBodyRecipe<'_> {
     }
 
     pub(crate) fn source_window(&self)->Result<Span,&'static str>{let source=self.headers.ok_or("actual original header owner unissued")?;let end=self.offset.checked_add(source.abi_source_len()).ok_or("current original source window overflows")?;Ok(Span::new(self.offset,end))}
+    pub(crate) fn parse_native_owned_admitted(&self,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<dm_syntax::AdmittedProcedureWithOrigins>>{
+      match self.headers{Some(headers)=>headers.parse_body_owned_admitted(self.relative.span,self.offset,a),None=>Ok(None)}
+    }
     pub(crate) fn parse_native_admitted(&self,a:&dm_syntax::SettingAdmission<'_>)
       ->std::io::Result<(Result<dm_syntax::ProcedureWithOrigins,dm_syntax::Diagnostic>,bool)>{
       match self.headers{
@@ -130,8 +227,11 @@ impl CurrentBodyRecipe<'_> {
     pub(crate) fn parse_original(&self)->Result<dm_syntax::ProcedureWithOrigins,dm_syntax::Diagnostic>{self.headers.ok_or_else(||dm_syntax::Diagnostic{span:self.span(),kind:dm_syntax::DiagnosticKind::Unsupported,message:"original declaration token input is unissued".into()})?.parse_body(self.relative.span,self.offset)}
 
     pub(crate) fn code_identity(&self) -> Arc<BodyCodeIdentity> {
-        Arc::clone(&self.relative.code)
+        self.issued_code().expect("unissued native demand Code requires checked ordinal realization")
     }
+    pub(crate) fn issued_code(&self)->Option<Arc<BodyCodeIdentity>>{self.relative_owner.issued_body_code(self.ordinal)}
+    pub(crate) fn issued_code_for_binding(&self)->std::io::Result<Option<Arc<BodyCodeIdentity>>>{self.relative_owner.issued_body_code_for_binding(self.ordinal)}
+    pub(crate) fn code_identity_admitted(&self,a:&dm_syntax::SettingAdmission<'_>)->Result<Arc<BodyCodeIdentity>,BodySyntaxFailure>{self.relative_owner.body_code_admitted(self.ordinal,a)}
     pub(crate) fn settings_owner(&self) -> Option<Arc<dm_ir::ProcedureMetadata>> {
         self.relative.settings_owner.clone()
     }
@@ -196,38 +296,59 @@ impl RelativeSyntax {
         source: dm_preprocess::SourceText,
         owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
         original_headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
-    ) -> Result<Self, BindingError> {
+    ) -> Result<Self, BindingError> {Self::capture_with_settings_headers_using(items,source,owners,original_headers,None)}
+    pub(super) fn capture_with_settings_headers_using(items:Vec<Item>,source:dm_preprocess::SourceText,owners:&std::collections::BTreeMap<usize,Arc<dm_ir::ProcedureMetadata>>,original_headers:Option<Arc<crate::procedure::OriginalProcedureHeaders>>,admission:Option<&dm_syntax::SettingAdmission<'_>>)->Result<Self,BindingError>{Self::capture_with_settings_headers_mode(items,source,owners,original_headers,admission,false)}
+    pub(super) fn capture_with_settings_headers_mode(items:Vec<Item>,source:dm_preprocess::SourceText,owners:&std::collections::BTreeMap<usize,Arc<dm_ir::ProcedureMetadata>>,original_headers:Option<Arc<crate::procedure::OriginalProcedureHeaders>>,admission:Option<&dm_syntax::SettingAdmission<'_>>,ordinary_demand:bool)->Result<Self,BindingError>{
         if original_headers
             .as_ref()
             .is_some_and(|h| !h.same_source(&source))
         {
             return Err(BindingError::ForeignOriginalHeaderOwner);
         }
+        let code_storage=OrdinaryCodeStorage::new(admission,ordinary_demand)?;
         let view=OriginalItems::from_items(&items);
         let max_end=Self::validate_items(view,&source)?;
         if let Some(headers) = original_headers.as_ref() {
             headers.reissue_settings_if_missing(&items,owners).map_err(|_|BindingError::ForeignOriginalHeaderOwner)?;
         }
-        let (bodies,primary_headers)=Self::collect_metadata(view,&source,owners,original_headers.as_deref());
+        let (bodies,primary_headers)=Self::collect_metadata(view,&source,owners,original_headers.as_deref(),admission,ordinary_demand)?;
         let source_len=source.len();
         Ok(Self{items:arena::Arena::capture(items,source),source_len,max_end,bodies,primary_headers,
-            primary_header_reissues:AtomicUsize::new(0),original_headers})
+            primary_header_reissues:AtomicUsize::new(0),original_headers,code_storage})
     }
     pub(super) fn adopt_original_items(
         items: OriginalCommittedItems, source: dm_preprocess::SourceText,
         owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
         original_headers: Arc<crate::procedure::OriginalProcedureHeaders>,
-    )->Result<Self,BindingError>{
+        admission:&dm_syntax::SettingAdmission<'_>,
+    )->Result<Self,BindingError>{Self::adopt_original_items_mode(items,source,owners,original_headers,admission,false)}
+    pub(super) fn adopt_original_items_mode(items:OriginalCommittedItems,source:dm_preprocess::SourceText,owners:&std::collections::BTreeMap<usize,Arc<dm_ir::ProcedureMetadata>>,original_headers:Arc<crate::procedure::OriginalProcedureHeaders>,admission:&dm_syntax::SettingAdmission<'_>,ordinary_demand:bool)->Result<Self,BindingError>{
+        let code_storage=OrdinaryCodeStorage::new(Some(admission),ordinary_demand)?;
         if !original_headers.same_source(&source){return Err(BindingError::ForeignOriginalHeaderOwner)}
         let view=items.view_for_same_source(&source).map_err(|_|BindingError::InvalidRelativeSpan)?;
         let max_end=Self::validate_items(view,&source)?;
         // The checked adapter already installed these exact owners. The
         // compact Original path cannot invoke the portable reissuer.
         original_headers.require_issued_settings_items(view,owners).map_err(|_|BindingError::ForeignOriginalHeaderOwner)?;
-        let (bodies,primary_headers)=Self::collect_metadata(view,&source,owners,Some(&original_headers));
+        let (bodies,primary_headers)=Self::collect_metadata(view,&source,owners,Some(&original_headers),Some(admission),ordinary_demand)?;
         let source_len=source.len();
         Ok(Self{items:arena::Arena::Original{items,source},source_len,max_end,bodies,primary_headers,
-            primary_header_reissues:AtomicUsize::new(0),original_headers:Some(original_headers)})
+            primary_header_reissues:AtomicUsize::new(0),original_headers:Some(original_headers),code_storage})
+    }
+    pub(crate) fn ordinary_code_demand(&self)->bool{self.code_storage.as_ref().is_some_and(|s|s.demand)}
+    fn issued_body_code(&self,ordinal:usize)->Option<Arc<BodyCodeIdentity>>{let body=self.bodies.get(ordinal)?;body.code.as_ref().cloned().or_else(||self.code_storage.as_ref()?.slots.as_ref()?.issued(ordinal))}
+    fn issued_body_code_for_binding(&self,ordinal:usize)->std::io::Result<Option<Arc<BodyCodeIdentity>>>{let Some(body)=self.bodies.get(ordinal)else{return Ok(None)};if let Some(code)=&body.code{return Ok(Some(Arc::clone(code)))}match self.code_storage.as_ref().and_then(|owner|owner.slots.as_ref()){Some(slots)=>slots.issued_for_binding(ordinal),None=>Ok(None)}}
+    fn body_code_admitted(&self,ordinal:usize,a:&dm_syntax::SettingAdmission<'_>)->Result<Arc<BodyCodeIdentity>,BodySyntaxFailure>{
+      a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+      let storage=self.code_storage.as_ref().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"ordinary Code has no actual admitted storage owner")))?;
+      if !a.matches_lease_domain(&storage.fixed){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"ordinary Code metadata belongs to another admission domain")))}
+      let body=self.bodies.get(ordinal).ok_or_else(||BodySyntaxFailure::Syntax(internal("ordinary Code ordinal absent")))?;
+      if let Some(code)=&body.code{return Ok(Arc::clone(code))}
+      let slots=storage.slots.as_ref().ok_or_else(||BodySyntaxFailure::Syntax(internal("eager Code is unexpectedly unissued")))?;
+      slots.get_or_create(self.bodies.len(),ordinal,a,||funded_body_code_preserving_error(a).map_err(BodySyntaxFailure::Operational)).map_err(|failure|match failure{
+       dm_syntax::OrdinalSlotFailure::Value(actual)=>actual,
+       dm_syntax::OrdinalSlotFailure::Admission(actual)=>BodySyntaxFailure::Operational(actual),
+      })
     }
     fn validate_items(items:OriginalItems<'_>,source:&str)->Result<usize,BindingError>{
         fn validate(items:OriginalItems<'_>,source:&str,max_end:&mut usize)->Result<(),BindingError>{
@@ -252,9 +373,10 @@ impl RelativeSyntax {
         items: OriginalItems<'_>, source: &str,
         owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
         original_headers: Option<&crate::procedure::OriginalProcedureHeaders>,
-    )->(Vec<RelativeBody>,OnceLock<Result<Arc<[(usize,Option<usize>,u8)]>,BindingError>>){
+        admission:Option<&dm_syntax::SettingAdmission<'_>>,ordinary_demand:bool,
+    )->Result<(Vec<RelativeBody>,OnceLock<Result<Arc<[(usize,Option<usize>,u8)]>,BindingError>>),BindingError>{
         let mut bodies=Vec::new();
-        capture_bodies(items,source,&mut Vec::new(),&mut bodies,owners,original_headers);
+        capture_bodies(items,source,&mut Vec::new(),&mut bodies,owners,original_headers,admission,ordinary_demand)?;
         fn issued(items:OriginalItems<'_>,parent:Option<u8>,out:&mut Vec<(usize,Option<usize>,u8)>){
             for item in items.iter(){
                 if matches!(item.kind(),ItemKind::Proc|ItemKind::Verb){continue}
@@ -271,7 +393,7 @@ impl RelativeSyntax {
             headers.dedup();
             let _=primary_headers.set(Ok(headers.into()));
         }
-        (bodies,primary_headers)
+        Ok((bodies,primary_headers))
     }
     fn primary_headers(&self, reissue: bool) -> Option<&Arc<[(usize, Option<usize>, u8)]>> {
         if reissue {
@@ -362,12 +484,13 @@ impl RelativeSyntax {
             self.bodies.len() * std::mem::size_of::<RelativeBody>(),
             self.bodies.capacity() * std::mem::size_of::<RelativeBody>(),
         );
+        if let Some(storage)=&self.code_storage{
+            let(layout,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<OrdinaryCodeStorage>()).expect("actual Code storage Arc layout");
+            visit(Arc::as_ptr(storage)as usize,std::mem::size_of::<OrdinaryCodeStorage>(),layout.pad_to_align().size());storage.fixed.visit_counter_storage(|p,n|visit(p,n,n));
+            if let Some(slots)=&storage.slots{slots.visit_storage(&mut visit).expect("quiescent Code storage census");slots.visit_issued(&mut|_,code|code.visit_allocation_storage(&mut visit)).expect("quiescent Code row census");}
+        }
         for body in &self.bodies {
-            visit(
-                Arc::as_ptr(&body.code) as usize,
-                std::mem::size_of::<BodyCodeIdentity>(),
-                std::mem::size_of::<BodyCodeIdentity>(),
-            );
+            if let Some(code)=&body.code{code.visit_allocation_storage(&mut visit);}
 
             visit(
                 body.path.as_ptr() as usize,
@@ -715,10 +838,19 @@ impl DeclarationSyntax {
     }
     /// Native captured-body path: exact current chunk/body/code before borrowing
     /// any original token range. Matching bytes or member IDs are insufficient.
-    pub(crate) fn original_body_recipe<'a>(
+    pub(crate) fn original_body_recipe(&self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<CurrentBodyRecipe<'_>,dm_syntax::Diagnostic>{self.original_body_recipe_checked(span,code).map_err(|error|match error{BodySyntaxFailure::Syntax(source)=>dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:source.message},BodySyntaxFailure::Operational(actual)=>dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:actual.to_string()}})}
+    pub(crate) fn original_body_recipe_checked(&self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<CurrentBodyRecipe<'_>,BodySyntaxFailure>{
+     let recipe=self.original_body_recipe_using(span,None).map_err(|error|BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,error.message)))?;
+     let actual=recipe.issued_code_for_binding().map_err(BodySyntaxFailure::Operational)?;
+     if !actual.as_ref().is_some_and(|actual|Arc::ptr_eq(actual,code)){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"original body token range/code owner differs")))}Ok(recipe)
+    }
+    /// Header-only current recipe: exact issued chunk/body span/header owner,
+    /// without forcing or certifying a BODY Code identity/product.
+    pub(super) fn original_header_recipe(&self,span:Span)->Result<CurrentBodyRecipe<'_>,dm_syntax::Diagnostic>{let recipe=self.original_body_recipe_using(span,None)?;if recipe.headers.is_none(){return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"actual original header owner is unissued".into()})}Ok(recipe)}
+    pub(crate) fn original_body_recipe_using<'a>(
         &'a self,
         span: Span,
-        code: &Arc<BodyCodeIdentity>,
+        code: Option<&Arc<BodyCodeIdentity>>,
     ) -> Result<CurrentBodyRecipe<'a>, dm_syntax::Diagnostic> {
         let fail = |message: &str| dm_syntax::Diagnostic {
             span,
@@ -750,14 +882,74 @@ impl DeclarationSyntax {
             .relative
             .bodies
             .get(n)
-            .filter(|b| b.span == relative && Arc::ptr_eq(&b.code, code))
+            .filter(|b| b.span == relative && code.is_none_or(|code|chunk.relative.issued_body_code(n).is_some_and(|actual|Arc::ptr_eq(&actual,code))))
             .ok_or_else(|| fail("original body token range/code owner differs"))?;
         Ok(CurrentBodyRecipe {
-            relative: body,
+            relative: body,relative_owner:&chunk.relative,ordinal:n,
             offset: chunk.offset,
             root_prefix: self.prefix[index],
             headers: chunk.relative.original_headers.as_ref(),
         })
+    }
+    // Header/reader DATA loans below are callable only through the existing
+    // private current frontend/archive. They validate the SAME original chunk,
+    // exact body span and actual Header owner, but certify no BODY product or
+    // Code. Query/parser entrypoints above continue requiring actual Code.
+    /// Borrow the existing producer resource owner for failure diagnostics.
+    /// This lends no source grant and never constructs or reparses an Item.
+    pub(crate) fn original_committed_products_for_trace(&self,span:Span)->Option<&Arc<super::committed_bodies::CommittedHeaderProducts>>{
+        self.original_header_recipe(span).ok()?.headers?.committed_products()
+    }
+    pub(crate) fn original_committed_items_for_trace(&self,span:Span)->Option<&OriginalCommittedItems>{
+        let recipe=self.original_header_recipe(span).ok()?;
+        match &recipe.relative_owner.items{arena::Arena::Original{items,..}=>Some(items),_=>None}
+    }
+    pub(crate) fn original_body_tokens_header_only(&self,span:Span)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,String>{let recipe=self.original_header_recipe(span).map_err(|error|error.message)?;recipe.headers.ok_or("original body primary token owner unissued")?.body_tokens(recipe.relative.span,recipe.offset).map_err(str::to_owned)}
+    pub(crate) fn original_formal_notice_rows_header_only<'a>(&'a self,span:Span)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>),String>>+'a,String>{
+        let recipe=self.original_header_recipe(span).map_err(|error|error.message)?;let headers=recipe.headers.ok_or("actual original formal header owner unavailable")?;let offset=recipe.offset;let rows=headers.formal_notices_for(recipe.relative.span).map_err(str::to_owned)?;
+        Ok(rows.map(move|notice|{let text=headers.formal_notice_text(notice).map_err(str::to_owned)?;let current=notice.checked_shift(offset).map_err(|error|error.to_string())?;Ok((current,text))}))
+    }
+    pub(crate) fn original_reader_commit_registration_header_only(&self,span:Span)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{
+        let recipe=self.original_header_recipe(span).map_err(|error|error.message)?;
+        let headers=recipe.headers.ok_or("actual reader header owner unissued")?;
+        headers.optional_reader_body_commit_registration(recipe.relative.span)
+    }
+    pub(crate) fn original_formal_notice_registration_rows_header_only<'a>(&'a self,span:Span)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>,Option<dm_preprocess::regions::OriginalNoticeRegistration>),String>>+'a,String>{
+        let recipe=self.original_header_recipe(span).map_err(|error|error.message)?;let headers=recipe.headers.ok_or("actual original formal header owner unavailable")?;let offset=recipe.offset;let rows=headers.formal_notices_for(recipe.relative.span).map_err(str::to_owned)?;
+        Ok(rows.map(move|notice|{let text=headers.formal_notice_text(notice).map_err(str::to_owned)?;let registration=headers.optional_formal_notice_registration(notice).map_err(str::to_owned)?.cloned();let current=notice.checked_shift(offset).map_err(|error|error.to_string())?;Ok((current,text,registration))}))
+    }
+    pub(super) fn requires_admitted_original_header_parameters_header_only(
+      &self,span:Span,
+    )->Result<bool,BodySyntaxFailure>{
+      let recipe=self.original_header_recipe(span).map_err(|error|internal(&error.message))?;
+      let headers=recipe.headers.ok_or_else(||internal("actual parameter header owner is unissued"))?;
+      Ok(headers.lazy_body_parameters())
+    }
+    pub(super) fn original_header_parameters_header_only<'a>(&'a self,span:Span)->Result<(&'a dm_syntax::SharedParameterSignature,dm_syntax::SyntaxProjection),dm_syntax::Diagnostic>{
+      let recipe=self.original_header_recipe(span)?;
+      let fail=|message:&str|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:message.into()};
+      let headers=recipe.headers.ok_or_else(||fail("actual parameter header owner is unissued"))?;
+      let parameters=headers.parameter_signature(recipe.relative.span).map_err(fail)?;
+      let original=Span::new(0,headers.abi_source_len());let current=recipe.source_window().map_err(fail)?;
+      let projection=dm_syntax::SyntaxProjection::new(original,current).map_err(|_|fail("actual parameter source projection differs"))?;
+      Ok((parameters,projection))
+    }
+    pub(super) fn with_original_header_parameters_admitted_header_only<T>(
+      &self, span: Span, a: &dm_syntax::SettingAdmission<'_>,
+      consume: impl FnOnce(&dm_syntax::ParameterSignature,dm_syntax::SyntaxProjection)->Result<T,BodySyntaxFailure>,
+    )->Result<T,BodySyntaxFailure>{
+      let recipe=self.original_header_recipe(span).map_err(|error|internal(&error.message))?;
+      let headers=recipe.headers.ok_or_else(||internal("actual parameter header owner is unissued"))?;
+      let parameters=headers.parameter_signature_admitted(recipe.relative.span,a).map_err(BodySyntaxFailure::Operational)?;
+      let original=Span::new(0,headers.abi_source_len());
+      let current=recipe.source_window().map_err(internal)?;
+      let projection=dm_syntax::SyntaxProjection::new(original,current).map_err(|_|internal("actual parameter source projection differs"))?;
+      consume(&parameters,projection)
+    }
+    pub(crate) fn original_callable_opening_header_only(&self,span:Span)->Result<usize,String>{
+        let recipe=self.original_header_recipe(span).map_err(|e|e.message)?;
+        let input=recipe.headers.ok_or("callable header original token input unissued")?;
+        input.callable_opening(recipe.relative.span,recipe.offset)
     }
     pub(crate) fn original_body_tokens(&self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,String>{let recipe=self.original_body_recipe(span,code).map_err(|error|error.message)?;recipe.headers.ok_or("original body primary token owner unissued")?.body_tokens(recipe.relative.span,recipe.offset).map_err(str::to_owned)}
     pub(crate) fn original_formal_notice_rows<'a>(&'a self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>),String>>+'a,String>{
@@ -769,11 +961,13 @@ impl DeclarationSyntax {
         let headers=recipe.headers.ok_or("actual reader header owner unissued")?;
         headers.optional_reader_body_commit_registration(recipe.relative.span)
     }
-    pub(crate) fn original_reader_end_registration(&self)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{
+    pub(crate) fn original_reader_end_registration(&self)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{self.original_reader_frontier_using(false)}
+    pub(crate) fn original_parser_reader_frontier_registration(&self)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{self.original_reader_frontier_using(true)}
+    fn original_reader_frontier_using(&self,parser_frontier:bool)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{
         let mut end:Option<dm_preprocess::regions::OriginalNoticeRegistration>=None;let mut absent=false;
         for chunk in self.chunks.iter(){
             let Some(headers)=chunk.relative.original_headers.as_ref() else{absent=true;continue};
-            let Some(current)=headers.optional_reader_end_registration()? else{absent=true;continue};
+            let current=if parser_frontier{headers.optional_parser_reader_frontier_registration()}else{headers.optional_reader_end_registration()?};let Some(current)=current else{absent=true;continue};
             if let Some(previous)=&end{if previous.compare_same_source(&current).map_err(|error|error.to_string())?==std::cmp::Ordering::Greater{return Err("actual reader end registrations are not monotone".into())}}
             end=Some(current);
         }
@@ -839,7 +1033,7 @@ impl DeclarationSyntax {
       self.original_body_expression_with_native_facts(body,code,source,offset,a).map(|value|value.map(|(parsed,_)|parsed))
     }
     pub(crate) fn original_body_expression_with_native_facts(&self,body:Span,code:&Arc<BodyCodeIdentity>,source:&str,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>)>>{
-      let recipe=self.original_body_recipe(body,code).map_err(|e|std::io::Error::new(std::io::ErrorKind::InvalidData,e.message))?;
+      let recipe=self.original_body_recipe_checked(body,code).map_err(|error|match error{BodySyntaxFailure::Operational(actual)=>actual,BodySyntaxFailure::Syntax(source)=>std::io::Error::new(std::io::ErrorKind::InvalidData,source.message)})?;
       let original=offset.checked_sub(recipe.offset).ok_or(std::io::ErrorKind::InvalidInput)?;
       let headers=recipe.headers.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"original BODY expression header owner is unissued"))?;
       headers.original_body_expression_with_native_facts(source,original,a)
@@ -1012,6 +1206,8 @@ impl DeclarationSyntax {
     }
     /// None proves an actual original primary header with no authored RHS.
     /// Source/token/metadata failures remain Err and cannot trigger inheritance.
+    pub(crate) fn initializer_constant_location(&self,cursor:usize)->Result<usize,String>{let(headers,header,_,_,_,offset)=self.initializer_token_source(cursor)?;match headers.initializer_assignment_token(header)?{Some(token)=>token.start.checked_add(offset).ok_or_else(||"initializer saved token coordinate overflow".into()),None=>Ok(cursor)}}
+    pub(crate) fn initializer_has_authored_value(&self,cursor:usize)->Result<bool,String>{let(headers,header,kind,_,_,_)=self.initializer_token_source(cursor)?;headers.has_authored_initializer(header,kind==ItemKind::Var)}
     pub(crate) fn initializer_token_input_if_authored<'a>(&'a self,cursor:usize,expression:&dm_ir::SymbolicExpression,symbols:&dm_ir::SymbolTable)->Result<Option<OriginalInitializerTokenInput<'a>>,String>{
         let(headers,header,kind,_,_,_)=self.initializer_token_source(cursor)?;
         if !headers.has_authored_initializer(header,kind==ItemKind::Var)?{return Ok(None)}
@@ -1138,6 +1334,7 @@ impl DeclarationSyntax {
             .map_err(dm_syntax::SettingSyntaxFailure::Operational)?;
         Ok((attribute.to_owned(),relation.to_owned(),current,native))
     }
+    pub(crate) fn ordinary_code_demand(&self)->bool{!self.chunks.is_empty()&&self.chunks.iter().all(|chunk|chunk.relative.ordinary_code_demand())}
     pub(crate) fn body_recipes(&self) -> impl Iterator<Item = CurrentBodyRecipe<'_>> {
         self.chunks
             .iter()
@@ -1146,9 +1343,9 @@ impl DeclarationSyntax {
                 chunk
                     .relative
                     .bodies
-                    .iter()
-                    .map(move |relative| CurrentBodyRecipe {
-                        relative,
+                    .iter().enumerate()
+                    .map(move |(ordinal,relative)| CurrentBodyRecipe {
+                        relative,relative_owner:&chunk.relative,ordinal,
                         offset: chunk.offset,
                         root_prefix,
                         headers: chunk.relative.original_headers.as_ref(),
@@ -1639,7 +1836,7 @@ mod original_setting_context_roster_tests {
    for (fact,origin) in facts.skeletons.iter().zip(&facts.origins){if let crate::Skeleton::Member{metadata,..}=fact{if let Some(owner)=metadata.procedure.as_ref(){owners.insert(origin.span.start as usize,owner.clone());}}}
    let mut expected=Vec::new();crate::settings::setting_spans(&ast.items[0].children,&mut expected);
    let relative=RelativeSyntax::capture_with_settings_headers(ast.items.clone(),{let mut value=None;input.visit_source(|source|value=Some(source.clone()));value.unwrap()},&owners,Some(input.clone())).unwrap();
-   let body=&relative.bodies[0];let recipe=CurrentBodyRecipe{relative:body,offset:0,root_prefix:0,headers:Some(&input)};
+   let body=&relative.bodies[0];let recipe=CurrentBodyRecipe{relative:body,relative_owner:&relative,ordinal:0,offset:0,root_prefix:0,headers:Some(&input)};
    assert_eq!(recipe.settings().collect::<Vec<_>>(),expected);assert!(expected.len()>1);
    if body.settings_owner.as_ref().unwrap().settings.is_empty(){assert!(recipe.setting_footprints().is_none());assert!(!recipe.settings().collect::<Vec<_>>().is_empty());}
   }
@@ -1714,19 +1911,20 @@ impl<'a> OriginalBodyCodeConvergence<'a> {
         let previous = self.previous;
         let peer = previous.chunks().get(chunk).map(CurrentSyntaxChunk::shared_relative);
         let peer = match peer {
-            Some(peer) if peer.initializer_admission_matches(a)? && peer.shared_source().is_some() => Some(peer),
+            Some(peer) if peer.ordinary_code_demand()==current.ordinary_code_demand()&&peer.initializer_admission_matches(a)? && peer.shared_source().is_some() => Some(peer),
             _ => None,
         };
         current.converge_body_codes_using(a, |current, ordinal| {
             if let Some(peer) = peer.filter(|peer| ordinal < peer.bodies.len()) {
-                if current.code_recipe_equal(ordinal, peer, ordinal, a)? {
-                    return Ok(Some(Arc::clone(&peer.bodies[ordinal].code)));
-                }
+                // Only a genuine already-issued predecessor warrants token
+                // equality work. Header-only predecessors do not force any
+                // Code or scan every BODY merely to prove absence.
+                if let Some(code)=peer.issued_body_code(ordinal){if current.code_recipe_equal(ordinal,peer,ordinal,a)?{return Ok(Some(code))}}
             }
             if self.fallback.is_none() {
                 let mut index = BodyCodeCandidates::new(a)?;
                 for chunk in previous.chunks().iter() {
-                    index.capture(chunk.shared_relative(), a)?;
+                    if chunk.shared_relative().ordinary_code_demand()==current.ordinary_code_demand(){index.capture(chunk.shared_relative(),a)?;}
                 }
                 index.finish(a)?;
                 self.fallback = Some(index);
@@ -1885,20 +2083,28 @@ impl RelativeSyntax{
   let mut changed=0;
   for ordinal in 0..self.bodies.len(){
    code_checkpoint(a)?;
-   if let Some(code)=lookup(self,ordinal)?{self.bodies[ordinal].code=code;changed+=1;}
+   if self.ordinary_code_demand()&&self.code_storage.as_ref().and_then(|s|s.slots.as_ref()).and_then(|s|s.issued(ordinal)).is_some(){continue}
+   if let Some(code)=lookup(self,ordinal)?{
+    // An unadmitted compatibility identity remains DATA. Do not move an
+    // unfunded/foreign tail into this actual native allocation domain.
+    if !code.committed_allocation_credit().is_some_and(|credit|a.matches_lease_domain(credit)){continue}
+    self.bodies[ordinal].code=Some(code);changed+=1;
+   }
   }
   code_checkpoint(a)?;Ok(changed)
  }
 }
 impl BodyCodeCandidates{
  fn lookup(&self,current:&RelativeSyntax,ordinal:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<Arc<BodyCodeIdentity>>>{
+  if self.rows.is_empty(){return Ok(None)}
   let hash=current.code_recipe_hash(ordinal,a)?;
   let mut begin=0;let mut end=self.rows.len();
   while begin<end{code_checkpoint(a)?;let mid=begin+(end-begin)/2;if self.rows[mid].hash<hash{begin=mid+1}else{end=mid}}
   for candidate in &self.rows[begin..]{
    code_checkpoint(a)?;if candidate.hash!=hash{break}
+   if candidate.syntax.ordinary_code_demand()!=current.ordinary_code_demand(){continue}
    if current.code_recipe_equal(ordinal,&candidate.syntax,candidate.ordinal,a)?{
-    return Ok(Some(Arc::clone(&candidate.syntax.bodies[candidate.ordinal].code)));
+    if let Some(code)=candidate.syntax.issued_body_code(candidate.ordinal){return Ok(Some(code))}
    }
   }
   Ok(None)
@@ -1907,7 +2113,7 @@ impl BodyCodeCandidates{
  pub(super) fn capture(&mut self,syntax:&Arc<RelativeSyntax>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
   code_checkpoint(a)?;if !syntax.initializer_admission_matches(a)?||syntax.shared_source().is_none(){return Ok(())}
   for ordinal in 0..syntax.bodies.len(){
-   code_checkpoint(a)?;let hash=syntax.code_recipe_hash(ordinal,a)?;
+   code_checkpoint(a)?;if syntax.issued_body_code(ordinal).is_none(){continue}let hash=syntax.code_recipe_hash(ordinal,a)?;
    if self.rows.len()==self.rows.capacity(){
     let count=self.rows.capacity().max(4).checked_mul(2).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
     let bytes=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<BodyCandidate>())).and_then(|n|n.checked_add(std::mem::size_of::<Self>()+128)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
@@ -1945,7 +2151,7 @@ impl BodyCodeCandidates{
   store.capture_source_headers_checked(&key,source,0,ast.items,facts,ledger,headers,a)?.ok_or_else(||code_io("actual native contribution was not captured"))
  }
  fn code(syntax:&RelativeSyntax,name:&str)->Arc<BodyCodeIdentity>{
-  let row=syntax.bodies.iter().find(|body|syntax.code_item(&body.path).unwrap().header().starts_with(&format!("/proc/{name}("))).unwrap();Arc::clone(&row.code)
+  let row=syntax.bodies.iter().find(|body|syntax.code_item(&body.path).unwrap().header().starts_with(&format!("/proc/{name}("))).unwrap();Arc::clone(row.code.as_ref().expect("eager test Code"))
  }
  #[test]fn actual_published_primary_capture_converges_both_unchanged_siblings_after_length_changing_same_chunk_edit(){
   let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&counter,1<<26,&||Ok(()));let store=RetainedDeclarations::default();
@@ -2005,5 +2211,189 @@ impl BodyCodeCandidates{
   let data=dm_syntax::OriginalLiteralData::from_value_using("0".into(),dm_syntax::OriginalTokenValue::Int(0),&seed).unwrap();let rows=vec![(dm_syntax::Span::new(1,2),data.clone()),(dm_syntax::Span::new(3,4),data)];let calls=std::cell::Cell::new(0);let poll=||{calls.set(calls.get()+1);if calls.get()==3{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};let stopped=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
   assert_eq!(code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&rows),0)),dm_syntax::Span::new(0,5),&stopped).unwrap_err().raw_os_error(),Some(1450));assert_eq!(calls.get(),3);
   let fresh=dm_syntax::SettingAdmission::new(&counter,1<<20,&success);assert!(code_literal_hash(Some((dm_syntax::OriginalLiteralRows::from_slice(&rows),0)),dm_syntax::Span::new(0,5),&fresh).is_ok());
+ }
+}
+
+impl BodyCodeIdentity{pub fn committed_allocation_credit(&self)->Option<&dm_syntax::SettingRootLease>{self.allocation_credit.get()}}
+impl std::fmt::Debug for BodyCodeIdentity{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("BodyCodeIdentity").field("_private",&0u8).finish()}}
+
+impl BodyCodeIdentity{pub fn visit_allocation_storage(&self,visit:&mut dyn FnMut(usize,usize,usize)){let(layout,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<Self>()).expect("actual Code Arc layout");visit(self as *const Self as usize,std::mem::size_of::<Self>(),layout.pad_to_align().size());let(layout,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<BodyCodeWeakAllocation>()).expect("actual Code credit Arc layout");visit(Arc::as_ptr(&self.allocation_credit)as usize,std::mem::size_of::<BodyCodeWeakAllocation>(),layout.pad_to_align().size());if let Some(credit)=self.allocation_credit.get(){credit.visit_counter_storage(|p,n|visit(p,n,n));}}}
+
+#[cfg(test)]#[test]fn actual_intrinsic_code_allocation_layout_is_measured_without_root_or_header_changes(){
+ #[allow(dead_code)]struct Prior{_private:u8}
+ fn padded<T>()->usize{let(layout,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<T>()).unwrap();layout.pad_to_align().size()}
+ assert_eq!(std::mem::size_of::<BodyCodeWeak>(),std::mem::size_of::<std::sync::Weak<BodyCodeIdentity>>(),"same one-pointer weak consumer representation");eprintln!("CODE_RESOURCE_OWNER payload={} padded_arc={} weak_locator={}",std::mem::size_of::<BodyCodeWeakAllocation>(),padded::<BodyCodeWeakAllocation>(),std::mem::size_of::<BodyCodeWeak>());let old=padded::<Prior>();let new=padded::<BodyCodeIdentity>();eprintln!("COMMITTED_CODE_ALLOCATION prior_payload={} current_payload={} prior_arc={} current_arc={} inline_lease={}",std::mem::size_of::<Prior>(),std::mem::size_of::<BodyCodeIdentity>(),old,new,std::mem::size_of::<dm_syntax::SettingRootLease>());assert!(new>=old);assert_eq!(std::mem::size_of::<BodyCodeIdentity>(),std::mem::size_of::<Arc<BodyCodeWeakAllocation>>());
+}
+
+#[cfg(test)]#[test]fn actual_funded_code_allocation_denies_peak_preserves_first_io_and_refunds_last_strong_owner(){
+ use std::sync::atomic::Ordering;let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let counter=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+ fn arc<T>()->usize{let(l,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<T>()).unwrap();l.pad_to_align().size()}
+ let required=arc::<BodyCodeIdentity>()+arc::<BodyCodeWeakAllocation>();let poll=||Ok(());let denied=dm_syntax::SettingAdmission::new(&counter,root+required-1,&poll);assert_eq!(funded_body_code(&denied).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);drop(denied);assert_eq!(counter.load(Ordering::Acquire),root);
+ let stop=||Err(std::io::Error::from_raw_os_error(1450));let failed=dm_syntax::SettingAdmission::new(&counter,root+required,&stop);assert_eq!(funded_body_code(&failed).unwrap_err().raw_os_error(),Some(1450));drop(failed);assert_eq!(counter.load(Ordering::Acquire),root);
+ let actual=dm_syntax::SettingAdmission::new(&counter,root+required,&poll);let code=funded_body_code(&actual).unwrap();let other=Arc::clone(&code);assert_eq!(counter.load(Ordering::Acquire),root+required);drop(code);assert_eq!(counter.load(Ordering::Acquire),root+required);drop(other);assert_eq!(counter.load(Ordering::Acquire),root);
+}
+
+#[cfg(test)]#[test]fn actual_weak_code_credit_preserves_expiry_and_funds_dead_shell_until_last_locator(){
+ use std::sync::atomic::Ordering;let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let counter=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
+ let code=funded_body_code(&a).unwrap();let paid=code.committed_allocation_credit().unwrap().bytes();let first=BodyCodeIdentity::downgrade(&code);let second=first.clone();assert!(first.ptr_eq(&second));assert!(first.matches(&code));assert_eq!(first.strong_count(),1);assert!(first.upgrade().is_some());
+ drop(code);assert_eq!(first.strong_count(),0);assert!(first.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),root+paid);drop(first);assert_eq!(counter.load(Ordering::Acquire),root+paid);drop(second);assert_eq!(counter.load(Ordering::Acquire),root);
+}
+
+impl BodyCodeIdentity{
+ /// Resource-only adoption of an existing DATA allocation; no source/current grant.
+ pub fn admit_native_allocation(&self,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+  if let Some(actual)=a.take_operational_error(){return Err(actual)}
+  fn padded<T>()->std::io::Result<usize>{let(layout,_)=std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize;2]>().extend(std::alloc::Layout::new::<T>()).map_err(|_|std::io::ErrorKind::OutOfMemory)?;Ok(layout.pad_to_align().size())}
+  let required=padded::<Self>()?.checked_add(padded::<BodyCodeWeakAllocation>()?).ok_or(std::io::ErrorKind::OutOfMemory)?;
+  let validate=|credit:&dm_syntax::SettingRootLease|{if !a.matches_lease_domain(credit)||credit.bytes()<required{Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual Code allocation uses another or incomplete grant"))}else{Ok(())}};
+  if let Some(credit)=self.allocation_credit.get(){return validate(credit)}
+  let pending=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(actual)}pending?;let reserved=a.reserve(required);if let Some(actual)=a.take_operational_error(){return Err(actual)}let credit=reserved?;if let Err(unused)=self.allocation_credit.set(credit){drop(unused)}validate(self.allocation_credit.get().expect("actual Code allocation initialized"))
+ }
+}
+
+#[cfg(test)]#[test]fn actual_data_code_admission_updates_prior_weak_locators_and_keeps_reserve_first_io(){
+ use std::sync::atomic::Ordering;let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let counter=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let code=ordinary_body_code(None).unwrap();let prior=BodyCodeIdentity::downgrade(&code);assert!(code.committed_allocation_credit().is_none());
+ let calls=std::cell::Cell::new(0);let fail=||{let next=calls.get()+1;calls.set(next);if next==2{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&fail);assert_eq!(code.admit_native_allocation(&a).unwrap_err().raw_os_error(),Some(1450));assert_eq!(calls.get(),2);assert!(code.committed_allocation_credit().is_none());drop(a);assert_eq!(counter.load(Ordering::Acquire),root);
+ let good=dm_syntax::SettingAdmission::new(&counter,1<<20,&||Ok(()));code.admit_native_allocation(&good).unwrap();let paid=code.committed_allocation_credit().unwrap().bytes();let owner_pointer=Arc::as_ptr(&code.allocation_credit);assert_eq!(Arc::as_ptr(&prior.credit),owner_pointer);drop(code);assert!(prior.upgrade().is_none());assert_eq!(prior.strong_count(),0);assert_eq!(counter.load(Ordering::Acquire),root+paid);drop(prior);assert_eq!(counter.load(Ordering::Acquire),root);
+}
+
+#[cfg(test)]#[test]
+fn actual_ordinary_code_binding_preserves_original_1450_and_exact_quota_payload(){
+ let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();
+ let counter=dm_syntax::SettingChargeCounter::try_new(root).unwrap();
+ let stop=||Err(std::io::Error::from_raw_os_error(1450));
+ let failed=dm_syntax::SettingAdmission::new(&counter,1<<20,&stop);
+ assert_eq!(ordinary_body_code(Some(&failed)).unwrap_err(),BindingError::InvalidRelativeSpan);
+ assert_eq!(failed.take_operational_error().unwrap().raw_os_error(),Some(1450));
+ assert_eq!(counter.load(Ordering::Acquire),root);
+ let ok=||Ok(());let tight=dm_syntax::SettingAdmission::new(&counter,root,&ok);
+ assert_eq!(ordinary_body_code(Some(&tight)).unwrap_err(),BindingError::InvalidRelativeSpan);
+ let actual=tight.take_operational_error().unwrap();assert_eq!(actual.kind(),std::io::ErrorKind::OutOfMemory);
+ assert!(actual.to_string().contains("requested"),"actual admission allocation context must survive the BindingError boundary");
+ assert_eq!(counter.load(Ordering::Acquire),root);
+ let recovered=dm_syntax::SettingAdmission::new(&counter,1<<20,&ok);let code=ordinary_body_code(Some(&recovered)).unwrap();assert!(code.committed_allocation_credit().is_some());drop(code);assert_eq!(counter.load(Ordering::Acquire),root);
+}
+
+impl DeclarationSyntax{
+    pub(crate) fn setting_token_input_header_only<'a>(
+        &'a self,
+        span: Span,
+        ordinal: usize,
+    ) -> Result<OriginalSettingTokenInput<'a>, dm_syntax::Diagnostic> {
+        let recipe = self.original_header_recipe(span)?;
+        let fail = |message: &str| dm_syntax::Diagnostic {
+            span,
+            kind: dm_syntax::DiagnosticKind::Unsupported,
+            message: message.into(),
+        };
+        let input = recipe
+            .headers
+            .ok_or_else(|| fail("original setting token owner unavailable"))?;
+        let owner = recipe
+            .relative
+            .settings_owner
+            .as_ref()
+            .ok_or_else(|| fail("original setting metadata owner unavailable"))?;
+        let footprint = recipe
+            .relative
+            .setting_footprints
+            .as_ref()
+            .and_then(|rows| rows.get(ordinal))
+            .ok_or_else(|| fail("original setting footprint ordinal unavailable"))?;
+        let (source, tokens) = input
+            .setting_value_tokens(recipe.relative.span, owner, footprint)
+            .map_err(|message| fail(&message))?;
+        let slots = input
+            .setting_root_slots(recipe.relative.span, owner, footprint)
+            .map_err(|message| fail(&message))?;
+        let header = Span::new(
+            footprint.header.start + recipe.offset,
+            footprint.header.end + recipe.offset,
+        );
+        let value = Span::new(
+            footprint.value.start + recipe.offset,
+            footprint.value.end + recipe.offset,
+        );
+        Ok(OriginalSettingTokenInput {
+            literal_owner:input,
+            source,
+            tokens,
+            original_owner: owner,
+            ordinal,
+            header,
+            value,
+            offset: recipe.offset,
+            slots,
+            original_value: footprint.value,
+        })
+    }
+    pub(crate) fn return_annotation_token_input_header_only<'a>(
+        &'a self,
+        span: Span,
+        fragment: &dm_ir::SymbolicExpression,
+        selected: &dm_ir::ProcedureMetadata,
+        symbols: &dm_ir::SymbolTable,
+    ) -> Result<OriginalReturnTokenInput<'a>, dm_syntax::Diagnostic> {
+        let recipe = self.original_header_recipe(span)?;
+        let fail = |message: String| dm_syntax::Diagnostic {
+            span,
+            kind: dm_syntax::DiagnosticKind::Unsupported,
+            message,
+        };
+        let headers = recipe
+            .headers
+            .ok_or_else(|| fail("original return token owner unavailable".into()))?;
+        let owner = recipe
+            .relative
+            .settings_owner
+            .as_ref()
+            .ok_or_else(|| fail("original return metadata owner unavailable".into()))?;
+        if owner.signature.return_annotation != selected.signature.return_annotation {
+            return Err(fail(
+                "selected return annotation differs from original metadata".into(),
+            ));
+        }
+        let (source, tokens, value, ordinal, count, slots) = headers
+            .return_fragment(recipe.relative.span, owner, fragment, symbols)
+            .map_err(fail)?;
+        Ok(OriginalReturnTokenInput {
+            literal_owner:headers,
+            source,
+            tokens,
+            original_value: value,
+            ordinal,
+            count,
+            slots,
+            offset: recipe.offset,
+        })
+    }
+    pub(super) fn abi_root_owner_header_only<'a>(&'a self,span:Span)->Result<(&'a Arc<crate::procedure::OriginalProcedureHeaders>,Span),dm_syntax::Diagnostic>{let recipe=self.original_header_recipe(span)?;recipe.headers.map(|owner|(owner,recipe.relative.span)).ok_or_else(||dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"ABI original header owner unavailable".into()})}
+    pub(super) fn cached_abi_root_header_only(&self,span:Span,ordinal:usize,count:usize,returns:bool,a:&dm_syntax::SettingAdmission<'_>)->Result<dm_syntax::SettingExpression,dm_syntax::SettingSyntaxFailure>{
+      let recipe=self.original_header_recipe(span).map_err(dm_syntax::SettingSyntaxFailure::Syntax)?;
+      let fail=|message:&str|dm_syntax::SettingSyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,message));
+      let headers=recipe.headers.ok_or_else(||fail("ABI original header owner unavailable"))?;let owner=recipe.relative.settings_owner.as_ref().ok_or_else(||fail("ABI original metadata owner unavailable"))?;
+      let root=headers.cached_abi_root(recipe.relative.span,owner,ordinal,count,returns,a)?;
+      root.project_current(recipe.offset,headers.abi_source_len()).map_err(dm_syntax::SettingSyntaxFailure::Operational)
+    }
+}
+
+#[cfg(test)]mod portable_eager_recipe_binding_controls{
+ use super::*;
+ #[test]fn actual_portable_eager_code_recipe_remains_valid_without_original_header_authority(){
+  let source="/proc/p()\n    return 1\n";let parsed=dm_syntax::parse(source);assert!(parsed.diagnostics.is_empty());let relative=Arc::new(RelativeSyntax::capture(parsed.items,source).unwrap());assert!(relative.original_headers.is_none());assert!(relative.code_storage.is_none(),"old no-admission portable constructor stays explicitly unqualified");let span=relative.bodies[0].span;let code=Arc::clone(relative.bodies[0].code.as_ref().unwrap());let syntax=DeclarationSyntax::new(vec![relative.bind(source.len(),0).unwrap()]).unwrap();
+  let bound=syntax.original_body_recipe_checked(span,&code).unwrap();assert!(bound.setting_headers().is_none());assert!(Arc::ptr_eq(&bound.issued_code_for_binding().unwrap().unwrap(),&code));assert!(syntax.original_body_recipe(span,&code).is_ok(),"old Diagnostic wrapper must preserve the portable recipe contract");assert!(syntax.original_header_recipe(span).is_err(),"portable Code identity does NOT mint Original Header/ABI authority");
+  let foreign=Arc::new(RelativeSyntax::capture(dm_syntax::parse(source).items,source).unwrap());let foreign_code=foreign.bodies[0].code.as_ref().unwrap();assert!(matches!(syntax.original_body_recipe_checked(span,foreign_code),Err(BodySyntaxFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::InvalidData));assert!(syntax.original_body_recipe_checked(Span::new(span.start,span.end+1),&code).is_err());
+ }
+}
+
+impl DeclarationSyntax{pub(super) fn has_parser_report_prefix(&self)->bool{self.chunks.iter().any(|chunk|chunk.relative.original_headers.as_ref().is_some_and(|headers|headers.committed_prefix_products().is_some()))}}
+
+impl DeclarationSyntax{
+ /// DATA-only owner test on the same ordered chunk geometry. This grants no
+ /// current body/Code identity; the existing recipe checks still follow it.
+ pub(super) fn body_has_parser_report_prefix(&self,span:Span)->bool{
+  if !self.ordered_chunks{return self.has_parser_report_prefix()}
+  let Some(index)=self.chunks.partition_point(|chunk|chunk.offset<=span.start).checked_sub(1)else{return false};let chunk=&self.chunks[index];
+  chunk.relative.original_headers.as_ref().is_some_and(|headers|headers.committed_prefix_products().is_some())
  }
 }

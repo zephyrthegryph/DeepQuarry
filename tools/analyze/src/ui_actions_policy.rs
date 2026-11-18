@@ -59,12 +59,14 @@ pub(crate) fn copy_proc_using<C:crate::key_policy_control::Control>(c:&mut C,p:&
 pub struct PreparedDispatcher{pub(crate) state:DispatcherState,charge:usize,first_line:String}
 pub(crate) enum DispatcherState{Missing,Bad(String),Ready(Normaliser)}
 impl PreparedDispatcher{pub fn needs_sources(&self)->bool{matches!(self.state,DispatcherState::Ready(_))}pub fn budget_charge(&self)->usize{self.charge}}
-pub fn prepare_dispatcher(text:Option<&str>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<PreparedDispatcher,Failure>{
- poll()?;budget.require().map_err(oom)?;let before=budget.used();budget.charge(std::mem::size_of::<PreparedDispatcher>()+128).map_err(oom)?;let state=match text{None=>DispatcherState::Missing,Some(text)=>match normaliser_from_using(text,&mut Work{budget,poll})?{Ok(normalizer)=>DispatcherState::Ready(normalizer),Err(message)=>DispatcherState::Bad(message)}};poll()?;budget.require().map_err(oom)?;let first_line=match text{None=>String::new(),Some(text)=>{let raw=text.lines().next().unwrap_or("");budget.charge(raw.len().checked_mul(4).and_then(|n|n.checked_add(128)).ok_or_else(||oom("UI first-line bound overflow".into()))?).map_err(oom)?;crate::util::normalize_ws(raw)}};poll()?;budget.require().map_err(oom)?;let charge=budget.used().checked_sub(before).ok_or_else(||oom("UI dispatcher accounting moved backwards".into()))?;Ok(PreparedDispatcher{state,charge,first_line})
+pub fn prepare_dispatcher(text:Option<&str>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<PreparedDispatcher,Failure>{prepare_dispatcher_using(text,budget,poll,None)}
+pub fn prepare_dispatcher_with_patterns(text:Option<&str>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,patterns:&dyn crate::native_pattern::Provider)->Result<PreparedDispatcher,Failure>{prepare_dispatcher_using(text,budget,poll,Some(patterns))}
+fn prepare_dispatcher_using(text:Option<&str>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,patterns:Option<&dyn crate::native_pattern::Provider>)->Result<PreparedDispatcher,Failure>{
+ poll()?;budget.require().map_err(oom)?;let before=budget.used();budget.charge(std::mem::size_of::<PreparedDispatcher>()+128).map_err(oom)?;let state=match text{None=>DispatcherState::Missing,Some(text)=>match normaliser_from_using(text,&mut Work{budget,poll,patterns})?{Ok(normalizer)=>DispatcherState::Ready(normalizer),Err(message)=>DispatcherState::Bad(message)}};poll()?;budget.require().map_err(oom)?;let first_line=match text{None=>String::new(),Some(text)=>{let raw=text.lines().next().unwrap_or("");budget.charge(raw.len().checked_mul(4).and_then(|n|n.checked_add(128)).ok_or_else(||oom("UI first-line bound overflow".into()))?).map_err(oom)?;crate::util::normalize_ws(raw)}};poll()?;budget.require().map_err(oom)?;let charge=budget.used().checked_sub(before).ok_or_else(||oom("UI dispatcher accounting moved backwards".into()))?;Ok(PreparedDispatcher{state,charge,first_line})
 }
 fn oom(message:String)->Failure{Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message))}
-pub(crate) struct Work<'a>{pub(crate) budget:&'a Arc<Budget>,pub(crate) poll:&'a dyn Fn()->io::Result<()>}
-impl Control for Work<'_>{type Error=Failure;const CHECKED:bool=true;fn checkpoint(&mut self)->Result<(),Failure>{(self.poll)()?;self.budget.require().map_err(oom)}fn reserve(&mut self,n:usize)->Result<(),Failure>{self.budget.charge(n).map_err(oom)}fn overflow(&mut self)->Failure{let _=self.budget.charge(usize::MAX);oom("UI-actions allocation overflow".into())}fn allocation_failed(&mut self)->Failure{let _=self.budget.charge(usize::MAX);oom("UI-actions allocation refused".into())}}
+pub(crate) struct Work<'a>{pub(crate) budget:&'a Arc<Budget>,pub(crate) poll:&'a dyn Fn()->io::Result<()>,pub(crate)patterns:Option<&'a dyn crate::native_pattern::Provider>}
+impl Control for Work<'_>{fn native_patterns(&self)->Option<&dyn crate::native_pattern::Provider>{self.patterns}fn native_pattern_failed(&mut self,actual:io::Error)->Failure{Failure::Operational(actual)}type Error=Failure;const CHECKED:bool=true;fn checkpoint(&mut self)->Result<(),Failure>{(self.poll)()?;self.budget.require().map_err(oom)}fn reserve(&mut self,n:usize)->Result<(),Failure>{self.budget.charge(n).map_err(oom)}fn overflow(&mut self)->Failure{let _=self.budget.charge(usize::MAX);oom("UI-actions allocation overflow".into())}fn allocation_failed(&mut self)->Failure{let _=self.budget.charge(usize::MAX);oom("UI-actions allocation refused".into())}}
 impl DispatcherControl for Work<'_>{fn invalid_pattern(&mut self,pattern:&str,message:String)->Failure{match kc::format(self,format_args!("original UI dispatcher pattern unavailable ({pattern:?}): {message}")){Ok(message)=>Failure::Unsupported(message),Err(actual)=>actual}}}
 
 impl PreparedDispatcher{
@@ -72,9 +74,9 @@ impl PreparedDispatcher{
  /// HashSet buckets stay explicitly unknown in heap census, not invented RSS.
  pub fn visit_exposed_storage(&self,mut visit:impl FnMut(usize,usize,usize)){visit(self.first_line.as_ptr()as usize,self.first_line.len(),self.first_line.capacity());match &self.state{DispatcherState::Missing=>(),DispatcherState::Bad(message)=>visit(message.as_ptr()as usize,message.len(),message.capacity()),DispatcherState::Ready(normalizer)=>normalizer.visit_exposed_storage(&mut visit)}}
  pub fn first_source_line(&self)->&str{&self.first_line}
- pub fn has_opaque_storage(&self)->bool{matches!(self.state,DispatcherState::Ready(_))}
+ pub fn has_opaque_storage(&self)->bool{match &self.state{DispatcherState::Ready(normalizer)=>normalizer.has_opaque_programs()||!normalizer.reserved.is_empty(),_=>false}}
 }
 
 }
-#[cfg(feature="native-policy")]pub use prepared::{PreparedDispatcher,prepare_dispatcher};
+#[cfg(feature="native-policy")]pub use prepared::{PreparedDispatcher,prepare_dispatcher,prepare_dispatcher_with_patterns};
 #[cfg(feature="native-policy")]pub(crate) use prepared::{Work,DispatcherState};

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Stamp {
@@ -45,6 +45,8 @@ pub(crate) fn original_source_open_failure(error:&io::Error)->bool{matches!(erro
 pub trait SnapshotProvider {
     /// Actual reader-open status only. Never reads payload, metadata stamp, or a
     /// parent folder; a source-open failure remains its exact typed observation.
+    fn optional_read_status(&self,_path:&Path)->io::Result<OptionalReadStatus>{Err(io::Error::new(io::ErrorKind::NotConnected,"provider cannot reobserve actual optional reader"))}
+    fn read_optional_admitted(&self,_path:&Path,_limit:usize,_work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,_fund:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OptionalInputRead>{Err(io::Error::new(io::ErrorKind::NotConnected,"provider cannot issue actual optional reader"))}
     fn original_open_status(&self,_path:&Path)->io::Result<OriginalReadOpenStatus>{Err(io::Error::new(io::ErrorKind::NotConnected,"provider cannot reobserve actual Original reader open"))}
 
     /// Target-following metadata only, including directories; no payload IO.
@@ -103,6 +105,8 @@ pub trait SnapshotProvider {
 }
 impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
     fn original_open_status(&self,path:&Path)->io::Result<OriginalReadOpenStatus>{(**self).original_open_status(path)}
+    fn optional_read_status(&self,path:&Path)->io::Result<OptionalReadStatus>{(**self).optional_read_status(path)}
+    fn read_optional_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,fund:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OptionalInputRead>{(**self).read_optional_admitted(path,limit,work,fund)}
 
     fn path_presence(&self,path:&Path)->io::Result<bool>{(**self).path_presence(path)}
     fn path_presence_admitted(&self,path:&Path,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{(**self).path_presence_admitted(path,work)}
@@ -190,6 +194,8 @@ pub use generated::GeneratedOutputInputs;
 #[path = "input_snapshot_open.rs"]
 mod source_open;
 impl SnapshotProvider for FileSystemInputs {
+    fn optional_read_status(&self,path:&Path)->io::Result<OptionalReadStatus>{policy_read::filesystem_optional_probe(path)}
+    fn read_optional_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,fund:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OptionalInputRead>{work.checkpoint()?;policy_read::filesystem_optional_read_admitted(path,limit,fund)}
     fn original_open_status(&self,path:&Path)->io::Result<OriginalReadOpenStatus>{crate::daemon::control::checkpoint()?;match std::fs::File::open(path){Ok(handle)=>{drop(handle);Ok(OriginalReadOpenStatus::Readable)},Err(error)if original_source_open_failure(&error)=>OriginalReadOpenStatus::observed(&error),Err(error)=>Err(error)}}
 
     fn path_presence(&self,path:&Path)->io::Result<bool>{crate::daemon::control::checkpoint()?;match std::fs::metadata(path){Ok(_)=>Ok(true),Err(actual)if original_source_open_failure(&actual)=>Ok(false),Err(actual)=>Err(actual)}}
@@ -371,7 +377,10 @@ pub(crate) use analysis_subject::OriginalAnalysisSubject;
 pub(crate) use path_presence::{PathPresenceFacts,ImmutablePathFacts};
 #[path="input_original_open_status.rs"]mod original_open_status;
 pub use original_open_status::OriginalReadOpenStatus;
+#[path="input_optional_read_status.rs"]mod optional_read_status;
+pub use optional_read_status::{OptionalReadPhase,OptionalReadStatus,OptionalInputRead};
 type OriginalOpenFacts=ImmutablePathFacts<OriginalReadOpenStatus>;
+type OptionalReadFacts=ImmutablePathFacts<OptionalReadStatus>;
 #[path="input_original_open_recording.rs"]mod original_open_recording;
 #[path="input_original_batch_view.rs"]mod original_batch_view;
 #[path="input_image_dir_report.rs"]mod image_dir_report;
@@ -829,6 +838,8 @@ pub struct InputSnapshot {
     opened_reads: OriginalOpenFacts,
     #[serde(default)]
     original_payloads: OriginalPayloadFacts,
+    #[serde(default)]
+    optional_reads: OptionalReadFacts,
     #[serde(skip)]
     structure_proof: StructureProof,
     #[serde(skip)]
@@ -849,7 +860,8 @@ impl Serialize for InputSnapshot {
         let include_paths = !serializer.is_human_readable() || !self.path_presence.is_empty();
         let include_open = !serializer.is_human_readable() || !self.opened_reads.is_empty();
         let include_payload = !serializer.is_human_readable() || !self.original_payloads.is_empty();
-        let mut fields = serializer.serialize_struct("InputSnapshot", 5 + usize::from(include_directories) + usize::from(include_paths) + usize::from(include_open)+usize::from(include_payload))?;
+        let include_optional = !serializer.is_human_readable() || !self.optional_reads.is_empty();
+        let mut fields = serializer.serialize_struct("InputSnapshot", 5 + usize::from(include_directories) + usize::from(include_paths) + usize::from(include_open)+usize::from(include_payload)+usize::from(include_optional))?;
         fields.serialize_field("scanned_ns", &self.scanned_ns)?;
         fields.serialize_field("files", &self.files)?;
         fields.serialize_field("folders", &self.folders)?;
@@ -861,6 +873,7 @@ impl Serialize for InputSnapshot {
         if include_paths { fields.serialize_field("path_presence", &self.path_presence)?; }
         if include_open { fields.serialize_field("opened_reads", &self.opened_reads)?; }
         if include_payload { fields.serialize_field("original_payloads", &self.original_payloads)?; }
+        if include_optional { fields.serialize_field("optional_reads", &self.optional_reads)?; }
         fields.end()
     }
 }
@@ -954,7 +967,7 @@ impl InputSnapshot {
     /// read that differs is rejected), so equal counts mean an equal capture.
     pub(crate) fn shape(&self) -> (usize, usize, usize) {
         (
-            self.files.len().saturating_add(self.path_presence.len()).saturating_add(self.opened_reads.len()).saturating_add(self.original_payloads.len()),
+            self.files.len().saturating_add(self.path_presence.len()).saturating_add(self.opened_reads.len()).saturating_add(self.original_payloads.len()).saturating_add(self.optional_reads.len()),
             self.folders
                 .len()
                 .saturating_add(self.policy_directories.len()),
@@ -968,6 +981,7 @@ impl InputSnapshot {
             && self.path_presence == other.path_presence
             && self.opened_reads == other.opened_reads
             && self.original_payloads==other.original_payloads
+            && self.optional_reads==other.optional_reads
             && self.folders == other.folders
             && self.policy_directories == other.policy_directories
             && self.negative_files == other.negative_files
@@ -1064,7 +1078,7 @@ impl InputSnapshot {
         self.folders.keys().map(PathBuf::as_path)
     }
     pub fn proof_paths(&self) -> impl Iterator<Item = PathBuf> + '_ {
-        self.files.keys().chain(self.negative_files.iter()).chain(self.path_presence.keys()).chain(self.opened_reads.keys()).chain(self.original_payloads.keys()).cloned()
+        self.files.keys().chain(self.negative_files.iter()).chain(self.path_presence.keys()).chain(self.opened_reads.keys()).chain(self.original_payloads.keys()).chain(self.optional_reads.keys()).cloned()
     }
     pub fn proof_folders(&self) -> impl Iterator<Item = PathBuf> + '_ {
         self.folders.keys().cloned()
@@ -1081,6 +1095,7 @@ impl InputSnapshot {
             path_presence: Default::default(),
             opened_reads: Default::default(),
             original_payloads: Default::default(),
+            optional_reads: Default::default(),
             // All later insertion methods validate their individual facts.
             structure_proof: StructureProof(OnceLock::from(())),
             watch: WatchMark::default(),
@@ -1137,11 +1152,13 @@ impl InputSnapshot {
         if self.path_presence != other.path_presence { return Some("metadata path presence".into()); }
         if self.opened_reads != other.opened_reads { return Some("actual Original reader-open outcomes".into()); }
         if self.original_payloads!=other.original_payloads{return Some("exact Original raw payloads".into())}
+        if self.optional_reads!=other.optional_reads{return Some("actual optional reader outcomes".into())}
         if self.generated_outputs != other.generated_outputs {
             return Some("generated outputs".into());
         }
         None
     }
+    pub(crate) fn recorded_negative_file(&self,path:&Path)->bool{self.negative_files.contains(path)}
     pub(crate) fn recorded_canonical_file(&self, path: &Path) -> Option<&FileInput> {
         self.files.get(path)
     }
@@ -1191,6 +1208,7 @@ impl InputSnapshot {
         next.path_presence = self.path_presence.clone();
         next.opened_reads = self.opened_reads.clone();
         next.original_payloads = self.original_payloads.clone();
+        next.optional_reads = self.optional_reads.clone();
         next.watch.replace(self.watch.get());
         Ok(next)
     }
@@ -1203,6 +1221,7 @@ impl InputSnapshot {
         self.path_presence.merge_data(&other.path_presence)?;
         self.opened_reads.merge_data(&other.opened_reads)?;
         self.original_payloads.merge_data(&other.original_payloads)?;
+        self.optional_reads.merge_data(&other.optional_reads)?;
         for (path, v) in &other.policy_directories {
             self.record_policy_directory(path, v.follow_root, v.listing.clone())?;
         }
@@ -1365,9 +1384,9 @@ impl InputSnapshot {
     }
     fn check_path_presence_compatible(&self,path:&Path,present:bool)->io::Result<()>{if present&&self.negative_files.contains(path)||!present&&self.files.contains_key(path){return Err(invalid("metadata path presence contradicts captured file fact"))}Ok(())}
     /// Explicit resource-host union for genuinely disjoint admitted captures.
-    pub fn merge_path_presence_using(&mut self,other:&Self,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<()>{other.check_structure()?;for(path,present)in other.path_presence.iter(){self.check_path_presence_compatible(path,*present)?;}self.path_presence.merge_using(&other.path_presence,work)?;self.opened_reads.merge_using(&other.opened_reads,work)?;self.original_payloads.merge_using(&other.original_payloads,work)}
+    pub fn merge_path_presence_using(&mut self,other:&Self,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<()>{other.check_structure()?;for(path,present)in other.path_presence.iter(){self.check_path_presence_compatible(path,*present)?;}self.path_presence.merge_using(&other.path_presence,work)?;self.opened_reads.merge_using(&other.opened_reads,work)?;self.original_payloads.merge_using(&other.original_payloads,work)?;self.optional_reads.merge_using(&other.optional_reads,work)}
     pub(crate) fn path_presence_observations(&self)->impl Iterator<Item=(&PathBuf,&bool)>{self.path_presence.iter()}
-    pub(crate) fn visit_original_open_storage(&self,mut visit:impl FnMut(usize,usize,usize)){self.path_presence.visit_storage(&mut visit);self.opened_reads.visit_storage(&mut visit);self.original_payloads.visit_storage(visit)}
+    pub(crate) fn visit_original_open_storage(&self,mut visit:impl FnMut(usize,usize,usize)){self.path_presence.visit_storage(&mut visit);self.opened_reads.visit_storage(&mut visit);self.original_payloads.visit_storage(&mut visit);self.optional_reads.visit_storage(visit)}
 
     pub fn record_negative(&mut self, path: &Path) -> io::Result<()> {
         let path = canonical_path(path);
@@ -1384,6 +1403,8 @@ impl InputSnapshot {
     pub fn check_structure(&self) -> io::Result<()> {
         for(path,_)in self.original_payloads.iter(){if !path.is_absolute()||self.opened_reads.get(path).is_none_or(|status|!status.is_readable()){return Err(invalid("exact Original payload lacks actual readable-open observation"))}}
         if self.opened_reads.keys().any(|path|!path.is_absolute()){return Err(invalid("Original reader-open observations must retain absolute actual lookup paths"))}
+        if self.optional_reads.keys().any(|path|!path.is_absolute()){return Err(invalid("optional reader facts require the actual absolute lookup path"))}
+        for(path,status)in self.optional_reads.iter(){if *status==OptionalReadStatus::Readable&&!self.files.contains_key(&canonical_path(path)){return Err(invalid("optional readable observation lacks its exact positive payload"))}}
         if self.structure_proof.0.get().is_some() {
             return Ok(());
         }
@@ -1477,6 +1498,9 @@ impl InputSnapshot {
         let mut open_rows=Vec::new();open_rows.try_reserve_exact(self.opened_reads.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;let mut same_opens=true;
         for(path,observed)in self.opened_reads.iter(){let actual=provider.original_open_status(path)?;if actual!=*observed{same_opens=false;report.changed.push(path.clone());if stop_on_change{return Ok((report,next))}}open_rows.push((path.as_path(),actual));}
         next.opened_reads=if same_opens{self.opened_reads.clone()}else{OriginalOpenFacts::from_observed_data(open_rows)?};
+        let mut optional_rows=Vec::new();optional_rows.try_reserve_exact(self.optional_reads.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;let mut same_optional=true;
+        for(path,observed)in self.optional_reads.iter(){let actual=provider.optional_read_status(path)?;if actual!=*observed{same_optional=false;report.changed.push(path.clone());if stop_on_change{return Ok((report,next))}}optional_rows.push((path.as_path(),actual));}
+        next.optional_reads=if same_optional{self.optional_reads.clone()}else{OptionalReadFacts::from_observed_data(optional_rows)?};
         let mut payload_rows=Vec::new();payload_rows.try_reserve_exact(self.original_payloads.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;let mut same_payloads=true;
         for(path,old)in self.original_payloads.iter(){if !next.opened_reads.get(path).is_some_and(|status|status.is_readable()){same_payloads=false;continue}let(stamp,content)=provider.digest(path)?;report.rehashed+=1;let actual=OriginalPayloadDigest{stamp,content};if actual.content!=old.content{same_payloads=false;report.changed.push(path.clone());if stop_on_change{return Ok((report,next))}}else if actual!=*old{same_payloads=false}payload_rows.push((path.as_path(),actual));}
         next.original_payloads=if same_payloads{self.original_payloads.clone()}else{OriginalPayloadFacts::from_observed_data(payload_rows)?};
@@ -1740,6 +1764,7 @@ impl InputSnapshot {
         }
         for(path,present)in self.path_presence.iter(){if provider.path_presence(path)?!=*present{report.changed.push(path.clone());}}
         for(path,observed)in self.opened_reads.iter(){if provider.original_open_status(path)?!=*observed{report.changed.push(path.clone());}}
+        for(path,observed)in self.optional_reads.iter(){if provider.optional_read_status(path)?!=*observed{report.changed.push(path.clone());}}
         for(path,old)in self.original_payloads.iter(){if !provider.original_open_status(path)?.is_readable(){continue}let(_,content)=provider.digest(path)?;report.rehashed+=1;if content!=old.content{report.changed.push(path.clone());}}
         for (path, file) in &self.files {
             match provider.stamp(path) {
@@ -1825,9 +1850,25 @@ impl InputSnapshot{
  /// successful authored write. This does not rewrite either immutable ledger,
  /// exempt generated paths, or authorize a parser/query from comparison DATA.
  pub(crate) fn same_authored_step(&self,next:&Self,transition:Option<&crate::native_author_fix_transaction::Transition>,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{
+  self.same_authored_step_with_read_role(next,transition,work,false)
+ }
+ /// A codemod can remove its last callee, changing this exact source from a
+ /// required read to an optional-positive read on actual repreparation.
+ pub(crate)fn same_codemod_authored_step(&self,next:&Self,transition:&crate::native_author_fix_transaction::Transition,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{
+  self.same_authored_step_with_read_role(next,Some(transition),work,true)
+ }
+ fn same_authored_step_with_read_role(&self,next:&Self,transition:Option<&crate::native_author_fix_transaction::Transition>,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,permit_optional_role:bool)->io::Result<bool>{
   fn same<T:PartialEq>(mut old:impl Iterator<Item=T>,mut new:impl Iterator<Item=T>,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{loop{work.checkpoint()?;match(old.next(),new.next()){(None,None)=>return Ok(true),(Some(a),Some(b))if a==b=>{},_=>return Ok(false)}}}
   work.checkpoint()?;self.check_structure()?;next.check_structure()?;
   if !same(self.path_presence.iter(),next.path_presence.iter(),work)?||!same(self.opened_reads.iter(),next.opened_reads.iter(),work)?||!same(self.negative_files.iter(),next.negative_files.iter(),work)?||!same(self.generated_outputs.iter(),next.generated_outputs.iter(),work)?{return Ok(false)}
+  if permit_optional_role{
+   let Some(target)=transition.map(|t|t.path())else{return Ok(false)};
+   if !same(self.optional_reads.iter().filter(|(p,_)|p.as_path()!=target),next.optional_reads.iter().filter(|(p,_)|p.as_path()!=target),work)?{return Ok(false)}
+   // Only actual positive-reader role presence may differ on the opaque
+   // writer target. NoText, other paths, namespaces and file digests stay exact.
+   let before=self.optional_reads.get(target);let after=next.optional_reads.get(target);
+   if before!=after&&!matches!((before,after),(None,Some(OptionalReadStatus::Readable))|(Some(OptionalReadStatus::Readable),None)){return Ok(false)}
+  }else if !same(self.optional_reads.iter(),next.optional_reads.iter(),work)?{return Ok(false)}
   if self.folders.len()!=next.folders.len()||self.policy_directories.len()!=next.policy_directories.len(){return Ok(false)}
   for(path,before)in &self.folders{work.checkpoint()?;let Some(after)=next.folders.get(path)else{return Ok(false)};match(before,after){(FolderListing::Missing,FolderListing::Missing)=>{},(FolderListing::Present(a),FolderListing::Present(b))if same(a.iter(),b.iter(),work)?=>{},_=>return Ok(false)}}
   for(path,before)in &self.policy_directories{work.checkpoint()?;let Some(after)=next.policy_directories.get(path)else{return Ok(false)};if before.follow_root!=after.follow_root{return Ok(false)}match(&before.listing,&after.listing){(PolicyDirectoryListing::Missing,PolicyDirectoryListing::Missing)|(PolicyDirectoryListing::NotDirectory,PolicyDirectoryListing::NotDirectory)=>{},(PolicyDirectoryListing::Present(a),PolicyDirectoryListing::Present(b))if same(a.iter(),b.iter(),work)?=>{},_=>return Ok(false)}}
@@ -1842,4 +1883,224 @@ impl InputSnapshot{
  use super::*;use dm_preprocess::source_arena_credit::{SourceArenaWork,SourceArenaCredit};
  struct FirstIo;impl SourceArenaWork for FirstIo{fn checkpoint(&self)->io::Result<()>{Err(io::Error::from_raw_os_error(1450))}fn reserve(&self,_:usize)->io::Result<SourceArenaCredit>{panic!("comparison must never allocate a resource grant")}fn grow(&self,_:&mut SourceArenaCredit,_:usize)->io::Result<()>{panic!("comparison must never grow storage")}fn shrink(&self,_:&mut SourceArenaCredit,_:usize)->io::Result<()>{panic!("comparison must never alter retained credit")}}
  #[test]fn authored_step_comparison_preserves_first_actual_io_without_any_allocation_or_followup(){let a=InputSnapshot::new(0);let b=InputSnapshot::new(0);let error=a.same_authored_step(&b,None,&FirstIo).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));}
+}
+
+#[path="input_selftest_candidates.rs"]mod selftest_candidates;
+pub(crate) use selftest_candidates::{NativeSelftestCandidates,NativeSelftestInputs};
+
+impl InputSnapshot{
+ /// Baseline-only created-file step. Existing DM in-place comparison stays
+ /// unchanged; only an actual writer-minted absent->verified-file transition
+ /// may change this exact negative fact and direct parent entry.
+ pub(crate) fn same_baseline_step(&self,next:&Self,t:&crate::native_author_fix_transaction::Transition,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{self.same_created_authored_step(next,t,work,true)}
+ fn same_created_authored_step(&self,next:&Self,t:&crate::native_author_fix_transaction::Transition,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,legacy_parent:bool)->io::Result<bool>{
+  if !t.created(){return self.same_authored_step(next,Some(t),work)}
+  fn same<T:PartialEq>(mut a:impl Iterator<Item=T>,mut b:impl Iterator<Item=T>,w:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{loop{w.checkpoint()?;match(a.next(),b.next()){(None,None)=>return Ok(true),(Some(a),Some(b))if a==b=>{},_=>return Ok(false)}}}
+  work.checkpoint()?;self.check_structure()?;next.check_structure()?;let path=t.path();let Some(parent)=path.parent()else{return Ok(false)};let Some(leaf)=path.file_name().and_then(|s|s.to_str())else{return Ok(false)};
+  if !self.negative_files.contains(path)||next.negative_files.contains(path)||self.files.contains_key(path){return Ok(false)}
+  if legacy_parent&&!matches!(self.folders.get(parent),Some(FolderListing::Present(_))){return Ok(false)}
+  if !legacy_parent&&!matches!(self.policy_directories.get(parent).map(|row|&row.listing),Some(PolicyDirectoryListing::Present(_))){return Ok(false)}
+  let Some(after)=next.files.get(path)else{return Ok(false)};if !t.after(&after.stamp,after.content){return Ok(false)}
+  if self.path_presence.get(path).is_some_and(|present|present)||next.path_presence.get(path).is_some_and(|present|!present){return Ok(false)}
+  if !same(self.path_presence.iter().filter(|(p,_)|p.as_path()!=path),next.path_presence.iter().filter(|(p,_)|p.as_path()!=path),work)?
+   ||!same(self.opened_reads.iter(),next.opened_reads.iter(),work)?||!same(self.optional_reads.iter(),next.optional_reads.iter(),work)?||!same(self.generated_outputs.iter(),next.generated_outputs.iter(),work)?
+   ||!same(self.negative_files.iter().filter(|p|p.as_path()!=path),next.negative_files.iter(),work)?
+   ||!same(self.files.iter(),next.files.iter().filter(|(p,_)|p.as_path()!=path),work)?{return Ok(false)}
+  if self.original_payloads.iter().any(|(p,_)|p==path){return Ok(false)}
+  if !same(self.original_payloads.iter(),next.original_payloads.iter().filter(|(p,_)|*p!=path),work)?{return Ok(false)}
+  if let Some((_,fact))=next.original_payloads.iter().find(|(p,_)|*p==path){if !t.after(&fact.stamp,fact.content){return Ok(false)}}
+  if self.folders.len()!=next.folders.len()||self.policy_directories.len()!=next.policy_directories.len(){return Ok(false)}
+  for(folder,before)in &self.folders{work.checkpoint()?;let Some(after)=next.folders.get(folder)else{return Ok(false)};
+   if folder.as_path()==parent{match(before,after){(FolderListing::Present(a),FolderListing::Present(b))=>{if a.iter().any(|n|n==leaf)||b.iter().filter(|n|n.as_str()==leaf).count()!=1||!same(a.iter(),b.iter().filter(|n|n.as_str()!=leaf),work)?{return Ok(false)}},_=>return Ok(false)}}else if before!=after{return Ok(false)}
+  }
+  for(folder,before)in &self.policy_directories{work.checkpoint()?;let Some(after)=next.policy_directories.get(folder)else{return Ok(false)};
+   if before.follow_root!=after.follow_root{return Ok(false)}
+   if folder.as_path()==parent{match(&before.listing,&after.listing){(PolicyDirectoryListing::Present(a),PolicyDirectoryListing::Present(b))=>{if a.iter().any(|n|n.name==leaf)||b.iter().filter(|n|n.name==leaf&&n.kind==PolicyEntryKind::File).count()!=1||!same(a.iter(),b.iter().filter(|n|n.name!=leaf),work)?{return Ok(false)}},_=>return Ok(false)}}else if before!=after{return Ok(false)}
+  }
+  work.checkpoint()?;Ok(true)
+ }
+}
+
+impl InputSnapshot{
+ /// Refresh only the physical domain of a genuine closed GEN operation into
+ /// this attempt's SAME recorder. Existing parser/model facts are reused only
+ /// when already actually recorded by this attempt; no old fact is installed.
+ pub(crate) fn refresh_domain_into<P:SnapshotProvider>(&self,recording:&RecordingInputs<P>,queries:&crate::query_db::QueryDb,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,credits:&mut crate::query_db::RawInputCredits<'_>)->io::Result<()>{
+  use dm_preprocess::SourceProvider;
+  self.check_structure()?;
+  // The old immutable GEN observation owner supplies a conservative bound for
+  // new fact/path columns before this recorder can copy any physical metadata.
+  // Directory buffers and actual legacy listing copies retain their own prior
+  // per-operation admission below; Original source roles are never copied.
+  budget.charge(self.observation_retention_charge()?).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  for folder in self.folders.keys(){crate::daemon::control::checkpoint()?;let follow=self.policy_directories.get(folder).map_or(true,|fact|fact.follow_root);baseline_generation_folder(recording,folder,follow,budget,credits)?;}
+  for(path,observation)in &self.policy_directories{
+   crate::daemon::control::checkpoint()?;
+   let existing=recording.snapshot.lock().map_err(|_|invalid("baseline recorder poisoned"))?.policy_directories.get(path).map(|actual|actual.follow_root);
+   if let Some(actual_follow)=existing{if actual_follow!=observation.follow_root{return Err(io::Error::new(io::ErrorKind::Unsupported,"baseline and GEN directory follow roles differ"))}}else{recording.capture_policy_directory_lent(path,observation.follow_root,0,budget,credits)?;}
+  }
+  // The old GEN owner lends physical paths only. Every observation below is
+  // actually reissued by THIS recorder; no Original open/payload role is copied.
+  for path in self.files.keys().chain(self.negative_files.iter()).chain(self.opened_reads.iter().map(|(path,_)|path)).chain(self.original_payloads.iter().map(|(path,_)|path)){
+   crate::daemon::control::checkpoint()?;
+   let exists={let actual=recording.snapshot.lock().map_err(|_|invalid("baseline recorder poisoned"))?;actual.files.contains_key(path)||actual.negative_files.contains(path)};
+   if !exists{
+    let parent=path.parent().ok_or_else(||invalid("GEN input parent absent"))?;let follow=self.policy_directories.get(parent).map_or(true,|fact|fact.follow_root);baseline_generation_folder(recording,parent,follow,budget,credits)?;
+    credits.with_held_source_work(queries,|work|{
+     let mut grant=None;
+     let pending=recording.read_policy_payload_admitted(path,budget.remaining(),&mut|bytes|{grant=Some(work.reserve(bytes)?);Ok(())});
+     // Physical payload retires before its exact same-family temporary grant.
+     let pending=match pending{Ok(bytes)=>{drop(bytes);Ok(())},Err(first)=>Err(first)};drop(grant);pending
+    })?;
+   }
+  }
+  for(path,_)in self.path_presence.iter(){
+   let recorded=recording.snapshot.lock().map_err(|_|invalid("baseline recorder poisoned"))?.path_presence.get(path).is_some();
+   if !recorded{credits.with_held_source_work(queries,|work|recording.path_presence_admitted(path,work).map(|_|()))?;}
+  }
+  // GEN lends only physical paths. Reissue this distinct optional role through
+  // the SAME recorder; no NoText outcome becomes an Original open/payload fact.
+  for(path,_)in self.optional_reads.iter(){
+   crate::daemon::control::checkpoint()?;let recorded=recording.snapshot.lock().map_err(|_|invalid("baseline recorder poisoned"))?.optional_reads.get(path).is_some();
+   if !recorded{credits.with_held_source_work(queries,|work|{
+    let mut grant=None;let pending=recording.read_optional_callback_payload(path,budget.remaining(),work,&mut|bytes|{grant=Some(work.reserve(bytes)?);Ok(())});
+    let pending=match pending{Ok(bytes)=>{drop(bytes);Ok(())},Err(first)=>Err(first)};drop(grant);pending
+   })?;}
+  }
+  // Physical freshness does not issue a compiler Original subject, parser
+  // receipt or payload role. Raw selected preparation remains genuinely raw.
+  crate::daemon::control::checkpoint()?;Ok(())
+ }
+}
+
+fn baseline_generation_folder<P:SnapshotProvider>(recording:&RecordingInputs<P>,folder:&Path,follow_root:bool,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,credits:&mut crate::query_db::RawInputCredits<'_>)->io::Result<()>{
+ if recording.snapshot.lock().map_err(|_|invalid("baseline recorder poisoned"))?.folders.contains_key(folder){return Ok(())}
+ let existing={let current=recording.snapshot.lock().map_err(|_|invalid("baseline recorder poisoned"))?;current.policy_directories.get(folder).map(|fact|(fact.follow_root,fact.listing.clone()))};
+ let listing=match existing{Some((follow,listing))=>{if follow!=follow_root{return Err(io::Error::new(io::ErrorKind::Unsupported,"baseline and GEN directory follow roles differ"))}listing},None=>recording.capture_policy_directory_lent(folder,follow_root,0,budget,credits)?};
+ let legacy=match listing{
+  PolicyDirectoryListing::Missing=>FolderListing::Missing,
+  PolicyDirectoryListing::NotDirectory=>return Err(io::Error::new(io::ErrorKind::Interrupted,"GEN directory changed kind before baseline capture")),
+  PolicyDirectoryListing::Present(entries)=>{
+   let bytes=entries.iter().try_fold(entries.len().checked_mul(std::mem::size_of::<String>()).ok_or(io::ErrorKind::OutOfMemory)?,|n,e|n.checked_add(e.name.len()).ok_or(io::ErrorKind::OutOfMemory)).map_err(io::Error::from)?;
+   budget.charge(bytes.checked_mul(4).ok_or(io::ErrorKind::OutOfMemory)?).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
+   let mut names=Vec::new();names.try_reserve_exact(entries.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
+   for entry in entries.iter(){crate::daemon::control::checkpoint()?;names.push(entry.name.clone());}FolderListing::Present(names)
+  }
+ };
+ recording.snapshot.lock().map_err(|_|invalid("baseline recorder poisoned"))?.record_folder(folder,legacy)
+}
+
+#[cfg(test)]mod baseline_optional_domain_controls{
+ use super::*;use dm_preprocess::source_arena_credit::SourceArenaWork;
+ fn old_domain(path:&Path,queries:&crate::query_db::QueryDb)->InputSnapshot{let inputs=RecordingInputs::new(FileSystemInputs,0);let mut grant=None;let bytes=inputs.read_optional_callback_payload(path,4096,queries,&mut|n|{grant=Some(queries.reserve(n)?);Ok(())}).unwrap();assert!(bytes.is_some());drop(bytes);drop(grant);inputs.into_snapshot().unwrap()}
+ fn refresh<P:SnapshotProvider>(old:&InputSnapshot,inputs:&RecordingInputs<P>,queries:&crate::query_db::QueryDb)->io::Result<()>{queries.with_baseline_input_refresh(|budget,credits|{let(owner,before,legacy)=inputs.baseline_refresh_recorder_metadata(budget)?;crate::input_snapshot::RecordedPolicySourceLender::prepare_directory_metadata(credits,&owner,before)?;let ceiling=credits.recorder_metadata_operation_ceiling(&owner)?;let pending=credits.with_baseline_legacy_metadata(&owner,legacy,|credits|old.refresh_domain_into(inputs,queries,budget,credits));let settled=match inputs.late_workspace_recorder_charge().and_then(|n|n.checked_add(2*std::mem::size_of::<usize>()).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))){Ok(actual)=>{credits.retain_recorder_metadata_absolute(&owner,actual);if actual>ceiling{budget.deny();Err(io::ErrorKind::OutOfMemory.into())}else{Ok(())}},Err(error)=>{credits.retain_recorder_metadata_absolute(&owner,ceiling);budget.deny();Err(error)}};match pending{Err(first)=>Err(first),Ok(())=>settled}})}
+ #[test]fn actual_gen_domain_reobserves_optional_reader_without_original_role_promotion(){let root=std::fs::canonicalize(crate::test_scratch::dir("baseline-optional-gen-role")).unwrap();let path=root.join("dispatcher.dm");std::fs::write(&path,"retained optional bytes").unwrap();let queries=crate::query_db::QueryDb::default();let before=queries.source_input_admission_bytes().unwrap();let old=old_domain(&path,&queries);let inputs=RecordingInputs::new(FileSystemInputs,0);refresh(&old,&inputs,&queries).unwrap();let next=inputs.into_snapshot().unwrap();assert_eq!(next.optional_reads.get(&path),Some(OptionalReadStatus::Readable));assert!(next.opened_reads.is_empty()&&next.original_payloads.is_empty(),"actual optional reobservation cannot issue Original reader facts");assert_eq!(old.files.get(&canonical_path(&path)),next.files.get(&canonical_path(&path)));drop(next);drop(old);queries.with_baseline_input_refresh(|_,_|Ok(())).unwrap();assert_eq!(queries.source_input_admission_bytes().unwrap(),before);}
+ struct FailOptional{calls:std::sync::atomic::AtomicUsize}
+ impl SnapshotProvider for FailOptional{fn stamp(&self,p:&Path)->io::Result<Stamp>{FileSystemInputs.stamp(p)}fn read(&self,p:&Path)->io::Result<(Stamp,Vec<u8>)>{FileSystemInputs.read(p)}fn list(&self,p:&Path)->io::Result<FolderListing>{FileSystemInputs.list(p)}fn policy_directory(&self,p:&Path,follow:bool,limit:usize)->io::Result<Option<PolicyDirectoryListing>>{FileSystemInputs.policy_directory(p,follow,limit)}fn read_policy_bounded_admitted(&self,p:&Path,limit:usize,fund:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<Option<CapturedInputRead>>{FileSystemInputs.read_policy_bounded_admitted(p,limit,fund)}fn read_optional_admitted(&self,_:&Path,_:usize,_:&dyn SourceArenaWork,_:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<OptionalInputRead>{self.calls.fetch_add(1,std::sync::atomic::Ordering::Relaxed);Err(io::Error::from_raw_os_error(1450))}}
+ #[test]fn actual_gen_optional_framework_io_stays_first_and_same_counter_recovers(){let root=std::fs::canonicalize(crate::test_scratch::dir("baseline-optional-gen-io")).unwrap();let path=root.join("dispatcher.dm");std::fs::write(&path,"retained optional bytes").unwrap();let queries=crate::query_db::QueryDb::default();let before=queries.source_input_admission_bytes().unwrap();let old=old_domain(&path,&queries);let provider=FailOptional{calls:0.into()};let inputs=RecordingInputs::new(&provider,0);let error=refresh(&old,&inputs,&queries).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(provider.calls.load(std::sync::atomic::Ordering::Relaxed),1);assert!(inputs.snapshot().unwrap().optional_reads.is_empty());drop(inputs);let healthy=RecordingInputs::new(FileSystemInputs,0);refresh(&old,&healthy,&queries).unwrap();let next=healthy.into_snapshot().unwrap();assert_eq!(next.optional_reads.get(&path),Some(OptionalReadStatus::Readable));assert!(next.opened_reads.is_empty()&&next.original_payloads.is_empty());drop(next);drop(old);queries.with_baseline_input_refresh(|_,_|Ok(())).unwrap();assert_eq!(queries.source_input_admission_bytes().unwrap(),before);}
+}
+
+impl InputSnapshot{
+ /// Exact private report creation; all unrelated original/optional/namespace facts compare unchanged.
+ pub(crate)fn same_closure_report_step(&self,next:&Self,root:&Path,t:&crate::native_author_fix_transaction::Transition,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{let path=dm_preprocess::regions::canonical_path(&root.join(crate::runner_host::sem_closure_capture::RELATIVE));if t.path()!=path{return Ok(false)}self.same_created_authored_step(next,t,work,false)}
+}
+
+#[path="input_utility_capture.rs"]pub(crate)mod utility_capture;
+
+impl InputSnapshot{
+ pub(crate) fn same_fixture_step(&self,next:&Self,root:&Path,t:&crate::native_author_fix_transaction::Transition,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{
+  if t.path()!=dm_preprocess::regions::canonical_path(&root.join("expected.txt")){return Ok(false)}
+  self.same_created_authored_step(next,t,work,false)
+ }
+}
+
+impl InputSnapshot{
+ /// Exactly one writer-authenticated missing-directory step. No other namespace
+ /// change is ignored, including unrecorded descendants or sibling additions.
+ pub(crate) fn same_directory_step(&self,next:&Self,t:&crate::native_author_fix_transaction::DirectoryTransition,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{
+  work.checkpoint()?;self.check_structure()?;next.check_structure()?;t.require_identity()?;
+  let path=t.path();let Some(parent)=path.parent()else{return Ok(false)};let Some(leaf)=path.file_name().and_then(|s|s.to_str())else{return Ok(false)};
+  if !path.starts_with(t.root())||path==t.root(){return Ok(false)}
+
+  fn same<T:PartialEq>(mut a:impl Iterator<Item=T>,mut b:impl Iterator<Item=T>,w:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{loop{w.checkpoint()?;match(a.next(),b.next()){(None,None)=>return Ok(true),(Some(a),Some(b))if a==b=>{},_=>return Ok(false)}}}
+  if !same(self.files.iter(),next.files.iter(),work)?||!same(self.negative_files.iter(),next.negative_files.iter(),work)?||!same(self.generated_outputs.iter(),next.generated_outputs.iter(),work)?{return Ok(false)}
+  if !same(self.opened_reads.iter(),next.opened_reads.iter(),work)?||!same(self.optional_reads.iter(),next.optional_reads.iter(),work)?||!same(self.original_payloads.iter(),next.original_payloads.iter(),work)?{return Ok(false)}
+  if !same(self.path_presence.iter().filter(|(p,_)|p.as_path()!=path),next.path_presence.iter().filter(|(p,_)|p.as_path()!=path),work)?{return Ok(false)}
+  match(self.path_presence.get(path),next.path_presence.get(path)){(None,None)|(Some(false),Some(true))=>{},_=>return Ok(false)}
+  if self.folders.len()!=next.folders.len()||self.policy_directories.len()!=next.policy_directories.len(){return Ok(false)}
+  for(folder,before)in &self.folders{work.checkpoint()?;let Some(after)=next.folders.get(folder)else{return Ok(false)};
+   if folder.as_path()==path{if !matches!((before,after),(FolderListing::Missing,FolderListing::Present(b))if b.is_empty()){return Ok(false)}}
+   else if folder.as_path()==parent{match(before,after){(FolderListing::Present(a),FolderListing::Present(b))=>{if a.iter().any(|s|s==leaf)||b.iter().filter(|s|s.as_str()==leaf).count()!=1||!same(a.iter(),b.iter().filter(|s|s.as_str()!=leaf),work)?{return Ok(false)}},_=>return Ok(false)}}else if before!=after{return Ok(false)}
+  }
+  let mut seen=false;let mut seen_parent=false;
+  for(folder,before)in &self.policy_directories{work.checkpoint()?;let Some(after)=next.policy_directories.get(folder)else{return Ok(false)};if before.follow_root!=after.follow_root{return Ok(false)}
+   if folder.as_path()==path{if !matches!((&before.listing,&after.listing),(PolicyDirectoryListing::Missing,PolicyDirectoryListing::Present(b))if b.is_empty()){return Ok(false)}seen=true;}
+   else if folder.as_path()==parent{match(&before.listing,&after.listing){(PolicyDirectoryListing::Present(a),PolicyDirectoryListing::Present(b))=>{if a.iter().any(|s|s.name==leaf)||b.iter().filter(|s|s.name==leaf&&s.kind==PolicyEntryKind::Directory).count()!=1||!same(a.iter(),b.iter().filter(|s|s.name!=leaf),work)?{return Ok(false)}seen_parent=true;},_=>return Ok(false)}}else if before!=after{return Ok(false)}
+  }
+  work.checkpoint()?;Ok(seen&&seen_parent)
+ }
+}
+
+impl InputSnapshot{
+ pub(crate)fn same_codemod_output_step(&self,next:&Self,target:&crate::runner_host::codemod_targets::CapturedCodemodTarget<'_>,transition:&crate::native_author_fix_transaction::Transition,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{
+  work.checkpoint()?;if transition.path()!=dm_preprocess::regions::canonical_path(&target.root().join(target.relative())){return Ok(false)}
+  self.same_created_authored_step(next,transition,work,false)
+ }
+ pub(crate)fn same_codemod_removal_step(&self,next:&Self,target:&crate::runner_host::codemod_targets::CapturedCodemodTarget<'_>,removal:&crate::native_author_fix_transaction::Removal,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<bool>{
+  work.checkpoint()?;if target.kind()!=crate::runner_host::codemod_targets::Output::RevertRecord||removal.inverse().path()!=dm_preprocess::regions::canonical_path(&target.root().join(target.relative())){return Ok(false)}
+  next.same_created_authored_step(self,removal.inverse(),work,false)
+ }
+}
+
+impl InputSnapshot{
+ /// Borrowed physical payload DATA from this exact closed recorder. Synthetic
+ /// analysis-subject source has no physical payload fact and is not invented.
+ pub(crate) fn visit_captured_physical_files(&self,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,visit:&mut dyn FnMut(&Path,&Stamp,u128)->io::Result<()>)->io::Result<()>{
+  self.check_structure()?;
+  for row in self.files.values(){work.checkpoint()?;if let Some(other)=self.original_payloads.get_ref(&row.path){if other.stamp!=row.stamp||other.content!=row.content{return Err(invalid("physical parity DATA ordinary/Original facts disagree"))}}visit(&row.path,&row.stamp,row.content)?;}
+  for(path,row)in self.original_payloads.iter(){work.checkpoint()?;if self.files.contains_key(path){continue}if self.opened_reads.get(path).is_none_or(|status|!status.is_readable()){return Err(invalid("physical parity Original DATA lacks actual readable-open fact"))}visit(path,&row.stamp,row.content)?;}
+  Ok(())
+ }
+}
+
+impl InputSnapshot{
+ /// Positive/negative directory DATA from actual captured listings only.
+ /// Metadata presence is not promoted to a directory kind.
+ pub(crate) fn visit_captured_directories(&self,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,visit:&mut dyn FnMut(&Path,bool)->io::Result<()>)->io::Result<()>{
+  self.check_structure()?;for(path,listing)in &self.folders{work.checkpoint()?;visit(path,matches!(listing,FolderListing::Present(_)))?;}
+  for(path,observation)in &self.policy_directories{work.checkpoint()?;let present=matches!(observation.listing,PolicyDirectoryListing::Present(_));if let Some(prior)=self.folders.get(path){if present!=matches!(prior,FolderListing::Present(_)){return Err(invalid("parity directory DATA ordinary/typed facts disagree"))}continue}visit(path,present)?;}
+  Ok(())
+ }
+}
+
+#[cfg(test)]mod codemod_read_role_controls{
+ use super::*;use dm_preprocess::source_arena_credit::SourceArenaWork;
+ fn capture(root:&Path,optional:&str,work:&crate::query_db::QueryDb)->InputSnapshot{
+  let recording=RecordingInputs::new(FileSystemInputs,1);
+  for name in ["source.dm","other.dm"]{
+   let path=root.join(name);let mut credit=None;let mut fund=|bytes|{credit=Some(work.reserve(bytes)?);Ok(())};
+   let bytes=if name==optional{recording.read_optional_callback_payload(&path,1024,work,&mut fund)}else{recording.read_policy_payload_admitted(&path,1024,&mut fund)}.unwrap().unwrap();
+   drop(bytes);drop(credit);
+  }
+  let mut snapshot=recording.snapshot().unwrap();snapshot.record_folder(root,FileSystemInputs.list(root).unwrap()).unwrap();snapshot
+ }
+ #[test]fn actual_codemod_writer_target_may_change_only_its_positive_reader_role(){
+  let root=std::fs::canonicalize(crate::test_scratch::dir("codemod-positive-read-role")).unwrap();
+  let path=root.join("source.dm");std::fs::write(&path,b"old").unwrap();std::fs::write(root.join("other.dm"),b"unchanged").unwrap();let work=crate::query_db::QueryDb::default();
+  let before=capture(&root,"",&work);let stamp=FileSystemInputs.stamp(&path).unwrap();
+  let(_,transition)=crate::native_author_fix_transaction::commit(&root,"source.dm",&stamp,b"old",b"new",&work,&mut||Ok(())).unwrap().into_parts();let after=capture(&root,"source.dm",&work);
+  assert!(!before.same_authored_step(&after,Some(&transition),&work).unwrap(),"generic authored comparison stays strict");
+  assert!(before.same_codemod_authored_step(&after,&transition,&work).unwrap());
+  assert!(!after.same_codemod_authored_step(&before,&transition,&work).unwrap(),"opaque transition direction remains authoritative");
+  let stamp=FileSystemInputs.stamp(&path).unwrap();let(_,inverse)=crate::native_author_fix_transaction::commit(&root,"source.dm",&stamp,b"new",b"old",&work,&mut||Ok(())).unwrap().into_parts();let restored=capture(&root,"",&work);
+  assert!(after.same_codemod_authored_step(&restored,&inverse,&work).unwrap(),"revert restores the actual required-reader role");
+ }
+ #[test]fn actual_codemod_reader_role_step_refuses_other_inputs_and_namespace_changes(){
+  let root=std::fs::canonicalize(crate::test_scratch::dir("codemod-positive-read-role-foreign")).unwrap();let path=root.join("source.dm");let other=root.join("other.dm");
+  std::fs::write(&path,b"old").unwrap();std::fs::write(&other,b"unchanged").unwrap();let work=crate::query_db::QueryDb::default();let before=capture(&root,"",&work);let stamp=FileSystemInputs.stamp(&path).unwrap();
+  let(_,transition)=crate::native_author_fix_transaction::commit(&root,"source.dm",&stamp,b"old",b"new",&work,&mut||Ok(())).unwrap().into_parts();
+  assert!(!before.same_codemod_authored_step(&capture(&root,"other.dm",&work),&transition,&work).unwrap(),"off-target positive role change is not authorized");
+  std::fs::write(root.join("new.dm"),b"namespace change").unwrap();assert!(!before.same_codemod_authored_step(&capture(&root,"source.dm",&work),&transition,&work).unwrap());std::fs::remove_file(root.join("new.dm")).unwrap();
+  std::fs::write(&other,b"foreign edit").unwrap();assert!(!before.same_codemod_authored_step(&capture(&root,"source.dm",&work),&transition,&work).unwrap());
+ }
 }

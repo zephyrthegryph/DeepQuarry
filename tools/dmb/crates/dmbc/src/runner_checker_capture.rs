@@ -5,7 +5,7 @@ use crate::input_snapshot::{InputSnapshot,JoinedReportEpoch,RecordingInputs,Snap
 use dm_preprocess::source_arena_credit::{SourceArenaCredit,SourceArenaWork};
 use dm_tree::frontend::{DiagnosticSourceView,DiagnosticPreparationPurpose,SourceExportMapping};
 use std::{collections::BTreeSet,error::Error,io,path::{Path,PathBuf},sync::{Arc,Weak}};
-enum ReportPurpose{Checker,RegisteredModel(Arc<crate::runner_host::NativeCheckSelection>),RegisteredEngineModel(Arc<crate::runner_host::NativeCheckSelection>)}
+enum ReportPurpose{Checker,ParseOnly,RegisteredModel(Arc<crate::runner_host::NativeCheckSelection>),RegisteredEngineModel(Arc<crate::runner_host::NativeCheckSelection>)}
 pub(super) struct Pending{purpose:ReportPurpose,project:PathBuf,mapping:Weak<SourceExportMapping>,semantic:u128,source:u128,epoch:JoinedReportEpoch,_credit:SourceArenaCredit}
 pub(crate) struct Inputs{purpose:ReportPurpose,project:PathBuf,mapping:Weak<SourceExportMapping>,semantic:u128,source:u128,inputs:InputSnapshot,_epoch:JoinedReportEpoch,_credit:SourceArenaCredit}
 impl Pending{
@@ -14,6 +14,11 @@ impl Pending{
    return Err(io::Error::new(io::ErrorKind::InvalidInput,"standalone Checker needs its actual Original checker preparation").into())
   }
   Self::capture_actual(recording,project,frontend,generated,work,ReportPurpose::Checker)
+ }
+ pub(super) fn capture_parse_only<P:SnapshotProvider>(recording:&RecordingInputs<P>,project:&Path,frontend:&dm_tree::frontend::DiagnosticFrontend,generated:&BTreeSet<PathBuf>,work:&dyn SourceArenaWork)->Result<Self,Box<dyn Error>>{
+  frontend.parse_only_body_counts()?;let view=frontend.source_view().map_err(io::Error::other)?;
+  if !matches!(view.preparation_purpose(),DiagnosticPreparationPurpose::OriginalSharedComplete|DiagnosticPreparationPurpose::OriginalAnalyzePrefix)||view.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!view.receipt().authenticates(view.tree()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"parse-only ledger needs its actual syntax preparation").into())}
+  Self::capture_actual(recording,project,&view,generated,work,ReportPurpose::ParseOnly)
  }
  // report_project binds the caller operation only. The actual source entry
  // remains authenticated by the subject/mapping/receipt checks below.
@@ -40,6 +45,23 @@ impl Pending{
  }
 }
 impl Inputs{
+ pub(crate) fn require_parse_only_binding(&self,project:&Path,frontend:&dm_tree::frontend::DiagnosticFrontend)->io::Result<()>{
+  frontend.parse_only_body_counts()?;let view=frontend.source_view().map_err(io::Error::other)?;
+  if !matches!(self.purpose,ReportPurpose::ParseOnly)||self.project!=project||self.mapping.upgrade().is_none_or(|actual|!Arc::ptr_eq(&actual,view.mapping()))||self.semantic!=view.tree().identity()||self.source!=view.source_revision(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"parse-only ledger differs from actual syntax source"))}Ok(())
+ }
+
+ pub(crate) fn require_fixture_step(&self,next:&Self,project:&Path,root:&Path,transition:&crate::native_author_fix_transaction::Transition,work:&dyn SourceArenaWork)->io::Result<()>{
+  work.checkpoint()?;
+  let same=match(&self.purpose,&next.purpose){(ReportPurpose::RegisteredModel(a),ReportPurpose::RegisteredModel(b))|(ReportPurpose::RegisteredEngineModel(a),ReportPurpose::RegisteredEngineModel(b))=>a.fixture_scope().is_some_and(|scope|scope.root()==root)&&b.fixture_scope().is_some()&&Arc::ptr_eq(a,b),_=>false};
+  if !same||self.project!=project||next.project!=project{return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected model fixture step differs from actual plan/purpose/namespace"))}
+  if !self.inputs.same_fixture_step(&next.inputs,root,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"selected model input closure changed beyond its actual fixture expected write"))}Ok(())
+ }
+ pub(crate) fn require_baseline_step(&self,next:&Self,project:&Path,transition:&crate::native_author_fix_transaction::Transition,work:&dyn SourceArenaWork)->io::Result<()>{
+  work.checkpoint()?;
+  let same=match(&self.purpose,&next.purpose){(ReportPurpose::RegisteredModel(a),ReportPurpose::RegisteredModel(b))|(ReportPurpose::RegisteredEngineModel(a),ReportPurpose::RegisteredEngineModel(b))=>a.is_baseline_update()&&b.is_baseline_update()&&Arc::ptr_eq(a,b),_=>false};
+  if !same||self.project!=project||next.project!=project{return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected model baseline step differs from actual plan/purpose/namespace"))}
+  if !self.inputs.same_baseline_step(&next.inputs,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"selected model input closure changed beyond its actual baseline write"))}Ok(())
+ }
  pub(crate) fn require_binding(&self,project:&Path,mapping:&Arc<SourceExportMapping>,semantic:u128,source:u128)->io::Result<()>{
   if !matches!(&self.purpose,ReportPurpose::Checker){return Err(io::Error::new(io::ErrorKind::InvalidInput,"model ledger cannot grant standalone Checker source"))}
   if self.project!=project||self.mapping.upgrade().is_none_or(|actual|!Arc::ptr_eq(&actual,mapping))||self.semantic!=semantic||self.source!=source{
@@ -58,5 +80,13 @@ impl Inputs{
   let provider=crate::input_snapshot::GeneratedOutputInputs::new(&current,self.inputs.generated_outputs().iter().cloned());
   runner_freshness::admit(&self.inputs,&provider)?;
   if !self.inputs.exact_positive_contents_match(&provider)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"standalone Checker input closure changed during operation").into())}Ok(())
+ }
+}
+
+impl Inputs{pub(crate) fn native_selftest_epoch(&self)->&crate::input_snapshot::JoinedReportEpoch{&self._epoch}}
+
+impl Inputs{
+ pub(crate) fn with_report_input_observation<T>(&self,project:&std::path::Path,observe:impl FnOnce(&crate::input_snapshot::InputSnapshot)->std::io::Result<T>)->Result<T,Box<dyn std::error::Error>>{
+  self.require_current(project)?;let result=observe(&self.inputs)?;self.require_current(project)?;Ok(result)
  }
 }

@@ -55,7 +55,7 @@ pub struct AllowUse {
 
 /// What a scan produces.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct Sink {
+pub struct Sink<'patterns> {
     pub sites: Vec<Site>,
     pub allow_used: Vec<AllowUse>,
     /// Extra summary lines the lint wants printed (e.g. "state schema lint: 12 types, 0 problems").
@@ -65,10 +65,18 @@ pub struct Sink {
     pub cur: String,
     #[serde(skip)]
     bound: Option<captured_sink::Bound>,
+    #[cfg(feature="native-policy")]
+    #[serde(skip)]
+    patterns:Option<SinkPatternLoan<'patterns>>,
+    #[serde(skip)]
+    _patterns_lifetime:std::marker::PhantomData<&'patterns ()>,
 }
 
-impl Sink {
-    pub fn new() -> Sink {
+impl<'patterns> Sink<'patterns> {
+    /// Copy the unchanged owned finding DATA for the legacy serialized memo.
+    /// An operation-only native provider/first-error loan never enters storage.
+    pub(crate) fn clone_owned_data(&self)->Sink<'static>{Sink{sites:self.sites.clone(),allow_used:self.allow_used.clone(),notes:self.notes.clone(),cur:self.cur.clone(),bound:self.bound.clone(),#[cfg(feature="native-policy")]patterns:None,_patterns_lifetime:std::marker::PhantomData}}
+    pub fn new() -> Self {
         Sink::default()
     }
 
@@ -162,6 +170,14 @@ impl Sink {
     /// `allowed(raw_lines, number, lint)`: is line `number` of `f` kept by an annotation for
     /// `lint`? Records the annotation as used when it is.
     pub fn allowed(&mut self, f: &SourceFile, number: usize, lint: &str) -> bool {
+        #[cfg(feature="native-policy")]if let Some(loan)=self.patterns{
+         let mut control=SinkAllowControl{loan};
+         if let Err(message)=f.require_view_budget(){control.fail(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message));return true}
+         if control.failed(){return true}
+         let pending=crate::allow::kept_using(f,number,lint,&mut control);
+         match pending{Ok(Some(kept))=>{self.use_allow(f,kept.line,lint,kept.code);return true},Ok(None)=>return false,Err(_)=>return true}
+        }
+
         match crate::allow::kept(f, number, lint) {
             Some(k) => {
                 self.use_allow(f, k.line, lint, k.code);
@@ -173,6 +189,14 @@ impl Sink {
 
     /// Same-line only (`allowed_here`).
     pub fn allowed_here(&mut self, f: &SourceFile, number: usize, lint: &str) -> bool {
+        #[cfg(feature="native-policy")]if let Some(loan)=self.patterns{
+         let mut control=SinkAllowControl{loan};
+         if let Err(message)=f.require_view_budget(){control.fail(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message));return true}
+         if control.failed(){return true}
+         let pending=(if number>=1&&number<=f.raw().num_lines(){crate::allow::keeps_with(f.raw().line(number),lint,&mut control).map(|code|code.map(|code|crate::allow::Kept{line:number,code}))}else{Ok(None)});
+         match pending{Ok(Some(kept))=>{self.use_allow(f,kept.line,lint,kept.code);return true},Ok(None)=>return false,Err(_)=>return true}
+        }
+
         match crate::allow::kept_here(f, number, lint) {
             Some(k) => {
                 self.use_allow(f, k.line, lint, k.code);
@@ -270,6 +294,8 @@ impl Meta {
 
 /// Everything a scan may look at.
 pub struct Cx<'a> {
+    /// Resource-only borrowed operation; never source/model/EOF authority.
+    pub fixture:Option<&'a crate::raw_fixture_policy::Fixture<'a>>,
     pub tree: &'a Tree,
     pub meta: &'a Meta,
     pub scope: &'a LintScope,
@@ -386,6 +412,12 @@ pub trait Lint: Send + Sync {
         Ok(String::new())
     }
 
+    /// The SAME fixture assertions with explicit source/finding storage admission.
+    /// Default/inherited callbacks keep their actual original implementation.
+    fn selftest_with_fixture(&self, _fixture: &crate::raw_fixture_policy::Fixture<'_>) -> Result<String, String> {
+        self.selftest()
+    }
+
     /// How `analyze parity` compares this lint with its legacy script (None = not comparable).
     fn parity(&self) -> Option<crate::parity::Parity> {
         None
@@ -409,4 +441,31 @@ impl Registry {
             .find(|l| l.meta().name == name)
             .map(|b| b.as_ref())
     }
+}
+
+#[cfg(feature="native-policy")]
+#[derive(Clone,Copy)]
+pub(crate) struct SinkPatternLoan<'a>{pub(crate)provider:&'a dyn crate::native_pattern::Provider,pub(crate)first:&'a std::sync::Mutex<Option<std::io::Error>>,pub(crate)budget:&'a std::sync::Arc<crate::captured_generator_budget::Budget>}
+#[cfg(feature="native-policy")]
+impl std::fmt::Debug for SinkPatternLoan<'_>{fn fmt(&self,out:&mut std::fmt::Formatter<'_>)->std::fmt::Result{out.write_str("borrowed native pattern operation")}}
+#[cfg(feature="native-policy")]
+struct SinkAllowControl<'a>{loan:SinkPatternLoan<'a>}
+#[cfg(feature="native-policy")]
+impl SinkAllowControl<'_>{
+ fn failed(&self)->bool{self.loan.first.lock().unwrap_or_else(|error|error.into_inner()).is_some()}
+ fn fail(&self,actual:std::io::Error)->String{self.loan.first.lock().unwrap_or_else(|error|error.into_inner()).get_or_insert(actual);"native ALLOW retains its actual first IO".into()}
+}
+#[cfg(feature="native-policy")]
+impl crate::key_policy_control::Control for SinkAllowControl<'_>{
+ type Error=String;const CHECKED:bool=true;
+ fn native_patterns(&self)->Option<&dyn crate::native_pattern::Provider>{Some(self.loan.provider)}
+ fn native_pattern_failed(&mut self,actual:std::io::Error)->String{self.fail(actual)}
+ fn checkpoint(&mut self)->Result<(),String>{if self.failed(){return Err("native ALLOW already failed".into())}self.loan.budget.require().map_err(|message|self.fail(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))}
+ fn reserve(&mut self,n:usize)->Result<(),String>{self.loan.budget.charge(n).map_err(|message|self.fail(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))}
+ fn overflow(&mut self)->String{self.fail(std::io::ErrorKind::OutOfMemory.into())}
+ fn allocation_failed(&mut self)->String{self.fail(std::io::ErrorKind::OutOfMemory.into())}
+}
+impl<'patterns> Sink<'patterns>{
+ #[cfg(feature="native-policy")]
+ pub(crate) fn with_pattern_loan(mut self,loan:Option<SinkPatternLoan<'patterns>>)->Self{self.patterns=loan;self}
 }

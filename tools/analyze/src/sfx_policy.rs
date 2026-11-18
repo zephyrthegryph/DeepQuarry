@@ -1,4 +1,5 @@
 //! Unique complete original sound-set lexical facts, merge and judge. No source authority.
+use crate::raw_fixture_policy::PatternApi as _;
 use std::collections::HashSet;
 use serde::{Serialize,Deserialize};
 use crate::{incr,tree::{SourceFile,Tree},pat::Pat,util::{py_lstrip,py_rstrip},pat,pat_match,key_policy_control::Control};
@@ -49,9 +50,10 @@ fn statement(lines: &[&str], index: usize, start: usize) -> String {
 /// `ASSIGN.finditer(code)` as `(name, match end)`. The pattern is
 /// `(?:^|[^\w.])(?:var/(?:\w+/)*)?(\w+)\s*(?<![!<>=])=(?!=)\s*(?:pick\s*\(|list\s*\()?`. The lookbehind
 /// is always true (a word char or whitespace precedes the `=`), so only `(?!=)` is checked by hand.
-fn assign_matches(code: &str) -> Vec<(String, usize)> {
+fn assign_matches(code: &str) -> Vec<(String, usize)> {assign_matches_with_fixture(code,&crate::raw_fixture_policy::Fixture::legacy())}
+fn assign_matches_with_fixture(code:&str,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Vec<(String,usize)>{
     let mut out = Vec::new();
-    let head = pat!(r"(?:^|[^\w.])(?:var/(?:\w+/)*)?(\w+)\s*=");
+    let head = fixture.pattern(r"(?:^|[^\w.])(?:var/(?:\w+/)*)?(\w+)\s*=",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?:^|[^\w.])(?:var/(?:\w+/)*)?(\w+)\s*="));
     let mut pos = 0;
     while pos <= code.len() {
         let Some(c) = head.captures_at(code, pos) else { break };
@@ -64,7 +66,7 @@ fn assign_matches(code: &str) -> Vec<(String, usize)> {
         let rest = &code[e..];
         let ws = rest.len() - crate::util::py_lstrip(rest).len();
         let mut end = e + ws;
-        if let Some(m) = pat_match!(r"(?:pick\s*\(|list\s*\()").find(&code[end..]) {
+        if let Some(m) = fixture.pattern(r"(?:pick\s*\(|list\s*\()",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"(?:pick\s*\(|list\s*\()")).find(&code[end..]) {
             end += m.end;
         }
         out.push((c.s(1).to_string(), end));
@@ -89,7 +91,8 @@ fn char_find(text: &str, needle: &str) -> isize {
     text.find(needle).map(|byte| text[..byte].chars().count() as isize).unwrap_or(-1)
 }
 
-pub fn scan_file_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,ctx:&Context,out:&mut Vec<(&'static str,usize)>,keep:&mut C,temp:&mut T)->Result<(),C::Error>{
+pub fn scan_file_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,ctx:&Context,out:&mut Vec<(&'static str,usize)>,keep:&mut C,temp:&mut T)->Result<(),C::Error>{scan_file_using_with_fixture(f,ctx,out,keep,temp,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn scan_file_using_with_fixture<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,ctx:&Context,out:&mut Vec<(&'static str,usize)>,keep:&mut C,temp:&mut T,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),C::Error>{
     keep.checkpoint()?;let(fed,named)=(&ctx.fed,&ctx.named);
     let rel = f.rel.as_str();
     if rel == "code/domains/damage/sound_sets.dm" {
@@ -101,22 +104,22 @@ pub fn scan_file_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,ctx:&C
         keep.checkpoint()?;
         let number = idx + 1;
         let code = code_of(line);
-        if pat!(r"\bspark_spread\b").is_match(code) {
+        if fixture.pattern(r"\bspark_spread\b",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\bspark_spread\b")).is_match(code) {
             crate::raw_tree_report::row(keep,out)?;out.push(("spark_triple", number));
         }
         let soundy = code.contains("playsound") || code.contains("get_sfx");
         if code.contains("playsound") {
-            for m in pat!(r"(?<![\w./])playsound(?:_local)?\s*\(").find_iter(code) {
+            for m in fixture.pattern(r"(?<![\w./])playsound(?:_local)?\s*\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w./])playsound(?:_local)?\s*\(")).find_iter(code) {
                 keep.checkpoint()?;
-                if literal().is_match(&statement(&lines, idx, m.start)) {
+                if literal_with_fixture(fixture).is_match(&statement(&lines, idx, m.start)) {
                     crate::raw_tree_report::row(keep,out)?;out.push(("literal_playsound", number));
                 }
             }
         }
-        if soundy && pat!(r#"(?<![\w./])(?:playsound(?:_local)?\s*\([^,()]+|get_sfx\s*\()\s*,?\s*"[a-z_]+""#).is_match(code) {
+        if soundy && fixture.pattern(r#"(?<![\w./])(?:playsound(?:_local)?\s*\([^,()]+|get_sfx\s*\()\s*,?\s*"[a-z_]+""#,crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r#"(?<![\w./])(?:playsound(?:_local)?\s*\([^,()]+|get_sfx\s*\()\s*,?\s*"[a-z_]+""#)).is_match(code) {
             crate::raw_tree_report::row(keep,out)?;out.push(("sfx_string_key", number));
         } else if have_named && code.contains('=') {
-            for m in pat!(r#"(?:^|[^\w.])(\w+)\s*=\s*"(\w+)""#).captures_iter(code) {
+            for m in fixture.pattern(r#"(?:^|[^\w.])(\w+)\s*=\s*"(\w+)""#,crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r#"(?:^|[^\w.])(\w+)\s*=\s*"(\w+)""#)).captures_iter(code) {
                 if fed.contains(m.s(1)) && named.contains(m.s(2)) {
                     crate::raw_tree_report::row(keep,out)?;out.push(("sfx_string_key", number));
                     break;
@@ -127,18 +130,18 @@ pub fn scan_file_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,ctx:&C
             continue;
         }
         let mut names: Vec<(String, usize)> = Vec::new();
-        let gm = if code.contains("GLOBAL_LIST_INIT") { pat!(r"GLOBAL_LIST_INIT\s*\(\s*(\w+)\s*,").captures(code) } else { None };
+        let gm = if code.contains("GLOBAL_LIST_INIT") { fixture.pattern(r"GLOBAL_LIST_INIT\s*\(\s*(\w+)\s*,",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"GLOBAL_LIST_INIT\s*\(\s*(\w+)\s*,")).captures(code) } else { None };
         if let Some(gm) = gm {
             names.push((gm.s(1).to_string(), gm.end(0)));
         } else if code.contains('=') {
-            names = assign_matches(code);
+            names = assign_matches_with_fixture(code,fixture);
         }
         for (name, end) in names {
             keep.checkpoint()?;
             if !fed.contains(&name) {
                 continue;
             }
-            if literal().is_match(statement(&lines, idx, 0).get(end..).unwrap_or("")) {
+            if literal_with_fixture(fixture).is_match(statement(&lines, idx, 0).get(end..).unwrap_or("")) {
                 crate::raw_tree_report::row(keep,out)?;out.push(("literal_sound_var", number));
                 break;
             }
@@ -156,7 +159,8 @@ pub struct Facts {
 }
 
 pub fn facts_of(f:&SourceFile)->Facts{facts_of_using(f,&mut crate::key_policy_control::Compatibility,&mut crate::key_policy_control::Compatibility).expect("original sfx facts")}
-pub fn facts_of_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T)->Result<Facts,C::Error>{keep.checkpoint()?;crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(256)?.checked_add(4096))?;
+pub fn facts_of_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T)->Result<Facts,C::Error>{facts_of_using_with_fixture(f,keep,temp,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn facts_of_using_with_fixture<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<Facts,C::Error>{keep.checkpoint()?;crate::key_policy_control::reserve(temp,||f.text().len().checked_mul(256)?.checked_add(4096))?;
     let mut set: HashSet<String> = HashSet::new();
     for line in f.raw().lines() {
         keep.checkpoint()?;
@@ -164,9 +168,7 @@ pub fn facts_of_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&m
         if !code.contains('(') || !(code.contains("playsound") || code.contains("play_sfx") || code.contains("get_sfx")) {
             continue;
         }
-        for m in pat!(
-            r"(?<![\w./])(?:playsound(?:_local)?|play_sfx)\s*\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*(?:pick\s*\(\s*)?([A-Za-z_][\w.]*)\s*\)?\s*[,)]|(?<![\w./])get_sfx\s*\(\s*(?:pick\s*\(\s*)?([A-Za-z_][\w.]*)\s*\)?\s*\)"
-        )
+        for m in fixture.pattern(r"(?<![\w./])(?:playsound(?:_local)?|play_sfx)\s*\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*(?:pick\s*\(\s*)?([A-Za-z_][\w.]*)\s*\)?\s*[,)]|(?<![\w./])get_sfx\s*\(\s*(?:pick\s*\(\s*)?([A-Za-z_][\w.]*)\s*\)?\s*\)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w./])(?:playsound(?:_local)?|play_sfx)\s*\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*(?:pick\s*\(\s*)?([A-Za-z_][\w.]*)\s*\)?\s*[,)]|(?<![\w./])get_sfx\s*\(\s*(?:pick\s*\(\s*)?([A-Za-z_][\w.]*)\s*\)?\s*\)"))
         .captures_iter(code)
         {
             keep.checkpoint()?;let name = if m.matched(1) { m.s(1) } else { m.s(2) };
@@ -179,7 +181,7 @@ pub fn facts_of_using<C:Control,T:Control<Error=C::Error>>(f:&SourceFile,keep:&m
     if f.rel == "code/defines/host/sfx.dm" {
         let text = f.raw().text.as_str();
         let section = py_slice(text, char_find(text, "// Named sets"), char_find(text, "// File sets."));
-        for capture in pat!(r#"#define SFX_\w+ "(\w+)""#).captures_iter(&section).iter(){keep.checkpoint()?;crate::raw_tree_report::row(keep,&mut named)?;named.push(crate::raw_tree_report::own(keep,capture.s(1))?);}
+        for capture in fixture.pattern(r#"#define SFX_\w+ "(\w+)""#,crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r#"#define SFX_\w+ "(\w+)""#)).captures_iter(&section).iter(){keep.checkpoint()?;crate::raw_tree_report::row(keep,&mut named)?;named.push(crate::raw_tree_report::own(keep,capture.s(1))?);}
         crate::key_policy_control::reserve(keep,||named.len().checked_mul(4*std::mem::size_of::<String>())?.checked_add(128))?;named.sort();
         named.dedup();
     }
@@ -195,3 +197,5 @@ pub struct Context {
 fn hash_insert<C:Control>(set:&mut HashSet<String>,value:&str,c:&mut C)->Result<(),C::Error>{c.checkpoint()?;if set.contains(value){return Ok(())}if C::CHECKED&&set.len()==set.capacity(){let target=set.capacity().checked_mul(2).map(|v|v.max(4)).ok_or_else(||c.overflow())?;let bound=target.checked_mul(4).ok_or_else(||c.overflow())?;crate::key_policy_control::reserve(c,||bound.checked_mul(std::mem::size_of::<String>())?.checked_add(4096))?;set.try_reserve(target-set.len()).map_err(|_|c.allocation_failed())?;if set.capacity()>bound{return Err(c.allocation_failed())}}set.insert(crate::raw_tree_report::own(c,value)?);Ok(())}
 pub fn merge<'a,C:Control>(pairs:impl IntoIterator<Item=(&'a str,&'a Facts)>,c:&mut C)->Result<Context,C::Error>{let mut fed=HashSet::new();let mut named=HashSet::new();for(relative,facts)in pairs{c.checkpoint()?;for value in &facts.fed{hash_insert(&mut fed,value,c)?;}if relative=="code/defines/host/sfx.dm"{named.clear();for value in &facts.named{hash_insert(&mut named,value,c)?;}}}for name in NOT_FED{c.checkpoint()?;fed.remove(*name);}c.checkpoint()?;Ok(Context{fed,named})}
 pub fn scan(tree:&Tree,files:&[&SourceFile])->Vec<(&'static str,String,usize)>{let _=tree;let(_,results)=incr::two_phase("sys-sfx",files,facts_of,|pairs|merge(pairs.iter().map(|(file,facts)|(file.rel.as_str(),*facts)),&mut crate::key_policy_control::Compatibility).expect("original sfx merge"),|f,ctx|{let mut rows=Vec::new();scan_file_using(f,ctx,&mut rows,&mut crate::key_policy_control::Compatibility,&mut crate::key_policy_control::Compatibility).expect("original sfx judge");rows.into_iter().map(|(rule,line)|(RULES.iter().position(|r|r.name==rule).unwrap_or(0)as u8,line as u32)).collect::<Vec<(u8,u32)>>()});let mut out=Vec::new();for(file,rows)in files.iter().zip(results){for(rule,line)in rows{out.push((RULES[rule as usize].name,file.rel.clone(),line as usize));}}out}
+
+fn literal_with_fixture<'f,'a>(fixture:&'f crate::raw_fixture_policy::Fixture<'a>)->crate::raw_fixture_policy::Pattern<'f,'a>{fixture.pattern(r"'[^'\n]+\.(?:ogg|wav|mid|mp3)'",crate::raw_fixture_policy::PatternMode::Search,literal)}

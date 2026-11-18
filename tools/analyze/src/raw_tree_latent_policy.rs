@@ -1,4 +1,5 @@
 //! Unique latent holder/index and Python-line judge. No complete source authority.
+use crate::raw_fixture_policy::PatternApi as _;
 use std::collections::{BTreeSet,HashSet};
 use serde::{Serialize,Deserialize};
 use crate::lint::{Meta,Policy,RuleMeta,ScanKind};
@@ -32,9 +33,10 @@ pub struct Facts {
 }
 
 pub fn facts_of(f:&SourceFile)->Facts{facts_of_using(f,&mut crate::key_policy_control::Compatibility,&mut crate::key_policy_control::Compatibility).expect("original latent facts")}
-pub fn facts_of_using<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T)->Result<Facts,C::Error>{
+pub fn facts_of_using<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T)->Result<Facts,C::Error>{facts_of_using_with_fixture(f,keep,temp,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn facts_of_using_with_fixture<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(f:&SourceFile,keep:&mut C,temp:&mut T,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<Facts,C::Error>{
  use crate::{key_policy_control as kc,raw_tree_report as growth};keep.checkpoint()?;
- let type_header=crate::pat_match!(r"(/[\w/]+)\s*$");let latent_decl=crate::pat_match!(r"\s+latent_contents\s*=\s*(TRUE|FALSE)");let legacy_loop=crate::pat!(r"\bfor\s*\(.*\bin\s+(?:[\w.]+\.)?contents\b");
+ let type_header=fixture.pattern(r"(/[\w/]+)\s*$",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"(/[\w/]+)\s*$"));let latent_decl=fixture.pattern(r"\s+latent_contents\s*=\s*(TRUE|FALSE)",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"\s+latent_contents\s*=\s*(TRUE|FALSE)"));let legacy_loop=fixture.pattern(r"\bfor\s*\(.*\bin\s+(?:[\w.]+\.)?contents\b",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\bfor\s*\(.*\bin\s+(?:[\w.]+\.)?contents\b"));
  kc::reserve(temp,||f.text().len().checked_add(1)?.checked_mul(4*std::mem::size_of::<&str>())?.checked_add(128))?;let lines=py_splitlines(f.text());if T::CHECKED&&lines.capacity()>f.text().len().saturating_add(1).saturating_mul(4){return Err(temp.allocation_failed())}
  let(mut holders,mut eager)=(BTreeSet::<String>::new(),BTreeSet::<String>::new());let mut legacy=0u32;let mut current:Option<&str>=None;
  for line in &lines{keep.checkpoint()?;if let Some(h)=type_header.captures(line){current=Some(h.s(1));continue}if !line.is_empty()&&!line.chars().next().map(is_py_space).unwrap_or(false){current=None}if let(Some(cur),Some(d))=(current,latent_decl.captures(line)){let target=if d.s(1)=="TRUE"{&mut holders}else{&mut eager};if !target.contains(cur){kc::reserve(keep,||Some(2048))?;target.insert(growth::own(keep,cur)?);}}}
@@ -46,13 +48,12 @@ pub fn facts_of_using<C:crate::key_policy_control::Control,T:crate::key_policy_c
 /// recorded (the cache replays them).
 pub fn judge(f:&SourceFile,holders:&HashSet<String>,eager:&HashSet<String>,allowed:impl FnMut(&[&str],usize)->bool)->Vec<u32>{judge_using(f,holders,eager,allowed,&mut crate::key_policy_control::Compatibility).expect("original latent judge")}
 fn is_holder_using<C:crate::key_policy_control::Control>(path:&str,holders:&HashSet<String>,eager:&HashSet<String>,c:&mut C)->Result<bool,C::Error>{let mut longest=[None,None];for(slot,roots)in longest.iter_mut().zip([holders,eager]){for root in roots{c.checkpoint()?;if path==root||(path.starts_with(root.as_str())&&path.as_bytes().get(root.len())==Some(&b'/')){if slot.map(|n|root.len()>n).unwrap_or(true){*slot=Some(root.len());}}}}Ok(match longest{[Some(l),Some(o)]=>l>o,[Some(_),None]=>true,_=>false})}
-pub fn judge_using<C:crate::key_policy_control::Control>(f:&SourceFile,holders:&HashSet<String>,eager:&HashSet<String>,mut allowed:impl FnMut(&[&str],usize)->bool,c:&mut C)->Result<Vec<u32>,C::Error>{
+pub fn judge_using<C:crate::key_policy_control::Control>(f:&SourceFile,holders:&HashSet<String>,eager:&HashSet<String>,mut allowed:impl FnMut(&[&str],usize)->bool,c:&mut C)->Result<Vec<u32>,C::Error>{judge_using_with_fixture(f,holders,eager,allowed,c,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn judge_using_with_fixture<C:crate::key_policy_control::Control>(f:&SourceFile,holders:&HashSet<String>,eager:&HashSet<String>,mut allowed:impl FnMut(&[&str],usize)->bool,c:&mut C,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<Vec<u32>,C::Error>{
     c.checkpoint()?;let mut temporary_peak=0;
-    let proc_header = crate::pat_match!(r"(/[\w/]+?)/(?:proc/|verb/)?(\w+)\(");
-    let own_walk = crate::pat!(
-        r"\bin\s+(?:src\.)?contents\b|\bin\s+src\s*\)|(?<![\w.])contents\.len\b|length\(\s*(?:src\.)?contents\s*\)"
-    );
-    let typed_var = crate::pat!(r"var/([\w/]+)/(\w+)");
+    let proc_header = fixture.pattern(r"(/[\w/]+?)/(?:proc/|verb/)?(\w+)\(",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"(/[\w/]+?)/(?:proc/|verb/)?(\w+)\("));
+    let own_walk = fixture.pattern(r"\bin\s+(?:src\.)?contents\b|\bin\s+src\s*\)|(?<![\w.])contents\.len\b|length\(\s*(?:src\.)?contents\s*\)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\bin\s+(?:src\.)?contents\b|\bin\s+src\s*\)|(?<![\w.])contents\.len\b|length\(\s*(?:src\.)?contents\s*\)"));
+    let typed_var = fixture.pattern(r"var/([\w/]+)/(\w+)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"var/([\w/]+)/(\w+)"));
     crate::key_policy_control::reserve(c,||f.text().len().checked_add(1)?.checked_mul(4*std::mem::size_of::<&str>())?.checked_add(128))?;let lines=py_splitlines(f.text());if C::CHECKED&&lines.capacity()>f.text().len().saturating_add(1).saturating_mul(4){return Err(c.allocation_failed())}
     let mut sites: Vec<u32> = Vec::new();
     let mut owner: Option<String> = None;
@@ -83,7 +84,7 @@ pub fn judge_using<C:crate::key_policy_control::Control>(f:&SourceFile,holders:&
             }
         }
         for name in &typed {c.checkpoint()?;
-            if crate::raw_name_match::contents_walk(code, name) {
+            if crate::raw_name_match::contents_walk_with_fixture(code,name,fixture) {
                 crate::raw_tree_report::row(c,&mut sites)?;sites.push(number as u32);
                 break;
             }

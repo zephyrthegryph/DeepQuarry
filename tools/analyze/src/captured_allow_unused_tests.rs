@@ -1,4 +1,5 @@
 use super::*;
+use crate::captured_allow_annotations::Operation;
 use crate::{captured_raw_file::{File,RawPolicyViews},captured_raw_policy::Configuration,allow_registry_metadata::complete_registry_allow_names};
 use std::sync::Arc;
 struct Pages{files:Vec<File>,stop:bool,fail:bool}
@@ -47,4 +48,62 @@ fn op<'a>(b:&'a Budget)->Operation<'a>{Operation{budget:b,poll:&||Ok(())}}
 #[test]fn selected_tree_plan_matches_actual_original_engine_loading_and_does_not_widen_excluded_maps(){
  let root=full_plan_scratch::dir("allow-selected-original-plan");for(relative,text)in[("code/probe.dm","/proc/p()\n    return\n"),("maps/probe.dm","// ALLOW(scheduler): preserve actual mapping behavior here\n"),("code/.hidden/probe.dm","// hidden is not CODE_MAPS_DM\n")]{let path=root.join(relative);std::fs::create_dir_all(path.parent().unwrap()).unwrap();std::fs::write(path,text).unwrap();}
  for keep in [vec!["scheduler"],vec!["scheduler","allow_annotations"]]{let registry=crate::run::registry();let exclusions=registry.lints.iter().filter(|lint|!keep.contains(&lint.meta().name)).map(|lint|format!("-{}",lint.meta().name)).collect::<Vec<_>>();let engine=crate::run::Engine::new(registry,crate::run::Options{root:root.clone(),lints:exclusions,no_cache:true,raw:true,..Default::default()}).unwrap();let selected=crate::run::selected(&engine.reg,&engine.opts.lints);let budget=Budget::new(16<<20).unwrap();let plan=SelectedTreePlanData::new(selected.iter().map(|lint|lint.meta().select),&mut op(&budget)).unwrap();let expected=engine.tree.select(&crate::tree::CODE_MAPS_DM).into_iter().map(|file|file.rel.as_str()).collect::<Vec<_>>();let actual=["code/probe.dm","maps/probe.dm","code/.hidden/probe.dm"].into_iter().filter(|relative|plan.matches_path(relative)).collect::<Vec<_>>();assert_eq!(actual,expected);assert_eq!(plan.matches_path("maps/probe.dm"),keep.contains(&"allow_annotations"));}
+}
+
+#[test]fn actual_duplicate_producer_roots_allocate_and_admit_only_one_native_plan_entry(){
+ let unique_budget=Budget::new(16*1024).unwrap();let unique_before=unique_budget.used();let unique=SelectedTreePlanData::new([crate::tree::CODE_MAPS_DM],&mut op(&unique_budget)).unwrap();let unique_charge=unique_budget.used()-unique_before;
+ let repeated_budget=Budget::new(16*1024).unwrap();let repeated_before=repeated_budget.used();let repeated=SelectedTreePlanData::new(std::iter::repeat_n(crate::tree::CODE_MAPS_DM,4096),&mut op(&repeated_budget)).unwrap();
+ assert_eq!(repeated.plan.entries,unique.plan.entries);assert_eq!(repeated.roots(),unique.roots());assert_eq!(repeated_budget.used()-repeated_before,unique_charge,"duplicate roots cannot allocate dead temporary Strings or consume another node grant");assert!(!repeated_budget.denied());
+ for path in["code/probe.dm","maps/probe.dm","code/.hidden/probe.dm","doc/probe.md"]{assert_eq!(repeated.matches_path(path),unique.matches_path(path));assert_eq!(repeated.matches_loaded_dm(path),unique.matches_loaded_dm(path));}
+}
+#[test]fn normalized_duplicate_plan_keys_preserve_actual_plan_and_root_order(){
+ let rows=[crate::tree::Select{roots:&[("code/","dm"),("code",".dm"),("maps//","..dm"),("maps","dm"),("doc/",".md")],hidden:false},crate::tree::CODE_MAPS_DM];
+ let mut original=crate::tree::Plan::default();for select in rows{for &(dir,extension)in select.roots{original.add(dir,extension);}}
+ let budget=Budget::new(16*1024).unwrap();let actual=SelectedTreePlanData::new(rows,&mut op(&budget)).unwrap();assert_eq!(actual.plan.entries,original.entries);assert_eq!(actual.roots(),["code","maps"]);
+}
+#[test]fn duplicate_plan_checkpoint_preserves_actual_first_io_without_partial_result(){
+ struct Stop{polls:usize,fail:usize}impl Control for Stop{type Error=Failure;const CHECKED:bool=true;
+  fn checkpoint(&mut self)->Result<(),Failure>{self.polls+=1;if self.polls==self.fail{Err(Failure::Operational(io::Error::from_raw_os_error(1450)))}else{Ok(())}}
+  fn reserve(&mut self,_:usize)->Result<(),Failure>{Ok(())}fn overflow(&mut self)->Failure{Failure::Operational(io::ErrorKind::OutOfMemory.into())}fn allocation_failed(&mut self)->Failure{self.overflow()}
+ }
+ for fail in 1..=12{let mut actual=Stop{polls:0,fail};let result=SelectedTreePlanData::new(std::iter::repeat_n(crate::tree::CODE_MAPS_DM,4),&mut actual);let Err(Failure::Operational(error))=result else{panic!("actual duplicate traversal checkpoint must refuse before returning Plan DATA")};assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(actual.polls,fail);}
+}
+
+#[cfg(feature="native-policy")]
+#[test]
+fn actual_registered_empty_producers_complete_in_selection_index_order_without_duplicate_names(){
+ let budget=Budget::new(1<<20).unwrap();let mut c=op(&budget);
+ let selection=registered_full_selection(&[],&mut c).unwrap();assert!(selection.names().len()>32);
+ let names=selection.names().to_vec();let before=budget.used();
+ let mut join=UsageJoinData::new(&selection,frame());assert!(join.completed.is_empty());assert_eq!(join.completed.capacity(),0);
+ // A real producer may finish out of registration order; its exact slot alone completes.
+ for (position,name)in names.iter().rev().enumerate(){
+  join.record_fold(name,frame(),&[],&mut c).unwrap();
+  assert_eq!(join.completed.iter().filter(|done|**done).count(),position+1);
+  if position+1<names.len(){assert!(join.finish_data(&mut c).is_err());}
+ }
+ assert_eq!(join.completed.len(),selection.names().len());assert!(join.finish_data(&mut c).unwrap().used.is_empty());
+ let completion_charge=budget.used()-before;
+ assert!(completion_charge>=join.completed.capacity()*std::mem::size_of::<bool>());
+ assert!(completion_charge<4096,"actual completion flags replace per-producer BTree nodes and name copies: {completion_charge}");
+ assert_eq!(selection.names(),names,"exact original registration order and names are immutable");
+ assert!(join.record_fold(&names[0],frame(),&[],&mut c).is_err());assert!(join.finish_data(&mut c).is_err());
+}
+#[test]
+fn completion_flag_growth_first_1450_poison_and_fresh_recovery_keep_actual_rows_private(){
+ struct FirstAllocation{left:usize}
+ impl Control for FirstAllocation{
+  type Error=Failure;const CHECKED:bool=true;
+  fn checkpoint(&mut self)->Result<(),Failure>{Ok(())}
+  fn reserve(&mut self,_:usize)->Result<(),Failure>{if self.left==0{return Err(Failure::Operational(io::Error::from_raw_os_error(1450)))}self.left-=1;Ok(())}
+  fn overflow(&mut self)->Failure{Failure::Operational(io::ErrorKind::OutOfMemory.into())}
+  fn allocation_failed(&mut self)->Failure{Failure::Operational(io::ErrorKind::OutOfMemory.into())}
+ }
+ let selection=selected();let mut denied=UsageJoinData::new(&selection,frame());
+ let first=denied.record_fold("scheduler",frame(),&[],&mut FirstAllocation{left:0}).unwrap_err();
+ assert!(matches!(first,Failure::Operational(ref error)if error.raw_os_error()==Some(1450)));
+ assert_eq!(denied.completed.len(),0);assert_eq!(denied.completed.capacity(),0);
+ let wider=FullSelectionData{names:["scheduler","allow_annotations","init","decl","tracked","base_vars"].into_iter().map(str::to_owned).collect()};let mut partial=UsageJoinData::new(&wider,frame());let actual=partial.record_fold("scheduler",frame(),&[],&mut FirstAllocation{left:1}).unwrap_err();assert!(matches!(actual,Failure::Operational(ref error)if error.raw_os_error()==Some(1450)));assert_eq!(partial.completed.len(),4);assert!(partial.completed.iter().all(|done|!*done));
+ let budget=Budget::new(1<<20).unwrap();let mut c=op(&budget);assert!(partial.finish_data(&mut c).is_err());assert!(denied.finish_data(&mut c).is_err());assert!(denied.record_fold("allow_annotations",frame(),&[],&mut c).is_err());
+ let mut fresh=UsageJoinData::new(&selection,frame());fresh.record_fold("allow_annotations",frame(),&[],&mut c).unwrap();assert!(fresh.finish_data(&mut c).is_err());fresh.record_fold("scheduler",frame(),&[],&mut c).unwrap();assert!(fresh.finish_data(&mut c).unwrap().used.is_empty());
 }

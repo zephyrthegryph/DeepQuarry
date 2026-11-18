@@ -47,6 +47,10 @@ fn main_inner() {
             std::process::exit(2);
         }
     };
+    if arguments.first().map(String::as_str)==Some("analyze-list"){
+        let result=if arguments.len()==1&&compile_result.is_none(){dmbc::runner_host::write_registered_metadata_list(&mut std::io::stdout().lock())}else{Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"usage: dmbc analyze-list"))};
+        if let Err(error)=result{eprintln!("analyze list: {error}");std::process::exit(2)}return;
+    }
     if arguments.first().map(String::as_str)==Some("--native-grammar-census"){
         if compile_result.is_some(){eprintln!("--native-grammar-census accepts no compile result");std::process::exit(2);}
         if let Err(error)=dmbc::cli::run_native_grammar_census(&arguments){eprintln!("native intrinsic grammar census: {error}");std::process::exit(2);}
@@ -184,6 +188,10 @@ fn main_inner() {
         let result=if compile_result.is_none(){dmbc::daemon::run_checker_text_cli(&arguments[1..])}else{Err("profiling compile output is not a standalone Checker request".into())};
         match result{Ok(code)=>std::process::exit(i32::from(code)),Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
     }
+    if arguments.first().map(String::as_str)==Some("analyze-baseline-update"){
+        let result=if compile_result.is_none(){dmbc::daemon::run_baseline_update_cli(&arguments[1..])}else{Err("profiling compile output is not a baseline update request".into())};
+        match result{Ok(())=>return,Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
+    }
     if arguments.first().map(String::as_str)==Some("analyze-fix"){
         let result=if compile_result.is_none(){dmbc::daemon::run_native_fix_cli(&arguments[1..])}else{Err("profiling compile output is not an authored fix request".into())};
         match result{Ok(())=>return,Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
@@ -191,6 +199,18 @@ fn main_inner() {
     if arguments.first().map(String::as_str)==Some("analyze-schema-proposals"){
         let result=if compile_result.is_none(){dmbc::daemon::run_schema_proposals_cli(&arguments[1..])}else{Err("profiling compile output is not a schema report request".into())};
         match result{Ok(())=>return,Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
+    }
+    if arguments.first().map(String::as_str)==Some("analyze-sem-utility"){
+        let result=if compile_result.is_none(){dmbc::daemon::run_native_sem_utility_cli(&arguments[1..])}else{Err("profiling compile output is not a semantic utility request".into())};
+        match result{Ok(0)=>return,Ok(code)=>std::process::exit(i32::from(code)),Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
+    }
+    if arguments.first().map(String::as_str)==Some("analyze-codemod-fixture"){
+        let result=if compile_result.is_none(){dmbc::daemon::run_native_codemod_fixture_cli(&arguments[1..])}else{Err("profiling compile output is not a semantic utility request".into())};
+        match result{Ok(0)=>return,Ok(code)=>std::process::exit(i32::from(code)),Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
+    }
+    if arguments.first().map(String::as_str)==Some("analyze-selftest"){
+        let result=if compile_result.is_none(){dmbc::daemon::run_standalone_selftests_cli(&arguments[1..])}else{Err("profiling compile output is not a standalone callback request".into())};
+        match result{Ok(true)=>return,Ok(false)=>std::process::exit(1),Err(error)=>{eprintln!("{error}");let code=dmbc::request_failure::exit_code(error.as_ref());std::process::exit(if code==75{75}else{2})}}
     }
     if arguments.first().map(String::as_str)==Some("analyze-full-check"){
         let result=if compile_result.is_none(){dmbc::daemon::run_full_registry_check_cli(&arguments[1..])}else{Err("profiling compile output is not a report-only check request".into())};
@@ -220,6 +240,10 @@ fn main_inner() {
                 std::process::exit(if status == 75 { 75 } else { 2 });
             }
         }
+    }
+    if arguments.first().map(String::as_str) == Some("generate-ordinary") {
+        let result=if compile_result.is_none(){dmbc::daemon::generation::run_ordinary_arguments(&arguments[1..])}else{Err("generate-ordinary does not accept compilation output options".into())};
+        match result{Ok(true)=>return,Ok(false)=>std::process::exit(1),Err(error)=>{eprintln!("{error}");std::process::exit(2)}}
     }
     if arguments.first().map(String::as_str) == Some("generate") {
         let result=if compile_result.is_none()&&arguments.len()==3&&arguments[2]=="--jsonl"{dmbc::daemon::generation::run_file(std::path::Path::new(&arguments[1]))}else{Err("usage: dmbc generate REQUEST.json --jsonl".into())};

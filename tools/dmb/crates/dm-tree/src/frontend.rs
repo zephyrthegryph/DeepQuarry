@@ -95,7 +95,7 @@ pub struct Diagnostic {
 pub struct OriginalFatalPreparationOutcome<'a>{diagnostic:&'a Diagnostic,prior:&'a[Diagnostic],byte_column:usize,indentation:bool}
 pub struct OriginalFormalNoticeOutcome<'a>{diagnostic:&'a Diagnostic,notice:crate::OriginalFormalNotice,byte_column:usize}
 impl OriginalFormalNoticeOutcome<'_>{pub fn message(&self)->&str{&self.diagnostic.message}pub fn registration(&self)->(Option<&'static str>,crate::OriginalFormalNoticeLevel){self.notice.registration()}pub fn location(&self)->(&Path,usize,usize){let point=self.diagnostic.location.as_ref().expect("actual formal notice source point");(point.path.as_path(),point.line,self.byte_column)}}
-impl OriginalFatalPreparationOutcome<'_>{pub fn prior_notices(&self)->impl Iterator<Item=OriginalFormalNoticeOutcome<'_>>{self.prior.iter().map(|diagnostic|{let DiagnosticKind::OriginalFormalNotice{notice,byte_column}=diagnostic.kind else{unreachable!("private actual formal prefix")};OriginalFormalNoticeOutcome{diagnostic,notice,byte_column}})}pub fn message(&self)->&str{&self.diagnostic.message}pub fn location(&self)->(&Path,usize,usize){let point=self.diagnostic.location.as_ref().expect("private native mapped failure");(point.path.as_path(),point.line,self.byte_column)}pub fn severity(&self)->&'static str{"error"}pub fn notes(&self)->Vec<String>{let mut notes=Vec::with_capacity(if self.indentation{3}else{2});if self.indentation{let(_,line,_)=self.location();notes.push(format!("{}:1: check for extra indentation at the start of the next line",line+1));}notes.push("fatal error: the parser cannot continue".into());notes.push("constant evaluation will be skipped".into());notes}pub fn continues_analysis(&self)->bool{false}pub fn compiler_admissible(&self)->bool{false}}
+impl OriginalFatalPreparationOutcome<'_>{pub fn prior_notices(&self)->impl Iterator<Item=OriginalFormalNoticeOutcome<'_>>{self.prior.iter().map(|diagnostic|{let DiagnosticKind::OriginalFormalNotice{notice,byte_column}=diagnostic.kind else{unreachable!("private actual formal prefix")};OriginalFormalNoticeOutcome{diagnostic,notice,byte_column}})}pub fn message(&self)->&str{&self.diagnostic.message}pub fn location(&self)->(&Path,usize,usize){let point=self.diagnostic.location.as_ref().expect("private native mapped failure");(point.path.as_path(),point.line,self.byte_column)}pub fn severity(&self)->&'static str{"error"}pub fn write_notes(&self,out:&mut impl std::io::Write)->std::io::Result<()>{if self.indentation{let(_,line,_)=self.location();writeln!(out,"- {}:1: check for extra indentation at the start of the next line",line+1)?;}writeln!(out,"- fatal error: the parser cannot continue")?;writeln!(out,"- constant evaluation will be skipped")}pub fn notes(&self)->Vec<String>{let mut notes=Vec::with_capacity(if self.indentation{3}else{2});if self.indentation{let(_,line,_)=self.location();notes.push(format!("{}:1: check for extra indentation at the start of the next line",line+1));}notes.push("fatal error: the parser cannot continue".into());notes.push("constant evaluation will be skipped".into());notes}pub fn continues_analysis(&self)->bool{false}pub fn compiler_admissible(&self)->bool{false}}
 /// Only a real first fatal declaration failure is represented. Other native
 /// diagnostics remain unsupported here, never a fabricated empty full report.
 pub fn original_fatal_preparation_outcome(diagnostics:&[Diagnostic])->Option<OriginalFatalPreparationOutcome<'_>>{let(first,prior)=diagnostics.split_last()?;if prior.iter().any(|row|!matches!(row.kind,DiagnosticKind::OriginalFormalNotice{..})||row.location.is_none()){return None}let(byte_column,indentation)=match first.kind{DiagnosticKind::OriginalFatalInput{byte_column,indentation,..}|DiagnosticKind::OriginalFatalParameter{byte_column,indentation,..}|DiagnosticKind::OriginalFatalDeclaration{byte_column,indentation,..}=>(byte_column,indentation),_=>return None};first.location.as_ref()?;Some(OriginalFatalPreparationOutcome{diagnostic:first,prior,byte_column,indentation})}
@@ -392,8 +392,7 @@ impl ColdFrontend {
       checkpoint().map_err(BodySyntaxFailure::Operational)?;
       self.compact_body(occurrence)?;
       let issued=&self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
-      let code=self.body_code(issued)?;
-      let(parameters,projection)=self.issued_syntax.original_header_parameters(issued.expanded_span,code.identity()).map_err(|error|internal(&error.message))?;
+      let(parameters,projection)=self.issued_syntax.original_header_parameters_header_only(issued.expanded_span).map_err(|error|internal(&error.message))?;
       let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
       body_archive::checked_source_parameters_projected(&self.snapshot.tree,issued,header,parameters,&self.issued_arena,Some(projection),&||checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())
     }
@@ -404,8 +403,7 @@ impl ColdFrontend {
       a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
       self.compact_body(occurrence)?;
       let issued=&self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
-      let code=self.body_code(issued)?;
-      self.issued_syntax.with_original_header_parameters_admitted(issued.expanded_span,code.identity(),a,|parameters,projection|{
+      self.issued_syntax.with_original_header_parameters_admitted_header_only(issued.expanded_span,a,|parameters,projection|{
        let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
        let view=body_archive::checked_source_parameters_projected(&self.snapshot.tree,issued,header,parameters,&self.issued_arena,Some(projection),&||a.checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())?;
        consume(view)
@@ -422,6 +420,7 @@ impl ColdFrontend {
         &'a self,
         occurrence: &BodyOccurrence,
     ) -> Result<ParsedBody<'a>, BodySyntaxFailure> {
+        if self.body_queries.is_some(){let ordinal=*self.body_by_declaration.get(&occurrence.declaration).ok_or_else(||internal("body declaration ordinal absent"))?;self.syntax_input_checked(ordinal,&||Ok(()))?;}
         self.parse_body_with(occurrence, |input, host| input.obtain_checked(host))
     }
     fn parse_body_with<'a, E: From<Diagnostic>>(
@@ -433,7 +432,8 @@ impl ColdFrontend {
         let issued = &self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
         if let Some(queries) = &self.body_queries {
             let ordinal = self.body_by_declaration[&occurrence.declaration];
-            let shared = obtain(&queries.inputs[ordinal], queries.host.as_ref())?;
+            let input=queries.inputs.issued(ordinal).ok_or_else(||internal("native body Input is not issued; use checked ordinal demand"))?;
+            let shared = obtain(&input, queries.host.as_ref())?;
             return Ok(ParsedBody {
                 statements: None,
                 statement_attempted: false,
@@ -604,19 +604,20 @@ mod relative_declarations;
 pub use body_code::IssuedBodyCode;
 #[path = "frontend_body_queries.rs"]
 mod body_queries;
+#[path="frontend_committed_bodies.rs"]pub(crate) mod committed_bodies;
 #[path = "frontend_abi_source.rs"]
 mod abi_source;
 pub use abi_source::{OriginalAbiSourceInput,OriginalAbiExpressionKind,OriginalAbiExpressionProvenance};
 #[path = "frontend_initializer_source.rs"]
 mod initializer_source;
-pub use initializer_source::{OriginalInitializerRootProvenance,OriginalInitializerDimensionInput,OriginalInitializerDimensions,
+pub use initializer_source::{OriginalUtilityValues,UtilityVariableOrigin,UtilityConstantError,OriginalUtilityErrors,OriginalDeclarationDimensions,OriginalInitializerRootProvenance,OriginalInitializerDimensionInput,OriginalInitializerDimensions,
     OriginalDeclarationExpressionContext, OriginalDeclarationExpressionInput,
     InitializerExpressionRecipe, OriginalInitializerContext, OriginalInitializerExpression,
     OriginalInitializerExpressionInput,
 };
 #[path = "frontend_setting_source.rs"]
 mod setting_source;
-pub use body_queries::{BodySyntax, BodySyntaxInput, BodySyntaxQueries,CurrentBodySyntax,OriginalBodySyntaxProduct,OriginalBodySyntaxError};
+pub use body_queries::{BorrowedBodyUtilityPoint,BodySyntax, BodySyntaxInput, BodySyntaxInputWeak, BodySyntaxQueries,CurrentBodySyntax,OriginalBodySyntaxProduct,OriginalBodySyntaxError};
 #[path = "frontend_setting_queries.rs"]
 mod setting_queries;
 pub use setting_queries::{
@@ -631,7 +632,7 @@ pub use body_archive::{OriginalArchiveOwner, OriginalParentSourceFailure,
     AnnotationCandidateRoster, ArchivedBody, BodyArchive, CheckerVariableProperties, CallableHeaderSource,
     OriginalHeaderExpressionHandle, SourceHeaderExpressions, SourceLocalView, SourceParameterView,
 };
-pub use relative_declarations::BodyCodeIdentity;
+pub use relative_declarations::{BodyCodeIdentity,BodyCodeWeak};
 pub use relative_declarations::{CurrentSyntaxChunk, DeclarationSyntax, ItemView, RelativeSyntax};
 #[path = "body_arena.rs"]
 mod body_arena;
@@ -962,7 +963,7 @@ mod ast_capacity;
 mod diagnostic_preparation;
 #[path = "frontend_pipeline.rs"]
 mod pipeline;
-pub use diagnostic_preparation::{CleanOriginalImageDirArchive, CleanOriginalImageDirProof, DecodedSourceCandidates, DiagnosticFrontend, DiagnosticSourceView, OriginalImageDirFrontend};
+pub use diagnostic_preparation::{CleanOriginalImageDirArchive, CleanOriginalImageDirProof, DecodedSourceCandidates, DiagnosticFrontend, DiagnosticSourceView, OriginalImageDirFrontend,OriginalCommittedBodyDiagnostic,ParseOnlySyntaxSource,OriginalParserFormalNotice};
 pub use body_archive::OriginalImageDirCallable;
 #[path="frontend_original_notices.rs"]mod original_notices;
 pub use original_notices::{OriginalDiagnosticPoint,OriginalPreprocessNotice,OriginalPreprocessNotes,OriginalPreprocessNotices,OriginalPreprocessNoticeOwner,OriginalPreprocessNoticeStorage};
@@ -973,7 +974,11 @@ pub use pipeline::{
     build_with_executor_and_semantic_state_for_policy_checked,
     build_with_executor_and_semantic_state_with_original_types,
     build_for_checker_diagnostics_with_state_checked,
+    build_for_committed_body_syntax_checked,
+    build_for_parse_only_syntax_checked,
     build_for_original_analysis_with_callable_anchors_checked,
+    build_for_original_native_parameter_demand_with_callable_anchors_checked,
+    build_for_original_native_body_demand_with_callable_anchors_checked,
     build_for_original_compound_with_callable_anchors_checked,
     build_for_original_analysis_with_state_checked,
     build_for_original_image_dir_checked,
@@ -1270,10 +1275,10 @@ fn collect_bodies(
     mapping: &Mapping<'_>,
     bodies: &mut Vec<BodyOccurrence>,
     settings: &mut Vec<Option<Arc<dm_ir::ProcedureMetadata>>>,
-    codes: &mut Vec<Arc<BodyCodeIdentity>>,
+    codes: &mut Vec<Option<Arc<BodyCodeIdentity>>>,
 ) -> Result<(), Vec<Diagnostic>> {
     for recipe in syntax.body_recipes() {
-        codes.push(recipe.code_identity());
+        codes.push(recipe.issued_code());
         let span = recipe.span();
         let declaration = declarations
             .get(&span.start)
@@ -1471,3 +1476,8 @@ pub use body_queries::{OriginalBodyDisposition,OriginalBodyCodeGrant,NativeBodyD
 
 #[path="frontend_original_signature_funding.rs"]mod original_signature_funding;
 pub use original_signature_funding::{OriginalSignatureAliasGroup,OriginalSignatureAliasCensus};
+
+impl OriginalFatalPreparationOutcome<'_>{
+ /// SAME pinned fatal notes in DMError Debug-display form, without an owned Vec.
+ pub fn write_sem_message(&self,out:&mut dyn std::fmt::Write)->std::fmt::Result{write!(out,"{}",self.message())?;if self.indentation{let(_,line,_)=self.location();write!(out,"\n- {}:1: check for extra indentation at the start of the next line",line+1)?;}write!(out,"\n- fatal error: the parser cannot continue\n- constant evaluation will be skipped")}
+}

@@ -30,3 +30,16 @@ fn pages(case:&str)->(PathBuf,Pages,Config,HashMap<String,usize>){
  let root=std::env::current_dir().unwrap().join("keys-original-file-scratch");let path=root.join("code/padding.dm");let source=format!("// {}\n{}// ALLOW(cache): world.Export() is a blocking external call\n","x".repeat(64*1024),"\n".repeat(1000));let budget=Budget::new(64*1024*1024).unwrap();let phase=Budget::scoped_temporaries(&budget).unwrap();let before=budget.used();let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
  for index in 0..80{let mut projection=Projection::default();crate::captured_raw_file::with_original_policy_file_prepared(&root,&path,0,&budget,|local|{local.charge(source.len().checked_mul(4).and_then(|n|n.checked_add(8192)).unwrap()).map_err(|m|oom(local,m))?;Ok(dm_preprocess::SourceText::from(source.clone()))},&mut|relative,views|{projection.file(relative,views,&phase,&||Ok(()))?;Ok(true)}).unwrap();assert_eq!(projection.count,0);assert!(projection.entry_ops.is_empty()&&projection.defines.is_empty()&&projection.key_refs.is_empty()&&projection.bad_sources.is_empty()&&projection.allows.is_empty());drop(projection);assert_eq!(budget.used(),before+(index+1)*fixed,"only existing fixed FileScratch metadata may survive; no per-file line/head/regex buffers escape");}
 }
+
+#[test]fn native_key_header_program_io_precedes_later_cancel_without_publishing_rows(){
+ use std::sync::atomic::{AtomicBool,Ordering};
+ struct Refuse(AtomicBool);impl crate::native_pattern::Provider for Refuse{
+  fn capture_len(&self,_:crate::native_pattern::Spec)->io::Result<usize>{self.0.store(true,Ordering::SeqCst);Err(io::Error::from_raw_os_error(1450))}
+  fn find(&self,_:crate::native_pattern::Spec,_:&str,_:usize,_:&mut dyn FnMut((usize,usize))->io::Result<()>)->io::Result<bool>{panic!("header width failed before search")}
+  fn capture(&self,_:crate::native_pattern::Spec,_:&str,_:usize,_:&mut dyn FnMut(&[Option<(usize,usize)>])->io::Result<()>)->io::Result<bool>{panic!("header width failed before capture")}
+ }
+ let(_,actual_pages,configuration,order)=pages("basic");let provider=Refuse(AtomicBool::new(false));let budget=Budget::new(64*1024*1024).unwrap();
+ let poll=||if provider.0.load(Ordering::SeqCst){Err(io::Error::new(io::ErrorKind::Interrupted,"later real callback cancellation"))}else{Ok(())};
+ let error=collect_with_patterns(&actual_pages,&configuration,&order,&budget,&poll,&provider).err().expect("failed native width cannot publish key data");assert!(matches!(error,Failure::Operational(ref actual)if actual.raw_os_error()==Some(1450)));assert!(provider.0.load(Ordering::SeqCst));
+ let recovered=collect(&actual_pages,&configuration,&order,&Budget::new(64*1024*1024).unwrap(),&||Ok(())).unwrap();assert_eq!(recovered.sites().len(),16,"the original kernel still recovers on a new admitted operation");
+}

@@ -1,4 +1,5 @@
 //! Original authored CODE-view catch range scanner shared by both report facades.
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::{
     key_policy_control::Control,
     lint::{Meta, Policy, RuleMeta, ScanKind},
@@ -28,9 +29,9 @@ pub(crate) fn excluded(relative: &str) -> bool {
     relative.starts_with("code/tests/") || relative.contains("/_generated/")
 }
 
-pub(crate) struct Patterns {
-    catch_head: Pat,
-    throwing: Pat,
+pub(crate) struct Patterns<P=Pat> {
+    catch_head: P,
+    throwing: P,
 }
 
 impl Patterns {
@@ -41,6 +42,8 @@ impl Patterns {
         }
     }
 
+}
+impl<P:crate::raw_fixture_policy::PatternApi> Patterns<P>{
     pub(crate) fn scan<C: Control>(
         &self,
         code: &View,
@@ -67,3 +70,7 @@ impl Patterns {
         control.checkpoint()
     }
 }
+
+const PATTERN_SOURCES:&[&str]=&[r"^\s*catch\b",r"\b(?:stack_trace|CRASH)\("];
+#[cfg(feature="native-policy")]
+pub(crate) fn native_patterns<'f,'a>(fixture:&'f crate::raw_fixture_policy::Fixture<'a>)->Patterns<crate::raw_fixture_policy::Pattern<'f,'a>>{Patterns{catch_head:fixture.pattern(PATTERN_SOURCES[0],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(PATTERN_SOURCES[0])),throwing:fixture.pattern(PATTERN_SOURCES[1],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(PATTERN_SOURCES[1]))}}

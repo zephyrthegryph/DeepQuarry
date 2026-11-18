@@ -85,9 +85,14 @@ impl CurrentOriginalDeclarations{
   let end=self.offset.checked_add(self.source.len()).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
   if expanded.get(self.offset..end)!=Some(self.source.as_str()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original primary source differs from actual expanded source region"))}
   let mut symbols=self.symbols.take().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual original primary products were already adapted"))?;
-  // Lazy body parameters are issued only on the complete single-input compact
-  // route. Keep early-fatal and grouped original symbol ownership unchanged.
-  if self.offset == 0 && self.fatal.is_none() && self.headers.lazy_body_parameters() {
+  // The existing lazy route and an actual complete unshifted committed
+  // stream may share compact spelling storage. A new committed lane must
+  // retain BOTH actual source grants; this issues no completion authority.
+  // Dense standalone/grouped/fatal ownership remains unchanged.
+  let bound_committed=matches!(&self.items,OriginalSignatureItems::Committed(_))
+   &&self.source.source_arena_payload_credit().is_some()
+   &&self.source.source_arena_control_credit().is_some();
+  if self.offset == 0 && self.fatal.is_none() && (self.headers.lazy_body_parameters()||bound_committed) {
    original_operation(admission, || symbols.enable_compact_spellings(admission))?;
    if self.source.source_arena_payload_credit().is_some() && self.source.source_arena_control_credit().is_some() {
     original_operation(admission, || symbols.bind_compact_spelling_source(ActualCompactSpellingSource(self.source.clone()), admission))?;
@@ -112,6 +117,10 @@ impl CurrentOriginalDeclarations{
   if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
    eprintln!("ORIGINAL_INITIALIZER_SLOT_CONTAINERS stage=after_adapt offset={} classes={:?}", self.offset, self.headers.initializer_slots().container_geometry_for_trace());
   }
+  // No progress/facts getter can observe deferred local spellings. The
+  // adapter has consumed every signature and cannot call user code; keep its
+  // actual facts local until the same funded observation table is complete.
+  original_operation(admission,||self.prepared.finish_deferred_spelling_observations(&progress.facts().symbols,admission))?;
   Ok(progress)
  }
 
@@ -238,7 +247,7 @@ impl OriginalDeclarationProducts{
 /// Existing native current-contribution machinery consumes SAME actual
 /// adapter/header rows, never reconstructs a declaration or parses a signature.
 impl CurrentOriginalDeclarations{
- fn into_current(mut self,progress:crate::adapter::DeclarationAdapterProgress,a:&dm_syntax::SettingAdmission<'_>)->io::Result<(super::declaration_state::CurrentContribution,OriginalPrimaryRoots)>{
+ fn into_current(mut self,progress:crate::adapter::DeclarationAdapterProgress,a:&dm_syntax::SettingAdmission<'_>,ordinary_demand:bool)->io::Result<(super::declaration_state::CurrentContribution,OriginalPrimaryRoots)>{
   if !a.matches_lease_domain(&self._lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original current contribution belongs to another native resource domain"))}
   let(mut facts,rows,errors)=progress.into_parts();
   if let Some(error)=errors.first(){return Err(io::Error::new(io::ErrorKind::Unsupported,format!("unissued original declaration adapter state: {}",error.message)))}
@@ -246,10 +255,12 @@ impl CurrentOriginalDeclarations{
   let receipt=crate::procedure::HeaderAllocationReceipt::from_original_rows_checked(items,&self.headers,self.offset,rows,a).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})?;
   let ledger=crate::allocation_ledger::capture_with_original_header_receipt(items,"/",&mut facts.symbols,&receipt).map_err(|error|io::Error::new(io::ErrorKind::Unsupported,error.message))?;drop(receipt);
   let mut aliases=super::original_signature_funding::OriginalSignatureAliasGroup::capture(&facts,&mut self.prepared,a)?;
-  let current=match self.items {
-   OriginalSignatureItems::Dense(items)=>super::declaration_state::CurrentContribution::fresh_source_headers(self.source,self.offset,items,facts,ledger,Some(self.headers)),
-   OriginalSignatureItems::Committed(items)=>super::declaration_state::CurrentContribution::adopt_original_items(self.source,items,facts,ledger,self.headers),
-  }.ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"actual original prefix cannot bind native current contribution"))?;
+  let pending=match self.items {
+   OriginalSignatureItems::Dense(items)=>super::declaration_state::CurrentContribution::fresh_source_headers_mode(self.source,self.offset,items,facts,ledger,Some(self.headers),Some(a),ordinary_demand),
+   OriginalSignatureItems::Committed(items)=>super::declaration_state::CurrentContribution::adopt_original_items_mode(self.source,items,facts,ledger,self.headers,a,ordinary_demand),
+  };
+  if let Some(actual)=a.take_operational_error(){return Err(actual)}
+  let current=pending.ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"actual original prefix cannot bind native current contribution"))?;
   if let Some(items)=current.syntax.shared_relative().wide_relative_items(){let group=Arc::get_mut(&mut aliases).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"primary weak alias observations escaped before publication"))?;original_operation(a,||group.retain_wide_items(items,&self._lease,a))?;}
   if !current.syntax.shared_relative().initializer_admission_matches(a)?{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual original prefix contribution lacks same-counter initializer completion"))}
   original_operation(a,||a.checkpoint())?;Ok((current,OriginalPrimaryRoots{offset:self.offset,parser:self._lease,_signatures:self.prepared,aliases}))
@@ -267,14 +278,15 @@ pub(super) struct OriginalCurrentDeclarations{
  lease:dm_syntax::SettingRootLease,
 }
 impl OriginalDeclarationProducts{
- pub(super) fn into_current(self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<OriginalCurrentDeclarations>{
+ pub(super) fn into_current(self,a:&dm_syntax::SettingAdmission<'_>)->io::Result<OriginalCurrentDeclarations>{self.into_current_mode(a,false)}
+ pub(super) fn into_current_mode(self,a:&dm_syntax::SettingAdmission<'_>,ordinary_demand:bool)->io::Result<OriginalCurrentDeclarations>{
   if !a.matches_lease_domain(&self.primary.lease)||!a.matches_lease_domain(&self._lease){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual original products belong to another native resource owner"))}
   if self.rows.len()!=self.primary.inputs.len(){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual original producer rosters differ"))}
   let mut result=OriginalCurrentDeclarations{expanded:self.primary.expanded,current:Vec::new(),diagnostics:Vec::new(),primary_leases:Vec::new(),frontier:self.primary.frontier,lease:original_operation(a,||a.reserve(std::mem::size_of::<OriginalCurrentDeclarations>()))?};
   for(mut input,row)in self.primary.inputs.into_iter().zip(self.rows){
    for diagnostic in std::mem::take(&mut input.diagnostics){reserve_slot(&mut result.diagnostics,&mut result.lease,a)?;result.diagnostics.push((input.offset,diagnostic));}
    reserve_slot(&mut result.current,&mut result.lease,a)?;reserve_slot(&mut result.primary_leases,&mut result.lease,a)?;
-   let(current,primary)=input.into_current(row,a)?;result.current.push(current);result.primary_leases.push(primary);
+   let(current,primary)=input.into_current(row,a,ordinary_demand)?;result.current.push(current);result.primary_leases.push(primary);
   }
   original_operation(a,||a.checkpoint())?;Ok(result)
  }
@@ -302,14 +314,23 @@ pub(super) struct PreparedOriginalDeclarations{
  pub(super) parsed:super::declaration_parse::ParsedDeclarations,
  pub(super) retention:Arc<OriginalPrimaryRetention>,
 }
+#[repr(u8)]#[derive(Clone,Copy,Debug,Eq,PartialEq)]enum OriginalBodyStorageMode{EagerFull,EagerCompact,DemandFull}
 pub(crate) struct OriginalPrimaryRetention{
+ body_storage_mode:OriginalBodyStorageMode,
  source:dm_preprocess::SourceText,
+ committed_inputs:Option<Box<std::sync::Mutex<Option<super::committed_bodies::FinalCommittedBodyInputs>>>>,
  primary_leases:Vec<OriginalPrimaryRoots>,
  frontier:Option<(usize,OriginalPrimaryFatal)>,
  _metadata:dm_syntax::SettingRootLease,
 }
 impl std::fmt::Debug for OriginalPrimaryRetention{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalPrimaryRetention").field("source_bytes",&self.source.len()).field("actual_primary_roots",&self.primary_leases.len()).field("partial",&self.frontier.is_some()).finish_non_exhaustive()}}
 impl OriginalPrimaryRetention{
+ pub(super) fn compact_macro_history(&self)->bool{self.body_storage_mode==OriginalBodyStorageMode::EagerCompact}
+ pub(super) fn ordinary_code_demand(&self)->bool{self.body_storage_mode==OriginalBodyStorageMode::DemandFull}
+ pub(super) fn install_committed_inputs(&mut self,inputs:Box<std::sync::Mutex<Option<super::committed_bodies::FinalCommittedBodyInputs>>>)->io::Result<()>{if self.committed_inputs.is_some()||self.frontier.is_some(){return Err(super::committed_bodies::trace_invalid_input("primary-install-committed-inputs: previous inputs or fatal frontier already exists"))}self.committed_inputs=Some(inputs);Ok(())}
+ pub(super) fn has_committed_bodies(&self)->bool{self.committed_inputs.is_some()}
+ pub(super) fn take_committed_inputs(&self)->io::Result<Option<super::committed_bodies::FinalCommittedBodyInputs>>{match &self.committed_inputs{None=>Ok(None),Some(slot)=>slot.lock().map_err(|_|io::Error::other("actual committed Input handoff poisoned"))?.take().map(Some).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual committed Input handoff was already consumed"))}}
+
  pub(super) fn lazy_body_parameters(&self)->bool{
   self.primary_leases.iter().any(|roots|roots._signatures.actual_headers().lazy_body_parameters())
  }
@@ -319,6 +340,7 @@ impl OriginalPrimaryRetention{
  pub(super) fn visit_formal_notices<'a>(&'a self,checkpoint:&dyn Fn()->io::Result<()>,mut consume:impl FnMut(crate::OriginalFormalNotice,Option<&'a str>)->io::Result<()>)->io::Result<()>{for roots in &self.primary_leases{checkpoint()?;let headers=roots._signatures.actual_headers();if !headers.formal_source_matches(&self.source,roots.offset){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual formal notice source differs from retained primary projection"))}for notice in headers.all_formal_notices().map_err(|reason|io::Error::new(io::ErrorKind::Unsupported,reason))?{checkpoint()?;let value=headers.formal_notice_text(notice).map_err(|reason|io::Error::new(io::ErrorKind::Unsupported,reason))?;consume(notice.checked_shift(roots.offset)?,value)?;}}Ok(())}
 
  pub(super) fn visit_retained_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
+  if let Some(slot)=&self.committed_inputs{visit(&**slot as *const std::sync::Mutex<Option<super::committed_bodies::FinalCommittedBodyInputs>> as usize,std::mem::size_of_val(&**slot),std::mem::size_of_val(&**slot));if let Ok(guard)=slot.lock(){if let Some(inputs)=guard.as_ref(){inputs.visit_storage(&mut visit)}}}
   if self.primary_leases.capacity()!=0{visit(self.primary_leases.as_ptr()as usize,self.primary_leases.capacity()*std::mem::size_of::<OriginalPrimaryRoots>(),std::mem::align_of::<OriginalPrimaryRoots>())}
   for roots in &self.primary_leases{roots._signatures.visit_retained_failure_storage(&mut visit);roots.aliases.visit_storage(&mut visit)}
  }
@@ -347,7 +369,7 @@ impl OriginalCurrentDeclarations{
   let syntax=DeclarationSyntax::new(syntax).map_err(|error|io::Error::new(io::ErrorKind::InvalidData,format!("current original syntax binding failed: {error:?}")))?;
   let events=crate::allocation_ledger::AllocationEvents::bind_leaves(allocations).map_err(|error|io::Error::new(io::ErrorKind::InvalidData,format!("current original event binding failed: {error:?}")))?;
   let parsed=super::declaration_parse::ParsedDeclarations{syntax,diagnostics:self.diagnostics,adapted,allocation_ledger:crate::allocation_ledger::AllocationLedger{events},declaration_errors:Vec::new(),reuse_stats:DeclarationReuseStats{chunks:count,parsed_chunks:count,..Default::default()}};
-  let retention=Arc::new(OriginalPrimaryRetention{source:self.expanded,primary_leases:self.primary_leases,frontier:self.frontier,_metadata:metadata});original_operation(a,||a.checkpoint())?;
+  let retention=Arc::new(OriginalPrimaryRetention{body_storage_mode:OriginalBodyStorageMode::EagerFull,source:self.expanded,committed_inputs:None,primary_leases:self.primary_leases,frontier:self.frontier,_metadata:metadata});original_operation(a,||a.checkpoint())?;
   Ok(PreparedOriginalDeclarations{parsed,retention})
  }
 }
@@ -671,7 +693,7 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
   // Original u32 source geometry. Alter only this RESOURCE-test indentation
   // scalar, moving SAME native Item allocations; never issue a model/view.
   let OriginalSignatureItems::Dense(items)=&mut primary.items else{panic!("explicit compatibility fixture must stay dense")};
-  items[0].indent=usize::MAX;let(current,roots)=primary.into_current(progress,&a).unwrap();let wide=Arc::clone(current.syntax.shared_relative().wide_relative_items().expect("actual existing wide storage fallback"));let original=Arc::downgrade(&roots.parser);let mut census=OriginalSignatureAliasCensus::default();census.retain(Arc::clone(&roots.aliases),&a).unwrap();drop(current);drop(roots);census.prune(&a).unwrap();assert!(original.upgrade().is_some());assert_eq!(census.live_groups(),1);drop(wide);census.prune(&a).unwrap();assert!(original.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+  items[0].indent=usize::MAX;let(current,roots)=primary.into_current(progress,&a,false).unwrap();let wide=Arc::clone(current.syntax.shared_relative().wide_relative_items().expect("actual existing wide storage fallback"));let original=Arc::downgrade(&roots.parser);let mut census=OriginalSignatureAliasCensus::default();census.retain(Arc::clone(&roots.aliases),&a).unwrap();drop(current);drop(roots);census.prune(&a).unwrap();assert!(original.upgrade().is_some());assert_eq!(census.live_groups(),1);drop(wide);census.prune(&a).unwrap();assert!(original.upgrade().is_none());assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
  }
  #[test]fn actual_header_resource_root_cannot_rebind_foreign_reservation_or_replace_current_owner(){
   let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);let primary=CurrentOriginalDeclarations::parse("/datum/kept\n".into(),0,&a).unwrap();let foreign=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let b=dm_syntax::SettingAdmission::new(&foreign,32<<20,&poll);let root=Arc::new(b.reserve(64).unwrap());assert!(matches!(primary.headers.retain_original_primary_resource(root,&b),Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(ref error))if error.kind()==io::ErrorKind::InvalidInput));assert_eq!(foreign.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());let other=Arc::new(a.reserve(64).unwrap());assert!(primary.headers.retain_original_primary_resource(other,&a).is_err());drop(primary);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
@@ -698,5 +720,99 @@ impl OriginalCurrentDeclarations{pub(super) fn retain_signature_aliases(&self,ho
   let actual=crate::procedure::original_primary_signatures::parse_original_signatures_using("/proc/p(A)\n    return A\n".into(),&a).unwrap();
   let foreign=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let b=dm_syntax::SettingAdmission::new(&foreign,16<<20,&||Ok(()));
   assert_eq!(OrderedOriginalDeclarations::from_actual_signature_input(actual,&b).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
+ }
+}
+
+impl OriginalPrimaryRetention{
+ pub(super) fn committed_body_counts(&self)->io::Result<(usize,usize)>{
+  if !self.has_committed_bodies()||self.frontier.is_some(){return Err(io::Error::new(io::ErrorKind::Unsupported,"actual committed BODY syntax preparation is unavailable"))}
+  let(mut good,mut bad)=(0usize,0usize);for roots in &self.primary_leases{let headers=roots._signatures.actual_headers();if !headers.formal_source_matches(&self.source,roots.offset){return Err(super::committed_bodies::trace_invalid_input("primary-committed-counts: formal source view differs from retained source projection"))}let products=headers.committed_products().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual committed BODY product column is absent"))?;let(g,b)=products.counts();good=good.checked_add(g).ok_or(io::ErrorKind::OutOfMemory)?;bad=bad.checked_add(b).ok_or(io::ErrorKind::OutOfMemory)?;}Ok((good,bad))
+ }
+ pub(super) fn visit_committed_body_diagnostics<'a>(&'a self,checkpoint:&dyn Fn()->io::Result<()>,consume:&mut dyn FnMut(usize,dm_syntax::Span,&'a dm_syntax::Diagnostic,&'a dm_preprocess::regions::OriginalNoticeRegistration)->io::Result<()>)->io::Result<()>{
+  self.committed_body_counts()?;
+  for roots in &self.primary_leases{checkpoint()?;let headers=roots._signatures.actual_headers();let products=headers.committed_products().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual committed BODY diagnostics column is absent"))?;products.visit_first_diagnostics(checkpoint,&mut|header,diagnostic,registration|consume(roots.offset,header,diagnostic,registration))?;}Ok(())
+ }
+}
+
+impl OriginalPrimaryRetention{pub(super) fn committed_body_input_key(&self,mut ordinal:usize)->io::Result<u64>{self.committed_body_counts()?;for roots in &self.primary_leases{let headers=roots._signatures.actual_headers();let products=headers.committed_products().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual committed Input column absent"))?;let(good,bad)=products.counts();let count=good.checked_add(bad).ok_or(io::ErrorKind::OutOfMemory)?;if ordinal<count{return products.input_key(ordinal)}ordinal-=count;}Err(super::committed_bodies::trace_invalid_input("primary-committed-input-key: ordinal is absent from actual committed products"))}}
+
+#[cfg(test)]mod deferred_stream_spelling_lifetime_control{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn actual_deferred_handoff_census_keeps_detached_spelling_until_last_alias_and_refunds(){
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let a=dm_syntax::SettingAdmission::new(&used,16<<20,&||Ok(()));
+  let source=dm_preprocess::SourceText::from("/proc/probe(argument)\n    return argument\n");let mut observer=crate::procedure::original_primary_signatures::OriginalSignatureObserver::new(&a).unwrap();let primary=dm_syntax::parse_original_declaration_skeleton_with_observer_using(&source,&a,Some(&mut observer)).unwrap();let actual=observer.finish_primary_for_ordered_adapter(source,primary,None,false,None,None).unwrap().0;
+  let products=OrderedOriginalDeclarations::from_actual_signature_input(actual,&a).unwrap().adapt_for_original_outcome(&a).unwrap();
+  let id=dm_ir::SymbolId::of("argument");let spelling=Arc::clone(products.rows()[0].facts().symbols.shared_text(id).unwrap());
+  let native=products.into_current(&a).unwrap();assert!(Arc::ptr_eq(&spelling,native.current[0].symbols().shared_text(id).unwrap()));
+  let mut census=super::super::original_signature_funding::OriginalSignatureAliasCensus::default();census.retain(Arc::clone(&native.primary_leases[0].aliases),&a).unwrap();drop(native);census.prune(&a).unwrap();assert_eq!(census.live_groups(),1);assert_eq!(&*spelling,"argument");assert!(used.load(Ordering::Acquire)>root);drop(spelling);census.prune(&a).unwrap();assert_eq!(census.live_groups(),0);assert_eq!(used.load(Ordering::Acquire),root);
+ }
+}
+
+#[cfg(test)]mod committed_compact_gate_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn standalone_dense_and_declaration_fatal_keep_their_owned_spelling_lane(){
+  for(text,fatal)in [("/datum/scope\n    proc/long_callable()\n        return 1\n",false),("/datum/scope\n    proc/long_callable()\n        return 1\n    var/datum/first,second\n",true)]{
+   let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let counter=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,32<<20,&poll);
+   let input=OrderedOriginalDeclarations::parse(text.into(),&a).unwrap();
+   assert_eq!(input.frontier().is_some(),fatal,"exercise genuine complete versus declaration-fatal dense producers");
+   let products=input.adapt_for_original_outcome(&a).unwrap();
+   for row in products.rows(){assert_eq!(row.facts().symbols.compact_spelling_len(),0,"standalone dense/fatal must not opt into committed storage");}
+   drop(products);assert_eq!(counter.load(Ordering::Acquire),root);
+  }
+ }
+}
+
+impl PreparedOriginalDeclarations{
+ /// Called exactly at the actual stream handoff, before this owner escapes.
+ /// Its allocation was already funded by size_of::<OriginalPrimaryRetention>.
+ pub(super) fn record_stream_macro_history(&mut self,compact:bool)->io::Result<()>{self.record_stream_body_mode(compact,false)}
+ pub(super) fn record_stream_body_mode(&mut self,compact:bool,demand:bool)->io::Result<()>{
+  if compact&&demand{return Err(io::Error::new(io::ErrorKind::InvalidInput,"ordinary Code demand cannot use compact macro history"))}
+  if self.parsed.syntax.chunks().iter().any(|chunk|chunk.shared_relative().ordinary_code_demand()!=demand){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual ordinary Code storage mode differs from its primary retention"))}
+  Arc::get_mut(&mut self.retention).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"Original history owner escaped before mode binding"))?.body_storage_mode=if demand{OriginalBodyStorageMode::DemandFull}else if compact{OriginalBodyStorageMode::EagerCompact}else{OriginalBodyStorageMode::EagerFull};Ok(())
+ }
+}
+
+#[cfg(test)]#[test]
+fn actual_original_into_current_keeps_stopped_quota_as_oom_through_code_adoption(){
+ use std::sync::atomic::Ordering;
+ fn attempt(extra:Option<usize>)->(usize,usize,io::Result<()>){
+  let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let counter=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let peak=std::cell::Cell::new(root);let poll=||{peak.set(peak.get().max(counter.load(Ordering::Acquire)));Ok(())};
+  let healthy=dm_syntax::SettingAdmission::new(&counter,8<<20,&poll);
+  let text="/proc/probe(argument=1)\n    return argument\n";
+  let products=OrderedOriginalDeclarations::parse(text.into(),&healthy).unwrap().adapt_for_original_outcome(&healthy).unwrap();
+  let before=counter.load(Ordering::Acquire);peak.set(before);
+  let admitted=dm_syntax::SettingAdmission::new(&counter,extra.map_or(8<<20,|n|before.checked_add(n).unwrap()),&poll);
+  let pending=products.into_current(&admitted).map(drop);
+  let measured=peak.get().saturating_sub(before);
+  drop(admitted);drop(healthy);assert_eq!(counter.load(Ordering::Acquire),root,"real primary/signature/alias/Code owners refund on every actual adoption exit");
+  (before,measured,pending)
+ }
+ let(_,needed,healthy)=attempt(None);healthy.unwrap();assert!(needed>0&&needed<256*1024,"finite actual fixture must exercise paid current/adoption allocations");
+ let(mut denied,mut passed)=(0usize,0usize);
+ for extra in (0..=needed+std::mem::size_of::<usize>()).step_by(std::mem::size_of::<usize>()){
+  let(_,_,pending)=attempt(Some(extra));match pending{Ok(())=>passed+=1,Err(actual)=>{denied+=1;assert_eq!(actual.kind(),io::ErrorKind::OutOfMemory,"genuine stopped admission must not become unsupported/binding DATA: {actual:?}");}}
+ }
+ assert!(denied>0&&passed>0,"actual tight limits and healthy adoption both run");
+}
+
+impl OriginalPrimaryRetention{
+ pub(super) fn parse_only_body_counts(&self)->io::Result<(usize,usize)>{
+  if self.frontier.is_none(){return self.committed_body_counts()}
+  if self.committed_inputs.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"prefix cannot carry completed BODY Inputs"))}
+  let(mut good,mut bad)=(0usize,0usize);
+  for roots in &self.primary_leases{let headers=roots._signatures.actual_headers();if !headers.formal_source_matches(&self.source,roots.offset){return Err(super::committed_bodies::trace_invalid_input("primary-prefix-counts: formal source view differs from retained prefix projection"))}let products=headers.committed_prefix_products().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual report-only prefix BODY column is absent"))?;let(g,b)=products.counts();good=good.checked_add(g).ok_or(io::ErrorKind::OutOfMemory)?;bad=bad.checked_add(b).ok_or(io::ErrorKind::OutOfMemory)?;}Ok((good,bad))
+ }
+ pub(super) fn visit_parse_only_body_diagnostics<'a>(&'a self,checkpoint:&dyn Fn()->io::Result<()>,consume:&mut dyn FnMut(usize,dm_syntax::Span,&'a dm_syntax::Diagnostic,&'a dm_preprocess::regions::OriginalNoticeRegistration)->io::Result<()>)->io::Result<()>{
+  self.parse_only_body_counts()?;if self.frontier.is_none(){return self.visit_committed_body_diagnostics(checkpoint,consume)}
+  for roots in &self.primary_leases{checkpoint()?;let products=roots._signatures.actual_headers().committed_prefix_products().ok_or_else(||io::Error::from(io::ErrorKind::Unsupported))?;products.visit_first_diagnostics(checkpoint,&mut|header,diagnostic,registration|consume(roots.offset,header,diagnostic,registration))?;}Ok(())
+ }
+}
+
+impl OriginalPrimaryRetention{
+ pub(super) fn visit_parser_formal_notices<'a>(&'a self,checkpoint:&dyn Fn()->io::Result<()>,consume:&mut dyn FnMut(crate::OriginalFormalNotice,Option<&'a str>,&'a dm_preprocess::regions::OriginalNoticeRegistration)->io::Result<()>)->io::Result<()>{
+  self.parse_only_body_counts()?;self.visit_original_utility_formal_notices(checkpoint,consume)
+ }
+ pub(crate) fn visit_original_utility_formal_notices<'a>(&'a self,checkpoint:&dyn Fn()->io::Result<()>,consume:&mut dyn FnMut(crate::OriginalFormalNotice,Option<&'a str>,&'a dm_preprocess::regions::OriginalNoticeRegistration)->io::Result<()>)->io::Result<()>{for roots in &self.primary_leases{checkpoint()?;let headers=roots._signatures.actual_headers();if !headers.formal_source_matches(&self.source,roots.offset){return Err(super::committed_bodies::trace_invalid_input("primary-formal-notices: formal source view differs from retained source projection"))}for notice in headers.all_formal_notices().map_err(|reason|io::Error::new(io::ErrorKind::Unsupported,reason))?{checkpoint()?;let value=headers.formal_notice_text(notice).map_err(|reason|io::Error::new(io::ErrorKind::Unsupported,reason))?;let registration=headers.formal_notice_registration(notice).map_err(|reason|io::Error::new(io::ErrorKind::Unsupported,reason))?;consume(notice.checked_shift(roots.offset)?,value,registration)?;}}Ok(())
  }
 }

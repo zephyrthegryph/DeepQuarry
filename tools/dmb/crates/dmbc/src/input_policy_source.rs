@@ -8,6 +8,14 @@ fn pay(b:&Budget,n:Option<usize>)->Result<(),Failure>{let n=n.ok_or_else(||quota
 /// Resource-only settlement; never authorizes a source or changes the read.
 /// The real QueryDb implementation publishes actual backing BEFORE quota denial.
 pub(crate) trait RecordedPolicySourceLender {
+ /// Same actual held ledger/work, plus an operation-only native program lender.
+ /// Lenders without this real resource loan refuse; no detached fallback.
+ fn with_held_native_patterns(&mut self,_queries:&crate::query_db::QueryDb,_visit:&mut dyn FnMut(&dyn dm_preprocess::source_arena_credit::SourceArenaWork,&dyn dq_analyze::native_pattern::Provider)->io::Result<()>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::NotConnected,"this source lender has no actual held pattern resource loan"))}
+
+ /// Allocation-only native pattern work inside this operation's already-paid
+ /// capture window. An arbitrary Budget is not an admissible substitute.
+ fn with_prepaid_native_patterns(&mut self,_queries:&crate::query_db::QueryDb,_loan:&dq_analyze::captured_generator_budget::ReservedWindowLoan<'_>,_visit:&mut dyn FnMut(&dyn dm_preprocess::source_arena_credit::SourceArenaWork,&dyn dq_analyze::native_pattern::Provider)->io::Result<()>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::NotConnected,"this source lender has no authenticated prepaid native pattern loan"))}
+
  /// Resource-only synchronous callback. Unimplemented lenders refuse rather
  /// than issuing detached work or silently accepting an unvisited marker.
  fn with_held_source_work(&mut self,_queries:&crate::query_db::QueryDb,_visit:&mut dyn FnMut(&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<()>)->io::Result<()>{Err(io::Error::new(io::ErrorKind::NotConnected,"this source lender has no actual held-gate resource loan"))}

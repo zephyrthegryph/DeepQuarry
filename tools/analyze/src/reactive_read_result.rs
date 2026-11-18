@@ -32,6 +32,7 @@ impl FrozenReadSet{
   Ok(Self{reads,ctx_fields,sites,diags,lookup_diags,effects,followed,opaque,internal,sampled})
  }
  pub fn reads(&self)->&[Read]{&self.reads}
+
  pub fn ctx_fields(&self)->&[(String,(String,u32))]{&self.ctx_fields}
  pub fn sites(&self)->&[(Read,(String,u32))]{&self.sites}
  pub fn diagnostics(&self)->&[Diag]{&self.diags}

@@ -96,7 +96,7 @@ fn notice_publisher_preserves_exact_sites_and_used_allow_from_both_facades(){
         let tree=crate::tree::Tree::from_files(pages.files);
         let scope=config.borrowed_report_scope(lint.meta().name,lint.meta().group).unwrap();
         let mut old=crate::lint::Sink::new();
-        lint.scan_tree(&crate::lint::Cx{tree:&tree,meta:lint.meta(),scope},&mut old);
+        lint.scan_tree(&crate::lint::Cx{ fixture:None,tree:&tree,meta:lint.meta(),scope},&mut old);
         assert_eq!(old.sites.as_slice(),result.sites());
         assert_eq!(old.allow_used.as_slice(),result.allow_used());
         assert_eq!(old.notes.as_slice(),result.notes());

@@ -153,6 +153,15 @@ fn read_text(path: &Path) -> String {
     }
 }
 
+/// Status-only loan of the SAME captured view budget. No source/path proof,
+/// deserialization or independently issued allocation owner is provided.
+#[cfg(feature="native-policy")]
+pub(crate) struct CapturedViewStatus(Arc<captured_budget::Budget>);
+#[cfg(feature="native-policy")]
+impl CapturedViewStatus {
+    pub(crate) fn require(&self)->Result<(),String>{self.0.error().map_or(Ok(()),Err)}
+}
+
 impl SourceFile {
     /// Disable old global/disk incremental caches for captured input work.
     /// This observes only a prefilled constructor tag: no lazy read, path probe,
@@ -357,6 +366,12 @@ impl SourceFile {
             data,
         })
     }
+    #[cfg(feature="native-policy")]
+    pub(crate) fn captured_view_status(&self)->Option<CapturedViewStatus>{
+        // Never trigger a lazy filesystem load just to obtain status DATA.
+        self.data.get()?.captured_budget.as_ref().map(|budget|CapturedViewStatus(Arc::clone(budget)))
+    }
+
     /// Poll the SAME existing captured-view budget before/after a lazy loan.
     /// This is admission status only; it grants no source/compiled authority.
     pub(crate) fn require_view_budget(&self) -> Result<(), String> {

@@ -4,7 +4,7 @@
 use crate::{request::{BuildRequest,BuildOutcome,BuildCommand},runner_host::BuildHost};
 use std::{error::Error,io::{self,Write},path::PathBuf};
 #[derive(Clone,Debug,serde::Serialize,serde::Deserialize)]#[serde(deny_unknown_fields)]pub struct Request{pub project:PathBuf,pub configuration:Option<PathBuf>,pub cache_root:PathBuf,pub workers:usize,pub timeout_seconds:u16}
-#[derive(Clone,Debug,serde::Serialize)]pub struct Outcome{pub json:bool,pub emitted:usize,pub visited_bodies:usize,pub exit_code:i32,pub semantic_revision:u128,pub source_revision:u128,pub policy_revision:u128,pub full_checker_parity:bool}
+#[derive(Clone,Debug,serde::Serialize)]pub struct Outcome{pub json:bool,pub parser:Option<dq_analyze::native_checker_wire::ParserCounts>,pub emitted:usize,pub visited_bodies:usize,pub exit_code:i32,pub semantic_revision:u128,pub source_revision:u128,pub policy_revision:u128,pub full_checker_parity:bool}
 impl Request{
  pub fn from_arguments(arguments:&[String],cache_root:PathBuf)->io::Result<Self>{
   let(mut project,mut configuration)=(None,None);let mut args=arguments.iter();
@@ -40,6 +40,11 @@ pub fn run(request:Request,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mu
 }
 /// Explicit pinned JSON-count mode over the same actual complete native run.
 pub fn run_with_json(request:Request,json:bool,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<Outcome,Box<dyn Error>>{
+ run_with_mode(request,json,false,host,stdout,stderr)
+}
+/// Explicit syntax-only operation, including a typed formal-fatal prefix.
+pub fn run_parse_only(request:Request,json:bool,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<Outcome,Box<dyn Error>>{run_with_mode(request,json,true,host,stdout,stderr)}
+fn run_with_mode(request:Request,json:bool,parse_only:bool,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<Outcome,Box<dyn Error>>{
  use crate::daemon::{control,prepare_deadline};
  if !host.retains_artifacts(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native Checker needs the existing retained host").into())}
  request.validate()?;
@@ -50,7 +55,7 @@ pub fn run_with_json(request:Request,json:bool,host:&mut BuildHost,stdout:&mut i
  control::checkpoint()?;
  let width=request.project.as_os_str().len().checked_add(request.cache_root.as_os_str().len()).and_then(|n|n.checked_add(request.configuration.as_ref().map_or(0,|p|p.as_os_str().len()))).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(65536)).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
  let _request_credit=host.source_arena_work().reserve(width)?;
- let build=request.build()?;let(outcome,_inputs)=run_prepared_with_json(build,&request.project,request.configuration.as_deref(),json,host,stdout,stderr)?;Ok(outcome)
+ let build=request.build()?;let(outcome,_inputs)=run_prepared_with_mode(build,&request.project,None,request.configuration.as_deref(),json,parse_only,host,stdout,stderr)?;Ok(outcome)
 }
 
 /// SAME Checker execution after the existing daemon admitted its actual request.
@@ -62,6 +67,9 @@ pub(crate) fn run_prepared_with_json(build:BuildRequest,display_environment:&std
  run_prepared_with_caller(build,display_environment,None,explicit_configuration,json,host,stdout,stderr)
 }
 pub(crate) fn run_prepared_with_caller(build:BuildRequest,display_environment:&std::path::Path,caller_directory:Option<&std::path::Path>,explicit_configuration:Option<&std::path::Path>,json:bool,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<(Outcome,crate::request_runner::checker_capture::Inputs),Box<dyn Error>>{
+ run_prepared_with_mode(build,display_environment,caller_directory,explicit_configuration,json,false,host,stdout,stderr)
+}
+pub(crate) fn run_prepared_with_mode(build:BuildRequest,display_environment:&std::path::Path,caller_directory:Option<&std::path::Path>,explicit_configuration:Option<&std::path::Path>,json:bool,parse_only:bool,host:&mut BuildHost,stdout:&mut impl Write,stderr:&mut impl Write)->Result<(Outcome,crate::request_runner::checker_capture::Inputs),Box<dyn Error>>{
  use crate::daemon::control;
  if crate::daemon::control::WorkerContext::capture_for_checkpoints().is_none()||crate::daemon::control::current_deadline().is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Checker staging requires its existing original request binding").into())}
  require_prepared_shape_with_caller(&build,display_environment,caller_directory,explicit_configuration)?;control::checkpoint()?;
@@ -79,6 +87,14 @@ pub(crate) fn run_prepared_with_caller(build:BuildRequest,display_environment:&s
  // Preparation text is private: success re-renders typed notices from the
  // SAME retained owner. Fatal preparation remains a distinct Err, never a
  // synthetic full Checker report assembled from compiler diagnostic text.
+
+ if parse_only{
+  let prepared=crate::request_runner::prepare_parse_only_syntax(build,host).map_err(|first|parse_only_invariant_context("actual parse-only syntax preparation rejected its source invariant",first))?;prepared.inputs.require_current(&project)?;
+  let transcript=host.stage_parse_only_cli(&prepared,&project,explicit_configuration,&cache_root).map_err(|first|parse_only_invariant_context("actual parse-only transcript rejected its source invariant",Box::new(first)))?;prepared.inputs.require_current(&project)?;
+  let counts=transcript.counts;let parser=dq_analyze::native_checker_wire::ParserCounts{good:u64::try_from(transcript.good).map_err(|_|io::Error::from(io::ErrorKind::OutOfMemory))?,bad:u64::try_from(transcript.bad).map_err(|_|io::Error::from(io::ErrorKind::OutOfMemory))?,fatal:transcript.fatal};
+  let outcome=Outcome{json,parser:Some(parser),emitted:transcript.emitted,visited_bodies:0,exit_code:if transcript.emitted==0{0}else{1},semantic_revision:transcript.semantic,source_revision:transcript.source,policy_revision:transcript.policy,full_checker_parity:false};transcript.publish(&mut stderr)?;
+  prepared.inputs.require_current(&project)?;writeln!(stdout,"============================================================\nFound {} diagnostics",outcome.emitted)?;if json{counts.write_json(&mut stdout)?;}stdout.flush()?;stderr.flush()?;prepared.inputs.require_current(&project)?;control::checkpoint()?;return Ok((outcome,prepared.inputs));
+ }
  let(prepared,inputs)=crate::request_runner::prepare_standalone_checker(build,host)?;
  if !matches!(prepared,BuildOutcome::QueryPrepared{retained:true,..}){return Err(io::Error::other("native Checker did not obtain its actual retained Original source").into())}
  inputs.require_current(&project)?;
@@ -87,7 +103,7 @@ pub(crate) fn run_prepared_with_caller(build:BuildRequest,display_environment:&s
   snapshot.stage_original_checker_cli(&project,explicit_configuration,&cache_root,&inputs)?
  };
  inputs.require_current(&project)?;
- let outcome=Outcome{json,emitted:transcript.emitted,visited_bodies:transcript.visited_bodies,exit_code:if transcript.emitted==0{0}else{1},semantic_revision:transcript.semantic,source_revision:transcript.source,policy_revision:transcript.policy,full_checker_parity:false};
+ let outcome=Outcome{json,parser:None,emitted:transcript.emitted,visited_bodies:transcript.visited_bodies,exit_code:if transcript.emitted==0{0}else{1},semantic_revision:transcript.semantic,source_revision:transcript.source,policy_revision:transcript.policy,full_checker_parity:false};
  let counts=transcript.counts;transcript.publish(&mut stderr)?;
  // Emit the exact reference phase labels ONLY after every actual producer and
  // completion token succeeded. Separate stdout/stderr streams retain their own
@@ -139,5 +155,33 @@ impl<W:Write>Write for CheckedOutput<'_,W>{
   let(request,root)=actual("checker-relative-first-io");let mut host=BuildHost::default();let _bound=crate::daemon::control::bind_with_deadline(crate::daemon::control::Cancellation::default(),std::time::Instant::now()+std::time::Duration::from_secs(60));let mut err=Vec::new();
   let failure=run_prepared_with_caller(request.build().unwrap(),std::path::Path::new("project.dme"),Some(&root),None,false,&mut host,&mut Stop,&mut err).err().unwrap();assert_eq!(failure.downcast_ref::<io::Error>().unwrap().raw_os_error(),Some(1450));assert!(err.is_empty());
   let mut out=Vec::new();let(outcome,_)=run_prepared_with_caller(request.build().unwrap(),std::path::Path::new("project.dme"),Some(&root),None,false,&mut host,&mut out,&mut err).unwrap();assert_eq!(outcome.exit_code,0);assert!(err.is_empty());
+ }
+}
+
+/// Explicit nondefault report-only syntax observation over the SAME producer.
+/// Includes actual formal-fatal prefixes; it never publishes a Checker frame.
+/// The callback borrows the actual retained source and runs under the original
+/// request context. Its first error is preserved before any final freshness IO.
+pub fn observe_parse_only_syntax<T>(request:Request,host:&mut BuildHost,consume:impl FnOnce(&dm_tree::frontend::DiagnosticFrontend)->io::Result<T>)->Result<T,Box<dyn Error>>{
+ use crate::daemon::{control,prepare_deadline};
+ if !host.retains_artifacts(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"parse-only needs the existing retained host").into())}request.validate()?;
+ let deadline=prepare_deadline::capture(BuildCommand::PrepareQuery,Some(request.timeout_seconds),std::time::Instant::now())?.ok_or_else(||io::Error::other("parse-only deadline absent"))?;
+ let _binding=if control::WorkerContext::capture_for_checkpoints().is_none(){if control::current_deadline().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"parse-only cannot start under publication masking").into())}Some(control::bind_with_deadline(control::Cancellation::default(),deadline))}else{if control::current_deadline().is_none_or(|old|old>deadline){return Err(io::Error::new(io::ErrorKind::InvalidInput,"parse-only cannot extend inherited request deadline").into())}None};
+ control::checkpoint()?;
+ let width=request.project.as_os_str().len().checked_add(request.cache_root.as_os_str().len()).and_then(|n|n.checked_add(request.configuration.as_ref().map_or(0,|p|p.as_os_str().len()))).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(65536)).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
+ let _request_credit=host.source_arena_work().reserve(width)?;let build=request.build()?;let project=build.project.clone();
+ let prepared=crate::request_runner::prepare_parse_only_syntax(build,host)?;
+ prepared.inputs.require_parse_only_binding(&project,&prepared.frontend)?;prepared.inputs.require_current(&project)?;control::checkpoint()?;
+ let value=consume(&prepared.frontend)?;
+ prepared.inputs.require_parse_only_binding(&project,&prepared.frontend)?;prepared.inputs.require_current(&project)?;control::checkpoint()?;Ok(value)
+}
+
+// Give an otherwise unlabelled pure invariant failure its actual phase name.
+// A real OS error or existing producer diagnostic remains byte-for-byte first.
+fn parse_only_invariant_context(stage:&'static str,first:Box<dyn std::error::Error>)->Box<dyn std::error::Error>{
+ if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_none(){return first}
+ match first.downcast::<std::io::Error>(){
+  Ok(first)if first.kind()==std::io::ErrorKind::InvalidInput&&first.raw_os_error().is_none()&&first.get_ref().is_none()=>Box::new(std::io::Error::new(first.kind(),stage)),
+  Ok(first)=>first,Err(first)=>first,
  }
 }

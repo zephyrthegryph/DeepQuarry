@@ -118,7 +118,7 @@ mod tests {
     fn requirement_bool_counts_calls_and_definitions_without_comment_or_string_noise() {
         let tree = Tree::from_files(vec![]);
         let scope = crate::scopes::LintScope::default();
-        let context = Cx {
+        let context = Cx { fixture:None,
             tree: &tree,
             meta: &META,
             scope: &scope,

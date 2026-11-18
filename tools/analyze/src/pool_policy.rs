@@ -1,4 +1,5 @@
 //! Exact original cross-file pool raw policy; no semantic model/parser.
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::{
     captured_generator_budget::Budget,
     lint::{Meta, Policy, RuleMeta, ScanKind},
@@ -47,23 +48,28 @@ fn charge(b: Option<&Budget>, bytes: Option<usize>) -> Result<(), String> {
     }
     Ok(())
 }
-fn strip(line: &str, b: Option<&Budget>) -> Result<String, String> {
+fn strip(line: &str, b: Option<&Budget>) -> Result<String, String> {strip_with_fixture(line,b,&crate::raw_fixture_policy::Fixture::legacy())}
+fn strip_with_fixture(line: &str, b: Option<&Budget>,fixture:&crate::raw_fixture_policy::Fixture<'_>) -> Result<String, String> {
     charge(
         b,
         line.len().checked_mul(4).and_then(|n| n.checked_add(256)),
     )?;
-    Ok(pat!(r#""[^"]*""#).replace_all(before_slashes(line), "\"\""))
+    Ok(fixture.replace_static(r#""[^"]*""#,before_slashes(line), "\"\"",||pat!(r#""[^"]*""#))?)
 }
 pub fn facts_of(
     f: &SourceFile,
     b: Option<&Budget>,
     mut checkpoint: impl FnMut() -> Result<(), String>,
-) -> Result<Facts, String> {
+) -> Result<Facts, String> {facts_of_with_fixture(f,b,checkpoint,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn facts_of_with_fixture(
+    f: &SourceFile,
+    b: Option<&Budget>,
+    mut checkpoint: impl FnMut() -> Result<(), String>,fixture:&crate::raw_fixture_policy::Fixture<'_>) -> Result<Facts, String> {
     let mut pooled: BTreeSet<String> = BTreeSet::new();
     let mut current: Option<String> = None;
     for line in f.raw().lines() {
         checkpoint()?;
-        if let Some(m) = pat!(r"^(/datum/[A-Za-z0-9_/]+)\s*$").captures(line) {
+        if let Some(m) = fixture.pattern(r"^(/datum/[A-Za-z0-9_/]+)\s*$",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^(/datum/[A-Za-z0-9_/]+)\s*$")).captures(line) {
             charge(
                 b,
                 m.s(1).len().checked_mul(2).and_then(|n| n.checked_add(64)),
@@ -71,7 +77,7 @@ pub fn facts_of(
             current = Some(m.s(1).to_string());
         }
         if let Some(m) =
-            pat!(r"^\s+parent_type\s*=\s*(/datum/pooled\b[A-Za-z0-9_/]*|/datum/[A-Za-z0-9_/]+)")
+            fixture.pattern(r"^\s+parent_type\s*=\s*(/datum/pooled\b[A-Za-z0-9_/]*|/datum/[A-Za-z0-9_/]+)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^\s+parent_type\s*=\s*(/datum/pooled\b[A-Za-z0-9_/]*|/datum/[A-Za-z0-9_/]+)"))
                 .captures(line)
         {
             if let Some(cur) = &current {
@@ -81,7 +87,7 @@ pub fn facts_of(
                 }
             }
         }
-        for d in pat!(r"POOL_DECLARE\((/datum/[A-Za-z0-9_/]+)\)").captures_iter(line) {
+        for d in fixture.pattern(r"POOL_DECLARE\((/datum/[A-Za-z0-9_/]+)\)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"POOL_DECLARE\((/datum/[A-Za-z0-9_/]+)\)")).captures_iter(line) {
             checkpoint()?;
             charge(
                 b,
@@ -106,13 +112,18 @@ fn returned_acquisition(
     at: usize,
     b: Option<&Budget>,
     checkpoint: &mut impl FnMut() -> Result<(), String>,
-) -> Result<bool, String> {
-    let declaration = strip(lines[at], b)?;
-    let Some(local)=pat!(r"^\tvar/(?:[A-Za-z0-9_]+/)+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:pool_take|take)\(/datum/[A-Za-z0-9_/]+\)\s*$").captures(&declaration)else{return Ok(false);};
+) -> Result<bool, String> {returned_acquisition_with_fixture(lines,at,b,checkpoint,&crate::raw_fixture_policy::Fixture::legacy())}
+fn returned_acquisition_with_fixture(
+    lines: &[&str],
+    at: usize,
+    b: Option<&Budget>,
+    checkpoint: &mut impl FnMut() -> Result<(), String>,fixture:&crate::raw_fixture_policy::Fixture<'_>) -> Result<bool, String> {
+    let declaration = strip_with_fixture(lines[at], b,fixture)?;
+    let Some(local)=fixture.pattern(r"^\tvar/(?:[A-Za-z0-9_]+/)+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:pool_take|take)\(/datum/[A-Za-z0-9_/]+\)\s*$",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^\tvar/(?:[A-Za-z0-9_]+/)+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:pool_take|take)\(/datum/[A-Za-z0-9_/]+\)\s*$")).captures(&declaration)else{return Ok(false);};
     let name = local.s(1);
     for raw in &lines[at + 1..] {
         checkpoint()?;
-        let line = strip(raw, b)?;
+        let line = strip_with_fixture(raw, b,fixture)?;
         if !line.trim().is_empty() && !line.starts_with('\t') && !line.starts_with(' ') {
             break;
         }
@@ -123,7 +134,7 @@ fn returned_acquisition(
             return Ok(line.strip_prefix("\treturn ") == Some(name));
         }
         if let Some(write) =
-            pat!(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:=|\+=|-=|\*=|/=)").captures(&line)
+            fixture.pattern(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:=|\+=|-=|\*=|/=)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:=|\+=|-=|\*=|/=)")).captures(&line)
         {
             if write.s(1) == name {
                 return Ok(false);
@@ -141,7 +152,14 @@ pub fn judge(
     b: Option<&Budget>,
     mut checkpoint: impl FnMut() -> Result<(), String>,
     mut emit: impl FnMut(u8, u32, std::fmt::Arguments<'_>) -> Result<(), String>,
-) -> Result<(), String> {
+) -> Result<(), String> {judge_with_fixture(f,pooled,exempt_prefixes,b,checkpoint,emit,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn judge_with_fixture(
+    f: &SourceFile,
+    pooled: &BTreeSet<String>,
+    exempt_prefixes: &[String],
+    b: Option<&Budget>,
+    mut checkpoint: impl FnMut() -> Result<(), String>,
+    mut emit: impl FnMut(u8, u32, std::fmt::Arguments<'_>) -> Result<(), String>,fixture:&crate::raw_fixture_policy::Fixture<'_>) -> Result<(), String> {
     let exempt = starts_with_any(&f.rel, exempt_prefixes);
     let mut takes: Vec<(usize, String)> = Vec::new();
     let mut releases = false;
@@ -158,13 +176,13 @@ pub fn judge(
         if raw.contains("ALLOW(pool)") {
             continue;
         }
-        let line = strip(raw, b)?;
-        if pat!(r"\.release\(\)|\bpool_release\(|\brelease\(\)").is_match(&line) {
+        let line = strip_with_fixture(raw, b,fixture)?;
+        if fixture.pattern(r"\.release\(\)|\bpool_release\(|\brelease\(\)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\.release\(\)|\bpool_release\(|\brelease\(\)")).is_match(&line) {
             releases = true;
         }
-        for t in pat!(r"\b(?:pool_take|take)\((/datum/[A-Za-z0-9_/]+)").captures_iter(&line) {
+        for t in fixture.pattern(r"\b(?:pool_take|take)\((/datum/[A-Za-z0-9_/]+)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\b(?:pool_take|take)\((/datum/[A-Za-z0-9_/]+)")).captures_iter(&line) {
             checkpoint()?;
-            if !returned_acquisition(&lines, number - 1, b, &mut checkpoint)? {
+            if !returned_acquisition_with_fixture(&lines, number - 1, b, &mut checkpoint,fixture)? {
                 charge(
                     b,
                     t.s(1).len().checked_mul(2).and_then(|n| n.checked_add(64)),
@@ -180,7 +198,7 @@ pub fn judge(
         if exempt {
             continue;
         }
-        for t in pat!(r"\bnew\s+(/datum/[A-Za-z0-9_/]+)").captures_iter(&line) {
+        for t in fixture.pattern(r"\bnew\s+(/datum/[A-Za-z0-9_/]+)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\bnew\s+(/datum/[A-Za-z0-9_/]+)")).captures_iter(&line) {
             checkpoint()?;
             let t = t.s(1);
             if pooled.iter().any(|p| {

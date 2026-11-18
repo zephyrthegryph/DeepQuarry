@@ -32,6 +32,11 @@ pub(crate) fn registry() -> &'static Registry {
 pub fn metadata(name: &str) -> Option<&'static crate::lint::Meta> {
     registry().find(name).map(|lint| lint.meta())
 }
+/// Invoke the SAME native registration, including its actual inherited default.
+/// This only runs fixture callbacks; it grants no producer/source completion.
+pub fn registered_selftest(name:&str)->Option<Result<String,String>>{
+ registry().find(name).map(|lint|lint.selftest())
+}
 /// Host authenticates exact bytes or absence through the native request ledger.
 /// This enum does not itself prove a filesystem observation or full config closure.
 #[derive(Clone, Copy)]
@@ -251,7 +256,7 @@ impl CapturedRawPolicy {
                     ));
                 }
                 let scope = self.scopes.for_lint(meta.name, meta.group);
-                let cx = Cx {
+                let cx = Cx { fixture:None,
                     tree: &self.tree,
                     meta,
                     scope: &scope,
@@ -316,4 +321,160 @@ mod report_collision_tests {
         assert!(require_distinct_report_paths(&files).is_err());
         assert!(require_distinct_report_paths(&files[..1]).is_ok());
     }
+}
+
+/// Fixture DATA only, never a completed workspace/policy frame.
+pub struct RawSelftestResult{completed:usize,names:Vec<&'static str>,failures:Vec<RawSelftestFailure>,successes:Option<Vec<RawSelftestFailure>>}
+struct RawSelftestFailure{ordinal:usize,message:String}
+impl RawSelftestResult{
+ pub fn completed(&self)->usize{self.completed}
+ pub fn failed(&self)->usize{self.failures.len()}
+ pub fn matches_names(&self,names:&[String])->bool{self.names.iter().copied().eq(names.iter().map(String::as_str))}
+ pub fn failures(&self)->impl Iterator<Item=(&'static str,&str)>{self.failures.iter().map(|row|(self.names[row.ordinal],row.message.as_str()))}
+ pub fn write_standalone(&self,out:&mut impl std::io::Write)->std::io::Result<()>{
+  let successes=self.successes.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"catalog did not retain actual standalone callback messages"))?;
+  if self.completed!=self.names.len()||successes.len()+self.failures.len()!=self.completed{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"standalone callback transcript is incomplete"))}
+  let mut failures=self.failures.iter().peekable();let mut successes=successes.iter();
+  for (ordinal,name) in self.names.iter().enumerate(){
+   if failures.peek().is_some_and(|row|row.ordinal==ordinal){let row=failures.next().expect("observed actual failure");writeln!(out,"selftest FAILED: {name}: {}",row.message)?;}
+   else{let row=successes.next().filter(|row|row.ordinal==ordinal).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"standalone callback message is absent"))?;writeln!(out,"selftest ok: {name} {}",row.message)?;}
+  }Ok(())
+ }
+ pub fn write_failures(&self,out:&mut impl std::io::Write)->std::io::Result<()>{for(name,message)in self.failures(){writeln!(out,"selftest FAILED: {name}: {message}")?;}Ok(())}
+ #[cfg(test)]fn exposed_heap_bytes(&self)->usize{self.names.capacity()*std::mem::size_of::<&'static str>()+self.failures.capacity()*std::mem::size_of::<RawSelftestFailure>()+self.failures.iter().map(|row|row.message.capacity()).sum::<usize>()}
+}
+fn selftest_oom(message:impl Into<String>)->crate::captured_reactive_reads::Failure{crate::captured_reactive_reads::Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message.into()))}
+fn selftest_row<T>(rows:&mut Vec<T>,budget:&crate::captured_generator_budget::Budget)->Result<(),crate::captured_reactive_reads::Failure>{
+ if rows.len()<rows.capacity(){return Ok(())}
+ let needed=rows.len().checked_add(1).ok_or_else(||selftest_oom("selftest row overflow"))?;
+ let upper=needed.checked_mul(4).ok_or_else(||selftest_oom("selftest capacity overflow"))?;
+ let bytes=upper.checked_mul(std::mem::size_of::<T>()).ok_or_else(||selftest_oom("selftest row bytes overflow"))?;
+ budget.charge(bytes).map_err(selftest_oom)?;
+ rows.try_reserve_exact(1).map_err(|e|selftest_oom(e.to_string()))?;
+ if rows.capacity()>upper{return Err(selftest_oom("selftest exposed row capacity exceeds its prior admission"))}Ok(())
+}
+/// SAME native raw Registry/callbacks as scans. No legacy Engine/parser,
+/// filesystem marker or parallel success memo. Actual callback temporary heap
+/// still requires independent qualification; retained result storage is charged.
+pub fn run_registered_raw_selftests(names:&[String],budget:&Arc<crate::captured_generator_budget::Budget>,poll:&dyn Fn()->std::io::Result<()>)->Result<RawSelftestResult,crate::captured_reactive_reads::Failure>{
+ use crate::captured_reactive_reads::Failure;
+ poll()?;budget.require().map_err(selftest_oom)?;
+ if names.is_empty()||names.len()>RAW_FILE_LINTS.len()||names.iter().enumerate().any(|(i,name)|!RAW_FILE_LINTS.contains(&name.as_str())||names[..i].contains(name)){return Err(Failure::Unsupported("selftests require a nonempty exact native raw-policy roster; other producers remain unported".into()))}
+ let fixed=std::mem::size_of::<crate::captured_generator_budget::Budget>()+2*std::mem::size_of::<usize>();let required=MAX_FIXTURE_TOTAL_BYTES.checked_sub(fixed).ok_or_else(||selftest_oom("selftest fixed metadata exceeds existing allowance"))?;
+ if budget.remaining()<required{budget.charge(required).map_err(selftest_oom)?;return Err(selftest_oom("selftest allowance changed during admission"))}
+ let mut actual=Vec::new();
+ for name in names{poll()?;budget.require().map_err(selftest_oom)?;let lint=registry().find(name).ok_or_else(||Failure::Unsupported("raw selftest lacks its actual native registration".into()))?;selftest_row(&mut actual,budget)?;actual.push(lint.meta());}
+ run_native_selftest_catalog(&actual,budget,poll,|meta,local|registered_selftest_funded(meta.name,local,poll).expect("validated immutable native registry"))
+  .map_err(|failure|match failure{crate::derived_selftest_policy::Failure::Operational(actual)=>Failure::Operational(actual),crate::derived_selftest_policy::Failure::Assertion(message)=>Failure::Unsupported(message)})
+}
+// Private DATA fold; production supplies only the actual native callbacks.
+fn run_raw_selftest_callbacks(names:Vec<&'static str>,budget:&crate::captured_generator_budget::Budget,checkpoint:&dyn Fn()->Result<(),crate::captured_reactive_reads::Failure>,mut callback:impl FnMut(&str)->Result<String,String>)->Result<RawSelftestResult,crate::captured_reactive_reads::Failure>{
+ budget.charge(names.capacity().checked_mul(std::mem::size_of::<&'static str>()).ok_or_else(||selftest_oom("selftest names overflow"))?).map_err(selftest_oom)?;
+ let mut result=RawSelftestResult{completed:0,names,failures:Vec::new(),successes:None};
+ for ordinal in 0..result.names.len(){
+  checkpoint()?;selftest_row(&mut result.failures,budget)?;
+  let actual=callback(result.names[ordinal]);checkpoint()?;result.completed+=1;
+  if let Err(message)=actual{budget.charge(message.capacity()).map_err(selftest_oom)?;result.failures.push(RawSelftestFailure{ordinal,message});}
+ }
+ checkpoint()?;Ok(result)
+}
+#[cfg(test)]mod native_raw_selftest_controls{
+ use super::*;
+ fn names(rows:&[&str])->Vec<String>{rows.iter().map(|s|(*s).to_owned()).collect()}
+ #[test]fn actual_native_raw_callbacks_run_and_unported_rosters_never_become_empty_passes(){
+  let budget=crate::captured_generator_budget::Budget::new(MAX_FIXTURE_TOTAL_BYTES).unwrap();let actual=run_registered_raw_selftests(&names(&["reactions_table_proc","entry_slots"]),&budget,&||Ok(())).unwrap();assert_eq!((actual.completed(),actual.failed()),(2,0));assert!(actual.matches_names(&names(&["reactions_table_proc","entry_slots"])));assert!(budget.used()>=actual.exposed_heap_bytes());
+  for rows in [&[][..],&["derived_reads"][..],&["ui_actions"][..],&["entry_slots","entry_slots"][..]]{let budget=crate::captured_generator_budget::Budget::new(MAX_FIXTURE_TOTAL_BYTES).unwrap();assert!(matches!(run_registered_raw_selftests(&names(rows),&budget,&||Ok(())),Err(crate::captured_reactive_reads::Failure::Unsupported(_))));}
+ }
+ #[test]fn native_raw_selftest_actual_first_io_and_fixture_quota_refuse_then_recover(){
+  let budget=crate::captured_generator_budget::Budget::new(MAX_FIXTURE_TOTAL_BYTES).unwrap();let Err(crate::captured_reactive_reads::Failure::Operational(actual))=run_registered_raw_selftests(&names(&["entry_slots"]),&budget,&||Err(std::io::Error::from_raw_os_error(1450)))else{panic!("actual first IO required")};assert_eq!(actual.raw_os_error(),Some(1450));
+  let tight=crate::captured_generator_budget::Budget::new(MAX_FIXTURE_TOTAL_BYTES-1).unwrap();assert!(matches!(run_registered_raw_selftests(&names(&["entry_slots"]),&tight,&||Ok(())),Err(crate::captured_reactive_reads::Failure::Operational(ref e))if e.kind()==std::io::ErrorKind::OutOfMemory));let healthy=crate::captured_generator_budget::Budget::new(MAX_FIXTURE_TOTAL_BYTES).unwrap();assert_eq!(run_registered_raw_selftests(&names(&["entry_slots"]),&healthy,&||Ok(())).unwrap().completed(),1);
+ }
+ #[test]fn selftest_failure_fold_preserves_typed_names_text_order_and_admits_actual_retained_capacity(){
+  let budget=crate::captured_generator_budget::Budget::new(MAX_FIXTURE_TOTAL_BYTES).unwrap();let mut seen=Vec::new();let actual=run_raw_selftest_callbacks(vec!["first","second"],&budget,&||Ok(()),|name|{seen.push(name.to_owned());Err(format!("{name} detail"))}).unwrap();assert_eq!(seen,["first","second"]);assert_eq!((actual.completed(),actual.failed()),(2,2));assert_eq!(actual.failures().map(|(name,_)|name).collect::<Vec<_>>(),["first","second"]);let mut out=Vec::new();actual.write_failures(&mut out).unwrap();assert_eq!(out,b"selftest FAILED: first: first detail\nselftest FAILED: second: second detail\n");assert!(budget.used()>=actual.exposed_heap_bytes());
+ }
+ #[test]fn earlier_fixture_failure_never_hides_later_operational_io_or_completes_a_result(){
+  let budget=crate::captured_generator_budget::Budget::new(MAX_FIXTURE_TOTAL_BYTES).unwrap();let polls=std::cell::Cell::new(0);let stopped=||{let n=polls.get()+1;polls.set(n);if n==3{Err(crate::captured_reactive_reads::Failure::Operational(std::io::Error::from_raw_os_error(1450)))}else{Ok(())}};let Err(crate::captured_reactive_reads::Failure::Operational(actual))=run_raw_selftest_callbacks(vec!["first","second"],&budget,&stopped,|_|Err("retained fixture failure".into()))else{panic!("actual later IO must prevent completed callback result")};assert_eq!(actual.raw_os_error(),Some(1450));
+ }
+}
+
+/// Checked catalog fold. Each callback gets a root window in the SAME operation
+/// allowance, so its own existing scoped temporary budgets remain usable.
+/// The host must hold its original physical grant throughout this call. These
+/// result rows are DATA, never an input/source/policy-completion certificate.
+pub fn run_native_selftest_catalog(
+ metas:&[&'static crate::lint::Meta],budget:&std::sync::Arc<crate::captured_generator_budget::Budget>,poll:&dyn Fn()->std::io::Result<()>,callback:impl FnMut(&'static crate::lint::Meta,&std::sync::Arc<crate::captured_generator_budget::Budget>)->Result<String,crate::derived_selftest_policy::Failure>,
+)->Result<RawSelftestResult,crate::derived_selftest_policy::Failure>{run_native_selftest_catalog_mode(metas,budget,poll,false,callback)}
+pub fn run_native_selftest_catalog_mode(
+ metas:&[&'static crate::lint::Meta],budget:&std::sync::Arc<crate::captured_generator_budget::Budget>,
+ poll:&dyn Fn()->std::io::Result<()>,retain_successes:bool,
+ mut callback:impl FnMut(&'static crate::lint::Meta,&std::sync::Arc<crate::captured_generator_budget::Budget>)->Result<String,crate::derived_selftest_policy::Failure>,
+)->Result<RawSelftestResult,crate::derived_selftest_policy::Failure>{
+ use crate::{captured_generator_budget::Budget,derived_selftest_policy::Failure};
+ let oom=|message:String|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message));
+ poll()?;budget.require().map_err(oom)?;
+ if metas.is_empty()||metas.iter().enumerate().any(|(i,meta)|metas[..i].iter().any(|old|old.name==meta.name)){return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native selftest catalog requires exact distinct registered metadata")))}
+ let upper=metas.len().checked_mul(4).ok_or_else(||oom("native selftest roster overflow".into()))?;
+ budget.charge(upper.checked_mul(std::mem::size_of::<&'static str>()+std::mem::size_of::<RawSelftestFailure>()).ok_or_else(||oom("native selftest roster bytes overflow".into()))?).map_err(oom)?;
+ let mut names=Vec::new();let mut failures=Vec::new();names.try_reserve_exact(metas.len()).map_err(|e|oom(e.to_string()))?;failures.try_reserve_exact(metas.len()).map_err(|e|oom(e.to_string()))?;
+ if names.capacity()>upper||failures.capacity()>upper{return Err(oom("native selftest roster capacity exceeds its admitted bound".into()))}
+ for meta in metas{names.push(meta.name)}
+ let successes=if retain_successes{budget.charge(upper.checked_mul(std::mem::size_of::<RawSelftestFailure>()).ok_or_else(||oom("native standalone roster bytes overflow".into()))?).map_err(oom)?;let mut rows=Vec::new();rows.try_reserve_exact(metas.len()).map_err(|e|oom(e.to_string()))?;if rows.capacity()>upper{return Err(oom("native standalone roster exposed excess capacity".into()))}Some(rows)}else{None};
+ let mut result=RawSelftestResult{completed:0,names,failures,successes};
+ for(ordinal,meta)in metas.iter().enumerate(){
+  poll()?;budget.require().map_err(oom)?;
+  let window=Budget::reserve_window(budget,MAX_FIXTURE_TOTAL_BYTES).map_err(oom)?;
+  let local=Budget::new(window.capacity()).map_err(oom)?;
+  let actual=callback(meta,&local);
+  // An actual operational failure wins before any later checkpoint. The
+  // callback's owned assertion result is still under the live real window.
+  let actual=match actual{Err(Failure::Operational(first))=>return Err(Failure::Operational(first)),other=>other};
+  local.require().map_err(oom)?;poll()?;
+  match actual{
+   Ok(message)=>{if let Some(successes)=&mut result.successes{let retained=message.capacity();drop(local);window.settle(retained).map_err(oom)?;successes.push(RawSelftestFailure{ordinal,message});}else{drop(message);drop(local);window.settle(0).map_err(oom)?;}},
+   Err(Failure::Assertion(message))=>{let retained=message.capacity();drop(local);window.settle(retained).map_err(oom)?;result.failures.push(RawSelftestFailure{ordinal,message});},
+   Err(Failure::Operational(_))=>unreachable!("actual first IO returned above"),
+  }
+  result.completed+=1;
+ }
+ poll()?;budget.require().map_err(oom)?;Ok(result)
+}
+
+/// The actual immutable native registration, with an explicit caller-budget
+/// fixture loan. Only shared fixture DATA is produced; no policy/source receipt.
+pub fn registered_selftest_funded(name:&str,budget:&Arc<crate::captured_generator_budget::Budget>,poll:&dyn Fn()->std::io::Result<()>)->Option<Result<String,crate::derived_selftest_policy::Failure>>{
+ let lint=registry().find(name)?;
+ let fixture=crate::raw_fixture_policy::Fixture::native(budget,poll);
+ let actual=lint.selftest_with_fixture(&fixture);
+ Some(fixture.finish(actual))
+}
+
+/// The native host path supplies its actual same-session query/lender provider.
+/// The older funded fixture helper remains container-only and explicitly does
+/// not qualify legacy regex program/scratch ownership.
+pub fn registered_selftest_funded_with_patterns(name:&str,budget:&Arc<crate::captured_generator_budget::Budget>,poll:&dyn Fn()->std::io::Result<()>,patterns:&dyn crate::native_pattern::Provider)->Option<Result<String,crate::derived_selftest_policy::Failure>>{
+ let lint=registry().find(name)?;
+ let fixture=crate::raw_fixture_policy::Fixture::native_patterns(budget,poll,patterns);
+ let actual=lint.selftest_with_fixture(&fixture);Some(fixture.finish(actual))
+}
+
+#[cfg(test)]mod funded_fixture_controls{
+ use super::*;
+ #[test]fn actual_ten_shared_raw_callbacks_preserve_original_assertions_and_result_text(){
+  for name in ["cap_bits","dcs","entry_slots","reactions_table_proc","sys/dx_manual_transfer","sys/dx_raw_delay","sys/dx_raw_overlays","sys/dx_review","sys/sync_sql","sys/usr_use"]{
+   let original=registry().find(name).expect("actual native registration").selftest();
+   let budget=crate::captured_generator_budget::Budget::new(MAX_FIXTURE_TOTAL_BYTES).unwrap();
+   let actual=registered_selftest_funded(name,&budget,&||Ok(())).unwrap();
+   match(original,actual){(Ok(a),Ok(b))=>assert_eq!(a,b,"{name}"),(Err(a),Err(crate::derived_selftest_policy::Failure::Assertion(b)))=>assert_eq!(a,b,"{name}"),other=>panic!("actual shared callback differs for {name}: {other:?}")}
+  }
+ }
+}
+
+#[cfg(test)]mod standalone_catalog_controls{
+ use super::*;
+ #[test]fn actual_catalog_standalone_keeps_actual_success_and_failure_messages_in_registered_order(){
+  let a=metadata("dcs").unwrap();let b=metadata("entry_slots").unwrap();let budget=crate::captured_generator_budget::Budget::new(MAX_FIXTURE_TOTAL_BYTES).unwrap();
+  let result=run_native_selftest_catalog_mode(&[a,b],&budget,&||Ok(()),true,|meta,local|{if meta.name==a.name{registered_selftest_funded(meta.name,local,&||Ok(())).unwrap()}else{Err(crate::derived_selftest_policy::Failure::Assertion("actual checked assertion failure".into()))}}).unwrap();
+  assert_eq!((result.completed(),result.failed()),(2,1));let mut text=Vec::new();result.write_standalone(&mut text).unwrap();let text=String::from_utf8(text).unwrap();assert!(text.starts_with("selftest ok: dcs "));assert!(text.ends_with("selftest FAILED: entry_slots: actual checked assertion failure
+"));assert!(budget.used()>=result.successes.as_ref().unwrap()[0].message.capacity());
+ }
 }

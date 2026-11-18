@@ -32,6 +32,7 @@ static META: Meta = Meta {
     lists: crate::allow_registry_fields::ref_text::SCOPE_META_0.lists,
 };
 
+const REF_TEXT_PATTERN_SOURCES:&[&str]=&[r"(?<![=!<>])(?:\+|\||-)?=(?!=)\s*REF\(",r"\[\s*REF\([^\]]*\)\s*\]\s*(?:\+|\||-)?=(?!=)",r"\b(?:LAZYADD|LAZYOR|LAZYSET|LAZYINITLIST)\s*\([^,()]+,\s*REF\(",r"\.(?:Add|Insert)\([^()]*\bREF\(",r"\blist\([^)]*\bREF\([^)]*\)\s*=[^=]",r"\\ref\["];
 struct RefText {
     stored: Vec<Pat>,
     macro_: Pat,
@@ -42,15 +43,15 @@ impl RefText {
         RefText {
             stored: vec![
                 // var = REF(x), var += REF(x), var |= REF(x), var/x = REF(x)
-                Pat::new(r"(?<![=!<>])(?:\+|\||-)?=(?!=)\s*REF\("),
+                Pat::new(REF_TEXT_PATTERN_SOURCES[0]),
                 // L[REF(x)] = ...
-                Pat::new(r"\[\s*REF\([^\]]*\)\s*\]\s*(?:\+|\||-)?=(?!=)"),
+                Pat::new(REF_TEXT_PATTERN_SOURCES[1]),
                 // LAZYADD(L, REF(x)) and the other list macros, L.Add(REF(x)), list(REF(x) = v)
-                Pat::new(r"\b(?:LAZYADD|LAZYOR|LAZYSET|LAZYINITLIST)\s*\([^,()]+,\s*REF\("),
-                Pat::new(r"\.(?:Add|Insert)\([^()]*\bREF\("),
-                Pat::new(r"\blist\([^)]*\bREF\([^)]*\)\s*=[^=]"),
+                Pat::new(REF_TEXT_PATTERN_SOURCES[2]),
+                Pat::new(REF_TEXT_PATTERN_SOURCES[3]),
+                Pat::new(REF_TEXT_PATTERN_SOURCES[4]),
             ],
-            macro_: Pat::new(r"\\ref\["),
+            macro_: Pat::new(REF_TEXT_PATTERN_SOURCES[5]),
         }
     }
 }
@@ -60,7 +61,14 @@ impl Lint for RefText {
         &META
     }
 
-    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
+    fn scan_file(&self,_cx:&Cx,f:&SourceFile,out:&mut Sink){scan_using(f,out,&self.stored,&self.macro_)}
+}
+
+pub fn register(reg: &mut Registry) {
+    reg.add(RefText::new());
+}
+
+fn scan_using<P:crate::raw_fixture_policy::PatternApi>(f:&SourceFile,out:&mut Sink,stored:&[P],macro_:&P){
         let code = f.code();
         let raw = f.raw();
         for (i, line) in code.lines().enumerate() {
@@ -69,20 +77,36 @@ impl Lint for RefText {
             if t.starts_with('#') || t.is_empty() {
                 continue;
             }
-            if self.stored.iter().any(|p| p.is_match(line)) {
+            if stored.iter().any(|p| p.is_match(line)) {
                 out.site("stored", n);
                 continue;
             }
             // \ref[ sits inside a string, which the code view blanks: look at the raw line, skipping comment lines.
             let r = raw.line(n);
             let rt = r.trim_start();
-            if !rt.starts_with("//") && !rt.starts_with('*') && self.macro_.is_match(r) {
+            if !rt.starts_with("//") && !rt.starts_with('*') && macro_.is_match(r) {
                 out.site("ref_macro", n);
             }
         }
-    }
+
 }
 
-pub fn register(reg: &mut Registry) {
-    reg.add(RefText::new());
+#[cfg(feature="native-policy")]
+struct NativeRefText{legacy:std::sync::OnceLock<RefText>}
+#[cfg(feature="native-policy")]
+impl Lint for NativeRefText{
+ fn meta(&self)->&Meta{&META}
+ fn scan_file(&self,cx:&Cx,f:&SourceFile,out:&mut Sink){
+  if let Some(fixture)=cx.fixture{
+   let p0=fixture.pattern(REF_TEXT_PATTERN_SOURCES[0],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(REF_TEXT_PATTERN_SOURCES[0]));
+   let p1=fixture.pattern(REF_TEXT_PATTERN_SOURCES[1],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(REF_TEXT_PATTERN_SOURCES[1]));
+   let p2=fixture.pattern(REF_TEXT_PATTERN_SOURCES[2],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(REF_TEXT_PATTERN_SOURCES[2]));
+   let p3=fixture.pattern(REF_TEXT_PATTERN_SOURCES[3],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(REF_TEXT_PATTERN_SOURCES[3]));
+   let p4=fixture.pattern(REF_TEXT_PATTERN_SOURCES[4],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(REF_TEXT_PATTERN_SOURCES[4]));
+   let p5=fixture.pattern(REF_TEXT_PATTERN_SOURCES[5],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(REF_TEXT_PATTERN_SOURCES[5]));
+   scan_using(f,out,&[p0,p1,p2,p3,p4],&p5)
+  }else{self.legacy.get_or_init(RefText::new).scan_file(cx,f,out)}
+ }
 }
+#[cfg(feature="native-policy")]
+pub fn register_native(reg:&mut Registry){reg.add(NativeRefText{legacy:std::sync::OnceLock::new()})}

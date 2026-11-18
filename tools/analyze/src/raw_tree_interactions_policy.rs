@@ -1,4 +1,5 @@
 //! Unique interactions declaration/inheritance algorithm.
+use crate::raw_fixture_policy::PatternApi as _;
 use std::collections::BTreeMap;
 use crate::lint::{Meta,Policy,RuleMeta,ScanKind};
 use crate::tree::{SourceFile,CODE_DM};
@@ -22,7 +23,8 @@ pub static META: Meta = Meta {
 
 
 pub fn declarations(f:&SourceFile,mut visit:impl FnMut(&str,usize)){declarations_using(f,visit,&mut crate::key_policy_control::Compatibility).expect("original interactions source index")}
-pub fn declarations_using<C:crate::key_policy_control::Control>(f:&SourceFile,mut visit:impl FnMut(&str,usize),c:&mut C)->Result<(),C::Error>{c.checkpoint()?;for(number,line)in f.raw().numbered(){c.checkpoint()?;let m=pat!(r"^\s*DECLARE_INTERACTIONS\(\s*(/[\w/]+)").captures(line).or_else(||pat!(r"^(/[\w/]+)/get_interactions\(\)").captures(line));if let Some(m)=m{visit(m.s(1),number)}}c.checkpoint()?;Ok(())}
+pub fn declarations_using<C:crate::key_policy_control::Control>(f:&SourceFile,mut visit:impl FnMut(&str,usize),c:&mut C)->Result<(),C::Error>{declarations_using_with_fixture(f,visit,c,&crate::raw_fixture_policy::Fixture::legacy())}
+pub fn declarations_using_with_fixture<C:crate::key_policy_control::Control>(f:&SourceFile,mut visit:impl FnMut(&str,usize),c:&mut C,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),C::Error>{c.checkpoint()?;for(number,line)in f.raw().numbered(){c.checkpoint()?;let m=fixture.pattern(r"^\s*DECLARE_INTERACTIONS\(\s*(/[\w/]+)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^\s*DECLARE_INTERACTIONS\(\s*(/[\w/]+)")).captures(line).or_else(||fixture.pattern(r"^(/[\w/]+)/get_interactions\(\)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^(/[\w/]+)/get_interactions\(\)")).captures(line));if let Some(m)=m{visit(m.s(1),number)}}c.checkpoint()?;Ok(())}
 pub fn assemble<'a>(rows:impl IntoIterator<Item=(&'a str,&'a str,usize,bool)>,out:&mut impl Reporter){let mut sites:BTreeMap<String,(String,usize,bool)>=BTreeMap::new();for(path,rel,line,ok)in rows{if !out.checkpoint(){return}sites.insert(path.to_string(),(rel.to_string(),line,ok));}
         let mut bad = 0;
         for (path, (rel, number, ok)) in &sites {

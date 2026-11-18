@@ -48,3 +48,25 @@ pub struct ValidationData{pub sites:Vec<crate::lint::Site>,pub source_text:Vec<S
 
 #[path="captured_allow_unused.rs"]
 pub mod full_unused;
+
+/// Resource-only adapter over the same existing Operation. No owned patterns,
+/// source facts, extra budget or cache survive this borrowed phase control.
+pub(crate) struct PatternOperation<'a>{pub budget:&'a crate::captured_generator_budget::Budget,pub poll:&'a dyn Fn()->std::io::Result<()>,pub patterns:Option<&'a dyn crate::native_pattern::Provider>}
+impl crate::key_policy_control::Control for PatternOperation<'_>{
+ type Error=Failure;const CHECKED:bool=true;
+ fn native_patterns(&self)->Option<&dyn crate::native_pattern::Provider>{self.patterns}
+ fn native_pattern_failed(&mut self,actual:std::io::Error)->Failure{Failure::Operational(actual)}
+ fn checkpoint(&mut self)->Result<(),Failure>{crate::key_policy_control::Control::checkpoint(&mut Operation{budget:self.budget,poll:self.poll})}
+ fn reserve(&mut self,n:usize)->Result<(),Failure>{crate::key_policy_control::Control::reserve(&mut Operation{budget:self.budget,poll:self.poll},n)}
+ fn overflow(&mut self)->Failure{crate::key_policy_control::Control::overflow(&mut Operation{budget:self.budget,poll:self.poll})}
+ fn allocation_failed(&mut self)->Failure{crate::key_policy_control::Control::allocation_failed(&mut Operation{budget:self.budget,poll:self.poll})}
+}
+
+impl<'a> Operation<'a>{
+ /// Exact same budget/checkpoint control with a borrowed actual program lender.
+ /// The opaque control carries no source/registry/execution authority.
+ pub fn with_patterns<'p>(self,patterns:&'p dyn crate::native_pattern::Provider)->impl Control<Error=Failure>+'p where 'a:'p{PatternOperation{budget:self.budget,poll:self.poll,patterns:Some(patterns)}}
+}
+pub fn validate_original_budgeted_with_patterns(known:&ConfigurationNames<'_>,views:RawPolicyViews<'_>,fallback:&crate::captured_generator_budget::Budget,poll:&dyn Fn()->std::io::Result<()>,patterns:&dyn crate::native_pattern::Provider,emit:impl FnMut(&'static str,usize,&str,&str)->Result<(),Failure>)->Result<(),Failure>{
+ let local=views.allocation_budget(fallback);let mut control=PatternOperation{budget:local,poll,patterns:Some(patterns)};validate_original_borrowed(known,&views,&mut control,emit)
+}

@@ -66,7 +66,9 @@ impl<'a> BorrowedRawCohort<'a> {
     /// roster before entering the no-IO policy scope or calling any matcher.
     pub fn capture(raw: &'a CapturedRawPolicy, inputs: &'a PolicyInputs) -> Self { Self { raw, inputs } }
     pub fn scan(&self, name: &str, budget: Arc<Budget>, remaining_bytes: usize,
-        remaining_sites: usize, mut checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        remaining_sites: usize, mut checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {self.scan_using(name,budget,remaining_bytes,remaining_sites,checkpoint,None)}
+    fn scan_using(&self, name: &str, budget: Arc<Budget>, remaining_bytes: usize,
+        remaining_sites: usize, mut checkpoint: impl FnMut() -> Result<(), String>,fixture:Option<&crate::raw_fixture_policy::Fixture<'_>>) -> Result<RawRun, String> {
         checkpoint()?; budget.require()?; intact(self.raw, &budget)?;
         if !LINTS.contains(&name) { return Err("policy is not in the whole raw cohort".into()); }
         // BTreeSet roster validation itself has coordination storage; reserve
@@ -91,8 +93,8 @@ impl<'a> BorrowedRawCohort<'a> {
         budget.charge(final_census)?;
         let headroom = remaining_bytes.saturating_sub(budget.used());
         if headroom < 1024 { return Err(denied(&budget, "raw-cohort result metadata denied")); }
-        let mut sink = Sink::bounded(remaining_sites.min(captured_raw_policy::MAX_FIXTURE_SITES), headroom);
-        let cx = Cx { tree: &self.raw.tree, meta, scope };
+        let mut sink = if let Some(fixture)=fixture{Sink::bounded_budget_limits(remaining_sites.min(captured_raw_policy::MAX_FIXTURE_SITES),headroom,fixture.scan_budget())?.with_pattern_loan(fixture.sink_pattern_loan())}else{Sink::bounded(remaining_sites.min(captured_raw_policy::MAX_FIXTURE_SITES),headroom)};
+        let cx = Cx { fixture, tree: &self.raw.tree, meta, scope };
         // This TLS scope disables only old disk caches, after actual roster
         // admission. It does not manufacture input/current-source authority.
         let no_io = crate::incr::captured_compute_scope();
@@ -126,4 +128,50 @@ impl<'a> BorrowedRawCohort<'a> {
         checkpoint()?;
         Ok(RawRun { name: name.to_owned(), run: Run { sites: sink.sites, notes: sink.notes }, allow_used: sink.allow_used })
     }
+}
+
+#[cfg(feature="native-policy")]
+impl BorrowedRawCohort<'_>{
+ /// Bounded fixture DATA over the SAME actual captured files and registry
+ /// collector. The phase bool is DATA, never a workspace EOF/source receipt.
+ pub fn scan_with_patterns(&self,name:&str,config:&crate::captured_raw_file::Config,budget:Arc<Budget>,remaining_bytes:usize,remaining_sites:usize,patterns:&dyn crate::native_pattern::Provider,poll:&dyn Fn()->std::io::Result<()>)->Result<RawRun,crate::captured_reactive_reads::Failure>{
+  use crate::captured_reactive_reads::Failure;
+  use crate::reactive_raw_policy_pages::RawPolicyPages;
+  let oom=|message:String|{budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message))};
+  poll()?;budget.require().map_err(&oom)?;intact(self.raw,&budget).map_err(&oom)?;
+  if !LINTS.contains(&name)||self.raw.tree.files.len()>128{return Err(Failure::Unsupported("policy/roster exceeds the existing bounded raw cohort".into()))}
+  if !Arc::ptr_eq(&self.raw.scopes,&config.shared_scopes()){return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"bounded raw phase requires the same captured configuration owner")))}
+  // The existing ninth Kind10 cohort member is genuinely File-only; it
+  // keeps its same shared scan kernel and is not relabeled as a tree policy.
+  if name=="entry_slots"{
+   let fixture=crate::raw_fixture_policy::Fixture::native_patterns(&budget,poll,patterns);
+   let pending=self.scan_using(name,Arc::clone(&budget),remaining_bytes,remaining_sites,||fixture.check(),Some(&fixture));
+   if let Some(actual)=fixture.take_scan_failure(){return Err(match actual{crate::derived_selftest_policy::Failure::Operational(actual)=>Failure::Operational(actual),crate::derived_selftest_policy::Failure::Assertion(message)=>Failure::Unsupported(message)})}
+   let value=pending.map_err(Failure::Unsupported)?;fixture.finish_scan().map_err(|actual|match actual{crate::derived_selftest_policy::Failure::Operational(actual)=>Failure::Operational(actual),crate::derived_selftest_policy::Failure::Assertion(message)=>Failure::Unsupported(message)})?;return Ok(value)
+  }
+  let roster=self.raw.tree.files.len().checked_mul(512).and_then(|n|n.checked_add(4096)).ok_or_else(||oom("bounded raw roster metadata overflow".into()))?;budget.charge(roster).map_err(&oom)?;
+  self.raw.validate_current_raw_roster(self.inputs).map_err(Failure::Unsupported)?;
+  let policy=crate::captured_raw_tree_pages::Policy::from_name(name).ok_or_else(||Failure::Unsupported("bounded raw roster has no actual tree collector".into()))?;
+  let empty=LintScope::default();let meta=policy.metadata();let scope=self.raw.scopes.borrowed_for_lint(meta.name,meta.group).unwrap_or(&empty);
+  // Preserve the admitted old temporary envelope while individual existing
+  // producer paths are ported to checked construction; it is not regex credit.
+  let mut first=None;let pending=admit_temporaries(name,self.raw,scope,&budget,&mut||match poll(){Ok(())=>Ok(()),Err(actual)=>{first=Some(actual);Err("bounded raw census retained original operational failure".into())}});if let Some(actual)=first{return Err(Failure::Operational(actual))}pending.map_err(&oom)?;
+  struct Pages<'a>{raw:&'a CapturedRawPolicy,budget:&'a Arc<Budget>,poll:&'a dyn Fn()->std::io::Result<()>}
+  impl RawPolicyPages for Pages<'_>{fn for_each(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+   for file in &self.raw.tree.files{(self.poll)()?;self.budget.require().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;
+    let pending=visit(&file.rel,crate::captured_raw_file::RawPolicyViews::from_source(file));
+    if matches!(&pending,Err(Failure::Operational(_))){return pending}
+    file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;self.budget.require().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;if !pending?{return Ok(false)}
+   }Ok(true)
+  }}
+  let pages=Pages{raw:self.raw,budget:&budget,poll};let no_io=crate::incr::captured_compute_scope();
+  let pending=crate::captured_raw_tree_pages::collect_with_patterns(&pages,policy,config,&budget,poll,patterns);
+  // Preserve already-issued operational failure before any later poll/latch.
+  let data=match pending{Err(Failure::Operational(actual))=>return Err(Failure::Operational(actual)),other=>{no_io.require().map_err(Failure::Unsupported)?;intact(self.raw,&budget).map_err(&oom)?;other?}};
+  self.raw.validate_current_raw_roster(self.inputs).map_err(Failure::Unsupported)?;
+  let owned_name=crate::captured_api_pages::own(&budget,poll,name)?;let run=Run{sites:data.sites,notes:data.notes};let used=data.allow_used;
+  if run.sites.len()>remaining_sites.min(captured_raw_policy::MAX_FIXTURE_SITES)||crate::captured_raw_file::Findings::budget_charge_parts(&owned_name,&run,&used)>remaining_bytes{return Err(oom("bounded raw final findings exceed admitted result extent".into()))}
+  poll()?;budget.require().map_err(&oom)?;
+  Ok(RawRun{name:owned_name,run,allow_used:used})
+ }
 }

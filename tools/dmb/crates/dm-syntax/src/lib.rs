@@ -38,7 +38,8 @@ pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,
     for_each_source_chunk_with_limits, for_each_stable_source_chunk, parse_proc_at_span,
     parse_proc_with_origins_at_span, parse_proc_with_origins_from_spans, ChunkReport,
-    ProcedureWithOrigins, parse_proc_with_native_consumption_from_window, parse_original_proc_with_shared_parameters_from_spans,parse_original_proc_with_shared_parameters_from_window, StreamingAudit,parse_original_proc_with_origins_and_default_roots_from_spans, parse_proc_with_origins_and_default_roots_from_spans,
+    AdmittedProcedureWithOrigins, parse_proc_with_native_consumption_from_window_admitted, parse_proc_with_committed_native_consumption_from_window_admitted,
+    ProcedureWithOrigins, parse_proc_with_native_consumption_from_window,parse_proc_with_committed_native_consumption_from_window, parse_original_proc_with_shared_parameters_from_spans,parse_original_proc_with_shared_parameters_from_window, StreamingAudit,parse_original_proc_with_origins_and_default_roots_from_spans, parse_proc_with_origins_and_default_roots_from_spans,
 };
 pub use statements::{
     parse_body_items, parse_body_items_with_context, parse_body_items_with_source, parse_proc_body,
@@ -252,6 +253,8 @@ pub struct ParsedExpr {
 impl ParsedExpr{pub fn original_constructor_facts(&self)->Option<&OriginalConstructorFacts>{self.original_constructor_facts.as_ref()}pub fn original_input_notices(&self)->Option<&OriginalInputNotices>{self.original_input_notices.as_ref()}pub fn original_input_failure(&self)->Option<OriginalInputFailure>{self.original_input_failure}}
 mod original_constructor_facts;
 pub use original_constructor_facts::{OriginalConstructorFact,OriginalConstructorFacts};
+mod setting_original_products;
+pub use setting_original_products::OriginalSettingProducts;
 mod original_input_notices;
 pub use original_input_notices::{OriginalInputNotice,OriginalInputNoticeKind,OriginalInputNotices,OriginalInputFailure,OriginalInputExpected,original_input_type_name};
 pub mod literal;
@@ -259,6 +262,8 @@ pub use literal::{shift_expression, LiteralText};
 
 pub mod original_token_value;
 pub use original_token_value::OriginalTokenValue;
+mod pratt_continuations;
+mod parser_cleanup;
 mod expression_parser;
 pub use expression_parser::{parse_expression,parse_expression_original_token_view,parse_expression_demanded,parse_original_expression_demanded,DemandedExpression,CompletedDemandedExpression,NativePrimitiveClauseMode,NativeExpressionReadRole,NativeExpressionRead,NativeExpressionTokenDemand,NativeExpressionTokenOccurrence,NativeTermExpectation,NativeDelimiterExpected,NativeDelimiterExpectation};
 mod expression_continuation;
@@ -311,7 +316,7 @@ mod procedure_origin_tests;
 mod parameter_syntax;
 mod shared_parameter_signature;
 pub use shared_parameter_signature::{SharedParameterSignature,ProcedureParameters};
-pub use parameter_syntax::{HeaderTypeDeclarationSyntax, ParameterSignature, ParameterSyntax,parameter_signature_with_default_roots,parameter_signature_original_with_default_roots,parameter_signature_original_plain_empty};
+pub use parameter_syntax::{original_parameter_metadata_envelope,HeaderTypeDeclarationSyntax, ParameterSignature, ParameterSyntax,parameter_signature_with_default_roots,parameter_signature_original_with_default_roots,parameter_signature_original_with_native_observation,parameter_signature_original_plain_empty};
 
 mod parameter_clauses;
 pub use parameter_clauses::{parameter_clause_spans,parameter_clause_spans_in_window, ParameterClauseSpans,ParameterClauseCursor,ParameterExpressionDemand};
@@ -324,30 +329,32 @@ mod setting_drop;
 mod setting_prepare;
 mod admitted_worklist;
 mod body_literal_syntax;
+mod body_cleanup_geometry;
+pub use body_cleanup_geometry::{body_cleanup_startup_geometry, original_body_cleanup_startup_geometry, original_body_cleanup_peak_geometry,original_body_token_cleanup_geometry, BodyCleanupStartupGeometry};
 pub use body_literal_syntax::{prepare_body_literal_syntax,PreparedBodyLiteralSyntax,BodyLiteralAdmission,drop_body_literal_syntax};
-pub use setting_prepare::{prepare_setting_expression,prepare_setting_expression_with_original_literal_facts,prepare_setting_expression_with_original_literal_facts_and_native_observation,retain_demanded_expression, SettingSyntaxFailure};
+pub use setting_prepare::{prepare_setting_expression,prepare_setting_expression_with_original_literal_facts,prepare_setting_expression_with_original_literal_facts_and_native_observation,prepare_setting_expression_with_original_products,retain_demanded_expression, SettingSyntaxFailure};
 mod setting_expression;
 pub use setting_expression::{
     visit_setting_literal_retention, SettingAdmission, SettingEvaluationFrame, SettingExpression, SettingRootLease,
     SharedSettingRetention,
 };
 mod setting_slots;
-pub use setting_slots::SettingExpressionSlots;
+pub use setting_slots::{SettingExpressionSlots,AdmittedOrdinalSlots,OrdinalSlotFailure};
 
 mod setting_projection;
 pub use setting_projection::{ProjectedExprView, SettingValueView, SettingView,SyntaxProjection};
 pub use statements::{
-    parse_body_items_with_context_and_settings, parse_body_items_with_admitted_literals, OriginalLeafBlockLink, SettingStatement, SettingSyntaxProvider,
+    parse_body_items_with_context_and_settings, parse_body_items_with_admitted_literals,parse_body_items_with_admitted_literals_and_syntax_traversal, OriginalLeafBlockLink, SettingStatement, SettingSyntaxProvider, BodyExpressionGeometry,
 };
 
 mod syntax_ledger_views;
 pub use syntax_ledger_views::{ProjectedSyntaxExpr,ProjectedParameterSignature,ProjectedParameter,ProjectedHeaderTypeDeclaration,ProjectedParameterInput,ProjectedLocalLedger,ProjectedLocal,ProjectedArrayInitializer,ProjectedControlOrigins,ProjectedPendingBodies,ProjectedLiteralFragment,SyntaxViewError,ProjectedStatements,ProjectedStatement,ProjectedStatementKind,ProjectedForControl,ProjectedForInitializer,ProjectedSwitchCases,ProjectedSwitchCase,ProjectedSwitchAlternative};
 
-pub use declaration_parser::{OriginalDeclarationFatal,OriginalDeclarationSkeleton,OriginalPrimaryHeader,OriginalPrimaryCommit,OriginalHeaderFlow,OriginalDeclarationHeaderObserver,parse_original_declaration_skeleton_using,parse_original_declaration_skeleton_with_observer_using};
+pub use declaration_parser::{OriginalDeclarationFatal,OriginalDeclarationSkeleton,OriginalPrimaryHeader,OriginalPrimaryCommit,OriginalCommittedBodyCollection,OriginalCommittedBodyInput,OriginalHeaderFlow,OriginalDeclarationHeaderObserver,parse_original_declaration_skeleton_using,parse_original_declaration_skeleton_with_observer_using};
 
 pub use syntax_ledger_views::ProjectedSettingExpression;
 
-pub use statements::{OriginalBodyGrammarOutcome,OriginalBodyGrammarKind,NativeBodyParserFacts};
+pub use statements::{OriginalBodyGrammarOutcome,OriginalBodyGrammarKind,NativeBodyParserFacts,NativeBodySyntaxTraversal};
 
 mod original_literal_data;
 mod original_literal_projection;
@@ -385,3 +392,5 @@ mod setting_charge_counter;
 pub use setting_charge_counter::{ProvisionalNativeGrant, SettingChargeCounter, SharedNativeReservation};
 
 pub use expression_parser::{NativeExpressionParserFacts,parse_expression_original_token_view_with_native_facts,parse_expression_token_view_with_native_facts};
+
+pub use declaration_parser::original_callable_syntax_extent_using;

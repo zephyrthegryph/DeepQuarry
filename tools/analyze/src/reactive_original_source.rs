@@ -10,7 +10,8 @@ const STATIC_FLAG:u32=1;const CONST_FLAG:u32=2;const TMP_FLAG:u32=4;
 use std::{path::Path,sync::Arc,collections::HashMap,borrow::Cow};
 
 /// Stack-only source binding. No raw/native tree, callable map or AST is copied.
-pub(crate) struct ReadSource<'a>{raw:Option<&'a CapturedRawPolicy>,raw_pages:Option<&'a dyn crate::reactive_raw_policy_pages::RawPolicyPages>,native_root:Option<&'a Path>,selected_setter_files:Option<&'a dyn crate::captured_raw_file::SelectedTreeFiles>,inputs:&'a PolicyInputs,budget:&'a Arc<Budget>,order:ReadOrder<'a>,checkpoint:Option<&'a dyn Fn()->std::io::Result<()>>,body_borrower:Option<&'a dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>>}
+pub(crate) struct ReadSource<'a>{raw:Option<&'a CapturedRawPolicy>,raw_pages:Option<&'a dyn crate::reactive_raw_policy_pages::RawPolicyPages>,native_root:Option<&'a Path>,selected_setter_files:Option<&'a dyn crate::captured_raw_file::SelectedTreeFiles>,inputs:&'a PolicyInputs,budget:&'a Arc<Budget>,operation_budget:&'a Arc<Budget>,order:ReadOrder<'a>,checkpoint:Option<&'a dyn Fn()->std::io::Result<()>>,body_borrower:Option<&'a dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>>,utility_body_borrower:Option<&'a UtilityBodyBorrower<'a>>}
+ pub(crate) type UtilityBodyBorrower<'a>=dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::OriginalBodySyntaxProduct>,dm_tree::frontend::BodySyntaxFailure>+'a;
 /// One existing include-order map; temporary page views borrow it directly.
 enum ReadOrder<'a>{Owned(HashMap<String,usize>),Borrowed(&'a HashMap<String,usize>)}
 impl std::ops::Deref for ReadOrder<'_>{type Target=HashMap<String,usize>;fn deref(&self)->&Self::Target{match self{Self::Owned(map)=>map,Self::Borrowed(map)=>map}}}
@@ -37,9 +38,12 @@ impl<'a> ReadSource<'a>{
     /// or credit is issued here. The caller must preadmit its temporary page
     /// and retain graph allocations under their real parent before page drop.
     pub(crate) fn with_budget<'page,T>(&'page self,budget:&'page Arc<Budget>,operation:impl FnOnce(&ReadSource<'page>)->T)->T{
-        let page=ReadSource{raw:self.raw,raw_pages:self.raw_pages,native_root:self.native_root,selected_setter_files:self.selected_setter_files,inputs:self.inputs,budget,order:ReadOrder::Borrowed(&self.order),checkpoint:self.checkpoint,body_borrower:self.body_borrower};operation(&page)
+        let page=ReadSource{raw:self.raw,raw_pages:self.raw_pages,native_root:self.native_root,selected_setter_files:self.selected_setter_files,inputs:self.inputs,budget,operation_budget:self.operation_budget,order:ReadOrder::Borrowed(&self.order),checkpoint:self.checkpoint,body_borrower:self.body_borrower,utility_body_borrower:self.utility_body_borrower};operation(&page)
     }
     pub(crate) fn reserve(&self,n:Option<usize>)->Result<(),String>{charge(self.budget,n)}
+    /// The original operation root remains borrowed across temporary source views.
+    /// Physical per-body scratch uses this root; retained policy work uses budget().
+    pub(crate) fn operation_budget(&self)->&Arc<Budget>{self.operation_budget}
     pub(crate) fn inputs(&self)->&'a PolicyInputs{self.inputs}
 
 
@@ -51,6 +55,11 @@ impl<'a> ReadSource<'a>{
     }
     /// The SAME active query context must observe each actual body demand.
     /// This stack callback confers no source owner and cannot replace syntax.
+    /// Utility-only active-context canonical demand. The actual archive still
+    /// authenticates current Input/code/recipe/domain before a body or NoCode.
+    pub(crate) fn with_utility_body_borrower(mut self,borrower:&'a UtilityBodyBorrower<'a>)->Self{self.utility_body_borrower=Some(borrower);self}
+    pub(crate) fn utility_body_borrower(&self)->Option<&'a UtilityBodyBorrower<'a>>{self.utility_body_borrower}
+    pub(crate) fn has_absolute_body_borrower(&self)->bool{self.body_borrower.is_some()}
     pub(crate) fn with_body_borrower(mut self,borrower:&'a dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>)->Self{self.body_borrower=Some(borrower);self}
     pub(crate) fn with_header_parameters<T>(
         &self, ordinal:usize,
@@ -84,7 +93,7 @@ impl<'a> ReadSource<'a>{
         let profile=tree.checker_builtin_profile().ok_or("reactive original source lacks exact builtin profile")?;
         tree.validate_checker_builtin_profile(profile).map_err(|e|format!("reactive source profile: {e:?}"))?;
         let order=crate::captured_sparse_slots::captured_order(raw,inputs,budget)?;
-        Ok(Self{raw:Some(raw),raw_pages:None,native_root:None,selected_setter_files:None,inputs,budget,order:ReadOrder::Owned(order),checkpoint:None,body_borrower:None})
+        Ok(Self{raw:Some(raw),raw_pages:None,native_root:None,selected_setter_files:None,inputs,budget,operation_budget:budget,order:ReadOrder::Owned(order),checkpoint:None,body_borrower:None,utility_body_borrower:None})
     }
     /// Original-native-only semantic source loan. PolicyInputs is the existing
     /// private captured archive/mapping producer; root is diagnostic formatting
@@ -95,7 +104,7 @@ impl<'a> ReadSource<'a>{
     }
     pub(crate) fn native_validated(inputs:&'a PolicyInputs,root:&'a Path,budget:&'a Arc<Budget>,proof:&dm_tree::checker_builtins::ValidatedCheckerProfile<'_>,profile:dm_ir::PackedU128)->Result<Self,String>{
         budget.require()?;if !root.is_absolute(){return Err("native reactive diagnostic root must be absolute".into())}proof.require(inputs.archive().tree(),profile).map_err(|e|format!("reactive source profile: {e:?}"))?;
-        Ok(Self{raw:None,raw_pages:None,native_root:Some(root),selected_setter_files:None,inputs,budget,order:ReadOrder::Owned(HashMap::new()),checkpoint:None,body_borrower:None})
+        Ok(Self{raw:None,raw_pages:None,native_root:Some(root),selected_setter_files:None,inputs,budget,operation_budget:budget,order:ReadOrder::Owned(HashMap::new()),checkpoint:None,body_borrower:None,utility_body_borrower:None})
     }
 
     /// Policy-only page provider. This does NOT prove full raw coverage; the
@@ -684,3 +693,11 @@ pub(crate) fn variable_declaring_owner_original<'a,E:From<&'static str>>(receive
 }
 
 impl ReadSource<'_>{pub(crate) fn callable_header_site(&self,ordinal:usize)->Result<(String,u32),String>{self.require()?;let archive=self.inputs.archive();let occurrence=archive.occurrences().get(ordinal).ok_or("setter header original occurrence absent")?;let point=archive.callable_header_policy_line(occurrence.member)?;let file=self.file(&point.path)?;let line=file.analyze_display_line(point.line).map_err(|e|e.to_string())?;self.site_line(ordinal,u32::try_from(line).map_err(|_|"setter original header line overflow")?)}}
+
+impl<'a>ReadSource<'a>{
+ /// Borrow the same captured relative-file DATA for an actual utility descriptor.
+ pub(crate)fn utility_report_file(&self,path:&std::path::Path)->Result<std::borrow::Cow<'a,str>,crate::reactive_reads_native::Failure>{self.require()?;self.relative_file(path).map_err(crate::reactive_reads_native::Failure::from)}
+}
+
+#[cfg(test)]
+#[path="reactive_original_source_operation_tests.rs"]mod operation_root_controls;

@@ -458,6 +458,11 @@ impl GenerationInputClosure {
         if !self.inputs.exact_positive_contents_match(&provider)?{return Err(std::io::Error::new(std::io::ErrorKind::Interrupted,"observed generation input contents changed").into())}
         crate::daemon::control::checkpoint()?;Ok(())
     }
+    pub(crate) fn refresh_baseline_domain<P:SnapshotProvider>(&self,recording:&crate::input_snapshot::RecordingInputs<P>,root:&std::path::Path,queries:&crate::query_db::QueryDb,budget:&std::sync::Arc<dq_analyze::captured_generator_budget::Budget>,credits:&mut crate::query_db::RawInputCredits<'_>)->std::io::Result<()>{
+        let mut names=crate::generation_coordinator::OBSERVED_NAMES;names.sort();
+        if self.root!=root||!self.names().eq(names){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"baseline GEN domain differs from its actual all-twelve namespace"))}
+        self.inputs.refresh_domain_into(recording,queries,budget,credits)
+    }
     pub(crate) fn from_bootstrap_retired(retired:crate::input_snapshot::RetiredGenerationInputs)->Self{let(inputs,root,names)=retired.into_parts();Self{inputs,root,names}}
     pub(crate) fn root(&self)->&std::path::Path{&self.root}
     pub(crate) fn names(&self)->impl Iterator<Item=crate::GeneratorName>+'_ {self.names.iter().flatten().copied()}
@@ -617,6 +622,9 @@ impl JoinedSelectedInputs {
         crate::daemon::control::checkpoint()?;Ok(())
     }
 
+    pub(crate) fn require_baseline_step(&self,next:&Self,project:&std::path::Path,transition:&crate::native_author_fix_transaction::Transition,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->std::io::Result<()>{
+        work.checkpoint()?;if self.project!=project||next.project!=project||!self.inputs.same_baseline_step(&next.inputs,transition,work)?{return Err(std::io::Error::new(std::io::ErrorKind::Interrupted,"baseline source/configuration/namespace changed beyond its actual verified write"))}Ok(())
+    }
     /// DATA loan from this same moved combined-preparation ledger only.
     pub(crate) fn with_report_input_observation<T>(&self,project:&std::path::Path,observe:impl FnOnce(&InputSnapshot)->std::io::Result<T>)->Result<T,Box<dyn Error>>{
         self.require_report_current(project)?;
@@ -829,4 +837,16 @@ pub(crate) fn admit_registered_source_ledger(inputs:&InputSnapshot,generated:&st
     admit_live(inputs,generated)?;
     if !capture.is_recorded_in(inputs){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"registered source admission omits actual workspace observations").into())}
     Ok(WorkspacePolicyAdmission{capture,generation_inputs:None})
+}
+
+impl JoinedSelectedInputs{pub(crate) fn native_selftest_epoch(&self)->&crate::input_snapshot::JoinedReportEpoch{&self._recorder_epoch}}
+
+/// Same report-purpose physical restat/exact-positive barrier for a scoped
+/// callback on an in-place parent ledger. It grants no Root or source role.
+pub(crate) fn require_native_callback_inputs_current(inputs:&InputSnapshot)->Result<(),Box<dyn Error>>{
+ let proofs=crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(inputs)?;
+ let provider=crate::input_snapshot::GeneratedOutputInputs::new(&proofs,inputs.generated_outputs().iter().cloned());
+ admit(inputs,&provider).map_err(|error|->Box<dyn Error>{if error.is::<InputsMoved>(){std::io::Error::new(std::io::ErrorKind::Interrupted,"native callback input observations changed during operation").into()}else{error}})?;
+ if !inputs.exact_positive_contents_match(&provider)?{return Err(std::io::Error::new(std::io::ErrorKind::Interrupted,"native callback positive input contents changed during operation").into())}
+ crate::daemon::control::checkpoint()?;Ok(())
 }

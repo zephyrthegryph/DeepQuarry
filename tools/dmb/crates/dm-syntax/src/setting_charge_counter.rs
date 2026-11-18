@@ -68,6 +68,9 @@ pub struct SettingChargeCounter {
     aggregate: AtomicUsize,
     leased: AtomicUsize,
     parent: Option<Arc<SharedNativeReservation>>,
+    cleanup_gate:std::sync::Mutex<()>,
+    #[cfg(test)] cleanup_active:AtomicUsize,
+    #[cfg(test)] cleanup_peak:AtomicUsize,
 }
 impl SettingChargeCounter {
     /// Fixed payload plus the existing two-word Arc-control allocation bound.
@@ -95,6 +98,9 @@ impl SettingChargeCounter {
             aggregate: AtomicUsize::new(fixed),
             leased: AtomicUsize::new(fixed),
             parent,
+            cleanup_gate:std::sync::Mutex::new(()),
+            #[cfg(test)] cleanup_active:AtomicUsize::new(0),
+            #[cfg(test)] cleanup_peak:AtomicUsize::new(0),
         }))
     }
     pub fn shared_reservation(&self) -> Option<&Arc<SharedNativeReservation>> {
@@ -281,3 +287,21 @@ mod tests {
         drop(all);
     }
 }
+
+/// Actual domain-wide cleanup coordination only. No parser, IO, query or
+/// admission operation runs under this lock. Root allocation pays the mutex
+/// once; neither a cache nor another reservation counter is introduced.
+pub(crate) struct CleanupGuard<'a>{
+ _guard:std::sync::MutexGuard<'a,()>,
+ #[cfg(test)] counter:&'a SettingChargeCounter,
+}
+impl SettingChargeCounter{
+ pub(crate) fn cleanup_guard(&self)->CleanupGuard<'_>{
+  let guard=self.cleanup_gate.lock().unwrap_or_else(|poison|poison.into_inner());
+  #[cfg(test)]{let active=self.cleanup_active.fetch_add(1,Ordering::AcqRel)+1;self.cleanup_peak.fetch_max(active,Ordering::AcqRel);}
+  CleanupGuard{_guard:guard,#[cfg(test)]counter:self}
+ }
+ #[cfg(test)]pub(crate)fn cleanup_activity(&self)->(usize,usize){(self.cleanup_active.load(Ordering::Acquire),self.cleanup_peak.load(Ordering::Acquire))}
+ #[cfg(test)]pub(crate)fn reset_cleanup_peak(&self){assert_eq!(self.cleanup_active.load(Ordering::Acquire),0);self.cleanup_peak.store(0,Ordering::Release);}
+}
+impl Drop for CleanupGuard<'_>{fn drop(&mut self){#[cfg(test)]{assert_eq!(self.counter.cleanup_active.fetch_sub(1,Ordering::AcqRel),1);}}}

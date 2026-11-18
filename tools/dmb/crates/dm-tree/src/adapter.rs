@@ -275,7 +275,12 @@ fn from_items_with_cursor_progress_using<D:AdapterDemand>(
         no_expansion: Arc::from([]),
     };
     let mut containing_owner=owner.to_owned();
-    crate::normalize::visit_declarations_in_scope(items,owner,&mut || demand.checkpoint(),&mut |item|walk(std::iter::once(item),&mut containing_owner,&mut context))?;
+    let visited=crate::normalize::visit_declarations_in_scope(items,owner,&mut || demand.checkpoint(),&mut |item|walk(std::iter::once(item),&mut containing_owner,&mut context));
+    #[cfg(debug_assertions)]
+    if visited.is_err()&&std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){
+        if let Some(prepared)=context.prepared_signatures.as_deref(){context.demand.trace_prepared_failure(prepared,context.symbols,context.result);}
+    }
+    visited?;
     context.demand.checkpoint()?;
     // The walk grows both vectors by doubling; the result is retained per region, so release the slack.
     result.skeletons.shrink_to_fit();
@@ -363,6 +368,19 @@ struct AdapterContext<'a,'op,D:AdapterDemand> {
 impl<D:AdapterDemand> AdapterContext<'_,'_,D>{
     fn symbol(&mut self,text:&str)->Result<SymbolId,WalkFailure<D::Operational>>{
         self.demand.intern_adapter_spelling(self.symbols,text,self.prepared_signatures.as_deref_mut())
+    }
+    fn member_name(&mut self,text:&str,header:dm_syntax::Span)->Result<SymbolId,WalkFailure<D::Operational>>{
+        // This is an optional immutable byte-storage hint, not a declaration
+        // identity or a new source grant. The existing bound owner rechecks
+        // the exact UTF-8 bytes and falls back to owned compact slabs on miss.
+        let source_start=self.source.and_then(|source|{
+            let offset=self.headers.map_or(0,|(_,offset)|offset);
+            let start=header.start.checked_add(offset)?;
+            let end=header.end.checked_add(offset)?;
+            let local=source.get(start..end)?.rfind(text)?;
+            start.checked_add(local)
+        });
+        self.demand.intern_member_name(self.symbols,text,source_start,self.prepared_signatures.as_deref_mut())
     }
 }
 fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>, containing_owner: &mut String, context: &mut AdapterContext<'_,'_,D>)->Result<(),D::Operational> {
@@ -497,7 +515,7 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     let content = metadata.canonical.xxh3_128();
                     Ok(Some(Skeleton::Member {
                         owner: context.symbol(&owner)?,
-                        name: context.symbol(raw_name)?,
+                        name: context.member_name(raw_name,item.raw.header_span())?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Declare,
                         // The field tail stays with the variable metadata owner.
@@ -655,7 +673,7 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         context.symbols, &path, source_start, context.prepared_signatures.as_deref_mut(),
                     )?;
                     let owner_id = context.symbol(&owner)?;
-                    let name_id = context.symbol(name)?;
+                    let name_id = context.member_name(name,item.raw.header_span())?;
                     let procedure = Some(context.demand.procedure_metadata(
                         parsed_signature.signature, typed_settings, context.prepared_signatures.as_deref_mut(),
                     ).map_err(WalkFailure::Operational)?);
@@ -730,7 +748,7 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     let content = metadata.canonical.xxh3_128();
                     Ok(Some(Skeleton::Member {
                         owner: context.symbol(&assignment_owner)?,
-                        name: context.symbol(name)?,
+                        name: context.member_name(name,item.raw.header_span())?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Override,
                         metadata: Arc::new(metadata.with_field_tail(fields)),
@@ -809,6 +827,7 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         context.symbols.compact_spelling_len(),
                         context.prepared_signatures.as_deref().map_or(0, |actual| actual.plain_metadata_hits_for_trace()),
                     );
+
                 }
                 return Err(actual);
             }

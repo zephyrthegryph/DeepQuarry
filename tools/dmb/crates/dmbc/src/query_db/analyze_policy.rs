@@ -17,6 +17,7 @@ fn bounded_only(name: &str) -> bool {
 }
 #[derive(Clone)]
 struct Params {
+    scoped_patterns:bool,
     capture: Weak<CapturedPolicyInputs>,
     evidence_key: u64,
     configuration: Key,
@@ -89,11 +90,15 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
     db.define(
         ANALYZE_FINDINGS,
         "native-analyze-cross-file-policy",
-        move |ctx, params| {
+        move|ctx,params|produce_analyze(ctx,params,&charge,&admission,None),
+    );
+}
+fn produce_analyze(ctx:&mut dm_query::Ctx<'_>,params:&dm_query::Value,charge:&AtomicUsize,admission:&Admission,queries:Option<&QueryDb>)->Result<Outcome,QueryError>{
             let p = params
                 .downcast_ref::<Params>()
                 .expect("typed policy params");
             admission.abort.before_outcome(p.result)?;
+            if p.scoped_patterns!=queries.is_some(){return Err(QueryError::operational(p.result,io::Error::new(io::ErrorKind::NotConnected,"bounded analyze requires its actual scoped native pattern lender")))}
             // Issuance is checked on BOTH a cache hit at entry and actual execution.
             let capture = p.capture.upgrade().ok_or(QueryError::Missing(p.result))?;
             let evidence = capture.semantic_source_evidence();
@@ -171,13 +176,35 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                                         admission.abort.take_error().unwrap_or_else(||io::Error::other(message))),
                                 )?
                             } else if name == "pool" {
-                                BorrowedPool::capture(&raw, capture.policy())?.scan(
-                                    budget, MAX_FIXTURE_SITES - sites, checkpoint,
-                                )?
+                                if let Some(queries)=queries{
+                                 let pool=BorrowedPool::capture(&raw,capture.policy())?;let mut pending=None;
+                                 let resource=queries.with_held_raw_pattern_work(&budget,|work,scratch|{
+                                  let provider=crate::query_db::PatternProvider::scoped(queries,work,scratch);
+                                  pending=Some(pool.scan_with_patterns(Arc::clone(&budget),MAX_FIXTURE_SITES-sites,&provider,&crate::daemon::control::checkpoint));
+                                  if pending.as_ref().is_some_and(|result|matches!(result,Err(dq_analyze::captured_reactive_reads::Failure::Operational(_)))){Err(io::ErrorKind::Other.into())}else{Ok(())}
+                                 });
+                                 match pending{
+                                  Some(Err(dq_analyze::captured_reactive_reads::Failure::Operational(actual)))=>return Err(AnalyzeReadFailure::Operational(actual)),
+                                  Some(Err(dq_analyze::captured_reactive_reads::Failure::Unsupported(message)))=>{resource.map_err(AnalyzeReadFailure::Operational)?;return Err(AnalyzeReadFailure::Semantic(message))},
+                                  Some(Ok(actual))=>{resource.map_err(AnalyzeReadFailure::Operational)?;actual},
+                                  None=>{resource.map_err(AnalyzeReadFailure::Operational)?;return Err(AnalyzeReadFailure::Operational(io::Error::new(io::ErrorKind::NotConnected,"actual bounded pool pattern loan not visited")))}
+                                 }
+                                }else{BorrowedPool::capture(&raw,capture.policy())?.scan(budget,MAX_FIXTURE_SITES-sites,checkpoint)?}
                             } else {
-                                BorrowedRawCohort::capture(&raw, capture.policy()).scan(
-                                    name, budget, remaining, MAX_FIXTURE_SITES - sites, checkpoint,
-                                )?
+                                if let Some(queries)=queries{
+                                 let mut pending=None;
+                                 let resource=queries.with_held_raw_pattern_work(&budget,|work,scratch|{
+                                  let provider=crate::query_db::PatternProvider::scoped(queries,work,scratch);
+                                  pending=Some(BorrowedRawCohort::capture(&raw,capture.policy()).scan_with_patterns(name,&config.config,budget.clone(),remaining,MAX_FIXTURE_SITES-sites,&provider,&crate::daemon::control::checkpoint));
+                                  if pending.as_ref().is_some_and(|result|matches!(result,Err(dq_analyze::captured_reactive_reads::Failure::Operational(_)))){Err(io::ErrorKind::Other.into())}else{Ok(())}
+                                 });
+                                 match pending{
+                                  Some(Err(dq_analyze::captured_reactive_reads::Failure::Operational(actual)))=>return Err(AnalyzeReadFailure::Operational(actual)),
+                                  Some(Err(dq_analyze::captured_reactive_reads::Failure::Unsupported(message)))=>{resource.map_err(AnalyzeReadFailure::Operational)?;return Err(AnalyzeReadFailure::Semantic(message))},
+                                  Some(Ok(actual))=>{resource.map_err(AnalyzeReadFailure::Operational)?;actual},
+                                  None=>{resource.map_err(AnalyzeReadFailure::Operational)?;return Err(AnalyzeReadFailure::Operational(io::Error::new(io::ErrorKind::NotConnected,"actual bounded raw pattern loan not visited")))}
+                                 }
+                                }else{BorrowedRawCohort::capture(&raw,capture.policy()).scan(name,budget,remaining,MAX_FIXTURE_SITES-sites,checkpoint)?}
                             }
                         }
                         "init" => {
@@ -287,6 +314,13 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                 Err(AnalyzeReadFailure::Semantic(message)) => Err(message),
                 Err(AnalyzeReadFailure::Query(error)) => return Err(error),
                 Err(AnalyzeReadFailure::Operational(error)) => {
+                    // Same existing poisoned-view/denial bookkeeping, performed
+                    // without a later poll before returning the actual first IO.
+                    if p.ordered.iter().any(|name|bounded_only(name)){
+                     let view_denied=sources.iter().any(|source|source.file.require_view_budget().is_err());
+                     if view_denied{admission.view_denied.store(true,Ordering::Relaxed);admission.denied.store(true,Ordering::Relaxed);}
+                     if bounded_budget.as_ref().is_some_and(|budget:&Arc<Budget>|budget.denied()){admission.denied.store(true,Ordering::Relaxed);}
+                    }
                     return Err(QueryError::operational(p.result, error))
                 }
             };
@@ -331,8 +365,6 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
             retain_derived(&charge, bytes, &admission, p.result)?;
             admission.abort.before_outcome(p.result)?;
             Ok(Outcome::new(result, hash, bytes))
-        },
-    );
 }
 impl QueryDb {
     pub(crate) fn analyze_fixture_findings(
@@ -460,6 +492,7 @@ impl QueryDb {
                 &cohort.root,
                 &cohort.configuration,
                 &ordered,
+                true,
             ),
         );
         let planned = BTreeMap::from([(result_key, 1024)]);
@@ -473,9 +506,10 @@ impl QueryDb {
         }
         let result = self
             .db
-            .get::<Result<Vec<RawRun>, String>>(
+            .get_with_scoped_computation::<Result<Vec<RawRun>,String>>(
                 result_key,
                 Arc::new(Params {
+                    scoped_patterns:true,
                     capture: Arc::downgrade(&cohort.capture),
                     evidence_key: evidence.key(),
                     configuration: prepared.configuration,
@@ -486,6 +520,7 @@ impl QueryDb {
                     result: result_key,
                     value_input: value_input.as_ref().map(Arc::downgrade),
                 }),
+                |ctx,params|produce_analyze(ctx,params,&self.raw_policy.charge,&self.raw_policy.admission,Some(self)),
             )
             .map_err(|error| self.derived_query_error("native typed policy query", error));
         let result = match result {

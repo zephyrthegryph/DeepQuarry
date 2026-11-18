@@ -56,9 +56,9 @@ pub fn file_facts_using(f:&SourceFile, gate:&dyn Gate)->FileFacts {
         if !gate.checkpoint(){return FileFacts::default();}
                 if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
                     flush(&mut cur, &mut body);
-                    if let Some(m) = crate::pat_match!(r"^(/datum/[\w/]+)/entries\(\)").captures(line) {
+                    if let Some(m) = gate.captures_pattern(r"^(/datum/[\w/]+)/entries\(\)",line,||crate::pat_match!(r"^(/datum/[\w/]+)/entries\(\)")) {
                         if gate.checked()&&!gate.reserve(m.s(1).len().checked_mul(4).and_then(|n|n.checked_add(4096))){return FileFacts::default()}cur = Some((true, m.s(1).to_string(), Vec::new()));
-                    } else if let Some(m) = crate::pat_match!(r"^/proc/(\w+)\(([^)]*)\)").captures(line) {
+                    } else if let Some(m) = gate.captures_pattern(r"^/proc/(\w+)\(([^)]*)\)",line,||crate::pat_match!(r"^/proc/(\w+)\(([^)]*)\)")) {
                         if gate.checked()&&!gate.reserve(m.s(1).len().checked_add(m.s(2).len()).and_then(|n|n.checked_mul(128)).and_then(|n|n.checked_add(4096))){return FileFacts::default()}
                         let params = m
                             .s(2)
@@ -410,7 +410,7 @@ pub fn judge(&self,args:&[String])->Vec<Clash>{self.judge_using(args,&Unchecked)
         let text = if subst.is_empty() { text } else { prune_ifs_using(&prune_ternaries_using(&text, gate), gate) };
         // a local `var/list/x = list(...)` of a body stands for its value where it is named
         let mut locals = HashMap::new();
-        for c in crate::pat!(r"var/list/(\w+)\s*=\s*").captures_iter(&text) {
+        for c in gate.captures_pattern_rows(r"var/list/(\w+)\s*=\s*",&text,||crate::pat!(r"var/list/(\w+)\s*=\s*")) {
         if !gate.checkpoint(){return;}
             let start = c.end(0);
             if let Some((name, open, close)) = call_at_using(&text, start, gate) {
@@ -1419,8 +1419,7 @@ pub fn relative_priority_using(f:&SourceFile,mut emit:impl FnMut(usize)->bool, g
     if !gate.checkpoint(){return;}
 
     if f.rel.starts_with("code/engine/_generated/"){return}
-    let rel=crate::pat!(r"\bpriority\(\s*(?:above|below)\(");
-    for(number,line)in f.clean().numbered(){if !gate.checkpoint(){return}if rel.is_match(line)&&!emit(number){return}}
+    for(number,line)in f.clean().numbered(){if !gate.checkpoint(){return}if gate.matches_pattern(r"\bpriority\(\s*(?:above|below)\(",line,||crate::pat!(r"\bpriority\(\s*(?:above|below)\("))&&!emit(number){return}}
 }
 pub fn file_facts(f:&SourceFile)->FileFacts{file_facts_using(f,&Unchecked)}
 pub fn relative_priority(f:&SourceFile,mut emit:impl FnMut(usize)){relative_priority_using(f,|line|{emit(line);true},&Unchecked)}

@@ -2,6 +2,7 @@
 use std::collections::{BTreeMap,HashMap};
 use serde::{Serialize,Deserialize};use crate::{dm::field_write::FwlIndex,lint::{Meta,Policy,RuleMeta,ScanKind},tree::CODE_DM,pat::Pat,pat_match,util::{py_lstrip,py_strip}};
 use crate::tree::SourceFile;
+use crate::raw_fixture_policy::{Fixture,PatternApi,PatternMode};
 pub trait Reporter{fn allowed(&mut self,line:usize)->bool;fn site(&mut self,rule:&str,line:usize);}
 const HINT: &str = "use the one mechanism doc/rewrite/object_model_core.md sec 16 names";
 
@@ -62,7 +63,7 @@ fn split_args(s: &str) -> Vec<String> {
 }
 
 /// `calls(text, name)`: `(line number in text, argument text)` of every call of `name`.
-fn calls(f: &SourceFile, name: &str, pat: &Pat) -> Vec<(usize, String)> {
+fn calls<P:PatternApi>(f: &SourceFile, name: &str, pat: &P) -> Vec<(usize, String)> {
     let text = &f.code().text;
     if !text.contains(name) {
         return Vec::new();
@@ -100,10 +101,10 @@ fn calls(f: &SourceFile, name: &str, pat: &Pat) -> Vec<(usize, String)> {
 }
 
 /// `state_args`: how many arguments the call passes through its argument lists (99: built elsewhere).
-fn state_args(argtext: &str, positional: &[usize], named: &[&str]) -> usize {
+fn state_args(argtext: &str, positional: &[usize], named: &[&str],fixture:&Fixture<'_>) -> usize {
     let mut n = 0;
     for (i, arg) in split_args(argtext).iter().enumerate() {
-        let m = pat_match!(r"(?s)(\w+)\s*=(?!=)\s*(.*)$").captures(arg);
+        let m = fixture.pattern(r"(?s)(\w+)\s*=(?!=)\s*(.*)$",PatternMode::Match,||pat_match!(r"(?s)(\w+)\s*=(?!=)\s*(.*)$")).captures(arg);
         let value = match &m {
             Some(c) if named.contains(&c.s(1)) => py_strip(c.s(2)).to_string(),
             None if positional.contains(&i) => arg.clone(),
@@ -112,7 +113,7 @@ fn state_args(argtext: &str, positional: &[usize], named: &[&str]) -> usize {
         if value == "null" || value.is_empty() {
             continue;
         }
-        n += match pat_match!(r"(?s)list\((.*)\)$").captures(&value) {
+        n += match fixture.pattern(r"(?s)list\((.*)\)$",PatternMode::Match,||pat_match!(r"(?s)list\((.*)\)$")).captures(&value) {
             Some(lm) => split_args(lm.s(1)).len(),
             None => 99,
         };
@@ -125,7 +126,7 @@ fn not_define(f: &SourceFile, line: usize) -> bool {
 }
 
 /// `pattern(regex)` / `outside(prefix, regex)`: one site per match on every non-`#define` line.
-fn pattern_sites(f: &SourceFile, pat: &Pat) -> Vec<usize> {
+fn pattern_sites<P:PatternApi>(f: &SourceFile, pat: &P) -> Vec<usize> {
     let mut out = Vec::new();
     for (no, line) in f.code().numbered() {
         if py_lstrip(line).starts_with("#define") {
@@ -152,8 +153,9 @@ pub struct FwFacts {
     pub globals: BTreeMap<String, String>,
 }
 
-pub fn fw_facts(f: &SourceFile) -> FwFacts {
-    let p=FwlIndex::facts_from_views(f.raw(),f.code());
+pub fn fw_facts(f:&SourceFile)->FwFacts{fw_facts_with_fixture(f,&Fixture::legacy())}
+pub fn fw_facts_with_fixture(f:&SourceFile,fixture:&Fixture<'_>)->FwFacts{
+    let p=FwlIndex::facts_from_views_with_fixture(f.raw(),f.code(),fixture);
     let one=FwlIndex::merge_facts(std::iter::once(p));
     FwFacts {
         fields: one.fields,
@@ -200,16 +202,16 @@ pub fn sorted_globals(index: &FwlIndex) -> BTreeMap<&String, &String> {
     index.globals.iter().collect()
 }
 
-pub struct Api {
-    call_pats: Vec<(&'static str, Pat)>,
-    vars_helpers: Pat,
-    vars_write: Pat,
-    timer_cooldown: Pat,
-    accessor_macros: Pat,
-    raw_world_bind: Pat,
-    string_keys: Pat,
-    reactor_api: Pat,
-    raw_relation: Pat,
+pub struct Api<P=Pat> {
+    call_pats: Vec<(&'static str, P)>,
+    vars_helpers: P,
+    vars_write: P,
+    timer_cooldown: P,
+    accessor_macros: P,
+    raw_world_bind: P,
+    string_keys: P,
+    reactor_api: P,
+    raw_relation: P,
 }
 
 const PROMPT_NAMES: &[&str] = &[
@@ -226,11 +228,6 @@ const PROMPT_NAMES: &[&str] = &[
 ];
 
 impl Api {
-    fn calls(&self, f: &SourceFile, name: &str) -> Vec<(usize, String)> {
-        let (n, p) = self.call_pats.iter().find(|(n, _)| *n == name).unwrap();
-        calls(f, n, p)
-    }
-
     pub fn new() -> Api {
         let mut names = vec!["om_task_timed", "use_tool", "om_task_start"];
         names.extend_from_slice(PROMPT_NAMES);
@@ -251,19 +248,26 @@ impl Api {
 }
 
 
-impl Api{pub fn scan_file(&self,f:&SourceFile,out:&mut impl Reporter){
+impl<P:PatternApi> Api<P>{    fn calls(&self, f: &SourceFile, name: &str) -> Vec<(usize, String)> {
+        let (n, p) = self.call_pats.iter().find(|(n, _)| *n == name).unwrap();
+        calls(f, n, p)
+    }
+
+}
+impl Api{pub fn scan_file(&self,f:&SourceFile,out:&mut impl Reporter){self.scan_file_with_fixture(f,out,&Fixture::legacy())}}
+impl<P:PatternApi> Api<P>{pub fn scan_file_with_fixture(&self,f:&SourceFile,out:&mut impl Reporter,fixture:&Fixture<'_>){
         if f.rel.contains("/unit_tests/") {
             return; // only field_write scans tests
         }
         let rel = f.rel.as_str();
         // CHECKS order (sites are per rule, so only the order inside a rule matters).
         for (line, args) in self.calls(f, "om_task_timed") {
-            if state_args(&args, &[5, 8, 10], &["done_args", "fail_args", "check_args"]) > 2 {
+            if state_args(&args, &[5, 8, 10], &["done_args", "fail_args", "check_args"],fixture) > 2 {
                 emit(out, f, "do_after_state", line);
             }
         }
         for (line, args) in self.calls(f, "use_tool") {
-            if state_args(&args, &[], &["done_args", "fail_args"]) > 2 {
+            if state_args(&args, &[], &["done_args", "fail_args"],fixture) > 2 {
                 emit(out, f, "use_tool_state", line);
             }
         }
@@ -302,7 +306,7 @@ impl Api{pub fn scan_file(&self,f:&SourceFile,out:&mut impl Reporter){
         }
         for (line, args) in self.calls(f, "om_task_start") {
             let parts = split_args(&args);
-            if parts.len() > 3 && !pat_match!(r"\w+\s*=(?!=)").is_match(&parts[3]) && not_define(f, line) {
+            if parts.len() > 3 && !fixture.pattern(r"\w+\s*=(?!=)",PatternMode::Match,||pat_match!(r"\w+\s*=(?!=)")).is_match(&parts[3]) && not_define(f, line) {
                 emit(out, f, "task_params_list", line);
             }
         }
@@ -315,3 +319,20 @@ impl Api{pub fn scan_file(&self,f:&SourceFile,out:&mut impl Reporter){
             }
         }
 }}
+
+impl<'f,'a> Api<crate::raw_fixture_policy::Pattern<'f,'a>>{
+ pub fn with_fixture(fixture:&'f Fixture<'a>)->Result<Self,String>{
+  let mut call_pats=Vec::new();for name in ["om_task_timed","use_tool","om_task_start"].into_iter().chain(PROMPT_NAMES.iter().copied()){
+   let escaped=fixture.escape_pattern(name)?;let pattern=fixture.formatted_pattern(format_args!(r"(?<![\w/.]){}\s*\(",escaped),PatternMode::Search)?;let _=pattern.capture_group_count();fixture.check()?;fixture.push(&mut call_pats,(name,pattern))?;
+  }
+  let vars_helpers=fixture.pattern(r"\b(?:om_set_var(?:_then)?|om_toggle_var|cure_temporary_s?disability)\b",PatternMode::Search,||crate::pat!(r"\b(?:om_set_var(?:_then)?|om_toggle_var|cure_temporary_s?disability)\b"));let _=vars_helpers.capture_group_count();fixture.check()?;
+  let vars_write=fixture.pattern(r"\bvars\[[^\]]*\]\s*=(?!=)",PatternMode::Search,||crate::pat!(r"\bvars\[[^\]]*\]\s*=(?!=)"));let _=vars_write.capture_group_count();fixture.check()?;
+  let timer_cooldown=fixture.pattern(r"\bS?_?TIMER_COOLDOWN_START\s*\(",PatternMode::Search,||crate::pat!(r"\bS?_?TIMER_COOLDOWN_START\s*\("));let _=timer_cooldown.capture_group_count();fixture.check()?;
+  let accessor_macros=fixture.pattern(r"(?<![\w/])(?:BUCKLED|BUCKLED_MOBS|PULLING|PULLED_BY|GRABBED_BY|EYE_OWNER|EYES_OF|ACTIVE_EYE|GRAB_TARGET|ORBIT_TARGET|ORBITERS|GRAB_ASSAILANT|LEASH_PET|LEASH_MASTER|LEASH_OF|TETHERED_HANDHELD|TETHER_HOST|FOLLOWING|FOLLOWERS|BORER_HOST|BORER_OF|BS_TX_TARGET|BS_TX_RADIOS|BS_RX_SOURCE|BS_RX_RADIOS|GRIPPER_HELD|UAV_MASTERS|STASIS_SOURCE|SLOT_ITEM|SLOT_LIST|OM_REL_TARGETS?|OM_REL_SOURCES?)\s*\(",PatternMode::Search,||crate::pat!(r"(?<![\w/])(?:BUCKLED|BUCKLED_MOBS|PULLING|PULLED_BY|GRABBED_BY|EYE_OWNER|EYES_OF|ACTIVE_EYE|GRAB_TARGET|ORBIT_TARGET|ORBITERS|GRAB_ASSAILANT|LEASH_PET|LEASH_MASTER|LEASH_OF|TETHERED_HANDHELD|TETHER_HOST|FOLLOWING|FOLLOWERS|BORER_HOST|BORER_OF|BS_TX_TARGET|BS_TX_RADIOS|BS_RX_SOURCE|BS_RX_RADIOS|GRIPPER_HELD|UAV_MASTERS|STASIS_SOURCE|SLOT_ITEM|SLOT_LIST|OM_REL_TARGETS?|OM_REL_SOURCES?)\s*\("));let _=accessor_macros.capture_group_count();fixture.check()?;
+  let raw_world_bind=fixture.pattern(r"(?<![\w/])vg_world_(?:at|on_key|watch_\w+|rate_watch|step|clear|cancel)\s*\(",PatternMode::Search,||crate::pat!(r"(?<![\w/])vg_world_(?:at|on_key|watch_\w+|rate_watch|step|clear|cancel)\s*\("));let _=raw_world_bind.capture_group_count();fixture.check()?;
+  let string_keys=fixture.pattern(r#"\bom_world_(?:publish|on_key)\([^)\n]*""#,PatternMode::Search,||crate::pat!(r#"\bom_world_(?:publish|on_key)\([^)\n]*""#));let _=string_keys.capture_group_count();fixture.check()?;
+  let reactor_api=fixture.pattern(r"\b(?:SSreactor|on_react|react_every|react_sleep_violation|reactor_id|REACT_[A-Z_]+)\b",PatternMode::Search,||crate::pat!(r"\b(?:SSreactor|on_react|react_every|react_sleep_violation|reactor_id|REACT_[A-Z_]+)\b"));let _=reactor_api.capture_group_count();fixture.check()?;
+  let raw_relation=fixture.pattern(r"(?<![\w/.])om_(?:relation_of|source_of|related|related_to)\s*\(",PatternMode::Search,||crate::pat!(r"(?<![\w/.])om_(?:relation_of|source_of|related|related_to)\s*\("));let _=raw_relation.capture_group_count();fixture.check()?;
+  Ok(Self{call_pats,vars_helpers,vars_write,timer_cooldown,accessor_macros,raw_world_bind,string_keys,reactor_api,raw_relation})
+ }
+}

@@ -11,38 +11,39 @@ const MIN_REASON_WORDS: usize = 3;
 pub const UNOBSERVED: &[&str] = &["check_grep", "doc_snippets"];
 
 
-fn vague() -> &'static [(Pat, &'static str)] {
-    static V: std::sync::LazyLock<Vec<(Pat, &'static str)>> = std::sync::LazyLock::new(|| {
-        vec![
-            (Pat::new(r"(?i)\ballowlist(?:s|ed)?\b"), "there is no allowlist: say why this site stays"),
-            (Pat::new(r"(?i)\b(?:see|as) (?:above|below)\b"), "say the reason here, not on another line"),
-            (Pat::new(r"(?i)\bnot edited here\b"), "a deferred conversion is not a reason: convert the site or say why it must stay"),
-            (Pat::new(r"(?i)\bS\d+\b|\bwave F\d+|\bsec(?:tion)? \d|\bphase \d"), "a plan-phase label names the plan, not the reason"),
-            (Pat::new(r"\b[A-Z]\d{1,2}[a-z]?(?:/[A-Z]?\d{1,2}[a-z]?)*\b"), "a plan item code (M1a, C9, P3, ...) names the plan, not the reason"),
-        ]
-    });
-    &V
-}
+const VAGUE_SOURCES:&[(&str,&str)]=&[(r"(?i)\ballowlist(?:s|ed)?\b","there is no allowlist: say why this site stays"),(r"(?i)\b(?:see|as) (?:above|below)\b","say the reason here, not on another line"),(r"(?i)\bnot edited here\b","a deferred conversion is not a reason: convert the site or say why it must stay"),(r"(?i)\bS\d+\b|\bwave F\d+|\bsec(?:tion)? \d|\bphase \d","a plan-phase label names the plan, not the reason"),(r"\b[A-Z]\d{1,2}[a-z]?(?:/[A-Z]?\d{1,2}[a-z]?)*\b","a plan item code (M1a, C9, P3, ...) names the plan, not the reason")];
+fn vague()->&'static[(Pat,&'static str)]{static V:std::sync::LazyLock<Vec<(Pat,&'static str)>>=std::sync::LazyLock::new(||VAGUE_SOURCES.iter().map(|(source,why)|(Pat::new(source),*why)).collect());&V}
+
 
 /// Why `reason` is not a reason, or None (`reason_problem`).
-pub fn reason_problem(reason: &str) -> Option<String> {
+pub fn reason_problem(reason:&str)->Option<String>{match reason_problem_using(reason,&mut kc::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}
+fn reason_problem_using<C:Control>(reason:&str,control:&mut C)->Result<Option<String>,C::Error>{
     let text = crate::util::py_strip(reason);
     if text.chars().count() < MIN_REASON || py_split(text).count() < MIN_REASON_WORDS {
-        return Some(format!(
+        return Ok(Some(format!(
             "reason {} is too short to explain anything (at least {} characters and {} words)",
             py_repr(text),
             MIN_REASON,
             MIN_REASON_WORDS
-        ));
+        )));
     }
-    for (pattern, why) in vague() {
-        if pattern.is_match(text) {
+    #[cfg(feature="native-policy")]let native=control.native_patterns().is_some();
+    #[cfg(not(feature="native-policy"))]let native=false;
+    let legacy=(!native).then(vague);
+    for (index,&(source,why))in VAGUE_SOURCES.iter().enumerate(){
+        let matched={
+         #[cfg(feature="native-policy")]if native{match index{
+0=>kc::is_match_static(control,source,text,||&vague()[0].0)?,1=>kc::is_match_static(control,source,text,||&vague()[1].0)?,2=>kc::is_match_static(control,source,text,||&vague()[2].0)?,3=>kc::is_match_static(control,source,text,||&vague()[3].0)?,4=>kc::is_match_static(control,source,text,||&vague()[4].0)?,_=>unreachable!("closed ALLOW reason recipe index")}}else{legacy.unwrap()[index].0.is_match(text)}
+         #[cfg(not(feature="native-policy"))]{let _=source;legacy.unwrap()[index].0.is_match(text)}
+        };
+        if matched {
             let shown = if text.chars().count() <= 70 { text.to_string() } else { format!("{}...", text.chars().take(67).collect::<String>()) };
-            return Some(format!("reason {}: {}", py_repr(&shown), why));
+            return Ok(Some(format!("reason {}: {}", py_repr(&shown), why)));
         }
     }
-    None
+    Ok(None)
 }
+
 
 /// Python's `%r` of a str (single quotes unless the text has a single and no double quote).
 pub(crate) fn py_repr(s: &str) -> String {
@@ -70,7 +71,7 @@ struct Names<'a>(&'a BTreeSet<String>);
 impl std::fmt::Display for Names<'_>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{for(i,name)in self.0.iter().enumerate(){if i!=0{f.write_str(", ")?}f.write_str(name)?}Ok(())}}
 /// Same reason policy, with its real temporary/result overlap admitted before formatting.
 pub fn reason_problem_with<C:Control>(reason:&str,control:&mut C)->Result<Option<String>,C::Error>{
- kc::reserve(control,||reason.len().checked_mul(12)?.checked_add(2048))?;let value=reason_problem(reason);control.checkpoint()?;Ok(value)
+ kc::reserve(control,||reason.len().checked_mul(12)?.checked_add(2048))?;let value=reason_problem_using(reason,control)?;control.checkpoint()?;Ok(value)
 }
 /// Lends each complete owned message in exact original per-line/rule/name order.
 pub fn validate_line<C:Control>(known:&BTreeSet<String>,number:usize,line:&str,control:&mut C,mut emit:impl FnMut(&'static str,usize,String)->Result<(),C::Error>)->Result<(),C::Error>{

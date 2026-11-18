@@ -79,17 +79,16 @@ fn collect<'a,'op,'body>(body:&'body ParsedBody,a:&'a SettingAdmission<'op>)->io
  }
  Ok(Collected{roots,bytes,statements:count})
 }
-fn input_peak(root:&Expr,a:&SettingAdmission<'_>)->io::Result<usize>{
- let mut pending=Worklist::new(a)?;pending.push(root)?;let mut peak=0;
+pub(crate) fn input_peak(root:&Expr,a:&SettingAdmission<'_>)->io::Result<usize>{input_peak_with_contract(root,a).map(|(peak,_)|peak)}
+fn input_peak_with_contract(root:&Expr,a:&SettingAdmission<'_>)->io::Result<(usize,bool)>{
+ let mut pending=Worklist::new(a)?;pending.push(root)?;let mut peak=0;let mut independent_template=false;
  while let Some(e)=pending.pop(){
   a.checkpoint()?;
   if let ExprKind::Literal(literal)=&e.kind {
    if literal.require_fresh_body_owner(a)? {
-    // No parser is entered for this owner. Any existing child can still
-    // contain fresh ordinary literals, which need their own peak.
-    if let Some(Ok(Some(parts))) = literal.prepared_syntax_parts() {
-     pending.extend(parts.expressions.iter())?;
-    }
+    independent_template=true;
+    // The complete typed builder prepared and retained every private child
+    // before this immutable owner escaped. Its subtree needs no body permit.
    } else if literal.shared_storage().is_some() {
     peak = add(a, peak, crate::setting_prepare::literal_parser_peak(literal.as_str(),a)?)?;
    }
@@ -101,7 +100,7 @@ fn input_peak(root:&Expr,a:&SettingAdmission<'_>)->io::Result<usize>{
   crate::for_each_expression_child(e,|_,child|{if failed.is_none(){if let Err(e)=pending.push(child){failed=Some(e);}}});
   if let Some(e)=failed{return Err(e);}
  }
- Ok(peak)
+ Ok((peak,independent_template))
 }
 /// Parent reserves cleanup BEFORE the original body parser creates the AST.
 /// Its source-width envelope covers only failure-cleanup coordination, not a
@@ -110,15 +109,33 @@ pub fn prepare_body_literal_syntax<'a,'op>(body:ParsedBody,cleanup:SettingRootLe
  let mut guard=Pending{body:Some(body),anchor:None,peaks:None,cleanup:Some(cleanup)};
  guard.peaks=Some(Worklist::new(a)?);
  let result:io::Result<BodyLiteralAdmission>=(||{
-  let collected=collect(guard.body.as_ref().unwrap(),a)?;let mut bytes=collected.bytes;let mut nodes=collected.statements;
+  let collected=collect(guard.body.as_ref().unwrap(),a)?;let mut bytes=collected.bytes;let mut expression_nodes=0usize;let mut aggregate_nodes=0usize;let mut independent_template=false;
   for root in collected.roots.as_slice(){
-   let peak=input_peak(root,a)?;if peak!=0{guard.peaks.as_mut().unwrap().push(a.reserve(peak)?)?;}
+   let(peak,template)=input_peak_with_contract(root,a)?;independent_template|=template;if peak!=0{guard.peaks.as_mut().unwrap().push(a.reserve(peak)?)?;}
    let measured=crate::setting_prepare::prepare_body_measure(root,a)?;
-   bytes=add(a,bytes,measured.bytes)?;nodes=add(a,nodes,measured.nodes)?;
+   bytes=add(a,bytes,measured.bytes)?;expression_nodes=expression_nodes.max(measured.cleanup_nodes);aggregate_nodes=add(a,aggregate_nodes,measured.cleanup_nodes)?;
   }
+  // Independent Original owners now have complete private-child custody.
+  // Their real descendant cleanup is paid by those SAME owners separately.
+  // Refine final Original template roots only for the SAME native available
+  // body grammar. Generic/deferred/malformed bodies keep their old aggregate
+  // contract even though template payload custody itself is fully retained.
+  let native_available=guard.body.as_ref().unwrap().diagnostics.is_empty()
+   &&guard.body.as_ref().unwrap().original_grammar.as_ref().is_some_and(|outcome|outcome.kind()==crate::OriginalBodyGrammarKind::Available);
+  if independent_template&&!native_available{expression_nodes=aggregate_nodes;}
   // Final aliases may die after this operation; cleanup capacity is therefore
   // retained with the actual literal buffers, not credited at query return.
-  let cleanup_bytes=nodes.checked_mul(4*(size_of::<Expr>()+size_of::<SharedSettingRetention>()+size_of::<Statement>())).ok_or_else(||stop(a,io::ErrorKind::OutOfMemory,"body literal cleanup envelope overflow"))?;
+  // Statement destruction schedules nonempty donor Vec metadata only. Each
+  // queued donor owns a distinct Statement; its backing remains payload-funded. Expression roots
+  // are fully destroyed ONE at a time; the actual counter cleanup mutex also
+  // serializes escaped literal aliases from different roots. Qualified fresh
+  // roots reuse MAX-root headroom; owned template descendants are excluded. Payload bytes
+  // above still sum every allocation. Keep the same four-slot allowance.
+  // Ident/TypePath payloads are still measured, but setting_drop destroys them
+  // immediately at every child edge, without a coordination-worklist slot.
+  let cleanup_bytes=collected.statements.checked_mul(4*size_of::<Vec<Statement>>())
+   .and_then(|statements|expression_nodes.checked_mul(4*(size_of::<Expr>()+size_of::<SharedSettingRetention>())).and_then(|expressions|statements.checked_add(expressions)))
+   .ok_or_else(||stop(a,io::ErrorKind::OutOfMemory,"body literal cleanup envelope overflow"))?;
   let retained=add(a,add(a,bytes,cleanup_bytes)?,crate::setting_expression::root_storage_envelope())?;
   // Both cleanup envelopes protect the same destructive walk. A body
   // being unwound has its Pending guard; after publication only the final
@@ -156,20 +173,35 @@ pub fn prepare_body_literal_syntax<'a,'op>(body:ParsedBody,cleanup:SettingRootLe
 /// Stack-safe original ownership destruction, used before any credit release.
 /// This helper creates no syntax, calls no parser and clones no AST/root/source.
 pub fn drop_body_literal_syntax(body:ParsedBody,admission:Option<BodyLiteralAdmission>){drop_body_inner(body,admission.map(|a|a.anchor));}
+// Every queued NONEMPTY donor contains a distinct live Statement. Empty
+// vectors die immediately. Donor payloads are never flattened or copied.
+// Root siblings may now retire before queued descendants; this is resource-only
+// AST destruction (no evaluation, IO, query or user-visible ordering effects).
+fn schedule_statements(pending:&mut Vec<Vec<Statement>>,statements:Vec<Statement>){
+ if !statements.is_empty(){pending.push(statements);
+  #[cfg(test)] DONOR_QUEUE_PEAK.with(|peak|peak.set(peak.get().max(pending.len())));
+ }
+}
+#[cfg(test)]
+thread_local!{static DONOR_QUEUE_PEAK:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
 fn drop_body_inner(body:ParsedBody,anchor:Option<SharedSettingRetention>){
- let ParsedBody{mut statements,control_origins,local_variables,diagnostics,pending_bodies,original_grammar:_}=body;
+ #[cfg(test)] DONOR_QUEUE_PEAK.with(|peak|peak.set(0));
+ let ParsedBody{statements,control_origins,local_variables,diagnostics,pending_bodies,original_grammar:_}=body;
  drop(control_origins);drop(diagnostics);drop(pending_bodies);
  local_variables.drop_dimension_expressions(|e|crate::setting_drop::drop_expression(e,anchor.clone()));
+ let mut pending:Vec<Vec<Statement>>=Vec::new();
+ schedule_statements(&mut pending,statements);
+ while let Some(mut statements)=pending.pop(){
  while let Some(st)=statements.pop(){
   drop(st.raw_header);
   match st.kind{
-   StatementKind::If{condition,mut then_branch,mut else_branch}=>{crate::setting_drop::drop_expression(condition,anchor.clone());statements.append(&mut then_branch);statements.append(&mut else_branch);},
-   StatementKind::While{condition,mut body}|StatementKind::DoWhile{condition,mut body}=>{crate::setting_drop::drop_expression(condition,anchor.clone());statements.append(&mut body);},
-   StatementKind::Spawn{delay,mut body}=>{for e in delay{crate::setting_drop::drop_expression(e,anchor.clone());}statements.append(&mut body);},
+   StatementKind::If{condition,then_branch,else_branch}=>{crate::setting_drop::drop_expression(condition,anchor.clone());schedule_statements(&mut pending,then_branch);schedule_statements(&mut pending,else_branch);},
+   StatementKind::While{condition,body}|StatementKind::DoWhile{condition,body}=>{crate::setting_drop::drop_expression(condition,anchor.clone());schedule_statements(&mut pending,body);},
+   StatementKind::Spawn{delay,body}=>{for e in delay{crate::setting_drop::drop_expression(e,anchor.clone());}schedule_statements(&mut pending,body);},
    StatementKind::Set{value,..}=>crate::setting_drop::drop_expression(value,anchor.clone()),
    StatementKind::ProjectedSet{value,..}=>drop(value),
-   StatementKind::For{control,mut body}=>{
-    statements.append(&mut body);
+   StatementKind::For{control,body}=>{
+    schedule_statements(&mut pending,body);
     match control{
      ForControl::All{..}=>(),
      ForControl::Each{iterable,..}|ForControl::Pair{iterable,..}=>crate::setting_drop::drop_expression(iterable,anchor.clone()),
@@ -181,19 +213,21 @@ fn drop_body_inner(body:ParsedBody,anchor:Option<SharedSettingRetention>){
      }
     }
    }
-   StatementKind::Switch{selector,cases,mut else_branch,..}=>{
-    crate::setting_drop::drop_expression(selector,anchor.clone());statements.append(&mut else_branch);
-    for mut case in cases{statements.append(&mut case.body);for alt in case.alternatives{match alt{SwitchAlternative::Exact(e)=>crate::setting_drop::drop_expression(e,anchor.clone()),SwitchAlternative::Range(x,y)=>{crate::setting_drop::drop_expression(x,anchor.clone());crate::setting_drop::drop_expression(y,anchor.clone());}}}}
+   StatementKind::Switch{selector,cases,else_branch,..}=>{
+    crate::setting_drop::drop_expression(selector,anchor.clone());schedule_statements(&mut pending,else_branch);
+    for case in cases{schedule_statements(&mut pending,case.body);for alt in case.alternatives{match alt{SwitchAlternative::Exact(e)=>crate::setting_drop::drop_expression(e,anchor.clone()),SwitchAlternative::Range(x,y)=>{crate::setting_drop::drop_expression(x,anchor.clone());crate::setting_drop::drop_expression(y,anchor.clone());}}}}
    }
-   StatementKind::Try{mut body,mut catch_body,..}=>{statements.append(&mut body);statements.append(&mut catch_body);},
-   StatementKind::Label{mut body,..}=>statements.append(&mut body),
+   StatementKind::Try{body,catch_body,..}=>{schedule_statements(&mut pending,body);schedule_statements(&mut pending,catch_body);},
+   StatementKind::Label{body,..}=>schedule_statements(&mut pending,body),
    StatementKind::Return(value)|StatementKind::Var{value,..}=>{for e in value{crate::setting_drop::drop_expression(e,anchor.clone());}},
    StatementKind::Assign{target,value,..}=>{crate::setting_drop::drop_expression(target,anchor.clone());crate::setting_drop::drop_expression(value,anchor.clone());},
    StatementKind::Throw(e)|StatementKind::Delete(e)|StatementKind::Call(e)|StatementKind::Expression(e)=>crate::setting_drop::drop_expression(e,anchor.clone()),
    StatementKind::Goto(_)|StatementKind::BreakLabel(_)|StatementKind::ContinueLabel(_)|StatementKind::Break|StatementKind::Continue|StatementKind::Unsupported=>(),
   }
  }
- drop(statements);drop(anchor);
+ drop(statements);
+ }
+ drop(pending);drop(anchor);
 }
 
 #[cfg(test)]

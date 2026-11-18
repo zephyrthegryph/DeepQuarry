@@ -135,22 +135,15 @@ pub fn result_line(failed: &[String]) -> String {
 
 /// Borrow labels from the actual ordered result producer and write once.
 /// True means no failed labels, including the optional unused-ALLOW suffix.
-pub fn write_result_line<'a>(
-    failed: impl IntoIterator<Item = &'a str>, output: &mut impl std::io::Write,
-) -> std::io::Result<bool> {
-    let mut labels = failed.into_iter();
-    let Some(first) = labels.next() else {
-        output.write_all(b"All ratchet lints passed.\n")?;
-        return Ok(true);
-    };
-    output.write_all(b"Ratchet lints failed: ")?;
-    output.write_all(first.as_bytes())?;
-    for label in labels {
-        output.write_all(b" ")?;
-        output.write_all(label.as_bytes())?;
-    }
-    output.write_all(b"\n")?;
-    Ok(false)
+/// A typed borrowed label; selftest suffix is emitted without String copies.
+pub enum ResultLabel<'a>{Lint(&'a str),Selftest(&'a str)}
+fn write_result_label(label:ResultLabel<'_>,output:&mut impl std::io::Write)->std::io::Result<()>{match label{ResultLabel::Lint(name)=>output.write_all(name.as_bytes()),ResultLabel::Selftest(name)=>{output.write_all(name.as_bytes())?;output.write_all(b" --selftest")}}}
+pub fn write_result_line<'a>(failed:impl IntoIterator<Item=&'a str>,output:&mut impl std::io::Write)->std::io::Result<bool>{write_result_line_labels(failed.into_iter().map(ResultLabel::Lint),output)}
+pub fn write_result_line_labels<'a>(failed:impl IntoIterator<Item=ResultLabel<'a>>,output:&mut impl std::io::Write)->std::io::Result<bool>{
+ let mut labels=failed.into_iter();let Some(first)=labels.next()else{output.write_all(b"All ratchet lints passed.\n")?;return Ok(true)};
+ output.write_all(b"Ratchet lints failed: ")?;write_result_label(first,output)?;
+ for label in labels{output.write_all(b" ")?;write_result_label(label,output)?;}
+ output.write_all(b"\n")?;Ok(false)
 }
 
 #[cfg(test)]
@@ -190,3 +183,9 @@ mod result_line_tests {
 #[path="policy_report_admitted.rs"]pub mod admitted;
 
 pub use dq_analyze_client::policy_report_wire as derived_wire;
+
+#[cfg(test)]mod typed_selftest_result_line_controls{
+ use super::*;
+ #[test]fn typed_selftest_labels_preserve_original_order_duplicates_and_policy_failure_summary(){let mut out=Vec::new();assert!(!write_result_line_labels([ResultLabel::Selftest("scheduler"),ResultLabel::Selftest("entry_slots"),ResultLabel::Lint("scheduler"),ResultLabel::Lint("allow_annotations --unused")],&mut out).unwrap());assert_eq!(out,b"Ratchet lints failed: scheduler --selftest entry_slots --selftest scheduler allow_annotations --unused\n");}
+ #[test]fn typed_selftest_suffix_keeps_first_output_io(){struct Broken{writes:usize}impl std::io::Write for Broken{fn write(&mut self,bytes:&[u8])->std::io::Result<usize>{self.writes+=1;if self.writes==3{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(bytes.len())}}fn flush(&mut self)->std::io::Result<()>{Ok(())}}let mut out=Broken{writes:0};let error=write_result_line_labels([ResultLabel::Selftest("actual"),ResultLabel::Lint("later")],&mut out).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(out.writes,3);}
+}

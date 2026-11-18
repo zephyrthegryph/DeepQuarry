@@ -23,11 +23,11 @@ pub const ENGINE_HASH: &str = env!("DQ_ENGINE_HASH");
 pub struct LintCache {
     pub stamp: String,
     /// `SourceFile::fkey` -> result, for files that produced something.
-    pub per_file: HashMap<Hash, Sink>,
+    pub per_file: HashMap<Hash, Sink<'static>>,
     /// `fkey`s of files that were scanned and produced nothing.
     pub clean: std::collections::HashSet<Hash>,
     /// (combined input hash, result)
-    pub tree: Option<(Hash, Sink)>,
+    pub tree: Option<(Hash, Sink<'static>)>,
     #[serde(skip)]
     pub dirty: bool,
 }

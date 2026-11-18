@@ -123,7 +123,7 @@ impl Engine {
         let t0 = Instant::now();
         let meta = lint.meta();
         let scope = self.scopes.for_lint(meta.name, meta.group);
-        let cx = Cx { tree: &self.tree, meta, scope: &scope };
+        let cx = Cx { fixture:None, tree: &self.tree, meta, scope: &scope };
         let t_load = Instant::now();
         let mut lc = self.cache.load_lint(meta.name);
         LOAD_NS.fetch_add(t_load.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
@@ -234,7 +234,7 @@ impl Engine {
     pub fn judge_with(&self, lint: &dyn Lint, run: &Run, raw: bool) -> (bool, String) {
         let meta = lint.meta();
         let scope = self.scopes.for_lint(meta.name, meta.group);
-        let cx = Cx { tree: &self.tree, meta, scope: &scope };
+        let cx = Cx { fixture:None, tree: &self.tree, meta, scope: &scope };
         crate::policy_judge::judge(lint, &cx, run, &self.opts.root, &self.changed, raw)
     }
 
@@ -254,7 +254,7 @@ impl Engine {
             let (run, allow_used, timing) = self.scan(lint);
             let meta=lint.meta();
             let scope=self.scopes.for_lint(meta.name,meta.group);
-            let cx=Cx{tree:&self.tree,meta,scope:&scope};
+            let cx=Cx{ fixture:None,tree:&self.tree,meta,scope:&scope};
             crate::policy_finish::finish_report(meta,&scope,&self.tree,run,allow_used,timing,&self.opts.root,&self.changed,self.opts.raw,|run,text,raw|lint.finish_raw(&cx,run,text,raw),|run,text|lint.post_judge(&cx,run,text))
         }));
         match res {
@@ -324,7 +324,7 @@ impl Engine {
         let meta = lint.meta();
         let (run, _, _) = self.scan(lint);
         let scope = self.scopes.for_lint(meta.name, meta.group);
-        let cx = Cx { tree: &self.tree, meta, scope: &scope };
+        let cx = Cx { fixture:None, tree: &self.tree, meta, scope: &scope };
         let scopes_root = self.opts.scopes_from.as_deref().unwrap_or(&self.opts.root);
         crate::policy_finish::update_baseline_report(meta, &scope, &self.tree, &run, &self.opts.root, scopes_root, mode, |run,mode|lint.update_baseline(&cx,run,mode))
     }

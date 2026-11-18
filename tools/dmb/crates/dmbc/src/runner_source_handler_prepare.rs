@@ -19,12 +19,20 @@ pub(super) enum ActualPreparation{Structural(StructuralPair),RequiresFull(Requir
 pub(super) fn prepare<P:SnapshotProvider+Sync,C:crate::frozen_inputs::CapturedCurrentProvider>(
  inputs:&RecordingInputs<P>,current:&C,handler_current:&crate::frozen_inputs::Inputs,generated:&BTreeSet<PathBuf>,
  intents:&ChildIntents,host:&mut BuildHost,workers:usize,
+)->Result<ActualPreparation,Box<dyn Error>>{prepare_using_baseline(inputs,current,handler_current,generated,intents,host,workers,None)}
+pub(super) fn prepare_baseline<P:SnapshotProvider+Sync,C:crate::frozen_inputs::CapturedCurrentProvider>(
+ inputs:&RecordingInputs<P>,current:&C,handler_current:&crate::frozen_inputs::Inputs,generated:&BTreeSet<PathBuf>,
+ intents:&ChildIntents,host:&mut BuildHost,workers:usize,domain:Option<&runner_freshness::GenerationInputClosure>,
+)->Result<ActualPreparation,Box<dyn Error>>{if !intents.projection().parent().is_baseline_update(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"conditional baseline requires its actual baseline parent plan").into())}prepare_using_baseline(inputs,current,handler_current,generated,intents,host,workers,domain)}
+fn prepare_using_baseline<P:SnapshotProvider+Sync,C:crate::frozen_inputs::CapturedCurrentProvider>(
+ inputs:&RecordingInputs<P>,current:&C,handler_current:&crate::frozen_inputs::Inputs,generated:&BTreeSet<PathBuf>,
+ intents:&ChildIntents,host:&mut BuildHost,workers:usize,domain:Option<&runner_freshness::GenerationInputClosure>,
 )->Result<ActualPreparation,Box<dyn Error>>{
  crate::daemon::control::checkpoint()?;intents.projection().require_parent(intents.projection().parent())?;
  let handlers=super::handlers_prepare::prepare(inputs,intents.handlers(),host,workers,None,false)?
   .ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"conditional operation omitted its actual exclusive Handler producer"))?;
  let queries=Arc::clone(host.query_db());
- let(capture,source)=crate::runner_host::workspace_capture::capture_registered_source_check(inputs,intents.raw(),&queries,Arc::clone(intents.projection().raw()))?;
+ let(capture,source)=if intents.projection().parent().is_baseline_update(){crate::runner_host::workspace_capture::capture_registered_source_baseline(inputs,intents.raw(),&queries,Arc::clone(intents.projection().raw()),domain)?}else{crate::runner_host::workspace_capture::capture_registered_source_check(inputs,intents.raw(),&queries,Arc::clone(intents.projection().raw()))?};
  let raw=RawWorkspaceSnapshot::issued_registered(intents.raw(),Arc::clone(&capture),source,Arc::clone(&queries),intents.projection().raw())?;
  let admission=runner_freshness::admit_workspace_captured_using(inputs,None,current,generated,capture,queries.as_ref())?.1;
  handlers.require_bound()?;if !handlers.uses_queries(queries.as_ref()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"conditional Handler producer belongs to another actual query owner").into())}handlers.prepared().subject().require_current(inputs)?;

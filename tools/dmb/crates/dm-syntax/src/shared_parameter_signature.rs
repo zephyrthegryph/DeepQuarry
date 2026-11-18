@@ -49,6 +49,8 @@ impl SharedParameterSignature{
     Self::retention_envelope().checked_add(signature.retained_children_bytes(None))
  }
  pub fn same_owner(&self,other:&Self)->bool{Arc::ptr_eq(self.owner.as_ref().unwrap(),other.owner.as_ref().unwrap())}
+ #[cfg(debug_assertions)]
+ pub fn retained_lease_bytes_for_trace(&self)->Option<usize>{self.payload().retention.as_ref().map(SettingRootLease::bytes)}
  pub fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{self.payload().retention.as_ref().is_some_and(|lease|a.matches_lease_domain(lease))}
  fn payload(&self)->&Payload{self.owner.as_deref().expect("live parameter signature owner")}
  pub fn visit_owner_storage(&self,mut visit:impl FnMut(usize,usize,usize)){

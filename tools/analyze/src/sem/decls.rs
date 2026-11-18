@@ -212,8 +212,15 @@ pub use crate::raw_key_calls_policy::{CAP_KEY_CALLS, KeyKind, KeyRef, OP_KEY_CAL
 /// The position of each `#include`d file of `deepquarry.dme` (repo-relative, forward slashes). A file the dme does not include (generated
 /// output) has no entry and sorts after every included file.
 pub fn dme_include_order(root: &std::path::Path) -> HashMap<String, usize> {
+    let Ok(text) = std::fs::read_to_string(root.join("deepquarry.dme")) else { return HashMap::new() };
+    dme_include_order_text(&text)
+}
+
+/// SAME include-order DATA kernel for a captured manifest. This never reads a
+/// path or grants rewrite authority; required native byte acquisition and its
+/// lifetime stay with the operation-specific captured physical owner.
+pub fn dme_include_order_text(text: &str) -> HashMap<String, usize> {
     let mut out = HashMap::new();
-    let Ok(text) = std::fs::read_to_string(root.join("deepquarry.dme")) else { return out };
     for line in text.lines() {
         let line = line.trim();
         let Some(rest) = line.strip_prefix("#include") else { continue };
@@ -233,59 +240,66 @@ impl Decls {
             let files = tree.select(&CODE_DM);
             // Per file, cached on disk by content: a one-file edit rescans one file.
             let stored: Vec<Stored> = crate::incr::facts("sem-decls-2", &files, |f| Stored::from(scan_file(f)));
-            let default = Stored::default();
-            let nonempty: Vec<(&str, &Stored)> = files.iter().zip(stored.iter()).filter(|(_, s)| **s != default).map(|(f, s)| (f.rel.as_str(), s)).collect();
             // Generated declarations follow `deepquarry.dme` include order, not file path: moving a file leaves the include in its
             // place, so it must not move the types and procs generated from its markers (typesof() and proc-table order follow them).
             let include_order = dme_include_order(&tree.root);
-            let key = crate::incr::mix(&[crate::incr::ctx_key(&nonempty), crate::incr::ctx_key(&include_order.iter().collect::<std::collections::BTreeMap<_, _>>())]);
-            let parts: Vec<FileDecls> = stored.into_iter().map(FileDecls::from).collect();
-            let mut d = Decls { key, ..Decls::default() };
-            for (f, p) in files.iter().zip(parts) {
-                d.markers.extend(p.markers);
-                for (t, v) in p.relations {
-                    d.relations.entry(t).or_default().insert(v);
-                }
-                for (t, v) in p.tracked {
-                    if f.rel != crate::gens::auto_tracked::AUTO_REL {
-                        d.tracked_explicit.entry(t.clone()).or_default().insert(v.clone());
-                    }
-                    d.tracked.entry(t).or_default().insert(v);
-                }
-                d.defines.extend(p.defines);
-                d.key_refs.extend(p.key_refs);
-                d.bad_sources.extend(p.bad_sources);
-                d.entry_ops.extend(p.entry_ops);
-                for (k, s) in p.publishers {
-                    d.publishers.entry(k).or_default().push(s);
-                }
-            }
-            let at = |rel: &str| include_order.get(rel).copied().unwrap_or(usize::MAX);
-            d.markers.sort_by(|a, b| (at(&a.rel), a.rel.as_str(), a.line).cmp(&(at(&b.rel), b.rel.as_str(), b.line)));
-            // The relation entries of CAPABILITIES(T, ...) blocks (E1's declaration forms) declare their vars relations of T; link(/A::a, /B::b)
-            // declares `a` on /A and `b` on /B.
-            let own = regex::Regex::new(r"\b(?:owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)").expect("relation entry pattern");
-            let link = regex::Regex::new(r"\blinks?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").expect("link entry pattern");
-            let mut found: Vec<(String, String)> = Vec::new();
-            for m in d.markers.iter().filter(|m| m.name == "CAPABILITIES") {
-                if let Some(ty) = m.args.first() {
-                    for c in own.captures_iter(&m.body) {
-                        found.push((ty.clone(), c[1].to_string()));
-                    }
-                }
-                for c in link.captures_iter(&m.body) {
-                    found.push((c[1].to_string(), c[2].to_string()));
-                    found.push((c[3].to_string(), c[4].to_string()));
-                }
-            }
-            for (t, v) in found {
-                d.relations.entry(t).or_default().insert(v);
-            }
+            let d = Self::from_stored(&files, stored, &include_order);
             if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
                 eprintln!("analyze: Decls built in {:.0?} ({} markers, {} defines)", t_decls.elapsed(), d.markers.len(), d.defines.len());
             }
             d
         })
+    }
+
+    // SAME merge/order/key kernel. The input FileDecls were issued by scan_file,
+    // either from the old content cache or an operation's actual captured files.
+    fn from_stored(files:&[&SourceFile], stored:Vec<Stored>, include_order:&HashMap<String,usize>)->Decls {
+    let default = Stored::default();
+    let nonempty: Vec<(&str, &Stored)> = files.iter().zip(stored.iter()).filter(|(_, s)| **s != default).map(|(f, s)| (f.rel.as_str(), s)).collect();
+    let key = crate::incr::mix(&[crate::incr::ctx_key(&nonempty), crate::incr::ctx_key(&include_order.iter().collect::<std::collections::BTreeMap<_, _>>())]);
+    let parts: Vec<FileDecls> = stored.into_iter().map(FileDecls::from).collect();
+    let mut d = Decls { key, ..Decls::default() };
+    for (f, p) in files.iter().zip(parts) {
+        d.markers.extend(p.markers);
+        for (t, v) in p.relations {
+            d.relations.entry(t).or_default().insert(v);
+        }
+        for (t, v) in p.tracked {
+            if f.rel != crate::auto_setter_calls_policy::AUTO_REL {
+                d.tracked_explicit.entry(t.clone()).or_default().insert(v.clone());
+            }
+            d.tracked.entry(t).or_default().insert(v);
+        }
+        d.defines.extend(p.defines);
+        d.key_refs.extend(p.key_refs);
+        d.bad_sources.extend(p.bad_sources);
+        d.entry_ops.extend(p.entry_ops);
+        for (k, s) in p.publishers {
+            d.publishers.entry(k).or_default().push(s);
+        }
+    }
+    let at = |rel: &str| include_order.get(rel).copied().unwrap_or(usize::MAX);
+    d.markers.sort_by(|a, b| (at(&a.rel), a.rel.as_str(), a.line).cmp(&(at(&b.rel), b.rel.as_str(), b.line)));
+    // The relation entries of CAPABILITIES(T, ...) blocks (E1's declaration forms) declare their vars relations of T; link(/A::a, /B::b)
+    // declares `a` on /A and `b` on /B.
+    let own = regex::Regex::new(r"\b(?:owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)").expect("relation entry pattern");
+    let link = regex::Regex::new(r"\blinks?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").expect("link entry pattern");
+    let mut found: Vec<(String, String)> = Vec::new();
+    for m in d.markers.iter().filter(|m| m.name == "CAPABILITIES") {
+        if let Some(ty) = m.args.first() {
+            for c in own.captures_iter(&m.body) {
+                found.push((ty.clone(), c[1].to_string()));
+            }
+        }
+        for c in link.captures_iter(&m.body) {
+            found.push((c[1].to_string(), c[2].to_string()));
+            found.push((c[3].to_string(), c[4].to_string()));
+        }
+    }
+    for (t, v) in found {
+        d.relations.entry(t).or_default().insert(v);
+    }
+        d
     }
 
     pub fn markers_named<'a>(&'a self, name: &'a str) -> impl Iterator<Item = &'a Marker> + 'a {
@@ -862,4 +876,61 @@ mod include_order_tests {
         assert_eq!(order.len(), 2);
         assert_eq!(dme_include_order(&dir.path().join("missing")).len(), 0);
     }
+}
+
+/// Actual marker count over already captured decoded CODE views. This scoped
+/// projection borrows no ambient filesystem/cache/model and exports no rows or
+/// source grant. The host must validate the actual roster/current ledger and
+/// lend its existing paid raw-family Budget for this operation.
+#[cfg(feature="native-policy")]
+pub fn captured_marker_count(files:&[&SourceFile],root:&Arc<crate::captured_generator_budget::Budget>,poll:&dyn Fn()->std::io::Result<()>)->Result<usize,crate::captured_reactive_reads::Failure>{
+ use crate::captured_reactive_reads::Failure;
+ let oom=|message:String|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message));
+ let mut total=0usize;
+ for file in files{
+  if !file.is_captured_input(){return Err(Failure::Unsupported("marker count requires already captured file views".into()))}
+  // Captured view refusal must precede a later context poll. SourceFile's
+  // marker view only transforms its already captured immutable decoded text.
+  if let Some(first)=file.captured_budget_error(){return Err(oom(first))}
+  root.require().map_err(oom)?;poll()?;
+  let phase=crate::captured_generator_budget::Budget::scoped_temporaries(root).map_err(oom)?;
+  let marker=file.marker();
+  if let Some(first)=file.captured_budget_error(){return Err(oom(first))}
+  phase.require().map_err(oom)?;
+  let mut rows=Vec::new();let mut count=0usize;
+  let mut checkpoint=||->Result<(),Failure>{
+   if let Some(first)=file.captured_budget_error(){return Err(oom(first))}
+   phase.require().map_err(oom)?;poll()?;Ok(())
+  };
+  let pending=crate::captured_marker_rows::collect_file_funded(&file.rel,marker.as_str(),&phase,&phase,MARKERS,true,true,true,&mut rows,&mut count,&mut checkpoint);
+  if let Err(Failure::Operational(first))=pending{return Err(Failure::Operational(first))}
+  if let Some(first)=file.captured_budget_error(){return Err(oom(first))}
+  phase.require().map_err(oom)?;poll()?;pending?;
+  if count!=rows.len(){return Err(Failure::Unsupported("actual captured marker count/row producer differs".into()))}
+  total=total.checked_add(count).ok_or_else(||oom("captured marker count overflow".into()))?;
+  // No marker or line-table alias escapes the same physical phase owner.
+  drop(rows);drop(phase);
+ }
+ root.require().map_err(oom)?;poll()?;Ok(total)
+}
+
+#[cfg(all(test,feature="native-policy"))]
+mod captured_count_controls{
+ use super::*;use crate::{captured_generator_budget::Budget,captured_reactive_reads::Failure};
+ #[test]
+ fn actual_captured_marker_count_matches_shared_legacy_rows_including_entries_parts_and_runtime(){
+  let text="CAPABILITIES(/datum/a)\n    op(\"test\", then(PROC_REF(p)))\nCAPABILITIES_PART(/datum/a, feature, owns_one(nameof(v)))\nSTAT(/datum/a, value)\n/proc/bundle()\n    return list(op(\"bundle\"))\n/datum/capability/a/entries()\n    return list(op(\"cap\"))\n/proc/ordinary()\n    observe(src, \"key\", src, PROC_REF(p))\n    var/text = \"CAPABILITIES(/fake)\"\n";
+  let source=SourceFile::from_shared_budgeted("code/actual.dm",std::env::current_dir().unwrap().join("code/actual.dm"),text.into(),4<<20).unwrap();
+  let expected=scan_file(&source).markers.len();assert!(expected>=6,"actual fixture includes statements, parts, entry/capability procs and runtime");
+  let root=Budget::new(4<<20).unwrap();let before=root.used();let actual=captured_marker_count(&[&source],&root,&||Ok(())).unwrap();assert_eq!(actual,expected);
+  assert_eq!(root.used(),before+std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>(),"one retired child leaves only its actual fixed metadata tail under the parent");
+ }
+ #[test]
+ fn actual_marker_count_preserves_first_io_and_quota_before_later_poll_then_fresh_operation_recovers(){
+  let source=SourceFile::from_shared_budgeted("code/actual.dm",std::env::current_dir().unwrap().join("code/actual.dm"),"CAPABILITIES(/datum/a)\n".into(),1<<20).unwrap();
+  let root=Budget::new(1<<20).unwrap();let error=captured_marker_count(&[&source],&root,&||Err(std::io::Error::from_raw_os_error(1450))).unwrap_err();assert!(matches!(error,Failure::Operational(e)if e.raw_os_error()==Some(1450)));
+  let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();let tight=Budget::new(fixed).unwrap();let calls=std::cell::Cell::new(0);let poll=||{calls.set(calls.get()+1);if calls.get()==1{Ok(())}else{Err(std::io::Error::new(std::io::ErrorKind::Interrupted,"later cancellation"))}};
+  let error=captured_marker_count(&[&source],&tight,&poll).unwrap_err();assert!(matches!(error,Failure::Operational(e)if e.kind()==std::io::ErrorKind::OutOfMemory));assert_eq!(calls.get(),1);
+  let recovered=Budget::new(1<<20).unwrap();assert_eq!(captured_marker_count(&[&source],&recovered,&||Ok(())).unwrap(),1);
+ }
 }

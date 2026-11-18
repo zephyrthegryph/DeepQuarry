@@ -23,6 +23,7 @@ struct Line {
 // Ordinary callers preserve their existing Vec/push_layout behavior. The demand
 // cursor supplies an allocation-owned sink whose credit follows its actual Vec.
 trait LayoutLineSink {
+ fn allocation(&self)->Option<&original_storage::Storage<'_,'_>>{None}
  fn push_line(&mut self,line:Line,original:Option<&OriginalParseState<'_,'_,'_>>)->bool;
  fn len(&self)->usize;
  fn get_mut(&mut self,index:usize)->Option<&mut Line>;
@@ -224,14 +225,16 @@ pub(super) fn parse_original_body_span_range_with_native_consumption(source:&str
  *complete=false;
  parse_original_span_range_with_native_consumption(source,range,tokens,false,None,facts.as_ref().map(|view|view.raw_parts()),Some(complete))
 }
+pub(super) fn parse_original_body_span_range_with_typed_native_consumption(source:&str,range:Span,tokens:TokenWindow<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,complete:&mut bool)->(Vec<Item>,Vec<Diagnostic>){*complete=false;parse_original_span_range_with_consumption_mode(source,range,tokens,false,None,facts.as_ref().map(|view|view.raw_parts()),Some(complete),true)}
 fn parse_original_span_range_with_outcome(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>)->(Vec<Item>,Vec<Diagnostic>){
     parse_original_span_range_with_native_consumption(source,range,tokens,skeleton,original,facts,None)
 }
-fn parse_original_span_range_with_native_consumption(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>,native_consumption:Option<&mut bool>)->(Vec<Item>,Vec<Diagnostic>){
+fn parse_original_span_range_with_native_consumption(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>,native_consumption:Option<&mut bool>)->(Vec<Item>,Vec<Diagnostic>){parse_original_span_range_with_consumption_mode(source,range,tokens,skeleton,original,facts,native_consumption,false)}
+fn parse_original_span_range_with_consumption_mode(source:&str,range:Span,tokens:TokenWindow<'_>,skeleton:bool,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>,native_consumption:Option<&mut bool>,typed:bool)->(Vec<Item>,Vec<Diagnostic>){
     let layout=original.and_then(|state|state.storage.layout(source,tokens,std::mem::size_of::<Line>()));
     if original.is_some()&&layout.is_none(){return(Vec::new(),Vec::new())}
     let mut layout_consumed=false;
-    let lines = original_declaration_lines_with_native_consumption(source,range,tokens,original,facts,Some(&mut layout_consumed));
+    let lines = original_declaration_lines_with_consumption_mode(source,range,tokens,original,facts,Some(&mut layout_consumed),typed);
     let mut diagnostics = Vec::new();
     let (items, consumed) = parse_level(
         source,
@@ -243,12 +246,69 @@ fn parse_original_span_range_with_native_consumption(source:&str,range:Span,toke
             skeleton,
             tokens,
             original,
+            allocation:None,
             var_context:None,
         },
         &mut diagnostics,
     );
     if let Some(complete)=native_consumption{*complete=layout_consumed&&consumed==lines.len();}
     (items, diagnostics)
+}
+
+
+
+/// SAME Storage, exposed only to the canonical procedure facade. It cannot
+/// carry Original semantic state, observers, source frames or grammar grants.
+pub(super) struct CanonicalPrimaryStorage<'a,'b>(original_storage::Storage<'a,'b>);
+impl<'a,'b> CanonicalPrimaryStorage<'a,'b>{
+ pub(super) fn new(a:&'a crate::SettingAdmission<'b>)->std::io::Result<Self>{original_storage::Storage::new(a).map(Self)}
+ pub(super) fn parse(&self,source:&str,range:Span,tokens:TokenWindow<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,complete:&mut bool,typed:bool)->(Vec<Item>,Vec<Diagnostic>){parse_canonical_body_allocated(source,range,tokens,facts,complete,typed,&self.0)}
+ pub(super) fn take_failure(&self)->Option<std::io::Error>{self.0.take_failure()}
+ pub(super) fn diagnostic(&self,span:Span,kind:DiagnosticKind,message:&str)->Diagnostic{Diagnostic{span,kind,message:self.0.text(message).unwrap_or_default()}}
+ pub(super) fn finish(&self,result:&Result<crate::ProcedureWithOrigins,Diagnostic>)->std::io::Result<crate::SettingRootLease>{self.0.finish_procedure(result)}
+}
+/// Allocation-only canonical BODY entry. Semantic Original remains None.
+fn parse_canonical_body_allocated(source:&str,range:Span,tokens:TokenWindow<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,complete:&mut bool,typed:bool,storage:&original_storage::Storage<'_,'_>)->(Vec<Item>,Vec<Diagnostic>){
+ *complete=false;
+ let Some(mut layout)=storage.layout_scoped(source,range,tokens,std::mem::size_of::<Line>(),typed)else{return(Vec::new(),Vec::new())};
+ let Some(visible)=storage.layout_buffer::<u8>(range.end-range.start,&layout)else{return(Vec::new(),Vec::new())};
+ let Some(delimiters)=storage.layout_buffer::<u8>(range.end-range.start,&layout)else{return(Vec::new(),Vec::new())};
+ let multiline=tokens.iter().filter(|token|matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&token.text(source).contains('\n')).count();
+ let Some(multiline_literals)=storage.layout_buffer::<Span>(multiline,&layout)else{return(Vec::new(),Vec::new())};
+ let mut masks=NativeLayoutMaskCursor{visible:String::from_utf8(visible).expect("empty funded byte buffer"),delimiters,multiline_literals,..Default::default()};
+ if !masks.advance_with_literal_facts_allocated(source,range,tokens,None,facts.as_ref().map(|view|view.raw_parts()),Some(storage)){return(Vec::new(),Vec::new())}
+ let mut structural=NativeStructuralCursor::default();
+ if typed{let Some(groups)=storage.layout_buffer::<u8>(range.end-range.start,&layout)else{return(Vec::new(),Vec::new())};structural.typed_groups=Some(groups);}
+ let mut physical=AllocatedLineSink{rows:Vec::new(),storage,layout:&layout};
+ if let Err(actual)=structural.advance_into(masks.visible(),&masks.delimiters,&masks.multiline_literals,None,source,tokens,range.start,true,&mut physical){storage.fail(actual);return(Vec::new(),Vec::new())}
+ let mut inline=NativeInlineBlockCursor::default();let mut lines=AllocatedLineSink{rows:Vec::new(),storage,layout:&layout};
+ inline.advance_into(&source[range.range()],&physical.rows,&masks.delimiters,None,source,tokens,range.start,&mut lines);
+ *complete=structural.finished&&!structural.native_unmatched_close&&structural.offset==masks.visible.len()&&structural.pending.is_none()&&structural.depth==0&&structural.initializer_depth==0&&structural.typed_groups.as_ref().is_none_or(Vec::is_empty)&&structural.block_depth==0&&inline.brace_depth==0&&inline.initializer_depth==0&&masks.tokens==tokens.len()&&masks.visible.len()==range.end-range.start;
+ for line in &mut lines.rows{line.header_start+=range.start;line.header_end+=range.start;line.end+=range.start;}
+ // Structural and inline decisions are complete. Only final Line coordinates
+ // feed parse_level; they contain no loans into these temporary buffers.
+ let lines=lines.rows;
+ drop(physical);drop(structural);drop(inline);drop(masks);
+ // Physical old masks/groups/line buffers are gone BEFORE their credit retires.
+ // Keep the exact final Line Vec paid while Item/header storage is constructed.
+ let Some(live_lines)=lines.capacity().checked_mul(std::mem::size_of::<Line>())else{storage.fail(std::io::ErrorKind::OutOfMemory.into());return(Vec::new(),Vec::new())};
+ if !storage.settle_retired_layout(&mut layout,live_lines){return(Vec::new(),Vec::new())}
+ let mut diagnostics=Vec::new();let(items,consumed)=parse_level(source,&lines,0,0,ParseContext{in_body:false,skeleton:false,tokens,original:None,allocation:Some(storage),var_context:None},&mut diagnostics);*complete&=consumed==lines.len();
+ // The remaining final line allocation dies before its own residual lease.
+ drop(lines);drop(layout);
+ (items,diagnostics)
+}
+struct AllocatedLineSink<'a,'b>{rows:Vec<Line>,storage:&'a original_storage::Storage<'a,'b>,layout:&'a crate::SettingRootLease}
+impl LayoutLineSink for AllocatedLineSink<'_,'_>{
+ fn allocation(&self)->Option<&original_storage::Storage<'_,'_>>{Some(self.storage)}
+ fn push_line(&mut self,line:Line,_original:Option<&OriginalParseState<'_,'_,'_>>)->bool{
+  if !self.storage.poll(){return false}
+  if self.rows.len()==self.rows.capacity(){let Some(capacity)=self.rows.capacity().max(2).checked_mul(2)else{return self.storage.fail(std::io::ErrorKind::OutOfMemory.into())};let Some(mut next)=self.storage.layout_buffer::<Line>(capacity,self.layout)else{return false};next.append(&mut self.rows);self.rows=next;}
+  self.rows.push(line);true
+ }
+ fn len(&self)->usize{self.rows.len()}
+ fn get_mut(&mut self,index:usize)->Option<&mut Line>{self.rows.get_mut(index)}
+ fn last_mut(&mut self)->Option<&mut Line>{self.rows.last_mut()}
 }
 
 fn original_declaration_lines(source:&str,range:Span,tokens:&[SpanToken])->Vec<Line>{original_declaration_lines_with_storage(source,range,tokens,None)}
@@ -261,7 +321,8 @@ fn original_declaration_lines(source:&str,range:Span,tokens:&[SpanToken])->Vec<L
 impl NativeLayoutMaskCursor{
  #[cfg(test)]
  fn advance(&mut self,source:&str,range:Span,tokens:&[SpanToken],original:Option<&OriginalParseState<'_,'_,'_>>)->bool{self.advance_with_literal_facts(source,range,TokenWindow::from_slice(tokens),original,None)}
- fn advance_with_literal_facts(&mut self,source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>)->bool{
+ fn advance_with_literal_facts(&mut self,source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>)->bool{self.advance_with_literal_facts_allocated(source,range,tokens,original,facts,None)}
+ fn advance_with_literal_facts_allocated(&mut self,source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>,allocation:Option<&original_storage::Storage<'_,'_>>)->bool{
   let Some(text)=source.get(range.range())else{return false};
   if self.visible.len()>text.len()||self.tokens>tokens.len(){return false}
   let old=self.visible.len();let Some(tail)=text.get(old..)else{return false};
@@ -270,7 +331,7 @@ impl NativeLayoutMaskCursor{
   // issued raw gaps and ASCII masks; never validate or rewrite that prefix.
   let mut visible_cursor=old;
   for token in tokens.range(self.tokens,tokens.len()).expect("checked mask token frontier").iter(){
-   if original.is_some_and(|state|!state.poll()){return false}
+   if (original.is_some_and(|state|!state.poll())||allocation.is_some_and(|storage|!storage.poll())){return false}
    if token.span.start<range.start+old||token.span.end>range.end||token.span.end<token.span.start{return false}
    let Some(raw)=source.get(token.span.range())else{return false};
    let multiline=matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&raw.contains('\n');
@@ -281,7 +342,7 @@ impl NativeLayoutMaskCursor{
     self.append_visible(gap);
    }
    if visible_mask||delimiter_mask{for(at,byte)in raw.as_bytes().iter().enumerate(){
-    if at%1024==0&&original.is_some_and(|state|!state.poll()){return false}
+    if at%1024==0&&(original.is_some_and(|state|!state.poll())||allocation.is_some_and(|storage|!storage.poll())){return false}
     if visible_mask{
      self.visible.push(if matches!(*byte,b'\r'|b'\n'){char::from(*byte)}else{' '});
      #[cfg(test)]{self.visible_appended_bytes+=1;}
@@ -295,11 +356,11 @@ impl NativeLayoutMaskCursor{
     let Some(finish)=origin.checked_add(token.span.end)else{return false};
     let at=facts.partition_point(|(span,_)|span.start<start);
     let Some((_,data))=facts.get(at).filter(|(span,_)|*span==Span::new(start,finish))else{return false};
-    if match data.raw(){Ok(raw)=>raw!=token.text(source),Err(error)=>{if let Some(state)=original{state.storage.a.record_operational_error(error);}return false}}{return false}
+    if match data.raw(){Ok(raw)=>raw!=token.text(source),Err(error)=>{if let Some(storage)=allocation{storage.fail(error);}else if let Some(state)=original{state.storage.a.record_operational_error(error);}return false}}{return false}
     let begin=token.span.start-range.start;let Some(end)=token.span.end.checked_sub(range.start+1)else{return false};if begin>end{return false}
     // Boundary positions are issued by the actual typed fragment product;
     // neither the literal payload nor its child spelling is scanned for '['.
-    let value=match data.value(){Ok(value)=>value,Err(error)=>{if let Some(state)=original{state.storage.a.record_operational_error(error);}return false}};
+    let value=match data.value(){Ok(value)=>value,Err(error)=>{if let Some(storage)=allocation{storage.fail(error);}else if let Some(state)=original{state.storage.a.record_operational_error(error);}return false}};
     match value{crate::OriginalTokenValue::InterpBegin(_)=>self.delimiters[end]=b'[',crate::OriginalTokenValue::InterpPart(_)=>{self.delimiters[begin]=b']';self.delimiters[end]=b'[';},crate::OriginalTokenValue::InterpEnd(_)=>self.delimiters[begin]=b']',_=>return false}
    }
    if multiline&&!push_layout(&mut self.multiline_literals,Span::new(token.span.start-range.start,token.span.end-range.start),original){return false}
@@ -320,16 +381,17 @@ fn original_declaration_lines_with_storage(source:&str,range:Span,tokens:&[SpanT
 fn original_declaration_lines_in_window(source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>)->Vec<Line>{
  original_declaration_lines_with_native_consumption(source,range,tokens,original,facts,None)
 }
-fn original_declaration_lines_with_native_consumption(source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>,native_consumption:Option<&mut bool>)->Vec<Line>{
+fn original_declaration_lines_with_native_consumption(source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>,native_consumption:Option<&mut bool>)->Vec<Line>{original_declaration_lines_with_consumption_mode(source,range,tokens,original,facts,native_consumption,false)}
+fn original_declaration_lines_with_consumption_mode(source:&str,range:Span,tokens:TokenWindow<'_>,original:Option<&OriginalParseState<'_,'_,'_>>,facts:Option<LayoutLiteralRows<'_>>,native_consumption:Option<&mut bool>,typed:bool)->Vec<Line>{
  let mut masks=NativeLayoutMaskCursor::default();if !masks.advance_with_literal_facts(source,range,tokens,original,facts){return Vec::new()}
  let range_source=&source[range.range()];let visible=masks.visible();
- let mut structural=NativeStructuralCursor::default();
+ let mut structural=NativeStructuralCursor{typed_groups:typed.then(Vec::new),..Default::default()};
  let physical=structural.advance(visible,&masks.delimiters,&masks.multiline_literals,original,source,tokens,range.start,true).expect("fresh final native structural input has actual mask geometry");
  let mut inline=NativeInlineBlockCursor::default();
  let mut lines=inline.advance(range_source,&physical,&masks.delimiters,original,source,tokens,range.start);
  if let Some(complete)=native_consumption{
   *complete=structural.finished&&!structural.native_unmatched_close&&structural.offset==visible.len()
-   &&structural.pending.is_none()&&structural.depth==0&&structural.initializer_depth==0
+   &&structural.pending.is_none()&&structural.depth==0&&structural.initializer_depth==0&&structural.typed_groups.as_ref().is_none_or(Vec::is_empty)
    &&structural.block_depth==0&&inline.brace_depth==0&&inline.initializer_depth==0
    &&masks.tokens==tokens.len()&&masks.visible.len()==range.end-range.start;
  }
@@ -365,6 +427,7 @@ fn original_line_outer_probe<E>(source:&str,tokens:TokenWindow<'_>,line:&Line,in
 #[derive(Default)]struct NativeStructuralCursor{
  offset:usize,pending:Option<Line>,depth:usize,literal_cursor:usize,native_unmatched_close:bool,
  initializer_depth:usize,block_depth:usize,procedure:Option<(usize,usize)>,
+ typed_groups:Option<Vec<u8>>,
  pending_in_body:bool,pending_block_start:usize,pending_physical_indent:usize,procedure_scope_exact:bool,finished:bool,early_physical:Option<usize>,
 }
 struct NativePrimaryHeaderStart{line:Line}
@@ -414,12 +477,15 @@ impl NativeStructuralCursor{
         let segment_start=self.pending.as_ref().map_or(self.offset+leading,|line|line.header_start);
         for at in self.offset..self.offset+raw.len(){
             if at%1024==0&&original.is_some_and(|state|!state.poll()){return Ok(())}
+            // Only the admitted commit producer requests this transient stack.
+            // Ordinary layout and native-consumption reports remain unchanged.
+            if let Some(groups)=self.typed_groups.as_mut(){match typed_group_action(groups.last().copied(),delimiters[at]){Some(0)=>{groups.pop();},Some(close)=>{if !push_layout(groups,close,original){return Ok(())}},None=>()}}
             match delimiters[at]{
                 b'(' | b'['=>self.depth+=1,
                 b')' | b']'=>{if self.depth==0{self.native_unmatched_close=true;}self.depth=self.depth.saturating_sub(1)},
                 b'{' if self.initializer_depth > 0 || (self.depth == 0
-                    && (self.pending_in_body || !typed_procedure_header(visible, delimiters, segment_start, at))
-                    && is_object_initializer_primary(&visible[segment_start..at],self.pending_in_body,original.map(|state|(source,tokens,Span::new(range_start+segment_start,range_start+at),state))))=>self.initializer_depth+=1,
+                    && (self.pending_in_body || !typed_procedure_header_allocated(visible, delimiters, segment_start, at,lines.allocation()))
+                    && is_object_initializer_allocated(&visible[segment_start..at],self.pending_in_body,original.map(|state|(source,tokens,Span::new(range_start+segment_start,range_start+at),state)),lines.allocation()))=>self.initializer_depth+=1,
                 b'}' if self.initializer_depth>0=>self.initializer_depth-=1,
                 b'{' if self.depth==0=>self.block_depth+=1,
                 b'}' if self.depth==0=>{if self.block_depth==0{self.native_unmatched_close=true;}self.block_depth=self.block_depth.saturating_sub(1)},
@@ -524,8 +590,8 @@ impl NativeInlineBlockCursor{
                 b'{' if paren_depth == 0
                     && (self.initializer_depth > 0
                         || (in_body || self.brace_depth != block_start
-                            || !typed_procedure_header(source, delimiters, segment_start, at))
-                            && is_object_initializer_primary(&source[segment_start..at],in_body||(opens_procedure&&self.brace_depth>block_start),original.map(|state|(raw_source,tokens,Span::new(range_start+segment_start,range_start+at),state)))) =>
+                            || !typed_procedure_header_allocated(source, delimiters, segment_start, at,result.allocation()))
+                            && is_object_initializer_allocated(&source[segment_start..at],in_body||(opens_procedure&&self.brace_depth>block_start),original.map(|state|(raw_source,tokens,Span::new(range_start+segment_start,range_start+at),state)),result.allocation())) =>
                 {
                     self.initializer_depth += 1;
                 }
@@ -604,7 +670,7 @@ fn push_inline_procedure_segment(
     indent: usize,
     original: Option<&OriginalParseState<'_, '_, '_>>,
 ) {
-    let Some(body_start) = inline_proc_body_start(source, delimiters, start, end) else {
+    let Some(body_start) = inline_proc_body_start_allocated(source, delimiters, start, end,rows.allocation()) else {
         push_inline_segment(rows, source, start, end, indent, original);
         return;
     };
@@ -638,11 +704,32 @@ fn is_return_annotation(tail: &str) -> bool {
         .is_some_and(|next| next.is_whitespace() || matches!(next, '/' | '('))
 }
 
+
+fn top_level_assignment_index_allocated(source:&str,allocation:Option<&original_storage::Storage<'_,'_>>)->Option<usize>{
+ let Some(storage)=allocation else{return top_level_assignment_index(source)};
+ let mut depth=0usize;let mut found=None;let mut cursor=crate::NativeTokenCursor::default();
+ let actual=cursor.visit_available_using(source,true,storage.a,|token|{if matches!(token.kind,TokenKind::Punctuation|TokenKind::Operator){match token.text(source){"("|"["|"{"=>depth+=1,")"|"]"|"}"=>depth=depth.saturating_sub(1),"=" if depth==0&&found.is_none()=>{found=Some(token.span.start)},_=>()}}true},|_,_,_|true);
+ if let Err(actual)=actual{storage.fail(actual);return None}found
+}
+fn inline_proc_body_start_allocated(source:&str,delimiters:&[u8],start:usize,end:usize,allocation:Option<&original_storage::Storage<'_,'_>>)->Option<usize>{
+ let tail=inline_proc_tail_start_allocated(source,delimiters,start,end,allocation)?;
+ (tail<end&&!is_return_annotation(&source[tail..end])).then_some(tail)
+}
+fn typed_procedure_header_allocated(source:&str,delimiters:&[u8],start:usize,end:usize,allocation:Option<&original_storage::Storage<'_,'_>>)->bool{
+ callable_header(&source[start..end])&&inline_proc_tail_start_allocated(source,delimiters,start,end,allocation).is_some_and(|tail|is_return_annotation(&source[tail..end]))
+}
 fn inline_proc_tail_start(
     source: &str,
     delimiters: &[u8],
     start: usize,
     end: usize,
+) -> Option<usize> {inline_proc_tail_start_allocated(source,delimiters,start,end,None)}
+fn inline_proc_tail_start_allocated(
+    source: &str,
+    delimiters: &[u8],
+    start: usize,
+    end: usize,
+    allocation:Option<&original_storage::Storage<'_,'_>>,
 ) -> Option<usize> {
     let segment = source[start..end].trim_start();
     let opening = segment.find('(')?;
@@ -657,7 +744,7 @@ fn inline_proc_tail_start(
         || prefix.contains("/verb/")
         || (prefix.starts_with('/')
             && !prefix.chars().any(char::is_whitespace)
-            && top_level_assignment_index(prefix).is_none()))
+            && top_level_assignment_index_allocated(prefix,allocation).is_none()))
     {
         return None;
     }
@@ -696,6 +783,20 @@ fn inline_if_do_suffix(segment: &str) -> Option<usize> {
 pub(super) fn bare_prefab(prefix:&str)->bool{let prefix=prefix.trim();prefix.starts_with('/')&&prefix.chars().all(|ch|ident_continue(ch)||matches!(ch,'/'|'.'|':'))}
 fn callable_header(header:&str)->bool{
  let header=header.trim();let Some(open)=header.find('(')else{return false};let prefix=header[..open].trim();!prefix.is_empty()&&!prefix.chars().any(char::is_whitespace)&&!prefix.contains(['=','{','}'])&&!matches!(prefix,"if"|"for"|"while"|"switch"|"spawn"|"catch")
+}
+
+// Resource-only form of the SAME compatibility predicate. The default native
+// lexer is unchanged; stream its membership question instead of allocating a
+// discarded token/diagnostic roster. Its quote work uses this SAME admission.
+fn is_object_initializer_allocated(prefix:&str,in_body:bool,primary:Option<(&str,TokenWindow<'_>,Span,&OriginalParseState<'_,'_,'_>)>,allocation:Option<&original_storage::Storage<'_,'_>>)->bool{
+ let Some(storage)=allocation.filter(|_|primary.is_none())else{return is_object_initializer_primary(prefix,in_body,primary)};
+ if in_body&&bare_prefab(prefix){return true}
+ let token=prefix.split_whitespace().next_back().unwrap_or("");
+ if !token.contains('/')||token.ends_with(')')||token.ends_with(']'){return false}
+ if prefix.contains('='){return true}
+ let mut found=false;let mut cursor=crate::NativeTokenCursor::default();
+ if let Err(actual)=cursor.visit_available_using(prefix,true,storage.a,|token|{if token.kind==TokenKind::Ident&&token.text(prefix)=="new"{found=true}true},|_,_,_|true){storage.fail(actual);return false}
+ found||prefix.contains('(')||prefix.contains(',')
 }
 fn is_object_initializer_primary(prefix:&str,in_body:bool,primary:Option<(&str,TokenWindow<'_>,Span,&OriginalParseState<'_,'_,'_>)>)->bool{
  if let Some((source,tokens,span,state))=primary{if in_body&&bare_prefab(prefix){return true}let token=prefix.split_whitespace().next_back().unwrap_or("");if !token.contains('/')||token.ends_with(')')||token.ends_with(']'){return false}if prefix.contains('=')||prefix.contains('(')||prefix.contains(','){return true}let first=tokens.partition_point(|token|token.span.end<=span.start);let last=tokens.partition_point(|token|token.span.start<span.end);for token in tokens.range(first,last).expect("ordered initializer token window").iter(){if !state.poll(){return false}if token.kind==TokenKind::Ident&&token.text(source)=="new"{return true}}return false}is_object_initializer(prefix,in_body)
@@ -876,8 +977,11 @@ struct ParseContext<'a,'observer,'budget> {
     skeleton: bool,
     tokens: TokenWindow<'a>,
     original:Option<&'a OriginalParseState<'a,'observer,'budget>>,
+    allocation:Option<&'a original_storage::Storage<'a,'budget>>,
     var_context:Option<u8>,
 }
+
+impl<'a,'observer,'budget> ParseContext<'a,'observer,'budget>{fn storage(self)->Option<&'a original_storage::Storage<'a,'budget>>{self.allocation.or_else(||self.original.map(|state|&state.storage))}}
 
 fn body_keyword(header: &str, keyword: &str) -> bool {
     header
@@ -913,7 +1017,7 @@ fn retain_setting_chains(items:Vec<Item>,original:Option<&OriginalParseState<'_,
  drop(input);if let Some(state)=original{state.storage.transfer_compacted_vector(old_capacity,result.capacity());}result
 }
 
-fn push_primary_item(rows:&mut Vec<Item>,item:Item,original:Option<&OriginalParseState<'_,'_,'_>>)->bool{match original{Some(state)=>state.storage.push(rows,item),None=>{rows.push(item);true}}}
+fn push_primary_item(rows:&mut Vec<Item>,item:Item,storage:Option<&original_storage::Storage<'_,'_>>)->bool{match storage{Some(storage)=>storage.push(rows,item),None=>{rows.push(item);true}}}
 fn original_header_before_child_lookahead(source:&str,line:&Line,context:ParseContext<'_,'_,'_>,items:&mut Vec<Item>)->bool{
  original_header_before_child_lookahead_scoped(source,line,context,items,None)
 }
@@ -998,11 +1102,11 @@ fn parse_level(
     context: ParseContext<'_,'_,'_>,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> (Vec<Item>, usize) {
-    let _frame=match context.original{Some(state)=>match state.storage.frame(){Some(frame)=>Some(frame),None=>return(Vec::new(),index)},None=>None};
+    let _frame=match context.storage(){Some(storage)=>match storage.frame(){Some(frame)=>Some(frame),None=>return(Vec::new(),index)},None=>None};
     let mut items = Vec::new();
     let mut saw_item = false;
     while index < lines.len() {
-        if context.original.is_some_and(|state|!state.poll()||state.stopped()){break}
+        if context.original.is_some_and(|state|!state.poll()||state.stopped())||context.allocation.is_some_and(|storage|!storage.poll()){break}
         let line = &lines[index];
         if line.indent < indent {
             break;
@@ -1012,7 +1116,7 @@ fn parse_level(
         }
         if line.indent > indent {
             let span=Span::new(line.header_start,line.header_end);let kind=DiagnosticKind::Indentation;let message="unexpected indentation";
-            if let Some(state)=context.original{if !state.storage.diagnostic_parts(diagnostics,span,kind,message){break}}else{diagnostics.push(Diagnostic{span,kind,message:message.into()})}
+            if let Some(storage)=context.storage(){if !storage.diagnostic_parts(diagnostics,span,kind,message){break}}else{diagnostics.push(Diagnostic{span,kind,message:message.into()})}
         }
         let mut end = line.end;
         let mut children = Vec::new();
@@ -1032,6 +1136,7 @@ fn parse_level(
                         || matches!(kind, ItemKind::Proc | ItemKind::Verb | ItemKind::Statement),
                     tokens: context.tokens,
                     original:context.original,
+                    allocation:context.allocation,
                     var_context:original_var_context,
                     skeleton: context.skeleton
                         && (context.in_body || !matches!(kind, ItemKind::Statement)),
@@ -1081,7 +1186,7 @@ fn prepare_primary_line(source:&str,line:&Line,child:Option<&Line>,context:Parse
             // DreamMaker rejects the first indented line under `return`.
             let child = child.expect("actual native return-block child supplied");
             let span=Span::new(child.header_start,child.header_end);let kind=DiagnosticKind::Statement;let message=RETURN_BLOCK_UNSUPPORTED;
-            if let Some(state)=context.original{if !state.storage.diagnostic_parts(diagnostics,span,kind,message){return None}}else{diagnostics.push(Diagnostic{span,kind,message:message.into()})}
+            if let Some(storage)=context.storage(){if !storage.diagnostic_parts(diagnostics,span,kind,message){return None}}else{diagnostics.push(Diagnostic{span,kind,message:message.into()})}
         }
  Some(PreparedPrimaryLine{kind,var_context:original_var_context,outer:observed_outer_terminator})
 }
@@ -1113,11 +1218,11 @@ fn commit_primary_item(source:&str,line:&Line,kind:ItemKind,end:usize,children:V
                     original_outer_terminator: Some(false),
                     indent: line.indent,
                     children,
-                },context.original){return false}
+                },context.storage()){return false}
             }
             return true;
         }
-        let owned_header=if let Some(state)=context.original{match state.storage.text(header){Some(header)=>header,None=>return false}}else{header.to_owned()};
+        let owned_header=if let Some(storage)=context.storage(){match storage.text(header){Some(header)=>header,None=>return false}}else{header.to_owned()};
         if !push_primary_item(items,Item {
             kind,
             header: owned_header,
@@ -1148,10 +1253,11 @@ fn commit_primary_item(source:&str,line:&Line,kind:ItemKind,end:usize,children:V
             },
             indent: line.indent,
             children,
-        },context.original){return false}
+        },context.storage()){return false}
  if !context.in_body {
   let item=items.last().expect("actual successfully committed declaration");
-  let event=OriginalPrimaryCommit{source,item};
+  let collection=if !matches!(kind,ItemKind::Proc|ItemKind::Verb){OriginalCommittedBodyCollection::NotCallable}else if context.original.is_some_and(|state|state.stopped()){OriginalCommittedBodyCollection::FailedPrefix}else if line.explicit_block_opener{OriginalCommittedBodyCollection::Block}else if line.same_line_body{OriginalCommittedBodyCollection::Inline}else if has_children{OriginalCommittedBodyCollection::Block}else{OriginalCommittedBodyCollection::HeaderTerminated};
+  let event=OriginalPrimaryCommit{source,item,tokens:context.tokens,collection};
   let result=match observer {
    Some(observer)=>observer.declaration_committed(event),
    None=>match context.original.and_then(|state|state.observer.as_ref()) {
@@ -1368,9 +1474,47 @@ impl<'a> OriginalPrimaryHeader<'a>{
 /// existing formal signature producer and retains that producer's exact result.
 /// Borrowed only at the actual canonical declaration commit, after all children.
 /// Private fields prevent callers from manufacturing a registration frontier.
-pub struct OriginalPrimaryCommit<'a>{source:&'a str,item:&'a Item}
-impl<'a> OriginalPrimaryCommit<'a>{pub fn source(&self)->&'a str{self.source}pub fn item(&self)->&'a Item{self.item}}
+/// DATA from the actual line/frame collection, not standalone TT/EOF authority.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
+pub enum OriginalCommittedBodyCollection{NotCallable,HeaderTerminated,Inline,Block,FailedPrefix}
+#[derive(Clone,Copy)]
+pub struct OriginalPrimaryCommit<'a>{source:&'a str,item:&'a Item,tokens:TokenWindow<'a>,collection:OriginalCommittedBodyCollection}
+impl<'a> OriginalPrimaryCommit<'a>{
+ pub fn source(&self)->&'a str{self.source}pub fn item(&self)->&'a Item{self.item}
+ /// SAME delivered primary rows, including actual layout lookahead already read.
+ pub fn token_window(&self)->TokenWindow<'a>{self.tokens}
+ pub fn body_collection(&self)->OriginalCommittedBodyCollection{self.collection}
+ fn with_body_input<'facts>(self,facts:OriginalLiteralFactsView<'facts>,actual_end_observed:bool,producer:OriginalPrimaryProducerIdentity)->std::io::Result<OriginalCommittedBodyInput<'a,'facts>>{
+  let item=self.item;
+  if !matches!(item.kind,ItemKind::Proc|ItemKind::Verb)||item.span.start>item.header_span.start||item.header_span.start>item.header_span.end||item.header_span.end>item.span.end||item.span.end>self.source.len()
+    ||self.source.get(item.header_span.range())!=Some(item.header.as_str())
+    ||self.tokens.last().is_some_and(|token|token.span.end>self.source.len()){
+   return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"committed BODY input differs from actual primary occurrence"))
+  }
+  Ok(OriginalCommittedBodyInput{commit:self,facts,actual_end_observed,producer})
+ }
+}
+/// Borrowed only at the real callable-commit boundary. It conveys no final
+/// SourceMapping, model/currentness, code permission, or fabricated EOF.
+pub struct OriginalCommittedBodyInput<'a,'facts>{commit:OriginalPrimaryCommit<'a>,facts:OriginalLiteralFactsView<'facts>,actual_end_observed:bool,producer:OriginalPrimaryProducerIdentity}
+impl<'a,'facts> OriginalCommittedBodyInput<'a,'facts>{
+ pub fn source(&self)->&'a str{self.commit.source()}
+ pub fn item(&self)->&'a Item{self.commit.item()}
+ pub fn body_collection(&self)->OriginalCommittedBodyCollection{self.commit.body_collection()}
+ pub fn token_window(&self)->TokenWindow<'a>{self.commit.token_window()}
+ pub fn literal_facts(&self)->OriginalLiteralFactsView<'facts>{self.facts}
+ /// SAME actual primary allocation/epoch, never identity from matching bytes.
+ pub fn primary_producer(&self)->&OriginalPrimaryProducerIdentity{&self.producer}
+ /// The collector retains ONE shared producer identity for its optional column.
+ pub fn take_primary_producer(&mut self)->Option<OriginalPrimaryProducerIdentity>{self.producer.take()}
+ pub fn into_parts(self)->(OriginalPrimaryCommit<'a>,OriginalLiteralFactsView<'facts>,bool){(self.commit,self.facts,self.actual_end_observed)}
+}
 pub trait OriginalDeclarationHeaderObserver{
+ /// Opt-in actual BODY syntax demand. The ordinary reader stays unchanged.
+ fn wants_committed_body_input(&self)->bool{false}
+ /// Semantic local parse failures must be retained as actual products and
+ /// return Ok; Err is an operational failure, not a fake global parse stop.
+ fn committed_body_input(&mut self,_input:OriginalCommittedBodyInput<'_,'_>)->std::io::Result<()>{Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual committed BODY syntax consumer is not installed"))}
  fn header(&mut self,event:OriginalPrimaryHeader<'_>)->std::io::Result<OriginalHeaderFlow>;
  fn declaration_committed(&mut self,_event:OriginalPrimaryCommit<'_>)->std::io::Result<()>{Ok(())}
 }
@@ -1444,6 +1588,7 @@ impl OriginalParseState<'_,'_,'_>{
 pub fn parse_original_declaration_skeleton_using(source:&str,a:&crate::SettingAdmission<'_>)->std::io::Result<OriginalDeclarationSkeleton>{parse_original_declaration_skeleton_with_observer_using(source,a,None)}
 pub fn parse_original_declaration_skeleton_with_observer_using(source:&str,a:&crate::SettingAdmission<'_>,observer:Option<&mut dyn OriginalDeclarationHeaderObserver>)->std::io::Result<OriginalDeclarationSkeleton>{
  let checkpoint=||{let status=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(actual)}status};checkpoint()?;
+ if observer.as_ref().is_some_and(|observer|observer.wants_committed_body_input()){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"committed BODY demand requires scoped actual primary observer"))}
  let storage=original_storage::Storage::new(a)?;
  #[cfg(test)]WHOLE_LEX_CALLS.with(|n|n.set(n.get()+1));
  let mut lexed=SpannedLexed::default();
@@ -1920,4 +2065,103 @@ mod original_body_literal_layout_tests {
         drop(facts);
         assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
     }
+}
+
+#[cfg(test)]mod committed_body_collection_controls{
+ use super::*;use std::io;use std::sync::atomic::Ordering;
+ #[test]fn actual_commit_records_terminator_inline_and_empty_or_indented_block_roles(){
+  struct Observe(Vec<OriginalCommittedBodyCollection>);impl OriginalDeclarationHeaderObserver for Observe{fn header(&mut self,_:OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}fn declaration_committed(&mut self,event:OriginalPrimaryCommit<'_>)->io::Result<()>{if matches!(event.item().kind,ItemKind::Proc|ItemKind::Verb){self.0.push(event.body_collection())}Ok(())}}
+  for(source,expected)in[("/proc/p();\n",OriginalCommittedBodyCollection::HeaderTerminated),("/proc/p() return 1\n",OriginalCommittedBodyCollection::Inline),("/proc/p() {}\n",OriginalCommittedBodyCollection::Block),("/proc/p()\n    return 1\n",OriginalCommittedBodyCollection::Block)]{
+   let used=SettingChargeCounter::try_new(SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut observe=Observe(Vec::new());let primary=parse_original_declaration_skeleton_with_observer_using(source,&a,Some(&mut observe)).unwrap();assert!(primary.fatal().is_none());assert!(primary.unavailable().is_none());assert!(primary.syntax().diagnostics.is_empty());assert_eq!(observe.0,[expected]);drop(primary);assert_eq!(used.load(Ordering::Acquire),SettingChargeCounter::root_allocation_bytes());
+  }
+ }
+}
+
+#[cfg(test)]mod typed_canonical_consumption_controls{
+ use super::*;
+ #[test]fn same_canonical_cursor_refuses_open_or_crossed_groups_without_changing_layout(){
+  for(source,expected)in[("/proc/p()\n    return (1+)\n",true),("/proc/p()\n    return ([)]\n",false),("/proc/p()\n    return (1\n",false),("/proc/p()\n    return ([)])\n",false)]{
+   let tokens=lex_spans(source).tokens;let mut consumed=false;let(actual,diagnostics)=parse_original_body_span_range_with_typed_native_consumption(source,Span::new(0,source.len()),TokenWindow::from_slice(&tokens),None,&mut consumed);let expected_layout=parse(source);assert_eq!(actual,expected_layout.items);assert_eq!(diagnostics,expected_layout.diagnostics);assert_eq!(consumed,expected,"{source}");
+  }
+ }
+}
+
+/// Transient syntax geometry over the SAME current primary rows. The caller
+/// authenticates header/logical ownership; this DATA never issues source/EOF.
+/// The logical Item/Code span deliberately omits outer layout delimiters.
+pub fn original_callable_syntax_extent_using(source:&str,logical:Span,header:Span,tokens:TokenWindow<'_>,facts:Option<OriginalLiteralFactsView<'_>>,a:&crate::SettingAdmission<'_>)->std::io::Result<Result<Span,&'static str>>{
+ fn poll(a:&crate::SettingAdmission<'_>)->std::io::Result<()>{let p=a.checkpoint();if let Some(e)=a.take_operational_error(){return Err(e)}p}
+ poll(a)?;
+ if logical.start!=header.start||header.end>logical.end||source.get(logical.range()).is_none()||source.get(header.range()).is_none(){return Ok(Err("callable syntax extent lacks actual header/body geometry"))}
+ if facts.is_some_and(|facts|!facts.admitted_by(a)){return Ok(Err("callable syntax extent has foreign literal facts"))}
+ let first=tokens.partition_point(|row|row.span.end<=header.end);
+ let tail=tokens.range(first,tokens.len()).expect("partitioned actual callable token window");let mut rows=tail.iter();
+ let mut previous=header.end;
+ let opener=loop{
+  let Some(row)=rows.next()else{return Ok(Ok(logical))};poll(a)?;
+  if row.span.start<previous||row.span.end<row.span.start||source.get(row.span.range()).is_none(){return Ok(Err("callable syntax extent token geometry differs"))}previous=row.span.end;
+  if matches!(row.kind,TokenKind::Comment|TokenKind::Whitespace|TokenKind::Newline){continue}
+  if row.kind!=TokenKind::Punctuation||row.text(source)!="{"{return Ok(Ok(logical))}
+  break row;
+ };
+ // Every allocation is charged before growth; old/new allocation overlap stays
+ // covered until the old lease is replaced. Payload drops before LAST credit.
+ struct Groups{rows:Vec<u8>,credit:Option<crate::SettingRootLease>}
+ impl Groups{
+  fn push(&mut self,byte:u8,a:&crate::SettingAdmission<'_>)->std::io::Result<()>{
+   if self.rows.len()==self.rows.capacity(){let capacity=self.rows.capacity().checked_mul(2).ok_or(std::io::ErrorKind::OutOfMemory)?.max(8);let reserved=a.reserve(capacity);if let Some(e)=a.take_operational_error(){return Err(e)}let credit=reserved?;self.rows.try_reserve_exact(capacity-self.rows.len()).map_err(|_|std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;if self.rows.capacity()>capacity{return Err(std::io::ErrorKind::OutOfMemory.into())}self.credit=Some(credit);}
+   self.rows.push(byte);Ok(())
+  }
+  fn advance(&mut self,byte:u8,a:&crate::SettingAdmission<'_>)->std::io::Result<()>{match typed_group_action(self.rows.last().copied(),byte){Some(0)=>{self.rows.pop();},Some(close)=>self.push(close,a)?,None=>()}Ok(())}
+ }
+ let mut groups=Groups{rows:Vec::new(),credit:None};groups.advance(b'{',a)?;
+ for row in rows{
+  poll(a)?;
+  if row.span.start<previous||row.span.end<row.span.start||source.get(row.span.range()).is_none(){return Ok(Err("callable syntax extent token geometry differs"))}previous=row.span.end;
+  if row.kind==TokenKind::Interpolation{
+   let Some(facts)=facts else{return Ok(Err("callable syntax extent interpolation facts unissued"))};let(facts,origin)=facts.raw_parts();
+   let Some(start)=origin.checked_add(row.span.start)else{return Ok(Err("callable syntax extent literal origin overflow"))};let Some(end)=origin.checked_add(row.span.end)else{return Ok(Err("callable syntax extent literal origin overflow"))};
+   let index=facts.partition_point(|(span,_)|span.start<start);let Some((_,data))=facts.get(index).filter(|(span,_)|*span==Span::new(start,end))else{return Ok(Err("callable syntax extent literal facts differ"))};
+   if data.raw()?!=row.text(source){return Ok(Err("callable syntax extent literal spelling differs"))}
+   match data.value()?{crate::OriginalTokenValue::InterpBegin(_)=>groups.advance(b'[',a)?,crate::OriginalTokenValue::InterpPart(_)=>{groups.advance(b']',a)?;groups.advance(b'[',a)?},crate::OriginalTokenValue::InterpEnd(_)=>groups.advance(b']',a)?,_=>return Ok(Err("callable syntax extent literal kind differs"))}
+  }else if matches!(row.kind,TokenKind::Punctuation|TokenKind::Operator){
+   for byte in row.text(source).bytes(){poll(a)?;groups.advance(byte,a)?;}
+  }
+  if groups.rows.is_empty(){
+   if row.kind!=TokenKind::Punctuation||row.text(source)!="}"||row.span.end<logical.end||opener.span.start<header.end{return Ok(Err("callable syntax extent does not close its actual owned body"))}
+   poll(a)?;return Ok(Ok(Span::new(logical.start,row.span.end)))
+  }
+ }
+ poll(a)?;Ok(Err("callable syntax extent has no actual matching owned close"))
+}
+// SAME typed read_any_tt rule: mismatched closing tokens are leaves. A zero
+// action pops only the actual expected closer; openers append their own type.
+fn typed_group_action(expected:Option<u8>,byte:u8)->Option<u8>{match byte{b'('=>Some(b')'),b'['=>Some(b']'),b'{'=>Some(b'}'),close @ (b')'|b']'|b'}') if expected==Some(close)=>Some(0),_=>None}}
+
+#[cfg(test)]mod actual_callable_syntax_extent_tests{
+ use super::*;
+ #[test]fn actual_owned_tt_extent_excludes_forward_tokens_and_preserves_logical_item(){
+  for source in["/proc/p() {return 1}\n/proc/q(){}","/proc/p(){}\n/proc/q(){}","/proc/p() {}\n/proc/q(){}","/proc/p(value=1){return value}\n/proc/q(){}","/proc/p(){return \"}not a close\"}\n/proc/q(){}","/proc/p(){return (1]}\n/proc/q(){}","/proc/p(){return value?[1}\n/proc/q(){}","/proc/p(){return 1\n/proc/q(){}"]{
+   let parsed=parse_declaration_skeleton(source);let item=&parsed.items[0];let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let result=original_callable_syntax_extent_using(source,item.span,item.header_span,TokenWindow::from_slice(&parsed.tokens),None,&a).unwrap();
+   if source.contains("(1]")||source.contains("value?[1}")||source=="/proc/p(){return 1\n/proc/q(){}"{assert!(result.is_err(),"mismatched required group cannot borrow later foreign closers");}else{let syntax=result.unwrap();assert_eq!(&source[syntax.end-1..syntax.end],"}");assert!(syntax.end<=source.find("\n/proc/q").unwrap());assert!(syntax.end>=item.span.end);assert_eq!(item.span,parsed.items[0].span);}
+   assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  }
+ }
+ #[test]fn actual_inline_and_header_terminated_extents_do_not_borrow_foreign_body(){
+  for source in["/proc/p();\n/proc/q(){}","/proc/p() return 1\n/proc/q(){}"]{let parsed=parse_declaration_skeleton(source);let item=&parsed.items[0];let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));assert_eq!(original_callable_syntax_extent_using(source,item.span,item.header_span,TokenWindow::from_slice(&parsed.tokens),None,&a).unwrap().unwrap(),item.span);}
+ }
+ #[test]fn actual_owned_extent_preserves_first_io_and_real_quota_refunds(){
+  let source="/proc/p(){return 1}\n/";let parsed=parse_declaration_skeleton(source);let item=&parsed.items[0];let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();
+  let fail=||Err(std::io::Error::from_raw_os_error(1450));let a=crate::SettingAdmission::new(&counter,1<<20,&fail);assert_eq!(original_callable_syntax_extent_using(source,item.span,item.header_span,TokenWindow::from_slice(&parsed.tokens),None,&a).unwrap_err().raw_os_error(),Some(1450));drop(a);
+  let a=crate::SettingAdmission::new(&counter,fixed,&||Ok(()));assert_eq!(original_callable_syntax_extent_using(source,item.span,item.header_span,TokenWindow::from_slice(&parsed.tokens),None,&a).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),fixed);
+ }
+}
+
+#[cfg(test)]mod canonical_layout_resource_predicate_controls{
+ use super::*;
+ #[test]fn canonical_layout_resource_predicates_preserve_semantic_none_fallbacks(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,4<<20,&||Ok(()));let storage=original_storage::Storage::new(&a).unwrap();
+  for prefix in ["return new /datum/value","foo(/datum/path","a,/datum/path","a=/datum/path","return /datum/path","\"new\" /datum/path","new /datum/path"]{for in_body in [false,true]{assert_eq!(is_object_initializer_allocated(prefix,in_body,None,Some(&storage)),is_object_initializer(prefix,in_body),"{prefix}, in_body={in_body}")}}
+  for source in ["/datum/example/p","/datum/example/p=one","/datum/example/p[one=two]","/datum/example/p(\"=\")","/datum/example/p{one=two}"]{assert_eq!(top_level_assignment_index_allocated(source,Some(&storage)),top_level_assignment_index(source),"{source}");}
+ }
 }

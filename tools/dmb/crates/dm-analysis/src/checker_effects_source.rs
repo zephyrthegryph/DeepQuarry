@@ -13,7 +13,7 @@ pub struct EffectSource<'source>{pub(super) archive:&'source Arc<BodyArchive>,pu
 impl<'source> EffectSource<'source>{
     pub fn new(archive:&'source Arc<BodyArchive>,profile:PackedU128)->Result<Self,PolicyFailure>{
         archive.tree().validate_checker_builtin_profile(profile).map_err(|e|PolicyFailure::from(format!("purity builtin profile: {e:?}")))?;
-        if archive.syntax_inputs().is_none()||archive.body_query_host().is_none(){return Err("effect source requires original compiler body-query graph".into())}
+        if (archive.syntax_inputs().is_none()&&!archive.uses_ordinary_body_demand())||archive.body_query_host().is_none(){return Err("effect source requires original compiler body-query graph".into())}
         if !archive.callables().authenticates_borrowed_tree(archive.tree()){return Err("effect source callable roster has foreign tree".into())}
         Ok(Self{archive,profile})
     }

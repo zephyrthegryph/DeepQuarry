@@ -1,5 +1,6 @@
 //! The unique source-neutral reactive writer algorithm, independent of the legacy semantic module.
 //! Borrowed original Proc/body DATA only; this module cannot issue source/EOF authority.
+use crate::raw_fixture_policy::PatternApi as _;
 use std::collections::HashSet;
 use crate::{dm::dx::Proc,pat,pat_match,pat::Pat,util::py_strip};
 pub fn writer_call() -> &'static Pat {
@@ -59,12 +60,13 @@ fn top_level_ops(text: &str) -> Vec<usize> {
 }
 
 /// `write_target_bad`: an assignment target that is state (not a local, parameter, `.` or `look`).
-fn write_target_bad(target: &str, locals: &HashSet<String>) -> bool {
+fn write_target_bad(target: &str, locals: &HashSet<String>) -> bool {write_target_bad_using(target,locals,&original_writer_pattern)}
+fn write_target_bad_using<P:crate::raw_fixture_policy::PatternApi,F:Fn(usize)->P>(target:&str,locals:&HashSet<String>,patterns:&F)->bool{
     let target = py_strip(target);
-    if target.is_empty() || target.starts_with("var/") || pat!(r"\bvar/").is_match(target) {
+    if target.is_empty() || target.starts_with("var/") || patterns(3).is_match(target) {
         return false;
     }
-    let Some(m) = pat_match!(r"(\.|[A-Za-z_]\w*)").captures(target) else { return false };
+    let Some(m) = patterns(4).captures(target) else { return false };
     let root = m.s(1);
     let rest = py_strip(&target[m.end(0)..]);
     if root == "." || root == "look" {
@@ -83,12 +85,15 @@ fn write_target_bad(target: &str, locals: &HashSet<String>) -> bool {
 
 /// Same unique old writer judgment over current borrowed original body lines.
 /// This helper issues neither source nor body/semantic completion.
-pub fn reactive_writes_lines_using<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(proc:&Proc,lines:&[(usize,&str)],keep:&mut C,temp:&mut T)->Result<Vec<usize>,C::Error>{
+pub fn reactive_writes_lines_using<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(proc:&Proc,lines:&[(usize,&str)],keep:&mut C,temp:&mut T)->Result<Vec<usize>,C::Error>{reactive_writes_lines_with_programs(proc,lines,keep,temp,&original_writer_pattern)}
+#[cfg(feature="native-policy")]
+pub fn reactive_writes_lines_with_fixture<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(proc:&Proc,lines:&[(usize,&str)],keep:&mut C,temp:&mut T,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<Vec<usize>,C::Error>{reactive_writes_lines_with_programs(proc,lines,keep,temp,&|id|native_writer_pattern(fixture,id))}
+pub fn reactive_writes_lines_with_programs<P:crate::raw_fixture_policy::PatternApi,F:Fn(usize)->P,C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(proc:&Proc,lines:&[(usize,&str)],keep:&mut C,temp:&mut T,patterns:&F)->Result<Vec<usize>,C::Error>{
  keep.checkpoint()?;let mut width=0usize;for(_,line)in lines{keep.checkpoint()?;width=width.checked_add(line.len()).and_then(|n|n.checked_add(1)).ok_or_else(||keep.overflow())?;}for name in &proc.params{keep.checkpoint()?;width=width.checked_add(name.len()).ok_or_else(||keep.overflow())?;}crate::key_policy_control::reserve(temp,||width.checked_mul(256)?.checked_add(lines.len().checked_mul(4*std::mem::size_of::<(usize,&str)>())?)?.checked_add(4096))?;
     let mut declared: HashSet<String> = HashSet::new();
     for (_n, text) in lines {
         keep.checkpoint()?;
-        for m in local_decl().captures_iter(text) {
+        for m in patterns(2).captures_iter(text) {
             keep.checkpoint()?;
             declared.insert(m.s(1).to_string());
         }
@@ -97,15 +102,15 @@ pub fn reactive_writes_lines_using<C:crate::key_policy_control::Control,T:crate:
     locals.extend(proc.params.iter().cloned());
     let mut mutable: HashSet<&str> = declared.iter().map(|s| s.as_str()).collect();
     mutable.extend([".", "look", "data"]);
-    let splitter = pat!(r"[;{]|\bin\b|^\s*(?:if|while|else if)\s*\(.*\)\s*");
-    let incdec = pat!(r#"(\+\+|--)\s*([A-Za-z_.][\w.?\[\]]*)|([A-Za-z_.][\w.?\[\]"]*?)\s*(\+\+|--)"#);
+    let splitter = patterns(5);
+    let incdec = patterns(6);
     let mut out = Vec::new();
     for (number, code) in lines {
         keep.checkpoint()?;
         let code: &str = code;
-        let mut bad = writer_call().is_match(code);
+        let mut bad = patterns(0).is_match(code);
         if !bad {
-            for m in member_writer().captures_iter(code) {
+            for m in patterns(1).captures_iter(code) {
                 keep.checkpoint()?;
                 let root = m.s(1);
                 let through = py_strip(m.s(2));
@@ -128,7 +133,7 @@ pub fn reactive_writes_lines_using<C:crate::key_policy_control::Control,T:crate:
                         Some(m) => &lhs[m.end..],
                         None => lhs,
                     };
-                    if write_target_bad(lhs, &locals) {
+                    if write_target_bad_using(lhs,&locals,patterns) {
                         bad = true;
                         break;
                     }
@@ -139,7 +144,7 @@ pub fn reactive_writes_lines_using<C:crate::key_policy_control::Control,T:crate:
             for m in incdec.captures_iter(code) {
                 keep.checkpoint()?;
                 let target = if m.matched(2) { m.s(2) } else { m.s(3) };
-                if !target.is_empty() && write_target_bad(target, &locals) {
+                if !target.is_empty() && write_target_bad_using(target,&locals,patterns) {
                     bad = true;
                     break;
                 }
@@ -154,3 +159,7 @@ pub fn reactive_writes_lines_using<C:crate::key_policy_control::Control,T:crate:
 
 
 #[cfg(test)]mod tests{use super::*;#[test]fn native_reactive_writer_kernel_accepts_original_proc_without_legacy_model(){let file=crate::tree::SourceFile::from_text("code/kernel-writer.dm","/obj/control/proc/appearance_overlays(value)\n\tvar/list/parts = list()\n\tparts += value\n\tparts.Add(value)\n\tlook.set_icon(value)\n\tstate = value\n\tcell.set_charge(value)\n");let proc=crate::dm::dx::procs_in(&file).into_iter().next().expect("real original Proc");let clean=file.clean();let lines:Vec<_>=(0..proc.body_len).map(|k|(proc.body_start+k,clean.line(proc.body_start+k))).collect();let result=reactive_writes_lines_using(&proc,&lines,&mut crate::key_policy_control::Compatibility,&mut crate::key_policy_control::Compatibility).unwrap();assert_eq!(result,vec![6,7]);}}
+
+fn original_writer_pattern(id:usize)->&'static Pat{match id{0=>writer_call(),1=>member_writer(),2=>local_decl(),3=>crate::pat!(r"\bvar/"),4=>crate::pat_match!(r"(\.|[A-Za-z_]\w*)"),5=>crate::pat!(r"[;{]|\bin\b|^\s*(?:if|while|else if)\s*\(.*\)\s*"),6=>crate::pat!(r#"(\+\+|--)\s*([A-Za-z_.][\w.?\[\]]*)|([A-Za-z_.][\w.?\[\]"]*?)\s*(\+\+|--)"#),_=>unreachable!("closed original writer pattern slot")}}
+#[cfg(feature="native-policy")]
+pub(crate) fn native_writer_pattern<'f,'a>(fixture:&'f crate::raw_fixture_policy::Fixture<'a>,id:usize)->crate::raw_fixture_policy::Pattern<'f,'a>{match id{0=>fixture.pattern(r"(?<![\w./:])(?:changed|cap_set|timed_set|timed_cancel|own_set|own_add|own_put|own_take|own_take_all|own_take_member|own_remove|own_clear|own_transfer|own_move|rel_set|rel_add|rel_remove|rel_clear|om_set|qdel|forceMove|set_light|update_icon|add_fingerprint|to_chat|playsound|set_\w+)\s*\(",crate::raw_fixture_policy::PatternMode::Search,||original_writer_pattern(0)),1=>fixture.pattern(r"(?<![\w.])([A-Za-z_]\w*|\.)((?:\s*\??\.\s*[A-Za-z_]\w*)*?)\s*\??\.\s*(set_\w+|forceMove|qdel|set_light|update_icon|add_fingerprint|Add|Cut|Remove|RemoveAll|Insert|Swap|Splice)\s*\(",crate::raw_fixture_policy::PatternMode::Search,||original_writer_pattern(1)),2=>fixture.pattern(r"\bvar/(?:[\w/]+/)?(\w+)",crate::raw_fixture_policy::PatternMode::Search,||original_writer_pattern(2)),3=>fixture.pattern(r"\bvar/",crate::raw_fixture_policy::PatternMode::Search,||original_writer_pattern(3)),4=>fixture.pattern(r"(\.|[A-Za-z_]\w*)",crate::raw_fixture_policy::PatternMode::Match,||original_writer_pattern(4)),5=>fixture.pattern(r"[;{]|\bin\b|^\s*(?:if|while|else if)\s*\(.*\)\s*",crate::raw_fixture_policy::PatternMode::Search,||original_writer_pattern(5)),6=>fixture.pattern(r#"(\+\+|--)\s*([A-Za-z_.][\w.?\[\]]*)|([A-Za-z_.][\w.?\[\]"]*?)\s*(\+\+|--)"#,crate::raw_fixture_policy::PatternMode::Search,||original_writer_pattern(6)),_=>unreachable!("closed native writer pattern slot")}}

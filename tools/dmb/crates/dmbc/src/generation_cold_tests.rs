@@ -34,7 +34,7 @@ fn actual_cold_generation_source_seven_questions_all_thirteen_write_then_warm_sh
  for path in crate::query_db::QueryDb::generation_dm_outputs(){assert!(root.join(path).is_file(),"{path}");}
  assert!(std::fs::read_to_string(root.join(GeneratorName::AutoTracked.path())).unwrap().contains("TRACKED(/datum/probe, charge)"));
  let tree=Arc::clone(host.query_tree().expect("final unchanged ordinary frame on same host"));
- {let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();let inputs=snapshot.workspace_generator_inputs(GeneratorName::AutoTracked).unwrap();let archive=inputs.policy().archive();assert!(archive.uses_body_queries(host.query_db().as_ref()),"generator bodies use the SAME resident native QueryDb");assert!(!archive.syntax_inputs().expect("actual native body input issuance").is_empty());}
+ {let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();let inputs=snapshot.workspace_generator_inputs(GeneratorName::AutoTracked).unwrap();let archive=inputs.policy().archive();assert!(archive.uses_body_queries(host.query_db().as_ref()),"generator bodies use the SAME resident native QueryDb");assert!(!archive.is_empty());assert!(archive.syntax_input_checked(0,&||crate::daemon::control::checkpoint()).is_ok(),"actual native selected body input issuance");}
  let computed=host.query_db().db().stats(dm_query::Kind(4)).computed;
  let warm=run(&mut host,&request,&names,Mode::Write,&cache).unwrap();
  assert!(!warm.committed);assert!(warm.changed.is_empty());assert!(warm.rows.iter().all(|row|row.state==State::Fresh));
@@ -139,7 +139,7 @@ fn actual_selection_only_generation_preserves_prepared_originals_and_body_inputs
  let(mut host,request,cache,_root)=crate::generation_test_fixture::fixture();
  let names=[GeneratorName::Deps];
  prepare(&mut host,&request,&names).unwrap();
- let before={let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();let inputs=snapshot.workspace_generator_inputs(GeneratorName::Deps).unwrap();inputs.policy().archive().syntax_inputs().unwrap().to_vec()};
+ let before={let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();let inputs=snapshot.workspace_generator_inputs(GeneratorName::Deps).unwrap();{let archive=inputs.policy().archive();(0..archive.len()).map(|ordinal|archive.syntax_input_checked(ordinal,&||crate::daemon::control::checkpoint()).unwrap()).collect::<Vec<_>>()}};
  assert!(!before.is_empty(),"actual complete frontend issued body inputs");
  let owner=host.prepared_sources().unwrap();
  let count=|owner:&crate::input_snapshot::PreparedInputArtifacts|{let mut count=0;owner.visit_storage(|view|if matches!(view,dm_session::ArtifactStorageView::Entry{..}){count+=1});count};
@@ -147,6 +147,6 @@ fn actual_selection_only_generation_preserves_prepared_originals_and_body_inputs
  assert!(matches!(crate::request_runner::generation_cold::stage(&mut host,&request,&names,&names,false,&cache).unwrap(),crate::request_runner::generation_cold::Preparation::NotNeeded));
  assert_eq!(count(&owner),retained,"selection-only missing-unused probes must not publish an empty prepared roster");
  prepare(&mut host,&request,&names).unwrap();
- let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();let inputs=snapshot.workspace_generator_inputs(GeneratorName::Deps).unwrap();let after=inputs.policy().archive().syntax_inputs().unwrap();
- assert_eq!(before.len(),after.len());for(old,current)in before.iter().zip(after){assert!(Arc::ptr_eq(old,current),"same current acquisition/program proof must keep the original body input issuance");}
+ let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().unwrap();let inputs=snapshot.workspace_generator_inputs(GeneratorName::Deps).unwrap();let archive=inputs.policy().archive();let after=(0..archive.len()).map(|ordinal|archive.syntax_input_checked(ordinal,&||crate::daemon::control::checkpoint()).unwrap());
+ assert_eq!(before.len(),after.len());for(old,current)in before.iter().zip(after){assert!(Arc::ptr_eq(old,&current),"same current acquisition/program proof must keep the original body input issuance");}
 }

@@ -31,4 +31,28 @@ class Formats(unittest.TestCase):
    with self.assertRaises(ValueError):captured.verify_again()
  def test_check_written_state_refuses(self):
   with self.assertRaises(ValueError):m.expected_generator_text([dict(generator='actions',path='actual',state='written')],[],['actions'])
+ def test_diagnostic_only_ui_formats_once_with_explicit_captured_root_without_native_row(self):
+  diagnostics=[dict(generator='ui_types',relative='code/ui.dm',line=7,message='nothing to type')]
+  before=list(diagnostics);root=r'\\?\E:\actual\source'
+  expected='code/ui.dm:7: [gen/ui_types] nothing to type\nfresh '+root+'\\tgui/packages/tgui/interfaces/generated\n'
+  self.assertEqual(m.expected_generator_text([],diagnostics,['ui_types'],root),expected.encode())
+  self.assertEqual(diagnostics,before)
+ def test_ui_display_root_preserves_trailing_separator_and_posix_backslash_data(self):
+  diagnostics=[dict(generator='ui_types',relative='ui.dm',line=1,message='actual')]
+  for root,suffix in [('E:\\actual\\\\','tgui/packages/tgui/interfaces/generated'),('/actual/source\\','/tgui/packages/tgui/interfaces/generated'),('/actual/source//','tgui/packages/tgui/interfaces/generated')]:
+   actual=m.expected_generator_text([],diagnostics,['ui_types'],root).decode()
+   self.assertEqual(actual,'ui.dm:1: [gen/ui_types] actual\nfresh '+root+suffix+'\n')
+ def test_diagnostic_only_ui_requires_explicit_role_and_root_other_missing_rows_refuse(self):
+  ui=[dict(generator='ui_types',relative='code/ui.dm',line=7,message='nothing to type')]
+  with self.assertRaises(ValueError):m.expected_generator_text([],ui,['ui_types'])
+  with self.assertRaises(ValueError):m.expected_generator_text([],ui,['ui_types'],'relative-root')
+  foreign=[dict(generator='actions',relative='code/a.dm',line=1,message='actual')]
+  with self.assertRaises(ValueError):m.expected_generator_text([],foreign,['actions'],'/actual/source')
+ def test_ui_actual_multirow_finding_order_is_unchanged(self):
+  rows=[dict(generator='ui_types',path='Alpha.d.ts',state='fresh'),dict(generator='ui_types',path='Zed.d.ts',state='stale')]
+  diagnostics=[dict(generator='ui_types',relative='code/ui.dm',line=7,message='actual')]
+  text=m.expected_generator_text(rows,diagnostics,['ui_types'],'/actual/source').decode()
+  self.assertEqual(text.count('[gen/ui_types] actual'),1)
+  self.assertLess(text.index('fresh Alpha.d.ts'),text.index('[gen/ui_types] actual'))
+  self.assertLess(text.index('[gen/ui_types] actual'),text.index('Zed.d.ts:1:'))
 if __name__=='__main__':unittest.main()

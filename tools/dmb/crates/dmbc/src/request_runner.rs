@@ -127,6 +127,7 @@ pub(crate) fn run_build_with_host_and_policy_sinks_from(
 }
 
 pub(crate) use runner_freshness::JoinedSelectedInputs;
+#[path="runner_utility_capture.rs"]pub(super) mod utility_capture;
 #[path="runner_schema_capture.rs"]pub(crate) mod schema_capture;
 pub(crate) fn prepare_schema_proposals(request:BuildRequest,host:&mut crate::runner_host::BuildHost)->Result<(BuildOutcome,schema_capture::Inputs,Option<crate::selected_report_spool::Verified>,dm_preprocess::source_arena_credit::SourceArenaCredit),Box<dyn std::error::Error>>{
  use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
@@ -150,6 +151,15 @@ pub(crate) fn prepare_schema_proposals(request:BuildRequest,host:&mut crate::run
 #[path="runner_native_check_handlers.rs"]pub(crate) mod native_check_handlers;
 #[path="runner_checker_capture.rs"]pub(crate) mod checker_capture;
 /// Nonpublishing capture on the actual existing retained checker host path.
+
+/// Nonpublishing syntax-only owner. The frontend remains diagnostic-only and
+/// the actual recorder is moved once; this is never a current Checker frame.
+pub(crate) struct ParseOnlySyntaxPrepared{pub(crate)frontend:dm_tree::frontend::DiagnosticFrontend,pub(crate)inputs:checker_capture::Inputs,pub(crate)policy:Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,_credit:dm_preprocess::source_arena_credit::SourceArenaCredit}
+pub(crate) fn prepare_parse_only_syntax(request:BuildRequest,host:&mut crate::runner_host::BuildHost)->Result<ParseOnlySyntaxPrepared,Box<dyn std::error::Error>>{
+ if request.command!=BuildCommand::PrepareQuery||!request.exact_inputs||!request.no_cache||request.no_daemon||!host.retains_artifacts()||request.policy_inputs.as_ref().is_none_or(|p|p.analysis_context!=Some(crate::policy_request::AnalysisContext::OriginalChecker0290)||p.workspace.is_some()||!p.workspace_auxiliary.is_empty()||!p.workspace_generators.is_empty()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"parse-only requires its exact retained Original preparation role").into())}
+ let cache=request.cache_root.as_ref().ok_or_else(||io::Error::other("parse-only explicit cache absent"))?;let mut private=crate::selected_report_spool::Stage::new(cache)?;let mut prepared=None;let mut output=PreparationDiagnosticOutput::captured(&mut private);output.retain_parse_only(&mut prepared)?;
+ let result=run_build_with_host_and_derived_sink(request,host,None,&mut output);let first=output.take_error();drop(output);if let Some(actual)=first{return Err(actual.into())}result?;prepared.ok_or_else(||io::Error::other("parse-only did not move its actual syntax/recorder owner").into())
+}
 pub(crate) fn prepare_standalone_checker(request:BuildRequest,host:&mut crate::runner_host::BuildHost)->Result<(BuildOutcome,checker_capture::Inputs),Box<dyn std::error::Error>>{
  if request.command!=BuildCommand::PrepareQuery||!request.exact_inputs||!request.no_cache||request.no_daemon||!host.retains_artifacts()
   ||request.policy_inputs.as_ref().is_none_or(|p|p.analysis_context!=Some(crate::policy_request::AnalysisContext::OriginalChecker0290)||p.workspace.is_some()||!p.workspace_auxiliary.is_empty()||!p.workspace_generators.is_empty()){
@@ -288,7 +298,7 @@ fn run_build_attempt(
         artifact_directory,
         no_daemon: _,
         trace_path,
-        warnings: _,
+        warnings,
     } = request;
     let registered_model=source_check.as_deref().and_then(|preparation|preparation.model_plan()).cloned();
     let registered_engine=source_check.as_deref().and_then(|preparation|preparation.engine_plan()).cloned();
@@ -375,18 +385,26 @@ fn run_build_attempt(
     let generated_paths =
         dmbc::input_snapshot::SnapshotProvider::generated_outputs(&generated_provider)
             .expect("explicit generated output policy");
-    let prepared_sources = if source_override.is_none(){host.prepared_sources()}else{None};
     let mut inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&generated_provider, now_ns())
         .with_initial_environment(analysis_context.map_or(dm_preprocess::InitialEnvironment::Native5161687,|context|context.initial_environment()))
-        .with_exact_reuse(exact_inputs)
-        .with_prepared_sources(prepared_sources.clone());
+        .with_exact_reuse(exact_inputs);
+    if preparation_output.run_native_selftests(host,&inputs_capture,cache_root.as_deref(),policy_inputs.as_ref().and_then(|intent|intent.workspace()).map(|workspace|workspace.root.as_path()))?{
+        // Nested fixtures use their OWN diagnostic stages and actual engine
+        // variants. Only semantic completion reaches here; first operational
+        // IO/cancellation returns above and can never be erased by this reset.
+        dmbc::diagnostics::begin(warnings.clone());
+    }
+    // Acquire the actual outer view AFTER nested fixture requests. The normal
+    // engine selection below rebinds the genuine current variant as before.
+    let prepared_sources = if source_override.is_none(){host.prepared_sources()}else{None};
+    inputs_capture=inputs_capture.with_prepared_sources(prepared_sources.clone());
     // One operation-local conditional phase; no new worker or frontend is
     // created. Only the actual Handler subject may demand a full continuation.
     let mut conditional_required_full=None;
     if let Some(intents)=&registered_source_handlers{
         let parent=policy_inputs.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"conditional parent admitted intent absent"))?;
         intents.projection().require_parent_intent(parent)?;
-        let actual=source_handler_prepare::prepare(&inputs_capture,&stamped_provider,&input_provider,generated_paths,intents,host,workers)?;
+        let actual=if preparation_output.needs_baseline_update(){source_handler_prepare::prepare_baseline(&inputs_capture,&stamped_provider,&input_provider,generated_paths,intents,host,workers,preparation_output.baseline_generation_domain())?}else{source_handler_prepare::prepare(&inputs_capture,&stamped_provider,&input_provider,generated_paths,intents,host,workers)?};
         match actual{
             source_handler_prepare::ActualPreparation::Structural(pair)=>{
                 let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
@@ -410,7 +428,8 @@ fn run_build_attempt(
         let plan=Arc::clone(preparation.source_plan().expect("actual source-only operation variant"));
         let intent=policy_inputs.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"registered source CHECK needs its actual workspace intent"))?;
         let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
-        let(captured,owner)=crate::runner_host::workspace_capture::capture_registered_source_check(&inputs_capture,intent,&queries,Arc::clone(&plan))?;
+        plan.capture_fixture_physical(&inputs_capture,queries.as_ref())?;
+        let(captured,owner)=if preparation_output.needs_baseline_update(){crate::runner_host::workspace_capture::capture_registered_source_baseline(&inputs_capture,intent,&queries,Arc::clone(&plan),preparation_output.baseline_generation_domain())?}else{crate::runner_host::workspace_capture::capture_registered_source_check(&inputs_capture,intent,&queries,Arc::clone(&plan))?};
         let snapshot=crate::runner_host::query_snapshot::RawWorkspaceSnapshot::issued_registered(intent,Arc::clone(&captured),owner,Arc::clone(&queries),&plan)?;
         input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
         let(pending,admission)=native_check_source::Pending::capture(&inputs_capture,&project,Arc::clone(&plan),&snapshot,captured,generated_paths,queries.as_ref())?;
@@ -428,9 +447,12 @@ fn run_build_attempt(
     if engine_preflight.as_ref().is_some_and(|selection|selection.is_empty()){
         let intent=policy_inputs.as_ref().expect("actual conditional Engine intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
         let proof=engine_preflight.take().expect("actual empty Engine preflight").into_unselected()?;let(captured,owner)=crate::runner_host::workspace_capture::capture_engine_unselected(&inputs_capture,intent,&queries,proof)?;
+        if preparation_output.needs_baseline_update(){if registered_engine.as_ref().is_none_or(|plan|!plan.is_baseline_update()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"empty Engine baseline lacks actual selected plan").into())}if let Some(domain)=preparation_output.baseline_generation_domain(){queries.with_baseline_input_refresh(|budget,credits|crate::runner_host::workspace_capture::refresh_selected_baseline_domain(&inputs_capture,captured.root(),Some(domain),queries.as_ref(),budget,credits))?;}}
+
         let admission=runner_freshness::admit_workspace_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,Arc::clone(&captured),queries.as_ref())?.1;
         if let Some(plan)=&registered_engine{
             let snapshot=crate::runner_host::query_snapshot::RawWorkspaceSnapshot::issued_engine_unselected(intent,Arc::clone(&captured),owner,Arc::clone(&queries),plan)?;
+            plan.capture_fixture_physical(&inputs_capture,queries.as_ref())?;
             let pending=native_check_source::Pending::capture_engine_unselected(&inputs_capture,&project,Arc::clone(plan),&snapshot,generated_paths,queries.as_ref())?;
             input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;let inputs=pending.finish(inputs_capture)?;
             source_check.as_deref_mut().ok_or_else(||io::Error::other("selected Engine operation slot absent"))?.record_engine(native_check_source::EnginePrepared::Unselected{snapshot:snapshot.clone(),inputs})?;
@@ -484,6 +506,10 @@ fn run_build_attempt(
         // Preserve the original report-stage position of a structural policy
         // failure. No pending row/error is published before the full barrier.
         handlers_capture=Some(crate::input_snapshot::HandlerPreparedCapture::detach_staged(capture,staged)?);
+        // The sealed rows no longer borrow the partial archive. Retire only
+        // expired BODY inputs/products through the existing owner-based path
+        // before the independent full frontend reserves its actual syntax.
+        dm_tree::frontend::BodySyntaxQueries::begin_revision(queries.as_ref());
     }
     if joined_derived.is_some() { dm_profile::detail_mark("request.joined_handlers", total); }
     if handlers_capture.as_ref().is_some_and(|capture|
@@ -491,10 +517,12 @@ fn run_build_attempt(
     ){
         let capture=handlers_capture.take().expect("actual structural-only preparation");let intent=policy_inputs.as_ref().expect("actual handler intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
         let partial_source_revision=capture.partial_revision()?.map(|revision|format!("{revision:032x}"));
+        if preparation_output.needs_baseline_update(){if let Some(domain)=preparation_output.baseline_generation_domain(){let workspace=intent.workspace().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"Handler baseline workspace absent"))?;queries.with_baseline_input_refresh(|budget,credits|crate::runner_host::workspace_capture::refresh_selected_baseline_domain(&inputs_capture,&workspace.root,Some(domain),queries.as_ref(),budget,credits))?;}}
         let proof=runner_freshness::admit_handlers_captured_using(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&capture),queries.as_ref())?.1.into_shared()?;
         input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
-        let query=query_attempt.admit_handlers_source(intent,capture,proof,queries)?;
+        let query=query_attempt.admit_handlers_source(intent,capture,proof,Arc::clone(&queries))?;
         if let Some(plan)=source_check.as_deref().and_then(native_check_source::Preparation::handlers_plan).map(Arc::clone){
+         plan.capture_fixture_physical(&inputs_capture,queries.as_ref())?;
          let pending=native_check_handlers::capture_current(&inputs_capture,&project,plan,query_attempt.current_state(),generated_paths,host.source_arena_work())?;
          let actual=pending.finish(inputs_capture)?;
          source_check.as_deref_mut().ok_or_else(||io::Error::other("Handler CHECK operation slot disappeared"))?.record_handlers(actual)?;
@@ -503,7 +531,7 @@ fn run_build_attempt(
         return Ok(BuildOutcome::HandlersQueryPrepared{query_revision:format!("{query:032x}"),partial_source_revision,full_source_revision:None,retained:retains_query_owners});
     }
     let (paired_dmm, raw_spool_cache) = if std::env::var_os("DMB_EXPERIMENTAL_PAIRED_DMM").as_deref() == Some(std::ffi::OsStr::new("1"))
-        && stage_handlers && preparation_output.needs_full_ci_baselines()
+        && stage_handlers && policy_inputs.as_ref().is_some_and(|intent| intent.workspace_auxiliary() == crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_FULL_REGISTRY)
     {
         let derived = joined_derived.as_ref().expect("actual joined Derived preflight");
         let cache = cache_root.as_deref().ok_or("paired DMM requires its admitted cache root")?;
@@ -513,6 +541,14 @@ fn run_build_attempt(
             == Some(std::ffi::OsStr::new("1"))).then(|| cache.to_path_buf());
         (Some(stage), raw_spool_cache)
     } else { (None, None) };
+    // The same immutable page spool needs no paired-DMM authority: its
+    // existing selector only covers standalone doc/TypeScript raw pages.
+    let raw_spool_cache = if raw_spool_cache.is_some() { raw_spool_cache }
+        else if stage_handlers
+            && std::env::var_os("DMB_EXPERIMENTAL_WORKSPACE_RAW_SPOOL").as_deref() == Some(std::ffi::OsStr::new("1"))
+            && policy_inputs.as_ref().is_some_and(|intent| intent.workspace_auxiliary() == crate::policy_request::WorkspaceAuxiliaryQuestion::PRIVATE_FULL_REGISTRY)
+        { Some(cache_root.as_ref().ok_or("private raw page spool requires its admitted cache root")?.clone()) }
+        else { None };
     let derived_preflight=if joined_derived.is_some(){joined_derived}else if registered_model.is_none()&&analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads]){
         Some(Arc::clone(host.query_db()).prepare_derived_preflight(&inputs_capture,policy_inputs.as_ref().expect("exact admitted Derived intent"))?)
     }else{None};
@@ -965,16 +1001,35 @@ fn run_build_attempt(
             }
             let original_provider=inputs_capture.original_batch_view(query_db.as_deref().map(|db|db as &(dyn dm_preprocess::SourceChanges+Sync)));
             let preparation=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){
+                if preparation_output.wants_semantic_only_utility(){
+                    // One genuine full-history Original Analyze preparation.
+                    // BODY products are demanded from its SAME actual current
+                    // Input/Code through existing canonical Kind4, not parsed
+                    // again as a second Model or promoted from a collector flag.
+                    dm_tree::frontend::build_for_original_native_parameter_demand_with_callable_anchors_checked(
+                        &project,&original_provider,&defines,
+                        dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
+                        frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host,strict_callable_prior)
+                }else if preparation_output.wants_native_sem_utility(){
+                    // SAME native full-history Analyze preparation. BODY is
+                    // demanded once through actual Kind4 during the utility prelude.
+                    dm_tree::frontend::build_for_original_native_body_demand_with_callable_anchors_checked(
+                        &project,&original_provider,&defines,
+                        dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
+                        frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host,strict_callable_prior)
+                }else{
                 let prepare=if preparation_output.compact_checker_cache().is_some()
                     && preparation_output.needs_combined_checker()
                     && preparation_output.wants_joined_inputs() {
                     dm_tree::frontend::build_for_original_compound_with_callable_anchors_checked
                 } else {
-                    dm_tree::frontend::build_for_original_analysis_with_callable_anchors_checked
+                    dm_tree::frontend::build_for_original_native_body_demand_with_callable_anchors_checked
                 };
                 prepare(&project,&original_provider,&defines,
                     dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
                     frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host,strict_callable_prior)
+                }
+            }else if preparation_output.wants_parse_only(){dm_tree::frontend::build_for_parse_only_syntax_checked(&project,&provider,&defines,dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},executor,&settings_host,&(Arc::clone(&source_policy_queries) as Arc<dyn dm_tree::frontend::BodySyntaxQueries>))
             }else{dm_tree::frontend::build_for_checker_diagnostics_with_state_checked(&project,&provider,&defines,
                 dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
                 frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host)};
@@ -1063,18 +1118,53 @@ fn run_build_attempt(
                     preparation_output.emit(|mut output|dmbc::diagnostics::write_original_preprocess_notices(&mut output,&notices))?;
                 }
             }
+            if preparation_output.wants_parse_only(){
+                if analysis_context!=Some(crate::policy_request::AnalysisContext::OriginalChecker0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"parse-only cannot borrow another analysis purpose").into())}
+                prepared.parse_only_body_counts()?;
+                let intent=policy_inputs.as_ref().ok_or_else(||io::Error::other("parse-only actual policy intent absent"))?;
+                let parser_source=prepared.parse_only_syntax_source()?;let policy=Arc::new(crate::runner_host::policy_capture::capture_parser_report(&parser_source,&inputs_capture,&intent.capture_files(),intent.search_folders())?.bind_request(intent)?.bind_diagnostic_profile()?);
+                input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
+                let pending=checker_capture::Pending::capture_parse_only(&inputs_capture,&project,&prepared,generated_paths,source_policy_queries.as_ref())?;
+                let credit=dm_preprocess::source_arena_credit::SourceArenaWork::reserve(source_policy_queries.as_ref(),std::mem::size_of::<ParseOnlySyntaxPrepared>())?;
+                let view=prepared.source_view()?;let outcome=BuildOutcome::QueryPrepared{semantic_revision:format!("{:032x}",view.tree().identity()),source_revision:format!("{:032x}",view.source_revision()),policy_revision:None,retained:false};
+                let inputs=pending.finish(inputs_capture)?;inputs.require_parse_only_binding(&project,&prepared)?;inputs.require_current(&project)?;
+                preparation_output.record_parse_only(ParseOnlySyntaxPrepared{frontend:prepared,inputs,policy,_credit:credit})?;
+                return Ok(outcome);
+            }
             if analysis_context.is_some(){
                 // A genuine analysis purpose stays diagnostic-only even when
                 // the original graph has zero declaration errors. No ABI or
                 // lowering admission is inferred from that fact.
-                let prepared=Arc::new(prepared.with_body_queries(Arc::clone(&source_policy_queries) as Arc<dyn dm_tree::frontend::BodySyntaxQueries>)?);
+                let prepared=Arc::new(prepared.with_body_queries_checked(Arc::clone(&source_policy_queries) as Arc<dyn dm_tree::frontend::BodySyntaxQueries>,Arc::clone(&source_policy_queries) as Arc<dyn dm_tree::frontend::SettingExpressionQueries>)?);
+                if preparation_output.wants_native_sem_utility(){preparation_output.record_native_sem_utility_frontend(Arc::clone(&prepared))?;}
                 let view=prepared.source_view()?;
                 let intent=policy_inputs.as_ref().ok_or("analysis purpose requires its actual admitted request")?;
                 let mut pending_joined = None;
                 let mut pending_author_fix = None;
                 let mut pending_checker = None;
                 let mut model_capture=None;
-                if let Some(workspace)=intent.workspace(){
+                if preparation_output.wants_semantic_only_utility(){
+                    if !preparation_output.wants_native_sem_utility()||analysis_context!=Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)||!intent.files().is_empty()||!intent.search_folders().is_empty()||!intent.workspace_generators().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"semantic-only utility cannot borrow a judged/configuration capture").into())}
+                    let subject=analysis_subject.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"semantic-only utility lacks its actual Analyze subject"))?;
+                    subject.bind_frontend(&view)?;
+                    preparation_output.record_utility_workspace_roster(subject.discovery().as_ref(),source_policy_queries.as_ref())?;
+                    // An actual semantic child intent, not a missing/default Config
+                    // and not a Workspace policy frame. Ordinary paths below keep
+                    // their original requested configuration semantics.
+                    // This child binds ONLY the empty explicit policy scope.
+                    // The actual full Analyze purpose/root remain in the SAME
+                    // already-bound subject and frontend, checked above and by
+                    // capture_semantic_utility/stage_semantic_only_utility below.
+                    // Reissuing full Analyze without a workspace is invalid;
+                    // fabricating another workspace would grant the wrong role.
+                    let semantic_intent=crate::policy_request::PolicyInputRequest::default().admit()?;
+                    let captured=Arc::new(crate::runner_host::policy_capture::capture_semantic_utility(&view,&inputs_capture,subject)?.bind_request(&semantic_intent)?.bind_diagnostic_profile()?);
+                    query_attempt.stage_semantic_only_utility(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured),Arc::clone(subject))?;
+                    let admission=runner_freshness::admit_diagnostic_captured_using(&inputs_capture,None,&stamped_provider,generated_paths,captured,source_policy_queries.as_ref())?.1;
+                    input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
+                    semantic_state.remember_analysis_frontend(&project,&defines,Arc::clone(&prepared))?;
+                    query_attempt.admit_diagnostic_policy(admission)?;
+                }else if let Some(workspace)=intent.workspace(){
                     let check_grep=intent.workspace_auxiliary().iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep|crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline));
                     if check_grep&&analysis_subject.is_none(){
                         let root=view.original_plan().occurrences().first().ok_or("analysis actual root occurrence absent")?;
@@ -1114,14 +1204,15 @@ fn run_build_attempt(
                         dm_profile::request_mark("joined.checker_policy_bound");
                         Some(checker)
                     } else { None };
+                    preparation_output.record_utility_workspace_roster(discovery.as_ref(),source_policy_queries.as_ref())?;
                     let captured=if let Some(plan)=&registered_model{
-                        crate::runner_host::workspace_capture::capture_analysis_registered(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref(),Arc::clone(plan))?
+                        if preparation_output.needs_baseline_update(){crate::runner_host::workspace_capture::capture_analysis_registered_baseline(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref(),Arc::clone(plan),preparation_output.baseline_generation_domain())?}else{crate::runner_host::workspace_capture::capture_analysis_registered(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref(),Arc::clone(plan))?}
                     }else if preparation_output.needs_full_ci_baselines(){
                         crate::runner_host::workspace_capture::capture_analysis_full_ci(
-                            &view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref(),paired_dmm,raw_spool_cache.as_deref(),
+                            &view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref(),paired_dmm,raw_spool_cache.as_deref(),preparation_output.needs_baseline_update(),preparation_output.baseline_generation_domain(),
                         )?
                     }else if crate::policy_request::WorkspaceAuxiliaryQuestion::admits_map_edits_capture(intent.workspace_auxiliary()){
-                        crate::runner_host::workspace_capture::capture_analysis_map_edits(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref())?
+                        crate::runner_host::workspace_capture::capture_analysis_map_edits(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary(),source_policy_queries.as_ref(),paired_dmm,raw_spool_cache.as_deref())?
                     }else if preparation_output.needs_library_sites_baseline(){
                         if analysis_context != Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)
                             || analysis_subject.as_ref().is_none_or(|subject|subject.synthetic()) {
@@ -1134,6 +1225,7 @@ fn run_build_attempt(
                     }else{
                         crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?
                     };
+                    if preparation_output.needs_baseline_update()&&!preparation_output.needs_full_ci_baselines()&&registered_model.is_none()&&registered_source_handlers.is_none(){if let Some(domain)=preparation_output.baseline_generation_domain(){source_policy_queries.with_baseline_input_refresh(|budget,credits|crate::runner_host::workspace_capture::refresh_selected_baseline_domain(&inputs_capture,&workspace.root,Some(domain),source_policy_queries.as_ref(),budget,credits))?;}}
                     dm_profile::request_mark("joined.workspace_capture_done");
                     let checker=if preparation_output.needs_combined_checker(){
                         let checker_policy = match early_checker {
@@ -1197,7 +1289,8 @@ fn run_build_attempt(
                             return Ok(BuildOutcome::HandlersQueryPrepared{query_revision:format!("{query:032x}"),partial_source_revision,full_source_revision:Some(format!("{:032x}",view.source_revision())),retained:retains_query_owners});
                         }
                         if let Some(plan)=source_check.as_deref().and_then(native_check_source::Preparation::handlers_plan).map(Arc::clone){
-                         let pending=native_check_handlers::capture_current(&inputs_capture,&project,plan,query_attempt.current_state(),generated_paths,source_policy_queries.as_ref())?;
+                         plan.capture_fixture_physical(&inputs_capture,source_policy_queries.as_ref())?;
+         let pending=native_check_handlers::capture_current(&inputs_capture,&project,plan,query_attempt.current_state(),generated_paths,source_policy_queries.as_ref())?;
                          let actual=pending.finish(inputs_capture)?;
                          source_check.as_deref_mut().ok_or_else(||io::Error::other("Handler CHECK operation slot disappeared"))?.record_handlers(actual)?;
                         }
@@ -1210,12 +1303,14 @@ fn run_build_attempt(
                 }
                 if let Some(plan)=&registered_engine{
                     let capture=model_capture.as_ref().ok_or_else(||io::Error::other("selected nonempty Engine capture absent"))?;
+                    plan.capture_fixture_physical(&inputs_capture,source_policy_queries.as_ref())?;
                     let pending=checker_capture::Pending::capture_registered_engine_model(&inputs_capture,&project,&view,generated_paths,source_policy_queries.as_ref(),capture,plan)?;let inputs=pending.finish(inputs_capture)?;
                     source_check.as_deref_mut().ok_or_else(||io::Error::other("selected Engine operation slot absent"))?.record_engine(native_check_source::EnginePrepared::Model{inputs})?;
                     query_attempt.finish_analyzed();return Ok(BuildOutcome::QueryPrepared{semantic_revision:format!("{:032x}",view.tree().identity()),source_revision:format!("{:032x}",view.source_revision()),policy_revision:query_attempt.policy_revision().map(|pin|format!("{pin:032x}")),retained:retains_query_owners});
                 }
                 if let Some(plan)=&registered_model{
                     let capture=model_capture.as_ref().ok_or_else(||io::Error::other("selected model actual workspace capture absent"))?;
+                    plan.capture_fixture_physical(&inputs_capture,source_policy_queries.as_ref())?;
                     let pending=checker_capture::Pending::capture_registered_model(&inputs_capture,registered_model_report_project,&view,generated_paths,source_policy_queries.as_ref(),capture,plan)?;
                     let inputs=pending.finish(inputs_capture)?;source_check.as_deref_mut().ok_or_else(||io::Error::other("selected model operation slot absent"))?.record_model(inputs)?;
                     query_attempt.finish_analyzed();return Ok(BuildOutcome::QueryPrepared{semantic_revision:format!("{:032x}",view.tree().identity()),source_revision:format!("{:032x}",view.source_revision()),policy_revision:query_attempt.policy_revision().map(|pin|format!("{pin:032x}")),retained:retains_query_owners});
@@ -1223,6 +1318,12 @@ fn run_build_attempt(
                 let outcome=BuildOutcome::QueryPrepared{semantic_revision:format!("{:032x}",view.tree().identity()),source_revision:format!("{:032x}",view.source_revision()),policy_revision:query_attempt.policy_revision().map(|pin|format!("{pin:032x}")),retained:retains_query_owners};
                  let pending_schema=if preparation_output.wants_schema_inputs(){
                   if pending_joined.is_some()||pending_checker.is_some()||pending_author_fix.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"one recorder cannot transfer to schema and another report").into())}
+                  if preparation_output.utility_capture_requested()?{
+                   let state=query_attempt.current_state().try_lock().map_err(|e|match e{std::sync::TryLockError::WouldBlock=>io::Error::new(io::ErrorKind::WouldBlock,"utility pre-final model already borrowed"),std::sync::TryLockError::Poisoned(_)=>io::Error::other("utility pre-final model poisoned")})?;
+                   let snapshot=state.snapshot.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::NotFound,"utility pre-final current model absent"))?;
+                   preparation_output.prepare_utility_current(&view,snapshot,source_policy_queries.as_ref())?;
+                  } // release query-state loan before physical raw-family capture
+                  preparation_output.capture_utility_physical(&inputs_capture,source_policy_queries.as_ref())?;
                   Some(schema_capture::Pending::capture(&inputs_capture,&project,&view,generated_paths,source_policy_queries.as_ref())?)
                  }else{None};
                  match(pending_joined,pending_checker,pending_schema,pending_author_fix){
@@ -1239,7 +1340,7 @@ fn run_build_attempt(
                 Ok(frontend)=>Ok(frontend),
                 Err(prepared)=>{
                     if prepared.source_view()?.receipt().errors().is_empty(){return Err(std::io::Error::other("valid diagnostic program lacks complete original retained records; reuse unsupported").into());}
-                    let prepared=prepared.with_body_queries(std::sync::Arc::clone(&source_policy_queries) as std::sync::Arc<dyn dm_tree::frontend::BodySyntaxQueries>)?;
+                    let prepared=prepared.with_body_queries_checked(std::sync::Arc::clone(&source_policy_queries) as std::sync::Arc<dyn dm_tree::frontend::BodySyntaxQueries>,std::sync::Arc::clone(&source_policy_queries) as std::sync::Arc<dyn dm_tree::frontend::SettingExpressionQueries>)?;
                     let view=prepared.source_view()?;
                     let intent=policy_inputs.as_ref().ok_or("diagnostic preparation requires explicit policy input contract")?;
                     let captured=std::sync::Arc::new(crate::runner_host::policy_capture::capture_diagnostic(&view,&inputs_capture,&intent.capture_files(),intent.search_folders())?.bind_request(intent)?.bind_diagnostic_profile()?);
@@ -2171,6 +2272,14 @@ fn run_build_attempt(
     Ok(outcome)
     });
     dm_profile::request_mark("runner.execution_joined");
+    if dm_profile::detail_enabled(){
+        // This is the exact source_policy_queries cloned before execution.run,
+        // attached as BodySyntaxQueries and used by the active Original effects.
+        // The joined result/error is only borrowed; diagnostic IO cannot replace it.
+        source_policy_queries.write_post_request_query_timing(
+            execution_result.is_ok(),matches!(&execution_result,Ok(Ok(_))),
+            &mut std::io::stderr().lock());
+    }
     drop(frontend_memo);
     host.prune_foreign_callable_index();
     dm_profile::request_mark("runner.host_pruned");
@@ -2262,7 +2371,7 @@ pub(crate) fn prepare_selected_report(
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
     joined: Option<&mut Option<JoinedSelectedInputs>>, library_sites: bool, compact_cache:Option<&Path>,
 )->io::Result<(PreparationDiagnosticResult, Option<PreparedCheckerTranscript>)>{
-    prepare_selected_report_using(request, host, stage, checker, joined, library_sites, compact_cache, false, false)
+    prepare_selected_report_using(request, host, stage, checker, joined, library_sites, compact_cache, false, false, false, None, None)
 }
 
 #[cfg(test)]
@@ -2277,7 +2386,7 @@ pub(crate) fn prepare_private_authored_with_checker(
     {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "private combined report requires its exact live authored intent").into());
     }
-    let (result, checker) = prepare_selected_report_using(request, host, stage, Some(checker), None, false, None, true, false)?;
+    let (result, checker) = prepare_selected_report_using(request, host, stage, Some(checker), None, false, None, true, false, false, None, None)?;
     match checker {
         Some(checker) => Ok((result, checker)),
         None => {
@@ -2291,20 +2400,30 @@ pub(crate) fn prepare_private_authored_with_checker(
 pub(crate) fn prepare_compound_full_registry(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
     stage:&mut crate::selected_report_spool::Stage, checker:&mut crate::selected_report_spool::Stage,
-    joined:&mut Option<JoinedSelectedInputs>, compact_cache:Option<&Path>, full_ci:bool,
+    joined:&mut Option<JoinedSelectedInputs>, compact_cache:Option<&Path>, full_ci:bool, selftest_plan:Option<&Arc<crate::runner_host::NativeCheckSelection>>,
 )->io::Result<(PreparationDiagnosticResult,Option<PreparedCheckerTranscript>)>{
     use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
     if request.policy_inputs.as_ref().is_none_or(|intent|intent.workspace_auxiliary!=Q::PRIVATE_FULL_REGISTRY){
         return Err(io::Error::new(io::ErrorKind::InvalidInput,"compound full registry requires its exact internal authored intent"));
     }
-    prepare_selected_report_using(request,host,stage,Some(checker),Some(joined),false,compact_cache,true,full_ci)
+    prepare_selected_report_using(request,host,stage,Some(checker),Some(joined),false,compact_cache,true,full_ci,false,None,selftest_plan)
+}
+
+pub(crate) fn prepare_compound_baseline_update(
+    request:BuildRequest,host:&mut crate::runner_host::BuildHost,
+    stage:&mut crate::selected_report_spool::Stage,checker:&mut crate::selected_report_spool::Stage,
+    joined:&mut Option<JoinedSelectedInputs>,generation_domain:Option<&runner_freshness::GenerationInputClosure>,compact_cache:Option<&std::path::Path>,
+)->io::Result<(PreparationDiagnosticResult,Option<PreparedCheckerTranscript>)>{
+    use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+    if request.policy_inputs.as_ref().is_none_or(|intent|intent.workspace_auxiliary!=Q::PRIVATE_FULL_REGISTRY){return Err(io::Error::new(io::ErrorKind::InvalidInput,"baseline update needs actual complete registry intent"))}
+    prepare_selected_report_using(request,host,stage,Some(checker),Some(joined),false,compact_cache,true,true,true,generation_domain,None)
 }
 
 fn prepare_selected_report_using(
     request:BuildRequest, host:&mut crate::runner_host::BuildHost,
     stage:&mut crate::selected_report_spool::Stage, checker:Option<&mut crate::selected_report_spool::Stage>,
     joined: Option<&mut Option<JoinedSelectedInputs>>, library_sites: bool, compact_cache:Option<&Path>,
-    private_authored_doc_ui: bool, full_ci: bool,
+    private_authored_doc_ui: bool, full_ci: bool, baseline_update:bool,generation_domain:Option<&runner_freshness::GenerationInputClosure>, selftest_plan:Option<&Arc<crate::runner_host::NativeCheckSelection>>,
 )->io::Result<(PreparationDiagnosticResult, Option<PreparedCheckerTranscript>)>{
     if request.command != BuildCommand::PrepareQuery {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "selected report preparation is PrepareQuery only"));
@@ -2314,11 +2433,14 @@ fn prepare_selected_report_using(
         None=>PreparationDiagnosticOutput::selected_report(stage),
     };
     if let Some(joined) = joined { output.retain_joined_inputs(joined); }
+    if let Some(plan)=selftest_plan{output.retain_native_selftests(plan)?;}
     if library_sites { output.require_library_sites_baseline()?; }
     if full_ci { output.require_full_ci_baselines()?; }
+    if baseline_update { output.require_baseline_update(generation_domain)?; }
     if let Some(cache)=compact_cache{output.use_compact_checker(cache)?;}
-    let preparation=run_build_with_selected_publication(request,host,None,None,&mut output,None,None,private_authored_doc_ui,None);
+    let mut preparation=run_build_with_selected_publication(request,host,None,None,&mut output,None,None,private_authored_doc_ui,None);
     let diagnostics=output.take_error().map_or(Ok(()),Err);
+    if preparation.is_ok()&&diagnostics.is_ok(){if let Err(actual)=output.finish_joined_native_selftests(){preparation=Err(actual.into());}}
     Ok((PreparationDiagnosticResult{preparation,diagnostics}, output.take_checker_frame()))
 }
 
@@ -2326,3 +2448,27 @@ pub(crate) trait HandlersFailureReportSink{
     fn consume_budget(&mut self,data:&dq_analyze::captured_sem_handlers::Data,config:&dq_analyze::captured_raw_file::Config,budget:&Arc<dq_analyze::captured_generator_budget::Budget>);
  fn failed(&mut self,error:io::Error);
 }
+
+
+/// Utility-only retained preparation. Reuses the actual take-once recorder/context owner; no CHECK result is produced.
+pub(crate) fn prepare_native_sem_utility(request:BuildRequest,binding:&dq_analyze::native_sem_utility_wire::Binding,host:&mut crate::runner_host::BuildHost,physical:Option<&mut dyn utility_capture::Capture>)->Result<(BuildOutcome,schema_capture::Inputs,Arc<dm_tree::frontend::DiagnosticFrontend>,dm_preprocess::source_arena_credit::SourceArenaCredit),Box<dyn std::error::Error>>{
+ use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
+ use dq_analyze::native_sem_utility_wire::Question;
+ binding.validate()?;
+ let required:&[Q]=match binding.question{Question::Reads{..}|Question::ReadsUsage|Question::Help|Question::Closure{..}=>&[Q::SemReads],Question::ClothingDump=>&[Q::BaseVars],Question::BaseVarsDead{..}=>&[Q::BaseVars]};
+ if request.command!=BuildCommand::PrepareQuery||!request.exact_inputs||!request.no_cache||request.no_daemon||!host.retains_artifacts()||!request.defines.is_empty()||request.engine_template.is_some()||request.bootstrap_catalog||request.record_inputs.is_some()||request.replay_inputs.is_some()||request.artifact_directory.is_some()||request.output_store.is_some()||request.trace_path.is_some()||request.source_questions.is_some()||request.diagnostic_declarations||request.policy_inputs.as_ref().is_none_or(|p|p.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290)||p.workspace.as_ref().is_none_or(|w|w.root!=binding.root)||p.workspace_auxiliary!=required||!p.workspace_generators.is_empty()||!p.files.is_empty()||!p.search_folders.is_empty()){
+  return Err(io::Error::new(io::ErrorKind::InvalidInput,"native sem utility requires its exact retained Original workspace intent").into())
+ }
+ let canonical=|p:&std::path::Path|crate::policy_request::canonical_analysis_project(p,Some(AnalysisContext::OriginalAnalyze0290));
+ if canonical(&request.project)?!=canonical(&binding.root.join("deepquarry.dme"))?{return Err(io::Error::new(io::ErrorKind::InvalidInput,"native utility project differs from actual workspace").into())}
+ let cache=request.cache_root.as_deref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"native utility external cache absent"))?;
+ let canonical_cache=std::fs::canonicalize(cache)?;let canonical_root=std::fs::canonicalize(&binding.root)?;if !canonical_cache.is_dir()||canonical_cache.starts_with(&canonical_root){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native utility cache must be existing and outside its input workspace").into())}
+ let credit=host.source_arena_work().reserve(cache.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(16384)).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?)?;
+ let mut native_text=std::io::sink();let mut inputs=None;let mut frontend=None;let mut output=PreparationDiagnosticOutput::captured(&mut native_text);output.retain_native_sem_utility_inputs(&mut inputs,&mut frontend)?;if let Some(physical)=physical{output.retain_utility_physical(physical)?;}
+ let pending=run_build_with_host_and_derived_sink(request,host,None,&mut output);let first=output.take_error();if pending.is_err()||first.is_some(){output.abort_utility_capture();}drop(output);if let Some(actual)=first{return Err(actual.into())}let prepared=pending?;
+ let inputs=inputs.ok_or_else(||io::Error::other("native utility omitted its actual moved recorder closure"))?;
+ let frontend=frontend.ok_or_else(||io::Error::other("native utility omitted its actual committed frontend"))?;frontend.require_original_utility_owner()?;let view=frontend.source_view().map_err(io::Error::other)?;inputs.require_binding(view.mapping(),view.tree().identity(),view.source_revision())?;inputs.require_current()?;Ok((prepared,inputs,frontend,credit))
+}
+
+#[path="runner_codemod_capture.rs"]pub(crate)mod codemod_capture;
+#[path="runner_native_codemod_fixture.rs"]pub(crate)mod native_codemod_fixture;

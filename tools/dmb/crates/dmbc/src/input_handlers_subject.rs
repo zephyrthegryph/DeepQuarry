@@ -101,6 +101,8 @@ impl HandlerStructuralSubject{
   Ok(())
  }
 
+ /// Borrow actual interpreted configuration DATA; no filesystem/current grant.
+ pub(crate) fn configuration_observation(&self)->(&Path,Option<&[u8]>){(&self.configuration,self.configuration_bytes.as_ref().map(|bytes|bytes.as_slice()))}
  pub(crate) fn require_configuration(&self,path:&Path,bytes:Option<&[u8]>)->io::Result<()>{if path!=self.configuration||bytes!=self.configuration_bytes.as_ref().map(|b|b.as_slice()){return Err(fail("handlers actual interpreted configuration differs from selected raw preflight"))}Ok(())}
  pub(crate) fn input_retained_charge(&self)->io::Result<usize>{self.budget.require().map_err(|m|quota(&self.budget,&m))?;Ok(if self.detached_producer.load(std::sync::atomic::Ordering::Acquire) {
   // The recorder row owns these directory settlements separately. The

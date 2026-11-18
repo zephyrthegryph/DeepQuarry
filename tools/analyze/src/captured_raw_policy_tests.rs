@@ -63,7 +63,7 @@ fn raw_adapter_shares_issued_text_and_preserves_exact_file_policy_and_allow_rows
     let registry = registry();
     let lint = registry.find("scheduler").unwrap();
     let scope = Scopes::default().for_lint("scheduler", "");
-    let cx = Cx {
+    let cx = Cx { fixture:None,
         tree: &old_tree,
         meta: lint.meta(),
         scope: &scope,

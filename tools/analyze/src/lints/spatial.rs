@@ -126,12 +126,12 @@ mod tests {
     use crate::scopes::LintScope;
     use crate::tree::Tree;
 
-    fn scan(rel: &str, text: &str) -> Sink {
+    fn scan(rel: &str, text: &str) -> Sink<'static> {
         let mut scope = LintScope::default();
         scope.lists.insert("api_prefixes".to_string(), vec!["code/library/containers/containment/".to_string()]);
         scope.lists.insert("api_files".to_string(), vec!["code/defines/engine/containment.dm".to_string()]);
         let tree = Tree::from_files(vec![]);
-        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
+        let cx = Cx { fixture:None, tree: &tree, meta: &META, scope: &scope };
         let f = SourceFile::from_text(rel, text);
         let mut out = Sink::new();
         out.cur = f.rel.clone();

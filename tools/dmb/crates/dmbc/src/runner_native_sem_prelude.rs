@@ -1,0 +1,36 @@
+//! Original Sem's build/errors/decls prelude on the SAME retained frontend.
+//! Errors are actual preprocess/formal/Kind4/fatal/parent/value outcomes only.
+use super::*;
+use std::{io::{self,Write},path::Path,sync::Arc};
+use dm_tree::frontend::{DiagnosticFrontend,OriginalAnalysisCompleteness,OriginalDiagnosticPoint,OriginalUtilityErrors,OriginalUtilityValues,BodySyntaxFailure,SettingExpressionQueries};
+use dm_preprocess::original_model_value::ModelMessage;
+fn invalid(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::InvalidData,message)}
+fn body_error(error:BodySyntaxFailure)->io::Error{match error{BodySyntaxFailure::Operational(actual)=>actual,BodySyntaxFailure::Syntax(row)=>io::Error::new(io::ErrorKind::Unsupported,row.message)}}
+fn file(registry:&dm_tree::frontend::OriginalCheckerSourceRegistry<'_>,path:&Path)->io::Result<u16>{registry.registrations().find_map(|(_,actual,id)|(actual==path).then_some(id)).ok_or_else(||invalid("utility diagnostic path was not actually registered"))}
+fn notice_point(registry:&dm_tree::frontend::OriginalCheckerSourceRegistry<'_>,point:OriginalDiagnosticPoint<'_>)->io::Result<(u16,usize,usize)>{match point{OriginalDiagnosticPoint::Default=>Ok((u16::MAX,0,0)),OriginalDiagnosticPoint::Builtins=>Ok((0,1,1)),OriginalDiagnosticPoint::Acquired{reported_path,line,byte_column,..}=>Ok((file(registry,reported_path)?,line,byte_column))}}
+/// The callback runs while the real initializer admission/column remain held.
+/// It may render utility output, but cannot retain a source grant or AST alias.
+pub(crate) fn with_values<T>(front:&DiagnosticFrontend,inputs:&dm_analysis::policy_inputs::PolicyInputs,queries:&Arc<crate::query_db::QueryDb>,body:&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::OriginalBodySyntaxProduct>,BodySyntaxFailure>,_root:&Path,_budget:&Arc<dq_analyze::captured_generator_budget::Budget>,markers:Option<(usize,std::time::Duration)>,build_started:std::time::Instant,stderr:&mut crate::selected_report_spool::Stage,consume:impl FnOnce(&OriginalUtilityValues<'_,'_,'_>,&dm_syntax::SettingAdmission<'_>,&mut crate::selected_report_spool::Stage)->Result<T,Box<dyn std::error::Error>>)->Result<T,Box<dyn std::error::Error>>{
+ let complete=front.require_original_utility_owner()?;let view=front.source_view().map_err(io::Error::other)?;if !inputs.archive().matches_tree(view.tree())||!Arc::ptr_eq(inputs.mapping(),view.mapping()){return Err(invalid("utility prelude policy/frontend owner differs").into())}
+ let admission_context=front.original_utility_declaration_context().map_err(body_error)?;let mut consume=Some(consume);let mut pending=None;
+ let operation=admission_context.with_admission(&mut|a|{
+  let result=(||->Result<T,Box<dyn std::error::Error>>{
+   let registry=view.mapping().original_checker_source_registry(a)?;let mut errors=OriginalUtilityErrors::new();let poll=||crate::daemon::control::checkpoint();
+   let notices=view.original_preprocess_notices().ok_or_else(||invalid("utility actual preprocess notices absent"))?;
+   for notice in notices.iter(){poll()?;let notice=notice.map_err(invalid)?;if notice.severity!=dm_preprocess::regions::OriginalNoticeSeverity::Error{continue}let at=notice_point(&registry,notice.point)?;let mut text=ModelMessage::copy_using(notice.message,a)?;for note in notice.notes{let(point,message)=note.map_err(invalid)?;let point=notice_point(&registry,point)?;text.append_using("\n- ",a)?;if point!=at{text.append_format_using(format_args!("{}:{}: ",point.1,point.2),a)?}text.append_using(message,a)?;}errors.push(at.0,at.1,at.2,text,a)?;}
+   // Every actual ordinal is resolved under this same admission. Sparse
+   // absence never means no error and no nested host admission is created.
+   if inputs.archive().len()!=view.bodies().len(){return Err(invalid("utility actual body roster differs").into())}
+   for ordinal in 0..inputs.archive().len(){poll()?;let input=inputs.archive().syntax_input_using_admission(ordinal,a).map_err(body_error)?;let product=body(&input).map_err(body_error)?;product.with_utility_error_current(&input,a,|message,point|{let(path,line,column)=point.reported_coordinates();errors.push(file(&registry,path)?,line,column,ModelMessage::copy_using(message,a)?,a)}).map_err(body_error)?;}
+   front.visit_original_utility_formal_notices(&poll,&mut|row|{if row.notice.registration().1!=dm_tree::OriginalFormalNoticeLevel::Error{return Ok(())}let(path,line,column)=row.point.reported_coordinates();let text=ModelMessage::format_using(a,|out|row.notice.write_message(row.value,out))?;errors.push(file(&registry,path)?,line,column,text,a)})?;
+   if complete==OriginalAnalysisCompleteness::PrimaryPrefix{let host=Arc::clone(queries)as Arc<dyn SettingExpressionQueries>;let fatal=front.original_utility_fatal_report(&host).map_err(|failure|match failure{dm_tree::frontend::FrontendBuildFailure::Operational(actual)=>actual,dm_tree::frontend::FrontendBuildFailure::Diagnostics(_)=>invalid("utility fatal producer returned an unissued outcome")})?.ok_or_else(||invalid("historical utility prefix omitted its actual fatal outcome"))?;let fatal=dm_tree::frontend::original_fatal_preparation_outcome(&fatal).ok_or_else(||invalid("utility actual typed fatal outcome absent"))?;let(path,line,column)=fatal.location();let text=ModelMessage::format_using(a,|out|fatal.write_sem_message(out))?;errors.push(file(&registry,path)?,line,column,text,a)?;}
+   queries.visit_utility_parent_rows(&view,|finding|{if finding.original_fixed_level().is_some_and(|level|level!=dm_analysis::check_policy::DiagnosticSeverity::Error){return Ok(())}let point=finding.borrowed_reported_point().map_err(io::Error::other)?;let(path,line,column)=point.coordinates();let row=finding.diagnostic();let mut text=ModelMessage::copy_using(&row.message,a)?;for note in &row.notes{poll()?;text.append_using("\n- ",a)?;if let Some(source)=&note.source{if source.path.as_path()!=path||source.line!=line||source.byte_column!=column{text.append_format_using(format_args!("{}:{}: ",source.line,source.byte_column),a)?}}text.append_using(&note.message,a)?;}errors.push(file(&registry,path)?,line,column,text,a)})?;
+   let mut lookup=|path:&Path|file(&registry,path).map(u32::from);let context=front.original_utility_declaration_context().map_err(body_error)?;let values=OriginalUtilityValues::capture(context,Arc::clone(inputs.archive()),a,&mut lookup)?;
+   if complete==OriginalAnalysisCompleteness::Complete{values.evaluate_all()?;values.append_constant_errors(&mut errors)?;}
+   errors.write_prelude(build_started.elapsed(),stderr,a)?;
+   let(count,elapsed)=markers.ok_or_else(||invalid("utility prelude lacks its completed actual raw marker count"))?;writeln!(stderr,"decls: {:.2?} ({} markers)",elapsed,count)?;
+   consume.take().ok_or_else(||invalid("utility consumer repeated"))?(&values,a,stderr)
+  })();pending=Some(match a.take_operational_error(){Some(first)=>Err(first.into()),None=>result});if pending.as_ref().is_some_and(Result::is_err){Err(BodySyntaxFailure::Operational(io::ErrorKind::Other.into()))}else{Ok(())}
+ });
+ match pending{Some(Err(first))=>Err(first),Some(Ok(value))=>{operation.map_err(body_error)?;Ok(value)},None=>{operation.map_err(body_error)?;Err(invalid("utility initializer admission was not visited").into())}}
+}

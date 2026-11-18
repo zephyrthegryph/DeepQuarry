@@ -11,7 +11,7 @@ function fixtureRoot(): string {
 }
 
 describe('analyze test cargo runs', () => {
-  test('a rustc panic clears the incremental cache and retries once, non-incrementally', async () => {
+  test('a rustc panic clears the incremental cache and retries once with incremental and caller overrides enforced', async () => {
     const root = fixtureRoot();
     const calls: { env: NodeJS.ProcessEnv }[] = [];
     const run: TestCommand = async (_command, _args, options) => {
@@ -20,10 +20,13 @@ describe('analyze test cargo runs', () => {
     };
     const logs: string[] = [];
     try {
-      await runAnalyzeTests({ root, cache: null, run, log: (m) => logs.push(m) });
+      await runAnalyzeTests({ root, cache: null, run, env: { CI: 'true', CARGO_INCREMENTAL: '0', RUSTC_WRAPPER: 'sccache', RUSTC_WORKSPACE_WRAPPER: 'workspace-instrumentation' }, log: (m) => logs.push(m) });
       expect(calls).toHaveLength(2);
-      expect(calls[0].env.CARGO_INCREMENTAL).toBe('0');
-      expect(calls[1].env.RUSTC_WRAPPER).toBe('');
+      for (const call of calls) {
+        expect(call.env.CARGO_INCREMENTAL).toBe('1');
+        expect(call.env.RUSTC_WRAPPER).toBe('');
+        expect(call.env.RUSTC_WORKSPACE_WRAPPER).toBe('workspace-instrumentation');
+      }
       expect(fs.existsSync(path.join(root, 'tools/analyze/target/dev/incremental'))).toBe(false);
       expect(logs.some((m) => m.includes('rustc panicked'))).toBe(true);
     } finally {

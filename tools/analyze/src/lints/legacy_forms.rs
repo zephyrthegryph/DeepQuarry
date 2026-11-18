@@ -279,7 +279,7 @@ mod tests {
             "a-a @ code/kept/ = nonoverlapping legacy punctuation",
         ].into_iter().map(str::to_owned).collect());
         let tree = Tree::from_files(vec![]);
-        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
+        let cx = Cx { fixture:None, tree: &tree, meta: &META, scope: &scope };
         let source = r#"/datum/req/child
     old old vg_entity vg_bind vg_forbidden old_prefix factor(x)
     xold old2 _old old_ a-a xa-a-a!

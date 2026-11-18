@@ -19,10 +19,11 @@ pub static META: Meta = Meta {
     lists: crate::allow_registry_fields::duplicate_input_key::SCOPE_META_0.lists,
 };
 
-pub struct Patterns{block:Pat,entry:Pat}
-impl Patterns{pub fn new()->Self{Self{block:Pat::new(r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]"),entry:Pat::new(r"^(click_on|double_click_on|drag_onto|drag_over|hover|tooltip)\(")}}}
-pub fn declared(f:&SourceFile,p:&Patterns,mut visit:impl FnMut(&str,&str,usize)){declared_using(f,p,visit,&mut crate::key_policy_control::Compatibility).expect("original duplicate_input_key source index")}
-pub fn declared_using<C:crate::key_policy_control::Control>(f:&SourceFile,p:&Patterns,mut visit:impl FnMut(&str,&str,usize),c:&mut C)->Result<(),C::Error>{c.checkpoint()?;let block=&p.block;let entry=&p.entry;
+const KEY_PATTERN_SOURCES:&[&str]=&[r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]",r"^(click_on|double_click_on|drag_onto|drag_over|hover|tooltip)\("];
+pub struct Patterns<P=Pat>{block:P,entry:P}
+impl Patterns{pub fn new()->Self{Self{block:Pat::new(KEY_PATTERN_SOURCES[0]),entry:Pat::new(KEY_PATTERN_SOURCES[1])}}}
+pub fn declared<P:crate::raw_fixture_policy::PatternApi>(f:&SourceFile,p:&Patterns<P>,mut visit:impl FnMut(&str,&str,usize)){declared_using(f,p,visit,&mut crate::key_policy_control::Compatibility).expect("original duplicate_input_key source index")}
+pub fn declared_using<P:crate::raw_fixture_policy::PatternApi,C:crate::key_policy_control::Control>(f:&SourceFile,p:&Patterns<P>,mut visit:impl FnMut(&str,&str,usize),c:&mut C)->Result<(),C::Error>{c.checkpoint()?;let block=&p.block;let entry=&p.entry;
         let mut current: Option<&str> = None;
         for (number, line) in f.code().numbered() {c.checkpoint()?;
             if line.trim().is_empty() {
@@ -53,3 +54,9 @@ pub fn assemble<'a>(rows:impl IntoIterator<Item=(&'a str,&'a str,&'a str,usize)>
             }
         }
 }
+
+#[cfg(feature="native-policy")]
+pub fn native_patterns<'f,'a>(fixture:&'f crate::raw_fixture_policy::Fixture<'a>)->Patterns<crate::raw_fixture_policy::Pattern<'f,'a>>{use crate::raw_fixture_policy::PatternMode;Patterns{
+ block:fixture.pattern(KEY_PATTERN_SOURCES[0],PatternMode::Search,||crate::pat!(KEY_PATTERN_SOURCES[0])),
+ entry:fixture.pattern(KEY_PATTERN_SOURCES[1],PatternMode::Search,||crate::pat!(KEY_PATTERN_SOURCES[1])),
+}}

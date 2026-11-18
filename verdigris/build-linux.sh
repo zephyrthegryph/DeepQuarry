@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export CARGO_INCREMENTAL=1 RUSTC_WRAPPER=''
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"

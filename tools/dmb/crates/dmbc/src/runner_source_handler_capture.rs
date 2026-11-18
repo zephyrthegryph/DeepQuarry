@@ -21,6 +21,12 @@ impl Pending{
 }
 fn actual_io(error:Box<dyn Error>)->io::Error{match error.downcast::<io::Error>(){Ok(actual)=>*actual,Err(other)=>io::Error::new(io::ErrorKind::Interrupted,other.to_string())}}
 impl Inputs{
+ pub(crate) fn require_baseline_step(&self,next:&Self,project:&Path,transition:&crate::native_author_fix_transaction::Transition,work:&dyn SourceArenaWork)->io::Result<()>{
+  work.checkpoint()?;
+  let a=self.projection.parent();let b=next.projection.parent();
+  if self.project!=project||next.project!=project||!a.is_baseline_update()||!b.is_baseline_update()||!Arc::ptr_eq(a,b){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Source/Handler baseline step differs from actual parent plan/namespace"))}
+  if !self.inputs.same_baseline_step(&next.inputs,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"Source/Handler input closure changed beyond its actual baseline write"))}Ok(())
+ }
  pub(crate) fn pins(&self)->SourceHandlerPins{self.pins}
  pub(crate) fn require_binding(&self,raw:&RawWorkspaceSnapshot,handler:&HandlerWorkspaceSnapshot,full:Option<&SourceSnapshot>,projection:&Arc<SourceHandlerProjection>)->io::Result<()>{
   if !Arc::ptr_eq(projection,&self.projection)||!Arc::ptr_eq(handler.capture(),&self.handler)||!Arc::ptr_eq(handler.admission(),&self.proof){return Err(io::Error::new(io::ErrorKind::InvalidInput,"combined source report belongs to another actual owner"))}
@@ -44,4 +50,12 @@ pub(super) fn capture_current<P:SnapshotProvider>(recording:&RecordingInputs<P>,
  let handlers=state.handlers_snapshot.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::NotConnected,"conditional actual Handler sibling absent"))?;
  let full=handlers.requires_full().then_some(state.snapshot.as_ref()).flatten();
  Pending::capture(recording,project,projection,raw,handlers,full,generated,work)
+}
+
+impl Inputs{pub(crate) fn native_selftest_epoch(&self)->&crate::input_snapshot::JoinedReportEpoch{&self._epoch}}
+
+impl Inputs{
+ pub(crate) fn with_report_input_observation<T>(&self,project:&std::path::Path,observe:impl FnOnce(&crate::input_snapshot::InputSnapshot)->std::io::Result<T>)->Result<T,Box<dyn std::error::Error>>{
+  self.require_report_current(project)?;let result=observe(&self.inputs)?;self.require_report_current(project)?;Ok(result)
+ }
 }

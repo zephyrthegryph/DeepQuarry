@@ -29,12 +29,12 @@ fn split_decl_using<C:Control>(mut segs:Vec<&str>,block_mods:&BTreeSet<String>,c
 pub fn visit_file(rel:&str,code:&View,mut declare:impl FnMut(&str,DeclarationParts,&str,usize),mut latent:impl FnMut(&str,bool)){visit_file_using(rel,code,&mut kc::Compatibility,|owner,parts,path,line,_|{declare(owner,parts,path,line);Ok(())},|owner,value,_|{latent(owner,value);Ok(())}).unwrap_or_else(|never|match never{})}
 pub fn visit_file_using<C:Control>(rel:&str,code:&View,control:&mut C,mut declare:impl FnMut(&str,DeclarationParts,&str,usize,&mut C)->Result<(),C::Error>,mut latent:impl FnMut(&str,bool,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{
  control.checkpoint()?;
-    let header = pat_match!(r"^(/?[A-Za-z_][\w/]*)\s*(?:$|=|\()");
-    let block_member = pat_match!(r"^((?:[A-Za-z_]\w*/)*[A-Za-z_]\w*)\s*(?:\[[^\]]*\])?\s*(?:=|$)");
-    let block_head = pat_match!(r"^var(/(tmp|static|global|const))*\s*$");
-    let var_decl = pat_match!(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:\[[^\]]*\])?\s*(?:=|$|as\b)");
-    let latent_re = pat_match!(r"^latent_safe\s*=\s*(TRUE|FALSE|1|0)\b");
-    let latent_registration = pat_match!(r"^register\(\s*(/[A-Za-z_][\w/]*)\s*,\s*TYPE_META_LATENT_SAFE\s*,\s*(TRUE|FALSE|1|0)\s*\)");
+
+
+
+
+
+
     let empty = BTreeSet::new();
 
     let mut cur: Option<String> = None; // current type block
@@ -59,7 +59,7 @@ pub fn visit_file_using<C:Control>(rel:&str,code:&View,control:&mut C,mut declar
             in_proc = false;
             in_metadata_registration = false;
             cur = None;
-            let Some(m) = header.captures(text) else { continue };
+            let Some(m) = kc::captures_match_static(control,r"^(/?[A-Za-z_][\w/]*)\s*(?:$|=|\()",text,||pat_match!(r"^(/?[A-Za-z_][\w/]*)\s*(?:$|=|\()"))? else { continue };
             let g1 = m.s(1);
             let full = if g1.starts_with('/') { g1.to_string() } else { format!("/{}", g1) };
             let segs: Vec<&str> = full.trim_matches('/').split('/').collect();
@@ -94,7 +94,7 @@ pub fn visit_file_using<C:Control>(rel:&str,code:&View,control:&mut C,mut declar
         }
         if in_proc {
             if in_metadata_registration {
-                if let Some(m) = latent_registration.captures(text) {
+                if let Some(m) = kc::captures_match_static(control,r"^register\(\s*(/[A-Za-z_][\w/]*)\s*,\s*TYPE_META_LATENT_SAFE\s*,\s*(TRUE|FALSE|1|0)\s*\)",text,||pat_match!(r"^register\(\s*(/[A-Za-z_][\w/]*)\s*,\s*TYPE_META_LATENT_SAFE\s*,\s*(TRUE|FALSE|1|0)\s*\)"))? {
                     latent(m.s(1),matches!(m.s(2),"TRUE"|"1"),control)?;
                 }
             }
@@ -104,7 +104,7 @@ pub fn visit_file_using<C:Control>(rel:&str,code:&View,control:&mut C,mut declar
         kc::reserve(control,||text.len().checked_mul(128)?.checked_add(8192))?;
         if let Some(bm) = &block_mods {
             if indent > block_indent {
-                if let Some(m) = block_member.captures(text) {
+                if let Some(m) = kc::captures_match_static(control,r"^((?:[A-Za-z_]\w*/)*[A-Za-z_]\w*)\s*(?:\[[^\]]*\])?\s*(?:=|$)",text,||pat_match!(r"^((?:[A-Za-z_]\w*/)*[A-Za-z_]\w*)\s*(?:\[[^\]]*\])?\s*(?:=|$)"))? {
                     if let Some(d) = split_decl_using(m.s(1).split('/').collect(),bm,control)? {
                         declare(cur_t,d,rel,no,control)?;
                     }
@@ -116,18 +116,18 @@ pub fn visit_file_using<C:Control>(rel:&str,code:&View,control:&mut C,mut declar
         if indent != 1 && !raw.starts_with("    ") {
             continue;
         }
-        if block_head.is_match(text) {
+        if kc::is_match_match_static(control,r"^var(/(tmp|static|global|const))*\s*$",text,||pat_match!(r"^var(/(tmp|static|global|const))*\s*$"))? {
             block_mods = Some(text.split('/').skip(1).map(|s| s.to_string()).collect());
             block_indent = indent;
             continue;
         }
-        if let Some(m) = var_decl.captures(text) {
+        if let Some(m) = kc::captures_match_static(control,r"^var((?:/[A-Za-z_]\w*)+)\s*(?:\[[^\]]*\])?\s*(?:=|$|as\b)",text,||pat_match!(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:\[[^\]]*\])?\s*(?:=|$|as\b)"))? {
             if let Some(d) = split_decl_using(m.s(1).trim_matches('/').split('/').collect(),&empty,control)? {
                 declare(cur_t,d,rel,no,control)?;
             }
             continue;
         }
-        if let Some(m) = latent_re.captures(text) {
+        if let Some(m) = kc::captures_match_static(control,r"^latent_safe\s*=\s*(TRUE|FALSE|1|0)\b",text,||pat_match!(r"^latent_safe\s*=\s*(TRUE|FALSE|1|0)\b"))? {
             latent(cur_t,matches!(m.s(1),"TRUE"|"1"),control)?;
         }
     }

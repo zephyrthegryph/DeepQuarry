@@ -20,6 +20,8 @@ impl CheckerVariableProperties<'_> {
     pub fn declared_hint(&self) -> Option<&str> {
         self.declared_hint.as_deref()
     }
+    /// Transfer only the caller-funded ephemeral hint, never source authority.
+    pub fn into_declared_hint(self)->Option<String>{self.declared_hint}
 }
 struct PropertyWork<'a,E>{reserve:&'a mut dyn FnMut(usize)->Result<(),E>,operational:&'a mut dyn FnMut(std::io::Error)->E}
 impl<E> PropertyWork<'_,E>{fn fund(&mut self,bytes:usize)->Result<(),E>{(self.reserve)(bytes)}fn failed(&mut self,message:&'static str)->E{(self.operational)(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message))}}
@@ -70,6 +72,14 @@ impl BodyArchive {
     pub fn checker_variable_properties_with_work<E:From<String>+From<&'static str>>(&self,formal:MemberId,profile:PackedU128,reserve:&mut dyn FnMut(usize)->Result<(),E>,operational:&mut dyn FnMut(std::io::Error)->E)->Result<CheckerVariableProperties<'_>,E>{
         let flags=self.checker_variable_qualifiers_admitted(formal,profile).map_err(&mut*operational)?;
         properties_for_issued_original_using(self.tree(),formal,||Ok(flags),&mut PropertyWork{reserve,operational})
+    }
+    /// Ordinary utility VarTypeBuilder::suffix inserts exactly ONE list path
+    /// component for any nonempty authored array suffix, including arrays of
+    /// lists. This distinct DATA projection does not relax the existing checker
+    /// property contract or infer qualifiers from a matching type spelling.
+    pub fn checker_utility_variable_properties_with_work<E:From<String>+From<&'static str>>(&self,formal:MemberId,profile:PackedU128,reserve:&mut dyn FnMut(usize)->Result<(),E>,operational:&mut dyn FnMut(std::io::Error)->E)->Result<CheckerVariableProperties<'_>,E>{
+        let flags=self.checker_variable_qualifiers_admitted(formal,profile).map_err(&mut*operational)?;
+        properties_for_issued_original_array_contract_using(self.tree(),formal,||Ok(flags),true,&mut PropertyWork{reserve,operational})
     }
     /// Flags are independent of normalized value typing (for example nested
     /// arrays); this borrows the same original formal/cursor-issued metadata.
@@ -152,11 +162,14 @@ pub(in crate::frontend) fn properties_for_issued_original<'a>(tree:&'a crate::Se
  let mut reserve=|_|Ok(());let mut operational=|actual:std::io::Error|actual.to_string();properties_for_issued_original_using(tree,formal,flags,&mut PropertyWork{reserve:&mut reserve,operational:&mut operational})
 }
 fn properties_for_issued_original_using<'a,E:From<String>+From<&'static str>>(tree:&'a crate::SemanticTree,formal:MemberId,flags:impl FnOnce()->Result<u8,String>,work:&mut PropertyWork<'_,E>)->Result<CheckerVariableProperties<'a>,E>{
+ properties_for_issued_original_array_contract_using(tree,formal,flags,false,work)
+}
+fn properties_for_issued_original_array_contract_using<'a,E:From<String>+From<&'static str>>(tree:&'a crate::SemanticTree,formal:MemberId,flags:impl FnOnce()->Result<u8,String>,utility_array_suffix:bool,work:&mut PropertyWork<'_,E>)->Result<CheckerVariableProperties<'a>,E>{
  work.fund(0)?;let node=tree.member(formal).ok_or("checker formal variable member unavailable")?;if node.kind!=MemberKind::Var||node.definition!=DefinitionMode::Declare||node.metadata.inherited_opaque().is_some(){return Err("checker variable needs an exact authored formal declaration".into())}
  let flags=flags()?;let data=node.metadata.as_ref();
  let declared_hint=if let Some(array)=&data.array{
-  if array.dimensions.len()!=1{return Err("nested array checker type projection is not issued".into())}
-  let element=array.element_type.map(|path|cleaned_type_using(tree,path,flags,work)).transpose()?.flatten();if element.as_ref().is_some_and(|path|path=="/list"||path.starts_with("/list/")){return Err("array-of-list checker type projection is not issued".into())}
+  if array.dimensions.is_empty()||(!utility_array_suffix&&array.dimensions.len()!=1){return Err("nested array checker type projection is not issued".into())}
+  let element=array.element_type.map(|path|cleaned_type_using(tree,path,flags,work)).transpose()?.flatten();if !utility_array_suffix&&element.as_ref().is_some_and(|path|path=="/list"||path.starts_with("/list/")){return Err("array-of-list checker type projection is not issued".into())}
   Some(match element{Some(path)=>property_text(&["/list",&path],work)?,None=>property_text(&["/list"],work)?})
  }else if data.declared_type()==Some(SymbolId::of("/list")){
   Some(match data.list_element_type(){Some(element)=>match cleaned_type_using(tree,element,flags,work)?{Some(path)=>property_text(&["/list",&path],work)?,None=>property_text(&["/list"],work)?},None=>property_text(&["/list"],work)?})

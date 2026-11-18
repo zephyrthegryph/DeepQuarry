@@ -40,7 +40,7 @@ impl WorkspaceCodeReader<'_,'_>{
   }
   impl captured_sys_reactive::Pages for Pages<'_,'_,'_>{fn with_auto_tracked(&self,visit:&mut dyn FnMut(Option<RawPolicyViews<'_>>)->Result<(),Failure>)->Result<(),Failure>{if self.passes.get()!=1||self.auto.get().is_some(){return Err("Sys reactive fixed observation order differs".into())}let present=self.reader.with_sys_reactive_auto(visit)?;self.auto.set(Some(present));Ok(())}}
   let pages=Pages{reader:self,inputs,config,passes:std::cell::Cell::new(0),auto:std::cell::Cell::new(None)};
-  let data=captured_sys_reactive::collect_available(inputs,self.root(),&pages,config,self.budget(),globals,poll)?;
+  let slot=self.new_pattern_slot().map_err(Failure::Operational)?;let patterns=ReaderPatternProvider{reader:self,slot:&slot};let data=captured_sys_reactive::collect_available_with_patterns(inputs,self.root(),&pages,config,self.budget(),globals,poll,&patterns)?;
   let expected=match pages.auto.get(){Some(true)=>3,Some(false)=>2,None=>return Err("Sys reactive fixed observation missing".into())};
   if pages.passes.get()!=expected{return Err("Sys reactive actual compound EOF incomplete".into())}
   self.require_policy_inputs(inputs)?;self.require_sys_discovery()?;self.checkpoint()?;

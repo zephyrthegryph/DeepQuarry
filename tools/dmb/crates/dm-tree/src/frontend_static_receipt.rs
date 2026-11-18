@@ -23,13 +23,13 @@ struct StaticSourceReceipt {
     declaration:crate::OccurrenceId,
     tree:Weak<crate::SemanticTree>,
     occurrences:Weak<crate::OccurrenceTable>,
-    code:Weak<super::BodyCodeIdentity>,
+    code:super::BodyCodeWeak,
     termination:dm_syntax::BodyTermination,
 }
 impl StaticSourceReceipt {
     fn new(frontend:&ColdFrontend,body:&BodyOccurrence)->Result<Self,String>{
         let code=frontend.body_code(body).map_err(|error|error.message)?;
-        Ok(Self{declaration:body.declaration,tree:Arc::downgrade(&frontend.snapshot.tree),occurrences:Arc::downgrade(&frontend.snapshot.occurrences),code:Arc::downgrade(code.identity()),termination:code.termination()})
+        Ok(Self{declaration:body.declaration,tree:Arc::downgrade(&frontend.snapshot.tree),occurrences:Arc::downgrade(&frontend.snapshot.occurrences),code:super::BodyCodeIdentity::downgrade(code.identity()),termination:code.termination()})
     }
     fn matches(&self,frontend:&ColdFrontend,body:&BodyOccurrence)->Result<bool,String>{
         let (Some(tree),Some(occurrences),Some(code))=(self.tree.upgrade(),self.occurrences.upgrade(),self.code.upgrade())else{return Ok(false)};
@@ -74,13 +74,13 @@ pub struct RelativeStaticPlan {
     plan: StaticPlan,
     source: Arc<str>,
     declarations: Arc<[Arc<dm_ir::ProcedureStaticDeclaration>]>,
-    syntax_code:Option<Weak<super::BodyCodeIdentity>>,
+    syntax_code:Option<super::BodyCodeWeak>,
     syntax_termination:dm_syntax::BodyTermination,
     syntax: Option<Arc<super::StatementBody>>,
     syntax_body: dm_syntax::Span,
 }
 impl RelativeStaticPlan {
-    pub fn visit_weak_syntax_storage(&self,mut visit:impl FnMut(usize,usize,usize)){if let Some(code)=&self.syntax_code{let bytes=std::mem::size_of::<super::BodyCodeIdentity>();visit(code.as_ptr() as usize,if code.strong_count()>0{bytes}else{0},bytes);}}
+    pub fn visit_weak_syntax_storage(&self,mut visit:impl FnMut(usize,usize,usize)){if let Some(code)=&self.syntax_code{code.visit_allocation_storage(&mut visit);}}
     pub fn retained_statement_body(&self)->Option<&Arc<super::StatementBody>>{self.syntax.as_ref()}
     pub fn canonical_declarations(&self) -> &Arc<[Arc<dm_ir::ProcedureStaticDeclaration>]> {
         &self.declarations
@@ -138,8 +138,8 @@ impl IssuedStaticPlan {
         for (pointer,live,capacity) in [
             (snapshot.tree.as_ptr() as usize,snapshot.tree.strong_count()>0,std::mem::size_of::<crate::SemanticTree>()),
             (snapshot.occurrences.as_ptr() as usize,snapshot.occurrences.strong_count()>0,std::mem::size_of::<crate::OccurrenceTable>()),
-            (snapshot.code.as_ptr() as usize,snapshot.code.strong_count()>0,std::mem::size_of::<super::BodyCodeIdentity>()),
         ]{visit(pointer,if live{capacity}else{0},capacity);}
+        snapshot.code.visit_allocation_storage(&mut visit);
     }
     /// Resource-domain predicate only. Current source/code/termination authority
     /// is checked separately by require_current_source before native use.
@@ -411,8 +411,8 @@ impl IssuedStaticPlan {
 impl std::fmt::Debug for IssuedStaticPlan{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("IssuedStaticPlan").field("plan",&self.plan).field("body_span",&self.body_span).finish_non_exhaustive()}}
 impl std::fmt::Debug for RelativeStaticPlan{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("RelativeStaticPlan").field("plan",&self.plan).finish_non_exhaustive()}}
 
-fn same_syntax_profile(code:&Weak<super::BodyCodeIdentity>,termination:dm_syntax::BodyTermination,current:&super::IssuedBodyCode<'_>)->bool{
- std::sync::Weak::ptr_eq(code,&Arc::downgrade(current.identity()))&&termination==current.termination()
+fn same_syntax_profile(code:&super::BodyCodeWeak,termination:dm_syntax::BodyTermination,current:&super::IssuedBodyCode<'_>)->bool{
+ code.matches(current.identity())&&termination==current.termination()
 }
 #[cfg(test)]
 mod static_syntax_profile_tests{
@@ -422,7 +422,7 @@ mod static_syntax_profile_tests{
  #[test]
  fn same_original_body_code_cannot_retain_static_ast_under_changed_termination_profile(){
   let front=super::super::build(std::path::Path::new("static-profile.dme"),&Source,&Default::default(),1).unwrap();
-  let current=front.body_code(&front.bodies[0]).unwrap();let code=Arc::downgrade(current.identity());
+  let current=front.body_code(&front.bodies[0]).unwrap();let code=crate::frontend::BodyCodeIdentity::downgrade(current.identity());
   assert!(same_syntax_profile(&code,current.termination(),&current));
   let changed=if current.termination()==dm_syntax::BodyTermination::Unknown{dm_syntax::BodyTermination::ExhaustedInput}else{dm_syntax::BodyTermination::Unknown};
   assert!(!same_syntax_profile(&code,changed,&current),"same actual code owner does not erase lexical termination proof");
@@ -432,4 +432,25 @@ mod static_syntax_profile_tests{
 fn static_dimension(body:&super::StatementBody,header:dm_syntax::Span,index:usize)->Option<&dm_syntax::Expr>{
  let [fact]=body.parsed().local_variables.in_span(header).ok()? else{return None};
  let array=fact.array_syntax.as_ref()?;let slot=(*array.root.dimension_slots.get(index)?)?;array.root.dimensions.get(slot)
+}
+
+#[cfg(test)]#[test]fn actual_weak_code_locator_owner_widths_are_measured(){
+ {#[allow(dead_code)]struct Prior{
+    declaration:crate::OccurrenceId,
+    tree:Weak<crate::SemanticTree>,
+    occurrences:Weak<crate::OccurrenceTable>,
+    code:std::sync::Weak<super::BodyCodeIdentity>,
+    termination:dm_syntax::BodyTermination,
+}
+let old=std::mem::size_of::<Prior>();let new=std::mem::size_of::<StaticSourceReceipt>();eprintln!("WEAK_CODE_OWNER StaticSourceReceipt prior={old} current={new} delta={}",new as isize-old as isize);assert!(new<=old+std::mem::size_of::<usize>());}
+ {#[allow(dead_code)]struct Prior{
+    plan: StaticPlan,
+    source: Arc<str>,
+    declarations: Arc<[Arc<dm_ir::ProcedureStaticDeclaration>]>,
+    syntax_code:Option<std::sync::Weak<super::BodyCodeIdentity>>,
+    syntax_termination:dm_syntax::BodyTermination,
+    syntax: Option<Arc<super::StatementBody>>,
+    syntax_body: dm_syntax::Span,
+}
+let old=std::mem::size_of::<Prior>();let new=std::mem::size_of::<RelativeStaticPlan>();eprintln!("WEAK_CODE_OWNER RelativeStaticPlan prior={old} current={new} delta={}",new as isize-old as isize);assert!(new<=old+std::mem::size_of::<usize>());}
 }

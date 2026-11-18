@@ -1,4 +1,5 @@
 //! Source-neutral data and exact shared notice publisher scan.
+use crate::raw_fixture_policy::PatternApi as _;
 use std::collections::{BTreeMap,BTreeSet};
 
 use crate::{
@@ -25,15 +26,15 @@ pub(crate) static META: Meta = Meta {
     lists: crate::allow_registry_fields::notice_publisher::SCOPE_META_0.lists,
 };
 
-pub(crate) struct Patterns {
-    path: Pat,
-    subscribes: Pat,
-    publishes: Pat,
-    assigned: Pat,
-    action: Pat,
-    action_notice: Pat,
-    token_call: Pat,
-    token_macro: Pat,
+pub(crate) struct Patterns<P=Pat> {
+    path: P,
+    subscribes: P,
+    publishes: P,
+    assigned: P,
+    action: P,
+    action_notice: P,
+    token_call: P,
+    token_macro: P,
 }
 
 impl Patterns {
@@ -70,8 +71,8 @@ fn insert<C:Control>(set:&mut BTreeSet<String>,value:&str,work:&mut C)->Result<(
 }
 
 impl PublisherIndex {
-    pub(crate) fn index<C:Control,T:Control<Error=C::Error>>(
-        &mut self,file:&SourceFile,patterns:&Patterns,retained:&mut C,temporary:&mut T,
+    pub(crate) fn index<P:crate::raw_fixture_policy::PatternApi,C:Control,T:Control<Error=C::Error>>(
+        &mut self,file:&SourceFile,patterns:&Patterns<P>,retained:&mut C,temporary:&mut T,
     )->Result<(),C::Error>{
         retained.checkpoint()?;
         if file.rel.contains("/_generated/"){return Ok(())}
@@ -125,8 +126,8 @@ impl PublisherIndex {
 
 pub(crate) struct Publishers([BTreeSet<String>;2]);
 impl Publishers{
-    pub(crate) fn judge<C:Control>(
-        &self,file:&SourceFile,patterns:&Patterns,work:&mut C,out:&mut impl Reporter,
+    pub(crate) fn judge<P:crate::raw_fixture_policy::PatternApi,C:Control>(
+        &self,file:&SourceFile,patterns:&Patterns<P>,work:&mut C,out:&mut impl Reporter,
     )->Result<(),C::Error>{
         work.checkpoint()?;
         if file.rel.contains("/_generated/"){return Ok(())}
@@ -155,3 +156,7 @@ impl Publishers{
         work.checkpoint()
     }
 }
+
+const NOTICE_PATTERN_SOURCES:&[&str]=&[r"/datum/notice/([A-Za-z0-9_/]+)",r"(?:^|[^\w])(?:on_notice|observe)\(",r"PUBLISH_LEGACY\(|(?:^|[^\w])publish\(|take_notice\(|notice_take\(|\w_publish\(",r"\bnotice(?:_type)?\s*=\s*/datum/notice/([A-Za-z0-9_/]+)",r"^ACTION\(\s*([A-Za-z0-9_/]+)",r"\bnotice\s*=\s*/datum/notice/([A-Za-z0-9_/]+)",r"\b(?:act|publish)_(\w+)",r"\b(?:ACT_ATTEMPT|PUBLISH)\([^,]*,\s*(\w+)"];
+#[cfg(feature="native-policy")]
+pub(crate) fn native_patterns<'f,'a>(fixture:&'f crate::raw_fixture_policy::Fixture<'a>)->Patterns<crate::raw_fixture_policy::Pattern<'f,'a>>{Patterns{path:fixture.pattern(NOTICE_PATTERN_SOURCES[0],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(NOTICE_PATTERN_SOURCES[0])),subscribes:fixture.pattern(NOTICE_PATTERN_SOURCES[1],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(NOTICE_PATTERN_SOURCES[1])),publishes:fixture.pattern(NOTICE_PATTERN_SOURCES[2],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(NOTICE_PATTERN_SOURCES[2])),assigned:fixture.pattern(NOTICE_PATTERN_SOURCES[3],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(NOTICE_PATTERN_SOURCES[3])),action:fixture.pattern(NOTICE_PATTERN_SOURCES[4],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(NOTICE_PATTERN_SOURCES[4])),action_notice:fixture.pattern(NOTICE_PATTERN_SOURCES[5],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(NOTICE_PATTERN_SOURCES[5])),token_call:fixture.pattern(NOTICE_PATTERN_SOURCES[6],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(NOTICE_PATTERN_SOURCES[6])),token_macro:fixture.pattern(NOTICE_PATTERN_SOURCES[7],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(NOTICE_PATTERN_SOURCES[7]))}}

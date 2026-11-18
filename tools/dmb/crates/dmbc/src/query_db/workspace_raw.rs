@@ -247,6 +247,7 @@ pub(crate) struct CurrentFile {
 /// Private producer/factory only. Current bytes are scoped page owners and
 /// evicted immediately after a result, including all error/cancellation paths.
 struct PageInput {
+    scoped_patterns:bool,
     graph: u64,
     root: PathBuf,
     configuration: PathBuf,
@@ -266,6 +267,7 @@ struct Contribution {
     findings: Vec<Arc<Findings>>,
 }
 struct PageResult {
+    scoped_patterns:bool,
     graph: u64,
     root: PathBuf,
     configuration: PathBuf,
@@ -304,11 +306,26 @@ pub(super) fn register_with_admission(db: &Db, admission: Arc<super::Admission>)
     db.define(
         PAGE_RESULT,
         "native-workspace-raw-page-result",
-        move |ctx, p| {
+        move |ctx,p|produce_page(ctx,p,&admission,None),
+    );
+}
+
+struct PatternResources<'a>{budget:&'a Arc<dq_analyze::captured_generator_budget::Budget>,provider:&'a dyn dq_analyze::native_pattern::Provider}
+enum PageFailure{Policy(String),Operational(io::Error)}
+impl From<String> for PageFailure{fn from(actual:String)->Self{Self::Policy(actual)}}
+impl From<&str> for PageFailure{fn from(actual:&str)->Self{Self::Policy(actual.into())}}
+impl PageFailure{fn into_message(self)->String{match self{Self::Policy(message)=>message,Self::Operational(actual)=>actual.to_string()}}}
+fn produce_page(ctx:&mut dm_query::Ctx<'_>,p:&dm_query::Value,admission:&super::Admission,resources:Option<&PatternResources<'_>>)->Result<Outcome,QueryError>{
+
             let p = p.downcast_ref::<Params>().expect("workspace page params");
             admission.abort.before_outcome(p.input)?;
             let input = ctx.input::<PageInput>(p.input)?;
-            let result = compute_with_admission(&input, &admission).map(Arc::new);
+            if input.scoped_patterns!=resources.is_some(){return Err(QueryError::operational(p.input,io::Error::new(io::ErrorKind::NotConnected,"this page requires its actual scoped pattern lender")))}
+            let result=match compute_with_pattern_resources(&input,admission,resources){
+                Ok(actual)=>Ok(Arc::new(actual)),
+                Err(PageFailure::Policy(message))=>Err(message),
+                Err(PageFailure::Operational(actual))=>return Err(QueryError::operational(p.input,actual)),
+            };
             if admission.denied.load(Ordering::Relaxed) { return Err(QueryError::Missing(p.input)); }
             let (hash, charge) = match &result {
                 Ok(page) => {
@@ -333,17 +350,13 @@ pub(super) fn register_with_admission(db: &Db, admission: Arc<super::Admission>)
             }
             admission.abort.before_outcome(p.input)?;
             Ok(Outcome::new(result, hash, charge))
-        },
-    );
 }
 #[cfg(test)]
 fn compute(p: &PageInput) -> Result<PageResult, String> {
     compute_with_admission(p, &super::Admission::default())
 }
-fn compute_with_admission(
-    p: &PageInput,
-    admission: &super::Admission,
-) -> Result<PageResult, String> {
+fn compute_with_admission(p:&PageInput,admission:&super::Admission)->Result<PageResult,String>{compute_with_pattern_resources(p,admission,None).map_err(PageFailure::into_message)}
+fn compute_with_pattern_resources(p:&PageInput,admission:&super::Admission,resources:Option<&PatternResources<'_>>)->Result<PageResult,PageFailure>{
     let live_owner = p
         .live
         .upgrade()
@@ -353,7 +366,7 @@ fn compute_with_admission(
     let previous = previous
         .as_ref()
         .and_then(|v| v.as_ref().as_ref().ok())
-        .filter(|old| old.same_policy(p));
+        .filter(|old| old.same_policy(p)&&old.scoped_patterns==p.scoped_patterns);
     // The current input owns only source texts, not their per-lint derived
     // views. Designate the active file's shared source charge to its own view
     // budget; union all other live sources by real allocation key exactly once.
@@ -493,16 +506,19 @@ fn compute_with_admission(
                 .checked_sub(charge)
                 .ok_or("result headroom exhausted")?;
             let file = file.as_ref().expect("file created above");
-            let scanned = if current.raw_selection.is_some() {
+            let scanned = if let Some(resources)=resources{
+                file.scan_with_pattern_resources(scope,p.remaining_sites-sites,available,current.raw_selection.is_some(),resources.budget,resources.provider,&crate::daemon::control::checkpoint)
+            }else if current.raw_selection.is_some() {
                 file.scan_preselected_budgeted_checked(scope, p.remaining_sites - sites, available)
             } else {
                 file.scan_budgeted_checked(scope, p.remaining_sites - sites, available)
             };
             let rows = scanned.map_err(|failure| match failure {
-                captured_raw_file::ScanFailure::Policy(error) => error,
+                captured_raw_file::ScanFailure::Policy(error) => PageFailure::Policy(error),
+                captured_raw_file::ScanFailure::Operational(actual)=>PageFailure::Operational(actual),
                 captured_raw_file::ScanFailure::Admission(error) => {
                     admission.denied.store(true,Ordering::Relaxed);
-                    error
+                    PageFailure::Policy(error)
                 }
             })?;
             let cost = compact_charge(&rows);
@@ -538,6 +554,7 @@ fn compute_with_admission(
             })
             .sum::<usize>();
     Ok(PageResult {
+        scoped_patterns:p.scoped_patterns,
         graph: p.graph,
         root: p.root.clone(),
         configuration: p.configuration.clone(),
@@ -928,6 +945,7 @@ impl QueryDb {
         scans: Arc<AtomicUsize>,
         inventory: &ResourceInventory,
         bulk_raw: bool,
+        pattern_budget:Option<&Arc<dq_analyze::captured_generator_budget::Budget>>,
     ) -> io::Result<(Vec<Arc<PageResult>>, Vec<Arc<Scope>>)> {
         crate::daemon::control::checkpoint()?;
         capture.require_scope(scope)?; // exact immutable map/revision BEFORE cache
@@ -1020,7 +1038,7 @@ impl QueryDb {
             if end <= start {
                 return Err(invalid("workspace page made no progress"));
             }
-            let metadata = (&capture.root(), configuration, &ordered, page_index);
+            let metadata = (&capture.root(), configuration, &ordered, page_index,pattern_budget.is_some());
             let id = dm_query::hash_bytes(&serde_json::to_vec(&metadata).map_err(invalid)?);
             let input_key = Key::new(PAGE_INPUT, id);
             let result_key = Key::new(PAGE_RESULT, id);
@@ -1042,6 +1060,7 @@ impl QueryDb {
             self.db.set_input(
                 input_key,
                 PageInput {
+                    scoped_patterns:pattern_budget.is_some(),
                     graph: self.id,
                     root: capture.root().to_path_buf(),
                     configuration: configuration.to_path_buf(),
@@ -1061,13 +1080,15 @@ impl QueryDb {
                 db: &self.db,
                 key: input_key,
             };
-            let result = self
-                .db
-                .get::<Result<Arc<PageResult>, String>>(
-                    result_key,
-                    Arc::new(Params { input: input_key }),
-                )
-                .map_err(|e| self.derived_query_error("workspace page query", e))?;
+            let result=if let Some(budget)=pattern_budget{
+                let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|e|e.into_inner());
+                source_arena::with_held_pattern_work(self,&mut ledger,budget,|work,scratch|{
+                    let provider=crate::query_db::PatternProvider::scoped(self,work,scratch);
+                    let resources=PatternResources{budget,provider:&provider};
+                    self.db.get_with_scoped_computation::<Result<Arc<PageResult>,String>>(result_key,Arc::new(Params{input:input_key}),|ctx,p|produce_page(ctx,p,&self.raw_policy.admission,Some(&resources)))
+                        .map_err(|actual|match actual.into_operational(){Ok(actual)=>actual.into_io(),Err(other)=>self.derived_query_error("workspace page query",other)})
+                })?
+            }else{self.db.get::<Result<Arc<PageResult>,String>>(result_key,Arc::new(Params{input:input_key})).map_err(|e|self.derived_query_error("workspace page query",e))?};
             let page = result.as_ref().as_ref().map_err(|e| invalid(e.clone()))?;
             for file in &page.files {
                 for rows in &file.findings {
@@ -1117,7 +1138,7 @@ impl QueryDb {
             .denied
             .store(false, Ordering::Relaxed);
         let inventory = self.workspace_resource_inventory_locked()?;
-        let (pages,_scopes) = self.build_workspace_pages_locked(capture, scope, names, scans, &inventory, false)?;
+        let (pages,_scopes) = self.build_workspace_pages_locked(capture, scope, names, scans, &inventory, false,None)?;
         let ordered = captured_raw_file::ordered_names(names).map_err(invalid)?;
         let mut available = RESULT_BOUND
             .checked_sub(inventory.bytes())
@@ -1168,19 +1189,20 @@ mod tests;
 #[path="generation_source_policy.rs"]mod generation_source_policy;
 
 impl QueryDb{
- pub(crate) fn with_workspace_raw_allow_usage<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&dq_analyze::captured_generator_budget::Budget,consume:impl FnOnce(&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>)->io::Result<R>)->io::Result<R>{
+ pub(crate) fn with_workspace_raw_allow_usage<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,consume:impl FnOnce(&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>)->io::Result<R>)->io::Result<R>{
   self.with_workspace_raw_union_rows(capture,scope,name,budget,false,|_,usage,_|consume(usage))
  }
  // Both cursors borrow the same completed pages. Traversing the result rows
  // and their ALLOW uses does not execute a second raw policy or source query.
- pub(crate) fn with_workspace_raw_union_rows<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&dq_analyze::captured_generator_budget::Budget,with_report:bool,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>)->io::Result<R>{
-  self.with_workspace_raw_union_rows_mode(capture,scope,name,budget,with_report,false,consume)
+ pub(crate) fn with_workspace_raw_union_rows<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,with_report:bool,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>)->io::Result<R>{
+  self.with_workspace_raw_union_rows_mode(capture,scope,name,budget,with_report,false,consume,None)
  }
- pub(crate) fn with_workspace_bulk_raw_union_rows<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&dq_analyze::captured_generator_budget::Budget,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>)->io::Result<R>{
+ pub(crate) fn with_workspace_bulk_raw_union_rows<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>)->io::Result<R>{
   if !capture.is_sealed_raw_file_capture(){return Err(invalid("bulk raw pages require the sealed raw capture"))}
-  self.with_workspace_raw_union_rows_mode(capture,scope,name,budget,true,true,consume)
+  self.with_workspace_raw_union_rows_mode(capture,scope,name,budget,true,true,consume,None)
  }
- fn with_workspace_raw_union_rows_mode<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&dq_analyze::captured_generator_budget::Budget,with_report:bool,bulk_raw:bool,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>)->io::Result<R>{
+ pub(crate) fn with_workspace_raw_union_rows_observed<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>,observed:&mut dyn FnMut(usize,usize,std::time::Duration)->io::Result<()>)->io::Result<R>{self.with_workspace_raw_union_rows_mode(capture,scope,name,budget,true,false,consume,Some(observed))}
+ fn with_workspace_raw_union_rows_mode<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,name:&str,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,with_report:bool,bulk_raw:bool,consume:impl FnOnce(&mut dyn Iterator<Item=&Findings>,&mut dyn Iterator<Item=&dq_analyze::lint::AllowUse>,Option<(&dq_analyze::scopes::LintScope,&Arc<dq_analyze::captured_generator_budget::Budget>)>)->io::Result<R>,mut observed:Option<&mut dyn FnMut(usize,usize,std::time::Duration)->io::Result<()>>)->io::Result<R>{
   crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;if !scope.uses_queries(self){return Err(invalid("full ALLOW raw producer uses another QueryDb"))}
   budget.charge(name.len().saturating_mul(4).saturating_add(4096)).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;let names=[name.to_owned()];
   if !capture.covers_selected_raw_policies(&names,&mut|bytes|budget.charge(bytes).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m)))?{return Err(io::Error::new(io::ErrorKind::Unsupported,"full ALLOW raw producer requires actual complete selected discovery"))}
@@ -1189,9 +1211,10 @@ impl QueryDb{
   // Cache retention target only. An active stage still uses the original
   // full 64 MiB result-family admission, with its unchanged report reserve.
   if bulk_raw { self.trim_bulk_raw_values_locked(16 * 1024 * 1024); }
-  let inventory=self.workspace_resource_inventory_using_locked(bulk_raw)?;let(pages,scopes)=self.build_workspace_pages_locked(capture,scope,&names,Arc::new(AtomicUsize::new(0)),&inventory,bulk_raw)?;
+  let started=observed.is_some().then(std::time::Instant::now);let scans=Arc::new(AtomicUsize::new(0));let inventory=self.workspace_resource_inventory_using_locked(bulk_raw)?;let(pages,scopes)=self.build_workspace_pages_locked(capture,scope,&names,Arc::clone(&scans),&inventory,bulk_raw,Some(budget))?;
   crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;
   if pages.iter().flat_map(|page|page.files.iter()).any(|file|file.findings.len()!=1){return Err(invalid("actual raw usage producer returned another finding cohort"))}
+  if let Some(observed)=observed.as_deref_mut(){let files=pages.iter().try_fold(0usize,|n,page|n.checked_add(page.files.len()).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory)))?;observed(files,scans.load(Ordering::Relaxed),started.expect("actual optional timing observation").elapsed())?;}
   let mut rows=pages.iter().flat_map(|page|page.files.iter()).map(|file|file.findings[0].as_ref());
   let mut usage=rows.clone().flat_map(|file|file.allow_used.iter());
   let pending=if with_report{
@@ -1226,5 +1249,21 @@ impl QueryDb{
   assert_eq!(calls,1);assert_eq!(error.raw_os_error(),Some(1450));
   let _gate=db.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
   assert!(db.workspace_input_base_headroom_locked(0).unwrap()>0);
+ }
+}
+
+impl QueryDb{
+ pub(super) fn with_held_raw_pattern_work<R>(&self,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,consume:impl FnOnce(&dyn dm_preprocess::source_arena_credit::SourceArenaWork,&dyn crate::query_db::native_patterns::PatternWorkLender)->io::Result<R>)->io::Result<R>{
+  let mut ledger=self.raw_policy.workspace.raw_sources.lock().unwrap_or_else(|error|error.into_inner());
+  source_arena::with_held_pattern_work(self,&mut ledger,budget,consume)
+ }
+}
+
+impl QueryDb{
+ /// Pure native callback fixture kernels only; the held raw ledger closes
+ /// before any nested actual source preparation or file acquisition resumes.
+ pub(crate) fn with_native_fixture_patterns<T>(&self,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,consume:impl FnOnce(&dyn dq_analyze::native_pattern::Provider)->io::Result<T>)->io::Result<T>{
+  crate::daemon::control::checkpoint()?;let _gate=self.raw_policy.gate.lock().unwrap_or_else(|error|error.into_inner());
+  self.with_held_raw_pattern_work(budget,|work,lender|consume(&crate::query_db::native_patterns::PatternProvider::scoped(self,work,lender)))
  }
 }

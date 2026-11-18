@@ -132,6 +132,25 @@ fn original_for_each_bare_string_index(expression: &Expr) -> bool {
 
 fn original_for_each_subtraction(expression: &Expr) -> bool {
     let ExprKind::Binary { op, lhs, rhs } = &expression.kind else { return false; };
+    // This routing predicate is consulted only after the SAME complete
+    // Original child has consumed the entire iterable. Keep the existing
+    // member-minus-index form, and admit only subtypesof/typesof one-TypePath
+    // roster subtraction without lending assignment or purity authority.
+    if op == "-" {
+        fn roster(expression: &Expr) -> bool {
+            matches!(&expression.kind, ExprKind::Call { callee, args }
+                if matches!(&callee.kind, ExprKind::Ident(name)
+                    if matches!(name.as_str(), "subtypesof" | "typesof"))
+                    && args.len() == 1 && matches!(&args[0].kind, ExprKind::TypePath(_)))
+        }
+        let mut left = expression;
+        while let ExprKind::Binary { op, lhs, rhs } = &left.kind {
+            if op != "-" || !(roster(rhs)
+                || matches!(&rhs.kind, ExprKind::TypePath(_))) { break; }
+            left = lhs;
+        }
+        if roster(left) { return true; }
+    }
     let ExprKind::Member { object: left, selector: left_name, via_colon: false } = &lhs.kind
         else { return false; };
     let ExprKind::Index { object, index } = &rhs.kind else { return false; };
@@ -164,10 +183,16 @@ pub(super) fn parse_for(
             clause,
             crate::LocalSourceKind::ForBinding,
         );
-        return Some(ForControl::All {
-            source_binding:origins.for_list_binding(clause,&lexical,clause_base,clause.trim()),
-            declaration: clause.trim().into(),
-        });
+        let source_binding=origins.for_list_binding(clause,&lexical,clause_base,clause.trim());
+        if let Some(name)=source_binding{
+            let row=origins.locals.entries().ok().and_then(|rows|rows.iter().find(|row|row.source_kind==crate::LocalSourceKind::ForBinding&&row.name==name.name()));
+            let header=Span::new(clause_base,clause_base+clause.len());
+            match row.and_then(|row|origins.settings.map(|provider|provider.original_for_implicit_world_header(header,row))).transpose(){
+                Ok(Some(true))=>*original_control=true,Ok(_)=>(),
+                Err(actual)=>if let Some(a)=origins.admission{a.forward_operational_error(actual)},
+            }
+        }
+        return Some(ForControl::All {source_binding,declaration: clause.trim().into()});
     }
     if let Some((binding_source, iterable_source)) = list_clause {
         let at = binding_source.len();
@@ -208,6 +233,9 @@ pub(super) fn parse_for(
             let mut chars = value.chars();
             let bare_value = chars.next().is_some_and(|c| c == '_' || c.is_alphabetic())
                 && chars.all(|c| c == '_' || c.is_alphanumeric());
+            let pair_shape=(binding.starts_with("var/") || starts_keyword(binding, "var"))
+                && crate::local_variable_syntax::top_level_local_assignment(pair[0]).is_none()
+                && split_top_level_keyword(pair[0], "as").is_none() && bare_value;
             if !(binding.starts_with("var/") || starts_keyword(binding, "var"))
                 || crate::local_variable_syntax::top_level_local_assignment(pair[0]).is_some()
                 || split_top_level_keyword(pair[0], "as").is_some()
@@ -217,21 +245,36 @@ pub(super) fn parse_for(
                     .locals
                     .decline("pair-loop shape has no original checker declaration receipt");
             }
-            return parse_expr(
-                iterable,
-                offset_of(iterable),
-                diagnostics,
-            )
-            .map(|iterable| ForControl::Pair {
-                key_binding: pair[0].trim().into(),
-                value_binding: pair[1].trim().into(),
-                iterable,
+            let mut original_iterable=false;
+            let iterable=parse_expr_observed(iterable,offset_of(iterable),diagnostics,&mut|parsed|{
+                original_iterable=parsed.original_simple_expression.is_some_and(|proof|
+                    proof.is_original()&&proof.kind()==crate::expression_parser::OriginalSimpleKind::Complete);
+            })?;
+            let prefix=Span::new(offset_of(binding),iterable.span.start);
+            let rows=origins.locals.entries().ok().and_then(|rows|{
+                let start=prefix.start;let end=prefix.end;
+                let mut rows=rows.iter().filter(|row|matches!(row.source_kind,crate::LocalSourceKind::ForBinding|crate::LocalSourceKind::CommaContinuation)&&row.name.start>=start&&row.name.end<=end);
+                let key=rows.next()?;let value=rows.next()?;
+                (rows.next().is_none()&&key.source_kind==crate::LocalSourceKind::ForBinding
+                    &&value.source_kind==crate::LocalSourceKind::CommaContinuation
+                    &&key.source_modifiers==0&&!key.array_suffix
+                    &&value.source_modifiers==0&&!value.array_suffix&&value.type_components.is_empty()).then_some((key,value))
+            });
+            if original_iterable&&pair_shape{
+                match rows.and_then(|(key,value)|origins.settings.map(|provider|provider.original_for_pair_prefix(prefix,key,value))).transpose(){
+                    Ok(Some(true))=>*original_control=true,
+                    Ok(_)=>(),
+                    Err(actual)=>{if let Some(a)=origins.admission{a.forward_operational_error(actual);}},
+                }
+            }
+            return Some(ForControl::Pair {
+                key_binding:pair[0].trim().into(),value_binding:pair[1].trim().into(),iterable,
             });
         }
         if let Some((start_source, remainder)) = split_top_level_keyword(iterable, "to") {
             let mut bounds_witnessed = false;
             let control = parse_range_control(
-                binding, start_source, remainder, clause, clause_base, diagnostics,
+                binding, start_source, remainder, clause, &lexical, clause_base, diagnostics,
                 Some(&mut bounds_witnessed),
             )?;
             if bounds_witnessed {
@@ -252,18 +295,27 @@ pub(super) fn parse_for(
         let mut anything_iterable = false;
         let mut bare_string_index = false;
         let mut composed_iterable = false;
+        let mut declared_assignment_iterable = false;
         let iterable = parse_expr_observed(iterable, offset, diagnostics, &mut |parsed| {
             expression_complete = parsed.original_simple_expression.is_some_and(|value| {
                 value.kind() == crate::expression_parser::OriginalSimpleKind::Complete
             });
             let actual_original = parsed.original_simple_expression.is_some_and(|value| value.is_original());
+            // Only pinned for(var/name in EXPR) consumes the RHS separately.
+            // A reused bare head instead parses the full init expression, so
+            // its assignment precedence cannot borrow this declared-head rule.
+            declared_assignment_iterable = binding.starts_with("var/")
+                && parsed.original_simple_expression.is_some_and(|proof|
+                    proof.is_original() && proof.kind()==crate::expression_parser::OriginalSimpleKind::PlainAssignment);
             let kind = parsed.expr.as_ref().map(|value| &value.kind);
             // The pinned `as anything` clause consumes an expression; its
             // type/name/as/in head remains separately authenticated below.
             anything_iterable = actual_original && expression_complete;
-            composed_iterable = actual_original && expression_complete && (matches!(kind,Some(ExprKind::Member{via_colon:false,..}|ExprKind::SafeMember{via_colon:false,..}
-                    |ExprKind::Index{..}|ExprKind::SafeIndex{..}))
-                || matches!(kind,Some(ExprKind::Call{callee,..})if matches!(&callee.kind,ExprKind::Member{via_colon:false,..})));
+            // Pinned ForList consumes a complete expression VALUE. Its
+            // actual child receipt, not an AST-kind/type/purity whitelist,
+            // authenticates the whole tail; binding and In stay separate.
+            // Statement-only/PrefixCondition proofs cannot enter this route.
+            composed_iterable = actual_original && expression_complete;
             dotted_original = actual_original && matches!(kind, Some(ExprKind::Member { via_colon: false, .. }));
             grouped_index = actual_original && matches!(kind,
                 Some(ExprKind::Group(value)) if matches!(&value.kind, ExprKind::Index { .. }));
@@ -276,36 +328,62 @@ pub(super) fn parse_for(
             subtraction = actual_original && parsed.expr.as_ref().is_some_and(original_for_each_subtraction);
             bare_string_index = actual_original && parsed.expr.as_ref().is_some_and(original_for_each_bare_string_index);
         })?;
-        let source_binding = origins.for_list_binding(clause, &lexical, clause_base, binding);
-        *original_control = expression_complete && source_binding.is_some()
-            && original_for_each_clause(
+        let mut source_binding = origins.for_list_binding(clause, &lexical, clause_base, binding);
+        *original_control = source_binding.is_some()
+            && ((expression_complete && original_for_each_clause(
                 clause, &lexical, at, dotted_original, grouped_index, call_member, direct_call, subtraction, bare_string_index, composed_iterable,
-            );
+            )) || (declared_assignment_iterable && original_for_each_clause(
+                clause, &lexical, at, false, false, false, false, false, false, true,
+            )));
         let mut declaration = binding;
         if let Some((before_hint, _)) = split_top_level_keyword(binding, "as")
             .filter(|(_, hint)| hint.trim() == "anything")
             .filter(|_| !*original_control && expression_complete && anything_iterable)
         {
-            if let Some(name) = source_binding {
+            // SAME canonical as-clause slice and existing single-name producer.
+            // A reused binding adds no declaration or local type inference.
+            let head = before_hint.trim();
+            let bare = if source_binding.is_none()
+                && crate::expression_parser::original_ordinary_call_name(head)
+                && !matches!(head, "null" | "__PROC__" | "__TYPE__" | "__IMPLIED_TYPE__")
+            { origins.for_list_binding(clause, &lexical, clause_base, head) } else { None };
+            if let Some(name) = source_binding.or(bare) {
                 let prefix = Span::new(offset_of(binding), iterable.span.start);
                 let typed = origins.locals.entries().ok().and_then(|rows| rows.iter().find(|row| {
                     row.source_kind == crate::LocalSourceKind::ForBinding
                         && row.name == name.name() && row.source_modifiers == 0
-                        && !row.array_suffix && !row.type_components.is_empty()
+                        && !row.array_suffix
                 }));
-                match typed.and_then(|row| origins.settings.map(|provider| {
-                    provider.original_for_each_anything_prefix(prefix, row.name, &row.type_components)
+                let components: Option<&[Span]> = typed.map(|row| row.type_components.as_ref())
+                    .or_else(|| bare.map(|_| &[][..]));
+                match components.and_then(|components| origins.settings.map(|provider| {
+                    provider.original_for_each_anything_prefix(prefix, name.name(), components)
                 })).transpose() {
                     Ok(Some(true)) => {
                         *original_control = true;
+                        source_binding = Some(name);
                         // The source hint governs iteration, not the local's name.
                         declaration = before_hint.trim_end();
                     }
                     Ok(_) => {}
                     Err(actual) => {
                         if let Some(admission) = origins.admission {
-                            admission.record_operational_error(actual);
+                            admission.forward_operational_error(actual);
                         }
+                    }
+                }
+            }
+        }
+        if !*original_control&&composed_iterable{
+            if let Some((head,hint))=split_top_level_keyword(binding,"as"){
+                let head=head.trim();let hint=hint.trim();
+                if let Some(name)=origins.for_list_binding(clause,&lexical,clause_base,head){
+                    let row=origins.locals.entries().ok().and_then(|rows|rows.iter().find(|row|row.source_kind==crate::LocalSourceKind::ForBinding&&row.name==name.name()));
+                    let prefix=Span::new(offset_of(binding),iterable.span.start);
+                    let hint=Span::new(offset_of(hint),offset_of(hint)+hint.len());
+                    match row.and_then(|row|origins.settings.map(|provider|provider.original_for_each_typed_prefix(prefix,row,hint))).transpose(){
+                        Ok(Some(true))=>{*original_control=true;source_binding=Some(name);declaration=binding;},Ok(_)=>(),
+                        Err(actual)=>if let Some(a)=origins.admission{a.forward_operational_error(actual)},
                     }
                 }
             }
@@ -337,7 +415,7 @@ pub(super) fn parse_for(
                 });
                 return None;
             }
-            let (end, step) = parse_range_tail(remainder, clause, clause_base, diagnostics, None)?;
+            let (end, step) = parse_range_tail(remainder, clause, &lexical, clause_base, diagnostics, None)?;
             return Some(ForControl::RangeImplicitArray {
                 binding: begin.trim().into(),
                 end,
@@ -373,7 +451,7 @@ pub(super) fn parse_for(
         );
         let mut bounds_witnessed = false;
         let control = parse_range_control(
-            binding, start_source, remainder, clause, clause_base, diagnostics,
+            binding, start_source, remainder, clause, &lexical, clause_base, diagnostics,
             Some(&mut bounds_witnessed),
         )?;
         if bounds_witnessed {
@@ -456,7 +534,7 @@ pub(super) fn parse_for(
                 diagnostics,
                 &mut |parsed| {
                     test_witnessed = parsed.original_simple_expression.is_some_and(|proof| {
-                        proof.is_original() && matches!(proof.kind(),OriginalSimpleKind::Complete|OriginalSimpleKind::PrefixCondition)
+                        proof.is_original() && matches!(proof.kind(),OriginalSimpleKind::Complete|OriginalSimpleKind::PrefixCondition|OriginalSimpleKind::PlainAssignment)
                     });
                 },
             )?)
@@ -532,7 +610,7 @@ pub(super) fn parse_for(
 }
 
 fn original_two_clause_separator_question(provider:Option<&dyn SettingSyntaxProvider>,first:Span,tail:Span,empty:bool,a:Option<&crate::SettingAdmission<'_>>)->bool{
- match provider.map(|p|p.original_two_clause_for_header(first,tail,empty)).transpose(){Ok(value)=>value==Some(true),Err(actual)=>{if let Some(a)=a{a.record_operational_error(actual)}false}}
+ match provider.map(|p|p.original_two_clause_for_header(first,tail,empty)).transpose(){Ok(value)=>value==Some(true),Err(actual)=>{if let Some(a)=a{a.forward_operational_error(actual)}false}}
 }
 
 // Route only the existing same-body separator question. A false/default/missing
@@ -544,7 +622,7 @@ fn original_classic_separator_question(
     match provider.map(|provider| provider.original_classic_for_separators(first, second, empty_initializer)).transpose() {
         Ok(value) => value == Some(true),
         Err(actual) => {
-            if let Some(admission) = admission { admission.record_operational_error(actual); }
+            if let Some(admission) = admission { admission.forward_operational_error(actual); }
             false
         }
     }
@@ -555,7 +633,7 @@ fn original_classic_tokens(origins: &BodyOrigins<'_>, span: Span, name: Span, de
         Ok(value) => value == Some(true),
         Err(actual) => {
             if let Some(admission) = origins.admission {
-                admission.record_operational_error(actual);
+                admission.forward_operational_error(actual);
             }
             false
         }
@@ -566,17 +644,25 @@ fn original_declared_range_header(
     control: &ForControl, binding_start: usize, name: Option<ForListBinding>,
     initialized: bool, origins: &BodyOrigins<'_>,
 ) -> bool {
-    let (ForControl::Range { start, end, step: None, .. }, Some(name)) = (control, name)
+    let (ForControl::Range { start, end, step, .. }, Some(name)) = (control, name)
         else { return false; };
     let prefix = Span::new(binding_start, start.span.start);
     let between = Span::new(start.span.end, end.span.start);
     match origins.settings.map(|provider| {
         provider.original_for_range_header(prefix, name.name(), between, initialized)
     }).transpose() {
-        Ok(value) => value == Some(true),
+        Ok(value) => {
+            if value!=Some(true){return false}
+            let Some(step)=step else{return true};
+            let gap=Span::new(end.span.end,step.span.start);
+            match origins.settings.map(|provider|provider.original_for_range_step_gap(gap)).transpose(){
+                Ok(value)=>value==Some(true),
+                Err(actual)=>{if let Some(a)=origins.admission{a.forward_operational_error(actual)}false}
+            }
+        },
         Err(actual) => {
             if let Some(admission) = origins.admission {
-                admission.record_operational_error(actual);
+                admission.forward_operational_error(actual);
             }
             false
         }
@@ -588,6 +674,7 @@ fn parse_range_control(
     start_source: &str,
     remainder: &str,
     clause: &str,
+    lexical: &crate::SpannedLexed,
     base: usize,
     diagnostics: &mut BodyDiagnostics<'_>,
     witness: Option<&mut bool>,
@@ -604,10 +691,10 @@ fn parse_range_control(
     )?;
     let mut end_witnessed = false;
     let (end, step) = parse_range_tail(
-        remainder, clause, base, diagnostics, witness.as_ref().map(|_| &mut end_witnessed),
+        remainder, clause, lexical, base, diagnostics, witness.as_ref().map(|_| &mut end_witnessed),
     )?;
     if let Some(witness) = witness {
-        *witness = start_witnessed && end_witnessed && step.is_none();
+        *witness = start_witnessed && end_witnessed;
     }
     Some(ForControl::Range {
         binding: binding.into(),
@@ -626,12 +713,12 @@ fn original_complete_range_bound(parsed: &crate::ParsedExpr) -> bool {
 fn parse_range_tail(
     remainder: &str,
     clause: &str,
+    lexical: &crate::SpannedLexed,
     base: usize,
     diagnostics: &mut BodyDiagnostics<'_>,
     end_witnessed: Option<&mut bool>,
 ) -> Option<(Expr, Option<Expr>)> {
-    let (end_source, step_source) = remainder
-        .split_once(" step ")
+    let (end_source, step_source) = split_range_step(remainder,lexical,remainder.as_ptr()as usize-clause.as_ptr()as usize)
         .map_or((remainder, None), |(end, step)| (end, Some(step)));
     let end_source = end_source.trim();
     let mut end_witnessed = end_witnessed;
@@ -645,17 +732,40 @@ fn parse_range_tail(
             }
         },
     )?;
+    let mut step_witnessed=step_source.is_none();
     let step = if let Some(source) = step_source {
         let source = source.trim();
-        Some(parse_expr(
+        Some(parse_expr_observed(
             source,
             base + (source.as_ptr() as usize - clause.as_ptr() as usize),
             diagnostics,
+            &mut|parsed|step_witnessed=original_complete_range_bound(parsed),
         )?)
     } else {
         None
     };
+    if let Some(witness)=end_witnessed{*witness&=step_witnessed;}
     Some((end, step))
+}
+
+// The producer writes `step-1`; spaces around the keyword are not grammar.
+// Pick only a real top-level keyword after an expression-ending token, never
+// a field/typepath component or a nested call's/string's spelling.
+fn split_range_step<'a>(source:&'a str,lexical:&crate::SpannedLexed,offset:usize)->Option<(&'a str,&'a str)>{
+ let end=offset.checked_add(source.len())?;let first=lexical.tokens.partition_point(|token|token.span.end<=offset);
+ let(mut depth,mut can_end)=(0i32,false);let mut previous:Option<(&str,usize,bool)>=None;
+ for token in lexical.tokens.get(first..)?.iter().take_while(|token|token.span.start<end){
+  if token.span.start<offset||token.span.end>end{return None}
+  if matches!(token.kind,crate::TokenKind::Whitespace|crate::TokenKind::Newline|crate::TokenKind::Comment){continue}
+  let text=source.get(token.span.start-offset..token.span.end-offset)?;
+  if depth==0&&can_end&&token.kind==crate::TokenKind::Ident&&text=="step"{return Some((&source[..token.span.start-offset],&source[token.span.end-offset..]))}
+  match text{"("|"["|"{"=>depth+=1,")"|"]"|"}"=>depth-=1,_=>()}
+  let postfix_pair=matches!(text,"+"|"-")&&previous.is_some_and(|(spelling,end,before)|spelling==text&&end==token.span.start&&before);
+  let before=can_end;
+  can_end=postfix_pair||matches!(token.kind,crate::TokenKind::Ident|crate::TokenKind::Number|crate::TokenKind::String|crate::TokenKind::Resource|crate::TokenKind::Interpolation)||matches!(text,")"|"]"|"}"|"++"|"--");
+  previous=Some((text,token.span.end,before));
+ }
+ None
 }
 
 fn control_close(rest: &str) -> Option<usize> {
@@ -759,7 +869,10 @@ pub(super) fn parse_control_condition_origin(
         start,
         diagnostics,
         &mut |parsed| {
-            let issued = parsed.original_simple_expression.is_some_and(|value| value.kind() == crate::expression_parser::OriginalSimpleKind::Complete || (value.is_original()&&value.kind()==crate::expression_parser::OriginalSimpleKind::PrefixCondition));
+            // A completed Original plain assignment is an evaluated expression in
+            // the pinned if/while grammar, not just a statement role. The
+            // receipt authenticates the bare lvalue, '=' and entire RHS.
+            let issued = parsed.original_simple_expression.is_some_and(|value| value.kind() == crate::expression_parser::OriginalSimpleKind::Complete || (value.is_original()&&matches!(value.kind(),crate::expression_parser::OriginalSimpleKind::PrefixCondition|crate::expression_parser::OriginalSimpleKind::PlainAssignment)));
             origins.require_original(issued, Span::new(start, start + clause.len()), "control_condition");
         },
     )?;
@@ -846,10 +959,10 @@ pub(super) fn parse_expr_observed_with_native(source:&str,offset:usize,diagnosti
         return (None,None);
     }
     let original=match diagnostics.settings{
-      Some(provider)=>match provider.original_expression_with_native_facts(source,offset){Ok(value)=>value,Err(actual)=>{if let Some(a)=diagnostics.admission{a.record_operational_error(actual);}return (None,None)}},None=>None,
+      Some(provider)=>match provider.body_expression_with_geometry(source,offset){Ok(value)=>value,Err(actual)=>{if let Some(a)=diagnostics.admission{a.forward_operational_error(actual);}return (None,None)}},None=>None,
     };
-    let using_original=original.is_some();
-    let (mut parsed,native) = match original{Some(pair)=>pair,None=>(parse_expression(source),None)};
+    let using_original=original.as_ref().is_some_and(|(_,_,geometry)|*geometry==crate::BodyExpressionGeometry::OriginalUnpublished);
+    let (mut parsed,native) = match original{Some((parsed,native,_))=>(parsed,native),None=>(parse_expression(source),None)};
     if let Some(progress)=diagnostics.native_progress{
         progress.expression(native,parsed.expr.as_ref().map(|expr|expr.span));
     }
@@ -870,7 +983,7 @@ pub(super) fn parse_expr_observed_with_native(source:&str,offset:usize,diagnosti
             return (None,None);
         };
         if let Err(actual)=crate::literal::shift_unpublished_expression_using(&mut expr,offset,a) {
-            a.record_operational_error(actual);
+            a.forward_operational_error(actual);
             return (None,None);
         }
     } else { shift_expr(&mut expr, offset); }
@@ -1103,6 +1216,135 @@ mod original_classic_step_typed_demand_controls {
         }
     }
     #[test]
+    fn actual_original_type_roster_subtraction_requires_closed_children_and_complete_eof() {
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        for (text,expected) in [
+            ("subtypesof ( /datum ) - typesof ( /datum/product ) - /datum/pump",true),
+            ("subtypesof ( /datum ) - /datum/pump",true),
+            ("subtypesof ( /datum ) + typesof ( /datum/product )",false),
+            ("subtypesof ( path ) - /datum/pump",false),
+            ("subtypesof ( path = other ) - /datum/pump",false),
+            ("subtypesof ( /datum ) - owner . typesof ( /datum )",false),
+            ("list ( /datum ) - /datum/pump",false),
+            ("subtypesof ( /datum ) - call ( target ) ( )",false),
+            ("subtypesof ( /datum ) - /datum/pump trailing",false),
+        ] {
+            let admission=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+            let mut source=FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:None,faulted:false};
+            let root=crate::parse_original_expression_demanded(&mut source,&admission).unwrap();
+            let issued=root.parsed().original_simple_expression.is_some_and(|proof|
+                proof.is_original()&&proof.kind()==crate::expression_parser::OriginalSimpleKind::Complete)
+                &&root.parsed().expr.as_ref().is_some_and(original_for_each_subtraction);
+            assert_eq!(issued,expected,"{text}: {:?}",root.parsed());
+            if issued {
+                let clause=format!("var/path in {text}");let lexical=crate::lex_spans(&clause);
+                let at=lexical.tokens.iter().find(|token|token.text(&clause)=="in").unwrap().span.start;
+                assert!(original_for_each_clause(&clause,&lexical,at,false,false,false,false,true,false,false));
+                assert!(!original_for_each_clause(&clause,&lexical,at+1,false,false,false,false,true,false,false));
+            }
+            drop(root);assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+        }
+    }
+    #[test]
+    fn actual_original_type_roster_subtraction_keeps_eof_first_io_quota_and_recovery() {
+        use std::sync::atomic::Ordering;
+        let text="subtypesof ( /datum ) - typesof ( /datum/product ) - /datum/pump";
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let baseline=used.load(Ordering::Acquire);let count=FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:None,faulted:false}.rows.len();
+        for fail_at in [0,count/2,count] {
+            let admission=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+            let mut source=FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:Some(fail_at),faulted:false};
+            let error=crate::parse_original_expression_demanded(&mut source,&admission).err().expect("actual demand or EOF fault cannot issue iterable");
+            assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),baseline);
+        }
+        let tight=crate::SettingAdmission::new(&used,baseline,&||Ok(()));
+        let mut source=FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:None,faulted:false};
+        let error=crate::parse_original_expression_demanded(&mut source,&tight).err().expect("actual allocation cannot bypass same hard cap");
+        assert_eq!(error.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),baseline);
+        let admission=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut source=FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:None,faulted:false};
+        let root=crate::parse_original_expression_demanded(&mut source,&admission).unwrap();assert!(root.parsed().expr.as_ref().is_some_and(original_for_each_subtraction));drop(root);assert_eq!(used.load(Ordering::Acquire),baseline);
+    }
+    #[test]
+    fn actual_original_dynamic_for_and_conditional_statement_roles_require_complete_roots() {
+        // These fixtures explicitly contain the ordinary ternary Colon role,
+        // not lookup CloseColon. Lend that occurrence fact separately from the
+        // expression tokens; absent metadata must keep refusing production.
+        struct TernaryTokens(FinalTokens);
+        impl crate::NativeExpressionTokenDemand for TernaryTokens {
+            fn next_token(&mut self)->std::io::Result<Option<crate::Token>>{crate::NativeExpressionTokenDemand::next_token(&mut self.0)}
+            fn requires_original_values(&self)->bool{true}
+            fn original_value(&self,at:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{crate::NativeExpressionTokenDemand::original_value(&self.0,at)}
+            fn original_close_colon(&self,at:crate::NativeExpressionTokenOccurrence)->std::io::Result<Option<bool>>{
+                assert!(!self.0.faulted,"no colon metadata after actual first IO");
+                let token=self.0.rows.get(at.ordinal()).ok_or(std::io::ErrorKind::InvalidInput)?;
+                if token.span!=at.span(){return Err(std::io::ErrorKind::InvalidInput.into())}
+                Ok((token.kind==crate::TokenKind::Punctuation&&token.text==":").then_some(false))
+            }
+        }
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let baseline=used.load(std::sync::atomic::Ordering::Acquire);
+        {
+            let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
+            let mut missing=FinalTokens{rows:crate::lex("(tick_usage>limit?stoplag():0)").tokens,next:0,fail_at:None,faulted:false};
+            let error=crate::parse_original_expression_demanded(&mut missing,&a).err().expect("missing actual Colon role remains unsupported");
+            assert_eq!(error.kind(),std::io::ErrorKind::Unsupported);
+            assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),baseline);
+        }
+        for (text,dynamic,conditional) in [
+            ("call(current[index],adjacent)(id)",true,false),
+            ("call(current[index],adjacent)",false,false),
+            ("call(current[index],adjacent)(id) trailing",false,false),
+            ("(tick_usage>limit?stoplag():0)",false,true),
+            ("tick_usage>limit?stoplag():0",false,false),
+            ("(tick_usage>limit?stoplag():0) trailing",false,false),
+            ("(tick_usage+limit)",false,false),
+            ("(stoplag())",false,false),
+        ] {
+            let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut source=TernaryTokens(FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:None,faulted:false});let root=crate::parse_original_expression_demanded(&mut source,&a).unwrap();
+            let complete=root.parsed().original_simple_expression.is_some_and(|proof|proof.is_original()&&proof.kind()==crate::expression_parser::OriginalSimpleKind::Complete);
+            assert_eq!(complete&&root.parsed().expr.as_ref().is_some_and(original_dynamic_call_statement_root),dynamic,"{text}: {:?}",root.parsed());
+            assert_eq!(complete&&root.parsed().expr.as_ref().is_some_and(original_parenthesized_conditional_statement_root),conditional,"{text}: {:?}",root.parsed());
+            drop(root);assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),baseline);
+        }
+        for text in ["call(current[index],adjacent)(id)","(tick_usage>limit?stoplag():0)"] {
+            let count=crate::lex(text).tokens.len();for fail_at in[0,count/2,count]{
+                let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut source=TernaryTokens(FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:Some(fail_at),faulted:false});let error=crate::parse_original_expression_demanded(&mut source,&a).err().expect("actual demanded first/inner/EOF fault cannot supply role");assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),baseline);
+            }
+        }
+    }
+    #[test]
+    fn actual_original_for_iterable_complete_values_keep_independent_binding_and_in_proof(){
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let baseline=used.load(std::sync::atomic::Ordering::Acquire);
+        for (text,wanted) in[
+            ("GLOB.admin_datums+GLOB.deadmins",true),
+            ("left+right",true),("left*other",true),("left+choose()",true),
+            ("left+(target=value)",true),
+            ("++index<limit",false),("left+=right",false),("left=right",false),
+            ("left+right trailing",false),
+        ]{
+            let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut source=FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:None,faulted:false};let root=crate::parse_original_expression_demanded(&mut source,&a).unwrap();
+            let complete=root.parsed().original_simple_expression.is_some_and(|proof|proof.is_original()&&proof.kind()==crate::expression_parser::OriginalSimpleKind::Complete);
+            assert_eq!(complete,wanted,"{text}: {:?}",root.parsed());
+            if complete{
+                let clause=format!("var/item in {text}");let lexical=crate::lex_spans(&clause);let at=lexical.tokens.iter().find(|token|token.text(&clause)=="in").unwrap().span.start;
+                assert!(original_for_each_clause(&clause,&lexical,at,false,false,false,false,false,false,true));
+                assert!(!original_for_each_clause(&clause,&lexical,at+1,false,false,false,false,false,false,true));
+                let changed=format!("owner.item in {text}");let lexical=crate::lex_spans(&changed);let at=lexical.tokens.iter().find(|token|token.text(&changed)=="in").unwrap().span.start;
+                assert!(!original_for_each_clause(&changed,&lexical,at,false,false,false,false,false,false,true));
+            }
+            drop(root);assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),baseline);
+        }
+    }
+    #[test]
+    fn actual_original_for_iterable_complete_value_keeps_eof_first_io_quota_and_recovery(){
+        use std::sync::atomic::Ordering;
+        let text="GLOB.admin_datums+GLOB.deadmins";let count=crate::lex(text).tokens.len();let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let baseline=used.load(Ordering::Acquire);
+        for fail_at in[0,count/2,count]{
+            let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut source=FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:Some(fail_at),faulted:false};let error=crate::parse_original_expression_demanded(&mut source,&a).err().expect("actual first/mid/EOF fault cannot become an iterable value");assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),baseline);
+        }
+        let tight=crate::SettingAdmission::new(&used,baseline,&||Ok(()));let mut source=FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:None,faulted:false};assert_eq!(crate::parse_original_expression_demanded(&mut source,&tight).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),baseline);
+        let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let mut source=FinalTokens{rows:crate::lex(text).tokens,next:0,fail_at:None,faulted:false};let root=crate::parse_original_expression_demanded(&mut source,&a).unwrap();assert!(root.parsed().original_simple_expression.is_some_and(|proof|proof.is_original()&&proof.kind()==crate::expression_parser::OriginalSimpleKind::Complete));drop(root);assert_eq!(used.load(Ordering::Acquire),baseline);
+    }
+    #[test]
     fn raw_split_assignment_bytes_mislabeled_as_final_are_not_repaired_into_a_step_receipt() {
         let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let admission=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
@@ -1184,4 +1426,100 @@ fn two_clause_for_question_defaults_closed_and_preserves_first_actual_io(){
  assert!(!original_two_clause_separator_question(None,Span::new(10,20),Span::new(30,31),false,Some(&a)));
  assert!(!original_two_clause_separator_question(Some(&Deny),Span::new(10,20),Span::new(30,31),false,Some(&a)));
  let fail=Fail(0.into());assert!(!original_two_clause_separator_question(Some(&fail),Span::new(10,20),Span::new(30,31),false,Some(&a)));assert_eq!(fail.0.get(),1);assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),root);
+}
+
+#[cfg(test)]
+mod actual_body_expression_geometry_controls {
+ use super::*;
+ struct Native<'a,'op>{a:&'a crate::SettingAdmission<'op>,strict:bool,fail:bool}
+ impl SettingSyntaxProvider for Native<'_,'_>{
+  fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}
+  fn original_expression_with_native_facts(&self,source:&str,_:usize)->std::io::Result<Option<(crate::ParsedExpr,Option<crate::NativeExpressionParserFacts>)>>{
+   if self.fail{return Err(std::io::Error::from_raw_os_error(1450))}
+   let tokens=crate::lex_spans(source);assert!(tokens.diagnostics.is_empty());
+   Ok(Some(crate::parse_expression_token_view_with_native_facts(source,&tokens.tokens,0,self.a,None)))
+  }
+  fn body_expression_with_geometry(&self,source:&str,offset:usize)->std::io::Result<Option<(crate::ParsedExpr,Option<crate::NativeExpressionParserFacts>,crate::BodyExpressionGeometry)>>{
+   let geometry=if self.strict{crate::BodyExpressionGeometry::OriginalUnpublished}else{crate::BodyExpressionGeometry::NativeUnpublished};
+   self.original_expression_with_native_facts(source,offset).map(|value|value.map(|(parsed,native)|(parsed,native,geometry)))
+  }
+ }
+ #[test]fn actual_native_token_template_keeps_native_geometry_without_original_promotion(){
+  let root=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(root).unwrap();
+  let a=crate::SettingAdmission::new(&counter,8<<20,&||Ok(()));let provider=Native{a:&a,strict:false,fail:false};let source=r#""value [1 + 2]""#;
+  let mut rows=Vec::new();let mut diagnostics=BodyDiagnostics{rows:&mut rows,settings:Some(&provider),admission:Some(&a),native_progress:None};
+  let(mut expr,native)=parse_expr_observed_with_native(source,77,&mut diagnostics,&mut|parsed|assert!(parsed.original_simple_expression.is_none_or(|proof|!proof.is_original())));
+  let expr=expr.take().unwrap();assert_eq!(expr.span,Span::new(77,77+source.len()));assert!(native.unwrap().is_complete());assert!(rows.is_empty());assert!(a.take_operational_error().is_none());
+  let ExprKind::Literal(value)=&expr.kind else{panic!("real template")};assert!(value.original_template_lexical_shape().is_none(),"native DATA never becomes Original template backing");
+  let parts=value.syntax_parts().unwrap().unwrap();assert_eq!(parts.expressions.len(),1);assert_eq!(parts.expressions[0].span,Span::new(85,90));
+  crate::setting_drop::drop_expression(expr,None);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),root);
+ }
+ #[test]fn original_geometry_still_refuses_native_backing_and_preserves_actual_first_io(){
+  for fail in [false,true]{
+   let root=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(root).unwrap();let a=crate::SettingAdmission::new(&counter,8<<20,&||Ok(()));let provider=Native{a:&a,strict:true,fail};let mut rows=Vec::new();
+   let mut diagnostics=BodyDiagnostics{rows:&mut rows,settings:Some(&provider),admission:Some(&a),native_progress:None};
+   assert!(parse_expr_observed(r#""value [1 + 2]""#,77,&mut diagnostics,&mut |_|{}).is_none());let error=a.take_operational_error().unwrap();
+   if fail{assert_eq!(error.raw_os_error(),Some(1450))}else{assert_eq!(error.kind(),std::io::ErrorKind::InvalidInput)}
+   assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),root);
+  }
+ }
+}
+
+#[cfg(test)]mod original_bare_anything_default_deny_controls{
+ use super::*;
+ #[test]fn bare_anything_for_requires_actual_owned_prefix_and_never_creates_a_shadow_local(){
+  for head in ["copying as anything", "copying.field as anything", "copying[key] as anything", "(copying) as anything", "copying = other as anything", "null as anything"]{
+   let source=format!("/proc/p(items)\n    var/copying = null\n    for({head} in items)\n        return copying\n");let parsed=crate::parse(&source);let body=crate::parse_body_items_with_source(&parsed.items[0].children,&source);assert!(body.original_grammar.is_none(),"no actual source provider: {head}");
+   if head=="copying as anything"{let StatementKind::For{control:ForControl::Each{binding,source_binding,..},..}=&body.statements[1].kind else{panic!("same canonical ForList")};assert_eq!(binding,"copying as anything","refusal must not strip the actual native clause");assert!(source_binding.is_none());assert_eq!(body.local_variables.entries().unwrap().iter().filter(|row|row.source_kind==crate::LocalSourceKind::ForBinding).count(),0);}
+  }
+ }
+}
+
+#[cfg(test)]mod forwarded_provider_error_controls{
+ use super::*;
+ struct Returned<'a,'op>{a:&'a crate::SettingAdmission<'op>}
+ impl SettingSyntaxProvider for Returned<'_,'_>{
+  fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{panic!("no settings in this exact error-boundary corpus")}
+  fn original_expression(&self,_:&str,_:usize)->std::io::Result<Option<crate::ParsedExpr>>{
+   self.a.record_operational_error(std::io::Error::from_raw_os_error(1450));
+   Err(self.a.take_operational_error().expect("actual same-permit error returned by fallible provider"))
+  }
+ }
+ #[test]fn returned_original_provider_first_io_survives_body_stop_without_reopening_admission(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let source="/proc/p()\n    call(value)\n";let ast=crate::parse(source);let provider=Returned{a:&a};
+  let body=parse_body_items_using_settings(&ast.items[0].children,Some(&provider),Some(&a),Some(source),false);assert!(a.is_stopped());assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));drop(body);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),fixed);
+ }
+}
+
+#[cfg(test)]
+#[test]
+fn original_pair_and_untyped_anything_keep_actual_local_rows_without_provider_authority(){
+    for clause in["var/key,value in entries","var/status as anything in entries"]{
+        let source=format!("/proc/probe(entries)\n    for({clause})\n        return\n");
+        let syntax=crate::parse(&source);assert!(syntax.diagnostics.is_empty());
+        let body=parse_body_items_using_settings(&syntax.items[0].children,None,None,Some(&source),false);
+        assert!(body.original_grammar.is_none());
+        let rows=body.local_variables.entries().unwrap();
+        let names=rows.iter().filter(|row|matches!(row.source_kind,crate::LocalSourceKind::ForBinding|crate::LocalSourceKind::CommaContinuation)).map(|row|source.get(row.name.range()).unwrap()).collect::<Vec<_>>();
+        assert_eq!(names,if clause.starts_with("var/key"){vec!["key","value"]}else{vec!["status"]});
+        if clause.starts_with("var/key"){
+            assert_eq!(rows.iter().map(|row|row.source_kind).collect::<Vec<_>>(),vec![crate::LocalSourceKind::ForBinding,crate::LocalSourceKind::CommaContinuation]);
+            assert_eq!(source.get(rows[1].anchor.range()),Some(","),"actual second local retains its producer's consumed comma anchor");
+        }
+        if clause.starts_with("var/status"){
+            assert!(rows.iter().filter(|row|row.source_kind==crate::LocalSourceKind::ForBinding).all(|row|row.type_components.is_empty()));
+            assert!(matches!(&body.statements[0].kind,StatementKind::For{control:ForControl::Each{binding,..},..}if binding=="var/status as anything"));
+        }
+    }
+}
+
+#[cfg(test)]#[test]fn native_written_range_step_survives_canonical_spacing_and_reuses_existing_name(){
+ fn split(source:&str)->Option<(&str,&str)>{let lexical=crate::lex_spans(source);split_range_step(source,&lexical,0)}
+ for tail in["1 step-1","1 step -1","1 step(-1)"]{
+  let source=format!("/proc/probe()\n    for(column_max in column_max-1 to {tail})\n        break\n");let syntax=crate::parse(&source);assert!(syntax.diagnostics.is_empty());let body=crate::parse_body_items_with_source(&syntax.items[0].children,&source);assert!(body.diagnostics.is_empty(),"{:?}",body.diagnostics);
+  let StatementKind::For{control:ForControl::Range{binding,start,end,step:Some(step)},..}=&body.statements[0].kind else{panic!("same native Range must retain written step")};assert_eq!(binding,"column_max");assert_eq!(&source[start.span.range()],"column_max-1");assert_eq!(&source[end.span.range()],"1");assert!(source[step.span.range()].contains("-1"));assert_eq!(body.local_variables.entries().unwrap().len(),0,"reuse cannot mint a declaration");
+ }
+ for source in["owner.step","/datum/step","finish(step)","a-step","step"]{assert!(split(source).is_none(),"not an optional Step separator: {source}");}
+ assert_eq!(split("owner.step step-1"),Some(("owner.step ","-1")));
+ assert_eq!(split("i++ step-1"),Some(("i++ ","-1")));assert_eq!(split("i-- step-1"),Some(("i-- ","-1")));assert!(split("a + +step").is_none());
 }

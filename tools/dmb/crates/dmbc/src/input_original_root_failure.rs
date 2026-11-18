@@ -79,7 +79,8 @@ impl OriginalRootOpenFailure{
   let before=&self.attempt.pending.get().ok_or_else(||invalid("failed root has no actual observation transaction"))?.0;
   let current=inputs.snapshot.lock().map_err(|_|invalid("handler failed-prefix ledger poisoned"))?;
   let ordinary=prefix.files.iter().all(|(p,v)|current.files.get(p)==Some(v))&&prefix.folders.iter().all(|(p,v)|current.folders.get(p)==Some(v))&&prefix.policy_directories.iter().all(|(p,v)|current.policy_directories.get(p)==Some(v))&&prefix.negative_files.is_subset(&current.negative_files)&&prefix.generated_outputs.is_subset(&current.generated_outputs);
+  let optional=prefix.optional_reads.iter().all(|(p,v)|current.optional_reads.get(p).as_ref()==Some(v));
   let opened=prefix.opened_reads.iter().all(|(p,v)|if p==&self.attempt.root{before.get(p).as_ref()==Some(v)}else{current.opened_reads.get(p).as_ref()==Some(v)});
-  if !ordinary||!extra_ordinary(&current)||!opened||!prefix.path_presence.iter().all(|(p,v)|current.path_presence.get(p).as_ref()==Some(v))||!prefix.original_payloads.iter().all(|(p,v)|current.original_payloads.get(p).as_ref()==Some(v)){return Err(invalid("failed handler prefix differs from its exact before/current recorded observations"))}Ok(())
+  if !ordinary||!extra_ordinary(&current)||!optional||!opened||!prefix.path_presence.iter().all(|(p,v)|current.path_presence.get(p).as_ref()==Some(v))||!prefix.original_payloads.iter().all(|(p,v)|current.original_payloads.get(p).as_ref()==Some(v)){return Err(invalid("failed handler prefix differs from its exact before/current recorded observations"))}Ok(())
  }
 }

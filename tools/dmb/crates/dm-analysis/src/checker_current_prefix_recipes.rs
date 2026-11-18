@@ -8,7 +8,7 @@ use dm_tree::frontend::{BodySyntaxFailure,CurrentArchivedBody,InitialSettingSour
 use std::{io,sync::{Arc,Weak}};
 #[derive(Clone,Copy,Debug)]enum NoteOrigin{Setting(Span),CurrentHeader}
 #[derive(Debug)]enum Recipe{GlobalFinal,Unknown(usize),AtDefinition(usize),Invalid(usize),Return(CurrentReturnRecipe),Rejected{ordinal:usize,family:u8,first:Option<NoteOrigin>}}
-#[derive(Debug)]pub struct CurrentSettingPrelude{code:Weak<dm_tree::frontend::BodyCodeIdentity>,window:Span,identity:ProcedureIdentity,rows:Vec<Recipe>,skipped:bool}
+#[derive(Debug)]pub struct CurrentSettingPrelude{code:dm_tree::frontend::BodyCodeWeak,window:Span,identity:ProcedureIdentity,rows:Vec<Recipe>,skipped:bool}
 pub struct CurrentPreludeFinding<'a>{diagnostic:&'a Diagnostic,tag:Option<&'static str>,level:crate::check_policy::DiagnosticSeverity}
 impl CurrentPreludeFinding<'_>{pub fn diagnostic(&self)->&Diagnostic{self.diagnostic}pub fn registration_tag(&self)->Option<&'static str>{self.tag}pub fn default_level(&self)->crate::check_policy::DiagnosticSeverity{self.level}}
 fn syntax_failure(actual:BodySyntaxFailure)->PolicyFailure{match actual{BodySyntaxFailure::Operational(actual)=>PolicyFailure::Operational(actual),BodySyntaxFailure::Syntax(actual)=>actual.message.into()}}
@@ -16,7 +16,7 @@ fn oom()->PolicyFailure{PolicyFailure::Operational(io::Error::new(io::ErrorKind:
 fn recipe_message_bytes(recipe:&Recipe)->Option<usize>{match recipe{Recipe::Return(value)=>value.retained_bytes()?.checked_sub(std::mem::size_of::<CurrentReturnRecipe>()),_=>Some(0)}}
 impl CurrentSettingPrelude{
  pub fn retained_charge(&self)->Option<usize>{self.rows.capacity().checked_mul(std::mem::size_of::<Recipe>()).and_then(|bytes|self.rows.iter().try_fold(bytes,|sum,row|sum.checked_add(recipe_message_bytes(row)?))).and_then(|n|n.checked_add(std::mem::size_of::<Self>()))}
- pub fn visit_storage(&self,mut visit:impl FnMut(Storage)){visit(Storage::Buffer{owner:"current_prefix.recipes",address:self.rows.as_ptr()as usize,logical:self.rows.len()*std::mem::size_of::<Recipe>(),capacity:self.rows.capacity()*std::mem::size_of::<Recipe>()});for row in &self.rows{if let Recipe::Return(value)=row{value.visit_storage(&mut visit);}}}
+ pub fn visit_storage(&self,mut visit:impl FnMut(Storage)){self.code.visit_allocation_storage(&mut |address,logical,capacity|visit(crate::checker_effects::Storage::Buffer{owner:"current_prefix.weak_code",address,logical,capacity}));visit(Storage::Buffer{owner:"current_prefix.recipes",address:self.rows.as_ptr()as usize,logical:self.rows.len()*std::mem::size_of::<Recipe>(),capacity:self.rows.capacity()*std::mem::size_of::<Recipe>()});for row in &self.rows{if let Recipe::Return(value)=row{value.visit_storage(&mut visit);}}}
  pub fn fingerprint_parts(&self,mut part:impl FnMut(&[u8])){part(&[self.skipped as u8]);part(&(self.rows.len()as u64).to_le_bytes());for row in &self.rows{match row{Recipe::GlobalFinal=>part(&[0]),Recipe::Unknown(n)=>{part(&[1]);part(&(*n as u64).to_le_bytes());},Recipe::AtDefinition(n)=>{part(&[2]);part(&(*n as u64).to_le_bytes());},Recipe::Invalid(n)=>{part(&[3]);part(&(*n as u64).to_le_bytes());},Recipe::Return(value)=>{part(&[4]);value.fingerprint_parts(&mut part);},Recipe::Rejected{ordinal,family,first}=>{part(&[5,*family]);part(&(*ordinal as u64).to_le_bytes());match first{None=>part(&[0]),Some(NoteOrigin::CurrentHeader)=>part(&[1]),Some(NoteOrigin::Setting(span))=>{part(&[2]);part(&(span.start as u64).to_le_bytes());part(&(span.end as u64).to_le_bytes());}}}}}}
  pub fn visit_current<W:EffectReportWork>(&self,body:&CurrentArchivedBody<'_,'_>,a:&dm_syntax::SettingAdmission<'_>,work:&mut W,checkpoint:&dyn Fn()->io::Result<()>,mut emit:impl FnMut(&Diagnostic)->io::Result<()>)->Result<(),PolicyFailure>{self.visit_current_registered(body,a,work,checkpoint,|row|emit(row.diagnostic()))}
  /// Current delivery only. Full aggregate must call ALL preludes before bodies.
@@ -38,7 +38,7 @@ impl CurrentSettingPrelude{
  }
  pub(crate) fn row_count(&self)->usize{self.rows.len()}
  fn deliver_current<W:EffectReportWork>(&self,body:&CurrentArchivedBody<'_,'_>,a:&dm_syntax::SettingAdmission<'_>,work:&mut W,checkpoint:&dyn Fn()->io::Result<()>,mut emit:impl FnMut(Diagnostic,Option<&'static str>,crate::check_policy::DiagnosticSeverity)->io::Result<usize>)->Result<(),PolicyFailure>{
-  checkpoint().map_err(PolicyFailure::Operational)?;if !Weak::ptr_eq(&self.code,&Arc::downgrade(body.syntax().original_code_owner()))||self.window!=body.syntax().canonical_window(){return Err("initial-setting recipes belong to another canonical body".into())}
+  checkpoint().map_err(PolicyFailure::Operational)?;if !self.code.matches(body.syntax().original_code_owner())||self.window!=body.syntax().canonical_window(){return Err("initial-setting recipes belong to another canonical body".into())}
   let pending=body.with_initial_setting_prefix(self.identity,a,|prefix|{if self.skipped{if !prefix.settings().is_empty()||prefix.first_non_setting().is_some(){return Err("skipped initial-setting recipe rebound to available code".into())}return Ok(())}
    // Admit actual current formatting geometry before ANY name/path/message Vec
    // is allocated. Syntax reservation remains separate on the real host counter.
@@ -89,5 +89,10 @@ pub fn current_setting_prelude<W:EffectReportWork>(body:&CurrentArchivedBody<'_,
    if let Some(row)=row{if rows.len()==rows.capacity(){return Err(oom())}rows.push(row);}Ok(())};
   let ordinary=syntax_using_observed_recipes(prefix.statement_body(),body.tree(),identity,&headers,Family::Duplicate,Severity::Error,&mut||checkpoint().map_err(PolicyFailure::Operational),&mut|_|Ok(()),None,None,Some(&mut sink))?;if !ordinary.is_empty(){return Err("prefix event adapter retained unqualified physical rows".into())}Ok(())
  });let result=match pending{Ok(value)=>value,Err(actual)=>Err(syntax_failure(actual))};if let Err(actual)=result{drop(rows);let cleanup=work.reconcile(marker,0);if matches!(&actual,PolicyFailure::Operational(_)){return Err(actual)}cleanup.map_err(PolicyFailure::Operational)?;return Err(actual)}
- let mut bytes=rows.capacity().checked_mul(std::mem::size_of::<Recipe>()).ok_or_else(oom)?;for row in &rows{bytes=bytes.checked_add(recipe_message_bytes(row).ok_or_else(oom)?).ok_or_else(oom)?;}work.reconcile(marker,bytes).map_err(PolicyFailure::Operational)?;Ok(CurrentSettingPrelude{code:Arc::downgrade(body.syntax().original_code_owner()),window:body.syntax().canonical_window(),identity,rows,skipped})
+ let mut bytes=rows.capacity().checked_mul(std::mem::size_of::<Recipe>()).ok_or_else(oom)?;for row in &rows{bytes=bytes.checked_add(recipe_message_bytes(row).ok_or_else(oom)?).ok_or_else(oom)?;}work.reconcile(marker,bytes).map_err(PolicyFailure::Operational)?;Ok(CurrentSettingPrelude{code:dm_tree::frontend::BodyCodeIdentity::downgrade(body.syntax().original_code_owner()),window:body.syntax().canonical_window(),identity,rows,skipped})
+}
+
+#[cfg(test)]#[test]fn actual_weak_code_locator_owner_widths_are_measured(){
+ {#[allow(dead_code)]struct Prior{code:std::sync::Weak<dm_tree::frontend::BodyCodeIdentity>,window:Span,identity:ProcedureIdentity,rows:Vec<Recipe>,skipped:bool}
+let old=std::mem::size_of::<Prior>();let new=std::mem::size_of::<CurrentSettingPrelude>();eprintln!("WEAK_CODE_OWNER CurrentSettingPrelude prior={old} current={new} delta={}",new as isize-old as isize);assert!(new<=old+std::mem::size_of::<usize>());}
 }

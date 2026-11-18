@@ -221,6 +221,11 @@ pub struct SettingStatement {
 #[derive(Clone, Copy)]
 pub enum OriginalLeafBlockLink { ElseIf, Else, DoWhile, Catch }
 
+/// Geometry of the SAME producer result, independent of grammar completion.
+/// Native token views do not issue Original-prepared literal owners.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum BodyExpressionGeometry { OriginalUnpublished, NativeUnpublished }
+
 pub trait SettingSyntaxProvider {
     #[cfg(debug_assertions)]
     fn traces_original_body_grammar(&self) -> bool { false }
@@ -230,6 +235,12 @@ pub trait SettingSyntaxProvider {
     /// None denotes the unchanged ordinary parser route, not original parity.
     fn original_expression_with_native_facts(&self,source:&str,offset:usize)->std::io::Result<Option<(crate::ParsedExpr,Option<crate::NativeExpressionParserFacts>)>>{
       self.original_expression(source,offset).map(|value|value.map(|parsed|(parsed,None)))
+    }
+    /// Existing providers retain the strict Original geometry contract. An
+    /// actual native token producer reports its own geometry without granting
+    /// Original-prepared literal backing or Original grammar completeness.
+    fn body_expression_with_geometry(&self,source:&str,offset:usize)->std::io::Result<Option<(crate::ParsedExpr,Option<crate::NativeExpressionParserFacts>,BodyExpressionGeometry)>>{
+      self.original_expression_with_native_facts(source,offset).map(|value|value.map(|(parsed,native)|(parsed,native,BodyExpressionGeometry::OriginalUnpublished)))
     }
     fn original_expression(&self,_source:&str,_offset:usize)->std::io::Result<Option<crate::ParsedExpr>>{Ok(None)}
     fn setting(&self, item: &Item) -> Result<SettingStatement, Diagnostic>;
@@ -258,6 +269,9 @@ pub trait SettingSyntaxProvider {
     fn original_inline_if_assignment_head(&self, _boundary: Span, _name: Span) -> std::io::Result<bool> {
         Ok(false)
     }
+    /// Exact single condition-close token and all trivia up to the actual
+    /// independently parsed inline assignment/call statement's header start.
+    fn original_inline_if_statement_gap(&self,_gap:Span)->std::io::Result<bool>{Ok(false)}
     /// Exact condition close, prefix ++/-- and bare name; the child's
     /// independently consumed PrefixStatement receipt remains mandatory.
     fn original_inline_if_prefix_head(&self, _boundary: Span, _operator: &'static str, _name: Span) -> std::io::Result<bool> {
@@ -274,6 +288,15 @@ pub trait SettingSyntaxProvider {
     ) -> std::io::Result<bool> {
         Ok(false)
     }
+    /// SAME current implicit-world declaration and actual local producer row.
+    fn original_for_implicit_world_header(&self,_header:Span,_local:&crate::LocalVariableSyntax)->std::io::Result<bool>{Ok(false)}
+    /// Exact declared head, As type-mask span and In; iterable proof is separate.
+    fn original_for_each_typed_prefix(&self,_prefix:Span,_local:&crate::LocalVariableSyntax,_hint:Span)->std::io::Result<bool>{Ok(false)}
+    /// Exact current Step keyword/trivia between independently completed bounds.
+    fn original_for_range_step_gap(&self,_gap:Span)->std::io::Result<bool>{Ok(false)}
+    /// Authenticate the SAME pair-loop declaration, comma, value name and In.
+    /// Both names are borrowed from this body's existing local producer ledger.
+    fn original_for_pair_prefix(&self,_prefix:Span,_key:&crate::LocalVariableSyntax,_value:&crate::LocalVariableSyntax)->std::io::Result<bool>{Ok(false)}
     /// Authenticate the exact unmodified type path and as-anything prefix.
     /// Components and name belong to this body's existing local ledger.
     fn original_for_each_anything_prefix(
@@ -293,6 +316,9 @@ pub trait SettingSyntaxProvider {
     }
     /// Prove the explicitly authored empty classic-for body on the SAME tape.
     /// Absence of children or an authored ')' is never an empty-body grant.
+    /// Same current while head, empty terminator gap and next sibling anchor.
+    /// No next sibling or a spelling-only provider grants no empty body.
+    fn original_empty_while_body(&self, _header:Span, _next_header:Span)->std::io::Result<bool>{Ok(false)}
     fn original_empty_classic_for_body(&self, _header: Span) -> std::io::Result<bool> {
         Ok(false)
     }
@@ -306,6 +332,7 @@ pub trait SettingSyntaxProvider {
     ) -> std::io::Result<bool> { Ok(false) }
     /// Authenticate exact try and bare/one plain var/type/name catch headers.
     /// Parameter facts are borrowed DATA; the actual body tape must match them.
+    fn original_empty_catch_continuation(&self, _catch_header: Span, _next_header: Span) -> std::io::Result<bool> { Ok(false) }
     fn original_try_catch_heads(&self, _try_header: Span, _catch_header: Span, _parameter: Option<&crate::LocalVariableSyntax>) -> std::io::Result<bool> { Ok(false) }
     /// Authenticate the exact var/static or var/global head before its independent initializer.
     fn original_static_local_head(&self, _header: Span) -> std::io::Result<bool> { Ok(false) }
@@ -330,7 +357,6 @@ pub trait SettingSyntaxProvider {
     fn switch_case_cursor(&self,_item:&Item)->Result<OriginalCaseCursor,&'static str>{Err("original switch block cursor was not issued")}
 }
 
-#[cfg(debug_assertions)]
 fn trace_original_unissued_leaf(body_start: usize, leaf: Span, reason: &str, source: Option<&str>) {
     use std::{io::Write, sync::atomic::{AtomicUsize, Ordering}};
     static REMAINING: AtomicUsize = AtomicUsize::new(32);
@@ -352,6 +378,9 @@ pub enum NativeBodyParserFacts {
  BareReturn { header:Span },
  Intrinsic { scope_roots:usize, scopes:usize, productions:usize, expressions:usize },
 }
+/// Transient SAME-parser syntax result only; not retained BODY/current/code authority.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
+pub enum NativeBodySyntaxTraversal{Parsed,Rejected,Unissued}
 // One stack-owned producer ledger. Recursive scopes and expression loans borrow
 // the SAME cells; no AST walk, public flag or separate frontend can settle them.
 #[derive(Default)]
@@ -361,26 +390,41 @@ struct NativeBodyParserProgress {
  scopes_started:std::cell::Cell<usize>, scopes_finished:std::cell::Cell<usize>,
  expressions:std::cell::Cell<usize>, recovered:std::cell::Cell<bool>,
  deferred:std::cell::Cell<bool>, unsupported:std::cell::Cell<bool>,
+ syntax_unissued:std::cell::Cell<bool>,
 }
 impl NativeBodyParserProgress {
  fn increment(&self,cell:&std::cell::Cell<usize>){
-  match cell.get().checked_add(1){Some(value)=>cell.set(value),None=>self.deferred.set(true)}
+  match cell.get().checked_add(1){Some(value)=>cell.set(value),None=>{self.deferred.set(true);self.syntax_unissued.set(true)}}
  }
  fn production(&self){self.increment(&self.productions);}
  fn scope_started(&self){self.increment(&self.scopes_started);}
  fn scope_finished(&self,exhausted:bool){
-  if exhausted{self.increment(&self.scopes_finished)}else{self.deferred.set(true)}
+  if exhausted{self.increment(&self.scopes_finished)}else{self.deferred.set(true);self.syntax_unissued.set(true)}
  }
  fn expression(&self,facts:Option<crate::NativeExpressionParserFacts>,span:Option<Span>){
   self.increment(&self.expressions);
   match facts {
    Some(facts) => {
     self.recovered.set(self.recovered.get()||facts.recovered());
+    self.syntax_unissued.set(self.syntax_unissued.get()||facts.deferred()
+     ||(!facts.is_complete()&&!facts.recovered())
+     ||(facts.is_complete()&&(!facts.exhausted()||facts.complete_span()!=span)));
     self.deferred.set(self.deferred.get()||facts.deferred()
      ||!facts.exhausted()||!facts.is_complete()||facts.complete_span()!=span);
    },
-   None=>self.deferred.set(true),
+   None=>{self.deferred.set(true);self.syntax_unissued.set(true)},
   }
+ }
+ fn syntax_traversal(&self,body:&ParsedBody)->NativeBodySyntaxTraversal{
+  if self.syntax_unissued.get()
+   ||body.diagnostics.iter().any(|row|row.kind==DiagnosticKind::Unsupported)||self.scopes_started.get()==0
+   ||self.scopes_started.get()!=self.scopes_finished.get(){return NativeBodySyntaxTraversal::Unissued}
+  if self.recovered.get()||!body.diagnostics.is_empty(){
+   // A recovery classification without its actual registered error cannot
+   // stand in for pinned code=None or authorize successful syntax coverage.
+   return if body.diagnostics.is_empty(){NativeBodySyntaxTraversal::Unissued}else{NativeBodySyntaxTraversal::Rejected}
+  }
+  if self.deferred.get(){NativeBodySyntaxTraversal::Unissued}else{NativeBodySyntaxTraversal::Parsed}
  }
  fn finish(self,body:&ParsedBody)->NativeBodyParserFacts{
   if self.recovered.get()||!body.diagnostics.is_empty(){return NativeBodyParserFacts::Recovered}
@@ -418,12 +462,10 @@ fn parse_body_items_with_native_progress(
         source,
         native_progress,
         original_compound_complete:true,
-        #[cfg(debug_assertions)]
         trace_unissued_leaf: settings.is_some() && {
             static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
             *ENABLED.get_or_init(|| std::env::var_os("DMB_ORIGINAL_TRACE_GRAMMAR_LEAF").is_some())
         },
-        #[cfg(debug_assertions)]
         first_unissued_leaf: None,
         original_compound_seen_statement:false,
         original_loop_control:false,
@@ -436,17 +478,24 @@ fn parse_body_items_with_native_progress(
     result.statements = parse_sequence_first(items, None, &mut diagnostics, &mut origins, Some(&mut prefix_settings));
     drop(diagnostics);
     let compound=origins.original_compound_complete&&origins.original_compound_seen_statement;
-    #[cfg(debug_assertions)]
     let first_unissued = origins.first_unissued_leaf;
+    #[cfg(not(debug_assertions))]
+    let release_trace_unissued = origins.trace_unissued_leaf;
     result.local_variables.finish_source_order();
     finish_original_setting_prefix(&mut result, prefix_settings);
     if compound&&result.diagnostics.is_empty(){result.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings,scope_roots:Some(result.statements.len()),kind:OriginalBodyGrammarKind::Available,statement:None,expression:None,operator:None});}
-    #[cfg(debug_assertions)]
     if result.original_grammar.is_none() && result.diagnostics.is_empty()
         && !admission.is_some_and(|admission| admission.is_stopped())
     {
         if let (Some((leaf, reason)), Some(first)) = (first_unissued, items.first()) {
-            if settings.is_some_and(|provider| provider.traces_original_body_grammar()) {
+            // Preserve the existing debug provider gate. Fixed release test
+            // profiles can opt into the SAME bounded first-leaf diagnostic
+            // with the existing flag, without changing syntax admission.
+            #[cfg(debug_assertions)]
+            let report_unissued=settings.is_some_and(|provider| provider.traces_original_body_grammar());
+            #[cfg(not(debug_assertions))]
+            let report_unissued=release_trace_unissued;
+            if report_unissued {
                 trace_original_unissued_leaf(first.header_span.start, leaf, reason, source);
             }
         }
@@ -503,9 +552,7 @@ struct BodyOrigins<'a> {
     native_progress:Option<&'a NativeBodyParserProgress>,
     source: Option<&'a str>,
     original_compound_complete:bool,
-    #[cfg(debug_assertions)]
     trace_unissued_leaf: bool,
-    #[cfg(debug_assertions)]
     first_unissued_leaf: Option<(Span, &'static str)>,
     original_compound_seen_statement:bool,
     original_loop_control:bool,
@@ -531,7 +578,6 @@ impl BodyOrigins<'_> {
         }
     }
     fn require_original(&mut self, issued: bool, _span: Span, _reason: &'static str) {
-        #[cfg(debug_assertions)]
         if self.trace_unissued_leaf && !issued && self.first_unissued_leaf.is_none() {
             self.first_unissued_leaf = Some((_span, _reason));
         }
@@ -651,24 +697,34 @@ impl BodyOrigins<'_> {
 }
 
 // DATA routing only; a genuine Complete Original expression must still prove
-// both children and the exact output operator before this statement can issue.
+// both children and the exact stream operator before this statement can issue.
 fn native_unsupported(item:&Item,origins:&BodyOrigins<'_>)->Statement{
- if let Some(progress)=origins.native_progress{progress.unsupported.set(true);}
+ if let Some(progress)=origins.native_progress{progress.unsupported.set(true);progress.syntax_unissued.set(true);}
  unsupported(item)
 }
-fn original_possible_output_header(header:&str)->bool{header.contains("<<")}
+fn original_possible_output_header(header:&str)->bool{header.contains("<<")||header.contains(">>")}
 fn original_output_statement_root(expr:&Expr)->bool{
  let ExprKind::Binary{op,lhs,..}=&expr.kind else{return false};
- if op!="<<"{return false}
+ if !matches!(op.as_str(),"<<"|">>"){return false}
  let name=|expr:&Expr|matches!(&expr.kind,ExprKind::Ident(name)
   if crate::expression_parser::original_ordinary_call_name(name)
    && !matches!(name.as_str(),"null"|"__PROC__"|"__TYPE__"|"__IMPLIED_TYPE__"));
- let mut member=lhs.as_ref();
- while let ExprKind::Member{object,via_colon:false,..}=&member.kind{member=object;}
- name(lhs)||(matches!(&lhs.kind,ExprKind::Member{via_colon:false,..})&&name(member))
-  ||matches!(&lhs.kind,ExprKind::Index{object,index}
-  if name(object)&&matches!(&index.kind,ExprKind::Literal(value)
-   if matches!(value.original_value(),Some(crate::OriginalTokenValue::String(_)))))
+ // Eligibility DATA only; the complete expression receipt separately
+ // authenticates fields/brackets/key/operator before this role is used.
+ let plain=|mut value:&Expr|{for _ in 0..32{match &value.kind{
+  ExprKind::Member{object,via_colon:false,..}=>value=object,
+  _=>return name(value),
+ }}false};
+ // DATA only: the existing Complete proof authenticates each call/field/child.
+ let call_member=|mut value:&Expr|{let mut seen=false;for _ in 0..32{match &value.kind{
+  ExprKind::Member{object,via_colon:false,..}=>{seen=true;value=object;},
+  ExprKind::Call{callee,..}=>return seen&&matches!(&callee.kind,ExprKind::Ident(n)if crate::expression_parser::original_ordinary_call_name(n)),
+  _=>return false,
+ }}false};
+ (op=="<<"&&matches!(&lhs.kind,ExprKind::Call{callee,args}if matches!(&callee.kind,ExprKind::Ident(n)if n=="file")&&args.len()==1&&!matches!(&args[0].kind,ExprKind::Binary{op,..}if is_assignment(op))))
+  ||(op=="<<"&&call_member(lhs))||plain(lhs)||matches!(&lhs.kind,ExprKind::Index{object,index}
+  if plain(object)&&(name(index)||matches!(&index.kind,ExprKind::Literal(value)
+   if matches!(value.original_value(),Some(crate::OriginalTokenValue::String(_))))))
 }
 
 fn parse_sequence(items:&[Item],diagnostics:&mut BodyDiagnostics<'_>,origins:&mut BodyOrigins<'_>)->Vec<Statement>{parse_sequence_first(items,None,diagnostics,origins,None)}
@@ -703,7 +759,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
         if header == "do" || header == "try" || starts_keyword(header,"if") || starts_keyword(header,"while") || starts_keyword(header,"switch")
             || starts_keyword(header,"for") || original_label_header(header).is_some() {
             origins.original_compound_seen_statement=true;
-        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!starts_keyword(header,"throw")&&!possible_joined_throw(header)&&!starts_keyword(header,"del")&&!original_ordinary_call_header(header)&&!original_explicit_call_header(header)&&!original_external_call_header(header)&&!original_dynamic_call_header(header)&&!original_static_new_header(header)&&original_named_loop_control_header(header).is_none()&&!original_simple_assignment_candidate(header)&&!original_post_increment_candidate(header)&&!original_crash_statement_candidate(header)&&!original_possible_output_header(header)&&!local_statement&&!initial_setting
+        }else if !item.children.is_empty()||(!starts_keyword(header,"return")&&!starts_keyword(header,"throw")&&!possible_joined_throw(header)&&!starts_keyword(header,"del")&&!original_ordinary_call_header(header)&&!original_explicit_call_header(header)&&!original_external_call_header(header)&&!original_dynamic_call_header(header)&&!original_static_new_header(header)&&!starts_keyword(header,"new")&&original_named_loop_control_header(header).is_none()&&!original_simple_assignment_candidate(header)&&!original_post_increment_candidate(header)&&!original_crash_statement_candidate(header)&&!original_possible_output_header(header)&&!header.starts_with('(')&&!local_statement&&!initial_setting
             && !(matches!(header, "break" | "continue") && origins.original_loop_control)){
             // The actual Original output can join a keyword directly to
             // punctuation or an interpolation token. Let parse_one's same
@@ -747,7 +803,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                 continue;
             }
             original_local_head = original_single_local_head(header, &lexical);
-            if !original_local_head && header.starts_with("var/list/") {
+            if !original_local_head && header.starts_with("var/") {
                 original_local_head=original_single_array_local(header,base,diagnostics,origins);
                 if diagnostics.admission.is_some_and(|a|a.is_stopped()){break}
             }
@@ -766,7 +822,7 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                     Err(actual) => {
                         origins.original_compound_complete = false;
                         if let Some(admission) = diagnostics.admission {
-                            admission.record_operational_error(actual);
+                            admission.forward_operational_error(actual);
                         }
                         break;
                     }
@@ -870,7 +926,9 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
                 );
                 let issued = heads && original_indented_block_boundary(item, origins)
                     && original_linked_leaf_block(item, catch, OriginalLeafBlockLink::Catch, origins)
-                    && original_indented_block_boundary(catch, origins);
+                    && (original_indented_block_boundary(catch, origins)
+                        || (catch.children.is_empty() && items.get(index+2).is_some_and(|next|
+                            original_empty_catch_question(origins.settings,catch.header_span,next.header_span,origins.admission))));
                 origins.require_original(issued, item.header_span, "try_catch");
                 if !origins.operational_ready() { break; }
                 statements.push(Statement {
@@ -917,7 +975,8 @@ fn parse_sequence_first(items:&[Item],first:Option<&Item>,diagnostics:&mut BodyD
             index += 1;
             continue;
         }
-        let statement = parse_one(item, diagnostics, origins, original_local_head, defer_joined_return);
+        let statement = parse_one(item, diagnostics, origins, original_local_head, defer_joined_return,
+            items.get(index+1).map(|next|next.header_span));
         if let Some(count) = root_prefix.as_deref_mut() {
             if original_initial_setting(&statement) {
                 *count += 1;
@@ -963,12 +1022,19 @@ fn original_inline_prefix_boundary(
 )->bool{
     match provider.map(|provider|provider.original_inline_if_prefix_head(boundary,operator,name)).transpose(){
         Ok(value)=>value==Some(true),
-        Err(actual)=>{if let Some(admission)=admission{admission.record_operational_error(actual);}false}
+        Err(actual)=>{if let Some(admission)=admission{admission.forward_operational_error(actual);}false}
     }
 }
 
 // An inline leaf has no block close to infer. Borrow the SAME real token tape
 // to prove zero closes before the actual following else/else-if header.
+fn original_empty_catch_question(provider:Option<&dyn SettingSyntaxProvider>,catch_header:Span,next_header:Span,admission:Option<&crate::SettingAdmission<'_>>)->bool{
+ if catch_header.start>=catch_header.end||next_header.start>=next_header.end||catch_header.end>next_header.start{return false}
+ match provider.map(|p|p.original_empty_catch_continuation(catch_header,next_header)).transpose(){
+  Ok(Some(value))=>value,_ if provider.is_none()=>false,Err(actual)=>{if let Some(a)=admission{a.forward_operational_error(actual);}false},_=>false,
+ }
+}
+
 fn original_try_catch_head_question(
     provider: Option<&dyn SettingSyntaxProvider>, try_header: Span, catch_header: Span,
     parameter: Option<&crate::LocalVariableSyntax>, admission: Option<&crate::SettingAdmission<'_>>,
@@ -976,10 +1042,23 @@ fn original_try_catch_head_question(
     match provider.map(|provider| provider.original_try_catch_heads(try_header, catch_header, parameter)).transpose() {
         Ok(value) => value == Some(true),
         Err(actual) => {
-            if let Some(admission) = admission { admission.record_operational_error(actual); }
+            if let Some(admission) = admission { admission.forward_operational_error(actual); }
             false
         }
     }
+}
+
+// DATA route shared by inline-THEN and block-THEN continuations. The actual
+// provider sees all ELSE-to-child bytes, while the child keeps its own receipt.
+fn original_inline_else_prefix(next:&Item)->Option<Span>{
+ if !next.children.is_empty(){return None}
+ let header=next.header.trim();if !starts_keyword(header,"else"){return None}
+ let rest=header.strip_prefix("else")?.trim_start();
+ if original_inline_assignment_name(rest).is_none()&&!starts_keyword(rest,"return")&&!possible_joined_return(rest)
+    &&!original_ordinary_call_header(rest){return None}
+ let start=next.header_span.start.checked_add(header.as_ptr()as usize-next.header.as_ptr()as usize)?;
+ let child=next.header_span.start.checked_add(rest.as_ptr()as usize-next.header.as_ptr()as usize)?;
+ (start<child&&child<=next.header_span.end).then_some(Span::new(start,child))
 }
 
 fn original_inline_if_continuation(item: &Item, next_items: &[Item], origins: &BodyOrigins<'_>) -> bool {
@@ -991,21 +1070,8 @@ fn original_inline_if_continuation(item: &Item, next_items: &[Item], origins: &B
             .is_some_and(|rest| starts_keyword(rest.trim_start(), "if")) =>
             (OriginalLeafBlockLink::ElseIf, next.header_span),
         [next] if next.children.is_empty() => {
-            let header = next.header.trim();
-            if !starts_keyword(header, "else") { return false; }
-            let Some(rest) = header.strip_prefix("else").map(str::trim_start) else { return false; };
-            // DATA routing only. Authenticate the final ELSE token AND
-            // every byte before the child through the SAME provider: its
-            // Else role permits only ELSE plus trivia in this entire range.
-            // The consuming child proof subsequently checks the full suffix.
-            // Padding a compatibility Item cannot hide a semicolon/brace.
-            if original_inline_assignment_name(rest).is_none()
-                && !starts_keyword(rest, "return") && !possible_joined_return(rest) { return false; }
-            let start = next.header_span.start
-                + (header.as_ptr() as usize - next.header.as_ptr() as usize);
-            let child_start = next.header_span.start
-                + (rest.as_ptr() as usize - next.header.as_ptr() as usize);
-            (OriginalLeafBlockLink::Else, Span::new(start, child_start))
+            let Some(prefix)=original_inline_else_prefix(next)else{return false};
+            (OriginalLeafBlockLink::Else,prefix)
         }
         _ => return false,
     };
@@ -1014,7 +1080,7 @@ fn original_inline_if_continuation(item: &Item, next_items: &[Item], origins: &B
     match origins.settings.map(|provider| provider.original_leaf_block_link(tail, next_header, link, 0)).transpose() {
         Ok(actual) => actual == Some(true),
         Err(error) => {
-            if let Some(admission) = origins.admission { admission.record_operational_error(error); }
+            if let Some(admission) = origins.admission { admission.forward_operational_error(error); }
             false
         }
     }
@@ -1029,7 +1095,7 @@ fn original_inline_for_assignment_boundary(
     match provider.map(|provider| provider.original_inline_for_assignment_head(gap, name)).transpose() {
         Ok(value) => value == Some(true),
         Err(actual) => {
-            if let Some(admission) = admission { admission.record_operational_error(actual); }
+            if let Some(admission) = admission { admission.forward_operational_error(actual); }
             false
         }
     }
@@ -1053,6 +1119,7 @@ fn parse_if(
     });
     let inline = control_inline(item, "if");
     let mut require_next_proof = false;
+    let mut deferred_inline_gap = false;
     if newly_composed || require_continuation_proof {
         // A compatibility Item can attach children after an authored ';'.
         let opening = inline.is_none()
@@ -1066,6 +1133,8 @@ fn parse_if(
             [next, ..] if opening && next.header.trim_start().strip_prefix("else")
                     .is_some_and(|rest| starts_keyword(rest.trim_start(), "if")) =>
                 original_linked_leaf_block(item, next, OriginalLeafBlockLink::ElseIf, origins),
+            [next] if opening => original_inline_else_prefix(next).is_some_and(|prefix|
+                original_linked_leaf_block_to(item,prefix,OriginalLeafBlockLink::Else,origins)),
             _ => false,
         };
         let inline_leaf = item.children.is_empty()
@@ -1101,7 +1170,7 @@ fn parse_if(
                     Ok(value) => value == Some(true),
                     Err(actual) => {
                         if let Some(admission) = origins.admission {
-                            admission.record_operational_error(actual);
+                            admission.forward_operational_error(actual);
                         }
                         false
                     }
@@ -1109,7 +1178,12 @@ fn parse_if(
             });
         let inline_linked = inline_leaf && original_inline_if_continuation(item, else_items, origins);
         let issued = (opening && continuation) || inline_linked;
-        origins.require_original(issued, item.header_span, "if_boundary");
+        // This new route waits for the SAME parser's single actual leaf and
+        // its independently required statement receipt. No scanned callee or
+        // member-name list stands in for the consumed child.
+        deferred_inline_gap = !issued && inline.is_some()
+            && item.children.is_empty() && original_inline_if_continuation(item,else_items,origins);
+        if !deferred_inline_gap { origins.require_original(issued, item.header_span, "if_boundary"); }
         // A newly admitted multi-link chain must prove each following link,
         // even when a nested condition is in the older simple cohort.
         require_next_proof = issued && (require_continuation_proof || else_items.len() > 1
@@ -1118,6 +1192,23 @@ fn parse_if(
     if !origins.operational_ready() { return native_unsupported(item,origins); }
     let then_branch = control_body_from_inline(item, inline, diagnostics, origins);
     if !origins.operational_ready() { return native_unsupported(item,origins); }
+    if deferred_inline_gap {
+        let issued = condition.as_ref().zip(then_branch.first()).is_some_and(|(condition,leaf)| {
+            let expected_start=inline.map(|inline|item.header_span.start
+                +(inline.as_ptr() as usize-item.header.as_ptr() as usize));
+            if then_branch.len()!=1 || expected_start!=Some(leaf.header_span.start)
+                || leaf.header_span.end>item.header_span.end
+                || condition.span.end>leaf.header_span.start
+                || !(matches!(&leaf.kind,StatementKind::Assign{..}|StatementKind::Call(_))
+                    || original_inline_bare_postfix_leaf(&leaf.kind)
+                    ||(origins.original_loop_control&&matches!(&leaf.kind,StatementKind::Break|StatementKind::Continue))) { return false; }
+            let gap=Span::new(condition.span.end,leaf.header_span.start);
+            original_inline_control_close_boundary(origins.settings,gap,origins.admission)
+        });
+        origins.require_original(issued,item.header_span,"if_consumed_leaf_gap");
+        require_next_proof=issued&&(require_continuation_proof||!else_items.is_empty());
+        if !origins.operational_ready() { return native_unsupported(item,origins); }
+    }
     let mut span = item.span;
     let else_branch = if let Some((other, remaining)) = else_items.split_first() {
         span.end = else_items.last().unwrap().span.end;
@@ -1136,7 +1227,7 @@ fn parse_if(
                 // Native inline-else compatibility drops surplus clauses; that
                 // is not a fully consumed Original source scope.
                 origins.require_original(remaining.is_empty(), other.header_span, "else_chain");
-                if !remaining.is_empty(){if let Some(progress)=origins.native_progress{progress.unsupported.set(true);}}
+                if !remaining.is_empty(){if let Some(progress)=origins.native_progress{progress.unsupported.set(true);progress.syntax_unissued.set(true);}}
                 let mut inline = other.clone();
                 inline.header = rest.trim_end_matches(';').into();
                 inline.header_span.start += other.header.find(rest).unwrap_or(0);
@@ -1185,7 +1276,7 @@ fn original_indented_block_boundary(item: &Item, origins: &BodyOrigins<'_>) -> b
             Ok(value) => value,
             Err(actual) => {
                 if let Some(admission) = origins.admission {
-                    admission.record_operational_error(actual);
+                    admission.forward_operational_error(actual);
                 }
                 false
             }
@@ -1197,7 +1288,10 @@ fn original_indented_block_boundary(item: &Item, origins: &BodyOrigins<'_>) -> b
 
 fn original_linked_leaf_block(
     item: &Item, next: &Item, link: OriginalLeafBlockLink, origins: &BodyOrigins<'_>,
-) -> bool {
+) -> bool {original_linked_leaf_block_to(item,next.header_span,link,origins)}
+fn original_linked_leaf_block_to(
+    item:&Item,next_header:Span,link:OriginalLeafBlockLink,origins:&BodyOrigins<'_>,
+)->bool{
     let Some(mut last) = item.children.last() else { return false };
     let mut closes = 1;
     while let Some(child) = last.children.last() {
@@ -1219,7 +1313,11 @@ fn original_linked_leaf_block(
         // condition/body receipts are still consumed later by parse_one.
         let indented_while = starts_keyword(header, "while") && header.ends_with(')')
             && control_inline(last, "while").is_none();
-        if !(indented_if || indented_else_if || header == "else" || indented_for || indented_while)
+        // A trailing SWITCH also owns a real block close. Its case/header
+        // grammar is independently proved when parse_one consumes that child.
+        let indented_switch = starts_keyword(header, "switch") && header.ends_with(')')
+            && control_inline(last, "switch").is_none();
+        if !(indented_if || indented_else_if || header == "else" || indented_for || indented_while || indented_switch)
             || !original_indented_block_boundary(last, origins)
         {
             return false;
@@ -1227,12 +1325,13 @@ fn original_linked_leaf_block(
         closes += 1;
         last = child;
     }
-    let tail = Span::new(last.header_span.end, next.header_span.start);
-    match origins.settings.map(|provider| provider.original_leaf_block_link(tail, next.header_span, link, closes)).transpose() {
+    if last.header_span.end>next_header.start||next_header.start>=next_header.end{return false}
+    let tail = Span::new(last.header_span.end, next_header.start);
+    match origins.settings.map(|provider| provider.original_leaf_block_link(tail, next_header, link, closes)).transpose() {
         Ok(value) => value == Some(true),
         Err(actual) => {
             if let Some(admission) = origins.admission {
-                admission.record_operational_error(actual);
+                admission.forward_operational_error(actual);
             }
             false
         }
@@ -1259,7 +1358,7 @@ fn original_throw_head_checked(origins: &mut BodyOrigins<'_>, head: Span) -> Opt
         Err(actual) => {
             origins.original_compound_complete = false;
             *origins.original_grammar = None;
-            if let Some(admission) = origins.admission { admission.record_operational_error(actual); }
+            if let Some(admission) = origins.admission { admission.forward_operational_error(actual); }
             None
         }
     }
@@ -1275,7 +1374,9 @@ fn parse_one(
     origins: &mut BodyOrigins<'_>,
     mut original_local_head: bool,
     defer_joined_return: bool,
+    next_header: Option<Span>,
 ) -> Statement {
+    let syntax_errors_before=diagnostics.rows.len();
     if let Some(native)=origins.native_progress{native.production();}
     let native_child_scopes=origins.native_progress.map(|progress|progress.scopes_started.get());
     let header = item.header.trim();
@@ -1285,7 +1386,7 @@ fn parse_one(
             Err(actual) => {
                 origins.original_compound_complete = false;
                 if let Some(admission) = diagnostics.admission {
-                    admission.record_operational_error(actual);
+                    admission.forward_operational_error(actual);
                 }
                 return native_unsupported(item,origins);
             }
@@ -1321,10 +1422,16 @@ fn parse_one(
         // block are witnessed. Inline/recovery tails cannot borrow the proof.
         let mut witnessed = inline.is_none() && header.ends_with(')')
             && original_indented_block_boundary(item, origins);
+        if !witnessed && item.children.is_empty() && inline.is_none() && header.ends_with(')') {
+            witnessed=next_header.is_some_and(|next|original_empty_while_question(
+                origins.settings,item.header_span,next,origins.admission));
+        }
         let condition = parse_control_condition_observed(item, "while", diagnostics, &mut |parsed| {
             witnessed &= parsed.original_simple_expression.is_some_and(|value| {
                 value.is_read_value()
-                    ||(value.is_original()&&value.kind()==crate::expression_parser::OriginalSimpleKind::PrefixCondition)
+                    ||(value.is_original()&&matches!(value.kind(),
+                        crate::expression_parser::OriginalSimpleKind::PrefixCondition
+                            |crate::expression_parser::OriginalSimpleKind::PlainAssignment))
             });
         });
         let issued = witnessed && condition.is_some();
@@ -1346,7 +1453,7 @@ fn parse_one(
                 provider.original_empty_classic_for_body(item.header_span)).transpose() {
                 Ok(value) => boundary = value == Some(true),
                 Err(actual) => if let Some(admission) = origins.admission {
-                    admission.record_operational_error(actual);
+                    admission.forward_operational_error(actual);
                 },
             }
         }
@@ -1360,11 +1467,23 @@ fn parse_one(
                 }
             }
         }
+        // Same lexical close/trivia loan, not borrowed IF authority. The
+        // iterable/header is independently issued, and the inline child will
+        // still require its own actual call or IF/body receipt below.
+        if !boundary && original_control {
+            if let (Some(ForControl::Each{iterable,..}),Some(inline))=(&control,control_inline(item,"for")){
+                let child_start=item.header_span.start+(inline.as_ptr()as usize-item.header.as_ptr()as usize);
+                let routed=starts_keyword(inline,"if")
+                    ||(item.children.is_empty()&&original_ordinary_call_header(inline));
+                boundary=routed&&original_inline_control_close_boundary(origins.settings,
+                    Span::new(iterable.span.end,child_start),origins.admission);
+            }
+        }
         origins.require_original(boundary && original_control, item.header_span, "for_control");
         control.map(|control| {
             let parent = origins.original_loop_control;
             origins.original_loop_control = boundary && original_control
-                && matches!(&control, ForControl::Each { .. }
+                && matches!(&control, ForControl::All { .. } | ForControl::Each { .. } | ForControl::Pair { .. }
                     | ForControl::Range { .. } | ForControl::CStyle { .. });
             let body = control_body(item, "for", diagnostics, origins);
             origins.original_loop_control = parent;
@@ -1407,7 +1526,7 @@ fn parse_one(
         let leading = item.header.len() - item.header.trim_start().len();
         let offset = item.header_span.start + leading + (header.len() - rest.len());
         let return_head=match original_return_head_question(origins.settings,Span::new(item.header_span.start+leading,offset)){
-            Ok(issued)=>issued,Err(actual)=>{origins.original_compound_complete=false;if let Some(a)=origins.admission{a.record_operational_error(actual)}return native_unsupported(item,origins)}
+            Ok(issued)=>issued,Err(actual)=>{origins.original_compound_complete=false;if let Some(a)=origins.admission{a.forward_operational_error(actual)}return native_unsupported(item,origins)}
         };
         parse_expr_observed(rest,offset,diagnostics,&mut|parsed|{
             use crate::expression_parser::OriginalSimpleKind;
@@ -1433,7 +1552,7 @@ fn parse_one(
             match origins.settings.map(|provider|provider.original_delete_head(head)).transpose(){
                 Ok(value)=>value==Some(true),
                 Err(actual)=>{origins.original_compound_complete=false;*origins.original_grammar=None;
-                    if let Some(a)=origins.admission{a.record_operational_error(actual);}return native_unsupported(item,origins)}
+                    if let Some(a)=origins.admission{a.forward_operational_error(actual);}return native_unsupported(item,origins)}
             }
         }else{false};
         origins.require_original(head_issued,item.header_span,"delete_head");
@@ -1490,7 +1609,7 @@ fn parse_one(
                 Err(actual) => {
                     origins.original_compound_complete = false;
                     if let Some(admission) = diagnostics.admission {
-                        admission.record_operational_error(actual);
+                        admission.forward_operational_error(actual);
                     }
                     return native_unsupported(item,origins);
                 }
@@ -1524,12 +1643,14 @@ fn parse_one(
         let external_call=original_external_call_header(header);
         let dynamic_call=original_dynamic_call_header(header);
         let static_new=original_static_new_header(header);
+        let dynamic_new=starts_keyword(header,"new");
         let assignment=original_simple_assignment_candidate(header);
         let increment=original_post_increment_candidate(header);
         let crash=original_crash_statement_candidate(header);
         let output=original_possible_output_header(header);
+        let conditional_value=header.starts_with('(');
         parse_expr_observed(header,item.header_span.start,diagnostics,&mut|parsed|{
-            if ordinary_call || explicit_call || external_call || dynamic_call || static_new || assignment || increment || crash || output {
+            if ordinary_call || explicit_call || external_call || dynamic_call || static_new || dynamic_new || assignment || increment || crash || output || conditional_value {
                 use crate::expression_parser::OriginalSimpleKind;
                 let issued=parsed.original_simple_expression.is_some_and(|actual|match actual.kind(){
                     OriginalSimpleKind::OrdinaryCallStatement=>ordinary_call,
@@ -1544,6 +1665,8 @@ fn parse_one(
                         || (external_call && actual.is_original() && parsed.expr.as_ref().is_some_and(original_external_call_statement_root))
                         || (dynamic_call && actual.is_original() && parsed.expr.as_ref().is_some_and(original_dynamic_call_statement_root))
                         || (static_new && actual.is_original() && parsed.expr.as_ref().is_some_and(original_static_new_statement_root))
+                        || (dynamic_new && actual.is_original() && parsed.expr.as_ref().is_some_and(original_dynamic_new_statement_root))
+                        || (conditional_value && actual.is_original() && parsed.expr.as_ref().is_some_and(|expr|original_parenthesized_conditional_statement_root(expr)||original_parenthesized_assignment_statement_root(expr)))
                         || (output && actual.is_original() && parsed.expr.as_ref().is_some_and(original_output_statement_root)) || (ordinary_call && parsed.expr.as_ref().is_some_and(|expr| {
                         let ExprKind::Call { callee, .. } = &expr.kind else { return false; };
                         if matches!(&callee.kind, ExprKind::Ident(_)) {
@@ -1555,8 +1678,13 @@ fn parse_one(
                         // Complete consumed all argument and member tokens.
                         // Keep this statement role to identifier-rooted dot paths.
                         let mut receiver = callee.as_ref();
-                        while let ExprKind::Member { object, via_colon: false, .. } = &receiver.kind {
-                            receiver = object;
+                        loop {
+                            receiver = match &receiver.kind {
+                                ExprKind::Member { object, via_colon: false, .. }
+                                | ExprKind::SafeMember { object, via_colon: false, .. } => object,
+                                ExprKind::Call { callee, .. } => callee,
+                                _ => break,
+                            };
                         }
                         matches!(&receiver.kind, ExprKind::Ident(_))
                     })),
@@ -1577,7 +1705,7 @@ fn parse_one(
     };
     if !item.children.is_empty(){
       if let(Some(progress),Some(before))=(origins.native_progress,native_child_scopes){
-        if progress.scopes_started.get()==before{progress.unsupported.set(true);}
+        if progress.scopes_started.get()==before{progress.unsupported.set(true);progress.syntax_unissued.set(true);}
       }
     }
     match kind {
@@ -1586,6 +1714,12 @@ fn parse_one(
             span: item.span,
             header_span: item.header_span,
             raw_header: item.header.clone(),
+        },
+        None if diagnostics.rows.len()>syntax_errors_before=>{
+            // Actual registered error recovery uses a placeholder node. It is
+            // not an unimplemented grammar production or a good-body grant.
+            if let Some(progress)=origins.native_progress{progress.unsupported.set(true);}
+            unsupported(item)
         },
         None => native_unsupported(item,origins),
     }
@@ -1606,10 +1740,10 @@ fn original_return_head_question(provider:Option<&dyn SettingSyntaxProvider>,hea
 }
 
 fn original_label_head_question(provider:Option<&dyn SettingSyntaxProvider>,head:Span,name:Span,a:Option<&crate::SettingAdmission<'_>>)->bool{
- match provider.map(|p|p.original_label_head(head,name)).transpose(){Ok(value)=>value==Some(true),Err(actual)=>{if let Some(a)=a{a.record_operational_error(actual)}false}}
+ match provider.map(|p|p.original_label_head(head,name)).transpose(){Ok(value)=>value==Some(true),Err(actual)=>{if let Some(a)=a{a.forward_operational_error(actual)}false}}
 }
 fn original_named_loop_control_question(provider:Option<&dyn SettingSyntaxProvider>,head:Span,keyword:&'static str,name:Span,a:Option<&crate::SettingAdmission<'_>>)->bool{
- match provider.map(|p|p.original_named_loop_control(head,keyword,name)).transpose(){Ok(value)=>value==Some(true),Err(actual)=>{if let Some(a)=a{a.record_operational_error(actual)}false}}
+ match provider.map(|p|p.original_named_loop_control(head,keyword,name)).transpose(){Ok(value)=>value==Some(true),Err(actual)=>{if let Some(a)=a{a.forward_operational_error(actual)}false}}
 }
 
 // DATA route for implicit current/parent calls only. Keep this separate
@@ -1627,6 +1761,20 @@ fn original_external_call_header(header:&str)->bool{
 fn original_external_call_statement_root(expr:&Expr)->bool{
  matches!(crate::native_special_forms::chained_dispatch(expr),Ok(Some(form))
   if matches!(form.target,crate::native_special_forms::DispatchTarget::External{..}))
+}
+
+// Discarding this actual parenthesized conditional is a statement role only.
+// Its complete source/children receipt remains mandatory, and no purity fact
+// is inferred from syntax (e.g. CHECK_TICK can call stoplag()).
+fn original_parenthesized_conditional_statement_root(expr:&Expr)->bool{
+ matches!(&expr.kind,ExprKind::Group(value)if matches!(&value.kind,ExprKind::Conditional{..}))
+}
+
+// Discard the value of an already-authenticated grouped plain assignment.
+// The SAME Complete value production already checked the exact target, '='
+// and entire RHS. This root role neither widens lvalues nor implies purity.
+fn original_parenthesized_assignment_statement_root(expr:&Expr)->bool{
+ matches!(&expr.kind,ExprKind::Group(value)if matches!(&value.kind,ExprKind::Binary{op,..}if op=="="))
 }
 
 // DATA only: the independently issued Complete receipt still authenticates
@@ -1651,11 +1799,29 @@ fn original_static_new_statement_root(expr:&Expr)->bool{
   &&matches!(&value.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::TypePath(path)if path.starts_with('/'))))
 }
 
+// The existing Complete NewMiniExpr receipt already owns the dynamic target,
+// all actual argument slots and every child. Only discarding that exact called
+// constructor value is added here; this DATA predicate cannot issue a receipt.
+fn original_dynamic_new_statement_root(expr:&Expr)->bool{
+ let ExprKind::Unary{op,value}=&expr.kind else{return false};
+ let ExprKind::Call{callee,..}=&value.kind else{return false};
+ op=="new"&&match &callee.kind{
+  ExprKind::Ident(name)=>crate::expression_parser::original_ordinary_call_name(name),
+  ExprKind::Member{via_colon:false,..}=>true,
+  _=>false,
+ }
+}
+
 // A routing filter only. The consuming expression parser certifies the
 // actual callee, complete parentheses, argument roots and separator tokens.
 fn original_ordinary_call_header(header:&str)->bool{
     let Some((name,_))=header.strip_suffix(')').and_then(|head|head.split_once('('))else{return false};
-    name.trim_end().split('.').all(crate::expression_parser::original_ordinary_call_name)
+    // DATA route only: input without its own argument list is a bare variable.
+    // The consuming Complete member-call proof still authenticates all tokens.
+    if let Some(fields)=name.trim_end().strip_prefix("input."){
+        return fields.split('.').all(crate::expression_parser::original_ordinary_call_name);
+    }
+    name.trim_end().split("?.").flat_map(|part|part.split('.')).all(crate::expression_parser::original_ordinary_call_name)
 }
 
 // Route only names whose assignment-shaped statements reach the generic
@@ -1672,15 +1838,22 @@ fn original_post_increment_candidate(header: &str) -> bool {
     header.strip_suffix("++").or_else(|| header.strip_suffix("--"))
         .is_some_and(|target| {
             let target = target.trim_end();
-            if crate::expression_parser::original_ordinary_call_name(target) { return true; }
+            if target=="."||crate::expression_parser::original_ordinary_call_name(target) { return true; }
             // DATA classifier only. The expression receipt checks the actual
-            // issued one-dot receiver, operator and every child/root span.
+            // issued bounded dot-chain receiver, operator and every child/root span.
             if let Some((receiver, _)) = target.strip_suffix(']').and_then(|target| target.split_once('[')) {
-                return crate::expression_parser::original_ordinary_call_name(receiver.trim_end());
+                let mut names=receiver.trim_end().split('.');
+                return names.next().is_some_and(|name|crate::expression_parser::original_ordinary_call_name(name.trim()))
+                    && names.all(|name|crate::expression_parser::original_ascii_identifier(name.trim()));
             }
-            target.split_once('.').is_some_and(|(receiver, member)|
-                crate::expression_parser::original_ordinary_call_name(receiver.trim_end())
-                    && crate::expression_parser::original_ascii_identifier(member.trim_start()))
+            // DATA routing only: the independent root receipt authenticates
+            // the ordinary call/member/operator and each bounded argument.
+            if target.split_once('(').is_some_and(|(name,tail)|crate::expression_parser::original_ordinary_call_name(name.trim())
+                &&tail.rsplit_once(')').is_some_and(|(_,follow)|follow.trim_start().strip_prefix('.')
+                    .is_some_and(|fields|fields.split('.').all(|field|crate::expression_parser::original_ascii_identifier(field.trim()))))){return true}
+            let mut names=target.split('.');
+            names.next().is_some_and(|receiver|crate::expression_parser::original_ordinary_call_name(receiver.trim()))
+                && names.all(|member|crate::expression_parser::original_ascii_identifier(member.trim()))
         })
 }
 
@@ -1697,15 +1870,41 @@ fn original_simple_assignment_candidate(header: &str) -> bool {
         .is_some_and(|key|!key.trim_start().starts_with(']')) && header.contains('=') {
         return true;
     }
+    // DATA routing only: a direct ordinary call followed by an index, or by
+    // one ordinary field and an index, still needs the exact root '=' receipt.
+    if header.split_once('=').is_some_and(|(target,_)|target.split_once('(').is_some_and(|(callee,tail)|
+        crate::expression_parser::original_ordinary_call_name(callee.trim_end())
+        &&tail.rsplit_once(')').is_some_and(|(_,follow)|{
+            let follow=follow.trim();
+            (follow.starts_with('[')||follow.strip_prefix('.').is_some_and(|field|
+                field.split_once('[').is_some_and(|(fields,_)|fields.split('.').all(|name|crate::expression_parser::original_ascii_identifier(name.trim())))))
+                &&follow.ends_with(']')
+        }))){return true}
+    // DATA only; exact Original colon role, target and RHS are checked by the root receipt.
+    if header.split_once('=').is_some_and(|(target,_)|target.rsplit_once(':').is_some_and(|(receiver,name)|
+        crate::expression_parser::original_ascii_identifier(name.trim())
+        &&receiver.trim().split('.').all(|name|crate::expression_parser::original_ordinary_call_name(name.trim())))){return true}
+    // DATA routing for a method receiver whose indexed key contains another call.
+    if header.split_once('=').is_some_and(|(target,_)|target.trim_end().ends_with(']')&&target.contains('(')
+        &&target.split(['.','(','[']).next().is_some_and(|n|crate::expression_parser::original_ordinary_call_name(n.trim()))){return true}
     let Some((target, _)) = header.split_once('=') else { return false; };
     let target = target.trim_end_matches(['+', '-', '*', '/', '%', '|', '&', '^', '<', '>']).trim();
     // DATA routing only: the expression witness checks the exact bare
     // Ident/list target and permitted assignment operator.
-    if matches!(target, "." | "list" | "input") { return true; }
+    if matches!(target, "." | "list" | "input" | "pick") { return true; }
     if target.strip_prefix('.').map(str::trim_start)
         .and_then(|tail| tail.strip_prefix('[')).and_then(|key| key.strip_suffix(']'))
         .is_some_and(|key| crate::expression_parser::original_ordinary_call_name(key.trim()))
     {
+        return true;
+    }
+    // DATA routing only: a direct ordinary call's final member may be the
+    // target. The expression receipt separately proves call/dot/name/operator.
+    if target.split_once('(').is_some_and(|(callee,tail)|
+        crate::expression_parser::original_ordinary_call_name(callee.trim_end())
+        &&tail.rsplit_once(')').is_some_and(|(_,follow)|follow.trim_start().strip_prefix('.')
+            .is_some_and(|fields|fields.split('.').all(|name|crate::expression_parser::original_ascii_identifier(name.trim())))
+            ||follow.trim_start().strip_prefix("?.").is_some_and(|chain|chain.split("?.").all(|name|crate::expression_parser::original_ascii_identifier(name.trim()))))){
         return true;
     }
     let name = target.split(['.', '[', '?']).next().unwrap_or(target).trim_end();
@@ -1929,7 +2128,7 @@ fn parse_var_parts(
                 match origins.settings.map(|provider| provider.original_plain_comma_local_head(span, index == 0)).transpose() {
                     Ok(value) => head_issued = value == Some(true),
                     Err(actual) => {
-                        if let Some(admission) = origins.admission { admission.record_operational_error(actual); }
+                        if let Some(admission) = origins.admission { admission.forward_operational_error(actual); }
                         return false;
                     }
                 }
@@ -1972,7 +2171,8 @@ fn original_single_local_head(header: &str, lexical: &crate::SpannedLexed) -> bo
         let text = name.text(header);
         if name.kind != TokenKind::Ident
             || !crate::expression_parser::original_ascii_identifier(text)
-            || matches!(text, "const" | "global" | "static" | "tmp" | "final")
+            || (matches!(text, "const" | "global" | "static" | "tmp" | "final")
+                &&tokens.clone().next().is_some_and(|next|next.text(header)=="/"))
         {
             return false;
         }
@@ -1987,7 +2187,7 @@ fn original_array_local_head_question(
 )->bool{
  match provider.map(|p|p.original_array_local_head(prefix,name,suffix)).transpose(){
   Ok(actual)=>actual==Some(true),
-  Err(actual)=>{if let Some(a)=admission{a.record_operational_error(actual);}false}
+  Err(actual)=>{if let Some(a)=admission{a.forward_operational_error(actual);}false}
  }
 }
 // A written initializer replaces the old synthetic array constructor. Empty
@@ -2012,11 +2212,11 @@ fn original_single_array_local(
  header:&str,base:usize,diagnostics:&mut BodyDiagnostics<'_>,origins:&mut BodyOrigins<'_>,
 )->bool{
  // Borrow only DATA from the just-issued native ledger row. Keep this cohort
- // to one nonempty list dimension and no explicit initializer/modifier.
+ // to one nonempty implicit/list dimension and no explicit initializer/modifier.
  let Some((name,bracket,dimension))=origins.locals.entries().ok().and_then(|rows|rows.last()).and_then(|row|{
   let array=row.array_syntax.as_ref()?;
   (row.source_kind==crate::LocalSourceKind::Statement&&row.source_modifiers==0
-   &&row.array_suffix&&row.type_components.len()==1&&!array.explicit_initializer
+   &&row.array_suffix&&row.type_components.len()<=1&&!array.explicit_initializer
    &&array.root.brackets.len()==1&&array.root.dimension_slots.as_ref()==[Some(0)]
    &&array.root.dimensions.len()==1).then(||(row.name,array.root.brackets[0],array.root.dimensions[0].span))
  })else{return false};
@@ -2089,7 +2289,7 @@ fn parse_var_header(
                     use crate::expression_parser::OriginalSimpleKind;
                     // Real Original positional calls are Complete. Its
                     // statement-only keyed calls must not prove a local RHS.
-                    value.is_read_value()
+                    value.is_read_value() || value.is_initializer_assignment()
                         || (!value.is_original() && value.kind() == OriginalSimpleKind::OrdinaryCallStatement)
                 });
             }
@@ -2114,7 +2314,7 @@ fn original_inline_switch_effect(body:&[Statement])->bool{
  matches!(body,[statement]if matches!(&statement.kind,StatementKind::Assign{..}|StatementKind::Call(_)|StatementKind::Expression(_)))
 }
 fn original_inline_switch_body_question(provider:Option<&dyn SettingSyntaxProvider>,gap:Span,a:Option<&crate::SettingAdmission<'_>>)->bool{
- match provider.map(|p|p.original_inline_switch_body_head(gap)).transpose(){Ok(value)=>value==Some(true),Err(actual)=>{if let Some(a)=a{a.record_operational_error(actual)}false}}
+ match provider.map(|p|p.original_inline_switch_body_head(gap)).transpose(){Ok(value)=>value==Some(true),Err(actual)=>{if let Some(a)=a{a.forward_operational_error(actual)}false}}
 }
 fn original_inline_switch_return_question(
  provider:Option<&dyn SettingSyntaxProvider>,head:Span,default:bool,
@@ -2122,7 +2322,7 @@ fn original_inline_switch_return_question(
 )->bool{
  match provider.map(|p|p.original_inline_switch_return_head(head,default)).transpose(){
   Ok(actual)=>actual==Some(true),
-  Err(actual)=>{if let Some(a)=admission{a.record_operational_error(actual);}false}
+  Err(actual)=>{if let Some(a)=admission{a.forward_operational_error(actual);}false}
  }
 }
 
@@ -2183,6 +2383,14 @@ fn parse_switch(
                     original_inline_switch_return_question(origins.settings,Span::new(start,child+6),true,origins.admission)
                 };
             if diagnostics.admission.is_some_and(|a|a.is_stopped()){return None}
+            let default_effect_head=!default_return_head&&!inline.is_empty()&&case.children.is_empty()
+                &&original_inline_else_prefix(case).is_some_and(|prefix|{
+                    match origins.settings.map(|provider|provider.original_leaf_block_link(
+                        Span::new(prefix.start,prefix.start),prefix,OriginalLeafBlockLink::Else,0)).transpose(){
+                        Ok(value)=>value==Some(true),Err(actual)=>{if let Some(a)=origins.admission{a.forward_operational_error(actual)}false}
+                    }
+                });
+            if diagnostics.admission.is_some_and(|a|a.is_stopped()){return None}
             else_branch = if inline.is_empty() {
                 parse_sequence(&case.children, diagnostics, origins)
             } else {
@@ -2192,12 +2400,15 @@ fn parse_switch(
                 nested.span.start = nested.header_span.start;
                 parse_sequence(&[nested], diagnostics, origins)
             };
+            let exact_default_effect=default_effect_head&&original_inline_switch_effect(&else_branch)
+                &&origins.settings.is_some_and(|provider|provider.switch_inline_statement_cursor(case).is_ok());
+            if diagnostics.admission.is_some_and(|a|a.is_stopped()){return None}
             witnessed &= if inline.is_empty() {
                 header == "else" && original_indented_block_boundary(case, origins)
             } else {
                 let exact_return=default_return_head&&original_inline_switch_value_return(&else_branch);
-                all_inline_cases_proved &= exact_return;
-                exact_return||(inline_decimal_returns&&case.children.is_empty()
+                all_inline_cases_proved &= exact_return||exact_default_effect;
+                exact_return||exact_default_effect||(inline_decimal_returns&&case.children.is_empty()
                     &&matches!(else_branch.as_slice(),[statement]if matches!(&statement.kind,StatementKind::Return(Some(_)))))
             };
             index+=1;
@@ -2410,13 +2621,22 @@ pub fn parse_body_items_with_admitted_literals(
  items:&[Item],source:&str,context:&dyn Fn(usize)->Option<ItemKind>,settings:&dyn SettingSyntaxProvider,
  admission:&crate::SettingAdmission<'_>,cleanup:crate::SettingRootLease,
 )->std::io::Result<crate::PreparedBodyLiteralSyntax>{
+ parse_body_items_with_admitted_literals_and_syntax_traversal(items,source,context,settings,admission,cleanup).map(|(prepared,_)|prepared)
+}
+/// SAME producer with a transient syntax report; existing prepared product is unchanged.
+#[doc(hidden)]
+pub fn parse_body_items_with_admitted_literals_and_syntax_traversal(
+ items:&[Item],source:&str,context:&dyn Fn(usize)->Option<ItemKind>,settings:&dyn SettingSyntaxProvider,
+ admission:&crate::SettingAdmission<'_>,cleanup:crate::SettingRootLease,
+)->std::io::Result<(crate::PreparedBodyLiteralSyntax,NativeBodySyntaxTraversal)>{
   let progress=NativeBodyParserProgress{input_roots:items.len(),root_header:items.first().map(|item|item.header_span),..Default::default()};
   let mut parsed=parse_body_items_with_native_progress(items,Some(settings),Some(admission),Some(source),true,Some(&progress));
   if !admission.is_stopped(){parsed.pending_bodies=crate::pending_body::pending_bodies(&parsed.statements,source,context);}
+  let traversal=progress.syntax_traversal(&parsed);
   let native=progress.finish(&parsed);
   let mut prepared=crate::prepare_body_literal_syntax(parsed,cleanup,admission)?;
   prepared.set_native_parser_facts(native);
-  Ok(prepared)
+  Ok((prepared,traversal))
 }
 
 #[cfg(test)]
@@ -2591,7 +2811,16 @@ impl OriginalBodyGrammarOutcome{
 fn original_setting_leaf(expr:&Expr)->bool{match &expr.kind{ExprKind::Ident(name)=>crate::expression_parser::original_ascii_identifier(name),ExprKind::Literal(text)=>text.as_str()=="null"||crate::expression_parser::original_decimal(text.as_str()),ExprKind::TypePath(path)=>path.starts_with('/')&&path.split('/').skip(1).all(crate::expression_parser::original_ascii_identifier),_=>false}}
 fn original_setting_receiver(expr:&Expr)->bool{original_setting_leaf(expr)||matches!(&expr.kind,ExprKind::Index{object,index}if original_setting_leaf(object)&&original_setting_leaf(index))}
 fn original_setting_expression(expr:&Expr)->bool{original_setting_leaf(expr)||match &expr.kind{ExprKind::Member{object,selector,via_colon:false}=>original_setting_receiver(object)&&crate::expression_parser::original_ascii_identifier(selector),ExprKind::Index{object,index}=>original_setting_leaf(object)&&original_setting_leaf(index),ExprKind::Binary{op,lhs,rhs}=>matches!(op.as_str(),"+"|"-"|"*"|"/"|"%"|"||"|"&&")&&original_setting_leaf(lhs)&&original_setting_leaf(rhs),_=>false}}
-fn original_initial_setting(row:&Statement)->bool{match &row.kind{StatementKind::Set{attribute,relation,value}=>crate::expression_parser::original_ascii_identifier(attribute)&&matches!(relation.as_str(),"="|"in")&&original_setting_expression(value),StatementKind::ProjectedSet{attribute,relation,value}=>crate::expression_parser::original_ascii_identifier(attribute)&&matches!(relation.as_str(),"="|"in")&&original_setting_expression(value.original_expression()),_=>false}}
+// Static String VALUE comes from the existing actual Original setting token
+// loan. Only the root literal is added; string receivers/templates/calls do not
+// become setting-expression grammar through this receipt.
+fn original_initial_setting_value(expr:&Expr)->bool{
+ original_setting_expression(expr)||matches!(&expr.kind,ExprKind::Literal(text)
+  if matches!(text.original_value(),Some(crate::OriginalTokenValue::String(_)))
+   &&text.original_origin()==Some(expr.span.start)
+   &&expr.span.end.checked_sub(expr.span.start)==Some(text.as_str().len()))
+}
+fn original_initial_setting(row:&Statement)->bool{match &row.kind{StatementKind::Set{attribute,relation,value}=>crate::expression_parser::original_ascii_identifier(attribute)&&matches!(relation.as_str(),"="|"in")&&original_initial_setting_value(value),StatementKind::ProjectedSet{attribute,relation,value}=>crate::expression_parser::original_ascii_identifier(attribute)&&matches!(relation.as_str(),"="|"in")&&original_initial_setting_value(value.original_expression()),_=>false}}
 fn finish_original_setting_prefix(body:&mut ParsedBody, settings: usize){
  if settings==body.statements.len()&&!body.statements.is_empty()&&body.diagnostics.is_empty(){body.original_grammar=Some(OriginalBodyGrammarOutcome{prefix_settings:settings,scope_roots:None,kind:OriginalBodyGrammarKind::Available,statement:None,expression:None,operator:None});return}
  let Some(mut outcome)=body.original_grammar else{return};
@@ -2599,6 +2828,22 @@ fn finish_original_setting_prefix(body:&mut ParsedBody, settings: usize){
  if body.statements.len()!=settings+1||body.statements.last().map(|row|row.header_span)!=outcome.statement{body.original_grammar=None;return}outcome.prefix_settings=settings;body.original_grammar=Some(outcome);
 }
 #[cfg(test)]mod original_initial_setting_outcome_tests{use super::*;
+ #[test]fn initial_setting_static_string_requires_actual_value_origin_and_exact_extent(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();
+  {let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let raw=r#""Verb Name""#;
+   let data=crate::OriginalLiteralData::from_value_using(raw.into(),crate::OriginalTokenValue::String("Verb Name"),&a).unwrap();
+   let text=crate::LiteralText::from_original_data(&data,7,&a).unwrap();let mut expr=Expr{span:Span::new(7,7+raw.len()),kind:ExprKind::Literal(text)};
+   assert!(!original_setting_expression(&expr),"old receiver/composition kernel remains closed");assert!(original_initial_setting_value(&expr));
+   expr.span.start+=1;assert!(!original_initial_setting_value(&expr),"same VALUE cannot license a different token origin");expr.span.start-=1;expr.span.end+=1;assert!(!original_initial_setting_value(&expr),"same VALUE cannot license widened token extent");expr.span.end-=1;
+   let member=Expr{span:Span::new(7,expr.span.end+5),kind:ExprKind::Member{object:Box::new(expr),selector:"name".into(),via_colon:false}};assert!(!original_initial_setting_value(&member),"root-only String receipt is not receiver authority");
+  }assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),fixed);
+ }
+ #[test]fn raw_quotes_and_interpolation_without_actual_static_string_value_do_not_issue_setting_grammar(){
+  for rhs in[r#""Verb Name""#,r#""[unknown]""#,"missing_call()"]{
+   let syntax=crate::parse(&format!("/proc/probe()\n    set name={rhs}\n    return null\n"));let body=parse_proc_body(&syntax.items[0]);assert!(body.original_grammar.is_none(),"compatibility/raw parse cannot issue staticString VALUE: {rhs}");
+  }
+ }
+
  #[test]fn actual_native_setting_prefix_has_only_demonstrated_original_grammar(){for rhs in["x","x.type","x[_]","x[_].type","x || /datum/a","/datum/b","1+2"]{let syntax=crate::parse(&format!("/proc/probe(x)\n    set SpacemanDMM_return_type={rhs}\n    return null\n"));let body=parse_proc_body(&syntax.items[0]);let outcome=body.original_grammar.unwrap();assert_eq!(outcome.kind(),OriginalBodyGrammarKind::Available,"{rhs}");assert_eq!(outcome.prefix_settings(),1);assert!(outcome.statement_span().is_some());}}
  #[test]fn actual_native_setting_only_and_zero_argument_source_call_and_member_are_issued(){for code in["    set SpacemanDMM_return_type=x\n","    return choose()\n","    return choose().field\n"]{let syntax=crate::parse(&format!("/proc/probe(x)\n{code}"));let body=parse_proc_body(&syntax.items[0]);assert_eq!(body.original_grammar.unwrap().kind(),OriginalBodyGrammarKind::Available,"{code}");}}
  #[test]fn malformed_number_and_unissued_setting_shapes_never_gain_original_availability(){for code in["    return 123abc\n","    return 1e3\n","    set SpacemanDMM_return_type=missing_call()\n    return null\n","    return choose(1)\n"]{let syntax=crate::parse(&format!("/proc/probe(x)\n{code}"));let body=parse_proc_body(&syntax.items[0]);assert!(body.original_grammar.is_none(),"unissued {code}");}}
@@ -3107,7 +3352,8 @@ fn original_inline_assignment_head_first_io_stops_before_the_child_without_autho
 fn original_prefix_update_statement_classifier_requires_only_the_supported_bare_target() {
     for (source, expected) in [("++fromIndex", true), ("-- fromIndex", true),
         ("++object.field", false), ("++L[i]", false), ("++lookup()", false),
-        ("value = ++i", false), ("return ++i", false)] {
+        ("value = ++i", false), ("return ++i", false), ("entry.handles.len--",true),
+        ("entry ?. handles . len --",false),("factory().field--",false)] {
         assert_eq!(original_post_increment_candidate(source), expected, "{source}");
     }
 }
@@ -3189,8 +3435,8 @@ fn original_inline_else_padded_compatibility_item_cannot_hide_a_separator() {
     let mut result = ParsedBody::default();
     let origins = BodyOrigins {native_progress:None,
         source: Some(&actual), original_compound_complete: true,
-        #[cfg(debug_assertions)] trace_unissued_leaf: false,
-        #[cfg(debug_assertions)] first_unissued_leaf: None,
+        trace_unissued_leaf: false,
+        first_unissued_leaf: None,
         original_compound_seen_statement: true, original_loop_control: false, original_terminal_header: None,
         original_grammar: &mut result.original_grammar, controls: &mut result.control_origins,
         locals: &mut result.local_variables, settings: Some(&gap), admission: None, deferred_literal_purity: false,
@@ -3316,8 +3562,8 @@ fn original_operation_abort_revokes_internal_completion_and_keeps_the_actual_fir
     assert!(result.original_grammar.is_some());
     let mut origins=BodyOrigins {native_progress:None,
         source:None,original_compound_complete:true,
-        #[cfg(debug_assertions)] trace_unissued_leaf:false,
-        #[cfg(debug_assertions)] first_unissued_leaf:None,
+        trace_unissued_leaf:false,
+        first_unissued_leaf:None,
         original_compound_seen_statement:true,original_loop_control:false,original_terminal_header:None,
         original_grammar:&mut result.original_grammar,controls:&mut result.control_origins,
         locals:&mut result.local_variables,settings:None,admission:Some(&admission),deferred_literal_purity:false,
@@ -3490,7 +3736,7 @@ fn original_inline_prefix_head_first_io_stops_before_its_child_without_authority
 #[cfg(test)]mod original_output_statement_controls{
  use super::*;
  #[test]fn output_routing_cannot_issue_without_an_actual_original_root(){
-  for (source,wanted) in [("user << value",true),("user >> value",false),("1 << value",false),("null << value",false),("user.member << value",true),("user[index] << value",false),("user << value << other",false)]{
+  for (source,wanted) in [("user << value",true),("user >> value",true),("1 << value",false),("null << value",false),("user.member << value",true),("user[index] << value",true),("user << value << other",false)]{
    let expression=crate::parse_expression(source);assert!(expression.diagnostics.is_empty());
    assert_eq!(original_output_statement_root(expression.expr.as_ref().unwrap()),wanted,"{source}");
    // A source candidate is not a receipt; compatibility parsing must not lend
@@ -3524,7 +3770,7 @@ fn original_storage_and_array_local_head_first_io_stops_before_initializer_or_di
   fn original_static_local_head(&self,_:Span)->std::io::Result<bool>{self.heads.set(self.heads.get()+1);Err(std::io::Error::from_raw_os_error(1450))}
   fn original_array_local_head(&self,_:Span,_:Span,_:Span)->std::io::Result<bool>{self.heads.set(self.heads.get()+1);Err(std::io::Error::from_raw_os_error(1450))}
  }
- for line in ["var/global/time_offset=0","var/static/time_offset=0","var/const/GUID_VERSION=\"b\"","var/list/chars_to_add[max(charcount+1,0)]","var/line[] = list(value)","var/list/line[ ] = list(value)"]{
+ for line in ["var/global/time_offset=0","var/static/time_offset=0","var/const/GUID_VERSION=\"b\"","var/list/chars_to_add[max(charcount+1,0)]","var/JaniData[0]","var/new_tnote[0]","var/supplyData[0]","var/line[] = list(value)","var/list/line[ ] = list(value)"]{
   let source=format!("/proc/probe(charcount)\n    {line}\n");let syntax=crate::parse(&source);assert!(syntax.diagnostics.is_empty());let probe=Probe{heads:std::cell::Cell::new(0),children:std::cell::Cell::new(0)};
   let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
   let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&probe),Some(&a),Some(&source),false);
@@ -3536,7 +3782,7 @@ fn original_storage_and_array_local_head_first_io_stops_before_initializer_or_di
  use super::*;use std::sync::atomic::Ordering;
  #[test]fn output_expression_role_requires_complete_native_children_and_real_string_key(){
   let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));
-  for(source,expected)in[("user << value",true),("destination[\"dummy\"] << value",true),("destination[index] << value",false),("user >> value",false),("1 << value",false),("user << value << other",false)]{
+  for(source,expected)in[("user << value",true),("destination[\"dummy\"] << value",true),("source[\"last_update\"] >> value",true),("destination[index] << value",false),("user >> value",true),("1 << value",false),("user << value << other",false)]{
    let output=crate::expression_parser::simple_original_literal_fixture(source,&a).unwrap();
    let parsed=output.parsed();
    let issued=parsed.original_simple_expression.is_some_and(|proof|proof.is_original()&&proof.kind()==crate::expression_parser::OriginalSimpleKind::Complete)
@@ -3723,5 +3969,310 @@ fn dynamic_dispatch_statement_route_requires_real_original_special_form_authorit
  }
  #[test]fn static_new_statement_route_without_original_source_cannot_issue_body_availability(){
   let source="/proc/probe()\n    new /obj()\n    return 0\n";let parsed=crate::parse(source);assert!(parsed.diagnostics.is_empty());let body=parse_proc_body(&parsed.items[0]);assert!(body.original_grammar.is_none_or(|proof|proof.kind!=OriginalBodyGrammarKind::Available),"the spelling/AST route alone cannot grant Original body availability");
+ }
+}
+
+#[cfg(test)]mod transient_syntax_traversal_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ struct Producer<'a,'op>{a:&'a crate::SettingAdmission<'op>,mode:u8}
+ impl SettingSyntaxProvider for Producer<'_,'_>{
+  fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{panic!("fixture has no setting")}
+  fn original_expression_with_native_facts(&self,source:&str,_:usize)->std::io::Result<Option<(crate::ParsedExpr,Option<crate::NativeExpressionParserFacts>)>>{
+   if self.mode==1{return Ok(None)}if self.mode==2{return Err(std::io::Error::from_raw_os_error(1450))}
+   let lexed=crate::lex_spans(source);let(parsed,facts)=crate::expression_parser::parse_expression_span_tokens_with_original_literals_and_native_facts(source,&lexed.tokens,0,self.a,None);Ok(Some((parsed,facts)))
+  }
+ }
+ #[test]fn actual_syntax_traversal_distinguishes_good_local_bad_and_unissued_children(){
+  for(source,mode,expected)in[("/proc/p()\n    return 1\n",0,NativeBodySyntaxTraversal::Parsed),("/proc/p()\n    return (1+)\n",0,NativeBodySyntaxTraversal::Rejected),("/proc/p()\n    return (1+)\n",1,NativeBodySyntaxTraversal::Unissued),("/proc/p()\n    return 1\n    else\n        return 2\n",0,NativeBodySyntaxTraversal::Unissued)]{
+   let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,8<<20,&||Ok(()));let syntax=crate::parse(source);assert!(syntax.diagnostics.is_empty());let provider=Producer{a:&a,mode};let cleanup=a.reserve(source.len()*512+8192).unwrap();let(prepared,report)=parse_body_items_with_admitted_literals_and_syntax_traversal(&syntax.items[0].children,source,&|_|None,&provider,&a,cleanup).unwrap();assert_eq!(report,expected,"{source}");let(parsed,literals,_)=prepared.into_parts_with_native_parser_facts();if report==NativeBodySyntaxTraversal::Rejected{assert!(!parsed.diagnostics.is_empty(),"local bad requires its actual registered diagnostic")}crate::drop_body_literal_syntax(parsed,Some(literals));drop(syntax);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  }
+ }
+ #[test]fn actual_syntax_traversal_never_turns_first_child_io_into_a_report(){
+  let source="/proc/p()\n    return 1\n";let counter=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&counter,8<<20,&||Ok(()));let syntax=crate::parse(source);let provider=Producer{a:&a,mode:2};let cleanup=a.reserve(source.len()*512+8192).unwrap();let proxy=parse_body_items_with_admitted_literals_and_syntax_traversal(&syntax.items[0].children,source,&|_|None,&provider,&a,cleanup).err().expect("actual child IO must stop the same operation");let actual=a.take_operational_error().unwrap_or(proxy);assert_eq!(actual.raw_os_error(),Some(1450));assert!(a.is_stopped());drop(syntax);assert_eq!(counter.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+}
+
+#[cfg(test)]#[test]
+fn optional_dot_call_statement_heads_route_only_and_never_issue_compatibility_grammar(){
+ for(source,wanted)in[("value.run()",true),("value?.run()",true),
+  ("value?.child.run(argument)",true),("value.child?.run(argument)",true),
+  ("value?.child?.run(name=argument)",true),
+  ("(value)?.run()",false),("value[1]?.run()",false),
+  ("value?:run()",false),("value?.new()",false),("value?.()",false)]{
+  assert_eq!(original_ordinary_call_header(source),wanted,"{source}");
+  let tree=crate::parse(&format!("/proc/probe(value,argument)\n    {source}\n"));
+  let body=parse_proc_body(&tree.items[0]);
+  if wanted{assert!(tree.diagnostics.is_empty(),"real native declaration fixture: {source}");assert!(!body.statements.is_empty(),"real native statement fixture: {source}");}
+  assert!(body.original_grammar.is_none(),"routing DATA cannot issue a missing consuming Original receipt: {source}");
+ }
+}
+
+#[cfg(test)]
+#[test]
+fn original_inline_consumed_leaf_gap_defaults_closed_and_keeps_first_io() {
+    struct Probe { gaps:std::cell::Cell<usize>, children:std::cell::Cell<usize> }
+    impl SettingSyntaxProvider for Probe {
+        fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}
+        fn original_expression(&self,text:&str,_:usize)->std::io::Result<Option<crate::ParsedExpr>>{
+            if text.starts_with("GLOB.")||text.starts_with("rel_set("){self.children.set(self.children.get()+1);}
+            Ok(None)
+        }
+        fn original_inline_if_statement_gap(&self,_:Span)->std::io::Result<bool>{self.gaps.set(self.gaps.get()+1);Err(std::io::Error::from_raw_os_error(1450))}
+    }
+    for leaf in["GLOB.whitelist=null","rel_set(SS,key,new /datum/item(SS))"] {
+        let source=format!("/proc/probe(argument)\n    if(!argument) {leaf}\n");let syntax=crate::parse(&source);assert!(syntax.diagnostics.is_empty());let probe=Probe{gaps:std::cell::Cell::new(0),children:std::cell::Cell::new(0)};
+        let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&probe),Some(&a),Some(&source),false);assert!(body.original_grammar.is_none());assert_eq!(probe.gaps.get(),1);assert_eq!(probe.children.get(),1,"actual child parsed exactly once before its actual start is borrowed");assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));
+    }
+    struct Deny;impl SettingSyntaxProvider for Deny{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}}
+    assert!(!Deny.original_inline_if_statement_gap(Span::new(3,5)).unwrap());
+}
+
+#[cfg(test)]mod original_savefile_input_statement_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn input_stream_routing_keeps_complete_root_and_receiver_boundary(){
+  for(source,expected)in[("F[\"last_update\"] >> value",true),("F.member >> value",true),("F[index] >> value",true),("F?.member >> value",false),("lookup()[\"last_update\"] >> value",false),("1 >> value",false),("F >> value >> other",false)]{
+   let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let output=crate::expression_parser::simple_original_literal_fixture(source,&a).unwrap();let parsed=output.parsed();let issued=parsed.original_simple_expression.is_some_and(|p|p.is_original()&&p.kind()==crate::expression_parser::OriginalSimpleKind::Complete)&&parsed.expr.as_ref().is_some_and(original_output_statement_root);assert_eq!(issued,expected,"{source}: {:?}",parsed.original_simple_expression);if expected{assert!(parsed.diagnostics.is_empty());assert!(matches!(&parsed.expr.as_ref().unwrap().kind,ExprKind::Binary{op,..}if op==">>"));}drop(output);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  }
+ }
+ #[test]fn input_stream_first_actual_expression_failure_stops_before_later_statement(){
+  struct Fail(std::cell::Cell<usize>);impl SettingSyntaxProvider for Fail{
+   fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}
+   fn original_expression(&self,source:&str,_:usize)->std::io::Result<Option<crate::ParsedExpr>>{self.0.set(self.0.get()+1);assert_eq!(source,"F[\"last_update\"] >> value");Err(std::io::Error::from_raw_os_error(1450))}
+  }
+  let source="/proc/probe(F,value)\n    F[\"last_update\"] >> value\n    later()\n";let syntax=crate::parse(source);let probe=Fail(std::cell::Cell::new(0));let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&probe),Some(&a),Some(source),false);assert_eq!(probe.0.get(),1);assert!(body.original_grammar.is_none());assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));
+ }
+}
+
+#[cfg(test)]mod original_dynamic_new_statement_route_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn actual_original_dynamic_new_effect_statement_uses_only_existing_complete_constructor_value(){
+  for source in["new type(src)","new associated_map_datum(using_map,z)","new build_path(T,build_dir,1)","new source.type(value)"]{
+   let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let output=crate::expression_parser::simple_original_literal_fixture(source,&a).unwrap();let parsed=output.parsed();assert!(parsed.diagnostics.is_empty(),"{source}: {:?}",parsed.diagnostics);assert!(parsed.original_simple_expression.is_some_and(|p|p.is_original()&&p.kind()==crate::expression_parser::OriginalSimpleKind::Complete),"same consumed value owns target and args: {source}");assert!(original_dynamic_new_statement_root(parsed.expr.as_ref().unwrap()),"{source}");drop(output);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+  }
+  for source in["factory(value)","new(value)","new /datum(value)","new path(value).field","new path(value)+other"]{
+   let parsed=crate::parse_expression(source);assert!(!original_dynamic_new_statement_root(parsed.expr.as_ref().unwrap()),"root role remains closed: {source}");
+  }
+ }
+ #[test]fn actual_original_dynamic_new_routing_data_never_upgrades_compatibility_or_unproved_targets(){
+  for source in["new type(src)","new source.type(value)","new source?.type(value)","new path[key](value)","new source:type(value)","new path(key=value)"]{
+   let text=format!("/proc/probe()\n    {source}\n");let tree=crate::parse(&text);let body=parse_proc_body(&tree.items[0]);assert!(body.original_grammar.is_none_or(|p|p.kind!=OriginalBodyGrammarKind::Available),"DATA never invents consuming Original authority: {source}");
+  }
+ }
+ #[test]fn actual_original_dynamic_new_statement_keeps_first_expression_io_before_later_effect(){
+  struct Fail(std::cell::Cell<usize>);impl SettingSyntaxProvider for Fail{
+   fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}
+   fn original_expression(&self,source:&str,_:usize)->std::io::Result<Option<crate::ParsedExpr>>{self.0.set(self.0.get()+1);assert_eq!(source,"new type(src)");Err(std::io::Error::from_raw_os_error(1450))}
+  }
+  let source="/proc/probe()\n    new type(src)\n    later()\n";let tree=crate::parse(source);let fail=Fail(0.into());let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let body=parse_body_items_using_settings(&tree.items[0].children,Some(&fail),Some(&a),Some(source),false);assert!(body.original_grammar.is_none());assert_eq!(fail.0.get(),1);assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));
+ }
+}
+
+#[cfg(test)]
+#[test]
+fn original_try_switch_close_route_counts_only_real_opened_blocks_without_issuing_grammar() {
+    struct Probe<'a>{source:&'a str, calls:std::cell::Cell<usize>,fail:bool}
+    impl SettingSyntaxProvider for Probe<'_>{
+        fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}
+        fn original_statement_block_open(&self,gap:Span)->std::io::Result<bool>{
+            let gap=self.source.get(gap.range()).unwrap();
+            Ok(gap.contains('\n')&&gap.bytes().all(|byte|matches!(byte,b' '|b'\t'|b'\r'|b'\n')))
+        }
+        fn original_leaf_block_link(&self,tail:Span,next:Span,link:OriginalLeafBlockLink,closes:usize)->std::io::Result<bool>{
+            assert!(matches!(link,OriginalLeafBlockLink::Catch));assert_eq!(closes,3);
+            assert_eq!(tail.end,next.start);assert_eq!(self.source.get(next.range()),Some("catch(var/exception/e)"));
+            self.calls.set(self.calls.get()+1);
+            if self.fail{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(false)}
+        }
+    }
+    let source="/proc/probe(phase)\n    try\n        switch(phase)\n            if(1)\n                finish()\n    catch(var/exception/e)\n        recover()\n";
+    let syntax=crate::parse(source);assert!(syntax.diagnostics.is_empty());let items=&syntax.items[0].children;assert_eq!(items.len(),2);
+    for fail in[false,true]{
+        let probe=Probe{source,calls:0.into(),fail};let mut result=ParsedBody::default();
+        let base=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(base).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let origins=BodyOrigins{native_progress:None,source:Some(source),original_compound_complete:true,
+            trace_unissued_leaf:false,first_unissued_leaf:None,original_compound_seen_statement:true,original_loop_control:false,original_terminal_header:None,
+            original_grammar:&mut result.original_grammar,controls:&mut result.control_origins,locals:&mut result.local_variables,
+            settings:Some(&probe),admission:Some(&a),deferred_literal_purity:false};
+        assert!(!original_linked_leaf_block(&items[0],&items[1],OriginalLeafBlockLink::Catch,&origins));
+        assert_eq!(probe.calls.get(),1);assert!(result.original_grammar.is_none());
+        assert_eq!(a.take_operational_error().and_then(|e|e.raw_os_error()),fail.then_some(1450));assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),base);
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn original_unproved_pair_scope_never_requests_a_bare_loop_control_receipt(){
+    struct Deny;
+    impl SettingSyntaxProvider for Deny{
+        fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}
+        fn original_bare_loop_control(&self,_:Span,_:&'static str)->std::io::Result<bool>{panic!("unproved pair scope must not ask for break/continue authority")}
+    }
+    for leaf in["continue","break"]{
+        let source=format!("/proc/probe(entries)\n    for(var/key,value in entries)\n        {leaf}\n");
+        let syntax=crate::parse(&source);assert!(syntax.diagnostics.is_empty());
+        let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&Deny),None,Some(&source),false);
+        assert!(body.original_grammar.is_none());
+        assert!(matches!(&body.statements[0].kind,StatementKind::For{control:ForControl::Pair{..},..}));
+    }
+}
+
+#[cfg(test)]#[test]
+fn original_call_result_member_assignment_candidate_never_issues_authority(){
+ for(source,wanted)in[("hud_of(M)?.pullin?.icon_state=dir",true),("rx_of(src).look_seen_dir=dir",true),("rx_of ( src ) . look_seen_dir = dir",true),("factory()=value",false),("call(target)(value).field=value",false)]{assert_eq!(original_simple_assignment_candidate(source),wanted);}
+ let source="/proc/probe()\n    rx_of(src).look_seen_dir=dir\n";let syntax=crate::parse(source);
+ let body=parse_body_items_using_settings(&syntax.items[0].children,None,None,Some(source),false);assert!(body.original_grammar.is_none(),"text classifier has no Original source authority");
+}
+
+#[cfg(test)]mod original_indexed_stream_name_key_roles{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn actual_original_indexed_stream_requires_complete_value_and_closed_member_root(){
+  for(source,wanted)in[(r#"GLOB.banlist["reason"] << reason"#,true),("GLOB.banlist[key] << reason",true),("F[cleaned] << 1",true),("GLOB.banlist[key] >> value",true),("factory()[key] << value",false),("holder?.slots[key] << value",false),("F[key.field] << value",false),("F[1] << value",false),("F[key] << value << other",false)]{
+   let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let out=crate::expression_parser::simple_original_literal_fixture(source,&a).unwrap();let parsed=out.parsed();let actual=parsed.original_simple_expression.is_some_and(|p|p.is_original()&&p.kind()==crate::expression_parser::OriginalSimpleKind::Complete)&&parsed.expr.as_ref().is_some_and(original_output_statement_root);assert_eq!(actual,wanted,"{source}: {:?}",parsed.original_simple_expression);drop(out);assert_eq!(used.load(Ordering::Acquire),fixed);
+  }
+ }
+ #[test]fn indexed_stream_data_gate_never_mints_compatibility_body_receipt(){
+  for statement in["GLOB.banlist[key] << reason","F[cleaned] << 1"]{let source=format!("/proc/probe(key,reason,cleaned)\n    {statement}\n");let syntax=crate::parse(&source);let body=parse_proc_body(&syntax.items[0]);assert!(body.original_grammar.is_none(),"DATA shape is not a current Original expression proof");}
+ }
+ #[test]fn indexed_stream_first_expression_io_stops_before_later_statement(){
+  struct Fail(std::cell::Cell<usize>);impl SettingSyntaxProvider for Fail{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}fn original_expression(&self,_:&str,_:usize)->std::io::Result<Option<crate::ParsedExpr>>{self.0.set(self.0.get()+1);Err(std::io::Error::from_raw_os_error(1450))}}
+  let source="/proc/probe(key,reason)\n    GLOB.banlist[key] << reason\n    later()\n";let syntax=crate::parse(source);let stop=Fail(std::cell::Cell::new(0));let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&stop),Some(&a),Some(source),false);assert_eq!(stop.0.get(),1);assert!(body.original_grammar.is_none());assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));
+ }
+}
+
+#[cfg(test)]#[test]fn unproved_world_typed_and_inline_control_scopes_never_request_bare_control_authority(){
+ struct Deny;impl SettingSyntaxProvider for Deny{
+  fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}
+  fn original_bare_loop_control(&self,_:Span,_:&'static str)->std::io::Result<bool>{panic!("unproved current loop cannot lend control authority")}
+ }
+ for code in["    for(var/datum/d)\n        break\n","    for(var/T as mob in entries)\n        continue\n","    if(limit<=0)break\n"]{
+  let source=format!("/proc/probe(entries,limit)\n{code}");let syntax=crate::parse(&source);assert!(syntax.diagnostics.is_empty());
+  let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&Deny),None,Some(&source),false);assert!(body.original_grammar.is_none());
+ }
+}
+
+#[cfg(test)]#[test]fn original_terminal_modifier_spelling_is_a_real_local_name_not_a_flag(){
+ for header in["var/turf/final=get_step(T,0)","var/turf/const","var/turf/tmp=value"]{
+  let lexical=crate::lex_spans(header);assert!(original_single_local_head(header,&lexical),"{header}");let source=format!("/proc/probe(T,value)\n    {header}\n");let syntax=crate::parse(&source);let body=parse_body_items(&syntax.items[0].children);let rows=body.local_variables.entries().unwrap();assert_eq!(rows.len(),1);assert_eq!(rows[0].source_modifiers,0);assert_eq!(&source[rows[0].type_components[0].range()],"turf");assert!(matches!(&source[rows[0].name.range()],"final"|"const"|"tmp"));
+ }
+ for header in["var/final/turf/name=value","var/static/turf/name=value","var/global/value"]{assert!(!original_single_local_head(header,&crate::lex_spans(header)),"real nonterminal modifiers retain separate producer/provider gate");}
+}
+
+#[cfg(test)]#[test]fn block_then_inline_else_routes_exact_prefix_and_retains_actual_nested_close_count(){
+ let padded="/proc/probe(flag)\n    if(flag)\n        while(flag)\n            return 0\n    else  return 1\n";let actual=padded.replace("else  ","else; ");assert_eq!(padded.len(),actual.len());let syntax=crate::parse(padded);assert!(syntax.diagnostics.is_empty());let items=&syntax.items[0].children;assert_eq!(items.len(),2);let prefix=original_inline_else_prefix(&items[1]).unwrap();assert_eq!(actual.get(prefix.range()),Some("else; "));
+ struct Probe<'a>{actual:&'a str,calls:std::cell::Cell<usize>,fail:bool}impl SettingSyntaxProvider for Probe<'_>{
+  fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}
+  fn original_statement_block_open(&self,gap:Span)->std::io::Result<bool>{Ok(self.actual.get(gap.range()).is_some_and(|text|text.contains('\n')&&text.bytes().all(|b|matches!(b,b' '|b'\t'|b'\r'|b'\n'))))}
+  fn original_leaf_block_link(&self,tail:Span,next:Span,link:OriginalLeafBlockLink,closes:usize)->std::io::Result<bool>{assert!(matches!(link,OriginalLeafBlockLink::Else));assert_eq!(closes,2);assert_eq!(tail.end,next.start);assert_eq!(self.actual.get(next.range()),Some("else; "),"all hidden separator bytes must reach current provider");self.calls.set(self.calls.get()+1);if self.fail{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(false)}}
+ }
+ let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();
+ for fail in[false,true]{let probe=Probe{actual:&actual,calls:0.into(),fail};let mut result=ParsedBody::default();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let origins=BodyOrigins{native_progress:None,source:Some(&actual),original_compound_complete:true,trace_unissued_leaf:false,first_unissued_leaf:None,original_compound_seen_statement:true,original_loop_control:false,original_terminal_header:None,original_grammar:&mut result.original_grammar,controls:&mut result.control_origins,locals:&mut result.local_variables,settings:Some(&probe),admission:Some(&a),deferred_literal_purity:false};assert!(!original_linked_leaf_block_to(&items[0],prefix,OriginalLeafBlockLink::Else,&origins));assert_eq!(probe.calls.get(),1);assert!(result.original_grammar.is_none());assert_eq!(a.take_operational_error().and_then(|e|e.raw_os_error()),fail.then_some(1450));assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),fixed);}
+}
+#[cfg(test)]#[test]fn inline_else_prefix_does_not_infer_unconsumed_children_or_other_statement_kinds(){
+ for suffix in["return 1","output=value"]{let source=format!("/proc/probe(flag)\n    if(flag)\n        return 0\n    else {suffix}\n");let syntax=crate::parse(&source);let next=&syntax.items[0].children[1];let prefix=original_inline_else_prefix(next).unwrap();assert_eq!(&source[prefix.range()],"else ");}
+ for suffix in["if(flag)","spawn(0)","while(flag)"]{let source=format!("/proc/probe(flag)\n    if(flag)\n        return 0\n    else {suffix}\n        return 1\n");let syntax=crate::parse(&source);let next=&syntax.items[0].children[1];assert!(original_inline_else_prefix(next).is_none());}
+}
+
+#[cfg(test)]#[test]fn original_call_index_root_assignment_route_ignores_rhs_parentheses_without_granting_source(){
+ for header in["cache()[key]=value","rx_of(E).change_last[key]=change_value(E,H)","cache()[key]=list()"]{assert!(original_simple_assignment_candidate(header),"{header}");let source=format!("/proc/probe()\n    {header}\n");let syntax=crate::parse(&source);let body=parse_body_items_using_settings(&syntax.items[0].children,None,None,Some(&source),false);assert!(body.original_grammar.is_none(),"DATA routing needs actual source receipts");}
+ for header in["factory()=value","factory()[key]++","factory()[key](value)"]{assert!(!original_simple_assignment_candidate(header),"{header}");}
+}
+
+#[cfg(test)]#[test]fn switch_default_inline_effect_stays_closed_and_first_boundary_io_precedes_child(){
+ struct Fail(std::cell::Cell<usize>);impl SettingSyntaxProvider for Fail{
+  fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}
+  fn original_expression(&self,text:&str,_:usize)->std::io::Result<Option<crate::ParsedExpr>>{assert!(!text.trim_start().starts_with("output"),"default boundary failed before its child");Ok(None)}
+  fn original_leaf_block_link(&self,tail:Span,prefix:Span,link:OriginalLeafBlockLink,closes:usize)->std::io::Result<bool>{assert!(matches!(link,OriginalLeafBlockLink::Else));assert_eq!(closes,0);assert_eq!(tail,Span::new(prefix.start,prefix.start));self.0.set(self.0.get()+1);Err(std::io::Error::from_raw_os_error(1450))}
+ }
+ let source="/proc/probe(mode,value)\n    switch(mode)\n        if(0)\n            return 0\n        else output+=value\n";let syntax=crate::parse(source);let plain=parse_proc_body(&syntax.items[0]);assert!(plain.original_grammar.is_none(),"compatibility shape is no Original default effect receipt");let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let fail=Fail(0.into());let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&fail),Some(&a),Some(source),false);assert!(body.original_grammar.is_none());assert_eq!(fail.0.get(),1);assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));
+}
+
+#[cfg(test)]#[test]fn original_empty_catch_continuation_defaults_closed_and_keeps_first_io(){
+ struct Deny;impl SettingSyntaxProvider for Deny{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}}
+ struct Fail;impl SettingSyntaxProvider for Fail{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}fn original_empty_catch_continuation(&self,_:Span,_:Span)->std::io::Result<bool>{Err(std::io::Error::from_raw_os_error(1450))}}
+ let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));assert!(!original_empty_catch_question(None,Span::new(1,6),Span::new(10,20),Some(&a)));assert!(!original_empty_catch_question(Some(&Deny),Span::new(1,6),Span::new(10,20),Some(&a)));assert!(!original_empty_catch_question(Some(&Fail),Span::new(1,6),Span::new(5,20),Some(&a)));assert!(!a.is_stopped());assert!(!original_empty_catch_question(Some(&Fail),Span::new(1,6),Span::new(10,20),Some(&a)));assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),fixed);
+}
+
+#[cfg(test)]#[test]fn original_bare_input_member_call_route_requires_existing_source_receipt(){
+ assert!(original_ordinary_call_header("input.reset()"));assert!(original_ordinary_call_header("input.nested.reset()"));assert!(!original_ordinary_call_header("input?.reset()"));assert!(!original_ordinary_call_header("input(value)"));
+ let source="/proc/probe()\n    input.reset()\n";let syntax=crate::parse(&source);let body=parse_body_items_using_settings(&syntax.items[0].children,None,None,Some(&source),false);assert!(body.original_grammar.is_none(),"DATA route cannot invent Original receiver/call source proof");
+}
+
+// Only the already independently-issued root update is eligible for the
+// consumed inline-if leaf gap. This shape check supplies no expression proof.
+fn original_inline_bare_postfix_leaf(kind:&StatementKind)->bool{
+ matches!(kind,StatementKind::Expression(Expr{kind:ExprKind::Unary{op,value},..})
+  if matches!(op.as_str(),"post++"|"post--")
+    &&matches!(&value.kind,ExprKind::Ident(name)if crate::expression_parser::original_ordinary_call_name(name)))
+}
+#[cfg(test)]#[test]fn actual_original_inline_bare_postfix_leaf_is_only_a_routing_shape(){
+ for(source,wanted)in[("count++",true),("count--",true),("++count",false),("items[i]++",false),("owner.count++",false),("count+1",false),("consume()",false)]{
+ let out=crate::parse_expression(source);let e=out.expr.unwrap();assert_eq!(original_inline_bare_postfix_leaf(&StatementKind::Expression(e)),wanted,"{source}");
+ }
+}
+
+fn original_empty_while_question(provider:Option<&dyn SettingSyntaxProvider>,header:Span,next:Span,admission:Option<&crate::SettingAdmission<'_>>)->bool{
+ if header.start>=header.end||next.start>=next.end||header.end>next.start{return false}
+ match provider.map(|p|p.original_empty_while_body(header,next)).transpose(){
+  Ok(Some(answer))=>answer,Err(actual)=>{if let Some(a)=admission{a.forward_operational_error(actual);}false},_=>false,
+ }
+}
+#[cfg(test)]#[test]fn actual_original_empty_while_question_defaults_closed_and_preserves_first_io(){
+ struct Deny;impl SettingSyntaxProvider for Deny{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}}
+ struct Fail;impl SettingSyntaxProvider for Fail{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}fn original_empty_while_body(&self,_:Span,_:Span)->std::io::Result<bool>{Err(std::io::Error::from_raw_os_error(1450))}}
+ let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+ assert!(!original_empty_while_question(None,Span::new(1,6),Span::new(10,20),Some(&a)));assert!(!original_empty_while_question(Some(&Deny),Span::new(1,6),Span::new(10,20),Some(&a)));
+ assert!(!original_empty_while_question(Some(&Fail),Span::new(1,6),Span::new(5,20),Some(&a)));assert!(!a.is_stopped());assert!(!original_empty_while_question(Some(&Fail),Span::new(1,6),Span::new(10,20),Some(&a)));assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),fixed);
+}
+
+#[cfg(test)]mod original_file_call_output_roles{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn actual_original_file_and_call_member_output_require_complete_expression_and_closed_role(){
+  for(source,wanted)in[("file(filename)<<json_encode(to_store)",true),("nif().human<<sound",true),("factory().child.viewer<<value",true),("file(filename)>>value",false),("factory(filename)<<value",false),("file(filename,other)<<value",false),("file(filename)<<value<<other",false)]{let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,8<<20,&||Ok(()));let out=crate::expression_parser::simple_original_literal_fixture(source,&a).unwrap();let parsed=out.parsed();assert!(parsed.diagnostics.is_empty(),"{source}: {:?}",parsed.diagnostics);let actual=parsed.original_simple_expression.is_some_and(|p|p.is_original()&&p.is_read_value())&&parsed.expr.as_ref().is_some_and(original_output_statement_root);assert_eq!(actual,wanted,"{source}");drop(out);assert_eq!(used.load(Ordering::Acquire),fixed);}
+  // The final-VALUE fixture above coalesces shifts only. Its compatibility
+  // lexer splits `?.`, whereas Original requires the actual single SafeDot
+  // occurrence. Keep this DATA-role negative on the genuine native AST.
+  let source="factory()?.viewer<<value";
+  let parsed=crate::parse_expression(source);
+  assert!(parsed.diagnostics.is_empty(),"{source}: {:?}",parsed.diagnostics);
+  assert!(matches!(&parsed.expr.as_ref().unwrap().kind,ExprKind::Binary{op,lhs,..}
+   if op=="<<"&&matches!(&lhs.kind,ExprKind::SafeMember{via_colon:false,..})),"{source}: {:?}",parsed.expr);
+  assert!(!original_output_statement_root(parsed.expr.as_ref().unwrap()),"{source}");
+  assert!(parsed.original_simple_expression.is_none());
+
+ }
+ #[test]fn file_call_and_member_chain_routing_never_mint_source_receipts(){
+  assert!(original_simple_assignment_candidate("target().particles.datum_flags|=1"));assert!(original_simple_assignment_candidate("factory().child.value[key]=value"));assert!(original_post_increment_candidate("target().particles.datum_flags++"));
+  for line in["file(filename)<<json_encode(to_store)","target().particles.datum_flags|=1","nif().human<<sound"]{let source=format!("/proc/probe()\n    {line}\n");let syntax=crate::parse(&source);let body=parse_proc_body(&syntax.items[0]);assert!(body.original_grammar.is_none());}
+ }
+ #[test]fn file_call_output_first_io_precedes_later_statement(){
+  struct Fail(std::cell::Cell<usize>);impl SettingSyntaxProvider for Fail{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}fn original_expression(&self,_:&str,_:usize)->std::io::Result<Option<crate::ParsedExpr>>{self.0.set(self.0.get()+1);Err(std::io::Error::from_raw_os_error(1450))}}
+  let source="/proc/probe()\n    file(filename)<<json_encode(to_store)\n    later()\n";let syntax=crate::parse(source);let f=Fail(0.into());let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let body=parse_body_items_using_settings(&syntax.items[0].children,Some(&f),Some(&a),Some(source),false);assert!(body.original_grammar.is_none());assert_eq!(f.0.get(),1);assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));
+ }
+}
+
+#[cfg(test)]#[test]fn implicit_array_local_native_ledger_stays_data_until_current_head_and_dimension(){
+ struct Deny;impl SettingSyntaxProvider for Deny{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}}
+ for name in["JaniData","new_tnote","supplyData"]{let source=format!("/proc/probe()\n    var/{name}[0]\n");let syntax=crate::parse(&source);assert!(syntax.diagnostics.is_empty(),"{name}");let body=parse_proc_body(&syntax.items[0]);assert!(body.original_grammar.is_none());let rows=body.local_variables.entries().unwrap();assert_eq!(rows.len(),1);let row=&rows[0];assert_eq!(row.source_kind,crate::LocalSourceKind::Statement);assert!(row.type_components.is_empty());assert!(row.array_suffix);assert_eq!(&source[row.name.range()],name);let array=row.array_syntax.as_ref().unwrap();assert!(!array.explicit_initializer);assert_eq!(array.root.dimension_slots.as_ref(),[Some(0)]);assert_eq!(array.root.dimensions.len(),1);assert_eq!(&source[array.root.dimensions[0].span.range()],"0");let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));let denied=parse_body_items_using_settings(&syntax.items[0].children,Some(&Deny),Some(&a),Some(&source),false);assert!(denied.original_grammar.is_none());}
+}
+
+// Pure borrowed close+trivia query. Parent control and consumed child receipts
+// stay separate; this carries no IF/FOR/body availability by itself.
+fn original_inline_control_close_boundary(provider:Option<&dyn SettingSyntaxProvider>,gap:Span,admission:Option<&crate::SettingAdmission<'_>>)->bool{
+ if gap.start>=gap.end{return false}
+ match provider.map(|p|p.original_inline_if_statement_gap(gap)).transpose(){
+  Ok(Some(answer))=>answer,Err(actual)=>{if let Some(a)=admission{a.forward_operational_error(actual);}false},_=>false,
+ }
+}
+#[cfg(test)]#[test]fn actual_original_inline_control_gap_defaults_closed_and_keeps_first_io(){
+ struct Deny;impl SettingSyntaxProvider for Deny{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}}
+ struct Fail;impl SettingSyntaxProvider for Fail{fn setting(&self,_:&Item)->Result<SettingStatement,Diagnostic>{unreachable!()}fn original_inline_if_statement_gap(&self,_:Span)->std::io::Result<bool>{Err(std::io::Error::from_raw_os_error(1450))}}
+ let fixed=crate::SettingChargeCounter::root_allocation_bytes();let used=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&used,1<<20,&||Ok(()));
+ assert!(!original_inline_control_close_boundary(None,Span::new(1,4),Some(&a)));assert!(!original_inline_control_close_boundary(Some(&Deny),Span::new(1,4),Some(&a)));
+ assert!(!original_inline_control_close_boundary(Some(&Fail),Span::new(4,1),Some(&a)));assert!(!a.is_stopped());assert!(!original_inline_control_close_boundary(Some(&Fail),Span::new(1,4),Some(&a)));assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450));assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),fixed);
+}
+#[cfg(test)]#[test]fn actual_original_inline_else_call_prefix_is_only_a_data_route(){
+ for(source,wanted)in[("else deliver(value)",true),("else owner.deliver(value)",true),("else ; deliver(value)",false),("else value += other",true),("else if(test())",false)]{
+ let tree=crate::parse(&format!("/proc/probe()\n    {source}\n"));let item=&tree.items[0].children[0];assert_eq!(original_inline_else_prefix(item).is_some(),wanted,"{source}");
  }
 }

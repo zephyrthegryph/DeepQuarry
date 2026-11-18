@@ -87,3 +87,33 @@ mod tests {
         assert_eq!(r.synthesized, 1);
     }
 }
+
+/// Same ordered groups and collision decisions as analyze(), with every owned
+/// row/string admitted by the held codemod operation before it allocates.
+pub fn analyze_using(keys:&[KeyUse],work:&dyn crate::policy_finish::admitted::Work)->std::io::Result<KeyReport>{
+ use super::work as paid;
+ let mut ordered=paid::vec_capacity(Some(work),keys.len())?;
+ let mut rep=KeyReport::default();
+ for key in keys{work.checkpoint()?;if key.synthesized{rep.synthesized+=1}else{rep.preserved+=1}ordered.push(key);}
+ paid::stable_sort_by(Some(work),&mut ordered,|a,b|(&a.owner,&a.key).cmp(&(&b.owner,&b.key)))?;
+ let mut first=0;
+ while first<ordered.len(){
+  work.checkpoint()?;let seed=ordered[first];let mut end=first+1;
+  while end<ordered.len()&&ordered[end].owner==seed.owner&&ordered[end].key==seed.key{work.checkpoint()?;end+=1;}
+  // The old sorted/dedup handler vector asks only whether two distinct
+  // handlers exist. This borrowed comparison gives exactly the same answer.
+  if ordered[first+1..end].iter().any(|value|value.handler!=seed.handler){
+   let resolved=ordered[first..end].iter().all(|value|!value.synthesized);
+   let owner=paid::own(Some(work),&seed.owner)?;let key=paid::own(Some(work),&seed.key)?;
+   let mut uses=paid::vec_capacity(Some(work),end-first)?;
+   for value in &ordered[first..end]{work.checkpoint()?;uses.push((paid::own(Some(work),&value.origin)?,paid::own(Some(work),&value.handler)?,value.synthesized));}
+   paid::row(Some(work),&mut rep.collisions)?;rep.collisions.push(Collision{owner,key,uses,resolved});if !resolved{rep.unresolved+=1}
+  }
+  first=end;
+ }
+ work.checkpoint()?;Ok(rep)
+}
+#[cfg(test)]mod admitted_controls{use super::*;
+ struct Denied;impl crate::policy_finish::admitted::Work for Denied{fn checkpoint(&self)->std::io::Result<()>{Ok(())}fn reserve(&self,_:usize)->std::io::Result<()>{Err(std::io::Error::from_raw_os_error(1450))}fn overflow(&self)->std::io::Error{std::io::ErrorKind::OutOfMemory.into()}}
+ #[test]fn first_actual_allocation_error_survives_key_grouping(){let error=analyze_using(&[],&Denied).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));}
+}

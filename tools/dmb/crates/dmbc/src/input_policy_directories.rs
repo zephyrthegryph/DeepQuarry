@@ -312,22 +312,12 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         }));
         assert!(failed.is_err());
     }
-    pub(crate) fn late_workspace_recorder_charge(&self) -> io::Result<usize> {
-        let current = self.snapshot.lock().map_err(|_| invalid("input mutex poisoned"))?;
-        let mut bytes = current.policy_closure_charge()?;
-        for (path, listing) in &current.folders {
-            let storage = match listing {
-                FolderListing::Missing => 0,
-                FolderListing::Present(names) => names.iter().try_fold(
-                    names.capacity().checked_mul(std::mem::size_of::<String>())
-                        .ok_or(io::ErrorKind::OutOfMemory)?,
-                    |sum, name| sum.checked_add(name.capacity()).ok_or(io::ErrorKind::OutOfMemory),
-                )?,
-            };
-            bytes = bytes.checked_add(128).and_then(|n| n.checked_add(path.capacity()))
-                .and_then(|n| n.checked_add(storage)).ok_or(io::ErrorKind::OutOfMemory)?;
-        }
-        Ok(bytes)
+    pub(crate) fn late_workspace_recorder_charge(&self)->io::Result<usize>{let current=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?;late_recorder_charge(&current)}
+    /// Exact same recorder core and legacy-folder storage, borrowed once under
+    /// its actual mutex. The optional owner allocation is admitted before it.
+    pub(crate) fn baseline_refresh_recorder_metadata(&self,budget:&dq_analyze::captured_generator_budget::Budget)->io::Result<(Arc<()>,usize,usize)>{
+     let owner=self.policy_metadata_owner(Some(budget))?;let current=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?;
+     let core=current.policy_closure_charge()?;let total=late_recorder_charge(&current)?;let legacy=total.checked_sub(core).ok_or_else(||invalid("recorder legacy metadata geometry differs"))?;Ok((owner,total,legacy))
     }
     pub(crate) fn late_workspace_recorder_owner(&self) -> io::Result<Arc<()>> {
         self.policy_metadata_owner(None)
@@ -655,11 +645,28 @@ impl<P:SnapshotProvider> RecordingInputs<P>{
 
 impl InputSnapshot{
  pub(crate) fn original_observations_subset_of(&self,current:&Self)->bool{
-  self.path_presence.iter().all(|(p,v)|current.path_presence.get(p).as_ref()==Some(v))&&self.opened_reads.iter().all(|(p,v)|current.opened_reads.get(p).as_ref()==Some(v))&&self.original_payloads.iter().all(|(p,v)|current.original_payloads.get(p).as_ref()==Some(v))
+  self.path_presence.iter().all(|(p,v)|current.path_presence.get(p).as_ref()==Some(v))&&self.opened_reads.iter().all(|(p,v)|current.opened_reads.get(p).as_ref()==Some(v))&&self.original_payloads.iter().all(|(p,v)|current.original_payloads.get(p).as_ref()==Some(v))&&self.optional_reads.iter().all(|(p,v)|current.optional_reads.get(p).as_ref()==Some(v))
  }
  pub(crate) fn write_original_workspace_observations(&self,output:&mut impl std::io::Write)->io::Result<()>{
-  if self.path_presence.is_empty()&&self.opened_reads.is_empty()&&self.original_payloads.is_empty(){return Ok(())}
-  use std::io::Write;output.write_all(b"native-workspace-actual-original-observations-v1")?;
-  serde_json::to_writer(output,&(&self.path_presence,&self.opened_reads,&self.original_payloads)).map_err(io::Error::other)
+  use std::io::Write;
+  if !self.path_presence.is_empty()||!self.opened_reads.is_empty()||!self.original_payloads.is_empty(){output.write_all(b"native-workspace-actual-original-observations-v1")?;serde_json::to_writer(&mut *output,&(&self.path_presence,&self.opened_reads,&self.original_payloads)).map_err(io::Error::other)?;}
+  if !self.optional_reads.is_empty(){output.write_all(b"native-workspace-actual-optional-reader-observations-v1")?;serde_json::to_writer(&mut *output,&self.optional_reads).map_err(io::Error::other)?;}Ok(())
  }
+}
+
+fn late_recorder_charge(current:&InputSnapshot)->io::Result<usize>{
+ let mut bytes=current.policy_closure_charge()?;
+        for (path, listing) in &current.folders {
+            let storage = match listing {
+                FolderListing::Missing => 0,
+                FolderListing::Present(names) => names.iter().try_fold(
+                    names.capacity().checked_mul(std::mem::size_of::<String>())
+                        .ok_or(io::ErrorKind::OutOfMemory)?,
+                    |sum, name| sum.checked_add(name.capacity()).ok_or(io::ErrorKind::OutOfMemory),
+                )?,
+            };
+            bytes = bytes.checked_add(128).and_then(|n| n.checked_add(path.capacity()))
+                .and_then(|n| n.checked_add(storage)).ok_or(io::ErrorKind::OutOfMemory)?;
+        }
+ Ok(bytes)
 }

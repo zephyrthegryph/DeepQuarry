@@ -158,6 +158,7 @@ impl<'op> SettingAdmission<'op> {
             _lease: lease,
         })
     }
+    #[track_caller]
     pub(crate) fn admit_drop_depth(&self, depth: usize) -> std::io::Result<()> {
         self.checkpoint()?;
         let admitted = depth
@@ -165,6 +166,13 @@ impl<'op> SettingAdmission<'op> {
             .and_then(|bytes| bytes.checked_add(self.stack_used.get()))
             .is_some_and(|bytes| bytes <= self.stack_allowance);
         if !admitted {
+            if std::env::var_os("DMB_ORIGINAL_TRACE_BODY_PRESSURE").is_some() {
+                use std::io::Write as _;
+                let caller = std::panic::Location::caller();
+                let backtrace = std::backtrace::Backtrace::force_capture();
+                let _ = writeln!(std::io::stderr(), "ORIGINAL_CLEANUP_DEPTH_DENIED depth={} stack_used={} allowance={} caller={}:{}:{}", depth, self.stack_used.get(), self.stack_allowance, caller.file(), caller.line(), caller.column());
+                let _ = writeln!(std::io::stderr(), "ORIGINAL_CLEANUP_DEPTH_BACKTRACE\n{backtrace}");
+            }
             self.record_operational_error(std::io::Error::new(
                 std::io::ErrorKind::OutOfMemory,
                 "setting AST cleanup stack-work allowance exhausted",
@@ -173,14 +181,40 @@ impl<'op> SettingAdmission<'op> {
         }
         Ok(())
     }
+    #[track_caller]
     pub fn record_operational_error(&self, error: std::io::Error) {
+        self.trace_operational_1450("record",&error);
         if self.stopped.get().is_none() {
             self.stopped.set(Some(error.kind()));
             *self.failure.borrow_mut() = Some(error);
         }
     }
+    // A fallible child may return the actual error taken from this SAME permit.
+    // Forward that owned cause across an in-parser handoff without reopening
+    // checkpoint execution or replacing an already held first operational IO.
+    #[track_caller]
+    pub(crate) fn forward_operational_error(&self,error:std::io::Error){
+        self.trace_operational_1450("forward",&error);
+        if self.failure.borrow().is_none()&&self.stopped.get()==Some(error.kind()){
+            *self.failure.borrow_mut()=Some(error);
+        }else{
+            self.record_operational_error(error);
+        }
+    }
+    #[track_caller]
     pub fn take_operational_error(&self) -> Option<std::io::Error> {
-        self.failure.borrow_mut().take()
+        let error=self.failure.borrow_mut().take();
+        if let Some(error)=&error{self.trace_operational_1450("take",error);}
+        error
+    }
+    #[track_caller]
+    fn trace_operational_1450(&self,operation:&'static str,error:&std::io::Error){
+        // No success-path environment read or formatting: this diagnostic is
+        // only for an actual owned OS1450 while following its handoff chain.
+        if error.raw_os_error()!=Some(1450)||std::env::var_os("DMB_TRACE_OPERATIONAL_IO").is_none(){return}
+        let _=std::io::Write::write_fmt(&mut std::io::stderr().lock(),format_args!(
+            "SETTING_IO_HANDOFF admission={:p} operation={operation} caller={} raw={:?} kind={:?} stopped={:?} cause_held={}\n",
+            self,std::panic::Location::caller(),error.raw_os_error(),error.kind(),self.stopped.get(),self.failure.borrow().is_some()));
     }
     pub fn is_stopped(&self) -> bool {
         self.stopped.get().is_some()
@@ -327,6 +361,7 @@ impl SharedSettingRetention {
     pub fn bytes(&self) -> usize {
         self.payload().lease.bytes()
     }
+    pub(crate)fn cleanup_guard(&self)->crate::setting_charge_counter::CleanupGuard<'_>{self.payload().lease.counter.cleanup_guard()}
     pub fn same_owner(&self, other: &Self) -> bool {
         Arc::ptr_eq(self.owner.as_ref().unwrap(), other.owner.as_ref().unwrap())
     }
@@ -720,5 +755,16 @@ mod evaluation_frame_tests {
   let plain=SettingExpression::compatibility(expression());assert_eq!(plain.retained_charge(),None);assert!(!plain.is_retained_in(&a));let mut visits=0;plain.visit_retention_storage(|_,_|visits+=1);assert_eq!(visits,0);drop(plain);
   let root=SettingExpression::retained(expression(),a.reserve(512).unwrap());let alias=root.clone();let baseline=crate::SettingChargeCounter::root_allocation_bytes();
   assert!(root.same_root(&alias));assert_eq!(root.retained_charge(),Some(512));assert!(root.is_retained_in(&a));drop(root);assert_eq!(used.load(Ordering::Acquire),baseline+512);drop(alias);assert_eq!(used.load(Ordering::Acquire),baseline);
+ }
+}
+
+#[cfg(test)]mod operational_error_forwarding_controls{
+ use super::*;
+ #[test]fn returned_child_error_restores_same_sticky_first_io_without_reopening_admission(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();let calls=std::cell::Cell::new(0);let stop=||{calls.set(calls.get()+1);Err(std::io::Error::from_raw_os_error(1450))};let a=SettingAdmission::new(&counter,1<<20,&stop);
+  assert!(a.checkpoint().is_err());let first=a.take_operational_error().unwrap();assert_eq!(first.raw_os_error(),Some(1450));assert!(a.is_stopped());
+  a.forward_operational_error(first);assert!(a.checkpoint().is_err());assert_eq!(calls.get(),1,"returning a child cause never resets cancellation or invokes the stopped callback again");
+  a.forward_operational_error(std::io::Error::new(std::io::Error::from_raw_os_error(1450).kind(),"later unrelated same-kind error"));
+  a.forward_operational_error(std::io::Error::from_raw_os_error(5));assert_eq!(a.take_operational_error().unwrap().raw_os_error(),Some(1450),"a later different cause must not overwrite the held first IO");assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),fixed);
  }
 }

@@ -1206,7 +1206,7 @@ mod checked_capture_tests {
         assert_eq!(frontend.bodies.len(),2);
         let provider=Arc::new(FailSecond{db:db.clone(),target:AtomicU64::new(0),once:AtomicBool::new(true),calls:AtomicUsize::new(0)});
         let frontend=frontend.with_body_queries(provider.clone());
-        provider.target.store(frontend.body_archive().unwrap().syntax_inputs().unwrap()[1].key(),Ordering::SeqCst);
+        provider.target.store(frontend.body_archive().unwrap().syntax_input_checked(1,&||crate::daemon::control::checkpoint()).unwrap().key(),Ordering::SeqCst);
         let executor=dm_exec::BuildExecutor::new(2).unwrap();
         let arena=dm_tree::frontend::BodyArena::new(&frontend);
         let error=capture_with_executor_and_bodies_checked(&frontend,&[],&executor,&arena).err().expect("joined sibling IO");

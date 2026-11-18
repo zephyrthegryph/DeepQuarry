@@ -279,7 +279,7 @@ mod tests {
         };
         let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "/obj/thing/proc/poke()\n\treturn\n")]);
         let scope = crate::scopes::LintScope::default();
-        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
+        let cx = Cx { fixture:None, tree: &tree, meta: &META, scope: &scope };
         let p = cx.program(FrontendKind::Text);
         assert!(p.proc("/obj/thing", "poke").is_some());
         // memoized: the second call is the same allocation

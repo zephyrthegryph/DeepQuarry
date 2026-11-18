@@ -134,29 +134,7 @@ impl Lint for Tracker {
     }
 
     fn selftest(&self) -> Result<String, String> {
-        let files: Vec<SourceFile> = SELFTEST.iter().map(|(rel, text)| SourceFile::from_text(rel, text)).collect();
-        let mut tracked: Tracked = BTreeMap::new();
-        for f in &files {
-            tracked_from_text(f, &mut tracked);
-        }
-        let pats = build_pats(&tracked).ok_or("no tracked vars in the fixtures")?;
-        let mut got: Vec<(String, usize, String)> = Vec::new();
-        let mut setters = 0usize;
-        for f in &files {
-            let mut sink = Sink::new();
-            sink.cur = f.rel.clone();
-            let (hits, s) = scan_one(&tracked, &pats, &Tracked::new(), None, f, &mut sink, &BTreeSet::new());
-            setters += s.len();
-            for h in hits {
-                got.push((f.rel.clone(), h.line, h.msg.split(' ').next().unwrap_or("").to_string()));
-            }
-        }
-        let want: Vec<(String, usize, String)> = SELFTEST_EXPECT.iter().map(|(r, n, v)| (r.to_string(), *n, v.to_string())).collect();
-        if got == want && setters == 2 {
-            Ok(format!("({} fixtures)", want.len()))
-        } else {
-            Err(format!("expected {:?}, got {:?}, setters {}", want, got, setters))
-        }
+        crate::tracked_selftest_policy::run(&mut crate::derived_selftest_policy::LegacyAssertions,&mut crate::derived_selftest_policy::LegacyAssertions).map_err(|failure|match failure{crate::derived_selftest_policy::Failure::Assertion(text)=>text,crate::derived_selftest_policy::Failure::Operational(actual)=>actual.to_string()})
     }
 
     fn parity(&self) -> Option<Parity> {
@@ -176,101 +154,7 @@ impl Lint for Tracker {
     }
 }
 
-/// The Python's `SELFTEST` fixtures (code/a.dm, code/b.dm; the texts start with a newline).
-const SELFTEST: &[(&str, &str)] = &[
-    (
-        "code/a.dm",
-        r#"
-/obj/machinery/pump
-	var/target_pressure = 100
-	var/other = 1
-TRACKED(/obj/machinery/pump, target_pressure)
-
-/obj/machinery/pump/bigger
-	target_pressure = 200
-
-/obj/machinery/pump/proc/bad_direct()
-	target_pressure = 5
-	src.target_pressure += 1
-	target_pressure++
-	--target_pressure
-
-/obj/machinery/pump/proc/good_read()
-	if(target_pressure == 5)
-		other = target_pressure
-	set_target_pressure(7)
-
-/obj/machinery/pump/proc/shadowed()
-	var/target_pressure = 3
-	target_pressure -= 1
-
-/obj/machinery/pump/proc/allowed_write()
-	target_pressure = 1 // ALLOW(tracked): fixture keep
-
-/obj/machinery/pump/bigger/proc/subtype_write()
-	target_pressure = 9
-
-/obj/machinery/pump/bigger/set_target_pressure(value)
-	target_pressure = value * 2
-	return TRUE
-
-/obj/other_thing/proc/unrelated()
-	target_pressure = 4
-
-/proc/external(obj/machinery/pump/P, obj/other_thing/Q)
-	P.target_pressure = 3
-	Q.target_pressure = 3
-	var/obj/machinery/pump/bigger/B = P
-	B.target_pressure -= 2
-	unknown.target_pressure = 1
-	// P.target_pressure = 8 in a comment
-	var/s = "P.target_pressure = 8"
-
-/obj/machinery/valve
-	var/open = FALSE
-SETTER(/obj/machinery/valve, open)
-
-/obj/machinery/valve/proc/set_open(value)
-	open = value
-	update_pipes()
-
-/obj/machinery/valve/proc/bad_open()
-	open = TRUE
-
-/proc/external_valve(obj/machinery/valve/V)
-	V.open = FALSE
-	if(V.open == TRUE)
-		return
-"#,
-    ),
-    (
-        "code/b.dm",
-        r#"
-/obj/gadget
-	var/total = 0
-
-/obj/gadget/derived()
-	. = ..()
-	. += derive(nameof(total), nameof(level))
-
-/obj/gadget/proc/oops()
-	total = 5
-"#,
-    ),
-];
-
-const SELFTEST_EXPECT: &[(&str, usize, &str)] = &[
-    ("code/a.dm", 11, "target_pressure"),
-    ("code/a.dm", 12, "target_pressure"),
-    ("code/a.dm", 13, "target_pressure"),
-    ("code/a.dm", 14, "target_pressure"),
-    ("code/a.dm", 29, "target_pressure"),
-    ("code/a.dm", 39, "P.target_pressure"),
-    ("code/a.dm", 42, "B.target_pressure"),
-    ("code/a.dm", 56, "open"),
-    ("code/a.dm", 59, "V.open"),
-    ("code/b.dm", 10, "total"),
-];
+use crate::tracked_selftest_policy::{SELFTEST,SELFTEST_EXPECT};
 
 pub fn register(reg: &mut Registry) {
     reg.add(Tracker { tests: false });
@@ -459,7 +343,7 @@ pub fn fix_cli(args: &[String], root: &std::path::Path) -> std::process::ExitCod
     }
     let meta = if tests { &META_TESTS } else { &META };
     let scope = engine.scopes.for_lint(meta.name, meta.group);
-    let cx = Cx { tree: &engine.tree, meta, scope: &scope };
+    let cx = Cx { fixture:None, tree: &engine.tree, meta, scope: &scope };
     let mut tracked: Tracked = BTreeMap::new();
     for f in cx.all_files() {
         tracked_from_text_with(f, &mut tracked, tests);

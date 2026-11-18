@@ -40,9 +40,11 @@ pub struct SysModule {
     /// Rules that take no ALLOW annotation (`NO_ALLOW`).
     pub no_allow: &'static [&'static str],
     pub file_scan: Option<FileScan>,
+    pub fixture_file_scan:Option<fn(&SourceFile,&mut Vec<(&'static str,usize)>,&crate::raw_fixture_policy::Fixture<'_>)->Result<(),String>>,
     pub files_scan: Option<FilesScan>,
     /// The module's fixture tests (`selftest()` in the Python).
     pub selftest: Option<fn() -> Result<String, String>>,
+    pub fixture_selftest: Option<fn(&crate::raw_fixture_policy::Fixture<'_>) -> Result<String, String>>,
     /// Whether the Python module has a `selftest()` (parity runs `sys_lint.py --selftest --only`).
     pub py_selftest: bool,
 }
@@ -55,8 +57,10 @@ impl SysModule {
         allow_extra_rules: &[],
         no_allow: &[],
         file_scan: None,
+        fixture_file_scan:None,
         files_scan: None,
         selftest: None,
+        fixture_selftest: None,
         py_selftest: false,
     };
 }
@@ -115,20 +119,13 @@ thread_local! {
 /// `allow::kept` for a module that asks an ALLOW question inside its own scan (outside the
 /// wrapper's `sys_<rule>` check, e.g. `ALLOW(cooldown)`): records the annotation as used, so the
 /// unused-ALLOW check sees it. The wrapper moves the records into the scan's `Sink`.
-pub fn kept_recorded(f: &SourceFile, number: usize, name: &str) -> bool {
-    match crate::allow::kept(f, number, name) {
-        Some(k) => {
-            EXTRA_USED.with(|e| {
-                let u = crate::lint::AllowUse { rel: f.rel.clone(), line: k.line as u32, name: name.to_string(), code: k.code.unwrap_or_default() };
-                let mut e = e.borrow_mut();
-                if !e.contains(&u) {
-                    e.push(u);
-                }
-            });
-            true
-        }
-        None => false,
-    }
+pub fn kept_recorded(f:&SourceFile,number:usize,name:&str)->bool{kept_recorded_using(f,number,name,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+/// Same actual annotation query and trace, with the caller's existing control.
+/// This records usage DATA only and does not issue a source/completion role.
+pub(crate) fn kept_recorded_using<C:crate::key_policy_control::Control>(f:&SourceFile,number:usize,name:&str,control:&mut C)->Result<bool,C::Error>{
+ let Some(k)=crate::allow::kept_using(f,number,name,control)?else{return Ok(false)};
+ let u=crate::lint::AllowUse{rel:crate::key_policy_control::own(control,&f.rel)?,line:k.line as u32,name:crate::key_policy_control::own(control,name)?,code:k.code.unwrap_or_default()};
+ EXTRA_USED.with(|e|{let mut rows=e.borrow_mut();if !rows.contains(&u){crate::key_policy_control::row(control,&mut rows)?;rows.push(u);}Ok::<(),C::Error>(())})?;Ok(true)
 }
 
 /// Takes the calling thread's recorded ALLOW uses (the incremental cache captures them per file).
@@ -182,10 +179,12 @@ impl Lint for SysLint {
         &self.meta
     }
 
-    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
+    fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
         let Some(scan) = self.module.file_scan else { return };
         let mut found = Vec::new();
-        scan(f, &mut found);
+        if let (Some(fixture),Some(checked))=(cx.fixture,self.module.fixture_file_scan){
+            fixture.note_scan(checked(f,&mut found,fixture));
+        }else{scan(f,&mut found);}
         drain_extra(out);
         for (rule, line) in found {
             if !self.kept(out, f, rule, line) {
@@ -215,6 +214,13 @@ impl Lint for SysLint {
         match self.module.selftest {
             Some(t) => t(),
             None => Ok(String::new()),
+        }
+    }
+
+    fn selftest_with_fixture(&self, fixture: &crate::raw_fixture_policy::Fixture<'_>) -> Result<String, String> {
+        match self.module.fixture_selftest {
+            Some(callback) => callback(fixture),
+            None => self.selftest(),
         }
     }
 

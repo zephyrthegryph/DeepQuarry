@@ -8,7 +8,7 @@
 #[cfg(test)]
 extern crate self as dq_analyze;
 
-pub use dq_analyze_client::{cli_arguments, native_cli_client, native_policy_roster, selected_exclusions_wire, full_registry_check_wire, full_registry_check_selection_wire, schema_proposals_wire, native_fix_wire};
+pub use dq_analyze_client::{cli_arguments, native_cli_client, native_policy_roster, selected_exclusions_wire, full_registry_check_wire, full_registry_check_selection_wire, schema_proposals_wire, native_fix_wire, native_baseline_update_wire,native_sem_utility_wire};
 pub mod allow;
 #[cfg(feature = "legacy-sem")]
 pub mod base_vars_dead;
@@ -16,6 +16,7 @@ pub mod baseline;
 pub mod policy_judge;
 pub mod keys_policy;
 pub mod key_policy_control;
+mod base_vars_dead_policy;
 pub mod auto_setter_calls_policy;
 pub mod auto_tracking_policy;
 mod auto_tracking_emitter;
@@ -32,9 +33,9 @@ mod captured_keys_source;
 pub mod raw_key_calls_policy;
 #[cfg(feature = "legacy-sem")]
 pub mod cache;
-#[cfg(feature = "legacy-sem")]
+#[cfg(any(feature = "legacy-sem", feature = "native-policy"))]
 pub mod codemod;
-#[cfg(feature = "legacy-sem")]
+#[cfg(any(feature = "legacy-sem", feature = "native-policy"))]
 pub mod codemods;
 pub mod dm;
 #[cfg(feature = "legacy-sem")]
@@ -43,6 +44,7 @@ pub mod frontend;
 pub mod gens;
 pub mod incr;
 pub mod lint;
+pub mod raw_fixture_policy;
 pub mod lints;
 #[cfg(feature = "legacy-sem")]
 pub mod parity;
@@ -175,6 +177,10 @@ pub mod write_policy;
 pub mod raw_reactive_metadata_policy;
 
 pub mod reactive_read_facts;
+pub mod native_sem_utility_render;
+#[cfg(feature="native-policy")]
+pub mod captured_base_vars_dead;
+pub(crate) mod reactive_closure_report;
 
 pub mod reactive_annotations_policy;
 
@@ -192,6 +198,7 @@ pub mod reactive_annotations_policy;
 #[cfg(feature="native-policy")]mod reactive_global_facts_native;
 
 #[cfg(feature="native-policy")]pub mod captured_reactive_reads;
+
 #[cfg(feature="native-policy")]pub mod reactive_raw_policy_pages;
 
 pub mod reactive_variable_policy;
@@ -227,6 +234,16 @@ pub(crate) mod reactive_rank_policy;
 pub(crate) mod derived_reads_collect_policy;
 mod derived_entry_policy;
 mod derived_reads_judge;
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]
+mod derived_fix_policy;
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]
+pub mod derived_selftest_policy;
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub mod pool_selftest_policy;
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub mod sys_reactive_selftest_policy;
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub mod sys_selftest_policy;
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub mod tracked_selftest_policy;
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub(crate) mod selftest_source_policy;
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub mod ui_selftest_policy;
 mod derived_schema_policy;
 mod derived_reads_metadata;
 #[cfg(feature="native-policy")]mod reactive_raw_lexical_source;
@@ -590,3 +607,46 @@ pub use dq_analyze_client::native_checker_wire;
 
 #[cfg(feature="native-policy")]mod captured_tracked_drop;
 #[cfg(feature="native-policy")]pub mod captured_registry_check_selection;
+
+pub use dq_analyze_client::cli_usage;
+
+pub use dq_analyze_client::native_check_cli_wire;
+
+#[cfg(feature="native-policy")]pub mod native_pattern;
+
+pub use dq_analyze_client::native_selftest_wire;
+
+#[cfg(feature="native-policy")]pub mod captured_sem_utility_prelude;
+
+#[path="sem/decls.rs"]pub mod declaration_markers;
+
+#[cfg(feature="native-policy")]pub mod captured_sem_utility_closure;
+
+#[cfg(feature="native-policy")]
+pub mod fixture_report_policy;
+
+pub use dq_analyze_client::native_codemod_fixture_wire;
+
+#[cfg(feature="native-policy")]pub mod captured_codemod_calls;
+
+pub use dq_analyze_client::codemod_spec;
+
+pub mod codemod_facts;
+
+#[cfg(feature="native-policy")]mod captured_codemod_facts;
+
+#[cfg(feature="native-policy")]pub(crate) mod captured_codemod_index;
+
+#[cfg(feature="native-policy")]pub(crate) mod captured_codemod_work;
+
+#[cfg(feature="native-policy")]pub mod captured_codemod_plan;
+
+#[cfg(all(test,feature="native-policy",not(feature="legacy-sem")))]
+mod native_codemod_feature_boundary_controls{
+ #[test]fn actual_native_only_codemod_registry_and_factories_match_shared_specs_without_legacy_sem(){
+  assert!(!crate::LEGACY_SEMANTICS_ENABLED);
+  let actual=crate::codemod::registry();let names=actual.iter().map(|entry|entry.name()).collect::<Vec<_>>();
+  let mut expected=crate::codemod_spec::ALL.iter().map(|entry|entry.name).collect::<Vec<_>>();expected.sort_unstable();assert_eq!(names,expected);
+  for spec in crate::codemod_spec::ALL{let entry=crate::codemod::native_find(spec.name).expect("same actual native implementation");assert_eq!(entry.name(),spec.name);assert_eq!(entry.about(),spec.about);assert_eq!(entry.callees(),spec.callees);assert_eq!(entry.reasons(),spec.reasons);}
+ }
+}

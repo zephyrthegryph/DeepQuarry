@@ -19,7 +19,7 @@ pub mod ctor_args;
 pub mod handlers;
 pub mod hooks;
 pub mod cli;
-pub mod decls;
+pub use crate::declaration_markers as decls;
 pub mod globals;
 pub mod graph;
 pub mod layering;

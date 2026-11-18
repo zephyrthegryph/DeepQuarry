@@ -9,6 +9,7 @@
 //! on any line start; the type path may contain spaces. The comment and string content are not
 //! stripped, so a definition-shaped line in a comment or string at column 0 counts.
 
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::tree::{Select, SourceFile};
@@ -37,7 +38,8 @@ impl Lint for I7Handler {
     }
 
     fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let handler = crate::pat!(r"(?m)^(/\w[\w/ ]*?)/(attackby|attack_hand|attack_self|click_alt)\(");
+        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
+        let handler = fixture.pattern(r"(?m)^(/\w[\w/ ]*?)/(attackby|attack_hand|attack_self|click_alt)\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?m)^(/\w[\w/ ]*?)/(attackby|attack_hand|attack_self|click_alt)\("));
         let allowed = cx.list("allowed");
         let text = f.text();
         for m in handler.captures_iter(text) {

@@ -295,8 +295,8 @@ pub trait ScanSource<C:crate::key_policy_control::Control>{
 }
 pub fn scan_keys_controlled<C:crate::key_policy_control::Control>(cx:&crate::lint::Cx<'_>,decls:&ScanInput<'_>,out:&mut crate::lint::Sink,c:&mut C,
  system_var:impl FnMut(&str,&str,&mut C)->Result<(bool,bool),C::Error>,system_types:impl FnMut(&str,&mut C)->Result<Vec<String>,C::Error>)->Result<(),C::Error>{
- struct Legacy<'a,'tree>{cx:&'a crate::lint::Cx<'tree>,out:&'a mut crate::lint::Sink}
- impl<C:crate::key_policy_control::Control> ScanSource<C> for Legacy<'_,'_>{
+ struct Legacy<'a,'tree,'patterns>{cx:&'a crate::lint::Cx<'tree>,out:&'a mut crate::lint::Sink<'patterns>}
+ impl<C:crate::key_policy_control::Control> ScanSource<C> for Legacy<'_,'_,'_>{
   fn exempt(&self,relative:&str)->bool{self.cx.exempt(relative)}
   fn allowed(&mut self,relative:&str,line:u32,control:&mut C)->Result<bool,C::Error>{allowed_controlled(self.cx,self.out,relative,line,control)}
   fn site(&mut self,rule:&'static str,relative:&str,line:usize,message:String)->Result<(),C::Error>{self.out.site_in_msg(rule,relative,line,message);Ok(())}

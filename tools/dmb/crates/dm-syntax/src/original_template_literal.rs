@@ -11,12 +11,29 @@ fn refund(a:&crate::SettingAdmission<'_>,credit:&mut crate::SettingRootLease,byt
     a.shrink(credit,bytes).map_err(|error|a.take_operational_error().unwrap_or(error))
 }
 struct Part{data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:Vec<crate::SpanToken>,native:Option<crate::NativeExpressionParserFacts>,native_observed:bool,empty_native:bool}
-pub(crate) struct OriginalTemplateBuilder{rows:Vec<Part>,credit:Option<crate::SettingRootLease>}
-impl Drop for OriginalTemplateBuilder{fn drop(&mut self){for mut row in self.rows.drain(..){if let Some(expr)=row.expression.take(){crate::setting_drop::drop_expression(expr,None)}}}}
-struct PendingParts(Option<LiteralParts>);
-impl Drop for PendingParts{fn drop(&mut self){if let Some(parts)=self.0.take(){crate::setting_drop::drop_literal_parts(parts,None)}}}
-impl OriginalTemplateBuilder{
- pub(crate) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{poll(a)?;Ok(Self{rows:Vec::new(),credit:Some(a.reserve(size_of::<Self>())?)})}
+pub(crate) struct OriginalTemplateBuilder<'a,'op>{rows:Vec<Vec<Part>>,len:usize,credit:Option<crate::SettingRootLease>,cleanup:Option<crate::parser_cleanup::ParserCleanup<'a,'op>>}
+fn release_parser_child(expression:Expr,cleanup:Option<&crate::parser_cleanup::ParserCleanup<'_, '_>>){
+ if let Some(cleanup)=cleanup{cleanup.drop_expression(expression)}else{crate::setting_drop::drop_expression(expression,None)}
+}
+// Incoming raw child enters this guard BEFORE the first fallible callback.
+// Part/argument/field Vec element layouts remain exactly the existing layouts.
+struct IncomingPart<'a,'op>{part:Option<Part>,cleanup:Option<crate::parser_cleanup::ParserCleanup<'a,'op>>}
+impl Drop for IncomingPart<'_, '_>{fn drop(&mut self){if let Some(part)=&mut self.part{if let Some(child)=part.expression.take(){release_parser_child(child,self.cleanup.as_ref())}}}}
+impl Drop for OriginalTemplateBuilder<'_, '_>{fn drop(&mut self){for block in &mut self.rows{for mut row in block.drain(..){if let Some(expr)=row.expression.take(){release_parser_child(expr,self.cleanup.as_ref())}}}}}
+struct PendingParts<'a,'op>{parts:Option<LiteralParts>,anchor:Option<crate::SharedSettingRetention>,parser:Option<crate::SettingRootLease>,cleanup:Option<crate::parser_cleanup::ParserCleanup<'a,'op>>}
+impl Drop for PendingParts<'_, '_>{fn drop(&mut self){if let Some(mut parts)=self.parts.take(){
+ if let Some(cleanup)=&self.cleanup{for expression in parts.expressions.drain(..){cleanup.drop_expression(expression)}}
+ crate::setting_drop::drop_literal_parts(parts,self.anchor.take())
+}}}
+impl OriginalTemplateBuilder<'static,'static>{
+ pub(crate) fn new(a:&crate::SettingAdmission<'_>)->io::Result<Self>{poll(a)?;Ok(Self{rows:Vec::new(),len:0,credit:Some(a.reserve(size_of::<Self>())?),cleanup:None})}
+}
+impl<'a,'op> OriginalTemplateBuilder<'a,'op>{
+ pub(crate) fn new_with_cleanup(a:&'a crate::SettingAdmission<'op>,cleanup:crate::parser_cleanup::ParserCleanup<'a,'op>)->io::Result<Self>{
+  cleanup.ensure_nodes(Some(a),0)?;poll(a)?;
+  Ok(Self{rows:Vec::new(),len:0,credit:Some(a.reserve(size_of::<Self>())?),cleanup:Some(cleanup)})
+ }
+ #[track_caller]
  fn grow(&mut self,n:usize,a:&crate::SettingAdmission<'_>)->io::Result<()>{
     a.grow(self.credit.as_mut().ok_or(io::ErrorKind::InvalidInput)?,n)
         .map_err(|error|a.take_operational_error().unwrap_or(error))
@@ -25,9 +42,11 @@ impl OriginalTemplateBuilder{
  pub(crate) fn push_with_native_facts(&mut self,data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:&[crate::Token],native:Option<crate::NativeExpressionParserFacts>,empty_native:bool,a:&crate::SettingAdmission<'_>)->io::Result<()>{self.push_inner(data,span,expression,tokens,native,true,empty_native,a)}
  fn push_inner(&mut self,data:crate::OriginalLiteralData,span:Span,expression:Option<Expr>,tokens:&[crate::Token],native:Option<crate::NativeExpressionParserFacts>,native_observed:bool,empty_native:bool,a:&crate::SettingAdmission<'_>)->io::Result<()>{
   // Own the AST on ALL fallible paths; its iterative release precedes credit.
-  let mut part=Part{data,span,expression,tokens:Vec::new(),native,native_observed,empty_native};
-  let result=(||{
+  let mut incoming=IncomingPart{part:Some(Part{data,span,expression,tokens:Vec::new(),native,native_observed,empty_native}),cleanup:self.cleanup.clone()};
+  let part=incoming.part.as_mut().unwrap();
+  let result:io::Result<usize>=(||{
     poll(a)?;
+    let next_len=self.len.checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;
     if empty_native&&(part.expression.is_some()||tokens.iter().any(|token|!matches!(token.kind,crate::TokenKind::Whitespace|crate::TokenKind::Newline|crate::TokenKind::Comment))){return Err(io::ErrorKind::InvalidInput.into())}
     let token_bound=envelope::<crate::SpanToken>(tokens.len())?;
     self.grow(token_bound,a)?;
@@ -37,54 +56,107 @@ impl OriginalTemplateBuilder{
     for token in tokens {
         part.tokens.push(crate::SpanToken{kind:token.kind,span:token.span});
     }
-    if self.rows.len()==self.rows.capacity(){
-        let old=capacity_bytes::<Part>(self.rows.capacity())?;
-        let count=self.rows.len().checked_add(1).and_then(usize::checked_next_power_of_two).ok_or(io::ErrorKind::OutOfMemory)?;
-        let bound=envelope::<Part>(count)?;
-        self.grow(bound,a)?;
-        self.rows.try_reserve_exact(count-self.rows.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
-        let actual=capacity_bytes::<Part>(self.rows.capacity())?;
-        if actual>bound{return Err(io::ErrorKind::OutOfMemory.into())}
-        refund(a,self.credit.as_mut().unwrap(),old.checked_add(bound-actual).ok_or(io::ErrorKind::OutOfMemory)?)?;
+    if self.rows.last().is_none_or(|block|block.len()==block.capacity().min(64)){
+        // Preserve small-template geometry, then cap each real row allocation.
+        // Existing blocks stay physically live and paid throughout new growth.
+        let count=self.rows.last().map_or(1,|block|block.capacity().saturating_mul(2).min(64));
+        if self.rows.len()==self.rows.capacity(){
+            let old=capacity_bytes::<Vec<Part>>(self.rows.capacity())?;
+            let outer=self.rows.len().checked_add(1).and_then(usize::checked_next_power_of_two).ok_or(io::ErrorKind::OutOfMemory)?;
+            let bound=envelope::<Vec<Part>>(outer)?;self.grow(bound,a)?;
+            self.rows.try_reserve_exact(outer-self.rows.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
+            let actual=capacity_bytes::<Vec<Part>>(self.rows.capacity())?;
+            refund(a,self.credit.as_mut().unwrap(),old.checked_add(bound.checked_sub(actual).ok_or(io::ErrorKind::OutOfMemory)?).ok_or(io::ErrorKind::OutOfMemory)?)?;
+        }
+        let bound=envelope::<Part>(count)?;self.grow(bound,a)?;
+        let mut block=Vec::new();block.try_reserve_exact(count).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
+        let actual=capacity_bytes::<Part>(block.capacity())?;
+        refund(a,self.credit.as_mut().unwrap(),bound.checked_sub(actual).ok_or(io::ErrorKind::OutOfMemory)?)?;
+        self.rows.push(block);
     }
-    poll(a)
+    poll(a)?;Ok(next_len)
   })();
-  if let Err(error)=result{if let Some(expr)=part.expression.take(){crate::setting_drop::drop_expression(expr,None)}return Err(error)}self.rows.push(part);Ok(())
+  let next_len=result?;self.rows.last_mut().expect("funded row block").push(incoming.part.take().unwrap());self.len=next_len;Ok(())
  }
  pub(crate) fn finish(mut self,raw:&str,origin:usize,a:&crate::SettingAdmission<'_>)->io::Result<LiteralText>{
-  poll(a)?;if self.rows.len()<2{return Err(io::ErrorKind::InvalidInput.into())}
-  let last=self.rows.len()-1;let mut previous=origin;let mut nonempty=false;
-  for(i,row)in self.rows.iter().enumerate(){poll(a)?;let text=match(i,row.data.value()){(0,crate::OriginalTokenValue::InterpBegin(s))=>s,(i,crate::OriginalTokenValue::InterpEnd(s))if i==last=>s,(i,crate::OriginalTokenValue::InterpPart(s))if i>0&&i<last=>s,_=>return Err(io::ErrorKind::InvalidInput.into())};if row.span.start<previous||row.span.end>origin.checked_add(raw.len()).ok_or(io::ErrorKind::InvalidInput)?||row.span.start>=row.span.end{return Err(io::ErrorKind::InvalidInput.into())}let local=Span::new(row.span.start-origin,row.span.end-origin);if raw.get(local.range())!=Some(row.data.raw()){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual template fragment differs from its producer source range"))}if i==0&&row.expression.is_some(){return Err(io::ErrorKind::InvalidInput.into())}previous=row.span.end;nonempty|=!text.is_empty();}
-  if self.rows[0].span.start!=origin||previous!=origin+raw.len(){return Err(io::ErrorKind::InvalidInput.into())}
-  // This path moves already parsed children and typed fragments. Admit only
-  // the allocations made here; the producer's parse/cleanup guard still owns
-  // the incoming AST until the enclosing syntax owner measures it.
+  poll(a)?;if self.len<2{return Err(io::ErrorKind::InvalidInput.into())}
+  let last=self.len-1;let mut previous=origin;let mut nonempty=false;
+  for(i,row)in self.rows.iter().flatten().enumerate(){poll(a)?;let text=match(i,row.data.value()){(0,crate::OriginalTokenValue::InterpBegin(s))=>s,(i,crate::OriginalTokenValue::InterpEnd(s))if i==last=>s,(i,crate::OriginalTokenValue::InterpPart(s))if i>0&&i<last=>s,_=>return Err(io::ErrorKind::InvalidInput.into())};if row.span.start<previous||row.span.end>origin.checked_add(raw.len()).ok_or(io::ErrorKind::InvalidInput)?||row.span.start>=row.span.end{return Err(io::ErrorKind::InvalidInput.into())}let local=Span::new(row.span.start-origin,row.span.end-origin);if raw.get(local.range())!=Some(row.data.raw()){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual template fragment differs from its producer source range"))}if i==0&&row.expression.is_some(){return Err(io::ErrorKind::InvalidInput.into())}previous=row.span.end;nonempty|=!text.is_empty();}
+  if self.rows[0][0].span.start!=origin||previous!=origin+raw.len(){return Err(io::ErrorKind::InvalidInput.into())}
+  // Move already parsed children and typed fragments. The producer's incoming
+  // parse/cleanup guard covers failures before this builder establishes full
+  // private-child custody below; no template/alias is exposed before then.
   let(mut native_issued,mut native_complete,mut native_recovered,mut native_deferred)=(true,true,false,false);
-  for(i,row)in self.rows.iter().enumerate(){native_issued&=row.native_observed;if i==0{continue}
+  for(i,row)in self.rows.iter().flatten().enumerate(){native_issued&=row.native_observed;if i==0{continue}
    match(&row.expression,row.native){(Some(expression),Some(facts))=>{native_recovered|=facts.recovered();native_deferred|=facts.deferred();native_complete&=facts.is_complete()&&facts.complete_span()==Some(expression.span);},(None,_)if row.empty_native=>(),_=>{native_complete=false;native_deferred=true;}}
   }
-  let count=self.rows.len();
+  let count=self.len;let expression_count=self.rows.iter().flatten().filter(|row|row.expression.is_some()).count();
   let fragment_bound=envelope::<LiteralFragment>(count)?;
-  let expression_bound=envelope::<Expr>(count-1)?;
+  let expression_bound=envelope::<Expr>(expression_count)?;
   let owners=size_of::<LiteralState>()+2*size_of::<usize>()+crate::setting_expression::root_storage_envelope();
   self.grow(owners,a)?;
   self.grow(fragment_bound,a)?;
   self.grow(expression_bound,a)?;
-  let mut pending=PendingParts(Some(LiteralParts{native_parser_facts:crate::expression_parser::NativeExpressionParserState::aggregate(native_issued.then(||crate::NativeExpressionParserFacts::aggregate(native_complete,native_recovered,native_deferred||!native_complete))),runtime_error:None,fragments:Vec::new(),template:Vec::new(),expressions:Vec::new(),lexical:Ok(LiteralLexicalShape{interpolated:true,pinned_segment_nonempty:nonempty})}));
-  let parts=pending.0.as_mut().unwrap();parts.fragments.try_reserve_exact(self.rows.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;parts.expressions.try_reserve_exact(self.rows.len()-1).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
+  let mut pending=PendingParts{parts:Some(LiteralParts{native_parser_facts:crate::expression_parser::NativeExpressionParserState::aggregate(native_issued.then(||crate::NativeExpressionParserFacts::aggregate(native_complete,native_recovered,native_deferred||!native_complete))),runtime_error:None,fragments:Vec::new(),template:Vec::new(),expressions:Vec::new(),lexical:Ok(LiteralLexicalShape{interpolated:true,pinned_segment_nonempty:nonempty})}),anchor:None,parser:None,cleanup:self.cleanup.clone()};
+  let parts=pending.parts.as_mut().unwrap();parts.fragments.try_reserve_exact(count).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;parts.expressions.try_reserve_exact(expression_count).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
   let unused_fragments=fragment_bound.checked_sub(capacity_bytes::<LiteralFragment>(parts.fragments.capacity())?).ok_or(io::ErrorKind::OutOfMemory)?;
   let unused_expressions=expression_bound.checked_sub(capacity_bytes::<Expr>(parts.expressions.capacity())?).ok_or(io::ErrorKind::OutOfMemory)?;
   refund(a,self.credit.as_mut().unwrap(),unused_fragments.checked_add(unused_expressions).ok_or(io::ErrorKind::OutOfMemory)?)?;
-  for mut row in self.rows.drain(..){let expression=row.expression.take().map(|expr|{let index=parts.expressions.len();parts.expressions.push(expr);index});for token in &mut row.tokens{token.span.start=token.span.start.checked_sub(origin).ok_or(io::ErrorKind::InvalidInput)?;token.span.end=token.span.end.checked_sub(origin).ok_or(io::ErrorKind::InvalidInput)?;}parts.fragments.push(LiteralFragment{range:Span::new(row.span.start-origin,row.span.end-origin),expression,tokens:row.tokens,original:Some(row.data)});}
-  let builder_bytes=capacity_bytes::<Part>(self.rows.capacity())?.checked_add(size_of::<Self>()).ok_or(io::ErrorKind::OutOfMemory)?;
-  drop(std::mem::take(&mut self.rows));
+  // Keep every unvisited row in Builder custody across fallible geometry.
+  // Blocks contain at most 64 rows, so removing the first row is bounded and
+  // never allocates. A Drain would default-drop remaining raw AST on error.
+  for block in &mut self.rows{while !block.is_empty(){
+   let mut incoming=IncomingPart{part:Some(block.remove(0)),cleanup:self.cleanup.clone()};
+   let row=incoming.part.as_mut().unwrap();
+   let expression=row.expression.take().map(|expr|{let index=parts.expressions.len();parts.expressions.push(expr);index});
+   for token in &mut row.tokens{token.span.start=token.span.start.checked_sub(origin).ok_or(io::ErrorKind::InvalidInput)?;token.span.end=token.span.end.checked_sub(origin).ok_or(io::ErrorKind::InvalidInput)?;}
+   // No child remains in this row; fragment storage was prepaid above.
+   let row=incoming.part.take().unwrap();
+   parts.fragments.push(LiteralFragment{range:Span::new(row.span.start-origin,row.span.end-origin),expression,tokens:row.tokens,original:Some(row.data)});
+  }}
+  let mut builder_bytes=capacity_bytes::<Vec<Part>>(self.rows.capacity())?.checked_add(size_of::<Self>()).ok_or(io::ErrorKind::OutOfMemory)?;
+  for block in &self.rows{builder_bytes=builder_bytes.checked_add(capacity_bytes::<Part>(block.capacity())?).ok_or(io::ErrorKind::OutOfMemory)?;}
+  drop(std::mem::take(&mut self.rows));self.len=0;
   refund(a,self.credit.as_mut().unwrap(),builder_bytes)?;
   decode_actual_template_runtime(parts,a,self.credit.as_mut().unwrap())?;
   if parts.runtime_error.is_some()||parts.lexical.is_err(){if let Some(facts)=parts.native_parser_facts.facts(None){parts.native_parser_facts=crate::expression_parser::NativeExpressionParserState::aggregate(Some(crate::NativeExpressionParserFacts::aggregate(false,facts.recovered(),true)));}}
+  // Incoming children are now stable SAME native AST. An already complete
+  // nested Original template carries its own exact custody and is not counted
+  // twice. All other child payload and actual cleanup work are retained here
+  // BEFORE this template or any alias can escape the builder.
+  // Reuse the existing body preflight for ordinary nested Text. Genuine
+  // Original-prepared children need zero parser work; generic callers retain
+  // the SAME real parser permit through measurement, attachment and failure
+  // cleanup. Pending releases child AST before this permit on every error.
+  let mut parser_bytes=0usize;
+  for child in &parts.expressions{let peak=crate::body_literal_syntax::input_peak(child,a).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;parser_bytes=parser_bytes.checked_add(peak).ok_or(io::ErrorKind::OutOfMemory)?;}
+  pending.parser=Some(a.reserve(parser_bytes).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?);
+  let parts=pending.parts.as_ref().unwrap();
+  let(mut child_bytes,mut child_cleanup)=(0usize,1usize);
+  for child in &parts.expressions{
+   let measured=crate::setting_prepare::prepare_body_measure(child,a).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;
+   child_bytes=child_bytes.checked_add(measured.bytes).ok_or(io::ErrorKind::OutOfMemory)?;
+   child_cleanup=child_cleanup.checked_add(measured.cleanup_nodes).ok_or(io::ErrorKind::OutOfMemory)?;
+  }
+  let cleanup=child_cleanup.checked_mul(4*(size_of::<Expr>()+size_of::<crate::SharedSettingRetention>())).ok_or(io::ErrorKind::OutOfMemory)?;
+  self.grow(child_bytes.checked_add(cleanup).ok_or(io::ErrorKind::OutOfMemory)?,a)?;
   let raw=crate::admitted_message_using(a,self.credit.as_mut().unwrap(),|out|out.write_str(raw))?;poll(a)?;
-  let retention=OnceLock::new();let _=retention.set(crate::SharedSettingRetention::new(self.credit.take().unwrap()));
-  let prepared=OnceLock::new();let _=prepared.set(Ok(pending.0.take()));
-  Ok(LiteralText(Backing::Text(LiteralOwner::new(LiteralState{raw,origin,parts:prepared,retention,original_prepared:true}))))
+  // Pending owns this credit throughout every fallible attach; both worklists
+  // and real child AST drop under the SAME cleanup lock before credit release.
+  pending.anchor=Some(crate::SharedSettingRetention::new(self.credit.take().unwrap()));
+  for child in &pending.parts.as_ref().unwrap().expressions{crate::setting_prepare::attach(child,pending.anchor.as_ref().unwrap(),a).map_err(|proxy|a.take_operational_error().unwrap_or(proxy))?;}
+  drop(pending.parser.take()); // Real parser scratch is gone; completed own custody remains.
+  // Establish the fully paid final owner BEFORE removing Pending's custody.
+  // Pending keeps an anchor alias until every child is installed; a failed
+  // transfer can never retire credit ahead of its still-owned child payload.
+  let retention=OnceLock::new();let _=retention.set(pending.anchor.as_ref().unwrap().clone());
+  let owner=LiteralOwner::new(LiteralState{raw,origin,parts:OnceLock::new(),retention,original_prepared:true});
+  if let Err(value)=owner.parts.set(Ok(pending.parts.take())){
+   pending.parts=value.map_err(|_|io::ErrorKind::InvalidInput)?;
+   return Err(io::ErrorKind::InvalidInput.into())
+  }
+  drop(pending.anchor.take());
+  Ok(LiteralText(Backing::Text(owner)))
  }
 }
 
@@ -222,5 +294,108 @@ fn decode_actual_template_runtime(parts:&mut LiteralParts,a:&crate::SettingAdmis
   let mut tokens=crate::lex("x.y").tokens;for token in &mut tokens{token.span.start+=6;token.span.end+=6;}let spans=tokens.iter().map(|t|crate::SpanToken{kind:t.kind,span:t.span}).collect::<Vec<_>>();
   let(mut parsed,native)=crate::expression_parser::parse_expression_span_tokens_with_original_literals_and_native_facts(raw,&spans,0,&a,None);assert!(parsed.diagnostics.is_empty());let child=parsed.expr.take().unwrap();assert_eq!(native.unwrap().complete_span(),Some(child.span));let address=child.span;
   builder.push_with_native_facts(begin,Span::new(0,6),None,&[],None,false,&a).unwrap();builder.push_with_native_facts(end,Span::new(9,15),Some(child),&tokens,native,false,&a).unwrap();let before=literal_child_parses_for_test();let literal=builder.finish(raw,0,&a).unwrap();assert!(literal.native_parser_facts().unwrap().is_complete());assert_eq!(literal.syntax_parts().unwrap().unwrap().expressions[0].span,address);let alias=literal.clone();assert_eq!(literal_child_parses_for_test(),before);drop(literal);assert!(used.load(Ordering::Acquire)>crate::SettingChargeCounter::root_allocation_bytes());drop(alias);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+}
+
+#[cfg(test)]
+#[path="original_template_child_custody_controls.rs"]mod complete_child_custody_controls;
+
+#[cfg(test)]mod growth_callsite_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]
+ fn actual_original_template_growth_preserves_request_callsite_credit_and_first_io(){
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let fixed=crate::SettingChargeCounter::root_allocation_bytes();let good=||Ok(());let a=crate::SettingAdmission::new(&used,1<<20,&good);let mut builder=OriginalTemplateBuilder::new(&a).unwrap();let before=used.load(Ordering::Acquire);let owned=builder.credit.as_ref().unwrap().bytes();
+  let tight=crate::SettingAdmission::new(&used,before,&good);
+  let expected_line=line!()+1;
+  let error=builder.grow(1,&tight).unwrap_err();
+  assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);let message=error.to_string();assert!(message.contains(&format!("{}:{}:",file!(),expected_line)),"actual request callsite must pass through both track_caller wrappers: {message}");assert!(message.contains("1 requested"));assert!(message.contains(&format!("{before} retained, {before} limit")));assert_eq!(used.load(Ordering::Acquire),before);assert_eq!(builder.credit.as_ref().unwrap().bytes(),owned);
+  let fail=||Err(io::Error::from_raw_os_error(1450));let stopped=crate::SettingAdmission::new(&used,1<<20,&fail);let actual=builder.grow(1,&stopped).unwrap_err();assert_eq!(actual.raw_os_error(),Some(1450),"callsite attribution must not replace the actual first operational cause");assert_eq!(used.load(Ordering::Acquire),before);assert_eq!(builder.credit.as_ref().unwrap().bytes(),owned);
+  builder.grow(1,&a).unwrap();assert_eq!(used.load(Ordering::Acquire),before+1);drop(builder);assert_eq!(used.load(Ordering::Acquire),fixed);
+ }
+}
+
+#[cfg(test)]mod empty_template_row_pressure_controls{
+ use super::*;use std::sync::atomic::Ordering;
+ #[test]fn actual_many_empty_template_parts_fit_bounded_peak_and_keep_same_runtime_owner(){
+  let count=256usize;let raw=format!("\"{}\"","[]".repeat(count));
+  let oracle=LiteralText::at(raw.clone(),0);let expected=oracle.syntax_parts().unwrap().unwrap();
+  let used=crate::SettingChargeCounter::try_new(crate::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=crate::SettingAdmission::new(&used,256<<10,&||Ok(()));
+  let before=literal_child_parses_for_test();let mut builder=OriginalTemplateBuilder::new(&a).unwrap();
+  for index in 0..=count{
+   let start=if index==0{0}else{index*2};let end=start+2;
+   let value=if index==0{crate::OriginalTokenValue::InterpBegin("")}else if index==count{crate::OriginalTokenValue::InterpEnd("")}else{crate::OriginalTokenValue::InterpPart("")};
+   let data=crate::OriginalLiteralData::from_value_with_mode_using(raw[start..end].into(),value,crate::OriginalStringMode::Normal,&a).unwrap();
+   builder.push_with_native_facts(data,Span::new(start,end),None,&[],None,true,&a).unwrap();
+  }
+  let value=builder.finish(&raw,0,&a).unwrap();let parts=value.syntax_parts().unwrap().unwrap();
+  assert_eq!(parts.fragments.len(),count+1);assert!(parts.expressions.is_empty());assert_eq!(parts.template,expected.template);assert_eq!(parts.runtime_error,expected.runtime_error);assert_eq!(literal_child_parses_for_test(),before,"empty parts never invoke a child parser");
+  let retained=used.load(Ordering::Acquire);assert!(retained>crate::SettingChargeCounter::root_allocation_bytes());let alias=value.clone();drop(value);assert_eq!(used.load(Ordering::Acquire),retained,"escaping actual template alias keeps the SAME funded payload");drop(alias);assert_eq!(used.load(Ordering::Acquire),crate::SettingChargeCounter::root_allocation_bytes());
+ }
+}
+
+
+#[cfg(test)]mod parser_cleanup_adapter_controls{
+ use super::*;use std::cell::Cell;use std::sync::atomic::Ordering;
+ fn deep_child(a:&crate::SettingAdmission<'_>,cleanup:&crate::parser_cleanup::ParserCleanup<'_, '_>,nodes:usize)->(Expr,crate::SettingRootLease){
+  cleanup.ensure_nodes(Some(a),nodes).unwrap();
+  let credit=a.reserve(nodes.checked_mul(size_of::<Expr>()).unwrap()+1).unwrap();
+  let mut child=Expr{span:Span::new(2,3),kind:ExprKind::Ident("x".into())};
+  for _ in 1..nodes{child=Expr{span:Span::new(2,3),kind:ExprKind::Group(Box::new(child))};}
+  (child,credit)
+ }
+ #[test]fn template_incoming_deep_child_has_cleanup_before_first_error_or_panic(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();
+  for panic_mode in [false,true]{
+   let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();let stop=Cell::new(false);let polls=Cell::new(0);
+   let poll=||{polls.set(polls.get()+1);if stop.get(){if panic_mode{panic!("actual first template checkpoint panic")};return Err(io::Error::from_raw_os_error(1450))}Ok(())};
+   let a=crate::SettingAdmission::new(&counter,32<<20,&poll);let cleanup=crate::parser_cleanup::ParserCleanup::new(Some(&a)).unwrap();
+   let mut builder=OriginalTemplateBuilder::new_with_cleanup(&a,cleanup.clone()).unwrap();
+   let (child,payload)=deep_child(&a,&cleanup,20_001);
+   let data=crate::OriginalLiteralData::from_value_using("]\"".into(),crate::OriginalTokenValue::InterpEnd(""),&a).unwrap();
+   let before=polls.get();stop.set(true);
+   let result=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||builder.push(data,Span::new(3,5),Some(child),&[],&a)));
+   assert_eq!(polls.get(),before+1,"incoming cleanup never polls after first failure");
+   if panic_mode{assert!(result.is_err());assert!(!a.is_stopped());}else{assert_eq!(result.unwrap().unwrap_err().raw_os_error(),Some(1450));}
+   stop.set(false);drop(builder);drop(cleanup);drop(payload);assert_eq!(counter.load(Ordering::Acquire),fixed);
+  }
+ }
+ #[test]fn template_pending_parts_and_builder_drop_deep_children_without_polling(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();
+  let stop=Cell::new(false);let polls=Cell::new(0);let poll=||{polls.set(polls.get()+1);if stop.get(){Err(io::Error::from_raw_os_error(1450))}else{Ok(())}};
+  let a=crate::SettingAdmission::new(&counter,32<<20,&poll);let cleanup=crate::parser_cleanup::ParserCleanup::new(Some(&a)).unwrap();
+  let mut builder=OriginalTemplateBuilder::new_with_cleanup(&a,cleanup.clone()).unwrap();let(child,payload)=deep_child(&a,&cleanup,20_001);
+  let data=crate::OriginalLiteralData::from_value_using("]\"".into(),crate::OriginalTokenValue::InterpEnd(""),&a).unwrap();
+  builder.push(data,Span::new(3,5),Some(child),&[],&a).unwrap();let before=polls.get();stop.set(true);drop(builder);assert_eq!(polls.get(),before);stop.set(false);drop(payload);
+  let(child,payload)=deep_child(&a,&cleanup,20_001);let anchor=crate::SharedSettingRetention::new(a.reserve(512).unwrap());
+  let pending=PendingParts{parts:Some(LiteralParts{native_parser_facts:crate::expression_parser::NativeExpressionParserState::aggregate(None),runtime_error:None,fragments:Vec::new(),template:Vec::new(),expressions:vec![child],lexical:Ok(LiteralLexicalShape{interpolated:true,pinned_segment_nonempty:false})}),anchor:Some(anchor),parser:Some(a.reserve(128).unwrap()),cleanup:Some(cleanup.clone())};
+  let before=polls.get();stop.set(true);drop(pending);assert_eq!(polls.get(),before,"pending teardown never enters canceled operation");assert!(!a.is_stopped());
+  stop.set(false);drop(payload);drop(cleanup);assert_eq!(counter.load(Ordering::Acquire),fixed);
+ }
+ #[test]fn template_finish_bad_token_geometry_keeps_all_deep_rows_guarded(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&counter,32<<20,&||Ok(()));
+  let cleanup=crate::parser_cleanup::ParserCleanup::new(Some(&a)).unwrap();let mut builder=OriginalTemplateBuilder::new_with_cleanup(&a,cleanup.clone()).unwrap();
+  let(first,first_credit)=deep_child(&a,&cleanup,20_001);let(second,second_credit)=deep_child(&a,&cleanup,20_001);
+  let begin=crate::OriginalLiteralData::from_value_using("\"[".into(),crate::OriginalTokenValue::InterpBegin(""),&a).unwrap();
+  let middle=crate::OriginalLiteralData::from_value_using("][".into(),crate::OriginalTokenValue::InterpPart(""),&a).unwrap();
+  let end=crate::OriginalLiteralData::from_value_using("]\"".into(),crate::OriginalTokenValue::InterpEnd(""),&a).unwrap();
+  builder.push(begin,Span::new(10,12),None,&[],&a).unwrap();
+  let foreign=[crate::Token{kind:crate::TokenKind::Ident,span:Span::new(0,1),text:"x".into()}];
+  builder.push(middle,Span::new(13,15),Some(first),&foreign,&a).unwrap();
+  builder.push(end,Span::new(16,18),Some(second),&[],&a).unwrap();
+  assert_eq!(builder.finish("\"[x][y]\"",10,&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);
+  assert!(!a.is_stopped(),"bad geometry is nominal, not a waived operational error");
+  drop(first_credit);drop(second_credit);drop(cleanup);assert_eq!(counter.load(Ordering::Acquire),fixed);
+ }
+ #[test]fn template_cleanup_custody_reaches_paid_literal_owner_and_last_alias(){
+  let fixed=crate::SettingChargeCounter::root_allocation_bytes();let counter=crate::SettingChargeCounter::try_new(fixed).unwrap();let a=crate::SettingAdmission::new(&counter,16<<20,&||Ok(()));
+  let cleanup=crate::parser_cleanup::ParserCleanup::new(Some(&a)).unwrap();cleanup.ensure_nodes(Some(&a),2).unwrap();
+  let raw="\"[(x)]\"";let mut child=crate::parse_expression("(x)").expr.unwrap();shift_expression(&mut child,2);
+  let mut tokens=crate::lex("(x)").tokens;for token in &mut tokens{token.span.start+=2;token.span.end+=2;}
+  let mut builder=OriginalTemplateBuilder::new_with_cleanup(&a,cleanup.clone()).unwrap();
+  let begin=crate::OriginalLiteralData::from_value_using("\"[".into(),crate::OriginalTokenValue::InterpBegin(""),&a).unwrap();
+  let end=crate::OriginalLiteralData::from_value_using("]\"".into(),crate::OriginalTokenValue::InterpEnd(""),&a).unwrap();
+  builder.push(begin,Span::new(0,2),None,&[],&a).unwrap();builder.push(end,Span::new(5,7),Some(child),&tokens,&a).unwrap();
+  let value=builder.finish(raw,0,&a).unwrap();assert!(matches!(&value.syntax_parts().unwrap().unwrap().expressions[0].kind,ExprKind::Group(_)));
+  let alias=value.clone();drop(value);drop(cleanup);assert!(counter.load(Ordering::Acquire)>fixed);drop(alias);assert_eq!(counter.load(Ordering::Acquire),fixed);
  }
 }

@@ -25,4 +25,5 @@ impl<'a,'op,T> Worklist<'a,'op,T>{
  pub(crate) fn extend(&mut self,values:impl IntoIterator<Item=T>)->io::Result<()>{for value in values{self.push(value)?;}Ok(())}
  pub(crate) fn pop(&mut self)->Option<T>{self.values.pop()}
  pub(crate) fn as_slice(&self)->&[T]{&self.values}
+ pub(crate) fn as_mut_slice(&mut self)->&mut[T]{&mut self.values}
 }

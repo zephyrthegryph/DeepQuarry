@@ -85,6 +85,15 @@ pub fn judge_captured_baseline<S: baseline::SiteText + ?Sized>(
     bytes: Option<&[u8]>, work: &dyn Work,
     post: impl FnMut(&Run, &mut String) -> bool,
 ) -> io::Result<(bool, String)> {
+    judge_captured_baseline_changed(meta,scope,source,run,root,bytes,work,post,&None)
+}
+
+pub fn judge_captured_baseline_changed<S: baseline::SiteText + ?Sized>(
+    meta: &crate::lint::Meta, scope: &LintScope, source: &S, run: &Run, root: &Path,
+    bytes: Option<&[u8]>, work: &dyn Work,
+    post: impl FnMut(&Run, &mut String) -> bool,
+    changed: &Option<std::collections::HashSet<String>>,
+) -> io::Result<(bool, String)> {
     work.checkpoint()?;
     let text = bytes.and_then(|bytes| std::str::from_utf8(bytes).ok()).unwrap_or_default();
     let mut lines = 1usize;
@@ -98,14 +107,14 @@ pub fn judge_captured_baseline<S: baseline::SiteText + ?Sized>(
         Policy::Sites { .. } => {
             let baseline = baseline::parse_sites_text(text.to_owned());
             crate::policy_judge::judge_report_using(
-                meta, scope, source, run, root, &None, false, |_, _, _| false, post,
+                meta, scope, source, run, root, changed, false, |_, _, _| false, post,
                 Some(crate::policy_judge::Sites::Complete(&baseline)), None,
             )
         }
         Policy::Ceilings { .. } => {
             let baseline = baseline::parse_ceilings_text(text);
             crate::policy_judge::judge_report_using(
-                meta, scope, source, run, root, &None, false, |_, _, _| false, post,
+                meta, scope, source, run, root, changed, false, |_, _, _| false, post,
                 None, Some(&baseline),
             )
         }
@@ -148,3 +157,21 @@ fn selected(data:&dyn baseline::SiteText,meta:&crate::lint::Meta,sites:&[crate::
  let mut allow_usage=BTreeSet::new();for used in used{let digest=digest(&used.rel).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"missing actual selected ALLOW digest"))?;let mut hex=String::with_capacity(40);use std::fmt::Write as _;for b in digest{write!(hex,"{b:02x}").map_err(io::Error::other)?}allow_usage.insert((used.name.clone(),hex,used.line));}
  work.checkpoint()?;Ok(Text{clean:complete&&!failed,text,allow_usage})
 }
+
+/// Exact update-only Sites renderer over captured old bytes and actual Run DATA.
+/// The host funds current grouping/fingerprints/text before invoking this loan.
+pub fn render_captured_sites_update<S:baseline::SiteText+?Sized>(meta:&crate::lint::Meta,scope:&LintScope,source:&S,run:&Run,bytes:&[u8])->io::Result<(String,usize,String)>{render_captured_sites_mode(meta,scope,source,run,bytes,baseline::Mode::Update)}
+pub fn render_captured_sites_mode<S:baseline::SiteText+?Sized>(meta:&crate::lint::Meta,scope:&LintScope,source:&S,run:&Run,bytes:&[u8],mode:baseline::Mode)->io::Result<(String,usize,String)>{
+ let Policy::Sites{header,banned,..}=meta.policy else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"captured Sites updater needs actual Sites metadata"))};
+ let by_rule=run.by_rule(meta);let groups:Vec<(&str,Vec<&crate::lint::Site>)>=by_rule.iter().filter(|(rule,_)|!scope.ceilings.contains_key(*rule)).map(|(rule,sites)|(*rule,sites.clone())).collect();
+ let rules:Vec<&str>=meta.rules.iter().map(|rule|rule.name).filter(|rule|!banned.contains(rule)&&!scope.ceilings.contains_key(*rule)).collect();
+ let old=baseline::parse_sites_text(std::str::from_utf8(bytes).unwrap_or_default().to_owned());
+ let(text,count)=baseline::render_sites(&old,header,source,&groups,&rules,mode)?;
+ let counts=groups.iter().map(|(rule,sites)|format!("{} {}",rule,sites.len())).collect::<Vec<_>>().join(", ");
+ Ok((text,count,counts))
+}
+/// Exact old-key/min/current count update over captured baseline bytes.
+pub fn render_captured_count_update(bytes:&[u8],header:&[&str],run:&Run)->(String,usize){let old=baseline::parse_ceilings_text(std::str::from_utf8(bytes).unwrap_or_default());baseline::render_updated_ceilings(&old,header,&run.sites)}
+
+/// Pure actual captured count-mode semantics; Migrate performs no write.
+pub fn render_captured_count_mode(bytes:&[u8],header:&[&str],run:&Run,mode:baseline::Mode)->(Option<String>,usize){match mode{baseline::Mode::Update=>{let(text,n)=render_captured_count_update(bytes,header,run);(Some(text),n)},baseline::Mode::Seed=>{let counts=baseline::key_counts(&run.sites);let text=baseline::render_ceilings(header,&counts);(Some(text),counts.len())},baseline::Mode::Migrate=>(None,baseline::parse_ceilings_text(std::str::from_utf8(bytes).unwrap_or_default()).len())}}

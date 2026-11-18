@@ -7,10 +7,10 @@ fn canonical(db:&crate::query_db::QueryDb,archive:&dm_tree::frontend::BodyArchiv
 /proc/probe(datum/receiver/argument)
     return argument.field
 ";let(mut host,mut request,root)=fixture(source);let intent=request.policy_inputs.as_mut().unwrap();intent.analysis_context=Some(AnalysisContext::OriginalAnalyze0290);intent.workspace_auxiliary=vec![Q::StoredRefs];intent.workspace.as_mut().unwrap().recursive_roots=vec![root.join("code")];let db=Arc::clone(host.query_db());run(&mut host,&request);
- let(tree,code)=current(&host,|snapshot|{let archive=snapshot.body_archive.as_ref().unwrap();assert_eq!(archive.len(),1);canonical(&db,archive);let input=&archive.syntax_inputs().unwrap()[0];(Arc::clone(&snapshot.tree),Arc::clone(input.original_code_owner().unwrap()))});let computed=db.db().stats(dm_query::Kind(4)).computed;
+ let(tree,code)=current(&host,|snapshot|{let archive=snapshot.body_archive.as_ref().unwrap();assert_eq!(archive.len(),1);canonical(&db,archive);let input=archive.syntax_input_checked(0,&||crate::daemon::control::checkpoint()).unwrap();(Arc::clone(&snapshot.tree),Arc::clone(input.original_code_owner().unwrap()))});let computed=db.db().stats(dm_query::Kind(4)).computed;
  std::fs::write(root.join("code/probe.dm"),"/datum/receiver
     var/field
 /proc/probe(datum/receiver/argument)
     return argument.field
-").unwrap();run(&mut host,&request);current(&host,|snapshot|{assert!(!Arc::ptr_eq(&tree,&snapshot.tree));let archive=snapshot.body_archive.as_ref().unwrap();let input=&archive.syntax_inputs().unwrap()[0];assert!(Arc::ptr_eq(&code,input.original_code_owner().unwrap()),"actual new header/model owner retains only exact same code identity");canonical(&db,archive);});assert_eq!(db.db().stats(dm_query::Kind(4)).computed,computed);assert!(Arc::ptr_eq(&db,host.query_db()));
+").unwrap();run(&mut host,&request);current(&host,|snapshot|{assert!(!Arc::ptr_eq(&tree,&snapshot.tree));let archive=snapshot.body_archive.as_ref().unwrap();let input=archive.syntax_input_checked(0,&||crate::daemon::control::checkpoint()).unwrap();assert!(Arc::ptr_eq(&code,input.original_code_owner().unwrap()),"actual new header/model owner retains only exact same code identity");canonical(&db,archive);});assert_eq!(db.db().stats(dm_query::Kind(4)).computed,computed);assert!(Arc::ptr_eq(&db,host.query_db()));
 }

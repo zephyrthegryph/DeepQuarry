@@ -375,13 +375,13 @@ impl<'source,'op> Walk<'source,'op>{
   if self.depth>=MAX_EXPRESSION_DEPTH{return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"reactive expression work stack exceeds admitted operation")));}
   self.depth+=1;let result=self.eval_inner(fr,e);self.depth-=1;result
  }
- fn at(&self,span:Span)->Result<usize,Failure>{span.start.checked_add(self.offset).ok_or_else(||Failure::Unsupported("reactive projected source span overflow".into()))}
+ fn at(&self,fr:&Frame<'_>,span:Span)->Result<usize,Failure>{let offset=span.start.checked_add(self.offset).ok_or_else(||Failure::Unsupported("reactive projected source span overflow".into()))?;fr.body.current_offset(offset)}
  fn eval_inner(&mut self,fr:&mut Frame<'_>,e:&Expr)->Result<Value,Failure>{
   match &e.kind{
-   ExprKind::Ident(name)=>{self.line=self.source.line_at(self.at(e.span)?)?;self.ident(fr,name,self.at(e.span)?)},
+   ExprKind::Ident(name)=>{self.line=self.source.line_at(self.at(fr,e.span)?)?;self.ident(fr,name,self.at(fr,e.span)?)},
    ExprKind::Group(value)=>self.eval(fr,value),
    ExprKind::Literal(value)=>{
-    self.line=self.source.line_at(self.at(e.span)?)?;
+    self.line=self.source.line_at(self.at(fr,e.span)?)?;
     // The actual demanded Kind4 body completed this cache before publication.
     // Borrow the issued syntax children independently of runtime text decoding.
     match value.prepared_syntax_parts(){
@@ -393,11 +393,11 @@ impl<'source,'op> Walk<'source,'op>{
     Ok(Value::local(None))
    }
    ExprKind::TypeFilter{value,..}=>{self.eval(fr,value)?;Ok(Value::local(None))},
-   ExprKind::ObjectInitializer{..}=>{self.line=self.source.line_at(self.at(e.span)?)?;Ok(Value::local(None))},
-   ExprKind::TypePath(_)=>{self.line=self.source.line_at(self.at(e.span)?)?;Ok(Value::local(None))},
-   ExprKind::Member{object,selector,..}|ExprKind::SafeMember{object,selector,..}=>{let v=self.eval(fr,object)?;self.field(fr,v,selector,self.at(e.span)?)},
+   ExprKind::ObjectInitializer{..}=>{self.line=self.source.line_at(self.at(fr,e.span)?)?;Ok(Value::local(None))},
+   ExprKind::TypePath(_)=>{self.line=self.source.line_at(self.at(fr,e.span)?)?;Ok(Value::local(None))},
+   ExprKind::Member{object,selector,..}|ExprKind::SafeMember{object,selector,..}=>{let v=self.eval(fr,object)?;self.field(fr,v,selector,self.at(fr,e.span)?)},
    ExprKind::StaticMember{object,..}=>{self.eval(fr,object)?;Ok(Value::local(None))}, // original StaticField/ProcReference do not follow
-   ExprKind::Unary{op,value}=>{if op=="new"{self.line=self.source.line_at(self.at(e.span)?)?;if let ExprKind::Call{args,..}=&value.kind{for arg in args{self.eval(fr,arg)?;}}return Ok(Value::local(None))}let value=self.eval(fr,value)?;if op=="-"{if let Root::Scalar(LookupArgument::Literal(number))=&value.root{if number!="null"{self.reserve(number.len().checked_mul(4).and_then(|n|n.checked_add(128)))?;return Ok(Value{ty:None,root:Root::Scalar(LookupArgument::Literal(format!("-{number}"))),hops:Vec::new(),hop_ok:true,list:false,blame:None})}}}Ok(Value::local(None))},
+   ExprKind::Unary{op,value}=>{if op=="new"{self.line=self.source.line_at(self.at(fr,e.span)?)?;if let ExprKind::Call{args,..}=&value.kind{for arg in args{self.eval(fr,arg)?;}}return Ok(Value::local(None))}let value=self.eval(fr,value)?;if op=="-"{if let Root::Scalar(LookupArgument::Literal(number))=&value.root{if number!="null"{self.reserve(number.len().checked_mul(4).and_then(|n|n.checked_add(128)))?;return Ok(Value{ty:None,root:Root::Scalar(LookupArgument::Literal(format!("-{number}"))),hops:Vec::new(),hop_ok:true,list:false,blame:None})}}}Ok(Value::local(None))},
    ExprKind::Binary{op,lhs,rhs} if assignment(op)=>{let rv=self.eval(fr,rhs)?;self.assign(fr,lhs,op,&rv)?;Ok(rv)},
    ExprKind::Binary{lhs,rhs,..}=>{self.eval(fr,lhs)?;self.eval(fr,rhs)?;Ok(Value::local(None))},
    ExprKind::Conditional{condition,then_value,else_value}=>{
@@ -429,10 +429,10 @@ impl<'source,'op> Walk<'source,'op>{
     let declared=self.value_copy(previous)?.ty;if op!="="{self.eval(fr,lhs)?;}
     let mut value=self.value_copy(rv)?;if value.ty.is_none(){value.ty=declared;}return self.bind(fr,name,value);
    }
-   if op!="="{self.eval(fr,lhs)?;}if !self.closed{self.effect(fr,"assign",name,fr.this.ty.as_deref().unwrap_or(""),self.source.line_at(self.at(lhs.span)?)?)?;}return Ok(());
+   if op!="="{self.eval(fr,lhs)?;}if !self.closed{self.effect(fr,"assign",name,fr.this.ty.as_deref().unwrap_or(""),self.source.line_at(self.at(fr,lhs.span)?)?)?;}return Ok(());
   }
   if let ExprKind::Member{object,selector,..}|ExprKind::SafeMember{object,selector,..}=&lhs.kind{
-   let receiver=self.eval(fr,object)?;if op!="="{let copied=self.value_copy(&receiver)?;self.field(fr,copied,selector,self.at(lhs.span)?)?;}if !self.closed{self.effect(fr,"assign",selector,receiver.ty.as_deref().unwrap_or(""),self.source.line_at(self.at(lhs.span)?)?)?;}return Ok(());
+   let receiver=self.eval(fr,object)?;if op!="="{let copied=self.value_copy(&receiver)?;self.field(fr,copied,selector,self.at(fr,lhs.span)?)?;}if !self.closed{self.effect(fr,"assign",selector,receiver.ty.as_deref().unwrap_or(""),self.source.line_at(self.at(fr,lhs.span)?)?)?;}return Ok(());
   }
   self.eval(fr,lhs)?;Ok(())
  }
@@ -494,7 +494,7 @@ impl<'source,'op> Walk<'source,'op>{
  fn lookup_diag_at_line(&mut self,fr:&Frame<'_>,line:u32,rule:&'static str,args:std::fmt::Arguments<'_>)->Result<(),Failure>{self.reporting(line,|walk|walk.lookup_diag(fr,rule,args))}
  fn call(&mut self,fr:&mut Frame<'_>,callee:&Expr,args:&[Expr],at:Span)->Result<Value,Failure>{
   if let ExprKind::Ident(name)=&callee.kind{
-   let call_line=self.source.line_at(self.at(callee.span)?)?;self.line=call_line;
+   let call_line=self.source.line_at(self.at(fr,callee.span)?)?;self.line=call_line;
    if matches!(name.as_str(),"nameof"|"PROC_REF"|"TYPE_PROC_REF"|"GLOBAL_PROC_REF"|"initial"){return Ok(Value::local(None));}
    if matches!(name.as_str(),"list"|"."|"new"|"input"|"locate"|"pick"){
     for arg in args{self.eval(fr,arg)?;}return Ok(Value::local(None));
@@ -616,10 +616,10 @@ impl<'source,'op> Walk<'source,'op>{
    for value in &argv{bind.push(if value.root==Root::Act{Value::local(None)}else{self.value_copy(value)?});}
    return Ok(self.run_proc(global.ordinal,Value::local(None),&bind,false,true)?.unwrap_or_else(||Value::local(None)))
   }
-  if matches!(callee.kind,ExprKind::StaticMember{..}){self.line=self.source.line_at(self.at(callee.span)?)?;for arg in args{self.eval(fr,arg)?;}return Ok(Value::local(None))}
+  if matches!(callee.kind,ExprKind::StaticMember{..}){self.line=self.source.line_at(self.at(fr,callee.span)?)?;for arg in args{self.eval(fr,arg)?;}return Ok(Value::local(None))}
   if let ExprKind::Call{callee:primitive,args:first}=&callee.kind{
    if matches!(&primitive.kind,ExprKind::Ident(name)if name=="call"){
-    let line=self.source.line_at(self.at(callee.span)?)?;self.line=line;for value in first.iter().chain(args){self.eval(fr,value)?;}
+    let line=self.source.line_at(self.at(fr,callee.span)?)?;self.line=line;for value in first.iter().chain(args){self.eval(fr,value)?;}
     self.diag_at_line(&fr.rel,line,"dynamic_read",format_args!("call() cannot be followed"))?;return Ok(Value::local(None))
    }
   }
@@ -696,7 +696,7 @@ impl<'source,'op> Walk<'source,'op>{
  }
  fn statements_inner(&mut self,fr:&mut Frame<'_>,statements:&[Statement])->Result<(),Failure>{
   for st in statements{
-   self.tick()?;self.line=self.source.line_at(st.header_span.start)?;
+   self.tick()?;self.line=self.source.line_at(fr.body.current_offset(st.header_span.start)?)?;
    match &st.kind{
     StatementKind::Expression(e)|StatementKind::Call(e)|StatementKind::Throw(e)|StatementKind::Delete(e)=>{self.eval(fr,e)?;},
     StatementKind::Assign{target,op,value}=>{let rv=self.eval(fr,value)?;self.assign(fr,target,op,&rv)?;},

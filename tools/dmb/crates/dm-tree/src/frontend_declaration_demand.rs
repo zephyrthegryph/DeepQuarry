@@ -27,9 +27,12 @@ pub(super) trait Permit {
     type Failure: From<Vec<Diagnostic>> + Send;
     fn checkpoint(&self)->Result<(),Self::Failure>;
     fn original_primary_admitted(&self)->bool{false}
+    fn adopt_committed_bodies(&self,_:ColdFrontend)->Result<ColdFrontend,Self::Failure>{Err(vec![internal("actual committed BODY attachment requires the checked native host")].into())}
     fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>,plan:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>;
+    fn original_primary_failure_only(&self,_:&super::original_declaration_input::OriginalPrimaryRetention,_:&DeclarationSyntax,_:&Mapping<'_>,_:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>{Err(vec![internal("typed fatal-only parser report requires native checked admission")].into())}
     fn original_analysis_declarations(&self,expanded:&ExpandedRegions,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>;
     fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,lazy_body_parameters:bool,compact_compound:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>;
+    fn original_stream_declarations_with_code_mode(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,lazy_body_parameters:bool,compact_compound:bool,ordinary_code_demand:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>{if ordinary_code_demand{return Err(vec![internal("ordinary Code demand requires the existing checked native host")].into())}self.original_stream_declarations(project,provider,defines,executor,engine,previous,analyze_delivery,lazy_body_parameters,compact_compound)}
     fn borrow_authored_callables<'a>(
         &self, _: &'a crate::declaration_contributions::KeyedDeclarations,
         _: &'a crate::owner_callable::RetainedCallableOwners,
@@ -44,6 +47,7 @@ pub(super) trait Permit {
     fn syntax(&self,syntax:&DeclarationSyntax)->Result<bool,Self::Failure>;
 }
 pub(super) trait Demand: Sync {
+    fn parse_only_reporting(&self)->bool{false}
     type Failure: From<Vec<Diagnostic>> + Send;
     fn run<T>(&self, operation:impl FnOnce(&dyn Permit<Failure=Self::Failure>)->Result<T,Self::Failure>)->Result<T,Self::Failure>;
     fn attach(&self,frontend:ColdFrontend)->Result<ColdFrontend,Self::Failure>;
@@ -74,21 +78,22 @@ impl Permit for Compatibility {
     fn syntax(&self,_:&DeclarationSyntax)->Result<bool,Self::Failure>{Ok(true)}
 }
 
-pub(super) struct Checked<'a>{pub host:&'a Arc<dyn SettingExpressionQueries>,pub type_loan:Option<crate::declaration_contributions::TypeContributionLoan<'a>>}
-struct CheckedPermit<'a,'op>{admission:&'a dm_syntax::SettingAdmission<'op>,host:&'a dyn SettingExpressionQueries,type_loan:Option<crate::declaration_contributions::TypeContributionLoan<'a>>}
+pub(super) struct Checked<'a>{pub parse_only_reporting:bool,pub host:&'a Arc<dyn SettingExpressionQueries>,pub body_host:Option<&'a Arc<dyn BodySyntaxQueries>>,pub type_loan:Option<crate::declaration_contributions::TypeContributionLoan<'a>>}
+struct CheckedPermit<'a,'op>{parse_only_reporting:bool,admission:&'a dm_syntax::SettingAdmission<'op>,host:&'a dyn SettingExpressionQueries,body_host:Option<&'a Arc<dyn BodySyntaxQueries>>,type_loan:Option<crate::declaration_contributions::TypeContributionLoan<'a>>}
 fn actual_checkpoint(admission:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()> {
     let result=admission.checkpoint();
     if let Some(actual)=admission.take_operational_error(){return Err(actual)}
     result
 }
 impl Demand for Checked<'_>{
+    fn parse_only_reporting(&self)->bool{self.parse_only_reporting}
     type Failure=FrontendBuildFailure;
     fn run<T>(&self, operation:impl FnOnce(&dyn Permit<Failure=Self::Failure>)->Result<T,Self::Failure>)->Result<T,Self::Failure>{
         let mut operation=Some(operation);
         let mut completed=None;
         let result=self.host.with_declaration_admission(&mut |admission|{
             let operation=operation.take().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"declaration admission callback was repeated")))?;
-            match operation(&CheckedPermit{admission,host:self.host.as_ref(),type_loan:self.type_loan}) {
+            match operation(&CheckedPermit{parse_only_reporting:self.parse_only_reporting,admission,host:self.host.as_ref(),body_host:self.body_host,type_loan:self.type_loan}) {
                 Err(FrontendBuildFailure::Operational(actual))=>Err(BodySyntaxFailure::Operational(actual)),
                 result=>{completed=Some(result);Ok(())},
             }
@@ -112,39 +117,24 @@ impl Demand for Checked<'_>{
         if !valid || (!frontend.emission_order.is_empty() && frontend.syntax.chunks().is_empty()){
             return Err(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"checked frontend lacks completed original declaration producers")));
         }
+        let prefix=self.parse_only_reporting&&frontend.original_primary.as_ref().is_some_and(|primary|primary.frontier().is_some());
+        let frontend=if self.body_host.is_some()&&!prefix{self.run(|permit|permit.adopt_committed_bodies(frontend))?}else{frontend};
         frontend.with_setting_expression_queries(self.host).map_err(|error|FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,error.message)))
     }
 }
 impl Permit for CheckedPermit<'_,'_>{
+    fn adopt_committed_bodies(&self,frontend:ColdFrontend)->Result<ColdFrontend,Self::Failure>{let host=self.body_host.ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual committed BODY host absent")))?;frontend.adopt_committed_body_queries(host,self.admission).map_err(|error|match error{BodySyntaxFailure::Operational(actual)=>FrontendBuildFailure::Operational(actual),BodySyntaxFailure::Syntax(actual)=>FrontendBuildFailure::Diagnostics(vec![actual].into())})}
+
     fn original_primary_admitted(&self)->bool{true}
-    fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>,plan:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>{
-      use super::original_declaration_input::OriginalPrimaryFatal as F;
-      self.checkpoint()?;let a=self.admission;let mut credit=a.reserve(0).map_err(FrontendBuildFailure::Operational)?;let mut rows=Vec::new();
-      let(offset,fatal)=primary.frontier().ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual original parser did not issue a fatal frontier")))?;
-      let local=match fatal{F::Comma(actual)=>actual.token_span(),F::Parameter(actual)=>actual.token_span(),F::Input(actual)=>actual.token_span()};let at=offset.checked_add(local.start).ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::from(std::io::ErrorKind::OutOfMemory)))?;
-      let source_point=|at|source_export_mapping::original_note_point_in(&mapping.expanded.origins,at,|region|{let include=mapping.plan.regions.get(region).ok_or("formal original region absent")?.occurrence;let acquired=mapping.plan.source_acquisitions.get(&include).ok_or("formal original source acquisition absent")?;Ok((include,acquired))},|include|Ok(&mapping.plan.occurrences.get(include).ok_or("formal original include absent")?.path)).map_err(|reason|std::io::Error::new(std::io::ErrorKind::Unsupported,reason));
-      primary.visit_formal_notices(&||actual_checkpoint(a),|notice,value|{
-        if notice.span().start>at{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual parser notice follows its consumed fatal frontier"))}
-        let point=source_point(notice.span().start)?;let native=mapping.output_for_retained_report(notice.span().start,a,&mut credit)?;
-        if native.path.as_path()!=point.path.as_path()||native.line!=point.line{return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual formal parser native/source cursor projection differs"))}
-        let message=super::diagnostic_rows::message_using(a,&mut credit,|out|{notice.write_message(value,out)})?;
-        super::diagnostic_rows::push(&mut rows,&mut credit,Diagnostic{kind:DiagnosticKind::OriginalFormalNotice{notice,byte_column:point.byte_column},stage:DiagnosticStage::Declaration,message,location:Some(native)},a)
-      }).map_err(FrontendBuildFailure::Operational)?;
-      let point=source_point(at).map_err(FrontendBuildFailure::Operational)?;let native=mapping.output_for_retained_report(at,a,&mut credit).map_err(FrontendBuildFailure::Operational)?;
-      if native.path.as_path()!=point.path.as_path()||native.line!=point.line{return Err(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual original fatal native/source cursor projection differs")))}
-      let earlier=syntax.first_original_outer_block_using(&||self.checkpoint())?.map_err(|reason|FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,reason)))?;
-      let indentation=earlier.is_some_and(|before|before<at)||matches!(fatal,F::Parameter(actual)if actual.prior_outer_block())||matches!(fatal,F::Input(actual)if actual.prior_outer_block());
-      let kind=match fatal{F::Comma(reason)=>DiagnosticKind::OriginalFatalDeclaration{reason,byte_column:point.byte_column,indentation},F::Parameter(reason)=>DiagnosticKind::OriginalFatalParameter{reason,byte_column:point.byte_column,indentation},F::Input(reason)=>DiagnosticKind::OriginalFatalInput{reason,byte_column:point.byte_column,indentation}};
-      let retained_input=match fatal{F::Input(reason)=>Some(primary.input_fatal_message(offset,reason).map_err(FrontendBuildFailure::Operational)?),_=>None};
-      let message=super::diagnostic_rows::message_using(a,&mut credit,|out|match fatal{F::Comma(reason)=>out.write_str(reason.message()),F::Parameter(reason)=>reason.write_message(out),F::Input(_)=>out.write_str(retained_input.expect("actual retained input message"))}).map_err(FrontendBuildFailure::Operational)?;
-      super::diagnostic_rows::push(&mut rows,&mut credit,Diagnostic{kind,stage:DiagnosticStage::Declaration,message,location:Some(native)},a).map_err(FrontendBuildFailure::Operational)?;
-      let report=FrontendDiagnostics::admitted(rows,credit,a).and_then(|report|report.retain_original_plan(plan)).map_err(FrontendBuildFailure::Operational)?;self.checkpoint()?;Ok(FrontendBuildFailure::Diagnostics(report))
-    }
+    fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>,plan:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>{self.original_primary_failure_reporting(primary,syntax,mapping,plan,true)}
+    fn original_primary_failure_only(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>,plan:&FrontendDirectivePlan)->Result<Self::Failure,Self::Failure>{self.original_primary_failure_reporting(primary,syntax,mapping,plan,false)}
 
     type Failure=FrontendBuildFailure;
     fn checkpoint(&self)->Result<(),Self::Failure>{actual_checkpoint(self.admission).map_err(FrontendBuildFailure::Operational)}
-    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,lazy_body_parameters:bool,compact_compound:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>{
+    fn original_stream_declarations(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,lazy_body_parameters:bool,compact_compound:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>{self.original_stream_declarations_with_code_mode(project,provider,defines,executor,engine,previous,analyze_delivery,lazy_body_parameters,compact_compound,false)}
+    fn original_stream_declarations_with_code_mode(&self,project:&Path,provider:&dyn SourceProvider,defines:&BTreeMap<String,String>,executor:&dm_exec::BuildExecutor,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>,analyze_delivery:bool,lazy_body_parameters:bool,compact_compound:bool,ordinary_code_demand:bool)->Result<(FrontendDirectivePlan,ExpandedRegions,super::original_declaration_input::PreparedOriginalDeclarations),Self::Failure>{
       self.checkpoint()?;let a=self.admission;
+      if ordinary_code_demand&&(!analyze_delivery||!lazy_body_parameters||compact_compound||self.body_host.is_some()){return Err(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"ordinary Code demand requires actual full-history Analyze without committed BODY")))}
       let source_work=self.host.original_source_work().map_err(|error|match error{BodySyntaxFailure::Operational(actual)=>FrontendBuildFailure::Operational(actual),BodySyntaxFailure::Syntax(actual)=>FrontendBuildFailure::Diagnostics(vec![actual].into())})?;
       let batch_host=super::original_stream::TreeOriginalBatchHost(self.host);
       let batch_provider=if analyze_delivery{Some(provider.original_batch_source().map_err(FrontendBuildFailure::Operational)?.ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"actual Original Analyze source has no safe batch-provider loan")))?)}else{None};
@@ -155,12 +145,17 @@ impl Permit for CheckedPermit<'_,'_>{
       if lazy_body_parameters && batch.is_none(){
        return Err(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"compound BODY parameter demand requires actual Original batch preparation")))
       }
-      let streamed=if lazy_body_parameters{
+      let mut committed=self.body_host.map(|host|super::committed_bodies::CommittedBodyPreparation::new(Arc::clone(host),a)).transpose().map_err(FrontendBuildFailure::Operational)?;
+      let streamed=if let Some(consumer)=committed.as_mut(){
+       if lazy_body_parameters||compact_compound{return Err(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed BODY syntax cannot impersonate compound demand")))}
+       super::original_stream::prepare_original_stream_with_committed_body_reporting_using(project,provider,defines,omissions,usize::MAX,source_work,a,batch.as_ref(),false,false,self.parse_only_reporting,Some(consumer))
+      }else if lazy_body_parameters{
        super::original_stream::prepare_original_stream_with_parameter_mode_using(project,provider,defines,omissions,usize::MAX,source_work,a,batch.as_ref(),true,compact_compound)
       }else{
        super::original_stream::prepare_original_stream_using(project,provider,defines,omissions,usize::MAX,source_work,a,batch.as_ref())
       }.map_err(FrontendBuildFailure::Operational)?;
-      let(plan,expanded,prepared)=streamed.into_prepared(engine,previous,self.host,a)?;
+      let(plan,expanded,mut prepared)=streamed.into_prepared_with_code_mode(engine,previous,self.host,a,ordinary_code_demand)?;
+      prepared.record_stream_body_mode(compact_compound,ordinary_code_demand).map_err(FrontendBuildFailure::Operational)?;
       Ok((FrontendDirectivePlan::OriginalDiagnostic(plan),expanded,prepared))
     }
     fn original_analysis_declarations(&self,expanded:&ExpandedRegions,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>{
@@ -198,4 +193,31 @@ impl Permit for CheckedPermit<'_,'_>{
         for chunk in syntax.chunks().iter(){if !chunk.shared_relative().initializer_admission_matches(self.admission).map_err(FrontendBuildFailure::Operational)?{return Ok(false)}}
         self.checkpoint()?;Ok(true)
     }
+}
+
+impl CheckedPermit<'_,'_>{
+    fn original_primary_failure_reporting(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>,plan:&FrontendDirectivePlan,include_formals:bool)->Result<FrontendBuildFailure,FrontendBuildFailure>{
+      use super::original_declaration_input::OriginalPrimaryFatal as F;
+      self.checkpoint()?;let a=self.admission;let mut credit=a.reserve(0).map_err(FrontendBuildFailure::Operational)?;let mut rows=Vec::new();
+      let(offset,fatal)=primary.frontier().ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual original parser did not issue a fatal frontier")))?;
+      let local=match fatal{F::Comma(actual)=>actual.token_span(),F::Parameter(actual)=>actual.token_span(),F::Input(actual)=>actual.token_span()};let at=offset.checked_add(local.start).ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::from(std::io::ErrorKind::OutOfMemory)))?;
+      let source_point=|at|source_export_mapping::original_note_point_in(&mapping.expanded.origins,at,|region|{let include=mapping.plan.regions.get(region).ok_or("formal original region absent")?.occurrence;let acquired=mapping.plan.source_acquisitions.get(&include).ok_or("formal original source acquisition absent")?;Ok((include,acquired))},|include|Ok(&mapping.plan.occurrences.get(include).ok_or("formal original include absent")?.path)).map_err(|reason|std::io::Error::new(std::io::ErrorKind::Unsupported,reason));
+      if include_formals{primary.visit_formal_notices(&||actual_checkpoint(a),|notice,value|{
+        if notice.span().start>at{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual parser notice follows its consumed fatal frontier"))}
+        let point=source_point(notice.span().start)?;let native=mapping.output_for_retained_report(notice.span().start,a,&mut credit)?;
+        if native.path.as_path()!=point.path.as_path()||native.line!=point.line{return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual formal parser native/source cursor projection differs"))}
+        let message=super::diagnostic_rows::message_using(a,&mut credit,|out|{notice.write_message(value,out)})?;
+        super::diagnostic_rows::push(&mut rows,&mut credit,Diagnostic{kind:DiagnosticKind::OriginalFormalNotice{notice,byte_column:point.byte_column},stage:DiagnosticStage::Declaration,message,location:Some(native)},a)
+      }).map_err(FrontendBuildFailure::Operational)?;}
+      let point=source_point(at).map_err(FrontendBuildFailure::Operational)?;let native=mapping.output_for_retained_report(at,a,&mut credit).map_err(FrontendBuildFailure::Operational)?;
+      if native.path.as_path()!=point.path.as_path()||native.line!=point.line{return Err(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual original fatal native/source cursor projection differs")))}
+      let earlier=syntax.first_original_outer_block_using(&||self.checkpoint())?.map_err(|reason|FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,reason)))?;
+      let indentation=earlier.is_some_and(|before|before<at)||matches!(fatal,F::Parameter(actual)if actual.prior_outer_block())||matches!(fatal,F::Input(actual)if actual.prior_outer_block());
+      let kind=match fatal{F::Comma(reason)=>DiagnosticKind::OriginalFatalDeclaration{reason,byte_column:point.byte_column,indentation},F::Parameter(reason)=>DiagnosticKind::OriginalFatalParameter{reason,byte_column:point.byte_column,indentation},F::Input(reason)=>DiagnosticKind::OriginalFatalInput{reason,byte_column:point.byte_column,indentation}};
+      let retained_input=match fatal{F::Input(reason)=>Some(primary.input_fatal_message(offset,reason).map_err(FrontendBuildFailure::Operational)?),_=>None};
+      let message=super::diagnostic_rows::message_using(a,&mut credit,|out|match fatal{F::Comma(reason)=>out.write_str(reason.message()),F::Parameter(reason)=>reason.write_message(out),F::Input(_)=>out.write_str(retained_input.expect("actual retained input message"))}).map_err(FrontendBuildFailure::Operational)?;
+      super::diagnostic_rows::push(&mut rows,&mut credit,Diagnostic{kind,stage:DiagnosticStage::Declaration,message,location:Some(native)},a).map_err(FrontendBuildFailure::Operational)?;
+      let report=FrontendDiagnostics::admitted(rows,credit,a).and_then(|report|report.retain_original_plan(plan)).map_err(FrontendBuildFailure::Operational)?;self.checkpoint()?;Ok(FrontendBuildFailure::Diagnostics(report))
+    }
+
 }

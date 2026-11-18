@@ -29,13 +29,15 @@ use crate::tree::{SourceFile, Tree, View};
 use crate::util::{is_py_space, under};
 
 macro_rules! re {
-    ($name:ident, $p:expr) => {
+    ($name:ident,$source:ident, $p:expr) => {
+        pub const $source:&str=$p;
         pub static $name: LazyLock<Pat> = LazyLock::new(|| Pat::new($p));
     };
 }
 /// `re.match` (anchored at the start).
 macro_rules! re_m {
-    ($name:ident, $p:expr) => {
+    ($name:ident,$source:ident, $p:expr) => {
+        pub const $source:&str=$p;
         pub static $name: LazyLock<Pat> = LazyLock::new(|| Pat::new_match($p));
     };
 }
@@ -145,9 +147,9 @@ pub const OBJLIST_WRITES: &[&str] = &[
     ".Insert",
 ];
 
-re_m!(PROC_DEF, r"^(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$");
+re_m!(PROC_DEF,PROC_DEF_SOURCE, r"^(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$");
 
-re!(TYPED_NAME, r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b");
+re!(TYPED_NAME,TYPED_NAME_SOURCE, r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b");
 
 /// An accessor's var-name argument: a string literal (banned, `string_name`) or `nameof(v)` /
 /// `nameof(x.v)` / `nameof(/type::v)`. Group: the var name.
@@ -158,58 +160,51 @@ pub use crate::raw_ownership_policy::VAR_ARG;
 /// The type `GLOB` has; the vars of every `GLOBAL_*` macro are its globals ([`Index::globals`]).
 pub const GLOB_TYPE: &str = "/datum/controller/global_vars";
 
-pub use crate::raw_ownership_policy::ACCESSOR;
+pub use crate::raw_ownership_policy::{ACCESSOR,ACCESSOR_SOURCE};
 /// Groups: 1 = destination receiver, 2 = destination var (`VAR_ARG` with its first capture
 /// turned non-capturing, exactly as the Python's `.replace`).
+macro_rules! transfer_source{($first:expr,$second:expr)=>{concat!(r"\bown_transfer\([^,]+,\s*",$first,r"\s*,\s*([\w.]+)\s*,\s*",$second)}}
+pub const TRANSFER_DEST_SOURCE:&str=transfer_source!(crate::raw_ownership_policy::var_arg_source!(r"\w+"),crate::raw_ownership_policy::var_arg_source!(r"(\w+)"));
 pub static TRANSFER_DEST: LazyLock<Pat> = LazyLock::new(|| {
     Pat::new(&format!(
-        r"\bown_transfer\([^,]+,\s*{}\s*,\s*([\w.]+)\s*,\s*{}",
+        transfer_source!("{}","{}"),
         VAR_ARG.replace(r"(\w+)", r"\w+"),
         VAR_ARG
     ))
 });
-re!(
-    STRING_NAME,
+re!(STRING_NAME,STRING_NAME_SOURCE,
     r#"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_take_all|own_clear|own_values|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|rel_targets|rel_names|proto_set|proto_private|proto_replace|proto_is_private|shared_set|keyed_set_id)\((?:[^,()"]|\([^()]*\))*,\s*"\w+"|\b(own_move)\((?:[^,()"]|\([^()]*\))*,(?:[^,()"]|\([^()]*\))*,\s*"\w+""#
 );
 // A name after a `/` is a path component (`/datum/capability/wires = /datum/...` is an assoc key), not a var.
-re!(
-    WRITE_ASSIGN,
+re!(WRITE_ASSIGN,WRITE_ASSIGN_SOURCE,
     r"(?<![\w./])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)"
 );
-re!(
-    WRITE_INDEX,
+re!(WRITE_INDEX,WRITE_INDEX_SOURCE,
     r"(?<![\w.])((?:\w+\??\.)*)(\w+)\[[^\]\n]*\]\s*=(?!=)"
 );
-re!(
-    WRITE_METHOD,
+re!(WRITE_METHOD,WRITE_METHOD_SOURCE,
     r"(?<![\w.])((?:\w+\??\.)*)(\w+)\??\.(Cut|Add|Remove|Insert|Swap|RemoveAll)\("
 );
-re!(
-    WRITE_MACRO,
+re!(WRITE_MACRO,WRITE_MACRO_SOURCE,
     r"\b(QDEL_NULL|QDEL_LIST|QDEL_LIST_ASSOC|QDEL_LIST_ASSOC_VAL|QDEL_LAZYLIST|LAZYADD|LAZYREMOVE|LAZYSET|LAZYOR|LAZYINITLIST|LAZYCLEARLIST|LAZYNULL|UNSETEMPTY|LAZYADDASSOC|LAZYREMOVEASSOC|LAZYADDASSOCLIST|LAZYDISTINCTADD|LAZYINSERT)\(\s*((?:\w+\??\.)*)(\w+)\b"
 );
-re!(CALLBACK, r"\bCALLBACK\(");
-re!(
-    HANDLE_CALL,
+re!(CALLBACK,CALLBACK_SOURCE, r"\bCALLBACK\(");
+re!(HANDLE_CALL,HANDLE_CALL_SOURCE,
     r"\bom_(handle|resolve|handle_of|handle_is|resolve_all)\("
 );
-re!(
-    HANDLE_VAR,
+re!(HANDLE_VAR,HANDLE_VAR_SOURCE,
     r"^\s*var/(?:[\w]+/)*(\w+_handle)\b|^(/[\w/]+?)/var/(?:[\w]+/)*(\w+_handle)\b"
 );
-re!(
-    REMOVED,
+re!(REMOVED,REMOVED_SOURCE,
     r"\b(DECLARE_REF|OM_STATIC_TYPE|REFKIND_\w+|link_set|link_clear|link_backlist_add|link_backlist_remove|WEAK_LIST_ADD|WEAK_LIST_REMOVE|WEAK_LIST_HAS|weak_list_live|DuplicateObject|dq_lifecycle_link_table|declared_refs|declared_ownership|own_declare|keyed_target_var|declared_keep_vars|declared_pool_reset|declared_forward_vars|declare_ownership)\b|\b(?:OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEYED_TARGET|KEEP_AFTER_DESTROY|POOL_RESET|FORWARD_STATE)(?=\()"
 );
-re!(LOCAL_DECL, r"\bvar/(?:[\w]+/)*(\w+)");
-re!(
-    OBJ_TOKEN,
+re!(LOCAL_DECL,LOCAL_DECL_SOURCE, r"\bvar/(?:[\w]+/)*(\w+)");
+re!(OBJ_TOKEN,OBJ_TOKEN_SOURCE,
     r#"(?<![\w."])(src|new|[A-Za-z_]\w*)(?![\w.\[(?:])"#
 );
-re_m!(NEW_VALUE, r"^\s*new\s*(/[\w/]+)?");
-re!(PARAM_NAME, r"(?:^|,)\s*(\w+)\s*(?:=|,|\)|$)");
-re!(CALL_ARGS, r"\b(?!new\b)[A-Za-z_]\w*\s*\([^()]*\)");
+re_m!(NEW_VALUE,NEW_VALUE_SOURCE, r"^\s*new\s*(/[\w/]+)?");
+re!(PARAM_NAME,PARAM_NAME_SOURCE, r"(?:^|,)\s*(\w+)\s*(?:=|,|\)|$)");
+re!(CALL_ARGS,CALL_ARGS_SOURCE, r"\b(?!new\b)[A-Za-z_]\w*\s*\([^()]*\)");
 
 pub fn related(a: &str, b: &str) -> bool {
     a == b || a.starts_with(&format!("{}/", b)) || b.starts_with(&format!("{}/", a))
@@ -573,7 +568,7 @@ pub fn proc_scopes_using<C:crate::key_policy_control::Control>(code:&View,c:&mut
             continue; // the tail of a multi-line string
         }
         if first.map(|c| !is_py_space(c)).unwrap_or(false) {
-            match PROC_DEF.captures(line) {
+            match crate::key_policy_control::captures_match_static(c,PROC_DEF_SOURCE,line,||&PROC_DEF)? {
                 Some(m) if !line.starts_with('#') => {
                     crate::key_policy_control::temporary(c,1,||local_bytes.checked_add(m.whole().len().checked_mul(16)?)?.checked_add(1024))?;
                     owner = Some(m.s(1).to_string());
@@ -581,13 +576,13 @@ pub fn proc_scopes_using<C:crate::key_policy_control::Control>(code:&View,c:&mut
                     local_types = HashMap::new();
                     if C::CHECKED{local_bytes=m.s(1).len().checked_add(m.s(2).len()).ok_or_else(||c.overflow())?;}
                     let params = m.s(3);
-                    for tm in TYPED_NAME.captures_iter(params) {c.checkpoint()?;scope_local_room(&local_types,&mut local_bytes,tm.s(2),Some(tm.s(1)),true,c)?;
+                    for tm in crate::key_policy_control::captures_all_static(c,TYPED_NAME_SOURCE,params,||&TYPED_NAME)? {c.checkpoint()?;scope_local_room(&local_types,&mut local_bytes,tm.s(2),Some(tm.s(1)),true,c)?;
                         local_types.insert(
                             tm.s(2).to_string(),
                             Some(format!("/{}", tm.s(1).trim_start_matches('/'))),
                         );
                     }
-                    for am in PARAM_NAME.captures_iter(params) {c.checkpoint()?;scope_local_room(&local_types,&mut local_bytes,am.s(1),None,false,c)?;
+                    for am in crate::key_policy_control::captures_all_static(c,PARAM_NAME_SOURCE,params,||&PARAM_NAME)? {c.checkpoint()?;scope_local_room(&local_types,&mut local_bytes,am.s(1),None,false,c)?;
                         local_types.entry(am.s(1).to_string()).or_insert(None);
                     }
                 }
@@ -601,7 +596,7 @@ pub fn proc_scopes_using<C:crate::key_policy_control::Control>(code:&View,c:&mut
         let Some(own) = owner.as_deref() else {
             continue;
         };
-        for tm in TYPED_NAME.captures_iter(line) {c.checkpoint()?;
+        for tm in crate::key_policy_control::captures_all_static(c,TYPED_NAME_SOURCE,line,||&TYPED_NAME)? {c.checkpoint()?;
             let start = tm.start(0);
             if line[..start].ends_with("var/") || line[start..].starts_with("var/") {
                 scope_local_room(&local_types,&mut local_bytes,tm.s(2),Some(tm.s(1)),true,c)?;
@@ -611,7 +606,7 @@ pub fn proc_scopes_using<C:crate::key_policy_control::Control>(code:&View,c:&mut
                 );
             }
         }
-        for lm in LOCAL_DECL.captures_iter(line) {c.checkpoint()?;scope_local_room(&local_types,&mut local_bytes,lm.s(1),None,false,c)?;
+        for lm in crate::key_policy_control::captures_all_static(c,LOCAL_DECL_SOURCE,line,||&LOCAL_DECL)? {c.checkpoint()?;scope_local_room(&local_types,&mut local_bytes,lm.s(1),None,false,c)?;
             local_types.entry(lm.s(1).to_string()).or_insert(None);
         }
         f(no,line,own,&proc_name,&local_types,c)?;
@@ -653,15 +648,16 @@ pub fn receiver_type_using<C:crate::key_policy_control::Control>(idx:&Index,chai
 }
 
 /// True when the assigned value is `new /entity/type(...)` (not a value type such as an image).
-pub fn creates_entity(rhs: &str) -> bool {
+pub fn creates_entity(rhs: &str) -> bool {creates_entity_using(rhs,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+pub fn creates_entity_using<C:crate::key_policy_control::Control>(rhs:&str,c:&mut C)->Result<bool,C::Error>{
     let head = rhs.split("//").next().unwrap_or("");
-    let Some(m) = NEW_VALUE.captures(head) else {
-        return false;
+    let Some(m) = crate::key_policy_control::captures_match_static(c,NEW_VALUE_SOURCE,head,||&NEW_VALUE)? else {
+        return Ok(false);
     };
     if !m.matched(1) {
-        return false; // implicit type: the declared type decides (already handled)
+        return Ok(false); // implicit type: the declared type decides (already handled)
     }
-    !under(m.s(1), VALUE_TYPES)
+    Ok(!under(m.s(1), VALUE_TYPES))
 }
 
 /// True when the written value (or key) is recognisably an entity: `src`, a `new` expression, or a
@@ -675,13 +671,13 @@ pub fn puts_object_using<C:crate::key_policy_control::Control>(rhs:&str,local_ty
     let mut text = rhs.split("//").next().unwrap_or("").to_string();
     // A proc call's arguments are not the written value: TIME_NOW(src, ...) writes a number.
     loop {c.checkpoint()?;crate::key_policy_control::temporary(c,5,||text.len().checked_mul(16)?.checked_add(1024))?;
-        let next = CALL_ARGS.replace_all(&text, "0");
+        let next = crate::key_policy_control::replace_static(c,CALL_ARGS_SOURCE,&text,"0",||&CALL_ARGS)?;
         if next == text {
             break;
         }
         text = next;
     }
-    for m in OBJ_TOKEN.captures_iter(&text) {c.checkpoint()?;
+    for m in crate::key_policy_control::captures_all_static(c,OBJ_TOKEN_SOURCE,&text,||&OBJ_TOKEN)? {c.checkpoint()?;
         let tok = m.s(1);
         if tok == "src" || tok == "new" {
             return Ok(true);

@@ -279,3 +279,61 @@ fn dense_primary(primary: &OriginalStreamPrimary) -> &OriginalDeclarationSkeleto
         OriginalStreamPrimary::Committed(_) => panic!("fixture did not request compact storage"),
     }
 }
+
+
+/// Actual raw producer -> scoped primary loan -> SAME committed typed parser.
+/// This deliberately does not substitute lex_spans or manufacture a commit.
+#[test]
+fn actual_raw_scoped_commit_reaches_same_typed_primary_consumption(){
+ struct Actual<'a,'budget>{a:&'a SettingAdmission<'budget>,bodies:usize}
+ impl dm_syntax::OriginalDeclarationHeaderObserver for Actual<'_,'_>{
+  fn header(&mut self,_:dm_syntax::OriginalPrimaryHeader<'_>)->io::Result<OriginalHeaderFlow>{Ok(OriginalHeaderFlow::Continue)}
+  fn wants_committed_body_input(&self)->bool{true}
+  fn committed_body_input(&mut self,input:dm_syntax::OriginalCommittedBodyInput<'_,'_>)->io::Result<()>{
+   self.bodies+=1;
+   let span=input.item().span;let header=input.item().header_span;let source=input.source();let tokens=input.token_window();
+   let width=span.end.checked_sub(span.start).ok_or(io::ErrorKind::InvalidInput)?;
+   let _cleanup=self.a.reserve(width.checked_mul(512).and_then(|n|n.checked_add(8192)).ok_or(io::ErrorKind::OutOfMemory)?)?;
+   let lease=self.a.reserve(width.checked_mul(128).and_then(|n|n.checked_add(1024)).and_then(|n|n.checked_add(dm_syntax::SharedParameterSignature::retention_envelope())).ok_or(io::ErrorKind::OutOfMemory)?)?;
+   let signature=tokens.with_dense_using(self.a,|dense|Ok(dm_syntax::parameter_signature_original_with_native_observation(source,dense,header,0,&mut None)))?;
+   assert!(signature.entries().unwrap().is_empty(),"fixture has actual empty formal grammar");
+   let shared=dm_syntax::SharedParameterSignature::retained_using(signature,lease,self.a)?;
+   let syntax_span=dm_syntax::original_callable_syntax_extent_using(source,span,header,tokens,Some(input.literal_facts()),self.a)?.map_err(|reason|io::Error::new(io::ErrorKind::Unsupported,reason))?;
+    let(parsed,complete)=dm_syntax::parse_proc_with_committed_native_consumption_from_window(source,syntax_span,tokens,0,shared,input.literal_facts());
+    assert_eq!(parsed.as_ref().map(|value|value.item.span),Ok(span),"owned syntax extent preserves actual logical Item identity");
+   if !complete{
+    // Failure-only DATA from this fixed two-procedure raw producer fixture.
+    // Keep the actual owned span; never append a closer/lookahead or fake EOF.
+    assert!(source.len()<=1024&&tokens.len()<=256,"bounded raw fixture changed unexpectedly");
+    let first=tokens.partition_point(|token|token.span.end<=span.start);let end=tokens.partition_point(|token|token.span.start<span.end);
+    let selected=tokens.range(first,end).expect("actual selected token interval");
+    struct TokenData<'a>{tokens:dm_syntax::TokenWindow<'a>,source:&'a str}
+    impl std::fmt::Debug for TokenData<'_>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_list().entries(self.tokens.iter().map(|token|(token,self.source.get(token.span.range())))).finish()}}
+    let all=TokenData{tokens,source};let owned=TokenData{tokens:selected,source};
+    panic!("actual scoped primary consumption failed: span={span:?}, header={header:?}, source_len={}, actual_source={source:?}, owned_source={:?}, token_count={}, selected_interval={first}..{end}, selected={owned:?}, all={all:?}, actual={:?}",source.len(),source.get(span.range()),tokens.len(),parsed.as_ref().err());
+   }
+   assert!(parsed.is_ok(),"actual valid raw procedure must parse: {:?}",parsed.as_ref().err());Ok(())
+  }
+ }
+ impl OriginalPrimaryStreamConsumer for Actual<'_,'_>{
+  fn retains_committed_items(&self)->bool{true}
+  fn callable(&mut self,_:OriginalPrimaryLiveHeader,stream:&mut dyn super::super::OriginalFormalTokenStream)->io::Result<OriginalHeaderFlow>{
+   // This fixture's exact real production has no formal tokens before ')'.
+   let close=stream.next_header_token()?.ok_or(io::ErrorKind::UnexpectedEof)?;
+   assert_eq!(close.text,")");Ok(OriginalHeaderFlow::Continue)
+  }
+ }
+ for fixture in[
+  "/proc/p()\n    return 1\n/proc/q()\n    return 2\n",
+  "/proc/p(){}\n/proc/q(){}\n",
+  "/proc/p()\n    return \"literal } not a closer\"\n/proc/q()\n    return 2\n",
+  "/proc/p()\n    return \"prefix [list(1)[1]] suffix }\"\n/proc/q()\n    return 2\n",
+  "/proc/p()\n    return value?[1]\n/proc/q()\n    return 2\n",
+  "/proc/p()\n    return list(list(1))[1]\n/proc/q()\n    return 2\n",
+ ]{
+ let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();let source_used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let work=Work(source_used.clone());
+ let file=File::new(fixture);let mut driver=driver(&file,&a);let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut control=Control{emitted:0,fail:false};let mut actual=Actual{a:&a,bodies:0};
+ let mut logical=OriginalLogicalProducer::new(&mut driver,&file,&mut notices,&mut host,&mut control,&a).unwrap();logical.enable_body_spelling_projection();
+ let output=consume_prepared_primary_using(&mut logical,&work,&a,&mut actual).unwrap();drop(logical);assert!(output.consumed_eof);assert_eq!(actual.bodies,2);drop((output,driver,host));assert_eq!(used.load(Ordering::Acquire),fixed);assert_eq!(source_used.load(Ordering::Acquire),0);
+ }
+}

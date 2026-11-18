@@ -118,6 +118,14 @@ impl CanonicalValueBodies for CanonicalBodies<'_, '_> {
     }
 }
 
+fn syntax_input_query_failure(key: Key, error: dm_tree::frontend::BodySyntaxFailure) -> QueryError {
+    match error {
+        dm_tree::frontend::BodySyntaxFailure::Operational(actual) => QueryError::operational(key, actual),
+        dm_tree::frontend::BodySyntaxFailure::Syntax(actual) => QueryError::operational(key,
+            std::io::Error::new(std::io::ErrorKind::Unsupported, actual.message)),
+    }
+}
+
 pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>, body_charge: Arc<dm_syntax::SettingChargeCounter>) {
     db.define(VALUE_PROOFS, "native-value-proofs", move |ctx, params| {
         let params = params
@@ -134,8 +142,11 @@ pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>, body_charge: Arc<dm_s
                 body_charge: &body_charge,
             })
         } else {
-            for syntax in input.archive().syntax_inputs().ok_or(QueryError::Missing(params.key))? {
-                body_syntax::observe(ctx, syntax)?;
+            for ordinal in 0..input.archive().len() {
+                let syntax = input.archive()
+                    .syntax_input_checked(ordinal, &||crate::daemon::control::checkpoint())
+                    .map_err(|actual|syntax_input_query_failure(params.key, actual))?;
+                body_syntax::observe(ctx, &syntax)?;
             }
             input.compute_checked()
         };
@@ -194,27 +205,25 @@ impl QueryDb {
             )
             .into());
         }
-        let syntax_inputs = input
-            .archive()
-            .syntax_inputs()
-            .ok_or_else(|| Unsupported("issued syntax inputs absent".into()))?;
-        // Kind5 observes all parser dependencies before inference. Reject an
-        // oversized cohort before that loop can populate the syntax family.
-        // This migration admission estimate is not a full-host/RSS guarantee.
-        admit_syntax_cohort(syntax_inputs.iter().map(|input| input.budget_charge())).map_err(
-            |e| {
-                ValueQueryFailure::Operational(std::io::Error::new(
-                    std::io::ErrorKind::OutOfMemory,
-                    e.0,
-                ))
-            },
-        )?;
+        // Kind5 intentionally observes every body's parser dependencies before
+        // inference. Admit real inputs one ordinal at a time without a new
+        // eager roster or BODY parsing during the migration-budget check.
+        // This estimate is not a full-host/RSS guarantee.
+        let mut syntax_charge = 0usize;
+        for ordinal in 0..input.archive().len() {
+            let syntax = input.archive()
+                .syntax_input_checked(ordinal, &||crate::daemon::control::checkpoint())?;
+            syntax_charge = admit_syntax_cohort([syntax_charge, syntax.budget_charge()])
+                .map_err(|e|ValueQueryFailure::Operational(std::io::Error::new(
+                    std::io::ErrorKind::OutOfMemory, e.0)))?;
+        }
         if !input.requires_canonical_bodies() {
-            let mut inputs = self.body_inputs.lock().unwrap_or_else(|e| e.into_inner());
-            for syntax in syntax_inputs {
-                inputs
-                    .entry(Key::new(body_syntax::BODY_SYNTAX, syntax.key().into()))
-                    .or_insert_with(|| Arc::downgrade(syntax));
+            for ordinal in 0..input.archive().len() {
+                let syntax = input.archive()
+                    .syntax_input_checked(ordinal, &||crate::daemon::control::checkpoint())?;
+                // Do not hold the registry lock during sparse-input admission.
+                let mut inputs = self.body_inputs.lock().unwrap_or_else(|e| e.into_inner());
+                if let std::collections::btree_map::Entry::Vacant(slot)=inputs.entry(Key::new(body_syntax::BODY_SYNTAX,syntax.key().into())){slot.insert(body_syntax::registered_body_input(&syntax,&self.body_charge).map_err(ValueQueryFailure::Operational)?);}
             }
         }
         let key = Key::new(VALUE_PROOFS, input.key().into());

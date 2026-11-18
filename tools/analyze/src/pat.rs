@@ -414,6 +414,17 @@ impl Pat {
         out
     }
 
+    /// SAME replacement progression, using the existing checked DATA builder.
+    /// Engine program and private search scratch are a separate owner contract.
+    pub fn replace_all_using<C:crate::key_policy_control::Control>(&self,hay:&str,replacement:&str,control:&mut C)->Result<String,C::Error>{
+        let mut state=(String::new(),0usize,control);
+        self.try_for_each_match(hay,&mut state,|state|state.2.checkpoint(),|state,matched|{
+            crate::key_policy_control::append(state.2,&mut state.0,&hay[state.1..matched.start])?;
+            crate::key_policy_control::append(state.2,&mut state.0,replacement)?;state.1=matched.end;Ok(())
+        })?;
+        crate::key_policy_control::append(state.2,&mut state.0,&hay[state.1..])?;state.2.checkpoint()?;Ok(state.0)
+    }
+
     /// `re.sub` with a closure over the captures.
     pub fn replace_with<F: FnMut(&Caps) -> String>(&self, hay: &str, mut f: F) -> String {
         let mut out = String::with_capacity(hay.len());

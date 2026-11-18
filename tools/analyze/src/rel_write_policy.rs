@@ -27,4 +27,6 @@ pub fn metadata() -> &'static Meta {
 }
 
 pub const PATH_FORM:&str=r"\b(rel_(?:set|add|remove|clear|take|take_all|move))\(\s*[^,]+,\s*nameof\(\s*(/[\w/]+?)/?::(\w+)\s*\)";
-pub fn path_forms_using<C:crate::key_policy_control::Control>(file:&crate::tree::SourceFile,work:&mut C,mut emit:impl FnMut(usize,&str,&str,&str)->Result<(),C::Error>)->Result<(),C::Error>{let pattern=crate::pat!(PATH_FORM);for(i,line)in file.code().lines().enumerate(){work.checkpoint()?;for c in pattern.captures_iter(line){work.checkpoint()?;emit(i+1,c.s(1),c.s(2),c.s(3))?;}}work.checkpoint()}
+pub fn path_forms_using<C:crate::key_policy_control::Control>(file:&crate::tree::SourceFile,work:&mut C,mut emit:impl FnMut(usize,&str,&str,&str)->Result<(),C::Error>)->Result<(),C::Error>{
+ for(i,line)in file.code().lines().enumerate(){work.checkpoint()?;let mut at=0;while let Some(c)=crate::key_policy_control::captures_static(work,PATH_FORM,line,at,||crate::pat!(PATH_FORM))?{work.checkpoint()?;emit(i+1,c.s(1),c.s(2),c.s(3))?;at=c.end(0);}}work.checkpoint()
+}

@@ -201,6 +201,8 @@ where F:for<'a> FnOnce(Observation<'a>)->io::Result<()> + Send + 'static {
  pub(crate) options:dq_analyze::full_registry_check_wire::Options,
  pub(crate) clean:bool,pub(crate) diagnostics:Option<Seal>,
  pub(crate) checker:Seal,pub(crate) report:Seal,
+ /// Actual immutable input archive cardinality, never a completed-visit count.
+ pub(crate) original_archive_bodies:usize,
 }
 #[derive(Serialize)]struct ReportHeader<'a>{
  schema:&'static str,kind:&'static str,scope:&'static str,

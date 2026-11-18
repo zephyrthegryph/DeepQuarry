@@ -9,6 +9,7 @@
 //! hits yields one site each; the ALLOW question is asked only for a line that has a hit. The old
 //! "N kept sites" summary count is not reproduced.
 
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::tree::{Select, SourceFile};
@@ -37,11 +38,12 @@ impl Lint for RegistryLint {
         &META
     }
 
-    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let self_add = crate::pat!(
+    fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
+        let self_add = fixture.pattern(r"\bGLOB\.(\w+)\s*(?:\+=|\|=)\s*src\b|\bGLOB\.(\w+)\.(?:Add|Insert)\((?:[^()]*,\s*)?src\)|\bGLOB\.(\w+)\[[^\]]*\]\s*=\s*src\b",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(
             r"\bGLOB\.(\w+)\s*(?:\+=|\|=)\s*src\b|\bGLOB\.(\w+)\.(?:Add|Insert)\((?:[^()]*,\s*)?src\)|\bGLOB\.(\w+)\[[^\]]*\]\s*=\s*src\b"
-        );
-        let boilerplate = crate::pat_match!(r"\s*GLOBAL_LIST_BOILERPLATE\(\s*(\w+)\s*,");
+        ));
+        let boilerplate = fixture.pattern(r"\s*GLOBAL_LIST_BOILERPLATE\(\s*(\w+)\s*,",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"\s*GLOBAL_LIST_BOILERPLATE\(\s*(\w+)\s*,"));
         for (number, line) in f.raw().numbered() {
             let code = before_slashes(line);
             let mut hits: Vec<String> = Vec::new();

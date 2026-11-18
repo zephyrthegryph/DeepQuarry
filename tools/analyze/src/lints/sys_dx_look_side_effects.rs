@@ -24,20 +24,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/custom, TYPE_PROC_REF(/obj/machinery/cust
 \treturn list()
 ";
 
-fn selftest() -> Result<String, String> {
-    let lines: Vec<&str> = FIXTURE.split('\n').collect();
-    let tree = Tree::from_files(vec![SourceFile::from_text("code/fixture.dm", FIXTURE)]);
-    let files = vec![tree.get("code/fixture.dm").unwrap()];
-    let mut got: Vec<usize> = crate::sys_look_effects_policy::scan(&tree, &files).into_iter().map(|(_, _, n)| n).collect();
-    got.sort();
-    let bad = ["\t\tplaysound(src, 'sound/weld.ogg', 50)", "\tlast_state = \"on\"", "\ton = TRUE"];
-    let mut want: Vec<usize> = bad.iter().map(|t| lines.iter().position(|l| l == t).map(|k| k + 1).unwrap_or(0)).collect();
-    want.sort();
-    if got != want {
-        return Err(format!("dx_look_side_effects selftest: got {:?}, want {:?}", got, want));
-    }
-    Ok("true".to_string())
-}
+fn selftest()->Result<String,String>{crate::sys_selftest_policy::run(crate::sys_selftest_policy::Kind::Look,&mut crate::derived_selftest_policy::LegacyAssertions,&mut crate::derived_selftest_policy::LegacyAssertions).map_err(|failure|match failure{crate::derived_selftest_policy::Failure::Assertion(text)=>text,crate::derived_selftest_policy::Failure::Operational(actual)=>actual.to_string()})}
 
 pub fn register(reg: &mut Registry) {
     register_module(

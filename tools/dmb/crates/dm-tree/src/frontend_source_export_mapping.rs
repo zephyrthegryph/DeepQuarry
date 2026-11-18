@@ -738,6 +738,20 @@ impl SourceExportMapping {
         }
         Ok(flags)
     }
+    /// Source encounter DATA only: the actual final include declaration may
+    /// observe the already-authenticated root EOF delimiter. Returning its
+    /// original ordinal grants no initializer token or strict policy cursor.
+    pub(super) fn declaration_encounter_order(&self, ordinal: OccurrenceId) -> Result<usize, String> {
+        self.declaration_diagnostic_cursor(ordinal)?;
+        Ok(ordinal.0 as usize)
+    }
+    /// Absence-only proof over the actual terminal variable HEADER cursor.
+    /// The syntax query must find the same issued declaration cursor and its
+    /// real authored RHS fact. No numeric cursor or expression loan escapes.
+    pub(super) fn terminal_declaration_is_authored_absence(&self, ordinal: OccurrenceId, syntax: &DeclarationSyntax) -> Result<bool, String> {
+        let Some(cursor)=self.original_terminal_declaration_cursor(ordinal) else{return Ok(false)};
+        syntax.initializer_has_authored_value(cursor).map(|present|!present)
+    }
     pub(super) fn initializer_declaration_cursor(
         &self,
         ordinal: OccurrenceId,

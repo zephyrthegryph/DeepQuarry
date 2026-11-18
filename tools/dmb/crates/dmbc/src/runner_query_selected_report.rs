@@ -288,7 +288,18 @@ impl SectionFailures {
     }
 }
 
+// Borrowed only through the SAME actual producer projection and child budget.
+// The callback cannot publish a completed operation; full ALLOW/producer finish
+// and exact source recheck below must succeed before its caller uses any plan.
+pub(in crate::runner_host) enum BaselineProjectionRows<'a>{
+    Generic{run:&'a Run,text:&'a dyn SiteText,lines:&'a[String]},
+    CheckGrep(&'a dq_analyze::lints::check_grep::native::Output),
+}
+type BaselineProjection<'a>=dyn FnMut(&Meta,&LintScope,BaselineProjectionRows<'_>,&Arc<Budget>)->io::Result<()>+'a;
+pub(in crate::runner_host) type BaselinePlanner<'a>=dyn FnMut(&Meta,&LintScope,BaselineProjectionRows<'_>,&Arc<Budget>,&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>)->io::Result<()>+'a;
+type ActualUsageWriter<'a>=dyn Fn(&dq_analyze::captured_allow_annotations::full_unused::UsageData<'_>)->io::Result<()>+'a;
 struct ReportStage<'a> {
+    usage_writer:Option<&'a ActualUsageWriter<'a>>,
     file: Stage,
     finished: usize,
     selected: &'a [&'a str],
@@ -307,6 +318,7 @@ struct ReportStage<'a> {
     full_ci_baseline: Option<&'a dyn Fn(&Meta) -> io::Result<Option<&'a [u8]>>>,
     check_format:Option<crate::runner_host::FullRegistryCheckOptions>,
     registered_source:Option<&'a NativeCheckSelection>,
+    explicit_selftests:Option<&'a dq_analyze::captured_raw_policy::RawSelftestResult>,
 }
 impl ReportStage<'_> {
     fn is_raw(&self) -> bool {
@@ -316,6 +328,12 @@ impl ReportStage<'_> {
     fn grouped(&self)->bool{self.check_format.map_or(!self.is_raw(),|format|format.ci)}
 
     fn observe(&mut self, root: &Path, meta: &Meta, rows: ReportRows<'_, '_>, scope: &LintScope, child: &Arc<Budget>) -> io::Result<()> {
+        self.observe_with_baseline(root,meta,rows,scope,child,None)
+    }
+    fn observe_with_baseline(&mut self,root:&Path,meta:&Meta,rows:ReportRows<'_,'_>,scope:&LintScope,child:&Arc<Budget>,baseline:Option<&mut BaselineProjection<'_>>)->io::Result<()>{
+        if self.finished==0{if let Some(actual)=self.explicit_selftests.or_else(||self.registered_source.and_then(NativeCheckSelection::raw_selftests)){actual.write_failures(&mut self.file)?;}}
+
+        let unchanged=None;let changed=self.registered_source.and_then(NativeCheckSelection::cli_observations).map(|actual|actual.changed()).unwrap_or(&unchanged);
         let registered_row=self.registered_source.is_some_and(|plan|plan.metadata().any(|actual|std::ptr::eq(meta,actual)));
         if let ReportRows::Union(UnionRows::CheckGrep(data)) = &rows {
             if (self.selected != Roster::WithCheckGrep.names() && !self.private_check_grep && !registered_row)
@@ -329,6 +347,13 @@ impl ReportStage<'_> {
                 crate::daemon::control::checkpoint()?;
                 child.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))
             };
+            if let Some(plan)=baseline{plan(meta,scope,BaselineProjectionRows::CheckGrep(data),child)?;}
+            if let Some(fixture)=self.registered_source.and_then(NativeCheckSelection::fixture_scope){
+                let mut control=Operation{budget:child,poll:&||crate::daemon::control::checkpoint()};
+                fixture.observe(&data.run.sites,&mut control,&mut self.file,|control,expected|dq_analyze::lints::check_grep::native::write_fixture_expected(scope,data,control,expected))?;
+                self.failed.record(self.finished,false)?;self.finished+=1;return Ok(());
+            }
+
             // This producer has already run the original custom renderer over
             // the actual Check observations, and owns its admitted report
             // bytes. The generic judge prefixes notes before that hook.
@@ -337,10 +362,14 @@ impl ReportStage<'_> {
             for note in &data.run.notes {
                 writeln!(self.file, "{note}")?;
             }
-            self.file.write_all(data.report.as_bytes())?;
+            let failed=if let Some(changed)=changed{
+                let mut scratch=SectionScratch{budget:Budget::scoped_temporaries(child).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?,complete:false};
+                let(failed,text)=dq_analyze::lints::check_grep::native::finish_changed_report_after_delivery(scope,data,changed,&scratch.budget,&||crate::daemon::control::checkpoint()).map_err(operational)?;
+                self.file.write_all(text.as_bytes())?;drop(text);scratch.complete=true;failed
+            }else{self.file.write_all(data.report.as_bytes())?;data.failed};
             if self.grouped() { writeln!(self.file, "::endgroup::")?; }
             checkpoint()?;
-            self.failed.record(self.finished, data.failed)?;
+            self.failed.record(self.finished, failed)?;
             self.finished += 1;
             return Ok(());
         }
@@ -726,7 +755,12 @@ impl ReportStage<'_> {
             width.checked_add(repeated)?.checked_mul(128)?.checked_add(rows.checked_mul(8192)?)
         }).map_err(operational)?;
 
+        if let Some(fixture)=self.registered_source.and_then(NativeCheckSelection::fixture_scope){
+            fixture.observe(&projection.run.sites,&mut control,&mut self.file,|control,expected|dq_analyze::fixture_report_policy::write_identity_expected(&projection.run.sites,control,expected))?;
+            self.failed.record(self.finished,false)?;self.finished+=1;drop(projection);scratch.complete=true;return Ok(());
+        }
         let source_text = Text { sites: &projection.run.sites, lines: &projection.text };
+        if let Some(plan)=baseline{plan(meta,scope,BaselineProjectionRows::Generic{run:&projection.run,text:&source_text,lines:&projection.text},&scratch.budget)?;}
         let raw = self.is_raw();
         let post = |run: &Run, text: &mut String| {
             if let Some(blocks) = doc_summary {
@@ -735,12 +769,12 @@ impl ReportStage<'_> {
             if let Some(message) = post_judge { text.push_str(message); true } else { false }
         };
         let (failed, text) = if raw || deadline || matches!(meta.policy, Policy::Hard) {
-            policy_judge::judge_report(meta, scope, &source_text, &projection.run, root, &None, raw,
+            policy_judge::judge_report(meta, scope, &source_text, &projection.run, root, changed, raw,
                 |run, text, _| deadline_judge.take().is_some_and(|(parsed, shown)| parsed.finish(run, &shown, text)),
                 post)
         } else if let Some(baseline) = self.full_ci_baseline {
-            dq_analyze::policy_finish::admitted::judge_captured_baseline(
-                meta, scope, &source_text, &projection.run, root, baseline(meta)?, &SitesWork(&scratch.budget), post,
+            dq_analyze::policy_finish::admitted::judge_captured_baseline_changed(
+                meta, scope, &source_text, &projection.run, root, baseline(meta)?, &SitesWork(&scratch.budget), post, changed,
             )?
         } else if self.judgment == JudgmentV2::CiLibrarySites && library_sites(meta) {
             let baseline = self.library_baseline.ok_or_else(|| io::Error::new(
@@ -767,6 +801,8 @@ impl ReportStage<'_> {
         if self.finished != self.selected.len() || !data.selected().iter().map(String::as_str).eq(self.selected.iter().copied()) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected sections did not complete their actual ALLOW join"));
         }
+        if self.registered_source.is_some_and(|plan|plan.fixture_scope().is_some()){budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;return Ok(true)}
+        if let Some(write)=self.usage_writer{write(data.usage()?)?;}
         let audit_unused=self.check_format.is_none_or(|format|format.unused);
         let unused=if audit_unused{data.unused()?}else{&[]};
         if audit_unused {
@@ -774,10 +810,12 @@ impl ReportStage<'_> {
             writeln!(self.file, "allow annotations: {} unused", unused.len())?;
         }
         budget.require().map_err(|m| io::Error::new(io::ErrorKind::OutOfMemory, m))?;
-        let failed = data.selected().iter().enumerate()
-            .filter_map(|(ordinal, name)| self.failed.failed(ordinal).then_some(name.as_str()))
-            .chain((audit_unused&&!unused.is_empty()).then_some("allow_annotations --unused"));
-        policy_finish::write_result_line(failed, &mut self.file)
+        let selftest_failed=self.explicit_selftests.or_else(||self.registered_source.and_then(NativeCheckSelection::raw_selftests)).into_iter().flat_map(|actual|actual.failures().map(|(name,_)|policy_finish::ResultLabel::Selftest(name)));
+        let failed = selftest_failed.chain(data.selected().iter().enumerate()
+            .filter_map(|(ordinal, name)| self.failed.failed(ordinal).then_some(policy_finish::ResultLabel::Lint(name.as_str()))))
+            .chain((audit_unused&&!unused.is_empty()).then_some(policy_finish::ResultLabel::Lint("allow_annotations --unused")));
+        if let Some(actual)=self.registered_source.and_then(NativeCheckSelection::cli_observations){actual.before_result(&mut self.file)?;}
+        policy_finish::write_result_line_labels(failed, &mut self.file)
     }
 }
 
@@ -820,25 +858,32 @@ impl super::super::RawWorkspaceSnapshot {
 
     pub(in crate::runner_host) fn stage_selected_registry_source_check(
         &self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>,
-    )->io::Result<(bool,Verified)>{
+    )->io::Result<(bool,Verified)>{self.stage_selected_registry_source_check_baseline(prepared,retained,root,file,plan,None)}
+    pub(in crate::runner_host) fn stage_selected_registry_source_check_baseline(
+        &self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>,
+    mut baseline_update:Option<&mut crate::runner_host::baseline_update::Builder>)->io::Result<(bool,Verified)>{
         self.require_registered_source_plan(plan)?;
         let mut work=Operation{budget:retained,poll:&||crate::daemon::control::checkpoint()};let mut order=Vec::new();
         for name in plan.names(){kc::row(&mut work,&mut order).map_err(operational)?;order.push(name.as_str());}
-        self.stage_raw_file_report_using_plan(Some(prepared),plan.exclusions(),retained,root,&order,crate::runner_host::workspace_capture::RawSourcePurpose::RegisteredSourceCheck,file,false,None,Some(plan),None)
+        self.stage_raw_file_report_using_plan_baseline(Some(prepared),plan.exclusions(),retained,root,&order,crate::runner_host::workspace_capture::RawSourcePurpose::RegisteredSourceCheck,file,false,None,Some(plan),None,baseline_update)
     }
 
     pub(in crate::runner_host) fn stage_source_handler_registry_check(
         &self,retained:&Arc<Budget>,root:&Path,file:Stage,
         projection:&SourceHandlerProjection,handler:&super::super::HandlerWorkspaceSnapshot,full:Option<&SourceSnapshot>,
-    )->io::Result<(bool,Verified)>{
+    )->io::Result<(bool,Verified)>{self.stage_source_handler_registry_check_baseline(retained,root,file,projection,handler,full,None)}
+    pub(in crate::runner_host) fn stage_source_handler_registry_check_baseline(
+        &self,retained:&Arc<Budget>,root:&Path,file:Stage,
+        projection:&SourceHandlerProjection,handler:&super::super::HandlerWorkspaceSnapshot,full:Option<&SourceSnapshot>,
+    mut baseline_update:Option<&mut crate::runner_host::baseline_update::Builder>)->io::Result<(bool,Verified)>{
         projection.require_parent(projection.parent())?;self.require_source_handler_sibling(handler,projection.raw(),full)?;
         // Group reporting DATA only; neither a Model nor full Handler source
         // revision is minted from these independently authentic native owners.
         let owner_work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork=self.queries.as_ref();
         let mut control=NativeSelectionControl{work:owner_work,credit:owner_work.reserve(0)?};
         let mut order=Vec::new();for name in projection.parent().names(){kc::row(&mut control,&mut order).map_err(operational)?;order.push(name.as_str());}
-        let answer=self.stage_raw_file_report_using_plan(None,projection.parent().exclusions(),retained,root,&order,
-            crate::runner_host::workspace_capture::RawSourcePurpose::RegisteredSourceCheck,file,false,None,Some(projection.raw()),Some((projection,handler,full)));
+        let answer=self.stage_raw_file_report_using_plan_baseline(None,projection.parent().exclusions(),retained,root,&order,
+            crate::runner_host::workspace_capture::RawSourcePurpose::RegisteredSourceCheck,file,false,None,Some(projection.raw()),Some((projection,handler,full)),baseline_update);
         if answer.is_err(){return answer}self.require_source_handler_sibling(handler,projection.raw(),full)?;answer
     }
 
@@ -848,7 +893,16 @@ impl super::super::RawWorkspaceSnapshot {
         purpose: crate::runner_host::workspace_capture::RawSourcePurpose, mut file: Stage,
         cache_report: bool, prior: Option<Arc<WorkspaceCapture>>,check_plan:Option<&Arc<NativeCheckSelection>>,
         source_handler:Option<(&SourceHandlerProjection,&super::super::HandlerWorkspaceSnapshot,Option<&SourceSnapshot>)>,
-    ) -> io::Result<(bool, Verified)> {
+    ) -> io::Result<(bool, Verified)> {self.stage_raw_file_report_using_plan_baseline(prepared,exclusions,retained,root,selected,purpose,file,cache_report,prior,check_plan,source_handler,None)}
+
+    fn stage_raw_file_report_using_plan_baseline(
+        &self, prepared: Option<&crate::request::BuildOutcome>, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, selected: &[&str],
+        purpose: crate::runner_host::workspace_capture::RawSourcePurpose, mut file: Stage,
+        cache_report: bool, prior: Option<Arc<WorkspaceCapture>>,check_plan:Option<&Arc<NativeCheckSelection>>,
+        source_handler:Option<(&SourceHandlerProjection,&super::super::HandlerWorkspaceSnapshot,Option<&SourceSnapshot>)>,
+    mut baseline_update:Option<&mut crate::runner_host::baseline_update::Builder>,
+) -> io::Result<(bool, Verified)> {
         use crate::{request::BuildOutcome, runner_host::workspace_capture::RawSourcePurpose};
         if let Some(plan)=check_plan{self.require_registered_source_plan(plan)?;if !plan.source_only()||purpose!=RawSourcePurpose::RegisteredSourceCheck||cache_report||prior.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"registered source CHECK profile differs from its actual plan"))}}
         use dq_analyze::captured_allow_annotations::full_unused::{FrameData, FrameOwner, SelectedTreePlanData, UsageJoinData};
@@ -888,7 +942,13 @@ impl super::super::RawWorkspaceSnapshot {
             if let Some((projection,handler,full))=source_handler{self.require_source_handler_sibling(handler,projection.raw(),full)?;}
             Ok(())
         };
-        queries.require_workspace_report_configuration(capture, &guard).map_err(operational)?;
+        // The exact captured single-lint FixtureScope follows original sem fixture:
+        // parse the selected configuration in its producer, without CHECK's
+        // unrelated complete-registry required-list preflight. The actual plan
+        // was authenticated above; ordinary CHECK keeps the full preflight.
+        if !check_plan.is_some_and(|plan|plan.fixture_scope().is_some()) {
+            queries.require_workspace_report_configuration(capture, &guard).map_err(operational)?;
+        }
         let mut work = Operation { budget: retained, poll: &poll };
         let selection = full_unused::registered_full_selection(exclusions, &mut work).map_err(operational)?;
         if !selection.names().iter().map(String::as_str).eq(selected.iter().copied()) {
@@ -916,7 +976,10 @@ impl super::super::RawWorkspaceSnapshot {
         };
         let mut usage = UsageJoinData::new(&selection, frame);
         let observed_baseline=|meta:&Meta|{capture.registered_check_baseline(meta,&guard,check_plan.ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"registered baseline role absent"))?)};
-        let mut stage = ReportStage {check_format:check_plan.map(|plan|{let mut format=plan.format();format.unused=plan.audit_unused();format}),registered_source:source_handler.map(|(projection,_,_)|projection.parent().as_ref()).or_else(||check_plan.map(Arc::as_ref)),
+        let mut observe=|stage:&mut ReportStage<'_>,meta:&Meta,rows:ReportRows<'_,'_>,scope:&LintScope,child:&Arc<Budget>|->io::Result<()>{match baseline_update.as_deref_mut(){Some(plan)=>stage.observe_with_baseline(root,meta,rows,scope,child,Some(&mut|meta,scope,rows,child|plan.observe(meta,scope,rows,child,capture,&guard))),None=>stage.observe(root,meta,rows,scope,child)}};
+        let observation_plan=source_handler.map(|(projection,_,_)|projection.parent().as_ref()).or_else(||check_plan.map(Arc::as_ref));
+        let usage_writer=|usage:&dq_analyze::captured_allow_annotations::full_unused::UsageData<'_>|->io::Result<()>{let actual=observation_plan.and_then(NativeCheckSelection::cli_observations).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual raw CHECK usage request absent"))?;queries.with_workspace_allow_usage(capture,&guard,usage,|used,digests,child|actual.write_usage(used,digests,child)).map_err(operational)};
+        let mut stage = ReportStage {usage_writer:observation_plan.and_then(NativeCheckSelection::cli_observations).is_some_and(|actual|actual.request().allow_usage).then_some(&usage_writer),explicit_selftests:None,check_format:check_plan.map(|plan|{let mut format=plan.format();format.unused=plan.audit_unused();format}),registered_source:source_handler.map(|(projection,_,_)|projection.parent().as_ref()).or_else(||check_plan.map(Arc::as_ref)),
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
             authored_doc_ui: false, ordinary_fold_sys: false, ordinary_semantic_and_fixed: false, private_checker_body: false, private_image_dir: false, private_check_grep: false, private_derived_reads: false, judgment: JudgmentV2::Raw, library_baseline: None, full_ci_baseline: check_plan.is_some_and(|plan|!plan.format().raw).then_some(&observed_baseline),
         };
@@ -925,6 +988,7 @@ impl super::super::RawWorkspaceSnapshot {
             poll()?;
             let producer = producer(name);
             let meta = producer.metadata();
+            let timing=observation_plan.and_then(NativeCheckSelection::cli_observations).filter(|actual|actual.request().timing);let timing_before=timing.map(|_|queries.cli_observation_stats()).transpose()?;
             match producer {
                 Producer::Raw(_) if producer.question().is_none()||check_plan.is_some() => {
                     let consume = |
@@ -934,7 +998,7 @@ impl super::super::RawWorkspaceSnapshot {
                     | {
                         let (scope, child) = report.ok_or_else(|| io::Error::other("raw-file producer omitted its report scope"))?;
                         let rows=if name=="deadline_polling"{let(path,bytes)=capture.deadline_observation()?;UnionRows::Deadline(rows,path,bytes)}else{UnionRows::Raw(rows)};
-                        stage.observe(root, meta, ReportRows::Union(rows), scope, child)?;
+                        observe(&mut stage, meta, ReportRows::Union(rows), scope, child)?;
                         usage.record_fold_iter(name, frame, allows, &mut work).map_err(operational)
                     };
                     if sealed_bulk {
@@ -942,7 +1006,7 @@ impl super::super::RawWorkspaceSnapshot {
                     } else {
                         // Joined Docs/UI use an ordinary live raw capture, so
                         // their base raw policies must take the ordinary lender.
-                        queries.with_workspace_raw_union_rows(capture, &guard, name, retained, true, consume)?;
+                        if let Some(actual)=timing{queries.with_workspace_raw_union_rows_observed(capture,&guard,name,retained,consume,&mut|files,rescanned,total|actual.record_timing(crate::runner_host::check_cli_observations::TimingRow{name:meta.name,total,files,rescanned,memo:false}))?;}else{queries.with_workspace_raw_union_rows(capture, &guard, name, retained, true, consume)?;}
                     }
                 }
                 Producer::Tree(policy) if check_plan.is_some()||matches!(policy,
@@ -955,7 +1019,7 @@ impl super::super::RawWorkspaceSnapshot {
                     queries.with_workspace_raw_tree(capture, &guard, policy, |data, config, child| {
                         let empty = LintScope::default();
                         let scope = config.borrowed_report_scope(meta.name, meta.group).unwrap_or(&empty);
-                        stage.observe(root, meta, ReportRows::Union(UnionRows::Tree(data)), scope, child)?;
+                        observe(&mut stage, meta, ReportRows::Union(UnionRows::Tree(data)), scope, child)?;
                         usage.record_fold(name, frame, data.allow_used(), &mut work).map_err(operational)
                     }).map_err(operational)?;
                 }
@@ -964,7 +1028,7 @@ impl super::super::RawWorkspaceSnapshot {
                     self.require_source_handler_sibling(handler,projection.raw(),full)?;
                     handler.with_source_union_report(full,|data,config,child|{
                         let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
-                        stage.observe(root,meta,ReportRows::Union(UnionRows::Handlers(data)),scope,child)?;
+                        observe(&mut stage,meta,ReportRows::Union(UnionRows::Handlers(data)),scope,child)?;
                         usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)
                     })?;
                     self.require_source_handler_sibling(handler,projection.raw(),full)?;
@@ -973,17 +1037,18 @@ impl super::super::RawWorkspaceSnapshot {
                     queries.with_workspace_allow_annotations(capture, &guard, |data, config, child| {
                         let empty = LintScope::default();
                         let scope = config.borrowed_report_scope(meta.name, meta.group).unwrap_or(&empty);
-                        stage.observe(root, meta, ReportRows::Union(UnionRows::Validation(data)), scope, child)?;
+                        observe(&mut stage, meta, ReportRows::Union(UnionRows::Validation(data)), scope, child)?;
                         usage.record_fold(name, frame, &[], &mut work).map_err(operational)
                     }).map_err(operational)?;
                 }
-                Producer::Special("sem/keys") if check_plan.is_some()=>{queries.with_workspace_keys(capture,&guard,|data,config,child|{let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);stage.observe(root,meta,ReportRows::Union(UnionRows::Keys(data)),scope,child)?;usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)}).map_err(operational)?;}
-                Producer::Special("sys/hygiene") if check_plan.is_some()=>{queries.with_workspace_hygiene_report(capture,&guard,|data,config,child|{let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);stage.observe(root,meta,ReportRows::Union(UnionRows::SysSource("sys/hygiene",data.sites(),data.source_text())),scope,child)?;usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)})?;}
-                Producer::Special("sys/resolvers") if check_plan.is_some()=>{queries.with_workspace_resolvers_report(capture,&guard,|data,config,child|{let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);stage.observe(root,meta,ReportRows::Union(UnionRows::SysSource("sys/resolvers",data.sites(),data.source_text())),scope,child)?;usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)})?;}
-                Producer::Special("sys/tables") if check_plan.is_some()=>{queries.with_workspace_tables_report(capture,&guard,|data,config,child|{let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);stage.observe(root,meta,ReportRows::Union(UnionRows::SysSource("sys/tables",data.sites(),data.source_text())),scope,child)?;usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)})?;}
-                Producer::Special("system_boundary") if check_plan.is_some()=>{queries.with_workspace_boundary_report(capture,&guard,|data,config,child|{let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);stage.observe(root,meta,ReportRows::Union(UnionRows::SysSource("system_boundary",data.sites(),data.source_text())),scope,child)?;usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)})?;}
+                Producer::Special("sem/keys") if check_plan.is_some()=>{queries.with_workspace_keys(capture,&guard,|data,config,child|{let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);observe(&mut stage,meta,ReportRows::Union(UnionRows::Keys(data)),scope,child)?;usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)}).map_err(operational)?;}
+                Producer::Special("sys/hygiene") if check_plan.is_some()=>{queries.with_workspace_hygiene_report(capture,&guard,|data,config,child|{let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);observe(&mut stage,meta,ReportRows::Union(UnionRows::SysSource("sys/hygiene",data.sites(),data.source_text())),scope,child)?;usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)})?;}
+                Producer::Special("sys/resolvers") if check_plan.is_some()=>{queries.with_workspace_resolvers_report(capture,&guard,|data,config,child|{let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);observe(&mut stage,meta,ReportRows::Union(UnionRows::SysSource("sys/resolvers",data.sites(),data.source_text())),scope,child)?;usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)})?;}
+                Producer::Special("sys/tables") if check_plan.is_some()=>{queries.with_workspace_tables_report(capture,&guard,|data,config,child|{let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);observe(&mut stage,meta,ReportRows::Union(UnionRows::SysSource("sys/tables",data.sites(),data.source_text())),scope,child)?;usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)})?;}
+                Producer::Special("system_boundary") if check_plan.is_some()=>{queries.with_workspace_boundary_report(capture,&guard,|data,config,child|{let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);observe(&mut stage,meta,ReportRows::Union(UnionRows::SysSource("system_boundary",data.sites(),data.source_text())),scope,child)?;usage.record_fold(name,frame,data.allow_used(),&mut work).map_err(operational)})?;}
                 _ => return Err(io::Error::new(io::ErrorKind::Unsupported, "raw-file roster contains a model or foreign producer")),
             }
+            if let(Some(actual),Some(before))=(timing,timing_before){if !actual.has_timing(meta.name)?{let after=queries.cli_observation_stats()?;actual.record_timing(crate::runner_host::check_cli_observations::TimingRow{name:meta.name,total:policy_started.elapsed(),files:0,rescanned:0,memo:after.computed==before.computed&&after.green>before.green})?;}}
             dm_profile::detail_mark(meta.name, policy_started);
         }
         let completed = usage.finish_data(&mut work).map_err(operational)?;
@@ -991,10 +1056,10 @@ impl super::super::RawWorkspaceSnapshot {
             Some(SelectedTreePlanData::new([dq_analyze::tree::CODE_MAPS_DM],&mut work).map_err(operational)?)
         }else{None};
         let clean = if check_plan.is_some_and(|plan|!plan.audit_unused()){
-            poll()?;stage.finish(&CompleteAllowRun{selected:selection.names(),validation:None,unused:None},retained)?
+            poll()?;stage.finish(&CompleteAllowRun{usage:Some(&completed),selected:selection.names(),validation:None,unused:None},retained)?
         }else{queries.with_workspace_full_allow_unused(capture, &guard, unused_tree.as_ref().unwrap_or(&selected_tree), &completed, |unused, _, budget| {
             poll()?;
-            stage.finish(&CompleteAllowRun { selected: selection.names(), validation: None, unused:Some(unused) }, budget)
+            stage.finish(&CompleteAllowRun { usage:Some(&completed),selected: selection.names(), validation: None, unused:Some(unused) }, budget)
         }).map_err(operational)?};
         let output = if cache_report {
             queries.finish_bulk_raw_report(capture, &guard, stage.file, clean)?
@@ -1179,6 +1244,36 @@ impl SourceSnapshot {
         self.stage_selected_report_judging_format(prepared,&[],retained,root,&order,Q::PRIVATE_FULL_REGISTRY,JudgmentV2::Raw,false,true,Some(handlers),file,true,Some(checker),!format.raw,Some(format))
     }
 
+    pub(in crate::runner_host) fn stage_private_full_registry_check_with_selftests(
+        &self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,
+        checker:&crate::request_runner::PreparedCheckerTranscript,handlers:&super::super::HandlerWorkspaceSnapshot,
+        format:crate::runner_host::FullRegistryCheckOptions,plan:&Arc<NativeCheckSelection>,
+    )->io::Result<(bool,Verified)>{
+        let mut work=Operation{budget:retained,poll:&||crate::daemon::control::checkpoint()};
+        let selection=full_unused::registered_full_selection(&[],&mut work).map_err(operational)?;
+        let mut order=Vec::new();for name in selection.names(){kc::row(&mut work,&mut order).map_err(operational)?;order.push(name.as_str());}
+        if !plan.names().iter().map(String::as_str).eq(order.iter().copied()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"whole selftest result differs from its actual registry order"))}
+        self.stage_selected_report_judging_format_selftests(prepared,&[],retained,root,&order,Q::PRIVATE_FULL_REGISTRY,JudgmentV2::Raw,false,true,Some(handlers),file,true,Some(checker),!format.raw,Some(format),plan.native_selftest_result()?,Some(plan.as_ref()))
+    }
+
+    /// Actual full producer findings loan, not a writer or completed baseline API.
+    /// Plans produced by the callback must be discarded if this operation errs.
+    /// This preserves all full frame/Checker/Handler/ALLOW and source rechecks.
+    pub(in crate::runner_host) fn stage_private_full_registry_baseline_projection(
+        &self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,
+        checker:&crate::request_runner::PreparedCheckerTranscript,handlers:&super::super::HandlerWorkspaceSnapshot,
+        plan:&mut BaselinePlanner<'_>,
+    )->io::Result<(bool,Verified)>{
+        let workspace=self.native_workspace.as_ref().ok_or_else(||io::Error::other("baseline update workspace absent"))?;
+        if !workspace.has_baseline_update_capture(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"baseline planning needs actual update-only target capture"))}
+        let guard=self.workspace_native_read()?;
+        let mut project=|meta:&Meta,scope:&LintScope,rows:BaselineProjectionRows<'_>,budget:&Arc<Budget>|plan(meta,scope,rows,budget,workspace,&guard);
+        let mut work=Operation{budget:retained,poll:&||crate::daemon::control::checkpoint()};
+        let selection=full_unused::registered_full_selection(&[],&mut work).map_err(operational)?;
+        let mut order=Vec::new();for name in selection.names(){kc::row(&mut work,&mut order).map_err(operational)?;order.push(name.as_str());}
+        self.stage_selected_report_judging_format_using_baseline(prepared,&[],retained,root,&order,Q::PRIVATE_FULL_REGISTRY,JudgmentV2::Raw,false,true,Some(handlers),file,true,Some(checker),true,None,Some(&mut project))
+    }
+
     pub(in crate::runner_host) fn stage_private_full_registry_ci(
         &self, prepared: &crate::request::BuildOutcome, retained: &Arc<Budget>,
         root: &Path, file: Stage, checker: &crate::request_runner::PreparedCheckerTranscript,
@@ -1291,13 +1386,46 @@ impl SourceSnapshot {
         handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage, ordinary_fold_sys: bool,
         checker: Option<&crate::request_runner::PreparedCheckerTranscript>, full_ci: bool, check_format:Option<crate::runner_host::FullRegistryCheckOptions>,
     ) -> io::Result<(bool, Verified)> {
+        self.stage_selected_report_judging_format_selftests(prepared,exclusions,retained,root,selected,questions,judgment,needs_library_sites_baseline,requires_handlers,handlers,file,ordinary_fold_sys,checker,full_ci,check_format,None,None)
+    }
+    fn stage_selected_report_judging_format_selftests(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, selected: &[&str], questions: &[Q], judgment: JudgmentV2,
+        needs_library_sites_baseline: bool, requires_handlers: bool,
+        handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage, ordinary_fold_sys: bool,
+        checker: Option<&crate::request_runner::PreparedCheckerTranscript>, full_ci: bool, check_format:Option<crate::runner_host::FullRegistryCheckOptions>,explicit_selftests:Option<&dq_analyze::captured_raw_policy::RawSelftestResult>,registered_source:Option<&NativeCheckSelection>,
+    ) -> io::Result<(bool, Verified)> {
+
+        self.stage_selected_report_judging_format_selftests_using_baseline(prepared,exclusions,retained,root,selected,questions,judgment,needs_library_sites_baseline,requires_handlers,handlers,file,ordinary_fold_sys,checker,full_ci,check_format,explicit_selftests,registered_source,None)
+    }
+    fn stage_selected_report_judging_format_using_baseline(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, selected: &[&str], questions: &[Q], judgment: JudgmentV2,
+        needs_library_sites_baseline: bool, requires_handlers: bool,
+        handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage, ordinary_fold_sys: bool,
+        checker: Option<&crate::request_runner::PreparedCheckerTranscript>, full_ci: bool, check_format:Option<crate::runner_host::FullRegistryCheckOptions>,
+        baseline:Option<&mut BaselineProjection<'_>>,
+    ) -> io::Result<(bool, Verified)> {
+
+        self.stage_selected_report_judging_format_selftests_using_baseline(prepared,exclusions,retained,root,selected,questions,judgment,needs_library_sites_baseline,requires_handlers,handlers,file,ordinary_fold_sys,checker,full_ci,check_format,None,None,baseline)
+    }
+    fn stage_selected_report_judging_format_selftests_using_baseline(
+        &self, prepared: &crate::request::BuildOutcome, exclusions: &[String], retained: &Arc<Budget>,
+        root: &Path, selected: &[&str], questions: &[Q], judgment: JudgmentV2,
+        needs_library_sites_baseline: bool, requires_handlers: bool,
+        handlers: Option<&super::super::HandlerWorkspaceSnapshot>, file: Stage, ordinary_fold_sys: bool,
+        checker: Option<&crate::request_runner::PreparedCheckerTranscript>, full_ci: bool, check_format:Option<crate::runner_host::FullRegistryCheckOptions>,
+        explicit_selftests:Option<&dq_analyze::captured_raw_policy::RawSelftestResult>,
+        registered_source:Option<&NativeCheckSelection>,
+        mut baseline:Option<&mut BaselineProjection<'_>>,
+    ) -> io::Result<(bool, Verified)> {
         use crate::request::BuildOutcome;
         let BuildOutcome::QueryPrepared { semantic_revision, source_revision, policy_revision: Some(policy_revision), retained: true } = prepared else {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "selected report preparation did not issue a current Original frame"));
         };
         let pin = |text: &str| u128::from_str_radix(text, 16).ok();
         let workspace = self.native_workspace.as_ref().ok_or_else(|| io::Error::other("selected report has no actual workspace"))?;
-        if workspace.root() != root || workspace.configuration().1.is_none()
+        if workspace.root() != root || (workspace.configuration().1.is_none()&&!(baseline.is_some()&&workspace.has_baseline_update_capture()))
             || !workspace.matches_auxiliary_questions(questions)
             || ordinary_fold_sys && !workspace.has_extended_authored_doc_ui_capture()
             || handlers.is_some() != requires_handlers
@@ -1333,7 +1461,9 @@ impl SourceSnapshot {
             let guard = ci_guard.as_ref().ok_or_else(|| io::Error::other("full CI read guard absent"))?;
             workspace.full_ci_baseline(guard, meta)
         };
-        let stage = RefCell::new(ReportStage {check_format,registered_source:None,
+        let usage_guard=self.workspace_native_read()?;let usage_queries=self.native_raw_queries.as_ref().ok_or_else(||io::Error::other("CHECK usage needs its actual source queries"))?;
+        let usage_writer=|usage:&dq_analyze::captured_allow_annotations::full_unused::UsageData<'_>|->io::Result<()>{let actual=registered_source.and_then(NativeCheckSelection::cli_observations).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"actual full CHECK usage request absent"))?;usage_queries.with_workspace_allow_usage(workspace,&usage_guard,usage,|used,digests,child|actual.write_usage(used,digests,child)).map_err(operational)};
+        let stage = RefCell::new(ReportStage {usage_writer:registered_source.and_then(NativeCheckSelection::cli_observations).is_some_and(|actual|actual.request().allow_usage).then_some(&usage_writer),explicit_selftests,check_format,registered_source,
             file, finished: 0, selected, failed: SectionFailures::new(selected.len(), retained)?,
             authored_doc_ui: workspace.has_authored_doc_ui_capture(), ordinary_fold_sys,
             ordinary_semantic_and_fixed: ordinary_fold_sys && (private_checker_body || questions == Q::PRIVATE_EXTENDED_AUTHORED_ORDINARY_SEMANTIC),
@@ -1345,8 +1475,11 @@ impl SourceSnapshot {
             private_derived_reads: questions == Q::PRIVATE_FULL_REGISTRY,
             judgment, library_baseline, full_ci_baseline: full_ci.then_some(&ci_baseline),
         });
-        let clean = self.with_native_allow_registered_using(&self.tree, exclusions, Some(retained), handlers, private_checker_body, None, check_format.is_none_or(|format|format.unused), Some(&mut |meta, rows, scope, budget| {
-            stage.borrow_mut().observe(root, meta, ReportRows::Union(rows), scope, budget)
+        let clean = self.with_native_allow_registered_observed_using(&self.tree, exclusions, Some(retained), handlers, private_checker_body, None, check_format.is_none_or(|format|format.unused), registered_source.and_then(NativeCheckSelection::cli_observations), Some(&mut |meta, rows, scope, budget| {
+            match baseline.as_mut(){
+                Some(plan)=>stage.borrow_mut().observe_with_baseline(root,meta,ReportRows::Union(rows),scope,budget,Some(&mut **plan)),
+                None=>stage.borrow_mut().observe(root,meta,ReportRows::Union(rows),scope,budget),
+            }
         }), |data, _, budget| stage.borrow_mut().finish(data,budget)).map_err(operational)?;
         let stage = stage.into_inner();
         let output = checked_stage(stage.file)?;
@@ -1458,7 +1591,7 @@ pub(in crate::runner_host) fn stage_named_image_dir(
     let empty = LintScope::default();
     let meta = data.metadata();
     let scope = config.borrowed_report_scope(meta.name, meta.group).unwrap_or(&empty);
-    let mut stage = ReportStage {check_format:None,registered_source:None,
+    let mut stage = ReportStage {usage_writer:None,explicit_selftests:None,check_format:None,registered_source:None,
         file,
         finished: 0,
         selected: &["image_dir_after_build"],
@@ -1495,14 +1628,60 @@ pub(in crate::runner_host) fn checked_stage(file: Stage) -> io::Result<Verified>
 
 /// Actual native registry selection metadata. It grants no source, model,
 /// producer completion or file permission; those remain actual capture loans.
+pub(crate) struct NativeSelftestCompletion{actual:dq_analyze::captured_raw_policy::RawSelftestResult,_credit:dm_preprocess::source_arena_credit::SourceArenaCredit}
+impl NativeSelftestCompletion{
+ pub(crate) fn passed(&self)->bool{self.actual.failed()==0}
+ pub(crate) fn receipt(&self)->io::Result<dq_analyze::full_registry_check_wire::Selftests>{Ok(dq_analyze::full_registry_check_wire::Selftests{completed:u64::try_from(self.actual.completed()).map_err(|_|io::Error::from(io::ErrorKind::InvalidData))?,failed:u64::try_from(self.actual.failed()).map_err(|_|io::Error::from(io::ErrorKind::InvalidData))?})}
+}
 pub(crate) struct NativeCheckSelection{
+ fixture:Option<Box<crate::runner_host::fixture_scope::FixtureScope>>,
+ cli:Option<Box<crate::runner_host::check_cli_observations::Observations>>,
  selection:dq_analyze::captured_registry_check_selection::Selection,
+ selftests:std::sync::OnceLock<Arc<NativeSelftestCompletion>>,
+ selftest_request:Option<crate::runner_host::NativeSelftestRequest>,
+ baseline_update:Option<dq_analyze::native_baseline_update_wire::Mode>,
  roots:Vec<(&'static str,&'static str)>,questions:Vec<Q>,source_only:bool,docs:bool,ui:bool,
  format:crate::runner_host::FullRegistryCheckOptions,
  binding:dq_analyze::full_registry_check_selection_wire::SelectionBinding,
  _credit:dm_preprocess::source_arena_credit::SourceArenaCredit,
 }
 impl NativeCheckSelection{
+ pub(crate) fn fixture_scope(&self)->Option<&crate::runner_host::fixture_scope::FixtureScope>{self.fixture.as_deref()}
+ pub(crate) fn install_fixture(&mut self,scope:crate::runner_host::fixture_scope::FixtureScope)->io::Result<()>{if self.fixture.is_some()||self.names().len()!=1||scope.lint()!=self.names()[0]||!self.format.raw||self.format.unused||self.is_baseline_update()||self.cli.is_some()||self.selftest_request.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"fixture requires its fresh exact single raw registered selection"))}self.fixture=Some(Box::new(scope));Ok(())}
+ pub(crate) fn configuration_matches(&self,root:&Path,path:&Path)->bool{match self.fixture_scope(){Some(actual)=>actual.require_configuration(root,path),None=>path==root.join("tools/ci/lint_scopes.toml")}}
+ pub(crate) fn capture_fixture_physical<P:crate::input_snapshot::SnapshotProvider>(&self,recording:&crate::input_snapshot::RecordingInputs<P>,queries:&crate::query_db::QueryDb)->io::Result<()>{match self.fixture_scope(){Some(scope)=>scope.capture_physical(recording,queries),None=>Ok(())}}
+
+ pub(crate) fn cli_observations(&self)->Option<&crate::runner_host::check_cli_observations::Observations>{self.cli.as_deref()}
+ pub(crate) fn enable_cli_observations(&mut self,request:&dq_analyze::native_check_cli_wire::Request,cache:&Path,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<()>{if self.cli.is_some()||request.allow_usage&&self.format.unused{return Err(io::Error::new(io::ErrorKind::InvalidInput,"CHECK CLI observations already installed or usage output conflicts with whole-unused audit"))}self.cli=Some(crate::runner_host::check_cli_observations::Observations::issue(request,self.names().len(),cache,work)?);Ok(())}
+
+ pub(crate) fn enable_native_selftests(&mut self,caller:Option<std::path::PathBuf>,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<()>{
+  if self.selftest_request.is_some()||self.selftests.get().is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native selftest request was already issued"))}
+  let needed=self.names().iter().any(|name|matches!(name.as_str(),"ui_actions"|"check_grep"));
+  if needed!=caller.is_some()||caller.as_ref().is_some_and(|path|!path.is_absolute()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native selftest caller directory differs from exact selected live-input demand"))}
+  let extra=caller.as_ref().map_or(0,|path|path.capacity()).checked_add(std::mem::size_of::<crate::runner_host::NativeSelftestRequest>()).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;
+  let bytes=self._credit.reserved_bytes().checked_add(extra).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;work.grow(&mut self._credit,bytes)?;
+  self.selftest_request=Some(crate::runner_host::NativeSelftestRequest::new(caller));Ok(())
+ }
+ pub(crate) fn selftest_request(&self)->Option<&crate::runner_host::NativeSelftestRequest>{self.selftest_request.as_ref()}
+ pub(crate) fn install_native_selftests(&self,actual:dq_analyze::captured_raw_policy::RawSelftestResult,credit:dm_preprocess::source_arena_credit::SourceArenaCredit,budget:&Budget,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<()>{
+  let mut owner=NativeSelftestCompletion{actual,_credit:credit}; // payload drops before its real grant on every refusal
+  if self.selftest_request.is_none()||self.selftests.get().is_some()||!owner.actual.matches_names(self.names())||owner.actual.completed()!=self.names().len(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"selftest result does not belong to the exact requested native producer roster"))}
+  budget.charge((std::mem::size_of::<NativeSelftestCompletion>()+2*std::mem::size_of::<usize>())).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  let retained=budget.used();
+  let release=owner._credit.reserved_bytes().checked_sub(retained).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"actual callback result exceeds its original grant"))?;
+  work.shrink(&mut owner._credit,release)?;
+  if owner._credit.reserved_bytes()<retained{return Err(io::Error::new(io::ErrorKind::InvalidData,"callback resource settlement underfunded its actual retained result"))}
+  self.selftests.set(Arc::new(owner)).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"native selftest completion was already attached"))
+ }
+ fn raw_selftests(&self)->Option<&dq_analyze::captured_raw_policy::RawSelftestResult>{self.selftests.get().map(|owner|&owner.actual)}
+ pub(crate) fn native_selftest_result(&self)->io::Result<Option<&dq_analyze::captured_raw_policy::RawSelftestResult>>{
+  match(self.selftest_request.is_some(),self.raw_selftests()){(false,None)=>Ok(None),(true,Some(actual))=>Ok(Some(actual)),_=>Err(io::Error::new(io::ErrorKind::InvalidInput,"requested native selftests have no authenticated completed callback result"))}
+ }
+
+ pub(crate) fn native_selftest_completion(&self)->io::Result<Option<Arc<NativeSelftestCompletion>>>{self.native_selftest_result()?;Ok(self.selftests.get().map(Arc::clone))}
+ pub(in crate::runner_host) fn require_baseline_update(&mut self,mode:dq_analyze::native_baseline_update_wire::Mode)->io::Result<()>{if self.baseline_update.is_some()||self.format.raw{return Err(io::Error::new(io::ErrorKind::InvalidInput,"baseline target purpose requires a fresh judged registered plan"))}self.baseline_update=Some(mode);Ok(())}
+ pub(crate) fn is_baseline_update(&self)->bool{self.baseline_update.is_some()}
+ pub(crate) fn baseline_mode(&self)->Option<dq_analyze::native_baseline_update_wire::Mode>{self.baseline_update}
  pub(crate) fn source_handler_union_candidate(&self)->bool{
   self.needs_handlers()&&(self.names().len()>1||self.audit_unused())&&self.names().iter().all(|name|matches!(Producer::from_name(name),Some(Producer::Special("sem/handlers")))||Producer::from_name(name).is_some_and(source_only_registry_producer))
  }
@@ -1576,6 +1755,7 @@ impl NativeCheckSelection{
  }
  pub(crate) fn metadata(&self)->impl Iterator<Item=&'static Meta>+'_ {self.names().iter().map(|name|Producer::from_name(name).expect("actual admitted registered producer").metadata())}
  pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
+  if let Some(scope)=self.fixture_scope(){scope.visit_storage(&mut visit)}
   self.selection.visit_storage(&mut visit);visit(self.questions.as_ptr()as usize,self.questions.len()*std::mem::size_of::<Q>(),self.questions.capacity()*std::mem::size_of::<Q>());
   visit(self.roots.as_ptr()as usize,self.roots.len()*std::mem::size_of::<(&str,&str)>(),self.roots.capacity()*std::mem::size_of::<(&str,&str)>());self._credit.visit_storage(&mut |pointer,bytes|visit(pointer,bytes,bytes));
  }
@@ -1624,7 +1804,7 @@ fn prepare_native_check_selection_for(selectors:&[String],format:crate::runner_h
  if format.unused&&selection.full_run(){for &root in dq_analyze::allow_annotation_policy::metadata().select.roots{if !roots.contains(&root){kc::row(&mut control,&mut roots).map_err(operational)?;roots.push(root)}}}
  roots.sort_unstable();questions.sort_unstable();
  let binding=dq_analyze::full_registry_check_selection_wire::SelectionBinding::for_selectors_using(selectors,&||work.checkpoint())?;
- Ok(Arc::new(NativeCheckSelection{selection,roots,questions,source_only,docs,ui,format,binding,_credit:control.credit}))
+ Ok(Arc::new(NativeCheckSelection{fixture:None,selection,cli:None,selftests:std::sync::OnceLock::new(),selftest_request:None,baseline_update:None,roots,questions,source_only,docs,ui,format,binding,_credit:control.credit}))
 }
 
 #[cfg(test)]mod native_check_selection_controls{
@@ -1655,15 +1835,18 @@ fn prepare_native_check_selection_for(selectors:&[String],format:crate::runner_h
 }
 
 impl SourceSnapshot{
- pub(in crate::runner_host) fn stage_selected_registry_model_check(&self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>,checker:Option<&crate::request_runner::PreparedCheckerTranscript>,handlers:Option<&super::super::HandlerWorkspaceSnapshot>)->io::Result<(bool,Verified)>{
+ pub(in crate::runner_host) fn stage_selected_registry_model_check(&self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>,checker:Option<&crate::request_runner::PreparedCheckerTranscript>,handlers:Option<&super::super::HandlerWorkspaceSnapshot>)->io::Result<(bool,Verified)>{self.stage_selected_registry_model_check_baseline(prepared,retained,root,file,plan,checker,handlers,None)}
+ pub(in crate::runner_host) fn stage_selected_registry_model_check_baseline(&self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>,checker:Option<&crate::request_runner::PreparedCheckerTranscript>,handlers:Option<&super::super::HandlerWorkspaceSnapshot>,mut baseline_update:Option<&mut crate::runner_host::baseline_update::Builder>)->io::Result<(bool,Verified)>{
   let crate::request::BuildOutcome::QueryPrepared{semantic_revision,source_revision,policy_revision:Some(policy_revision),retained:true}=prepared else{return Err(io::Error::new(io::ErrorKind::InvalidData,"selected model CHECK has no actual current model frame"))};
   let capture=self.native_workspace.as_ref().ok_or_else(||io::Error::other("selected model capture absent"))?;capture.require_registered_plan(plan)?;let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;self.require_original_analyze_subject(capture)?;
   let pin=|value:&str|u128::from_str_radix(value,16).ok();if plan.source_only()||root!=capture.root()||pin(semantic_revision)!=Some(self.tree.identity())||pin(source_revision)!=Some(self.source_revision)||pin(policy_revision)!=Some(capture.policy_revision())||handlers.is_some()!=plan.needs_handlers()||checker.is_some()!=plan.needs_checker(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected model frame/dependency ownership differs from actual selected demand"))}
   if let Some(checker)=checker{self.require_staged_checker_body_domain(checker)?;crate::daemon::selected_report_wire::Frame::from_prepared(prepared)?.require_checker_frame(checker.frame)?;}
   let mut work=Operation{budget:retained,poll:&||crate::daemon::control::checkpoint()};let mut order=Vec::new();for name in plan.names(){kc::row(&mut work,&mut order).map_err(operational)?;order.push(name.as_str());}
   let baseline=|meta:&Meta|capture.registered_check_baseline(meta,&guard,plan);let mut format=plan.format();format.unused=plan.audit_unused();
-  let stage=RefCell::new(ReportStage{check_format:Some(format),registered_source:Some(plan.as_ref()),file,finished:0,selected:&order,failed:SectionFailures::new(order.len(),retained)?,authored_doc_ui:false,ordinary_fold_sys:false,ordinary_semantic_and_fixed:false,private_checker_body:false,private_image_dir:false,private_check_grep:false,private_derived_reads:false,judgment:JudgmentV2::Raw,library_baseline:None,full_ci_baseline:(!format.raw).then_some(&baseline)});
-  let clean=self.with_native_allow_registered_using(&self.tree,plan.exclusions(),Some(retained),handlers,false,Some(plan),plan.audit_unused(),Some(&mut|meta,rows,scope,budget|stage.borrow_mut().observe(root,meta,ReportRows::Union(rows),scope,budget)),|data,_config,budget|stage.borrow_mut().finish(data,budget)).map_err(operational)?;
+  let usage_queries=self.native_raw_queries.as_ref().ok_or_else(||io::Error::other("selected usage source queries absent"))?;
+  let usage_writer=|usage:&dq_analyze::captured_allow_annotations::full_unused::UsageData<'_>|->io::Result<()>{let actual=plan.cli_observations().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"selected model usage was not requested"))?;usage_queries.with_workspace_allow_usage(capture,&guard,usage,|used,digests,child|actual.write_usage(used,digests,child)).map_err(operational)};
+  let stage=RefCell::new(ReportStage{usage_writer:plan.cli_observations().is_some_and(|actual|actual.request().allow_usage).then_some(&usage_writer),explicit_selftests:None,check_format:Some(format),registered_source:Some(plan.as_ref()),file,finished:0,selected:&order,failed:SectionFailures::new(order.len(),retained)?,authored_doc_ui:false,ordinary_fold_sys:false,ordinary_semantic_and_fixed:false,private_checker_body:false,private_image_dir:false,private_check_grep:false,private_derived_reads:false,judgment:JudgmentV2::Raw,library_baseline:None,full_ci_baseline:(!format.raw).then_some(&baseline)});
+  let clean=self.with_native_allow_registered_using(&self.tree,plan.exclusions(),Some(retained),handlers,false,Some(plan),plan.audit_unused(),Some(&mut|meta,rows,scope,budget|match baseline_update.as_deref_mut(){Some(plan)=>stage.borrow_mut().observe_with_baseline(root,meta,ReportRows::Union(rows),scope,budget,Some(&mut|meta,scope,rows,child|plan.observe(meta,scope,rows,child,capture,&guard))),None=>stage.borrow_mut().observe(root,meta,ReportRows::Union(rows),scope,budget)}),|data,_config,budget|stage.borrow_mut().finish(data,budget)).map_err(operational)?;
   let stage=stage.into_inner();let output=checked_stage(stage.file)?;Ok((clean,output))
  }
 }
@@ -1679,7 +1862,7 @@ impl SourceSnapshot{
 fn stage_registered_handlers_rows(
  root:&Path,plan:&Arc<NativeCheckSelection>,file:Stage,
  data:&dq_analyze::captured_sem_handlers::Data,config:&dq_analyze::captured_raw_file::Config,
- child:&Arc<Budget>,extent:HandlerReportExtent,
+ child:&Arc<Budget>,extent:HandlerReportExtent,baseline:Option<&mut BaselineProjection<'_>>,
 )->io::Result<(bool,Verified)>{
  crate::daemon::control::checkpoint()?;
  let meta=dq_analyze::sem_handlers_policy::metadata();
@@ -1689,18 +1872,20 @@ fn stage_registered_handlers_rows(
  }
  const ORDER:&[&str]=&["sem/handlers"];
  let mut format=plan.format();format.unused=false;
- let mut stage=ReportStage{file,finished:0,selected:ORDER,failed:SectionFailures::new(ORDER.len(),child)?,
+ let mut stage=ReportStage{usage_writer:None,explicit_selftests:None,file,finished:0,selected:ORDER,failed:SectionFailures::new(ORDER.len(),child)?,
   authored_doc_ui:false,ordinary_fold_sys:false,ordinary_semantic_and_fixed:false,
   private_checker_body:false,private_image_dir:false,private_check_grep:false,private_derived_reads:false,
   judgment:JudgmentV2::Raw,library_baseline:None,full_ci_baseline:None,
   check_format:Some(format),registered_source:Some(plan.as_ref())};
  let empty=LintScope::default();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);
- stage.observe(root,meta,ReportRows::Union(UnionRows::Handlers(data)),scope,child)?;
+ stage.observe_with_baseline(root,meta,ReportRows::Union(UnionRows::Handlers(data)),scope,child,baseline)?;
  if stage.finished!=1{return Err(io::Error::new(io::ErrorKind::InvalidData,"actual Handler section did not complete"))}
+ if matches!(extent,HandlerReportExtent::Current){if let Some(actual)=plan.cli_observations().filter(|actual|actual.request().allow_usage){actual.write_usage(data.allow_used(),data.allow_digests(),child)?;}}
  // No CompleteAllowRun is invented here: this positive selection explicitly
  // did not request the independent whole-registry unused audit.
- let clean=match extent{HandlerReportExtent::Current=>policy_finish::write_result_line(stage.failed.failed(0).then_some(meta.name),&mut stage.file)?,
-  HandlerReportExtent::FailedFull=>{writeln!(stage.file,"sem/handlers: structural results only; independently requested full source failed")?;false}};
+ if matches!(extent,HandlerReportExtent::Current){if let Some(actual)=plan.cli_observations(){actual.before_result(&mut stage.file)?;}}
+ let clean=if plan.fixture_scope().is_some(){if !matches!(extent,HandlerReportExtent::Current){return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed-full Handler cannot complete a fixture"))}true}else{match extent{HandlerReportExtent::Current=>policy_finish::write_result_line(stage.failed.failed(0).then_some(meta.name),&mut stage.file)?,
+  HandlerReportExtent::FailedFull=>{writeln!(stage.file,"sem/handlers: structural results only; independently requested full source failed")?;false}}};
  child.require().map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))?;
  let length=stage.file.length();let(verified,count)=stage.file.seal()?.validate(|input|{
   let mut total=0u64;let mut block=[0u8;8192];loop{crate::daemon::control::checkpoint()?;
@@ -1713,8 +1898,8 @@ fn stage_registered_handlers_rows(
 }
 
 enum HandlerReportExtent{Current,FailedFull}
-pub(crate) fn stage_registered_handlers_current(root:&Path,plan:&Arc<NativeCheckSelection>,file:Stage,data:&dq_analyze::captured_sem_handlers::Data,config:&dq_analyze::captured_raw_file::Config,child:&Arc<Budget>)->io::Result<(bool,Verified)>{stage_registered_handlers_rows(root,plan,file,data,config,child,HandlerReportExtent::Current)}
-pub(crate) fn stage_registered_handlers_failed_full(root:&Path,plan:&Arc<NativeCheckSelection>,file:Stage,data:&dq_analyze::captured_sem_handlers::Data,config:&dq_analyze::captured_raw_file::Config,child:&Arc<Budget>)->io::Result<(bool,Verified)>{stage_registered_handlers_rows(root,plan,file,data,config,child,HandlerReportExtent::FailedFull)}
+pub(crate) fn stage_registered_handlers_current(root:&Path,plan:&Arc<NativeCheckSelection>,file:Stage,data:&dq_analyze::captured_sem_handlers::Data,config:&dq_analyze::captured_raw_file::Config,child:&Arc<Budget>)->io::Result<(bool,Verified)>{stage_registered_handlers_rows(root,plan,file,data,config,child,HandlerReportExtent::Current,None)}
+pub(crate) fn stage_registered_handlers_failed_full(root:&Path,plan:&Arc<NativeCheckSelection>,file:Stage,data:&dq_analyze::captured_sem_handlers::Data,config:&dq_analyze::captured_raw_file::Config,child:&Arc<Budget>)->io::Result<(bool,Verified)>{stage_registered_handlers_rows(root,plan,file,data,config,child,HandlerReportExtent::FailedFull,None)}
 
 #[cfg(test)]mod registered_handler_selection_controls{
  use super::*;
@@ -1728,22 +1913,26 @@ pub(crate) fn stage_registered_handlers_failed_full(root:&Path,plan:&Arc<NativeC
 
 fn exact_engine_stage<'a>(plan:&'a Arc<NativeCheckSelection>,retained:&Arc<Budget>,file:Stage)->io::Result<ReportStage<'a>>{
  if !plan.exclusive_engine_layering(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"exact exclusive selected Engine stage required"))}let mut format=plan.format();format.unused=false;
- Ok(ReportStage{check_format:Some(format),registered_source:Some(plan.as_ref()),file,finished:0,selected:&["engine_layering"],failed:SectionFailures::new(1,retained)?,authored_doc_ui:false,ordinary_fold_sys:false,ordinary_semantic_and_fixed:false,private_checker_body:false,private_image_dir:false,private_check_grep:false,private_derived_reads:false,judgment:JudgmentV2::Raw,library_baseline:None,full_ci_baseline:None})
+ Ok(ReportStage{usage_writer:None,explicit_selftests:None,check_format:Some(format),registered_source:Some(plan.as_ref()),file,finished:0,selected:&["engine_layering"],failed:SectionFailures::new(1,retained)?,authored_doc_ui:false,ordinary_fold_sys:false,ordinary_semantic_and_fixed:false,private_checker_body:false,private_image_dir:false,private_check_grep:false,private_derived_reads:false,judgment:JudgmentV2::Raw,library_baseline:None,full_ci_baseline:None})
 }
 impl ReportStage<'_>{
  /// Only the one completed actual Engine provider may finish this partial registry report.
  /// It has no aggregate unused-ALLOW request and cannot forge CompleteAllowRun.
  fn finish_exact_engine(&mut self,budget:&Budget)->io::Result<bool>{
   if self.finished!=1||self.selected!=["engine_layering"]||self.registered_source.is_none_or(|plan|!plan.exclusive_engine_layering())||self.check_format.is_none_or(|format|format.unused){return Err(io::Error::new(io::ErrorKind::InvalidData,"exclusive Engine section did not finish its actual producer"))}budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  if let Some(actual)=self.registered_source.and_then(NativeCheckSelection::cli_observations){actual.before_result(&mut self.file)?;}
+  if self.registered_source.is_some_and(|plan|plan.fixture_scope().is_some()){return Ok(true)}
   policy_finish::write_result_line(self.failed.failed(0).then_some("engine_layering").into_iter(),&mut self.file)
  }
 }
 impl super::super::RawWorkspaceSnapshot{
- pub(in crate::runner_host) fn stage_selected_engine_unselected(&self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>)->io::Result<(bool,Verified)>{
+ pub(in crate::runner_host) fn stage_selected_engine_unselected(&self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>)->io::Result<(bool,Verified)>{self.stage_selected_engine_unselected_baseline(prepared,retained,root,file,plan,None)}
+ pub(in crate::runner_host) fn stage_selected_engine_unselected_baseline(&self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>,mut baseline_update:Option<&mut crate::runner_host::baseline_update::Builder>)->io::Result<(bool,Verified)>{
   self.require_engine_unselected_plan(plan)?;let crate::request::BuildOutcome::RawQueryPrepared{query_revision,source_revision,policy_revision,retained:true}=prepared else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"empty Engine needs actual retained RawQueryPrepared"))};let pin=|value:&str|u128::from_str_radix(value,16).ok();
   if root!=self.capture.root()||pin(query_revision)!=Some(self.revision())||pin(source_revision)!=Some(self.source_revision())||pin(policy_revision)!=Some(self.policy_revision()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"empty Engine current raw frame differs"))}
   let guard=super::super::workspace_native_guard::NativeReadGuard::raw_owned(&self.capture,&self.source,&self.queries)?;let mut stage=exact_engine_stage(plan,retained,file)?;
-  let clean=self.queries.with_engine_unselected(&self.capture,&guard,|data,config,budget|{if !data.sites().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual empty Engine proof produced nonempty findings"))}let empty=LintScope::default();let meta=data.metadata();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);stage.observe(root,meta,ReportRows::Engine(data),scope,budget)?;stage.finish_exact_engine(budget)}).map_err(operational)?;
+  let timing=plan.cli_observations().filter(|actual|actual.request().timing).map(|actual|Ok::<_,io::Error>((actual,std::time::Instant::now(),self.queries.cli_observation_stats()?))).transpose()?;
+  let clean=self.queries.with_engine_unselected(&self.capture,&guard,|data,config,budget|{if !data.sites().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual empty Engine proof produced nonempty findings"))}let empty=LintScope::default();let meta=data.metadata();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);match baseline_update.as_deref_mut(){Some(builder)=>stage.observe_with_baseline(root,meta,ReportRows::Engine(data),scope,budget,Some(&mut|meta,scope,rows,_|builder.observe_engine(meta,scope,rows,plan,&self.capture,&guard))),None=>stage.observe(root,meta,ReportRows::Engine(data),scope,budget)}?;if let Some(actual)=plan.cli_observations().filter(|actual|actual.request().allow_usage){if !data.allow_used().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual Engine producer unexpectedly requires an unissued usage digest"))}actual.write_usage(data.allow_used(),&std::collections::BTreeMap::new(),budget)?;}if let Some((actual,started,before))=&timing{let after=self.queries.cli_observation_stats()?;actual.record_timing(crate::runner_host::check_cli_observations::TimingRow{name:"engine_layering",total:started.elapsed(),files:0,rescanned:0,memo:after.computed==before.computed&&after.green>before.green})?;}stage.finish_exact_engine(budget)}).map_err(operational)?;
   self.require_engine_unselected_plan(plan)?;Ok((clean,checked_stage(stage.file)?))
  }
 }
@@ -1753,10 +1942,12 @@ impl SourceSnapshot{
   let subject=self.analysis_subject.as_ref().ok_or_else(||io::Error::other("actual nonempty Engine subject absent"))?;let preflight=subject.engine_preflight()?;let capture=self.native_workspace.as_ref().ok_or_else(||io::Error::other("actual nonempty Engine workspace absent"))?;capture.require_analysis_subject(subject)?;capture.require_engine_preflight(preflight)?;
   if preflight.question()!=Q::EngineLayering{return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected Engine cannot borrow another model purpose"))}let mapping=self.source_mapping.as_ref().ok_or_else(||io::Error::other("actual Engine mapping absent"))?;subject.require_bound_mapping(mapping)?;inputs.require_registered_engine_binding(project,mapping,self.tree.identity(),self.source_revision,plan)
  }
- pub(in crate::runner_host) fn stage_selected_engine_model(&self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>)->io::Result<(bool,Verified)>{
+ pub(in crate::runner_host) fn stage_selected_engine_model(&self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>)->io::Result<(bool,Verified)>{self.stage_selected_engine_model_baseline(prepared,retained,root,file,plan,None)}
+ pub(in crate::runner_host) fn stage_selected_engine_model_baseline(&self,prepared:&crate::request::BuildOutcome,retained:&Arc<Budget>,root:&Path,file:Stage,plan:&Arc<NativeCheckSelection>,mut baseline_update:Option<&mut crate::runner_host::baseline_update::Builder>)->io::Result<(bool,Verified)>{
   let crate::request::BuildOutcome::QueryPrepared{semantic_revision,source_revision,policy_revision:Some(policy_revision),retained:true}=prepared else{return Err(io::Error::new(io::ErrorKind::InvalidInput,"nonempty Engine requires actual retained QueryPrepared"))};let capture=self.native_workspace.as_ref().ok_or_else(||io::Error::other("Engine model workspace absent"))?;let pin=|value:&str|u128::from_str_radix(value,16).ok();
   if !plan.exclusive_engine_layering()||root!=capture.root()||pin(semantic_revision)!=Some(self.tree.identity())||pin(source_revision)!=Some(self.source_revision)||pin(policy_revision)!=Some(capture.policy_revision()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"nonempty Engine actual model frame differs"))}
-  let mut stage=exact_engine_stage(plan,retained,file)?;let clean=self.with_original_engine_layering_policy(|data,config,budget|{let empty=LintScope::default();let meta=data.metadata();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);stage.observe(root,meta,ReportRows::Engine(data),scope,budget)?;stage.finish_exact_engine(budget)})?;
+  let timing=if let Some(actual)=plan.cli_observations().filter(|actual|actual.request().timing){let queries=self.native_raw_queries.as_ref().ok_or_else(||io::Error::other("actual selected Engine QueryDb absent"))?;Some((actual,std::time::Instant::now(),queries,queries.cli_observation_stats()?))}else{None};
+  let baseline_guard=self.workspace_native_read()?;let mut stage=exact_engine_stage(plan,retained,file)?;let clean=self.with_original_engine_layering_policy(|data,config,budget|{let empty=LintScope::default();let meta=data.metadata();let scope=config.borrowed_report_scope(meta.name,meta.group).unwrap_or(&empty);match baseline_update.as_deref_mut(){Some(builder)=>stage.observe_with_baseline(root,meta,ReportRows::Engine(data),scope,budget,Some(&mut|meta,scope,rows,_|builder.observe_engine(meta,scope,rows,plan,capture,&baseline_guard))),None=>stage.observe(root,meta,ReportRows::Engine(data),scope,budget)}?;if let Some(actual)=plan.cli_observations().filter(|actual|actual.request().allow_usage){if !data.allow_used().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual Engine producer unexpectedly requires an unissued usage digest"))}actual.write_usage(data.allow_used(),&std::collections::BTreeMap::new(),budget)?;}if let Some((actual,started,queries,before))=&timing{let after=queries.cli_observation_stats()?;actual.record_timing(crate::runner_host::check_cli_observations::TimingRow{name:"engine_layering",total:started.elapsed(),files:0,rescanned:0,memo:after.computed==before.computed&&after.green>before.green})?;}stage.finish_exact_engine(budget)})?;
   Ok((clean,checked_stage(stage.file)?))
  }
 }
@@ -1807,7 +1998,7 @@ impl SourceHandlerProjection{
   if workspace.configuration.strip_prefix(&workspace.root).ok()!=Some(Path::new("tools/ci/lint_scopes.toml"))||workspace.recursive_roots.len()!=directories||self.parent.roots().iter().any(|(directory,_)|!workspace.recursive_roots.iter().any(|path|path.strip_prefix(&workspace.root).ok()==Some(Path::new(directory))))||workspace.recursive_roots.iter().any(|path|!self.parent.roots().iter().any(|(directory,_)|path.strip_prefix(&workspace.root).ok()==Some(Path::new(directory)))){return Err(invalid())}Ok(())
  }
 
- pub(crate) fn require_parent(&self,parent:&Arc<NativeCheckSelection>)->io::Result<()>{if !Arc::ptr_eq(parent,&self.parent)||!parent.source_handler_union_candidate()||!self.raw.source_only()||self.raw.audit_unused()!=parent.audit_unused(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"conditional source projection differs from its actual registered parent"))}Ok(())}
+ pub(crate) fn require_parent(&self,parent:&Arc<NativeCheckSelection>)->io::Result<()>{if !Arc::ptr_eq(parent,&self.parent)||!parent.source_handler_union_candidate()||!self.raw.source_only()||self.raw.audit_unused()!=parent.audit_unused()||self.raw.baseline_mode()!=parent.baseline_mode(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"conditional source projection differs from its actual registered parent"))}Ok(())}
 }
 pub(crate) fn derive_source_handler_projection(parent:Arc<NativeCheckSelection>,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->io::Result<SourceHandlerProjection>{
  work.checkpoint()?;if !parent.source_handler_union_candidate(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"source projection cannot force an unrequested model"))}
@@ -1816,7 +2007,62 @@ pub(crate) fn derive_source_handler_projection(parent:Arc<NativeCheckSelection>,
   let producer=Producer::from_name(name).ok_or_else(||dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"canonical registry name lacks its actual registered producer")))?;let meta=producer.metadata();
   let source=parent.names().iter().any(|name|name==meta.name)&&Producer::from_name(meta.name).is_some_and(source_only_registry_producer);let auxiliary=parent.audit_unused()&&std::ptr::eq(meta,dq_analyze::allow_annotation_policy::metadata());let wanted=source||auxiliary;
   if parent.audit_unused(){if !wanted{kc::row(control,&mut selectors)?;selectors.push(kc::format(control,format_args!("-{}",meta.name))?);}}else if wanted{kc::row(control,&mut selectors)?;selectors.push(kc::own(control,meta.name)?);}Ok(())
- }).map_err(operational)?;let mut options=parent.format();options.unused=parent.audit_unused();let raw=prepare_native_check_selection(&selectors,options,work)?;drop(selectors);drop(control);
+ }).map_err(operational)?;let mut options=parent.format();options.unused=parent.audit_unused();let mut raw=prepare_native_check_selection(&selectors,options,work)?;if parent.is_baseline_update(){Arc::get_mut(&mut raw).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"fresh Source child plan already aliased"))?.require_baseline_update(parent.baseline_mode().expect("checked baseline parent"))?;}drop(selectors);drop(control);
  if !raw.source_only()||raw.audit_unused()!=parent.audit_unused()||parent.metadata().filter(|meta|Producer::from_name(meta.name).is_some_and(source_only_registry_producer)).any(|meta|!raw.names().iter().any(|name|name==meta.name))||raw.names().iter().any(|name|!parent.names().contains(name)&&!(parent.audit_unused()&&name==dq_analyze::allow_annotation_policy::metadata().name)){return Err(io::Error::new(io::ErrorKind::InvalidData,"actual source child selection differs from its producer projection"))}
  let result=SourceHandlerProjection{parent,raw,_credit:credit};result.require_parent(result.parent())?;Ok(result)
+}
+
+impl SourceSnapshot{
+ pub(crate) fn with_native_derived_fixture(&self,visit:&mut dq_analyze::captured_derived_reads::FixtureVisitor<'_>)->io::Result<()>{
+  use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;
+  let workspace=self.native_workspace.as_ref().ok_or_else(||io::Error::other("derived fixture actual workspace absent"))?;self.require_original_analyze_subject(workspace)?;
+  let guard=self.workspace_native_read()?;let capture=self.workspace_semantic_inputs_with_guard(Q::DerivedReads,&guard)?;let subject=self.analysis_subject.as_ref().ok_or_else(||io::Error::other("derived fixture actual subject absent"))?;
+  let queries=self.native_raw_queries.as_ref().ok_or_else(||io::Error::other("derived fixture actual QueryDb absent"))?;
+  queries.with_original_workspace_derived_fixture_guard(workspace,&guard,capture,subject,visit)
+ }
+}
+
+impl SourceSnapshot{pub(crate) fn with_native_sys_reactive_fixture<T>(&self,visit:impl FnOnce(&dq_analyze::captured_sys_reactive::Data)->std::io::Result<T>)->std::io::Result<T>{
+ let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("Sys fixture actual workspace absent"))?;let guard=self.workspace_native_read()?;
+ self.with_original_sys_reactive_policy_report(|data,_,budget|{
+  if workspace.sys_reactive_auto_index(&guard,&mut|bytes|budget.charge(bytes).map_err(|message|std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?.is_some(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"Sys fixture requires its actual recorded AUTO absence"))}
+  visit(data)
+ })
+}}
+
+#[cfg(test)]mod actual_selftest_credit_settlement_controls{
+ use super::*;use dm_preprocess::source_arena_credit::SourceArenaWork;
+ #[test]fn actual_selftest_credit_subtracts_only_released_capacity_for_small_and_more_than_half_allowance_results_then_refunds(){
+  use dq_analyze::{captured_raw_policy::{MAX_FIXTURE_TOTAL_BYTES,run_native_selftest_catalog},derived_selftest_policy::Failure};
+  for width in[0usize,5*1024*1024]{
+   let db=crate::query_db::QueryDb::default();let baseline=db.source_input_admission_bytes().unwrap();
+   let mut plan=prepare_native_registered_check_selection(&["scheduler".into()],dq_analyze::full_registry_check_wire::Options{unused:false,..Default::default()},&db).unwrap();Arc::get_mut(&mut plan).unwrap().enable_native_selftests(None,&db).unwrap();
+   let credit=db.reserve(MAX_FIXTURE_TOTAL_BYTES).unwrap();let budget=Budget::new(MAX_FIXTURE_TOTAL_BYTES).unwrap();let meta=dq_analyze::captured_raw_policy::metadata("scheduler").unwrap();
+   let actual=run_native_selftest_catalog(&[meta],&budget,&||Ok(()),|_,local|{
+    local.charge(width).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+    let mut message=String::new();message.try_reserve_exact(width).map_err(|e|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,e)))?;if message.capacity()>width{local.charge(message.capacity()-width).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;}message.extend(std::iter::repeat_n('x',width));Err(Failure::Assertion(message))
+   }).unwrap();
+   plan.install_native_selftests(actual,credit,&budget,&db).unwrap();let owner=plan.selftests.get().unwrap();assert_eq!(owner._credit.reserved_bytes(),budget.used());if width>0{assert!(owner._credit.reserved_bytes()>MAX_FIXTURE_TOTAL_BYTES/2);}else{assert!(owner._credit.reserved_bytes()<MAX_FIXTURE_TOTAL_BYTES/2);}
+   assert_eq!(plan.native_selftest_result().unwrap().unwrap().failed(),1);drop(plan);drop(budget);assert_eq!(db.source_input_admission_bytes().unwrap(),baseline,"actual same-family grants and holders refunded after the last real result owner");
+  }
+ }
+}
+
+pub(in crate::runner_host) fn stage_registered_handlers_current_baseline(root:&Path,plan:&Arc<NativeCheckSelection>,file:Stage,data:&dq_analyze::captured_sem_handlers::Data,config:&dq_analyze::captured_raw_file::Config,child:&Arc<Budget>,builder:&mut crate::runner_host::baseline_update::Builder,loan:&crate::request_runner::native_check_handlers::BaselineConfiguration<'_>)->io::Result<(bool,Verified)>{if !plan.is_baseline_update(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Handler callback needs actual baseline request"))}stage_registered_handlers_rows(root,plan,file,data,config,child,HandlerReportExtent::Current,Some(&mut|meta,scope,rows,_child|builder.observe_handler(meta,scope,rows,loan)))}
+
+/// Exact full registry display DATA. Never constructs a BuildHost, source model,
+/// selected report, captured ledger or completion grant.
+pub(crate) fn write_registered_metadata_list(out:&mut impl std::io::Write)->io::Result<()>{
+ let budget=Budget::new(1024*1024).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))?;
+ let poll=||crate::daemon::control::checkpoint();let mut work=dq_analyze::captured_allow_annotations::Operation{budget:&budget,poll:&poll};let mut count=0usize;
+ dq_analyze::captured_registry_check_selection::visit_registered_names(&mut work,&mut|name,work|{
+  use dq_analyze::key_policy_control::Control;work.checkpoint()?;
+  let producer=Producer::from_name(name).ok_or_else(||dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"canonical list name lacks actual registered metadata")))?;
+  let meta=producer.metadata();if meta.name!=name{return Err(dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"canonical list metadata name differs")))}
+  writeln!(out,"{:<28} group={:<8} scan={:?} legacy={}",meta.name,meta.group,meta.scan,meta.legacy).map_err(dq_analyze::captured_reactive_reads::Failure::Operational)?;
+  count=count.checked_add(1).ok_or_else(||dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::from(io::ErrorKind::OutOfMemory)))?;Ok(())
+ }).map_err(operational)?;writeln!(out,"{} lints",count)
+}
+#[cfg(test)]mod metadata_list_controls{use super::*;
+ #[test]fn canonical_metadata_list_preserves_actual_registry_order_and_first_output_io(){let mut out=Vec::new();write_registered_metadata_list(&mut out).unwrap();let text=std::str::from_utf8(&out).unwrap();let mut names=Vec::new();dq_analyze::captured_registry_check_selection::visit_registered_names(&mut dq_analyze::key_policy_control::Compatibility,&mut|name,_|{names.push(name.to_owned());Ok(())}).unwrap();assert_eq!(text.lines().count(),names.len()+1);for(line,name)in text.lines().zip(&names){assert_eq!(line.split_whitespace().next(),Some(name.as_str()))}struct Stop;impl std::io::Write for Stop{fn write(&mut self,_:&[u8])->io::Result<usize>{Err(io::Error::from_raw_os_error(1450))}fn flush(&mut self)->io::Result<()>{Ok(())}}assert_eq!(write_registered_metadata_list(&mut Stop).unwrap_err().raw_os_error(),Some(1450));}
 }

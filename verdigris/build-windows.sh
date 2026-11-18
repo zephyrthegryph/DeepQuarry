@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export CARGO_INCREMENTAL=1 RUSTC_WRAPPER=''
 # Below normal priority, for this script and everything it starts (cargo and rustc, the analyzer, git): the machine is also the user's desktop.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../tools/dq_below_normal.sh"
 

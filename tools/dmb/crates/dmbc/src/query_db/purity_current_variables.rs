@@ -4,14 +4,14 @@
 //! current model input, so unchanged lookup answers cut off semantic work.
 use super::*;
 use dm_analysis::checks_undefined_variable::{self as variables,CurrentUndefinedProduct,CurrentUndefinedDisposition,CurrentUndefinedRow};
-use dm_tree::frontend::{BodyCodeIdentity,BodySyntaxFailure};
+use dm_tree::frontend::{BodyCodeIdentity,BodyCodeWeak,BodySyntaxFailure};
 use std::io;
 pub(super) const CURRENT_VARIABLES:Kind=Kind(28);
 pub(super) const CURRENT_LOOKUP:Kind=Kind(29);
 const CURRENT_MODEL:Kind=Kind(30);
 struct Driver{input:Weak<EffectInput>}
-struct CurrentParams{key:Key,driver:Key,input:Weak<EffectInput>,code:Weak<BodyCodeIdentity>,caller:dm_ir::ProcedureIdentity,syntax_charge:Arc<dm_syntax::SettingChargeCounter>,old_edges:usize,dependencies:std::sync::atomic::AtomicUsize}
-struct LookupParams{key:Key,driver:Key,caller:dm_ir::ProcedureIdentity,code:Weak<BodyCodeIdentity>,query:ResolveQuery}
+struct CurrentParams{key:Key,driver:Key,input:Weak<EffectInput>,code:BodyCodeWeak,caller:dm_ir::ProcedureIdentity,syntax_charge:Arc<dm_syntax::SettingChargeCounter>,old_edges:usize,dependencies:std::sync::atomic::AtomicUsize}
+struct LookupParams{key:Key,driver:Key,caller:dm_ir::ProcedureIdentity,code:BodyCodeWeak,query:ResolveQuery}
 fn invalid(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::InvalidData,message)}
 fn unsupported(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::Unsupported,message)}
 fn oom(message:&'static str)->io::Error{io::Error::new(io::ErrorKind::OutOfMemory,message)}
@@ -19,7 +19,7 @@ fn failure(error:dm_analysis::policy_body_demand::PolicyFailure)->io::Error{matc
 fn syntax_io(error:BodySyntaxFailure)->io::Error{match error{BodySyntaxFailure::Operational(actual)=>actual,BodySyntaxFailure::Syntax(actual)=>io::Error::new(io::ErrorKind::Unsupported,actual.message)}}
 fn product_key(code:&Arc<BodyCodeIdentity>,caller:dm_ir::ProcedureIdentity,profile:dm_ir::PackedU128)->Key{let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"current-original-body-v2\0");hash.update(&(Arc::as_ptr(code)as usize).to_le_bytes());hash.update(&caller.owner.bits().to_le_bytes());hash.update(&caller.name.bits().to_le_bytes());hash.update(&[caller.verb as u8]);hash.update(&caller.occurrence.to_le_bytes());hash.update(&profile.to_le_bytes());Key::new(CURRENT_VARIABLES,hash.digest128())}
 fn lookup_key(parent:Key,query:ResolveQuery)->Key{let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(&parent.id.to_le_bytes());hash.update(&query_id(&query).to_le_bytes());Key::new(CURRENT_LOOKUP,hash.digest128())}
-fn code_from_lease(key:Key,lease:&NodeLease)->Option<Weak<BodyCodeIdentity>>{let params=lease.params.as_ref()?.upgrade()?;if key.kind==CURRENT_VARIABLES{Some(params.downcast_ref::<CurrentParams>()?.code.clone())}else if key.kind==CURRENT_LOOKUP{Some(params.downcast_ref::<LookupParams>()?.code.clone())}else{None}}
+fn code_from_lease(key:Key,lease:&NodeLease)->Option<BodyCodeWeak>{let params=lease.params.as_ref()?.upgrade()?;if key.kind==CURRENT_VARIABLES{Some(params.downcast_ref::<CurrentParams>()?.code.clone())}else if key.kind==CURRENT_LOOKUP{Some(params.downcast_ref::<LookupParams>()?.code.clone())}else{None}}
 pub(super) fn is_current_node(key:Key)->bool{key.kind==CURRENT_VARIABLES||key.kind==CURRENT_LOOKUP}
 pub(super) fn retains(key:Key,lease:&NodeLease,db:&Db,current_driver:Option<Key>)->bool{
  let Some(params)=lease.params.as_ref().and_then(Weak::upgrade)else{return false};let(driver,caller,code)=if key.kind==CURRENT_VARIABLES{let Some(params)=params.downcast_ref::<CurrentParams>()else{return false};(params.driver,params.caller,&params.code)}else if key.kind==CURRENT_LOOKUP{let Some(params)=params.downcast_ref::<LookupParams>()else{return false};(params.driver,params.caller,&params.code)}else{return false};
@@ -29,13 +29,13 @@ pub(super) fn retains(key:Key,lease:&NodeLease,db:&Db,current_driver:Option<Key>
  if current_driver != Some(driver) { return code.strong_count() > 0; }
  // Resource membership only. The actual private scoped entry selected this
  // existing driver; old escaped archives/CodeIDs cannot select themselves.
- let Some(driver)=db.input::<Driver>(driver)else{return false};let Some(input)=driver.input.upgrade()else{return false};let Some(ordinal)=input.archive().callables().ordinal_for_identity(caller)else{return false};input.archive().syntax_inputs().and_then(|rows|rows.get(ordinal)).and_then(|syntax|syntax.original_code_owner()).is_some_and(|actual|Weak::ptr_eq(code,&Arc::downgrade(actual)))
+ let Some(driver)=db.input::<Driver>(driver)else{return false};let Some(input)=driver.input.upgrade()else{return false};let Some(ordinal)=input.archive().callables().ordinal_for_identity(caller)else{return false};input.archive().peek_syntax_input(ordinal).is_some_and(|syntax|syntax.original_code_owner().is_some_and(|actual|code.matches(actual)))
 }
 // This weak allocation lease prevents pointer ABA without retaining an old
 // model/source/AST. Only the actual current published archive keeps code live.
-fn reserve_node(ledger:&Arc<Mutex<Ledger>>,input:&Arc<EffectInput>,key:Key,code:Option<&Weak<BodyCodeIdentity>>,bytes:usize)->io::Result<ParamReservation>{
+fn reserve_node(ledger:&Arc<Mutex<Ledger>>,input:&Arc<EffectInput>,key:Key,code:Option<&BodyCodeWeak>,bytes:usize)->io::Result<ParamReservation>{
  crate::daemon::control::checkpoint()?;let mut ledger_guard=ledger.lock().unwrap_or_else(|e|e.into_inner());
- if let Some(old)=ledger_guard.nodes.get(&key){if let Some(code)=code{if let Some(prior)=code_from_lease(key,old){if !Weak::ptr_eq(&prior,code){return Err(invalid("current semantic code-key collision"))}}else if old.params.as_ref().is_some_and(|old|old.strong_count()>0)||!old.input.ptr_eq(&Arc::downgrade(input)){return Err(invalid("current semantic existing node lacks its actual code lease"))}}ledger_guard.admit(bytes).map_err(|_|oom("current semantic Params admission refused"))?;ledger_guard.update_node(&key,|old|{old.input=Arc::downgrade(input);old.param_reserved=old.param_reserved.checked_add(bytes).ok_or_else(||oom("current semantic parameter overlap overflow"))?;Ok::<(),io::Error>(())}).unwrap()?;return Ok(ParamReservation{ledger:ledger.clone(),key,bytes})}
+ if let Some(old)=ledger_guard.nodes.get(&key){if let Some(code)=code{if let Some(prior)=code_from_lease(key,old){if !prior.ptr_eq(code){return Err(invalid("current semantic code-key collision"))}}else if old.params.as_ref().is_some_and(|old|old.strong_count()>0)||!old.input.ptr_eq(&Arc::downgrade(input)){return Err(invalid("current semantic existing node lacks its actual code lease"))}}ledger_guard.admit(bytes).map_err(|_|oom("current semantic Params admission refused"))?;ledger_guard.update_node(&key,|old|{old.input=Arc::downgrade(input);old.param_reserved=old.param_reserved.checked_add(bytes).ok_or_else(||oom("current semantic parameter overlap overflow"))?;Ok::<(),io::Error>(())}).unwrap()?;return Ok(ParamReservation{ledger:ledger.clone(),key,bytes})}
  if ledger_guard.nodes.len()>=MAX_NODES{return Err(oom("current semantic existing ledger node bound exhausted"))}ledger_guard.admit(NODE_BOUND.checked_add(bytes).ok_or_else(||oom("current semantic node bound overflow"))?).map_err(|_|oom("current semantic node admission refused"))?;ledger_guard.insert_node(key,NodeLease{input:Arc::downgrade(input),params:None,param_size:bytes,param_reserved:0,observed_edges:0});Ok(ParamReservation{ledger:ledger.clone(),key,bytes:0})
 }
 struct SharedWork<'a>(&'a Mutex<graph_work::GraphWork>);
@@ -67,7 +67,7 @@ impl CurrentLookupData{
 }
 pub(super) struct NativeCurrentLookup{data:CurrentLookupData,lease:graph_work::GraphLease}
 impl NativeCurrentLookup{
- pub(super) fn visit_storage(&self,visit:&mut impl FnMut(Storage)){visit(Storage::Buffer{owner:"current_lookup.completion",address:Arc::as_ptr(&self.lease.completion)as usize,logical:std::mem::size_of::<std::sync::atomic::AtomicBool>(),capacity:std::mem::size_of::<std::sync::atomic::AtomicBool>()});visit(Storage::Buffer{owner:"current_lookup.value",address:self as *const Self as usize,logical:std::mem::size_of::<Self>(),capacity:std::mem::size_of::<Self>()});visit(Storage::Buffer{owner:"current_lookup.code_locators",address:self.data.codes.as_ptr()as usize,logical:self.data.codes.len()*std::mem::size_of::<Arc<BodyCodeIdentity>>(),capacity:self.data.codes.capacity()*std::mem::size_of::<Arc<BodyCodeIdentity>>()});for code in &self.data.codes{visit(Storage::Buffer{owner:"current_lookup.code_identity",address:Arc::as_ptr(code)as usize,logical:std::mem::size_of::<BodyCodeIdentity>(),capacity:std::mem::size_of::<BodyCodeIdentity>()});}}
+ pub(super) fn visit_storage(&self,visit:&mut impl FnMut(Storage)){visit(Storage::Buffer{owner:"current_lookup.completion",address:Arc::as_ptr(&self.lease.completion)as usize,logical:std::mem::size_of::<std::sync::atomic::AtomicBool>(),capacity:std::mem::size_of::<std::sync::atomic::AtomicBool>()});visit(Storage::Buffer{owner:"current_lookup.value",address:self as *const Self as usize,logical:std::mem::size_of::<Self>(),capacity:std::mem::size_of::<Self>()});visit(Storage::Buffer{owner:"current_lookup.code_locators",address:self.data.codes.as_ptr()as usize,logical:self.data.codes.len()*std::mem::size_of::<Arc<BodyCodeIdentity>>(),capacity:self.data.codes.capacity()*std::mem::size_of::<Arc<BodyCodeIdentity>>()});for code in &self.data.codes{code.visit_allocation_storage(&mut |address,logical,capacity|visit(Storage::Buffer{owner:"current_lookup.code_identity",address,logical,capacity}));}}
 }
 impl graph_work::RetainedHandle for NativeCurrentLookup{type Data=CurrentLookupData;fn coordination_charge()->usize{std::mem::size_of::<Self>()+128}fn issue(data:Self::Data,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Arc::new(Self{data,lease:graph_work::GraphLease::new(ledger, completion)})}fn retained_charge(&self)->Option<usize>{self.data.charge()?.checked_add(std::mem::size_of::<Self>()+128)}fn fingerprint(&self,_:Key)->u128{self.data.hash}}
 fn retain_actual_code(codes:&mut Vec<Arc<BodyCodeIdentity>>,code:&Arc<BodyCodeIdentity>,work:&mut dyn dm_ir::CanonicalWork)->io::Result<()>{
@@ -82,9 +82,9 @@ fn retain_actual_code(codes:&mut Vec<Arc<BodyCodeIdentity>>,code:&Arc<BodyCodeId
 pub(super) fn current_answer_hash(input:&EffectInput,query:ResolveQuery,answer:&ResolvedMeaning,work:&mut dyn dm_ir::CanonicalWork,mut retain:Option<&mut Vec<Arc<BodyCodeIdentity>>>)->io::Result<u128>{
  let native=meaning_hash(answer,work)?;
  if matches!(query,ResolveQuery::SourceDeclarationChain{..}){
-  let ResolvedMeaning::Members(rows)=answer else{return Ok(native)};let archive=input.archive();let inputs=archive.syntax_inputs().ok_or_else(||unsupported("actual current source callable inputs are unissued"))?;
+  let ResolvedMeaning::Members(rows)=answer else{return Ok(native)};let archive=input.archive();
   let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"current-native-source-chain-and-current-code-choice-v1\0");hash.update(&native.to_le_bytes());hash.update(&(rows.len()as u64).to_le_bytes());
-  for row in rows.iter(){work.poll()?;let ResolvedMeaning::Declaration{identity,..}=row else{return Err(invalid("actual current source callable chain row is not a declaration"))};let ordinal=archive.callables().ordinal_for_identity_using(*identity,&mut||work.poll())?.ok_or_else(||unsupported("actual source callable has no current archive membership"))?;let code=inputs.get(ordinal).and_then(|input|input.original_code_owner()).ok_or_else(||unsupported("actual source callable code choice has not been issued"))?;
+  for row in rows.iter(){work.poll()?;let ResolvedMeaning::Declaration{identity,..}=row else{return Err(invalid("actual current source callable chain row is not a declaration"))};let ordinal=archive.callables().ordinal_for_identity_using(*identity,&mut||work.poll())?.ok_or_else(||unsupported("actual source callable has no current archive membership"))?;let syntax=archive.syntax_input_checked(ordinal,&||crate::daemon::control::checkpoint()).map_err(syntax_io)?;let code=syntax.original_code_owner().ok_or_else(||unsupported("actual source callable code choice has not been issued"))?;
    hash.update(&identity.owner.bits().to_le_bytes());hash.update(&identity.name.bits().to_le_bytes());hash.update(&[identity.verb as u8]);hash.update(&identity.occurrence.to_le_bytes());hash.update(&(Arc::as_ptr(code)as usize).to_le_bytes());if let Some(codes)=&mut retain{retain_actual_code(codes,code,work)?;}
   }return Ok(hash.digest128())
  }
@@ -115,7 +115,7 @@ pub(super) fn register(db:&Db,ledger:Arc<Mutex<Ledger>>){
   let ordinal=input.archive().callables().ordinal_for_identity_using(params.caller,&mut||crate::daemon::control::checkpoint()).map_err(|actual|QueryError::operational(params.key,actual))?.ok_or(QueryError::Missing(params.key))?;
   let work=Mutex::new(graph_work::GraphWork::new(ledger.clone(),params.key));let admission=execution_admission(&ledger);
   let computed=setting_syntax::with_setting_admission(&params.syntax_charge,|syntax_admission|input.archive().with_current_body_checked_in(ordinal,syntax_admission,ctx,|ctx,syntax|{body_syntax::obtain_product(ctx,syntax)},|ctx,body|{
-   if !Weak::ptr_eq(&params.code,&Arc::downgrade(body.syntax().original_code_owner())){return Err(BodySyntaxFailure::Operational(invalid("current semantic Params code differs from actual current archive")))}
+   if !params.code.matches(body.syntax().original_code_owner()){return Err(BodySyntaxFailure::Operational(invalid("current semantic Params code differs from actual current archive")))}
    let context=Mutex::new(ctx);let resolver=Recording{ctx:&context,input:&input,params,ledger:ledger.clone(),work:&work,admission:&admission,error:Mutex::new(None)};
    let prefix_loan=|syntax:&Arc<dm_tree::frontend::BodySyntaxInput>|{let mut context=context.lock().unwrap_or_else(|e|e.into_inner());pages::reserve_actual_dependency(&ledger,params.key,params.old_edges,context.dependency_count()+1,&admission,admission.available()).map_err(BodySyntaxFailure::Operational)?;body_syntax::obtain_product(&mut context,syntax)};
    let mut shared=SharedWork(&work);let result=(||{let settings=dm_analysis::checks_directive_binding::current_setting_prelude(&body,&resolver,syntax_admission,&mut shared,&||crate::daemon::control::checkpoint())?;let variables=variables::current_using_with_prefix(&body,&resolver,input.profile(),syntax_admission,&admission,&mut shared,&||crate::daemon::control::checkpoint(),&prefix_loan)?;Ok::<_,dm_analysis::policy_body_demand::PolicyFailure>(CurrentContribution{variables,settings})})();resolver.finish().map_err(|actual|BodySyntaxFailure::Operational(pages::restore_graph_error(&ledger,actual)))?;result.map_err(|actual|BodySyntaxFailure::Operational(failure(actual)))
@@ -128,8 +128,8 @@ impl QueryDb{
   let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());scope.validate(self,input).map_err(io::Error::other)?;{let mut ledger=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());ledger.denied=false;ledger.aborted=None;}
   let driver=Key::new(CURRENT_MODEL,input.profile().get());let _driver=reserve_node(&self.purity.ledger,input,driver,None,std::mem::size_of::<Driver>())?;self.db.set_input(driver,Driver{input:Arc::downgrade(input)},input.key()as u128);
   self.prune_purity_under_gate(Some(driver));
-  let syntax=input.archive().syntax_inputs().and_then(|rows|rows.get(ordinal)).ok_or_else(||invalid("current variable actual body input absent"))?;let code=syntax.original_code_owner().ok_or_else(||unsupported("current variable actual code identity unissued"))?;let caller=input.archive().callables().identity(ordinal).ok_or_else(||invalid("current variable callable occurrence absent"))?;let key=product_key(code,caller,input.profile());
-  let code=Arc::downgrade(code);let _reservation=reserve_node(&self.purity.ledger,input,key,Some(&code),std::mem::size_of::<CurrentParams>())?;let mut peak=pages::reserve_dependencies(&self.purity.ledger,key,0).map_err(io::Error::other)?;let params=Arc::new(CurrentParams{key,driver,input:Arc::downgrade(input),code,caller,syntax_charge:self.body_charge.clone(),old_edges:peak.old,dependencies:std::sync::atomic::AtomicUsize::new(0)});remember_params(&self.purity.ledger,input,key,&params);
+  let syntax=input.archive().syntax_input_checked(ordinal,&||crate::daemon::control::checkpoint()).map_err(syntax_io)?;let code=syntax.original_code_owner().ok_or_else(||unsupported("current variable actual code identity unissued"))?;let caller=input.archive().callables().identity(ordinal).ok_or_else(||invalid("current variable callable occurrence absent"))?;let key=product_key(code,caller,input.profile());
+  let code=BodyCodeIdentity::downgrade(code);let _reservation=reserve_node(&self.purity.ledger,input,key,Some(&code),std::mem::size_of::<CurrentParams>())?;let mut peak=pages::reserve_dependencies(&self.purity.ledger,key,0).map_err(io::Error::other)?;let params=Arc::new(CurrentParams{key,driver,input:Arc::downgrade(input),code,caller,syntax_charge:self.body_charge.clone(),old_edges:peak.old,dependencies:std::sync::atomic::AtomicUsize::new(0)});remember_params(&self.purity.ledger,input,key,&params);
   let result=self.db.get::<Result<Arc<NativeCurrentVariables>,String>>(key,params.clone()).map_err(|actual|pages::restore_graph_error(&self.purity.ledger,actual))?;peak.commit(params.dependencies.load(std::sync::atomic::Ordering::Acquire));let value=result.as_ref().as_ref().map_err(|message|io::Error::other(message.clone()))?;scope.validate(self,input).map_err(io::Error::other)?;
   let delivered=consume(value,key)?;scope.validate(self,input).map_err(io::Error::other)?;Ok(delivered)
  }
@@ -151,7 +151,7 @@ impl QueryDb{
 }
 
 #[cfg(test)]impl QueryDb{
- pub(crate) fn current_variable_keys_for_test(&self,input:&Arc<EffectInput>,ordinal:usize,query:ResolveQuery)->(Key,Key,Key){let syntax=&input.archive().syntax_inputs().unwrap()[ordinal];let code=syntax.original_code_owner().unwrap();let caller=input.archive().callables().identity(ordinal).unwrap();let parent=product_key(code,caller,input.profile());(parent,lookup_key(parent,query),Key::new(CURRENT_MODEL,input.profile().get()))}
+ pub(crate) fn current_variable_keys_for_test(&self,input:&Arc<EffectInput>,ordinal:usize,query:ResolveQuery)->(Key,Key,Key){let syntax=input.archive().syntax_input_checked(ordinal,&||crate::daemon::control::checkpoint()).unwrap();let code=syntax.original_code_owner().unwrap();let caller=input.archive().callables().identity(ordinal).unwrap();let parent=product_key(code,caller,input.profile());(parent,lookup_key(parent,query),Key::new(CURRENT_MODEL,input.profile().get()))}
 }
 
 #[cfg(test)]impl QueryDb{
@@ -188,4 +188,13 @@ fn current_structural_fingerprint_distinguishes_presence_from_missing_and_unissu
             .unwrap_err().kind(),
         io::ErrorKind::Unsupported,
     );
+}
+
+pub(super) fn visit_code_locator_storage(key:Key,lease:&NodeLease,visit:&mut impl FnMut(Storage)){if let Some(code)=code_from_lease(key,lease){code.visit_allocation_storage(&mut |address,logical,capacity|visit(Storage::Buffer{owner:"current_semantic.weak_code",address,logical,capacity}));}}
+
+#[cfg(test)]#[test]fn actual_weak_code_locator_owner_widths_are_measured(){
+ {#[allow(dead_code)]struct Prior{key:Key,driver:Key,input:Weak<EffectInput>,code:Weak<BodyCodeIdentity>,caller:dm_ir::ProcedureIdentity,syntax_charge:Arc<dm_syntax::SettingChargeCounter>,old_edges:usize,dependencies:std::sync::atomic::AtomicUsize}
+let old=std::mem::size_of::<Prior>();let new=std::mem::size_of::<CurrentParams>();eprintln!("WEAK_CODE_OWNER CurrentParams prior={old} current={new} delta={}",new as isize-old as isize);assert!(new<=old+std::mem::size_of::<usize>());}
+ {#[allow(dead_code)]struct Prior{key:Key,driver:Key,caller:dm_ir::ProcedureIdentity,code:Weak<BodyCodeIdentity>,query:ResolveQuery}
+let old=std::mem::size_of::<Prior>();let new=std::mem::size_of::<LookupParams>();eprintln!("WEAK_CODE_OWNER LookupParams prior={old} current={new} delta={}",new as isize-old as isize);assert!(new<=old+std::mem::size_of::<usize>());}
 }

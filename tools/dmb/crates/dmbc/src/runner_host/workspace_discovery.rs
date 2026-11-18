@@ -20,7 +20,7 @@ pub(crate) struct DiscoveryContract {
 /// The selector actually executed by the only recursive receipt issuer.
 /// No caller flag, include glob or exclusion list can construct this value.
 #[derive(Clone,Copy)]
-enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1, AuthoredDocUiJoinedV1, AuthoredDocUiExtendedV1, AuthoredCheckGrepV1, RegisteredSourceCheckV1}
+enum DiscoverySelection{RecursiveDmNoChildLinksV1,MapEditsJoinedDmNoLinksV1,CheckGrepDmAndRawNoChildLinksV1,DocSnippetsCodeAndMarkdownV1,DocSnippetsDemandV2,DocSnippetsJoinedAllowV1,OwnershipCodeDmV2,UiActionsVisibleRootsV1,UiActionsJoinedAllowV1,DocUiJoinedAllowV1, AuthoredDocUiJoinedV1, AuthoredDocUiExtendedV1, AuthoredCheckGrepV1, RegisteredSourceCheckV1, UtilityBaseVarsDataV1}
 /// Obligations of the one physical traversal selected by the private issuer.
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 struct DiscoveryFacets {
@@ -59,6 +59,7 @@ impl DiscoverySelection{
  }
 
  fn includes_file(self,path:&Path,root:&Path)->bool{match self{
+  Self::UtilityBaseVarsDataV1=>path.strip_prefix(root).is_ok_and(|relative|(relative.starts_with("code")&&path.extension().is_some_and(|extension|extension=="dm"))||(relative.starts_with("maps")&&path.extension().is_some_and(|extension|extension=="dmm"))),
   Self::AuthoredCheckGrepV1 => Self::AuthoredDocUiExtendedV1.includes_file(path,root)
     || path.strip_prefix(root).is_ok_and(dq_analyze::lints::check_grep::native::selects_filesystem_source),
   Self::AuthoredDocUiExtendedV1=>Self::AuthoredDocUiJoinedV1.includes_file(path,root)
@@ -197,6 +198,7 @@ impl DiscoveryReceipt {
         self.covers_selected_roots(&[("code","dm"),("tgui/packages/tgui/interfaces","tsx"),("tgui/packages/tgui/interfaces","ts"),("tgui/packages/tgui/interfaces","jsx"),("tgui/packages/tgui/interfaces","js")],true,false,admit)
     }
     fn covers_selected_roots(&self,roots:&[(&str,&str)],missing_is_empty:bool,doc:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
+        if matches!(self.selection,DiscoverySelection::UtilityBaseVarsDataV1){return Ok(false)} // lexical DATA cannot certify any existing policy/model source role
         for &(directory,extension) in roots{
             crate::daemon::control::checkpoint()?;
             if extension!="dm"&&!(doc&&directory=="doc/rewrite"&&extension=="md")&&!(matches!(self.selection,DiscoverySelection::UiActionsVisibleRootsV1|DiscoverySelection::UiActionsJoinedAllowV1|DiscoverySelection::DocUiJoinedAllowV1|DiscoverySelection::AuthoredDocUiJoinedV1|DiscoverySelection::AuthoredDocUiExtendedV1|DiscoverySelection::AuthoredCheckGrepV1)&&directory=="tgui/packages/tgui/interfaces"&&matches!(extension,"tsx"|"ts"|"jsx"|"js")){return Ok(false)}
@@ -434,7 +436,8 @@ fn discover_selected_lent<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contrac
 fn discover_selected_lent_scoped<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>,mut lender:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,scratch:Option<&Arc<dq_analyze::captured_generator_budget::Budget>>)->io::Result<DiscoveryReceipt>{
     discover_selected_lent_scoped_plan(inputs,contract,selection,doc_configuration,lender,scratch,None)
 }
-fn discover_selected_lent_scoped_plan<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>,mut lender:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,scratch:Option<&Arc<dq_analyze::captured_generator_budget::Budget>>,registered_check:Option<Arc<crate::runner_host::NativeCheckSelection>>)->io::Result<DiscoveryReceipt>{
+fn discover_selected_lent_scoped_plan<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>,lender:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,scratch:Option<&Arc<dq_analyze::captured_generator_budget::Budget>>,registered_check:Option<Arc<crate::runner_host::NativeCheckSelection>>)->io::Result<DiscoveryReceipt>{discover_selected_lent_scoped_plan_after_contract_admitted(inputs,contract,selection,doc_configuration,lender,scratch,registered_check,&mut||{})}
+fn discover_selected_lent_scoped_plan_after_contract_admitted<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut contract:DiscoveryContract,selection:DiscoverySelection,doc_configuration:Option<DocConfiguration>,mut lender:Option<(&Arc<dq_analyze::captured_generator_budget::Budget>,&mut dyn crate::input_snapshot::RecordedPolicySourceLender)>,scratch:Option<&Arc<dq_analyze::captured_generator_budget::Budget>>,registered_check:Option<Arc<crate::runner_host::NativeCheckSelection>>,contract_admitted:&mut impl FnMut())->io::Result<DiscoveryReceipt>{
     if !contract.root.is_absolute() || contract.recursive_roots.iter().any(|p| !p.is_absolute()) {
         return Err(io::Error::other(
             "workspace discovery paths must be caller absolute",
@@ -490,7 +493,11 @@ fn discover_selected_lent_scoped_plan<P:SnapshotProvider>(inputs:&RecordingInput
     let mut funded_metadata=doc_configuration.as_ref().filter(|config|config.scope_prepaid).map_or(0,|config|config.scope_bound);
     let mut fund_metadata=|bytes:usize|->io::Result<()>{if let Some(budget)=&metadata_budget{let extra=bytes.saturating_sub(funded_metadata);budget.charge(extra).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;}funded_metadata=funded_metadata.max(bytes);Ok(())};
     if let Some(config)=&doc_configuration{metadata=metadata.checked_add(config.scope_bound).and_then(|n|n.checked_add(config.path.capacity()*8+4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Doc scope/traversal metadata overflow"))?;}
-    fund_metadata(metadata)?;check(inputs, metadata)?;
+    fund_metadata(metadata)?;
+    // Only the authenticated utility constructor uses this callback. The
+    // SAME existing discovery frontier has now admitted the actual normalized
+    // contract; construction/normalization credits can retire, never earlier.
+    contract_admitted();check(inputs, metadata)?;
     if matches!(selection,DiscoverySelection::RegisteredSourceCheckV1)!=registered_check.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"registered discovery requires its actual selector"))}
     let facets = selection.facets();
     let mut stack = contract
@@ -544,7 +551,7 @@ fn discover_selected_lent_scoped_plan<P:SnapshotProvider>(inputs:&RecordingInput
         observed.insert(folder.clone());
         match listing {
             Listing::Missing => {} // exact negative directory fact retained, not an empty positive listing
-            Listing::NotDirectory if matches!(selection,DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::OwnershipCodeDmV2|DiscoverySelection::UiActionsVisibleRootsV1)=>{} // genuine negative subtree observation, never a fabricated empty listing
+            Listing::NotDirectory if matches!(selection,DiscoverySelection::UtilityBaseVarsDataV1|DiscoverySelection::DocSnippetsDemandV2|DiscoverySelection::OwnershipCodeDmV2|DiscoverySelection::UiActionsVisibleRootsV1)=>{} // genuine negative subtree observation, never a fabricated empty listing
             Listing::NotDirectory if registered_check.as_ref().is_some_and(|plan|plan.source_only())=>{} // actual negative source-only selection, never an empty positive listing
             Listing::NotDirectory => {
                 return Err(io::Error::other(
@@ -590,6 +597,7 @@ fn discover_selected_lent_scoped_plan<P:SnapshotProvider>(inputs:&RecordingInput
                                 files.insert(path);
                             }
                         }
+                        Kind::Symlink|Kind::Other if matches!(selection,DiscoverySelection::UtilityBaseVarsDataV1)=>return Err(io::Error::new(io::ErrorKind::Unsupported,"base-vars lexical traversal encountered an unqualified child alias/nonregular entry")),
                         Kind::File | Kind::Symlink | Kind::Other => {}
                     }
                 }
@@ -878,4 +886,37 @@ pub(crate) fn discover_registered_source_check<P:SnapshotProvider>(inputs:&Recor
   let mut polls=0;let actual=receipt.covers_registered_index_roots(&plan,dq_analyze::tree::CODE_MAPS_DM.roots,false,&mut |_|{polls+=1;Err(io::Error::from_raw_os_error(1450))}).unwrap_err();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(polls,1);
   let productive=crate::runner_host::prepare_native_check_selection(&["scheduler".into()],format,work).unwrap();assert!(productive.source_only());let ordinary=RecordingInputs::new(crate::input_snapshot::FileSystemInputs,1);let(pruned,_)=discover_registered_source_check(&ordinary,contract,&root.join("absent-scopes.toml"),Arc::clone(&productive)).unwrap();pruned.validate_recording(&ordinary).unwrap();assert!(!pruned.covers_registered_index_roots(&productive,dq_analyze::tree::CODE_MAPS_DM.roots,false,&mut |_|Ok(())).unwrap(),"an actual productive receipt alone cannot certify a missing unselected-index obligation");
  }
+}
+
+/// DATA-only code DM/maps DMM traversal. It cannot certify any model/policy scope.
+pub(crate) fn discover_utility_base_vars_admitted<P:SnapshotProvider>(inputs:&RecordingInputs<P>,root:&Path,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,lender:&mut dyn crate::input_snapshot::RecordedPolicySourceLender)->io::Result<DiscoveryReceipt>{
+ if !root.is_absolute()||inputs.original_analysis_subject().is_none_or(|subject|!subject.matches_workspace_root(root)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"base-vars physical roster requires its actual prepared Original root"))}
+ let bytes=root.as_os_str().len().checked_mul(16).and_then(|n|n.checked_add(1024)).ok_or(io::ErrorKind::OutOfMemory)?;
+ budget.charge(bytes).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+ let contract=DiscoveryContract{root:root.to_path_buf(),recursive_roots:vec![root.join("code"),root.join("maps")]};
+ discover_selected_lent(inputs,contract,DiscoverySelection::UtilityBaseVarsDataV1,None,Some((budget,lender)))
+}
+
+/// Operation-specific physical CODE/MAPS-DM roster over the existing issuer.
+/// Constructor buffers and native contract-normalization frontier are paid by
+/// the SAME held lender until the existing metadata kernel actually admits the
+/// normalized contract. No root-width multiplier or second traversal is used.
+pub(crate) fn discover_utility_dm_admitted<P:SnapshotProvider>(inputs:&RecordingInputs<P>,root:&Path,queries:&crate::query_db::QueryDb,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,lender:&mut dyn crate::input_snapshot::RecordedPolicySourceLender)->io::Result<DiscoveryReceipt>{
+ if !root.is_absolute()||inputs.original_analysis_subject().is_none_or(|subject|!subject.matches_workspace_root(root)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"utility physical roster requires its actual prepared Original root"))}
+ let mut made=None;let mut construction=None;let mut normalization=None;
+ lender.with_held_source_work(queries,&mut|work|{
+  let mut credit=work.reserve(0)?;let actual_root=dm_preprocess::regions::copy_path_into_credit(root,work,&mut credit)?;
+  let paid=2usize.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<PathBuf>())).ok_or(io::ErrorKind::OutOfMemory)?;work.grow(&mut credit,paid)?;
+  let mut roots=Vec::new();roots.try_reserve_exact(2).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;
+  let actual=roots.capacity().checked_mul(std::mem::size_of::<PathBuf>()).ok_or(io::ErrorKind::OutOfMemory)?;work.shrink(&mut credit,paid.checked_sub(actual).ok_or(io::ErrorKind::OutOfMemory)?)?;
+  roots.push(dm_preprocess::regions::joined_path_into_credit(root,"code",work,&mut credit)?);roots.push(dm_preprocess::regions::joined_path_into_credit(root,"maps",work,&mut credit)?);
+  // This is the EXISTING discovery metadata frontier, with its documented
+  // four pending/visited/selected/final path roles and fixed tree allowance.
+  // Hold it before that same kernel canonicalizes/deduplicates the contract.
+  let mut native=8192usize.checked_add(actual_root.capacity()).ok_or(io::ErrorKind::OutOfMemory)?;
+  for root in &roots{native=native.checked_add(root.capacity().checked_mul(4).and_then(|n|n.checked_add(512)).ok_or(io::ErrorKind::OutOfMemory)?).ok_or(io::ErrorKind::OutOfMemory)?;}
+  normalization=Some(work.reserve(native)?);construction=Some(credit);made=Some(DiscoveryContract{root:actual_root,recursive_roots:roots});Ok(())
+ })?;
+ let contract=made.ok_or_else(||io::Error::other("utility discovery constructor loan omitted"))?;
+ discover_selected_lent_scoped_plan_after_contract_admitted(inputs,contract,DiscoverySelection::RecursiveDmNoChildLinksV1,None,Some((budget,lender)),None,None,&mut||{drop(construction.take());drop(normalization.take());})
 }

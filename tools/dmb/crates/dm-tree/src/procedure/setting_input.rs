@@ -47,6 +47,12 @@ impl std::ops::Deref for SettingsRoster {
 }
 
 impl SettingsRoster {
+    // Observation only: repeated references may share one retained grant.
+    pub(super) fn resource_summary(&self)->(usize,usize,usize,usize){
+        let(mut roots,mut grants)=(0usize,0usize);
+        for row in &self.rows{for slots in [&row.roots,&row.return_roots]{slots.visit_storage(|_,_,_|{},|root|{roots+=1;grants=grants.saturating_add(root.retained_charge().unwrap_or(0));});}}
+        (self.rows.len(),self.credit.as_ref().map_or(0,SettingRootLease::bytes),roots,grants)
+    }
     fn fund(&mut self, bytes: usize, a: &SettingAdmission<'_>) -> std::io::Result<()> {
         if let Some(credit) = &mut self.credit {
             a.grow(credit, bytes).map_err(|e| a.take_operational_error().unwrap_or(e))
@@ -248,6 +254,16 @@ impl OriginalProcedureHeaders {
             let row = checked_row(body, owner, footprints, &self.source, |bytes| {
                 roster.fund(bytes, a).map_err(super::OriginalHeaderFailure::Operational)
             })?;
+            if let Some(products)=self.committed_products(){
+                let index=self.headers.binary_search_by_key(&body.start,|span|span.start).map_err(|_|super::OriginalHeaderFailure::Operational(std::io::ErrorKind::InvalidInput.into()))?;
+                for footprint in row.footprints.iter(){
+                    super::original_checkpoint(a)?;
+                    let(root,facts)=products.produced_setting(index,footprint.header,a).map_err(|error|match error{dm_syntax::SettingSyntaxFailure::Operational(actual)=>super::OriginalHeaderFailure::Operational(a.take_operational_error().unwrap_or(actual)),dm_syntax::SettingSyntaxFailure::Syntax(_)=>super::OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"committed setting first writer retained a syntax failure"))})?;
+                    if root.current_offset()!=0||root.original_expression().span!=footprint.value{return Err(super::OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed setting root differs from final actual footprint")))}
+                    row.roots.obtain_with_native_observation(footprint.ordinal,row.footprints.len(),a,||Ok((root,facts))).map_err(|error|match error{dm_syntax::SettingSyntaxFailure::Operational(actual)=>super::OriginalHeaderFailure::Operational(a.take_operational_error().unwrap_or(actual)),dm_syntax::SettingSyntaxFailure::Syntax(_)=>super::OriginalHeaderFailure::Operational(std::io::ErrorKind::InvalidData.into())})?;
+                }
+                products.finish_settings_transfer(index).map_err(super::OriginalHeaderFailure::Operational)?;
+            }
             push_checked(roster, row, expected_rows, a)
         })
     }

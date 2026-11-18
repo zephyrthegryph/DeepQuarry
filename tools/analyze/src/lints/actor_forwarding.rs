@@ -4,6 +4,7 @@
 //! telekinesis reach an atom through their capability adapter. Any definition or call fails.
 //! Matched on the raw text up to the first `//` (so a string holding `//` hides the rest of the line).
 
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::tree::{Select, SourceFile};
@@ -32,8 +33,9 @@ impl Lint for ActorForwarding {
         &META
     }
 
-    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let pattern = crate::pat!(r"\battack_(ai|robot|ghost|tk)\(");
+    fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
+        let pattern = fixture.pattern(r"\battack_(ai|robot|ghost|tk)\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\battack_(ai|robot|ghost|tk)\("));
         for (number, line) in f.raw().numbered() {
             if pattern.is_match(before_slashes(line)) {
                 out.site_msg("attack_proc", number, py_strip(line));

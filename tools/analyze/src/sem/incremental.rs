@@ -59,7 +59,7 @@ pub struct Record {
     #[serde(skip)]
     pub type_loc: BTreeMap<String, String>,
     pub footprint: Vec<String>,
-    pub sinks: BTreeMap<String, Sink>,
+    pub sinks: BTreeMap<String, Sink<'static>>,
     /// Generator name -> (text, diagnostics) of a generator that used the full model.
     pub gens: BTreeMap<String, GenCache>,
 }
@@ -491,7 +491,7 @@ pub fn store(tree: &Tree, lint: &str, sink: &Sink) {
     let p = pending(tree);
     let mut g = p.lock().unwrap();
     if let Some(rec) = g.as_mut() {
-        rec.sinks.insert(lint.to_string(), sink.clone());
+        rec.sinks.insert(lint.to_string(), sink.clone_owned_data());
         save(rec);
     }
 }

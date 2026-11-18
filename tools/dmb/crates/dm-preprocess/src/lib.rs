@@ -440,3 +440,7 @@ impl<'a>OriginalRawAllocationPlan<'a>{
  pub fn new(original:&'a[u8],capacity:usize,constructor_bytes:usize,decoded_bytes:usize,exceptional:bool,needs_decode:bool)->Self{Self{original,capacity,constructor_bytes,decoded_bytes,exceptional,needs_decode}}
  pub fn original(self)->&'a[u8]{self.original}pub fn capacity(self)->usize{self.capacity}pub fn constructor_bytes(self)->usize{self.constructor_bytes}pub fn decoded_bytes(self)->usize{self.decoded_bytes}pub fn exceptional(self)->bool{self.exceptional}pub fn needs_decode(self)->bool{self.needs_decode}
 }
+
+// Shared Debug DATA projection; authentic token owners remain with each caller.
+pub mod original_expression_debug;
+#[path="regions/original_model_value.rs"]pub mod original_model_value;

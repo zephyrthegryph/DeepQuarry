@@ -56,13 +56,13 @@ fn observed(host: &crate::runner_host::BuildHost, root: &Path) -> (Vec<(usize, u
  fn native_chain(host:&crate::runner_host::BuildHost)->Vec<u8>{current(host,|snapshot|{dm_ir::Resolver::resolve(snapshot.tree.as_ref(),ResolveQuery::SourceDeclarationChain{owner:SymbolId::of("/"),name:SymbolId::of("choose"),verb:false}).canonical_bytes()})}
  let(mut host,request,root)=current_callee_fixture(PRESENT_TYPE);let queries=host.query_db().clone();run(&mut host,&request);let first=read(&host,&root);assert_eq!(first.1.len(),1);let metadata=native_chain(&host);let semantic=queries.db().stats(Kind(28)).computed;let syntax=queries.db().stats(Kind(4)).computed;
  let retained_old=current(&host,|snapshot|{let owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();Arc::clone(owner.input())});
- let old_callee=Arc::downgrade(retained_old.archive().syntax_inputs().unwrap()[0].original_code_owner().unwrap());let old_caller=Arc::downgrade(retained_old.archive().syntax_inputs().unwrap()[1].original_code_owner().unwrap());
+ let old_callee=Arc::downgrade(retained_old.archive().syntax_input_checked(0,&||crate::daemon::control::checkpoint()).unwrap().original_code_owner().unwrap());let old_caller=Arc::downgrade(retained_old.archive().syntax_input_checked(1,&||crate::daemon::control::checkpoint()).unwrap().original_code_owner().unwrap());
  let(parent,chain,_)=current(&host,|snapshot|{let owner=snapshot.original_checker_request_input(&snapshot.tree).unwrap();queries.current_variable_keys_for_test(owner.input(),1,ResolveQuery::SourceDeclarationChain{owner:SymbolId::of("/"),name:SymbolId::of("choose"),verb:false})});assert!(queries.db().dependants(&[chain]).contains(&parent));
  for(index,body)in ["return 1","return 1 +","return null"].into_iter().enumerate(){
   let source=PRESENT_TYPE.replace("return null",body);std::fs::write(root.join("code/probe.dm"),&source).unwrap();run(&mut host,&request);assert_eq!(native_chain(&host),metadata,"this control changes actual BODY choice while native signature/settings metadata is byte-identical");
   let incremental=read(&host,&root);let(mut fresh,fresh_request,fresh_root)=current_callee_fixture(&source);run(&mut fresh,&fresh_request);let independent=read(&fresh,&fresh_root);assert_eq!(incremental,independent,"complete current selected rows must match genuine fresh execution for {body}");
   assert_eq!(queries.db().stats(Kind(28)).computed,semantic+index as u64+1,"the actual current callee code choice invalidates the existing caller contribution");assert_eq!(queries.db().stats(Kind(4)).computed,syntax+index as u64+1,"only the edited callee parses; unchanged caller uses its SAME canonical product");
-  current(&host,|snapshot|{let inputs=snapshot.body_archive.as_ref().unwrap().syntax_inputs().unwrap();assert!(std::sync::Weak::ptr_eq(&old_caller,&Arc::downgrade(inputs[1].original_code_owner().unwrap())));if index==0{assert!(!std::sync::Weak::ptr_eq(&old_callee,&Arc::downgrade(inputs[0].original_code_owner().unwrap())));}});
+  current(&host,|snapshot|{let archive=snapshot.body_archive.as_ref().unwrap();let inputs=(0..archive.len()).map(|ordinal|archive.syntax_input_checked(ordinal,&||crate::daemon::control::checkpoint()).unwrap()).collect::<Vec<_>>();assert!(std::sync::Weak::ptr_eq(&old_caller,&Arc::downgrade(inputs[1].original_code_owner().unwrap())));if index==0{assert!(!std::sync::Weak::ptr_eq(&old_callee,&Arc::downgrade(inputs[0].original_code_owner().unwrap())));}});
  }
  assert_eq!(retained_old.archive().len(),2,"genuine old input/source/archive stayed live through all edits; old child liveness cannot authorize its current choice");assert_eq!(queries.effect_graph_work_for_test(),0);
  let stable=queries.db().stats(Kind(28)).computed;let parses=queries.db().stats(Kind(4)).computed;std::fs::write(root.join("code/probe.dm"),format!("/datum/unrelated_shift\n// α source-only shift\n{PRESENT_TYPE}")).unwrap();run(&mut host,&request);let shifted=read(&host,&root);assert_eq!(shifted.1.len(),first.1.len());assert_eq!(shifted.1[0].2,first.1[0].2);assert_ne!(shifted.1[0].0,first.1[0].0);assert_eq!(queries.db().stats(Kind(28)).computed,stable,"actual unchanged code-choice answers cut off semantic work");assert_eq!(queries.db().stats(Kind(4)).computed,parses);
@@ -277,7 +277,7 @@ fn opt_in_original_kind17_retracts_edited_callee_sleep_and_matches_fresh_canonic
    let archive=canonical.archive();
    let codes=["leaf","probe","note"].map(|name|{
     let ordinal=(0..archive.len()).find(|&ordinal|archive.callables().identity(ordinal).is_some_and(|id|id.name==SymbolId::of(name))).unwrap();
-    Arc::downgrade(archive.syntax_inputs().unwrap()[ordinal].original_code_owner().unwrap())
+    Arc::downgrade(archive.syntax_input_checked(ordinal,&||crate::daemon::control::checkpoint()).unwrap().original_code_owner().unwrap())
    });
    let mut bytes=Vec::new();
    assert!(!snapshot.write_original_ordered_checker_using(&canonical,&env,Some(&config),&snapshot.tree,&mut bytes).unwrap());
@@ -932,7 +932,7 @@ fn current_original_primary_prefix_reuses_loan_and_callee_reads_real_syntax() {
         }).unwrap();
         let probe = find("probe");
         let choose = find("choose");
-        let inputs = archive.syntax_inputs().unwrap();
+        let inputs = (0..archive.len()).map(|ordinal|archive.syntax_input_checked(ordinal,&||crate::daemon::control::checkpoint()).unwrap()).collect::<Vec<_>>();
         let called = std::cell::Cell::new(0);
         let obtain = |requested: &Arc<_>| {
             assert!(!Arc::ptr_eq(requested, &inputs[probe]), "redundant primary Kind4 demand");
@@ -996,4 +996,23 @@ fn current_original_for_each_uses_pinned_iteration_type_and_matches_absolute_byt
         assert_eq!(canonical, db.original_current_body_bytes_for_test(input, 0, encode).unwrap());
         assert_eq!(db.db().stats(Kind(4)).computed, parsed);
     });
+}
+
+#[test]
+fn actual_normal_analyze_request_attaches_same_querydb_sparse_body_owner_before_joined_header_capture(){
+ use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
+ let(mut host,mut request,_root)=super::super::analysis_context_tests::fixture("/proc/header_only(value=1)\n    set name=\"actual\"\n    return value\n/proc/unused()\n    return 2\n");
+ let intent=request.policy_inputs.as_mut().unwrap();intent.analysis_context=Some(AnalysisContext::OriginalAnalyze0290);intent.workspace_auxiliary=vec![Q::SemReads];
+ let queries=Arc::clone(host.query_db());
+ // Genuine request_runner/BuildHost preparation, not a direct builder shortcut.
+ run(&mut host,&request);
+ current(&host,|snapshot|{
+  snapshot.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290)).unwrap();
+  let archive=snapshot.body_archive.as_ref().expect("actual normal model archive");assert_eq!(archive.len(),2);assert!(archive.uses_body_queries(queries.as_ref()),"the normal successful analysis branch must attach its SAME actual QueryDb");assert!(archive.uses_ordinary_body_demand());assert!(archive.syntax_inputs().is_none());assert!((0..archive.len()).all(|ordinal|archive.peek_syntax_input(ordinal).is_none()),"normal model/header capture must not manufacture eager inputs");assert_eq!(queries.db().stats(Kind(4)).computed,0);
+  let observed=host.semantic.as_ref().expect("actual retained normal preparation").with_remembered_analysis_source(|view|{
+   assert_eq!(view.preparation_purpose(),dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete);assert!(Arc::ptr_eq(view.archive(),archive));
+   let charge=crate::runner_host::policy_capture::JoinedHeaderCharge::capture(&view,queries.as_ref()).expect("the unchanged exact complete-archive/SAME-QueryDb header guard must succeed");drop(charge);
+   assert!((0..archive.len()).all(|ordinal|archive.peek_syntax_input(ordinal).is_none()));assert_eq!(queries.db().stats(Kind(4)).computed,0);true
+  }).unwrap();assert_eq!(observed,Some(true));
+ });
 }

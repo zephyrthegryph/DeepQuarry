@@ -44,9 +44,20 @@ impl Stage {
         Ok(())
     }
 
-    pub(crate) fn seal(mut self) -> io::Result<Sealed> {
+    pub(crate) fn seal(self) -> io::Result<Sealed> {
+        self.seal_with_empty_allowed(false)
+    }
+
+    /// Utility stdout/stderr may genuinely contain zero bytes. This enters the
+    /// SAME flush/physical-length/hash/rewind kernel and still rejects every
+    /// poisoned stage; no empty stream can conceal an earlier write failure.
+    pub(crate) fn seal_allow_empty(self) -> io::Result<Sealed> {
+        self.seal_with_empty_allowed(true)
+    }
+
+    fn seal_with_empty_allowed(mut self, allow_empty: bool) -> io::Result<Sealed> {
         crate::daemon::control::checkpoint()?;
-        if self.failed || self.length == 0 {
+        if self.failed || (!allow_empty && self.length == 0) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "failed or empty selected report staging"));
         }
         self.file.flush()?;
@@ -403,4 +414,45 @@ mod tests {
 ");
         assert_eq!(std::fs::read_dir(&root).unwrap().count(), 0);
     }
+}
+
+#[cfg(test)]mod utility_empty_controls{
+ use super::*;
+ #[test]fn utility_empty_stage_uses_same_verification_and_old_seal_still_refuses_empty(){
+  let root=crate::test_scratch::dir("utility-empty-stage");let stage=Stage::new(&root).unwrap();assert_eq!(stage.length(),0);
+  assert_eq!(stage.seal().err().unwrap().kind(),io::ErrorKind::InvalidData);
+  let stage=Stage::new(&root).unwrap();let(verified,count)=stage.seal_allow_empty().unwrap().validate(|r|io::copy(r,&mut io::sink())).unwrap();
+  assert_eq!(count,0);assert_eq!(verified.length(),0);assert_eq!(verified.hash(),xxhash_rust::xxh3::xxh3_128(b""));let mut output=Vec::new();verified.publish(&mut output).unwrap();assert!(output.is_empty());assert_eq!(std::fs::read_dir(&root).unwrap().count(),0);
+ }
+ #[test]fn utility_empty_stage_never_hides_poisoned_write_or_physical_extra_bytes(){
+  let root=crate::test_scratch::dir("utility-empty-stage-poison");let mut stage=Stage::new(&root).unwrap();stage.limit=0;
+  assert_eq!(stage.write_all(b"actual failed write").unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(stage.length(),0);assert!(stage.failed);assert_eq!(stage.seal_allow_empty().err().unwrap().kind(),io::ErrorKind::InvalidData);
+  let mut stage=Stage::new(&root).unwrap();stage.file.write_all(b"unreported actual bytes").unwrap();assert_eq!(stage.length(),0);assert_eq!(stage.seal_allow_empty().err().unwrap().kind(),io::ErrorKind::InvalidData);assert_eq!(std::fs::read_dir(&root).unwrap().count(),0);
+ }
+ #[test]fn utility_empty_stage_keeps_first_validation_output_io_and_expired_context(){
+  let root=crate::test_scratch::dir("utility-empty-stage-first-io");let stage=Stage::new(&root).unwrap();let mut calls=0;
+  let error=stage.seal_allow_empty().unwrap().validate::<()>(|_|{calls+=1;Err(io::Error::from_raw_os_error(1450))}).err().unwrap();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(calls,1);
+  struct FlushStop{writes:usize,flushes:usize}impl Write for FlushStop{fn write(&mut self,_:&[u8])->io::Result<usize>{self.writes+=1;panic!("a genuinely empty stream writes no bytes")}fn flush(&mut self)->io::Result<()>{self.flushes+=1;Err(io::Error::from_raw_os_error(1450))}}
+  let stage=Stage::new(&root).unwrap();let(verified,_)=stage.seal_allow_empty().unwrap().validate(|r|io::copy(r,&mut io::sink())).unwrap();let mut output=FlushStop{writes:0,flushes:0};let error=verified.publish(&mut output).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(output.writes,0);assert_eq!(output.flushes,1);
+  let stage=Stage::new(&root).unwrap();let _expired=crate::daemon::control::bind_with_deadline(crate::daemon::control::Cancellation::default(),std::time::Instant::now());assert_eq!(stage.seal_allow_empty().err().unwrap().kind(),io::ErrorKind::Interrupted);assert_eq!(std::fs::read_dir(&root).unwrap().count(),0);
+ }
+}
+
+/// Exact resource-only comparison of two already genuine sealed producer
+/// streams. No report parser, semantic projection, source or completion grant.
+impl Verified{
+ pub(crate)fn same_bytes(mut self,mut other:Self,work:&dyn SourceArenaWork)->io::Result<bool>{
+  if self.length()!=other.length(){return Ok(false)}
+  let _credit=work.reserve(BLOCK.checked_mul(2).ok_or(io::ErrorKind::OutOfMemory)?)?;
+  let(mut a,mut b)=([0u8;BLOCK],[0u8;BLOCK]);let mut offset=0;
+  while offset<self.length(){work.checkpoint()?;let count=(self.length()-offset).min(BLOCK as u64)as usize;self.read_compare_at(offset,&mut a[..count])?;other.read_compare_at(offset,&mut b[..count])?;if a[..count]!=b[..count]{return Ok(false)}offset+=count as u64;}work.checkpoint()?;Ok(true)
+ }
+ fn read_compare_at(&mut self,offset:u64,bytes:&mut[u8])->io::Result<()>{match &mut self.0{VerifiedBacking::Single(sealed)=>{sealed.file.seek(SeekFrom::Start(offset))?;sealed.file.read_exact(bytes)},VerifiedBacking::Replay(replay)=>replay.read_at(offset,bytes)}}
+}
+#[cfg(test)]mod parity_stream_controls{
+ use super::*;
+ #[test]fn actual_sealed_stream_comparison_handles_empty_and_block_boundary_difference(){
+  let host=crate::runner_host::BuildHost::default();let cache=crate::test_scratch::dir("parity-compare-spools");
+  for size in [0,BLOCK+3]{let bytes=vec![b'x';size];let seal=|bytes:&[u8]|{use std::io::Write;let mut s=Stage::new(&cache).unwrap();s.write_all(bytes).unwrap();s.seal_allow_empty().unwrap().validate(|r|io::copy(r,&mut io::sink())).unwrap().0};assert!(seal(&bytes).same_bytes(seal(&bytes),host.source_arena_work()).unwrap());if size>0{let mut other=bytes.clone();other[BLOCK]=b'y';assert!(!seal(&bytes).same_bytes(seal(&other),host.source_arena_work()).unwrap());}}
+ }
 }

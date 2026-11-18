@@ -143,7 +143,7 @@ pub(super) fn consume_prepared_primary_using(source:&mut dyn OriginalPreparedTok
  }Ok(())})();
  progress.inspect_err(|_error|{
   #[cfg(debug_assertions)]
-  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){
+  {
    use std::io::Write;
    let counter_before_primary_drop=a.retained_bytes_for_trace();
    let literals=primary.trace_literal_retention();

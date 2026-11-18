@@ -88,7 +88,7 @@ impl Lint for Pool {
         out.note(format!("pool_lint: {} problem(s)", n));
     }
 
-    fn selftest(&self) -> Result<String, String> {
+    fn selftest(&self) -> Result<String,String>{
         let mut scope = LintScope::default();
         scope.lists.insert(
             "exempt_prefixes".into(),
@@ -97,43 +97,14 @@ impl Lint for Pool {
                 "code/library/lifecycle/pool.dm".into(),
             ],
         );
-        let run = |files: Vec<(&str, &str)>| -> usize {
-            let fs: Vec<SourceFile> = files
-                .iter()
-                .map(|(r, t)| SourceFile::from_text(r, t))
-                .collect();
-            let refs: Vec<&SourceFile> = fs.iter().collect();
-            let mut out = Sink::new();
-            check(&refs, scope.list("exempt_prefixes"), &mut out);
-            out.sites.len()
-        };
-        let good = "/datum/foo\n\tparent_type = /datum/pooled\n\n/proc/f()\n\tvar/datum/foo/F = take(/datum/foo)\n\tF.release()\n";
-        let factory = "/datum/foo\n\tparent_type = /datum/pooled\n\n/proc/factory()\n\tvar/datum/foo/packet = take(/datum/foo)\n\tpacket.zone = 1\n\treturn packet\n";
-        let reassigned = factory.replace("\tpacket.zone = 1", "\tpacket = null");
-        let conditional = factory.replace("\treturn packet", "\tif(ok)\n\t\treturn packet");
-        let multiple = factory.replace(
-            "\tpacket.zone = 1",
-            "\tvar/datum/foo/other = take(/datum/foo)",
-        );
-        if run(vec![("factory.dm", factory)]) != 0
-            || run(vec![("reassigned.dm", &reassigned)]) == 0
-            || run(vec![("conditional.dm", &conditional)]) == 0
-            || run(vec![("multiple.dm", &multiple)]) == 0
-        {
-            return Err("factory return contract misclassified".into());
+        struct Original<'a>(&'a [String]);
+        impl crate::pool_selftest_policy::Backend for Original<'_>{
+            fn inspect(&mut self,rows:&[(&str,&str)])->Result<usize,crate::derived_selftest_policy::Failure>{
+                let files:Vec<SourceFile>=rows.iter().map(|(relative,text)|SourceFile::from_text(relative,text)).collect();
+                let refs:Vec<&SourceFile>=files.iter().collect();let mut out=Sink::new();check(&refs,self.0,&mut out);Ok(out.sites.len())
+            }
         }
-        let bad_new = "/proc/g()\n\tvar/datum/foo/F = new /datum/foo\n";
-        let bad_leak = [
-            ("a.dm", "/datum/foo\n\tparent_type = /datum/pooled\n"),
-            ("c.dm", "/proc/h()\n\treturn take(/datum/foo)\n"),
-        ];
-        if run(vec![("a.dm", good)]) != 0 {
-            return Err("clean input flagged".into());
-        }
-        if run(vec![("a.dm", good), ("b.dm", bad_new)]) == 0 || run(bad_leak.to_vec()) == 0 {
-            return Err("a violation went unflagged".into());
-        }
-        Ok(String::new())
+        crate::pool_selftest_policy::assertions(&mut Original(scope.list("exempt_prefixes")),&mut crate::derived_selftest_policy::LegacyAssertions).map_err(|failure|match failure{crate::derived_selftest_policy::Failure::Assertion(text)=>text,crate::derived_selftest_policy::Failure::Operational(actual)=>actual.to_string()})
     }
 
     fn parity(&self) -> Option<Parity> {

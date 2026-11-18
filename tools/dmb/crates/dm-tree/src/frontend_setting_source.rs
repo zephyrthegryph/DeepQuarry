@@ -102,10 +102,9 @@ impl ColdFrontend {
         let ordinal = metadata.settings.iter().position(|node| {
             matches!(node,dm_ir::ProcedureSettingNode::Setting(setting) if std::ptr::eq(&setting.value,expression))
         }).ok_or_else(|| internal("setting expression is not the selected original directive"))?;
-        let code = self.body_code(occurrence)?;
         let input = self
             .issued_syntax
-            .setting_token_input(occurrence.expanded_span, code.identity(), ordinal)
+            .setting_token_input_header_only(occurrence.expanded_span, ordinal)
             .map_err(|error| Diagnostic {
                 kind: syntax_kind(error.kind),
                 stage: DiagnosticStage::Syntax,

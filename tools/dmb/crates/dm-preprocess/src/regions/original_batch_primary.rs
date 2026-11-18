@@ -164,7 +164,7 @@ pub(super) fn consume_batch_primary_using<R:OriginalBatchRunner>(execution:&Orig
  // Real token/text/batch buffers retain their own actual admitted credits.
  let _queue_credit=a.reserve(QUEUED.checked_mul(std::mem::size_of::<Message>()+8*std::mem::size_of::<usize>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(4096)).ok_or(io::ErrorKind::OutOfMemory)?)?;
  let signals=Signals::new();let metadata=Mutex::new(None);let(tx,rx)=sync_channel(QUEUED);
- let trace_enabled=cfg!(debug_assertions)&&std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some();
+ let trace_enabled=dm_profile::detail_enabled()||(cfg!(debug_assertions)&&std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some());
  let parsed=execution.executor().scope(|scope|{
   scope.spawn(|_|{let start=trace_enabled.then(std::time::Instant::now);let mut issued=0usize;let mut product=None;let result=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||execution.host().with_producer_admission(&mut|pa|{issued+=1;if issued!=1{return Err(io::ErrorKind::InvalidData.into())}let mut borrowed=0;product=Some(runner.with_source(pa,&mut|source|{borrowed+=1;if borrowed!=1{return Err(io::ErrorKind::InvalidData.into())}send_batches(source,pa,&tx,&signals,trace_enabled)?;
    // An intentional header stop still needs its real prefix metadata. A

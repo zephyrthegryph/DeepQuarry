@@ -50,7 +50,7 @@ impl<'a> BorrowedWeakRawRead<'a> {
     ) -> Result<RawRun, D::Error> {
         let scope = self.raw.scopes.for_lint("weak_raw_read", "");
         let meta = crate::weak_relation_policy::metadata();
-        let cx = crate::lint::Cx {
+        let cx = crate::lint::Cx { fixture:None,
             tree: &self.raw.tree,
             meta,
             scope: &scope,

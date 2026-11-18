@@ -107,6 +107,39 @@ impl<'a,'b> Storage<'a,'b>{
   if let Err(actual)=self.a.admit_drop_depth(1){drop(frame);self.fail(actual);return None}Some(frame)
  }
  pub(super) fn temporary(&self,bytes:usize)->Option<crate::SettingRootLease>{if !self.poll(){return None}match self.a.reserve(bytes){Ok(lease)=>Some(lease),Err(actual)=>{self.fail(actual);None}}}
+
+ /// Allocation-only canonical layout. Same physical mask/line geometry, scoped
+ /// to the actual BODY bytes; the immutable TU/token owner is borrowed.
+ pub(super) fn layout_scoped(&self,source:&str,range:Span,tokens:TokenWindow<'_>,line_width:usize,typed:bool)->Option<crate::SettingRootLease>{
+  let Some(text)=source.get(range.range())else{self.fail(io::ErrorKind::InvalidInput.into());return None};
+  let(mut boundaries,mut multiline)=(8usize,0usize);
+  for token in tokens.iter(){if !self.poll(){return None}let Some(raw)=source.get(token.span.range())else{self.fail(io::ErrorKind::InvalidInput.into());return None};if token.span.start<range.start||token.span.end>range.end{self.fail(io::ErrorKind::InvalidInput.into());return None}if token.kind==TokenKind::Newline||matches!(raw,"{"|"}"|";"|"("){boundaries=match boundaries.checked_add(2){Some(n)=>n,None=>{self.overflow();return None}}}if matches!(token.kind,TokenKind::String|TokenKind::Interpolation)&&raw.contains('\n'){multiline+=1;}}
+  let bytes=text.len().checked_mul(2+usize::from(typed)).and_then(|n|boundaries.checked_mul(line_width).and_then(|rows|rows.checked_mul(8)).and_then(|rows|n.checked_add(rows))).and_then(|n|multiline.checked_mul(std::mem::size_of::<Span>()).and_then(|rows|rows.checked_mul(4)).and_then(|rows|n.checked_add(rows)));
+  match bytes{Some(n)=>self.temporary(n),None=>{self.overflow();None}}
+ }
+ /// Cleanup-only phase settlement. The caller has already destroyed every
+ /// scoped layout allocation except the final Line buffer of `live_bytes`.
+ /// No checkpoint is inserted and no operational first error is inspected/reset.
+ pub(super) fn settle_retired_layout(&self,lease:&mut crate::SettingRootLease,live_bytes:usize)->bool{
+  if !self.a.matches_lease_domain(lease){return self.fail(io::Error::new(io::ErrorKind::InvalidInput,"canonical layout settlement has foreign resource domain"))}
+  let Some(retired)=lease.bytes().checked_sub(live_bytes)else{return self.fail(io::Error::new(io::ErrorKind::InvalidData,"canonical final line buffer exceeds actual layout grant"))};
+  match lease.release_retired_bytes(retired){Ok(())=>true,Err(actual)=>self.fail(actual)}
+ }
+ /// Exact Global layout, already covered by the private scoped layout lease.
+ /// Canonical masks use two byte buffers, typed-group one byte buffer, and
+ /// the actual multiline roster. This adds no allocation credit or authority.
+ pub(super) fn layout_buffer<T>(&self,capacity:usize,lease:&crate::SettingRootLease)->Option<Vec<T>>{
+  if !self.poll(){return None}let Ok(layout)=std::alloc::Layout::array::<T>(capacity)else{self.overflow();return None};
+  if !self.a.matches_lease_domain(lease)||layout.size()>lease.bytes(){self.fail(io::ErrorKind::InvalidInput.into());return None}if layout.size()==0{return Some(Vec::new())}
+  match funded_vector(capacity,layout){Some(rows)=>Some(rows),None=>{self.overflow();None}}
+ }
+ pub(super) fn finish_procedure(&self,result:&Result<crate::ProcedureWithOrigins,Diagnostic>)->io::Result<crate::SettingRootLease>{
+  if let Some(actual)=self.take_failure(){return Err(actual)}
+  let target=match result{Ok(value)=>self.item_bytes(&value.item.children).and_then(|n|n.checked_add(value.item.header.capacity())),Err(row)=>Some(row.message.capacity())}.ok_or_else(||self.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))?;
+  let excess=self.bytes().checked_sub(target).ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"actual canonical primary payload was not funded"))?;
+  if !self.release(excess){return Err(self.take_failure().unwrap_or_else(||io::ErrorKind::OutOfMemory.into()))}
+  let bytes=self.owned.borrow().bytes();self.a.split(&mut self.owned.borrow_mut(),bytes).map_err(|proxy|self.a.take_operational_error().unwrap_or(proxy))
+ }
  pub(super) fn layout(&self,source:&str,tokens:TokenWindow<'_>,line_width:usize)->Option<crate::SettingRootLease>{
   let(mut boundaries,mut multiline)=(8usize,0usize);for token in tokens.iter(){if !self.poll(){return None}if token.kind==TokenKind::Newline||matches!(token.text(source),"{"|"}"|";"|"("){let Some(next)=boundaries.checked_add(2)else{self.overflow();return None};boundaries=next}if token.kind==TokenKind::String&&token.text(source).contains('\n'){multiline+=1;}}
   // Exactly two byte masks plus the simultaneous input/output line vectors,

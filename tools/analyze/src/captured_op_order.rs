@@ -1,6 +1,6 @@
 //! Complete op_order DATA fold over authentic whole CODE loans and fixed raw manifest.
 //! Neither this DATA nor provider booleans issue source/EOF/model authority.
-use crate::{op_order_policy as judge,captured_api_pages as fund,captured_generator_budget::Budget,captured_raw_file::Config,captured_reactive_reads::Failure,captured_allow_annotations::Operation,reactive_raw_policy_pages::RawPolicyPages,lint::{Site,AllowUse}};
+use crate::{op_order_policy as judge,captured_api_pages as fund,captured_generator_budget::Budget,captured_raw_file::Config,captured_reactive_reads::Failure,captured_allow_annotations::PatternOperation,reactive_raw_policy_pages::RawPolicyPages,lint::{Site,AllowUse}};
 use std::{collections::{BTreeMap,HashMap},sync::Arc,io};
 pub struct Data{pub(crate)sites:Vec<Site>,pub(crate)source_text:Vec<String>,pub(crate)allow_used:Vec<AllowUse>,pub(crate)digests:BTreeMap<String,[u8;20]>}
 fn empty()->Data{Data{sites:Vec::new(),source_text:Vec::new(),allow_used:Vec::new(),digests:BTreeMap::new()}}
@@ -8,8 +8,8 @@ struct Phase{budget:Arc<Budget>,complete:bool}impl Drop for Phase{fn drop(&mut s
 fn oom(b:&Budget)->Failure{b.deny();Failure::Operational(io::ErrorKind::OutOfMemory.into())}
 fn charge(b:&Budget,n:Option<usize>)->Result<(),Failure>{b.charge(n.ok_or_else(||oom(b))?).map_err(|_|oom(b))}
 fn selected(c:&Config,path:&str)->bool{!c.policy_path_exempt("op_order","",path)&&!path.starts_with("code/engine/_generated/")}
-fn allowed(data:&mut Data,file:&crate::tree::SourceFile,line:usize,b:&Budget,local:&Budget,poll:&dyn Fn()->io::Result<()>)->Result<bool,Failure>{
- fund::checked(b,poll)?;let raw=file.raw();let mut operation=Operation{budget:local,poll};let mut kept=None;
+fn allowed(data:&mut Data,file:&crate::tree::SourceFile,line:usize,b:&Budget,local:&Budget,poll:&dyn Fn()->io::Result<()>,patterns:Option<&dyn crate::native_pattern::Provider>)->Result<bool,Failure>{
+ fund::checked(b,poll)?;let raw=file.raw();let mut operation=PatternOperation{patterns,budget:local,poll};let mut kept=None;
  if line>=1&&line<=raw.num_lines(){if let Some(code)=crate::allow::keeps_with(raw.line(line),"op_order",&mut operation)?{kept=Some((line,code));}}
  if kept.is_none()&&line>=2{let above=raw.line(line-1);if crate::util::py_lstrip(above).starts_with("//"){if let Some(code)=crate::allow::keeps_with(above,"op_order",&mut operation)?{kept=Some((line-1,code));}}}
  let Some((at,code))=kept else{return Ok(false)};let code=code.unwrap_or_default();let line=u32::try_from(at).map_err(|_|oom(b))?;
@@ -25,13 +25,16 @@ fn append(to:&mut Data,mut from:Data,b:&Budget,poll:&dyn Fn()->io::Result<()>)->
  fund::reserve_append(b,poll,&mut to.sites,from.sites.len())?;fund::reserve_append(b,poll,&mut to.source_text,from.source_text.len())?;fund::reserve_append(b,poll,&mut to.allow_used,from.allow_used.len())?;
  to.sites.append(&mut from.sites);to.source_text.append(&mut from.source_text);to.allow_used.append(&mut from.allow_used);for(path,digest)in from.digests{fund::node(b)?;to.digests.insert(path,digest);}Ok(())
 }
-pub fn collect(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,config:&Config,root:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<Data,Failure>{
+pub fn collect(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,config:&Config,root:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<Data,Failure>{collect_using(pages,order,config,root,poll,None)}
+#[cfg(feature="native-policy")]
+pub fn collect_with_patterns(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,config:&Config,root:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,patterns:&dyn crate::native_pattern::Provider)->Result<Data,Failure>{collect_using(pages,order,config,root,poll,Some(patterns))}
+fn collect_using(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,config:&Config,root:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,patterns:Option<&dyn crate::native_pattern::Provider>)->Result<Data,Failure>{
  fund::checked(root,poll)?;let mut phase=Phase{budget:Budget::scoped_temporaries(root).map_err(|_|oom(root))?,complete:false};let b=&phase.budget;
  let pending=(||{
  let mut files=Vec::new();let mut markers=Vec::new();let mut marker_count=0;
  if !pages.for_each(&mut|relative,views|{
   fund::checked(b,poll)?;let file=views.source_file()?;if relative!=file.rel{return Err("op_order original index relative path differs".into())}let local=views.allocation_budget(root);
-  let gate=judge::Controlled::new(Operation{budget:local,poll});let facts=judge::file_facts_using(file,&gate);let facts=gate.finish(facts)?;
+  let gate=judge::Controlled::new(PatternOperation{patterns,budget:local,poll});let facts=judge::file_facts_using(file,&gate);let facts=gate.finish(facts)?;
   charge(b,facts.storage_bytes())?;fund::row(b,poll,&mut files)?;files.push((fund::own(b,poll,relative)?,facts));
   crate::captured_marker_rows::collect_file_funded(relative,views.marker()?,b,local,&["CAPABILITIES","CAPABILITY_TYPE","CAPABILITY_DEF"],true,true,false,&mut markers,&mut marker_count,&mut||{fund::checked(b,poll)})?;
   fund::checked(local,poll)?;Ok(true)
@@ -39,16 +42,16 @@ pub fn collect(pages:&dyn RawPolicyPages,order:&HashMap<String,usize>,config:&Co
  crate::key_policy_control::sort_data(&mut files,&mut|a,c|->Result<std::cmp::Ordering,Failure>{fund::checked(b,poll)?;Ok(a.0.cmp(&c.0))})?;
  crate::key_policy_control::sort_data(&mut markers,&mut|a,c|->Result<std::cmp::Ordering,Failure>{fund::checked(b,poll)?;Ok((order.get(&a.rel).copied().unwrap_or(usize::MAX),a.rel.as_str(),a.line).cmp(&(order.get(&c.rel).copied().unwrap_or(usize::MAX),c.rel.as_str(),c.line)))})?;
  let mut marker_views=Vec::new();fund::reserve_append(b,poll,&mut marker_views,markers.len())?;for m in &markers{fund::checked(b,poll)?;marker_views.push(judge::Marker{name:&m.name,relative:&m.rel,line:m.line,args:&m.args});}
- let gate=judge::Controlled::new(Operation{budget:b,poll});let model=judge::Model::from_facts_using(files.into_iter().map(|(_,f)|f),&marker_views,&gate);let model=gate.finish(model)?;
+ let gate=judge::Controlled::new(PatternOperation{patterns,budget:b,poll});let model=judge::Model::from_facts_using(files.into_iter().map(|(_,f)|f),&marker_views,&gate);let model=gate.finish(model)?;
  let mut file_batches=Vec::new();let mut clash_batches=Vec::new();
  if !pages.for_each(&mut|relative,views|{
   fund::checked(b,poll)?;if !selected(config,relative){return Ok(true)}let file=views.source_file()?;if relative!=file.rel{return Err("op_order actual judge relative path differs".into())}let local=views.allocation_budget(root);
-  let mut relative_data=empty();let mut actual=None;let gate=judge::Controlled::new(Operation{budget:local,poll});
-  judge::relative_priority_using(file,|line|{if actual.is_some(){return false}let result=(||{if !allowed(&mut relative_data,file,line,root,local,poll)?{finding(&mut relative_data,file,"relative_priority",line,file.line(line).trim(),"relative_priority",root,poll)?;}Ok::<_,Failure>(())})();if let Err(error)=result{actual=Some(error)}actual.is_none()},&gate);
+  let mut relative_data=empty();let mut actual=None;let gate=judge::Controlled::new(PatternOperation{patterns,budget:local,poll});
+  judge::relative_priority_using(file,|line|{if actual.is_some(){return false}let result=(||{if !allowed(&mut relative_data,file,line,root,local,poll,patterns)?{finding(&mut relative_data,file,"relative_priority",line,file.line(line).trim(),"relative_priority",root,poll)?;}Ok::<_,Failure>(())})();if let Err(error)=result{actual=Some(error)}actual.is_none()},&gate);
   if let Some(error)=actual{return Err(error)}gate.finish(())?;fund::row(b,poll,&mut file_batches)?;file_batches.push((fund::own(b,poll,relative)?,relative_data));
   for(index,m)in marker_views.iter().enumerate(){
-   fund::checked(b,poll)?;if m.name!="CAPABILITIES"||m.relative!=relative{continue}let gate=judge::Controlled::new(Operation{budget:local,poll});let found=model.judge_using(m.args,&gate);let found=gate.finish(found)?;let mut data=empty();
-   for clash in found{fund::checked(b,poll)?;if !allowed(&mut data,file,m.line as usize,root,local,poll)?{finding(&mut data,file,"unordered_clash",m.line as usize,&clash.message,&clash.key,root,poll)?;}}
+   fund::checked(b,poll)?;if m.name!="CAPABILITIES"||m.relative!=relative{continue}let gate=judge::Controlled::new(PatternOperation{patterns,budget:local,poll});let found=model.judge_using(m.args,&gate);let found=gate.finish(found)?;let mut data=empty();
+   for clash in found{fund::checked(b,poll)?;if !allowed(&mut data,file,m.line as usize,root,local,poll,patterns)?{finding(&mut data,file,"unordered_clash",m.line as usize,&clash.message,&clash.key,root,poll)?;}}
    fund::row(b,poll,&mut clash_batches)?;clash_batches.push((index,data));
   }
   fund::checked(local,poll)?;Ok(true)

@@ -15,6 +15,7 @@
 //!   * `ALLOW(sys_update_icon)` keeps only `update_icon_override` sites (not the other rules);
 //!   * when two declarations canonicalize to one type the later one wins (`_canon_decls`).
 
+use crate::raw_fixture_policy::{Fixture,PatternApi,PatternMode};
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use crate::dm::field_write::{canon, char_window, local_or_member, norm, proc_def, typed_names, FwlIndex, Locals};
@@ -88,7 +89,8 @@ struct Setters {
 pub type RegFact = (String, String, String, bool);
 
 /// The setter registrations of one file, in line order (one entry per generated setter name).
-pub fn registrations_of(f: &SourceFile) -> Vec<RegFact> {
+pub fn registrations_of(f:&SourceFile)->Vec<RegFact>{registrations_with_fixture(f,&Fixture::legacy())}
+pub fn registrations_with_fixture(f:&SourceFile,fixture:&Fixture<'_>)->Vec<RegFact>{
     let mut out = Vec::new();
     if f.rel == "code/defines/engine/om.dm" {
         return out;
@@ -97,7 +99,7 @@ pub fn registrations_of(f: &SourceFile) -> Vec<RegFact> {
         if !line.contains("OM_") && !line.contains("DERIVE_FIELD") {
             continue;
         }
-        let Some(m) = pat!(r"\A(?:\s*(OM_FIELD|OM_FIELD_TYPED|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER|DERIVE_FIELD)\((.*)$)").captures(line) else {
+        let Some(m) = fixture.pattern(r"\A(?:\s*(OM_FIELD|OM_FIELD_TYPED|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER|DERIVE_FIELD)\((.*)$)",PatternMode::Search,||pat!(r"\A(?:\s*(OM_FIELD|OM_FIELD_TYPED|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER|DERIVE_FIELD)\((.*)$)")).captures(line) else {
             continue;
         };
         let (fi, ci, has_setter, flag) = shape(m.s(1));
@@ -142,13 +144,14 @@ struct Decls {
 /// One appearance declaration line: `(kind, owner, text after the owner's comma)`.
 pub type WatchEvent = (String, String, String);
 
-pub fn watch_events_of(f: &SourceFile) -> Vec<WatchEvent> {
+pub fn watch_events_of(f:&SourceFile)->Vec<WatchEvent>{watch_events_with_fixture(f,&Fixture::legacy())}
+pub fn watch_events_with_fixture(f:&SourceFile,fixture:&Fixture<'_>)->Vec<WatchEvent>{
     let mut out = Vec::new();
     for line in f.raw().lines() {
         if !line.contains("APPEARANCE") {
             continue;
         }
-        let Some(m) = pat!(r"\A(?:\s*(APPEARANCE_WATCH|APPEARANCE_TEMPLATE|APPEARANCE_LEVEL|APPEARANCE_EMISSIVE|DECLARE_APPEARANCE|APPEARANCE_NONE)\(\s*(/[\w/]+)\s*(?:,(.*))?$)").captures(line) else {
+        let Some(m) = fixture.pattern(r"\A(?:\s*(APPEARANCE_WATCH|APPEARANCE_TEMPLATE|APPEARANCE_LEVEL|APPEARANCE_EMISSIVE|DECLARE_APPEARANCE|APPEARANCE_NONE)\(\s*(/[\w/]+)\s*(?:,(.*))?$)",PatternMode::Search,||pat!(r"\A(?:\s*(APPEARANCE_WATCH|APPEARANCE_TEMPLATE|APPEARANCE_LEVEL|APPEARANCE_EMISSIVE|DECLARE_APPEARANCE|APPEARANCE_NONE)\(\s*(/[\w/]+)\s*(?:,(.*))?$)")).captures(line) else {
             continue;
         };
         out.push((m.s(1).to_string(), m.s(2).to_string(), m.s(3).to_string()));
@@ -156,7 +159,7 @@ pub fn watch_events_of(f: &SourceFile) -> Vec<WatchEvent> {
     out
 }
 
-fn watches(per_file: &[&Vec<WatchEvent>]) -> Decls {
+fn watches(per_file: &[&Vec<WatchEvent>],fixture:&Fixture<'_>) -> Decls {
     let mut entries: Vec<(String, bool, HashSet<String>)> = Vec::new();
     let mut at: HashMap<String, usize> = HashMap::new();
     for events in per_file {
@@ -174,22 +177,22 @@ fn watches(per_file: &[&Vec<WatchEvent>]) -> Decls {
             let args = split_args(rest);
             let first = args.first().map(|s| s.as_str()).unwrap_or("");
             if kind == "APPEARANCE_WATCH" {
-                for c in pat!(r#""(\w+)""#).captures_iter(first) {
+                for c in fixture.pattern(r#""(\w+)""#,PatternMode::Search,||pat!(r#""(\w+)""#)).captures_iter(first) {
                     entries[idx].2.insert(c.s(1).to_string());
                 }
             } else if kind == "APPEARANCE_TEMPLATE" {
-                for c in pat!(r"\{\s*(\w+)\s*(?:\?[^}]*)?\}").captures_iter(first) {
+                for c in fixture.pattern(r"\{\s*(\w+)\s*(?:\?[^}]*)?\}",PatternMode::Search,||pat!(r"\{\s*(\w+)\s*(?:\?[^}]*)?\}")).captures_iter(first) {
                     if c.s(1) != "initial" {
                         entries[idx].2.insert(c.s(1).to_string());
                     }
                 }
             } else if !args.is_empty() {
                 let name = py_strip(&args[0]).trim_matches('"');
-                if pat!(r"\A(?:\w+$)").is_match(name) && name != "null" {
+                if fixture.pattern(r"\A(?:\w+$)",PatternMode::Search,||pat!(r"\A(?:\w+$)")).is_match(name) && name != "null" {
                     entries[idx].2.insert(name.to_string());
                 }
                 if kind == "APPEARANCE_LEVEL" && args.len() > 2 {
-                    for c in pat!(r"\{\s*(\w+)\s*(?:\?[^}]*)?\}").captures_iter(&args[2]) {
+                    for c in fixture.pattern(r"\{\s*(\w+)\s*(?:\?[^}]*)?\}",PatternMode::Search,||pat!(r"\{\s*(\w+)\s*(?:\?[^}]*)?\}")).captures_iter(&args[2]) {
                         if c.s(1) != "initial" {
                             entries[idx].2.insert(c.s(1).to_string());
                         }
@@ -258,14 +261,14 @@ fn norm_recv(recv: Option<&str>) -> String {
     }
 }
 
-fn receiver_type(index: &FwlIndex, owner: &str, locals: &Locals, recv: &str) -> Option<String> {
+fn receiver_type(index: &FwlIndex, owner: &str, locals: &Locals, recv: &str,fixture:&Fixture<'_>) -> Option<String> {
     if recv == "src" {
         return Some(owner.to_string());
     }
     let head = recv.split('.').next().unwrap().trim_end_matches('?');
     if recv.contains('.') {
         let (init, last) = recv.rsplit_once('.').unwrap();
-        return index.chain_type(owner, locals, &format!("{}.", init), last);
+        return index.chain_type_with_fixture(owner, locals, &format!("{}.", init), last,fixture);
     }
     local_or_member(index, locals, owner, head)
 }
@@ -279,7 +282,7 @@ struct Proc<'a> {
     body: Vec<(usize, &'a str)>,
 }
 
-fn procs<'a>(f: &'a SourceFile) -> Vec<Proc<'a>> {
+fn procs<'a>(f: &'a SourceFile,fixture:&Fixture<'_>) -> Vec<Proc<'a>> {
     let mut out = Vec::new();
     let mut cur: Option<Proc<'a>> = None;
     for (no, line) in f.code().numbered() {
@@ -288,7 +291,7 @@ fn procs<'a>(f: &'a SourceFile) -> Vec<Proc<'a>> {
                 if let Some(p) = cur.take() {
                     out.push(p);
                 }
-                if let Some(m) = proc_def(line) {
+                if let Some(m) = crate::dm::field_write::proc_def_with_fixture(line,fixture) {
                     // `m.params` borrows from `line` (a slice of the code view): re-slice for the lifetime.
                     let args: &'a str = &line[line.len() - m.params.len()..];
                     let mut p = Proc { owner: norm(&m.owner), name: m.name, args, start: no, body: Vec::new() };
@@ -321,9 +324,9 @@ struct Parsed<'a> {
     is_setter: bool,
 }
 
-struct Pats {
-    setter: Option<Pat>,
-    harmless: Pat,
+struct Pats<P=Pat> {
+    setter: Option<P>,
+    harmless: P,
 }
 
 fn indent_of(line: &str) -> usize {
@@ -333,13 +336,13 @@ fn indent_of(line: &str) -> usize {
 const CALL_DOTTED: &str = r"((?:\w+\??\.)*\w+)\??\.(?:update_icon|queue_icon_update)\s*\(";
 const CALL_BARE: &str = r"(?<![\w.?])(?:update_icon|queue_icon_update)\s*\(";
 
-fn is_call_line(line: &str) -> bool {
-    pat!(CALL_BARE).is_match(line) || pat!(CALL_DOTTED).is_match(line)
+fn is_call_line(line: &str,fixture:&Fixture<'_>) -> bool {
+    fixture.pattern(CALL_BARE,PatternMode::Search,||pat!(CALL_BARE)).is_match(line) || fixture.pattern(CALL_DOTTED,PatternMode::Search,||pat!(CALL_DOTTED)).is_match(line)
 }
 
 /// TRUE when the refresh at `body[index]` follows a watched-field setter on `recv` and nothing on
 /// the way could change what is drawn (see the Python docstring).
-fn after_setter(pats: &Pats, body: &[(usize, &str)], index: usize, recv: &str, setter_lines: &HashMap<usize, HashSet<String>>) -> bool {
+fn after_setter<P:PatternApi>(pats: &Pats<P>, body: &[(usize, &str)], index: usize, recv: &str, setter_lines: &HashMap<usize, HashSet<String>>,fixture:&Fixture<'_>) -> bool {
     let scope = indent_of(body[index].1);
     let mut seen_nested = false;
     let mut i = index as isize - 1;
@@ -362,17 +365,17 @@ fn after_setter(pats: &Pats, body: &[(usize, &str)], index: usize, recv: &str, s
             }
             continue;
         }
-        if is_call_line(line) {
+        if is_call_line(line,fixture) {
             continue; // another receiver's refresh
         }
-        if pat!(r"\A(?:\s*(?:if\s*\(.*\)|else(?:\s+if\s*\(.*\))?|for\s*\(.*\)|while\s*\(.*\)|switch\s*\(.*\)|do|spawn\s*\(.*\))\s*$)").is_match(line)
-            || pat!(r"\A(?:\s*var/)").is_match(line)
-            || pat!(r"\A(?:\s*\.\s*=)").is_match(line)
+        if fixture.pattern(r"\A(?:\s*(?:if\s*\(.*\)|else(?:\s+if\s*\(.*\))?|for\s*\(.*\)|while\s*\(.*\)|switch\s*\(.*\)|do|spawn\s*\(.*\))\s*$)",PatternMode::Search,||pat!(r"\A(?:\s*(?:if\s*\(.*\)|else(?:\s+if\s*\(.*\))?|for\s*\(.*\)|while\s*\(.*\)|switch\s*\(.*\)|do|spawn\s*\(.*\))\s*$)")).is_match(line)
+            || fixture.pattern(r"\A(?:\s*var/)",PatternMode::Search,||pat!(r"\A(?:\s*var/)")).is_match(line)
+            || fixture.pattern(r"\A(?:\s*\.\s*=)",PatternMode::Search,||pat!(r"\A(?:\s*\.\s*=)")).is_match(line)
             || pats.harmless.is_match(line)
         {
             continue;
         }
-        if depth > scope && pat!(r"\A(?:\s*return\b)").is_match(line) {
+        if depth > scope && fixture.pattern(r"\A(?:\s*return\b)",PatternMode::Search,||pat!(r"\A(?:\s*return\b)")).is_match(line) {
             continue; // that branch never reaches the refresh
         }
         return false;
@@ -381,25 +384,25 @@ fn after_setter(pats: &Pats, body: &[(usize, &str)], index: usize, recv: &str, s
 }
 
 /// Everything pass 1 reads besides the file: the shared index and the merged registrations.
-pub struct Ctx<'a> {
+pub struct Ctx<'a,P=Pat> {
     index: &'a FwlIndex,
     setters: Setters,
     decls: Decls,
-    pats: Pats,
+    pats: Pats<P>,
 }
 
 /// Pass 1 for one file: the watched-field writes per line, per proc.
-fn parse_file<'a>(cx: &Ctx, f: &'a SourceFile) -> Vec<Parsed<'a>> {
-    let (index, setters, decls, pats) = (cx.index, &cx.setters, &cx.decls, &cx.pats);
+fn parse_file<'a,P:PatternApi,Q>(cx:&Ctx<'_,Q>,f:&'a SourceFile,pats:&Pats<P>,fixture:&Fixture<'_>)->Vec<Parsed<'a>>{
+    let (index, setters, decls) = (cx.index, &cx.setters, &cx.decls);
     let mut out = Vec::new();
-    for p in procs(f) {
+    for p in procs(f,fixture) {
         let mut locals = Locals::new();
-        for tm in typed_names(p.args) {
+        for tm in crate::dm::field_write::typed_names_with_fixture(p.args,fixture) {
             locals.insert(tm.name, Some(norm(&tm.ty)));
         }
         let mut setter_lines: HashMap<usize, HashSet<String>> = HashMap::new();
         for &(no, line) in &p.body {
-            for tm in typed_names(line) {
+            for tm in crate::dm::field_write::typed_names_with_fixture(line,fixture) {
                 if char_window(line, tm.start, 4, 4).contains("var/") {
                     locals.insert(tm.name, Some(norm(&tm.ty)));
                 }
@@ -411,7 +414,7 @@ fn parse_file<'a>(cx: &Ctx, f: &'a SourceFile) -> Vec<Parsed<'a>> {
                             continue;
                         }
                         let recv = norm_recv(c.get(1));
-                        let rt = receiver_type(index, &p.owner, &locals, &recv);
+                        let rt = receiver_type(index, &p.owner, &locals, &recv,fixture);
                         if capable(setters, decls, c.s(2), rt.as_deref()) {
                             setter_lines.entry(no).or_default().insert(recv);
                         }
@@ -419,9 +422,9 @@ fn parse_file<'a>(cx: &Ctx, f: &'a SourceFile) -> Vec<Parsed<'a>> {
                 }
             }
             if line.contains("om_set") {
-                for c in pat!(r#"\bom_set\(\s*([\w.]+)\s*,\s*"(\w+)""#).captures_iter(line) {
+                for c in fixture.pattern(r#"\bom_set\(\s*([\w.]+)\s*,\s*"(\w+)""#,PatternMode::Search,||pat!(r#"\bom_set\(\s*([\w.]+)\s*,\s*"(\w+)""#)).captures_iter(line) {
                     let recv = norm_recv(c.get(1));
-                    let rt = receiver_type(index, &p.owner, &locals, &recv);
+                    let rt = receiver_type(index, &p.owner, &locals, &recv,fixture);
                     if capable(setters, decls, &format!("set_{}", c.s(2)), rt.as_deref()) {
                         setter_lines.entry(no).or_default().insert(recv);
                     }
@@ -446,7 +449,7 @@ fn owning_of(parsed_file: &[Parsed]) -> Vec<(String, String)> {
     out
 }
 
-fn judge_parsed(pats: &Pats, owning: &HashSet<(String, String)>, parsed_file: &[Parsed]) -> Vec<(&'static str, String, usize)> {
+fn judge_parsed<P:PatternApi>(pats: &Pats<P>, owning: &HashSet<(String, String)>, parsed_file: &[Parsed],fixture:&Fixture<'_>) -> Vec<(&'static str, String, usize)> {
     let inherits = |owner: &str, name: &str| -> bool {
         let mut path = canon(owner);
         while path.matches('/').count() > 1 {
@@ -467,10 +470,10 @@ fn judge_parsed(pats: &Pats, owning: &HashSet<(String, String)>, parsed_file: &[
         }
         if name == "appearance_overlays" && !RUNTIME.contains(&rel) {
             for &(no, line) in &parsed.proc.body {
-                if pat!(r"(?<![\w.])(?:src\.)?(?:add_overlay|cut_overlays?|copy_overlays)\s*\(|(?<![\w.])(?:src\.)?overlays\s*(?:[-+]?=(?!=)|\.Cut\()").is_match(line) {
+                if fixture.pattern(r"(?<![\w.])(?:src\.)?(?:add_overlay|cut_overlays?|copy_overlays)\s*\(|(?<![\w.])(?:src\.)?overlays\s*(?:[-+]?=(?!=)|\.Cut\()",PatternMode::Search,||pat!(r"(?<![\w.])(?:src\.)?(?:add_overlay|cut_overlays?|copy_overlays)\s*\(|(?<![\w.])(?:src\.)?overlays\s*(?:[-+]?=(?!=)|\.Cut\()")).is_match(line) {
                     out.push(("appearance_proc_overlays", rel.to_string(), no));
                 }
-                if parsed.setter_lines.contains_key(&no) || pat!(r#"\bom_set\(\s*([\w.]+)\s*,\s*"(\w+)""#).is_match(line) {
+                if parsed.setter_lines.contains_key(&no) || fixture.pattern(r#"\bom_set\(\s*([\w.]+)\s*,\s*"(\w+)""#,PatternMode::Search,||pat!(r#"\bom_set\(\s*([\w.]+)\s*,\s*"(\w+)""#)).is_match(line) {
                     out.push(("appearance_proc_state", rel.to_string(), no));
                 }
             }
@@ -483,21 +486,21 @@ fn judge_parsed(pats: &Pats, owning: &HashSet<(String, String)>, parsed_file: &[
         let inherited = inherits(owner, name);
         let mut owns = parsed.is_setter;
         for (index, &(no, line)) in parsed.proc.body.iter().enumerate() {
-            if inherited && pat!(r"\A(?:\s*(?:\.\s*=\s*\.\.\(|\.\.\(|if\s*\(\s*\(?\s*(?:\.\s*=\s*)?\.\.\())").is_match(line) {
+            if inherited && fixture.pattern(r"\A(?:\s*(?:\.\s*=\s*\.\.\(|\.\.\(|if\s*\(\s*\(?\s*(?:\.\s*=\s*)?\.\.\())",PatternMode::Search,||pat!(r"\A(?:\s*(?:\.\s*=\s*\.\.\(|\.\.\(|if\s*\(\s*\(?\s*(?:\.\s*=\s*)?\.\.\())")).is_match(line) {
                 owns = true;
             }
             if !line.contains("update_icon") && !line.contains("queue_icon_update") {
                 continue; // no call shape can match
             }
             let mut hits: Vec<String> = Vec::new();
-            for cm in pat!(r"(?:CALLBACK|INVOKE_ASYNC|om_after\w*|addtimer)\s*\(\s*(?:CALLBACK\s*\(\s*)?([\w.]+)\s*,[^\n]*?PROC_REF\s*\((?:[\w/]+\s*,\s*)?(?:update_icon|queue_icon_update)\s*\)").captures_iter(line) {
+            for cm in fixture.pattern(r"(?:CALLBACK|INVOKE_ASYNC|om_after\w*|addtimer)\s*\(\s*(?:CALLBACK\s*\(\s*)?([\w.]+)\s*,[^\n]*?PROC_REF\s*\((?:[\w/]+\s*,\s*)?(?:update_icon|queue_icon_update)\s*\)",PatternMode::Search,||pat!(r"(?:CALLBACK|INVOKE_ASYNC|om_after\w*|addtimer)\s*\(\s*(?:CALLBACK\s*\(\s*)?([\w.]+)\s*,[^\n]*?PROC_REF\s*\((?:[\w/]+\s*,\s*)?(?:update_icon|queue_icon_update)\s*\)")).captures_iter(line) {
                 hits.push(norm_recv(cm.get(1)));
             }
             if hits.is_empty() {
-                for cm in pat!(CALL_DOTTED).captures_iter(line) {
+                for cm in fixture.pattern(CALL_DOTTED,PatternMode::Search,||pat!(CALL_DOTTED)).captures_iter(line) {
                     hits.push(norm_recv(cm.get(1)));
                 }
-                for cm in pat!(CALL_BARE).captures_iter(line) {
+                for cm in fixture.pattern(CALL_BARE,PatternMode::Search,||pat!(CALL_BARE)).captures_iter(line) {
                     if py_rstrip(&line[..cm.start(0)]).ends_with("proc/") {
                         continue;
                     }
@@ -506,7 +509,7 @@ fn judge_parsed(pats: &Pats, owning: &HashSet<(String, String)>, parsed_file: &[
             }
             for recv in hits {
                 let in_line = parsed.setter_lines.get(&no).map(|s| s.contains(&recv)).unwrap_or(false);
-                if (recv == "src" && owns) || in_line || after_setter(pats, &parsed.proc.body, index, &recv, &parsed.setter_lines) {
+                if (recv == "src" && owns) || in_line || after_setter(pats, &parsed.proc.body, index, &recv, &parsed.setter_lines,fixture) {
                     out.push(("update_icon_call", rel.to_string(), no));
                     break;
                 }
@@ -519,7 +522,7 @@ fn judge_parsed(pats: &Pats, owning: &HashSet<(String, String)>, parsed_file: &[
 
 /// `setter_re.finditer(line)` with its `(?<![\w])` before the name: a match with no receiver whose
 /// name follows a word character is rejected and the scan resumes one character on.
-fn setter_matches<'h>(pat: &Pat, line: &'h str) -> Vec<crate::pat::Caps<'h>> {
+fn setter_matches<'h,P:PatternApi>(pat: &P, line: &'h str) -> Vec<crate::pat::Caps<'h>> {
     let mut out = Vec::new();
     let mut pos = 0;
     while pos <= line.len() {
@@ -542,7 +545,7 @@ fn setter_matches<'h>(pat: &Pat, line: &'h str) -> Vec<crate::pat::Caps<'h>> {
 /// Same selected schema merge; only the existing lexical index is borrowed.
 pub fn schema<'a>(index:&'a FwlIndex,regs:&[Vec<RegFact>],events:&[Vec<WatchEvent>])->Ctx<'a>{
     let setters = registrations(&regs.iter().collect::<Vec<_>>());
-    let decls = watches(&events.iter().collect::<Vec<_>>());
+    let decls = watches(&events.iter().collect::<Vec<_>>(),&Fixture::legacy());
     let names: Vec<&String> = {
         let mut v: Vec<&String> = setters.order.iter().collect();
         v.sort_by(|a, b| b.chars().count().cmp(&a.chars().count()));
@@ -565,5 +568,21 @@ pub fn schema<'a>(index:&'a FwlIndex,regs:&[Vec<RegFact>],events:&[Vec<WatchEven
     };
 Ctx{index,setters,decls,pats}
 }
-pub fn owning_file(context:&Ctx<'_>,file:&SourceFile)->Vec<(String,String)>{owning_of(&parse_file(context,file))}
-pub fn judge_file(context:&Ctx<'_>,owning:&HashSet<(String,String)>,file:&SourceFile)->Vec<(&'static str,String,usize)>{judge_parsed(&context.pats,owning,&parse_file(context,file))}
+pub fn owning_file(context:&Ctx<'_>,file:&SourceFile)->Vec<(String,String)>{owning_of(&parse_file(context,file,&context.pats,&Fixture::legacy()))}
+pub fn judge_file(context:&Ctx<'_>,owning:&HashSet<(String,String)>,file:&SourceFile)->Vec<(&'static str,String,usize)>{judge_parsed(&context.pats,owning,&parse_file(context,file,&context.pats,&Fixture::legacy()),&Fixture::legacy())}
+
+/// SAME registrations/watch merge, with actual recipe construction on its owner.
+pub fn schema_with_fixture<'index,'f,'budget>(index:&'index FwlIndex,regs:&[Vec<RegFact>],events:&[Vec<WatchEvent>],fixture:&'f Fixture<'budget>)->Result<Ctx<'index,crate::raw_fixture_policy::Pattern<'f,'budget>>,String>{
+ let borrowed_regs=fixture.collect(regs.iter())?;let setters=registrations(&borrowed_regs);
+ let borrowed_events=fixture.collect(events.iter())?;let decls=watches(&borrowed_events,fixture);
+ let names=fixture.collect(setters.order.iter())?;let names=fixture.stable_by_key(names,|name|std::cmp::Reverse(name.chars().count()))?;
+ let setter=if names.is_empty(){None}else{let refs=fixture.collect(names.iter().map(|name|name.as_str()))?;let alt=fixture.join(&refs,"|")?;let pattern=fixture.formatted_pattern(format_args!(r"(?:((?:\w+\??\.)*\w+)\??\.)?({})\s*\(",alt),PatternMode::Search)?;let _=pattern.capture_group_count();fixture.check()?;Some(pattern)};
+ let mut escaped=Vec::new();for name in HARMLESS_CALLS{fixture.push(&mut escaped,fixture.escape_pattern(name)?)?;}let refs=fixture.collect(escaped.iter().map(String::as_str))?;let alt=fixture.join(&refs,"|")?;
+ let harmless=fixture.formatted_pattern(format_args!(r"\A(?:\s*(?:(?:src|user|usr|\w+)\.)?(?:{})\s*\(.*\)\s*$)",alt),PatternMode::Search)?;let _=harmless.capture_group_count();fixture.check()?;
+ Ok(Ctx{index,setters,decls,pats:Pats{setter,harmless}})
+}
+impl Pats<crate::raw_fixture_policy::Pattern<'_,'_>>{
+ fn with_fixture<'f,'b>(&'f self,fixture:&'f Fixture<'b>)->Result<Pats<crate::raw_fixture_policy::Pattern<'f,'b>>,String>{Ok(Pats{setter:self.setter.as_ref().map(|pattern|pattern.with_fixture(fixture)).transpose()?,harmless:self.harmless.with_fixture(fixture)?})}
+}
+pub fn owning_file_with_fixture(context:&Ctx<'_,crate::raw_fixture_policy::Pattern<'_,'_>>,file:&SourceFile,fixture:&Fixture<'_>)->Result<Vec<(String,String)>,String>{let pats=context.pats.with_fixture(fixture)?;let parsed=parse_file(context,file,&pats,fixture);fixture.check()?;Ok(owning_of(&parsed))}
+pub fn judge_file_with_fixture(context:&Ctx<'_,crate::raw_fixture_policy::Pattern<'_,'_>>,owning:&HashSet<(String,String)>,file:&SourceFile,fixture:&Fixture<'_>)->Result<Vec<(&'static str,String,usize)>,String>{let pats=context.pats.with_fixture(fixture)?;let parsed=parse_file(context,file,&pats,fixture);fixture.check()?;let result=judge_parsed(&pats,owning,&parsed,fixture);fixture.check()?;Ok(result)}

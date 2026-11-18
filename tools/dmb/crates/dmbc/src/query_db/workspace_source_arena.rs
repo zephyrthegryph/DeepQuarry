@@ -306,9 +306,11 @@ fn split_owned_text(
     Ok((payload, backing.into_control()))
 }
 
+fn budget_denial(role:&str,budget:&dq_analyze::captured_generator_budget::Budget,requested:usize,message:&str)->io::Error{
+ if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){eprintln!("[native-source-budget-denial] role={role} used={} requested={requested} remaining={} actual={message}",budget.used(),budget.remaining());}oom()
+}
 fn oom()->io::Error{io::Error::new(io::ErrorKind::OutOfMemory,"native source arena exceeds existing shared input-family allowance")}
 fn no_source_room(_requested:usize,_ledger_live:usize,_remaining:Option<usize>)->io::Error{
- #[cfg(debug_assertions)]
  if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){
   eprintln!("ORIGINAL_SOURCE_INPUT_LIMIT requested={_requested} source_ledger_reserved={_ledger_live} shared_input_headroom={_remaining:?}");
  }
@@ -752,7 +754,7 @@ impl SourceArenaWork for HeldSourceWork<'_>{
  fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{
   self.checkpoint()?;let mut state=self.lock()?;
   let needed=bytes.checked_add(Allocation::metadata_bytes()).ok_or_else(||{state.budget.deny();oom()})?;
-  state.budget.charge(needed).map_err(|_|oom())?;
+  state.budget.charge(needed).map_err(|message|budget_denial("held_reserve",state.budget,needed,&message))?;
   let actual=AllocationHandle::new(Arc::new(Allocation{bytes:AtomicUsize::new(bytes),
    domain:Arc::downgrade(state.domain),origin_parent:None,read_group:Default::default()}));
   let peak=state.ledger.projected_source_arena_storage(actual.arc())?;
@@ -765,7 +767,9 @@ impl SourceArenaWork for HeldSourceWork<'_>{
 }
 /// Only RawInputCredits can lend its own actual mutable ledger and operation
 /// budget. Bind verifies the existing native domain before any provider IO.
-pub(super) fn with_held_source_work<R>(db:&QueryDb,ledger:&mut super::raw_input_credits::Ledger,budget:&dq_analyze::captured_generator_budget::Budget,consume:impl FnOnce(&dyn SourceArenaWork)->io::Result<R>)->io::Result<R>{ledger.bind_source_arena(&db.raw_policy.admission)?;let work=HeldSourceWork{state:std::sync::Mutex::new(HeldSourceState{ledger,domain:&db.raw_policy.admission,budget})};consume(&work)}
+fn held_source_work<R>(db:&QueryDb,ledger:&mut super::raw_input_credits::Ledger,budget:&dq_analyze::captured_generator_budget::Budget,consume:impl FnOnce(&HeldSourceWork<'_>)->io::Result<R>)->io::Result<R>{ledger.bind_source_arena(&db.raw_policy.admission)?;let work=HeldSourceWork{state:std::sync::Mutex::new(HeldSourceState{ledger,domain:&db.raw_policy.admission,budget})};consume(&work)}
+pub(super) fn with_held_source_work<R>(db:&QueryDb,ledger:&mut super::raw_input_credits::Ledger,budget:&dq_analyze::captured_generator_budget::Budget,consume:impl FnOnce(&dyn SourceArenaWork)->io::Result<R>)->io::Result<R>{held_source_work(db,ledger,budget,|work|consume(work))}
+
 
 /// Resource-only loan issued INSIDE the genuine report's already-held family
 /// gate. No reserve/grow call reenters that gate and no new counter is minted.
@@ -788,7 +792,7 @@ impl QueryDb{
 
 impl QueryDb{pub(crate) fn source_input_admission_bytes(&self)->io::Result<usize>{let _gate=self.raw_policy.gate.try_lock().map_err(|_|io::Error::new(io::ErrorKind::WouldBlock,"input family is already borrowed"))?;self.raw_source_input_charge_locked()}}
 
-fn charge_allocation_growth(actual:&Allocation,budget:&dq_analyze::captured_generator_budget::Budget,extra:usize)->io::Result<usize>{let next=actual.reserved_bytes().checked_add(extra).ok_or_else(||{budget.deny();oom()})?;budget.charge(extra).map_err(|_|oom())?;Ok(next)}
+fn charge_allocation_growth(actual:&Allocation,budget:&dq_analyze::captured_generator_budget::Budget,extra:usize)->io::Result<usize>{let next=actual.reserved_bytes().checked_add(extra).ok_or_else(||{budget.deny();oom()})?;budget.charge(extra).map_err(|message|budget_denial("arena_growth",budget,extra,&message))?;Ok(next)}
 
 #[cfg(test)]
 mod owned_text_partition_tests {
@@ -1067,4 +1071,144 @@ mod native_origin_parent_tests {
         drop((source,recovered));
         assert_eq!(parent.reserved_bytes(),baseline);
     }
+}
+
+// Resource-domain proof only: this adds no source/read/code authority and does
+// not reacquire the raw-family gate while a held lender is active.
+impl QueryDb{pub(crate)fn require_native_pattern_credit(&self,credit:&SourceArenaCredit)->io::Result<()>{
+ let actual=allocation(self,credit)?;if actual.origin_parent.is_some()||actual.read_group.get().is_some(){return Err(wrong())}Ok(())
+}}
+
+/// Stack-local reusable EMPTY reservation. It retains no program, source text,
+/// match rows or semantic facts; the existing Db owns every compiled program.
+pub(super) struct PatternScratchSlot<'budget>{
+ budget:&'budget Arc<dq_analyze::captured_generator_budget::Budget>,
+ slot:std::sync::Mutex<Option<SourceArenaCredit>>,identity:usize,
+ _control:SourceArenaControlCredit,
+}
+struct BoundPatternScratch<'a,'held,'budget>{work:&'a HeldSourceWork<'held>,slot:&'a PatternScratchSlot<'budget>}
+impl PatternScratchSlot<'_>{
+ pub(super) fn require_available(&self)->io::Result<()>{
+  let slot=self.slot.lock().map_err(|_|wrong())?;
+  let credit=slot.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"native scratch scope is active or failed"))?;
+  if credit.reserved_bytes()!=0{return Err(wrong())}Ok(())
+ }
+}
+struct PatternTemporaryWork<'a,'held>{parent:&'a HeldSourceWork<'held>,budget:&'a dq_analyze::captured_generator_budget::Budget,identity:Option<usize>}
+impl PatternTemporaryWork<'_,'_>{
+ fn actual<'c>(&self,state:&HeldSourceState<'_>,credit:&'c SourceArenaCredit)->io::Result<&'c Allocation>{
+  let actual=HeldSourceWork::actual(state,credit)?;
+  if self.identity.is_some_and(|identity|std::ptr::from_ref(actual)as usize!=identity){return Err(wrong())}Ok(actual)
+ }
+}
+impl SourceArenaWork for PatternTemporaryWork<'_,'_>{
+ fn checkpoint(&self)->io::Result<()>{self.budget.require().map_err(|message|budget_denial("pattern_checkpoint",self.budget,0,&message))?;self.parent.checkpoint()}
+ fn reserve(&self,bytes:usize)->io::Result<SourceArenaCredit>{
+  if self.identity.is_some(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"native search must use its actual moved scratch reservation"))}
+  self.checkpoint()?;let mut credit=self.parent.reserve(0)?;self.grow(&mut credit,bytes)?;Ok(credit)
+ }
+ fn grow(&self,credit:&mut SourceArenaCredit,extra:usize)->io::Result<()>{
+  self.checkpoint()?;let mut state=self.parent.lock()?;let actual=self.actual(&state,credit)?;
+  let next=charge_allocation_growth(actual,self.budget,extra)?;state.ledger.resize_arena(actual,next)
+ }
+ fn shrink(&self,credit:&mut SourceArenaCredit,bytes:usize)->io::Result<()>{
+  // Paid cleanup after physical disposal: no new checkpoint/allocation.
+  let mut state=self.parent.lock()?;let actual=self.actual(&state,credit)?;
+  let next=actual.reserved_bytes().checked_sub(bytes).ok_or_else(wrong)?;
+  self.budget.validate_scoped_refund(bytes).map_err(|_|wrong())?;
+  state.ledger.resize_arena(actual,next)?;
+  self.budget.refund_scoped(bytes).map_err(|_|wrong())
+ }
+}
+impl crate::query_db::native_patterns::PatternWorkLender for BoundPatternScratch<'_,'_,'_>{
+ fn prepare_miss(&self,db:&QueryDb)->io::Result<()>{
+  self.work.checkpoint()?;self.slot.budget.require().map_err(|message|budget_denial("pattern_pressure_checkpoint",self.slot.budget,0,&message))?;
+  // A soft quarter-family watermark trims cold cache values while keeping
+  // three quarters for the next cold parser/Unicode/NFA peak under SAME cap.
+  // Real registry compilation needs more than half of a 1MiB family even
+  // though its final program is small; waiting until half is occupied is late.
+  // This is NOT a larger cap, a reserved grant or a fit promise for arbitrary
+  // patterns. Eligible physical Drop remains the ONLY refund authority; live
+  // aliases/nonpattern allocations may still cause a genuine first denial.
+  if self.slot.budget.used()>self.slot.budget.allocation_limit()/4{db.db.evict_unborrowed_values(&[super::native_patterns::NATIVE_PATTERN]);}
+  Ok(())
+ }
+
+ fn with_compile(&self,key:dm_query::Key,compute:&mut dyn FnMut(&dyn SourceArenaWork)->Result<(dm_query::Outcome,usize),dm_query::QueryError>)->Result<dm_query::Outcome,dm_query::QueryError>{
+  self.work.checkpoint().map_err(|actual|dm_query::QueryError::operational(key,actual))?;
+  let budget=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(self.slot.budget).map_err(|message|dm_query::QueryError::operational(key,io::Error::new(if self.slot.budget.denied(){io::ErrorKind::OutOfMemory}else{io::ErrorKind::InvalidInput},message)))?;
+  let work=PatternTemporaryWork{parent:self.work,budget:&budget,identity:None};
+  let (outcome,retained)=match compute(&work){Ok(actual)=>actual,Err(first)=>{budget.keep_failed_scratch();return Err(first)}};
+  // Actual buffers are still covered by the child. Transfer retained extent
+  // into the SAME parent BEFORE the child can refund, never after publication.
+  match super::native_patterns::retain_program_payload(outcome,retained,&budget,self.slot.budget){
+   Ok(outcome)=>Ok(outcome),Err(first)=>{budget.keep_failed_scratch();Err(dm_query::QueryError::operational(key,first))}
+  }
+ }
+
+ fn with_scratch(&self,visit:&mut dyn FnMut(&dyn SourceArenaWork,SourceArenaCredit)->io::Result<SourceArenaCredit>)->io::Result<()>{
+  self.work.checkpoint()?;
+  let credit=self.slot.slot.lock().map_err(|_|wrong())?.take().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"native scratch reservation already moved or failed"))?;
+  if credit.reserved_bytes()!=0{return Err(wrong())}
+  // This is the existing child of the ONE parent budget, not a new allowance.
+  // Allocation/ledger metadata was already funded by the parent before this
+  // empty credit was issued. Search growth alone charges/refunds this child.
+  let budget=dq_analyze::captured_generator_budget::Budget::scoped_temporaries(self.slot.budget).map_err(|message|io::Error::new(if self.slot.budget.denied(){io::ErrorKind::OutOfMemory}else{io::ErrorKind::InvalidInput},message))?;
+  let work=PatternTemporaryWork{parent:self.work,budget:&budget,identity:Some(self.slot.identity)};
+  let mut credit=match visit(&work,credit){Ok(actual)=>actual,Err(first)=>{budget.keep_failed_scratch();return Err(first)}};
+  let settled=(||{
+   budget.require().map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))?;
+   {let state=self.work.lock()?;work.actual(&state,&credit)?;}
+   // Private executor returned this SAME credit only after its real hook and
+   // every actual search buffer dropped; its result is a sealed scalar.
+   let released=credit.reserved_bytes();work.shrink(&mut credit,released)?;
+   let prior=self.slot.slot.lock().map_err(|_|wrong())?.replace(credit);if prior.is_some(){return Err(wrong())}Ok(())
+  })();
+  if let Err(first)=settled{budget.keep_failed_scratch();return Err(first)}
+  // Child payload refunds here. Existing fixed Budget-Arc metadata remains
+  // conservatively charged, exactly as the existing scoped budget policy.
+  Ok(())
+ }
+}
+fn issue_pattern_slot<'budget>(work:&HeldSourceWork<'_>,budget:&'budget Arc<dq_analyze::captured_generator_budget::Budget>)->io::Result<PatternScratchSlot<'budget>>{
+ {let state=work.lock()?;if !std::ptr::eq(state.budget,budget.as_ref()){return Err(wrong())}}
+ let credit=work.reserve(0)?;let identity=std::ptr::from_ref(credit.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?)as usize;let control=credit.control();
+ Ok(PatternScratchSlot{budget,slot:std::sync::Mutex::new(Some(credit)),identity,_control:control})
+}
+fn bind_pattern_slot<'a,'held,'budget>(work:&'a HeldSourceWork<'held>,slot:&'a PatternScratchSlot<'budget>)->io::Result<BoundPatternScratch<'a,'held,'budget>>{
+ let state=work.lock()?;
+ if !std::ptr::eq(state.budget,slot.budget.as_ref()){return Err(wrong())}
+ let actual=slot._control.owner().as_any().downcast_ref::<Allocation>().ok_or_else(wrong)?;
+ if actual.origin_parent.is_some()||actual.is_retirable_path_fact()||!actual.same_domain(&Arc::downgrade(state.domain))||!state.ledger.has_source_arena(actual)||std::ptr::from_ref(actual)as usize!=slot.identity{return Err(wrong())}
+ drop(state);Ok(BoundPatternScratch{work,slot})
+}
+pub(super) fn new_pattern_slot<'budget>(db:&QueryDb,ledger:&mut super::raw_input_credits::Ledger,budget:&'budget Arc<dq_analyze::captured_generator_budget::Budget>)->io::Result<PatternScratchSlot<'budget>>{
+ held_source_work(db,ledger,budget,|work|issue_pattern_slot(work,budget))
+}
+pub(super) fn with_held_pattern_slot<R>(db:&QueryDb,ledger:&mut super::raw_input_credits::Ledger,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,slot:&PatternScratchSlot<'_>,consume:impl FnOnce(&dyn SourceArenaWork,&dyn crate::query_db::native_patterns::PatternWorkLender)->io::Result<R>)->io::Result<R>{
+ slot.require_available()?;
+ held_source_work(db,ledger,budget,|work|{let scratch=bind_pattern_slot(work,slot)?;consume(work,&scratch)})
+}
+pub(super) fn with_held_pattern_work<R>(db:&QueryDb,ledger:&mut super::raw_input_credits::Ledger,budget:&Arc<dq_analyze::captured_generator_budget::Budget>,consume:impl FnOnce(&dyn SourceArenaWork,&dyn crate::query_db::native_patterns::PatternWorkLender)->io::Result<R>)->io::Result<R>{
+ held_source_work(db,ledger,budget,|work|{let slot=issue_pattern_slot(work,budget)?;let scratch=bind_pattern_slot(work,&slot)?;consume(work,&scratch)})
+}
+
+#[cfg(test)]mod retained_plain_family_controls{
+ use super::*;use dq_analyze::native_pattern::{Spec,Mode,Provider};
+ fn bound()->crate::daemon::control::Binding{crate::daemon::control::bind_with_deadline(Default::default(),std::time::Instant::now()+std::time::Duration::from_secs(120))}
+ #[test]fn actual_unicode_lookbehind_cold_compile_and_match_fit_same_one_mib_family(){
+  let _bound=bound();let db=QueryDb::default();let budget=dq_analyze::captured_generator_budget::Budget::new(1<<20).unwrap();let mut ledger=super::super::raw_input_credits::Ledger::default();
+  let spec=Spec{pattern:r"(?<![\w./])spawn(?:\s*\(|\s*$|\s+[A-Za-z_])",mode:Mode::Search};let text="éspawn(0) spawn (1)";let expected=dq_analyze::pat::Pat::new(spec.pattern).find(text).map(|m|(m.start,m.end));
+  with_held_pattern_work(&db,&mut ledger,&budget,|work,scratch|{
+   let provider=crate::query_db::PatternProvider::scoped(&db,work,scratch);let mut actual=None;provider.find(spec,text,0,&mut|m|{actual=Some(m);Ok(())})?;assert_eq!(actual,expected);assert!(actual.is_some(),"genuine required Unicode-sensitive matcher must run");
+   assert_eq!(provider.capture_len(spec)?,1);assert_eq!(provider.capture_len(spec)?,1);Ok(())
+  }).unwrap();assert!(!budget.denied());assert!(budget.used()<1<<20);assert_eq!(db.db.stats(crate::query_db::native_patterns::NATIVE_PATTERN).computed,1,"actual same native query node is reused");
+ }
+ #[test]fn actual_unicode_compiler_true_peak_still_refuses_and_same_db_fresh_family_recovers(){
+  let _bound=bound();let db=QueryDb::default();let spec=Spec{pattern:r"(?<![\w.])spawn\s*\(",mode:Mode::Search};
+  let denied=dq_analyze::captured_generator_budget::Budget::new(64*1024).unwrap();let mut ledger=super::super::raw_input_credits::Ledger::default();
+  let error=with_held_pattern_work(&db,&mut ledger,&denied,|work,scratch|crate::query_db::PatternProvider::scoped(&db,work,scratch).capture_len(spec)).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert!(denied.denied());assert_eq!(db.db.stats(crate::query_db::native_patterns::NATIVE_PATTERN).computed,0);
+  let healthy=dq_analyze::captured_generator_budget::Budget::new(1<<20).unwrap();let mut ledger=super::super::raw_input_credits::Ledger::default();
+  with_held_pattern_work(&db,&mut ledger,&healthy,|work,scratch|crate::query_db::PatternProvider::scoped(&db,work,scratch).capture_len(spec)).unwrap();assert!(!healthy.denied());
+ }
 }

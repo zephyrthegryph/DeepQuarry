@@ -215,3 +215,12 @@ pub(crate) fn stage_batch(request:BatchRequest,host:&mut BuildHost)->Result<Stag
  let completed=run_batch(request,host,&mut diagnostics,&mut report)?;
  let result=(||->Result<_,Box<dyn Error>>{let diagnostics=if diagnostics.length()==0{None}else{Some(diagnostics.seal()?.validate(drain)?.0)};let report=report.seal()?.validate(drain)?.0;completed.inputs.require_current()?;Ok((diagnostics,report))})();let(diagnostics,report)=result.map_err(|primary|Box::new(BatchFailure{committed_files:completed.committed_files,primary})as Box<dyn Error>)?;Ok(StagedBatch{root,prefixes,mode,apply,completed,diagnostics,report,_credit:credit})
 }
+
+// Reused authored-transaction status wrappers for the baseline coordinator.
+impl BatchFailure{pub(crate) fn from_operation(committed_files:usize,primary:Box<dyn Error>)->Box<dyn Error>{Box::new(Self{committed_files,primary})}}
+impl FailedMutation{pub(crate) fn from_attempt(primary:Box<dyn Error>,may_have_changed:bool,recovered:bool,recovery:Option<Box<dyn Error>>)->Box<dyn Error>{Box::new(Self{primary,may_have_changed,recovered,recovery})}}
+
+impl CommittedFailure{
+ /// Only an actual writer-minted opaque transition supplies committed truth.
+ pub(crate) fn from_verified_transition(primary:Box<dyn Error>,transition:&crate::native_author_fix_transaction::Transition)->Box<dyn Error>{Box::new(Self{primary,replacement:transition.verified_replacement().clone()})}
+}

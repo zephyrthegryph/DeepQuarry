@@ -5,11 +5,15 @@ use dm_analysis::policy_inputs::PolicyInputs;
 use dm_tree::frontend::{BodySyntax,BodySyntaxInput,BodySyntaxFailure,OriginalArchiveOwner};
 use std::{io,sync::Arc};
 pub use crate::{reactive_read_result::FrozenReadSet,reactive_reads_native::Failure};
-#[derive(Clone,Copy,Debug,PartialEq,Eq,serde::Serialize)]pub enum Flavor{Closed,Targeted}
+#[derive(Clone,Copy,Debug,PartialEq,Eq,serde::Serialize)]pub enum Flavor{Closed,Targeted,UtilityClosed,UtilityTargeted}
+impl Flavor{pub(crate) fn is_utility(self)->bool{matches!(self,Self::UtilityClosed|Self::UtilityTargeted)}pub(crate) fn is_closed(self)->bool{matches!(self,Self::Closed|Self::UtilityClosed)}pub(crate) fn utility(self)->Self{if self.is_closed(){Self::UtilityClosed}else{Self::UtilityTargeted}}}
 /// Opaque original-source-bound global result; fact equality is not authority.
-pub struct GlobalResult{owner:OriginalArchiveOwner,value:NativeGlobals}
+pub struct GlobalResult{owner:OriginalArchiveOwner,value:NativeGlobals,utility:bool}
 impl GlobalResult{
- pub fn matches(&self,inputs:&PolicyInputs)->bool{self.owner.matches(inputs.archive())}
+ pub fn matches(&self,inputs:&PolicyInputs)->bool{!self.utility&&self.owner.matches(inputs.archive())}
+ pub fn matches_utility(&self,inputs:&PolicyInputs)->bool{self.utility&&self.owner.matches(inputs.archive())}
+ pub fn utility_contract(&self)->bool{self.utility}
+ fn matches_source(&self,source:&dyn crate::reactive_global_source::Source)->bool{self.utility==source.utility_body_contract()&&source.complete_inputs().is_some_and(|inputs|self.owner.matches(inputs.archive()))}
  pub fn visit_storage(&self,mut visit:impl FnMut(&'static str,usize,usize,usize)){
   self.owner.visit_storage(&mut visit);self.value.visit_storage(|pointer,capacity|visit("global_rows",pointer,capacity,capacity));
  }
@@ -21,11 +25,14 @@ impl GlobalResult{
  /// public oracle schema. This is data only; source witness checks still apply.
  pub fn serialize_dependency_facts<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{self.value.serialize_dependencies(serializer)}
  pub(crate) fn outside_setters(&self)->&crate::write_policy::WriteRows{self.value.outside_setters()}
- pub(crate) fn outside_written_on(&self,source:&dyn crate::reactive_global_source::Source,owner:&str,name:&str)->Result<bool,Failure>{let inputs=source.complete_inputs().ok_or("derived Globals require actual complete original source")?;if !self.matches(inputs){return Err("derived Globals original owner differs".into())}reactive_reads_native::GlobalFacts::outside_written_on(&self.value,source,owner,name)}
+ pub(crate) fn outside_written_on(&self,source:&dyn crate::reactive_global_source::Source,owner:&str,name:&str)->Result<bool,Failure>{let _inputs=source.complete_inputs().ok_or("derived Globals require actual complete original source")?;if !self.matches_source(source){return Err("derived Globals original owner/utility contract differs".into())}reactive_reads_native::GlobalFacts::outside_written_on(&self.value,source,owner,name)}
 
 
 }
 type BodyBorrower<'a>=dyn Fn(&Arc<BodySyntaxInput>)->Result<Arc<BodySyntax>,BodySyntaxFailure>+'a;
+#[derive(Clone,Copy)]enum BodyDemand<'a>{Strict(&'a BodyBorrower<'a>),Utility(&'a crate::reactive_original_source::UtilityBodyBorrower<'a>)}
+impl<'a>BodyDemand<'a>{fn bind<'b>(self,source:ReadSource<'b>)->ReadSource<'b>where 'a:'b{match self{Self::Strict(body)=>source.with_body_borrower(body),Self::Utility(body)=>source.with_utility_body_borrower(body)}}}
+
 /// All lifetimes end with this operation. Every demanded body enters the real
 /// active query context callback before the archive's private issuance check.
 fn source<'a>(raw:&'a CapturedRawPolicy,inputs:&'a PolicyInputs,budget:&'a Arc<Budget>,checkpoint:&'a dyn Fn()->io::Result<()>,body:&'a BodyBorrower<'a>)->Result<ReadSource<'a>,Failure>{
@@ -33,7 +40,7 @@ fn source<'a>(raw:&'a CapturedRawPolicy,inputs:&'a PolicyInputs,budget:&'a Arc<B
 }
 pub fn globals(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<GlobalResult,Failure>{
  let source=source(raw,inputs,budget,checkpoint,body)?;let value=NativeGlobals::build(&source,checkpoint)?;checkpoint()?;source.require()?;
- Ok(GlobalResult{owner:inputs.archive().original_owner_witness(),value})
+ Ok(GlobalResult{owner:inputs.archive().original_owner_witness(),value,utility:false})
 }
 /// Native semantic-only Globals producer. The caller must authenticate current
 /// evidence/config/mapping before cache access and lend the SAME active query
@@ -41,7 +48,7 @@ pub fn globals(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budget>,c
 pub fn globals_native(inputs:&PolicyInputs,root:&std::path::Path,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<GlobalResult,Failure>{
  checkpoint()?;let source=ReadSource::native(inputs,root,budget)?.with_checkpoint(checkpoint).with_body_borrower(body);
  let value=NativeGlobals::build(&source,checkpoint)?;checkpoint()?;source.require()?;
- Ok(GlobalResult{owner:inputs.archive().original_owner_witness(),value})
+ Ok(GlobalResult{owner:inputs.archive().original_owner_witness(),value,utility:false})
 }
 /// A stack-only lazy loan from the SAME query graph. The factory checks the
 /// returned value's original-source witness before any policy question.
@@ -49,20 +56,21 @@ pub trait GlobalProvider{fn with_globals(&self,consume:&mut dyn FnMut(&GlobalRes
 impl<F> GlobalProvider for F where F:Fn(&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{fn with_globals(&self,consume:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{self(consume)}}
 struct GlobalAdapter<'a,'s>{source:&'a ReadSource<'s>,provider:&'a dyn GlobalProvider}
 impl reactive_reads_native::GlobalFacts for GlobalAdapter<'_,'_>{
- fn outside_written_on(&self,source:&dyn crate::reactive_global_source::Source,owner:&str,name:&str)->Result<bool,Failure>{let inputs=source.complete_inputs().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"ordinary global provider requires complete original source")))?;self.question(&mut|result|{self.check(result)?;if !result.matches(inputs){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider differs from actual question source")))}reactive_reads_native::GlobalFacts::outside_written_on(&result.value,source,owner,name)})}
+ fn outside_written_on(&self,source:&dyn crate::reactive_global_source::Source,owner:&str,name:&str)->Result<bool,Failure>{let _inputs=source.complete_inputs().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"ordinary global provider requires complete original source")))?;self.question(&mut|result|{self.check(result)?;if !result.matches_source(source){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider differs from actual question source/utility contract")))}reactive_reads_native::GlobalFacts::outside_written_on(&result.value,source,owner,name)})}
 
  fn constant_after_init(&self,name:&str)->Result<bool,Failure>{self.question(&mut|result|{self.check(result)?;reactive_reads_native::GlobalFacts::constant_after_init(&result.value,name)})}
  fn field_constant_after_init(&self,name:&str)->Result<bool,Failure>{self.question(&mut|result|{self.check(result)?;reactive_reads_native::GlobalFacts::field_constant_after_init(&result.value,name)})}
- fn is_written_on(&self,source:&dyn crate::reactive_global_source::Source,owner:&str,name:&str)->Result<bool,Failure>{let inputs=source.complete_inputs().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"ordinary global provider requires its actual complete original source")))?;self.question(&mut|result|{self.check(result)?;if !result.matches(inputs){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider differs from actual question source")))}reactive_reads_native::GlobalFacts::is_written_on(&result.value,source,owner,name)})}
+ fn is_written_on(&self,source:&dyn crate::reactive_global_source::Source,owner:&str,name:&str)->Result<bool,Failure>{let _inputs=source.complete_inputs().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"ordinary global provider requires its actual complete original source")))?;self.question(&mut|result|{self.check(result)?;if !result.matches_source(source){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider differs from actual question source/utility contract")))}reactive_reads_native::GlobalFacts::is_written_on(&result.value,source,owner,name)})}
 }
 /// One lazy current-source question from the existing query graph. A provider
 /// cannot mint an answer without exactly one authenticated borrowed result.
 /// Actual callback/provider IO stays operational even after a semantic refusal.
-pub fn with_global_question(provider:&dyn GlobalProvider,inputs:&PolicyInputs,checkpoint:&dyn Fn()->io::Result<()>,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{
+pub fn with_global_question(provider:&dyn GlobalProvider,inputs:&PolicyInputs,checkpoint:&dyn Fn()->io::Result<()>,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{with_global_question_contract(provider,inputs,false,checkpoint,action)}
+fn with_global_question_contract(provider:&dyn GlobalProvider,inputs:&PolicyInputs,utility:bool,checkpoint:&dyn Fn()->io::Result<()>,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{
  checkpoint()?;let mut answer=None;let mut first=None;let mut called=false;
  let returned=provider.with_globals(&mut|value|{
   let attempt=(||{checkpoint()?;if called{return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider repeated original result callback")))}called=true;
-   if !value.matches(inputs){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider supplied another original source owner tuple")))}
+   if !(if utility{value.matches_utility(inputs)}else{value.matches(inputs)}){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider supplied another original source owner/utility contract tuple")))}
    let actual=action(value)?;answer=Some(actual);checkpoint()?;Ok(actual)})();
   match attempt{Ok(actual)=>Ok(actual),Err(actual)=>{if first.is_none()||(!matches!(&first,Some(Failure::Operational(_)))&&matches!(&actual,Failure::Operational(_))){first=Some(actual)}Err(Failure::Operational(io::Error::other(ReadCallbackStopped)))}}
  });
@@ -72,8 +80,8 @@ pub fn with_global_question(provider:&dyn GlobalProvider,inputs:&PolicyInputs,ch
  match answer{Some(actual)if actual==returned=>Ok(actual),_=>Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider omitted or replaced original checked answer")))}
 }
 impl GlobalAdapter<'_,'_>{
- fn question(&self,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{budgeted_action(self.source.budget(),||with_global_question(self.provider,self.source.inputs(),&||self.source.checkpoint(),&mut|result|budgeted_action(self.source.budget(),||action(result))))}
- fn check(&self,result:&GlobalResult)->Result<(),Failure>{if !result.matches(self.source.inputs()){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"reactive globals belong to another original source owner tuple")))}self.source.checkpoint()?;Ok(())}}
+ fn question(&self,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{budgeted_action(self.source.budget(),||with_global_question_contract(self.provider,self.source.inputs(),self.source.utility_body_borrower().is_some(),&||self.source.checkpoint(),&mut|result|budgeted_action(self.source.budget(),||action(result))))}
+ fn check(&self,result:&GlobalResult)->Result<(),Failure>{if !result.matches_source(self.source){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"reactive globals belong to another original source owner tuple")))}self.source.checkpoint()?;Ok(())}}
 
 
 // Classify SAME-budget denial inside the child callback, before a provider can
@@ -115,13 +123,15 @@ impl std::error::Error for ReadCallbackStopped{}
 fn read_callback_proxy(error:&io::Error)->bool{let mut cause=error.get_ref().map(|e|e as &(dyn std::error::Error+'static));while let Some(error)=cause{if error.is::<ReadCallbackStopped>(){return true}cause=error.downcast_ref::<io::Error>().and_then(io::Error::get_ref).map(|payload|payload as &(dyn std::error::Error+'static)).or_else(||error.source());}false}
 /// Neutral page data is never exposed as a verified finite ReadResult.
 /// Host full-result wrappers must additionally check completed workspace proof.
-pub struct UnsealedReadData{owner:OriginalArchiveOwner,request:ReadIdentity,facts:FrozenReadSet}
+pub struct UnsealedReadData{owner:OriginalArchiveOwner,request:ReadIdentity,facts:FrozenReadSet,utility_procedure:Option<Box<UtilityProcedure>>}
 impl UnsealedReadData{
  pub fn matches_compiled(&self,inputs:&PolicyInputs)->bool{self.owner.matches(inputs.archive())}
  pub fn matches_request(&self,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor)->bool{self.request.matches(receiver,procedure,context,flavor)}
  pub fn facts(&self)->&FrozenReadSet{&self.facts}
+ pub fn utility_procedure(&self)->Option<&UtilityProcedure>{self.utility_procedure.as_deref()}
+ pub fn serialize_data<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{use serde::Serialize as _;match &self.utility_procedure{None=>self.facts.serialize(serializer),Some(actual)=>(&self.facts,actual).serialize(serializer)}}
  pub fn retained_charge(&self)->Option<usize>{let mut bytes=Some(std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>());self.visit_storage(|_,_,_,capacity|bytes=bytes.and_then(|n|n.checked_add(capacity)));bytes}
- pub fn visit_storage(&self,mut visit:impl FnMut(&'static str,usize,usize,usize)){self.owner.visit_storage(&mut visit);self.request.visit_storage(&mut visit);self.facts.visit_storage(visit)}
+ pub fn visit_storage(&self,mut visit:impl FnMut(&'static str,usize,usize,usize)){self.owner.visit_storage(&mut visit);self.request.visit_storage(&mut visit);self.facts.visit_storage(&mut visit);if let Some(actual)=&self.utility_procedure{visit("utility_procedure_owner",actual.as_ref() as *const _ as usize,std::mem::size_of::<UtilityProcedure>(),std::mem::size_of::<UtilityProcedure>());actual.visit_storage(&mut visit);}}
 }
 pub trait RawPolicyReadProvider{fn with_read_data(&self,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,consume:&mut dyn FnMut(&UnsealedReadData)->Result<(),Failure>)->Result<(),Failure>;}
 impl<F> RawPolicyReadProvider for F where F:Fn(&str,&str,Option<&str>,Flavor,&mut dyn FnMut(&UnsealedReadData)->Result<(),Failure>)->Result<(),Failure>{fn with_read_data(&self,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,consume:&mut dyn FnMut(&UnsealedReadData)->Result<(),Failure>)->Result<(),Failure>{self(receiver,procedure,context,flavor,consume)}}
@@ -218,16 +228,16 @@ impl DependencyResult{
 }
 
 fn freeze_original_read(source:&ReadSource<'_>,facts:&PolicyFacts,provider:&dyn GlobalProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>)->Result<FrozenReadSet,Failure>{
- let mut poll=||checkpoint();let globals=GlobalAdapter{source,provider};let result=reactive_reads_native::original_request(source,Directives{facts,globals:Some(&globals)},receiver,procedure,context,matches!(flavor,Flavor::Closed),&mut poll)?;let frozen=FrozenReadSet::freeze(result,budget,&mut poll)?;checkpoint()?;source.require()?;Ok(frozen)
+ let mut poll=||checkpoint();let globals=GlobalAdapter{source,provider};let result=reactive_reads_native::original_request(source,Directives{facts,globals:Some(&globals)},receiver,procedure,context,flavor.is_closed(),&mut poll)?;let frozen=FrozenReadSet::freeze(result,budget,&mut poll)?;checkpoint()?;source.require()?;Ok(frozen)
 }
 /// Unsealed full-page data production. The provider's bool is not coverage
 /// authority. Actual host exhaustion/WorkspaceCodeWitness must be checked
 /// before a full-role query may deliver this data, including every warm loan.
-pub fn read_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,provider:&dyn GlobalProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<UnsealedReadData,Failure>{read_data_from_pages_inner(inputs,root,pages,order,budget,provider,receiver,procedure,context,flavor,checkpoint,body,None)}
-fn read_data_from_pages_inner(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,provider:&dyn GlobalProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>,policy:Option<&PolicyFacts>)->Result<UnsealedReadData,Failure>{
+pub fn read_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,provider:&dyn GlobalProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<UnsealedReadData,Failure>{read_data_from_pages_inner(inputs,root,pages,order,budget,provider,receiver,procedure,context,flavor,checkpoint,BodyDemand::Strict(body),None)}
+fn read_data_from_pages_inner(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,provider:&dyn GlobalProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,checkpoint:&dyn Fn()->io::Result<()>,body:BodyDemand<'_>,policy:Option<&PolicyFacts>)->Result<UnsealedReadData,Failure>{
  checkpoint()?;let produced=(||{
   let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
-  let value=(||{let source=ReadSource::native(inputs,root,&scratch)?.with_raw_policy_pages(pages,order).with_checkpoint(checkpoint).with_body_borrower(body);let request=ReadIdentity::capture(&scratch,receiver,procedure,context,flavor)?;let mut poll=||checkpoint();let captured=if policy.is_none(){Some(PolicyFacts::capture(&source,&mut poll)?)}else{None};let facts=policy.or(captured.as_ref()).expect("actual captured or supplied policy facts");let frozen=freeze_original_read(&source,facts,provider,receiver,procedure,context,flavor,&scratch,checkpoint)?;Ok::<_,Failure>(UnsealedReadData{owner:inputs.archive().original_owner_witness(),request,facts:frozen})})();
+  let value=(||{let source=body.bind(ReadSource::native(inputs,root,&scratch)?.with_raw_policy_pages(pages,order).with_checkpoint(checkpoint));let request=ReadIdentity::capture(&scratch,receiver,procedure,context,flavor)?;let mut poll=||checkpoint();let captured=if policy.is_none(){Some(PolicyFacts::capture(&source,&mut poll)?)}else{None};let facts=policy.or(captured.as_ref()).expect("actual captured or supplied policy facts");let frozen=freeze_original_read(&source,facts,provider,receiver,procedure,context,flavor,&scratch,checkpoint)?;let utility_procedure=match body{BodyDemand::Strict(_)=>None,BodyDemand::Utility(body)=>{scratch.charge(std::mem::size_of::<UtilityProcedure>()).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;Some(Box::new(UtilityProcedure::capture(inputs,root,&scratch,checkpoint,body,receiver,procedure)?))}};Ok::<_,Failure>(UnsealedReadData{owner:inputs.archive().original_owner_witness(),request,facts:frozen,utility_procedure})})();
   // Source/facts/interpreter containers above are physically gone. The moved
   // immutable payload remains funded while the conservative scratch credit is
   // still live; only then may the scratch Arc retire. No root-by-root facts
@@ -351,7 +361,7 @@ pub fn policy_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&
  poll()?;let produced=(||{let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let value=(||{let source=ReadSource::native(inputs,root,&scratch)?.with_raw_policy_pages(pages,order).with_checkpoint(poll);let facts=PolicyFacts::capture(&source,&mut||poll())?;let names=source.dependency_defines()?;let count=names.len();let bytes=count.checked_mul(4*std::mem::size_of::<String>()).and_then(|n|n.checked_add(64)).ok_or_else(||{scratch.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"policy defines capacity overflow"))})?;scratch.charge(bytes)?;let mut defines=Vec::new();defines.try_reserve_exact(count).map_err(|actual|{scratch.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual))})?;if defines.capacity().checked_mul(std::mem::size_of::<String>()).is_none_or(|n|n>bytes){scratch.deny();return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"policy defines allocator exceeds admission")))}for name in names{poll()?;defines.push(name)}Ok::<_,Failure>(UnsealedPolicyFacts{owner:inputs.archive().original_owner_witness(),facts,defines})})();let funded=match value{Ok(value)=>match value.retained_charge().ok_or_else(||{budget.deny();io::Error::new(io::ErrorKind::OutOfMemory,"policy data retained capacity overflow")}).and_then(|bytes|budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))){Ok(())=>Ok(value),Err(actual)=>{drop(value);Err(Failure::Operational(actual))}},Err(actual)=>Err(actual)};if funded.is_err(){scratch.keep_failed_scratch()}drop(scratch);funded})();finish_page_data(produced,budget,poll)
 }
 
-pub fn read_data_from_pages_with_policy(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,policy:&dyn PolicyFactsProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<UnsealedReadData,Failure>{let produced=with_policy_data(policy,inputs,poll,|data|read_data_from_pages_inner(inputs,root,pages,order,budget,globals,receiver,procedure,context,flavor,poll,body,Some(&data.facts)));finish_page_data(produced,budget,poll)}
+pub fn read_data_from_pages_with_policy(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,policy:&dyn PolicyFactsProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<UnsealedReadData,Failure>{let produced=with_policy_data(policy,inputs,poll,|data|read_data_from_pages_inner(inputs,root,pages,order,budget,globals,receiver,procedure,context,flavor,poll,BodyDemand::Strict(body),Some(&data.facts)));finish_page_data(produced,budget,poll)}
 
 pub fn dependency_data_from_pages_with_policy(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,reads:&dyn RawPolicyReadProvider,policy:&dyn PolicyFactsProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<UnsealedDependencyData,Failure>{dependency_data_from_pages_with_policy_using(inputs,root,pages,order,budget,globals,reads,policy,poll,body,None)}
 
@@ -492,9 +502,18 @@ fn setter_publishes_data_from_pages_using(inputs:&PolicyInputs,root:&std::path::
 /// authentic raw CODE loans and shared native generator. No report role is
 /// issued here; the host must exhaust/join its actual selected source purpose.
 pub fn derived_reads_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,selected_pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,test_types:&std::collections::BTreeSet<String>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<crate::captured_derived_reads::DerivedReadData,Failure>{
+ derived_reads_data_from_pages_using(inputs,root,selected_pages,pages,order,test_types,budget,globals,poll,body,None)
+}
+
+/// Actual fixture inspection on the SAME native collector; no report role.
+pub fn derived_reads_fixture_from_pages(inputs:&PolicyInputs,root:&std::path::Path,selected_pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,test_types:&std::collections::BTreeSet<String>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>,fixture:&mut crate::captured_derived_reads::FixtureVisitor<'_>)->Result<crate::captured_derived_reads::DerivedReadData,Failure>{
+ derived_reads_data_from_pages_using(inputs,root,selected_pages,pages,order,test_types,budget,globals,poll,body,Some(fixture))
+}
+
+fn derived_reads_data_from_pages_using(inputs:&PolicyInputs,root:&std::path::Path,selected_pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,test_types:&std::collections::BTreeSet<String>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>,mut fixture:Option<&mut crate::captured_derived_reads::FixtureVisitor<'_>>)->Result<crate::captured_derived_reads::DerivedReadData,Failure>{
  budget.require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;poll()?;
  let phase=Budget::scoped_temporaries(budget).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
- let pending=(||{let source=ReadSource::native(inputs,root,&phase)?.with_raw_policy_pages(selected_pages,order).with_checkpoint(poll).with_body_borrower(body);let all_source=ReadSource::native(inputs,root,&phase)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);let mut index=Some(crate::captured_derived_reads::prepare(&source,poll)?);let mut out=None;with_global_question(globals,inputs,poll,&mut|value|{let index=index.take().ok_or("derived schema consumed by a repeated Globals question")?;out=Some(crate::captured_derived_reads::collect(&source,&all_source,index,value,test_types,poll)?);Ok(true)})?;out.ok_or_else(||Failure::Unsupported("derived whole question omitted its actual Globals result".into()))})();
+ let pending=(||{let source=ReadSource::native(inputs,root,&phase)?.with_raw_policy_pages(selected_pages,order).with_checkpoint(poll).with_body_borrower(body);let all_source=ReadSource::native(inputs,root,&phase)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);let mut index=Some(crate::captured_derived_reads::prepare(&source,poll)?);let mut out=None;with_global_question(globals,inputs,poll,&mut|value|{let index=index.take().ok_or("derived schema consumed by a repeated Globals question")?;out=Some(match fixture.as_deref_mut(){Some(visit)=>crate::captured_derived_reads::collect_with_fixture(&source,&all_source,index,value,test_types,poll,visit)?,None=>crate::captured_derived_reads::collect(&source,&all_source,index,value,test_types,poll)?});Ok(true)})?;out.ok_or_else(||Failure::Unsupported("derived whole question omitted its actual Globals result".into()))})();
  let pending=finish_page_data(pending,&phase,poll);let pending=match pending{Ok(data)=>{let bytes=data.retained_charge().ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"derived retained report size overflow")))?;match budget.charge(bytes){Ok(())=>Ok(data),Err(message)=>{drop(data);Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))}}},Err(actual)=>Err(actual)};
  if pending.is_err(){phase.keep_failed_scratch()}drop(phase);finish_page_data(pending,budget,poll)
 }
@@ -532,4 +551,62 @@ pub fn handler_declarations_data_from_pages(inputs:&PolicyInputs,scope:Option<&c
 /// Exact declared-removal consumer of already-issued SAME-owner dependencies.
 pub fn drop_declared_fix_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,configuration:&crate::captured_raw_file::Config,relative:&str,budget:&Arc<Budget>,dependencies:&dyn DependencyDataProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<crate::captured_tracked_fix::ListMacroFixData,Failure>{
  let result=with_dependency_data(dependencies,inputs,poll,|data|{let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);crate::captured_tracked_drop::collect_source(&source,crate::reactive_dependency_view::Analysis::Frozen(&data.value.facts),configuration,relative,poll)});finish_page_data(result,budget,poll)
+}
+
+/// Utility Globals share the existing native global classifier and completed
+/// original source witness. The private result tag prevents strict CHECK/GEN
+/// callers from adopting NoCode-derived utility facts.
+pub fn globals_native_utility(inputs:&PolicyInputs,root:&std::path::Path,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>,body:&crate::reactive_original_source::UtilityBodyBorrower<'_>)->Result<GlobalResult,Failure>{
+ checkpoint()?;let source=ReadSource::native(inputs,root,budget)?.with_checkpoint(checkpoint).with_utility_body_borrower(body);
+ let value=NativeGlobals::build(&source,checkpoint)?;checkpoint()?;source.require()?;
+ Ok(GlobalResult{owner:inputs.archive().original_owner_witness(),value,utility:true})
+}
+/// SAME read scratch/freeze/retained-charge kernel with an explicit utility
+/// request identity and canonical Kind4 body borrower. No direct body parse.
+pub fn utility_read_data_from_pages_with_policy(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,policy:&dyn PolicyFactsProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,poll:&dyn Fn()->io::Result<()>,body:&crate::reactive_original_source::UtilityBodyBorrower<'_>)->Result<UnsealedReadData,Failure>{
+ let flavor=flavor.utility();let produced=with_policy_data(policy,inputs,poll,|data|read_data_from_pages_inner(inputs,root,pages,order,budget,globals,receiver,procedure,context,flavor,poll,BodyDemand::Utility(body),Some(&data.facts)));finish_page_data(produced,budget,poll)
+}
+
+
+/// Ordinary debug text uses actual Original callable selection and SAME current
+/// canonical body loan. A rejected body prints -1 only after its private bound
+/// Rejected product has been authenticated by that loan.
+fn with_utility_procedure(inputs:&PolicyInputs,root:&std::path::Path,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>,body:&crate::reactive_original_source::UtilityBodyBorrower<'_>,requested_owner:&str,name:&str,mut consume:impl FnMut(bool,Option<crate::native_sem_utility_render::Procedure<'_>>)->Result<(),Failure>)->Result<(),Failure>{
+ use dm_ir::{ResolvedMeaning,SymbolId};
+ use crate::native_sem_utility_render::Procedure;
+ checkpoint()?;let source=ReadSource::native(inputs,root,budget)?.with_checkpoint(checkpoint).with_utility_body_borrower(body);source.require()?;
+ let receiver=if requested_owner.is_empty(){"/"}else{requested_owner};let tree=inputs.archive().tree();let profile=tree.checker_builtin_profile().ok_or("utility callable profile absent")?;
+ let type_known=if requested_owner.is_empty()||requested_owner=="/"{true}else{tree.checker_source_type_presence(profile,receiver).map_err(|e|format!("utility type presence: {e:?}"))?};
+ match source.callable_checked(receiver,name)?{
+  crate::reactive_original_source::SelectedCallable::Missing=>consume(type_known,None)?,
+  crate::reactive_original_source::SelectedCallable::Source(call)=>{
+   let mut code=None;crate::reactive_global_source::Source::with_body(&source,call.ordinal,&mut|loan|{code=Some(loan.statement_body().parsed().statements.len());Ok(())})?;
+   // ProcBody reports the actual model location, not the distinct raw/engine-line projection used by lint sites.
+   let point=inputs.archive().callable_header_source().reported_policy_line(call.member)?;let file=source.utility_report_file(&point.path)?;
+   let owner=if call.owner.is_empty(){"/"}else{call.owner};
+   consume(type_known,Some(Procedure{owner,name:call.name,file:&file,line:point.line,builtin:false,code}))?;
+  },
+  crate::reactive_original_source::SelectedCallable::Builtin=>{
+   // Re-enter the SAME checked fact selector solely to borrow the selected
+   // fixed catalog spelling; never infer declaring owner from the receiver.
+   let rows=inputs.archive().callables().members().len();let reserve=std::mem::size_of::<ResolvedMeaning>().checked_mul(16).and_then(|n|n.checked_mul(rows)).and_then(|n|n.checked_add(tree.types().len().checked_mul(std::mem::size_of::<SymbolId>()*16)?)).and_then(|n|n.checked_add(8192)).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;
+   budget.charge(reserve).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;
+   let fact=dm_analysis::checker_call_facts::callable_any_using(tree,tree,profile,SymbolId::of(receiver),SymbolId::of(name),&mut||{checkpoint().map_err(Failure::Operational)})?;
+   let dm_analysis::checker_call_facts::CallableFact::CheckerBuiltin{declaring_owner,name:actual_name,..}=fact else{return Err("utility builtin selector changed role".into())};
+   let owner=tree.checker_builtin_spelling(profile,declaring_owner).ok_or("utility builtin owner spelling absent")?;let actual_name=tree.checker_builtin_spelling(profile,actual_name).ok_or("utility builtin name spelling absent")?;
+   consume(type_known,Some(Procedure{owner:if owner.is_empty(){"/"}else{owner},name:actual_name,file:"",line:1,builtin:true,code:None}))?;
+  }
+ }
+ checkpoint()?;source.require()?;Ok(())
+}
+
+#[derive(serde::Serialize)]pub struct UtilityProcedure{type_known:bool,selected:Option<UtilityProcedureRow>}
+#[derive(serde::Serialize)]struct UtilityProcedureRow{owner:String,name:String,file:String,line:usize,builtin:bool,code:Option<usize>}
+impl UtilityProcedure{
+ fn capture(inputs:&PolicyInputs,root:&std::path::Path,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>,body:&crate::reactive_original_source::UtilityBodyBorrower<'_>,owner:&str,name:&str)->Result<Self,Failure>{
+  fn copied(text:&str,b:&Budget)->Result<String,Failure>{let bound=text.len().checked_mul(4).and_then(|n|n.checked_add(std::mem::size_of::<String>())).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;b.charge(bound).map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;let mut out=String::new();out.try_reserve_exact(text.len()).map_err(|e|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,e)))?;if out.capacity().checked_add(std::mem::size_of::<String>()).is_none_or(|n|n>bound){return Err(Failure::Operational(io::ErrorKind::OutOfMemory.into()))}out.push_str(text);Ok(out)}
+  let mut result=None;with_utility_procedure(inputs,root,budget,poll,body,owner,name,|type_known,selected|{if result.is_some(){return Err("utility procedure descriptor repeated".into())}let selected=selected.map(|p|Ok::<_,Failure>(UtilityProcedureRow{owner:copied(p.owner,budget)?,name:copied(p.name,budget)?,file:copied(p.file,budget)?,line:p.line,builtin:p.builtin,code:p.code})).transpose()?;result=Some(Self{type_known,selected});Ok(())})?;result.ok_or_else(||"actual utility procedure descriptor absent".into())
+ }
+ pub fn write(&self,owner:&str,name:&str,out:&mut impl io::Write)->io::Result<()>{let selected=self.selected.as_ref().map(|p|crate::native_sem_utility_render::Procedure{owner:&p.owner,name:&p.name,file:&p.file,line:p.line,builtin:p.builtin,code:p.code});crate::native_sem_utility_render::debug_proc(out,owner,name,self.type_known,selected)}
+ fn visit_storage(&self,visit:&mut dyn FnMut(&'static str,usize,usize,usize)){if let Some(p)=&self.selected{for value in [&p.owner,&p.name,&p.file]{if value.capacity()!=0{visit("utility_procedure_text",value.as_ptr() as usize,value.len(),value.capacity());}}}}
 }

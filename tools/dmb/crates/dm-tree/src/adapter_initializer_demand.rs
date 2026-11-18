@@ -29,6 +29,9 @@ impl sealed::Sealed for Checked<'_,'_>{}
 pub(super) trait AdapterDemand:sealed::Sealed{
     type Operational;
     fn checkpoint(&self)->Result<(),Self::Operational>;
+    #[cfg(debug_assertions)]
+    fn trace_prepared_failure(&self,_prepared:&crate::procedure::original_primary_signatures::PreparedOriginalSignatures,_symbols:&SymbolTable,_facts:&crate::AdaptedDeclarations){}
+
     fn original_settings(
         &self,items:OriginalItems<'_>,symbols:&mut SymbolTable,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,
         _prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
@@ -51,6 +54,15 @@ pub(super) trait AdapterDemand:sealed::Sealed{
         _prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
     )->Result<SymbolId,WalkFailure<Self::Operational>>{
         symbols.intern(text).map_err(|error|WalkFailure::Source(error.to_string()))
+    }
+    /// Member names are data, never absolute type/owner IDs. Compatibility
+    /// keeps its old owned insertion; checked native tables may use their
+    /// existing independently funded compact spelling storage.
+    fn intern_member_name(
+        &self,symbols:&mut SymbolTable,text:&str,_source_start:Option<usize>,
+        prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
+    )->Result<SymbolId,WalkFailure<Self::Operational>>{
+        self.intern_adapter_spelling(symbols,text,prepared)
     }
     fn intern_callable_path(
         &self, symbols: &mut SymbolTable, text: &str, _source_start: Option<usize>,
@@ -125,6 +137,9 @@ impl AdapterDemand for Compatibility{
     fn assignment(&self,_:dm_syntax::Span,header:&str,index:usize,_:Option<(&crate::procedure::OriginalProcedureHeaders,usize)>,symbols:&mut SymbolTable)->Result<dm_ir::SymbolicExpression,WalkFailure<Self::Operational>>{crate::procedure::expression(header[index+1..].trim(),symbols).map_err(Into::into)}
 }
 impl AdapterDemand for Checked<'_,'_>{
+    #[cfg(debug_assertions)]
+    fn trace_prepared_failure(&self,prepared:&crate::procedure::original_primary_signatures::PreparedOriginalSignatures,symbols:&SymbolTable,facts:&crate::AdaptedDeclarations){prepared.trace_failed_adapter_categories(symbols,facts,self.admission);}
+
     type Operational=std::io::Error;
     fn original_settings(
         &self,items:OriginalItems<'_>,symbols:&mut SymbolTable,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,
@@ -177,6 +192,20 @@ impl AdapterDemand for Checked<'_,'_>{
             None=>symbols.intern(text),
         };
         inserted.map_err(|error|WalkFailure::Source(error.to_string()))
+    }
+    fn intern_member_name(
+        &self,symbols:&mut SymbolTable,text:&str,source_start:Option<usize>,
+        prepared:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
+    )->Result<SymbolId,WalkFailure<Self::Operational>>{
+        // Any header hint is validated by the SAME immutable source owner.
+        // Existing owned formal spellings win before compact insertion, including
+        // formals declared later in this already-completed primary stream.
+        if text.starts_with('/') { return self.intern_adapter_spelling(symbols,text,prepared); }
+        match symbols.intern_compact_spelling_at(text,source_start,self.admission).map_err(WalkFailure::Operational)?{
+            Ok(Some(id))=>Ok(id),
+            Ok(None)=>self.intern_adapter_spelling(symbols,text,prepared),
+            Err(error)=>Err(WalkFailure::Source(error.to_string())),
+        }
     }
     fn intern_callable_path(
         &self, symbols: &mut SymbolTable, text: &str, source_start: Option<usize>,

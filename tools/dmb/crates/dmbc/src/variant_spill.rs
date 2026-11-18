@@ -33,7 +33,8 @@ use std::{
 };
 
 /// Bump with any change to the stored layout or to a stored type: an old file is then ignored (and ages out).
-const VERSION: u32 = 2;
+// Version 3 adds InputSnapshot optional-callback reads in BaseParts.
+const VERSION: u32 = 3;
 const MAGIC: &[u8; 8] = b"DMBSPIL1";
 const EXTENSION: &str = "spill";
 const DEFAULT_BUDGET_GB: u64 = 4;
@@ -466,5 +467,39 @@ mod tests {
         // A budget below the kept file's size removes nothing more.
         evict_with(&dir, Some(&fresh), Some(1), None, now);
         assert!(fresh.exists() && other.exists());
+    }
+}
+
+
+#[cfg(test)]
+mod optional_snapshot_format_tests {
+    use super::*;
+
+    #[test]
+    fn actual_spill_reader_refuses_previous_snapshot_frames_before_source_half() {
+        let dir = crate::test_scratch::dir("optional-snapshot-spill-schema");
+        let key = key(Path::new("E:/fixture/project.dme"), &BTreeMap::new(), 1);
+        let mut header = Header { version: 2, key, dmb_hash: 0, text_key: (0, 0),
+            image_bytes: 0, written_unix: 0 };
+        let old_frame = dm_wire::encode(2 * 16, &header).unwrap();
+        let mut old = MAGIC.to_vec();
+        old.extend_from_slice(&(old_frame.len() as u64).to_le_bytes());
+        old.extend_from_slice(&old_frame);
+        fs::write(path_of(&dir, key), old).unwrap();
+        assert!(peek(&dir, key).is_none());
+        assert!(read(&dir, key).is_err());
+        // The current frame tag alone cannot relabel an old version header.
+        let mut mismatched = MAGIC.to_vec();
+        frame(&mut mismatched, 0, &header).unwrap();
+        fs::write(path_of(&dir, key), mismatched).unwrap();
+        assert!(peek(&dir, key).is_none());
+        assert!(read(&dir, key).is_err());
+        header.version = VERSION;
+        let mut current = MAGIC.to_vec();
+        frame(&mut current, 0, &header).unwrap();
+        fs::write(path_of(&dir, key), current).unwrap();
+        assert_eq!(peek(&dir, key).unwrap().version, VERSION);
+        // Header admission does not fabricate the missing source/image frames.
+        assert!(read(&dir, key).is_err());
     }
 }

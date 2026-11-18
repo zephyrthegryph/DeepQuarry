@@ -2,8 +2,8 @@
 use std::sync::OnceLock;
 use crate::{api_policy,dm::{field_write::Fields,pylines::recorded_into},incr,lint::{Cx,Lint,Meta,Registry,Sink},parity::{ParseKind,Parity},tree::SourceFile};
 struct Api{core:api_policy::Api}
-struct Reporting<'file,'out>{file:&'file SourceFile,out:&'out mut Sink}
-impl api_policy::Reporter for Reporting<'_,'_>{fn allowed(&mut self,line:usize)->bool{self.out.allowed(self.file,line,"api")}fn site(&mut self,rule:&str,line:usize){self.out.site(rule,line)}}
+struct Reporting<'file,'out,'patterns>{file:&'file SourceFile,out:&'out mut Sink<'patterns>}
+impl api_policy::Reporter for Reporting<'_,'_,'_>{fn allowed(&mut self,line:usize)->bool{self.out.allowed(self.file,line,"api")}fn site(&mut self,rule:&str,line:usize){self.out.site(rule,line)}}
 impl Lint for Api{fn meta(&self)->&Meta{&api_policy::META}
  fn scan_file(&self,_cx:&Cx,file:&SourceFile,out:&mut Sink){self.core.scan_file(file,&mut Reporting{file,out});}
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {

@@ -15,10 +15,37 @@ use dm_tree::frontend::{BodyArchive, CurrentBodySyntax, OriginalBodyDisposition,
 use dm_syntax::StatementKind;
 use std::{io, path::Path};
 
-const MAX_WINDOW: usize = 1024;
+const MAX_WINDOW: usize = 8192;
+const NATIVE_MAX_WINDOW: usize = 1024;
 const MAX_EXAMPLES: usize = 32;
+// DATA path equality only: archive semantic paths use native separators on
+// Windows, while the hidden CLI selector is project-relative forward slashes.
+// Borrow bytes; preserve case, components and UTF8 exactly (no filesystem read).
+fn census_source_path_matches(actual:&str,selected:&str)->bool{
+    let slash=|byte|if byte==b'\\'{b'/'}else{byte};
+    actual.bytes().map(slash).eq(selected.bytes().map(slash))
+}
+#[test]fn census_source_anchor_matches_borrowed_windows_and_slash_paths_without_canonicalizing_components(){
+    for(actual,selected)in[(r"code\content\turfs\simulated\floor_types.dm","code/content/turfs/simulated/floor_types.dm"),("code/content/turfs/simulated/floor_types.dm",r"code\content\turfs\simulated\floor_types.dm"),(r"code\føø\probe.dm","code/føø/probe.dm"),(r"code/content\turfs/simulated\floor_types.dm","code/content/turfs/simulated/floor_types.dm")]{assert!(census_source_path_matches(actual,selected));}
+    for actual in["Code/content/turfs/simulated/floor_types.dm","code/content/turfs/simulated/other.dm","code/content/turfs/simulated/floor_types.dm.extra","code/content/../floor_types.dm","code/extra/content/turfs/simulated/floor_types.dm",""]{assert!(!census_source_path_matches(actual,"code/content/turfs/simulated/floor_types.dm"));}
+}
+#[test]fn actual_census_source_anchor_matches_current_captured_archive_semantic_path(){
+    let root=crate::test_scratch::dir("census-source-anchor-native-path");std::fs::create_dir(root.join("code")).unwrap();let project=root.join("deepquarry.dme");
+    std::fs::write(&project,"#include \"code/probe.dm\"\n").unwrap();std::fs::write(root.join("code/probe.dm"),"/proc/probe()\n    return 1\n").unwrap();
+    let host=prepare(&project);let state=host.query_state();let guard=state.lock().unwrap();let archive=guard.snapshot.as_ref().unwrap().original_body_census_archive().unwrap();
+    assert_eq!(archive.occurrences().len(),1);let occurrence=&archive.occurrences()[0];assert!(census_source_path_matches(&occurrence.source.semantic_path,"code/probe.dm"),"actual captured source path {:?}",occurrence.source.semantic_path);
+    assert_eq!(occurrence.source.line,1);assert!(!census_source_path_matches(&occurrence.source.semantic_path,"code/other.dm"));
+}
+
+// Byte-bounded UTF8 DATA preview, borrowed from the genuine current owner.
+fn census_preview(value:&str)->&str{let mut end=value.len().min(192);while !value.is_char_boundary(end){end-=1} &value[..end]}
+#[test]fn census_preview_is_borrowed_utf8_and_byte_bounded(){
+ let text="x".repeat(191)+"\u{1f642}tail";let preview=census_preview(&text);assert_eq!(preview.len(),191);assert!(preview.len()<=192);assert!(std::ptr::eq(preview.as_ptr(),text.as_ptr()));assert_eq!(census_preview("actual"),"actual");
+}
+
 
 #[derive(Clone,Copy,Eq,PartialEq)]enum CensusContract{Original0290,NativeIntrinsic}
+fn census_window_limit(contract:CensusContract)->usize{match contract{CensusContract::Original0290=>MAX_WINDOW,CensusContract::NativeIntrinsic=>NATIVE_MAX_WINDOW}}
 impl CensusContract{fn label(self)->&'static str{match self{Self::Original0290=>"original",Self::NativeIntrinsic=>"native_intrinsic"}}}
 #[derive(Clone, Copy)]
 enum Order {
@@ -143,12 +170,10 @@ fn inspect(
 }
 fn inspect_contract(db:&QueryDb,archive:&BodyArchive,ordinal:usize,rank:Option<usize>,examples:&mut Examples,contract:CensusContract)->Result<Disposition,BodySyntaxFailure>{
     let occurrence = archive.occurrences().get(ordinal).ok_or_else(|| invalid("missing archive body ordinal"))?;
-    let input = archive.syntax_inputs()
-        .and_then(|inputs| inputs.get(ordinal))
-        .ok_or_else(|| invalid("missing archive-issued BODY input"))?;
     if !archive.uses_body_queries(db) {
         return Err(invalid("census BODY owner differs"));
     }
+    let input=archive.syntax_input_checked(ordinal,&||Ok(()))?;
     let show = |reason: &str, detail: &str| {
         eprintln!("original.census rank={rank:?} ordinal={ordinal} file={} line={} result={reason} detail={detail:?}",
             occurrence.source.semantic_path, occurrence.source.line);
@@ -157,7 +182,7 @@ fn inspect_contract(db:&QueryDb,archive:&BodyArchive,ordinal:usize,rank:Option<u
         // Same producer and budget as Kind4; keep only one body product alive
         // and do not prepare or populate any graph rows for the census.
         let product = input.parse_original_product_with_setting_admission(admission)?;
-        if let Some(diagnostic) = product.bind_error(input)? {
+        if let Some(diagnostic) = product.bind_error(&input)? {
             if examples.include(None) { show("native_rejected", &diagnostic.message); }
             return Ok(Disposition::NativeRejected);
         }
@@ -192,6 +217,19 @@ fn inspect_contract(db:&QueryDb,archive:&BodyArchive,ordinal:usize,rank:Option<u
                     admission.checkpoint().map_err(BodySyntaxFailure::Operational)?;
                     roots |= 1 << root_bucket(&statement.kind);
                 }
+                // One row for EVERY actual typed missing witness; the bounded
+                // example quota below only controls extra root-header context.
+                admission.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+                let member=archive.tree().member(occurrence.member).ok_or_else(||invalid("census callable member unavailable"))?;
+                let owner=archive.tree().type_node(member.owner).ok_or_else(||invalid("census callable owner unavailable"))?;
+                let owner_id=owner.path;
+                let owner=archive.tree().symbols().text(owner_id).ok_or_else(||invalid("census owner spelling unavailable"))?;
+                let name=archive.tree().symbols().text(member.name).ok_or_else(||invalid("census member spelling unavailable"))?;
+                {
+                    use std::io::Write as _;
+                    writeln!(std::io::stderr().lock(),"original.census.unissued typed=UnissuedOriginalBodyGrammar rank={rank:?} ordinal={ordinal} owner={:?} owner_bytes={} owner_symbol={owner_id:?} member={:?} member_bytes={} member_symbol={:?} kind={:?} file={:?} file_bytes={} line={} span={:?} diagnostic_only=true report_completed=false callback_invoked=false",census_preview(owner),owner.len(),census_preview(name),name.len(),member.name,member.kind,census_preview(&occurrence.source.semantic_path),occurrence.source.semantic_path.len(),occurrence.source.line,bound.body_span())
+                        .map_err(BodySyntaxFailure::Operational)?;
+                }
                 if examples.include(Some(roots)) {
                     for statement in parsed.statements.iter().take(3) {
                         let detail = &statement.raw_header;
@@ -224,7 +262,7 @@ fn survey_archive(
     [all[0],all[1],all[2],all[3]]
 }
 fn survey_archive_contract(db:&Arc<QueryDb>,archive:&BodyArchive,start:usize,count:usize,order:Order,continue_after_oom:bool,contract:CensusContract)->[usize;5]{
-    assert!((1..=MAX_WINDOW).contains(&count), "invalid survey window size");
+    assert!((1..=census_window_limit(contract)).contains(&count), "invalid survey window size");
     assert_eq!(archive.source_mapping().initial_environment(), dm_preprocess::InitialEnvironment::OriginalChecker0290);
     assert!(archive.uses_body_queries(db.as_ref()));
     let total = archive.occurrences().len();
@@ -268,6 +306,20 @@ fn survey_archive_contract(db:&Arc<QueryDb>,archive:&BodyArchive,start:usize,cou
                 continue;
             }
             Err(error) => {
+                // Read only the already captured failing occurrence. Never retry
+                // projection/parameter parsing while reporting its first error.
+                if let Some(occurrence)=archive.occurrences().get(ordinal){
+                    let member=archive.tree().member(occurrence.member);
+                    let owner=member.and_then(|m|archive.tree().type_node(m.owner)).and_then(|o|archive.tree().symbols().text(o.path));
+                    let name=member.and_then(|m|archive.tree().symbols().text(m.name));
+                    let signature=member.and_then(|m|m.metadata.procedure.as_ref()).map(|p|&p.signature);
+                    eprintln!("{}.census.operational_context rank={rank:?} ordinal={ordinal} owner={:?} member={:?} member_id={:?} declaration={:?} file={:?} file_bytes={} line={} body_origin={:?} parameter_count={:?} variadic={:?} diagnostic_only=true report_completed=false callback_invoked=false",contract.label(),owner.map(census_preview),name.map(census_preview),occurrence.member,occurrence.declaration,census_preview(&occurrence.source.semantic_path),occurrence.source.semantic_path.len(),occurrence.source.line,occurrence.expanded_span,signature.map(|s|s.parameters.len()),signature.map(|s|s.variadic));
+                    if let Some(signature)=signature{
+                        for(index,parameter)in signature.parameters.iter().take(16).enumerate(){
+                            eprintln!("{}.census.operational_parameter ordinal={ordinal} index={index} name={:?} name_symbol={:?} relative_span={:?} declared_type={:?} diagnostic_only=true",contract.label(),archive.tree().symbols().text(parameter.name).map(census_preview),parameter.name,parameter.relative_span,parameter.declared_type());
+                        }
+                    }
+                }
                 if contract==CensusContract::NativeIntrinsic{panic!("Native intrinsic census stopped at rank {rank:?}, ordinal {ordinal}; prior counts {counts:?}: {error:?}")}
                 panic!("Original census stopped at rank {rank:?}, ordinal {ordinal}; prior counts {counts:?}: {error:?}")
             },
@@ -312,12 +364,15 @@ fn compact_checkout_survey(
     [all[0],all[1],all[2],all[3]]
 }
 fn compact_checkout_survey_contract(project:&Path,start:usize,count:usize,order:Order,continue_after_oom:bool,contract:CensusContract)->[usize;5]{
+    compact_checkout_survey_contract_at_source(project,start,count,order,continue_after_oom,contract,None)
+}
+fn compact_checkout_survey_contract_at_source(project:&Path,start:usize,count:usize,order:Order,continue_after_oom:bool,contract:CensusContract,source:Option<(&str,usize)>)->[usize;5]{
     let root = project.parent().unwrap();
     let intent = PolicyInputRequest {
         analysis_context: Some(AnalysisContext::OriginalAnalyze0290),
         workspace: Some(WorkspacePolicyRequest {
             root: root.to_path_buf(),
-            recursive_roots: vec![root.join("code")],
+            recursive_roots: crate::policy_request::WorkspaceAuxiliaryQuestion::AUTHORED_DOC_UI_CHECK_GREP_ROOTS.iter().map(|folder|root.join(folder)).collect(),
             configuration: root.join("tools/ci/lint_scopes.toml"),
         }),
         ..Default::default()
@@ -342,6 +397,21 @@ fn compact_checkout_survey_contract(project:&Path,start:usize,count:usize,order:
     recorder.diagnostic_source_evidence(&view).unwrap().check(view.mapping()).unwrap();
     assert!(view.archive().matches_tree(view.tree()));
     assert!(Arc::ptr_eq(view.archive().source_mapping(), view.mapping()));
+    let start = if let Some((path, line)) = source {
+        let mut selected = None;
+        for (ordinal, body) in view.archive().occurrences().iter().enumerate() {
+            crate::daemon::control::checkpoint().expect("source census archive lookup interrupted");
+            if census_source_path_matches(&body.source.semantic_path,path) && body.source.line as usize == line {
+                assert!(selected.replace(ordinal).is_none(), "source census anchor is ambiguous in actual captured archive");
+            }
+        }
+        let ordinal = selected.expect("source census anchor absent from actual captured archive");
+        let rank = queries.checker_order_rank_for_census(view.archive(), ordinal).expect("actual source census rank lookup failed");
+        eprintln!("original.census.anchor file={:?} file_bytes={} line={line} ordinal={ordinal} checker_rank={rank} diagnostic_only=true report_completed=false callback_invoked=false", census_preview(path), path.len());
+        rank
+    } else { start };
+    let max_window=census_window_limit(contract);
+    eprintln!("original.census.context analysis_context=OriginalAnalyze0290 initial_environment=OriginalChecker0290 recursive_roots={:?} coordinate={} start={start} count={count} max_window={max_window} diagnostic_only=true report_completed=false callback_invoked=false",crate::policy_request::WorkspaceAuxiliaryQuestion::AUTHORED_DOC_UI_CHECK_GREP_ROOTS,order.label());
     survey_archive_contract(&queries, view.archive(), start, count, order, continue_after_oom,contract)
 }
 
@@ -416,8 +486,15 @@ pub(crate) fn run_current_cli(project: std::path::PathBuf, start: usize, count: 
 pub(crate) fn run_native_cli(project:std::path::PathBuf,start:usize,count:usize)->Result<(),String>{
     run_contract_cli(project,start,count,CensusContract::NativeIntrinsic)
 }
+pub(crate) fn run_current_cli_at_source(project:std::path::PathBuf,path:String,line:usize,count:usize)->Result<(),String>{
+    if path.is_empty() || line == 0 { return Err("invalid source census anchor".into()); }
+    run_contract_cli_at_source(project,0,count,CensusContract::Original0290,Some((path,line)))
+}
 fn run_contract_cli(project:std::path::PathBuf,start:usize,count:usize,contract:CensusContract)->Result<(),String>{
-    if !project.is_absolute() || !(1..=MAX_WINDOW).contains(&count) || start.checked_add(count).is_none() {
+    run_contract_cli_at_source(project,start,count,contract,None)
+}
+fn run_contract_cli_at_source(project:std::path::PathBuf,start:usize,count:usize,contract:CensusContract,source:Option<(String,usize)>)->Result<(),String>{
+    if !project.is_absolute() || !(1..=census_window_limit(contract)).contains(&count) || start.checked_add(count).is_none() {
         return Err("invalid bounded Original grammar census request".into());
     }
     let worker = std::thread::Builder::new().name(format!("{}-grammar-census",contract.label()))
@@ -427,7 +504,7 @@ fn run_contract_cli(project:std::path::PathBuf,start:usize,count:usize,contract:
             let _deadline = bind_with_deadline(Cancellation::default(), Instant::now() + Duration::from_secs(300));
             // No CLI or environment opt-out for operational errors. This shared
             // implementation classifies only the nominal missing-witness cause.
-            compact_checkout_survey_contract(&project, start, count, Order::Checker, false,contract);
+            compact_checkout_survey_contract_at_source(&project, start, count, Order::Checker, false,contract,source.as_ref().map(|(path,line)|(path.as_str(),*line)));
         }).map_err(|error| error.to_string())?;
     worker.join().map_err(|cause| {
         if let Some(message) = cause.downcast_ref::<String>() { message.clone() }

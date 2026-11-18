@@ -44,10 +44,14 @@ enum RequestCommand {
     SelectedExclusions(super::selected_report_wire::Roster),
     SelectedExclusionsV2(super::selected_report_wire::Roster, dq_analyze::selected_exclusions_wire::JudgmentV2),
     CombinedSelectedReports,
-    FullRegistryCheck{options:crate::runner_host::FullRegistryCheckOptions,selectors:Arc<Vec<String>>},
+    NativeSemUtility{binding:Arc<dq_analyze::native_sem_utility_wire::Binding>},
+    NativeCodemodFixture{binding:Arc<dq_analyze::native_codemod_fixture_wire::Binding>},
+    NativeSelftests{selectors:Arc<Vec<String>>,caller_directory:Option<PathBuf>},
+    FullRegistryCheck{options:crate::runner_host::FullRegistryCheckOptions,selectors:Arc<Vec<String>>,selftests:bool,caller_directory:Option<PathBuf>,cli:Option<Arc<dq_analyze::native_check_cli_wire::Request>>},
     SchemaProposals,
     NativeFix(crate::native_fix::Codemod,Vec<String>,bool),
-    CheckerText(PathBuf, Option<PathBuf>,Option<PathBuf>,bool),
+    BaselineUpdate(dq_analyze::native_baseline_update_wire::Mode,bool,Vec<String>),
+    CheckerText(PathBuf, Option<PathBuf>,Option<PathBuf>,bool,bool),
     CompileSelectedReports(super::selected_report_wire::CompoundRoster, bool),
     NamedImageDir,
     GenerationCheck,
@@ -1112,8 +1116,12 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
         },
         Request::CheckerText(request)=>{
             if let Err(error)=request.qualify(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
-            let super::checker_text::Request{build,display,caller_directory,configuration,json}=request;
-            handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::CheckerText{display,caller_directory,configuration,json}))
+            let super::checker_text::Request{build,display,caller_directory,configuration,json,parse_only}=request;
+            handle_build(stream,shared,discovery,version,compiler,build,None,Some(ReportDispatch::CheckerText{display,caller_directory,configuration,json,parse_only}))
+        }
+        Request::BaselineUpdate(request)=>{
+            if let Err(error)=super::baseline_update::qualify(&request){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
+            let report=ReportDispatch::BaselineUpdate{mode:request.mode,no_gen:request.no_gen,selectors:request.selectors};handle_build(stream,shared,discovery,version,compiler,request.build,None,Some(report))
         }
         Request::NativeFix(request)=>{
             if let Err(error)=super::native_fix::qualify(&request){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
@@ -1123,9 +1131,21 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             if let Err(error)=request.qualify(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
             handle_build(stream,shared,discovery,version,compiler,request.build,None,Some(ReportDispatch::SchemaProposals))
         }
+        Request::NativeUtility(super::native_utility::Request::Sem(request))=>{
+            if let Err(error)=request.qualify(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
+            handle_build(stream,shared,discovery,version,compiler,request.build,None,Some(ReportDispatch::NativeSemUtility{binding:Arc::new(request.binding)}))
+        }
+        Request::NativeUtility(super::native_utility::Request::CodemodFixture(request))=>{
+            if let Err(error)=request.qualify(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
+            handle_build(stream,shared,discovery,version,compiler,request.build,None,Some(ReportDispatch::NativeCodemodFixture{binding:Arc::new(request.binding)}))
+        }
+        Request::NativeUtility(super::native_utility::Request::StandaloneSelftests(request))=>{
+            if let Err(error)=request.qualify(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
+            let actual=request.actual;handle_build(stream,shared,discovery,version,compiler,actual.build,None,Some(ReportDispatch::NativeSelftests{selectors:Arc::new(actual.selectors),caller_directory:actual.caller_directory}))
+        }
         Request::FullRegistryCheck(request)=>{
             if let Err(error)=request.qualify(){return protocol::send(&mut stream,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)))}
-            handle_build(stream,shared,discovery,version,compiler,request.build,None,Some(ReportDispatch::FullRegistryCheck{options:request.options,selectors:Arc::new(request.selectors)}))
+            handle_build(stream,shared,discovery,version,compiler,request.build,None,Some(ReportDispatch::FullRegistryCheck{options:request.options,selectors:Arc::new(request.selectors),selftests:request.selftests,caller_directory:request.caller_directory,cli:request.cli.map(Arc::new)}))
         }
         Request::CompileSelectedReports(request) => {
             let roster = match request.qualify() {
@@ -1161,10 +1181,14 @@ enum ReportDispatch {
     SelectedExclusions { roster: super::selected_report_wire::Roster, exclusions: Vec<String>, mode: super::selected_exclusions::Mode },
     CompileSelected { roster: super::selected_report_wire::CompoundRoster, exclusions: Vec<String>, output_name: String, compact_checker: bool },
     NamedImageDir,
-    FullRegistryCheck{options:crate::runner_host::FullRegistryCheckOptions,selectors:Arc<Vec<String>>},
+    NativeSemUtility{binding:Arc<dq_analyze::native_sem_utility_wire::Binding>},
+    NativeCodemodFixture{binding:Arc<dq_analyze::native_codemod_fixture_wire::Binding>},
+    NativeSelftests{selectors:Arc<Vec<String>>,caller_directory:Option<PathBuf>},
+    FullRegistryCheck{options:crate::runner_host::FullRegistryCheckOptions,selectors:Arc<Vec<String>>,selftests:bool,caller_directory:Option<PathBuf>,cli:Option<Arc<dq_analyze::native_check_cli_wire::Request>>},
     SchemaProposals,
     NativeFix{mode:crate::native_fix::Codemod,prefixes:Vec<String>,apply:bool},
-    CheckerText{display:PathBuf,caller_directory:Option<PathBuf>,configuration:Option<PathBuf>,json:bool},
+    BaselineUpdate{mode:dq_analyze::native_baseline_update_wire::Mode,no_gen:bool,selectors:Vec<String>},
+    CheckerText{display:PathBuf,caller_directory:Option<PathBuf>,configuration:Option<PathBuf>,json:bool,parse_only:bool},
 }
 
 fn handle_report(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,version:u32,compiler:u128,request:super::analyze::AnalyzeRequest,kind:super::analyze::AttemptKind)->io::Result<()>{
@@ -1282,10 +1306,14 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Derived, _) => RequestCommand::DerivedReport,
                     ReportDispatch::Existing(super::analyze::AttemptKind::Handlers, _) => RequestCommand::HandlersReport,
                     ReportDispatch::NamedImageDir => RequestCommand::NamedImageDir,
-                    ReportDispatch::FullRegistryCheck{options,selectors}=>RequestCommand::FullRegistryCheck{options:*options,selectors:Arc::clone(selectors)},
+                    ReportDispatch::NativeSemUtility{binding}=>RequestCommand::NativeSemUtility{binding:Arc::clone(binding)},
+                    ReportDispatch::NativeCodemodFixture{binding}=>RequestCommand::NativeCodemodFixture{binding:Arc::clone(binding)},
+                    ReportDispatch::NativeSelftests{selectors,caller_directory}=>RequestCommand::NativeSelftests{selectors:Arc::clone(selectors),caller_directory:caller_directory.clone()},
+                    ReportDispatch::FullRegistryCheck{options,selectors,selftests,caller_directory,cli}=>RequestCommand::FullRegistryCheck{options:*options,selectors:Arc::clone(selectors),selftests:*selftests,caller_directory:caller_directory.clone(),cli:cli.clone()},
                     ReportDispatch::SchemaProposals=>RequestCommand::SchemaProposals,
                     ReportDispatch::NativeFix{mode,prefixes,apply}=>RequestCommand::NativeFix(*mode,prefixes.clone(),*apply),
-                    ReportDispatch::CheckerText{display,caller_directory,configuration,json}=>RequestCommand::CheckerText(display.clone(),caller_directory.clone(),configuration.clone(),*json),
+                    ReportDispatch::BaselineUpdate{mode,no_gen,selectors}=>RequestCommand::BaselineUpdate(*mode,*no_gen,selectors.clone()),
+                    ReportDispatch::CheckerText{display,caller_directory,configuration,json,parse_only}=>RequestCommand::CheckerText(display.clone(),caller_directory.clone(),configuration.clone(),*json,*parse_only),
                     ReportDispatch::CompileSelected { roster, compact_checker, .. } => {
                         let (native, _) = compound.as_ref().expect("admitted compound destination");
                         let native_key = RequestKey::of(native, &path, &[], &[]);
@@ -1326,7 +1354,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
             let stream = Arc::new(Mutex::new(stream));
             // Only staged preparation diagnostics belong to the verified
             // transcript. Ordinary daemon traces stay in the lifecycle log.
-            let _output = (!matches!(&report, Some(ReportDispatch::SelectedExclusions { .. } | ReportDispatch::CompileSelected { .. } | ReportDispatch::NamedImageDir | ReportDispatch::FullRegistryCheck{..} | ReportDispatch::SchemaProposals | ReportDispatch::CheckerText{..} | ReportDispatch::NativeFix{..})))
+            let _output = (!matches!(&report, Some(ReportDispatch::SelectedExclusions { .. } | ReportDispatch::CompileSelected { .. } | ReportDispatch::NamedImageDir | ReportDispatch::NativeSemUtility{..} | ReportDispatch::NativeCodemodFixture{..} | ReportDispatch::NativeSelftests{..} | ReportDispatch::FullRegistryCheck{..} | ReportDispatch::SchemaProposals | ReportDispatch::CheckerText{..} | ReportDispatch::NativeFix{..} | ReportDispatch::BaselineUpdate{..})))
                 .then(|| super::output_binding(Arc::clone(&stream)));
             let _binding = match preparation_deadline {
                 Some(deadline) => control::bind_with_deadline(token, deadline),
@@ -1413,10 +1441,14 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                                 })?;
                                 Ok(super::generation::Executed::NamedImageDir)
                             }
-                            ReportDispatch::FullRegistryCheck{options,selectors}=>host.stage_selected_registry_check_report(request,options,selectors.as_slice()).map(super::generation::Executed::FullRegistryCheck),
+                            ReportDispatch::NativeSemUtility{binding}=>host.stage_native_sem_utility(request,&binding).map(super::generation::Executed::NativeSemUtility),
+                            ReportDispatch::NativeCodemodFixture{binding}=>host.stage_native_codemod_fixture_shared(request,binding).map(super::generation::Executed::NativeCodemodFixture),
+                            ReportDispatch::NativeSelftests{selectors,caller_directory}=>host.stage_standalone_native_selftests(request,selectors.as_slice(),caller_directory).map(super::generation::Executed::NativeSelftests),
+                            ReportDispatch::FullRegistryCheck{options,selectors,selftests,caller_directory,cli}=>host.stage_selected_registry_check_cli_mode(request,options,selectors.as_slice(),selftests,caller_directory,cli.as_deref()).map(super::generation::Executed::FullRegistryCheck),
                             ReportDispatch::SchemaProposals=>host.stage_schema_proposals(request).map(super::generation::Executed::SchemaProposals),
+                            ReportDispatch::BaselineUpdate{mode,no_gen,selectors}=>crate::runner_host::baseline_update::stage(crate::runner_host::BaselineUpdateRequest{build:request,mode,no_gen,selectors},&mut host).map(super::generation::Executed::BaselineUpdate),
                             ReportDispatch::NativeFix{mode,prefixes,apply}=>crate::native_fix::stage_batch(crate::native_fix::BatchRequest{build:request,codemod:mode,prefixes,apply},&mut host).map(super::generation::Executed::NativeFix),
-                            ReportDispatch::CheckerText{display,caller_directory,configuration,json}=>host.stage_standalone_checker(request,display,caller_directory,configuration,json).map(super::generation::Executed::CheckerText),
+                            ReportDispatch::CheckerText{display,caller_directory,configuration,json,parse_only}=>host.stage_standalone_checker_mode(request,display,caller_directory,configuration,json,parse_only).map(super::generation::Executed::CheckerText),
                             ReportDispatch::CompileSelected { roster, exclusions, compact_checker, .. } => {
                                 let (native, destination) = compound.ok_or_else(|| io::Error::other("compound destination absent"))?;
                                 let output_guards = destination.claim()?;
@@ -1498,6 +1530,10 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     use super::selected_report_wire::SendFailure;let mut output=stream.lock().unwrap_or_else(|e|e.into_inner());
                     match super::selected_report_wire::send_checker_text(&mut *output,report,host.source_arena_work()){Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error)}
                 }
+                Ok(Ok(super::generation::Executed::BaselineUpdate(report)))=>{
+                    use super::selected_report_wire::SendFailure;let mut output=stream.lock().unwrap_or_else(|e|e.into_inner());
+                    match super::selected_report_wire::send_baseline_update(&mut *output,report){Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error)}
+                }
                 Ok(Ok(super::generation::Executed::NativeFix(report)))=>{
                     use super::selected_report_wire::SendFailure;let mut output=stream.lock().unwrap_or_else(|e|e.into_inner());
                     match super::selected_report_wire::send_fix(&mut *output,report,host.source_arena_work()){Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error)}
@@ -1506,11 +1542,23 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                     use super::selected_report_wire::SendFailure;let mut output=stream.lock().unwrap_or_else(|e|e.into_inner());
                     match super::selected_report_wire::send_schema(&mut *output,report,host.source_arena_work()){Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error)}
                 }
+                Ok(Ok(super::generation::Executed::NativeSemUtility(report)))=>{
+                    use super::selected_report_wire::SendFailure;let mut output=stream.lock().unwrap_or_else(|e|e.into_inner());
+                    match super::selected_report_wire::send_native_sem_utility(&mut *output,report,host.source_arena_work()){Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error)}
+                }
+                Ok(Ok(super::generation::Executed::NativeCodemodFixture(report)))=>{
+                    use super::selected_report_wire::SendFailure;let mut output=stream.lock().unwrap_or_else(|e|e.into_inner());
+                    match super::selected_report_wire::send_native_codemod_fixture(&mut *output,report,host.source_arena_work()){Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error)}
+                }
+                Ok(Ok(super::generation::Executed::NativeSelftests(report)))=>{
+                    use super::selected_report_wire::SendFailure;let mut output=stream.lock().unwrap_or_else(|e|e.into_inner());
+                    match super::selected_report_wire::send_standalone_selftests(&mut *output,report,host.source_arena_work()){Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error)}
+                }
                 Ok(Ok(super::generation::Executed::FullRegistryCheck(report)))=>{
                     use super::selected_report_wire::SendFailure;
                     let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());
                     match super::selected_report_wire::send_full_check(&mut *output,report,host.source_arena_work()){
-                        Ok(())=>Ok(()),Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error),
+                        Ok(inputs)=>{host.commit_native_report_replay(inputs);Ok(())},Err(SendFailure::BeforePublication(error))=>protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error))),Err(SendFailure::AfterPublication(error))=>Err(error),
                     }
                 }
                 Ok(Ok(super::generation::Executed::SelectedExclusions(report))) => {

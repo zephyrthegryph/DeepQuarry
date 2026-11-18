@@ -31,7 +31,11 @@ impl SettingExpressionQueries for Host {
         self.entries.fetch_add(1,Ordering::Relaxed);
         let checkpoint=||self.checkpoint();
         let a=dm_syntax::SettingAdmission::new(&self.counter,self.limit.load(Ordering::Acquire),&checkpoint);
-        self.aliases.lock().unwrap().prune(&a).map_err(BodySyntaxFailure::Operational)?;
+        let pruned=self.aliases.lock().unwrap().prune(&a);
+        // Match the production admission boundary: pruning may return a
+        // sticky proxy while the actual first IO is still held by the permit.
+        if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}
+        pruned.map_err(BodySyntaxFailure::Operational)?;
         let before=a.checkpoint();
         if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}
         before.map_err(BodySyntaxFailure::Operational)?;

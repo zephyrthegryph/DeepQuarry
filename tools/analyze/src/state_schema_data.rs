@@ -136,7 +136,18 @@ pub fn parse_file(rel:&str,code:&View,decls:&mut HashMap<String,Vec<Var>>,latent
 pub fn parse_file_using<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(rel:&str,code:&View,decls:&mut HashMap<String,Vec<Var>>,latent:&mut HashMap<String,bool>,keep:&mut C,temporary:&mut T)->Result<(),C::Error>{
  use crate::key_policy_control as kc;
  if T::CHECKED{let mut width=0usize;let mut parts=0usize;for(_,line)in code.numbered(){temporary.checkpoint()?;width=width.max(line.len());parts=parts.max(line.bytes().filter(|byte|*byte==b'/').count().checked_add(1).ok_or_else(||temporary.overflow())?);}kc::reserve(temporary,||width.checked_mul(8)?.checked_add(parts.checked_mul(6*std::mem::size_of::<&str>())?)?.checked_add(32768))?;}
- let control=std::cell::RefCell::new(keep);let error=std::cell::RefCell::new(None);crate::raw_declaration_policy::visit_file(rel,code,|owner,parts,rel,line|{if error.borrow().is_some(){return}let result=(||{let mut control=control.borrow_mut();let c=&mut **control;c.checkpoint()?;let(name,mods,vtype,is_list)=parts;if !decls.contains_key(owner){kc::reserve(c,||Some(2048))?;decls.insert(kc::own(c,owner)?,Vec::new());}let rows=decls.get_mut(owner).expect("actual admitted schema owner");kc::row(c,rows)?;if C::CHECKED{let bytes=mods.iter().fold(name.capacity().checked_add(vtype.capacity()),|n,word|n?.checked_add(2048)?.checked_add(word.capacity())).ok_or_else(||c.overflow())?;c.reserve(bytes)?;}rows.push(Var{owner:kc::own(c,owner)?,name,mods,vtype,is_list,path:kc::own(c,rel)?,line});Ok::<(),C::Error>(())})();if let Err(actual)=result{*error.borrow_mut()=Some(actual)}},|owner,value|{if error.borrow().is_some(){return}let result=(||{let mut control=control.borrow_mut();let c=&mut **control;c.checkpoint()?;if let Some(old)=latent.get_mut(owner){*old=value}else{kc::reserve(c,||Some(2048))?;latent.insert(kc::own(c,owner)?,value);}Ok::<(),C::Error>(())})();if let Err(actual)=result{*error.borrow_mut()=Some(actual)}});if let Some(actual)=error.into_inner(){return Err(actual)}control.into_inner().checkpoint()
+ let control=std::cell::RefCell::new(keep);
+ let pending=crate::raw_declaration_policy::visit_file_using(rel,code,temporary,|owner,parts,rel,line,_|{
+  let mut control=control.borrow_mut();let c=&mut **control;c.checkpoint()?;let(name,mods,vtype,is_list)=parts;
+  if !decls.contains_key(owner){kc::reserve(c,||Some(2048))?;decls.insert(kc::own(c,owner)?,Vec::new());}
+  let rows=decls.get_mut(owner).expect("actual admitted schema owner");kc::row(c,rows)?;
+  if C::CHECKED{let bytes=mods.iter().fold(name.capacity().checked_add(vtype.capacity()),|n,word|n?.checked_add(2048)?.checked_add(word.capacity())).ok_or_else(||c.overflow())?;c.reserve(bytes)?;}
+  rows.push(Var{owner:kc::own(c,owner)?,name,mods,vtype,is_list,path:kc::own(c,rel)?,line});Ok(())
+ },|owner,value,_|{
+  let mut control=control.borrow_mut();let c=&mut **control;c.checkpoint()?;
+  if let Some(old)=latent.get_mut(owner){*old=value}else{kc::reserve(c,||Some(2048))?;latent.insert(kc::own(c,owner)?,value);}Ok(())
+ });if pending.is_err(){return pending}control.into_inner().checkpoint()
+
 }
 
 /// `parse_codec_keys` for one file: `state_codecs()` keys are string literals, which `code_only`
@@ -145,9 +156,21 @@ pub fn parse_codec_keys_file(text:&str,codecs:&mut HashMap<String,HashSet<String
 /// Same raw codec policy; persistent keys and per-file capture/owner scratch
 /// have distinct actual operation/FileScope controls in native consumers.
 pub fn parse_codec_keys_file_using<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(text:&str,codecs:&mut HashMap<String,HashSet<String>>,keep:&mut C,temporary:&mut T)->Result<(),C::Error>{
- let head=pat!(r"(?m)^(/[\w/]+)/state_codecs\(\)");let first_nonspace_line=pat!(r"(?m)^\S");let key=pat!(r#""(\w+)"\s*=\s*/datum/state_codec"#);
- crate::key_policy_control::reserve(temporary,||head.capture_group_count().checked_add(key.capture_group_count())?.checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(2*std::mem::size_of::<crate::pat::Caps<'_>>()+128))?;let mut owner_peak=0usize;
- for m in head.captures_iter(text){temporary.checkpoint()?;if T::CHECKED{let peak=m.s(1).len().checked_mul(4).and_then(|n|n.checked_add(128)).ok_or_else(||temporary.overflow())?;if peak>owner_peak{temporary.reserve(peak-owner_peak)?;owner_peak=peak;}}let owner=m.s(1).replace("/proc","");let end=m.end(0);let rest=&text[end..];let stop=first_nonspace_line.find(rest).map(|e|e.start).unwrap_or(rest.len());let body=&rest[..stop];for k in key.captures_iter(body){temporary.checkpoint()?;if !codecs.contains_key(&owner){crate::key_policy_control::reserve(keep,||Some(2048))?;let name=crate::key_policy_control::own(keep,&owner)?;codecs.insert(name,HashSet::new());}let rows=codecs.get_mut(&owner).expect("actual codec owner");if !rows.contains(k.s(1)){crate::key_policy_control::reserve(keep,||Some(2048))?;rows.insert(crate::key_policy_control::own(keep,k.s(1))?);}}}keep.checkpoint()
+ use crate::key_policy_control as kc;
+ const HEAD:&str=r"(?m)^(/[\w/]+)/state_codecs\(\)";const FIRST:&str=r"(?m)^\S";const KEY:&str=r#""(\w+)"\s*=\s*/datum/state_codec"#;
+ let head=kc::capture_len_static(temporary,HEAD,false,||pat!(r"(?m)^(/[\w/]+)/state_codecs\(\)"))?;
+ let _=kc::capture_len_static(temporary,FIRST,false,||pat!(r"(?m)^\S"))?;
+ let key=kc::capture_len_static(temporary,KEY,false,||pat!(r#""(\w+)"\s*=\s*/datum/state_codec"#))?;
+ kc::reserve(temporary,||head.checked_add(key)?.checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(2*std::mem::size_of::<crate::pat::Caps<'_>>()+128))?;let mut owner_peak=0usize;
+ kc::try_for_each_capture_static(HEAD,||pat!(r"(?m)^(/[\w/]+)/state_codecs\(\)"),text,temporary,|_,_|Ok(()),|temporary,m|{
+  temporary.checkpoint()?;if T::CHECKED{let peak=m.s(1).len().checked_mul(4).and_then(|n|n.checked_add(128)).ok_or_else(||temporary.overflow())?;if peak>owner_peak{temporary.reserve(peak-owner_peak)?;owner_peak=peak;}}
+  let owner=m.s(1).replace("/proc","");let rest=&text[m.end(0)..];let stop=kc::find_static(temporary,FIRST,rest,0,||pat!(r"(?m)^\S"))?.map(|found|found.start).unwrap_or(rest.len());let body=&rest[..stop];
+  kc::try_for_each_capture_static(KEY,||pat!(r#""(\w+)"\s*=\s*/datum/state_codec"#),body,temporary,|_,_|Ok(()),|temporary,k|{
+   temporary.checkpoint()?;if !codecs.contains_key(&owner){kc::reserve(keep,||Some(2048))?;let name=kc::own(keep,&owner)?;codecs.insert(name,HashSet::new());}
+   let rows=codecs.get_mut(&owner).expect("actual codec owner");if !rows.contains(k.s(1)){kc::reserve(keep,||Some(2048))?;rows.insert(kc::own(keep,k.s(1))?);}Ok(())
+  })
+ })
+
 }
 
 /// The whole parse, built once per run (`Schema::get`).
@@ -199,5 +222,14 @@ impl Schema {
 
 /// Same original ownership-entry expression. Kept phase-local as before; this
 /// is not an additional retained regex cache or source index.
-pub fn ownership_entry_pattern()->Result<regex::Regex,regex::Error>{regex::Regex::new(r"\b(owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)")}
+pub const OWNERSHIP_ENTRY_SOURCE:&str=r"\b(owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)";
+pub fn ownership_entry_pattern()->Result<regex::Regex,regex::Error>{regex::Regex::new(OWNERSHIP_ENTRY_SOURCE)}
 pub fn visit_ownership_entries(pattern:&regex::Regex,body:&str,mut emit:impl FnMut(&str,&'static str)){for c in pattern.captures_iter(body){let rest=body[c.get(0).map(|x|x.end()).unwrap_or(0)..].split('\n').next().unwrap_or("");let owned_hud=&c[1]=="hud_element"&&!rest.contains("owned = FALSE");let kind=if c[1].starts_with("owns_")||owned_hud||&c[1]=="profile"{"OWN"}else{"REL"};emit(&c[2],kind);}}
+
+/// Same ownership-entry lexical fold. The actual control owns program/capture
+/// work; callback errors stop before another source match is requested.
+pub fn visit_ownership_entries_using<C:crate::key_policy_control::Control>(body:&str,c:&mut C,mut emit:impl FnMut(&str,&'static str)->Result<(),C::Error>)->Result<(),C::Error>{
+ crate::key_policy_control::try_for_each_capture_static(OWNERSHIP_ENTRY_SOURCE,||crate::pat!(r"\b(owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)"),body,c,|_,_|Ok(()),|_,capture|{
+  let rest=body[capture.end(0)..].split('\n').next().unwrap_or("");let owned_hud=capture.s(1)=="hud_element"&&!rest.contains("owned = FALSE");let kind=if capture.s(1).starts_with("owns_")||owned_hud||capture.s(1)=="profile"{"OWN"}else{"REL"};emit(capture.s(2),kind)
+ })
+}

@@ -39,7 +39,7 @@ use std::sync::{Arc, RwLock};
 use serde::{Deserialize, Serialize};
 
 use crate::dm::ownership_index::{self as oi,
-    creates_entity, proc_scopes, puts_object, receiver_type, related, Index, OrdMap, ACCESSOR, CALLBACK, CALLBACK_OK, CORE_DIRS, ENTITY_ROOTS, HANDLE_CALL,
+    proc_scopes, puts_object, receiver_type, related, Index, OrdMap, ACCESSOR, CALLBACK, CALLBACK_OK, CORE_DIRS, ENTITY_ROOTS, HANDLE_CALL,
     HANDLE_OK, HANDLE_VAR, OBJLIST_WRITES, OWN_FUNCS, PROTO_FUNCS, REL_FUNCS, REL_WRITERS, REMOVED, STRING_NAME, TRANSFER_DEST, WRITE_ASSIGN, WRITE_INDEX,
     WRITE_MACRO, WRITE_METHOD,
 };
@@ -162,7 +162,7 @@ pub(crate) fn usage_scan_using<C:crate::key_policy_control::Control>(idx:&Index,
     let mut sc = UsageScan::default();
     oi::proc_scopes_using(f.code(),c,&mut|no,_line,owner,_proc,local_types,c|{
         let rl = raw.line(no);
-        for m in ACCESSOR.captures_iter(rl) {c.checkpoint()?;crate::key_policy_control::temporary(c,4,||owner.len().checked_add(local_types.get(m.s(2)).and_then(|t|t.as_ref()).map_or(0,|t|t.len()))?.checked_mul(16)?.checked_add(1024))?;
+        for m in crate::key_policy_control::captures_all_static(c,oi::ACCESSOR_SOURCE,rl,||&ACCESSOR)? {c.checkpoint()?;crate::key_policy_control::temporary(c,4,||owner.len().checked_add(local_types.get(m.s(2)).and_then(|t|t.as_ref()).map_or(0,|t|t.len()))?.checked_mul(16)?.checked_add(1024))?;
             let (func, recv, name) = (m.s(1), m.s(2), m.s(3));
             let mut rtype: Option<String> =
                 if recv == "src" { Some(owner.to_string()) } else { local_types.get(recv).and_then(|t| t.clone()) };
@@ -202,7 +202,7 @@ pub(crate) fn usage_scan_using<C:crate::key_policy_control::Control>(idx:&Index,
                 crate::key_policy_control::row(c,&mut sc.unknown)?;sc.unknown.push((no as u32, crate::key_policy_control::format(c,format_args!("{}({}, \"{}\"): no type declares a var {}", func, recv, name, name))?));
             }
         }
-        for m in TRANSFER_DEST.captures_iter(rl) {c.checkpoint()?;crate::key_policy_control::temporary(c,4,||owner.len().checked_add(local_types.get(m.s(2)).and_then(|t|t.as_ref()).map_or(0,|t|t.len()))?.checked_mul(16)?.checked_add(1024))?;
+        for m in crate::key_policy_control::captures_all_static(c,oi::TRANSFER_DEST_SOURCE,rl,||&TRANSFER_DEST)? {c.checkpoint()?;crate::key_policy_control::temporary(c,4,||owner.len().checked_add(local_types.get(m.s(2)).and_then(|t|t.as_ref()).map_or(0,|t|t.len()))?.checked_mul(16)?.checked_add(1024))?;
             let (recv, name) = (m.s(1), m.s(2));
             let rtype: String = if recv == "src" { owner.to_string() } else { local_types.get(recv).and_then(|t| t.clone()).unwrap_or_default() };
             crate::key_policy_control::row(c,&mut sc.events)?;crate::key_policy_control::reserve(c,||rtype.capacity().checked_add(32))?;sc.events.push((crate::key_policy_control::own(c,name)?, 0, rtype, no as u32));
@@ -250,7 +250,7 @@ pub(crate) fn content_checks_using<C:crate::key_policy_control::Control>(f:&Sour
         if !line.contains('(') {
             continue;
         }
-        let Some(hit) = STRING_NAME.captures(before_slashes(raw.line(no))) else { continue };
+        let Some(hit) = crate::key_policy_control::captures_static(c,oi::STRING_NAME_SOURCE,before_slashes(raw.line(no)),0,||&STRING_NAME)? else { continue };
         let name = if hit.s(1).is_empty() { hit.s(2) } else { hit.s(1) };
         // The call itself must be code (a name inside a string or comment is blanked in `line`).
         // SUSPECTED BUG, kept: the Python's `re.search(r"\b%s\(" % name, line)` was committed with a literal
@@ -265,21 +265,21 @@ pub(crate) fn content_checks_using<C:crate::key_policy_control::Control>(f:&Sour
     // removed / callback / handle
     for no in 1..=raw.num_lines(){c.checkpoint()?;
         let current = code.line(no);
-        if let Some(m) = REMOVED.find(current) {
+        if let Some(m) = crate::key_policy_control::find_static(c,oi::REMOVED_SOURCE,current,0,||&REMOVED)? {
             if !rel.starts_with("tools/") && !allowed_using(&mut res.uses,f,no,c)? {
                 crate::key_policy_control::row(c,&mut res.lines)?;res.lines.push((0, no as u32, crate::key_policy_control::format(c,format_args!("{} was removed (doc/rewrite/ownership.md)", m.as_str()))?));
             }
         }
-        if CALLBACK.is_match(current) && !starts_with_any(rel, CALLBACK_OK) && !allowed_using(&mut res.uses,f,no,c)? {
+        if crate::key_policy_control::is_match_static(c,oi::CALLBACK_SOURCE,current,||&CALLBACK)? && !starts_with_any(rel, CALLBACK_OK) && !allowed_using(&mut res.uses,f,no,c)? {
             crate::key_policy_control::row(c,&mut res.lines)?;res.lines.push((1, no as u32, crate::key_policy_control::own(c,"CALLBACK outside the core: use om_after() (arguments held as handles)")?));
         }
         if !starts_with_any(rel, HANDLE_OK) {
-            if let Some(m) = HANDLE_CALL.captures(current) {
+            if let Some(m) = crate::key_policy_control::captures_static(c,oi::HANDLE_CALL_SOURCE,current,0,||&HANDLE_CALL)? {
                 if !allowed_using(&mut res.uses,f,no,c)? {
                     crate::key_policy_control::row(c,&mut res.lines)?;res.lines.push((2, no as u32, crate::key_policy_control::format(c,format_args!("om_{}() in content: a var naming an entity is a relation view (rel_set)", m.s(1)))?));
                 }
             }
-            if let Some(hm) = HANDLE_VAR.captures(current) {
+            if let Some(hm) = crate::key_policy_control::captures_static(c,oi::HANDLE_VAR_SOURCE,current,0,||&HANDLE_VAR)? {
                 if !allowed_using(&mut res.uses,f,no,c)? {
                     let var = if hm.s(1).is_empty() { hm.s(3) } else { hm.s(1) };
                     crate::key_policy_control::row(c,&mut res.lines)?;res.lines.push((2, no as u32, crate::key_policy_control::format(c,format_args!("var {}: a content var naming an entity is a relation view, not a handle", var))?));
@@ -324,11 +324,11 @@ pub(crate) fn raw_writes_using<C:crate::key_policy_control::Control>(cx:&Ctx,f:&
     oi::proc_scopes_using(f.code(),c,&mut|no,line,owner,proc,local_types,c|{c.checkpoint()?;
         let mut hits: Vec<Hit> = Vec::new();
         let mut hit_bytes=0usize;
-        for m in WRITE_ASSIGN.captures_iter(line) {c.checkpoint()?;
+        for m in crate::key_policy_control::captures_all_static(c,oi::WRITE_ASSIGN_SOURCE,line,||&WRITE_ASSIGN)? {c.checkpoint()?;
             let (chain, name, op) = (m.s(1), m.s(2), m.s(3));
             let (start, end) = (m.start(0), m.end(0));
             let before = py_rstrip(&line[..start]);
-            if before.ends_with("var") || pat!(r"var/(?:[\w/]+/)?$").is_match(&line[..start]) {
+            if before.ends_with("var") || crate::key_policy_control::is_match_static(c,r"var/(?:[\w/]+/)?$",&line[..start],||pat!(r"var/(?:[\w/]+/)?$"))? {
                 continue;
             }
             if chain.is_empty() && (before.ends_with('(') || before.ends_with(',')) {
@@ -343,7 +343,7 @@ pub(crate) fn raw_writes_using<C:crate::key_policy_control::Control>(cx:&Ctx,f:&
             hit_room(&mut hits,&mut hit_bytes,chain.len().checked_add(name.len()).and_then(|n|n.checked_add(op.len())).and_then(|n|n.checked_add(line[end..].len())),c)?;
             hits.push(Hit { chain: chain.to_string(), name: name.to_string(), how: op.to_string(), rhs: line[end..].to_string() });
         }
-        for m in WRITE_INDEX.captures_iter(line) {c.checkpoint()?;
+        for m in crate::key_policy_control::captures_all_static(c,oi::WRITE_INDEX_SOURCE,line,||&WRITE_INDEX)? {c.checkpoint()?;
             if m.s(1).is_empty() && local_types.contains_key(m.s(2)) {
                 continue;
             }
@@ -358,14 +358,14 @@ pub(crate) fn raw_writes_using<C:crate::key_policy_control::Control>(cx:&Ctx,f:&
                 rhs: format!("{} {}", inner, &line[m.end(0)..]),
             });
         }
-        for m in WRITE_METHOD.captures_iter(line) {c.checkpoint()?;
+        for m in crate::key_policy_control::captures_all_static(c,oi::WRITE_METHOD_SOURCE,line,||&WRITE_METHOD)? {c.checkpoint()?;
             if m.s(1).is_empty() && local_types.contains_key(m.s(2)) {
                 continue;
             }
             hit_room(&mut hits,&mut hit_bytes,m.s(1).len().checked_add(m.s(2).len()).and_then(|n|n.checked_add(m.s(3).len())).and_then(|n|n.checked_add(line[m.end(0)..].len())).and_then(|n|n.checked_add(1)),c)?;
             hits.push(Hit { chain: m.s(1).to_string(), name: m.s(2).to_string(), how: format!(".{}", m.s(3)), rhs: line[m.end(0)..].to_string() });
         }
-        for m in WRITE_MACRO.captures_iter(line) {c.checkpoint()?;
+        for m in crate::key_policy_control::captures_all_static(c,oi::WRITE_MACRO_SOURCE,line,||&WRITE_MACRO)? {c.checkpoint()?;
             if m.s(2).is_empty() && local_types.contains_key(m.s(3)) {
                 continue;
             }
@@ -385,7 +385,7 @@ pub(crate) fn raw_writes_using<C:crate::key_policy_control::Control>(cx:&Ctx,f:&
                 None if !h.chain.is_empty() => cx.unknown_receiver_kind_using(&h.name,c)?,
                 None => continue,
             };
-            if kind.is_none() && h.how == "=" && creates_entity(&h.rhs) {
+            if kind.is_none() && h.how == "=" && oi::creates_entity_using(&h.rhs,c)? {
                 if let Some(rt) = &rtype {
                     // A member var assigned a new entity: whatever its declared type, the holder made
                     // it, so it owns it (own_set), unless declared otherwise.

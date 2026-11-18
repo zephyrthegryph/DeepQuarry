@@ -34,9 +34,17 @@ pub fn parse_with<C: crate::key_policy_control::Control>(line: &str, control:&mu
         return Ok(None);
     }
     control.checkpoint()?;
-    let pattern = pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$");
+    let captured={
+     #[cfg(feature="native-policy")]if control.native_patterns().is_some(){crate::key_policy_control::captures_static(control,r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$",line,0,||crate::pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$"))?}else{    let pattern = pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$");
     crate::key_policy_control::reserve(control,||pattern.capture_group_count().checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(128))?;
-    let Some(c)=pattern.captures(line)else{return Ok(None)};
+    pattern.captures(line)
+}
+     #[cfg(not(feature="native-policy"))]{    let pattern = pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$");
+    crate::key_policy_control::reserve(control,||pattern.capture_group_count().checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(128))?;
+    pattern.captures(line)
+}
+    };
+    let Some(c)=captured else{return Ok(None)};
     let mut names = BTreeSet::new();
     let mut codes = BTreeMap::new();
     for entry in c.s(1).split(',') {

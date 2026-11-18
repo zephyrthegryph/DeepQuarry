@@ -508,7 +508,7 @@ pub(super) fn checked_source_parameters_projected<'a,E>(
 impl ArchivedBody<'_> {
     /// Current original token coordinates, borrowed from the SAME parser-owned
     /// chunk. No source scan, new token array, expression parse or owner clone.
-    pub fn original_body_tokens(&self)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,String>{let index=*self.archive.body_indices.get(&self.occurrence.declaration).ok_or("original body token declaration absent")?;if !self.archive.bodies.get(index).is_some_and(|row|std::ptr::eq(row,self.occurrence)){return Err("original body token occurrence differs".into())}let code=self.archive.body_codes.get(index).ok_or("original body token code absent")?;self.archive.syntax.original_body_tokens(self.occurrence.expanded_span,&code.identity)}
+    pub fn original_body_tokens(&self)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,String>{let index=*self.archive.body_indices.get(&self.occurrence.declaration).ok_or("original body token declaration absent")?;if !self.archive.bodies.get(index).is_some_and(|row|std::ptr::eq(row,self.occurrence)){return Err("original body token occurrence differs".into())}self.archive.syntax.original_body_tokens_header_only(self.occurrence.expanded_span)}
 
     pub fn source_locals(&self) -> Result<SourceLocalView<'_>, String> {
         // Local declaration geometry uses the issued Original syntax. Runtime
@@ -645,7 +645,9 @@ impl BodyArchive {
             .body_codes
             .get(index)
             .ok_or_else(|| internal("archived body code owner missing"))?;
-        Ok(body_code::issue_archived_code(occurrence, owner))
+        if owner.identity.is_some(){return Ok(body_code::issue_archived_code(occurrence,owner))}
+        let code=self.syntax.original_header_recipe(occurrence.expanded_span).map_err(|e|internal(&e.message))?.issued_code_for_binding().map_err(|error|internal(&error.to_string()))?.ok_or_else(||internal("ordinary Code is not issued; use checked body Code demand"))?;
+        Ok(body_code::issue_archived_demand_code(occurrence,owner,code))
     }
     pub fn visit_body_code_storage(&self, visit: impl FnMut(usize, usize, usize)) {
         body_code::visit_issued_code_storage(&self.body_codes, visit)
@@ -776,9 +778,25 @@ impl BodyArchive {
     }
     /// Existing issued syntax inputs for dependency edges in the same graph.
     pub fn syntax_inputs(&self) -> Option<&[Arc<BodySyntaxInput>]> {
-        self.body_queries
-            .as_ref()
-            .map(|queries| queries.inputs.as_ref())
+        self.body_queries.as_ref().and_then(|queries|queries.inputs.eager_slice())
+    }
+    /// Only an already-issued genuine Input is observed. Cache admission may
+    /// conservatively miss; semantic consumers must use syntax_input_checked.
+    /// Actual private input storage mode; not a caller tag or completion proof.
+    /// Stable evidence-only locators may use this without issuing any body.
+    pub fn uses_ordinary_body_demand(&self)->bool{self.body_queries.as_ref().is_some_and(|queries|queries.inputs.is_demand())}
+    pub fn peek_syntax_input(&self,ordinal:usize)->Option<Arc<BodySyntaxInput>>{self.body_queries.as_ref()?.inputs.issued(ordinal)}
+    /// Resolve one real current Input using this SAME native host/counter.
+    /// No BODY parse/query and no new source/current completion grant occurs.
+    pub fn syntax_input_checked(&self,ordinal:usize,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Arc<BodySyntaxInput>,BodySyntaxFailure>{
+      let queries=self.body_queries.as_ref().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"actual native body query host is absent")))?;
+      if ordinal>=self.bodies.len(){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual body ordinal absent")))}checkpoint().map_err(BodySyntaxFailure::Operational)?;
+      if !queries.inputs.requires_admission(){return queries.inputs.issued(ordinal).ok_or_else(||internal("eager body input ordinal absent").into())}
+      let settings=self.setting_queries.as_ref().and_then(std::sync::Weak::upgrade).ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"current body demand has no live admission host")))?;
+      if !std::ptr::addr_eq(settings.as_ref()as *const dyn SettingExpressionQueries,queries.host.as_ref()as *const dyn BodySyntaxQueries){return Err(internal("body Input query/admission hosts differ").into())}
+      let mut pending=None;
+      settings.with_original_header_admission(&mut|a|{pending=Some(body_queries::current_input_admitted(&queries.inputs,&self.bodies,ordinal,&self.syntax,&self.source,&self.mapping,a)?);Ok(())})?;
+      pending.ok_or_else(||internal("body Input admission callback omitted").into())
     }
     /// Semantic policies must use the compiler's graph, not another host that
     /// happens to parse equal source bytes.
@@ -811,8 +829,7 @@ impl BodyArchive {
     ) -> Result<T,BodySyntaxFailure> {
       checkpoint().map_err(BodySyntaxFailure::Operational)?;
       let occurrence=self.bodies.get(ordinal).ok_or_else(||internal("header-only original body ordinal is unavailable"))?;
-      let code=self.body_codes.get(ordinal).ok_or_else(||internal("header-only original code owner is unavailable"))?;
-      if !self.syntax.requires_admitted_original_header_parameters(occurrence.expanded_span,&code.identity)? {
+      if !self.syntax.requires_admitted_original_header_parameters_header_only(occurrence.expanded_span)? {
        return consume(self.header_parameters_after_checkpoint(ordinal,checkpoint)?);
       }
       let host=self.setting_queries.as_ref().and_then(std::sync::Weak::upgrade)
@@ -836,8 +853,7 @@ impl BodyArchive {
     }
     fn header_parameters_after_checkpoint(&self,ordinal:usize,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<SourceParameterView<'_>,BodySyntaxFailure>{
       let occurrence=self.bodies.get(ordinal).ok_or_else(||internal("header-only original body ordinal is unavailable"))?;
-      let code=self.body_codes.get(ordinal).ok_or_else(||internal("header-only original code owner is unavailable"))?;
-      let(parameters,projection)=self.syntax.original_header_parameters(occurrence.expanded_span,&code.identity).map_err(|error|internal(&error.message))?;
+      let(parameters,projection)=self.syntax.original_header_parameters_header_only(occurrence.expanded_span).map_err(|error|internal(&error.message))?;
       let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
       checked_source_parameters_projected(&self.tree,occurrence,header,parameters,&self.source,Some(projection),&||checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())
     }
@@ -849,8 +865,7 @@ impl BodyArchive {
     ) -> Result<T, BodySyntaxFailure> {
       a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
       let occurrence=self.bodies.get(ordinal).ok_or_else(||internal("header-only original body ordinal is unavailable"))?;
-      let code=self.body_codes.get(ordinal).ok_or_else(||internal("header-only original code owner is unavailable"))?;
-      self.syntax.with_original_header_parameters_admitted(occurrence.expanded_span,&code.identity,a,|parameters,projection|{
+      self.syntax.with_original_header_parameters_admitted_header_only(occurrence.expanded_span,a,|parameters,projection|{
        let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
        let view=checked_source_parameters_projected(&self.tree,occurrence,header,parameters,&self.source,Some(projection),&||a.checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())?;
        consume(view)
@@ -914,6 +929,7 @@ impl BodyArchive {
         )
     }
     pub fn parse_checked(&self, ordinal: usize) -> Result<ArchivedBody<'_>, BodySyntaxFailure> {
+        if self.body_queries.is_some(){self.syntax_input_checked(ordinal,&||Ok(()))?;}
         self.parse_with(
             ordinal,
             |input, host| input.obtain_checked(host),
@@ -927,6 +943,7 @@ impl BodyArchive {
         &self,ordinal:usize,
         obtain:impl FnOnce(&Arc<BodySyntaxInput>)->Result<Arc<BodySyntax>,BodySyntaxFailure>,
     )->Result<ArchivedBody<'_>,BodySyntaxFailure>{
+        if self.body_queries.is_some(){self.syntax_input_checked(ordinal,&||Ok(()))?;}
         if self.body_queries.is_none(){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"observed body demand requires original native query inputs")))}
         self.parse_with(ordinal,|input,host|{host.prepare_checked_input(input)?;input.obtain_checked_using(obtain)},|_,_|Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"observed body demand cannot use standalone statements"))))
     }
@@ -985,6 +1002,7 @@ impl BodyArchive {
             .bodies
             .get(ordinal)
             .ok_or_else(|| internal("body archive ordinal unavailable"))?;
+        if self.syntax.body_has_parser_report_prefix(occurrence.expanded_span){return Err(internal("report-only parser prefix cannot parse or export BODY syntax").into())}
         if occurrence
             .expanded_span
             .end
@@ -994,7 +1012,8 @@ impl BodyArchive {
             return Err(internal("body archive query exceeds 1 MiB input limit").into());
         }
         if let Some(queries) = &self.body_queries {
-            let shared = obtain(&queries.inputs[ordinal], queries.host.as_ref())?;
+            let input=queries.inputs.issued(ordinal).ok_or_else(||internal("native body Input is not issued; use checked ordinal demand"))?;
+            let shared = obtain(&input, queries.host.as_ref())?;
             let mut header = shared.item.clone();
             if shared.statements.parsed().diagnostics.is_empty() {
                 header.children = Vec::new();
@@ -1012,11 +1031,12 @@ impl BodyArchive {
             .syntax
             .parse_original_procedure(
                 occurrence.expanded_span,
-                &self
+                self
                     .body_codes
                     .get(ordinal)
                     .ok_or_else(|| internal("original archive body code missing"))?
-                    .identity,
+                    .identity.as_ref()
+                    .ok_or_else(|| internal("ordinary Code is unissued; use checked body Code demand"))?,
             )
             .map_err(|error| Diagnostic {
                 kind: syntax_kind(error.kind),
@@ -1115,32 +1135,196 @@ pub(super) fn parse_statements_with_body_literal_admission(
 )->Result<Arc<StatementBody>,BodySyntaxFailure>{
     parse_statements_admitted(item,source,syntax,body,code,admission,supported,true)
 }
+
+/// Same canonical installed provider and one caller-pre-admitted cleanup lease.
+/// Success transfers it into StatementBody; rejection before this call retains
+/// it on the actual canonical error product instead.
+pub(super) fn parse_statements_with_body_literal_cleanup(
+ item:&mut Item,source:&str,syntax:&DeclarationSyntax,body:dm_syntax::Span,
+ code:Option<&Arc<BodyCodeIdentity>>,admission:&dm_syntax::SettingAdmission<'_>,cleanup:CanonicalBodyCleanup<'_>,
+)->Result<Arc<StatementBody>,BodySyntaxFailure>{
+ let code=code.ok_or_else(||BodySyntaxFailure::Syntax(internal("original body code input is unissued")))?;
+ let input=ActualBodyParserInput::Installed{syntax,body,code};
+ parse_statements_from_actual_input(item,source,body,&input,admission,|_|false,true,Some(cleanup),None)
+}
+// A stack-only choice between the existing completed declaration owner and
+// the actual primary-commit borrow. It never owns another AST or source map.
+#[derive(Clone,Copy)]
+enum ActualBodyParserInput<'a>{
+ Installed{syntax:&'a DeclarationSyntax,body:dm_syntax::Span,code:&'a Arc<BodyCodeIdentity>},
+ Committed{tokens:crate::procedure::header_input::OriginalBodyTokens<'a>,settings:Option<&'a super::committed_bodies::CommittedSettingRoots>,code:&'a Arc<BodyCodeIdentity>},
+}
+impl<'a> ActualBodyParserInput<'a>{
+ fn code(&self)->&Arc<BodyCodeIdentity>{match *self{Self::Installed{code,..}|Self::Committed{code,..}=>code}}
+ fn tokens(&self)->Result<crate::procedure::header_input::OriginalBodyTokens<'a>,String>{match *self{Self::Installed{syntax,body,code}=>syntax.original_body_tokens(body,code),Self::Committed{tokens,..}=>Ok(tokens)}}
+ fn expression(&self,source:&str,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>)>>{match *self{Self::Installed{syntax,body,code}=>syntax.original_body_expression_with_native_facts(body,code,source,offset,a),Self::Committed{tokens,..}=>tokens.expression_with_native_facts(source,offset,a)}}
+ fn setting(&self,item:&Item,a:&dm_syntax::SettingAdmission<'_>)->Result<(String,String,dm_syntax::SettingExpression,Option<dm_syntax::NativeExpressionParserFacts>),dm_syntax::SettingSyntaxFailure>{match *self{Self::Installed{syntax,body,code}=>syntax.setting_statement_expression_with_native_observation(body,code,item,a),Self::Committed{tokens,settings,..}=>tokens.committed_setting_with_native_observation(item,a,settings.ok_or_else(||dm_syntax::SettingSyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual committed setting has no context inventory")))?).map(|(value,native)|(value.attribute,value.relation,value.value,native))}}
+ fn declaration_header_at(&self,offset:usize)->Option<dm_syntax::ItemKind>{match *self{Self::Installed{syntax,..}=>syntax.declaration_header_at(offset),Self::Committed{..}=>None /* executable procedure children are excluded from declaration authority */}}
+ #[cfg(debug_assertions)]fn checker_profile(&self)->bool{match *self{Self::Installed{syntax,body,code}=>syntax.original_body_recipe(body,code).ok().is_some_and(|recipe|recipe.checker_body_profile()),Self::Committed{..}=>true}}
+}
 fn parse_statements_admitted(
     item:&mut Item,source:&str,syntax:&DeclarationSyntax,body:dm_syntax::Span,
     code:Option<&Arc<BodyCodeIdentity>>,admission:&dm_syntax::SettingAdmission<'_>,
     supported:fn(&[dm_syntax::Statement])->bool,complete_literals:bool,
 )->Result<Arc<StatementBody>,BodySyntaxFailure>{
-    struct Original<'a, 'op> {
-        syntax: &'a DeclarationSyntax,
-        body: dm_syntax::Span,
-        code: &'a Arc<BodyCodeIdentity>,
-        admission: &'a dm_syntax::SettingAdmission<'op>,
+ let code=code.ok_or_else(||BodySyntaxFailure::Syntax(internal("original body code input is unissued")))?;
+ let input=ActualBodyParserInput::Installed{syntax,body,code};
+ parse_statements_from_actual_input(item,source,body,&input,admission,supported,complete_literals,None,None)
+}
+/// The actual caller must retain this ONE immutable product and adopt it under
+/// the same early code/input/window identity; no final Current grant is issued.
+pub(super) fn parse_statements_at_committed_input(
+ item:&mut Item,input:dm_syntax::OriginalCommittedBodyInput<'_,'_>,code:&Arc<BodyCodeIdentity>,admission:&dm_syntax::SettingAdmission<'_>,cleanup:CanonicalBodyCleanup<'_>,settings:Option<&super::committed_bodies::CommittedSettingRoots>,report:&mut dyn FnMut(dm_syntax::NativeBodySyntaxTraversal),
+)->Result<Arc<StatementBody>,BodySyntaxFailure>{
+ let source=input.source();let actual=input.item();let body=actual.span;
+ if item.span!=actual.span||item.header_span!=actual.header_span||item.header!=actual.header{
+  return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed BODY parser item differs from its actual primary occurrence")))
+ }
+ let tokens=crate::procedure::header_input::OriginalBodyTokens::from_committed_input(input)
+  .map_err(|reason|BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,reason)))?;
+ let input=ActualBodyParserInput::Committed{tokens,settings,code};
+ parse_statements_from_actual_input(item,source,body,&input,admission,|_|false,true,Some(cleanup),Some(report))
+}
+
+fn body_literal_cleanup_bytes(body:dm_syntax::Span)->Result<usize,BodySyntaxFailure>{body.end.checked_sub(body.start).and_then(|n|n.checked_mul(512)).and_then(|n|n.checked_add(8192)).ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"body literal cleanup source envelope overflow")))}
+pub(super) fn reserve_body_literal_cleanup(body:dm_syntax::Span,a:&dm_syntax::SettingAdmission<'_>)->Result<dm_syntax::SettingRootLease,BodySyntaxFailure>{a.reserve(body_literal_cleanup_bytes(body)?).map_err(|proxy|BodySyntaxFailure::Operational(a.take_operational_error().unwrap_or(proxy)))}
+
+/// Transient funding plan, never a syntax/currentness grant. Private fields
+/// bind its exact debit to the SAME existing canonical code and body span.
+pub(super) struct CanonicalBodyCleanup<'code>{lease:dm_syntax::SettingRootLease,body:dm_syntax::Span,code:&'code Arc<BodyCodeIdentity>,expected:usize}
+impl CanonicalBodyCleanup<'_>{
+ pub(super) fn into_lease(self,body:dm_syntax::Span,code:&Arc<BodyCodeIdentity>,a:&dm_syntax::SettingAdmission<'_>)->Result<dm_syntax::SettingRootLease,BodySyntaxFailure>{
+  if self.body!=body||!Arc::ptr_eq(self.code,code)||self.expected!=self.lease.bytes()||!a.matches_lease_domain(&self.lease){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"canonical cleanup plan differs from its actual code/body/domain/debit")))}Ok(self.lease)
+ }
+}
+fn trace_canonical_cleanup(body:dm_syntax::Span,source_bound:usize,token_bound:usize){
+ if source_bound>262144&&std::env::var_os("DMB_ORIGINAL_TRACE_BODY_PRESSURE").is_some(){use std::io::Write as _;let _=writeln!(std::io::stderr().lock(),"ORIGINAL_CANONICAL_CLEANUP_PLAN body={body:?} source_bound={source_bound} reserved={token_bound}");}
+}
+
+/// Full structural Item is the actual canonical parser result, not the primary
+/// skeleton. Admit Statement/Expr cleanup only now, before that AST exists.
+pub(super) fn reserve_installed_canonical_cleanup_after_primary<'code>(item:&Item,syntax:&DeclarationSyntax,source:&str,body:dm_syntax::Span,code:&'code Arc<BodyCodeIdentity>,a:&dm_syntax::SettingAdmission<'_>)->Result<CanonicalBodyCleanup<'code>,BodySyntaxFailure>{
+ if item.span!=body||source.get(item.header_span.range())!=Some(item.header.as_str()){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"canonical primary Item differs from its actual body/source")))}
+ let input=ActualBodyParserInput::Installed{syntax,body,code};let lease=reserve_issued_body_literal_cleanup(item,body,&input,a)?;let expected=lease.bytes();
+ Ok(CanonicalBodyCleanup{lease,body,code,expected})
+}
+pub(super) fn reserve_committed_canonical_cleanup_after_primary<'code>(item:&Item,input:&dm_syntax::OriginalCommittedBodyInput<'_,'_>,code:&'code Arc<BodyCodeIdentity>,a:&dm_syntax::SettingAdmission<'_>)->Result<CanonicalBodyCleanup<'code>,BodySyntaxFailure>{
+ let body=input.item().span;let source=input.source();
+ if !input.literal_facts().admitted_by(a)||item.span!=body||item.header_span!=input.item().header_span||item.header!=input.item().header{return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed canonical primary Item differs from its actual occurrence")))}
+ let all=input.token_window();let first=all.partition_point(|token|token.span.end<=body.start);let last=all.partition_point(|token|token.span.start<body.end);let fallback=body_literal_cleanup_bytes(body)?;
+ let bytes=match all.range(first,last){Some(tokens)if !tokens.iter().any(|token|token.span.start<body.start||token.span.end>body.end||source.get(token.span.range()).is_none())=>fallback.min(dm_syntax::original_body_cleanup_peak_geometry(&item.children,tokens.iter().map(|token|(token.kind,token.span,token.text(source))),a).map_err(BodySyntaxFailure::Operational)?.bytes()),_=>fallback};
+ trace_canonical_cleanup(body,fallback,bytes);let lease=a.reserve(bytes).map_err(|proxy|BodySyntaxFailure::Operational(a.take_operational_error().unwrap_or(proxy)))?;Ok(CanonicalBodyCleanup{lease,body,code,expected:bytes})
+}
+
+pub(super) fn reserve_installed_canonical_cleanup<'code>(syntax:&DeclarationSyntax,source:&str,body:dm_syntax::Span,code:&'code Arc<BodyCodeIdentity>,a:&dm_syntax::SettingAdmission<'_>)->Result<CanonicalBodyCleanup<'code>,BodySyntaxFailure>{
+ let tokens=match syntax.original_body_tokens(body,code){Ok(tokens)if tokens.current_span()==body=>{
+  if matches!(tokens.expression_geometry().map_err(BodySyntaxFailure::Operational)?,dm_syntax::BodyExpressionGeometry::OriginalUnpublished){Some(tokens)}else{None}
+ },_=>None};
+ // The authentic completed owner is borrowed, with its existing source window.
+ // Reuse its exact token mapping; no dense tape, Item parse or source copy.
+ let fallback=body_literal_cleanup_bytes(body)?;
+ let bytes=match tokens{Some(tokens)=>match tokens.tokens(body){Ok(tokens)=>fallback.min(dm_syntax::original_body_token_cleanup_geometry(tokens,a).map_err(BodySyntaxFailure::Operational)?.bytes()),Err(_)=>fallback},None=>fallback};
+ if source.get(body.range()).is_none(){return Err(BodySyntaxFailure::Operational(std::io::ErrorKind::InvalidInput.into()))}
+ trace_canonical_cleanup(body,fallback,bytes);
+ let lease=a.reserve(bytes).map_err(|proxy|BodySyntaxFailure::Operational(a.take_operational_error().unwrap_or(proxy)))?;
+ Ok(CanonicalBodyCleanup{lease,body,code,expected:bytes})
+}
+
+
+// The default source-width grant remains a safe fallback for inputs without
+// the complete issued Original token loan. Canonical paths now carry a private
+// token-aggregate plan bound to their actual code/body. This is storage planning, not a grammar
+// pass or a source/completeness receipt.
+fn reserve_issued_body_literal_cleanup(
+ item:&Item,body:dm_syntax::Span,input:&ActualBodyParserInput<'_>,a:&dm_syntax::SettingAdmission<'_>,
+)->Result<dm_syntax::SettingRootLease,BodySyntaxFailure>{
+ let source_bound=body_literal_cleanup_bytes(body)?;
+ let reserve=|bytes|a.reserve(bytes).map_err(|proxy|BodySyntaxFailure::Operational(a.take_operational_error().unwrap_or(proxy)));
+ a.checkpoint().map_err(|proxy|BodySyntaxFailure::Operational(a.take_operational_error().unwrap_or(proxy)))?;
+ let tokens=match input.tokens(){Ok(tokens)=>tokens,Err(_)=>return reserve(source_bound)};
+ if tokens.current_span()!=body||item.span.start<body.start||item.span.end>body.end{return reserve(source_bound)}
+ if !matches!(tokens.expression_geometry().map_err(BodySyntaxFailure::Operational)?,dm_syntax::BodyExpressionGeometry::OriginalUnpublished){return reserve(source_bound)}
+ let actual=match tokens.tokens(body){Ok(actual)=>actual,Err(_)=>return reserve(source_bound)};
+ let geometry=dm_syntax::original_body_cleanup_peak_geometry(&item.children,actual,a).map_err(BodySyntaxFailure::Operational)?;
+ let bytes=source_bound.min(geometry.bytes());
+ if source_bound>262144&&std::env::var_os("DMB_ORIGINAL_TRACE_BODY_PRESSURE").is_some(){
+  use std::io::Write as _;let _=writeln!(std::io::stderr().lock(),"ORIGINAL_BODY_CLEANUP_GEOMETRY source_bound={source_bound} reserved={bytes} {geometry:?}");
+ }
+ reserve(bytes)
+}
+
+fn original_inline_if_statement_gap_tokens<'text>(
+    tokens:impl Iterator<Item=(dm_syntax::TokenKind,dm_syntax::Span,&'text str)>,
+    admission:&dm_syntax::SettingAdmission<'_>,
+)->std::io::Result<bool>{
+    use dm_syntax::TokenKind;let mut closed=false;
+    for(kind,span,text)in tokens{admission.checkpoint()?;match(kind,text){
+        (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_)=>(),
+        (TokenKind::Punctuation,")")if !closed&&span.end.checked_sub(span.start)==Some(1)=>closed=true,
+        _=>return Ok(false),
+    }}Ok(closed)
+}
+
+// Match only borrowed FINAL header data. The caller authenticates the actual
+// Original token loan; this helper never issues a source/body grant.
+fn original_classic_for_final_tokens<'text>(
+    tokens: impl Iterator<Item=(dm_syntax::TokenKind,dm_syntax::Span,&'text str)>,
+    name: dm_syntax::Span, declaration: bool, admission: &dm_syntax::SettingAdmission<'_>,
+) -> std::io::Result<bool> {
+    use dm_syntax::TokenKind;
+            let mut index = 0;
+            for (kind, span, spelling) in tokens {
+                admission.checkpoint()?;
+                match (declaration, index, kind, spelling) {
+                    (_, _, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
+                    (true, 0, TokenKind::Ident, "var")
+                    | (true, 1, TokenKind::Operator | TokenKind::Punctuation, "/")
+                    | (true, 3, TokenKind::Operator | TokenKind::Punctuation, "=")
+                    | (false, 0, TokenKind::Operator | TokenKind::Punctuation, "++") => index += 1,
+                    (true, 2, TokenKind::Ident, _) => {
+                        // The exact local-name span comes from the SAME primary
+                        // ForInitializer fact. Earlier components are only the
+                        // ordinary slash-separated type path in this header.
+                        index = if span == name { 3 } else { 1 };
+                    }
+                    (false, 1, TokenKind::Ident, _) if span == name => index += 1,
+                    _ => return Ok(false),
+                }
+            }
+            Ok(index == if declaration { 4 } else { 2 })
+}
+
+fn parse_statements_from_actual_input(
+ item:&mut Item,source:&str,body:dm_syntax::Span,input:&ActualBodyParserInput<'_>,admission:&dm_syntax::SettingAdmission<'_>,
+ supported:fn(&[dm_syntax::Statement])->bool,complete_literals:bool,preadmitted_cleanup:Option<CanonicalBodyCleanup<'_>>,mut syntax_report:Option<&mut dyn FnMut(dm_syntax::NativeBodySyntaxTraversal)>,
+)->Result<Arc<StatementBody>,BodySyntaxFailure>{
+ struct Original<'a,'input,'op>{input:&'a ActualBodyParserInput<'input>,body:dm_syntax::Span,admission:&'a dm_syntax::SettingAdmission<'op>,case_layout:std::cell::OnceCell<crate::procedure::header_input::OriginalCaseLayoutReplay<'input>>}
+    impl Original<'_, '_, '_>{
+        fn current_tokens(&self)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,String>{
+            let actual=self.input.tokens()?;
+            if self.case_layout.get().is_none(){let _=self.case_layout.set(actual.case_layout_replay());}
+            self.case_layout.get().expect("actual per-parse layout loan initialized").attach(actual)
+        }
     }
-    impl dm_syntax::SettingSyntaxProvider for Original<'_, '_> {
+    impl dm_syntax::SettingSyntaxProvider for Original<'_, '_, '_> {
         #[cfg(debug_assertions)]
         fn traces_original_body_grammar(&self) -> bool {
-            self.syntax.original_body_recipe(self.body, self.code).ok()
-                .is_some_and(|recipe| recipe.checker_body_profile())
+            self.input.checker_profile()
         }
 
-        fn original_expression(&self,source:&str,offset:usize)->std::io::Result<Option<dm_syntax::ParsedExpr>>{self.syntax.original_body_expression(self.body,self.code,source,offset,self.admission)}
-        fn original_expression_with_native_facts(&self,source:&str,offset:usize)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>)>>{self.syntax.original_body_expression_with_native_facts(self.body,self.code,source,offset,self.admission)}
+        fn original_expression(&self,source:&str,offset:usize)->std::io::Result<Option<dm_syntax::ParsedExpr>>{self.input.expression(source,offset,self.admission).map(|value|value.map(|(parsed,_)|parsed))}
+        fn original_expression_with_native_facts(&self,source:&str,offset:usize)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>)>>{self.input.expression(source,offset,self.admission)}
+        fn body_expression_with_geometry(&self,source:&str,offset:usize)->std::io::Result<Option<(dm_syntax::ParsedExpr,Option<dm_syntax::NativeExpressionParserFacts>,dm_syntax::BodyExpressionGeometry)>>{
+            let tokens=self.current_tokens().map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let geometry=tokens.expression_geometry()?;
+            self.input.expression(source,offset,self.admission).map(|value|value.map(|(parsed,native)|(parsed,native,geometry)))
+        }
         fn original_joined_return(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             use std::io::{Error, ErrorKind};
 
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|reason| Error::new(ErrorKind::InvalidData, reason))?;
             let mut tokens = tokens.tokens(header)
                 .map_err(|reason| Error::new(ErrorKind::InvalidData, reason))?;
@@ -1155,14 +1339,14 @@ fn parse_statements_admitted(
             Ok(keyword.start == header.start && keyword.end == next.start)
         }
         fn original_delete_head(&self,head:dm_syntax::Span)->std::io::Result<bool>{
-            self.syntax.original_body_tokens(self.body,self.code)
+            self.current_tokens()
                 .map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?
                 .delete_head_using(head,self.admission)
         }
         fn original_throw_head(&self, head: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|reason| std::io::Error::new(std::io::ErrorKind::InvalidData, reason))?;
             let Ok(tokens) = tokens.tokens(head) else { return Ok(false); };
             let mut keyword = false;
@@ -1181,7 +1365,7 @@ fn parse_statements_admitted(
         ) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let Ok(boundary) = tokens.tokens(boundary) else { return Ok(false); };
             let mut significant = 0;
@@ -1201,7 +1385,7 @@ fn parse_statements_admitted(
         ) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let Ok(boundary) = tokens.tokens(boundary) else { return Ok(false); };
             let mut significant = 0;
@@ -1216,13 +1400,19 @@ fn parse_statements_admitted(
             }
             Ok(significant == 2)
         }
+        fn original_inline_if_statement_gap(&self,gap:dm_syntax::Span)->std::io::Result<bool>{
+            self.admission.checkpoint()?;
+            let owner=self.current_tokens().map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let Ok(tokens)=owner.tokens(gap)else{return Ok(false)};
+            original_inline_if_statement_gap_tokens(tokens,self.admission)
+        }
         fn original_inline_if_prefix_head(
             &self,boundary:dm_syntax::Span,operator:&'static str,name:dm_syntax::Span,
         )->std::io::Result<bool>{
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
             if !matches!(operator,"++"|"--")||boundary.end!=name.end{return Ok(false)}
-            let tokens=self.syntax.original_body_tokens(self.body,self.code)
+            let tokens=self.current_tokens()
                 .map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message))?;
             let Ok(boundary)=tokens.tokens(boundary)else{return Ok(false)};
             let mut significant=0;
@@ -1252,7 +1442,7 @@ fn parse_statements_admitted(
         ) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let (Ok(prefix), Ok(between)) = (tokens.tokens(prefix), tokens.tokens(between)) else { return Ok(false); };
             let mut index = 0;
@@ -1281,66 +1471,59 @@ fn parse_statements_admitted(
             }
             Ok(to)
         }
+        fn original_for_implicit_world_header(&self,header:dm_syntax::Span,local:&dm_syntax::LocalVariableSyntax)->std::io::Result<bool>{
+            self.admission.checkpoint()?;let owner=self.current_tokens().map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let Ok(tokens)=owner.tokens(header)else{return Ok(false)};
+            original_declared_for_current_tokens(tokens,header,local,None,self.admission)
+        }
+        fn original_for_each_typed_prefix(&self,prefix:dm_syntax::Span,local:&dm_syntax::LocalVariableSyntax,hint:dm_syntax::Span)->std::io::Result<bool>{
+            self.admission.checkpoint()?;let owner=self.current_tokens().map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let Ok(tokens)=owner.tokens(prefix)else{return Ok(false)};
+            original_declared_for_current_tokens(tokens,prefix,local,Some(hint),self.admission)
+        }
+        fn original_for_range_step_gap(&self,gap:dm_syntax::Span)->std::io::Result<bool>{
+            self.admission.checkpoint()?;let owner=self.current_tokens().map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let Ok(tokens)=owner.tokens(gap)else{return Ok(false)};
+            original_range_step_current_tokens(tokens,gap,self.admission)
+        }
+        fn original_for_pair_prefix(&self,prefix:dm_syntax::Span,key:&dm_syntax::LocalVariableSyntax,value:&dm_syntax::LocalVariableSyntax)->std::io::Result<bool>{
+            self.admission.checkpoint()?;
+            let tokens=self.current_tokens().map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message))?;
+            let Ok(tokens)=tokens.tokens(prefix)else{return Ok(false)};
+            original_pair_for_final_tokens(tokens,key,value,self.admission)
+        }
         fn original_for_each_anything_prefix(
             &self, prefix: dm_syntax::Span, name: dm_syntax::Span,
             type_components: &[dm_syntax::Span],
         ) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
-            if type_components.is_empty() { return Ok(false); }
-            let Ok(prefix) = tokens.tokens(prefix) else { return Ok(false); };
-            let mut index = 0;
-            let mut component = 0;
-            for (kind, span, spelling) in prefix {
-                self.admission.checkpoint()?;
-                match (index, kind, spelling) {
-                    (_, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
-                    (0, TokenKind::Ident, "var")
-                    | (1, TokenKind::Operator | TokenKind::Punctuation, "/")
-                    | (5, TokenKind::Ident, "as")
-                    | (6, TokenKind::Ident, "anything")
-                    | (7, TokenKind::Ident, "in") => index += 1,
-                    (2, TokenKind::Ident, _) if type_components.get(component) == Some(&span) => {
-                        component += 1;
-                        index = 3;
-                    }
-                    (3, TokenKind::Operator | TokenKind::Punctuation, "/") => {
-                        index = if component == type_components.len() { 4 } else { 2 };
-                    }
-                    (4, TokenKind::Ident, _) if span == name => index = 5,
-                    _ => return Ok(false),
+            if type_components.is_empty() {
+                // Distinguish an actual var/name prefix from an already-existing
+                // bare binding using the SAME captured token window.
+                let Ok(head)=tokens.tokens(prefix)else{return Ok(false)};
+                let first=head.filter(|(kind,_,_)|!matches!(kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment)).next();
+                if !matches!(first,Some((TokenKind::Ident,_,"var"))){
+                    return tokens.bare_for_each_anything_prefix_using(prefix,name,self.admission);
                 }
             }
-            Ok(index == 8 && component == type_components.len())
+            let Ok(prefix) = tokens.tokens(prefix) else { return Ok(false); };
+            original_declared_anything_for_final_tokens(prefix,name,type_components,self.admission)
         }
         fn original_classic_for_tokens(
             &self, span: dm_syntax::Span, name: dm_syntax::Span, declaration: bool,
         ) -> std::io::Result<bool> {
-            use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let Ok(tokens) = tokens.tokens(span) else { return Ok(false); };
-            let mut index = 0;
-            for (kind, span, spelling) in tokens {
-                self.admission.checkpoint()?;
-                match (declaration, index, kind, spelling) {
-                    (_, _, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
-                    (true, 0, TokenKind::Ident, "var")
-                    | (true, 1, TokenKind::Operator | TokenKind::Punctuation, "/")
-                    | (true, 3, TokenKind::Operator | TokenKind::Punctuation, "=")
-                    | (false, 0, TokenKind::Operator | TokenKind::Punctuation, "++") => index += 1,
-                    (true, 2, TokenKind::Ident, _) | (false, 1, TokenKind::Ident, _) if span == name => index += 1,
-                    _ => return Ok(false),
-                }
-            }
-            Ok(index == if declaration { 4 } else { 2 })
+            original_classic_for_final_tokens(tokens, name, declaration, self.admission)
         }
         fn original_two_clause_for_header(&self,first:dm_syntax::Span,tail:dm_syntax::Span,empty:bool)->std::io::Result<bool>{
             use dm_syntax::TokenKind;self.admission.checkpoint()?;
-            let owner=self.syntax.original_body_tokens(self.body,self.code).map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let owner=self.current_tokens().map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
             let(Ok(first),Ok(tail))=(owner.tokens(first),owner.tokens(tail))else{return Ok(false)};
             let mut stage=if empty{0}else{2};let mut separator=false;
             for(kind,_,text)in first{self.admission.checkpoint()?;match(kind,text){
@@ -1361,7 +1544,7 @@ fn parse_statements_admitted(
         ) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let mut expected = None;
             for (index, span) in [first, second].into_iter().enumerate() {
@@ -1386,10 +1569,27 @@ fn parse_statements_admitted(
             }
             Ok(true)
         }
+        fn original_empty_while_body(&self,header:dm_syntax::Span,next_header:dm_syntax::Span)->std::io::Result<bool>{
+            use dm_syntax::{Span,TokenKind};self.admission.checkpoint()?;
+            if header.start<self.body.start||header.start>=header.end||next_header.start>=next_header.end||header.end>next_header.start||next_header.end>self.body.end{return Ok(false)}
+            let tokens=self.current_tokens().map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message))?;
+            let Ok(head)=tokens.tokens(header)else{return Ok(false)};
+            let(mut first,mut second,mut last,mut count)=(None,None,None,0usize);
+            for(kind,span,text)in head{self.admission.checkpoint()?;if matches!(kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment){continue}if count==0{first=Some((kind,span,text));}if count==1{second=Some((kind,span,text));}count+=1;last=Some((kind,span,text));}
+            if !matches!(first,Some((TokenKind::Ident,span,"while"))if span.start==header.start&&span.end.checked_sub(span.start)==Some(5))
+                ||!matches!(second,Some((TokenKind::Punctuation,span,"("))if span.end.checked_sub(span.start)==Some(1))
+                ||!matches!(last,Some((TokenKind::Punctuation,span,")"))if span.end==header.end&&span.end.checked_sub(span.start)==Some(1)){return Ok(false)}
+            let Ok(next)=tokens.tokens(next_header)else{return Ok(false)};let mut next_seen=false;
+            for(kind,span,_)in next{self.admission.checkpoint()?;if !matches!(kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment){next_seen=span.start==next_header.start;break;}}if !next_seen{return Ok(false)}
+            let gap=Span::new(header.end,next_header.start);let Ok(actual)=tokens.tokens(gap)else{return Ok(false)};
+            // Shared lexical trivia/terminator kernel only; current while and
+            // sibling authority comes from the independent checks above.
+            original_empty_catch_gap_using(gap,actual,&||self.admission.checkpoint())
+        }
         fn original_empty_classic_for_body(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::{Span, TokenKind};
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let Ok(head) = tokens.tokens(header) else { return Ok(false); };
             let mut previous = None;
@@ -1418,7 +1618,7 @@ fn parse_statements_admitted(
         }
         fn original_statement_block_open(&self, gap: dm_syntax::Span) -> std::io::Result<bool> {
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let mut open = false;
             let Ok(gap) = tokens.tokens(gap) else { return Ok(false); };
@@ -1441,7 +1641,7 @@ fn parse_statements_admitted(
             use dm_syntax::OriginalLeafBlockLink;
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             if tail.end != next.start { return Ok(false); }
             let Ok(tail) = tokens.tokens(tail) else { return Ok(false); };
@@ -1485,13 +1685,23 @@ fn parse_statements_admitted(
                 }
             }
         }
+        fn original_empty_catch_continuation(&self,catch_header:dm_syntax::Span,next_header:dm_syntax::Span)->std::io::Result<bool>{
+            self.admission.checkpoint()?;
+            if catch_header.start>=catch_header.end||next_header.start>=next_header.end||catch_header.end>next_header.start{return Ok(false)}
+            let tokens=self.current_tokens().map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message))?;
+            let Ok(next)=tokens.tokens(next_header)else{return Ok(false)};
+            let mut next_seen=false;for(kind,span,_)in next{self.admission.checkpoint()?;if !matches!(kind,dm_syntax::TokenKind::Whitespace|dm_syntax::TokenKind::Newline|dm_syntax::TokenKind::Comment){next_seen=span.start==next_header.start;break;}}if !next_seen{return Ok(false)}
+            let gap=dm_syntax::Span::new(catch_header.end,next_header.start);
+            let Ok(actual)=tokens.tokens(gap)else{return Ok(false)};
+            original_empty_catch_gap_using(gap,actual,&||self.admission.checkpoint())
+        }
         fn original_try_catch_heads(
             &self, try_header: dm_syntax::Span, catch_header: dm_syntax::Span,
             parameter: Option<&dm_syntax::LocalVariableSyntax>,
         ) -> std::io::Result<bool> {
             use dm_syntax::{LocalSourceKind, TokenKind};
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let Ok(head) = tokens.tokens(try_header) else { return Ok(false); };
             let mut seen = false;
@@ -1529,7 +1739,7 @@ fn parse_statements_admitted(
         fn original_static_local_head(&self, header: dm_syntax::Span) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let Ok(tokens) = tokens.tokens(header) else { return Ok(false); };
             let mut tokens = tokens.filter(|(kind, _, _)| !matches!(
@@ -1566,7 +1776,7 @@ fn parse_statements_admitted(
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
             if prefix.end>suffix.start{return Ok(false)}
-            let owner=self.syntax.original_body_tokens(self.body,self.code)
+            let owner=self.current_tokens()
                 .map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message))?;
             let(Ok(prefix),Ok(suffix))=(owner.tokens(prefix),owner.tokens(suffix))else{return Ok(false)};
             let mut index=0;
@@ -1596,7 +1806,7 @@ fn parse_statements_admitted(
         }
         fn original_return_head(&self,head:dm_syntax::Span)->std::io::Result<bool>{
             use dm_syntax::TokenKind;self.admission.checkpoint()?;
-            let owner=self.syntax.original_body_tokens(self.body,self.code).map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let owner=self.current_tokens().map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
             let Ok(tokens)=owner.tokens(head)else{return Ok(false)};let mut keyword=false;
             for(kind,at,text)in tokens{self.admission.checkpoint()?;match(kind,text){
                 (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_)=>(),
@@ -1606,7 +1816,7 @@ fn parse_statements_admitted(
         }
         fn original_inline_switch_body_head(&self,gap:dm_syntax::Span)->std::io::Result<bool>{
             use dm_syntax::TokenKind;self.admission.checkpoint()?;
-            let owner=self.syntax.original_body_tokens(self.body,self.code).map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
+            let owner=self.current_tokens().map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
             let Ok(tokens)=owner.tokens(gap)else{return Ok(false)};let mut closed=false;
             for(kind,_,text)in tokens{self.admission.checkpoint()?;match(kind,text){
                 (TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment,_)=>(),
@@ -1616,7 +1826,7 @@ fn parse_statements_admitted(
         }
         fn switch_inline_statement_cursor(&self,item:&Item)->Result<dm_syntax::OriginalCaseCursor,&'static str>{
             let mut checkpoint=||self.admission.checkpoint().map_err(|actual|{self.admission.record_operational_error(actual);"inline statement cursor operation stopped"});
-            let owner=self.syntax.original_body_tokens(self.body,self.code).map_err(|_|"original inline statement owner unavailable")?;
+            let owner=self.current_tokens().map_err(|_|"original inline statement owner unavailable")?;
             owner.switch_inline_statement_cursor_using(item.header_span,item.span,&mut checkpoint)
         }
         fn original_inline_switch_return_head(&self,head:dm_syntax::Span,default:bool)->std::io::Result<bool>{
@@ -1625,7 +1835,7 @@ fn parse_statements_admitted(
             if !default{return self.original_inline_if_leaf(head,"return")}
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let tokens=self.syntax.original_body_tokens(self.body,self.code)
+            let tokens=self.current_tokens()
                 .map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message))?;
             let Ok(tokens)=tokens.tokens(head)else{return Ok(false)};let mut significant=0;
             for(kind,_,text)in tokens{
@@ -1641,7 +1851,7 @@ fn parse_statements_admitted(
         fn original_plain_comma_local_head(&self, head: dm_syntax::Span, first: bool) -> std::io::Result<bool> {
             use dm_syntax::TokenKind;
             self.admission.checkpoint()?;
-            let owner = self.syntax.original_body_tokens(self.body, self.code)
+            let owner = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             let Ok(tokens) = owner.tokens(head) else { return Ok(false); };
             let mut actual = tokens.filter(|(kind, _, _)| !matches!(kind,
@@ -1668,37 +1878,32 @@ fn parse_statements_admitted(
         }
         fn original_label_head(&self,head:dm_syntax::Span,name:dm_syntax::Span)->std::io::Result<bool>{
             self.admission.checkpoint()?;
-            let tokens=self.syntax.original_body_tokens(self.body,self.code)
+            let tokens=self.current_tokens()
                 .map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
             tokens.label_head_using(head,name,self.admission)
         }
         fn original_named_loop_control(&self,head:dm_syntax::Span,keyword:&'static str,name:dm_syntax::Span)->std::io::Result<bool>{
             self.admission.checkpoint()?;
-            let tokens=self.syntax.original_body_tokens(self.body,self.code)
+            let tokens=self.current_tokens()
                 .map_err(|reason|std::io::Error::new(std::io::ErrorKind::InvalidData,reason))?;
             tokens.named_loop_control_using(head,keyword,name,self.admission)
         }
         fn original_bare_loop_control(&self, header: dm_syntax::Span, keyword: &'static str) -> std::io::Result<bool> {
             self.admission.checkpoint()?;
-            let tokens = self.syntax.original_body_tokens(self.body, self.code)
+            let tokens = self.current_tokens()
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
             tokens.bare_loop_control_using(header,keyword,self.admission)
         }
         fn switch_case_cursor(&self,item:&Item)->Result<dm_syntax::OriginalCaseCursor,&'static str>{
             let mut checkpoint=||{self.admission.checkpoint().map_err(|actual|{self.admission.record_operational_error(actual);"native case cursor operation stopped"})};
-            let tokens=self.syntax.original_body_tokens(self.body,self.code).map_err(|_|"original case body token owner unavailable")?;tokens.switch_case_cursor_using(item.header_span,item.span,&mut checkpoint)
+            let tokens=self.current_tokens().map_err(|_|"original case body token owner unavailable")?;tokens.switch_case_cursor_using(item.header_span,item.span,&mut checkpoint)
         }
         fn setting(
             &self,
             item: &Item,
         ) -> Result<dm_syntax::SettingStatement, dm_syntax::Diagnostic> {self.setting_with_native_observation(item).map(|(value,_)|value)}
         fn setting_with_native_observation(&self,item:&Item)->Result<(dm_syntax::SettingStatement,Option<dm_syntax::NativeExpressionParserFacts>),dm_syntax::Diagnostic>{
-            match self.syntax.setting_statement_expression_with_native_observation(
-                self.body,
-                self.code,
-                item,
-                self.admission,
-            ) {
+            match self.input.setting(item,self.admission) {
                 Ok((attribute,relation,value,native)) => Ok((dm_syntax::SettingStatement {attribute,relation,value},native)),
                 Err(dm_syntax::SettingSyntaxFailure::Syntax(error)) => Err(error),
                 Err(dm_syntax::SettingSyntaxFailure::Operational(error)) => {
@@ -1714,25 +1919,27 @@ fn parse_statements_admitted(
             }
         }
     }
-    let code = code.ok_or_else(|| {
-        BodySyntaxFailure::Syntax(internal("original body code input is unissued"))
-    })?;
-    let provider = Original {
-        syntax,
-        body,
-        code,
-        admission,
-    };
+    let provider=Original{input,body,admission,case_layout:std::cell::OnceCell::new()};
     // Failure cleanup is admitted BEFORE the ordinary body AST is built.
     // It is coordination headroom only, not a global native-input/AST cap.
-    let cleanup=if complete_literals{
-        let bytes=body.end.checked_sub(body.start).and_then(|n|n.checked_mul(512)).and_then(|n|n.checked_add(8192)).ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"body literal cleanup source envelope overflow")))?;
-        Some(admission.reserve(bytes).map_err(BodySyntaxFailure::Operational)?)
-    }else{None};
+    let cleanup=if let Some(cleanup)=preadmitted_cleanup{
+        if !complete_literals{return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"canonical cleanup requires complete literal admission")))}
+        Some(cleanup.into_lease(body,input.code(),admission)?)
+    }else if complete_literals{match reserve_issued_body_literal_cleanup(item,body,input,admission){
+        Ok(cleanup)=>Some(cleanup),Err(actual)=>{
+            if std::env::var_os("DMB_ORIGINAL_TRACE_BODY_PRESSURE").is_some(){
+                use std::io::Write as _;let _=writeln!(std::io::stderr().lock(),"ORIGINAL_BODY_CLEANUP_OWNER {:?}",input.tokens());
+            }
+            return Err(actual)
+        }
+    }}else{None};
     if let Some(cleanup)=cleanup{
-        let prepared=dm_syntax::parse_body_items_with_admitted_literals(
-            &item.children,source,&|at|syntax.declaration_header_at(at),&provider,admission,cleanup,
-        ).map_err(BodySyntaxFailure::Operational)?;
+        let prepared=if let Some(report)=syntax_report.as_mut(){
+            let(prepared,traversal)=dm_syntax::parse_body_items_with_admitted_literals_and_syntax_traversal(&item.children,source,&|at|input.declaration_header_at(at),&provider,admission,cleanup).map_err(BodySyntaxFailure::Operational)?;
+            report(traversal);prepared
+        }else{dm_syntax::parse_body_items_with_admitted_literals(
+            &item.children,source,&|at|input.declaration_header_at(at),&provider,admission,cleanup,
+        ).map_err(BodySyntaxFailure::Operational)?};
         let (parsed,literals,native)=prepared.into_parts_with_native_parser_facts();
         if let Some(actual)=admission.take_operational_error(){
             dm_syntax::drop_body_literal_syntax(parsed,Some(literals));
@@ -1741,7 +1948,7 @@ fn parse_statements_admitted(
         Ok(finish_statements(item,parsed,supported,Some(literals),native))
     }else{
         let parsed=dm_syntax::parse_body_items_with_context_and_settings(
-            &item.children,source,&|at|syntax.declaration_header_at(at),&provider,admission,
+            &item.children,source,&|at|input.declaration_header_at(at),&provider,admission,
         );
         if let Some(actual)=admission.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual));}
         admission.checkpoint().map_err(BodySyntaxFailure::Operational)?;
@@ -1987,13 +2194,13 @@ impl<'a> CallableHeaderSource<'a>{
   if !matches!(self.tree.member(member).ok_or("callable header member unavailable")?.kind,crate::MemberKind::Proc|crate::MemberKind::Verb){return Err("callable header requires source procedure/verb".into())}
   let ordinal=self.callables.ordinal(member).ok_or("callable header member not in original roster")?;let occurrence=self.bodies.get(ordinal).ok_or("callable header original occurrence absent")?;
   if occurrence.member!=member{return Err("callable header roster occurrence differs".into())}
-  let code=self.codes.get(ordinal).ok_or("callable header original code absent")?;self.syntax.original_callable_opening(occurrence.expanded_span,&code.identity)
+  self.syntax.original_callable_opening_header_only(occurrence.expanded_span)
  }
  /// Authenticated actual parser records; no Q4/body/default grammar is run.
- pub fn reader_commit_registration(&self,member:crate::MemberId)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual reader member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual reader occurrence absent")?;let code=self.codes.get(ordinal).ok_or("actual reader code owner absent")?;self.syntax.original_reader_commit_registration(occurrence.expanded_span,&code.identity)}
+ pub fn reader_commit_registration(&self,member:crate::MemberId)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual reader member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual reader occurrence absent")?;self.syntax.original_reader_commit_registration_header_only(occurrence.expanded_span)}
  pub fn reader_end_registration(&self)->Result<Option<dm_preprocess::regions::OriginalNoticeRegistration>,String>{self.syntax.original_reader_end_registration()}
- pub fn formal_notice_registrations(&self,member:crate::MemberId)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>,Option<dm_preprocess::regions::OriginalNoticeRegistration>),String>>+'a,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual formal member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual formal occurrence absent")?;let code=self.codes.get(ordinal).ok_or("actual formal code owner absent")?;self.syntax.original_formal_notice_registration_rows(occurrence.expanded_span,&code.identity)}
- pub fn formal_notices(&self,member:crate::MemberId)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>),String>>+'a,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual formal member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual formal occurrence absent")?;let code=self.codes.get(ordinal).ok_or("actual formal code owner absent")?;self.syntax.original_formal_notice_rows(occurrence.expanded_span,&code.identity)}
+ pub fn formal_notice_registrations(&self,member:crate::MemberId)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>,Option<dm_preprocess::regions::OriginalNoticeRegistration>),String>>+'a,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual formal member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual formal occurrence absent")?;self.syntax.original_formal_notice_registration_rows_header_only(occurrence.expanded_span)}
+ pub fn formal_notices(&self,member:crate::MemberId)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>),String>>+'a,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual formal member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual formal occurrence absent")?;self.syntax.original_formal_notice_rows_header_only(occurrence.expanded_span)}
  pub fn reported_policy_line(&self,member:crate::MemberId)->Result<SourcePolicyLineOrigin,String>{self.mapping.original_policy_line(self.cursor(member)?)}
  pub fn reported_point(&self,member:crate::MemberId)->Result<super::BorrowedSourceNoteOrigin<'a>,String>{self.mapping.borrowed_source_note_point(self.cursor(member)?).map_err(str::to_owned)}
     /// Resolve the exact authored version before projecting its primary header.
@@ -2065,3 +2272,233 @@ impl BodyArchive{
 
 #[path="frontend_current_body_archive.rs"]mod current_body;
 pub use current_body::CurrentArchivedBody;
+
+impl BodyArchive{
+ /// Resolve one actual current ordinal under the caller's SAME existing admission; no nested host scope or BODY query.
+ pub fn syntax_input_using_admission(&self,ordinal:usize,a:&dm_syntax::SettingAdmission<'_>)->Result<Arc<BodySyntaxInput>,BodySyntaxFailure>{let queries=self.body_queries.as_ref().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"utility current Input host absent")))?;body_queries::current_input_admitted(&queries.inputs,&self.bodies,ordinal,&self.syntax,&self.source,&self.mapping,a)}
+}
+
+#[cfg(test)]
+mod original_typed_classic_header_controls {
+    use super::*;
+    #[test]
+    fn actual_original_typed_classic_header_keeps_exact_name_tokens_and_eof() {
+        use dm_syntax::{Span,TokenKind};
+        let source="var/datum/T = ";let lexical=dm_syntax::lex_spans(source);
+        let name=lexical.tokens.iter().find(|row|row.text(source)=="T").unwrap().span;
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
+        let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));
+        let rows=||lexical.tokens.iter().map(|row|(row.kind,row.span,row.text(source)));
+        assert!(original_classic_for_final_tokens(rows(),name,true,&a).unwrap());
+        assert!(!original_classic_for_final_tokens(rows(),Span::new(name.start+1,name.end+1),true,&a).unwrap());
+        for text in ["var/datum/T", "var/datum//T=", "var/datum/T+=", "var/datum/T=extra", "var/T,other=", "var/datum/T/=", "var/datum/T=="] {
+            let tokens=dm_syntax::lex_spans(text);
+            // A malformed // header can mask its physical T inside a Comment.
+            // This is a deliberate absent-name negative, not a token witness.
+            let at=text.find('T').unwrap();let name=Span::new(at,at+1);
+            assert!(!original_classic_for_final_tokens(tokens.tokens.iter().map(|row|(row.kind,row.span,row.text(text))),name,true,&a).unwrap(),"{text}");
+        }
+        for wrong in ["datum","T"] {
+            assert!(!original_classic_for_final_tokens(rows().map(|(kind,span,text)|
+                (if text==wrong{TokenKind::Number}else{kind},span,text)),name,true,&a).unwrap(),"same spelling with forged type/name token kind");
+        }
+        assert!(!original_classic_for_final_tokens(rows().filter(|(_,_,text)|*text!="="),name,true,&a).unwrap());
+        assert!(!original_classic_for_final_tokens(rows(),name,false,&a).unwrap());
+        assert!(!original_classic_for_final_tokens(std::iter::empty(),name,true,&a).unwrap());
+    }
+    #[test]
+    fn actual_original_typed_classic_header_keeps_first_token_io_and_same_counter() {
+        use std::sync::atomic::Ordering;
+        let source="var/datum/T=";let lexical=dm_syntax::lex_spans(source);let name=lexical.tokens.iter().find(|row|row.text(source)=="T").unwrap().span;
+        let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let baseline=used.load(Ordering::Acquire);
+        for fail in [1,3,lexical.tokens.len()] {
+            let calls=std::cell::Cell::new(0);let checkpoint=||{let next=calls.get()+1;calls.set(next);if next==fail{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};
+            let a=dm_syntax::SettingAdmission::new(&used,baseline,&checkpoint);
+            let proxy=original_classic_for_final_tokens(lexical.tokens.iter().map(|row|(row.kind,row.span,row.text(source))),name,true,&a).unwrap_err();
+            let error=a.take_operational_error().unwrap_or(proxy);
+            assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(calls.get(),fail);assert_eq!(used.load(Ordering::Acquire),baseline);
+        }
+        // Header authentication itself needs no allocation and never changes the
+        // hard cap. The real parser quota/rollback is covered by native Host tests.
+        let a=dm_syntax::SettingAdmission::new(&used,baseline,&||Ok(()));
+        assert!(original_classic_for_final_tokens(lexical.tokens.iter().map(|row|(row.kind,row.span,row.text(source))),name,true,&a).unwrap());assert_eq!(used.load(Ordering::Acquire),baseline);
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn actual_original_consumed_inline_leaf_gap_requires_one_final_close_and_preserves_io() {
+    use dm_syntax::{Span,TokenKind};use std::sync::atomic::Ordering;
+    let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let baseline=used.load(Ordering::Acquire);
+    let a=dm_syntax::SettingAdmission::new(&used,baseline,&||Ok(()));
+    for(source,wanted)in[(")",true),(") /*trivia*/ ",true),("",false),("))",false),(");",false),("){",false),(")name",false),("( ",false)]{
+        let tokens=dm_syntax::lex_spans(source);assert_eq!(original_inline_if_statement_gap_tokens(tokens.tokens.iter().map(|row|(row.kind,row.span,row.text(source))),&a).unwrap(),wanted,"{source}");
+    }
+    for row in[(TokenKind::Operator,Span::new(1,2),")"),(TokenKind::Punctuation,Span::new(1,3),")"),(TokenKind::Punctuation,Span::new(1,2),"(")]{assert!(!original_inline_if_statement_gap_tokens(std::iter::once(row),&a).unwrap());}
+    let check=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&used,baseline,&check);let proxy=original_inline_if_statement_gap_tokens(std::iter::once((TokenKind::Punctuation,Span::new(1,2),")")),&a).unwrap_err();assert_eq!(a.take_operational_error().unwrap_or(proxy).raw_os_error(),Some(1450));assert_eq!(used.load(Ordering::Acquire),baseline);
+}
+
+fn original_pair_for_final_tokens<'t>(tokens:impl IntoIterator<Item=(dm_syntax::TokenKind,dm_syntax::Span,&'t str)>,key:&dm_syntax::LocalVariableSyntax,value:&dm_syntax::LocalVariableSyntax,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+ use dm_syntax::{TokenKind as K,LocalSourceKind};
+ if key.source_kind!=LocalSourceKind::ForBinding||value.source_kind!=LocalSourceKind::CommaContinuation
+  ||key.source_modifiers!=0||value.source_modifiers!=0||key.array_suffix||value.array_suffix||!value.type_components.is_empty(){return Ok(false)}
+ let(mut state,mut component)=(0usize,0usize);
+ for(kind,span,text)in tokens{a.checkpoint()?;if matches!(kind,K::Whitespace|K::Newline|K::Comment){continue}
+  let valid=match state{
+   0=>kind==K::Ident&&text=="var"&&span==key.anchor,
+   1|3=>kind==K::Punctuation&&text=="/"&&span.end.checked_sub(span.start)==Some(1),
+   2=>if component<key.type_components.len(){kind==K::Ident&&span==key.type_components[component]}else{kind==K::Ident&&span==key.name},
+   4=>kind==K::Punctuation&&text==","&&span==value.anchor&&span.end.checked_sub(span.start)==Some(1),
+   5=>kind==K::Ident&&span==value.name,
+   6=>kind==K::Ident&&text=="in",
+   _=>false};
+  if !valid{return Ok(false)}
+  state=match state{0=>1,1|3=>2,2=>if component<key.type_components.len(){component+=1;3}else{4},4=>5,5=>6,6=>7,_=>return Ok(false)};
+ }
+ Ok(state==7&&component==key.type_components.len())
+}
+
+fn original_declared_anything_for_final_tokens<'t>(tokens:impl IntoIterator<Item=(dm_syntax::TokenKind,dm_syntax::Span,&'t str)>,name:dm_syntax::Span,type_components:&[dm_syntax::Span],a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+ use dm_syntax::TokenKind;
+            let mut index = 0;
+            let mut component = 0;
+            for (kind, span, spelling) in tokens {
+                a.checkpoint()?;
+                match (index, kind, spelling) {
+                    (_, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment, _) => (),
+                    (0, TokenKind::Ident, "var")
+                    | (1, TokenKind::Operator | TokenKind::Punctuation, "/")
+                    | (5, TokenKind::Ident, "as")
+                    | (6, TokenKind::Ident, "anything")
+                    | (7, TokenKind::Ident, "in") => index += 1,
+                    (2, TokenKind::Ident, _) if type_components.is_empty() && span == name => index = 5,
+                    (2, TokenKind::Ident, _) if type_components.get(component) == Some(&span) => {
+                        component += 1;
+                        index = 3;
+                    }
+                    (3, TokenKind::Operator | TokenKind::Punctuation, "/") => {
+                        index = if component == type_components.len() { 4 } else { 2 };
+                    }
+                    (4, TokenKind::Ident, _) if span == name => index = 5,
+                    _ => return Ok(false),
+                }
+            }
+            Ok(index == 8 && component == type_components.len())
+}
+
+#[cfg(test)]
+#[test]
+fn original_pair_and_untyped_anything_prefixes_require_current_name_separator_and_end(){
+ use dm_syntax::{TokenKind as K,Span};
+ let source="/proc/probe(entries)\n    for(var/key,value in entries)\n        return\n";
+ let syntax=dm_syntax::parse(source);let body=dm_syntax::parse_body_items(&syntax.items[0].children);
+ let rows=body.local_variables.entries().unwrap();let key=&rows[0];let value=&rows[1];
+ let prefix=Span::new(source.find("var/").unwrap(),source.find("in entries").unwrap()+3);
+ let lex=dm_syntax::lex_spans(source);let tokens=lex.tokens.iter().filter(|t|t.span.start>=prefix.start&&t.span.end<=prefix.end).map(|t|(t.kind,t.span,t.text(source))).collect::<Vec<_>>();
+ let baseline=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(baseline).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));
+ assert!(original_pair_for_final_tokens(tokens.iter().copied(),key,value,&a).unwrap());
+ for at in 0..tokens.len(){if matches!(tokens[at].2,"/"|","|"in"){
+  let mut bad=tokens.clone();bad[at].0=K::Number;assert!(!original_pair_for_final_tokens(bad.iter().copied(),key,value,&a).unwrap());
+ }}
+ let mut bad=tokens.clone();bad.push((K::Ident,Span::new(prefix.end,prefix.end+2),"in"));assert!(!original_pair_for_final_tokens(bad.iter().copied(),key,value,&a).unwrap());
+ let mut wrong=value.clone();wrong.name=Span::new(value.name.start+1,value.name.end+1);assert!(!original_pair_for_final_tokens(tokens.iter().copied(),key,&wrong,&a).unwrap());
+ let mut wrong_kind=value.clone();wrong_kind.source_kind=dm_syntax::LocalSourceKind::ForBinding;assert!(!original_pair_for_final_tokens(tokens.iter().copied(),key,&wrong_kind,&a).unwrap(),"a forged second ForBinding cannot replace the actual comma-origin local");
+ let start=100;let declared=[(K::Ident,Span::new(start,start+3),"var"),(K::Punctuation,Span::new(103,104),"/"),(K::Ident,Span::new(104,110),"status"),(K::Ident,Span::new(111,113),"as"),(K::Ident,Span::new(114,122),"anything"),(K::Ident,Span::new(123,125),"in")];
+ assert!(original_declared_anything_for_final_tokens(declared,Span::new(104,110),&[],&a).unwrap());
+ assert!(!original_declared_anything_for_final_tokens(declared,Span::new(105,111),&[],&a).unwrap());
+ assert!(!original_declared_anything_for_final_tokens(declared,Span::new(104,110),&[Span::new(104,110)],&a).unwrap());
+ assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),baseline);
+}
+#[cfg(test)]
+#[test]
+fn original_pair_prefix_keeps_actual_first_checkpoint_failure_and_no_payload_charge(){
+ use dm_syntax::Span;
+ let source="/proc/probe(entries)\n    for(var/key,value in entries)\n        return\n";
+ let syntax=dm_syntax::parse(source);let body=dm_syntax::parse_body_items(&syntax.items[0].children);let rows=body.local_variables.entries().unwrap();
+ let prefix=Span::new(source.find("var/").unwrap(),source.find("in entries").unwrap()+3);let lex=dm_syntax::lex_spans(source);
+ let tokens=lex.tokens.iter().filter(|t|t.span.start>=prefix.start&&t.span.end<=prefix.end).map(|t|(t.kind,t.span,t.text(source))).collect::<Vec<_>>();
+ let baseline=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(baseline).unwrap();
+ for stop in[1,3,tokens.len()]{let calls=std::cell::Cell::new(0);let checkpoint=||{let next=calls.get()+1;calls.set(next);if next==stop{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};let a=dm_syntax::SettingAdmission::new(&used,baseline,&checkpoint);
+  let error=original_pair_for_final_tokens(tokens.iter().copied(),&rows[0],&rows[1],&a).unwrap_err();assert_eq!(a.take_operational_error().unwrap_or(error).raw_os_error(),Some(1450));assert_eq!(calls.get(),stop);assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),baseline);
+ }
+ let a=dm_syntax::SettingAdmission::new(&used,baseline,&||Ok(()));assert!(original_pair_for_final_tokens(tokens.iter().copied(),&rows[0],&rows[1],&a).unwrap());
+ assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),baseline);
+}
+
+// Borrow only the existing current tokens and SAME primary local declaration.
+// No inferred world/container/type or copied local row is issued by this proof.
+fn original_declared_for_current_tokens<'t>(tokens:impl IntoIterator<Item=(dm_syntax::TokenKind,dm_syntax::Span,&'t str)>,prefix:dm_syntax::Span,local:&dm_syntax::LocalVariableSyntax,hint:Option<dm_syntax::Span>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+ use dm_syntax::TokenKind as K;
+ if local.source_kind!=dm_syntax::LocalSourceKind::ForBinding||local.source_modifiers!=0||local.array_suffix{return Ok(false)}
+ let(mut state,mut component,mut end)=(0,0,prefix.start);let(mut hint_start,mut hint_end,mut need_type)=(None,None,true);
+ for(kind,span,text)in tokens{
+  a.checkpoint()?;
+  if span.start<end||span.end<span.start||span.end>prefix.end||span.end-span.start!=text.len(){return Ok(false)}end=span.end;
+  if matches!(kind,K::Whitespace|K::Newline|K::Comment){continue}
+  let valid=match state{
+   0=>kind==K::Ident&&text=="var",
+   1|3=>matches!(kind,K::Punctuation|K::Operator)&&text=="/",
+   2=>kind==K::Ident&&local.type_components.get(component).copied().unwrap_or(local.name)==span,
+   4=>kind==K::Ident&&text=="as"&&hint.is_some(),
+   5=>{
+    let Some(hint)=hint else{return Ok(false)};
+    if span.start>=hint.start&&span.end<=hint.end{
+     let valid=if need_type{kind==K::Ident&&dm_syntax::original_input_type_name(text)}else{matches!(kind,K::Punctuation|K::Operator)&&text=="|"};
+     if !valid{return Ok(false)}hint_start.get_or_insert(span.start);hint_end=Some(span.end);need_type=!need_type;continue
+    }
+    kind==K::Ident&&text=="in"&&!need_type&&hint_start==Some(hint.start)&&hint_end==Some(hint.end)
+   },_=>false,
+  };
+  if !valid{return Ok(false)}
+  state=match state{0=>1,1|3=>2,2=>if component<local.type_components.len(){component+=1;3}else{4},4=>5,5=>6,_=>return Ok(false)};
+ }
+ Ok(component==local.type_components.len()&&if hint.is_some(){state==6}else{state==4})
+}
+
+#[cfg(test)]#[test]fn actual_declared_world_and_typed_for_current_header_keeps_local_and_each_occurrence(){
+ use dm_syntax::{TokenKind as K,Span};
+ let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));
+ for clause in["var/datum/d","var/client/T","var/T as mob in entries","var/T as obj|mob in entries"]{
+  let source=format!("/proc/probe(entries)\n    for({clause})\n        break\n");let syntax=dm_syntax::parse(&source);let body=dm_syntax::parse_body_items(&syntax.items[0].children);let row=&body.local_variables.entries().unwrap()[0];
+  let start=source.find("var/").unwrap();
+  let finish=if clause.contains(" in "){source.rfind("entries)").unwrap()}else{source[start..].find(')').unwrap()+start};let prefix=Span::new(start,finish);
+  let hint=clause.split_once(" as ").map(|(_,tail)|{let text=tail.split(" in ").next().unwrap();let first=source.find(&format!("as {text}")).unwrap()+3;Span::new(first,first+text.len())});
+  let lex=dm_syntax::lex_spans(&source);let tokens=lex.tokens.iter().filter(|t|t.span.start>=prefix.start&&t.span.end<=prefix.end).map(|t|(t.kind,t.span,t.text(&source))).collect::<Vec<_>>();
+  assert!(original_declared_for_current_tokens(tokens.iter().copied(),prefix,row,hint,&a).unwrap(),"{clause}");
+  for at in 0..tokens.len(){if matches!(tokens[at].0,K::Whitespace|K::Newline|K::Comment){continue}let mut bad=tokens.clone();bad[at].0=K::Number;assert!(!original_declared_for_current_tokens(bad.iter().copied(),prefix,row,hint,&a).unwrap(),"kind {at} {clause}");let mut bad=tokens.clone();bad[at].1.start+=1000;bad[at].1.end+=1000;assert!(!original_declared_for_current_tokens(bad.iter().copied(),prefix,row,hint,&a).unwrap(),"foreign {at}");}
+  let mut bad=row.clone();bad.source_kind=dm_syntax::LocalSourceKind::Statement;assert!(!original_declared_for_current_tokens(tokens.iter().copied(),prefix,&bad,hint,&a).unwrap());
+  let failure=||Err(std::io::Error::from_raw_os_error(1450));let denied=dm_syntax::SettingAdmission::new(&used,1<<20,&failure);let error=original_declared_for_current_tokens(tokens.iter().copied(),prefix,row,hint,&denied).unwrap_err();assert_eq!(denied.take_operational_error().unwrap_or(error).raw_os_error(),Some(1450));
+ }assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),fixed);
+}
+
+fn original_range_step_current_tokens<'t>(tokens:impl IntoIterator<Item=(dm_syntax::TokenKind,dm_syntax::Span,&'t str)>,gap:dm_syntax::Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+ use dm_syntax::TokenKind as K;let(mut end,mut found)=(gap.start,false);
+ for(kind,span,text)in tokens{a.checkpoint()?;if span.start<end||span.end<span.start||span.end>gap.end||span.end-span.start!=text.len(){return Ok(false)}end=span.end;
+  if matches!(kind,K::Whitespace|K::Newline|K::Comment){continue}if found||kind!=K::Ident||text!="step"{return Ok(false)}found=true;
+ }Ok(found)
+}
+#[cfg(test)]#[test]fn actual_range_step_gap_requires_current_keyword_occurrence_and_preserves_first_failure(){
+ use dm_syntax::{Span,TokenKind as K};let fixed=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(fixed).unwrap();let a=dm_syntax::SettingAdmission::new(&used,fixed,&||Ok(()));let gap=Span::new(10,16);let tokens=[(K::Whitespace,Span::new(10,11)," "),(K::Ident,Span::new(11,15),"step"),(K::Whitespace,Span::new(15,16)," ")];assert!(original_range_step_current_tokens(tokens,gap,&a).unwrap());
+ for bad in[[(K::Ident,Span::new(1011,1015),"step")],[(K::Number,Span::new(11,15),"step")],[(K::Ident,Span::new(11,15),"stop")]]{assert!(!original_range_step_current_tokens(bad,gap,&a).unwrap());}
+ let calls=std::cell::Cell::new(0);for stop in[1,2,3]{calls.set(0);let fail=||{calls.set(calls.get()+1);if calls.get()==stop{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};let a=dm_syntax::SettingAdmission::new(&used,fixed,&fail);let error=original_range_step_current_tokens(tokens,gap,&a).unwrap_err();assert_eq!(a.take_operational_error().unwrap_or(error).raw_os_error(),Some(1450));assert_eq!(calls.get(),stop);}
+ assert_eq!(used.load(std::sync::atomic::Ordering::Acquire),fixed);
+}
+
+// Borrow only the exact current gap after an independently proved catch header.
+// No child statement can be hidden in an empty catch; explicit empty braces are allowed.
+fn original_empty_catch_gap_using<'s>(gap:dm_syntax::Span,tokens:impl IntoIterator<Item=(dm_syntax::TokenKind,dm_syntax::Span,&'s str)>,checkpoint:&impl Fn()->std::io::Result<()>)->std::io::Result<bool>{
+ use dm_syntax::TokenKind as K;checkpoint()?;if gap.start>=gap.end{return Ok(false)}
+ let(mut end,mut state,mut boundary)=(gap.start,0u8,false);
+ for(kind,span,text)in tokens{checkpoint()?;if span.start<end||span.end<span.start||span.end>gap.end||span.end.checked_sub(span.start)!=Some(text.len()){return Ok(false)}end=span.end;
+  match(kind,text){(K::Whitespace|K::Comment,_)=>(),(K::Newline,_)=>boundary=true,
+   (K::Punctuation,";")if state==0=>{state=3;boundary=true},
+   (K::Punctuation,"{")if state==0=>state=1,(K::Punctuation,"}")if state==1=>{state=2;boundary=true},_=>return Ok(false)}
+ }
+ Ok(boundary&&state!=1)
+}
+
+#[cfg(test)]#[test]fn original_empty_catch_current_gap_rejects_hidden_children_and_preserves_first_io(){
+ use dm_syntax::{Span,TokenKind as K};let gap=Span::new(10,13);
+ assert!(original_empty_catch_gap_using(gap,[(K::Newline,Span::new(10,11),"\n"),(K::Whitespace,Span::new(11,13),"  ")],&||Ok(())).unwrap());assert!(original_empty_catch_gap_using(Span::new(10,12),[(K::Punctuation,Span::new(10,11),"{"),(K::Punctuation,Span::new(11,12),"}")],&||Ok(())).unwrap());
+ for rows in[vec![(K::Ident,Span::new(10,11),"x")],vec![(K::Punctuation,Span::new(10,11),"{")],vec![(K::Newline,Span::new(110,111),"\n")],vec![(K::Newline,Span::new(10,12),"\n")],vec![(K::Punctuation,Span::new(10,11),";"),(K::Punctuation,Span::new(11,12),";")]]{assert!(!original_empty_catch_gap_using(gap,rows,&||Ok(())).unwrap());}assert_eq!(original_empty_catch_gap_using(gap,std::iter::empty(),&||Err(std::io::Error::from_raw_os_error(1450))).unwrap_err().raw_os_error(),Some(1450));
+}

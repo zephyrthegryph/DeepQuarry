@@ -674,3 +674,129 @@ fn dynamic_dispatch_checker_observes_target_arguments_then_invocation_arguments_
  let rows=observe_mode("/proc/p()\n    return call(make_target(),make_name())(get_value())\n",true).unwrap();
  assert_eq!(rows.iter().map(|row|row.1.as_str()).collect::<Vec<_>>(),["make_target","make_name","get_value"],"same pinned DynamicCall target-list then argument-list traversal, not an unscoped call named call");
 }
+
+#[test]
+fn actual_reserved_primitive_trace_uses_its_call_node_and_issued_member_not_cached_body(){
+    let source="/proc/first(target)\n    return call(target)\n/proc/second(value)\n    return pick(value)\n";
+    let seed=reference_hierarchy::seed();
+    let front=build_with_config(Path::new("primitive_trace.dme"),&Source(source.into()),&Default::default(),FrontendConfig{workers:1,engine:Some(&seed),observer:None}).unwrap();
+    let tree=front.snapshot.tree.as_ref();let profile=tree.checker_builtin_profile().unwrap();let arena=BodyArena::new_typed(&front,|_|true);
+    let mut seen=0;
+    for(_,occurrence)in crate::checker_order::bodies(&front).unwrap(){
+        arena.with_parsed(occurrence,|body|{
+            let view=BodyView::new(&front,body).unwrap();
+            let StatementKind::Return(Some(expression))=&view.syntax().parsed().statements[0].kind else{panic!("actual retained Return call")};
+            let ExprKind::Call{callee,..}=&expression.kind else{panic!("actual retained primary Call")};
+            let ExprKind::Ident(name)=&callee.kind else{panic!("actual named primitive")};
+            let member_name=tree.symbols().text(tree.member(occurrence.member).unwrap().name).unwrap();
+            assert!(matches!((member_name,name.as_str()),("first","call")|("second","pick")));
+            let mut bytes=Vec::new();write_primitive_context_trace(tree,None,CodeSource::issued(&front.expanded.text),occurrence.member,expression,callee,Some(expression),&mut bytes);
+            let trace=String::from_utf8(bytes).unwrap();
+            assert!(trace.contains(&format!("callee=Some({name:?})")));assert!(trace.contains(&format!("member_name=Some({member_name:?})")));
+            assert!(trace.contains(&format!("current_expression=Ok({:?})",expression.span)));
+            assert!(trace.contains("source_point=unavailable"),"no borrowed archive means no invented file/line");
+            if name=="call"{assert_eq!(linear(&front,body,tree,profile).unwrap_err(),"call needs a primary syntax-primitive context, not ordinary proc lookup");}
+            else{assert!(linear(&front,body,tree,profile).is_ok(),"normal pick remains a primary primitive, not a new failure");}
+            seen+=1;
+        }).unwrap();
+    }
+    assert_eq!(seen,2);
+}
+
+#[test]
+fn original_unlint_missing_proc_skips_arguments_but_keeps_following_evaluation(){
+ let rows=observe_mode("/proc/probe()\n    SpacemanDMM_unlint(hidden(src),ignored())\n    visible_tail()\n",true).unwrap();
+ assert_eq!(rows.iter().map(|row|row.1.as_str()).collect::<Vec<_>>(),["visible_tail"],"actual pinned missing-proc escape skips every argument, including global src");
+}
+#[test]
+fn original_unlint_declared_proc_keeps_ordinary_resolution_and_argument_visitation(){
+ let rows=observe_mode("/proc/SpacemanDMM_unlint(value)\n    return value\n/proc/probe()\n    return SpacemanDMM_unlint(visible_argument())\n",true).unwrap();
+ assert!(rows.iter().any(|row|row.0=="resolved"&&row.1=="SpacemanDMM_unlint"));
+ assert_eq!(rows.iter().filter(|row|row.0=="missing").map(|row|row.1.as_str()).collect::<Vec<_>>(),["visible_argument"],"a real declared proc wins before the escape branch");
+}
+#[test]
+fn original_unlint_escape_is_not_member_global_or_other_reserved_call_authority(){
+ let member=observe_mode("/datum/holder/proc/probe()\n    src.SpacemanDMM_unlint(hidden())\n",true).unwrap();
+ assert!(member.iter().any(|row|row.0=="missing"&&row.1=="SpacemanDMM_unlint"));assert!(!member.iter().any(|row|row.1=="hidden"));
+ let global=observe_mode("/proc/probe()\n    ::SpacemanDMM_unlint(hidden())\n",true).unwrap();assert!(global.iter().any(|row|row.0=="missing"&&row.1=="SpacemanDMM_unlint"));
+ assert_eq!(observe_mode("/proc/probe(target)\n    return call(target)\n",true).unwrap_err(),"call needs a primary syntax-primitive context, not ordinary proc lookup");
+}
+
+#[test]
+fn actual_unknown_field_trace_borrows_failing_ast_and_keeps_origin_refusal(){
+ let source="/proc/first(value)\n    return value.field\n/proc/second(other)\n    return other.second_field\n";let seed=reference_hierarchy::seed();let front=build_with_config(Path::new("unknown_field_trace.dme"),&Source(source.into()),&Default::default(),FrontendConfig{workers:1,engine:Some(&seed),observer:None}).unwrap();let tree=front.snapshot.tree.as_ref();let profile=tree.checker_builtin_profile().unwrap();let arena=BodyArena::new_typed(&front,|_|true);let mut seen=0;
+ for(_,occurrence)in crate::checker_order::bodies(&front).unwrap(){arena.with_parsed(occurrence,|body|{
+  let view=BodyView::new(&front,body).unwrap();let StatementKind::Return(Some(expression))=&view.syntax().parsed().statements[0].kind else{panic!("real Return")};let ExprKind::Member{object,selector,..}=&expression.kind else{panic!("real field")};let member_name=tree.symbols().text(tree.member(occurrence.member).unwrap().name).unwrap();
+  let mut bytes=Vec::new();write_unknown_field_context_trace(tree,None,CodeSource::issued(&front.expanded.text),occurrence.member,expression,object,selector,TypeFact::Unknown,&mut bytes);let trace=String::from_utf8(bytes).unwrap();assert!(trace.contains("base=Unknown object_kind=Ident"));assert!(trace.contains(&format!("selector={selector:?}")));assert!(trace.contains(&format!("member_name=Some({member_name:?})")));assert!(trace.contains(&format!("current_expression=Ok({:?})",expression.span)));assert!(trace.contains("source_point=unavailable"));
+  assert_eq!(linear(&front,body,tree,profile).unwrap_err(),"unknown-receiver field access needs pinned fix-hint/declaration origins");seen+=1;
+ }).unwrap();}assert_eq!(seen,2);
+}
+
+const ORIGINAL_BINARY_EMPTY_FIXTURE:&str="/datum/attr\n/datum/meter\n    var/datum/attr/attr\n/datum/sched\n    var/datum/meter/meter\n/proc/probe(datum/sched/left,datum/sched/right)\n    return (left?.meter || right.meter).attr\n/proc/hint_probe(datum/meter/left)\n    return left || new\n/proc/list_probe(list/items)\n    return items + items\n";
+#[derive(Default)]struct BinaryEmptyEvents{rows:Vec<(&'static str,String,bool)>,fail:Option<usize>}
+impl<'a> OriginalEvents<'a,String> for BinaryEmptyEvents{
+ fn expression_event(&mut self,event:Event<'a>)->Result<(),String>{match event{
+  Event::ResolvedField{name,..}=>self.rows.push(("field",name.into(),true)),
+  Event::FieldWithoutStaticType{name,hint,..}=>self.rows.push(("field_static",name.into(),hint.is_none())),
+  Event::MissingImplicitNewHint{..}=>self.rows.push(("missing_new","new".into(),true)),
+  _=>self.rows.push(("other",String::new(),true)),
+ }if self.fail==Some(self.rows.len()){return Err("actual binary operand event failure".into())}Ok(())}
+ fn flow_event(&mut self,_:crate::checker_reachable::Event<'a>)->Result<(),String>{Ok(())}
+ fn access_row(&mut self,_:crate::checks_proc_visibility::Row<'a>)->Result<(),String>{Ok(())}
+ fn immediate_row(&mut self,_:crate::checks::Diagnostic)->Result<(),String>{Ok(())}
+}
+#[test]
+fn actual_original_binary_empty_analysis_has_no_operand_type_or_fix_hint(){
+ let seed=reference_hierarchy::seed();let front=build_with_config(Path::new("binary_empty.dme"),&Source(ORIGINAL_BINARY_EMPTY_FIXTURE.into()),&Default::default(),FrontendConfig{workers:1,engine:Some(&seed),observer:None}).unwrap();let tree=front.snapshot.tree.as_ref();let profile=tree.checker_builtin_profile().unwrap();let arena=BodyArena::new_typed(&front,|_|true);let mut seen=0;
+ for(_,occurrence)in crate::checker_order::bodies(&front).unwrap(){if tree.member(occurrence.member).unwrap().name!=SymbolId::of("probe"){continue}arena.with_parsed(occurrence,|body|{
+  let view=BodyView::new(&front,body).unwrap();let StatementKind::Return(Some(expression))=&view.syntax().parsed().statements[0].kind else{panic!("actual return")};let ExprKind::Member{object,..}=&expression.kind else{panic!("actual attr follow")};let ExprKind::Group(binary)=&object.kind else{panic!("actual grouped OR")};let mut events=BinaryEmptyEvents::default();{
+   let mut walker=Walker::new(tree,None,&view.syntax().parsed().local_variables,&front.expanded.text,occurrence,body.checker_parameters(profile).unwrap(),tree,profile,None).unwrap();walker.original_events=Some(&mut events);walker.original_values=true;
+   assert_eq!(walker.expression(binary,None).unwrap(),TypeFact::Unhinted);assert_eq!(walker.last_impurity,None);assert!(walker.original_value.is_none());assert_eq!(walker.expression(expression,None).unwrap(),TypeFact::Unhinted);
+  }
+  assert_eq!(events.rows.iter().map(|r|(r.0,r.1.as_str(),r.2)).collect::<Vec<_>>(),[("field","meter",true),("field","meter",true),("field","meter",true),("field","meter",true),("field_static","attr",true)],"both known operand fields visited; OR yields empty static analysis and no inherited declaration note");
+  assert_eq!(linear(&front,body,tree,profile).unwrap_err(),"unknown-receiver field access needs pinned fix-hint/declaration origins","compatibility Unknown remains closed");seen+=1;
+ }).unwrap();}assert_eq!(seen,1);
+}
+#[test]
+fn actual_original_binary_empty_analysis_keeps_destination_hint_list_shape_and_first_error(){
+ let seed=reference_hierarchy::seed();let front=build_with_config(Path::new("binary_empty_roles.dme"),&Source(ORIGINAL_BINARY_EMPTY_FIXTURE.into()),&Default::default(),FrontendConfig{workers:1,engine:Some(&seed),observer:None}).unwrap();let tree=front.snapshot.tree.as_ref();let profile=tree.checker_builtin_profile().unwrap();let arena=BodyArena::new_typed(&front,|_|true);let mut seen=0;
+ for(_,occurrence)in crate::checker_order::bodies(&front).unwrap(){let name=tree.member(occurrence.member).unwrap().name;if ![SymbolId::of("probe"),SymbolId::of("hint_probe"),SymbolId::of("list_probe")].contains(&name){continue}arena.with_parsed(occurrence,|body|{
+  let view=BodyView::new(&front,body).unwrap();let StatementKind::Return(Some(expression))=&view.syntax().parsed().statements[0].kind else{panic!("actual return")};let mut events=BinaryEmptyEvents{fail:(name==SymbolId::of("probe")).then_some(2),..Default::default()};{
+   let mut walker=Walker::new(tree,None,&view.syntax().parsed().local_variables,&front.expanded.text,occurrence,body.checker_parameters(profile).unwrap(),tree,profile,None).unwrap();walker.original_events=Some(&mut events);walker.original_values=true;
+   if name==SymbolId::of("probe"){assert_eq!(walker.expression(expression,None).unwrap_err(),"actual binary operand event failure");}
+   else if name==SymbolId::of("hint_probe"){assert_eq!(walker.expression(expression,Some(SymbolId::of("/datum/meter"))).unwrap(),TypeFact::Unhinted);assert_eq!(walker.last_impurity,None);assert!(walker.original_value.is_none());}
+   else{assert_eq!(walker.expression(expression,None).unwrap(),TypeFact::List(None));assert_eq!(walker.last_impurity,None);assert!(walker.original_value.is_none());}
+  }
+  if name==SymbolId::of("probe"){assert_eq!(events.rows.iter().map(|r|r.1.as_str()).collect::<Vec<_>>(),["meter","meter"],"failure stops before outerfield and does not revisit operands");}
+  if name==SymbolId::of("hint_probe"){assert!(!events.rows.iter().any(|r|r.0=="missing_new"),"OR forwards real destination hint to RHS implicit new");}seen+=1;
+ }).unwrap();}assert_eq!(seen,3);
+}
+
+#[derive(Default)]struct DiagnosedEmptyEvents{rows:Vec<&'static str>,fail:bool}
+impl<'a> OriginalEvents<'a,String> for DiagnosedEmptyEvents{
+ fn expression_event(&mut self,event:Event<'a>)->Result<(),String>{self.rows.push(match event{Event::MissingParent{..}=>"parent",Event::MissingImplicitNewHint{..}=>"implicit_new",_=>"other"});if self.fail{return Err("actual diagnosed event failure".into())}Ok(())}
+ fn flow_event(&mut self,_:crate::checker_reachable::Event<'a>)->Result<(),String>{Ok(())}
+ fn access_row(&mut self,_:crate::checks_proc_visibility::Row<'a>)->Result<(),String>{Ok(())}
+ fn immediate_row(&mut self,_:crate::checks::Diagnostic)->Result<(),String>{Ok(())}
+}
+const DIAGNOSED_EMPTY_TERM_FIXTURE:&str="/proc/parent_probe()\n    return ..(must_not_visit())\n/proc/new_probe()\n    return new(must_not_visit())\n";
+#[test]
+fn actual_original_diagnosed_parent_and_new_results_clear_origins_without_visiting_args(){
+ let seed=reference_hierarchy::seed();let front=build_with_config(Path::new("diagnosed_empty_terms.dme"),&Source(DIAGNOSED_EMPTY_TERM_FIXTURE.into()),&Default::default(),FrontendConfig{workers:1,engine:Some(&seed),observer:None}).unwrap();let tree=front.snapshot.tree.as_ref();let profile=tree.checker_builtin_profile().unwrap();let arena=BodyArena::new_typed(&front,|_|true);let mut seen=0;
+ for(_,occurrence)in crate::checker_order::bodies(&front).unwrap(){arena.with_parsed(occurrence,|body|{
+  let view=BodyView::new(&front,body).unwrap();let StatementKind::Return(Some(expression))=&view.syntax().parsed().statements[0].kind else{panic!("real return term")};let name=tree.member(occurrence.member).unwrap().name;let expected=if name==SymbolId::of("parent_probe"){"parent"}else{"implicit_new"};let mut events=DiagnosedEmptyEvents::default();{
+   let mut walker=Walker::new(tree,None,&view.syntax().parsed().local_variables,&front.expanded.text,occurrence,body.checker_parameters(profile).unwrap(),tree,profile,None).unwrap();walker.original_events=Some(&mut events);walker.original_values=true;
+   assert_eq!(walker.expression(expression,None).unwrap(),TypeFact::Unhinted);assert_eq!(walker.last_impurity,None);assert!(walker.original_value.is_none());
+  }assert_eq!(events.rows,[expected],"pinned diagnosed terms skip argument evaluation");
+  let mut compatibility=Walker::new(tree,None,&view.syntax().parsed().local_variables,&front.expanded.text,occurrence,body.checker_parameters(profile).unwrap(),tree,profile,None).unwrap();assert_eq!(compatibility.expression(expression,None).unwrap(),TypeFact::Unknown,"compatibility absence remains unproved");seen+=1;
+ }).unwrap();}assert_eq!(seen,2);
+}
+#[test]
+fn actual_original_diagnosed_empty_terms_do_not_complete_after_first_observer_failure(){
+ let seed=reference_hierarchy::seed();let front=build_with_config(Path::new("diagnosed_empty_first_error.dme"),&Source(DIAGNOSED_EMPTY_TERM_FIXTURE.into()),&Default::default(),FrontendConfig{workers:1,engine:Some(&seed),observer:None}).unwrap();let tree=front.snapshot.tree.as_ref();let profile=tree.checker_builtin_profile().unwrap();let arena=BodyArena::new_typed(&front,|_|true);let mut seen=0;
+ for(_,occurrence)in crate::checker_order::bodies(&front).unwrap(){arena.with_parsed(occurrence,|body|{
+  let view=BodyView::new(&front,body).unwrap();let StatementKind::Return(Some(expression))=&view.syntax().parsed().statements[0].kind else{panic!("real return term")};let mut events=DiagnosedEmptyEvents{fail:true,..Default::default()};{
+   let mut walker=Walker::new(tree,None,&view.syntax().parsed().local_variables,&front.expanded.text,occurrence,body.checker_parameters(profile).unwrap(),tree,profile,None).unwrap();walker.original_events=Some(&mut events);walker.original_values=true;assert_eq!(walker.expression(expression,None).unwrap_err(),"actual diagnosed event failure");
+  }assert_eq!(events.rows.len(),1,"no later argument or follow work after the first real error");seen+=1;
+ }).unwrap();}assert_eq!(seen,2);
+}

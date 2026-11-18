@@ -23,6 +23,7 @@
 //!
 //! Unit tests and the engine's own directories are exempt.
 
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::dm::sys::{register_module, SysModule};
 use crate::lint::{Registry, RuleMeta};
 use crate::pat;
@@ -33,9 +34,9 @@ use crate::allow_registry_fields::sys_dx_review::RULES;
 const EXEMPT_PREFIXES: &[&str] = &["code/tests/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"];
 
 /// The proc a line belongs to: its type path, its name, whether it is an op effect, and whether it is an output.
-struct ProcCtx {
-    type_path: String,
-    name: String,
+struct ProcCtx<'a> {
+    type_path: &'a str,
+    name: &'a str,
     effect: bool,
     output: bool,
     /// draw(look) or look_parts(look): the look builder's procs, which change no atom either.
@@ -53,36 +54,38 @@ fn indent_of(code: &str) -> usize {
 }
 
 /// `/a/b/proc/name(args` or `/a/b/name(args` at column 0: (type, name, args).
-fn header(line: &str) -> Option<(String, String, String)> {
-    let caps = pat!(r"^(/[\w/]+?)/(?:proc/|verb/)?(\w+)\((.*)$").captures(line)?;
-    Some((caps.get(1)?.to_string(), caps.get(2)?.to_string(), caps.get(3)?.to_string()))
+fn header_using<'a>(line:&'a str,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<Option<(&'a str,&'a str,&'a str)>,String>{
+    let Some(caps) = fixture.captures(&fixture.pattern(r"^(/[\w/]+?)/(?:proc/|verb/)?(\w+)\((.*)$",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^(/[\w/]+?)/(?:proc/|verb/)?(\w+)\((.*)$")),line)? else{return Ok(None)};
+    Ok(caps.get(1).zip(caps.get(2)).zip(caps.get(3)).map(|((owner,name),args)|(owner,name,args)))
 }
 
 /// A or B is the other's ancestor by path (the parent_type a type declares is not followed).
 fn related(a: &str, b: &str) -> bool {
-    let pa = format!("{}/", a);
-    let pb = format!("{}/", b);
-    a == b || pa.starts_with(&pb) || pb.starts_with(&pa)
+    a == b || a.strip_prefix(b).is_some_and(|tail|tail.starts_with('/')) || b.strip_prefix(a).is_some_and(|tail|tail.starts_with('/'))
 }
 
-fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
-    let mut ctx: Option<ProcCtx> = None;
-    let mut block_type: Option<String> = None;
-    let mut undefs: Vec<(String, usize)> = Vec::new();
+fn scan_lines(f:&SourceFile,out:&mut Vec<(&'static str,usize)>){
+    scan_lines_using(f,out,&crate::raw_fixture_policy::Fixture::legacy()).expect("legacy scanner has no admission refusal")
+}
+fn scan_lines_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),String>{
+    fixture.check()?;
+    let mut ctx: Option<ProcCtx<'_>> = None;
+    let mut block_type: Option<&str> = None;
+    let mut undefs: Vec<(&str, usize)> = Vec::new();
     for (number, code) in f.code().numbered() {
         // ---- the #undef rule works on the whole file ----
-        if let Some(c) = pat!(r"^\s*#undef\s+(\w+)").captures(code) {
-            undefs.push((c.s(1).to_string(), number));
+        if let Some(c) = fixture.captures(&fixture.pattern(r"^\s*#undef\s+(\w+)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^\s*#undef\s+(\w+)")),code)? {
+            fixture.push(&mut undefs,(c.s(1), number))?;
             continue;
         }
-        if let Some(c) = pat!(r"^\s*#define\s+(\w+)").captures(code) {
+        if let Some(c) = fixture.captures(&fixture.pattern(r"^\s*#define\s+(\w+)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^\s*#define\s+(\w+)")),code)? {
             let name = c.s(1);
-            undefs.retain(|(n, _)| n != name);
+            undefs.retain(|(n, _)| *n != name);
             continue;
         }
         for (name, _) in &undefs {
-            if code.contains(name.as_str()) && crate::pat::Pat::new(&format!(r"(?<![\w]){}(?![\w])", name)).is_match(code) {
-                out.push(("undef_then_used", number));
+            if code.contains(*name) && fixture.find_iter(&fixture.pattern(r"\w+",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\w+")),code)?.iter().any(|word|word.as_str()==*name) {
+                fixture.push(out,("undef_then_used", number))?;
                 break;
             }
         }
@@ -92,31 +95,31 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
         if at_col0 {
             ctx = None;
             block_type = None;
-            if let Some(c) = pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]").captures(code) {
-                block_type = Some(c.s(1).to_string());
-            } else if let Some((type_path, name, args)) = header(code) {
+            if let Some(c) = fixture.captures(&fixture.pattern(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^CAPABILITIES(?:_PART)?\((/[\w/]+)[,)]")),code)? {
+                block_type = Some(c.s(1));
+            } else if let Some((type_path, name, args)) = header_using(code,fixture)? {
                 let effect = args.contains("datum/act/op/");
-                let look = matches!(name.as_str(), "draw" | "look_parts") && args.contains("look");
-                let output = look || matches!(name.as_str(), "ui_data" | "tgui_data" | "appearance_overlays" | "appearance_state");
+                let look = matches!(name, "draw" | "look_parts") && args.contains("look");
+                let output = look || matches!(name, "ui_data" | "tgui_data" | "appearance_overlays" | "appearance_state");
                 ctx = Some(ProcCtx { type_path, name, effect, output, look, told: false, relay_indent: None, cancel_indent: None });
             }
             continue;
         }
-        let owner = ctx.as_ref().map(|c| c.type_path.clone()).or_else(|| block_type.clone());
+        let owner = ctx.as_ref().map(|c| c.type_path).or(block_type);
 
         // nameof(/type::var) of a type unrelated to the holder: an accessor on src, or an entry of the type's own block (a relation's
         // other end, back = ..., names the other type's var and is fine; so does target_key =, the id var of the keyed targets)
         if let Some(owner) = owner {
             if code.contains("nameof(/") {
                 let found = if ctx.is_some() {
-                    pat!(r"\w+\(\s*src\s*,\s*nameof\((/[\w/]+)::\w+\)").captures_iter(code)
+                    fixture.captures_iter(&fixture.pattern(r"\w+\(\s*src\s*,\s*nameof\((/[\w/]+)::\w+\)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\w+\(\s*src\s*,\s*nameof\((/[\w/]+)::\w+\)")),code)?
                 } else {
-                    pat!(r"(?<!back = )(?<!target_key = )nameof\((/[\w/]+)::\w+\)").captures_iter(code)
+                    fixture.captures_iter(&fixture.pattern(r"(?<!back = )(?<!target_key = )nameof\((/[\w/]+)::\w+\)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<!back = )(?<!target_key = )nameof\((/[\w/]+)::\w+\)")),code)?
                 };
                 for c in found {
                     let named = c.s(1);
                     if !related(named, &owner) && !named.starts_with("/datum/capability") && !owner.starts_with("/datum/capability") {
-                        out.push(("nameof_unrelated", number));
+                        fixture.push(out,("nameof_unrelated", number))?;
                         break;
                     }
                 }
@@ -124,16 +127,16 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
         }
 
         // a hand push
-        if pat!(r"(?<![\w.:/])push_to_rust\(\)|(?<![\w.:/])changed\(\s*\w+\s*,\s*CHANGE_").is_match(code) {
-            out.push(("manual_push", number));
+        if fixture.pattern(r"(?<![\w.:/])push_to_rust\(\)|(?<![\w.:/])changed\(\s*\w+\s*,\s*CHANGE_",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w.:/])push_to_rust\(\)|(?<![\w.:/])changed\(\s*\w+\s*,\s*CHANGE_")).is_match(code) {
+            fixture.push(out,("manual_push", number))?;
         }
 
         let Some(c) = ctx.as_mut() else { continue };
         if c.effect {
-            if pat!(r"(?<![\w.])open_request\(").is_match(code) {
-                out.push(("request_in_effect", number));
+            if fixture.pattern(r"(?<![\w.])open_request\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w.])open_request\(")).is_match(code) {
+                fixture.push(out,("request_in_effect", number))?;
             }
-            if pat!(r"(?<![\w])(to_chat|atom_say|balloon_alert|act_message)\(|\bA\.reason\s*=").is_match(code) {
+            if fixture.pattern(r"(?<![\w])(to_chat|atom_say|balloon_alert|act_message)\(|\bA\.reason\s*=",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w])(to_chat|atom_say|balloon_alert|act_message)\(|\bA\.reason\s*=")).is_match(code) {
                 c.told = true;
             }
             let indent = indent_of(code);
@@ -143,44 +146,52 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
             if c.cancel_indent.is_some_and(|k| indent < k) {
                 c.cancel_indent = None;
             }
-            if pat!(r"^\s*(?:if|else if)\(.*\bACT_REFUSED_BY\(").is_match(code) {
+            if fixture.pattern(r"^\s*(?:if|else if)\(.*\bACT_REFUSED_BY\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"^\s*(?:if|else if)\(.*\bACT_REFUSED_BY\(")).is_match(code) {
                 c.relay_indent = Some(indent);
             }
-            if pat!(r"(?<![\w.])act_cancel\(").is_match(code) {
+            if fixture.pattern(r"(?<![\w.])act_cancel\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w.])act_cancel\(")).is_match(code) {
                 c.cancel_indent = Some(indent);
             }
             // A refusal that relays an ACT_ATTEMPT hook's veto, or follows an act_cancel in its own block, is the doc's commit-time
             // veto or a failed commit: it cannot be a requirement, because it is known only when the effect runs.
             let relayed = c.relay_indent.is_some_and(|r| indent > r) || c.cancel_indent == Some(indent);
-            if c.told && !relayed && pat!(r"\breturn\s+OP_REFUSED\b").is_match(code) {
-                out.push(("effect_refusal", number));
+            if c.told && !relayed && fixture.pattern(r"\breturn\s+OP_REFUSED\b",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\breturn\s+OP_REFUSED\b")).is_match(code) {
+                fixture.push(out,("effect_refusal", number))?;
             }
         }
-        if c.output && pat!(r"(?<![\w.])(to_chat|atom_say|playsound|play_sfx|balloon_alert)\(").is_match(code) {
-            out.push(("output_side_effect", number));
+        if c.output && fixture.pattern(r"(?<![\w.])(to_chat|atom_say|playsound|play_sfx|balloon_alert)\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w.])(to_chat|atom_say|playsound|play_sfx|balloon_alert)\(")).is_match(code) {
+            fixture.push(out,("output_side_effect", number))?;
         } else if c.look
-            && pat!(r"(?<![\w.])((?:[A-Za-z_]\w*(?:\(\))?\s*\??\.\s*)*)(update_icon|update_held_icon|update_inv_\w+|regenerate_icons|add_overlay|cut_overlays?|set_light|set_light_on|forceMove)\s*\(")
-                .captures_iter(code)
+            && fixture.captures_iter(&fixture.pattern(r"(?<![\w.])((?:[A-Za-z_]\w*(?:\(\))?\s*\??\.\s*)*)(update_icon|update_held_icon|update_inv_\w+|regenerate_icons|add_overlay|cut_overlays?|set_light|set_light_on|forceMove)\s*\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w.])((?:[A-Za-z_]\w*(?:\(\))?\s*\??\.\s*)*)(update_icon|update_held_icon|update_inv_\w+|regenerate_icons|add_overlay|cut_overlays?|set_light|set_light_on|forceMove)\s*\(")),code)?
                 .iter()
                 .any(|m| !m.s(1).trim_start().starts_with("look"))
         {
-            out.push(("output_side_effect", number));
+            fixture.push(out,("output_side_effect", number))?;
         }
-        if (c.name.contains("pulse") || c.name.contains("wire")) && pat!(r"(?<![\w.])after\(").is_match(code) && !code.contains("key =") && !code.contains("key=") {
-            out.push(("unkeyed_wire_after", number));
+        if (c.name.contains("pulse") || c.name.contains("wire")) && fixture.pattern(r"(?<![\w.])after\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w.])after\(")).is_match(code) && !code.contains("key =") && !code.contains("key=") {
+            fixture.push(out,("unkeyed_wire_after", number))?;
         }
     }
+    Ok(())
 }
 
-fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
+fn scan_file(f:&SourceFile,out:&mut Vec<(&'static str,usize)>){
+    scan_file_using(f,out,&crate::raw_fixture_policy::Fixture::legacy()).expect("legacy scanner has no admission refusal")
+}
+fn scan_file_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),String>{
     if EXEMPT_PREFIXES.iter().any(|p| f.rel.starts_with(p)) {
-        return;
+        return Ok(());
     }
-    scan_lines(f, out);
+    scan_lines_using(f,out,fixture)?;
+    Ok(())
 }
 
 fn selftest() -> Result<String, String> {
-    let fixture = [
+    selftest_with_fixture(&crate::raw_fixture_policy::Fixture::legacy())
+}
+
+fn selftest_with_fixture(fixture: &crate::raw_fixture_policy::Fixture<'_>) -> Result<String, String> {
+    let fixture_lines = [
         "/obj/machinery/x/proc/vend(datum/act/op/A)",          // 1
         "\tif(!ready)",                                         // 2
         "\t\tto_chat(A.actor, \"no\")",                         // 3
@@ -221,12 +232,11 @@ fn selftest() -> Result<String, String> {
         "\tact_message(A.actor, A.target, others = \"x\")",    // 38
         "\treturn OP_REFUSED",                                 // 39 effect_refusal: told through act_message()
     ];
-    let f = SourceFile::from_text("code/x.dm", &fixture.join("\n"));
+    let f = fixture.file("code/x.dm", &fixture.join(&fixture_lines,"\n")?)?;
     let mut v = Vec::new();
-    scan_lines(&f, &mut v);
-    let mut got: Vec<(&str, usize)> = v;
-    got.sort_by_key(|(_, n)| *n);
-    let want = vec![
+    scan_lines_using(&f,&mut v,fixture)?;
+    let got: Vec<(&str,usize)> = fixture.stable_by_key(v,|(_,n)|*n)?;
+    let want = [
         ("effect_refusal", 4),
         ("request_in_effect", 5),
         ("nameof_unrelated", 6),
@@ -240,17 +250,43 @@ fn selftest() -> Result<String, String> {
         ("effect_refusal", 39),
     ];
     if got != want {
-        return Err(format!("dx_review selftest: got {:?}", got));
+        return Err(fixture.detail(format_args!("dx_review selftest: got {:?}", got))?);
     }
-    let t = SourceFile::from_text("code/tests/unit_tests/x.dm", "/obj/a/proc/b(datum/act/op/A)\n\topen_request(A, x)");
+    let t = fixture.file("code/tests/unit_tests/x.dm", "/obj/a/proc/b(datum/act/op/A)\n\topen_request(A, x)")?;
     let mut v2 = Vec::new();
-    scan_file(&t, &mut v2);
+    scan_file_using(&t,&mut v2,fixture)?;
     if !v2.is_empty() {
-        return Err("dx_review selftest: unit tests are exempt".to_string());
+        return Err(fixture.own("dx_review selftest: unit tests are exempt")?);
     }
-    Ok("dx_review".to_string())
+    Ok(fixture.own("dx_review")?)
 }
 
 pub fn register(reg: &mut Registry) {
-    register_module(reg, SysModule { name: crate::allow_registry_fields::sys_dx_review::SCOPE_MODULE_NAME, rules: RULES, file_scan: Some(scan_file), selftest: Some(selftest), ..SysModule::DEFAULT });
+    register_module(reg, SysModule { name: crate::allow_registry_fields::sys_dx_review::SCOPE_MODULE_NAME, rules: RULES, file_scan: Some(scan_file), fixture_file_scan:Some(scan_file_using), selftest: Some(selftest), fixture_selftest: Some(selftest_with_fixture), ..SysModule::DEFAULT });
+}
+
+#[cfg(test)]mod borrowed_review_controls{
+ use super::*;
+ #[test]fn actual_captured_undef_names_match_the_old_unicode_word_boundary_expression(){
+  let names=["FOO","_A2","Å","中","a\u{301}","a\u{200c}b"];
+  let rows=["FOO","FOO_BAR","xFOO","FOOx","(FOO)","Å","xÅ","(中)","a\u{301}","a\u{301}_","a\u{200c}b","a\u{200c}b!",""];
+  for name in names{
+   // These are precisely the nonempty Unicode-word names the actual #undef
+   // capture admits. No arbitrary regex source is accepted as a name.
+   assert!(crate::pat::Pat::new_full(r"\w+").is_match(name));
+   let old=crate::pat::Pat::new(&format!(r"(?<![\w]){}(?![\w])",name));
+   for row in rows{
+    let new=row.contains(name)&&crate::pat!(r"\w+").find_iter(row).iter().any(|word|word.as_str()==name);
+    assert_eq!(old.is_match(row),new,"name={name:?}, row={row:?}");
+   }
+  }
+ }
+ #[test]fn borrowed_path_ancestry_preserves_exact_old_slash_prefix_semantics(){
+  for a in ["","/","/datum","/datum/","/datum/a","/datum/ab","/datum//a","/Å/中"]{
+   for b in ["","/","/datum","/datum/","/datum/a","/datum/ab","/datum//a","/Å/中"]{
+    let pa=format!("{a}/");let pb=format!("{b}/");
+    assert_eq!(related(a,b),a==b||pa.starts_with(&pb)||pb.starts_with(&pa),"{a:?} {b:?}");
+   }
+  }
+ }
 }

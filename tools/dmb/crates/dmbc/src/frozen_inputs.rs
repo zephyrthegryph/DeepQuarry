@@ -310,6 +310,9 @@ impl Inputs {
     }
 }
 impl SnapshotProvider for Inputs {
+    fn optional_read_status(&self,path:&Path)->io::Result<crate::input_snapshot::OptionalReadStatus>{match self{Self::Live=>FileSystemInputs.optional_read_status(path),_=>Err(io::Error::new(io::ErrorKind::NotConnected,"optional reader has no frozen journal role; native report requests already refuse record/replay"))}}
+    fn read_optional_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,fund:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<crate::input_snapshot::OptionalInputRead>{match self{Self::Live=>FileSystemInputs.read_optional_admitted(path,limit,work,fund),_=>Err(io::Error::new(io::ErrorKind::NotConnected,"optional reader has no frozen journal role; native report requests already refuse record/replay"))}}
+
     fn original_open_status(&self,path:&Path)->io::Result<crate::input_snapshot::OriginalReadOpenStatus>{if let Self::Replay(journal)=self{return journal.index.lock().map_err(|_|invalid("verification mutex poisoned"))?.original_open_v1.get(path).ok_or_else(||Journal::unknown(path))}FileSystemInputs.original_open_status(path)}
     fn read_original_open_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<crate::input_snapshot::OriginalOpenedRead>{self.original_open_with_journal(path,limit,work,after_open,before_allocate)}
 
@@ -769,6 +772,9 @@ impl<'a> ProofStampedInputs<'a> {
     }
 }
 impl SnapshotProvider for ProofStampedInputs<'_> {
+    fn optional_read_status(&self,path:&Path)->io::Result<crate::input_snapshot::OptionalReadStatus>{self.actual().optional_read_status(path)}
+    fn read_optional_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,fund:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<crate::input_snapshot::OptionalInputRead>{self.actual().read_optional_admitted(path,limit,work,fund)}
+
     fn original_open_status(&self,path:&Path)->io::Result<crate::input_snapshot::OriginalReadOpenStatus>{self.actual().original_open_status(path)}
     fn read_original_open_admitted(&self,path:&Path,limit:usize,work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->io::Result<dm_preprocess::OriginalRawOpenDecision>,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<crate::input_snapshot::OriginalOpenedRead>{self.actual().read_original_open_admitted(path,limit,work,after_open,before_allocate)}
 
@@ -909,3 +915,29 @@ pub(crate) fn generation_publication_guard_charge(parent:&Path,root:&Path)->io::
 pub(crate) trait CapturedCurrentProvider:SnapshotProvider{fn uses_live_filesystem(&self)->bool;}
 impl CapturedCurrentProvider for Inputs{fn uses_live_filesystem(&self)->bool{!matches!(self,Inputs::Replay(_))}}
 impl CapturedCurrentProvider for ProofStampedInputs<'_>{fn uses_live_filesystem(&self)->bool{self.original_borrowed.is_none()&&!matches!(self.inner,Inputs::Replay(_))}}
+
+/// Shared source-free single-directory creation primitive. Both generated
+/// staging and authored utility writes use this SAME ordinary-path/held-parent
+/// kernel. Callers own mutation accounting and never assume rollback.
+pub(crate) fn create_guarded_directory_using(
+ root:&Path,path:&Path,before_attempt:&mut impl FnMut()->io::Result<()>,
+ after_create:&mut impl FnMut()->io::Result<()>,
+)->io::Result<u128>{
+ let relative=path.strip_prefix(root).map_err(|_|io::Error::new(io::ErrorKind::InvalidInput,"directory creation escapes issued root"))?;
+ if !root.is_absolute()||relative.as_os_str().is_empty()||relative.components().any(|c|!matches!(c,std::path::Component::Normal(_))){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory creation needs ordinary contained child"))}
+ let parent=path.parent().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"directory creation has no parent"))?;
+ let mut cursor=root.to_owned();
+ for part in std::iter::once(None).chain(parent.strip_prefix(root).map_err(|_|io::ErrorKind::InvalidInput)?.components().map(Some)){
+  if let Some(part)=part{cursor.push(part.as_os_str())}
+  let metadata=std::fs::symlink_metadata(&cursor)?;
+  if metadata.file_type().is_symlink()||!metadata.is_dir(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory creation has linked or non-directory ancestor"))}
+  #[cfg(windows)]{use std::os::windows::fs::MetadataExt;if metadata.file_attributes()&0x400!=0{return Err(io::Error::new(io::ErrorKind::InvalidInput,"directory creation has reparse ancestor"))}}
+ }
+ let _parent= generation_ancestor_guard(parent,root)?;
+ match std::fs::symlink_metadata(path){Err(e)if e.kind()==io::ErrorKind::NotFound=>{},Err(e)=>return Err(e),Ok(_)=>return Err(io::Error::new(io::ErrorKind::AlreadyExists,"captured missing directory now exists"))}
+ before_attempt()?;
+ std::fs::create_dir(path)?;
+ // Record actual creation BEFORE any fallible post-create identity work.
+ after_create()?;
+ generation_directory_identity(path,root)
+}

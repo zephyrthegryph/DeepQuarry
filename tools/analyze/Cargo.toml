@@ -18,7 +18,7 @@ path = "src/lib.rs"
 [features]
 default = ["legacy-sem"]
 legacy-sem = ["dep:dreammaker"]
-native-policy = ["dep:dm-analysis", "dep:dm-tree", "dep:dm-ir", "dep:dm-syntax"]
+native-policy = ["dep:regex-automata", "dep:regex-syntax", "fancy-regex/native-admission", "dep:dm-analysis", "dep:dm-tree", "dep:dm-ir", "dep:dm-syntax"]
 # Explicit independent migration oracle; never enabled by production defaults.
 unified-oracle = ["legacy-sem", "dreammaker/generation-oracle"]
 
@@ -75,6 +75,8 @@ mimalloc = { version = "0.1", default-features = false }
 dreammaker = { path = "vendor/dreammaker", optional = true }
 regex = "1"
 fancy-regex = "0.14"
+regex-automata = { version = "0.4.18", optional = true, features = ["native-admission"] }
+regex-syntax = { version = "0.8.11", optional = true, features = ["native-admission"] }
 rayon = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value"] }
@@ -105,7 +107,7 @@ opt-level = 3
 debug = false
 lto = "thin"
 codegen-units = 16
-incremental = false
+incremental = true
 
 [profile.dev]
 opt-level = 1
@@ -122,22 +124,22 @@ incremental = true
 codegen-units = 256
 
 # Dependencies (dreammaker's parser is most of a cold `analyze gen`) are built once, so they get release code generation: few codegen
-# units, no incremental. Only this crate stays incremental.
+# units; incremental remains enabled for supported workspace/path dependencies.
 [profile.dev-fast.package."*"]
 opt-level = 3
 codegen-units = 16
-incremental = false
+incremental = true
 
 # The vendored parser is a workspace member (a path dependency inside this directory), which `package."*"` does not cover.
 [profile.dev-fast.package.dreammaker]
 opt-level = 3
 codegen-units = 16
-incremental = false
+incremental = true
 
 [profile.dev-fast.package.interval-tree]
 opt-level = 3
 codegen-units = 16
-incremental = false
+incremental = true
 
 # `DQ_ANALYZE_TEST_PROFILE=gate-test`: for analyzer test runs after a source change (9 min with the `test`
 # profile, incremental off, 2 jobs). Incremental, many codegen units and line tables only, in the worktree's persistent target
@@ -445,3 +447,10 @@ required-features = ["unified-oracle"]
 [[example]]
 name = "unified_selected_order_ownership_original"
 required-features = ["legacy-sem", "unified-oracle"]
+
+# Repo-local pinned original engines; native hooks are opt-in, legacy defaults unchanged.
+[patch.crates-io]
+regex = { path = "vendor/native-regex/regex-1.13.1" }
+regex-automata = { path = "vendor/native-regex/regex-automata-0.4.18" }
+regex-syntax = { path = "vendor/native-regex/regex-syntax-0.8.11" }
+fancy-regex = { path = "vendor/native-regex/fancy-regex-0.14.0" }

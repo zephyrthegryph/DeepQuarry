@@ -58,6 +58,11 @@ mod tests {
     use std::sync::atomic::{Ordering};
 
     #[test]
+    fn actual_single_adapter_row_reserves_only_its_one_initialized_slot() {
+        let root=dm_syntax::SettingChargeCounter::root_allocation_bytes();let used=dm_syntax::SettingChargeCounter::try_new(root).unwrap();let unit=std::mem::size_of::<u64>();let a=SettingAdmission::new(&used,root+unit,&||Ok(()));let mut rows=AdapterRows::default();rows.reserve_checked(&a).unwrap();rows.push_reserved(19u64);assert_eq!(rows.rows.capacity(),1);assert_eq!(&*rows,[19]);assert_eq!(rows.credit.as_ref().unwrap().bytes(),unit);assert_eq!(used.load(Ordering::Acquire),root+unit);drop(rows);assert_eq!(used.load(Ordering::Acquire),root);
+    }
+
+    #[test]
     fn denied_adapter_growth_keeps_existing_rows_and_refunds_at_last_owner() {
         let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
         let a = SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (95), &|| Ok(()));
@@ -85,7 +90,7 @@ mod tests {
         let before = used.load(Ordering::Acquire);
         let shared = rows.into_shared();
         assert_eq!(shared[0].as_ref(), "same existing payload");
-        assert_eq!(before - used.load(Ordering::Acquire), 4*std::mem::size_of::<Arc<str>>());
+        assert_eq!(before - used.load(Ordering::Acquire), std::mem::size_of::<Arc<str>>());
         drop((shared,retained));
         assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
     }

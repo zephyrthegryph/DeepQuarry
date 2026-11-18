@@ -10,6 +10,7 @@
 //! with an empty body counts as "only sets flags" (`all([])`); `modular_chomp/` is still scanned
 //! when it exists (the Python's SCAN_DIRS).
 
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat::Pat;
@@ -35,13 +36,7 @@ static META: Meta = Meta {
 
 const BASES: &[&str] = &["/atom/proc/atom_break", "/atom/proc/atom_fix", "/obj/machinery/atom_break", "/obj/machinery/atom_fix"];
 
-struct Breakpoint {
-    flag_only: Vec<Pat>,
-}
-
-impl Breakpoint {
-    fn new() -> Breakpoint {
-        let pats = [
+const FLAG_ONLY_SOURCES:&[&str]=&[
             r"^\.\s*=\s*\.\.\(.*\)$",
             r"^\.\.\(.*\)$",
             r"^(src\.)?stat\s*(\|=|&=\s*~|\^=)\s*\(?BROKEN\)?$",
@@ -51,6 +46,14 @@ impl Breakpoint {
             r"^if\s*\(\s*!?\s*\(?\s*stat\s*&\s*BROKEN\s*\)?\s*\)$",
             r"^(set_broken|atom_break|atom_fix)\(\)$",
         ];
+
+struct Breakpoint {
+    flag_only: Vec<Pat>,
+}
+
+impl Breakpoint {
+    fn new() -> Breakpoint {
+        let pats=FLAG_ONLY_SOURCES;
         Breakpoint { flag_only: pats.iter().map(|p| Pat::new_match(p)).collect() }
     }
 }
@@ -78,31 +81,7 @@ impl Lint for Breakpoint {
         &META
     }
 
-    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let def_re = crate::pat_match!(r"(/[\w/]*?)/(?:proc/|verb/)?(set_broken|atom_break|atom_fix)\s*\(");
-        let lines = f.raw().lines_vec();
-        for (index, line) in lines.iter().enumerate() {
-            let Some(m) = def_re.captures(line) else { continue };
-            let (owner, proc_) = (m.s(1), m.s(2));
-            let full = format!("{}/{}", owner, proc_);
-            if BASES.contains(&full.as_str()) {
-                continue;
-            }
-            let number = index + 1;
-            if proc_ == "set_broken" {
-                out.site_msg("set_broken", number, format!("{}() defines set_broken(); call atom_break() (damage.md section 6)", full));
-                continue;
-            }
-            let body = body_lines(&lines, index);
-            if body.iter().all(|code| self.flag_only.iter().any(|p| p.is_match(code))) {
-                out.site_msg(
-                    "flag_only_override",
-                    number,
-                    format!("{}() only sets flags; the base /obj/machinery/{}() does that, so delete the override", full, proc_),
-                );
-            }
-        }
-    }
+    fn scan_file(&self,cx:&Cx,f:&SourceFile,out:&mut Sink){scan_using(cx,f,out,|code|self.flag_only.iter().any(|p|p.is_match(code)))}
 
     fn parity(&self) -> Option<Parity> {
         Some(Parity {
@@ -121,3 +100,47 @@ impl Lint for Breakpoint {
 pub fn register(reg: &mut Registry) {
     reg.add(Breakpoint::new());
 }
+
+fn scan_using(cx:&Cx,f:&SourceFile,out:&mut Sink,flag_only:impl Fn(&str)->bool){
+        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
+        let def_re = fixture.pattern(r"(/[\w/]*?)/(?:proc/|verb/)?(set_broken|atom_break|atom_fix)\s*\(",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"(/[\w/]*?)/(?:proc/|verb/)?(set_broken|atom_break|atom_fix)\s*\("));
+        let lines = f.raw().lines_vec();
+        for (index, line) in lines.iter().enumerate() {
+            let Some(m) = def_re.captures(line) else { continue };
+            let (owner, proc_) = (m.s(1), m.s(2));
+            let full = format!("{}/{}", owner, proc_);
+            if BASES.contains(&full.as_str()) {
+                continue;
+            }
+            let number = index + 1;
+            if proc_ == "set_broken" {
+                out.site_msg("set_broken", number, format!("{}() defines set_broken(); call atom_break() (damage.md section 6)", full));
+                continue;
+            }
+            let body = body_lines(&lines, index);
+            if body.iter().all(|code| flag_only(code)) {
+                out.site_msg(
+                    "flag_only_override",
+                    number,
+                    format!("{}() only sets flags; the base /obj/machinery/{}() does that, so delete the override", full, proc_),
+                );
+            }
+        }
+
+}
+
+#[cfg(feature="native-policy")]
+struct NativeBreakpoint{legacy:std::sync::OnceLock<Breakpoint>}
+#[cfg(feature="native-policy")]
+impl Lint for NativeBreakpoint{
+ fn meta(&self)->&Meta{&META}
+ fn scan_file(&self,cx:&Cx,f:&SourceFile,out:&mut Sink){
+  if let Some(fixture)=cx.fixture{
+   let patterns:&[(&str,fn()->&'static Pat)]=&[(FLAG_ONLY_SOURCES[0],(||crate::pat_match!(FLAG_ONLY_SOURCES[0])) as fn()->&'static Pat),(FLAG_ONLY_SOURCES[1],(||crate::pat_match!(FLAG_ONLY_SOURCES[1])) as fn()->&'static Pat),(FLAG_ONLY_SOURCES[2],(||crate::pat_match!(FLAG_ONLY_SOURCES[2])) as fn()->&'static Pat),(FLAG_ONLY_SOURCES[3],(||crate::pat_match!(FLAG_ONLY_SOURCES[3])) as fn()->&'static Pat),(FLAG_ONLY_SOURCES[4],(||crate::pat_match!(FLAG_ONLY_SOURCES[4])) as fn()->&'static Pat),(FLAG_ONLY_SOURCES[5],(||crate::pat_match!(FLAG_ONLY_SOURCES[5])) as fn()->&'static Pat),(FLAG_ONLY_SOURCES[6],(||crate::pat_match!(FLAG_ONLY_SOURCES[6])) as fn()->&'static Pat),(FLAG_ONLY_SOURCES[7],(||crate::pat_match!(FLAG_ONLY_SOURCES[7])) as fn()->&'static Pat)];
+   scan_using(cx,f,out,|code|patterns.iter().any(|(source,legacy)|fixture.pattern(source,crate::raw_fixture_policy::PatternMode::Match,*legacy).is_match(code)))
+  }else{self.legacy.get_or_init(Breakpoint::new).scan_file(cx,f,out)}
+ }
+ fn parity(&self)->Option<Parity>{self.legacy.get_or_init(Breakpoint::new).parity()}
+}
+#[cfg(feature="native-policy")]
+pub fn register_native(reg:&mut Registry){reg.add(NativeBreakpoint{legacy:std::sync::OnceLock::new()})}

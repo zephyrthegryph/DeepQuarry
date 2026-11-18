@@ -41,6 +41,17 @@ impl Pending{
  }
 }
 impl Inputs{
+ pub(crate) fn baseline_configuration(&self)->io::Result<BaselineConfiguration<'_>>{if !self.plan.is_baseline_update()||!self.plan.handlers_only(){return Err(invalid("Handler baseline target requires its actual exclusive baseline plan"))}self.require_current(&self.project)?;if !self.snapshot.capture().is_recorded_in(&self.inputs){return Err(invalid("Handler baseline target lacks its actual moved input facts"))}Ok(BaselineConfiguration{inputs:self})}
+ pub(crate) fn require_fixture_step(&self,next:&Self,project:&Path,root:&Path,transition:&crate::native_author_fix_transaction::Transition,work:&dyn SourceArenaWork)->io::Result<()>{
+  work.checkpoint()?;
+  if self.project!=project||next.project!=project||self.plan.fixture_scope().is_none_or(|scope|scope.root()!=root)||next.plan.fixture_scope().is_none()||!Arc::ptr_eq(&self.plan,&next.plan){return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected Handler fixture step differs from its actual plan/purpose/namespace"))}
+  if !self.inputs.same_fixture_step(&next.inputs,root,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"selected Handler input closure changed beyond its actual fixture expected write"))}Ok(())
+ }
+ pub(crate) fn require_baseline_step(&self,next:&Self,project:&Path,transition:&crate::native_author_fix_transaction::Transition,work:&dyn SourceArenaWork)->io::Result<()>{
+  work.checkpoint()?;
+  if self.project!=project||next.project!=project||!self.plan.is_baseline_update()||!next.plan.is_baseline_update()||!Arc::ptr_eq(&self.plan,&next.plan){return Err(io::Error::new(io::ErrorKind::InvalidInput,"selected Handler baseline step differs from its actual plan/purpose/namespace"))}
+  if !self.inputs.same_baseline_step(&next.inputs,transition,work)?{return Err(io::Error::new(io::ErrorKind::Interrupted,"selected Handler input closure changed beyond its actual baseline write"))}Ok(())
+ }
  /// Observation DATA only: never semantic/policy revision pins. The containing
  /// Handler report still needs the same current actual owner and moved ledger.
  pub(crate) fn observation(&self)->io::Result<(u128,Option<u128>,Option<u128>)>{
@@ -168,3 +179,19 @@ pub(crate) fn check_diagnostic_stage(file:crate::selected_report_spool::Stage)->
 }
 
 #[cfg(test)]#[path="runner_native_check_handlers_tests.rs"]mod tests;
+
+impl Inputs{pub(crate) fn native_selftest_epoch(&self)->&crate::input_snapshot::JoinedReportEpoch{&self._epoch}}
+
+/// Borrowed only from the real Current Handler owner and its moved recorder.
+/// FailedFullOneShot has no such entry point and cannot supply a write target.
+pub(crate) struct BaselineConfiguration<'a>{inputs:&'a Inputs}
+impl BaselineConfiguration<'_>{
+ pub(crate) fn require_owner(&self)->io::Result<()>{if !self.inputs.plan.is_baseline_update()||!self.inputs.plan.handlers_only(){return Err(invalid("Handler configuration loan lost actual baseline purpose"))}self.inputs.snapshot.require_current()}
+ pub(crate) fn observed(&self)->(&Path,&Path,Option<&[u8]>,&InputSnapshot){let subject=self.inputs.snapshot.capture().prepared().subject();let(path,bytes)=subject.configuration_observation();(subject.root_path(),path,bytes,&self.inputs.inputs)}
+}
+
+impl Inputs{
+ pub(crate) fn with_report_input_observation<T>(&self,project:&std::path::Path,observe:impl FnOnce(&crate::input_snapshot::InputSnapshot)->std::io::Result<T>)->Result<T,Box<dyn std::error::Error>>{
+  self.require_current(project)?;let result=observe(&self.inputs)?;self.require_current(project)?;Ok(result)
+ }
+}

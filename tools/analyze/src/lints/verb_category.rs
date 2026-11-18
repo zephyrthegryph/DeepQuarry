@@ -11,6 +11,7 @@
 //! (which can drift after a string that swallows a newline); a file whose raw text has no
 //! "category" is skipped.
 
+use crate::raw_fixture_policy::PatternApi as _;
 use std::collections::HashMap;
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
@@ -41,10 +42,11 @@ impl Lint for VerbCategory {
         &META
     }
 
-    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let set_category = crate::pat!(r#"\bset\s+category\s*=\s*""#);
-        let macro_category = crate::pat!(r#"\b(?:DEBUG_VERB|ADMIN_VERB|ADMIN_VERB_AND_CONTEXT_MENU)\s*\((?:[^,()]*,){4}\s*""#);
-        let define = crate::pat_match!(r##"#define\s+(VERB_CAT_\w+)\s+"([^"]*)""##);
+    fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
+        let set_category = fixture.pattern(r#"\bset\s+category\s*=\s*""#,crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r#"\bset\s+category\s*=\s*""#));
+        let macro_category = fixture.pattern(r#"\b(?:DEBUG_VERB|ADMIN_VERB|ADMIN_VERB_AND_CONTEXT_MENU)\s*\((?:[^,()]*,){4}\s*""#,crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r#"\b(?:DEBUG_VERB|ADMIN_VERB|ADMIN_VERB_AND_CONTEXT_MENU)\s*\((?:[^,()]*,){4}\s*""#));
+        let define = fixture.pattern(r##"#define\s+(VERB_CAT_\w+)\s+"([^"]*)""##,crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r##"#define\s+(VERB_CAT_\w+)\s+"([^"]*)""##));
         if f.rel == DEFINES {
             let mut seen: HashMap<String, String> = HashMap::new();
             for (number, line) in f.raw().numbered() {

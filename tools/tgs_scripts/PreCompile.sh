@@ -4,6 +4,7 @@
 
 set -e
 set -x
+export CARGO_INCREMENTAL=1 RUSTC_WRAPPER=''
 
 #load dep exports
 #need to switch to game dir for Dockerfile weirdness

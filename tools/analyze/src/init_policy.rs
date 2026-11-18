@@ -11,10 +11,6 @@ pub(crate) struct TableFacts {
 pub(crate) fn table_facts(f:&SourceFile)->TableFacts{table_facts_using(f,&mut kc::Compatibility,&mut|lines,number|Ok(crate::dm::pylines::allowed_in_recorded(f,lines,number,"init"))).unwrap_or_else(|never|match never{})}
 pub(crate) fn table_facts_using<C:Control>(f:&SourceFile,control:&mut C,allowed:&mut impl FnMut(&[&str],usize)->Result<bool,C::Error>)->Result<TableFacts,C::Error>{
  control.checkpoint()?;
-    let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
-    let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
-    let table_proc = pat_match!(r"^GLOBAL_LIST_INIT\(init_from_table_\w+, list\(");
-    let table_row = pat_match!(r"^\s+(/[\w/]+)\s*=\s*(TRUE|FALSE|1|0)\b");
     let mut in_table = false;
     let mut out = TableFacts::default();
     let lines = crate::dm::pylines::py_splitlines_using(f.text(),control)?;
@@ -22,7 +18,7 @@ pub(crate) fn table_facts_using<C:Control>(f:&SourceFile,control:&mut C,allowed:
         control.checkpoint()?;
         let number = i + 1;
         let line = *line;
-        if table_proc.is_match(line) {
+        if kc::is_match_match_static(control,r"^GLOBAL_LIST_INIT\(init_from_table_\w+, list\(",line,||pat_match!(r"^GLOBAL_LIST_INIT\(init_from_table_\w+, list\("))? {
             in_table = true;
             continue;
         }
@@ -30,14 +26,14 @@ pub(crate) fn table_facts_using<C:Control>(f:&SourceFile,control:&mut C,allowed:
             if col0(line) {
                 in_table = false;
             } else {
-                if let Some(row) = table_row.captures(line) {
+                if let Some(row) = kc::captures_match_static(control,r"^\s+(/[\w/]+)\s*=\s*(TRUE|FALSE|1|0)\b",line,||pat_match!(r"^\s+(/[\w/]+)\s*=\s*(TRUE|FALSE|1|0)\b"))? {
                     kc::row(control, &mut out.flags)?;
                     out.flags.push((kc::own(control, row.s(1))?, matches!(row.s(2), "TRUE" | "1")));
                 }
                 continue;
             }
         }
-        let header = init_header.captures(line).or_else(|| late_header.captures(line));
+        let header=match kc::captures_match_static(control,r"^(/[\w/]+)/Initialize\s*\(",line,||pat_match!(r"^(/[\w/]+)/Initialize\s*\("))?{Some(actual)=>Some(actual),None=>kc::captures_match_static(control,r"^(/[\w/]+)/LateInitialize\s*\(",line,||pat_match!(r"^(/[\w/]+)/LateInitialize\s*\("))?};
         if let Some(h) = header {
             // Asked for every header, not only one that would count.
             if !allowed(&lines,number)? {
@@ -63,10 +59,8 @@ fn init_code_using<C:Control>(line:&str,control:&mut C)->Result<Option<String>,C
 }
 
 /// The owner a header line names (`/obj/x/Initialize(` is `/obj/x`); empty when the line writes none.
-pub(crate) fn text_owner(line: &str) -> String {
-    let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
-    init_header.captures(line).map(|c| c.s(1).to_string()).unwrap_or_default()
-}
+pub(crate) fn text_owner(line:&str)->String{text_owner_using(line,&mut kc::Compatibility).unwrap_or_else(|never|match never{})}
+pub(crate) fn text_owner_using<C:Control>(line:&str,control:&mut C)->Result<String,C::Error>{Ok(kc::captures_match_static(control,r"^(/[\w/]+)/Initialize\s*\(",line,||pat_match!(r"^(/[\w/]+)/Initialize\s*\("))?.map(|c| c.s(1).to_string()).unwrap_or_default())}
 
 /// The atom built-ins `SETTER()`-registered in code/game/atom/atom_visual.dm.
 const VISUAL_SETTER_VARS: &[&str] = &["color", "alpha", "layer", "plane", "pixel_x", "pixel_y", "pixel_w", "pixel_z", "appearance_flags", "gender"];
@@ -82,31 +76,28 @@ const VISUAL_SETTER_VARS: &[&str] = &["color", "alpha", "layer", "plane", "pixel
 ///
 /// Sites that share a target share an identity; the ratchet counts them per identity, so a fix still shrinks the count and a new
 /// line of the same target still fails once the count is exceeded.
-pub fn init_line_target(stmt: &str) -> String {
+pub fn init_line_target(stmt:&str)->String{init_line_target_using(stmt,&mut kc::Compatibility).unwrap_or_else(|never|match never{})}
+pub fn init_line_target_using<C:Control>(stmt:&str,control:&mut C)->Result<String,C::Error>{
     let t = stmt.trim();
-    let control = pat_match!(r"^(else\s+if|if|else|for|while|switch|do|try|catch|spawn)\b");
-    if let Some(c) = control.captures(t) {
-        return c.s(1).split_whitespace().collect::<Vec<_>>().join(" ");
+    if let Some(c) = kc::captures_match_static(control,r"^(else\s+if|if|else|for|while|switch|do|try|catch|spawn)\b",t,||pat_match!(r"^(else\s+if|if|else|for|while|switch|do|try|catch|spawn)\b"))? {
+        return Ok(c.s(1).split_whitespace().collect::<Vec<_>>().join(" "));
     }
-    if pat_match!(r"^return\b").is_match(t) {
-        return "return".to_string();
+    if kc::is_match_match_static(control,r"^return\b",t,||pat_match!(r"^return\b"))? {
+        return Ok("return".to_string());
     }
     let t = t.strip_prefix("src.").unwrap_or(t);
     // `var/list/x = ...` / `var/x`: the declared name.
-    let decl = pat_match!(r"^var/(?:[\w/]*/)?(\w+)\s*(?:=|$|\[)");
-    if let Some(c) = decl.captures(t) {
-        return c.s(1).to_string();
+    if let Some(c) = kc::captures_match_static(control,r"^var/(?:[\w/]*/)?(\w+)\s*(?:=|$|\[)",t,||pat_match!(r"^var/(?:[\w/]*/)?(\w+)\s*(?:=|$|\[)"))? {
+        return Ok(c.s(1).to_string());
     }
-    let assign = pat_match!(r"^(\.|[A-Za-z_][\w.\[\]]*)\s*(?:\|\||&&|<<|>>|[-+*/%|&^])?=(?:[^=]|$)");
-    if let Some(c) = assign.captures(t) {
-        return c.s(1).to_string();
+    if let Some(c) = kc::captures_match_static(control,r"^(\.|[A-Za-z_][\w.\[\]]*)\s*(?:\|\||&&|<<|>>|[-+*/%|&^])?=(?:[^=]|$)",t,||pat_match!(r"^(\.|[A-Za-z_][\w.\[\]]*)\s*(?:\|\||&&|<<|>>|[-+*/%|&^])?=(?:[^=]|$)"))? {
+        return Ok(c.s(1).to_string());
     }
-    let call = pat_match!(r"^([A-Za-z_][\w.:]*)\s*\(");
-    if let Some(c) = call.captures(t) {
+    if let Some(c) = kc::captures_match_static(control,r"^([A-Za-z_][\w.:]*)\s*\(",t,||pat_match!(r"^([A-Za-z_][\w.:]*)\s*\("))? {
         let callee = c.s(1);
         if let Some(var) = callee.strip_prefix("set_") {
             if !var.is_empty() && !var.contains('.') {
-                return var.to_string();
+                return Ok(var.to_string());
             }
         }
         // `obj.set_color(v)` is the write `obj.color = v` converted to its registered visual setter (code/game/atom/atom_visual.dm): the same
@@ -114,31 +105,29 @@ pub fn init_line_target(stmt: &str) -> String {
         if let Some((recv, last)) = callee.rsplit_once('.') {
             if let Some(var) = last.strip_prefix("set_") {
                 if VISUAL_SETTER_VARS.contains(&var) && !recv.is_empty() {
-                    return format!("{recv}.{var}");
+                    return Ok(format!("{recv}.{var}"));
                 }
             }
         }
-        return callee.to_string();
+        return Ok(callee.to_string());
     }
-    "expr".to_string()
+    Ok("expr".to_string())
 }
 
 /// A definition header as the text rule reads one (`/type/Initialize(` at column 0; a commented-out line is not one).
-pub(crate) fn text_header(line: &str) -> Option<Def> {
-    let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
-    let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
-    let turf_materialize = pat_match!(r"^/turf(/[\w/]*)?/on_materialize\s*\(");
+pub(crate) fn text_header(line:&str)->Option<Def>{text_header_using(line,&mut kc::Compatibility).unwrap_or_else(|never|match never{})}
+pub(crate) fn text_header_using<C:Control>(line:&str,control:&mut C)->Result<Option<Def>,C::Error>{
     if line.starts_with("//") {
-        return None;
+        return Ok(None);
     }
-    if turf_materialize.is_match(line) {
-        Some(Def::TurfMaterialize)
-    } else if late_header.is_match(line) {
-        Some(Def::Late)
-    } else if init_header.is_match(line) {
-        Some(Def::Init)
+    if kc::is_match_match_static(control,r"^/turf(/[\w/]*)?/on_materialize\s*\(",line,||pat_match!(r"^/turf(/[\w/]*)?/on_materialize\s*\("))? {
+        Ok(Some(Def::TurfMaterialize))
+    } else if kc::is_match_match_static(control,r"^(/[\w/]+)/LateInitialize\s*\(",line,||pat_match!(r"^(/[\w/]+)/LateInitialize\s*\("))? {
+        Ok(Some(Def::Late))
+    } else if kc::is_match_match_static(control,r"^(/[\w/]+)/Initialize\s*\(",line,||pat_match!(r"^(/[\w/]+)/Initialize\s*\("))? {
+        Ok(Some(Def::Init))
     } else {
-        None
+        Ok(None)
     }
 }
 
@@ -171,7 +160,6 @@ pub(crate) fn judge_definition_using<C:Control,O:Output<C::Error>>(lines:&[&str]
                     Some(c)=>{kc::reserve(control,||c.len().checked_mul(8)?.checked_add(2048))?;let message=kc::format(control,format_args!("ALLOW(init{}) needs a reason code: ALLOW(init/CODE), CODE one of {}",if c.is_empty(){String::new()}else{format!("/{c}")},REASON_CODES.join(", ")))?;out.site("initialize",number,message,String::new())?;},
                     None => {}
                 }
-                let world_read = crate::pat!(r"(?<![\w.])(?:o?range|view)\s*\(|\bGetAbove\s*\(|\bGetBelow\s*\(|\bGLOB\.|\bSTART_PROCESSING\s*\(");
                 for n in crate::lifecycle_source::body_lines_using(lines,number as u32,control)? {
                     control.checkpoint()?;
                     let code = before_slashes(lines[n - 1]);
@@ -179,9 +167,9 @@ pub(crate) fn judge_definition_using<C:Control,O:Output<C::Error>>(lines:&[&str]
                     kc::reserve(control,||stmt.len().checked_mul(4)?.checked_add(128))?;let super_call = matches!(stmt.replace(' ', "").as_str(), ".=..()" | "..()" | "return..()" | "return" | "return.");
                     if !stmt.is_empty() && !super_call {
                         // Identified by the type, the proc and the target the line writes or calls, not by its text: see [`init_line_target`].
-                        kc::reserve(control,||stmt.len().checked_mul(8)?.checked_add(owner.len())?.checked_add(2048))?;let identity=kc::format(control,format_args!("{}::Initialize::{}",owner,init_line_target(stmt)))?;out.site("init_lines",n,String::new(),identity)?;
+                        kc::reserve(control,||stmt.len().checked_mul(8)?.checked_add(owner.len())?.checked_add(2048))?;let target=init_line_target_using(stmt,control)?;let identity=kc::format(control,format_args!("{}::Initialize::{}",owner,target))?;out.site("init_lines",n,String::new(),identity)?;
                     }
-                    if world_read.is_match(code) && !out.allowed(lines,n)? {
+                    if kc::is_match_static(control,r"(?<![\w.])(?:o?range|view)\s*\(|\bGetAbove\s*\(|\bGetBelow\s*\(|\bGLOB\.|\bSTART_PROCESSING\s*\(",code,||crate::pat!(r"(?<![\w.])(?:o?range|view)\s*\(|\bGetAbove\s*\(|\bGetBelow\s*\(|\bGLOB\.|\bSTART_PROCESSING\s*\("))? && !out.allowed(lines,n)? {
                         out.site("world_reads",n,String::new(),String::new())?;
                     }
                 }

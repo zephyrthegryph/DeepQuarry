@@ -98,13 +98,13 @@ mod tests;
 /// no source text, model, absolute current point or foreign syntax owner.
 /// Code affinity alone is NOT semantic freshness; the current QueryDb consumer
 /// must first verify its real resolver dependencies before lending rows.
-#[derive(Debug)]pub struct CurrentUndefinedProduct{code:std::sync::Weak<dm_tree::frontend::BodyCodeIdentity>,window:dm_syntax::Span,rows:Vec<Diagnostic>,skipped:bool}
+#[derive(Debug)]pub struct CurrentUndefinedProduct{code:dm_tree::frontend::BodyCodeWeak,window:dm_syntax::Span,rows:Vec<Diagnostic>,skipped:bool}
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum CurrentUndefinedDisposition{Evaluated,SkippedOriginal}
 #[derive(Debug)]pub struct CurrentUndefinedRow<'a>{pub diagnostic:&'a Diagnostic,pub span:dm_syntax::Span,pub expression_span:dm_syntax::Span}
 impl CurrentUndefinedProduct{
  pub fn disposition(&self)->CurrentUndefinedDisposition{if self.skipped{CurrentUndefinedDisposition::SkippedOriginal}else{CurrentUndefinedDisposition::Evaluated}}
  pub fn retained_charge(&self)->Option<usize>{self.rows.capacity().checked_mul(std::mem::size_of::<Diagnostic>()).and_then(|base|self.rows.iter().try_fold(base,|sum,row|sum.checked_add(row.message.capacity()))).and_then(|bytes|bytes.checked_add(std::mem::size_of::<Self>()))}
- pub fn visit_storage(&self,mut visit:impl FnMut(crate::checker_effects::Storage)){use crate::checker_effects::Storage;visit(Storage::Buffer{owner:"current_variable.rows",address:self.rows.as_ptr()as usize,logical:self.rows.len()*std::mem::size_of::<Diagnostic>(),capacity:self.rows.capacity()*std::mem::size_of::<Diagnostic>()});for row in &self.rows{visit(Storage::Buffer{owner:"current_variable.message",address:row.message.as_ptr()as usize,logical:row.message.len(),capacity:row.message.capacity()});}}
+ pub fn visit_storage(&self,mut visit:impl FnMut(crate::checker_effects::Storage)){self.code.visit_allocation_storage(&mut |address,logical,capacity|visit(crate::checker_effects::Storage::Buffer{owner:"current_variable.weak_code",address,logical,capacity}));use crate::checker_effects::Storage;visit(Storage::Buffer{owner:"current_variable.rows",address:self.rows.as_ptr()as usize,logical:self.rows.len()*std::mem::size_of::<Diagnostic>(),capacity:self.rows.capacity()*std::mem::size_of::<Diagnostic>()});for row in &self.rows{visit(Storage::Buffer{owner:"current_variable.message",address:row.message.as_ptr()as usize,logical:row.message.len(),capacity:row.message.capacity()});}}
  /// Canonical neutral bytes for the EXISTING query graph's result fingerprint.
  /// All fields influencing current delivery participate; this does not issue a
  /// source/model identity or authorize reporting without current verification.
@@ -112,7 +112,7 @@ impl CurrentUndefinedProduct{
  /// Geometry-only final binding. The caller supplies semantic freshness by
  /// having just verified the producer's current resolver dependency graph.
  pub fn visit_current(&self,body:&dm_tree::frontend::CurrentArchivedBody<'_,'_>,mut visit:impl FnMut(CurrentUndefinedRow<'_>)->std::io::Result<()>)->std::io::Result<CurrentUndefinedDisposition>{
-  if !std::sync::Weak::ptr_eq(&self.code,&std::sync::Arc::downgrade(body.syntax().original_code_owner()))||self.window!=body.syntax().canonical_window(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"variable product belongs to another canonical BODY"))}
+  if !self.code.matches(body.syntax().original_code_owner())||self.window!=body.syntax().canonical_window(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"variable product belongs to another canonical BODY"))}
   for row in &self.rows{let span=body.syntax().projection().span(row.span).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"variable point escapes current BODY binding"))?;let expression_span=body.syntax().projection().span(row.expression_span).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"variable expression escapes current BODY binding"))?;visit(CurrentUndefinedRow{diagnostic:row,span,expression_span})?;}Ok(self.disposition())
  }
 }
@@ -145,7 +145,12 @@ fn current_using_context<W:crate::checker_effects::EffectReportWork>(body:&dm_tr
  };
  match pending{
   Err(actual)=>{drop(out);let cleanup=work.reconcile(marker,0);if matches!(&actual,Failure::Operational(_)){return Err(actual)}cleanup.map_err(Failure::Operational)?;Err(actual)},
-  Ok(checker_expression_visit::CurrentEvaluation::SkippedOriginal)=>{if !out.is_empty(){drop(out);work.reconcile(marker,0).map_err(Failure::Operational)?;return Err("genuine skipped Original BODY unexpectedly evaluated variable rows".into())}drop(out);work.reconcile(marker,0).map_err(Failure::Operational)?;Ok(CurrentUndefinedProduct{code:std::sync::Arc::downgrade(body.syntax().original_code_owner()),window:body.syntax().canonical_window(),rows:Vec::new(),skipped:true})},
-  Ok(checker_expression_visit::CurrentEvaluation::Evaluated)=>{let bytes=out.capacity().checked_mul(std::mem::size_of::<Diagnostic>()).and_then(|base|out.iter().try_fold(base,|sum,row|sum.checked_add(row.message.capacity())));let Some(bytes)=bytes else{drop(out);work.reconcile(marker,0).map_err(Failure::Operational)?;return Err(oom("current variable retained output geometry overflow"))};work.reconcile(marker,bytes).map_err(Failure::Operational)?;Ok(CurrentUndefinedProduct{code:std::sync::Arc::downgrade(body.syntax().original_code_owner()),window:body.syntax().canonical_window(),rows:out,skipped:false})}
+  Ok(checker_expression_visit::CurrentEvaluation::SkippedOriginal)=>{if !out.is_empty(){drop(out);work.reconcile(marker,0).map_err(Failure::Operational)?;return Err("genuine skipped Original BODY unexpectedly evaluated variable rows".into())}drop(out);work.reconcile(marker,0).map_err(Failure::Operational)?;Ok(CurrentUndefinedProduct{code:dm_tree::frontend::BodyCodeIdentity::downgrade(body.syntax().original_code_owner()),window:body.syntax().canonical_window(),rows:Vec::new(),skipped:true})},
+  Ok(checker_expression_visit::CurrentEvaluation::Evaluated)=>{let bytes=out.capacity().checked_mul(std::mem::size_of::<Diagnostic>()).and_then(|base|out.iter().try_fold(base,|sum,row|sum.checked_add(row.message.capacity())));let Some(bytes)=bytes else{drop(out);work.reconcile(marker,0).map_err(Failure::Operational)?;return Err(oom("current variable retained output geometry overflow"))};work.reconcile(marker,bytes).map_err(Failure::Operational)?;Ok(CurrentUndefinedProduct{code:dm_tree::frontend::BodyCodeIdentity::downgrade(body.syntax().original_code_owner()),window:body.syntax().canonical_window(),rows:out,skipped:false})}
  }
+}
+
+#[cfg(test)]#[test]fn actual_weak_code_locator_owner_widths_are_measured(){
+ {#[allow(dead_code)]struct Prior{code:std::sync::Weak<dm_tree::frontend::BodyCodeIdentity>,window:dm_syntax::Span,rows:Vec<Diagnostic>,skipped:bool}
+let old=std::mem::size_of::<Prior>();let new=std::mem::size_of::<CurrentUndefinedProduct>();eprintln!("WEAK_CODE_OWNER CurrentUndefinedProduct prior={old} current={new} delta={}",new as isize-old as isize);assert!(new<=old+std::mem::size_of::<usize>());}
 }

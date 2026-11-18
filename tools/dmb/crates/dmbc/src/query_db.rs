@@ -19,7 +19,10 @@ mod answer_value_owner;
 mod answer_value_owner_tests;
 mod body_syntax;
 pub(crate) use body_syntax::body_syntax_census_tests::run_current_cli as run_original_grammar_census;
+pub(crate) use body_syntax::body_syntax_census_tests::run_current_cli_at_source as run_original_grammar_census_at_source;
 pub(crate) use body_syntax::body_syntax_census_tests::run_native_cli as run_native_grammar_census;
+mod native_patterns;
+pub(crate) use native_patterns::PatternProvider;
 mod setting_syntax;
 mod source_answers;
 mod source_question_roster;
@@ -90,7 +93,7 @@ pub struct QueryDb {
     purity: purity::State,
     value_inputs:
         Mutex<BTreeMap<Key, std::sync::Weak<dm_analysis::value_query::ArchiveValueInput>>>,
-    body_inputs: Mutex<BTreeMap<Key, std::sync::Weak<dm_tree::frontend::BodySyntaxInput>>>,
+    body_inputs: Mutex<BTreeMap<Key, body_syntax::RegisteredBodyInput>>,
     // Cache retirement cursor only; no additional input/syntax collection.
     body_eviction_cursor: Mutex<Option<Key>>,
     /// Current answers of every query a stored unit read (see `answer` below).
@@ -125,6 +128,7 @@ impl QueryDb {
         let body_charge = dm_syntax::SettingChargeCounter::try_new_with_parent(body_syntax::BUDGET, Some(parent))
             .expect("fixed syntax root fits existing native allowances");
         body_syntax::register(&db, Arc::clone(&body_charge));
+        native_patterns::register(&db);
         let value_charge = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         value_proofs::register(&db, Arc::clone(&value_charge), Arc::clone(&body_charge));
         let raw_policy = raw_policy::State::default();
@@ -1958,3 +1962,18 @@ mod handlers_current_body;
 mod handlers_source_adapter;
 
 pub(crate) use raw_policy::reactive_handlers::{StructuralData as HandlerStructuralData,StructuralFinding as HandlerStructuralFinding};
+
+impl QueryDb{pub(crate) fn cli_observation_stats(&self)->std::io::Result<dm_query::KindStats>{self.db.total_stats().ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))}}
+
+// Private diagnostic only: read the SAME query owner after its executor joins.
+// Cumulative successful query work and current retained counters are not body
+// coverage, a peak memory figure, or permission to demand another query.
+impl QueryDb {
+ pub(crate) fn write_post_request_query_timing(&self,bracket_ok:bool,request_ok:bool,output:&mut impl std::io::Write){
+  let stats=[4,23,24,25,26,27].map(|kind|self.db.stats(Kind(kind)));
+  let retained=self.body_charge.load(std::sync::atomic::Ordering::Acquire);
+  let leased=self.body_charge.allocation_lease_reserved();
+  let value_retained=self.value_charge.load(std::sync::atomic::Ordering::Acquire);
+  let _=writeln!(output,"ORIGINAL_REQUEST_QUERY_STATS phase=execution_joined bracket_ok={bracket_ok} request_ok={request_ok} body_retained={retained} body_leased={leased} value_retained={value_retained} k4={:?} k23={:?} k24={:?} k25={:?} k26={:?} k27={:?}",stats[0],stats[1],stats[2],stats[3],stats[4],stats[5]);
+ }
+}

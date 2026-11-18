@@ -16,6 +16,7 @@ mod occurrence_pages;
 mod policy_capture_tests;
 #[path = "runner_query_purity.rs"]
 mod purity;
+pub(crate) use purity::DiagnosticCounts;
 #[path = "runner_query_raw_policy.rs"]
 mod raw_policy;
 #[path = "runner_query_resolved.rs"]
@@ -1292,6 +1293,23 @@ impl CombinedCheckerFrame {
 }
 
 impl SourceSnapshot {
+    /// Immutable input roster DATA, independently of any visited/completed count.
+    /// This archive was issued with the actual Original frontend before visits.
+    pub(super) fn observed_original_archive_bodies(&self, frame:dq_analyze::selected_exclusions_wire::Frame)->std::io::Result<usize>{
+        self.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290))?;
+        if self.model_preparation!=Some(dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete)
+            || frame.semantic_revision.0!=self.tree.identity() || frame.source_revision.0!=self.source_revision
+            || Some(frame.policy_revision.0)!=self.policy_revision {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"observed original body roster differs from the actual complete report frame"));
+        }
+        let archive=self.body_archive.as_ref().ok_or_else(||std::io::Error::other("observed original body roster absent"))?;
+        let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("observed original body roster query owner absent"))?;
+        if !archive.matches_tree(&self.tree)||!archive.uses_body_queries(queries.as_ref()){
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"observed original body roster belongs to another tree/query owner"));
+        }
+        Ok(archive.len())
+    }
+
     pub(super) fn require_staged_checker_body_domain(
         &self, checker: &crate::request_runner::PreparedCheckerTranscript,
     ) -> std::io::Result<()> {
@@ -1638,8 +1656,9 @@ impl SourceSnapshot{
 #[cfg(test)]#[path="runner_query_op_order_tests.rs"]mod op_order_complete_raw;
 
 #[path="runner_query_allow_full_run.rs"]mod allow_full_run;
-pub(crate) use allow_full_run::{NativeCheckSelection,prepare_native_check_selection,SourceHandlerProjection,derive_source_handler_projection,prepare_native_source_handler_selection,prepare_native_registered_check_selection};
+pub(crate) use allow_full_run::{NativeSelftestCompletion,NativeCheckSelection,prepare_native_check_selection,SourceHandlerProjection,derive_source_handler_projection,prepare_native_source_handler_selection,prepare_native_registered_check_selection};
 pub(crate) use allow_full_run::{stage_registered_handlers_current,stage_registered_handlers_failed_full};
+pub(in crate::runner_host) use allow_full_run::{stage_registered_handlers_current_baseline,BaselineProjectionRows};
 pub(super) use allow_full_run::{checked_stage as checked_selected_report_stage,stage_named_image_dir,validate_selection as validate_selected_report_selection,validate_selection_v2 as validate_selected_report_selection_v2,SelectedReportPlan};
 
 impl SourceSnapshot{pub(crate) fn with_original_derived_policy_report<T>(&self,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{self.with_original_derived_policy_report_to(&mut crate::daemon::stderr_writer(),consume)}pub(crate) fn with_original_derived_policy_report_to<T>(&self,diagnostics:&mut impl std::io::Write,consume:impl FnOnce(&dq_analyze::captured_derived_reads::DerivedReadData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{let capture=self.workspace_semantic_inputs(crate::policy_request::WorkspaceAuxiliaryQuestion::DerivedReads)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("Derived actual workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("Derived actual QueryDb unavailable"))?;let subject=capture.original_analysis_subject().ok_or_else(||std::io::Error::other("Derived actual full subject absent"))?;subject.derived_preflight()?.require_current(subject,workspace,&guard,capture.policy(),queries)?;self.replay_original_preprocess_notices(diagnostics)?;queries.with_original_workspace_derived_guard_report(workspace,&guard,capture,consume)}}
@@ -1686,3 +1705,106 @@ impl SourceSnapshot{
   use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;let capture=self.workspace_semantic_inputs(if mode==dq_analyze::native_fix_wire::Mode::TrackedDropDeclared{Q::SemReads}else if mode==dq_analyze::native_fix_wire::Mode::TrackedTests{Q::TrackedTests}else{Q::Tracked})?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("native FIX target workspace absent"))?;inputs.require_workspace(workspace)?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("native FIX target QueryDb absent"))?;let result=queries.with_original_workspace_fix_targets(workspace,&guard,capture,mode,prefixes,consume)?;inputs.require_workspace(workspace)?;Ok(result)
  }
 }
+
+pub(crate) use allow_full_run::write_registered_metadata_list;
+
+
+impl SourceSnapshot{
+ pub(crate) fn with_original_sem_utility_read<T>(&self,receiver:&str,procedure:&str,consume:impl FnOnce(&dq_analyze::captured_reactive_reads::UnsealedReadData,&Arc<dq_analyze::captured_generator_budget::Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork)->std::io::Result<T>)->std::io::Result<T>{
+  use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
+  self.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;self.require_semantic_source_encoding()?;
+  if  !matches!(self.model_preparation,Some(dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete|dm_tree::frontend::DiagnosticPreparationPurpose::OriginalAnalyzePrefix)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"ordinary sem utility needs its actual Original complete/prefix preparation"))}
+  let capture=self.workspace_semantic_inputs(Q::SemReads)?;
+  if self.source_mapping.as_ref().is_none_or(|mapping|!Arc::ptr_eq(mapping,capture.policy().mapping()))||!capture.policy().archive().matches_tree(&self.tree){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"ordinary sem utility model/capture mapping differs"))}
+  let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("ordinary sem utility workspace absent"))?;
+  let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("ordinary sem utility native query owner absent"))?;
+  let guard=self.workspace_native_read()?;workspace.require_scope(&guard)?;
+  queries.with_original_sem_utility_read(workspace,&guard,capture,receiver,procedure,consume)
+ }
+}
+
+
+impl SourceSnapshot{
+ pub(crate) fn native_sem_utility_frame(&self,inputs:&crate::request_runner::schema_capture::Inputs)->std::io::Result<dq_analyze::native_sem_utility_wire::Frame>{
+  self.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290))?;self.require_semantic_source_encoding()?;
+  let original=match self.model_preparation{Some(dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete)=>dq_analyze::native_sem_utility_wire::OriginalCompleteness::Complete,Some(dm_tree::frontend::DiagnosticPreparationPurpose::OriginalAnalyzePrefix)=>dq_analyze::native_sem_utility_wire::OriginalCompleteness::PrimaryPrefix,_=>return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native utility cannot frame an unissued model"))};
+  let mapping=self.source_mapping.as_ref().ok_or_else(||std::io::Error::other("native utility mapping absent"))?;inputs.require_binding(mapping,self.tree.identity(),self.source_revision)?;
+  let guard=self.workspace_native_read()?;self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("native utility workspace absent"))?.require_scope(&guard)?;
+  let policy_revision=self.policy_revision.ok_or_else(||std::io::Error::other("native utility policy revision absent"))?;
+  use dq_analyze::selected_exclusions_wire::Hex128;Ok(dq_analyze::native_sem_utility_wire::Frame{semantic_revision:Hex128(self.tree.identity()),source_revision:Hex128(self.source_revision),policy_revision:Hex128(policy_revision),original})
+ }
+}
+
+
+impl SourceSnapshot{
+ /// Pre-final utility fact loan, never a final current frame/epoch. The caller
+ /// must still finish the SAME recorder and perform final input checks.
+ pub(crate) fn with_original_utility_model<T>(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion,markers:bool,consume:impl FnOnce(&dm_analysis::policy_inputs::PolicyInputs,&std::path::Path,&Arc<dq_analyze::captured_generator_budget::Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork,&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::OriginalBodySyntaxProduct>,dm_tree::frontend::BodySyntaxFailure>,Option<(usize,std::time::Duration)>)->Result<T,dq_analyze::captured_reactive_reads::Failure>)->std::io::Result<T>{
+  use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};
+  self.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;self.require_semantic_source_encoding()?;
+  if !matches!(question,Q::SemReads|Q::BaseVars)||!matches!(self.model_preparation,Some(dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete|dm_tree::frontend::DiagnosticPreparationPurpose::OriginalAnalyzePrefix)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"ordinary utility model loan requires its actual semantic complete/prefix role"))}
+  let capture=self.workspace_semantic_inputs(question)?;if self.source_mapping.as_ref().is_none_or(|actual|!Arc::ptr_eq(actual,capture.policy().mapping()))||!capture.policy().archive().matches_tree(&self.tree){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"utility current model/capture binding differs"))}
+  let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("utility actual workspace absent"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("utility actual native query owner absent"))?;let guard=self.workspace_native_read()?;workspace.require_scope(&guard)?;
+  queries.with_original_utility_model(workspace,&guard,capture,markers,consume)
+ }
+}
+
+
+impl SourceSnapshot{
+ pub(crate)fn with_original_utility_pages<T>(&self,consume:impl FnOnce(&dm_analysis::policy_inputs::PolicyInputs,&std::path::Path,&dyn dq_analyze::reactive_raw_policy_pages::RawPolicyPages,&std::collections::HashMap<String,usize>,&Arc<dq_analyze::captured_generator_budget::Budget>,&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::OriginalBodySyntaxProduct>,dm_tree::frontend::BodySyntaxFailure>,&dyn dq_analyze::native_pattern::Provider)->Result<T,dq_analyze::captured_reactive_reads::Failure>)->std::io::Result<T>{use crate::policy_request::{AnalysisContext,WorkspaceAuxiliaryQuestion as Q};self.require_analysis_context(Some(AnalysisContext::OriginalAnalyze0290))?;self.require_semantic_source_encoding()?;if !matches!(self.model_preparation,Some(dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete|dm_tree::frontend::DiagnosticPreparationPurpose::OriginalAnalyzePrefix)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"utility pages require their actual complete/prefix Analyze purpose"))}let capture=self.workspace_semantic_inputs(Q::SemReads)?;if self.source_mapping.as_ref().is_none_or(|mapping|!Arc::ptr_eq(mapping,capture.policy().mapping()))||!capture.policy().archive().matches_tree(&self.tree){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"utility page mapping/tree differs"))}let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("utility pages workspace absent"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("utility pages host absent"))?;let guard=self.workspace_native_read()?;workspace.require_scope(&guard)?;queries.with_original_utility_pages(workspace,&guard,capture,consume)}
+}
+
+impl QueryAttempt{
+ /// Actual semantic-only child over the SAME Original subject. The existing
+ /// Checker staging API remains strict and never accepts a prefix from here.
+ pub(crate) fn stage_semantic_only_utility(&mut self,frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,queries:Arc<crate::query_db::QueryDb>,policy:Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>,subject:Arc<crate::input_snapshot::OriginalAnalysisSubject>)->std::io::Result<()>{
+  use dm_tree::frontend::DiagnosticPreparationPurpose as P;
+  if !matches!(frontend.preparation_purpose(),P::OriginalSharedComplete|P::OriginalAnalyzePrefix)||policy.original_analysis_subject().is_none_or(|actual|!Arc::ptr_eq(actual,&subject)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic-only utility differs from actual complete/prefix subject"))}
+  subject.bind_frontend(frontend)?;
+  let mut snapshot=SourceSnapshot::capture_diagnostic(frontend,queries,policy)?;
+  snapshot.analysis_subject=Some(subject);
+  snapshot.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290))?;
+  self.pending_source=None;self.pending_workspace=None;self.pending_diagnostic=Some(snapshot);Ok(())
+ }
+}
+impl SourceSnapshot{
+ /// No interpreted configuration or Workspace policy fact is created. The
+ /// callback gets only actual semantic capture and SAME paid operation work.
+ pub(crate) fn with_semantic_only_utility_model<T>(&self,root:&std::path::Path,consume:impl FnOnce(&dm_analysis::policy_inputs::PolicyInputs,&std::path::Path,&Arc<dq_analyze::captured_generator_budget::Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork,&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::OriginalBodySyntaxProduct>,dm_tree::frontend::BodySyntaxFailure>)->Result<T,dq_analyze::captured_reactive_reads::Failure>)->Result<T,Box<dyn std::error::Error>>{
+  self.with_semantic_only_utility_model_using(root,false,|inputs,root,budget,work,body,_|consume(inputs,root,budget,work,body))
+ }
+ /// Same purpose/current owner, with a borrowed regex lender issued INSIDE
+ /// the same held source-ledger loan. No nested raw gate or config capture.
+ pub(crate) fn with_semantic_only_utility_patterns<T>(&self,root:&std::path::Path,consume:impl FnOnce(&dm_analysis::policy_inputs::PolicyInputs,&std::path::Path,&Arc<dq_analyze::captured_generator_budget::Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork,&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::OriginalBodySyntaxProduct>,dm_tree::frontend::BodySyntaxFailure>,&dyn dq_analyze::native_pattern::Provider)->Result<T,dq_analyze::captured_reactive_reads::Failure>)->Result<T,Box<dyn std::error::Error>>{
+  self.with_semantic_only_utility_model_using(root,true,|inputs,root,budget,work,body,patterns|{
+   let patterns=patterns.ok_or_else(||dq_analyze::captured_reactive_reads::Failure::Unsupported("semantic-only scoped pattern provider absent".into()))?;
+   consume(inputs,root,budget,work,body,patterns)
+  })
+ }
+ pub(crate) fn with_semantic_only_utility_model_using<T>(&self,root:&std::path::Path,patterns:bool,consume:impl FnOnce(&dm_analysis::policy_inputs::PolicyInputs,&std::path::Path,&Arc<dq_analyze::captured_generator_budget::Budget>,&dyn dm_preprocess::source_arena_credit::SourceArenaWork,&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::OriginalBodySyntaxProduct>,dm_tree::frontend::BodySyntaxFailure>,Option<&dyn dq_analyze::native_pattern::Provider>)->Result<T,dq_analyze::captured_reactive_reads::Failure>)->Result<T,Box<dyn std::error::Error>>{
+  use dq_analyze::captured_reactive_reads::Failure;use crate::input_snapshot::RecordedPolicySourceLender;
+  self.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290))?;self.require_semantic_source_encoding()?;
+  if !matches!(self.model_preparation,Some(dm_tree::frontend::DiagnosticPreparationPurpose::OriginalSharedComplete|dm_tree::frontend::DiagnosticPreparationPurpose::OriginalAnalyzePrefix)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic-only utility requires its actual complete or historical Analyze-prefix purpose").into())}
+  if self.native_workspace.is_some()||self.policy_role!=SnapshotPolicyRole::ExplicitSubset||self.analysis_subject.as_ref().is_none_or(|actual|!actual.matches_workspace_root(root)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic-only utility cannot borrow a workspace/foreign root").into())}
+  let capture=self.native_policy_inputs.as_ref().ok_or_else(||std::io::Error::other("semantic-only actual capture absent"))?;
+  if self.source_mapping.as_ref().is_none_or(|actual|!Arc::ptr_eq(actual,capture.policy().mapping()))||!capture.policy().archive().matches_tree(&self.tree){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic-only utility mapping/tree owner differs").into())}
+  if capture.policy().files().any(|file|file.role()==dm_analysis::policy_inputs::PolicyRole::Configuration){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic-only utility cannot lend interpreted configuration inputs").into())}
+  let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("semantic-only actual native host absent"))?;
+  let current=||crate::request_runner::runner_freshness::require_native_callback_inputs_current(capture.facts());
+  current()?;let mut consume=Some(consume);let mut pending=None;
+  let resource=queries.with_baseline_input_refresh(|budget,lender|{
+   let mut visit=|work:&dyn dm_preprocess::source_arena_credit::SourceArenaWork,provider:Option<&dyn dq_analyze::native_pattern::Provider>|{
+    let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>|dm_tree::frontend::BodySyntaxQueries::syntax_product_checked(queries.as_ref(),input);
+    let call=consume.take().ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic-only consumer repeated"))?;
+    pending=Some(call(capture.policy(),root,budget,work,&body,provider));
+    if pending.as_ref().is_some_and(Result::is_err){Err(std::io::ErrorKind::Other.into())}else{Ok(())}
+   };
+   if patterns{lender.with_held_native_patterns(queries,&mut|work,provider|visit(work,Some(provider)))}
+   else{lender.with_held_source_work(queries,&mut|work: &dyn dm_preprocess::source_arena_credit::SourceArenaWork|visit(work,None))}
+  });
+  let value=match pending{Some(Err(Failure::Operational(first)))=>return Err(first.into()),Some(Err(Failure::Unsupported(message)))=>return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,message).into()),Some(Ok(value))=>{resource?;value},None=>{resource?;return Err(std::io::Error::other("semantic-only resource loan was not visited").into())}};
+  current()?;Ok(value)
+ }
+}
+
+impl SourceSnapshot{pub(crate)fn matches_original_utility_root(&self,root:&std::path::Path)->bool{self.analysis_subject.as_ref().is_some_and(|actual|actual.matches_workspace_root(root))}}

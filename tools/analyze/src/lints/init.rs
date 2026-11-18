@@ -176,8 +176,8 @@ impl Init {
 
     /// One definition's sites: the header (its ALLOW(init/CODE) keep) and, for an Initialize(), its body's world reads.
     fn judge_def(&self,f:&SourceFile,lines:&[&str],number:usize,kind:Def,owner:&str,out:&mut Sink){
-        struct Legacy<'a>{file:&'a SourceFile,sink:&'a mut Sink}
-        impl crate::init_policy::Output<std::convert::Infallible> for Legacy<'_>{fn site(&mut self,rule:&'static str,line:usize,message:String,identity:String)->Result<(),std::convert::Infallible>{self.sink.site_decl(rule,&self.file.rel,line,message,identity);Ok(())}fn allowed(&mut self,lines:&[&str],line:usize)->Result<bool,std::convert::Infallible>{Ok(allowed_in(self.sink,self.file,lines,line,"init"))}}
+        struct Legacy<'a,'patterns>{file:&'a SourceFile,sink:&'a mut Sink<'patterns>}
+        impl crate::init_policy::Output<std::convert::Infallible> for Legacy<'_,'_>{fn site(&mut self,rule:&'static str,line:usize,message:String,identity:String)->Result<(),std::convert::Infallible>{self.sink.site_decl(rule,&self.file.rel,line,message,identity);Ok(())}fn allowed(&mut self,lines:&[&str],line:usize)->Result<bool,std::convert::Infallible>{Ok(allowed_in(self.sink,self.file,lines,line,"init"))}}
         crate::init_policy::judge_definition_using(lines,number,kind,owner,&mut crate::key_policy_control::Compatibility,&mut Legacy{file:f,sink:out}).unwrap_or_else(|never|match never{})
     }
 

@@ -29,7 +29,7 @@ impl<'a> BorrowedKeys<'a>{
    for row in &rows.markers{markers.push(Marker{name:&row.name,rel:&row.rel,line:row.line,body:&row.body,args:&row.args,body_offset:row.body_offset,line_starts:&row.line_starts});}
    let input=ScanInput{keys:Input{markers:&markers,entry_ops:&rows.entry_ops},defines:&rows.defines,key_refs:&rows.key_refs,bad_sources:&rows.bad_sources};
    let scope=self.raw.scopes.for_lint("sem/keys","sem");
-   let cx=Cx{tree:&self.raw.tree,meta:crate::keys_policy::metadata(),scope:&scope};
+   let cx=Cx{ fixture:None,tree:&self.raw.tree,meta:crate::keys_policy::metadata(),scope:&scope};
    let headroom=remaining_bytes.saturating_sub(budget.used());
    if headroom<1024{return Err(operational("keys result metadata admission refused"))}
    // Partition remaining admission before either family allocates. The sink

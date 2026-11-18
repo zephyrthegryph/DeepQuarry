@@ -6,6 +6,7 @@
 //! `code/__defines/om.dm` (the lint's exempt prefixes in `lint_scopes.toml`) fails unless the line
 //! carries `// ALLOW(engine_internal): <reason>`. No baseline.
 
+use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
@@ -32,14 +33,15 @@ impl Lint for EngineInternal {
         &META
     }
 
-    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
+    fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
         // The Python skipped a file with no `_om_` in it before splitting lines.
         if !f.text().contains("_om_") {
             return;
         }
         for (number, line) in f.raw().numbered() {
             let code = before_slashes(line);
-            if let Some(m) = pat!(r"(?<![\w])_om_\w+").find(code) {
+            if let Some(m) = fixture.pattern(r"(?<![\w])_om_\w+",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"(?<![\w])_om_\w+")).find(code) {
                 if !out.allowed(f, number, "engine_internal") {
                     out.site_msg("internal", number, format!("{} is internal to the OM scheduler: use om_after / om_deadline / om_task_*", m.as_str()));
                 }
