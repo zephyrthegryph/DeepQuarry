@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscadd: "Station Wiki: a page for every object placed on the station, sold by a vendor, cooked, crafted or built, with its recipe, where to find it, its size, damage and power draw."
+  - rscadd: "Station Wiki: pages for every gas, material and plant, read from the game's own data, and guides for ore processing, botany, cooking and materials."
+  - bugfix: "Station Wiki: supply pack prices are shown in Thalers (the real order price), not legacy points; the outdated chef recipe book is no longer filed."

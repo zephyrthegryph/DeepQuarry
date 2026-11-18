@@ -6,6 +6,7 @@
 
 /obj/machinery/mineral/processing_unit_console
 	name = "production machine console"
+	desc = "Sets what the material processor does with each ore and shows the ore it holds."
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "console"
 	layer = ABOVE_WINDOW_LAYER
@@ -197,6 +198,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 
 /obj/machinery/mineral/processing_unit
 	name = "material processor" //This isn't actually a goddamn furnace, we're in space and it's processing platinum and flammable phoron...
+	desc = "Takes ore in from its input side and smelts, compresses or alloys it into sheets as its console is set, passing them out its output side."
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "furnace"
 	density = TRUE

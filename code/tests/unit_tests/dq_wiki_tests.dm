@@ -137,7 +137,9 @@
 			continue
 		count++
 		var/list/article = index[id]
-		if(!wiki_catalogue_description(article["body_key"]))
+		var/list/sources = GLOBAL_TABLE_GET(wiki_catalogue_sources_table)
+		// Designed and ordered things are held to a description each; things only placed, sold or made are dq_wiki_coverage's ratchet.
+		if((sources["designs"][article["body_key"]] || sources["packs"][article["body_key"]]) && !wiki_catalogue_description(article["body_key"]))
 			missing += "[article["body_key"]]"
 		var/list/parts = splittext(article["path"], "/")
 		TEST_ASSERT(parts[1] == "Uncategorised" || (length(parts) >= 3 && parts[2] == "Catalogue"), "[id] is filed at [article["path"]]")

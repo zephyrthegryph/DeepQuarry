@@ -1,5 +1,6 @@
 /obj/machinery/embedded_controller
 	name = "Embedded Controller"
+	desc = "A wall panel that runs an airlock or docking port: it seals the doors and cycles the air between them."
 	layer = ABOVE_WINDOW_LAYER
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
