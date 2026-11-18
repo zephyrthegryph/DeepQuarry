@@ -75,6 +75,8 @@ export type DockAction =
   | { type: 'activate'; id: string }
   | { type: 'collapse'; group: string; collapsed: boolean }
   | { type: 'resize'; group: string; height: number }
+  /** A docked window's content asks for this body height (auto-fit): taken only while the player has not sized the entry. */
+  | { type: 'fit'; group: string; height: number }
   /** A popped-out window's native geometry changed (physical px): kept with its placement, apart from its docked height. */
   | {
       type: 'floatGeometry';
@@ -466,6 +468,13 @@ function reduce(state: DockState, action: DockAction): DockState {
         height: clampHeight(action.height),
         sized: true,
       }));
+    case 'fit': {
+      const g = state.groups.find((x) => x.id === action.group);
+      const height = clampHeight(action.height);
+      // The same state when nothing changes: a fit that settles must not redraw or save the column.
+      if (!g || g.sized || g.height === height) return state;
+      return mapGroup(state, action.group, (x) => ({ ...x, height }));
+    }
     case 'boundary': {
       // A pure transfer between the two entries either side of the boundary. The filling entry (the chat) is one of them only by
       // taking what the other gives up: its height is never stored, and no other entry changes.

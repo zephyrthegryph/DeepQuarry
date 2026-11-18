@@ -25,7 +25,7 @@ type Data = {
 };
 
 export const NtosWindow = (props) => {
-  const { title, width = 575, height = 700, children } = props;
+  const { title, width = 575, height = 700, autoFit, children } = props;
   const { act, data } = useBackend<Data>();
   const {
     PC_device_theme,
@@ -39,7 +39,13 @@ export const NtosWindow = (props) => {
     PC_showexitprogram,
   } = data;
   return (
-    <Window title={title} width={width} height={height} theme={PC_device_theme}>
+    <Window
+      title={title}
+      width={width}
+      height={height}
+      autoFit={autoFit}
+      theme={PC_device_theme}
+    >
       <div className="NtosWindow">
         <div className="NtosWindow__header NtosHeader">
           <div className="NtosHeader__left">

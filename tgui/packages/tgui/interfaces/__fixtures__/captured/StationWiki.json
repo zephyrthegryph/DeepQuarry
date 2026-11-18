@@ -91,6 +91,18 @@
 			"The material card: six numbers that decide how anything made of a material behaves."
 		],
 		[
+			"guide/security/basics",
+			"Security equipment",
+			"Security/Guides",
+			"Records, cameras, the brig, restraints and where Security keeps its gear."
+		],
+		[
+			"guide/exploration/expeditions",
+			"Going on an expedition",
+			"Exploration/Guides",
+			"Taking a contract, flying to the site, finishing the objectives and getting paid."
+		],
+		[
 			"home",
 			"Station Wiki",
 			"Welcome",
@@ -40849,6 +40861,606 @@
 			""
 		],
 		[
+			"cat/mecha/combat",
+			"Mecha",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/durand",
+			"Durand",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/durand/old",
+			"Durand",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/gorilla",
+			"Sd.Kfz. 269 Mechakampfwagen Gorilla Ausf. A",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/gygax",
+			"Gygax",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/gygax/serenity",
+			"Serenity",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/gygax/old",
+			"Gygax",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/marauder",
+			"Marauder",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/marauder/seraph",
+			"Seraph",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/marauder/old",
+			"Marauder",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/phazon",
+			"Phazon",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/phazon/equipped",
+			"Phazon",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/phazon/janus",
+			"Phazon Prototype Janus Class",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/phazon/old",
+			"Phazon",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/phazon/scree",
+			"Scuttlebug",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/scarab",
+			"Scarab",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/hades",
+			"The Hades Prototype",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter",
+			"Delete me, nerd!!",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter/gunpod",
+			"Gunpod",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter/gunpod/loaded",
+			"Gunpod",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter/gunpod/recon",
+			"Gunpod",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter/baron",
+			"Baron",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter/baron/loaded",
+			"Baron",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter/scoralis",
+			"Scoralis",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter/scoralis/loaded",
+			"Scoralis",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter/allure",
+			"Allure",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter/allure/loaded",
+			"Allure",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/combat/fighter/pinnace",
+			"Pinnace",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/medical",
+			"Mecha",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/medical/odysseus",
+			"Odysseus",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/medical/odysseus/old",
+			"Odysseus",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/micro",
+			"Mecha",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/micro/sec",
+			"Mecha",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/micro/sec/polecat",
+			"Polecat",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/micro/sec/weasel",
+			"Weasel",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/micro/utility",
+			"Mecha",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/micro/utility/gopher",
+			"Gopher",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/working",
+			"Mecha",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/working/hoverpod/combatpod",
+			"Combat Hoverpod",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/working/hoverpod/shuttlepod",
+			"Hover Pod",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/working/hoverpod/shuttlecraft",
+			"Shuttle",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/working/ripley",
+			"APLU \"Ripley\"",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/working/ripley/deathripley",
+			"DEATH-RIPLEY",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/working/ripley/mining/old",
+			"APLU \"Miner\"",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/working/ripley/antique",
+			"APLU \"Geiger\"",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/mecha/working/ripley/interim_air_forwarded_actor",
+			"APLU \"Ripley\"",
+			"Research/Catalogue/Exosuits",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon",
+			"Mecha weapon",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/ballistic",
+			"General ballisic weapon",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/ballistic/cannon",
+			"8.8cm KwK 47",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/ballistic/cannon/weak",
+			"8.8 cm KwK 36",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/ballistic/mortar",
+			"HEP RC 4 \"Skyfall\"",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack",
+			"General ballisic weapon",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/clusterbang",
+			"SOP-6 grenade launcher",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/frag",
+			"HEP-I 5 grenade launcher",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive",
+			"SRM-8 missile rack",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive/rigged",
+			"Jury-rigged rocket pod",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/energy",
+			"General energy weapon",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/energy/pulse",
+			"EZ-13 mk2 heavy pulse rifle",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/weapon/honker",
+			"Sound emission device",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/tool",
+			"Mecha equipment",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/tool/drill/micro",
+			"Micro Drill",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/tool/micro",
+			"Mecha equipment",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/tool/micro/orescoop",
+			"Mounted micro ore box",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/safety",
+			"KILL CLAMP",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/mecha_parts/mecha_equipment/runningboard",
+			"Hacked powered exosuit running board",
+			"Research/Catalogue/Exosuit equipment",
+			""
+		],
+		[
+			"cat/item/robot_module/drone",
+			"Drone module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/drone/mining",
+			"Miner drone module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/drone/swarm",
+			"Swarm drone module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/drone/swarm/ranged",
+			"Swarm gunner module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/drone/swarm/melee",
+			"Swarm drone module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/drone/construction",
+			"Construction drone module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot",
+			"Robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/malf",
+			"Robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/malf/lost",
+			"Lost robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/malf/gravekeeper",
+			"Gravekeeper robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/security",
+			"Security robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/security/combat",
+			"Combat robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/security/general",
+			"Security robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/standard",
+			"Standard robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/medical",
+			"Medical robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/medical/surgeon",
+			"Surgeon robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/medical/crisis",
+			"Crisis robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/syndicate",
+			"Illegal robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/syndicate/protector",
+			"Protector robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/syndicate/mechanist",
+			"Mechanist robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/syndicate/combat_medic",
+			"Combat medic robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/syndicate/ninja",
+			"Ninja robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/clerical",
+			"Service robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/clerical/butler",
+			"Service robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/clerical/general",
+			"Clerical robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/clerical/honkborg",
+			"Clown robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/engineering",
+			"Engineering robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/janitor",
+			"Janitorial robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/miner",
+			"Miner robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/research",
+			"Research module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/chound",
+			"Command robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/exploration",
+			"Exploration robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/platform",
+			"Robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/platform/explorer",
+			"Robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
+			"cat/item/robot_module/robot/platform/cargo",
+			"Robot module",
+			"Research/Catalogue/Cyborg modules",
+			""
+		],
+		[
 			"research/node/tyrian tech",
 			"Tyrian Tech",
 			"Research/Research nodes/Misc",
@@ -47417,6 +48029,6090 @@
 			"Alien weeds",
 			"Civilian/Botany/Plants",
 			""
+		],
+		[
+			"fauna/slime",
+			"Slime",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/slime/xenobio",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/purple",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/blue",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/silver",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/cerulean",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/red",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/sapphire",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/light_pink",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/rainbow",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/rainbow/kendrick",
+			"Kendrick",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/dark_blue",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/dark_purple",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/emerald",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/green",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/metal",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/orange",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/gold",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/oil",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/pink",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/pink/sana",
+			"Sana",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/ruby",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/yellow",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/amber",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/bluespace",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/sepia",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/redspace",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/dark",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/plague",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/oceanic",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/nuclear",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/dream",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/nightmare",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/xenobio/sound",
+			"Slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/dark_blue",
+			"Dark blue feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/purple",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/orange",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/blue",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/metal",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/yellow",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/dark_purple",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/silver",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/bluespace",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/ruby",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/red",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/green",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/pink",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/slime/feral/emerald",
+			"Feral slime",
+			"Creatures/Slime",
+			""
+		],
+		[
+			"fauna/animal/sif/glitterfly",
+			"Glitterfly",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/glitterfly/rare",
+			"Sparkling glitterfly",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/glitterfly/tidy",
+			"Glitterfly",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/siffet",
+			"Siffet",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/kururak",
+			"Kururak",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/kururak/leader",
+			"Kururak",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/kururak/hibernate",
+			"Kururak",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/leech",
+			"River leech",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/sakimm",
+			"Sakimm",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/sakimm/intelligent",
+			"Sakimm",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/frostfly",
+			"Frostfly",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/savik",
+			"Savik",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/tymisian",
+			"Tymisian Moth",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/diyaab",
+			"Diyaab",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/duck",
+			"Crystal-feather duck",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/fluffy",
+			"Fluffy",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/fluffy/silky",
+			"Silky",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/hooligan_crab",
+			"Hooligan crab",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/shantak",
+			"Shantak",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/shantak/leader",
+			"Big shantak",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/shantak/leader/autofollow",
+			"Big shantak",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/shantak/leader/autofollow/retaliate",
+			"Big shantak",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/shantak/retaliate",
+			"Shantak",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/sif/shantak/scruffy",
+			"Scruffy",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog",
+			"Dog",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/corgi",
+			"Corgi",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/corgi/puppy",
+			"Corgi puppy",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/corgi/puppy/Bockscar",
+			"Bockscar",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/corgi/puppy/wiggle",
+			"Mister Wiggles",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/corgi/Ian",
+			"Ian",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/corgi/Lisa",
+			"Lisa",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/corgi/narsian",
+			"Nars-Ian",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/void_puppy",
+			"Void puppy",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/void_puppy/nulle",
+			"Nulle",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/bullterrier",
+			"Bull terrier",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/tamaskan",
+			"Tamaskan",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/tamaskan/Spice",
+			"Spice",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/brittany",
+			"Brittany",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/dog/stray",
+			"Dog",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/armadillo",
+			"Armadillo",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/armadillo/torta",
+			"Torta",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/opossum",
+			"Opossum",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/opossum/poppy",
+			"Poppy the Safety Possum",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/opossum/beastmode",
+			"Opossum",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/cat/bluespace",
+			"Bluespace cat",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/cat/bread",
+			"Bread cat",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/cat/original",
+			"Original cat",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/cat/cak",
+			"Cak",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/cat/space",
+			"Space cat",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/bass",
+			"Bass",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/trout",
+			"Trout",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/salmon",
+			"Salmon",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/perch",
+			"Perch",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/pike",
+			"Pike",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/koi",
+			"Koi",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/koi/poisonous",
+			"Koi",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/javelin",
+			"Javelin",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/icebass",
+			"Glitter bass",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/rockfish",
+			"Rock-fish",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/solarfish",
+			"Sun-fin",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/murkin",
+			"Murkin",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fish/measelshark",
+			"Measel Shark",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fox",
+			"Fox",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fox/syndicate",
+			"Syndi-fox",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fox/syndicate/aipet",
+			"R3N4-ULT",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fox/renault",
+			"Renault",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/fox/beastmode",
+			"Fox",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse",
+			"Mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/jerboa",
+			"Jerboa",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/jerboa/leggy",
+			"Leggy",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/brown",
+			"Mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/brown/feivel",
+			"Feivel",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/brown/Tom",
+			"Tom",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/white",
+			"Mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/white/virology",
+			"Fleming",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/white/apple",
+			"Apple",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/gray",
+			"Mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/black",
+			"Mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/rat",
+			"Rat",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/rat/strong",
+			"Rat",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/operative",
+			"Mouse operative",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/operative/agent_cheese",
+			"Agent Cheese",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/mining",
+			"Cooper",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/beastmode",
+			"Mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/event",
+			"Mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mouse/dq_body_order_probe",
+			"Mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/tindalos",
+			"Tindalos",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/tindalos/twigs",
+			"Twigs",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mimepet",
+			"Dave",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mimepet/gregory",
+			"Gregory XXVI Esq.",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/chicken",
+			"Chicken",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/chicken/clucky",
+			"Commander Clucky",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/chick",
+			"Chick",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/cow",
+			"Cow",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/cockroach",
+			"Cockroach",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/crab",
+			"Crab",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/crab/Coffee",
+			"Coffee",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/crab/sif",
+			"Crab",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/lizard",
+			"Lizard",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/lizard/large",
+			"Lizard",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/lizard/large/defensive",
+			"Lizard",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/lizard/event",
+			"Lizard",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/yithian",
+			"Yithian",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mothroach",
+			"Mothroach",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/mothroach/bar",
+			"Mothroach bartender",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/penguin",
+			"Penguin",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/penguin/tux",
+			"Tux",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/raccoon",
+			"Raccoon",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/hare",
+			"Ice hare",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/pillbug",
+			"Fire bug",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/gaslamp",
+			"Gaslamp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/gaslamp/snow",
+			"Frostlit Lamp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/snake",
+			"Snake",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/snake/red",
+			"Snake",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/snake/python",
+			"Python",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/snake/python/noodle",
+			"Noodle",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/passive/honkpet",
+			"Hinkle",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/nurse",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/nurse/broodling",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/nurse/queen",
+			"Giant spider queen",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/nurse/queen/event",
+			"Giant spider queen",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/nurse/queen/eggless",
+			"Giant spider queen",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/nurse/eggless",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/nurse/hat",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/nurse/space",
+			"Giant space spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/carrier",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/carrier/recursive",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/carrier/event",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/lurker",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/lurker/broodling",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/lurker/space",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/broodmother",
+			"Giant spider broodmother",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/frost",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/frost/broodling",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/frost/sif",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/frost/event",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/frost/space",
+			"Giant space spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/electric",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/electric/broodling",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/electric/event",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/electric/space",
+			"Giant space spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/hunter",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/hunter/broodling",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/hunter/event",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/hunter/space",
+			"Giant space spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/pepper",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/pepper/broodling",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/pepper/space",
+			"Giant space spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/thermic",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/thermic/broodling",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/thermic/space",
+			"Giant space spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/tunneler",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/tunneler/broodling",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/tunneler/frequent",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/tunneler/fast",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/tunneler/cave",
+			"Cave spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/tunneler/space",
+			"Giant space spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/webslinger",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/webslinger/broodling",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/webslinger/event",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/webslinger/space",
+			"Giant space spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/broodling",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/event",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/ion",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/lorenzo",
+			"Lorenzo",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/phorogenic",
+			"Giant spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/giant_spider/space",
+			"Giant space spider",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/solargrub_larva",
+			"Solargrub larva",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp",
+			"Space carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/holodeck",
+			"Space carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/event",
+			"Space carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/large",
+			"Elder carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/large/huge",
+			"Great white carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/large/huge/vorny",
+			"Great white carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/large/huge/roguemines",
+			"Great white carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/large/roguemines",
+			"Elder carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/holographic",
+			"Holographic carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/puffer",
+			"Puffercarp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/station",
+			"Distant space carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/carp/roguemines",
+			"Space carp",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/bear",
+			"Space bear",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/bear/hudson",
+			"Hudson",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/bear/brown",
+			"Brown bear",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/bear/brown/beastmode",
+			"Brown bear",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/bear/roguemines",
+			"Space bear",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/goose",
+			"Goose",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/goose/white",
+			"White goose",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/goose/domesticated",
+			"Domesticated goose",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/goose/domesticated/casino",
+			"Donella",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/goose/virgo3b",
+			"Goose",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/goose/roguemines",
+			"Goose",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/space_worm",
+			"Space worm segment",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/space_worm/head",
+			"Space worm",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/space_worm/head/severed",
+			"Space worm",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/space_worm/head/short",
+			"Space worm",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/space_worm/head/long",
+			"Space worm",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/mouse_army",
+			"Mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/mouse_army/stealth",
+			"Stealth mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/mouse_army/operative",
+			"Operative mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/mouse_army/pyro",
+			"Pyro mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/mouse_army/ammo",
+			"Ammo mouse",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien",
+			"Alien hunter",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/queen",
+			"Alien queen",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/queen/empress",
+			"Alien empress",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/queen/empress/mother",
+			"Alien mother",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/queen/empress/mother/big",
+			"Alien mother",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/queen/empress/star",
+			"Alien Staticlisk",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/queen/empress/tank",
+			"Alien tankerlisk",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/drone",
+			"Alien drone",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel",
+			"Alien sentinel",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/praetorian",
+			"Alien praetorian",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/praetorian/echo",
+			"Alien Echopraetorian",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/praetorian/ion",
+			"Alien Ionic praetorian",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/praetorian/blaze",
+			"Alien blazing praetorian",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/praetorian/splat",
+			"Alien splattetorian",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/praetorian/tank",
+			"Alien Tankerling",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/praetorian/acid",
+			"Alien praetorian",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/electro",
+			"Alien Electrosentinel",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/pyro",
+			"Alien Pyrosentinel",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/cyro",
+			"Alien cryosentinel",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/sentinel/acid",
+			"Alien sentinel",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/tanky",
+			"Alien hunter",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/hunterling",
+			"Alien hunterling",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/alien/hunterlisk",
+			"Alien hunterlisk",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/bats",
+			"Space bat swarm",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/bats/cult",
+			"Space bat swarm",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/bats/cult/strong",
+			"Space bat swarm",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/bats/roguemines",
+			"Space bat swarm",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/gnat",
+			"Space gnat",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/ray",
+			"Space ray",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/shark",
+			"Space shark",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/shark/event",
+			"Space shark",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/space/tree",
+			"Pine tree",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/borer",
+			"Cortical borer",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/borer/roundstart",
+			"Cortical borer",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/borer/non_antag",
+			"Cortical borer",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/builder",
+			"Tritium ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/bronze",
+			"Bronze metal ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/copper",
+			"Copper metal ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/agate",
+			"Agate metal ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/quartz",
+			"Quartz metal ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/diamond",
+			"Diamond metal ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/verdantium",
+			"Green metal ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/uranium",
+			"Glowing metal ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/mhydro",
+			"Mhydro ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/painite",
+			"Painite metal ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/graphite",
+			"Graphite ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/silver",
+			"Silver ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/tyr/mineral_ants/gold",
+			"Gold ant",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/synx",
+			"Synx",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/synx/ai",
+			"Synx",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/synx/ai/pet",
+			"Bob",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/synx/ai/pet/clown",
+			"Inflatable Clown Synx",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/synx/ai/pet/holo",
+			"Hardlight synx",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/synx/ai/pet/debug",
+			"Syntox",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/synx/scp",
+			"Unknown",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/goat",
+			"Goat",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/animal/hyena",
+			"Hyena",
+			"Creatures/Animal",
+			""
+		],
+		[
+			"fauna/construct",
+			"Construct",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/construct/shade",
+			"Shade",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/artificer",
+			"Artificer",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/artificer/caster",
+			"Artificer",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/wraith",
+			"Wraith",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/wraith/jaunt_spam",
+			"Wraith",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/wraith/fast_jaunt",
+			"Wraith",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/juggernaut",
+			"Juggernaut",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/juggernaut/behemoth",
+			"Behemoth",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/juggernaut/behemoth/unstoppable",
+			"Behemoth",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/proteon",
+			"Proteon",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/bishop",
+			"Bishop",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/bishop/arch",
+			"Archbishop",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/cardinal",
+			"Cardinal",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/deacon",
+			"Deacon",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/harvester",
+			"Harvester",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/harvester/greater",
+			"Greater Harvester",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/laity",
+			"Laity",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/construct/priest",
+			"Priest",
+			"Creatures/Construct",
+			""
+		],
+		[
+			"fauna/vore/fluffball",
+			"Fluffball",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/leopardmander",
+			"Leopardmander",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/leopardmander/blue",
+			"Blue leopardmander",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/leopardmander/exotic",
+			"Glass-belly leopardmander",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/bigdragon",
+			"Large dragon",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/bigdragon/friendly",
+			"Large dragon",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/bigdragon/friendly/maintpred",
+			"Lesser dragon",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/teppi",
+			"Teppi",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/teppi/baby",
+			"Teppi",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/teppi/baby/cass",
+			"Teppi",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/teppi/mutant",
+			"Teppi",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/teppi/cass",
+			"Teppi",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/teppi/aronai",
+			"Teppi",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/teppi/lira",
+			"Teppi",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug",
+			"Catslug",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/horrible",
+			"Catslug",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/tulidaan",
+			"Tulidaan",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom",
+			"Catslug",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/pilotslug",
+			"Navigator Purrverick",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/spaceslug",
+			"Miros",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/spaceslug/responseslug",
+			"Emeowgency Responder",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/spaceslug/syndislug",
+			"Mercenyary",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/spaceslug/deathslug",
+			"Asset Purrtection",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/gatslug",
+			"Officer Gatslug",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/medislug",
+			"Doctor Mlemulon",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/scienceslug",
+			"Professor Nubbins",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/cargoslug",
+			"Technician Nermley",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/capslug",
+			"Captain Crumsh",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/royalslug",
+			"Ruler Purrton",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/cryptslug",
+			"Keeper Sluguloth",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/exploslug",
+			"Explorer Pawdiana",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/santaslug",
+			"Santa Claws",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/catslug/custom/engislug",
+			"Engineer O'Brimn",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/startreader",
+			"Asteroid star treader",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/startreader/cutout",
+			"Stand-up figure?",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/space_jellyfish",
+			"Space jellyfish",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/skeleton",
+			"Skeleton",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/skeleton/alt",
+			"Skeleton",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/dustjumper",
+			"Dust jumper",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/space_ghost",
+			"Space ghost",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/spooky_ghost",
+			"Space ghost",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/succlet",
+			"Succlet",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/succlet/big",
+			"Succlet",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/succlet/dark",
+			"Succlet",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/succlet/poison",
+			"Succlet",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/succlet/moss",
+			"Succlet",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/alienanimals/succlet/king",
+			"Succlet",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/cookiegirl",
+			"Cookiegirl",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolfgirl",
+			"Wolfgirl",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie",
+			"Otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/red",
+			"Feral red otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/red/chubby",
+			"Chubby red otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/red/chubby/cocoa",
+			"Cocoa",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/red/friendly",
+			"Red otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/syndicate",
+			"Commandotie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/syndicate/blackhole",
+			"Black Hole attack otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/syndicate/chubby",
+			"Chubby commandotie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/feral",
+			"Mutated feral otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/feral/chubby",
+			"Chubby mutated feral otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/friendly",
+			"Otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/friendly/chubby",
+			"Chubby otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/cotie",
+			"Tamed otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/cotie/chubby",
+			"Chubby tamed otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/cotie/phoron",
+			"Mutated otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/security",
+			"Guard otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/security/chubby",
+			"Chubby guard otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/security/phoron",
+			"Mutated guard otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/security/phoron/red",
+			"Red guard otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/otie/security/phoron/red/chubby",
+			"Chubby red guard otie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/corrupthound",
+			"Corrupt hound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/corrupthound/muffinmonster",
+			"Muffin Monster",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/corrupthound/swoopie",
+			"SWOOPIE XL",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/corrupthound/prettyboi",
+			"Corrupt corrupt hound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/corrupthound/space",
+			"Corrupt hound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/corrupthound/space/roguemines",
+			"Corrupt hound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/corrupthound/fire",
+			"Corrupt hound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/corrupthound/laser",
+			"Corrupt hound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/corrupthound/fast",
+			"Corrupt hound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/panther",
+			"Panther",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/panther/thor",
+			"Panther",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/dragon",
+			"Red dragon",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/dragon/virgo3b",
+			"Phoron dragon",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/dragon/space",
+			"Space dragon",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/dragon/gray_scaled",
+			"Gray scaled drake",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/deathclaw",
+			"Deathclaw",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/deathclaw/den",
+			"Deathclaw",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/dino",
+			"Voracious lizard",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/dino/virgo3b",
+			"Voracious lizard",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/frog",
+			"Giant frog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/frog/space",
+			"Space frog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/lizardman",
+			"Lizardman",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/mimic",
+			"Crate",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/mimic/airlock",
+			"Maintnence Access",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/mimic/closet",
+			"Old closet",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/mimic/floor",
+			"Loose wooden floor",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/mimic/floor/tile",
+			"Loose floor tiles",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/mimic/floor/plating",
+			"Loose plating",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/rat",
+			"Giant rat",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/rat/tame",
+			"Curious giant rat",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/rat/phoron",
+			"Phoron rat",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/rat/pet",
+			"Giant Rat Siblings",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/rat/event",
+			"Giant rat",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/rat/labrat",
+			"Giant lab rat",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/rat/labrat/genetics",
+			"Nibbles",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/aggressive/giant_snake",
+			"Giant snake",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blaidd",
+			"Blaidd",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blaidd/hostile",
+			"Blaidd",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/ddraig",
+			"Ddraig",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/ddraig/faster",
+			"Ddraig",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/gryphon",
+			"Gryphon",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/scrubble",
+			"Scrubble",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/solargrub",
+			"Juvenile solargrub",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI",
+			"Rift Walker",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI/gibspam",
+			"Rift Walker",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI/wendigo",
+			"Wendigo",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI/engorge",
+			"Engorge",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI/zellic",
+			"Zellic",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI/avarn",
+			"Avarn",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI/covern",
+			"Covern",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI/ira",
+			"Ira",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI/ire",
+			"Ire",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI/laxel",
+			"Laxel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demonAI/lutra",
+			"Lutra",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/candy",
+			"Candy critter",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/candy/bluecabold",
+			"Gummy kobold",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/candy/orangecabold",
+			"Gummy kobold",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/candy/purplecabold",
+			"Gummy kobold",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/candy/yellowcabold",
+			"Gummy kobold",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/candy/redcabold",
+			"Gummy kobold",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/candy/marshmellowserpent",
+			"Marshmellow serpent",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/candy/greencabold",
+			"Gummy kobold",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/candy/ouroboros",
+			"Candy critter",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/candy/peppermint",
+			"Peppermint turtle",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/spacecritter/livingice",
+			"Living icicle",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/spacecritter/livingice/iceberg",
+			"Living iceberg",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/spacecritter/radcrab",
+			"Crystaline crab",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/spacecritter/radcrab/supermattercrab",
+			"Energized crystaline crab",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/spacecritter/solarray",
+			"Solar ray",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/spacecritter/solarray/galaxyray",
+			"Galaxy ray",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/spacecritter/dreameel",
+			"Dream eel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/spacecritter/dreameel/nightmare",
+			"Dream eel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/spacecritter/gravityshell",
+			"Gravity Shell",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/spacecritter/gravityshell/cleanse",
+			"Gravity Shell",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/greatwolf",
+			"Great white wolf",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/greatwolf/black",
+			"Great black wolf",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/greatwolf/grey",
+			"Great grey wolf",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/overmap/spacewhale",
+			"Space whale",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/overmap/stardog",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/overmap/stardog/test_fur",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/fennec",
+			"Fennec",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/fennec/bridgette",
+			"Bridgette",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/fennec/huge",
+			"Fennec",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/squirrel",
+			"Squirrel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/squirrel/small",
+			"Squirrel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/squirrel/big",
+			"Squirrel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/turkeygirl",
+			"Turkeygirl",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/horse",
+			"Small horse",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/horse/unicorn",
+			"Unicorn",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/horse/unicorn/hostile",
+			"Unicorn",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/horse/unicorn/beastmode",
+			"Unicorn",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/horse/big",
+			"Horse",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/horse/kelpie",
+			"Kelpie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/ashy",
+			"Ashy",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/bat",
+			"Giant bat",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/bee",
+			"Space bumble bee",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole",
+			"Black Hole fanatic",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/shield",
+			"Black Hole bulwark",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/grotesque",
+			"Grotesque",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/ranged",
+			"Black Hole trooper",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/ranged/smg",
+			"Black Hole gunner",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/ranged/rifle",
+			"Black Hole rifleman",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/ranged/lmg",
+			"Black Hole machinegunner",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/taur",
+			"Black Hole fanatic",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/taur/shield",
+			"Black Hole heavy bulwark",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/taur/ranged",
+			"Black Hole machinegunner",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/taur/ranged/hmg",
+			"Black Hole heavy machinegunner",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole/bikers",
+			"Black Hole mechanized troopers",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole_obelisk",
+			"Black Hole Obelisk",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/blackhole_obelisk/monolith",
+			"Black Hole Monolith",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/retaliate/corrupthound/janihound",
+			"Corrupt janihound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/retaliate/corrupthound/janihound/old",
+			"Corrupt janihound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/retaliate/corrupthound/janihound/medihound",
+			"Corrupt medihound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/retaliate/corrupthound/janihound/space",
+			"Corrupt janihound",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/retaliate/lion",
+			"Lion",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/cryptdrake",
+			"Crypt drake",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/cryptdrake/albedo",
+			"Crypt drake",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/devil",
+			"Statue of temptation",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/fennix",
+			"Fennix",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/hippo",
+			"Hippo",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/jelly",
+			"Jelly blob",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia",
+			"Purple lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/bra",
+			"Purple lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/albino",
+			"Albino lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/albino/bra",
+			"Albino lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/albino/shirt",
+			"Albino lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/albino/cave",
+			"Albino cave lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/cobra",
+			"Cobra lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/cobra/bra",
+			"Cobra lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/cobra/shirt",
+			"Cobra lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/copper",
+			"Copper lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/copper/bra",
+			"Copper lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/copper/shirt",
+			"Copper lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/copper/cave",
+			"Cave lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/green",
+			"Green lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/green/bra",
+			"Green lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/green/shirt",
+			"Green lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/zebra",
+			"Zebra lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/zebra/bra",
+			"Zebra lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/zebra/shirt",
+			"Zebra lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/lamia/random",
+			"Purple lamia",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/meowl",
+			"Meowl",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/oregrub",
+			"Juvenile oregrub",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/oregrub/lava",
+			"Mature lavagrub",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/pakkun",
+			"Pakkun",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/pakkun/snapdragon",
+			"Snapdragon",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/pakkun/snapdragon/snappy",
+			"Snappy",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/pakkun/sand",
+			"Sand pakkun",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/pakkun/fire",
+			"Fire pakkun",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/pakkun/purple",
+			"Amethyst pakkun",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/rabbit",
+			"Rabbit",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/rabbit/black",
+			"Rabbit",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/rabbit/white",
+			"Rabbit",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/rabbit/white/lennie",
+			"Lennie",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/rabbit/brown",
+			"Rabbit",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/rabbit/brown/george",
+			"George",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/rabbit/killer",
+			"Rabbit",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/raptor",
+			"Raptor",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/raptor/yellow",
+			"Raptor",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/redpanda",
+			"Red panda",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/redpanda/fae",
+			"Dark wah",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/redpanda/blue",
+			"Blue wah",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/reindeer",
+			"Reindeer",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/reindeer/festive",
+			"Reindeer",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/scel",
+			"Scel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/scel/orange",
+			"Scel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/scel/blue",
+			"Scel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/scel/purple",
+			"Scel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/scel/green",
+			"Scel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/scel/red",
+			"Scel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/seagull",
+			"Seagull",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/sect_drone",
+			"Sect drone",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/sect_queen",
+			"Sect queen",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/sheep",
+			"Sheep",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/slug",
+			"Slug",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/smokestar",
+			"Strange creature",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/smokestar/drider",
+			"Strange creature",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/woof",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/woof/cass",
+			"Cass",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/woof/hostile",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/woof/hostile/melee",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/woof/hostile/ranged",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/woof/hostile/horrible",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/woof/hostile/terrible",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/woof/hostile/aweful",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/woof/hostile/aweful/melee",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/woof/hostile/aweful/ranged",
+			"Dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/sonadile",
+			"Sonadile",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/stalker",
+			"Cave stalker",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolf",
+			"Grey wolf",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolf/direwolf",
+			"Dire wolf",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolf/direwolf/syndicate",
+			"Mercenary commandoggo",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolf/direwolf/syndicate/black",
+			"Mercenary commandoggo",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolf/direwolf/dog",
+			"Large dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolf/direwolf/dog/sec",
+			"Large guard dog",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolf/direwolf/sec",
+			"Dire guard wolf",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolf/direwolf/andrews",
+			"Andrewsarchus",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolf/space",
+			"Space wolf",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolf/space/roguemines",
+			"Space wolf",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/syndicate",
+			"Mercenary commando",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/syndicate/alt1",
+			"Mercenary commando",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/syndicate/alt2",
+			"Mercenary commando",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/syndicate/alt3",
+			"Mercenary commando",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/syndicate/lmg",
+			"Mercenary commando heavy",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/syndicate/smg",
+			"Mercenary commando",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/clown",
+			"Wolftaur",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/white",
+			"Wolftaur",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/whiteclothed",
+			"Wolftaur",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/brown",
+			"Wolftaur",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/brownclothed",
+			"Wolftaur",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/black",
+			"Wolftaur",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/blackclothed",
+			"Wolftaur",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/red",
+			"Wolftaur",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/redclothed",
+			"Wolftaur",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/wolftaur/dark",
+			"Wolftaur",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/turkey",
+			"Turkey",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/vampire/count",
+			"Vampire",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/vampire/countess",
+			"Vampire",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/vampire/count_nude",
+			"Vampire",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/vampire/countess_nude",
+			"Vampire",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/vampire/queen",
+			"Vampire",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/vore_hostile/abyss_lurker",
+			"Abyss lurker",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/vore_hostile/leaper",
+			"Abyss leaper",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/vore_hostile/gelatinous_cube",
+			"Gelatinous cube",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/boss_jellyfish",
+			"Expirmental jellyfish",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/weretiger",
+			"Weretiger",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/xeno_defanged",
+			"Defanged xenomorph",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/xeyakin",
+			"Xeyakin",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demon",
+			"Rift Walker",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demon/wendigo",
+			"Wendigo",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demon/engorge",
+			"Engorge",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demon/zellic",
+			"Zellic",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demon/avarn",
+			"Avarn",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demon/covern",
+			"Covern",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demon/ira",
+			"Ira",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demon/ire",
+			"Ire",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demon/laxel",
+			"Laxel",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/demon/lutra",
+			"Lutra",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/morph",
+			"Morph",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/morph/dominated_prey",
+			"Subservient node",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/pitcher_plant",
+			"Pitcher plant",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/mantrap",
+			"Mantrap",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/vore/pitcher",
+			"Pitcher plant",
+			"Creatures/Vore",
+			""
+		],
+		[
+			"fauna/glitch_boss_fake",
+			"CLICK ME!!!",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/glitch_boss_fake/strong",
+			"CLICK ME!!!",
+			"Creatures/Glitch boss fake",
+			""
+		],
+		[
+			"fauna/glitch_boss_fake/strong/interim_always_respawn",
+			"CLICK ME!!!",
+			"Creatures/Glitch boss fake",
+			""
+		],
+		[
+			"fauna/glitch_boss_fake/interim_no_respawn",
+			"CLICK ME!!!",
+			"Creatures/Glitch boss fake",
+			""
+		],
+		[
+			"fauna/mechanical/viscerator",
+			"Viscerator",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/viscerator/mercenary",
+			"Viscerator",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/viscerator/raider",
+			"Viscerator",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/viscerator/station",
+			"Viscerator",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/viscerator/piercing",
+			"Viscerator",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/battle_top",
+			"Astral collective cryo top",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/tankyboss/crystal_boss",
+			"Crystalized expirment",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/tankyboss/crystal_boss/ufo",
+			"Astral collective deflection saucer",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/janus",
+			"Astral collective janus",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/hivebot/tyr",
+			"Ai control center",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/hivebot/nanoweavetower",
+			"Ai control center",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/bomb_mauler",
+			"Damaged mauler",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/occult",
+			"Occult Construct",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/tyrbosses/ai_cores/sec_core",
+			"Defense core",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/tyrbosses/ai_cores/engi_core",
+			"Power core",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/tyrbosses/ai_cores/ark_core",
+			"Master core",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/tyrbosses/expirments/slime",
+			"Farm expirment",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/eclipse/tyrbosses/expirments/barrier",
+			"Spacial expirment",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/imperion",
+			"Imperion",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/imperion/phase1",
+			"Imperion",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/imperion/phase2",
+			"Imperion",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/imperion/phase4",
+			"Imperion",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/imperion/phase5",
+			"Imperion",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/imperion/phase3",
+			"Imperion",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/vistor/vistorblue",
+			"Vistor blue",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/vistor/vistorblue/shielded",
+			"Vistor blue",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/vistor/vistorgreen",
+			"Vistor green",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/vistor/vistorpurple",
+			"Vistor purple",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/vistor/vistoryellow",
+			"Vistor yellow",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/vistor/vistororange",
+			"Vistor orange?",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/forgotten",
+			"Forgotten",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/combat/gygax/dark/advanced/blackhole",
+			"Singularity gygax",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mecha/combat/durand/blackhole",
+			"Singularity vulture",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mining_drone",
+			"Mining drone",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/mining_drone/scavenger",
+			"Scavenger drone",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/ward",
+			"Ward",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/ward/monitor",
+			"Ward",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/ward/monitor/syndicate",
+			"Ward",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/ward/monitor/crew",
+			"Ward",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot",
+			"Hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/support",
+			"Hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/support/commander",
+			"Commander hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/support/commander/autofollow",
+			"Commander hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/support/logistics",
+			"Logistics hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/support/harry",
+			"Harry the hivelessbot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/tank",
+			"Hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/tank/meatshield",
+			"Bulky hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/tank/armored",
+			"Armored hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/tank/armored/anti_melee",
+			"Riot hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/tank/armored/anti_bullet",
+			"Bulletproof hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/tank/armored/anti_laser",
+			"Ablative hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/precusor",
+			"Precursor Hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/precusor/chrono",
+			"Advanced Precursor Hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/precusor/machinegun",
+			"Precursor Hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/precusor/laser",
+			"Precursor Hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/precusor/lobber",
+			"Precursor Hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/nanoevent",
+			"Strange hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/nanoevent/bright_green",
+			"Nanoweave infantry hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/nanoevent/cyan",
+			"Nanoweave cracker hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/nanoevent/pink",
+			"Nanoweave blasters hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/nanoevent/yellow",
+			"Nanoweave barrier hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/nanoevent/orange",
+			"Nanoweave artillery hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/swarm",
+			"Swarm hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage",
+			"Hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/basic",
+			"Ranged hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/rapid",
+			"Rapid hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/laser",
+			"Laser hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/ion",
+			"Ionic hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/strong",
+			"Strong hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/strong/guard",
+			"Guard hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/dot",
+			"Ember hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/backline",
+			"Backline hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/siege",
+			"Siege engine hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/siege/emp",
+			"Ionic artillery hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/siege/radiation",
+			"Desolator hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/siege/fragmentation",
+			"Anti-personnel artillery hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/ranged_damage/declone",
+			"Irradiating hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/tyr",
+			"Hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/tyr/swarm",
+			"Replicating swarmer",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/tyr/meteor",
+			"Repair drone",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/hivebot/eclipse",
+			"Repurposed hivebot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/corrupt_maint_drone",
+			"Corrupt Maintenance Drone",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/infectionbot",
+			"Strange robot",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/combat_drone",
+			"Combat drone",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/combat_drone/melee",
+			"Combat drone",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/combat_drone/lesser",
+			"Combat drone",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/combat_drone/lesser/aerostat",
+			"Combat drone",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/mechanical/combat_drone/event",
+			"Combat drone",
+			"Creatures/Mechanical",
+			""
+		],
+		[
+			"fauna/vr",
+			"Vr creation",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/vr/alchemistbee",
+			"Large hardlight creature",
+			"Creatures/Vr",
+			""
+		],
+		[
+			"fauna/vr/firewiz",
+			"Hardlight creation fire",
+			"Creatures/Vr",
+			""
+		],
+		[
+			"fauna/vr/poisonwiz",
+			"Hardlight creation poison",
+			"Creatures/Vr",
+			""
+		],
+		[
+			"fauna/vr/lightingwiz",
+			"Hardlight creation lighting",
+			"Creatures/Vr",
+			""
+		],
+		[
+			"fauna/vr/frostwiz",
+			"Hardlight creation frost",
+			"Creatures/Vr",
+			""
+		],
+		[
+			"fauna/vr/doomknight",
+			"Hardlight creation doomknight",
+			"Creatures/Vr",
+			""
+		],
+		[
+			"fauna/glitch_boss",
+			"CLICK ME!!!",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/metroid",
+			"Metroid",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/metroid/juvenile",
+			"Metroid",
+			"Creatures/Metroid",
+			""
+		],
+		[
+			"fauna/metroid/juvenile/baby",
+			"Baby metroid",
+			"Creatures/Metroid",
+			""
+		],
+		[
+			"fauna/metroid/juvenile/super",
+			"Super metroid",
+			"Creatures/Metroid",
+			""
+		],
+		[
+			"fauna/metroid/juvenile/alpha",
+			"Alpha metroid",
+			"Creatures/Metroid",
+			""
+		],
+		[
+			"fauna/metroid/juvenile/gamma",
+			"Gamma metroid",
+			"Creatures/Metroid",
+			""
+		],
+		[
+			"fauna/metroid/juvenile/zeta",
+			"Zeta metroid",
+			"Creatures/Metroid",
+			""
+		],
+		[
+			"fauna/metroid/juvenile/omega",
+			"Omega metroid",
+			"Creatures/Metroid",
+			""
+		],
+		[
+			"fauna/metroid/juvenile/queen",
+			"Queen metroid",
+			"Creatures/Metroid",
+			""
+		],
+		[
+			"fauna/metroid/jellybrig",
+			"Jellybrig",
+			"Creatures/Metroid",
+			""
+		],
+		[
+			"fauna/metroid/mine",
+			"Mochtroid",
+			"Creatures/Metroid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective",
+			"Astral Collective Unit",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/soul",
+			"Astral Collective Soulspeaker",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/soul/shield_projector",
+			"Astral Collective Soulspeaker",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/soul/spear_bearer",
+			"Astral Collective Soulspeaker",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/purity",
+			"Astral Collective Purity",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/ranged",
+			"Astral Collective Unit",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/ranged/noodle",
+			"Astral Collective Unit",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/ranged/taur",
+			"Astral Collective Unit",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/ranged/tesh",
+			"Astral Collective Unit",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/ranged/wolf",
+			"Astral Collective Unit",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/ranged/lizard",
+			"Astral Collective Unit",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/ranged/zaddat",
+			"Astral Collective Unit",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/body",
+			"Astral Collective Enforcement",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/body/dagger",
+			"Astral Collective Enforcement",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/body/juggernaught",
+			"Astral Collective Enforcement",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/mind",
+			"Astral Collective Researcher",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/mind/gravity",
+			"Astral Collective Researcher",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/astral_collective/mind/fire",
+			"Astral Collective Researcher",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/clown",
+			"Clown",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/clown/clown",
+			"Clown",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/magus",
+			"Blood Magus",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/magus/rift",
+			"Rift Magus",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/human",
+			"Cultist",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/human/bloodjaunt",
+			"Cultist",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/human/bloodjaunt/fireball",
+			"Burning Mage",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/hunter",
+			"Blood Hunter",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/hunter/surt",
+			"Itinerant Blood Hunter",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/initiate",
+			"Blood Intiate",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/lizard",
+			"Cultist",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/noodle",
+			"Converted",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/caster",
+			"Blood Mage",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/castertesh",
+			"Teshari Mage",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/tesh",
+			"Cultist",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/cultist/elite",
+			"Elite Cultist",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate",
+			"Pirate",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/armored",
+			"Armored Pirate",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/machete",
+			"Pirate Brush Cutter",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/machete/armored",
+			"Armored Brush Cutter",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/las",
+			"Pirate Duelist",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/las/armored",
+			"Armored Duelist",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/shield",
+			"Pirate Buckler",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/shield/armored",
+			"Armored Buckler",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/shield/machete",
+			"Pirate Sword and Boarder",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/shield/machete/armored",
+			"Armored Sword and Boarder",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/ranged",
+			"Pirate Pistolier",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/ranged/armored",
+			"Armored Pistolier",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/ranged/shotgun",
+			"Pirate Blunderbuster",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/ranged/shotgun/armored",
+			"Armored Blunderbuster",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/ranged/handcannon",
+			"Pirate Handcannon",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/ranged/handcannon/armored",
+			"Armored Handcannon",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/mate",
+			"First Mate",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/mate/ranged",
+			"Mate Pistolier",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/mate/ranged/bosun",
+			"Bosun",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/mate/ranged/shotgun",
+			"Mate Blunderbuster",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/mate/ranged/rifle",
+			"Mate Marksman",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/pirate/captain",
+			"Pirate Captain",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/melee",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/melee/sword",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/melee/sword/space",
+			"Mercenary commando",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/melee/sword/poi",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/melee/sword/poi/guard_limit",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/melee/poi",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/melee/poi/guard_limit",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/smg",
+			"Mercenary soldier",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/smg/sol",
+			"Mercenary soldier",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/smg/poi",
+			"Mercenary soldier",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/smg/poi/guard_limit",
+			"Mercenary soldier",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/rifle",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/rifle/mag",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/rifle/mag/poi",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/rifle/mag/poi/guard_limit",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/rifle/poi",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/rifle/poi/guard_limit",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/laser",
+			"Mercenary marksman",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/laser/poi",
+			"Mercenary marksman",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/laser/poi/guard_limit",
+			"Mercenary marksman",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/ionrifle",
+			"Mercenary anti-technical",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/ionrifle/poi",
+			"Mercenary anti-technical",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/ionrifle/poi/guard_limit",
+			"Mercenary anti-technical",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/grenadier",
+			"Mercenary grenadier",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/grenadier/poi",
+			"Mercenary grenadier",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/grenadier/poi/guard_limit",
+			"Mercenary grenadier",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/technician",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/technician/poi",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/technician/poi/guard_limit",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/sniper",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/sniper/guard_limit",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/sniper/blackhole",
+			"Black Hole sniper",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/sniper/blackhole/rocket",
+			"Black Hole anti tank",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/garand",
+			"Mercenary rifleman",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/deagle",
+			"Mercenary officer",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/space",
+			"Armored mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/space/shotgun",
+			"Mercenary tactical",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/space/shotgun/auto",
+			"Mercenary sweeper",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/space/heavy",
+			"Mercenary heavy gunner",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/space/tommylas",
+			"Mercenary light burster",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/space/fal",
+			"Mercenary commando",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/space/suppressor",
+			"Mercenary suppressor",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/space/suppressor/elite",
+			"Mercenary elite suppressor",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/poi",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/ranged/poi/guard_limit",
+			"Mercenary",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/voxpirate",
+			"Vox mannequin",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/voxpirate/pirate",
+			"Vox pirate",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/voxpirate/boarder",
+			"Vox mannequin",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/voxpirate/boarder/ranged",
+			"Vox ranged boarder",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/voxpirate/technician",
+			"Vox salvage technician",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/voxpirate/ranged",
+			"Vox mannequin",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/voxpirate/ranged/suppressor",
+			"Vox suppressor",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/merc/voxpirate/ranged/captain",
+			"Vox pirate captain",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/russian",
+			"Russian",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/humanoid/russian/ranged",
+			"Russian",
+			"Creatures/Humanoid",
+			""
+		],
+		[
+			"fauna/ysbryd",
+			"Ysbryd",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/ysbryd/decorated",
+			"Ysbryd",
+			"Creatures/Ysbryd",
+			""
+		],
+		[
+			"fauna/clockwork",
+			"Clockwork Marauder",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/clockwork/fluff",
+			"Clockwork Marauder",
+			"Creatures/Clockwork",
+			""
+		],
+		[
+			"fauna/clockwork/fluff/Ignis",
+			"Ignis",
+			"Creatures/Clockwork",
+			""
+		],
+		[
+			"fauna/blob/spore",
+			"Blob spore",
+			"Creatures/Blob",
+			""
+		],
+		[
+			"fauna/blob/spore/infesting",
+			"Infesting blob spore",
+			"Creatures/Blob",
+			""
+		],
+		[
+			"fauna/blob/spore/weak",
+			"Fragile blob spore",
+			"Creatures/Blob",
+			""
+		],
+		[
+			"fauna/homunculus",
+			"Homunculus",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/homunculus/evil",
+			"Homunculus",
+			"Creatures/Homunculus",
+			""
+		],
+		[
+			"fauna/fleshtaker",
+			"Fleshtaker",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/xeno_ch/hunter",
+			"Xenomorph hunter",
+			"Creatures/Xeno ch",
+			""
+		],
+		[
+			"fauna/xeno_ch/sentinel",
+			"Xenomorph sentinel",
+			"Creatures/Xeno ch",
+			""
+		],
+		[
+			"fauna/xeno_ch/queen",
+			"Xenomorph queen",
+			"Creatures/Xeno ch",
+			""
+		],
+		[
+			"fauna/xeno_ch/queen/maid",
+			"Xenomorph maid queen",
+			"Creatures/Xeno ch",
+			""
+		],
+		[
+			"fauna/vox/armalis",
+			"Serpentine alien",
+			"Creatures/Vox",
+			""
+		],
+		[
+			"fauna/horror/bradley",
+			"Bradley",
+			"Creatures/Horror",
+			""
+		],
+		[
+			"fauna/horror/Eddy",
+			"???",
+			"Creatures/Horror",
+			""
+		],
+		[
+			"fauna/horror/Master",
+			"Dr. Helix",
+			"Creatures/Horror",
+			""
+		],
+		[
+			"fauna/horror/Master/aerostat",
+			"Dr. Helix",
+			"Creatures/Horror",
+			""
+		],
+		[
+			"fauna/horror/Sally",
+			"???",
+			"Creatures/Horror",
+			""
+		],
+		[
+			"fauna/horror/BigTim",
+			"Shitty Tim",
+			"Creatures/Horror",
+			""
+		],
+		[
+			"fauna/horror/Smiley",
+			"???",
+			"Creatures/Horror",
+			""
+		],
+		[
+			"fauna/horror/Steve",
+			"???",
+			"Creatures/Horror",
+			""
+		],
+		[
+			"fauna/horror/TinyTim",
+			"???",
+			"Creatures/Horror",
+			""
+		],
+		[
+			"fauna/horror/Willy",
+			"???",
+			"Creatures/Horror",
+			""
+		],
+		[
+			"fauna/creature",
+			"Creature",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/creature/strong",
+			"Creature",
+			"Creatures/Creature",
+			""
+		],
+		[
+			"fauna/creature/cult",
+			"Creature",
+			"Creatures/Creature",
+			""
+		],
+		[
+			"fauna/creature/cult/strong",
+			"Creature",
+			"Creatures/Creature",
+			""
+		],
+		[
+			"fauna/faithless",
+			"Faithless",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/faithless/strong",
+			"Faithless",
+			"Creatures/Faithless",
+			""
+		],
+		[
+			"fauna/faithless/cult",
+			"Faithless",
+			"Creatures/Faithless",
+			""
+		],
+		[
+			"fauna/faithless/cult/strong",
+			"Faithless",
+			"Creatures/Faithless",
+			""
+		],
+		[
+			"fauna/tomato",
+			"Tomato",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/clowns/big/normal",
+			"Clown",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/honkmunculus",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/cluwne",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/tunnelclown",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/sentinel",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/punished",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/thicc",
+			"A Clown...",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/perm",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/wide",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/thin",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/hulk",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/longface",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/giggles",
+			"A Giggles?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/destroyer",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/chlown",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/scary",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/flesh",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/clowns",
+			"Definitely a singular clown",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/mutant",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/blob",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/mayor",
+			"A clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/honkling",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/anormal",
+			"Clown",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/honkmunculus",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/cluwne",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/tunnelclown",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/sentinel",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/punished",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/thicc",
+			"A Clown...",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/perm",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/wide",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/thin",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/hulk",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/longface",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/giggles",
+			"A Giggles?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/destroyer",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/chlown",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/scary",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/flesh",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/clowns",
+			"Definitely a singular clown",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/mutant",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/blob",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/mayor",
+			"A clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/honkling",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/big/c_shift/honkelemental",
+			"Honk Elemental",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/honkmunculus",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/cluwne",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/tunnelclown",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/sentinel",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/punished",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/thicc",
+			"A Clown...",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/perm",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/wide",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/thin",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/hulk",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/longface",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/giggles",
+			"A Giggles?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/destroyer",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/chlown",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/scary",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/flesh",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/clowns",
+			"Definitely a singular clown",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/mutant",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/blob",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/mayor",
+			"A clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/honkling",
+			"A Clown?",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/clowns/normal",
+			"Clown",
+			"Creatures/Clowns",
+			""
+		],
+		[
+			"fauna/shadekin",
+			"Shadekin",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/shadekin/red",
+			"Red-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/red/white",
+			"Red-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/red/dark",
+			"Red-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/red/brown",
+			"Red-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/red/rakshasa",
+			"Rakshasa",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/blue",
+			"Blue-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/blue/white",
+			"Blue-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/blue/dark",
+			"Blue-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/blue/brown",
+			"Blue-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/blue/rivyr",
+			"Rivyr",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/blue/luna",
+			"Luna",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/blue/muninn",
+			"Muninn",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/blue/roti",
+			"Roti",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/purple",
+			"Purple-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/purple/white",
+			"Purple-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/purple/dark",
+			"Purple-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/purple/brown",
+			"Purple-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/purple/zylas",
+			"Zylas",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/purple/muninn",
+			"Muninn",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/purple/anno",
+			"Anno",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/yellow",
+			"Yellow-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/yellow/white",
+			"Yellow-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/yellow/dark",
+			"Yellow-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/yellow/brown",
+			"Yellow-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/yellow/retaliate",
+			"Yellow-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/yellow/retaliate/white",
+			"Yellow-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/yellow/retaliate/dark",
+			"Yellow-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/yellow/retaliate/brown",
+			"Yellow-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/green",
+			"Green-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/green/white",
+			"Green-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/green/dark",
+			"Green-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/green/brown",
+			"Green-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/green/soft",
+			"Softpatch",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/orange",
+			"Orange-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/orange/white",
+			"Orange-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/orange/dark",
+			"Orange-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/orange/brown",
+			"Orange-eyed shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/shadekin/orange/yrmir",
+			"Green and black shadekin",
+			"Creatures/Shadekin",
+			""
+		],
+		[
+			"fauna/combat_ai_test_subject",
+			"Combat AI test subject",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/combat_ai_tactics_subject",
+			"Combat AI tactics subject",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/combat_ai_tactics_subject/handed",
+			"Combat AI tactics subject",
+			"Creatures/Combat ai tactics subject",
+			""
+		],
+		[
+			"fauna/combat_ai_pack_subject",
+			"Combat AI pack subject",
+			"Creatures/Other",
+			""
+		],
+		[
+			"fauna/combat_ai_pack_subject/focus",
+			"Combat AI pack subject",
+			"Creatures/Combat ai pack subject",
+			""
+		],
+		[
+			"fauna/combat_ai_pack_subject/states",
+			"Combat AI pack subject",
+			"Creatures/Combat ai pack subject",
+			""
+		],
+		[
+			"fauna/dq_draw_pred",
+			"Draw pred",
+			"Creatures/Other",
+			""
+		],
+		[
+			"ops/fusion_reactions",
+			"Fusion reactions",
+			"Engineering/Power",
+			"Every reaction the R-UST can run, read from its reaction table."
+		],
+		[
+			"ops/expedition_contracts",
+			"Expedition contracts",
+			"Exploration",
+			"Every contract a pilot can take, and what it pays."
+		],
+		[
+			"ops/alert_levels",
+			"Alert levels",
+			"Security",
+			"The station's alert levels and what each one means."
 		]
 	],
 	"home": "home",

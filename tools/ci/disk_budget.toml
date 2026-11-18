@@ -288,6 +288,13 @@ policy = children-lru
 cap_gb = 3
 age_days = 21
 
+# The sprite cache the render preview reads (tools/tgui_preview/capture.ts writes current/): one unit, kept apart from the runs.
+[cache.tgui-sprites]
+policy = children-lru
+cap_gb = 1
+age_days = 60
+keep = 1
+
 # ---------------------------------------------------------------------------------------------------------------------------------
 # Per-worktree growth: what a lane, the train or the merge worktree leaves under its own checkout. Applied to every worktree under
 # E:/projects/dq-wt (the main checkout and DQ_DISK_EXCLUDE_WT names are skipped). Each table caps one path PER WORKTREE.

@@ -119,7 +119,9 @@ const sheetDir = path.resolve(
   root,
   String(meta.spritesheet_dir ?? 'data/spritesheets/'),
 );
-const spritesOut = path.join(CACHE, 'sprites');
+// Its own cache table (tools/ci/disk_budget.toml [cache.tgui-sprites]), so evicting old render runs never takes the sprites.
+const spritesOut =
+  process.env.DQ_TGUI_SPRITES ?? 'E:/dq-cache/tgui-sprites/current';
 rmSync(spritesOut, { recursive: true, force: true });
 mkdirSync(spritesOut, { recursive: true });
 const byHash = new Map<string, string>();

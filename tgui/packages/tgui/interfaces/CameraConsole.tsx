@@ -87,7 +87,7 @@ export const CameraConsole = (props) => {
     activeCamera,
   );
   return (
-    <Window width={870} height={708}>
+    <Window autoFit={false} width={870} height={708}>
       <div className="CameraConsole__left">
         <Window.Content scrollable>
           <CameraConsoleContent />

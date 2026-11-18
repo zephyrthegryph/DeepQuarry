@@ -8,7 +8,11 @@ Math.random = () => {
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 };
-const geometry = { size: { x: 560, y: 640 }, pos: { x: 0, y: 0 } };
+// The window's real size, as BYOND reports its own: the reveal checks it against what it asked for.
+const geometry = () => ({
+  size: { x: innerWidth, y: innerHeight },
+  pos: { x: 0, y: 0 },
+});
 (globalThis as any).Byond = {
   windowId: 'preview',
   IS_BYOND: false,
@@ -19,7 +23,7 @@ const geometry = { size: { x: 560, y: 640 }, pos: { x: 0, y: 0 } };
   callAsync: async () => ({}),
   topic: noop,
   command: noop,
-  winget: async () => geometry,
+  winget: async () => geometry(),
   // The window's own size request (Window width/height) is what the harness must lay it out at.
   // Only the window's own winset: a map or browser control inside it (ByondUi) asks for its own size too.
   winset: (id: string, opts: any) => {

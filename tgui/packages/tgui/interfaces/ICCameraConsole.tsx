@@ -22,7 +22,7 @@ export const ICCameraConsole = (props) => {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <Window width={870} height={708}>
+    <Window autoFit={false} width={870} height={708}>
       <div className="CameraConsole__left">
         <Window.Content scrollable>
           <Stack vertical height="100%">

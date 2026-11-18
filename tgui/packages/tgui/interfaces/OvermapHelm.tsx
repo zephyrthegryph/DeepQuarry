@@ -39,7 +39,7 @@ type Data = {
 
 export const OvermapHelm = (props) => {
   return (
-    <Window width={800} height={530}>
+    <Window autoFit={false} width={800} height={530}>
       <Window.Content>
         <OvermapHelmContent />
       </Window.Content>

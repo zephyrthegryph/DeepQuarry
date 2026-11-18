@@ -379,6 +379,7 @@ not change (doc §13, §19).
 width; PNGs and a contact sheet in `E:/dq-cache/tgui-preview/runs/latest/`; no name renders every window; `--baseline <dir>` diffs).
 Presets are `tgui/packages/tgui/interfaces/__fixtures__/windows/<Window>.<variant>.json`; `bun tools/tgui_preview/capture.ts`
 recaptures every window's real data and the spritesheets. `doc/tgui_preview.md`.
+Windows fit their height to their content at run time (don't hand-tune `height` to remove empty space; `autoFit={false}` only for a map or camera view).
 
 ## 6. Changelogs
 

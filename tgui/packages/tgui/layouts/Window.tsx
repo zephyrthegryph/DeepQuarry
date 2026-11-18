@@ -27,9 +27,11 @@ import {
   type ResolvedWindowGeometry,
   recallWindowGeometry,
   resizeStartHandler,
+  resizeWindowHeightBy,
   setWindowKey,
   setWindowPosition,
   storeWindowGeometry,
+  windowUserSized,
 } from '../drag';
 import { EmbeddedContext } from '../embedded';
 import { suspendStart } from '../events/handlers/suspense';
@@ -40,7 +42,12 @@ import { profileTransition } from '../profiling/transitions';
 import { claimReveal, isProfiling, revealWindow, traceAlpha } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
 import { resolveTheme, useConsoleScanlines } from './consoleTheme';
-import { fitOverflow, measureNaturalBottom } from './fitWindow';
+import {
+  fitOverflow,
+  fitTarget,
+  measureFitHeight,
+  measureNaturalBottom,
+} from './fitWindow';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
 
@@ -94,6 +101,14 @@ type Props = Partial<{
   framed: boolean;
   /** Grow the window until all of its content shows (see fitWindow.ts). */
   fitContent: boolean;
+  /**
+   * Fit the window's height to its content (default on; see fitWindow.ts measureFitHeight): on open and whenever the content
+   * changes, clamped to the screen, never after the player resized the window. Off for a window whose content fills
+   * whatever it is given (a camera or map view).
+   */
+  autoFit: boolean;
+  /** The shortest the auto-fit may make the window (CSS px of window height). */
+  minHeight: number;
   scrollbars: boolean;
 }> &
   PropsWithChildren;
@@ -113,7 +128,7 @@ export function Window(props: Props) {
 }
 
 function EmbeddedWindow(props: Props) {
-  const { theme, children } = props;
+  const { theme, children, autoFit = true } = props;
   const { config } = useBackend();
   // No useConsoleScanlines: it sets a page-wide variable, and the column page keeps its own.
   const showDimmer =
@@ -131,7 +146,8 @@ function EmbeddedWindow(props: Props) {
       ])}
       theme={theme}
     >
-      <div className="Window__rest">
+      {/* data-autofit: the column fits a docked entry to its content unless the window keeps its size (Column.tsx). */}
+      <div className="Window__rest" data-autofit={autoFit ? undefined : 'off'}>
         {children}
         {showDimmer && <div className="Window__dimmer" />}
       </div>
@@ -151,10 +167,13 @@ function NativeWindow(props: Props) {
     fitted,
     framed,
     fitContent,
+    autoFit = true,
+    minHeight,
     scrollbars = true,
   } = props;
 
   const { config, suspended, debug } = useBackend();
+  const [revealedGeometry, setRevealedGeometry] = useState(false);
   useConsoleScanlines(resolveTheme(theme));
   const defaultGeometry = getStaticWindowGeometry(config?.interface?.name);
   const width = requestedWidth ?? defaultGeometry?.width;
@@ -263,6 +282,8 @@ function NativeWindow(props: Props) {
           geometry,
         );
         floatTrace('reveal-done', { revealed });
+        // The window has its opening size now: auto-fit may start (a fit sent before would be overwritten by the reveal).
+        setRevealedGeometry(true);
         void floatTraceNative();
         if (float) {
           pendingFloat.current = null;
@@ -323,6 +344,54 @@ function NativeWindow(props: Props) {
     }
     return () => observer.disconnect();
   }, [fitContent, suspended, isReadyToRender]);
+
+  // Auto-fit (fitWindow.ts): the window's height follows its content, on open and as the content changes.
+  useLayoutEffect(() => {
+    const rest = restRef.current;
+    // Read by the render checks (tools/tgui_preview): whether this window fits itself.
+    document.documentElement.dataset.tguiAutofit =
+      autoFit && !fitContent && !fitted ? 'on' : 'off';
+    if (
+      !autoFit ||
+      fitContent ||
+      fitted ||
+      !rest ||
+      suspended ||
+      !revealedGeometry
+    ) {
+      return;
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const fit = () => {
+      timer = undefined;
+      if (windowUserSized()) return;
+      const want = measureFitHeight(document);
+      if (want === null) return;
+      const delta = fitTarget(want, window.innerHeight, {
+        min: minHeight,
+        max: Math.floor((window.screen?.availHeight || 1080) * 0.9),
+      });
+      if (delta !== 0) resizeWindowHeightBy(delta);
+    };
+    const later = () => {
+      if (timer === undefined) timer = setTimeout(fit, 60);
+    };
+    later();
+    const resize = new ResizeObserver(later);
+    const content = rest.querySelector('.Window__contentPadding') ?? rest;
+    resize.observe(content);
+    const mutate = new MutationObserver(later);
+    mutate.observe(rest, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+    return () => {
+      resize.disconnect();
+      mutate.disconnect();
+      if (timer !== undefined) clearTimeout(timer);
+    };
+  }, [autoFit, fitContent, fitted, suspended, revealedGeometry, minHeight]);
 
   const fancy = config.window?.fancy;
   const dockable = !!config.window?.dockable;

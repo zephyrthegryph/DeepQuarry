@@ -720,3 +720,34 @@ describe('fitting the entries to the column', () => {
     });
   });
 });
+
+describe('auto-fit of a docked entry (fit)', () => {
+  it('takes the height its content asks for, without marking it as the player sized', () => {
+    let state = openAll('a', 'b');
+    const group = state.groups[0].id;
+    state = dockReduce(state, { type: 'fit', group, height: 333 });
+    expect(state.groups[0].height).toBe(333);
+    expect(state.groups[0].sized).toBeFalsy();
+  });
+  it('is clamped to the dock limits', () => {
+    let state = openAll('a', 'b');
+    const group = state.groups[0].id;
+    state = dockReduce(state, { type: 'fit', group, height: 1 });
+    expect(state.groups[0].height).toBe(DOCK_HEIGHT_MIN);
+  });
+  it('leaves an entry the player resized alone', () => {
+    let state = openAll('a', 'b');
+    const group = state.groups[0].id;
+    state = dockReduce(state, { type: 'resize', group, height: 400 });
+    const sized = state;
+    state = dockReduce(state, { type: 'fit', group, height: 200 });
+    expect(state).toBe(sized);
+    expect(state.groups[0].height).toBe(400);
+  });
+  it('returns the same state when nothing changes, so a settled fit does not redraw or save', () => {
+    let state = openAll('a', 'b');
+    const group = state.groups[0].id;
+    state = dockReduce(state, { type: 'fit', group, height: 300 });
+    expect(dockReduce(state, { type: 'fit', group, height: 300 })).toBe(state);
+  });
+});

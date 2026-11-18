@@ -91,7 +91,6 @@ export const Pda = (props) => {
             <App />
           </Section>
         )}
-        <Box mb={8} />
         <PDAFooter onSettingsMode={setSettingsMode} />
       </Window.Content>
     </Window>
@@ -185,11 +184,13 @@ const PDAFooter = (props: {
   const { app, useRetro } = data;
 
   return (
+    // Sticky to the foot of the window's scroller, not fixed to the page: fixed, it sat at the bottom of the whole column
+    // page when docked, and a fitted window needed a spacer under the content for it.
     <Box
-      position="fixed"
-      bottom="0%"
-      left="0%"
-      right="0%"
+      position="sticky"
+      bottom={0}
+      mt={1}
+      style={{ zIndex: 1 }}
       backgroundColor={useRetro ? '#6f7961' : '#1b1b1b'}
     >
       <Stack>

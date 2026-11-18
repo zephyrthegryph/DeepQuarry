@@ -35,6 +35,7 @@ import {
 import { ReloadBoundary } from 'tgui/ReloadBoundary';
 import 'tgui/embeddedStyles';
 import { type Pair, TITLE_GRAB } from 'tgui/floatPlacement';
+import { FIT_STEP, measureFitHeight } from 'tgui/layouts/fitWindow';
 import { EmbeddedInterface } from 'tgui/routes';
 import { Button } from 'tgui-core/components';
 import { MapSplitHandle } from '../layout/ChatLayout';
@@ -608,6 +609,40 @@ const Group = memo(function Group(
   const stacked = group.windows.length > 1;
   const foldable = host.mayCollapse(group);
   const collapsed = host.collapsed(group);
+  // Auto-fit (tgui/layouts/fitWindow.ts): a docked entry the player has not sized takes its content's height, on open and as
+  // the content changes. The chat (the filling entry) and a window that keeps its size are left alone.
+  const groupRef = useRef<HTMLDivElement>(null);
+  const fits = !fill && !collapsed && !group.sized;
+  useLayoutEffect(() => {
+    const el = groupRef.current;
+    if (!fits || !el) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const fit = () => {
+      timer = undefined;
+      const body = el.querySelector<HTMLElement>('.column-body');
+      const win = el.querySelector<HTMLElement>(
+        '.column-window:not([style*="none"])',
+      );
+      if (!body || !win) return;
+      const top = body.getBoundingClientRect().top;
+      const want = measureFitHeight(win, top);
+      if (want === null) return;
+      const delta = want - body.getBoundingClientRect().height;
+      if (Math.abs(delta) >= FIT_STEP) {
+        host.dispatch({ type: 'fit', group: group.id, height: height + delta });
+      }
+    };
+    const later = () => {
+      if (timer === undefined) timer = setTimeout(fit, 60);
+    };
+    later();
+    const mutate = new MutationObserver(later);
+    mutate.observe(el, { childList: true, subtree: true, characterData: true });
+    return () => {
+      mutate.disconnect();
+      if (timer !== undefined) clearTimeout(timer);
+    };
+  }, [fits, group.id, group.active, height, host]);
   const toggle = () => {
     if (!foldable) return;
     host.dispatch({
@@ -629,6 +664,7 @@ const Group = memo(function Group(
         .filter(Boolean)
         .join(' ')}
       data-column-group={group.id}
+      ref={groupRef}
       onScrollCapture={(event) => {
         const node = event.target as Element;
         scrolls.current.set(node, [node.scrollTop, node.scrollLeft]);

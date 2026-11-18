@@ -50,7 +50,7 @@ export const Communicator = () => {
   tab[tabs[9]] = <CommunicatorSettingsTab />;
 
   return (
-    <Window width={475} height={700}>
+    <Window autoFit={false} width={475} height={700}>
       <Window.Content>
         {video_comm && (
           <VideoComm

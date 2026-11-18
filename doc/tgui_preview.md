@@ -23,6 +23,20 @@ Each shot is checked for: a JS exception or console error, a blank render (one c
 window that has no export, horizontal page overflow, elements running off the right edge (`off-right:N(innermost offenders)`; a LabeledList's designed 1em overhang is not counted), a titled section with nothing in it and no word saying so (`empty-section:N(titles)`, use `EmptyState`), and content a section scrolls sideways (`h-scroll`, the narrow fallback of `styles/dq/narrow.scss`; reported, not a failure).
 Exit status is 1 on exceptions, blank renders, missing exports or overflow.
 
+## Window fit
+
+Every window fits its height to its content at run time (`tgui/packages/tgui/layouts/fitWindow.ts` `measureFitHeight`, used by
+`layouts/Window.tsx`): after it opens and whenever its content changes, it measures the content with every scroll box and fill
+layout released to what it holds, and resizes to that, at least 120 px and at most 90% of the screen (a longer list scrolls).
+It stops for good once the player resizes the window (a saved geometry carries `sized`), and a window whose content fills
+whatever it gets (a camera or map view, `ByondUi`) passes `autoFit={false}`. Docked in the right-hand column, an entry the
+player has not sized takes its content's height the same way (`tgui-panel/column/Column.tsx`, the model's `fit` action), up to
+the room the chat leaves.
+
+The render check reports `slack:Npx` (space under the content) and `overfull:Npx` (content cut off or scrolling while the
+window could still grow) over 16 px, at the window's own width and docked (`--widths std,dock`: `?dock=1` renders the window
+in the real column above a stand-in for the chat).
+
 ## Regression mode
 
 ```sh
@@ -77,7 +91,7 @@ SchedulerProfiler, ControllerOverview) still change, since their numbers are the
 ## Sprites
 
 The census also generates every spritesheet (legacy and iconforge batched). capture.ts copies the CSS and PNGs into
-`E:/dq-cache/tgui-preview/sprites` with their URLs pointed at the copies and writes `sprites/index.json`; the preview page loads
+`E:/dq-cache/tgui-sprites/current` (its own cache table, so evicting render runs never takes it) with their URLs pointed at the copies and writes `sprites/index.json`; the preview page loads
 every sheet's CSS and maps `resolveAsset()` names to the copies, so `classes(['vending32x32', ...])` and asset images show the real
 sprites. `DmIcon` needs no capture: the preview's `Byond.iconRefMap` maps every `.dmi` path to `dmi/<path>`, and the render server
 crops that state/dir/frame out of `icons/gen/<path>` (`tools/tgui_preview/png.ts`). States it cannot find are listed in

@@ -203,7 +203,12 @@ export const AppearanceChanger = (props) => {
   const [tabIndex, setTabIndex] = useState(firstAccesibleTab);
 
   return (
-    <Window width={700} height={850} title={decodeHtmlEntities(title)}>
+    <Window
+      autoFit={false}
+      width={700}
+      height={850}
+      title={decodeHtmlEntities(title)}
+    >
       {is_design_console && !selected_a_record ? (
         <Window.Content>
           <AppearanceChangerHeader />

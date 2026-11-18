@@ -54,7 +54,15 @@ export type ResolvedWindowGeometry = Partial<{
 type StoredWindowGeometry = {
   pos: Point;
   size: Point;
+  /** The player resized this window: its size is theirs, and auto-fit (layouts/fitWindow.ts) leaves it alone. */
+  sized?: boolean;
 };
+
+/** The player resized this window in this session (a resize drag), or a saved size says they did. */
+let userSized = false;
+export function windowUserSized(): boolean {
+  return userSized || !!geometryCache.get(windowKey)?.sized;
+}
 
 const geometryCache = new Map<string, StoredWindowGeometry | null>();
 const geometryRequestCache = new Map<
@@ -162,6 +170,17 @@ export function growWindowHeight(deltaCss: number): void {
   setWindowSizeBatched([width, next]);
 }
 
+/** Auto-fit: changes the window's height by a CSS-px delta (either sign); never marks the size as the player's. */
+export function resizeWindowHeightBy(deltaCss: number): void {
+  const [width, height] = getWindowSize();
+  const next = Math.max(
+    Math.round(50 * ratioNow()),
+    Math.round(height + deltaCss * ratioNow()),
+  );
+  logger.log(`fit: window height ${height} -> ${next} (native px)`);
+  setWindowSizeBatched([width, next]);
+}
+
 // Set window position
 export function setWindowPosition(vec: Point): void {
   const byondPos = vecAdd(vec, screenOffset);
@@ -244,6 +263,7 @@ export async function storeWindowGeometry(): Promise<void> {
   const geometry = {
     pos: getWindowPosition(),
     size: getWindowSize(),
+    sized: windowUserSized(),
   };
   geometryCache.set(windowKey, geometry);
   storage.set(windowKey, geometry);
@@ -628,6 +648,7 @@ export const resizeStartHandler =
   (event: MouseEvent): void => {
     resizeMatrix = [x, y];
     logger.log('resize start', resizeMatrix);
+    userSized = true;
     resizing = true;
     dragPointOffset = vecSubtract(
       [event.screenX * ratioNow(), event.screenY * ratioNow()],

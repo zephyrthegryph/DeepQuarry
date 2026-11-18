@@ -43,6 +43,10 @@ const BROWSERS = [
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
 ].filter(Boolean) as string[];
 const NARROW = 360;
+/** Space (CSS px) a window may leave under or need beyond its content before the fit check reports it. */
+const FIT_SLACK = 16;
+/** The filling entry's minimum body height in the column (tgui-panel/column/model.ts FILL_MIN). */
+const DOCK_FILL_MIN = 160;
 /** Windows that draw nothing on purpose (an audio host, a tooltip layer, a screen overlay): never "blank". */
 const NO_UI = new Set(['MediaPlayer', 'Tooltip', 'BellyOverlay']);
 
@@ -75,7 +79,12 @@ const baselineDir = opt('--baseline')
   ? path.resolve(opt('--baseline')!)
   : undefined;
 const bundle = path.resolve(opt('--bundle') ?? path.join(CACHE, 'bundle'));
-const sprites = path.join(CACHE, 'sprites');
+const sprites =
+  process.env.DQ_TGUI_SPRITES ?? 'E:/dq-cache/tgui-sprites/current';
+if (!existsSync(path.join(sprites, 'index.json')))
+  console.warn(
+    `no sprite cache at ${sprites} (evicted or never made): sprites and game images will be missing; run bun tools/tgui_preview/capture.ts`,
+  );
 
 // ---- bundle ----------------------------------------------------------------------------------------------------------------
 if (!flag('--reuse') || !existsSync(path.join(bundle, 'index.html'))) {
@@ -293,11 +302,26 @@ type Job = {
   tag: string;
   file: string;
   narrow: boolean;
+  dock?: boolean;
 };
 const jobs: Job[] = [];
 for (const [w, v] of all.filter(([w, v]) => match(w, v))) {
   const g = geometry[w] ?? { width: 400, height: 600 };
   for (const kind of widths) {
+    if (kind === 'dock') {
+      const tag = `${w}${v ? `.${v}` : ''}@dock`;
+      jobs.push({
+        window: w,
+        variant: v,
+        width: 600,
+        height: 1000,
+        tag,
+        file: `${tag}.png`,
+        narrow: false,
+        dock: true,
+      });
+      continue;
+    }
     const width = kind === 'narrow' ? Math.min(NARROW, g.width) : g.width;
     if (kind === 'narrow' && width === g.width && g.width <= NARROW) continue; // already narrow
     const tag = `${w}${v ? `.${v}` : ''}${kind === 'narrow' ? '@narrow' : ''}`;
@@ -383,6 +407,9 @@ const PROBE = `(() => {
   }
   return {
     brokenImg, tiny, tinyAt, emptySections,
+    fit: window.__tguiFit ? window.__tguiFit() : null,
+    autofit: document.documentElement.dataset.tguiAutofit || 'unknown',
+    inner: innerHeight,
     text: (app.innerText || '').trim().length,
     nodes: app.querySelectorAll('*').length,
     missing: !!document.getElementById('preview-missing'),
@@ -427,11 +454,15 @@ async function runJob(page: { sessionId: string }, job: Job): Promise<Result> {
       height: job.height,
       deviceScaleFactor: 1,
       mobile: false,
+      // A 1080p screen: auto-fit clamps a window to 90% of the screen height (layouts/Window.tsx).
+      screenWidth: 1920,
+      screenHeight: 1080,
     },
     page.sessionId,
   );
   const q = new URLSearchParams({ w: job.window });
   if (job.variant) q.set('v', job.variant);
+  if (job.dock) q.set('dock', '1');
   if (theme) q.set('theme', theme);
   // Animations run to their end at once and transitions are off, so a shot is the same every run (regression mode compares pixels).
   q.set(
@@ -453,37 +484,47 @@ async function runJob(page: { sessionId: string }, job: Job): Promise<Result> {
     page.sessionId,
   ).catch(() => ({ result: { value: false } }));
   // A window whose size is computed (width={grid * 66}) asks for it at run time (Byond.winset): lay it out again at that size.
-  const asked = (
-    await send(
-      'Runtime.evaluate',
-      {
-        expression:
-          'new Promise(r => { const s = Date.now(); const t = () => (window.__previewSize || Date.now() - s > 1500) ? r(window.__previewSize ?? null) : setTimeout(t, 25); t(); })',
-        awaitPromise: true,
-        returnByValue: true,
-      },
-      page.sessionId,
-    )
-  ).result.value;
-  if (process.env.DQ_PREVIEW_DEBUG)
-    console.log(job.tag, 'asked', JSON.stringify(asked));
-  if (Array.isArray(asked) && asked[0] > 0 && asked[1] > 0) {
-    const w = job.narrow ? Math.min(NARROW, asked[0]) : asked[0];
-    if (w !== job.width || asked[1] !== job.height) {
-      job.width = w;
-      job.height = asked[1];
+  // The window asks for its size at run time (Byond.winset): once from its <Window width height> or a computed size, then
+  // again as auto-fit (layouts/fitWindow.ts) settles on its content. Follow each request until it stops changing.
+  const askedNow = async (waitMs: number) =>
+    (
       await send(
-        'Emulation.setDeviceMetricsOverride',
+        'Runtime.evaluate',
         {
-          width: job.width,
-          height: job.height,
-          deviceScaleFactor: 1,
-          mobile: false,
+          expression: `new Promise(r => { const s = Date.now(); const t = () => (window.__previewSize || Date.now() - s > ${waitMs}) ? r(window.__previewSize ?? null) : setTimeout(t, 25); t(); })`,
+          awaitPromise: true,
+          returnByValue: true,
         },
         page.sessionId,
-      );
-      await Bun.sleep(300);
+      )
+    ).result.value;
+  if (job.dock) await Bun.sleep(1200); // the docked interface loads on demand, then the column fits its entry
+  for (let round = 0; round < (job.dock ? 0 : 6); round++) {
+    const asked = await askedNow(round === 0 ? 1500 : 0);
+    if (process.env.DQ_PREVIEW_DEBUG)
+      console.log(job.tag, 'asked', JSON.stringify(asked));
+    if (!(Array.isArray(asked) && asked[0] > 0 && asked[1] > 0)) break;
+    const w = job.narrow ? Math.min(NARROW, asked[0]) : asked[0];
+    if (w === job.width && asked[1] === job.height) {
+      if (round > 0) break;
+      await Bun.sleep(250); // the fit runs 60 ms after the content settles
+      continue;
     }
+    job.width = w;
+    job.height = asked[1];
+    await send(
+      'Emulation.setDeviceMetricsOverride',
+      {
+        width: job.width,
+        height: job.height,
+        deviceScaleFactor: 1,
+        mobile: false,
+        screenWidth: 1920,
+        screenHeight: 1080,
+      },
+      page.sessionId,
+    );
+    await Bun.sleep(250);
   }
   const probed = await send(
     'Runtime.evaluate',
@@ -534,6 +575,28 @@ async function runJob(page: { sessionId: string }, job: Job): Promise<Result> {
   if (probe.hOverflow) problems.push('h-overflow');
   if (probe.sideScroll) problems.push('h-scroll');
   if (process.env.DQ_PREVIEW_DEBUG) console.log(job.tag, JSON.stringify(probe));
+  // Window fit (layouts/fitWindow.ts): space left under the content, or content cut off / scrolling at this size.
+  if (job.dock && probe.fit && typeof probe.fit === 'object') {
+    // Docked: the column entry against its content (Column.tsx fits it, the column caps it).
+    // Docked bounds (tgui-panel/column/model.ts): at least DOCK_HEIGHT_MIN; it grows only into the room the filling entry
+    // (the chat) has above its own minimum, so a long window that has taken all of that is capped, not overfull.
+    const target = Math.max(80 - probe.fit.head, probe.fit.fit);
+    const slack = probe.fit.docked - target;
+    const room = probe.fit.fillRoom - DOCK_FILL_MIN;
+    if (slack > FIT_SLACK) problems.push(`slack:${Math.round(slack)}px`);
+    else if (slack < -FIT_SLACK && room > FIT_SLACK)
+      problems.push(`overfull:${Math.round(-slack)}px`);
+  } else if (
+    !job.narrow &&
+    typeof probe.fit === 'number' &&
+    probe.autofit !== 'off'
+  ) {
+    // What auto-fit aims for (layouts/Window.tsx): the content height, at least FIT_MIN_HEIGHT, at most 90% of the screen.
+    const target = Math.min(972, Math.max(120, probe.fit));
+    const slack = probe.inner - target;
+    if (slack > FIT_SLACK) problems.push(`slack:${slack}px`);
+    else if (slack < -FIT_SLACK) problems.push(`overfull:${-slack}px`);
+  }
   if (probe.emptySections?.length)
     problems.push(
       `empty-section:${probe.emptySections.length}(${probe.emptySections.filter(Boolean).join(',')})`,
@@ -657,7 +720,9 @@ process.exit(
         p !== 'console-error' &&
         p !== 'h-scroll' &&
         !p.startsWith('off-right') &&
-        !p.startsWith('empty-section'),
+        !p.startsWith('empty-section') &&
+        !p.startsWith('slack') &&
+        !p.startsWith('overfull'),
     ),
   )
     ? 1
