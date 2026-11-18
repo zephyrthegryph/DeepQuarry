@@ -1,85 +1,735 @@
-// The station wiki (interfaces/StationWiki.tsx).
-.StationWiki {
-  &__link {
-    color: var(--color-primary);
-    cursor: pointer;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-underline-offset: 2px;
+// The station wiki (interfaces/StationWiki.tsx): a reading layout. The index is a sidebar (a drawer below 640px), the article a
+// scrolling column of readable width under a sticky header. Text uses a proportional face at normal weight: the console theme's bold
+// monospace is for controls, not paragraphs.
 
-    &:hover {
-      text-decoration-style: solid;
+$wiki-bg: rgba(0, 0, 0, 0.25);
+$wiki-panel: rgba(255, 255, 255, 0.035);
+$wiki-panel-hover: rgba(255, 255, 255, 0.08);
+$wiki-line: rgba(255, 255, 255, 0.12);
+$wiki-text: #dfe5ec;
+$wiki-dim: #9aa6b4;
+$wiki-link: #7cc4ff;
+$wiki-read-font:
+  'Segoe UI', Verdana, Tahoma, sans-serif;
+
+$callouts: (
+  'info': #5b9bf0,
+  'tip': #5cc87a,
+  'warning': #f0b43a,
+  'danger': #f0605a,
+);
+
+$tones: (
+  'good': #5cc87a,
+  'green': #5cc87a,
+  'average': #f0b43a,
+  'yellow': #f0b43a,
+  'orange': #f08a3a,
+  'bad': #f0605a,
+  'red': #f0605a,
+  'grey': #8a929c,
+  'label': #8a929c,
+  'blue': #5b9bf0,
+  'teal': #4fc3e8,
+  'purple': #b07cf0,
+);
+
+.StationWiki {
+  position: relative;
+  display: flex;
+  height: 100%;
+  color: $wiki-text;
+  font-family: $wiki-read-font;
+  font-weight: normal;
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+
+    &:focus-visible {
+      outline: 2px solid $wiki-link;
+      outline-offset: 1px;
     }
   }
 
+  // ---- index ----
+
+  &__sidebar {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 18.5em;
+    min-width: 0;
+    margin-right: 0.5em;
+    background: $wiki-bg;
+    border: 1px solid $wiki-line;
+    border-radius: 4px;
+  }
+
+  &__drawerHead {
+    display: flex;
+    align-items: center;
+    padding: 0.4em 0.5em 0.4em 0.8em;
+    font-weight: 600;
+    border-bottom: 1px solid $wiki-line;
+  }
+
+  &__search {
+    padding: 0.5em;
+    border-bottom: 1px solid $wiki-line;
+  }
+
+  &__index {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.25em 0 0.5em;
+  }
+
+  &__section {
+    display: flex;
+    align-items: center;
+    border-left: 3px solid transparent;
+    min-height: 1.75em;
+
+    &:hover {
+      background: $wiki-panel;
+    }
+
+    &--top {
+      margin-top: 0.15em;
+      font-weight: bold;
+    }
+
+    &--current {
+      background: $wiki-panel-hover;
+    }
+  }
+
+  &__fold {
+    flex: 0 0 1.4em;
+    text-align: center !important;
+    color: $wiki-dim !important;
+    font-size: 0.75em;
+  }
+
+  &__sectionName {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding: 0.2em 0 !important;
+  }
+
+  &__count {
+    flex: none;
+    margin: 0 0.5em 0 0.4em;
+    padding: 0 0.45em;
+    border-radius: 0.7em;
+    background: rgba(255, 255, 255, 0.08);
+    color: $wiki-dim;
+    font-size: 0.75em;
+    font-weight: normal;
+    line-height: 1.5;
+  }
+
+  &__entry {
+    display: block;
+    width: 100%;
+    // The left padding is the entry's depth, set inline.
+    padding-top: 0.18em !important;
+    padding-bottom: 0.18em !important;
+    padding-right: 0.5em !important;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #c3ccd6 !important;
+    border-left: 3px solid transparent !important;
+
+    &:hover {
+      background: $wiki-panel-hover !important;
+      color: #fff !important;
+    }
+
+    &--current {
+      background: rgba(124, 196, 255, 0.16) !important;
+      border-left-color: $wiki-link !important;
+      color: #fff !important;
+    }
+  }
+
+  &__resultCount {
+    padding: 0.2em 0.75em 0.4em;
+    color: $wiki-dim;
+    font-size: 0.8em;
+  }
+
+  &__result {
+    display: block;
+    width: 100%;
+    padding: 0.35em 0.6em !important;
+    border-left: 3px solid transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+
+    &:hover,
+    &--cursor {
+      background: $wiki-panel-hover !important;
+    }
+
+    &--cursor {
+      box-shadow: inset 0 0 0 1px rgba(124, 196, 255, 0.5);
+    }
+  }
+
+  &__resultTitle {
+    font-weight: bold;
+  }
+
+  &__resultPath {
+    color: $wiki-dim;
+    font-size: 0.8em;
+    margin-top: 0.1em;
+  }
+
+  &__resultSnippet {
+    margin-top: 0.2em;
+    color: #b8c2cc;
+    font-size: 0.85em;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__mark {
+    background: rgba(240, 180, 58, 0.35);
+    color: #fff;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  &__empty {
+    padding: 1em;
+    color: $wiki-dim;
+  }
+
+  // ---- article column ----
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: $wiki-bg;
+    border: 1px solid $wiki-line;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  &__header {
+    flex: none;
+    padding: 0.5em 1.1em 0.6em;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 2px solid;
+  }
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.15em;
+  }
+
+  &__crumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    min-width: 0;
+    margin-left: 0.5em;
+    font-size: 0.85em;
+    color: $wiki-dim;
+  }
+
+  &__crumb {
+    padding: 0.1em 0.3em !important;
+    border-radius: 3px;
+    white-space: nowrap;
+
+    &:hover {
+      background: $wiki-panel-hover !important;
+      color: #fff;
+    }
+  }
+
+  &__crumbSep {
+    font-size: 0.65em;
+    opacity: 0.5;
+    margin: 0 0.1em;
+  }
+
+  &__title {
+    margin: 0.3em 0 0;
+    font-size: 1.55em;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #fff;
+  }
+
+  &__titleCount {
+    margin-left: 0.6em;
+    font-size: 0.5em;
+    font-weight: normal;
+    color: $wiki-dim;
+    vertical-align: middle;
+  }
+
+  &__summary {
+    margin-top: 0.2em;
+    color: $wiki-dim;
+    font-style: italic;
+  }
+
+  &__scroll {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  &__body {
+    max-width: 50em;
+    padding: 0.8em 1.1em 1.5em;
+    line-height: 1.5;
+
+    &::after {
+      content: '';
+      display: block;
+      clear: both;
+    }
+  }
+
+  // ---- blocks ----
+
+  &__link {
+    color: $wiki-link;
+    cursor: pointer;
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(124, 196, 255, 0.55);
+
+    &:hover {
+      color: #b5dcff;
+      border-bottom-style: solid;
+    }
+  }
+
+  &__deadLink {
+    color: #f0605a;
+    border-bottom: 1px dashed;
+  }
+
   &__p {
-    margin-bottom: 0.6em;
-    line-height: 1.45;
+    margin: 0 0 0.7em;
   }
 
   &__h {
-    margin: 0.9em 0 0.35em;
-    padding-bottom: 2px;
-    border-bottom: 1px solid var(--color-grey);
-    font-weight: bold;
-    font-size: 1.05em;
-    letter-spacing: 0.02em;
-  }
-
-  &__note {
-    margin: 0.4em 0 0.6em;
-    padding: 0.35em 0.6em;
-    border-left: 3px solid currentColor;
-    background-color: rgba(255, 255, 255, 0.04);
+    margin: 1.1em 0 0.5em;
+    padding-bottom: 0.2em;
+    border-bottom: 1px solid $wiki-line;
+    font-size: 1.12em;
+    font-weight: 600;
+    color: #fff;
+    // Its rule stops at a floated infobox instead of running under it.
+    overflow: hidden;
   }
 
   &__list {
-    margin: 0.2em 0 0.6em;
-    padding-left: 1.6em;
+    margin: 0.2em 0 0.8em;
+    padding-left: 1.5em;
 
     li {
       margin: 0.2em 0;
       padding-left: 0.2em;
-      line-height: 1.4;
+    }
+
+    li::marker {
+      color: $wiki-dim;
+    }
+  }
+
+  &__callout {
+    display: flex;
+    gap: 0.6em;
+    margin: 0.6em 0 0.9em;
+    padding: 0.55em 0.8em;
+    border: 1px solid;
+    border-left-width: 4px;
+    border-radius: 4px;
+
+    @each $kind, $color in $callouts {
+      &--#{$kind} {
+        border-color: rgba($color, 0.45);
+        border-left-color: $color;
+        background: rgba($color, 0.1);
+
+        .StationWiki__calloutIcon {
+          color: $color;
+        }
+      }
+    }
+  }
+
+  &__calloutIcon {
+    flex: none;
+    margin-top: 0.2em;
+  }
+
+  &__facts {
+    border-collapse: collapse;
+    margin: 0.2em 0 0.9em;
+    width: 100%;
+
+    th,
+    td {
+      padding: 0.3em 0.6em;
+      vertical-align: top;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      text-align: left;
+    }
+
+    th {
+      width: 1%;
+      white-space: nowrap;
+      color: $wiki-dim;
+      font-weight: 600;
+    }
+
+    tr:nth-child(odd) {
+      background: rgba(255, 255, 255, 0.025);
+    }
+  }
+
+  &__tableWrap {
+    overflow-x: auto;
+    margin: 0.4em 0 1em;
+    border: 1px solid $wiki-line;
+    border-radius: 4px;
+  }
+
+  &__table {
+    border-collapse: collapse;
+    width: 100%;
+
+    th,
+    td {
+      padding: 0.35em 0.7em;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-weight: 600;
+      white-space: nowrap;
+      border-bottom: 1px solid $wiki-line;
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    tbody tr:hover {
+      background: rgba(124, 196, 255, 0.07);
     }
   }
 
   &__grid {
     display: grid;
     grid-template-columns: max-content 1fr;
-    column-gap: 0.75em;
-    row-gap: 0.3em;
-    margin-bottom: 0.6em;
+    column-gap: 0.9em;
+    row-gap: 0.5em;
+    margin: 0.4em 0 1em;
     align-items: baseline;
   }
 
   &__rowLabel {
-    font-weight: bold;
+    font-weight: 600;
     font-size: 0.9em;
+    color: $wiki-dim;
     max-width: 14em;
   }
 
-  &__chip {
-    margin: 0 0.4em 0.2em 0;
-    white-space: nowrap;
+  &__rowItems {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3em;
   }
 
-  &__table {
-    margin-bottom: 0.6em;
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: 0.12em 0.6em !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    border-radius: 1em;
+    background: $wiki-panel !important;
+    font-size: 0.9em;
+    line-height: 1.4;
+    white-space: nowrap;
 
-    .Table__cell {
-      padding: 2px 6px;
-      vertical-align: top;
+    &--live {
+      color: $wiki-link !important;
+
+      &:hover {
+        background: rgba(124, 196, 255, 0.15) !important;
+        border-color: rgba(124, 196, 255, 0.5) !important;
+      }
+    }
+
+    @each $tone, $color in $tones {
+      &--#{$tone} {
+        border-color: rgba($color, 0.55) !important;
+        background: rgba($color, 0.1) !important;
+
+        .StationWiki__chipName {
+          color: $color;
+        }
+      }
     }
   }
 
-  &__section {
-    font-weight: bold;
+  &__chipNote {
+    color: $wiki-dim;
+    font-size: 0.85em;
   }
 
-  &__entry {
-    white-space: nowrap;
+  &__tabs {
+    margin-top: 0.8em;
+    clear: both;
+  }
+
+  &__tabBody {
+    padding-top: 0.6em;
+  }
+
+  // ---- infobox ----
+
+  &__infobox {
+    float: right;
+    width: 16em;
+    margin: 0 0 0.8em 1.1em;
+    padding: 0.6em 0.7em 0.4em;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid $wiki-line;
+    border-top: 3px solid;
+    border-radius: 4px;
+    font-size: 0.92em;
+
+    .StationWiki__facts {
+      margin-bottom: 0.2em;
+    }
+
+    .StationWiki__facts th {
+      white-space: normal;
+      width: 40%;
+    }
+  }
+
+  &__infoboxTitle {
+    font-weight: 600;
+    font-size: 1.05em;
+    text-align: center;
+    color: #fff;
+  }
+
+  &__infoboxArt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3em;
+    margin: 0.5em 0;
+    padding: 0.5em;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+
+  &__sprite {
+    image-rendering: pixelated;
+  }
+
+  &__spriteFallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: $wiki-dim;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+
+  &__infoboxArt &__spriteFallback {
+    font-size: 2em;
+  }
+
+  &__swatch {
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    vertical-align: middle;
+
+    &--big {
+      width: 3.2em;
+      height: 3.2em;
+      box-shadow:
+        inset 0 -0.5em 0.8em rgba(0, 0, 0, 0.35),
+        0 0 0.6em rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  &__swatchHex {
+    font-family: monospace;
+    font-size: 0.85em;
+    color: $wiki-dim;
+  }
+
+  &__infoboxBadges {
+    display: flex;
+    justify-content: center;
+    margin: 0.4em 0;
+  }
+
+  &__badge {
+    padding: 0.05em 0.6em !important;
+    border: 1px solid !important;
+    border-radius: 1em;
+    font-size: 0.85em;
+    font-weight: 600;
+
+    &:hover {
+      background: $wiki-panel-hover !important;
+    }
+  }
+
+  // ---- cards ----
+
+  &__cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13em, 1fr));
+    gap: 0.5em;
+    margin-bottom: 0.8em;
+
+    &--depts {
+      grid-template-columns: repeat(auto-fill, minmax(15em, 1fr));
+    }
+  }
+
+  &__card {
+    display: block;
+    padding: 0.5em 0.7em !important;
+    background: $wiki-panel !important;
+    border: 1px solid $wiki-line !important;
+    border-left: 4px solid !important;
+    border-radius: 4px;
+    min-width: 0;
+
+    &:hover {
+      background: $wiki-panel-hover !important;
+    }
+  }
+
+  &__cardHead {
+    display: flex;
+    align-items: center;
+  }
+
+  &__cardTitle {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    color: #fff;
     overflow: hidden;
+    white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  &__cardSub {
+    margin-top: 0.25em;
+    color: $wiki-dim;
+    font-size: 0.82em;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  // ---- related ----
+
+  &__related {
+    clear: both;
+    margin-top: 1.6em;
+    padding: 0.7em 0.8em;
+    background: $wiki-panel;
+    border: 1px solid $wiki-line;
+    border-radius: 4px;
+  }
+
+  &__relatedHead {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    color: $wiki-dim;
+  }
+
+  &__more {
+    margin-left: auto;
+    color: $wiki-link !important;
+    font-weight: normal;
+    font-size: 0.9em;
+  }
+
+  // ---- narrow: the index is a drawer, the infobox a full-width card ----
+
+  &--narrow {
+    .StationWiki__sidebar {
+      display: none;
+    }
+
+    .StationWiki__infobox {
+      float: none;
+      width: auto;
+      margin: 0 0 0.9em;
+    }
+
+    .StationWiki__body {
+      padding: 0.7em 0.8em 1.2em;
+    }
+
+    .StationWiki__grid {
+      grid-template-columns: 1fr;
+      row-gap: 0.2em;
+    }
+
+    .StationWiki__rowItems {
+      margin-bottom: 0.4em;
+    }
+  }
+
+  &--narrow.StationWiki--drawer .StationWiki__sidebar {
+    display: flex;
+    position: absolute;
+    z-index: 5;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(20em, 88%);
+    background: #15191e;
+    box-shadow: 0.3em 0 1.2em rgba(0, 0, 0, 0.6);
   }
 }

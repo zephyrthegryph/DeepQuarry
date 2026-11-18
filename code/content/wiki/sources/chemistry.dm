@@ -66,7 +66,7 @@ GLOBAL_TABLE(wiki_used_in_table, GLOBAL_PROC_REF(build_wiki_used_in))
 			path = "Medical/Drugs/[dq_reagent_category_table()[id] || "Other"]"
 		else
 			path = "Chemistry/Reagents/[wiki_reagent_family(R)]"
-		wiki_add(index, wiki_chem_id(id), R.name, path, null, null, GLOBAL_PROC_REF(wiki_reagent_body), id)
+		wiki_set_swatch(wiki_add(index, wiki_chem_id(id), R.name, path, null, null, GLOBAL_PROC_REF(wiki_reagent_body), id), R.color)
 
 /proc/wiki_reagent_body(reagent_id)
 	var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent_id]

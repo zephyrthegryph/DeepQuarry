@@ -2,7 +2,8 @@
 // quick row (the "Station Wiki" command) or from a reference book.
 //
 // An article is a plain list, never a datum: id, title, path (its place in the index, "Medical/Conditions/Cardiac"), summary, and its body
-// as a list of blocks. Ids are stable strings ("med/cond/concussion", "chem/bicaridine"); any article links to any other by id.
+// as a list of blocks. A catalogue or reagent article may also carry a sprite (wiki_set_sprite) or a colour swatch (wiki_set_swatch); the
+// window shows it, with the body's first labelled facts, in an infobox card. Ids are stable strings ("med/cond/concussion", "chem/bicaridine"); any article links to any other by id.
 //
 // Where articles come from (all data, nothing per-department in the engine):
 //   * Sources: GLOB.wiki_sources lists builder procs. Each is called once with the index and adds its articles with wiki_add(). A
@@ -14,7 +15,8 @@
 //   p     list("k" = "p", "t" = text)                                   a paragraph
 //   h     list("k" = "h", "t" = text)                                   a sub-heading
 //   ul/ol list("k" = "ul"|"ol", "items" = list(text, ...))              a bullet or numbered list
-//   note  list("k" = "note", "t" = text, "tone" = "good"|"bad"|...)     a highlighted remark
+//   note  list("k" = "note", "t" = text, "tone" = "good"|"bad"|...)     a callout box: good = tip, average = warning, bad = danger,
+//                                                                       anything else = info
 //   kv    list("k" = "kv", "rows" = list(list(label, text), ...))       labelled facts
 //   links list("k" = "links", "t" = label, "items" = list(wiki_link(), ...))  a labelled row of links
 //   table list("k" = "table", "head" = list(text, ...), "rows" = list(list(text, ...), ...))
@@ -92,7 +94,23 @@ GLOBAL_LIST_EMPTY(wiki_duplicate_ids)
 		blocks = CACHED(wiki_bodies, id)
 		if(GLOB.wiki_trace)
 			log_world("WIKI: read [id] ([length(blocks)] block(s), [REALTIMEOFDAY - started] ds)")
-	return list("id" = id, "title" = article["title"], "path" = article["path"], "summary" = article["summary"], "blocks" = blocks || list())
+	return list("id" = id, "title" = article["title"], "path" = article["path"], "summary" = article["summary"], "blocks" = blocks || list(),
+		"icon" = article["icon"], "icon_state" = article["icon_state"], "swatch" = article["swatch"])
+
+/// Gives an article a sprite (its infobox shows it): the type's own icon and state, read once when the index is built.
+/proc/wiki_set_sprite(list/article, path)
+	if(!article || !ispath(path, /atom))
+		return
+	var/atom/A = path
+	if(!initial(A.icon))
+		return
+	article["icon"] = "[initial(A.icon)]"
+	article["icon_state"] = initial(A.icon_state) || ""
+
+/// Gives an article a colour swatch (a reagent's colour), shown in its infobox.
+/proc/wiki_set_swatch(list/article, color)
+	if(article && istext(color) && length(color))
+		article["swatch"] = color
 
 DECLARE_SHARED_CACHE(wiki_bodies, GLOBAL_PROC_REF(build_wiki_body), SC_NEVER)
 
@@ -151,9 +169,16 @@ GLOBAL_TABLE(wiki_index_rows_table, GLOBAL_PROC_REF(build_wiki_index_rows))
 /proc/wiki_tabs(list/tabs)
 	return list("k" = "tabs", "tabs" = tabs)
 
-/// One link of a links block: the target id, its label, a short grey note and a colour (good, bad, average, grey).
-/proc/wiki_link(id, name, note, tone)
-	return list("id" = id, "name" = name, "note" = note, "tone" = tone)
+/// One link of a links block: the target id, its label, a short grey note and a colour (good, bad, average, grey); `sprite` (a type path)
+/// shows that type's icon beside the label.
+/proc/wiki_link(id, name, note, tone, sprite)
+	var/list/link = list("id" = id, "name" = name, "note" = note, "tone" = tone)
+	if(ispath(sprite, /atom))
+		var/atom/A = sprite
+		if(initial(A.icon))
+			link["icon"] = "[initial(A.icon)]"
+			link["icon_state"] = initial(A.icon_state) || ""
+	return link
 
 /// An inline link for text: [[id|label]].
 /proc/wiki_ref(id, label)

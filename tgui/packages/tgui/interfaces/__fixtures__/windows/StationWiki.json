@@ -1,50 +1,313 @@
 {
 	"index": [
-		["home", "Station Wiki", "Welcome", "Start here."],
-		["med/index", "Medical reference", "Medical", ""],
+		[
+			"home",
+			"Station Wiki",
+			"Welcome",
+			"Start here: how the wiki is laid out and where to look first."
+		],
+		[
+			"med/index",
+			"Medical reference",
+			"Medical",
+			"How to read the medical pages: conditions, drugs, mechanisms, surgery."
+		],
 		[
 			"med/cond/concussion",
 			"Concussion",
 			"Medical/Conditions/Neurological",
+			"Brain injury from a blow to the head"
+		],
+		[
+			"med/cond/skull_fracture",
+			"Skull fracture",
+			"Medical/Conditions/Neurological",
+			"Broken cranium; often comes with a concussion"
+		],
+		[
+			"med/cond/brain_bleed",
+			"Intracranial bleed",
+			"Medical/Conditions/Neurological",
+			"Bleeding inside the skull"
+		],
+		[
+			"med/cond/arterial",
+			"Arterial bleed",
+			"Medical/Conditions/Trauma",
+			"A cut artery: fast, heavy blood loss"
+		],
+		[
+			"med/cond/cardiac_arrest",
+			"Cardiac arrest",
+			"Medical/Conditions/Cardiac",
+			"The heart has stopped"
+		],
+		[
+			"med/mech/hemostatic",
+			"Hemostatic",
+			"Medical/Treatment mechanisms",
+			"Stops or slows bleeding"
+		],
+		[
+			"med/mech/neural_repair",
+			"Neural repair",
+			"Medical/Treatment mechanisms",
+			"Repairs brain tissue over time"
+		],
+		[
+			"med/mech/analgesic",
+			"Analgesic",
+			"Medical/Treatment mechanisms",
+			"Dulls pain"
+		],
+		[
+			"med/sym/headache",
+			"Headache",
+			"Medical/Symptoms/Neurological",
+			"\"Patient reports head pain\""
+		],
+		[
+			"med/surg/craniotomy",
+			"Craniotomy",
+			"Medical/Surgery/Head",
+			"Opening the skull to reach the brain"
+		],
+		["chem/alkysine", "Alkysine", "Medical/Drugs/Neurological", ""],
+		["chem/bicaridine", "Bicaridine", "Medical/Drugs/Trauma", ""],
+		["chem/tramadol", "Tramadol", "Medical/Drugs/Painkillers", ""],
+		["chem/inaprovaline", "Inaprovaline", "Medical/Drugs/Cardiac", ""],
+		["chem/water", "Water", "Chemistry/Reagents/Basic", ""],
+		["chem/carbon", "Carbon", "Chemistry/Reagents/Elements", ""],
+		[
+			"chem/purity",
+			"Purity and contaminants",
+			"Chemistry",
+			"Grades, contaminants, and every way to make a mixture cleaner."
+		],
+		[
+			"cat/item/healthanalyzer",
+			"Health analyzer",
+			"Medical/Catalogue/Diagnostics",
 			""
 		],
-		["chem/bicaridine", "Bicaridine", "Medical/Drugs/Trauma", ""],
-		["chem/water", "Water", "Chemistry/Reagents/Other", ""]
+		[
+			"cat/item/surgical/scalpel",
+			"Scalpel",
+			"Medical/Catalogue/Surgical tools",
+			""
+		],
+		[
+			"cat/item/surgical/hemostat",
+			"Hemostat",
+			"Medical/Catalogue/Surgical tools",
+			""
+		],
+		[
+			"cat/item/surgical/retractor",
+			"Retractor",
+			"Medical/Catalogue/Surgical tools",
+			""
+		],
+		[
+			"cat/item/stack/medical/bruise_pack",
+			"Roll of gauze",
+			"Medical/Catalogue/Field treatment",
+			""
+		],
+		["cat/item/weldingtool", "Welding tool", "Engineering/Catalogue/Tools", ""],
+		["cat/item/multitool", "Multitool", "Engineering/Catalogue/Tools", ""],
+		[
+			"cat/item/cell/high",
+			"High-capacity power cell",
+			"Engineering/Catalogue/Power",
+			""
+		],
+		[
+			"guide/eng/power",
+			"Setting up the engine",
+			"Engineering/Guides",
+			"Start the supermatter and wire the grid, step by step."
+		],
+		[
+			"guide/eng/atmos",
+			"Atmospherics basics",
+			"Engineering/Guides",
+			"Pumps, filters and keeping the station breathable."
+		],
+		[
+			"guide/med/triage",
+			"Triage",
+			"Medical/Guides",
+			"Who to treat first when the bay fills up."
+		],
+		[
+			"guide/cargo/ordering",
+			"Ordering supplies",
+			"Cargo/Guides",
+			"Points, the supply console and the shuttle."
+		],
+		[
+			"cargo/pack/medical/surgery",
+			"Surgery crate",
+			"Cargo/Supply packs/Medical",
+			""
+		],
+		[
+			"cargo/pack/eng/tools",
+			"Toolbox crate",
+			"Cargo/Supply packs/Engineering",
+			""
+		],
+		[
+			"research/node/biotech",
+			"Biological technology",
+			"Research/Research nodes/Biology",
+			""
+		],
+		[
+			"research/node/adv_surgery",
+			"Advanced surgery tools",
+			"Research/Research nodes/Biology",
+			""
+		],
+		[
+			"cat/item/gun/energy/laser",
+			"Laser carbine",
+			"Security/Catalogue/Weapons",
+			""
+		],
+		[
+			"guide/sec/arrests",
+			"Making an arrest",
+			"Security/Guides",
+			"Cuffs, charges and the brig timer."
+		],
+		[
+			"guide/civ/kitchen",
+			"Running the kitchen",
+			"Civilian/Guides",
+			"Recipes, the grill and the fryer."
+		],
+		[
+			"guide/cmd/ids",
+			"ID cards and access",
+			"Command/Guides",
+			"Who opens what, and how to change it."
+		]
 	],
 	"article": {
 		"id": "med/cond/concussion",
 		"title": "Concussion",
 		"path": "Medical/Conditions/Neurological",
-		"summary": null,
+		"summary": "Brain injury from a blow to the head",
 		"blocks": [
 			{
 				"k": "p",
-				"t": "A blow to the head. See [[med/index|the medical pages]] and **rest**."
+				"t": "A blow to the head shakes the brain against the skull. Mild cases clear on their own with **rest**; a severe one becomes an [[med/cond/brain_bleed]] if ignored. See [[med/index|the medical pages]] for how conditions are read."
 			},
-			{ "k": "kv", "rows": [["Course", "Self-resolving"]] },
-			{ "k": "h", "t": "Treatment" },
+			{
+				"k": "kv",
+				"rows": [
+					["Severity", "Mild to severe"],
+					["Course", "Self-resolving when mild"],
+					["Organ", "Brain"],
+					["Caused by", "Blunt trauma to the head, falls, explosions"],
+					["Scanner", "\"Neurological irregularity\""]
+				]
+			},
+			{
+				"k": "h",
+				"t": "Signs"
+			},
 			{
 				"k": "links",
-				"t": "[[med/index|Neural repair]] (moderate)",
+				"t": "Symptoms",
 				"items": [
 					{
-						"id": "chem/bicaridine",
-						"name": "Bicaridine",
+						"id": "med/sym/headache",
+						"name": "Headache",
+						"note": "early",
+						"tone": null
+					},
+					{
+						"id": null,
+						"name": "Blurred vision",
+						"note": null,
+						"tone": null
+					},
+					{
+						"id": null,
+						"name": "Confusion",
+						"note": "severe",
+						"tone": "average"
+					}
+				]
+			},
+			{
+				"k": "h",
+				"t": "Treatment"
+			},
+			{
+				"k": "links",
+				"t": "[[med/mech/neural_repair]] (moderate)",
+				"items": [
+					{
+						"id": "chem/alkysine",
+						"name": "Alkysine",
+						"note": "strong",
+						"tone": "good"
+					},
+					{
+						"id": null,
+						"name": "Neural graft",
+						"note": "surgery",
+						"tone": null
+					}
+				]
+			},
+			{
+				"k": "links",
+				"t": "[[med/mech/analgesic]] (for comfort)",
+				"items": [
+					{
+						"id": "chem/tramadol",
+						"name": "Tramadol",
 						"note": "mild",
 						"tone": "good"
 					},
-					{ "id": null, "name": "Plain", "note": null, "tone": null }
+					{
+						"id": "chem/bicaridine",
+						"name": "Bicaridine",
+						"note": "worsens bleeding",
+						"tone": "bad"
+					}
 				]
 			},
-			{ "k": "ol", "items": ["First", "Second"] },
-			{ "k": "ul", "items": ["A [[chem/water]] bullet"] },
-			{ "k": "note", "t": "Careful.", "tone": "bad" },
-			{ "k": "table", "head": ["A", "B"], "rows": [["1", "[[chem/water]]"]] },
 			{
-				"k": "tabs",
-				"tabs": [
-					{ "name": "One", "blocks": [{ "k": "p", "t": "First tab" }] },
-					{ "name": "Two", "blocks": [] }
+				"k": "ol",
+				"items": [
+					"Scan the head with a [[cat/item/healthanalyzer|health analyzer]].",
+					"Keep the patient lying down.",
+					"Give [[chem/alkysine]] if confusion sets in."
+				]
+			},
+			{
+				"k": "note",
+				"t": "Do not give blood thinners to a concussed patient: a bleed inside the skull is far worse than the concussion.",
+				"tone": "bad"
+			},
+			{
+				"k": "note",
+				"t": "Severe cases need a [[med/surg/craniotomy]] within ten minutes.",
+				"tone": "average"
+			},
+			{
+				"k": "table",
+				"head": ["Severity", "Time to clear", "Treatment"],
+				"rows": [
+					["Mild", "2 minutes", "Rest"],
+					["Moderate", "5 minutes", "[[chem/alkysine]]"],
+					["Severe", "Never on its own", "[[med/surg/craniotomy]]"]
 				]
 			}
 		]

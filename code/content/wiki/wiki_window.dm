@@ -53,6 +53,9 @@ CAPABILITIES(/datum/station_wiki)
 		"path" = article["path"],
 		"summary" = article["summary"],
 		"blocks" = article["blocks"],
+		"icon" = article["icon"],
+		"icon_state" = article["icon_state"],
+		"swatch" = article["swatch"],
 	))
 
 /datum/station_wiki/proc/ui_act_open(datum/act/op/A, id)

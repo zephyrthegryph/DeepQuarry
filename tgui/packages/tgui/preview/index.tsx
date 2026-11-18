@@ -1,7 +1,8 @@
 /**
  * Renders one tgui window from the renderAll fixtures in an ordinary browser, for screenshots
  * (tools/tgui_preview/shoot.ts builds this bundle and drives it). `index.html?w=<Window>` shows
- * that window with its hand-written fixture, else the captured ui_data, else empty data.
+ * that window with its hand-written fixture, else the captured ui_data, else empty data; `&data=<url>` loads its data from that
+ * JSON file instead.
  */
 import './byond';
 import '../styles/main.scss';
@@ -87,16 +88,28 @@ store.set(configAtom, {
 } as any);
 store.set(gameStaticDataAtom, {});
 store.set(gameDataAtom, dataFor(name));
-
-createRoot(document.getElementById('app')!).render(
-  <StrictMode>
-    <Provider store={store}>
-      <Suspense fallback={null}>
-        {Routed ? <Routed /> : <div id="preview-missing">missing {name}</div>}
-      </Suspense>
-    </Provider>
-  </StrictMode>,
-);
+// ?data=<url>: the window's data from a JSON file served beside the bundle (more than one sample per window, e.g. one per article).
+// useBackend reads the store without subscribing, so the data is in place before the first render.
+function renderWindow() {
+  createRoot(document.getElementById('app')!).render(
+    <StrictMode>
+      <Provider store={store}>
+        <Suspense fallback={null}>
+          {Routed ? <Routed /> : <div id="preview-missing">missing {name}</div>}
+        </Suspense>
+      </Provider>
+    </StrictMode>,
+  );
+}
+const dataUrl = new URLSearchParams(location.search).get('data');
+if (dataUrl) {
+  fetch(dataUrl)
+    .then((r) => r.json())
+    .then((d) => store.set(gameDataAtom, d))
+    .finally(renderWindow);
+} else {
+  renderWindow();
+}
 (window as any).previewReady = true;
 
 // ?check=1: once the window has settled, run the alignment checks and hand the findings to the parent frame;

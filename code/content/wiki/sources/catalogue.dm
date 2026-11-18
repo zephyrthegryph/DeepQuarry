@@ -170,7 +170,7 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 		var/name = initial(O.name) || first?.name
 		if(!name)
 			continue
-		wiki_add(index, wiki_cat_id(path), capitalize(name), wiki_catalogue_path(path, first), null, null, GLOBAL_PROC_REF(wiki_catalogue_body), path)
+		wiki_set_sprite(wiki_add(index, wiki_cat_id(path), capitalize(name), wiki_catalogue_path(path, first), null, null, GLOBAL_PROC_REF(wiki_catalogue_body), path), path)
 	var/list/nodes = research_techweb_nodes()
 	for(var/node_id in nodes)
 		var/datum/techweb_node/N = nodes[node_id]
@@ -313,7 +313,7 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 	for(var/path in counts)
 		var/obj/O = path
 		var/id = wiki_cat_id(path)
-		items += list(wiki_link(wiki_title(id) ? id : null, capitalize(initial(O.name) || "[path]"), counts[path] > 1 ? "x[counts[path]]" : null))
+		items += list(wiki_link(wiki_title(id) ? id : null, capitalize(initial(O.name) || "[path]"), counts[path] > 1 ? "x[counts[path]]" : null, null, path))
 	if(length(items))
 		blocks += list(wiki_links("Contains", items))
 	blocks += list(wiki_note("Order it at a supply console; see [wiki_ref("guide/cargo/ordering", "ordering supplies")]."))

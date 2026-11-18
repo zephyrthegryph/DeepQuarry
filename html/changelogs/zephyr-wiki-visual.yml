@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Station Wiki redesign: department colours and icons, coloured tip/warning/danger callouts, tag chips, an infobox per article with the item sprite or reagent colour, styled tables, breadcrumbs and a sticky header."
+  - qol: "Station Wiki: a landing page per section with cards, department cards on the front page, an 'In this section' list under articles, search results with highlighted snippets and arrow-key picking, folds remembered for the session, and a drawer index in narrow windows."
