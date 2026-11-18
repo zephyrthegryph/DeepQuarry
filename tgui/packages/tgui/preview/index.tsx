@@ -25,7 +25,7 @@ import {
   suspendedAtom,
 } from '../events/store';
 import captured from '../interfaces/__fixtures__/ui_data.json';
-import { measureFitHeight } from '../layouts/fitWindow';
+import { measureFitHeight, measureFitWidth } from '../layouts/fitWindow';
 import { alignmentFindings, markFindings } from './alignment';
 
 const requireInterface = require.context(
@@ -307,6 +307,7 @@ const dataUrl = params.get('data');
 })();
 
 /** The window's fitted inner height (layouts/fitWindow.ts), for the render checks. */
+(window as any).__tguiFitWidth = () => measureFitWidth(document);
 (window as any).__tguiFit = () => {
   // Docked (?dock=1): the entry's body against what its window's content wants.
   const body = document.querySelector<HTMLElement>(

@@ -408,6 +408,9 @@ const PROBE = `(() => {
   return {
     brokenImg, tiny, tinyAt, emptySections,
     fit: window.__tguiFit ? window.__tguiFit() : null,
+    fitWidth: window.__tguiFitWidth ? window.__tguiFitWidth() : null,
+    innerW: innerWidth,
+    declaredW: Number(document.documentElement.dataset.tguiDeclaredWidth) || 0,
     autofit: document.documentElement.dataset.tguiAutofit || 'unknown',
     inner: innerHeight,
     text: (app.innerText || '').trim().length,
@@ -593,6 +596,20 @@ async function runJob(page: { sessionId: string }, job: Job): Promise<Result> {
   ) {
     // What auto-fit aims for (layouts/Window.tsx): the content height, at least FIT_MIN_HEIGHT, at most 90% of the screen.
     const target = Math.min(972, Math.max(120, probe.fit));
+    // Width (fitWindow.ts fitWidthTarget): the unwrapped content width, at least 240 and at most the declared width;
+    // wider than declared only when the wrapped content still does not fit.
+    // The width this window asked for (its <Window width>, computed or not), as it reported it.
+    const declared = probe.declaredW || (geometry[job.window]?.width ?? 400);
+    const fw = probe.fitWidth;
+    if (fw) {
+      const tw =
+        fw.min > declared
+          ? Math.min(1728, fw.min)
+          : Math.max(Math.min(240, declared), Math.min(declared, fw.max));
+      const slackX = probe.innerW - tw;
+      if (slackX > FIT_SLACK) problems.push(`slack-x:${slackX}px`);
+      else if (slackX < -FIT_SLACK) problems.push(`overfull-x:${-slackX}px`);
+    }
     const slack = probe.inner - target;
     if (slack > FIT_SLACK) problems.push(`slack:${slack}px`);
     else if (slack < -FIT_SLACK) problems.push(`overfull:${-slack}px`);
@@ -722,6 +739,7 @@ process.exit(
         !p.startsWith('off-right') &&
         !p.startsWith('empty-section') &&
         !p.startsWith('slack') &&
+        !p.startsWith('overfull-x') &&
         !p.startsWith('overfull'),
     ),
   )

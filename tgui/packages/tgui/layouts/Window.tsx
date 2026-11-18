@@ -43,9 +43,12 @@ import { claimReveal, isProfiling, revealWindow, traceAlpha } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
 import { resolveTheme, useConsoleScanlines } from './consoleTheme';
 import {
+  FIT_MIN_HEIGHT,
   fitOverflow,
   fitTarget,
+  fitWidthTarget,
   measureFitHeight,
+  measureFitWidth,
   measureNaturalBottom,
 } from './fitWindow';
 import { Layout } from './Layout';
@@ -153,6 +156,21 @@ function EmbeddedWindow(props: Props) {
       </div>
     </Layout>
   );
+}
+
+/** The opening size (CSS px) a window fits to: its content's width and then its height at that width, clamped to the screen. */
+function openingFit(
+  declaredWidth: number,
+  minHeight?: number,
+): [number, number] | null {
+  const want = measureFitWidth(document);
+  if (!want) return null;
+  const screenW = Math.floor((window.screen?.availWidth || 1920) * 0.9);
+  const screenH = Math.floor((window.screen?.availHeight || 1080) * 0.9);
+  const w = fitWidthTarget(want, declaredWidth, screenW);
+  const h = measureFitHeight(document, 0, w);
+  if (h === null) return null;
+  return [w, Math.min(screenH, Math.max(minHeight ?? FIT_MIN_HEIGHT, h))];
 }
 
 function NativeWindow(props: Props) {
@@ -277,6 +295,19 @@ function NativeWindow(props: Props) {
           screen: [window.screen.width, window.screen.height],
           dpr: window.devicePixelRatio,
         });
+        // Fit before showing (fitWindow.ts): measured at the width being fitted to, whatever the hidden shell's own size, so
+        // the window opens at its content's size instead of opening at its declared size and jumping.
+        if (autoFit && !fitContent && !fitted && !windowUserSized() && width) {
+          const fitted0 = openingFit(width, minHeight);
+          if (fitted0) {
+            const dpr = window.devicePixelRatio || 1;
+            geometry = {
+              ...geometry,
+              size: [fitted0[0] * dpr, fitted0[1] * dpr],
+            };
+            logger.log('fit: opening at', fitted0, '(CSS px)');
+          }
+        }
         const revealed = await revealWindow(
           config.window?.generation,
           geometry,
@@ -351,6 +382,7 @@ function NativeWindow(props: Props) {
     // Read by the render checks (tools/tgui_preview): whether this window fits itself.
     document.documentElement.dataset.tguiAutofit =
       autoFit && !fitContent && !fitted ? 'on' : 'off';
+    document.documentElement.dataset.tguiDeclaredWidth = String(width ?? '');
     if (
       !autoFit ||
       fitContent ||
@@ -391,7 +423,15 @@ function NativeWindow(props: Props) {
       mutate.disconnect();
       if (timer !== undefined) clearTimeout(timer);
     };
-  }, [autoFit, fitContent, fitted, suspended, revealedGeometry, minHeight]);
+  }, [
+    autoFit,
+    fitContent,
+    fitted,
+    suspended,
+    revealedGeometry,
+    minHeight,
+    width,
+  ]);
 
   const fancy = config.window?.fancy;
   const dockable = !!config.window?.dockable;

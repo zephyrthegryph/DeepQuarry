@@ -76,37 +76,40 @@ export function fitTarget(
   return Math.abs(delta) < FIT_STEP ? 0 : delta;
 }
 
-/**
- * Auto-fit for every window (doc/tgui_preview.md "Window fit"): the inner height (CSS px, the viewport the window must
- * have; for a docked window, the height below `originTop`, its column entry's top) at which the window's content shows whole with no space left under it, or null when the window cannot be
- * measured (a map or browser control has no size of its own, or there is no window content).
- *
- * Unlike measureNaturalBottom (a prompt that only grows), every scroll box and fill layout is released to its content:
- * a fill Section, a scrollable list and the window's own scroller take the height of what is in them, so the result is
- * the height the whole content wants. The caller clamps it to the screen and to the window's limits; a list longer than
- * that scrolls as before. Everything is restored before returning, in the same task, so nothing paints.
- */
-export function measureFitHeight(
-  scope: Document | Element = document,
-  originTop = 0,
-): number | null {
+/** The window content and its padded root, or null when the window cannot be fitted (no content, a map view, autoFit off). */
+function fitRoot(
+  scope: Document | Element,
+): { content: HTMLElement; root: HTMLElement } | null {
   const content = scope.querySelector<HTMLElement>('.Window__content');
   if (!content) return null;
   // A window that keeps its size (autoFit={false}: a camera or map view).
   if (content.closest('[data-autofit="off"]')) return null;
-  // A map or embedded browser control fills whatever space it is given: there is no content height to fit to.
+  // A map or embedded browser control fills whatever space it is given: there is no content size to fit to.
   if (content.querySelector('.ByondUi, .NanoMap, [class*="Map__"]'))
     return null;
   const root =
     content.querySelector<HTMLElement>(':scope > .Window__contentPadding') ??
     content;
+  return { content, root };
+}
+
+/**
+ * Runs `measure` with every scroll box and fill layout under `root` released to its content (`rootCss` added to the
+ * root), then restores every style in the same task, so nothing paints.
+ */
+function withReleased<T>(
+  content: HTMLElement,
+  root: HTMLElement,
+  rootCss: string,
+  measure: () => T,
+): T {
   const saved: [HTMLElement, string][] = [];
   const release = (el: HTMLElement, css: string) => {
     saved.push([el, el.style.cssText]);
     el.style.cssText += css;
   };
   const scrollTop = content.scrollTop;
-  release(root, ';height:auto !important;min-height:0 !important');
+  release(root, `;height:auto !important;min-height:0 !important${rootCss}`);
   for (const el of root.querySelectorAll<HTMLElement>('*')) {
     const style = getComputedStyle(el);
     const scroller = style.overflowY === 'auto' || style.overflowY === 'scroll';
@@ -114,8 +117,8 @@ export function measureFitHeight(
     if (scroller) {
       release(
         el,
-        ';overflow-y:visible !important;max-height:none !important;height:auto !important;flex-basis:auto !important' +
-          // A fill section's scroll box is stretched absolutely over its section (top: 0; bottom: 0): in flow it takes its content's height.
+        ';overflow:visible !important;max-height:none !important;height:auto !important;flex-basis:auto !important' +
+          // A fill section's scroll box is stretched absolutely over its section (top: 0; bottom: 0): in flow it takes its content's size.
           (style.position === 'absolute'
             ? ';position:relative !important;inset:auto !important'
             : ''),
@@ -126,15 +129,94 @@ export function measureFitHeight(
   }
   try {
     content.scrollTop = 0;
-    const box = root.getBoundingClientRect();
-    const cs = getComputedStyle(root);
-    const pad = Number.parseFloat(getComputedStyle(content).paddingBottom) || 0;
-    const margin = Number.parseFloat(cs.marginBottom) || 0;
-    return Math.ceil(box.top + box.height + margin + pad - originTop);
+    return measure();
   } finally {
-    for (let i = saved.length - 1; i >= 0; i--) {
-      saved[i][0].style.cssText = saved[i][1];
+    for (let k = saved.length - 1; k >= 0; k--) {
+      saved[k][0].style.cssText = saved[k][1];
     }
     content.scrollTop = scrollTop;
   }
+}
+
+/** The space (CSS px) beside the content root across the window: its left offset from `originLeft` plus the padding and margin on its right. */
+function sideSpace(
+  content: HTMLElement,
+  root: HTMLElement,
+  originLeft: number,
+): number {
+  const left = root.getBoundingClientRect().left - originLeft;
+  const pad = Number.parseFloat(getComputedStyle(content).paddingRight) || 0;
+  const margin = Number.parseFloat(getComputedStyle(root).marginRight) || 0;
+  return left + pad + margin;
+}
+
+/**
+ * Auto-fit for every window (doc/tgui_preview.md "Window fit"): the inner height (CSS px, the viewport the window must
+ * have; for a docked window, the height below `originTop`, its column entry's top) at which the content shows whole
+ * with no space left under it, laid out at window width `widthCss` (the current width when omitted), or null when the
+ * window cannot be measured. Every scroll box and fill layout is released to its content, so the result is the height
+ * the whole content wants; the caller clamps it to the screen and the window's limits.
+ */
+export function measureFitHeight(
+  scope: Document | Element = document,
+  originTop = 0,
+  widthCss?: number,
+  originLeft = 0,
+): number | null {
+  const found = fitRoot(scope);
+  if (!found) return null;
+  const { content, root } = found;
+  const width =
+    widthCss === undefined
+      ? ''
+      : `;width:${Math.max(0, widthCss - sideSpace(content, root, originLeft))}px !important;flex:none !important`;
+  return withReleased(content, root, width, () => {
+    const box = root.getBoundingClientRect();
+    const pad = Number.parseFloat(getComputedStyle(content).paddingBottom) || 0;
+    const margin = Number.parseFloat(getComputedStyle(root).marginBottom) || 0;
+    return Math.ceil(box.top + box.height + margin + pad - originTop);
+  });
+}
+
+/**
+ * The window widths (CSS px) the content wants: `max` with nothing wrapped (every line at its full length), `min` with
+ * everything wrapped as far as it goes (the widest word, button or fixed-size element). Derived from the content: a
+ * fill layout takes the width of what is in it. Null when the window cannot be measured.
+ */
+export function measureFitWidth(
+  scope: Document | Element = document,
+  originLeft = 0,
+): { max: number; min: number } | null {
+  const found = fitRoot(scope);
+  if (!found) return null;
+  const { content, root } = found;
+  const side = sideSpace(content, root, originLeft);
+  const at = (w: string) =>
+    withReleased(
+      content,
+      root,
+      `;width:${w} !important;flex:none !important;max-width:none !important`,
+      () => Math.ceil(root.getBoundingClientRect().width + side),
+    );
+  return { max: at('max-content'), min: at('min-content') };
+}
+
+/** The narrowest a fitted window is made (CSS px). */
+export const FIT_MIN_WIDTH = 240;
+
+/**
+ * The width (CSS px) a window fits to: its content's unwrapped width, between FIT_MIN_WIDTH and the window's declared
+ * width (wider would only spread the content out); wider than declared only when even the fully wrapped content does
+ * not fit (a fixed table, a board), up to `screenMax`.
+ */
+export function fitWidthTarget(
+  want: { max: number; min: number },
+  declared: number,
+  screenMax: number,
+): number {
+  if (want.min > declared) return Math.min(screenMax, want.min);
+  return Math.max(
+    Math.min(FIT_MIN_WIDTH, declared),
+    Math.min(declared, want.max),
+  );
 }

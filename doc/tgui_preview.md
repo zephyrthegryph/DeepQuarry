@@ -28,12 +28,15 @@ Exit status is 1 on exceptions, blank renders, missing exports or overflow.
 Every window fits its height to its content at run time (`tgui/packages/tgui/layouts/fitWindow.ts` `measureFitHeight`, used by
 `layouts/Window.tsx`): after it opens and whenever its content changes, it measures the content with every scroll box and fill
 layout released to what it holds, and resizes to that, at least 120 px and at most 90% of the screen (a longer list scrolls).
-It stops for good once the player resizes the window (a saved geometry carries `sized`), and a window whose content fills
+Width fits too: the content's unwrapped width (`measureFitWidth`, max-content with fill layouts released, so it comes from the
+content), at least 240 px and at most the window's declared width; wider only when even the wrapped content does not fit
+(`fitWidthTarget`). The opening size is fitted before the window is shown (measured at the target width, whatever the hidden
+shell's size), so there is no jump; later content changes refit the height. It stops for good once the player resizes the window (a saved geometry carries `sized`), and a window whose content fills
 whatever it gets (a camera or map view, `ByondUi`) passes `autoFit={false}`. Docked in the right-hand column, an entry the
 player has not sized takes its content's height the same way (`tgui-panel/column/Column.tsx`, the model's `fit` action), up to
 the room the chat leaves.
 
-The render check reports `slack:Npx` (space under the content) and `overfull:Npx` (content cut off or scrolling while the
+The render check reports `slack:Npx` / `slack-x:Npx` (space under or beside the content) and `overfull:Npx` / `overfull-x:Npx` (content cut off or scrolling while the
 window could still grow) over 16 px, at the window's own width and docked (`--widths std,dock`: `?dock=1` renders the window
 in the real column above a stand-in for the chat).
 

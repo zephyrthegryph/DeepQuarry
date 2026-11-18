@@ -5,6 +5,7 @@ import {
   FIT_TOLERANCE,
   fitOverflow,
   fitTarget,
+  fitWidthTarget,
   measureNaturalBottom,
 } from './fitWindow';
 
@@ -93,5 +94,20 @@ describe('fitTarget (auto-fit)', () => {
   });
   it('ignores a change smaller than one step (layout noise)', () => {
     expect(fitTarget(400 + FIT_STEP - 1, 400, { max: 972 })).toBe(0);
+  });
+});
+
+describe('fitWidthTarget (auto-fit width)', () => {
+  it('shrinks to the unwrapped content width, never past the declared width', () => {
+    expect(fitWidthTarget({ max: 300, min: 120 }, 450, 1728)).toBe(300);
+    expect(fitWidthTarget({ max: 900, min: 120 }, 450, 1728)).toBe(450);
+  });
+  it('keeps a sane minimum', () => {
+    expect(fitWidthTarget({ max: 90, min: 60 }, 450, 1728)).toBe(240);
+    expect(fitWidthTarget({ max: 90, min: 60 }, 200, 1728)).toBe(200);
+  });
+  it('grows past the declared width only when the wrapped content does not fit, up to the screen', () => {
+    expect(fitWidthTarget({ max: 1400, min: 700 }, 450, 1728)).toBe(700);
+    expect(fitWidthTarget({ max: 4000, min: 3000 }, 450, 1728)).toBe(1728);
   });
 });
