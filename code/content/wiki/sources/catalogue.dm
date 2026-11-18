@@ -154,7 +154,70 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 		for(var/path in P.contains)
 			if(ispath(path, /obj))
 				LAZYOR(packs_by_path[path], P)
-	return list("designs" = designs_by_path, "packs" = packs_by_path)
+	return list("designs" = designs_by_path, "packs" = packs_by_path, "made" = wiki_catalogue_made_by(), "vended" = wiki_catalogue_vended(), "placed" = wiki_catalogue_placed())
+
+/// A catalogued thing: a physical object a player meets (an item, a machine, a structure, a vehicle or an exosuit).
+/proc/wiki_catalogue_kind(path)
+	for(var/root in GLOB.wiki_catalogue_roots)
+		if(ispath(path, root))
+			return TRUE
+	return FALSE
+
+/// The object roots the catalogue files. Effects, landmarks, spawners and projectiles are not things a player handles.
+GLOBAL_LIST_INIT(wiki_catalogue_roots, list(/obj/item, /obj/machinery, /obj/structure, /obj/vehicle, /obj/mecha))
+
+/// The station map the catalogue reads placed things from (the live map, AGENTS.md section 1): every .dmm in these folders.
+GLOBAL_LIST_INIT(wiki_station_map_dirs, list("maps/southern_cross/"))
+
+/// Every object type placed on the station map (path -> TRUE), read from the map files' type dictionaries. Var-edited instances count as their type.
+/proc/wiki_catalogue_placed()
+	. = list()
+	for(var/dir in GLOB.wiki_station_map_dirs)
+		for(var/file in flist(dir))
+			if(copytext(file, -4) != ".dmm")
+				continue
+			for(var/line in splittext(file2text("[dir][file]"), "\n"))
+				if(copytext(line, 1, 6) != "/obj/")
+					continue
+				var/stop = length(line) + 1
+				for(var/mark in list("{", ",", ")", ascii2text(13)))
+					var/at = findtext(line, mark)
+					if(at && at < stop)
+						stop = at
+				var/path = text2path(copytext(line, 1, stop))
+				if(path && wiki_catalogue_kind(path))
+					.[path] = TRUE
+
+/// What every vending machine sells (path -> list(vendor type)): its products and premium stock, not its hidden contraband.
+/proc/wiki_catalogue_vended()
+	. = list()
+	var/list/catalog = vending_catalog_load()
+	for(var/type_text in catalog)
+		var/vendor = text2path(type_text)
+		if(!vendor)
+			continue
+		for(var/section in list("products", "premium"))
+			for(var/path in vending_catalog_section(vendor, section))
+				if(ispath(path, /obj) && wiki_catalogue_kind(path))
+					LAZYOR(.[path], vendor)
+
+/// The rules that make each object (path -> list(/datum/xform)): cooking, crafting, stack recipes, smelting and every other transformation.
+/proc/wiki_catalogue_made_by()
+	. = list()
+	xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING) // the rules are compiled on first use
+	for(var/datum/xform/X as anything in GLOB.xform_rules)
+		var/list/made = list()
+		if(ispath(X.result, /obj))
+			made += X.result
+		for(var/list/row in X.makes)
+			if(length(row) >= 2 && ispath(row[2], /obj))
+				made |= row[2]
+		for(var/datum/xform_spawn/spawn_row in X.spawn_rows)
+			if(ispath(spawn_row.what, /obj))
+				made |= spawn_row.what
+		for(var/path in made)
+			if(wiki_catalogue_kind(path))
+				LAZYOR(.[path], X)
 
 /proc/wiki_source_catalogue(list/index)
 	var/list/sources = GLOBAL_TABLE_GET(wiki_catalogue_sources_table)
@@ -163,6 +226,9 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 		paths[path] = TRUE
 	for(var/path in sources["packs"])
 		paths[path] = TRUE
+	for(var/key in list("made", "vended", "placed"))
+		for(var/path in sources[key])
+			paths[path] = TRUE
 	for(var/path in paths)
 		var/obj/O = path
 		var/list/designs = sources["designs"][path]
@@ -222,7 +288,7 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 /proc/wiki_catalogue_body(path)
 	var/list/sources = GLOBAL_TABLE_GET(wiki_catalogue_sources_table)
 	var/list/blocks = list(wiki_p(wiki_catalogue_description(path) || "No description is recorded for it."))
-	var/list/facts = list(list("Filed under", replacetext(wiki_catalogue_path(path, null), "/", " / ")))
+	var/list/facts = list(list("Filed under", replacetext(wiki_catalogue_path(path, null), "/", " / "))) + wiki_catalogue_facts(path)
 	blocks += list(wiki_kv(facts))
 	var/list/made = list()
 	var/list/nodes = list()
@@ -235,8 +301,24 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 				nodes[wiki_node_id(node_id)] = TRUE
 		if(length(D.materials))
 			recycle |= wiki_material_text(D.materials)
+	for(var/datum/xform/X as anything in sources["made"][path])
+		var/text = wiki_xform_text(X)
+		if(text)
+			made |= text
 	if(length(made))
 		blocks += list(wiki_h("How it is made"), wiki_ul(made))
+	var/list/found = list()
+	if(sources["placed"][path])
+		found += "Placed on the station at the start of the shift."
+	var/list/vendors = list()
+	for(var/vendor in sources["vended"][path])
+		var/obj/V = vendor
+		var/vendor_id = wiki_cat_id(vendor)
+		vendors += wiki_title(vendor_id) ? wiki_ref(vendor_id, initial(V.name)) : "[initial(V.name)]"
+	if(length(vendors))
+		found += "Sold by [english_list(vendors)]."
+	if(length(found))
+		blocks += list(wiki_h("Where to find it"), wiki_ul(found))
 	if(length(nodes))
 		var/list/links = list()
 		for(var/id in nodes)
@@ -244,11 +326,11 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 		blocks += list(wiki_links("Unlocked by", links))
 	var/list/packs = list()
 	for(var/datum/supply_pack/P as anything in sources["packs"][path])
-		packs += list(wiki_link(wiki_pack_id(P), P.name, "[P.cost] points"))
+		packs += list(wiki_link(wiki_pack_id(P), P.name, "[SSsupply.catalog_price(P)] Thalers"))
 	if(length(packs))
 		blocks += list(wiki_h("Ordering it"), wiki_links("Supply packs", packs))
-	if(!length(made) && !length(packs))
-		blocks += list(wiki_note("Not printed or ordered: found where the station keeps it."))
+	if(!length(made) && !length(packs) && !length(found))
+		blocks += list(wiki_note("Not printed, made, sold or ordered on the station, and not placed on it at the start of the shift."))
 	if(ispath(path, /obj/item/circuitboard))
 		var/obj/item/circuitboard/B = path
 		var/built = initial(B.build_path)
@@ -300,7 +382,7 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 /proc/wiki_pack_body(pack_name)
 	var/datum/supply_pack/P = supply_supply_pack()[pack_name]
 	var/list/blocks = list(wiki_p(P.desc || "A supply crate."))
-	var/list/facts = list(list("Cost", "[P.cost] points"), list("Group", P.group))
+	var/list/facts = list(list("Cost", "[SSsupply.catalog_price(P)] Thalers"), list("Group", P.group))
 	if(P.access)
 		facts += list(list("Locked", "Opens with the right access"))
 	if(P.num_contained)
@@ -318,3 +400,90 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 		blocks += list(wiki_links("Contains", items))
 	blocks += list(wiki_note("Order it at a supply console; see [wiki_ref("guide/cargo/ordering", "ordering supplies")]."))
 	return blocks
+
+// ---- facts read from the type ----
+
+GLOBAL_LIST_INIT(wiki_item_size_names, list("Tiny", "Small", "Normal", "Bulky", "Huge", "Gigantic"))
+
+/// Labelled facts read from the type's own data: an item's size and blow (its item_combat() trait), a machine's draw (its uses_power() trait).
+/proc/wiki_catalogue_facts(path)
+	. = list()
+	if(ispath(path, /obj/item))
+		var/obj/item/I = path
+		var/size = initial(I.w_class)
+		if(isnum(size) && size >= 1 && size <= length(GLOB.wiki_item_size_names))
+			. += list(list("Size", GLOB.wiki_item_size_names[size]))
+		var/datum/type_trait/item_combat/combat = combat_of_type(path)
+		if(combat?.force > 0)
+			. += list(list("Hits for", "[combat.force] [combat.sharp || combat.edge ? "cutting" : "blunt"] damage"))
+	if(ispath(path, /obj/machinery))
+		var/datum/type_trait/power/power = power_of_type(path)
+		if(power && (power.idle || power.active))
+			. += list(list("Power draw", "[power.idle] W idle, [power.active] W working"))
+
+/// The appliances a cooking rule's bitfield names.
+/proc/wiki_cook_appliances(flags)
+	. = list()
+	var/static/list/names = list("[MICROWAVE]" = "microwave", "[FRYER]" = "deep fryer", "[OVEN]" = "oven", "[GRILL]" = "grill", "[CANDYMAKER]" = "candy machine", "[CEREALMAKER]" = "cereal maker")
+	for(var/flag in names)
+		if(flags & text2num(flag))
+			. += names[flag]
+
+/// One term of a rule as text: "2 egg", "5u Salt".
+/proc/wiki_xterm_text(currency, key, amount)
+	if(ispath(key, /datum/material))
+		var/datum/material/M = key
+		return "[amount] [initial(M.display_name) || initial(M.name)] sheet\s"
+	if(ispath(key, /datum/gas))
+		var/datum/gas/G = key
+		return "[amount] mol [initial(G.name)]"
+	if(ispath(key, /atom))
+		var/atom/A = key
+		return "[amount] [initial(A.name)]"
+	if(currency == XCUR_REAGENT && istext(key))
+		return "[amount]u [dq_reagent_display_name(key)]"
+	return "[amount] [key]"
+
+/// A rule's inputs as text, from its takes rows (or, for a crafting recipe, its requirement groups: any one of a group).
+/proc/wiki_xform_inputs(datum/xform/X)
+	. = list()
+	if(length(X.reqs))
+		for(var/list/group in X.reqs)
+			var/list/options = list()
+			for(var/key in group)
+				options += wiki_xterm_text(null, key, group[key])
+			if(length(options))
+				. += english_list(options, and_text = " or ")
+		return
+	for(var/list/row in X.takes)
+		if(length(row) >= 3)
+			. += wiki_xterm_text(row[1], row[2], row[3])
+
+/// How a rule makes its product, as one line, or null for a rule with nothing to say.
+/proc/wiki_xform_text(datum/xform/X)
+	var/list/inputs = wiki_xform_inputs(X)
+	var/from = length(inputs) ? english_list(inputs) : null
+	switch(X.regime)
+		if(REGIME_COOKING)
+			var/list/appliances = wiki_cook_appliances(X.cooks_in)
+			var/list/parts = inputs.Copy()
+			for(var/tag in X.fruit_takes)
+				parts += "[X.fruit_takes[tag]] [tag]"
+			return "Cooked in [length(appliances) ? "a [english_list(appliances, and_text = " or ")]" : "the kitchen"][length(parts) ? " from [english_list(parts)]" : ""][X.cook_time ? ", [X.cook_time / 10] seconds" : ""]."
+		if(REGIME_CRAFTING)
+			var/list/tools = list()
+			for(var/behaviour in X.tool_behaviors)
+				tools += "[behaviour]"
+			for(var/tool in X.tool_paths)
+				var/obj/T = tool
+				tools += "[initial(T.name)]"
+			return "Crafted in the crafting window[from ? " from [from]" : ""][length(tools) ? ", with [english_list(tools)]" : ""][X.build_time ? ", [X.build_time / 10] seconds" : ""]."
+		if(REGIME_CHOSEN)
+			return "Built from a stack (use the stack in hand)[X.title ? ": [X.title]" : ""][from ? ", costing [from]" : ""]."
+		if(REGIME_SMELTING)
+			return "Smelted[from ? " from [from]" : ""]."
+		if(REGIME_GRINDING)
+			return "Ground[from ? " from [from]" : ""]."
+		if(REGIME_INSTANT)
+			return from ? "Forms when [from] are mixed in a container." : null
+	return from ? "Made from [from]." : null

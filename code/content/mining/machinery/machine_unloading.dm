@@ -2,6 +2,7 @@
 
 /obj/machinery/mineral/unloading_machine
 	name = "unloading machine"
+	desc = "Empties ore boxes on its input side and moves loose items from there to its output side."
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "unloader"
 	density = TRUE

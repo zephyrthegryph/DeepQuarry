@@ -24,14 +24,13 @@ GLOBAL_LIST_INIT(wiki_manual_sections, list(
 	/obj/item/book/manual/synthetic_life = "Research/Manuals",
 	/obj/item/book/manual/medical_cloning = "Medical/Manuals",
 	/obj/item/book/manual/hydroponics_pod_people = "Civilian/Manuals",
-	/obj/item/book/manual/chef_recipes = "Civilian/Manuals",
 	/obj/item/book/manual/barman_recipes = "Civilian/Manuals",
 	/obj/item/book/manual/cook_guide = "Civilian/Manuals",
 	/obj/item/book/manual/bar_guide = "Civilian/Manuals",
 ))
 
-/// Manuals that are not station reference (an antagonist's handbook).
-GLOBAL_LIST_INIT(wiki_manual_excluded, list(/obj/item/book/manual/nuclear))
+/// Manuals not filed: an antagonist's handbook, and the old recipe book whose recipes no longer match the kitchen (each dish's catalogue page has its real recipe).
+GLOBAL_LIST_INIT(wiki_manual_excluded, list(/obj/item/book/manual/nuclear, /obj/item/book/manual/chef_recipes))
 
 /// HTML (a manual's dat, a codex page) to wiki markup: headings, list items and paragraphs kept, every other tag dropped, entities decoded.
 /// `link_of` (term -> article id) turns the codex's quick links into wiki links.

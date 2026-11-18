@@ -73,6 +73,7 @@ Every finding step has its own page under Medical/Surgery, with the tools it tak
 - Solar arrays give a steady trickle in daylight; the instructions come with the panels.
 ## Getting it to the rooms
 - Cable carries power between machines. Lay it with a coil; cut it with wirecutters. A break anywhere in a run starves everything past it.
+- Cable has resistance: a long run loses part of what it carries, more under heavy load, and a machine at the far end of a long run works less efficiently. Branches and loops share the current. Cable of a better conductor (see \[\[guide/engineering/materials|materials]]) loses less; engineered and superconducting cable also heats up under load and has limits of its own.
 - Each room's APC runs its lighting, equipment and environment channels from its own cell. A drained APC shuts its channels off one by one.
 ## When it fails
 1. Check the engine is running and the storage is charging.
@@ -102,7 +103,7 @@ The pipe dispenser and the pipes themselves are explained in \[\[manual/pipesand
 	summary = "Research nodes unlock designs; lathes and fabricators print them from materials."
 	body = {"Research is a tree of nodes. Each node costs research points, needs the nodes before it, and unlocks designs. Every node has a page under Research/Research nodes, and every design's product has a catalogue page saying where it is printed and from what.
 ## Printing
-- An autolathe prints common tools and parts from steel and glass.
+- An autolathe prints common tools and parts from steel, glass and plastic.
 - A protolathe prints what research unlocks; a circuit imprinter prints circuit boards; the exosuit and prosthetics fabricators print exosuit and robot parts.
 - Feed the machines materials; what a design costs is on its catalogue page. Recycling an object gives back up to what it was made of.
 See \[\[manual/researchanddevelopment101|Research and Development 101]] for the department's own manual and \[\[guide/chemistry/lab|working the chemistry lab]] for the chemists."}

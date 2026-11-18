@@ -101,3 +101,7 @@ SETTER(/datum/system/supply, shuttle)
 /// Convert Thalers to the legacy export-point unit; callers still decide rounding.
 /datum/system/supply/proc/money_to_export_points(thalers)
 	return thalers * points_per_money
+
+/// What a catalog pack costs to order, in Thalers (its catalog price, before any trader's markup or standing).
+/datum/system/supply/proc/catalog_price(datum/supply_pack/pack)
+	return pack_price(pack)

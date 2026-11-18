@@ -2,6 +2,7 @@
 
 /obj/machinery/mineral/stacking_unit_console
 	name = "stacking machine console"
+	desc = "Shows what the stacking machine holds, sets how big a stack it releases, and releases a partial stack on demand."
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "console"
 	layer = ABOVE_WINDOW_LAYER
@@ -70,6 +71,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 
 /obj/machinery/mineral/stacking_machine
 	name = "stacking machine"
+	desc = "Collects loose sheets from its input side into full stacks and releases them out its output side."
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "stacker"
 	density = TRUE
