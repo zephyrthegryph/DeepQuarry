@@ -1,0 +1,10 @@
+{
+	"verbose": 1,
+	"spo2Alarm": 90,
+	"choice": 0,
+	"health": 1,
+	"crit": 1,
+	"healthAlarm": 50,
+	"spo2": 1,
+	"occupant": null
+}

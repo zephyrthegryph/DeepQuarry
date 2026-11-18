@@ -28,6 +28,9 @@ export const WINDOW_THEMES: readonly string[] = [
 
 /** The theme a window is drawn in: its own when it names one with a stylesheet, the console look otherwise (no name, '' or a name nothing styles). */
 export function resolveTheme(theme?: string | null): string {
+  // The render preview's ?theme= (tgui/packages/tgui/preview) draws every window in one theme.
+  const forced = (globalThis as any).__TGUI_PREVIEW_THEME__;
+  if (forced) return forced;
   return theme && WINDOW_THEMES.includes(theme) ? theme : CONSOLE_THEME;
 }
 

@@ -1,0 +1,37 @@
+{
+	"user": "Unknown",
+	"wanted_issue": null,
+	"securityCaster": 0,
+	"channels": [
+		{
+			"admin": 1,
+			"ref": 109,
+			"name": "Station Announcements",
+			"censored": 0
+		},
+		{
+			"admin": 1,
+			"ref": 23922,
+			"name": "The Gibson Gazette",
+			"censored": 0
+		},
+		{
+			"admin": 1,
+			"ref": 23923,
+			"name": "Oculum Content Aggregator",
+			"censored": 0
+		}
+	],
+	"photo_data": 0,
+	"total_num": 3,
+	"active_num": 3,
+	"message_num": 0,
+	"viewing_channel": null,
+	"company": "NanoTrasen-testing",
+	"temp": null,
+	"channel_name": "",
+	"c_locked": 0,
+	"msg": "",
+	"title": "",
+	"paper_remaining": 15
+}

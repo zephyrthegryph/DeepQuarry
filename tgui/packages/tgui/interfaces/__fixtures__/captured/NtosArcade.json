@@ -1,0 +1,10 @@
+{
+	"Hitpoints": 45,
+	"PlayerHitpoints": 30,
+	"PlayerMP": 10,
+	"TicketCount": 0,
+	"GameActive": 1,
+	"PauseState": 0,
+	"Status": "Nanotrasen says, winners make us money.",
+	"BossID": "boss1.gif"
+}

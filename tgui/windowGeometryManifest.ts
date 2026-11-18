@@ -9,6 +9,9 @@ export type WindowGeometryManifestEntry = {
 
 const FALLBACK_WIDTH = 400;
 const FALLBACK_HEIGHT = 600;
+/** NtosWindow's default size (packages/tgui/layouts/NtosWindow.tsx). */
+const NTOS_WIDTH = 575;
+const NTOS_HEIGHT = 700;
 
 function numericProp(tag: string, prop: string): number | undefined {
   const expression = tag.match(
@@ -20,14 +23,16 @@ function numericProp(tag: string, prop: string): number | undefined {
 }
 
 function geometryFromSource(source: string): WindowGeometryManifestEntry {
-  for (const match of source.matchAll(/<Window\b([\s\S]*?)>/g)) {
-    const width = numericProp(match[1], 'width');
-    const height = numericProp(match[1], 'height');
-    if (width || height) {
+  // <NtosWindow> opens at its own defaults (layouts/NtosWindow.tsx) unless it names a size.
+  for (const match of source.matchAll(/<(Ntos)?Window\b([\s\S]*?)>/g)) {
+    const ntos = Boolean(match[1]);
+    const width = numericProp(match[2], 'width');
+    const height = numericProp(match[2], 'height');
+    if (width || height || ntos) {
       return {
-        width: width ?? FALLBACK_WIDTH,
-        height: height ?? FALLBACK_HEIGHT,
-        exact: Boolean(width && height),
+        width: width ?? (ntos ? NTOS_WIDTH : FALLBACK_WIDTH),
+        height: height ?? (ntos ? NTOS_HEIGHT : FALLBACK_HEIGHT),
+        exact: ntos || Boolean(width && height),
       };
     }
   }

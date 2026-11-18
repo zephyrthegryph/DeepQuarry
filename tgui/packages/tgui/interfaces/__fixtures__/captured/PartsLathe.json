@@ -1,0 +1,61 @@
+{
+	"materials": [
+		{
+			"name": "steel",
+			"ref": 18281,
+			"amount": 0,
+			"color": "#666666"
+		},
+		{
+			"name": "glass",
+			"ref": 18275,
+			"amount": 0,
+			"color": "#00E1FF"
+		}
+	],
+	"SHEET_MATERIAL_AMOUNT": 2000,
+	"copyBoard": null,
+	"copyBoardReqComponents": null,
+	"queue": [],
+	"building": null,
+	"buildPercent": null,
+	"error": null,
+	"recipies": [
+		{
+			"name": "console screen",
+			"type": "/obj/item/stock_parts/console_screen"
+		},
+		{
+			"name": "capacitor",
+			"type": "/obj/item/stock_parts/capacitor"
+		},
+		{
+			"name": "scanning module",
+			"type": "/obj/item/stock_parts/scanning_module"
+		},
+		{
+			"name": "micro-manipulator",
+			"type": "/obj/item/stock_parts/manipulator"
+		},
+		{
+			"name": "micro-laser",
+			"type": "/obj/item/stock_parts/micro_laser"
+		},
+		{
+			"name": "matter bin",
+			"type": "/obj/item/stock_parts/matter_bin"
+		},
+		{
+			"name": "gear",
+			"type": "/obj/item/stock_parts/gear"
+		},
+		{
+			"name": "motor",
+			"type": "/obj/item/stock_parts/motor"
+		},
+		{
+			"name": "spring",
+			"type": "/obj/item/stock_parts/spring"
+		}
+	]
+}

@@ -1,0 +1,11 @@
+{
+	"suffix": "1",
+	"power": 1,
+	"load": null,
+	"locked": 1,
+	"auto_return": 1,
+	"crates_only": 1,
+	"hatch": 0,
+	"safety": 1,
+	"issilicon": 0
+}

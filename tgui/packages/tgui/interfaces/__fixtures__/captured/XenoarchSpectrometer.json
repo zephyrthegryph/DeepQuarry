@@ -1,0 +1,20 @@
+{
+	"IDEAL_RPM": 600,
+	"RPM_MAX_DELTA": 60,
+	"RPM_MAX": 1200,
+	"TARGET_RADIATION": 20,
+	"RADIATION_MAX": 50,
+	"HEAT_FAILURE_THRESHOLD": 10,
+	"HEAT_MAX": 12,
+	"COOLANT_MAX": 100,
+	"last_scan_data": "No scans on record.",
+	"scanning": 0,
+	"scan_progress": 0,
+	"scanner_rpm": 0,
+	"scanner_rpm_delta": 0,
+	"radiation": 0,
+	"heat": 0,
+	"scanned_item": "",
+	"scanned_item_desc": "",
+	"coolant": 0
+}

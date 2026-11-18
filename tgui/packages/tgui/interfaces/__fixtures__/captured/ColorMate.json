@@ -1,0 +1,27 @@
+{
+	"message": "",
+	"title": "Color Mate",
+	"matrix_only": 0,
+	"matrixcolors": {
+		"rr": 1,
+		"rg": 0,
+		"rb": 0,
+		"gr": 0,
+		"gg": 1,
+		"gb": 0,
+		"br": 0,
+		"bg": 0,
+		"bb": 1,
+		"cr": 0,
+		"cg": 0,
+		"cb": 0
+	},
+	"temp": null,
+	"item_name": null,
+	"item_sprite": null,
+	"item_preview": null,
+	"activemode": 2,
+	"buildhue": 0,
+	"buildsat": 1,
+	"buildval": 1
+}

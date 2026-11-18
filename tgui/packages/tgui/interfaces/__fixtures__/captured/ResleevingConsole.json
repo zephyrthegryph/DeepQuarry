@@ -1,0 +1,16 @@
+{
+	"menu": 1,
+	"pods": [],
+	"spods": [],
+	"sleevers": [],
+	"coredumped": 0,
+	"emergency": 0,
+	"temp": null,
+	"selected_pod": null,
+	"selected_printer": null,
+	"selected_sleever": null,
+	"bodyrecords": [],
+	"mindrecords": [],
+	"active_b_rec": null,
+	"active_m_rec": null
+}

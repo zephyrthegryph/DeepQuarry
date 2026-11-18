@@ -1,0 +1,11 @@
+{
+	"on": 1,
+	"locked": 1,
+	"tank": 1,
+	"tankVolume": 1000,
+	"tankMaxVolume": 5000,
+	"waters_trays": 1,
+	"refills_water": 1,
+	"uproots_weeds": 1,
+	"replaces_nutriment": 0
+}

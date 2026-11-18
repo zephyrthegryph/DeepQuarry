@@ -1,0 +1,75 @@
+{
+	"mode": 0,
+	"transfer_max": 30000,
+	"output_load": 0,
+	"input_load": 0,
+	"equalise": 0,
+	"blink_tick": 0,
+	"cells_max": 3,
+	"cells_cur": 0,
+	"cells_list": [
+		{
+			"slot": 1,
+			"used": 0,
+			"percentage": null,
+			"name": null,
+			"id": null
+		},
+		{
+			"slot": 2,
+			"used": 0,
+			"percentage": null,
+			"name": null,
+			"id": null
+		},
+		{
+			"slot": 3,
+			"used": 0,
+			"percentage": null,
+			"name": null,
+			"id": null
+		},
+		{
+			"slot": 4,
+			"used": 0,
+			"percentage": null,
+			"name": null,
+			"id": null
+		},
+		{
+			"slot": 5,
+			"used": 0,
+			"percentage": null,
+			"name": null,
+			"id": null
+		},
+		{
+			"slot": 6,
+			"used": 0,
+			"percentage": null,
+			"name": null,
+			"id": null
+		},
+		{
+			"slot": 7,
+			"used": 0,
+			"percentage": null,
+			"name": null,
+			"id": null
+		},
+		{
+			"slot": 8,
+			"used": 0,
+			"percentage": null,
+			"name": null,
+			"id": null
+		},
+		{
+			"slot": 9,
+			"used": 0,
+			"percentage": null,
+			"name": null,
+			"id": null
+		}
+	]
+}

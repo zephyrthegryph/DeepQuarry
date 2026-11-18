@@ -1,0 +1,17 @@
+{
+	"on": 1,
+	"open": 0,
+	"locked": 1,
+	"vocal": 1,
+	"amount": 10,
+	"possible_bmode": [
+		"NORTH",
+		"EAST",
+		"SOUTH",
+		"WEST"
+	],
+	"improvefloors": null,
+	"eattiles": null,
+	"maketiles": null,
+	"bmode": null
+}

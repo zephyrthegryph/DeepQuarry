@@ -1,0 +1,76 @@
+{
+	"locked": 1,
+	"emagged": 0,
+	"externalPower": 0,
+	"powerCellStatus": 90,
+	"chargeMode": 1,
+	"chargingStatus": 0,
+	"totalLoad": 0,
+	"failTime": 0,
+	"gridCheck": 0,
+	"coverLocked": 1,
+	"siliconUser": 0,
+	"emergencyLights": 1,
+	"powerChannels": [
+		{
+			"title": "Equipment",
+			"powerLoad": 0,
+			"status": 3,
+			"topicParams": {
+				"auto": {
+					"channel": 0,
+					"mode": 3
+				},
+				"on": {
+					"channel": 0,
+					"mode": 2
+				},
+				"off": {
+					"channel": 0,
+					"mode": 1
+				}
+			}
+		},
+		{
+			"title": "Lighting",
+			"powerLoad": 0,
+			"status": 3,
+			"topicParams": {
+				"auto": {
+					"channel": 1,
+					"mode": 3
+				},
+				"on": {
+					"channel": 1,
+					"mode": 2
+				},
+				"off": {
+					"channel": 1,
+					"mode": 1
+				}
+			}
+		},
+		{
+			"title": "Environment",
+			"powerLoad": 0,
+			"status": 3,
+			"topicParams": {
+				"auto": {
+					"channel": 2,
+					"mode": 3
+				},
+				"on": {
+					"channel": 2,
+					"mode": 2
+				},
+				"off": {
+					"channel": 2,
+					"mode": 1
+				}
+			}
+		}
+	],
+	"isOperating": 1,
+	"nightshiftLights": 0,
+	"nightshiftSetting": 1
+}

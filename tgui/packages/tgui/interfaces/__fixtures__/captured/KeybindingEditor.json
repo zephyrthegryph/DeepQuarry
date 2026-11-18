@@ -1,0 +1,888 @@
+{
+	"bindings": [
+		{
+			"id": "move_north",
+			"name": "Move north",
+			"category": "Movement",
+			"command": "KeyDown North"
+		},
+		{
+			"id": "move_south",
+			"name": "Move south",
+			"category": "Movement",
+			"command": "KeyDown South"
+		},
+		{
+			"id": "move_east",
+			"name": "Move east",
+			"category": "Movement",
+			"command": "KeyDown East"
+		},
+		{
+			"id": "move_west",
+			"name": "Move west",
+			"category": "Movement",
+			"command": "KeyDown West"
+		},
+		{
+			"id": "move_w",
+			"name": "Move up (WASD)",
+			"category": "Movement",
+			"command": "KeyDown W"
+		},
+		{
+			"id": "move_a",
+			"name": "Move left (WASD)",
+			"category": "Movement",
+			"command": "KeyDown A"
+		},
+		{
+			"id": "move_s",
+			"name": "Move down (WASD)",
+			"category": "Movement",
+			"command": "KeyDown S"
+		},
+		{
+			"id": "move_d",
+			"name": "Move right (WASD)",
+			"category": "Movement",
+			"command": "KeyDown D"
+		},
+		{
+			"id": "face_north",
+			"name": "Face north",
+			"category": "Movement",
+			"command": "northface"
+		},
+		{
+			"id": "face_south",
+			"name": "Face south",
+			"category": "Movement",
+			"command": "southface"
+		},
+		{
+			"id": "face_east",
+			"name": "Face east",
+			"category": "Movement",
+			"command": "eastface"
+		},
+		{
+			"id": "face_west",
+			"name": "Face west",
+			"category": "Movement",
+			"command": "westface"
+		},
+		{
+			"id": "face_north_hold",
+			"name": "Keep facing north",
+			"category": "Movement",
+			"command": "northfaceperm"
+		},
+		{
+			"id": "face_south_hold",
+			"name": "Keep facing south",
+			"category": "Movement",
+			"command": "southfaceperm"
+		},
+		{
+			"id": "face_east_hold",
+			"name": "Keep facing east",
+			"category": "Movement",
+			"command": "eastfaceperm"
+		},
+		{
+			"id": "face_west_hold",
+			"name": "Keep facing west",
+			"category": "Movement",
+			"command": "westfaceperm"
+		},
+		{
+			"id": "shift_north",
+			"name": "Shift north",
+			"category": "Movement",
+			"command": "shiftnorth"
+		},
+		{
+			"id": "shift_south",
+			"name": "Shift south",
+			"category": "Movement",
+			"command": "shiftsouth"
+		},
+		{
+			"id": "shift_east",
+			"name": "Shift east",
+			"category": "Movement",
+			"command": "shifteast"
+		},
+		{
+			"id": "shift_west",
+			"name": "Shift west",
+			"category": "Movement",
+			"command": "shiftwest"
+		},
+		{
+			"id": "mod_shift",
+			"name": "Shift (held)",
+			"category": "Movement",
+			"command": "KeyDown Shift"
+		},
+		{
+			"id": "mod_ctrl",
+			"name": "Ctrl (held)",
+			"category": "Movement",
+			"command": "KeyDown Ctrl"
+		},
+		{
+			"id": "mod_alt",
+			"name": "Alt (held)",
+			"category": "Movement",
+			"command": "KeyDown Alt"
+		},
+		{
+			"id": "swap_hands",
+			"name": "Swap hands",
+			"category": "Mob",
+			"command": ".northeast"
+		},
+		{
+			"id": "throw_mode",
+			"name": "Toggle throw mode",
+			"category": "Mob",
+			"command": ".southwest"
+		},
+		{
+			"id": "drop",
+			"name": "Drop held item",
+			"category": "Mob",
+			"command": ".northwest"
+		},
+		{
+			"id": "self_use_diagonal",
+			"name": "Use held item (Page Down)",
+			"category": "Mob",
+			"command": ".southeast"
+		},
+		{
+			"id": "self_use",
+			"name": "Use held item",
+			"category": "Mob",
+			"command": "Use-Held-Item"
+		},
+		{
+			"id": "robot_self_use",
+			"name": "Use held module (multibelt aware)",
+			"category": "Robot",
+			"command": "Use-Held-Module"
+		},
+		{
+			"id": "stop_pulling",
+			"name": "Stop pulling",
+			"category": "Mob",
+			"command": "delete-key-pressed"
+		},
+		{
+			"id": "rest",
+			"name": "Rest",
+			"category": "Mob",
+			"command": "Rest"
+		},
+		{
+			"id": "resist",
+			"name": "Resist",
+			"category": "Mob",
+			"command": "Resist"
+		},
+		{
+			"id": "quick_equip",
+			"name": "Quick equip",
+			"category": "Items",
+			"command": "quick-equip"
+		},
+		{
+			"id": "holster",
+			"name": "Holster",
+			"category": "Items",
+			"command": "holster"
+		},
+		{
+			"id": "toggle_gun_mode",
+			"name": "Toggle gun aiming mode",
+			"category": "Items",
+			"command": "toggle-gun-mode"
+		},
+		{
+			"id": "pull",
+			"name": "Pull something nearby",
+			"category": "Mob",
+			"command": "Pull"
+		},
+		{
+			"id": "succumb",
+			"name": "Succumb to death",
+			"category": "Mob",
+			"command": "Succumb-to-death"
+		},
+		{
+			"id": "move_up",
+			"name": "Move up a level",
+			"category": "Movement",
+			"command": "Move-Upwards"
+		},
+		{
+			"id": "move_down",
+			"name": "Move down a level",
+			"category": "Movement",
+			"command": "Move-Down"
+		},
+		{
+			"id": "climb_down",
+			"name": "Climb down the wall you stand on",
+			"category": "Movement",
+			"command": "Climb-down-wall"
+		},
+		{
+			"id": "toggle_afk",
+			"name": "Toggle AFK",
+			"category": "Mob",
+			"command": "Toggle-AFK"
+		},
+		{
+			"id": "notes",
+			"name": "Notes",
+			"category": "Mob",
+			"command": "Notes"
+		},
+		{
+			"id": "examine_mob",
+			"name": "Examine a mob you can see (even from inside something)",
+			"category": "Mob",
+			"command": "Mob-Examine"
+		},
+		{
+			"id": "vore_panel",
+			"name": "Vore panel",
+			"category": "Mob",
+			"command": "Vore-Panel"
+		},
+		{
+			"id": "spin_view_cw",
+			"name": "Spin the view clockwise",
+			"category": "Client",
+			"command": "Spin-View-CW"
+		},
+		{
+			"id": "spin_view_ccw",
+			"name": "Spin the view counter-clockwise",
+			"category": "Client",
+			"command": "Spin-View-CCW"
+		},
+		{
+			"id": "combat_mode_off",
+			"name": "Combat mode off",
+			"category": "Combat",
+			"command": ".combat-mode off"
+		},
+		{
+			"id": "combat_disarm",
+			"name": "Disarm (hold)",
+			"category": "Combat",
+			"command": ".attack-variant disarm"
+		},
+		{
+			"id": "combat_grab",
+			"name": "Grab (hold)",
+			"category": "Combat",
+			"command": ".attack-variant grab"
+		},
+		{
+			"id": "combat_mode_on",
+			"name": "Combat mode on",
+			"category": "Combat",
+			"command": ".combat-mode on"
+		},
+		{
+			"id": "combat_mode_toggle",
+			"name": "Toggle combat mode",
+			"category": "Combat",
+			"command": ".combat-mode toggle"
+		},
+		{
+			"id": "combat_mode_toggle_alt",
+			"name": "Toggle combat mode (second key)",
+			"category": "Combat",
+			"command": ".combat-mode toggle"
+		},
+		{
+			"id": "module_1",
+			"name": "Module 1",
+			"category": "Robot",
+			"command": ".use-ability robot_live.toggle_module_1"
+		},
+		{
+			"id": "module_2",
+			"name": "Module 2",
+			"category": "Robot",
+			"command": ".use-ability robot_live.toggle_module_2"
+		},
+		{
+			"id": "module_3",
+			"name": "Module 3",
+			"category": "Robot",
+			"command": ".use-ability robot_live.toggle_module_3"
+		},
+		{
+			"id": "unequip_module",
+			"name": "Unequip module",
+			"category": "Robot",
+			"command": "unequip-module"
+		},
+		{
+			"id": "target_r_leg",
+			"name": "Target right leg",
+			"category": "Targeting",
+			"command": "body-r-leg"
+		},
+		{
+			"id": "target_groin",
+			"name": "Target groin",
+			"category": "Targeting",
+			"command": "body-groin"
+		},
+		{
+			"id": "target_l_leg",
+			"name": "Target left leg",
+			"category": "Targeting",
+			"command": "body-l-leg"
+		},
+		{
+			"id": "target_r_arm",
+			"name": "Target right arm",
+			"category": "Targeting",
+			"command": "body-r-arm"
+		},
+		{
+			"id": "target_chest",
+			"name": "Target chest",
+			"category": "Targeting",
+			"command": "body-chest"
+		},
+		{
+			"id": "target_l_arm",
+			"name": "Target left arm",
+			"category": "Targeting",
+			"command": "body-l-arm"
+		},
+		{
+			"id": "target_head",
+			"name": "Target head, eyes, mouth",
+			"category": "Targeting",
+			"command": "body-toggle-head"
+		},
+		{
+			"id": "say",
+			"name": "Say",
+			"category": "Communication",
+			"command": "Say-verb"
+		},
+		{
+			"id": "emote",
+			"name": "Emote",
+			"category": "Communication",
+			"command": "Me-verb"
+		},
+		{
+			"id": "subtle",
+			"name": "Subtle emote",
+			"category": "Communication",
+			"command": "Subtle-verb"
+		},
+		{
+			"id": "whisper",
+			"name": "Whisper",
+			"category": "Communication",
+			"command": "Whisper-verb"
+		},
+		{
+			"id": "ooc",
+			"name": "OOC",
+			"category": "Communication",
+			"command": ".dq-ooc-input"
+		},
+		{
+			"id": "looc",
+			"name": "LOOC",
+			"category": "Communication",
+			"command": ".dq-looc-input"
+		},
+		{
+			"id": "radio",
+			"name": "Radio",
+			"category": "Communication",
+			"command": ".dq-radio-input"
+		},
+		{
+			"id": "ahelp",
+			"name": "Admin help",
+			"category": "Communication",
+			"command": "request-help"
+		},
+		{
+			"id": "tab_noop",
+			"name": "Swallow Tab (keeps hotkey mode on)",
+			"category": "Client",
+			"command": ".dq-tab-noop"
+		},
+		{
+			"id": "options",
+			"name": "Client options",
+			"category": "Client",
+			"command": ".options"
+		},
+		{
+			"id": "screenshot_auto",
+			"name": "Screenshot (quick save)",
+			"category": "Client",
+			"command": ".screenshot auto"
+		},
+		{
+			"id": "screenshot",
+			"name": "Screenshot (save as)",
+			"category": "Client",
+			"command": ".screenshot"
+		},
+		{
+			"id": "toggle_hud",
+			"name": "Toggle HUD",
+			"category": "Client",
+			"command": "F12"
+		},
+		{
+			"id": "plane_up",
+			"name": "Look up a level",
+			"category": "Client",
+			"command": "planeup"
+		},
+		{
+			"id": "plane_down",
+			"name": "Look down a level",
+			"category": "Client",
+			"command": "planedown"
+		},
+		{
+			"id": "interaction_menu",
+			"name": "Interaction menu (hovered or in front)",
+			"category": "Interaction",
+			"command": ".input-menu"
+		},
+		{
+			"id": "category_toggle",
+			"name": "Toggle (hovered or in front)",
+			"category": "Interaction",
+			"command": ".input-category toggle"
+		},
+		{
+			"id": "category_open",
+			"name": "Open (hovered or in front)",
+			"category": "Interaction",
+			"command": ".input-category open"
+		},
+		{
+			"id": "category_eject",
+			"name": "Eject (hovered or in front)",
+			"category": "Interaction",
+			"command": ".input-category eject"
+		},
+		{
+			"id": "category_insert",
+			"name": "Insert (hovered or in front)",
+			"category": "Interaction",
+			"command": ".input-category insert"
+		},
+		{
+			"id": "category_lock",
+			"name": "Lock (hovered or in front)",
+			"category": "Interaction",
+			"command": ".input-category lock"
+		},
+		{
+			"id": "category_configure",
+			"name": "Configure (hovered or in front)",
+			"category": "Interaction",
+			"command": ".input-category configure"
+		},
+		{
+			"id": "category_repair",
+			"name": "Repair (hovered or in front)",
+			"category": "Interaction",
+			"command": ".input-category repair"
+		},
+		{
+			"id": "category_maintain",
+			"name": "Maintain (hovered or in front)",
+			"category": "Interaction",
+			"command": ".input-category maintain"
+		},
+		{
+			"id": "category_attack",
+			"name": "Attack (hovered or in front)",
+			"category": "Interaction",
+			"command": ".input-category attack"
+		},
+		{
+			"id": "ability_slot_1",
+			"name": "Ability in slot 1",
+			"category": "Abilities",
+			"command": ".use-ability-slot 1"
+		},
+		{
+			"id": "ability_slot_2",
+			"name": "Ability in slot 2",
+			"category": "Abilities",
+			"command": ".use-ability-slot 2"
+		},
+		{
+			"id": "ability_slot_3",
+			"name": "Ability in slot 3",
+			"category": "Abilities",
+			"command": ".use-ability-slot 3"
+		},
+		{
+			"id": "ability_slot_4",
+			"name": "Ability in slot 4",
+			"category": "Abilities",
+			"command": ".use-ability-slot 4"
+		},
+		{
+			"id": "ability_slot_5",
+			"name": "Ability in slot 5",
+			"category": "Abilities",
+			"command": ".use-ability-slot 5"
+		},
+		{
+			"id": "ability_slot_6",
+			"name": "Ability in slot 6",
+			"category": "Abilities",
+			"command": ".use-ability-slot 6"
+		},
+		{
+			"id": "ability_slot_7",
+			"name": "Ability in slot 7",
+			"category": "Abilities",
+			"command": ".use-ability-slot 7"
+		},
+		{
+			"id": "ability_slot_8",
+			"name": "Ability in slot 8",
+			"category": "Abilities",
+			"command": ".use-ability-slot 8"
+		},
+		{
+			"id": "ability_slot_9",
+			"name": "Ability in slot 9",
+			"category": "Abilities",
+			"command": ".use-ability-slot 9"
+		}
+	],
+	"profiles": [
+		{
+			"id": "default",
+			"name": "Default"
+		},
+		{
+			"id": "robot",
+			"name": "Cyborg"
+		}
+	],
+	"right_click_options": [
+		{
+			"id": "menu",
+			"name": "Menu (the interaction menu)"
+		},
+		{
+			"id": "alternate",
+			"name": "Alternate (same as Alt-click)"
+		}
+	],
+	"max_keys": 4,
+	"profile": "default",
+	"keys": {
+		"move_north": [
+			"North"
+		],
+		"move_south": [
+			"South"
+		],
+		"move_east": [
+			"East"
+		],
+		"move_west": [
+			"West"
+		],
+		"move_w": [
+			"W"
+		],
+		"move_a": [
+			"A"
+		],
+		"move_s": [
+			"S"
+		],
+		"move_d": [
+			"D"
+		],
+		"face_north": [
+			"CTRL+NORTH"
+		],
+		"face_south": [
+			"CTRL+SOUTH"
+		],
+		"face_east": [
+			"CTRL+EAST"
+		],
+		"face_west": [
+			"CTRL+WEST"
+		],
+		"face_north_hold": [
+			"ALT+NORTH"
+		],
+		"face_south_hold": [
+			"ALT+SOUTH"
+		],
+		"face_east_hold": [
+			"ALT+EAST"
+		],
+		"face_west_hold": [
+			"ALT+WEST"
+		],
+		"shift_north": [
+			"CTRL+SHIFT+NORTH"
+		],
+		"shift_south": [
+			"CTRL+SHIFT+SOUTH"
+		],
+		"shift_east": [
+			"CTRL+SHIFT+EAST"
+		],
+		"shift_west": [
+			"CTRL+SHIFT+WEST"
+		],
+		"mod_shift": [
+			"Shift"
+		],
+		"mod_ctrl": [
+			"Ctrl"
+		],
+		"mod_alt": [
+			"Alt"
+		],
+		"swap_hands": [
+			"NORTHEAST",
+			"X",
+			"CTRL+X"
+		],
+		"throw_mode": [
+			"SOUTHWEST",
+			"R",
+			"CTRL+R"
+		],
+		"drop": [
+			"NORTHWEST",
+			"Q",
+			"CTRL+Q"
+		],
+		"self_use_diagonal": [
+			"SOUTHEAST"
+		],
+		"self_use": [
+			"Z",
+			"CTRL+Z"
+		],
+		"robot_self_use": [],
+		"stop_pulling": [
+			"DELETE"
+		],
+		"rest": [
+			"U"
+		],
+		"resist": [
+			"B"
+		],
+		"quick_equip": [
+			"E",
+			"CTRL+E"
+		],
+		"holster": [
+			"H",
+			"CTRL+H"
+		],
+		"toggle_gun_mode": [
+			"J",
+			"CTRL+J"
+		],
+		"pull": [],
+		"succumb": [],
+		"move_up": [],
+		"move_down": [],
+		"climb_down": [],
+		"toggle_afk": [],
+		"notes": [],
+		"examine_mob": [],
+		"vore_panel": [],
+		"spin_view_cw": [],
+		"spin_view_ccw": [],
+		"combat_mode_off": [
+			"1",
+			"CTRL+1"
+		],
+		"combat_disarm": [
+			"2",
+			"CTRL+2"
+		],
+		"combat_grab": [
+			"3",
+			"CTRL+3"
+		],
+		"combat_mode_on": [
+			"4",
+			"CTRL+4"
+		],
+		"combat_mode_toggle": [
+			"F",
+			"CTRL+F"
+		],
+		"combat_mode_toggle_alt": [
+			"INSERT",
+			"G",
+			"CTRL+G"
+		],
+		"module_1": [],
+		"module_2": [],
+		"module_3": [],
+		"unequip_module": [],
+		"target_r_leg": [
+			"NUMPAD1"
+		],
+		"target_groin": [
+			"NUMPAD2"
+		],
+		"target_l_leg": [
+			"NUMPAD3"
+		],
+		"target_r_arm": [
+			"NUMPAD4"
+		],
+		"target_chest": [
+			"NUMPAD5"
+		],
+		"target_l_arm": [
+			"NUMPAD6"
+		],
+		"target_head": [
+			"NUMPAD8"
+		],
+		"say": [
+			"T",
+			"F3"
+		],
+		"emote": [
+			"5",
+			"F4"
+		],
+		"subtle": [
+			"6"
+		],
+		"whisper": [
+			"Y",
+			"CTRL+Y"
+		],
+		"ooc": [
+			"F2"
+		],
+		"looc": [],
+		"radio": [],
+		"ahelp": [
+			"F1"
+		],
+		"tab_noop": [
+			"TAB"
+		],
+		"options": [
+			"CTRL+SHIFT+F1+REP"
+		],
+		"screenshot_auto": [
+			"F2+REP"
+		],
+		"screenshot": [
+			"SHIFT+F2+REP"
+		],
+		"toggle_hud": [
+			"F12"
+		],
+		"plane_up": [
+			"CTRL+SHIFT+ADD"
+		],
+		"plane_down": [
+			"CTRL+SHIFT+SUBTRACT"
+		],
+		"asay": [
+			"F5"
+		],
+		"player_panel": [
+			"F6"
+		],
+		"admin_pm": [
+			"F7"
+		],
+		"invisimin": [
+			"F8"
+		],
+		"msay": [
+			"F9"
+		],
+		"esay": [
+			"F10"
+		],
+		"mentorsay": [
+			"F11"
+		],
+		"interaction_menu": [],
+		"category_toggle": [],
+		"category_open": [],
+		"category_eject": [],
+		"category_insert": [],
+		"category_lock": [],
+		"category_configure": [],
+		"category_repair": [],
+		"category_maintain": [],
+		"category_attack": [],
+		"ability_slot_1": [
+			"ALT+1"
+		],
+		"ability_slot_2": [
+			"ALT+2"
+		],
+		"ability_slot_3": [
+			"ALT+3"
+		],
+		"ability_slot_4": [
+			"ALT+4"
+		],
+		"ability_slot_5": [
+			"ALT+5"
+		],
+		"ability_slot_6": [
+			"ALT+6"
+		],
+		"ability_slot_7": [
+			"ALT+7"
+		],
+		"ability_slot_8": [
+			"ALT+8"
+		],
+		"ability_slot_9": [
+			"ALT+9"
+		]
+	},
+	"customised": [],
+	"right_click": null
+}

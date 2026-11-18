@@ -60,8 +60,23 @@ const fixtures: Record<string, Record<string, unknown>> = existsSync(FIXTURES)
 /** Hand-written fixtures, one per window (`__fixtures__/windows/<Window>.json`): realistic rows, every ui_shape key set. */
 const WINDOW_FIXTURES = join(ROOT, '__fixtures__', 'windows');
 const windowFixtures: Record<string, Record<string, unknown>> = {};
+const windowVariants: Record<
+  string,
+  Array<[string, Record<string, unknown>]>
+> = {};
 if (existsSync(WINDOW_FIXTURES)) {
   for (const entry of readdirSync(WINDOW_FIXTURES)) {
+    // `<Window>.<variant>.json` is a render preset (tools/tgui_preview, doc/tgui_preview.md): it lays only the keys it changes over
+    // the base fixture, so it is rendered below, not checked against the ui_shape.
+    const v = entry.match(/^([^.]+)\.([^.]+)\.json$/);
+    if (v) {
+      windowVariants[v[1]] = windowVariants[v[1]] ?? [];
+      windowVariants[v[1]].push([
+        v[2],
+        JSON.parse(readFileSync(join(WINDOW_FIXTURES, entry), 'utf8')),
+      ]);
+      continue;
+    }
     const m = entry.match(/^(.+)\.json$/);
     if (m)
       windowFixtures[m[1]] = JSON.parse(
@@ -203,6 +218,12 @@ describe('every tgui interface renders', () => {
         expect(
           renderWith(name, Routed, written),
           `${name} with __fixtures__/windows/${name}.json`,
+        ).toEqual([]);
+      }
+      for (const [variant, preset] of windowVariants[name] ?? []) {
+        expect(
+          renderWith(name, Routed, { ...(written ?? sample ?? {}), ...preset }),
+          `${name} with __fixtures__/windows/${name}.${variant}.json`,
         ).toEqual([]);
       }
     });

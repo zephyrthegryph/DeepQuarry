@@ -281,6 +281,13 @@ policy = state
 [cache.disk-budget]
 policy = state
 
+# tgui render preview (tools/tgui_preview, doc/tgui_preview.md): the bundle, the sprite cache, the Chrome profile and the render runs
+# (each a child: bundle, sprites, chrome, runs/<label> under one unit per child). All of it is rebuilt by the tools on a miss.
+[cache.tgui-preview]
+policy = children-lru
+cap_gb = 3
+age_days = 21
+
 # ---------------------------------------------------------------------------------------------------------------------------------
 # Per-worktree growth: what a lane, the train or the merge worktree leaves under its own checkout. Applied to every worktree under
 # E:/projects/dq-wt (the main checkout and DQ_DISK_EXCLUDE_WT names are skipped). Each table caps one path PER WORKTREE.

@@ -130,9 +130,9 @@
 
 	if(portData.len)
 		data["ports"] = portData
-	if(output)
-		data["set_flow_rate"] = round(set_flow_rate)
-		data["last_flow_rate"] = round(last_flow_rate)
+	// Always sent: the window shows both rates whether or not an output port is set (it read "undefined L/s" before one was).
+	data["set_flow_rate"] = round(set_flow_rate)
+	data["last_flow_rate"] = round(last_flow_rate)
 
 	return data
 

@@ -1,0 +1,18 @@
+{
+	"screenstate": 0,
+	"checkout_period": 5,
+	"sort_by": "author",
+	"upload_category": "Fiction",
+	"emagged": 0,
+	"is_admin": 0,
+	"buffer_book": "",
+	"buffer_mob": "",
+	"world_time_min": 0.188333,
+	"has_db": 0,
+	"has_scanner": 0,
+	"scanner_cache": null,
+	"inventory": [],
+	"checkouts": [],
+	"internal_archive": [],
+	"external_archive": []
+}

@@ -9,6 +9,7 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import { EmptyState } from './common/EmptyState';
 import type {
   OvermapEnginesActions,
   OvermapEnginesData,
@@ -64,11 +65,14 @@ export const OvermapEnginesContent = (props) => {
             />
           </LabeledList.Item>
           <LabeledList.Item label="Total Thrust">
-            <AnimatedNumber value={total_thrust} />
+            <AnimatedNumber value={total_thrust ?? 0} />
           </LabeledList.Item>
         </LabeledList>
       </Section>
       <Section title="Engines" height="340px" style={{ overflowY: 'auto' }}>
+        {engines_info.length === 0 && (
+          <EmptyState>No engines are connected to this console.</EmptyState>
+        )}
         {engines_info.map((engine, i) => (
           <Stack mt={i !== 0 && -1} key={i}>
             <Stack.Item basis="80%">

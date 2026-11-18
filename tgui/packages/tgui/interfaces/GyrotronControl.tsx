@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Knob, Section, Table } from 'tgui-core/components';
+import { EmptyState } from './common/EmptyState';
 import type {
   GyrotronControlActions,
   GyrotronControlData,
@@ -32,6 +33,11 @@ export const GyrotronControlContent = (props) => {
         </Button>
       }
     >
+      {gyros.length === 0 && (
+        <EmptyState>
+          No gyrotrons are linked. Set the tag to match one.
+        </EmptyState>
+      )}
       <Table>
         <Table.Row header>
           <Table.Cell>Name</Table.Cell>

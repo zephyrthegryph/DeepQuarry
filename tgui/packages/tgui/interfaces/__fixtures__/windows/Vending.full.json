@@ -1,0 +1,95 @@
+{
+	"chargesMoney": 1,
+	"products": [
+		{
+			"key": 1,
+			"name": "Cheesecake",
+			"desc": "A rich, creamy cake.",
+			"price": 15,
+			"color": "",
+			"isatom": 1,
+			"path": "/obj/item",
+			"image": "dmi:icons/obj/food.dmi:cheesecake",
+			"amount": 4,
+			"max_amount": 10
+		},
+		{
+			"key": 2,
+			"name": "Apple pie",
+			"desc": "Fresh from the oven.",
+			"price": 10,
+			"color": "",
+			"isatom": 1,
+			"path": "/obj/item",
+			"image": "dmi:icons/obj/food.dmi:applepie",
+			"amount": 2,
+			"max_amount": 10
+		},
+		{
+			"key": 3,
+			"name": "Waffles",
+			"desc": "Golden and syrupy.",
+			"price": 8,
+			"color": "",
+			"isatom": 1,
+			"path": "/obj/item",
+			"image": "dmi:icons/obj/food.dmi:waffles",
+			"amount": 6,
+			"max_amount": 10
+		},
+		{
+			"key": 4,
+			"name": "Mint",
+			"desc": "A small breath mint.",
+			"price": 1,
+			"color": "",
+			"isatom": 1,
+			"path": "/obj/item",
+			"image": "dmi:icons/obj/food.dmi:mint",
+			"amount": 20,
+			"max_amount": 10
+		},
+		{
+			"key": 5,
+			"name": "Carafe",
+			"desc": "A glass carafe.",
+			"price": 5,
+			"color": "",
+			"isatom": 1,
+			"path": "/obj/item",
+			"image": "dmi:icons/obj/drinks.dmi:carafe",
+			"amount": 0,
+			"max_amount": 10
+		},
+		{
+			"key": 6,
+			"name": "Big beer",
+			"desc": "A huge glass of beer.",
+			"price": 12,
+			"color": "",
+			"isatom": 1,
+			"path": "/obj/item",
+			"image": "dmi:icons/obj/drinks.dmi:bigbeerglass",
+			"amount": 3,
+			"max_amount": 10
+		},
+		{
+			"key": 7,
+			"name": "Choccy milk",
+			"desc": "Chocolate milk, in a glass.",
+			"price": 4,
+			"color": "",
+			"isatom": 1,
+			"path": "/obj/item",
+			"image": "dmi:icons/obj/drinks.dmi:choccymilkglass",
+			"amount": 9,
+			"max_amount": 10
+		}
+	],
+	"userMoney": 42,
+	"user": {
+		"name": "Jo Park",
+		"job": "Station Engineer"
+	},
+	"coin": 0
+}

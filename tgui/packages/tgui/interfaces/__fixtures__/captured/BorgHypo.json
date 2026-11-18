@@ -1,0 +1,15 @@
+{
+	"isDispensingDrinks": 0,
+	"minTransferAmount": 1,
+	"maxTransferAmount": 10,
+	"amount": 5,
+	"uiChemicalSearch": "",
+	"recordingRecipe": null,
+	"isDispensingRecipe": 0,
+	"selectedRecipeId": "",
+	"theme": "",
+	"transferAmounts": [],
+	"chemicals": [],
+	"selectedReagentId": "",
+	"recipes": []
+}

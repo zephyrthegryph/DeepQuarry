@@ -22,7 +22,11 @@ export const PlayerNotesInfo = (props) => {
   const { act, data } = useBackend<Data, PlayerNotesInfoActions>();
   const { age, ckey, entries } = data;
   return (
-    <Window title={`Info on ${ckey}`} width={400} height={500}>
+    <Window
+      title={ckey ? `Info on ${ckey}` : 'Player info'}
+      width={400}
+      height={500}
+    >
       <Window.Content>
         <Stack vertical fill>
           {!entries && (

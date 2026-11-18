@@ -1,0 +1,13 @@
+{
+	"helmet": null,
+	"suit": null,
+	"mask": null,
+	"occupied": 0,
+	"broken": 0,
+	"panelopen": 0,
+	"locked": 0,
+	"open": 0,
+	"safeties": 1,
+	"uv_active": 0,
+	"uv_super": 0
+}

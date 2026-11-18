@@ -1,0 +1,44 @@
+{
+	"manifest": [
+		{
+			"cat": "Command",
+			"elems": []
+		},
+		{
+			"cat": "Security",
+			"elems": []
+		},
+		{
+			"cat": "Engineering",
+			"elems": []
+		},
+		{
+			"cat": "Medical",
+			"elems": []
+		},
+		{
+			"cat": "Science",
+			"elems": []
+		},
+		{
+			"cat": "Cargo",
+			"elems": []
+		},
+		{
+			"cat": "Exploration",
+			"elems": []
+		},
+		{
+			"cat": "Civilian",
+			"elems": []
+		},
+		{
+			"cat": "Silicon",
+			"elems": []
+		},
+		{
+			"cat": "Miscellaneous",
+			"elems": []
+		}
+	]
+}

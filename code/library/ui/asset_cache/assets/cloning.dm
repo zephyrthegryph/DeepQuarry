@@ -3,6 +3,8 @@
 	assets = list(
 		"pod_idle.gif" = 'icons/UI_Icons/synthprinter.gif',
 		"pod_cloning.gif" = 'icons/UI_Icons/synthprinter_working.gif',
+		// A pod whose clone failed ("mess") is drawn as an idle pod; the window names the state beside it.
+		"pod_mess.gif" = 'icons/UI_Icons/synthprinter.gif',
 	)
 
 /datum/asset/simple/cloning/resleeving

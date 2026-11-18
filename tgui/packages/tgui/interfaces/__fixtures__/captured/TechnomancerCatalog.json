@@ -1,0 +1,640 @@
+{
+	"tab": 4,
+	"spell_tab": "All",
+	"budget": 1000,
+	"max_budget": 1000,
+	"spell_categories": [
+		"All",
+		"Offensive",
+		"Defensive",
+		"Utility",
+		"Support"
+	],
+	"spells": [
+		{
+			"name": "Audible Deception",
+			"desc": "Allows you to create a specific sound at a location of your choosing.",
+			"cost": 50,
+			"spell_power_desc": "",
+			"enhancement_desc": "An extremely loud bike horn sound that costs  large amount of energy and instability becomes available, which will deafen and stun all who are near the targeted tile, including yourself if unprotected.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Blink",
+			"desc": "Force the target to teleport a short distance away.  This target could be anything from something lying on the ground, to someone trying to fight you, or even yourself.  Using this on someone next to you makes their potential distance after teleportation greater.  Self casting has the greatest potential for distance, as well as the cheapest cost.",
+			"cost": 50,
+			"spell_power_desc": "Blink distance is scaled up with more spell power.",
+			"enhancement_desc": "Blink distance is increased greatly.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Condensation",
+			"desc": "This causes rapid formation of liquid at the target, causing floors to become wet, entities to be soaked, and fires to be extinguished.  You can also fill contains with water if they are targeted directly.",
+			"cost": 50,
+			"spell_power_desc": "",
+			"enhancement_desc": "Floors affected by condensation will also freeze.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Control",
+			"desc": "This function allows you to exert control over simple-minded entities to an extent, such as spiders and carp.  Controlled entities will not be hostile towards you, and you may direct them to move to specific areas or to attack specific targets.  This function will have no effect on entities of higher intelligence, such as humans and similar alien species, as it's not true mind control, but merely pheromone synthesis for living animals, and electronic hacking for simple robots.  The green web around the entity is merely a hologram used to allow the user to know if the creature is safe or not.",
+			"cost": 100,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Illusion",
+			"desc": "Allows you to create and control a holographic illusion, that can take the form of most object or entities.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "Illusions will be made of hard light, allowing the interception of attacks, appearing more realistic.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Oxygenate",
+			"desc": "This function creates oxygen at a location of your chosing.  If used on a humanoid entity, it heals oxygen deprivation.  If casted on the envirnment, air (oxygen and nitrogen) is moved from a distant location to your target.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Radiance",
+			"desc": "Causes you to be very radiant, glowing brightly in visible light, thermal energy, and deadly ionizing radiation.  Note that this WILL affect you.",
+			"cost": 100,
+			"spell_power_desc": "Spell power increases the amount of radiation and heat radiated, as well as the radius.",
+			"enhancement_desc": "Radiation will not affect the caster or their allies.",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Resurrect",
+			"desc": "This function injects various regenetive medical compounds and nanomachines, in an effort to restart the body, however this must be done soon after they die, as this will have no effect on people who have died long ago.  It also doesn't resolve whatever caused them to die originally.",
+			"cost": 100,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Shared Burden",
+			"desc": "One of the few functions able to adjust instability, this allows you to take someone else's instability.",
+			"cost": 50,
+			"spell_power_desc": "Draws bonus instability from the target, with the bonus dissipating harmlessly, for 'free'.",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Targeting Matrix",
+			"desc": "Automatically targets and fires a ranged weapon or function at a non-friendly target near a targeted tile.  Each target assisted attack costs some energy and instability.",
+			"cost": 50,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Track",
+			"desc": "Acts as directional guidance towards an object that belongs to you or your team.  It can also point towards your allies.  Wonderful if you're worried someone will steal your valuables, like a certain shiny Scepter...",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "You will be able to track most other entities in addition to your belongings and allies.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Warp Strike",
+			"desc": "Teleports you next to your target, and attacks them with whatever is in your off-hand, spell or object.",
+			"cost": 100,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Corona",
+			"desc": "Causes the victim to glow very brightly, which while harmless in itself, makes it easier for them to be hit.  The bright glow also makes it very difficult to be stealthy.  The effect lasts for one minute.",
+			"cost": 50,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Haste",
+			"desc": "Allows the target to run at speeds that should not be possible for an ordinary being.  For five seconds, the target runs extremly fast, and cannot be slowed by any means.",
+			"cost": 100,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Mend Life",
+			"desc": "Heals minor wounds, such as cuts, bruises, burns, and other non-lifethreatening injuries.  Instability is split between the target and technomancer, if separate.  The function will end prematurely if the target is completely healthy, preventing further instability.",
+			"cost": 50,
+			"spell_power_desc": "Healing amount increased.",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Mend Synthetic",
+			"desc": "Repairs minor damage to prosthetics.  Instability is split between the target and technomancer, if separate.  The function will end prematurely if the target is completely healthy, preventing further instability.",
+			"cost": 50,
+			"spell_power_desc": "Healing amount increased.",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Purify",
+			"desc": "Clenses the body of harmful impurities, such as toxins, radiation, viruses, genetic damage, and such.  Instability is split between the target and technomancer, if separate.  The function will end prematurely if the target is completely healthy, preventing further instability.",
+			"cost": 25,
+			"spell_power_desc": "Healing amount increased.",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Repel Missiles",
+			"desc": "Places a repulsion field around you, which attempts to deflect incoming bullets and lasers, making them 45% less likely to hit you.  The field lasts for 10 minutes and can be granted to yourself or an ally.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Beam",
+			"desc": "Fires a laser at your target.  Cheap, reliable, and a bit boring.",
+			"cost": 100,
+			"spell_power_desc": "Increases damage dealt.",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Chain Lightning",
+			"desc": "This dangerous function shoots lightning that will strike someone, then bounce to a nearby person.  Be careful that it does not bounce to you.  The lighting prefers to bounce to people with the least resistance to electricity.  It will strike up to four targets, including yourself if conditions allow it to occur.  Lightning functions cannot miss due to distance.",
+			"cost": 150,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Force Missile",
+			"desc": "This fires a missile at your target.  It's cheap to use, however the projectile itself moves and impacts in such a way that armor designed to protect from blunt force will mitigate this function as well.",
+			"cost": 50,
+			"spell_power_desc": "Increases damage dealt.",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Ionic Bolt",
+			"desc": "Shoots a bolt of ion energy at the target.  If it hits something, it will generally drain energy, corrupt electronics, or otherwise ruin complex machinery.",
+			"cost": 50,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Lesser Chain Lightning",
+			"desc": "This is very similar to the function Chain Lightning, however it is considerably less powerful.  As a result, it's a lot more economical in terms of energy cost, as well as instability generation.  Lightning functions cannot miss due to distance.",
+			"cost": 100,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Lightning Strike",
+			"desc": "This uses a hidden electrolaser, which creates a laser beam to ionize the enviroment, allowing for ideal conditions for a directed lightning strike to occur.  The lightning is very strong, however it requires a few seconds to prepare a strike.  Lightning functions cannot miss due to distance.",
+			"cost": 150,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Overload",
+			"desc": "Fires a bolt of highly unstable energy, that does damaged equal to 0.3% of the technomancer's current reserve of energy.  This energy pierces all known armor.  Energy cost is equal to 10% of maximum core charge.",
+			"cost": 100,
+			"spell_power_desc": "Increases damage dealt, up to a cap of 80 damage per shot.",
+			"enhancement_desc": "Will do damage equal to 0.4% of current energy.",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Darkness",
+			"desc": "Disrupts photons moving in a local area, causing darkness to shroud yourself or a position of your choosing.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Fire Blast",
+			"desc": "Causes a disturbance on a targeted tile.  After two and a half seconds, it will explode in a small radius around it.  Be sure to not be close to the disturbance yourself.",
+			"cost": 175,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Summon Creature",
+			"desc": "Teleports a specific creature from their current location in the universe to the targeted tile, after a delay. The creature summoned can be chosen by using the ability in your hand. Available creatures are; mice, crabs, parrots, bats, goats, cats, corgis, spiders, and space carp. The creatures take a few moments to be teleported to the targeted tile. Note that the creatures summoned are not inherently loyal to the technomancer, and that the creatures will be hurt slightly from being teleported to you.",
+			"cost": 100,
+			"spell_power_desc": "The strength and endurance of the summoned creature will be greater.",
+			"enhancement_desc": "Summoned entities will never harm their summoner.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Summon Monitor Ward",
+			"desc": "Teleports a prefabricated 'ward' drone to the target location, which will alert you when it sees entities moving around it, or when it is attacked. They can see for up to five meters. It can also see invisible entities, and forcefully decloak them if close enough.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Abjuration",
+			"desc": "This ability attempts to send summoned or teleported entities or anomalies to the place from whence they came, or at least far away from the caster.  Failing that, it may inhibit those entities in some form.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Apportation",
+			"desc": "This allows you to teleport objects into your hand, or to pull people towards you.  If they're close enough, the function will grab them automatically.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "Range is unlimited.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Chroma",
+			"desc": "Creates light around you, or in a location of your choosing.  You can choose what color the light is.  This could be useful to trick someone into believing you're casting a different spell, or perhaps just for fun.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Dispel",
+			"desc": "Ends most on-going effects caused by another Technomancer function on the target.  Useful if you are worried about hitting an ally with a deterimental function, if your opponent has similar capabilities to you, or if you're tired of Instability plaguing you.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Energy Siphon",
+			"desc": "This creates a link to a target that drains electricity, converts it to energy that the Core can use, then absorbs it.  Every second, electricity is stolen until the link is broken by the target moving too far away, or having no more energy left.  Can drain from powercells, microbatteries, and other Cores.  The beam created by the siphoning is harmful to touch.",
+			"cost": 100,
+			"spell_power_desc": "Rate of siphoning is scaled up based on spell power.",
+			"enhancement_desc": "Rate of siphoning is doubled.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Flame Tongue",
+			"desc": "Using a miniturized flamethrower in your gloves, you can emit a flame strong enough to melt both your enemies and walls.",
+			"cost": 50,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Gambit",
+			"desc": "This function causes you to receive a random function, including those which you haven't purchased.",
+			"cost": 50,
+			"spell_power_desc": "Makes certain rare functions possible to acquire via Gambit which cannot be obtained otherwise, if above 100%.",
+			"enhancement_desc": "Instead of a purely random spell, it will give you a \"random\" spell.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Instability Tap",
+			"desc": "Creates a large sum of energy (5,000 at normal spell power), at the cost of a very large amount of instability afflicting you.",
+			"cost": 100,
+			"spell_power_desc": "Amount of energy gained scaled with spell power.",
+			"enhancement_desc": "50% more energy gained, 20% less instability gained.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Mark",
+			"desc": "This function places a specific 'mark' beacon under you, which is used by the Recall function as a destination.  Note that using Mark again will move the destination instead of creating a second destination, and only one destination can exist, regardless of who casted Mark.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Recall",
+			"desc": "This function teleports you to where you placed a mark using the Mark function.  Without the Mark function, this function is useless.  Note that teleporting takes three seconds.  Being incapacitated while teleporting will cancel it.",
+			"cost": 25,
+			"spell_power_desc": "",
+			"enhancement_desc": "Recall takes two seconds instead of three.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Mend Internals",
+			"desc": "Greatly heals the target's wounds, both external and internal.  Restores internal organs to functioning states, even if robotic, reforms bones, patches internal bleeding, and restores missing blood.",
+			"cost": 100,
+			"spell_power_desc": "Healing amount increased.",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Passwall",
+			"desc": "An uncommon function that allows the user to phase through matter (usually walls) in order to enter or exit a room.  Be careful you don't pass into somewhere dangerous.",
+			"cost": 100,
+			"spell_power_desc": "",
+			"enhancement_desc": "Cost per tile is halved.",
+			"category": "Utility",
+			"hidden": 0
+		},
+		{
+			"name": "Phase Shift",
+			"desc": "Hides you in the safest possible place, where no harm can come to you.  Unfortunately, a prolonged stay inside the rift you create will afflict you with instability.",
+			"cost": 50,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Defensive",
+			"hidden": 0
+		},
+		{
+			"name": "Reflect",
+			"desc": "Emits a protective shield fron your hand in front of you, which will reflect one attack back at the attacker.",
+			"cost": 100,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Defensive",
+			"hidden": 0
+		},
+		{
+			"name": "Shield",
+			"desc": "Emits a protective shield fron your hand in front of you, which will protect you from almost anything able to harm you, so long as you can power it.  Stronger attacks blocked cost more energy to sustain.  Note that holding two shields will make blocking more energy efficent.",
+			"cost": 100,
+			"spell_power_desc": "",
+			"enhancement_desc": "Blocking is twice as efficent in terms of energy cost per hit.",
+			"category": "Defensive",
+			"hidden": 0
+		},
+		{
+			"name": "Restoration Aura",
+			"desc": "Heals you and your allies (or everyone, if you want) of trauma and burns slowly, as long as they remain within four meters.",
+			"cost": 100,
+			"spell_power_desc": "Increases the radius and healing amount of the aura.",
+			"enhancement_desc": "",
+			"category": "Support",
+			"hidden": 0
+		},
+		{
+			"name": "Fire Storm",
+			"desc": "This causes everyone within four meters of you to heat up, eventually burning to death if they remain for too long.  This does not affect you or your allies.  It also causes a large amount of fire to erupt around you, however the main threat is still the heating up.",
+			"cost": 100,
+			"spell_power_desc": "Radius, heat rate, heat capacity, and amount of fires made increased.",
+			"enhancement_desc": "Increased heat generation, more fires, and higher temperature cap.",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Chilling Aura",
+			"desc": "Lowers the core body temperature of everyone around you (except for your friends), causing them to become very slow if they stay within four meters of you.",
+			"cost": 100,
+			"spell_power_desc": "Radius and rate of cooling are scaled.",
+			"enhancement_desc": "Will make nearby entities even slower.",
+			"category": "Defensive",
+			"hidden": 0
+		},
+		{
+			"name": "Electric Aura",
+			"desc": "Repeatively electrocutes enemies within four meters of you, as well as nearby electronics.",
+			"cost": 100,
+			"spell_power_desc": "Radius and damage scaled up.",
+			"enhancement_desc": "Aura does twice as much damage.",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Degen Aura",
+			"desc": "Destabalizes your enemies, breaking their elements down to their basic levels, slowly killing them from the inside.  For each person within <b>fourteen meters</b> of you, they suffer 1% of their current health every second.  Your allies are unharmed.",
+			"cost": 150,
+			"spell_power_desc": "Radius is increased.",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Destablize",
+			"desc": "Creates an unstable disturbance at the targeted tile, which will afflict anyone nearby with instability who remains nearby.  This can affect you and your allies as well.  The disturbance lasts for twenty seconds.",
+			"cost": 100,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		},
+		{
+			"name": "Pulsar",
+			"desc": "Emits electronic pulses to destroy, disable, or otherwise harm devices and machines.  Be sure to not hit yourself with this.",
+			"cost": 100,
+			"spell_power_desc": "",
+			"enhancement_desc": "",
+			"category": "Offensive",
+			"hidden": 0
+		}
+	],
+	"equipment": [
+		{
+			"name": "Manipulation Core",
+			"desc": "The default core that you most likely already have.  This is here in-case you change your mind after buying another core, don't forget to refund the old core.<br>Capacity: 10k<br>Recharge: 50/s<br>Instability Modifier: 80%<br>Energy Cost Modifier: 100%<br>Spell Power: 100%",
+			"cost": 100
+		},
+		{
+			"name": "Rapid Core",
+			"desc": "A core optimized for passive regeneration, however at the cost of capacity.  Has a capacity of 7,000 units of energy, and recharges at a rate of 70 units.  Complex gravatics and force manipulation allows the wearer to also run slightly faster.<br><span class='red'>Capacity: 7k</span><br><span class='green'><span class='bold'>Recharge: 70/s</span></span><br><span class='red'>Instability Modifier: 90%</span><br>Energy Cost Modifier: 100%<br>Spell Power: 100%",
+			"cost": 100
+		},
+		{
+			"name": "Bulky Core",
+			"desc": "This core has very large capacitors, however it also has a subpar fractal reactor.  The user is recommended to purchase one or more energy-generating Functions as well if using this core.  The intense weight of the core unfortunately can cause the wear to move slightly slower, and the closeness of the capacitors causes a slight increase in incoming instability.<br><span class='green'><span class='bold'>Capacity: 20k</span></span><br><span class='red'>Recharge: 25/s</span><br><span class='red'>Instability Modifier: 100%</span><br>Energy Cost Modifier: 100%<br><span class='green'>Spell Power: 140%</span>",
+			"cost": 100
+		},
+		{
+			"name": "Unstable Core",
+			"desc": "This core feeds off unstable energies around the user in addition to a fractal reactor.  This means that it performs better as the user has more instability, which could prove dangerous to the inexperienced or unprepared.  The rate of recharging increases as the user accumulates more instability, eventually exceeding even the rapid core in regen speed, at a huge risk.<br><span class='green'>Capacity: 13k</span><br><span class='green'>Recharge: 35/s to 110/s+</span><br><span class='red'><span class='bold'>Instability Modifier: 130%</span></span><br><span class='green'>Energy Cost Modifier: 70%</span><br><span class='green'>Spell Power: 110%</span>",
+			"cost": 100
+		},
+		{
+			"name": "Recycling Core",
+			"desc": "This core is optimized for energy efficency, being able to sometimes recover energy that would have been lost with other cores.  Each time energy is spent, there is a 30% chance of recovering half of what was spent.<br><span class='green'>Capacity: 12k</span><br><span class='red'>Recharge: 40/s</span><br><span class='green'>Instability Modifier: 60%</span><br><span class='green'>Energy Cost Modifier: 80%</span><br>Spell Power: 100%",
+			"cost": 100
+		},
+		{
+			"name": "Summoning Core",
+			"desc": "A unique type of core, this one sacrifices other characteristics in order to optimize it for the purposes teleporting entities from vast distances, and keeping them there.  Wearers of this core can maintain up to 40 summons at once, and the energy demand for maintaining summons is severely reduced.<br><span class='red'>Capacity: 8k</span><br><span class='red'>Recharge: 35/s</span><br><span class='red'>Instability Modifier: 120%</span><br>Energy Cost Modifier: 100%<br><span class='green'>Spell Power: 120%</span>",
+			"cost": 100
+		},
+		{
+			"name": "Safety Core",
+			"desc": "This core is designed so that the wearer suffers almost no instability.  It unfortunately comes at a cost of subpar ratings for everything else.<br><span class='red'>Capacity: 7k</span><br><span class='red'>Recharge: 30/s</span><br><span class='green'><span class='bold'>Instability Modifier: 30%</span></span><br>Energy Cost Modifier: 100%<br><span class='red'><span class='bold'>Spell Power: 70%</span></span>",
+			"cost": 100
+		},
+		{
+			"name": "Overcharged Core",
+			"desc": "A core that was created in order to get the most power out of functions.  It does this by shoving the most power into those functions, so it is the opposite of energy efficent, however the enhancement of functions is second to none for other cores.<br><span class='red'>Capacity: 15k (effectively 7.5k)</span><br><span class='red'>Recharge: 40/s</span><br><span class='red'>Instability Modifier: 110%</span><br><span class='red'><span class='bold'>Energy Cost Modifier: 200%</span></span><br><span class='green'><span class='bold'>Spell Power: 175%</span></span>",
+			"cost": 100
+		},
+		{
+			"name": "Hypo Belt",
+			"desc": "A medical belt designed to carry autoinjectors and other medical equipment.  Comes with one of each hypo.",
+			"cost": 50
+		},
+		{
+			"name": "Belt of Holding",
+			"desc": "A belt with a literal pocket which opens to a localized pocket of 'Blue-Space', allowing for more storage.  The nature of the pocket allows for storage of larger objects than what is typical for other belts, and in larger quanities.  It will also help keep your pants on.",
+			"cost": 50
+		},
+		{
+			"name": "Thermoncle",
+			"desc": "A fancy monocle with a thermal optics lens installed.  Allows you to see people across walls.",
+			"cost": 150
+		},
+		{
+			"name": "Night Vision Goggles",
+			"desc": "Strategical goggles which will allow the wearer to see in the dark.  Perfect for the sneaky type, just get rid of the lights first.",
+			"cost": 50
+		},
+		{
+			"name": "Omnisight Scanner",
+			"desc": "A very rare scanner worn on the face, which allows the wearer to see nearly anything across walls.",
+			"cost": 300
+		},
+		{
+			"name": "Medical HUD",
+			"desc": "A commonly available HUD for medical professionals, which displays how healthy an individual is.  Recommended for support-based apprentices!",
+			"cost": 25
+		},
+		{
+			"name": "Scepter of Empowerment",
+			"desc": "A gem sometimes found in the depths of asteroids makes up the basis for this device.  Energy is channeled into it from the Core and the user, causing many functions to be enhanced in various ways, so long as it is held in the off-hand.  Be careful not to lose this!",
+			"cost": 200
+		},
+		{
+			"name": "Spyglass",
+			"desc": "A mundane spyglass, it may prove useful to those who wish to scout ahead, or fight from an extreme range.",
+			"cost": 100
+		},
+		{
+			"name": "Boots of Speed",
+			"desc": "What appears to be an ordinary pair of boots, is actually a bit more useful than that.  These will help against slipping on flat surfaces, and will make you run a bit faster than if you had normal shoes or boots on.",
+			"cost": 50
+		},
+		{
+			"name": "Gloves of Regeneration",
+			"desc": "It's a pair of black gloves, with a hypodermic needle on the insides, and a small storage of a secret blend of chemicals designed to be slowly fed into a living person's system, increasing their metabolism greatly, resulting in accelerated healing.  A side effect of this healing is that the wearer will generally get hungry a lot faster.  Sliding the gloves on and off also hurts a lot.  As a bonus, the gloves are more resistant to the elements than most.  It should be noted that synthetics will have little use for these.",
+			"cost": 50
+		},
+		{
+			"name": "Personal Shield Projector",
+			"desc": "This state-of-the-art technology uses the bleeding edge of energy distribution and field projection to provide a personal shield around you, which can diffuse laser beams and reduce the velocity of bullets and close quarters weapons, reducing their potential for harm severely.  All of this comes at a cost of of requiring a large amount of energy, of which your Core can provide.  When you are struck by something, the shield will block 75% of the damage, deducting energy proportional to the amount of force that was inflicted.  Armor penetration has no effect on the shield's ability to protect you from harm, however the shield will fail if the energy supply cannot meet demand.",
+			"cost": 200
+		},
+		{
+			"name": "Tesla Armor",
+			"desc": "This piece of armor offers a retaliation-based defense.  When the armor is 'ready', it will completely protect you from the next attack you suffer, and strike the attacker with a strong bolt of lightning, provided they are close enough.  This effect requires fifteen seconds to recharge.  If you are attacked while this is recharging, a weaker lightning bolt is sent out, however you won't be protected from the person beating you.",
+			"cost": 150
+		}
+	],
+	"consumables": [
+		{
+			"name": "Trauma Hypo",
+			"desc": "A extended capacity hypo which can treat blunt trauma.",
+			"cost": 25
+		},
+		{
+			"name": "Burn Hypo",
+			"desc": "A extended capacity hypo which can treat severe burns.",
+			"cost": 25
+		},
+		{
+			"name": "Toxin Hypo",
+			"desc": "A extended capacity hypo which can treat various toxins.",
+			"cost": 25
+		},
+		{
+			"name": "Oxy Hypo",
+			"desc": "A extended capacity hypo which can treat oxygen deprivation.",
+			"cost": 25
+		},
+		{
+			"name": "Purity Hypo",
+			"desc": "A extended capacity hypo which can remove various inpurities in the system such as viruses, infections, radiation, and genetic problems.",
+			"cost": 25
+		},
+		{
+			"name": "Pain Hypo",
+			"desc": "A extended capacity hypo which contains potent painkillers.",
+			"cost": 25
+		},
+		{
+			"name": "Organ Hypo",
+			"desc": "A extended capacity hypo which is designed to fix internal organ problems.",
+			"cost": 50
+		},
+		{
+			"name": "Combat Hypo",
+			"desc": "A extended capacity hypo containing a dangerous cocktail of various combat stims.",
+			"cost": 75
+		},
+		{
+			"name": "Freedom Implant",
+			"desc": "A hidden implant which allows one to escape bindings such as handcuffs.",
+			"cost": 50
+		},
+		{
+			"name": "Explosive Implant",
+			"desc": "A hidden implant which will explode if it hears a passphrase.",
+			"cost": 150
+		},
+		{
+			"name": "Disposable Teleporter",
+			"desc": "An ultra-safe teleportation device that can directly teleport you to a number of locations at minimal risk, however it has a limited amount of charges.",
+			"cost": 50
+		}
+	],
+	"assistance": [
+		{
+			"name": "Friendly Apprentice",
+			"desc": "A one-time use teleporter that sends a less powerful manipulator of space to you, who will do their best to protect and serve you.  They get their own catalog and can buy spells for themselves, however they have a smaller pool to buy with.  If you are unable to receive an apprentice, the teleporter can be refunded like most equipment by sliding it into the catalog.  Note that apprentices cannot purchase more apprentices.",
+			"cost": 300
+		}
+	]
+}

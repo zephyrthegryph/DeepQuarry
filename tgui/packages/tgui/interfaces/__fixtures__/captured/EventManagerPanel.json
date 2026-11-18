@@ -1,0 +1,49 @@
+{
+	"events_paused": 1,
+	"report_at_round_end": 0,
+	"selected_severity": null,
+	"severities": [
+		{
+			"ref": 12022,
+			"severity": "Mundane",
+			"starts_at": "00:01",
+			"starts_in_minutes": 0,
+			"delayed": 0,
+			"delay_modifier": 1
+		},
+		{
+			"ref": 12024,
+			"severity": "Moderate",
+			"starts_at": "00:01",
+			"starts_in_minutes": 0,
+			"delayed": 0,
+			"delay_modifier": 1
+		},
+		{
+			"ref": 12025,
+			"severity": "Major",
+			"starts_at": "00:01",
+			"starts_in_minutes": 0,
+			"delayed": 0,
+			"delay_modifier": 1
+		}
+	],
+	"next_events": [
+		{
+			"ref": 12022,
+			"severity": "Mundane",
+			"queued_name": null
+		},
+		{
+			"ref": 12024,
+			"severity": "Moderate",
+			"queued_name": null
+		},
+		{
+			"ref": 12025,
+			"severity": "Major",
+			"queued_name": null
+		}
+	],
+	"running_events": []
+}

@@ -1,0 +1,10 @@
+{
+	"subtemplate": "ShuttleControlConsoleWeb",
+	"is_in_transit": true,
+	"is_moving": true,
+	"travel_progress": 40,
+	"time_left": 27,
+	"future_location": "Mining Outpost",
+	"can_cancel": true,
+	"shuttle_status": "In transit."
+}

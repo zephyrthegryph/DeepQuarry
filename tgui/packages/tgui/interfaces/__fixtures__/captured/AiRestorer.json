@@ -1,0 +1,9 @@
+{
+	"AI_present": 0,
+	"error": "Please transfer an AI unit.",
+	"name": "",
+	"restoring": 0,
+	"health": 0,
+	"isDead": 0,
+	"laws": []
+}

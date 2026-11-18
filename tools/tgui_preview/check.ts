@@ -9,38 +9,77 @@
  * Exit status is 1 when anything was found.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const root = path.resolve(import.meta.dirname, '..', '..');
 const tgui = path.join(root, 'tgui');
-const CHROME = process.env.CHROME ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+const CHROME =
+  process.env.CHROME ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const args = process.argv.slice(2);
-const opt = (n: string) => (args.indexOf(n) >= 0 ? args[args.indexOf(n) + 1] : undefined);
-const out = path.resolve(opt('--out') ?? path.join(root, 'data', 'tgui_alignment'));
+const opt = (n: string) =>
+  args.indexOf(n) >= 0 ? args[args.indexOf(n) + 1] : undefined;
+const out = path.resolve(
+  opt('--out') ?? path.join(root, 'data', 'tgui_alignment'),
+);
 const reuse = opt('--reuse');
 const injectCss = opt('--css') ?? '';
-const names = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--out' && args[i - 1] !== '--reuse' && args[i - 1] !== '--css');
+const names = args.filter(
+  (a, i) =>
+    !a.startsWith('--') &&
+    args[i - 1] !== '--out' &&
+    args[i - 1] !== '--reuse' &&
+    args[i - 1] !== '--css',
+);
 mkdirSync(out, { recursive: true });
 
 const bundle = reuse ? path.resolve(reuse) : path.join(out, 'bundle');
 if (!reuse) {
-  const r = spawnSync('bun', [path.join(root, 'tools/tgui_preview/shoot.ts'), '--out', out, '--build-only'], { stdio: 'inherit' });
+  const r = spawnSync(
+    'bun',
+    [
+      path.join(root, 'tools/tgui_preview/shoot.ts'),
+      '--out',
+      out,
+      '--build-only',
+    ],
+    { stdio: 'inherit' },
+  );
   if (r.status !== 0) throw new Error('bundle build failed');
 }
 
-const fixtures = JSON.parse(readFileSync(path.join(tgui, 'packages/tgui/interfaces/__fixtures__/ui_data.json'), 'utf8'));
-const written = readdirSync(path.join(tgui, 'packages/tgui/interfaces/__fixtures__/windows')).map((f) => f.replace(/\.json$/, ''));
+const fixtures = JSON.parse(
+  readFileSync(
+    path.join(tgui, 'packages/tgui/interfaces/__fixtures__/ui_data.json'),
+    'utf8',
+  ),
+);
+const written = readdirSync(
+  path.join(tgui, 'packages/tgui/interfaces/__fixtures__/windows'),
+).map((f) => f.replace(/\.json$/, ''));
 const all = [...new Set([...Object.keys(fixtures), ...written])].sort();
 const targets = names.length ? names : all;
 
-const { buildWindowGeometryManifest } = await import(pathToFileURL(path.join(tgui, 'windowGeometryManifest.ts')).href);
-const geometry = buildWindowGeometryManifest(path.join(tgui, 'packages/tgui/interfaces'));
+const { buildWindowGeometryManifest } = await import(
+  pathToFileURL(path.join(tgui, 'windowGeometryManifest.ts')).href
+);
+const geometry = buildWindowGeometryManifest(
+  path.join(tgui, 'packages/tgui/interfaces'),
+);
 // A window is laid out at the size it asks the game for (its Window width/height); the manifest size, read from the source text, is the fallback.
-const jobs = targets.map((n) => ({ name: n, width: geometry[n]?.width ?? 560, height: geometry[n]?.height ?? 640}));
+const jobs = targets.map((n) => ({
+  name: n,
+  width: geometry[n]?.width ?? 560,
+  height: geometry[n]?.height ?? 640,
+}));
 
-type Row = { name: string; theme: string; findings: unknown[]; size?: [number, number] };
+type Row = {
+  name: string;
+  theme: string;
+  findings: unknown[];
+  size?: [number, number];
+};
 const results = new Map<string, Row>();
 let finish: () => void = () => {};
 const done = new Promise<void>((r) => (finish = r));
@@ -87,7 +126,8 @@ const server = Bun.serve({
   port: 0,
   fetch: async (req) => {
     const url = new URL(req.url);
-    if (url.pathname === '/driver.html') return new Response(driver, { headers: { 'content-type': 'text/html' } });
+    if (url.pathname === '/driver.html')
+      return new Response(driver, { headers: { 'content-type': 'text/html' } });
     if (url.pathname === '/result') {
       const row = JSON.parse(await req.text()) as Row;
       results.set(row.name, row);
@@ -98,13 +138,22 @@ const server = Bun.serve({
       return new Response('ok');
     }
     const file = Bun.file(path.join(bundle, decodeURIComponent(url.pathname)));
-    return file.size ? new Response(file) : new Response('not found', { status: 404 });
+    return file.size
+      ? new Response(file)
+      : new Response('not found', { status: 404 });
   },
 });
 
 const profile = path.join(out, 'chrome-profile');
 const chrome = Bun.spawn(
-  [CHROME, '--headless=new', '--disable-gpu', `--user-data-dir=${profile}`, '--window-size=1400,1000', `http://localhost:${server.port}/driver.html`],
+  [
+    CHROME,
+    '--headless=new',
+    '--disable-gpu',
+    `--user-data-dir=${profile}`,
+    '--window-size=1400,1000',
+    `http://localhost:${server.port}/driver.html`,
+  ],
   { stdout: 'ignore', stderr: 'ignore' },
 );
 await Promise.race([done, Bun.sleep(25 * 60 * 1000)]);
@@ -134,15 +183,36 @@ for (const job of jobs) {
   }
   checked++;
   if (row.findings.length) windows[job.name] = row.findings;
-  for (const f of row.findings as Array<{ rule: string }>) byRule[f.rule] = (byRule[f.rule] ?? 0) + 1;
+  for (const f of row.findings as Array<{ rule: string }>)
+    byRule[f.rule] = (byRule[f.rule] ?? 0) + 1;
 }
 const total = Object.values(byRule).reduce((a, b) => a + b, 0);
-writeFileSync(path.join(out, 'alignment.json'), JSON.stringify({ checked, total, byRule, skipped, windows }, null, 1));
-console.log(`checked ${checked} windows, skipped ${Object.keys(skipped).length}, findings ${total}`, byRule);
+writeFileSync(
+  path.join(out, 'alignment.json'),
+  JSON.stringify({ checked, total, byRule, skipped, windows }, null, 1),
+);
+console.log(
+  `checked ${checked} windows, skipped ${Object.keys(skipped).length}, findings ${total}`,
+  byRule,
+);
 
 if (!flagOff('--no-shots') && Object.keys(windows).length) {
   mkdirSync(path.join(out, 'issues'), { recursive: true });
-  spawnSync('bun', [path.join(root, 'tools/tgui_preview/shoot.ts'), '--reuse', bundle, '--sizes', path.join(out, 'sizes.json'), '--mark', '--out', path.join(out, 'issues'), ...Object.keys(windows)], { stdio: 'inherit' });
+  spawnSync(
+    'bun',
+    [
+      path.join(root, 'tools/tgui_preview/shoot.ts'),
+      '--reuse',
+      bundle,
+      '--sizes',
+      path.join(out, 'sizes.json'),
+      '--mark',
+      '--out',
+      path.join(out, 'issues'),
+      ...Object.keys(windows),
+    ],
+    { stdio: 'inherit' },
+  );
 }
 process.exit(total ? 1 : 0);
 

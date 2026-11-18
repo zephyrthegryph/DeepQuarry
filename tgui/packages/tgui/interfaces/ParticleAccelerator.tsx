@@ -13,8 +13,8 @@ export const ParticleAccelerator = (props) => {
   const { act, data } = useBackend<Data, ParticleAcceleratorActions>();
   const { assembled, power, strength } = data;
   return (
-    <Window width={350} height={185}>
-      <Window.Content>
+    <Window width={350} height={215}>
+      <Window.Content scrollable>
         <Section>
           <LabeledList>
             <LabeledList.Item

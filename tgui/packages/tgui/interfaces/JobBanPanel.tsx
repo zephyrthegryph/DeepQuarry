@@ -38,7 +38,13 @@ export const JobBanPanel = () => {
           <Section
             key={d.title}
             title={
-              <Box style={{ backgroundColor: d.color, padding: '2px 4px' }}>
+              // The department colour as an accent stripe: a full pastel bar is unreadable on the dark console theme.
+              <Box
+                style={{
+                  borderLeft: `4px solid ${d.color}`,
+                  paddingLeft: '6px',
+                }}
+              >
                 <Button
                   compact
                   color={d.is_dept_banned ? 'bad' : 'default'}

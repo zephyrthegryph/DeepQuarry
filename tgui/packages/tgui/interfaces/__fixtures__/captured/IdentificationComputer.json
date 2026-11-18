@@ -1,0 +1,293 @@
+{
+	"manifest": [
+		{
+			"cat": "Command",
+			"elems": []
+		},
+		{
+			"cat": "Security",
+			"elems": []
+		},
+		{
+			"cat": "Engineering",
+			"elems": []
+		},
+		{
+			"cat": "Medical",
+			"elems": []
+		},
+		{
+			"cat": "Science",
+			"elems": []
+		},
+		{
+			"cat": "Cargo",
+			"elems": []
+		},
+		{
+			"cat": "Exploration",
+			"elems": []
+		},
+		{
+			"cat": "Civilian",
+			"elems": []
+		},
+		{
+			"cat": "Silicon",
+			"elems": []
+		},
+		{
+			"cat": "Miscellaneous",
+			"elems": []
+		}
+	],
+	"have_id_slot": 1,
+	"have_printer": 1,
+	"printing": 0,
+	"station_name": "NSS Ade-testing",
+	"mode": 0,
+	"target_name": "-----",
+	"target_owner": "-----",
+	"scan_name": "-----",
+	"authenticated": 0,
+	"has_modify": 0,
+	"account_number": null,
+	"centcom_access": 0,
+	"id_rank": "Unassigned",
+	"departments": [
+		{
+			"department_name": "Command",
+			"jobs": [
+				{
+					"display_name": "Site&nbsp;Manager",
+					"job": "Site Manager"
+				},
+				{
+					"display_name": "Chief&nbsp;Engineer",
+					"job": "Chief Engineer"
+				},
+				{
+					"display_name": "Chief&nbsp;Medical&nbsp;Officer",
+					"job": "Chief Medical Officer"
+				},
+				{
+					"display_name": "Head&nbsp;of&nbsp;Personnel",
+					"job": "Head of Personnel"
+				},
+				{
+					"display_name": "Head&nbsp;of&nbsp;Security",
+					"job": "Head of Security"
+				},
+				{
+					"display_name": "Research&nbsp;Director",
+					"job": "Research Director"
+				},
+				{
+					"display_name": "Command&nbsp;Secretary",
+					"job": "Command Secretary"
+				}
+			]
+		},
+		{
+			"department_name": "Security",
+			"jobs": [
+				{
+					"display_name": "Head&nbsp;of&nbsp;Security",
+					"job": "Head of Security"
+				},
+				{
+					"display_name": "Warden",
+					"job": "Warden"
+				},
+				{
+					"display_name": "Detective",
+					"job": "Detective"
+				},
+				{
+					"display_name": "Security&nbsp;Officer",
+					"job": "Security Officer"
+				}
+			]
+		},
+		{
+			"department_name": "Engineering",
+			"jobs": [
+				{
+					"display_name": "Chief&nbsp;Engineer",
+					"job": "Chief Engineer"
+				},
+				{
+					"display_name": "Atmospheric&nbsp;Technician",
+					"job": "Atmospheric Technician"
+				},
+				{
+					"display_name": "Engineer",
+					"job": "Engineer"
+				}
+			]
+		},
+		{
+			"department_name": "Medical",
+			"jobs": [
+				{
+					"display_name": "Chief&nbsp;Medical&nbsp;Officer",
+					"job": "Chief Medical Officer"
+				},
+				{
+					"display_name": "Chemist",
+					"job": "Chemist"
+				},
+				{
+					"display_name": "Field&nbsp;Medic",
+					"job": "Field Medic"
+				},
+				{
+					"display_name": "Geneticist",
+					"job": "Geneticist"
+				},
+				{
+					"display_name": "Medical&nbsp;Doctor",
+					"job": "Medical Doctor"
+				},
+				{
+					"display_name": "Paramedic",
+					"job": "Paramedic"
+				},
+				{
+					"display_name": "Psychiatrist",
+					"job": "Psychiatrist"
+				}
+			]
+		},
+		{
+			"department_name": "Research",
+			"jobs": [
+				{
+					"display_name": "Research&nbsp;Director",
+					"job": "Research Director"
+				},
+				{
+					"display_name": "Geneticist",
+					"job": "Geneticist"
+				},
+				{
+					"display_name": "Roboticist",
+					"job": "Roboticist"
+				},
+				{
+					"display_name": "Scientist",
+					"job": "Scientist"
+				},
+				{
+					"display_name": "Xenobiologist",
+					"job": "Xenobiologist"
+				},
+				{
+					"display_name": "Xenobotanist",
+					"job": "Xenobotanist"
+				}
+			]
+		},
+		{
+			"department_name": "Cargo",
+			"jobs": [
+				{
+					"display_name": "Quartermaster",
+					"job": "Quartermaster"
+				},
+				{
+					"display_name": "Cargo&nbsp;Technician",
+					"job": "Cargo Technician"
+				},
+				{
+					"display_name": "Shaft&nbsp;Miner",
+					"job": "Shaft Miner"
+				}
+			]
+		},
+		{
+			"department_name": "Exploration",
+			"jobs": [
+				{
+					"display_name": "Pathfinder",
+					"job": "Pathfinder"
+				},
+				{
+					"display_name": "Explorer",
+					"job": "Explorer"
+				},
+				{
+					"display_name": "Field&nbsp;Medic",
+					"job": "Field Medic"
+				},
+				{
+					"display_name": "Pilot",
+					"job": "Pilot"
+				}
+			]
+		},
+		{
+			"department_name": "Civilian",
+			"jobs": [
+				{
+					"display_name": "Head&nbsp;of&nbsp;Personnel",
+					"job": "Head of Personnel"
+				},
+				{
+					"display_name": "Bartender",
+					"job": "Bartender"
+				},
+				{
+					"display_name": "Botanist",
+					"job": "Botanist"
+				},
+				{
+					"display_name": "Chaplain",
+					"job": "Chaplain"
+				},
+				{
+					"display_name": "Chef",
+					"job": "Chef"
+				},
+				{
+					"display_name": "Entertainer",
+					"job": "Entertainer"
+				},
+				{
+					"display_name": "Entrepreneur",
+					"job": "Entrepreneur"
+				},
+				{
+					"display_name": "Intern",
+					"job": "Intern"
+				},
+				{
+					"display_name": "Internal&nbsp;Affairs&nbsp;Agent",
+					"job": "Internal Affairs Agent"
+				},
+				{
+					"display_name": "Janitor",
+					"job": "Janitor"
+				},
+				{
+					"display_name": "Librarian",
+					"job": "Librarian"
+				},
+				{
+					"display_name": "Maintenance&nbsp;Lurker",
+					"job": "Maintenance Lurker"
+				},
+				{
+					"display_name": "Assistant",
+					"job": "Assistant"
+				},
+				{
+					"display_name": "Visitor",
+					"job": "Visitor"
+				}
+			]
+		}
+	],
+	"regions": [],
+	"all_centcom_access": []
+}

@@ -1,0 +1,9 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Colour pickers opened without a starting colour no longer show NaN in every channel."
+  - bugfix: "Gas pumps report their power draw; omni filters and mixers show their flow rates before an output port is set."
+  - bugfix: "A failed cloning pod shows its picture instead of a broken image."
+  - bugfix: "NTOS programs open at their real size; the rapid pipe dispenser's layer labels, the particle accelerator, the nav beacon and the prox sensor no longer clip."
+  - qol: "Empty camera consoles, chemical dispensers, fabricators, vendors, crew monitors, fusion core, gyrotron, fuel and engine consoles and seed storage say so instead of showing blank space."
+  - qol: "Job-ban panel department headers are readable on the dark theme; crew monitor filters read Alive / Down / Dead."

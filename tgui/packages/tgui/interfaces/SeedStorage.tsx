@@ -8,6 +8,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
+import { EmptyState } from './common/EmptyState';
 import type {
   SeedStorageActions,
   SeedStorageData,
@@ -26,6 +27,7 @@ export const SeedStorage = (props) => {
     <Window width={600} height={760}>
       <Window.Content scrollable>
         <Section title="Seeds">
+          {seeds.length === 0 && <EmptyState>No seeds stored.</EmptyState>}
           {seeds.map((seed) => (
             <Stack mt={-1} key={seed.name + seed.uid}>
               <Stack.Item basis="60%">

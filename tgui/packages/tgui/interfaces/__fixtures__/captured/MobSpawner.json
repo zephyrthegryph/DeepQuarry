@@ -1,0 +1,11 @@
+{
+	"initial_x": 128,
+	"initial_y": 128,
+	"initial_z": 1,
+	"loc_lock": 0,
+	"use_custom_ai": 0,
+	"ai_type": "",
+	"faction": "",
+	"intent": "",
+	"path": null
+}

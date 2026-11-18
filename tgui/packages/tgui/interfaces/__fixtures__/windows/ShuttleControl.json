@@ -1,0 +1,83 @@
+{
+	"shuttle_status": "Docked at the station.",
+	"shuttle_state": "idle",
+	"has_docking": true,
+	"docking_status": "docked",
+	"docking_override": false,
+	"can_launch": true,
+	"can_cancel": false,
+	"can_force": false,
+	"docking_codes": "MINING-7",
+	"subtemplate": "ShuttleControlConsoleMulti",
+	"destination_name": "Mining Outpost",
+	"can_pick": true,
+	"can_cloak": false,
+	"cloaked": false,
+	"legit": true,
+	"fuel_usage": 12,
+	"remaining_fuel": 340,
+	"fuel_span": "good",
+	"can_plot_expedition": true,
+	"expedition": {
+		"name": "Deep Survey 4",
+		"objective": "Scan three anomalies",
+		"progress": "1 / 3",
+		"complete": false
+	},
+	"shuttle_location": "Southern Cross Hangar",
+	"future_location": null,
+	"routes": [
+		{
+			"name": "Mining Outpost",
+			"index": 1,
+			"travel_time": "45 s"
+		},
+		{
+			"name": "Asteroid Belt",
+			"index": 2,
+			"travel_time": "1 min 20 s"
+		}
+	],
+	"skip_docking": false,
+	"is_moving": false,
+	"is_in_transit": false,
+	"travel_progress": 0,
+	"time_left": 0,
+	"can_autopilot": false,
+	"autopilot": false,
+	"can_rename": true,
+	"doors": {
+		"Port hatch": {
+			"bolted": false,
+			"open": true
+		},
+		"Starboard hatch": {
+			"bolted": true,
+			"open": false
+		}
+	},
+	"sensors": {
+		"Cabin": {
+			"reading": true,
+			"pressure": "101.3",
+			"n2": "78",
+			"o2": "21",
+			"co2": "0",
+			"plasma": "0",
+			"methane": "0",
+			"other": "1",
+			"temp": "20"
+		},
+		"Exterior": {
+			"reading": false,
+			"pressure": null,
+			"n2": null,
+			"o2": null,
+			"co2": null,
+			"plasma": null,
+			"methane": null,
+			"other": null,
+			"temp": null
+		}
+	}
+}

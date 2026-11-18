@@ -1,0 +1,24 @@
+{
+	"categories": [
+		{
+			"category": "Atmosphere Alarms",
+			"alarms": []
+		},
+		{
+			"category": "Camera Alarms",
+			"alarms": []
+		},
+		{
+			"category": "Fire Alarms",
+			"alarms": []
+		},
+		{
+			"category": "Motion Alarms",
+			"alarms": []
+		},
+		{
+			"category": "Power Alarms",
+			"alarms": []
+		}
+	]
+}

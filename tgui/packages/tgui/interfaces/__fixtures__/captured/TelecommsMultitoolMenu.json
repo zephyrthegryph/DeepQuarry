@@ -1,0 +1,27 @@
+{
+	"temp": null,
+	"on": 0,
+	"id": null,
+	"network": null,
+	"autolinkers": 0,
+	"shadowlink": 0,
+	"options": {
+		"use_listening_level": 0,
+		"use_broadcasting": 0,
+		"use_receiving": 0,
+		"listening_level": 0,
+		"broadcasting": 0,
+		"receiving": 0,
+		"use_change_freq": 0,
+		"change_freq": null,
+		"use_broadcast_range": 0,
+		"use_receive_range": 0,
+		"range": null,
+		"minRange": null,
+		"maxRange": null
+	},
+	"linked": [],
+	"filter": [],
+	"multitool": 0,
+	"multitool_buffer": null
+}

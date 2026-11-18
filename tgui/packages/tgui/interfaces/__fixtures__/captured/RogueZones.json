@@ -1,0 +1,13 @@
+{
+	"scanning": 0,
+	"debug": 0,
+	"shuttle_location": "Unknown",
+	"shuttle_at_station": 0,
+	"timeout_percent": 3.76667,
+	"diffstep": 1,
+	"difficulty": "Low",
+	"occupied": 0,
+	"updated": 1,
+	"scan_ready": 0,
+	"can_recall_shuttle": 0
+}

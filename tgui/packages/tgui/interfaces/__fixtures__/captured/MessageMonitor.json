@@ -1,0 +1,13 @@
+{
+	"customsender": "System Administrator",
+	"customjob": "Admin",
+	"custommessage": "This is a test, please ignore.",
+	"temp": null,
+	"customrecepient": "",
+	"hacking": 0,
+	"emag": 0,
+	"auth": 0,
+	"linkedServer": null,
+	"possibleRecipients": [],
+	"isMalfAI": 0
+}

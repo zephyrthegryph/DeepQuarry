@@ -17,11 +17,19 @@
 			"data_list": [
 				"1042",
 				"2026-09-14 18:22:10",
-				"Job Ban",
-				"Security Officer",
+				"JOB_PERMABAN",
 				"Brig abuse",
+				"Security Officer",
+				0,
+				"",
+				"jopark",
 				"zephyr",
-				"Permanent"
+				0,
+				"",
+				"",
+				"",
+				"203.0.113.24",
+				"1234567890"
 			],
 			"auto": false
 		},
@@ -29,13 +37,41 @@
 			"data_list": [
 				"1077",
 				"2026-10-02 21:05:44",
-				"Temp Ban",
-				"Server",
+				"TEMPBAN",
 				"Griefing the engine",
+				"",
+				1440,
+				"2026-10-03 21:05:44",
+				"jopark",
 				"zephyr",
-				"1440 minutes"
+				0,
+				"",
+				"",
+				"",
+				"203.0.113.24",
+				"1234567890"
 			],
 			"auto": true
+		},
+		{
+			"data_list": [
+				"1101",
+				"2026-11-01 09:12:00",
+				"PERMABAN",
+				"Ban evasion",
+				"",
+				0,
+				"",
+				"jopark",
+				"mira",
+				1,
+				"zephyr",
+				"2026-11-02 10:00:00",
+				"Reason edited by zephyr",
+				"203.0.113.24",
+				"1234567890"
+			],
+			"auto": false
 		}
 	],
 	"min_search": false

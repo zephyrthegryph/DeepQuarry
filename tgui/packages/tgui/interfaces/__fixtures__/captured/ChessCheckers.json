@@ -1,0 +1,14 @@
+{
+	"game_type": "checkers",
+	"player_one": null,
+	"player_two": null,
+	"player_one_time": 0,
+	"player_two_time": 0,
+	"current_board": [],
+	"selected_figure": [],
+	"valid_moves": [],
+	"game_state": 0,
+	"winner": null,
+	"has_won": 0,
+	"possible_jumps": []
+}

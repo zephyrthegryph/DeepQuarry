@@ -1,0 +1,28 @@
+{
+	"ntnetstatus": 1,
+	"ntnetrelays": 1,
+	"idsstatus": 1,
+	"idsalarm": 0,
+	"config_softwaredownload": 1,
+	"config_peertopeer": 1,
+	"config_communication": 1,
+	"config_systemcontrol": 1,
+	"ntnetlogs": [
+		{
+			"entry": "06:00 - *SYSTEM* - NTNet logging system activated."
+		},
+		{
+			"entry": "00:00 - *SYSTEM* - New quantum relay activated. Current amount of linked relays: 1"
+		},
+		{
+			"entry": "00:01 - *SYSTEM* - New quantum relay activated. Current amount of linked relays: 2"
+		},
+		{
+			"entry": "00:01 - *SYSTEM* - Quantum relay connection severed. Current amount of linked relays: 2"
+		}
+	],
+	"minlogs": 10,
+	"maxlogs": 500,
+	"banned_nids": [],
+	"ntnetmaxlogs": 100
+}

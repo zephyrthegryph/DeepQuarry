@@ -9,7 +9,8 @@ export const LayerSection = (props) => {
   const { category: rootCategoryIndex, piping_layer, pipe_layers = {} } = data;
   const previews = (data.preview_rows ?? []).flatMap((row) => row.previews);
   return (
-    <Section fill width="100px">
+    // Wide enough for "Scrubber Layer": at 100px the labels were cut to "Regular La".
+    <Section fill width="10.5em">
       {rootCategoryIndex === 0 && (
         <Stack vertical mb={1}>
           {Object.keys(pipe_layers).map((layer) => (

@@ -1,0 +1,8 @@
+{
+	"time_since_fail": 100,
+	"stored_charge": 0,
+	"max_charge": 8000000,
+	"charge_rate": 100000,
+	"max_charge_rate": 400000,
+	"active": 0
+}

@@ -1,0 +1,26 @@
+{
+	"message_log": [],
+	"assist_dept": [
+		"MiniTest",
+		"MiniBar"
+	],
+	"supply_dept": [
+		"MiniTest",
+		"MiniBar"
+	],
+	"info_dept": [
+		"MiniTest",
+		"MiniBar"
+	],
+	"department": "Unknown",
+	"screen": 6,
+	"newmessagepriority": 0,
+	"silent": 0,
+	"announcementConsole": 0,
+	"message": "",
+	"recipient": "",
+	"priority": -1,
+	"msgStamped": "",
+	"msgVerified": "",
+	"announceAuth": 0
+}

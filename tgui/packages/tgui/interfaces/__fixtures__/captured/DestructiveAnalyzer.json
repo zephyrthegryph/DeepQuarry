@@ -1,0 +1,10 @@
+{
+	"research_point_id": "research_points",
+	"server_connected": 1,
+	"node_data": null,
+	"item_icon": null,
+	"indestructible": 0,
+	"already_deconstructed": 0,
+	"recoverable_points": null,
+	"loaded_item": null
+}

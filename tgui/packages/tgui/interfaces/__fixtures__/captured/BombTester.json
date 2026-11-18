@@ -1,0 +1,10 @@
+{
+	"mode": 1,
+	"tank1": null,
+	"tank1ref": null,
+	"tank2": null,
+	"tank2ref": null,
+	"canister": null,
+	"sim_canister_output": 1013.25,
+	"simulating": 0
+}

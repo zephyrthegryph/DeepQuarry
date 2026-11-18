@@ -1,0 +1,134 @@
+{
+	"available_ram": 100,
+	"bought": [
+		{
+			"name": "Radio Configuration",
+			"id": "radio",
+			"on": 0
+		},
+		{
+			"name": "Digital Messenger",
+			"id": "messenger",
+			"on": 0
+		},
+		{
+			"name": "Crew Manifest",
+			"id": "manifest",
+			"on": 0
+		},
+		{
+			"name": "Directives",
+			"id": "directives",
+			"on": 0
+		}
+	],
+	"not_bought": [
+		{
+			"name": "Atmosphere Sensor",
+			"id": "atmos_sense",
+			"ram": 5
+		},
+		{
+			"name": "Death Alarm",
+			"id": "death_alarm",
+			"ram": 25
+		},
+		{
+			"name": "Door Jack",
+			"id": "door_jack",
+			"ram": 30
+		},
+		{
+			"name": "Medical Records",
+			"id": "med_records",
+			"ram": 15
+		},
+		{
+			"name": "AR HUD",
+			"id": "ar_hud",
+			"ram": 30
+		},
+		{
+			"name": "Security Records",
+			"id": "sec_records",
+			"ram": 15
+		},
+		{
+			"name": "Remote Signaler",
+			"id": "signaller",
+			"ram": 5
+		},
+		{
+			"name": "Universal Translator",
+			"id": "translator",
+			"ram": 35
+		}
+	],
+	"emotions": [
+		{
+			"displayText": "Neutral",
+			"value": 1
+		},
+		{
+			"displayText": "What",
+			"value": 2
+		},
+		{
+			"displayText": "Happy",
+			"value": 3
+		},
+		{
+			"displayText": "Cat",
+			"value": 4
+		},
+		{
+			"displayText": "Extremely Happy",
+			"value": 5
+		},
+		{
+			"displayText": "Face",
+			"value": 6
+		},
+		{
+			"displayText": "Laugh",
+			"value": 7
+		},
+		{
+			"displayText": "Sad",
+			"value": 8
+		},
+		{
+			"displayText": "Angry",
+			"value": 9
+		},
+		{
+			"displayText": "Silly",
+			"value": 10
+		},
+		{
+			"displayText": "Nose",
+			"value": 11
+		},
+		{
+			"displayText": "Smirk",
+			"value": 12
+		},
+		{
+			"displayText": "Exclamation Points",
+			"value": 13
+		},
+		{
+			"displayText": "Question Mark",
+			"value": 14
+		},
+		{
+			"displayText": "Blank",
+			"value": 15
+		},
+		{
+			"displayText": "Off",
+			"value": 16
+		}
+	],
+	"current_emotion": 16
+}

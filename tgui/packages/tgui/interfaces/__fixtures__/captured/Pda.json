@@ -1,0 +1,111 @@
+{
+	"theme": null,
+	"owner": null,
+	"ownjob": null,
+	"useRetro": 0,
+	"touch_silent": 0,
+	"idInserted": 0,
+	"idLink": "--------",
+	"cartridge_name": "",
+	"stationTime": "00:01",
+	"app": {
+		"name": "PDA",
+		"icon": "home",
+		"template": "pda_main_menu",
+		"has_back": 0,
+		"is_home": 1
+	},
+	"apps": {
+		"General": [
+			{
+				"name": "Notekeeper",
+				"icon": "sticky-note-o",
+				"notify_icon": "exclamation-circle",
+				"ref": 24049
+			},
+			{
+				"name": "Timeclock",
+				"icon": "clock",
+				"notify_icon": "exclamation-circle",
+				"ref": 24050
+			},
+			{
+				"name": "News",
+				"icon": "newspaper",
+				"notify_icon": "exclamation-circle",
+				"ref": 24051
+			},
+			{
+				"name": "Messenger",
+				"icon": "comments-o",
+				"notify_icon": "comments",
+				"ref": 24052
+			},
+			{
+				"name": "Crew Manifest",
+				"icon": "user",
+				"notify_icon": "exclamation-circle",
+				"ref": 24053
+			},
+			{
+				"name": "Contracts",
+				"icon": "file-signature",
+				"notify_icon": "exclamation-circle",
+				"ref": 24054
+			},
+			{
+				"name": "Cargo Orders",
+				"icon": "box",
+				"notify_icon": "exclamation-circle",
+				"ref": 24055
+			},
+			{
+				"name": "Service Receipts",
+				"icon": "receipt",
+				"notify_icon": "exclamation-circle",
+				"ref": 24056
+			},
+			{
+				"name": "Nerdle",
+				"icon": "child-reaching",
+				"notify_icon": "child-combatant",
+				"ref": 24058
+			},
+			{
+				"name": "Game Launcher",
+				"icon": "dice",
+				"notify_icon": "dice-d20",
+				"ref": 24059
+			}
+		],
+		"Utilities": [
+			{
+				"name": "Atmospheric Scan",
+				"icon": "fire",
+				"notify_icon": "exclamation-circle",
+				"ref": 24057
+			},
+			{
+				"name": "Enable Flashlight",
+				"icon": "lightbulb-o",
+				"notify_icon": "exclamation-circle",
+				"ref": 24061
+			}
+		],
+		"Scanners": [
+			{
+				"name": "Enable Note Scanner",
+				"icon": "clipboard",
+				"notify_icon": "exclamation-circle",
+				"ref": 24060
+			}
+		]
+	},
+	"categories": [
+		"General",
+		"Scanners",
+		"Utilities"
+	],
+	"pai": 0,
+	"notifying": []
+}

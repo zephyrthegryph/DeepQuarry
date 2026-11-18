@@ -11,6 +11,7 @@ import {
 } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
+import { EmptyState } from './common/EmptyState';
 import type {
   CameraConsoleActions,
   CameraConsoleData,
@@ -159,12 +160,12 @@ export const CameraConsoleContent = (props) => {
       </Stack.Item>
       <Stack.Item>
         <Stack>
-          <Stack.Item>
+          <Stack.Item grow>
             <Dropdown
               searchInput
               autoScroll={false}
               mb={1}
-              width={networkFilter ? '155px' : '177px'}
+              width="100%"
               selected={networkFilter}
               displayText={networkFilter || 'No Filter'}
               options={allNetworks}
@@ -189,6 +190,13 @@ export const CameraConsoleContent = (props) => {
       </Stack.Item>
       <Stack.Item height="100%">
         <Section fill scrollable>
+          {selected_cameras.length === 0 && (
+            <EmptyState>
+              {cameras.length
+                ? 'No camera matches the search or filter.'
+                : "No cameras on this console's networks."}
+            </EmptyState>
+          )}
           {selected_cameras.map((camera) => (
             // We're not using the component here because performance
             // would be absolutely abysmal (50+ ms for each re-render).

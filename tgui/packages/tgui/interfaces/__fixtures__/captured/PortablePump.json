@@ -1,0 +1,14 @@
+{
+	"on": 0,
+	"direction": 1,
+	"connected": 0,
+	"pressure": 101,
+	"target_pressure": 101,
+	"default_pressure": 101,
+	"min_pressure": 0,
+	"max_pressure": 3997,
+	"powerDraw": 0,
+	"cellCharge": 5000,
+	"cellMaxCharge": 5000,
+	"holding": null
+}

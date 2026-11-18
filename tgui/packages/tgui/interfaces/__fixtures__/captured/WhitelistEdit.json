@@ -1,0 +1,39 @@
+{
+	"species_with_whitelist": [
+		"Diona",
+		"Gamma Replicant",
+		"Hanner",
+		"Lleill",
+		"Protean",
+		"Shadekin",
+		"Sparkle Dog",
+		"Vox",
+		"Werebeast",
+		"Xenochimera"
+	],
+	"language_with_whitelist": [
+		"Local Rootspeak",
+		"Global Rootspeak",
+		"Promethean Biolinguistics",
+		"Glamour Speak",
+		"Sparkle"
+	],
+	"robot_with_whitelist": [
+		"Combat",
+		"Lost",
+		"Gravekeeper",
+		"Protector",
+		"Mechanist",
+		"Combat Medic",
+		"Ninja"
+	],
+	"jobs_with_whitelist": [
+		"CentCom Officer",
+		"Emergency Responder",
+		"Maintenance Lurker"
+	],
+	"alienwhitelist": [],
+	"languagewhitelist": [],
+	"robotwhitelist": [],
+	"jobwhitelist": []
+}

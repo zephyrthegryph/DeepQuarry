@@ -1,0 +1,11 @@
+{
+	"has_occupant": 0,
+	"occupant_name": "",
+	"status": "",
+	"health_percent": 0,
+	"diagnosis": null,
+	"body_temp_c": 0,
+	"body_temp_f": 0,
+	"reagents": [],
+	"syringe_volume": 0
+}
