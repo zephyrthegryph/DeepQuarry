@@ -21,7 +21,9 @@ const geometry = { size: { x: 560, y: 640 }, pos: { x: 0, y: 0 } };
   command: noop,
   winget: async () => geometry,
   // The window's own size request (Window width/height) is what the harness must lay it out at.
-  winset: (_id: string, opts: any) => {
+  // Only the window's own winset: a map or browser control inside it (ByondUi) asks for its own size too.
+  winset: (id: string, opts: any) => {
+    if (id && id !== 'preview') return;
     const m = String(opts?.size ?? '').match(/^(\d+)x(\d+)$/);
     const size = m
       ? [Number(m[1]), Number(m[2])]
