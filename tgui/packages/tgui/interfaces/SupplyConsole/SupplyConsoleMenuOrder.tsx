@@ -9,6 +9,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import { EmptyState } from '../common/EmptyState';
 import type { SupplyConsoleActions } from '../generated/SupplyConsole';
 import type { Data, SupplyPack } from './types';
 
@@ -112,6 +113,13 @@ export const SupplyConsoleMenuOrder = (props) => {
             </Stack.Item>
             <Stack.Item grow>
               <Section scrollable fill>
+                {filteredPack.length === 0 && (
+                  <EmptyState>
+                    {searchContent
+                      ? 'No pack matches the search.'
+                      : 'Pick a category to see its packs.'}
+                  </EmptyState>
+                )}
                 {filteredPack.map((pack) => (
                   <Box key={pack.name}>
                     <Stack align="center" justify="flex-start">
