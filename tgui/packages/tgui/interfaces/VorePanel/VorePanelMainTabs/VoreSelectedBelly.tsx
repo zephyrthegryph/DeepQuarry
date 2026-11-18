@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Section, Stack, Tabs } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
+import { EmptyState } from '../../common/EmptyState';
 import { tabToNames } from '../constants';
 import type { DropdownEntry, HostMob, SelectedData } from '../types';
 import { VoreContentsPanel } from '../VoreSelectedBellyTabs/VoreContentsPanel';
@@ -139,7 +139,9 @@ export const VoreSelectedBelly = (props: {
       </Stack.Item>
       <Stack.Item grow>
         <Section noTopPadding fill scrollable={activeVoreTab !== 6}>
-          {tabs[activeVoreTab] || 'Error'}
+          {tabs[activeVoreTab] || (
+            <EmptyState>This tab's data has not arrived yet.</EmptyState>
+          )}
         </Section>
       </Stack.Item>
     </Stack>

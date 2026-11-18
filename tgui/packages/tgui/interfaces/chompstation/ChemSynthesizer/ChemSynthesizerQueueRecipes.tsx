@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-
+import { EmptyState } from '../../common/EmptyState';
 import type { ChemSynthesizerActions } from '../../generated/ChemSynthesizer';
 import type { Data } from './types';
 
@@ -88,7 +88,7 @@ export const ChemSynthesizerQueueRecipes = (props) => {
                 );
               })) || (
               <LabeledList.Item>
-                <Box m={1}>Queue Empty.</Box>
+                <EmptyState>The queue is empty.</EmptyState>
               </LabeledList.Item>
             )}
           </LabeledList>
@@ -145,7 +145,9 @@ export const ChemSynthesizerQueueRecipes = (props) => {
                 );
               })) || (
               <LabeledList.Item>
-                <Box m={1}>No recipes found.</Box>
+                <EmptyState>
+                  No recipes saved yet. Record one with +.
+                </EmptyState>
               </LabeledList.Item>
             )}
           </LabeledList>

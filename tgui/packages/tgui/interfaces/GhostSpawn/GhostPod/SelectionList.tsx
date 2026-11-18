@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-
+import { EmptyState } from '../../common/EmptyState';
 import type {
   GhostSpawnActions,
   GhostSpawnData,
@@ -86,6 +86,9 @@ export const SelectionList = (props: {
         <Stack.Item grow>
           <Section fill scrollable>
             <Stack vertical fill>
+              {!filtered?.length && (
+                <EmptyState>No pods of this type are active.</EmptyState>
+              )}
               {!!filtered &&
                 filtered.map((our_pod) => (
                   <Stack.Item key={our_pod.ref}>
