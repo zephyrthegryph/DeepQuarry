@@ -2,13 +2,13 @@
 	"materials": [
 		{
 			"name": "steel",
-			"ref": 18281,
+			"ref": 1,
 			"amount": 0,
 			"color": "#666666"
 		},
 		{
 			"name": "glass",
-			"ref": 18275,
+			"ref": 2,
 			"amount": 0,
 			"color": "#00E1FF"
 		}

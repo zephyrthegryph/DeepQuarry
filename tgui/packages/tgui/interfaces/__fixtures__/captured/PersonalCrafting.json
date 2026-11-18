@@ -4,7 +4,7 @@
 			"Weapons": [
 				{
 					"name": "Spear",
-					"ref": 1072623,
+					"ref": 1,
 					"req_text": "1 cable restraints, 1 metal rod, 1 shard OR 1 knife blade",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -12,7 +12,7 @@
 				},
 				{
 					"name": "Wooden Shovel",
-					"ref": 24068,
+					"ref": 2,
 					"req_text": "5 wooden stick, 1 wood plank, 3 plant fiber, 1 flint piece",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -20,7 +20,7 @@
 				},
 				{
 					"name": "stone blade",
-					"ref": 24069,
+					"ref": 3,
 					"req_text": "",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -37,7 +37,7 @@
 				},
 				{
 					"name": "stone knife",
-					"ref": 24070,
+					"ref": 4,
 					"req_text": "1 stone blade",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -54,7 +54,7 @@
 				},
 				{
 					"name": "stone knife",
-					"ref": 24071,
+					"ref": 5,
 					"req_text": "1 stone blade, 1 bone",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -71,7 +71,7 @@
 				},
 				{
 					"name": "stone axe",
-					"ref": 24074,
+					"ref": 6,
 					"req_text": "1 stone blade",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -88,7 +88,7 @@
 				},
 				{
 					"name": "stone axe",
-					"ref": 24075,
+					"ref": 7,
 					"req_text": "1 stone blade, 1 bone",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -105,7 +105,7 @@
 				},
 				{
 					"name": "stone spear",
-					"ref": 24076,
+					"ref": 8,
 					"req_text": "1 stone blade, 1 flint piece, 2 wood plank, 3 plant fiber",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -113,7 +113,7 @@
 				},
 				{
 					"name": "stone spear",
-					"ref": 24077,
+					"ref": 9,
 					"req_text": "1 stone blade, 1 flint piece, 2 bone, 3 plant fiber",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -121,7 +121,7 @@
 				},
 				{
 					"name": "Stunprod",
-					"ref": 24079,
+					"ref": 10,
 					"req_text": "1 cable restraints, 1 metal rod, 1 wirecutters",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -129,7 +129,7 @@
 				},
 				{
 					"name": "Shortbow",
-					"ref": 24080,
+					"ref": 11,
 					"req_text": "",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -162,7 +162,7 @@
 				},
 				{
 					"name": "Primitive Shield",
-					"ref": 24083,
+					"ref": 12,
 					"req_text": "2 wood plank, 1 wooden bucket, 5 cloth",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -170,7 +170,7 @@
 				},
 				{
 					"name": "Bolt scope to bolt-action (cannot be removed)",
-					"ref": 24084,
+					"ref": 13,
 					"req_text": "1 rifle scope, 1 bolt-action rifle",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -178,7 +178,7 @@
 				},
 				{
 					"name": "Ziplaser",
-					"ref": 24085,
+					"ref": 14,
 					"req_text": "1 high-capacity power cell, 2 metal rod, 2 device power cell",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -227,7 +227,7 @@
 				},
 				{
 					"name": "Strange Weapon",
-					"ref": 24091,
+					"ref": 15,
 					"req_text": "1 device power cell",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -276,7 +276,7 @@
 				},
 				{
 					"name": "Solar Rapier",
-					"ref": 24092,
+					"ref": 16,
 					"req_text": "15 steel, 3 leather, 2 Strange Wisp",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -284,7 +284,7 @@
 				},
 				{
 					"name": "Gravity Hammer",
-					"ref": 24093,
+					"ref": 17,
 					"req_text": "15 steel, 3 leather, 2 Shell Chitin, 1 high-capacity power cell",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -292,7 +292,7 @@
 				},
 				{
 					"name": "Harvester",
-					"ref": 24094,
+					"ref": 18,
 					"req_text": "15 steel, 3 leather, 2 Dream Scale",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -300,7 +300,7 @@
 				},
 				{
 					"name": "agate blade",
-					"ref": 24098,
+					"ref": 19,
 					"req_text": "2 wood plank, 6 energized agate",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -308,7 +308,7 @@
 				},
 				{
 					"name": "agate hammer",
-					"ref": 24099,
+					"ref": 20,
 					"req_text": "4 wood plank, 2 energized agate",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -316,7 +316,7 @@
 				},
 				{
 					"name": "agate spear",
-					"ref": 24100,
+					"ref": 21,
 					"req_text": "3 wood plank, 3 energized agate",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -327,7 +327,7 @@
 			"Ammunition": [
 				{
 					"name": "Wood arrow (sandstone tip)",
-					"ref": 24081,
+					"ref": 22,
 					"req_text": "2 wood plank, 2 sandstone brick",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -335,7 +335,7 @@
 				},
 				{
 					"name": "Wood arrow (marble tip)",
-					"ref": 24082,
+					"ref": 23,
 					"req_text": "2 wood plank, 2 marble brick",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -343,7 +343,7 @@
 				},
 				{
 					"name": "Wood arrow (agate tip)",
-					"ref": 24097,
+					"ref": 24,
 					"req_text": "2 wood plank, 2 energized agate",
 					"catalyst_text": "",
 					"tool_text": "",
@@ -354,7 +354,7 @@
 		"Misc": [
 			{
 				"name": "surgery table",
-				"ref": 548350,
+				"ref": 25,
 				"req_text": "12 silver, 10 metal rod, 1 leather",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -362,7 +362,7 @@
 			},
 			{
 				"name": "toilet",
-				"ref": 24063,
+				"ref": 26,
 				"req_text": "5 steel, 1 bucket",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -370,7 +370,7 @@
 			},
 			{
 				"name": "sticks",
-				"ref": 24073,
+				"ref": 27,
 				"req_text": "1 wood plank",
 				"catalyst_text": "",
 				"tool_text": "kitchen knife",
@@ -378,7 +378,7 @@
 			},
 			{
 				"name": "rope bindings",
-				"ref": 24078,
+				"ref": 28,
 				"req_text": "3 plant fiber",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -386,7 +386,7 @@
 			},
 			{
 				"name": "cable leash",
-				"ref": 24102,
+				"ref": 29,
 				"req_text": "3 cable coil",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -394,7 +394,7 @@
 			},
 			{
 				"name": "pillow (pink)",
-				"ref": 24103,
+				"ref": 30,
 				"req_text": "6 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -402,7 +402,7 @@
 			},
 			{
 				"name": "pillow (teal)",
-				"ref": 24104,
+				"ref": 31,
 				"req_text": "6 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -410,7 +410,7 @@
 			},
 			{
 				"name": "pillow (white)",
-				"ref": 24105,
+				"ref": 32,
 				"req_text": "6 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -418,7 +418,7 @@
 			},
 			{
 				"name": "pillow (black)",
-				"ref": 24106,
+				"ref": 33,
 				"req_text": "6 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -426,7 +426,7 @@
 			},
 			{
 				"name": "pillow (green)",
-				"ref": 24107,
+				"ref": 34,
 				"req_text": "6 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -434,7 +434,7 @@
 			},
 			{
 				"name": "pillow (yellow)",
-				"ref": 24108,
+				"ref": 35,
 				"req_text": "6 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -442,7 +442,7 @@
 			},
 			{
 				"name": "pillow (red)",
-				"ref": 24109,
+				"ref": 36,
 				"req_text": "6 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -450,7 +450,7 @@
 			},
 			{
 				"name": "pillow (orange)",
-				"ref": 24110,
+				"ref": 37,
 				"req_text": "6 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -458,7 +458,7 @@
 			},
 			{
 				"name": "tent (green)",
-				"ref": 24111,
+				"ref": 38,
 				"req_text": "10 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -466,7 +466,7 @@
 			},
 			{
 				"name": "tent (tan)",
-				"ref": 24112,
+				"ref": 39,
 				"req_text": "10 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -474,7 +474,7 @@
 			},
 			{
 				"name": "butterfly net",
-				"ref": 24113,
+				"ref": 40,
 				"req_text": "2 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -484,7 +484,7 @@
 		"Tribal": [
 			{
 				"name": "Cloth bolt",
-				"ref": 24064,
+				"ref": 41,
 				"req_text": "3 plant fiber",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -492,7 +492,7 @@
 			},
 			{
 				"name": "Crude bandages (x10)",
-				"ref": 24065,
+				"ref": 42,
 				"req_text": "2 cloth",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -500,7 +500,7 @@
 			},
 			{
 				"name": "sandstone brick",
-				"ref": 24095,
+				"ref": 43,
 				"req_text": "4 sand",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -508,7 +508,7 @@
 			},
 			{
 				"name": "marble brick",
-				"ref": 24096,
+				"ref": 44,
 				"req_text": "4 recrystallized carbonate",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -518,7 +518,7 @@
 		"Clothing": [
 			{
 				"name": "primitive clothes",
-				"ref": 24066,
+				"ref": 45,
 				"req_text": "",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -551,7 +551,7 @@
 			},
 			{
 				"name": "primitive shoes",
-				"ref": 24067,
+				"ref": 46,
 				"req_text": "",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -584,7 +584,7 @@
 			},
 			{
 				"name": "primitive plate carrier",
-				"ref": 24086,
+				"ref": 47,
 				"req_text": "4 metal rod",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -617,7 +617,7 @@
 			},
 			{
 				"name": "solar cloak",
-				"ref": 24087,
+				"ref": 48,
 				"req_text": "",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -650,7 +650,7 @@
 			},
 			{
 				"name": "solar cloak",
-				"ref": 24088,
+				"ref": 49,
 				"req_text": "",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -683,7 +683,7 @@
 			},
 			{
 				"name": "purging gloves",
-				"ref": 24089,
+				"ref": 50,
 				"req_text": "1 capacitor",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -716,7 +716,7 @@
 			},
 			{
 				"name": "frost boots",
-				"ref": 24090,
+				"ref": 51,
 				"req_text": "1 winter boots",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -749,7 +749,7 @@
 			},
 			{
 				"name": "tyr leaf cloak",
-				"ref": 24101,
+				"ref": 52,
 				"req_text": "1 strange leaves",
 				"catalyst_text": "",
 				"tool_text": "",
@@ -784,7 +784,7 @@
 		"Tool": [
 			{
 				"name": "wooden bucket",
-				"ref": 24072,
+				"ref": 53,
 				"req_text": "",
 				"catalyst_text": "",
 				"tool_text": "",

@@ -41,7 +41,7 @@
 			"elems": []
 		}
 	],
-	"mapRef": "communicator_[0x2001d47]_map",
+	"mapRef": "communicator_[0x0000001]_map",
 	"visible": 1,
 	"targetAddress": "",
 	"targetAddressName": "",

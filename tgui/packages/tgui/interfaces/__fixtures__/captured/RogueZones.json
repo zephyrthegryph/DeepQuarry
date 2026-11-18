@@ -3,7 +3,7 @@
 	"debug": 0,
 	"shuttle_location": "Unknown",
 	"shuttle_at_station": 0,
-	"timeout_percent": 3.76667,
+	"timeout_percent": 0,
 	"diffstep": 1,
 	"difficulty": "Low",
 	"occupied": 0,

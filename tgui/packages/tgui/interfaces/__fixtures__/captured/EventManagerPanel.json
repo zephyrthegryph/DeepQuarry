@@ -4,7 +4,7 @@
 	"selected_severity": null,
 	"severities": [
 		{
-			"ref": 12022,
+			"ref": 1,
 			"severity": "Mundane",
 			"starts_at": "00:01",
 			"starts_in_minutes": 0,
@@ -12,7 +12,7 @@
 			"delay_modifier": 1
 		},
 		{
-			"ref": 12024,
+			"ref": 2,
 			"severity": "Moderate",
 			"starts_at": "00:01",
 			"starts_in_minutes": 0,
@@ -20,7 +20,7 @@
 			"delay_modifier": 1
 		},
 		{
-			"ref": 12025,
+			"ref": 3,
 			"severity": "Major",
 			"starts_at": "00:01",
 			"starts_in_minutes": 0,
@@ -30,17 +30,17 @@
 	],
 	"next_events": [
 		{
-			"ref": 12022,
+			"ref": 1,
 			"severity": "Mundane",
 			"queued_name": null
 		},
 		{
-			"ref": 12024,
+			"ref": 2,
 			"severity": "Moderate",
 			"queued_name": null
 		},
 		{
-			"ref": 12025,
+			"ref": 3,
 			"severity": "Major",
 			"queued_name": null
 		}

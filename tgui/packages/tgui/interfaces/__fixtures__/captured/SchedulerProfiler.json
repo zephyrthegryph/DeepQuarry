@@ -1,6 +1,6 @@
 {
-	"elapsed_s": 11.3,
-	"last_run_ms": 2.716,
+	"elapsed_s": 0,
+	"last_run_ms": 0,
 	"error_count": 0,
 	"behind": 0,
 	"behaviours": [
@@ -140,9 +140,9 @@
 		{
 			"name": "icon_resolved_path",
 			"hits": 0,
-			"misses": 335,
+			"misses": 333,
 			"hit_rate": 0,
-			"entries": 335,
+			"entries": 333,
 			"max_entries": 0,
 			"evictions": 0,
 			"invalidations": 0,
@@ -152,25 +152,25 @@
 		{
 			"name": "icon_dmi_metadata",
 			"hits": 0,
-			"misses": 179,
+			"misses": 177,
 			"hit_rate": 0,
-			"entries": 179,
+			"entries": 177,
 			"max_entries": 0,
 			"evictions": 0,
 			"invalidations": 0,
-			"kb": 19.6,
+			"kb": 19.4,
 			"policy": "never"
 		},
 		{
 			"name": "icon_state_names",
 			"hits": 0,
-			"misses": 179,
+			"misses": 177,
 			"hit_rate": 0,
-			"entries": 179,
+			"entries": 177,
 			"max_entries": 0,
 			"evictions": 0,
 			"invalidations": 0,
-			"kb": 356.8,
+			"kb": 352.3,
 			"policy": "never"
 		},
 		{
@@ -3811,7 +3811,7 @@
 		}
 	],
 	"world_step": {
-		"step_ms": 0.241,
+		"step_ms": 0.158,
 		"total_wakes": 65,
 		"last_wakes": 0,
 		"dropped": 0

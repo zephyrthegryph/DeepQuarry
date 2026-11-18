@@ -51,10 +51,13 @@ const meta = JSON.parse(readFileSync(metaFile, 'utf8'));
 // ---- fixtures ----------------------------------------------------------------------------------------------------------------
 /** Keys whose numbers are a clock reading: zeroed so each capture is the same. */
 const CLOCK_KEY =
-  /(^|_)(world_?time|time_?now|uptime|round_?time|station_?time|realtime|timeofday|server_?time|current_?time|tick|ticks)$/i;
+  /(^|_)(world_?time|time_?now|uptime|round_?time|station_?time|realtime|timeofday|server_?time|current_?time|tick|ticks|world_time_min|opened_at|elapsed(_s)?|last_run_ms|timeout_percent|remaining)$/i;
+/** Keys whose numbers are an instance id (a datum's numeric ref): renumbered per window, in order of appearance. */
+const NUM_REF_KEY = /(^|_)ref$/i;
 const REF = /^\[0x[0-9a-f]+\]$/i;
 function stable(window: string, data: unknown): unknown {
   const refs = new Map<string, string>();
+  const numRefs = new Map<number, number>();
   const name = String(meta.user_name ?? '');
   const walk = (v: unknown, key = ''): unknown => {
     if (typeof v === 'string') {
@@ -63,9 +66,18 @@ function stable(window: string, data: unknown): unknown {
           refs.set(v, `[0x${(refs.size + 1).toString(16).padStart(7, '0')}]`);
         return refs.get(v);
       }
-      return name && v.includes(name) ? v.split(name).join('Test Subject') : v;
+      if (key === 'session') return 'session';
+      // A ref inside a longer string (a map control's id): renumbered the same way.
+      const inner = v.replace(/\[0x[0-9a-f]+\]/gi, (r) => String(walk(r)));
+      return name && inner.includes(name)
+        ? inner.split(name).join('Test Subject')
+        : inner;
     }
     if (typeof v === 'number' && CLOCK_KEY.test(key)) return 0;
+    if (typeof v === 'number' && NUM_REF_KEY.test(key)) {
+      if (!numRefs.has(v)) numRefs.set(v, numRefs.size + 1);
+      return numRefs.get(v);
+    }
     if (Array.isArray(v)) return v.map((x) => walk(x));
     if (v && typeof v === 'object') {
       const o: Record<string, unknown> = {};

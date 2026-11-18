@@ -8,7 +8,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548816
+			"ref": 1
 		},
 		{
 			"name": "Booze dispenser",
@@ -18,7 +18,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548815
+			"ref": 2
 		},
 		{
 			"name": "Soda dispenser",
@@ -28,7 +28,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548814
+			"ref": 3
 		},
 		{
 			"name": "Coffee dispenser",
@@ -38,7 +38,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548813
+			"ref": 4
 		},
 		{
 			"name": "Syrup dispenser",
@@ -48,7 +48,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548812
+			"ref": 5
 		},
 		{
 			"name": "Chemistry dispenser refill",
@@ -58,7 +58,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548811
+			"ref": 6
 		},
 		{
 			"name": "Bar alcoholic dispenser refill",
@@ -68,7 +68,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548790
+			"ref": 7
 		},
 		{
 			"name": "Bar soft drink dispenser refill",
@@ -78,7 +78,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548806
+			"ref": 8
 		},
 		{
 			"name": "Coffee machine dispenser refill",
@@ -88,7 +88,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548809
+			"ref": 9
 		},
 		{
 			"name": "Syrup machine dispenser refill",
@@ -98,7 +98,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548808
+			"ref": 10
 		},
 		{
 			"name": "Empty dispenser cartridges",
@@ -110,7 +110,7 @@
 				"chemical dispenser cartridge"
 			],
 			"random": 0,
-			"ref": 548807
+			"ref": 11
 		},
 		{
 			"name": "Reagent refill - Hydrogen",
@@ -120,7 +120,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548803
+			"ref": 12
 		},
 		{
 			"name": "Reagent refill - Lithium",
@@ -130,7 +130,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548805
+			"ref": 13
 		},
 		{
 			"name": "Reagent refill - Carbon",
@@ -140,7 +140,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548804
+			"ref": 14
 		},
 		{
 			"name": "Reagent refill - Nitrogen",
@@ -150,7 +150,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548802
+			"ref": 15
 		},
 		{
 			"name": "Reagent refill - Oxygen",
@@ -160,7 +160,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548801
+			"ref": 16
 		},
 		{
 			"name": "Reagent refill - Fluorine",
@@ -170,7 +170,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548800
+			"ref": 17
 		},
 		{
 			"name": "Reagent refill - Sodium",
@@ -180,7 +180,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548799
+			"ref": 18
 		},
 		{
 			"name": "Reagent refill - Aluminum",
@@ -190,7 +190,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548798
+			"ref": 19
 		},
 		{
 			"name": "Reagent refill - Silicon",
@@ -200,7 +200,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548797
+			"ref": 20
 		},
 		{
 			"name": "Reagent refill - Phosphorus",
@@ -210,7 +210,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548796
+			"ref": 21
 		},
 		{
 			"name": "Reagent refill - Sulfur",
@@ -220,7 +220,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548795
+			"ref": 22
 		},
 		{
 			"name": "Reagent refill - Chlorine",
@@ -230,7 +230,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548794
+			"ref": 23
 		},
 		{
 			"name": "Reagent refill - Potassium",
@@ -240,7 +240,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548793
+			"ref": 24
 		},
 		{
 			"name": "Reagent refill - Iron",
@@ -250,7 +250,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548792
+			"ref": 25
 		},
 		{
 			"name": "Reagent refill - Copper",
@@ -260,7 +260,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548791
+			"ref": 26
 		},
 		{
 			"name": "Reagent refill - Mercury",
@@ -270,7 +270,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548778
+			"ref": 27
 		},
 		{
 			"name": "Reagent refill - Radium",
@@ -280,7 +280,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548789
+			"ref": 28
 		},
 		{
 			"name": "Reagent refill - Ethanol",
@@ -290,7 +290,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548788
+			"ref": 29
 		},
 		{
 			"name": "Reagent refill - Sulfuric Acid",
@@ -300,7 +300,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548787
+			"ref": 30
 		},
 		{
 			"name": "Reagent refill - Tungsten",
@@ -310,7 +310,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548786
+			"ref": 31
 		},
 		{
 			"name": "Reagent refill - Calcium",
@@ -320,7 +320,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548785
+			"ref": 32
 		},
 		{
 			"name": "Reagent refill - Beer",
@@ -330,7 +330,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548784
+			"ref": 33
 		},
 		{
 			"name": "Reagent refill - Kahlua",
@@ -340,7 +340,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548783
+			"ref": 34
 		},
 		{
 			"name": "Reagent refill - Whiskey",
@@ -350,7 +350,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548782
+			"ref": 35
 		},
 		{
 			"name": "Reagent refill - Red Wine",
@@ -360,7 +360,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548781
+			"ref": 36
 		},
 		{
 			"name": "Reagent refill - White Wine",
@@ -370,7 +370,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548780
+			"ref": 37
 		},
 		{
 			"name": "Reagent refill - Vodka",
@@ -380,7 +380,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 548779
+			"ref": 38
 		},
 		{
 			"name": "Reagent refill - Gin",
@@ -390,7 +390,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24565
+			"ref": 39
 		},
 		{
 			"name": "Reagent refill - Rum",
@@ -400,7 +400,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24566
+			"ref": 40
 		},
 		{
 			"name": "Reagent refill - Tequila",
@@ -410,7 +410,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24567
+			"ref": 41
 		},
 		{
 			"name": "Reagent refill - Vermouth",
@@ -420,7 +420,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24568
+			"ref": 42
 		},
 		{
 			"name": "Reagent refill - Cognac",
@@ -430,7 +430,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24569
+			"ref": 43
 		},
 		{
 			"name": "Reagent refill - Ale",
@@ -440,7 +440,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24570
+			"ref": 44
 		},
 		{
 			"name": "Reagent refill - Mead",
@@ -450,7 +450,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24571
+			"ref": 45
 		},
 		{
 			"name": "Reagent refill - Water",
@@ -460,7 +460,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24572
+			"ref": 46
 		},
 		{
 			"name": "Reagent refill - Sugar",
@@ -470,7 +470,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24573
+			"ref": 47
 		},
 		{
 			"name": "Reagent refill - Ice",
@@ -480,7 +480,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24574
+			"ref": 48
 		},
 		{
 			"name": "Reagent refill - Tea",
@@ -490,7 +490,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24575
+			"ref": 49
 		},
 		{
 			"name": "Reagent refill - Iced Tea",
@@ -500,7 +500,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24576
+			"ref": 50
 		},
 		{
 			"name": "Reagent refill - Space Cola",
@@ -510,7 +510,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24577
+			"ref": 51
 		},
 		{
 			"name": "Reagent refill - Space Mountain Wind",
@@ -520,7 +520,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24578
+			"ref": 52
 		},
 		{
 			"name": "Reagent refill - Dr. Gibb",
@@ -530,7 +530,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24579
+			"ref": 53
 		},
 		{
 			"name": "Reagent refill - Space-Up",
@@ -540,7 +540,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24580
+			"ref": 54
 		},
 		{
 			"name": "Reagent refill - Tonic Water",
@@ -550,7 +550,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24581
+			"ref": 55
 		},
 		{
 			"name": "Reagent refill - Soda Water",
@@ -560,7 +560,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24582
+			"ref": 56
 		},
 		{
 			"name": "Reagent refill - Lemon-Lime Juice",
@@ -570,7 +570,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24583
+			"ref": 57
 		},
 		{
 			"name": "Reagent refill - Orange Juice",
@@ -580,7 +580,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24584
+			"ref": 58
 		},
 		{
 			"name": "Reagent refill - Lime Juice",
@@ -590,7 +590,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24585
+			"ref": 59
 		},
 		{
 			"name": "Reagent refill - Lemon Juice",
@@ -600,7 +600,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24586
+			"ref": 60
 		},
 		{
 			"name": "Reagent refill - Watermelon Juice",
@@ -610,7 +610,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24587
+			"ref": 61
 		},
 		{
 			"name": "Reagent refill - Coffee",
@@ -620,7 +620,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24588
+			"ref": 62
 		},
 		{
 			"name": "Reagent refill - Cafe Latte",
@@ -630,7 +630,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24589
+			"ref": 63
 		},
 		{
 			"name": "Reagent refill - Soy Latte",
@@ -640,7 +640,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24590
+			"ref": 64
 		},
 		{
 			"name": "Reagent refill - Hot Coco",
@@ -650,7 +650,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24591
+			"ref": 65
 		},
 		{
 			"name": "Reagent refill - Milk",
@@ -660,7 +660,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24592
+			"ref": 66
 		},
 		{
 			"name": "Reagent refill - Cream",
@@ -670,7 +670,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24593
+			"ref": 67
 		},
 		{
 			"name": "Inflatable barriers",
@@ -682,7 +682,7 @@
 				"inflatable barrier box"
 			],
 			"random": 0,
-			"ref": 24594
+			"ref": 68
 		},
 		{
 			"name": "Empty gas canister",
@@ -694,7 +694,7 @@
 				"canister"
 			],
 			"random": 0,
-			"ref": 24595
+			"ref": 69
 		},
 		{
 			"name": "Air canister",
@@ -706,7 +706,7 @@
 				"Canister [Air]"
 			],
 			"random": 0,
-			"ref": 24596
+			"ref": 70
 		},
 		{
 			"name": "Oxygen canister",
@@ -718,7 +718,7 @@
 				"Canister: [O2]"
 			],
 			"random": 0,
-			"ref": 24597
+			"ref": 71
 		},
 		{
 			"name": "Nitrogen canister",
@@ -730,7 +730,7 @@
 				"Canister: [N2]"
 			],
 			"random": 0,
-			"ref": 24598
+			"ref": 72
 		},
 		{
 			"name": "Phoron gas canister",
@@ -742,7 +742,7 @@
 				"Canister [Phoron]"
 			],
 			"random": 0,
-			"ref": 24599
+			"ref": 73
 		},
 		{
 			"name": "N2O gas canister",
@@ -754,7 +754,7 @@
 				"Canister: [N2O]"
 			],
 			"random": 0,
-			"ref": 24600
+			"ref": 74
 		},
 		{
 			"name": "Carbon dioxide gas canister",
@@ -766,7 +766,7 @@
 				"Canister [CO2]"
 			],
 			"random": 0,
-			"ref": 24601
+			"ref": 75
 		},
 		{
 			"name": "CH4 gas canister",
@@ -778,7 +778,7 @@
 				"Canister: [CH4]"
 			],
 			"random": 0,
-			"ref": 24602
+			"ref": 76
 		},
 		{
 			"name": "Coolant Tank",
@@ -790,7 +790,7 @@
 				"coolant tank"
 			],
 			"random": 0,
-			"ref": 24603
+			"ref": 77
 		},
 		{
 			"name": "Pipe Dispenser",
@@ -802,7 +802,7 @@
 				"Pipe Dispenser"
 			],
 			"random": 0,
-			"ref": 24604
+			"ref": 78
 		},
 		{
 			"name": "Disposals Pipe Dispenser",
@@ -814,7 +814,7 @@
 				"Disposal Pipe Dispenser"
 			],
 			"random": 0,
-			"ref": 24605
+			"ref": 79
 		},
 		{
 			"name": "Rapid Pipe Dispenser",
@@ -826,7 +826,7 @@
 				"Rapid Piping Device (RPD)"
 			],
 			"random": 0,
-			"ref": 24606
+			"ref": 80
 		},
 		{
 			"name": "Internals crate",
@@ -839,7 +839,7 @@
 				"air tank"
 			],
 			"random": 0,
-			"ref": 24607
+			"ref": 81
 		},
 		{
 			"name": "Emergency equipment",
@@ -857,7 +857,7 @@
 				"gas mask"
 			],
 			"random": 0,
-			"ref": 24608
+			"ref": 82
 		},
 		{
 			"name": "Contraband crate",
@@ -871,7 +871,7 @@
 				"Warlock's Velvet"
 			],
 			"random": 5,
-			"ref": 24609
+			"ref": 83
 		},
 		{
 			"name": "Confiscated equipment",
@@ -881,7 +881,7 @@
 			"contraband": 1,
 			"manifest": [],
 			"random": 1,
-			"ref": 24610
+			"ref": 84
 		},
 		{
 			"name": "Trading Card Crate",
@@ -895,7 +895,7 @@
 				"card box"
 			],
 			"random": 5,
-			"ref": 24611
+			"ref": 85
 		},
 		{
 			"name": "Miniatures Crate",
@@ -913,7 +913,7 @@
 				"lich miniature"
 			],
 			"random": 4,
-			"ref": 24612
+			"ref": 86
 		},
 		{
 			"name": "Plushies Crate",
@@ -978,7 +978,7 @@
 				"teppi plush"
 			],
 			"random": 5,
-			"ref": 24613
+			"ref": 87
 		},
 		{
 			"name": "Webbing crate",
@@ -996,7 +996,7 @@
 				"webbing"
 			],
 			"random": 4,
-			"ref": 24614
+			"ref": 88
 		},
 		{
 			"name": "Explorer shield",
@@ -1011,7 +1011,7 @@
 				"PSG Variant-M"
 			],
 			"random": 2,
-			"ref": 24615
+			"ref": 89
 		},
 		{
 			"name": "FANTASTIC PIZZA PIE VOUCHER CRATE!",
@@ -1023,7 +1023,7 @@
 				"free pizza voucher"
 			],
 			"random": 3,
-			"ref": 24616
+			"ref": 90
 		},
 		{
 			"name": "Burger crate",
@@ -1039,7 +1039,7 @@
 				"Space Fries"
 			],
 			"random": 5,
-			"ref": 24617
+			"ref": 91
 		},
 		{
 			"name": "Chinese takeout crate",
@@ -1052,7 +1052,7 @@
 				"hot & sour soup"
 			],
 			"random": 5,
-			"ref": 24618
+			"ref": 92
 		},
 		{
 			"name": "Desatti jaffa cake crate",
@@ -1064,7 +1064,7 @@
 				"Desatti Jaffa Cakes"
 			],
 			"random": 1,
-			"ref": 24619
+			"ref": 93
 		},
 		{
 			"name": "Sweets crate",
@@ -1080,7 +1080,7 @@
 				"Desatti Rhubarb and Custards"
 			],
 			"random": 5,
-			"ref": 24620
+			"ref": 94
 		},
 		{
 			"name": "Collectable hat crate!",
@@ -1110,7 +1110,7 @@
 				"ultra rare hat"
 			],
 			"random": 4,
-			"ref": 24621
+			"ref": 95
 		},
 		{
 			"name": "Costumes crate",
@@ -1141,7 +1141,7 @@
 				"kilt"
 			],
 			"random": 3,
-			"ref": 24622
+			"ref": 96
 		},
 		{
 			"name": "Costume hats",
@@ -1167,7 +1167,7 @@
 				"ushanka"
 			],
 			"random": 3,
-			"ref": 24623
+			"ref": 97
 		},
 		{
 			"name": "Formalwear (Dresses)",
@@ -1184,7 +1184,7 @@
 				"sundress"
 			],
 			"random": 3,
-			"ref": 24624
+			"ref": 98
 		},
 		{
 			"name": "Teshari undercoats",
@@ -1196,7 +1196,7 @@
 				"Undercoat"
 			],
 			"random": 4,
-			"ref": 24625
+			"ref": 99
 		},
 		{
 			"name": "Teshari undercoats (black)",
@@ -1208,7 +1208,7 @@
 				"Undercoat"
 			],
 			"random": 4,
-			"ref": 24626
+			"ref": 100
 		},
 		{
 			"name": "Teshari cloaks",
@@ -1220,7 +1220,7 @@
 				"white cloak"
 			],
 			"random": 4,
-			"ref": 24627
+			"ref": 101
 		},
 		{
 			"name": "Teshari cloaks (black)",
@@ -1232,7 +1232,7 @@
 				"black cloak"
 			],
 			"random": 4,
-			"ref": 24628
+			"ref": 102
 		},
 		{
 			"name": "Teshari cloaks (belted)",
@@ -1244,7 +1244,7 @@
 				"belted cloak"
 			],
 			"random": 4,
-			"ref": 24629
+			"ref": 103
 		},
 		{
 			"name": "Teshari cloaks (belted, black)",
@@ -1256,7 +1256,7 @@
 				"belted cloak"
 			],
 			"random": 4,
-			"ref": 24630
+			"ref": 104
 		},
 		{
 			"name": "Teshari cloaks (hooded)",
@@ -1278,7 +1278,7 @@
 				"brown and grey hooded cloak"
 			],
 			"random": 4,
-			"ref": 24631
+			"ref": 105
 		},
 		{
 			"name": "Teshari cloaks (hooded, black)",
@@ -1303,7 +1303,7 @@
 				"black and brown hooded cloak"
 			],
 			"random": 4,
-			"ref": 24632
+			"ref": 106
 		},
 		{
 			"name": "Leather gear",
@@ -1335,7 +1335,7 @@
 				"grey cowboy vest"
 			],
 			"random": 5,
-			"ref": 24633
+			"ref": 107
 		},
 		{
 			"name": "Gloves crate",
@@ -1361,7 +1361,7 @@
 				"white gloves"
 			],
 			"random": 4,
-			"ref": 24634
+			"ref": 108
 		},
 		{
 			"name": "Boots crate",
@@ -1380,7 +1380,7 @@
 				"winter boots"
 			],
 			"random": 3,
-			"ref": 24635
+			"ref": 109
 		},
 		{
 			"name": "Revolver Crate",
@@ -1397,7 +1397,7 @@
 				"derringer"
 			],
 			"random": 2,
-			"ref": 24636
+			"ref": 110
 		},
 		{
 			"name": "Assault rifle crate",
@@ -1411,7 +1411,7 @@
 				"assault rifle"
 			],
 			"random": 2,
-			"ref": 24637
+			"ref": 111
 		},
 		{
 			"name": "Smg crate",
@@ -1424,7 +1424,7 @@
 				"personal defense weapon"
 			],
 			"random": 2,
-			"ref": 24638
+			"ref": 112
 		},
 		{
 			"name": "Deluxe Fishing Bait",
@@ -1437,7 +1437,7 @@
 				"can of deluxe worms"
 			],
 			"random": 8,
-			"ref": 24639
+			"ref": 113
 		},
 		{
 			"name": "Action figures crate",
@@ -1449,7 +1449,7 @@
 				"random action figure"
 			],
 			"random": 5,
-			"ref": 24640
+			"ref": 114
 		},
 		{
 			"name": "Random APLU modkit",
@@ -1464,7 +1464,7 @@
 				"\"Burning Chrome\" APLU customisation kit"
 			],
 			"random": 1,
-			"ref": 24641
+			"ref": 115
 		},
 		{
 			"name": "Random Durand exosuit modkit",
@@ -1478,7 +1478,7 @@
 				"\"Sypher\" Durand customisation kit"
 			],
 			"random": 1,
-			"ref": 24642
+			"ref": 116
 		},
 		{
 			"name": "Random Gygax exosuit modkit",
@@ -1492,7 +1492,7 @@
 				"\"Gaoler\" Gygax customisation kit"
 			],
 			"random": 1,
-			"ref": 24643
+			"ref": 117
 		},
 		{
 			"name": "Armor - Security armor",
@@ -1514,7 +1514,7 @@
 				"PCRC heavy armor vest"
 			],
 			"random": 5,
-			"ref": 24644
+			"ref": 118
 		},
 		{
 			"name": "Armor - Surplus plate carriers",
@@ -1531,7 +1531,7 @@
 				"light blue plate carrier"
 			],
 			"random": 5,
-			"ref": 24645
+			"ref": 119
 		},
 		{
 			"name": "Armor - Surplus security armor plates",
@@ -1549,7 +1549,7 @@
 				"ballistic armor plate"
 			],
 			"random": 5,
-			"ref": 24646
+			"ref": 120
 		},
 		{
 			"name": "Armor - Surplus security armguard attachments",
@@ -1564,7 +1564,7 @@
 				"bullet resistant arm guards"
 			],
 			"random": 5,
-			"ref": 24647
+			"ref": 121
 		},
 		{
 			"name": "Armor - Surplus security legguard attachments",
@@ -1579,7 +1579,7 @@
 				"bullet resistant leg guards"
 			],
 			"random": 5,
-			"ref": 24648
+			"ref": 122
 		},
 		{
 			"name": "Armor - Surplus security pouch attachments",
@@ -1592,7 +1592,7 @@
 				"large storage pouches"
 			],
 			"random": 5,
-			"ref": 24649
+			"ref": 123
 		},
 		{
 			"name": "Gear - Holsters",
@@ -1608,7 +1608,7 @@
 				"leg holster"
 			],
 			"random": 4,
-			"ref": 24650
+			"ref": 124
 		},
 		{
 			"name": "5-pack Extra-Cheap Vendor Refill Cartridges",
@@ -1621,7 +1621,7 @@
 				"specialized wardrobe refill cartridge"
 			],
 			"random": 5,
-			"ref": 24651
+			"ref": 125
 		},
 		{
 			"name": "Special Ops supplies",
@@ -1635,7 +1635,7 @@
 				"incendiary grenade"
 			],
 			"random": 0,
-			"ref": 24652
+			"ref": 126
 		},
 		{
 			"name": "Armor - Black modular armor",
@@ -1650,7 +1650,7 @@
 				"storage pouches"
 			],
 			"random": 0,
-			"ref": 24653
+			"ref": 127
 		},
 		{
 			"name": "Armor - Blue modular armor",
@@ -1665,7 +1665,7 @@
 				"storage pouches"
 			],
 			"random": 0,
-			"ref": 24654
+			"ref": 128
 		},
 		{
 			"name": "Armor - Green modular armor",
@@ -1680,7 +1680,7 @@
 				"storage pouches"
 			],
 			"random": 0,
-			"ref": 24655
+			"ref": 129
 		},
 		{
 			"name": "Armor - Navy modular armor",
@@ -1695,7 +1695,7 @@
 				"storage pouches"
 			],
 			"random": 0,
-			"ref": 24656
+			"ref": 130
 		},
 		{
 			"name": "Armor - Tan modular armor",
@@ -1710,7 +1710,7 @@
 				"storage pouches"
 			],
 			"random": 0,
-			"ref": 24657
+			"ref": 131
 		},
 		{
 			"name": "Armor - Security light armor plate",
@@ -1722,7 +1722,7 @@
 				"light armor plate"
 			],
 			"random": 0,
-			"ref": 24658
+			"ref": 132
 		},
 		{
 			"name": "Armor - Security stab armor plate",
@@ -1734,7 +1734,7 @@
 				"mesh armor plate"
 			],
 			"random": 0,
-			"ref": 24659
+			"ref": 133
 		},
 		{
 			"name": "Armor - Security armor plate",
@@ -1746,7 +1746,7 @@
 				"medium armor plate"
 			],
 			"random": 0,
-			"ref": 24660
+			"ref": 134
 		},
 		{
 			"name": "Armor - Security medium armor plate",
@@ -1758,7 +1758,7 @@
 				"tactical armor plate"
 			],
 			"random": 0,
-			"ref": 24661
+			"ref": 135
 		},
 		{
 			"name": "Armor - Plate carrier tags",
@@ -1770,7 +1770,7 @@
 				"you should not see this..."
 			],
 			"random": 0,
-			"ref": 24662
+			"ref": 136
 		},
 		{
 			"name": "Armor - Helmet covers",
@@ -1785,7 +1785,7 @@
 				"tan helmet cover"
 			],
 			"random": 0,
-			"ref": 24663
+			"ref": 137
 		},
 		{
 			"name": "Gear - Riot",
@@ -1802,7 +1802,7 @@
 				"box of spare handcuffs"
 			],
 			"random": 0,
-			"ref": 24664
+			"ref": 138
 		},
 		{
 			"name": "Armor - Riot",
@@ -1817,7 +1817,7 @@
 				"riot leg guards"
 			],
 			"random": 0,
-			"ref": 24665
+			"ref": 139
 		},
 		{
 			"name": "Armor - Riot plates",
@@ -1830,7 +1830,7 @@
 				"riot plate carrier"
 			],
 			"random": 0,
-			"ref": 24666
+			"ref": 140
 		},
 		{
 			"name": "Armor - Ablative",
@@ -1845,7 +1845,7 @@
 				"ablative leg guards"
 			],
 			"random": 0,
-			"ref": 24667
+			"ref": 141
 		},
 		{
 			"name": "Armor - Ablative plates",
@@ -1858,7 +1858,7 @@
 				"ablative plate carrier"
 			],
 			"random": 0,
-			"ref": 24668
+			"ref": 142
 		},
 		{
 			"name": "Armor - Ballistic",
@@ -1873,7 +1873,7 @@
 				"bullet resistant leg guards"
 			],
 			"random": 0,
-			"ref": 24669
+			"ref": 143
 		},
 		{
 			"name": "Armor - Tactical Light",
@@ -1891,7 +1891,7 @@
 				"combat belt"
 			],
 			"random": 0,
-			"ref": 24670
+			"ref": 144
 		},
 		{
 			"name": "Misc - Security Barriers",
@@ -1903,7 +1903,7 @@
 				"deployable barrier"
 			],
 			"random": 0,
-			"ref": 24671
+			"ref": 145
 		},
 		{
 			"name": "Misc - Wall shield generators",
@@ -1915,7 +1915,7 @@
 				"shield generator"
 			],
 			"random": 0,
-			"ref": 24672
+			"ref": 146
 		},
 		{
 			"name": "Gear - Security surplus equipment",
@@ -1931,7 +1931,7 @@
 				"tactical AR visor"
 			],
 			"random": 0,
-			"ref": 24673
+			"ref": 147
 		},
 		{
 			"name": "Forensic - Investigation equipment",
@@ -1960,7 +1960,7 @@
 				"secure satchel"
 			],
 			"random": 0,
-			"ref": 24674
+			"ref": 148
 		},
 		{
 			"name": "Forensic - Scanning Equipment",
@@ -1975,7 +1975,7 @@
 				"forensic scanner"
 			],
 			"random": 0,
-			"ref": 24675
+			"ref": 149
 		},
 		{
 			"name": "Forensic - Investigation apparel",
@@ -1996,7 +1996,7 @@
 				"black gloves"
 			],
 			"random": 0,
-			"ref": 24676
+			"ref": 150
 		},
 		{
 			"name": "Gear - Officer equipment",
@@ -2026,7 +2026,7 @@
 				"maglight"
 			],
 			"random": 0,
-			"ref": 24677
+			"ref": 151
 		},
 		{
 			"name": "Gear - Warden equipment",
@@ -2053,7 +2053,7 @@
 				"maglight"
 			],
 			"random": 0,
-			"ref": 24678
+			"ref": 152
 		},
 		{
 			"name": "Gear - Head of Security equipment",
@@ -2083,7 +2083,7 @@
 				"PSG Variant-S"
 			],
 			"random": 0,
-			"ref": 24679
+			"ref": 153
 		},
 		{
 			"name": "Misc - Security uniform red",
@@ -2104,7 +2104,7 @@
 				"holobadge box"
 			],
 			"random": 0,
-			"ref": 24680
+			"ref": 154
 		},
 		{
 			"name": "Misc - Security uniform navy blue",
@@ -2128,7 +2128,7 @@
 				"holobadge box"
 			],
 			"random": 0,
-			"ref": 24681
+			"ref": 155
 		},
 		{
 			"name": "Misc - Security uniform corporate",
@@ -2151,7 +2151,7 @@
 				"holobadge box"
 			],
 			"random": 0,
-			"ref": 24682
+			"ref": 156
 		},
 		{
 			"name": "Gear - Security biohazard gear",
@@ -2170,7 +2170,7 @@
 				"box of latex gloves"
 			],
 			"random": 0,
-			"ref": 24683
+			"ref": 157
 		},
 		{
 			"name": "Gear - Morale Posters",
@@ -2182,7 +2182,7 @@
 				"rolled-up poster"
 			],
 			"random": 0,
-			"ref": 24684
+			"ref": 158
 		},
 		{
 			"name": "VARMAcorp autoNOMous security solution",
@@ -2192,7 +2192,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24685
+			"ref": 159
 		},
 		{
 			"name": "VARMAcorp autoNOMous security solution for hostile environments",
@@ -2202,7 +2202,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24686
+			"ref": 160
 		},
 		{
 			"name": "Implants - Tracking",
@@ -2214,7 +2214,7 @@
 				"boxed tracking implant kit"
 			],
 			"random": 0,
-			"ref": 24687
+			"ref": 161
 		},
 		{
 			"name": "Implants - Chemical",
@@ -2226,7 +2226,7 @@
 				"boxed chemical implant kit"
 			],
 			"random": 0,
-			"ref": 24688
+			"ref": 162
 		},
 		{
 			"name": "Security Belt PSGs",
@@ -2238,7 +2238,7 @@
 				"PSG Variant-S"
 			],
 			"random": 0,
-			"ref": 24689
+			"ref": 163
 		},
 		{
 			"name": "Security Reinforced Backpack PSG",
@@ -2250,7 +2250,7 @@
 				"Backpack PSG Variant-S"
 			],
 			"random": 0,
-			"ref": 24690
+			"ref": 164
 		},
 		{
 			"name": "Security PSG-P",
@@ -2262,7 +2262,7 @@
 				"PSG Variant-P"
 			],
 			"random": 0,
-			"ref": 24691
+			"ref": 165
 		},
 		{
 			"name": "Experimental Capture Gun",
@@ -2274,7 +2274,7 @@
 				"experimental capture gun"
 			],
 			"random": 4,
-			"ref": 24692
+			"ref": 166
 		},
 		{
 			"name": "Loyalty Implant Lockbox",
@@ -2286,7 +2286,7 @@
 				"lockbox of loyalty implants"
 			],
 			"random": 0,
-			"ref": 24693
+			"ref": 167
 		},
 		{
 			"name": "Armor - Alt Black modular armor set",
@@ -2305,7 +2305,7 @@
 				"large storage pouches"
 			],
 			"random": 0,
-			"ref": 24694
+			"ref": 168
 		},
 		{
 			"name": "Armor - Alt Green modular armor set",
@@ -2324,7 +2324,7 @@
 				"large storage pouches"
 			],
 			"random": 0,
-			"ref": 24695
+			"ref": 169
 		},
 		{
 			"name": "Armor - Alt Tan modular armor set",
@@ -2343,7 +2343,7 @@
 				"large storage pouches"
 			],
 			"random": 0,
-			"ref": 24696
+			"ref": 170
 		},
 		{
 			"name": "Armor - Alt Navy modular armor set",
@@ -2362,7 +2362,7 @@
 				"large storage pouches"
 			],
 			"random": 0,
-			"ref": 24697
+			"ref": 171
 		},
 		{
 			"name": "Armor - Alt Peacekeeper modular armor set",
@@ -2381,7 +2381,7 @@
 				"large storage pouches"
 			],
 			"random": 0,
-			"ref": 24698
+			"ref": 172
 		},
 		{
 			"name": "Moghes imports",
@@ -2394,7 +2394,7 @@
 				"Moghes Imported Sissalik Jerky"
 			],
 			"random": 0,
-			"ref": 24699
+			"ref": 173
 		},
 		{
 			"name": "Stolen supply crate",
@@ -2406,7 +2406,7 @@
 				"stolen package"
 			],
 			"random": 0,
-			"ref": 24700
+			"ref": 174
 		},
 		{
 			"name": "Wolfgirl Crate",
@@ -2416,7 +2416,7 @@
 			"contraband": 1,
 			"manifest": [],
 			"random": 0,
-			"ref": 24701
+			"ref": 175
 		},
 		{
 			"name": "Catgirl Crate",
@@ -2426,7 +2426,7 @@
 			"contraband": 1,
 			"manifest": [],
 			"random": 0,
-			"ref": 24702
+			"ref": 176
 		},
 		{
 			"name": "Capture Crystal crate",
@@ -2438,7 +2438,7 @@
 				"capture crystal"
 			],
 			"random": 0,
-			"ref": 24703
+			"ref": 177
 		},
 		{
 			"name": "gender and size chemistry bundle kit",
@@ -2451,7 +2451,7 @@
 				"gender chemistry kit"
 			],
 			"random": 0,
-			"ref": 24704
+			"ref": 178
 		},
 		{
 			"name": "Kitchen supply crate",
@@ -2470,7 +2470,7 @@
 				"Sprinkles"
 			],
 			"random": 0,
-			"ref": 24705
+			"ref": 179
 		},
 		{
 			"name": "Artisanal food delivery",
@@ -2483,7 +2483,7 @@
 				"sugar sack"
 			],
 			"random": 0,
-			"ref": 24706
+			"ref": 180
 		},
 		{
 			"name": "Cooking seasonings crate",
@@ -2498,7 +2498,7 @@
 				"Condiment Container"
 			],
 			"random": 0,
-			"ref": 24707
+			"ref": 181
 		},
 		{
 			"name": "Toner cartridges",
@@ -2510,7 +2510,7 @@
 				"toner cartridge"
 			],
 			"random": 0,
-			"ref": 24708
+			"ref": 182
 		},
 		{
 			"name": "Janitorial supplies",
@@ -2537,7 +2537,7 @@
 				"mop bucket"
 			],
 			"random": 0,
-			"ref": 24709
+			"ref": 183
 		},
 		{
 			"name": "Shipping supplies",
@@ -2554,7 +2554,7 @@
 				"tape roll"
 			],
 			"random": 0,
-			"ref": 24710
+			"ref": 184
 		},
 		{
 			"name": "Office supplies",
@@ -2572,7 +2572,7 @@
 				"paper bin"
 			],
 			"random": 0,
-			"ref": 24711
+			"ref": 185
 		},
 		{
 			"name": "Stationery - sticky notes (50)",
@@ -2584,7 +2584,7 @@
 				"sticky note pad"
 			],
 			"random": 0,
-			"ref": 24712
+			"ref": 186
 		},
 		{
 			"name": "Spare PDAs",
@@ -2596,7 +2596,7 @@
 				"PDA"
 			],
 			"random": 0,
-			"ref": 24713
+			"ref": 187
 		},
 		{
 			"name": "Shaft miner equipment",
@@ -2621,7 +2621,7 @@
 				"optical meson scanner"
 			],
 			"random": 0,
-			"ref": 24714
+			"ref": 188
 		},
 		{
 			"name": "Cargo Train Tug",
@@ -2633,7 +2633,7 @@
 				"cargo train tug"
 			],
 			"random": 0,
-			"ref": 24715
+			"ref": 189
 		},
 		{
 			"name": "Cargo Train Trolley",
@@ -2645,7 +2645,7 @@
 				"cargo train trolley"
 			],
 			"random": 0,
-			"ref": 24716
+			"ref": 190
 		},
 		{
 			"name": "Cargo Train Tanker",
@@ -2657,7 +2657,7 @@
 				"cargo train tanker"
 			],
 			"random": 0,
-			"ref": 24717
+			"ref": 191
 		},
 		{
 			"name": "Freezer crate",
@@ -2667,7 +2667,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24718
+			"ref": 192
 		},
 		{
 			"name": "Emergency food cubes",
@@ -2679,7 +2679,7 @@
 				"Food Cube Dispenser"
 			],
 			"random": 0,
-			"ref": 24719
+			"ref": 193
 		},
 		{
 			"name": "Postal Service Supplies",
@@ -2694,7 +2694,7 @@
 				"mail bag"
 			],
 			"random": 0,
-			"ref": 24720
+			"ref": 194
 		},
 		{
 			"name": "Salvage lot",
@@ -2704,7 +2704,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24721
+			"ref": 195
 		},
 		{
 			"name": "Surplus freight lot",
@@ -2714,7 +2714,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24722
+			"ref": 196
 		},
 		{
 			"name": "Weapon - Surplus militia rifles",
@@ -2727,7 +2727,7 @@
 				"ammo clip (7.62mm)"
 			],
 			"random": 0,
-			"ref": 24723
+			"ref": 197
 		},
 		{
 			"name": "Weapons - Energy sidearms",
@@ -2739,7 +2739,7 @@
 				"energy gun"
 			],
 			"random": 0,
-			"ref": 24724
+			"ref": 198
 		},
 		{
 			"name": "Weapons - Flare guns",
@@ -2754,7 +2754,7 @@
 				"ammo box (12 gauge flash)"
 			],
 			"random": 0,
-			"ref": 24725
+			"ref": 199
 		},
 		{
 			"name": "Weapons - Experimental weapons crate",
@@ -2767,7 +2767,7 @@
 				"energy combat shield"
 			],
 			"random": 0,
-			"ref": 24726
+			"ref": 200
 		},
 		{
 			"name": "Weapons - Laser rifle crate",
@@ -2779,7 +2779,7 @@
 				"NT LC-525 Laser Rifle"
 			],
 			"random": 0,
-			"ref": 24727
+			"ref": 201
 		},
 		{
 			"name": "Weapons - Shotgun crate",
@@ -2793,7 +2793,7 @@
 				"combat shotgun"
 			],
 			"random": 0,
-			"ref": 24728
+			"ref": 202
 		},
 		{
 			"name": "Weapons - Electromagnetic Pulse Rifles",
@@ -2806,7 +2806,7 @@
 				"box of low yield emp grenades"
 			],
 			"random": 0,
-			"ref": 24729
+			"ref": 203
 		},
 		{
 			"name": "Weapons - Electromagnetic Pulse pistols",
@@ -2819,7 +2819,7 @@
 				"box of low yield emp grenades"
 			],
 			"random": 0,
-			"ref": 24730
+			"ref": 204
 		},
 		{
 			"name": "Weapons - Ballistic SMGs",
@@ -2831,7 +2831,7 @@
 				"machine pistol"
 			],
 			"random": 0,
-			"ref": 24731
+			"ref": 205
 		},
 		{
 			"name": "Weapons - Ballistic Rifles",
@@ -2843,7 +2843,7 @@
 				"battle rifle"
 			],
 			"random": 0,
-			"ref": 24732
+			"ref": 206
 		},
 		{
 			"name": "Weapons - Bolt-Action Rifles",
@@ -2856,7 +2856,7 @@
 				"ammo box (7.62mm)"
 			],
 			"random": 0,
-			"ref": 24733
+			"ref": 207
 		},
 		{
 			"name": "Weapons - Competitive shooting rifles",
@@ -2871,7 +2871,7 @@
 				"shooting target"
 			],
 			"random": 0,
-			"ref": 24734
+			"ref": 208
 		},
 		{
 			"name": "Weapons - Prototype Caseless Rifle",
@@ -2884,7 +2884,7 @@
 				"prototype rifle magazine (5mm caseless)"
 			],
 			"random": 0,
-			"ref": 24735
+			"ref": 209
 		},
 		{
 			"name": "Weapons - Magnetic Rifles",
@@ -2896,7 +2896,7 @@
 				"coil rifle"
 			],
 			"random": 0,
-			"ref": 24736
+			"ref": 210
 		},
 		{
 			"name": "Weapons - Magnetic Pistols",
@@ -2908,7 +2908,7 @@
 				"coil pistol"
 			],
 			"random": 0,
-			"ref": 24737
+			"ref": 211
 		},
 		{
 			"name": "Weapons - Magnetic Carbines",
@@ -2920,7 +2920,7 @@
 				"shredder rifle"
 			],
 			"random": 0,
-			"ref": 24738
+			"ref": 212
 		},
 		{
 			"name": "Weapons - Magnetic Shells",
@@ -2932,7 +2932,7 @@
 				"flechette magazine"
 			],
 			"random": 0,
-			"ref": 24739
+			"ref": 213
 		},
 		{
 			"name": "Weapons - Melee - Claymores",
@@ -2944,7 +2944,7 @@
 				"claymore"
 			],
 			"random": 0,
-			"ref": 24740
+			"ref": 214
 		},
 		{
 			"name": "Ammunition - Shotgun shells",
@@ -2957,7 +2957,7 @@
 				"ammo box (12 gauge buckshot)"
 			],
 			"random": 0,
-			"ref": 24741
+			"ref": 215
 		},
 		{
 			"name": "Ammunition - Beanbag shells",
@@ -2969,7 +2969,7 @@
 				"ammo box (12 gauge beanbag)"
 			],
 			"random": 0,
-			"ref": 24742
+			"ref": 216
 		},
 		{
 			"name": "Ammunition - 9mm top mounted lethal",
@@ -2981,7 +2981,7 @@
 				"top mounted magazine (9mm)"
 			],
 			"random": 0,
-			"ref": 24743
+			"ref": 217
 		},
 		{
 			"name": "Ammunition - 9mm top mounted rubber",
@@ -2993,7 +2993,7 @@
 				"top mounted magazine (9mm rubber)"
 			],
 			"random": 0,
-			"ref": 24744
+			"ref": 218
 		},
 		{
 			"name": "Ammunition - 7.62mm lethal",
@@ -3005,7 +3005,7 @@
 				"magazine (7.62mm)"
 			],
 			"random": 0,
-			"ref": 24745
+			"ref": 219
 		},
 		{
 			"name": "Ammunition - Power cell",
@@ -3017,7 +3017,7 @@
 				"advanced device power cell"
 			],
 			"random": 0,
-			"ref": 24746
+			"ref": 220
 		},
 		{
 			"name": "Light machine gun crate",
@@ -3029,7 +3029,7 @@
 				"light machine gun"
 			],
 			"random": 0,
-			"ref": 24747
+			"ref": 221
 		},
 		{
 			"name": "Exploration phasegun (station-locked) crate",
@@ -3043,7 +3043,7 @@
 				"EW26 Artemis"
 			],
 			"random": 0,
-			"ref": 24748
+			"ref": 222
 		},
 		{
 			"name": "Exploration phasecannon (station-locked) crate",
@@ -3055,7 +3055,7 @@
 				"EW50 Gaia"
 			],
 			"random": 0,
-			"ref": 24749
+			"ref": 223
 		},
 		{
 			"name": "OFD Charge - EMP",
@@ -3067,7 +3067,7 @@
 				"EM2-QUASAR charge"
 			],
 			"random": 0,
-			"ref": 24750
+			"ref": 224
 		},
 		{
 			"name": "OFD Charge - Explosive",
@@ -3079,7 +3079,7 @@
 				"XP4-INDARRA charge"
 			],
 			"random": 0,
-			"ref": 24751
+			"ref": 225
 		},
 		{
 			"name": "OFD Charge - Incendiary",
@@ -3091,7 +3091,7 @@
 				"FR1-ENFER charge"
 			],
 			"random": 0,
-			"ref": 24752
+			"ref": 226
 		},
 		{
 			"name": "OFD Charge - Mining",
@@ -3103,7 +3103,7 @@
 				"MN3-BERGBAU charge"
 			],
 			"random": 0,
-			"ref": 24753
+			"ref": 227
 		},
 		{
 			"name": "Weapons - Melee -Longsword (Steel)",
@@ -3115,7 +3115,7 @@
 				"longsword"
 			],
 			"random": 0,
-			"ref": 24754
+			"ref": 228
 		},
 		{
 			"name": "Cowboy Crate",
@@ -3132,7 +3132,7 @@
 				"speedloader (.45)"
 			],
 			"random": 0,
-			"ref": 24755
+			"ref": 229
 		},
 		{
 			"name": "Weapons - Surplus Hunting Rifles",
@@ -3145,7 +3145,7 @@
 				"rifle clip (7.62mm hunting)"
 			],
 			"random": 0,
-			"ref": 24756
+			"ref": 230
 		},
 		{
 			"name": "Weapons - Surplus Phase Carbines",
@@ -3157,7 +3157,7 @@
 				"EW26 Artemis"
 			],
 			"random": 0,
-			"ref": 24757
+			"ref": 231
 		},
 		{
 			"name": "Weapons - Phase Rifles",
@@ -3169,7 +3169,7 @@
 				"EW31 Orion"
 			],
 			"random": 0,
-			"ref": 24758
+			"ref": 232
 		},
 		{
 			"name": "Wizard costume",
@@ -3184,7 +3184,7 @@
 				"wizard hat"
 			],
 			"random": 0,
-			"ref": 24759
+			"ref": 233
 		},
 		{
 			"name": "Formalwear (Suits)",
@@ -3209,7 +3209,7 @@
 				"waistcoat"
 			],
 			"random": 0,
-			"ref": 24760
+			"ref": 234
 		},
 		{
 			"name": "Witch costume",
@@ -3224,7 +3224,7 @@
 				"broom"
 			],
 			"random": 0,
-			"ref": 24761
+			"ref": 235
 		},
 		{
 			"name": "Xenowear crate",
@@ -3248,7 +3248,7 @@
 				"insulated gauntlets"
 			],
 			"random": 0,
-			"ref": 24762
+			"ref": 236
 		},
 		{
 			"name": "Teshari smocks",
@@ -3261,7 +3261,7 @@
 				"small command dress"
 			],
 			"random": 4,
-			"ref": 24763
+			"ref": 237
 		},
 		{
 			"name": "Teshari worksuits",
@@ -3273,7 +3273,7 @@
 				"small black and red worksuit"
 			],
 			"random": 4,
-			"ref": 24764
+			"ref": 238
 		},
 		{
 			"name": "Utility uniforms",
@@ -3285,7 +3285,7 @@
 				"utility uniform"
 			],
 			"random": 0,
-			"ref": 24765
+			"ref": 239
 		},
 		{
 			"name": "Skirts crate",
@@ -3306,7 +3306,7 @@
 				"red plaid skirt"
 			],
 			"random": 0,
-			"ref": 24766
+			"ref": 240
 		},
 		{
 			"name": "Varsity jackets",
@@ -3323,7 +3323,7 @@
 				"red varsity jacket"
 			],
 			"random": 0,
-			"ref": 24767
+			"ref": 241
 		},
 		{
 			"name": "Eyewear crate",
@@ -3342,7 +3342,7 @@
 				"3D glasses"
 			],
 			"random": 0,
-			"ref": 24768
+			"ref": 242
 		},
 		{
 			"name": "Saddlebags crate",
@@ -3359,7 +3359,7 @@
 				"Taur Duty Vest"
 			],
 			"random": 0,
-			"ref": 24769
+			"ref": 243
 		},
 		{
 			"name": "Knights Gear",
@@ -3378,7 +3378,7 @@
 				"knight boots"
 			],
 			"random": 0,
-			"ref": 24770
+			"ref": 244
 		},
 		{
 			"name": "Christmas costume pack",
@@ -3399,7 +3399,7 @@
 				"green christmas boots"
 			],
 			"random": 0,
-			"ref": 24771
+			"ref": 245
 		},
 		{
 			"name": "Replacement lights",
@@ -3411,7 +3411,7 @@
 				"box of replacement lights"
 			],
 			"random": 0,
-			"ref": 24772
+			"ref": 246
 		},
 		{
 			"name": "Superconducting Magnetic Coil",
@@ -3423,7 +3423,7 @@
 				"superconductive magnetic coil"
 			],
 			"random": 0,
-			"ref": 24773
+			"ref": 247
 		},
 		{
 			"name": "Superconducting Capacitance Coil",
@@ -3435,7 +3435,7 @@
 				"superconductive capacitance coil"
 			],
 			"random": 0,
-			"ref": 24774
+			"ref": 248
 		},
 		{
 			"name": "Superconducting Transmission Coil",
@@ -3447,7 +3447,7 @@
 				"superconductive transmission coil"
 			],
 			"random": 0,
-			"ref": 24775
+			"ref": 249
 		},
 		{
 			"name": "Shield Capacitor",
@@ -3459,7 +3459,7 @@
 				"shield capacitor"
 			],
 			"random": 0,
-			"ref": 24776
+			"ref": 250
 		},
 		{
 			"name": "Advanced Shield Capacitor",
@@ -3471,7 +3471,7 @@
 				"advanced shield capacitor"
 			],
 			"random": 0,
-			"ref": 24777
+			"ref": 251
 		},
 		{
 			"name": "Bubble Shield Generator",
@@ -3483,7 +3483,7 @@
 				"bubble shield generator"
 			],
 			"random": 0,
-			"ref": 24778
+			"ref": 252
 		},
 		{
 			"name": "Advanced Bubble Shield Generator",
@@ -3495,7 +3495,7 @@
 				"advanced bubble shield generator"
 			],
 			"random": 0,
-			"ref": 24779
+			"ref": 253
 		},
 		{
 			"name": "Hull Shield Generator",
@@ -3507,7 +3507,7 @@
 				"hull shield generator"
 			],
 			"random": 0,
-			"ref": 24780
+			"ref": 254
 		},
 		{
 			"name": "Advanced Hull Shield Generator",
@@ -3519,7 +3519,7 @@
 				"advanced hull shield generator"
 			],
 			"random": 0,
-			"ref": 24781
+			"ref": 255
 		},
 		{
 			"name": "Point Defense Turret Circuit",
@@ -3529,7 +3529,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24782
+			"ref": 256
 		},
 		{
 			"name": "Point Defense Controller Circuit",
@@ -3539,7 +3539,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24783
+			"ref": 257
 		},
 		{
 			"name": "Electrical maintenance crate",
@@ -3554,7 +3554,7 @@
 				"high-capacity power cell"
 			],
 			"random": 0,
-			"ref": 24784
+			"ref": 258
 		},
 		{
 			"name": "Electric welder crate",
@@ -3566,7 +3566,7 @@
 				"electric welding tool"
 			],
 			"random": 0,
-			"ref": 24785
+			"ref": 259
 		},
 		{
 			"name": "Mechanical maintenance crate",
@@ -3581,7 +3581,7 @@
 				"hard hat"
 			],
 			"random": 0,
-			"ref": 24786
+			"ref": 260
 		},
 		{
 			"name": "Fuel tank crate",
@@ -3593,7 +3593,7 @@
 				"fuel tank"
 			],
 			"random": 0,
-			"ref": 24787
+			"ref": 261
 		},
 		{
 			"name": "Solar Pack crate",
@@ -3607,7 +3607,7 @@
 				"paper- 'Going green! Setup your own solar array instructions.'"
 			],
 			"random": 0,
-			"ref": 24788
+			"ref": 262
 		},
 		{
 			"name": "Emitter crate",
@@ -3619,7 +3619,7 @@
 				"emitter"
 			],
 			"random": 0,
-			"ref": 24789
+			"ref": 263
 		},
 		{
 			"name": "Field Generator crate",
@@ -3631,7 +3631,7 @@
 				"Field Generator"
 			],
 			"random": 0,
-			"ref": 24790
+			"ref": 264
 		},
 		{
 			"name": "Singularity Generator crate",
@@ -3643,7 +3643,7 @@
 				"Gravitational Singularity Generator"
 			],
 			"random": 0,
-			"ref": 24791
+			"ref": 265
 		},
 		{
 			"name": "Tesla Generator crate",
@@ -3655,7 +3655,7 @@
 				"energy ball generator"
 			],
 			"random": 0,
-			"ref": 24792
+			"ref": 266
 		},
 		{
 			"name": "Collector crate",
@@ -3667,7 +3667,7 @@
 				"Radiation Collector Array"
 			],
 			"random": 0,
-			"ref": 24793
+			"ref": 267
 		},
 		{
 			"name": "Particle Accelerator crate",
@@ -3683,7 +3683,7 @@
 				"Alpha Particle Generation Array"
 			],
 			"random": 0,
-			"ref": 24794
+			"ref": 268
 		},
 		{
 			"name": "c-type rotary electric generator board",
@@ -3695,7 +3695,7 @@
 				"circuit board (C-Type-REG)"
 			],
 			"random": 0,
-			"ref": 24795
+			"ref": 269
 		},
 		{
 			"name": "Bubble shield generator circuitry",
@@ -3705,7 +3705,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24796
+			"ref": 270
 		},
 		{
 			"name": "Hull shield generator circuitry",
@@ -3715,7 +3715,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24797
+			"ref": 271
 		},
 		{
 			"name": "Bubble shield capacitor circuitry",
@@ -3725,7 +3725,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24798
+			"ref": 272
 		},
 		{
 			"name": "Supermatter Core",
@@ -3737,7 +3737,7 @@
 				"Supermatter"
 			],
 			"random": 0,
-			"ref": 24799
+			"ref": 273
 		},
 		{
 			"name": "Mark I Thermoelectric Generator",
@@ -3749,7 +3749,7 @@
 				"thermoelectric generator"
 			],
 			"random": 0,
-			"ref": 24800
+			"ref": 274
 		},
 		{
 			"name": "Binary atmospheric circulator",
@@ -3761,7 +3761,7 @@
 				"circulator"
 			],
 			"random": 0,
-			"ref": 24801
+			"ref": 275
 		},
 		{
 			"name": "Radiation suits package (Humanoid)",
@@ -3774,7 +3774,7 @@
 				"Radiation hood"
 			],
 			"random": 0,
-			"ref": 24802
+			"ref": 276
 		},
 		{
 			"name": "Radiation suits package (Teshari)",
@@ -3787,7 +3787,7 @@
 				"Small radiation hood"
 			],
 			"random": 0,
-			"ref": 24803
+			"ref": 277
 		},
 		{
 			"name": "P.A.C.M.A.N. portable generator parts",
@@ -3802,7 +3802,7 @@
 				"circuit board (PACMAN-type generator)"
 			],
 			"random": 0,
-			"ref": 24804
+			"ref": 278
 		},
 		{
 			"name": "Super P.A.C.M.A.N. portable generator parts",
@@ -3817,7 +3817,7 @@
 				"circuit board (SUPERPACMAN-type generator)"
 			],
 			"random": 0,
-			"ref": 24805
+			"ref": 279
 		},
 		{
 			"name": "R-UST Mk. 8 Tokamak fusion core crate",
@@ -3830,7 +3830,7 @@
 				"R-UST Mk. 9 Tokamak core"
 			],
 			"random": 0,
-			"ref": 24806
+			"ref": 280
 		},
 		{
 			"name": "R-UST Mk. 8 fuel injector crate",
@@ -3842,7 +3842,7 @@
 				"fuel injector"
 			],
 			"random": 0,
-			"ref": 24807
+			"ref": 281
 		},
 		{
 			"name": "Gyrotron crate",
@@ -3854,7 +3854,7 @@
 				"gyrotron"
 			],
 			"random": 0,
-			"ref": 24808
+			"ref": 282
 		},
 		{
 			"name": "Fusion Fuel Compressor circuitry crate",
@@ -3864,7 +3864,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24809
+			"ref": 283
 		},
 		{
 			"name": "Deuterium crate",
@@ -3874,7 +3874,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24810
+			"ref": 284
 		},
 		{
 			"name": "Tritium crate",
@@ -3884,7 +3884,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24811
+			"ref": 285
 		},
 		{
 			"name": "Modern Shield Construction Kit",
@@ -3900,7 +3900,7 @@
 				"subspace amplifier"
 			],
 			"random": 0,
-			"ref": 24812
+			"ref": 286
 		},
 		{
 			"name": "Thermal Regulator",
@@ -3912,7 +3912,7 @@
 				"thermal regulator"
 			],
 			"random": 0,
-			"ref": 24813
+			"ref": 287
 		},
 		{
 			"name": "Dosimeters",
@@ -3924,7 +3924,7 @@
 				"dosimeter case"
 			],
 			"random": 0,
-			"ref": 24814
+			"ref": 288
 		},
 		{
 			"name": "Algae Sheets (10)",
@@ -3936,7 +3936,7 @@
 				"algae sheet"
 			],
 			"random": 0,
-			"ref": 24815
+			"ref": 289
 		},
 		{
 			"name": "inducer",
@@ -3948,7 +3948,7 @@
 				"industrial inducer"
 			],
 			"random": 0,
-			"ref": 24816
+			"ref": 290
 		},
 		{
 			"name": "Reflector crate",
@@ -3960,7 +3960,7 @@
 				"NanoTrasen reflector box"
 			],
 			"random": 0,
-			"ref": 24817
+			"ref": 291
 		},
 		{
 			"name": "EVA hardsuit (empty)",
@@ -3972,7 +3972,7 @@
 				"EVA suit control module"
 			],
 			"random": 0,
-			"ref": 24818
+			"ref": 292
 		},
 		{
 			"name": "industrial hardsuit (empty)",
@@ -3984,7 +3984,7 @@
 				"industrial suit control module"
 			],
 			"random": 0,
-			"ref": 24819
+			"ref": 293
 		},
 		{
 			"name": "medical hardsuit (empty)",
@@ -3996,7 +3996,7 @@
 				"rescue suit control module"
 			],
 			"random": 0,
-			"ref": 24820
+			"ref": 294
 		},
 		{
 			"name": "hazard hardsuit (empty)",
@@ -4008,7 +4008,7 @@
 				"hazard hardsuit control module"
 			],
 			"random": 0,
-			"ref": 24821
+			"ref": 295
 		},
 		{
 			"name": "ami hardsuit (empty)",
@@ -4020,7 +4020,7 @@
 				"AMI control module"
 			],
 			"random": 0,
-			"ref": 24822
+			"ref": 296
 		},
 		{
 			"name": "advanced hardsuit (empty)",
@@ -4032,7 +4032,7 @@
 				"advanced hardsuit control module"
 			],
 			"random": 0,
-			"ref": 24823
+			"ref": 297
 		},
 		{
 			"name": "unathi breacher hardsuit (empty)",
@@ -4044,7 +4044,7 @@
 				"NT breacher chassis control module"
 			],
 			"random": 0,
-			"ref": 24824
+			"ref": 298
 		},
 		{
 			"name": "null hardsuit (jets)",
@@ -4056,7 +4056,7 @@
 				"null hardsuit control module"
 			],
 			"random": 0,
-			"ref": 24825
+			"ref": 299
 		},
 		{
 			"name": "solgov medical hardsuit (loaded)",
@@ -4068,7 +4068,7 @@
 				"Commonwealth medical hardsuit control module"
 			],
 			"random": 0,
-			"ref": 24826
+			"ref": 300
 		},
 		{
 			"name": "solgov engineering hardsuit (loaded)",
@@ -4080,7 +4080,7 @@
 				"Commonwealth engineering hardsuit control module"
 			],
 			"random": 0,
-			"ref": 24827
+			"ref": 301
 		},
 		{
 			"name": "EFTPOS scanner",
@@ -4092,7 +4092,7 @@
 				"EFTPOS scanner"
 			],
 			"random": 0,
-			"ref": 24828
+			"ref": 302
 		},
 		{
 			"name": "Chaplain equipment",
@@ -4112,7 +4112,7 @@
 				"red candle pack"
 			],
 			"random": 0,
-			"ref": 24829
+			"ref": 303
 		},
 		{
 			"name": "Hoverpod Shipment",
@@ -4122,7 +4122,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24830
+			"ref": 304
 		},
 		{
 			"name": "Holoplant Pot",
@@ -4134,7 +4134,7 @@
 				"holoplant"
 			],
 			"random": 0,
-			"ref": 24831
+			"ref": 305
 		},
 		{
 			"name": "Emergency - MREs",
@@ -4148,7 +4148,7 @@
 				"protein MRE"
 			],
 			"random": 6,
-			"ref": 24832
+			"ref": 306
 		},
 		{
 			"name": "Emergency - Paste",
@@ -4160,7 +4160,7 @@
 				"emergency MRE"
 			],
 			"random": 0,
-			"ref": 24833
+			"ref": 307
 		},
 		{
 			"name": "Emergency - VitaPaste",
@@ -4172,7 +4172,7 @@
 				"medical MRE"
 			],
 			"random": 0,
-			"ref": 24834
+			"ref": 308
 		},
 		{
 			"name": "Machine - Pump",
@@ -4184,7 +4184,7 @@
 				"fluid pump"
 			],
 			"random": 0,
-			"ref": 24835
+			"ref": 309
 		},
 		{
 			"name": "Belt-miner gear crate",
@@ -4201,7 +4201,7 @@
 				"binoculars"
 			],
 			"random": 0,
-			"ref": 24836
+			"ref": 310
 		},
 		{
 			"name": "jetpack (empty)",
@@ -4213,7 +4213,7 @@
 				"jetpack (empty)"
 			],
 			"random": 0,
-			"ref": 24837
+			"ref": 311
 		},
 		{
 			"name": "music players (3)",
@@ -4225,7 +4225,7 @@
 				"PodZu music player"
 			],
 			"random": 0,
-			"ref": 24838
+			"ref": 312
 		},
 		{
 			"name": "jukebox remote speakers (2)",
@@ -4237,7 +4237,7 @@
 				"BoomTown cordless speaker"
 			],
 			"random": 0,
-			"ref": 24839
+			"ref": 313
 		},
 		{
 			"name": "shortwave-capable headsets (x4)",
@@ -4249,7 +4249,7 @@
 				"explorer's headset"
 			],
 			"random": 0,
-			"ref": 24840
+			"ref": 314
 		},
 		{
 			"name": "emergency locator beacons (x4)",
@@ -4261,7 +4261,7 @@
 				"personal emergency beacon"
 			],
 			"random": 0,
-			"ref": 24841
+			"ref": 315
 		},
 		{
 			"name": "SWOOPIE XL CleanBot Kit",
@@ -4271,7 +4271,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24842
+			"ref": 316
 		},
 		{
 			"name": "random corporate supply crate",
@@ -4283,7 +4283,7 @@
 				"random corporate supply crate"
 			],
 			"random": 0,
-			"ref": 24843
+			"ref": 317
 		},
 		{
 			"name": "special corporate supply crate",
@@ -4295,7 +4295,7 @@
 				"random corporate crate"
 			],
 			"random": 0,
-			"ref": 24844
+			"ref": 318
 		},
 		{
 			"name": "Exotic crate - Solar Ray",
@@ -4305,7 +4305,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24845
+			"ref": 319
 		},
 		{
 			"name": "Exotic crate - Living Ice",
@@ -4315,7 +4315,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24846
+			"ref": 320
 		},
 		{
 			"name": "Exotic crate - Crystaline Crab",
@@ -4325,7 +4325,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24847
+			"ref": 321
 		},
 		{
 			"name": "Exotic crate - Dream Eel",
@@ -4335,7 +4335,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24848
+			"ref": 322
 		},
 		{
 			"name": "Exotic crate - Gravity Shell",
@@ -4345,7 +4345,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24849
+			"ref": 323
 		},
 		{
 			"name": "Bluespace Fulton Kit",
@@ -4358,7 +4358,7 @@
 				"bluespace extraction beacon signaller"
 			],
 			"random": 0,
-			"ref": 24850
+			"ref": 324
 		},
 		{
 			"name": "Surplus Bluespace Fultons",
@@ -4370,7 +4370,7 @@
 				"bluespace fulton extraction pack"
 			],
 			"random": 0,
-			"ref": 24851
+			"ref": 325
 		},
 		{
 			"name": "Party equipment",
@@ -4393,7 +4393,7 @@
 				"Spacer beer"
 			],
 			"random": 0,
-			"ref": 24852
+			"ref": 326
 		},
 		{
 			"name": "Bar supplies",
@@ -4417,7 +4417,7 @@
 				"box of drink sticks"
 			],
 			"random": 0,
-			"ref": 24853
+			"ref": 327
 		},
 		{
 			"name": "Cooking oil tank crate",
@@ -4429,7 +4429,7 @@
 				"cooking oil tank"
 			],
 			"random": 0,
-			"ref": 24854
+			"ref": 328
 		},
 		{
 			"name": "Surprise pack of five pizzas",
@@ -4442,7 +4442,7 @@
 				"kitchen knife"
 			],
 			"random": 0,
-			"ref": 24855
+			"ref": 329
 		},
 		{
 			"name": "Gift crate",
@@ -4459,7 +4459,7 @@
 				"flower card"
 			],
 			"random": 0,
-			"ref": 24856
+			"ref": 330
 		},
 		{
 			"name": "Painting equipment",
@@ -4475,7 +4475,7 @@
 				"canvas"
 			],
 			"random": 0,
-			"ref": 24857
+			"ref": 331
 		},
 		{
 			"name": "Holy water crate",
@@ -4487,7 +4487,7 @@
 				"Flask of Holy Water"
 			],
 			"random": 0,
-			"ref": 24858
+			"ref": 332
 		},
 		{
 			"name": "Condiments crate",
@@ -4501,7 +4501,7 @@
 				"pepper shaker"
 			],
 			"random": 0,
-			"ref": 24859
+			"ref": 333
 		},
 		{
 			"name": "Kitchen supply crate: meat",
@@ -4513,7 +4513,7 @@
 				"meat"
 			],
 			"random": 0,
-			"ref": 24860
+			"ref": 334
 		},
 		{
 			"name": "Kitchen supply crate: fish",
@@ -4525,7 +4525,7 @@
 				"fillet"
 			],
 			"random": 0,
-			"ref": 24861
+			"ref": 335
 		},
 		{
 			"name": "Kitchen supply crate: poultry",
@@ -4537,7 +4537,7 @@
 				"poultry"
 			],
 			"random": 0,
-			"ref": 24862
+			"ref": 336
 		},
 		{
 			"name": "Monkey crate",
@@ -4549,7 +4549,7 @@
 				"monkey cube box"
 			],
 			"random": 0,
-			"ref": 24863
+			"ref": 337
 		},
 		{
 			"name": "Farwa crate",
@@ -4561,7 +4561,7 @@
 				"farwa cube box"
 			],
 			"random": 0,
-			"ref": 24864
+			"ref": 338
 		},
 		{
 			"name": "Neaera crate",
@@ -4573,7 +4573,7 @@
 				"neaera cube box"
 			],
 			"random": 0,
-			"ref": 24865
+			"ref": 339
 		},
 		{
 			"name": "Stok crate",
@@ -4585,7 +4585,7 @@
 				"stok cube box"
 			],
 			"random": 0,
-			"ref": 24866
+			"ref": 340
 		},
 		{
 			"name": "Corgi Crate",
@@ -4595,7 +4595,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24867
+			"ref": 341
 		},
 		{
 			"name": "Cat Crate",
@@ -4605,7 +4605,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24868
+			"ref": 342
 		},
 		{
 			"name": "Catslug Crate",
@@ -4615,7 +4615,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24869
+			"ref": 343
 		},
 		{
 			"name": "Mothroach Crate",
@@ -4625,7 +4625,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24870
+			"ref": 344
 		},
 		{
 			"name": "Hydroponics Supply Crate",
@@ -4643,7 +4643,7 @@
 				"flora disk box"
 			],
 			"random": 0,
-			"ref": 24871
+			"ref": 345
 		},
 		{
 			"name": "Cow crate",
@@ -4653,7 +4653,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24872
+			"ref": 346
 		},
 		{
 			"name": "Goat crate",
@@ -4663,7 +4663,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24873
+			"ref": 347
 		},
 		{
 			"name": "Chicken crate",
@@ -4673,7 +4673,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24874
+			"ref": 348
 		},
 		{
 			"name": "Turkey crate",
@@ -4683,7 +4683,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24875
+			"ref": 349
 		},
 		{
 			"name": "Seeds crate",
@@ -4693,7 +4693,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24876
+			"ref": 350
 		},
 		{
 			"name": "Weed control crate",
@@ -4708,7 +4708,7 @@
 				"scythe"
 			],
 			"random": 0,
-			"ref": 24877
+			"ref": 351
 		},
 		{
 			"name": "Water tank crate",
@@ -4720,7 +4720,7 @@
 				"water tank"
 			],
 			"random": 0,
-			"ref": 24878
+			"ref": 352
 		},
 		{
 			"name": "Beekeeping crate",
@@ -4735,7 +4735,7 @@
 				"bee pack"
 			],
 			"random": 0,
-			"ref": 24879
+			"ref": 353
 		},
 		{
 			"name": "Empty hydroponics trays",
@@ -4745,7 +4745,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24880
+			"ref": 354
 		},
 		{
 			"name": "Birds Crate",
@@ -4755,7 +4755,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24881
+			"ref": 355
 		},
 		{
 			"name": "Sobaka crate",
@@ -4765,7 +4765,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24882
+			"ref": 356
 		},
 		{
 			"name": "Saru crate",
@@ -4775,7 +4775,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24883
+			"ref": 357
 		},
 		{
 			"name": "Sparra crate",
@@ -4785,7 +4785,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24884
+			"ref": 358
 		},
 		{
 			"name": "Wolpin crate",
@@ -4795,7 +4795,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24885
+			"ref": 359
 		},
 		{
 			"name": "Fennec crate",
@@ -4805,7 +4805,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24886
+			"ref": 360
 		},
 		{
 			"name": "Fish supply crate",
@@ -4819,7 +4819,7 @@
 				"extra large monkfish"
 			],
 			"random": 0,
-			"ref": 24887
+			"ref": 361
 		},
 		{
 			"name": "Fennec treats crate",
@@ -4838,7 +4838,7 @@
 				"ant meat"
 			],
 			"random": 0,
-			"ref": 24888
+			"ref": 362
 		},
 		{
 			"name": "Jerboa crate",
@@ -4848,7 +4848,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24889
+			"ref": 363
 		},
 		{
 			"name": "A pair of great tits",
@@ -4858,7 +4858,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24890
+			"ref": 364
 		},
 		{
 			"name": "Teppi crate",
@@ -4868,7 +4868,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24891
+			"ref": 365
 		},
 		{
 			"name": "Sheep crate",
@@ -4878,7 +4878,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24892
+			"ref": 366
 		},
 		{
 			"name": "Dog crate",
@@ -4888,7 +4888,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24893
+			"ref": 367
 		},
 		{
 			"name": "50 metal sheets",
@@ -4900,7 +4900,7 @@
 				"stack of steel"
 			],
 			"random": 0,
-			"ref": 24894
+			"ref": 368
 		},
 		{
 			"name": "50 glass sheets",
@@ -4910,7 +4910,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24895
+			"ref": 369
 		},
 		{
 			"name": "50 wooden planks",
@@ -4922,7 +4922,7 @@
 				"stack of wood"
 			],
 			"random": 0,
-			"ref": 24896
+			"ref": 370
 		},
 		{
 			"name": "50 birch planks",
@@ -4932,7 +4932,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24897
+			"ref": 371
 		},
 		{
 			"name": "50 oak planks",
@@ -4942,7 +4942,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24898
+			"ref": 372
 		},
 		{
 			"name": "50 pine planks",
@@ -4952,7 +4952,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24899
+			"ref": 373
 		},
 		{
 			"name": "50 alien wood planks",
@@ -4962,7 +4962,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24900
+			"ref": 374
 		},
 		{
 			"name": "50 acacia planks",
@@ -4972,7 +4972,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24901
+			"ref": 375
 		},
 		{
 			"name": "50 hardwood planks",
@@ -4982,7 +4982,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24902
+			"ref": 376
 		},
 		{
 			"name": "50 redwood planks",
@@ -4992,7 +4992,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24903
+			"ref": 377
 		},
 		{
 			"name": "50 plastic sheets",
@@ -5002,7 +5002,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24904
+			"ref": 378
 		},
 		{
 			"name": "50 copper ingots",
@@ -5012,7 +5012,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24905
+			"ref": 379
 		},
 		{
 			"name": "50 cardboard sheets",
@@ -5022,7 +5022,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24906
+			"ref": 380
 		},
 		{
 			"name": "Imported standard carpet",
@@ -5032,7 +5032,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24907
+			"ref": 381
 		},
 		{
 			"name": "Imported ornate carpet",
@@ -5042,7 +5042,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24908
+			"ref": 382
 		},
 		{
 			"name": "Imported diamond carpet",
@@ -5052,7 +5052,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24909
+			"ref": 383
 		},
 		{
 			"name": "Imported retro carpet",
@@ -5062,7 +5062,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24910
+			"ref": 384
 		},
 		{
 			"name": "Linoleum flooring",
@@ -5072,7 +5072,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24911
+			"ref": 385
 		},
 		{
 			"name": "Concrete blocks",
@@ -5082,7 +5082,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24912
+			"ref": 386
 		},
 		{
 			"name": "50 aluminium ingots",
@@ -5092,7 +5092,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24913
+			"ref": 387
 		},
 		{
 			"name": "50 iron ingots",
@@ -5102,7 +5102,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24914
+			"ref": 388
 		},
 		{
 			"name": "50 uranium ingots",
@@ -5112,7 +5112,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24915
+			"ref": 389
 		},
 		{
 			"name": "50 gold ingots",
@@ -5122,7 +5122,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24916
+			"ref": 390
 		},
 		{
 			"name": "50 silver ingots",
@@ -5132,7 +5132,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24917
+			"ref": 391
 		},
 		{
 			"name": "50 platinum ingots",
@@ -5142,7 +5142,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24918
+			"ref": 392
 		},
 		{
 			"name": "50 osmium ingots",
@@ -5152,7 +5152,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24919
+			"ref": 393
 		},
 		{
 			"name": "50 titanium ingots",
@@ -5162,7 +5162,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24920
+			"ref": 394
 		},
 		{
 			"name": "50 nickel ingots",
@@ -5172,7 +5172,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24921
+			"ref": 395
 		},
 		{
 			"name": "50 chromium ingots",
@@ -5182,7 +5182,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24922
+			"ref": 396
 		},
 		{
 			"name": "50 tungsten ingots",
@@ -5192,7 +5192,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24923
+			"ref": 397
 		},
 		{
 			"name": "50 technical ceramic sheets",
@@ -5202,7 +5202,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24924
+			"ref": 398
 		},
 		{
 			"name": "50 graphite ingots",
@@ -5212,7 +5212,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24925
+			"ref": 399
 		},
 		{
 			"name": "50 durasteel ingots",
@@ -5224,7 +5224,7 @@
 				"stack of durasteel"
 			],
 			"random": 0,
-			"ref": 24926
+			"ref": 400
 		},
 		{
 			"name": "50 plasteel ingots",
@@ -5236,7 +5236,7 @@
 				"stack of plasteel"
 			],
 			"random": 0,
-			"ref": 24927
+			"ref": 401
 		},
 		{
 			"name": "50 diamond ingots",
@@ -5246,7 +5246,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24928
+			"ref": 402
 		},
 		{
 			"name": "50 verdantium ingots",
@@ -5256,7 +5256,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24929
+			"ref": 403
 		},
 		{
 			"name": "50 sandstone blocks",
@@ -5266,7 +5266,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24930
+			"ref": 404
 		},
 		{
 			"name": "50 marble blocks",
@@ -5276,7 +5276,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24931
+			"ref": 405
 		},
 		{
 			"name": "50 leather bolts",
@@ -5286,7 +5286,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24932
+			"ref": 406
 		},
 		{
 			"name": "50 phoron ingots",
@@ -5296,7 +5296,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24933
+			"ref": 407
 		},
 		{
 			"name": "50 painite ingots",
@@ -5306,7 +5306,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24934
+			"ref": 408
 		},
 		{
 			"name": "50 cloth bolts",
@@ -5316,7 +5316,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24935
+			"ref": 409
 		},
 		{
 			"name": "Fancy Imported carpet",
@@ -5326,7 +5326,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24936
+			"ref": 410
 		},
 		{
 			"name": "Basic Medical Supplies",
@@ -5347,7 +5347,7 @@
 				"box of injectors"
 			],
 			"random": 0,
-			"ref": 24937
+			"ref": 411
 		},
 		{
 			"name": "BloodPack crate",
@@ -5359,7 +5359,7 @@
 				"blood packs bags"
 			],
 			"random": 0,
-			"ref": 24938
+			"ref": 412
 		},
 		{
 			"name": "BloodPack (Synthplas) crate",
@@ -5371,7 +5371,7 @@
 				"IV pack"
 			],
 			"random": 0,
-			"ref": 24939
+			"ref": 413
 		},
 		{
 			"name": "Body bag crate",
@@ -5383,7 +5383,7 @@
 				"body bags"
 			],
 			"random": 0,
-			"ref": 24940
+			"ref": 414
 		},
 		{
 			"name": "Stasis bag crate",
@@ -5395,7 +5395,7 @@
 				"stasis bag"
 			],
 			"random": 0,
-			"ref": 24941
+			"ref": 415
 		},
 		{
 			"name": "Surgery crate",
@@ -5417,7 +5417,7 @@
 				"circular saw"
 			],
 			"random": 0,
-			"ref": 24942
+			"ref": 416
 		},
 		{
 			"name": "Death Alarm crate",
@@ -5429,7 +5429,7 @@
 				"death alarm kit"
 			],
 			"random": 0,
-			"ref": 24943
+			"ref": 417
 		},
 		{
 			"name": "Clotting Medicine crate",
@@ -5441,7 +5441,7 @@
 				"clotting kit"
 			],
 			"random": 0,
-			"ref": 24944
+			"ref": 418
 		},
 		{
 			"name": "Sterile equipment crate",
@@ -5457,7 +5457,7 @@
 				"medical belt"
 			],
 			"random": 0,
-			"ref": 24945
+			"ref": 419
 		},
 		{
 			"name": "Medical surplus equipment",
@@ -5472,7 +5472,7 @@
 				"medical winter coat"
 			],
 			"random": 0,
-			"ref": 24946
+			"ref": 420
 		},
 		{
 			"name": "Chief Medical Officer equipment",
@@ -5497,7 +5497,7 @@
 				"PSG Variant-BIO"
 			],
 			"random": 0,
-			"ref": 24947
+			"ref": 421
 		},
 		{
 			"name": "Medical Doctor equipment",
@@ -5522,7 +5522,7 @@
 				"syringe"
 			],
 			"random": 0,
-			"ref": 24948
+			"ref": 422
 		},
 		{
 			"name": "Chemist equipment",
@@ -5546,7 +5546,7 @@
 				"syringe"
 			],
 			"random": 0,
-			"ref": 24949
+			"ref": 423
 		},
 		{
 			"name": "Chemical precursor crate",
@@ -5560,7 +5560,7 @@
 				"box of organic precursors"
 			],
 			"random": 0,
-			"ref": 24950
+			"ref": 424
 		},
 		{
 			"name": "Paramedic equipment",
@@ -5589,7 +5589,7 @@
 				"white webbing vest"
 			],
 			"random": 0,
-			"ref": 24951
+			"ref": 425
 		},
 		{
 			"name": "Psychiatrist equipment",
@@ -5610,7 +5610,7 @@
 				"Med-U cartridge"
 			],
 			"random": 0,
-			"ref": 24952
+			"ref": 426
 		},
 		{
 			"name": "Medical scrubs",
@@ -5629,7 +5629,7 @@
 				"box of latex gloves"
 			],
 			"random": 0,
-			"ref": 24953
+			"ref": 427
 		},
 		{
 			"name": "Autopsy equipment",
@@ -5648,7 +5648,7 @@
 				"pen"
 			],
 			"random": 0,
-			"ref": 24954
+			"ref": 428
 		},
 		{
 			"name": "Medical uniforms",
@@ -5672,7 +5672,7 @@
 				"box of latex gloves"
 			],
 			"random": 0,
-			"ref": 24955
+			"ref": 429
 		},
 		{
 			"name": "Medical biohazard gear",
@@ -5690,7 +5690,7 @@
 				"box of latex gloves"
 			],
 			"random": 0,
-			"ref": 24956
+			"ref": 430
 		},
 		{
 			"name": "Portable freezers crate",
@@ -5702,7 +5702,7 @@
 				"portable freezer"
 			],
 			"random": 0,
-			"ref": 24957
+			"ref": 431
 		},
 		{
 			"name": "Virus culture crate",
@@ -5715,7 +5715,7 @@
 				"flu virus culture"
 			],
 			"random": 0,
-			"ref": 24958
+			"ref": 432
 		},
 		{
 			"name": "Defibrillator crate",
@@ -5727,7 +5727,7 @@
 				"defibrillator"
 			],
 			"random": 0,
-			"ref": 24959
+			"ref": 433
 		},
 		{
 			"name": "Chemical distiller crate",
@@ -5739,7 +5739,7 @@
 				"chemical distillery"
 			],
 			"random": 0,
-			"ref": 24960
+			"ref": 434
 		},
 		{
 			"name": "Industrial Chemical distiller crate",
@@ -5751,7 +5751,7 @@
 				"industrial chemical distillery"
 			],
 			"random": 0,
-			"ref": 24961
+			"ref": 435
 		},
 		{
 			"name": "Oxygen pump crate",
@@ -5763,7 +5763,7 @@
 				"portable oxygen pump"
 			],
 			"random": 0,
-			"ref": 24962
+			"ref": 436
 		},
 		{
 			"name": "Anesthetic pump crate",
@@ -5775,7 +5775,7 @@
 				"portable anesthetic pump"
 			],
 			"random": 0,
-			"ref": 24963
+			"ref": 437
 		},
 		{
 			"name": "Portable stabilizer crate",
@@ -5787,7 +5787,7 @@
 				"portable patient stabilizer"
 			],
 			"random": 0,
-			"ref": 24964
+			"ref": 438
 		},
 		{
 			"name": "Virology biohazard gear",
@@ -5804,7 +5804,7 @@
 				"box of latex gloves"
 			],
 			"random": 0,
-			"ref": 24965
+			"ref": 439
 		},
 		{
 			"name": "Experimental Disease crate",
@@ -5816,7 +5816,7 @@
 				"experimental disease culture bottle"
 			],
 			"random": 0,
-			"ref": 24966
+			"ref": 440
 		},
 		{
 			"name": "Minor Experimental Disease crate",
@@ -5828,7 +5828,7 @@
 				"minor experimental disease culture bottle"
 			],
 			"random": 0,
-			"ref": 24967
+			"ref": 441
 		},
 		{
 			"name": "Compact Defibrillator crate",
@@ -5840,7 +5840,7 @@
 				"compact defibrillator"
 			],
 			"random": 0,
-			"ref": 24968
+			"ref": 442
 		},
 		{
 			"name": "Glucose Hypoinjectors",
@@ -5852,7 +5852,7 @@
 				"glucose hypo"
 			],
 			"random": 0,
-			"ref": 24969
+			"ref": 443
 		},
 		{
 			"name": "Surgery Kit Bag",
@@ -5864,7 +5864,7 @@
 				"surgery kit"
 			],
 			"random": 0,
-			"ref": 24970
+			"ref": 444
 		},
 		{
 			"name": "Spare backup implanters",
@@ -5876,7 +5876,7 @@
 				"backup implanter"
 			],
 			"random": 0,
-			"ref": 24971
+			"ref": 445
 		},
 		{
 			"name": "Commercial Denecrotizer ",
@@ -5888,7 +5888,7 @@
 				"commercial denecrotizer"
 			],
 			"random": 0,
-			"ref": 24972
+			"ref": 446
 		},
 		{
 			"name": "string instruments",
@@ -5903,7 +5903,7 @@
 				"electric guitar"
 			],
 			"random": 0,
-			"ref": 24973
+			"ref": 447
 		},
 		{
 			"name": "wind instruments",
@@ -5921,7 +5921,7 @@
 				"gilded bike horn"
 			],
 			"random": 0,
-			"ref": 24974
+			"ref": 448
 		},
 		{
 			"name": "keyed instruments",
@@ -5935,7 +5935,7 @@
 				"musical moth"
 			],
 			"random": 0,
-			"ref": 24975
+			"ref": 449
 		},
 		{
 			"name": "Foam Weapon Crate",
@@ -5950,7 +5950,7 @@
 				"fire axe"
 			],
 			"random": 0,
-			"ref": 24976
+			"ref": 450
 		},
 		{
 			"name": "Donk-Soft Weapon Crate",
@@ -5965,7 +5965,7 @@
 				"Donk-Soft pistol magazine"
 			],
 			"random": 0,
-			"ref": 24977
+			"ref": 451
 		},
 		{
 			"name": "Donk-Soft Cyborg Blaster Crate",
@@ -5977,7 +5977,7 @@
 				"Donk-Soft Cyborg Blaster module"
 			],
 			"random": 0,
-			"ref": 24978
+			"ref": 452
 		},
 		{
 			"name": "Donk-Soft Vendor Crate",
@@ -5987,7 +5987,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24979
+			"ref": 453
 		},
 		{
 			"name": "Lasertag Turrets",
@@ -5997,7 +5997,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 24980
+			"ref": 454
 		},
 		{
 			"name": "Lasertag equipment",
@@ -6019,7 +6019,7 @@
 				"blue lasertag mine"
 			],
 			"random": 0,
-			"ref": 24981
+			"ref": 455
 		},
 		{
 			"name": "Arts and Crafts supplies",
@@ -6042,7 +6042,7 @@
 				"canvas"
 			],
 			"random": 0,
-			"ref": 24982
+			"ref": 456
 		},
 		{
 			"name": "Station Painting Supplies",
@@ -6057,7 +6057,7 @@
 				"paint remover bucket"
 			],
 			"random": 0,
-			"ref": 24983
+			"ref": 457
 		},
 		{
 			"name": "Cheap Fishing Bait",
@@ -6069,7 +6069,7 @@
 				"can of sickly worms"
 			],
 			"random": 0,
-			"ref": 24984
+			"ref": 458
 		},
 		{
 			"name": "Laser Tag Turrets",
@@ -6081,7 +6081,7 @@
 				"lasertag turret"
 			],
 			"random": 0,
-			"ref": 24985
+			"ref": 459
 		},
 		{
 			"name": "Monster Bait Toy",
@@ -6093,7 +6093,7 @@
 				"bait toy"
 			],
 			"random": 0,
-			"ref": 24986
+			"ref": 460
 		},
 		{
 			"name": "Recreational Restraints",
@@ -6114,7 +6114,7 @@
 				"shibari bindings"
 			],
 			"random": 0,
-			"ref": 24987
+			"ref": 461
 		},
 		{
 			"name": "Wolfgirl Cosplay Crate",
@@ -6126,7 +6126,7 @@
 				"Autumn Shield"
 			],
 			"random": 0,
-			"ref": 24988
+			"ref": 462
 		},
 		{
 			"name": "Collar bundle",
@@ -6144,7 +6144,7 @@
 				"Holo-collar"
 			],
 			"random": 0,
-			"ref": 24989
+			"ref": 463
 		},
 		{
 			"name": "Shiny Clothing",
@@ -6168,7 +6168,7 @@
 				"polychromic shiny socks"
 			],
 			"random": 0,
-			"ref": 24990
+			"ref": 464
 		},
 		{
 			"name": "Smole Bulding Bricks",
@@ -6180,7 +6180,7 @@
 				"smolebrick case"
 			],
 			"random": 0,
-			"ref": 24991
+			"ref": 465
 		},
 		{
 			"name": "Snack planets pack",
@@ -6192,7 +6192,7 @@
 				"bag o' planets"
 			],
 			"random": 4,
-			"ref": 24992
+			"ref": 466
 		},
 		{
 			"name": "Pillow Crate - Pink",
@@ -6204,7 +6204,7 @@
 				"pillow"
 			],
 			"random": 0,
-			"ref": 24993
+			"ref": 467
 		},
 		{
 			"name": "Pillow Crate - Teal",
@@ -6216,7 +6216,7 @@
 				"pillow"
 			],
 			"random": 0,
-			"ref": 24994
+			"ref": 468
 		},
 		{
 			"name": "Pillow Crate - White",
@@ -6228,7 +6228,7 @@
 				"pillow"
 			],
 			"random": 0,
-			"ref": 24995
+			"ref": 469
 		},
 		{
 			"name": "Pillow Crate - Black",
@@ -6240,7 +6240,7 @@
 				"pillow"
 			],
 			"random": 0,
-			"ref": 24996
+			"ref": 470
 		},
 		{
 			"name": "Pillow Crate - Red",
@@ -6252,7 +6252,7 @@
 				"pillow"
 			],
 			"random": 0,
-			"ref": 24997
+			"ref": 471
 		},
 		{
 			"name": "Pillow Crate - Green",
@@ -6264,7 +6264,7 @@
 				"pillow"
 			],
 			"random": 0,
-			"ref": 24998
+			"ref": 472
 		},
 		{
 			"name": "Pillow Crate - Orange",
@@ -6276,7 +6276,7 @@
 				"pillow"
 			],
 			"random": 0,
-			"ref": 24999
+			"ref": 473
 		},
 		{
 			"name": "Pillow Crate - Yellow",
@@ -6288,7 +6288,7 @@
 				"pillow"
 			],
 			"random": 0,
-			"ref": 25000
+			"ref": 474
 		},
 		{
 			"name": "Gambling Game Crate",
@@ -6304,7 +6304,7 @@
 				"dice cup"
 			],
 			"random": 0,
-			"ref": 25001
+			"ref": 475
 		},
 		{
 			"name": "Instrument bundle",
@@ -6324,7 +6324,7 @@
 				"trombone"
 			],
 			"random": 0,
-			"ref": 25002
+			"ref": 476
 		},
 		{
 			"name": "Grand* Piano",
@@ -6334,7 +6334,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 25003
+			"ref": 477
 		},
 		{
 			"name": "Robotics assembly crate",
@@ -6349,7 +6349,7 @@
 				"high-capacity power cell"
 			],
 			"random": 0,
-			"ref": 25004
+			"ref": 478
 		},
 		{
 			"name": "Morpheus robolimb blueprints",
@@ -6361,7 +6361,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25005
+			"ref": 479
 		},
 		{
 			"name": "Cyber Solutions robolimb blueprints",
@@ -6373,7 +6373,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25006
+			"ref": 480
 		},
 		{
 			"name": "Xion robolimb blueprints",
@@ -6385,7 +6385,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25007
+			"ref": 481
 		},
 		{
 			"name": "Grayson robolimb blueprints",
@@ -6397,7 +6397,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25008
+			"ref": 482
 		},
 		{
 			"name": "Hephaestus robolimb blueprints",
@@ -6409,7 +6409,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25009
+			"ref": 483
 		},
 		{
 			"name": "Ward-Takahashi robolimb blueprints",
@@ -6421,7 +6421,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25010
+			"ref": 484
 		},
 		{
 			"name": "Zeng Hu robolimb blueprints",
@@ -6433,7 +6433,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25011
+			"ref": 485
 		},
 		{
 			"name": "Bishop robolimb blueprints",
@@ -6445,7 +6445,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25012
+			"ref": 486
 		},
 		{
 			"name": "Cenilimi Cybernetics robolimb blueprints",
@@ -6457,7 +6457,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25013
+			"ref": 487
 		},
 		{
 			"name": "Circuit Crate (\"Ripley\" APLU)",
@@ -6471,7 +6471,7 @@
 				"exosuit module circuit board (Ripley peripherals control)"
 			],
 			"random": 0,
-			"ref": 25014
+			"ref": 488
 		},
 		{
 			"name": "Circuit Crate (\"Odysseus\")",
@@ -6484,7 +6484,7 @@
 				"exosuit module circuit board (Odysseus central control)"
 			],
 			"random": 0,
-			"ref": 25015
+			"ref": 489
 		},
 		{
 			"name": "Jumper kit crate",
@@ -6496,7 +6496,7 @@
 				"jumper cable kit"
 			],
 			"random": 0,
-			"ref": 25016
+			"ref": 490
 		},
 		{
 			"name": "Restraining bolt crate",
@@ -6509,7 +6509,7 @@
 				"glass case - 'Restraining Bolt'"
 			],
 			"random": 0,
-			"ref": 25017
+			"ref": 491
 		},
 		{
 			"name": "Spacebike Crate",
@@ -6519,7 +6519,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 25018
+			"ref": 492
 		},
 		{
 			"name": "ATV Crate",
@@ -6529,7 +6529,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 25019
+			"ref": 493
 		},
 		{
 			"name": "ATV Trailer Crate",
@@ -6539,7 +6539,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 25020
+			"ref": 494
 		},
 		{
 			"name": "Basic Robolimb Blueprints",
@@ -6551,7 +6551,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25021
+			"ref": 495
 		},
 		{
 			"name": "Advanced Robolimb Blueprints",
@@ -6563,7 +6563,7 @@
 				"Limb Blueprints"
 			],
 			"random": 0,
-			"ref": 25022
+			"ref": 496
 		},
 		{
 			"name": "Coolant tank crate",
@@ -6575,7 +6575,7 @@
 				"coolant tank"
 			],
 			"random": 0,
-			"ref": 25023
+			"ref": 497
 		},
 		{
 			"name": "Phoron research crate",
@@ -6593,7 +6593,7 @@
 				"tank transfer valve"
 			],
 			"random": 0,
-			"ref": 25024
+			"ref": 498
 		},
 		{
 			"name": "Exotic seeds crate",
@@ -6605,7 +6605,7 @@
 				"packet of seeds"
 			],
 			"random": 0,
-			"ref": 25025
+			"ref": 499
 		},
 		{
 			"name": "Integrated circuit printer",
@@ -6619,7 +6619,7 @@
 				"circuit wirer"
 			],
 			"random": 0,
-			"ref": 25026
+			"ref": 500
 		},
 		{
 			"name": "Integrated circuit printer upgrade - advanced designs",
@@ -6631,7 +6631,7 @@
 				"integrated circuit printer upgrade disk - advanced designs"
 			],
 			"random": 0,
-			"ref": 25027
+			"ref": 501
 		},
 		{
 			"name": "Xenoarchaeology Tech crate",
@@ -6657,7 +6657,7 @@
 				"wrench"
 			],
 			"random": 0,
-			"ref": 25028
+			"ref": 502
 		},
 		{
 			"name": "Protolathe Board Crate",
@@ -6674,7 +6674,7 @@
 				"circuit board (departmental protolathe (security))"
 			],
 			"random": 0,
-			"ref": 25029
+			"ref": 503
 		},
 		{
 			"name": "Dangerous Predator crate",
@@ -6684,7 +6684,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 25030
+			"ref": 504
 		},
 		{
 			"name": "EXTREMELY Dangerous Predator crate",
@@ -6694,7 +6694,7 @@
 			"contraband": 1,
 			"manifest": [],
 			"random": 0,
-			"ref": 25031
+			"ref": 505
 		},
 		{
 			"name": "Exotic Weretiger crate",
@@ -6704,7 +6704,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 25032
+			"ref": 506
 		},
 		{
 			"name": "VARMAcorp adoptable reject (Dangerous!)",
@@ -6714,7 +6714,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 25033
+			"ref": 507
 		},
 		{
 			"name": "VARMAcorp adaptive beta subject (Experimental)",
@@ -6724,7 +6724,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 25034
+			"ref": 508
 		},
 		{
 			"name": "Anomaly Harvesting crate",
@@ -6734,7 +6734,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 25035
+			"ref": 509
 		},
 		{
 			"name": "Latent Anomaly crate",
@@ -6746,7 +6746,7 @@
 				"latent anomaly core"
 			],
 			"random": 0,
-			"ref": 25036
+			"ref": 510
 		},
 		{
 			"name": "Borg-O's Five-Pack",
@@ -6756,7 +6756,7 @@
 			"contraband": 0,
 			"manifest": [],
 			"random": 0,
-			"ref": 25037
+			"ref": 511
 		},
 		{
 			"name": "EXTREMELY Dangerous Bug",
@@ -6766,7 +6766,7 @@
 			"contraband": 1,
 			"manifest": [],
 			"random": 0,
-			"ref": 25038
+			"ref": 512
 		},
 		{
 			"name": "Explorer gear",
@@ -6794,7 +6794,7 @@
 				"survival watch"
 			],
 			"random": 0,
-			"ref": 25039
+			"ref": 513
 		},
 		{
 			"name": "Pilot gear",
@@ -6822,7 +6822,7 @@
 				"survival watch"
 			],
 			"random": 0,
-			"ref": 25040
+			"ref": 514
 		},
 		{
 			"name": "Pathfinder gear",
@@ -6853,7 +6853,7 @@
 				"PSG Variant-B"
 			],
 			"random": 0,
-			"ref": 25041
+			"ref": 515
 		},
 		{
 			"name": "Getmore Chocolate Corp Vendor Refill Cartridge",
@@ -6865,7 +6865,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25042
+			"ref": 516
 		},
 		{
 			"name": "SweatMAX Vendor Refill Cartridge",
@@ -6877,7 +6877,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25043
+			"ref": 517
 		},
 		{
 			"name": "Nippon-tan Vendor Refill Cartridge",
@@ -6889,7 +6889,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25044
+			"ref": 518
 		},
 		{
 			"name": "Sol-Snacks Vendor Refill Cartridge",
@@ -6901,7 +6901,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25045
+			"ref": 519
 		},
 		{
 			"name": "Snix Vendor Refill Cartridge",
@@ -6913,7 +6913,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25046
+			"ref": 520
 		},
 		{
 			"name": "Shop-n-Large Snacks Vendor Refill Cartridge",
@@ -6925,7 +6925,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25047
+			"ref": 521
 		},
 		{
 			"name": "Ration Station Vendor Refill Cartridge",
@@ -6937,7 +6937,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25048
+			"ref": 522
 		},
 		{
 			"name": "Altevian Vendor Refill Cartridge",
@@ -6949,7 +6949,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25049
+			"ref": 523
 		},
 		{
 			"name": "Hot Drinks Vendor Refill Cartridge",
@@ -6961,7 +6961,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25050
+			"ref": 524
 		},
 		{
 			"name": "Robust Softdrinks Vendor Refill Cartridge",
@@ -6973,7 +6973,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25051
+			"ref": 525
 		},
 		{
 			"name": "BODA Vendor Refill Cartridge",
@@ -6985,7 +6985,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25052
+			"ref": 526
 		},
 		{
 			"name": "Bepis Softdrinks Vendor Refill Cartridge",
@@ -6997,7 +6997,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25053
+			"ref": 527
 		},
 		{
 			"name": "Cigarette Vendor Refill Cartridge",
@@ -7009,7 +7009,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25054
+			"ref": 528
 		},
 		{
 			"name": "Wardrobe Vendor Refill Cartridge",
@@ -7021,7 +7021,7 @@
 				"specialized wardrobe refill cartridge"
 			],
 			"random": 0,
-			"ref": 25055
+			"ref": 529
 		},
 		{
 			"name": "AlliCo Baubles and Confectionaries Vendor Refill Cartridge",
@@ -7033,7 +7033,7 @@
 				"vending refill cartridge"
 			],
 			"random": 0,
-			"ref": 25056
+			"ref": 530
 		},
 		{
 			"name": "5-Pack Food Vendor Refill Cartridges",
@@ -7045,7 +7045,7 @@
 				"food vendor refill cartridge"
 			],
 			"random": 0,
-			"ref": 25057
+			"ref": 531
 		},
 		{
 			"name": "5-Pack Drink Vendor Refill Cartridges",
@@ -7057,7 +7057,7 @@
 				"drinks vendor refill cartridge"
 			],
 			"random": 0,
-			"ref": 25058
+			"ref": 532
 		},
 		{
 			"name": "5-Pack Clothing Vendor Refill Cartridges",
@@ -7069,7 +7069,7 @@
 				"clothing vendor refill cartridge"
 			],
 			"random": 0,
-			"ref": 25059
+			"ref": 533
 		},
 		{
 			"name": "5-Pack Technical Vendor Refill Cartridges",
@@ -7081,7 +7081,7 @@
 				"technical vendor refill cartridge"
 			],
 			"random": 0,
-			"ref": 25060
+			"ref": 534
 		},
 		{
 			"name": "5-Pack Specialty Vendor Refill Cartridges",
@@ -7093,7 +7093,7 @@
 				"specialty vendor refill cartridge"
 			],
 			"random": 0,
-			"ref": 25061
+			"ref": 535
 		},
 		{
 			"name": "Atmospheric voidsuits",
@@ -7109,7 +7109,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25062
+			"ref": 536
 		},
 		{
 			"name": "Heavy Duty Atmospheric voidsuits",
@@ -7125,7 +7125,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25063
+			"ref": 537
 		},
 		{
 			"name": "Engineering voidsuits",
@@ -7141,7 +7141,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25064
+			"ref": 538
 		},
 		{
 			"name": "Engineering Construction voidsuits",
@@ -7157,7 +7157,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25065
+			"ref": 539
 		},
 		{
 			"name": "Engineering Hazmat voidsuits",
@@ -7173,7 +7173,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25066
+			"ref": 540
 		},
 		{
 			"name": "Reinforced Engineering voidsuits",
@@ -7189,7 +7189,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25067
+			"ref": 541
 		},
 		{
 			"name": "Medical voidsuits",
@@ -7205,7 +7205,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25068
+			"ref": 542
 		},
 		{
 			"name": "Medical EMT voidsuits",
@@ -7221,7 +7221,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25069
+			"ref": 543
 		},
 		{
 			"name": "Medical Biohazard voidsuits",
@@ -7237,7 +7237,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25070
+			"ref": 544
 		},
 		{
 			"name": "Vey-Med Autoadaptive Lightweight voidsuits",
@@ -7253,7 +7253,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25071
+			"ref": 545
 		},
 		{
 			"name": "Vey-Med Nonadaptive Lightweight voidsuits",
@@ -7269,7 +7269,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25072
+			"ref": 546
 		},
 		{
 			"name": "Security voidsuits",
@@ -7285,7 +7285,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25073
+			"ref": 547
 		},
 		{
 			"name": "Security Crowd Control voidsuits",
@@ -7301,7 +7301,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25074
+			"ref": 548
 		},
 		{
 			"name": "Security EVA voidsuits",
@@ -7317,7 +7317,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25075
+			"ref": 549
 		},
 		{
 			"name": "Mining voidsuits",
@@ -7332,7 +7332,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25076
+			"ref": 550
 		},
 		{
 			"name": "Frontier Mining voidsuits",
@@ -7347,7 +7347,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25077
+			"ref": 551
 		},
 		{
 			"name": "Zaddat Shroud",
@@ -7360,7 +7360,7 @@
 				"Zaddat Veil"
 			],
 			"random": 0,
-			"ref": 25078
+			"ref": 552
 		},
 		{
 			"name": "NT Unathi breacher chassis",
@@ -7372,7 +7372,7 @@
 				"NT breacher chassis control module"
 			],
 			"random": 0,
-			"ref": 25079
+			"ref": 553
 		},
 		{
 			"name": "Authentic Unathi breacher chassis",
@@ -7384,7 +7384,7 @@
 				"breacher chassis control module"
 			],
 			"random": 0,
-			"ref": 25080
+			"ref": 554
 		},
 		{
 			"name": "Vox Engineering Hardsuit",
@@ -7396,7 +7396,7 @@
 				"fluid alien control module"
 			],
 			"random": 0,
-			"ref": 25081
+			"ref": 555
 		},
 		{
 			"name": "Vox Security Hardsuit",
@@ -7408,7 +7408,7 @@
 				"sturdy alien control module"
 			],
 			"random": 0,
-			"ref": 25082
+			"ref": 556
 		},
 		{
 			"name": "Explorer voidsuits",
@@ -7424,7 +7424,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25083
+			"ref": 557
 		},
 		{
 			"name": "Field Medic voidsuits",
@@ -7440,7 +7440,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25084
+			"ref": 558
 		},
 		{
 			"name": "Pilot voidsuits",
@@ -7456,7 +7456,7 @@
 				"oxygen tank"
 			],
 			"random": 0,
-			"ref": 25085
+			"ref": 559
 		},
 		{
 			"name": "Solgov mining voidsuit crate",
@@ -7469,7 +7469,7 @@
 				"mining voidsuit helmet"
 			],
 			"random": 0,
-			"ref": 25086
+			"ref": 560
 		},
 		{
 			"name": "Solgov anomaly suit crate",
@@ -7482,7 +7482,7 @@
 				"Excavation hood"
 			],
 			"random": 0,
-			"ref": 25087
+			"ref": 561
 		},
 		{
 			"name": "Solgov riot voidsuit crate",
@@ -7495,7 +7495,7 @@
 				"crowd control voidsuit helmet"
 			],
 			"random": 0,
-			"ref": 25088
+			"ref": 562
 		},
 		{
 			"name": "Solgov pilot voidsuit crate",
@@ -7508,7 +7508,7 @@
 				"pilot voidsuit helmet"
 			],
 			"random": 0,
-			"ref": 25089
+			"ref": 563
 		},
 		{
 			"name": "Solgov medical voidsuit crate",
@@ -7521,7 +7521,7 @@
 				"medical voidsuit helmet"
 			],
 			"random": 0,
-			"ref": 25090
+			"ref": 564
 		},
 		{
 			"name": "Solgov exploration voidsuit crate",
@@ -7534,7 +7534,7 @@
 				"exploration voidsuit helmet"
 			],
 			"random": 0,
-			"ref": 25091
+			"ref": 565
 		},
 		{
 			"name": "Solgov engineering voidsuit crate",
@@ -7547,7 +7547,7 @@
 				"engineering voidsuit helmet"
 			],
 			"random": 0,
-			"ref": 25092
+			"ref": 566
 		},
 		{
 			"name": "Solgov atmos voidsuit crate",
@@ -7560,7 +7560,7 @@
 				"atmospherics voidsuit helmet"
 			],
 			"random": 0,
-			"ref": 25093
+			"ref": 567
 		},
 		{
 			"name": "Solgov captain voidsuit crate",
@@ -7573,7 +7573,7 @@
 				"manager helmet"
 			],
 			"random": 0,
-			"ref": 25094
+			"ref": 568
 		},
 		{
 			"name": "CSC voidsuit crate",
@@ -7587,7 +7587,7 @@
 				"CSC industrial jetpack"
 			],
 			"random": 0,
-			"ref": 25095
+			"ref": 569
 		}
 	],
 	"categories": [
@@ -8343,7 +8343,7 @@
 				"description": "Traceable station products from any operational department.",
 				"fulfilled": 0,
 				"target": 5,
-				"remaining": 5,
+				"remaining": 0,
 				"multiplier": 1.54,
 				"ship": null,
 				"reserved": 0,
@@ -8358,7 +8358,7 @@
 				"description": "Processed material stacks suitable for industrial resale.",
 				"fulfilled": 0,
 				"target": 80,
-				"remaining": 80,
+				"remaining": 0,
 				"multiplier": 1.68,
 				"ship": null,
 				"reserved": 0,
@@ -8373,7 +8373,7 @@
 				"description": "Preserved organs, vaccines, and other clinical products.",
 				"fulfilled": 0,
 				"target": 5,
-				"remaining": 5,
+				"remaining": 0,
 				"multiplier": 1.46,
 				"ship": null,
 				"reserved": 0,
@@ -8388,7 +8388,7 @@
 				"description": "Prepared meals and packaged food for off-station distribution.",
 				"fulfilled": 0,
 				"target": 8,
-				"remaining": 8,
+				"remaining": 0,
 				"multiplier": 1.42,
 				"ship": null,
 				"reserved": 0,
@@ -8403,7 +8403,7 @@
 				"description": "Prepared meals and packaged food for off-station distribution.",
 				"fulfilled": 0,
 				"target": 16,
-				"remaining": 16,
+				"remaining": 0,
 				"multiplier": 1.34,
 				"ship": null,
 				"reserved": 0,
@@ -8418,7 +8418,7 @@
 				"description": "Preserved organs, vaccines, and other clinical products.",
 				"fulfilled": 0,
 				"target": 3,
-				"remaining": 3,
+				"remaining": 0,
 				"multiplier": 1.65,
 				"ship": null,
 				"reserved": 0,
@@ -8433,7 +8433,7 @@
 				"description": "Weapons and ammunition accepted under the buyer's own end-user certification.",
 				"fulfilled": 0,
 				"target": 4,
-				"remaining": 4,
+				"remaining": 0,
 				"multiplier": 2.03,
 				"ship": null,
 				"reserved": 0,
@@ -8448,7 +8448,7 @@
 				"description": "Traceable devices manufactured by the Research department.",
 				"fulfilled": 0,
 				"target": 3,
-				"remaining": 3,
+				"remaining": 0,
 				"multiplier": 1.87,
 				"ship": null,
 				"reserved": 0,
@@ -8463,7 +8463,7 @@
 				"description": "Recovered salvage and catalogued research samples.",
 				"fulfilled": 0,
 				"target": 4,
-				"remaining": 4,
+				"remaining": 0,
 				"multiplier": 1.54,
 				"ship": null,
 				"reserved": 0,
@@ -8478,7 +8478,7 @@
 				"description": "Traceable station products from any operational department.",
 				"fulfilled": 0,
 				"target": 7,
-				"remaining": 7,
+				"remaining": 0,
 				"multiplier": 1.24,
 				"ship": null,
 				"reserved": 0,
@@ -8493,7 +8493,7 @@
 				"description": "Recovered salvage and catalogued research samples.",
 				"fulfilled": 0,
 				"target": 3,
-				"remaining": 3,
+				"remaining": 0,
 				"multiplier": 1.46,
 				"ship": null,
 				"reserved": 0,
@@ -8508,7 +8508,7 @@
 				"description": "Station-built technical equipment with Engineering provenance.",
 				"fulfilled": 0,
 				"target": 8,
-				"remaining": 8,
+				"remaining": 0,
 				"multiplier": 1.27,
 				"ship": null,
 				"reserved": 0,
@@ -8523,7 +8523,7 @@
 				"description": "Prepared meals and packaged food for off-station distribution.",
 				"fulfilled": 0,
 				"target": 16,
-				"remaining": 16,
+				"remaining": 0,
 				"multiplier": 1.42,
 				"ship": null,
 				"reserved": 0,
@@ -8538,7 +8538,7 @@
 				"description": "Station-built technical equipment with Engineering provenance.",
 				"fulfilled": 0,
 				"target": 5,
-				"remaining": 5,
+				"remaining": 0,
 				"multiplier": 1.3,
 				"ship": null,
 				"reserved": 0,
@@ -8553,7 +8553,7 @@
 				"description": "Traceable station products from any operational department.",
 				"fulfilled": 0,
 				"target": 6,
-				"remaining": 6,
+				"remaining": 0,
 				"multiplier": 1.23,
 				"ship": null,
 				"reserved": 0,
@@ -8568,7 +8568,7 @@
 				"description": "Traceable devices manufactured by the Research department.",
 				"fulfilled": 0,
 				"target": 3,
-				"remaining": 3,
+				"remaining": 0,
 				"multiplier": 1.7,
 				"ship": null,
 				"reserved": 0,
@@ -8583,7 +8583,7 @@
 				"description": "Preserved organs, vaccines, and other clinical products.",
 				"fulfilled": 0,
 				"target": 3,
-				"remaining": 3,
+				"remaining": 0,
 				"multiplier": 1.73,
 				"ship": null,
 				"reserved": 0,

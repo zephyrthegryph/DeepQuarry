@@ -21,61 +21,61 @@
 				"name": "Notekeeper",
 				"icon": "sticky-note-o",
 				"notify_icon": "exclamation-circle",
-				"ref": 24049
+				"ref": 1
 			},
 			{
 				"name": "Timeclock",
 				"icon": "clock",
 				"notify_icon": "exclamation-circle",
-				"ref": 24050
+				"ref": 2
 			},
 			{
 				"name": "News",
 				"icon": "newspaper",
 				"notify_icon": "exclamation-circle",
-				"ref": 24051
+				"ref": 3
 			},
 			{
 				"name": "Messenger",
 				"icon": "comments-o",
 				"notify_icon": "comments",
-				"ref": 24052
+				"ref": 4
 			},
 			{
 				"name": "Crew Manifest",
 				"icon": "user",
 				"notify_icon": "exclamation-circle",
-				"ref": 24053
+				"ref": 5
 			},
 			{
 				"name": "Contracts",
 				"icon": "file-signature",
 				"notify_icon": "exclamation-circle",
-				"ref": 24054
+				"ref": 6
 			},
 			{
 				"name": "Cargo Orders",
 				"icon": "box",
 				"notify_icon": "exclamation-circle",
-				"ref": 24055
+				"ref": 7
 			},
 			{
 				"name": "Service Receipts",
 				"icon": "receipt",
 				"notify_icon": "exclamation-circle",
-				"ref": 24056
+				"ref": 8
 			},
 			{
 				"name": "Nerdle",
 				"icon": "child-reaching",
 				"notify_icon": "child-combatant",
-				"ref": 24058
+				"ref": 9
 			},
 			{
 				"name": "Game Launcher",
 				"icon": "dice",
 				"notify_icon": "dice-d20",
-				"ref": 24059
+				"ref": 10
 			}
 		],
 		"Utilities": [
@@ -83,13 +83,13 @@
 				"name": "Atmospheric Scan",
 				"icon": "fire",
 				"notify_icon": "exclamation-circle",
-				"ref": 24057
+				"ref": 11
 			},
 			{
 				"name": "Enable Flashlight",
 				"icon": "lightbulb-o",
 				"notify_icon": "exclamation-circle",
-				"ref": 24061
+				"ref": 12
 			}
 		],
 		"Scanners": [
@@ -97,7 +97,7 @@
 				"name": "Enable Note Scanner",
 				"icon": "clipboard",
 				"notify_icon": "exclamation-circle",
-				"ref": 24060
+				"ref": 13
 			}
 		]
 	},

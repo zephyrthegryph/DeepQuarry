@@ -36,6 +36,18 @@ takes a second frame 0.5 s later and ignores pixels that moved between the two (
 shots of the same tree (2026-11-18): 728 differ by 0 pixels; the largest remaining difference is 0.38% (RecyclerInterface, whose
 GIF frame period is longer than the 0.5 s gap), so the default sits above that.
 
+## Reviewing many windows
+
+```sh
+bun tools/tgui_preview/montage.ts E:/dq-cache/tgui-preview/runs/latest --per 12 --scale 0.5    # grids of 12 shots, NN.png + NN.txt
+bun tools/tgui_preview/compare.ts <beforeRun> <afterRun>                                       # before/after sheet of what changed
+```
+
+`montage.ts` packs a run's shots into labelled grids (an agent can read one image instead of a dozen); `--only-problems`,
+`--narrow`. `compare.ts` pairs the shots that differ between two runs, most changed first, plus the shots only the newer run
+has, into `<afterRun>/compare/index.html` with the PNGs copied beside it. To shoot an older version of the windows, build a bundle
+from it into another folder and pass `--bundle <dir> --reuse`.
+
 ## Fixtures
 
 The preview picks a window's data, first found:
@@ -57,7 +69,10 @@ bun tools/tgui_preview/capture.ts --skip-bench
 
 The ui_census bench (`code/tests/benchmarks/ui_census.dm`) builds every declared window for a dummy viewer and writes
 `data/tgui_fixtures/census.json`; capture.ts writes one fixture per window with volatile values made stable (refs renumbered per
-window, the dummy's name replaced, clock readings zeroed), so a recapture diffs only where the data changed. Commit the result.
+window, numeric `ref`/`*_ref` ids renumbered, the dummy's name replaced, clock and timer readings zeroed), so a recapture diffs only
+where the data changed. Measured over two captures of the same tree (2026-11-18): 320 of 326 fixtures identical. Of the six,
+three (a map control id, a chat session stamp, a minutes clock) are normalised since; the profiler windows (OmProfiler,
+SchedulerProfiler, ControllerOverview) still change, since their numbers are the measurement itself. Commit the result.
 
 ## Sprites
 
@@ -71,6 +86,6 @@ crops that state/dir/frame out of `icons/gen/<path>` (`tools/tgui_preview/png.ts
 ## Files
 
 - `tgui/packages/tgui/preview/` the page (`index.tsx`), the BYOND stand-in (`byond.ts`), the alignment checks.
-- `tools/tgui_preview/render.ts` the renderer (CDP over one WebSocket, no npm packages), `capture.ts`, `png.ts`.
+- `tools/tgui_preview/render.ts` the renderer (CDP over one WebSocket, no npm packages), `capture.ts`, `png.ts`, `montage.ts`, `compare.ts`.
 - `tools/tgui_preview/check.ts` the older alignment sweep, `shoot.ts` and `sheet.ts` the older one-process-per-shot shooter.
 - Cache: `E:/dq-cache/tgui-preview` (`[cache.tgui-preview]` in `tools/ci/disk_budget.toml`).

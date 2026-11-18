@@ -5,19 +5,19 @@
 	"channels": [
 		{
 			"admin": 1,
-			"ref": 109,
+			"ref": 1,
 			"name": "Station Announcements",
 			"censored": 0
 		},
 		{
 			"admin": 1,
-			"ref": 23922,
+			"ref": 2,
 			"name": "The Gibson Gazette",
 			"censored": 0
 		},
 		{
 			"admin": 1,
-			"ref": 23923,
+			"ref": 3,
 			"name": "Oculum Content Aggregator",
 			"censored": 0
 		}
@@ -33,5 +33,5 @@
 	"c_locked": 0,
 	"msg": "",
 	"title": "",
-	"paper_remaining": 15
+	"paper_remaining": 0
 }

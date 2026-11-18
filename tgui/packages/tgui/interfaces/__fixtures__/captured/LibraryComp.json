@@ -7,7 +7,7 @@
 	"is_admin": 0,
 	"buffer_book": "",
 	"buffer_mob": "",
-	"world_time_min": 0.188333,
+	"world_time_min": 0,
 	"has_db": 0,
 	"has_scanner": 0,
 	"scanner_cache": null,
