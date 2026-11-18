@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - spellcheck: "Manuals: Pipes and You (the gas filter sets a flow rate, not a pressure), EVA Gear and You (only the strong suit cycler settings burn), How to Alcohol (Rum and Cola and Cuba Libre recipes)."
+  - bugfix: "Station Wiki: plant ripening and harvest times in real minutes, catalogue pages filed where the index files them, each vendor listed once, stack costs read properly, recipe yields shown, department pages name who actually leads each one, var-edited supply pack contents named, gas facts nothing reads removed, material export prices in Thalers."

@@ -153,7 +153,8 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 		var/datum/supply_pack/P = packs[pack_name]
 		if(!P?.name || P.contraband)
 			continue
-		for(var/path in P.contains)
+		for(var/listed in P.contains)
+			var/path = wiki_base_path(listed)
 			if(ispath(path, /obj))
 				LAZYOR(packs_by_path[path], P)
 	return list("designs" = designs_by_path, "packs" = packs_by_path, "made" = wiki_catalogue_made_by(), "vended" = wiki_catalogue_vended(), "placed" = wiki_catalogue_placed(), "kinds" = wiki_catalogue_whole_kinds())
@@ -301,7 +302,8 @@ GLOBAL_LIST_INIT(wiki_station_map_dirs, list("maps/southern_cross/"))
 /proc/wiki_catalogue_body(path)
 	var/list/sources = GLOBAL_TABLE_GET(wiki_catalogue_sources_table)
 	var/list/blocks = list(wiki_p(wiki_catalogue_description(path) || "No description is recorded for it."))
-	var/list/facts = list(list("Filed under", replacetext(wiki_catalogue_path(path, null), "/", " / "))) + wiki_catalogue_facts(path)
+	var/list/own_designs = sources["designs"][path]
+	var/list/facts = list(list("Filed under", replacetext(wiki_catalogue_path(path, length(own_designs) ? own_designs[1] : null), "/", " / "))) + wiki_catalogue_facts(path)
 	blocks += list(wiki_kv(facts))
 	var/list/made = list()
 	var/list/nodes = list()
@@ -328,8 +330,15 @@ GLOBAL_LIST_INIT(wiki_station_map_dirs, list("maps/southern_cross/"))
 	var/list/vendors = list()
 	for(var/vendor in sources["vended"][path])
 		var/obj/V = vendor
+		var/vendor_name = "[initial(V.name)]"
 		var/vendor_id = wiki_cat_id(vendor)
-		vendors += wiki_title(vendor_id) ? wiki_ref(vendor_id, initial(V.name)) : "[initial(V.name)]"
+		// One entry per vendor name: a variant of a vendor (its event or map copy) sells the same stock under the same name.
+		if(!vendors[vendor_name] || wiki_title(vendor_id))
+			vendors[vendor_name] = wiki_title(vendor_id) ? wiki_ref(vendor_id, vendor_name) : vendor_name
+	var/list/vendor_texts = list()
+	for(var/vendor_name in vendors)
+		vendor_texts += vendors[vendor_name]
+	vendors = vendor_texts
 	if(length(vendors))
 		found += "Sold by [english_list(vendors)]."
 	if(length(found))
@@ -396,7 +405,9 @@ GLOBAL_LIST_INIT(wiki_station_map_dirs, list("maps/southern_cross/"))
 
 /proc/wiki_pack_body(pack_name)
 	var/datum/supply_pack/P = supply_supply_pack()[pack_name]
-	var/list/blocks = list(wiki_p(P.desc || "A supply crate."))
+	var/datum/supply_pack/base = /datum/supply_pack
+	var/placeholder = initial(base.desc)
+	var/list/blocks = list(wiki_p(P.desc && P.desc != placeholder ? P.desc : "A crate from the [P.group] catalog: its contents are listed below."))
 	var/list/facts = list(list("Cost", "[SSsupply.catalog_price(P)] Thalers"), list("Group", P.group))
 	if(P.access)
 		facts += list(list("Locked", "Opens with the right access"))
@@ -405,12 +416,13 @@ GLOBAL_LIST_INIT(wiki_station_map_dirs, list("maps/southern_cross/"))
 	blocks += list(wiki_kv(facts))
 	var/list/items = list()
 	var/list/counts = list()
-	for(var/path in P.contains)
-		counts[path] = (counts[path] || 0) + max(1, isnum(P.contains[path]) ? P.contains[path] : 1)
+	for(var/listed in P.contains)
+		var/path = wiki_base_path(listed)
+		counts[path] = (counts[path] || 0) + max(1, isnum(P.contains[listed]) ? P.contains[listed] : 1)
 	for(var/path in counts)
 		var/obj/O = path
 		var/id = wiki_cat_id(path)
-		items += list(wiki_link(wiki_title(id) ? id : null, capitalize(initial(O.name) || "[path]"), counts[path] > 1 ? "x[counts[path]]" : null, null, path))
+		items += list(wiki_link(wiki_title(id) ? id : null, capitalize(initial(O.name) || (length(counts) == 1 && P.containername ? replacetext(P.containername, " crate", "") : "[path]") || "an unnamed item"), counts[path] > 1 ? "x[counts[path]]" : null, null, path))
 	if(length(items))
 		blocks += list(wiki_links("Contains", items))
 	blocks += list(wiki_note("Order it at a supply console; see [wiki_ref("guide/cargo/ordering", "ordering supplies")]."))
@@ -462,6 +474,8 @@ GLOBAL_LIST_INIT(wiki_item_size_names, list("Tiny", "Small", "Normal", "Bulky", 
 
 /// One term of a rule as text: "2 egg", "5u Salt".
 /proc/wiki_xterm_text(currency, key, amount)
+	if(key == STACK_SELF)
+		return "[amount] of the stack"
 	if(ispath(key, /datum/material))
 		var/datum/material/M = key
 		return "[amount] [initial(M.display_name) || initial(M.name)] sheet\s"
@@ -492,6 +506,13 @@ GLOBAL_LIST_INIT(wiki_item_size_names, list("Tiny", "Small", "Normal", "Bulky", 
 
 /// How a rule makes its product, as one line, or null for a rule with nothing to say.
 /proc/wiki_xform_text(datum/xform/X)
+	var/text = wiki_xform_text_base(X)
+	var/made = length(X.makes) && length(X.makes[1]) >= 3 ? X.makes[1][3] : 1
+	if(text && isnum(made) && made > 1)
+		text = "[copytext(text, 1, -1)] (makes [made])."
+	return text
+
+/proc/wiki_xform_text_base(datum/xform/X)
 	var/list/inputs = wiki_xform_inputs(X)
 	var/from = length(inputs) ? english_list(inputs) : null
 	switch(X.regime)
@@ -547,3 +568,10 @@ GLOBAL_LIST_INIT(wiki_item_size_names, list("Tiny", "Small", "Normal", "Bulky", 
 			steps += "[capitalize(what)]: [text]"
 		return list(wiki_h("How it is built"), wiki_ol(steps))
 	return list()
+
+/// The plain type of a listed path: a var-edited literal (/obj/x{anchored = FALSE}) is its base type.
+/proc/wiki_base_path(path)
+	var/text = "[path]"
+	var/brace = findtext(text, "{")
+	// A var-edited literal is not a plain path: initial() reads nothing from it. Its text names the base type (with or without the braces).
+	return text2path(brace ? copytext(text, 1, brace) : text) || path

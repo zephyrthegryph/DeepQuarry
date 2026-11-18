@@ -90,8 +90,9 @@ GLOBAL_LIST_INIT(wiki_manual_excluded, list(/obj/item/book/manual/nuclear, /obj/
 	for(var/title in D.jobs)
 		var/datum/job/J = D.jobs[title]
 		var/id = wiki_job_id(J.title)
-		var/list/link = wiki_link(wiki_title(id) ? id : null, J.title, J.departments_managed ? "leads it" : null, J.departments_managed ? "good" : null)
-		if(J.departments_managed)
+		var/leads = (name in J.departments_managed)
+		var/list/link = wiki_link(wiki_title(id) ? id : null, J.title, leads ? "leads it" : (J.departments_managed ? "a head of staff" : null), leads ? "good" : null)
+		if(leads)
 			heads += list(link)
 		else
 			jobs += list(link)

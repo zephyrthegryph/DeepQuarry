@@ -127,3 +127,44 @@ GLOBAL_LIST_INIT(wiki_required_system_guides, list(
 		var/ceiling = GLOB.wiki_coverage_ceiling[category]
 		TEST_ASSERT(!isnull(ceiling), "the coverage category [category] has no ceiling")
 		TEST_ASSERT(length(names) <= ceiling, "[category]: [length(names)], above the ratchet of [ceiling]; document them: [english_list(names.Copy(1, min(length(names), 20) + 1))]")
+
+/// The text of a body, flattened for reading: every block's text, items, rows and tabs, one line each.
+/proc/wiki_flatten_blocks(list/blocks, list/into)
+	for(var/list/block in blocks)
+		if(block["t"])
+			into += "  [block["k"]]: [block["t"]]"
+		for(var/item in block["items"])
+			if(islist(item))
+				var/list/link_item = item
+				into += "    - [link_item["name"]][link_item["note"] ? " ([link_item["note"]])" : ""]"
+			else
+				into += "    - [item]"
+		for(var/list/row in block["rows"])
+			into += "    | [jointext(row, " | ")]"
+		for(var/list/tab in block["tabs"])
+			into += "  tab [tab["name"]]:"
+			wiki_flatten_blocks(tab["blocks"], into)
+
+/// Writes a spread of generated pages (every source's id prefix, a few each, picked by a fixed stride) to data/wiki_sample.txt, for checking
+/// generated facts against the code by eye. Not an assertion.
+/datum/unit_test/dq_wiki_sample_dump
+
+/datum/unit_test/dq_wiki_sample_dump/Run()
+	var/list/by_prefix = list()
+	for(var/id in wiki_index())
+		var/list/parts = splittext(id, "/")
+		var/prefix = parts[1]
+		LAZYADD(by_prefix[prefix], id)
+	var/list/lines = list()
+	for(var/prefix in by_prefix)
+		var/list/ids = by_prefix[prefix]
+		var/take = prefix == "cat" ? 12 : 3
+		var/stride = max(1, round(length(ids) / take))
+		for(var/i = 1, i <= length(ids) && take > 0, i += stride)
+			take--
+			var/list/article = wiki_article(ids[i])
+			lines += "== [ids[i]]: [article["title"]] ([article["path"]])"
+			wiki_flatten_blocks(article["blocks"], lines)
+	fdel("data/wiki_sample.txt")
+	text2file(jointext(lines, "\n"), "data/wiki_sample.txt")
+	TEST_ASSERT(length(lines) > 40, "the sample has pages")

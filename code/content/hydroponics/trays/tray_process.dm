@@ -45,7 +45,7 @@
 			return PROCESS_KILL
 		return
 
-	// Advance plant age.
+	// Advance plant age. The wiki's plant pages assume this 30% chance (wiki_plant_seconds_per_age()): change both together.
 	if(prob(30))
 		set_age(age + (1 * HYDRO_SPEED_MULTIPLIER))
 		if(age_mod >= 1) //Age reagents double the speed of plant growth in sufficient quantities

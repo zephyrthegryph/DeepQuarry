@@ -15,9 +15,9 @@
 		for(var/id in X.field_products)
 			products += wiki_chem_ref(id)
 		rows += list(list("[wiki_chem_ref(X.reactant_a)] + [wiki_chem_ref(X.reactant_b)]", "[X.energy_in]", "[X.energy_out]", "[X.radiation]", "[X.instability]", "[X.min_level]", "[X.min_heat]", english_list(products, nothing_text = "-")))
-	var/list/blocks = list(wiki_p("The R-UST's field fuses pairs of reactants. Each reaction takes the energy in to start and gives the energy out; radiation and instability are added to the field for every pair. A reaction needs the field at its minimum level and plasma at its minimum heat."))
-	blocks += list(wiki_table(list("Reactants", "Energy in", "Energy out", "Radiation", "Instability", "Minimum level", "Minimum heat", "Makes"), rows))
-	blocks += list(wiki_note("Field strength sets the field's size: up to 50 it is one tile, up to 200 three, up to 500 five, above that seven. Fuel injected outside the field is lost."))
+	var/list/blocks = list(wiki_p("The R-UST's field fuses pairs of reactants. Each reaction takes the energy in to start and gives the energy out; radiation and instability are added to the field for every pair. A reaction runs only while the field holds at least its minimum energy and the plasma is at least its minimum heat."))
+	blocks += list(wiki_table(list("Reactants", "Energy in", "Energy out", "Radiation", "Instability", "Minimum field energy", "Minimum plasma heat", "Makes"), rows))
+	blocks += list(wiki_note("Field strength sets the field's size: up to 50 it is one tile, up to 200 three, up to 500 five, above that seven."))
 	return blocks
 
 /proc/wiki_expedition_contracts_body()

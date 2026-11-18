@@ -1067,7 +1067,7 @@
 				<li>"} + span_bold("Gas mixer:") + {" Two sides are input, one side is output. Mixes the gases pumped into it at the ratio defined. The side perpendicular to the other two is "node 2," for reference, on non-mirrored mixers..
 				Output is controlled by flow rate. There is also an "omni" variant that allows you to set input and output sections freely..</li>
 				<li>"} + span_bold("Gas filter:") + {" Essentially the opposite of a gas mixer. One side is input. The other two sides are output. One gas type will be filtered into the perpendicular output pipe,
-				the rest will continue out the other side. Can also output from 0-4500 kPa. The "omni" vairant allows you to set input and output sections freely.</li>
+				the rest will continue out the other side. Its flow rate can be set up to the volume of its input. The "omni" vairant allows you to set input and output sections freely.</li>
 				</ul>
 
 				<h1><a name="HES">"} + span_bold("Heat Exchange Systems") + {"</a></h1>
@@ -1194,7 +1194,7 @@
 				There's a variety of equipment that can modify hardsuits to fit species that can't fit into them, making life quite a bit easier.<BR><BR>
 
 				The first piece of equipment is a suit cycler. This is a large machine resembling the storage pods that are in place in some places. These are machines that will automatically tailor a suit to certain specifications.
-				The largest uses of them are for their cleaning functions and their ability to tailor suits for a species. Do not enter them physically. You will die from any of the functions being activated, and it will hurt the whole time you're dying.
+				The largest uses of them are for their cleaning functions and their ability to tailor suits for a species. Do not enter them physically: the stronger UV settings burn whoever is inside.
 				These machines can both tailor a suit between species, and between types. This means you can convert engineering hardsuits to atmospherics, or the other way. This is useful. Use it if you can.<BR><BR>
 
 				There's also modification kits that let you modify suits yourself. These are extremely difficult to use unless you understand the actual construction of the suit. I do not reccomend using them unless no other option is available.<BR><BR>
@@ -1370,8 +1370,10 @@ CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 				1 part Berry Juice, 1 Part Lemon Juice, 3 parts Gin
 				<h3>Cold Front:</h3>
 				1 part Iced Coffee, 1 part Whiskey, 1 part Mint <b>(Allergy Warning: do not give to any species with less cold tolerance than Teshari, they will die if you do, if unsure do not serve)</b>
-				<h3>Cuba Libre (Often called Rum and Coke):</h3>
-				1 part Space Cola, 2 parts Rum.
+				<h3>Rum and Cola:</h3>
+				2 parts Rum, 1 part Space Cola.
+				<h3>Cuba Libre:</h3>
+				3 parts Rum and Cola, 1 part Lime Juice.
 				<h3>Negroni Sbagliato:</h3>
 				1 part Wine, 1 part Bermouth, 1 part Soda Water
 				<h3>Slow Comfortable Screw Against the Wall (Stop giggling!):</h3>

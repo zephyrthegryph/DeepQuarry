@@ -105,3 +105,7 @@ SETTER(/datum/system/supply, shuttle)
 /// What a catalog pack costs to order, in Thalers (its catalog price, before any trader's markup or standing).
 /datum/system/supply/proc/catalog_price(datum/supply_pack/pack)
 	return pack_price(pack)
+
+/// What `legacy_points` of export value pays, in Thalers (a sold sheet's supply_conversion_value, a crate's appraised points).
+/datum/system/supply/proc/export_price(legacy_points)
+	return export_revenue(legacy_points)
