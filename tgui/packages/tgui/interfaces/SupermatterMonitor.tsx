@@ -10,6 +10,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
+import { EmptyState } from './common/EmptyState';
 import type {
   SupermatterMonitorActions,
   SupermatterMonitorData,
@@ -45,13 +46,18 @@ const SupermatterMonitorList = (props) => {
 
   return (
     <Section
-      title="Supermatters Detected"
+      title="Supermatter Crystals"
       buttons={
         <Button icon="sync" onClick={() => act('refresh')}>
           Refresh
         </Button>
       }
     >
+      {!supermatters?.length && (
+        <EmptyState>
+          No supermatter crystals detected. Refresh to scan again.
+        </EmptyState>
+      )}
       <Stack wrap="wrap">
         {(supermatters ?? []).map((sm, i) => (
           <Stack.Item basis="49%" grow={i % 2} key={i}>

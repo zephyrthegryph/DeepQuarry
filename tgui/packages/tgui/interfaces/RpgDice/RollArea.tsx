@@ -2,6 +2,7 @@ import { Fragment, type RefObject, useEffect, useRef } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Label } from 'tgui/components/Label';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
+import { EmptyState } from '../common/EmptyState';
 import type { RpgDiceActions } from '../generated/RpgDice';
 import { stateToColor } from './constants';
 import type { Data, Result } from './types';
@@ -37,6 +38,7 @@ export const RollArea = (props) => {
       }
     >
       <Stack vertical fill>
+        {last_rolls.length === 0 && <EmptyState>No rolls yet.</EmptyState>}
         {last_rolls.map((roll, index) => (
           <Stack.Item key={index}>
             <Label inline>{roll.player}:</Label>

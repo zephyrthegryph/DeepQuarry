@@ -8,6 +8,7 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import { EmptyState } from '../common/EmptyState';
 import { validateRegExp } from './functions';
 import type { CategoryViewerProps } from './types';
 
@@ -78,6 +79,13 @@ export const CategoryViewer = (props: CategoryViewerProps) => {
     >
       <Section fill scrollable>
         <Stack g={0} fill vertical overflowX="hidden">
+          {!data?.entries?.length && (
+            <EmptyState>
+              {activeCategory
+                ? 'This category has no entries.'
+                : 'Pick a category to read its log.'}
+            </EmptyState>
+          )}
           {!searchRegex || regexValidation === true ? (
             data?.entries.map((entry) => {
               if (search) {

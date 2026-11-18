@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Image, Section, Stack, Table } from 'tgui-core/components';
-
+import { EmptyState } from '../common/EmptyState';
 import { SortButton } from './CharacterDirectorySortButton';
 import { getTagColor } from './constants';
 import type { mobEntry } from './types';
@@ -96,6 +96,15 @@ export const CharacterDirectoryList = (props: {
             View
           </Table.Cell>
         </Table.Row>
+        {directory.length === 0 && (
+          <Table.Row>
+            <Table.Cell colSpan={9} py={1}>
+              <EmptyState>
+                Nobody has listed themselves in the directory yet.
+              </EmptyState>
+            </Table.Cell>
+          </Table.Row>
+        )}
         {[...directory]
           .sort((a, b) => {
             const i = sortOrder ? 1 : -1;

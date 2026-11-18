@@ -45,6 +45,7 @@ fx() { # <section> <pool size>: a scratch origin + repo + pool for one section; 
 	export DQ_LANE_POOL_DIR="$b/pool" DQ_LANE_POOL_STATE="$b/state" DQ_LANE_POOL_SIZE="$2" DQ_LANE_POOL_REPO="$b/repo" DQ_DMBC_DAEMON_DIR="$b/none"
 	export DQ_LANE_POOL_NO_FETCH=1   # tests only: no git fetch per pool call, origin is the local bare repository above
 	export DQ_LANE_POOL_PROCS_CMD="echo no processes"   # never spawn powershell (seconds per call) in the fixtures
+	export DQ_LANE_POOL_RESERVED=""   # the sections below exercise every slot; sec_reserved sets its own reservation
 }
 g() { git -C "$b/repo" "$@"; }
 poolx() { bash "$b/repo/tools/dq_lane_pool.sh" "$@"; }   # a real process, as the lanes run it: waiters (their ticket carries the process id) and the entry-point check
@@ -263,8 +264,34 @@ sec_lock() {
 	check "a lock with no owner record (an older script) is broken after 120 s" '[ "$p2" = "$b/pool/pool-2" ] && [ ! -d "$L" ]'
 }
 
+# ---- section: reserved slots (never leased, never reclaimed or saved, even when abandoned and dirty) ------------------------------------
+sec_reserved() {
+	fx reserved 3
+	export DQ_LANE_POOL_COMPILER=2 DQ_LANE_POOL_STUCK_MIN=30 DQ_LANE_POOL_RECLAIM_IDLE_MIN=60
+	# The owner holds pool-1 and pool-c2 outside the pool: lease them before the reservation applies, then make them look abandoned.
+	o1="$(DQ_LANE_POOL_RESERVED="" pool lease owner/one 2>/dev/null)"
+	oc="$(DQ_LANE_POOL_RESERVED="2 3 c1" pool lease tools/dmb-owner --class compiler 2>/dev/null)"
+	check "the owner's slots were made" '[ "$o1" = "$b/pool/pool-1" ] && [ "$oc" = "$b/pool/pool-c2" ]'
+	echo owner-work >>"$o1/a.txt"; echo owner-work >>"$oc/a.txt"
+	for s in "1:$o1" "c2:$oc"; do
+		k="${s%%:*}"; d="${s#*:}"; read -r _ gd <"$d/.git"
+		touch -d "3 hours ago" "$DQ_LANE_POOL_STATE/pool-$k.lease" "$gd/HEAD" "$gd/logs/HEAD" "$d/a.txt"
+	done
+	h1="$(git -C "$o1" rev-parse HEAD)"; hc="$(git -C "$oc" rev-parse HEAD)"
+	export DQ_LANE_POOL_RESERVED="1 c2 light"
+	p="$(pool lease lane/g 2>/dev/null)"
+	check "a general lane skips reserved pool-1" '[ "$p" = "$b/pool/pool-2" ]'
+	q="$(pool lease tools/dmb-x --class compiler 2>/dev/null)"
+	check "a compiler lane skips reserved pool-c2" '[ "$q" = "$b/pool/pool-c1" ]'
+	out="$(pool lease lane/l --class light 2>&1)"; rc=$?
+	check "a light lane is refused: its only slot is reserved" '[ "$rc" -ne 0 ] && [ ! -e "$b/pool/pool-light" ]'
+	check "the abandoned, dirty reserved slots were not reclaimed" '[ -f "$DQ_LANE_POOL_STATE/pool-1.lease" ] && [ -f "$DQ_LANE_POOL_STATE/pool-c2.lease" ]'
+	check "nothing was committed or moved in them" '[ "$(git -C "$o1" rev-parse HEAD)" = "$h1" ] && [ "$(git -C "$oc" rev-parse HEAD)" = "$hc" ] && [ -n "$(git -C "$o1" status --porcelain)" ] && [ -n "$(git -C "$oc" status --porcelain)" ]'
+	check "both still on the owner's branches" '[ "$(git -C "$o1" branch --show-current)" = owner/one ] && [ "$(git -C "$oc" branch --show-current)" = tools/dmb-owner ]'
+}
+
 # ---- run the sections in parallel; print their output in order ------------------------------------------------------------------------
-sections=(${DQ_TEST_SECTIONS:-lease release reclaim waiter classes stuck cancel cap lock})   # DQ_TEST_SECTIONS="classes stuck": run only those (profiling)
+sections=(${DQ_TEST_SECTIONS:-lease release reclaim waiter classes stuck cancel cap lock reserved})   # DQ_TEST_SECTIONS="classes stuck": run only those (profiling)
 pids=()
 for s in "${sections[@]}"; do
 	( fail=0; "sec_$s"; exit "$fail" ) >"$tmp/out.$s" 2>"$tmp/err.$s" &

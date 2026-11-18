@@ -1,0 +1,57 @@
+{
+	"amount": 30,
+	"recipes": {
+		"Furniture": {
+			"stool": {
+				"res_amount": 1,
+				"max_res_amount": 1,
+				"req_amount": 1,
+				"ref": 1
+			},
+			"chair": {
+				"res_amount": 1,
+				"max_res_amount": 1,
+				"req_amount": 1,
+				"ref": 2
+			},
+			"bed": {
+				"res_amount": 1,
+				"max_res_amount": 1,
+				"req_amount": 2,
+				"ref": 3
+			}
+		},
+		"Walls": {
+			"girder": {
+				"res_amount": 1,
+				"max_res_amount": 1,
+				"req_amount": 2,
+				"ref": 4
+			},
+			"computer frame": {
+				"res_amount": 1,
+				"max_res_amount": 1,
+				"req_amount": 5,
+				"ref": 5
+			}
+		},
+		"metal rod": {
+			"res_amount": 2,
+			"max_res_amount": 60,
+			"req_amount": 1,
+			"ref": 6
+		},
+		"floor tile": {
+			"res_amount": 4,
+			"max_res_amount": 20,
+			"req_amount": 1,
+			"ref": 7
+		},
+		"airlock assembly": {
+			"res_amount": 1,
+			"max_res_amount": 1,
+			"req_amount": 4,
+			"ref": 8
+		}
+	}
+}

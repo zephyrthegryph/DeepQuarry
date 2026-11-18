@@ -75,12 +75,15 @@ fetch_origin() { [ "${DQ_LANE_POOL_NO_FETCH:-}" = 1 ] && return 0; git -C "$1" f
 SLOTS_GENERAL=(); SLOTS_COMPILER=(); _k=0   # arrays built once: a seq or $(...) per call is a fork
 while [ "$_k" -lt "$POOL_SIZE" ]; do _k=$((_k + 1)); SLOTS_GENERAL+=("$_k"); done
 _k=0; while [ "$_k" -lt "$COMPILER_SLOTS" ]; do _k=$((_k + 1)); SLOTS_COMPILER+=("c$_k"); done
-slots_for_class() { # <class>: sets CLASS_SLOTS to the slots a class may take, in the order it tries them
+slots_for_class() { # <class>: sets CLASS_SLOTS to the slots a class may take, in the order it tries them (never a reserved one)
+	local all=() s
 	case "$1" in
-		compiler) CLASS_SLOTS=("${SLOTS_COMPILER[@]}" "${SLOTS_GENERAL[@]}") ;;
-		light) CLASS_SLOTS=(light) ;;
-		*) CLASS_SLOTS=("${SLOTS_GENERAL[@]}") ;;
+		compiler) all=("${SLOTS_COMPILER[@]}" "${SLOTS_GENERAL[@]}") ;;
+		light) all=(light) ;;
+		*) all=("${SLOTS_GENERAL[@]}") ;;
 	esac
+	CLASS_SLOTS=()
+	for s in "${all[@]}"; do slot_reserved "$s" || CLASS_SLOTS+=("$s"); done
 }
 lane_class() { # <branch> <explicit class or empty>: sets LANE_CLASS
 	case "${2:-}" in compiler|light|general) LANE_CLASS="$2"; return ;; '') ;; *) die "--class must be general, compiler or light" ;; esac
@@ -323,6 +326,11 @@ gitdir_of() { # <wt>: sets GD to the worktree's git dir without running git (a l
 ALL_SLOTS=(); for ((_k = 1; _k <= POOL_SIZE; _k++)); do ALL_SLOTS+=("$_k"); done
 for ((_k = 1; _k <= COMPILER_SLOTS; _k++)); do ALL_SLOTS+=("c$_k"); done
 ALL_SLOTS+=(light)
+# Reserved slots: held for one owner outside the pool (pool-1 and pool-c2 run Codex lanes, pool-light a standing session). They are never
+# leased, never reclaimed and never touched (no save of abandoned work, no move to master): the lease and reclaim paths skip them.
+# DQ_LANE_POOL_RESERVED is a space-separated list of slot ids (1, c2, light); the default is the user's reservation (2026-11-18).
+RESERVED_SLOTS=" ${DQ_LANE_POOL_RESERVED-1 c2 light} "
+slot_reserved() { [[ "$RESERVED_SLOTS" == *" $1 "* ]]; }
 
 slot_activity_set() { # <slot> <worktree>: sets ACT_V to epoch seconds of the newest change to the lease, HEAD, reflog or a lane log
 	local newest=0 f m wt="$2" line
@@ -506,6 +514,7 @@ reclaim_finished() { # called under the lock: drop leases whose lane is done
 	while read -r sha ref; do heads["${ref#refs/heads/}"]="$sha"; done < <(git -C "$REPO" for-each-ref --format='%(objectname) %(refname)' refs/heads 2>/dev/null)   # one git start for every branch tip
 	for i in "${ALL_SLOTS[@]}"; do
 		[ -f "$STATE_DIR/pool-$i.lease" ] || continue
+		slot_reserved "$i" && continue   # a reserved slot belongs to its owner: never saved, released or moved
 		wt="$POOL_DIR/pool-$i"
 		lease_get "$i" branch; branch="$LG"; lease_get "$i" start; start="$LG"
 		if [ ! -d "$wt" ]; then rm -f "$STATE_DIR/pool-$i.lease"; say "reclaimed pool-$i (worktree gone)"; continue; fi

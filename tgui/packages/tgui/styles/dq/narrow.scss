@@ -1,0 +1,49 @@
+// Narrow windows (a window resized below its design width, or one opened narrow): rows of buttons, labelled rows and
+// tables wrap instead of running off the right edge. Only below 420px, so a window at its own size draws as designed.
+// Found and checked with the render preview's narrow pass (tools/tgui_preview/render.ts --widths narrow, 360px).
+
+@media (max-width: 420px) {
+  // A row of buttons flows onto more lines between buttons; a button keeps its label on one line, cut with an ellipsis
+  // only when it alone is wider than the window (letting it wrap broke labels into one letter per line).
+  .LabeledList__buttons {
+    white-space: normal;
+  }
+  .Button {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  // The buttons column of a labelled row is sized by its buttons (width 0.1%): capping them to it would cut every label.
+  .LabeledList__buttons .Button {
+    max-width: none;
+  }
+  // Long values break between words, never letter by letter (break-word leaves the column's minimum width alone).
+  .LabeledList__cell,
+  .Table__cell {
+    overflow-wrap: break-word;
+  }
+  // (A section's title buttons stay on one line: they sit absolutely at the title's right, and wrapping them would run
+  // them down over the content. Stacks keep their layout too: wrapping every horizontal Stack moved fixed side-by-side
+  // layouts, like a canvas beside its tools.)
+  // A horizontal Stack whose items are buttons (a toolbar, a row of modes) does wrap them.
+  .Stack--horizontal:not(.Stack--fill):has(> .Stack__item > .Button) {
+    flex-wrap: wrap;
+  }
+  .Section__titleText {
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  // Inputs, number inputs and progress bars shrink with their cell instead of holding it open.
+  .Input,
+  .NumberInput,
+  .ProgressBar,
+  .Dropdown {
+    max-width: 100%;
+    min-width: 0;
+  }
+  // Content still wider than the window (a table of many numeric columns, a fixed game board) scrolls sideways inside its
+  // section instead of pushing the window wider; content that fits shows no scrollbar.
+  .Section__content {
+    overflow-x: auto;
+  }
+}

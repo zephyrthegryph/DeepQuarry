@@ -329,23 +329,46 @@ const PROBE = `(() => {
   const app = document.getElementById('app');
   const W = innerWidth;
   let offRight = 0;
+  let sideScroll = 0;
   const offenders = [];
   for (const el of app.querySelectorAll('*')) {
     const r = el.getBoundingClientRect();
     if (!(r.width && r.height && r.right > W + 2)) continue;
+    // A LabeledList is 1em wider than its box by design (negative margins line its rows up with the section edge).
+    const list = el.closest('.LabeledList');
+    if (list && r.right <= W + 2 + parseFloat(getComputedStyle(list).fontSize)) continue;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.pointerEvents === 'none') continue; // decoration (scanlines, vignettes)
     // Inside a scroll or clip box that itself fits, it is scrolled content (a carousel, a scrollable table), not overflow.
     let clipped = false;
+    let scrolled = false;
     for (let p = el.parentElement; p && p !== app.parentElement; p = p.parentElement) {
       const o = getComputedStyle(p);
-      if (/Layout|Window|Section__content/.test(String(p.className))) continue; // the window's own scroller clips everything
+      if (/Layout|Window/.test(String(p.className))) continue; // the window's own scroller clips everything
+      if (/Section__content/.test(String(p.className))) {
+        // A section that scrolls sideways (the narrow-window fallback, styles/dq/narrow.scss): reachable, but worth a look.
+        if (o.overflowX !== 'visible' && o.overflowX !== 'hidden' && p.getBoundingClientRect().right <= W + 2) { scrolled = true; break; }
+        continue;
+      }
       if (o.overflowX !== 'visible' && p.getBoundingClientRect().right <= W + 2) { clipped = true; break; }
     }
-    if (!clipped) {
+    if (scrolled) sideScroll++;
+    else if (!clipped) {
       offRight++;
-      if (offenders.length < 3) offenders.push((el.className && String(el.className).split(' ')[0]) || el.tagName.toLowerCase());
+      offenders.push(el);
     }
+  }
+  // Sections with a title and nothing in them: an empty list with no word saying so (the wiki style says it: EmptyState).
+  const emptySections = [];
+  for (const sec of app.querySelectorAll('.Section')) {
+    const title = sec.querySelector(':scope > .Section__title .Section__titleText');
+    const content = sec.querySelector(':scope > .Section__rest > .Section__content');
+    // A title-only section (a header bar with buttons, content collapsed) is a design, not an empty list.
+    if (!title || !content || content.getBoundingClientRect().height < 20) continue;
+    const hasText = (content.innerText || '').trim().length > 0;
+    const hasThing = content.querySelector('img, canvas, svg, input, textarea, .Button, .ProgressBar, .NumberInput, .Knob, .ColorBox, .Slider, .Dropdown, .Tab, [class*="32x32"], [class*="64x64"]');
+    if (!hasText && !hasThing && emptySections.length < 3) emptySections.push((title.textContent || '').trim().slice(0, 24));
+    else if (!hasText && !hasThing) emptySections.push('');
   }
   // Broken images (a sprite or asset that did not load) and text drawn under 10px (unreadable on a game client).
   let brokenImg = 0;
@@ -359,13 +382,19 @@ const PROBE = `(() => {
     if (r.width && parseFloat(getComputedStyle(n.parentElement).fontSize) < 10) { tiny++; if (tinyAt.length < 3) tinyAt.push(String(n.parentElement.className).split(' ')[0] || n.parentElement.tagName.toLowerCase()); }
   }
   return {
-    brokenImg, tiny, tinyAt,
+    brokenImg, tiny, tinyAt, emptySections,
     text: (app.innerText || '').trim().length,
     nodes: app.querySelectorAll('*').length,
     missing: !!document.getElementById('preview-missing'),
     crashed: /An error has occurred|Uncaught|TypeError/.test(app.innerText || '') && !!app.querySelector('.Layout__content, .Window') === false,
     hOverflow: document.documentElement.scrollWidth > W + 1,
-    offRight, offenders,
+    offRight,
+    sideScroll,
+    // The innermost elements that run off (an ancestor only runs off because they do): the ones to fix.
+    offenders: offenders
+      .filter((el) => !offenders.some((o) => o !== el && el.contains(o)))
+      .slice(0, 3)
+      .map((el) => [el.className && String(el.className).split(' ')[0], el.tagName.toLowerCase(), (el.textContent || '').trim().slice(0, 18)].filter(Boolean).join(':')),
   };
 })()`;
 
@@ -456,14 +485,17 @@ async function runJob(page: { sessionId: string }, job: Job): Promise<Result> {
       await Bun.sleep(300);
     }
   }
-  const probe =
-    (
-      await send(
-        'Runtime.evaluate',
-        { expression: PROBE, returnByValue: true },
-        page.sessionId,
-      )
-    ).result.value ?? {};
+  const probed = await send(
+    'Runtime.evaluate',
+    { expression: PROBE, returnByValue: true },
+    page.sessionId,
+  );
+  // The checks themselves failing (a syntax error in PROBE) must not read as a clean window.
+  if (probed.exceptionDetails)
+    throw new Error(
+      `the page checks failed: ${probed.exceptionDetails.exception?.description ?? probed.exceptionDetails.text}`,
+    );
+  const probe = probed.result.value ?? {};
   const shot = await send(
     'Page.captureScreenshot',
     { format: 'png' },
@@ -500,6 +532,12 @@ async function runJob(page: { sessionId: string }, job: Job): Promise<Result> {
   )
     problems.push('blank');
   if (probe.hOverflow) problems.push('h-overflow');
+  if (probe.sideScroll) problems.push('h-scroll');
+  if (process.env.DQ_PREVIEW_DEBUG) console.log(job.tag, JSON.stringify(probe));
+  if (probe.emptySections?.length)
+    problems.push(
+      `empty-section:${probe.emptySections.length}(${probe.emptySections.filter(Boolean).join(',')})`,
+    );
   if (probe.brokenImg) problems.push(`broken-img:${probe.brokenImg}`);
   if (probe.tiny)
     problems.push(`tiny-text:${probe.tiny}(${probe.tinyAt.join(',')})`);
@@ -614,7 +652,13 @@ console.log(
 );
 process.exit(
   bad.some((r) =>
-    r.problems.some((p) => p !== 'console-error' && !p.startsWith('off-right')),
+    r.problems.some(
+      (p) =>
+        p !== 'console-error' &&
+        p !== 'h-scroll' &&
+        !p.startsWith('off-right') &&
+        !p.startsWith('empty-section'),
+    ),
   )
     ? 1
     : 0,

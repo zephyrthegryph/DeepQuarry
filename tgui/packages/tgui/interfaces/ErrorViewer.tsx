@@ -194,6 +194,11 @@ export const ErrorViewer = () => {
         {data.view_kind === 'source' ? (
           <SourceView data={data} act={act} />
         ) : null}
+        {data.view_kind === 'unknown' ? (
+          <EmptyState>
+            Nothing selected: open the runtime list from the admin verbs.
+          </EmptyState>
+        ) : null}
         {data.view_kind === 'entry' ? (
           <EntryView data={data} act={act} />
         ) : null}

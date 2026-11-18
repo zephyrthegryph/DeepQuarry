@@ -4,6 +4,7 @@ import { Window } from 'tgui/layouts';
 import { Color } from 'tgui-core/color';
 import { Box, Section, Stack } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
+import { EmptyState } from './common/EmptyState';
 import type { WiresActions, WiresData } from './generated/Wires';
 
 export type WireData = WiresData;
@@ -29,7 +30,44 @@ export const Wires = (props) => {
   );
 };
 
+const WIRE_COLOR_HEX: Record<string, string> = {
+  red: '#ff0000',
+  blue: '#0000ff',
+  green: '#008000',
+  yellow: '#ffff00',
+  orange: '#ffa500',
+  pink: '#ffc0cb',
+  purple: '#800080',
+  cyan: '#00ffff',
+  aqua: '#00ffff',
+  black: '#000000',
+  white: '#ffffff',
+  grey: '#808080',
+  gray: '#808080',
+  brown: '#a52a2a',
+  gold: '#ffd700',
+  silver: '#c0c0c0',
+  violet: '#ee82ee',
+  magenta: '#ff00ff',
+  lime: '#00ff00',
+  teal: '#008080',
+  navy: '#000080',
+  maroon: '#800000',
+  olive: '#808000',
+  indigo: '#4b0082',
+  salmon: '#fa8072',
+  crimson: '#dc143c',
+  beige: '#f5f5dc',
+  khaki: '#f0e68c',
+  tan: '#d2b48c',
+};
+
 export const standardizeColor = (color: string): string => {
+  // A page without OffscreenCanvas (an older embedded browser, the test DOM): the wire colour names DM uses, else grey.
+  if (typeof OffscreenCanvas === 'undefined') {
+    if (/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(color)) return color;
+    return WIRE_COLOR_HEX[color.toLowerCase()] ?? '#808080';
+  }
   const canvas = new OffscreenCanvas(1, 1);
   const ctx = canvas.getContext('2d');
   if (ctx) {
@@ -47,6 +85,7 @@ export const WiresWires = (props) => {
   return (
     <Section scrollable fill>
       <Stack vertical>
+        {wires.length === 0 && <EmptyState>No wires are exposed.</EmptyState>}
         {wires.map((wire) => {
           return (
             <Stack.Item key={wire.seen_color}>

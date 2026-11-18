@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import { EmptyState } from '../../common/EmptyState';
 
 export const PodSelectionList = (props: {
   podTypes: string[];
@@ -32,6 +33,9 @@ export const PodSelectionList = (props: {
         <Stack.Item grow>
           <Section fill scrollable>
             <Stack vertical fill>
+              {!filtered?.length && (
+                <EmptyState>No ghost pods are open right now.</EmptyState>
+              )}
               {!!filtered &&
                 filtered.map((pod_type) => (
                   <Stack.Item key={pod_type}>

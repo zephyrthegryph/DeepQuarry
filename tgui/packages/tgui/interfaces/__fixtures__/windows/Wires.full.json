@@ -1,0 +1,49 @@
+{
+	"wires": [
+		{
+			"seen_color": "red",
+			"color_name": "red",
+			"color": "red",
+			"wire": "Power",
+			"cut": false,
+			"attached": false
+		},
+		{
+			"seen_color": "blue",
+			"color_name": "blue",
+			"color": "blue",
+			"wire": "Bolts",
+			"cut": true,
+			"attached": false
+		},
+		{
+			"seen_color": "green",
+			"color_name": "green",
+			"color": "green",
+			"wire": null,
+			"cut": false,
+			"attached": true
+		},
+		{
+			"seen_color": "yellow",
+			"color_name": "yellow",
+			"color": "yellow",
+			"wire": "Shock",
+			"cut": false,
+			"attached": false
+		},
+		{
+			"seen_color": "orange",
+			"color_name": "orange",
+			"color": "orange",
+			"wire": null,
+			"cut": false,
+			"attached": false
+		}
+	],
+	"status": [
+		"The door bolts have fallen!",
+		"The test light is on.",
+		"The door bolt lights are on."
+	]
+}

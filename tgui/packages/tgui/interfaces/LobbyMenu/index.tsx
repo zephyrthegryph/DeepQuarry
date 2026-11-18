@@ -156,7 +156,8 @@ export const LobbyMenu = (props) => {
             </Box>
           )}
           <Stack vertical height="100%" justify="space-around" align="center">
-            <Stack.Item>
+            {/* Centred at its own width, but never wider than the window (the welcome lines are one line each). */}
+            <Stack.Item maxWidth="100%">
               <LobbyButtons
                 setModal={setModal}
                 hidden={hidden}

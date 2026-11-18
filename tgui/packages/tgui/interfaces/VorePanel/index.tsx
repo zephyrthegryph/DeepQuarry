@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Icon, NoticeBox, Stack, Tabs } from 'tgui-core/components';
+import { EmptyState } from '../common/EmptyState';
 import type { VorePanelActions } from '../generated/VorePanel';
 import type { Data } from './types';
 import { VoreBellySelectionAndCustomization } from './VorePanelMainTabs/VoreBellySelectionAndCustomization';
@@ -177,7 +178,11 @@ export const VorePanel = () => {
               </Tabs.Tab>
             </Tabs>
           </Stack.Item>
-          <Stack.Item grow>{tabs[active_tab] || 'Error'}</Stack.Item>
+          <Stack.Item grow>
+            {tabs[active_tab] || (
+              <EmptyState>This tab's data has not arrived yet.</EmptyState>
+            )}
+          </Stack.Item>
         </Stack>
       </Window.Content>
     </Window>

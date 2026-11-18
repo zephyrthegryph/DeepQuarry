@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, DmIcon, Section, Stack } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
+import { EmptyState } from '../common/EmptyState';
 import type {
   AnomalyHarvesterActions,
   AnomalyHarvesterData,
@@ -28,6 +29,9 @@ export const SampleDisplay = (props) => {
       }
     >
       <Stack vertical fill>
+        {samples.length === 0 && (
+          <EmptyState>No anomalous material generated yet.</EmptyState>
+        )}
         {samples.length > 0 &&
           samples.map((sample) => {
             return (
