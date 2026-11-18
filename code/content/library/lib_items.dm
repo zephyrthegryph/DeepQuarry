@@ -488,6 +488,7 @@ CAPABILITIES(/obj/item/book/bundle)
  * Barcode Scanner
  */
 /obj/item/barcodescanner
+	desc = "A hand scanner the librarian uses to check books in and out of the library computer."
 	name = "barcode scanner"
 	icon = 'icons/obj/library.dmi'
 	icon_state ="scanner"

@@ -1,4 +1,5 @@
 /obj/structure/sign
+	desc = "A sign."
 	icon = 'icons/obj/decals.dmi'
 	anchored = TRUE
 	opacity = 0
@@ -153,6 +154,7 @@ CAPABILITIES(/obj/item/sign)
 	icon_state = "nosmoking2_burnt"
 
 /obj/structure/sign/warning
+	desc = "A warning sign."
 	name = "\improper WARNING"
 	icon_state = "securearea"
 

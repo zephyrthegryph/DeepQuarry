@@ -22,6 +22,7 @@
 
 //Build our Module
 /obj/item/robot_module/robot/chound
+	desc = "The command cyborg module: an aide to the heads of staff."
 	name = "command robot module"
 	channels = list(
 			"Medical" = 1,

@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/ashy
+	desc = "A small whelp born of ash."
 	name = "ashy"
 	icon = 'icons/mob/ashspawn.dmi'
 	icon_state = "ash_whelp"

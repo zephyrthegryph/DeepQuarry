@@ -4,6 +4,7 @@
  */
 
 /obj/item/paper
+	desc = "A sheet of paper. Write on it with a pen."
 	name = "sheet of paper"
 	gender = NEUTER
 	icon = 'icons/obj/bureaucracy.dmi'

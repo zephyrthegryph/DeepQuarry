@@ -1,4 +1,5 @@
 /obj/machinery/portable_atmospherics/powered/pump
+	desc = "A portable pump: it moves gas between its tank and the room or a connected port."
 	name = "portable air pump"
 
 	icon = 'icons/obj/atmos.dmi'

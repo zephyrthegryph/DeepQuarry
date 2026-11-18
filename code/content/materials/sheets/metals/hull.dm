@@ -1,4 +1,5 @@
 /obj/item/stack/material/steel/hull
+	desc = "Steel hull plating."
 	name = MAT_STEELHULL
 	default_type = MAT_STEELHULL
 
@@ -6,6 +7,7 @@
 	return REAGENTS_PER_HULL
 
 /obj/item/stack/material/plasteel/hull
+	desc = "Plasteel hull plating."
 	name = MAT_PLASTEELHULL
 	default_type = MAT_PLASTEELHULL
 
@@ -13,6 +15,7 @@
 	return REAGENTS_PER_HULL
 
 /obj/item/stack/material/durasteel/hull
+	desc = "Durasteel hull plating."
 	name = MAT_DURASTEELHULL
 	default_type = MAT_DURASTEELHULL
 
@@ -20,6 +23,7 @@
 	return REAGENTS_PER_HULL
 
 /obj/item/stack/material/titanium/hull
+	desc = "Titanium hull plating."
 	name = MAT_TITANIUMHULL
 	default_type = MAT_TITANIUMHULL
 

@@ -17,6 +17,9 @@
 	var/obj/item/key/key
 	var/key_type = /obj/item/key/cargo_train
 
+/obj/item/key
+	desc = "A key for a vehicle or a lock."
+
 /obj/item/key/cargo_train
 	name = "key"
 	desc = "A keyring with a small steel key, and a yellow fob reading \"Choo Choo!\"."

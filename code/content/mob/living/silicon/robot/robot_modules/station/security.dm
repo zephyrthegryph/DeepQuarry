@@ -1,4 +1,5 @@
 /obj/item/robot_module/robot/security
+	desc = "A security cyborg module: tools to subdue and restrain."
 	staffing_role = DEPARTMENT_SECURITY
 	security_emotes = TRUE
 	name = "security robot module"

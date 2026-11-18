@@ -1,4 +1,5 @@
 /obj/machinery/computer/fusion_core_control
+	desc = "Controls the R-UST fusion core: its field strength and power."
 	name = "\improper R-UST Mk. 8 core control"
 	circuit = VARIANT(/obj/item/circuitboard/fusion_core_control)
 

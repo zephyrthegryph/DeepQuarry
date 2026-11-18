@@ -6,7 +6,7 @@
 	icon = 'icons/mob/construct.dmi'
 	name = "Construct"
 	real_name = "Construct"
-	desc = ""
+	desc = "A shell of stone and metal animated by a cult's power."
 	tt_desc = "Error"
 
 	icon_living = "shade"

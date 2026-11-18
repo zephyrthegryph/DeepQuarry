@@ -201,6 +201,7 @@ CAPABILITIES(/obj/structure/smoletrack)
 //buildings code
 //Defining building actions
 /obj/structure/smolebuilding
+	desc = "A tiny model building."
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	density = TRUE
 	anchored = TRUE

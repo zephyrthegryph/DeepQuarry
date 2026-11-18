@@ -14,6 +14,7 @@ GLOBAL_LIST_EMPTY(dq_spawn_log)
 GLOBAL_LIST_INIT(dq_spawn_weights, list(/obj/item/dq_spawn_probe/a = 1, /obj/item/dq_spawn_probe/b = 1))
 
 /obj/item/dq_spawn_probe
+	desc = "A test object."
 
 /obj/item/dq_spawn_probe/Initialize(mapload, ...)
 	. = ..()

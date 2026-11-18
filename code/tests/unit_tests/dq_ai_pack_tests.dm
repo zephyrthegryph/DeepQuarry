@@ -22,6 +22,7 @@
 	pack_doctrine = PACK_FOCUS
 
 /mob/living/simple_mob/combat_ai_pack_subject
+	desc = "A test creature."
 	name = "combat AI pack subject"
 	icon = 'icons/mob/animal.dmi'
 	icon_state = "tiger"

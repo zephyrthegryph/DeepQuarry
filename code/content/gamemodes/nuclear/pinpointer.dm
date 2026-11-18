@@ -275,6 +275,7 @@ CAPABILITIES(/obj/item/pinpointer/nukeop)
 
 // This one only points to the ship.  Useful if there is no nuking to occur today.
 /obj/item/pinpointer/shuttle
+	desc = "A pinpointer that points to its shuttle."
 	var/shuttle_comp_id = null
 	var/obj/machinery/computer/shuttle_control/our_shuttle
 

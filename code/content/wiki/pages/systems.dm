@@ -68,3 +68,39 @@ Drinks are mixed, not cooked: each drink is a reagent with its own page and reci
 Some materials have traits, each with a strength out of 100: superconducting, catalytic, sorbent, radioactive, toxic, antimicrobial and others. A catalytic sheet speeds a reaction when dropped in a container (see \[\[guide/chemistry/lab|the chemistry lab]]); a sorbent one lines a filter.
 ## Using them
 Use a stack of sheets in hand to see what it builds. Lathes take sheets as their stock; what a design costs is on its catalogue page. Power cable and cells are affected too: cable of a better conductor loses less power over a long run."}
+
+// ---- Security ----
+
+/datum/wiki_page/guide/security_basics
+	id = "guide/security/basics"
+	title = "Security equipment"
+	path = "Security/Guides"
+	summary = "Records, cameras, the brig, restraints and where Security keeps its gear."
+	body = {"Security keeps the station's order with its consoles, its brig and its equipment. Every item below has its own catalogue page under Security.
+## Consoles
+- The \[\[cat/machinery/computer/secure_data|security records]] console holds every crew member's record: wanted status, notes and history.
+- The \[\[cat/machinery/computer/security|camera]] console watches the station's camera networks.
+- The \[\[cat/machinery/computer/prisoner|prisoner management]] console tracks and works implanted prisoners.
+## The brig
+- Each cell has a door timer: set the sentence and start it, and the cell opens itself when the time is up.
+- \[\[cat/machinery/flasher|Flashers]] blind whoever is in front of them when triggered; \[\[cat/machinery/deployable/barrier|deployable barriers]] block a corridor.
+## Gear
+- The \[\[cat/machinery/vending/security|security vendor]] stocks restraints, flashes and other basics; the armoury holds the heavier weapons. Weapons, ammunition, armour and restraints each have a section under Security/Catalogue.
+- \[\[cat/machinery/recharger|Rechargers]] recharge energy weapons and batons.
+## Alerts
+The station's alert level is set by Command; see \[\[ops/alert_levels|alert levels]] for what each one means."}
+
+// ---- Exploration ----
+
+/datum/wiki_page/guide/exploration_expeditions
+	id = "guide/exploration/expeditions"
+	title = "Going on an expedition"
+	path = "Exploration/Guides"
+	summary = "Taking a contract, flying to the site, finishing the objectives and getting paid."
+	body = {"Expeditions send a crewed vessel to a site generated for the job: a cave, a derelict, a hostile outpost. Every contract and what it pays is in \[\[ops/expedition_contracts|expedition contracts]].
+1. At a vessel's flight console, plot an expedition: choose a contract, then a threat band. Higher bands pay more and fight back harder. A vessel holds one assignment at a time, and only a vessel built for surface expeditions can take one.
+2. The site is generated for the contract. The Flight Operations window shows the destination, the plan and its progress.
+3. Engage the flight plan to fly there; abort to call it off. Abandon the expedition to give the assignment up.
+4. On the site, finish the required objectives. Bonus objectives pay extra. Some contracts have a time limit.
+5. When the required objectives are done the contract completes: its survey points are logged for the exploration program and its pay is split between the surviving crew on the site and the exploration budget.
+> Your share is paid to the account on your ID card. Carry it."}

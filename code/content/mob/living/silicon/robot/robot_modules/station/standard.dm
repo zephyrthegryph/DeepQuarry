@@ -1,4 +1,5 @@
 /obj/item/robot_module/robot/standard
+	desc = "The standard cyborg module: a little of everything."
 	name = "standard robot module"
 	pto_type = PTO_CIVILIAN
 

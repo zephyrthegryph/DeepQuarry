@@ -15,6 +15,7 @@
 	coin_type = /obj/item/coin/plasteel
 
 /obj/item/stack/material/plasteel/rebar
+	desc = "Plasteel bars for reinforcing structures."
 	name = MAT_PLASTEELREBAR
 	icon_state = "rods"
 	default_type = MAT_PLASTEELREBAR

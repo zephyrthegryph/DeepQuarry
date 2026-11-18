@@ -9,6 +9,7 @@ CAPABILITIES(/obj/item/stack/material/glass)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/stack/material/glass/reinforced
+	desc = "Glass sheets reinforced with steel rods, for windows that take a beating."
 	name = "reinforced glass"
 	icon_state = "sheet-rglass" // replace materials update
 	default_type = MAT_RGLASS

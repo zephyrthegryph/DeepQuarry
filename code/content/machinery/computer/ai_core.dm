@@ -6,6 +6,7 @@ MSG_DEF_SELF(ai_core/reinforced_glass, "needs reinforced glass")
 MSG_DEF_SELF(ai_core/wiring_start, "You start to add cables to the frame.")
 MSG_DEF_SELF(ai_core/glass_start, "You start to put in the glass panel.")
 /obj/structure/AIcore
+	desc = "An AI core frame: build it up with its parts and an AI's brain."
 	density = TRUE
 	anchored = FALSE
 	name = "\improper AI core"

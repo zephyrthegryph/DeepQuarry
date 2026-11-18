@@ -1,5 +1,6 @@
 /* Other, unaffiliated modules */
 /obj/item/robot_module/robot/malf
+	desc = "A module of a cyborg gone rogue."
 	hide_on_manifest = TRUE
 	ui_theme = "malfunction"
 	idcard_type = /obj/item/card/id/lost

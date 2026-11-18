@@ -1,5 +1,6 @@
 //Explo doggos
 /obj/item/robot_module/robot/exploration
+	desc = "The exploration cyborg module: tools for expeditions off the station."
 	name = "exploration robot module"
 	channels = list("Explorer" = 1)
 	languages = list(

@@ -45,6 +45,7 @@
 
 //VOX ORGANS.
 /obj/item/organ/internal/stack
+	desc = "A cortical stack: the implant that records a mind for resleeving."
 	name = "cortical stack"
 	parent_organ = BP_HEAD
 	icon_state = "brain_prosthetic"

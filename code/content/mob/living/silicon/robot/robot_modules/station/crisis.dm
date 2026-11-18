@@ -1,4 +1,5 @@
 /obj/item/robot_module/robot/medical/crisis
+	desc = "The crisis cyborg module: first response and emergency treatment."
 	name = "crisis robot module"
 
 /obj/item/robot_module/robot/medical/crisis/create_equipment(mob/living/silicon/robot/robot)

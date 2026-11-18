@@ -6762,6 +6762,7 @@
 #include "code\content\wiki\sources\chemistry.dm"
 #include "code\content\wiki\sources\medical.dm"
 #include "code\content\wiki\sources\medical_mechanisms.dm"
+#include "code\content\wiki\sources\operations.dm"
 #include "code\content\wiki\sources\station.dm"
 #include "code\content\wiki\sources\world.dm"
 #include "code\content\xenoarcheaology\effect.dm"

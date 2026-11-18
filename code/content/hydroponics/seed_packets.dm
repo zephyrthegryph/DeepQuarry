@@ -2,6 +2,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 
 //Seed packet object/procs.
 /obj/item/seeds
+	desc = "A packet of seeds. Plant it in a hydroponics tray."
 	name = "packet of seeds"
 	icon = 'icons/obj/seeds.dmi'
 	icon_state = "blank"

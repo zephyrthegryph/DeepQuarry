@@ -1,4 +1,5 @@
 /obj/item/ore
+	desc = "A lump of ore. The material processor smelts it into sheets."
 	name = "small rock"
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "ore2"

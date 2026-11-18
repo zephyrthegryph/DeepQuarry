@@ -64,6 +64,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 			SD.refresh()
 
 /obj/machinery/ai_status_display
+	desc = "A display showing the AI's face."
 	icon = 'icons/obj/status_display.dmi'
 	icon_state = "frame"
 	layer = ABOVE_WINDOW_LAYER

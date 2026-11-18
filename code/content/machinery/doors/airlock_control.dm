@@ -268,6 +268,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 	return T.return_air()
 
 /obj/machinery/access_button
+	desc = "A button that asks the airlock controller beside it to cycle the airlock."
 	icon = 'icons/obj/airlock_machines.dmi'
 	icon_state = "access_button_standby"
 	layer = ABOVE_WINDOW_LAYER

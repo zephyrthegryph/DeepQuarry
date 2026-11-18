@@ -1,4 +1,5 @@
 /obj/item/robot_module
+	desc = "A cyborg module: the tools and purpose a cyborg is built with."
 	name = "robot module"
 	icon = 'icons/obj/module.dmi'
 	icon_state = "std_module"

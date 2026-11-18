@@ -1,4 +1,5 @@
 /obj/item/chameleon
+	desc = "A projector that scans an object and disguises its holder as it."
 	name = "chameleon projector"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "shield0"

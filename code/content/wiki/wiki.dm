@@ -52,6 +52,8 @@ GLOBAL_LIST_INIT(wiki_sources, list(
 	GLOBAL_PROC_REF(wiki_source_catalogue),
 	GLOBAL_PROC_REF(wiki_source_station),
 	GLOBAL_PROC_REF(wiki_source_world),
+	GLOBAL_PROC_REF(wiki_source_fauna),
+	GLOBAL_PROC_REF(wiki_source_operations),
 ))
 
 /// id -> article. Built once.

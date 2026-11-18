@@ -1,4 +1,5 @@
 /obj/item/robot_module/robot/security/combat
+	desc = "The combat cyborg module: armour and heavier weapons for emergencies."
 	name = "combat robot module"
 	hide_on_manifest = TRUE
 	supported_upgrades = list(/obj/item/borg/upgrade/restricted/bellycapupgrade)

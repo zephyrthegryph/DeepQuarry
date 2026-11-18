@@ -7,6 +7,7 @@
 // Gas mixer - omni variant
 //--------------------------------------------
 /obj/machinery/atmospherics/omni/mixer
+	desc = "A mixer with four configurable sides: it combines gas from its inputs in set proportions into its output."
 	port_volume = ATMOS_DEFAULT_VOLUME_MIXER
 	name = "omni gas mixer"
 	icon_state = "map_mixer"

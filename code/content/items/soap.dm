@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/soap)
 
 /obj/item/soap/nanotrasen
 	name = "Soap (Nanotrasen)"
-	desc = ""
+	desc = "A bar of soap. The janitor's favourite: it cleans faster than most."
 	icon_state = "soapnt"
 	cleanspeed = 28 //janitor gets this
 

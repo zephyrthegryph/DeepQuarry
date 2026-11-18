@@ -56,6 +56,7 @@
 
 
 /obj/item/moneybag/vault
+	desc = "A heavy bag of the vault's coins."
 
 CAPABILITIES(/obj/item/moneybag/vault)
 	initial_contents(/obj/item/coin/silver, count = 4)

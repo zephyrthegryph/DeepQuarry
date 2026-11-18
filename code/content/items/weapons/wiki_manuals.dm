@@ -14,6 +14,7 @@ CAPABILITIES(/obj/item/book/manual/wiki)
 
 // A book that links to the wiki
 /obj/item/book/manual/wiki
+	desc = "A reference book that links to a page of the configured web wiki, opened in your browser."
 	dat = "Nanotrasen presently does not have any resources on this topic. If you would like to know more, contact your local Central Command representative." // safety
 	/// The ending URL of the page that we link to.
 	var/page_link = ""

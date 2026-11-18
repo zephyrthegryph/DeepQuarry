@@ -25,6 +25,7 @@
 	return
 
 /obj/item/robot_module/robot/medical
+	desc = "A medical cyborg module: tools to diagnose and treat patients."
 	staffing_role = DEPARTMENT_MEDICAL
 	name = "medical robot module"
 	channels = list(CHANNEL_MEDICAL = 1)
@@ -34,6 +35,7 @@
 	supported_upgrades = list(/obj/item/borg/upgrade/restricted/bellycapupgrade)
 
 /obj/item/robot_module/robot/clerical
+	desc = "A clerical cyborg module: tools for service and paperwork."
 	name = "service robot module"
 	channels = list(
 		CHANNEL_SERVICE = 1,

@@ -1,4 +1,5 @@
 /obj/item/robot_module/robot/engineering
+	desc = "The engineering cyborg module: tools, construction materials and meson vision."
 	staffing_role = DEPARTMENT_ENGINEERING
 	names_assemblies = TRUE
 	name = "engineering robot module"

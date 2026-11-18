@@ -1,4 +1,5 @@
 /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack
+	desc = "An exosuit launcher that fires missiles or grenades from a rack."
 	var/missile_speed = 2
 	var/missile_range = 30
 

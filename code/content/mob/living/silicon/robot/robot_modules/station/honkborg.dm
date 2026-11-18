@@ -1,4 +1,5 @@
 /obj/item/robot_module/robot/clerical/honkborg
+	desc = "The clown cyborg module: entertainment."
 	name = "clown robot module"
 	channels = list("Service" = 1,
 					"Entertainment" = 1)

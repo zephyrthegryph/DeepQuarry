@@ -1,4 +1,5 @@
 /obj/machinery/beehive
+	desc = "A beehive. Fit frames and a queen to keep bees and harvest honey."
 	name = "beehive"
 	icon = 'icons/obj/beekeeping.dmi'
 	icon_state = "beehive"

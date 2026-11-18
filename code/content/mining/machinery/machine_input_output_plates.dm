@@ -1,6 +1,7 @@
 /**********************Input and output plates**************************/
 
 /obj/machinery/mineral/input
+	desc = "Marks the side a mining machine takes its input from."
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "blank"
 	name = "Input area"
@@ -8,6 +9,7 @@
 	anchored = TRUE
 
 /obj/machinery/mineral/output
+	desc = "Marks the side a mining machine puts its output on."
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "blank"
 	name = "Output area"

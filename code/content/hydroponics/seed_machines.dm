@@ -168,6 +168,7 @@ CAPABILITIES(/obj/machinery/botany)
 
 // Allows for a trait to be extracted from a seed packet, destroying that seed.
 /obj/machinery/botany/extractor
+	desc = "Extracts genes from a seed packet onto a disk."
 	name = "lysis-isolation centrifuge"
 	icon_state = "traitcopier"
 
@@ -303,6 +304,7 @@ CAPABILITIES(/obj/machinery/botany)
 // Fires an extracted trait into another packet of seeds with a chance
 // of destroying it based on the size/complexity of the plasmid.
 /obj/machinery/botany/editor
+	desc = "Splices genes from a disk into a seed packet."
 	name = "bioballistic delivery system"
 	icon_state = "traitgun"
 	disk_needs_genes = 1

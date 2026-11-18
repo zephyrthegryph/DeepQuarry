@@ -161,6 +161,7 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 	use_power(electricity_level * 5)
 
 /obj/machinery/magnetic_controller
+	desc = "Controls a magnetic module's field."
 	name = "Magnetic Control Console"
 	icon = 'icons/obj/airlock_machines.dmi' // uses an airlock machine icon, THINK GREEN HELP THE ENVIRONMENT - RECYCLING!
 	icon_state = "airlock_control_standby"

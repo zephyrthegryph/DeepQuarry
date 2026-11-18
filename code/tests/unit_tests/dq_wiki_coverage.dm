@@ -5,12 +5,14 @@
 /// Category -> the most uncovered or undescribed entries allowed. Lower only.
 GLOBAL_LIST_INIT(wiki_coverage_ceiling, list(
 	"objects without an article" = 0,
-	"catalogued objects without a description" = 104,
+	"catalogued objects without a description" = 0,
 	"reagents without an article" = 0,
 	"jobs without an article" = 0,
 	"gases without an article" = 0,
 	"materials without an article" = 0,
 	"plants without an article" = 0,
+	"creatures without an article" = 0,
+	"creatures without a description" = 0,
 	"systems without a guide" = 0,
 ))
 
@@ -18,7 +20,7 @@ GLOBAL_LIST_INIT(wiki_coverage_ceiling, list(
 GLOBAL_LIST_INIT(wiki_required_system_guides, list(
 	"guide/chemistry/lab", "guide/medical/triage", "guide/medical/surgery", "guide/engineering/power", "guide/engineering/atmos",
 	"guide/research/basics", "guide/cargo/ordering", "guide/cargo/trade_ships", "guide/cargo/haggling", "guide/cargo/salvage", "guide/cargo/ore_processing",
-	"guide/civilian/botany", "guide/civilian/kitchen", "guide/engineering/materials",
+	"guide/civilian/botany", "guide/civilian/kitchen", "guide/engineering/materials", "guide/security/basics", "guide/exploration/expeditions",
 ))
 
 /// Category -> list(missing names) and the number checked, for every category. The coverage report.
@@ -28,7 +30,7 @@ GLOBAL_LIST_INIT(wiki_required_system_guides, list(
 	var/list/checked = list()
 	var/list/sources = GLOBAL_TABLE_GET(wiki_catalogue_sources_table)
 	var/list/objects = list()
-	for(var/key in list("designs", "packs", "made", "vended", "placed"))
+	for(var/key in list("designs", "packs", "made", "vended", "placed", "kinds"))
 		for(var/path in sources[key])
 			objects[path] = TRUE
 	var/list/no_article = list()
@@ -85,6 +87,19 @@ GLOBAL_LIST_INIT(wiki_required_system_guides, list(
 			plants += name
 	missing["plants without an article"] = plants
 	checked["plants without an article"] = length(seeds)
+	var/list/fauna_missing = list()
+	var/list/fauna_undescribed = list()
+	var/list/fauna = wiki_fauna_types()
+	for(var/path in fauna)
+		var/mob/M = path
+		if(!index[wiki_fauna_id(path)])
+			fauna_missing += "[path]"
+		else if(!initial(M.desc))
+			fauna_undescribed += "[path]"
+	missing["creatures without an article"] = fauna_missing
+	checked["creatures without an article"] = length(fauna)
+	missing["creatures without a description"] = fauna_undescribed
+	checked["creatures without a description"] = length(fauna)
 	var/list/guides = list()
 	for(var/id in GLOB.wiki_required_system_guides)
 		if(!index[id])

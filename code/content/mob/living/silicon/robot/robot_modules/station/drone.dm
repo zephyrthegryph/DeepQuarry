@@ -1,6 +1,7 @@
 /* Drones */
 
 /obj/item/robot_module/drone
+	desc = "A maintenance drone's module: tools to repair and build."
 	names_assemblies = TRUE
 	name = "drone module"
 	hide_on_manifest = TRUE

@@ -294,6 +294,7 @@ GLOBAL_LIST(construction_frame_floor)
 SOURCE_DEF(frame_class)
 
 /obj/structure/frame
+	desc = "A machine frame: add the board and parts it asks for, then screw it shut."
 	material_template = /datum/material_template/machine_part
 	material_total = 5 * SHEET_MATERIAL_AMOUNT
 	anchored = FALSE

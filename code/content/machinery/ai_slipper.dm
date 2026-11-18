@@ -1,4 +1,5 @@
 /obj/machinery/ai_slipper
+	desc = "A dispenser the AI uses to foam the floor and trip intruders."
 	name = "\improper AI Liquid Dispenser"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "liquid_dispenser"

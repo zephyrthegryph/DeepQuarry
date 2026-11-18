@@ -319,6 +319,7 @@
 			"}
 
 /obj/item/book/manual/stasis
+	desc = "A xenoarchaeology paper on cellular suspension: stasis as a successor to cryogenics."
 	name = "Cellular Suspension, the New Cryogenics?"
 	icon_state = "stasis"
 	item_state = "book6"

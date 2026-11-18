@@ -1,4 +1,5 @@
 /obj/machinery/robotic_fabricator
+	desc = "An old fabricator of robot parts."
 	name = "robotic fabricator"
 	icon = 'icons/obj/robotics.dmi'
 	icon_state = "fab-idle"

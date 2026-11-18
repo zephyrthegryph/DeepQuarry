@@ -1,6 +1,7 @@
 /* Syndicate modules */
 
 /obj/item/robot_module/robot/syndicate
+	desc = "A hostile agent's cyborg module."
 	name = "illegal robot module"
 	hide_on_manifest = TRUE
 	languages = list(

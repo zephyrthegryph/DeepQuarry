@@ -163,3 +163,40 @@
 		if(length(mutants))
 			blocks += list(wiki_links("Can mutate into", mutants))
 	return blocks
+
+// ---- creatures ----
+
+/proc/wiki_fauna_id(path)
+	return "fauna/[replacetext("[path]", "/mob/living/simple_mob/", "")]"
+
+/// A creature the wiki files: every simple mob type with a name and a living sprite (a type without one is a base that never spawns as itself).
+/proc/wiki_fauna_types()
+	. = list()
+	for(var/path in subtypesof(/mob/living/simple_mob))
+		var/mob/living/simple_mob/M = path
+		if(initial(M.name) && initial(M.icon_living))
+			. += path
+
+/proc/wiki_source_fauna(list/index)
+	for(var/path in wiki_fauna_types())
+		var/mob/living/simple_mob/M = path
+		var/list/parts = splittext(replacetext("[path]", "/mob/living/simple_mob/", ""), "/")
+		var/group = length(parts) > 1 ? capitalize(replacetext(parts[1], "_", " ")) : "Other"
+		wiki_set_sprite(wiki_add(index, wiki_fauna_id(path), capitalize(initial(M.name)), "Creatures/[group]", null, null, GLOBAL_PROC_REF(wiki_fauna_body), path), path)
+
+/proc/wiki_fauna_body(path)
+	var/mob/living/simple_mob/M = path
+	var/list/blocks = list(wiki_p(initial(M.desc) || "A creature."))
+	var/list/facts = list()
+	if(initial(M.melee_damage_upper) > 0)
+		facts += list(list("Bites or strikes for", "[initial(M.melee_damage_lower)] to [initial(M.melee_damage_upper)] damage"))
+	var/projectile = initial(M.projectiletype)
+	if(ispath(projectile, /atom))
+		var/atom/P = projectile
+		facts += list(list("Ranged attack", "Fires [initial(P.name)]"))
+	facts += list(list("Comfortable between", "[initial(M.minbodytemp)] K and [initial(M.maxbodytemp)] K"))
+	facts += list(list("Breathes", initial(M.min_oxy) > 0 ? "Needs oxygen" : "Needs no oxygen"))
+	if(initial(M.taser_kill))
+		facts += list(list("Stun weapons", "Hurt by them (an electrical injury, not a stun)"))
+	blocks += list(wiki_kv(facts))
+	return blocks

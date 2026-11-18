@@ -506,7 +506,7 @@ Notes: `when` takes a var name, a `PROC_REF`, or `all_of()` / `any_of()` / `not(
 #### `wait(t, keeps =, repeats =, after_step =)` and `then(handler, checks =, early =)` (op parts)
 Need: an op's timed delay, and the effect that runs when it ends.
 Defined: `wait` at `code/engine/parts/part.dm:396`, `then` at `code/engine/actions/hooks.dm:83`
-Example: `op("link_scanner", tool(TOOL_MULTITOOL), label("Link"), wait(0), then(PROC_REF(multitool_link)))`, `code/content/machinery/adv_med.dm:278`
+Example: `op("link_scanner", tool(TOOL_MULTITOOL), label("Link"), wait(0), then(PROC_REF(multitool_link)))`, `code/content/machinery/adv_med.dm:283`
 Replaces / bans: `do_after`, `sleep` in effects; the task engine (gone).
 Notes: `then` is also the handler wrapper in `every`, `after_init`, `on_notice` and `on_change`. `wait_until(until =)` is the unbounded form.
 

@@ -451,6 +451,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		SStgui.update_uis(src)
 
 /obj/item/paper/monitorkey
+	desc = "A note holding the key code for the station's message monitor."
 	name = "Monitor Decryption Key"
 
 CAPABILITIES(/obj/item/paper/monitorkey)

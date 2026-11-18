@@ -11,6 +11,7 @@
 // And arbitrary messages set by comms computer
 
 /obj/machinery/status_display
+	desc = "A screen showing the shuttle timer, alerts or messages."
 	icon = 'icons/obj/status_display.dmi'
 	icon_state = "frame"
 	plane = TURF_PLANE

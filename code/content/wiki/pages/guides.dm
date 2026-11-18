@@ -106,6 +106,9 @@ The pipe dispenser and the pipes themselves are explained in \[\[manual/pipesand
 - An autolathe prints common tools and parts from steel, glass and plastic.
 - A protolathe prints what research unlocks; a circuit imprinter prints circuit boards; the exosuit and prosthetics fabricators print exosuit and robot parts.
 - Feed the machines materials; what a design costs is on its catalogue page. Recycling an object gives back up to what it was made of.
+## Earning research
+- The \[\[cat/machinery/rnd/destructive_analyzer|destructive analyzer]] destroys an object to learn from it: it earns research points and can reveal the nodes the object belongs to.
+- Experiments (scans, analyses and tests the research console lists) earn points and unlock nodes of their own.
 See \[\[manual/researchanddevelopment101|Research and Development 101]] for the department's own manual and \[\[guide/chemistry/lab|working the chemistry lab]] for the chemists."}
 
 // ---- Cargo ----

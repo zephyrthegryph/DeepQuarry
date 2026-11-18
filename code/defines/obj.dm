@@ -1,4 +1,5 @@
 /obj/structure/signpost
+	desc = "A signpost."
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "signpost"
 	anchored = TRUE
@@ -170,6 +171,7 @@ CAPABILITIES(/obj/structure/showcase)
 /obj/item/mouse_drag_pointer = MOUSE_ACTIVE_POINTER
 
 /obj/item/beach_ball
+	desc = "An inflatable ball for the beach or the pool."
 	icon = 'icons/misc/beach.dmi'
 	icon_state = "beachball"
 	name = "beach ball"

@@ -6,6 +6,7 @@ CAPABILITIES(/obj/structure/shuttle)
 	configure(movable_motion(unacidable = TRUE))
 
 /obj/structure/shuttle/window
+	desc = "A shuttle's window."
 	name = "shuttle window"
 	icon = 'icons/obj/podwindows.dmi'
 	icon_state = "0_0" //The states are a bitflag for connecting window directions, then connecting shuttle wall directions
@@ -45,6 +46,7 @@ CAPABILITIES(/obj/structure/shuttle/window)
 			wall_flags &= ~flag     // turn off the bit flag
 
 /obj/structure/shuttle/engine
+	desc = "Part of a shuttle's engine."
 	name = "engine"
 	density = TRUE
 	anchored = TRUE

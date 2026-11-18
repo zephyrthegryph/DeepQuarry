@@ -1,6 +1,7 @@
 ///////////////////////////////////////////////////////////////////////
 //Under clothing
 /obj/item/clothing/under
+	desc = "A jumpsuit or other undersuit, worn under armour and coats."
 	icon = 'icons/inventory/uniform/item.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_uniforms.dmi',

@@ -1,5 +1,6 @@
 
 /obj/item/robot_module/robot/platform
+	desc = "A robot platform's module."
 
 	hide_on_manifest = TRUE
 

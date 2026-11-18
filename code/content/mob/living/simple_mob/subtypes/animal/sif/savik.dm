@@ -18,6 +18,7 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 /mob/living/simple_mob/animal/sif/savik
+	desc = "A large predator of Sif that hunts on land the way a shark hunts at sea. Dangerous up close."
 	name = "savik"
 	tt_desc = "S Pistris tellus" //landshark
 

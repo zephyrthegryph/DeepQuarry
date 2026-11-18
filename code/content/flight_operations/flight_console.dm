@@ -219,6 +219,7 @@ CAPABILITIES(/datum/flight_operations_ui)
 	return TRUE
 
 /obj/machinery/computer/ship
+	desc = "A ship console."
 	var/datum/flight_operations_ui/flight_operations_ui
 
 CAPABILITIES(/obj/machinery/computer/ship)

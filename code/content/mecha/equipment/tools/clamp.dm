@@ -161,6 +161,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp)
 
 //This is pretty much just for the death-ripley so that it is harmless
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/safety
+	desc = "A hydraulic clamp with its force limited so it cannot crush people."
 	name = "\improper KILL CLAMP"
 	equip_cooldown = 15
 	energy_drain = 0

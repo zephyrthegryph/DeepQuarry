@@ -1,4 +1,5 @@
 /obj/item/fuel_assembly
+	desc = "A fuel rod for the R-UST fusion reactor's injectors."
 	name = "fuel rod assembly"
 	icon = 'icons/obj/machines/power/fusion.dmi'
 	icon_state = "fuel_assembly"

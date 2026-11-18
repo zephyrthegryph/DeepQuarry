@@ -2,6 +2,7 @@
 // robot's panel, sprite and module state redraw it with no call.
 
 /mob/living/simple_mob/dq_draw_pred
+	desc = "A test creature."
 	name = "draw pred"
 	icon = 'icons/mob/animal.dmi'
 	icon_state = "mouse_gray"

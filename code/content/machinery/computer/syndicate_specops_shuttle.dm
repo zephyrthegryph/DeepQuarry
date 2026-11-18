@@ -1,4 +1,5 @@
 /obj/machinery/computer/syndicate_elite_shuttle
+	desc = "The console of a hostile strike team's shuttle."
 	name = "elite mercenary squad shuttle control console"
 	icon_keyboard = "syndie_key"
 	icon_screen = "syndishuttle"

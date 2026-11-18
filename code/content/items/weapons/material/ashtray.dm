@@ -9,6 +9,7 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 
 /obj/item/material/ashtray
 	name = "ashtray"
+	desc = "A dish for cigarette ends. A stronger material holds more before it overflows."
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "blank"
 	force_divisor = 0.1

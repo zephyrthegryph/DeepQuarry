@@ -406,6 +406,7 @@ CAPABILITIES(/datum/carried_afflictions)
 // --- Component objects ----------------------------------------------------------------
 
 /obj/item/broken_device
+	desc = "A device broken beyond use. Recycle it for its materials."
 	name = "broken component"
 	icon = 'icons/obj/robot_component.dmi'
 	icon_state = "broken"

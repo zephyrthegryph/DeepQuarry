@@ -20,6 +20,7 @@
 // Test-only mob with a fixed modern-AI behavior set, so these tests don't
 // depend on any shipped creature's tuning.
 /mob/living/simple_mob/combat_ai_test_subject
+	desc = "A test creature."
 	name = "combat AI test subject"
 	icon = 'icons/mob/animal.dmi'
 	icon_state = "tiger"

@@ -1,4 +1,5 @@
 /obj/item/robot_module/robot/janitor
+	desc = "The janitor cyborg module: mops, sprays and a trash bag."
 	staffing_role = JOB_JANITOR
 	eats_trash = TRUE
 	name = "janitorial robot module"

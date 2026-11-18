@@ -69,6 +69,7 @@
 
 
 /obj/item/book/manual/supermatter_engine
+	desc = "The operating manual of the supermatter engine: startup, cooling and ejection."
 	name = "Supermatter Engine Operating Manual"
 	icon_state = "bookSupermatter"
 	item_state = "book15"
@@ -143,7 +144,7 @@
 				<h2>EJECTION PROCEDURE</h2>
 				<ol>
 				<li>Ensure the engine room has power. The blast doors and ejection platform are unresponsive without power.</li>
-				<li>Press Engine Ventilatory Control button to open engine core blast door to space. (In CE Office and next to the reactor shroud)</li>
+				<li>Press the Engine Ventillatory Control button (in the CE's office) or the Reactor Ventillatory Control button (in the engine room) to open the engine core blast door to space.</li>
 				<li>Press Emergency Core Eject button to eject supermatter crystal. (In CE Office, only) NOTE: Attempting crystal ejection while engine core vent is closed will result in ejection failure.</li>
 				<li>In event of ejection failure, "} + span_italics("good luck.") + {"</li>
 				</ol>
@@ -186,6 +187,16 @@
 				<p>Tesla Coils will attract the energy ball&apos;s bolts. They will take half the power of the bolt (if they are connected to a wire node), pump it into the powernet it is hooked to, and then will send the other half of the power to the next available conductor, which follows the criteria listed above. Preferably, this will be another coil to harness more of the power and pump it into the grid.</p>
 				<p>Grounding Rods are safety precautions to prevent the tesla bolts from hitting machinery or personnel. If the tesla is loose, being near one will usually keep you safe from direct shocks.</p>
 				<br>
+				<h2>COIL TYPES</h2>
+				A multitool behind a coil's open panel turns it into another kind, keeping its parts. Better capacitors make a coil produce more and arc sooner.
+				<ul>
+				<li>Tesla coil: turns half of each bolt into power on its cable network and arcs the rest on.</li>
+				<li>Relay coil: moves power along without making any.</li>
+				<li>Prism coil: splits a bolt between several targets.</li>
+				<li>Amplifier coil: strengthens a bolt passing through it, with diminishing returns the more relays the bolt has crossed.</li>
+				<li>Recaster coil: extends the reach of the bolts it sends on.</li>
+				<li>Collector coil: collects power very efficiently and does not arc on.</li>
+				</ul>
 				<h2>STARTUP PROCEDURE</h2>
 				<ol>
 				<li>Bolt and weld down the Field Generators, ensuring they form a complete rectangle.</li>
@@ -371,32 +382,23 @@
 				<head>
 				<style>
 				h1 {font-size: 18px; margin: 15px 0px 5px;}
-				h2 {font-size: 15px; margin: 15px 0px 5px;}
 				li {margin: 2px 0px 2px 15px;}
-				ul {margin: 5px; padding: 0px;}
 				ol {margin: 5px; padding: 0px 15px;}
 				body {font-size: 13px; font-family: Verdana;}
 				</style>
 				</head>
 				<body>
-				<h3>Growing a Diona</h3>
-
+				<h1>Growing a Diona</h1>
 				Growing a Diona is easy!
-				<p>
 				<ol>
-					<li>Take a syringe of blood from the body you wish to turn into a Diona.</li>
-					<li>Inject 5 units of blood into the pack of dionaea-replicant seeds.</li>
-					<li>Plant the seeds.</li>
-					<li>Tend to the plants water and nutrition levels until it is time to harvest the Diona.</li>
+				<li>Plant a packet of replicant pod nodes in a hydroponics tray.</li>
+				<li>Tend to its water and nutrients until the pod is ripe.</li>
+				<li>When it is ripe, a willing spirit can take the pod: it opens, and they wake in it as a diona nymph. A pod harvested by hand before anyone takes it gives a nymph with no mind, which does not live.</li>
 				</ol>
-				<p>
-				Note that for a successful harvest, the body from which the blood was taken from must be dead BEFORE harvesting the pod, however the pod can be growing while they are still alive. Otherwise, the soul would not be able to migrate to the new Diona body.<br><br>
-
-				It really is that easy! Good luck!
-
+				Replicant pods never mutate. Be patient: wait for someone to answer the pod before you harvest it.
 				</body>
 				</html>
-				"}
+			"}
 
 
 /obj/item/book/manual/medical_cloning
@@ -452,13 +454,10 @@
 				<a name='4'><h3>Step 4: Scan body</h3>
 				Go onto the computer and scan the body by pressing 'Scan - &lt;Subject Name Here&gt;.' If you're successful, they will be added to the records (note that this can be done at any time, even with living people,
 				so that they can be cloned without a body in the event that they are lying dead on port solars and didn't turn on their suit sensors)!
-				If not, and it says "Error: Mental interface failure.", then they have left their bodily confines and are one with the spirits. If this happens, just shout at them to get back in their body,
-				click 'Refresh' and try scanning them again. If there's no success, threaten them with gibbing.
-				Still no success? Skip over to Step 7 and don't continue after it, as you have an unresponsive body and it cannot be cloned.
-				If you got "Error: Unable to locate valid genetic data.", you are trying to clone a monkey - start over.
+				If the scan fails, the console says why: "Subject's brain is not responding" means they have left their body for now, so shout at them to come back and try again after a short delay. "No brain detected", "Subject has committed suicide" and "Subject species is not scannable" cannot be scanned at all: skip to Step 7.
 
 				<a name='5'><h3>Step 5: Clone body</h3>
-				Now that the body has a record, click 'View Records,' click the subject's name, and then click 'Clone' to start the cloning process. Congratulations! You're halfway there.
+				Now that the body has a record, click 'View Records,' click the subject's name, and then click 'Clone' to start the cloning process. Congratulations! You're halfway there. Each clone takes 30 units of biomass from the beakers loaded in the pod, so keep them stocked.
 				Remember not to 'Eject' the cloning pod as this will kill the developing clone and you'll have to start the process again.
 
 				<a name='6'><h3>Step 6: Get clean SEs for body</h3>
@@ -550,10 +549,10 @@
 					<li>Secure the mainboard with a screwdriver.</li>
 					<li>Install the peripherals control module (Not included. Use supplied datadisk to create one).</li>
 					<li>Secure the peripherals control module with a screwdriver.</li>
-					<li>Install the internal armor plating (Not included due to corporate regulations. Can be made using 5 metal sheets).</li>
+					<li>Install the internal armor plating (Not included due to corporate regulations: 5 steel sheets).</li>
 					<li>Secure the internal armor plating with a wrench.</li>
 					<li>Weld the internal armor plating to the chassis.</li>
-					<li>Install the external reinforced armor plating (Not included due to corporate regulations. Can be made using 5 reinforced metal sheets).</li>
+					<li>Install the external reinforced armor plating (Not included due to corporate regulations: 5 plasteel sheets).</li>
 					<li>Secure the external reinforced armor plating with a wrench.</li>
 					<li>Weld the external reinforced armor plating to the chassis.</li>
 				</ol>
@@ -582,21 +581,38 @@
 	dat = {"<html>
 				<head>
 				<style>
-				h1 {font-size: 21px; margin: 15px 0px 5px;}
-				h2 {font-size: 18px; margin: 15px 0px 5px;}
-				h3 {font-size: 15px; margin: 15px 0px 5px;}
+				h1 {font-size: 18px; margin: 15px 0px 5px;}
+				h2 {font-size: 15px; margin: 15px 0px 5px;}
 				li {margin: 2px 0px 2px 15px;}
 				ul {margin: 5px; padding: 0px;}
-				ol {margin: 5px; padding: 0px 15px;}
 				body {font-size: 13px; font-family: Verdana;}
 				</style>
 				</head>
 				<body>
-
 				<h1>Science For Dummies</h1>
-				So you want to further SCIENCE? Good man/woman/thing! However, SCIENCE is a complicated process even though it's quite easy. For the most part, it's a three step process:
-				<ol>
-					<li>"} + span_bold("Deconstruct") + {" items in the Destructive Analyzer to advance technology or improve the design.</li>
+				Research is a tree of nodes. Each node costs research points, needs the nodes before it, and unlocks designs the lathes can then print. Every lab shares one tree through the research servers.
+
+				<h2>The R&D Console</h2>
+				The research console is where you spend points on nodes, read what a node unlocks, and see the experiments on offer. Every console on the network shows the same tree: losing one console loses nothing.
+
+				<h2>The Research Servers</h2>
+				The servers hold the station's research and produce points over time. Keep them powered (an EMP or a broken server stops it); they heat the room they stand in. The server control console manages them.
+
+				<h2>Earning points</h2>
+				<ul>
+				<li>The servers produce points steadily while they run.</li>
+				<li>Experiments, listed on the console, pay points and can unlock nodes of their own: scanning things, analysing them, testing them.</li>
+				<li>The Destructive Analyzer destroys an object to learn from it. It earns points and can reveal the nodes the object belongs to.</li>
+				</ul>
+
+				<h2>The Protolathe and Circuit Imprinter</h2>
+				The protolathe prints the devices research unlocks; the circuit imprinter prints circuit boards. Both take materials (and some designs take reagents). What a design costs and where it is printed is on its page in the station wiki.
+
+				<h2>Building a Better Machine</h2>
+				Machines built from a board in a machine frame need parts: capacitors, matter bins, manipulators, lasers, scanning modules. Research unlocks better versions, and a machine built with them works better: an autolathe with better matter bins holds more, for example.
+				</body>
+				</html>
+			"} + span_bold("Deconstruct") + {" items in the Destructive Analyzer to advance technology or improve the design.</li>
 					<li>"} + span_bold("Build") + {" unlocked designs in the Protolathe and Circuit Imprinter.</li>
 					<li>"} + span_bold("Repeat") + {"!</li>
 				</ol>
@@ -642,6 +658,7 @@
 			"}
 
 /obj/item/book/manual/robotics_cyborgs
+	desc = "A guide to building, maintaining and repairing cyborgs."
 	name = JOB_CYBORG + "s for Dummies"
 	icon_state = "borgbook"
 	item_state = "book1"
@@ -689,65 +706,7 @@
 
 
 				<h2><a name="Modules">Cyborg Modules</h2>
-				When a cyborg is created it picks out of an array of modules to designate its purpose. There are 6 different cyborg modules.
-
-				<h3>Standard Cyborg</h3>
-				The standard cyborg module is a multi-purpose cyborg. It is equipped with various modules, allowing it to do basic tasks.<br>A Standard Cyborg comes with:
-				<ul>
-				  <li>Crowbar</li>
-				  <li>Stun Baton</li>
-				  <li>Health Analyzer</li>
-				  <li>Fire Extinguisher</li>
-				</ul>
-
-				<h3>Engineering Cyborg</h3>
-				The Engineering cyborg module comes equipped with various engineering-related tools to help with engineering-related tasks.<br>An Engineering Cyborg comes with:
-				<ul>
-				  <li>A basic set of engineering tools</li>
-				  <li>Metal Synthesizer</li>
-				  <li>Reinforced Glass Synthesizer</li>
-				  <li>An RCD</li>
-				  <li>Wire Synthesizer</li>
-				  <li>Fire Extinguisher</li>
-				  <li>Built-in Optical Meson Scanners</li>
-				</ul>
-
-				<h3>Mining Cyborg</h3>
-				The Mining Cyborg module comes equipped with the latest in mining equipment. They are efficient at mining due to no need for oxygen, but their power cells limit their time in the mines.<br>A Mining Cyborg comes with:
-				<ul>
-				  <li>Jackhammer</li>
-				  <li>Shovel</li>
-				  <li>Mining Satchel</li>
-				  <li>Built-in Optical Meson Scanners</li>
-				</ul>
-
-				<h3>Security Cyborg</h3>
-				The Security Cyborg module is equipped with effective security measures used to apprehend and arrest criminals without harming them a bit.<br>A Security Cyborg comes with:
-				<ul>
-				  <li>Stun Baton</li>
-				  <li>Handcuffs</li>
-				  <li>Taser</li>
-				</ul>
-
-				<h3>Janitor Cyborg</h3>
-				The Janitor Cyborg module is equipped with various cleaning-facilitating devices.<br>A Janitor Cyborg comes with:
-				<ul>
-				  <li>Mop</li>
-				  <li>Hand Bucket</li>
-				  <li>Cleaning Spray Synthesizer and Spray Nozzle</li>
-				</ul>
-
-				<h3>Service Cyborg</h3>
-				The service cyborg module comes ready to serve your human needs. It includes various entertainment and refreshment devices. Occasionally some service cyborgs may have been referred to as "Bros."<br>A Service Cyborg comes with:
-				<ul>
-				  <li>Shaker</li>
-				  <li>Industrial Dropper</li>
-				  <li>Platter</li>
-				  <li>Beer Synthesizer</li>
-				  <li>Zippo Lighter</li>
-				  <li>Rapid-Service-Fabricator (Produces various entertainment and refreshment objects)</li>
-				  <li>Pen</li>
-				</ul>
+				When a cyborg is activated it picks one module, which sets its purpose and the tools it is built with. The station's modules are Standard, Engineering, Miner, Research, Crisis and Surgeon (medical), Security and Combat, Exploration, Service, Clerical, Command, Janitor and Clown. What each one carries changes as Robotics upgrades it: read the module itself, or ask the cyborg.
 
 				<h2><a name="Construction">Cyborg Construction</h2>
 				Cyborg construction is a rather easy process, requiring a decent amount of metal and a few other supplies.<br>The required materials to make a cyborg are:
@@ -847,6 +806,7 @@
 		"}
 
 /obj/item/book/manual/chef_recipes
+	desc = "An old recipe book. Its recipes are out of date; the kitchen's appliances list what they make."
 	name = JOB_CHEF + " Recipes"
 	icon_state = "cooked_book"
 	item_state = "book16"
@@ -1019,6 +979,7 @@
 			"}
 
 /obj/item/book/manual/atmospipes
+	desc = "A guide to the station's pipes, pumps, valves and filters."
 	name = "Pipes and You: Getting To Know Your Scary Tools"
 	icon_state = "pipingbook"
 	item_state = "book3"
@@ -1128,6 +1089,7 @@
 			"}
 
 /obj/item/book/manual/evaguide
+	desc = "A guide to suits, internals and working outside the station."
 	name = "EVA Gear and You: Not Spending All Day Inside, 2nd Edition"
 	icon_state = "evabook"
 	item_state = "book14"

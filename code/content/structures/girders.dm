@@ -1,4 +1,5 @@
 /obj/structure/girder
+	desc = "A wall's frame: add sheets to finish the wall, or take it apart with a wrench."
 	name = "girder"
 	icon_state = "girder"
 	anchored = TRUE

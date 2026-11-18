@@ -1,6 +1,6 @@
 /obj/machinery/exonet_node
 	name = "exonet node"
-	desc = null // Gets written in New()
+	desc = "A relay that links the station's computers and communicators to the wider network."
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "exonet"
 	density = TRUE

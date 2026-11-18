@@ -1,4 +1,5 @@
 /obj/item/robot_module/robot/research
+	desc = "The research cyborg module: tools for the labs and robotics."
 	staffing_role = DEPARTMENT_RESEARCH
 	name = "research module"
 	channels = list(CHANNEL_SCIENCE = 1)

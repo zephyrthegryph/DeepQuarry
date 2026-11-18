@@ -10,6 +10,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 MSG_DEF_SELF(analyzer/busy, "It's busy right now.")
 
 /obj/machinery/rnd/destructive_analyzer
+	desc = "Destroys an object to learn from it, earning research."
 	name = "destructive analyzer"
 	icon_state = "d_analyzer"
 	var/decon_mod = 0

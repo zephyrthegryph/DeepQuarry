@@ -30,6 +30,8 @@ GLOBAL_LIST_INIT(wiki_catalogue_departments, list(
 	/obj/item/organ = "Medical/Organs and prosthetics",
 	/obj/item/robot_parts = "Research/Robotics",
 	/obj/item/mecha_parts = "Research/Exosuits",
+	/obj/item/mecha_parts/mecha_equipment = "Research/Exosuit equipment",
+	/obj/item/robot_module = "Research/Cyborg modules",
 	/obj/mecha = "Research/Exosuits",
 	/obj/item/stock_parts = "Research/Machine parts",
 	/obj/item/circuitboard = "Engineering/Circuit boards",
@@ -154,7 +156,18 @@ GLOBAL_TABLE(wiki_catalogue_sources_table, GLOBAL_PROC_REF(build_wiki_catalogue_
 		for(var/path in P.contains)
 			if(ispath(path, /obj))
 				LAZYOR(packs_by_path[path], P)
-	return list("designs" = designs_by_path, "packs" = packs_by_path, "made" = wiki_catalogue_made_by(), "vended" = wiki_catalogue_vended(), "placed" = wiki_catalogue_placed())
+	return list("designs" = designs_by_path, "packs" = packs_by_path, "made" = wiki_catalogue_made_by(), "vended" = wiki_catalogue_vended(), "placed" = wiki_catalogue_placed(), "kinds" = wiki_catalogue_whole_kinds())
+
+/// Families catalogued whole, every named subtype, placed or not: exosuits, their equipment and cyborg modules are built or chosen, not found.
+GLOBAL_LIST_INIT(wiki_catalogue_whole_roots, list(/obj/mecha, /obj/item/mecha_parts/mecha_equipment, /obj/item/robot_module))
+
+/proc/wiki_catalogue_whole_kinds()
+	. = list()
+	for(var/root in GLOB.wiki_catalogue_whole_roots)
+		for(var/path in subtypesof(root))
+			var/obj/O = path
+			if(initial(O.name))
+				.[path] = TRUE
 
 /// A catalogued thing: a physical object a player meets (an item, a machine, a structure, a vehicle or an exosuit).
 /proc/wiki_catalogue_kind(path)
@@ -226,7 +239,7 @@ GLOBAL_LIST_INIT(wiki_station_map_dirs, list("maps/southern_cross/"))
 		paths[path] = TRUE
 	for(var/path in sources["packs"])
 		paths[path] = TRUE
-	for(var/key in list("made", "vended", "placed"))
+	for(var/key in list("made", "vended", "placed", "kinds"))
 		for(var/path in sources[key])
 			paths[path] = TRUE
 	for(var/path in paths)
@@ -307,6 +320,8 @@ GLOBAL_LIST_INIT(wiki_station_map_dirs, list("maps/southern_cross/"))
 			made |= text
 	if(length(made))
 		blocks += list(wiki_h("How it is made"), wiki_ul(made))
+	if(ispath(path, /obj/mecha))
+		blocks += wiki_mecha_build_blocks(path)
 	var/list/found = list()
 	if(sources["placed"][path])
 		found += "Placed on the station at the start of the shift."
@@ -416,6 +431,22 @@ GLOBAL_LIST_INIT(wiki_item_size_names, list("Tiny", "Small", "Normal", "Bulky", 
 		var/datum/type_trait/item_combat/combat = combat_of_type(path)
 		if(combat?.force > 0)
 			. += list(list("Hits for", "[combat.force] [combat.sharp || combat.edge ? "cutting" : "blunt"] damage"))
+	if(ispath(path, /obj/mecha))
+		var/obj/mecha/mech = path
+		. += list(list("Speed", "A step every [initial(mech.step_in) / 10] seconds, [initial(mech.step_energy_drain)] energy each"))
+	if(ispath(path, /obj/item/mecha_parts/mecha_equipment))
+		var/obj/item/mecha_parts/mecha_equipment/E = path
+		if(initial(E.equip_type))
+			. += list(list("Slot", capitalize(replacetext("[initial(E.equip_type)]", "_", " "))))
+		if(initial(E.energy_drain))
+			. += list(list("Energy per use", "[initial(E.energy_drain)]"))
+		if(initial(E.equip_cooldown))
+			. += list(list("Cooldown", "[initial(E.equip_cooldown) / 10] seconds"))
+	if(ispath(path, /obj/mecha) || ispath(path, /obj/structure) || ispath(path, /obj/machinery))
+		var/obj/O = path
+		var/datum/type_trait/atom_rules/rules = atom_rules_of_type(path)
+		if(rules?.uses_integrity && initial(O.max_integrity) > 0)
+			. += list(list("Integrity", "[initial(O.max_integrity)]"))
 	if(ispath(path, /obj/machinery))
 		var/datum/type_trait/power/power = power_of_type(path)
 		if(power && (power.idle || power.active))
@@ -487,3 +518,32 @@ GLOBAL_LIST_INIT(wiki_item_size_names, list("Tiny", "Small", "Normal", "Bulky", 
 		if(REGIME_INSTANT)
 			return from ? "Forms when [from] are mixed in a container." : null
 	return from ? "Made from [from]." : null
+
+/// An exosuit's construction, read from its blueprint (code/content/mecha/mecha_construction_paths.dm): the parts, then each step in order.
+/proc/wiki_mecha_build_blocks(mecha_type)
+	for(var/blueprint_type in subtypesof(/datum/mecha_blueprint))
+		var/datum/mecha_blueprint/B = mecha_blueprint_of(blueprint_type)
+		if(B?.result != mecha_type)
+			continue
+		var/list/parts = list()
+		for(var/part in B.mecha_parts)
+			var/obj/P = part
+			var/part_id = wiki_cat_id(part)
+			parts += wiki_title(part_id) ? wiki_ref(part_id, initial(P.name)) : "[initial(P.name)]"
+		var/list/steps = list("Attach [english_list(parts)] to the chassis frame, in any order.")
+		for(var/i in length(B.ladder) to 1 step -1)
+			var/list/row = B.ladder[i]
+			var/key = row["key"]
+			var/what
+			if(ispath(key, /obj/item/stack))
+				var/obj/item/stack/S = key
+				what = "[row["refund_amt"] || 1] [initial(S.name)]"
+			else if(ispath(key, /atom))
+				var/atom/A = key
+				what = "[initial(A.name)]"
+			else
+				what = "[key]"
+			var/text = replacetext(replacetext(row["fwd_self"], "{HOLDER}", "the chassis"), "You ", "")
+			steps += "[capitalize(what)]: [text]"
+		return list(wiki_h("How it is built"), wiki_ol(steps))
+	return list()

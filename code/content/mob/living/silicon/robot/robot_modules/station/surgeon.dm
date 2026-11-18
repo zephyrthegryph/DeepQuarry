@@ -3,6 +3,7 @@
 //However, given this seems as though it will remain a hot topic for as long as SS13 exists, we are going to leave the surgeon module here in the event that we split them. Again.
 //This also goes for the sprite datums. It's be a lot of work to 'clear' them of having surgery in their path just to have to split them again in 2-3 years.
 /obj/item/robot_module/robot/medical/surgeon
+	desc = "The surgeon cyborg module: surgical tools and anaesthesia."
 	name = "surgeon robot module"
 
 /obj/item/robot_module/robot/medical/surgeon/create_equipment(mob/living/silicon/robot/robot)

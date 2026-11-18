@@ -1,4 +1,5 @@
 /obj/structure/ladder_assembly
+	desc = "An unfinished ladder."
 	name = "ladder assembly"
 	icon = 'icons/obj/structures_vr.dmi'
 	icon_state = "ladder00"

@@ -2,6 +2,7 @@
 #define MENU_RECORDS 2
 
 /obj/machinery/computer/cloning
+	desc = "The console that runs the cloning pod."
 	name = "cloning console"
 	icon = 'icons/obj/computer.dmi'
 	icon_keyboard = "med_key"

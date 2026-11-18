@@ -45,6 +45,7 @@
 // its area takes the window over, and the silicons' firewall (ailock) keeps them out. Its own work below: targeting and firing.
 
 /obj/machinery/porta_turret
+	desc = "A turret that shoots at whoever its controls tell it to."
 	name = "turret"
 	icon = 'icons/obj/turrets.dmi'
 	icon_state = "turret_cover_normal"
@@ -975,6 +976,7 @@ MSG_DEF_SELF(turret_frame/stuck_gun, "It is stuck to your hand, you cannot put i
 			spawns(/obj/item/stack/material/steel, 5)))
 
 /obj/machinery/porta_turret_construct
+	desc = "An unfinished turret."
 	name = "turret frame"
 	icon = 'icons/obj/turrets.dmi'
 	icon_state = "turret_frame"

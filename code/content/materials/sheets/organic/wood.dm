@@ -120,6 +120,7 @@ CAPABILITIES(/obj/item/stack/material/log)
 
 
 /obj/item/stack/material/stick
+	desc = "Wooden sticks."
 	name = MAT_WOODEN_STICK
 	icon_state = "sheet-stick"
 	default_type = MAT_WOODEN_STICK

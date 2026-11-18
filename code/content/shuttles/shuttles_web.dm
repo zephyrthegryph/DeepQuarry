@@ -460,6 +460,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 //A sensor for detecting air outside shuttles! Handy, that.
 /obj/machinery/shuttle_sensor
+	desc = "Reads the air outside a shuttle's door."
 	name = "environment sensor"
 	icon = 'icons/obj/airlock_machines.dmi'
 	icon_state = "airlock_sensor_standby"

@@ -3,6 +3,7 @@
 	channels = list(CHANNEL_SERVICE = 1)
 
 /obj/item/robot_module/robot/clerical/butler
+	desc = "The service cyborg module: drinks, food and hospitality."
 	name = "service robot module"
 
 /obj/item/robot_module/robot/clerical/butler/create_equipment(mob/living/silicon/robot/robot)

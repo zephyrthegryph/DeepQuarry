@@ -24,6 +24,7 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 #define BODY_SCAN_LIGHT_POWER 2
 
 /obj/machinery/bodyscanner
+	desc = "A scanner a patient lies in for a full scan of their body, read on its console."
 	locked = null
 	name = "Body Scanner"
 	icon = 'icons/obj/Cryogenic2.dmi'
@@ -259,6 +260,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 
 //Body Scan Console
 /obj/machinery/body_scanconsole
+	desc = "The console of the body scanner: it shows the scan of the patient lying in it."
 	name = "Body Scanner Console"
 	icon = 'icons/obj/Cryogenic2.dmi'
 	icon_state = "scanner_terminal_off"

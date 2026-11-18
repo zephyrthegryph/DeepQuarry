@@ -1,5 +1,6 @@
 #define FUSION_ROD_SHEET_AMT 15
 /obj/machinery/fusion_fuel_compressor
+	desc = "Compresses materials or reagents into fuel rods for the R-UST's injectors."
 	var/blitzprogress = 0
 	name = "fuel compressor"
 	icon = 'icons/obj/machines/power/fusion.dmi'

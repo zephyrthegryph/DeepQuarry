@@ -6,6 +6,7 @@
 
 /// The shared test subject with a settable vitality (flee tactics read it).
 /mob/living/simple_mob/combat_ai_tactics_subject
+	desc = "A test creature."
 	name = "combat AI tactics subject"
 	icon = 'icons/mob/animal.dmi'
 	icon_state = "tiger"

@@ -2,6 +2,7 @@
 // (the old "hardness" was integrity / 10; one hardness point is 10 integrity).
 
 /obj/structure/simple_door
+	desc = "A plain door that opens by hand."
 	name = "door"
 	density = TRUE
 	anchored = TRUE

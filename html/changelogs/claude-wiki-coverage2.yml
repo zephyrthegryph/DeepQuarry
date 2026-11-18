@@ -1,0 +1,7 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscadd: "Station Wiki: pages for every creature, cyborg module, exosuit and exosuit part; exosuit pages list their construction steps from the blueprint."
+  - rscadd: "Station Wiki: generated tables of fusion reactions, expedition contracts and pay, and alert levels; guides for security equipment and expeditions."
+  - spellcheck: "Manuals corrected for this station: Research and Development 101 rewritten for the research tree, the Diona and cyborg module chapters rewritten, cloning scan errors and biomass, Ripley armour (steel and plasteel), Tesla coil types, supermatter vent buttons."
+  - spellcheck: "Descriptions written for about a hundred objects and creatures that had none."

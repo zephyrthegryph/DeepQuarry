@@ -1,4 +1,5 @@
 /obj/item/robot_module/robot/miner
+	desc = "The mining cyborg module: drills, a satchel and meson vision."
 	staffing_role = DEPARTMENT_CARGO
 	name = "miner robot module"
 	channels = list(CHANNEL_SUPPLY = 1)

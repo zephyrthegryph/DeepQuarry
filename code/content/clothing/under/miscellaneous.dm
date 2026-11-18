@@ -247,6 +247,7 @@ CAPABILITIES(/obj/item/clothing/under/gladiator)
  */
 
 /obj/item/clothing/under/dress
+	desc = "A dress."
 
 CAPABILITIES(/obj/item/clothing/under/dress)
 	variants(nameof(variant), PROC_REF(own_variant_table)) // its own rows replace the parent family's

@@ -29,4 +29,5 @@
 // Referenced by cryopod/energy_ball iterators; presence-only checks. Keeping
 // as a stub avoids deleting consumer code blocks.
 /obj/machinery/gateway
+	desc = "A ring from an old gateway. It no longer opens anywhere."
 
