@@ -40,6 +40,8 @@ GLOBAL_REAL(SSvg, /datum/system/native)
 /// `register`/`unregister`: called from on_materialize()/on_dematerialize()
 /// (code/content/atom/atoms_movable.dm), not generated code.
 /datum/system/native/proc/register(atom/movable/mover)
+	if(QDELETED(mover))
+		stack_trace("SSvg.register(): a deleted [mover.type] was bound again; nothing would take it out of the entity table (a hard delete)")
 	if(!(mover in bound))
 		add_bound(mover)
 	var/slot = ((mover.vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
