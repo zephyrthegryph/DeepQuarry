@@ -296,7 +296,8 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `lease --wait`. A full suite takes at most `DQ_SLOTS_SUITE_MAX_WORLDS` test worlds (default 1 while others wait) so focused runs are not starved.
 - **Everything important lives in the repo; `E:/dq-cache` holds only disposable caches.** Never install a script, wrapper or config under
   `E:/dq-cache` (the old `E:/dq-cache/bin/dq_lane_pool` is gone for this reason): call `bash tools/dq_lane_pool.sh` from an up-to-date checkout.
-  Each copy runs as it is (nothing swaps in origin/master's), and the scripts share one lock protocol (`tools/lib/dq_lock.sh`) that an
+  Exception: `tools/dq_lane_pool.sh` runs origin/master's copy when its own differs (extracted per blob hash to
+  `E:/dq-cache/lane-pool/canonical/<blob>/`, a disposable cache that cannot go stale), so an old checkout never hands out a reserved slot. The scripts share one lock protocol (`tools/lib/dq_lock.sh`) that an
   older copy still respects.
 - **Tests clean their scratch; caches are capped.** A Rust test that needs a store or scratch directory takes it from
   `tools/dmb/shared/test_scratch.rs` (`crate::test_scratch::root()` / `dir(label)`: a per-process `run-<pid>-<ms>` directory removed at process
