@@ -48,6 +48,15 @@ fx() { # <section> <pool size>: a scratch origin + repo + pool for one section; 
 	export DQ_LANE_POOL_NO_FETCH=1   # tests only: no git fetch per pool call, origin is the local bare repository above
 	export DQ_LANE_POOL_PROCS_CMD="echo no processes"   # never spawn powershell (seconds per call) in the fixtures
 	export DQ_LANE_POOL_RESERVED=""   # the sections below exercise every slot; sec_reserved sets its own reservation
+	real_state_guard
+}
+real_state_guard() { # refuse to run unless every pool path is inside this test's own temp root (never the real E:/dq-cache/lane-pool or E:/projects/dq-wt)
+	local v n
+	for v in DQ_LANE_POOL_STATE DQ_LANE_POOL_DIR DQ_LANE_POOL_REPO DQ_DMBC_DAEMON_DIR; do
+		n="${!v:-}"; n="${n//\\//}"; n="${n,,}"
+		case "$n" in "${tmp,,}"/*) ;; *) echo "FAIL: $v=${!v:-} is outside the test's temp root $tmp: refusing to run against real state"; exit 1 ;; esac
+		case "$n" in *dq-cache/lane-pool*|e:/projects/dq-wt*|/e/projects/dq-wt*) echo "FAIL: $v points at real lane-pool state ($n): refusing"; exit 1 ;; esac
+	done
 }
 g() { git -C "$b/repo" "$@"; }
 poolx() { bash "$b/repo/tools/dq_lane_pool.sh" "$@"; }   # a real process, as the lanes run it: waiters (their ticket carries the process id) and the entry-point check
