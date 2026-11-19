@@ -22,7 +22,7 @@ export const BanPanel = (props) => {
   } = data;
 
   return (
-    <Window width={1200} height={800} theme="admin">
+    <Window width={1200} height={800}>
       <Window.Content>
         <Stack vertical fill>
           <Stack.Item basis="30%">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Stack, Table } from 'tgui-core/components';
+import { EmptyState } from './common/EmptyState';
 import type {
   PlayerNotesActions,
   PlayerNotesData,
@@ -71,6 +72,9 @@ export const PlayerNotes = (props) => {
             <Stack.Divider />
             <Stack.Item grow>
               <Section fill scrollable>
+                {ckeys.length === 0 && (
+                  <EmptyState>No players have notes on this page.</EmptyState>
+                )}
                 <Table>
                   {ckeys.map((ckey) => (
                     <Table.Row key={ckey.name}>

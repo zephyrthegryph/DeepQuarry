@@ -558,7 +558,8 @@ const Screen18 = (props: { data: Data; act: ActFn }) => {
 
 export const AdminNewscaster = () => {
   const { data, act } = useBackend<Data, AdminNewscasterActions>();
-  const s = data.screen;
+  // Before its first screen arrives (or for an unknown one) it shows the main menu, not an empty window.
+  const s = data.screen ?? 0;
   return (
     <Window width={680} height={680} title="Admin Newscaster">
       <Window.Content scrollable>

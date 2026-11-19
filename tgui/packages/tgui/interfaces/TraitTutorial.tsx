@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack, Tabs } from 'tgui-core/components';
 import { sanitizeText } from '../sanitize';
+import { EmptyState } from './common/EmptyState';
 import type {
   TraitTutorialActions,
   TraitTutorialData,
@@ -31,6 +32,7 @@ export const TraitSelection = (props) => {
     <Stack>
       <Stack.Item shrink>
         <Section title="Trait Selection">
+          {names.length === 0 && <EmptyState>No traits to explain.</EmptyState>}
           <Tabs vertical>
             {names.map((name) => (
               <Tabs.Tab

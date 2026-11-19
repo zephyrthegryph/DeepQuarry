@@ -1,5 +1,5 @@
 import { useBackend } from 'tgui/backend';
-import { Button, NoticeBox, Stack } from 'tgui-core/components';
+import { Box, Button, NoticeBox, Stack } from 'tgui-core/components';
 
 export const FunForYouTab = (props) => {
   const { act } = useBackend();
@@ -12,18 +12,16 @@ export const FunForYouTab = (props) => {
             <NoticeBox danger mb={0} width={19.6}>
             </NoticeBox>
             */}
-            <NoticeBox width={19.6} mb={0}>
-              Your admin button here, coder!
-            </NoticeBox>
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box width={19.6} mb={0} />
           </Stack.Item>
           <Stack.Item>
             {/*
             <NoticeBox danger width={19.6} mb={0}>
             </NoticeBox>
             */}
-            <NoticeBox width={19.6} mb={0}>
-              Your admin button here, coder!
-            </NoticeBox>
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box width={19.6} mb={0} />
           </Stack.Item>
         </Stack>
       </Stack.Item>
@@ -64,7 +62,8 @@ export const FunForYouTab = (props) => {
         <NoticeBox danger mb={0}>
         </NoticeBox>
         */}
-        <NoticeBox mb={0}>Your admin button here, coder!</NoticeBox>
+        {/* An unused slot: kept empty so the grid stays aligned. */}
+        <Box mb={0} />
       </Stack.Item>
       <Stack.Item>
         <NoticeBox danger mb={0}>
@@ -87,18 +86,16 @@ export const FunForYouTab = (props) => {
             <NoticeBox danger width={19.6} mb={0}>
             </NoticeBox>
             */}
-            <NoticeBox width={19.6} mb={0}>
-              Your admin button here, coder!
-            </NoticeBox>
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box width={19.6} mb={0} />
           </Stack.Item>
           <Stack.Item>
             {/*
             <NoticeBox info width={19.6} mb={0}>
             </NoticeBox>
             */}
-            <NoticeBox width={19.6} mb={0}>
-              Your admin button here, coder!
-            </NoticeBox>
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box width={19.6} mb={0} />
           </Stack.Item>
         </Stack>
       </Stack.Item>
@@ -109,18 +106,16 @@ export const FunForYouTab = (props) => {
             <NoticeBox danger width={19.6} mb={0}>
             </NoticeBox>
             */}
-            <NoticeBox width={19.6} mb={0}>
-              Your admin button here, coder!
-            </NoticeBox>
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box width={19.6} mb={0} />
           </Stack.Item>
           <Stack.Item>
             {/*
             <NoticeBox info width={19.6} mb={0}>
             </NoticeBox>
             */}
-            <NoticeBox width={19.6} mb={0}>
-              Your admin button here, coder!
-            </NoticeBox>
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box width={19.6} mb={0} />
           </Stack.Item>
         </Stack>
       </Stack.Item>
@@ -152,14 +147,12 @@ export const FunForYouTab = (props) => {
       </Stack.Item>
       <Stack>
         <Stack.Item>
-          <NoticeBox width={19.6} mb={0}>
-            Your admin button here, coder!
-          </NoticeBox>
+          {/* An unused slot: kept empty so the grid stays aligned. */}
+          <Box width={19.6} mb={0} />
         </Stack.Item>
         <Stack.Item>
-          <NoticeBox width={19.6} mb={0}>
-            Your admin button here, coder!
-          </NoticeBox>
+          {/* An unused slot: kept empty so the grid stays aligned. */}
+          <Box width={19.6} mb={0} />
         </Stack.Item>
       </Stack>
     </Stack>

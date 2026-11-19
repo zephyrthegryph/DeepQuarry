@@ -12,6 +12,7 @@ import {
 import { KEY } from 'tgui-core/keys';
 import { round, toFixed } from 'tgui-core/math';
 import { sanitizeAdminHtml } from '../sanitize';
+import { EmptyState } from './common/EmptyState';
 import type { TicketActions, TicketData } from './generated/Ticket';
 
 const Level = {
@@ -163,6 +164,11 @@ export const Ticket = (props) => {
             <Section scrollable ref={messagesEndRef} fill title="Log">
               <Stack fill direction="column">
                 <Stack.Item grow>
+                  {Object.keys(log ?? {}).length === 0 && (
+                    <EmptyState>
+                      Nothing has been said in this ticket yet.
+                    </EmptyState>
+                  )}
                   {Object.keys(log ?? {})
                     .slice(0)
                     .map((L, i) => (

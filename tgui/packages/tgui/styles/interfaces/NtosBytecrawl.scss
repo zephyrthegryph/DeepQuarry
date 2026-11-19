@@ -11,7 +11,9 @@ $line-height: 1.5;
 
 // ── Outer container ───────────────────────────────────────────────────────────
 .NtosByteCrawl__container {
+  // The terminal's design width (the window fits to it), never wider than the window (a narrow window crops nothing).
   width: 720px;
+  max-width: 100%;
   height: 540px;
   background: $bg;
   border-radius: 8px;
@@ -102,6 +104,8 @@ $line-height: 1.5;
 
 // ── Each output line (colour is set inline per-line) ─────────────────────────
 .NtosByteCrawl__line {
+  // A long rule or banner line wraps anywhere on a narrow terminal instead of pushing it wider.
+  overflow-wrap: anywhere;
   // Base glow; exact color + shadow overridden by inline style per-line
   text-shadow: 0 0 5px rgba(51, 255, 51, 0.6);
 }
@@ -128,6 +132,8 @@ $line-height: 1.5;
 // ── Text input field ──────────────────────────────────────────────────────────
 .NtosByteCrawl__input {
   flex: 1;
+  // A text input's default minimum (its size attribute) would hold the row wider than a narrow window.
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;

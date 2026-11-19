@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - qol: "Admin panels (ban, secrets, spawn, whitelist) use the station console look; ban rows are muted tints, the secrets panel lost its placeholder buttons; the admin newscaster, unban and permissions panels no longer open blank."
+  - qol: "Empty player logs, retail transactions, tickets, trait lists and vore imports say so."
+  - qol: "Windows squeezed narrower than their content stack their side-by-side columns instead of running off the edge."

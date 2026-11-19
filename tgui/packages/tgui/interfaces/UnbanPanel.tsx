@@ -8,7 +8,9 @@ import type { UnbanPanelActions, UnbanPanelData } from './generated/UnbanPanel';
 
 export const UnbanPanel = () => {
   const { data, act } = useBackend<UnbanPanelData, UnbanPanelActions>();
-  const { bans = [], count } = data;
+  const { bans = [] } = data;
+  // The server counts the bans; before its first update the list itself does.
+  const count = data.count ?? bans.length;
   return (
     <Window width={760} height={620} title={`Unban (${count})`}>
       <Window.Content scrollable>
