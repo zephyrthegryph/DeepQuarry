@@ -41,7 +41,25 @@ GLOBAL_TABLE(wiki_med_reagents_table, GLOBAL_PROC_REF(build_wiki_med_reagents))
 GLOBAL_TABLE(wiki_used_in_table, GLOBAL_PROC_REF(build_wiki_used_in))
 
 /proc/build_wiki_used_in()
-	return _dq_build_used_in_index()
+	var/list/out = list()
+	for(var/datum/xform/CR as anything in GLOB.xform_rules)
+		if(CR.medium != MEDIUM_REAGENTS || (!CR.route_id && !ispath(CR.rule_type, /transformation/chem)))
+			continue
+		if((CR.wiki & WIKI_SPOILER) || !CR.result || wiki_xform_is_clash(CR))
+			continue
+		for(var/id in CR.reagent_takes)
+			LAZYINITLIST(out[id])
+			out[id] |= list(list("id" = CR.result, "name" = dq_reagent_display_name(CR.result)))
+		for(var/id in CR.reagent_catalysts)
+			LAZYINITLIST(out[id])
+			out[id] |= list(list("id" = CR.result, "name" = dq_reagent_display_name(CR.result)))
+	return out
+
+/// A clash: a generated route where two incompatible reagents meet and spoil into residue (code/domains/world_model/reagents/blocks/routes.dm).
+/// It is no process anyone runs on purpose, so the wiki does not list it as a recipe or a use.
+/proc/wiki_xform_is_clash(datum/xform/CR)
+	var/datum/chem_route/route = chem_route_of(CR)
+	return route && !chem_process_of(route.process_id)
 
 /// An inline link to a reagent, or its plain name when it has no article.
 /proc/wiki_chem_ref(reagent_id)
@@ -195,9 +213,18 @@ GLOBAL_TABLE(wiki_used_in_table, GLOBAL_PROC_REF(build_wiki_used_in))
 			list("Tags", english_list(structure["tags"])),
 		)))
 	var/list/recipes = entry ? entry["recipe"] : _dq_reagent_recipe(reagent_id)
+	var/clashes = 0
+	var/residues = 0
 	if(length(recipes))
 		var/list/lines = list()
 		for(var/list/rcp in recipes)
+			if(rcp["process"] == "Clash")
+				clashes++
+				continue
+			// A generated route that makes this only as a by-product of making something else is not a way to make it.
+			if(rcp["process"] && !rcp["product"])
+				residues++
+				continue
 			var/list/takes = list()
 			for(var/list/ing in rcp["required"])
 				takes += "[ing["amount"]]u [wiki_chem_ref(ing["id"])]"
@@ -221,7 +248,12 @@ GLOBAL_TABLE(wiki_used_in_table, GLOBAL_PROC_REF(build_wiki_used_in))
 			if(length(inhibitors))
 				notes += "stopped by [english_list(inhibitors)]"
 			lines += "[jointext(takes, " + ")] makes [rcp["result_amount"]]u[length(notes) ? " ([jointext(notes, "; ")])" : ""]."
-		blocks += list(wiki_h("How it is made"), wiki_ul(lines))
+		if(residues)
+			lines += "It is also left behind as a by-product by [residues] process route\s that make other chemicals."
+		if(clashes)
+			lines += "It also forms when two incompatible chemicals meet in one container ([clashes] such pairs): a spoiled mixture, not a recipe."
+		if(length(lines))
+			blocks += list(wiki_h("How it is made"), wiki_ul(lines))
 	var/list/routes = entry ? entry["acted_on"] : _dq_reagent_routes_from(reagent_id)
 	if(length(routes))
 		var/list/lines = list()

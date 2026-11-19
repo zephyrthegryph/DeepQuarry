@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - spellcheck: "Food for Dummies 2 and How to Alcohol match the real recipes (buns, meatballs, queso burrito, nachos, gin and tonic, Negroni, Long Island, cafe latte, grenadine, Driver's Punch, Screaming Viking); old off-station recipe links point to the station wiki instead."
+  - qol: "Station Wiki: chemical pages no longer list hundreds of spoiled-mixture and residue routes as recipes; they say how many there are."

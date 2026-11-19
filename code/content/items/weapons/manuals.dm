@@ -898,7 +898,7 @@
 				Mix vodka and Kahlua into a glass.
 
 				<h3>Cafe Latte:</h3>
-				Mix milk and coffee into a glass.
+				Mix milk and flat white coffee into a glass.
 
 				<h3>Classic Martini:</h3>
 				Mix vermouth and gin into a glass.
@@ -1281,7 +1281,7 @@ CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 		<h3>Tofu Creation:</h3>
 		Same as cheese, but with Soymilk!
 		<h3>Meatball Creation:</h3>
-		Mix Animal protein and Flour, to create Animal Protein grind down some Meat in the grinder, then remove the beaker and add Flour.
+		Mix 3 units of Animal Protein and 5 units of Flour with Universal Enzyme in the beaker (the enzyme is not used up): three meatballs pop out. To get Animal Protein, grind some Meat in the grinder.
 		<h3>Meat Uses:</h3>
 		Full pieces of Meat can be cut for Raw Cutlets, which can be cut once more to make Raw Bacon. Though be sure not to cut all of your meat, plenty of recipes need a full uncut piece!
 				<h2>Part 2: Putting It All Together</h2>
@@ -1289,15 +1289,15 @@ CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 		<h4>Warning: recipes are upscale able, so you can add multiple of the same ingredients in the same ratio to cook lots of food at once!</h4>
 		<h4>Warning: do not try and cook multiple recipes at once as it is very likely it will default to a different recipe or will just cook the one and just "grill, bake, etc." the rest of the ingredients.</h4>
 		<h2>Burgers:</h2>
-		<b>The cornerstone of basic food:</b> to prepare these, microwave a piece of Dough to get a bun and grab a piece of Meat. Open the Grill, remove the Rack, and add both Bun and Meat to the Rack. Then, place the Rack back into the Grill to cook and remove it once finished. If you feel fancy, you can add cheese afterwards for a cheeseburger.
+		<b>The cornerstone of basic food:</b> to prepare these, bake a piece of Dough with 1 unit of Salt in the Oven to get three buns, and grab a piece of Meat. Open the Grill, remove the Rack, and add both Bun and Meat to the Rack. Then, place the Rack back into the Grill to cook and remove it once finished. If you feel fancy, you can add cheese afterwards for a cheeseburger.
 		<h2>Meat Pie:</h2>
 		Flat Dough and Meat in an Oven Pan, same way you use the Grill; take the Pan out, put the ingredients in, and place it back to cook. Simple, but very good looking and tasty!
 		<h2>Burritos:</h2>
-		Burritos: A personal favorite due to flexibility of options: Use a Tortilla as a base for all of these. For a Chili one, add 2 Meatballs and 1 Space Spice (found near the Flour) to the Microwave; very simple and filling! Add a Cheese Wedge instead of the spice to make a queso burrito. For a Breakfast Wrap, add a whole Egg, Cooked Bacon (Raw Bacon cooked in the Microwave), and Cheese in with the Tortilla. For Vegan Burritos, just cook a Tortilla and Tofu together in the Microwave.
+		Burritos: A personal favorite due to flexibility of options: Use a Tortilla as a base for all of these. For a Chili one, add 2 Meatballs and 1 Space Spice (found near the Flour) to the Microwave; very simple and filling! For a queso burrito, use two Cheese Wedges and a Soybean from Botany with the Tortilla instead. For a Breakfast Wrap, add a whole Egg, Cooked Bacon (Raw Bacon cooked in the Microwave), and Cheese in with the Tortilla. For Vegan Burritos, just cook a Tortilla and Tofu together in the Microwave.
 		<h2>Tacos:</h2>
 		Use a tortilla then 1 cooked Cutlet, and a Cheese Wedge. Very easy to mass produce, great in a pinch!
 		<h2>Cheesy Nachos:</h2>
-		Tortilla, Cheese and 1 unit of Salt in the microwave, the perfect Finger Food!
+		First make chips: a Tortilla and 1 unit of Salt in the Microwave. Then Microwave the chips with a Cheese Wedge. The perfect Finger Food!
 		<h2>Spaghetti:</h2>
 		Without Tomato's from Botany it's not going to be the flashiest, but one can make Boiled Spaghetti with Spaghetti and Water in the Microwave. Kitsune Udon can be made with Spaghetti, Egg Yolk (crack egg in beaker then add to microwave), and Tofu. Spaghetti and Meatballs can be made by doing the Boiled Spaghetti Recipe and adding 2 Meatballs; adding 4 Meatballs into the initial mix makes Spesslaw. Lastly, Spaghetti, Milk, and Cheese in the Oven makes Macaroni and Cheese.
 		<h2>Steak:</h2>
@@ -1309,7 +1309,7 @@ CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 		<h2>Part 3: Final Notes</h2>
 		<p>These recipes only scratch the surface, but it's all things that can be done with what is pre-provided. If you have a partner in Botany, feel free to request more meat or any other supplies to try new recipes!</p>
 		<p>The Fryer, CondiMaster3000, and other nearby devices have been deliberately left out of this guide; as you get more advanced feel free to experiment with them, though be careful with the Fryer especially as it's the #1 source of fires for learning chefs, myself included. The one other machine that is worth understanding is the <b>Gibber</b> in the freezer room. If you are delivered fish or such they can be gibbed for extra Meat, though you may need to butcher the parts with a Knife afterwards to get usable Meat! Though if the meat is purple or comes from Koi or Spacecarp <b>do not directly serve it to crew!</b> It contains toxins that are better taken care of by other departments. </p>
-		<p>Some wonderful websites share recipes and tips for learning chefs on the Extranet! Look on your PDA or preferred device at https://wiki.vore-station.net/Guide_to_Food_and_Drink and https://vore-station.net/infodump/recipes_food.html for further tips, though do note the latter is more accurate in regard to recipes. Happy cooking!</p>
+		<p>Some wonderful websites share recipes and tips for learning chefs on the Extranet! Every dish has a page in the station wiki, with its appliance, ingredients and cooking time. Happy cooking!</p>
 		<h4>Pro Tips:</h4>
 		<h4>((The Food Bags in the Chef's Closet are great for moving a lot of food at once!))</h4>
 		<h4>((Stay out of the Freezer if you're Cold Blooded!))</h4>
@@ -1356,7 +1356,7 @@ CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 				<h3>Baloon:</h3>
 				1 part Cream, 1 part Miss Blue Curacao
 				<h3>Gin and Tonic:</h3>
-				1 part Gin, 1 part Tonic
+				2 parts Gin, 1 part Tonic Water
 				<h3>Appletini:</h3>
 				2 parts Apple Juice, 1 part Vodka
 				<h1>Medium Alcohol</h1>
@@ -1375,7 +1375,7 @@ CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 				<h3>Cuba Libre:</h3>
 				3 parts Rum and Cola, 1 part Lime Juice.
 				<h3>Negroni Sbagliato:</h3>
-				1 part Wine, 1 part Bermouth, 1 part Soda Water
+				1 part Red Wine, 1 part Vermouth, 1 part Soda Water
 				<h3>Slow Comfortable Screw Against the Wall (Stop giggling!):</h3>
 				3 parts Screwdriver, 1 part Rum, 1 part Whiskey, 1 part Gin
 				<h3>Space Bulldog:</h3>
@@ -1451,7 +1451,7 @@ CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 				<h3>B-52:</h3>
 				1 part Irish Cream, 1 part Cognac, 1 part Kahlua
 				<h3>Long Island Iced Tea:</h3>
-				3 part Cuba Libre, 1 part Vodka, 1 part Gin, 1 part Tequila
+				3 parts Rum and Cola, 1 part Vodka, 1 part Gin, 1 part Tequila
 				<h3>Vodka Martini:</h3>
 				2 parts Vodka, 1 part Vermouth
 				<h3>Changeling Sting:</h3>
@@ -1467,8 +1467,7 @@ CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 				<h3>Euphoria:</h3>
 				1 part Special Blend Whiskey, 2 part Cognac
 				<h3>Screaming Viking:</h3>
-				Vodka, Vermouth, Lime Juice, Rum, Gin, and Tonic
-				<h6>Good Luck figuring out the order and ratio :)</h6>
+				2 parts Classic Martini, 2 parts Vodka and Tonic, 1 part Lime Juice, 1 part Rum
 				<h3>Fire Punch:</h3>
 				1 part Sugar, 2 part Rum <b>(Technically the strongest thing you can make, but it metabolizes slowish so it's slightly less dangerous than some others)</b>
 
@@ -1484,15 +1483,15 @@ CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 				<h3>Brown Star:</h3>
 				2 parts Orange Juice, 1 part Space Cola
 				<h3>Cafe Latte:</h3>
-				1 part Coffee, 1 part Milk
+				1 part Flat White Coffee, 1 part Milk
 				<h3>Coffee Milkshake:</h3>
 				1 part Milkshake, 1 part Coffee
 				<h3>Driver's Punch:</h3>
-				1 part Appleade, 1 part Orange Juice, 1 part Mint, 1 part Soda Water
+				2 parts Appleade, 1 part Orange Juice, 1 part Mint, 1 part Soda Water
 				<h3>Graveyard:</h3>
 				All 4 Sodas in your Soft Drink Dispenser in equal parts, haha it go woosh.
 				<h3>Grenadine Syrup:</h3>
-				10 parts berry juice, 5 parts Universal Enzyme <b>(Get Enzyme from Kitchen)</b>
+				10 parts Berry Juice with 5 parts Universal Enzyme added (the enzyme is not used up) <b>(Get Enzyme from Kitchen)</b>
 				<h3>Iced Coffee:</h3>
 				1 part Ice, 2 parts Coffee
 				<h3>Kira Special:</h3>
@@ -1505,7 +1504,7 @@ CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 				1 part Cream, 2 parts Ice, 2 parts Milk
 				<h3>Sweet Tea:</h3>
 				2 parts Ice Tea, 1 part Sugar
-				<p><b>Note:</b> There are many more drinks you can mix, these are just ones using resources you will almost always have available, the Extranet has good websites to check found here: https://wiki.vore-station.net/Guide_to_Food_and_Drink ass well as here: https://vore-station.net/infodump/recipes_drinks.html
+				<p><b>Note:</b> There are many more drinks you can mix, these are just ones using resources you will almost always have available, every drink has its own page and recipe in the station wiki
 
 				<h1>Part 1: The Basics</h1>
 				<p>First and foremost, making drinks is about understanding measurements. Drinks are measured in units a pint is 60 units, a half pint 30, and ratios of those units can create certain drinks.</p>
