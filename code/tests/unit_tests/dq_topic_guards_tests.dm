@@ -125,14 +125,8 @@
 	fail = refused_without_question(perform(actor, holder, "c_mode"), /datum/msg/admin_topic/round_started, "picking a mode once the round has started")
 	TEST_ASSERT_NULL(fail, fail)
 	set_var(SSticker, "mode", null)
-	set_global("master_mode", "extended")
-	fail = refused_without_question(perform(actor, holder, "f_secret"), /datum/msg/admin_topic/not_secret, "forcing a secret round when it is not")
-	TEST_ASSERT_NULL(fail, fail)
 	var/mob/living/carbon/human/unreachable = allocate(/mob/living/carbon/human, T)
 	fail = refused_without_question(perform(actor, holder, "CentComReply", list("CentComReply" = unreachable)), /datum/msg/admin_topic/centcom_unreachable, "a CentCom reply to someone with no radio")
-	TEST_ASSERT_NULL(fail, fail)
-	set_global("master_mode", "secret")
-	fail = asks_question(perform(actor, holder, "f_secret"), made, "forcing a secret round when it is secret")
 	TEST_ASSERT_NULL(fail, fail)
 	step = "newscaster"
 	// The newscaster: a channel or Wanted draft that cannot be sent is refused before the confirmation.

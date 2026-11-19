@@ -271,18 +271,8 @@
 /// Ghosts that turn on Antagovision cannot rejoin the round.
 /datum/config_entry/flag/antag_hud_restricted
 
-/// relative probability of each mode
-/datum/config_entry/keyed_list/probabilities
-	key_mode = KEY_MODE_TEXT
-	value_mode = VALUE_MODE_NUM
-
 /// Overrides for how many players readied up a gamemode needs to start.
 /datum/config_entry/keyed_list/player_requirements
-	key_mode = KEY_MODE_TEXT
-	value_mode = VALUE_MODE_NUM
-
-/// Same as above, but for the secret gamemode.
-/datum/config_entry/keyed_list/player_requirements_secret
 	key_mode = KEY_MODE_TEXT
 	value_mode = VALUE_MODE_NUM
 

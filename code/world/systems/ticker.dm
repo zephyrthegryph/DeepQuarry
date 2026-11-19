@@ -21,7 +21,6 @@ SYSTEM_DEF(ticker)
 	/// Boolean to track and check if our subsystem setup is done.
 	var/setup_done = FALSE
 
-	var/hide_mode = FALSE
 	var/datum/game_mode/mode = null
 
 	var/list/datum/mind/minds = list() //The characters in the game. Used for objective tracking.
@@ -310,24 +309,7 @@ SYSTEM_DEF(ticker)
 // Formerly the first half of setup() - The part that chooses the game mode.
 // Returns 0 if failed to pick a mode, otherwise 1
 /datum/system/ticker/proc/setup_choose_gamemode()
-	//Create and announce mode
-	if(GLOB.master_mode == "secret")
-		src.hide_mode = TRUE
-
-	var/list/runnable_modes = config.get_runnable_modes()
-	if((GLOB.master_mode == "random") || (GLOB.master_mode == "secret"))
-		if(!length(runnable_modes))
-			to_chat(world, span_filter_system(span_bold("Unable to choose playable game mode.") + " Reverting to pregame lobby."))
-			return 0
-		if(GLOB.secret_force_mode != "secret")
-			rel_set(src, nameof(mode), config.pick_mode(GLOB.secret_force_mode))
-		if(!src.mode)
-			var/list/weighted_modes = list()
-			for(var/datum/game_mode/GM in runnable_modes)
-				weighted_modes[GM.config_tag] = CONFIG_GET(keyed_list/probabilities)[GM.config_tag]
-			rel_set(src, nameof(mode), config.gamemode_cache[pickweight(weighted_modes)])
-	else
-		rel_set(src, nameof(mode), config.pick_mode(GLOB.master_mode))
+	rel_set(src, nameof(mode), config.pick_mode(GLOB.master_mode))
 
 	if(!src.mode)
 		to_chat(world, span_boldannounce("Serious error in mode setup! Reverting to pregame lobby.")) //Uses setup instead of set up due to computational context.
@@ -345,17 +327,7 @@ SYSTEM_DEF(ticker)
 		SSjob.reset_occupations()
 		return 0
 
-	if(hide_mode)
-		to_chat(world, span_world(span_notice("The current game mode is - Secret!")))
-		if(length(runnable_modes))
-			var/list/tmpmodes = list()
-			for (var/datum/game_mode/M in runnable_modes)
-				tmpmodes+=M.name
-			tmpmodes = sortList(tmpmodes)
-			if(length(tmpmodes))
-				to_chat(world, span_filter_system(span_bold("Possibilities:") + " [english_list(tmpmodes, and_text= "; ", comma_text = "; ")]"))
-	else
-		src.mode.announce()
+	src.mode.announce()
 	return 1
 
 // Called during GAME_STATE_FINISHED (RUNLEVEL_POSTGAME)

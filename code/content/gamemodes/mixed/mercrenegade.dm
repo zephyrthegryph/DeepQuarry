@@ -4,7 +4,6 @@
 	extended_round_description = "Mercenaries and renegades spawn during this round."
 	config_tag = "mercren"
 	required_players = 16			//What could possibly go wrong?
-	required_players_secret = 15
 	required_enemies = 8
 	end_on_antag_death = 0
 	antag_tags = list(MODE_MERCENARY, MODE_RENEGADE)

@@ -866,6 +866,8 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 	if(Lines.len)
 		if(Lines[1])
 			GLOB.master_mode = Lines[1]
+			if(GLOB.master_mode == "secret" || GLOB.master_mode == "random") // removed modes saved by an older build
+				GLOB.master_mode = "extended"
 			log_world("## MISC Saved mode is '[GLOB.master_mode]'")
 
 /world/proc/save_mode(the_mode)
