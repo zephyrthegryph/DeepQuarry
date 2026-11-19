@@ -52,6 +52,35 @@
 # Exit status: 0 ok, 1 error, 3 pool full, 4 a queued lease was cancelled (stuck: 1 when any lease is stuck).
 set -uo pipefail
 _dq_dir="${BASH_SOURCE[0]%/*}"; [ "$_dq_dir" = "${BASH_SOURCE[0]}" ] && _dq_dir=.   # no dirname fork: a fork costs a few hundred ms on a loaded host
+# One rule set for every caller. Agents run `bash tools/dq_lane_pool.sh` from whatever checkout they stand in, and an old worktree carries an
+# old copy of this script (one from before the reserved slots handed pool-1 out on 2026-11-18). So a copy that differs from origin/master's
+# runs origin/master's instead: it is extracted (with the two files it sources) to $STATE_DIR/canonical/<blob>/ and exec'd, with this checkout
+# as the repository. DQ_LANE_POOL_NO_DELEGATE=1 runs this copy as it is (only for testing a change to this script by hand).
+if [ "${DQ_LANE_POOL_NO_DELEGATE:-}" != 1 ] && [ "${DQ_LANE_POOL_DELEGATED:-}" != 1 ]; then
+	_dq_self="${BASH_SOURCE[0]}"; _dq_repo="${DQ_LANE_POOL_REPO:-$_dq_dir/..}"
+	_dq_mb="$(git -C "$_dq_repo" rev-parse -q --verify origin/master:tools/dq_lane_pool.sh 2>/dev/null)" || _dq_mb=""
+	if [ -n "$_dq_mb" ] && [ "$(git hash-object "$_dq_self" 2>/dev/null)" != "$_dq_mb" ]; then
+		_dq_cdir="${DQ_LANE_POOL_STATE:-E:/dq-cache/lane-pool}/canonical/$_dq_mb"
+		if [ ! -f "$_dq_cdir/tools/dq_lane_pool.sh" ]; then
+			mkdir -p "$_dq_cdir/tools/lib.tmp$$"
+			git -C "$_dq_repo" show origin/master:tools/dq_git_safe.sh >"$_dq_cdir/tools/lib.tmp$$/dq_git_safe.sh" \
+				&& git -C "$_dq_repo" show origin/master:tools/lib/dq_lock.sh >"$_dq_cdir/tools/lib.tmp$$/dq_lock.sh" \
+				&& git -C "$_dq_repo" show origin/master:tools/dq_lane_pool.sh >"$_dq_cdir/tools/lib.tmp$$/dq_lane_pool.sh" \
+				&& mkdir -p "$_dq_cdir/tools/lib" \
+				&& mv -f "$_dq_cdir/tools/lib.tmp$$/dq_git_safe.sh" "$_dq_cdir/tools/dq_git_safe.sh" \
+				&& mv -f "$_dq_cdir/tools/lib.tmp$$/dq_lock.sh" "$_dq_cdir/tools/lib/dq_lock.sh" \
+				&& mv -f "$_dq_cdir/tools/lib.tmp$$/dq_lane_pool.sh" "$_dq_cdir/tools/dq_lane_pool.sh"   # last: its presence means the set is whole
+			rm -rf "$_dq_cdir/tools/lib.tmp$$"
+		fi
+		if [ -f "$_dq_cdir/tools/dq_lane_pool.sh" ]; then
+			_o="$PWD"; cd "$_dq_repo" && _dq_repo="$(pwd -W 2>/dev/null || pwd)"; cd "$_o"
+			echo "dq_lane_pool: this copy differs from origin/master's; running origin/master's" >&2
+			DQ_LANE_POOL_DELEGATED=1 DQ_LANE_POOL_REPO="$_dq_repo" exec bash "$_dq_cdir/tools/dq_lane_pool.sh" "$@"
+		fi
+		echo "dq_lane_pool: this copy differs from origin/master's and origin/master's could not be extracted; refusing (update this checkout)" >&2
+		exit 2
+	fi
+fi
 . "$_dq_dir/dq_git_safe.sh"
 
 POOL_SIZE="${DQ_LANE_POOL_SIZE:-3}"
@@ -243,6 +272,7 @@ size_cached() { # <path>: sets SZ (KB); a stale entry is refreshed by a detached
 # ---- release ----------------------------------------------------------------------------------------------------------------------
 release_slot() { # <slot> <force> <keep_outputs>
 	local i="$1" force="$2" keep="$3" wt branch
+	slot_reserved "$i" && { say "refusing to release reserved pool-$i"; return 1; }
 	wt="$POOL_DIR/pool-$i"
 	lease_get "$i" branch; branch="$LG"
 	if [ -d "$wt" ]; then
@@ -276,7 +306,7 @@ RECLAIM_IDLE_MIN="${DQ_LANE_POOL_RECLAIM_IDLE_MIN:-180}"
 STUCK_MIN="${DQ_LANE_POOL_STUCK_MIN:-30}"
 IDLE_FLAG_MIN="${DQ_LANE_POOL_IDLE_FLAG_MIN:-10}"
 NOTICE_DIR="$STATE_DIR/notices"
-SLOTS_SH="$_dq_dir/dq_machine_slots.sh"
+SLOTS_SH="$REPO/tools/dq_machine_slots.sh"   # the repository's copy: a delegated run (above) lives outside it
 
 # Status and stuck run on a loaded Windows host where every fork costs a few hundred ms, so the evaluation below is written with bash builtins
 # (EPOCHSECONDS, read, [[ =~ ]]) and a single batched stat (mt_prefetch). A command substitution is a fork too: the hot paths set variables.
@@ -329,7 +359,10 @@ ALL_SLOTS+=(light)
 # Reserved slots: held for one owner outside the pool (pool-1 and pool-c2 run Codex lanes, pool-light a standing session). They are never
 # leased, never reclaimed and never touched (no save of abandoned work, no move to master): the lease and reclaim paths skip them.
 # DQ_LANE_POOL_RESERVED is a space-separated list of slot ids (1, c2, light); the default is the user's reservation (2026-11-18).
-RESERVED_SLOTS=" ${DQ_LANE_POOL_RESERVED-1 c2 light} "
+# DQ_LANE_POOL_RESERVED ADDS to the default; an empty or shorter value never frees pool-1, pool-c2 or pool-light. Only the self-test's
+# scratch pools (DQ_LANE_POOL_NO_FETCH=1, a local bare origin) may replace the list, so they can exercise every slot.
+if [ "${DQ_LANE_POOL_NO_FETCH:-}" = 1 ] && [ -n "${DQ_LANE_POOL_RESERVED+x}" ]; then RESERVED_SLOTS=" ${DQ_LANE_POOL_RESERVED} "
+else RESERVED_SLOTS=" 1 c2 light ${DQ_LANE_POOL_RESERVED:-} "; fi
 slot_reserved() { [[ "$RESERVED_SLOTS" == *" $1 "* ]]; }
 
 slot_activity_set() { # <slot> <worktree>: sets ACT_V to epoch seconds of the newest change to the lease, HEAD, reflog or a lane log
@@ -482,6 +515,7 @@ slot_eval() {
 
 stuck_notice() { # <slot>: write or remove $STATE_DIR/notices/pool-N.stuck from the E_* of slot_eval
 	local i="$1" f="$NOTICE_DIR/pool-$1.stuck"
+	slot_reserved "$i" && return 0   # a reserved slot never gets a stuck notice
 	if [ "$E_STUCK" -eq 1 ]; then
 		[ -d "$NOTICE_DIR" ] || mkdir -p "$NOTICE_DIR" 2>/dev/null
 		{
@@ -668,6 +702,7 @@ lease_once() {
 	# A lane that already holds a slot gets it back.
 	for i in "${ALL_SLOTS[@]}"; do
 		[ -f "$STATE_DIR/pool-$i.lease" ] || continue
+		slot_reserved "$i" && continue   # never handed back, and its record is never dropped as stale
 		lease_get "$i" branch
 		if [ "$LG" = "$branch" ]; then
 			wt="$POOL_DIR/pool-$i"
@@ -703,6 +738,7 @@ lease_once() {
 		die "no usable slot: every free worktree is dirty or mid-merge ($skipped); clean or finish it by hand (nothing is cleaned for you)"
 	fi
 	i="$free"; wt="$POOL_DIR/pool-$i"
+	slot_reserved "$i" && { lock_drop; die "internal error: picked reserved pool-$i; refusing"; }
 	if [ ! -e "$wt/.git" ]; then
 		[ -z "$(ls -A "$wt" 2>/dev/null)" ] || { lock_drop; die "$wt exists and is not a worktree; move it away"; }
 		say "creating $wt (one-time checkout; later leases are a switch)"
@@ -765,6 +801,7 @@ cmd_release() {
 		if [ -n "$sphys" ] && [ "$sphys" = "$tphys" ]; then found="$i"; break; fi
 	done
 	[ -n "$found" ] || { lock_drop; die "no lease for '$target' (dq_lane_pool.sh status)"; }
+	slot_reserved "$found" && { lock_drop; die "pool-$found is reserved (DQ_LANE_POOL_RESERVED): the pool never releases or touches it; its owner manages it by hand"; }
 	release_slot "$found" "$force" "$keep"
 	local rc=$?
 	lock_drop
@@ -848,6 +885,7 @@ cmd_stuck() { # [--quiet]: list stuck leases; exit 1 when there are any
 	usage_start; mt_prefetch
 	for i in "${ALL_SLOTS[@]}"; do
 		if [ ! -f "$STATE_DIR/pool-$i.lease" ]; then [ -e "$NOTICE_DIR/pool-$i.stuck" ] && rm -f "$NOTICE_DIR/pool-$i.stuck" 2>/dev/null; continue; fi
+		slot_reserved "$i" && continue   # its owner's: never reported as stuck or reclaimable
 		wt="$POOL_DIR/pool-$i"
 		slot_eval "$i"; stuck_notice "$i"
 		[ "$E_STUCK" -eq 1 ] || continue

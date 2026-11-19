@@ -7,7 +7,9 @@
 # Cases: lease creates pool-1 and a branch on origin/master; a second lane gets pool-2; a third is refused (exit 3, "POOL FULL");
 # leasing a held branch returns its slot; release refuses a dirty tree; release keeps icons/gen, data/analyze-cache and node_modules,
 # deletes build outputs, detaches at origin/master and keeps an unmerged branch; a finished (merged) lane is reclaimed by the next
-# lease; a dirty free slot is skipped, not cleaned; waiters queue, sort by class and cancel; stuck leases are reported; the suite cap.
+# lease; a dirty free slot is skipped, not cleaned; waiters queue, sort by class and cancel; stuck leases are reported; the suite cap;
+# reserved slots (pool-1, pool-c2, pool-light by default) are never leased, handed back, reclaimed, released, reported stuck or freed by an empty
+# DQ_LANE_POOL_RESERVED, and a stale copy of the script in another checkout runs origin/master's instead.
 #
 # Speed: a process start costs a few hundred ms on a loaded Windows host, so the cases are split into independent sections, each with its own
 # scratch repository, pool and state, and the sections run in parallel (their output is printed in order). Inside a section, assertions use bash
@@ -268,26 +270,53 @@ sec_lock() {
 sec_reserved() {
 	fx reserved 3
 	export DQ_LANE_POOL_COMPILER=2 DQ_LANE_POOL_STUCK_MIN=30 DQ_LANE_POOL_RECLAIM_IDLE_MIN=60
-	# The owner holds pool-1 and pool-c2 outside the pool: lease them before the reservation applies, then make them look abandoned.
+	# The owner holds pool-1, pool-2 and pool-c2 outside the pool: lease them before the reservation applies, then make them look abandoned.
 	o1="$(DQ_LANE_POOL_RESERVED="" pool lease owner/one 2>/dev/null)"
+	o2="$(DQ_LANE_POOL_RESERVED="" pool lease owner/two 2>/dev/null)"
 	oc="$(DQ_LANE_POOL_RESERVED="2 3 c1" pool lease tools/dmb-owner --class compiler 2>/dev/null)"
-	check "the owner's slots were made" '[ "$o1" = "$b/pool/pool-1" ] && [ "$oc" = "$b/pool/pool-c2" ]'
+	check "the owner's slots were made" '[ "$o1" = "$b/pool/pool-1" ] && [ "$o2" = "$b/pool/pool-2" ] && [ "$oc" = "$b/pool/pool-c2" ]'
 	echo owner-work >>"$o1/a.txt"; echo owner-work >>"$oc/a.txt"
-	for s in "1:$o1" "c2:$oc"; do
+	# pool-2: clean, its lease's branch is gone (the "branch is gone" reclaim) and it is idle (the "stuck" reclaim)
+	git -C "$o2" switch -q --detach && g branch -q -D owner/two
+	for s in "1:$o1" "2:$o2" "c2:$oc"; do
 		k="${s%%:*}"; d="${s#*:}"; read -r _ gd <"$d/.git"
 		touch -d "3 hours ago" "$DQ_LANE_POOL_STATE/pool-$k.lease" "$gd/HEAD" "$gd/logs/HEAD" "$d/a.txt"
 	done
-	h1="$(git -C "$o1" rev-parse HEAD)"; hc="$(git -C "$oc" rev-parse HEAD)"
-	export DQ_LANE_POOL_RESERVED="1 c2 light"
+	h1="$(git -C "$o1" rev-parse HEAD)"; h2="$(git -C "$o2" rev-parse HEAD)"; hc="$(git -C "$oc" rev-parse HEAD)"
+	owner_intact() { [ -f "$DQ_LANE_POOL_STATE/pool-1.lease" ] && [ -f "$DQ_LANE_POOL_STATE/pool-2.lease" ] && [ -f "$DQ_LANE_POOL_STATE/pool-c2.lease" ] \
+		&& [ "$(git -C "$o1" rev-parse HEAD)" = "$h1" ] && [ "$(git -C "$o2" rev-parse HEAD)" = "$h2" ] && [ "$(git -C "$oc" rev-parse HEAD)" = "$hc" ] \
+		&& [ -n "$(git -C "$o1" status --porcelain)" ] && [ -n "$(git -C "$oc" status --porcelain)" ] \
+		&& [ "$(git -C "$o1" branch --show-current)" = owner/one ] && [ "$(git -C "$oc" branch --show-current)" = tools/dmb-owner ]; }
+	export DQ_LANE_POOL_RESERVED="1 2 c2 light"
 	p="$(pool lease lane/g 2>/dev/null)"
-	check "a general lane skips reserved pool-1" '[ "$p" = "$b/pool/pool-2" ]'
+	check "fresh lease: a general lane skips reserved pool-1 and pool-2" '[ "$p" = "$b/pool/pool-3" ]'
 	q="$(pool lease tools/dmb-x --class compiler 2>/dev/null)"
-	check "a compiler lane skips reserved pool-c2" '[ "$q" = "$b/pool/pool-c1" ]'
+	check "fresh lease: a compiler lane skips reserved pool-c2" '[ "$q" = "$b/pool/pool-c1" ]'
 	out="$(pool lease lane/l --class light 2>&1)"; rc=$?
-	check "a light lane is refused: its only slot is reserved" '[ "$rc" -ne 0 ] && [ ! -e "$b/pool/pool-light" ]'
-	check "the abandoned, dirty reserved slots were not reclaimed" '[ -f "$DQ_LANE_POOL_STATE/pool-1.lease" ] && [ -f "$DQ_LANE_POOL_STATE/pool-c2.lease" ]'
-	check "nothing was committed or moved in them" '[ "$(git -C "$o1" rev-parse HEAD)" = "$h1" ] && [ "$(git -C "$oc" rev-parse HEAD)" = "$hc" ] && [ -n "$(git -C "$o1" status --porcelain)" ] && [ -n "$(git -C "$oc" status --porcelain)" ]'
-	check "both still on the owner's branches" '[ "$(git -C "$o1" branch --show-current)" = owner/one ] && [ "$(git -C "$oc" branch --show-current)" = tools/dmb-owner ]'
+	check "fresh lease: a light lane is refused, its only slot is reserved" '[ "$rc" -ne 0 ] && [ ! -e "$b/pool/pool-light" ]'
+	check "reclaim: abandoned dirty, branch-gone and idle-clean reserved slots were not reclaimed, saved or moved" 'owner_intact'
+	out="$(pool lease lane/z 2>&1)"; rc=$?
+	check "fallback when full: POOL FULL, no reserved slot offered" '[ "$rc" -eq 3 ] && [[ "$out" == *"POOL FULL"* ]] && [[ "$out" != *"pool-1:"* ]] && [[ "$out" != *"pool-2:"* ]] && owner_intact'
+	out="$(pool lease lane/w --wait --timeout 0 2>&1)"; rc=$?
+	check "queued lease (--wait): times out, never takes a reserved slot" '[ "$rc" -eq 3 ] && [[ "$out" != *"pool-1"* ]] && owner_intact'
+	out="$(pool lease owner/one 2>&1)"; rc=$?
+	check "re-lease of the owner's branch: the reserved slot is not handed back nor its record dropped" '[[ "$out" != *"$o1"* ]] && owner_intact'
+	out="$(pool release owner/one 2>&1)"; rc=$?
+	check "release by branch refuses a reserved slot" '[ "$rc" -ne 0 ] && [[ "$out" == *reserved* ]] && owner_intact'
+	out="$(pool release --path "$o1" --force 2>&1)"; rc=$?
+	check "release --path --force refuses a reserved slot" '[ "$rc" -ne 0 ] && [[ "$out" == *reserved* ]] && owner_intact'
+	out="$(pool stuck 2>&1)"
+	check "stuck never lists a reserved slot" '[[ "$out" != *"pool-1 "* ]] && [[ "$out" != *"pool-2 "* ]] && [ ! -e "$DQ_LANE_POOL_STATE/notices/pool-1.stuck" ]'
+	pool release lane/g >/dev/null 2>&1
+	out="$(DQ_LANE_POOL_NO_FETCH= DQ_LANE_POOL_RESERVED="" pool lease lane/h 2>/dev/null)"
+	check "an empty DQ_LANE_POOL_RESERVED outside the self-test never frees the default (pool-1)" '[ "$out" != "$o1" ] && [ -f "$DQ_LANE_POOL_STATE/pool-1.lease" ] && [ "$(git -C "$o1" rev-parse HEAD)" = "$h1" ]'
+	pool release lane/h >/dev/null 2>&1
+	# A stale copy of the script (another checkout, an older commit) that would hand out reserved slots: it runs origin/master's instead.
+	g switch -q -c stale master && sed -i 's/^slot_reserved() {.*/slot_reserved() { false; }/' "$b/repo/tools/dq_lane_pool.sh" && g commit -q -am stale && g switch -q master
+	g worktree add -q --detach "$b/old" stale 2>/dev/null
+	out="$(env -u DQ_LANE_POOL_RESERVED -u DQ_LANE_POOL_REPO bash "$b/old/tools/dq_lane_pool.sh" lease lane/s 2>&1)"; rc=$?
+	check "a stale copy in another checkout delegates to origin/master's and skips pool-1" '[ "$rc" -eq 0 ] && [[ "$out" == *"running origin/master"* ]] && [[ "$out" != *"leased pool-1"* ]] && [ -f "$DQ_LANE_POOL_STATE/pool-1.lease" ] && [ "$(git -C "$o1" rev-parse HEAD)" = "$h1" ]'
+	check "the stale copy is not run when it matches: origin/master's own copy does not delegate" '[[ "$(DQ_LANE_POOL_RESERVED="1 2 c2 light" pool path lane/s 2>&1)" != *"running origin/master"* ]]'
 }
 
 # ---- run the sections in parallel; print their output in order ------------------------------------------------------------------------
