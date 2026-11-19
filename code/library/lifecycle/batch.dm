@@ -71,10 +71,6 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	var/list/free_pipe_ports = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// A pipe topology commit was asked for while the batch ran: it runs once at the end.
 	var/pipe_commit_pending = FALSE
-	/// Movables leaving SSvg's bound list in one pass. A plain list, not a relation: its members are mid-destroy when they join it
-	/// (on_dematerialize()), and the teardown guard refuses a relation write to a dying target, so a ref_many here silently dropped every
-	/// one and left it in SSvg.bound for good (the hard-deleted outlet injectors and vent pumps of an explosion). Emptied by the flush.
-	var/list/unbind_movers = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// /datum/registry -> members leaving it in one pass.
 	var/list/registry_leaves = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Turf -> TRUE once one object's destroy effects played there.
@@ -172,10 +168,10 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		power_topology_edited(/datum/destroy_batch)
 	if(length(batch.drop_heat_bodies))
 		heat_drop_log(vg_heat_body_drop_list(batch.drop_heat_bodies))
-	if(length(batch.unbind_movers))
-		SSvg.unregister_many(batch.unbind_movers)
-		batch.unbind_movers.Cut()
 	if(length(batch.unbind_entities))
+		// By handle, not by mover: a doomed mover is queued mid-destroy, when the teardown guard refuses a relation write to it. SSvg's entity
+		// table still names each one, and its movers leave SSvg.bound in one pass before the entities are freed.
+		SSvg.unregister_entities(batch.unbind_entities)
 		vg_entity_unbind_list(batch.unbind_entities)
 	for(var/datum/registry/registry as anything in batch.registry_leaves)
 		registry.remove_many(batch.registry_leaves[registry])

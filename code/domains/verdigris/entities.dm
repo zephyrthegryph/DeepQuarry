@@ -57,9 +57,21 @@ GLOBAL_REAL(SSvg, /datum/system/native)
 	if(slot <= length(entities_by_index) && entities_by_index[slot] == mover)
 		entities_by_index[slot] = null
 
-/// unregister() for a whole doomed set (batched destroy): one pass over `bound`.
-/datum/system/native/proc/unregister_many(list/movers)
-	remove_bound(movers)
+/// unregister() for a whole doomed set (batched destroy) by entity handle: each handle's mover is read from the entity table (which still
+/// names it), its index cleared, and all of them leave `bound` in one pass.
+/datum/system/native/proc/unregister_entities(list/entities)
+	var/list/movers = list()
+	for(var/entity in entities)
+		var/slot = ((entity - 1) & VG_ENTITY_INDEX_MASK) + 1
+		if(slot > length(entities_by_index))
+			continue
+		var/atom/movable/mover = entities_by_index[slot]
+		if(!ismovable(mover))
+			continue
+		entities_by_index[slot] = null
+		movers += mover
+	if(length(movers))
+		remove_bound(movers)
 
 /// Gives `D` (any datum) its own entity handle, bound in `entities_by_index`
 /// like an atom's: `entity_lookup()` finds it. Returns the handle.

@@ -96,11 +96,8 @@
 	if(vg_entity)
 		var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 		if(batch?.doomed[src])
-			// Batched destroy: one pass over SSvg.bound and one unbind call at the end.
-			var/slot = ((vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
-			if(slot <= length(SSvg.entities_by_index) && SSvg.entities_by_index[slot] == src)
-				SSvg.entities_by_index[slot] = null
-			batch.unbind_movers += src // ALLOW(ownership): a dying mover queued for the batch's one unbind pass; a relation write to it is refused mid-destroy
+			// Batched destroy: one pass over SSvg.bound and one unbind call at the end. Only the handle is queued (a number): SSvg's own
+			// entity table still names the mover under it until the flush resolves it (SSvg.unregister_entities()).
 			batch.unbind_entities += vg_entity
 		else
 			SSvg.unregister(src)
