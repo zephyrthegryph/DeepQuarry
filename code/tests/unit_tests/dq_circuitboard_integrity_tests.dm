@@ -1,7 +1,7 @@
 // Circuit board integrity: a board builds a real machine, the boards stubbed to bare /obj/machinery while their machines were gone build
 // those machines again, and every printable board design is reachable from the techweb.
 
-/// The build_path of a board type or variant row is a real, non-abstract machine (or a wall intercom; never a bare /obj/machinery or /obj/machinery/computer).
+/// The build_path of a board type or variant row is a real, non-abstract machine (or a wall-mounted device item; never a bare /obj/machinery or /obj/machinery/computer).
 /datum/unit_test/dq_circuitboard_build_paths_are_machines
 
 /datum/unit_test/dq_circuitboard_build_paths_are_machines/Run()
@@ -25,8 +25,9 @@
 /proc/dq_board_build_path_problem(build_path)
 	if(isnull(build_path))
 		return null
-	if(!ispath(build_path, /obj/machinery) && !ispath(build_path, /obj/item/radio/intercom)) // an intercom is a wall radio built from a display frame
-		return "[build_path] is not a machine"
+	// a few boards build wall devices that are items (the intercom, the wall geiger counter) through a display frame
+	if(!ispath(build_path, /obj/machinery) && !ispath(build_path, /obj/item))
+		return "[build_path] is not a machine or wall device"
 	if(build_path == /obj/machinery || build_path == /obj/machinery/computer)
 		return "[build_path] is a bare base type"
 	if(is_abstract(build_path))
