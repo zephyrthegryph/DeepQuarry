@@ -508,8 +508,20 @@ GLOBAL_VAR_INIT(fab_trace, FALSE)
 		src.interact(user)
 	return OP_OK
 
+/// Pours this stack into the other partial stacks of its kind on its turf, until it is used up or they are full. transfer_to() checks the
+/// stacktype and colour and caps on get_max_amount() before it takes anything, so nothing is used that the other stack cannot hold (the old
+/// version took the amount with use() and then add() refused it past get_max_amount(), which lost the stack).
 /obj/item/stack/proc/combine_in_loc()
-	return //STUBBED for now, as it seems to randomly delete stacks
+	if(!isturf(loc) || uses_charge || QDELETED(src))
+		return
+	FOR_CONTENTS(var/obj/item/stack/S, loc)
+		if(QDELETED(src) || amount < 1)
+			return
+		if(S == src || QDELETED(S) || S.uses_charge || S.stacktype != stacktype)
+			continue
+		if(S.get_amount() >= S.get_max_amount())
+			continue
+		transfer_to(S)
 
 /obj/item/stack/dropped(mob/user, equipping, slot)
 	. = ..()

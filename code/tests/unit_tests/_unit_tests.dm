@@ -479,6 +479,7 @@
 #include "dq_chem_ice_tests.dm"
 #include "dq_book_chem_tests.dm"
 #include "dq_stabilisation_tests.dm"
+#include "dq_stack_combine_in_loc.dm"
 #include "dq_vital_systems_tests.dm"
 #include "dq_contagion_tests.dm"
 #include "dq_physiology_tests.dm"
