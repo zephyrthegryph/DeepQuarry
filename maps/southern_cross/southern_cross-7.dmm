@@ -5474,7 +5474,7 @@
 	dir = 10
 	},
 /obj/effect/landmark/start{
-	name = "Search and Rescue"
+	name = "Field Medic"
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
 	dir = 10
@@ -13747,7 +13747,7 @@
 	dir = 5
 	},
 /obj/effect/landmark/start{
-	name = "Search and Rescue"
+	name = "Field Medic"
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
 	dir = 4
@@ -30296,6 +30296,12 @@
 /obj/structure/flora/ausbushes/fullgrass,
 /turf/simulated/floor/grass2,
 /area/expoutpost/slingcarrierdock)
+"aac" = (
+/obj/effect/landmark/start{
+	name = "Pathfinder"
+	},
+/turf/simulated/floor/tiled,
+/area/expoutpost/explobriefroom)
 
 (1,1,1) = {"
 cwA
@@ -57557,7 +57563,7 @@ liP
 liP
 liP
 liP
-liP
+aac
 liP
 qLk
 gOD
@@ -57816,7 +57822,7 @@ tis
 jGJ
 liP
 liP
-liP
+aac
 lyU
 xfE
 eoO

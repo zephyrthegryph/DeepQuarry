@@ -7,10 +7,8 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/extended_round_description = "This roundtype should not be spawned, let alone votable. Someone contact a developer and tell them the game's broken again."
 	var/config_tag = null
 	var/votable = 1
-	var/probability = 0
 
 	var/required_players = 0                 // Minimum players for round to start if voted in.
-	var/required_players_secret = 0          // Minimum number of players for that game mode to be chose in Secret
 	var/required_enemies = 0                 // Minimum antagonists for round to start.
 	var/newscaster_announcements = null
 	var/end_on_antag_death = 0               // Round will end when all antagonists are dead.
@@ -165,7 +163,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			antag_summary += "[antag.role_text_plural]"
 			i++
 		antag_summary += "."
-		if(antag_templates.len > 1 && GLOB.master_mode != "secret")
+		if(antag_templates.len > 1)
 			to_chat(world, span_filter_system("[antag_summary]"))
 		else
 			message_admins("[antag_summary]")
@@ -178,12 +176,8 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 		if((player.client)&&(player.ready))
 			playerC++
 
-	if(GLOB.master_mode=="secret")
-		if(playerC < CONFIG_GET(keyed_list/player_requirements_secret)[config_tag])
-			return 0
-	else
-		if(playerC < CONFIG_GET(keyed_list/player_requirements)[config_tag])
-			return 0
+	if(playerC < CONFIG_GET(keyed_list/player_requirements)[config_tag])
+		return 0
 
 	if(!(antag_templates && antag_templates.len))
 		return 1
@@ -600,15 +594,11 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 		to_chat(usr, span_warning("Something is terribly wrong; there is no gametype."))
 		return
 
-	if(GLOB.master_mode != "secret")
-		to_chat(usr, span_boldnotice("The roundtype is [capitalize(ticker_mode().name)]"))
-		if(ticker_mode().round_description)
-			to_chat(usr, span_notice(span_italics("[ticker_mode().round_description]")))
-		if(ticker_mode().extended_round_description)
-			to_chat(usr, span_notice("[ticker_mode().extended_round_description]"))
-	else
-		to_chat(usr, span_notice(span_italics("Shhhh") + ". It's a secret."))
-	return
+	to_chat(usr, span_boldnotice("The roundtype is [capitalize(ticker_mode().name)]"))
+	if(ticker_mode().round_description)
+		to_chat(usr, span_notice(span_italics("[ticker_mode().round_description]")))
+	if(ticker_mode().extended_round_description)
+		to_chat(usr, span_notice("[ticker_mode().extended_round_description]"))
 
 // Antagonist definitions are round-long singletons.
 

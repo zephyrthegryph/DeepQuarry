@@ -97,11 +97,6 @@
 	check(admin, H, "c_mode", "round_not_started", MSG(admin_topic/round_started))
 	set_var(SSticker, "mode", null)
 	check(admin, H, "c_mode", "round_not_started", null)
-	set_global("master_mode", "extended")
-	check(admin, H, "f_secret", "round_is_secret", MSG(admin_topic/not_secret))
-	set_global("master_mode", "secret")
-	check(admin, H, "f_secret", "round_is_secret", null)
-	TEST_ASSERT_EQUAL(GLOB.master_mode, "secret", "the requirement did not mutate the real selection")
 
 /datum/unit_test/dq_requirement_boundary_pin/proc/unregister_holder(datum/admins/holder)
 	if(holder)

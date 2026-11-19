@@ -3,15 +3,21 @@
 	desc = "A magnetic clamp which can halt the flow of gas in a pipe, via a localised stasis field."
 	icon = 'icons/atmos/clamp.dmi'
 	icon_state = "pclamp0"
-	var/list/clamps
 
+/// Projects a /obj/machinery/clamp onto a simple pipe, or takes one back off (its on_destroy reopens the pipe).
 /obj/item/dogborg/stasis_clamp/afterattack(atom/A, mob/user as mob, proximity)
 	if(!proximity)
 		return
 
-	// /obj/machinery/clamp was a ZAS pipe-clamp tool (clamp.dm in atmoalter),
-	// deleted with ZAS atmos machinery. Stasis-clamp tool reduced to a polite
-	// no-op until LINDA's atmos machinery is wired in.
-	if (istype(A, /obj/machinery/atmospherics/pipe))
-		to_chat(user, span_warning("Pipe clamping is unavailable until LINDA's atmos machinery is wired in."))
+	if(istype(A, /obj/machinery/clamp))
+		to_chat(user, span_notice("You dissipate \the [A]."))
+		qdel(A)
 		return
+
+	if(!istype(A, /obj/machinery/atmospherics/pipe/simple))
+		return
+	if(locate_within(get_turf(A), /obj/machinery/clamp))
+		to_chat(user, span_warning("A clamp is already attached to the pipe there!"))
+		return
+	new /obj/machinery/clamp(A.loc, A)
+	to_chat(user, span_notice("You attach a stasis clamp to \the [A]."))

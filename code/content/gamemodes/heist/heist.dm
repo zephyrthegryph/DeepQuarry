@@ -6,7 +6,6 @@ VOX HEIST ROUNDTYPE
 	name = "Heist"
 	config_tag = "heist"
 	required_players = 12
-	required_players_secret = 12
 	required_enemies = 3
 	round_description = "An unidentified bluespace signature is approaching the station!"
 	extended_round_description = "The Company's majority control of phoron in the system has marked the \

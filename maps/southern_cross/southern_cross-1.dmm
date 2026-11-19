@@ -50000,7 +50000,7 @@
 "bSp" = (
 /obj/structure/bed/chair/comfy/brown,
 /obj/effect/landmark/start{
-	name = "Station Engineer"
+	name = "Engineer"
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers{
@@ -50014,7 +50014,7 @@
 "bSq" = (
 /obj/structure/bed/chair/comfy/brown,
 /obj/effect/landmark/start{
-	name = "Station Engineer"
+	name = "Engineer"
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
 	dir = 4
@@ -52550,7 +52550,7 @@
 	dir = 1
 	},
 /obj/effect/landmark/start{
-	name = "Station Engineer"
+	name = "Engineer"
 	},
 /turf/simulated/floor/carpet,
 /area/engineering/break_room)
@@ -57611,7 +57611,7 @@
 	dir = 8
 	},
 /obj/effect/landmark/start{
-	name = "Station Engineer"
+	name = "Engineer"
 	},
 /turf/simulated/floor/tiled,
 /area/engineering/engine_monitoring)
@@ -59778,7 +59778,7 @@
 	dir = 8
 	},
 /obj/effect/landmark/start{
-	name = "Station Engineer"
+	name = "Engineer"
 	},
 /obj/structure/cable/cyan{
 	icon_state = "1-2"
@@ -81129,7 +81129,7 @@
 "dbG" = (
 /obj/structure/bed/chair/wood,
 /obj/effect/landmark/start{
-	name = "Assistant"
+	name = "Intern"
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /turf/simulated/floor/wood,
@@ -82049,7 +82049,7 @@
 	dir = 1
 	},
 /obj/effect/landmark/start{
-	name = "Assistant"
+	name = "Intern"
 	},
 /obj/machinery/atmospherics/unary/vent_scrubber/on{
 	dir = 1
@@ -89230,7 +89230,7 @@
 /area/storage/primary)
 "dsw" = (
 /obj/effect/landmark/start{
-	name = "Assistant"
+	name = "Intern"
 	},
 /obj/effect/floor_decal/industrial/outline/grey,
 /obj/machinery/hologram/holopad,
@@ -101251,7 +101251,7 @@
 "dQs" = (
 /obj/structure/bed/chair/office/dark,
 /obj/effect/landmark/start{
-	name = "Colony Director"
+	name = "Site Manager"
 	},
 /obj/machinery/button/remote/airlock{
 	desc = "A remote control switch for the Starboard Bridge Doors.";
@@ -108564,7 +108564,7 @@
 "edU" = (
 /obj/structure/bed/chair/office/dark,
 /obj/effect/landmark/start{
-	name = "Station Engineer"
+	name = "Engineer"
 	},
 /obj/structure/disposalpipe/segment,
 /turf/simulated/floor/tiled,
@@ -108800,6 +108800,30 @@
 /obj/machinery/chem_hot_plate,
 /turf/simulated/floor/tiled/white,
 /area/medical/chemistry)
+"bJy" = (
+/obj/effect/landmark/start{
+	name = "Xenobotanist"
+	},
+/turf/simulated/floor/tiled/hydro,
+/area/rnd/xenobiology/xenoflora)
+"bJA" = (
+/obj/effect/landmark/start{
+	name = "Entertainer"
+	},
+/turf/simulated/floor/wood,
+/area/crew_quarters/bar)
+"bKL" = (
+/obj/effect/landmark/start{
+	name = "Entrepreneur"
+	},
+/turf/simulated/floor/wood,
+/area/crew_quarters/cafeteria)
+"bJz" = (
+/obj/effect/landmark/start{
+	name = "Visitor"
+	},
+/turf/simulated/floor/wood,
+/area/hallway/secondary/entry/docking_lounge)
 (1,1,1) = {"
 aaa
 aaa
@@ -153376,7 +153400,7 @@ aqz
 boC
 bJH
 cfp
-cfp
+bJy
 dVU
 dWk
 dWI
@@ -153632,7 +153656,7 @@ aaa
 arM
 bnV
 bJH
-cfp
+bJy
 cfp
 dVT
 dWj
@@ -203050,7 +203074,7 @@ dpZ
 dqI
 drm
 drR
-dss
+bJz
 dsY
 doP
 dtO
@@ -203308,7 +203332,7 @@ dqJ
 drn
 drS
 dst
-dss
+bJz
 doP
 dtP
 dul
@@ -204042,7 +204066,7 @@ cHw
 cBb
 cSw
 cTw
-cTw
+bJA
 cVQ
 cSu
 cXx
@@ -205336,7 +205360,7 @@ daL
 dbH
 dcA
 ddt
-cYq
+bKL
 der
 cYw
 cYw
@@ -205592,7 +205616,7 @@ cZs
 daI
 cYq
 dcw
-cYq
+bKL
 cYq
 dep
 deJ

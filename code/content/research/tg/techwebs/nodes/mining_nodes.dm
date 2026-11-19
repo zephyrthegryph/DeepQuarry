@@ -32,6 +32,7 @@
 		"gps_mine",
 		"mesons",
 		"material",
+		"board_material_furnace",
 		// "cargoexpress",
 		// "brm",
 		// "b_smelter",

@@ -345,3 +345,34 @@ MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 	if(!pixel_x && !pixel_y)
 		offset_alarm()
 	return list(pixel_x, pixel_y)
+
+/// Starts or stops one of the supermatter alarm loops ("eng", "crit" or "causality") on this alarm; the warn flag lets
+/// power_change_settle() resume it after a blackout.
+/obj/machinery/firealarm/proc/set_sm_alarm(kind, on)
+	var/datum/looping_sound/loop
+	switch(kind)
+		if("eng")
+			engwarn = on
+			loop = engalarm
+		if("crit")
+			critwarn = on
+			loop = critalarm
+		if("causality")
+			causalitywarn = on
+			loop = causality
+	if(!loop) // Mapped alarms may be reached before Initialize creates their loops.
+		return
+	if(on)
+		loop.start()
+	else
+		loop.stop()
+
+/// Every fire alarm in an engineering area on a station level: the ones the supermatter sounds.
+/proc/engineering_fire_alarms()
+	. = list()
+	for(var/type, area in GLOB.areas_by_type)
+		if(!istype(area, /area/engineering))
+			continue
+		for(var/obj/machinery/firealarm/FA in area_contents_of_type(area, /obj/machinery/firealarm))
+			if(FA.z in using_map.station_levels)
+				. += FA

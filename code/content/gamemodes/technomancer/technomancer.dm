@@ -8,7 +8,6 @@
 	config_tag = "technomancer"
 	votable = 1
 	required_players = 5
-	required_players_secret = 5
 	required_enemies = 1
 	end_on_antag_death = 0
 	antag_tags = list(MODE_TECHNOMANCER)

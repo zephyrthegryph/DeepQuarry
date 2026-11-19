@@ -7,7 +7,7 @@ import type { GamePanelActions, GamePanelData } from './generated/GamePanel';
 
 export const GamePanel = () => {
   const { data, act } = useBackend<GamePanelData, GamePanelActions>();
-  const { master_mode, secret_mode } = data;
+  const { master_mode } = data;
   return (
     <Window width={360} height={360} title="Game Panel">
       <Window.Content>
@@ -21,17 +21,6 @@ export const GamePanel = () => {
             <Button icon="exchange" onClick={() => act('change_mode')}>
               Change Game Mode
             </Button>
-            {secret_mode ? (
-              <Box mt={1}>
-                <Button
-                  icon="user-secret"
-                  color="bad"
-                  onClick={() => act('force_secret')}
-                >
-                  Force Secret Mode
-                </Button>
-              </Box>
-            ) : null}
           </Box>
         </Section>
 
