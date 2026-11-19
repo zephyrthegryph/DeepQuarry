@@ -562,10 +562,10 @@
 	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stack/cable_coil = 5, /obj/item/stack/material/phoron = 5, /obj/item/stack/material/diamond = 1 )
 /obj/item/circuitboard/area_atmos
 	name = T_BOARD("area air control console")
-	build_path = /obj/machinery/computer
+	build_path = /obj/machinery/computer/area_atmos
 /obj/item/circuitboard/arf_generator
 	name = T_BOARD("atmospheric field generator")
-	build_path = /obj/machinery
+	build_path = /obj/machinery/atmospheric_field_generator
 	board_type = /datum/frame/frame_types/arfgs
 	req_components = list(/obj/item/stock_parts/micro_laser = 2, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stack/cable_coil = 10)
 /obj/item/circuitboard/artifact_harvester
@@ -782,7 +782,7 @@
 	req_components = list ( /obj/item/stock_parts/subspace/crystal = 10 )
 	hidden = TRUE
 /obj/item/circuitboard/distiller
-	build_path = /obj/machinery
+	build_path = /obj/machinery/portable_atmospherics/powered/reagent_distillery
 	board_type = /datum/frame/frame_types/reagent_distillery
 	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/motor = 2, /obj/item/stock_parts/gear = 1)
 /obj/item/circuitboard/dna_analyzer
@@ -966,7 +966,7 @@
 	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stack/material/glass/reinforced = 1)
 /obj/item/circuitboard/industrial_reagent_reactor
 	name = T_BOARD("industrial chemical reactor")
-	build_path = /obj/machinery
+	build_path = /obj/machinery/reagent_refinery/reactor
 	board_type = /datum/frame/frame_types/industrial_reagent_reactor
 	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/capacitor = 4, /obj/item/stock_parts/micro_laser = 4, /obj/item/stock_parts/manipulator = 1, /obj/item/stack/material/glass/reinforced = 1)
 /obj/item/circuitboard/industrial_reagent_splitter
@@ -1265,7 +1265,7 @@
 	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/micro_laser = 1, /obj/item/smes_coil = 1, /obj/item/stock_parts/console_screen = 1, /obj/item/stock_parts/subspace/amplifier = 1, /obj/item/stack/cable_coil = 5)
 /obj/item/circuitboard/shutoff_monitor
 	name = T_BOARD("automatic shutoff valve monitor")
-	build_path = /obj/machinery/computer
+	build_path = /obj/machinery/computer/shutoff_monitor
 /obj/item/circuitboard/sleeper
 	name = T_BOARD("sleeper")
 	build_path = /obj/machinery/sleeper
@@ -1351,7 +1351,7 @@
 	hidden = TRUE
 /obj/item/circuitboard/turbine_control
 	name = T_BOARD("turbine control console")
-	build_path = /obj/machinery/computer
+	build_path = /obj/machinery/computer/turbine_computer
 	hidden = TRUE
 /obj/item/circuitboard/vr_sleeper
 	name = T_BOARD("VR sleeper")

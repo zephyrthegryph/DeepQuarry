@@ -49,7 +49,8 @@
 	for(var/key in expected)
 		var/machine_type = expected[key]
 		var/computer = ispath(machine_type, /obj/machinery/computer)
-		var/obj/structure/frame/F = new (computer ? /obj/structure/frame/computer : /obj/structure/frame)(T)
+		var/frame_type = computer ? /obj/structure/frame/computer : /obj/structure/frame
+		var/obj/structure/frame/F = new frame_type(T)
 		var/obj/item/circuitboard/B = variant_new(variant_ref(/obj/item/circuitboard, key), F)
 		TEST_ASSERT_EQUAL(B.build_path, machine_type, "[key] builds [machine_type]")
 		rel_set(F, nameof(F.circuit), B)
