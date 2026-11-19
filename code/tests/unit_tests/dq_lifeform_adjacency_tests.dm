@@ -80,3 +80,36 @@ CAPABILITIES(/obj/structure/dq_adjacency_probe)
 	TEST_ASSERT(isnull(GLOB.adjacency_held), "the hold is closed once drained")
 	qdel(C)
 	qdel(A)
+
+/// A member destroyed while a hold is open frees its datum slot, and the next datum made reuses it (an explosion makes damage reports while
+/// its crater's members are destroyed). The drain must not resolve the held entry to that unrelated datum (the runtime was "undefined variable
+/// /datum/contract_damage_report/var/adj_handle" from adjacency_hold_drain()).
+/datum/unit_test/dq_lifeform_adjacency_hold_slot_reuse
+
+/datum/unit_test/dq_lifeform_adjacency_hold_slot_reuse/Run()
+	var/turf/T = dq_containment_floor()
+	var/turf/east = get_step(T, EAST)
+	TEST_ASSERT(east, "the test floor has room around it")
+	var/obj/structure/dq_adjacency_probe/A = allocate(/obj/structure/dq_adjacency_probe, T)
+	var/obj/structure/dq_adjacency_probe/B = allocate(/obj/structure/dq_adjacency_probe, east)
+	adjacency_hold_begin()
+	var/obj/structure/dq_adjacency_probe/C = allocate(/obj/structure/dq_adjacency_probe, get_step(east, EAST))
+	TEST_ASSERT(length(GLOB.adjacency_held) >= 1, "a neighbour's creation while held queues B's recompute")
+	var/b_slot = SLOT(B)
+	TEST_ASSERT(b_slot > 0, "the held member has a datum slot")
+	qdel(B)
+	var/list/fillers = list()
+	var/datum/reused
+	for(var/i in 1 to 64)
+		var/datum/D = new /datum
+		fillers += D
+		if(slot_of(D) == b_slot)
+			reused = D
+			break
+	TEST_ASSERT(reused, "a datum made after the destroy reuses the held member's slot")
+	TEST_ASSERT(adjacency_hold_drain(FALSE), "the hold drains without resolving the reused slot to the new datum")
+	TEST_ASSERT_EQUAL(A.adj_mask, 0, "the drain recomputes the survivor without the destroyed neighbour")
+	for(var/datum/D as anything in fillers)
+		qdel(D)
+	qdel(C)
+	qdel(A)

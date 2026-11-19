@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Explosions no longer lose neighbour updates (walls, tables, windows) to a runtime when something nearby is destroyed during the blast."
+  - bugfix: "Dropped stacks of the same material merge again on the floor, without losing sheets."
+  - bugfix: "Air vents, scrubbers and injectors destroyed by explosions no longer leak memory."

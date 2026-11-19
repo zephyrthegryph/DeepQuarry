@@ -100,7 +100,7 @@
 			var/slot = ((vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
 			if(slot <= length(SSvg.entities_by_index) && SSvg.entities_by_index[slot] == src)
 				SSvg.entities_by_index[slot] = null
-			rel_add(batch, nameof(batch.unbind_movers), src)
+			batch.unbind_movers += src // ALLOW(ownership): a dying mover queued for the batch's one unbind pass; a relation write to it is refused mid-destroy
 			batch.unbind_entities += vg_entity
 		else
 			SSvg.unregister(src)

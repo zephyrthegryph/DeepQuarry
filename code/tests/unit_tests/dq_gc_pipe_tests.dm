@@ -190,3 +190,71 @@
 	qdel(locate(map_key))
 	qdel(locate(fresh_key))
 	TEST_ASSERT_EQUAL(refs_of(map_key), refs_of(fresh_key), "a map-placed lattice keeps no reference a new one does not")
+
+// The same sweep, for the area air devices and injectors: the server bench logged outlet injectors and engine vent pumps still referenced
+// after qdel() ("unable to be GC'd"). Each is made on its own, on a pipe, on a radio frequency and after a radio command, then deleted.
+/datum/unit_test/dq_gc_sweep/atmos_air_devices
+
+/datum/unit_test/dq_gc_sweep/atmos_air_devices/dq_gc_sweep_build(turf/T)
+	var/list/subjects = list("labels" = list())
+	for(var/path in list(/obj/machinery/atmospherics/unary/outlet_injector, /obj/machinery/atmospherics/unary/vent_pump/engine, /obj/machinery/atmospherics/unary/vent_pump/on, /obj/machinery/atmospherics/unary/vent_scrubber/on))
+		for(var/i in 1 to 3)
+			var/obj/machinery/atmospherics/unary/U = new path(T)
+			if(i >= 2 && istype(U, /obj/machinery/atmospherics/unary/outlet_injector))
+				var/obj/machinery/atmospherics/unary/outlet_injector/I = U
+				I.set_frequency(ENGINE_FREQ)
+				I.broadcast_status()
+			dq_gc_sweep_add(subjects, U, "[path] [i]")
+	refresh_flush()
+	wait_ticks(round(1 SECONDS / world.tick_lag)) // the status reports (after()) and radio posts have run
+	refresh_flush()
+	return subjects
+
+// The bench's case: the devices sit on a pipe and an explosion ends them (the supermatter bench's engine room), not a qdel().
+/datum/unit_test/dq_gc_sweep/atmos_air_devices_blasted
+
+/datum/unit_test/dq_gc_sweep/atmos_air_devices_blasted/dq_gc_sweep_build(turf/T)
+	var/list/subjects = list("labels" = list())
+	var/turf/pipe_turf = get_step(T, NORTH)
+	TEST_ASSERT(pipe_turf, "the test floor has a tile north of it")
+	for(var/path in list(/obj/machinery/atmospherics/unary/outlet_injector, /obj/machinery/atmospherics/unary/vent_pump/engine, /obj/machinery/atmospherics/unary/vent_pump/on, /obj/machinery/atmospherics/unary/vent_scrubber/on))
+		for(var/i in 1 to 3)
+			var/obj/machinery/atmospherics/unary/U = new path(T)
+			U.set_dir(NORTH)
+			dq_gc_sweep_add(subjects, U, "blasted [path] [i]")
+	var/obj/machinery/atmospherics/pipe/simple/P = new /obj/machinery/atmospherics/pipe/simple(pipe_turf)
+	P.set_dir(SOUTH)
+	for(var/obj/machinery/atmospherics/unary/U in T)
+		U.atmos_init()
+	P.atmos_init()
+	refresh_flush()
+	wait_ticks(round(1 SECONDS / world.tick_lag))
+	refresh_flush()
+	dq_gc_sweep_add(subjects, P, "the pipe they share")
+	return subjects
+
+/datum/unit_test/dq_gc_sweep/atmos_air_devices_blasted/dq_gc_sweep_delete(list/subjects)
+	var/list/deleted = list()
+	var/list/labels = subjects[subjects[1]]
+	subjects.Cut(1, 2)
+	for(var/i in 1 to length(subjects))
+		var/datum/D = subjects[i]
+		deleted[ref(D)] = labels[i]
+		SSexplosions.queue_blast(D, 1)
+		subjects[i] = null
+	subjects.Cut()
+	SSexplosions.deliver_blast_batches(INFINITY, FALSE)
+	SSair.rust_commit_pending_pipenets()
+	for(var/key in deleted.Copy())
+		var/datum/D = locate(key)
+		if(D && !QDELETED(D))
+			deleted -= key // the blast did not end it (a sturdy one): not a leak
+			qdel(D, TRUE)
+	return deleted
+
+/// The blast's sparks are litter too (the base only clears items).
+/datum/unit_test/dq_gc_sweep/atmos_air_devices_blasted/dq_gc_sweep_clean_litter(turf/T, list/floor_before)
+	..()
+	for(var/turf/place as anything in block(locate(max(T.x - 2, 1), max(T.y - 2, 1), T.z), locate(min(T.x + 2, world.maxx), min(T.y + 2, world.maxy), T.z)))
+		FOR_CONTENTS(var/obj/effect/effect/sparks/S, place)
+			qdel(S, TRUE)
