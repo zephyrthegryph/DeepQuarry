@@ -34,7 +34,7 @@ export const WhitelistEdit = () => {
   };
 
   return (
-    <Window width={530} height={495} theme="admin">
+    <Window width={530} height={495}>
       <Window.Content>
         <Stack vertical fill>
           <Stack.Item>

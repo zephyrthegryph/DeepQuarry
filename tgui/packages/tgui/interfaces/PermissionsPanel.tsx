@@ -399,10 +399,23 @@ const HousekeepingPage = (props: {
 
 export const PermissionsPanel = () => {
   const { data, act } = useBackend<Data, PermissionsPanelActions>();
+  const shown =
+    (data.page === data.PERMISSIONS_PAGE_PERMISSIONS &&
+      data.permissions_rows) ||
+    (data.page === data.PERMISSIONS_PAGE_RANKS && data.ranks_page) ||
+    (data.page === data.PERMISSIONS_PAGE_LOGGING && data.logging_page) ||
+    (data.page === data.PERMISSIONS_PAGE_HOUSEKEEPING &&
+      data.housekeeping_page);
   return (
     <Window width={820} height={720} title="Permissions">
       <Window.Content scrollable>
         <PageNav data={data} act={act} />
+        {!shown && (
+          <EmptyState>
+            Nothing to show on this page: the admin database may not be
+            connected.
+          </EmptyState>
+        )}
         {data.page === data.PERMISSIONS_PAGE_PERMISSIONS &&
         data.permissions_rows ? (
           <PermissionsPage rows={data.permissions_rows} act={act} />

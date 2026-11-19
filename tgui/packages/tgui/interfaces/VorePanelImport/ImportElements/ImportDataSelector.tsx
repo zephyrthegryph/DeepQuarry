@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import { EmptyState } from '../../common/EmptyState';
 import type { VorePanelImportActions } from '../../generated/VorePanelImport';
 import type { DesiredData } from '../types';
 
@@ -144,6 +145,11 @@ export const ImportDataSelector = (props: {
           }
         >
           <Stack fill vertical>
+            {!filteredData[activeTab] && (
+              <EmptyState>
+                Select a character to see its soulcatcher.
+              </EmptyState>
+            )}
             {!!filteredData[activeTab] &&
               (filteredData[activeTab].soulcatcher ? (
                 <Stack.Item>

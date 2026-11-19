@@ -11,6 +11,7 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
+import { EmptyState } from '../common/EmptyState';
 import type {
   PlayerLogViewerActions,
   PlayerLogViewerData,
@@ -185,6 +186,9 @@ export const PlayerLogViewer = (props) => {
               }
             >
               <Stack fill vertical>
+                {entriesWithAll[activeTab]?.length === 0 && (
+                  <EmptyState>This log has no entries yet.</EmptyState>
+                )}
                 {entriesWithAll[activeTab] ? (
                   entriesWithAll[activeTab]
                     .filter((entry) => {
@@ -225,9 +229,7 @@ export const PlayerLogViewer = (props) => {
                       </Stack.Item>
                     ))
                 ) : (
-                  <Box color="red" textAlign="center">
-                    No Entry Selected.
-                  </Box>
+                  <EmptyState>Pick a log above to read it.</EmptyState>
                 )}
               </Stack>
             </Section>

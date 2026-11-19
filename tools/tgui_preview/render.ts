@@ -410,6 +410,7 @@ const PROBE = `(() => {
     fit: window.__tguiFit ? window.__tguiFit() : null,
     fitWidth: window.__tguiFitWidth ? window.__tguiFitWidth() : null,
     innerW: innerWidth,
+    narrowLayout: document.documentElement.classList.contains('tgui-narrow'),
     declaredW: Number(document.documentElement.dataset.tguiDeclaredWidth) || 0,
     autofit: document.documentElement.dataset.tguiAutofit || 'unknown',
     inner: innerHeight,
@@ -461,6 +462,13 @@ async function runJob(page: { sessionId: string }, job: Job): Promise<Result> {
       screenWidth: 1920,
       screenHeight: 1080,
     },
+    page.sessionId,
+  );
+  // A transparent page (the right-click popup clears every background: in the game its browser element is sized to the
+  // menu over the map) shows black, as the map behind it would, not the headless browser's white.
+  await send(
+    'Emulation.setDefaultBackgroundColorOverride',
+    { color: { r: 0, g: 0, b: 0, a: 1 } },
     page.sessionId,
   );
   const q = new URLSearchParams({ w: job.window });

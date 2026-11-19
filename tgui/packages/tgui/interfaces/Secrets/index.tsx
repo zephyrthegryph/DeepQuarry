@@ -20,53 +20,50 @@ export const Secrets = (props) => {
   const TabComponent = TAB2NAME[tabIndex - 1].component();
 
   return (
-    <Window title="Secrets Panel" width={500} height={528} theme="admin">
+    <Window title="Secrets Panel" width={500} height={528}>
       <Window.Content>
         <Stack vertical fill>
           <Stack.Item mb={1}>
-            <Section
-              title="Secrets"
-              buttons={
-                <Stack>
-                  <Stack.Item>
-                    <Button
-                      color="blue"
-                      icon="address-card"
-                      onClick={() => act('admin_log')}
-                    >
-                      Admin Log
-                    </Button>
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button
-                      color="blue"
-                      icon="comments"
-                      onClick={() => act('dialog_log')}
-                    >
-                      Dialog Log
-                    </Button>
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button
-                      color="blue"
-                      icon="eye"
-                      onClick={() => act('show_admins')}
-                    >
-                      Show Admins
-                    </Button>
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button
-                      color="blue"
-                      icon="gamepad"
-                      onClick={() => act('show_game_mode')}
-                    >
-                      Game Mode
-                    </Button>
-                  </Stack.Item>
-                </Stack>
-              }
-            >
+            <Section title="Secrets">
+              {/* The log buttons sit in the panel, not over the title: four of them hid the "Secrets" title. */}
+              <Stack wrap justify="center" mb={1}>
+                <Stack.Item>
+                  <Button
+                    color="blue"
+                    icon="address-card"
+                    onClick={() => act('admin_log')}
+                  >
+                    Admin Log
+                  </Button>
+                </Stack.Item>
+                <Stack.Item>
+                  <Button
+                    color="blue"
+                    icon="comments"
+                    onClick={() => act('dialog_log')}
+                  >
+                    Dialog Log
+                  </Button>
+                </Stack.Item>
+                <Stack.Item>
+                  <Button
+                    color="blue"
+                    icon="eye"
+                    onClick={() => act('show_admins')}
+                  >
+                    Show Admins
+                  </Button>
+                </Stack.Item>
+                <Stack.Item>
+                  <Button
+                    color="blue"
+                    icon="gamepad"
+                    onClick={() => act('show_game_mode')}
+                  >
+                    Game Mode
+                  </Button>
+                </Stack.Item>
+              </Stack>
               <Stack mx={-0.5} align="stretch" justify="center">
                 <Stack.Item bold>
                   <NoticeBox color="black">

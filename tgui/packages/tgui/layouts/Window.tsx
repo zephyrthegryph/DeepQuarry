@@ -163,6 +163,22 @@ function openingFit(
   declaredWidth: number,
   minHeight?: number,
 ): [number, number] | null {
+  // Measured in the window's own layout, not the narrow one (styles/dq/narrow.scss): the narrow layout is for a window
+  // squeezed below what this measures.
+  const root = document.documentElement;
+  const wasNarrow = root.classList.contains('tgui-narrow');
+  root.classList.remove('tgui-narrow');
+  try {
+    return openingFitIn(declaredWidth, minHeight);
+  } finally {
+    if (wasNarrow) root.classList.add('tgui-narrow');
+  }
+}
+
+function openingFitIn(
+  declaredWidth: number,
+  minHeight?: number,
+): [number, number] | null {
   const want = measureFitWidth(document);
   if (!want) return null;
   const screenW = Math.floor((window.screen?.availWidth || 1920) * 0.9);
@@ -192,6 +208,24 @@ function NativeWindow(props: Props) {
 
   const { config, suspended, debug } = useBackend();
   const [revealedGeometry, setRevealedGeometry] = useState(false);
+  // The width the window opened at for its content (its fitted width, else its declared one). Narrower than that, the
+  // player has squeezed it: the page takes the narrow layout (styles/dq/narrow.scss, :root.tgui-narrow).
+  const intrinsicWidth = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    const update = () => {
+      const want = intrinsicWidth.current ?? requestedWidth ?? 0;
+      document.documentElement.classList.toggle(
+        'tgui-narrow',
+        want > 0 && window.innerWidth + 4 < want,
+      );
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      document.documentElement.classList.remove('tgui-narrow');
+    };
+  }, [requestedWidth, revealedGeometry]);
   useConsoleScanlines(resolveTheme(theme));
   const defaultGeometry = getStaticWindowGeometry(config?.interface?.name);
   const width = requestedWidth ?? defaultGeometry?.width;
@@ -300,6 +334,7 @@ function NativeWindow(props: Props) {
         if (autoFit && !fitContent && !fitted && !windowUserSized() && width) {
           const fitted0 = openingFit(width, minHeight);
           if (fitted0) {
+            intrinsicWidth.current = fitted0[0];
             const dpr = window.devicePixelRatio || 1;
             geometry = {
               ...geometry,

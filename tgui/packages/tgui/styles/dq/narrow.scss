@@ -1,8 +1,9 @@
 // Narrow windows (a window resized below its design width, or one opened narrow): rows of buttons, labelled rows and
-// tables wrap instead of running off the right edge. Only below 420px, so a window at its own size draws as designed.
+// tables wrap instead of running off the right edge. Only when the window is narrower than the width it opened at for its
+// content (layouts/Window.tsx sets :root.tgui-narrow), so a window at its own size, however small, draws as designed.
 // Found and checked with the render preview's narrow pass (tools/tgui_preview/render.ts --widths narrow, 360px).
 
-@media (max-width: 420px) {
+:root.tgui-narrow {
   // A row of buttons flows onto more lines between buttons; a button keeps its label on one line, cut with an ellipsis
   // only when it alone is wider than the window (letting it wrap broke labels into one letter per line).
   .LabeledList__buttons {
@@ -45,5 +46,26 @@
   // section instead of pushing the window wider; content that fits shows no scrollbar.
   .Section__content {
     overflow-x: auto;
+  }
+  // Side-by-side columns of sections (a sidebar beside a list, a lathe's categories, queue and designs) stack one under the
+  // other instead of squeezing every column below its content's width; the window scrolls to reach the lower ones.
+  .Stack--horizontal:has(> .Stack__item > .Section),
+  .Stack--horizontal:has(> .Stack__item > .Stack > .Stack__item > .Section) {
+    // !important: Stack sets its direction and height inline.
+    flex-direction: column !important;
+    height: auto !important;
+    > .Stack__item {
+      flex-basis: auto !important;
+      width: auto !important;
+      max-width: none !important;
+      margin-left: 0 !important;
+      // A definite height of its own: a fill section inside sizes against it (its scroll box is stretched over it).
+      height: max(12em, 45vh);
+      // A fixed-height column whose content is taller scrolls itself instead of running over the next one.
+      overflow-y: auto;
+    }
+  }
+  .Window__content {
+    overflow-y: auto;
   }
 }

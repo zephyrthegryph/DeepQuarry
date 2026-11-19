@@ -8,6 +8,7 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
+import { EmptyState } from '../common/EmptyState';
 import type { RetailScannerActions } from '../generated/RetailScanner';
 import type { Data } from './types';
 
@@ -57,6 +58,9 @@ export const CurrentTransaction = (model) => {
           The customer will see an itemized personal/subsidy quote and must
           explicitly confirm after presenting their ID or PDA.
         </Label>
+      )}
+      {!Object.keys(current_transactioon).length && (
+        <EmptyState>No transaction open: scan an item to start one.</EmptyState>
       )}
       <Table>
         {items && prices && (

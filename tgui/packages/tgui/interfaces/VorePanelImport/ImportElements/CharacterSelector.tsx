@@ -10,6 +10,7 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import { EmptyState } from '../../common/EmptyState';
 import { getCurrentTimestamp } from '../../VorePanelExport/VorePanelExportTimestamp';
 import { CURRENT_VERSION, UNKNOWN_ORIGIN } from '../constants';
 import { importLengthToColor } from '../function';
@@ -116,6 +117,11 @@ export const CharacterSelector = (props: {
           }
         >
           <Stack fill vertical>
+            {characterNames.length === 0 && (
+              <EmptyState>
+                Load an export file to list its characters.
+              </EmptyState>
+            )}
             {characterNames.map((character) => (
               <Stack.Item key={character}>
                 <Stack>

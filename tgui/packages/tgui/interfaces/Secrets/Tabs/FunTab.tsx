@@ -1,5 +1,5 @@
 import { useBackend } from 'tgui/backend';
-import { Button, NoticeBox, Stack } from 'tgui-core/components';
+import { Box, Button, Stack } from 'tgui-core/components';
 
 import { buttonWidthNormal, lineHeightNormal } from '../constants';
 
@@ -110,35 +110,32 @@ export const FunTab = (props) => {
           <Stack.Item>
             {/*
              */}
-            <NoticeBox
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box
               mb={-0.5}
               width={buttonWidthNormal}
               height={lineHeightNormal}
-            >
-              Your admin button here, coder!
-            </NoticeBox>
+            />
           </Stack.Item>
           <Stack.Item>
             {/*
              */}
-            <NoticeBox
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box
               mb={-0.5}
               width={buttonWidthNormal}
               height={lineHeightNormal}
-            >
-              Your admin button here, coder!
-            </NoticeBox>
+            />
           </Stack.Item>
           <Stack.Item>
             {/*
              */}
-            <NoticeBox
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box
               mb={-0.5}
               width={buttonWidthNormal}
               height={lineHeightNormal}
-            >
-              Your admin button here, coder!
-            </NoticeBox>
+            />
           </Stack.Item>
         </Stack>
       </Stack.Item>
@@ -147,35 +144,32 @@ export const FunTab = (props) => {
           <Stack.Item>
             {/*
              */}
-            <NoticeBox
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box
               mb={-0.5}
               width={buttonWidthNormal}
               height={lineHeightNormal}
-            >
-              Your admin button here, coder!
-            </NoticeBox>
+            />
           </Stack.Item>
           <Stack.Item>
             {/*
              */}
-            <NoticeBox
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box
               mb={-0.5}
               width={buttonWidthNormal}
               height={lineHeightNormal}
-            >
-              Your admin button here, coder!
-            </NoticeBox>
+            />
           </Stack.Item>
           <Stack.Item>
             {/*
              */}
-            <NoticeBox
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box
               mb={-0.5}
               width={buttonWidthNormal}
               height={lineHeightNormal}
-            >
-              Your admin button here, coder!
-            </NoticeBox>
+            />
           </Stack.Item>
         </Stack>
       </Stack.Item>
@@ -184,13 +178,12 @@ export const FunTab = (props) => {
           <Stack.Item>
             {/*
              */}
-            <NoticeBox
+            {/* An unused slot: kept empty so the grid stays aligned. */}
+            <Box
               mb={-0.5}
               width={buttonWidthNormal}
               height={lineHeightNormal}
-            >
-              Your admin button here, coder!
-            </NoticeBox>
+            />
           </Stack.Item>
           <Stack.Item>
             <Button
