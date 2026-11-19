@@ -322,22 +322,20 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 	if(damage > emergency_point)
 		alert_msg = emergency_alert + alert_msg
 		lastwarning = REALTIMEOFDAY - WARNING_DELAY * 4
-		// /obj/machinery/firealarm was deleted with ZAS fire_alarm.dm;
-		// the critalarm/engalarm sound loops are gone. Just track the warn flag
-		// so subsequent ticks don't re-trigger; alarm audio comes back if a LINDA
-		// equivalent is wired later.
 		if(!critwarn)
+			for(var/obj/machinery/firealarm/FA as anything in engineering_fire_alarms())
+				FA.set_sm_alarm("crit", TRUE)
 			critwarn = TRUE
 		safe_warned = FALSE
 	else if(damage > 0 && damage >= damage_archived) // The damage is still going up
-		// firealarm machinery deleted; preserve the engineering light
-		// alert but skip the alarm sound loop.
 		if(!engwarn)
 			if(src.z in using_map.station_levels)
 				for(var/type, area in GLOB.areas_by_type)
 					if(istype(area, /area/engineering))
 						for(var/obj/machinery/light/L in area)
 							L.set_alert_engineering()
+				for(var/obj/machinery/firealarm/FA as anything in engineering_fire_alarms())
+					FA.set_sm_alarm("eng", TRUE)
 			engwarn = TRUE
 		safe_warned = FALSE
 		alert_msg = warning_alert + alert_msg
@@ -531,9 +529,10 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 /obj/machinery/power/supermatter/proc/countdown()
 	if(!final_countdown)
-		// firealarm machinery deleted; flag the warning state without
-		// triggering the deleted alarm sound loop.
 		if(!causalitywarn)
+			if(src.z in using_map.station_levels)
+				for(var/obj/machinery/firealarm/FA as anything in engineering_fire_alarms())
+					FA.set_sm_alarm("causality", TRUE)
 			causalitywarn = TRUE
 
 	if(!(src.z in using_map.station_levels)) // SM Global Warn Fix; Is our location the same as the station? If no, then we're not going to use a stabilization field.
@@ -738,13 +737,14 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 	causalitywarn = FALSE
 
 /proc/reset_sm_alarms()
-	// /obj/machinery/firealarm was deleted with ZAS fire_alarm.dm; the
-	// SM alarm-sound loops have no host. Stub: just reset lights in engineering
-	// areas.
 	for(var/type, area in GLOB.areas_by_type)
 		if(istype(area, /area/engineering))
 			for(var/obj/machinery/light/L in area)
 				L.reset_alert()
+	for(var/obj/machinery/firealarm/FA as anything in engineering_fire_alarms())
+		FA.set_sm_alarm("eng", FALSE)
+		FA.set_sm_alarm("causality", FALSE)
+		FA.set_sm_alarm("crit", FALSE)
 
 #undef POWER_FACTOR
 #undef DECAY_FACTOR

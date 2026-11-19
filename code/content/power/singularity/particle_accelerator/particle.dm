@@ -55,11 +55,17 @@ CAPABILITIES(/obj/effect/accelerated_particle)
 		else if(istype(A, /obj/machinery/particle_smasher))
 			var/obj/machinery/particle_smasher/G = A
 			G.set_energy(G.energy + energy)
-		// R-UST fusion core and particle catcher deleted with the fusion
-		// subsystem (depended on /obj/effect/fusion_em_field in core_field.dm).
-		// Particles passing through where a fusion core used to be just continue
-		// flying; if fusion is re-implemented on LINDA the energy-transfer branches
-		// here should be restored.
+		// R-UST: reactant particles (from a fuel injector) feed the core's field, through the core or one of its catchers.
+		else if(istype(A, /obj/machinery/power/fusion_core))
+			var/obj/machinery/power/fusion_core/collided_core = A
+			if(particle_type && particle_type != "neutron" && collided_core.AddParticles(particle_type, 1 + additional_particles))
+				collided_core.owned_field.AddEnergy(energy, mega_energy)
+				spent(src)
+		else if(istype(A, /obj/effect/fusion_particle_catcher))
+			var/obj/effect/fusion_particle_catcher/PC = A
+			if(particle_type && particle_type != "neutron" && PC.AddParticles(particle_type, 1 + additional_particles))
+				PC.parent.AddEnergy(energy, mega_energy)
+				spent(src)
 
 
 /obj/effect/accelerated_particle/proc/bumped_into(datum/act/A)

@@ -598,7 +598,6 @@ CAPABILITIES(/obj/structure/bed/bath/material_treatment)
 	category = list(RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH)
 	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_ENGINEERING
 
-/datum/techweb_node/material_processing
 
 /// Applies production treatments instantly for isolated testing. The target is
 /// still replaced through the normal processed-stack path, exercising material

@@ -12,11 +12,14 @@
 	reusable = TRUE
 	event_type = /datum/event2/event/grid_check
 
-// /obj/machinery/power/generator (turbine) was deleted with the ZAS
-// power machinery cleanup; REGISTRY_MEMBERS(REGISTRY_TURBINES) no longer exists. Without
-// turbines, overpower is always 0 — grid checks fall back to weight-only.
+// Having the turbines be way over their rated limit makes grid checks more likely.
 /datum/event2/meta/grid_check/proc/get_overpower()
-	return 0
+	var/highest_overpower = 0
+	for(var/obj/machinery/power/generator/turbine as anything in REGISTRY_MEMBERS(REGISTRY_TURBINES))
+		var/overpower = max((turbine.effective_gen / turbine.max_power) - 1, 0)
+		if(overpower > highest_overpower)
+			highest_overpower = overpower
+	return highest_overpower
 
 /datum/event2/meta/grid_check/get_weight()
 	var/population_factor = GLOB.metric.count_people_in_department(DEPARTMENT_ENGINEERING) * 10
@@ -27,7 +30,19 @@
 
 /datum/event2/event/grid_check
 
+/// The turbine being pushed the hardest: it sends the power spike.
+/datum/event2/event/grid_check/proc/most_stressed_turbine()
+	var/obj/machinery/power/generator/most_stressed = null
+	for(var/obj/machinery/power/generator/turbine as anything in REGISTRY_MEMBERS(REGISTRY_TURBINES))
+		if(!most_stressed || turbine.effective_gen > most_stressed.effective_gen)
+			most_stressed = turbine
+	return most_stressed
+
 /datum/event2/event/grid_check/start()
 	// This sets off a chain of events that lead to the actual grid check (or perhaps worse).
-	// There are no turbines under LINDA (see get_overpower), so there is no engine power spike to send first.
-	// A grid checker on the same powernet would trigger a blackout and, if not, lots of stuff breaks.  See code/modules/power/generator.dm for that piece of code.
+	// First, the most stressed turbine makes a power spike.
+	var/obj/machinery/power/generator/engine = most_stressed_turbine()
+	if(engine)
+		engine.power_spike()
+	// After that, the engine checks if a grid checker exists on the same powernet, and if so, it triggers a blackout.
+	// If not, lots of stuff breaks.  See code/content/power/generator.dm for that piece of code.
