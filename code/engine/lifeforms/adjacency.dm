@@ -146,8 +146,11 @@ GLOBAL_LIST(adjacency_pending)
 	adjacency_write(holder, C, 0)
 	DQ_ADJACENCY_TRACE(holder, "mask cleared")
 
-/// While a bulk change holds the recomputes (adjacency_hold_begin()): the member slots, in the order first asked, and slot -> TRUE (a slot is a number,
-/// so the set is an alist beside the ordered list). Each member recomputes once when
+/// While a bulk change holds the recomputes (adjacency_hold_begin()): the member handles (adj_handle, indexes into GLOB.adjacency_members), in the
+/// order first asked, and handle -> TRUE (a handle is a number, so the set is an alist beside the ordered list). Handles, not datum slots: a member
+/// the bulk change destroys frees its datum slot, which is reused by whatever is made next (an explosion's damage reports), so a held slot would
+/// resolve to that unrelated datum. A member's teardown clears its adjacency handle's entry, and a reused adjacency handle names another member,
+/// which a recompute only refreshes. Each member recomputes once when
 /// the hold drains (adjacency_hold_drain()), instead of once per neighbour that changed: an explosion crater changes most turfs next to each other,
 /// and every changed turf asked its 4-8 neighbours again (14 k recomputes for 2.3 k changed turfs in the supermatter bench).
 GLOBAL_LIST(adjacency_held)
@@ -172,8 +175,8 @@ GLOBAL_VAR_INIT(adjacency_held_runs, 0)
 	if(!held)
 		return TRUE
 	while(GLOB.adjacency_held_index <= length(held))
-		var/atom/member = slot_datum(held[GLOB.adjacency_held_index++])
-		if(member && !QDELETED(member) && member.adj_handle)
+		var/atom/member = adjacency_member(held[GLOB.adjacency_held_index++])
+		if(member)
 			GLOB.adjacency_held_runs++
 			var/datum/lifeform_plan/MP = lifeform_plan_of(member)
 			for(var/datum/centry/MC as anything in MP.adjacencies)
@@ -186,6 +189,16 @@ GLOBAL_VAR_INIT(adjacency_held_runs, 0)
 	GLOB.adjacency_held_index = 1
 	return TRUE
 
+/// The live member adjacency handle `h` names now, or null (a freed handle, or a member being destroyed).
+/proc/adjacency_member(h)
+	var/atom/member = slot_datum(GLOB.adjacency_members[h])
+	if(!member || QDELETED(member))
+		return null
+	if(!isatom(member) || member.adj_handle != h)
+		declare_report("adjacency: handle [h] names a [member.type] that is not its member (its slot was reused without the member's teardown)")
+		return null
+	return member
+
 /proc/adjacency_recompute_handles(list/changed, kind)
 	var/list/waiting = GLOB.adjacency_pending?[kind]
 	var/list/held = GLOB.adjacency_held
@@ -193,12 +206,11 @@ GLOBAL_VAR_INIT(adjacency_held_runs, 0)
 		if(waiting)
 			waiting -= h // recomputed here, with the successor in place
 		if(held)
-			var/member_slot = GLOB.adjacency_members[h]
-			if(member_slot)
+			if(GLOB.adjacency_members[h])
 				GLOB.adjacency_held_asks++
-				if(!GLOB.adjacency_held_seen[member_slot])
-					GLOB.adjacency_held_seen[member_slot] = TRUE
-					held += member_slot
+				if(!GLOB.adjacency_held_seen[h])
+					GLOB.adjacency_held_seen[h] = TRUE
+					held += h
 			continue
 		var/atom/member = slot_datum(GLOB.adjacency_members[h])
 		if(!member || QDELETED(member))
