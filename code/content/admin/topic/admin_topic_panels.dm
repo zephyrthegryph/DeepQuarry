@@ -121,21 +121,15 @@
 	message_admins(span_blue("[key_name(user)] [ticker_delay_end() ? "delayed the round end" : "has made the round end normally"]."), 1)
 
 MSG_DEF_SELF(admin_topic/round_started, "The game has already started.")
-MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 
 /datum/admins/proc/round_not_started(datum/act/op/A)
 	return (!(SSticker && ticker_mode())) ? null : MSG(admin_topic/round_started)
-
-/datum/admins/proc/round_is_secret(datum/act/op/A)
-	return (read_once(GLOB.master_mode) == "secret") ? null : MSG(admin_topic/not_secret)
 
 /// The game modes an admin can pick before the round starts: label -> mode.
 /datum/admins/proc/c_mode_choices()
 	var/list/label_to_mode = list()
 	for(var/mode in config.modes)
 		label_to_mode["[config.mode_names[mode]]"] = mode
-	label_to_mode["Secret"] = "secret"
-	label_to_mode["Random"] = "random"
 	return label_to_mode
 
 /datum/admins/proc/c_mode_labels(datum/act/op/A)
@@ -153,36 +147,9 @@ MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 	if(picked_mode)
 		admin_set_master_mode(user, picked_mode)
 
-/// The modes a secret round can be forced to: label -> mode.
-/datum/admins/proc/f_secret_choices()
-	var/list/label_to_mode = list()
-	for(var/mode in config.modes)
-		label_to_mode["[config.mode_names[mode]]"] = mode
-	label_to_mode["Random (default)"] = "secret"
-	return label_to_mode
-
-/datum/admins/proc/f_secret_labels(datum/act/op/A)
-	return assoc_to_keys(f_secret_choices())
-
-/datum/admins/proc/f_secret_question(datum/act/op/A)
-	return "What game mode do you want to force secret to be? (current: [GLOB.secret_force_mode])"
-
-/datum/admins/proc/topic_f_secret(datum/act/op/A)
-	var/mob/user = A.actor
-	var/pick = A.step_value("mode")
-	if(!pick)
-		return
-	var/picked_mode = f_secret_choices()[pick]
-	if(picked_mode)
-		admin_set_secret_force_mode(user, picked_mode)
-
 /datum/admins/proc/topic_c_mode2(datum/act/op/A, href_c_mode2)
 	var/mob/user = A.actor
 	admin_set_master_mode(user, href_c_mode2)
-
-/datum/admins/proc/topic_f_secret2(datum/act/op/A, href_f_secret2)
-	var/mob/user = A.actor
-	admin_set_secret_force_mode(user, href_f_secret2)
 
 /// Sets the round's game mode before it starts.
 /datum/admins/proc/admin_set_master_mode(mob/user, mode)
@@ -197,21 +164,6 @@ MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 	to_chat(world, span_world(span_blue("The mode is now: [config.mode_names[GLOB.master_mode]]")))
 	Game() // updates the main game menu
 	world.save_mode(GLOB.master_mode)
-
-/// Sets the mode a secret round will actually run.
-/datum/admins/proc/admin_set_secret_force_mode(mob/user, mode)
-	if(!check_rights_for(user?.client, R_ADMIN|R_SERVER|R_EVENT) || !mode)
-		return
-	if(SSticker && ticker_mode())
-		tgui_alert_async(user, "The game has already started.")
-		return
-	if(GLOB.master_mode != "secret")
-		tgui_alert_async(user, "The game mode has to be secret!")
-		return
-	GLOB.secret_force_mode = mode
-	log_admin("[key_name(user)] set the forced secret mode as [GLOB.secret_force_mode].")
-	message_admins(span_blue("[key_name_admin(user)] set the forced secret mode as [GLOB.secret_force_mode]."))
-	Game() // updates the main game menu
 
 /datum/admins/proc/topic_check_antagonist(datum/act/op/A)
 	var/mob/user = A.actor

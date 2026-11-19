@@ -147,7 +147,6 @@ SYSTEM_ACCESSOR(tgui, tgui_chunk_files, nameof(chunk_files))
 SYSTEM_ACCESSOR(ticker, ticker_admin_delay_notice, nameof(admin_delay_notice))
 SYSTEM_ACCESSOR(ticker, ticker_current_state, nameof(current_state))
 SYSTEM_ACCESSOR(ticker, ticker_delay_end, nameof(delay_end))
-SYSTEM_ACCESSOR(ticker, ticker_hide_mode, nameof(hide_mode))
 SYSTEM_ACCESSOR(ticker, ticker_minds, nameof(minds))
 /// Typed: a caller reads through it (ticker_mode()?.name).
 SYSTEM_ACCESSOR(ticker, ticker_mode, nameof(mode), /datum/game_mode)

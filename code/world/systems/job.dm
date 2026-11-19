@@ -458,6 +458,20 @@ CAPABILITIES(/datum/system/job)
 			rel_remove(src, nameof(unassigned), player)
 	return TRUE
 
+/// The free roundstart landmarks for a job: the ones named for its title, else the ones named for one of its alt titles
+/// (maps name some landmarks for an alt title, such as "Barista").
+/datum/system/job/proc/roundstart_spawns_for(rank, datum/job/job, include_occupied = FALSE, list/candidates = null)
+	var/list/exact = list()
+	var/list/by_alt = list()
+	for(var/obj/effect/landmark/start/sloc in (candidates || REGISTRY_MEMBERS(REGISTRY_LANDMARKS)))
+		if(!include_occupied && locate_within(sloc.loc, /mob/living))
+			continue
+		if(sloc.name == rank)
+			exact += sloc
+		else if(job && LAZYACCESS(job.alt_titles, sloc.name))
+			by_alt += sloc
+	return length(exact) ? exact : by_alt
+
 /datum/system/job/proc/equip_rank(mob/living/carbon/human/human_mob, rank, joined_late = 0, announce = TRUE)
 	if(!human_mob)
 		return null
@@ -467,11 +481,7 @@ CAPABILITIES(/datum/system/job)
 
 	if(!joined_late)
 		var/obj/spawn_point = null
-		var/list/possible_spawns = list()
-		for(var/obj/effect/landmark/start/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
-			if(sloc.name != rank)	continue
-			if(locate_within(sloc.loc, /mob/living))	continue
-			possible_spawns.Add(sloc)
+		var/list/possible_spawns = roundstart_spawns_for(rank, job)
 		if(length(possible_spawns))
 			spawn_point = pick(possible_spawns)
 		if(!spawn_point)

@@ -17,9 +17,8 @@
 CAPABILITIES(/datum/game_panel)
 	ref_one(nameof(owner_admin))
 	interface("GamePanel", title = "Game Panel", rights = R_ADMIN)
-	ui_shape(master_mode = schema_text(), secret_mode = bool())
+	ui_shape(master_mode = schema_text())
 	op("change_mode", ui_act("change_mode"), then(PROC_REF(ui_act_change_mode)))
-	op("force_secret", ui_act("force_secret"), then(PROC_REF(ui_act_force_secret)))
 	op("spawn_panel", ui_act("spawn_panel"), then(PROC_REF(ui_act_spawn_panel)))
 	op("vsc", ui_act("vsc", arg("setting", schema_text(4096))), then(PROC_REF(ui_act_vsc)))
 
@@ -31,7 +30,6 @@ CAPABILITIES(/datum/game_panel)
 /datum/game_panel/ui_data(datum/act/eval/A)
 	return list(
 		"master_mode" = GLOB.master_mode,
-		"secret_mode" = GLOB.master_mode == "secret",
 	)
 
 /datum/game_panel/proc/ui_gate(datum/act/op/A)
@@ -45,14 +43,6 @@ CAPABILITIES(/datum/game_panel)
 	if(!ui_gate(A))
 		return FALSE
 	owner_admin.topic_internal(user, list("c_mode" = "1"))
-	SStgui.update_uis(src)
-	return TRUE
-
-/datum/game_panel/proc/ui_act_force_secret(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
-	owner_admin.topic_internal(user, list("f_secret" = "1"))
 	SStgui.update_uis(src)
 	return TRUE
 

@@ -26,7 +26,7 @@
 	. = ..()
 	. += ""
 
-	. += "Game Mode: [ticker_hide_mode() ? "Secret" : "[config.mode_names[GLOB.master_mode]]"]"
+	. += "Game Mode: [config.mode_names[GLOB.master_mode]]"
 
 	// if(GLOB.vote_service.mode)
 	// 	. += "Vote: [capitalize(GLOB.vote_service.mode)] Time Left: [GLOB.vote_service.time_remaining] s"
