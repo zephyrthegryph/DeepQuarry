@@ -113,6 +113,8 @@ pub(crate) struct ValueProcs<'a, 'k> {
     params: RefCell<Vec<Vec<bool>>>,
     /// The name of each definition.
     def_names: Vec<String>,
+    /// Name -> its definitions, in id order (a call on a receiver of unknown type, a name a string spells).
+    by_name: HashMap<String, Vec<usize>>,
     /// Names of the procs the tree itself defines with a body or declaration (not the DM builtin types').
     tree_names: HashSet<String>,
     /// Names of the procs the DM builtin types define.
@@ -149,6 +151,13 @@ fn type_key(path: &str) -> String {
 
 impl<'a, 'k> ValueProcs<'a, 'k> {
     pub(crate) fn build(sem: &'a Sem, w: &'a Walker<'a, 'k>) -> Self {
+        let trace = std::env::var_os("DQ_ANALYZE_TRACE").is_some();
+        let t0 = std::time::Instant::now();
+        let lap = |what: &str| {
+            if trace {
+                eprintln!("value_procs: {what} after {:.2?}", t0.elapsed());
+            }
+        };
         let mut ids: HashMap<DefKey, usize> = HashMap::new();
         let mut refs: Vec<ProcRef<'a>> = Vec::new();
         let mut finals: HashMap<String, Vec<(String, usize)>> = HashMap::new();
@@ -177,7 +186,9 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             }
         }
         let parent: Vec<Option<usize>> = refs.iter().map(|r| r.parent_proc().filter(|p| !p.is_builtin()).and_then(|p| ids.get(&(type_key(&p.ty().get().path), p.name().to_string(), p.index())).copied())).collect();
+        lap("definitions");
         let vars = value_var_candidates(sem);
+        lap("var candidates");
         let mut var_keys: HashMap<String, Vec<String>> = HashMap::new();
         for k in vars.keys() {
             if let Some((_, n)) = k.rsplit_once("::") {
@@ -185,7 +196,12 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             }
         }
         let def_names: Vec<String> = refs.iter().map(|r| r.name().to_string()).collect();
+        let mut by_name: HashMap<String, Vec<usize>> = HashMap::new();
+        for (i, n) in def_names.iter().enumerate() {
+            by_name.entry(n.clone()).or_default().push(i);
+        }
         let (params, names, proc_refs) = param_candidates(sem, &refs);
+        lap("parameter candidates");
         let tree_names: HashSet<String> = refs.iter().filter(|r| !r.is_builtin() && !r.get().location.is_builtins()).map(|r| r.name().to_string()).collect();
         let mut builtin_names: HashSet<String> = HashSet::new();
         for ty in sem.objtree.iter_types() {
@@ -195,9 +211,9 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 }
             }
         }
-        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), vars: RefCell::new(vars), var_keys, params: RefCell::new(params), def_names, tree_names, builtin_names, current: std::cell::Cell::new(None), readers: RefCell::new(HashMap::new()), queue: RefCell::new(std::collections::VecDeque::new()), queued: RefCell::new(vec![false; refs.len()]) };
+        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), vars: RefCell::new(vars), var_keys, params: RefCell::new(params), by_name, def_names, tree_names, builtin_names, current: std::cell::Cell::new(None), readers: RefCell::new(HashMap::new()), queue: RefCell::new(std::collections::VecDeque::new()), queued: RefCell::new(vec![false; refs.len()]) };
         for n in names.iter() {
-            let ids: Vec<usize> = me.def_names.iter().enumerate().filter(|(_, d)| *d == n).map(|(i, _)| i).collect();
+            let ids: Vec<usize> = me.defs_named(n).to_vec();
             me.bar(&ids);
         }
         for (owner, name) in proc_refs.iter() {
@@ -205,14 +221,16 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 Target::Defs(d) => me.bar(&d),
                 // A reference to a name no definition is found for on that type: judged by name, the safe side.
                 Target::Builtin => {
-                    let ids: Vec<usize> = me.def_names.iter().enumerate().filter(|(_, d)| *d == name).map(|(i, _)| i).collect();
+                    let ids: Vec<usize> = me.defs_named(name).to_vec();
                     me.bar(&ids);
                 }
             }
         }
+        lap("barred");
         let verify = std::env::var_os("DQ_VALUE_PROCS_VERIFY").is_some();
         let snapshot = verify.then(|| (me.value.clone(), me.vars.borrow().clone(), me.params.borrow().clone()));
         me.solve_worklist(&refs);
+        lap("fixpoint");
         if let Some((value, vars, params)) = snapshot {
             let (wl_value, wl_vars, wl_params) = (me.value.clone(), me.vars.borrow().clone(), me.params.borrow().clone());
             me.value = value;
@@ -252,9 +270,11 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 queued[id] = true;
             }
         }
+        let mut evaluations = 0usize;
         loop {
             let next = self.queue.borrow_mut().pop_front();
             let Some(id) = next else { break };
+            evaluations += 1;
             self.queued.borrow_mut()[id] = false;
             // A definition that already lost the title is still evaluated: its var writes and calls narrow the vars and parameters
             // whatever it returns, and with the facts it read gone false they may narrow more.
@@ -267,6 +287,9 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 let name = self.def_names[id].clone();
                 self.wake(&Fact::Name(name));
             }
+        }
+        if std::env::var_os("DQ_ANALYZE_TRACE").is_some() {
+            eprintln!("value_procs: {} evaluations of {} definitions", evaluations, refs.len());
         }
     }
 
@@ -313,6 +336,10 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             queued[id] = true;
             self.queue.borrow_mut().push_back(id);
         }
+    }
+
+    fn defs_named(&self, name: &str) -> &[usize] {
+        self.by_name.get(name).map(|v| v.as_slice()).unwrap_or(&[])
     }
 
     fn id_of(&self, r: ProcRef<'a>) -> Option<usize> {
@@ -591,16 +618,8 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             return true;
         }
         self.read(Fact::Name(name.to_string()));
-        let mut any = false;
-        for (i, n) in self.def_names.iter().enumerate() {
-            if n == name {
-                any = true;
-                if !self.value[i] {
-                    return false;
-                }
-            }
-        }
-        any
+        let defs = self.defs_named(name);
+        !defs.is_empty() && defs.iter().all(|i| self.value[*i])
     }
 
     /// `id` and the definitions its `..()` reaches: a call that reaches `id` hands the same arguments up the chain.
@@ -661,7 +680,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     fn call_site(&self, ctx: &Ctx, defs: Option<Vec<usize>>, name: &str, args: &[Expression]) {
         let ids: Vec<usize> = match defs {
             Some(d) => d,
-            None => self.def_names.iter().enumerate().filter(|(_, n)| *n == name).map(|(i, _)| i).collect(),
+            None => self.defs_named(name).to_vec(),
         };
         if ids.is_empty() {
             return;
