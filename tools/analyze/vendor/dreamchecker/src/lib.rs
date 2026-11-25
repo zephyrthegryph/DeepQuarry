@@ -1008,8 +1008,8 @@ impl<'o> AnalyzeObjectTree<'o> {
     }
 
     /// The `must_not_sleep` and `must_be_pure` call-tree checks. Each directive proc's search is independent and reads only the
-    /// finished tables, so the searches run on several threads; their diagnostics are registered in the directive tables' order,
-    /// as the serial loops registered them. A proc is queued at most once per search (the serial loop queued it again for every
+    /// finished tables, so the searches run on several threads; their diagnostics are registered in the directive procs' source
+    /// order. A proc is queued at most once per search (the serial loop queued it again for every
     /// caller and skipped it when popped: the first queued copy, the one kept here, is the one it checked).
     pub fn check_proc_call_tree(&mut self) {
         let tables = CallTables {
@@ -1021,8 +1021,15 @@ impl<'o> AnalyzeObjectTree<'o> {
             sleeping_overrides: &self.sleeping_overrides,
             impure_overrides: &self.impure_overrides,
         };
-        let sleep: Vec<(ProcRef<'o>, Location)> = self.must_not_sleep.directive.iter().map(|(p, &(_, l))| (*p, l)).collect();
-        let pure: Vec<(ProcRef<'o>, Location)> = self.must_be_pure.directive.iter().map(|(p, &(_, l))| (*p, l)).collect();
+        // In the procs' source order: upstream walked the directive tables' hash order, which is seeded per process, so the order of
+        // these diagnostics changed from run to run.
+        let in_order = |d: &ProcDirective<'o>| {
+            let mut v: Vec<(ProcRef<'o>, Location)> = d.directive.iter().map(|(p, &(_, l))| (*p, l)).collect();
+            v.sort_by_key(|(p, l)| (p.get().location, *l, p.to_string()));
+            v
+        };
+        let sleep = in_order(&self.must_not_sleep);
+        let pure = in_order(&self.must_be_pure);
         let found = parallel_map(&sleep, |&(procref, location)| tables.sleep_findings(procref, location));
         for e in found.into_iter().flatten() {
             e.register(self.context);

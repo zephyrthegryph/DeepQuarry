@@ -868,7 +868,8 @@ paths, wall times and miss causes.
 ### DreamChecker policy (2026-10-16)
 
 2026-11-25: DreamChecker runs in process, `analyze dreamchecker -e deepquarry.dme` (the vendored suite-1.11 checker on analyze's own
-parse, `doc/rewrite/proposals/lean_unified.md`): the same output and exit code as the standalone binary, in about 12 s and 1 GB instead
+parse, `doc/rewrite/proposals/lean_unified.md`): the same diagnostics and exit code as the standalone binary (the call-tree ones in source
+order; the standalone's order changes from run to run), in about 12 s and 1 GB instead
 of about 6 minutes (the call-tree pass queued each proc once per caller; it now queues it once and runs the searches on several
 threads). The build's DreamChecker step uses it; `DQ_DREAMCHECKER_STANDALONE=1` runs the standalone binary, which stays the oracle
 (`tools/analyze/tests/dreamchecker_parity.rs`). When to run it is unchanged below.
