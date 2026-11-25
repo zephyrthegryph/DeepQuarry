@@ -19,6 +19,8 @@ path = "src/lib.rs"
 mimalloc = { version = "0.1", default-features = false }
 # Parse-aware frontend: SpacemanDMM suite-1.11 dreammaker, vendored (vendor/README.md) to add model persistence.
 dreammaker = { path = "vendor/dreammaker" }
+# DreamChecker at the same pin (vendor/README.md): `analyze dreamchecker` runs it on this parse.
+dreamchecker = { path = "vendor/dreamchecker" }
 regex = "1"
 fancy-regex = "0.14"
 rayon = "1"

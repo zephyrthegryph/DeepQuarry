@@ -258,6 +258,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "blake3",
+ "dreamchecker",
  "dreammaker",
  "fancy-regex",
  "md-5",
@@ -270,6 +271,15 @@ dependencies = [
  "tempfile",
  "toml 0.8.23",
  "walkdir",
+]
+
+[[package]]
+name = "dreamchecker"
+version = "1.11.0"
+dependencies = [
+ "dreammaker",
+ "foldhash",
+ "serde_json",
 ]
 
 [[package]]

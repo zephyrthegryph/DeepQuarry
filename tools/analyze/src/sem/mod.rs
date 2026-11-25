@@ -507,7 +507,15 @@ impl Sem {
 /// preprocessor's registers the files (every `Location` names one of its file ids), and the errors of both are kept. `preregister` names
 /// files to register first, in order, so they get the same ids as in the parse that produced that list (`model_store`).
 pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<String>) -> Result<model_store::Parsed, String> {
-    parse_source(dme_path, preregister, Source::Dme(text), false)
+    parse_source(dme_path, preregister, Source::Dme(text), false, None)
+}
+
+/// A full parse as DreamChecker makes it (`crate::dreamchecker`): every body parsed (not the lean encoding), the config of
+/// `config_dme`'s directory, every diagnostic kept.
+pub fn parse_for_checker(dme_path: &Path, config_dme: &Path) -> Result<model_store::Parsed, String> {
+    model_store::ensure_codec();
+    dreammaker::objtree::set_compact_parse(false);
+    parse_source(dme_path, &[], Source::Dme(None), false, Some(config_dme))
 }
 
 /// What the preprocessor reads.
@@ -527,18 +535,25 @@ pub fn set_lean_parse(on: bool) {
     dreammaker::objtree::set_compact_parse(on);
 }
 
-pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Source, history: bool) -> Result<model_store::Parsed, String> {
+/// `checker`: parse as DreamChecker does (`crate::dreamchecker`): both contexts read the `.dme`'s `SpacemanDMM.toml` (the parser's
+/// code-standard checks read it), body ranges are kept, and every diagnostic of every severity is returned in `Parsed::raw`.
+pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Source, history: bool, checker: Option<&Path>) -> Result<model_store::Parsed, String> {
+    let config = checker.map(|p| p.to_path_buf());
     const BATCH: usize = 8192;
     let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<dreammaker::lexer::LocatedToken>>(64);
     let dme_for_pp = dme_path.to_path_buf();
     let pre: Vec<PathBuf> = preregister.to_vec();
+    let config_pp = config.clone();
     type Out = (dreammaker::Context, Option<dreammaker::preprocessor::StoredDefineHistory>);
     let pp_thread = std::thread::Builder::new()
         .name("dm-preprocess".into())
         .stack_size(64 * 1024 * 1024)
         .spawn(move || -> Result<Out, String> {
             let _acct = CpuGuard(std::panic::Location::caller(), if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 });
-            let ctx = dreammaker::Context::default();
+            let mut ctx = dreammaker::Context::default();
+            if let Some(toml) = &config_pp {
+                ctx.autodetect_config(toml);
+            }
             for p in &pre {
                 ctx.register_file(p);
             }
@@ -579,13 +594,20 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
             Ok((ctx, stored))
         })
         .map_err(|e| format!("preprocessor thread: {}", e))?;
-    let parse_ctx = dreammaker::Context::default();
+    let mut parse_ctx = dreammaker::Context::default();
+    if let Some(dme) = &config {
+        parse_ctx.autodetect_config(dme);
+    }
+    let fatal;
     let objtree = {
         let mut parser = dreammaker::parser::Parser::new(&parse_ctx, rx.into_iter().flatten());
         parser.enable_procs();
-        let (_fatal, mut tree) = parser.parse_object_tree_2();
+        let (fatal_errored, mut tree) = parser.parse_object_tree_2();
+        fatal = fatal_errored;
         // A proc's body range ends in whatever file came next; nothing reads it (model_store splices files parsed alone).
-        tree.drop_body_ranges();
+        if config.is_none() {
+            tree.drop_body_ranges();
+        }
         tree
     };
     let (ctx, defines) = match pp_thread.join() {
@@ -600,7 +622,14 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
         all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
         all.iter().map(|e| format!("{}", e)).collect()
     };
-    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines })
+    let raw = config.is_some().then(|| {
+        let mut all: Vec<dreammaker::DMError> = std::mem::take(&mut *ctx.errors_mut());
+        all.append(&mut parse_ctx.errors_mut());
+        // Stable: two diagnostics at one position keep preprocessor-then-parser order.
+        all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
+        all
+    });
+    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines, raw, fatal })
 }
 
 /// One line of a file as the layering index reads it (see `Sem::build_with`).

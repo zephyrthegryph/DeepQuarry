@@ -191,6 +191,23 @@ impl Context {
         self.errors.borrow_mut().push(error);
     }
 
+    /// A context for one worker of a parallel pass: the same files and config, no diagnostics, printing nothing. Its diagnostics are
+    /// taken (`take_errors`) and registered on the original in a fixed order, so output does not depend on scheduling.
+    pub fn fork(&self) -> Context {
+        Context {
+            files: self.files.clone(),
+            errors: Default::default(),
+            config: self.config.clone(),
+            print_severity: None,
+            io_time: Default::default(),
+        }
+    }
+
+    /// Take the diagnostics registered so far, leaving none.
+    pub fn take_errors(&self) -> Vec<DMError> {
+        std::mem::take(&mut *self.errors.borrow_mut())
+    }
+
     /// Access the list of diagnostics generated so far.
     pub fn errors(&self) -> Ref<'_, [DMError]> {
         Ref::map(self.errors.borrow(), |x| &**x)

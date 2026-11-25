@@ -1,0 +1,90 @@
+//! `analyze dreamchecker`: SpacemanDMM's DreamChecker (vendored at the same suite-1.11 pin as `dreammaker`, `vendor/README.md`)
+//! run in this process on analyze's own parse, with the standalone `dreamchecker -e <dme>` output: progress on stdout, every
+//! diagnostic at info severity or above on stderr as it is registered, the closing count, `--json` totals and exit 1 on any.
+//! The standalone binary stays the oracle (`tools/analyze/tests/dreamchecker_parity.rs`).
+
+use std::path::{Path, PathBuf};
+
+/// Arguments: the standalone's own `[-e DME] [-c CONFIG] [--json] [--parse-only]`, plus `--threads N`.
+pub fn cli(argv: &[String], root: &Path) -> i32 {
+    let mut dme: Option<PathBuf> = None;
+    let mut config: Option<PathBuf> = None;
+    let mut json = false;
+    let mut parse_only = false;
+    let mut threads = default_threads();
+    let mut it = argv.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "-e" => dme = it.next().map(PathBuf::from),
+            "-c" => config = it.next().map(PathBuf::from),
+            "--json" => json = true,
+            "--parse-only" => parse_only = true,
+            "--threads" => match it.next().and_then(|n| n.parse().ok()) {
+                Some(n) => threads = n,
+                None => {
+                    eprintln!("--threads takes a number");
+                    return 2;
+                }
+            },
+            other => {
+                eprintln!("unknown argument: {other}");
+                return 2;
+            }
+        }
+    }
+    let dme = dme.map(|p| if p.is_absolute() { p } else { root.join(p) }).unwrap_or_else(|| root.join("deepquarry.dme"));
+    run(&dme, config.as_deref(), json, parse_only, threads)
+}
+
+/// Half the cores (the machine is also a desktop), at most 8; `DQ_DREAMCHECKER_THREADS` overrides, 1 is the serial upstream pass.
+fn default_threads() -> usize {
+    if let Some(n) = std::env::var("DQ_DREAMCHECKER_THREADS").ok().and_then(|v| v.parse().ok()) {
+        return n;
+    }
+    std::thread::available_parallelism().map(|n| (n.get() / 2).clamp(1, 8)).unwrap_or(1)
+}
+
+pub fn run(dme: &Path, config: Option<&Path>, json: bool, parse_only: bool, threads: usize) -> i32 {
+    let toml_dme = config.map(|c| c.parent().unwrap_or(Path::new(".")).join("x.dme")).unwrap_or_else(|| dme.to_path_buf());
+    println!("============================================================");
+    println!("Parsing {}...\n", dme.display());
+    let parsed = match crate::sem::parse_for_checker(dme, &toml_dme) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("analyze dreamchecker: {e}");
+            return 2;
+        }
+    };
+    // The context DreamChecker registers to: the parse's files under the same ids, its config, printing as the standalone does.
+    let mut context = dreammaker::Context::default();
+    context.set_print_severity(Some(dreammaker::Severity::Info));
+    match config {
+        Some(c) => context.force_config(c),
+        None => context.autodetect_config(dme),
+    }
+    parsed.files.for_each(|p| {
+        context.register_file(p);
+    });
+    for e in parsed.raw.unwrap_or_default() {
+        context.register_error(e);
+    }
+    if !parse_only && !parsed.fatal {
+        dreamchecker::run_parallel(&context, &parsed.objtree, true, threads);
+    }
+    println!("============================================================");
+    let errors = context.errors().iter().filter(|e| e.severity() <= dreammaker::Severity::Info).count();
+    println!("Found {errors} diagnostics");
+    if json {
+        let count = |s| context.errors().iter().filter(|e| e.severity() == s).count();
+        print!(
+            "{}",
+            serde_json::json!({
+                "hint": count(dreammaker::Severity::Hint),
+                "info": count(dreammaker::Severity::Info),
+                "warning": count(dreammaker::Severity::Warning),
+                "error": count(dreammaker::Severity::Error),
+            })
+        );
+    }
+    if errors > 0 { 1 } else { 0 }
+}

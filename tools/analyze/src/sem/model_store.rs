@@ -48,6 +48,10 @@ pub struct Parsed {
     pub structure: Option<u128>,
     /// A full parse's macro history: the macro state at the start of every file, so a later run parses one file alone.
     pub defines: Option<dreammaker::preprocessor::StoredDefineHistory>,
+    /// A checker parse's diagnostics, every severity, in source order (`parse_source`'s `checker`); never stored.
+    pub raw: Option<Vec<dreammaker::DMError>>,
+    /// The parser stopped on a fatal error.
+    pub fatal: bool,
 }
 
 #[derive(Serialize)]
@@ -265,7 +269,7 @@ pub fn obtain(root: &Path, tree: &Tree, dme_path: &Path) -> Result<Parsed, Strin
                 eprintln!("analyze: model store: full parse ({})", why);
             }
             let _ = std::fs::remove_file(dir.join(DELTA));
-            let mut parsed = super::parse_source(dme_path, &[], super::Source::Dme(None), true)?;
+            let mut parsed = super::parse_source(dme_path, &[], super::Source::Dme(None), true, None)?;
             let mut paths = Vec::new();
             parsed.files.for_each(|p| paths.push(p.to_path_buf()));
             let (keys, directive) = table(tree, root, &paths);
@@ -390,7 +394,7 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<
                 read.push((next.clone(), abs_in(root, next)));
             }
             let tp = std::time::Instant::now();
-            let partial = super::parse_source(dme_path, &s.paths, super::Source::Alone(hist.clone(), read), false)?;
+            let partial = super::parse_source(dme_path, &s.paths, super::Source::Alone(hist.clone(), read), false, None)?;
             if partial.files.get_id(target) != Some(fid) {
                 return Err("the partial parse named the file differently".to_string());
             }
@@ -457,7 +461,7 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<
         std::mem::forget(patches);
     }
     let structure = s.structure;
-    Ok((Parsed { objtree: s.objtree, files, errors: s.errors, env: Some(env), structure: Some(structure), defines: None }, parsed, patched))
+    Ok((Parsed { objtree: s.objtree, files, errors: s.errors, env: Some(env), structure: Some(structure), defines: None, raw: None, fatal: false }, parsed, patched))
 }
 
 /// Called once the model is in the memo: writes a new base on a side thread when this run parsed the tree or folded the delta.

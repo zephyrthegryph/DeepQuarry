@@ -10,6 +10,7 @@ pub mod cache;
 pub mod codemod;
 pub mod codemods;
 pub mod dm;
+pub mod dreamchecker;
 pub mod frontend;
 pub mod incr;
 pub mod gens;

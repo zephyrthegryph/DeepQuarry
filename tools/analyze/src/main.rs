@@ -30,6 +30,8 @@ USAGE
   analyze timing [--lint NAME...] [--no-cache]
       A full check with a per-lint timing table.
   analyze selftest [--lint NAME...]     Run each lint's fixture tests.
+  analyze dreamchecker [-e DME] [-c TOML] [--json] [--parse-only]
+      DreamChecker on this process's own parse; same output and exit code as the standalone binary.
   analyze list                          The registered lints.
   analyze frontend-diff                 Compare the text scanner with the dreammaker parser.
   analyze gen [--check] [NAME...]       Write (or check) the generated DM under code/engine/_generated/.
@@ -397,6 +399,10 @@ fn real_main() -> ExitCode {
             } else {
                 ExitCode::SUCCESS
             }
+        }
+        "dreamchecker" => {
+            let rest: Vec<String> = std::env::args().skip(2).collect();
+            return ExitCode::from(dq_analyze::dreamchecker::cli(&rest, &root) as u8);
         }
         "sem" => dq_analyze::sem::cli::run(&args.flags, &root),
         "base-vars-dead" => dq_analyze::base_vars_dead::run(&args.flags, &root),

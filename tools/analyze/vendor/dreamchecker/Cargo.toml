@@ -1,0 +1,13 @@
+[package]
+name = "dreamchecker"
+version = "1.11.0"
+authors = ["Tad Hardesty <tad@platymuus.com>"]
+edition = "2021"
+license = "GPL-3.0-only"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+dreammaker = { path = "../dreammaker" }
+foldhash = "0.2.0"
