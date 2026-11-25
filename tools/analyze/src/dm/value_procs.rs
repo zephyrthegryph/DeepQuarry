@@ -39,6 +39,11 @@
 //! The answer is the greatest fixpoint: every definition starts as a value-returning one and loses the title when a return path does
 //! not qualify, until nothing changes. Recursion therefore terminates (the set only shrinks) and a cycle with no other way out stays
 //! as it is, since it returns nothing at all.
+//!
+//! It is solved with a worklist: each evaluation records the facts it read (another definition's answer, the definitions of a name, a
+//! var's verdict); when a fact turns false, only its readers are evaluated again, and a definition whose parameters lose a position is
+//! evaluated again. An evaluation that read nothing that changed gives the same answer and the same narrowing, so this is the fixpoint
+//! the round-by-round loop (`DQ_VALUE_PROCS_VERIFY=1` runs both and compares) reaches, without re-reading every body each round.
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -98,14 +103,10 @@ pub(crate) struct ValueProcs<'a, 'k> {
     /// The final definition of each type's own proc `name`, for finding overrides.
     finals: HashMap<String, Vec<(String, usize)>>,
     targets: RefCell<HashMap<(String, String), Target>>,
-    /// Set while a definition is evaluated: it read another definition's answer.
-    touched: RefCell<bool>,
     /// Var names that still hold only values (candidates start in; an assignment of a non-value takes a name out).
     vars: RefCell<HashMap<String, bool>>,
     /// Var name -> every key of `vars` with that name, for a write whose receiver cannot be typed.
     var_keys: HashMap<String, Vec<String>>,
-    /// Set when a var name left `vars` during this pass: the definitions that read it must be looked at again.
-    vars_changed: RefCell<bool>,
     /// Per definition, per parameter position: still known to receive only values at every call that can reach it. A call reaches the
     /// definitions its receiver's static type finds (and their overrides); only a call whose receiver cannot be typed, a string naming the
     /// proc and a `call()` reach every definition of a name.
@@ -116,6 +117,24 @@ pub(crate) struct ValueProcs<'a, 'k> {
     tree_names: HashSet<String>,
     /// Names of the procs the DM builtin types define.
     builtin_names: HashSet<String>,
+    /// The definition being evaluated, whose reads are recorded (worklist mode).
+    current: std::cell::Cell<Option<usize>>,
+    /// Who read a fact: the definitions to evaluate again when it turns false.
+    readers: RefCell<HashMap<Fact, Vec<usize>>>,
+    /// Definitions to evaluate again (a fact they read turned false, or their parameters narrowed).
+    queue: RefCell<std::collections::VecDeque<usize>>,
+    queued: RefCell<Vec<bool>>,
+}
+
+/// A fact an evaluation reads.
+#[derive(Clone, PartialEq, Eq, Hash)]
+enum Fact {
+    /// A definition's answer.
+    Value(usize),
+    /// Every definition of a name (a call on a receiver of unknown type).
+    Name(String),
+    /// A var's verdict (`var_key`).
+    Var(String),
 }
 
 struct Ctx<'c> {
@@ -176,7 +195,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 }
             }
         }
-        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), touched: RefCell::new(false), vars: RefCell::new(vars), var_keys, vars_changed: RefCell::new(false), params: RefCell::new(params), def_names, tree_names, builtin_names };
+        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), vars: RefCell::new(vars), var_keys, params: RefCell::new(params), def_names, tree_names, builtin_names, current: std::cell::Cell::new(None), readers: RefCell::new(HashMap::new()), queue: RefCell::new(std::collections::VecDeque::new()), queued: RefCell::new(vec![false; refs.len()]) };
         for n in names.iter() {
             let ids: Vec<usize> = me.def_names.iter().enumerate().filter(|(_, d)| *d == n).map(|(i, _)| i).collect();
             me.bar(&ids);
@@ -191,27 +210,109 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 }
             }
         }
-        let mut live: Vec<usize> = (0..refs.len()).collect();
-        loop {
-            let mut changed = false;
-            *me.vars_changed.borrow_mut() = false;
-            let mut next = Vec::new();
-            for id in live {
-                *me.touched.borrow_mut() = false;
-                let ok = me.eval_def(id, refs[id]);
-                if !ok {
-                    me.value[id] = false;
-                    changed = true;
-                } else if *me.touched.borrow() {
-                    next.push(id);
+        let verify = std::env::var_os("DQ_VALUE_PROCS_VERIFY").is_some();
+        let snapshot = verify.then(|| (me.value.clone(), me.vars.borrow().clone(), me.params.borrow().clone()));
+        me.solve_worklist(&refs);
+        if let Some((value, vars, params)) = snapshot {
+            let (wl_value, wl_vars, wl_params) = (me.value.clone(), me.vars.borrow().clone(), me.params.borrow().clone());
+            me.value = value;
+            *me.vars.borrow_mut() = vars;
+            *me.params.borrow_mut() = params;
+            me.solve_rounds(&refs);
+            let same = me.value == wl_value && *me.vars.borrow() == wl_vars && *me.params.borrow() == wl_params;
+            eprintln!("value_procs verify: worklist and rounds {}", if same { "agree" } else { "DIFFER" });
+            if !same {
+                let count = |v: &[bool]| v.iter().filter(|b| **b).count();
+                eprintln!("  values true: worklist {} rounds {}", count(&wl_value), count(&me.value));
+                for (i, (a, b)) in wl_value.iter().zip(me.value.iter()).enumerate().filter(|(_, (a, b))| a != b).take(8) {
+                    eprintln!("  def {} {:?}: worklist {} rounds {}", i, refs[i], a, b);
                 }
+                let wv = wl_vars.values().filter(|b| **b).count();
+                let rv = me.vars.borrow().values().filter(|b| **b).count();
+                eprintln!("  vars true: worklist {} rounds {}", wv, rv);
+                for (k, b) in me.vars.borrow().iter().filter(|(k, b)| wl_vars.get(*k) != Some(*b)).take(8) {
+                    eprintln!("  var {}: worklist {:?} rounds {}", k, wl_vars.get(k), b);
+                }
+                let wp: usize = wl_params.iter().map(|v| count(v)).sum();
+                let rp: usize = me.params.borrow().iter().map(|v| count(v)).sum();
+                eprintln!("  params true: worklist {} rounds {}", wp, rp);
             }
-            if !changed && !*me.vars_changed.borrow() {
-                break;
-            }
-            live = next;
+            assert!(same, "value_procs: the worklist fixpoint differs from the round-by-round one");
         }
         me
+    }
+
+    /// The fixpoint by worklist (see the module doc).
+    fn solve_worklist(&mut self, refs: &[ProcRef<'a>]) {
+        {
+            let mut q = self.queue.borrow_mut();
+            let mut queued = self.queued.borrow_mut();
+            for id in 0..refs.len() {
+                q.push_back(id);
+                queued[id] = true;
+            }
+        }
+        loop {
+            let next = self.queue.borrow_mut().pop_front();
+            let Some(id) = next else { break };
+            self.queued.borrow_mut()[id] = false;
+            // A definition that already lost the title is still evaluated: its var writes and calls narrow the vars and parameters
+            // whatever it returns, and with the facts it read gone false they may narrow more.
+            self.current.set(Some(id));
+            let ok = self.eval_def(id, refs[id]);
+            self.current.set(None);
+            if !ok && self.value[id] {
+                self.value[id] = false;
+                self.wake(&Fact::Value(id));
+                let name = self.def_names[id].clone();
+                self.wake(&Fact::Name(name));
+            }
+        }
+    }
+
+    /// The reference fixpoint for `DQ_VALUE_PROCS_VERIFY`: every definition is evaluated again, round after round, until a round changes
+    /// no fact. (The loop this replaced stopped evaluating a definition once it lost the title, so the narrowing its writes and calls
+    /// would make under later facts was lost and the answer depended on the order of the definitions.)
+    fn solve_rounds(&mut self, refs: &[ProcRef<'a>]) {
+        loop {
+            let before = (self.value.clone(), self.vars.borrow().clone(), self.params.borrow().clone());
+            for id in 0..refs.len() {
+                let ok = self.eval_def(id, refs[id]);
+                if !ok {
+                    self.value[id] = false;
+                }
+            }
+            if before == (self.value.clone(), self.vars.borrow().clone(), self.params.borrow().clone()) {
+                break;
+            }
+        }
+    }
+
+    /// Records that the definition being evaluated read `fact`.
+    fn read(&self, fact: Fact) {
+        if let Some(c) = self.current.get() {
+            let mut r = self.readers.borrow_mut();
+            let v = r.entry(fact).or_default();
+            if v.last() != Some(&c) {
+                v.push(c);
+            }
+        }
+    }
+
+    /// `fact` turned false: queue its readers.
+    fn wake(&self, fact: &Fact) {
+        let readers = self.readers.borrow_mut().remove(fact);
+        for id in readers.into_iter().flatten() {
+            self.enqueue(id);
+        }
+    }
+
+    fn enqueue(&self, id: usize) {
+        let mut queued = self.queued.borrow_mut();
+        if !queued[id] {
+            queued[id] = true;
+            self.queue.borrow_mut().push_back(id);
+        }
     }
 
     fn id_of(&self, r: ProcRef<'a>) -> Option<usize> {
@@ -250,8 +351,13 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     }
 
     fn defs_value(&self, defs: &[usize]) -> bool {
-        *self.touched.borrow_mut() = true;
-        defs.iter().all(|d| self.value[*d])
+        for d in defs {
+            self.read(Fact::Value(*d));
+            if !self.value[*d] {
+                return false;
+            }
+        }
+        true
     }
 
     fn call_value(&self, owner: &str, name: &str, builtin_ok: bool) -> bool {
@@ -319,7 +425,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                     },
                     Term::SelfCall(_) => match ctx.def {
                         Some(id) => {
-                            *self.touched.borrow_mut() = true;
+                            self.read(Fact::Value(id));
                             self.value[id]
                         }
                         None => false,
@@ -407,10 +513,17 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
 
     /// Whether the var `name` read on type `ty` holds only values.
     fn var_value(&self, ty: &str, name: &str) -> bool {
-        *self.touched.borrow_mut() = true;
         let Some(sig) = self.sem.var_decl(ty, name) else { return false };
         let Some(owner) = self.sem.var_owner(ty, name) else { return false };
-        sig.declared.is_empty() && self.vars.borrow().get(&var_key(&owner, name)).copied().unwrap_or(false)
+        if !sig.declared.is_empty() {
+            return false;
+        }
+        let key = var_key(&owner, name);
+        let v = self.vars.borrow().get(&key).copied().unwrap_or(false);
+        if v {
+            self.read(Fact::Var(key));
+        }
+        v
     }
 
     /// Takes out of `vars` every var that `code` assigns a non-value to. A write through a receiver of known type (or to the proc's own var)
@@ -449,13 +562,21 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 return;
             }
             if !self.value_expr(ctx, rhs) {
-                let mut vars = self.vars.borrow_mut();
-                for k in keys {
-                    if let Some(b) = vars.get_mut(&k) {
-                        *b = false;
+                let mut killed = Vec::new();
+                {
+                    let mut vars = self.vars.borrow_mut();
+                    for k in keys {
+                        if let Some(b) = vars.get_mut(&k) {
+                            if *b {
+                                *b = false;
+                                killed.push(k);
+                            }
+                        }
                     }
                 }
-                *self.vars_changed.borrow_mut() = true;
+                for k in killed {
+                    self.wake(&Fact::Var(k));
+                }
             }
         });
     }
@@ -463,13 +584,13 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     /// A method call `x.name()` whose receiver has no static type: it runs some definition named `name`, so it is a value when every
     /// definition of that name in the tree is and no DM builtin type has a proc of that name.
     fn any_receiver_value(&self, name: &str) -> bool {
-        *self.touched.borrow_mut() = true;
         if self.builtin_names.contains(name) {
             return false;
         }
         if BUILTIN_VALUE_METHODS.contains(&name) && !self.tree_names.contains(name) {
             return true;
         }
+        self.read(Fact::Name(name.to_string()));
         let mut any = false;
         for (i, n) in self.def_names.iter().enumerate() {
             if n == name {
@@ -505,18 +626,25 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
 
     /// Takes a parameter position (all of them: None) of a definition and of the definitions above it out of `params` for good.
     fn kill_def(&self, id: usize, i: Option<usize>) {
-        let mut ps = self.params.borrow_mut();
-        let mut hit = false;
-        for d in self.up_chain(id) {
-            for (j, b) in ps[d].iter_mut().enumerate() {
-                if *b && i.is_none_or(|i| i == j) {
-                    *b = false;
-                    hit = true;
+        let mut narrowed = Vec::new();
+        {
+            let mut ps = self.params.borrow_mut();
+            for d in self.up_chain(id) {
+                let mut hit = false;
+                for (j, b) in ps[d].iter_mut().enumerate() {
+                    if *b && i.is_none_or(|i| i == j) {
+                        *b = false;
+                        hit = true;
+                    }
+                }
+                if hit {
+                    narrowed.push(d);
                 }
             }
         }
-        if hit {
-            *self.vars_changed.borrow_mut() = true;
+        // A definition reads its own parameters' verdicts: evaluate it again.
+        for d in narrowed {
+            self.enqueue(d);
         }
     }
 
@@ -610,7 +738,6 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         let mut locals: HashMap<String, (String, Option<crate::lints::stored_refs::Place>)> = HashMap::new();
         let mut bad: HashSet<String> = HashSet::new();
         let mut value_params: Vec<String> = Vec::new();
-        *self.touched.borrow_mut() = true;
         let flags = self.params.borrow()[id].clone();
         for (i, p) in v.parameters.iter().enumerate() {
             locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
