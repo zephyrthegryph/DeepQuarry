@@ -44,6 +44,11 @@
 //! var's verdict); when a fact turns false, only its readers are evaluated again, and a definition whose parameters lose a position is
 //! evaluated again. An evaluation that read nothing that changed gives the same answer and the same narrowing, so this is the fixpoint
 //! the round-by-round loop (`DQ_VALUE_PROCS_VERIFY=1` runs both and compares) reaches, without re-reading every body each round.
+//!
+//! Between runs the solution is kept (`data/analyze-cache/value-procs.bin`) with who read each fact and who would take each one out.
+//! When only bodies changed (same structure, same starting candidates), the facts the changed definitions took out are put back, and
+//! with them every fact only definitions affected by those took out, and just those definitions are evaluated again. Any other
+//! change solves from the start.
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -126,10 +131,12 @@ pub(crate) struct ValueProcs<'a, 'k> {
     /// Definitions to evaluate again (a fact they read turned false, or their parameters narrowed).
     queue: RefCell<std::collections::VecDeque<usize>>,
     queued: RefCell<Vec<bool>>,
+    /// Who would take a fact out (a var or a parameter position), whether or not it is still in: what may put it back after an edit.
+    takers: RefCell<HashMap<Fact, Vec<usize>>>,
 }
 
-/// A fact an evaluation reads.
-#[derive(Clone, PartialEq, Eq, Hash)]
+/// A fact an evaluation reads or takes out.
+#[derive(Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 enum Fact {
     /// A definition's answer.
     Value(usize),
@@ -137,6 +144,51 @@ enum Fact {
     Name(String),
     /// A var's verdict (`var_key`).
     Var(String),
+    /// A parameter position of a definition.
+    Param(usize, usize),
+    /// The bodies of one type's procs (read by `config_class_clean`).
+    TypeBodies(String),
+}
+
+/// The kept solution (see the module doc).
+#[derive(serde::Serialize, serde::Deserialize)]
+struct Saved {
+    stamp: String,
+    structure: u128,
+    defs: Vec<DefKey>,
+    bodies: Vec<u128>,
+    init_vars: Vec<(String, bool)>,
+    init_params: Vec<Vec<bool>>,
+    value: Vec<bool>,
+    vars: Vec<(String, bool)>,
+    params: Vec<Vec<bool>>,
+    readers: Vec<(Fact, Vec<u32>)>,
+    takers: Vec<(Fact, Vec<u32>)>,
+}
+
+fn sorted_vars(v: &HashMap<String, bool>) -> Vec<(String, bool)> {
+    let mut out: Vec<(String, bool)> = v.iter().map(|(k, b)| (k.clone(), *b)).collect();
+    out.sort();
+    out
+}
+
+fn pack(m: &HashMap<Fact, Vec<usize>>) -> Vec<(Fact, Vec<u32>)> {
+    m.iter()
+        .map(|(f, v)| {
+            let mut ids: Vec<u32> = v.iter().map(|i| *i as u32).collect();
+            ids.sort_unstable();
+            ids.dedup();
+            (f.clone(), ids)
+        })
+        .collect()
+}
+
+fn unpack(v: Vec<(Fact, Vec<u32>)>) -> HashMap<Fact, Vec<usize>> {
+    v.into_iter().map(|(f, ids)| (f, ids.into_iter().map(|i| i as usize).collect())).collect()
+}
+
+fn saved_path() -> Option<std::path::PathBuf> {
+    crate::incr::dir().map(|d| d.join("value-procs.bin"))
 }
 
 struct Ctx<'c> {
@@ -211,7 +263,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 }
             }
         }
-        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), vars: RefCell::new(vars), var_keys, params: RefCell::new(params), by_name, def_names, tree_names, builtin_names, current: std::cell::Cell::new(None), readers: RefCell::new(HashMap::new()), queue: RefCell::new(std::collections::VecDeque::new()), queued: RefCell::new(vec![false; refs.len()]) };
+        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), vars: RefCell::new(vars), var_keys, params: RefCell::new(params), by_name, def_names, tree_names, builtin_names, current: std::cell::Cell::new(None), readers: RefCell::new(HashMap::new()), queue: RefCell::new(std::collections::VecDeque::new()), queued: RefCell::new(vec![false; refs.len()]), takers: RefCell::new(HashMap::new()) };
         for n in names.iter() {
             let ids: Vec<usize> = me.defs_named(n).to_vec();
             me.bar(&ids);
@@ -227,47 +279,215 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             }
         }
         lap("barred");
-        let verify = std::env::var_os("DQ_VALUE_PROCS_VERIFY").is_some();
-        let snapshot = verify.then(|| (me.value.clone(), me.vars.borrow().clone(), me.params.borrow().clone()));
-        me.solve_worklist(&refs);
-        lap("fixpoint");
-        if let Some((value, vars, params)) = snapshot {
-            let (wl_value, wl_vars, wl_params) = (me.value.clone(), me.vars.borrow().clone(), me.params.borrow().clone());
-            me.value = value;
-            *me.vars.borrow_mut() = vars;
-            *me.params.borrow_mut() = params;
-            me.solve_rounds(&refs);
-            let same = me.value == wl_value && *me.vars.borrow() == wl_vars && *me.params.borrow() == wl_params;
-            eprintln!("value_procs verify: worklist and rounds {}", if same { "agree" } else { "DIFFER" });
-            if !same {
-                let count = |v: &[bool]| v.iter().filter(|b| **b).count();
-                eprintln!("  values true: worklist {} rounds {}", count(&wl_value), count(&me.value));
-                for (i, (a, b)) in wl_value.iter().zip(me.value.iter()).enumerate().filter(|(_, (a, b))| a != b).take(8) {
-                    eprintln!("  def {} {:?}: worklist {} rounds {}", i, refs[i], a, b);
-                }
-                let wv = wl_vars.values().filter(|b| **b).count();
-                let rv = me.vars.borrow().values().filter(|b| **b).count();
-                eprintln!("  vars true: worklist {} rounds {}", wv, rv);
-                for (k, b) in me.vars.borrow().iter().filter(|(k, b)| wl_vars.get(*k) != Some(*b)).take(8) {
-                    eprintln!("  var {}: worklist {:?} rounds {}", k, wl_vars.get(k), b);
-                }
-                let wp: usize = wl_params.iter().map(|v| count(v)).sum();
-                let rp: usize = me.params.borrow().iter().map(|v| count(v)).sum();
-                eprintln!("  params true: worklist {} rounds {}", wp, rp);
-            }
-            assert!(same, "value_procs: the worklist fixpoint differs from the round-by-round one");
+        let init_vars = me.vars.borrow().clone();
+        let init_params = me.params.borrow().clone();
+        let keep = sem.cacheable();
+        let structure = if keep { sem.structure_digest() } else { 0 };
+        let defs: Vec<DefKey> = refs.iter().map(|r| (type_key(&r.ty().get().path), r.name().to_string(), r.index())).collect();
+        let bodies: Vec<u128> = refs.iter().map(|r| sem.location_key(r.get().location)).collect();
+        let stamp = crate::incr::stamp().unwrap_or_default();
+        let saved = if keep { Self::load(&stamp, structure, &defs, &init_vars, &init_params) } else { None };
+        let incremental = saved.is_some();
+        match saved {
+            Some(saved) => me.solve_from(&refs, saved, &bodies),
+            None => me.solve_worklist(&refs),
+        }
+        lap(if incremental { "fixpoint (kept, changed bodies only)" } else { "fixpoint" });
+        if std::env::var_os("DQ_VALUE_PROCS_VERIFY").is_some() {
+            me.verify(&refs, &init_vars, &init_params, incremental);
+        }
+        if keep {
+            me.save(stamp, structure, defs, bodies, &init_vars, init_params);
         }
         me
     }
 
+    /// The kept solution, when it was made for this structure and these starting candidates.
+    fn load(stamp: &str, structure: u128, defs: &[DefKey], init_vars: &HashMap<String, bool>, init_params: &[Vec<bool>]) -> Option<Saved> {
+        let bytes = std::fs::read(saved_path()?).ok()?;
+        let saved: Saved = crate::incr::de(&bytes).ok()?;
+        (saved.stamp == stamp && saved.structure == structure && saved.defs == defs && saved.init_vars == sorted_vars(init_vars) && saved.init_params == init_params)
+            .then_some(saved)
+    }
+
+    fn save(&self, stamp: String, structure: u128, defs: Vec<DefKey>, bodies: Vec<u128>, init_vars: &HashMap<String, bool>, init_params: Vec<Vec<bool>>) {
+        let Some(path) = saved_path() else { return };
+        let saved = Saved {
+            stamp,
+            structure,
+            defs,
+            bodies,
+            init_vars: sorted_vars(init_vars),
+            init_params,
+            value: self.value.clone(),
+            vars: sorted_vars(&self.vars.borrow()),
+            params: self.params.borrow().clone(),
+            readers: pack(&self.readers.borrow()),
+            takers: pack(&self.takers.borrow()),
+        };
+        if let Ok(bytes) = crate::incr::ser(&saved) {
+            let tmp = path.with_extension(format!("tmp{}", std::process::id()));
+            if std::fs::write(&tmp, &bytes).is_ok() {
+                let _ = std::fs::rename(&tmp, &path);
+            }
+        }
+    }
+
+    /// From the kept solution: put back what the changed definitions (and, in turn, what they affected) took out, evaluate those again.
+    fn solve_from(&mut self, refs: &[ProcRef<'a>], saved: Saved, bodies: &[u128]) {
+        self.value = saved.value;
+        *self.vars.borrow_mut() = saved.vars.into_iter().collect();
+        *self.params.borrow_mut() = saved.params;
+        *self.readers.borrow_mut() = unpack(saved.readers);
+        *self.takers.borrow_mut() = unpack(saved.takers);
+        let init_vars: HashMap<String, bool> = saved.init_vars.into_iter().collect();
+        let init_params = saved.init_params;
+        // What each definition would take out.
+        let mut takes: Vec<Vec<Fact>> = vec![Vec::new(); refs.len()];
+        for (f, ids) in self.takers.borrow().iter() {
+            for &d in ids {
+                takes[d].push(f.clone());
+            }
+        }
+        let changed: Vec<usize> = (0..refs.len()).filter(|&i| saved.bodies.get(i) != Some(&bodies[i])).collect();
+        let mut affected = vec![false; refs.len()];
+        let mut back: HashSet<Fact> = HashSet::new();
+        let mut stack: Vec<usize> = changed.clone();
+        // A changed body changes what `config_class_clean` reads of its type.
+        for &d in &changed {
+            let ty = type_key(&refs[d].ty().get().path);
+            if let Some(r) = self.readers.borrow().get(&Fact::TypeBodies(ty)) {
+                stack.extend(r.iter().copied());
+            }
+        }
+        while let Some(d) = stack.pop() {
+            if affected[d] {
+                continue;
+            }
+            affected[d] = true;
+            let mut facts: Vec<Fact> = takes[d].clone();
+            facts.push(Fact::Value(d));
+            for f in facts {
+                if back.contains(&f) {
+                    continue;
+                }
+                let out = match &f {
+                    Fact::Value(i) => !self.value[*i],
+                    Fact::Var(k) => !self.vars.borrow().get(k).copied().unwrap_or(true) && init_vars.get(k).copied().unwrap_or(false),
+                    Fact::Param(i, j) => {
+                        !self.params.borrow()[*i].get(*j).copied().unwrap_or(true) && init_params[*i].get(*j).copied().unwrap_or(false)
+                    }
+                    _ => false,
+                };
+                if !out {
+                    continue;
+                }
+                // Out only by affected definitions: it may come back. A taker that is not affected still takes it out.
+                let all_affected = match &f {
+                    Fact::Value(_) => true,
+                    _ => self.takers.borrow().get(&f).is_none_or(|t| t.iter().all(|t| affected[*t])),
+                };
+                if !all_affected {
+                    continue;
+                }
+                back.insert(f.clone());
+                let readers = self.readers.borrow();
+                if let Some(r) = readers.get(&f) {
+                    stack.extend(r.iter().copied());
+                }
+                match &f {
+                    Fact::Value(i) => {
+                        if let Some(r) = readers.get(&Fact::Name(self.def_names[*i].clone())) {
+                            stack.extend(r.iter().copied());
+                        }
+                    }
+                    Fact::Param(i, _) => stack.push(*i),
+                    _ => {}
+                }
+            }
+            // A taker that joins later may free a fact an earlier one held: look at its facts' other takers again.
+            for f in &takes[d] {
+                if let Some(t) = self.takers.borrow().get(f) {
+                    for &o in t {
+                        if affected[o] && o != d {
+                            stack.push(o);
+                        }
+                    }
+                }
+            }
+        }
+        // The facts come back as they started; the affected definitions forget what they would take out and are evaluated again.
+        for f in &back {
+            match f {
+                Fact::Value(i) => self.value[*i] = true,
+                Fact::Var(k) => {
+                    self.vars.borrow_mut().insert(k.clone(), true);
+                }
+                Fact::Param(i, j) => self.params.borrow_mut()[*i][*j] = true,
+                _ => {}
+            }
+        }
+        {
+            let mut takers = self.takers.borrow_mut();
+            for ids in takers.values_mut() {
+                ids.retain(|d| !affected[*d]);
+            }
+            takers.retain(|_, ids| !ids.is_empty());
+        }
+        let queue: Vec<usize> = (0..refs.len()).filter(|&d| affected[d]).collect();
+        if std::env::var_os("DQ_ANALYZE_TRACE").is_some() {
+            eprintln!("value_procs: {} changed bodies, {} definitions affected, {} facts put back", changed.len(), queue.len(), back.len());
+        }
+        self.run_queue(refs, queue);
+    }
+
+    /// `DQ_VALUE_PROCS_VERIFY`: the answer must be the plain repeat-until-stable fixpoint from the same start.
+    fn verify(&mut self, refs: &[ProcRef<'a>], init_vars: &HashMap<String, bool>, init_params: &[Vec<bool>], incremental: bool) {
+        let got = (self.value.clone(), self.vars.borrow().clone(), self.params.borrow().clone());
+        let tables = (self.readers.borrow().clone(), self.takers.borrow().clone());
+        self.value = vec![true; refs.len()];
+        *self.vars.borrow_mut() = init_vars.clone();
+        *self.params.borrow_mut() = init_params.to_vec();
+        self.solve_rounds(refs);
+        let want = (self.value.clone(), self.vars.borrow().clone(), self.params.borrow().clone());
+        let same = got == want;
+        eprintln!("value_procs verify: {} and rounds {}", if incremental { "kept solution" } else { "worklist" }, if same { "agree" } else { "DIFFER" });
+        if !same {
+            let count = |v: &[bool]| v.iter().filter(|b| **b).count();
+            eprintln!("  values true: got {} want {}", count(&got.0), count(&want.0));
+            for (i, (a, b)) in got.0.iter().zip(want.0.iter()).enumerate().filter(|(_, (a, b))| a != b).take(8) {
+                eprintln!("  def {} {}: got {} want {}", i, refs[i], a, b);
+            }
+            for (k, b) in want.1.iter().filter(|(k, b)| got.1.get(*k) != Some(*b)).take(8) {
+                eprintln!("  var {}: got {:?} want {}", k, got.1.get(k), b);
+            }
+            let gp: usize = got.2.iter().map(|v| count(v)).sum();
+            let wp: usize = want.2.iter().map(|v| count(v)).sum();
+            eprintln!("  params true: got {} want {}", gp, wp);
+        }
+        assert!(same, "value_procs: the solution differs from the round-by-round fixpoint");
+        self.value = got.0;
+        *self.vars.borrow_mut() = got.1;
+        *self.params.borrow_mut() = got.2;
+        *self.readers.borrow_mut() = tables.0;
+        *self.takers.borrow_mut() = tables.1;
+    }
+
     /// The fixpoint by worklist (see the module doc).
     fn solve_worklist(&mut self, refs: &[ProcRef<'a>]) {
+        self.run_queue(refs, (0..refs.len()).collect());
+    }
+
+    /// Evaluates `start` (in order), then whatever their changes wake, until the queue is empty.
+    fn run_queue(&mut self, refs: &[ProcRef<'a>], start: Vec<usize>) {
         {
             let mut q = self.queue.borrow_mut();
             let mut queued = self.queued.borrow_mut();
-            for id in 0..refs.len() {
-                q.push_back(id);
-                queued[id] = true;
+            for id in start {
+                if !queued[id] {
+                    q.push_back(id);
+                    queued[id] = true;
+                }
             }
         }
         let mut evaluations = 0usize;
@@ -316,6 +536,17 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         if let Some(c) = self.current.get() {
             let mut r = self.readers.borrow_mut();
             let v = r.entry(fact).or_default();
+            if v.last() != Some(&c) {
+                v.push(c);
+            }
+        }
+    }
+
+    /// Records that the definition being evaluated would take `fact` out.
+    fn take(&self, fact: Fact) {
+        if let Some(c) = self.current.get() {
+            let mut t = self.takers.borrow_mut();
+            let v = t.entry(fact).or_default();
             if v.last() != Some(&c) {
                 v.push(c);
             }
@@ -514,6 +745,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             if type_key(&cur.get().path) == class {
                 return true;
             }
+            self.read(Fact::TypeBodies(type_key(&cur.get().path)));
             for (_, tp) in cur.get().procs.iter() {
                 for v in tp.value.iter() {
                     let Some(code) = v.code.as_ref() else { continue };
@@ -546,11 +778,12 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             return false;
         }
         let key = var_key(&owner, name);
-        let v = self.vars.borrow().get(&key).copied().unwrap_or(false);
-        if v {
+        let v = self.vars.borrow().get(&key).copied();
+        if v.is_some() {
+            // Read whether in or out: a var that is put back after an edit must wake whoever saw it out.
             self.read(Fact::Var(key));
         }
-        v
+        v.unwrap_or(false)
     }
 
     /// Takes out of `vars` every var that `code` assigns a non-value to. A write through a receiver of known type (or to the proc's own var)
@@ -585,12 +818,17 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 Some(o) => vec![var_key(&o, &name)],
                 None => self.var_keys.get(&name).cloned().unwrap_or_default(),
             };
-            if keys.is_empty() || !keys.iter().any(|k| self.vars.borrow().get(k).copied().unwrap_or(false)) {
+            let keys: Vec<String> = keys.into_iter().filter(|k| self.vars.borrow().contains_key(k)).collect();
+            if keys.is_empty() {
                 return;
             }
+            // Judged even when every var it reaches is already out: who would take a var out is what may put it back after an edit.
             if !self.value_expr(ctx, rhs) {
                 let mut killed = Vec::new();
                 {
+                    for k in &keys {
+                        self.take(Fact::Var(k.clone()));
+                    }
                     let mut vars = self.vars.borrow_mut();
                     for k in keys {
                         if let Some(b) = vars.get_mut(&k) {
@@ -651,9 +889,12 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             for d in self.up_chain(id) {
                 let mut hit = false;
                 for (j, b) in ps[d].iter_mut().enumerate() {
-                    if *b && i.is_none_or(|i| i == j) {
-                        *b = false;
-                        hit = true;
+                    if i.is_none_or(|i| i == j) {
+                        self.take(Fact::Param(d, j));
+                        if *b {
+                            *b = false;
+                            hit = true;
+                        }
                     }
                 }
                 if hit {
