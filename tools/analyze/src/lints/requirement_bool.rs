@@ -49,43 +49,68 @@ impl Lint for RequirementBool {
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let files = cx.files();
-        let key = crate::incr::ctx_key(&files.iter().map(|f| (f.rel.as_str(), f.fkey)).collect::<Vec<_>>());
-        let typed: Option<Vec<(String, u32, String)>> =
-            crate::incr::cached("requirement-bool-calls-v2", key, || cx.sem().map(|sem| crate::sem::procs::call_sites(&sem, &["req_bool"])));
-        for (rel, line) in self.collect_sites(&files, typed) {
+        // Cached per file inside call_sites: an edit re-reads only the edited files' bodies.
+        let typed: Option<Vec<(String, u32, String)>> = cx.sem().map(|sem| crate::sem::procs::call_sites(&sem, cx.tree, &["req_bool"]));
+        // The text rules are a function of one file and the retired-macro list: cached per file, so an edit re-scans that file only.
+        let retired: Vec<String> = cx.list("retired_macros").to_vec();
+        let ctx = crate::incr::ctx_key(&retired);
+        let text: Vec<(Vec<usize>, Vec<usize>)> = crate::incr::keyed("requirement-bool-text", ctx, &files, |file| self.text_sites(file, &retired));
+        let calls: Vec<&[usize]> = text.iter().map(|(c, _)| c.as_slice()).collect();
+        let sites = Self::merge_sites(&files, typed, &calls);
+        for (rel, line) in sites {
             out.site_in("boolean_callback", &rel, line);
         }
         // This lint has no engine exemption: retired requirements cannot return
         // as definitions or calls there while content stays clean.
-        for file in &files {
-            for (line, code) in file.code().numbered() {
-                if cx.list("retired_macros").iter().any(|name| retired_name_in(code, name)) {
-                    out.site_in("legacy_macro", &file.rel, line);
-                }
+        for (file, (_, legacy)) in files.iter().zip(&text) {
+            for line in legacy {
+                out.site_in("legacy_macro", &file.rel, *line);
             }
         }
     }
 }
 
 impl RequirementBool {
-    fn collect_sites(&self, files: &[&SourceFile], typed: Option<Vec<(String, u32, String)>>) -> std::collections::BTreeSet<(String, usize)> {
-        let selected: std::collections::HashSet<&str> = files.iter().map(|f| f.rel.as_str()).collect();
+    /// The typed sites in the selected files, united with each file's text call sites (`calls[i]` for `files[i]`): a successful typed
+    /// parse never suppresses source evidence.
+    fn merge_sites(files: &[&SourceFile], typed: Option<Vec<(String, u32, String)>>, calls: &[&[usize]]) -> std::collections::BTreeSet<(String, usize)> {
         let mut sites: std::collections::BTreeSet<(String, usize)> = std::collections::BTreeSet::new();
         if let Some(typed_sites) = typed {
+            let selected: std::collections::HashSet<&str> = files.iter().map(|f| f.rel.as_str()).collect();
             for (rel, line, _) in typed_sites {
                 if selected.contains(rel.as_str()) {
                     sites.insert((rel, line as usize));
                 }
             }
         }
-        for file in files {
-            for (line, code) in file.code().numbered() {
-                if self.call.is_match(code) || self.declaration.is_match(code) {
-                    sites.insert((file.rel.clone(), line));
-                }
+        for (file, lines) in files.iter().zip(calls) {
+            for line in lines.iter() {
+                sites.insert((file.rel.clone(), *line));
             }
         }
         sites
+    }
+
+    #[cfg(test)]
+    fn collect_sites(&self, files: &[&SourceFile], typed: Option<Vec<(String, u32, String)>>) -> std::collections::BTreeSet<(String, usize)> {
+        let text: Vec<Vec<usize>> = files.iter().map(|f| self.text_sites(f, &[]).0).collect();
+        let calls: Vec<&[usize]> = text.iter().map(|c| c.as_slice()).collect();
+        Self::merge_sites(files, typed, &calls)
+    }
+
+    /// One file's text sites: `req_bool(` calls and definitions, and lines naming a retired macro.
+    fn text_sites(&self, file: &SourceFile, retired: &[String]) -> (Vec<usize>, Vec<usize>) {
+        let mut calls = Vec::new();
+        let mut legacy = Vec::new();
+        for (line, code) in file.code().numbered() {
+            if self.call.is_match(code) || self.declaration.is_match(code) {
+                calls.push(line);
+            }
+            if retired.iter().any(|name| retired_name_in(code, name)) {
+                legacy.push(line);
+            }
+        }
+        (calls, legacy)
     }
 
     /// The text rule: a `req_bool(` on a code line (the fallback when the model is unavailable).
@@ -172,7 +197,7 @@ mod tests {
         std::fs::write(root.path().join("code/probe.dm"), text).unwrap();
         let tree = Tree::from_files(vec![SourceFile::from_text("code/probe.dm", text)]);
         let sem = crate::sem::Sem::build(root.path(), &tree).unwrap();
-        let lines: Vec<u32> = crate::sem::procs::call_sites(&sem, &["req_bool"]).into_iter().map(|(_, l, _)| l).collect();
+        let lines: Vec<u32> = crate::sem::procs::call_sites(&sem, &tree, &["req_bool"]).into_iter().map(|(_, l, _)| l).collect();
         assert_eq!(lines, vec![8, 10]);
     }
     #[test]

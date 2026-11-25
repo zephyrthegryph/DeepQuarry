@@ -356,6 +356,11 @@ impl Sem {
         self.writes.get_or_init(|| reads::WriteIndex::build(self))
     }
 
+    /// The macro environment's key (`model_store::environment`; 0 for a model not built from the real `.dme`).
+    pub fn env_key(&self) -> u128 {
+        self.env_key
+    }
+
     /// Whether this model's walks may be kept between runs.
     pub fn cacheable(&self) -> bool {
         self.full && self.env_key != 0
