@@ -212,7 +212,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	look.set_icon('icons/obj/cryogenics_split.dmi')
 	look.state("base")
 	if(cooling)
-		// ALLOW(sys_dx_untracked_read): the fluid takes the beaker's colour when the cell is switched on or its beaker changes, not as the mix drains
 		look.overlay(look_overlay_image('icons/obj/cryogenics_split.dmi', "tube_filler", layer = MOB_LAYER + 0.1, plane = MOB_PLANE, alpha = CRYO_GLASS_ALPHA, pixel_y = CRYO_GLASS_RAISE, color = beaker?.reagents.get_color())) //Below glass, above mob
 	look.overlay(look_overlay_image('icons/obj/cryogenics_split.dmi', "tank", layer = MOB_LAYER + 0.2, plane = MOB_PLANE, alpha = CRYO_GLASS_ALPHA, pixel_y = CRYO_GLASS_RAISE)) //Above fluid
 

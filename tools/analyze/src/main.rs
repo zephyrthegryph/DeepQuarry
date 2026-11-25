@@ -150,9 +150,12 @@ fn recheck_unused_cold(root: &Path, problems: Vec<String>) -> Vec<String> {
 }
 
 /// `Some(true)` when a cold run's output reports the unused-ALLOW check with no problem, `Some(false)` with some, `None` when the check did not run.
+/// The check's own summary line decides (`allow annotations: N unused`): a problem can read "is unused: no longer triggers ..." or
+/// "... but no lint run used any ...", and matching one wording took a real unused annotation for stale caches, which then deleted
+/// the caches on every run.
 fn cold_finds_no_unused(text: &str) -> Option<bool> {
-    text.lines().any(|l| l.starts_with("allow annotations: "))
-        .then(|| !text.lines().any(|l| l.contains("is unused: no longer triggers")))
+    let count = text.lines().rev().find_map(|l| l.strip_prefix("allow annotations: ")?.strip_suffix(" unused")?.trim().parse::<usize>().ok())?;
+    Some(count == 0)
 }
 
 #[cfg(test)]
@@ -163,6 +166,10 @@ mod tests {
     fn cold_verdict_is_read_from_the_check_output() {
         assert_eq!(cold_finds_no_unused("x\nallow annotations: 0 unused\n"), Some(true));
         assert_eq!(cold_finds_no_unused("a.dm:3: ALLOW(handlers) is unused: no longer triggers the handlers lint; delete\nallow annotations: 1 unused\n"), Some(false));
+        assert_eq!(
+            cold_finds_no_unused("ALLOW(sys_x): 1 annotation, but no lint run used any: the sys_x lint is not run\nallow annotations: 1 unused\n"),
+            Some(false)
+        );
         assert_eq!(cold_finds_no_unused("crashed before the check\n"), None);
     }
 }
