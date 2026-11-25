@@ -237,20 +237,31 @@ fn collect(sem: &Sem) -> Collected {
     collect_with(sem, true)
 }
 
+/// [`collect`] for the files in `only` (the rest come out empty).
+fn collect_files(sem: &Sem, only: &HashSet<String>) -> Collected {
+    collect_in(sem, true, Some(only))
+}
+
 /// `with_writes` false skips the proc-body walk (the names each file's procs write), for a consumer that only needs the
 /// structure (shapes and located types).
 pub(crate) fn collect_with(sem: &Sem, with_writes: bool) -> Collected {
+    collect_in(sem, with_writes, None)
+}
+
+fn collect_in(sem: &Sem, with_writes: bool, only: Option<&HashSet<String>>) -> Collected {
+    // `file_of`, restricted to `only` when given: what lies outside is not collected.
+    let file_of = |loc: dreammaker::Location| -> Option<&str> { sem.file_of(loc).filter(|f| only.is_none_or(|o| o.contains(*f))) };
     let mut c = Collected { shape: HashMap::new(), writes: HashMap::new(), types: HashMap::new() };
     let mut procs: Vec<(dreammaker::objtree::ProcRef, &str)> = Vec::new();
     for ty in sem.objtree.iter_types() {
         let t = ty.get();
         let path = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
-        if let Some(f) = sem.file_of(t.location) {
+        if let Some(f) = file_of(t.location) {
             c.types.entry(f.to_string()).or_default().insert(path.clone());
         }
         for (name, v) in &t.vars {
             if let Some(d) = &v.declaration {
-                if let Some(f) = sem.file_of(d.location) {
+                if let Some(f) = file_of(d.location) {
                     let mut e = format!("V|{}|{}|{:?}|{}", path, name, d.var_type.flags, d.var_type.type_path.join("/"));
                     if name == "parent_type" {
                         e.push_str(&format!("|{:?}", v.value.constant));
@@ -258,19 +269,19 @@ pub(crate) fn collect_with(sem: &Sem, with_writes: bool) -> Collected {
                     c.shape.entry(f.to_string()).or_default().push(e);
                 }
             } else if name == "parent_type" {
-                if let Some(f) = sem.file_of(v.value.location) {
+                if let Some(f) = file_of(v.value.location) {
                     c.shape.entry(f.to_string()).or_default().push(format!("PT|{}|{:?}", path, v.value.constant));
                 }
             }
         }
         for (name, tp) in &t.procs {
             if let Some(d) = &tp.declaration {
-                if let Some(f) = sem.file_of(d.location) {
+                if let Some(f) = file_of(d.location) {
                     c.shape.entry(f.to_string()).or_default().push(format!("D|{}|{}|{:?}", path, name, d.kind));
                 }
             }
             for v in &tp.value {
-                if let Some(f) = sem.file_of(v.location) {
+                if let Some(f) = file_of(v.location) {
                     let params: Vec<String> = v.parameters.iter().map(|p| format!("{}:{:?}:{}", p.name, p.var_type.flags, p.var_type.type_path.join("/"))).collect();
                     c.shape.entry(f.to_string()).or_default().push(format!("P|{}|{}|{}|{}", path, name, params.join(","), v.code.has_body()));
                 }
@@ -280,7 +291,7 @@ pub(crate) fn collect_with(sem: &Sem, with_writes: bool) -> Collected {
             if p.is_builtin() {
                 continue;
             }
-            if let Some(f) = sem.file_of(p.get().location) {
+            if let Some(f) = file_of(p.get().location) {
                 procs.push((p, f));
             }
         }
@@ -451,20 +462,48 @@ fn capture_unlocked(tree: &Tree, sem: &Sem, footprint: Vec<String>) {
         *pending(tree).lock().unwrap() = Some(rec);
         return;
     }
-    let col = collect(sem);
+    // A record of the same environment keeps the facts of every file whose content is unchanged (each is a function of the file in
+    // that environment): only the edited files are collected again, not the whole model.
+    let previous = load().filter(|r| r.env == env && r.stamp == stamp);
+    let changed: Option<HashSet<String>> = previous.as_ref().map(|r| {
+        now.iter().filter(|(rel, k)| r.files.get(*rel).map(|f| f.fkey) != Some(**k)).map(|(rel, _)| rel.clone()).collect()
+    });
+    let col = match &changed {
+        Some(c) => collect_files(sem, c),
+        None => collect(sem),
+    };
     let mut files = BTreeMap::new();
     for (rel, fkey) in now {
+        if let (Some(prev), Some(c)) = (&previous, &changed) {
+            if !c.contains(&rel) {
+                if let Some(f) = prev.files.get(&rel) {
+                    files.insert(rel.clone(), f.clone());
+                    continue;
+                }
+            }
+        }
         files.insert(
             rel.clone(),
             FileFacts {
                 fkey,
                 shape: shape_hash(col.shape.get(&rel)),
-                writes: col.writes.get(&rel).map(|s| s.iter().cloned().collect()).unwrap_or_default(),
+                writes: col.writes.get(&rel).map(|s| { let mut v: Vec<String> = s.iter().cloned().collect(); v.sort(); v }).unwrap_or_default(),
                 directive: has_directive(&text_of(tree, &rel)),
                 bare: bare_hash(tree, &rel),
                 tokens: token_hash(tree, &rel),
             },
         );
+    }
+    // DQ_SEM_RECORD_VERIFY=1: collect the whole model as well and require the same facts.
+    if changed.is_some() && std::env::var_os("DQ_SEM_RECORD_VERIFY").is_some() {
+        let full = collect(sem);
+        let bad: Vec<&String> = files
+            .iter()
+            .filter(|(rel, f)| f.shape != shape_hash(full.shape.get(*rel)) || { let mut a = f.writes.clone(); a.sort(); let mut b: Vec<String> = full.writes.get(*rel).map(|s| s.iter().cloned().collect()).unwrap_or_default(); b.sort(); a != b })
+            .map(|(rel, _)| rel)
+            .collect();
+        eprintln!("analyze: sem record verify: {} file(s) differ{}", bad.len(), bad.first().map(|r| format!(" (first {r})")).unwrap_or_default());
+        assert!(bad.is_empty(), "sem record: reused facts differ from a full collection");
     }
     let type_loc: BTreeMap<String, String> = sem.type_loc.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
     save_types(&stamp, env, &type_loc);
