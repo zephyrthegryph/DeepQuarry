@@ -270,94 +270,110 @@ impl Lint for Lifeforms {
         let decls = Decls::get(cx.tree);
         let d = Declared::build(&decls);
         self.constructor_positions(cx, &d, out);
-        let make = crate::pat!(r"\bmake\(\s*(/[\w/]+)");
-        for f in cx.all_files() {
-            if f.rel.starts_with("code/engine/") || cx.exempt(&f.rel) {
-                continue;
-            }
-            let clean = f.clean();
-            if !d.after_init.is_empty() && !is_engine(&f.rel) && f.text().contains("new") {
-                for (number, line) in clean.numbered() {
-                    if !line.contains("new") {
-                        continue;
-                    }
-                    if let Some((ty, decl)) = d.after_init_bare_new(line) {
-                        out.site_in_msg("after_init_bare_new", &f.rel, number, format!("new {}: {} declares after_init(), which runs only for make({})", ty, decl, ty));
-                    }
-                }
-            }
-            if f.text().contains("make(") {
-                for (number, line) in clean.numbered() {
-                    if !line.contains("make(") {
-                        continue;
-                    }
-                    for (name, args) in calls(line) {
-                        if name != "make" {
-                            continue;
-                        }
-                        let Some(first) = args.first() else { continue };
-                        if !make.is_match(&format!("make({}", first)) {
-                            continue; // a type in a var: checked at runtime
-                        }
-                        let ty = first.trim().to_string();
-                        let mut given = BTreeSet::new();
-                        for a in args.iter().skip(1) {
-                            let Some((k, _)) = a.split_once('=') else { continue };
-                            let k = k.trim();
-                            if k.is_empty() || !k.chars().all(|c| c.is_alphanumeric() || c == '_') || a.contains("==") {
-                                continue;
-                            }
-                            given.insert(k.to_string());
-                            if k == "parts" {
-                                if !d.builds_from(&ty) {
-                                    out.site_in_msg("make_parts_without_built_from", &f.rel, number, format!("make({}, parts = ...): no built_from()", ty));
-                                }
-                                continue;
-                            }
-                            if k == "at" || k == "by" {
-                                continue;
-                            }
-                            if !d.has_param(&ty, k) {
-                                out.site_in_msg("make_unknown_param", &f.rel, number, format!("make({}, {} = ...): {} declares no param(nameof({}))", ty, k, ty, k));
-                            }
-                        }
-                        for req in d.required_of(&ty) {
-                            if !given.contains(&req) {
-                                out.site_in_msg("make_missing_required", &f.rel, number, format!("make({}): the required param {} is not given", ty, req));
-                            }
-                        }
-                    }
-                }
-            }
-            if d.per_type.is_empty() {
-                continue;
-            }
-            for p in crate::dm::dx::procs_in(f) {
-                if p.is_global() {
-                    continue;
-                }
-                for ancestor in Declared::lineage(&p.path) {
-                    let Some(list) = d.per_type.get(&ancestor) else { continue };
-                    for (var, build) in list {
-                        if &p.name == build {
-                            continue;
-                        }
-                        let v = regex::escape(var);
-                        let write = regex::Regex::new(&format!(r"(?:^|[^\w.]){v}(?:\s*\[[^\]]*\]\s*=[^=]|\s*(?:\+=|-=|\|=|&=)|\.(?:Add|Remove|Cut|Insert|Swap)\(|\s*=[^=])")).expect("per_type write");
-                        for k in 0..p.body_len {
-                            let number = p.body_start + k;
-                            if write.is_match(clean.line(number)) {
-                                out.site_in_msg("per_type_write", &f.rel, number, format!("{} is a per_type() table of {}: read-only", var, ancestor));
-                            }
-                        }
-                    }
-                }
+        // The text rules read one file and the declarations: cached per file under the declarations' digest.
+        let files = cx.all_files();
+        let found: Vec<Vec<(String, usize, String)>> =
+            crate::incr::keyed("lifeforms-text", decls.key, &files, |f| self.text_sites(f, &d, cx.exempt(&f.rel)));
+        for (f, sites) in files.iter().zip(found) {
+            for (rule, number, msg) in sites {
+                out.site_in_msg(&rule, &f.rel, number, msg);
             }
         }
     }
 }
 
 impl Lifeforms {
+    /// One file's sites of the text rules (`after_init_bare_new`, the `make()` rules, `per_type_write`): (rule, line, message).
+    fn text_sites(&self, f: &SourceFile, d: &Declared, exempt: bool) -> Vec<(String, usize, String)> {
+        let mut found: Vec<(String, usize, String)> = Vec::new();
+        let make = crate::pat!(r"\bmake\(\s*(/[\w/]+)");
+        let mut writes: HashMap<String, regex::Regex> = HashMap::new();
+        if f.rel.starts_with("code/engine/") || exempt {
+            return found;
+        }
+        let clean = f.clean();
+        if !d.after_init.is_empty() && !is_engine(&f.rel) && f.text().contains("new") {
+            for (number, line) in clean.numbered() {
+                if !line.contains("new") {
+                    continue;
+                }
+                if let Some((ty, decl)) = d.after_init_bare_new(line) {
+                    found.push(("after_init_bare_new".to_string(), number, format!("new {}: {} declares after_init(), which runs only for make({})", ty, decl, ty)));
+                }
+            }
+        }
+        if f.text().contains("make(") {
+            for (number, line) in clean.numbered() {
+                if !line.contains("make(") {
+                    continue;
+                }
+                for (name, args) in calls(line) {
+                    if name != "make" {
+                        continue;
+                    }
+                    let Some(first) = args.first() else { continue };
+                    if !make.is_match(&format!("make({}", first)) {
+                        continue; // a type in a var: checked at runtime
+                    }
+                    let ty = first.trim().to_string();
+                    let mut given = BTreeSet::new();
+                    for a in args.iter().skip(1) {
+                        let Some((k, _)) = a.split_once('=') else { continue };
+                        let k = k.trim();
+                        if k.is_empty() || !k.chars().all(|c| c.is_alphanumeric() || c == '_') || a.contains("==") {
+                            continue;
+                        }
+                        given.insert(k.to_string());
+                        if k == "parts" {
+                            if !d.builds_from(&ty) {
+                                found.push(("make_parts_without_built_from".to_string(), number, format!("make({}, parts = ...): no built_from()", ty)));
+                            }
+                            continue;
+                        }
+                        if k == "at" || k == "by" {
+                            continue;
+                        }
+                        if !d.has_param(&ty, k) {
+                            found.push(("make_unknown_param".to_string(), number, format!("make({}, {} = ...): {} declares no param(nameof({}))", ty, k, ty, k)));
+                        }
+                    }
+                    for req in d.required_of(&ty) {
+                        if !given.contains(&req) {
+                            found.push(("make_missing_required".to_string(), number, format!("make({}): the required param {} is not given", ty, req)));
+                        }
+                    }
+                }
+            }
+        }
+        if d.per_type.is_empty() {
+            return found;
+        }
+        for p in crate::dm::dx::procs_in(f) {
+            if p.is_global() {
+                continue;
+            }
+            for ancestor in Declared::lineage(&p.path) {
+                let Some(list) = d.per_type.get(&ancestor) else { continue };
+                for (var, build) in list {
+                    if &p.name == build {
+                        continue;
+                    }
+                    let write = writes.entry(var.clone()).or_insert_with(|| {
+                        let v = regex::escape(var);
+                        regex::Regex::new(&format!(r"(?:^|[^\w.]){v}(?:\s*\[[^\]]*\]\s*=[^=]|\s*(?:\+=|-=|\|=|&=)|\.(?:Add|Remove|Cut|Insert|Swap)\(|\s*=[^=])")).expect("per_type write")
+                    });
+                    for k in 0..p.body_len {
+                        let number = p.body_start + k;
+                        if write.is_match(clean.line(number)) {
+                            found.push(("per_type_write".to_string(), number, format!("{} is a per_type() table of {}: read-only", var, ancestor)));
+                        }
+                    }
+                }
+            }
+        }
+        found
+    }
+
     /// `param_pos_override` / `param_overrides_nothing` from the declarations, then `ctor_dead_arg` / `ctor_forward_only` on the typed tree
     /// (`sem::ctor_args`).
     fn constructor_positions(&self, cx: &Cx, d: &Declared, out: &mut Sink) {

@@ -16,7 +16,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::pat::Pat;
-use crate::tree::CODE_DM;
+use crate::tree::{SourceFile, CODE_DM};
 
 const HINT: &str = "the sender reads back what this handler writes, but a notice published inside another delivery is queued: declare `read_back = TRUE` \
 on the notice type so publish() answers it at once. doc/rewrite/reactions.md section 3";
@@ -79,22 +79,9 @@ impl Lint for ReadBack {
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        // Every notice type that declares read_back, tree-wide.
-        let mut read_back: BTreeSet<String> = BTreeSet::new();
-        for f in cx.all_files() {
-            let mut current: Option<String> = None;
-            for (_, text) in f.code().numbered() {
-                if !text.starts_with('\t') && !text.starts_with(' ') && !text.trim().is_empty() {
-                    current = self.type_head.captures(text).map(|c| c.s(1).to_string());
-                    continue;
-                }
-                if let Some(t) = &current {
-                    if self.read_back_decl.is_match(text) {
-                        read_back.insert(t.clone());
-                    }
-                }
-            }
-        }
+        // Every notice type that declares read_back, tree-wide: per-file facts, cached by content.
+        let per_file: Vec<Vec<String>> = crate::incr::facts("read-back-decls", &cx.all_files(), |f| self.declared_in(f));
+        let mut read_back: BTreeSet<String> = per_file.into_iter().flatten().collect();
         // A notice an ACTION() declares is delivered synchronously by PUBLISH, so its sender always reads what the handlers wrote: no flag needed.
         for m in crate::sem::decls::Decls::get(cx.tree).markers_named("ACTION") {
             let Some(name) = m.args.first() else { continue };
@@ -106,65 +93,100 @@ impl Lint for ReadBack {
                 read_back.insert(t.to_string());
             }
         }
-        for f in cx.files() {
-            let lines: Vec<(usize, &str)> = f.code().numbered().collect();
-            let mut i = 0;
-            while i < lines.len() {
-                let head = lines[i].1;
-                let top = !head.starts_with('\t') && !head.starts_with(' ') && !head.trim().is_empty();
-                if !(top && head.contains('(')) {
-                    i += 1;
-                    continue;
+        // Each file's writes into a notice without read_back: a function of the file and that set, cached per file while the set is
+        // unchanged. The ALLOW question is asked here, outside the cache, so its use is recorded every run.
+        let files = cx.files();
+        let hits: Vec<Vec<(usize, String)>> = crate::incr::keyed("read-back-writes", crate::incr::ctx_key(&read_back), &files, |f| self.writes_in(f, &read_back));
+        for (f, hits) in files.iter().zip(hits) {
+            for (n, t) in hits {
+                if !out.allowed_here(f, n, "read_back") {
+                    out.site_in_msg("undeclared_read_back", &f.rel, n, format!("a handler writes into /datum/notice/{}, which does not declare read_back", t));
                 }
-                let mut j = i + 1;
-                while j < lines.len() && (lines[j].1.trim().is_empty() || lines[j].1.starts_with('\t') || lines[j].1.starts_with(' ')) {
-                    j += 1;
-                }
-                // fill() and the generated make_notice() are the notice filling itself.
-                if head.contains("/fill(") || head.contains("/make_notice(") {
-                    i = j;
-                    continue;
-                }
-                let mut notices: BTreeMap<String, String> = BTreeMap::new();
-                let mut aliases: BTreeMap<String, String> = BTreeMap::new();
-                for c in self.notice_var.captures_iter(head) {
-                    notices.insert(c.s(2).to_string(), c.s(1).to_string());
-                }
-                for &(n, text) in &lines[i + 1..j] {
-                    if let Some(c) = self.notice_var.captures(text) {
-                        let rhs = c.get(4).map(|m| m.trim()).unwrap_or("");
-                        let bare = !rhs.is_empty() && rhs.chars().all(|ch| ch.is_alphanumeric() || ch == '_');
-                        if bare {
-                            notices.insert(c.s(2).to_string(), c.s(1).to_string());
-                        }
-                        continue;
-                    }
-                    if let Some(c) = self.list_alias.captures(text) {
-                        if let Some(t) = notices.get(c.s(2)) {
-                            aliases.insert(c.s(1).to_string(), t.clone());
-                        }
-                        continue;
-                    }
-                    let mut hit: Option<&String> = None;
-                    for (v, t) in &notices {
-                        if writes(text, v, true) {
-                            hit = Some(t);
-                        }
-                    }
-                    for (a, t) in &aliases {
-                        if writes(text, a, false) {
-                            hit = Some(t);
-                        }
-                    }
-                    if let Some(t) = hit {
-                        if !declared(&read_back, t) && !out.allowed_here(f, n, "read_back") {
-                            out.site_in_msg("undeclared_read_back", &f.rel, n, format!("a handler writes into /datum/notice/{}, which does not declare read_back", t));
-                        }
-                    }
-                }
-                i = j;
             }
         }
+    }
+}
+
+impl ReadBack {
+    /// The notice types one file declares read_back on.
+    fn declared_in(&self, f: &SourceFile) -> Vec<String> {
+        let mut found: BTreeSet<String> = BTreeSet::new();
+        let mut current: Option<String> = None;
+        for (_, text) in f.code().numbered() {
+            if !text.starts_with('\t') && !text.starts_with(' ') && !text.trim().is_empty() {
+                current = self.type_head.captures(text).map(|c| c.s(1).to_string());
+                continue;
+            }
+            if let Some(t) = &current {
+                if self.read_back_decl.is_match(text) {
+                    found.insert(t.clone());
+                }
+            }
+        }
+        found.into_iter().collect()
+    }
+
+    /// One file's lines that write into a notice whose type does not declare read_back: (line, notice type).
+    fn writes_in(&self, f: &SourceFile, read_back: &BTreeSet<String>) -> Vec<(usize, String)> {
+        let mut found: Vec<(usize, String)> = Vec::new();
+        let lines: Vec<(usize, &str)> = f.code().numbered().collect();
+        let mut i = 0;
+        while i < lines.len() {
+            let head = lines[i].1;
+            let top = !head.starts_with('\t') && !head.starts_with(' ') && !head.trim().is_empty();
+            if !(top && head.contains('(')) {
+                i += 1;
+                continue;
+            }
+            let mut j = i + 1;
+            while j < lines.len() && (lines[j].1.trim().is_empty() || lines[j].1.starts_with('\t') || lines[j].1.starts_with(' ')) {
+                j += 1;
+            }
+            // fill() and the generated make_notice() are the notice filling itself.
+            if head.contains("/fill(") || head.contains("/make_notice(") {
+                i = j;
+                continue;
+            }
+            let mut notices: BTreeMap<String, String> = BTreeMap::new();
+            let mut aliases: BTreeMap<String, String> = BTreeMap::new();
+            for c in self.notice_var.captures_iter(head) {
+                notices.insert(c.s(2).to_string(), c.s(1).to_string());
+            }
+            for &(n, text) in &lines[i + 1..j] {
+                if let Some(c) = self.notice_var.captures(text) {
+                    let rhs = c.get(4).map(|m| m.trim()).unwrap_or("");
+                    let bare = !rhs.is_empty() && rhs.chars().all(|ch| ch.is_alphanumeric() || ch == '_');
+                    if bare {
+                        notices.insert(c.s(2).to_string(), c.s(1).to_string());
+                    }
+                    continue;
+                }
+                if let Some(c) = self.list_alias.captures(text) {
+                    if let Some(t) = notices.get(c.s(2)) {
+                        aliases.insert(c.s(1).to_string(), t.clone());
+                    }
+                    continue;
+                }
+                let mut hit: Option<&String> = None;
+                for (v, t) in &notices {
+                    if writes(text, v, true) {
+                        hit = Some(t);
+                    }
+                }
+                for (a, t) in &aliases {
+                    if writes(text, a, false) {
+                        hit = Some(t);
+                    }
+                }
+                if let Some(t) = hit {
+                    if !declared(read_back, t) {
+                        found.push((n, t.clone()));
+                    }
+                }
+            }
+            i = j;
+        }
+        found
     }
 }
 
