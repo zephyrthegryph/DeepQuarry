@@ -38,6 +38,16 @@ const REBASE_AT: usize = 48;
 /// ... or when the patches are about this large (an estimate: 2 KB a proc).
 const REBASE_BYTES: usize = 12 << 20;
 
+/// A checker parse's diagnostics (`super::parse_source`'s `checker`), in the order the standalone checker prints them.
+pub struct CheckerDiagnostics {
+    /// Preprocessor and parser, in stream order.
+    pub stream: Vec<dreammaker::DMError>,
+    /// The parser's "parsed N/M proc bodies" line, printed after `stream`.
+    pub summary: Option<String>,
+    /// What finishing the object tree registered.
+    pub finish: Vec<dreammaker::DMError>,
+}
+
 pub struct Parsed {
     pub objtree: ObjectTree,
     pub files: dreammaker::FileList,
@@ -49,7 +59,7 @@ pub struct Parsed {
     /// A full parse's macro history: the macro state at the start of every file, so a later run parses one file alone.
     pub defines: Option<dreammaker::preprocessor::StoredDefineHistory>,
     /// A checker parse's diagnostics, every severity, in source order (`parse_source`'s `checker`); never stored.
-    pub raw: Option<Vec<dreammaker::DMError>>,
+    pub raw: Option<CheckerDiagnostics>,
     /// The parser stopped on a fatal error.
     pub fatal: bool,
 }

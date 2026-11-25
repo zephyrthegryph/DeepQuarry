@@ -135,6 +135,18 @@ function dreamCheckerWanted(): boolean {
   return !!process.env.CI && process.env.CI !== '0' && process.env.CI !== 'false';
 }
 
+/** The standalone SpacemanDMM binary runs DreamChecker only when asked (DQ_DREAMCHECKER_STANDALONE=1); otherwise `analyze dreamchecker`
+ * runs the same checks in process, with the same output and exit code, in seconds (doc/rewrite/proposals/lean_unified.md). */
+function dreamCheckerStandalone(): boolean {
+  return process.env.DQ_DREAMCHECKER_STANDALONE === '1';
+}
+
+/** What runs DreamChecker: the analyze binary (in process) or, with DQ_DREAMCHECKER_STANDALONE=1, the standalone binary if found. */
+function dreamCheckerCommand(): string | null {
+  if (!dreamCheckerStandalone()) return fs.existsSync(ANALYZE_BIN) ? ANALYZE_BIN : null;
+  return findDreamChecker();
+}
+
 function findDreamChecker(): string | null {
   const candidates = [
     process.env.DREAMCHECKER_EXE,
@@ -1317,11 +1329,15 @@ export const DmTarget = new Juke.Target({
     // SpacemanDMM's DreamChecker has no incremental mode: it always parses and checks the whole tree (2+ minutes, competing
     // with the compile for every core). A local dm/server/test build therefore skips it; the merge gates, the push script
     // and CI run it (DQ_DREAMCHECKER=1 does it for one build). doc/testing.md "DreamChecker policy".
-    const checker = dreamCheckerWanted() ? findDreamChecker() : null;
+    const checker = dreamCheckerWanted() ? dreamCheckerCommand() : null;
     if (!dreamCheckerWanted()) {
       Juke.logger.info('dreamchecker skipped for this local build (it checks the whole tree every time); CI runs it, or set DQ_DREAMCHECKER=1');
     } else if (!checker) {
-      Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
+      Juke.logger.info(
+        dreamCheckerStandalone()
+          ? 'dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)'
+          : `dreamchecker: ${ANALYZE_BIN} is missing — skipping DM lint (build it with tools/build/build.sh analyze-build)`,
+      );
     }
     const compile = () =>
       DreamMaker(`${DME_NAME}.dme`, {
@@ -3890,10 +3906,10 @@ async function waitForDreamCheckerMemory(): Promise<void> {
 // no-ops with a warning. CI installs it via tools/ci/install_spaceman_dmm.sh;
 // local dev can skip it without consequence.
 export const DreamCheckerTarget = new Juke.Target({
-  dependsOn: [GenTarget, VerdigrisBindingsCheckTarget], // it lints the generated DM too, and the gitignored verdigris bindings (a stale copy gave a false 'undefined proc vg_world_steps_run')
+  dependsOn: [AnalyzeBuildTarget, GenTarget, VerdigrisBindingsCheckTarget], // it lints the generated DM too, and the gitignored verdigris bindings (a stale copy gave a false 'undefined proc vg_world_steps_run')
   inputs: ['code/**/*.dm', 'deepquarry.dme'],
   onlyWhen: () => {
-    if (!findDreamChecker()) {
+    if (!dreamCheckerCommand()) {
       Juke.logger.info(
         'dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)',
       );
@@ -3908,11 +3924,16 @@ export const DreamCheckerTarget = new Juke.Target({
   },
 });
 
-/** SpacemanDMM's DreamChecker over deepquarry.dme; throws on any diagnostic it fails on. */
+/** SpacemanDMM's DreamChecker over deepquarry.dme (in process through analyze, or the standalone binary with
+ * DQ_DREAMCHECKER_STANDALONE=1); throws on any diagnostic it fails on. */
 async function runDreamChecker(): Promise<void> {
-  const dreamChecker = findDreamChecker();
+  const dreamChecker = dreamCheckerCommand();
   if (!dreamChecker) {
     throw new Error('DreamChecker disappeared after dependency detection.');
+  }
+  if (!dreamCheckerStandalone()) {
+    await execLowPriority(dreamChecker, ['dreamchecker', '-e', `${DME_NAME}.dme`]);
+    return;
   }
   // DreamChecker 1.11 auto-selects a root-level DME when several are present, so name the production manifest
   // explicitly. It used to move the other root *.dme files away for the run; that renamed deepquarry.test.dme

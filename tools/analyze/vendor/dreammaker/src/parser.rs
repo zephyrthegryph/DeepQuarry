@@ -441,13 +441,19 @@ impl<'ctx, 'an, 'inp> Parser<'ctx, 'an, 'inp> {
     fn finalize_object_tree(self) -> ObjectTree {
         let procs_total = self.procs_good + self.procs_bad;
         if self.procs_bad > 0 {
-            eprintln!(
+            let line = format!(
                 "parsed {}/{} proc bodies ({}%)",
                 self.procs_good,
                 procs_total,
                 (self.procs_good * 100 / procs_total)
             );
+            if HOLD_SUMMARY.with(|h| h.get()) {
+                HELD_SUMMARY.with(|h| *h.borrow_mut() = Some(line));
+            } else {
+                eprintln!("{}", line);
+            }
         }
+        DIAGNOSTICS_BEFORE_FINISH.with(|n| n.set(self.context.errors().len()));
 
         self.tree.finish(self.context, self.fatal_errored)
     }
@@ -2673,4 +2679,28 @@ fn reconstruct_path(node: &str, proc_deets: Option<ProcDeclBuilder>, var_type: O
         result.push(last.to_owned());
     }
     result
+}
+
+// ----------------------------------------------------------------------------
+// The end of a parse, for a caller that prints the diagnostics later (DeepQuarry's `analyze dreamchecker`, which parses on two
+// threads and prints in the standalone checker's order). On this thread, `hold_parse_summary(true)` keeps the "parsed N/M proc
+// bodies" line instead of printing it, `take_parse_summary` returns it, and `diagnostics_before_finish` is how many diagnostics the
+// parser's context held when the tree began to finish (the rest come from `ObjectTree::finish`).
+
+thread_local! {
+    static HOLD_SUMMARY: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static HELD_SUMMARY: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+    static DIAGNOSTICS_BEFORE_FINISH: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+pub fn hold_parse_summary(on: bool) {
+    HOLD_SUMMARY.with(|h| h.set(on));
+}
+
+pub fn take_parse_summary() -> Option<String> {
+    HELD_SUMMARY.with(|h| h.borrow_mut().take())
+}
+
+pub fn diagnostics_before_finish() -> usize {
+    DIAGNOSTICS_BEFORE_FINISH.with(|n| n.get())
 }

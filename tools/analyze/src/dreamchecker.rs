@@ -32,8 +32,11 @@ pub fn cli(argv: &[String], root: &Path) -> i32 {
             }
         }
     }
-    let dme = dme.map(|p| if p.is_absolute() { p } else { root.join(p) }).unwrap_or_else(|| root.join("deepquarry.dme"));
-    run(&dme, config.as_deref(), json, parse_only, threads)
+    // Shown as given and read from the working directory, as the standalone does (the repository root when none can be read).
+    let root = std::env::current_dir().unwrap_or_else(|_| root.to_path_buf());
+    let shown = dme.unwrap_or_else(|| PathBuf::from("deepquarry.dme"));
+    let dme = if shown.is_absolute() { shown.clone() } else { root.join(&shown) };
+    run(&dme, &shown, config.as_deref(), json, parse_only, threads)
 }
 
 /// Half the cores (the machine is also a desktop), at most 8; `DQ_DREAMCHECKER_THREADS` overrides, 1 is the serial upstream pass.
@@ -44,10 +47,10 @@ fn default_threads() -> usize {
     std::thread::available_parallelism().map(|n| (n.get() / 2).clamp(1, 8)).unwrap_or(1)
 }
 
-pub fn run(dme: &Path, config: Option<&Path>, json: bool, parse_only: bool, threads: usize) -> i32 {
+pub fn run(dme: &Path, shown: &Path, config: Option<&Path>, json: bool, parse_only: bool, threads: usize) -> i32 {
     let toml_dme = config.map(|c| c.parent().unwrap_or(Path::new(".")).join("x.dme")).unwrap_or_else(|| dme.to_path_buf());
     println!("============================================================");
-    println!("Parsing {}...\n", dme.display());
+    println!("Parsing {}...\n", shown.display());
     let parsed = match crate::sem::parse_for_checker(dme, &toml_dme) {
         Ok(p) => p,
         Err(e) => {
@@ -65,8 +68,16 @@ pub fn run(dme: &Path, config: Option<&Path>, json: bool, parse_only: bool, thre
     parsed.files.for_each(|p| {
         context.register_file(p);
     });
-    for e in parsed.raw.unwrap_or_default() {
-        context.register_error(e);
+    if let Some(raw) = parsed.raw {
+        for e in raw.stream {
+            context.register_error(e);
+        }
+        if let Some(line) = raw.summary {
+            eprintln!("{line}");
+        }
+        for e in raw.finish {
+            context.register_error(e);
+        }
     }
     if !parse_only && !parsed.fatal {
         dreamchecker::run_parallel(&context, &parsed.objtree, true, threads);

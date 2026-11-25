@@ -322,6 +322,15 @@ pub(crate) fn run_parallel_batched(context: &Context, objtree: &ObjectTree, cli:
     if threads <= 1 {
         return run_inner(context, objtree, cli);
     }
+    // DQ_DREAMCHECKER_TIMING=1: each pass's wall time on stderr (a measurement aid; off by default).
+    let timing = std::env::var_os("DQ_DREAMCHECKER_TIMING").is_some();
+    let mut mark = std::time::Instant::now();
+    let mut lap = |what: &str| {
+        if timing {
+            eprintln!("dreamchecker timing: {what} {:.1} s", mark.elapsed().as_secs_f64());
+        }
+        mark = std::time::Instant::now();
+    };
     macro_rules! cli_println {
         ($($rest:tt)*) => {
             if cli { println!($($rest)*) }
@@ -332,6 +341,7 @@ pub(crate) fn run_parallel_batched(context: &Context, objtree: &ObjectTree, cli:
     cli_println!("Analyzing variables...\n");
 
     check_var_defs(objtree, context);
+    lap("variables");
 
     let mut analyzer = AnalyzeObjectTree::new(context, objtree);
 
@@ -347,7 +357,9 @@ pub(crate) fn run_parallel_batched(context: &Context, objtree: &ObjectTree, cli:
 
     cli_println!("============================================================");
     cli_println!("Analyzing proc bodies...\n");
+    lap("settings");
     analyzer.check_procs_parallel(threads, batch);
+    lap("bodies");
 
     cli_println!("============================================================");
     cli_println!("Analyzing proc override validity...\n");
@@ -359,10 +371,12 @@ pub(crate) fn run_parallel_batched(context: &Context, objtree: &ObjectTree, cli:
     });
 
     analyzer.finish_check_kwargs();
+    lap("overrides");
 
     cli_println!("============================================================");
     cli_println!("Analyzing proc call tree...\n");
     analyzer.check_proc_call_tree();
+    lap("call tree");
 }
 
 fn run_inner(context: &Context, objtree: &ObjectTree, cli: bool) {
@@ -450,6 +464,154 @@ struct BatchTables<'o> {
     sleeping_procs: ViolatingProcs<'o>,
     impure_procs: ViolatingProcs<'o>,
     waitfor_procs: HashSet<ProcRef<'o>>,
+}
+
+/// What the call-tree checks read, all finished before they start (`AnalyzeObjectTree::check_proc_call_tree`).
+struct CallTables<'a, 'o> {
+    call_tree: &'a HashMap<ProcRef<'o>, Vec<(ProcRef<'o>, Location, bool)>>,
+    waitfor_procs: &'a HashSet<ProcRef<'o>>,
+    sleep_exempt: &'a ProcDirective<'o>,
+    sleeping_procs: &'a ViolatingProcs<'o>,
+    impure_procs: &'a ViolatingProcs<'o>,
+    sleeping_overrides: &'a ViolatingOverrides<'o>,
+    impure_overrides: &'a ViolatingOverrides<'o>,
+}
+
+impl<'a, 'o> CallTables<'a, 'o> {
+    fn sleep_findings(&self, procref: ProcRef<'o>, location: Location) -> Vec<DMError> {
+        let mut out = Vec::new();
+        if let Some(sleepvec) = self.sleeping_procs.get_violators(procref) {
+            out.push(error(procref.get().location, format!("{procref} sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)"))
+                .with_note(location, "SpacemanDMM_should_not_sleep set here")
+                .with_errortype("must_not_sleep")
+                .with_blocking_builtins(sleepvec));
+        }
+        let mut visited = HashSet::<ProcRef<'o>>::new();
+        let mut to_visit = VecDeque::<(ProcRef<'o>, CallStack, bool)>::new();
+        if let Some(procscalled) = self.call_tree.get(&procref) {
+            for (proccalled, location, new_context) in procscalled {
+                if visited.insert(*proccalled) {
+                    let mut callstack = CallStack::default();
+                    callstack.add_step(*proccalled, *location, *new_context);
+                    to_visit.push_back((*proccalled, callstack, *new_context));
+                }
+            }
+        }
+        while let Some((nextproc, callstack, new_context)) = to_visit.pop_front() {
+            if self.waitfor_procs.contains(&nextproc) {
+                continue
+            }
+            if self.sleep_exempt.get(nextproc).is_some() {
+                continue
+            }
+            if new_context {
+                continue
+            }
+            if let Some(sleepvec) = self.sleeping_procs.get_violators(nextproc) {
+                out.push(error(procref.get().location, format!("{procref} sets SpacemanDMM_should_not_sleep but calls blocking proc {nextproc}"))
+                    .with_note(location, "SpacemanDMM_should_not_sleep set here")
+                    .with_errortype("must_not_sleep")
+                    .with_callstack(&callstack)
+                    .with_blocking_builtins(sleepvec));
+            } else if let Some(overridesleep) = self.sleeping_overrides.get_override_violators(nextproc) {
+                for child_violator in overridesleep {
+                    if procref.ty().is_subtype_of(&nextproc.ty()) && !child_violator.ty().is_subtype_of(&procref.ty()) {
+                        continue
+                    }
+                    out.push(error(procref.get().location, format!("{procref} calls {nextproc} which has override child proc that sleeps {child_violator}"))
+                        .with_note(location, "SpacemanDMM_should_not_sleep set here")
+                        .with_errortype("must_not_sleep")
+                        .with_callstack(&callstack)
+                        .with_blocking_builtins(self.sleeping_procs.get_violators(*child_violator).unwrap()));
+                }
+            }
+            if let Some(calledvec) = self.call_tree.get(&nextproc) {
+                for (proccalled, location, new_context) in calledvec.iter() {
+                    if visited.insert(*proccalled) {
+                        let mut newstack = callstack.clone();
+                        newstack.add_step(*proccalled, *location, *new_context);
+                        to_visit.push_back((*proccalled, newstack, *new_context));
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    fn pure_findings(&self, procref: ProcRef<'o>, location: Location) -> Vec<DMError> {
+        let mut out = Vec::new();
+        if let Some(impurevec) = self.impure_procs.get_violators(procref) {
+            out.push(error(procref.get().location, format!("{procref} does impure operations"))
+                .with_errortype("must_be_pure")
+                .with_note(location, "SpacemanDMM_should_be_pure set here")
+                .with_impure_operations(impurevec));
+        }
+        let mut visited = HashSet::<ProcRef<'o>>::new();
+        let mut to_visit = VecDeque::<(ProcRef<'o>, CallStack)>::new();
+        if let Some(procscalled) = self.call_tree.get(&procref) {
+            for (proccalled, location, new_context) in procscalled {
+                if visited.insert(*proccalled) {
+                    let mut callstack = CallStack::default();
+                    callstack.add_step(*proccalled, *location, *new_context);
+                    to_visit.push_back((*proccalled, callstack));
+                }
+            }
+        }
+        while let Some((nextproc, callstack)) = to_visit.pop_front() {
+            if let Some(impurevec) = self.impure_procs.get_violators(nextproc) {
+                out.push(error(procref.get().location, format!("{procref} sets SpacemanDMM_should_be_pure but calls a {nextproc} that does impure operations"))
+                    .with_note(location, "SpacemanDMM_should_be_pure set here")
+                    .with_errortype("must_be_pure")
+                    .with_callstack(&callstack)
+                    .with_impure_operations(impurevec));
+            } else if let Some(overrideimpure) = self.impure_overrides.get_override_violators(nextproc) {
+                for child_violator in overrideimpure {
+                    if procref.ty().is_subtype_of(&nextproc.ty()) && !child_violator.ty().is_subtype_of(&procref.ty()) {
+                        continue
+                    }
+                    out.push(error(procref.get().location, format!("{procref} calls {nextproc} which has override child proc that does impure operations {child_violator}"))
+                        .with_note(location, "SpacemanDMM_should_not_pure set here")
+                        .with_errortype("must_be_pure")
+                        .with_callstack(&callstack)
+                        .with_blocking_builtins(self.impure_procs.get_violators(*child_violator).unwrap()));
+                }
+            }
+            if let Some(calledvec) = self.call_tree.get(&nextproc) {
+                for (proccalled, location, new_context) in calledvec.iter() {
+                    if visited.insert(*proccalled) {
+                        let mut newstack = callstack.clone();
+                        newstack.add_step(*proccalled, *location, *new_context);
+                        to_visit.push_back((*proccalled, newstack));
+                    }
+                }
+            }
+        }
+        out
+    }
+}
+
+/// `f` over `items` on up to `CALL_TREE_THREADS` threads (half the cores, at most 8; `DQ_DREAMCHECKER_THREADS` overrides), results in
+/// `items`' order.
+fn parallel_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let threads = std::env::var("DQ_DREAMCHECKER_THREADS").ok().and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or_else(|| std::thread::available_parallelism().map(|n| (n.get() / 2).clamp(1, 8)).unwrap_or(1))
+        .max(1);
+    if threads == 1 || items.len() < 2 {
+        return items.iter().map(&f).collect();
+    }
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let slots: std::sync::Mutex<Vec<Option<R>>> = std::sync::Mutex::new((0..items.len()).map(|_| None).collect());
+    std::thread::scope(|scope| {
+        for _ in 0..threads.min(items.len()) {
+            scope.spawn(|| loop {
+                let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let Some(item) = items.get(i) else { break };
+                let r = f(item);
+                slots.lock().unwrap()[i] = Some(r);
+            });
+        }
+    });
+    slots.into_inner().unwrap().into_iter().map(|r| r.expect("every item mapped")).collect()
 }
 
 /// Struct for SpacemanDMM_* directives
@@ -845,116 +1007,29 @@ impl<'o> AnalyzeObjectTree<'o> {
         }
     }
 
+    /// The `must_not_sleep` and `must_be_pure` call-tree checks. Each directive proc's search is independent and reads only the
+    /// finished tables, so the searches run on several threads; their diagnostics are registered in the directive tables' order,
+    /// as the serial loops registered them. A proc is queued at most once per search (the serial loop queued it again for every
+    /// caller and skipped it when popped: the first queued copy, the one kept here, is the one it checked).
     pub fn check_proc_call_tree(&mut self) {
-        for (procref, &(_, location)) in self.must_not_sleep.directive.iter() {
-            if let Some(sleepvec) = self.sleeping_procs.get_violators(*procref) {
-                error(procref.get().location, format!("{procref} sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)"))
-                    .with_note(location, "SpacemanDMM_should_not_sleep set here")
-                    .with_errortype("must_not_sleep")
-                    .with_blocking_builtins(sleepvec)
-                    .register(self.context)
-            }
-            let mut visited = HashSet::<ProcRef<'o>>::new();
-            let mut to_visit = VecDeque::<(ProcRef<'o>, CallStack, bool)>::new();
-            if let Some(procscalled) = self.call_tree.get(procref) {
-                for (proccalled, location, new_context) in procscalled {
-                    let mut callstack = CallStack::default();
-                    callstack.add_step(*proccalled, *location, *new_context);
-                    to_visit.push_back((*proccalled, callstack, *new_context));
-                }
-            }
-            while let Some((nextproc, callstack, new_context)) = to_visit.pop_front() {
-                if !visited.insert(nextproc) {
-                    continue
-                }
-                if self.waitfor_procs.contains(&nextproc) {
-                    continue
-                }
-                if self.sleep_exempt.get(nextproc).is_some() {
-                    continue
-                }
-                if new_context {
-                    continue
-                }
-                if let Some(sleepvec) = self.sleeping_procs.get_violators(nextproc) {
-                    error(procref.get().location, format!("{procref} sets SpacemanDMM_should_not_sleep but calls blocking proc {nextproc}"))
-                        .with_note(location, "SpacemanDMM_should_not_sleep set here")
-                        .with_errortype("must_not_sleep")
-                        .with_callstack(&callstack)
-                        .with_blocking_builtins(sleepvec)
-                        .register(self.context)
-                } else if let Some(overridesleep) = self.sleeping_overrides.get_override_violators(nextproc) {
-                    for child_violator in overridesleep {
-                        if procref.ty().is_subtype_of(&nextproc.ty()) && !child_violator.ty().is_subtype_of(&procref.ty()) {
-                            continue
-                        }
-                        error(procref.get().location, format!("{procref} calls {nextproc} which has override child proc that sleeps {child_violator}"))
-                            .with_note(location, "SpacemanDMM_should_not_sleep set here")
-                            .with_errortype("must_not_sleep")
-                            .with_callstack(&callstack)
-                            .with_blocking_builtins(self.sleeping_procs.get_violators(*child_violator).unwrap())
-                            .register(self.context)
-                    }
-                }
-                if let Some(calledvec) = self.call_tree.get(&nextproc) {
-                    for (proccalled, location, new_context) in calledvec.iter() {
-                        let mut newstack = callstack.clone();
-                        newstack.add_step(*proccalled, *location, *new_context);
-                        to_visit.push_back((*proccalled, newstack, *new_context));
-                    }
-                }
-            }
+        let tables = CallTables {
+            call_tree: &self.call_tree,
+            waitfor_procs: &self.waitfor_procs,
+            sleep_exempt: &self.sleep_exempt,
+            sleeping_procs: &self.sleeping_procs,
+            impure_procs: &self.impure_procs,
+            sleeping_overrides: &self.sleeping_overrides,
+            impure_overrides: &self.impure_overrides,
+        };
+        let sleep: Vec<(ProcRef<'o>, Location)> = self.must_not_sleep.directive.iter().map(|(p, &(_, l))| (*p, l)).collect();
+        let pure: Vec<(ProcRef<'o>, Location)> = self.must_be_pure.directive.iter().map(|(p, &(_, l))| (*p, l)).collect();
+        let found = parallel_map(&sleep, |&(procref, location)| tables.sleep_findings(procref, location));
+        for e in found.into_iter().flatten() {
+            e.register(self.context);
         }
-
-        for (procref, (_, location)) in self.must_be_pure.directive.iter() {
-            if let Some(impurevec) = self.impure_procs.get_violators(*procref) {
-                error(procref.get().location, format!("{procref} does impure operations"))
-                    .with_errortype("must_be_pure")
-                    .with_note(*location, "SpacemanDMM_should_be_pure set here")
-                    .with_impure_operations(impurevec)
-                    .register(self.context)
-            }
-            let mut visited = HashSet::<ProcRef<'o>>::new();
-            let mut to_visit = VecDeque::<(ProcRef<'o>, CallStack)>::new();
-            if let Some(procscalled) = self.call_tree.get(procref) {
-                for (proccalled, location, new_context) in procscalled {
-                    let mut callstack = CallStack::default();
-                    callstack.add_step(*proccalled, *location, *new_context);
-                    to_visit.push_back((*proccalled, callstack));
-                }
-            }
-            while let Some((nextproc, callstack)) = to_visit.pop_front() {
-                if !visited.insert(nextproc) {
-                    continue
-                }
-                if let Some(impurevec) = self.impure_procs.get_violators(nextproc) {
-                    error(procref.get().location, format!("{procref} sets SpacemanDMM_should_be_pure but calls a {nextproc} that does impure operations"))
-                        .with_note(*location, "SpacemanDMM_should_be_pure set here")
-                        .with_errortype("must_be_pure")
-                        .with_callstack(&callstack)
-                        .with_impure_operations(impurevec)
-                        .register(self.context)
-                } else if let Some(overrideimpure) = self.impure_overrides.get_override_violators(nextproc) {
-                    for child_violator in overrideimpure {
-                        if procref.ty().is_subtype_of(&nextproc.ty()) && !child_violator.ty().is_subtype_of(&procref.ty()) {
-                            continue
-                        }
-                        error(procref.get().location, format!("{procref} calls {nextproc} which has override child proc that does impure operations {child_violator}"))
-                            .with_note(*location, "SpacemanDMM_should_not_pure set here")
-                            .with_errortype("must_be_pure")
-                            .with_callstack(&callstack)
-                            .with_blocking_builtins(self.impure_procs.get_violators(*child_violator).unwrap())
-                            .register(self.context)
-                    }
-                }
-                if let Some(calledvec) = self.call_tree.get(&nextproc) {
-                    for (proccalled, location, new_context) in calledvec.iter() {
-                        let mut newstack = callstack.clone();
-                        newstack.add_step(*proccalled, *location, *new_context);
-                        to_visit.push_back((*proccalled, newstack));
-                    }
-                }
-            }
+        let found = parallel_map(&pure, |&(procref, location)| tables.pure_findings(procref, location));
+        for e in found.into_iter().flatten() {
+            e.register(self.context);
         }
     }
 

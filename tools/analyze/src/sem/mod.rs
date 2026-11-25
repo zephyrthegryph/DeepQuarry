@@ -602,7 +602,9 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
     let objtree = {
         let mut parser = dreammaker::parser::Parser::new(&parse_ctx, rx.into_iter().flatten());
         parser.enable_procs();
+        dreammaker::parser::hold_parse_summary(config.is_some());
         let (fatal_errored, mut tree) = parser.parse_object_tree_2();
+        dreammaker::parser::hold_parse_summary(false);
         fatal = fatal_errored;
         // A proc's body range ends in whatever file came next; nothing reads it (model_store splices files parsed alone).
         if config.is_none() {
@@ -623,11 +625,15 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
         all.iter().map(|e| format!("{}", e)).collect()
     };
     let raw = config.is_some().then(|| {
-        let mut all: Vec<dreammaker::DMError> = std::mem::take(&mut *ctx.errors_mut());
-        all.append(&mut parse_ctx.errors_mut());
-        // Stable: two diagnostics at one position keep preprocessor-then-parser order.
-        all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
-        all
+        // The standalone checker's one context holds them in stream order: preprocessor and parser interleaved, then the summary line,
+        // then what finishing the tree registers. Files are read whole, one after the next, and ids go in reading order, so by location
+        // is the stream order (stable: one position keeps preprocessor-then-parser order).
+        let mut finish = std::mem::take(&mut *parse_ctx.errors_mut());
+        let before = dreammaker::parser::diagnostics_before_finish().min(finish.len());
+        let mut stream: Vec<dreammaker::DMError> = finish.drain(..before).collect();
+        stream.append(&mut ctx.errors_mut());
+        stream.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
+        model_store::CheckerDiagnostics { stream, summary: dreammaker::parser::take_parse_summary(), finish }
     });
     Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines, raw, fatal })
 }
