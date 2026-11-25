@@ -37,18 +37,22 @@ DreamChecker stays off as a gate until the user turns it back on; S1-S2 make it 
 
 ## Progress
 
-Measured on master `6910cfdade` in `pool-c1`, below-normal priority, one run each.
+Measured on master in `pool-c1`, below-normal priority, a shared machine (other work ran beside it); single runs.
 
-| What | Before | Now |
+| What | Before (2026-11-25 start) | Now |
 |---|---|---|
-| DreamChecker, whole tree | 366 s, 1.18 GB (standalone binary) | 12 s, 1.0 GB (`analyze dreamchecker`), same diagnostics |
-| `analyze check`, nothing changed | about 100 s (the unused-ALLOW recheck misread a real problem as stale caches and wiped them every run) | 0.6-1 s |
-| `analyze check`, one-line body edit | 23-27 s | about 10 s |
+| DreamChecker, whole tree | 366 s, 355 CPU s, 1.18 GB (standalone binary) | 6.7 s, 12 CPU s, 1.0 GB (`analyze dreamchecker`), same diagnostics |
+| `analyze check`, nothing changed | about 100 s (the unused-ALLOW recheck misread a real problem as stale caches and wiped them every run) | 0.6 s, 1.2 CPU s, 0.3 GB |
+| `analyze check`, one-line body edit | 23-27 s, about 35 CPU s | about 5 s, 28 CPU s, 3.3 GB peak |
 
 - S1: `analyze dreamchecker` runs the vendored checker on analyze's own parse; the build's DreamChecker step uses it
   (`DQ_DREAMCHECKER_STANDALONE=1` keeps the binary). `tools/analyze/tests/dreamchecker_parity.rs` compares it with the binary.
-- S2: DreamChecker's time was its call-tree pass (243 s), not its body checks (under 1 s): each search queued a proc once per caller.
-  Fixed, and the body and call-tree passes run on several threads.
-- S3 so far: `value_procs` is a worklist fixpoint (it also kept losing narrowing from definitions that had lost the title, so its
-  answer depended on definition order); model call sites and `requirement_bool`'s text rules are cached per file.
-  Left on a body edit: `value_procs`' first pass (about 8 s), `sem/handlers` and `gen/deps` (walk-cache decode and context digest).
+- S2: DreamChecker's time was its call-tree pass (243 s), not its body checks (under 1 s). Each search now queues a proc once, keeps parent
+  links instead of copied stacks, and a should_not_sleep proc whose same-context calls cannot reach a reportable sleep is not searched;
+  the searches and the body pass run on several threads. The call-tree diagnostics come in source order (upstream's order is seeded per process).
+- S3: `value_procs` is a worklist fixpoint kept between runs (only the definitions an edit affects are evaluated again; it also no longer
+  loses narrowing from definitions that lost the title, which made its answer depend on order); the semantic record re-collects only edited
+  files; model call sites, `requirement_bool`, `read_back` and `lifeforms`' text rules are cached per file.
+  Left on a body edit: the reads walks behind `sem/handlers`, `gen/deps` and `gen/auto-tracked` (shared by `untracked_inputs`,
+  `setter_publishes`, `sem/handlers`), the model load, and walk-cache decoding: about 28 CPU s spread over the cores.
+- S4 (resident process) would remove the per-run loads and decodes but keeps about 3 GB resident; not started.
