@@ -218,6 +218,12 @@ sec_stuck() {
 	DQ_LANE_POOL_PROCS_CMD="echo node run $sa/x $sb/x" pool stuck >/dev/null 2>&1; lrc=$?
 	check "a live process using the worktree makes it not stuck" '[ "$lrc" -eq 0 ]'
 	check "the notice goes away once the lease is not stuck" '[ ! -f "$DQ_LANE_POOL_STATE/notices/pool-1.stuck" ]'
+	# a clean stuck lease whose worktree sits on a never-pushed commit of a branch other than the leased name is unpushed, not reclaimable
+	git -C "$sb" switch -q -c stuck/other && git -C "$sb" -c user.name=t -c user.email=t@t commit -q --allow-empty -m unpushed
+	read -r k gd <"$sb/.git"
+	touch -d "2 hours ago" "$DQ_LANE_POOL_STATE/pool-2.lease" "$gd/HEAD" "$gd/logs/HEAD"
+	out="$(pool stuck 2>&1)"
+	check "a worktree commit on another never-pushed branch counts as unpushed" '[[ "$out" =~ STUCK\ pool-2.*dirty=0\ unpushed=1.*report-only ]] || { echo "$out" >&2; false; }'
 	DQ_LANE_POOL_PROCS_CMD="echo node run $sa/x $sb/x" pool lease stuck/k >"$b/k.out" 2>"$b/k.err"; krc=$?; kerr="$(<"$b/k.err")"
 	check "a lease with a live process is not reclaimed" '[[ "$kerr" != *"reclaimed pool-1"* ]] && [ -f "$DQ_LANE_POOL_STATE/pool-1.lease" ]'
 	old "$sa" 1; old "$sb" 2
