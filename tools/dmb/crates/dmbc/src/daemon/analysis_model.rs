@@ -142,12 +142,12 @@ pub(crate) fn parse(dme: &Path, checker: bool) -> Result<dq_analyze::sem::model_
                     summary: memo.summary.clone(),
                     finish: memo.finish.iter().map(Diagnostic::make).collect(),
                 });
-                super::emit_stderr(format_args!(
+                dq_hostio::out(false, format_args!(
                     "dmbd analyze: model of {} unchanged ({} files compared in {compared:.1?}), decoded in {:.1?}",
                     root.display(),
                     memo.inputs.len(),
                     started.elapsed() - compared
-                ));
+                ), true);
                 return Ok(dq_analyze::sem::model_store::Parsed {
                     objtree,
                     files: files_ctx.clone_file_list(),
@@ -169,7 +169,8 @@ pub(crate) fn parse(dme: &Path, checker: bool) -> Result<dq_analyze::sem::model_
     let t = Instant::now();
     let inputs = inputs_of(&root, &parsed.files);
     let raw = parsed.raw.as_ref();
-    let memo = dq_analyze::incr::ser(&parsed.objtree).ok().map(|tree| Memo {
+    // Only a checker parse is remembered: it serves the analysis request too, and encoding the tree costs about a second a request.
+    let memo = checker.then(|| dq_analyze::incr::ser(&parsed.objtree).ok()).flatten().map(|tree| Memo {
         inputs,
         tree,
         errors: parsed.errors.clone(),
@@ -179,13 +180,13 @@ pub(crate) fn parse(dme: &Path, checker: bool) -> Result<dq_analyze::sem::model_
         finish: raw.map(|r| r.finish.iter().map(Diagnostic::of).collect()).unwrap_or_default(),
     });
     if let Some(memo) = memo {
-        super::emit_stderr(format_args!(
+        dq_hostio::out(false, format_args!(
             "dmbd analyze: model of {} converted in {converted:.1?}, remembered ({} files, {} MB encoded) in {:.1?}",
             root.display(),
             memo.inputs.len(),
             memo.tree.len() >> 20,
             t.elapsed()
-        ));
+        ), true);
         MEMO.lock().unwrap_or_else(|e| e.into_inner()).get_or_insert_with(HashMap::new).insert(root, memo);
     }
     let mut parsed = parsed;

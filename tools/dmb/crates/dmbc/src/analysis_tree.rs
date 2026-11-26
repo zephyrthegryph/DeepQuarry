@@ -382,64 +382,228 @@ pub struct FeedStats {
     pub parse_errors: Vec<dreammaker::DMError>,
 }
 
-/// dmbc's front end as a dreammaker object tree. `locate` maps an expanded offset to a dreammaker location.
-pub fn build_tree(
-    frontend: &ColdFrontend,
-    locate: &mut dyn FnMut(usize) -> Location,
+/// Makes one location mapper per worker thread: an expanded offset to a dreammaker location. The mappers answer alike (they read the
+/// same front end and the same file ids); each keeps its own cache.
+pub type Locator<'a> = dyn Fn() -> Box<dyn FnMut(usize) -> Location + 'a> + Sync + 'a;
 
-) -> (ObjectTree, FeedStats) {
-    build_tree_in(&dreammaker::Context::default(), frontend, locate)
+/// What one declaration contributes to the tree, computed away from the builder so the work runs on many threads.
+#[derive(PartialEq, serde::Serialize, serde::Deserialize)]
+enum Prepared {
+    Var { location: Location, type_parts: Vec<String>, value: Option<Expression>, input: Option<InputType>, spaceman: VarTypeFlags },
+    Override { location: Location, value: Option<Expression> },
+    Proc { location: Location, parameters: Vec<Parameter>, return_type: ProcReturnType },
+}
+
+/// What decides a remembered conversion besides the declaration itself: the files bytes and the file ids the locations carry. Off
+/// (the default) converts everything.
+#[derive(Default)]
+pub struct CacheKeys {
+    pub enabled: bool,
+    /// What the file ids stand for.
+    pub files_key: u128,
+    /// A file path and bytes, by its include spelling and by its id.
+    pub by_path: HashMap<Arc<str>, u128>,
+    pub by_id: HashMap<dreammaker::FileId, u128>,
+}
+
+/// One converted declaration as it is remembered.
+#[derive(Default, PartialEq, serde::Serialize, serde::Deserialize)]
+struct DeclarationResult {
+    prepared: Option<Prepared>,
+    failures: usize,
+}
+
+/// One converted body as it is remembered.
+#[derive(Default, PartialEq, serde::Serialize, serde::Deserialize)]
+struct BodyResult {
+    block: Option<Block>,
+    error: Option<(Location, String)>,
+}
+
+/// A declaration of the semantic tree with the spelling matched to it.
+struct Item<'t> {
+    id: dm_tree::MemberId,
+    owner: String,
+    name: String,
+    slot: Slot,
+    member: &'t dm_tree::MemberNode,
+    spelling: Option<Spelled>,
+}
+
+/// One worker's state.
+struct Worker<'a> {
+    locate: Box<dyn FnMut(usize) -> Location + 'a>,
+    line_files: HashMap<Arc<str>, usize>,
+}
+
+fn prepare(frontend: &ColdFrontend, w: &mut Worker<'_>, item: &Item<'_>, failures: &mut usize) -> Prepared {
+    let Item { owner, slot, member, spelling, .. } = item;
+    let locate: &mut dyn FnMut(usize) -> Location = &mut *w.locate;
+    let location = spelling.as_ref().map(|s| locate(s.at)).unwrap_or_else(Location::builtins);
+    match slot {
+        Slot::VarDeclare => {
+            let mut spaceman = VarTypeFlags::default();
+            let (type_parts, value, input) = match spelling.as_ref().and_then(|s| var_header(owner, &s.header).map(|v| (s, v))) {
+                Some((s, v)) => {
+                    let value = v.initializer.map(|(t, off)| specified(t, s.at + off, locate, failures)).unwrap_or_default();
+                    let suffix = v.suffix_initializer.as_deref().and_then(|t| expression(t, s.at, locate, failures));
+                    spaceman = v.spaceman;
+                    (v.type_parts, value.value.or(suffix), value.input_type.or(v.input))
+                }
+                None => (Vec::new(), None, None),
+            };
+            // dreammaker places a var declaration at the token after its name: the `=`, or the end of its line.
+            let location = match spelling.as_ref() {
+                Some(s) => match dm_syntax::top_level_assignment_index(&s.header) {
+                    Some(index) => locate(s.at + index),
+                    None => {
+                        let at = locate(s.at);
+                        match line_end_column(frontend, s.at, &mut w.line_files) {
+                            Some(column) if at.line != 0 => Location { column, ..at },
+                            _ => at,
+                        }
+                    }
+                },
+                None => location,
+            };
+            Prepared::Var { location, type_parts, value, input, spaceman }
+        }
+        Slot::VarOverride => {
+            let value = spelling.as_ref().and_then(|s| {
+                let index = dm_syntax::top_level_assignment_index(&s.header)?;
+                let rest = &s.header[index + 1..];
+                let lead = rest.len() - rest.trim_start().len();
+                expression(rest.trim(), s.at + index + 1 + lead, locate, failures)
+            });
+            Prepared::Override { location, value }
+        }
+        Slot::Proc | Slot::Verb => {
+            let mut parameters = Vec::new();
+            let mut return_type = ProcReturnType::default();
+            // dreammaker places a proc at its parameter list's `(`.
+            let mut location = location;
+            if let (Some(s), Some(procedure)) = (spelling.as_ref(), member.metadata.procedure.as_ref()) {
+                if let Some((before, arguments, after)) = signature_parts(&s.header) {
+                    let base = s.at + before.len() + 1;
+                    location = locate(base - 1);
+                    for p in procedure.signature.parameters.iter() {
+                        let (start, end) = (p.relative_span.start, p.relative_span.end);
+                        if let Some(t) = arguments.get(start..end) {
+                            let mut p = parameter(t, base + start, locate, failures);
+                            // dreammaker places a parameter at the token after it (its `,` or the closing `)`).
+                            p.location = locate(base + end);
+                            parameters.push(p);
+                        }
+                    }
+                    // `proc/f(a, ...)`: dreammaker keeps the marker as a parameter named `...` with no type.
+                    if procedure.signature.variadic {
+                        let at = arguments.rfind("...").map_or(base, |i| base + i);
+                        parameters.push(Parameter { name: "...".into(), location: locate(at), ..Default::default() });
+                    }
+                    return_type = return_annotation(after);
+                }
+            }
+            Prepared::Proc { location, parameters, return_type }
+        }
+    }
+}
+
+/// dmbc's front end as a dreammaker object tree. `locator` makes the offset-to-location mappers.
+pub fn build_tree(frontend: &ColdFrontend, locator: &Locator<'_>) -> (ObjectTree, FeedStats) {
+    build_tree_in(&dreammaker::Context::default(), frontend, locator, &CacheKeys::default())
 }
 
 /// [`build_tree`] registering what finishing the tree reports (bad parent types, constant evaluation) to `context`.
-pub fn build_tree_in(
-    context: &dreammaker::Context,
-    frontend: &ColdFrontend,
-    locate: &mut dyn FnMut(usize) -> Location,
-
-) -> (ObjectTree, FeedStats) {
+pub fn build_tree_in(context: &dreammaker::Context, frontend: &ColdFrontend, locator: &Locator<'_>, keys: &CacheKeys) -> (ObjectTree, FeedStats) {
+    use rayon::prelude::*;
+    let trace = dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some();
+    let phase = |name: &str, t: std::time::Instant| {
+        if trace {
+            dq_hostio::out(false, format_args!("analyze: tree phase {name} {:.1?}", t.elapsed()), true);
+        }
+    };
     let mut stats = FeedStats::default();
     let mut spelled: HashMap<Key, VecDeque<Spelled>> = HashMap::new();
     let mut type_sites: HashMap<String, usize> = HashMap::new();
     let mut starts: Vec<usize> = Vec::new();
+    let t = std::time::Instant::now();
     for chunk in frontend.syntax.chunks().iter() {
         walk(chunk.items(), "/", &mut spelled, &mut type_sites, &mut starts);
     }
     starts.sort_unstable();
+    phase("spelling", t);
 
-    // Converted bodies by member.
+    // Converted bodies by member, on every core, each remembered by what decides it: its expanded text, where it sits in its file, that
+    // file's bytes (the line map reads them) and the file ids. An edit converts the bodies of the edited files again; the rest are read.
+    let t = std::time::Instant::now();
     let arena = BodyArena::new_typed(frontend, |_| true);
-    let mut bodies: HashMap<u32, Block> = HashMap::new();
-    for occurrence in frontend.bodies.iter() {
-        let Ok(body) = arena.take_parsed(occurrence) else { continue };
-        let Some(statements) = body.statement_body() else { continue };
+    let expanded = frontend.expanded.text.as_str();
+    let body_keys: Vec<u128> = frontend
+        .bodies
+        .par_iter()
+        .map(|o| {
+            let text = expanded.get(o.expanded_span.start..o.expanded_span.end).unwrap_or("");
+            let source = &o.source;
+            dq_analyze::incr::mix(&[
+                xxhash_rust::xxh3::xxh3_128(text.as_bytes()),
+                keys.by_path.get(&source.semantic_path).copied().unwrap_or(0),
+                xxhash_rust::xxh3::xxh3_128(source.semantic_path.as_bytes()),
+                source.span.start as u128 | (source.span.end as u128) << 64,
+                keys.files_key,
+            ])
+        })
+        .collect();
+    let convert = |i: usize| {
+        let mut locate = locator();
+        let Ok(body) = arena.take_parsed(&frontend.bodies[i]) else { return BodyResult::default() };
+        let Some(statements) = body.statement_body() else { return BodyResult::default() };
         match analysis_bridge::convert_body_checked(&statements.parsed().statements, &mut |o: usize| locate(o)) {
-            Ok(block) => {
-                bodies.insert(occurrence.member.0, block);
-            }
-            // A body dreammaker's parser rejects has no code, and its error is a parse diagnostic.
-            Err((location, message)) => stats.parse_errors.push(dreammaker::DMError::new(location, message)),
+            Ok(block) => BodyResult { block: Some(block), error: None },
+            Err(error) => BodyResult { block: None, error: Some(error) },
+        }
+    };
+    let results: Vec<BodyResult> = if keys.enabled {
+        dq_analyze::incr::keyed_by("tree-bodies", dq_analyze::incr::ctx_key("tree-bodies-v1"), &body_keys, convert)
+    } else {
+        (0..frontend.bodies.len()).into_par_iter().map(convert).collect()
+    };
+    let mut bodies: HashMap<u32, Block> = HashMap::new();
+    for (occurrence, result) in frontend.bodies.iter().zip(results) {
+        // A body dreammaker's parser rejects has no code, and its error is a parse diagnostic.
+        if let Some((location, message)) = result.error {
+            stats.parse_errors.push(dreammaker::DMError::new(location, message));
+        }
+        if let Some(block) = result.block {
+            bodies.insert(occurrence.member.0, block);
         }
     }
+    phase("bodies", t);
 
-    let mut line_files: HashMap<Arc<str>, usize> = HashMap::new();
     let mut builder = ObjectTreeBuilder::with_builtin_types();
     let tree = &frontend.snapshot.tree;
     let symbols = tree.symbols();
     let text = |id| symbols.text(id).unwrap_or("").to_owned();
-    for node in tree.types() {
-        let path = text(node.path);
-        let location = type_sites.get(&path).map(|&at| locate(at)).unwrap_or_else(Location::builtins);
-        builder.add_type_path(location, &path);
+    let t = std::time::Instant::now();
+    let type_paths: Vec<String> = tree.types().iter().map(|node| text(node.path)).collect();
+    let type_locations: Vec<Location> = type_paths
+        .par_iter()
+        .map_init(|| locator(), |locate, path| type_sites.get(path).map(|&at| locate(at)).unwrap_or_else(Location::builtins))
+        .collect();
+    for (path, location) in type_paths.iter().zip(type_locations) {
+        builder.add_type_path(location, path);
         stats.types += 1;
     }
+    phase("types", t);
+
+    // Match each declaration with its spelling (in declaration order: a queue per key).
+    let t = std::time::Instant::now();
+    let mut items: Vec<Item<'_>> = Vec::new();
     for target in tree.declarations() {
         let Target::Member(id) = *target else { continue };
         let Some(member) = tree.member(id) else { continue };
         let Some(owner) = tree.type_node(member.owner) else { continue };
         let owner = text(owner.path);
         let name = text(member.name);
-        let ty = builder.add_type_path(Location::builtins(), &owner);
         let slot = match (member.kind, member.definition) {
             (MemberKind::Var, DefinitionMode::Declare) => Slot::VarDeclare,
             (MemberKind::Var, _) => Slot::VarOverride,
@@ -463,95 +627,89 @@ pub fn build_tree_in(
                 eprintln!("missing spelling: {owner:?} {name:?} {slot:?} near {near:?}");
             }
         }
-        let location = spelling.as_ref().map(|s| locate(s.at)).unwrap_or_else(Location::builtins);
-        match slot {
-            Slot::VarDeclare => {
+        items.push(Item { id, owner, name, slot, member, spelling });
+    }
+    phase("matching", t);
+
+    // Each declaration's initializer, parameters and locations, on every core.
+    let t = std::time::Instant::now();
+    let compute = |w: &mut Worker<'_>, item: &Item<'_>| {
+        let mut failures = 0;
+        let p = prepare(frontend, w, item, &mut failures);
+        DeclarationResult { prepared: Some(p), failures }
+    };
+    let results: Vec<DeclarationResult> = if keys.enabled {
+        // Remembered by the declaration spelling, its place and its file bytes.
+        let decl_keys: Vec<u128> = items
+            .par_iter()
+            .map_init(
+                || locator(),
+                |locate, item| {
+                    let signature = item.member.metadata.procedure.as_ref().map(|p| {
+                        let spans: Vec<(usize, usize)> = p.signature.parameters.iter().map(|q| (q.relative_span.start, q.relative_span.end)).collect();
+                        format!("{spans:?}{}", p.signature.variadic)
+                    });
+                    let (header, site) = match &item.spelling {
+                        Some(s) => (s.header.as_str(), locate(s.at)),
+                        None => ("", Location::builtins()),
+                    };
+                    let file = keys.by_id.get(&site.file).copied().unwrap_or(0);
+                    dq_analyze::incr::mix(&[
+                        xxhash_rust::xxh3::xxh3_128(header.as_bytes()),
+                        xxhash_rust::xxh3::xxh3_128(format!("{}|{}|{:?}|{signature:?}", item.owner, item.name, item.slot).as_bytes()),
+                        file,
+                        site.line as u128 | (site.column as u128) << 32,
+                        keys.files_key,
+                    ])
+                },
+            )
+            .collect();
+        dq_analyze::incr::keyed_by("tree-declarations", dq_analyze::incr::ctx_key("tree-declarations-v1"), &decl_keys, |i| {
+            let mut w = Worker { locate: locator(), line_files: HashMap::new() };
+            compute(&mut w, &items[i])
+        })
+    } else {
+        items.par_iter().map_init(|| Worker { locate: locator(), line_files: HashMap::new() }, |w, item| compute(w, item)).collect()
+    };
+    let prepared: Vec<(Prepared, usize)> = results.into_iter().filter_map(|r| r.prepared.map(|p| (p, r.failures))).collect();
+    phase("declarations", t);
+
+    let t = std::time::Instant::now();
+    for (item, (prepared, failures)) in items.iter().zip(prepared) {
+        stats.expression_failures += failures;
+        let ty = builder.add_type_path(Location::builtins(), &item.owner);
+        match prepared {
+            Prepared::Var { location, type_parts, value, input, spaceman } => {
                 stats.vars += 1;
-                let mut spaceman = VarTypeFlags::default();
-                let (type_parts, value, input) = match spelling.as_ref().and_then(|s| var_header(&owner, &s.header).map(|v| (s, v))) {
-                    Some((s, v)) => {
-                        let value = v
-                            .initializer
-                            .map(|(t, off)| specified(t, s.at + off, locate, &mut stats.expression_failures))
-                            .unwrap_or_default();
-                        let suffix = v.suffix_initializer.as_deref().and_then(|t| expression(t, s.at, locate, &mut stats.expression_failures));
-                        spaceman = v.spaceman;
-                        (v.type_parts, value.value.or(suffix), value.input_type.or(v.input))
-                    }
-                    None => (Vec::new(), None, None),
-                };
                 let var_type = VarType {
-                    flags: var_flags(member.metadata.flags) | spaceman,
+                    flags: var_flags(item.member.metadata.flags) | spaceman,
                     type_path: type_parts.into_boxed_slice(),
                     input_type: input.unwrap_or_default(),
                 };
-                // dreammaker places a var declaration at the token after its name: the `=`, or the end of its line.
-                let location = match spelling.as_ref() {
-                    Some(s) => match dm_syntax::top_level_assignment_index(&s.header) {
-                        Some(index) => locate(s.at + index),
-                        None => {
-                            let at = locate(s.at);
-                            match line_end_column(frontend, s.at, &mut line_files) {
-                                Some(column) if at.line != 0 => Location { column, ..at },
-                                _ => at,
-                            }
-                        }
-                    },
-                    None => location,
-                };
-                builder.add_var_declaration(ty, &name, location, var_type, value);
+                builder.add_var_declaration(ty, &item.name, location, var_type, value);
             }
-            Slot::VarOverride => {
+            Prepared::Override { location, value } => {
                 stats.vars += 1;
-                let value = spelling.as_ref().and_then(|s| {
-                    let index = dm_syntax::top_level_assignment_index(&s.header)?;
-                    let rest = &s.header[index + 1..];
-                    let lead = rest.len() - rest.trim_start().len();
-                    expression(rest.trim(), s.at + index + 1 + lead, locate, &mut stats.expression_failures)
-                });
                 if let Some(value) = value {
-                    builder.add_var_override(ty, &name, location, value);
+                    builder.add_var_override(ty, &item.name, location, value);
                 }
             }
-            Slot::Proc | Slot::Verb => {
+            Prepared::Proc { location, parameters, return_type } => {
                 stats.procs += 1;
-                let declaration = (member.definition == DefinitionMode::Declare)
-                    .then(|| ProcDeclBuilder::new(if slot == Slot::Verb { ProcDeclKind::Verb } else { ProcDeclKind::Proc }, None));
-                let mut parameters = Vec::new();
-                let mut return_type = ProcReturnType::default();
-                // dreammaker places a proc at its parameter list's `(`.
-                let mut location = location;
-                if let (Some(s), Some(procedure)) = (spelling.as_ref(), member.metadata.procedure.as_ref()) {
-                    if let Some((before, arguments, after)) = signature_parts(&s.header) {
-                        let base = s.at + before.len() + 1;
-                        location = locate(base - 1);
-                        for p in procedure.signature.parameters.iter() {
-                            let (start, end) = (p.relative_span.start, p.relative_span.end);
-                            if let Some(t) = arguments.get(start..end) {
-                                let mut p = parameter(t, base + start, locate, &mut stats.expression_failures);
-                                // dreammaker places a parameter at the token after it (its `,` or the closing `)`).
-                                p.location = locate(base + end);
-                                parameters.push(p);
-                            }
-                        }
-                        // `proc/f(a, ...)`: dreammaker keeps the marker as a parameter named `...` with no type.
-                        if procedure.signature.variadic {
-                            let at = arguments.rfind("...").map_or(base, |i| base + i);
-                            parameters.push(Parameter { name: "...".into(), location: locate(at), ..Default::default() });
-                        }
-                        return_type = return_annotation(after);
-                    }
-                }
-                let code = bodies.remove(&id.0);
+                let declaration = (item.member.definition == DefinitionMode::Declare)
+                    .then(|| ProcDeclBuilder::new(if item.slot == Slot::Verb { ProcDeclKind::Verb } else { ProcDeclKind::Proc }, None));
+                let code = bodies.remove(&item.id.0);
                 stats.bodies += usize::from(code.is_some());
-                match builder.add_proc_value(context, location, ty, &name, declaration, parameters, return_type, code) {
+                match builder.add_proc_value(context, location, ty, &item.name, declaration, parameters, return_type, code) {
                     Ok(_) => {}
                     Err(_) => stats.proc_errors += 1,
                 }
             }
         }
     }
+    phase("builder", t);
     // `parent_type = /x`: the semantic tree holds it as the type's explicit parent, dreammaker as an override it reads at finish.
+    let mut locate = locator();
     let mut parents: Vec<_> = spelled.iter_mut().filter(|(k, _)| k.1 == "parent_type" && k.2 == Slot::VarOverride).collect();
     parents.sort_by(|a, b| a.0.cmp(b.0));
     for ((owner, _, _), entries) in parents {
@@ -560,13 +718,16 @@ pub fn build_tree_in(
             let Some(index) = dm_syntax::top_level_assignment_index(&s.header) else { continue };
             let rest = &s.header[index + 1..];
             let lead = rest.len() - rest.trim_start().len();
-            if let Some(value) = expression(rest.trim(), s.at + index + 1 + lead, locate, &mut stats.expression_failures) {
+            if let Some(value) = expression(rest.trim(), s.at + index + 1 + lead, &mut *locate, &mut stats.expression_failures) {
                 stats.vars += 1;
                 builder.add_var_override(ty, "parent_type", locate(s.at), value);
             }
         }
     }
-    (builder.finish_tree(context, false), stats)
+    let t = std::time::Instant::now();
+    let tree = builder.finish_tree(context, false);
+    phase("finish", t);
+    (tree, stats)
 }
 
 #[derive(Default)]
@@ -629,15 +790,18 @@ pub fn run(dme: &Path) -> Result<(), Box<dyn std::error::Error>> {
             dm_file_ids.insert(norm(&p.to_string_lossy()), id);
         }
     }
-    let mut cache: HashMap<usize, Location> = HashMap::new();
-    let mut locate = |offset: usize| -> Location {
-        *cache.entry(offset).or_insert_with(|| match frontend.debug_site(offset) {
-            Some((path, line)) => Location { file: dm_file_ids.get(&norm(&path)).copied().unwrap_or_default(), line: line as u32, column: 0 },
-            None => Location::default(),
+    let locator = || -> Box<dyn FnMut(usize) -> Location + '_> {
+        let (frontend, dm_file_ids) = (&frontend, &dm_file_ids);
+        let mut cache: HashMap<usize, Location> = HashMap::new();
+        Box::new(move |offset: usize| -> Location {
+            *cache.entry(offset).or_insert_with(|| match frontend.debug_site(offset) {
+                Some((path, line)) => Location { file: dm_file_ids.get(&norm(&path)).copied().unwrap_or_default(), line: line as u32, column: 0 },
+                None => Location::default(),
+            })
         })
     };
     let build_started = std::time::Instant::now();
-    let (mine, stats) = build_tree(&frontend, &mut locate);
+    let (mine, stats) = build_tree(&frontend, &locator);
     eprintln!("analysis-parity --tree: dmbc object tree built in {:.1?}: {stats:?}", build_started.elapsed());
     let dm = &parsed.objtree;
 
@@ -916,31 +1080,65 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
             Err(_) => abs,
         }
     };
+    // Files are registered up front, in include order (as dreammaker's preprocessor names them), so every worker thread maps a path
+    // to its id with a plain read.
     let mut ids: HashMap<Arc<str>, dreammaker::FileId> = HashMap::new();
-    let mut cache: HashMap<usize, Location> = HashMap::new();
-    let mapper = frontend.site_mapper();
-    let (mut locate_calls, mut locate_misses, mut locate_time) = (0usize, 0usize, std::time::Duration::ZERO);
-    let mut locate = |offset: usize| -> Location {
-        locate_calls += 1;
-        if let Some(l) = cache.get(&offset) {
-            return *l;
+    let canonical: Vec<PathBuf> = {
+        use rayon::prelude::*;
+        frontend.plan.occurrences.par_iter().map(|o| registered(&o.semantic_path)).collect()
+    };
+    for (occurrence, path) in frontend.plan.occurrences.iter().zip(&canonical) {
+        ids.entry(occurrence.semantic_path.clone()).or_insert_with(|| files_ctx.register_file(path));
+    }
+    // What a remembered conversion depends on besides its own text: the files paths and bytes, and the ids the locations carry.
+    let cache_keys = {
+        use rayon::prelude::*;
+        let path_hashes: HashMap<&PathBuf, u128> = frontend
+            .files
+            .par_iter()
+            .map(|f| (&*f.path, xxhash_rust::xxh3::xxh3_128(f.text.as_str().as_bytes())))
+            .collect::<Vec<_>>()
+            .into_iter()
+            .collect();
+        let mut by_path: HashMap<Arc<str>, u128> = HashMap::new();
+        for occurrence in &frontend.plan.occurrences {
+            let content = path_hashes.get(&*occurrence.path).copied().unwrap_or(0);
+            by_path.entry(occurrence.semantic_path.clone()).or_insert_with(|| {
+                dq_analyze::incr::mix(&[xxhash_rust::xxh3::xxh3_128(occurrence.semantic_path.as_bytes()), content])
+            });
         }
-        let t = std::time::Instant::now();
-        locate_misses += 1;
-        let l = match mapper.debug_site_column(offset) {
-            Some((path, line, column)) => {
-                let file = *ids.entry(path.clone()).or_insert_with(|| files_ctx.register_file(&registered(&path)));
-                Location { file, line: line as u32, column: column.min(u16::MAX as usize) as u16 }
+        let by_id: HashMap<dreammaker::FileId, u128> = ids.iter().filter_map(|(path, id)| by_path.get(path).map(|h| (*id, *h))).collect();
+        let mut order: Vec<_> = ids.iter().map(|(path, id)| (path.clone(), *id)).collect();
+        order.sort_by(|a, b| a.0.cmp(&b.0));
+        let files_key = xxhash_rust::xxh3::xxh3_128(format!("{order:?}").as_bytes());
+        CacheKeys { enabled: true, files_key, by_path, by_id }
+    };
+    let unregistered = std::sync::atomic::AtomicUsize::new(0);
+    let locator = || -> Box<dyn FnMut(usize) -> Location + '_> {
+        let mapper = frontend.site_mapper();
+        let (ids, unregistered) = (&ids, &unregistered);
+        let mut cache: HashMap<usize, Location> = HashMap::new();
+        Box::new(move |offset: usize| -> Location {
+            if let Some(l) = cache.get(&offset) {
+                return *l;
             }
-            None => Location::builtins(),
-        };
-        locate_time += t.elapsed();
-        cache.insert(offset, l);
-        l
+            let l = match mapper.debug_site_column(offset) {
+                Some((path, line, column)) => match ids.get(&path) {
+                    Some(&file) => Location { file, line: line as u32, column: column.min(u16::MAX as usize) as u16 },
+                    None => {
+                        unregistered.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        Location::builtins()
+                    }
+                },
+                None => Location::builtins(),
+            };
+            cache.insert(offset, l);
+            l
+        })
     };
     let finish = dreammaker::Context::default();
     let tree_started = std::time::Instant::now();
-    let (objtree, stats) = build_tree_in(&finish, &frontend, &mut locate);
+    let (objtree, stats) = build_tree_in(&finish, &frontend, &locator, &cache_keys);
     let tree_time = tree_started.elapsed();
     // The preprocessor's warnings, in DreamChecker's stream as dreammaker's preprocessor registers them.
     let stream = if checker {
@@ -955,8 +1153,8 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
         Vec::new()
     };
     let files = files_ctx.clone_file_list();
-    if std::env::var_os("DQ_ANALYZE_PARSE_TRACE").is_some() {
-        eprintln!("analyze: dmbc front end {built:.1?}, object tree {tree_time:.1?} (locate: {locate_calls} calls, {locate_misses} mapped, {locate_time:.1?}): {stats:?}");
+    if dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some() {
+        dq_hostio::out(false, format_args!("analyze: dmbc front end {built:.1?}, object tree {tree_time:.1?} (unregistered files: {}), {} bodies", unregistered.load(std::sync::atomic::Ordering::Relaxed), stats.bodies), true);
     }
     let finish_errors: Vec<dreammaker::DMError> = std::mem::take(&mut *finish.errors_mut());
     let errors = finish_errors
