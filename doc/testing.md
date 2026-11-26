@@ -597,6 +597,14 @@ Fresh worktrees should not pay cold build costs:
   mtime, so a worktree can link another worktree's library or cache a binary built from other sources under its
   own key (`doc/rewrite/agent_workflow.md` section 1). `cargo` runs hold the machine-wide `cargo` slot
   (`doc/rewrite/agent_workflow.md` section 10), so concurrent builds queue instead of competing.
+- **Warm analyzer worker.** After a `check`, `timing`, `baseline` or `gen` run, `analyze` starts one detached, below-normal worker per
+  worktree (`tools/analyze/src/warm.rs`, files in `data/analyze-cache/warm/`). The worker reads the stored model and walk caches and
+  decodes every body, then waits; the next such run hands it its command line, working directory and environment and replays its
+  stdout, stderr and exit code, byte for byte what a standalone run prints. Each worker answers one request and starts a successor
+  that reads what that run wrote. It runs a copy of the binary (`warm/analyze-<hash>.exe`), so cargo can rebuild `analyze.exe` while it
+  waits; a worker of another build or environment is retired and the run happens in the client. Memory: no worker starts under 12 GB of
+  RAM free, a waiting worker leaves when free RAM drops under 6 GB or after `DQ_ANALYZE_WARM_IDLE_MIN` minutes (default 10), and it
+  deletes its files when it goes. `DQ_ANALYZE_WARM=0` (or `CI`) turns it off; `DQ_ANALYZE_WARM_TRACE=1` prints client and worker times.
 - **Analyzer profile.** `DQ_ANALYZE_PROFILE` picks the cargo profile. Locally the default is `dev-fast`
   (`tools/analyze/Cargo.toml`: opt-level 2, no LTO, 256 codegen units, incremental; binary at
   `target/dev-fast/analyze`). CI (`CI` set) uses `release`; local runs use the default (the findings of

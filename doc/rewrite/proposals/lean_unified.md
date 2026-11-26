@@ -55,4 +55,8 @@ Measured on master in `pool-c1`, below-normal priority, a shared machine (other 
   files; model call sites, `requirement_bool`, `read_back` and `lifeforms`' text rules are cached per file.
   Left on a body edit: the reads walks behind `sem/handlers`, `gen/deps` and `gen/auto-tracked` (shared by `untracked_inputs`,
   `setter_publishes`, `sem/handlers`), the model load, and walk-cache decoding: about 28 CPU s spread over the cores.
-- S4 (resident process) would remove the per-run loads and decodes but keeps about 3 GB resident; not started.
+- S4: a one-shot warm worker per worktree (`tools/analyze/src/warm.rs`) instead of a long-lived server: it reads and decodes the
+  stored model and walks before the request arrives, answers one `check`/`timing`/`baseline`/`gen`, and starts a successor. Memory is
+  shed rather than held: no worker under 12 GB free, a waiting worker leaves under 6 GB free or after 10 idle minutes, and nothing is
+  resident while a run is not expected. Output (stdout, stderr, exit code, files written) matched standalone byte for byte for check,
+  gen and baseline after edits. Alternating distinct one-line edits: warm 7-9 s, standalone 17.5-18 s.

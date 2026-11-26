@@ -131,6 +131,8 @@ struct Meta {
 }
 
 static PENDING_META: Mutex<Option<Meta>> = Mutex::new(None);
+/// The base and delta a warm worker read before its request (`prewarm`), for `obtain` to use instead of reading them.
+static PREWARMED: Mutex<Option<(PathBuf, Option<Base>, Option<Delta>)>> = Mutex::new(None);
 static WRITER: Mutex<Option<std::thread::JoinHandle<()>>> = Mutex::new(None);
 
 fn trace() -> bool {
@@ -245,6 +247,33 @@ pub fn ensure_codec() {
 }
 
 /// The model of the real `.dme`: the stored one brought up to date, or a full parse.
+/// Reads the stored model and delta now and decodes every proc body (a warm worker does this before its request: `crate::warm`).
+pub fn prewarm() {
+    ensure_codec();
+    if !enabled() {
+        return;
+    }
+    let Some(dir) = crate::incr::dir() else { return };
+    let store = dir.join(FILE);
+    let (loaded, delta) = std::thread::scope(|s| {
+        let d = s.spawn(|| std::fs::read(dir.join(DELTA)).ok().and_then(|b| bincode::deserialize::<Delta>(&b).ok()));
+        let l = load(&store);
+        (l, d.join().ok().flatten())
+    });
+    if let Some(base) = &loaded {
+        let mut bodies: Vec<&dreammaker::objtree::ProcValue> = Vec::new();
+        for ty in base.objtree.iter_types() {
+            for (_, tp) in ty.get().procs.iter() {
+                bodies.extend(tp.value.iter());
+            }
+        }
+        super::par_map(&bodies, |v| {
+            let _ = v.code.as_ref();
+        });
+    }
+    *PREWARMED.lock().unwrap() = Some((store, loaded, delta));
+}
+
 pub fn obtain(root: &Path, tree: &Tree, dme_path: &Path) -> Result<Parsed, String> {
     ensure_codec();
     if !enabled() {
@@ -254,11 +283,15 @@ pub fn obtain(root: &Path, tree: &Tree, dme_path: &Path) -> Result<Parsed, Strin
     let store = dir.join(FILE);
     let dme_hash = std::fs::read(dme_path).map(|b| h128(&b)).unwrap_or(0);
     let t0 = std::time::Instant::now();
-    let (loaded, delta) = std::thread::scope(|s| {
-        let d = s.spawn(|| std::fs::read(dir.join(DELTA)).ok().and_then(|b| bincode::deserialize::<Delta>(&b).ok()));
-        let l = load(&store);
-        (l, d.join().ok().flatten())
-    });
+    let prewarmed = PREWARMED.lock().unwrap().take().filter(|(p, _, _)| *p == store);
+    let (loaded, delta) = match prewarmed {
+        Some((_, l, d)) => (l, d),
+        None => std::thread::scope(|s| {
+            let d = s.spawn(|| std::fs::read(dir.join(DELTA)).ok().and_then(|b| bincode::deserialize::<Delta>(&b).ok()));
+            let l = load(&store);
+            (l, d.join().ok().flatten())
+        }),
+    };
     if trace() {
         eprintln!("analyze: model store: read the stored model in {:.1?}", t0.elapsed());
     }

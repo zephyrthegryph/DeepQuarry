@@ -118,7 +118,7 @@ fn recheck_unused_cold(root: &Path, problems: Vec<String>) -> Vec<String> {
     let scratch = std::env::temp_dir().join(format!("analyze-cold-{}", std::process::id()));
     let _ = std::fs::create_dir_all(&scratch);
     eprintln!("analyze: {} unused ALLOW annotation(s) under warm caches; confirming with a cold run", problems.len());
-    let mut args: Vec<String> = std::env::args().skip(1).collect();
+    let mut args: Vec<String> = RUN_ARGV.get().cloned().unwrap_or_else(|| std::env::args().collect()).into_iter().skip(1).collect();
     if !args.iter().any(|a| a == "--root") {
         args.push("--root".to_string());
         args.push(root.to_string_lossy().to_string());
@@ -189,7 +189,21 @@ fn options(args: &Args, root: &Path) -> Options {
 }
 
 fn main() -> ExitCode {
-    let code = real_main();
+    let argv: Vec<String> = std::env::args().collect();
+    if argv.get(1).map(|a| a.as_str()) == Some("warm-serve") {
+        return ExitCode::from(dq_analyze::warm::serve(&argv, run_all));
+    }
+    // A warm worker of this worktree answers when it can (dq_analyze::warm); otherwise the run happens here.
+    let root = find_root(parse(argv.clone()).root);
+    if let Some(code) = dq_analyze::warm::client(&root, &argv) {
+        return ExitCode::from(code);
+    }
+    ExitCode::from(run_all(argv))
+}
+
+/// One run of `argv`, with the end-of-run work.
+fn run_all(argv: Vec<String>) -> u8 {
+    let code = real_main(argv);
     // Hand the cache files this run rewrote to the other worktrees (src/shared.rs).
     dq_analyze::shared::publish();
     dq_analyze::sem::model_store::finish();
@@ -204,15 +218,30 @@ fn main() -> ExitCode {
     for (k, n) in dq_analyze::tree::TEXT_PROBE.lock().unwrap().iter() {
         eprintln!("TEXT {} {}", n, k);
     }
-    code
+    exit_byte(code)
 }
 
-fn real_main() -> ExitCode {
+/// The byte an `ExitCode` carries (the ones this binary returns: SUCCESS, FAILURE and `from(n)`).
+fn exit_byte(code: ExitCode) -> u8 {
+    if code == ExitCode::SUCCESS {
+        0
+    } else if code == ExitCode::FAILURE {
+        1
+    } else {
+        (0..=255u8).find(|n| ExitCode::from(*n) == code).unwrap_or(1)
+    }
+}
+
+/// The command line of this run: the process's own, or the request a warm worker serves (`dq_analyze::warm`).
+static RUN_ARGV: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+
+fn real_main(argv: Vec<String>) -> ExitCode {
+    let _ = RUN_ARGV.set(argv.clone());
     if std::env::var_os("DQ_BODY_PROBE").is_some() {
         dreammaker::objtree::PROBE.store(true, std::sync::atomic::Ordering::Relaxed);
     }
     dq_analyze::tree::start_watchdog();
-    let args = parse(std::env::args().collect());
+    let args = parse(argv);
     let root = find_root(args.root.clone());
     let has = |f: &str| args.flags.iter().any(|x| x == f);
     match args.cmd.as_str() {
@@ -408,7 +437,7 @@ fn real_main() -> ExitCode {
             }
         }
         "dreamchecker" => {
-            let rest: Vec<String> = std::env::args().skip(2).collect();
+            let rest: Vec<String> = RUN_ARGV.get().cloned().unwrap_or_default().into_iter().skip(2).collect();
             return ExitCode::from(dq_analyze::dreamchecker::cli(&rest, &root) as u8);
         }
         "sem" => dq_analyze::sem::cli::run(&args.flags, &root),

@@ -289,6 +289,16 @@ fn loaded() -> Option<&'static Loaded> {
         .as_ref()
 }
 
+/// Reads the store and decodes every stored walk (a warm worker does this before its request: `crate::warm`).
+pub fn prewarm() {
+    if let Some(l) = loaded() {
+        let sets: Vec<&LazySet> = l.base.values().chain(l.delta.values()).map(|(_, _, s)| s).collect();
+        super::par_map(&sets, |s| {
+            let _ = s.get();
+        });
+    }
+}
+
 /// Starts reading the store on a side thread (it is read while the model loads).
 pub fn prefetch() {
     if enabled() {
