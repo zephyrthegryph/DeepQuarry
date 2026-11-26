@@ -37,6 +37,8 @@ sha1 = "0.10"
 
 [dev-dependencies]
 tempfile = "3"
+# The tests build their models through the compiler's front end (dmbc: parse -> analysis tree), registered by `tests/common`.
+dmbc = { path = "../dmb/crates/dmbc" }
 
 # One standalone crate, not a member of the verdigris workspace.
 [workspace]

@@ -6,6 +6,8 @@
 //! This parses the whole tree (a few seconds): it is the proof that the generator can replace the
 //! lists, so it runs against the real code, not a fixture.
 
+mod common;
+
 use std::path::PathBuf;
 
 use dq_analyze::run::{Engine, Options};
@@ -19,13 +21,11 @@ fn repo_root() -> PathBuf {
 
 #[test]
 fn generated_reads_contain_every_hand_written_read_on_the_pinned_handlers() {
+    common::dmbc_parse();
     let root = repo_root();
     let cfg = SpikeConfig::parse(&std::fs::read_to_string(root.join("tools/analyze/oracle/spike.toml")).expect("spike.toml"));
     assert_eq!(cfg.handlers.len(), 6, "the spike pins 6 handlers");
 
-    // Parsing the whole tree holds every proc body as a syntax tree (most of this test's memory); this test reads a few bodies, so hold
-    // them encoded: the gate dies of out-of-memory when the machine is loaded, and the assertions below do not change.
-    dq_analyze::sem::set_lean_parse(true);
     let opts = Options { root: root.clone(), lints: vec!["sem/keys".to_string()], no_cache: true, raw: true, ..Default::default() };
     let engine = Engine::new(dq_analyze::run::registry(), opts).expect("engine");
     let sem = dq_analyze::sem::sem_for(&engine.tree).expect("the real tree parses");

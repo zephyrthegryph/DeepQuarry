@@ -9,6 +9,8 @@
 //!   `<case>.out.dm`      the expected output (identical to the input for a no-op)
 //!   `<case>.residue`     the reason codes of the residue sites in file order, one per line (absent: none)
 
+mod common;
+
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
@@ -121,21 +123,25 @@ fn check(name: &str) {
 
 #[test]
 fn om_after_fixtures_and_gates() {
+    common::dmbc_parse();
     check("om_after");
 }
 
 #[test]
 fn own_set_fixtures_and_gates() {
+    common::dmbc_parse();
     check("own_set");
 }
 
 #[test]
 fn own_add_fixtures_and_gates() {
+    common::dmbc_parse();
     check("own_add");
 }
 
 #[test]
 fn every_registered_codemod_has_a_test_and_a_directory() {
+    common::dmbc_parse();
     let names: Vec<&str> = vec!["om_after", "own_add", "own_set"];
     let reg: Vec<String> = codemod::registry().iter().map(|c| c.name().to_string()).collect();
     assert_eq!(reg, names, "a new codemod needs a #[test] in tests/codemods.rs that calls check(name)");
@@ -146,6 +152,7 @@ fn every_registered_codemod_has_a_test_and_a_directory() {
 
 #[test]
 fn excluded_paths_are_counted_and_never_rewritten() {
+    common::dmbc_parse();
     let cm = codemod::find("own_set").unwrap();
     let (stubs, _) = cases("own_set");
     let d = tempfile::tempdir().unwrap();
@@ -167,6 +174,7 @@ fn excluded_paths_are_counted_and_never_rewritten() {
 
 #[test]
 fn a_path_filter_withholds_edits_but_still_reports_the_whole_tree() {
+    common::dmbc_parse();
     let cm = codemod::find("own_set").unwrap();
     let (stubs, _) = cases("own_set");
     let d = tempfile::tempdir().unwrap();
@@ -187,6 +195,7 @@ fn a_path_filter_withholds_edits_but_still_reports_the_whole_tree() {
 
 #[test]
 fn write_then_revert_restores_every_byte() {
+    common::dmbc_parse();
     let cm = codemod::find("om_after").unwrap();
     let (stubs, cases) = cases("om_after");
     let d = scratch(&stubs, &cases.iter().find(|c| c.name == "basic").unwrap().input);
