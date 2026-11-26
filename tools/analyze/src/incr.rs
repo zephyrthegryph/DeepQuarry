@@ -229,7 +229,17 @@ fn keyed_inner<R>(name: &str, ctx: Hash, files: &[&SourceFile], f: impl Fn(&Sour
 where
     R: Serialize + DeserializeOwned + Default + PartialEq + Send,
 {
-    let sharded = files.len() >= SHARD_MIN_FILES;
+    let keys: Vec<Hash> = files.iter().map(|file| file.fkey).collect();
+    keyed_by(name, ctx, &keys, |i| f(files[i]))
+}
+
+/// [`keyed`] over items named by content keys instead of files: `f(i)` for `keys[i]`, cached per key under `ctx` in the store `name`.
+/// For results that are a function of something other than a tree file (a file of the semantic model, under its macro environment).
+pub fn keyed_by<R>(name: &str, ctx: Hash, keys: &[Hash], f: impl Fn(usize) -> R + Sync) -> Vec<R>
+where
+    R: Serialize + DeserializeOwned + Default + PartialEq + Send,
+{
+    let sharded = keys.len() >= SHARD_MIN_FILES;
     let n = if sharded { SHARDS } else { 1 };
     let target = config();
     let path = target.as_ref().map(|(dir, _)| store_path(dir, name, None));
@@ -244,22 +254,23 @@ where
         _ => Container { shards: vec![Vec::new(); n], ..Default::default() },
     };
     let mut stores: Vec<Shard> = container.shards.par_iter().map(|b| if b.is_empty() { Shard::default() } else { de::<Shard>(b).unwrap_or_default() }).collect();
-    let shard = |file: &SourceFile| if sharded { shard_of(file.fkey) } else { 0 };
+    let shard = |k: Hash| if sharded { shard_of(k) } else { 0 };
     let mut uses: Vec<AllowUse> = Vec::new();
-    let results: Vec<(R, bool, Vec<AllowUse>)> = files
-        .par_iter()
-        .map(|file| {
-            let st = &stores[shard(file)];
-            if st.clean.contains(&file.fkey) {
+    let results: Vec<(R, bool, Vec<AllowUse>)> = (0..keys.len())
+        .into_par_iter()
+        .map(|i| {
+            let fkey = keys[i];
+            let st = &stores[shard(fkey)];
+            if st.clean.contains(&fkey) {
                 return (R::default(), false, Vec::new());
             }
-            if let Some(b) = st.map.get(&file.fkey) {
+            if let Some(b) = st.map.get(&fkey) {
                 if let Ok((r, u)) = de::<(R, Vec<AllowUse>)>(b) {
                     return (r, false, u);
                 }
             }
             let before = crate::dm::sys::take_recorded();
-            let r = f(file);
+            let r = f(i);
             let u = crate::dm::sys::take_recorded();
             crate::dm::sys::restore_recorded(before);
             (r, true, u)
@@ -270,18 +281,18 @@ where
     let mut maps: Vec<HashMap<Hash, Vec<u8>>> = (0..n).map(|_| HashMap::new()).collect();
     let mut cleans: Vec<HashSet<Hash>> = (0..n).map(|_| HashSet::new()).collect();
     let mut out = Vec::with_capacity(results.len());
-    for (file, (r, was_fresh, u)) in files.iter().zip(results) {
-        let k = shard(file);
+    for (&fkey, (r, was_fresh, u)) in keys.iter().zip(results) {
+        let k = shard(fkey);
         dirty[k] |= was_fresh;
         if r == R::default() && u.is_empty() {
-            cleans[k].insert(file.fkey);
+            cleans[k].insert(fkey);
         } else if !was_fresh {
             // Served from the store: keep its bytes as they are.
-            if let Some(b) = stores[k].map.remove(&file.fkey) {
-                maps[k].insert(file.fkey, b);
+            if let Some(b) = stores[k].map.remove(&fkey) {
+                maps[k].insert(fkey, b);
             }
         } else if let Ok(b) = ser(&(&r, &u)) {
-            maps[k].insert(file.fkey, b);
+            maps[k].insert(fkey, b);
         }
         uses.extend(u);
         out.push(r);

@@ -72,11 +72,11 @@ fn walk_calls<'a>(b: &'a Block, f: &mut dyn FnMut(&'a Expression)) {
 
 /// Every unscoped call `name(...)` (and `global.name(...)`) of a proc in `names`, in any proc body: `(file, line, name)`,
 /// sorted and unique.
-pub fn call_sites(sem: &Sem, tree: &crate::tree::Tree, names: &[&str]) -> Vec<(String, u32, String)> {
+pub fn call_sites(sem: &Sem, names: &[&str]) -> Vec<(String, u32, String)> {
     let store = format!("call-sites-{}", names.join("-"));
-    let per_file: Vec<Vec<(String, u32, String)>> = per_file(sem, tree, &store, |_rel, defs| {
+    let per_file: Vec<Vec<(String, u32, String)>> = per_file(sem, &store, |_rel, defs| {
         let mut out: Vec<(String, u32, String)> = Vec::new();
-        for v in defs {
+        for (_, v) in defs {
             let Some(code) = v.code.as_ref() else { continue };
             walk_calls(code, &mut |e| {
                 if let Expression::Base { term, .. } = e {
@@ -98,44 +98,35 @@ pub fn call_sites(sem: &Sem, tree: &crate::tree::Tree, names: &[&str]) -> Vec<(S
     out.into_iter().collect()
 }
 
-/// `f(rel, definitions)` over every file's proc definitions (each definition belongs to the file of its location), cached per file in
-/// the `incr` store `name` under the macro environment: a body is its file's text in that environment, so after an edit `f` runs for the
-/// edited files only, and the other files' bodies are not even decoded. A model that is not the full one (a fixture, a partial model)
-/// computes everything. Results come in path order.
-pub fn per_file<R>(sem: &Sem, tree: &crate::tree::Tree, name: &str, f: impl Fn(&str, &[&dreammaker::objtree::ProcValue]) -> R + Sync) -> Vec<R>
+/// `f(rel, definitions)` over every file's proc definitions, each with its type's path (a definition belongs to the file of its location), cached per file in
+/// the `incr` store `name` by the file's content in the macro environment (`Sem::location_key`): after an edit `f` runs for the edited
+/// files only, and the other files' bodies are not even decoded. A model that is not the full one (a fixture, a partial model) computes
+/// everything. Results come in path order.
+pub fn per_file<R>(sem: &Sem, name: &str, f: impl Fn(&str, &[(String, &dreammaker::objtree::ProcValue)]) -> R + Sync) -> Vec<R>
 where
     R: serde::Serialize + serde::de::DeserializeOwned + Default + PartialEq + Send,
 {
     use std::collections::BTreeMap;
-    let mut by_file: BTreeMap<String, Vec<&dreammaker::objtree::ProcValue>> = BTreeMap::new();
+    let mut by_file: BTreeMap<String, (u128, Vec<(String, &dreammaker::objtree::ProcValue)>)> = BTreeMap::new();
     for ty in sem.objtree.iter_types() {
+        let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
         for (_, tp) in ty.get().procs.iter() {
             for v in tp.value.iter() {
                 if !v.code.has_body() {
                     continue;
                 }
                 if let Some(rel) = sem.file_of(v.location) {
-                    by_file.entry(rel.to_string()).or_default().push(v);
+                    by_file.entry(rel.to_string()).or_insert_with(|| (sem.location_key(v.location), Vec::new())).1.push((path.clone(), v));
                 }
             }
         }
     }
-    let empty: Vec<&dreammaker::objtree::ProcValue> = Vec::new();
-    let cached: Vec<&crate::tree::SourceFile> = if sem.cacheable() { by_file.keys().filter_map(|rel| tree.get(rel)).collect() } else { Vec::new() };
-    let mut from_store: std::collections::HashMap<String, R> = std::collections::HashMap::new();
-    if !cached.is_empty() {
-        let got = crate::incr::keyed(name, sem.env_key(), &cached, |file| f(&file.rel, by_file.get(&file.rel).unwrap_or(&empty)));
-        for (file, r) in cached.iter().zip(got) {
-            from_store.insert(file.rel.clone(), r);
-        }
+    let groups: Vec<(&String, &(u128, Vec<(String, &dreammaker::objtree::ProcValue)>))> = by_file.iter().collect();
+    if !sem.cacheable() {
+        return groups.iter().map(|(rel, (_, defs))| f(rel, defs)).collect();
     }
-    by_file
-        .iter()
-        .map(|(rel, defs)| match from_store.remove(rel) {
-            Some(r) => r,
-            None => f(rel, defs),
-        })
-        .collect()
+    let keys: Vec<u128> = groups.iter().map(|(_, (k, _))| *k).collect();
+    crate::incr::keyed_by(name, 0, &keys, |i| f(groups[i].0, &groups[i].1 .1))
 }
 
 /// The line the lint engine numbers `model_line` of `rel` as. The engine reads files with universal newlines (a lone carriage

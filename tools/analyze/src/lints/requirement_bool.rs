@@ -50,7 +50,7 @@ impl Lint for RequirementBool {
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let files = cx.files();
         // Cached per file inside call_sites: an edit re-reads only the edited files' bodies.
-        let typed: Option<Vec<(String, u32, String)>> = cx.sem().map(|sem| crate::sem::procs::call_sites(&sem, cx.tree, &["req_bool"]));
+        let typed: Option<Vec<(String, u32, String)>> = cx.sem().map(|sem| crate::sem::procs::call_sites(&sem, &["req_bool"]));
         // The text rules are a function of one file and the retired-macro list: cached per file, so an edit re-scans that file only.
         let retired: Vec<String> = cx.list("retired_macros").to_vec();
         let ctx = crate::incr::ctx_key(&retired);
@@ -197,7 +197,7 @@ mod tests {
         std::fs::write(root.path().join("code/probe.dm"), text).unwrap();
         let tree = Tree::from_files(vec![SourceFile::from_text("code/probe.dm", text)]);
         let sem = crate::sem::Sem::build(root.path(), &tree).unwrap();
-        let lines: Vec<u32> = crate::sem::procs::call_sites(&sem, &tree, &["req_bool"]).into_iter().map(|(_, l, _)| l).collect();
+        let lines: Vec<u32> = crate::sem::procs::call_sites(&sem, &["req_bool"]).into_iter().map(|(_, l, _)| l).collect();
         assert_eq!(lines, vec![8, 10]);
     }
     #[test]

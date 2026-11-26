@@ -1231,53 +1231,13 @@ fn param_candidates(sem: &Sem, refs: &[ProcRef]) -> ParamCandidates {
                 texts.push((p.name.to_string(), t));
             }
         }
-        let own = type_key(&r.ty().get().path);
-        if let Some(code) = v.code.as_ref() {
-            for_each_var_init(code, &mut |n, e| {
-                if let Some(t) = literal_text(e) {
-                    texts.push((n.to_string(), t));
-                }
-            });
-            for_each_expr(code, &mut |e| {
-                if let Expression::AssignOp { op: AssignOp::Assign, lhs, rhs } = e {
-                    if let (Some(n), Some(t)) = (target_name(lhs), literal_text(rhs)) {
-                        texts.push((n, t));
-                    }
-                }
-                let Expression::Base { term, follow } = e else { return };
-                match &term.elem {
-                    Term::DynamicCall(args, _) => {
-                        for a in args.iter() {
-                            if let Some(t) = literal_text(a) {
-                                named.insert(t);
-                            } else if let Some(n) = target_name(a) {
-                                dynamic.insert(n);
-                            }
-                        }
-                    }
-                    Term::Call(n, args) if n == "call" || n == "hascall" => {
-                        for a in args.iter() {
-                            if let Some(t) = literal_text(a) {
-                                named.insert(t);
-                            } else if let Some(n) = target_name(a) {
-                                dynamic.insert(n);
-                            }
-                        }
-                    }
-                    Term::Prefab(p) | Term::NewPrefab { prefab: p, .. } => {
-                        if let Some(pr) = proc_ref_of(p, &own) {
-                            proc_refs.push(pr);
-                        }
-                    }
-                    _ => {}
-                }
-                for fo in follow.iter() {
-                    if let Follow::ProcReference(n) = &fo.elem {
-                        named.insert(n.to_string());
-                    }
-                }
-            });
-        }
+    }
+    // What the bodies name: a function of each file's bodies, cached per file.
+    for names in crate::sem::procs::per_file(sem, "value-procs-body-names", |_rel, defs| body_names(defs)) {
+        texts.extend(names.texts);
+        named.extend(names.named);
+        dynamic.extend(names.dynamic);
+        proc_refs.extend(names.proc_refs);
     }
     for (n, t) in texts {
         if dynamic.contains(&n) {
@@ -1285,6 +1245,68 @@ fn param_candidates(sem: &Sem, refs: &[ProcRef]) -> ParamCandidates {
         }
     }
     (out, named, proc_refs)
+}
+
+/// What one file's bodies name, for [`param_candidates`]: literal texts assigned to a name, names a dynamic call spells, names whose
+/// value reaches a dynamic call, and the procs a type path literal refers to.
+#[derive(Default, PartialEq, serde::Serialize, serde::Deserialize)]
+struct BodyNames {
+    texts: Vec<(String, String)>,
+    named: Vec<String>,
+    dynamic: Vec<String>,
+    proc_refs: Vec<(String, String)>,
+}
+
+fn body_names(defs: &[(String, &dreammaker::objtree::ProcValue)]) -> BodyNames {
+    let mut out = BodyNames::default();
+    for (own, v) in defs {
+        let Some(code) = v.code.as_ref() else { continue };
+        for_each_var_init(code, &mut |n, e| {
+            if let Some(t) = literal_text(e) {
+                out.texts.push((n.to_string(), t));
+            }
+        });
+        for_each_expr(code, &mut |e| {
+            if let Expression::AssignOp { op: AssignOp::Assign, lhs, rhs } = e {
+                if let (Some(n), Some(t)) = (target_name(lhs), literal_text(rhs)) {
+                    out.texts.push((n, t));
+                }
+            }
+            let Expression::Base { term, follow } = e else { return };
+            match &term.elem {
+                Term::DynamicCall(args, _) => {
+                    for a in args.iter() {
+                        if let Some(t) = literal_text(a) {
+                            out.named.push(t);
+                        } else if let Some(n) = target_name(a) {
+                            out.dynamic.push(n);
+                        }
+                    }
+                }
+                Term::Call(n, args) if n == "call" || n == "hascall" => {
+                    for a in args.iter() {
+                        if let Some(t) = literal_text(a) {
+                            out.named.push(t);
+                        } else if let Some(n) = target_name(a) {
+                            out.dynamic.push(n);
+                        }
+                    }
+                }
+                Term::Prefab(p) | Term::NewPrefab { prefab: p, .. } => {
+                    if let Some(pr) = proc_ref_of(p, own) {
+                        out.proc_refs.push(pr);
+                    }
+                }
+                _ => {}
+            }
+            for fo in follow.iter() {
+                if let Follow::ProcReference(n) = &fo.elem {
+                    out.named.push(n.to_string());
+                }
+            }
+        });
+    }
+    out
 }
 
 /// The text a literal string expression spells.
