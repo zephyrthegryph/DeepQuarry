@@ -475,7 +475,13 @@ usage_scan() { # <worktree>: sets U_ANY (0/1: it holds or queues for a machine s
 	done <<<"$SLOT_USAGE_ALL"
 }
 
-slot_pushed() { # <branch>: nothing is unpushed: every commit is in origin/master or in origin/<branch> (a deleted branch holds nothing)
+slot_pushed() { # <branch> [<worktree>]: nothing is unpushed: every commit is in origin/master or in origin/<branch> (a deleted branch holds nothing),
+	# and the worktree's own HEAD (a lane may sit on a branch other than the leased name) is in origin/master or some origin ref; a local branch
+	# with no remote counterpart is unpushed
+	local head
+	if [ -n "${2:-}" ] && [ -e "$2/.git" ] && head="$(git -C "$2" rev-parse -q --verify HEAD 2>/dev/null)"; then
+		merged_into_master "$2" "$head" || [ -n "$(git -C "$2" for-each-ref --count=1 --contains "$head" refs/remotes/origin 2>/dev/null)" ] || return 1
+	fi
 	git -C "$REPO" show-ref -q --verify "refs/heads/$1" || return 0
 	merged_into_master "$REPO" "$1" && return 0
 	git -C "$REPO" merge-base --is-ancestor "refs/heads/$1" "refs/remotes/origin/$1" 2>/dev/null
@@ -506,7 +512,7 @@ slot_eval() {
 	[ "$E_LIVE" -eq 0 ] && [ "$E_IDLE" -ge "$STUCK_MIN" ] && E_STUCK=1
 	if [ "$E_STUCK" -eq 1 ]; then   # a dirty check only for a lease idle past the stuck limit, and a cheap cached one
 		wt_dirty_fast "$wt" && E_DIRTY=1
-		slot_pushed "$L_branch" || E_PUSHED=0
+		slot_pushed "$L_branch" "$wt" || E_PUSHED=0
 	fi
 	usage_scan "$wt"
 	[ -n "$U_WAIT" ] && E_WAIT="$U_WAIT"
@@ -576,7 +582,7 @@ reclaim_finished() { # called under the lock: drop leases whose lane is done
 			# the lane committed (tip moved off its start) and all of it is in origin/master: finished. A lane that has not committed yet
 			# also sits on a master ancestor, which is why the start commit is recorded.
 			RECLAIMED=1; release_slot "$i" 0 0; say "reclaimed pool-$i (lane $branch is merged into origin/master)"
-		elif ! slot_live "$i" "$wt" && slot_pushed "$branch"; then
+		elif ! slot_live "$i" "$wt" && slot_pushed "$branch" "$wt"; then
 			# stuck (no process, idle past the limit), clean, and every commit pushed or merged: nothing can be lost (a lane that never committed lands here too)
 			RECLAIMED=1; release_slot "$i" 0 0; say "reclaimed pool-$i (stuck: clean, no live process, idle $(fmt_min "$IDLE_V"), nothing unpushed on $branch)"
 		fi
