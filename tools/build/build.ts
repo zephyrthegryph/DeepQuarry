@@ -915,8 +915,49 @@ const analyzeSourceKey = (): string => {
 };
 let analyzePendingKey: string | null = null;
 
+// One program: the analysis engine is linked into the native compiler, and the analyze binary is that compiler under the name
+// `analyze` (it runs `dmbc analyze`, which the compiler's resident daemon serves; tools/dmb/crates/dmbc/src/daemon/analysis.rs).
+// DQ_ANALYZE_STANDALONE=1 builds the separate tools/analyze binary instead (a lint author's 10 s incremental loop; the gates and CI
+// use the compiler).
+const analyzeStandalone = (): boolean => process.env.DQ_ANALYZE_STANDALONE === '1';
+
+/** Points ANALYZE_BIN at the compiler: a hard link (a copy where links fail) plus `<bin>.target` naming the compiler itself. */
+function linkAnalyzeToCompiler(): void {
+  const compiler = path.resolve(dmbcBinOverride() || sharedDmbcExe('dmbc'));
+  if (!fs.existsSync(compiler)) {
+    Juke.logger.warn(`analyze: the compiler ${compiler} is missing; the lint engine cannot run`);
+    return;
+  }
+  const stat = fs.statSync(compiler);
+  const key = `compiler|${compiler}|${stat.size}|${stat.mtimeMs}`;
+  const keyFile = `${ANALYZE_BIN}.key`;
+  if (fs.existsSync(ANALYZE_BIN) && fs.existsSync(keyFile) && fs.readFileSync(keyFile, 'utf-8').trim() === key) return;
+  fs.mkdirSync(path.dirname(ANALYZE_BIN), { recursive: true });
+  const tmp = `${ANALYZE_BIN}.${process.pid}.tmp`;
+  try {
+    fs.linkSync(compiler, tmp);
+  } catch {
+    fs.copyFileSync(compiler, tmp);
+  }
+  try {
+    fs.renameSync(tmp, ANALYZE_BIN);
+  } catch (error) {
+    fs.rmSync(tmp, { force: true });
+    throw new Error(`analyze: could not replace ${ANALYZE_BIN} (still running?): ${error instanceof Error ? error.message : error}`);
+  }
+  fs.writeFileSync(`${ANALYZE_BIN}.target`, compiler);
+  fs.writeFileSync(keyFile, key);
+  Juke.logger.info(`analyze: runs the compiler ${compiler} (dmbc analyze)`);
+}
+
 export const AnalyzeBuildTarget = new Juke.Target({
+  dependsOn: () => (analyzeStandalone() ? [] : [DmbcTarget]),
   onlyWhen: () => {
+    if (!analyzeStandalone()) {
+      linkAnalyzeToCompiler();
+      return false;
+    }
+    fs.rmSync(`${ANALYZE_BIN}.target`, { force: true });
     const key = analyzeSourceKey();
     analyzePendingKey = key;
     const keyFile = `${ANALYZE_BIN}.key`;

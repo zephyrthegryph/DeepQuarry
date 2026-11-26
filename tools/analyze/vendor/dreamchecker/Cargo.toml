@@ -9,5 +9,7 @@ license = "GPL-3.0-only"
 path = "src/lib.rs"
 
 [dependencies]
+# Output and environment per request (dmbc daemon hosting): hostio/src/lib.rs.
+dq-hostio = { path = "../../hostio" }
 dreammaker = { path = "../dreammaker" }
 foldhash = "0.2.0"

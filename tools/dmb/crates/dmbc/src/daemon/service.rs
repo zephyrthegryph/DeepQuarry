@@ -858,6 +858,10 @@ pub(super) fn serve() -> io::Result<()> {
         }
     }
 }
+/// RAM free on the machine now (`super::analysis` admission), when the platform reports it.
+pub(super) fn available_memory() -> Option<u64> {
+    soft_memory::available()
+}
 fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) -> io::Result<()> {
     transport::set_timeout(&mut stream, Duration::from_secs(20))?;
     let Request::Hello { version, compiler } = protocol::receive(&mut stream)? else {
@@ -979,6 +983,32 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     }),
                 ),
             }
+        }
+        Request::Analyze(request) => {
+            super::crash_trace::note_request(&format!("analyze {}", request.argv.get(1).map(String::as_str).unwrap_or("")));
+            if discovery
+                || version != protocol::VERSION
+                || compiler != shared.compiler
+                || shared.retiring.load(Ordering::Acquire)
+            {
+                return protocol::send(
+                    &mut stream,
+                    &Reply::Rejected(crate::request_failure::RequestFailure::infrastructure(
+                        "analysis requires this compiler generation's endpoint, not retiring",
+                    )),
+                );
+            }
+            let _accepted = match shared.accept_request() {
+                Ok(accepted) => accepted,
+                Err(error) => {
+                    return protocol::send(
+                        &mut stream,
+                        &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)),
+                    );
+                }
+            };
+            transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
+            super::analysis::serve(&mut stream, request)
         }
         Request::Build(request) => {
             dm_profile::request_marks_begin();

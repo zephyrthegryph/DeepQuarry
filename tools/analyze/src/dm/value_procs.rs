@@ -203,7 +203,7 @@ fn type_key(path: &str) -> String {
 
 impl<'a, 'k> ValueProcs<'a, 'k> {
     pub(crate) fn build(sem: &'a Sem, w: &'a Walker<'a, 'k>) -> Self {
-        let trace = std::env::var_os("DQ_ANALYZE_TRACE").is_some();
+        let trace = dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some();
         let t0 = std::time::Instant::now();
         let lap = |what: &str| {
             if trace {
@@ -293,7 +293,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             None => me.solve_worklist(&refs),
         }
         lap(if incremental { "fixpoint (kept, changed bodies only)" } else { "fixpoint" });
-        if std::env::var_os("DQ_VALUE_PROCS_VERIFY").is_some() {
+        if dq_hostio::var_os("DQ_VALUE_PROCS_VERIFY").is_some() {
             me.verify(&refs, &init_vars, &init_params, incremental);
         }
         if keep {
@@ -435,7 +435,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             takers.retain(|_, ids| !ids.is_empty());
         }
         let queue: Vec<usize> = (0..refs.len()).filter(|&d| affected[d]).collect();
-        if std::env::var_os("DQ_ANALYZE_TRACE").is_some() {
+        if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {
             eprintln!("value_procs: {} changed bodies, {} definitions affected, {} facts put back", changed.len(), queue.len(), back.len());
         }
         self.run_queue(refs, queue);
@@ -508,7 +508,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 self.wake(&Fact::Name(name));
             }
         }
-        if std::env::var_os("DQ_ANALYZE_TRACE").is_some() {
+        if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {
             eprintln!("value_procs: {} evaluations of {} definitions", evaluations, refs.len());
         }
     }

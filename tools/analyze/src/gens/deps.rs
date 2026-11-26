@@ -292,7 +292,7 @@ pub fn analyzed_legacy(tree: &crate::tree::Tree) -> std::sync::Arc<Option<DepsAn
 
 fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let started = std::time::Instant::now();
-    let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
+    let trace = dq_hostio::var("DQ_ANALYZE_TRACE").is_ok();
     // The presentation reactions' reads come from the text alone: found while the model loads.
     let (reaction_pairs, sem) = std::thread::scope(|s| {
         let pairs = std::thread::Builder::new().stack_size(64 << 20).spawn_scoped(s, || crate::lints::derived_reads::reaction_read_pairs(tree, &tree.select(&crate::tree::CODE_DM))).expect("spawn");
@@ -662,7 +662,7 @@ impl Generator for Deps {
             out.diag("deepquarry.dme", 1, "the semantic model could not be built; stat and draw dependencies cannot be generated");
             return;
         };
-        if std::env::var("DQ_AUTO_REPORT").is_ok() {
+        if dq_hostio::var("DQ_AUTO_REPORT").is_ok() {
             let mut hist: BTreeMap<&str, usize> = BTreeMap::new();
             for u in an.consumers.values().flatten() {
                 *hist.entry(u.what.as_str()).or_default() += 1;

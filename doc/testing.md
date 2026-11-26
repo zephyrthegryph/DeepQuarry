@@ -597,14 +597,19 @@ Fresh worktrees should not pay cold build costs:
   mtime, so a worktree can link another worktree's library or cache a binary built from other sources under its
   own key (`doc/rewrite/agent_workflow.md` section 1). `cargo` runs hold the machine-wide `cargo` slot
   (`doc/rewrite/agent_workflow.md` section 10), so concurrent builds queue instead of competing.
-- **Warm analyzer worker.** After a `check`, `timing`, `baseline` or `gen` run, `analyze` starts one detached, below-normal worker per
-  worktree (`tools/analyze/src/warm.rs`, files in `data/analyze-cache/warm/`). The worker reads the stored model and walk caches and
-  decodes every body, then waits; the next such run hands it its command line, working directory and environment and replays its
-  stdout, stderr and exit code, byte for byte what a standalone run prints. Each worker answers one request and starts a successor
-  that reads what that run wrote. It runs a copy of the binary (`warm/analyze-<hash>.exe`), so cargo can rebuild `analyze.exe` while it
-  waits; a worker of another build or environment is retired and the run happens in the client. Memory: no worker starts under 12 GB of
-  RAM free, a waiting worker leaves when free RAM drops under 6 GB or after `DQ_ANALYZE_WARM_IDLE_MIN` minutes (default 10), and it
-  deletes its files when it goes. `DQ_ANALYZE_WARM=0` (or `CI`) turns it off; `DQ_ANALYZE_WARM_TRACE=1` prints client and worker times.
+- **Analysis runs in the compiler.** The analysis engine (tools/analyze) is linked into the native compiler: `dmbc analyze ...` takes
+  the same command line as the old binary, and `tools/analyze/target/<profile>/analyze` is the compiler under that name (the
+  `analyze-build` target links it and writes `<bin>.target`, the compiler's own path, so a run goes to the published compiler whose
+  daemon every worktree shares). `check`, `timing`, `baseline`, `gen` and `dreamchecker` are served by the compiler's resident
+  daemon (`tools/dmb/crates/dmbc/src/daemon/analysis.rs`): one request at a time on threads of its own, its environment, working
+  directory and output scoped to it (`tools/analyze/hostio`), its run state reset afterwards (`tools/analyze/src/host.rs`), so its
+  stdout, stderr, exit code and files written are what a standalone run gives (checked byte for byte on edits). After each request
+  the daemon reads that root's stored model and walks ahead for the next one; it drops them after 10 idle minutes or when free RAM
+  falls under 8 GB, refuses a request under 6 GB free (it then runs in the client), and the client prints nothing until the daemon
+  has answered, so any failure falls back to running in the client. `DQ_ANALYZE_DAEMON=0` (or `CI`) runs in the client,
+  `DQ_ANALYZE_DAEMON_TRACE=1` says which happened; `DMB_DAEMON_AUTOSTART=0` also keeps it from starting a daemon.
+  `DQ_ANALYZE_STANDALONE=1` builds the separate analyze binary instead (incremental, about 10 s after a lint edit; a compiler build
+  after a lint edit takes minutes).
 - **Analyzer profile.** `DQ_ANALYZE_PROFILE` picks the cargo profile. Locally the default is `dev-fast`
   (`tools/analyze/Cargo.toml`: opt-level 2, no LTO, 256 codegen units, incremental; binary at
   `target/dev-fast/analyze`). CI (`CI` set) uses `release`; local runs use the default (the findings of

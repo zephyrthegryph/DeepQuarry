@@ -1027,7 +1027,7 @@ Notes: capped at `DQ_FOCUSED_MAX_MIN` (default 10); never wrap it in `timeout`. 
 
 #### `analyze`, `ALLOW(...)`, `check_ratchets.sh`
 Need: lint, baseline and fix.
-Defined: `tools/analyze/src/main.rs:223`, `tools/ci/check_ratchets.sh:1`
+Defined: `tools/analyze/src/cli.rs:380`, `tools/ci/check_ratchets.sh:1`
 Example: `bash tools/ci/check_ratchets.sh --changed-only`; `spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call`
 Replaces / bans: the old Python lint scripts and allowlist files.
 Notes: a site that is right as it is carries an inline `ALLOW(lint): reason` (reason of 20 characters or more, 3 words or more); an annotation no lint used fails the full run. Path exemptions, ceilings and lists live in `tools/ci/lint_scopes.toml`. `analyze baseline --update` drops fixed sites and never adds one. Do not annotate new debt to get under a ceiling.

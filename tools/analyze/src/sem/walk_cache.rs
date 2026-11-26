@@ -55,7 +55,7 @@ fn dep_id(d: &Dep) -> u64 {
 }
 
 /// Every dependency id seen this run, with what it names.
-static DEPS: OnceLock<RwLock<HashMap<u64, Dep>>> = OnceLock::new();
+static DEPS: crate::host::RunCell<RwLock<HashMap<u64, Dep>>> = crate::host::RunCell::new();
 
 fn deps() -> &'static RwLock<HashMap<u64, Dep>> {
     DEPS.get_or_init(Default::default)
@@ -67,16 +67,16 @@ thread_local! {
 }
 
 fn enabled() -> bool {
-    static ON: OnceLock<bool> = OnceLock::new();
-    *ON.get_or_init(|| !matches!(std::env::var("DQ_WALK_CACHE").as_deref(), Ok("off") | Ok("0")) && crate::incr::dir().is_some())
+    static ON: dq_hostio::EnvCached<bool> = dq_hostio::EnvCached::new();
+    ON.get(|| !matches!(dq_hostio::var("DQ_WALK_CACHE").as_deref(), Ok("off") | Ok("0")) && crate::incr::dir().is_some())
 }
 
 fn verify() -> bool {
-    std::env::var_os("DQ_WALK_VERIFY").is_some()
+    dq_hostio::var_os("DQ_WALK_VERIFY").is_some()
 }
 
 fn trace() -> bool {
-    std::env::var_os("DQ_ANALYZE_TRACE").is_some()
+    dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some()
 }
 
 /// Records a dependency of the walk (or memoized node) running on this thread, if any.
@@ -224,9 +224,9 @@ struct Loaded {
     delta: HashMap<String, Kept>,
 }
 
-static LOADED: OnceLock<Option<Loaded>> = OnceLock::new();
+static LOADED: crate::host::RunCell<Option<Loaded>> = crate::host::RunCell::new();
 /// The walks this run made: key -> (context, dep ids, result).
-static FRESH: OnceLock<Mutex<HashMap<String, (u128, Vec<u64>, LazySet)>>> = OnceLock::new();
+static FRESH: crate::host::RunCell<Mutex<HashMap<String, (u128, Vec<u64>, LazySet)>>> = crate::host::RunCell::new();
 static HITS: AtomicUsize = AtomicUsize::new(0);
 static MISSES: AtomicUsize = AtomicUsize::new(0);
 static DIFFERED: AtomicUsize = AtomicUsize::new(0);
@@ -268,7 +268,7 @@ fn loaded() -> Option<&'static Loaded> {
                 let d = read_file(&dir.join(DELTA));
                 (b.join().unwrap_or_default(), d)
             });
-            if std::env::var_os("DQ_WALK_SIZES").is_some() {
+            if dq_hostio::var_os("DQ_WALK_SIZES").is_some() {
                 let mut by: std::collections::BTreeMap<String, (usize, usize)> = Default::default();
                 for (k, (_, _, set)) in base.iter() {
                     let flavor = k.splitn(3, '|').take(3).collect::<Vec<_>>().join("|");
@@ -378,7 +378,7 @@ fn digest_dep(sem: &Sem, d: &Dep) -> u64 {
 
 /// A stored result for `key`, when its context and every dependency still digest the same.
 fn lookup(key: &str, context: u128, sem: &Sem, digests: &Digests) -> Option<Arc<ReadSet>> {
-    let why = std::env::var_os("DQ_WALK_WHY").is_some();
+    let why = dq_hostio::var_os("DQ_WALK_WHY").is_some();
     let l = loaded()?;
     let Some((ctx, ds, set)) = l.delta.get(key).or_else(|| l.base.get(key)) else {
         if why {
@@ -465,8 +465,8 @@ fn walk_verify(key: String, cached: Arc<ReadSet>, run: impl FnOnce() -> ReadSet)
     Arc::new(set)
 }
 
-static DIGESTS: OnceLock<Digests> = OnceLock::new();
-static MODEL: OnceLock<std::sync::Arc<super::SemBox>> = OnceLock::new();
+static DIGESTS: crate::host::RunCell<Digests> = crate::host::RunCell::new();
+static MODEL: crate::host::RunCell<std::sync::Arc<super::SemBox>> = crate::host::RunCell::new();
 
 /// The run's dependency digests (one full model per process).
 pub fn digests() -> &'static Digests {
@@ -574,5 +574,17 @@ pub fn finish() {
     std::mem::forget(fresh);
     if trace() {
         eprintln!("analyze: walk cache: wrote the {} ({} walks) in {:.1?}", what, n, t0.elapsed());
+    }
+}
+
+/// Run state for `crate::host::reset_run_state`.
+pub(crate) fn reset() {
+    crate::host::clear(&DEPS);
+    crate::host::clear(&LOADED);
+    crate::host::clear(&FRESH);
+    crate::host::clear(&DIGESTS);
+    crate::host::clear(&MODEL);
+    for c in [&HITS, &MISSES, &DIFFERED, &T_VALIDATE, &T_DECODE, &T_CTX, &T_LOOKUP] {
+        c.store(0, Ordering::Relaxed);
     }
 }

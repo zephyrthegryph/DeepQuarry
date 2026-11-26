@@ -136,7 +136,6 @@ impl CheckGrep {
 /// Whether the root `.gitignore` names `rel` exactly (`/code/__defines/verdigris/_bindings_types.dm`): build output, not source, so the
 /// rules that judge committed code do not count its lines against their ceilings. A tree with no such `.gitignore` (a fixture) has none.
 fn ignored_output(root: &Path, rel: &str) -> bool {
-    static NAMED: std::sync::Mutex<Option<std::collections::HashMap<std::path::PathBuf, std::collections::HashSet<String>>>> = std::sync::Mutex::new(None);
     let mut guard = NAMED.lock().unwrap_or_else(|e| e.into_inner());
     guard
         .get_or_insert_with(Default::default)
@@ -891,4 +890,12 @@ TRACKED(/obj/item/flagged, slot_flags)
     fn selftest_passes() {
         assert_eq!(CheckGrep::new().selftest(), Ok(String::new()));
     }
+}
+
+/// The root `.gitignore`'s named outputs, read once per run (`ignored_output`).
+static NAMED: std::sync::Mutex<Option<std::collections::HashMap<std::path::PathBuf, std::collections::HashSet<String>>>> = std::sync::Mutex::new(None);
+
+/// Run state for `crate::host::reset_run_state`.
+pub(crate) fn reset() {
+    *NAMED.lock().unwrap_or_else(|e| e.into_inner()) = None;
 }

@@ -1724,3 +1724,11 @@ impl<'de> serde::Deserialize<'de> for LazyCode {
         Ok(LazyCode { cell: std::sync::OnceLock::new(), raw: Some(raw) })
     }
 }
+
+/// What a run of the hosting analyzer left in this crate's statics, cleared before its next request in the same process.
+pub fn reset_run_state() {
+    COMPACT_PARSE.store(false, std::sync::atomic::Ordering::Relaxed);
+    DECODED.store(0, std::sync::atomic::Ordering::Relaxed);
+    PROBE.store(false, std::sync::atomic::Ordering::Relaxed);
+    PROBES.lock().unwrap_or_else(|e| e.into_inner()).clear();
+}

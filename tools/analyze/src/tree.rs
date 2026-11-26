@@ -125,7 +125,7 @@ fn read_text(path: &Path) -> String {
 impl SourceFile {
     fn data(&self) -> &Data {
         self.data.get_or_init(|| {
-            if std::env::var("DQ_ANALYZE_TRACE_LOAD").is_ok() {
+            if dq_hostio::var("DQ_ANALYZE_TRACE_LOAD").is_ok() {
                 static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
                 if N.fetch_add(1, std::sync::atomic::Ordering::Relaxed) == 300 {
                     eprintln!("analyze: 300th lazy file load, from: {}", std::backtrace::Backtrace::force_capture());
@@ -263,13 +263,13 @@ pub fn run_isolated<T: Send>(f: impl FnOnce() -> T + Send) -> T {
 }
 
 fn memo_trace() -> bool {
-    static ON: OnceLock<bool> = OnceLock::new();
-    *ON.get_or_init(|| std::env::var("DQ_ANALYZE_TRACE").is_ok())
+    static ON: dq_hostio::EnvCached<bool> = dq_hostio::EnvCached::new();
+    ON.get(|| dq_hostio::var("DQ_ANALYZE_TRACE").is_ok())
 }
 
 /// Debug aid (`DQ_ANALYZE_WATCHDOG=<seconds>`): when set, memo state is tracked and dumped if the run is still going
 /// after that long, then the process exits with status 99.
-static WATCH: OnceLock<Mutex<HashMap<String, Vec<&'static str>>>> = OnceLock::new();
+static WATCH: crate::host::RunCell<Mutex<HashMap<String, Vec<&'static str>>>> = crate::host::RunCell::new();
 
 fn watch_set(key: &str, state: &'static str) {
     if let Some(w) = WATCH.get() {
@@ -291,7 +291,11 @@ fn watch_set(key: &str, state: &'static str) {
 
 /// Starts the watchdog when `DQ_ANALYZE_WATCHDOG` is set.
 pub fn start_watchdog() {
-    let Some(secs) = std::env::var("DQ_ANALYZE_WATCHDOG").ok().and_then(|s| s.parse::<u64>().ok()) else { return };
+    let Some(secs) = dq_hostio::var("DQ_ANALYZE_WATCHDOG").ok().and_then(|s| s.parse::<u64>().ok()) else { return };
+    // It ends the process: never inside the daemon, which serves other requests and compiles.
+    if dq_hostio::hosted() {
+        return;
+    }
     let _ = WATCH.set(Mutex::new(HashMap::new()));
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(secs));
@@ -618,8 +622,8 @@ mod tests {
 
 /// `DQ_TEXT_PROBE=1`: who strips files (counts by the first analyzer frame outside the tree), printed at exit.
 pub fn text_probe() {
-    static ON: OnceLock<bool> = OnceLock::new();
-    if !*ON.get_or_init(|| std::env::var_os("DQ_TEXT_PROBE").is_some()) {
+    static ON: dq_hostio::EnvCached<bool> = dq_hostio::EnvCached::new();
+    if !ON.get(|| dq_hostio::var_os("DQ_TEXT_PROBE").is_some()) {
         return;
     }
     let bt = std::backtrace::Backtrace::force_capture().to_string();
@@ -629,3 +633,9 @@ pub fn text_probe() {
 }
 
 pub static TEXT_PROBE: std::sync::Mutex<std::collections::BTreeMap<String, usize>> = std::sync::Mutex::new(std::collections::BTreeMap::new());
+
+/// Run state for `crate::host::reset_run_state`.
+pub(crate) fn reset() {
+    crate::host::clear(&WATCH);
+    TEXT_PROBE.lock().unwrap_or_else(|e| e.into_inner()).clear();
+}

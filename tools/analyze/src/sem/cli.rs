@@ -197,7 +197,7 @@ fn gen_store_key(tree: &crate::tree::Tree, root: &Path) -> u128 {
 /// ~/.cache/dq/gen-store; `off` disables it). An entry is a directory of the generated files by repo-relative path and a `manifest` of
 /// their digests, written under a temporary name and renamed into place; the newest `GEN_STORE_KEEP` entries are kept.
 fn gen_store_dir() -> Option<std::path::PathBuf> {
-    match std::env::var("DQ_GEN_STORE") {
+    match dq_hostio::var("DQ_GEN_STORE") {
         Ok(v) if v == "off" || v == "0" => return None,
         Ok(v) if !v.is_empty() => return Some(std::path::PathBuf::from(v)),
         _ => {}
@@ -205,7 +205,7 @@ fn gen_store_dir() -> Option<std::path::PathBuf> {
     if cfg!(windows) && Path::new("E:/").exists() {
         return Some(std::path::PathBuf::from("E:/dq-cache/gen-store"));
     }
-    std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(|h| std::path::PathBuf::from(h).join(".cache").join("dq").join("gen-store"))
+    dq_hostio::var_os("HOME").or_else(|| dq_hostio::var_os("USERPROFILE")).map(|h| std::path::PathBuf::from(h).join(".cache").join("dq").join("gen-store"))
 }
 
 const GEN_STORE_KEEP: usize = 40;
@@ -361,7 +361,7 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
     super::incremental::disable_capture();
     let check = args.iter().any(|a| a == "--check");
     let names: Vec<String> = args.iter().filter(|a| !a.starts_with("--")).cloned().collect();
-    let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
+    let trace = dq_hostio::var("DQ_ANALYZE_TRACE").is_ok();
     let mut written: Vec<std::path::PathBuf> = Vec::new();
     let mut results = Vec::new();
     let mut last_tree: Option<Engine> = None;

@@ -32,7 +32,7 @@ pub struct Options {
 }
 
 /// The first lint's start (`DQ_ANALYZE_TRACE_SPANS` prints each lint's span relative to it).
-static SPAN_ORIGIN: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+static SPAN_ORIGIN: crate::host::RunCell<Instant> = crate::host::RunCell::new();
 
 /// Total time spent reading lint caches (`DQ_ANALYZE_TRACE`).
 pub static LOAD_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -119,14 +119,14 @@ impl Engine {
         if prior.len() != meta.len() || meta.iter().any(|(k, v)| prior.get(k) != Some(v)) {
             cache.save_meta(&meta);
         }
-        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: scopes+meta load {:.1?}, walk+hash {:.1?}, save {:.1?}", t_prior, t_tree - t_prior, t0.elapsed() - t_tree);
         }
         let t_lines = Instant::now();
         if let Some(dir) = crate::incr::dir() {
             tree.load_line_cache(&dir.join("linetext.bin"), cache.stamp());
         }
-        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: line cache load {:.1?}", t_lines.elapsed());
         }
         let changed = if opts.changed_only { Some(changed_files(&opts.root)) } else { None };
@@ -356,7 +356,7 @@ impl Engine {
         let name = lint.meta().name.to_string();
         let t_start = Instant::now();
         let out = self.run_one_inner(lint, name);
-        if std::env::var("DQ_ANALYZE_TRACE_SPANS").is_ok() {
+        if dq_hostio::var("DQ_ANALYZE_TRACE_SPANS").is_ok() {
             let t0 = *SPAN_ORIGIN.get_or_init(Instant::now);
             eprintln!("span {:>7.0}..{:>7.0} ms  {}", t_start.saturating_duration_since(t0).as_secs_f64() * 1000.0, t0.elapsed().as_secs_f64() * 1000.0, out.name);
         }
@@ -416,7 +416,7 @@ impl Engine {
         if let Some(dir) = crate::incr::dir() {
             self.tree.save_line_cache(&dir.join("linetext.bin"), self.cache.stamp());
         }
-        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: lint cache loads {:.1}ms (summed over threads)", LOAD_NS.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e6);
         }
         outcomes
@@ -497,7 +497,7 @@ impl Engine {
 pub fn changed_files(root: &Path) -> HashSet<String> {
     let mut out = HashSet::new();
     let git = |args: &[&str]| -> Vec<String> {
-        std::process::Command::new("git")
+        dq_hostio::command("git")
             .args(args)
             .current_dir(root)
             .output()
@@ -575,4 +575,10 @@ mod changed_only_tests {
         assert!(!is_file);
         assert!(failed, "a tree lint must judge the whole tree, not only changed files");
     }
+}
+
+/// Run state for `crate::host::reset_run_state`.
+pub(crate) fn reset() {
+    crate::host::clear(&SPAN_ORIGIN);
+    LOAD_NS.store(0, std::sync::atomic::Ordering::Relaxed);
 }

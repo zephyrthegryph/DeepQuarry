@@ -2,6 +2,16 @@
 //! DreamMaker.
 #![allow(dead_code, unused_variables)]
 
+// Output goes through dq_hostio: the process's streams standalone, a request's sink inside the dmbc daemon.
+#[allow(unused_macros)]
+macro_rules! print { ($($t:tt)*) => { dq_hostio::out(true, format_args!($($t)*), false) }; }
+#[allow(unused_macros)]
+macro_rules! println { () => { dq_hostio::out(true, format_args!(""), true) }; ($($t:tt)*) => { dq_hostio::out(true, format_args!($($t)*), true) }; }
+#[allow(unused_macros)]
+macro_rules! eprint { ($($t:tt)*) => { dq_hostio::out(false, format_args!($($t)*), false) }; }
+#[allow(unused_macros)]
+macro_rules! eprintln { () => { dq_hostio::out(false, format_args!(""), true) }; ($($t:tt)*) => { dq_hostio::out(false, format_args!($($t)*), true) }; }
+
 extern crate dreammaker as dm;
 use dm::ast::*;
 use dm::constants::{ConstFn, Constant};
@@ -323,7 +333,7 @@ pub(crate) fn run_parallel_batched(context: &Context, objtree: &ObjectTree, cli:
         return run_inner(context, objtree, cli);
     }
     // DQ_DREAMCHECKER_TIMING=1: each pass's wall time on stderr (a measurement aid; off by default).
-    let timing = std::env::var_os("DQ_DREAMCHECKER_TIMING").is_some();
+    let timing = dq_hostio::var_os("DQ_DREAMCHECKER_TIMING").is_some();
     let mut mark = std::time::Instant::now();
     let mut lap = |what: &str| {
         if timing {
@@ -644,7 +654,7 @@ struct Step<'o> {
 /// `f` over `items` on up to `CALL_TREE_THREADS` threads (half the cores, at most 8; `DQ_DREAMCHECKER_THREADS` overrides), results in
 /// `items`' order.
 fn parallel_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
-    let threads = std::env::var("DQ_DREAMCHECKER_THREADS").ok().and_then(|v| v.parse::<usize>().ok())
+    let threads = dq_hostio::var("DQ_DREAMCHECKER_THREADS").ok().and_then(|v| v.parse::<usize>().ok())
         .unwrap_or_else(|| std::thread::available_parallelism().map(|n| (n.get() / 2).clamp(1, 8)).unwrap_or(1))
         .max(1);
     if threads == 1 || items.len() < 2 {
@@ -1103,7 +1113,7 @@ impl<'o> AnalyzeObjectTree<'o> {
         };
         let sleep = in_order(&self.must_not_sleep);
         let pure = in_order(&self.must_be_pure);
-        if std::env::var_os("DQ_DREAMCHECKER_TIMING").is_some() {
+        if dq_hostio::var_os("DQ_DREAMCHECKER_TIMING").is_some() {
             eprintln!(
                 "dreamchecker timing: {} should_not_sleep and {} should_be_pure procs; {} and {} procs can reach a violation ({} in the caller's context); {} callers",
                 sleep.len(), pure.len(), tables.can_sleep.len(), tables.can_be_impure.len(), tables.sleeps_in_context.len(), self.call_tree.len()

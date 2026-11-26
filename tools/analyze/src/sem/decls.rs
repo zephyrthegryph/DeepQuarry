@@ -304,7 +304,7 @@ impl Decls {
             for (t, v) in found {
                 d.relations.entry(t).or_default().insert(v);
             }
-            if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+            if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
                 eprintln!("analyze: Decls built in {:.0?} ({} markers, {} defines)", t_decls.elapsed(), d.markers.len(), d.defines.len());
             }
             d

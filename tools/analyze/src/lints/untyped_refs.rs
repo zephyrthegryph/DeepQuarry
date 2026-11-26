@@ -120,7 +120,7 @@ type Lits = BTreeMap<(String, String), Evidence>;
 fn scan(cx: &Cx, out: &mut Sink, lits_out: &mut Lits) {
     {
         let t_scan = std::time::Instant::now();
-        let trace = std::env::var_os("DQ_ANALYZE_TRACE").is_some();
+        let trace = dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some();
         let Some(sem) = cx.sem() else {
             out.note("untyped: the semantic model is unavailable; nothing checked");
             return;

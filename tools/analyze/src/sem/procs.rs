@@ -133,8 +133,6 @@ where
 /// return ends a line, as in Python); the parser does not, so after a lone carriage return the two count differently. Read once per file.
 pub fn engine_line(root: &std::path::Path, rel: &str, model_line: u32) -> u32 {
     use std::collections::HashMap;
-    use std::sync::Mutex;
-    static LONE_CR: Mutex<Option<HashMap<String, Vec<u32>>>> = Mutex::new(None);
     let mut guard = LONE_CR.lock().unwrap();
     let map = guard.get_or_insert_with(HashMap::new);
     let lines = map.entry(rel.to_string()).or_insert_with(|| {
@@ -201,4 +199,12 @@ mod tests {
         assert_eq!(body_lines(&lines, 1), 2..6);
         assert_eq!(body_lines(&lines, 7), 8..9);
     }
+}
+
+/// Each file's lone carriage returns, read once per run (`engine_line`).
+static LONE_CR: std::sync::Mutex<Option<std::collections::HashMap<String, Vec<u32>>>> = std::sync::Mutex::new(None);
+
+/// Run state for `crate::host::reset_run_state`.
+pub(crate) fn reset() {
+    *LONE_CR.lock().unwrap_or_else(|e| e.into_inner()) = None;
 }

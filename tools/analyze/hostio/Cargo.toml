@@ -1,0 +1,9 @@
+[package]
+name = "dq-hostio"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Where analyze's output goes and which environment it reads: the process's own, or a request's inside the dmbc daemon"
+
+[lib]
+path = "src/lib.rs"

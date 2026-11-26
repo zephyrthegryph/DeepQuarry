@@ -35,6 +35,9 @@ dm-codegen-byond = { path = "../dm-codegen-byond" }
 dm-link = { path = "../dm-link" }
 
 dm-resources = { path = "../dm-resources" }
+# The lint and analysis engine: `dmbc analyze ...` (one program for compile and analysis).
+dq-analyze = { path = "../../../analyze" }
+dq-hostio = { path = "../../../analyze/hostio" }
 
 [dev-dependencies]
 # Semantic retained-vs-fresh oracle: incremental output may assign IDs stably

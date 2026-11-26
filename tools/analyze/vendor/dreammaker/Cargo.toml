@@ -5,6 +5,8 @@ authors = ["Tad Hardesty <tad@platymuus.com>"]
 edition = "2021"
 
 [dependencies]
+# Output and environment per request (dmbc daemon hosting): hostio/src/lib.rs.
+dq-hostio = { path = "../../hostio" }
 interval-tree = { path = "../interval-tree" }
 builtins-proc-macro = { path = "../builtins-proc-macro" }
 lodepng = "3.10.7"

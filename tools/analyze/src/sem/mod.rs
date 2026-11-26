@@ -132,7 +132,7 @@ impl Sem {
 
     fn build_with(root: &Path, tree: &Tree, only: Option<&[String]>) -> Result<Sem, String> {
         // The synthesized .dme lives in a temp dir, so every path it names must be absolute.
-        let abs_root: PathBuf = if root.is_absolute() { root.to_path_buf() } else { std::env::current_dir().map_err(|e| e.to_string())?.join(root) };
+        let abs_root: PathBuf = if root.is_absolute() { root.to_path_buf() } else { dq_hostio::current_dir().map_err(|e| e.to_string())?.join(root) };
         let root = abs_root.as_path();
         let dme = root.join("deepquarry.dme");
         let real = only.is_none() && std::fs::read_to_string(&dme).map(|t| t.contains("#include")).unwrap_or(false);
@@ -281,7 +281,7 @@ impl Sem {
                 layering_owner_defs.entry(owner.clone()).or_default().push(file.clone());
             }
         }
-        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: sem build: parse {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
         }
         let file_keys: HashMap<dreammaker::FileId, u128> = files.iter().filter_map(|(id, rel)| tree.get(rel).map(|f| (*id, f.hash))).collect();

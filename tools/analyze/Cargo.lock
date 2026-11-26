@@ -258,6 +258,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "blake3",
+ "dq-hostio",
  "dreamchecker",
  "dreammaker",
  "fancy-regex",
@@ -274,9 +275,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "dq-hostio"
+version = "0.1.0"
+
+[[package]]
 name = "dreamchecker"
 version = "1.11.0"
 dependencies = [
+ "dq-hostio",
  "dreammaker",
  "foldhash",
 ]
@@ -289,6 +295,7 @@ dependencies = [
  "builtins-proc-macro",
  "color_space",
  "derivative",
+ "dq-hostio",
  "foldhash",
  "get-size",
  "get-size-derive",

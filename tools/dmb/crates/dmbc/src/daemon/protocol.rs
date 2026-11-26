@@ -1,13 +1,15 @@
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 const MAX_FRAME: usize = 4 * 1024 * 1024;
-pub(super) const VERSION: u32 = 5;
+pub(super) const VERSION: u32 = 6;
 #[derive(Serialize, Deserialize)]
 pub(super) enum Request {
     Hello { version: u32, compiler: u128 },
     Retire,
     Query(super::query::QueryRequest),
     Build(crate::request::BuildRequest),
+    /// `dmbc analyze` (`super::analysis`).
+    Analyze(super::analysis::AnalyzeRequest),
 }
 #[derive(Serialize, Deserialize)]
 pub(super) enum Reply {
@@ -25,6 +27,8 @@ pub(super) enum Reply {
     Rejected(crate::request_failure::RequestFailure),
     Retiring,
     Query(super::query::QueryReply),
+    /// An analysis request finished with this exit code (its output came before, as `Diagnostic` frames).
+    Analyzed(u8),
 }
 pub(super) fn send(stream: &mut impl Write, value: &impl Serialize) -> io::Result<()> {
     let bytes = serde_json::to_vec(value)?;

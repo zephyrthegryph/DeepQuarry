@@ -136,11 +136,11 @@ static PREWARMED: Mutex<Option<(PathBuf, Option<Base>, Option<Delta>)>> = Mutex:
 static WRITER: Mutex<Option<std::thread::JoinHandle<()>>> = Mutex::new(None);
 
 fn trace() -> bool {
-    std::env::var_os("DQ_ANALYZE_TRACE").is_some()
+    dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some()
 }
 
 fn enabled() -> bool {
-    !matches!(std::env::var("DQ_MODEL_STORE").as_deref(), Ok("off") | Ok("0")) && crate::incr::stamp().is_some()
+    !matches!(dq_hostio::var("DQ_MODEL_STORE").as_deref(), Ok("off") | Ok("0")) && crate::incr::stamp().is_some()
 }
 
 fn engine() -> String {
@@ -459,12 +459,12 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<
         let fid = files.get_id(target).ok_or("no file id")?;
         s.objtree.splice_patch(fid, p).map_err(|e| format!("{}: {}", crate::util::rel_slash(&abs_in(root, target), root), e))?;
     }
-    if std::env::var_os("DQ_MODEL_VERIFY").is_some() && patched > 0 {
+    if dq_hostio::var_os("DQ_MODEL_VERIFY").is_some() && patched > 0 {
         let full = super::parse_dme(dme_path, &[], None)?;
         let a = bincode::serialize(&s.objtree).map_err(|e| e.to_string())?;
         let b = bincode::serialize(&full.objtree).map_err(|e| e.to_string())?;
         if a != b {
-            if let Some(d) = std::env::var_os("DQ_MODEL_VERIFY_DUMP") {
+            if let Some(d) = dq_hostio::var_os("DQ_MODEL_VERIFY_DUMP") {
                 let d = PathBuf::from(d);
                 let _ = std::fs::write(d.join("spliced.bin"), &a);
                 let _ = std::fs::write(d.join("full.bin"), &b);
@@ -570,4 +570,18 @@ pub fn finish() {
     if let Some(t) = WRITER.lock().unwrap().take() {
         let _ = t.join();
     }
+}
+
+/// Drops the prewarmed model (a hosting process sheds it when idle or short of memory).
+pub fn shed() {
+    *PREWARMED.lock().unwrap_or_else(|e| e.into_inner()) = None;
+}
+
+/// Run state for `crate::host::reset_run_state`: the store writer joined (it holds the run's model) and the pending meta. The
+/// prewarmed model stays.
+pub(crate) fn reset() {
+    if let Some(t) = WRITER.lock().unwrap_or_else(|e| e.into_inner()).take() {
+        let _ = t.join();
+    }
+    *PENDING_META.lock().unwrap_or_else(|e| e.into_inner()) = None;
 }

@@ -43,12 +43,12 @@ static ACTIVE: Mutex<Option<Active>> = Mutex::new(None);
 static SEQ: AtomicUsize = AtomicUsize::new(0);
 
 fn trace() -> bool {
-    std::env::var_os("DQ_ANALYZE_TRACE").is_some()
+    dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some()
 }
 
 /// The shared root, when sharing is on for a run rooted at `repo` with its cache in `local`.
 fn shared_root(repo: &Path, local: &Path) -> Option<PathBuf> {
-    let explicit = std::env::var("DQ_ANALYZE_SHARED_CACHE").ok();
+    let explicit = dq_hostio::var("DQ_ANALYZE_SHARED_CACHE").ok();
     match explicit.as_deref() {
         Some("off") | Some("0") | Some("") => return None,
         _ => {}
@@ -60,7 +60,7 @@ fn shared_root(repo: &Path, local: &Path) -> Option<PathBuf> {
         return Some(PathBuf::from(p));
     }
     // A moved local cache (tests, one-off experiments) must not leak into the shared one; CI machines start empty.
-    if std::env::var_os("DQ_ANALYZE_CACHE").is_some() || std::env::var_os("CI").is_some() {
+    if dq_hostio::var_os("DQ_ANALYZE_CACHE").is_some() || dq_hostio::var_os("CI").is_some() {
         return None;
     }
     if local != repo.join("data").join("analyze-cache") {
@@ -69,7 +69,7 @@ fn shared_root(repo: &Path, local: &Path) -> Option<PathBuf> {
     if cfg!(windows) && Path::new("E:/").exists() {
         return Some(PathBuf::from("E:/dq-cache/analyze-cache"));
     }
-    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    let home = dq_hostio::var_os("HOME").or_else(|| dq_hostio::var_os("USERPROFILE"))?;
     Some(PathBuf::from(home).join(".cache").join("dq").join("analyze-cache"))
 }
 
@@ -185,8 +185,8 @@ fn dir_bytes(dir: &Path) -> u64 {
 
 /// Removes the least recently used stamp directories beyond the caps (never `keep`) and scratch files left by a crashed copy.
 pub fn prune(root: &Path, keep: Option<&str>) {
-    let max_dirs: usize = std::env::var("DQ_ANALYZE_SHARED_KEEP").ok().and_then(|v| v.parse().ok()).unwrap_or(DEFAULT_KEEP);
-    let max_bytes: u64 = std::env::var("DQ_ANALYZE_SHARED_MAX_MB").ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(DEFAULT_MAX_MB) * 1024 * 1024;
+    let max_dirs: usize = dq_hostio::var("DQ_ANALYZE_SHARED_KEEP").ok().and_then(|v| v.parse().ok()).unwrap_or(DEFAULT_KEEP);
+    let max_bytes: u64 = dq_hostio::var("DQ_ANALYZE_SHARED_MAX_MB").ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(DEFAULT_MAX_MB) * 1024 * 1024;
     let Ok(rd) = std::fs::read_dir(root) else { return };
     let mut dirs: Vec<(SystemTime, PathBuf, String, u64)> = Vec::new();
     for e in rd.filter_map(|e| e.ok()) {
@@ -250,10 +250,15 @@ mod tests {
             std::fs::File::options().write(true).open(d.join(USED)).unwrap().set_modified(when).unwrap();
         }
         // Dir 0 is the oldest but protected; of the rest the four newest (2 to 5) stay, so only 1 goes.
-        std::env::set_var("DQ_ANALYZE_SHARED_KEEP", "4");
+        dq_hostio::set_var("DQ_ANALYZE_SHARED_KEEP", "4");
         prune(t.path(), Some(&names[0]));
-        std::env::remove_var("DQ_ANALYZE_SHARED_KEEP");
+        dq_hostio::remove_var("DQ_ANALYZE_SHARED_KEEP");
         let left: Vec<bool> = names.iter().map(|n| t.path().join(n).exists()).collect();
         assert_eq!(left, vec![true, false, true, true, true, true]);
     }
+}
+
+/// Run state for `crate::host::reset_run_state`.
+pub(crate) fn reset() {
+    *ACTIVE.lock().unwrap_or_else(|e| e.into_inner()) = None;
 }

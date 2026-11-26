@@ -25,6 +25,11 @@ export const DMBC_CACHE_INPUTS = [
   'tools/dmb/crates',
   'tools/dmb/patches',
   'tools/dmb/fixtures/native_template.bin',
+  // `dmbc analyze`: the analysis engine is linked into the compiler (doc/rewrite/proposals/lean_unified.md, one program).
+  'tools/analyze/Cargo.toml',
+  'tools/analyze/build.rs',
+  'tools/analyze/src',
+  'tools/analyze/vendor',
 ];
 
 export function dmbcCacheDir(): string | null {

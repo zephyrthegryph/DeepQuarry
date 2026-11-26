@@ -41,10 +41,10 @@ where
     I: Serialize + DeserializeOwned,
 {
     let dir = crate::incr::dir();
-    if !sem.cacheable() || dir.is_none() || matches!(std::env::var("DQ_BODY_FACTS").as_deref(), Ok("off")) {
+    if !sem.cacheable() || dir.is_none() || matches!(dq_hostio::var("DQ_BODY_FACTS").as_deref(), Ok("off")) {
         return build(super::par_map(procs, |p| fact(*p)));
     }
-    let trace = std::env::var_os("DQ_ANALYZE_TRACE").is_some();
+    let trace = dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some();
     let path = dir.unwrap().join(format!("body-{}.bin", name));
     let engine = crate::cache::ENGINE_HASH.to_string();
     let stored: Option<Store<I>> = std::fs::read(&path).ok().and_then(|b| crate::incr::de::<Store<I>>(&b).ok()).filter(|s| s.engine == engine && s.ctx == ctx);

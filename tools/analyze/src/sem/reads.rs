@@ -795,7 +795,7 @@ impl<'a> ReadsEngine<'a> {
             h.update(&self.globals().digest().to_le_bytes());
             let t3 = t0.elapsed();
             h.update(&self.write_index().digest().to_le_bytes());
-            if std::env::var_os("DQ_ANALYZE_TRACE").is_some() {
+            if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {
                 eprintln!("analyze: walk context ({}): structure {:.1?}, annotations {:.1?}, globals {:.1?}, writes {:.1?}", self.flavor(), t1, t2 - t1, t3 - t2, t0.elapsed() - t3);
             }
             u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())

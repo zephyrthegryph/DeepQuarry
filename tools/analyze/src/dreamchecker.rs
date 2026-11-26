@@ -33,7 +33,7 @@ pub fn cli(argv: &[String], root: &Path) -> i32 {
         }
     }
     // Shown as given and read from the working directory, as the standalone does (the repository root when none can be read).
-    let root = std::env::current_dir().unwrap_or_else(|_| root.to_path_buf());
+    let root = dq_hostio::current_dir().unwrap_or_else(|_| root.to_path_buf());
     let shown = dme.unwrap_or_else(|| PathBuf::from("deepquarry.dme"));
     let dme = if shown.is_absolute() { shown.clone() } else { root.join(&shown) };
     run(&dme, &shown, config.as_deref(), json, parse_only, threads)
@@ -41,7 +41,7 @@ pub fn cli(argv: &[String], root: &Path) -> i32 {
 
 /// Half the cores (the machine is also a desktop), at most 8; `DQ_DREAMCHECKER_THREADS` overrides, 1 is the serial upstream pass.
 fn default_threads() -> usize {
-    if let Some(n) = std::env::var("DQ_DREAMCHECKER_THREADS").ok().and_then(|v| v.parse().ok()) {
+    if let Some(n) = dq_hostio::var("DQ_DREAMCHECKER_THREADS").ok().and_then(|v| v.parse().ok()) {
         return n;
     }
     std::thread::available_parallelism().map(|n| (n.get() / 2).clamp(1, 8)).unwrap_or(1)

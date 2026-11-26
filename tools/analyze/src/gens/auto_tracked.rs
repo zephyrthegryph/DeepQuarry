@@ -145,7 +145,7 @@ pub fn called_candidates(tree: &Tree, sem: &crate::sem::Sem, eng: &ReadsEngine, 
             if v.declaration.is_none() {
                 continue;
             }
-            if let Ok(want) = std::env::var("DQ_AUTO_DEBUG") {
+            if let Ok(want) = dq_hostio::var("DQ_AUTO_DEBUG") {
                 if *name == want {
                     eprintln!("auto_tracked debug typed: {:?} calls: {} {}", typed_set_calls(tree).get(&format!("remove_{want}")).or(typed_set_calls(tree).get(&format!("add_{want}"))), calls.contains(want.as_str()), calls.contains(&format!("{want}[]")));
                     eprintln!("auto_tracked debug: {}.{} called_here={} candidate={} declared_reactive={}", path, name, called_here(tree, sem, &defs, calls, &path, name), candidate(eng, written, calls, &path, name), declared_reactive(eng, &path, name));
@@ -486,7 +486,7 @@ impl Generator for AutoTracked {
             out.diag("deepquarry.dme", 1, "the semantic model could not be built; read-driven tracking cannot be generated");
             return;
         };
-        if std::env::var("DQ_AUTO_REPORT").is_ok() {
+        if dq_hostio::var("DQ_AUTO_REPORT").is_ok() {
             eprintln!("auto_tracked: {} tracked ({} lists), {} blocked", set.tracked.len(), set.tracked.iter().filter(|a| a.list).count(), set.blocked.len());
             for (t, v, why) in &set.blocked {
                 eprintln!("auto_tracked: blocked {}.{}: {}", t, v, why);

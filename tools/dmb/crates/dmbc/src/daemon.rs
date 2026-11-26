@@ -4,6 +4,8 @@ use std::{
     sync::{Arc, Mutex},
     time::Duration,
 };
+mod analysis;
+pub use analysis::client as analyze_client;
 mod build_admission;
 mod crash_trace;
 pub mod control;

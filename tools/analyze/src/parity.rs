@@ -20,7 +20,7 @@
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+
 
 use crate::baseline::Mode;
 use crate::lint::{Lint, Policy};
@@ -365,11 +365,11 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
 }
 
 fn python() -> String {
-    if let Ok(p) = std::env::var("PYTHON") {
+    if let Ok(p) = dq_hostio::var("PYTHON") {
         return p;
     }
     for cand in ["python3", "python"] {
-        if Command::new(cand).arg("--version").output().map(|o| o.status.success()).unwrap_or(false) {
+        if dq_hostio::command(cand).arg("--version").output().map(|o| o.status.success()).unwrap_or(false) {
             return cand.to_string();
         }
     }
@@ -391,8 +391,8 @@ fn run_old_sh(root: &Path, args: &[&str]) -> Output {
     let name = Path::new(args[0]).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     let tmp = std::env::temp_dir().join(format!("dq-analyze-old-{}-{}", std::process::id(), name));
     let _ = std::fs::write(&tmp, patched);
-    let bash = std::env::var("DQ_BASH").unwrap_or_else(|_| "bash".to_string());
-    let out = Command::new(bash)
+    let bash = dq_hostio::var("DQ_BASH").unwrap_or_else(|_| "bash".to_string());
+    let out = dq_hostio::command(bash)
         .arg(tmp.to_string_lossy().replace('\\', "/"))
         .args(&args[1..])
         .current_dir(root)
@@ -411,7 +411,7 @@ fn run_old(root: &Path, args: &[&str]) -> Output {
     if args.first().map(|a| a.ends_with(".sh")).unwrap_or(false) {
         return run_old_sh(root, args);
     }
-    let out = Command::new(python())
+    let out = dq_hostio::command(python())
         .args(args)
         .current_dir(root)
         .env("PYTHONIOENCODING", "utf-8")

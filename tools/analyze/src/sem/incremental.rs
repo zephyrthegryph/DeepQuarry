@@ -93,7 +93,7 @@ fn save_types(stamp: &str, env: Hash, map: &BTreeMap<String, String>) {
 }
 
 fn load() -> Option<Record> {
-    let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
+    let trace = dq_hostio::var("DQ_ANALYZE_TRACE").is_ok();
     let Some(stamp) = crate::incr::stamp() else {
         if trace { eprintln!("analyze: sem record: caching is off"); }
         return None;
@@ -219,7 +219,7 @@ pub(crate) fn environment(tree: &Tree) -> Option<(Hash, BTreeMap<String, Hash>)>
         files.insert(rel, h);
     }
     let defines: Vec<(&str, Hash)> = tree.select(&CODE_DM).iter().filter(|f| crate::scopes::is_defines(&f.rel)).map(|f| (f.rel.as_str(), f.hash)).collect();
-    if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+    if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
         eprintln!("analyze: sem env parts: dme {:x} decls {:x} defines {:x}", dme, decls.key, crate::incr::ctx_key(&defines));
     }
     let env = crate::incr::ctx_key(&(dme, decls.key, defines));
@@ -321,7 +321,7 @@ pub(crate) fn shape_hash(entries: Option<&Vec<String>>) -> Hash {
 
 /// Is `rec` still the answer for this tree? Updates the stored content keys when it is.
 fn miss(why: u32) -> Option<Record> {
-    if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+    if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
         eprintln!("analyze: sem record miss (reason {})", why);
     }
     None
@@ -382,7 +382,7 @@ fn validate(tree: &Tree) -> Option<Record> {
             return miss(6);
         }
         let made = got.types.get(rel).cloned().unwrap_or_default();
-        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: sem partial {}: {} types made", rel, made.len());
         }
         if made.iter().any(|t| !rec.type_loc.contains_key(t)) {
@@ -495,7 +495,7 @@ fn capture_unlocked(tree: &Tree, sem: &Sem, footprint: Vec<String>) {
         );
     }
     // DQ_SEM_RECORD_VERIFY=1: collect the whole model as well and require the same facts.
-    if changed.is_some() && std::env::var_os("DQ_SEM_RECORD_VERIFY").is_some() {
+    if changed.is_some() && dq_hostio::var_os("DQ_SEM_RECORD_VERIFY").is_some() {
         let full = collect(sem);
         let bad: Vec<&String> = files
             .iter()
@@ -533,4 +533,9 @@ pub fn store(tree: &Tree, lint: &str, sink: &Sink) {
         rec.sinks.insert(lint.to_string(), sink.clone());
         save(rec);
     }
+}
+
+/// Run state for `crate::host::reset_run_state`.
+pub(crate) fn reset() {
+    CAPTURE_OFF.store(false, std::sync::atomic::Ordering::Relaxed);
 }

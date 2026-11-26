@@ -249,12 +249,12 @@ fn compute(tree: &Tree) -> Analysis {
     an.accessor_gaps.sort_by(|a, b| (a.rel.as_str(), a.line).cmp(&(b.rel.as_str(), b.line)));
     let t_reads_as = started.elapsed();
     let footprint = sem.footprint();
-    if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+    if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
         eprintln!("analyze: sem/handlers walked {} handlers (targeted + closed) in {:.1?}", an.handlers.len(), started.elapsed());
         eprintln!("analyze: sem footprint: {} handlers, {} files consulted", an.handlers.len(), footprint.len());
     }
     super::incremental::capture(tree, &sem, footprint);
-    if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+    if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
         eprintln!("analyze: sem/handlers phases: setup {:.1?}, walks {:.1?}, per-handler {:.1?}, graph {:.1?}, READS_AS {:.1?}, capture {:.1?}", t_jobs, t_walked - t_jobs, t_loop - t_walked, t_graph - t_loop, t_reads_as - t_graph, started.elapsed() - t_reads_as);
     }
     an

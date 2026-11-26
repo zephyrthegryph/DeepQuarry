@@ -346,7 +346,7 @@ pub fn render(g: &dyn Generator, cx: &GenCx) -> (String, Vec<GenDiag>) {
     let mut out = GenOut::default();
     // A generator that needed the full model: reuse its stored output while the semantic record is valid.
     if let Some(c) = super::incremental::cached_gen(cx.tree, g.name()) {
-        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: gen {} served from the semantic record", g.name());
         }
         out.body = c.text;
@@ -354,7 +354,7 @@ pub fn render(g: &dyn Generator, cx: &GenCx) -> (String, Vec<GenDiag>) {
     } else {
         g.generate(cx, &mut out);
         let used = cx.used_sem.lock().unwrap().take();
-        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: gen {} generated (full model used: {})", g.name(), used.is_some());
         }
         if let Some(sem) = used {
@@ -405,11 +405,11 @@ pub fn run(root: &Path, tree: &Tree, names: &[String], check: bool) -> Vec<GenRe
 
 /// [`run`] limited to the generators of one [`Generator::stage`] (all stages when None).
 pub fn run_stage(root: &Path, tree: &Tree, names: &[String], check: bool, stage: Option<u8>) -> Vec<GenResult> {
-    let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
+    let trace = dq_hostio::var("DQ_ANALYZE_TRACE").is_ok();
     let began = std::time::Instant::now();
     // Reading and stripping every file up front pays only when most of them are read: a cold run. A run with a stored model reads the
     // few files whose cached facts changed.
-    if std::env::var_os("DQ_PREWARM").is_some() || !super::model_store::stored(root) {
+    if dq_hostio::var_os("DQ_PREWARM").is_some() || !super::model_store::stored(root) {
         tree.prewarm_dm();
     }
     let dme = std::fs::read_to_string(root.join("deepquarry.dme")).unwrap_or_default();

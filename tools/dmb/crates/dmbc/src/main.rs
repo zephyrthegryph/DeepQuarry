@@ -19,9 +19,46 @@ fn main() {
     }
     dmbc::cache_maintenance::finish_process();
 }
-fn main_inner() {
-    // Below normal priority before any worker thread or daemon exists (DMB_PRIORITY=normal opts out).
+/// `analyze` is this executable under another name (the build links `tools/analyze/target/<profile>/analyze` to the compiler), so
+/// every caller of the analyze binary runs `dmbc analyze`. A link beside its `<name>.target` file (the compiler's own path, written
+/// by the build) hands the run to that compiler, which is the published one whose daemon every worktree shares.
+fn analyze_alias() -> bool {
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| p.file_stem().map(|s| s.to_string_lossy().eq_ignore_ascii_case("analyze")))
+        .unwrap_or(false)
+}
+
+fn run_analyze_alias() -> ! {
+    if let Ok(exe) = std::env::current_exe() {
+        let target_file = exe.with_extension(if cfg!(windows) { "exe.target" } else { "target" });
+        if let Ok(target) = std::fs::read_to_string(&target_file) {
+            let target = std::path::PathBuf::from(target.trim());
+            if target.is_file() {
+                match std::process::Command::new(&target).arg("analyze").args(std::env::args_os().skip(1)).status() {
+                    Ok(status) => std::process::exit(status.code().unwrap_or(1)),
+                    Err(error) => eprintln!("analyze: could not run the compiler {}: {error}; running this copy", target.display()),
+                }
+            }
+        }
+    }
     dmbc::priority::apply_from_env();
+    let code = dq_analyze::cli::main_args(std::env::args().collect(), Vec::new());
+    std::process::exit(exit_code(code));
+}
+
+fn exit_code(code: std::process::ExitCode) -> i32 {
+    if code == std::process::ExitCode::SUCCESS {
+        0
+    } else {
+        (0..=255u8).find(|n| std::process::ExitCode::from(*n) == code).map(i32::from).unwrap_or(1)
+    }
+}
+
+fn main_inner() {
+    if analyze_alias() && std::env::args().nth(1).as_deref() != Some("--serve-daemon") {
+        run_analyze_alias();
+    }
     // One latest compiler: an executable of a superseded published version hands the whole invocation to the current one (same
     // arguments, same standard streams and exit status), so a process that resolved an older version still reaches the one
     // daemon. A daemon never forwards (it retires itself), and the forwarded process is never forwarded again.
@@ -39,6 +76,21 @@ fn main_inner() {
             dmbc::daemon::resident::isolate_development_build(identity);
         }
     }
+    // `dmbc analyze ...`: the lint and analysis engine (tools/analyze), the same command line as the `analyze` binary.
+    if std::env::args().nth(1).as_deref() == Some("analyze") {
+        dmbc::priority::apply_from_env();
+        let mut argv: Vec<String> = std::env::args().collect();
+        argv.remove(1);
+        // The daemon serves it when it can (one resident program for compile and analysis); otherwise it runs here.
+        if let Some(code) = dmbc::daemon::analyze_client(&argv) {
+            std::process::exit(i32::from(code));
+        }
+        let code = dq_analyze::cli::main_args(argv, vec!["analyze".to_string()]);
+        let _ = std::io::Write::flush(&mut std::io::stdout());
+        std::process::exit(exit_code(code));
+    }
+    // Below normal priority before any worker thread or daemon exists (DMB_PRIORITY=normal opts out).
+    dmbc::priority::apply_from_env();
     let mut arguments: Vec<String> = std::env::args().skip(1).collect();
     let compile_result = match dmbc::output_cli::extract_compile_result(&mut arguments) {
         Ok(path) => path,

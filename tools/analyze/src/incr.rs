@@ -221,8 +221,8 @@ where
 }
 
 fn trace_on() -> bool {
-    static ON: OnceLock<bool> = OnceLock::new();
-    *ON.get_or_init(|| std::env::var("DQ_ANALYZE_TRACE_INCR").is_ok())
+    static ON: dq_hostio::EnvCached<bool> = dq_hostio::EnvCached::new();
+    ON.get(|| dq_hostio::var("DQ_ANALYZE_TRACE_INCR").is_ok())
 }
 
 fn keyed_inner<R>(name: &str, ctx: Hash, files: &[&SourceFile], f: impl Fn(&SourceFile) -> R + Sync) -> Vec<R>
@@ -364,4 +364,10 @@ where
     let idx = merge(&pairs);
     let rs = keyed(&format!("{}-judge", name), key, files, |file| judge(file, &idx));
     (idx, rs)
+}
+
+/// Run state for `crate::host::reset_run_state`.
+pub(crate) fn reset() {
+    *cfg().lock().unwrap_or_else(|e| e.into_inner()) = None;
+    SUSPENDED.store(false, std::sync::atomic::Ordering::SeqCst);
 }

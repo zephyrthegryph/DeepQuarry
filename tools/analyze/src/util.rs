@@ -172,8 +172,8 @@ static CPU_ACCOUNT: std::sync::Mutex<std::collections::BTreeMap<String, u64>> = 
 
 /// Whether `DQ_CPU_ACCOUNT` is set: worker threads add their CPU time to a table printed at exit.
 pub fn cpu_accounting() -> bool {
-    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *ON.get_or_init(|| std::env::var_os("DQ_CPU_ACCOUNT").is_some())
+    static ON: dq_hostio::EnvCached<bool> = dq_hostio::EnvCached::new();
+    ON.get(|| dq_hostio::var_os("DQ_CPU_ACCOUNT").is_some())
 }
 
 pub fn cpu_account(tag: String, ms: u64) {
@@ -228,4 +228,9 @@ mod normalize_dots_tests {
         assert_eq!(normalize_dots("code/a/b.dm"), "code/a/b.dm");
         assert_eq!(normalize_dots("../x.dm"), "../x.dm");
     }
+}
+
+/// Run state for `crate::host::reset_run_state`.
+pub(crate) fn reset() {
+    CPU_ACCOUNT.lock().unwrap_or_else(|e| e.into_inner()).clear();
 }

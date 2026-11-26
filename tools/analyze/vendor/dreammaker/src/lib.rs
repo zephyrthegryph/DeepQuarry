@@ -15,6 +15,16 @@ extern crate toml;
 use std::borrow::Cow;
 use std::path::Path;
 
+// Output goes through dq_hostio: the process's streams standalone, a request's sink inside the dmbc daemon.
+#[allow(unused_macros)]
+macro_rules! print { ($($t:tt)*) => { dq_hostio::out(true, format_args!($($t)*), false) }; }
+#[allow(unused_macros)]
+macro_rules! println { () => { dq_hostio::out(true, format_args!(""), true) }; ($($t:tt)*) => { dq_hostio::out(true, format_args!($($t)*), true) }; }
+#[allow(unused_macros)]
+macro_rules! eprint { ($($t:tt)*) => { dq_hostio::out(false, format_args!($($t)*), false) }; }
+#[allow(unused_macros)]
+macro_rules! eprintln { () => { dq_hostio::out(false, format_args!(""), true) }; ($($t:tt)*) => { dq_hostio::out(false, format_args!($($t)*), true) }; }
+
 mod error;
 pub use error::*;
 use get_size::GetSize;
