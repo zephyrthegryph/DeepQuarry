@@ -224,11 +224,17 @@ fn start_shedder() {
     STARTED.call_once(|| {
         let _ = std::thread::Builder::new().name("analyze-shed".into()).spawn(|| loop {
             std::thread::sleep(Duration::from_secs(15));
+            let idle = LAST_REQUEST.lock().unwrap_or_else(|e| e.into_inner()).map_or(IDLE_SHED, |t| t.elapsed());
+            let short = super::service::available_memory().is_some_and(|a| a < KEEP_FREE_BYTES);
+            if idle >= IDLE_SHED || short {
+                let freed = super::analysis_model::shed();
+                if freed > 0 {
+                    super::emit_stderr(format_args!("dmbd analyze: dropped the remembered models ({} MB)", freed >> 20));
+                }
+            }
             if !dq_analyze::cli::hosted_resident() {
                 continue;
             }
-            let idle = LAST_REQUEST.lock().unwrap_or_else(|e| e.into_inner()).map_or(IDLE_SHED, |t| t.elapsed());
-            let short = super::service::available_memory().is_some_and(|a| a < KEEP_FREE_BYTES);
             if (idle >= IDLE_SHED || short) && dq_analyze::cli::shed_hosted() {
                 super::emit_stderr(format_args!(
                     "dmbd analyze: dropped the read-ahead model ({})",

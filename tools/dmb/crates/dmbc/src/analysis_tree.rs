@@ -173,7 +173,11 @@ fn walk<'a>(
             ItemKind::Type => {
                 let path = absolute(&owner, header);
                 types.entry(path.clone()).or_insert(at);
-                containing = path.clone();
+                // A bare relative word with no block (`clown` under `/mob/.../clown`) declares the child type only: the items after it
+                // stay on the enclosing type, as the semantic tree reads them.
+                if header.starts_with('/') || item.children().next().is_some() {
+                    containing = path.clone();
+                }
                 walk(item.children(), &path, spelled, types, starts);
             }
             ItemKind::Var => {
@@ -220,6 +224,26 @@ fn walk<'a>(
             }
         }
     }
+}
+
+/// The column one past the end of the source line `offset` maps to (its comments included), as dreammaker's newline token sits.
+fn line_end_column(frontend: &ColdFrontend, offset: usize, files: &mut HashMap<Arc<str>, usize>) -> Option<u16> {
+    let (path, line, _) = frontend.debug_site_column(offset)?;
+    if files.is_empty() {
+        for (i, f) in frontend.files.iter().enumerate() {
+            files.insert(Arc::from(f.path.to_string_lossy().as_ref()), i);
+        }
+    }
+    let file = frontend.files.get(*files.get(&path).or_else(|| {
+        let p = Path::new(&*path);
+        files.iter().find(|(k, _)| Path::new(&**k as &str).ends_with(p)).map(|(_, v)| v)
+    })?)?;
+    let text = file.text.as_str();
+    let start = *file.line_starts.get(line.checked_sub(1)?)?;
+    let rest = &text[start.min(text.len())..];
+    let len = rest.find('\n').unwrap_or(rest.len());
+    let len = rest[..len].strip_suffix('\r').map_or(len, str::len);
+    Some((len + 1).min(u16::MAX as usize) as u16)
 }
 
 /// Re-parse `text` (at expanded offset `at`) with dm-syntax and convert it.
@@ -354,6 +378,8 @@ pub struct FeedStats {
     pub missing_spelling: usize,
     pub expression_failures: usize,
     pub proc_errors: usize,
+    /// Bodies dreammaker's parser would reject, as its parse errors (their procs have no code).
+    pub parse_errors: Vec<dreammaker::DMError>,
 }
 
 /// dmbc's front end as a dreammaker object tree. `locate` maps an expanded offset to a dreammaker location.
@@ -380,6 +406,16 @@ pub fn build_tree_in(
         walk(chunk.items(), "/", &mut spelled, &mut type_sites, &mut starts);
     }
     starts.sort_unstable();
+    // dreammaker hands a line's docs to the first tree entry read from it (a macro expanding to a type and its vars documents the
+    // type): only the earliest declaration of each line takes them.
+    let mut first_on_line: HashMap<(dreammaker::FileId, u32), usize> = HashMap::new();
+    for &at in type_sites.values().chain(spelled.values().flatten().map(|s| &s.at)) {
+        let l = locate(at);
+        let e = first_on_line.entry((l.file, l.line)).or_insert(at);
+        *e = (*e).min(at);
+    }
+    let claims: std::collections::HashSet<usize> = first_on_line.into_values().collect();
+    let mut docs = |at: usize| if claims.contains(&at) { docs(at) } else { Default::default() };
 
     // Converted bodies by member.
     let arena = BodyArena::new_typed(frontend, |_| true);
@@ -387,10 +423,16 @@ pub fn build_tree_in(
     for occurrence in frontend.bodies.iter() {
         let Ok(body) = arena.take_parsed(occurrence) else { continue };
         let Some(statements) = body.statement_body() else { continue };
-        let block = analysis_bridge::convert_body_with(&statements.parsed().statements, &mut |o: usize| locate(o));
-        bodies.insert(occurrence.member.0, block);
+        match analysis_bridge::convert_body_checked(&statements.parsed().statements, &mut |o: usize| locate(o)) {
+            Ok(block) => {
+                bodies.insert(occurrence.member.0, block);
+            }
+            // A body dreammaker's parser rejects has no code, and its error is a parse diagnostic.
+            Err((location, message)) => stats.parse_errors.push(dreammaker::DMError::new(location, message)),
+        }
     }
 
+    let mut line_files: HashMap<Arc<str>, usize> = HashMap::new();
     let mut builder = ObjectTreeBuilder::with_builtin_types();
     let tree = &frontend.snapshot.tree;
     let symbols = tree.symbols();
@@ -453,6 +495,20 @@ pub fn build_tree_in(
                     type_path: type_parts.into_boxed_slice(),
                     input_type: input.unwrap_or_default(),
                 };
+                // dreammaker places a var declaration at the token after its name: the `=`, or the end of its line.
+                let location = match spelling.as_ref() {
+                    Some(s) => match dm_syntax::top_level_assignment_index(&s.header) {
+                        Some(index) => locate(s.at + index),
+                        None => {
+                            let at = locate(s.at);
+                            match line_end_column(frontend, s.at, &mut line_files) {
+                                Some(column) if at.line != 0 => Location { column, ..at },
+                                _ => at,
+                            }
+                        }
+                    },
+                    None => location,
+                };
                 let var = builder.add_var_declaration(ty, &name, location, var_type, value);
                 if let Some(s) = spelling.as_ref() {
                     var.value.docs = docs(s.at);
@@ -480,13 +536,19 @@ pub fn build_tree_in(
                 let mut parameters = Vec::new();
                 let mut return_type = ProcReturnType::default();
                 let mut body_range = None;
+                // dreammaker places a proc at its parameter list's `(`.
+                let mut location = location;
                 if let (Some(s), Some(procedure)) = (spelling.as_ref(), member.metadata.procedure.as_ref()) {
                     if let Some((before, arguments, after)) = signature_parts(&s.header) {
                         let base = s.at + before.len() + 1;
+                        location = locate(base - 1);
                         for p in procedure.signature.parameters.iter() {
                             let (start, end) = (p.relative_span.start, p.relative_span.end);
                             if let Some(t) = arguments.get(start..end) {
-                                parameters.push(parameter(t, base + start, locate, &mut stats.expression_failures));
+                                let mut p = parameter(t, base + start, locate, &mut stats.expression_failures);
+                                // dreammaker places a parameter at the token after it (its `,` or the closing `)`).
+                                p.location = locate(base + end);
+                                parameters.push(p);
                             }
                         }
                         // `proc/f(a, ...)`: dreammaker keeps the marker as a parameter named `...` with no type.
@@ -573,6 +635,23 @@ fn ast_category(a: &Value, b: &Value) -> (String, String) {
     (format!("{} | dmbc {} vs dreammaker {}", ctx.join(">"), kind(da), kind(db)), format!("dmbc {}  dm {}", short(da, 200), short(db, 200)))
 }
 
+/// The source files in the order the preprocessor reads them (the manifest left out), spelled as the docs closures spell them:
+/// [`crate::analysis_docs::DocIndex::with_order`] carries docs pending at a file's end to the next one.
+fn doc_order(frontend: &ColdFrontend, root: &Path) -> Vec<String> {
+    let plan = &frontend.plan;
+    plan.items
+        .iter()
+        .filter_map(|item| match item {
+            dm_preprocess::regions::OrderedItem::Text(region) if !plan.regions[*region].manifest_source => {
+                let p = plan.occurrences[plan.regions[*region].occurrence].path.as_ref();
+                let p = if p.is_absolute() { p.to_path_buf() } else { root.join(p) };
+                Some(p.to_string_lossy().into_owned())
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 fn user_location(files: &dreammaker::FileList, location: Location) -> bool {
     norm(&files.get_path(location.file).to_string_lossy()) != "(builtins)"
 }
@@ -604,8 +683,8 @@ pub fn run(dme: &Path) -> Result<(), Box<dyn std::error::Error>> {
             None => Location::default(),
         })
     };
-    let mut doc_index = crate::analysis_docs::DocIndex::default();
     let root = dme.parent().map(Path::to_path_buf).unwrap_or_default();
+    let mut doc_index = crate::analysis_docs::DocIndex::with_order(doc_order(&frontend, &root));
     let mut docs = |offset: usize| match frontend.debug_site(offset) {
         Some((path, line)) => {
             let path = Path::new(&*path);
@@ -789,6 +868,90 @@ pub fn run(dme: &Path) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// dreammaker's preprocessor warnings, from dmbc's plan: `macro redefined` (a `#define` of a name already defined, `FILE_DIR` excepted)
+/// and `macro undefined while not defined` (an `#undef` of a name that is not). The plan's regions carry their active `#define` /
+/// `#undef` effects in order; each is placed at its directive's name, the next matching directive line of the region's source.
+/// `initial`: the names defined before the first file (the predefines and the caller's defines).
+fn macro_warnings(
+    frontend: &dm_tree::frontend::ColdFrontend,
+    initial: impl IntoIterator<Item = String>,
+    place: &mut dyn FnMut(&str, usize, usize) -> Location,
+) -> Vec<dreammaker::DMError> {
+    use dm_preprocess::regions::{MacroEffect, OrderedItem};
+    let plan = &frontend.plan;
+    let mut defined: HashMap<String, Location> = initial.into_iter().map(|n| (n, Location::builtins())).collect();
+    let mut out = Vec::new();
+    for item in &plan.items {
+        let OrderedItem::Text(region) = item else { continue };
+        let region = &plan.regions[*region];
+        if region.effects.is_empty() {
+            continue;
+        }
+        let path = plan.occurrences[region.occurrence].path.clone();
+        let text = plan.source_texts.get(path.as_ref()).map(|t| t.as_str()).unwrap_or("");
+        let starts = plan.source_line_starts.get(path.as_ref());
+        let path_text = path.to_string_lossy().into_owned();
+        let mut cursor = region.source_span.start.min(text.len());
+        let end = region.source_span.end.min(text.len());
+        // The next `#word NAME` directive line at or after the cursor: the offset of NAME.
+        let find = |word: &str, name: &str, cursor: &mut usize| -> Option<usize> {
+            let mut at = *cursor;
+            while at < end {
+                let line_end = text[at..end].find('\n').map_or(end, |i| at + i + 1);
+                let line = &text[at..line_end];
+                let lead = line.len() - line.trim_start().len();
+                if let Some(d) = line.trim_start().strip_prefix('#') {
+                    let dl = d.len() - d.trim_start().len();
+                    let d = d.trim_start();
+                    if let Some(rest) = d.strip_prefix(word) {
+                        let rl = rest.len() - rest.trim_start().len();
+                        let rest = rest.trim_start();
+                        if rl > 0 && rest.starts_with(name) && !rest[name.len()..].starts_with(|c: char| c.is_alphanumeric() || c == '_') {
+                            *cursor = line_end;
+                            return Some(at + lead + 1 + dl + word.len() + rl);
+                        }
+                    }
+                }
+                at = line_end;
+            }
+            None
+        };
+        for effect in region.effects.iter() {
+            let (word, name) = match effect {
+                MacroEffect::Define { name, .. } => ("define", name),
+                MacroEffect::Undef { name } => ("undef", name),
+                _ => continue,
+            };
+            let location = match (find(word, name, &mut cursor), starts) {
+                (Some(offset), Some(starts)) => {
+                    let row = starts.partition_point(|&s| s <= offset).saturating_sub(1);
+                    place(&path_text, row + 1, offset - starts.get(row).copied().unwrap_or(0) + 1)
+                }
+                _ => Location::builtins(),
+            };
+            if word == "define" {
+                if let Some(previous) = defined.insert(name.clone(), location) {
+                    if name != "FILE_DIR" {
+                        out.push(
+                            dreammaker::DMError::new(location, format!("macro redefined: {name}"))
+                                .set_severity(dreammaker::Severity::Warning)
+                                .with_note(previous, format!("previous definition of {name}"))
+                                .with_errortype("macro_redefined"),
+                        );
+                    }
+                }
+            } else if defined.remove(name.as_str()).is_none() {
+                out.push(
+                    dreammaker::DMError::new(location, format!("macro undefined while not defined: {name}"))
+                        .with_errortype("macro_undefined_no_definition")
+                        .set_severity(dreammaker::Severity::Warning),
+                );
+            }
+        }
+    }
+    out
+}
+
 /// dq-analyze's model (`Parsed`) from dmbc's front end: the provider `dmbc` registers with `dq_analyze::sem::register_parse_provider`
 /// (selected by `DQ_ANALYZE_PARSE=dmbc`). Files are registered under their path relative to the `.dme`'s directory, as dreammaker's
 /// preprocessor registers includes, in the order the tree first names them; locations carry the line (dmbc keeps no column).
@@ -800,7 +963,19 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
     // test fixtures among it, is part of the model).
     let mut defines = crate::analysis_parity::native_defines();
     defines.insert("SPACEMAN_DMM".into(), "1".into());
-    let frontend = crate::analysis_parity::build_frontend_with(dme, defines).map_err(|e| e.to_string())?;
+    let initial: Vec<String> =
+        dm_preprocess::regions::predefined_macros().into_iter().map(|(n, _, _)| n).chain(defines.keys().cloned())
+            // dreammaker's builtin function macros (its `builtins::default_defines`): an `#undef` of one is no warning there.
+            .chain(["EXCEPTION", "ASSERT"].map(String::from))
+            .collect();
+    // Inside the daemon, the retained compile session of this root supplies it (incrementally after an edit); elsewhere it is
+    // built cold.
+    let frontend = match crate::daemon::hosted_frontend(dme, &defines) {
+        Some(revision) => revision?,
+        None => dm_tree::frontend::FrontendRevision::new(
+            crate::analysis_parity::build_frontend_with(dme, defines).map_err(|e| e.to_string())?,
+        ),
+    };
     let built = started.elapsed();
     let root = dme.parent().map(Path::to_path_buf).filter(|p| !p.as_os_str().is_empty()).unwrap_or_else(|| PathBuf::from("."));
     let root_abs = std::fs::canonicalize(&root).unwrap_or_else(|_| root.clone());
@@ -827,7 +1002,7 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
             None => Location::builtins(),
         })
     };
-    let mut doc_index = crate::analysis_docs::DocIndex::default();
+    let mut doc_index = crate::analysis_docs::DocIndex::with_order(doc_order(&frontend, &root));
     let mut docs = |offset: usize| match frontend.debug_site(offset) {
         Some((path, line)) => {
             let p = Path::new(&*path);
@@ -838,6 +1013,18 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
     };
     let finish = dreammaker::Context::default();
     let (objtree, stats) = build_tree_in(&finish, &frontend, &mut locate, &mut docs);
+    // The preprocessor's warnings, in DreamChecker's stream as dreammaker's preprocessor registers them.
+    let stream = if checker {
+        let mut place = |path: &str, line: usize, column: usize| {
+            let file = *ids.entry(Arc::from(path)).or_insert_with(|| files_ctx.register_file(&registered(path)));
+            Location { file, line: line as u32, column: column.min(u16::MAX as usize) as u16 }
+        };
+        let mut stream = macro_warnings(&frontend, initial, &mut place);
+        stream.extend(stats.parse_errors.iter().cloned());
+        stream
+    } else {
+        Vec::new()
+    };
     let files = files_ctx.clone_file_list();
     if std::env::var_os("DQ_ANALYZE_PARSE_TRACE").is_some() {
         eprintln!("analyze: dmbc front end {built:.1?}, object tree {:.1?}: {stats:?}", started.elapsed() - built);
@@ -849,8 +1036,11 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
         .map(|e| format!("{e}"))
         .collect();
     let raw = checker.then(|| dq_analyze::sem::model_store::CheckerDiagnostics {
-        stream: Vec::new(),
-        summary: Some(format!("parsed {}/{} proc bodies (100%)", stats.bodies, stats.bodies)),
+        stream,
+        summary: Some({
+            let total = stats.bodies + stats.parse_errors.len();
+            format!("parsed {}/{} proc bodies ({}%)", stats.bodies, total, (stats.bodies * 100).checked_div(total).unwrap_or(100))
+        }),
         finish: finish_errors,
     });
     Ok(dq_analyze::sem::model_store::Parsed { objtree, files, errors, env: None, structure: None, defines: None, raw, fatal: false })
@@ -858,5 +1048,9 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
 
 /// Registers [`parse_for_analysis`] as dq-analyze's parse provider (used only under `DQ_ANALYZE_PARSE=dmbc`).
 pub fn register_analysis_provider() {
-    dq_analyze::sem::register_parse_provider(parse_for_analysis);
+    // Inside the daemon the provider remembers its conversion between requests (daemon/analysis_model.rs).
+    dq_analyze::sem::register_parse_provider(crate::daemon::analysis_provider);
 }
+#[cfg(test)]
+#[path = "analysis_tree_tests.rs"]
+mod analysis_tree_tests;

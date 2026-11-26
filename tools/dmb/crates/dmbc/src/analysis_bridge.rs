@@ -51,16 +51,29 @@ pub fn convert_body(frontend: &dm_tree::frontend::ColdFrontend, statements: &[SS
 
 /// Convert a typed body to dreammaker's AST with the caller's location mapper.
 pub fn convert_body_with(statements: &[SStatement], locate: &mut dyn Locate) -> Block {
-    Converter { locate }.block(statements)
+    Converter { locate, parse_error: None }.block(statements)
+}
+
+/// Convert a typed body, or report where dreammaker's parser rejects it (a form BYOND accepts and dreammaker does not, such as
+/// `new L[1](at)`): its location and dreammaker's message.
+pub fn convert_body_checked(statements: &[SStatement], locate: &mut dyn Locate) -> Result<Block, (Location, String)> {
+    let mut c = Converter { locate, parse_error: None };
+    let block = c.block(statements);
+    match c.parse_error.take() {
+        Some((at, message)) => Err((c.locate.locate(at), message)),
+        None => Ok(block),
+    }
 }
 
 /// Convert one typed expression (a var initializer, a parameter default) with the caller's location mapper.
 pub fn convert_expression_with(expression: &Expr, locate: &mut dyn Locate) -> Expression {
-    Converter { locate }.expr(expression)
+    Converter { locate, parse_error: None }.expr(expression)
 }
 
 struct Converter<'a> {
     locate: &'a mut dyn Locate,
+    /// The first form dreammaker's parser rejects (where it stops, and its message): the body is then a parse failure, as dreammaker's.
+    parse_error: Option<(usize, String)>,
 }
 
 /// Marker for a statement or expression dm-syntax kept unsupported, or a form the converter has no mapping for.
@@ -195,7 +208,8 @@ fn spine(mut e: &Expr) -> (&Expr, Vec<(Post<'_>, usize)>) {
             ExprKind::Unary { op, value } if op.starts_with("post") => (value, Post::Unary(op)),
             _ => break,
         };
-        out.push((post, e.span.start));
+        // dreammaker places a follow at its operator token (`.`, `[`, `++`): right after the object.
+        out.push((post, inner.span.end));
         e = inner;
     }
     out.reverse();
@@ -235,7 +249,7 @@ impl Converter<'_> {
                                     let outer = &mut *self.locate;
                                     let base_at = at + offset;
                                     let mut shifted = |o: usize| outer.locate(base_at + o);
-                                    Converter { locate: &mut shifted }.expr(&e)
+                                    Converter { locate: &mut shifted, parse_error: None }.expr(&e)
                                 }
                                 _ => {
                                     if std::env::var_os("DQ_BRIDGE_TRACE_LITERALS").is_some() {
@@ -555,10 +569,11 @@ impl Converter<'_> {
         }
     }
 
-    fn follow_on(&mut self, object: &Expr, follow: Follow, at: usize) -> Expression {
+    /// `object` followed by `follow`, placed as dreammaker places it: at the operator token (`.`, `?.`, `:`, `[`), right after the object.
+    fn follow_on(&mut self, object: &Expr, follow: Follow) -> Expression {
         let inner = self.expr(object);
         let (term, mut follows) = self.into_base(inner, object.span.start);
-        let l = self.loc(at);
+        let l = self.loc(object.span.end);
         follows.push(Spanned::new(l, follow));
         base(term, follows)
     }
@@ -606,15 +621,15 @@ impl Converter<'_> {
             ExprKind::Member { object, selector, via_colon } => {
                 let kind = if *via_colon { PropertyAccessKind::Colon } else { PropertyAccessKind::Dot };
                 let args = self.args(args);
-                self.follow_on(object, Follow::Call(kind, ident2(selector), args), callee.span.start)
+                self.follow_on(object, Follow::Call(kind, ident2(selector), args))
             }
             ExprKind::SafeMember { object, selector, via_colon } => {
                 let kind = if *via_colon { PropertyAccessKind::SafeColon } else { PropertyAccessKind::SafeDot };
                 let args = self.args(args);
-                self.follow_on(object, Follow::Call(kind, ident2(selector), args), callee.span.start)
+                self.follow_on(object, Follow::Call(kind, ident2(selector), args))
             }
             // dreammaker keeps `x::proc()` as a proc reference and drops the arguments.
-            ExprKind::StaticMember { object, selector } => self.follow_on(object, Follow::ProcReference(ident2(selector)), callee.span.start),
+            ExprKind::StaticMember { object, selector } => self.follow_on(object, Follow::ProcReference(ident2(selector))),
             _ => {
                 let _ = self.args(args);
                 unconverted("call of a non-name")
@@ -666,7 +681,13 @@ impl Converter<'_> {
                             kind: if *colon { PropertyAccessKind::SafeColon } else { PropertyAccessKind::SafeDot },
                             ident: ident2(s),
                         }),
-                        _ => return unconverted("new over an indexed name"),
+                        _ => {
+                            // dreammaker reads `new L[1]` as `new L` and an index, and stops at a following argument list.
+                            if let (Some(i), None) = (call_at, self.parse_error.as_ref()) {
+                                self.parse_error = Some((posts[i].1, "got '(', expected one of: operator, field access, ';'".into()));
+                            }
+                            return unconverted("new over an indexed name");
+                        }
                     }
                 }
                 Term::NewMiniExpr { expr: Box::new(MiniExpr { ident: ident2(name), fields: fields.into_boxed_slice() }), args }
@@ -730,7 +751,8 @@ impl Converter<'_> {
                 };
                 let inner = self.expr(value);
                 let (term, mut follows) = self.into_base(inner, value.span.start);
-                let l = self.loc(at);
+                // A postfix operator sits after its operand, a prefix one at the expression's start.
+                let l = self.loc(if op.starts_with("post") { value.span.end } else { at });
                 follows.push(Spanned::new(l, Follow::Unary(uop)));
                 base(term, follows)
             }
@@ -782,20 +804,20 @@ impl Converter<'_> {
             ExprKind::Call { callee, args } => self.call(e, callee, args),
             ExprKind::Member { object, selector, via_colon } => {
                 let kind = if *via_colon { PropertyAccessKind::Colon } else { PropertyAccessKind::Dot };
-                self.follow_on(object, Follow::Field(kind, ident2(selector)), at)
+                self.follow_on(object, Follow::Field(kind, ident2(selector)))
             }
             ExprKind::SafeMember { object, selector, via_colon } => {
                 let kind = if *via_colon { PropertyAccessKind::SafeColon } else { PropertyAccessKind::SafeDot };
-                self.follow_on(object, Follow::Field(kind, ident2(selector)), at)
+                self.follow_on(object, Follow::Field(kind, ident2(selector)))
             }
-            ExprKind::StaticMember { object, selector } => self.follow_on(object, Follow::StaticField(ident2(selector)), at),
+            ExprKind::StaticMember { object, selector } => self.follow_on(object, Follow::StaticField(ident2(selector))),
             ExprKind::Index { object, index } => {
                 let i = Box::new(self.expr(index));
-                self.follow_on(object, Follow::Index(ListAccessKind::Normal, i), at)
+                self.follow_on(object, Follow::Index(ListAccessKind::Normal, i))
             }
             ExprKind::SafeIndex { object, index } => {
                 let i = Box::new(self.expr(index));
-                self.follow_on(object, Follow::Index(ListAccessKind::Safe, i), at)
+                self.follow_on(object, Follow::Index(ListAccessKind::Safe, i))
             }
             ExprKind::TypeFilter { value, types } => {
                 if let ExprKind::Call { callee, args } = &value.kind {
@@ -832,7 +854,7 @@ mod literal_tests {
     fn multi_line_interpolation_converts() {
         let text = "\"[pick(\n\t\t\t\"a\",\n\t\t\t\"b\")] end\"";
         let mut locate = |_: usize| Location::default();
-        let e = Converter { locate: &mut locate }.literal(text, 0);
+        let e = Converter { locate: &mut locate, parse_error: None }.literal(text, 0);
         let s = format!("{e:?}");
         assert!(!s.contains(UNCONVERTED), "{s}");
         assert!(s.contains("Pick"), "{s}");

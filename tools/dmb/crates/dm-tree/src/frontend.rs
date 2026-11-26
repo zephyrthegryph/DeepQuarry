@@ -813,7 +813,96 @@ impl Mapping<'_> {
             matches!((a, b), (Some(a), Some(b)) if !a.is_empty() && a.len() == b.len() && a == b)
         };
         let leading = expansions.is_empty() || first.is_some_and(|f| from_start < f);
-        let found = if leading && matches(from_start) {
+        // The expander may lay a statement over several lines out on other rows (`animate(\n\t\ta,\n...)`): walk the expanded
+        // text and the source together from the origin's start, or back from its end, matching the non-blank bytes, up to the
+        // first (from the end: last) invocation. Exact where the text was copied verbatim, whatever its whitespace.
+        let is_blank = |b: u8| b == b' ' || b == b'\t' || b == b'\r' || b == b'\n' || b == b'\\';
+        let invocation_at = |p: usize| expansions.iter().any(|e| (src.start + e.invocation_span.start..src.start + e.invocation_span.end).contains(&p));
+        // Bounded: an origin of a long statement (a big list) is placed by the estimate below instead.
+        const WALK_LIMIT: usize = 8192;
+        // An output row may map the whole statement's source span (one origin per row of a statement laid out over several), so
+        // the row is aligned where its own text is: the first source position, outside any invocation, from which the row's
+        // non-blank bytes match up to the row's end (or an invocation). The walk then reads `offset`'s place on the way.
+        let walk_forward = || -> Option<usize> {
+            if offset.saturating_sub(out.start) > WALK_LIMIT {
+                return None;
+            }
+            let row_end = out.end.min(expanded.len());
+            let s_end = src.end.min(source.len());
+            let mut row = out.start;
+            while row < offset && is_blank(expanded[row]) {
+                row += 1;
+            }
+            let lead = *expanded.get(row)?;
+            let try_from = |start: usize| -> Option<usize> {
+                let (mut e, mut s) = (row, start);
+                let mut at = None;
+                loop {
+                    while e < row_end && is_blank(expanded[e]) {
+                        e += 1;
+                    }
+                    while s < s_end && is_blank(source[s]) {
+                        s += 1;
+                    }
+                    if e >= offset && at.is_none() {
+                        if e != offset {
+                            return None;
+                        }
+                        at = Some(s);
+                    }
+                    if e >= row_end || (s < s_end && invocation_at(s)) {
+                        return at;
+                    }
+                    if s >= s_end || expanded[e] != source[s] {
+                        return None;
+                    }
+                    e += 1;
+                    s += 1;
+                }
+            };
+            let mut budget = WALK_LIMIT;
+            let mut c = src.start;
+            while c < s_end && budget > 0 {
+                if source[c] == lead && !invocation_at(c) {
+                    if let Some(found) = try_from(c) {
+                        return Some(found);
+                    }
+                    budget = budget.saturating_sub(64);
+                }
+                c += 1;
+            }
+            None
+        };
+        let walk_back = || -> Option<usize> {
+            // Pointers one past the byte compared next.
+            let (mut e, mut s) = (out.end.min(expanded.len()), src.end.min(source.len()));
+            if offset >= e || e - offset > WALK_LIMIT {
+                return None;
+            }
+            loop {
+                while e > offset + 1 && is_blank(expanded[e - 1]) {
+                    e -= 1;
+                }
+                while s > src.start && is_blank(source[s - 1]) {
+                    s -= 1;
+                }
+                if s <= src.start || invocation_at(s - 1) {
+                    return None;
+                }
+                if expanded[e - 1] != source[s - 1] {
+                    return None;
+                }
+                if e - 1 == offset {
+                    return Some(s - 1);
+                }
+                e -= 1;
+                s -= 1;
+            }
+        };
+        let aligned = if expanded.get(offset).copied().is_some_and(is_blank) { None } else { walk_forward().or_else(walk_back) };
+        let found = if let Some(p) = aligned {
+            Some(p)
+        } else if leading && matches(from_start) {
             Some(from_start)
         } else if matches(from_end) {
             Some(from_end)

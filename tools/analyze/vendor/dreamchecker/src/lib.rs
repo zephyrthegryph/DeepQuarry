@@ -2767,6 +2767,11 @@ impl<'o, 's> AnalyzeProc<'o, 's> {
                         }
                     },
                     Term::Int(0) if can_be_zero => {},
+                    // An expanded constant (BYOND's value of a valid flag, or a combination of them for a non-exclusive field).
+                    Term::Int(n) if {
+                        let values = || valid_flags.iter().filter_map(|f| FILTER_FLAG_VALUES.get(*f).copied());
+                        values().any(|v| v == *n) || (!exclusive && *n != 0 && *n & !values().fold(0, |a, v| a | v) == 0)
+                    } => {},
                     other => {
                         error(location, format!("filter(type=\"{typevalue}\") called with invalid '{flagfieldname}' value '{other:?}'"))
                             .with_filter_args(location, typevalue)

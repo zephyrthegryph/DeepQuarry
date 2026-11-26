@@ -491,9 +491,12 @@ impl Shared {
         path: PathBuf,
         config: Option<&crate::request::BuildRequest>,
     ) -> Arc<Slot> {
+        self.slot_keyed(SessionKey::of(path, config))
+    }
+    fn slot_keyed(&self, key: SessionKey) -> Arc<Slot> {
         let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
         let slot = slots
-            .entry(SessionKey::of(path, config))
+            .entry(key)
             .or_insert_with(|| {
                 Arc::new(Slot {
                     request_serial: Mutex::new(()),
@@ -729,6 +732,7 @@ pub(super) fn serve() -> io::Result<()> {
     // Whatever way the daemon leaves (retired while idle, superseded, idle limit), the session it takes away is stored first: the
     // daemon that replaces it patches from the stored patch base instead of compiling the whole program.
     let _spill_on_exit = SpillOnExit(Arc::clone(&shared));
+    let _ = HOSTED.set(Arc::clone(&shared));
     let mut activity = Instant::now();
     // Housekeeping (allocator reclaim, tier releases that can take tens of
     // seconds) runs on its own thread so it can never stall request acceptance.
@@ -1495,4 +1499,87 @@ mod tests {
         assert!(!Arc::ptr_eq(&first, &shared.slot(path, Some(&request))));
         let _ = std::fs::remove_dir_all(&directory);
     }
+}
+
+/// The daemon's shared state, for analysis requests that take their front end from a compile session (`hosted_frontend`).
+static HOSTED: std::sync::OnceLock<Arc<Shared>> = std::sync::OnceLock::new();
+
+/// Whether this process is the daemon (it serves hosted analysis requests).
+pub(crate) fn hosting() -> bool {
+    HOSTED.get().is_some()
+}
+
+/// The front end of `dme` under `defines`, from the retained session compiles of that root use (`Slot::host`): the session keeps
+/// the analysis define set as one more variant, so an analysis request after a body edit adopts the previous revision's unchanged
+/// include subtrees and regions and splices the declarations instead of building the front end from scratch. `None` outside a
+/// daemon (the client and CI build it cold).
+pub(crate) fn hosted_frontend(
+    dme: &std::path::Path,
+    defines: &BTreeMap<String, String>,
+) -> Option<Result<dm_tree::frontend::FrontendRevision, String>> {
+    let shared = HOSTED.get()?;
+    // `DQ_ANALYZE_HOSTED_FRONTEND=0` builds it cold in the daemon too (a control for equivalence proofs).
+    if matches!(dq_hostio::var("DQ_ANALYZE_HOSTED_FRONTEND").as_deref(), Ok("0")) {
+        return None;
+    }
+    Some((|| {
+        let started = Instant::now();
+        // The path as the caller spells it, made absolute (not `canonicalize`: its `\\?\` prefix is not the spelling compiles key
+        // their session by, nor the one the cold path reports files under).
+        let project = if dme.is_absolute() {
+            dme.to_path_buf()
+        } else {
+            dq_hostio::current_dir().map(|cwd| cwd.join(dme)).unwrap_or_else(|_| dme.to_path_buf())
+        };
+        // `./deepquarry.dme` and `deepquarry.dme` are one variant: drop `.` components.
+        let project: std::path::PathBuf =
+            project.components().filter(|c| !matches!(c, std::path::Component::CurDir)).collect();
+        super::emit_stderr(format_args!("dmbd analyze: front end for {} (asked as {})", project.display(), dme.display()));
+        // dq-analyze's model is built against the engine's bootstrap catalog (`analysis_parity::build_frontend_with`), which a compile
+        // does not admit, so analysis keeps a session of its own for the root (a bootstrap session key): asking the compile's
+        // session for it would replace that session's engine and drop its patch base.
+        let key = SessionKey { manifest: session_root(project.clone()), engine: None, bootstrap: true };
+        let slot = shared.slot_keyed(key);
+        let _serial = slot.request_serial.lock().unwrap_or_else(|e| e.into_inner());
+        let mut host = slot.host.lock().unwrap_or_else(|e| e.into_inner());
+        let waited = started.elapsed();
+        let engine = host
+            .engine(project.clone(), defines.clone(), true, include_bytes!("../../../../fixtures/native_template.bin").to_vec())?;
+        let workers = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(shared.max_workers.max(1));
+        let (memo, execution, semantic) = host.execution(workers, None).map_err(|e| e.to_string())?;
+        let mut one_shot = dm_tree::frontend::RetainedSemanticTree::one_shot();
+        let retained = semantic.is_some();
+        let semantic = match semantic {
+            Some(state) => state,
+            None => &mut one_shot,
+        };
+        let declarations = semantic.begin_declaration_request(retained);
+        let built = execution
+            .run(|executor| {
+                dm_tree::frontend::build_with_executor_and_semantic_state(
+                    &project,
+                    &dm_preprocess::FileSystem,
+                    defines,
+                    dm_tree::frontend::FrontendConfig { workers, engine: Some(engine.frontend_seed()), observer: None },
+                    memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
+                    executor,
+                    Some(&mut *semantic),
+                )
+            })
+            .map_err(|e| format!("{e:?}"))?
+            .map_err(|d| format!("front end failed: {} diagnostic(s), first: {:?}", d.len(), d.first().map(|x| &x.message)))?;
+        let revision = dm_tree::frontend::FrontendRevision::new(built);
+        if retained {
+            declarations.publish_successful();
+            semantic.remember_frontend(&project, defines, revision.clone());
+        }
+        super::emit_stderr(format_args!(
+            "dmbd analyze: front end from the retained session of {} in {:.1?} (waited {:.1?} for the session, retained={retained})",
+            project.display(),
+            started.elapsed(),
+            waited
+        ));
+        Ok(revision)
+    })()
+    .inspect_err(|error| super::emit_stderr(format_args!("dmbd analyze: the retained session gave no front end: {error}"))))
 }

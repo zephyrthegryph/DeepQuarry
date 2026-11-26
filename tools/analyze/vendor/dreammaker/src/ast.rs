@@ -1544,6 +1544,23 @@ pub static VALID_FILTER_FLAGS: phf::Map<&'static str, (&str, bool, bool, &[&str]
     "wave" => ("flags", false, true, &[ "WAVE_SIDEWAYS", "WAVE_BOUNDED" ]),
 };
 
+/// BYOND's values of the filter flag constants: a front end that expands them as BYOND's predefined macros (dmbc) hands the checker
+/// the integer, which is valid when it is one of the field's flags (or, for a non-exclusive field, a combination of them).
+pub static FILTER_FLAG_VALUES: phf::Map<&'static str, i32> = phf_map! {
+    "MASK_INVERSE" => 1,
+    "MASK_SWAP" => 2,
+    "FILTER_COLOR_RGB" => 0,
+    "FILTER_COLOR_HSV" => 1,
+    "FILTER_COLOR_HSL" => 2,
+    "FILTER_COLOR_HCY" => 3,
+    "FILTER_OVERLAY" => 1,
+    "FILTER_UNDERLAY" => 2,
+    "OUTLINE_SHARP" => 1,
+    "OUTLINE_SQUARE" => 2,
+    "WAVE_SIDEWAYS" => 1,
+    "WAVE_BOUNDED" => 2,
+};
+
 // ----------------------------------------------------------------------------
 // Guard against sizeof regression.
 const _: [(); 0 - !(std::mem::size_of::<Statement>() <= 56) as usize] = [];
