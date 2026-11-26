@@ -133,3 +133,12 @@ fn macro_arguments_sit_at_the_invocation() {
     // dreammaker places every token of an expansion, the arguments' among them, at the invocation.
     assert!(!got.contains("3:9") && !got.contains("3:10") && !got.contains("5:"), "{got}");
 }
+
+#[test]
+fn named_arguments_before_a_nested_macro_keep_their_place() {
+    // `LIFE` expands `SPAWN`, which expands `SECONDS`: the nested invocations' spans are in the macro bodies, not in the statement.
+    let source = "#define SECONDS *10\n#define SPAWN (0.2 SECONDS)\n#define LIFE(mult) (SPAWN + 5*mult)\n#define OUT 128\n/datum/x/proc/f(atom/a, n)\n\tanimate(\n\t\ta,\n\t\tpixel_y = world.icon_size * 1.2,\n\t\ttime = LIFE(n),\n\t\teasing = 1 | OUT,\n\t)\n";
+    let parsed = fixture("analysis-tree-nested-macro", source);
+    let got = body_locations(&parsed, "/datum/x", "f");
+    assert!(got.contains("term 7:3 term 8:3"), "{got}");
+}

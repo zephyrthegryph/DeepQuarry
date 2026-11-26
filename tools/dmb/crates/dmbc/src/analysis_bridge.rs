@@ -555,7 +555,9 @@ impl Converter<'_> {
     }
 
     fn args(&mut self, args: &[Expr]) -> Box<[Expression]> {
-        args.iter().map(|a| self.expr(a)).collect()
+        // An empty argument (`f(a, , b)`) is a zero-width `null` from dm-syntax. The analysis model is dreammaker's, which has no node for it.
+        let empty = |a: &Expr| a.span.start == a.span.end && matches!(&a.kind, ExprKind::Literal(t) if t == "null");
+        args.iter().filter(|a| !empty(a)).map(|a| self.expr(a)).collect()
     }
 
     /// A term with follows appended (unary operators and field accesses go into dreammaker's `follow` list).

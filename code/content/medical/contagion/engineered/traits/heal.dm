@@ -36,7 +36,7 @@
 /datum/viral_trait/heal/proc/CanHeal(datum/affliction/contagion/engineered/A)
 	return power
 
-/datum/viral_trait/heal/proc/Heal(mob/living/M, /datum/affliction/contagion/engineered/A, actual_power = 1)
+/datum/viral_trait/heal/proc/Heal(mob/living/M, datum/affliction/contagion/engineered/A, actual_power = 1)
 	return TRUE
 
 /datum/viral_trait/heal/proc/passive_message_condition(mob/living/M)

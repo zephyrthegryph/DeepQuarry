@@ -419,6 +419,18 @@ impl ColdFrontend {
 
     /// [`Self::debug_site`] with a 1-based byte column: where the offset falls in its source line when the expanded text there is a
     /// verbatim copy of the source, else (a macro expansion) the column of the origin's start, the invocation.
+    /// A mapper for many [`Self::debug_site_column`] questions in a row: it remembers where the last answer was, so questions asked in
+    /// source order (a body's tokens) skip the search over every origin.
+    pub fn site_mapper(&self) -> SiteMapper<'_> {
+        SiteMapper(Mapping {
+            projection: Default::default(),
+            plan: &self.plan,
+            expanded: &self.expanded,
+            files: &self.files,
+            by_path: &self.source_by_path,
+            hints: Default::default(),
+        })
+    }
     pub fn debug_site_column(&self, expanded_offset: usize) -> Option<(Arc<str>, usize, usize)> {
         Mapping {
             projection: Default::default(),
@@ -734,6 +746,13 @@ mod source_export_mapping;
 pub use source_export_mapping::SourceExportMapping;
 #[path = "frontend_source_projection.rs"]
 mod source_projection;
+/// See [`ColdFrontend::site_mapper`].
+pub struct SiteMapper<'a>(Mapping<'a>);
+impl SiteMapper<'_> {
+    pub fn debug_site_column(&self, expanded_offset: usize) -> Option<(Arc<str>, usize, usize)> {
+        self.0.debug_site_column(expanded_offset)
+    }
+}
 struct Mapping<'a> {
     projection: source_projection::CurrentSourceProjection,
     plan: &'a DirectivePlan,
@@ -793,7 +812,14 @@ impl Mapping<'_> {
         let (out, src) = (origin.output_span, origin.source_span);
         let source_len = src.end - src.start;
         let delta = offset.saturating_sub(out.start);
-        let expansions = origin.macro_expansions.as_slice();
+        // Only the invocations written in this statement's own source: an expansion nested in a replacement or an argument rescan
+        // carries a span in that text, not in the source, so its name is not found at the position it names.
+        let source_text = self.files.get(file.index())?.text.as_str().as_bytes();
+        let expansions: Vec<_> = origin
+            .macro_expansions
+            .iter()
+            .filter(|e| source_text.get(src.start + e.invocation_span.start..).is_some_and(|rest| rest.starts_with(e.name.as_bytes())))
+            .collect();
         // Text before the first macro invocation and after the last one is copied verbatim: measure from the origin's start or
         // end. Inside an expansion, dreammaker places the tokens at the invocation.
         let from_start = src.start + delta.min(source_len);

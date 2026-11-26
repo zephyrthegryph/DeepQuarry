@@ -183,9 +183,6 @@ fn explain(da: &Value, db: &Value) -> Option<&'static str> {
     if da.get("Int").is_some() && db.get("Int").is_some() {
         return Some("environment: DM_VERSION/DM_BUILD differ");
     }
-    if matches!(da.get("Base").and_then(|b| b.get("term")), Some(Value::String(t)) if t == "Null") {
-        return Some("dreammaker drops an empty argument (`f(a, , b)`); dmbc keeps it as null, as BYOND does");
-    }
     if ta.contains(crate::analysis_bridge::UNCONVERTED) {
         return Some("converter or dm-syntax gap (unconverted node)");
     }

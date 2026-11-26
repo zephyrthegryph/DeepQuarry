@@ -359,8 +359,39 @@ fn gen_memo_store(tree: &crate::tree::Tree, root: &Path, results: &[super::gen::
 /// point. The generated files are not committed: every build runs this first (tools/build/build.ts GenTarget), so it must
 /// converge on its own. A run that converged records a digest of its inputs and outputs (`gen-state.bin`); the next run with the
 /// same inputs and intact outputs returns at once.
+/// The generated files the `.dme` includes (`_generated/` directories) exist before the model is built: a fresh worktree has none, and
+/// the compiler's front end refuses a missing include. An empty file is what the generators then overwrite (they are gitignored build
+/// output, never committed).
+fn ensure_generated_includes(root: &Path) {
+    let Ok(entries) = std::fs::read_dir(root) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("dme") {
+            continue;
+        }
+        let Ok(text) = std::fs::read_to_string(&path) else { continue };
+        for line in text.lines() {
+            let Some(rest) = line.trim().strip_prefix("#include") else { continue };
+            let spelled = rest.trim().trim_matches('"').replace('\\', "/");
+            if !spelled.contains("_generated/") {
+                continue;
+            }
+            let file = root.join(&spelled);
+            if !file.exists() {
+                if let Some(dir) = file.parent() {
+                    let _ = std::fs::create_dir_all(dir);
+                }
+                let _ = std::fs::write(&file, "");
+            }
+        }
+    }
+}
+
 pub fn gen(args: &[String], root: &Path) -> ExitCode {
     super::incremental::disable_capture();
+    if !args.iter().any(|a| a == "--check") {
+        ensure_generated_includes(root);
+    }
     let check = args.iter().any(|a| a == "--check");
     let names: Vec<String> = args.iter().filter(|a| !a.starts_with("--")).cloned().collect();
     let trace = dq_hostio::var("DQ_ANALYZE_TRACE").is_ok();

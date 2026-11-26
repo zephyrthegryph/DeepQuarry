@@ -126,7 +126,7 @@ CAPABILITIES(/obj/item/projectile/temp)
 			play_sfx(src, SFX_EFFECTS_METEORIMPACT)
 
 			for(var/mob/M in range(10, src))
-				if(!M.stat && !isAI(M))\
+				if(!M.stat && !isAI(M))
 					shake_camera(M, 3, 1)
 			spent(src)
 			return 1

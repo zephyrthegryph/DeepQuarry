@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The base viral trait Heal() proc now takes its affliction argument as a parameter instead of declaring a stray type"
+  - code_imp: "The analysis tree built from the compiler's front end now matches dreammaker's parse exactly (types, vars, procs, bodies)"

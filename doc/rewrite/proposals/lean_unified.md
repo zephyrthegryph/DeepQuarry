@@ -80,12 +80,38 @@ preprocessor environment; `DQ_ANALYZE_PARSE=dmbc` makes `dmbc analyze` (check, g
 (`dq_analyze::sem::register_parse_provider`, its own `data/analyze-cache-dmbc` and gen stamp). For analysis the front end is built with
 `SPACEMAN_DMM` defined, as SpacemanDMM tools read the tree. Differences kept on purpose, because dmbc follows BYOND:
 
-- Empty call arguments (`list(, a = b)`, `f(a, , b)`): dmbc keeps a `null` in the empty position, as BYOND does; dreammaker drops it.
+- Empty call arguments (`list(, a = b)`, `f(a, , b)`): the analysis conversion drops them, as dreammaker does (dmbc's own typed body keeps a
+  `null` there, as BYOND does; the model is dreammaker's shape, so no lint sees a difference).
 - An absolute path in a parameter list (`proc/f(mob/M, /datum/x/A)`) declares the type `/datum/x/A` and is no parameter (BYOND 516
-  compile oracle); dreammaker reads it as a parameter.
+  compile oracle); dreammaker reads it as a parameter. The one site in the tree (`/datum/viral_trait/heal/proc/Heal`) was a typo and is fixed.
 - BYOND constants (`WAVE_SIDEWAYS`, `NORTH`) are dmbc predefines, so they arrive as integers where dreammaker sees builtin names
   (DreamChecker's filter checks then see `Int(1)`).
 - Preprocessor warnings (macro redefined / undefined) are dmbc's own diagnostics, not forwarded into DreamChecker's stream.
 - File paths are canonical (`code/tests/benchmarks/x.dm`), not as an include spelled them (`code/tests/unit_tests\..\benchmarks`).
-- Proc body ranges: the end is the item's end (dreammaker: the first token after the body, which depends on trailing comments and the
-  next file); dq-analyze drops body ranges.
+- Docs and proc body ranges are not built: dq-analyze and DreamChecker read neither (dq-analyze drops body ranges, nothing reads
+  `docs`), so `analysis_docs.rs` is gone and the parity compares neither.
+- Hint-level diagnostics (the 11 `///` after `#define` hints) are not emitted; hints are never printed or counted among the diagnostics.
+
+### Step 2 result (2026-11-26): parity proved, the switch not made
+
+`dmbc analysis-parity --tree` on master: TREE PARITY 1168032 of 1168032 (100.00%); CONVERTER PARITY (bodies, spelling normalized) 105882 of 105882 (100.00%),
+0 classified differences. Four source sites were behind the last gaps and are fixed: the absolute
+parameter path above, a `\` line continuation after an `if` (the statement's line), and nested macro expansions (a function-like macro
+using other macros) whose invocation spans were read as source positions, which put the first arguments of an `animate()` call on the
+wrong line and made `tracked/outside_setter` report a named argument (`dm-tree` `debug_site_column` now keeps only the invocations whose
+name is in the statement's source).
+
+Outputs on master and on two seeded trees (a body edit, a new var), `DQ_ANALYZE_PARSE=dmbc` against the default:
+`analyze check --raw` byte-identical (0 differing lines), `gen` identical (warm tree, 409 files), `dreamchecker --json`: the printed
+diagnostics identical, only the unprinted hint count differs (401 vs 390, the `#define` doc hints).
+
+Measured and the reason the toggle is still there: the converted model is 5-10x slower than dreammaker's parse. Cold, in one process:
+dreammaker parse 7.6 s; dmbc front end 8-11 s plus the object tree 40-45 s (6.6 M location lookups 18-21 s, the rest body and
+initializer conversion, single-threaded) = 49-64 s. A one-line body edit through the daemon: 67-72 s `check` against about 5 s, because the
+daemon remembers a conversion only for unchanged inputs and an edit converts the whole tree again. Making it the only path therefore needs
+per-file (per-proc) conversion results kept between requests and a parallel conversion: step 3's engine. Until then `DQ_ANALYZE_PARSE=dmbc`
+stays opt-in and dreammaker's parser stays; deleting it also needs dq-analyze's own tests (`tools/analyze/tests`, the lints' fixtures), which
+build their models through it, moved onto the compiler's front end.
+A cold `analyze gen` under dmbc also needs the front end to accept a tree whose generated files are not there yet (dreammaker only reports
+a bad parent type): `gen` now creates empty stubs for the generated includes it finds missing, but `/datum/act/admission_query: invalid parent
+type` (its parent comes from a generated file) still refuses the first model.
