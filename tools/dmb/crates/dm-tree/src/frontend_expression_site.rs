@@ -81,6 +81,7 @@ fn statements<'a>(body: &'a [Statement], visit: &mut impl FnMut(&'a Expr)) {
                 condition,
                 then_branch,
                 else_branch,
+                ..
             } => {
                 expression(condition, visit);
                 statements(then_branch, visit);

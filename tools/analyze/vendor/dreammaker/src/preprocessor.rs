@@ -522,6 +522,24 @@ impl<'ctx> Preprocessor<'ctx> {
         }
     }
 
+    /// Replace every predefined macro with `defines` (name, parameters for a function-like macro, replacement text): a caller-supplied
+    /// build environment (`dmbc analysis-parity` parses with the native compiler's predefines). Call before reading any token.
+    pub fn replace_environment_defines(&mut self, defines: &[(String, Option<Vec<String>>, String)]) {
+        self.defines = DefineMap::default();
+        for (name, params, text) in defines {
+            let subst: Vec<Token> = Lexer::new(self.context, Location::builtins().file, text.as_bytes().to_vec())
+                .map(|t| t.token)
+                .filter(|t| !t.is_whitespace())
+                .collect();
+            let define = match params {
+                Some(params) => Define::Function { params: params.clone(), subst, variadic: false, docs: Default::default() },
+                None => Define::Constant { subst, docs: Default::default() },
+            };
+            while self.defines.remove(name).is_some() {}
+            self.defines.insert(name.clone(), (Location::builtins(), define));
+        }
+    }
+
     /// Finalize this preprocessor into its complete define history.
     pub fn finalize(mut self) -> DefineHistory {
         let mut i = 0;

@@ -48,6 +48,7 @@ fn skip_and_stop_preserve_statement_order_and_do_not_visit_hidden_children() {
             condition: expression.clone(),
             then_branch: vec![statement(StatementKind::Unsupported)],
             else_branch: Vec::new(),
+            has_else: false,
         }),
         statement(StatementKind::Return(Some(expression))),
         statement(StatementKind::Unsupported),

@@ -38,6 +38,8 @@ dm-resources = { path = "../dm-resources" }
 # The lint and analysis engine: `dmbc analyze ...` (one program for compile and analysis).
 dq-analyze = { path = "../../../analyze" }
 dq-hostio = { path = "../../../analyze/hostio" }
+# dreammaker's AST, the target of the analysis bridge (`analysis_bridge.rs`).
+dreammaker = { path = "../../../analyze/vendor/dreammaker" }
 
 [dev-dependencies]
 # Semantic retained-vs-fresh oracle: incremental output may assign IDs stably

@@ -5,6 +5,11 @@ use std::{
     time::Duration,
 };
 mod analysis;
+mod analysis_store;
+/// The `analysis_results` owner line for the shared store report (none before the first hosted analysis request).
+pub(crate) fn analysis_results_report() -> Option<String> {
+    analysis_store::report_line()
+}
 pub use analysis::client as analyze_client;
 mod build_admission;
 mod crash_trace;

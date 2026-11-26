@@ -65,6 +65,7 @@ impl HeapCensus {
                             condition,
                             then_branch,
                             else_branch,
+                            ..
                         } => {
                             pending.push(Node::Expr(condition));
                             statements(self, owner, then_branch, &mut pending);

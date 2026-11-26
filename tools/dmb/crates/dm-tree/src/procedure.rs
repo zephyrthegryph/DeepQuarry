@@ -395,7 +395,10 @@ pub(crate) fn parse_setting(
             | "background"
             | "instant"
             | "popup_menu"
-    ) {
+    ) && !name.starts_with("SpacemanDMM_")
+    {
+        // `SpacemanDMM_*` settings exist only under `SPACEMAN_DMM` (the analysis build of the tree, never BYOND's): they are
+        // annotations the analyzer reads, kept so its model sees them.
         return Err(format!("unknown procedure setting: {name}"));
     }
     Ok(ProcedureSetting {

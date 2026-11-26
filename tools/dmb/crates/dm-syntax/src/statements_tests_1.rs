@@ -460,3 +460,28 @@ fn var_block_comma_leaves_are_native_source_errors() {
     assert!(body.diagnostics.is_empty());
     assert_eq!(body.statements.len(), 2);
 }
+
+#[test]
+fn for_in_over_a_member_named_to_is_not_a_range() {
+    let ast = parse("/proc/test(V)\n    for(var/entry in V.to)\n        return entry\n");
+    let body = parse_proc_body(&ast.items[0]);
+    assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
+    let StatementKind::For { control, .. } = &body.statements[0].kind else {
+        panic!("expected for")
+    };
+    assert!(matches!(control, ForControl::Each { .. }), "{control:?}");
+}
+
+#[test]
+fn empty_else_is_told_from_no_else() {
+    let ast = parse("/proc/test(x)\n    if(x)\n        return 1\n    else\n    if(x)\n        return 2\n");
+    let body = parse_proc_body(&ast.items[0]);
+    let StatementKind::If { else_branch, has_else, .. } = &body.statements[0].kind else {
+        panic!("expected if")
+    };
+    assert!(*has_else && else_branch.is_empty());
+    let StatementKind::If { has_else, .. } = &body.statements[1].kind else {
+        panic!("expected second if")
+    };
+    assert!(!*has_else);
+}

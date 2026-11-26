@@ -83,6 +83,13 @@ pub fn run(dme: &Path, shown: &Path, config: Option<&Path>, json: bool, parse_on
         dreamchecker::run_parallel(&context, &parsed.objtree, true, threads);
     }
     println!("============================================================");
+    // `DQ_DREAMCHECKER_LIST=1`: every counted diagnostic, one per line, on stderr (comparing two parses' outputs).
+    if dq_hostio::var_os("DQ_DREAMCHECKER_LIST").is_some() {
+        for e in context.errors().iter().filter(|e| e.severity() <= dreammaker::Severity::Info) {
+            let l = e.location();
+            eprintln!("diag {}:{}:{} {:?} {}", context.file_path(l.file).display(), l.line, l.column, e.severity(), e.description());
+        }
+    }
     let errors = context.errors().iter().filter(|e| e.severity() <= dreammaker::Severity::Info).count();
     println!("Found {errors} diagnostics");
     if json {

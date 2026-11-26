@@ -507,6 +507,37 @@ impl Sem {
     }
 }
 
+/// Another front end's parse of a `.dme` into the model (`Parsed`): `dmbc` registers one at startup that builds the object tree from
+/// its own front end (`dmbc::analysis_tree`), so analysis that runs inside the compiler can skip dreammaker's preprocessor and parser.
+/// `checker` asks for a DreamChecker parse (diagnostics in `Parsed::raw`, body ranges kept).
+pub type ParseProvider = fn(dme: &Path, checker: bool) -> Result<model_store::Parsed, String>;
+
+static PARSE_PROVIDER: std::sync::OnceLock<ParseProvider> = std::sync::OnceLock::new();
+
+/// Registers the front end [`provided_parse`] uses. The first registration wins.
+pub fn register_parse_provider(provider: ParseProvider) {
+    let _ = PARSE_PROVIDER.set(provider);
+}
+
+/// `DQ_ANALYZE_PARSE=dmbc` with a registered provider: the model comes from it instead of dreammaker's parser.
+pub fn provided_parse_selected() -> bool {
+    matches!(dq_hostio::var("DQ_ANALYZE_PARSE").as_deref(), Ok("dmbc")) && PARSE_PROVIDER.get().is_some()
+}
+
+/// The provider's parse of `dme_path`, when [`provided_parse_selected`].
+pub fn provided_parse(dme_path: &Path, checker: bool) -> Option<Result<model_store::Parsed, String>> {
+    if !provided_parse_selected() {
+        return None;
+    }
+    let provider = PARSE_PROVIDER.get()?;
+    let started = std::time::Instant::now();
+    let parsed = provider(dme_path, checker);
+    if model_store::trace() || dq_hostio::var("DQ_ANALYZE_PARSE_TRACE").is_ok() {
+        eprintln!("analyze: model from the dmbc front end ({}) in {:.1?}", if checker { "checker" } else { "analysis" }, started.elapsed());
+    }
+    Some(parsed)
+}
+
 /// Parses `dme_path` with dreammaker: the preprocessor (lexing, macro expansion, includes: about a third of the parse) runs on its own
 /// thread and streams batches of tokens to the parser here. A `Context` is not shareable between threads, so each side has its own: the
 /// preprocessor's registers the files (every `Location` names one of its file ids), and the errors of both are kept. `preregister` names
@@ -519,6 +550,9 @@ pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<S
 /// `config_dme`'s directory, every diagnostic kept.
 pub fn parse_for_checker(dme_path: &Path, config_dme: &Path) -> Result<model_store::Parsed, String> {
     model_store::ensure_codec();
+    if let Some(parsed) = provided_parse(dme_path, true) {
+        return parsed;
+    }
     dreammaker::objtree::set_compact_parse(false);
     parse_source(dme_path, &[], Source::Dme(None), false, Some(config_dme))
 }
@@ -543,6 +577,25 @@ pub fn set_lean_parse(on: bool) {
 /// `checker`: parse as DreamChecker does (`crate::dreamchecker`): both contexts read the `.dme`'s `SpacemanDMM.toml` (the parser's
 /// code-standard checks read it), body ranges are kept, and every diagnostic of every severity is returned in `Parsed::raw`.
 pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Source, history: bool, checker: Option<&Path>) -> Result<model_store::Parsed, String> {
+    parse_source_env(dme_path, preregister, source, history, checker, None)
+}
+
+/// A build environment that replaces every predefined macro of the preprocessor: (name, parameters of a function-like macro,
+/// replacement text).
+#[derive(Clone, Debug, Default)]
+pub struct ParseEnvironment {
+    pub defines: Vec<(String, Option<Vec<String>>, String)>,
+}
+
+/// [`parse_for_checker`] under a caller's predefined macros instead of dreammaker's own (`dmbc analysis-parity` parses both trees in
+/// the native compiler's environment).
+pub fn parse_for_checker_with_env(dme_path: &Path, config_dme: &Path, env: ParseEnvironment) -> Result<model_store::Parsed, String> {
+    model_store::ensure_codec();
+    dreammaker::objtree::set_compact_parse(false);
+    parse_source_env(dme_path, &[], Source::Dme(None), false, Some(config_dme), Some(env))
+}
+
+fn parse_source_env(dme_path: &Path, preregister: &[PathBuf], source: Source, history: bool, checker: Option<&Path>, env: Option<ParseEnvironment>) -> Result<model_store::Parsed, String> {
     let config = checker.map(|p| p.to_path_buf());
     const BATCH: usize = 8192;
     let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<dreammaker::lexer::LocatedToken>>(64);
@@ -582,6 +635,9 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
                         pp
                     }
                 };
+                if let Some(env) = &env {
+                    pp.replace_environment_defines(&env.defines);
+                }
                 let mut batch = Vec::with_capacity(BATCH);
                 for tok in dreammaker::indents::IndentProcessor::new(&ctx, &mut pp) {
                     batch.push(tok);

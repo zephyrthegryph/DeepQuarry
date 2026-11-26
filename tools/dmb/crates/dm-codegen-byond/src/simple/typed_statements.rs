@@ -1064,6 +1064,7 @@ impl Compiler<'_> {
                     condition,
                     then_branch,
                     else_branch,
+                    ..
                 } => 'lowered: {
                     // A constant condition keeps only the branch it selects, with no test (DreamMaker 516.1687).
                     if let Some(value) = super::expression::constant_truth(condition)

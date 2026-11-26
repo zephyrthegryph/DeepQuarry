@@ -14,6 +14,13 @@ mod directive_memo;
 mod segment_lines;
 mod intern_wire;
 mod directives;
+/// The macros every native preprocess starts with, before the caller's defines: (name, parameters, replacement). Another front end
+/// that must see the same environment (dmbc analysis-parity's dreammaker parse) installs these.
+pub fn predefined_macros() -> Vec<(String, Option<Vec<String>>, String)> {
+    let functions = directives::FUNCTION_PREDEFINES.iter().map(|(n, r)| (n.to_string(), Some(vec!["message".to_string()]), r.to_string()));
+    let objects = directives::OBJECT_PREDEFINES.iter().map(|(n, r)| (n.to_string(), None, r.to_string()));
+    functions.chain(objects).collect()
+}
 mod plan_trace;
 pub use plan_trace::{PlanReuse, PlanTimings, PlanTrace};
 mod path_prefix;

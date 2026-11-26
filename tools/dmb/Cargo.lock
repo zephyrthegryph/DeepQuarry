@@ -513,6 +513,7 @@ dependencies = [
  "dmb-equiv",
  "dq-analyze",
  "dq-hostio",
+ "dreammaker",
  "fs2",
  "memchr",
  "mimalloc",

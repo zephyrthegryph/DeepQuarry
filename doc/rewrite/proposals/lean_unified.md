@@ -72,3 +72,20 @@ superseded. Three steps:
    string parts and the special call forms), then dreammaker's parser is deleted. Proof: every lint, `gen` and DreamChecker output
    identical on master and seeded trees.
 3. One incremental engine: per-proc analysis results in dmbc's query store; analyze's own caches go.
+
+### The converted tree and its intended differences (2026-11-26)
+
+`dmbc analysis-parity --tree` compares the object tree built from dmbc's front end (`dmbc::analysis_tree`) with dreammaker's under one
+preprocessor environment; `DQ_ANALYZE_PARSE=dmbc` makes `dmbc analyze` (check, gen, dreamchecker) take its model from it
+(`dq_analyze::sem::register_parse_provider`, its own `data/analyze-cache-dmbc` and gen stamp). For analysis the front end is built with
+`SPACEMAN_DMM` defined, as SpacemanDMM tools read the tree. Differences kept on purpose, because dmbc follows BYOND:
+
+- Empty call arguments (`list(, a = b)`, `f(a, , b)`): dmbc keeps a `null` in the empty position, as BYOND does; dreammaker drops it.
+- An absolute path in a parameter list (`proc/f(mob/M, /datum/x/A)`) declares the type `/datum/x/A` and is no parameter (BYOND 516
+  compile oracle); dreammaker reads it as a parameter.
+- BYOND constants (`WAVE_SIDEWAYS`, `NORTH`) are dmbc predefines, so they arrive as integers where dreammaker sees builtin names
+  (DreamChecker's filter checks then see `Int(1)`).
+- Preprocessor warnings (macro redefined / undefined) are dmbc's own diagnostics, not forwarded into DreamChecker's stream.
+- File paths are canonical (`code/tests/benchmarks/x.dm`), not as an include spelled them (`code/tests/unit_tests\..\benchmarks`).
+- Proc body ranges: the end is the item's end (dreammaker: the first token after the body, which depends on trailing comments and the
+  next file); dq-analyze drops body ranges.

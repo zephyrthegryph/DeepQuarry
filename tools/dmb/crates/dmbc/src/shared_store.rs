@@ -112,6 +112,9 @@ impl SharedStore {
             o(2),
             o(3)
         ));
+        if let Some(analysis) = crate::daemon::analysis_results_report() {
+            line.push_str(&analysis);
+        }
         let cores = self.cores.lock().unwrap_or_else(|e| e.into_inner());
         let mut rows: Vec<_> = cores
             .iter()

@@ -5,15 +5,23 @@ pub(super) fn split_top_level_keyword<'a>(
     keyword: &str,
 ) -> Option<(&'a str, &'a str)> {
     let mut depth = 0;
+    let mut previous = "";
     for token in crate::lex_spans(source).tokens {
-        match token.text(source) {
+        let text = token.text(source);
+        match text {
             "(" | "[" | "{" => depth += 1,
             ")" | "]" | "}" => depth -= 1,
-            text if depth == 0 && token.kind == crate::TokenKind::Ident && text == keyword => {
+            // A member named like the keyword (`V.to`, `x:to`, `x?.to`) is not the keyword.
+            _ if depth == 0
+                && token.kind == crate::TokenKind::Ident
+                && text == keyword
+                && !matches!(previous, "." | ":" | "?." | "?:" | "::") =>
+            {
                 return Some((&source[..token.span.start], &source[token.span.end..]));
             }
             _ => {}
         }
+        previous = text;
     }
     None
 }

@@ -152,7 +152,15 @@ pub(super) fn serve(stream: &mut transport::Stream, request: AnalyzeRequest) -> 
     *LAST_REQUEST.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
     let runner = std::thread::Builder::new()
         .name("analyze-host".into())
-        .spawn(move || dq_analyze::cli::run_hosted(argv, env, cwd, sink))
+        .spawn(move || {
+            // The daemon-wide analysis store backs `incr` on this hosted path (analysis_store.rs).
+            let store = super::analysis_store::started();
+            store.begin(std::path::Path::new(&cwd));
+            let shown = std::path::Path::new(&cwd).display().to_string();
+            let code = dq_analyze::cli::run_hosted(argv, env, cwd, sink);
+            eprintln!("dmbc pid={} root={}: {}", std::process::id(), shown, store.end());
+            code
+        })
         .map_err(io::Error::other)?;
     // Output in order, coalesced per stream; the channel closes when the request has finished and dropped its sink.
     let mut pending: Option<(bool, Vec<u8>)> = None;

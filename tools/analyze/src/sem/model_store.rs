@@ -135,7 +135,7 @@ static PENDING_META: Mutex<Option<Meta>> = Mutex::new(None);
 static PREWARMED: Mutex<Option<(PathBuf, Option<Base>, Option<Delta>)>> = Mutex::new(None);
 static WRITER: Mutex<Option<std::thread::JoinHandle<()>>> = Mutex::new(None);
 
-fn trace() -> bool {
+pub(crate) fn trace() -> bool {
     dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some()
 }
 
@@ -276,6 +276,10 @@ pub fn prewarm() {
 
 pub fn obtain(root: &Path, tree: &Tree, dme_path: &Path) -> Result<Parsed, String> {
     ensure_codec();
+    // A model from another front end (`DQ_ANALYZE_PARSE=dmbc`) is built whole each run: the store splices dreammaker parses.
+    if let Some(parsed) = super::provided_parse(dme_path, false) {
+        return parsed;
+    }
     if !enabled() {
         return super::parse_dme(dme_path, &[], None);
     }

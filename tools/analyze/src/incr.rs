@@ -70,6 +70,58 @@ fn store_path(dir: &std::path::Path, name: &str, shard: Option<usize>) -> PathBu
     }
 }
 
+/// One stored entry of a hosted store: a clean bit (the result is `Default` with no allow use) or the encoded `(R, allow uses)`.
+#[derive(Clone)]
+pub enum Entry {
+    Clean,
+    Bytes(std::sync::Arc<[u8]>),
+}
+
+/// Where the stores live when analyze runs hosted in a resident process (the dmbc daemon registers one): the entries are kept
+/// in that process, keyed by (store, stamp, context, content key), instead of `incr-*.bin`. The standalone path never
+/// registers one and keeps the disk stores; it is the baseline the hosted output is compared with.
+pub trait Provider: Send + Sync {
+    fn get(&self, store: &str, stamp: &str, ctx: Hash, key: Hash) -> Option<Entry>;
+    fn put(&self, store: &str, stamp: &str, ctx: Hash, key: Hash, entry: Entry);
+    /// One `keyed_by` call finished: how many entries it served and how many it recomputed.
+    fn finished(&self, _store: &str, _served: usize, _computed: usize) {}
+}
+
+static PROVIDER: std::sync::RwLock<Option<std::sync::Arc<dyn Provider>>> = std::sync::RwLock::new(None);
+
+/// Registers (or with `None` removes) the hosted store provider.
+pub fn set_provider(p: Option<std::sync::Arc<dyn Provider>>) {
+    *PROVIDER.write().unwrap_or_else(|e| e.into_inner()) = p;
+}
+
+/// A provider is registered (the run is hosted): lint caches and the shared disk copy step aside.
+pub fn provider_registered() -> bool {
+    !SUSPENDED.load(std::sync::atomic::Ordering::SeqCst) && PROVIDER.read().unwrap_or_else(|e| e.into_inner()).is_some()
+}
+
+/// One whole value of a hosted store under its own stamp (a lint's `LintCache`).
+pub fn hosted_get_bytes(store: &str, stamp: &str) -> Option<std::sync::Arc<[u8]>> {
+    let p = PROVIDER.read().unwrap_or_else(|e| e.into_inner()).clone()?;
+    match p.get(store, stamp, 0, 0) {
+        Some(Entry::Bytes(b)) => Some(b),
+        _ => None,
+    }
+}
+
+/// Stores what [`hosted_get_bytes`] reads.
+pub fn hosted_put_bytes(store: &str, stamp: &str, bytes: Vec<u8>) {
+    if let Some(p) = PROVIDER.read().unwrap_or_else(|e| e.into_inner()).clone() {
+        p.put(store, stamp, 0, 0, Entry::Bytes(bytes.into()));
+    }
+}
+
+/// The provider and this run's stamp, when caching is on and a provider is registered.
+fn hosted() -> Option<(std::sync::Arc<dyn Provider>, String)> {
+    let p = PROVIDER.read().unwrap_or_else(|e| e.into_inner()).clone()?;
+    let (_, stamp) = config()?;
+    Some((p, stamp))
+}
+
 static SUSPENDED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Turns the on-disk stores off (selftests run fixture trees through lints that use them: their
@@ -146,6 +198,20 @@ pub fn stamp() -> Option<String> {
 
 /// One value cached under `key`: `compute()` runs only when the stored key differs.
 pub fn cached<T: Serialize + DeserializeOwned>(name: &str, key: Hash, compute: impl FnOnce() -> T) -> T {
+    if let Some((p, stamp)) = hosted() {
+        if let Some(Entry::Bytes(b)) = p.get(name, &stamp, key, 0) {
+            if let Ok(v) = de::<T>(&b) {
+                p.finished(name, 1, 0);
+                return v;
+            }
+        }
+        let v = compute();
+        if let Ok(b) = ser(&v) {
+            p.put(name, &stamp, key, 0, Entry::Bytes(b.into()));
+        }
+        p.finished(name, 0, 1);
+        return v;
+    }
     let (st, target) = load(name, key);
     if let Some(b) = st.map.get(&0) {
         if let Ok(v) = de::<T>(b) {
@@ -239,6 +305,9 @@ pub fn keyed_by<R>(name: &str, ctx: Hash, keys: &[Hash], f: impl Fn(usize) -> R 
 where
     R: Serialize + DeserializeOwned + Default + PartialEq + Send,
 {
+    if let Some((p, stamp)) = hosted() {
+        return keyed_hosted(&*p, &stamp, name, ctx, keys, f);
+    }
     let sharded = keys.len() >= SHARD_MIN_FILES;
     let n = if sharded { SHARDS } else { 1 };
     let target = config();
@@ -316,6 +385,50 @@ where
         if let Ok(bytes) = ser(&container) {
             write_atomic(p, &bytes);
         }
+    }
+    crate::dm::sys::replay_recorded(uses);
+    out
+}
+
+/// [`keyed_by`] against the registered provider: no disk store is read or written.
+fn keyed_hosted<R>(p: &dyn Provider, stamp: &str, name: &str, ctx: Hash, keys: &[Hash], f: impl Fn(usize) -> R + Sync) -> Vec<R>
+where
+    R: Serialize + DeserializeOwned + Default + PartialEq + Send,
+{
+    let results: Vec<(R, bool, Vec<AllowUse>)> = (0..keys.len())
+        .into_par_iter()
+        .map(|i| {
+            match p.get(name, stamp, ctx, keys[i]) {
+                Some(Entry::Clean) => return (R::default(), false, Vec::new()),
+                Some(Entry::Bytes(b)) => {
+                    if let Ok((r, u)) = de::<(R, Vec<AllowUse>)>(&b) {
+                        return (r, false, u);
+                    }
+                }
+                None => {}
+            }
+            let before = crate::dm::sys::take_recorded();
+            let r = f(i);
+            let u = crate::dm::sys::take_recorded();
+            crate::dm::sys::restore_recorded(before);
+            let entry = if r == R::default() && u.is_empty() {
+                Some(Entry::Clean)
+            } else {
+                ser(&(&r, &u)).ok().map(|b| Entry::Bytes(b.into()))
+            };
+            if let Some(e) = entry {
+                p.put(name, stamp, ctx, keys[i], e);
+            }
+            (r, true, u)
+        })
+        .collect();
+    let computed = results.iter().filter(|r| r.1).count();
+    p.finished(name, results.len() - computed, computed);
+    let mut uses = Vec::new();
+    let mut out = Vec::with_capacity(results.len());
+    for (r, _, u) in results {
+        uses.extend(u);
+        out.push(r);
     }
     crate::dm::sys::replay_recorded(uses);
     out

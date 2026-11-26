@@ -88,6 +88,55 @@ fn main() {
         }
     }
     println!("cargo:rustc-env=DQ_ENGINE_HASH={}", hasher.finish_hex());
+
+    // ---- per-lint versions (hosted path) ------------------------------------------------------
+    // A lint module no other source names (`lints::<m>`) is a leaf: its own files version it, and every other source is the
+    // core version. A module some other source names stays in the core, so editing it changes every lint's version.
+    let lints_dir = src.join("lints");
+    let lint_mods = discover(&lints_dir);
+    let mut texts: Vec<(PathBuf, String)> = Vec::new();
+    for f in &files {
+        if let Ok(t) = fs::read_to_string(f) {
+            texts.push((f.clone(), t));
+        }
+    }
+    let mut leaves: Vec<(String, Vec<PathBuf>)> = Vec::new();
+    for m in &lint_mods {
+        let own = lints_dir.join(m);
+        let own_file = lints_dir.join(format!("{}.rs", m));
+        let is_own = |p: &Path| p == own_file || p.starts_with(&own);
+        let needle = format!("lints::{}", m);
+        let named = texts.iter().any(|(p, t)| !is_own(p) && t.contains(&needle) && !p.ends_with("build.rs"));
+        if !named {
+            leaves.push((m.clone(), texts.iter().filter(|(p, _)| is_own(p)).map(|(p, _)| p.clone()).collect()));
+        }
+    }
+    let leaf_files: std::collections::HashSet<PathBuf> = leaves.iter().flat_map(|(_, fs)| fs.iter().cloned()).collect();
+    let mut core = blake3_lite::Hasher::new();
+    for f in &files {
+        if leaf_files.contains(f) {
+            continue;
+        }
+        if let Ok(bytes) = fs::read(f) {
+            core.update(f.file_name().unwrap().to_string_lossy().as_bytes());
+            core.update(&bytes);
+        }
+    }
+    let mut table = String::new();
+    let _ = writeln!(table, "pub const CORE_HASH: &str = \"{}\";", core.finish_hex());
+    let _ = writeln!(table, "pub const LEAF_HASHES: &[(&str, &str)] = &[");
+    for (m, fs_) in &leaves {
+        let mut h = blake3_lite::Hasher::new();
+        for f in fs_ {
+            if let Ok(bytes) = fs::read(f) {
+                h.update(f.file_name().unwrap().to_string_lossy().as_bytes());
+                h.update(&bytes);
+            }
+        }
+        let _ = writeln!(table, "    (\"{}\", \"{}\"),", m, h.finish_hex());
+    }
+    let _ = writeln!(table, "];");
+    fs::write(out_dir.join("lint_versions_gen.rs"), table).unwrap();
 }
 
 /// A tiny FNV-1a/128-style hasher: the build script has no dependencies, and this only needs to

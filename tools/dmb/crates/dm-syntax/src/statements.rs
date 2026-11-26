@@ -65,6 +65,9 @@ pub enum StatementKind {
         condition: Expr,
         then_branch: Vec<Statement>,
         else_branch: Vec<Statement>,
+        /// The source has an `else` clause (its branch may be empty: `else` then nothing, which `else_branch` alone cannot tell
+        /// from no `else`).
+        has_else: bool,
     },
     While {
         condition: Expr,
@@ -313,6 +316,7 @@ fn parse_if(item: &Item, else_items: &[Item], diagnostics: &mut Vec<Diagnostic>)
     let condition = parse_control_condition(item, "if", diagnostics);
     let then_branch = control_body(item, "if", diagnostics);
     let mut span = item.span;
+    let has_else = !else_items.is_empty();
     let else_branch = if let Some((other, remaining)) = else_items.split_first() {
         span.end = else_items.last().unwrap().span.end;
         let header = other.header.trim();
@@ -354,6 +358,7 @@ fn parse_if(item: &Item, else_items: &[Item], diagnostics: &mut Vec<Diagnostic>)
                 condition,
                 then_branch,
                 else_branch,
+                has_else,
             },
             span,
             header_span: item.header_span,

@@ -1315,6 +1315,75 @@ impl ObjectTreeBuilder {
     }
 }
 
+/// Building a tree from another front end's declarations (dmbc's semantic tree): the parser's own registration steps, public.
+/// Types are added by absolute path, vars declared or overridden in the order the caller gives, procs registered with their
+/// converted bodies; [`ObjectTreeBuilder::finish_tree`] assigns parent types and evaluates constants as the parser's finish does.
+impl ObjectTreeBuilder {
+    /// A builder holding BYOND's builtin types, vars and procs, as the parser starts with.
+    pub fn with_builtin_types() -> ObjectTreeBuilder {
+        let mut builder = ObjectTreeBuilder::default();
+        builder.register_builtins();
+        builder
+    }
+
+    /// The type at an absolute path (`/obj/item`), adding every missing step. `/` (or the empty path) is the root.
+    pub fn add_type_path(&mut self, location: Location, path: &str) -> NodeIndex {
+        let pieces: Vec<&str> = path.split('/').filter(|p| !p.is_empty()).collect();
+        let len = pieces.len() + 1;
+        let mut current = self.root_index();
+        for piece in pieces {
+            current = self.subtype_or_add(location, current, piece, len);
+        }
+        current
+    }
+
+    /// The node of an existing type path.
+    pub fn type_index(&self, path: &str) -> Option<NodeIndex> {
+        if path.is_empty() || path == "/" {
+            return Some(self.root_index());
+        }
+        self.inner.types.get(path).copied()
+    }
+
+    /// `var/<flags>/<type>/name = expression` on `ty`.
+    pub fn add_var_declaration(
+        &mut self,
+        ty: NodeIndex,
+        name: &str,
+        location: Location,
+        var_type: VarType,
+        expression: Option<Expression>,
+    ) -> &mut TypeVar {
+        self.declare_var(ty, name, location, Default::default(), var_type, expression)
+    }
+
+    /// `name = expression` on `ty`: a value for a var declared on it or a parent.
+    pub fn add_var_override(&mut self, ty: NodeIndex, name: &str, location: Location, expression: Expression) -> &mut TypeVar {
+        self.override_var(ty, name, location, Default::default(), expression)
+    }
+
+    /// A proc definition (`declaration` set: `proc/name`, `verb/name`) or override on `ty`, with its body.
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_proc_value(
+        &mut self,
+        context: &Context,
+        location: Location,
+        ty: NodeIndex,
+        name: &str,
+        declaration: Option<ProcDeclBuilder>,
+        parameters: Vec<Parameter>,
+        return_type: ProcReturnType,
+        code: Option<Block>,
+    ) -> Result<(usize, &mut ProcValue), DMError> {
+        self.register_proc(context, location, ty, name, declaration, parameters, return_type, code, None)
+    }
+
+    /// Finish the tree as the parser does: parent types assigned, and constants evaluated unless the parse failed fatally.
+    pub fn finish_tree(self, context: &Context, fatal: bool) -> ObjectTree {
+        self.finish(context, fatal)
+    }
+}
+
 #[inline]
 fn is_var_decl(s: &str) -> bool {
     s == "var"

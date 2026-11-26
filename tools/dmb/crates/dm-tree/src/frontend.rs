@@ -416,6 +416,20 @@ impl ColdFrontend {
         }
         .debug_site(expanded_offset)
     }
+
+    /// [`Self::debug_site`] with a 1-based byte column: where the offset falls in its source line when the expanded text there is a
+    /// verbatim copy of the source, else (a macro expansion) the column of the origin's start, the invocation.
+    pub fn debug_site_column(&self, expanded_offset: usize) -> Option<(Arc<str>, usize, usize)> {
+        Mapping {
+            projection: Default::default(),
+            plan: &self.plan,
+            expanded: &self.expanded,
+            files: &self.files,
+            by_path: &self.source_by_path,
+            hints: Default::default(),
+        }
+        .debug_site_column(expanded_offset)
+    }
     pub fn source(&self, id: FileId) -> Option<&SourceFile> {
         self.files.get(id.index())
     }
@@ -770,6 +784,78 @@ impl Mapping<'_> {
             self.plan.occurrences[occurrence].semantic_path.clone(),
             origin.origin.source_line,
         ))
+    }
+    fn debug_site_column(&self, offset: usize) -> Option<(Arc<str>, usize, usize)> {
+        let (path, line) = self.debug_site(offset)?;
+        let origin = self.origin(offset)?;
+        let file = self.file_of(origin.origin.path)?;
+        let starts = &self.files.get(file.index())?.line_starts;
+        let (out, src) = (origin.output_span, origin.source_span);
+        let source_len = src.end - src.start;
+        let delta = offset.saturating_sub(out.start);
+        let expansions = origin.macro_expansions.as_slice();
+        // Text before the first macro invocation and after the last one is copied verbatim: measure from the origin's start or
+        // end. Inside an expansion, dreammaker places the tokens at the invocation.
+        let from_start = src.start + delta.min(source_len);
+        let from_end = src.end.saturating_sub(out.end.saturating_sub(offset));
+        // Invocation spans are relative to the origin's source start.
+        let first = expansions.iter().map(|e| src.start + e.invocation_span.start).min();
+        let last = expansions.iter().map(|e| src.start + e.invocation_span.end).max();
+        let _ = last;
+        // A candidate source position is right when the source text there is the expanded text at `offset` (a window of a few
+        // bytes): before the first invocation measure from the origin's start, after an expansion from its end.
+        let expanded = self.expanded.text.as_str().as_bytes();
+        let source = self.files.get(file.index())?.text.as_str().as_bytes();
+        let window = 6usize;
+        let matches = |p: usize| {
+            let a = expanded.get(offset..(offset + window).min(expanded.len()));
+            let b = source.get(p..(p + window).min(source.len()));
+            matches!((a, b), (Some(a), Some(b)) if !a.is_empty() && a.len() == b.len() && a == b)
+        };
+        let leading = expansions.is_empty() || first.is_some_and(|f| from_start < f);
+        let found = if leading && matches(from_start) {
+            Some(from_start)
+        } else if matches(from_end) {
+            Some(from_end)
+        } else {
+            // The expander may lay one source span (a statement over several lines) out as several output rows, so offsets from the
+            // origin's start drift: find the expanded text itself in the source span, nearest the estimate, outside any invocation.
+            let rest = expanded.get(offset..).unwrap_or(&[]);
+            let end = rest.iter().take(16).position(|&b| b == b'\n' || b == b'\r').unwrap_or(16.min(rest.len()));
+            let needle = &rest[..end];
+            let inside = |p: usize| expansions.iter().any(|e| (src.start + e.invocation_span.start..src.start + e.invocation_span.end).contains(&p));
+            let hay = source.get(src.start..src.end.min(source.len())).unwrap_or(&[]);
+            let found = (needle.len() >= 3)
+                .then(|| {
+                    hay.windows(needle.len())
+                        .enumerate()
+                        .filter(|(_, w)| *w == needle)
+                        .map(|(i, _)| src.start + i)
+                        .filter(|&p| !inside(p))
+                        .min_by_key(|&p| p.abs_diff(from_start))
+                })
+                .flatten();
+            found.or(expansions.is_empty().then_some(from_start))
+        };
+        if let Ok(probe) = std::env::var("DQ_SITE_COLUMN_TRACE") {
+            if probe == "1" || path.ends_with(&probe) {
+                eprintln!("site {offset} {path}:{line}: output {:?} source {:?} found {found:?}", origin.output_span, origin.source_span);
+            }
+        }
+        // Found: the physical line and column. Otherwise (inside an expansion) dreammaker places the token at the invocation: the
+        // nearest invocation start before the position, on `debug_site`'s line.
+        let (line, column) = match found {
+            Some(pos) => {
+                let row = starts.partition_point(|&s| s <= pos).saturating_sub(1);
+                (row + 1, pos - starts.get(row).copied().unwrap_or(0) + 1)
+            }
+            None => {
+                let pos = expansions.iter().map(|e| src.start + e.invocation_span.start).filter(|&s| s <= from_start).max().unwrap_or(src.start);
+                let row = starts.partition_point(|&s| s <= pos).saturating_sub(1);
+                if row + 1 == line { (line, pos - starts.get(row).copied().unwrap_or(0) + 1) } else { (line, 1) }
+            }
+        };
+        Some((path, line, column))
     }
     fn output(&self, offset: usize) -> Option<SourceLocation> {
         let origin = self.origin(offset)?;

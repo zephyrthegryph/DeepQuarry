@@ -303,7 +303,9 @@ fn file_digest(path: &Path) -> Option<u128> {
 }
 
 fn engine_stamp() -> String {
-    format!("gen-v1|{}", crate::cache::ENGINE_HASH)
+    // A model from dmbc's front end (`DQ_ANALYZE_PARSE=dmbc`) is its own engine: its outputs are neither the memo nor the shared store's.
+    let parse = if crate::sem::provided_parse_selected() { "|parse=dmbc" } else { "" };
+    format!("gen-v1|{}{}", crate::cache::ENGINE_HASH, parse)
 }
 
 /// The outputs of the last converged run when nothing they depend on changed (None = run the generators).

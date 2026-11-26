@@ -193,6 +193,7 @@ impl<V: TypedVisitor> Walk<'_, V> {
                 condition,
                 then_branch,
                 else_branch,
+                ..
             } => {
                 self.root_expression(0, condition);
                 self.branch(0, then_branch, statement);

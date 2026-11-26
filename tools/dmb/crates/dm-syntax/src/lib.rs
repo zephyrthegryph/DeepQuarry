@@ -231,6 +231,8 @@ pub struct ParsedExpr {
     pub diagnostics: Vec<Diagnostic>,
 }
 
+mod literals;
+pub use literals::{decode_literal, InterpExpr, InterpPart, InterpString, Literal, LiteralError};
 mod expression_parser;
 pub use expression_parser::parse_expression;
 mod expression_continuation;

@@ -73,6 +73,15 @@ keep = 1
 age_days = 14
 mtime_file = .used
 
+[cache.analysis]
+# The dmbc daemon's analysis_results slots (tools/dmb/crates/dmbc/src/daemon/analysis_store.rs): one file per (lint store, version
+# stamp), rewritten after a hosted request that changed it, read back by a restarted daemon. Content-keyed; a lost file is a miss.
+squeeze = no
+policy = files-lru
+cap_gb = 2
+age_days = 7
+glob = *.bin
+
 [cache.cargo-targets]
 # One directory per worktree, each holding that worktree's cargo targets (<worktree>/<name>/<profile>). Whole profile directories only, never
 # a file inside one, and never a permanent worktree's (permanent_worktrees), a leased slot's or a machine-slot holder's.
