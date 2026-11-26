@@ -1,0 +1,17 @@
+{
+	"authenticated": null,
+	"rank": null,
+	"copyItem": null,
+	"cooldown": 0,
+	"destination": "Central Command-testing",
+	"scan": null,
+	"isAI": 0,
+	"isRobot": 0,
+	"adminDepartments": [
+		"Central Command-testing",
+		"Solar Central Government",
+		"Central Command Job Boards",
+		"Supply"
+	],
+	"bossName": "Central Command-testing"
+}

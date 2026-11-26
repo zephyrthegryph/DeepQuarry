@@ -1,0 +1,59 @@
+// The DQ list row (dq/ListRow.tsx): a full-width console button per choice.
+
+@use '../console';
+
+.DqListRows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+}
+
+.DqListRow {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  padding: 4px 8px;
+  font: 700 12px console.$console-font;
+  text-align: left;
+  white-space: nowrap;
+  background: console.$console-button;
+  color: console.$console-text;
+  cursor: pointer;
+
+  &:hover {
+    background: console.$console-button-hover;
+  }
+
+  &--blocked {
+    display: block;
+    background: console.$console-disabled;
+    color: console.$console-dim;
+    cursor: default;
+
+    &:hover {
+      background: console.$console-disabled;
+    }
+  }
+}
+
+.DqListRow__trailing {
+  color: console.$console-key;
+}
+
+.DqListRow__reason {
+  margin-left: 0.5em;
+  font-size: 11px;
+  text-transform: uppercase;
+
+  &::before {
+    content: '[';
+  }
+
+  &::after {
+    content: ']';
+  }
+}

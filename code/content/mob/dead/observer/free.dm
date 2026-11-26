@@ -37,7 +37,7 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 	//Their objectives cleanup
 	if(src.mind.objectives.len)
 		own_clear(src.mind, nameof(/datum/expedition_mission::objectives), OWN_DELETE)
-		src.mind.special_role = null
+		src.mind.set_special_role(null)
 
 	//Cut the PDA manifest (ugh)
 	if(GLOB.PDA_Manifest.len)
@@ -53,7 +53,7 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 			spent(G)
 
 	//This removes them from being 'active' list on join screen
-	src.mind.assigned_role = null
+	src.mind.set_assigned_role(null)
 
 	//Feedback
 	to_chat(src,span_notice("Your job has been free'd up, and you can rejoin as another character or quit. Thanks for using this verb, it helps the server!"))

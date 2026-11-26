@@ -1,0 +1,722 @@
+import { describe, expect, it } from 'bun:test';
+import {
+  COLUMN_GAP,
+  COLUMN_HEAD,
+  COLUMN_PAD,
+  DOCK_HEIGHT_MIN,
+  DOCK_SAVE_MAX,
+  type DockState,
+  dockReduce,
+  dropIndex,
+  emptyDock,
+  FILL_MIN,
+  FIT_MIN,
+  fillHeight,
+  fillIndexOf,
+  fitHeights,
+  hiddenIds,
+  parseSaved,
+  serializeSaved,
+  shownIds,
+} from './model';
+
+const win = (id: string, iface = id.toUpperCase()) => ({
+  id,
+  iface,
+  title: iface,
+});
+
+function openAll(...ids: string[]): DockState {
+  let state = emptyDock();
+  for (const id of ids) {
+    state = dockReduce(state, { type: 'open', window: win(id) });
+  }
+  return state;
+}
+
+const order = (state: DockState) => state.groups.map((g) => g.windows);
+
+describe('window dock layout', () => {
+  it('opens each window as its own list entry, in order', () => {
+    const state = openAll('a', 'b', 'c');
+    expect(order(state)).toEqual([['a'], ['b'], ['c']]);
+    expect(shownIds(state)).toEqual(['a', 'b', 'c']);
+    expect(hiddenIds(state)).toEqual([]);
+  });
+
+  it('a collapsed group hides its window (no pushes) and expanding shows it', () => {
+    let state = openAll('a', 'b');
+    const group = state.groups[0].id;
+    state = dockReduce(state, { type: 'collapse', group, collapsed: true });
+    expect(hiddenIds(state)).toEqual(['a']);
+    expect(shownIds(state)).toEqual(['b']);
+    state = dockReduce(state, { type: 'collapse', group, collapsed: false });
+    expect(hiddenIds(state)).toEqual([]);
+  });
+
+  it('closing removes the window and its emptied group', () => {
+    let state = openAll('a', 'b');
+    state = dockReduce(state, { type: 'close', id: 'a' });
+    expect(order(state)).toEqual([['b']]);
+    expect(state.windows.a).toBeUndefined();
+  });
+
+  it('reorders groups', () => {
+    let state = openAll('a', 'b', 'c');
+    state = dockReduce(state, {
+      type: 'moveGroup',
+      group: state.groups[0].id,
+      index: 3,
+    });
+    expect(order(state)).toEqual([['b'], ['c'], ['a']]);
+    state = dockReduce(state, {
+      type: 'moveGroup',
+      group: state.groups[2].id,
+      index: 0,
+    });
+    expect(order(state)).toEqual([['a'], ['b'], ['c']]);
+  });
+
+  it('stacks a window into another group as the active tab; the others hide', () => {
+    let state = openAll('a', 'b', 'c');
+    state = dockReduce(state, {
+      type: 'moveWindow',
+      id: 'c',
+      group: state.groups[0].id,
+      index: 1,
+    });
+    expect(order(state)).toEqual([['a', 'c'], ['b']]);
+    expect(state.groups[0].active).toBe('c');
+    expect(hiddenIds(state)).toEqual(['a']);
+    state = dockReduce(state, { type: 'activate', id: 'a' });
+    expect(hiddenIds(state)).toEqual(['c']);
+  });
+
+  it('reorders tabs inside a group', () => {
+    let state = openAll('a', 'b', 'c');
+    const g = state.groups[0].id;
+    state = dockReduce(state, {
+      type: 'moveWindow',
+      id: 'b',
+      group: g,
+      index: 1,
+    });
+    state = dockReduce(state, {
+      type: 'moveWindow',
+      id: 'c',
+      group: g,
+      index: 2,
+    });
+    expect(order(state)).toEqual([['a', 'b', 'c']]);
+    state = dockReduce(state, {
+      type: 'moveWindow',
+      id: 'a',
+      group: g,
+      index: 3,
+    });
+    expect(order(state)).toEqual([['b', 'c', 'a']]);
+  });
+
+  it('splits a tab out into its own entry', () => {
+    let state = openAll('a', 'b');
+    state = dockReduce(state, {
+      type: 'moveWindow',
+      id: 'b',
+      group: state.groups[0].id,
+      index: 1,
+    });
+    state = dockReduce(state, { type: 'splitWindow', id: 'a', index: 1 });
+    expect(order(state)).toEqual([['b'], ['a']]);
+    expect(hiddenIds(state)).toEqual([]);
+  });
+
+  it('closing the active tab activates its neighbour', () => {
+    let state = openAll('a', 'b');
+    state = dockReduce(state, {
+      type: 'moveWindow',
+      id: 'b',
+      group: state.groups[0].id,
+      index: 1,
+    });
+    state = dockReduce(state, { type: 'close', id: 'b' });
+    expect(state.groups[0].active).toBe('a');
+  });
+
+  it('resizes within limits', () => {
+    let state = openAll('a');
+    const group = state.groups[0].id;
+    state = dockReduce(state, { type: 'resize', group, height: 3 });
+    expect(state.groups[0].height).toBe(DOCK_HEIGHT_MIN);
+  });
+
+  it('a reopened interface goes back to its group, place and tab', () => {
+    let state = openAll('a', 'b', 'c');
+    state = dockReduce(state, {
+      type: 'moveWindow',
+      id: 'c',
+      group: state.groups[0].id,
+      index: 0,
+    });
+    state = dockReduce(state, { type: 'close', id: 'c' });
+    state = dockReduce(state, { type: 'open', window: win('z', 'C') });
+    expect(order(state)).toEqual([['z', 'a'], ['b']]);
+  });
+
+  it('keeps a window with no interface yet out of the saved layout', () => {
+    let state = emptyDock();
+    state = dockReduce(state, {
+      type: 'open',
+      window: { id: 'col-1', iface: '', title: '' },
+    });
+    state = dockReduce(state, { type: 'open', window: win('a') });
+    expect(Object.keys(state.saved)).toEqual(['A']);
+    expect(state.groups).toHaveLength(2);
+  });
+
+  it('scrubs column window ids from a loaded layout', () => {
+    const place = { dock: true, group: 'g1', order: 0, tab: 0 };
+    const text = JSON.stringify({
+      'col-1': place,
+      'col-12': place,
+      Pda: place,
+    });
+    expect(Object.keys(parseSaved(text))).toEqual(['Pda']);
+    const loaded = dockReduce(emptyDock(), {
+      type: 'load',
+      saved: { 'col-3': parseSaved(text).Pda, Pda: parseSaved(text).Pda },
+    });
+    expect(Object.keys(loaded.saved)).toEqual(['Pda']);
+  });
+
+  it('round-trips the saved layout and survives junk', () => {
+    let state = openAll('a', 'b');
+    state = dockReduce(state, {
+      type: 'collapse',
+      group: state.groups[1].id,
+      collapsed: true,
+    });
+    const text = serializeSaved(state.saved);
+    const loaded = dockReduce(emptyDock(), {
+      type: 'load',
+      saved: parseSaved(text),
+    });
+    const again = dockReduce(
+      dockReduce(loaded, { type: 'open', window: win('y', 'B') }),
+      { type: 'open', window: win('x', 'A') },
+    );
+    expect(order(again)).toEqual([['x'], ['y']]);
+    expect(again.groups[1].collapsed).toBe(true);
+    expect(parseSaved('not json')).toEqual({});
+    expect(parseSaved('{"A": 4}')).toEqual({});
+  });
+
+  it('keeps the saved text within the preference limit', () => {
+    const saved: DockState['saved'] = {};
+    for (let i = 0; i < 400; i++) {
+      saved[`Interface${i}`] = {
+        dock: i % 2 === 0,
+        group: `g${i}`,
+        order: i,
+        tab: 0,
+        collapsed: false,
+        height: 260,
+      };
+    }
+    const text = serializeSaved(saved);
+    expect(text.length).toBeLessThanOrEqual(DOCK_SAVE_MAX);
+    expect(Object.values(parseSaved(text)).every((p) => p.dock)).toBe(true);
+  });
+});
+
+describe('one layout model: list, stacks and drops', () => {
+  it('re-orders a stack’s tabs as the strip commits them', () => {
+    let s = openAll('a', 'b', 'c');
+    const into = s.groups[0].id;
+    s = dockReduce(s, { type: 'joinGroup', group: s.groups[1].id, into });
+    s = dockReduce(s, { type: 'joinGroup', group: s.groups[1].id, into });
+    expect(s.groups[0].windows).toEqual(['a', 'b', 'c']);
+    s = dockReduce(s, {
+      type: 'orderTabs',
+      group: into,
+      order: ['c', 'a', 'b'],
+    });
+    expect(s.groups[0].windows).toEqual(['c', 'a', 'b']);
+    expect(s.saved.C.tab).toBe(0);
+    const same = dockReduce(s, {
+      type: 'orderTabs',
+      group: into,
+      order: ['a'],
+    });
+    expect(same).toBe(s);
+  });
+
+  it('stacks a whole entry onto another and shows the dropped one', () => {
+    let s = openAll('a', 'b');
+    s = dockReduce(s, {
+      type: 'collapse',
+      group: s.groups[0].id,
+      collapsed: true,
+    });
+    s = dockReduce(s, {
+      type: 'joinGroup',
+      group: s.groups[1].id,
+      into: s.groups[0].id,
+    });
+    expect(s.groups).toHaveLength(1);
+    expect(s.groups[0].active).toBe('b');
+    expect(s.groups[0].collapsed).toBe(false);
+  });
+
+  it('puts a window dropped on the panel where it was dropped', () => {
+    let s = openAll('a', 'b');
+    s = dockReduce(s, { type: 'open', window: { ...win('c'), at: 1 } });
+    expect(s.groups.map((g) => g.windows[0])).toEqual(['a', 'c', 'b']);
+    expect(s.windows.c).toEqual(win('c'));
+  });
+
+  it('a drop point wins over the saved place', () => {
+    let s = openAll('a', 'b', 'c');
+    s = dockReduce(s, { type: 'close', id: 'c' });
+    s = dockReduce(s, { type: 'open', window: { ...win('c'), at: 0 } });
+    expect(s.groups[0].windows).toEqual(['c']);
+  });
+});
+
+describe('fitting the entries to the column', () => {
+  const group = (id: string, height: number, collapsed = false) => ({
+    id,
+    windows: [id],
+    active: id,
+    collapsed,
+    height,
+  });
+
+  it('keeps a sized filling entry its height; an unsized one only the least', () => {
+    expect(fillHeight(group('chat', 500))).toBe(160);
+    expect(fillHeight({ ...group('chat', 500), sized: true })).toBe(500);
+    expect(fillHeight({ ...group('chat', 90), sized: true })).toBe(160);
+  });
+
+  it('resizing any entry, the filling one included, marks it sized', () => {
+    let state = dockReduce(emptyDock(), {
+      type: 'open',
+      window: { id: 'w', iface: 'Chat', title: 'Chat' },
+    });
+    state = dockReduce(state, {
+      type: 'resize',
+      group: state.groups[0].id,
+      height: 400,
+    });
+    expect(state.groups[0].sized).toBe(true);
+    expect(state.saved.Chat.sized).toBe(true);
+  });
+
+  it('keeps the saved heights while they fit, and gets them back on a taller column', () => {
+    const groups = [group('a', 300), group('b', 200), group('chat', 260)];
+    expect(fitHeights(groups, 2, 4000)).toEqual([300, 200, 260]);
+  });
+
+  it('cuts the entries in proportion on a short column, so the chat keeps its room', () => {
+    const groups = [group('a', 300), group('b', 300), group('chat', 260)];
+    const [a, b] = fitHeights(groups, 2, 600);
+    expect(a).toBe(b);
+    // The column's padding, two gaps, the chat's header and its least room, and the two entries: all within 600.
+    expect(
+      a + b + COLUMN_PAD + 2 * COLUMN_GAP + COLUMN_HEAD + FILL_MIN,
+    ).toBeLessThanOrEqual(600);
+    expect(groups[0].height).toBe(300);
+  });
+
+  it('collapses the border between neighbouring entries: the seam is an overlap of one border width', () => {
+    expect(COLUMN_GAP).toBe(-3);
+    const groups = [group('a', 300), group('b', 300), group('chat', 260)];
+    // Two seams give two border widths back to the entries: the budget is 416, not 410.
+    const [a, b] = fitHeights(groups, 2, 600);
+    expect(a + b).toBeGreaterThan(410);
+    expect(a + b).toBeLessThanOrEqual(416);
+  });
+
+  it('never cuts an entry under its least: 25 entries on a minimal column scroll instead', () => {
+    const groups = Array.from({ length: 25 }, (_, i) => group(`g${i}`, 260));
+    const heights = fitHeights(groups, 24, 200);
+    for (const h of heights.slice(0, 24)) expect(h).toBe(FIT_MIN);
+  });
+
+  it('leaves collapsed entries alone', () => {
+    const groups = [group('a', 500, true), group('b', 900), group('chat', 260)];
+    const heights = fitHeights(groups, 2, 500);
+    expect(heights[0]).toBe(500);
+    expect(heights[1]).toBeLessThan(900);
+  });
+
+  describe('boundary drag and opening', () => {
+    const iface = (id: string, name: string, height: number) => ({
+      id,
+      iface: name,
+      title: name,
+      height,
+    });
+    /** Status 300 over APC 200 over the chat (sized 260). */
+    const column = () => {
+      let state = emptyDock();
+      state = dockReduce(state, {
+        type: 'open',
+        window: iface('s', 'StatPanel', 300),
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: iface('a', 'APC', 200),
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { id: 'c', iface: 'Chat', title: 'Chat' },
+      });
+      return state;
+    };
+    const heights = (state: DockState) => state.groups.map((g) => g.height);
+
+    const drag = (
+      state: DockState,
+      above: number,
+      below: number | null,
+      dy: number,
+    ) => {
+      const [x, y] = [
+        state.groups[above],
+        below === null ? null : state.groups[below],
+      ];
+      return dockReduce(state, {
+        type: 'boundary',
+        above: x.id,
+        below: y?.id ?? null,
+        aboveStart: x.height,
+        belowStart: y?.height ?? 0,
+        dy,
+      });
+    };
+    const changed = (a: DockState, b: DockState) =>
+      a.groups.filter((g, i) => g.height !== b.groups[i].height).length;
+
+    it('dragging the Status/APC boundary changes exactly those two, by a transfer', () => {
+      const state = column();
+      const [s, a, c] = state.groups.map((g) => g.height);
+      const next = drag(state, 0, 1, 50);
+      expect(heights(next)).toEqual([s + 50, a - 50, c]);
+      expect(changed(state, next)).toBe(2);
+    });
+
+    it('a boundary drag keeps the pair total and stops at the least height', () => {
+      const state = column();
+      const total = state.groups[0].height + state.groups[1].height;
+      expect(heights(drag(state, 0, 1, 1000)).slice(0, 2)).toEqual([
+        total - FIT_MIN,
+        FIT_MIN,
+      ]);
+      expect(heights(drag(state, 0, 1, -1000)).slice(0, 2)).toEqual([
+        FIT_MIN,
+        total - FIT_MIN,
+      ]);
+    });
+
+    it('the boundary above the chat changes only the entry over it', () => {
+      const state = column();
+      const next = drag(state, 1, 2, 40);
+      expect(heights(next)).toEqual([
+        state.groups[0].height,
+        state.groups[1].height + 40,
+        state.groups[2].height,
+      ]);
+      expect(changed(state, next)).toBe(1);
+    });
+
+    it('a chat at the top: the boundary under it changes only the entry below', () => {
+      let state = column();
+      state = dockReduce(state, {
+        type: 'moveGroup',
+        group: state.groups[2].id,
+        index: 0,
+      });
+      expect(order(state)).toEqual([['c'], ['s'], ['a']]);
+      const next = drag(state, 0, 1, 10);
+      expect(heights(next)).toEqual([
+        state.groups[0].height,
+        state.groups[1].height - 10,
+        state.groups[2].height,
+      ]);
+      // A boundary between two stored entries below the chat moves neither it nor the chat.
+      const pair = drag(state, 1, 2, 25);
+      expect(pair.groups[0].height).toBe(state.groups[0].height);
+      expect(changed(state, pair)).toBe(2);
+    });
+
+    it('moving the chat to the top keeps every height when the drawn sizes are stored', () => {
+      const state = column();
+      const measured = {
+        [state.groups[0].id]: 300,
+        [state.groups[1].id]: 220,
+        [state.groups[2].id]: 410,
+      };
+      const moved = dockReduce(state, {
+        type: 'moveGroup',
+        group: state.groups[2].id,
+        index: 0,
+        measured,
+      });
+      expect(order(moved)).toEqual([['c'], ['s'], ['a']]);
+      expect(heights(moved)).toEqual([410, 300, 220]);
+    });
+
+    it('the chat is the filling entry wherever it sits', () => {
+      let state = column();
+      state = dockReduce(state, {
+        type: 'moveGroup',
+        group: state.groups[2].id,
+        index: 0,
+      });
+      expect(fillIndexOf(state.groups, state.windows, (g) => g.collapsed)).toBe(
+        0,
+      );
+    });
+
+    it('a new entry takes its height from Status first', () => {
+      let state = dockReduce(emptyDock(), {
+        type: 'open',
+        window: iface('s', 'StatPanel', 400),
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { id: 'c', iface: 'Chat', title: 'Chat' },
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { ...iface('a', 'APC', 150), at: 1 },
+      });
+      expect(order(state)).toEqual([['s'], ['a'], ['c']]);
+      expect(heights(state).slice(0, 2)).toEqual([250, 150]);
+    });
+
+    it('takes from Status only down to its least, then from a sized chat', () => {
+      let state = dockReduce(emptyDock(), {
+        type: 'open',
+        window: iface('s', 'StatPanel', 100),
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { id: 'c', iface: 'Chat', title: 'Chat' },
+      });
+      state = dockReduce(state, {
+        type: 'resize',
+        group: state.groups[1].id,
+        height: 400,
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { ...iface('a', 'APC', 150), at: 1 },
+      });
+      // Status gives 20 (100 to 80); the chat gives the other 130 (400 to 270).
+      expect(heights(state)).toEqual([FIT_MIN, 150, 270]);
+    });
+
+    describe('a window leaving the column', () => {
+      const open = (
+        state: DockState,
+        id: string,
+        name: string,
+        height: number,
+        at: number,
+      ) =>
+        dockReduce(state, {
+          type: 'open',
+          window: { ...iface(id, name, height), at },
+        });
+      const chatFirst = () =>
+        dockReduce(emptyDock(), {
+          type: 'open',
+          window: { id: 'c', iface: 'Chat', title: 'Chat' },
+        });
+
+      it('gives its height to Status, not the chat (closed)', () => {
+        let state = dockReduce(chatFirst(), {
+          type: 'open',
+          window: { ...iface('s', 'StatPanel', 300), at: 0 },
+        });
+        state = open(state, 'a', 'APC', 150, 1);
+        const before = heights(state);
+        expect(before.slice(0, 2)).toEqual([150, 150]);
+        const next = dockReduce(state, { type: 'close', id: 'a' });
+        expect(order(next)).toEqual([['s'], ['c']]);
+        // Status is back at 300: the freed 150 went to it, and the chat (the rest of the column) is untouched.
+        expect(next.groups[0].height).toBe(300);
+      });
+
+      it('gives its height to Status when it is popped out of a stack as well (its group goes)', () => {
+        let state = dockReduce(chatFirst(), {
+          type: 'open',
+          window: { ...iface('s', 'StatPanel', 200), at: 0 },
+        });
+        state = open(state, 'a', 'APC', 120, 1);
+        state = open(state, 'b', 'Tank', 100, 2);
+        const next = dockReduce(state, { type: 'close', id: 'b' });
+        expect(next.groups.find((g) => g.windows.includes('s'))?.height).toBe(
+          state.groups[0].height + 100,
+        );
+        expect(next.groups.find((g) => g.windows.includes('a'))?.height).toBe(
+          120,
+        );
+      });
+
+      it('with no Status, goes to the entry above the freed slot, never the chat', () => {
+        let state = open(chatFirst(), 'a', 'APC', 150, 0);
+        state = open(state, 'b', 'Tank', 120, 1);
+        state = open(state, 'd', 'Cell', 90, 2);
+        expect(order(state)).toEqual([['a'], ['b'], ['d'], ['c']]);
+        const a = state.groups[0].height;
+        const b = state.groups[1].height;
+        const next = dockReduce(state, { type: 'close', id: 'd' });
+        expect(next.groups.map((g) => g.height).slice(0, 2)).toEqual([
+          a,
+          b + 90,
+        ]);
+      });
+
+      it('with no Status and nothing above, goes to the entry below it', () => {
+        let state = open(chatFirst(), 'a', 'APC', 150, 0);
+        state = open(state, 'b', 'Tank', 120, 1);
+        const b = state.groups[1].height;
+        const next = dockReduce(state, { type: 'close', id: 'a' });
+        expect(order(next)).toEqual([['b'], ['c']]);
+        expect(next.groups[0].height).toBe(b + 150);
+      });
+
+      it('leaves the chat as it is: closing the only other window gives it nothing to store', () => {
+        const state = open(chatFirst(), 'a', 'APC', 150, 0);
+        const next = dockReduce(state, { type: 'close', id: 'a' });
+        expect(order(next)).toEqual([['c']]);
+        expect(next.groups[0].height).toBe(state.groups[1].height);
+      });
+
+      it('a collapsed entry frees only its header: nothing is handed on', () => {
+        let state = dockReduce(chatFirst(), {
+          type: 'open',
+          window: { ...iface('s', 'StatPanel', 300), at: 0 },
+        });
+        state = open(state, 'a', 'APC', 150, 1);
+        state = dockReduce(state, {
+          type: 'collapse',
+          group: state.groups[1].id,
+          collapsed: true,
+        });
+        const s = state.groups[0].height;
+        const next = dockReduce(state, { type: 'close', id: 'a' });
+        expect(next.groups[0].height).toBe(s);
+      });
+
+      it('the chat leaving gives nothing away', () => {
+        let state = dockReduce(emptyDock(), {
+          type: 'open',
+          window: iface('s', 'StatPanel', 300),
+        });
+        state = dockReduce(state, {
+          type: 'open',
+          window: { id: 'c', iface: 'Chat', title: 'Chat' },
+        });
+        const next = dockReduce(state, { type: 'close', id: 'c' });
+        expect(next.groups[0].height).toBe(300);
+      });
+    });
+
+    it('a window that left and docks again takes back what it handed on, so the round trip restores every height', () => {
+      const state = column();
+      const before = heights(state);
+      let next = dockReduce(state, { type: 'close', id: 'a' });
+      // Status took the 200 while it was away.
+      expect(heights(next)[0]).toBe(before[0] + before[1]);
+      next = dockReduce(next, {
+        type: 'open',
+        window: { id: 'a', iface: 'APC', title: 'APC' },
+      });
+      expect(heights(next)).toEqual(before);
+    });
+
+    it("docks again at its own saved inline height, not the popped-out window's", () => {
+      const state = column();
+      let next = dockReduce(state, { type: 'close', id: 'a' });
+      // The native window had been resized to 700 while popped out; docking passes that height along.
+      next = dockReduce(next, {
+        type: 'open',
+        window: { id: 'a', iface: 'APC', title: 'APC', height: 700 },
+      });
+      expect(next.groups[1].height).toBe(state.groups[1].height);
+    });
+
+    it('with no Status the space it handed on is taken back from the same entry', () => {
+      let state = dockReduce(emptyDock(), {
+        type: 'open',
+        window: { id: 'c', iface: 'Chat', title: 'Chat' },
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { ...iface('b', 'Tank', 120), at: 0 },
+      });
+      state = dockReduce(state, {
+        type: 'open',
+        window: { ...iface('a', 'APC', 150), at: 1 },
+      });
+      const before = heights(state);
+      let next = dockReduce(state, { type: 'close', id: 'a' });
+      expect(next.groups[0].height).toBe(before[0] + before[1]);
+      next = dockReduce(next, {
+        type: 'open',
+        window: { id: 'a', iface: 'APC', title: 'APC' },
+      });
+      expect(heights(next)).toEqual(before);
+    });
+
+    it('what it handed on survives the saved text', () => {
+      const state = column();
+      const next = dockReduce(state, { type: 'close', id: 'a' });
+      const back = parseSaved(serializeSaved(next.saved));
+      expect(back.APC.gave).toBe(state.groups[1].height);
+      expect(back.APC.gaveTo).toBe('StatPanel');
+    });
+  });
+
+  describe('reordering', () => {
+    const boxes = [
+      { id: 'a', start: 0, size: 100 },
+      { id: 'b', start: 97, size: 100 },
+      { id: 'chat', start: 194, size: 500 },
+    ];
+
+    it('the tall chat dragged to the top of the page lands in slot 0', () => {
+      // The page clamps the drag at the top: the chat's top edge is at 0.
+      expect(dropIndex(boxes, 'chat', -194)).toBe(0);
+    });
+
+    it('the chat lands in slot 1 only between the first and second middles', () => {
+      expect(dropIndex(boxes, 'chat', -100)).toBe(1);
+      expect(dropIndex(boxes, 'chat', -145)).toBe(0);
+      expect(dropIndex(boxes, 'chat', 0)).toBe(2);
+    });
+
+    it('an entry dragged down lands by its bottom edge', () => {
+      expect(dropIndex(boxes, 'a', 10)).toBe(0);
+      expect(dropIndex(boxes, 'a', 60)).toBe(1);
+      expect(dropIndex(boxes, 'a', 400)).toBe(2);
+      expect(dropIndex(boxes, 'zzz', 0)).toBe(-1);
+    });
+
+    it('moving an entry keeps every group and window id (so the page keeps each entry mounted)', () => {
+      const state = openAll('a', 'b', 'c');
+      const ids = state.groups.map((g) => g.id);
+      const moved = dockReduce(state, {
+        type: 'moveGroup',
+        group: state.groups[2].id,
+        index: 0,
+      });
+      expect(moved.groups.map((g) => g.id)).toEqual([ids[2], ids[0], ids[1]]);
+      expect(order(moved)).toEqual([['c'], ['a'], ['b']]);
+      expect(Object.keys(moved.windows).sort()).toEqual(['a', 'b', 'c']);
+    });
+  });
+});

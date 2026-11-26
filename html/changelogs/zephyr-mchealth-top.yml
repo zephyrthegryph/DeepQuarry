@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The MC Health tab now shows the recent ticks graph at the very top, above the UI FPS line."

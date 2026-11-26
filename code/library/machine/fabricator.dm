@@ -152,7 +152,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 	var/charge = 0
 	for(var/datum/material/mat as anything in run.needed)
 		charge += run.needed[mat]
-	run.charge = ROUND_UP((charge / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * run.coefficient * power_of(M).active)
+	run.charge = ROUND_UP((charge / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * run.coefficient * M.active_power_draw())
 	var/obj/item/card/id/card = A.actor?.GetIdCard()
 	run.producer_account = card?.associated_account_number || 0
 	run.department = department || department_for_mob(A.actor) || DEPARTMENT_ENGINEERING
@@ -207,9 +207,6 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 /proc/fabricator_print_one(obj/machinery/M, datum/fab_run/run)
 	if(!M.operable())
 		return "Unable to continue production, power failure."
-	if(!M.use_power_oneoff(run.charge))
-		var/area/A = get_area(M)
-		return QDELETED(A?.apc) ? "Unable to continue production, no APC in area." : "Unable to continue production, power grid overload."
 	var/datum/material_container/C = fabricator_store(M, run.materials)
 	var/datum/remote_materials/R = M.vars[run.materials]
 	if(istype(R) && !R.can_use_resource())
@@ -219,6 +216,10 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 	var/count = is_stack ? run.remaining : 1
 	if(!C || !C.has_materials(run.needed, run.coefficient, count))
 		return "Unable to continue production, missing materials."
+	// power is paid only for what is going to be made, the whole run of a stack design at once
+	if(!M.use_power_oneoff(run.charge * count))
+		var/area/A = get_area(M)
+		return QDELETED(A?.apc) ? "Unable to continue production, no APC in area." : "Unable to continue production, power grid overload."
 	if(istype(R))
 		R.use_materials(run.needed, run.coefficient, count, "built", "[D.name]")
 	else
@@ -338,7 +339,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 
 /// The power one take-out of `amount` sheets costs: 40% of the base power per full stack, as an insertion does.
 /datum/capability/lib/fabricator/proc/eject_power_cost(obj/machinery/M, amount)
-	return ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * power_of_type(M.type).active)
+	return ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * active_power_draw_of_type(M.type))
 
 /// Sheets of the material come out onto the machine's tile.
 /datum/capability/lib/fabricator/proc/sheets_ejected(datum/act/op/A, id, amount)
@@ -378,6 +379,8 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 		. += span_notice("Alt-click to reset.")
 
 // ---- the window ----
+
+UI_SCHEMA(fabricator_design, row(name = schema_text(), desc = schema_text(), cost = map_of(schema_text(), num()), id = schema_text(), categories = list_of(schema_text()), icon = schema_text(), materialConfigurable = bool(), materialProfile = nullable(schema_text()), materialSlots = list_of(row(role = schema_text(), label = schema_text(), amount = num(), defaultMaterial = nullable(schema_text()), optional = bool(), description = nullable(schema_text())))))
 
 /// The window row of one design: name, text, cost at `coefficient`, categories, icon and its material slots.
 /proc/fabricator_design_row(datum/design_techweb/D, coefficient)

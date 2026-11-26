@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -11,17 +12,14 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type {
+  CasinoPrizeDispenserActions,
+  CasinoPrizeDispenserData,
+} from './generated/CasinoPrizeDispenser';
 
-type Data = {
-  items: Record<string, Sortable[]>;
-};
+type Data = CasinoPrizeDispenserData;
 
-type Sortable = {
-  name: string;
-  affordable: number;
-  price: number;
-  restriction: string;
-};
+type Sortable = Data['items'][string][string];
 
 const sortTypes = {
   Alphabetical: (a: Sortable, b: Sortable) => a.name.localeCompare(b.name),
@@ -100,8 +98,8 @@ const CasinoPrizeDispenserItems = (props: {
   sortOrder: string;
   descending: boolean;
 }) => {
-  const { act, data } = useBackend<Data>();
-  const { items } = data;
+  const { act, data } = useBackend<Data, CasinoPrizeDispenserActions>();
+  const { items = {} } = data;
   // Search thingies
   const searcher = createSearch<[string, Sortable]>(
     props.searchText,
@@ -140,7 +138,7 @@ const CasinoPrizeDispenserItems = (props: {
         {has_contents ? (
           contents
         ) : (
-          <Box color="label">No items matching your criteria was found!</Box>
+          <Label>No items matching your criteria was found!</Label>
         )}
       </Section>
     </Stack.Item>
@@ -152,7 +150,7 @@ const CasinoPrizeDispenserItemsCategory = (props: {
   title: string;
   items: Sortable[];
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, CasinoPrizeDispenserActions>();
   const { title, items, ...rest } = props;
   return (
     <Collapsible open title={title} {...rest}>

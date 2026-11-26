@@ -77,3 +77,21 @@
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(E.ticks, 3, "a client that never answers releases the waiter at the timeout")
 	qdel(session)
+
+/// The verify pages share one browser window, so a page sent before the last loaded replaces it and that job's ack never comes; the ack of a later job
+/// proves every earlier resource arrived, so it releases every earlier waiter too (a burst of glow shape deliveries timed out otherwise).
+/datum/unit_test/engine/client_session_later_ack_releases_earlier_waiters
+/datum/unit_test/engine/client_session_later_ack_releases_earlier_waiters/run_engine(list/made)
+	var/datum/engine_test_entity/E = entity(made)
+	var/datum/client_session/session = new(null)
+	var/first = session.flush_assets(E, TYPE_PROC_REF(/datum/engine_test_entity, asset_cb), 1)
+	session.flush_assets(E, TYPE_PROC_REF(/datum/engine_test_entity, asset_cb), 10)
+	var/last = session.flush_assets(E, TYPE_PROC_REF(/datum/engine_test_entity, asset_cb), 100)
+	TEST_ASSERT_EQUAL(E.ticks, 0, "nothing runs before an ack")
+	TEST_ASSERT_NULL(session.confirm_asset_arrival("[last]"), "the last job's ack is consumed")
+	TEST_ASSERT_EQUAL(E.ticks, 111, "its ack released the earlier waiters as well, each once")
+	TEST_ASSERT_EQUAL(LAZYLEN(session.asset_waiters), 0, "no waiter is left to time out")
+	scheduler_advance(6)
+	TEST_ASSERT_EQUAL(E.ticks, 111, "no timeout runs a waiter a second time")
+	TEST_ASSERT(first < last, "jobs are numbered in the order they were sent")
+	qdel(session)

@@ -1,11 +1,3 @@
-export type Data = {
-  species_with_whitelist: string[];
-  language_with_whitelist: string[];
-  robot_with_whitelist: string[];
-  jobs_with_whitelist: string[];
+import type { WhitelistEditData } from '../generated/WhitelistEdit';
 
-  alienwhitelist: Record<string, string[] | null>;
-  languagewhitelist: Record<string, string[] | null>;
-  robotwhitelist: Record<string, string[] | null>;
-  jobwhitelist: Record<string, string[] | null>;
-};
+export type Data = WhitelistEditData;

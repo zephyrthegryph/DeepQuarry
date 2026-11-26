@@ -14,9 +14,9 @@
 //! (the head line itself is exempt), and a verb macro's from its own line through the indented or
 //! blank lines under it.
 
-use crate::raw_fixture_policy::PatternApi as _;
 use std::collections::HashSet;
 
+use crate::dm::dx::procs_in;
 use crate::dm::sys::{register_module, SysModule};
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
@@ -24,22 +24,24 @@ use crate::pat_match;
 use crate::tree::SourceFile;
 use crate::util::{py_lstrip, py_strip};
 
-use crate::allow_registry_fields::sys_usr_use::RULES;
+const RULES: &[RuleMeta] = &[RuleMeta {
+    name: "usr_outside_verb",
+    hint: "take the acting mob as a `user` argument (or use `src`); `usr` is only meaningful at the top of a verb (AGENTS.md 3a)",
+}];
 
 /// `verb_lines`: the set of 1-based line numbers that belong to a verb's body (or a verb macro's).
-fn verb_lines_using(f:&SourceFile,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<HashSet<usize>,String>{
-    fixture.check()?;
-    let set_stmt = fixture.pattern(r"^\s*set\s+(?:name|category|src|desc|hidden|popup_menu|instant)\b",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"^\s*set\s+(?:name|category|src|desc|hidden|popup_menu|instant)\b"));
-    let verb_macro = fixture.pattern(r"^(?:ADMIN_VERB\w*|DECLARE_\w*VERB\w*)\(",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"^(?:ADMIN_VERB\w*|DECLARE_\w*VERB\w*)\("));
+fn verb_lines(f: &SourceFile) -> HashSet<usize> {
+    let set_stmt = pat_match!(r"^\s*set\s+(?:name|category|src|desc|hidden|popup_menu|instant)\b");
+    let verb_macro = pat_match!(r"^(?:ADMIN_VERB\w*|DECLARE_\w*VERB\w*)\(");
     let clean = f.clean();
     let mut out = HashSet::new();
-    for proc in fixture.procs(f)? {
+    for proc in procs_in(f) {
         let end = proc.body_start + proc.body_len - 1;
         let head = clean.line(proc.line);
         let verb = head.split('(').next().unwrap_or("").contains("/verb/")
             || (0..proc.body_len).any(|k| set_stmt.is_match(clean.line(proc.body_start + k)));
         if verb {
-            for line in proc.line..=end{fixture.set_insert(&mut out,line)?;}
+            out.extend(proc.line..=end);
         }
     }
     // A macro-defined verb: `ADMIN_VERB(` at column 0 and the indented body under it.
@@ -51,32 +53,29 @@ fn verb_lines_using(f:&SourceFile,fixture:&crate::raw_fixture_policy::Fixture<'_
             while j < n && (py_strip(clean.line(j + 1)).is_empty() || clean.line(j + 1).starts_with([' ', '\t'])) {
                 j += 1;
             }
-            for line in i+1..=j{fixture.set_insert(&mut out,line)?;}
+            out.extend(i + 1..=j);
             i = j;
             continue;
         }
         i += 1;
     }
-    Ok(out)
+    out
 }
 
 /// `scan_lines`: `usr` in sanitized code, not on a preprocessor line and not in a verb.
-fn scan_lines(f:&SourceFile,out:&mut Vec<(&'static str,usize)>){scan_lines_using(f,out,&crate::raw_fixture_policy::Fixture::legacy()).expect("legacy scanner has no admission refusal")}
-fn scan_lines_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),String>{
-    fixture.check()?;
-    let usr=fixture.pattern(r"(?<![\w.])usr(?!\w)",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w.])usr(?!\w)"));
+fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
+    let usr: &Pat = crate::pat!(r"(?<![\w.])usr(?!\w)");
     let hits: Vec<usize> =
-        fixture.collect(f.clean().numbered().filter(|(_, code)| usr.is_match(code) && !py_lstrip(code).starts_with('#')).map(|(n, _)| n))?;
+        f.clean().numbered().filter(|(_, code)| usr.is_match(code) && !py_lstrip(code).starts_with('#')).map(|(n, _)| n).collect();
     if hits.is_empty() {
-        return Ok(());
+        return;
     }
-    let verb = verb_lines_using(f,fixture)?;
+    let verb = verb_lines(f);
     for n in hits {
         if !verb.contains(&n) {
-            fixture.push(out,("usr_outside_verb", n))?;
+            out.push(("usr_outside_verb", n));
         }
     }
-    Ok(())
 }
 
 fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
@@ -87,11 +86,7 @@ fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
 }
 
 fn selftest() -> Result<String, String> {
-    selftest_with_fixture(&crate::raw_fixture_policy::Fixture::legacy())
-}
-
-fn selftest_with_fixture(fixture: &crate::raw_fixture_policy::Fixture<'_>) -> Result<String, String> {
-    let fixture_lines = [
+    let fixture = [
         "/mob/proc/plain()",                             // 1
         "\tvar/mob/M = usr",                             // 2 bad
         "\tto_chat(usr, \"the usr word in text\")",      // 3 bad (the call), not the text
@@ -110,19 +105,19 @@ fn selftest_with_fixture(fixture: &crate::raw_fixture_policy::Fixture<'_>) -> Re
         "\t// usr is mentioned in a comment",            // 16 ok: a comment
         "\tvar/x = src.usr_count",                       // 17 ok: another identifier
     ];
-    let f = fixture.file("x.dm", &fixture.join(&fixture_lines,"\n")?)?;
+    let f = SourceFile::from_text("x.dm", &fixture.join("\n"));
     let mut v = Vec::new();
-    scan_lines_using(&f,&mut v,fixture)?;
-    let got: Vec<usize> = fixture.collect(v.into_iter().map(|(_, n)| n))?;
-    if got != [2, 3, 14] {
-        return Err(fixture.detail(format_args!("usr_use selftest: got {:?}", got))?);
+    scan_lines(&f, &mut v);
+    let got: Vec<usize> = v.into_iter().map(|(_, n)| n).collect();
+    if got != vec![2, 3, 14] {
+        return Err(format!("usr_use selftest: got {:?}", got));
     }
-    Ok(fixture.own("usr_use")?)
+    Ok("usr_use".to_string())
 }
 
 pub fn register(reg: &mut Registry) {
     register_module(
         reg,
-        SysModule { name: crate::allow_registry_fields::sys_usr_use::SCOPE_MODULE_NAME, rules: RULES, file_scan: Some(scan_file), fixture_file_scan:Some(scan_lines_using), selftest: Some(selftest), fixture_selftest: Some(selftest_with_fixture), py_selftest: true, ..SysModule::DEFAULT },
+        SysModule { name: "usr_use", rules: RULES, file_scan: Some(scan_file), selftest: Some(selftest), py_selftest: true, ..SysModule::DEFAULT },
     );
 }

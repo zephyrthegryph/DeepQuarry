@@ -228,7 +228,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 			antag_data.add_antagonist(new_character.mind)
 			antag_data.place_mob(new_character)
 		new_character.mind.loaded_from_ckey = picked_ckey
-		new_character.mind.loaded_from_slot = picked_slot
+		new_character.mind.set_loaded_from_slot(picked_slot)
 		if(new_character.mind.antag_holder)
 			new_character.mind.antag_holder.apply_antags(new_character)
 
@@ -282,9 +282,9 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 		if(!prey.mind) //No mind yet, aka haven't played in this round.
 			rel_set(prey, nameof(prey.mind), new /datum/mind(prey.key))
 
-		prey.mind.name = prey.name
+		prey.mind.set_name(prey.name)
 		rel_set(prey.mind, nameof(/datum/forms::current), prey)
-		prey.mind.active = TRUE
+		prey.mind.set_active(TRUE)
 
 		soulgem.catch_mob(prey) //This will result in the prey being deleted so...
 
@@ -320,9 +320,9 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 		if(!prey.mind) //No mind yet, aka haven't played in this round.
 			rel_set(prey, nameof(prey.mind), new /datum/mind(prey.key))
 
-		prey.mind.name = prey.name
+		prey.mind.set_name(prey.name)
 		rel_set(prey.mind, nameof(/datum/forms::current), prey)
-		prey.mind.active = TRUE
+		prey.mind.set_active(TRUE)
 
 		SC.catch_mob(prey) //This will result in the prey being deleted so...
 

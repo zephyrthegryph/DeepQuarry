@@ -7,33 +7,24 @@ use std::fmt;
 
 mod portable_answer;
 mod portable_meaning;
-pub use portable_answer::PortableResolvedAnswer;
 pub use portable_meaning::{Names as PortableNames, PortableMeaning};
+pub use portable_answer::PortableResolvedAnswer;
+mod warnings;
 pub mod builtin_names;
 pub mod header_compat;
-mod warnings;
 pub use warnings::WarningCode;
 
 mod packed_u128;
 pub use packed_u128::PackedU128;
-mod compact_spellings;
-pub use compact_spellings::CompactSpellingSource;
 mod symbols;
-pub use symbols::{LocalSymbolStorage, SymbolCollision, SymbolId, SymbolTable, SymbolTableStorage};
+pub use symbols::{SymbolCollision, SymbolId, SymbolTable, SymbolTableStorage};
 mod string_roster;
 pub use string_roster::{StringPayload, StringRoster, StringRosterError};
 
-/// Native proc/verb declaration modifier in the existing DeclarationMeaning.flags slot.
-/// Other member kinds retain their existing contextual flag masks.
-pub const PROC_FLAG_FINAL:u32=1<<16;
-mod canonical_bytes;
-pub use canonical_bytes::{CanonicalBytes, CanonicalBytesPlan, CANONICAL_HEADER_PREFIX};
-mod canonical_encoding;
-pub use canonical_encoding::{CanonicalByteSink, CanonicalWork};
 mod declarations;
 pub use declarations::{
-    ArrayDeclaration, DeclarationFieldMeaning, DeclarationMeaning, DeclaredTypeKnowledge, ExpressionToken, FieldTypeIds, OpaqueFieldBase,
-    Parameter, ParameterTail, ProcedureMetadata, ProcedureSetting, ProcedureSettingNode, ProcedureSignature,
+    ArrayDeclaration, DeclarationMeaning, DeclaredTypeKnowledge, ExpressionToken, OpaqueFieldBase,
+    Parameter, ProcedureMetadata, ProcedureSetting, ProcedureSettingNode, ProcedureSignature,
     SemanticValue, SettingOperation, SymbolicExpression,
 };
 mod initializer;
@@ -56,12 +47,10 @@ pub mod predefined_resolution;
 pub mod receiver_resolution;
 pub mod reference_resolution;
 pub use canonical_answer::CanonicalResolvedAnswer;
-pub mod hierarchy_canonical;
 mod resolver;
 mod selected_references;
 pub use resolver::{
-    procedure_value_query, HierarchyQuestion, ProcedureDefinition, ReadDomain, ResolveQuery,
-    ResolvedMeaning, Resolver,
+    procedure_value_query, ProcedureDefinition, ReadDomain, ResolveQuery, ResolvedMeaning, Resolver,
 };
 pub use selected_references::{
     SelectedBuiltin, SelectedMeaning, SelectedReference, SelectedReferences,
@@ -596,5 +585,3 @@ mod tests {
         }));
     }
 }
-
-mod symbolic_type_path;

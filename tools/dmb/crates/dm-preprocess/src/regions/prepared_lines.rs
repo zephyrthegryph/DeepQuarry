@@ -82,13 +82,6 @@ impl LineStorage {
             None => Self::Compact(compact.into()),
         }
     }
-    pub(super) fn storage_is_unaliased(&self) -> bool {
-        match self {
-            Self::Compact(lines) => Arc::weak_count(lines) == 0 && Arc::strong_count(lines) == 1,
-            Self::Wide(lines) => Arc::weak_count(lines) == 0 && Arc::strong_count(lines) == 1,
-        }
-    }
-
     pub(super) fn view(&self) -> PreparedLines<'_> {
         let len = match self {
             Self::Compact(lines) => lines.len(),

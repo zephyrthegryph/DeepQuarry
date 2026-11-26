@@ -30,10 +30,15 @@ CAPABILITIES(/obj/machinery/computer/supplycomp/control)
 
 CAPABILITIES(/obj/machinery/computer/supplycomp)
 	interface("SupplyConsole")
+	ui_shape(shuttle_auth = bool(), order_auth = bool(), shuttle = any, supply_points = num(), personal_balance = num(), can_personal_order = bool(), orders = list_of(row()), receipts = list_of(row()), contraband = bool(), market_auth = bool(), market = any, modal = any, supply_packs = list_of(row()), categories = list_of(schema_text()))
 	// Opening the window takes the console's access; its buttons take the supply system being up.
 	extend("ui_open", needs(req(PROC_REF(lets_in))))
 	extend(TAG_UI, needs(req(PROC_REF(supply_ready), silent = TRUE)))
 	op("market_request", ui_act("market_request", arg("id", schema_text(128)), arg("contract", bool(), optional = TRUE), arg("personal", bool(), optional = TRUE)), needs(req(PROC_REF(market_request_ok))), asks(/datum/prompt/text, fields = list("question" = "Procurement justification", "title" = "Why should the station purchase this market listing?", "default" = "External market procurement", "timeout" = 0), step = "reason"), then(PROC_REF(ui_act_market_request)))
+	op("special_order", ui_act("special_order", arg("ship", schema_text(128)), arg("pack", schema_text(256)), arg("personal", bool(), optional = TRUE)), needs(req(PROC_REF(special_order_ok))), asks(/datum/prompt/text, fields = list("question" = "Procurement justification", "title" = "Why should this be shipped in?", "default" = "Special order from a visiting trade ship", "timeout" = 0), step = "reason"), then(PROC_REF(ui_act_special_order)), logs(LOG_GAME))
+	op("trade_appraise", ui_act("trade_appraise", arg("crate", schema_text(4096))), needs(req(PROC_REF(trade_haggle_ok))), then(PROC_REF(ui_act_trade_appraise)))
+	op("trade_offer", ui_act("trade_offer", arg("ship", schema_text(128)), arg("crate", schema_text(4096))), needs(req(PROC_REF(trade_haggle_ok)), req(PROC_REF(trade_ship_docked))), asks(/datum/prompt/number, fields = list("question" = "Your asking price in Thalers", "title" = "Make an offer", "min_value" = 1, "max_value" = 1000000, "timeout" = 0), step = "ask"), then(PROC_REF(ui_act_trade_offer)), logs(LOG_GAME))
+	op("trade_accept", ui_act("trade_accept", arg("ship", schema_text(128)), arg("offer", schema_text(128))), needs(req(PROC_REF(trade_haggle_ok)), req(PROC_REF(trade_ship_docked))), then(PROC_REF(ui_act_trade_accept)), logs(LOG_GAME))
 	op("market_route", ui_act("market_route", arg("bid", schema_text(128)), arg("crate", schema_text(4096))), needs(req(PROC_REF(market_route_ok))), then(PROC_REF(ui_act_market_route)), logs(LOG_GAME))
 	op("view_crate", ui_act("view_crate", arg("crate", schema_text(4096))), needs(req(PROC_REF(crate_listed))), then(PROC_REF(ui_act_view_crate)))
 	op("request_crate", ui_act("request_crate", arg("ref", schema_text(4096)), arg("personal", bool(), optional = TRUE)), needs(req(PROC_REF(pack_orderable))), asks(/datum/prompt/text, fields = list("question" = "Reason:", "title" = "Why do you require this item?", "timeout" = 0), step = "reason"), then(PROC_REF(ui_act_request_crate)))
@@ -213,7 +218,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	data["modal"] = tgui_modal_data(src)
 	return data
 
-/obj/machinery/computer/supplycomp/tgui_static_data(mob/user)
+/obj/machinery/computer/supplycomp/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	var/list/pack_list = list()
@@ -238,6 +243,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 MSG_DEF_SELF(supply/offline, "The supply system is offline.")
 MSG_DEF_SELF(supply/no_market_listing, "That listing is gone.")
 MSG_DEF_SELF(supply/no_market_trade, "This console can't trade on the market for you.")
+MSG_DEF_SELF(supply/no_trade_ship, "That trade ship has left.")
 MSG_DEF_SELF(supply/no_route, "You can't route crates to that buyer.")
 MSG_DEF_SELF(supply/no_crate, "That crate is gone.")
 MSG_DEF_SELF(supply/pack_unavailable, "That pack isn't available from this console.")
@@ -296,6 +302,97 @@ GLOBAL_LIST_INIT(supply_export_title_fields, list("Name", "Value"))
 		to_chat(user, span_warning("The market listing is no longer available."))
 		return FALSE
 	to_chat(user, span_notice("The quoted market order was submitted[contract ? " against the contract allowance" : (personal ? " with personal funding" : " for departmental approval")]."))
+	return TRUE
+
+/// The docked ship and the special-order pack a button names, if the ship still takes that order.
+/obj/machinery/computer/supplycomp/proc/special_order_target(datum/act/op/A)
+	var/datum/trade_ship_visit/visit = SSsupply.trade_ship(ui_text(A.arg("ship"), 128))
+	if(!visit)
+		return null
+	var/datum/supply_pack/pack = SSsupply.catalog_pack_named(ui_text(A.arg("pack"), 256))
+	if(!(pack in SSsupply.trade_ship_special_packs(visit)))
+		return null
+	return list(visit, pack)
+
+/// req: the ship is docked and this console may spend the way the button asked (the pack is checked when the order is placed).
+/obj/machinery/computer/supplycomp/proc/special_order_ok(datum/act/op/A)
+	. = trade_ship_docked(A)
+	if(.)
+		return
+	if(!A.arg("personal") && !can_trade_market(A.actor))
+		return MSG(supply/no_market_trade)
+	return null
+
+/obj/machinery/computer/supplycomp/proc/ui_act_special_order(datum/act/op/A, ship, pack, personal)
+	var/mob/user = A.actor
+	supply_touched(A)
+	var/list/target = special_order_target(A)
+	var/reason = A.step_value("reason")
+	if(!target)
+		to_chat(user, span_warning("That ship will not ship that in."))
+		return FALSE
+	if(!reason)
+		return FALSE
+	var/datum/trade_ship_visit/visit = target[1]
+	var/datum/supply_pack/ordered = target[2]
+	if(!SSsupply.request_special_order(visit, ordered, user, reason, !!personal, contraband_ok()))
+		to_chat(user, span_warning("[visit.name] could not take that order."))
+		return FALSE
+	to_chat(user, span_notice("[visit.name] will ship in [ordered.name][personal ? ", paid from your account" : "; the order awaits departmental approval"]."))
+	return TRUE
+
+// ---- haggling with trade ships ----
+
+/// req: this console may sell the station's freight for the person, and the crate named is still there.
+/obj/machinery/computer/supplycomp/proc/trade_haggle_ok(datum/act/op/A)
+	if(!can_trade_market(A.actor))
+		return MSG(supply/no_market_trade)
+	if(!isnull(A.arg("crate")) && !ui_token(A.arg("crate"), null, /obj/structure/closet/crate))
+		return MSG(supply/no_crate)
+	return null
+
+/// req: the ship named is docked and this console may deal with it (a black-market ship needs an unlocked console or the faction's access).
+/obj/machinery/computer/supplycomp/proc/trade_ship_docked(datum/act/op/A)
+	var/datum/trade_ship_visit/visit = SSsupply.trade_ship(ui_text(A.arg("ship"), 128))
+	if(!visit || !SSsupply.trade_ship_access(visit, A.actor, contraband_ok()))
+		return MSG(supply/no_trade_ship)
+	return null
+
+/obj/machinery/computer/supplycomp/proc/ui_act_trade_appraise(datum/act/op/A, crate)
+	var/mob/user = A.actor
+	supply_touched(A)
+	var/obj/structure/closet/crate/appraised = ui_token(crate, null, /obj/structure/closet/crate)
+	var/estimate = SSsupply.appraise_trade_crate(appraised, user)
+	if(isnull(estimate))
+		to_chat(user, span_warning("Only crates aboard the supply shuttle can be appraised for a trade ship."))
+		return FALSE
+	to_chat(user, span_notice("You reckon the lot in [appraised] ([length(appraised.contents)] things together) is worth about [estimate] Thalers, give or take [round(appraised.trade_appraisal_spread * 100)]%."))
+	return TRUE
+
+/obj/machinery/computer/supplycomp/proc/ui_act_trade_offer(datum/act/op/A, ship, crate)
+	var/mob/user = A.actor
+	supply_touched(A)
+	var/datum/trade_ship_visit/visit = SSsupply.trade_ship(ui_text(ship, 128))
+	var/obj/structure/closet/crate/offered = ui_token(crate, null, /obj/structure/closet/crate)
+	var/ask = A.step_value("ask")
+	if(!visit || !offered || !isnum(ask))
+		return FALSE
+	var/datum/trade_offer/offer = SSsupply.make_trade_offer(visit, offered, ask, user, contraband_ok())
+	if(!offer)
+		to_chat(user, span_warning("[visit.name] can't take an offer for that crate."))
+		return FALSE
+	to_chat(user, span_notice("[visit.name]: [offer.last_reply]"))
+	return TRUE
+
+/obj/machinery/computer/supplycomp/proc/ui_act_trade_accept(datum/act/op/A, ship, offer)
+	var/mob/user = A.actor
+	supply_touched(A)
+	var/datum/trade_ship_visit/visit = SSsupply.trade_ship(ui_text(ship, 128))
+	var/datum/trade_offer/countered = SSsupply.trade_offer(visit, ui_text(offer, 128))
+	if(!SSsupply.accept_trade_counter(visit, countered, user, contraband_ok()))
+		to_chat(user, span_warning("That counteroffer no longer stands."))
+		return FALSE
+	to_chat(user, span_notice("[visit.name] bought [countered.crate_name] for [countered.settled_price] Thalers."))
 	return TRUE
 
 /// req: the bid's buyer may be routed to by this console or this person, and the crate named is still there.

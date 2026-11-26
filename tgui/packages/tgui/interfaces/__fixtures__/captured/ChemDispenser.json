@@ -1,0 +1,11 @@
+{
+	"amount": 30,
+	"glass": 0,
+	"recordingRecipe": null,
+	"isBeakerLoaded": 0,
+	"beakerContents": [],
+	"beakerCurrentVolume": null,
+	"beakerMaxVolume": null,
+	"chemicals": [],
+	"recipes": []
+}

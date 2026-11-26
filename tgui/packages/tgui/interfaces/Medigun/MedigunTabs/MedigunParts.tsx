@@ -1,13 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import type { ExamineData } from '../types';
+import type { MedigunActions } from '../../generated/Medigun';
+import type { Data, ExamineData } from '../types';
 
 export const MedigunParts = (props: {
   examineData: ExamineData;
   maintenance: BooleanLike;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, MedigunActions>();
   const { examineData, maintenance } = props;
   const { smodule, smanipulator, slaser, scapacitor, sbin } = examineData;
 

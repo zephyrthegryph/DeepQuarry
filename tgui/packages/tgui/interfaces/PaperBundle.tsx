@@ -6,23 +6,19 @@
 // only show the photo name.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type {
+  PaperBundleActions,
+  PaperBundleData,
+} from './generated/PaperBundle';
 
-type Kind = 'paper' | 'photo';
-
-type Data = {
-  page: number;
-  total_pages: number;
-  page_name: string;
-  page_kind: Kind;
-  page_info: string;
-  scribble: string;
-};
+type Data = PaperBundleData;
 
 export const PaperBundle = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PaperBundleActions>();
   const { page, total_pages, page_name, page_kind, page_info, scribble } = data;
   const isFirst = page === 1;
   const isLast = page === total_pages;
@@ -41,9 +37,9 @@ export const PaperBundle = () => {
             <Button icon="arrow-right" onClick={() => act('next_page')}>
               {isLast ? 'Back' : 'Next Page'}
             </Button>
-            <Box inline color="label" ml={2}>
+            <Label inline ml={2}>
               Page {page} of {total_pages}
-            </Box>
+            </Label>
           </Box>
         </Section>
         <Section title={page_name}>
@@ -51,9 +47,9 @@ export const PaperBundle = () => {
             <HtmlRenderer html={page_info} />
           ) : (
             <>
-              <Box italic color="label" mb={1}>
+              <Label italic mb={1}>
                 Photo: {page_name}
-              </Box>
+              </Label>
               {scribble ? (
                 <Box>
                   Written on the back:{' '}

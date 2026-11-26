@@ -1,0 +1,5 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Client lighting: a light just off screen now shows its glow on screen instead of popping in as you walk."
+  - admin: "Toggle Lighting Compare and Switch Lighting Compare View (Debug Game): run DM lighting and client glows together and switch which one you see, live."

@@ -40,10 +40,38 @@ pub const OUT_DIR: &str = "code/engine/_generated";
 
 /// The directories whose files .dme compiles only in a test build (`#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)`
 /// in code/tests/_tests.dm and code/tests/unit_tests/_unit_tests.dm).
-pub use crate::generator_test_scope::{test_only, NOT_TEST_ONLY, TEST_GUARD, TEST_ONLY_DIRS};
+pub const TEST_ONLY_DIRS: &[&str] = &["code/tests/", "code/tests/unit_tests/"];
+
+/// Under [`TEST_ONLY_DIRS`] but not test-only: the benchmark scenarios. The generators have always treated them as ordinary
+/// declarations (their lines unguarded, their reads analysed), so a `-DBENCHMARK` build gets the same generated code wherever the
+/// files sit; moving them under `code/tests/` must not change what a generator writes for them.
+pub const NOT_TEST_ONLY: &[&str] = &["code/tests/benchmarks/"];
+
+/// The guard a generator wraps test-only declarations in.
+pub const TEST_GUARD: &str = "#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)";
+
+/// Whether a source file is compiled only in a test build, so whatever a generator writes for it must sit inside [`TEST_GUARD`].
+pub fn test_only(rel: &str) -> bool {
+    TEST_ONLY_DIRS.iter().any(|d| rel.starts_with(d)) && !NOT_TEST_ONLY.iter().any(|d| rel.starts_with(d))
+}
 
 /// The type a top-level definition line names: `/datum/x` of `/datum/x`, `/datum/x/var/y = 1`, `/datum/x/proc/f()` or `/datum/x/f()`.
-use crate::generator_test_scope::defined_type;
+fn defined_type(line: &str) -> Option<&str> {
+    if !line.starts_with('/') || line.starts_with("//") {
+        return None;
+    }
+    let end = line.find(|c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '/')).unwrap_or(line.len());
+    let mut path = line[..end].trim_end_matches('/');
+    for kw in ["/var/", "/proc/", "/verb/"] {
+        if let Some(i) = path.find(kw) {
+            path = &path[..i];
+        }
+    }
+    if line[end..].trim_start().starts_with('(') {
+        path = path.rsplit_once('/').map(|(a, _)| a).unwrap_or(path);
+    }
+    (path.len() > 1).then_some(path)
+}
 
 /// The types only test-only files ([`test_only`]) define: a generated line that names one outside [`TEST_GUARD`] breaks the production build.
 pub fn test_only_types(tree: &Tree) -> std::collections::BTreeSet<String> {
@@ -52,24 +80,12 @@ pub fn test_only_types(tree: &Tree) -> std::collections::BTreeSet<String> {
 }
 
 fn test_only_types_uncached(tree: &Tree) -> std::collections::BTreeSet<String> {
-    let mut types_seen = crate::generator_test_scope::TestTypeCollector::default();
-    let files: Vec<&crate::tree::SourceFile> = tree
-        .files
-        .iter()
-        .filter(|f| {
-            f.rel.ends_with(".dm")
-                && !f.rel.starts_with(OUT_DIR)
-                && !f.rel.starts_with("code/_generated/")
-        })
-        .collect();
+    let mut test = std::collections::BTreeSet::new();
+    let mut prod = std::collections::HashSet::new();
+    let files: Vec<&crate::tree::SourceFile> = tree.files.iter().filter(|f| f.rel.ends_with(".dm") && !f.rel.starts_with(OUT_DIR) && !f.rel.starts_with("code/_generated/")).collect();
     // Per file, cached by content: the types its lines define. A warm run reads no file for this.
     let defined: Vec<Vec<String>> = crate::incr::facts("gen-defined-types", &files, |f| {
-        let mut v: Vec<String> = f
-            .text()
-            .lines()
-            .filter_map(defined_type)
-            .map(|t| t.to_string())
-            .collect();
+        let mut v: Vec<String> = f.text().lines().filter_map(defined_type).map(|t| t.to_string()).collect();
         v.sort();
         v.dedup();
         v
@@ -77,17 +93,19 @@ fn test_only_types_uncached(tree: &Tree) -> std::collections::BTreeSet<String> {
     for (f, types) in files.iter().zip(defined) {
         let is_test = test_only(&f.rel);
         for t in types {
-            types_seen.insert_owned(is_test, t);
+            if is_test {
+                test.insert(t);
+            } else {
+                prod.insert(t);
+            }
         }
     }
-    types_seen.finish()
+    test.retain(|t| !prod.contains(t));
+    test
 }
 
 /// The lines (1-based) of generated `text` that name a test-only type outside a [`TEST_GUARD`] block, with the type.
-pub fn test_type_leaks(
-    text: &str,
-    test_types: &std::collections::BTreeSet<String>,
-) -> Vec<(u32, String)> {
+pub fn test_type_leaks(text: &str, test_types: &std::collections::BTreeSet<String>) -> Vec<(u32, String)> {
     let mut leaks = Vec::new();
     let mut guards: Vec<bool> = Vec::new();
     for (i, line) in text.lines().enumerate() {
@@ -118,8 +136,7 @@ pub fn test_type_leaks(
                 j += 1;
                 continue;
             }
-            if b[j] == b'/' && (j == 0 || !(word(b[j - 1]) || b[j - 1] == b'/' || b[j - 1] == b'.'))
-            {
+            if b[j] == b'/' && (j == 0 || !(word(b[j - 1]) || b[j - 1] == b'/' || b[j - 1] == b'.')) {
                 let mut k = j;
                 while k < b.len() && (word(b[k]) || b[k] == b'/') {
                     k += 1;
@@ -153,28 +170,20 @@ pub const SYSTEM_INSTANCE: &str = "GLOB.{system}_service";
 
 /// The types a system name may live at (`/datum/world_service/<x>`, `/datum/system/<x>`).
 pub fn system_types(system: &str) -> Vec<String> {
-    vec![
-        format!("/datum/world_service/{}", system),
-        format!("/datum/system/{}", system),
-    ]
+    vec![format!("/datum/world_service/{}", system), format!("/datum/system/{}", system)]
 }
 
 /// The vars a system declares: `(some candidate type exists, its vars)`. Reads only the files that name the
 /// system's type, not the whole tree.
 pub fn system_vars(tree: &Tree, system: &str) -> (bool, std::collections::HashSet<String>) {
     // A pure function of the tree and the system name, asked once per accessor: one answer per system.
-    type Answers = std::sync::Mutex<
-        std::collections::HashMap<String, (bool, std::collections::HashSet<String>)>,
-    >;
+    type Answers = std::sync::Mutex<std::collections::HashMap<String, (bool, std::collections::HashSet<String>)>>;
     let answers: Arc<Answers> = tree.memo("sem/system_vars", || Answers::default());
     if let Some(known) = answers.lock().unwrap().get(system) {
         return known.clone();
     }
     let computed = system_vars_uncached(tree, system);
-    answers
-        .lock()
-        .unwrap()
-        .insert(system.to_string(), computed.clone());
+    answers.lock().unwrap().insert(system.to_string(), computed.clone());
     computed
 }
 
@@ -187,17 +196,11 @@ fn system_vars_uncached(tree: &Tree, system: &str) -> (bool, std::collections::H
         let facts: Vec<Vec<(u8, String)>> = crate::incr::facts("system-type-mentions", &all, |f| {
             let text = &f.code().text;
             let mut out: Vec<(u8, String)> = Vec::new();
-            for (k, prefix) in ["/datum/world_service/", "/datum/system/"]
-                .iter()
-                .enumerate()
-            {
+            for (k, prefix) in ["/datum/world_service/", "/datum/system/"].iter().enumerate() {
                 let mut from = 0;
                 while let Some(i) = text[from..].find(prefix) {
                     let start = from + i + prefix.len();
-                    let run: String = text[start..]
-                        .chars()
-                        .take_while(|c| c.is_alphanumeric() || *c == '_')
-                        .collect();
+                    let run: String = text[start..].chars().take_while(|c| c.is_alphanumeric() || *c == '_').collect();
                     out.push((k as u8, run));
                     from = start;
                 }
@@ -206,23 +209,13 @@ fn system_vars_uncached(tree: &Tree, system: &str) -> (bool, std::collections::H
             out.dedup();
             out
         });
-        all.iter()
-            .zip(facts)
-            .map(|(f, m)| (f.rel.clone(), m))
-            .collect()
+        all.iter().zip(facts).map(|(f, m)| (f.rel.clone(), m)).collect()
     });
     let plain = !system.is_empty() && system.chars().all(|c| c.is_alphanumeric() || c == '_');
     let files: Vec<&crate::tree::SourceFile> = if plain {
-        mentions
-            .iter()
-            .filter(|(_, m)| m.iter().any(|(_, run)| run.starts_with(system)))
-            .filter_map(|(rel, _)| tree.get(rel))
-            .collect()
+        mentions.iter().filter(|(_, m)| m.iter().any(|(_, run)| run.starts_with(system))).filter_map(|(rel, _)| tree.get(rel)).collect()
     } else {
-        tree.select(&crate::tree::CODE_DM)
-            .into_iter()
-            .filter(|f| types.iter().any(|t| f.code().text.contains(t.as_str())))
-            .collect()
+        tree.select(&crate::tree::CODE_DM).into_iter().filter(|f| types.iter().any(|t| f.code().text.contains(t.as_str()))).collect()
     };
     let table = crate::dm::dx::type_vars_in(tree, &files);
     let mut vars = std::collections::HashSet::new();
@@ -231,10 +224,7 @@ fn system_vars_uncached(tree: &Tree, system: &str) -> (bool, std::collections::H
         if let Some(v) = table.get(t) {
             known = true;
             vars.extend(v.iter().cloned());
-        } else if files
-            .iter()
-            .any(|f| f.code().text.lines().any(|l| l.trim_end() == t.as_str()))
-        {
+        } else if files.iter().any(|f| f.code().text.lines().any(|l| l.trim_end() == t.as_str())) {
             known = true;
         }
     }
@@ -270,11 +260,7 @@ impl GenOut {
     }
 
     pub fn diag(&mut self, rel: &str, line: u32, msg: impl Into<String>) {
-        self.diags.push(GenDiag {
-            rel: rel.to_string(),
-            line,
-            msg: msg.into(),
-        });
+        self.diags.push(GenDiag { rel: rel.to_string(), line, msg: msg.into() });
     }
 
     pub fn text(&self) -> &str {
@@ -293,12 +279,7 @@ pub struct GenCx<'a> {
 
 impl<'a> GenCx<'a> {
     pub fn new(tree: &'a Tree, root: &'a Path) -> GenCx<'a> {
-        GenCx {
-            tree,
-            root,
-            decls: Decls::get(tree),
-            used_sem: std::sync::Mutex::new(None),
-        }
+        GenCx { tree, root, decls: Decls::get(tree), used_sem: std::sync::Mutex::new(None) }
     }
 
     pub fn decls(&self) -> &Decls {
@@ -325,9 +306,7 @@ impl<'a> GenCx<'a> {
         // The same memoized program `Cx::program(Text)` hands lints.
         self.tree.memo("program/text", || {
             use crate::frontend::{Frontend, TextFrontend};
-            TextFrontend
-                .analyze(&self.tree.root, self.tree)
-                .unwrap_or_default()
+            TextFrontend.analyze(&self.tree.root, self.tree).unwrap_or_default()
         })
     }
 
@@ -371,20 +350,12 @@ pub fn render(g: &dyn Generator, cx: &GenCx) -> (String, Vec<GenDiag>) {
             eprintln!("analyze: gen {} served from the semantic record", g.name());
         }
         out.body = c.text;
-        out.diags = c
-            .diags
-            .into_iter()
-            .map(|(rel, line, msg)| GenDiag { rel, line, msg })
-            .collect();
+        out.diags = c.diags.into_iter().map(|(rel, line, msg)| GenDiag { rel, line, msg }).collect();
     } else {
         g.generate(cx, &mut out);
         let used = cx.used_sem.lock().unwrap().take();
         if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
-            eprintln!(
-                "analyze: gen {} generated (full model used: {})",
-                g.name(),
-                used.is_some()
-            );
+            eprintln!("analyze: gen {} generated (full model used: {})", g.name(), used.is_some());
         }
         if let Some(sem) = used {
             super::incremental::capture_and_store_gen(
@@ -392,14 +363,7 @@ pub fn render(g: &dyn Generator, cx: &GenCx) -> (String, Vec<GenDiag>) {
                 &sem,
                 sem.footprint(),
                 g.name(),
-                super::incremental::GenCache {
-                    text: out.body.clone(),
-                    diags: out
-                        .diags
-                        .iter()
-                        .map(|d| (d.rel.clone(), d.line, d.msg.clone()))
-                        .collect(),
-                },
+                super::incremental::GenCache { text: out.body.clone(), diags: out.diags.iter().map(|d| (d.rel.clone(), d.line, d.msg.clone())).collect() },
             );
         }
     }
@@ -440,31 +404,7 @@ pub fn run(root: &Path, tree: &Tree, names: &[String], check: bool) -> Vec<GenRe
 }
 
 /// [`run`] limited to the generators of one [`Generator::stage`] (all stages when None).
-pub fn run_stage(
-    root: &Path,
-    tree: &Tree,
-    names: &[String],
-    check: bool,
-    stage: Option<u8>,
-) -> Vec<GenResult> {
-    run_stage_using(root, tree, names, check, stage, registry)
-}
-
-/// Independent immutable-generator oracle: share the exact ordinary stage
-/// renderer, writer, normalization and test-only checks. This data-only factory
-/// cannot issue a semantic/source owner and is absent from ordinary builds.
-#[cfg(feature = "unified-oracle")]
-pub fn run_stage_with_original_registry(
-    root: &Path, tree: &Tree, names: &[String], check: bool, stage: Option<u8>,
-    make_registry: fn() -> Vec<Box<dyn Generator>>,
-) -> Vec<GenResult> {
-    run_stage_using(root, tree, names, check, stage, make_registry)
-}
-
-fn run_stage_using(
-    root: &Path, tree: &Tree, names: &[String], check: bool, stage: Option<u8>,
-    make_registry: impl FnOnce() -> Vec<Box<dyn Generator>>,
-) -> Vec<GenResult> {
+pub fn run_stage(root: &Path, tree: &Tree, names: &[String], check: bool, stage: Option<u8>) -> Vec<GenResult> {
     let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
     let began = std::time::Instant::now();
     // Reading and stripping every file up front pays only when most of them are read: a cold run. A run with a stored model reads the
@@ -476,13 +416,9 @@ fn run_stage_using(
     let mut out = Vec::new();
     let test_types = test_only_types(tree);
     if trace {
-        eprintln!(
-            "analyze: gen test-only types {} ms (cumulative {} ms)",
-            began.elapsed().as_millis(),
-            began.elapsed().as_millis()
-        );
+        eprintln!("analyze: gen test-only types {} ms (cumulative {} ms)", began.elapsed().as_millis(), began.elapsed().as_millis());
     }
-    let gens: Vec<Box<dyn Generator>> = make_registry()
+    let gens: Vec<Box<dyn Generator>> = registry()
         .into_iter()
         .filter(|g| names.is_empty() || names.iter().any(|n| n == g.name()))
         .filter(|g| !stage.is_some_and(|st| st != g.stage()))
@@ -490,9 +426,8 @@ fn run_stage_using(
     // The generators of one stage read the same tree and none reads another's output from it (that is what the stages are for), so they
     // render at once, each with its own context: the ones that need only declarations finish while the model parses. Their results are
     // written and reported in registry order, as a sequential pass did.
-    let rendered: Vec<((String, Vec<GenDiag>), Vec<(String, String)>, GenOut)> = std::thread::scope(
-        |s| {
-            let handles: Vec<_> = gens
+    let rendered: Vec<((String, Vec<GenDiag>), Vec<(String, String)>, GenOut)> = std::thread::scope(|s| {
+        let handles: Vec<_> = gens
             .iter()
             .map(|g| {
                 std::thread::Builder::new()
@@ -517,12 +452,8 @@ fn run_stage_using(
                     .expect("spawn a generator thread")
             })
             .collect();
-            handles
-                .into_iter()
-                .map(|h| h.join().expect("a generator thread panicked"))
-                .collect()
-        },
-    );
+        handles.into_iter().map(|h| h.join().expect("a generator thread panicked")).collect()
+    });
     for (g, ((text, diags), files, file_out)) in gens.iter().zip(rendered) {
         let mut diags = diags;
         diags.extend(file_out.diags);
@@ -539,23 +470,13 @@ fn run_stage_using(
                     state = State::Written;
                 }
             }
-            out.push(GenResult {
-                name: g.name(),
-                path: file_path,
-                state,
-                diags: Vec::new(),
-            });
+            out.push(GenResult { name: g.name(), path: file_path, state, diags: Vec::new() });
         }
         if g.output().is_empty() {
             if let Some(first) = out.iter_mut().rev().find(|r| r.name == g.name()) {
                 first.diags = diags;
             } else if !diags.is_empty() {
-                out.push(GenResult {
-                    name: g.name(),
-                    path: root.join(UI_NO_FILE),
-                    state: State::Fresh,
-                    diags,
-                });
+                out.push(GenResult { name: g.name(), path: root.join(UI_NO_FILE), state: State::Fresh, diags });
             }
             continue;
         }
@@ -573,10 +494,7 @@ fn run_stage_using(
         }
         // The file only counts when the build compiles it.
         let include = format!("{}\\{}", OUT_DIR.replace('/', "\\"), g.output());
-        if dme.contains("#include")
-            && !dme.replace('/', "\\").contains(&include)
-            && matches!(state, State::Fresh | State::Written)
-        {
+        if dme.contains("#include") && !dme.replace('/', "\\").contains(&include) && matches!(state, State::Fresh | State::Written) {
             state = State::NotIncluded;
         }
         // A test-only type outside the guard compiles in a test build and breaks the production one (`build.sh dm`).
@@ -585,12 +503,7 @@ fn run_stage_using(
         for (line, ty) in test_type_leaks(&text, &test_types) {
             diags.push(GenDiag { rel: rel.clone(), line, msg: format!("{} is defined only in test-only files; emit it inside `{}` (see sem::gen::test_only)", ty, TEST_GUARD) });
         }
-        out.push(GenResult {
-            name: g.name(),
-            path,
-            state,
-            diags,
-        });
+        out.push(GenResult { name: g.name(), path, state, diags });
     }
     out
 }
@@ -619,6 +532,7 @@ pub fn report(results: &[GenResult]) -> bool {
     ok
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -640,15 +554,8 @@ mod tests {
             crate::tree::SourceFile::from_text("code/game/b.dm", "/obj/shared\n"),
         ]);
         let types = test_only_types(&tree);
-        assert!(
-            types.contains("/datum/probe") && !types.contains("/obj/shared"),
-            "{:?}",
-            types
-        );
+        assert!(types.contains("/datum/probe") && !types.contains("/obj/shared"), "{:?}", types);
         let text = "/datum/probe/declared_entries(list/into)\n\tinto += \"/datum/probe::f\"\n/obj/shared/x()\n#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)\n/datum/probe/declared_entries()\n#endif\n";
-        assert_eq!(
-            test_type_leaks(text, &types),
-            vec![(1, "/datum/probe".to_string())]
-        );
+        assert_eq!(test_type_leaks(text, &types), vec![(1, "/datum/probe".to_string())]);
     }
 }

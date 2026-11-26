@@ -1,11 +1,10 @@
 /datum/material/steel
 	name = MAT_STEEL
 	stack_type = /obj/item/stack/material/steel
-	hardness = 60
-	density = 20
-	integrity = 150
+	strength = 60
+	weight = 20
+	toughness = 75
 	conductivity = 11 // Assuming this is carbon steel, it would actually be slightly less conductive than iron, but lets ignore that.
-	protectiveness = 10 // 33%
 	icon_base = "solid"
 	icon_reinf = "reinf_over"
 	icon_colour = "#666666"

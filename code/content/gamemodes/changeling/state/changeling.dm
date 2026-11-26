@@ -115,8 +115,6 @@ CAPABILITIES(/datum/changeling)
 		else
 			changelingID = "[rand(1,999)]"
 
-		grant(owner, granted_verb(/mob/proc/EvolutionMenu), src)
-		grant(owner, granted_verb(/mob/proc/changeling_respec), src)
 		owner.add_language("Changeling")
 
 //Former /datum/changeling procs
@@ -174,18 +172,8 @@ CAPABILITIES(/datum/changeling)
 		if(P.isVerb)
 			if(lesser_form && !P.allowduringlesserform)
 				continue
-			if(!(P in src.verbs))
-				grant(src, granted_verb(P.verbpath), comp)
 			if(P.make_hud_button)
-				if(!src.ability_master)
-					rel_set(src, nameof(ability_master), new /atom/movable/screen/movable/ability_master(src))
-				src.ability_master.add_ling_ability(
-					object_given = src,
-					verb_given = P.verbpath,
-					name_given = P.name,
-					ability_icon_given = P.ability_icon_state,
-					arguments = list()
-					)
+				grant_verb_ability(src, src, P.verbpath, P.name, P.ability_icon_state, arguments = list())
 
 	for(var/language in languages)
 		LAZYOR(comp.absorbed_languages, language)
@@ -215,10 +203,7 @@ CAPABILITIES(/datum/changeling)
 		return
 	for(var/datum/power/changeling/P in comp.purchased_powers)
 		if(P.isVerb)
-			revoke(src, granted_verb(P.verbpath), comp)
-			var/atom/movable/screen/ability/verb_based/changeling/C = ability_master.get_ability_by_proc_ref(P.verbpath)
-			if(C)
-				ability_master.remove_ability(C)
+			revoke_verb_ability(src, P.verbpath)
 
 //Helper proc. Does all the checks and stuff for us to avoid copypasta
 /mob/proc/changeling_power(required_chems=0, required_dna=0, max_genetic_damage=100, max_stat=0)
@@ -358,11 +343,36 @@ CAPABILITIES(/datum/changeling)
 			L.Add(t)
 	return L
 
-/mob/proc/EvolutionMenu()
-	set name = "-Evolution Menu-"
-	set category = VERB_CAT_CHANGELING
-	set desc = "Adapt yourself carefully."
+/// The changeling menu entries (Evolution Menu, Re-adapt, Hive Channel, Hive Absorb) show on a changeling's own mob; the powers themselves are buttons of its ability bar.
+/mob/proc/changeling_menu_ready(datum/act/op/A)
+	if(!is_changeling(src))
+		return MSG(req_silent)
+	return null
 
+/// The hive menu entries are the human form's only (the lesser form does not hear the hive).
+/mob/proc/changeling_hive_ready(datum/act/op/A)
+	if(!is_changeling(src) || !ishuman(src))
+		return MSG(req_silent)
+	return null
+
+/mob/proc/changeling_evolution_chosen(datum/act/op/A)
+	EvolutionMenu()
+	return OP_OK
+
+/mob/proc/changeling_respec_chosen(datum/act/op/A)
+	changeling_respec()
+	return OP_OK
+
+/mob/proc/changeling_hiveupload_chosen(datum/act/op/A)
+	changeling_hiveupload()
+	return OP_OK
+
+/mob/proc/changeling_hivedownload_chosen(datum/act/op/A)
+	changeling_hivedownload()
+	return OP_OK
+
+/// Adapt yourself carefully: spend genetic points on powers.
+/mob/proc/EvolutionMenu()
 	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
 		to_chat(src, "You are not a changeling!")
@@ -406,15 +416,7 @@ CAPABILITIES(/datum/changeling)
 		LAZYADD(purchased_powers_history, "[Pname] ([Thepower.genomecost] points)")
 
 	if(Thepower.make_hud_button && Thepower.isVerb)
-		// A fresh master (rel_set deletes the old one); a mob without one gets its first.
-		rel_set(owner, nameof(owner.ability_master), new /atom/movable/screen/movable/ability_master(owner))
-		owner.ability_master.add_ling_ability(
-			object_given = owner,
-			verb_given = Thepower.verbpath,
-			name_given = Thepower.name,
-			ability_icon_given = Thepower.ability_icon_state,
-			arguments = list()
-			)
+		grant_verb_ability(owner, owner, Thepower.verbpath, Thepower.name, Thepower.ability_icon_state, arguments = list())
 
 	if(!Thepower.isVerb && Thepower.verbpath)
 		call(owner, Thepower.verbpath)()
@@ -458,6 +460,7 @@ CAPABILITIES(/obj/item/changeling_debug)
 CAPABILITIES(/datum/changeling_panel)
 	ref_one(nameof(comp))
 	interface("ChangelingPanel", title = "Changeling Evolution Panel", state = nameof(GLOB.tgui_always_state))
+	ui_shape(available_points = int(), power_list = list_of(row(power_name = schema_text(), power_cost = int(), power_purchased = bool(), power_desc = schema_text())))
 	op("evolve_power", ui_act("evolve_power", arg("val", schema_text(4096))), then(PROC_REF(ui_act_evolve_power)))
 
 /// /datum/changeling_panel's window data.

@@ -53,19 +53,19 @@
 	var/list/run = dq_atmos_test_find_clear_pipe_run(1)
 	TEST_ASSERT_NOTNULL(run, "no clear floor for the turf cell test")
 	var/turf/simulated/floor/T = run[1]
-	T.air.set_moles(GAS_O2, 21)
+	T.turf_air().set_moles(GAS_O2, 21)
 	var/datum/gas_mixture/stale = new(CELL_VOLUME)
 	vg_unregister_gasmixture_hook(stale)
 	// A leftover turf object's air: it holds the cell's handle and generation as the replaced turf did.
-	stale._extools_pointer_gasmixture = T.air._extools_pointer_gasmixture
-	stale._extools_generation_gasmixture = T.air._extools_generation_gasmixture
+	stale._extools_pointer_gasmixture = T.turf_air()._extools_pointer_gasmixture
+	stale._extools_generation_gasmixture = T.turf_air()._extools_generation_gasmixture
 	TEST_ASSERT_EQUAL(stale.get_moles(GAS_O2), 21, "a handle of the current owner could not be read")
 	// The cell changes hands (the turf is replaced and its successor registers).
 	T.update_air_ref(-1)
 	T.update_air_ref(0, T.air_block_mask())
-	T.air.set_moles(GAS_O2, 8)
-	assert_refused(stale, T.air, 8)
-	TEST_ASSERT_EQUAL(T.air.get_moles(GAS_O2), 8, "the turf's own air stopped working after it re-registered")
+	T.turf_air().set_moles(GAS_O2, 8)
+	assert_refused(stale, T.turf_air(), 8)
+	TEST_ASSERT_EQUAL(T.turf_air().get_moles(GAS_O2), 8, "the turf's own air stopped working after it re-registered")
 	stale._extools_pointer_gasmixture = null
 	stale._extools_generation_gasmixture = null
 
@@ -90,19 +90,19 @@
 	V.rust_register_pipe_topology()
 	var/port = V.rust_pipe_port_ids[1]
 	// The live turf air is accepted through the machine's own path.
-	TEST_ASSERT(V.rust_set_turf_device(1, T.air), "a live turf air was refused as a device's turf side")
+	TEST_ASSERT(V.rust_set_turf_device(1, T.turf_air()), "a live turf air was refused as a device's turf side")
 	V.rust_ensure_device_id()
 	var/device = V.rust_device_id
-	var/datum/result/live = safe_call(PROC_REF(device_set_turf), device, port, T.air)
+	var/datum/result/live = safe_call(PROC_REF(device_set_turf), device, port, T.turf_air())
 	TEST_ASSERT(live.ok && live.value, "vg_pipe_device_set_turf refused the live turf air ([live.value])")
 	// A bare handle number cannot say which mixture it was minted for.
-	var/datum/result/bare = safe_call(PROC_REF(device_set_turf), device, port, T.air.arena_id())
+	var/datum/result/bare = safe_call(PROC_REF(device_set_turf), device, port, T.turf_air().arena_id())
 	TEST_ASSERT(!bare.ok, "vg_pipe_device_set_turf accepted a bare handle number")
 	// A leftover turf object's air after the cell changed hands.
 	var/datum/gas_mixture/stale = new(CELL_VOLUME)
 	vg_unregister_gasmixture_hook(stale)
-	stale._extools_pointer_gasmixture = T.air._extools_pointer_gasmixture
-	stale._extools_generation_gasmixture = T.air._extools_generation_gasmixture
+	stale._extools_pointer_gasmixture = T.turf_air()._extools_pointer_gasmixture
+	stale._extools_generation_gasmixture = T.turf_air()._extools_generation_gasmixture
 	T.update_air_ref(-1)
 	T.update_air_ref(0, T.air_block_mask())
 	var/datum/result/refused = safe_call(PROC_REF(device_set_turf), device, port, stale)
@@ -120,7 +120,7 @@
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
 	V.rust_register_pipe_topology()
 	var/port = V.rust_pipe_port_ids[1]
-	var/datum/result/bare = safe_call(PROC_REF(pipe_upsert), port, T.air.arena_id(), 10)
+	var/datum/result/bare = safe_call(PROC_REF(pipe_upsert), port, T.turf_air().arena_id(), 10)
 	TEST_ASSERT(!bare.ok, "vg_pipe_upsert accepted a bare handle number")
 	var/datum/gas_mixture/stale = new(CELL_VOLUME)
 	vg_unregister_gasmixture_hook(stale)

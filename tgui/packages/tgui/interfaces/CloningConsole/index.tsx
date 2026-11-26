@@ -5,7 +5,7 @@ import {
 } from 'tgui/interfaces/common/ComplexModal';
 import { Window } from 'tgui/layouts';
 import { Box, Section } from 'tgui-core/components';
-
+import type { CloningConsoleActions } from '../generated/CloningConsole';
 import { viewRecordModalBodyOverride } from './CloningConsoleBodyOverride';
 import { CloningConsoleNavigation } from './CloningConsoleNavigation';
 import {
@@ -19,7 +19,7 @@ import {
 import type { Data } from './types';
 
 export const CloningConsole = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, CloningConsoleActions>();
 
   const { menu } = data;
 
@@ -30,7 +30,7 @@ export const CloningConsole = (props) => {
 
   modalRegisterBodyOverride('view_rec', viewRecordModalBodyOverride);
   return (
-    <Window>
+    <Window width={460} height={600}>
       <ComplexModal maxWidth="75%" maxHeight="75%" />
       <Window.Content className="Layout__content--flexColumn">
         <CloningConsoleTemp />

@@ -25,6 +25,7 @@ import { useEffect, useRef } from 'react';
 import { useBackend } from 'tgui/backend';
 import type { BooleanLike } from 'tgui-core/react';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { TooltipActions } from './generated/Tooltip';
 
 const TOOLTIP_RESET_CSS = `
 html, body, #react-root, .TooltipRoot,
@@ -99,6 +100,34 @@ const themeStyles: Record<string, React.CSSProperties> = {
   },
 };
 
+// The map control's size and rendered size, asked of the client through
+// Byond.winget (a round trip each). They change only when the window is
+// resized, so a hover within METRICS_TTL_MS of the last read reuses it and the
+// popup appears on the first frame instead of after two round trips.
+const METRICS_TTL_MS = 1000;
+let metricsAt = 0;
+let metricsCache: Promise<any[]> | null = null;
+
+const readMapMetrics = (): Promise<any[]> => {
+  const now = Date.now();
+  if (metricsCache && now - metricsAt < METRICS_TTL_MS) {
+    return metricsCache;
+  }
+  metricsAt = now;
+  const pending = Promise.all([
+    Byond.winget('mapwindow.map', 'size'),
+    Byond.winget('mapwindow.map', 'view-size'),
+  ]);
+  metricsCache = pending;
+  // A failed read must not be reused.
+  pending.catch(() => {
+    if (metricsCache === pending) {
+      metricsCache = null;
+    }
+  });
+  return pending;
+};
+
 const parseSemiParams = (s: string): Record<string, string> => {
   const out: Record<string, string> = {};
   for (const part of s.split(';')) {
@@ -111,7 +140,7 @@ const parseSemiParams = (s: string): Record<string, string> => {
 };
 
 export const Tooltip = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TooltipActions>();
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -124,14 +153,11 @@ export const Tooltip = () => {
 
     let cancelled = false;
 
-    Promise.all([
-      // Byond.winget returns {x, y} objects (not "WxH" strings):
-      //   size      = the map control's pixel dimensions
-      //   view-size = the rendered map content's pixel size (letterboxed inside
-      //               the control when aspect ratios differ)
-      Byond.winget('mapwindow.map', 'size'),
-      Byond.winget('mapwindow.map', 'view-size'),
-    ])
+    // Byond.winget returns {x, y} objects (not "WxH" strings):
+    //   size      = the map control's pixel dimensions
+    //   view-size = the rendered map content's pixel size (letterboxed inside
+    //               the control when aspect ratios differ)
+    readMapMetrics()
       .then(([rawSize, rawViewSize]: any[]) => {
         if (cancelled) return;
 

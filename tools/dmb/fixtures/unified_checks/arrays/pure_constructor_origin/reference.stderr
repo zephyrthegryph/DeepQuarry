@@ -1,6 +1,0 @@
-@FIXTURE@, line 4, column 8:
-error: /proc/p sets SpacemanDMM_should_be_pure but calls a /list/proc/New that does impure operations
-- 5:5: SpacemanDMM_should_be_pure set here
-- (unknown):0:0: /list/proc/New() called here
-- 3:5: Assignment on purity breaking expression happens here
-

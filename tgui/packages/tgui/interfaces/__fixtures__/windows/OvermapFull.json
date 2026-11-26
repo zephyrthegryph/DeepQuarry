@@ -1,0 +1,69 @@
+{
+	"mapRef": "overmap_map",
+	"d_x": 12,
+	"d_y": 8,
+	"autopilot_disabled": false,
+	"autopilot": 0,
+	"sector": "Deep Quarry Approach",
+	"sector_info": "A quiet stretch of space.",
+	"landed": "Docked at Southern Cross",
+	"s_x": 10,
+	"s_y": 7,
+	"dest": true,
+	"speedlimit": "10 Gm/h",
+	"accel": 0.5,
+	"heading": 90,
+	"manual_control": true,
+	"canburn": true,
+	"accellimit": 2,
+	"speed": 3.2,
+	"speed_color": "good",
+	"ETAnext": "12 seconds",
+	"locations": [
+		{
+			"name": "Waypoint Alpha",
+			"x": 14,
+			"y": 9,
+			"reference": 3101
+		},
+		{
+			"name": "Derelict",
+			"x": 5,
+			"y": 3,
+			"reference": 3102
+		}
+	],
+	"global_state": true,
+	"global_limit": 80,
+	"engines_info": [
+		{
+			"eng_type": "Ion thruster",
+			"eng_on": 1,
+			"eng_thrust": 1200,
+			"eng_thrust_limiter": 100,
+			"eng_status": [["Status", "Nominal"]],
+			"eng_reference": 3201
+		}
+	],
+	"total_thrust": 1200,
+	"viewing": true,
+	"on": 1,
+	"range": "4 tiles",
+	"health": 90,
+	"max_health": 100,
+	"heat": 120,
+	"critical_heat": 500,
+	"status": "OK",
+	"contacts": [
+		{
+			"name": "Unknown vessel",
+			"ref": 3301,
+			"bearing": 45
+		},
+		{
+			"name": "Asteroid",
+			"ref": 3302,
+			"bearing": 220
+		}
+	]
+}

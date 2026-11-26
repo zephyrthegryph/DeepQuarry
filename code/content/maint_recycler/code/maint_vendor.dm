@@ -34,6 +34,7 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
 	owns_many(nameof(product_datums))
 	interface("RecyclerVendor")
+	ui_shape(items = list_of(row(category = schema_text(), name = schema_text(), cost = num(), desc = schema_text(), ad = schema_text(), icon = schema_text(), index = int())), userBalance = num(), userName = schema_text())
 	op("purchase", ui_act("purchase", arg("index", num())), then(PROC_REF(ui_act_purchase)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
@@ -188,7 +189,7 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 			"index" = i
 		))
 	data["items"] = items
-	data["userBalance"] = user_balance(user)
+	data["userBalance"] = user_balance(user) || 0
 	data["userName"] = user.name
 
 	return data

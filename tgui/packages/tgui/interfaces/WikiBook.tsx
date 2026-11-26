@@ -6,9 +6,11 @@
 // in the user's default web browser via `client << link(url)`.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { WikiBookActions } from './generated/WikiBook';
 
 type Data = {
   title: string;
@@ -17,7 +19,7 @@ type Data = {
 };
 
 export const WikiBook = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, WikiBookActions>();
   const { title, intro, url } = data;
   return (
     <Window width={520} height={520} title={title}>
@@ -38,9 +40,9 @@ export const WikiBook = () => {
               <Button icon="external-link-alt" onClick={() => act('open_wiki')}>
                 Open Wiki Page
               </Button>
-              <Box mt={1} color="label" italic>
+              <Label mt={1} italic>
                 {url}
-              </Box>
+              </Label>
             </Box>
           ) : (
             <Box italic color="bad">

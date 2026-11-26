@@ -16,7 +16,7 @@
 
 /mob/proc/insidePanel()
 	set name = "Vore Panel"
-	set category = VERB_CAT_IC_VORE
+	set hidden = TRUE // the HUD's vore panel button opens it
 
 	if(ticker_current_state() == GAME_STATE_STARTUP)
 		return
@@ -68,6 +68,7 @@
 
 CAPABILITIES(/datum/vore_look)
 	interface("VorePanel", title = "Vore Panel", state = nameof(GLOB.tgui_vorepanel_state))
+	ui_shape(vore_words = map_of(schema_text(), list_of(schema_text())), min_belly_name = int(), max_belly_name = int(), unsaved_changes = bool(), active_tab = int(), presets = schema_text(), persist_edit_mode = bool(), inside = row(), host_mobtype = nullable(row(is_cyborg = bool(), is_vore_simple_mob = bool())), show_pictures = nullable(bool()), icon_overflow = nullable(bool()), prey_abilities = nullable(list_of(row())), intent_data = nullable(row()), our_bellies = nullable(list_of(row())), selected = nullable(row()), soulcatcher = nullable(row()), abilities = nullable(row()), prefs = nullable(row()), general_pref_data = nullable(row()), active_vore_tab = nullable(int()))
 	op("set_attribute", ui_act("set_attribute", arg("attribute", schema_text(4096)), arg("val"), arg("msgtype")), then(PROC_REF(ui_act_set_attribute)))
 	op("liq_set_attribute", ui_act("liq_set_attribute", arg("attribute", schema_text(4096)), arg("val"), arg("msgtype")), then(PROC_REF(ui_act_liq_set_attribute)))
 	op("change_tab", ui_act("change_tab", arg("tab", num())), then(PROC_REF(ui_act_change_tab)))
@@ -84,6 +85,10 @@ CAPABILITIES(/datum/vore_look)
 	op("bellypick", ui_act("bellypick", arg("bellypick", schema_ref())), then(PROC_REF(ui_act_bellypick)))
 	op("move_belly", ui_act("move_belly", arg("dir", num())), then(PROC_REF(ui_act_move_belly)))
 	op("saveprefs", ui_act("saveprefs"), then(PROC_REF(ui_act_saveprefs)))
+	op("check_belly_liquid", ui_act("check_belly_liquid"), then(PROC_REF(ui_act_check_belly_liquid)))
+	op("transfer_liquid", ui_act("transfer_liquid"), then(PROC_REF(ui_act_transfer_liquid)))
+	op("fix_vore_effects", ui_act("fix_vore_effects"), then(PROC_REF(ui_act_fix_vore_effects)))
+	op("print_belly_settings", ui_act("print_belly_settings"), then(PROC_REF(ui_act_print_belly_settings)))
 	op("reloadprefs", ui_act("reloadprefs"), asks(/datum/prompt/choice/vore_reload_preferences, fields = list("question" = "Are you sure you want to reload character slot preferences? This will remove your current vore organs and eject their contents.", "title" = "Confirmation", "choices" = list("Reload", "Cancel"), "buttons" = TRUE), step = "reload"), then(PROC_REF(ui_act_reloadprefs)))
 	op("loadprefsfromslot", ui_act("loadprefsfromslot"), asks(/datum/prompt/choice/vore_load_preferences, fields = list("question" = "Are you sure you want to load another character slot's preferences? This will remove your current vore organs and eject their contents. This will not be immediately saved to your character slot, and you will need to save manually to overwrite your current bellies and preferences.", "title" = "Confirmation", "choices" = list("Load", "Cancel"), "buttons" = TRUE), step = "load"), then(PROC_REF(ui_act_loadprefsfromslot)))
 	op("exportpanel", ui_act("exportpanel"), then(PROC_REF(ui_act_exportpanel)))
@@ -212,14 +217,18 @@ CAPABILITIES(/datum/vore_look)
 			var/mob/living/simple_mob/S = M
 			key = "[S.icon_living]"
 		else
-			key = "[handle_of(target)][M.real_name]"
+			key = "[handle_text(handle_of(target))][M.real_name]"
 	if(nom_icons[key])
 		. = nom_icons[key]
 	else
-		. = icon2base64(getFlatIcon(target,defdir=SOUTH,no_anim=TRUE))
-		nom_icons[key] = .
+		// The shared portrait cache: rendered off the tick; until it lands the panel shows no picture for it (and asks again next push).
+		var/datum/portrait/P = portrait_request(target, SOUTH)
+		. = P?.b64
+		if(.)
+			nom_icons[key] = .
 
-/datum/vore_look/tgui_static_data(mob/user)
+/datum/vore_look/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = ..()
 
 	data["vore_words"] = list(
@@ -244,7 +253,7 @@ CAPABILITIES(/datum/vore_look)
 	var/list/data = list()
 	data["unsaved_changes"] = unsaved_changes
 	data["active_tab"] = active_tab
-	data["presets"] = preset_colors
+	data["presets"] = preset_colors || ""
 	var/list/merged_1 = ui_data_datum_vore_look(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -466,6 +475,38 @@ CAPABILITIES(/datum/vore_look)
 	var/mob/user = A.actor
 	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	return vore_save_preferences_step(ui, list())
+
+/// Check Belly Liquid: the liquid in one of your bellies, asked and reported in chat.
+/datum/vore_look/proc/ui_act_check_belly_liquid(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(!istype(user) || user != host())
+		return OP_REFUSED
+	user.vore_check_reagents()
+	return OP_OK
+
+/// Transfer Liquid: from a belly to another belly, a stomach, a person or a container.
+/datum/vore_look/proc/ui_act_transfer_liquid(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(!istype(user) || user != host())
+		return OP_REFUSED
+	user.vore_transfer_reagents()
+	return OP_OK
+
+/// Fix Vore Effects: clears vore effects lingering after you left a belly.
+/datum/vore_look/proc/ui_act_fix_vore_effects(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(!istype(user) || user != host())
+		return OP_REFUSED
+	user.fix_vore_effects()
+	return OP_OK
+
+/// X-Print Vorebelly Settings: your belly messages printed into chat for copying.
+/datum/vore_look/proc/ui_act_print_belly_settings(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(!istype(user) || user != host())
+		return OP_REFUSED
+	user.vorebelly_printout()
+	return OP_OK
 
 /datum/vore_look/proc/ui_act_reloadprefs(datum/act/op/A)
 	if(A.step_value("reload") != "Reload")
@@ -1756,42 +1797,34 @@ CAPABILITIES(/datum/vore_look)
 	switch(attribute)
 		if("rear")
 			var/spont_target = html_encode(val)
-			if(spont_target == "Current Selected")
-				if(host().spont_belly) host().spont_belly.set_spont_belly_rear(null)
-			else
-				STATE_SET(host(), spont_belly, spont_belly_rear, spont_target)
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_rear = vore_spont_name(host(), "rear")
+			// "Current Selected" clears the field; STATE_SET drops the lazy state once its last field is back at the default.
+			STATE_SET(host(), spont_belly, spont_belly_rear, spont_target == "Current Selected" ? null : spont_target)
+			if(host().client?.prefs_vr)
+				host().client.prefs_vr.set_spont_belly_rear(vore_spont_name(host(), "rear"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("front")
 			var/spont_target = html_encode(val)
-			if(spont_target == "Current Selected")
-				if(host().spont_belly) host().spont_belly.set_spont_belly_front(null)
-			else
-				STATE_SET(host(), spont_belly, spont_belly_front, spont_target)
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_front = vore_spont_name(host(), "front")
+			// "Current Selected" clears the field; STATE_SET drops the lazy state once its last field is back at the default.
+			STATE_SET(host(), spont_belly, spont_belly_front, spont_target == "Current Selected" ? null : spont_target)
+			if(host().client?.prefs_vr)
+				host().client.prefs_vr.set_spont_belly_front(vore_spont_name(host(), "front"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("left")
 			var/spont_target = html_encode(val)
-			if(spont_target == "Current Selected")
-				if(host().spont_belly) host().spont_belly.set_spont_belly_left(null)
-			else
-				STATE_SET(host(), spont_belly, spont_belly_left, spont_target)
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_left = vore_spont_name(host(), "left")
+			// "Current Selected" clears the field; STATE_SET drops the lazy state once its last field is back at the default.
+			STATE_SET(host(), spont_belly, spont_belly_left, spont_target == "Current Selected" ? null : spont_target)
+			if(host().client?.prefs_vr)
+				host().client.prefs_vr.set_spont_belly_left(vore_spont_name(host(), "left"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 		if("right")
 			var/spont_target = html_encode(val)
-			if(spont_target == "Current Selected")
-				if(host().spont_belly) host().spont_belly.set_spont_belly_right(null)
-			else
-				STATE_SET(host(), spont_belly, spont_belly_right, spont_target)
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.spont_belly_right = vore_spont_name(host(), "right")
+			// "Current Selected" clears the field; STATE_SET drops the lazy state once its last field is back at the default.
+			STATE_SET(host(), spont_belly, spont_belly_right, spont_target == "Current Selected" ? null : spont_target)
+			if(host().client?.prefs_vr)
+				host().client.prefs_vr.set_spont_belly_right(vore_spont_name(host(), "right"))
 			set_unsaved_changes(TRUE)
 			return TRUE
 	return FALSE

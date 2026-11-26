@@ -1,0 +1,168 @@
+{
+	"items": {
+		"Food Items": {
+			"Milk": {
+				"name": "Milk",
+				"price": 2,
+				"max_amount": 50,
+				"reagent": 1
+			},
+			"Cream": {
+				"name": "Cream",
+				"price": 3,
+				"max_amount": 50,
+				"reagent": 1
+			},
+			"Slab of meat": {
+				"name": "Slab of meat",
+				"price": 50,
+				"max_amount": 5
+			},
+			"Algae Sheets": {
+				"name": "Algae Sheets",
+				"price": 100,
+				"max_amount": 50
+			}
+		},
+		"Cooking Ingredients": {
+			"Universal Enzyme": {
+				"name": "Universal Enzyme",
+				"price": 3,
+				"max_amount": 50,
+				"reagent": 1
+			},
+			"Nutri-spread": {
+				"name": "Nutri-spread",
+				"price": 30,
+				"max_amount": 5
+			},
+			"Salt": {
+				"name": "Salt",
+				"price": 2,
+				"max_amount": 50,
+				"reagent": 1
+			},
+			"Soy Sauce": {
+				"name": "Soy Sauce",
+				"price": 3,
+				"max_amount": 50,
+				"reagent": 1
+			}
+		},
+		"Gardening Nutrients": {
+			"E-Z-Nutrient": {
+				"name": "E-Z-Nutrient",
+				"price": 30,
+				"max_amount": 5
+			},
+			"Left 4 Zed": {
+				"name": "Left 4 Zed",
+				"price": 50,
+				"max_amount": 5
+			},
+			"Robust Harvest": {
+				"name": "Robust Harvest",
+				"price": 50,
+				"max_amount": 5
+			},
+			"Diethylamine": {
+				"name": "Diethylamine",
+				"price": 60,
+				"max_amount": 5
+			},
+			"Mutagen": {
+				"name": "Mutagen",
+				"price": 50,
+				"max_amount": 15
+			},
+			"Plant-B-Gone": {
+				"name": "Plant-B-Gone",
+				"price": 50,
+				"max_amount": 5
+			}
+		},
+		"Exotic Seeds": {
+			"Mystery seed pack": {
+				"name": "Mystery seed pack",
+				"price": 150,
+				"max_amount": 5
+			},
+			"Kudzu seed pack": {
+				"name": "Kudzu seed pack",
+				"price": 100,
+				"max_amount": 5
+			}
+		},
+		"Leather Products": {
+			"Wallet": {
+				"name": "Wallet",
+				"price": 100,
+				"max_amount": 1
+			},
+			"Botanical gloves": {
+				"name": "Botanical gloves",
+				"price": 250,
+				"max_amount": 1
+			},
+			"Plant bag": {
+				"name": "Plant bag",
+				"price": 320,
+				"max_amount": 1
+			},
+			"Large plant bag": {
+				"name": "Large plant bag",
+				"price": 640,
+				"max_amount": 1
+			},
+			"Utility belt": {
+				"name": "Utility belt",
+				"price": 300,
+				"max_amount": 1
+			},
+			"Leather Satchel": {
+				"name": "Leather Satchel",
+				"price": 400,
+				"max_amount": 1
+			},
+			"Cash Bag": {
+				"name": "Cash Bag",
+				"price": 400,
+				"max_amount": 1
+			},
+			"Chemistry Bag": {
+				"name": "Chemistry Bag",
+				"price": 400,
+				"max_amount": 1
+			},
+			"Workboots": {
+				"name": "Workboots",
+				"price": 400,
+				"max_amount": 1
+			},
+			"Leather Chaps": {
+				"name": "Leather Chaps",
+				"price": 400,
+				"max_amount": 1
+			},
+			"Leather Coat": {
+				"name": "Leather Coat",
+				"price": 500,
+				"max_amount": 1
+			},
+			"Leather Jacket": {
+				"name": "Leather Jacket",
+				"price": 500,
+				"max_amount": 1
+			},
+			"Winter Coat": {
+				"name": "Winter Coat",
+				"price": 500,
+				"max_amount": 1
+			}
+		}
+	},
+	"beaker": 1,
+	"build_eff": 1,
+	"points": 0,
+	"processing": 0
+}

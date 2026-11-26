@@ -42,7 +42,6 @@ CAPABILITY_TYPE(bluespace_connection, CAP_BLUESPACE_CONNECTION, /datum/capabilit
 
 /datum/capability/bluespace_connection/proc/bluespace_closed(datum/act/A)
 	var/obj/structure/closet/assigned_closet = A.holder
-	assigned_closet.latent_materialize_all(CONTAINER_SLOT_INTERIOR)
 	var/list/inside = assigned_closet.slot_contents(CONTAINER_SLOT_INTERIOR)
 	if(!length(inside))
 		return

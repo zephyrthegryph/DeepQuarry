@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Section, Tabs } from 'tgui-core/components';
-
+import type { RapidPipeDispenserActions } from '../generated/RapidPipeDispenser';
 import { ICON_BY_CATEGORY_NAME } from './constants';
 import type { Data } from './types';
 
 export const PipeTypeSection = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RapidPipeDispenserActions>();
   const { categories = [] } = data;
   const [categoryName, setCategoryName] = useState('categoryName');
   const shownCategory =

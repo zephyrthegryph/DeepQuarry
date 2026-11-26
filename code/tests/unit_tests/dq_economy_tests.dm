@@ -38,7 +38,7 @@
 	TEST_ASSERT_EQUAL(provider.money, 20, "poor-patient subsidy did not reach Medical")
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_before - 20, "station subsidy was not conserved")
 	customer.set_money(100)
-	provider.service_subsidy = 0
+	provider.set_service_subsidy(0)
 	TEST_ASSERT(!department_service_quote(customer, DEPARTMENT_MEDICAL, 120), "underfunded service purchase produced a quote")
 	TEST_ASSERT(!charge_department_service(customer, DEPARTMENT_MEDICAL, 120, "Unaffordable care"), "underfunded service purchase was accepted")
 	qdel(provider)
@@ -119,8 +119,8 @@
 	TEST_ASSERT_EQUAL(plan["payroll_funded"] + plan["operating_funded"] + plan["remaining"], plan["available"], "waterfall did not reconcile available funds")
 	TEST_ASSERT_EQUAL(plan["requested"], plan["funded"] + plan["shortfall"], "budget preview did not reconcile requested, funded, and shortfall totals")
 	var/datum/money_account/engineering_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
-	engineering_budget.allocation_percent = 25
-	engineering_budget.allocation_configured = TRUE
+	engineering_budget.set_allocation_percent(25)
+	engineering_budget.set_allocation_configured(TRUE)
 	plan = SSsupply.department_budget_plan()
 	departments = plan["departments"]
 	engineering = departments[DEPARTMENT_ENGINEERING]
@@ -191,8 +191,8 @@
 	budget.set_department_id(DEPARTMENT_ENGINEERING)
 	budget.set_is_budget_account(TRUE)
 	budget.set_money(1200)
-	budget.monthly_income = 300
-	budget.monthly_expenses = 100
+	budget.set_monthly_income(300)
+	budget.set_monthly_expenses(100)
 	TEST_ASSERT(budget.roll_budget_period(), "department budget refused rollover")
 	TEST_ASSERT_EQUAL(budget.money, 0, "operating funds survived rollover")
 	TEST_ASSERT_EQUAL(budget.savings, 1200, "unused operating funds did not enter savings")
@@ -324,7 +324,7 @@
 	customer.set_account_number(823456)
 	customer.set_money(120)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
-	service.service_subsidy = 0.25
+	service.set_service_subsidy(0.25)
 	TEST_ASSERT(!department_service_quote(customer, DEPARTMENT_CIVILIAN, 200), "underfunded Service checkout produced a quote")
 	customer.set_money(150)
 	var/list/quote = department_service_quote(customer, DEPARTMENT_CIVILIAN, 200)
@@ -373,7 +373,7 @@
 	staff.set_account_number(834568)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, staff)
-	service.service_subsidy = 0
+	service.set_service_subsidy(0)
 	var/datum/service_invoice/invoice = complete_service_checkout(customer, service, 100, "Adversarial meal", "Destroyed terminal", list("meal" = 1), list("meal" = 100), staff.account_number, staff.owner_name, 20)
 	TEST_ASSERT(invoice, "valid tipped checkout did not create an invoice")
 	TEST_ASSERT_EQUAL(invoice.staff_tip, 10, "staff gratuity split was incorrect")
@@ -402,7 +402,7 @@
 	customer.suspended = FALSE
 	var/funded_service_balance = service.money
 	service.set_money(0)
-	service.savings = 0
+	service.set_savings(0)
 	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "underfunded provider issued a refund")
 	service.set_money(funded_service_balance)
 	TEST_ASSERT(transfer_account_funds(staff, impostor, staff.money, "Spent gratuity"), "test could not spend the staff gratuity")
@@ -420,12 +420,12 @@
 	SSsupply.currency_refunded = refunds_before
 	SSsupply.currency_internal_refunded = internal_refunds_before
 	service.set_money(service_before)
-	service.savings = service_savings_before
-	service.monthly_income = service_income_before
-	service.monthly_expenses = service_expenses_before
-	service.total_revenue = service_revenue_before
-	service.total_expenses = service_total_expenses_before
-	service.service_subsidy = old_subsidy
+	service.set_savings(service_savings_before)
+	service.set_monthly_income(service_income_before)
+	service.set_monthly_expenses(service_expenses_before)
+	service.set_total_revenue(service_revenue_before)
+	service.set_total_expenses(service_total_expenses_before)
+	service.set_service_subsidy(old_subsidy)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, staff)
 	qdel(invoice)
@@ -464,8 +464,8 @@
 	SSsupply.currency_refunded = refunds_before
 	SSsupply.currency_internal_refunded = internal_refunds_before
 	service.set_money(service_money_before)
-	service.monthly_expenses = service_expenses_before
-	service.total_expenses = service_total_expenses_before
+	service.set_monthly_expenses(service_expenses_before)
+	service.set_total_expenses(service_total_expenses_before)
 	for(var/obj/item/spacecash/new_cash in turf_contents_of_type(test_turf, /obj/item/spacecash))
 		if(!(new_cash in preexisting_cash))
 			qdel(new_cash)
@@ -759,7 +759,7 @@
 	TEST_ASSERT_EQUAL(STATE_PEEK(parts_output, economy, economic_producer_account), producer.account_number, "parts-lathe output discarded producer identity")
 	var/obj/machinery/mecha_part_fabricator_tg/mech_fabricator = new(test_turf)
 	var/datum/design_techweb/test_design = new
-	test_design.build_path = /obj/item
+	test_design.set_build_path(/obj/item)
 	TEST_ASSERT(mech_fabricator.add_to_queue(test_design, producer.account_number), "mech fabricator rejected a valid queued design")
 	TEST_ASSERT_EQUAL(mech_fabricator.queue_producer_accounts[1], producer.account_number, "mech-fabricator queue discarded producer identity")
 	var/turf/fabricator_exit = get_step(test_turf, EAST)
@@ -776,8 +776,8 @@
 
 	research.set_money(research_before)
 	cargo.set_money(cargo_before)
-	research.monthly_income = research_income_before
-	cargo.monthly_income = cargo_income_before
+	research.set_monthly_income(research_income_before)
+	cargo.set_monthly_income(cargo_income_before)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, producer)
 	qdel(scanner)
 	qdel(customer)
@@ -1198,13 +1198,13 @@
 	rel_set(store, nameof(store.linked_account), GLOB.department_accounts[DEPARTMENT_RESEARCH]) // linked by the economy setup / after_init in a live round
 	var/obj/item/store_item = new(store)
 	store_item.set_economic_provenance(DEPARTMENT_RESEARCH, 10, 0)
-	var/item_ref = "[handle_of(store_item)]"
+	var/item_ref = "[handle_text(handle_of(store_item))]"
 	store.set_stock_suggested_prices_at(item_ref, 40)
 	store.set_stock_prices_at(item_ref, 50)
 	store.stock_stocker_accounts[item_ref] = 0
 	var/obj/item/second_store_item = new(store)
 	second_store_item.set_economic_provenance(DEPARTMENT_RESEARCH, 10, 0)
-	var/second_item_ref = "[handle_of(second_store_item)]"
+	var/second_item_ref = "[handle_text(handle_of(second_store_item))]"
 	store.set_stock_suggested_prices_at(second_item_ref, 40)
 	store.set_stock_prices_at(second_item_ref, 50)
 	store.stock_stocker_accounts[second_item_ref] = 0
@@ -1716,7 +1716,7 @@
 
 /datum/unit_test/dq_supply_buy_ships_event_queued_orders/Run()
 	var/datum/shuttle/autodock/ferry/supply/unit_test/fake_shuttle = new /datum/shuttle/autodock/ferry/supply/unit_test("Unit Test Supply")
-	fake_shuttle.shuttle_area = list(get_area(run_loc_floor_bottom_left))
+	fake_shuttle.set_shuttle_area(list(get_area(run_loc_floor_bottom_left)))
 	var/datum/shuttle/autodock/ferry/supply/real_shuttle = SSsupply.shuttle
 	SSsupply.shuttle = fake_shuttle
 	var/datum/supply_order/order = new /datum/supply_order()
@@ -1732,3 +1732,322 @@
 		own_turf_contents(T) // the delivered crate lands on a clear turf of the area: the test owns it
 	SSsupply.shuttle = real_shuttle
 	qdel(fake_shuttle, TRUE) // shuttles are kept for the round unless forced
+
+/datum/unit_test/dq_trade_ship_visit
+
+/datum/unit_test/dq_trade_ship_visit/Run()
+	var/fixed_listings = 0
+	for(var/listing_id in SSsupply.market_listings)
+		var/datum/cargo_market_listing/fixed = SSsupply.market_listings[listing_id]
+		if(!fixed.visit_id)
+			fixed_listings++
+	var/datum/trade_ship_visit/visit = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/guild_trader)
+	TEST_ASSERT_NOTNULL(visit, "a trade ship did not dock")
+	TEST_ASSERT(LAZYLEN(visit.listing_ids) > 0, "a docked trade ship listed no cargo")
+	TEST_ASSERT(LAZYLEN(visit.bid_ids) > 0, "a docked trade ship wanted nothing")
+	for(var/listing_id in visit.listing_ids)
+		var/datum/cargo_market_listing/listing = SSsupply.market_listing(listing_id)
+		TEST_ASSERT_NOTNULL(listing, "a trade ship listing was not on the market")
+		TEST_ASSERT(listing.unit_price < SSsupply.pack_price(listing.pack), "a trade ship sold [listing.pack.name] at or above the catalog price")
+		TEST_ASSERT_EQUAL(listing.visit_id, visit.id, "a trade ship listing lost its ship")
+	for(var/bid_id in visit.bid_ids)
+		var/datum/cargo_market_bid/bid = SSsupply.market_bid(bid_id)
+		TEST_ASSERT(bid.price_multiplier >= 1.25, "a trade ship bid paid only x[bid.price_multiplier]")
+
+	SSsupply.refresh_cargo_market()
+	for(var/listing_id in visit.listing_ids)
+		TEST_ASSERT_NOTNULL(SSsupply.market_listing(listing_id), "a market refresh closed a docked ship's listing")
+	var/fixed_after = 0
+	for(var/listing_id in SSsupply.market_listings)
+		var/datum/cargo_market_listing/fixed = SSsupply.market_listings[listing_id]
+		if(!fixed.visit_id)
+			fixed_after++
+	TEST_ASSERT(fixed_after > 0 && fixed_listings > 0, "the fixed counterparties lost their listings beside the ship")
+
+	var/list/specials = SSsupply.trade_ship_special_packs(visit)
+	TEST_ASSERT(length(specials) > 0, "a trade ship offered no special orders")
+	var/datum/supply_pack/special = specials[1]
+	TEST_ASSERT(!special.contraband, "a trade ship offered contraband as a special order")
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	var/mob/living/carbon/human/buyer = new(test_turf)
+	var/datum/supply_order/order = SSsupply.request_special_order(visit, special, buyer, "Focused special order test")
+	TEST_ASSERT_NOTNULL(order, "a special order was refused")
+	TEST_ASSERT(order.quoted_price > SSsupply.pack_price(special), "a special order was not priced above the catalog")
+	TEST_ASSERT_EQUAL(order.market_counterparty_id, visit.counterparty_id, "a special order lost the ship's counterparty")
+	TEST_ASSERT_EQUAL(order.market_cover_name, visit.name, "a special order lost the ship's name")
+
+	var/list/listing_ids = visit.listing_ids.Copy()
+	var/list/bid_ids = visit.bid_ids.Copy()
+	var/visit_id = visit.id
+	TEST_ASSERT(SSsupply.depart_trade_ship(visit), "a docked trade ship would not depart")
+	TEST_ASSERT_NULL(SSsupply.trade_ship(visit_id), "a departed trade ship stayed docked")
+	for(var/listing_id in listing_ids)
+		TEST_ASSERT_NULL(SSsupply.market_listing(listing_id), "a departed ship's listing stayed open")
+	for(var/bid_id in bid_ids)
+		TEST_ASSERT_NULL(SSsupply.market_bid(bid_id), "a departed ship's bid stayed open")
+	TEST_ASSERT(!SSsupply.request_special_order(visit, special, buyer, "late"), "a departed ship took a special order")
+
+	var/datum/supply_order/admin_order
+	for(var/datum/supply_order/candidate in SSsupply.adm_order_history)
+		if(candidate.ordernum == order.ordernum)
+			admin_order = candidate
+			break
+	own_take_member(SSsupply, nameof(/datum/system/supply::order_history), order)
+	own_take_member(SSsupply, nameof(/datum/system/supply::adm_order_history), admin_order)
+	qdel(admin_order)
+	qdel(order)
+	qdel(buyer)
+
+/// Haggling: a ship accepts at or under its valuation, counters a reasonable ask, rejects a greedy one, walks away when out of
+/// patience, and an accepted deal pays Cargo once and removes the crate.
+/datum/unit_test/dq_trade_ship_haggling
+
+/datum/unit_test/dq_trade_ship_haggling/Run()
+	var/turf/shuttle_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	var/datum/trade_ship_visit/visit = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/union_hauler)
+	TEST_ASSERT_NOTNULL(visit, "no trade ship docked")
+	visit.mood = 1
+	var/mob/living/carbon/human/trader = new(shuttle_turf)
+
+	var/obj/structure/closet/crate/crate = new(shuttle_turf)
+	var/spot = SSsupply.trade_crate_spot_value(crate)
+	TEST_ASSERT(spot > 0, "an empty crate had no spot value (the crate fee)")
+	// The test floor is not the supply shuttle: the console's entry points refuse the crate; the negotiation is tested directly.
+	TEST_ASSERT_NULL(SSsupply.make_trade_offer(visit, crate, 1, trader), "a crate off the supply shuttle was offered to a ship")
+	TEST_ASSERT_NULL(SSsupply.appraise_trade_crate(crate, trader), "a crate off the supply shuttle was appraised")
+	var/estimate = SSsupply.estimate_trade_crate(crate, trader)
+	TEST_ASSERT(abs(estimate - spot) <= spot * TRADE_APPRAISAL_SPREAD_UNTRAINED + 1, "an appraisal ([estimate]) fell outside its spread of [spot]")
+	TEST_ASSERT_EQUAL(SSsupply.estimate_trade_crate(crate, trader), estimate, "appraising again changed the estimate (it would average away)")
+
+	var/valuation = SSsupply.trade_ship_valuation(visit, crate)
+	TEST_ASSERT(valuation > 0, "the ship valued the crate at nothing")
+	var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparty(visit.counterparty_id)
+	var/trader_before = counterparty.trader_standing
+	var/datum/trade_offer/offer = SSsupply.negotiate_trade_offer(visit, crate, valuation * 3, trader)
+	TEST_ASSERT_EQUAL(offer.status, TRADE_OFFER_OPEN, "a greedy ask was not rejected")
+	TEST_ASSERT_EQUAL(counterparty.trader_standing, trader_before + TRADE_TRADER_STANDING_INSULT, "an insulting ask did not cost the trader's regard")
+	TEST_ASSERT_EQUAL(offer.patience, TRADE_OFFER_PATIENCE - 2, "a rejection did not cost patience")
+	TEST_ASSERT(visit.mood < 1, "an insulting ask did not sour the ship's mood")
+	valuation = SSsupply.trade_ship_valuation(visit, crate)
+	var/ask = round(valuation * 1.2)
+	SSsupply.negotiate_trade_offer(visit, crate, ask, trader)
+	TEST_ASSERT_EQUAL(offer.status, TRADE_OFFER_COUNTERED, "a reasonable ask was not countered")
+	TEST_ASSERT(offer.counter >= valuation && offer.counter < ask, "the counter [offer.counter] was not between the valuation [valuation] and the ask [ask]")
+
+	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]
+	var/cargo_before = cargo.money
+	var/counter = offer.counter
+	var/trader_mid = counterparty.trader_standing
+	TEST_ASSERT(SSsupply.take_trade_counter(visit, offer, trader), "taking the counter failed")
+	TEST_ASSERT_EQUAL(counterparty.trader_standing, trader_mid + TRADE_TRADER_STANDING_SALE, "a haggled sale did not raise the trader's regard")
+	TEST_ASSERT_EQUAL(offer.status, TRADE_OFFER_SETTLED, "the deal did not settle")
+	TEST_ASSERT(QDELETED(crate) || isnull(crate.loc), "the sold crate stayed aboard")
+	TEST_ASSERT(cargo.money - cargo_before >= counter - 1 && cargo.money - cargo_before <= counter + 1, "Cargo was paid [cargo.money - cargo_before], not the agreed [counter]")
+	TEST_ASSERT(!SSsupply.take_trade_counter(visit, offer, trader), "a settled deal paid twice")
+
+	var/obj/structure/closet/crate/second = new(shuttle_turf)
+	var/datum/trade_offer/stubborn = SSsupply.negotiate_trade_offer(visit, second, 1000000, trader)
+	SSsupply.negotiate_trade_offer(visit, second, 1000000, trader)
+	TEST_ASSERT_EQUAL(stubborn.status, TRADE_OFFER_WALKED, "the ship kept negotiating past its patience")
+	var/datum/trade_offer/again = SSsupply.negotiate_trade_offer(visit, second, 1, trader)
+	TEST_ASSERT_EQUAL(again, stubborn, "a ship that walked away took a new offer for the same crate")
+	TEST_ASSERT_EQUAL(again.status, TRADE_OFFER_WALKED, "a ship that walked away reopened")
+
+	var/obj/structure/closet/crate/accepted = new(shuttle_turf)
+	var/datum/trade_offer/fair = SSsupply.negotiate_trade_offer(visit, accepted, 1, trader)
+	TEST_ASSERT_EQUAL(fair.status, TRADE_OFFER_SETTLED, "an ask under the valuation was not accepted")
+	TEST_ASSERT_EQUAL(fair.settled_price, 1, "an accepted ask paid other than the ask")
+
+	SSsupply.depart_trade_ship(visit)
+	counterparty.change_trader_standing(trader_before - counterparty.trader_standing)
+	qdel(second)
+	qdel(trader)
+
+/// Black-market ships: hidden from an ordinary console, deal contraband through an unlocked one, and a deal carries no
+/// customs risk (no interdiction, no NanoTrasen standing lost).
+/datum/unit_test/dq_black_market_ship
+
+/datum/unit_test/dq_black_market_ship/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	var/mob/living/carbon/human/dealer = new(test_turf)
+	var/datum/trade_ship_visit/visit = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/black_market)
+	TEST_ASSERT_NOTNULL(visit, "the black-market ship did not dock")
+	TEST_ASSERT(!SSsupply.trade_ship_visible(visit, dealer, FALSE), "an ordinary console saw a black-market ship")
+	TEST_ASSERT(SSsupply.trade_ship_visible(visit, dealer, TRUE), "an unlocked console could not see the black-market ship")
+	var/list/ui = SSsupply.trade_ship_ui_data(dealer, TRUE, FALSE)
+	for(var/list/row in ui["ships"])
+		TEST_ASSERT(row["id"] != visit.id, "the black-market ship was listed on an ordinary console")
+
+	var/datum/supply_pack/contraband_pack
+	for(var/datum/supply_pack/pack as anything in SSsupply.trade_ship_special_packs(visit))
+		if(pack.contraband)
+			contraband_pack = pack
+			break
+	TEST_ASSERT_NOTNULL(contraband_pack, "the black-market ship offered no contraband")
+	TEST_ASSERT(!SSsupply.request_special_order(visit, contraband_pack, dealer, "test", FALSE, FALSE), "a locked console special-ordered from the black market")
+	var/nt_before = get_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN)
+	var/nt_cargo_before = get_department_faction_reputation(DEPARTMENT_CARGO, REPUTATION_FACTION_NANOTRASEN)
+	var/datum/supply_order/order = SSsupply.request_special_order(visit, contraband_pack, dealer, "test", FALSE, TRUE)
+	TEST_ASSERT_NOTNULL(order, "an unlocked console could not special-order contraband")
+	TEST_ASSERT_EQUAL(get_station_faction_reputation(REPUTATION_FACTION_NANOTRASEN), nt_before, "a black-market deal cost NanoTrasen standing (the customs system is removed)")
+	TEST_ASSERT_EQUAL(get_department_faction_reputation(DEPARTMENT_CARGO, REPUTATION_FACTION_NANOTRASEN), nt_cargo_before, "a black-market deal cost Cargo NanoTrasen standing")
+	TEST_ASSERT(!hascall(SSsupply, "black_market_exposure"), "the customs interdiction proc is still defined")
+
+	var/datum/trade_ship_visit/lawful = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/guild_trader)
+	TEST_ASSERT(SSsupply.trade_ship_visible(lawful, dealer, FALSE), "a lawful ship was hidden")
+
+	SSsupply.depart_trade_ship(visit)
+	SSsupply.depart_trade_ship(lawful)
+	var/datum/supply_order/admin_order
+	for(var/datum/supply_order/candidate in SSsupply.adm_order_history)
+		if(candidate.ordernum == order.ordernum)
+			admin_order = candidate
+			break
+	own_take_member(SSsupply, nameof(/datum/system/supply::order_history), order)
+	own_take_member(SSsupply, nameof(/datum/system/supply::adm_order_history), admin_order)
+	qdel(admin_order)
+	qdel(order)
+	qdel(dealer)
+
+/// Prices follow three standing layers (station, department, trader), each shown and summed: better standing makes a
+/// ship's special orders cheaper and its valuation of a crate higher; worse standing the reverse.
+/datum/unit_test/dq_trade_standing_layers
+
+/datum/unit_test/dq_trade_standing_layers/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	var/datum/trade_ship_visit/visit = SSsupply.arrive_trade_ship(/datum/trade_ship_profile/guild_trader)
+	TEST_ASSERT_NOTNULL(visit, "no trade ship docked")
+	visit.mood = 1
+	var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparty(visit.counterparty_id)
+	var/faction_id = counterparty.faction_id
+	var/station_before = get_station_faction_reputation(faction_id)
+	var/cargo_before = get_department_faction_reputation(DEPARTMENT_CARGO, faction_id)
+	var/trader_before = counterparty.trader_standing
+	var/list/layers = SSsupply.trade_standing_layers(counterparty)
+	TEST_ASSERT_EQUAL(length(layers), 3, "prices did not have three standing layers")
+	var/list/names = list()
+	var/sum = 0
+	for(var/list/layer as anything in layers)
+		names += layer["layer"]
+		sum += layer["effect"]
+	TEST_ASSERT(names ~= list(TRADE_STANDING_STATION, TRADE_STANDING_DEPARTMENT, TRADE_STANDING_TRADER), "the layers were [jointext(names, ", ")]")
+	TEST_ASSERT(abs(SSsupply.trade_standing_effect(counterparty) - sum) < 0.0001, "the price effect is not the sum of the layers")
+
+	var/datum/supply_pack/special
+	for(var/datum/supply_pack/candidate as anything in SSsupply.trade_ship_special_packs(visit))
+		if(!special || SSsupply.pack_price(candidate) > SSsupply.pack_price(special))
+			special = candidate
+	var/obj/structure/closet/crate/crate = new(test_turf)
+	new /obj/item/tool/wrench(crate)
+	new /obj/item/tool/screwdriver(crate)
+	// Each layer moves the price on its own.
+	var/base_special = SSsupply.trade_ship_special_price(visit, special)
+	var/base_value = SSsupply.trade_ship_valuation(visit, crate)
+	adjust_station_faction_reputation(faction_id, REPUTATION_REVERED - get_station_faction_reputation(faction_id))
+	var/station_special = SSsupply.trade_ship_special_price(visit, special)
+	TEST_ASSERT(station_special < base_special, "station standing did not cheapen a special order ([station_special] vs [base_special])")
+	adjust_department_faction_reputation(DEPARTMENT_CARGO, faction_id, REPUTATION_REVERED - get_department_faction_reputation(DEPARTMENT_CARGO, faction_id))
+	var/department_special = SSsupply.trade_ship_special_price(visit, special)
+	TEST_ASSERT(department_special < station_special, "Cargo's standing did not cheapen a special order ([department_special] vs [station_special])")
+	counterparty.change_trader_standing(REPUTATION_REVERED - counterparty.trader_standing)
+	var/trader_special = SSsupply.trade_ship_special_price(visit, special)
+	TEST_ASSERT(trader_special < department_special, "the trader's regard did not cheapen a special order ([trader_special] vs [department_special])")
+	TEST_ASSERT(abs(SSsupply.trade_standing_effect(counterparty) - (TRADE_STANDING_STATION_WEIGHT + TRADE_STANDING_DEPARTMENT_WEIGHT + TRADE_STANDING_TRADER_WEIGHT)) < 0.0001, "full standing on every layer is not the sum of the weights")
+	TEST_ASSERT(SSsupply.trade_ship_valuation(visit, crate) > base_value, "good standing did not raise a ship's valuation of a crate")
+	var/list/ui = SSsupply.trade_standing_ui_data(counterparty)
+	TEST_ASSERT_EQUAL(length(ui["layers"]), 3, "the console did not show three standing layers")
+	TEST_ASSERT(ui["effect"] > 0, "the console showed no price effect at full standing")
+	// Poor standing the other way.
+	counterparty.change_trader_standing(REPUTATION_HATED - counterparty.trader_standing)
+	adjust_station_faction_reputation(faction_id, REPUTATION_HATED - get_station_faction_reputation(faction_id))
+	adjust_department_faction_reputation(DEPARTMENT_CARGO, faction_id, REPUTATION_HATED - get_department_faction_reputation(DEPARTMENT_CARGO, faction_id))
+	TEST_ASSERT(SSsupply.trade_ship_special_price(visit, special) > base_special, "poor standing did not raise a special order's price")
+	TEST_ASSERT(SSsupply.trade_ship_valuation(visit, crate) < base_value, "poor standing did not lower a ship's valuation")
+
+	adjust_station_faction_reputation(faction_id, station_before - get_station_faction_reputation(faction_id))
+	if(isnum(cargo_before))
+		adjust_department_faction_reputation(DEPARTMENT_CARGO, faction_id, cargo_before - get_department_faction_reputation(DEPARTMENT_CARGO, faction_id))
+	counterparty.change_trader_standing(trader_before - counterparty.trader_standing)
+	SSsupply.depart_trade_ship(visit)
+	for(var/obj/item/thing in crate)
+		qdel(thing)
+	qdel(crate)
+
+/// A cargo lot is data: a supply pack naming a pure loot table of existing items, delivered unlisted and appraised as one
+/// lot, with Cargo staff reading it tighter than anyone else. The cargo appraiser tool is gone.
+/datum/unit_test/dq_cargo_lot_pack
+
+/datum/unit_test/dq_cargo_lot_pack/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	TEST_ASSERT(!ispath(text2path("/obj/item/cargo_appraiser")), "the cargo appraiser tool still exists")
+	for(var/pack_path in list(/datum/supply_pack/supply/salvage_lot, /datum/supply_pack/supply/surplus_lot))
+		var/datum/supply_pack/pack = new pack_path
+		TEST_ASSERT(ispath(pack.lot_table, /loot), "[pack_path] names no loot table")
+		TEST_ASSERT(!length(pack.contains), "[pack_path] lists fixed contents beside its lot")
+		TEST_ASSERT_NOTNULL(loot_decl_for(pack.lot_table), "[pack.lot_table] declares no loot")
+		var/obj/structure/closet/crate/crate = new(test_turf)
+		var/list/lot = SSsupply.fill_supply_lot(pack, crate)
+		TEST_ASSERT(length(lot) > 0, "[pack_path] delivered an empty lot")
+		for(var/atom/movable/thing in lot)
+			TEST_ASSERT(QDELETED(thing) || thing.loc == crate || (thing.loc in crate.get_all_contents()), "a lot item ([thing.type]) landed outside its crate")
+		var/mob/living/carbon/human/stranger = new(test_turf)
+		var/mob/living/carbon/human/cargo_tech = new(test_turf)
+		cargo_tech.set_job(JOB_CARGO_TECHNICIAN)
+		TEST_ASSERT(SSsupply.trade_appraisal_spread(cargo_tech) < SSsupply.trade_appraisal_spread(stranger), "Cargo staff did not appraise a lot tighter than a stranger")
+		var/spot = SSsupply.trade_crate_spot_value(crate)
+		var/estimate = SSsupply.estimate_trade_crate(crate, cargo_tech)
+		TEST_ASSERT(abs(estimate - spot) <= spot * TRADE_APPRAISAL_SPREAD_TRAINED + 1, "a lot appraisal ([estimate]) fell outside the trained spread of [spot]")
+		TEST_ASSERT_EQUAL(crate.trade_appraiser, cargo_tech.name, "the lot appraisal did not record who made it")
+		for(var/turf/T in range(1, test_turf))
+			own_turf_contents(T)
+		for(var/atom/movable/thing in crate.get_all_contents())
+			if(thing != crate)
+				qdel(thing)
+		qdel(crate)
+		qdel(stranger)
+		qdel(cargo_tech)
+		qdel(pack)
+
+/// The recycling crusher breaks an item and everything in it into debris at its efficiency, never more than the parts are
+/// made of (the salvage path that replaced the salvage smelter).
+/datum/unit_test/dq_crusher_breaks_down_contents
+
+/datum/unit_test/dq_crusher_breaks_down_contents/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	TEST_ASSERT(!ispath(text2path("/obj/machinery/recycling/salvage_smelter")), "the salvage smelter still exists")
+	var/obj/machinery/recycling/crusher/crusher = new(test_turf)
+	crusher.set_dir(EAST)
+	var/obj/item/storage/toolbox/mechanical/box = new(test_turf)
+	var/list/paid = list()
+	for(var/obj/item/part as anything in box.get_all_contents_type(/obj/item))
+		var/list/part_matter = part.material_totals()
+		for(var/mat in part_matter)
+			paid[mat] += part_matter[mat] * breakdown_units(part)
+	TEST_ASSERT(length(paid), "a toolbox and its tools are made of nothing")
+	var/list/crushed = crusher.crush_matter(box)
+	for(var/mat in paid)
+		TEST_ASSERT(abs((crushed[mat] || 0) - paid[mat]) < 0.01, "[mat]: the crusher read [crushed[mat]] units, its parts are made of [paid[mat]]")
+	var/obj/item/toolbox_alone = new /obj/item/storage/toolbox/mechanical(test_turf)
+	for(var/obj/item/inner in toolbox_alone.contents)
+		qdel(inner)
+	var/list/alone = crusher.crush_matter(toolbox_alone)
+	var/alone_total = 0
+	var/full_total = 0
+	for(var/mat in alone)
+		alone_total += alone[mat]
+	for(var/mat in crushed)
+		full_total += crushed[mat]
+	TEST_ASSERT(full_total > alone_total, "the crusher ignored what was inside the toolbox")
+	qdel(toolbox_alone)
+	var/effic = crusher.effic_factor
+	TEST_ASSERT(effic > 0 && effic <= 1, "the crusher's efficiency was [effic]")
+	box.forceMove(crusher)
+	crusher.crush_done(box)
+	var/obj/item/debris_pack/debris = locate() in get_step(crusher, EAST)
+	TEST_ASSERT_NOTNULL(debris, "crushing left no debris")
+	var/list/debris_matter = debris.material_totals()
+	for(var/mat in paid)
+		TEST_ASSERT((debris_matter[mat] || 0) <= paid[mat] + 0.01, "[mat]: the debris holds more ([debris_matter[mat]]) than the parts were made of ([paid[mat]])")
+		TEST_ASSERT(abs((debris_matter[mat] || 0) - paid[mat] * effic) < 0.5, "[mat]: the debris holds [debris_matter[mat]], expected [paid[mat] * effic]")
+	qdel(debris)
+	qdel(crusher)

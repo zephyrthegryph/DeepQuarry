@@ -40,6 +40,7 @@ CAPABILITIES(/datum/computer_file/program/revelation)
 	op("PRG_arm", ui_act(), then(PROC_REF(ui_act_prg_arm)))
 	op("PRG_activate", ui_act(), then(PROC_REF(ui_act_prg_activate)))
 	interface("NtosRevelation")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool(), armed = bool())
 	op("PRG_obfuscate", ui_act("PRG_obfuscate", arg("new_name", schema_text(4096))), then(PROC_REF(ui_act_prg_obfuscate)))
 
 /datum/computer_file/program/revelation/proc/ui_act_prg_arm(datum/act/op/A)

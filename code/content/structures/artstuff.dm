@@ -95,6 +95,7 @@ CAPABILITIES(/obj/structure/easel)
 CAPABILITIES(/obj/item/canvas)
 	setup(PROC_REF(reset_grid))
 	interface("Canvas")
+	ui_shape(grid = list_of(list_of(schema_text())), name = schema_text(), finalized = bool())
 	op("paint", ui_act("paint", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_paint)))
 	op("finalize", ui_act("finalize"), then(PROC_REF(ui_act_finalize)))
 	extend(TAG_UI, needs(req(PROC_REF(canvas_open), because = MSG(canvas/finished))))
@@ -118,7 +119,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 	return OP_PASS
 
 /obj/item/canvas/ui_data(datum/act/eval/A)
-	return list("grid" = grid, "name" = painting_name, "finalized" = finalized)
+	return list("grid" = grid, "name" = painting_name, "finalized" = !!finalized)
 
 /obj/item/canvas/examine(mob/user)
 	. = ..()

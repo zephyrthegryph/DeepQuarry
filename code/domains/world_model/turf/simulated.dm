@@ -56,7 +56,7 @@
 	if(istype(loc, /area/chapel))
 		holy = 1
 	levelupdate()
-	if(is_outdoors())
+	if(SSplanets?.planet_at_z(z) && is_outdoors()) // only a planet's z keeps its outdoor turfs (weather, sun): elsewhere nothing reads them
 		SSplanets.addTurf(src)
 
 /turf/simulated/examine(mob/user)
@@ -74,17 +74,19 @@
 /turf/simulated/proc/update_dirt()
 	if(can_dirty)
 		dirt = min(dirt+1, 101)
-		var/obj/effect/decal/cleanable/dirt/dirtoverlay = locate(/obj/effect/decal/cleanable/dirt, src)
-		if (dirt > 50)
+		if (dirt > 50) // only a dirty floor looks for its overlay: the turf's contents are not walked on every step of a clean one
+			var/obj/effect/decal/cleanable/dirt/dirtoverlay = locate(/obj/effect/decal/cleanable/dirt, src)
 			if (!dirtoverlay)
 				dirtoverlay = new/obj/effect/decal/cleanable/dirt(src)
-			dirtoverlay.set_alpha(min((dirt - 50) * 5, 255))
+			var/dirt_alpha = min((dirt - 50) * 5, 255)
+			if(dirtoverlay.alpha != dirt_alpha) // a floor at its dirtiest is walked on every step: the overlay is not written again for the same value
+				dirtoverlay.set_alpha(dirt_alpha)
 
 /turf/simulated/Entered(atom/A, atom/OL)
 	var/dirtslip = FALSE
 	if (isliving(A))
 		var/mob/living/M = A
-		if(M.lying || stat_value(M, STAT_FLYING) || M.is_incorporeal() || !(M.flags & ATOM_INITIALIZED)) // Also ignore newly spawning mobs
+		if(M.lying || !(M.flags & ATOM_INITIALIZED) || M.is_incorporeal() || M.flying) // Also ignore newly spawning mobs; the cheap reads first
 			return ..()
 
 		if(M.dirties_floor())
@@ -100,8 +102,9 @@
 			// Tracking blood
 			var/list/bloodDNA = null
 			var/bloodcolor=""
-			if(H.get_equipped_item(SLOT_ID_SHOES))
-				var/obj/item/clothing/shoes/S = H.get_equipped_item(SLOT_ID_SHOES)
+			var/obj/item/worn_shoes = H.get_equipped_item(SLOT_ID_SHOES)
+			if(worn_shoes)
+				var/obj/item/clothing/shoes/S = worn_shoes
 				if(istype(S))
 					S.handle_movement(src,(H.m_intent == I_RUN ? 1 : 0), H) // handle_movement now needs to know who is moving, for inshoe steppies
 					if(S.track_blood)
@@ -122,7 +125,7 @@
 
 				bloodDNA = null
 
-		if(check_slipping(M,dirtslip))
+		if((!ishuman(M) || wet || dirtslip) && check_slipping(M,dirtslip)) // a human on a dry floor that is not dirt-slick cannot slip: check_slipping() would read shoes and species to say no
 			var/datum/turfslip/TSC = M.get_or_start_turfslip()
 			TSC.start_slip(src,dirtslip)
 	..()
@@ -166,7 +169,6 @@
 
 /turf/simulated/proc/toggle_climbability() //Again, b
 	set_climbable(!climbable)
-	verb_store_refresh(src, /turf/simulated/proc/climb_wall)
 
 /turf/simulated/proc/snow_dries()
 	set_wet(TURFSLIP_DRY)
@@ -178,5 +180,5 @@ CAPABILITIES(/turf/simulated)
 	setup(PROC_REF(simulated_start))
 	setup(PROC_REF(freelook_visibility_start))
 	after_init(0, then(PROC_REF(turf_after_init)))
-	verb_entry(/turf/simulated/proc/climb_wall, when = nameof(climbable))
+	op("climb_wall_menu", menu(desc = "Using nature's gifts or technology, scale that wall!"), label("Climb Wall"), when(nameof(climbable)), needs(req_adjacent(), req(PROC_REF(climb_wall_ready), fails = FAILS_HIDDEN)), then(PROC_REF(climb_wall_chosen)))
 	adjacency(ADJ_KIND_TURF_EDGE, dirs = ADJ_ALL_AROUND, changed = PROC_REF(edges_changed))

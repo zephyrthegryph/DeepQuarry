@@ -17,7 +17,7 @@ for f in "${forms[@]}"; do
 		*) re="\b${f}\b" ;;
 	esac
 	out=$(git grep -nE "$re" -- 'code/*.dm' 2>/dev/null | grep -Ev '^code/(modules/unit_tests|tests|engine|datums/om|datums/sys|__defines|defines/(engine|library|host|base|content))/' | grep -Ev '^[^:]*:[0-9]+:\s*//')
-	# REQ_ also names the kernel request-status constants (engine/vocabulary.dm) and the reads levels (REQ_READS_*), which are not legacy predicate macros.
+	# REQ_ also names the kernel request-status constants (engine/vocabulary.dm), which are not legacy predicate macros.
 	if [ "$f" = REQ_ ]; then out=$(printf '%s' "$out" | grep -Ev 'REQ_(ANSWERED|CANCELLED|TIMED_OUT|TRANSPORT_FAILED|NO_RESULT|FAILED|READS_TYPE|READS_INSTANCE)'); fi
 	sites=$(printf '%s' "$out" | grep -c . || true)
 	files=$(printf '%s' "$out" | cut -d: -f1 | sort -u | grep -c . || true)

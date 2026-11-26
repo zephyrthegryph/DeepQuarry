@@ -16,6 +16,8 @@
 	var/master_id
 	var/maximum_volume = 100
 	var/tmp/atom/my_atom = null
+	/// The temperature (K) the contents of a holder with no object of its own carry (the basin a filter catches a pour in): the temperature of what was poured into it.
+	var/tmp/carried_temperature
 	/// Nesting depth of begin_batch()/end_batch(). While positive, removals
 	/// defer their reaction check and change notification to end_batch().
 	var/tmp/batch_depth = 0
@@ -110,7 +112,22 @@ CAPABILITIES(/datum/reagents)
 	// The holder's heat capacity changed with its contents (H3).
 	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
 		my_atom.heat_capacity_changed()
+		if(istype(my_atom, /obj/item/reagent_containers))
+			var/obj/item/reagent_containers/C = my_atom
+			C.watch_reaction_bands() // the contents changed: so did the temperatures that matter to them
 	return
+
+/// update_total() for a holder that held nothing before `R` (one reagent, at or above the minimum volume) went in: the total, colour and master are
+/// that reagent's, so nothing is walked or summed. The same writes update_total() makes.
+/datum/reagents/proc/settle_first_reagent(datum/reagent/R)
+	set_total_volume(R.volume)
+	if(!ismob(my_atom))
+		set_tint(R.color)
+		set_master_id(R.id)
+	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
+		my_atom.heat_capacity_changed()
+
+SCHEMA(/datum/reagents, carried_temperature, num())
 
 /// Heat capacity of the contents, J/K: each reagent's volume x specific heat.
 /datum/reagents/proc/heat_capacity()
@@ -144,6 +161,8 @@ CAPABILITIES(/datum/reagents)
 		return FALSE
 	if(my_atom.flags & NOREACT)
 		return FALSE
+	if(reagent_by_id[REAGENT_ID_ICE] || reagent_by_id[REAGENT_ID_WATER])
+		phase_step() // ice that is warm melts and water that is cold freezes before anything else reacts (code/domains/world_model/reagents/freezing.dm)
 	var/list/effect_reactions = xform_settle_reagents(src)
 	update_total()
 	on_reactions_handled(effect_reactions)
@@ -151,11 +170,13 @@ CAPABILITIES(/datum/reagents)
 
 /* Holder-to-chemical */
 
+/// Adds `amount` units of `id`.
 /datum/reagents/proc/add_reagent(id, amount, data = null, safety = 0, was_from_belly, can_dialysis = TRUE)
 	if(!isnum(amount) || amount <= 0)
 		return 0
 
-	update_total()
+	if(length(reagent_list)) // an empty holder has nothing to settle: its total, tint and master are already those of nothing (a container filled at construction starts empty)
+		update_total()
 	amount = min(amount, get_free_space())
 
 	// O(1) lookup: check if this reagent already exists in the holder
@@ -182,7 +203,11 @@ CAPABILITIES(/datum/reagents)
 
 	var/datum/reagent/D = SSchemistry.ready().chemical_reagents[id]
 	if(D)
+		BOOT_PHASE_BEGIN(bp_new)
 		var/datum/reagent/R = new D.type()
+		BOOT_PHASE_END(bp_new, "add_reagent: new reagent datum", my_atom)
+		BOOT_PHASE_BEGIN(bp_link)
+		var/was_empty = !length(reagent_list)
 		own_reagent_lists()
 		rel_add(src, nameof(reagent_list), R)
 		// Only update reagent_by_id if no entry exists yet for this id.
@@ -196,11 +221,21 @@ CAPABILITIES(/datum/reagents)
 		SetViruses(R,data)
 		if(was_from_belly)
 			R.from_belly = was_from_belly
-		update_total()
+		BOOT_PHASE_END(bp_link, "add_reagent: link and fill the new reagent", my_atom)
+		BOOT_PHASE_BEGIN(bp_total)
+		if(was_empty && R.volume >= MINIMUM_CHEMICAL_VOLUME)
+			settle_first_reagent(R) // the holder held nothing: its total is this one reagent's volume, no walk of the list
+		else
+			update_total()
+		BOOT_PHASE_END(bp_total, "add_reagent: update_total", my_atom)
+		BOOT_PHASE_BEGIN(bp_react)
 		if(!safety)
 			handle_reactions()
+		BOOT_PHASE_END(bp_react, "add_reagent: handle_reactions", my_atom)
+		BOOT_PHASE_BEGIN(bp_changed)
 		if(my_atom)
 			my_atom.on_reagent_change()
+		BOOT_PHASE_END(bp_changed, "add_reagent: on_reagent_change", my_atom)
 		return 1
 	else
 		stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist.")
@@ -223,12 +258,6 @@ CAPABILITIES(/datum/reagents)
 	handle_reactions()
 	if(my_atom)
 		my_atom.on_reagent_change()
-
-/datum/reagents/proc/isolate_reagent(reagent)
-	for(var/datum/reagent/R as anything in reagent_list)
-		if(R.id != reagent)
-			del_reagent(R.id)
-			update_total()
 
 /datum/reagents/proc/remove_reagent(id, amount, safety = 0)
 	if(!isnum(amount))
@@ -347,21 +376,75 @@ CAPABILITIES(/datum/reagents)
 	if(!amount)
 		return
 
+	// A funnel with a filter on the container being poured into: the liquid goes through the filter first.
+	var/obj/item/chem_filter/gate = target.inflow_filter()
+	if(gate)
+		return trans_through_filter(target, gate, amount, multiplier, copy, can_dialysis)
+	return transfer_contents(target, amount, multiplier, copy, can_dialysis)
+
+/// The move of trans_to_holder() once the amount is settled and no filter is in the way: `amount` of everything, in proportion.
+/datum/reagents/proc/transfer_contents(datum/reagents/target, amount, multiplier, copy, can_dialysis)
 	var/part = amount / total_volume
 
 	var/target_is_belly = isbelly(target.my_atom) // Sending reagents into bellies turns them into belly reagents
+	var/source_temperature = content_temperature() // what is poured brings its temperature with it (receive_heat())
+	var/target_temperature = target.content_temperature()
+	var/carried_capacity = 0
 
 	for(var/datum/reagent/current in reagent_list)
 		var/amount_to_transfer = current.volume * part
 		if(current.dialysis_returnable || (!current.dialysis_returnable && ismob(target))) //Prevents duplication of reagents.
 			target.add_reagent(current.id, amount_to_transfer * multiplier, current.get_data(), safety = 1, was_from_belly = (current.from_belly || target_is_belly), can_dialysis = can_dialysis) // We don't react until everything is in place
+			carried_capacity += amount_to_transfer * multiplier * current.specific_heat
 		if(!copy)
 			remove_reagent(current.id, amount_to_transfer, 1)
+	target.receive_heat(source_temperature, target_temperature, carried_capacity, my_atom)
 
 	if(!copy)
 		handle_reactions()
 	target.handle_reactions()
 	return amount
+
+/// The temperature of the contents of this holder, K: its object's (a mob's blood and a turf have none that is theirs to mix), or what a holder with no object carries; null when neither.
+/datum/reagents/proc/content_temperature()
+	if(my_atom && !ismob(my_atom) && !isturf(my_atom))
+		return my_atom.get_temperature()
+	return carried_temperature
+
+/// Reagents with `carried_capacity` J/K of heat capacity at `source_temperature` were just poured in, the holder having been at `own_temperature` before: it settles at the
+/// heat-capacity-weighted mix of the two, by add_heat() on its object (the heat system moves it from there). A holder with no object of its own just carries the temperature on.
+/// Nothing is mixed into a mob's blood, a belly or a turf, or when either temperature is unknown.
+/datum/reagents/proc/receive_heat(source_temperature, own_temperature, carried_capacity, atom/source)
+	if(isnull(source_temperature) || !(carried_capacity > 0))
+		return
+	if(!my_atom)
+		carried_temperature = source_temperature
+		return
+	if(isnull(own_temperature) || !isobj(my_atom) || isbelly(my_atom) || abs(source_temperature - own_temperature) < 0.05)
+		return
+	var/joules = carried_capacity * (source_temperature - own_temperature)
+	my_atom.add_heat(joules)
+	if(GLOB.chem_trace)
+		log_world("CHEM: [round(carried_capacity / REAGENT_SPECIFIC_HEAT_WATER, 0.1)]u (water-equivalent) poured from [source || "a holder"] at [round(source_temperature - T0C, 0.1)] C into [my_atom] at [round(own_temperature - T0C, 0.1)] C: [round(joules)] J, now [round(my_atom.get_temperature() - T0C, 0.1)] C")
+
+/// The filter at the mouth of the container this holder is in (a funnel with a filter in it), or null.
+/datum/reagents/proc/inflow_filter()
+	RETURN_TYPE(/obj/item/chem_filter)
+	var/obj/item/reagent_containers/glass/vessel = my_atom
+	if(!istype(vessel))
+		return null
+	return vessel.funnel_filter()
+
+/// trans_to_holder() through `gate`: the liquid lands in an open basin first, the filter takes what it takes out of it, and what is left goes into `target`.
+/// Returns the amount that left this holder.
+/datum/reagents/proc/trans_through_filter(datum/reagents/target, obj/item/chem_filter/gate, amount, multiplier, copy, can_dialysis)
+	var/datum/reagents/basin = new /datum/reagents(max(amount * max(multiplier, 1), 1))
+	var/moved = trans_to_holder(basin, amount, multiplier, copy, can_dialysis)
+	if(!moved)
+		return moved
+	gate.filter_mixture(basin, target.my_atom)
+	basin.transfer_contents(target, basin.total_volume, 1, FALSE, can_dialysis)
+	return moved
 
 /* Holder-to-atom and similar procs */
 
@@ -392,12 +475,25 @@ CAPABILITIES(/datum/reagents)
 	if(!trans_to(target, amount, multiplier, copy, user = user))
 		touch(target, amount, user)
 
+/// Draws `amount` of the reagent `id` (a contaminant as much as any other: each is a reagent of its own) out of the mixture into a new holder, which carries the
+/// temperature of this one (every pour that goes by way of a portion, trans_id_to() and trans_type_to() among them, brings its heat the way trans_to_holder() does). Null
+/// when there is none of it.
+/datum/reagents/proc/draw_portion(id, amount)
+	RETURN_TYPE(/datum/reagents)
+	amount = min(amount, get_reagent_amount(id))
+	if(amount <= 0)
+		return null
+	var/datum/reagents/portion = new /datum/reagents(amount)
+	portion.carried_temperature = content_temperature()
+	portion.add_reagent(id, amount, get_data(id), safety = 1)
+	remove_reagent(id, amount, safety = 1)
+	handle_reactions()
+	if(GLOB.chem_trace)
+		log_world("CHEM: drew [round(amount, 0.001)]u of [id] out of [my_atom]")
+	return portion
+
 /datum/reagents/proc/trans_type_to(target, rtype, amount = 1)
 	if (!target)
-		return
-
-	var/datum/reagent/transfering_reagent = get_reagent(rtype)
-	if(!transfering_reagent)
 		return
 
 	if (istype(target, /atom))
@@ -405,36 +501,24 @@ CAPABILITIES(/datum/reagents)
 		if (!A.reagents || !atom_rules_of(A).simulated)
 			return
 
-	amount = min(amount, transfering_reagent.volume)
-
-	if(!amount)
+	var/datum/reagents/F = draw_portion(rtype, amount)
+	if(!F)
 		return
 
-	var/datum/reagents/F = new /datum/reagents(amount)
-	var/tmpdata = get_data(rtype)
-	F.add_reagent(rtype, amount, tmpdata)
-	remove_reagent(rtype, amount)
-
 	if (istype(target, /atom))
-		return F.trans_to(target, amount) // Let this proc check the atom's type
+		return F.trans_to(target, F.total_volume) // Let this proc check the atom's type
 	else if (istype(target, /datum/reagents))
-		return F.trans_to_holder(target, amount)
+		return F.trans_to_holder(target, F.total_volume)
 
 /datum/reagents/proc/trans_id_to(atom/target, id, amount = 1, force_open_container = FALSE)
 	if (!target || !target.reagents)
 		return
 
-	amount = min(amount, get_reagent_amount(id))
-
-	if(!amount)
+	var/datum/reagents/F = draw_portion(id, amount)
+	if(!F)
 		return
 
-	var/datum/reagents/F = new /datum/reagents(amount)
-	var/tmpdata = get_data(id)
-	F.add_reagent(id, amount, tmpdata)
-	remove_reagent(id, amount)
-
-	return F.trans_to(target, amount, force_open_container = force_open_container) // Let this proc check the atom's type
+	return F.trans_to(target, F.total_volume, force_open_container = force_open_container) // Let this proc check the atom's type
 
 // When applying reagents to an atom externally, touch() is called to trigger any on-touch effects of the reagent.
 // This does not handle transferring reagents to things.
@@ -633,3 +717,24 @@ GLOBAL_LIST_EMPTY(reagents_empty_list)
 	own_move(R, src, nameof(reagent_list))
 	if(!reagent_by_id[R.id])
 		set_reagent_by_id_at(R.id, R)
+
+/// Fills an empty holder with a starting template (reagents(): an ordered id -> amount list, no data, a set no transformation takes, fitting the
+/// volume): the result add_reagent() gives for each in turn, with the total, colour and change notice worked out once instead of after every add.
+/datum/reagents/proc/fill_from_template(list/template)
+	var/list/defs = SSchemistry.ready().chemical_reagents
+	own_reagent_lists()
+	for(var/id in template)
+		var/datum/reagent/D = defs[id]
+		if(!D)
+			stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist.")
+			continue
+		var/datum/reagent/R = new D.type()
+		rel_add(src, nameof(reagent_list), R)
+		if(!reagent_by_id[id])
+			set_reagent_by_id_at(id, R)
+		rel_set(R, nameof(R.holder), src)
+		R.set_volume(template[id])
+		R.initialize_data(null)
+	update_total()
+	if(my_atom)
+		my_atom.on_reagent_change()

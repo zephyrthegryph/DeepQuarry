@@ -1,0 +1,1590 @@
+{
+	"categories": [
+		{
+			"name": "Power - Passive",
+			"items": [
+				{
+					"name": "photovoltaic cell (tiny)",
+					"desc": "It's a very tiny solar cell, generally used in calculators.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/passive/power/solar_cell"
+				},
+				{
+					"name": "photovoltaic cell (small)",
+					"desc": "It's a small solar cell, generally used in flashlights.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/passive/power/solar_cell/dual"
+				},
+				{
+					"name": "photovoltaic cell (standard)",
+					"desc": "It's a solar cell, generally used in outdoor lamps.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/passive/power/solar_cell/quad"
+				},
+				{
+					"name": "photovoltaic cell (large)",
+					"desc": "It's a large solar cell, generally used en masse to store power for later use.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/passive/power/solar_cell/hex"
+				},
+				{
+					"name": "starter",
+					"desc": "This tiny circuit will send a pulse right after device is turned on, or when power is restored.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/passive/power/starter"
+				},
+				{
+					"name": "metabolic siphon",
+					"desc": "A complicated piece of technology which converts bodily nutriments of a host into electricity.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/passive/power/metabolic_siphon"
+				},
+				{
+					"name": "internal energy siphon",
+					"desc": "A small circuit designed to be connected to an internal power wire inside a synthetic entity.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/passive/power/metabolic_siphon/synthetic"
+				},
+				{
+					"name": "tesla power relay",
+					"desc": "A seemingly enigmatic device which connects to nearby APCs wirelessly and draws power from them.",
+					"can_build": 0,
+					"cost": 3,
+					"path": "/obj/item/integrated_circuit/passive/power/relay"
+				},
+				{
+					"name": "large tesla power relay",
+					"desc": "A seemingly enigmatic device which connects to nearby APCs wirelessly and draws power from them, now in industiral size!",
+					"can_build": 0,
+					"cost": 4,
+					"path": "/obj/item/integrated_circuit/passive/power/relay/large"
+				},
+				{
+					"name": "fuel cell",
+					"desc": "Produces electricity from chemicals.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/passive/power/chemical_cell"
+				},
+				{
+					"name": "power network interface",
+					"desc": "Gives or takes power from a wire underneath the machine.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/passive/power/powernet"
+				}
+			]
+		},
+		{
+			"name": "Cryptography",
+			"items": [
+				{
+					"name": "MD5 hash circuit",
+					"desc": "Message-Digest Algorithm 5",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/cryptography/hash_md5"
+				},
+				{
+					"name": "SHA1 hash circuit",
+					"desc": "Secure Hash Algorithm 1",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/cryptography/hash_sha1"
+				},
+				{
+					"name": "rot13 circuit",
+					"desc": "A very simple encryption circuit.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/cryptography/rot13"
+				}
+			]
+		},
+		{
+			"name": "Data Transfer",
+			"items": [
+				{
+					"name": "two multiplexer",
+					"desc": "This is what those in the business tend to refer to as a 'mux' or data selector. It moves data from one of the selected inputs to the output.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/transfer/multiplexer"
+				},
+				{
+					"name": "four multiplexer",
+					"desc": "This is what those in the business tend to refer to as a 'mux' or data selector. It moves data from one of the selected inputs to the output.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/transfer/multiplexer/medium"
+				},
+				{
+					"name": "eight multiplexer",
+					"desc": "This is what those in the business tend to refer to as a 'mux' or data selector. It moves data from one of the selected inputs to the output.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/integrated_circuit/transfer/multiplexer/large"
+				},
+				{
+					"name": "sixteen multiplexer",
+					"desc": "This is what those in the business tend to refer to as a 'mux' or data selector. It moves data from one of the selected inputs to the output.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/integrated_circuit/transfer/multiplexer/huge"
+				},
+				{
+					"name": "two demultiplexer",
+					"desc": "This is what those in the business tend to refer to as a 'demux'. It moves data from the input to one of the selected outputs.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/transfer/demultiplexer"
+				},
+				{
+					"name": "four demultiplexer",
+					"desc": "This is what those in the business tend to refer to as a 'demux'. It moves data from the input to one of the selected outputs.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/transfer/demultiplexer/medium"
+				},
+				{
+					"name": "eight demultiplexer",
+					"desc": "This is what those in the business tend to refer to as a 'demux'. It moves data from the input to one of the selected outputs.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/integrated_circuit/transfer/demultiplexer/large"
+				},
+				{
+					"name": "sixteen demultiplexer",
+					"desc": "This is what those in the business tend to refer to as a 'demux'. It moves data from the input to one of the selected outputs.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/integrated_circuit/transfer/demultiplexer/huge"
+				},
+				{
+					"name": "two pulse demultiplexer",
+					"desc": "Selector switch to choose the pin to be activated by number.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/transfer/pulsedemultiplexer"
+				},
+				{
+					"name": "four pulse demultiplexer",
+					"desc": "Selector switch to choose the pin to be activated by number.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/transfer/pulsedemultiplexer/medium"
+				},
+				{
+					"name": "eight pulse demultiplexer",
+					"desc": "Selector switch to choose the pin to be activated by number.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/integrated_circuit/transfer/pulsedemultiplexer/large"
+				},
+				{
+					"name": "sixteen pulse demultiplexer",
+					"desc": "Selector switch to choose the pin to be activated by number.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/integrated_circuit/transfer/pulsedemultiplexer/huge"
+				}
+			]
+		},
+		{
+			"name": "Lists",
+			"items": [
+				{
+					"name": "pick circuit",
+					"desc": "This circuit will randomly 'pick' an element from a list that is inputted.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/list/pick"
+				},
+				{
+					"name": "append circuit",
+					"desc": "This circuit will add an element to a list.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/list/append"
+				},
+				{
+					"name": "search circuit",
+					"desc": "This circuit will give index of desired element in the list.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/list/search"
+				},
+				{
+					"name": "at circuit",
+					"desc": "This circuit will pick an element from a list by index.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/list/at"
+				},
+				{
+					"name": "delete circuit",
+					"desc": "This circuit will delete the element from a list by index.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/list/delete"
+				},
+				{
+					"name": "write circuit",
+					"desc": "This circuit will write element in list with given index.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/list/write"
+				},
+				{
+					"name": "len circuit",
+					"desc": "This circuit will give length of the list.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/list/len"
+				},
+				{
+					"name": "join text circuit",
+					"desc": "This circuit will add all elements of a list into one string, separated by a character.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/list/jointext"
+				}
+			]
+		},
+		{
+			"name": "Logic",
+			"items": [
+				{
+					"name": "equal gate",
+					"desc": "This gate compares two values, and outputs the number one if both are the same.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/equals"
+				},
+				{
+					"name": "JK latch",
+					"desc": "This gate is a synchronysed JK latch.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/jklatch"
+				},
+				{
+					"name": "RS latch",
+					"desc": "This gate is synchronysed a RS latch. If both R and S are true, the state will not change.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/rslatch"
+				},
+				{
+					"name": "gated D latch",
+					"desc": "This gate is a synchronysed gated D latch.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/gdlatch"
+				},
+				{
+					"name": "not equal gate",
+					"desc": "This gate compares two values, and outputs the number one if both are different.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/not_equals"
+				},
+				{
+					"name": "and gate",
+					"desc": "This gate will output 'one' if both inputs evaluate to true.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/and"
+				},
+				{
+					"name": "or gate",
+					"desc": "This gate will output 'one' if one of the inputs evaluate to true.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/or"
+				},
+				{
+					"name": "less than gate",
+					"desc": "This will output 'one' if the first input is less than the second input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/less_than"
+				},
+				{
+					"name": "less than or equal gate",
+					"desc": "This will output 'one' if the first input is less than, or equal to the second input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/less_than_or_equal"
+				},
+				{
+					"name": "greater than gate",
+					"desc": "This will output 'one' if the first input is greater than the second input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/greater_than"
+				},
+				{
+					"name": "greater_than or equal gate",
+					"desc": "This will output 'one' if the first input is greater than, or equal to the second input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/binary/greater_than_or_equal"
+				},
+				{
+					"name": "not gate",
+					"desc": "This gate inverts what's fed into it.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/unary/not"
+				},
+				{
+					"name": "Circuit Gate",
+					"desc": "A circuit gate, only sending out data, and pulses when it is enabled.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/toggler"
+				},
+				{
+					"name": "boolean toggle",
+					"desc": "A simple toggle circuit that starts TRUE and switches between TRUE and FALSE each time it's pulsed.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/toggle_output"
+				},
+				{
+					"name": "conditional operator",
+					"desc": "This operator checks a boolean and based on its state either outputs the first or second inputs value, this is also known as the ?: operator.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/conditional"
+				},
+				{
+					"name": "boolean latch",
+					"desc": "A boolean latch is essentially a toggle swapping between true and false on being pulsed.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/logic/boollatch"
+				}
+			]
+		},
+		{
+			"name": "Manipulation",
+			"items": [
+				{
+					"name": "weapon firing mechanism",
+					"desc": "This somewhat complicated system allows one to slot in a gun, direct it towards a position, and remotely fire it.",
+					"can_build": 0,
+					"cost": 3,
+					"path": "/obj/item/integrated_circuit/manipulation/weapon_firing"
+				},
+				{
+					"name": "locomotion circuit",
+					"desc": "This allows a machine to move in a given direction.",
+					"can_build": 0,
+					"cost": 3,
+					"path": "/obj/item/integrated_circuit/manipulation/locomotion"
+				},
+				{
+					"name": "grenade primer",
+					"desc": "This circuit comes with the ability to attach most types of grenades at prime them at will.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/manipulation/grenade"
+				},
+				{
+					"name": "size circuit",
+					"desc": "This allows a given target to be resized.",
+					"can_build": 0,
+					"cost": 3,
+					"path": "/obj/item/integrated_circuit/manipulation/Size"
+				}
+			]
+		},
+		{
+			"name": "Memory",
+			"items": [
+				{
+					"name": "memory chip",
+					"desc": "This tiny chip can store one piece of data.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/memory"
+				},
+				{
+					"name": "small memory circuit",
+					"desc": "This circuit can store two pieces of data.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/memory/tiny"
+				},
+				{
+					"name": "medium memory circuit",
+					"desc": "This circuit can store four pieces of data.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/memory/medium"
+				},
+				{
+					"name": "large memory circuit",
+					"desc": "This big circuit can hold eight pieces of data.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/memory/large"
+				},
+				{
+					"name": "large memory stick",
+					"desc": "This stick of memory can hold up up to sixteen pieces of data.",
+					"can_build": 0,
+					"cost": 3,
+					"path": "/obj/item/integrated_circuit/memory/huge"
+				},
+				{
+					"name": "constant chip",
+					"desc": "This tiny chip can store one piece of data, which cannot be overwritten without disassembly.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/memory/constant"
+				}
+			]
+		},
+		{
+			"name": "Power - Active",
+			"items": [
+				{
+					"name": "power transmission circuit",
+					"desc": "This can wirelessly transmit electricity from an assembly's battery towards a nearby machine.",
+					"can_build": 0,
+					"cost": 2,
+					"path": "/obj/item/integrated_circuit/power/transmitter"
+				},
+				{
+					"name": "large power transmission circuit",
+					"desc": "This can wirelessly transmit a lot of electricity from an assembly's battery towards a nearby machine.  Warning:  Do not operate in flammable enviroments.",
+					"can_build": 0,
+					"cost": 4,
+					"path": "/obj/item/integrated_circuit/power/transmitter/large"
+				}
+			]
+		},
+		{
+			"name": "Reagent",
+			"items": [
+				{
+					"name": "smoke generator",
+					"desc": "Unlike most electronics, creating smoke is completely intentional.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/reagent/smoke"
+				},
+				{
+					"name": "integrated hypo-injector",
+					"desc": "This scary looking thing is able to pump liquids into whatever it's pointed at.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/reagent/injector"
+				},
+				{
+					"name": "reagent pump",
+					"desc": "Moves liquids safely inside a machine, or even nearby it.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/reagent/pump"
+				},
+				{
+					"name": "reagent storage",
+					"desc": "Stores liquid inside, and away from electrical components.  Can store up to 60u.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/reagent/storage"
+				},
+				{
+					"name": "cryo reagent storage",
+					"desc": "Stores liquid inside, and away from electrical components.  Can store up to 60u.  This will also suppress reactions.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/reagent/storage/cryo"
+				},
+				{
+					"name": "big reagent storage",
+					"desc": "Stores liquid inside, and away from electrical components.  Can store up to 180u.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/reagent/storage/big"
+				},
+				{
+					"name": "reagent scanner",
+					"desc": "Stores liquid inside, and away from electrical components.  Can store up to 60u.  On pulse this beaker will send list of contained reagents.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/reagent/storage/scan"
+				},
+				{
+					"name": "reagent filter",
+					"desc": "Filtering liquids by list of desired or unwanted reagents.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/reagent/filter"
+				}
+			]
+		},
+		{
+			"name": "Smart",
+			"items": [
+				{
+					"name": "basic pathfinder",
+					"desc": "This complex circuit is able to determine what direction a given target is.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/smart/basic_pathfinder"
+				},
+				{
+					"name": "advanced pathfinder",
+					"desc": "This circuit uses a complex processor for long-range pathfinding.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/smart/advanced_pathfinder"
+				},
+				{
+					"name": "targeted pathfinder",
+					"desc": "Finds the best direction to a target using advanced pathfinding, when pulsed.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/smart/targeted_pathfinder"
+				},
+				{
+					"name": "pathfinding locomotion controller",
+					"desc": "A specialized circuit that uses pathfinding to move towards a target when pulsed.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/smart/pathfinding_locomotion"
+				},
+				{
+					"name": "Z-level sensor",
+					"desc": "A specialized circuit that reports the current Z-level when pulsed.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/smart/z_level_sensor"
+				}
+			]
+		},
+		{
+			"name": "Trig",
+			"items": [
+				{
+					"name": "sin circuit",
+					"desc": "Has nothing to do with evil, unless you consider trigonometry to be evil.  Outputs the sine of A.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/trig/sine"
+				},
+				{
+					"name": "cos circuit",
+					"desc": "Outputs the cosine of A.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/trig/cosine"
+				},
+				{
+					"name": "tan circuit",
+					"desc": "Outputs the tangent of A.  Guaranteed to not go on a tangent about its existance.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/trig/tangent"
+				},
+				{
+					"name": "csc circuit",
+					"desc": "Outputs the cosecant of A.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/trig/cosecant"
+				},
+				{
+					"name": "sec circuit",
+					"desc": "Outputs the secant of A.  Has nothing to do with the security department.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/trig/secant"
+				},
+				{
+					"name": "cot circuit",
+					"desc": "Outputs the cotangent of A.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/trig/cotangent"
+				}
+			]
+		},
+		{
+			"name": "Arithmetic",
+			"items": [
+				{
+					"name": "addition circuit",
+					"desc": "This circuit can add numbers together.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/addition"
+				},
+				{
+					"name": "subtraction circuit",
+					"desc": "This circuit can subtract numbers.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/subtraction"
+				},
+				{
+					"name": "multiplication circuit",
+					"desc": "This circuit can multiply numbers.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/multiplication"
+				},
+				{
+					"name": "division circuit",
+					"desc": "This circuit can divide numbers, just don't think about trying to divide by zero!",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/division"
+				},
+				{
+					"name": "exponent circuit",
+					"desc": "Outputs A to the power of B.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/exponent"
+				},
+				{
+					"name": "sign circuit",
+					"desc": "This will say if a number is positive, negative, or zero.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/sign"
+				},
+				{
+					"name": "round circuit",
+					"desc": "Rounds A to the nearest B multiple of A.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/round"
+				},
+				{
+					"name": "absolute circuit",
+					"desc": "This outputs a non-negative version of the number you put in.  This may also be thought of as its distance from zero.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/absolute"
+				},
+				{
+					"name": "average circuit",
+					"desc": "This circuit is of average quality, however it will compute the average for numbers you give it.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/average"
+				},
+				{
+					"name": "pi constant circuit",
+					"desc": "Not recommended for cooking.  Outputs '3.14159' when it receives a pulse.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/pi"
+				},
+				{
+					"name": "random number generator circuit",
+					"desc": "This gives a random (integer) number between values A and B inclusive.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/random"
+				},
+				{
+					"name": "square root circuit",
+					"desc": "This outputs the square root of a number you put in.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/square_root"
+				},
+				{
+					"name": "modulo circuit",
+					"desc": "Gets the remainder of A / B.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/modulo"
+				},
+				{
+					"name": "iterator",
+					"desc": "This circuit adds Y to its input and provides it as an output.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/arithmetic/iterator"
+				}
+			]
+		},
+		{
+			"name": "Output",
+			"items": [
+				{
+					"name": "video output circuit",
+					"desc": "A tiny camera module that captures a 7x7 view around the assembly and broadcasts it on a private channel.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/video_camera"
+				},
+				{
+					"name": "advanced video output circuit",
+					"desc": "A high-end camera module with enhanced optics that can see in complete darkness.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/video_camera/advanced"
+				},
+				{
+					"name": "small screen",
+					"desc": "This small screen can display a single piece of data, when the machine is examined closely.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/screen"
+				},
+				{
+					"name": "medium screen",
+					"desc": "This screen allows for people holding the device to see a piece of data.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/screen/medium"
+				},
+				{
+					"name": "large screen",
+					"desc": "This screen allows for people able to see the device to see a piece of data.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/screen/large"
+				},
+				{
+					"name": "light",
+					"desc": "This light can turn on and off on command.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/light"
+				},
+				{
+					"name": "advanced light",
+					"desc": "This light can turn on and off on command, in any color, and in various brightness levels.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/light/advanced"
+				},
+				{
+					"name": "text-to-speech circuit",
+					"desc": "A miniature speaker is attached to this component. It is able to transpose any valid text to speech.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/text_to_speech"
+				},
+				{
+					"name": "advanced text-to-speech circuit",
+					"desc": "A miniature speaker is attached to this component. It is able to transpose any valid text to speech, matching a scanned target's voice.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/text_to_speech/advanced"
+				},
+				{
+					"name": "beeper circuit",
+					"desc": "A miniature speaker is attached to this component.  This is often used in the construction of motherboards, which use the speaker to tell the user if something goes very wrong when booting up.  It can also do other similar synthetic sounds such as buzzing, pinging, chiming, and more.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/sound/beeper"
+				},
+				{
+					"name": "securitron sound circuit",
+					"desc": "A miniature speaker is attached to this component.  Considered by some to be the essential component for a securitron.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/sound/beepsky"
+				},
+				{
+					"name": "medbot sound circuit",
+					"desc": "A miniature speaker is attached to this component, used to annoy patients while they get pricked by a medbot.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/sound/medbot"
+				},
+				{
+					"name": "light-emitting diode",
+					"desc": "This a LED that is lit whenever there is TRUE-equivalent data on its input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/led"
+				},
+				{
+					"name": "red LED",
+					"desc": "This a LED that is lit whenever there is TRUE-equivalent data on its input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/led/red"
+				},
+				{
+					"name": "orange LED",
+					"desc": "This a LED that is lit whenever there is TRUE-equivalent data on its input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/led/orange"
+				},
+				{
+					"name": "yellow LED",
+					"desc": "This a LED that is lit whenever there is TRUE-equivalent data on its input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/led/yellow"
+				},
+				{
+					"name": "green LED",
+					"desc": "This a LED that is lit whenever there is TRUE-equivalent data on its input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/led/green"
+				},
+				{
+					"name": "blue LED",
+					"desc": "This a LED that is lit whenever there is TRUE-equivalent data on its input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/led/blue"
+				},
+				{
+					"name": "purple LED",
+					"desc": "This a LED that is lit whenever there is TRUE-equivalent data on its input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/led/purple"
+				},
+				{
+					"name": "cyan LED",
+					"desc": "This a LED that is lit whenever there is TRUE-equivalent data on its input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/led/cyan"
+				},
+				{
+					"name": "white LED",
+					"desc": "This a LED that is lit whenever there is TRUE-equivalent data on its input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/led/white"
+				},
+				{
+					"name": "pink LED",
+					"desc": "This a LED that is lit whenever there is TRUE-equivalent data on its input.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/led/pink"
+				},
+				{
+					"name": "holographic projector",
+					"desc": "This projects a holographic copy of an object.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/output/holographic_projector"
+				}
+			]
+		},
+		{
+			"name": "Input",
+			"items": [
+				{
+					"name": "video input circuit",
+					"desc": "A circuit that receives and displays video feeds from paired video output circuits.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/video_camera_input"
+				},
+				{
+					"name": "button",
+					"desc": "This tiny button must do something, right?",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/button"
+				},
+				{
+					"name": "toggle button",
+					"desc": "It toggles on, off, on, off...",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/toggle_button"
+				},
+				{
+					"name": "EPv2 circuit",
+					"desc": "Enables the sending and receiving of messages on the Exonet with the EPv2 protocol.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/EPv2"
+				},
+				{
+					"name": "global positioning system",
+					"desc": "This allows you to easily know the position of a machine containing this device.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/gps"
+				},
+				{
+					"name": "internal battery monitor",
+					"desc": "This monitors the charge level of an internal battery.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/internalbm"
+				},
+				{
+					"name": "local locator",
+					"desc": "This is needed for certain devices that demand a reference for a target to act upon.  This type only locates something that is holding the machine containing it.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/local_locator"
+				},
+				{
+					"name": "integrated medical analyser",
+					"desc": "A very small version of the common medical analyser.  This allows the machine to know how healthy someone is.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/med_scanner"
+				},
+				{
+					"name": "integrated methane sensor",
+					"desc": "A tiny methane gas sensor module similar to that found in a PDA atmosphere analyser.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/methane_sensor"
+				},
+				{
+					"name": "microphone",
+					"desc": "Useful for spying on people or for voice activated machines.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/microphone"
+				},
+				{
+					"name": "sign-language translator",
+					"desc": "Useful for spying on people or for sign activated machines.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/microphone/sign"
+				},
+				{
+					"name": "integrated nitrogen sensor",
+					"desc": "A tiny nitrogen sensor module similar to that found in a PDA atmosphere analyser.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/nitrogen_sensor"
+				},
+				{
+					"name": "number pad",
+					"desc": "This small number pad allows someone to input a number into the system.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/numberpad"
+				},
+				{
+					"name": "integrated oxygen sensor",
+					"desc": "A tiny oxygen sensor module similar to that found in a PDA atmosphere analyser.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/oxygen_sensor"
+				},
+				{
+					"name": "integrated phoron sensor",
+					"desc": "A tiny phoron gas sensor module similar to that found in a PDA atmosphere analyser.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/phoron_sensor"
+				},
+				{
+					"name": "integrated pressure sensor",
+					"desc": "A tiny pressure sensor module similar to that found in a PDA atmosphere analyser.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/pressure_sensor"
+				},
+				{
+					"name": "reference grabber",
+					"desc": "A handheld mechanism that can be aimed to attain distant references.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/reference_grabber"
+				},
+				{
+					"name": "sensor",
+					"desc": "Scans and obtains a reference for any objects or persons near you.  All you need to do is shove the machine in their face.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/sensor"
+				},
+				{
+					"name": "integrated signaler",
+					"desc": "Signals from a signaler can be received with this, allowing for remote control.  Additionally, it can send signals as well.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/signaler"
+				},
+				{
+					"name": "integrated temperature sensor",
+					"desc": "A tiny temperature sensor module similar to that found in a PDA atmosphere analyser.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/temperature_sensor"
+				},
+				{
+					"name": "text pad",
+					"desc": "This small text pad allows someone to input a string into the system.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/textpad"
+				},
+				{
+					"name": "adjacent locator",
+					"desc": "This is needed for certain devices that demand a reference for a target to act upon.  This type only locates something that is standing a meter away from the machine.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/adjacent_locator"
+				},
+				{
+					"name": "integrated advanced medical analyzer",
+					"desc": "A very small version of the medibot's medical analyzer.  This allows the machine to know how healthy someone is.  This type is much more precise, allowing the machine to know much more about the target than a normal analyzer.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/adv_med_scanner"
+				},
+				{
+					"name": "advanced locator",
+					"desc": "This is needed for certain devices that demand a reference for a target to act upon. This type locates something that is standing in given radius of up to 7 meters",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/advanced_locator"
+				},
+				{
+					"name": "integrated atmospheric analyser",
+					"desc": "The same atmospheric analysis module that is integrated into every PDA.  This allows the machine to know the composition, temperature and pressure of the surrounding atmosphere.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/atmo_scanner"
+				},
+				{
+					"name": "integrated co2 sensor",
+					"desc": "A tiny carbon dioxide sensor module similar to that found in a PDA atmosphere analyser.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/co2_sensor"
+				},
+				{
+					"name": "color pad",
+					"desc": "This small color pad allows someone to input a hexadecimal color into the system.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/colorpad"
+				},
+				{
+					"name": "examiner",
+					"desc": "It's a little machine vision system. It can return the name, description, distance,relative coordinates, total amount of reagents, and maximum amount of reagents of the referenced object.",
+					"can_build": 0,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/examiner"
+				},
+				{
+					"name": "external battery monitor",
+					"desc": "This can help watch the battery level of any device in range.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/input/externalbm"
+				}
+			]
+		},
+		{
+			"name": "Converter",
+			"items": [
+				{
+					"name": "number to string",
+					"desc": "This circuit can convert a number variable into a string.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/num2text"
+				},
+				{
+					"name": "string to number",
+					"desc": "This circuit can convert a string variable into a number.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/text2num"
+				},
+				{
+					"name": "reference to string",
+					"desc": "This circuit can convert a reference to something else to a string, specifically the name of that reference.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/ref2text"
+				},
+				{
+					"name": "reference encoder",
+					"desc": "This circuit can encode a reference into a string, which can then be read by an EPV2 circuit.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/refcode"
+				},
+				{
+					"name": "reference decoder",
+					"desc": "This circuit can convert an encoded reference to actual reference.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/refdecode"
+				},
+				{
+					"name": "lowercase string converter",
+					"desc": "this will cause a string to come out in all lowercase.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/lowercase"
+				},
+				{
+					"name": "uppercase string converter",
+					"desc": "THIS WILL CAUSE A STRING TO COME OUT IN ALL UPPERCASE.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/uppercase"
+				},
+				{
+					"name": "concatenator",
+					"desc": "This joins many strings together to get one big string.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/concatenator"
+				},
+				{
+					"name": "separator",
+					"desc": "This splits as single string into two at the relative split point.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/separator"
+				},
+				{
+					"name": "find text",
+					"desc": "This gives position of sample in the string. Or returns 0.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/findstring"
+				},
+				{
+					"name": "string exploder",
+					"desc": "This splits a single string into a list of strings.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/exploders"
+				},
+				{
+					"name": "radians to degrees converter",
+					"desc": "Converts radians to degrees.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/radians2degrees"
+				},
+				{
+					"name": "degrees to radians converter",
+					"desc": "Converts degrees to radians.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/degrees2radians"
+				},
+				{
+					"name": "abs to rel coordinate converter",
+					"desc": "Easily convert absolute coordinates to relative coordinates with this.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/abs_to_rel_coords"
+				},
+				{
+					"name": "len circuit",
+					"desc": "This circuit will return the number of characters in a string.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/stringlength"
+				},
+				{
+					"name": "hsv to hexadecimal converter",
+					"desc": "This circuit can convert a HSV (Hue, Saturation, and Value) color to a Hexadecimal RGB color.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/hsv2hex"
+				},
+				{
+					"name": "rgb to hexadecimal converter",
+					"desc": "This circuit can convert a RGB (Red, Green, Blue) color to a Hexadecimal RGB color.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/rgb2hex"
+				},
+				{
+					"name": "string padder",
+					"desc": "This circuit adds leading and/or trailing spaces to a string.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/converter/space_pad"
+				}
+			]
+		},
+		{
+			"name": "Time",
+			"items": [
+				{
+					"name": "delay circuit",
+					"desc": "This sends a pulse signal out after a delay defined in tenths of a second, critical for ensuring proper control flow in a complex machine. This circuit's delay can be customized, between 1/10th of a second to one hour. The delay is updated upon receiving a pulse.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/time/delay"
+				},
+				{
+					"name": "ticker circuit",
+					"desc": "This circuit sends an automatic pulse every given interval, defined in tenths of a second.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/time/ticker"
+				},
+				{
+					"name": "integrated clock",
+					"desc": "Tells you what the local time is, specific to your station or planet.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/integrated_circuit/time/clock"
+				}
+			]
+		},
+		{
+			"name": "Assemblies",
+			"items": [
+				{
+					"name": "type-a electronic assembly",
+					"desc": "It's a case, for building small electronics with.",
+					"can_build": 1,
+					"cost": 20,
+					"path": "/obj/item/electronic_assembly/default"
+				},
+				{
+					"name": "type-b electronic assembly",
+					"desc": "It's a case, for building small electronics with. This one resembles a pocket calculator.",
+					"can_build": 1,
+					"cost": 20,
+					"path": "/obj/item/electronic_assembly/calc"
+				},
+				{
+					"name": "type-c electronic assembly",
+					"desc": "It's a case, for building small electronics with. This one has a clamshell design.",
+					"can_build": 1,
+					"cost": 20,
+					"path": "/obj/item/electronic_assembly/clam"
+				},
+				{
+					"name": "type-d electronic assembly",
+					"desc": "It's a case, for building small electronics with. This one has a simple design.",
+					"can_build": 1,
+					"cost": 20,
+					"path": "/obj/item/electronic_assembly/simple"
+				},
+				{
+					"name": "type-e electronic assembly",
+					"desc": "It's a case, for building small electronics with. This one looks like it has a belt clip, but it's purely decorative.",
+					"can_build": 1,
+					"cost": 20,
+					"path": "/obj/item/electronic_assembly/hook"
+				},
+				{
+					"name": "type-f electronic assembly",
+					"desc": "It's a case, for building small electronics with. This one resembles a PDA.",
+					"can_build": 1,
+					"cost": 20,
+					"path": "/obj/item/electronic_assembly/pda"
+				},
+				{
+					"name": "type-a electronic device",
+					"desc": "It's a case, for building tiny-sized electronics with.",
+					"can_build": 1,
+					"cost": 10,
+					"path": "/obj/item/electronic_assembly/tiny/default"
+				},
+				{
+					"name": "type-b electronic device",
+					"desc": "It's a case, for building tiny-sized electronics with. This one has a cylindrical design.",
+					"can_build": 1,
+					"cost": 10,
+					"path": "/obj/item/electronic_assembly/tiny/cylinder"
+				},
+				{
+					"name": "type-c electronic device",
+					"desc": "It's a case, for building tiny-sized electronics with. This one has a scanner-like design.",
+					"can_build": 1,
+					"cost": 10,
+					"path": "/obj/item/electronic_assembly/tiny/scanner"
+				},
+				{
+					"name": "type-d electronic device",
+					"desc": "It's a case, for building tiny-sized electronics with. This one looks like it has a belt clip, but it's purely decorative.",
+					"can_build": 1,
+					"cost": 10,
+					"path": "/obj/item/electronic_assembly/tiny/hook"
+				},
+				{
+					"name": "type-e electronic device",
+					"desc": "It's a case, for building tiny-sized electronics with. This one has a boxy design.",
+					"can_build": 1,
+					"cost": 10,
+					"path": "/obj/item/electronic_assembly/tiny/box"
+				},
+				{
+					"name": "type-a electronic mechanism",
+					"desc": "It's a case, for building medium-sized electronics with.",
+					"can_build": 1,
+					"cost": 40,
+					"path": "/obj/item/electronic_assembly/medium/default"
+				},
+				{
+					"name": "type-b electronic mechanism",
+					"desc": "It's a case, for building medium-sized electronics with. This one has a boxy design.",
+					"can_build": 1,
+					"cost": 40,
+					"path": "/obj/item/electronic_assembly/medium/box"
+				},
+				{
+					"name": "type-c electronic mechanism",
+					"desc": "It's a case, for building medium-sized electronics with. This one has a clamshell design.",
+					"can_build": 1,
+					"cost": 40,
+					"path": "/obj/item/electronic_assembly/medium/clam"
+				},
+				{
+					"name": "type-d electronic mechanism",
+					"desc": "It's a case, for building medium-sized electronics with. This one resembles some type of medical apparatus.",
+					"can_build": 1,
+					"cost": 40,
+					"path": "/obj/item/electronic_assembly/medium/medical"
+				},
+				{
+					"name": "type-e electronic mechanism",
+					"desc": "It's a case, for building medium-sized electronics with. This one resembles a gun, or some type of tool, if you're feeling optimistic.",
+					"can_build": 1,
+					"cost": 40,
+					"path": "/obj/item/electronic_assembly/medium/gun"
+				},
+				{
+					"name": "type-f electronic mechanism",
+					"desc": "It's a case, for building medium-sized electronics with. This one resembles an old radio.",
+					"can_build": 1,
+					"cost": 40,
+					"path": "/obj/item/electronic_assembly/medium/radio"
+				},
+				{
+					"name": "type-a electronic machine",
+					"desc": "It's a case, for building large electronics with.",
+					"can_build": 1,
+					"cost": 80,
+					"path": "/obj/item/electronic_assembly/large/default"
+				},
+				{
+					"name": "type-b electronic machine",
+					"desc": "It's a case, for building large electronics with. This one resembles an oscilloscope.",
+					"can_build": 1,
+					"cost": 80,
+					"path": "/obj/item/electronic_assembly/large/scope"
+				},
+				{
+					"name": "type-c electronic machine",
+					"desc": "It's a case, for building large electronics with. This one resembles a computer terminal.",
+					"can_build": 1,
+					"cost": 80,
+					"path": "/obj/item/electronic_assembly/large/terminal"
+				},
+				{
+					"name": "type-d electronic machine",
+					"desc": "It's a case, for building large electronics with. This one resembles a robotic arm.",
+					"can_build": 1,
+					"cost": 80,
+					"path": "/obj/item/electronic_assembly/large/arm"
+				},
+				{
+					"name": "type-e electronic machine",
+					"desc": "It's a case, for building large electronics with. This one has a tall design.",
+					"can_build": 1,
+					"cost": 80,
+					"path": "/obj/item/electronic_assembly/large/tall"
+				},
+				{
+					"name": "type-f electronic machine",
+					"desc": "It's a case, for building large electronics with. This one resembles some kind of industrial machinery.",
+					"can_build": 1,
+					"cost": 80,
+					"path": "/obj/item/electronic_assembly/large/industrial"
+				},
+				{
+					"name": "type-a electronic drone",
+					"desc": "It's a case, for building mobile electronics with.",
+					"can_build": 1,
+					"cost": 120,
+					"path": "/obj/item/electronic_assembly/drone/default"
+				},
+				{
+					"name": "type-b electronic drone",
+					"desc": "It's a case, for building mobile electronics with. This one is armed and dangerous.",
+					"can_build": 1,
+					"cost": 120,
+					"path": "/obj/item/electronic_assembly/drone/arms"
+				},
+				{
+					"name": "type-c electronic drone",
+					"desc": "It's a case, for building mobile electronics with. This one resembles a Securitron.",
+					"can_build": 1,
+					"cost": 120,
+					"path": "/obj/item/electronic_assembly/drone/secbot"
+				},
+				{
+					"name": "type-d electronic drone",
+					"desc": "It's a case, for building mobile electronics with. This one resembles a Medibot.",
+					"can_build": 1,
+					"cost": 120,
+					"path": "/obj/item/electronic_assembly/drone/medbot"
+				},
+				{
+					"name": "type-e electronic drone",
+					"desc": "It's a case, for building mobile electronics with. This one has a generic bot design.",
+					"can_build": 1,
+					"cost": 120,
+					"path": "/obj/item/electronic_assembly/drone/genbot"
+				},
+				{
+					"name": "type-f electronic drone",
+					"desc": "It's a case, for building mobile electronics with. This one has a hominoid design.",
+					"can_build": 1,
+					"cost": 120,
+					"path": "/obj/item/electronic_assembly/drone/android"
+				},
+				{
+					"name": "tiny wall-mounted electronic assembly",
+					"desc": "It's a case, for building tiny electronics with. It has a magnetized backing to allow it to stick to walls.",
+					"can_build": 1,
+					"cost": 10,
+					"path": "/obj/item/electronic_assembly/wallmount/tiny"
+				},
+				{
+					"name": "light wall-mounted electronic assembly",
+					"desc": "It's a case, for building small electronics with. It has a magnetized backing to allow it to stick to walls.",
+					"can_build": 1,
+					"cost": 20,
+					"path": "/obj/item/electronic_assembly/wallmount/light"
+				},
+				{
+					"name": "wall-mounted electronic assembly",
+					"desc": "It's a case, for building medium-sized electronics with. It has a magnetized backing to allow it to stick to walls.",
+					"can_build": 1,
+					"cost": 40,
+					"path": "/obj/item/electronic_assembly/wallmount"
+				},
+				{
+					"name": "heavy wall-mounted electronic assembly",
+					"desc": "It's a case, for building large electronics with. It has a magnetized backing to allow it to stick to walls.",
+					"can_build": 1,
+					"cost": 80,
+					"path": "/obj/item/electronic_assembly/wallmount/heavy"
+				},
+				{
+					"name": "electronic implant",
+					"desc": "It's a case, for building very tiny electronics with.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/implant/integrated_circuit"
+				},
+				{
+					"name": "electronic jumpsuit",
+					"desc": "It's a wearable case for electronics. This on is a black jumpsuit with wiring weaved into the fabric.",
+					"can_build": 1,
+					"cost": 3,
+					"path": "/obj/item/clothing/under/circuitry"
+				},
+				{
+					"name": "electronic gloves",
+					"desc": "It's a wearable case for electronics. This one is a pair of black gloves, with wires woven into them. A small device with a screen is attached to the left glove.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/clothing/gloves/circuitry"
+				},
+				{
+					"name": "electronic goggles",
+					"desc": "It's a wearable case for electronics. This one is a pair of goggles, with wiring sticking out. Could this augment your vision?",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/clothing/glasses/circuitry"
+				},
+				{
+					"name": "electronic boots",
+					"desc": "It's a wearable case for electronics. This one is a pair of boots, with wires attached to a small cover.",
+					"can_build": 1,
+					"cost": 3,
+					"path": "/obj/item/clothing/shoes/circuitry"
+				},
+				{
+					"name": "electronic headwear",
+					"desc": "It's a wearable case for electronics. This one appears to be a very technical-looking piece that goes around the collar, with a heads-up-display attached on the right.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/clothing/head/circuitry"
+				},
+				{
+					"name": "electronic earwear",
+					"desc": "It's a wearable case for electronics. This one appears to be a technical-looking headset.",
+					"can_build": 1,
+					"cost": 1,
+					"path": "/obj/item/clothing/ears/circuitry"
+				},
+				{
+					"name": "electronic chestpiece",
+					"desc": "It's a wearable case for electronics. This one appears to be a very technical-looking vest, that almost looks professionally made, however the wiring popping out betrays that idea.",
+					"can_build": 1,
+					"cost": 3,
+					"path": "/obj/item/clothing/suit/circuitry"
+				},
+				{
+					"name": "electronic bug",
+					"desc": "A tiny circuit assembly that looks perfect for hiding.",
+					"can_build": 1,
+					"cost": 10,
+					"path": "/obj/item/electronic_assembly/circuit_bug"
+				}
+			]
+		},
+		{
+			"name": "Tools",
+			"items": [
+				{
+					"name": "circuit wirer",
+					"desc": "It's a small wiring tool, with a wire roll, electric soldering iron, wire cutter, and more in one package. The wires used are generally useful for small electronics, such as circuitboards and breadboards, as opposed to larger wires used for power or data transmission.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/integrated_electronics/wirer"
+				},
+				{
+					"name": "circuit debugger",
+					"desc": "This small tool allows one working with custom machinery to directly set data to a specific pin, useful for writing settings to specific circuits, or for debugging purposes. It can also pulse activation pins.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/integrated_electronics/debugger"
+				},
+				{
+					"name": "assembly detailer",
+					"desc": "A combination autopainter and flash anodizer designed to give electronic assemblies a colorful, wear-resistant finish.",
+					"can_build": 1,
+					"cost": 2,
+					"path": "/obj/item/integrated_electronics/detailer"
+				}
+			]
+		}
+	],
+	"metal": 0,
+	"max_metal": 100,
+	"metal_per_sheet": 10,
+	"upgraded": 0,
+	"can_clone": 0
+}

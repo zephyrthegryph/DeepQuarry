@@ -32,44 +32,39 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use dreammaker::ast::{AssignOp, Block, Expression, Follow, Statement, Term, VarTypeFlags};
 
 use crate::dm::ownership_index::Index;
-use crate::lint::{Cx, Lint, Meta, Registry, Sink};
+use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::sem::ast::{stmt_blocks, stmt_exprs, strip_parens, walk_expr};
 use crate::sem::decls::Decls;
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
+use crate::tree::CODE_DM;
 
-use crate::stored_refs_policy::META;
+
+const H_VAR: &str = "declare the var: owns_one/ref_one/links()/slot() in the type's CAPABILITIES block (or its relations() table), which clears it when \
+the other end is deleted; or keep a weak ref (handle_of(x), read back with handle_get()). doc/rewrite/proposals/reference_storage.md";
+const H_LIST: &str = "a list of atoms/datums is a declared many (owns_many/ref_many/a many links() end) or holds handles (handle_of(x)); a cache or \
+pool keys by a handle or a type, never by the object. doc/rewrite/proposals/reference_storage.md";
+
+static META: Meta = Meta {
+    name: "stored_refs",
+    group: "",
+    label: "stored_refs",
+    legacy: "",
+    select: CODE_DM,
+    scan: ScanKind::Tree,
+    policy: Policy::Hard,
+    rules: &[RuleMeta { name: "var", hint: H_VAR }, RuleMeta { name: "list", hint: H_LIST }],
+    allow: &["stored_refs"],
+    lists: &["exempt_types", "transient_types", "work_queues"],
+};
 
 struct StoredRefs;
 
 /// Builtin roots that are not game objects, never deleted, or values.
-const NOT_REFS: &[&str] = &[
-    "/turf",
-    "/area",
-    "/client",
-    "/world",
-    "/savefile",
-    "/database",
-    "/exception",
-    "/regex",
-    "/icon",
-    "/image",
-    "/mutable_appearance",
-    "/sound",
-    "/matrix",
-    "/generator",
-    "/particles",
-    "/filter",
-    "/alist",
-    "/list",
-    "/callee",
-    "/procpath",
-];
+const NOT_REFS: &[&str] = &["/turf", "/area", "/client", "/world", "/savefile", "/database", "/exception", "/regex", "/icon", "/image", "/mutable_appearance", "/sound", "/matrix", "/generator", "/particles", "/filter", "/alist", "/list", "/callee", "/procpath"];
 
 fn under_any(path: &str, roots: &[&str]) -> bool {
-    roots
-        .iter()
-        .any(|r| path == *r || (path.starts_with(r) && path.as_bytes().get(r.len()) == Some(&b'/')))
+    roots.iter().any(|r| path == *r || (path.starts_with(r) && path.as_bytes().get(r.len()) == Some(&b'/')))
 }
 
 /// The holder-side knowledge every rule asks: which declared types are references.
@@ -98,28 +93,13 @@ impl<'a> Kinds<'a> {
         if under_any(declared, NOT_REFS) {
             return false;
         }
-        if self
-            .exempt_types
-            .iter()
-            .any(|t| under_any(declared, &[t.as_str()]))
-            || self
-                .registry
-                .iter()
-                .any(|t| under_any(declared, &[t.as_str()]))
-        {
+        if self.exempt_types.iter().any(|t| under_any(declared, &[t.as_str()])) || self.registry.iter().any(|t| under_any(declared, &[t.as_str()])) {
             return false;
         }
         // A subtype of /turf or /area declared by its full path (`/turf/simulated`) is caught above; anything else must be a datum.
-        if !(declared.starts_with("/datum")
-            || declared.starts_with("/atom")
-            || declared.starts_with("/obj")
-            || declared.starts_with("/mob"))
-        {
+        if !(declared.starts_with("/datum") || declared.starts_with("/atom") || declared.starts_with("/obj") || declared.starts_with("/mob")) {
             // A type declared without its root (`/foo` defined as a datum): ask the model.
-            return self.sem.ty(declared).is_some()
-                && self.sem.is_subtype(declared, "/datum")
-                && !self.sem.is_subtype(declared, "/turf")
-                && !self.sem.is_subtype(declared, "/area");
+            return self.sem.ty(declared).is_some() && self.sem.is_subtype(declared, "/datum") && !self.sem.is_subtype(declared, "/turf") && !self.sem.is_subtype(declared, "/area");
         }
         true
     }
@@ -159,23 +139,12 @@ pub(crate) fn pooled_holder(sem: &Sem, owner: &str) -> bool {
 /// A holder type in `[lint.stored_refs.lists] transient_types`: a record that lives for one call or one resolution and is dropped with it (an op
 /// candidate, a provider row), reviewed per type (relations proposal D8: "one run's scratch under a reviewed type"). Its fields are not stored refs.
 pub(crate) fn transient_holder(sem: &Sem, transient: &[String], owner: &str) -> bool {
-    transient
-        .iter()
-        .any(|t| t == owner || sem.is_subtype(owner, t))
+    transient.iter().any(|t| t == owner || sem.is_subtype(owner, t))
 }
 
-pub(crate) fn declared_by_relation(
-    sem: &Sem,
-    rels: &HashMap<String, Vec<String>>,
-    owner: &str,
-    var: &str,
-) -> bool {
-    let Some(types) = rels.get(var) else {
-        return false;
-    };
-    types
-        .iter()
-        .any(|t| t == owner || sem.is_subtype(t, owner) || sem.is_subtype(owner, t))
+pub(crate) fn declared_by_relation(sem: &Sem, rels: &HashMap<String, Vec<String>>, owner: &str, var: &str) -> bool {
+    let Some(types) = rels.get(var) else { return false };
+    types.iter().any(|t| t == owner || sem.is_subtype(t, owner) || sem.is_subtype(owner, t))
 }
 
 /// A list a proc body writes into.
@@ -201,18 +170,12 @@ pub(crate) fn path_of(tp: &[String]) -> String {
     }
 }
 
-pub(crate) fn collect_locals(
-    b: &Block,
-    rel: &str,
-    out: &mut HashMap<String, (String, Option<Place>)>,
-) {
+pub(crate) fn collect_locals(b: &Block, rel: &str, out: &mut HashMap<String, (String, Option<Place>)>) {
     for st in b.iter() {
         match &st.elem {
             Statement::Var(v) => {
                 let ty = path_of(&v.var_type.type_path);
-                let place = if v.var_type.flags.contains(VarTypeFlags::STATIC)
-                    && (ty == "/list" || ty.starts_with("/list/") || ty == "/alist" || ty.starts_with("/alist/"))
-                {
+                let place = if v.var_type.flags.contains(VarTypeFlags::STATIC) && (ty == "/list" || ty.starts_with("/list/") || ty == "/alist" || ty.starts_with("/alist/")) {
                     Some(Place::ProcStatic(rel.to_string(), st.location.line))
                 } else {
                     None
@@ -225,22 +188,14 @@ pub(crate) fn collect_locals(
                 }
             }
             Statement::ForList(fl) => {
-                let ty = fl
-                    .var_type
-                    .as_ref()
-                    .map(|t| path_of(&t.type_path))
-                    .unwrap_or_default();
+                let ty = fl.var_type.as_ref().map(|t| path_of(&t.type_path)).unwrap_or_default();
                 out.entry(fl.name.to_string()).or_insert((ty, None));
             }
             Statement::ForKeyValue(fk) => {
-                out.entry(fk.key.to_string())
-                    .or_insert((String::new(), None));
-                out.entry(fk.value.to_string())
-                    .or_insert((String::new(), None));
+                out.entry(fk.key.to_string()).or_insert((String::new(), None));
+                out.entry(fk.value.to_string()).or_insert((String::new(), None));
             }
-            Statement::ForLoop {
-                init: Some(init), ..
-            } => {
+            Statement::ForLoop { init: Some(init), .. } => {
                 if let Statement::Var(v) = init.as_ref() {
                     out.insert(v.name.to_string(), (path_of(&v.var_type.type_path), None));
                 }
@@ -274,19 +229,9 @@ impl<'a, 'k> Walker<'a, 'k> {
             Expression::Base { term, follow } => {
                 let mut cur: Option<String> = match &term.elem {
                     Term::Ident(n) => self.ident_type(sc, n),
-                    Term::NewPrefab { prefab, .. } => Some(format!(
-                        "/{}",
-                        prefab
-                            .path
-                            .iter()
-                            .map(|(_, n)| n.as_str())
-                            .collect::<Vec<_>>()
-                            .join("/")
-                    )),
+                    Term::NewPrefab { prefab, .. } => Some(format!("/{}", prefab.path.iter().map(|(_, n)| n.as_str()).collect::<Vec<_>>().join("/"))),
                     Term::Expr(inner) => self.type_of(sc, inner),
-                    Term::Call(n, _) => self
-                        .return_type(if sc.owner == "/" { "/" } else { sc.owner }, n)
-                        .or_else(|| self.return_type("/", n)),
+                    Term::Call(n, _) => self.return_type(if sc.owner == "/" { "/" } else { sc.owner }, n).or_else(|| self.return_type("/", n)),
                     Term::GlobalCall(n, _) => self.return_type("/", n),
                     _ => None,
                 };
@@ -294,10 +239,7 @@ impl<'a, 'k> Walker<'a, 'k> {
                     let Some(c) = cur.clone() else { return None };
                     cur = match &fo.elem {
                         Follow::Field(_, f) => self.field_type(&c, f),
-                        Follow::Index(_, _) => c
-                            .strip_prefix("/list")
-                            .filter(|r| r.starts_with('/'))
-                            .map(|r| r.to_string()),
+                        Follow::Index(_, _) => c.strip_prefix("/list").filter(|r| r.starts_with('/')).map(|r| r.to_string()),
                         Follow::Call(_, n, _) => self.return_type(&c, n),
                         Follow::Unary(_) => return None,
                         _ => return None,
@@ -305,10 +247,7 @@ impl<'a, 'k> Walker<'a, 'k> {
                 }
                 cur
             }
-            Expression::TernaryOp { if_, else_, .. } => self
-                .type_of(sc, if_)
-                .filter(|t| self.kinds.is_ref(t))
-                .or_else(|| self.type_of(sc, else_)),
+            Expression::TernaryOp { if_, else_, .. } => self.type_of(sc, if_).filter(|t| self.kinds.is_ref(t)).or_else(|| self.type_of(sc, else_)),
             _ => None,
         }
     }
@@ -317,10 +256,7 @@ impl<'a, 'k> Walker<'a, 'k> {
     fn return_type(&self, ty: &str, name: &str) -> Option<String> {
         let d = self.sem.ty(ty)?.get_proc_declaration(name)?;
         match &d.return_type {
-            dreammaker::ast::ProcReturnType::TypePath(p) if !p.is_empty() => Some(format!(
-                "/{}",
-                p.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("/")
-            )),
+            dreammaker::ast::ProcReturnType::TypePath(p) if !p.is_empty() => Some(format!("/{}", p.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("/"))),
             _ => None,
         }
     }
@@ -346,13 +282,9 @@ impl<'a, 'k> Walker<'a, 'k> {
     /// The list `e` names, when it is a type's var, a global or a proc-static list.
     pub(crate) fn place_of(&self, sc: &ProcScope, e: &Expression) -> Option<Place> {
         let e = strip_parens(e);
-        let Expression::Base { term, follow } = e else {
-            return None;
-        };
+        let Expression::Base { term, follow } = e else { return None };
         if follow.is_empty() {
-            let Term::Ident(n) = &term.elem else {
-                return None;
-            };
+            let Term::Ident(n) = &term.elem else { return None };
             if let Some((_, p)) = sc.locals.get(n.as_str()) {
                 return p.clone();
             }
@@ -361,29 +293,20 @@ impl<'a, 'k> Walker<'a, 'k> {
                     return Some(Place::Member(o, n.to_string()));
                 }
             }
-            return self
-                .sem
-                .var_owner("/", n)
-                .map(|o| Place::Member(o, n.to_string()));
+            return self.sem.var_owner("/", n).map(|o| Place::Member(o, n.to_string()));
         }
         // a.b.c: the last follow is the field; everything before it is the receiver.
-        let Follow::Field(_, last) = &follow[follow.len() - 1].elem else {
-            return None;
-        };
-        let recv = Expression::Base {
-            term: term.clone(),
-            follow: follow[..follow.len() - 1].to_vec().into_boxed_slice(),
-        };
+        let Follow::Field(_, last) = &follow[follow.len() - 1].elem else { return None };
+        let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
         let rt = self.type_of(sc, &recv)?;
         if rt.is_empty() {
             return None;
         }
-        self.sem
-            .var_owner(&rt, last)
-            .map(|o| Place::Member(o, last.to_string()))
+        self.sem.var_owner(&rt, last).map(|o| Place::Member(o, last.to_string()))
     }
 
-    /// A nested indexed list stores into its base declaration.
+    /// The list var that holds the list `e` names, when `e` is an element of a nested list (a registry's `by_key[k]`, `by_z[z][k]`): writing into the
+    /// element stores into the var that holds it, so the place is that var's. Otherwise place_of().
     pub(crate) fn container_place_of(&self, sc: &ProcScope, e: &Expression) -> Option<Place> {
         let mut cur = strip_parens(e).clone();
         loop {
@@ -404,19 +327,13 @@ impl<'a, 'k> Walker<'a, 'k> {
             if follow.is_empty() {
                 if let Term::List(args) = &term.elem {
                     return args.iter().any(|a| match a {
-                        Expression::AssignOp {
-                            op: AssignOp::Assign,
-                            lhs,
-                            rhs,
-                        } => self.stored_ref(sc, lhs) || self.stored_ref(sc, rhs),
+                        Expression::AssignOp { op: AssignOp::Assign, lhs, rhs } => self.stored_ref(sc, lhs) || self.stored_ref(sc, rhs),
                         other => self.stored_ref(sc, other),
                     });
                 }
             }
         }
-        self.type_of(sc, e)
-            .map(|t| self.kinds.is_ref(&t))
-            .unwrap_or(false)
+        self.type_of(sc, e).map(|t| self.kinds.is_ref(&t)).unwrap_or(false)
     }
 
     /// Every list write in one proc body that stores a reference: (place, model line).
@@ -430,18 +347,14 @@ impl<'a, 'k> Walker<'a, 'k> {
                         if let Some(last) = follow.last() {
                             if let Follow::Index(_, key) = &last.elem {
                                 if matches!(op, AssignOp::Assign) {
-                                    let list = Expression::Base {
-                                        term: term.clone(),
-                                        follow: follow[..follow.len() - 1]
-                                            .to_vec()
-                                            .into_boxed_slice(),
-                                    };
+                                    let list = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
                                     if self.stored_ref(sc, key) || self.stored_ref(sc, rhs) {
                                         if let Some(p) = self.container_place_of(sc, &list) {
                                             out.push((p, line));
                                         }
                                     }
                                 } else if matches!(op, AssignOp::AddAssign | AssignOp::BitOrAssign | AssignOp::OrAssign) && self.stored_ref(sc, rhs) {
+                                    // L[k] += x: x joins the list L[k] (a nested list: place_of() names the var that holds it).
                                     if let Some(p) = self.container_place_of(sc, lhs) {
                                         if self.is_list_place(&p) {
                                             out.push((p, line));
@@ -452,12 +365,8 @@ impl<'a, 'k> Walker<'a, 'k> {
                             }
                         }
                     }
-                    let adds = matches!(
-                        op,
-                        AssignOp::AddAssign | AssignOp::BitOrAssign | AssignOp::OrAssign
-                    );
-                    let list_literal = matches!(op, AssignOp::Assign)
-                        && matches!(strip_parens(rhs), Expression::Base { term, follow } if follow.is_empty() && matches!(term.elem, Term::List(_)));
+                    let adds = matches!(op, AssignOp::AddAssign | AssignOp::BitOrAssign | AssignOp::OrAssign);
+                    let list_literal = matches!(op, AssignOp::Assign) && matches!(strip_parens(rhs), Expression::Base { term, follow } if follow.is_empty() && matches!(term.elem, Term::List(_)));
                     if (adds || list_literal) && self.stored_ref(sc, rhs) {
                         if let Some(p) = self.place_of(sc, lhs) {
                             if self.is_list_place(&p) {
@@ -468,19 +377,14 @@ impl<'a, 'k> Walker<'a, 'k> {
                 }
                 Expression::Base { term, follow } => {
                     for (i, fo) in follow.iter().enumerate() {
-                        let Follow::Call(_, name, args) = &fo.elem else {
-                            continue;
-                        };
+                        let Follow::Call(_, name, args) = &fo.elem else { continue };
                         let skip = match name.as_str() {
                             "Add" => 0,
                             "Insert" => 1,
                             _ => continue,
                         };
                         if args.iter().skip(skip).any(|a| self.stored_ref(sc, a)) {
-                            let list = Expression::Base {
-                                term: term.clone(),
-                                follow: follow[..i].to_vec().into_boxed_slice(),
-                            };
+                            let list = Expression::Base { term: term.clone(), follow: follow[..i].to_vec().into_boxed_slice() };
                             if let Some(p) = self.place_of(sc, &list) {
                                 if self.is_list_place(&p) {
                                     out.push((p, line));
@@ -498,11 +402,7 @@ impl<'a, 'k> Walker<'a, 'k> {
     fn is_list_place(&self, p: &Place) -> bool {
         match p {
             Place::ProcStatic(..) => true,
-            Place::Member(o, v) => self
-                .sem
-                .var_decl(o, v)
-                .map(|s| s.is_list() || s.declared == "/alist" || s.declared.starts_with("/alist/") || s.declared.is_empty())
-                .unwrap_or(false),
+            Place::Member(o, v) => self.sem.var_decl(o, v).map(|s| s.is_list() || s.declared == "/alist" || s.declared.starts_with("/alist/") || s.declared.is_empty()).unwrap_or(false),
         }
     }
 }
@@ -549,18 +449,12 @@ impl Lint for StoredRefs {
                 never_deleted.push(c.s(1).to_string());
             }
         }
-        let kinds = Kinds {
-            sem,
-            exempt_types: cx.list("exempt_types").to_vec(),
-            registry: never_deleted,
-            cache: Default::default(),
-        };
+        let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: never_deleted, cache: Default::default() };
         let rels = relation_index(cx);
         let schemas = crate::sem::value_schema::ValueSchemas::build(&Decls::get(cx.tree));
         let transient: Vec<String> = cx.list("transient_types").to_vec();
         let queues: Vec<String> = cx.list("work_queues").to_vec();
-        let work_queue =
-            |owner: &str, name: &str| queues.iter().any(|q| q == &format!("{}::{}", owner, name));
+        let work_queue = |owner: &str, name: &str| queues.iter().any(|q| q == &format!("{}::{}", owner, name));
         // param(nameof(v), ..., keep = FALSE) in a CAPABILITIES block: init builds from the value and params_drop() puts the var back to its default when
         // Initialize() returns (code/engine/lifeforms/params.dm), so it is never stored past construction.
         let mut init_only: Vec<(String, String)> = Vec::new();
@@ -575,8 +469,7 @@ impl Lint for StoredRefs {
                         cur = Some(c.s(1).to_string());
                         continue;
                     }
-                    if !(line.starts_with('\t') || line.starts_with(' ')) && !line.trim().is_empty()
-                    {
+                    if !(line.starts_with('\t') || line.starts_with(' ')) && !line.trim().is_empty() {
                         cur = None;
                     }
                     if let (Some(t), Some(c)) = (cur.as_ref(), param.captures(line)) {
@@ -592,120 +485,65 @@ impl Lint for StoredRefs {
                 }
             }
         }
-        let init_only_var = |owner: &str, name: &str| {
-            init_only.iter().any(|(t, v)| {
-                v == name && (t == owner || sem.is_subtype(owner, t) || sem.is_subtype(t, owner))
-            })
-        };
+        let init_only_var = |owner: &str, name: &str| init_only.iter().any(|(t, v)| v == name && (t == owner || sem.is_subtype(owner, t) || sem.is_subtype(t, owner)));
         let root = &cx.tree.root;
         let line_of = |rel: &str, l: u32| engine_line(root, rel, l) as usize;
         let mut emitted: HashSet<(String, String, u32)> = HashSet::new();
-        let mut put =
-            |out: &mut Sink, rule: &str, rel: &str, line: usize, msg: String, ident: String| {
-                if !rel.starts_with("code/")
-                    || cx.exempt(rel)
-                    || !emitted.insert((rule.to_string(), rel.to_string(), line as u32))
-                {
+        let mut put = |out: &mut Sink, rule: &str, rel: &str, line: usize, msg: String, ident: String| {
+            if !rel.starts_with("code/") || cx.exempt(rel) || !emitted.insert((rule.to_string(), rel.to_string(), line as u32)) {
+                return;
+            }
+            if let Some(f) = cx.tree.get(rel) {
+                if out.allowed(f, line, "stored_refs") {
                     return;
                 }
-                if let Some(f) = cx.tree.get(rel) {
-                    if out.allowed(f, line, "stored_refs") {
-                        return;
-                    }
-                }
-                out.site_decl(rule, rel, line, msg, ident);
-            };
+            }
+            out.site_decl(rule, rel, line, msg, ident);
+        };
 
         // ---- var: declarations ----
         let mut typed_lists: Vec<(String, String, String, u32)> = Vec::new();
         let mut decls: Vec<(String, String, String, String, u32)> = Vec::new();
         for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() {
-                "/".to_string()
-            } else {
-                ty.get().path.clone()
-            };
+            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
             for (name, tv) in ty.get().vars.iter() {
-                let Some(d) = tv.declaration.as_ref() else {
-                    continue;
-                };
+                let Some(d) = tv.declaration.as_ref() else { continue };
                 if d.location.is_builtins() || d.var_type.flags.contains(VarTypeFlags::CONST) {
                     continue;
                 }
-                let Some(rel) = sem.file_of(d.location) else {
-                    continue;
-                };
+                let Some(rel) = sem.file_of(d.location) else { continue };
                 let declared = path_of(&d.var_type.type_path);
                 if declared == "/list" {
                     continue;
                 }
-                if let Some(elem) = declared
-                    .strip_prefix("/list")
-                    .filter(|r| r.starts_with('/'))
-                {
+                if let Some(elem) = declared.strip_prefix("/list").filter(|r| r.starts_with('/')) {
                     if kinds.is_ref(elem) {
-                        typed_lists.push((
-                            owner.clone(),
-                            name.to_string(),
-                            rel.to_string(),
-                            d.location.line,
-                        ));
+                        typed_lists.push((owner.clone(), name.to_string(), rel.to_string(), d.location.line));
                     }
                     continue;
                 }
                 if kinds.is_ref(&declared) {
-                    decls.push((
-                        owner.clone(),
-                        name.to_string(),
-                        declared,
-                        rel.to_string(),
-                        d.location.line,
-                    ));
+                    decls.push((owner.clone(), name.to_string(), declared, rel.to_string(), d.location.line));
                 }
             }
         }
         decls.sort_by(|a, b| (a.3.as_str(), a.4).cmp(&(b.3.as_str(), b.4)));
         for (owner, name, declared, rel, line) in decls {
-            if pooled_holder(sem, &owner)
-                || transient_holder(sem, &transient, &owner)
-                || work_queue(&owner, &name)
-                || init_only_var(&owner, &name)
-                || declared_by_relation(sem, &rels, &owner, &name)
-            {
+            if pooled_holder(sem, &owner) || transient_holder(sem, &transient, &owner) || work_queue(&owner, &name) || init_only_var(&owner, &name) || declared_by_relation(sem, &rels, &owner, &name) {
                 continue;
             }
-            put(
-                out,
-                "var",
-                &rel,
-                line_of(&rel, line),
-                format!(
-                    "{}/var/{} holds a {} outside a declared relation",
-                    if owner == "/" { "" } else { owner.as_str() },
-                    name,
-                    declared
-                ),
-                format!("{}::{}", owner, name),
-            );
+            put(out, "var", &rel, line_of(&rel, line), format!("{}/var/{} holds a {} outside a declared relation", if owner == "/" { "" } else { owner.as_str() }, name, declared), format!("{}::{}", owner, name));
         }
 
         // ---- list: writes in proc bodies ----
         let w = Walker { sem, kinds: &kinds };
         let mut found: BTreeMap<Place, (String, u32)> = BTreeMap::new();
         for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() {
-                "/".to_string()
-            } else {
-                ty.get().path.clone()
-            };
+            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
             for (_, tp) in ty.get().procs.iter() {
                 for v in tp.value.iter() {
-                    let Some(code) = v.code.as_ref() else {
-                        continue;
-                    };
-                    let Some(rel) = sem.file_of(v.location) else {
-                        continue;
-                    };
+                    let Some(code) = v.code.as_ref() else { continue };
+                    let Some(rel) = sem.file_of(v.location) else { continue };
                     if cx.exempt(rel) {
                         continue;
                     }
@@ -714,10 +552,7 @@ impl Lint for StoredRefs {
                         locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
                     }
                     collect_locals(code, rel, &mut locals);
-                    let sc = ProcScope {
-                        owner: &owner,
-                        locals,
-                    };
+                    let sc = ProcScope { owner: &owner, locals };
                     let mut writes = Vec::new();
                     w.writes(&sc, code, &mut writes);
                     for (p, l) in writes {
@@ -727,9 +562,7 @@ impl Lint for StoredRefs {
             }
         }
         for (owner, name, rel, line) in typed_lists {
-            found
-                .entry(Place::Member(owner, name))
-                .or_insert((rel, line));
+            found.entry(Place::Member(owner, name)).or_insert((rel, line));
         }
         let mut lists: Vec<(String, u32, String, String)> = Vec::new();
         for (place, (wrel, wline)) in found {
@@ -739,40 +572,19 @@ impl Lint for StoredRefs {
                     if schemas.find(sem, &o, &v).is_some() {
                         continue;
                     }
-                    if pooled_holder(sem, &o)
-                        || transient_holder(sem, &transient, &o)
-                        || work_queue(&o, &v)
-                        || declared_by_relation(sem, &rels, &o, &v)
-                    {
+                    if pooled_holder(sem, &o) || transient_holder(sem, &transient, &o) || work_queue(&o, &v) || declared_by_relation(sem, &rels, &o, &v) {
                         continue;
                     }
-                    let Some(sig) = sem.var_decl(&o, &v) else {
-                        continue;
-                    };
+                    let Some(sig) = sem.var_decl(&o, &v) else { continue };
                     if sig.is_const || sig.file.is_empty() {
                         continue;
                     }
                     let at = format!("{}:{}", wrel, line_of(&wrel, wline));
-                    lists.push((
-                        sig.file.clone(),
-                        sig.line,
-                        format!(
-                            "{}/var/{} stores atoms/datums (e.g. {})",
-                            if o == "/" { "" } else { o.as_str() },
-                            v,
-                            at
-                        ),
-                        format!("{}::{}", o, v),
-                    ));
+                    lists.push((sig.file.clone(), sig.line, format!("{}/var/{} stores atoms/datums (e.g. {})", if o == "/" { "" } else { o.as_str() }, v, at), format!("{}::{}", o, v)));
                 }
                 Place::ProcStatic(rel, line) => {
                     let at = format!("{}:{}", wrel, line_of(&wrel, wline));
-                    lists.push((
-                        rel,
-                        line,
-                        format!("a proc's static list stores atoms/datums (e.g. {})", at),
-                        String::new(),
-                    ));
+                    lists.push((rel, line, format!("a proc's static list stores atoms/datums (e.g. {})", at), String::new()));
                 }
             }
         }

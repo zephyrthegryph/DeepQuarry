@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
-
+import type { ChemDispenserActions } from '../generated/ChemDispenser';
 import { ChemDispenserBeaker } from './ChemDispenserBeaker';
 import {
   ChemDispenserChemicals,
@@ -13,7 +13,7 @@ import { dispenseAmounts } from './constants';
 import type { Data } from './types';
 
 export const ChemDispenser = (props) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, ChemDispenserActions>();
   const { recipes, recordingRecipe, glass, chemicals, amount } = data;
 
   return (

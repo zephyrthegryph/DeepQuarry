@@ -184,15 +184,6 @@
 // Named relation reads are typed procs on /datum (code/engine/refs/views.dm):
 // M.buckled_to(), A.buckled_mob_list(), M.pulling_target(), ... E.slot_item(slot).
 
-// ---------------------------------------------------------------- periodic cadences (code/engine/kernel/cadences.dm)
-
-
-/// The source a periodic member holds its cadence membership under (member_join()).
-#define PERIODIC_SOURCE "periodic"
-#define PERIODIC_SLOW /datum/cadence/slow
-#define PERIODIC_SECOND /datum/cadence/second
-#define PERIODIC_FAST /datum/cadence/fast
-
 	/// Which schedule a status display shows (shuttle_schedule_source()).
 	#define SHUTTLE_SCHEDULE_EVAC 1
 	#define SHUTTLE_SCHEDULE_SUPPLY 2
@@ -224,3 +215,7 @@
 // The ASK_* re-check flags moved to code/defines/engine/kernel.dm (a request re-checks them when its answer arrives).
 
 
+
+/// The share of a pass the presentation lane takes while the boot's first draws are being made (presentation_boosted(): nobody is in the map yet, so the draws
+/// are the one thing worth the tick); the other lanes keep the rest.
+#define SCHED_BOOT_DRAW_SHARE 0.8

@@ -1,4 +1,4 @@
-/// Real granted BYOND verb invocation through the existing actor-context API; not inbox/client coverage.
+/// The Set Timer menu entry picked from the grenade's context menu.
 /datum/unit_test/round2_grenade_timer_configuration
 	var/timer_case = "accepted"
 
@@ -18,11 +18,10 @@
 	var/obj/item/assembly/timer/timer = holder.a_left
 	TEST_ASSERT(istype(timer) && timer.loc == holder && timer.holder() == holder, "Actual constructor installs the real timer on its original left side and holder relation")
 	TEST_ASSERT(timer.secured && !timer.timing, "Real freshly constructed timer is secured and idle")
-	TEST_ASSERT(/obj/item/assembly_holder/timer_igniter/verb/configure in grenade.verbs, "Actual constructor's grant exposes the existing Set Timer verb on the grenade")
+	TEST_ASSERT(grenade.has_timer_detonator(null), "The grenade with a timer-igniter offers the Set Timer menu entry")
 	var/original_time = timer.time
 	var/original_name = grenade.name
-	var/datum/callback/invocation = allocate(/datum/callback, grenade, /obj/item/assembly_holder/timer_igniter/verb/configure)
-	world.push_usr(user, invocation)
+	test_menu(user, grenade, "set_timer")
 	var/datum/prompt/number/grenade_timer_configuration/question = SSrequests.open_for(user)
 	TEST_ASSERT(istype(question) && question.owner == grenade && question.answerer == user, "Actual public granted verb with its genuine actor context opens the native request on the grenade")
 	TEST_ASSERT_EQUAL(timer.time, original_time, "Opening the actual question leaves the real timer unchanged")

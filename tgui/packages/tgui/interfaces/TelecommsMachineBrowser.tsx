@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -8,24 +9,20 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import type {
+  TelecommsMachineBrowserActions,
+  TelecommsMachineBrowserData,
+} from './generated/TelecommsMachineBrowser';
 
-type Data = {
-  network: string;
-  temp: { color: string; text: string } | null;
-  machinelist: machine[] | [];
-  selectedMachine: Required<
-    machine & {
-      links: machine[] | undefined;
-    }
-  > | null;
-};
-
-type machine = { id: string; name: string };
+type Machine = TelecommsMachineBrowserData['machinelist'][number];
 
 export const TelecommsMachineBrowser = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    TelecommsMachineBrowserData,
+    TelecommsMachineBrowserActions
+  >();
 
-  const { network, temp, machinelist, selectedMachine } = data;
+  const { network, temp, machinelist = [], selectedMachine } = data;
 
   return (
     <Window width={575} height={450}>
@@ -107,7 +104,7 @@ export const TelecommsMachineBrowser = (props) => {
                 : 'Detected Network Entities'
             }
             list={selectedMachine ? selectedMachine.links : machinelist}
-            showBack={selectedMachine}
+            showBack={!!selectedMachine}
           />
         ) : (
           <Section title="No Devices Found">
@@ -121,8 +118,15 @@ export const TelecommsMachineBrowser = (props) => {
   );
 };
 
-const TelecommsBrowser = (props) => {
-  const { act, data } = useBackend();
+const TelecommsBrowser = (props: {
+  title: string;
+  list: Machine[];
+  showBack: boolean;
+}) => {
+  const { act } = useBackend<
+    TelecommsMachineBrowserData,
+    TelecommsMachineBrowserActions
+  >();
 
   const { list, title, showBack } = props;
 
@@ -137,9 +141,9 @@ const TelecommsBrowser = (props) => {
         )
       }
     >
-      <Box color="label">
+      <Label>
         <u>Linked entities</u>
-      </Box>
+      </Label>
       <LabeledList>
         {list.length ? (
           list.map((machine) => (

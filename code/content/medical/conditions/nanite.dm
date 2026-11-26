@@ -166,6 +166,7 @@
 
 /datum/affliction_symptom/nanite
 	category = "Synthetic"
+	abstract_type = /datum/affliction_symptom/nanite
 
 /datum/affliction_symptom/nanite/sloughing
 	name = "sloughing nanites"

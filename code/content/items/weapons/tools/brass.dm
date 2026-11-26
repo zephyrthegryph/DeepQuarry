@@ -24,7 +24,7 @@
 	icon_state = "wrench_brass"
 	item_state = "wrench_brass"
 
-MATERIAL_MIX(/obj/item/weldingtool/brass, list(MAT_STEEL = 70, MAT_GLASS = 60))
+MATERIAL_MIX(/obj/item/weldingtool/brass, list(MAT_STEEL = 20, MAT_GLASS = 15))
 //Welder
 /obj/item/weldingtool/brass
 	name = "brass welding tool"

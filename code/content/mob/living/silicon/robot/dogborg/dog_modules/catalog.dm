@@ -9,11 +9,6 @@
 CAPABILITIES(/obj/item/shockpaddles/robot/hound)
 	configure(item_combat(attack_verbs = list("batted", "pawed", "bopped", "whapped")))
 
-/obj/item/shockpaddles/robot/hound/jumper
-	name = "jumper paws"
-	desc = "Zappy paws. For rebooting a full body prostetic."
-	use_on_synthetic = 1
-
 /obj/item/reagent_containers/borghypo/hound
 	name = "MediHound hypospray"
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves, designed for heavy-duty medical equipment."

@@ -127,7 +127,7 @@ CAPABILITIES(/datum/remote_materials)
 	local_size = size
 	tracked_changed(src, nameof(local_size))
 	if (!silo() && mat_container())
-		mat_container().max_amount = size
+		mat_container().set_max_amount(size)
 
 ///Disconnects this connection from the silo
 /datum/remote_materials/proc/disconnect()

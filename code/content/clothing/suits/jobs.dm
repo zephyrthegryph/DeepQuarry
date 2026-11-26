@@ -11,7 +11,7 @@
 	blood_overlay_type = "armor"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/apron)
-	suit_storage(list (/obj/item/reagent_containers/spray/plantbgone, /obj/item/analyzer/plant_analyzer, /obj/item/seeds,   	/obj/item/reagent_containers/glass/bottle, /obj/item/material/minihoe))
+	suit_storage(list (/obj/item/reagent_containers/spray, /obj/item/analyzer/plant_analyzer, /obj/item/seeds,   	/obj/item/reagent_containers/glass/bottle, /obj/item/material/minihoe))
 	configure(item_worn(covers = 0))
 
 

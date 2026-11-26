@@ -1,0 +1,58 @@
+{
+	"degradation": 0,
+	"geneMasks": [
+		{
+			"tag": "diet",
+			"mask": "E5"
+		},
+		{
+			"tag": "special",
+			"mask": "99"
+		},
+		{
+			"tag": "fruit",
+			"mask": "65"
+		},
+		{
+			"tag": "hardiness",
+			"mask": "D7"
+		},
+		{
+			"tag": "metabolism",
+			"mask": "64"
+		},
+		{
+			"tag": "biochemistry",
+			"mask": "A0"
+		},
+		{
+			"tag": "output",
+			"mask": "9D"
+		},
+		{
+			"tag": "environment",
+			"mask": "EB"
+		},
+		{
+			"tag": "vigour",
+			"mask": "11"
+		},
+		{
+			"tag": "appearance",
+			"mask": "A3"
+		},
+		{
+			"tag": "pigment",
+			"mask": "16"
+		},
+		{
+			"tag": "atmosphere",
+			"mask": "8B"
+		}
+	],
+	"activity": 0,
+	"disk": 0,
+	"loaded": null,
+	"hasGenetics": 0,
+	"sourceName": null
+}

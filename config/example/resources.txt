@@ -22,8 +22,8 @@ ASSET_CDN_WEBROOT data/asset-store/
 ## URL the folder from above can be accessed from.
 ## for best results the webserver powering this should return a long cache validity time, compression, HTTP keep-alive, and Timing-Allow-Origin, as all assets sent via this transport use hash based urls
 ## Encryption (https) is supported here, but linux clients will have issues if you require higher then tls 1.0. Windows clients down to windows 7 can handle tls 1.2 no issue.
-## if you want to test this locally, you simpily run the `localhost-asset-webroot-server.py` python3 script to host assets stored in `data/asset-store/` via http://localhost:58715/
-ASSET_CDN_URL http://localhost:58715/
+## if you want to test this locally, you simpily run the `localhost-asset-webroot-server.py` python3 script to host assets stored in `data/asset-store/` via http://localhost:18715/
+ASSET_CDN_URL http://localhost:18715/
 
 ## Assets can opt-in to caching their results into `data/spritesheets/legacy_cache/`.
 ## The cache is stamped with the build (commit, compiler and a hash of the

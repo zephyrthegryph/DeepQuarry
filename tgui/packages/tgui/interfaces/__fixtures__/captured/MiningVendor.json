@@ -1,0 +1,429 @@
+{
+	"items": {
+		"Gear": {
+			"Brown Webbing": {
+				"name": "Brown Webbing",
+				"price": 500
+			},
+			"Defense Equipment - Plasteel Machete": {
+				"name": "Defense Equipment - Plasteel Machete",
+				"price": 500
+			},
+			"Defense Equipment - Razor Drone Deployer": {
+				"name": "Defense Equipment - Razor Drone Deployer",
+				"price": 1000
+			},
+			"Defense Equipment - Sentry Drone Deployer": {
+				"name": "Defense Equipment - Sentry Drone Deployer",
+				"price": 1500
+			},
+			"Defense Equipment - Smoke Bomb": {
+				"name": "Defense Equipment - Smoke Bomb",
+				"price": 100
+			},
+			"Defense Equipment - Phase Pistol": {
+				"name": "Defense Equipment - Phase Pistol",
+				"price": 1500
+			},
+			"Hybrid Equipment - Proto-Kinetic Crusher": {
+				"name": "Hybrid Equipment - Proto-Kinetic Crusher",
+				"price": 1000
+			},
+			"Hybrid Equipment - Proto-Kinetic Dagger": {
+				"name": "Hybrid Equipment - Proto-Kinetic Dagger",
+				"price": 500
+			},
+			"Hybrid Equipment - Proto-Kinetic Machete": {
+				"name": "Hybrid Equipment - Proto-Kinetic Machete",
+				"price": 1000
+			},
+			"Hybrid Equipment - Proto-Kinetic Gauntlets": {
+				"name": "Hybrid Equipment - Proto-Kinetic Gauntlets",
+				"price": 1000
+			},
+			"Hybrid Equipment - Proto-Kinetic Glaive": {
+				"name": "Hybrid Equipment - Proto-Kinetic Glaive",
+				"price": 10000
+			},
+			"Machete Holster": {
+				"name": "Machete Holster",
+				"price": 350
+			},
+			"Defense Equipment - PSG-B (Melee)": {
+				"name": "Defense Equipment - PSG-B (Melee)",
+				"price": 5000
+			},
+			"Defense Equipment - PSG-M (General)": {
+				"name": "Defense Equipment - PSG-M (General)",
+				"price": 1000
+			},
+			"PSG-M Upgrade Disk": {
+				"name": "PSG-M Upgrade Disk",
+				"price": 50
+			},
+			"Durasteel Fishing Rod": {
+				"name": "Durasteel Fishing Rod",
+				"price": 5000
+			},
+			"Titanium Fishing Rod": {
+				"name": "Titanium Fishing Rod",
+				"price": 1000
+			},
+			"Fishing Net": {
+				"name": "Fishing Net",
+				"price": 500
+			},
+			"Fulton Beacon": {
+				"name": "Fulton Beacon",
+				"price": 500
+			},
+			"Geiger Counter": {
+				"name": "Geiger Counter",
+				"price": 750
+			},
+			"GPS Device": {
+				"name": "GPS Device",
+				"price": 100
+			},
+			"Jump Boots": {
+				"name": "Jump Boots",
+				"price": 2500
+			},
+			"Mini-Translocator": {
+				"name": "Mini-Translocator",
+				"price": 1200
+			},
+			"Survival Equipment - Insulated Poncho": {
+				"name": "Survival Equipment - Insulated Poncho",
+				"price": 750
+			},
+			"Mining Satchel of Holding": {
+				"name": "Mining Satchel of Holding",
+				"price": 1500
+			},
+			"Industrial Equipment - Sheet-Snatcher": {
+				"name": "Industrial Equipment - Sheet-Snatcher",
+				"price": 500
+			},
+			"Sheet Snatcher of Holding": {
+				"name": "Sheet Snatcher of Holding",
+				"price": 1000
+			},
+			"Advanced Ore Scanner": {
+				"name": "Advanced Ore Scanner",
+				"price": 500
+			},
+			"Exotic Sample Container": {
+				"name": "Exotic Sample Container",
+				"price": 100
+			}
+		},
+		"Consumables": {
+			"1 Marker Beacon": {
+				"name": "1 Marker Beacon",
+				"price": 1
+			},
+			"10 Marker Beacons": {
+				"name": "10 Marker Beacons",
+				"price": 10
+			},
+			"30 Marker Beacons": {
+				"name": "30 Marker Beacons",
+				"price": 30
+			},
+			"Fulton Pack": {
+				"name": "Fulton Pack",
+				"price": 1200
+			},
+			"Injector (L) - Glucose": {
+				"name": "Injector (L) - Glucose",
+				"price": 500
+			},
+			"Injector (L) - Panacea": {
+				"name": "Injector (L) - Panacea",
+				"price": 500
+			},
+			"Injector (L) - Trauma": {
+				"name": "Injector (L) - Trauma",
+				"price": 500
+			},
+			"Nanopaste Tube": {
+				"name": "Nanopaste Tube",
+				"price": 1000
+			},
+			"Point Transfer Card": {
+				"name": "Point Transfer Card",
+				"price": 500
+			},
+			"Burn Medipen": {
+				"name": "Burn Medipen",
+				"price": 250
+			},
+			"Detox Medipen": {
+				"name": "Detox Medipen",
+				"price": 250
+			},
+			"Oxy Medipen": {
+				"name": "Oxy Medipen",
+				"price": 250
+			},
+			"Trauma Medipen": {
+				"name": "Trauma Medipen",
+				"price": 250
+			}
+		},
+		"Kinetic Accelerator": {
+			"Kinetic Accelerator": {
+				"name": "Kinetic Accelerator",
+				"price": 900
+			},
+			"KA AoE Damage": {
+				"name": "KA AoE Damage",
+				"price": 2000
+			},
+			"KA Damage Increase": {
+				"name": "KA Damage Increase",
+				"price": 1000
+			},
+			"KA Cooldown Decrease": {
+				"name": "KA Cooldown Decrease",
+				"price": 1200
+			},
+			"KA Range Increase": {
+				"name": "KA Range Increase",
+				"price": 1000
+			},
+			"KA Temperature Modulator": {
+				"name": "KA Temperature Modulator",
+				"price": 1000
+			},
+			"KA Off-Station Modulator": {
+				"name": "KA Off-Station Modulator",
+				"price": 1750
+			},
+			"KA Holster": {
+				"name": "KA Holster",
+				"price": 350
+			},
+			"KA Super Chassis": {
+				"name": "KA Super Chassis",
+				"price": 250
+			},
+			"KA Hyper Chassis": {
+				"name": "KA Hyper Chassis",
+				"price": 300
+			},
+			"KA Adjustable Tracer Rounds": {
+				"name": "KA Adjustable Tracer Rounds",
+				"price": 175
+			},
+			"KA White Tracer Rounds": {
+				"name": "KA White Tracer Rounds",
+				"price": 125
+			},
+			"Premium Kinetic Accelerator": {
+				"name": "Premium Kinetic Accelerator",
+				"price": 12000
+			}
+		},
+		"Digging Tools": {
+			"Resonator": {
+				"name": "Resonator",
+				"price": 900
+			},
+			"Silver Pickaxe": {
+				"name": "Silver Pickaxe",
+				"price": 1200
+			},
+			"Diamond Pickaxe": {
+				"name": "Diamond Pickaxe",
+				"price": 2000
+			},
+			"Super Resonator": {
+				"name": "Super Resonator",
+				"price": 2500
+			},
+			"Archeology Equipment - Chisels": {
+				"name": "Archeology Equipment - Chisels",
+				"price": 500
+			},
+			"Archeology Equipment - Scanner": {
+				"name": "Archeology Equipment - Scanner",
+				"price": 1000
+			},
+			"Fine Excavation Kit - Measuring Tape": {
+				"name": "Fine Excavation Kit - Measuring Tape",
+				"price": 125
+			},
+			"Explosive Excavation Kit - Plastic Charge": {
+				"name": "Explosive Excavation Kit - Plastic Charge",
+				"price": 1500
+			},
+			"Industrial Equipment - Phoron Bore": {
+				"name": "Industrial Equipment - Phoron Bore",
+				"price": 3000
+			},
+			"Industrial Equipment - Inducer": {
+				"name": "Industrial Equipment - Inducer",
+				"price": 3500
+			}
+		},
+		"Hardsuit": {
+			"Hardsuit - Cheap Control Module": {
+				"name": "Hardsuit - Cheap Control Module",
+				"price": 2000
+			},
+			"Hardsuit - Premium Control Module": {
+				"name": "Hardsuit - Premium Control Module",
+				"price": 5000
+			},
+			"Hardsuit - Drill": {
+				"name": "Hardsuit - Drill",
+				"price": 2500
+			},
+			"Hardsuit - Intelligence Storage": {
+				"name": "Hardsuit - Intelligence Storage",
+				"price": 2500
+			},
+			"Hardsuit - Maneuvering Jets": {
+				"name": "Hardsuit - Maneuvering Jets",
+				"price": 1250
+			},
+			"Hardsuit - Material Scanner": {
+				"name": "Hardsuit - Material Scanner",
+				"price": 1000
+			},
+			"Hardsuit - Advanced Optics": {
+				"name": "Hardsuit - Advanced Optics",
+				"price": 2000
+			},
+			"Hardsuit - Ore Scanner": {
+				"name": "Hardsuit - Ore Scanner",
+				"price": 1000
+			},
+			"Hardsuit - Plasma Cutter": {
+				"name": "Hardsuit - Plasma Cutter",
+				"price": 800
+			},
+			"Hardsuit - Anomaly Scanner": {
+				"name": "Hardsuit - Anomaly Scanner",
+				"price": 2500
+			},
+			"Hardsuit - Anomaly Drill": {
+				"name": "Hardsuit - Anomaly Drill",
+				"price": 2500
+			},
+			"Hardsuit - Radiation Shield": {
+				"name": "Hardsuit - Radiation Shield",
+				"price": 2000
+			},
+			"Hardsuit - Smoke Bomb Deployer": {
+				"name": "Hardsuit - Smoke Bomb Deployer",
+				"price": 2000
+			},
+			"Hardsuit - Proto-Kinetic Gauntlets": {
+				"name": "Hardsuit - Proto-Kinetic Gauntlets",
+				"price": 2000
+			}
+		},
+		"Shelter Capsules": {
+			"Shelter Capsule - Shelter (5x5)": {
+				"name": "Shelter Capsule - Shelter (5x5)",
+				"price": 500
+			},
+			"Shelter Capsule - Pocket Dorm (5x5)": {
+				"name": "Shelter Capsule - Pocket Dorm (5x5)",
+				"price": 500
+			},
+			"Shelter Capsule - Kitchen (7x7)": {
+				"name": "Shelter Capsule - Kitchen (7x7)",
+				"price": 3100
+			},
+			"Shelter Capsule - Luxury Shelter (7x7)": {
+				"name": "Shelter Capsule - Luxury Shelter (7x7)",
+				"price": 3100
+			},
+			"Shelter Capsule - Alt. Luxury Shelter (7x7)": {
+				"name": "Shelter Capsule - Alt. Luxury Shelter (7x7)",
+				"price": 3100
+			},
+			"Shelter Capsule - Redspace (7x7)": {
+				"name": "Shelter Capsule - Redspace (7x7)",
+				"price": 5000
+			},
+			"Shelter Capsule - Sauna (7x7)": {
+				"name": "Shelter Capsule - Sauna (7x7)",
+				"price": 3100
+			},
+			"Shelter Capsule - Rec Room + Cards Table (9x9)": {
+				"name": "Shelter Capsule - Rec Room + Cards Table (9x9)",
+				"price": 5000
+			},
+			"Shelter Capsule - Luxury Rec Room (11x11)": {
+				"name": "Shelter Capsule - Luxury Rec Room (11x11)",
+				"price": 10000
+			},
+			"Shelter Capsule - Bar (11x11)": {
+				"name": "Shelter Capsule - Bar (11x11)",
+				"price": 10000
+			},
+			"Shelter Capsule - Deluxe Cabin (11x11)": {
+				"name": "Shelter Capsule - Deluxe Cabin (11x11)",
+				"price": 10000
+			},
+			"Shelter Capsule - Cafe (11x11)": {
+				"name": "Shelter Capsule - Cafe (11x11)",
+				"price": 10000
+			}
+		},
+		"Miscellaneous": {
+			"Absinthe": {
+				"name": "Absinthe",
+				"price": 125
+			},
+			"Cigar": {
+				"name": "Cigar",
+				"price": 150
+			},
+			"Digital Tablet - Standard": {
+				"name": "Digital Tablet - Standard",
+				"price": 500
+			},
+			"Digital Tablet - Advanced": {
+				"name": "Digital Tablet - Advanced",
+				"price": 1000
+			},
+			"Laser Pointer": {
+				"name": "Laser Pointer",
+				"price": 900
+			},
+			"Plush Toy": {
+				"name": "Plush Toy",
+				"price": 300
+			},
+			"Soap": {
+				"name": "Soap",
+				"price": 200
+			},
+			"Thalers - 100": {
+				"name": "Thalers - 100",
+				"price": 1000
+			},
+			"Thalers - 1000": {
+				"name": "Thalers - 1000",
+				"price": 10000
+			},
+			"Umbrella": {
+				"name": "Umbrella",
+				"price": 200
+			},
+			"Whiskey": {
+				"name": "Whiskey",
+				"price": 125
+			}
+		},
+		"Extra": []
+	},
+	"has_id": 0,
+	"id": null
+}

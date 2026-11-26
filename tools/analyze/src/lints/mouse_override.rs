@@ -16,16 +16,16 @@ const HINT: &str = "declare the input in the type's CAPABILITIES block: click_on
 an input no entry takes goes on to the default handling, so a handler that wants it answers INPUT_FALLTHROUGH. Only code/engine/kernel/entry.dm overrides a native mouse proc (doc/rewrite/final_api.html section 2)";
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::mouse_override::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::mouse_override::SCOPE_META_0.group,
+    name: "mouse_override",
+    group: "",
     label: "mouse_override",
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "mouse_override", hint: HINT }],
-    allow: crate::allow_registry_fields::mouse_override::ALLOW_0,
-    lists: crate::allow_registry_fields::mouse_override::SCOPE_META_0.lists,
+    allow: &[],
+    lists: &[],
 };
 
 const NAMES: &str = "Click|DblClick|MouseDrop|MouseDrop_T|MouseDrag|MouseDown|MouseUp|MouseEntered|MouseExited|MouseWheel";

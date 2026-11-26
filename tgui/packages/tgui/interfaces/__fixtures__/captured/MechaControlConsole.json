@@ -1,0 +1,20 @@
+{
+	"stored_data": [],
+	"beacons": [
+		{
+			"ref": 1,
+			"name": "Combat Hoverpod",
+			"health": 200,
+			"maxHealth": 200,
+			"cell": 1,
+			"cellCharge": 15000,
+			"cellMaxCharge": 15000,
+			"airtank": 101.341,
+			"pilot": null,
+			"location": "The Strange Location",
+			"active": "CH-PS \"Immolator\" laser",
+			"cargoUsed": 0,
+			"cargoMax": 0
+		}
+	]
+}

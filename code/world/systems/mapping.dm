@@ -19,6 +19,9 @@ SYSTEM_DEF(mapping)
 	var/list/shelter_templates = list()
 	/// Async map loads waiting behind the running one, oldest first (code/modules/maps/map_load.dm): owned here, so a queued load lives until it starts.
 	var/list/map_load_queue
+	/// The levels joined to the level above them (a multi-z stack), by z number. Tracked: HasAbove()/HasBelow() read it through
+	/// mapping_z_links_up(), and a requirement that needs a level above (patching a ceiling from space) holds on it.
+	var/list/z_links_up
 
 	// TODO: Implement Later
 	var/datum/map/current_map

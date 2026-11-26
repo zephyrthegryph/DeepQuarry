@@ -122,10 +122,6 @@ CAPABILITIES(/obj/item/reagent_containers/blood)
 	blood_type = "O-"
 	reag_id = REAGENT_ID_SYNTHBLOOD_DILUTE
 
-/obj/item/reagent_containers/blood/synthblood
-	blood_type = "O-"
-	reag_id = REAGENT_ID_SYNTHBLOOD
-
 /obj/item/reagent_containers/blood/empty
 	name = "Empty BloodPack"
 	desc = "Seems pretty useless... Maybe if there were a way to fill it?"

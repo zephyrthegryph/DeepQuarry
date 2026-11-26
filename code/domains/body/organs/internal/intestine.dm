@@ -16,8 +16,7 @@
 	if (. >= 2)
 		if(prob(1))
 			owner.custom_pain("Your abdomen feels like it's tearing itself apart!",1)
-			owner.m_intent = I_WALK
-			owner.hud_used.move_intent.icon_state = "walking"
+			owner.set_m_intent(I_WALK)
 
 /obj/item/organ/internal/intestine/xeno
 	color = "#555555"

@@ -1,5 +1,6 @@
 import { Component, type CSSProperties } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -9,21 +10,12 @@ import {
   Section,
   Slider,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type { BombTesterActions, BombTesterData } from './generated/BombTester';
 
-type Data = {
-  simulating: BooleanLike;
-  mode: number;
-  tank1: string;
-  tank1ref: string;
-  tank2: string;
-  tank2ref: string;
-  canister: string | null;
-  sim_canister_output: number;
-};
+type Data = BombTesterData;
 
 export const BombTester = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BombTesterActions>();
 
   const {
     simulating,
@@ -37,7 +29,7 @@ export const BombTester = (props) => {
   } = data;
 
   return (
-    <Window width={450} height={400}>
+    <Window width={500} height={400}>
       <Window.Content>
         {(simulating && <BombTesterSimulation />) || (
           <Section title="Virtual Explosive Simulator v2.01">
@@ -104,7 +96,7 @@ export const BombTester = (props) => {
                   </Button>
                 }
               >
-                {(canister && <Box color="label">{canister}</Box>) || (
+                {(canister && <Label>{canister}</Label>) || (
                   <Box color="bad">No tank connected.</Box>
                 )}
               </LabeledList.Item>
@@ -113,7 +105,7 @@ export const BombTester = (props) => {
                   <Slider
                     tickWhileDragging
                     minValue={0}
-                    value={sim_canister_output}
+                    value={sim_canister_output ?? 0}
                     maxValue={1013.25}
                     onChange={(e, val: number) =>
                       act('set_can_pressure', { pressure: val })

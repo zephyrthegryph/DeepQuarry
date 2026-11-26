@@ -12,7 +12,7 @@ export const CharacterDirectoryList = (props: {
 }) => {
   const { act } = useBackend();
 
-  const { onOverlay, directory } = props;
+  const { onOverlay, directory = [] } = props;
 
   const [sortId, setSortId] = useState<string>('name');
   const [sortOrder, setSortOrder] = useState<boolean>(true);

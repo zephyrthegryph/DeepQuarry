@@ -14,6 +14,11 @@
 	display_name = "Mind & Body"
 	pref_keys = list("body_perks", "mind_perks", "age")
 
+/// The wire shape of /datum/preference_editor/mind_body's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_mind_body, row(age = num(), body_pool = num(), body_spent = num(), mind_pool = num(), mind_spent = num(), spent_by_cat = map_of(schema_text(), num()), body_perks = list_of(schema_text()), mind_perks = list_of(schema_text())))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_mind_body_static, row(categories = map_of(schema_text(), row(id = schema_text(), name = schema_text(), description = schema_text(), color = schema_text(), icon = nullable(schema_text()), type = enum(list("body", "mind")))), trees = map_of(schema_text(), row(id = schema_text(), name = schema_text(), description = schema_text(), color = nullable(schema_text()), icon = nullable(schema_text()), category = schema_text(), perks = list_of(schema_text()))), perks = map_of(schema_text(), row(name = schema_text(), desc = schema_text(), icon = schema_text(), cost = num(), perk_kind = enum(list("body", "mind")), category = schema_text(), tree = schema_text(), requires = list_of(schema_text()), sort_priority = num(), tree_x = nullable(num()), tree_y = nullable(num())))))
+
 /datum/preference_editor/mind_body/build_ui_data(datum/preferences/preferences)
 	var/age = preferences.read_preference(/datum/preference/numeric/human/age) || 18
 	var/list/body_perks = preferences.read_preference(/datum/preference/typed_list/body_perks) || list()

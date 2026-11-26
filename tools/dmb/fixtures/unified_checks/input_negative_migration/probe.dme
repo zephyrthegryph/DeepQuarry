@@ -1,3 +1,0 @@
-/datum/example/proc/probe()
-    first()
-    return input(hidden())

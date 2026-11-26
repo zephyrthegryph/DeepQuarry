@@ -1,0 +1,5 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Under client lighting the darksight overlay follows the light the floor is drawn with, so the player's own character no longer carries a glow halo in lit areas."
+  - bugfix: "A later asset ack releases every earlier pending asset waiter, so a burst of glow shape deliveries no longer times out and swaps glows to icons the client lacks (lighting flicker while walking)."

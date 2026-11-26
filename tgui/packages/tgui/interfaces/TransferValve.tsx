@@ -1,20 +1,16 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, NoticeBox, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  tank_one: string;
-  tank_two: string;
-  attached_device: string;
-  valve: BooleanLike;
-};
+import type {
+  TransferValveActions,
+  TransferValveData,
+} from './generated/TransferValve';
 
 export const TransferValve = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<TransferValveData, TransferValveActions>();
   const { tank_one, tank_two, attached_device, valve } = data;
   return (
-    <Window>
+    <Window width={430} height={400}>
       <Window.Content>
         <Section>
           <LabeledList>
@@ -34,7 +30,7 @@ export const TransferValve = (props) => {
           buttons={
             <Button
               textAlign="center"
-              width="150px"
+              width="170px"
               icon="cog"
               disabled={!attached_device}
               onClick={() => act('device')}
@@ -55,7 +51,9 @@ export const TransferValve = (props) => {
                 </Button>
               </LabeledList.Item>
             ) : (
-              <NoticeBox textAlign="center">Attach Assembly</NoticeBox>
+              <LabeledList.Item label="Attachment">
+                <NoticeBox textAlign="center">Attach Assembly</NoticeBox>
+              </LabeledList.Item>
             )}
           </LabeledList>
         </Section>
@@ -72,7 +70,9 @@ export const TransferValve = (props) => {
                 </Button>
               </LabeledList.Item>
             ) : (
-              <NoticeBox textAlign="center">Attach Tank</NoticeBox>
+              <LabeledList.Item label="Attachment">
+                <NoticeBox textAlign="center">Attach Tank</NoticeBox>
+              </LabeledList.Item>
             )}
           </LabeledList>
         </Section>
@@ -89,7 +89,9 @@ export const TransferValve = (props) => {
                 </Button>
               </LabeledList.Item>
             ) : (
-              <NoticeBox textAlign="center">Attach Tank</NoticeBox>
+              <LabeledList.Item label="Attachment">
+                <NoticeBox textAlign="center">Attach Tank</NoticeBox>
+              </LabeledList.Item>
             )}
           </LabeledList>
         </Section>

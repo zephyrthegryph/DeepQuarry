@@ -50,11 +50,11 @@
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u. It is pumping chemicals at a rate of [amount_per_transfer_from_this]u."
 	tutorial(REFINERY_TUTORIAL_SINGLEOUTPUT, .)
 
-/obj/machinery/reagent_refinery/vat/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
+/obj/machinery/reagent_refinery/vat/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate)
 	// no back/forth, filters don't use just their forward, they send the side too!
 	if(dir == GLOB.reverse_dir[source_forward_dir])
 		return 0
-	. = ..(origin_machine, RT, source_forward_dir, transfer_rate, filter_id)
+	. = ..(origin_machine, RT, source_forward_dir, transfer_rate)
 
 /// The old MouseDrop_T's guard clause, shared by both drag branches.
 /obj/machinery/reagent_refinery/vat/proc/mousedrop_allowed(mob/user, atom/movable/C)

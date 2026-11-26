@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
+import type { BiogeneratorActions } from '../generated/Biogenerator';
 import { BiogeneratorItems } from './BiogeneratorItems';
 import { BiogeneratorSearch } from './BiogeneratorSearch';
 import type { Data } from './types';
 
 export const Biogenerator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BiogeneratorActions>();
 
   const { processing, points, beaker } = data;
 

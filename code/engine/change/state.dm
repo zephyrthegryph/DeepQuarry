@@ -12,12 +12,9 @@
 
 /// Everything a datum holds for the reaction layer, allocated on first use (most datums never have one).
 /datum/rx_state
-	/// Containment demand and lifecycle state, allocated with the holder's reactions.
-	var/list/containment_pins
+	/// Containment lifecycle state, allocated with the holder's reactions.
 	var/containment_move_hooks = 0
 	var/atom/movable/containment_successor
-	var/containment_declared = FALSE
-	var/containment_policy_disabled = FALSE
 	/// Cache of the last applied appearance and derived verb decisions.
 	var/look_key
 	/// How many looks show this atom worn or held (look.watch_worn()): while any does, every write of it is read (rx_readers()).
@@ -52,6 +49,9 @@
 	var/list/at_most_last
 	/// on_change(at_most =): reaction sig -> the keys held until its window ends.
 	var/list/at_most_held
+	/// Silent construction (refresh.dm): held record key ("rx", or the var of the atom that owns it) -> the var names written under the atom's
+	/// construction, published once at its birth.
+	var/list/construction_held
 
 /datum
 	/// The reaction layer's per-datum state, or null (see /datum/rx_state).
@@ -84,8 +84,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 			return TRUE
 	if(E.rx?.observed?[key])
 		return TRUE
-	if(E.rx?.worn_watched)
-		return TRUE // a human's draw shows E worn or held (look.watch_worn()): it composes whatever E shows, so every write of E reaches it
+	if(E.rx?.worn_watched && key != HOP_TURF && key != HOP_AREA)
+		return TRUE // a human's draw shows E worn or held (look.watch_worn()): it composes whatever E shows, so every write of E reaches it; not
+		// where E is (the turf and area hops are no part of what it shows: its own reads of them are its type's, above)
 	if((bits & PLAN_READ_LIFEFORM) && lifeform_watching(E, key))
 		return TRUE // a lifecycle form follows the var: a registry key, a radio frequency, a derives() input (code/engine/lifeforms/forms.dm)
 	if(bits & PLAN_READ_HOOK)
@@ -117,6 +118,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		S.observed -= key
 	if(!length(S.observed))
 		S.observed = null
+	hop_readers_changed(key)
 
 /**
  * `key` of `E` changed. Delivers to the type's on_change / on_cross reactions and to observe()rs of the key
@@ -356,8 +358,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	var/datum/rx_state/S = D.rx
 	if(!S)
 		return
-	if(S.look_key && isatom(D))
-		look_worn_release(D) // a look that dies shows nothing worn or held any more
+	if(isatom(D))
+		look_worn_release(D) // a look that dies shows nothing worn or held any more; a draw that showed nothing still watched (look_key is null then)
 	if(S.every_hop_on)
 		every_hop_forget(D)
 	for(var/datum/rx_listener/L as anything in S.listeners?.Copy())

@@ -160,8 +160,6 @@
 #define ui_iarrowleft "SOUTH-1,EAST-4"
 #define ui_iarrowright "SOUTH-1,EAST-2"
 
-#define ui_spell_master "EAST-2:16,NORTH-1:26"
-#define ui_genetic_master "EAST-1:16,NORTH-3:16"
 
 // Ghost ones
 #define ui_ghost_returntomenu "SOUTH:6,CENTER-4:24"
@@ -172,6 +170,8 @@
 #define ui_ghost_teleport "SOUTH:6,CENTER+1:24"
 #define ui_ghost_pai "SOUTH: 6,CENTER+2:24"
 #define ui_ghost_updown "SOUTH: 6,CENTER+3:24"
+#define ui_ghost_panel "SOUTH:6,CENTER+4:24"
+#define ui_ghost_spawn "SOUTH:6,CENTER+5:24"
 
 // NIF Soulcatcher guest ones
 #define ui_nifsc_reenter "SOUTH:6,CENTER-3:24"
@@ -202,12 +202,7 @@
 
 #define ui_smallquad "EAST-4:22,SOUTH:5"
 
-//Upper left (action buttons)
-#define ui_action_palette "WEST+0:23,NORTH-1:5"
-#define ui_action_palette_offset(north_offset) ("WEST+0:23,NORTH-[1+north_offset]:5")
 
-#define ui_palette_scroll "WEST+1:8,NORTH-6:28"
-#define ui_palette_scroll_offset(north_offset) ("WEST+1:8,NORTH-[6+north_offset]:28")
 
 #define ui_shadekin_display "EAST-1:28,CENTER-3:15"
 #define ui_lleill_display "EAST-1:28,CENTER-3:15"

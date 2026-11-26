@@ -17,6 +17,7 @@
 CAPABILITIES(/datum/player_panel)
 	ref_one(nameof(owner_admin))
 	interface("PlayerPanel", title = "Player Panel", rights = R_HOLDER)
+	ui_shape(players = list_of(row(name = schema_text(), real_name = schema_text(), key = schema_text(), connected = bool(), job = schema_text(), is_antagonist = int(), ref = num())))
 	op("admin_opts", ui_act("admin_opts", arg("ref", schema_ref(/mob))), then(PROC_REF(ui_act_admin_opts)))
 	op("private_message", ui_act("private_message", arg("ref", schema_ref(/mob))), then(PROC_REF(ui_act_private_message)))
 	op("traitor", ui_act("traitor", arg("ref", schema_ref(/mob))), then(PROC_REF(ui_act_traitor)))
@@ -76,7 +77,6 @@ CAPABILITIES(/datum/player_panel)
 			"job" = job,
 			"is_antagonist" = is_special_character(M),
 			"ref" = handle_of(M),
-			"ip" = STATE_GET(M, connection, lastKnownIP),
 		))
 	set_shown_players(players)
 

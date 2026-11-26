@@ -1,0 +1,11 @@
+{
+	"temp": null,
+	"authenticated": null,
+	"rank": null,
+	"screen": null,
+	"printing": null,
+	"scan": null,
+	"isAI": 0,
+	"isRobot": 0,
+	"modal": null
+}

@@ -415,6 +415,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(control_step)), when = PROC_REF(works))
 	op("disassemble", tool(TOOL_SCREWDRIVER), label("Disconnect the monitor"), wait(2 SECONDS), then(PROC_REF(disassemble_done)))
 	interface("SolarControl")
+	ui_shape(array_angle = num(), rotation_rate = num(), tracking_state = int(0, 2), generated = num(), generated_ratio = num(), sun_angle = num(), max_rotation_rate = num(), connected_panels = int(), connected_tracker = bool())
 	extend("ui_open", when(req_empty_hand()))
 	op("azimuth", ui_act("azimuth", arg("adjust", num(), optional = TRUE), arg("value", num(), optional = TRUE)), then(PROC_REF(ui_act_azimuth)))
 	op("azimuth_rate", ui_act("azimuth_rate", arg("adjust", num(), optional = TRUE), arg("value", num(), optional = TRUE)), then(PROC_REF(ui_act_azimuth_rate)))
@@ -445,8 +446,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		var/obj/structure/frame/F = new /obj/structure/frame/computer(src.loc)
 		new /obj/item/material/shard(src.loc)
 		var/obj/item/circuitboard/M = variant_new(VARIANT(/obj/item/circuitboard/solar_control), F)
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/obj/C in contents_of(src))
 			C.forceMove(src.loc)
 		rel_set(F, nameof(F.circuit), M)
 		F.set_state(3)
@@ -456,8 +456,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		to_chat(user, span_blue("You disconnect the monitor."))
 		var/obj/structure/frame/F = new /obj/structure/frame/computer(src.loc)
 		var/obj/item/circuitboard/M = variant_new(VARIANT(/obj/item/circuitboard/solar_control), F)
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/obj/C in contents_of(src))
 			C.forceMove(src.loc)
 		rel_set(F, nameof(F.circuit), M)
 		F.set_state(4)
@@ -542,6 +541,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 
 /obj/item/paper/solar
 	name = "paper- 'Going green! Setup your own solar array instructions.'"
+	desc = "Instructions for setting up a solar array: lay the panels, wire them to the tracker and the control computer, and set the array tracking the star."
 	info = "<h1>Welcome</h1><p>At greencorps we love the environment, and space. With this package you are able to help mother nature and produce energy without any usage of fossil fuel or phoron! Singularity energy is dangerous while solar energy is safe, which is why it's better. Now here is how you setup your own solar array.</p><p>You can make a solar panel by wrenching the solar assembly onto a cable node. Adding a glass panel, reinforced or regular glass will do, will finish the construction of your solar panel. It is that easy!</p><p>Now after setting up 19 more of these solar panels you will want to create a solar tracker to keep track of our mother nature's gift, the sun. These are the same steps as before except you insert the tracker equipment circuit into the assembly before performing the final step of adding the glass. You now have a tracker! Now the last step is to add a computer to calculate the sun's movements and to send commands to the solar panels to change direction with the sun. Setting up the solar computer is the same as setting up any computer, so you should have no trouble in doing that. You do need to put a wire node under the computer, and the wire needs to be connected to the tracker.</p><p>Congratulations, you should have a working solar array. If you are having trouble, here are some tips. Make sure all solar equipment are on a cable node, even the computer. You can always deconstruct your creations if you make a mistake.</p><p>That's all to it, be safe, be green!</p>"
 
 #undef SOLAR_AUTO_START_NO

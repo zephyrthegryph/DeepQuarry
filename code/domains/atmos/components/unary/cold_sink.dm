@@ -17,6 +17,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	part_replacement()
 	op("toggleStatus", ui_act("toggleStatus"), then(PROC_REF(ui_act_togglestatus)))
 	interface("GasTemperatureSystem")
+	ui_shape(on = bool(), gasPressure = num(), gasTemperature = num(), minGasTemperature = num(), maxGasTemperature = num(), targetGasTemperature = num(), powerSetting = num(), gasTemperatureClass = schema_text(), reagentVolume = num(), reagentMaximum = num(), reagentPower = num())
 	op("setGasTemperature", ui_act("setGasTemperature", arg("temp", num())), then(PROC_REF(ui_act_setgastemperature)))
 	op("setPower", ui_act("setPower", arg("value", num())), then(PROC_REF(ui_act_setpower)))
 
@@ -93,7 +94,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	// this is the data which will be sent to the ui
 	var/list/data = list()
 	var/air_temperature = air_contents.return_temperature()
-	data["on"] = use_power ? 1 : 0
+	data["on"] = use_power ? TRUE : FALSE
 	data["gasPressure"] = round(air_contents.return_pressure())
 	data["gasTemperature"] = round(air_temperature)
 	data["minGasTemperature"] = 0

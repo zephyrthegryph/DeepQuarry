@@ -1,7 +1,7 @@
 use super::prepared_source::PreparedLineView;
 use super::*;
 use crate::{expand_traced, DiagnosticKind, ExpandLocation};
-use dm_syntax::lex_spans;
+use dm_syntax::{lex_spans, SpanToken};
 use std::borrow::Cow;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
@@ -14,61 +14,13 @@ pub struct ExpandedRegions {
     pub text: crate::SourceText,
     /// Lex the joined stream once: declarations and expressions may cross
     /// include boundaries and cannot be parsed as independent file programs.
-    pub tokens: dm_syntax::SpanTokenStorage,
+    pub tokens: Vec<SpanToken>,
     pub origins: ExpandedOriginArena,
-    /// Ordinary planner order. Original streams borrow their delivered token ordinals.
-    pub(super) dense_emission_regions: Vec<usize>,
+    /// Declaration ordering projection; grammar is always parsed in encounter order.
+    pub emission_regions: Vec<usize>,
     pub diagnostics: Vec<Diagnostic>,
     pub receipts: Vec<region_memo::RegionReceipt>,
     pub lexical_diagnostics: Vec<dm_syntax::Diagnostic>,
-}
-
-impl ExpandedRegions {
-    /// Construct an expansion containing only text.
-    pub fn with_text(text: crate::SourceText) -> Self {
-        Self { text, ..Self::default() }
-    }
-
-    /// Declaration ordering projection; grammar is always parsed in encounter order.
-    pub fn emission_regions(&self) -> impl DoubleEndedIterator<Item = usize> + ExactSizeIterator + '_ {
-        let original = self.origins.has_original_emission_ordinals();
-        let len = if original { self.origins.len() } else { self.dense_emission_regions.len() };
-        (0..len).map(move |ordinal| {
-            if original {
-                self.origins.get(ordinal).expect("delivered physical origin").region
-            } else {
-                self.dense_emission_regions[ordinal]
-            }
-        })
-    }
-
-    /// Assign each region its last issued emission ordinal. Regions without
-    /// an emission leave the caller's existing rank unchanged.
-    pub fn write_last_emission_ranks(&self, ranks: &mut [usize]) {
-        if !self.origins.write_original_emission_ranks(ranks) {
-            for (rank, &region) in self.dense_emission_regions.iter().enumerate() {
-                ranks[region] = rank;
-            }
-        }
-    }
-
-    pub fn same_emission_regions(&self, other: &Self) -> bool {
-        if !self.origins.has_original_emission_ordinals() && !other.origins.has_original_emission_ordinals() {
-            self.dense_emission_regions == other.dense_emission_regions
-        } else {
-            self.emission_regions().eq(other.emission_regions())
-        }
-    }
-
-    /// Visit only the independent ordinary projection allocation. Original rows
-    /// are accounted for by the origin arena's visitor.
-    pub fn visit_emission_region_storage(&self, visit: impl FnOnce(usize, usize, usize)) {
-        let dense = &self.dense_emission_regions;
-        if dense.capacity() != 0 {
-            visit(dense.as_ptr() as usize, std::mem::size_of_val(dense.as_slice()),
-                dense.capacity() * std::mem::size_of::<usize>());
-        }
-    }
 }
 
 pub(super) struct RegionOutput {
@@ -205,7 +157,7 @@ fn expand_regions_inner(
             .into_iter()
             .map(|(_, _, diagnostic)| diagnostic)
             .collect(),
-        dense_emission_regions: plan.emission_regions().collect(),
+        emission_regions: plan.emission_regions().collect(),
         ..ExpandedRegions::default()
     };
     let mut origins = super::origin_arena::OriginArenaBuilder::with_capacity(origin_capacity);
@@ -233,12 +185,12 @@ fn expand_regions_inner(
         }
         origins.push_region(output.lines, output_start, *index, path);
     }
-    result.origins = super::origin_byte_layout::bind_current_layout(plan, &text, origins.finish());
+    result.origins = origins.finish();
     debug_assert_eq!(output_offset, text.len());
     result.text = text;
     if retain_tokens {
         let lexed = lex_spans(&result.text);
-        result.tokens = lexed.tokens.into();
+        result.tokens = lexed.tokens;
         result.lexical_diagnostics = lexed.diagnostics;
     }
     result
@@ -250,20 +202,13 @@ fn end_line(line: PreparedLineView<'_>, source: &str) -> usize {
     line.source_line + line.source_lines.saturating_sub(1) + source.matches('\n').count()
 }
 
-// Original Include::Expansion stores the invocation's last_input_loc; reading
-// argument tokens through inner_next does not advance that location. Native's
-// separately measured continuation-line behavior remains unchanged.
-fn expansion_line(plan:&DirectivePlan,line:PreparedLineView<'_>,source:&str)->usize{
-    if plan.initial_environment==crate::InitialEnvironment::OriginalChecker0290{line.source_line}else{end_line(line,source)}
-}
-
 pub(super) fn expand_region(
     plan: &DirectivePlan,
     index: usize,
     recorder: Option<&region_memo::Recorder>,
 ) -> RegionOutput {
     let region = &plan.regions[index];
-    let file_name = plan.expansion_path(region.occurrence);
+    let file_name = plan.semantic_path(region.occurrence);
     let mut text_buffer = String::new();
     let mut diagnostics = Vec::new();
     let mut lines = output_lines::OutputLineBuilder::default();
@@ -299,125 +244,105 @@ pub(super) fn expand_region(
             let lookup: &dyn crate::MacroLookup = recording
                 .as_ref()
                 .map_or(&segment.macros as &dyn crate::MacroLookup, |lookup| lookup);
-            let contextual = crate::initial_environment::ContextLookup {
-                inner: lookup, environment: plan.initial_environment,
-            };
-            let lookup: &dyn crate::MacroLookup = &contextual;
             let source = line.text.trim_end_matches(['\r', '\n']);
             let mut joined = false;
-            let mut macro_points = None;
             // Empty indentation cannot contain a macro, interpolation, lexical
             // error or traced invocation. Keep the original source slice instead
             // of lexing and copying it; recorder input ordinals still advance.
-            let (text, meta): (Cow<str>, PreparedLineView<'_>) = if held.is_empty()
-                && source.bytes().all(|byte| matches!(byte, b' ' | b'\t'))
-            {
-                (Cow::Borrowed(source), line)
-            } else if !held.is_empty() {
-                let mut text = String::new();
-                for earlier in &held {
-                    text.push_str(earlier.text.trim_end_matches(['\r', '\n']));
-                    text.push('\n');
-                }
-                text.push_str(source);
-                match expand_traced(
-                    &text,
-                    lookup,
-                    // A call that stayed open over several lines reads `__LINE__` as the line it ends on plus the lines it
-                    // held back (measured against DreamMaker 516.1687: a call over n lines on 5..11 reads 17).
-                    ExpandLocation {
-                        file_name: &file_name,
-                        line: if plan.initial_environment==crate::InitialEnvironment::OriginalChecker0290{held[0].source_line}else{end_line(line, source) + held.len()},
-                    },
-                    &mut trace,
-                ) {
-                    Ok(text) => {
-                        joined = true;
-                        (Cow::Owned(text), held[0])
+            let (text, meta): (Cow<str>, PreparedLineView<'_>) =
+                if held.is_empty() && source.bytes().all(|byte| matches!(byte, b' ' | b'\t')) {
+                    (Cow::Borrowed(source), line)
+                } else if !held.is_empty() {
+                    let mut text = String::new();
+                    for earlier in &held {
+                        text.push_str(earlier.text.trim_end_matches(['\r', '\n']));
+                        text.push('\n');
                     }
-                    Err(message)
-                        if message == crate::MISSING_CALL_CLOSE
-                            && held.len() < crate::MAX_OPEN_CALL_LINES =>
-                    {
-                        held.push(line);
-                        continue;
+                    text.push_str(source);
+                    match expand_traced(
+                        &text,
+                        lookup,
+                        // A call that stayed open over several lines reads `__LINE__` as the line it ends on plus the lines it
+                        // held back (measured against DreamMaker 516.1687: a call over n lines on 5..11 reads 17).
+                        ExpandLocation {
+                            file_name: &file_name,
+                            line: end_line(line, source) + held.len(),
+                        },
+                        &mut trace,
+                    ) {
+                        Ok(text) => {
+                            joined = true;
+                            (Cow::Owned(text), held[0])
+                        }
+                        Err(message)
+                            if message == crate::MISSING_CALL_CLOSE
+                                && held.len() < crate::MAX_OPEN_CALL_LINES =>
+                        {
+                            held.push(line);
+                            continue;
+                        }
+                        Err(_) => {
+                            // Not a call later lines close: the held lines stand
+                            // alone, and so does this one.
+                            held.push(line);
+                            flush_held(
+                                &mut held,
+                                &segment.macros,
+                                &file_name,
+                                plan,
+                                region.occurrence,
+                                &mut trace_arena,
+                                &mut text_buffer,
+                                &mut lines,
+                                &mut diagnostics,
+                            );
+                            continue;
+                        }
                     }
-                    Err(_) => {
-                        // Not a call later lines close: the held lines stand
-                        // alone, and so does this one.
-                        held.push(line);
-                        flush_held(
-                            &mut held,
-                            &segment.macros,
-                            &file_name,
-                            plan,
-                            region.occurrence,
-                            &mut trace_arena,
-                            &mut text_buffer,
-                            &mut lines,
-                            &mut diagnostics,
-                        );
-                        continue;
+                } else {
+                    match expand_traced(
+                        source,
+                        lookup,
+                        ExpandLocation {
+                            file_name: &file_name,
+                            line: end_line(line, source),
+                        },
+                        &mut trace,
+                    ) {
+                        Ok(text) => (Cow::Owned(text), line),
+                        Err(message) if message == crate::MISSING_CALL_CLOSE => {
+                            held.push(line);
+                            continue;
+                        }
+                        Err(message) => {
+                            diagnostics.push(Diagnostic {
+                                path: plan.occurrences[region.occurrence].path.as_ref().clone(),
+                                line: line.source_line,
+                                kind: DiagnosticKind::Macro,
+                                message,
+                            });
+                            (Cow::Borrowed(source), line)
+                        }
                     }
-                }
-            } else {
-                match crate::macro_expansion::expand_traced_points(
-                    source,
-                    lookup,
-                    ExpandLocation {
-                        file_name: &file_name,
-                        line: expansion_line(plan,line,source),
-                    },
-                    &mut trace,
-                ) {
-                    Ok((text, points)) => {
-                        macro_points = points.map(|points| Arc::from(points.into_boxed_slice()));
-                        (Cow::Owned(text), line)
-                    }
-                    Err(message) if message == crate::MISSING_CALL_CLOSE => {
-                        held.push(line);
-                        continue;
-                    }
-                    Err(message) => {
-                        diagnostics.push(Diagnostic {
-                            path: plan.occurrences[region.occurrence].path.as_ref().clone(),
-                            line: line.source_line,
-                            kind: DiagnosticKind::Macro,
-                            message,
-                        });
-                        (Cow::Borrowed(source), line)
-                    }
-                }
-            };
+                };
             if joined {
                 held.clear();
             }
             // Traces survive through analysis and lowering. Release growth
             // slack before publishing immutable backing shared by emitted lines.
             let macro_expansions = trace_arena.freeze_expansions(macro_expansions);
-            let single_physical_macro_line = !joined
-                && meta.source_lines == 1
-                && !macro_expansions.is_empty()
-                && !text.strip_suffix('\n').unwrap_or(&text).contains('\n');
             // The terminal separator is not another emitted line. Interior
             // empty lines are source content, including inside block strings.
             for part in text.strip_suffix('\n').unwrap_or(&text).split('\n') {
                 let start = text_buffer.len();
                 text_buffer.push_str(part);
                 text_buffer.push('\n');
-                lines.push_with_macro_points(
-                    (
-                        Span::new(start, text_buffer.len()),
-                        meta.source_line,
-                        meta.source_span,
-                        macro_expansions.clone(),
-                    ),
-                    single_physical_macro_line,
-                    !macro_expansions.is_empty(),
-                    single_physical_macro_line
-                        .then(|| macro_points.clone())
-                        .flatten(),
-                );
+                lines.push((
+                    Span::new(start, text_buffer.len()),
+                    meta.source_line,
+                    meta.source_span,
+                    macro_expansions.clone(),
+                ));
             }
         }
         flush_held(
@@ -467,15 +392,12 @@ fn flush_held(
                 definition: macros.definition_origin(name).cloned(),
             });
         };
-        let contextual = crate::initial_environment::ContextLookup {
-            inner: macros, environment: plan.initial_environment,
-        };
         let text = match expand_traced(
             source,
-            &contextual,
+            macros,
             ExpandLocation {
                 file_name,
-                line: expansion_line(plan,line,source),
+                line: end_line(line, source),
             },
             &mut trace,
         ) {
@@ -495,17 +417,12 @@ fn flush_held(
             let start = text_buffer.len();
             text_buffer.push_str(part);
             text_buffer.push('\n');
-            lines.push_with_macro_points(
-                (
-                    Span::new(start, text_buffer.len()),
-                    line.source_line,
-                    line.source_span,
-                    macro_expansions.clone(),
-                ),
-                false,
-                !macro_expansions.is_empty(),
-                None,
-            );
+            lines.push((
+                Span::new(start, text_buffer.len()),
+                line.source_line,
+                line.source_span,
+                macro_expansions.clone(),
+            ));
         }
     }
 }
@@ -639,17 +556,17 @@ mod tests {
         }
         assert_eq!(offset, serial.text.len());
         assert_eq!(
-            serial.origins.get(0).unwrap().macro_expansions.native_owner().unwrap()[0]
+            serial.origins.get(0).unwrap().macro_expansions[0]
                 .name
                 .as_ref(),
             "VALUE"
         );
         assert!(Arc::ptr_eq(
-            serial.origins.get(1).unwrap().macro_expansions.native_owner().unwrap(),
-            serial.origins.get(2).unwrap().macro_expansions.native_owner().unwrap(),
+            serial.origins.get(1).unwrap().macro_expansions,
+            serial.origins.get(2).unwrap().macro_expansions,
         ));
         assert_eq!(
-            serial.origins.get(4).unwrap().macro_expansions.native_owner().unwrap()[0]
+            serial.origins.get(4).unwrap().macro_expansions[0]
                 .definition
                 .as_ref()
                 .unwrap()

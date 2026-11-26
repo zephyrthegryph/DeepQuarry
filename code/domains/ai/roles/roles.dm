@@ -6,8 +6,8 @@
 //
 // Roles are capabilities granted to the mob:
 //   lord      authority and the right to give orders (intend());
-//   sworn     tethered to a lord: never splits off its pack; it joins the lord's pack and serves(lord);
-//   sentinel  special sight: line of sight for dark or invisible targets is checked from sentinels first.
+//   sworn     tethered to a lord: never splits off its pack; it joins the lord's pack and serves(lord).
+// A sentinel (special sight) is no role: it is read from the mob's sight when asked (is_sentinel()).
 //
 // serves(lord): the sworn member regards the lord as an ally and takes the lord's hostile standings as its own (priority AI_STANDING_SERVES, source
 // the lord), re-synced when the lord's standings change. The rows go when the lord is deleted, and the sworn is freed when the lord dies.
@@ -16,7 +16,6 @@
 
 CAPABILITY_TYPE(ai_role_lord, CAP_AI_ROLE_LORD, /datum/capability/ai_role/lord, key = NONE)
 CAPABILITY_TYPE(ai_role_sworn, CAP_AI_ROLE_SWORN, /datum/capability/ai_role/sworn, key = NONE)
-CAPABILITY_TYPE(ai_role_sentinel, CAP_AI_ROLE_SENTINEL, /datum/capability/ai_role/sentinel, key = NONE)
 
 /datum/capability/ai_role
 	/// What holding the role adds to STAT_AI_AUTHORITY.
@@ -29,9 +28,6 @@ CAPABILITY_TYPE(ai_role_sentinel, CAP_AI_ROLE_SENTINEL, /datum/capability/ai_rol
 	return list()
 
 /datum/capability/ai_role/sworn/entries()
-	return list()
-
-/datum/capability/ai_role/sentinel/entries()
 	return list()
 
 /// Authority adds up: roles and traits hold on it, sources never overlap.
@@ -177,17 +173,12 @@ CAPABILITY_TYPE(ai_role_sentinel, CAP_AI_ROLE_SENTINEL, /datum/capability/ai_rol
 			B.unserve()
 
 /// Does this brain's mob see what most do not: through darkness, invisibility or walls (a held sight flag or a long night vision)? Such a member is a
-/// sentinel: it is granted the role the first time it is asked, and a pack checks line of sight for a dark or invisible target from sentinels first.
+/// sentinel, and a pack checks line of sight for a dark or invisible target from sentinels first. Read from the mob when asked, so a change of sight counts at once.
 /datum/ai_brain/proc/is_sentinel()
 	var/mob/living/L = holder
 	if(!L || QDELETED(L))
 		return FALSE
-	if(has_role(/datum/capability/ai_role/sentinel))
-		return TRUE
-	if((L.sight & (SEE_MOBS | SEE_THRU)) || L.see_invisible > SEE_INVISIBLE_LIVING || L.see_in_dark >= 8)
-		grant_role(/datum/capability/ai_role/sentinel)
-		return TRUE
-	return FALSE
+	return !!((L.sight & (SEE_MOBS | SEE_THRU)) || L.see_invisible > SEE_INVISIBLE_LIVING || L.see_in_dark >= 8)
 
 /// `brains` with the sentinels first (each group keeps its order).
 /datum/ai_pack/proc/sentinels_first(list/brains)

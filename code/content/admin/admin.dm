@@ -492,7 +492,7 @@ ADMIN_VERB(togglepersistence, R_SERVER, "Toggle Persistent Data", "Whether persi
 	world.update_status()
 	feedback_add_details("admin_verb","TPD") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(toggle_aliens, R_FUN|R_SERVER, "Toggle Aliens", "Toggle alien mobs.", ADMIN_CATEGORY_SERVER_GAME)
+ADMIN_VERB(toggle_aliens, R_FUN|R_SERVER|R_DEBUG, "Toggle Aliens", "Toggle alien mobs.", ADMIN_CATEGORY_SERVER_GAME)
 	CONFIG_SET(flag/aliens_allowed, !CONFIG_GET(flag/aliens_allowed))
 	log_admin("[key_name(user)] toggled Aliens to [CONFIG_GET(flag/aliens_allowed)].")
 	message_admins("[key_name_admin(user)] toggled Aliens [CONFIG_GET(flag/aliens_allowed) ? "on" : "off"].")
@@ -915,7 +915,7 @@ ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to
 	var/client/user = ask.answerer.client
 	var/crystals = ask.value
 	if (!isnull(crystals))
-		human_mob.mind.tcrystals = crystals
+		human_mob.mind.set_tcrystals(crystals)
 		var/msg = "[key_name(user)] has modified [human_mob.ckey]'s telecrystals to [crystals]."
 		message_admins(msg)
 
@@ -936,7 +936,7 @@ ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to
 	var/client/user = ask.answerer.client
 	var/crystals = ask.value
 	if (!isnull(crystals))
-		human_mob.mind.tcrystals += crystals
+		human_mob.mind.set_tcrystals(human_mob.mind.tcrystals + crystals)
 		var/msg = "[key_name(user)] has added [crystals] to [human_mob.ckey]'s telecrystals."
 		message_admins(msg)
 
@@ -1125,7 +1125,7 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	var/mob/living/carbon/human/traitor_human = A.request.value
 	var/client/user = A.request.answerer.client
 	antag_traitors().spawn_uplink(traitor_human)
-	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
+	traitor_human.mind.set_tcrystals(DEFAULT_TELECRYSTAL_AMOUNT)
 	traitor_human.mind.accept_tcrystals = 1
 	message_admins("[key_name(user)] has given [traitor_human.ckey] an uplink.")
 

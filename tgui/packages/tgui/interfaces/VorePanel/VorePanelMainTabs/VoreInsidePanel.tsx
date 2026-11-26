@@ -1,3 +1,4 @@
+import { Label } from 'tgui/components/Label';
 import { Box, Section, Stack } from 'tgui-core/components';
 import {
   digestModeToColor,
@@ -18,7 +19,7 @@ export const VoreInsidePanel = (props: { inside: InsideData }) => {
     liq_lvl,
     liq_reagent_type,
     liuq_name,
-  } = inside;
+  } = inside ?? ({} as InsideData);
 
   if (!belly_name) {
     return (
@@ -65,7 +66,7 @@ export const VoreInsidePanel = (props: { inside: InsideData }) => {
           </Box>
           &nbsp;
           <Stack.Item>
-            <Box color="label">{desc}</Box>
+            <Label>{desc}</Label>
           </Stack.Item>
         </Stack.Item>
       </Stack>

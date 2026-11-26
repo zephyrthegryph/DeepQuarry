@@ -3,14 +3,14 @@
 // code/engine/_generated/actions.dm); the engine is code/engine/actions/.
 
 /// Tries a world action: `var/datum/act/fall/F = ACT_ATTEMPT(src, fall, T, M)` is `act_fall(src, T, M, act_answer = TRUE)`. The result is the final act
-/// after every adjusts(); ACT_PASS when nothing hooks the action and no listener wants its notice (nothing is allocated); or, refused or taken over,
+/// after every adjusts_with(); ACT_PASS when nothing hooks the action and no listener wants its notice (nothing is allocated); or, refused or taken over,
 /// a /datum/act_refusal carrying the outcome, the reason and the taker's reply (ACT_REFUSED_BY(F), ACT_TAKEN_OVER(F), ACT_REPLY(F)). Every path of
 /// the caller that has a real act ends it with act_done(F) or act_cancel(F) (the pairing lint, tools/analyze sem/handlers); both ignore a refusal.
 /// The token is the action's name with an underscore for a slash: ACT_ATTEMPT(src, hit_projectile, packet).
 #define ACT_ATTEMPT(E, token, args...) act_##token(E, ##args, act_answer = TRUE)
 /// Was an ACT_ATTEMPT result refused or taken over?
 #define ACT_REFUSED_BY(R) istype(R, /datum/act_refusal)
-/// The final value of an action's field: the act's own field when ACT_ATTEMPT returned a real act (an adjusts() may have changed it), the caller's
+/// The final value of an action's field: the act's own field when ACT_ATTEMPT returned a real act (an adjusts_with() may have changed it), the caller's
 /// local when it returned ACT_PASS (nothing could have adjusted it). `ACT_FINAL(F, landing, T)`.
 #define ACT_FINAL(F, field, local) ((F) == ACT_PASS ? (local) : F.field)
 

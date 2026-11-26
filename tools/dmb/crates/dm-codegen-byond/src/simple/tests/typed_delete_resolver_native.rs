@@ -18,7 +18,7 @@ impl Resolver for Declarations {
             let mut data = dm_ir::DeclarationMeaning::default();
             if name == SymbolId::of("null_field") || name == SymbolId::of("null_global") {
                 data.flags = 2;
-                data.field_tail_mut().resolved_constant = Some(dm_ir::SemanticValue::Null);
+                data.resolved_constant = Some(dm_ir::SemanticValue::Null);
             }
             M::Member {
                 owner,

@@ -73,9 +73,9 @@ CAPABILITIES(/obj/item/uv_light)
 				if(dq_get_fluorescent(A) == 1)
 					dq_set_fluorescent(A, 2) //To prevent light crosstalk.
 					if(A.invisibility)
-						set_scanned_at("[handle_of(A)]", A.invisibility)
+						set_scanned_at("[handle_text(handle_of(A))]", A.invisibility)
 						A.set_invisibility(INVISIBILITY_NONE)
-						LAZYSET(stored_alpha, "[handle_of(A)]", A.alpha)
+						LAZYSET(stored_alpha, "[handle_text(handle_of(A))]", A.alpha)
 						A.set_alpha(use_alpha)
 					if(istype(A, /obj/item))
 						var/obj/item/O = A

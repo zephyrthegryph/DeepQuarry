@@ -1,3 +1,0 @@
-sources = ["code/z.dm", "code/a.dm", "code/.hidden.dm", "other/outside.dm", "code/invalid.dm"]
-expected_rows = 4
-expected_diagnostics = 0

@@ -1,6 +1,0 @@
-@FIXTURE@, line 2, column 5:
-error: undefined proc: "first" on /datum/example
-
-@FIXTURE@, line 3, column 18:
-error: undefined proc: "hidden" on /datum/example
-

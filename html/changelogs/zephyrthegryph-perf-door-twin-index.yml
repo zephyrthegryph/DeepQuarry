@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A light finds the doors it readies shapes for through a per-chunk door index and one sight call, instead of walking every door and shadowcasting each in DM"

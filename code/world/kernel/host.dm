@@ -144,7 +144,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 /datum/controller/kernel/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["fast_update"] = overview_fast_update
+	data["fast_update"] = overview_fast_update ? TRUE : FALSE
 	data["rolling_length"] = rolling_usage_length
 	var/list/merged_1 = ui_data_datum_controller_kernel(A.actor, null, null)
 	if(islist(merged_1))
@@ -165,8 +165,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			"init_order" = 0,
 			"last_fire" = system.last_fire,
 			"next_fire" = 0,
-			"can_fire" = system.can_fire,
-			"doesnt_fire" = !system.times_fired,
+			"can_fire" = system.can_fire ? TRUE : FALSE,
+			"doesnt_fire" = system.times_fired ? FALSE : TRUE,
 			"cost_ms" = system.fire_cost,
 			"wall_cost_last_ms" = system.fire_cost,
 			"cpu_cost_ms" = system.fire_cost,
@@ -176,7 +176,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			"tick_usage" = 0,
 			"usage_per_tick" = 0,
 			"tick_overrun" = system.tick_overrun,
-			"initialized" = system.initialized,
+			"initialized" = system.initialized ? TRUE : FALSE,
 			"initialization_failure_message" = null,
 		))
 	data["subsystems"] = system_data
@@ -204,6 +204,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			"[key_name(user)] tried to view kernel variables while having improper rights, \
 			this is potentially a malicious exploit and worth noting."
 		)
+		return FALSE
 
 	var/datum/system/system = ref
 	if(isnull(system))
@@ -295,15 +296,16 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// atoms of types whose default look is empty (code/engine/change/look_stamp.dm).
 	refresh_settle_created()
 	var/tail_settle = REALTIMEOFDAY
-	// What the settle kept is every first draw the map still owes. A server leaves them to the presentation lane, which draws the atoms
-	// around each client first (interest_enter(), engine/change/interest.dm): nobody sees the map from the lobby, and anything a client does see is drawn before
-	// the rest, so the lobby opens without waiting about 45 s for draws nobody is looking at. Test worlds draw everything now, as their
-	// tests read looks right after boot; a bench passes defer_boot_drain=1 to measure the server's way.
+	// What the settle kept is every first draw the map still owes: the look-only ones are filed by chunk (draw_queue.dm), the others are in the refresh
+	// queue. A server leaves them to the presentation lane, which draws them over the ticks that follow, nearest a client first and then all the rest:
+	// nobody sees the map from the lobby, and no player enters it until the last is drawn (boot_draws_pending()). Test worlds draw everything now, as
+	// their tests read looks right after boot; a bench passes defer_boot_drain=1 to measure the server's way.
 	if(boot_drain_deferred())
-		refresh_park_backlog() // the cosmetic first draws wait for a client to come near instead of draining
-		GLOB.boot_draws_outstanding = length(GLOB.refresh_queue) > 0
+		GLOB.boot_draws_outstanding = (length(GLOB.refresh_queue) + draw_depth()) > 0
 		GLOB.boot_draws_deferred_at = REALTIMEOFDAY
-		log_world("Boot drain deferred: [length(GLOB.refresh_queue)] first draws left to the presentation lane (nearest clients first).")
+		GLOB.boot_drain_boost = (length(GLOB.refresh_queue) + draw_depth()) > 0
+		GLOB.boot_drain_boost_draws = GLOB.look_cost_all_draws
+		log_world("Boot drain deferred: [length(GLOB.refresh_queue)] queued and [draw_depth()] filed first draws left to the presentation lane (nearest clients first).")
 	else
 		refresh_boot_drain()
 	var/tail_drain = REALTIMEOFDAY
@@ -366,7 +368,6 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	if(current_runlevel < 1)
 		current_runlevel = old_runlevel
 		CRASH("Attempted to set invalid runlevel: [new_runlevel]")
-	kernel_runlevel_changed()
 
 /// Starts the kernel's host loop (kernel/loop.dm start_loop()): the kernel owns the loop, this is the name it had.
 /datum/controller/kernel/proc/StartProcessing(delay)
@@ -382,7 +383,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// end_tick() clears them.
 	var/datum/tick_meter/meter = km_meter()
 	var/charged_ms = meter.tick_charged
-	meter.end_tick(usage, MAPTICK_LAST_INTERNAL_TICK_USAGE)
+	slow_tick_prepare(meter, usage)
+	GLOB.km_ledger.finish(perf_tick_end_usage, usage)
+	meter.end_tick(usage, MAPTICK_LAST_INTERNAL_TICK_USAGE, clamp(perf_tick_start_usage, 0, usage))
 	perf_tick_usage += usage
 	perf_tick_realtime += REALTIMEOFDAY
 	perf_samples_total++
@@ -472,33 +475,83 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" = 0, "p95" = 0, "p99" = 0, "max" = 0, "overruns" = 0, "tps" = 0))
 
 /datum/controller/kernel/proc/performance_window(seconds, start_index_override)
-	var/sample_count
-	var/start_index
 	if(start_index_override)
-		start_index = clamp(start_index_override, 1, perf_tick_usage.len + 1)
-		sample_count = perf_tick_usage.len - start_index + 1
-	else
-		sample_count = min(perf_tick_usage.len, max(round(world.fps * seconds), 1))
-		start_index = perf_tick_usage.len - sample_count + 1
-	if(!sample_count)
+		var/start_index = clamp(start_index_override, 1, perf_tick_usage.len + 1)
+		var/count = perf_tick_usage.len - start_index + 1
+		if(!count)
+			return GLOB.empty_performance_window
+		var/datum/perf_window_walk/from_start = performance_walk_begin(null, count)
+		performance_walk_step(from_start, INFINITY)
+		return performance_walk_result(from_start)
+	var/datum/perf_window_walk/W = performance_walk_begin(seconds)
+	if(!W)
 		return GLOB.empty_performance_window
-	// Percentiles come from a 1%-wide histogram filled in the same pass as the
-	// average, so the window is never copied or sorted (Q7). Usage above
-	// PERF_HISTOGRAM_BINS% lands in the top bin; "max" stays exact.
-	var/list/histogram = new /list(PERF_HISTOGRAM_BINS + 1)
+	performance_walk_step(W, INFINITY)
+	return performance_walk_result(W)
+
+/// A performance_window() being read a slice at a time (the MC Health panel's 30 s and 5 min windows: 600 and 6000 samples in one call held a
+/// tick for several ms). The samples are named by their absolute position (perf_samples_total), so the ring trimming meanwhile only
+/// clamps the walk to the oldest sample kept. Percentiles come from a 1%-wide histogram filled in the same pass as the average, so the
+/// window is never copied or sorted (Q7). Usage above PERF_HISTOGRAM_BINS% lands in the top bin; "max" stays exact.
+/datum/perf_window_walk
+	/// The absolute positions of the first and last sample of the window, and the next one to read.
+	var/first_pos = 0
+	var/last_pos = 0
+	var/next_pos = 0
+	var/samples = 0
+	var/list/histogram
 	var/sum = 0
 	var/overruns = 0
 	var/window_max = 0
-	var/end_index = start_index + sample_count - 1
-	for(var/i in start_index to end_index)
-		var/value = perf_tick_usage[i]
-		sum += value
-		if(value > window_max)
-			window_max = value
+	/// REALTIMEOFDAY of the first and last sample read.
+	var/real_first
+	var/real_last
+
+/// The walk of the last `seconds` of samples (or the last `count` samples), or null when there are none.
+/datum/controller/kernel/proc/performance_walk_begin(seconds, count)
+	var/sample_count = count || min(perf_tick_usage.len, max(round(world.fps * seconds), 1))
+	sample_count = min(sample_count, perf_tick_usage.len)
+	if(!sample_count)
+		return null
+	var/datum/perf_window_walk/W = new
+	W.last_pos = perf_samples_total
+	W.first_pos = perf_samples_total - sample_count + 1
+	W.next_pos = W.first_pos
+	W.histogram = new /list(PERF_HISTOGRAM_BINS + 1)
+	return W
+
+/// Reads samples for `budget_ms` (at least a few). TRUE when the window has been read to its end.
+/datum/controller/kernel/proc/performance_walk_step(datum/perf_window_walk/W, budget_ms)
+	var/started = TICK_USAGE_REAL
+	var/oldest = perf_samples_total - perf_tick_usage.len + 1
+	if(W.next_pos < oldest)
+		W.next_pos = oldest // trimmed away meanwhile: the window starts at the oldest kept
+	var/list/histogram = W.histogram
+	var/n = 0
+	while(W.next_pos <= W.last_pos)
+		var/idx = perf_index_of(W.next_pos)
+		var/value = perf_tick_usage[idx]
+		if(!W.samples)
+			W.real_first = perf_tick_realtime[idx]
+		W.real_last = perf_tick_realtime[idx]
+		W.samples++
+		W.next_pos++
+		W.sum += value
+		if(value > W.window_max)
+			W.window_max = value
 		if(value > 100)
-			overruns++
-		var/bin = min(round(value), PERF_HISTOGRAM_BINS) + 1
-		histogram[bin]++
+			W.overruns++
+		histogram[min(round(value), PERF_HISTOGRAM_BINS) + 1]++
+		if(!(++n % 64) && W.next_pos <= W.last_pos && TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) >= budget_ms)
+			return FALSE
+	return TRUE
+
+/// The finished walk, as performance_window() returns it.
+/datum/controller/kernel/proc/performance_walk_result(datum/perf_window_walk/W)
+	var/sample_count = W.samples
+	if(!sample_count)
+		return GLOB.empty_performance_window
+	var/list/histogram = W.histogram
 	var/list/percentile_ranks = list(
 		max(CEILING(sample_count * 0.50, 1), 1),
 		max(CEILING(sample_count * 0.95, 1), 1),
@@ -514,18 +567,18 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 			rank_index++
 		if(rank_index > 3)
 			break
-	var/realtime_delta = perf_tick_realtime[perf_tick_realtime.len] - perf_tick_realtime[start_index]
+	var/realtime_delta = W.real_last - W.real_first
 	if(realtime_delta < 0)
 		realtime_delta += 24 HOURS
 	return list(
 		"samples" = sample_count,
-		"avg" = sum / sample_count,
+		"avg" = W.sum / sample_count,
 		"percentile_samples" = sample_count,
 		"p50" = percentiles[1],
 		"p95" = percentiles[2],
 		"p99" = percentiles[3],
-		"max" = window_max,
-		"overruns" = overruns,
+		"max" = W.window_max,
+		"overruns" = W.overruns,
 		"tps" = realtime_delta > 0 ? ((sample_count - 1) / (realtime_delta * 0.1)) : world.fps,
 	)
 
@@ -593,6 +646,17 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 GLOBAL_VAR_INIT(boot_draws_outstanding, FALSE)
 /// REALTIMEOFDAY when the first draws were deferred (for the log line when they finish).
 GLOBAL_VAR_INIT(boot_draws_deferred_at, 0)
+/// TRUE from the deferred boot until both draw queues have been empty: the presentation lane takes most of each tick meanwhile (scheduler.dm SCHED_BOOT_DRAW_SHARE).
+GLOBAL_VAR_INIT(boot_drain_boost, FALSE)
+/// Draws made (look_cost_all_draws) when the deferred boot began, for the log line when the boost ends.
+GLOBAL_VAR_INIT(boot_drain_boost_draws, 0)
+
+/// The deferred boot's draws are all made (nothing in the refresh queue and nothing filed): the lane goes back to its own share. Logs how long it took.
+/proc/boot_drain_boost_end()
+	if(length(GLOB.refresh_queue) || length(GLOB.draw_buckets))
+		return
+	GLOB.boot_drain_boost = FALSE
+	log_world("Boot drain finished [(REALTIMEOFDAY - GLOB.boot_draws_deferred_at) / 10]s after init: [GLOB.look_cost_all_draws - GLOB.boot_drain_boost_draws] draws, [round(GLOB.draw_drain_ms)] ms of draw drain in all. [look_kinds_text(8)]")
 
 /// Whether the map's deferred first draws are still being made: until then no player enters the map (round start, observing, an
 /// admin ghost), so nobody ever sees an atom that has not been drawn. Clears for good the first time the refresh queue is empty.
@@ -600,7 +664,7 @@ GLOBAL_VAR_INIT(boot_draws_deferred_at, 0)
 	if(!GLOB.boot_draws_outstanding)
 		return FALSE
 	if(length(GLOB.refresh_queue))
-		return TRUE
+		return TRUE // (the filed draws are not waited for: the drain draws the chunks nearest a client first, so what a joiner sees is drawn)
 	GLOB.boot_draws_outstanding = FALSE
 	log_world("Boot draws finished [(REALTIMEOFDAY - GLOB.boot_draws_deferred_at) / 10]s after init; the map is open.")
 	return FALSE

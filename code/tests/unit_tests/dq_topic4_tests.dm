@@ -44,7 +44,7 @@
 	rel_add(R.module, nameof(R.module.emag), emag_tool)
 	var/obj/item/tool/crowbar/stray = allocate(/obj/item/tool/crowbar, T)
 	// the readouts: the module's tools by handle, in both the static and the live data
-	var/list/static_data = window.tgui_static_data(R)
+	var/list/static_data = present_tgui_static_data(window, R)
 	var/listed_static = FALSE
 	for(var/list/row in static_data["modules_static"])
 		if(row["ref"] == handle_of(tool))
@@ -52,8 +52,8 @@
 		TEST_ASSERT(row["ref"] != handle_of(emag_tool), "the emag tool is not listed before the cyborg is emagged")
 	TEST_ASSERT(listed_static, "the static data names the tool by handle")
 	var/list/data = hc_data(window, R)
-	TEST_ASSERT("[handle_of(tool)]" in data["modules"], "the live data keys the tool by handle")
-	TEST_ASSERT(!("[handle_of(emag_tool)]" in data["emag_modules"]), "and lists no emag tool before the cyborg is emagged")
+	TEST_ASSERT("[handle_text(handle_of(tool))]" in data["modules"], "the live data keys the tool by handle")
+	TEST_ASSERT(!("[handle_text(handle_of(emag_tool))]" in data["emag_modules"]), "and lists no emag tool before the cyborg is emagged")
 	// toggling: a listed tool is taken up, anything else is not
 	own(test_ui(R, window, "toggle_module", list("ref" = handle_of(stray))))
 	TEST_ASSERT(!R.activated(stray), "a tool that is in no module cannot be taken up")
@@ -67,7 +67,7 @@
 	TEST_ASSERT(!R.activated(tool), "and puts it back")
 	R.set_emagged(TRUE)
 	data = hc_data(window, R)
-	TEST_ASSERT("[handle_of(emag_tool)]" in data["emag_modules"], "an emagged cyborg lists its emag tool by handle")
+	TEST_ASSERT("[handle_text(handle_of(emag_tool))]" in data["emag_modules"], "an emagged cyborg lists its emag tool by handle")
 	own(test_ui(R, window, "toggle_module", list("ref" = handle_of(emag_tool))))
 	TEST_ASSERT(R.activated(emag_tool), "and the handle takes it up")
 

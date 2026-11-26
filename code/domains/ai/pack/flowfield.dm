@@ -45,7 +45,7 @@ CAPABILITIES(/datum/flow_field)
 		return null
 	for(var/datum/flow_field/field as anything in flow_fields)
 		var/turf/built_for = field.goal
-		if(built_for.z == goal.z && get_dist(built_for, goal) <= FLOW_GOAL_TOLERANCE && field.revision == GLOB.ai_navigation_revision && ELAPSED(field, built_at, CLOCK_WORLD) < FLOW_MAX_AGE)
+		if(built_for && built_for.z == goal.z && get_dist(built_for, goal) <= FLOW_GOAL_TOLERANCE && field.revision == GLOB.ai_navigation_revision && ELAPSED(field, built_at, CLOCK_WORLD) < FLOW_MAX_AGE)
 			return field.dist
 	var/list/dist = list()
 	dist[goal] = 0

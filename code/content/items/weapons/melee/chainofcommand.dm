@@ -18,11 +18,3 @@ CAPABILITIES(/obj/item/melee/chainofcommand)
 CAPABILITIES(/obj/item/melee/chainofcommand/curator_whip)
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5))
-
-/obj/item/melee/chainofcommand/curator_whip/toy
-	name = "toy whip"
-	desc = "A fake whip. Perfect for fake treasure hunting"
-
-CAPABILITIES(/obj/item/melee/chainofcommand/curator_whip/toy)
-	configure(item_thrown(force = 2))
-	configure(item_combat(force = 2))

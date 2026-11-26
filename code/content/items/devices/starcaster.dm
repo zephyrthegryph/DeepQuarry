@@ -20,6 +20,7 @@ CAPABILITIES(/obj/item/starcaster_news)
 	owns_one(nameof(loaded_article_owned), /datum/computer_file/data/news_article)
 	op("read_news", in_hand(), then(PROC_REF(reader_selected)), opens_ui())
 	interface("StarcasterCh")
+	ui_shape(showing_archived = bool(), article = nullable(row(title = schema_text(), cover = nullable(schema_text()), content = schema_text())), all_articles = list_of(row(name = schema_text(), uid = int(), archived = bool())))
 	op("PRG_openarticle", ui_act("PRG_openarticle", arg("uid", num())), then(PROC_REF(ui_act_prg_openarticle)))
 	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
 	op("PRG_toggle_archived", ui_act("PRG_toggle_archived"), then(PROC_REF(ui_act_prg_toggle_archived)))
@@ -35,7 +36,7 @@ CAPABILITIES(/obj/item/starcaster_news)
 	var/list/data = list()
 
 	var/list/all_articles = list()
-	data["showing_archived"] = show_archived
+	data["showing_archived"] = !!show_archived
 	data["article"] = null
 	if(loaded_article()) 	// Viewing an article.
 		data["article"] = list(

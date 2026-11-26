@@ -40,6 +40,7 @@
 
 CAPABILITIES(/datum/tgui_checkbox_input)
 	interface("CheckboxInput")
+	ui_shape(items = list_of(schema_text()), min_checked = int(), max_checked = int(), large_buttons = bool(), message = schema_text(), swapped_buttons = bool(), title = schema_text(), timeout = nullable(num()))
 	op("submit", ui_act("submit", arg("entry")), then(PROC_REF(ui_act_submit)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
@@ -53,22 +54,23 @@ CAPABILITIES(/datum/tgui_checkbox_input)
 /// /datum/tgui_checkbox_input's window data.
 /datum/tgui_checkbox_input/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["timeout"] = null
 
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 
 	return data
 
-/datum/tgui_checkbox_input/tgui_static_data(mob/user)
+/datum/tgui_checkbox_input/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["items"] = items
 	data["min_checked"] = min_checked
 	data["max_checked"] = max_checked
-	data["large_buttons"] = user.read_preference(/datum/preference/toggle/tgui_large_buttons)
-	data["message"] = message
-	data["swapped_buttons"] = !user.read_preference(/datum/preference/toggle/tgui_swapped_buttons)
-	data["title"] = title
+	data["large_buttons"] = TRUE
+	data["message"] = message || ""
+	data["swapped_buttons"] = TRUE
+	data["title"] = title || ""
 
 	return data
 

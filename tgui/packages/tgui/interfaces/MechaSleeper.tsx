@@ -8,38 +8,19 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import {
-  type Diagnosis,
   DiagnosisFindingsSection,
   DiagnosisVitalsList,
 } from './common/Diagnosis';
 import { EmptyState } from './common/EmptyState';
-
-type Reagent = {
-  name: string;
-  volume: number;
-};
-
-type Injectable = {
-  id: string;
-  name: string;
-};
-
-type Data = {
-  has_occupant: number;
-  occupant_name: string;
-  status: string;
-  health_percent: number;
-  diagnosis: Diagnosis | null;
-  body_temp_c: number;
-  body_temp_f: number;
-  reagents: Reagent[];
-  injectables: Injectable[];
-};
+import type {
+  MechaSleeperActions,
+  MechaSleeperData,
+} from './generated/MechaSleeper';
 
 const goodIf = (cond: boolean) => (cond ? 'good' : 'bad');
 
 export const MechaSleeper = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<MechaSleeperData, MechaSleeperActions>();
   const {
     has_occupant,
     occupant_name,
@@ -49,7 +30,7 @@ export const MechaSleeper = () => {
     body_temp_c,
     body_temp_f,
     reagents,
-    injectables,
+    syringe_volume,
   } = data;
 
   if (!has_occupant) {
@@ -64,6 +45,23 @@ export const MechaSleeper = () => {
     );
   }
 
+  // One list: the summary rows and the vitals share a value column.
+  const summary = (
+    <>
+      <LabeledList.Item label="Status">
+        <Box color={goodIf(status === 'Conscious')}>{status}</Box>
+      </LabeledList.Item>
+      <LabeledList.Item label="Health">
+        <Box color={goodIf(health_percent > 50)}>{health_percent}%</Box>
+      </LabeledList.Item>
+      <LabeledList.Item label="Core Temp">
+        <Box color={goodIf(body_temp_c > -23)}>
+          {body_temp_c}°C / {body_temp_f}°F
+        </Box>
+      </LabeledList.Item>
+    </>
+  );
+
   return (
     <Window width={440} height={520} title={`${occupant_name} statistics`}>
       <Window.Content scrollable>
@@ -75,20 +73,11 @@ export const MechaSleeper = () => {
             </Button>
           }
         >
-          <LabeledList>
-            <LabeledList.Item label="Status">
-              <Box color={goodIf(status === 'Conscious')}>{status}</Box>
-            </LabeledList.Item>
-            <LabeledList.Item label="Health">
-              <Box color={goodIf(health_percent > 50)}>{health_percent}%</Box>
-            </LabeledList.Item>
-            <LabeledList.Item label="Core Temp">
-              <Box color={goodIf(body_temp_c > -23)}>
-                {body_temp_c}°C / {body_temp_f}°F
-              </Box>
-            </LabeledList.Item>
-          </LabeledList>
-          {diagnosis ? <DiagnosisVitalsList vitals={diagnosis.vitals} /> : null}
+          {diagnosis ? (
+            <DiagnosisVitalsList vitals={diagnosis.vitals} before={summary} />
+          ) : (
+            <LabeledList>{summary}</LabeledList>
+          )}
         </Section>
         {diagnosis ? (
           <DiagnosisFindingsSection findings={diagnosis.findings} />
@@ -100,7 +89,10 @@ export const MechaSleeper = () => {
           ) : (
             <Stack vertical>
               {reagents.map((r) => (
-                <Stack.Item key={r.name}>
+                <Stack.Item
+                  key={r.name}
+                  color={r.contaminant ? 'grey' : undefined}
+                >
                   <Box inline bold>
                     {r.name}
                   </Box>
@@ -112,22 +104,12 @@ export const MechaSleeper = () => {
         </Section>
 
         <Section title="Inject from connected syringe gun">
-          {injectables.length === 0 ? (
+          {syringe_volume <= 0 ? (
             <EmptyState>No syringe gun loaded with reagents.</EmptyState>
           ) : (
-            <Stack vertical>
-              {injectables.map((i) => (
-                <Stack.Item key={i.id}>
-                  <Button
-                    fluid
-                    icon="syringe"
-                    onClick={() => act('inject', { reagent: i.id })}
-                  >
-                    Inject {i.name}
-                  </Button>
-                </Stack.Item>
-              ))}
-            </Stack>
+            <Button fluid icon="syringe" onClick={() => act('inject')}>
+              Inject a measure of the mix ({syringe_volume} held)
+            </Button>
           )}
         </Section>
       </Window.Content>

@@ -20,7 +20,7 @@
 		/obj/item/clothing/under/pants/track/green,
 		/obj/item/clothing/under/pants/track/white,
 		/obj/item/clothing/under/pants/track/red,
-		/obj/item/clothing/shoes/athletic = 2,
+		VARIANT(/obj/item/clothing/shoes/athletic) = 2,
 		/obj/item/clothing/shoes/hitops,
 		/obj/item/clothing/shoes/hitops/red,
 		/obj/item/clothing/shoes/hitops/black,

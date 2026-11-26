@@ -202,6 +202,10 @@
 	M.set_broken(2) // really broken
 	refresh_flush()
 	TEST_ASSERT_EQUAL(M.icon_state, "mwb", "broken")
+	var/turf/here = get_turf(M)
+	qdel(M, TRUE)
+	for(var/obj/item/stock_parts/part in here) // its default parts are real (made with its board) and fall out with it
+		qdel(part)
 
 /datum/unit_test/dq_draw_reagents_oven_follows_its_door
 

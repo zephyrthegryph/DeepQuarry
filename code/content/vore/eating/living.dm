@@ -320,10 +320,10 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_export(vore_prefs, P)
-	P.spont_belly_rear = vore_spont_name(src, "rear")
-	P.spont_belly_left = vore_spont_name(src, "left")
-	P.spont_belly_front = vore_spont_name(src, "front")
-	P.spont_belly_right = vore_spont_name(src, "right")
+	P.set_spont_belly_rear(vore_spont_name(src, "rear"))
+	P.set_spont_belly_left(vore_spont_name(src, "left"))
+	P.set_spont_belly_front(vore_spont_name(src, "front"))
+	P.set_spont_belly_right(vore_spont_name(src, "right"))
 	P.autotransferable = !!STATE_PEEK(src, movable_misc, autotransferable)
 
 	var/list/serialized = list()
@@ -529,21 +529,21 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	var/list/vore_examine_data = list()
 	vore_examine_data += reagent_examine
 	vore_examine_data += examine_belly
-	if(!client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable))
-		return vore_examine_data
-
 	return span_details("🤰 | Vore Descriptions", vore_examine_data.Join("\n"))
 
 
 //
 // Clearly super important. Obviously.
 //
-/mob/living/proc/lick(mob/living/tasted in living_mobs_in_view(1, TRUE))
-	set name = "Lick"
-	set category = VERB_CAT_IC_GAME
-	set desc = "Lick someone nearby!"
-	set popup_menu = FALSE // Stop licking by accident!
+/// The Lick entry of the right-click menu: the actor licks this mob.
+/mob/living/proc/lick_op(datum/act/op/A)
+	var/mob/living/licker = A.actor
+	if(!istype(licker))
+		return OP_REFUSED
+	licker.lick(src)
+	return OP_OK
 
+/mob/living/proc/lick(mob/living/tasted)
 	if(!istype(tasted))
 		return
 
@@ -596,12 +596,15 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 
 //This is just the above proc but switched about.
-/mob/living/proc/smell(mob/living/smelled in living_mobs(1, TRUE))
-	set name = "Smell"
-	set category = VERB_CAT_IC_GAME
-	set desc = "Smell someone nearby!"
-	set popup_menu = FALSE
+/// The Smell entry of the right-click menu: the actor smells this mob.
+/mob/living/proc/smell_op(datum/act/op/A)
+	var/mob/living/smeller = A.actor
+	if(!istype(smeller))
+		return OP_REFUSED
+	smeller.smell(src)
+	return OP_OK
 
+/mob/living/proc/smell(mob/living/smelled)
 	if(!istype(smelled))
 		return
 	if(!checkClickCooldown() || incapacitated(INCAPACITATION_KNOCKOUT) || is_paralyzed())
@@ -969,7 +972,6 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/glow_toggle()
 	set name = "Glow (Toggle)"
-	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Toggle your glowing on/off!"
 
 	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
@@ -984,7 +986,6 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/glow_color()
 	set name = "Glow (Set Color)"
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "Pick a color for your body's glow."
 
 	//Again, no real need for a check on this. I'm unsure how it could be somehow abused.
@@ -1016,7 +1017,6 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/eat_trash()
 	set name = "Eat Trash"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Consume held garbage."
 
 	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
@@ -1042,14 +1042,12 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/toggle_trash_catching() //Ported from chompstation
 	set name = "Toggle Trash Catching"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater throw vore abilities."
 	STATE_SET(src, living_misc, trash_catching, !STATE_GET(src, living_misc, trash_catching))
 	to_chat(src, span_vwarning("Trash catching [STATE_GET(src, living_misc, trash_catching) ? "enabled" : "disabled"]."))
 
 /mob/living/proc/eat_minerals() //Actual eating abstracted so the user isn't given a prompt due to an argument in this verb.
 	set name = "Eat Minerals"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Consume held raw ore, gems and refined minerals. Snack time!"
 
 	handle_eat_minerals()
@@ -1181,7 +1179,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 	if(nom) //Ravenous 1-4, snackage confirmed. Clear for chowdown, over.
 		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
-		var/T = (istype(M) ? M.hardness/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
+		var/T = (istype(M) ? M.strength/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
 		to_chat(src, span_notice("You start crunching on [I] with your powerful jaws, attempting to tear it apart..."))
 		//Eat on the move, but not multiple things at once.
 		perform_op(feeder, src, "eat_minerals", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("snack" = I, "nom" = nom, "time" = T))
@@ -1192,26 +1190,10 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/toggle_stuffing_mode()
 	set name = "Toggle feeding mode"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Switch whether you will try to feed other people food whole or normally, bite by bite."
 
 	STATE_SET(src, vore_fx, stuffing_feeder, !STATE_GET(src, vore_fx, stuffing_feeder))
 	to_chat(src, span_notice("You will [STATE_GET(src, vore_fx, stuffing_feeder) ? "now" : "no longer"] try to feed food whole."))
-
-/mob/living/proc/switch_scaling()
-	set name = "Switch scaling mode"
-	set category = VERB_CAT_PREFERENCES_GAME
-	set desc = "Switch sharp/fuzzy scaling for current mob."
-	set_appearance_flags(appearance_flags ^ PIXEL_SCALE)
-	set_fuzzy(!fuzzy)
-	update_transform()
-
-/mob/living/proc/center_offset()
-	set name = "Switch center offset mode"
-	set category = VERB_CAT_PREFERENCES_GAME
-	set desc = "Switch sprite center offset to fix even/odd symmetry."
-	set_offset_override(!offset_override)
-	update_transform()
 
 /mob/living/examine(mob/user, infix, suffix)
 	. = ..()
@@ -1300,7 +1282,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/vorebelly_printout() //Spew the vorepanel belly messages into chat window for copypasting.
 	set name = "X-Print Vorebelly Settings"
-	set category = VERB_CAT_PREFERENCES_VORE
+	set hidden = TRUE
 	set desc = "Print out your vorebelly messages into chat for copypasting."
 
 	return vore_export_stage()
@@ -1512,7 +1494,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/vore_check_reagents()
 	set name = "Check Belly Liquid (Vore)"
-	set category = VERB_CAT_ABILITIES_VORE
+	set hidden = TRUE
 	set desc = "Check the amount of liquid in your belly."
 
 	return vore_liquid_report_stage()
@@ -1535,7 +1517,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 
 /mob/living/proc/vore_transfer_reagents()
 	set name = "Transfer Liquid (Vore)"
-	set category = VERB_CAT_ABILITIES_VORE
+	set hidden = TRUE
 	set desc = "Transfer liquid from an organ to another or stomach, or into another person or container."
 	set popup_menu = FALSE
 
@@ -1778,7 +1760,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	else
 		soundfile = GLOB.fancy_release_sounds[RTB.release_sound]
 	if(soundfile)
-		playsound(src, soundfile, vol = 100, vary = 1, falloff = VORE_SOUND_FALLOFF, preference = /datum/preference/toggle/eating_noises)
+		playsound(src, soundfile, vol = 100, vary = 1, falloff = VORE_SOUND_FALLOFF, volume_channel = VOLUME_CHANNEL_VORE)
 
 /mob/living/proc/vore_bellyrub(mob/living/T in view(1,src))
 
@@ -1799,30 +1781,15 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 	to_chat(src, span_vwarning("There is no suitable belly for rubs."))
 	return FALSE
 
-/mob/living/proc/mute_entry()
-	set name = "Mute Vorgan Entrance"
-	set category = VERB_CAT_PREFERENCES_VORE
-	set desc = "Mute the chatlog messages when something enters a vore belly."
-	STATE_SET(src, living_misc, mute_entry, !STATE_GET(src, living_misc, mute_entry))
-	to_chat(src, span_vwarning("Entrance logs [STATE_GET(src, living_misc, mute_entry) ? "disabled" : "enabled"]."))
-
 /mob/living/proc/restrict_trasheater()
 	set name = "Restrict Trash Eater"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater restriction level."
 	set_adminbus_trash(!living_rules_of(src).adminbus_trash)
 	to_chat(src, span_vwarning("Trash Eater restriction level set to [living_rules_of(src).adminbus_trash ? "everything not blacklisted" : "only whitelisted items"]."))
 
-/mob/living/proc/liquidbelly_visuals()
-	set name = "Toggle Liquidbelly Visuals"
-	set category = VERB_CAT_PREFERENCES_VORE
-	set desc = "Toggle liquidbelly fullscreen visual effect."
-	STATE_SET(src, vore_fx, liquidbelly_visuals, !STATE_GET(src, vore_fx, liquidbelly_visuals))
-	to_chat(src, span_vwarning("Liquidbelly overlays [STATE_GET(src, vore_fx, liquidbelly_visuals) ? "enabled" : "disabled"]."))
-
 /mob/living/proc/fix_vore_effects()
 	set name = "Fix Vore Effects"
-	set category = VERB_CAT_OOC_DEBUG
+	set hidden = TRUE
 	set desc = "Fix certain vore effects lingering after you've exited a belly."
 
 	return vore_effect_cleanup_stage()

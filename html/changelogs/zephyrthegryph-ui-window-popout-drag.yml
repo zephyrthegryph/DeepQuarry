@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A window dragged out of the side panel pops out at once and follows the cursor while the button is held, instead of only on release"
+  - bugfix: "A window popped out of the side panel keeps the size it had there"
+  - bugfix: "Panel headers can be dragged up and down as well as sideways"
+  - bugfix: "Dragging a window only moves it; its size no longer changes, including across monitors of different scaling"

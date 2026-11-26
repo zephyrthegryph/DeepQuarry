@@ -26,6 +26,7 @@ CAPABILITIES(/obj/item/radio/headset)
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
 	interface("Radio", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(theme = nullable(schema_text()), rawfreq = num(), listening = bool(), broadcasting = bool(), subspace = bool(), subspaceSwitchable = bool(), loudspeaker = bool(), mic_cut = bool(), spk_cut = bool(), chan_list = nullable(list_of(row(chan = schema_text(), display_name = schema_text(), freq = num(), secure_channel = nullable(bool()), sec_channel_listen = nullable(bool())))), useSyndMode = bool(), minFrequency = num(), maxFrequency = num())
 	without("ui_open")
 	op("item", item(/obj/item/encryptionkey), label("Insert key"), needs(req(PROC_REF(can_insert_key_holds))), then(PROC_REF(interaction_item)))
 
@@ -67,12 +68,12 @@ CAPABILITIES(/obj/item/radio/headset)
 	if(!ishuman(src.loc)) //ition, this IF block.
 		return ..(freq, level) //ition end
 	if (aiOverride)
-		play_sfx(loc, SFX_EFFECTS_RADIO_COMMON, preference = /datum/preference/toggle/radio_sounds)
+		play_sfx(loc, SFX_EFFECTS_RADIO_COMMON, volume_channel = VOLUME_CHANNEL_VOICE)
 		return ..(freq, level)
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
 		if(H.get_equipped_item(SLOT_ID_EAR_L) == src || H.get_equipped_item(SLOT_ID_EAR_R) == src)
-			play_sfx(loc, SFX_EFFECTS_RADIO_COMMON, preference = /datum/preference/toggle/radio_sounds)
+			play_sfx(loc, SFX_EFFECTS_RADIO_COMMON, volume_channel = VOLUME_CHANNEL_VOICE)
 			return ..(freq, level)
 	return -1
 
@@ -533,27 +534,6 @@ CAPABILITIES(/obj/item/radio/headset)
 	centComm = 1
 	ks2type = /obj/item/encryptionkey/ert
 
-/obj/item/radio/headset/alt/centcom
-	name = "centcom bowman headset"
-	desc = "The bowman headset of the boss's boss."
-	icon_state = "com_headset_alt"
-	centComm = 1
-	ks2type = /obj/item/encryptionkey/ert
-
-/obj/item/radio/headset/nanotrasen
-	name = "\improper NT radio headset"
-	desc = "The headset of a Nanotrasen corporate employee."
-	icon_state = "nt_headset"
-	centComm = 1
-	ks2type = /obj/item/encryptionkey/ert
-
-/obj/item/radio/headset/alt/nanotrasen
-	name = "\improper NT bowman headset"
-	desc = "The bowman headset of a Nanotrasen corporate employee."
-	icon_state = "nt_headset_alt"
-	centComm = 1
-	ks2type = /obj/item/encryptionkey/ert
-
 /obj/item/radio/headset/pathfinder
 	name = "pathfinder's headset"
 	desc = "Headset used by pathfinders for exploring. Access to the explorer and command channels."
@@ -608,33 +588,6 @@ CAPABILITIES(/obj/item/radio/headset)
 	adhoc_fallback = TRUE
 	ks2type = /obj/item/encryptionkey/sar
 
-/obj/item/radio/headset/talon
-	name = "talon headset"
-	desc = "A headset for communication between the crew of the ITV Talon."
-	adhoc_fallback = TRUE
-	icon_state = "pilot_headset"
-	ks2type = /obj/item/encryptionkey/talon
-
-/obj/item/radio/headset/alt/talon
-	name = "talon bowman headset"
-	desc = "A bowman headset for communication between the crew of the ITV Talon."
-	adhoc_fallback = TRUE
-	icon_state = "pilot_headset_alt"
-	ks2type = /obj/item/encryptionkey/talon
-
-/obj/item/radio/headset/earbud/talon
-	name = "talon earbud"
-	desc = "A tiny earbud for communication between the crew of the ITV Talon."
-	adhoc_fallback = TRUE
-	icon_state = "pilot_headset"
-	ks2type = /obj/item/encryptionkey/talon
-
-/obj/item/radio/headset/headset_rob
-	name = "robotics radio headset"
-	desc = "Made specifically for the roboticists who cannot decide between departments."
-	icon_state = "rob_headset"
-	ks2type = /obj/item/encryptionkey/headset_rob
-
 // Special Antag/Admin/Event/Other headsets
 
 /obj/item/radio/headset/syndicate
@@ -657,9 +610,6 @@ CAPABILITIES(/obj/item/radio/headset)
 	syndie = 1
 	ks1type = /obj/item/encryptionkey/raider
 	frequency = RAID_FREQ // just the data; on_materialize() (C5) registers it with SSradio
-
-/obj/item/radio/headset/binary
-	ks1type = /obj/item/encryptionkey/binary
 
 /obj/item/radio/headset/omni		//Only for the admin intercoms
 	ks2type = /obj/item/encryptionkey/omni

@@ -8,12 +8,14 @@ import {
 } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
 import { round } from 'tgui-core/math';
-
-type Data = { timing: number; time: number };
+import type {
+  AssemblyTimerActions,
+  AssemblyTimerData,
+} from './generated/AssemblyTimer';
 
 export const AssemblyTimer = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { timing, time } = data;
+  const { act, data } = useBackend<AssemblyTimerData, AssemblyTimerActions>();
+  const { timing, time = 0 } = data;
   return (
     <Window width={400} height={110}>
       <Window.Content>

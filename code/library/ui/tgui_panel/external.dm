@@ -6,30 +6,26 @@
 /client/var/datum/tgui_panel/tgui_panel
 
 /**
- * tgui panel / chat troubleshooting verb
+ * The one UI repair verb: closes stuck TGUI windows, reloads the ones left, and reloads the chat panel.
+ * Also lets devs reattach a dev server without relogging, since it reinitializes the windows.
  */
-/client/verb/fix_tgui_panel()
-	set name = "Fix chat"
+/client/verb/fix_ui()
+	set name = "Fix UI"
+	set desc = "Use this if the chat panel or a TGUI window is broken or stuck on your screen."
 	set category = VERB_CAT_OOC_DEBUG
-	var/action
-	log_tgui(src, "Started fixing.", context = "verb/fix_tgui_panel")
+	log_tgui(src, "Started fixing.", context = "verb/fix_ui")
 
+	SStgui.close_user_uis(mob)
+	refresh_tgui()
 	nuke_chat()
-
-	// BYOND's native alert() instead of tg_alert (which used a
-	// browser-rendered modal). Native alert is safe here even when the
-	// TGUI panel is broken (the whole point of this verb).
-	action = alert(src.mob, "Did that work?", "", "Yes", "No, switch to old ui") // ALLOW(scheduler): repairs a broken tgui panel, so it cannot use a tgui prompt
-	if (action == "No, switch to old ui")
-		winset(src, SKIN_LEGACY_OUTPUT_SELECTOR, "left=output_legacy")
-		log_tgui(src, "Failed to fix.", context = "verb/fix_tgui_panel")
+	to_chat(src, span_notice("UI reloaded. If something is still broken, try again or ask an admin."))
 
 /client/proc/nuke_chat()
 	// Catch all solution (kick the whole thing in the pants)
 	winset(src, SKIN_LEGACY_OUTPUT_SELECTOR, "left=output_legacy")
 	if(!tgui_panel || !istype(tgui_panel))
 		log_tgui(src, "tgui_panel datum is missing",
-			context = "verb/fix_tgui_panel")
+			context = "verb/fix_ui")
 		rel_set(src, nameof(tgui_panel), new /datum/tgui_panel(src))
 	tgui_panel.initialize(force = TRUE)
 	// Force show the panel to see if there are any errors
@@ -38,10 +34,8 @@
 	if(prefs?.read_preference(/datum/preference/toggle/browser_dev_tools))
 		winset(src, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS],devtools")
 
-/client/verb/refresh_tgui()
-	set name = "Refresh TGUI"
-	set category = VERB_CAT_OOC_DEBUG
-
+/// Reinitializes every open TGUI window of this client.
+/client/proc/refresh_tgui()
 	var/alist/windows = session?.tgui_windows || alist()
 	for(var/window_id in windows)
 		var/datum/tgui_window/window = windows[window_id]

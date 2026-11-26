@@ -88,10 +88,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     }
     pub fn lease(self: &Arc<Self>) -> ObservedArtifactLease<T, Q, A, D> {
         assert!(matches!(self.retention, Retention::SharedCurrentRosters(_)));
-        let mut state = self
-            .state
-            .write()
-            .unwrap_or_else(|error| error.into_inner());
+        let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
         let slot = (!state.slots).trailing_zeros();
         assert!(
             slot < SLOTS,
@@ -205,14 +202,6 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
         drop(state);
         drop(detached);
     }
-    /// Borrow only this lease's actually claimed values. This is bookkeeping,
-    /// not a current-source replay or a new artifact admission. Callback errors
-    /// stop the native walk and retain their exact type; no index is allocated.
-    pub fn try_visit_claimed_values<E>(&self, checkpoint:&dyn Fn()->Result<(),E>,visit:&mut dyn FnMut(&Arc<T>)->Result<(),E>)->Result<(),E>{
-        let state=self.store.state.read().unwrap_or_else(|error|error.into_inner());
-        for bucket in state.buckets.values(){checkpoint()?;for entry in bucket{checkpoint()?;if entry.holders.has(self.slot){visit(&entry.value)?;}}}
-        Ok(())
-    }
     /// This visits the shared core, including sibling leases. Addresses identify
     /// actual common allocations; private lease/index nodes remain unreported.
     pub fn visit_storage(&self, visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>)) {
@@ -265,13 +254,7 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
         if !stored {
             return false;
         }
-        let detached = assign(
-            &mut state,
-            self.slot,
-            key,
-            hash,
-            Arc::as_ptr(value) as usize,
-        );
+        let detached = assign(&mut state, self.slot, key, hash, Arc::as_ptr(value) as usize);
         drop(state);
         drop(detached);
         true
@@ -311,9 +294,9 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
                 .read()
                 .unwrap_or_else(|error| error.into_inner());
             if let Some(bucket) = state.buckets.get(&hash) {
-                let target = bucket.iter().find(|entry| {
-                    Arc::ptr_eq(&entry.value, &receipt.value) && entry.key.as_ref() == key
-                });
+                let target = bucket
+                    .iter()
+                    .find(|entry| Arc::ptr_eq(&entry.value, &receipt.value) && entry.key.as_ref() == key);
                 if let Some(target) = target {
                     // Replacing this lease's claim on another variant of the key needs the write lock (that variant may
                     // be freed); an unchanged or first claim of a stored variant is one bit under the read lock.
@@ -351,7 +334,10 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
             .or(shared_key)
             .unwrap_or_else(|| Arc::from(key));
         if stored_key.is_none() {
-            let bucket = state.buckets.entry(hash).or_default();
+            let bucket = state
+                .buckets
+                .entry(hash)
+                .or_default();
             bucket.push(Variant {
                 key: Arc::clone(&key),
                 reads: receipt.reads,
@@ -413,71 +399,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         let accepted = candidate.admit(key, locally_current, observed)?;
         self.claim(key, accepted)
     }
-    pub fn try_claim_current<H, E>(
-        &self,
-        candidate: UnchangedCandidate<'_, '_, T, Q, A, D, H>,
-        locally_current: impl FnOnce(&[u8], &Arc<T>) -> Result<bool, E>,
-        observed: impl FnMut(&Arc<[Observation<Q, A, D>]>),
-    ) -> Result<Option<Arc<T>>, E> {
-        let Some((key, accepted)) = candidate.try_admit_current(locally_current, observed)? else {
-            return Ok(None);
-        };
-        Ok(self.claim(&key, accepted))
-    }
-    pub fn try_claim_unchanged<H, E>(
-        &self,
-        candidate: UnchangedCandidate<'_, '_, T, Q, A, D, H>,
-        key: &[u8],
-        locally_current: impl FnOnce(&Arc<T>) -> Result<bool, E>,
-        observed: impl FnMut(&Arc<[Observation<Q, A, D>]>),
-    ) -> Result<Option<Arc<T>>, E> {
-        let Some(accepted) = candidate.try_admit(key, locally_current, observed)? else {
-            return Ok(None);
-        };
-        Ok(self.claim(key, accepted))
-    }
-    pub fn try_visit_explained_accepted<R: ObservationHost<Q, A, D>, E>(
-        &self,
-        key: &[u8],
-        host: &R,
-        accept: &mut dyn FnMut(&Arc<T>) -> Result<bool, E>,
-    ) -> Result<(Option<ObservedArtifact<T, Q, A, D>>, Option<Q>), E> {
-        let (receipt, changed) = self.store.try_visit_receipted(key, &Exact(host), accept)?;
-        let accepted = receipt.and_then(|receipt| {
-            self.claim(
-                key,
-                ObservedArtifact {
-                    value: Arc::clone(&receipt.value),
-                    reads: receipt.reads.clone(),
-                    weight: receipt.weight,
-                },
-            )?;
-            Some(receipt)
-        });
-        Ok((accepted, changed))
-    }
-    pub fn try_visit_receipted_with_value<E>(
-        &self,
-        key: &[u8],
-        validate: &mut dyn FnMut(&crate::Receipt<Q, A, D>, &Arc<T>) -> Result<Option<Q>, E>,
-        accept: &mut dyn FnMut(&Arc<T>) -> Result<bool, E>,
-    ) -> Result<(Option<ObservedArtifact<T, Q, A, D>>, Option<Q>), E> {
-        let (receipt, changed) = self
-            .store
-            .try_visit_receipted_with_value(key, validate, accept)?;
-        let accepted = receipt.and_then(|receipt| {
-            self.claim(
-                key,
-                ObservedArtifact {
-                    value: Arc::clone(&receipt.value),
-                    reads: receipt.reads.clone(),
-                    weight: receipt.weight,
-                },
-            )?;
-            Some(receipt)
-        });
-        Ok((accepted, changed))
-    }
     pub fn visit_explained<R: ObservationHost<Q, A, D>>(
         &self,
         key: &[u8],
@@ -516,7 +437,11 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         validate: &mut dyn FnMut(&crate::Receipt<Q, A, D>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
-        self.visit_receipted_with_value(key, &mut |reads, _| validate(reads), accept)
+        self.visit_receipted_with_value(
+            key,
+            &mut |reads, _| validate(reads),
+            accept,
+        )
     }
     /// Use the same candidate loop and pending claim rule with producer payload
     /// certificates. Declined validation/acceptance never claims a variant.
@@ -547,7 +472,8 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> bool {
-        self.insert_with_owned(key, reads, weight, create).is_some()
+        self.insert_with_owned(key, reads, weight, create)
+            .is_some()
     }
     pub fn insert_with_owned(
         &self,
@@ -643,7 +569,9 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             .unwrap_or_else(|error| error.into_inner());
         if let Some(previous) = previous {
             if !state.buckets.get(&hash).into_iter().flatten().any(|entry| {
-                entry.key == key && entry.reads == reads && Arc::ptr_eq(&entry.value, previous)
+                entry.key == key
+                    && entry.reads == reads
+                    && Arc::ptr_eq(&entry.value, previous)
             }) {
                 return None;
             }
@@ -653,12 +581,20 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             .get(&hash)
             .into_iter()
             .flatten()
-            .find(|entry| !fresh && previous.is_none() && entry.key == key && entry.reads == reads)
+            .find(|entry| {
+                !fresh
+                    && previous.is_none()
+                    && entry.key == key
+                    && entry.reads == reads
+            })
             .map(|entry| (Arc::clone(&entry.value), Arc::clone(&entry.key)));
         if existing.is_none() && !self.permits_charge(state.bytes, weight) {
             return None;
         }
-        let bucket = state.buckets.entry(hash).or_default();
+        let bucket = state
+            .buckets
+            .entry(hash)
+            .or_default();
         let (value, key) = if let Some(existing) = existing {
             existing
         } else {
@@ -673,13 +609,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             state.bytes = state.bytes.saturating_add(weight);
             (value, key)
         };
-        let detached = assign(
-            &mut state,
-            self.slot,
-            &key,
-            hash,
-            Arc::as_ptr(&value) as usize,
-        );
+        let detached = assign(&mut state, self.slot, &key, hash, Arc::as_ptr(&value) as usize);
         drop(state);
         drop(detached);
         Some(value)
@@ -689,32 +619,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
 impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     ObservedArtifactLease<T, Q, A, D>
 {
-    pub fn try_visit_borrowed_receipted_with_value<E>(
-        &self,
-        digest: u128,
-        matches_key: &dyn Fn(&[u8]) -> bool,
-        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &Arc<T>) -> Result<Option<Q>, E>,
-        accept: &mut dyn FnMut(&Arc<T>) -> Result<bool, E>,
-    ) -> Result<(Option<ObservedArtifact<T, Q, A, D>>, Option<Q>), E> {
-        let (accepted, changed) = self.store.try_visit_borrowed_receipted_with_value(
-            digest,
-            matches_key,
-            validate,
-            accept,
-        )?;
-        let accepted = accepted.and_then(|(key, receipt)| {
-            self.claim_shared(
-                key,
-                ObservedArtifact {
-                    value: Arc::clone(&receipt.value),
-                    reads: receipt.reads.clone(),
-                    weight: receipt.weight,
-                },
-            )?;
-            Some(receipt)
-        });
-        Ok((accepted, changed))
-    }
     /// Same candidate loop, ledger admission and claim rule as exact slice lookup.
     pub fn visit_borrowed_receipted_with_value(
         &self,
@@ -747,15 +651,3 @@ mod tests;
 #[cfg(test)]
 #[path = "leased/fresh_tests.rs"]
 mod fresh_tests;
-
-#[cfg(test)]mod actual_claimed_visitor_tests{
- use super::*;
- #[test]fn actual_claimed_values_visitor_excludes_siblings_and_preserves_typed_callback_failure(){
-  let store=ObservedArtifactStore::<u32,u8,u32,u8>::shared_current_rosters();let own=store.lease();let sibling=store.lease();
-  own.insert_with_owned(Arc::from(b"a".as_slice()),Vec::<Observation<u8,u32,u8>>::new(),0,||11).unwrap();
-  sibling.insert_with_owned(Arc::from(b"b".as_slice()),Vec::<Observation<u8,u32,u8>>::new(),0,||22).unwrap();
-  let mut rows=Vec::new();own.try_visit_claimed_values(&||Ok::<_,std::io::Error>(()),&mut|value|{rows.push(**value);Ok(())}).unwrap();assert_eq!(rows,[11]);
-  let error=own.try_visit_claimed_values(&||Ok::<_,std::io::Error>(()),&mut|_|Err(std::io::Error::from_raw_os_error(1450))).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));
-  own.retain_current_keys(std::iter::empty::<&[u8]>());let mut count=0;own.try_visit_claimed_values(&||Ok::<_,std::io::Error>(()),&mut|_|{count+=1;Ok(())}).unwrap();assert_eq!(count,0);
- }
-}

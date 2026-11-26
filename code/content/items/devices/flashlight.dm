@@ -111,6 +111,9 @@ CAPABILITIES(/obj/item/flashlight)
 /obj/item/flashlight/proc/interaction_self(datum/act/op/A)
 	return switch_light(A.actor) ? OP_OK : OP_DECLINE
 
+/obj/item/flashlight/action_toggle_state(actiontype)
+	return on ? TRUE : FALSE
+
 /obj/item/flashlight/proc/switch_light(mob/user)
 	if(single_use && on)
 		return FALSE
@@ -227,10 +230,11 @@ CAPABILITIES(/obj/item/flashlight)
 	set_flickering(TRUE)
 	var/original_color = glow_of(src).color
 	var/original_on = on
+	add_movable_light() // a flashlight that is off has no overlay light yet (light_changed() makes it when the light first casts)
 	var/datum/overlay_lighting/OL = overlay_light //BEWARE, ESOTERIC BULLSHIT HERE.
 	if(flicker_color && glow_of(src).color != flicker_color)
 		set_light_color(flicker_color)
-		OL.directional_atom.color = flicker_color
+		OL.directional_atom.set_color(flicker_color)
 	do_flicker(amount, flicker_color, original_color, original_on, OL, 1)
 
 /// Args:
@@ -311,18 +315,6 @@ CAPABILITIES(/obj/item/flashlight/maglight)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 10, attack_verbs = list ("smacked", "thwacked", "thunked")))
 	configure(item_sounds(hit = SFX_SWING_HIT))
-
-/obj/item/flashlight/drone
-	name = "low-power flashlight"
-	desc = "A miniature lamp, that might be used by small robots."
-	icon_state = "penlight"
-	item_state = null
-	w_class = ITEMSIZE_TINY
-	power_use = 0
-	cell_type = null
-
-CAPABILITIES(/obj/item/flashlight/drone)
-	configure(light_glow(range = 2))
 
 /*
  * Lamps

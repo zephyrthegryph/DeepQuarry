@@ -104,15 +104,8 @@
 		TEST_ASSERT(contents_count(S) > 0, "The constructor generates actual loot after its code")
 		TEST_ASSERT(cap_key_get(S, LOCK_LOCKED), "Generating the initial code and loot leaves the real safe locked")
 
-/// Capture real generated descendants before spill-on-delete containers materialize them.
+/// Capture real generated descendants before spill-on-delete containers drop them.
 /datum/unit_test/dq_a13_initialization/proc/own_generated_contents(atom/holder)
-	if(istype(holder, /obj/item/storage))
-		var/list/materialized = holder.latent_materialize_all()
-		var/list/real_contents = contents_of(holder)
-		TEST_ASSERT(!holder.has_latent(), "Native storage materialization consumes every latent entry")
-		TEST_ASSERT(length(materialized) <= length(real_contents), "Every newly materialized item is represented in the real native contents")
-		for(var/atom/movable/created in materialized)
-			TEST_ASSERT(created in real_contents, "Native materialization returns the exact object held by its actual storage")
 	for(var/atom/movable/child in contents_of(holder))
 		own(child)
 		own_generated_contents(child)

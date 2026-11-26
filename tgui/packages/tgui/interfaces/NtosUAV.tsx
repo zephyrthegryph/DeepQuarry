@@ -1,19 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type { UAVActions, UAVData } from './generated/UAV';
 
-type Data = {
-  current_uav: { status: string; power: BooleanLike } | null;
-  signal_strength: string;
-  in_use: number;
-  paired_uavs: { name: string; uavref: string }[];
-};
+type Data = UAVData;
 
 export const NtosUAV = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, UAVActions>();
 
-  const { current_uav, signal_strength, in_use, paired_uavs } = data;
+  const { current_uav, signal_strength, in_use, paired_uavs = [] } = data;
 
   return (
     <NtosWindow width={600} height={500}>

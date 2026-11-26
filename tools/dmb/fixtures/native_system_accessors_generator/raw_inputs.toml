@@ -1,3 +1,0 @@
-sources = ["code/z.dm", "code/a.dm", "code/tests/unit.dm", "code/modules/unit_tests/other.dm", "code/comment.dm", "code/.hidden.dm"]
-expected_rows = 7
-expected_diagnostics = 7

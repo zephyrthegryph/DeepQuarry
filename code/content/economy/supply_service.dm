@@ -65,6 +65,7 @@ CAPABILITIES(/datum/system/supply)
 	owns_many(nameof(market_bids))
 	owns_many(nameof(market_counterparties))
 	owns_many(nameof(market_listings))
+	owns_many(nameof(trade_ship_visits))
 
 /// The cargo market and department payroll (was SSsupply, 20 s).
 /datum/system/supply/reactions()
@@ -381,7 +382,7 @@ CAPABILITIES(/datum/system/supply)
 		for(var/department in GLOB.department_accounts)
 			var/datum/money_account/budget = GLOB.department_accounts[department]
 			if(budget?.is_department_budget())
-				budget.allocation_configured = FALSE
+				budget.set_allocation_configured(FALSE)
 	return TRUE
 
 /datum/system/supply/proc/record_currency_created(amount, source)
@@ -426,8 +427,8 @@ CAPABILITIES(/datum/system/supply)
 			pay_due[employee] = due
 			total_due += due
 		if(!total_due)
-			budget.last_payroll_due = 0
-			budget.last_payroll_paid = 0
+			budget.set_last_payroll_due(0)
+			budget.set_last_payroll_paid(0)
 			continue
 		// Payroll is the first expenditure after allocation. If the department is
 		// insolvent, distribute every available Thaler proportionally instead of
@@ -449,8 +450,8 @@ CAPABILITIES(/datum/system/supply)
 				to_chat(employee, span_warning("Your [department] paycheck was partially funded: [pay] of [due] Thalers was deposited."))
 			else
 				to_chat(employee, span_notice("Your [department] paycheck of [pay] Thalers has been deposited."))
-		budget.last_payroll_due = total_due
-		budget.last_payroll_paid = delivered
+		budget.set_last_payroll_due(total_due)
+		budget.set_last_payroll_paid(delivered)
 
 /datum/system/supply/stat_entry(msg)
 	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]
@@ -574,8 +575,7 @@ ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum
 					base_value = CR.points_per_crate
 
 				// For each thing in the crate, get the value and quantity
-				CR.latent_materialize_all() // selling needs real things (C5)
-				for(var/atom/A in CR) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+				for(var/atom/A in CR)
 					if(A.export_sale(EC, TRUE))
 						things_sold_successfully += A
 			else
@@ -725,6 +725,8 @@ ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum
 		else
 			contains = SP.contains
 
+		// What is unpacked from this shipment is one lot: its stacks and stocked bottles are rolled with the traces of order #[SO.ordernum] (trace_roll(), logged).
+		trace_lot_begin("shipment [SO.ordernum]")
 		for(var/typepath in contains)
 			if(!typepath)
 				continue
@@ -742,6 +744,14 @@ ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum
 				if(slip)
 					slip.set_info(slip.info + ("<li>[B2.name]</li>")) //add the item to the manifest
 
+		if(SP.lot_table)
+			var/list/lot = fill_supply_lot(SP, A || pickedloc)
+			log_game("Supply: order #[SO.ordernum] ([SP.name]) delivered a lot of [length(lot)] things from [SP.lot_table].")
+			if(slip)
+				slip.set_info(slip.info + ("<li>One unsorted lot ([length(lot)] items), sold as seen</li>"))
+
+		trace_lot_end()
+
 		//manifest finalisation
 		if(slip)
 			slip.set_info(slip.info + ("</ul><br>"))
@@ -751,6 +761,18 @@ ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum
 		rel_remove(src, nameof(shoppinglist), shipped)
 	log_game(shopping_log)
 	return
+
+/// Roll the pack's lot table into the holder (a crate, or the shuttle floor). A spawner in the table that drops its item on the
+/// turf has it moved into the crate, so the whole lot arrives together. Returns what was made.
+/datum/system/supply/proc/fill_supply_lot(datum/supply_pack/pack, atom/holder)
+	. = loot_spawn(pack.lot_table, holder) || list()
+	if(isturf(holder))
+		return
+	var/turf/holder_turf = get_turf(holder)
+	var/list/inside = holder.get_all_contents()
+	for(var/atom/movable/lot_thing in .)
+		if(!QDELETED(lot_thing) && !(lot_thing in inside) && get_turf(lot_thing) == holder_turf)
+			lot_thing.forceMove(holder)
 
 // Will attempt to purchase the specified order, returning TRUE on success, FALSE on failure
 /datum/system/supply/proc/approve_order(datum/supply_order/O, mob/user)

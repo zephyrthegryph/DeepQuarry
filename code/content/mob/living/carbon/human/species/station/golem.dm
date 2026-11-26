@@ -32,8 +32,8 @@
 
 /datum/species/golem/handle_post_spawn(mob/living/carbon/human/H)
 	if(H.mind)
-		H.mind.assigned_role = JOB_GOLEM
-		H.mind.special_role = JOB_GOLEM
+		H.mind.set_assigned_role(JOB_GOLEM)
+		H.mind.set_special_role(JOB_GOLEM)
 	H.set_real_name("adamantine golem ([rand(1, 1000)])")
 	H.name = H.real_name
 	..()

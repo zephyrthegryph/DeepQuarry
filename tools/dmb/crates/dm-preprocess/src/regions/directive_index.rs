@@ -15,8 +15,6 @@ pub(super) struct DirectiveIndex {
     lines: usize,
 }
 impl DirectiveIndex {
-    pub(super) fn include_header_storage_bound(lines:usize)->Option<usize>{lines.checked_mul(std::mem::size_of::<DirectiveSyntax>())?.checked_add(lines.div_ceil(64).checked_mul(std::mem::size_of::<Block>())?)}
-
     pub(super) fn visit_storage(&self, visit: &mut impl FnMut(super::PreparedSourceStorage<'_>)) {
         for (address, bytes) in [
             (
@@ -56,11 +54,6 @@ impl DirectiveIndex {
             lines: lines.len(),
         }
     }
-    pub(super) fn storage_is_unaliased(&self) -> bool {
-        Arc::weak_count(&self.blocks) == 0 && Arc::strong_count(&self.blocks) == 1
-            && Arc::weak_count(&self.syntax) == 0 && Arc::strong_count(&self.syntax) == 1
-    }
-
     pub(super) fn get(&self, index: usize) -> Option<&DirectiveSyntax> {
         assert!(index < self.lines, "directive line index out of bounds");
         let block = &self.blocks[index / 64];
@@ -105,8 +98,8 @@ mod tests {
                 expected.as_ref().map(|v| &v.identifier)
             );
         }
-        assert_eq!(source.directive_index().blocks.len(), 4);
-        assert_eq!(source.directive_index().syntax.len(), 10);
+        assert_eq!(source.directives.blocks.len(), 4);
+        assert_eq!(source.directives.syntax.len(), 10);
     }
     #[test]
     #[should_panic(expected = "directive line index out of bounds")]

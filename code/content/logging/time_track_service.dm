@@ -69,7 +69,6 @@ SYSTEM_DEF(time_track)
 			"maptick",
 			"num_timers",
 			"air_turf_cost",
-			"air_gas_events_cost",
 			"air_highpressure_cost",
 			"air_superconductivity_cost",
 			"air_pipenets_cost",

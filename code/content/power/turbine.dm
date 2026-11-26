@@ -270,6 +270,7 @@ CAPABILITIES(/obj/machinery/power/turbine)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(turbine_step)), when = PROC_REF(running))
 	part_replacement()
 	interface("Turbine")
+	ui_shape(display_power = num(), turbine_rpm = nullable(num()), starter = nullable(bool()))
 	extend("ui_open", when(req_empty_hand()), needs(req_operable()))
 	op("start_stop", ui_act("start_stop"), then(PROC_REF(ui_act_start_stop)))
 	extend("machine_anchor", then(PROC_REF(rewrenched)))
@@ -278,7 +279,7 @@ CAPABILITIES(/obj/machinery/power/turbine)
 /// /obj/machinery/power/turbine's window data.
 /obj/machinery/power/turbine/ui_data(datum/act/eval/A)
 	return list(
-		"display_power" = lastgen,
+		"display_power" = lastgen || 0,
 		"turbine_rpm" = compressor()?.rpm,
 		"starter" = compressor()?.starter
 	)
@@ -322,6 +323,7 @@ CAPABILITIES(/obj/machinery/computer/turbine_computer)
 		asks(/datum/prompt/text, fields = list("title" = "Turbine control", "question" = "Enter a new ident tag.", "default" = nameof(id), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(ident_entered)))
 	interface("TurbineControl")
+	ui_shape(compressor_broke = bool(), turbine_broke = bool(), broken = bool(), door_status = bool(), online = bool(), power = num(), rpm = num(), temp = num())
 	op("power-on", ui_act("power-on"), then(PROC_REF(ui_act_power_on)))
 	op("power-off", ui_act("power-off"), then(PROC_REF(ui_act_power_off)))
 	op("reconnect", ui_act("reconnect"), then(PROC_REF(ui_act_reconnect)))
@@ -330,10 +332,9 @@ CAPABILITIES(/obj/machinery/computer/turbine_computer)
 /// /obj/machinery/computer/turbine_computer's window data.
 /obj/machinery/computer/turbine_computer/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["connected"] = (compressor() && compressor().turbine()) ? TRUE : FALSE
 	data["compressor_broke"] = (!compressor() || compressor().broken_now()) ? TRUE : FALSE
 	data["turbine_broke"] = (!compressor() || !compressor().turbine() || compressor().turbine().broken_now()) ? TRUE : FALSE
-	data["broken"] = (data["compressor_broke"] || data["turbine_broke"])
+	data["broken"] = (data["compressor_broke"] || data["turbine_broke"]) ? TRUE : FALSE
 	data["door_status"] = door_status ? TRUE : FALSE
 
 	data["online"] = FALSE
@@ -342,8 +343,8 @@ CAPABILITIES(/obj/machinery/computer/turbine_computer)
 	data["temp"] = 0
 
 	if(compressor() && compressor().turbine())
-		data["online"] = compressor().starter
-		data["power"] = compressor().turbine().lastgen // DisplayPower
+		data["online"] = compressor().starter ? TRUE : FALSE
+		data["power"] = compressor().turbine().lastgen || 0
 		data["rpm"] = compressor().rpm
 		data["temp"] = compressor().gas_contained.return_temperature()
 

@@ -1,5 +1,5 @@
 // DQAdd — Unified loadout panel. Integrates the gear catalog, starting-kit defaults
-// (headset/bag/PDA/ringtone/no-jacket/comm-visible), and underwear picker into one place
+// and underwear picker into one place
 // so the player has a single Loadout tab instead of three sibling sections.
 //
 // Layout:
@@ -23,6 +23,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -35,112 +36,25 @@ import {
   TextArea,
   Tooltip,
 } from 'tgui-core/components';
+import type {
+  PrefEditorLoadout,
+  PrefEditorLoadoutStatic,
+  PrefEditorUnderwear,
+  PrefEditorUnderwearStatic,
+} from '../../../generated/_schemas';
 import { ColorChoice, isSlotName } from '../colors';
 import { ColorizedImage, ColorizedImageButton } from '../helper_components';
 import type { EditorProps } from './index';
 
-type BodySlot = {
-  id: number | string;
-  label: string;
-  group: string;
-  multi?: boolean;
-};
-
-type GearTweakKind =
-  | 'text'
-  | 'textarea'
-  | 'color'
-  | 'choice'
-  | 'boolean'
-  | 'tf_toggle'
-  | 'channels'
-  | 'modal';
-
-type GearTweakDescriptor = {
-  key: string; // stable 1-based gear_tweaks index, as a string
-  label: string; // e.g. "Color", "Custom Name", "Variant"
-  kind: GearTweakKind;
-  /// When true, render side-by-side as a compact button at the bottom of the customize
-  /// panel instead of a full-width row. Set on the DM side for boolean/tf_toggle.
-  compact: boolean;
-  choices?: string[]; // present for "choice" kind
-  /// For "channels" kind: each colour channel's base colour; empty when the item has no channels.
-  channels?: string[];
-};
-
-type CatalogItem = {
-  name: string;
-  desc: string;
-  cost: number;
-  allowed_roles: string[] | null;
-  show_roles: boolean;
-  body_slot: string;
-  tweaks: GearTweakDescriptor[];
-};
-
-type StartingKitData = {
-  ringtone: string;
-  comm_visible: boolean;
-};
-
-type StartingKitStatic = {
-  ringtone_choices: string[];
-};
-
-type UnderwearItem = {
-  name: string;
-  icon?: string | null;
-  icon_state?: string | null;
-};
-
-type UnderwearData = { selections: Record<string, string> };
-type UnderwearStatic = { categories: Record<string, UnderwearItem[]> };
-
-type LoadoutEntry = {
-  key: string; // "_default" or a job title
-  label: string; // displayed label
-  priority?: string; // "high"|"med"|"low" (only on per-job entries)
-  count: number;
-  cost: number;
-};
-
-type LoadoutData = {
-  loadout_key: string;
-  loadouts: LoadoutEntry[];
-  prioritized_jobs: string[];
-  pda_slot: string | null;
-  by_body_slot: Record<string, string[]>;
-  /** Inherited (from-default) items grouped by body slot, used by SlotCell to render
-   *  them as italic ghost subtext alongside the slot label. Only populated when
-   *  editing a per-job loadout; empty when editing Default itself. */
-  inherited_by_body_slot: Record<string, string[]>;
-  /** {gear_name: {tweak_key: "Color: red" / "Custom Name: Bob's Hat"}} — pre-formatted
-   *  display strings from the DM side's gear_tweak.get_contents(). Used for "modal"
-   *  kind fallback display. */
-  tweak_values_by_item: Record<string, Record<string, string>>;
-  /** {gear_name: {tweak_key: raw_value}} — scalar metadata values for inline widgets
-   *  (text input, dropdown, color picker, boolean). List/null values are omitted. */
-  tweak_meta_by_item: Record<string, Record<string, string | number | boolean>>;
-  /** {gear_name: {icon: byond_ref, icon_state: str}} — used by SlotCell to render the
-   *  actual item sprite over the HUD slot icon when something is equipped. */
-  icon_data_by_item: Record<string, { icon: string; icon_state: string }>;
-  /** Item names that came from the Default loadout (and were not overridden by the
-   *  current per-job loadout). Used to mark them as inherited in the UI. */
-  inherited_items: string[];
-  total_cost: number;
-  max_gear_cost: number;
-  job_defaults: Record<string, string>;
-  preview_job: string | null;
-  starting_kit: StartingKitData;
-  underwear: UnderwearData;
-};
-
-type LoadoutStatic = {
-  categories: Record<string, CatalogItem[]>;
-  body_slots: BodySlot[];
-  starting_kit: StartingKitStatic;
-  underwear: UnderwearStatic;
-};
+type LoadoutData = PrefEditorLoadout;
+type LoadoutStatic = PrefEditorLoadoutStatic;
+type BodySlot = LoadoutStatic['body_slots'][number];
+type CatalogItem = LoadoutStatic['categories'][string][number];
+type GearTweakDescriptor = CatalogItem['tweaks'][number];
+type UnderwearData = PrefEditorUnderwear;
+type UnderwearStatic = PrefEditorUnderwearStatic;
+type TweakValue = LoadoutData['tweak_meta_by_item'][string][string];
+type UnderwearItem = UnderwearStatic['categories'][string][number];
 
 const sendTo = (
   act: ReturnType<typeof useBackend>['act'],
@@ -237,12 +151,13 @@ const dropdownDisplay = (
   selected: string,
 ) => options.find((o) => o.value === selected)?.displayText ?? selected;
 
-export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
+export const LoadoutBuilder = ({
+  data: serverData,
+  staticData: s,
+}: EditorProps<'loadout'>) => {
   const { act } = useBackend();
-  const serverData = data as LoadoutData;
-  const s = (staticData ?? {}) as LoadoutStatic;
 
-  const bodySlots: BodySlot[] = [...(s.body_slots ?? []), OTHER_BUCKET];
+  const bodySlots: BodySlot[] = [...(s?.body_slots ?? []), OTHER_BUCKET];
 
   // Always have a slot selected. Default to Uniform (most common starting point) if it
   // exists, otherwise the first body slot in the table.
@@ -280,8 +195,8 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
   // don't rebuild the flattened catalog every render. ~1000 items × ~1Hz polls = a lot
   // of unnecessary work otherwise.
   const allItems: CatalogItem[] = useMemo(
-    () => Object.values(s.categories ?? {}).flat(),
-    [s.categories],
+    () => Object.values(s?.categories ?? {}).flat(),
+    [s?.categories],
   );
   // name -> point cost, so applyOps can total the optimistic loadout from its resulting
   // slots instead of accumulating per-op drift.
@@ -292,10 +207,8 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
   }, [allItems]);
 
   const d = applyOps(serverData, pending, costByName);
-  const sk = d.starting_kit ?? ({} as StartingKitData);
-  const sks = s.starting_kit ?? ({} as StartingKitStatic);
-  const uw = d.underwear ?? ({ selections: {} } as UnderwearData);
-  const uws = s.underwear ?? ({ categories: {} } as UnderwearStatic);
+  const uw = d.underwear;
+  const uws: UnderwearStatic = s?.underwear ?? { categories: {} };
   // Role filter: scoped to the loadout currently being edited.
   //   "_default"   → union of every prioritized job (the default fronts all of them)
   //   <job_title>  → just that job
@@ -331,13 +244,6 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
 
   // Full-window datum picker state — used for the underwear selector. `null` = closed.
   const [pickerCategory, setPickerCategory] = useState<string | null>(null);
-
-  // The headset/backpack/PDA picks are now regular loadout gear datums in the catalog;
-  // the only remaining starting-kit-style controls are ringtone and comm-visibility.
-  const ringtoneOpts = (sks.ringtone_choices ?? []).map((x) => ({
-    value: x,
-    displayText: x,
-  }));
 
   // Build the loadout-picker dropdown options. The "_default" entry is always first;
   // job-specific loadouts follow, ordered server-side by priority then alphabetical.
@@ -415,10 +321,10 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
       </Stack>
 
       {d.preview_job && (
-        <Box mb={0.5} color="label" fontSize="0.85em">
+        <Label mb={0.5} fontSize="0.85em">
           Grey labels = <b>{d.preview_job}</b>'s default kit. Your picks replace
           them.
-        </Box>
+        </Label>
       )}
 
       {/* Two-column body. flex: 1 + minHeight: 0 lets the catalog Stack.Item below
@@ -539,38 +445,12 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
                 }}
               >
                 {filteredLabel}
-                <Box inline ml={0.5} color="label" fontSize="0.85em">
+                <Label inline ml={0.5} fontSize="0.85em">
                   ({visibleItems.length}{' '}
                   {visibleItems.length === 1 ? 'item' : 'items'})
-                </Box>
+                </Label>
               </Box>
             </Stack.Item>
-            {/* PDA slot: ringtone is now a per-PDA tweak (see standard_pda's
-                gear_tweaks). Comm-visible stays as a small inline toggle here because
-                it's a global pref, not a per-PDA setting. */}
-            {d.pda_slot && filterSlot === d.pda_slot && (
-              <Stack.Item>
-                <Stack align="center">
-                  <Stack.Item grow color="label" fontSize="0.85em">
-                    Comm visibility:
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button
-                      compact
-                      selected={sk.comm_visible}
-                      color={sk.comm_visible ? 'good' : undefined}
-                      icon={sk.comm_visible ? 'check' : 'xmark'}
-                      onClick={() =>
-                        sendTo(act, 'starting_kit', 'toggle_comm_visible')
-                      }
-                      tooltip="Communicator visible to others"
-                    >
-                      {sk.comm_visible ? 'Visible' : 'Hidden'}
-                    </Button>
-                  </Stack.Item>
-                </Stack>
-              </Stack.Item>
-            )}
             <Stack.Item grow style={{ minHeight: 0 }}>
               {filterSlot === '_uw' ? (
                 <div
@@ -643,7 +523,7 @@ const SlotCell = ({
   jobDefault: string | null;
   selected: boolean;
   onClick: () => void;
-  iconDataByItem: Record<string, { icon: string; icon_state: string }>;
+  iconDataByItem: LoadoutData['icon_data_by_item'];
 }) => {
   const slotHudState = SLOT_HUD[bodySlotKey(bs)] ?? 'block';
   const tipLines: string[] = [bs.label];
@@ -704,7 +584,7 @@ const SlotCell = ({
         {firstOccupantIcon ? (
           <ColorizedImage
             iconRef={firstOccupantIcon.icon}
-            iconState={firstOccupantIcon.icon_state}
+            iconState={firstOccupantIcon.icon_state ?? ''}
             color="#ffffff"
             size={52}
           />
@@ -921,7 +801,7 @@ const TweakRow = ({
   item: CatalogItem;
   tweak: GearTweakDescriptor;
   displayString: string;
-  rawValue: string | number | boolean | undefined;
+  rawValue: TweakValue | undefined;
 }) => {
   const { act } = useBackend();
 
@@ -953,9 +833,9 @@ const TweakRow = ({
     case 'textarea': {
       return (
         <Box mb={0.25}>
-          <Box color="label" fontSize="0.85em" mb={0.25}>
+          <Label fontSize="0.85em" mb={0.25}>
             {tweak.label}
-          </Box>
+          </Label>
           <TextArea
             fluid
             height="4em"
@@ -1054,8 +934,7 @@ const TweakRow = ({
     }
     case 'channels': {
       // rawValue is the saved list of channel choices straight from DM; set_channels cleans it on the way back.
-      const raw = rawValue as unknown;
-      const picked = Array.isArray(raw) ? (raw as string[]) : [];
+      const picked = Array.isArray(rawValue) ? rawValue : [];
       return (
         <ChannelsWidget
           label={tweak.label}
@@ -1145,11 +1024,7 @@ const UnderwearCatalog = ({
 }) => {
   const categories = Object.entries(uws.categories ?? {});
   if (categories.length === 0) {
-    return (
-      <Box italic color="label">
-        Your species has no underwear categories.
-      </Box>
-    );
+    return <Label italic>Your species has no underwear categories.</Label>;
   }
   return (
     <Stack vertical>
@@ -1268,9 +1143,7 @@ const CatalogScrollList = ({
       }}
     >
       {visibleItems.length === 0 ? (
-        <Box italic color="label">
-          No items fit this slot.
-        </Box>
+        <Label italic>No items fit this slot.</Label>
       ) : (
         <Stack vertical>
           {visibleItems.map((item) => (
@@ -1375,20 +1248,16 @@ const CatalogRow = ({
           <Box bold>
             {item.name}{' '}
             {item.cost > 0 ? (
-              <Box inline color="label" fontSize="0.85em">
+              <Label inline fontSize="0.85em">
                 · {item.cost}p
-              </Box>
+              </Label>
             ) : (
               <Box inline color="good" fontSize="0.85em">
                 · free
               </Box>
             )}
           </Box>
-          {item.desc && (
-            <Box color="label" fontSize="0.85em">
-              {item.desc}
-            </Box>
-          )}
+          {item.desc && <Label fontSize="0.85em">{item.desc}</Label>}
           {!!item.show_roles && !!item.allowed_roles?.length && (
             <Box color="grey" fontSize="0.8em">
               Roles: {item.allowed_roles.join(', ')}

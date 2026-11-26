@@ -24,6 +24,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 	op("search", ui_act(), then(PROC_REF(ui_act_search)))
 	op("back", ui_act(), then(PROC_REF(ui_act_back)))
 	interface("LibraryVisitor", title = "Library Visitor")
+	ui_shape(screenstate = int(), title = schema_text(), category = schema_text(), author = schema_text(), has_db = bool(), has_query = bool(), results = list_of(row(author = schema_text(), title = schema_text(), category = schema_text(), id = schema_text())))
 	without("ui_open")
 	op("settitle", ui_act("settitle"), asks(/datum/prompt/text/library_search_text, fields = list("question" = "Enter a title to search for:"), step = "value"), then(PROC_REF(ui_act_settitle)))
 	op("setcategory", ui_act("setcategory"), asks(/datum/prompt/choice/library_search_category, fields = list("question" = "Choose a category to search for:", "title" = "Category"), step = "value"), then(PROC_REF(ui_act_setcategory)))
@@ -44,8 +45,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 	// cached search results (list of assoc lists) for TGUI.
 	var/list/last_results = null
 
-// TGUI migration. attack_hand opens LibraryVisitor.tsx;
-// filter prompts and search execution move to tgui_act.
+// attack_hand opens LibraryVisitor.tsx.
 
 /obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl(datum/act/op/A)
 	var/mob/user = A.actor
@@ -171,6 +171,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	op("decreasetime", ui_act(), then(PROC_REF(ui_act_decreasetime)))
 	op("checkout", ui_act(), then(PROC_REF(ui_act_checkout)))
 	interface("LibraryComp", title = "Book Inventory Management")
+	ui_shape(screenstate = int(), checkout_period = num(), sort_by = schema_text(), upload_category = schema_text(), emagged = bool(), is_admin = bool(), buffer_book = schema_text(), buffer_mob = schema_text(), world_time_min = num(), has_db = bool(), has_scanner = bool(), scanner_cache = nullable(row(name = schema_text(), author = schema_text())), inventory = list_of(row(ref = num(), name = schema_text())), checkouts = list_of(row(ref = num(), bookname = schema_text(), mobname = schema_text(), taken_min = num(), due_min = num(), overdue = bool())), internal_archive = list_of(row(path = schema_text(), name = schema_text(), author = schema_text(), category = schema_text())), external_archive = list_of(row(id = schema_text(), author = schema_text(), title = schema_text(), category = schema_text())))
 	without("ui_open")
 	op("switchscreen", ui_act("switchscreen", arg("screen", num())), then(PROC_REF(ui_act_switchscreen)))
 	op("editbook", ui_act("editbook"), asks(/datum/prompt/text/library_catalogue/book, fields = list("question" = "Enter the book's title:"), step = "value"), then(PROC_REF(ui_act_editbook)))
@@ -210,6 +211,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	for(var/path in subtypesof(/obj/item/book/codex/lore))
 		var/obj/item/book/C = path
 		.[initial(C.name)] = library_archive_row(path)
+	var/obj/item/book/reference = /obj/item/book/dq_medical_reference
+	.[initial(reference.name)] = library_archive_row(/obj/item/book/dq_medical_reference) // printed from the library like any lore codex
 	for(var/path in subtypesof(/obj/item/book/custom_library) - base_genre_books)
 		var/obj/item/book/B = path
 		.[initial(B.title)] = library_archive_row(path)
@@ -227,9 +230,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 		"category" = initial(template.libcategory) || "",
 	)
 
-// TGUI migration. attack_hand and attack_ghost open
-// LibraryComp.tsx. The big browse-rendered switch and Topic dispatcher
-// move to tgui_data + tgui_act.
+// attack_hand and attack_ghost open LibraryComp.tsx.
 /obj/machinery/librarycomp/proc/interaction_link_scanner(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/barcodescanner/scanner = A.held
@@ -251,12 +252,12 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 		return GLOB.tgui_always_state
 	return ..()
 
-/// Fetches the External Archive listing (io_job); tgui_data shows it when it arrives.
+/// Fetches the External Archive listing (io_job); ui_data shows it when it arrives.
 /obj/machinery/librarycomp/proc/refresh_external()
 	if(!SSdbcore.IsConnected())
 		return
 	// sortby is mapped to a fixed column literal at the query site, so ORDER BY
-	// can never be injected even if the whitelist in tgui_act is ever bypassed.
+	// can never be injected even if the whitelist in the sort op is ever bypassed.
 	sql_view(src, "external", "SELECT id, author, title, category FROM library ORDER BY [safe_sortby_column()]", PROC_REF(sql_rows_arrived))
 
 /obj/machinery/librarycomp/proc/sql_rows_arrived(list/result, error, key)
@@ -266,7 +267,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 
 /// Maps the stored sortby value to a fixed, known-safe SQL column literal.
 /// Defense-in-depth: even if a future writer sets `sortby` without the whitelist
-/// in the "sort" tgui_act branch, ORDER BY can never become injectable.
+/// in the "sort" op, ORDER BY can never become injectable.
 /obj/machinery/librarycomp/proc/safe_sortby_column()
 	switch(sortby)
 		if("title")
@@ -558,6 +559,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	icon_state = "bigscanner"
 	anchored = TRUE
 	density = TRUE
+	circuit = VARIANT(/obj/item/circuitboard/libraryscanner)
 	var/tmp/obj/item/book/cache	// Last scanned book
 
 /obj/machinery/libraryscanner/proc/interaction_insert_book(datum/act/op/A)
@@ -567,8 +569,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	held.forceMove(src)
 	return TRUE
 
-// TGUI migration. attack_hand opens LibraryScanner.tsx;
-// scan/clear/eject move to tgui_act.
+// attack_hand opens LibraryScanner.tsx.
 /obj/machinery/libraryscanner/proc/interaction_open_ui_impl(datum/act/op/A)
 	var/mob/user = A.actor
 	user.set_machine(src)
@@ -576,8 +577,12 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	return TRUE
 
 CAPABILITIES(/obj/machinery/libraryscanner)
+	tabletop(carry = TRUE)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	ref_one(nameof(cache), /obj/item/book)
 	interface("LibraryScanner", title = "Scanner")
+	ui_shape(has_cache = bool(), cache_name = schema_text(), has_book = bool())
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
@@ -599,8 +604,7 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 
 /obj/machinery/libraryscanner/proc/ui_act_scan(datum/act/op/A)
 	var/mob/user = A.actor
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/book/B in contents)
 		rel_set(src, nameof(src.cache), B)
 		break
 	add_fingerprint(user)
@@ -611,8 +615,7 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	return TRUE
 
 /obj/machinery/libraryscanner/proc/ui_act_eject(datum/act/op/A)
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/book/B in contents)
 		B.forceMove(src.loc)
 	return TRUE
 
@@ -626,8 +629,12 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	icon_state = "binder"
 	anchored = TRUE
 	density = TRUE
+	circuit = VARIANT(/obj/item/circuitboard/bookbinder)
 
 CAPABILITIES(/obj/machinery/bookbinder)
+	tabletop(carry = TRUE)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	climb()
 	op("bind", inputs(item(/obj/item/paper), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Bind"), then(PROC_REF(interaction_bind)))
 
@@ -688,7 +695,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 			set_buffer_mob(value)
 		if("setauthor")
 			if(value && scanner()?.cache())
-				scanner().cache().author = value
+				scanner().cache().set_author(value)
 		if("setcategory")
 			if(value)
 				set_upload_category(value)

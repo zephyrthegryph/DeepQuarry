@@ -97,6 +97,17 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 	if(get_dir(mover, target) == GLOB.reverse_dir[dir])
 		return FALSE
 	return TRUE
+/// A machine whose setup ran before the holomaps were built (or that never got one) has no image yet: makes it now. FALSE when it has none.
+/obj/machinery/station_map/proc/ensure_map_image(mob/user)
+	if(!holomap_datum.station_map)
+		if(holomaps_holomaps_initialized())
+			setup_holomap()
+		else
+			holomap_datum.initialize_holomap_bogus()
+			set_bogus(TRUE)
+		log_game("Holomap [src] had no map image when [user ? key_name(user) : "someone"] looked; built it ([bogus ? "bogus" : "station"])")
+	return !!holomap_datum.station_map
+
 /obj/machinery/station_map/proc/startWatching(mob/user)
 	// Okay, does this belong on a screen thing or what?
 	// One argument is that this is an "in game" object becuase its in the world.
@@ -114,6 +125,8 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 	// TODO - This part!! ~Leshana
 	if(isliving(user) && anchored && operable())
 		if(user.client)
+			if(!ensure_map_image(user))
+				return
 			image_anchor(holomap_datum.station_map, GLOB.global_hud.holomap) // Put the image on the holomap hud
 			holomap_datum.station_map.alpha = 0 // Set to transparent so we can fade in
 			animate(holomap_datum.station_map, alpha = 255, time = 5, easing = LINEAR_EASING)

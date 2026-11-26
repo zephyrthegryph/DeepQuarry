@@ -15,7 +15,7 @@
 		"skirt"=/obj/item/clothing/under/rank/medical/skirt,
 		"virologist skirt"=/obj/item/clothing/under/rank/virologist/skirt,
 		"turtleneck"=/obj/item/clothing/under/rank/medical/turtleneck,
-		"vey-medical jumpsuit"=/obj/item/clothing/under/corp/veymed,
+		"vey-medical jumpsuit"=VARIANT(/obj/item/clothing/under/corp/veymed),
 		"TG&C jumpsuit"=/obj/item/clothing/under/rank/neo_med,
 		"TG&C jumpskirt"=/obj/item/clothing/under/rank/neo_med_skirt,
 		"TG&C virology jumpsuit"=/obj/item/clothing/under/rank/neo_viro,

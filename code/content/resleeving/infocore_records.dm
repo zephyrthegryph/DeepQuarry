@@ -255,7 +255,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 	var/mob/living/carbon/human/H = new /mob/living/carbon/human(location, mydna.dna.species)
 	if(!mydna.dna.real_name)
-		mydna.dna.real_name = backup_name
+		mydna.dna.set_real_name(backup_name)
 	H.set_real_name(mydna.dna.real_name)
 	H.name = H.real_name
 	STATE_SET(H, mob_misc, suiciding, 0)

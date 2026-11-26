@@ -1,0 +1,52 @@
+{
+	"slots": [
+		{
+			"name": "Head",
+			"item": "hard hat",
+			"icon": null,
+			"act": "targetSlot",
+			"params": {
+				"slot": "head"
+			}
+		},
+		{
+			"name": "Uniform",
+			"item": null,
+			"icon": null,
+			"act": "targetSlot",
+			"params": {
+				"slot": "w_uniform"
+			}
+		}
+	],
+	"specialSlots": [
+		{
+			"name": "Left Hand",
+			"item": null,
+			"icon": null,
+			"act": "targetSlot",
+			"params": {
+				"slot": "l_hand"
+			}
+		},
+		{
+			"name": "Right Hand",
+			"item": "wrench",
+			"icon": null,
+			"act": "targetSlot",
+			"params": {
+				"slot": "r_hand"
+			}
+		}
+	],
+	"internals": null,
+	"internalsValid": 0,
+	"sensors": 1,
+	"handcuffed": 1,
+	"handcuffedParams": {
+		"slot": "handcuffed"
+	},
+	"legcuffed": 0,
+	"legcuffedParams": null,
+	"accessory": 0
+}

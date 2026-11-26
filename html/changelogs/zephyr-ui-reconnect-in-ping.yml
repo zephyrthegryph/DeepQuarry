@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "The reconnecting state now shows inside the red ping indicator instead of in a separate banner"

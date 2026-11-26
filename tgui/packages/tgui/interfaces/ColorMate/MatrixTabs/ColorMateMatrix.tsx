@@ -1,11 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Icon, NumberInput, Stack } from 'tgui-core/components';
+import type {
+  ColorMateActions,
+  ColorMateData,
+} from '../../generated/ColorMate';
 import { MATRIX_COLUMS } from '../constants';
 import { ConfigField } from '../Helpers/ConfigField';
-import type { Data } from '../types';
 
 export const ColorMateMatrix = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<ColorMateData, ColorMateActions>();
   const { matrixcolors } = data;
 
   return (

@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, NumberInput, Section, Table } from 'tgui-core/components';
+import type { SignalerActions, SignalerData } from './generated/Signaler';
 
 export const Signaler = () => {
   return (
-    <Window width={280} height={132}>
+    <Window width={360} height={132}>
       <Window.Content>
         <SignalerContent />
       </Window.Content>
@@ -12,16 +13,9 @@ export const Signaler = () => {
   );
 };
 
-type Data = {
-  code: number;
-  frequency: number;
-  minFrequency: number;
-  maxFrequency: number;
-};
-
 export const SignalerContent = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { code, frequency, minFrequency, maxFrequency } = data;
+  const { act, data } = useBackend<SignalerData, SignalerActions>();
+  const { code = 0, frequency = 0, minFrequency = 0, maxFrequency = 0 } = data;
   return (
     <Section>
       <Table>
@@ -38,7 +32,7 @@ export const SignalerContent = (props) => {
               maxValue={maxFrequency / 10}
               value={frequency / 10}
               format={(value) => value.toFixed(1)}
-              width="80px"
+              width="110px"
               onChange={(value) =>
                 act('freq', {
                   freq: value,
@@ -71,7 +65,7 @@ export const SignalerContent = (props) => {
               minValue={1}
               maxValue={100}
               value={code}
-              width="80px"
+              width="110px"
               onChange={(value) =>
                 act('code', {
                   code: value,

@@ -1,5 +1,5 @@
-import { Box, LabeledList, Stack } from 'tgui-core/components';
-
+import { Label } from 'tgui/components/Label';
+import { LabeledList, Stack } from 'tgui-core/components';
 import { reagentToColor } from '../../constants';
 import type { LiqInteractData } from '../../types';
 import { VorePanelEditColor } from '../../VorePanelElements/VorePanelEditColor';
@@ -121,7 +121,7 @@ export const LiquidOptionsLeft = (props: {
           />
           {!custom_reagentalpha && (
             <Stack.Item>
-              <Box color="label">(Default)</Box>
+              <Label>(Default)</Label>
             </Stack.Item>
           )}
         </Stack>

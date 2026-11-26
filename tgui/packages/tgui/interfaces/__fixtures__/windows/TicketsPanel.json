@@ -1,0 +1,44 @@
+{
+	"tickets": [
+		{
+			"id": 42,
+			"name": "Engine fire",
+			"state": "open",
+			"level": 1,
+			"handler": "zephyr",
+			"opened_at": 5400,
+			"closed_at": 0,
+			"opened_at_date": "2026-11-12 18:02",
+			"closed_at_date": "",
+			"ishandled": true
+		},
+		{
+			"id": 43,
+			"name": "Stuck in locker",
+			"state": "open",
+			"level": 0,
+			"handler": "",
+			"opened_at": 5800,
+			"closed_at": 0,
+			"opened_at_date": "2026-11-12 18:09",
+			"closed_at_date": "",
+			"ishandled": false
+		}
+	],
+	"is_admin": true,
+	"selected_ticket": {
+		"id": 42,
+		"name": "Engine fire",
+		"state": "open",
+		"level": 1,
+		"handler": "zephyr",
+		"opened_at": 5400,
+		"closed_at": 0,
+		"opened_at_date": "2026-11-12 18:02",
+		"closed_at_date": "",
+		"actions": "<a href=\"#\">Close</a>",
+		"log": {
+			"1": "<b>jopark</b>: Help, the engine is on fire."
+		}
+	}
+}

@@ -118,19 +118,22 @@
 	if(status < STATUS_UPDATE)
 		return FALSE
 	if(!window())
-		rel_set(src, nameof(window), SStgui.request_pooled_window(user))
+		// A docked interface opens in the right-hand column's page (column_part.dm), anything else in a pooled native window.
+		rel_set(src, nameof(window), dock_window() || SStgui.request_pooled_window(user))
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	startup_profile["pool_acquired_ms"] = rustg_time_milliseconds(startup_timer)
 	#endif
 	if(!window())
 		return FALSE
 	STAMP(src, opened_at, CLOCK_WORLD)
+	tgui_count_open(interface)
 	var/list/default_geometry = SStgui.get_default_geometry(interface)
 	window().acquire_lock(src, default_geometry)
+	dock_on_open()
 	if(!window().is_ready() && !preinitialized)
 		window().initialize(
 			strict_mode = TRUE,
-			fancy = user.read_preference(/datum/preference/toggle/tgui_fancy),
+			fancy = TRUE,
 			assets = list(
 				SStgui.get_current_asset_generation().shell_assets(),
 				))
@@ -192,6 +195,9 @@
 	window().send_message("update", get_payload(
 		with_data = TRUE,
 		with_static_data = TRUE))
+	// A window floated out of the column opens under the pointer once (window_dock.dm); later updates leave it where it is.
+	float_at = null
+
 
 /// Queues this UI's assets. Returns TRUE when the caller must wait for the client's ack.
 /datum/tgui/proc/send_assets(list/startup_profile, startup_timer)
@@ -254,6 +260,8 @@
 		child.close(can_be_suspended, logout)
 	// If we don't have window_id, open proc did not have the opportunity
 	// to finish, therefore it's safe to skip this whole block.
+	if(docked)
+		dock_on_close()
 	if(window())
 		// Windows you want to keep are usually blue screens of death
 		// and we want to keep them around, to allow user to read
@@ -341,6 +349,9 @@
 /datum/tgui/proc/send_full_update(custom_data, force)
 	if(!user?.client || !initialized || closing)
 		return
+	if(view_hidden)
+		view_stale = TRUE // docked off screen: one full update when shown (window_dock.dm)
+		return
 	var/should_update_data = force || status >= STATUS_UPDATE
 	window().send_message("update", get_payload(
 		custom_data,
@@ -358,10 +369,14 @@
 /datum/tgui/proc/send_update(custom_data, force)
 	if(!user?.client || !initialized || closing)
 		return
+	if(view_hidden)
+		view_stale = TRUE
+		return
 	var/should_update_data = force || status >= STATUS_UPDATE
+	// A data push the page already shows (the reads that marked the window changed, the data did not) is dropped by the window.
 	window().send_message("update", get_payload(
 		custom_data,
-		with_data = should_update_data))
+		with_data = should_update_data), same_key = "update")
 
 /**
  * private
@@ -401,8 +416,8 @@
 		"window" = list(
 			"key" = window_key,
 			"size" = window_size,
-			"fancy" = user.read_preference(/datum/preference/toggle/tgui_fancy),
-			"locked" = user.read_preference(/datum/preference/toggle/tgui_lock),
+			"fancy" = TRUE,
+			"locked" = FALSE,
 			"scale" = user.read_preference(/datum/preference/toggle/ui_scale),
 			"prewarmed" = window()?.prewarmed ? TRUE : FALSE,
 			"generation" = window()?.generation || 0,
@@ -410,9 +425,19 @@
 			"default_geometry" = default_geometry,
 			"geometry_preapplied" = window()?.geometry_preapplied ? TRUE : FALSE,
 			"preapplied_geometry" = window()?.preapplied_geometry,
+			"docked" = docked ? TRUE : FALSE,
+			"float_at" = float_at,
+			"dockable" = dockable() ? TRUE : FALSE,
+			// Docked: whether the column offers float for it (never for an always-docked interface such as the stat panel).
+			"floatable" = GLOB.window_dock_always_docked[interface] ? FALSE : TRUE,
+			// Docked: whether an entry holding it can fold to its header (never an always-docked interface).
+			"collapsible" = GLOB.window_dock_always_docked[interface] ? FALSE : TRUE,
+			// Docked: whether the column offers close (and float, with floatable) buttons and a drag out for it (never an always-docked or always-open interface).
+			"closable" = (GLOB.window_dock_always_docked[interface] || GLOB.window_dock_always_open[interface]) ? FALSE : TRUE,
 		),
 		"client" = list(
 			"ckey" = user.client.ckey,
+			"chatlog_token" = user.client.chatlog_token || "",
 			"address" = user.client.address,
 			"computer_id" = user.client.computer_id,
 			// The development cache handshake is the explicit live-profiling switch
@@ -448,7 +473,7 @@
 	#endif
 	if(data)
 		json_data["data"] = data
-	var/static_data = with_static_data && src_object().tgui_static_data(user)
+	var/static_data = with_static_data && present_tgui_static_data(src_object(), user, tgui_is_observer_view(user, src))
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
 		startup_profile["static_data_ms"] = rustg_time_milliseconds(startup_timer)
@@ -581,6 +606,10 @@
 				send_full_update()
 			initialized = TRUE
 			cancel_after(src, "ping")
+		if("wm/dock", "wm/float", "wm/floated", "wm/geometry", "wm/dropped", "wm/drophint", "wm/view", "wm/log")
+			dock_message(type, payload)
+		if("wm/error")
+			log_tgui_client_error(user, payload, window())
 		if("ping/reply")
 			initialized = TRUE
 			cancel_after(src, "ping")
@@ -588,6 +617,10 @@
 			close(can_be_suspended = TRUE)
 			return TRUE
 		if("close")
+			// A docked window the column must keep (always docked, or its last) is not closed from the page.
+			if(docked && !may_leave_column(TRUE))
+				log_tgui(user, "Refused to close [interface]: the column keeps it.", window = window())
+				return TRUE
 			close(can_be_suspended = FALSE)
 			return TRUE
 		if("log")
@@ -597,15 +630,8 @@
 		if("setSharedState")
 			if(status != STATUS_INTERACTIVE)
 				return
-			var/datum/shared_state_owner = src_object()
-			LAZYINITLIST(shared_state_owner.tgui_shared_states)
-			shared_state_owner.tgui_shared_states[href_list["key"]] = href_list["value"]
-			SStgui.update_uis(src_object())
-		if("fallback")
-			#ifdef TGUI_DEBUGGING
-			log_tgui(user, "Fallback Triggered: [href_list["payload"]], Window: [window().id], Source: [src_object()]")
-			#endif
-			src_object().tgui_fallback(payload, user)
+			if(set_shared_state(href_list["key"], href_list["value"]))
+				SStgui.update_uis(src_object())
 		if(TGUI_MANAGED_BYONDUI_TYPE_RENDER)
 			var/byond_ui_id = payload[TGUI_MANAGED_BYONDUI_PAYLOAD_ID]
 			if(!byond_ui_id || LAZYLEN(open_byondui_elements) > TGUI_MANAGED_BYONDUI_LIMIT)
@@ -618,6 +644,41 @@
 				return
 
 			LAZYREMOVE(open_byondui_elements, byond_ui_id)
+		else
+			// A window with a protocol of its own (the stat panel): its host handles what tgui does not.
+			if(type && src_object()?.ui_raw_message(user, type, payload))
+				return TRUE
+
+/**
+ * Stores one client-sent shared state (useSharedState) on the host datum, bounded: the key and value must be text, the key at most
+ * TGUI_SHARED_STATE_MAX_KEY_LEN and the value at most TGUI_SHARED_STATE_MAX_VALUE_LEN characters, and a new key is refused once the host
+ * holds TGUI_SHARED_STATE_MAX_KEYS. Every refusal is logged. Returns TRUE when the value was stored.
+ */
+/datum/tgui/proc/set_shared_state(key, value)
+	var/datum/shared_state_owner = src_object()
+	var/reason = shared_state_refusal(shared_state_owner, key, value)
+	if(reason)
+		log_tgui(user, "Refused setSharedState: [reason].", window = window(), src_object = shared_state_owner)
+		return FALSE
+	LAZYINITLIST(shared_state_owner.tgui_shared_states)
+	shared_state_owner.tgui_shared_states[key] = value
+	return TRUE
+
+/// Why a client's shared state may not be stored on `owner`, or null when it may.
+/datum/tgui/proc/shared_state_refusal(datum/owner, key, value)
+	if(!owner)
+		return "no host"
+	if(!istext(key) || !length(key))
+		return "key is not text"
+	if(!istext(value))
+		return "value for [copytext(key, 1, 33)] is not text"
+	if(length(key) > TGUI_SHARED_STATE_MAX_KEY_LEN)
+		return "key of [length(key)] characters over [TGUI_SHARED_STATE_MAX_KEY_LEN]"
+	if(length(value) > TGUI_SHARED_STATE_MAX_VALUE_LEN)
+		return "value for [key] of [length(value)] characters over [TGUI_SHARED_STATE_MAX_VALUE_LEN]"
+	if(!(key in owner.tgui_shared_states) && LAZYLEN(owner.tgui_shared_states) >= TGUI_SHARED_STATE_MAX_KEYS)
+		return "new key [key] past the [TGUI_SHARED_STATE_MAX_KEYS] key limit"
+	return null
 
 /// Wrapper for behavior to potentially wait until the next tick if the server is overloaded
 /datum/tgui/proc/on_act_message(act_type, payload, state)
@@ -669,3 +730,72 @@ CAPABILITIES(/datum/tgui)
 	if(unit)
 		lookup_reads_prepare(unit, A, lookup_scope)
 	A.release()
+
+/// Where the open counts of every interface are kept across rounds (the chunk prefetch ranks by them).
+#define TGUI_OPEN_COUNTS_FILE "data/tgui_open_counts.json"
+/// How many of the most opened interfaces have their chunks prefetched first.
+#define TGUI_PREFETCH_TOP 30
+/// The counts are written back to disk every this many opens (and lost at most that many on a crash).
+#define TGUI_OPEN_COUNTS_FLUSH_EVERY 20
+
+/// Interface name -> how many times players opened it, over every round so far (read once from TGUI_OPEN_COUNTS_FILE).
+/proc/tgui_open_counts()
+	var/static/alist/counts
+	if(!counts)
+		counts = alist()
+		var/raw = rustg_file_exists(TGUI_OPEN_COUNTS_FILE) ? rustg_file_read(TGUI_OPEN_COUNTS_FILE) : null
+		var/list/saved = raw ? json_decode(raw) : null
+		for(var/interface in saved)
+			if(isnum(saved[interface]))
+				counts[interface] = saved[interface]
+	return counts
+
+/// Counts a window open of `interface` (kept across rounds) and logs it with this round's running count (the tgui log, "TGUI OPEN <interface> <n>").
+/proc/tgui_count_open(interface)
+	var/static/alist/round_counts = alist()
+	var/static/unsaved = 0
+	var/count = (round_counts[interface] || 0) + 1
+	round_counts[interface] = count
+	var/alist/counts = tgui_open_counts()
+	counts[interface] = (counts[interface] || 0) + 1
+	logger.Log(LOG_CATEGORY_HREF_TGUI, "TGUI OPEN [interface] [count]")
+	if(++unsaved >= TGUI_OPEN_COUNTS_FLUSH_EVERY)
+		unsaved = 0
+		var/list/plain = list()
+		for(var/name in counts)
+			plain[name] = counts[name]
+		rustg_file_write(json_encode(plain), TGUI_OPEN_COUNTS_FILE)
+	return count
+
+/// The chunk files of `generation` in prefetch order: the TGUI_PREFETCH_TOP most opened interfaces' chunks first (most opened first), then every
+/// other chunk in manifest order. list(files, how many of them are the top interfaces').
+/proc/tgui_ranked_chunk_files(datum/tgui_asset_generation/generation)
+	var/list/manifest = generation?.chunk_manifest
+	var/list/all_files = generation?.chunk_files || list()
+	if(!islist(manifest))
+		return list(all_files, 0)
+	var/alist/counts = tgui_open_counts()
+	var/list/ranked_names = list()
+	for(var/interface in manifest)
+		if(counts[interface])
+			ranked_names[interface] = counts[interface]
+	ranked_names = sortTim(ranked_names, GLOBAL_PROC_REF(cmp_numeric_dsc), associative = TRUE)
+	var/list/files = list()
+	var/list/seen = list()
+	var/taken = 0
+	for(var/interface in ranked_names)
+		if(++taken > TGUI_PREFETCH_TOP)
+			break
+		for(var/filename in manifest[interface])
+			if(!seen[filename])
+				seen[filename] = TRUE
+				files += filename
+	var/priority = length(files)
+	for(var/filename in all_files)
+		if(!seen[filename])
+			files += filename
+	return list(files, priority)
+
+#undef TGUI_OPEN_COUNTS_FILE
+#undef TGUI_PREFETCH_TOP
+#undef TGUI_OPEN_COUNTS_FLUSH_EVERY

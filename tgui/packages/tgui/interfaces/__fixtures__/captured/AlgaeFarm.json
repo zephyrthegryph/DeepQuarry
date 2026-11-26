@@ -1,0 +1,26 @@
+{
+	"last_flow_rate": 0,
+	"last_power_draw": 0,
+	"usePower": 1,
+	"errorText": null,
+	"materials": [
+		{
+			"name": "algae",
+			"display": "algae",
+			"qty": 0,
+			"max": 10000,
+			"percent": 0
+		},
+		{
+			"name": "graphite",
+			"display": "graphite",
+			"qty": 0,
+			"max": 10000,
+			"percent": 0
+		}
+	],
+	"inputDir": "north",
+	"outputDir": "south",
+	"input": null,
+	"output": null
+}

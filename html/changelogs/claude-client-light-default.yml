@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscadd: "Client lighting and layered plain human bodies are now the default."
+  - bugfix: "Walls are only lit from a side you can see, and lights around corners spill onto tiles you can see."
+  - admin: "Removed the client lighting, glow mask, glow anchor and layered body toggle verbs. The Server tab shows the UI panel's frame rate."

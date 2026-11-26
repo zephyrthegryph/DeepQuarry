@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - code_imp: "Log every native alpha change of a tgui window, to diagnose windows that open transparent."

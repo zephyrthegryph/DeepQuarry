@@ -83,6 +83,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 
 CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 	interface("GhostSpawn", state = nameof(GLOB.tgui_observer_state))
+	ui_shape(active_tab = int(), user_z = int(), all_ghost_pods = nullable(list_of(row(pod_type = schema_text(), pod_name = schema_text(), z_level = int(), ref = num(), remains_active = bool()))), all_vore_spawns = nullable(map_of(schema_text(), row(player = schema_text(), soulcatcher = bool(), soulcatcher_vore = bool(), vorespawn = bool()))), all_ghost_join_options = nullable(row(mouse_data = row(disabled = bool(), bad_turf = bool(), respawn_time = schema_text(), found_vents = bool()), drone_data = row(disabled = bool(), days_to_play = nullable(num()), respawn_time = schema_text(), fabricators = map_of(schema_text(), schema_text())), vr_data = row(record_found = bool(), vr_landmarks = map_of(schema_text(), schema_text())), cyborg_banned = bool(), ghost_banned = bool(), may_respawn = bool(), special_role_respawn = schema_text(), existing_ghost_spawnpoints = bool(), remaining_ghost_roles = int())))
 	op("mouse_spawn", ui_act(), then(PROC_REF(ui_act_mouse_spawn)))
 	op("corgi_spawn", ui_act(), then(PROC_REF(ui_act_corgi_spawn)))
 	op("lost_drone_spawn", ui_act(), then(PROC_REF(ui_act_lost_drone_spawn)))
@@ -202,7 +203,7 @@ CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 		if(DF.power_lost() || !DF.produce_drones)
 			continue
 		if(DF.drone_progress >= 100)
-			all_fabricators += list("[handle_of(DF)]" = DF.fabricator_tag)
+			all_fabricators += list("[handle_text(handle_of(DF))]" = DF.fabricator_tag)
 
 	return list(
 				"disabled" = !CONFIG_GET(flag/allow_drone_spawn),
@@ -215,7 +216,7 @@ CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 	var/datum/data/record/record_found = find_general_record("name", user.client.prefs.read_preference(/datum/preference/name/real_name))
 	var/list/vr_landmarks = list()
 	for(var/obj/effect/landmark/virtual_reality/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
-		vr_landmarks += list("[handle_of(sloc)]" = sloc.name)
+		vr_landmarks += list("[handle_text(handle_of(sloc))]" = sloc.name)
 
 	return list(
 				"record_found" = !!record_found,
@@ -252,7 +253,7 @@ CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 				var/mob/living/simple_mob/SM = player
 				if(SM.vore_active && SM.vore_prefs.latejoin_vore)
 					vorespawn_active = TRUE
-		compiled_spawn_data += list("[handle_of(player)]" = list("player" = player.name, "soulcatcher" = soulcatcher_active, "soulcatcher_vore" = soulcatcher_vore_active, "vorespawn" = vorespawn_active))
+		compiled_spawn_data += list("[handle_text(handle_of(player))]" = list("player" = player.name, "soulcatcher" = soulcatcher_active, "soulcatcher_vore" = soulcatcher_vore_active, "vorespawn" = vorespawn_active))
 	return compiled_spawn_data
 
 #undef GHOST_POD_TAB

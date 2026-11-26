@@ -8,55 +8,25 @@
 // (see code/modules/admin/antag_panel_data.dm).
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type {
+  RoundStatusPanelActions,
+  RoundStatusPanelData,
+} from './generated/RoundStatusPanel';
 
-type ShuttleState = 'idle' | 'counting_down' | 'arriving' | 'warmup';
-
-type ShuttleData = {
-  state: ShuttleState;
-  time_left_seconds?: number;
-  time_left_display?: string;
-  can_recall?: BooleanLike;
-};
-
-type AntagMember = {
-  name?: string;
-  key: string;
-  ref?: string;
-  logged_out?: BooleanLike;
-  dead?: BooleanLike;
-  mob_missing?: BooleanLike;
-};
-
-type AntagDisk = {
-  name: string;
-  location: string;
-};
-
-type AntagBlock = {
-  role_text: string;
-  role_text_plural: string;
-  members: AntagMember[];
-  disks?: AntagDisk[];
-};
-
-type Data = {
-  mode_name: string;
-  round_duration: string;
-  delay_end: BooleanLike;
-  shuttle: ShuttleData;
-  antag_blocks: AntagBlock[];
-};
+type Data = RoundStatusPanelData;
+type ShuttleData = Data['shuttle'];
+type AntagMember = Data['antag_blocks'][number]['members'][number];
 
 const ShuttleControls = (props: {
   shuttle: ShuttleData;
   act: (action: string) => void;
 }) => {
   const { shuttle, act } = props;
-  switch (shuttle.state) {
+  switch (shuttle?.state) {
     case 'idle':
       return (
         <Button icon="rocket" color="bad" onClick={() => act('call_shuttle')}>
@@ -113,9 +83,9 @@ const AntagMemberRow = (props: {
         <Box>
           {member.name}/{member.key}
           {member.logged_out ? (
-            <Box inline italic color="label" ml={1}>
+            <Label inline italic ml={1}>
               (logged out)
-            </Box>
+            </Label>
           ) : null}
           {member.dead ? (
             <Box inline bold color="bad" ml={1}>
@@ -152,8 +122,14 @@ const AntagMemberRow = (props: {
 };
 
 export const RoundStatusPanel = () => {
-  const { data, act } = useBackend<Data>();
-  const { mode_name, round_duration, delay_end, shuttle, antag_blocks } = data;
+  const { data, act } = useBackend<Data, RoundStatusPanelActions>();
+  const {
+    mode_name,
+    round_duration,
+    delay_end,
+    shuttle,
+    antag_blocks = [],
+  } = data;
 
   return (
     <Window width={620} height={700} title="Round Status">
@@ -185,7 +161,7 @@ export const RoundStatusPanel = () => {
               <Section key={block.role_text + i} title={block.role_text_plural}>
                 <Stack vertical>
                   {block.members.map((m, j) => (
-                    <Stack.Item key={(m.ref ?? m.key) + j}>
+                    <Stack.Item key={`${m.ref ?? m.key}-${j}`}>
                       <AntagMemberRow member={m} act={act} />
                     </Stack.Item>
                   ))}
@@ -196,9 +172,9 @@ export const RoundStatusPanel = () => {
                       Nuclear disk(s)
                     </Box>
                     {block.disks.map((d, k) => (
-                      <Box key={d.name + k} color="label">
+                      <Label key={d.name + k}>
                         <b>{d.name}</b>, {d.location}
-                      </Box>
+                      </Label>
                     ))}
                   </Box>
                 ) : null}

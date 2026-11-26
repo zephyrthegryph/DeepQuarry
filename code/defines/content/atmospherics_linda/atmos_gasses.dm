@@ -20,17 +20,15 @@
 #define GAS_ANTINOBLIUM "antinoblium"
 #define GAS_HALON "halon"
 
-// CHOMP code uses GAS_PHORON / GAS_CH4 / GAS_VOLATILE_FUEL by string ID.
-// LINDA uses different names (plasma vs phoron). The CHOMP _reagents.dm defines
-// load BEFORE this file, so our redefs win and CHOMP code resolves to LINDA gas
-// IDs. /datum/gas/methane and /datum/gas/volatile_fuel are also added below as
-// CHOMP-flavor gas subtypes so all the string IDs map to a real /datum/gas type.
-#undef GAS_PHORON
+// Phoron is LINDA's plasma: GAS_PHORON is the same gas id. Methane and volatile fuel
+// are the /datum/gas/methane and /datum/gas/volatile_fuel subtypes declared below.
+// (Reagent ids are REAGENT_ID_* in code/defines/library/_reagents.dm, never GAS_*.)
 #define GAS_PHORON GAS_PLASMA
-#undef GAS_CH4
 #define GAS_CH4 "methane"
-#undef GAS_VOLATILE_FUEL
 #define GAS_VOLATILE_FUEL "volatile_fuel"
+/// Chemistry gases: a boiled-off chlorine or ammonia reagent enters the air as these (code/domains/world_model/reagents/vapour.dm).
+#define GAS_CHLORINE "chlorine"
+#define GAS_AMMONIA "ammonia"
 
 /// Numeric Rust gas ID (GAS_ID_*) for a gas given as a GAS_ID_* number, a /datum/gas
 /// path, its path text or its short id ("o2"). Gas binds take only numbers.

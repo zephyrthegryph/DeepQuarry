@@ -22,7 +22,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	return R.choose(subtypesof(/obj/item/circuitboard/arcade) - /obj/item/circuitboard/arcade/clawmachine)
 
 /obj/machinery/computer/arcade/proc/become_rolled_board(datum/act/A)
-	if(!rolled_board || circuit)
+	if(!rolled_board || holds_board())
 		return
 	replace_with(src, dq_type_var(rolled_board, "build_path")) // the board stays a type: the machine it builds carries its own
 
@@ -109,6 +109,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	setup(PROC_REF(randomize_characters))
 	interface("ArcadeBattle")
+	ui_shape(temp = schema_text(), enemyAction = schema_text(), enemyName = schema_text(), playerHP = num(), playerMP = num(), enemyHP = num(), gameOver = bool())
 	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
 	op("attack", ui_act("attack"), then(PROC_REF(ui_act_attack)))
 	op(XENO_CHEM_HEAL, ui_act(XENO_CHEM_HEAL), then(PROC_REF(ui_act_heal)))
@@ -117,7 +118,6 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 
 /obj/machinery/computer/arcade/battle/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["name"] = name
 	data["temp"] = temp
 	data["enemyAction"] = enemy_action
 	data["enemyName"] = enemy_name
@@ -202,7 +202,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 				log_game("[key_name_admin(user)] has outbombed Cuban Pete and been awarded a bomb.")
 				randomize_characters()
 				set_emagged(0)
-			else if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
+			else if(!contents_count(src))
 				feedback_inc("arcade_win_normal")
 				prizevend(user)
 
@@ -1138,6 +1138,7 @@ CAPABILITIES(/obj/item/orion_ship)
 CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	op("clawmachine_card_pin", ai(), needs(req_adjacent(), req_capable()), asks(/datum/prompt/number/claw_pin, fields = list("account" = computed(PROC_REF(pin_account)), "timeout" = 0)), then(PROC_REF(card_pin_entered)))
 	interface("ClawMachine")
+	ui_shape(wintick = int(), instructions = schema_text(), gameStatus = enum(list("CLAWMACHINE_NEW", "CLAWMACHINE_ON", "CLAWMACHINE_END")), winscreen = schema_text())
 	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
 	op("return", ui_act("return"), then(PROC_REF(ui_act_return)))
 	op("pointless", ui_act("pointless"), then(PROC_REF(ui_act_pointless)))

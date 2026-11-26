@@ -5,23 +5,24 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
-
-type Data = {
-  title: string;
-  intro_html: string;
-  lines: string[];
-  columns: string[];
-  rows: string[][];
-  body_html: string;
-  has_host: BooleanLike;
-};
+import type {
+  AdminReportActions,
+  AdminReportData,
+} from './generated/AdminReport';
 
 export const AdminReport = () => {
-  const { data, act } = useBackend<Data>();
-  const { title, intro_html, lines, columns, rows, body_html, has_host } = data;
+  const { data, act } = useBackend<AdminReportData, AdminReportActions>();
+  const {
+    title,
+    intro_html,
+    lines = [],
+    columns = [],
+    rows = [],
+    body_html,
+    has_host,
+  } = data;
   return (
     <Window width={720} height={620} title={title}>
       <Window.Content scrollable>

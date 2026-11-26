@@ -56,13 +56,14 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	owns_many(nameof(internal_cells), /obj/item/cell)
 	part_replacement()
 	interface("Batteryrack")
+	ui_shape(mode = int(), transfer_max = num(), output_load = num(), input_load = num(), equalise = bool(), blink_tick = bool(), cells_max = int(), cells_cur = int(), cells_list = list_of(row(slot = int(), used = bool(), percentage = nullable(num()), name = nullable(schema_text()), id = nullable(int()))))
 	extend("ui_open", ungated()) // the window opens on an inoperable rack too; its buttons stay behind the operable gate
 	op("insert_cell", item(/obj/item/cell), needs(req(PROC_REF(cell_room))), then(PROC_REF(cell_inserted)), says(MSG(batteryrack/inserted)))
 	op("disable", ui_act(), then(PROC_REF(ui_disable)))
-	op("enable", ui_act(arg("enable")), then(PROC_REF(ui_enable)))
+	op("enable", ui_act(arg("enable", num())), then(PROC_REF(ui_enable)))
 	op("equaliseon", ui_act(), sets(nameof(equalise), TRUE))
 	op("equaliseoff", ui_act(), sets(nameof(equalise), FALSE))
-	op("ejectcell", ui_act(arg("ejectcell")), then(PROC_REF(ui_eject_cell)))
+	op("ejectcell", ui_act(arg("ejectcell", num())), then(PROC_REF(ui_eject_cell)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(power_frame)))
 
 /obj/machinery/power/smes/batteryrack/RefreshParts()
@@ -123,6 +124,9 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 		var/list/cell[0]
 		cell["slot"] = cell_index + 1
 		cell["used"] = 0
+		cell["percentage"] = null
+		cell["name"] = null
+		cell["id"] = null
 		cell_index++
 		cells += list(cell)
 	return list(

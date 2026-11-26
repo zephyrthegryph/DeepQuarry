@@ -1,24 +1,15 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-  Stack,
-} from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  scan_progress: number;
-  scanning: BooleanLike;
-  bloodsamp: string;
-  bloodsamp_desc: string;
-};
+import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import type {
+  DNAForensicsActions,
+  DNAForensicsData,
+} from './generated/DNAForensics';
 
 export const DNAForensics = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<DNAForensicsData, DNAForensicsActions>();
   const { scan_progress, scanning, bloodsamp, bloodsamp_desc } = data;
   return (
     <Window width={540} height={326}>
@@ -50,23 +41,22 @@ export const DNAForensics = (props) => {
           }
         >
           <LabeledList>
-            <LabeledList.Item label="Scan Progress">
-              <ProgressBar
-                ranges={{
-                  good: [99, Infinity],
-                  violet: [-Infinity, 99],
-                }}
-                value={scan_progress}
-                maxValue={100}
-              />
-            </LabeledList.Item>
+            <StatBar
+              label="Scan Progress"
+              ranges={{
+                good: [99, Infinity],
+                violet: [-Infinity, 99],
+              }}
+              value={scan_progress}
+              maxValue={100}
+            />
           </LabeledList>
         </Section>
         <Section title="Blood Sample">
           {(bloodsamp && (
             <Box>
               {bloodsamp}
-              <Box color="label">{bloodsamp_desc}</Box>
+              <Label>{bloodsamp_desc}</Label>
             </Box>
           )) || <Box color="bad">No blood sample inserted.</Box>}
         </Section>

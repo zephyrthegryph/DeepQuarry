@@ -1,5 +1,4 @@
 /mob/living/proc/toggle_active_cloaking() // Borrowed from Rogue Star, thanks guys!
-	set category = VERB_CAT_ABILITIES_GENERAL
 	set name = "Toggle Active Cloaking"
 
 	if(invisibility == INVISIBILITY_OBSERVER)

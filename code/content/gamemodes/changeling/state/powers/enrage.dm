@@ -14,9 +14,6 @@
 
 // Makes the ling very upset.
 /mob/living/proc/changeling_berserk()
-	set category = VERB_CAT_CHANGELING
-	set name = "Enrage (30)"
-	set desc = "Causes you to go Berserk."
 
 	var/datum/changeling/changeling = changeling_power(30,0,100)
 	if(!changeling)

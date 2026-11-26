@@ -16,26 +16,45 @@
 	caused_by_chems = list(REAGENT_ID_OXYCODONE = 5)
 	caused_by_chems_organ = O_BRAIN
 
-/datum/affliction/chem_side_effect/tramadol_nausea
+/// Tramadol's nausea is a real, treatable nausea (calcium carbonate settles it): held while the drug stays in the blood.
+/datum/affliction/nausea/tramadol
 	name = "tramadol nausea"
-	clinical_description = "Tramadol is a common analgesic but its action on serotonin receptors causes mild nausea and dizziness in many patients. Resolves as the chem clears."
+	clinical_description = "Tramadol's action on serotonin receptors makes the stomach turn and can bring on vomiting. It lasts while the drug is in the blood; calcium carbonate settles it."
+	progression_rate = 0
+	initial_severity = 40
 	symptom_pool = list(
-		/datum/affliction_symptom/nausea    = 70,
+		/datum/affliction_symptom/nausea    = 100,
 		/datum/affliction_symptom/dizziness = 50,
 	)
-	min_symptoms = 1
-	max_symptoms = 2
 	caused_by_chems = list(REAGENT_ID_TRAMADOL = 8)
+
+/// A large dose of paracetamol in the blood poisons the liver slowly, long before the overdose line (the strain applies above a dose, not per unit).
+/datum/affliction/chem_side_effect/paracetamol_hepatotoxicity
+	name = "paracetamol hepatotoxicity"
+	clinical_description = "A high paracetamol level saturates the liver's clearance pathway and the metabolites damage it a little with every tick. Harmless at ordinary doses; resolves as the chem clears, but the liver damage stays."
+	symptom_pool = list(
+		/datum/affliction_symptom/fatigue = 50,
+		/datum/affliction_symptom/nausea  = 40,
+	)
+	min_symptoms = 0
+	max_symptoms = 1
+	organ_damage_threshold = 0
+	organ_damage_type = "internal"
+	organ_damage_per_tick = 0.1
+	organ_damage_targets = list(O_LIVER)
+	caused_by_chems = list(REAGENT_ID_PARACETAMOL = 30)
 	caused_by_chems_organ = O_LIVER
 
 /datum/affliction/overdose/oxycodone
 	name = "opioid overdose"
-	clinical_description = "Oxycodone at overdose causes profound CNS depression — the patient may stop breathing entirely. Pinpoint pupils, slow heart, shallow respirations. The same effect produces near-total pain immunity and significant stun resistance — sometimes worth the risk when working through a major procedure under fire."
+	clinical_description = "Oxycodone at overdose causes profound CNS depression — the patient may stop breathing entirely. Naloxone reverses it within seconds. Pinpoint pupils, slow heart, shallow respirations. The same effect produces near-total pain immunity and significant stun resistance — sometimes worth the risk when working through a major procedure under fire."
 	symptom_pool = list(
 		/datum/affliction_symptom/drowsy            = 95,
 		/datum/affliction_symptom/labored_breathing = 85,
 		/datum/affliction_symptom/cyanosis          = 60,
 	)
+	// Naloxone strips the opioid out of the blood, so the overdose ends within a few ticks of the dose (reagents/content/medicine/naloxone.dm).
+	treated_by = list(TREAT_OPIOID_ANTAGONIST = 1)
 	min_symptoms = 2
 	max_symptoms = 3
 	factors = alist(STAT_SLOWDOWN = 2, STAT_ACCURACY = -40, STAT_MOTOR_CONTROL = 0.9, STAT_DISABLE_DURATION = 0.5, STAT_ANALGESIA = 50, STAT_HEART_RATE = -15, STAT_O2_SAT = -20, STAT_RESP_RATE = -10)

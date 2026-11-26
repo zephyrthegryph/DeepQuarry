@@ -16,8 +16,8 @@ use crate::pat::Pat;
 use crate::tree::{SourceFile, CODE_MAPS_DM};
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::qdel_src::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::qdel_src::SCOPE_META_0.group,
+    name: "qdel_src",
+    group: "",
     label: "qdel_src",
     legacy: "tools/ci/qdel_src_lint.py",
     select: CODE_MAPS_DM,
@@ -27,8 +27,8 @@ static META: Meta = Meta {
         name: "qdel_src",
         hint: "say why the thing ends: consume() / replace_with() / expire() / slot_clear() / ledger_empty() (code/library/lifecycle/verbs.dm); a real destroy-now keeps qdel(src) with `// ALLOW(lifecycle): <reason>`",
     }],
-    allow: crate::allow_registry_fields::qdel_src::ALLOW_0,
-    lists: crate::allow_registry_fields::qdel_src::SCOPE_META_0.lists,
+    allow: &["lifecycle"],
+    lists: &[],
 };
 
 struct QdelSrc {
@@ -77,7 +77,7 @@ mod tests {
     fn allow_is_asked_only_for_a_qdel_src_line() {
         let tree = Tree::from_files(vec![]);
         let scope = crate::scopes::LintScope::default();
-        let cx = Cx { fixture:None, tree: &tree, meta: &META, scope: &scope };
+        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
         let f = SourceFile::from_text(
             "code/a.dm",
             "qdel(src) qdel(src) // ALLOW(lifecycle): the grenade must vanish this instant\nqdel(src) qdel(src)\nqdel(M) // ALLOW(lifecycle): that is another lint's site, not this one\n",

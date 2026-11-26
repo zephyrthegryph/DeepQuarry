@@ -51,8 +51,6 @@ CAPABILITIES(/obj/effect/landmark)
 			return GLOB.newplayer_start
 		if("JoinLateGateway")
 			return GLOB.latejoin_gateway
-		if("JoinLateTeleporter")
-			return GLOB.latejoin_teleporter
 		if("JoinLateStationGateway")
 			return GLOB.latejoin_gatewaystation
 		if("JoinLateSifPlains")
@@ -140,7 +138,7 @@ CAPABILITIES(/obj/effect/landmark/costume/madscientist)
 		all = list(
 			/obj/item/clothing/under/suit_jacket/green,
 			/obj/item/clothing/head/flatcap,
-			/obj/item/clothing/suit/storage/toggle/labcoat/mad,
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/mad),
 			/obj/item/clothing/glasses/gglasses)))
 /obj/effect/landmark/costume/elpresidente
 CAPABILITIES(/obj/effect/landmark/costume/elpresidente)
@@ -178,19 +176,19 @@ CAPABILITIES(/obj/effect/landmark/costume/prig)
 			loot_sub(1, list(/obj/item/clothing/head/bowler, /obj/item/clothing/head/that)),
 			/obj/item/clothing/shoes/black,
 			/obj/item/cane,
-			/obj/item/clothing/under/sl_suit,
+			VARIANT(/obj/item/clothing/under/sl_suit),
 			/obj/item/clothing/mask/fakemoustache)))
 /obj/effect/landmark/costume/plaguedoctor
 CAPABILITIES(/obj/effect/landmark/costume/plaguedoctor)
 	configure(loot(all = list(/obj/item/clothing/suit/bio_suit/plaguedoctorsuit, /obj/item/clothing/head/plaguedoctorhat)))
 /obj/effect/landmark/costume/nightowl
 CAPABILITIES(/obj/effect/landmark/costume/nightowl)
-	configure(loot(all = list(/obj/item/clothing/under/owl, /obj/item/clothing/mask/gas/owl_mask)))
+	configure(loot(all = list(VARIANT(/obj/item/clothing/under/owl), /obj/item/clothing/mask/gas/owl_mask)))
 /obj/effect/landmark/costume/waiter
 CAPABILITIES(/obj/effect/landmark/costume/waiter)
 	configure(loot(
 		all = list(
-			/obj/item/clothing/under/waiter,
+			VARIANT(/obj/item/clothing/under/waiter),
 			loot_sub(1, list(/obj/item/clothing/head/kitty, /obj/item/clothing/head/rabbitears)),
 			/obj/item/clothing/suit/storage/apron)))
 /obj/effect/landmark/costume/pirate
@@ -203,7 +201,7 @@ CAPABILITIES(/obj/effect/landmark/costume/pirate)
 			/obj/item/clothing/glasses/eyepatch)))
 /obj/effect/landmark/costume/commie
 CAPABILITIES(/obj/effect/landmark/costume/commie)
-	configure(loot(all = list(/obj/item/clothing/under/soviet, /obj/item/clothing/head/ushanka)))
+	configure(loot(all = list(VARIANT(/obj/item/clothing/under/soviet), /obj/item/clothing/head/ushanka)))
 /obj/effect/landmark/costume/imperium_monk
 CAPABILITIES(/obj/effect/landmark/costume/imperium_monk)
 	configure(loot(all = list(/obj/item/clothing/suit/imperium_monk, /loot/costume/cyborg_mask)))

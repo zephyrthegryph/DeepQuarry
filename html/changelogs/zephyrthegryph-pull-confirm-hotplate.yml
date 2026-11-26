@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Pull (ctrl-click, the right-click menu, a hardsuit's control click) pulls the thing you chose at once instead of asking what to pull."
+  - rscadd: "The hot plate has a proper window: beaker temperature, dial, element state and which contents are boiling. The number over the plate is gone."

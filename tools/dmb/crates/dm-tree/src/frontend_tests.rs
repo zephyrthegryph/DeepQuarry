@@ -269,7 +269,7 @@ fn terminal_resource_domain_and_ordered_map_inputs_are_retained() {
         ("project.dme", "#define FILE_DIR \"early\"\n#include \"child.dm\"\n#undef FILE_DIR\n#include \"world.dmm\"\n#include \"skin.dmf\"\n"),
         ("child.dm", "#define FILE_DIR \"late\"\nvar/asset = 'asset.txt'\n"),
     ]).unwrap();
-    assert_eq!(result.plan.file_dirs(), &vec![PathBuf::from("early")]);
+    assert_eq!(result.plan.file_dirs, vec![PathBuf::from("early")]);
     assert_eq!(
         result.maps().collect::<Vec<_>>(),
         vec![Path::new("world.dmm")]
@@ -578,8 +578,8 @@ fn opaque_intrinsic_field_bases_preserve_authored_values_without_inventing_metad
             .resolve(ty, base.name, MemberKind::Var)
             .unwrap();
         let metadata = &model.snapshot.tree.member(member).unwrap().metadata;
-        assert_eq!(metadata.inherited_opaque(), Some(base.clone()));
-        assert_eq!(metadata.declared_type(), Some(SymbolId::of("/datum")));
+        assert_eq!(metadata.inherited_opaque.as_ref(), Some(&base));
+        assert_eq!(metadata.declared_type, Some(SymbolId::of("/datum")));
         assert_eq!(
             metadata
                 .initializer

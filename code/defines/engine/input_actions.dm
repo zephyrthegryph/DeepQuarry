@@ -83,6 +83,8 @@
 
 /// Minimum time between two hover updates for one client.
 #define INPUT_HOVER_THROTTLE (0.2 SECONDS)
+/// How long the mouse rests on an inventory item before its name tooltip opens.
+#define ITEM_TOOLTIP_DELAY (0.2 SECONDS)
 
 /// The singleton capability adapter of a type, e.g. INPUT_ADAPTER(telekinesis).
 #define INPUT_ADAPTER(adapter_name) (GLOB.input_adapters[/datum/input_adapter/##adapter_name])

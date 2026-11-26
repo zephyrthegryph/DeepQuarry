@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The chem hot plate now boils water at a rate set by the heat it delivers, so a beaker on a high dial boils dry in under a minute"
+  - qol: "The hot plate shows the beaker's temperature and the dial over the plate and when examined"
+  - bugfix: "A beaker's reactions follow its real temperature as it warms or cools, on or off the plate"

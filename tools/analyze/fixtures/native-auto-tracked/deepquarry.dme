@@ -1,7 +1,0 @@
-#include "code/globals.dm"
-#include "code/types.dm"
-#include "code/calls.dm"
-#include "code/tests/ignored.dm"
-
-#include "code/engine/_generated/auto_tracked.dm"
-#include "code/engine/_generated/tracked_lists.dm"

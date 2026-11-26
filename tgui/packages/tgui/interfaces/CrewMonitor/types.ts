@@ -31,5 +31,5 @@ export type Crewmember = {
   y: number;
   realZ: number;
   z: number;
-  ref: string;
+  ref: number;
 };

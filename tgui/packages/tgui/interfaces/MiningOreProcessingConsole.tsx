@@ -9,26 +9,19 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
 
 import { MiningUser } from './common/Mining';
-
-type Data = {
-  unclaimedPoints: number;
-  ores: {
-    ore: string;
-    name: string;
-    amount: number;
-    processing: number;
-  }[];
-  showAllOres: BooleanLike;
-  power: BooleanLike;
-  speed: BooleanLike;
-};
+import type {
+  MiningOreProcessingConsoleActions,
+  MiningOreProcessingConsoleData,
+} from './generated/MiningOreProcessingConsole';
 
 export const MiningOreProcessingConsole = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    MiningOreProcessingConsoleData,
+    MiningOreProcessingConsoleActions
+  >();
 
   const { unclaimedPoints, power, speed } = data;
 
@@ -142,7 +135,10 @@ const oreSorter = (a, b) => {
 };
 
 const MOPCOres = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    MiningOreProcessingConsoleData,
+    MiningOreProcessingConsoleActions
+  >();
   const { ores, showAllOres } = data;
   return (
     <Section
@@ -168,7 +164,7 @@ const MOPCOres = (props) => {
               buttons={
                 <Dropdown
                   autoScroll={false}
-                  width="120px"
+                  width="150px"
                   color={
                     (ore.processing === 0 && 'red') ||
                     (ore.processing === 1 && 'green') ||
@@ -192,9 +188,11 @@ const MOPCOres = (props) => {
               </Box>
             </LabeledList.Item>
           ))) || (
-          <Box color="bad" textAlign="center">
-            No ores in machine.
-          </Box>
+          <LabeledList.Item label="Ores">
+            <Box color="bad" textAlign="center">
+              No ores in machine.
+            </Box>
+          </LabeledList.Item>
         )}
       </LabeledList>
     </Section>

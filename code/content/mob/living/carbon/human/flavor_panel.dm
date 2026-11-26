@@ -28,6 +28,7 @@ GLOBAL_ALIST_EMPTY(dq_flavor_panels)
 CAPABILITIES(/datum/flavor_panel)
 	ref_one(nameof(host), /mob/living/carbon/human)
 	interface("FlavorText", title = "Update Flavour Text", state = nameof(GLOB.tgui_default_state))
+	ui_shape(parts = list_of(row(key = schema_text(), label = schema_text(), preview = schema_text())))
 	op("edit", ui_act("edit", arg("key", schema_text(4096))), then(PROC_REF(ui_act_edit)))
 	op("done", ui_act("done"), then(PROC_REF(ui_act_done)))
 
@@ -46,7 +47,7 @@ TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_labels, list( \
 
 /// /datum/flavor_panel's window data.
 /datum/flavor_panel/ui_data(datum/act/eval/A)
-	var/list/data = list()
+	var/list/data = list("parts" = list())
 	if(!host)
 		return data
 	var/list/parts = list()
@@ -55,7 +56,7 @@ TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_labels, list( \
 		parts += list(list(
 			"key" = k,
 			"label" = labels[k],
-			"preview" = TextPreview(LAZYACCESS(host.bio.flavor_texts, k)),
+			"preview" = TextPreview(LAZYACCESS(host.bio.flavor_texts, k)) || "",
 		))
 	data["parts"] = parts
 	return data

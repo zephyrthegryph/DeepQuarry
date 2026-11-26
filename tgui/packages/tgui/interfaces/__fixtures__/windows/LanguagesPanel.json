@@ -1,0 +1,33 @@
+{
+	"has_default": 1,
+	"default_name": "Galcom",
+	"languages": [
+		{
+			"id": "Galcom",
+			"name": "Galcom",
+			"key": "x",
+			"custom_key": null,
+			"description": "The common tongue of the station.",
+			"can_speak": 1,
+			"is_default": 1
+		},
+		{
+			"id": "Sol Common",
+			"name": "Sol Common",
+			"key": "1",
+			"custom_key": "4",
+			"description": "Spoken across human space.",
+			"can_speak": 1,
+			"is_default": 0
+		},
+		{
+			"id": "Sinta'unathi",
+			"name": "Sinta'unathi",
+			"key": "o",
+			"custom_key": null,
+			"description": "The hissing tongue of the Unathi.",
+			"can_speak": 0,
+			"is_default": 0
+		}
+	]
+}

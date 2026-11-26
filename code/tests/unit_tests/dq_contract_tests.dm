@@ -297,7 +297,7 @@
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_money_before + 200, "internal escrow payout did not reach its recipient")
 	TEST_ASSERT_EQUAL(SSsupply.currency_created, currency_created_before, "internal escrow payout was counted as newly created currency")
 	TEST_ASSERT_EQUAL(SSsupply.currency_destroyed, currency_destroyed_before, "completed internal escrow was counted as destroyed currency")
-	GLOB.station_account.money = station_money_before
+	GLOB.station_account.set_money(station_money_before)
 	qdel(completed_contract)
 	var/datum/money_account/contributor = new
 	contributor.set_owner_name("Suspended contributor")
@@ -428,7 +428,7 @@
 	TEST_ASSERT_EQUAL(get_station_faction_reputation(REPUTATION_FACTION_VEYMED) - station_rep_before, 5, "negotiated station reputation reward was incorrect")
 	TEST_ASSERT_EQUAL(get_department_faction_reputation(DEPARTMENT_MEDICAL, REPUTATION_FACTION_VEYMED) - department_rep_before, 3, "negotiated department reputation reward was incorrect")
 	TEST_ASSERT_EQUAL(contributor.get_faction_reputation(REPUTATION_FACTION_VEYMED) - personal_rep_before, 8, "negotiated personal reputation reward was incorrect")
-	GLOB.station_account.money = station_before
+	GLOB.station_account.set_money(station_before)
 	medical_account.set_money(medical_before)
 	contributor_account.set_money(personal_before)
 	GLOB.station_faction_relations.set_reputation(REPUTATION_FACTION_VEYMED, station_rep_before)
@@ -1375,8 +1375,8 @@
 	for(var/department in GLOB.department_accounts)
 		var/datum/money_account/department_budget = GLOB.department_accounts[department]
 		department_budget.monthly_allocation = old_allocations[department]
-		department_budget.allocation_percent = old_percents[department]
-		department_budget.allocation_configured = old_configured[department]
+		department_budget.set_allocation_percent(old_percents[department])
+		department_budget.set_allocation_configured(old_configured[department])
 	qdel(command)
 	qdel(management)
 
@@ -1419,14 +1419,14 @@
 /datum/unit_test/dq_contract_budget_acceptance_feasibility/Run()
 	var/station_money = GLOB.station_account.money
 	var/old_salary_support = SSsupply.nt_salary_support
-	GLOB.station_account.money = 2500
+	GLOB.station_account.set_money(2500)
 	SSsupply.nt_salary_support = 0
 	var/datum/contract_definition/outcome/command_budget_mandate/definition = SScontracts.definitions["command_budget_mandate"]
 	var/datum/contract/outcome/contract = definition.create_contract(list("allocation_target" = 20000, "department_target" = 5, "minimum_allocation" = 2000))
 	var/prepared = definition.prepare_accept(contract, null, null, null)
 	var/scaled_total = contract.primary_target
 	var/scaled_departments = contract.secondary_target
-	GLOB.station_account.money = station_money
+	GLOB.station_account.set_money(station_money)
 	SSsupply.nt_salary_support = old_salary_support
 	TEST_ASSERT(prepared, "fundable low-budget mandate was rejected instead of scaled")
 	TEST_ASSERT(scaled_total <= 2500, "budget mandate exceeded authoritative next-cycle funding")
@@ -1487,8 +1487,8 @@
 	TEST_ASSERT(subsidized_invoice.settled, "closed-period invoice was not finalized")
 	TEST_ASSERT(!SSsupply.refund_service_invoice(subsidized_invoice, provider, "Unit test checkout", refund_operator), "a finalized accounting-period invoice was refunded after contract settlement")
 	provider.set_money(old_provider_money)
-	provider.monthly_expenses = provider_expenses_before
-	provider.total_expenses = provider_total_expenses_before
+	provider.set_monthly_expenses(provider_expenses_before)
+	provider.set_total_expenses(provider_total_expenses_before)
 	SSsupply.currency_refunded = refunds_before
 	SSsupply.currency_internal_refunded = internal_refunds_before
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
@@ -1881,7 +1881,7 @@
 	TEST_ASSERT_NOTNULL(window, "real first event created its window")
 	var/datum/contract_opportunity_signal/first_signal = rule.signals[1]
 	var/list/first_lane = window.facts_by_signal[first_signal.id]
-	var/datum/contract_opportunity_observation/first_record = first_lane["dq_opportunity_test|guardrail-a"]
+	var/datum/contract_opportunity_observation/first_record = first_lane["guardrail-a|dq_opportunity_test"]
 	TEST_ASSERT_NOTNULL(first_record, "first authoritative fact has its original record")
 	TEST_ASSERT_EQUAL(owner_of(first_record), window, "the real window owns its first observation")
 	TEST_ASSERT(!emit_contract_event("dq_opportunity_test", fact_a, "guardrail-a:1"), "global occurrence deduplication accepted the same broker event twice")
@@ -1891,7 +1891,7 @@
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-a", "fact_revision" = 1, "actor_account" = 910001, "entity" = "A", "category" = "alpha", "metrics" = list("value" = 100)), "guardrail-a:stale"), "stale revision did not reach the broker for its own rejection")
 	TEST_ASSERT_EQUAL(SScontracts.opportunity_windows[window_key], window, "revision kept the original window")
 	TEST_ASSERT(QDELETED(first_record), "real replacement retired the exact prior record")
-	var/datum/contract_opportunity_observation/current_record = first_lane["dq_opportunity_test|guardrail-a"]
+	var/datum/contract_opportunity_observation/current_record = first_lane["guardrail-a|dq_opportunity_test"]
 	TEST_ASSERT_NOTNULL(current_record, "replacement leaves a current authoritative record")
 	TEST_ASSERT(current_record != first_record, "replacement created a distinct record")
 	TEST_ASSERT_EQUAL(owner_of(current_record), window, "replacement remains owned after the stale-revision control")
@@ -1926,7 +1926,7 @@
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-e", "fact_revision" = 2, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-e:2"), "fifth inactive fact revision was rejected")
 	TEST_ASSERT(!SScontracts.find_live_offer(offer_key) && !SScontracts.find_candidate(offer_key), "resolved trigger remained available for acceptance")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-f", "fact_revision" = 1, "metrics" = list("value" = 10)), "guardrail-f:1"), "final real teardown control event was accepted")
-	var/datum/contract_opportunity_observation/teardown_record = first_lane["dq_opportunity_test|guardrail-f"]
+	var/datum/contract_opportunity_observation/teardown_record = first_lane["guardrail-f|dq_opportunity_test"]
 	TEST_ASSERT_NOTNULL(teardown_record, "final event leaves an actual record for window teardown")
 	TEST_ASSERT(!QDELETED(teardown_record), "teardown control is still alive before its window goes")
 	TEST_ASSERT_EQUAL(owner_of(teardown_record), window, "original window owns the live teardown control")

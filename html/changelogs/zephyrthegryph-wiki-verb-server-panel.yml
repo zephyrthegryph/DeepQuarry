@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Station Wiki is now a Status verb every player has, including in the lobby and as an observer"
+  - bugfix: "The Server tab's health page no longer errors on first load before the tick numbers arrive"
+  - rscdel: "Removed the Guide button from the lobby menu; the Station Wiki covers it"

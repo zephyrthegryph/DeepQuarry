@@ -1,0 +1,7 @@
+{
+	"siliconUser": 0,
+	"locked": 0,
+	"open": 1,
+	"location": "Cargo Bay",
+	"codes": { "patrol": "1", "next_patrol": "Cargo Hall", "delivery": "1" }
+}

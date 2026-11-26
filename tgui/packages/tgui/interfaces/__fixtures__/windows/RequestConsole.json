@@ -1,0 +1,20 @@
+{
+	"message_log": [
+		["Message from Cargo Bay", "We need more steel."],
+		["Message sent to Security", "Please escort the shuttle."]
+	],
+	"assist_dept": ["Security", "Engineering", "Medical Department"],
+	"supply_dept": ["Cargo Bay", "Atmospherics"],
+	"info_dept": ["Bridge", "Captain's Desk"],
+	"department": "Research Department",
+	"screen": 6,
+	"newmessagepriority": 1,
+	"silent": 0,
+	"announcementConsole": 1,
+	"message": "Need assistance in the lab.",
+	"recipient": "Security",
+	"priority": 1,
+	"msgStamped": "Stamped with the captain's rubber stamp",
+	"msgVerified": "Verified by Jane Doe (Researcher)",
+	"announceAuth": 1
+}

@@ -1,6 +1,0 @@
-/datum/base/proc/work()
-    return 1
-/datum/base/proc/work()
-    return 2
-/datum/base/proc/work()
-    return 3

@@ -18,12 +18,6 @@
 CAPABILITIES(/obj/item/organ/internal/xenos/eggsac/grey/colormatch)
 	after_init(0, then(PROC_REF(match_blood_color)))
 
-/// Takes its owner's blood colour, once the body has placed it.
-/obj/item/organ/internal/xenos/eggsac/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
-	if(ishuman(owner)) // placed in its limb by now
-		var/mob/living/carbon/human/H = owner
-		set_color(H.species.blood_color)
-
 /obj/item/organ/internal/xenos/plasmavessel
 	name = "plasma vessel"
 	parent_organ = BP_TORSO
@@ -63,12 +57,6 @@ CAPABILITIES(/obj/item/organ/internal/xenos/eggsac/grey/colormatch)
 CAPABILITIES(/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch)
 	after_init(0, then(PROC_REF(match_blood_color)))
 
-/// Takes its owner's blood colour, once the body has placed it.
-/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
-	if(ishuman(owner)) // placed in its limb by now
-		var/mob/living/carbon/human/H = owner
-		set_color(H.species.blood_color)
-
 /obj/item/organ/internal/xenos/plasmavessel/queen
 	name = "bloated plasma vessel"
 	stored_plasma = 200
@@ -102,12 +90,6 @@ CAPABILITIES(/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch)
 CAPABILITIES(/obj/item/organ/internal/xenos/acidgland/grey/colormatch)
 	after_init(0, then(PROC_REF(match_blood_color)))
 
-/// Takes its owner's blood colour, once the body has placed it.
-/obj/item/organ/internal/xenos/acidgland/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
-	if(ishuman(owner)) // placed in its limb by now
-		var/mob/living/carbon/human/H = owner
-		set_color(H.species.blood_color)
-
 /obj/item/organ/internal/xenos/hivenode
 	name = "hive node"
 	parent_organ = BP_TORSO
@@ -119,10 +101,10 @@ CAPABILITIES(/obj/item/organ/internal/xenos/acidgland/grey/colormatch)
 	target.add_language(LANGUAGE_HIVEMIND) //You need this to speak the language, so...
 
 /obj/item/organ/internal/xenos/hivenode/removed(mob/living/user)
-	if(ishuman(user))
-		var/mob/living/carbon/human/human = user
-		human.remove_language(LANGUAGE_HIVEMIND)
-	..()
+	var/mob/living/carbon/human/patient = owner // the one it comes out of; the user is whoever holds the scalpel
+	. = ..()
+	if(istype(patient))
+		patient.remove_language(LANGUAGE_HIVEMIND)
 
 /obj/item/organ/internal/xenos/hivenode/grey
 	icon_state = "xenode_grey"
@@ -130,12 +112,6 @@ CAPABILITIES(/obj/item/organ/internal/xenos/acidgland/grey/colormatch)
 
 CAPABILITIES(/obj/item/organ/internal/xenos/hivenode/grey/colormatch)
 	after_init(0, then(PROC_REF(match_blood_color)))
-
-/// Takes its owner's blood colour, once the body has placed it.
-/obj/item/organ/internal/xenos/hivenode/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
-	if(ishuman(owner)) // placed in its limb by now
-		var/mob/living/carbon/human/H = owner
-		set_color(H.species.blood_color)
 
 /obj/item/organ/internal/xenos/resinspinner
 	name = "resin spinner"
@@ -155,76 +131,6 @@ CAPABILITIES(/obj/item/organ/internal/xenos/hivenode/grey/colormatch)
 CAPABILITIES(/obj/item/organ/internal/xenos/resinspinner/grey/colormatch)
 	after_init(0, then(PROC_REF(match_blood_color)))
 
-/// Takes its owner's blood colour, once the body has placed it.
-/obj/item/organ/internal/xenos/resinspinner/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
-	if(ishuman(owner)) // placed in its limb by now
-		var/mob/living/carbon/human/H = owner
-		set_color(H.species.blood_color)
-
-
-// XENOMORPH EXTERNAL ORGANS
-
-/obj/item/organ/external/chest/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-
-/obj/item/organ/external/groin/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-	encased = TRUE
-
-/obj/item/organ/external/arm/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-	stapled_nerves = TRUE
-	encased = TRUE
-
-/obj/item/organ/external/arm/right/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-	stapled_nerves = TRUE
-	encased = TRUE
-
-/obj/item/organ/external/leg/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-	stapled_nerves = TRUE
-	encased = TRUE
-
-/obj/item/organ/external/leg/right/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-	stapled_nerves = TRUE
-	encased = TRUE
-
-/obj/item/organ/external/foot/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-	stapled_nerves = TRUE
-	encased = TRUE
-
-/obj/item/organ/external/foot/right/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-	stapled_nerves = TRUE
-	encased = TRUE
-
-/obj/item/organ/external/hand/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-	stapled_nerves = TRUE
-	encased = TRUE
-
-/obj/item/organ/external/hand/right/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-	stapled_nerves = TRUE
-	encased = TRUE
-
-/obj/item/organ/external/head/unseverable/xeno
-	cannot_gib = 1
-	cannot_amputate = 1
-	eye_icon = "blank_eyes"
 
 // This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/xenos/plasmavessel/life_step_idle()

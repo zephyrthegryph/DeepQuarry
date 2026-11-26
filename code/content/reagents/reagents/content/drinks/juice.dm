@@ -36,17 +36,6 @@
 	allergen_type = ALLERGEN_FRUIT //Pineapples are fruit
 	cup_prefix = "pineapple"
 
-/datum/reagent/drink/juice/lettuce
-	name = REAGENT_LETTUCEJUICE
-	id = REAGENT_ID_LETTUCEJUICE
-	description = "It's mostly water, just a bit more lettucy."
-	taste_description = "fresh greens"
-	color = "#29df4b"
-
-	glass_name = "lettuce juice"
-	glass_desc = "This is just lettuce water. Fresh but boring."
-	cup_prefix = "lettuce"
-
 /datum/reagent/drink/juice
 	name = REAGENT_GRAPEJUICE
 	id = REAGENT_ID_GRAPEJUICE

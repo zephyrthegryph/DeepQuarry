@@ -146,6 +146,8 @@ CAPABILITIES(/datum/input_stats)
 	var/datum/km_stats_set/live
 	/// What is inside sched_core and appearance_drain: per callback, reaction and redrawn type, and the post-init settle record (attribution.dm).
 	var/datum/km_attr/attr
+	/// This tick's spans and the slow-tick trace written from them (slow_tick.dm).
+	var/datum/slow_tick/slow
 
 	// The flight recorder: flat fixed lists of ring_len entries (top systems: KM_TOP_N per entry).
 	var/ring_len = KM_RING_LEN
@@ -156,6 +158,8 @@ CAPABILITIES(/datum/input_stats)
 	var/list/fr_time
 	var/list/fr_usage
 	var/list/fr_maptick
+	/// Percent of each tick spent before the kernel started (verbs, input, BYOND).
+	var/list/fr_pre
 	var/list/fr_input
 	var/list/fr_streak
 	var/list/fr_top_sys
@@ -181,9 +185,13 @@ CAPABILITIES(/datum/input_stats)
 	var/last_overrun_line
 	var/list/last_overrun_top
 	var/last_overrun_usage = 0
+	/// Real time of the last end_tick(), and the latest freezes (a verb or proc that holds the server between ticks charges no system).
+	var/last_end_real = 0
+	var/list/stalls
 
 CAPABILITIES(/datum/tick_meter)
 	owns_one(nameof(attr), /datum/km_attr)
+	owns_one(nameof(slow), /datum/slow_tick)
 	ref_one(nameof(live))
 	ref_many(nameof(sets), /datum/km_stats_set)
 
@@ -199,6 +207,7 @@ CAPABILITIES(/datum/tick_meter)
 	fr_time = new /list(ring_len)
 	fr_usage = new /list(ring_len)
 	fr_maptick = new /list(ring_len)
+	fr_pre = new /list(ring_len)
 	fr_input = new /list(ring_len)
 	fr_streak = new /list(ring_len)
 	fr_top_sys = new /list(ring_len * KM_TOP_N)
@@ -206,6 +215,7 @@ CAPABILITIES(/datum/tick_meter)
 	rel_set(src, nameof(live), new /datum/km_stats_set)
 	rel_add(src, nameof(sets), live)
 	rel_set(src, nameof(attr), new /datum/km_attr)
+	rel_set(src, nameof(slow), new /datum/slow_tick)
 
 /datum/tick_meter/on_destroy(force)
 	for(var/datum/km_stats_set/S as anything in sets)
@@ -297,34 +307,31 @@ CAPABILITIES(/datum/tick_meter)
 // ---------------------------------------------------------------- the tick
 
 /// Closes the tick: `usage` is its percent of a tick at the end of the MC's run, `maptick` is world.map_cpu.
-/datum/tick_meter/proc/end_tick(usage, maptick)
+/datum/tick_meter/proc/end_tick(usage, maptick, pre_usage = 0)
 	var/overrun = usage > KM_OVERRUN_USAGE
 	total_ticks++
-	var/top1 = 0
-	var/top2 = 0
-	var/top3 = 0
-	var/ms1 = 0
-	var/ms2 = 0
-	var/ms3 = 0
+	var/now_real = REALTIMEOFDAY
+	if(last_end_real && (now_real - last_end_real) * 100 >= KM_STALL_MS)
+		note_stall((now_real - last_end_real) * 100, usage, pre_usage)
+	last_end_real = now_real
+	// The tick's costliest systems, largest first, built straight into its flight recorder entry.
+	ring_pos = ring_pos % ring_len + 1
+	var/base = (ring_pos - 1) * KM_TOP_N
+	for(var/k in 1 to KM_TOP_N)
+		fr_top_sys[base + k] = 0
+		fr_top_ms[base + k] = 0
 	for(var/i in 1 to n_touched)
 		var/idx = touched[i]
 		var/ms = tick_ms[idx]
 		var/late = tick_late[idx]
-		if(ms > ms3)
-			if(ms > ms2)
-				top3 = top2
-				ms3 = ms2
-				if(ms > ms1)
-					top2 = top1
-					ms2 = ms1
-					top1 = idx
-					ms1 = ms
-				else
-					top2 = idx
-					ms2 = ms
-			else
-				top3 = idx
-				ms3 = ms
+		if(ms > fr_top_ms[base + KM_TOP_N])
+			var/slot = KM_TOP_N
+			while(slot > 1 && ms > fr_top_ms[base + slot - 1])
+				fr_top_sys[base + slot] = fr_top_sys[base + slot - 1]
+				fr_top_ms[base + slot] = fr_top_ms[base + slot - 1]
+				slot--
+			fr_top_sys[base + slot] = idx
+			fr_top_ms[base + slot] = ms
 		// system_stats.record() and km_hist.add() inlined: this runs per touched system per open set every tick.
 		var/bin = KM_HIST_BIN(ms)
 		for(var/datum/km_stats_set/S as anything in sets)
@@ -345,6 +352,12 @@ CAPABILITIES(/datum/tick_meter)
 				stats.overrun_ms += ms
 			if(late > stats.late_max)
 				stats.late_max = late
+	var/top1 = fr_top_sys[base + 1]
+	var/top2 = fr_top_sys[base + 2]
+	var/top3 = fr_top_sys[base + 3]
+	var/ms1 = fr_top_ms[base + 1]
+	var/ms2 = fr_top_ms[base + 2]
+	var/ms3 = fr_top_ms[base + 3]
 	for(var/datum/km_stats_set/S as anything in sets)
 		if(isnull(S.started_real))
 			S.mark_start()
@@ -367,7 +380,6 @@ CAPABILITIES(/datum/tick_meter)
 		streak = 0
 
 	// The flight recorder entry.
-	ring_pos = ring_pos % ring_len + 1
 	if(ring_count < ring_len)
 		ring_count++
 	fr_tick[ring_pos] = round(world.time / world.tick_lag)
@@ -376,15 +388,14 @@ CAPABILITIES(/datum/tick_meter)
 	fr_maptick[ring_pos] = maptick
 	fr_input[ring_pos] = input_ms
 	fr_streak[ring_pos] = streak
-	var/base = (ring_pos - 1) * KM_TOP_N
-	fr_top_sys[base + 1] = top1
-	fr_top_ms[base + 1] = ms1
-	fr_top_sys[base + 2] = top2
-	fr_top_ms[base + 2] = ms2
-	fr_top_sys[base + 3] = top3
-	fr_top_ms[base + 3] = ms3
+	fr_pre[ring_pos] = pre_usage
 
 	map_peak = max(maptick, map_peak * KM_MAP_PEAK_DECAY)
+
+	// The slow-tick trace reads this tick's records, so it is written before they are cleared.
+	if(slow.threshold && usage > slow.threshold)
+		slow.trace(src, usage, maptick)
+	slow.clear()
 
 	if(overrun)
 		attribute_overrun(usage, maptick, top1, ms1, top2, ms2, top3, ms3, attr.end_tick(TRUE))
@@ -398,6 +409,20 @@ CAPABILITIES(/datum/tick_meter)
 	n_touched = 0
 	tick_charged = 0
 	input_ms = 0
+
+/// The server was held for `gap_ms` of real time between two ticks: recorded and logged whether or not any system was charged.
+/datum/tick_meter/proc/note_stall(gap_ms, usage, pre_usage)
+	var/worst
+	var/worst_ms = 0
+	for(var/i in 1 to n_touched)
+		if(tick_ms[touched[i]] > worst_ms)
+			worst_ms = tick_ms[touched[i]]
+			worst = km_systems().keys[touched[i]]
+	LAZYADD(stalls, list(list("gap_ms" = round(gap_ms), "usage" = round(usage), "pre" = round(pre_usage), "input_ms" = round(input_ms), "top" = worst, "top_ms" = round(worst_ms), "at" = time2text(world.timeofday, "hh:mm:ss"))))
+	if(length(stalls) > KM_STALL_KEEP)
+		stalls.Cut(1, 2)
+	if(log_overruns)
+		log_admin("STALL: the server was held [round(gap_ms)]ms between ticks (tick [round(usage)]%, before the kernel [round(pre_usage)]%, input [round(input_ms)]ms, top system [worst || "none"] [round(worst_ms)]ms)")
 
 /// An overrun tick: builds the record of what caused it (allocating is fine here, it is the exception) and, when
 /// enabled and not flooding, writes the admin-log line.

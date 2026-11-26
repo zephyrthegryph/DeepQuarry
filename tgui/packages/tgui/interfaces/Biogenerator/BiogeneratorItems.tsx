@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Section } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type { BiogeneratorActions } from '../generated/Biogenerator';
 import { BiogeneratorItemsCategory } from './BiogeneratorItemsCategory';
 import { sortTypes } from './constants';
 import type { Data, Sortable } from './types';
@@ -10,8 +11,8 @@ export const BiogeneratorItems = (props: {
   sortOrder: string;
   descending: boolean;
 }) => {
-  const { act, data } = useBackend<Data>();
-  const { points, items = [], build_eff, beaker } = data;
+  const { act, data } = useBackend<Data, BiogeneratorActions>();
+  const { points, items = {}, build_eff, beaker } = data;
   // Search thingies
   const searcher = createSearch<[string, Sortable]>(
     props.searchText,

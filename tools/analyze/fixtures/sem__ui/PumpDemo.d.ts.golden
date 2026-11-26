@@ -13,11 +13,11 @@ export type PumpDemoData = {
 export type PumpDemoActions = {
   set_pressure: {
     /** num 0..MAX_PUMP_PRESSURE step 1 */
-    pressure: number;
+    pressure: string | number | boolean | null;
   };
   mode: {
     /** enum */
-    mode: 'off' | 'on' | 'syphon';
+    mode: 'off' | 'on' | 'syphon' | null;
   };
   power: Record<string, never>;
 };

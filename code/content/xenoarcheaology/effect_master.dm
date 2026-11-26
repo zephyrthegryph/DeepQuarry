@@ -451,9 +451,9 @@ CAPABILITIES(/datum/artifact_master)
 			trigger_hot = 1
 
 	for(var/datum/artifact_effect/my_effect in my_effects)
-		my_effect.artifact_id = artifact_id
+		my_effect.set_artifact_id(artifact_id)
 
-		my_effect.periodic_step()
+		my_effect.effect_tick()
 
 		//COLD ACTIVATION
 		if(my_effect.trigger == TRIGGER_COLD && (trigger_cold ^ my_effect.activated))

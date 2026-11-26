@@ -48,8 +48,8 @@ MSG_DEF_SELF(loot_search/nothing_more, span_warning("You can't find anything els
 	return null
 
 /// The pile has not been searched out (a table's depletion: `left` yielding searches by anyone).
-/proc/req_loot_not_picked_clean()
-	return part_make(/datum/entry/part/req/loot_not_picked_clean)
+/proc/req_loot_not_picked_clean(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/loot_not_picked_clean), fails)
 
 /datum/entry/part/req/loot_not_picked_clean
 	part_name = "req_loot_not_picked_clean"
@@ -59,8 +59,8 @@ MSG_DEF_SELF(loot_search/nothing_more, span_warning("You can't find anything els
 	return loot_search_refusal(A.holder, A.actor) != /datum/msg/loot_search/picked_clean
 
 /// The searcher has not searched this pile yet (unless the table lets the same searcher search again).
-/proc/req_loot_unsearched()
-	return part_make(/datum/entry/part/req/loot_unsearched)
+/proc/req_loot_unsearched(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/loot_unsearched), fails)
 
 /datum/entry/part/req/loot_unsearched
 	part_name = "req_loot_unsearched"

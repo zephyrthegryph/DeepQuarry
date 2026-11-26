@@ -164,12 +164,6 @@ CAPABILITIES(/datum/tgui_state/default/must_hack)
 	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors. This ones seems a bit larger and heavier than the usual model, for some reason. Maybe it's an older version?"
 	icon_state = "multitool_modified"
 
-/obj/item/multitool/hacktool/obvious
-	name = "non-standard multitool"
-	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors. This one doesn't look like the usual model at all!"
-	icon_state = "multitool_suspicious"
-	in_hack_mode = 1	//start in hackmode
-
 /// Relation view: hacktool (reads null once it is gone).
 /datum/tgui_state/default/must_hack/proc/hacktool() as /obj/item/multitool/hacktool
 	return hacktool

@@ -36,7 +36,7 @@
 	var/list/occupants = list()
 	for(var/atom/movable/AM in T)
 		occupants += "[AM.type] [round(AM.get_temperature(), 0.1)] K"
-	log_test("GAS LEVEL ROOM: ([T.x],[T.y],[T.z]) floor [round(T.get_temperature(), 0.1)] K, air [round(T.air.return_temperature(), 0.1)] K, holds [jointext(occupants, "; ")]")
+	log_test("GAS LEVEL ROOM: ([T.x],[T.y],[T.z]) floor [round(T.get_temperature(), 0.1)] K, air [round(T.turf_air().return_temperature(), 0.1)] K, holds [jointext(occupants, "; ")]")
 	return T
 
 /// An artifact in air that stays under its breaking temperature is left alone; heat the air past it and it breaks, with nobody polling it.
@@ -50,11 +50,11 @@
 	dq_gas_level_test_deliver()
 	dq_gas_level_test_step(A)
 	TEST_ASSERT(!QDELETED(A), "an artifact in ordinary air broke")
-	heat_set(T.air, ARTIFACT_HEAT_BREAK - 300, HEAT_SOURCE_OTHER)
+	heat_set(T.turf_air(), ARTIFACT_HEAT_BREAK - 300, HEAT_SOURCE_OTHER)
 	dq_gas_level_test_deliver()
 	dq_gas_level_test_step(A)
 	TEST_ASSERT(!QDELETED(A), "an artifact in air under its breaking temperature broke")
-	heat_set(T.air, ARTIFACT_HEAT_BREAK + 500, HEAT_SOURCE_OTHER)
+	heat_set(T.turf_air(), ARTIFACT_HEAT_BREAK + 500, HEAT_SOURCE_OTHER)
 	dq_gas_level_test_deliver()
 	dq_gas_level_test_step(A)
 	TEST_ASSERT(QDELETED(A), "an artifact in air past its breaking temperature did not break")
@@ -78,7 +78,7 @@
 	dq_gas_level_test_step(A)
 	dq_gas_level_test_deliver()
 	dq_gas_level_test_step(A)
-	heat_set(other.air, ARTIFACT_HEAT_BREAK + 2500, HEAT_SOURCE_OTHER)
+	heat_set(other.turf_air(), ARTIFACT_HEAT_BREAK + 2500, HEAT_SOURCE_OTHER)
 	A.forceMove(other)
 	dq_gas_level_test_deliver()
 	dq_gas_level_test_step(A)
@@ -120,10 +120,10 @@
 	cancel_after(service, "material_service")
 	service.timer = FALSE
 	service.active = FALSE
-	heat_set(T.air, T.air.return_temperature() + MATERIAL_THERMAL_RESOLUTION / 4, HEAT_SOURCE_OTHER)
+	heat_set(T.turf_air(), T.turf_air().return_temperature() + MATERIAL_THERMAL_RESOLUTION / 4, HEAT_SOURCE_OTHER)
 	dq_gas_level_test_deliver()
 	TEST_ASSERT(!after_pending(service, "material_service"), "a change under its resolution woke the service")
-	heat_set(T.air, T.air.return_temperature() + MATERIAL_THERMAL_RESOLUTION * 20, HEAT_SOURCE_OTHER)
+	heat_set(T.turf_air(), T.turf_air().return_temperature() + MATERIAL_THERMAL_RESOLUTION * 20, HEAT_SOURCE_OTHER)
 	dq_gas_level_test_deliver()
 	TEST_ASSERT(after_pending(service, "material_service"), "a large change in its surroundings did not queue exposure work")
 	qdel(C)

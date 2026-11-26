@@ -7,7 +7,7 @@ use std::time::Instant;
 use crate::run::{Engine, Options};
 
 use super::decls::Decls;
-use super::reads::{Annotations, ReadsEngine};
+use super::reads::{Annotations, ReadKind, ReadsEngine};
 
 /// Engine-internal directories the reads walk does not enter (dispatchers that read `vars[]` by design).
 pub const DEFAULT_OPAQUE: &[&str] = &["code/library/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/library/capabilities/", "code/library/reactions/", "code/library/ownership/", "code/engine/", "code/__defines/verdigris/"];
@@ -41,19 +41,30 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
             };
             debug_proc(&sem, ty, name);
             let t = Instant::now();
-            let set = eng.analyze(ty, name);
+            // The closed walk (what the generated reads come from): engine bodies, virtual calls and global state are followed.
+            let set = if args.iter().any(|a| a == "--open") { eng.analyze(ty, name) } else { ReadsEngine::new(&sem, &decls, &ann).closed().analyze(ty, name) };
             eprintln!("analysis: {:.2?}", t.elapsed());
-            crate::native_sem_utility_render::reads(&mut std::io::stdout().lock(),&set.reads,&set.diags,&||Ok(())).unwrap_or_else(|actual|panic!("failed printing to stdout: {actual}"));
+            for r in &set.reads {
+                match &r.kind {
+                    ReadKind::Global(g) => println!("{}\tGlobal\t{}.{}\t{}", r.key(), g.chain.display(), g.field, g.owner),
+                    _ => println!("{}\t{:?}\t{}", r.key(), r.kind, r.owner),
+                }
+            }
+            for d in &set.diags {
+                println!("DIAG {} {}:{} {}", d.rule, d.rel, d.line, d.msg);
+            }
             ExitCode::SUCCESS
         }
         "clothing-dump" => {
             // One JSON object per line: every wearable type and its resolved (inherited) art vars. tools/clothing_channels reads this.
+            const ROOTS: [&str; 3] = ["/obj/item/clothing", "/obj/item/storage/belt", "/obj/item/storage/backpack"];
+            const VARS: [&str; 8] = ["icon", "icon_state", "item_state", "worn_state", "icon_override", "item_icons", "sprite_sheets", "item_state_slots"];
             for t in sem.objtree.iter_types() {
-                if !crate::native_sem_utility_render::clothing_type(&t.path) {
+                if !ROOTS.iter().any(|r| t.path == *r || t.path.starts_with(&format!("{r}/"))) {
                     continue;
                 }
                 let mut vars = serde_json::Map::new();
-                for name in crate::native_sem_utility_render::CLOTHING_VARS {
+                for name in VARS {
                     let Some(v) = t.get_value(name) else { continue };
                     let text = match (&v.constant, &v.expression) {
                         (Some(c), _) => format!("{c:?}"),
@@ -62,7 +73,7 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
                     };
                     vars.insert(name.to_string(), serde_json::Value::String(text));
                 }
-                crate::native_sem_utility_render::clothing_row(&mut std::io::stdout().lock(),&t.path,&vars).unwrap_or_else(|actual|panic!("failed printing to stdout: {actual}"));
+                println!("{}", serde_json::json!({"path": t.path, "vars": vars}));
             }
             ExitCode::SUCCESS
         }
@@ -120,9 +131,13 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
 }
 
 pub fn debug_proc(sem: &super::Sem, ty: &str, name: &str) {
-    let body=sem.proc_ref(ty,name).map(|p|sem.proc_body(p));
-    let actual=body.as_ref().map(|b|crate::native_sem_utility_render::Procedure{owner:&b.owner,name:&b.name,file:&b.file,line:b.line as usize,builtin:b.builtin,code:b.code.map(|c|c.len())});
-    crate::native_sem_utility_render::debug_proc(&mut std::io::stderr().lock(),ty,name,sem.ty(ty).is_some(),actual).unwrap_or_else(|actual|panic!("failed printing to stderr: {actual}"));
+    match sem.proc_ref(ty, name) {
+        None => eprintln!("no proc {} {} (type known: {})", ty, name, sem.ty(ty).is_some()),
+        Some(p) => {
+            let b = sem.proc_body(p);
+            eprintln!("proc {}::{} at {}:{} builtin={} code={}", b.owner, b.name, b.file, b.line, b.builtin, b.code.map(|c| c.len() as i64).unwrap_or(-1));
+        }
+    }
 }
 
 /// What `analyze gen` remembers of its last converged run: the analyzer, a digest of every file the generators can read, and the
@@ -359,7 +374,7 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
     // The stage 1 results of the pass that ran it: its files were written, and the next pass only proves stage 0 is still fresh.
     let mut stage1_results: Option<Vec<super::gen::GenResult>> = None;
     for pass in 0..5 {
-        let o = Options { root: root.to_path_buf(), lints: vec![crate::generator_test_scope::cli_source_lint().to_owned()], ..Default::default() };
+        let o = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
         let engine = match Engine::new(crate::run::registry(), o) {
             Ok(e) => e,
             Err(e) => {
@@ -382,7 +397,7 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
             if !check {
                 if let Some(paths) = gen_store_restore(gen_store_key(&engine.tree, root), root) {
                     // The restored files are part of the tree now; reload it and record the memo against the full state.
-                    let o2 = Options { root: root.to_path_buf(), lints: vec![crate::generator_test_scope::cli_source_lint().to_owned()], ..Default::default() };
+                    let o2 = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
                     if let Ok(e2) = Engine::new(crate::run::registry(), o2) {
                         let mut outputs = Vec::new();
                         for p in &paths {

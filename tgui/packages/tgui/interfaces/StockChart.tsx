@@ -17,7 +17,7 @@ const PADDING = { top: 16, right: 16, bottom: 28, left: 56 };
 
 export const StockChart = () => {
   const { data } = useBackend<Data>();
-  const { stock_name, points } = data;
+  const { stock_name, points = [] } = data;
   if (points.length === 0) {
     return (
       <Window width={680} height={500} title={`Share Value: ${stock_name}`}>

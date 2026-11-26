@@ -1,5 +1,5 @@
 //! Compact coordinates into the producer-owned exact source, with wide fallback.
-use dm_syntax::{Item, ItemKind, OriginalCommittedItems, OriginalItem, OriginalItems, Span};
+use dm_syntax::{Item, ItemKind, Span};
 use std::sync::Arc;
 #[derive(Clone, Copy, Debug)]
 pub(super) struct Node {
@@ -7,9 +7,6 @@ pub(super) struct Node {
     indent: u32,
     span: [u32; 2],
     header_span: [u32; 2],
-    declaration_cursor: u32,
-    checker_qualifiers: u8,
-    original_outer_terminator: Option<bool>,
     text: [u32; 2],
     children: [u32; 2],
 }
@@ -22,7 +19,6 @@ pub(super) enum Arena {
         owned: Vec<Box<str>>,
     },
     Wide(Arc<[Item]>),
-    Original { items: OriginalCommittedItems, source: dm_preprocess::SourceText },
 }
 impl Arena {
     pub(super) fn capture(items: Vec<Item>, source: impl Into<dm_preprocess::SourceText>) -> Self {
@@ -38,9 +34,6 @@ impl Arena {
                     ]
                     .into_iter()
                     .all(|v| v <= u32::MAX as usize)
-                    && item
-                        .declaration_cursor
-                        .is_none_or(|at| at < u32::MAX as usize)
                     && fits(&item.children)
             })
         }
@@ -81,9 +74,6 @@ impl Arena {
                     indent: item.indent as u32,
                     span: [item.span.start as u32, item.span.end as u32],
                     header_span: [span.start as u32, span.end as u32],
-                    declaration_cursor: item.declaration_cursor.map_or(u32::MAX, |at| at as u32),
-                    checker_qualifiers: item.checker_qualifiers,
-                    original_outer_terminator: item.original_outer_terminator,
                     text,
                     children: [0, 0],
                 });
@@ -110,18 +100,17 @@ impl Arena {
                 back: *roots,
             },
             Self::Wide(items) => Nodes::Wide(items.iter()),
-            Self::Original {items,source} => Nodes::original(items.view_for_same_source(source).expect("bound Original declaration source")),
         }
     }
     pub(super) fn wide_items(&self) -> Option<&Arc<[Item]>> {
         match self {
             Self::Wide(items) => Some(items),
-            Self::Compact { .. } | Self::Original { .. } => None,
+            Self::Compact { .. } => None,
         }
     }
     pub(super) fn source(&self) -> Option<&dm_preprocess::SourceText> {
         match self {
-            Self::Compact { source, .. } | Self::Original { source, .. } => Some(source),
+            Self::Compact { source, .. } => Some(source),
             Self::Wide(_) => None,
         }
     }
@@ -142,7 +131,6 @@ impl Arena {
                     buffer(text.as_ptr() as usize, text.len(), text.len());
                 }
             }
-            Self::Original {items,..} => items.visit_storage(buffer),
             Self::Wide(items) => {
                 buffer(
                     items.as_ptr() as usize,
@@ -173,26 +161,15 @@ impl Arena {
 pub(super) enum Ref<'a> {
     Compact(&'a Arena, usize),
     Wide(&'a Item),
-    Original(OriginalItem<'a>),
 }
 impl Ref<'_> {
-    /// The existing primary arena coordinate, not a second declaration index.
-    pub(super) fn root_slot(self) -> Option<(usize, usize)> {
-        match self {
-            Self::Compact(Arena::Compact { nodes, .. }, index) => Some((index, nodes.len())),
-            _ => None,
-        }
-    }
-
     pub(super) fn same(self, other: Self) -> bool {
         match (self, other) {
             (Self::Compact(a, i), Self::Compact(b, j)) => std::ptr::eq(a, b) && i == j,
             (Self::Wide(a), Self::Wide(b)) => std::ptr::eq(a, b),
-            (Self::Original(a), Self::Original(b)) => a.same_item(b),
             _ => false,
         }
     }
-    pub(super) fn is_original(self)->bool{matches!(self,Self::Original(_))}
     fn node(self) -> Option<Node> {
         match self {
             Self::Compact(Arena::Compact { nodes, .. }, i) => Some(nodes[i]),
@@ -203,7 +180,6 @@ impl Ref<'_> {
         self.node().map_or_else(
             || match self {
                 Self::Wide(item) => item.kind,
-                Self::Original(item) => item.kind(),
                 _ => unreachable!(),
             },
             |n| n.kind,
@@ -213,7 +189,6 @@ impl Ref<'_> {
         self.node().map_or_else(
             || match self {
                 Self::Wide(item) => item.indent,
-                Self::Original(item) => item.indent(),
                 _ => unreachable!(),
             },
             |n| n.indent as usize,
@@ -223,40 +198,15 @@ impl Ref<'_> {
         self.node().map_or_else(
             || match self {
                 Self::Wide(item) => item.span,
-                Self::Original(item) => item.span(),
                 _ => unreachable!(),
             },
             |n| Span::new(n.span[0] as usize, n.span[1] as usize),
-        )
-    }
-    pub(super) fn original_outer_terminator(self)->Option<bool>{self.node().map_or_else(||match self{Self::Wide(item)=>item.original_outer_terminator,Self::Original(item)=>item.original_outer_terminator(),_=>unreachable!()},|node|node.original_outer_terminator)}
-    pub(super) fn checker_qualifiers(self) -> u8 {
-        self.node().map_or_else(
-            || match self {
-                Self::Wide(item) => item.checker_qualifiers,
-                Self::Original(item) => item.checker_qualifiers(),
-                _ => unreachable!(),
-            },
-            |node| node.checker_qualifiers,
-        )
-    }
-    pub(super) fn declaration_cursor(self) -> Option<usize> {
-        self.node().map_or_else(
-            || match self {
-                Self::Wide(item) => item.declaration_cursor,
-                Self::Original(item) => item.declaration_cursor(),
-                _ => unreachable!(),
-            },
-            |node| {
-                (node.declaration_cursor != u32::MAX).then_some(node.declaration_cursor as usize)
-            },
         )
     }
     pub(super) fn header_span(self) -> Span {
         self.node().map_or_else(
             || match self {
                 Self::Wide(item) => item.header_span,
-                Self::Original(item) => item.header_span(),
                 _ => unreachable!(),
             },
             |n| Span::new(n.header_span[0] as usize, n.header_span[1] as usize),
@@ -267,7 +217,6 @@ impl<'a> Ref<'a> {
     pub(super) fn header(self) -> &'a str {
         match self {
             Self::Wide(item) => &item.header,
-            Self::Original(item) => item.header(),
             Self::Compact(
                 Arena::Compact {
                     source,
@@ -290,7 +239,6 @@ impl<'a> Ref<'a> {
     pub(super) fn children(self) -> Nodes<'a> {
         match self {
             Self::Wide(item) => Nodes::Wide(item.children.iter()),
-            Self::Original(item) => Nodes::original(item.children()),
             Self::Compact(arena @ Arena::Compact { nodes, .. }, i) => {
                 let range = nodes[i].children;
                 Nodes::Compact {
@@ -310,10 +258,6 @@ pub(super) enum Nodes<'a> {
         back: usize,
     },
     Wide(std::slice::Iter<'a, Item>),
-    Original { items: OriginalItems<'a>, front: usize, back: usize },
-}
-impl<'a> Nodes<'a> {
-    fn original(items:OriginalItems<'a>)->Self{Self::Original{items,front:0,back:items.len()}}
 }
 impl<'a> Iterator for Nodes<'a> {
     type Item = Ref<'a>;
@@ -330,12 +274,6 @@ impl<'a> Iterator for Nodes<'a> {
                 Some(Ref::Compact(arena, index))
             }
             Self::Wide(items) => items.nth(n).map(Ref::Wide),
-            Self::Original {items,front,back} => {
-                if n>=*back-*front {*front=*back;return None}
-                let at=*front+n;
-                *front=at+1;
-                items.get(at).map(Ref::Original)
-            }
         }
     }
     fn next(&mut self) -> Option<Self::Item> {
@@ -349,12 +287,6 @@ impl<'a> Iterator for Nodes<'a> {
                 Some(Ref::Compact(arena, i))
             }
             Self::Wide(items) => items.next().map(Ref::Wide),
-            Self::Original {items,front,back} => {
-                if *front==*back{return None}
-                let at=*front;
-                *front+=1;
-                items.get(at).map(Ref::Original)
-            }
         }
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -373,11 +305,6 @@ impl DoubleEndedIterator for Nodes<'_> {
                 Some(Ref::Compact(arena, *back))
             }
             Self::Wide(items) => items.next_back().map(Ref::Wide),
-            Self::Original {items,front,back} => {
-                if *front==*back{return None}
-                *back-=1;
-                items.get(*back).map(Ref::Original)
-            }
         }
     }
 }
@@ -386,7 +313,6 @@ impl ExactSizeIterator for Nodes<'_> {
         match self {
             Self::Compact { front, back, .. } => back - front,
             Self::Wide(items) => items.len(),
-            Self::Original {front,back,..} => back-front,
         }
     }
 }
@@ -454,9 +380,6 @@ mod tests {
             header: "/qualified/relative".into(),
             span: Span::new(0, 8),
             header_span: Span::new(0, 8),
-            declaration_cursor: None,
-            checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
-            original_outer_terminator: None,
             indent: 0,
             children: vec![],
         };

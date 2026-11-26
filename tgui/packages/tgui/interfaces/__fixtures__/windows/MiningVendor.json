@@ -1,0 +1,16 @@
+{
+	"has_id": 1,
+	"id": { "name": "Rex Miner", "points": 2600 },
+	"items": {
+		"Gear": {
+			"Geiger Counter": { "name": "Geiger Counter", "price": 750 },
+			"GPS Device": { "name": "GPS Device", "price": 100 },
+			"Jump Boots": { "name": "Jump Boots", "price": 2500 }
+		},
+		"Miscellaneous": {
+			"Cigar": { "name": "Cigar", "price": 150 },
+			"Soap": { "name": "Soap", "price": 200 }
+		},
+		"Extra": { "Test Prize": { "name": "Test Prize", "price": 5 } }
+	}
+}

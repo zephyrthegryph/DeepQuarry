@@ -1,13 +1,5 @@
 import type { BooleanLike } from 'tgui-core/react';
 
-export type Data = {
-  access_list: Access[];
-  name?: string;
-  coords?: string;
-  req_access?: number[];
-  req_one_access?: number[];
-};
-
 export type Access = {
   name: string;
   id: number;

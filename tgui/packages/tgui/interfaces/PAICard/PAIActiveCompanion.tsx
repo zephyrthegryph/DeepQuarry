@@ -9,13 +9,14 @@ import {
   Stack,
   TextArea,
 } from 'tgui-core/components';
+import type { PAICardActions } from '../generated/PAICard';
 import { configTools } from './constants';
 import { healthToColor } from './functions';
 import { PaiIcon } from './PaiIcon';
 import type { ActivePAIData, Data, RadioData } from './types';
 
 export const PAIActiveCompanion = (props: { activeData: ActivePAIData }) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PAICardActions>();
   const [newDirective, setNewDirective] = useState('');
 
   const { activeData } = props;

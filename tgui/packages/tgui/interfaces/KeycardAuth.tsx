@@ -4,14 +4,15 @@
 // at another device) to authorize.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
+import type {
+  KeycardAuthActions,
+  KeycardAuthData,
+} from './generated/KeycardAuth';
 
-type Data = {
-  screen: number;
-  event: string;
-  ert_admin_only: number;
-};
+type Data = KeycardAuthData;
 
 const EVENT_LABELS = [
   'Red alert',
@@ -21,7 +22,7 @@ const EVENT_LABELS = [
 ];
 
 export const KeycardAuth = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, KeycardAuthActions>();
   const { screen, event, ert_admin_only } = data;
 
   const events = EVENT_LABELS.filter(
@@ -32,10 +33,10 @@ export const KeycardAuth = () => {
     <Window width={500} height={280}>
       <Window.Content>
         <Section title="Keycard Authentication Device">
-          <Box mb={1} color="label">
+          <Label mb={1}>
             This device triggers high-security events. It requires two
             high-level ID cards swiped simultaneously at different devices.
-          </Box>
+          </Label>
           {screen === 1 ? (
             <Stack vertical>
               {events.map((e) => (

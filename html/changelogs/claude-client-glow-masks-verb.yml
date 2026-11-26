@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - admin: "Added Toggle Client Glow Masks, which draws client glows without shadow masks and reports what the glows are."

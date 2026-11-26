@@ -1,6 +1,0 @@
-/proc/probe()
-    var/i=0
-    (i++).field
-    (++i).field
-    (i--).field
-    (--i).field

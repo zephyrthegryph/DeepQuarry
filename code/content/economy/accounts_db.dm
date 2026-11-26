@@ -21,6 +21,7 @@
 		return 2
 	else if((ACCESS_HOP in held_card.access) || (ACCESS_CAPTAIN in held_card.access))
 		return 1
+	return 0
 
 /obj/machinery/account_database/proc/accounting_letterhead(report_name)
 	return {"
@@ -36,16 +37,17 @@ CAPABILITIES(/obj/machinery/account_database)
 	climb()
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
 	interface("AccountsTerminal")
+	ui_shape(machine_id = schema_text(), creating_new_account = bool(), id_inserted = bool(), id_card = schema_text(), access_level = int(0, 2), detailed_account_view = bool(), station_account_number = num(), account_number = nullable(num()), owner_name = nullable(schema_text()), money = nullable(num()), suspended = nullable(bool()), transactions = list_of(row(date = schema_text(), time = schema_text(), target_name = schema_text(), purpose = schema_text(), amount = num(), source_terminal = schema_text())), accounts = list_of(row(account_number = num(), owner_name = schema_text(), suspended = schema_text(), account_index = int())))
 	without("ui_open")
-	op("create_account", ui_act("create_account"), then(PROC_REF(ui_act_create_account)))
-	op("add_funds", ui_act("add_funds"), asks(/datum/prompt/number/account_ui_funds/add, step = "amount", when = PROC_REF(central_access)), then(PROC_REF(ui_act_add_funds)))
-	op("remove_funds", ui_act("remove_funds"), asks(/datum/prompt/number/account_ui_funds/remove, step = "amount", when = PROC_REF(central_access)), then(PROC_REF(ui_act_remove_funds)))
-	op("toggle_suspension", ui_act("toggle_suspension"), then(PROC_REF(ui_act_toggle_suspension)))
-	op("finalise_create_account", ui_act("finalise_create_account", arg("holder_name", schema_text(4096)), arg("starting_funds", num())), then(PROC_REF(ui_act_finalise_create_account)))
-	op("view_account_detail", ui_act("view_account_detail", arg("account_index", num())), then(PROC_REF(ui_act_view_account_detail)))
-	op("view_accounts_list", ui_act("view_accounts_list"), then(PROC_REF(ui_act_view_accounts_list)))
-	op("revoke_payroll", ui_act("revoke_payroll"), then(PROC_REF(ui_act_revoke_payroll)))
-	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
+	op("create_account", ui_act("create_account"), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_create_account)))
+	op("add_funds", ui_act("add_funds"), asks(/datum/prompt/number/account_ui_funds/add, step = "amount", when = PROC_REF(central_access)), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_add_funds)))
+	op("remove_funds", ui_act("remove_funds"), asks(/datum/prompt/number/account_ui_funds/remove, step = "amount", when = PROC_REF(central_access)), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_remove_funds)))
+	op("toggle_suspension", ui_act("toggle_suspension"), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_toggle_suspension)))
+	op("finalise_create_account", ui_act("finalise_create_account", arg("holder_name", schema_text(4096)), arg("starting_funds", num())), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_finalise_create_account)))
+	op("view_account_detail", ui_act("view_account_detail", arg("account_index", num())), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_view_account_detail)))
+	op("view_accounts_list", ui_act("view_accounts_list"), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_view_accounts_list)))
+	op("revoke_payroll", ui_act("revoke_payroll"), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_revoke_payroll)))
+	op("print", ui_act("print"), needs(req(PROC_REF(card_refusal))), then(PROC_REF(ui_act_print)))
 	op("interaction_insert_card", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_card)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	display_disconnect_op()
@@ -133,22 +135,19 @@ CAPABILITIES(/obj/machinery/account_database)
 
 	return data
 
-/obj/machinery/account_database/proc/ui_gate(datum/act/op/A)
-	var/action = A.window_action()
-	var/access_level = get_access_level()
-	if(action != "insert_card" && !access_level)
-		return FALSE
-	return TRUE
+/// Every control but the card slot needs an inserted card with account access.
+/obj/machinery/account_database/proc/card_refusal(datum/act/op/A)
+	if(!held_card)
+		return msg_reason("Insert an ID card first.")
+	if(!get_access_level())
+		return msg_reason("This card has no account access.")
+	return null
 
 /obj/machinery/account_database/proc/ui_act_create_account(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	set_creating_new_account(1)
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_add_funds(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	if(get_access_level() < 2)
 		return FALSE
 	return apply_ui_add_funds(A.actor, A.step_value("amount"))
@@ -164,8 +163,6 @@ CAPABILITIES(/obj/machinery/account_database)
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_remove_funds(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	if(get_access_level() < 2)
 		return FALSE
 	return apply_ui_remove_funds(A.actor, A.step_value("amount"))
@@ -179,8 +176,6 @@ CAPABILITIES(/obj/machinery/account_database)
 ACTION(world_payment_account_status, datum/money_account/account, FIXED, notice = /datum/notice/world_payment_account_status)
 
 /obj/machinery/account_database/proc/ui_act_toggle_suspension(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/access_level = get_access_level()
 	if(access_level < 2)
 		return FALSE
@@ -190,8 +185,6 @@ ACTION(world_payment_account_status, datum/money_account/account, FIXED, notice 
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_finalise_create_account(datum/act/op/A, holder_name, starting_funds_arg)
-	if(!ui_gate(A))
-		return FALSE
 	var/account_name = holder_name
 	var/starting_funds = max(starting_funds_arg, 0)
 
@@ -222,23 +215,17 @@ ACTION(world_payment_account_status, datum/money_account/account, FIXED, notice 
 	return OP_OK
 
 /obj/machinery/account_database/proc/ui_act_view_account_detail(datum/act/op/A, account_index)
-	if(!ui_gate(A))
-		return FALSE
 	var/index = account_index
 	if(index && index <= REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
 		rel_set(src, nameof(/obj/machinery/account_database::detailed_account_view), REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index])
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_view_accounts_list(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	rel_clear(src, nameof(/obj/machinery/account_database::detailed_account_view))
 	set_creating_new_account(0)
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_revoke_payroll(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/access_level = get_access_level()
 	if(access_level < 2 || !detailed_account_view() || detailed_account_view().is_budget_account)
 		return FALSE
@@ -248,8 +235,6 @@ ACTION(world_payment_account_status, datum/money_account/account, FIXED, notice 
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_print(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	print()
 	return TRUE
 

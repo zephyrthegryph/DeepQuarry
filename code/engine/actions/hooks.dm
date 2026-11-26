@@ -1,10 +1,10 @@
 // Hooks (doc/rewrite/final_api.html, section 10 "Hooks and events"; section 19 "E4, actions and hooks").
 //
-// Two forms. A BEFORE hook is an extend() of an action: needs (refuse), instead (take over), adjusts (modify one typed field). An AFTER hook is
+// Two forms. A BEFORE hook is an extend() of an action: needs (refuse), instead (take over), adjusts_with (modify the action in flight). An AFTER hook is
 // on_notice / on_op (react to a past-tense notice) or on_change (react to a state edge, change.dm). Nothing else is a hook.
 //
 //	extend(/datum/act/hit/projectile, instead(when(PROC_REF(mirror_ready)), chance(30), then(PROC_REF(reflect))))
-//	extend(/datum/act/hit/projectile, adjusts(packet.amount, scale = 0.67, when = PROC_REF(shield_up)))
+//	extend(/datum/act/hit/projectile, adjusts_with(PROC_REF(soften), when = PROC_REF(shield_up)))
 //	on_notice(/datum/notice/fell, then(PROC_REF(on_fell)), outcome = ACT_REPLACED)
 //	on_op("cover.open", then(PROC_REF(cover_opened)))
 //
@@ -66,11 +66,6 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /proc/instead(ENTRY_SLOTS, order = ORDER_NORMAL)
 	return entry_make(ENTRY_INSTEAD, null, list("order" = order), entry_flatten(ENTRY_SLOT_LIST))
 
-/// adjusts(packet.amount, by =, scale =, when =): modifies one typed field of the action before it reaches its sink. `field` is text (the
-/// generator rewrites the path a declaration writes); scale applies before by.
-/proc/adjusts(field, by = null, scale = null, when = null)
-	return entry_make(ENTRY_ADJUSTS, null, list("field" = field, "by" = by, "scale" = scale, "when" = when))
-
 /// adjusts_with(PROC_REF(x), when =): modifies the action in flight with code, for what a constant by/scale cannot say (a flag a listener ORs in, an amount
 /// a listener splits). x(datum/act/A) runs on the hook's holder (on the listener for an observe()), may write the act's typed fields and does not take the
 /// action over. An accumulator: every adjusts_with of the action runs, in order, so flags from several listeners combine.
@@ -84,6 +79,15 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	if(isnull(handler))
 		declare_report("then(): no handler: this part would run nothing") // a PROC_REF held in an unset var, say
 		return null
+	if(isnull(checks) && !early)
+		// The plain then(handler) of a call made over and over (an observe() each time a light changes hands): its interned entry by handler,
+		// without signing the arguments again. The same entry entry_make() interns.
+		var/static/list/plain = list() // keyed by the handler: a proc name or a proc path, never a number
+		var/datum/entry/known = plain[handler]
+		if(!known)
+			known = entry_make(ENTRY_THEN, null, list("handler" = handler, "checks" = null, "early" = FALSE))
+			plain[handler] = known
+		return known
 	return entry_make(ENTRY_THEN, null, list("handler" = handler, "checks" = checks, "early" = early))
 
 /// chance(p, otherwise = parts): inside an instead, takes over with probability p percent (one roll, drawn only when the hook's earlier gates held). In an
@@ -163,11 +167,69 @@ GLOBAL_VAR_INIT(hook_caps_reused, 0)
 		return null
 	if(!own_guard(listener, source, "an observe ([trigger])")) // the one teardown guard (code/engine/refs/guard.dm)
 		return null
+	// The definition an observe() of this shape grants is the same interned one every time (its entry, its hook capability): it is looked up by
+	// the shape (the trigger, outcome, op and each part's signature, all text) instead of signing the entry and hashing the capability again.
+	var/shape = observe_shape(trigger, outcome, op, p1, p2, p3, p4, p5)
+	if(shape)
+		var/datum/capability/hook/known = GLOB.hook_caps_interned[GLOB.observe_shape_caps[shape]]
+		if(known)
+			GLOB.observe_shapes_reused++
+			return grant(source, known, listener)
+	var/datum/capability/hook/def
 	if(ispath(trigger, /datum/act/action))
-		var/datum/entry/hook_entry = extend(trigger, p1, p2, p3, p4, p5)
-		return grant(source, hook_capability_of(list(hook_entry), TRUE), listener)
-	var/datum/entry/E = entry_make(ENTRY_ON_NOTICE, null, list("notice" = trigger, "outcome" = outcome, "op" = op), entry_flatten(list(p1, p2, p3, p4, p5)))
-	return grant(source, hook_capability_of(list(E), TRUE), listener)
+		def = hook_capability_of(list(extend(trigger, p1, p2, p3, p4, p5)), TRUE)
+	else
+		var/datum/entry/E = entry_make(ENTRY_ON_NOTICE, null, list("notice" = trigger, "outcome" = outcome, "op" = op), entry_flatten(list(p1, p2, p3, p4, p5)))
+		def = hook_capability_of(list(E), TRUE)
+	if(shape)
+		GLOB.observe_shape_caps[shape] = def.key
+	return grant(source, def, listener)
+
+/// The text naming an observe() call's definition (trigger, outcome, op, parts), or null when a part is not one interned entry (a list of parts, a
+/// value) or the op is not plain text or a path: such a call is built and interned as before.
+/proc/observe_shape(trigger, outcome, op, p1, p2, p3, p4, p5)
+	if(!isnull(op) && !istext(op) && !ispath(op))
+		return null
+	. = "[trigger]|[outcome]|[op]"
+	for(var/part in list(p1, p2, p3, p4, p5))
+		if(isnull(part))
+			. += "|"
+			continue
+		if(!istype(part, /datum/entry))
+			return null
+		var/datum/entry/E = part
+		. += "|[E.sig]"
+
+/// observe_notices(source, listener, list(/datum/notice/a = then(...), /datum/notice/b = then(...))): `listener` hears each notice of `source` with
+/// its parts, through ONE grant (one activation) instead of one observe() per notice: for a listener that always takes and drops the same set of
+/// notices together (a light following whoever carries it). unobserve(source, any of the notices, listener) ends all of them at once, as the one
+/// activation they share ends. Returns the activation, or null.
+/proc/observe_notices(datum/source, datum/listener, list/notices, outcome = ACT_COMMITTED)
+	if(!source || !listener || QDELETED(source) || QDELETED(listener) || !length(notices))
+		return null
+	if(!own_guard(listener, source, "an observe_notices()"))
+		return null
+	var/shape = "notices|[outcome]"
+	for(var/notice in notices)
+		var/datum/entry/part = notices[notice]
+		if(!ispath(notice, /datum/notice) || !istype(part))
+			declare_report("observe_notices(): each entry is a notice type and one part, got [notice] = [part]")
+			return null
+		shape += "|[notice]=[part.sig]"
+	var/datum/capability/hook/def = GLOB.hook_caps_interned[GLOB.observe_shape_caps[shape]]
+	if(def)
+		GLOB.observe_shapes_reused++
+	else
+		var/list/entries = list()
+		for(var/notice in notices)
+			entries += entry_make(ENTRY_ON_NOTICE, null, list("notice" = notice, "outcome" = outcome, "op" = null), list(notices[notice]))
+		def = hook_capability_of(entries, TRUE)
+		GLOB.observe_shape_caps[shape] = def.key
+	return grant(source, def, listener)
+
+/// observe() shape -> the key of the hook capability it grants (hook_caps_interned), and the calls it answered from it (the boot log, the benches).
+GLOBAL_LIST_EMPTY(observe_shape_caps)
+GLOBAL_VAR_INIT(observe_shapes_reused, 0)
 
 /// Ends what observe(source, notice, listener) made. TRUE when there was one. The legacy form takes a reaction.
 /proc/unobserve(datum/source, trigger, datum/listener)
@@ -575,9 +637,28 @@ PROC_SUMMARY(/proc/hook_gate) // vars[] / call() dispatcher: the walk cannot ent
 	if(TRACKED_UNCHANGED(hooks_generation, value))
 		return FALSE
 	hooks_generation = value
+	if(rx_counter_unread(src, nameof(hooks_generation)))
+		return TRUE // nothing watches it: no pending operation, observer or static reader (the memo keys read the number itself)
 	tracked_changed(src, nameof(hooks_generation))
 	return TRUE
 SETTER(/datum/rx_state, hooks_generation)
+
+/// TRUE when a write of counter `key` of rx state S has nobody to tell: no reader rx_readers() knows (a reaction of the type, a lifecycle form, an
+/// on_change hook; S has no rx of its own, so no operation waits on it and nothing observes it), no stat takes it as an input and no draw hops
+/// over it. The memo keys that read the number itself need no publish. Spares the full state_changed() of every grant (4 per observe/unobserve).
+/proc/rx_counter_unread(datum/rx_state/S, key)
+	if(S.rx || GLOB.state_batch_depth || GLOB.census_on || GLOB.published_write_census || IS_LOOKUP_READ_KEY(key) || !GLOB.draw_hop_vars_built)
+		return FALSE // the draw-hop table is built on its first ask (state_changed()): until then the full path decides
+	if(GLOB.draw_hop_vars[key] || rx_readers(S, key))
+		return FALSE
+	// A stat that takes the counter as an input still recomputes (stat_inputs_changed(), as state_changed() would); nothing else is told.
+	if(GLOB.stat_input_keys && GLOB.stat_input_keys[key] && key != GLOB.stat_writing)
+		stat_inputs_changed(S, key)
+	GLOB.rx_counter_writes_spared++
+	return TRUE
+
+/// Counter writes rx_counter_unread() spared a publish.
+GLOBAL_VAR_INIT(rx_counter_writes_spared, 0)
 
 /datum/rx_state
 	var/hooks_generation = 0

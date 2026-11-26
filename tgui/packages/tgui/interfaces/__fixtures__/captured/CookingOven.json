@@ -1,0 +1,70 @@
+{
+	"safety": 0,
+	"selected_option": null,
+	"on": 0,
+	"containersRemovable": 0,
+	"output_options": {
+		"Pizza": "/obj/item/reagent_containers/food/snacks/variable/pizza",
+		"Bread": "/obj/item/reagent_containers/food/snacks/variable/bread",
+		"Pie": "/obj/item/reagent_containers/food/snacks/variable/pie",
+		"Cake": "/obj/item/reagent_containers/food/snacks/variable/cake",
+		"Hot Pocket": "/obj/item/reagent_containers/food/snacks/variable/pocket",
+		"Kebab": "/obj/item/reagent_containers/food/snacks/variable/kebab",
+		"Waffles": "/obj/item/reagent_containers/food/snacks/variable/waffles",
+		"Cookie": "/obj/item/reagent_containers/food/snacks/variable/cookie",
+		"Donut": "/obj/item/reagent_containers/food/snacks/variable/donut"
+	},
+	"our_contents": [
+		{
+			"progress": 0,
+			"progressText": [
+				"average",
+				"Not Cooking."
+			],
+			"prediction": "",
+			"container": "shelf 1 - empty"
+		},
+		{
+			"progress": 0,
+			"progressText": [
+				"average",
+				"Not Cooking."
+			],
+			"prediction": "",
+			"container": "shelf 2 - empty"
+		},
+		{
+			"progress": 0,
+			"progressText": [
+				"average",
+				"Not Cooking."
+			],
+			"prediction": "",
+			"container": "shelf 3 - empty"
+		},
+		{
+			"progress": 0,
+			"progressText": [
+				"average",
+				"Not Cooking."
+			],
+			"prediction": "",
+			"container": "shelf 4 - empty"
+		},
+		{
+			"progress": 0,
+			"progressText": [
+				"average",
+				"Not Cooking."
+			],
+			"prediction": "",
+			"container": "shelf 5 - empty"
+		}
+	],
+	"temperature": -270.4,
+	"optimalTemp": 200,
+	"temperatureEnough": 0,
+	"efficiency": 0,
+	"is_open": 0,
+	"state_prefix": "oven"
+}

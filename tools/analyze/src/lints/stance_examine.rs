@@ -9,7 +9,6 @@
 //! `input_stance()` ignores a trailing `//` comment; `os.walk` scanned dot-files and dot-directories
 //! of `code/` and `maps/` (`hidden: true`).
 
-use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
@@ -23,8 +22,8 @@ const WHY_DESC: &str = "description_info is gone; examine text is generated from
 const WHY_INPUT: &str = "input_stance() outside the input layer; take the stance from the interaction or a stance argument";
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::stance_examine::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::stance_examine::SCOPE_META_0.group,
+    name: "stance_examine",
+    group: "",
     label: "stance_examine",
     legacy: "tools/ci/stance_examine_lint.py",
     select: Select { roots: &[("code", "dm"), ("maps", "dm")], hidden: true },
@@ -37,8 +36,8 @@ static META: Meta = Meta {
         RuleMeta { name: "description_info", hint: WHY_DESC },
         RuleMeta { name: "input_stance", hint: WHY_INPUT },
     ],
-    allow: crate::allow_registry_fields::stance_examine::ALLOW_0,
-    lists: crate::allow_registry_fields::stance_examine::SCOPE_META_0.lists,
+    allow: &[],
+    lists: &["input_stance_readers"],
 };
 
 struct StanceExamine;
@@ -49,22 +48,21 @@ impl Lint for StanceExamine {
     }
 
     fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
         let readers = cx.list("input_stance_readers");
         for (number, line) in f.raw().numbered() {
-            if fixture.pattern(r"\bIS_(HELPING|HARMING|DISARMING|GRABBING)\b",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"\bIS_(HELPING|HARMING|DISARMING|GRABBING)\b")).is_match(line) {
+            if pat!(r"\bIS_(HELPING|HARMING|DISARMING|GRABBING)\b").is_match(line) {
                 out.site_msg("stance_macro", number, WHY_MACRO);
             }
-            if fixture.pattern(r"(?<![\w.])use_stance\s*\(|[.]use_stance\s*\(",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"(?<![\w.])use_stance\s*\(|[.]use_stance\s*\(")).is_match(line) {
+            if pat!(r"(?<![\w.])use_stance\s*\(|[.]use_stance\s*\(").is_match(line) {
                 out.site_msg("use_stance", number, WHY_USE);
             }
-            if fixture.pattern(r"\ba_intent\b",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"\ba_intent\b")).is_match(line) {
+            if pat!(r"\ba_intent\b").is_match(line) {
                 out.site_msg("a_intent", number, WHY_INTENT);
             }
-            if fixture.pattern(r"\bdescription_info\b",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"\bdescription_info\b")).is_match(line) {
+            if pat!(r"\bdescription_info\b").is_match(line) {
                 out.site_msg("description_info", number, WHY_DESC);
             }
-            if fixture.pattern(r"\binput_stance\s*\(",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"\binput_stance\s*\(")).is_match(before_slashes(line)) && !starts_with_any(&f.rel, readers) {
+            if pat!(r"\binput_stance\s*\(").is_match(before_slashes(line)) && !starts_with_any(&f.rel, readers) {
                 out.site_msg("input_stance", number, WHY_INPUT);
             }
         }

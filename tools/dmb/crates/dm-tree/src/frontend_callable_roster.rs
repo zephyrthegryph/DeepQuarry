@@ -210,11 +210,6 @@ impl CallableRoster {
     pub fn authenticates_tree(&self, tree: &Arc<SemanticTree>) -> bool {
         Arc::ptr_eq(&self.tree, tree)
     }
-    /// Same exact payload identity when the existing archive lends &SemanticTree.
-    /// No structural equality, new owner, source receipt or Arc clone is involved.
-    pub fn authenticates_borrowed_tree(&self, tree: &SemanticTree) -> bool {
-        std::ptr::eq(self.tree.as_ref(), tree)
-    }
     /// Source-neutral ordering, admitted against current occurrence order below.
     pub fn source_order(&self) -> &[usize] {
         &self.index.source_order
@@ -230,13 +225,6 @@ impl CallableRoster {
     }
     pub fn ordinal(&self, member: MemberId) -> Option<usize> {
         self.index.ordinals.get(&member).copied()
-    }
-    /// Lookup a logical source value through the SAME existing owner/name,
-    /// predecessor and member->ordinal indexes. No duplicate identity roster.
-    pub fn ordinal_for_identity(&self,identity:ProcedureIdentity)->Option<usize>{match self.ordinal_for_identity_using(identity,&mut||Ok::<(),std::convert::Infallible>(() )){Ok(value)=>value,Err(never)=>match never{}}}
-    pub fn ordinal_for_identity_using<E>(&self,identity:ProcedureIdentity,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Option<usize>,E>{
-        checkpoint()?;let Some(owner)=self.tree.lookup_type(identity.owner)else{return Ok(None)};let kind=if identity.verb{MemberKind::Verb}else{MemberKind::Proc};let mut member=self.tree.resolve(owner,identity.name,kind);let mut remaining=self.tree.members().len();
-        while let Some(id)=member{checkpoint()?;if remaining==0{return Ok(None)}remaining-=1;if self.identity_for_member(id)==Some(identity){return Ok(self.ordinal(id))}let Some(node)=self.tree.member(id)else{return Ok(None)};member=node.previous;}Ok(None)
     }
     pub fn identity_for_member(&self, member: MemberId) -> Option<ProcedureIdentity> {
         self.identity(self.ordinal(member)?)

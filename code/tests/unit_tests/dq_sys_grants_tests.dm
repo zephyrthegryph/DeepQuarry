@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	var/mob/living/carbon/human/dq_grants_hiding/M = allocate(/mob/living/carbon/human/dq_grants_hiding, test_floor())
 	TEST_ASSERT(!(/mob/verb/observe in M.verbs), "hidden verb_entry() strips an inherited /type/verb/")
 
-/// Turf verbs are declared (conditional verb_entry() on climbable): toggling needs no store entry on the turf.
+/// Climbing is a menu entry of the turf, listed while the turf is climbable: toggling climbability leaves no verb on the turf.
 /datum/unit_test/dq_sys_grants_turf_declared
 
 /datum/unit_test/dq_sys_grants_turf_declared/Run()
@@ -139,9 +139,10 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 	TEST_ASSERT(istype(T), "the test floor is simulated")
 	var/was = T.climbable
 	T.toggle_climbability()
-	TEST_ASSERT_EQUAL(!!(/turf/simulated/proc/climb_wall in T.verbs), !!T.climbable, "climb_wall follows climbable after a toggle")
+	TEST_ASSERT_EQUAL(!!T.climbable, !was, "the toggle flips climbable")
 	T.toggle_climbability()
-	TEST_ASSERT_EQUAL(!!(/turf/simulated/proc/climb_wall in T.verbs), !!was, "and back")
+	TEST_ASSERT_EQUAL(!!T.climbable, !!was, "and back")
+	TEST_ASSERT(!(T.verbs.len), "a turf carries no verb for climbing")
 
 /// Exercise the production form hooks before replacing their grant/revoke calls.
 /datum/form/dq_grant_test
@@ -173,9 +174,9 @@ TYPE_TABLE(/datum/form/dq_grant_test, get_form_verbs, list(/mob/living/proc/dq_s
 	var/mob/living/carbon/alien/A = allocate(/mob/living/carbon/alien, test_floor())
 	TEST_ASSERT_EQUAL(A.stat, CONSCIOUS, "the real base alien is conscious")
 	TEST_ASSERT(isnull(A.adult_form), "the actual base alien has no adult form")
-	TEST_ASSERT(/mob/living/carbon/alien/verb/evolve in A.verbs, "the inherited public evolve verb starts present")
+	TEST_ASSERT(/mob/living/carbon/alien/proc/evolve in A.verbs, "the inherited public evolve verb starts present")
 	A.evolve()
-	TEST_ASSERT(!(/mob/living/carbon/alien/verb/evolve in A.verbs), "the actual no-adult branch hides evolve")
+	TEST_ASSERT(!(/mob/living/carbon/alien/proc/evolve in A.verbs), "the actual no-adult branch hides evolve")
 	TEST_ASSERT(!QDELETED(A), "refusing evolution preserves the real larval body")
 	TEST_ASSERT(isnull(A.adult_form), "the branch does not fabricate a grown body type")
 
@@ -184,15 +185,14 @@ TYPE_TABLE(/datum/form/dq_grant_test, get_form_verbs, list(/mob/living/proc/dq_s
 	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
 	R.add_robot_verbs()
-	TEST_ASSERT(/mob/living/silicon/robot/proc/robot_checklaws in R.verbs, "actual default laws proc is granted")
-	TEST_ASSERT(/mob/living/silicon/proc/subsystem_alarm_monitor in R.verbs, "actual alarm subsystem proc is granted")
+	TEST_ASSERT(/mob/living/silicon/robot/proc/robot_panel in R.verbs, "the silicon panel verb is granted")
+	TEST_ASSERT(!(/mob/living/silicon/robot/proc/robot_checklaws in R.verbs), "and the laws are a panel command, no verb")
+	TEST_ASSERT(!(/mob/living/silicon/proc/subsystem_alarm_monitor in R.verbs), "as are the subsystems")
 	R.add_robot_verbs()
 	R.remove_robot_verbs()
-	TEST_ASSERT(!(/mob/living/silicon/robot/proc/robot_checklaws in R.verbs), "one removal ends the same-source default grant despite repeated addition")
-	TEST_ASSERT(!(/mob/living/silicon/proc/subsystem_alarm_monitor in R.verbs), "one removal ends the same-source subsystem grant")
+	TEST_ASSERT(!(/mob/living/silicon/robot/proc/robot_panel in R.verbs), "one removal ends the same-source default grant despite repeated addition")
 	R.add_robot_verbs()
-	TEST_ASSERT(/mob/living/silicon/robot/proc/robot_checklaws in R.verbs, "default grant can be restored")
-	TEST_ASSERT(/mob/living/silicon/proc/subsystem_alarm_monitor in R.verbs, "subsystem grant can be restored")
+	TEST_ASSERT(/mob/living/silicon/robot/proc/robot_panel in R.verbs, "the panel grant can be restored")
 
 /datum/unit_test/retire_malf_source_verbs
 
@@ -208,13 +208,13 @@ TYPE_TABLE(/datum/form/dq_grant_test, get_form_verbs, list(/mob/living/proc/dq_s
 	var/path = /mob/living/proc/dq_sys_grants_test_verb
 	grant(AI, granted_verb(path), research)
 	TEST_ASSERT(path in AI.verbs, "the research source grants its real runtime verb")
-	TEST_ASSERT(/datum/game_mode/malfunction/verb/ai_help in AI.verbs, "malfunction setup grants the help verb")
+	TEST_ASSERT(/mob/living/silicon/ai/proc/malf_panel in AI.verbs, "malfunction setup grants the one malfunction verb, the panel")
 	AI.stop_malf()
 	test_time(1 SECOND)
 	TEST_ASSERT(!(path in AI.verbs), "delayed malfunction cleanup removes research-granted verbs")
 	TEST_ASSERT(!granted(AI, granted_verb(path)), "cleanup also ends the activation, preventing a later re-grant")
-	TEST_ASSERT(!(/datum/game_mode/malfunction/verb/ai_help in AI.verbs), "cleanup revokes its own malfunction verbs")
-	TEST_ASSERT(!granted(AI, granted_verb(/datum/game_mode/malfunction/verb/ai_help)), "cleanup ends self-sourced activations rather than only their presentation")
+	TEST_ASSERT(!(/mob/living/silicon/ai/proc/malf_panel in AI.verbs), "cleanup revokes its own malfunction verbs")
+	TEST_ASSERT(!granted(AI, granted_verb(/mob/living/silicon/ai/proc/malf_panel)), "cleanup ends self-sourced activations rather than only their presentation")
 	TEST_ASSERT_NULL(AI.research, "cleanup releases the research source")
 
 /datum/unit_test/retire_timed_hidden_verb

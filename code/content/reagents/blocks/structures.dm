@@ -1,0 +1,238 @@
+// What each chemistry reagent is built of (the machinery and what is derived: code/domains/world_model/reagents/blocks/structure.dm).
+//
+// chem_structure_make(cores, groups, links, cation, anion). A group named twice is two of it. An organic that carries a metal centre names the metal as its cation.
+// Every chemistry reagent of the four tiers is declared here (doc/rewrite/proposals/chemistry_redesign.md section 8; the recipe book: chemistry_recipes.md);
+// the mixtures (drinks, food, cultures, paints, cleaner, iron saline, thermite), the source-only chemicals that carry no route are not. A declaration is a decision
+// about what the reagent is: a process that ends in this structure makes this reagent, and a declared reagent whose route generates has no recipe of its own.
+// Adding one adds the routes the processes make of it (the pin test, dq_chem_routes_pinned, says which).
+
+GLOBAL_LIST_INIT(chem_declared_structures, list(
+	// ---- the inorganic toolkit: acids, bases, salts ----
+	REAGENT_ID_WATER = chem_structure_make(null, null, null, CHEM_ION_HYDROGEN, CHEM_ION_HYDROXIDE),
+	REAGENT_ID_SACID = chem_structure_make(null, null, null, CHEM_ION_HYDROGEN, CHEM_ION_SULFATE),
+	REAGENT_ID_HYDROCHLORIC = chem_structure_make(null, null, null, CHEM_ION_HYDROGEN, CHEM_ION_CHLORIDE),
+	REAGENT_ID_NITRICACID = chem_structure_make(null, null, null, CHEM_ION_HYDROGEN, CHEM_ION_NITRATE),
+	REAGENT_ID_PHOSPHORICACID = chem_structure_make(null, null, null, CHEM_ION_HYDROGEN, CHEM_ION_PHOSPHATE),
+	REAGENT_ID_SAND = chem_structure_make(null, null, null, CHEM_ION_HYDROGEN, CHEM_ION_SILICATE),
+	REAGENT_ID_LYE = chem_structure_make(null, null, null, CHEM_ION_SODIUM, CHEM_ION_HYDROXIDE),
+	REAGENT_ID_AMMONIA = chem_structure_make(null, null, null, CHEM_ION_AMMONIUM, CHEM_ION_HYDROXIDE),
+	REAGENT_ID_SODIUMCHLORIDE = chem_structure_make(null, null, null, CHEM_ION_SODIUM, CHEM_ION_CHLORIDE),
+	REAGENT_ID_POTASSIUMCHLORIDE = chem_structure_make(null, null, null, CHEM_ION_POTASSIUM, CHEM_ION_CHLORIDE),
+	REAGENT_ID_DRYAGENT = chem_structure_make(null, null, null, CHEM_ION_CALCIUM, CHEM_ION_CHLORIDE),
+	REAGENT_ID_CALCIUMCARBONATE = chem_structure_make(null, null, null, CHEM_ION_CALCIUM, CHEM_ION_CARBONATE),
+	REAGENT_ID_SODAASH = chem_structure_make(null, null, null, CHEM_ION_SODIUM, CHEM_ION_CARBONATE),
+	REAGENT_ID_BLEACH = chem_structure_make(null, null, null, CHEM_ION_SODIUM, CHEM_ION_HYPOCHLORITE),
+	REAGENT_ID_SILICATE = chem_structure_make(null, null, null, CHEM_ION_SODIUM, CHEM_ION_SILICATE),
+	REAGENT_ID_IRONSALT = chem_structure_make(null, null, null, CHEM_ION_IRON, CHEM_ION_SULFATE),
+	REAGENT_ID_COPPERSALT = chem_structure_make(null, null, null, CHEM_ION_COPPER, CHEM_ION_SULFATE),
+	REAGENT_ID_LITHIUMSALT = chem_structure_make(null, null, null, CHEM_ION_LITHIUM, CHEM_ION_CHLORIDE),
+	REAGENT_ID_CYANIDE = chem_structure_make(null, null, null, CHEM_ION_POTASSIUM, CHEM_ION_CYANIDE),
+	REAGENT_ID_PRUSSIANBLUE = chem_structure_make(null, null, null, CHEM_ION_IRON, CHEM_ION_CYANIDE),
+	REAGENT_ID_FERTILIZER = chem_structure_make(null, null, null, CHEM_ION_AMMONIUM, CHEM_ION_PHOSPHATE),
+	// ---- the metals a displacement moves (an element is a cation alone) ----
+	REAGENT_ID_SODIUM = chem_structure_make(null, null, null, CHEM_ION_SODIUM),
+	REAGENT_ID_POTASSIUM = chem_structure_make(null, null, null, CHEM_ION_POTASSIUM),
+	REAGENT_ID_CALCIUM = chem_structure_make(null, null, null, CHEM_ION_CALCIUM),
+	REAGENT_ID_LITHIUM = chem_structure_make(null, null, null, CHEM_ION_LITHIUM),
+	REAGENT_ID_IRON = chem_structure_make(null, null, null, CHEM_ION_IRON),
+	REAGENT_ID_COPPER = chem_structure_make(null, null, null, CHEM_ION_COPPER),
+	// ---- the dispenser's cores ----
+	REAGENT_ID_ETHANOL = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_SUGAR = chem_structure_make(list(CHEM_CORE_SUGAR_RING), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_GLYCEROL = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_DIETHYLAMINE = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_AMINE)),
+	REAGENT_ID_PHORON = chem_structure_make(list(CHEM_CORE_PHORON_LATTICE)),
+	// ---- the stocked precursors (the chemistry lab starts with a bottle of each) ----
+	REAGENT_ID_ACETICACID = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_PHENOL = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_WOODALDEHYDE = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_SALICYLICACID = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_FATTYACID = chem_structure_make(list(CHEM_CORE_LONG_CHAIN), list(CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_PYRIDINE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING)),
+	REAGENT_ID_ALKALOID = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE)),
+	REAGENT_ID_STEROL = chem_structure_make(list(CHEM_CORE_STEROID), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_AMINOACID = chem_structure_make(list(CHEM_CORE_AMINO), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL)),
+	// ---- the intermediates a route passes through ----
+	REAGENT_ID_CHLOROHYDRIN = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_NITROSALICYLIC = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBOXYL, CHEM_GROUP_NITRO)),
+	REAGENT_ID_CHLOROPHORON = chem_structure_make(list(CHEM_CORE_PHORON_LATTICE), list(CHEM_GROUP_HALIDE)),
+	REAGENT_ID_ALKALOIDACID = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_PYRIDONE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_HALOSPACEACILLIN = chem_structure_make(list(CHEM_CORE_AMINO, CHEM_CORE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE), list(CHEM_LINK_AMIDE)),
+	// ---- the ring family (wood aldehyde, salicylic acid, phenol) ----
+	REAGENT_ID_INAPROVALINE = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE)),
+	REAGENT_ID_ADRENALINE = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE)),
+	REAGENT_ID_BICARIDINE = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBOXYL, CHEM_GROUP_AMINE)),
+	REAGENT_ID_MYELAMINE = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_AMINE)),
+	REAGENT_ID_HYPERZINE = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_AMINE)),
+	REAGENT_ID_LUMINOL = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_PARACETAMOL = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_TRAMADOL = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_CARBONYL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_LEPORAZINE = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_CARBOXYL), list(CHEM_LINK_ESTER)),
+	REAGENT_ID_STERILIZINE = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_PLANTBGONE = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HALIDE), list(CHEM_LINK_ESTER)),
+	REAGENT_ID_CONDENSEDCAPSAICIN = chem_structure_make(list(CHEM_CORE_LONG_CHAIN, CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL), list(CHEM_LINK_AMIDE)),
+	// ---- the chelators and the radiation drugs (glycerol, ethanol) ----
+	REAGENT_ID_COOLANT = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_ANTITOXIN = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_THIOL)),
+	REAGENT_ID_CARTHATOLINE = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_THIOL, CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_TRICORDRAZINE = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN, CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_THIOL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_HYRONALIN = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE)),
+	REAGENT_ID_ARITHRAZINE = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE, CHEM_GROUP_PHOSPHATE)),
+	REAGENT_ID_CHLORALHYDRATE = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_STOXIN = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HALIDE), list(CHEM_LINK_ESTER)),
+	REAGENT_ID_MUTAGEN = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_AMINE, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_NITROGLYCERIN = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_NITRO)),
+	REAGENT_ID_FLUOROSURFACTANT = chem_structure_make(list(CHEM_CORE_LONG_CHAIN), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_HALIDE)),
+	// ---- the burn medicines: a siloxane (silicone burn gel). Sand in hot lye is silicate; silicate and an acid make kelotane (neutralise); kelotane and phosphorus make
+	// dermaline (phosphorylate); two kelotane make lube (polymerise); copper on dermaline is bullvalene (displace) ----
+	REAGENT_ID_KELOTANE = chem_structure_make(list(CHEM_CORE_SILOXANE), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_DERMALINE = chem_structure_make(list(CHEM_CORE_SILOXANE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_PHOSPHATE)),
+	REAGENT_ID_LUBE = chem_structure_make(list(CHEM_CORE_SILOXANE, CHEM_CORE_SILOXANE)),
+	REAGENT_ID_BULLVALENE = chem_structure_make(list(CHEM_CORE_SILOXANE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_PHOSPHATE, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_COPPER),
+	// ---- oxygen and cryo (the phoron lattice) ----
+	REAGENT_ID_DEXALIN = chem_structure_make(list(CHEM_CORE_PHORON_LATTICE), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_DEXALINP = chem_structure_make(list(CHEM_CORE_PHORON_LATTICE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_IRON),
+	REAGENT_ID_CRYOXADONE = chem_structure_make(list(CHEM_CORE_PHORON_LATTICE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_CLONEXADONE = chem_structure_make(list(CHEM_CORE_PHORON_LATTICE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_SODIUM),
+	REAGENT_ID_LEXORIN = chem_structure_make(list(CHEM_CORE_PHORON_LATTICE), list(CHEM_GROUP_AMINE)),
+	REAGENT_ID_POTASSIUMCHLOROPHORIDE = chem_structure_make(list(CHEM_CORE_PHORON_LATTICE), list(CHEM_GROUP_HALIDE, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_POTASSIUM),
+	REAGENT_ID_PERIDAXON = chem_structure_make(list(CHEM_CORE_PHORON_LATTICE, CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE, CHEM_GROUP_METAL_CENTRE), list(CHEM_LINK_ESTER), CHEM_ION_SODIUM),
+	// ---- the size drugs: tramadol with a sodium centre, and three more steps on it ----
+	REAGENT_ID_SIZEOXADONE = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_CARBONYL, CHEM_GROUP_METAL_CENTRE), list(CHEM_LINK_AMIDE), CHEM_ION_SODIUM),
+	REAGENT_ID_MACROCILLIN = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_AMINE, CHEM_GROUP_METAL_CENTRE), list(CHEM_LINK_AMIDE), CHEM_ION_SODIUM),
+	REAGENT_ID_MICROCILLIN = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_METAL_CENTRE), list(CHEM_LINK_AMIDE), CHEM_ION_SODIUM),
+	REAGENT_ID_NORMALCILLIN = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_CARBONYL, CHEM_GROUP_HALIDE, CHEM_GROUP_METAL_CENTRE), list(CHEM_LINK_AMIDE), CHEM_ION_SODIUM),
+	// ---- antibiotics, steroids, organ repair (amino acids and sterols) ----
+	REAGENT_ID_SPACEACILLIN = chem_structure_make(list(CHEM_CORE_AMINO, CHEM_CORE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HYDROXYL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_PANACILLIN = chem_structure_make(list(CHEM_CORE_AMINO, CHEM_CORE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HYDROXYL, CHEM_GROUP_THIOL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_COROPHIZINE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_AMORPHOROVIR = chem_structure_make(list(CHEM_CORE_STEROID)),
+	REAGENT_ID_GYNOROVIR = chem_structure_make(list(CHEM_CORE_STEROID), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_ANDROROVIR = chem_structure_make(list(CHEM_CORE_STEROID), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_ANDROGYNOROVIR = chem_structure_make(list(CHEM_CORE_STEROID), list(CHEM_GROUP_CARBONYL, CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_IMMUNOSUPRIZINE = chem_structure_make(list(CHEM_CORE_STEROID), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_LIPOZILASE = chem_structure_make(list(CHEM_CORE_STEROID), list(CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_LIPOSTIPO = chem_structure_make(list(CHEM_CORE_STEROID), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_OSTEODAXON = chem_structure_make(list(CHEM_CORE_AMINO), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_CALCIUM),
+	REAGENT_ID_CORDRADAXON = chem_structure_make(list(CHEM_CORE_AMINO), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_POTASSIUM),
+	REAGENT_ID_HEPANEPHRODAXON = chem_structure_make(list(CHEM_CORE_AMINO), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_LITHIUM),
+	REAGENT_ID_GASTIRODAXON = chem_structure_make(list(CHEM_CORE_AMINO), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_SODIUM),
+	REAGENT_ID_RESPIRODAXON = chem_structure_make(list(CHEM_CORE_AMINO, CHEM_CORE_PHORON_LATTICE), list(CHEM_GROUP_AMINE, CHEM_GROUP_METAL_CENTRE), list(CHEM_LINK_ESTER), CHEM_ION_IRON),
+	// ---- the brain, mood and street drugs (pyridine, plant alkaloid) ----
+	REAGENT_ID_ADRANOL = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_ETHYLREDOXRAZINE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_SYNAPTIZINE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_AMINE)),
+	REAGENT_ID_ALKYSINE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_IMIDAZOLINE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_AMINE)),
+	REAGENT_ID_METHYLPHENIDATE = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_HYDROXYL), list(CHEM_LINK_ESTER)),
+	REAGENT_ID_BLISS = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_CRYPTOBIOLIN = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_OXYCODONE = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_PSILOCYBIN = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HYDROXYL, CHEM_GROUP_PHOSPHATE)),
+	REAGENT_ID_MINDBREAKER = chem_structure_make(list(CHEM_CORE_DOUBLE_RING, CHEM_CORE_SHORT_CHAIN, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_AMINE), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_PAROXETINE = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_CITALOPRAM = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_CYANIDE)),
+	REAGENT_ID_TERCOZOLAM = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_THIOL)),
+	REAGENT_ID_IMPEDREZENE = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBONYL, CHEM_GROUP_HALIDE)),
+	// ---- the cures the first aid book was missing: oxycodone with its carbonyl reduced is the opioid antagonist (naloxone); a nitrated synaptizine repairs the ear (cochlexine); a halogenated adranol is the anti-parasitic (anthelmin) ----
+	REAGENT_ID_NALOXONE = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_COCHLEXINE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_NITRO)),
+	REAGENT_ID_ANTHELMIN = chem_structure_make(list(CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	// ---- the leftovers of tiers 2 and 3: a pyridine acid joined to an amine (a nikethamide) or a sugar (a nucleoside), an alkaloid acid on paracetamol ----
+	REAGENT_ID_ANTICONVULSANT = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_SHORT_CHAIN, CHEM_CORE_SHORT_CHAIN), null, list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_REZADONE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_SUGAR_RING), null, list(CHEM_LINK_ESTER)),
+	REAGENT_ID_BENZILATE = chem_structure_make(list(CHEM_CORE_DOUBLE_RING, CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_AMINE), list(CHEM_LINK_AMIDE, CHEM_LINK_ESTER)),
+	// ---- tier 4, the exotic trees (chemistry_recipes.md section 14): every tree starts from a core that cannot be made on the station, and no process changes one exotic core into another ----
+	// [fire] dragon blood: halogenate, then sulfur, makes neon liquid fire; oxidise that for blood sealer, bind iron to it for juggernog
+	REAGENT_ID_LIQUIDFIRE = chem_structure_make(list(CHEM_CORE_FIRE), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_CHLOROFIRE = chem_structure_make(list(CHEM_CORE_FIRE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_NEOLIQUIDFIRE = chem_structure_make(list(CHEM_CORE_FIRE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_THIOL)),
+	REAGENT_ID_BLOODSEALER = chem_structure_make(list(CHEM_CORE_FIRE), list(CHEM_GROUP_CARBONYL, CHEM_GROUP_THIOL)),
+	REAGENT_ID_JUGGERNOG = chem_structure_make(list(CHEM_CORE_FIRE), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_THIOL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_IRON),
+	// [death] deathclaw blood: halogenate for the mutagen, then ammonia for the heat nullifier
+	REAGENT_ID_DEATHBLOOD = chem_structure_make(list(CHEM_CORE_DEATH), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_DEATHCLAWMUTAGEN = chem_structure_make(list(CHEM_CORE_DEATH), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_HEATNULLIFER = chem_structure_make(list(CHEM_CORE_DEATH), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE)),
+	// [life] liquid life: oxidise for the peaker, aminate that for the sense enhancer; oxidise it again for the acid and join alkysine to it for soul dew; an ester of bicaridine is the liquid healer
+	REAGENT_ID_LIQUIDLIFE = chem_structure_make(list(CHEM_CORE_LIFE), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_PERFORMANCEPEAKER = chem_structure_make(list(CHEM_CORE_LIFE), list(CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_SENSEENHANCER = chem_structure_make(list(CHEM_CORE_LIFE), list(CHEM_GROUP_AMINE)),
+	REAGENT_ID_LIFEACID = chem_structure_make(list(CHEM_CORE_LIFE), list(CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_HALOSOULDEW = chem_structure_make(list(CHEM_CORE_LIFE, CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_HALIDE), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_SOULDEW = chem_structure_make(list(CHEM_CORE_LIFE, CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_THIOL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_LIQUIDHEALER = chem_structure_make(list(CHEM_CORE_LIFE, CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE), list(CHEM_LINK_ESTER)),
+	// [venom] carp and spider toxin: an enzyme cuts either part way for oceanic cure; carpotoxin and a sedative make zombie powder, and so on up
+	REAGENT_ID_CARPOTOXIN = chem_structure_make(list(CHEM_CORE_VENOM, CHEM_CORE_VENOM), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_HYDROXYL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_SPIDERTOXIN = chem_structure_make(list(CHEM_CORE_VENOM, CHEM_CORE_VENOM), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_THIOL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_OCEANICCURE = chem_structure_make(list(CHEM_CORE_VENOM), list(CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_ZOMBIEPOWDER = chem_structure_make(list(CHEM_CORE_VENOM, CHEM_CORE_VENOM, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE), list(CHEM_LINK_AMIDE, CHEM_LINK_ESTER)),
+	REAGENT_ID_LICHPOWDER = chem_structure_make(list(CHEM_CORE_VENOM, CHEM_CORE_VENOM, CHEM_CORE_SHORT_CHAIN, CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HALIDE), list(CHEM_LINK_AMIDE, CHEM_LINK_ESTER, CHEM_LINK_ESTER, CHEM_LINK_ESTER)),
+	REAGENT_ID_NECROXADONE = chem_structure_make(list(CHEM_CORE_VENOM, CHEM_CORE_VENOM, CHEM_CORE_SHORT_CHAIN, CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_THIOL), list(CHEM_LINK_AMIDE, CHEM_LINK_ESTER, CHEM_LINK_ESTER, CHEM_LINK_ESTER)),
+	// [slime] slime jelly: nitrate for brute juice, reduce that for mutation toxin, halogenate for the advanced one
+	REAGENT_ID_SLIMEJELLY = chem_structure_make(list(CHEM_CORE_SLIME)),
+	REAGENT_ID_BERSERKMED = chem_structure_make(list(CHEM_CORE_SLIME), list(CHEM_GROUP_NITRO)),
+	REAGENT_ID_MUTATIONTOXIN = chem_structure_make(list(CHEM_CORE_SLIME), list(CHEM_GROUP_AMINE)),
+	REAGENT_ID_ADVMUTATIONTOXIN = chem_structure_make(list(CHEM_CORE_SLIME), list(CHEM_GROUP_AMINE, CHEM_GROUP_HALIDE)),
+	// [volt] 200 V: phosphorylate for the energy booster; bicaridine on it is phoenix breath
+	REAGENT_ID_SHOCKCHEM = chem_structure_make(list(CHEM_CORE_VOLT), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_COPPER),
+	REAGENT_ID_ENERGYBOOSTER = chem_structure_make(list(CHEM_CORE_VOLT), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_METAL_CENTRE, CHEM_GROUP_PHOSPHATE), null, CHEM_ION_COPPER),
+	REAGENT_ID_PHOENIXBREATH = chem_structure_make(list(CHEM_CORE_VOLT, CHEM_CORE_RING), list(CHEM_GROUP_AMINE, CHEM_GROUP_HYDROXYL, CHEM_GROUP_METAL_CENTRE), list(CHEM_LINK_ESTER), CHEM_ION_COPPER),
+	// the expedition finds: relic ichor (oxidise, then bind lithium: claridyl) and void amber (halogenate, aminate: mortiferin; oxidise that: malish-qualem, and back)
+	REAGENT_ID_RELICICHOR = chem_structure_make(list(CHEM_CORE_RELIC), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_RELICESSENCE = chem_structure_make(list(CHEM_CORE_RELIC), list(CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_CLARIDYL = chem_structure_make(list(CHEM_CORE_RELIC), list(CHEM_GROUP_CARBONYL, CHEM_GROUP_METAL_CENTRE), null, CHEM_ION_LITHIUM),
+	REAGENT_ID_VOIDAMBER = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_CHLOROVOID = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_MORTIFERIN = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE)),
+	REAGENT_ID_MALISHQUALEM = chem_structure_make(list(CHEM_CORE_VOID), list(CHEM_GROUP_CARBONYL, CHEM_GROUP_AMINE)),
+	// ---- the last plain recipes (chemistry_recipes.md "Protein, resin and sedative ladders"): a peptide chain, the resins, a saturated ring, a trace amine, the Katish sedatives ----
+	// [protein] amino acids join by amides: a peptide, then the numbing enzyme (three), and water with a base or an enzyme cuts them back
+	REAGENT_ID_PEPTIDE = chem_structure_make(list(CHEM_CORE_AMINO, CHEM_CORE_AMINO), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL), list(CHEM_LINK_AMIDE)),
+	REAGENT_ID_NUMBENZYME = chem_structure_make(list(CHEM_CORE_AMINO, CHEM_CORE_AMINO, CHEM_CORE_AMINO), list(CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL), list(CHEM_LINK_AMIDE, CHEM_LINK_AMIDE)),
+	// [ring] a ring added to an amino acid, its carboxyl driven off: the trace amine (phenethylamine keeps the ring's hydroxyl)
+	REAGENT_ID_RINGAMINOACID = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_AMINO), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE, CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_PHENETHYLAMINE = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_AMINO), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_AMINE)),
+	// [ring] hydrogen saturates phenol (menthol); an enzyme hangs two hydroxyls on salicylic acid (tannin); two salicylic acids and a glycol make the polyester unit (plasticide)
+	REAGENT_ID_MENTHOL = chem_structure_make(list(CHEM_CORE_SATURATED_RING), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_TANNIN = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_PLASTICIDE = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_HYDROXYL), list(CHEM_LINK_ESTER, CHEM_LINK_ESTER)),
+	// [nitrile] acetic acid takes a halide, cyanide takes its place: ultra glue
+	REAGENT_ID_HALOACETIC = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_GLUE = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_CARBOXYL, CHEM_GROUP_CYANIDE)),
+	// [Katish] tobacco nicotine (two nitrogen rings) burnt to its acid, joined to sugar: qerr-quem; the alkaloid acid joined to sugar: talum-quem
+	REAGENT_ID_NICOTINE = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_NITROGEN_RING)),
+	REAGENT_ID_NICOTINICACID = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_NITROGEN_RING), list(CHEM_GROUP_CARBOXYL)),
+	REAGENT_ID_QERRQUEM = chem_structure_make(list(CHEM_CORE_NITROGEN_RING, CHEM_CORE_NITROGEN_RING, CHEM_CORE_SUGAR_RING), null, list(CHEM_LINK_ESTER)),
+	REAGENT_ID_TALUMQUEM = chem_structure_make(list(CHEM_CORE_DOUBLE_RING, CHEM_CORE_SUGAR_RING), list(CHEM_GROUP_AMINE), list(CHEM_LINK_ESTER)),
+	// ---- the contaminants ----
+	REAGENT_ID_CONTAMINANT_HEAVY_METAL = chem_structure_make(null, null, null, CHEM_ION_HEAVY_METAL, CHEM_ION_CARBONATE),
+	REAGENT_ID_CONTAMINANT_SULFUR = chem_structure_make(null, null, null, CHEM_ION_SODIUM, CHEM_ION_SULFATE),
+	REAGENT_ID_CONTAMINANT_ORGANIC_RESIDUE = chem_structure_make(list(CHEM_CORE_RING), list(CHEM_GROUP_HYDROXYL, CHEM_GROUP_CARBONYL)),
+	REAGENT_ID_CONTAMINANT_SALTS = chem_structure_make(null, null, null, CHEM_ION_SODIUM, CHEM_ION_CHLORIDE),
+	REAGENT_ID_CONTAMINANT_ACID_RESIDUE = chem_structure_make(null, null, null, CHEM_ION_HYDROGEN, CHEM_ION_SULFATE),
+	REAGENT_ID_CONTAMINANT_BASE_RESIDUE = chem_structure_make(null, null, null, CHEM_ION_SODIUM, CHEM_ION_HYDROXIDE),
+	REAGENT_ID_CONTAMINANT_OILY_RESIDUE = chem_structure_make(list(CHEM_CORE_LONG_CHAIN)),
+	REAGENT_ID_CONTAMINANT_BIOLOGICAL = chem_structure_make(list(CHEM_CORE_AMINO, CHEM_CORE_AMINO)),
+	REAGENT_ID_CONTAMINANT_REACTIVE = chem_structure_make(null, null, null, CHEM_ION_HYDROGEN, CHEM_ION_PEROXIDE),
+	REAGENT_ID_CONTAMINANT_DIOXIN = chem_structure_make(list(CHEM_CORE_DOUBLE_RING), list(CHEM_GROUP_HALIDE, CHEM_GROUP_HALIDE)),
+	REAGENT_ID_CONTAMINANT_NITROSAMINE = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN, CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_AMINE, CHEM_GROUP_NITRO)),
+	REAGENT_ID_CONTAMINANT_PEROXIDE = chem_structure_make(null, null, null, CHEM_ION_HYDROGEN, CHEM_ION_PEROXIDE),
+	REAGENT_ID_CONTAMINANT_METHANOL = chem_structure_make(list(CHEM_CORE_SHORT_CHAIN), list(CHEM_GROUP_HYDROXYL)),
+	REAGENT_ID_CONTAMINANT_PLASTICISER = chem_structure_make(list(CHEM_CORE_RING, CHEM_CORE_SHORT_CHAIN, CHEM_CORE_SHORT_CHAIN), null, list(CHEM_LINK_ESTER, CHEM_LINK_ESTER)),
+	REAGENT_ID_CONTAMINANT_TAR = chem_structure_make(list(CHEM_CORE_DOUBLE_RING, CHEM_CORE_LONG_CHAIN)),
+))
+
+/// The reagents the clashes leave alone (clashes.dm): the stock, the blocks, the intermediates and the metals, which are mixed on purpose to be made into something.
+GLOBAL_LIST_INIT(chem_building_blocks, list(
+	REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_GLYCEROL, REAGENT_ID_DIETHYLAMINE, REAGENT_ID_PHORON, REAGENT_ID_COOLANT,
+	REAGENT_ID_ACETICACID, REAGENT_ID_PHENOL, REAGENT_ID_WOODALDEHYDE, REAGENT_ID_SALICYLICACID, REAGENT_ID_FATTYACID, REAGENT_ID_PYRIDINE,
+	REAGENT_ID_ALKALOID, REAGENT_ID_STEROL, REAGENT_ID_AMINOACID,
+	REAGENT_ID_CHLOROHYDRIN, REAGENT_ID_NITROSALICYLIC, REAGENT_ID_CHLOROPHORON, REAGENT_ID_ALKALOIDACID, REAGENT_ID_PYRIDONE, REAGENT_ID_HALOSPACEACILLIN,
+	REAGENT_ID_SCAVENGERRESIN,
+	// the protein path, the resin and sedative rungs, and what tobacco gives
+	REAGENT_ID_PEPTIDE, REAGENT_ID_RINGAMINOACID, REAGENT_ID_HALOACETIC, REAGENT_ID_NICOTINICACID, REAGENT_ID_NICOTINE,
+	// the exotic inputs and the rungs between them and the blends: mixed on purpose, like the stock
+	REAGENT_ID_LIQUIDFIRE, REAGENT_ID_DEATHBLOOD, REAGENT_ID_LIQUIDLIFE, REAGENT_ID_CARPOTOXIN, REAGENT_ID_SPIDERTOXIN, REAGENT_ID_SLIMEJELLY, REAGENT_ID_SHOCKCHEM,
+	REAGENT_ID_RELICICHOR, REAGENT_ID_VOIDAMBER, REAGENT_ID_CHLOROFIRE, REAGENT_ID_LIFEACID, REAGENT_ID_HALOSOULDEW, REAGENT_ID_RELICESSENCE, REAGENT_ID_CHLOROVOID,
+))

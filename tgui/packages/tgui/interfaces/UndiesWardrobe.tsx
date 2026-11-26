@@ -7,26 +7,16 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import type {
+  UndiesWardrobeActions,
+  UndiesWardrobeData,
+} from './generated/UndiesWardrobe';
 
-type Tweak = {
-  ref: string;
-  label: string;
-};
-
-type Category = {
-  name: string;
-  item_name: string;
-  has_item: boolean;
-  tweaks: Tweak[];
-};
-
-type Data = {
-  categories: Category[];
-};
+type Data = UndiesWardrobeData;
 
 export const UndiesWardrobe = () => {
-  const { data, act } = useBackend<Data>();
-  const { categories } = data;
+  const { data, act } = useBackend<Data, UndiesWardrobeActions>();
+  const { categories = [] } = data;
 
   return (
     <Window width={520} height={420}>

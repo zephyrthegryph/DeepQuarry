@@ -5,7 +5,7 @@
 	var/datum/material/dominant
 	var/dominant_amount = 0
 	for(var/material_name in composition)
-		if(LAZYACCESS(composition, material_name) > dominant_amount)
+		if(LAZYACCESS(composition, material_name) > dominant_amount && get_material_by_name(material_name))
 			dominant = get_material_by_name(material_name)
 			dominant_amount = LAZYACCESS(composition, material_name)
 	return dominant?.icon_colour || "#8b8b8b"
@@ -13,23 +13,27 @@
 /proc/material_batch_absorb_sheet(datum/material_batch/batch, obj/item/stack/material/stack)
 	if(!istype(batch) || !istype(stack) || !stack.material || stack.amount < 1 || batch.amount >= MATERIAL_SCIENCE_MAX_BATCH)
 		return FALSE
-	stack.ensure_feedstock_lot()
+	stack.ensure_traces()
 	if(istype(stack.material, /datum/material/processed_alloy))
 		var/obj/item/stack/material/processed_alloy/processed_stack = stack
 		var/datum/material_batch/source = processed_stack.physical_batch()
 		for(var/component in source.composition)
-			batch.add_material(component, LAZYACCESS(source.composition, component) / max(source.amount, 1), null, source.purity, stack.feedstock_lot_id)
-		for(var/additive in source.impurities)
-			LAZYSET(batch.impurities, additive, (LAZYACCESS(batch.impurities, additive) || 0) + LAZYACCESS(source.impurities, additive) / max(source.amount, 1))
+			var/per_sheet = LAZYACCESS(source.composition, component) / max(source.amount, 1)
+			if(get_material_by_name(component))
+				batch.add_material(component, per_sheet)
+			else
+				LAZYSET(batch.composition, component, (LAZYACCESS(batch.composition, component) || 0) + per_sheet)
 		// Reclaimed stock offsets part of its fresh-feedstock cost. Coatings and
 		// field treatments are deliberately destroyed by remelting, but the
 		// recovered metal is now economically and contractually traceable.
 		batch.record_recovery(max(0.1, source.unit_production_cost() * 0.5))
 		LAZYADD(batch.process_history, "remelted reclaimed [source.display_name()]")
 	else
-		batch.add_material(stack.material.name, 1, null, stack.feedstock_purity, stack.feedstock_lot_id)
-		if(stack.feedstock_trace)
-			batch.add_additive(stack.feedstock_trace, stack.feedstock_trace_units, 0)
+		batch.add_material(stack.material.name, 1)
+		for(var/trace_id in stack.trace_amounts)
+			var/per_sheet = stack.trace_amounts[trace_id] / max(stack.amount, 1)
+			if(per_sheet > 0)
+				batch.add_substance(trace_id, per_sheet, 0)
 	stack.use(1)
 	batch.recalculate()
 	return TRUE
@@ -39,6 +43,10 @@
 		return null
 	var/amount = old_stock.get_amount()
 	var/obj/item/stack/material/processed_alloy/replacement = processed_spawn_stack(get_turf(location || old_stock), new_batch, amount)
+	// What a treatment leaves of the stock traces is still what the spectrometer read, unless the treatment changed them.
+	if(replacement && old_stock.assayed && istype(old_stock, /obj/item/stack/material/processed_alloy))
+		var/obj/item/stack/material/processed_alloy/old_processed = old_stock
+		replacement.assayed = old_processed.physical_batch()?.trace_signature() == new_batch.trace_signature()
 	replaced_by(old_stock, replacement)
 	return replacement
 
@@ -167,8 +175,8 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		return null
 	if(firing)
 		return "the furnace is still firing"
-	if(!LAZYLEN(feedstock))
-		return "the furnace is empty; load material sheets before firing it"
+	if(!LAZYLEN(feedstock) && !polymer_recipe_loaded(src))
+		return "the furnace is empty; load material sheets, or the units of a polymer, before firing it"
 	if(!operable())
 		return "the furnace has no power or requires repairs"
 	return null
@@ -217,6 +225,11 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 	set_firing(FALSE)
 	set_icon_state("nt_cruciforge")
 	set_glow(src, GLOW(0, null, null))
+	// A charge that is the makings of a polymer (the units of one in the medium, or sheets of cellulose with nitric acid, or aramid in nitrogen) is polymerised, not alloyed.
+	var/datum/polymer_recipe/polymer = polymer_recipe_for(src)
+	if(polymer)
+		polymerise(polymer)
+		return
 	var/datum/material_batch/batch
 	var/heat_treatment = FALSE
 	if(LAZYLEN(feedstock) == 1 && !LAZYLEN(carbon_feed) && !reagents?.total_volume)
@@ -238,8 +251,10 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		if(!QDELETED(stock) && stock.get_amount())
 			stock.forceMove(get_turf(src))
 	rel_take_all(src, nameof(feedstock))
+	var/coal_fed = 0
 	for(var/obj/item/ore/coal in carbon_feed)
-		batch.add_additive("carbon", 4, 0.5, MATERIAL_COST_CHEMICALS)
+		batch.add_substance(REAGENT_ID_CARBON, 4 * MATERIAL_SHEETS_PER_REAGENT_UNIT, 0.5, MATERIAL_COST_CHEMICALS)
+		coal_fed++
 		consumed(coal, src)
 	rel_take_all(src, nameof(carbon_feed))
 	if(!batch.amount)
@@ -247,6 +262,9 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		return
 	process_chemistry(batch)
 	apply_real_atmosphere(batch)
+	// Coal in the charge is smelting: the carbon takes the oxide out (reduce, down to the oxide's floor).
+	if(coal_fed)
+		batch.refine_by_process(CHEM_PROCESS_REDUCE)
 	// A hotter chamber gives the charge what it can: the two meet at their common temperature (it was the chamber's temperature for free).
 	if(chamber_air.return_temperature() > batch.temperature())
 		heat_equalize(chamber_air, HEAT_STORE(batch.ensure_heat_store()))
@@ -267,51 +285,76 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 			rel_set(src, nameof(output_stock), processed_spawn_stack(get_turf(src), batch, batch.amount))
 			spent(batch)
 			return
-	rel_set(src, nameof(output_stock), processed_spawn_stack(get_turf(src), batch, max(1, round(batch.amount * batch.yield_fraction))))
+	rel_set(src, nameof(output_stock), processed_spawn_stack(get_turf(src), batch, max(1, round(batch.amount))))
 	if(output_stock())
 		output_stock().forceMove(src)
 	visible_message(span_notice("[src] finishes firing. The completed alloy is ready to collect."))
 	spent(batch)
 
+/// Every reagent in the medium goes into the melt as a substance with an amount (up to 6 units each), by the vocabulary the chemistry and the materials share
+/// (melt_trace_of()): a reagent that is a trace, a contaminant that maps to one, an organic that chars to carbon, slag; one that boils below the melt leaves as a vapour.
+/// An acid wash (sulfuric or polytrifluoric, 5 units or more) strips the leachable traces. A flux (limestone or soda ash, 5 units or more) is the displace step: it
+/// skims the slag and the silica off, down to their floor; an electrolyte (a metal salt, 5 units or more) with the power for it is the electrolyse step, the electrorefining
+/// of the lead and the alkali.
 /obj/machinery/material_furnace/proc/process_chemistry(datum/material_batch/batch)
 	if(!reagents?.total_volume)
 		return
 	var/acid = reagents.get_reagent_amount(REAGENT_ID_SACID) + reagents.get_reagent_amount(REAGENT_ID_PACID)
-	var/carbon = reagents.get_reagent_amount(REAGENT_ID_CARBON)
-	var/silicon = reagents.get_reagent_amount(REAGENT_ID_SILICON)
-	var/lithium = reagents.get_reagent_amount(REAGENT_ID_LITHIUM)
-	var/coolant = reagents.get_reagent_amount(REAGENT_ID_COOLANT)
-	var/frost_oil = reagents.get_reagent_amount(REAGENT_ID_FROSTOIL)
-	if(carbon) batch.add_additive("carbon", min(carbon, 8), 1, MATERIAL_COST_CHEMICALS)
-	if(silicon) batch.add_additive("silicon", min(silicon, 6), 1, MATERIAL_COST_CHEMICALS)
-	if(lithium >= 2) batch.add_additive("conductive dopant", min(lithium, 6), 2, MATERIAL_COST_CHEMICALS)
-	if(coolant >= 2) batch.add_additive("thermal phase catalyst", min(coolant, 6), 2, MATERIAL_COST_CHEMICALS)
-	if(frost_oil >= 2) batch.add_additive("cryogenic stabilizer", min(frost_oil, 6), 2, MATERIAL_COST_CHEMICALS)
-	if(acid >= 5)
-		batch.purity = clamp(batch.purity + min(round(acid / 2), 12), 0, 100)
+	var/flux = reagents.get_reagent_amount(REAGENT_ID_CALCIUMCARBONATE) + reagents.get_reagent_amount(REAGENT_ID_SODAASH)
+	var/electrolyte = reagents.get_reagent_amount(REAGENT_ID_IRONSALT) + reagents.get_reagent_amount(REAGENT_ID_COPPERSALT) + reagents.get_reagent_amount(REAGENT_ID_LITHIUMSALT)
 	for(var/datum/reagent/reagent in reagents.reagent_list)
-		if(!(reagent.id in list(REAGENT_ID_CARBON, REAGENT_ID_SILICON, REAGENT_ID_LITHIUM, REAGENT_ID_COOLANT, REAGENT_ID_FROSTOIL, REAGENT_ID_SACID, REAGENT_ID_PACID)))
-			batch.add_additive(reagent.name, min(reagent.volume, 6), max(reagent.supply_conversion_value, 0.05), MATERIAL_COST_CHEMICALS)
+		if(reagent.id in list(REAGENT_ID_SACID, REAGENT_ID_PACID, REAGENT_ID_CALCIUMCARBONATE, REAGENT_ID_SODAASH, REAGENT_ID_IRONSALT, REAGENT_ID_COPPERSALT, REAGENT_ID_LITHIUMSALT))
+			continue
+		var/units = min(reagent.volume, 6)
+		if(units < 2 && !(reagent.id in list(REAGENT_ID_CARBON, REAGENT_ID_SILICON)))
+			continue
+		var/sheets = units * MATERIAL_SHEETS_PER_REAGENT_UNIT
+		var/unit_cost = max(reagent.supply_conversion_value, 0.05)
+		if(get_material_by_name(reagent.id))
+			batch.add_material(reagent.id, sheets)
+			continue
+		var/list/melt = melt_trace_of(reagent.id)
+		if(!melt)
+			material_log("[REF(batch)] [reagent.id] ([round(units, 0.1)]u) boiled off in the melt")
+			continue
+		batch.add_substance(melt[1], sheets * melt[2], unit_cost, MATERIAL_COST_CHEMICALS)
+		material_log("[REF(batch)] [reagent.id] ([round(units, 0.1)]u) went into the melt as [melt[1]] ([round(sheets * melt[2], 0.001)] sheets)")
+	if(acid >= 5)
+		batch.strip_traces(TRUE)
+		batch.refine(min(round(acid / 2), 12))
+	if(flux >= 5)
+		batch.refine_by_process(CHEM_PROCESS_DISPLACE)
+	if(electrolyte >= 5)
+		var/supplied = use_power_oneoff(MATERIAL_ELECTROREFINE_ENERGY)
+		if(supplied >= MATERIAL_ELECTROREFINE_ENERGY * 0.9)
+			batch.record_electricity(supplied)
+			batch.refine_by_process(CHEM_PROCESS_ELECTROLYSE)
+		else
+			material_log("[REF(batch)] electrorefining stopped: the furnace could not supply the current ([round(supplied)] of [MATERIAL_ELECTROREFINE_ENERGY] J)")
 	LAZYADD(batch.process_history, "chemically treated in [round(reagents.total_volume, 0.1)]u medium")
 	reagents.clear_reagents()
 
 /obj/machinery/material_furnace/proc/apply_real_atmosphere(datum/material_batch/batch)
 	var/pressure = chamber_air.return_pressure()
 	if(pressure < 20)
-		batch.atmosphere = MATERIAL_ATMOSPHERE_VACUUM
-		batch.purity = clamp(batch.purity + 3, 0, 100)
-		batch.porosity = clamp(batch.porosity - 4, 0, 100)
+		// A hard vacuum draws dissolved gas and oxide out of the melt, down to their floors, and leaves it cleaner.
+		batch.strip_traces(FALSE)
+		batch.refine(4)
+	var/oxygen = chamber_air.get_moles(/datum/gas/oxygen)
+	if(oxygen >= MATERIAL_ROAST_OXYGEN && pressure >= 50)
+		// An oxygen-rich chamber roasts the sulfur and carbon off (the oxidise step); ordinary air is too thin for it.
+		var/roast_used = min(oxygen, MATERIAL_ROAST_OXYGEN * 0.1)
+		chamber_air.adjust_moles(/datum/gas/oxygen, -roast_used)
+		batch.refine_by_process(CHEM_PROCESS_OXIDISE)
 	var/hydrogen = chamber_air.get_moles(/datum/gas/hydrogen)
 	if(hydrogen > 0.05)
 		var/used = min(hydrogen, 0.08 * clamp(pressure / ONE_ATMOSPHERE, 0, 5))
-		batch.atmosphere = MATERIAL_ATMOSPHERE_REDUCING
-		batch.add_dissolved_gas("hydrogen", used * 25)
+		batch.add_substance("hydrogen", used * 0.5, 0, MATERIAL_COST_MEDIA)
 		chamber_air.adjust_moles(/datum/gas/hydrogen, -used)
 	var/phoron = chamber_air.get_moles(/datum/gas/plasma)
 	if(phoron > 0.05)
 		var/used = min(phoron, 0.025)
-		batch.add_dissolved_gas("phoron", used * 40)
-		batch.add_additive("phoron interstitial", used * 20, 3, MATERIAL_COST_CHEMICALS)
+		batch.add_substance("phoron gas", used * 8, 3, MATERIAL_COST_CHEMICALS)
 		chamber_air.adjust_moles(/datum/gas/plasma, -used)
 	batch.recalculate()
 
@@ -475,16 +518,16 @@ CAPABILITIES(/obj/structure/bed/bath/material_treatment)
 		consume(item, user)
 		changed = TRUE
 	else if(istype(item, /obj/item/analyzer))
-		to_chat(user, span_notice("Composition [json_encode(batch.composition)]; purity [batch.purity]%; conductivity [batch.conductivity]%; hardness [batch.hardness]."))
+		var/list/trace_lines = assay(user)
+		to_chat(user, span_notice("Spectrometry: composition [json_encode(batch.bulk_composition())]; quality [100 - batch.flaws]%; temper [round(batch.temper)]; [length(trace_lines) ? "traces [jointext(trace_lines, "; ")]" : "no traces"]."))
 		var/list/certification = batch.evidence_context("physical analyzer assay")
 		certification["amount"] = get_amount()
-		ensure_feedstock_lot()
-		certification["material_lot_id"] = feedstock_lot_id
+		certification["material_lot_id"] = copytext(batch.fingerprint(), 1, 9)
 		certification["actor_account"] = contract_account_for_mob(user)?.account_number
 		emit_contract_event(CONTRACT_EVENT_MATERIAL_CERTIFIED, certification, "material-certification:[REF(src)]:[world.time]", src, user)
 		to_chat(user, span_notice("The analyzer records a traceable qualification for batch [copytext(batch.fingerprint(), 1, 9)]."))
 	else if(item.has_tool_quality(TOOL_MULTITOOL))
-		to_chat(user, span_notice("The stock measures [batch.conductivity]% relative conductivity and [batch.homogeneity]% lattice order."))
+		to_chat(user, span_notice("The stock measures [batch.conductivity]% relative conductivity and [100 - batch.flaws]% lattice quality."))
 	if(changed)
 		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(src, batch, user.drop_location())
 		user.put_in_hands(replacement)
@@ -531,10 +574,10 @@ CAPABILITIES(/obj/structure/bed/bath/material_treatment)
 	var/crystal_fraction = ((LAZYACCESS(batch.composition, MAT_GLASS) || 0) + (LAZYACCESS(batch.composition, MAT_QUARTZ) || 0) + (LAZYACCESS(batch.composition, MAT_DIAMOND) || 0) + (LAZYACCESS(batch.composition, MAT_VOLTAIC_CRYSTAL) || 0) + (LAZYACCESS(batch.composition, MAT_LUMEN_CRYSTAL) || 0)) / max(batch.amount, 1)
 	if(crystal_fraction >= 0.1 && batch.conductivity >= 25)
 		batch.add_field_treatment(MATERIAL_FIELD_ENERGY_STORAGE, round(strength * crystal_fraction))
-	if(batch.hardness >= 45 && batch.toughness >= 45)
+	if(batch.strength >= 45 && batch.toughness >= 25)
 		batch.add_field_treatment(MATERIAL_FIELD_RADIATION_HARDENED, round(strength * 0.6))
-		batch.structure[MATERIAL_STRUCTURE_DEFECT] = max(0, batch.structure[MATERIAL_STRUCTURE_DEFECT] - round(strength / 10))
-	batch.homogeneity = clamp(batch.homogeneity + round(strength / 8), 0, 100)
+		batch.refine(round(strength / 10))
+	batch.refine(round(strength / 8))
 	batch.record_electricity(300)
 	batch.recalculate()
 	rel_set(src, nameof(target), replace_processed_stack(stock, batch, src))
@@ -576,7 +619,6 @@ ADMIN_VERB(debug_apply_material_treatment, R_DEBUG, "Apply Material Treatment", 
 
 GLOBAL_LIST_INIT(material_debug_treatments, list(
 	"Particle conditioned" = MATERIAL_FIELD_PARTICLE,
-	"Magnetically aligned" = MATERIAL_FIELD_MAGNETIC,
 	"Emitter charged" = MATERIAL_FIELD_EMITTER,
 	"Fusion stabilized" = MATERIAL_FIELD_FUSION,
 	"Radiation hardened" = MATERIAL_FIELD_RADIATION_HARDENED,

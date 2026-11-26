@@ -183,8 +183,7 @@
 			E.removed()
 			spent(E)
 		var/list/organ_data = H.species.has_limbs[limb_tag]
-		var/limb_path = organ_data["path"]
-		var/obj/item/organ/external/new_limb = new limb_path(H)
+		var/obj/item/organ/external/new_limb = species_limb_new(organ_data, H)
 		new_limb.robotize(H.synthetic ? H.synthetic.company : null)
 		new_limb.sync_colour_to_human(H)
 		regrown++
@@ -322,7 +321,9 @@
 			playsound(site, sounds_of(W).use, 50, 1)
 		if(DORMANCY_PASTED)
 			var/obj/item/shockpaddles/paddles = W
-			if(!paddles.can_use(user))
+			var/refusal = paddles.use_refusal(user)
+			if(refusal)
+				to_chat(user, span_warning(refusal))
 				return
 			to_chat(user, span_notice("You hook up [W] to the contact points in the maintenance assembly."))
 			perform_op(user, src, "paddles_charge", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("tool" = W, "step" = step, "site" = site))

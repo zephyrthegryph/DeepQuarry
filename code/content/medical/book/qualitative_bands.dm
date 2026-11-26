@@ -63,3 +63,27 @@
 		return ""
 	var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent_id]
 	return R?.description || ""
+
+/// The band of a drug's organ-strain rate (DRUG_STRAIN_* in code/defines/content/drug_profile.dm).
+/proc/dq_describe_strain(rate)
+	if(rate >= DRUG_STRAIN_HEAVY)
+		return "heavy"
+	if(rate >= DRUG_STRAIN_MODERATE)
+		return "moderate"
+	return "mild"
+
+/// How a chem interaction changes one drug's treatment (`interferes_with` multiplier): verb and the resulting strength.
+/proc/dq_describe_interference(multiplier)
+	if(multiplier <= 0)
+		return "cancels"
+	if(multiplier < 1)
+		return "weakens"
+	if(multiplier > 1)
+		return "potentiates"
+	return "does not change"
+
+/// "40% strength" / "no effect" for an `interferes_with` multiplier.
+/proc/dq_describe_interference_strength(multiplier)
+	if(multiplier <= 0)
+		return "no effect"
+	return "[round(multiplier * 100)]% strength"

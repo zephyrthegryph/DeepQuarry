@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -11,16 +12,17 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-
 import { MiningUser } from './common/Mining';
+import type {
+  MiningVendorActions,
+  MiningVendorData,
+} from './generated/MiningVendor';
 
-type Data = {
-  has_id: boolean;
-  id: { id: string; points: number };
-  items: Record<string, Sortable[]>;
+type Item = MiningVendorData['items'][string][string];
+
+type Sortable = Item & {
+  affordable: number;
 };
-
-type Sortable = { name: string; affordable: number; price: number };
 
 const sortTypes = {
   Alphabetical: (a: Sortable, b: Sortable) => a.name.localeCompare(b.name),
@@ -61,24 +63,23 @@ const MiningVendorItems = (props: {
   sortOrder: string;
   descending: boolean;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<MiningVendorData, MiningVendorActions>();
   const { has_id, id, items } = data;
   // Search thingies
-  const searcher = createSearch<[string, Sortable]>(
-    props.searchText,
-    (item) => {
-      return item[0];
-    },
-  );
+  const searcher = createSearch<[string, Item]>(props.searchText, (item) => {
+    return item[0];
+  });
 
   let has_contents = false;
   const contents = Object.entries(items).map((kv, _i) => {
     let items_in_cat = Object.entries(kv[1])
       .filter(searcher)
-      .map((kv2) => {
-        kv2[1].affordable = +(has_id && id.points >= kv2[1].price);
-        return kv2[1];
-      })
+      .map(
+        ([, item]): Sortable => ({
+          ...item,
+          affordable: +!!(has_id && id && id.points >= item.price),
+        }),
+      )
       .sort(sortTypes[props.sortOrder]);
     if (items_in_cat.length === 0) {
       return undefined;
@@ -102,7 +103,7 @@ const MiningVendorItems = (props: {
         {has_contents ? (
           contents
         ) : (
-          <Box color="label">No items matching your criteria was found!</Box>
+          <Label>No items matching your criteria was found!</Label>
         )}
       </Section>
     </Stack.Item>
@@ -158,7 +159,7 @@ const MiningVendorItemsCategory = (props: {
   title: string;
   items: Sortable[];
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<MiningVendorData, MiningVendorActions>();
 
   const { has_id, id } = data;
 
@@ -178,7 +179,7 @@ const MiningVendorItemsCategory = (props: {
             {item.name}
           </Box>
           <Button
-            disabled={!has_id || id.points < item.price}
+            disabled={!has_id || !id || id.points < item.price}
             width="15%"
             textAlign="center"
             style={{

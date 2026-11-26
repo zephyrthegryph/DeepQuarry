@@ -47,19 +47,22 @@ CAPABILITIES(/obj/item/technomancer_core)
 	dismiss_all_summons()
 	..()
 
-// Add the spell buttons to the HUD.
+// Add the spell buttons to the wearer's abilities.
 /obj/item/technomancer_core/equipped(mob/user)
 	rel_set(src, nameof(wearer), user)
 	for(var/obj/spellbutton/spell in spells)
-		wearer.ability_master.add_technomancer_ability(spell, spell.ability_icon_state)
+		grant_technomancer_ability(wearer, spell)
 	..()
 
-// Removes the spell buttons from the HUD.
+// Removes the spell buttons from the wearer's abilities.
 /obj/item/technomancer_core/dropped(mob/user, equipping, slot)
 	// The inventory equip path calls dropped() before an unworn core has its first wearer.
 	if(wearer)
-		for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
-			wearer.ability_master.remove_ability(A)
+		for(var/datum/action/technomancer_spell/entry in wearer.actions?.Copy())
+			var/obj/spellbutton/button = entry.button()
+			if(!button || button.core == src)
+				entry.Remove(wearer)
+				spent(entry)
 	rel_clear(src, nameof(wearer))
 	set_canremove(TRUE)
 	..()
@@ -196,15 +199,13 @@ CAPABILITIES(/obj/spellbutton)
 	var/obj/spellbutton/spell = new(src, path, new_name, ability_icon_state)
 	rel_add(src, nameof(spells), spell)
 	if(wearer)
-		wearer.ability_master.add_technomancer_ability(spell, ability_icon_state)
+		grant_technomancer_ability(wearer, spell)
 
 /obj/item/technomancer_core/proc/remove_spell(obj/spellbutton/spell_to_remove)
 	if(spell_to_remove in spells)
 		own_take_member(src, nameof(spells), spell_to_remove)
 		if(wearer)
-			var/atom/movable/screen/ability/obj_based/technomancer/A = wearer.ability_master.get_ability_by_instance(spell_to_remove)
-			if(A)
-				wearer.ability_master.remove_ability(A)
+			revoke_technomancer_ability(wearer, spell_to_remove)
 		spent(spell_to_remove)
 
 /obj/item/technomancer_core/proc/has_spell(datum/technomancer/spell_to_check)

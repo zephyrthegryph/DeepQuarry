@@ -35,4 +35,4 @@
 	target.set_real_name(char_real_name)
 	target.name = target.real_name
 	if(target.dna)
-		target.dna.real_name = target.real_name
+		target.dna.set_real_name(target.real_name)

@@ -257,10 +257,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/supply_drop_loot)
 		/obj/item/clothing/head/santa/green,
 		/obj/item/clothing/head/santa/green,
 		/obj/item/clothing/head/santa/green,
-		/obj/item/clothing/accessory/scarf/christmas,
-		/obj/item/clothing/accessory/scarf/christmas,
-		/obj/item/clothing/accessory/scarf/christmas,
-		/obj/item/clothing/accessory/scarf/christmas
+		VARIANT(/obj/item/clothing/accessory/scarf/christmas),
+		VARIANT(/obj/item/clothing/accessory/scarf/christmas),
+		VARIANT(/obj/item/clothing/accessory/scarf/christmas),
+		VARIANT(/obj/item/clothing/accessory/scarf/christmas)
 		)
 
 /datum/supply_drop_loot/materials

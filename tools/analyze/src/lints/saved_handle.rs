@@ -9,8 +9,8 @@ use crate::pat::Pat;
 use crate::tree::{SourceFile, CODE_DM};
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::saved_handle::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::saved_handle::SCOPE_META_0.group,
+    name: "saved_handle",
+    group: "",
     label: "saved_handle",
     legacy: "",
     select: CODE_DM,
@@ -20,18 +20,17 @@ static META: Meta = Meta {
         name: "saved",
         hint: "a handle is per round and per connection: save an id, a ckey or a name, and re-link on load (relations.md D10)",
     }],
-    allow: crate::allow_registry_fields::saved_handle::ALLOW_0,
-    lists: crate::allow_registry_fields::saved_handle::SCOPE_META_0.lists,
+    allow: &[],
+    lists: &[],
 };
 
-const SAVED_HANDLE_PATTERN_SOURCES:&[&str]=&[r"(?:\bS\s*\[[^\]]*\]\s*(?:<<|=(?!=))|\b(?:WRITE_FILE|to_file)\s*\()[^\n]*\b(?:handle_of|client_handle)\s*\("];
 struct SavedHandle {
     save: Pat,
 }
 
 impl SavedHandle {
     fn new() -> SavedHandle {
-        SavedHandle { save: Pat::new(SAVED_HANDLE_PATTERN_SOURCES[0]) }
+        SavedHandle { save: Pat::new(r"(?:\bS\s*\[[^\]]*\]\s*(?:<<|=(?!=))|\b(?:WRITE_FILE|to_file)\s*\()[^\n]*\b(?:handle_of|client_handle)\s*\(") }
     }
 }
 
@@ -40,33 +39,15 @@ impl Lint for SavedHandle {
         &META
     }
 
-    fn scan_file(&self,_cx:&Cx,f:&SourceFile,out:&mut Sink){scan_using(f,out,&self.save)}
+    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        for (i, line) in f.code().lines().enumerate() {
+            if self.save.is_match(line) {
+                out.site("saved", i + 1);
+            }
+        }
+    }
 }
 
 pub fn register(reg: &mut Registry) {
     reg.add(SavedHandle::new());
 }
-
-fn scan_using<P:crate::raw_fixture_policy::PatternApi>(f:&SourceFile,out:&mut Sink,save:&P){
-        for (i, line) in f.code().lines().enumerate() {
-            if save.is_match(line) {
-                out.site("saved", i + 1);
-            }
-        }
-
-}
-
-#[cfg(feature="native-policy")]
-struct NativeSavedHandle{legacy:std::sync::OnceLock<SavedHandle>}
-#[cfg(feature="native-policy")]
-impl Lint for NativeSavedHandle{
- fn meta(&self)->&Meta{&META}
- fn scan_file(&self,cx:&Cx,f:&SourceFile,out:&mut Sink){
-  if let Some(fixture)=cx.fixture{
-   let p0=fixture.pattern(SAVED_HANDLE_PATTERN_SOURCES[0],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(SAVED_HANDLE_PATTERN_SOURCES[0]));
-   scan_using(f,out,&p0)
-  }else{self.legacy.get_or_init(SavedHandle::new).scan_file(cx,f,out)}
- }
-}
-#[cfg(feature="native-policy")]
-pub fn register_native(reg:&mut Registry){reg.add(NativeSavedHandle{legacy:std::sync::OnceLock::new()})}

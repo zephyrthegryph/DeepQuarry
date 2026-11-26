@@ -24,17 +24,17 @@
 	var/list/last_implants = null
 	var/last_location = null
 
-// TGUI migration. attack_self opens Locator.tsx; Topic
-// frequency/refresh/clear actions move to tgui_act.
+// attack_self opens Locator.tsx.
 CAPABILITIES(/obj/item/locator)
 	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("controls", in_hand(), label("Open locator"), then(PROC_REF(locator_controls_opened)))
 	interface("Locator", title = "Persistent Signal Locator")
+	ui_shape(frequency = schema_text(), has_scan = bool(), location = schema_text(), beacons = list_of(row(id = schema_text(), direction = schema_text(), strength = schema_text())), implants = list_of(row(id = num(), direction = schema_text(), strength = schema_text())))
 	without("ui_open")
-	op("freq", ui_act("freq", arg("delta", num())), then(PROC_REF(ui_act_freq)))
-	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
-	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("freq", ui_act("freq", arg("delta", num())), needs(req_capable(), req(PROC_REF(location_refusal))), then(PROC_REF(ui_act_freq)))
+	op("clear", ui_act("clear"), needs(req_capable(), req(PROC_REF(location_refusal))), then(PROC_REF(ui_act_clear)))
+	op("refresh", ui_act("refresh"), needs(req_capable(), req(PROC_REF(location_refusal))), then(PROC_REF(ui_act_refresh)))
 
 /obj/item/locator/proc/locator_controls_opened(datum/act/op/A)
 	tgui_interact(A.actor)
@@ -59,34 +59,25 @@ CAPABILITIES(/obj/item/locator)
 		return "weak"
 	return "very weak"
 
-/obj/item/locator/proc/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
-	var/turf/current_location = get_turf(user)
-	if(user.stat || user.restrained())
-		return FALSE
+/// The locator does not work on the station's z-level 3 (or nowhere at all); the window's buttons refuse with that.
+/obj/item/locator/proc/location_refusal(datum/act/op/A)
+	var/turf/current_location = get_turf(A.actor)
 	if(!current_location || current_location.z == 3)
-		to_chat(user, "The [src] is malfunctioning.")
-		return FALSE
-	return TRUE
+		return "\The [src] is malfunctioning."
+	return null
 
 /obj/item/locator/proc/ui_act_freq(datum/act/op/A, delta)
-	if(!ui_gate(A))
-		return FALSE
 	set_frequency(frequency + delta)
 	set_frequency(sanitize_frequency(frequency))
 	return TRUE
 
 /obj/item/locator/proc/ui_act_clear(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	set_last_beacons(null)
 	set_last_implants(null)
 	set_last_location(null)
 	return TRUE
 
 /obj/item/locator/proc/ui_act_refresh(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/turf/sr = get_turf(src)
 	if(!sr)
 		return TRUE

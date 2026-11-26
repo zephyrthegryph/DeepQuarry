@@ -1,2 +1,0 @@
-# Preserve the legacy parser's explicit four-space fixture indentation.
-*/code/*.dm whitespace=-indent-with-non-tab

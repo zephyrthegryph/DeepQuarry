@@ -324,10 +324,6 @@ impl<R: Resolver> NativeResourceResolver<R> {
     }
 }
 impl<R: Resolver> Resolver for NativeResourceResolver<R> {
-    fn source_owner(&self) -> Option<*const ()> {
-        self.tree.source_owner()
-    }
-
     /// The captured resource lookup tables are immutable and have no read
     /// observer, exactly like the tree they wrap, so observation is the inner
     /// host's. The default (`true`) disabled every exact-replay bypass that

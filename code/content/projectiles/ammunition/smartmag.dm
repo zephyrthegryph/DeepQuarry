@@ -55,7 +55,6 @@ MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
 	return (read_once(A.actor.get_inactive_hand()) == src && !!read_once(attached_cell())) ? null : /datum/msg/req_failed
 
 /obj/item/ammo_magazine/smart/proc/realize_rounds(datum/act/op/A)
-	make_rounds_real()
 	return OP_OK
 
 /obj/item/ammo_magazine/smart/proc/struggle_text(datum/act/op/A)
@@ -101,7 +100,6 @@ MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
 /obj/item/ammo_magazine/smart/proc/smart_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
-	make_rounds_real()
 	if(istype(I, /obj/item/ammo_magazine) || istype(I, /obj/item/ammo_casing))
 		scan_ammo(I, user)
 

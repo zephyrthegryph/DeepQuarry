@@ -1,7 +1,0 @@
-Repo-local native allocation hooks
-
-Pinned upstream packages: regex 1.13.1, regex-automata 0.4.18, regex-syntax 0.8.11 (MIT OR Apache-2.0), fancy-regex 0.14.0 (MIT). Original package licenses and copyright notices are preserved. upstream-source-manifest.json binds the actual local upstream inputs. No global Cargo registry files are modified.
-
-The opt-in native-admission feature adds checked entries for the existing AST/HIR, forward Thompson/Pike and Fancy parser/compiler/VM algorithms. Original constructors and their default paths stay available. Checked programs retain no lender or search scratch; the compiler host supplies its same source-family loan through the existing session Db. Captures copied into fixture results are admitted on the existing fixture owner before the scratch loan ends.
-
-These are source drafts, not typechecked or executed. Existing generic query-graph/allocator metadata policy is unchanged and is not an exact heap/RSS guarantee. The legacy/container-only API intentionally retains its prior unqualified regex implementation; the ordinary native selftest host selects the explicit actual-provider API. Ordinary source-policy scan lender threading is a separate remaining port and no default or whole-policy heap qualification is claimed.

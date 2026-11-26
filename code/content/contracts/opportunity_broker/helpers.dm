@@ -152,7 +152,7 @@ CAPABILITIES(/datum/contract_opportunity_window)
 	var/stable_fact_id = event.fact_id || event.occurrence_id
 	if(!stable_fact_id)
 		return FALSE
-	var/fact_key = "[event.event_type]|[stable_fact_id]"
+	var/fact_key = "[stable_fact_id]|[event.event_type]" // varying part first: see contract_infrastructure_fact_id()
 	var/list/facts = facts_by_signal[signal.id]
 	var/datum/contract_opportunity_observation/previous = facts[fact_key]
 	if(previous)
@@ -191,14 +191,14 @@ CAPABILITIES(/datum/contract_opportunity_window)
 		var/datum/contract_opportunity_observation/observation = facts[fact_key]
 		maximum_value = max(maximum_value, observation.value)
 		if(observation.actor_key)
-			actor_totals["[observation.actor_key]"] = (actor_totals["[observation.actor_key]"] || 0) + observation.value
+			actor_totals["[handle_text(observation.actor_key)]"] = (actor_totals["[handle_text(observation.actor_key)]"] || 0) + observation.value
 		else
 			anonymous_total += observation.value
 		for(var/field in signal.diversity_targets)
 			var/distinct_value = observation.diversity_values[field]
 			if(!isnull(distinct_value))
 				var/list/field_values = distinct_by_field[field]
-				field_values["[distinct_value]"] = TRUE
+				field_values["[handle_text(distinct_value)]"] = TRUE
 	var/aggregate = anonymous_total
 	for(var/actor_key in actor_totals)
 		var/actor_value = actor_totals[actor_key]

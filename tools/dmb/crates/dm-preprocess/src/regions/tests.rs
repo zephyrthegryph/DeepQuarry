@@ -213,7 +213,7 @@ fn actual_macro_expansions_retain_definition_and_replacement_ancestry() {
         ),
     ]);
     let output = expand_regions(&plan, 2);
-    let trace = output.origins.get(0).unwrap().macro_expansions.native_owner().unwrap();
+    let trace = output.origins.get(0).unwrap().macro_expansions;
     assert_eq!(trace.len(), 2);
     assert_eq!(trace[0].name.as_ref(), "OUTER");
     assert_eq!(trace[0].definition.as_ref().unwrap().source_line, 2);
@@ -243,18 +243,18 @@ fn continued_macro_definition_preserves_definition_and_use_provenance() {
     let origin = output.origins.get(0).unwrap();
     assert_eq!(origin.origin.source_line, 4);
     assert_eq!(origin.macro_expansions.len(), 2);
-    assert_eq!(origin.macro_expansions.native_owner().unwrap()[0].name.as_ref(), "OUTER");
+    assert_eq!(origin.macro_expansions[0].name.as_ref(), "OUTER");
     assert_eq!(
-        origin.macro_expansions.native_owner().unwrap()[0]
+        origin.macro_expansions[0]
             .definition
             .as_ref()
             .unwrap()
             .source_line,
         2
     );
-    assert_eq!(origin.macro_expansions.native_owner().unwrap()[1].name.as_ref(), "INNER");
+    assert_eq!(origin.macro_expansions[1].name.as_ref(), "INNER");
     assert_eq!(
-        origin.macro_expansions.native_owner().unwrap()[1]
+        origin.macro_expansions[1]
             .definition
             .as_ref()
             .unwrap()
@@ -262,7 +262,7 @@ fn continued_macro_definition_preserves_definition_and_use_provenance() {
         1
     );
     assert_eq!(
-        origin.macro_expansions.native_owner().unwrap()[1]
+        origin.macro_expansions[1]
             .replacement_chain
             .iter()
             .map(|name| name.as_ref())
@@ -465,9 +465,10 @@ fn captured_deferred_probe_retains_encounter_values_and_emission_projection() {
         assert_eq!(item.children[0].header, format!("return {value}"));
     }
     let procedures: Vec<_> = output
-        .emission_regions()
+        .emission_regions
+        .iter()
         .flat_map(|index| {
-            plan.regions[index]
+            plan.regions[*index]
                 .segments
                 .iter()
                 .flat_map(|segment| segment.lines.iter())
@@ -504,7 +505,7 @@ fn persistent_full_environments_keep_token_paste_and_definition_epochs_exact() {
             origin
                 .macro_expansions
                 .iter()
-                .find(|expansion| expansion.name == "VALUE1")
+                .find(|expansion| expansion.name.as_ref() == "VALUE1")
                 .unwrap()
                 .definition
                 .as_ref()
@@ -677,28 +678,4 @@ fn definition_sites_are_reported_relative_to_the_project_directory() {
     // The same file in another worktree reports the same site, so traces and region rows are equal across roots.
     assert_eq!(origin.path.as_path(), Path::new("code/defs.dm"));
     assert_eq!(plan.project_dir.join(origin.path.as_ref()), *plan.occurrences[1].path);
-}
-
-#[test]fn original_checker_entry_registration_keeps_actual_argument_through_incremental_reissue(){
- let provider=Memory(BTreeMap::from([(PathBuf::from("project.dme"),"/proc/probe()\n    return 0\n".to_owned())]));let defines=BTreeMap::new();
- let (first,_)=plan_regions_incremental(Path::new("project.dme"),&provider,&defines,None,None);
- assert_eq!(first.occurrences[0].original_entry_path().unwrap().as_os_str(),Path::new("project.dme").as_os_str());
- let (next,_)=plan_regions_incremental(Path::new("./project.dme"),&provider,&defines,None,Some(&first));
- assert_eq!(next.occurrences[0].original_entry_path().unwrap().as_os_str(),Path::new("./project.dme").as_os_str());
- assert_eq!(first.occurrences[0].path,next.occurrences[0].path);assert!(next.diagnostics.is_empty());
-}
-
-#[cfg(windows)]
-#[test]fn synthetic_include_rendering_preserves_actual_windows_drive_prefix_kind(){
- use std::path::{Component,Prefix};
- // Use the real source path on this checkout, not a manufactured provider or
- // Python approximation of Windows path semantics. This is only a path-kind
- // control; it grants no source membership or file acquisition authority.
- let root=std::fs::canonicalize(env!("CARGO_MANIFEST_DIR")).unwrap();let actual=std::fs::canonicalize(root.join("src/regions/tests.rs")).unwrap();
- assert!(matches!(actual.components().next(),Some(Component::Prefix(prefix))if matches!(prefix.kind(),Prefix::VerbatimDisk(_))),"actual Windows canonical source must exercise the verbatim disk prefix: {actual:?}");
- let old=actual.to_str().unwrap().replace('\\',"/");let old_operand=format!("\"{old}\"");let decoded_old=literal_include_path(&old_operand).unwrap();
- assert!(matches!(decoded_old.components().next(),Some(Component::Prefix(prefix))if matches!(prefix.kind(),Prefix::UNC(server,_)if server==std::ffi::OsStr::new("?"))),"slash-folding verbatim disk creates actual UNC authority: {decoded_old:?}");assert!(relative_filesystem_path(&decoded_old,&root).is_none());
- let ordinary=filesystem_comparison_key(&actual);let fixed=ordinary.to_str().unwrap().replace('\\',"/");let fixed_operand=format!("\"{fixed}\"");let decoded_fixed=literal_include_path(&fixed_operand).unwrap();
- assert!(matches!(decoded_fixed.components().next(),Some(Component::Prefix(prefix))if matches!(prefix.kind(),Prefix::Disk(_))),"the corrected include retains ordinary disk kind: {decoded_fixed:?}");assert_eq!(relative_filesystem_path(&decoded_fixed,&root).as_deref(),Some(Path::new("src/regions/tests.rs")));assert_eq!(filesystem_comparison_key(&decoded_fixed),filesystem_comparison_key(&actual));
- println!("ACTUAL_SYNTHETIC_INCLUDE_PATH_KIND={}",serde_json::json!({"actual":actual,"old_operand":old_operand,"old_prefix":format!("{:?}",decoded_old.components().next().unwrap()),"old_contained":false,"fixed_operand":fixed_operand,"fixed_prefix":format!("{:?}",decoded_fixed.components().next().unwrap()),"fixed_relative":"src/regions/tests.rs"}));
 }

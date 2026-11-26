@@ -38,8 +38,7 @@ CAPABILITIES(/obj/item/storage/fancy)
 	. = ..()
 
 	if(Adjacent(user))
-		// Counted without materializing: real things plus latent entries (systems.md §18).
-		var/left = contents_count(src) + (has_latent() ? latent_count(CONTAINER_SLOT_STORAGE) : 0)
+		var/left = contents_count(src)
 		if(!left)
 			. += "There are no [icon_type]s left in the box."
 		else if(left == 1)
@@ -55,6 +54,7 @@ CAPABILITIES(/obj/item/storage/fancy)
 	icon_state = "eggbox"
 	icon_type = REAGENT_ID_EGG
 	name = "egg box"
+	desc = "A carton that holds a dozen eggs."
 	storage_slots = 12
 	starts_with = list(/obj/item/reagent_containers/food/snacks/egg = 12)
 
@@ -445,21 +445,6 @@ CAPABILITIES(/obj/item/storage/fancy/cigar)
 	set_open(FALSE)
 	..()
 
-/obj/item/storage/fancy/cigar/choiba
-	name = "\improper Choiba cigar case"
-	desc = "A fancy case for holding your cigars when you are not smoking them."
-	icon_state = "cohibacase"
-	icon = 'icons/obj/cigarettes.dmi'
-	icon_type = "cigar"
-	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba = 5)
-
-CAPABILITIES(/obj/item/storage/fancy/cigar/choiba)
-	configure(atom_rules(description_fluff = "The exquisite wooden case bears the markings of the \
-	Choiba cigar company based out of Cuba. The perfectly humidized case keeps \
-	the companies signature Cigars in premium condidtion even when traveling \
-	long distances within a vacuume. The custom case itself can sell for quite \
-	a lot in some places."))
-
 /obj/item/storage/fancy/cigar/havana
 	name = "\improper Havana cigar case"
 	desc = "A fancy case for holding your cigars when you are not smoking them."
@@ -544,6 +529,7 @@ CAPABILITIES(/obj/item/storage/lockbox/vials)
 /obj/item/storage/fancy/heartbox
 	icon_state = "heartbox"
 	name = "box of chocolates"
+	desc = "A heart-shaped box of chocolates."
 	icon_type = "chocolate"
 
 	var/startswith = 6

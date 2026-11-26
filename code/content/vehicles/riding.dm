@@ -18,9 +18,9 @@ CAPABILITIES(/datum/riding)
 
 /datum/riding/proc/handle_vehicle_layer()
 	if(ridden().dir != NORTH)
-		ridden().layer = ABOVE_MOB_LAYER
+		ridden().set_layer(ABOVE_MOB_LAYER)
 	else
-		ridden().layer = OBJ_LAYER
+		ridden().set_layer(OBJ_LAYER)
 
 /datum/riding/proc/on_vehicle_move()
 	for(var/mob/living/M in ridden()?.buckled_mob_list())
@@ -171,7 +171,7 @@ CAPABILITIES(/datum/riding)
 			return null // This will runtime, but we want that since this is out of bounds.
 
 /datum/riding/boat/small/handle_vehicle_layer()
-	ridden().layer = ABOVE_MOB_LAYER
+	ridden().set_layer(ABOVE_MOB_LAYER)
 
 /datum/riding/boat/big // 'Big' boats can hold up to five people.
 
@@ -219,7 +219,7 @@ CAPABILITIES(/datum/riding)
 			return null // This will runtime, but we want that since this is out of bounds.
 
 /datum/riding/boat/big/handle_vehicle_layer()
-	ridden().layer = MOB_LAYER+0.4
+	ridden().set_layer(MOB_LAYER+0.4)
 
 /datum/riding/boat/get_offsets(pass_index) // list(dir = x, y, layer)
 	return list("[NORTH]" = list(1, 2), "[SOUTH]" = list(1, 2), "[EAST]" = list(1, 2), "[WEST]" = list(1, 2))

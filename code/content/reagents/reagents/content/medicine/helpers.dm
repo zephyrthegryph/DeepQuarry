@@ -13,15 +13,17 @@
 		. += L.mend(TREAT_VESSEL_REPAIR, amount, O)
 
 /// B13: a reagent that knits a fracture outright (bone regrowth, calcium
-/// miracles). Routed through mend(TREAT_BONE_SETTING) so only organic bone
-/// knits, and refused while the limb is still too damaged to hold.
-/proc/dq_reagent_knit_fracture(obj/item/organ/external/O)
+/// miracles). Routed through mend(`tag`) so only organic bone knits, and refused
+/// while the limb is still too damaged to hold. TREAT_BONE_SETTING (the default)
+/// sets the bone straight; TREAT_BONE_REPAIR (osteodaxon) only knits what it finds,
+/// so an unset fracture heals crooked into a malunion (conditions/malunion.dm).
+/proc/dq_reagent_knit_fracture(obj/item/organ/external/O, tag = TREAT_BONE_SETTING)
 	var/mob/living/L = O?.owner
 	if(!L || !O.is_fractured())
 		return 0
 	if(O.get_trauma() > O.min_broken_damage * CONFIG_GET(number/organ_health_multiplier))
 		return 0 // would just break again
-	return L.mend(TREAT_BONE_SETTING, DQ_REAGENT_KNIT_AMOUNT, O)
+	return L.mend(tag, DQ_REAGENT_KNIT_AMOUNT, O)
 
 /// Cryo-chemical regeneration: every tissue mechanism at once. Only for the
 /// temperature/death-gated cryo chems, whose gate a continuous tag can't express.

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Frost, fire and other elemental smoke no longer appears in nowhere when its source is not on a turf"
+  - bugfix: "Pouring a single reagent out of a container by id or type now carries the container's temperature with it, like a whole pour"

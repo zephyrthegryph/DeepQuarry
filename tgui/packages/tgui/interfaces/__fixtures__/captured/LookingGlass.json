@@ -1,0 +1,15 @@
+{
+	"currentProgram": "Off",
+	"immersion": 0,
+	"supportedPrograms": [
+		"Off",
+		"Diagnostics",
+		"Space 1",
+		"Space 2",
+		"Space 3",
+		"Space 4",
+		"Space 5",
+		"Space 6"
+	],
+	"gravity": 0
+}

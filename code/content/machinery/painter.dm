@@ -5,6 +5,7 @@
 	icon_state = "colormate"
 	density = TRUE
 	anchored = TRUE
+	circuit = VARIANT(/obj/item/circuitboard/colormate)
 	var/atom/movable/inserted
 	var/activecolor = "#FFFFFF"
 	var/list/color_matrix_last
@@ -51,11 +52,14 @@
 MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
 
 CAPABILITIES(/obj/machinery/gear_painter)
+	tabletop(carry = TRUE)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	configure(machine_usage(wrench_time = 40))
 	setup(PROC_REF(seed_colour_matrix))
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 	interface("ColorMate")
+	ui_shape(message = schema_text(), title = schema_text(), matrix_only = bool(), matrixcolors = row(rr = num(), rg = num(), rb = num(), gr = num(), gg = num(), gb = num(), br = num(), bg = num(), bb = num(), cr = num(), cg = num(), cb = num()), temp = nullable(schema_text()), item_name = nullable(schema_text()), item_sprite = nullable(schema_text()), item_preview = nullable(schema_text()), activemode = int(), buildhue = num(), buildsat = num(), buildval = num())
 	op("switch_modes", ui_act("switch_modes", arg("mode", num())), then(PROC_REF(ui_act_switch_modes)))
 	op("choose_color", ui_act("choose_color"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/color, fields = list("default" = computed(PROC_REF(colour_default)), "title" = "ColorMate colour picking", "question" = "Choose a color: ", "timeout" = 0), when = PROC_REF(colour_item_present)), then(PROC_REF(ui_act_choose_color)))
 	op("paint", ui_act("paint"), then(PROC_REF(ui_act_paint)))
@@ -96,12 +100,13 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	drop_item(user)
 	return OP_DECLINE
 
-/obj/machinery/gear_painter/proc/drop_item(mob/user)
+/obj/machinery/gear_painter/proc/drop_item(mob/user, quiet = FALSE)
 	if(!oview(1,src))
 		return
 	if(!inserted)
 		return
-	to_chat(user, span_notice("You remove [inserted] from [src]"))
+	if(!quiet) // the window shows the item gone
+		to_chat(user, span_notice("You remove [inserted] from [src]"))
 	inserted.forceMove(drop_location())
 	if(isliving(user))
 		user.put_in_hands(inserted)
@@ -111,6 +116,10 @@ CAPABILITIES(/obj/machinery/gear_painter)
 /obj/machinery/gear_painter/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	. = list()
+	// The colour matrix modal shares this window; the painter has no prompt text and offers every mode.
+	.["message"] = ""
+	.["title"] = name
+	.["matrix_only"] = FALSE
 	.["matrixcolors"] = list(
 		"rr" = color_matrix_last[1],
 		"rg" = color_matrix_last[2],
@@ -125,12 +134,13 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		"cg" = color_matrix_last[11],
 		"cb" = color_matrix_last[12],
 	)
-	if(temp)
-		.["temp"] = temp
+	.["temp"] = temp || null
 	if(inserted)
 		.["item_name"] = inserted.name
-		.["item_sprite"] = icon2base64(get_flat_icon(inserted,dir=SOUTH,no_anim=TRUE))
-		.["item_preview"] = icon2base64(build_preview(user))
+		// The shared portrait cache renders it off the tick (null until it lands; item_sprite_landed pushes the window then).
+		.["item_sprite"] = portrait_request(inserted, SOUTH, src, PROC_REF(item_sprite_landed))?.b64
+		var/icon/preview = build_preview(user)
+		.["item_preview"] = preview ? icon2base64(preview) : null
 	else
 		.["item_name"] = null
 		.["item_sprite"] = null
@@ -172,7 +182,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	if(!(inserted))
 		return
 	set_temp("")
-	drop_item(user)
+	drop_item(user, quiet = TRUE)
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_clear(datum/act/op/A)
@@ -271,22 +281,22 @@ CAPABILITIES(/obj/machinery/gear_painter)
 					text2num(color_matrix_last[12]),
 				)
 				if(!check_valid_color(cm, user))
-					return get_flat_icon(inserted, dir=SOUTH, no_anim=TRUE)
+					return flat_picture(inserted)
 
 			if(COLORMATE_TINT)
 				if(!check_valid_color(activecolor, user))
-					return get_flat_icon(inserted, dir=SOUTH, no_anim=TRUE)
+					return flat_picture(inserted)
 
 			if(COLORMATE_HSV)
 				cm = color_matrix_hsv(build_hue, build_sat, build_val)
 				set_color_matrix_last(cm)
 				if(!check_valid_color(cm, user))
-					return get_flat_icon(inserted, dir=SOUTH, no_anim=TRUE)
+					return flat_picture(inserted)
 
 		var/cur_color = inserted.color
 		inserted.color = null
 		inserted.color = (active_mode == COLORMATE_TINT ? activecolor : cm)
-		var/icon/preview = get_flat_icon(inserted, dir=SOUTH, no_anim=TRUE)
+		var/icon/preview = flat_picture(inserted)
 		inserted.color = cur_color
 		set_temp("")
 
@@ -310,8 +320,16 @@ CAPABILITIES(/obj/machinery/gear_painter)
 		COLORTEST("FFFFFF", cm)
 #undef COLORTEST
 		if(passed < minimum_matrix_tests)
-			temp = "Matrix is too dark. (passed [passed] out of [minimum_matrix_tests] required tests. Minimum lightness: [minimum_matrix_lightness])."
+			set_temp("Matrix is too dark. (passed [passed] out of [minimum_matrix_tests] required tests. Minimum lightness: [minimum_matrix_lightness]).")
 			return FALSE
 		return TRUE
 
 MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
+
+/// The inserted item's picture landed: the open window shows it.
+/// The flat picture of `A` as it looks now (its trial colour on), from the shared portrait cache: null until it lands (item_sprite_landed).
+/obj/machinery/gear_painter/proc/flat_picture(atom/A)
+	return portrait_request(A, SOUTH, src, PROC_REF(item_sprite_landed))?.picture
+
+/obj/machinery/gear_painter/proc/item_sprite_landed(datum/portrait/P)
+	SStgui.update_uis(src)

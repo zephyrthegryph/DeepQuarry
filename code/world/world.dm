@@ -851,6 +851,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /world/Del()
 	log_world("EXIT: world.Del() at [time_stamp()]")
 	// Joins verdigris' frame and job threads before BYOND unloads the DLL.
+	log_file_stop()
 	vg_world_shutdown()
 	QDEL_NULL(Tracy)
 	QDEL_NULL(Debugger)
@@ -990,9 +991,15 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 // allocation happens, this call still reports the z it created — callers
 // can rely on it instead of re-reading world.maxz across a yield.
 /world/proc/increment_max_z()
+	vg_configure_world(maxx, maxy, maxz + 1)
+	// The new level's turfs (space) are made and initialized inside `maxz++`: they skip their own air and heat registration (register_open_air())
+	// and the atmos core registers the whole level from the turf grid in one call after.
+	GLOB.air_level_registering = SSair?.initialized ? maxz + 1 : 0
 	maxz++
+	GLOB.air_level_registering = 0
 	. = maxz
-	vg_configure_world(maxx, maxy, maxz)
+	if(SSair?.initialized)
+		SSair.register_level_turfs(maxz)
 	max_z_changed()
 
 // Call this to change world.fps, don't modify it directly.

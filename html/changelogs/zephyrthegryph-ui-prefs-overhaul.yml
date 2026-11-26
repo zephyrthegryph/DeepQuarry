@@ -1,0 +1,13 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Changing species or taur body no longer blanks the character setup page; it updates in place"
+  - bugfix: "Character setup tabs are prefetched one at a time and re-requested if a page is lost, so Loadout no longer waits on a huge first answer"
+  - code_imp: "Character setup logs slow updates (PREFS_UI_SLOW) and tab load times"
+  - qol: "Long text boxes rest as a line or two and open while edited"
+  - qol: "Species sits top right of Identity with Blood under it; birthday month and day line up"
+  - qol: "Languages are a grid of tiles with the language description as a tooltip"
+  - qol: "Dropdowns fit their content and short controls flow inline"
+  - qol: "Larger text on the Traits and Jobs tabs, wider job title column"
+  - rscdel: "Removed the settings search box and the antag opt-in tab from character setup"
+  - qol: "The More tab is gone; general settings are the Game tab"

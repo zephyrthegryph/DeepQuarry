@@ -25,12 +25,13 @@ pub fn has_comment(s: &str) -> bool {
 /// A call that only changes its name: `old(a, b, c)` -> `new(a, b, c)`, valid when it has exactly `arity`
 /// positional arguments. Fewer is malformed (`too_few_args`); more, or any named argument, is a form the
 /// new proc does not take (`extra_args`), left for a human.
-pub fn rename_exact(cx:&Ctx,new:&str,arity:usize)->Outcome{
-    match rename_exact_using(cx,new,arity){Ok(outcome)=>outcome,Err(actual)=>Outcome::Operational(actual)}
-}
-fn rename_exact_using(cx:&Ctx,new:&str,arity:usize)->std::io::Result<Outcome>{
-    let n=cx.node.args.len();
-    if n<arity{return Ok(Outcome::Residue("too_few_args",cx.format_using(format_args!("{} takes {} arguments, the call has {}",cx.callee,arity,n))?))}
-    if n>arity||any_named(&cx.node.args){return Ok(Outcome::Residue("extra_args",cx.format_using(format_args!("{} is called with arguments {} does not take",cx.callee,new))?))}
-    let text=cx.own_using(new)?;let edits=cx.singleton_using(Edit::replace(cx.node.name,text))?;Ok(Outcome::edits(edits))
+pub fn rename_exact(cx: &Ctx, new: &str, arity: usize) -> Outcome {
+    let n = cx.node.args.len();
+    if n < arity {
+        return Outcome::Residue("too_few_args", format!("{} takes {} arguments, the call has {}", cx.callee, arity, n));
+    }
+    if n > arity || any_named(&cx.node.args) {
+        return Outcome::Residue("extra_args", format!("{} is called with arguments {} does not take", cx.callee, new));
+    }
+    Outcome::edits(vec![Edit::replace(cx.node.name, new)])
 }

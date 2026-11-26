@@ -75,6 +75,10 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 	/// behavior selection. For long windup attacks like charge_slam.
 	var/blocks_reselection = FALSE
 
+	/// If TRUE, the behaviour is one action that start() does and answers DQ_BEHAVIOR_DONE for: the brain runs it and ends it in one call (run_instant()) without
+	/// making it the active behaviour. A tick() it has is never called.
+	var/instant = FALSE
+
 	/// If TRUE, the behavior should be considered even if the brain has no
 	/// primary_threat (e.g. wander, idle_speak).
 	var/no_threat_required = FALSE

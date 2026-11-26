@@ -38,11 +38,11 @@ CAPABILITIES(/datum/feed_channel)
 /datum/feed_message/proc/clear()
 	set_author("")
 	set_body("")
-	src.caption = ""
+	set_caption("")
 	set_img(null)
 	set_time_stamp("")
 	src.backup_body = ""
-	src.backup_author = ""
+	set_backup_author("")
 	src.backup_caption = ""
 	src.backup_img = null
 	parent_channel().update()
@@ -53,11 +53,11 @@ CAPABILITIES(/datum/feed_channel)
 /datum/feed_channel/proc/clear()
 	set_channel_name("")
 	rel_set(src, nameof(messages), list())
-	src.locked = 0
+	set_locked(0)
 	set_author("")
 	src.backup_author = ""
 	set_censored(0)
-	src.is_admin_channel = 0
+	set_is_admin_channel(0)
 	src.announcement = ""
 	update()
 
@@ -77,8 +77,8 @@ CAPABILITIES(/datum/feed_network)
 	var/datum/feed_channel/newChannel = new /datum/feed_channel
 	newChannel.set_channel_name(channel_name)
 	newChannel.set_author(author)
-	newChannel.locked = locked
-	newChannel.is_admin_channel = adminChannel
+	newChannel.set_locked(locked)
+	newChannel.set_is_admin_channel(adminChannel)
 	if(announcement_message)
 		newChannel.announcement = announcement_message
 	else
@@ -95,12 +95,12 @@ CAPABILITIES(/datum/feed_network)
 		newMsg.set_title(title)
 	else
 		newMsg.set_title("News Update")
-	newMsg.post_time = round_duration_in_ds // Should be almost universally unique
+	newMsg.set_post_time(round_duration_in_ds) // Should be almost universally unique
 	if(message_type)
 		newMsg.set_message_type(message_type)
 	if(photo)
 		newMsg.set_img(photo.img)
-		newMsg.caption = photo.scribble
+		newMsg.set_caption(photo.scribble)
 	for(var/datum/feed_channel/FC in network_channels)
 		if(FC.channel_name == channel_name)
 			insert_message_in_channel(FC, newMsg) //Adding message to the network's appropriate feed_channel
@@ -158,7 +158,7 @@ CAPABILITIES(/datum/feed_network)
 
 CAPABILITIES(/obj/machinery/newscaster)
 	configure(atom_rules(integrity_failure = 0.5))
-	configure(movable_motion(blocks_emissive = NONE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(allocate_unit_number))
 	after_init(0, then(PROC_REF(connect_exonet)))
 	after_init(0, then(PROC_REF(follow_wanted)))
@@ -169,6 +169,7 @@ CAPABILITIES(/obj/machinery/newscaster)
 		then(PROC_REF(ui_act_set_attachment)))
 	owns_one(nameof(photo_data), /datum/news_photo)
 	interface("Newscaster")
+	ui_shape(user = schema_text(), wanted_issue = nullable(row(author = schema_text(), criminal = schema_text(), desc = schema_text(), img = nullable(schema_text()))), securityCaster = bool(), channels = list_of(row(admin = bool(), ref = int(), name = schema_text(), censored = bool())), photo_data = bool(), total_num = int(), active_num = int(), message_num = int(), viewing_channel = nullable(row(name = schema_text(), author = schema_text(), censored = bool(), messages = list_of(row(title = nullable(schema_text()), body = schema_text(), img = nullable(schema_text()), type = schema_text(), caption = nullable(schema_text()), author = schema_text(), timestamp = schema_text(), ref = int())), ref = int())), company = schema_text(), temp = nullable(row(text = schema_text(), style = schema_text())), channel_name = schema_text(), c_locked = bool(), msg = schema_text(), title = schema_text(), paper_remaining = int())
 	op("set_channel_name", ui_act("set_channel_name", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_channel_name)))
 	op("submit_new_channel", ui_act("submit_new_channel"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/yes_no/news_channel_create, fields = list("title" = "Network Channel Handler", "question" = "Please confirm Feed channel creation", "author" = computed(PROC_REF(channel_author)), "channel" = computed(PROC_REF(channel_prompt_name)), "locked" = computed(PROC_REF(channel_prompt_locked)), "timeout" = 0), when = PROC_REF(channel_can_create)), then(PROC_REF(ui_act_submit_new_channel)))
 	op("set_channel_receiving", ui_act("set_channel_receiving"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Network Channel Handler", "question" = "Choose receiving Feed Channel", "choices" = computed(PROC_REF(receiving_channels)), "timeout" = 0)), then(PROC_REF(ui_act_set_channel_receiving)))
@@ -215,7 +216,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		look.state("newscaster_off")
 		look.overlay("crack3", broken_now())
 		return
-	look.glow(GLOW(2, 0.9, "#00ff00"))
+	look.glow(GLOW(2, 0.25, "#00ff00"))
 	if(wanted_up)
 		look.state("newscaster_wanted")
 		look.glow("newscaster_wanted_ov")
@@ -375,7 +376,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	data["company"] = using_map.company_name
 
 	data["temp"] = temp
-	data["unit_no"] = unit_no
 	data["channel_name"] = channel_name
 	data["c_locked"] = c_locked
 	data["msg"] = msg
@@ -551,7 +551,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		tgui_alert_async(user, "This message was created by a [using_map.company_name] Officer. You cannot censor its author.")
 		return
 	if(MSG.author != "\[REDACTED\]")
-		MSG.backup_author = MSG.author
+		MSG.set_backup_author(MSG.author)
 		MSG.set_author("\[REDACTED\]")
 	else
 		MSG.set_author(MSG.backup_author)
@@ -573,11 +573,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		MSG.backup_caption = MSG.caption
 		MSG.backup_img = MSG.img
 		MSG.set_body("\[REDACTED\]")
-		MSG.caption = "\[REDACTED\]"
+		MSG.set_caption("\[REDACTED\]")
 		MSG.set_img(null)
 	else
 		MSG.set_body(MSG.backup_body)
-		MSG.caption = MSG.caption
+		MSG.set_caption(MSG.backup_caption)
 		MSG.set_img(MSG.backup_img)
 
 	MSG.parent_channel().update()
@@ -677,11 +677,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 		if(GLOB.news_network.wanted_issue() && GLOB.news_network.wanted_issue().is_admin_message)
 			tgui_alert_async(user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot edit it.")
 			return
-		GLOB.news_network.wanted_issue().author = channel_name
-		GLOB.news_network.wanted_issue().body = msg
-		GLOB.news_network.wanted_issue().backup_author = scanned_user
+		var/datum/feed_message/wanted = GLOB.news_network.wanted_issue()
+		wanted.set_author(channel_name)
+		wanted.set_body(msg)
+		wanted.set_backup_author(scanned_user)
 		if(photo_data)
-			GLOB.news_network.wanted_issue().img = photo_data.photo().img
+			wanted.set_img(photo_data.photo().img)
 		show_temp("Wanted issue for [channel_name] successfully edited.", "success", FALSE)
 		SStgui.update_uis(src)
 		return
@@ -689,7 +690,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	var/datum/feed_message/WANTED = new /datum/feed_message
 	WANTED.set_author(channel_name)
 	WANTED.set_body(msg)
-	WANTED.backup_author = scanned_user //I know, a bit wacky
+	WANTED.set_backup_author(scanned_user) //I know, a bit wacky
 	if(photo_data)
 		WANTED.set_img(photo_data.photo().img)
 	rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)

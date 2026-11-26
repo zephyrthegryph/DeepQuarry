@@ -8,22 +8,13 @@
 //     Once paid, the "Back" button needs the access code to unlock.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  eftpos_name: string;
-  machine_id: string;
-  transaction_locked: BooleanLike;
-  transaction_paid: BooleanLike;
-  transaction_purpose: string;
-  transaction_amount: number;
-  linked_account_name: string;
-};
+import type { EftposActions, EftposData } from './generated/Eftpos';
 
 export const Eftpos = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<EftposData, EftposActions>();
   const {
     eftpos_name,
     machine_id,
@@ -47,9 +38,9 @@ export const Eftpos = () => {
             ) : null
           }
         >
-          <Box italic color="label" mb={1}>
+          <Label italic mb={1}>
             Terminal {machine_id} — report this ID when contacting IT Support.
-          </Box>
+          </Label>
 
           <LabeledList>
             <LabeledList.Item label="Purpose">
@@ -95,9 +86,9 @@ export const Eftpos = () => {
                 </Box>
               ) : (
                 <>
-                  <Box italic color="label" mb={1}>
+                  <Label italic mb={1}>
                     Swipe your card to finish this transaction.
-                  </Box>
+                  </Label>
                   <Button fluid icon="id-card" onClick={() => act('scan_card')}>
                     [------]
                   </Button>
@@ -123,9 +114,9 @@ export const Eftpos = () => {
                 </Button>
               </Box>
               <Box mt={1}>
-                <Box inline color="label" mr={1}>
+                <Label inline mr={1}>
                   Scan card to reset access code:
-                </Box>
+                </Label>
                 <Button onClick={() => act('reset')}>[------]</Button>
               </Box>
             </Box>

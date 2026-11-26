@@ -1,0 +1,9 @@
+{
+	"init_value": "Medical",
+	"items": ["Engineering", "Medical", "Security", "Science"],
+	"large_buttons": false,
+	"message": "Choose a department to page.",
+	"swapped_buttons": false,
+	"title": "Page department",
+	"timeout": 60
+}

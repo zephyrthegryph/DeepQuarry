@@ -140,8 +140,8 @@
 			/obj/item/reagent_containers/hypospray/vial,
 			/obj/item/clothing/accessory/stethoscope,
 			/obj/item/clothing/glasses/hud/health,
-			/obj/item/clothing/suit/storage/toggle/labcoat/cmo,
-			/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt,
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmo),
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt),
 			/obj/item/clothing/mask/surgical,
 			/obj/item/clothing/shoes/white,
 			/obj/item/cartridge/cmo,
@@ -189,7 +189,7 @@
 			/obj/item/storage/box/autoinjectors,
 			/obj/item/clothing/under/rank/chemist,
 			/obj/item/clothing/glasses/science,
-			/obj/item/clothing/suit/storage/toggle/labcoat/chemist,
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/chemist),
 			/obj/item/clothing/mask/surgical,
 			/obj/item/clothing/shoes/white,
 			/obj/item/cartridge/chemistry,
@@ -204,6 +204,19 @@
 	containername = JOB_CHEMIST + " equipment"
 	access = ACCESS_CHEMISTRY
 
+/datum/supply_pack/med/chemprecursors
+	name = "Chemical precursor crate"
+	desc = "Three boxes of the sixteen common chemical precursors (acids, bleach, phenol, salicylic acid, wood aldehyde, glycerol, sterol and the rest). Requires Chemistry access."
+	contains = list(
+			/obj/item/storage/box/precursors_inorganic,
+			/obj/item/storage/box/precursors_ring,
+			/obj/item/storage/box/precursors_bio
+			)
+	cost = 30
+	containertype = /obj/structure/closet/crate/secure/nanomed
+	containername = "Chemical precursor crate"
+	access = ACCESS_CHEMISTRY
+
 /datum/supply_pack/med/paramedicgear
 	name = JOB_PARAMEDIC + " equipment"
 	desc = "Standard equipment for Paramedics and EMTs. Requires Medical Equipment access."
@@ -213,7 +226,7 @@
 			/obj/item/clothing/under/rank/medical/scrubs/black,
 			/obj/item/clothing/accessory/armband/medblue,
 			/obj/item/clothing/glasses/hud/health,
-			/obj/item/clothing/suit/storage/toggle/labcoat/emt,
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/emt),
 			/obj/item/clothing/under/rank/medical/paramedic,
 			/obj/item/clothing/suit/storage/toggle/fr_jacket,
 			/obj/item/clothing/mask/gas/clear,
@@ -307,12 +320,12 @@
 			/obj/item/clothing/under/rank/medical = 3,
 			/obj/item/clothing/under/rank/medical/paramedic = 3,
 			/obj/item/clothing/suit/storage/toggle/labcoat = 3,
-			/obj/item/clothing/suit/storage/toggle/labcoat/cmo,
-			/obj/item/clothing/suit/storage/toggle/labcoat/emt,
-			/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt,
-			/obj/item/clothing/suit/storage/toggle/labcoat/genetics,
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmo),
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/emt),
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt),
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/genetics),
 			/obj/item/clothing/suit/storage/toggle/labcoat/virologist,
-			/obj/item/clothing/suit/storage/toggle/labcoat/chemist,
+			VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/chemist),
 			/obj/item/storage/box/masks,
 			/obj/item/storage/box/gloves
 			)

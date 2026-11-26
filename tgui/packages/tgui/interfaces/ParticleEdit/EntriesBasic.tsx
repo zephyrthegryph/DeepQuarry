@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { Fragment, useContext } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
   Box,
@@ -10,7 +10,7 @@ import {
   NumberInput,
   Stack,
 } from 'tgui-core/components';
-
+import type { ParticleEditActions } from '../generated/ParticleEdit';
 import { ParticleContext } from '.';
 import {
   type EntryCoordProps,
@@ -30,7 +30,7 @@ import {
 import { editKeyOf, editWeightOf, setGradientSpace } from './helpers';
 
 export const EntryFloat = (props: EntryFloatProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, float } = props;
   return (
@@ -43,7 +43,7 @@ export const EntryFloat = (props: EntryFloatProps) => {
       <NumberInput
         animated
         tickWhileDragging
-        value={float}
+        value={float ?? 0}
         minValue={0}
         maxValue={Infinity}
         step={1}
@@ -59,9 +59,10 @@ export const EntryFloat = (props: EntryFloatProps) => {
 };
 
 export const EntryCoord = (props: EntryCoordProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
-  const { name, var_name, coord } = props;
+  const { name, var_name } = props;
+  const coord = Array.isArray(props.coord) ? props.coord : undefined;
   return (
     <LabeledList.Item label={name}>
       <Button
@@ -116,7 +117,7 @@ export const EntryCoord = (props: EntryCoordProps) => {
 };
 
 export const EntryGradient = (props: EntryGradientProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, gradient } = props;
   const cleanGradient = gradient?.map((entry) => {
@@ -180,7 +181,7 @@ export const EntryGradient = (props: EntryGradientProps) => {
         <Stack.Item>
           {cleanGradient?.map((entry, index) =>
             entry === 'loop' || entry === 'space' ? null : (
-              <>
+              <Fragment key={index}>
                 {typeof entry === 'string' ? (
                   <ColorBox mr={0.4} color={entry} />
                 ) : null}
@@ -213,7 +214,7 @@ export const EntryGradient = (props: EntryGradientProps) => {
                     })
                   }
                 />
-              </>
+              </Fragment>
             ),
           )}
         </Stack.Item>
@@ -236,7 +237,7 @@ export const EntryGradient = (props: EntryGradientProps) => {
 };
 
 export const EntryTransform = (props: EntryTransformProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const len = props.transform?.length ? props.transform.length : 0;
   const selected =
@@ -291,7 +292,7 @@ export const EntryTransform = (props: EntryTransformProps) => {
 };
 
 export const EntryIcon = (props: EntryIconStateProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, icon_state } = props;
   return (
@@ -305,9 +306,9 @@ export const EntryIcon = (props: EntryIconStateProps) => {
           />
         </Stack.Item>
         {typeof icon_state === 'object' && icon_state !== null ? (
-          Object.keys(icon_state).map((icon_name, i) => (
-            <>
-              <Stack.Item key={i}>{icon_name}</Stack.Item>
+          Object.keys(icon_state).map((icon_name) => (
+            <Fragment key={icon_name}>
+              <Stack.Item>{icon_name}</Stack.Item>
               <Stack.Item>
                 <Box> = </Box>
               </Stack.Item>
@@ -338,7 +339,7 @@ export const EntryIcon = (props: EntryIconStateProps) => {
                   })
                 }
               />
-            </>
+            </Fragment>
           ))
         ) : (
           <>
@@ -366,7 +367,7 @@ export const EntryIcon = (props: EntryIconStateProps) => {
 };
 
 export const EntryIconState = (props: EntryIconStateProps) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const { setDesc } = useContext(ParticleContext);
   const { name, var_name, icon_state } = props;
   const newValue =
@@ -387,7 +388,7 @@ export const EntryIconState = (props: EntryIconStateProps) => {
           // this can get big enough to go off the edge of the screen and scrollableHorizontal isnt working
           // so if someone inputs like 10 icon states at once its #notmyproblem
           Object.keys(icon_state).map((iconstate, index) => (
-            <>
+            <Fragment key={iconstate}>
               <Stack.Item>
                 <Input
                   width={'70px'}
@@ -434,7 +435,7 @@ export const EntryIconState = (props: EntryIconStateProps) => {
                   }
                 />
               </Stack.Item>
-            </>
+            </Fragment>
           ))
         ) : (
           <>

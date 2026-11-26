@@ -43,13 +43,14 @@
 	pain_at_max = 120
 	treated_by = list(TREAT_ANTITOXIN = 1.5, TREAT_ANALGESIC = 0.5)
 	symptom_pool = list(
+		/datum/affliction_symptom/neurotoxic_tremor = 100,
 		/datum/affliction_symptom/sharp_pain = 90,
 		/datum/affliction_symptom/jittery    = 60,
 		/datum/affliction_symptom/confusion  = 40,
 		/datum/affliction_symptom/nausea     = 30,
 	)
 	min_symptoms = 1
-	max_symptoms = 3
+	max_symptoms = 4
 
 
 // --- Cnidarian sting (space jellyfish) --------------------------------------------------

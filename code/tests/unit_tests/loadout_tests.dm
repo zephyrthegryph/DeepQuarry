@@ -176,8 +176,9 @@
 		var/list/option_paths = list()
 		for(var/disp in vt.valid_variants)
 			var/val = vt.valid_variants[disp]
-			if(ispath(val))
-				option_paths += val
+			var/option_path = saved_type_path(val) // a path, or the parent type of a variant-family reference
+			if(ispath(option_path))
+				option_paths += option_path
 		if(!length(option_paths))
 			continue
 		// The preview sprite (G.path) must belong to the SAME item family as the
@@ -193,14 +194,15 @@
 		if(!G.path)
 			offenders += "'[name]' ([G.type]) has no preview path (would inherit an unrelated parent default)"
 			continue
+		var/preview_path = saved_type_path(G.path) // a path, or the parent type of a variant-family reference
 		var/family_ok = FALSE
 		for(var/op in option_paths)
-			if(ispath(op, G.path))
+			if(ispath(op, preview_path))
 				family_ok = TRUE
 				break
 		if(!family_ok)
 			var/common_ancestor = dq_longest_common_type(option_paths)
-			if(common_ancestor && ispath(G.path, common_ancestor))
+			if(common_ancestor && ispath(preview_path, common_ancestor))
 				family_ok = TRUE
 		if(!family_ok)
 			offenders += "'[name]' ([G.type]) preview sprite [G.path] is in a different item family than any of its variant options"

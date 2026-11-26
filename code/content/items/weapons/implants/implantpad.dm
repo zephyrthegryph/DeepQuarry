@@ -21,6 +21,7 @@
 CAPABILITIES(/obj/item/implantpad)
 	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	interface("ImplantPad", title = "Implant Mini-Computer", input = in_hand())
+	ui_shape(has_case = bool(), has_implant = bool(), implant_info = schema_text(), is_tracking = bool(), tracking_id = int())
 	op("take_case", hand(), when(all_of(PROC_REF(has_case), carried())), then(PROC_REF(case_taken)))
 	op("insert_case", item(/obj/item/implantcase), passes(), when(req(PROC_REF(has_no_case))), then(PROC_REF(case_inserted)))
 	op("tracking_id", ui_act("tracking_id", arg("delta", num())), then(PROC_REF(ui_act_tracking_id)))

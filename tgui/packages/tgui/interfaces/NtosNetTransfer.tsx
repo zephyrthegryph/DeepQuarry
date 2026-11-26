@@ -1,42 +1,18 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { NtosWindow } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  Icon,
-  LabeledList,
-  ProgressBar,
-  Section,
-} from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import { Box, Button, Icon, LabeledList, Section } from 'tgui-core/components';
+import type {
+  NtosNetTransferActions,
+  NtosNetTransferData,
+} from './generated/NtosNetTransfer';
 
-type Data = {
-  error: string;
-  downloading: BooleanLike;
-  download_size: number | undefined;
-  download_progress: number | undefined;
-  download_netspeed: number | undefined;
-  download_name: string | undefined;
-  uploading: BooleanLike;
-  upload_uid: string | undefined;
-  upload_clients: number | undefined;
-  upload_haspassword: BooleanLike;
-  upload_filename: string | undefined;
-  upload_filelist: uploadFile[] | [];
-  servers: server[] | [];
-};
+type server = NtosNetTransferData['servers'][number];
 
-type server = {
-  uid: string;
-  filename: string;
-  size: number;
-  haspassword: BooleanLike;
-};
-
-type uploadFile = { uid: string; filename: string; size: number };
+type uploadFile = NtosNetTransferData['upload_filelist'][number];
 
 export const NtosNetTransfer = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<NtosNetTransferData, NtosNetTransferActions>();
 
   const { error, downloading, uploading, upload_filelist } = data;
 
@@ -60,7 +36,10 @@ export const NtosNetTransfer = (props) => {
 };
 
 const P2PError = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNetTransferData,
+    NtosNetTransferActions
+  >();
   const { error } = data;
   return (
     <Section
@@ -77,7 +56,10 @@ const P2PError = (props) => {
 };
 
 const P2PDownload = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNetTransferData,
+    NtosNetTransferActions
+  >();
   const { download_name, download_progress, download_size, download_netspeed } =
     data;
   return (
@@ -86,11 +68,13 @@ const P2PDownload = (props) => {
         <LabeledList.Item label="Downloaded File">
           {download_name}
         </LabeledList.Item>
-        <LabeledList.Item label="Progress">
-          <ProgressBar value={download_progress!} maxValue={download_size}>
-            {download_progress} / {download_size} GQ
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Progress"
+          value={download_progress ?? 0}
+          maxValue={download_size ?? undefined}
+        >
+          {download_progress} / {download_size} GQ
+        </StatBar>
         <LabeledList.Item label="Transfer Speed">
           {download_netspeed} GQ/s
         </LabeledList.Item>
@@ -105,7 +89,10 @@ const P2PDownload = (props) => {
 };
 
 const P2PUpload = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNetTransferData,
+    NtosNetTransferActions
+  >();
   const { upload_clients, upload_filename, upload_haspassword } = data;
   return (
     <Section title="Server enabled">
@@ -133,7 +120,10 @@ const P2PUpload = (props) => {
 };
 
 const P2PUploadServer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNetTransferData,
+    NtosNetTransferActions
+  >();
   const { upload_filelist } = data;
   return (
     <Section
@@ -164,7 +154,10 @@ const P2PUploadServer = (props) => {
 };
 
 const P2PAvailable = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNetTransferData,
+    NtosNetTransferActions
+  >();
   const { servers } = data;
   return (
     <Section

@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Client lighting no longer leaves the world black: its hidden planes are drawn."

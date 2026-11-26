@@ -53,15 +53,14 @@
 
 // --- Upkeep ---------------------------------------------------------------------------------------
 
-/// Every mob's base upkeep (the old /mob/Life() chain): followers and spell buttons.
+/// Every mob's base upkeep (the old /mob/Life() chain): followers.
 /mob/living/proc/life_upkeep(datum/seq_frame/life/F)
 	// to catch teleports etc which directly set loc
 	src.update_following()
-	src.update_spell_masters()
 
-/// Followers are dragged along on Moved; spell buttons only matter for casters.
+/// Followers are dragged along on Moved.
 /mob/living/proc/life_upkeep_due()
-	return LAZYLEN(src?.follower_list()) || LAZYLEN(src.spell_masters)
+	return LAZYLEN(src?.follower_list())
 
 // --- Light --------------------------------------------------------------------------------------
 
@@ -170,7 +169,7 @@
 	if(!C)
 		return
 	var/idle_limit = 10 MINUTES
-	if(C.inactivity >= idle_limit && !STATE_GET(src, connection, away_from_keyboard) && C.prefs?.read_preference(/datum/preference/toggle/auto_afk))	//if we're not already afk and we've been idle too long, and we have automarking enabled... then automark it
+	if(C.inactivity >= idle_limit && !STATE_GET(src, connection, away_from_keyboard))	//if we're not already afk and we've been idle too long, and we have automarking enabled... then automark it
 		src.add_status_indicator("afk")
 		to_chat(src, span_notice("You have been idle for too long, and automatically marked as AFK."))
 		STATE_SET(src, connection, away_from_keyboard, TRUE)
@@ -227,7 +226,7 @@
 	if(!src.client)
 		return
 	// If you're in an ambient area and have not moved out of it for x time as configured per-client, and do not have it disabled, we're going to play ambience again to you, to help break up the silence.
-	var/pref = src.read_preference(/datum/preference/numeric/ambience_freq)
+	var/pref = 5
 	if(!pref)
 		return
 
@@ -242,7 +241,7 @@
 /mob/living/proc/life_ambience_rewake()
 	if(!src.client)
 		return 0
-	var/pref = src.read_preference(/datum/preference/numeric/ambience_freq)
+	var/pref = 5
 	if(!pref)
 		return 0
 	return max(1 SECONDS, STATE_GET(src, mob_misc, lastareachange) + pref MINUTES - world.time)
@@ -254,7 +253,7 @@
 	src.update_pulling()
 
 	FOR_CONTENTS(var/obj/item/grab/G, src)
-		G.periodic_step()
+		G.grab_tick()
 
 /// Busy while pulling or grabbing. Gravity is re-read on Moved and when the ground changes (MOB_KEY_GROUND).
 /mob/living/proc/life_movement_due()
@@ -391,12 +390,30 @@
 		return
 	life_hud_pass()
 
+/// A move changed the place the mob stands in: only what the HUD reads from the place is redrawn (life_hud_place()), never the whole pass.
+/mob/living/proc/life_hud_place_changed(datum/act/A)
+	if(QDELETED(src) || !life_hud_wanted() || !life_placed())
+		return
+	life_hud_place()
+
+/// The part of the HUD that depends on where the mob is. A type whose life_hud() reads its place (a robot's air, a pAI's card) overrides this and calls ..().
+/mob/living/proc/life_hud_place()
+	SHOULD_CALL_PARENT(TRUE)
+	if(!hud_available())
+		return FALSE
+	var/place_started = TICK_USAGE
+	life_hud_darksight()
+	KM_SLOW_INNER(place_started, "life_hud_place darksight [type]") // the tick ledger names a step's HUD place pass when it passes KM_SLOW_SPAN_MIN_MS
+	return TRUE
+
 /// One reactive HUD pass: draw it, then arm its rewake (darksight, fading overlays) or, while it
 /// still has work (life_hud_idle() FALSE), run again a Life cycle later.
 /mob/living/proc/life_hud_pass()
 	if(!life_placed())
 		return
+	var/pass_started = TICK_USAGE
 	life_hud()
+	KM_SLOW_INNER(pass_started, "life_hud pass [type]")
 	var/delay = life_hud_idle() ? life_hud_rewake_delay() : LIFE_CYCLE
 	if(delay > 0 && client)
 		after(src, delay, PROC_REF(life_hud_rewake), key = LIFE_HUD_REWAKE, clock = CLOCK_WORLD)
@@ -429,8 +446,12 @@
 	SHOULD_CALL_PARENT(TRUE)
 	if(!hud_available())
 		return FALSE
+	var/darksight_started = TICK_USAGE
 	life_hud_darksight()
+	KM_SLOW_INNER(darksight_started, "life_hud darksight [type]")
+	var/icons_started = TICK_USAGE
 	life_hud_health_icons()
+	KM_SLOW_INNER(icons_started, "life_hud health icons [type]")
 	return TRUE
 
 
@@ -483,44 +504,69 @@ GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
 	act_cancel(draw)
 	return TRUE
 
-/// Adapts the darkness overlay to the light level and the mob's darksight.
+/// How strong night vision is for `sight` tiles of darksight, 0..1: none with no darksight, DARKSIGHT_BASE_STRENGTH up to DARKSIGHT_MIN_SIGHT, full at DARKSIGHT_FULL_SIGHT.
+/proc/darksight_strength(sight)
+	if(sight <= 0)
+		return 0
+	return clamp((sight - DARKSIGHT_MIN_SIGHT) / (DARKSIGHT_FULL_SIGHT - DARKSIGHT_MIN_SIGHT), DARKSIGHT_BASE_STRENGTH, 1)
+
+/// The half width, in tiles, of the smaller side of the view `view` (a number or "WxH").
+/proc/darksight_view_radius(view)
+	var/list/size = getviewsize(view)
+	return min(size[1], size[2]) / 2
+
+/// How wide the night-vision disc reaches, in tiles: the darksight distance (one more past DARKSIGHT_MIN_SIGHT, where the disc's faded rim needs room), never past the view.
+/proc/darksight_radius(sight, view_radius)
+	return clamp(sight > DARKSIGHT_MIN_SIGHT ? sight + 1 : sight, 0, view_radius)
+
+/// The scale to draw the 480 px overlay icon at so its disc reaches darksight_radius().
+/proc/darksight_scale(sight, view_radius)
+	return max(darksight_radius(sight, view_radius), 0.1) / DARKSIGHT_ICON_RADIUS
+
+/// The overlay's alpha, 0..1, for `sight` tiles of darksight over a floor that looks `darkness` dark (0..1): it eases in with the dark, none in light.
+/proc/darksight_alpha(sight, darkness)
+	return DARKSIGHT_MAX_ALPHA * darksight_strength(sight) * clamp(darkness, 0, 1)
+
+/// Adapts the night-vision overlay to the light level and the mob's darksight.
 /mob/living/proc/life_hud_darksight()
 	PUBLISH(src, mob_handle_hud_darksight)
 	var/image/dsoverlay = hud_of(src)?.dsoverlay
 	if(!dsoverlay) // no client, nothing to adapt
 		return
-	if(!src.seedarkness) //Cheap 'always darksight' var
-		dsoverlay.alpha = 255
-		return
 
-	var/darksightedness = min(src.see_in_dark/world.view,1.0)	//A ratio of how good your darksight is, from 'nada' to 'really darn good'
-	var/current = dsoverlay.alpha/255						//Our current adjustedness
-
+	var/view_radius = darksight_view_radius(client?.view || world.view)
+	var/sight = src.seedarkness ? src.see_in_dark : DARKSIGHT_FULL_SIGHT
 	var/brightness = 0.0 //We'll assume it's superdark if we can't find something else.
 
-	if(isturf(src.loc))
+	if(!src.seedarkness)
+		brightness = 0
+	else if(isturf(src.loc))
 		var/turf/T = src.loc //Will be true 99% of the time, thus avoiding the whole elif chain
-		brightness = T.get_lumcount()
-
+		brightness = client_darksight_brightness(T)
 	//Snowflake treatment of potential locations
 	else if(istype(src.loc,/obj/mecha)) //I imagine there's like displays and junk in there. Use the lights!
 		brightness = 1
 	else if(istype(src.loc,/obj/item/holder)) //Poor carried teshari and whatnot should adjust appropriately
 		var/turf/T = get_turf(src)
-		brightness = T.get_lumcount()
+		brightness = client_darksight_brightness(T)
 
-	var/darkness = 1-brightness					//Silly, I know, but 'alpha' and 'darkness' go the same direction on a number line
-	var/adjust_to = min(darkness,darksightedness)//Capped by how darksighted they are
+	var/current = dsoverlay.alpha/255
+	var/adjust_to = darksight_alpha(sight, 1 - brightness)
+	var/scale = darksight_scale(sight, view_radius)
+	var/current_scale = dsoverlay.transform.a
 	var/distance = abs(current-adjust_to)		//Used for how long to animate for
-	if(distance < 0.01) return					//We're already all set
+	if(distance < 0.01 && abs(current_scale - scale) < 0.02) return //We're already all set
 
-	animate(dsoverlay, alpha = (adjust_to*255), time = (distance*10 SECONDS))
+	if(client_glow_trace_line())
+		log_world("client lighting: night vision of [src] eases from alpha [round(current * 255)] to [round(adjust_to * 255)] at scale [round(scale, 0.01)] (turf brightness [round(brightness, 0.01)], sight [sight] of view radius [view_radius])")
+	animate(dsoverlay, alpha = (adjust_to*255), transform = matrix(scale, 0, 0, 0, scale, 0), time = max(distance * 10 SECONDS, 1 SECONDS))
 
 /// Sight flags: SEE_TURFS, see_in_dark, see_invisible, vision planes. Only the sight reaction runs it (life_vision_pass()).
 
 /// Variants set their sight, then call ..() last to send the vision signal.
 /mob/living/proc/life_vision()
 	SHOULD_CALL_PARENT(TRUE)
+	sight |= SEE_BLACKNESS // the unseen area is drawn black over the planes, so a large sprite's overhang onto a dark tile is darkened (as in /tg)
 	PUBLISH(src, mob_handle_vision)
 
 /// The root only notifies listeners (remote view); sight inputs wake it.

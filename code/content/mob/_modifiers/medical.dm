@@ -74,17 +74,6 @@
 
 	factors = alist(STAT_SLOWDOWN = 0.1, STAT_EVASION = -5, STAT_ATTACK_SPEED = 1.1, STAT_DISABLE_DURATION = 1.05)
 
-/datum/body_effect/clone_stabilizer
-	name = "clone stabilized"
-	desc = "Your body's regeneration is highly restricted."
-
-	on_created_text = span_danger("You feel nauseous.")
-	on_expired_text = span_warning("You feel healthier.")
-	stacks = MODIFIER_STACK_EXTEND
-
-	factors = alist(STAT_HEALING_RECEIVED = 0.1)
-
-
 // --- Transient body-factor sources ------------------------------------------------------
 // Brief effects that aren't reagents (venom bites, rotting nerves, withdrawal
 // crises, allergy flares). Each is a short modifier carrying a static factor

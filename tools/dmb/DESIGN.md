@@ -346,6 +346,15 @@ shows a stage dominating and the memo paying back 10×.
 - **Segments.** Each build that computed something new writes one segment to a temporary name, then
   renames it to `<segment-id>.seg`. A segment exists for readers only once renamed. The set of live
   segments is the directory listing; there is no manifest.
+- **Compressed payloads (segment format 2, 2026-11-06).** A one-shot compile compresses each record payload of 512 bytes or more with
+  LZ4 (`lz4_flex`, pure Rust, safe encode and decode; the stored bytes are the 4-byte size and the block) when that saves at least an eighth
+  of it; the top bit of the record's payload length word says so. A cold production compile's single segment fell from 2.28 GB to about
+  0.9 GB (payloads compress about 2.6 times). Format 1 segments stay readable (an older binary rejects a format 2 segment as a miss and
+  recompiles). Reading a compressed record decodes it once into a 16-byte aligned private buffer that the segment keeps while it is open,
+  because a view borrows it; so (a) stage 2 (lowered procedure records, which a session retains as zero-copy mapped bytes) is always
+  stored verbatim, and (b) a resident daemon writes plain segments (`dm_cache::set_compress_writes(false)` at daemon start), since
+  decoded copies would turn reclaimable file pages into private memory against its budget. `DMB_CACHE_COMPRESS=0|1` overrides either
+  way. The streaming batch writer packs the same way (spool and segment), so both writers stay byte-identical.
 - **Self-contained.** A segment includes the text of every symbol its records reference, and its
   records reference nothing in any other segment. Ignoring a segment therefore loses only its own
   entries; nothing elsewhere dangles.

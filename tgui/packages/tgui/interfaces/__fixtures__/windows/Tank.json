@@ -1,0 +1,10 @@
+{
+	"connected": 0,
+	"showToggle": 0,
+	"maskConnected": 1,
+	"tankPressure": 950,
+	"releasePressure": 101,
+	"defaultReleasePressure": 101,
+	"minReleasePressure": 0,
+	"maxReleasePressure": 1013
+}

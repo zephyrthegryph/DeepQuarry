@@ -26,7 +26,7 @@
 
 /datum/decl/hierarchy/outfit/tournament_gear/chef
 	name = "Tournament gear - Chef"
-	head = /obj/item/clothing/head/chefhat
+	head = VARIANT(/obj/item/clothing/head/chefhat)
 	uniform = /obj/item/clothing/under/rank/chef
 	suit = /obj/item/clothing/suit/chef
 	r_hand = /obj/item/material/kitchen/rollingpin

@@ -12,8 +12,8 @@
 	medical_name = "Influenza"
 	max_stages = 3
 	spread_text = "Airborne"
-	cure_text = REAGENT_SPACEACILLIN
-	cures = list(REAGENT_ID_SPACEACILLIN, REAGENT_ID_CHICKENSOUP, REAGENT_ID_CHICKENNOODLESOUP)
+	cure_text = "Bed rest, fluids (" + REAGENT_IRONSALINE + ") or " + REAGENT_SPACEACILLIN
+	cures = list(REAGENT_ID_SPACEACILLIN, REAGENT_ID_IRONSALINE)
 	virus_modifiers = NONE //Does NOT have needs_all_cures
 	cure_chance = 10
 	agent = "H13N1 flu virion"

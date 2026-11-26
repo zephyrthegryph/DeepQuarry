@@ -1,4 +1,0 @@
-/list/keyword_child/Copy()
-    return 0
-/proc/use_copy(list/value)
-    value.Copy(Start=1)

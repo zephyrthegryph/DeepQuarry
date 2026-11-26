@@ -126,7 +126,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 	new_character.sync_addictions()
 	bind_player(new_character, M.key)
 	new_character.mind.loaded_from_ckey = picked_ckey
-	new_character.mind.loaded_from_slot = picked_slot
+	new_character.mind.set_loaded_from_slot(picked_slot)
 
 	SSjob.equip_rank(new_character, JOB_MAINT_LURKER, 1)
 

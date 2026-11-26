@@ -2,12 +2,13 @@
 //! lint's ratchet policy and assembles the report.
 
 use std::collections::{HashMap, HashSet};
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use rayon::prelude::*;
 
-use crate::baseline::Mode;
+use crate::baseline::{self, Mode};
 use crate::cache::Cache;
 use crate::lint::{AllowUse, Cx, Lint, Meta, Policy, Registry, Run, ScanKind, Sink};
 use crate::scopes::Scopes;
@@ -36,7 +37,23 @@ static SPAN_ORIGIN: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
 /// Total time spent reading lint caches (`DQ_ANALYZE_TRACE`).
 pub static LOAD_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
-pub use crate::policy_finish::{Timing, Outcome};
+#[derive(Clone, Debug, Default)]
+pub struct Timing {
+    pub total: Duration,
+    pub files: usize,
+    pub rescanned: usize,
+    pub tree_memo_hit: bool,
+}
+
+pub struct Outcome {
+    pub name: String,
+    pub failed: bool,
+    pub text: String,
+    pub run: Run,
+    pub allow_used: Vec<AllowUse>,
+    pub timing: Timing,
+    pub internal_error: Option<String>,
+}
 
 pub struct Engine {
     pub reg: Registry,
@@ -57,10 +74,17 @@ pub fn registry() -> Registry {
     reg
 }
 
-pub fn selected<'a>(reg:&'a Registry,names:&[String])->Vec<&'a dyn Lint>{
- reg.lints.iter().map(|lint|lint.as_ref()).filter(|lint|{
-  let meta=lint.meta();crate::cli_arguments::lint_selected(meta.name,meta.group,names)
- }).collect()
+pub fn selected<'a>(reg: &'a Registry, names: &[String]) -> Vec<&'a dyn Lint> {
+    // `-name` excludes a lint or group; with only exclusions every other lint is selected.
+    let matches = |l: &dyn Lint, n: &str| l.meta().name == n || (!l.meta().group.is_empty() && l.meta().group == n);
+    let include: Vec<&String> = names.iter().filter(|n| !n.starts_with('-')).collect();
+    let exclude: Vec<&str> = names.iter().filter_map(|n| n.strip_prefix('-')).collect();
+    reg.lints
+        .iter()
+        .map(|b| b.as_ref())
+        .filter(|l| include.is_empty() || include.iter().any(|n| matches(*l, n)))
+        .filter(|l| !exclude.iter().any(|n| matches(*l, n)))
+        .collect()
 }
 
 impl Engine {
@@ -116,14 +140,30 @@ impl Engine {
     }
 
     /// Fail fast on a lint whose scope section lacks a list it declares.
-    pub fn validate_scopes(&self)->Vec<String>{crate::required_scope_policy::validate_using(self.reg.lints.iter().map(|lint|{let meta=lint.meta();crate::required_scope_policy::Requirement{name:meta.name,group:meta.group,lists:meta.lists}}),&self.scopes,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+    pub fn validate_scopes(&self) -> Vec<String> {
+        let mut problems = Vec::new();
+        for l in &self.reg.lints {
+            let m = l.meta();
+            let scope = self.scopes.for_lint(m.name, m.group);
+            for key in m.lists {
+                if !scope.lists.contains_key(*key) {
+                    problems.push(format!("lint_scopes.toml: [lint.{}.lists] is missing `{}`", m.name, key));
+                }
+            }
+        }
+        problems
+    }
+
+    fn baseline_path(&self, rel: &str) -> PathBuf {
+        self.opts.root.join(rel)
+    }
 
     /// Scans one lint (cached) and returns its raw sites.
     pub fn scan(&self, lint: &dyn Lint) -> (Run, Vec<AllowUse>, Timing) {
         let t0 = Instant::now();
         let meta = lint.meta();
         let scope = self.scopes.for_lint(meta.name, meta.group);
-        let cx = Cx { fixture:None, tree: &self.tree, meta, scope: &scope };
+        let cx = Cx { tree: &self.tree, meta, scope: &scope };
         let t_load = Instant::now();
         let mut lc = self.cache.load_lint(meta.name);
         LOAD_NS.fetch_add(t_load.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
@@ -234,8 +274,82 @@ impl Engine {
     pub fn judge_with(&self, lint: &dyn Lint, run: &Run, raw: bool) -> (bool, String) {
         let meta = lint.meta();
         let scope = self.scopes.for_lint(meta.name, meta.group);
-        let cx = Cx { fixture:None, tree: &self.tree, meta, scope: &scope };
-        crate::policy_judge::judge(lint, &cx, run, &self.opts.root, &self.changed, raw)
+        let cx = Cx { tree: &self.tree, meta, scope: &scope };
+        let mut text = String::new();
+        for n in &run.notes {
+            let _ = writeln!(text, "{}", n);
+        }
+        // `--changed-only`: judge only the sites in files that changed. A lint that scans the tree (or both) judges cross-file facts: an edit
+        // in one file (a proc moved out of a layer, a type re-declared, a line whose baseline fingerprint changed) puts the site in a file that
+        // did not change, so those lints are always judged whole.
+        let filtered: Run;
+        let run = match &self.changed {
+            Some(changed) if matches!(meta.scan, ScanKind::File) => {
+                filtered = Run { sites: run.sites.iter().filter(|s| changed.contains(&s.rel)).cloned().collect(), notes: run.notes.clone() };
+                &filtered
+            }
+            _ => run,
+        };
+        let mut by_rule = run.by_rule(meta);
+        let hints = |rule: &str| meta.rule(rule).map(|r| r.hint.to_string()).unwrap_or_default();
+        // Rules with a configured ceiling (`[lint.<name>.ceilings]`) are judged by their count.
+        let mut ceiling_failed = false;
+        if !raw && matches!(meta.policy, Policy::Sites { .. } | Policy::Hard) && !scope.ceilings.is_empty() {
+            let (with, without): (Vec<_>, Vec<_>) = by_rule.into_iter().partition(|(r, _)| scope.ceilings.contains_key(*r));
+            by_rule = without;
+            for (rule, found) in &with {
+                let ceiling = scope.ceilings[*rule];
+                let count = found.len() as i64;
+                let status = if count > ceiling {
+                    ceiling_failed = true;
+                    format!("FAIL (rose above its ceiling {})", ceiling)
+                } else if count < ceiling {
+                    format!("below ceiling {}: lower it with `analyze baseline --update`", ceiling)
+                } else {
+                    "ok".to_string()
+                };
+                let _ = writeln!(text, "{} {:<19} {:>6}  (ceiling {})  {}", meta.label, rule, count, ceiling, status);
+                if count > ceiling {
+                    let hint = hints(rule);
+                    let suffix = if hint.is_empty() { String::new() } else { format!(" -- {}", hint) };
+                    for s in found.iter().take(60) {
+                        let body = if s.msg.is_empty() { self.tree.site_text(&s.rel, s.line as usize) } else { s.msg.clone() };
+                        let _ = writeln!(text, "{}:{}: [{}/{}] {}{}", s.rel, s.line, meta.label, rule, body, suffix);
+                    }
+                    if found.len() > 60 {
+                        let _ = writeln!(text, "... and {} more", found.len() - 60);
+                    }
+                }
+            }
+        }
+        let failed = ceiling_failed | match meta.policy {
+            Policy::Sites { baseline, banned, .. } => {
+                let path = if raw { PathBuf::from("") } else { self.baseline_path(baseline) };
+                baseline::check_sites(meta.label, &self.tree, &by_rule, &hints, &path, banned, &mut text)
+            }
+            Policy::Ceilings { baseline, .. } => {
+                let path = if raw { PathBuf::from("") } else { self.baseline_path(baseline) };
+                let rules: Vec<&str> = meta.rules.iter().map(|r| r.name).collect();
+                baseline::check_ceilings(meta.label, &run.sites, &rules, &path, &mut text)
+            }
+            Policy::Hard => {
+                let mut failed = false;
+                for (rule, found) in &by_rule {
+                    let _ = writeln!(text, "{}: {} {} {}", meta.label, rule, found.len(), if found.is_empty() { "OK" } else { "FAIL" });
+                    let hint = hints(rule);
+                    for s in found {
+                        failed = true;
+                        let body = if s.msg.is_empty() { self.tree.site_text(&s.rel, s.line as usize) } else { s.msg.clone() };
+                        let suffix = if hint.is_empty() { String::new() } else { format!(" -- {}", hint) };
+                        let _ = writeln!(text, "{}:{}: [{}/{}] {}{}", s.rel, s.line, meta.label, rule, body, suffix);
+                    }
+                }
+                failed
+            }
+            Policy::Custom => lint.finish_raw(&cx, run, &mut text, raw),
+        };
+        let failed = if matches!(meta.policy, Policy::Custom) { failed } else { lint.post_judge(&cx, run, &mut text) | failed };
+        (failed, text)
     }
 
     pub fn run_one(&self, lint: &dyn Lint) -> Outcome {
@@ -252,13 +366,13 @@ impl Engine {
     fn run_one_inner(&self, lint: &dyn Lint, name: String) -> Outcome {
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let (run, allow_used, timing) = self.scan(lint);
-            let meta=lint.meta();
-            let scope=self.scopes.for_lint(meta.name,meta.group);
-            let cx=Cx{ fixture:None,tree:&self.tree,meta,scope:&scope};
-            crate::policy_finish::finish_report(meta,&scope,&self.tree,run,allow_used,timing,&self.opts.root,&self.changed,self.opts.raw,|run,text,raw|lint.finish_raw(&cx,run,text,raw),|run,text|lint.post_judge(&cx,run,text))
+            let (failed, text) = self.judge(lint, &run);
+            (run, allow_used, timing, failed, text)
         }));
         match res {
-            Ok(outcome) => outcome,
+            Ok((run, allow_used, timing, failed, text)) => {
+                Outcome { name, failed, text, run, allow_used, timing, internal_error: None }
+            }
             Err(e) => {
                 let msg = e
                     .downcast_ref::<String>()
@@ -324,9 +438,58 @@ impl Engine {
         let meta = lint.meta();
         let (run, _, _) = self.scan(lint);
         let scope = self.scopes.for_lint(meta.name, meta.group);
-        let cx = Cx { fixture:None, tree: &self.tree, meta, scope: &scope };
-        let scopes_root = self.opts.scopes_from.as_deref().unwrap_or(&self.opts.root);
-        crate::policy_finish::update_baseline_report(meta, &scope, &self.tree, &run, &self.opts.root, scopes_root, mode, |run,mode|lint.update_baseline(&cx,run,mode))
+        let cx = Cx { tree: &self.tree, meta, scope: &scope };
+        let by_rule = run.by_rule(meta);
+        // Per-rule ceilings live in lint_scopes.toml: lower them (--update) or set them (--seed).
+        let mut ceiling_note = String::new();
+        if matches!(meta.policy, Policy::Sites { .. } | Policy::Hard) {
+            let scopes_root = self.opts.scopes_from.clone().unwrap_or_else(|| self.opts.root.clone());
+            let scopes_path = scopes_root.join("tools").join("ci").join("lint_scopes.toml");
+            for (rule, found) in &by_rule {
+                let Some(&ceiling) = scope.ceilings.get(*rule) else { continue };
+                let count = found.len() as i64;
+                let new = match mode {
+                    Mode::Update => ceiling.min(count),
+                    Mode::Seed => count,
+                    Mode::Migrate => ceiling,
+                };
+                if new != ceiling {
+                    crate::scopes::write_ceiling(&scopes_path, meta.name, rule, new)?;
+                    ceiling_note.push_str(&format!(" ceiling {} {} -> {};", rule, ceiling, new));
+                }
+            }
+        }
+        let by_rule_for_baseline: Vec<(&str, Vec<&crate::lint::Site>)> =
+            by_rule.iter().filter(|(r, _)| !scope.ceilings.contains_key(*r)).map(|(r, s)| (*r, s.clone())).collect();
+        let by_rule = if matches!(meta.policy, Policy::Sites { .. }) { by_rule_for_baseline } else { by_rule };
+        match meta.policy {
+            Policy::Sites { baseline, header, banned } => {
+                let rules: Vec<&str> = meta
+                    .rules
+                    .iter()
+                    .map(|r| r.name)
+                    .filter(|r| !banned.contains(r) && !scope.ceilings.contains_key(*r))
+                    .collect();
+                let n = baseline::write_sites(&self.baseline_path(baseline), header, &self.tree, &by_rule, &rules, mode)?;
+                let counts: Vec<String> = by_rule.iter().map(|(r, s)| format!("{} {}", r, s.len())).collect();
+                Ok(format!("{}: baseline {} ({} rows; {});{}", meta.name, baseline, n, counts.join(", "), ceiling_note))
+            }
+            Policy::Ceilings { baseline, header } => {
+                let path = self.baseline_path(baseline);
+                let n = match mode {
+                    Mode::Update => baseline::update_ceilings(&path, header, &run.sites)?,
+                    Mode::Migrate => baseline::read_ceilings(&path).len(),
+                    Mode::Seed => {
+                        let counts = baseline::key_counts(&run.sites);
+                        baseline::write_ceilings(&path, header, &counts)?;
+                        counts.len()
+                    }
+                };
+                Ok(format!("{}: baseline {} ({} entries)", meta.name, baseline, n))
+            }
+            Policy::Hard => Ok(format!("{}: no baseline (hard ban);{}", meta.name, ceiling_note)),
+            Policy::Custom => lint.update_baseline(&cx, &run, mode),
+        }
     }
 }
 
@@ -356,14 +519,60 @@ pub fn changed_files(root: &Path) -> HashSet<String> {
     out
 }
 
-pub use crate::policy_finish::render;
+/// Prints outcomes the way `check_ratchets.sh` did. Returns the names of failed lints.
+pub fn render(outcomes: &[Outcome], ci: bool) -> (String, Vec<String>) {
+    let mut s = String::new();
+    let mut failed = Vec::new();
+    for o in outcomes {
+        if ci {
+            let _ = writeln!(s, "::group::{}", o.name);
+        }
+        s.push_str(&o.text);
+        if ci {
+            let _ = writeln!(s, "::endgroup::");
+        }
+        if o.failed {
+            failed.push(o.name.clone());
+        }
+    }
+    (s, failed)
+}
 
 pub fn meta_of<'a>(reg: &'a Registry, name: &str) -> Option<&'a Meta> {
     reg.find(name).map(|l| l.meta())
 }
 
-#[cfg(test)]mod required_scope_preport_tests{
- /// Genuine complete factory record BEFORE canonical required-list metadata moves.
- /// This test does not execute policy scans or mint source/usage completeness.
- #[test]fn actual_finished_registry_scope_contract_preport_record(){let registry=super::registry();assert!(!registry.lints.is_empty());let fields:Vec<_>=registry.lints.iter().map(|lint|{let meta=lint.meta();serde_json::json!({"name":meta.name,"group":meta.group,"lists":meta.lists})}).collect();let unique:std::collections::BTreeSet<_>=registry.lints.iter().map(|lint|lint.meta().name).collect();assert_eq!(unique.len(),registry.lints.len(),"actual all-registration factory must not hide duplicate policy names");let record=serde_json::json!({"schema":"actual-required-scope-registry-preport-v1","engine_hash":env!("DQ_ENGINE_HASH"),"factory":"run::registry","registered_fields":fields});println!("OLD_SCOPE_REGISTRY={record}");}
+#[cfg(test)]
+mod changed_only_tests {
+    use super::*;
+
+    /// `--changed-only` filters a per-file lint by the changed files but judges a tree lint whole: a cross-file fact (a proc moved out of
+    /// a layer) puts the site in a file that did not change. With nothing changed, the per-file lint passes and the tree lint still fails.
+    #[test]
+    fn changed_only_filters_file_lints_and_judges_tree_lints_whole() {
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures");
+        let judged = |fixture: &str, lint: &str| {
+            let dir = root.join(fixture);
+            let own = dir.join("tools").join("ci").join("lint_scopes.toml").exists();
+            let opts = Options {
+                root: dir,
+                lints: vec![lint.to_string()],
+                no_cache: true,
+                scopes_from: if own { None } else { Some(root.parent().unwrap().parent().unwrap().to_path_buf()) },
+                ..Default::default()
+            };
+            let mut engine = Engine::new(registry(), opts).expect("engine");
+            engine.changed = Some(HashSet::new());
+            let l = engine.reg.find(lint).expect("lint");
+            assert!(matches!(l.meta().scan, ScanKind::File | ScanKind::Tree), "pick a pure File or Tree lint");
+            let kind = matches!(l.meta().scan, ScanKind::File);
+            (kind, engine.run_one(l).failed)
+        };
+        let (is_file, failed) = judged("breakpoint", "breakpoint");
+        assert!(is_file);
+        assert!(!failed, "a per-file lint must ignore sites in unchanged files");
+        let (is_file, failed) = judged("base_vars", "base_vars");
+        assert!(!is_file);
+        assert!(failed, "a tree lint must judge the whole tree, not only changed files");
+    }
 }

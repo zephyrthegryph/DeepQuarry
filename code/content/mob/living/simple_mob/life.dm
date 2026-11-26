@@ -186,17 +186,6 @@
 	else
 		src.mend(TREAT_OXYGENATION, src.unsuitable_atoms_damage)
 
-/// Organ processing.
-/mob/living/simple_mob/proc/life_guts(datum/seq_frame/life/F)
-	for(var/obj/item/organ/OR in src.internal_organ_list())
-		OR.periodic_step()
-
-	for(var/obj/item/organ/OR in src.organs)
-		OR.periodic_step()
-
-/// Only mobs carrying real organ objects process them (most list organ paths for butchery).
-/mob/living/simple_mob/proc/life_guts_due()
-	return length(src.internal_organ_list()) || (LAZYLEN(src.organs) && (locate_in_list(src.organs, /obj/item/organ)))
 
 /// Holy purge wears off.
 /mob/living/simple_mob/proc/life_supernatural(datum/seq_frame/life/F)

@@ -197,10 +197,8 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	. += show_malf_ai()
 
 //can't inject synths
-/mob/living/silicon/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
-	if(error_msg)
-		to_chat(user, span_warning("The armoured plating is too tough."))
-	return 0
+/mob/living/silicon/inject_refusal(mob/user, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
+	return "The armoured plating is too tough."
 
 //Silicon mob language procs
 
@@ -267,11 +265,8 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 //I made it work like omnis with records by adding stuff to examine.dm
 // ends here
 
-/mob/living/silicon/verb/pose()
-	set name = "Set Pose"
-	set desc = "Sets a description which will be shown when someone examines you."
-	set category = VERB_CAT_IC_SETTINGS
-
+/// The Set Pose HUD button: a description shown when someone examines you.
+/mob/living/silicon/proc/pose()
 	// A cancel answers "": the pose is cleared.
 	open_request(src, /datum/prompt/text, PROC_REF(silicon_pose_entered), answerer = src, title = "Pose", question = "This is [src]. It is...", timeout = 0)
 
@@ -279,10 +274,9 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	var/text = A.answer ? A.answer.value : ""
 	pose = text ? strip_html_simple(text) : null
 
-/mob/living/silicon/verb/set_flavor()
+/mob/living/silicon/proc/set_flavor()
 	set name = "Set Flavour Text"
 	set desc = "Sets an extended description of your character's features."
-	set category = VERB_CAT_IC_SETTINGS
 
 	open_request(src, /datum/prompt/text, PROC_REF(silicon_flavor_entered), answerer = src, title = "Flavour text", question = "Please enter your new flavour text.", default = bio.flavor_text, multiline = TRUE, timeout = 0)
 
@@ -334,7 +328,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		COOLDOWN_START(src, next_alarm_notice, (10 SECONDS))
 	if(alarm.hidden)
 		return
-	if(alarm.origin() && !(get_z(alarm.origin()) in using_map.get_map_levels(get_z(src), TRUE, om_range = DEFAULT_OVERMAP_RANGE)))
+	if(alarm.origin() && !(get_z(alarm.origin()) in using_map.get_map_levels(get_z(src), TRUE, overmap_range = DEFAULT_OVERMAP_RANGE)))
 		return
 
 	var/datum/silicon_alarm_queue/Q = LAZYACCESS(queued_alarms, "[alarm_handler.type]")

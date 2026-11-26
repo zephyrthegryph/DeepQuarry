@@ -71,7 +71,6 @@ CAPABILITIES(/obj/item/storage/box)
 /// Only in combat mode, and with things inside: the box is crushed and its contents spill.
 /obj/item/storage/box/proc/crush_it(datum/act/op/A)
 	var/mob/user = A.actor
-	make_contents_real()
 	act_message(user, src, MSG_SELF(span_danger("You crush %T%, spilling its contents everywhere!")), MSG_OTHERS(span_danger("%U% crushes %T%, spilling its contents everywhere!")))
 	spill()
 	make_trash(user)
@@ -135,18 +134,6 @@ CAPABILITIES(/obj/item/storage/box)
 	desc = "This box contains masks of sterility."
 	icon_state = "sterile"
 	starts_with = list(/obj/item/clothing/mask/surgical = 7)
-
-/obj/item/storage/box/masks/white
-	name = "box of sterile masks"
-	desc = "This box contains masks of sterility."
-	icon_state = "sterile"
-	starts_with = list(/obj/item/clothing/mask/surgical/white = 7)
-
-/obj/item/storage/box/masks/dust
-	name = "box of dust masks"
-	desc = "This box contains dust masks. Breathe easy."
-	icon_state = "sterile"
-	starts_with = list(/obj/item/clothing/mask/surgical/dust = 7)
 
 /obj/item/storage/box/syringes
 	name = "box of syringes"
@@ -294,15 +281,6 @@ CAPABILITIES(/obj/item/storage/box/frags_half_box)
 		/obj/item/implantpad
 	)
 
-/obj/item/storage/box/camerabug
-	name = "mobile camera pod box"
-	desc = "A box containing some mobile camera pods."
-	icon_state = "pda"
-	starts_with = list(
-		/obj/item/camerabug = 6,
-		/obj/item/bug_monitor
-	)
-
 /obj/item/storage/box/rxglasses
 	name = "box of prescription glasses"
 	desc = "This box contains nerd glasses."
@@ -431,12 +409,6 @@ CAPABILITIES(/obj/item/storage/box/monkeycubes/pets)
 	icon_state = "handcuff"
 	starts_with = list(/obj/item/handcuffs = 7)
 
-/obj/item/storage/box/legcuffs
-	name = "box of spare legcuffs"
-	desc = "A box full of legcuffs."
-	icon_state = "handcuff"
-	starts_with = list(/obj/item/handcuffs/legcuffs = 7)
-
 /obj/item/storage/box/mousetraps
 	name = "box of Pest-B-Gon mousetraps"
 	desc = span_red(span_bold("WARNING:")) + " " + span_italics("Keep out of reach of children") + "."
@@ -548,9 +520,6 @@ CAPABILITIES(/obj/item/storage/box/freezer)
 		/obj/item/reagent_containers/blood,
 		/obj/item/reagent_containers/glass,
 		/obj/item/reagent_containers/food), max_size = ITEMSIZE_NORMAL))
-
-/obj/item/storage/box/freezer/red
-	icon_state = "portafreezer_red"
 
 /obj/item/storage/box/freezer/Entered(atom/movable/AM)
 	if(istype(AM, /obj/item/organ))
@@ -683,16 +652,6 @@ CAPABILITIES(/obj/item/storage/box/brainzsnax)
 
 /obj/item/storage/box/freezer
 
-/obj/item/storage/box/altevian_ammo
-	name = "SAM .48 ammo box"
-	desc = "A box of ratty ammo."
-	icon_state = "secbox"
-	starts_with = list(/obj/item/ammo_magazine/sam48 = 3)
-	max_storage_space = ITEMSIZE_COST_NORMAL * 3
-
-CAPABILITIES(/obj/item/storage/box/altevian_ammo)
-	configure(item_sounds(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
-
 /obj/item/storage/box/weapon_cells
 	name = "box of weapon cells"
 	desc = "A box full of weapon power cells. For all your portable energy storage needs."
@@ -733,7 +692,7 @@ CAPABILITIES(/obj/item/storage/box/altevian_ammo)
 	starts_with = list(
 	/obj/item/clothing/mask/gas/sexymime,
 	/obj/item/clothing/under/sexymime,
-	/obj/item/clothing/shoes/mime,
+	VARIANT(/obj/item/clothing/shoes/mime),
 	/obj/item/clothing/head/soft/mime
 	)
 

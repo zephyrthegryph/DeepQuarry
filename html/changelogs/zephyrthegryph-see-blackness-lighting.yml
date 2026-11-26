@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Large sprites and wall mounts that overhang a dark tile are now darkened there: every mob's sight includes SEE_BLACKNESS"

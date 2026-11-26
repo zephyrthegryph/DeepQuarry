@@ -20,7 +20,8 @@
 	var/tending = FALSE
 	/// The watch it sleeps on: its pipeline's gas (temperature), for the glow.
 	var/list/datum/native_watch/world/glow_watches
-	/// It lies on space and radiates (set when it joins its pipeline: a pipe does not move).
+	/// It lies on space and radiates: set from its place when it is made (lies_on_space()), and by its turf when the turf is replaced in play
+	/// (open_air_start()) or when the pipe moves (Moved()).
 	var/in_space = FALSE
 
 	minimum_temperature_difference = 20
@@ -41,11 +42,18 @@
 CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
 	configure(buckle_rules(lying = 1))
 	// In space the pipeline's gas radiates through the pipe's surface (Stefan-Boltzmann, integrated exactly in Rust).
+	// Set from its place at creation, so the sky link's gate first evaluates with it: set later (at the first port bind) every exterior pipe
+	// flipped it and re-gated once at boot.
+	preset(nameof(in_space), PROC_REF(lies_on_space), default = FALSE) // default: the compiled value the preset may replace (any other is a map edit)
 	when(nameof(in_space), heat_link(HEAT_PORT(1), HEAT_SKY(HE_PIPE_SKY_TEMPERATURE), 0, 1, nameof(surface)))
 	owns_many(nameof(glow_watches), /datum/native_watch/world)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(he_step)), when = nameof(tending))
 	on_change(nameof(parent), ANY, then(PROC_REF(reconsider)))
 
+
+/// Whether the pipe lies on space (its in_space at creation): read from its place, writes nothing.
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/lies_on_space(target)
+	return istype(get_turf(src), /turf/space)
 
 /// The pipe's shell is its heat body: it couples to its turf like any atom's (slot 0) and to its pipeline's gas (slot 1).
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/thermal_properties()
@@ -72,7 +80,6 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
 	. = ..()
 	if(index == 1)
 		couple_to_pipeline()
-		set_in_space(istype(loc, /turf/space))
 		reconsider()
 
 // BubbleWrap END
@@ -120,6 +127,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
+	set_in_space(lies_on_space())
 	reconsider()
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/set_leaking(new_leaking)

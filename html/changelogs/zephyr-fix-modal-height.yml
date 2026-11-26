@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Popup prompts (aghost confirm, alerts, inputs) no longer open with a runaway tall window"

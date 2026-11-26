@@ -1,42 +1,30 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
   Button,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
 import { MaterialAccessBar } from './common/MaterialAccessBar';
 import type { Material } from './Fabrication/Types';
-
-type Data = {
-  panelOpen: BooleanLike;
-  materials: Material[];
-  SHEET_MATERIAL_AMOUNT: number;
-  copyBoard: string | null;
-  copyBoardReqComponents: { name: string; qty: number }[] | null;
-  queue: string[];
-  building: string | null;
-  buildPercent: number | null;
-  error: string | null;
-  recipies: { name: string; type: string }[];
-};
+import type { PartsLatheActions, PartsLatheData } from './generated/PartsLathe';
 
 export const PartsLathe = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<PartsLatheData, PartsLatheActions>();
   const {
     copyBoard,
     copyBoardReqComponents,
-    queue,
+    queue = [],
     building,
     buildPercent,
     error,
-    recipies,
+    recipies = [],
     SHEET_MATERIAL_AMOUNT,
   } = data;
   return (
@@ -72,13 +60,12 @@ export const PartsLathe = (props) => {
                           <LabeledList.Item label="Name">
                             {toTitleCase(building)}
                           </LabeledList.Item>
-                          <LabeledList.Item label="Progress">
-                            <ProgressBar
-                              color="good"
-                              value={buildPercent!}
-                              maxValue={100}
-                            />
-                          </LabeledList.Item>
+                          <StatBar
+                            label="Progress"
+                            color="good"
+                            value={buildPercent!}
+                            maxValue={100}
+                          />
                         </LabeledList>
                       </Section>
                     </Stack.Item>
@@ -127,7 +114,7 @@ export const PartsLathe = (props) => {
                     <Section title="Queue" fill>
                       {(queue.length &&
                         queue.map((item, i) => (
-                          <Box key={item} color="label">
+                          <Label key={item}>
                             #{i + 1}: {toTitleCase(item)}
                             {((i > 0 || !building) && (
                               <Button
@@ -139,7 +126,7 @@ export const PartsLathe = (props) => {
                               </Button>
                             )) ||
                               ''}
-                          </Box>
+                          </Label>
                         ))) || <NoticeBox info>Queue Empty</NoticeBox>}
                     </Section>
                   </Stack.Item>

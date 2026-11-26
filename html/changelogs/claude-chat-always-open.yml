@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - qol: "Chat starts docked each connection, and Chat and Status have no pop-out or close button."
+  - qol: "Clicking a docked window's name collapses it."
+  - bugfix: "Buttons in the chat and status panes line up again."

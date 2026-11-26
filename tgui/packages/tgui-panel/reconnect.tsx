@@ -1,39 +1,102 @@
-import { Button, Stack } from 'tgui-core/components';
+import { atom, useAtomValue } from 'jotai';
+import { useEffect, useState } from 'react';
+import { createLogger } from 'tgui/logging';
+import { Button } from 'tgui-core/components';
+import { store } from './events/store';
+import { Reconnector, type ReconnectState } from './reconnect-model';
 
 let url: string | null = null;
 
+/** Keeps the server address for a reconnect: only a real address (BYOND sometimes reports a :0 port, or nothing a string). */
+export function noteServerUrl(currentUrl: unknown): void {
+  if (typeof currentUrl === 'string' && currentUrl && !/:0$/.test(currentUrl)) {
+    url = currentUrl;
+  }
+}
+
+/** The address a reconnect would use (tests). */
+export function serverUrl(): string | null {
+  return url;
+}
+
+// A poll whose answer is not a string, or that fails, keeps the last address: it never throws out of the timer, where it surfaced
+// as an error of whatever ran at that moment (the PDA test's 1-in-5 failure).
 setInterval(() => {
-  Byond.winget('', 'url').then((currentUrl) => {
-    // Sometimes, for whatever reason, BYOND will give an IP with a :0 port.
-    if (currentUrl && !currentUrl.match(/:0$/)) {
-      url = currentUrl;
-    }
-  });
+  Byond.winget('', 'url')
+    .then(noteServerUrl)
+    .catch(() => undefined);
 }, 5000);
 
-export function ReconnectButton(props: {
-  onDismissedWarning: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
-  if (!url) {
-    return null;
-  }
-  const { onDismissedWarning } = props;
+const logger = createLogger('Reconnect');
 
+const reconnector = new Reconnector({
+  now: () => Date.now(),
+  setTimer: (fn, ms) => setTimeout(fn, ms),
+  clearTimer: (id) => clearTimeout(id as ReturnType<typeof setTimeout>),
+  reconnect: () => Byond.command('.reconnect'),
+  log: (message) => logger.log(message),
+  onChange: (state) => store.set(reconnectStateAtom, state),
+});
+
+export const reconnectStateAtom = atom<ReconnectState>(reconnector.getState());
+
+/** Reconnects by itself while the connection is lost or the round restarts. */
+export function useAutoReconnect(down: boolean) {
+  useEffect(() => {
+    reconnector.setDown(down);
+  }, [down]);
+}
+
+/** Reconnect state shown inline in the ping indicator: attempt, countdown, buttons. */
+export function ReconnectStatus(props: { restarting: boolean }) {
+  const state = useAtomValue(reconnectStateAtom);
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  let text: string;
+  if (state.active) {
+    const secs =
+      state.nextAt === null
+        ? 0
+        : Math.max(0, Math.ceil((state.nextAt - Date.now()) / 1000));
+    text = `Reconnecting (attempt ${state.attempt + 1}${
+      state.nextAt !== null ? `, ${secs}s` : ''
+    })`;
+  } else if (state.cancelled) {
+    text = 'Disconnected';
+  } else {
+    text = props.restarting ? 'Server restarting' : 'Disconnected';
+  }
   return (
-    <Stack>
-      <Stack.Item>
+    <>
+      <span className="Ping__status">{text}</span>
+      {state.active ? (
         <Button
-          color="white"
-          onClick={() => {
-            Byond.command('.reconnect');
-          }}
+          compact
+          tooltip="Stop reconnecting automatically"
+          tooltipPosition="bottom"
+          onClick={() => reconnector.cancel()}
         >
-          Reconnect
+          Cancel
         </Button>
-      </Stack.Item>
-      <Stack.Item>
+      ) : null}
+      <Button
+        className="Ping__action--primary"
+        compact
+        tooltip="Reconnect now"
+        tooltipPosition="bottom"
+        onClick={() => {
+          Byond.command('.reconnect');
+        }}
+      >
+        Reconnect
+      </Button>
+      {url ? (
         <Button
-          color="white"
+          className="Ping__action--quiet"
+          compact
           icon="power-off"
           tooltip="Relaunch game"
           tooltipPosition="bottom-end"
@@ -42,17 +105,7 @@ export function ReconnectButton(props: {
             Byond.command('.quit');
           }}
         />
-      </Stack.Item>
-      <Stack.Item>
-        <Button
-          color="white"
-          onClick={() => {
-            onDismissedWarning(true);
-          }}
-        >
-          Dismiss
-        </Button>
-      </Stack.Item>
-    </Stack>
+      ) : null}
+    </>
   );
 }

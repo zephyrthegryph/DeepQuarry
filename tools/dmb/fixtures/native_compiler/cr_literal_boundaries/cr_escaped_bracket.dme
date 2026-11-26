@@ -1,10 +1,0 @@
-/proc/probe(a)
-    return "\\[a]"
-/world/New()
-    ..()
-    var/value = probe("MARK")
-    world.log << "VALUE=[json_encode(value)]"
-    world.log << "LENGTH=[length(value)]"
-    for(var/i=1 to length(value))
-        world.log << "BYTE=[i]:[text2ascii(value,i)]"
-    shutdown()

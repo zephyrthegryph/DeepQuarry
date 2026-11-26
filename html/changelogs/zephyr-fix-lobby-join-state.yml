@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The lobby switches from Ready to Join Game when the round starts by itself"

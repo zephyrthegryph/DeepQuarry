@@ -8,14 +8,16 @@ import {
   Section,
 } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
-
-type Data = {
-  stacktypes: { type: string; amt: number }[];
-  stackingAmt: number;
-};
+import type {
+  MiningStackingConsoleActions,
+  MiningStackingConsoleData,
+} from './generated/MiningStackingConsole';
 
 export const MiningStackingConsole = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    MiningStackingConsoleData,
+    MiningStackingConsoleActions
+  >();
 
   const { stacktypes, stackingAmt } = data;
 

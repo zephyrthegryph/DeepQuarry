@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -7,27 +8,23 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  XenoarchArtifactHarvesterActions,
+  XenoarchArtifactHarvesterData,
+} from './generated/XenoarchArtifactHarvester';
 
-type Data = {
-  info: {
-    no_scanner: BooleanLike;
-    harvesting: number;
-    inserted_battery: battery;
-  };
-};
+type Data = XenoarchArtifactHarvesterData;
 
-type battery = {
-  name: string;
-  stored_charge: number;
-  capacity: number;
-  artifact_id: string;
-};
+type battery = NonNullable<Data['info']['inserted_battery']>;
 
 export const XenoarchArtifactHarvester = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchArtifactHarvesterActions>();
 
-  const { no_scanner, harvesting, inserted_battery } = data.info;
+  const { no_scanner, harvesting, inserted_battery } = data.info ?? {
+    no_scanner: true,
+    harvesting: 0,
+    inserted_battery: null,
+  };
 
   return (
     <Window width={450} height={200}>
@@ -38,9 +35,9 @@ export const XenoarchArtifactHarvester = (props) => {
           <Section>
             {(harvesting > 0 && (
               <Box>
-                <Box color="label" textAlign="center" mb={1}>
+                <Label textAlign="center" mb={1}>
                   Please wait. Harvesting in progress.
-                </Box>
+                </Label>
                 <ArtHarvestBatteryProgress
                   inserted_battery={inserted_battery}
                 />
@@ -56,9 +53,9 @@ export const XenoarchArtifactHarvester = (props) => {
             )) ||
               (harvesting < 0 && (
                 <Box>
-                  <Box color="label" textAlign="center" mb={1}>
+                  <Label textAlign="center" mb={1}>
                     Please wait. Energy dump in progress.
-                  </Box>
+                  </Label>
                   <ArtHarvestBatteryProgress
                     inserted_battery={inserted_battery}
                   />
@@ -72,7 +69,7 @@ export const XenoarchArtifactHarvester = (props) => {
                   </Button>
                 </Box>
               )) ||
-              (Object.keys(inserted_battery).length && (
+              (inserted_battery && (
                 <Box>
                   <LabeledList>
                     <LabeledList.Item label="Name">
@@ -110,10 +107,12 @@ export const XenoarchArtifactHarvester = (props) => {
   );
 };
 
-const ArtHarvestBatteryProgress = (props: { inserted_battery: battery }) => {
+const ArtHarvestBatteryProgress = (props: {
+  inserted_battery: battery | null;
+}) => {
   const { inserted_battery } = props;
 
-  if (!Object.keys(inserted_battery).length) {
+  if (!inserted_battery) {
     return <Box color="bad">No battery inserted.</Box>;
   }
 

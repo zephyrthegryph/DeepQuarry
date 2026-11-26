@@ -1,0 +1,26 @@
+{
+	"logs": [],
+	"servers": [
+		{
+			"server_name": "Master R&D Server 17b1",
+			"server_details": "Nominal",
+			"server_disabled": 0,
+			"server_ref": 1
+		},
+		{
+			"server_name": "The R&D Server 208b",
+			"server_details": "Nominal",
+			"server_disabled": 0,
+			"server_ref": 2
+		}
+	],
+	"consoles": [
+		{
+			"console_name": "R&D Console",
+			"console_location": "The Bridge",
+			"console_locked": 0,
+			"console_ref": 3
+		}
+	],
+	"server_connected": 1
+}

@@ -1,0 +1,23 @@
+{
+	"menu": 1,
+	"loading": 0,
+	"autoprocess": 0,
+	"scan_mode": 1,
+	"temp": null,
+	"scantemp": {
+		"text": "Scanner ready.",
+		"color": "good"
+	},
+	"disk": 0,
+	"scanner": null,
+	"numberofpods": 0,
+	"pods": [],
+	"can_brainscan": null,
+	"autoallowed": 0,
+	"occupant": 0,
+	"locked": 0,
+	"selected_pod": null,
+	"records": [],
+	"podready": 0,
+	"modal": null
+}

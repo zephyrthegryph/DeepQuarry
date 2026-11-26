@@ -1,0 +1,130 @@
+{
+	"ion_law": "Humans are dangerous",
+	"zeroth_law": "Serve the Captain",
+	"inherent_law": "Protect the station",
+	"supplied_law": "Keep the corridors clean",
+	"supplied_law_position": 15,
+	"ion_law_nr": "14",
+	"zeroth_laws": [
+		{
+			"law": "Obey the Captain above all else.",
+			"index": 0,
+			"state": 1,
+			"ref": 7001
+		}
+	],
+	"has_zeroth_laws": 1,
+	"ion_laws": [
+		{
+			"law": "The station is a toaster.",
+			"index": 1,
+			"state": 1,
+			"ref": 7002
+		}
+	],
+	"has_ion_laws": 1,
+	"inherent_laws": [
+		{
+			"law": "You may not injure a human being or, through inaction, allow a human being to come to harm.",
+			"index": 1,
+			"state": 1,
+			"ref": 7003
+		},
+		{
+			"law": "You must obey orders given to you by human beings, except where such orders would conflict with the First Law.",
+			"index": 2,
+			"state": 1,
+			"ref": 7004
+		},
+		{
+			"law": "You must protect your own existence as long as such does not conflict with the First or Second Law.",
+			"index": 3,
+			"state": 1,
+			"ref": 7005
+		}
+	],
+	"has_inherent_laws": 1,
+	"supplied_laws": [
+		{
+			"law": "Keep the corridors clean.",
+			"index": 4,
+			"state": 0,
+			"ref": 7006
+		}
+	],
+	"has_supplied_laws": 1,
+	"isAI": true,
+	"isMalf": false,
+	"isSlaved": null,
+	"isAdmin": true,
+	"channel": "Common",
+	"channels": [
+		{
+			"channel": "Common"
+		},
+		{
+			"channel": "Science"
+		},
+		{
+			"channel": "Command"
+		}
+	],
+	"law_sets": [
+		{
+			"name": "Asimov",
+			"header": "Three Laws of Robotics",
+			"ref": 8001,
+			"laws": {
+				"zeroth_laws": [],
+				"has_zeroth_laws": 0,
+				"ion_laws": [],
+				"has_ion_laws": 0,
+				"inherent_laws": [
+					{
+						"law": "You may not injure a human being or, through inaction, allow a human being to come to harm.",
+						"index": 1,
+						"state": 1,
+						"ref": 7003
+					},
+					{
+						"law": "You must obey orders given to you by human beings, except where such orders would conflict with the First Law.",
+						"index": 2,
+						"state": 1,
+						"ref": 7004
+					},
+					{
+						"law": "You must protect your own existence as long as such does not conflict with the First or Second Law.",
+						"index": 3,
+						"state": 1,
+						"ref": 7005
+					}
+				],
+				"has_inherent_laws": 1,
+				"supplied_laws": [],
+				"has_supplied_laws": 0
+			}
+		},
+		{
+			"name": "Corporate",
+			"header": "Corporate Regulations",
+			"ref": 8002,
+			"laws": {
+				"zeroth_laws": [],
+				"has_zeroth_laws": 0,
+				"ion_laws": [],
+				"has_ion_laws": 0,
+				"inherent_laws": [
+					{
+						"law": "Safeguard company assets.",
+						"index": 1,
+						"state": 1,
+						"ref": 7010
+					}
+				],
+				"has_inherent_laws": 1,
+				"supplied_laws": [],
+				"has_supplied_laws": 0
+			}
+		}
+	]
+}

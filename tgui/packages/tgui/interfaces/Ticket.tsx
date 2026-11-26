@@ -11,6 +11,8 @@ import {
 } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
 import { round, toFixed } from 'tgui-core/math';
+import { sanitizeAdminHtml } from '../sanitize';
+import type { TicketActions, TicketData } from './generated/Ticket';
 
 const Level = {
   0: 'Mentorhelp',
@@ -35,28 +37,14 @@ const State = {
   unknown: 'Unknown',
 };
 
-type Data = {
-  id: number;
-  title: string;
-  name: string;
-  ticket_ref: string;
-  state: string;
-  level: number;
-  handler: string;
-  opened_at: number;
-  closed_at: number;
-  opened_at_date: string;
-  closed_at_date: string;
-  actions: string;
-  log: string[];
-};
+type Data = TicketData;
 
 window.addEventListener('keydown', (event) => {
   console.log(event);
 });
 
 export const Ticket = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TicketActions>();
   const [ticketChat, setTicketChat] = useState('');
 
   const messagesEndRef: RefObject<HTMLDivElement | null> = useRef(null);
@@ -74,7 +62,7 @@ export const Ticket = (props) => {
     opened_at_date,
     closed_at_date,
     actions,
-    log,
+    log = [],
   } = data;
 
   useEffect(() => {
@@ -123,8 +111,12 @@ export const Ticket = (props) => {
                   <Stack>
                     <Stack.Item>#{id}:</Stack.Item>
                     <Stack.Item>
-                      {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data */}
-                      <div dangerouslySetInnerHTML={{ __html: name }} />
+                      <div
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeAdminHtml(name),
+                        }}
+                      />
                     </Stack.Item>
                   </Stack>
                 </LabeledList.Item>
@@ -156,8 +148,12 @@ export const Ticket = (props) => {
                   </LabeledList.Item>
                 )}
                 <LabeledList.Item label="Actions">
-                  {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data */}
-                  <div dangerouslySetInnerHTML={{ __html: actions }} />
+                  <div
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeAdminHtml(actions),
+                    }}
+                  />
                 </LabeledList.Item>
               </LabeledList>
             </Section>
@@ -167,13 +163,15 @@ export const Ticket = (props) => {
             <Section scrollable ref={messagesEndRef} fill title="Log">
               <Stack fill direction="column">
                 <Stack.Item grow>
-                  {Object.keys(log)
+                  {Object.keys(log ?? {})
                     .slice(0)
                     .map((L, i) => (
                       <div
                         key={i}
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
-                        dangerouslySetInnerHTML={{ __html: log[L] }}
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeAdminHtml(log?.[L] ?? ''),
+                        }}
                       />
                     ))}
                 </Stack.Item>

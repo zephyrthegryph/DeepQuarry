@@ -163,9 +163,6 @@ CAPABILITIES(/obj/item/implantcase/backup)
 	)
 
 /*
-/obj/item/implant/backup/full
-	name = "backup implant"
-	desc = "A normal wireless cortical stack with neutrino and QE transmission for constant-stream consciousness upload."
 */
 
 //Infinite use implanter. Feel free to make proper sprites for it or whatnot.

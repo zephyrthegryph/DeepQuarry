@@ -56,3 +56,27 @@ CAPABILITIES(/obj/structure/dq_adjacency_probe)
 	qdel(C)
 	qdel(A)
 	TEST_ASSERT_EQUAL(A.adj_handle, 0, "a destroyed member gives its handle back")
+
+/// A hold (adjacency_hold_begin(), an explosion's resolve) queues the neighbour recomputes and runs each member once when it drains.
+/datum/unit_test/dq_lifeform_adjacency_hold
+
+/datum/unit_test/dq_lifeform_adjacency_hold/Run()
+	var/turf/T = dq_containment_floor()
+	var/turf/east = get_step(T, EAST)
+	var/turf/north = get_step(T, NORTH)
+	TEST_ASSERT(east && north, "the test floor has room around it")
+	var/obj/structure/dq_adjacency_probe/A = allocate(/obj/structure/dq_adjacency_probe, T)
+	var/obj/structure/dq_adjacency_probe/B = allocate(/obj/structure/dq_adjacency_probe, east)
+	TEST_ASSERT_EQUAL(A.adj_mask, EAST, "the pair joins before the hold")
+	var/changes_before = A.changes
+	adjacency_hold_begin()
+	var/obj/structure/dq_adjacency_probe/C = allocate(/obj/structure/dq_adjacency_probe, north)
+	qdel(B)
+	TEST_ASSERT_EQUAL(A.adj_mask, EAST, "while held, a neighbour's changes do not recompute the member")
+	TEST_ASSERT(adjacency_hold_drain(FALSE), "the hold drains in one call without a tick check")
+	TEST_ASSERT_EQUAL(A.adj_mask, NORTH, "the drain recomputes the member with every change in place")
+	TEST_ASSERT_EQUAL(C.adj_mask, SOUTH, "and the member made during the hold")
+	TEST_ASSERT_EQUAL(A.changes, changes_before + 1, "two neighbour changes recompute the member once")
+	TEST_ASSERT(isnull(GLOB.adjacency_held), "the hold is closed once drained")
+	qdel(C)
+	qdel(A)

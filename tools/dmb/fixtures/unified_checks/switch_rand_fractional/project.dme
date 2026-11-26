@@ -1,4 +1,0 @@
-/proc/probe()
-    switch(rand(0.5,3.8))
-        if(0.8 to 2.9)
-            return 0

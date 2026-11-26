@@ -15,7 +15,6 @@ SYSTEM_DEF(job)
 	var/list/type_occupations = list()	//Dict of all jobs, keys are types
 
 	var/list/department_datums = list()
-	var/list/job_icon_cache = list()
 	var/debug_messages = FALSE
 
 	var/savepath = "data/job_camp_list.json"
@@ -195,7 +194,7 @@ CAPABILITIES(/datum/system/job)
 			position_limit = job.spawn_positions
 		if((job.current_positions < position_limit) || position_limit == -1)
 			job_debug_message("Player: [player] is now Rank: [rank], JCP:[job.current_positions], JPL:[position_limit]")
-			player.mind.assigned_role = rank
+			player.mind.set_assigned_role(rank)
 			player.mind.role_alt_title = get_player_alt_title(player, rank)
 			rel_remove(src, nameof(unassigned), player)
 			job.current_positions++
@@ -288,8 +287,8 @@ CAPABILITIES(/datum/system/job)
 /datum/system/job/proc/reset_occupations()
 	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if((player) && (player.mind))
-			player.mind.assigned_role = null
-			player.mind.special_role = null
+			player.mind.set_assigned_role(null)
+			player.mind.set_special_role(null)
 	setup_occupations()
 	rel_clear(src, nameof(unassigned))
 	return
@@ -494,6 +493,10 @@ CAPABILITIES(/datum/system/job)
 			human_mob_buckled.forceMove(human_mob.loc)
 			human_mob_buckled.set_dir(human_mob.dir)
 
+	var/equip_started = TICK_USAGE_REAL
+	var/list/step_ms = list()
+	var/list/slow_items = list() // the loadout items that took JOIN_ITEM_SLOW_MS or more to make and wear: type -> ms
+	var/step_started = TICK_USAGE_REAL
 	if(job)
 
 		//Equip custom gear loadout.
@@ -526,9 +529,13 @@ CAPABILITIES(/datum/system/job)
 
 				// Implants get special treatment
 				if(gaar_thing.slot == "implant")
+					var/item_started = TICK_USAGE_REAL
 					var/obj/item/implant/gear_implant = gaar_thing.spawn_item(human_mob, active_gear_list[gaar_thing.display_name])
+					if(!gear_implant)
+						continue
 					gear_implant.set_invisibility(INVISIBILITY_MAXIMUM)
 					gear_implant.implant_loadout(human_mob)
+					join_note_slow_item(slow_items, gaar_thing.type, item_started)
 					continue
 
 				// items with no body slot (the new "Other / Junk" bucket in the
@@ -541,31 +548,46 @@ CAPABILITIES(/datum/system/job)
 				// Try desperately (and sorta poorly) to equip the item. Now with increased desperation!
 				if(gaar_thing.slot && !(gaar_thing.slot in custom_equip_slots))
 					var/metadata = active_gear_list[gaar_thing.display_name]
+					var/item_started = TICK_USAGE_REAL
 					//if(G.slot == SLOT_ID_MASK || G.slot == SLOT_ID_SUIT || G.slot == SLOT_ID_HEAD)
 					//	custom_equip_leftovers += thing
 					//else
-					if(human_mob.equip_to_slot_or_del(gaar_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs), gaar_thing.slot))
+					var/obj/item/made_gear = gaar_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs)
+					if(!made_gear)
+						continue
+					if(human_mob.equip_to_slot_or_del(made_gear, gaar_thing.slot))
 						to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
 						if(gaar_thing.slot != SLOT_ID_TIE)
 							custom_equip_slots.Add(gaar_thing.slot)
 					else
 						custom_equip_leftovers.Add(thing)
+					join_note_slow_item(slow_items, gaar_thing.type, item_started)
 				else
 					spawn_in_storage += thing
 
+		step_ms["loadout"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+		step_started = TICK_USAGE_REAL
 		// Set up their account
 		job.setup_account(human_mob)
+		step_ms["account"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+		step_started = TICK_USAGE_REAL
 
 		// Equip job items.
 		job.equip(human_mob, human_mob.mind ? human_mob.mind.role_alt_title : "")
+		step_ms["job outfit"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+		step_started = TICK_USAGE_REAL
 
 		// Stick their fingerprints on literally everything
 		job.apply_fingerprints(human_mob)
+		step_ms["fingerprints ([length(contents_of(human_mob))] carried)"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+		step_started = TICK_USAGE_REAL
 
 		// Only non-silicons get post-job-equip equipment and dormant diseases
 		if(!(job.mob_type & JOB_SILICON))
 			human_mob.equip_post_job()
 			human_mob.give_random_dormant_disease(guaranteed_symptoms = job.symptoms)
+			step_ms["post equip, dormant disease"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+			step_started = TICK_USAGE_REAL
 
 		// If some custom items could not be equipped before, try again now.
 		for(var/thing in custom_equip_leftovers)
@@ -575,7 +597,10 @@ CAPABILITIES(/datum/system/job)
 			else
 				var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // per-job loadout (was: gear_list[gear_slot])
 				var/metadata = active_gear_list[gear_thing.display_name]
-				if(human_mob.equip_to_slot_or_del(gear_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs), gear_thing.slot))
+				var/obj/item/made_leftover = gear_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs)
+				if(!made_leftover)
+					continue
+				if(human_mob.equip_to_slot_or_del(made_leftover, gear_thing.slot))
 					to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
 					custom_equip_slots.Add(gear_thing.slot)
 				else
@@ -590,6 +615,8 @@ CAPABILITIES(/datum/system/job)
 		to_chat(human_mob, span_filter_notice("Your job is [rank] and the game just can't handle it! Please report this bug to an administrator."))
 		return human_mob
 
+	step_ms["leftover loadout"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 	human_mob.set_job(rank)
 	log_game("JOINED [key_name(human_mob)] as \"[rank]\"")
 	log_game("SPECIES [key_name(human_mob)] is a: \"[human_mob.species.name]\"")
@@ -608,7 +635,7 @@ CAPABILITIES(/datum/system/job)
 
 	var/alt_title = null
 	if(human_mob.mind)
-		human_mob.mind.assigned_role = rank
+		human_mob.mind.set_assigned_role(rank)
 		alt_title = human_mob.mind.role_alt_title
 
 		// If we're a silicon, we may be done at this point
@@ -639,13 +666,14 @@ CAPABILITIES(/datum/system/job)
 			else
 				to_chat(human_mob, span_danger("Failed to locate a storage object on your mob, either you spawned with no arms and no backpack or this is a bug."))
 
+	step_ms["job set, memories, announcement, stored items"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 	if(istype(human_mob)) //give humans wheelchairs, if they need them.
 		var/obj/item/organ/external/l_foot = human_mob.get_organ(BP_L_FOOT)
 		var/obj/item/organ/external/r_foot = human_mob.get_organ(BP_R_FOOT)
 		var/obj/item/storage/storage_bag = locate_within(human_mob, /obj/item/storage)
 		var/obj/item/wheelchair/used_wheelchair
 		if(storage_bag)
-			storage_bag.latent_materialize_all() // a walk needs real things (C5)
 			used_wheelchair = locate_within(storage_bag, /obj/item/wheelchair)
 		if(!l_foot || !r_foot || used_wheelchair)
 			var/wheelchair_type = used_wheelchair?.unfolded_type || /obj/structure/bed/chair/wheelchair
@@ -658,6 +686,8 @@ CAPABILITIES(/datum/system/job)
 				active_wheelchair.set_color(used_wheelchair.color)
 				spent(used_wheelchair)
 
+	step_ms["wheelchair"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 	to_chat(human_mob, span_filter_notice(span_bold("You are [job.total_positions == 1 ? "the" : "a"] [alt_title ? alt_title : rank].")))
 
 	if(job.supervisors)
@@ -669,6 +699,8 @@ CAPABILITIES(/datum/system/job)
 	if(job.req_admin_notify)
 		to_chat(human_mob, span_filter_notice(span_bold("You are playing a job that is important for Game Progression. If you have to disconnect, please notify the admins via adminhelp.")))
 
+	step_ms["welcome messages"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 	// EMAIL GENERATION
 	// Email addresses will be created under this domain name. Mostly for the looks.
 	var/domain = "freemail.nt"
@@ -689,10 +721,12 @@ CAPABILITIES(/datum/system/job)
 	else
 		var/datum/computer_file/data/email_account/user_mail_acc = new/datum/computer_file/data/email_account()
 		user_mail_acc.password = GenerateKey()
-		user_mail_acc.login = 	complete_login
+		user_mail_acc.set_login(complete_login)
 		to_chat(human_mob, span_filter_notice("Your email account address is " + span_bold("[user_mail_acc.login]") + " and the password is " + span_bold("[user_mail_acc.password]") + ". This information has also been placed into your notes."))
 		human_mob.mind.store_memory("Your email account address is [user_mail_acc.login] and the password is [user_mail_acc.password].")
 	// END EMAIL GENERATION
+	step_ms["email"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	step_started = TICK_USAGE_REAL
 
 	//Gives glasses to the vision impaired
 	if(human_mob.disabilities() & NEARSIGHTED)
@@ -705,6 +739,13 @@ CAPABILITIES(/datum/system/job)
 	human_mob.flag_hud_update(ID_HUD)
 	human_mob.flag_hud_update(IMPLOYAL_HUD)
 	human_mob.flag_hud_update(SPECIALROLE_HUD)
+	step_ms["glasses, huds"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	var/steps = ""
+	for(var/step_name in step_ms)
+		steps += ", [step_name] [round(step_ms[step_name], 0.1)] ms"
+	for(var/item_type in slow_items)
+		steps += ", slow loadout item [item_type] [round(slow_items[item_type], 0.1)] ms"
+	log_world("JOIN_TIMING_EQUIP: [key_name(human_mob)] as [rank]: whole [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - equip_started), 0.1)] ms[steps]")
 	return human_mob
 
 /datum/system/job/proc/handle_feedback_gathering()
@@ -1168,3 +1209,12 @@ CAPABILITIES(/datum/system/job)
 	if(!fexists(savepath))
 		log_world("Saving: failed to save [savepath]")
 // end
+
+/// A loadout item that took this long (ms) to make and wear is named in the join's JOIN_TIMING_EQUIP line.
+#define JOIN_ITEM_SLOW_MS 4
+
+/// Notes loadout item `item_type` in `slow_items` (type -> ms) when it took JOIN_ITEM_SLOW_MS or more since `started`.
+/proc/join_note_slow_item(list/slow_items, item_type, started)
+	var/item_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	if(item_ms >= JOIN_ITEM_SLOW_MS)
+		slow_items["[item_type]"] = item_ms

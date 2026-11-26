@@ -1,2 +1,0 @@
-/atom
-    var/hidden

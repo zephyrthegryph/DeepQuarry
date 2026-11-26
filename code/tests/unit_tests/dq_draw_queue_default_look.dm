@@ -5,7 +5,7 @@
 // samples one fresh instance per type at boot (refresh_settle_created()) and drops the fresh atoms of types whose default look is empty;
 // after the verdict, a fresh atom of such a type is not queued at all.
 
-/// A type like a space turf: it has capabilities (an op), so it may derive something, and its draw shows nothing.
+/// A type like a space turf: it may derive a look (a draw() override), and its draw shows nothing.
 /obj/dq_stamp_plain
 	name = "stamp plain"
 	icon = 'icons/turf/space.dmi'
@@ -17,12 +17,17 @@ CAPABILITIES(/obj/dq_stamp_plain)
 /obj/dq_stamp_plain/proc/poke(datum/act/op/act)
 	return OP_PASS
 
+/// It overrides draw() (so its type may derive a look, TYPE_DERIVES_LOOK) and draws nothing: only a first refresh can tell its default look is empty.
+/obj/dq_stamp_plain/draw(datum/look/look)
+	..()
+
 /datum/unit_test/dq_draw_queue_default_look
 
 /datum/unit_test/dq_draw_queue_default_look/Run()
 	var/turf/T = test_floor()
 	var/type = /obj/dq_stamp_plain
 	refresh_flush()
+	set_global(nameof(GLOB.boot_created_settled), FALSE) // the boot window: everything queues in the refresh queue, which the settle samples by type
 	GLOB.type_look_stamp -= type
 	GLOB.type_derives_cache -= type
 
@@ -45,14 +50,15 @@ CAPABILITIES(/obj/dq_stamp_plain)
 	TEST_ASSERT(!(D in GLOB.refresh_queue), "and is not in the queue")
 	TEST_ASSERT_NULL(refresh_look(D, FALSE), "a dry draw of the stamped atom is empty, as the stamp says")
 
-	// A real write still queues it, without the creation mark.
+	// A real write still owes the redraw, without the creation mark.
 	refresh_mark(D, DEP_ALL) // a real mark (a type that derives nothing is not queued by state_changed() at all)
-	TEST_ASSERT(D.refresh_queued & DEP_DRAW, "a write after creation queues the redraw")
+	TEST_ASSERT(D.refresh_queued & DEP_DRAW, "a write after creation owes the redraw")
 	TEST_ASSERT(!(D.refresh_queued & DEP_CREATED), "a real mark clears the creation mark")
 
 	// A fresh atom written before the drain is not dropped by the stamp: the write is a real mark.
 	var/obj/E = new type(T)
 	refresh_mark(E, DEP_ALL)
+	set_global(nameof(GLOB.boot_created_settled), FALSE)
 	refresh_settle_created()
 	TEST_ASSERT(E.refresh_queued, "a fresh atom written since creation keeps its refresh")
 
@@ -138,47 +144,126 @@ CAPABILITIES(/obj/dq_stamp_plain)
 	qdel(plain)
 	qdel(side)
 
-/// What is pending is judged by kind: a lazy type's real mark (made while the map initializes) is presentation, so the atom still parks and still draws
-/// when a client comes near; a type whose verdict is not lazy keeps its marked entry queued; a mark of an effect kind is never deferred.
-/datum/unit_test/dq_refresh_park_look_only_marks
+/// A fixture whose setup() writes a var its draw reads: the writes an atom's own construction makes after Initialize() returned.
+/obj/dq_setup_marks_probe
+	name = "setup marks probe"
+	var/shade = 0
 
-/datum/unit_test/dq_refresh_park_look_only_marks/Run()
-	set_global(nameof(GLOB.refresh_parked_near), GLOB.refresh_parked_near)
-	interest_isolate()
-	set_global(nameof(GLOB.refresh_parked_marked), GLOB.refresh_parked_marked)
-	set_global(nameof(GLOB.refresh_parked), GLOB.refresh_parked)
-	set_global(nameof(GLOB.refresh_near_drawn), GLOB.refresh_near_drawn)
-	set_global(nameof(GLOB.refresh_park_residual), GLOB.refresh_park_residual)
+CAPABILITIES(/obj/dq_setup_marks_probe)
+	setup(PROC_REF(probe_setup))
+
+/obj/dq_setup_marks_probe/draw(datum/look/look)
+	. = ..()
+	look.state("shade-[shade]")
+
+/obj/dq_setup_marks_probe/proc/probe_setup()
+	set_shade(2)
+
+/// What an atom's setup() writes is its construction (the first draw queued at creation covers it): the creation mark survives, so the type is
+/// still sampled at boot (refresh_settle_created()) instead of every instance waiting, unsampled, for the post-boot drain. A write after construction
+/// is a real mark and clears it, as before.
+/datum/unit_test/dq_refresh_setup_writes_are_construction
+
+/datum/unit_test/dq_refresh_setup_writes_are_construction/Run()
 	var/turf/T = test_floor()
 	refresh_flush()
-	GLOB.type_look_stamp -= /obj/structure/table
-	var/obj/structure/table/marked = new(T)
-	refresh_mark(marked, DEP_ALL)
-	refresh_mark(marked, DEP_DRAW) // a real mark: the creation mark is gone
-	TEST_ASSERT(!(marked.refresh_queued & DEP_CREATED), "a real mark clears the creation mark")
-	GLOB.type_look_lazy -= /obj/structure/table
-	refresh_park_backlog()
-	TEST_ASSERT(marked.refresh_queued != DEP_PARKED, "a type without a lazy verdict stays queued")
-	GLOB.type_look_lazy[/obj/structure/table] = TRUE
-	TEST_ASSERT(refresh_pending_look_only(marked), "a lazy table's pending work is look only")
-	var/marked_before = GLOB.refresh_parked_marked
-	refresh_park_backlog()
-	TEST_ASSERT_EQUAL(marked.refresh_queued, DEP_PARKED, "a look-only mark during init no longer keeps a lazy atom in the queue")
-	TEST_ASSERT(GLOB.refresh_parked_marked > marked_before, "and the park counts it as marked since creation")
-	TEST_ASSERT(findtext(refresh_kind_census(list(marked)), "0 entries"), "a parked atom is no queued work in the census")
-	// Nothing waits forever: a client near it draws what it owed.
-	interest_hold_set("dq-test-near", interest_view_keys(T, world.view))
-	TEST_ASSERT(marked.refresh_queued & DEP_DRAW, "a client near it queues the draw it owed")
+	GLOB.type_look_stamp -= /obj/dq_setup_marks_probe
+	set_global(nameof(GLOB.boot_created_settled), FALSE)
+	var/obj/dq_setup_marks_probe/first = new(T)
+	var/obj/dq_setup_marks_probe/second = new(T)
+	TEST_ASSERT_EQUAL(first.shade, 2, "its setup() ran")
+	TEST_ASSERT(first.refresh_queued & DEP_CREATED, "the setup() write did not clear the creation mark")
+	TEST_ASSERT(first.refresh_queued & DEP_DRAW, "and its first draw is still owed")
+	refresh_settle_created()
+	TEST_ASSERT(!isnull(GLOB.type_look_stamp[/obj/dq_setup_marks_probe]), "the boot settle sampled the type: its instances were fresh")
+	TEST_ASSERT(!GLOB.type_look_stamp[/obj/dq_setup_marks_probe], "and its default look is not empty (the setup write is drawn)")
+	// A write after construction is a real mark.
+	second.set_shade(5)
+	TEST_ASSERT(!(second.refresh_queued & DEP_CREATED), "a write after construction clears the creation mark")
 	refresh_flush()
-	TEST_ASSERT_EQUAL(marked.refresh_queued, 0, "and the drain draws it")
-	// An effect bit is not presentation: a datum with a side effect pending is never look only.
-	var/datum/dq_refresh_plain_datum/side/side = new
-	side.bump()
-	TEST_ASSERT(!refresh_pending_look_only(side), "a pending side effect is not look only")
-	TEST_ASSERT(findtext(refresh_kind_census(list(side)), "effects 1"), "the census counts it as an effect")
-	GLOB.type_look_lazy -= /obj/structure/table
-	qdel(side)
-	qdel(marked)
-	for(var/obj/item/stack/material/scrap in T)
-		qdel(scrap)
+	TEST_ASSERT_EQUAL(second.shade, 5, "and the write stands")
+	TEST_ASSERT_EQUAL(second.refresh_queued, 0, "and the drain draws it")
+	GLOB.type_look_stamp -= /obj/dq_setup_marks_probe
+	qdel(first)
+	qdel(second)
 	refresh_flush()
+
+/// A wall or floor built while the round runs (ChangeTurf) takes its material and flooring in setup(), is drawn from them and still answers later changes.
+/datum/unit_test/dq_refresh_runtime_built_turfs_draw
+
+/datum/unit_test/dq_refresh_runtime_built_turfs_draw/Run()
+	var/turf/T = test_floor()
+	var/floor_type = T.type
+	refresh_flush()
+	var/turf/simulated/wall/W = T.ChangeTurf(/turf/simulated/wall)
+	TEST_ASSERT(istype(W), "the floor became a wall")
+	if(!istype(W))
+		return
+	TEST_ASSERT(istype(W.material, /datum/material), "the wall took its material in setup()")
+	TEST_ASSERT(W.density, "the wall is solid")
+	refresh_flush()
+	TEST_ASSERT_EQUAL(W.refresh_queued, 0, "the wall's first draw ran")
+	var/before = W.icon_state
+	var/turf/back = W.ChangeTurf(floor_type)
+	refresh_flush()
+	TEST_ASSERT(!istype(back, /turf/simulated/wall), "the wall became a floor again ([back.type]; was drawn [before])")
+	TEST_ASSERT(!back.density, "which can be walked on")
+	TEST_ASSERT_EQUAL(back.refresh_queued, 0, "and the floor's draw ran")
+
+/// Draw on first view at boot: while the boot map loads, a type with no look verdict queues one fresh instance as its sample and holds the rest out of
+/// the queue by type; the settle drops the held atoms of an empty default look without walking the queue, and a real mark on a held atom queues it.
+/datum/unit_test/dq_boot_created_held_by_type
+
+/datum/unit_test/dq_boot_created_held_by_type/Run()
+	var/turf/T = test_floor()
+	var/type = /obj/dq_stamp_plain
+	refresh_flush()
+	GLOB.type_look_stamp -= type
+	GLOB.type_derives_cache -= type
+	set_global(nameof(GLOB.boot_created_settled), FALSE)
+	var/datum/materialize_batch/batch = SSatoms.batch_open("dq_boot_created_held_by_type") // the boot map load's frame is open
+	var/obj/sample = new type(T)
+	var/obj/held = new type(T)
+	var/obj/written = new type(T)
+	SSatoms.batch_close(batch)
+	TEST_ASSERT(sample.refresh_queued & DEP_CREATED, "the first fresh instance is queued as the type's sample")
+	TEST_ASSERT(held.datum_flags & DF_BOOT_HELD, "a later one is held out of every queue, owing its first refresh")
+	TEST_ASSERT(!(held in GLOB.refresh_queue) && !held.refresh_queued, "and is not in the queue")
+	refresh_mark(written, DEP_ALL)
+	TEST_ASSERT(!written.refresh_queued, "a mark on a held atom marks nothing: the settle draws it once")
+	refresh_settle_created()
+	TEST_ASSERT(GLOB.type_look_stamp[type], "the sample records an empty default look")
+	TEST_ASSERT(!(held.datum_flags & DF_BOOT_HELD) && !held.refresh_queued, "the held atom of an empty default look is released with its type, untouched")
+	TEST_ASSERT(!(held in GLOB.refresh_queue), "and never enters the queue")
+	TEST_ASSERT(GLOB.boot_created_settled, "the boot settle closes the hold: a later map load queues as before")
+	refresh_flush()
+	qdel(sample)
+	qdel(held)
+	qdel(written)
+
+/// Draw on first view holds only atoms on the map: a client's HUD (screen objects in nullspace: plane masters, fullscreen overlays) made during
+/// boot is drawn at once, so a player who connects while the server boots never keeps an undrawn screen. A map atom of the same kind is still held.
+/datum/unit_test/dq_boot_hold_spares_screens_and_non_map_atoms
+
+/datum/unit_test/dq_boot_hold_spares_screens_and_non_map_atoms/Run()
+	var/type = /obj/dq_stamp_plain
+	refresh_flush()
+	GLOB.type_look_stamp -= type
+	GLOB.type_derives_cache -= type
+	set_global(nameof(GLOB.boot_created_settled), FALSE)
+	var/datum/materialize_batch/batch = SSatoms.batch_open("dq_boot_hold_spares_screens") // the boot map load's frame is open
+	var/obj/sample = new type(test_floor())
+	var/obj/on_map = new type(test_floor())
+	var/obj/in_nullspace = new type(null) // where a HUD's screen objects live
+	var/atom/movable/screen/hud_piece = new
+	SSatoms.batch_close(batch)
+	TEST_ASSERT(sample.refresh_queued & DEP_CREATED, "the first map instance is the type's sample")
+	TEST_ASSERT(on_map.datum_flags & DF_BOOT_HELD, "a later map instance is still held for the verdict")
+	TEST_ASSERT(!(in_nullspace.datum_flags & DF_BOOT_HELD), "an atom with no turf under it (a HUD's) is never held")
+	TEST_ASSERT(!(hud_piece.datum_flags & DF_BOOT_HELD), "and neither is a screen object")
+	refresh_settle_created()
+	refresh_flush()
+	qdel(sample)
+	qdel(on_map)
+	qdel(in_nullspace)
+	qdel(hud_piece)

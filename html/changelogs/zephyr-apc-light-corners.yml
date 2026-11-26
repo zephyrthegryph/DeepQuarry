@@ -1,0 +1,6 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "The APC window's channel status (On/Off) has a fixed width, so the buttons stay aligned in every state."
+  - bugfix: "Corner lighting: walls block light (a corner next to a wall averages only the open turfs on its own side, and a wall gets no lit underlay), and every lit tile gets a gradient."
+  - qol: "Corner lighting is on by default on top of an always-on blur (config LIGHTING_CORNERS); the admin verb is now Toggle Corner Lighting."

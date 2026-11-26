@@ -8,22 +8,15 @@ import {
   Section,
 } from 'tgui-core/components';
 import { formatPower } from 'tgui-core/format';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  TurbineControlActions,
+  TurbineControlData,
+} from './generated/TurbineControl';
 
-type Data = {
-  connected: BooleanLike;
-  compressor_broke: BooleanLike;
-  turbine_broke: BooleanLike;
-  broken: BooleanLike;
-  door_status: BooleanLike;
-  online: BooleanLike;
-  power: number;
-  rpm: number;
-  temp: number;
-};
+type Data = TurbineControlData;
 
 export const TurbineControl = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TurbineControlActions>();
 
   const {
     compressor_broke,

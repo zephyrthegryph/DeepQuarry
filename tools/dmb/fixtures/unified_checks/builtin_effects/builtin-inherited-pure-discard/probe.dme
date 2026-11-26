@@ -1,5 +1,0 @@
-/atom/proc/Move()
-    set SpacemanDMM_should_be_pure=1
-    return 1
-/mob/proc/probe()
-    Move()

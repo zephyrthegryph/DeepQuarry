@@ -7,19 +7,12 @@ import { Box } from 'tgui-core/components';
 import { Switch } from '../controls';
 import type { EditorProps } from './index';
 
-type Data = {
-  flags: Record<string, boolean>;
-};
-
-type Static = {
-  labels: Record<string, string>;
-};
-
-export const PersistenceEditor = ({ data, staticData }: EditorProps) => {
+export const PersistenceEditor = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'persistence'>) => {
   const { act } = useBackend();
-  const d = data as Data;
-  const s = (staticData ?? {}) as Static;
-  const labels = s.labels ?? {};
+  const labels = s?.labels ?? {};
   const flagOrder = ['spawn', 'weight', 'organs', 'markings', 'size'];
   return (
     <Box

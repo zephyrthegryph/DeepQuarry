@@ -1,12 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
+import type { FourInARowActions } from '../generated/FourInARow';
 import { GameArea } from './GameArea';
 import { PlayerMenu } from './PlayerMenu';
 import type { Data } from './types';
 
 export const FourInARow = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, FourInARowActions>();
 
   const { grid_y_size } = data;
   const added_height = grid_y_size * 63;

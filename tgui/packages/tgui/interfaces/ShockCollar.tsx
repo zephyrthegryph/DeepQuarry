@@ -7,24 +7,15 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 import { round } from 'tgui-core/math';
-
-export type ShockCollarData = {
-  on: boolean;
-  frequency: number;
-  code: number;
-  freq_min: number;
-  freq_max: number;
-  code_min: number;
-  code_max: number;
-  target_size?: number | string;
-  target_size_min?: number;
-  target_size_max?: number;
-};
+import type {
+  ShockCollarActions,
+  ShockCollarData,
+} from './generated/ShockCollar';
 
 export const ShockCollar = (props) => {
-  const { act, data } = useBackend<ShockCollarData>();
+  const { act, data } = useBackend<ShockCollarData, ShockCollarActions>();
   return (
-    <Window width={260} height={data.target_size ? 215 : 175}>
+    <Window width={340} height={data.target_size ? 215 : 175}>
       <Window.Content fontSize={1.5} textAlign="center">
         <Button
           fluid
@@ -39,10 +30,10 @@ export const ShockCollar = (props) => {
               animated
               fluid
               unit="kHz"
-              minValue={data.freq_min}
-              maxValue={data.freq_max}
+              minValue={data.freq_min ?? 0}
+              maxValue={data.freq_max ?? 0}
               step={1}
-              value={data.frequency}
+              value={data.frequency ?? 0}
               format={(val) => (val / 10).toFixed(1)}
               onChange={(val) => act('freq', { freq: val })}
             />
@@ -51,10 +42,10 @@ export const ShockCollar = (props) => {
             <NumberInput
               animated
               fluid
-              minValue={data.code_min}
-              maxValue={data.code_max}
+              minValue={data.code_min ?? 0}
+              maxValue={data.code_max ?? 0}
               step={1}
-              value={data.code}
+              value={data.code ?? 0}
               onChange={(val) => act('code', { code: val })}
             />
           </LabeledList.Item>
@@ -73,7 +64,7 @@ export const ShockCollar = (props) => {
 };
 
 export const SizeInput = (props: {
-  size?: number | string;
+  size?: unknown;
   min?: number;
   max?: number;
 }) => {

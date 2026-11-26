@@ -78,12 +78,21 @@
 /// probed here (review 2 H9: a draw() may read what the subtype's Initialize() sets up after ..()):
 /// the first instance of each type is always queued, and its refresh records what the type derives.
 /proc/caps_init(atom/holder, mapload)
-	var/datum/own_table/own = _CACHED_KEY_FAST(own_table, holder.type, holder) // own_table_of() inlined: every atom passes here
-	if(own.engine_hooks & ENGINE_HOOK_INIT)
-		BOOT_PHASE_BEGIN(bp_engine)
-		engine_holder_init(holder, mapload)
-		BOOT_PHASE_END(bp_engine, "caps_init: engine_holder_init" + BOOT_KIND(holder), holder)
-	var/flags = type_derive_flags(holder)
+	var/plan = CTOR_PLAN_FOR(holder) // the construction plan of the atom InitAtom() is initializing (ctor_plan.dm), else null
+	if(plan)
+		if((plan & CTOR_ENGINE_INIT) && !(plan & CTOR_SETUP_ONLY))
+			BOOT_PHASE_BEGIN(bp_engine)
+			engine_holder_init(holder, mapload)
+			BOOT_PHASE_END(bp_engine, "caps_init: engine_holder_init" + BOOT_KIND(holder), holder)
+	else
+		var/datum/own_table/own = _CACHED_KEY_FAST(own_table, holder.type, holder) // own_table_of() inlined: every atom passes here
+		if(own.engine_hooks & ENGINE_HOOK_INIT)
+			BOOT_PHASE_BEGIN(bp_engine)
+			engine_holder_init(holder, mapload)
+			BOOT_PHASE_END(bp_engine, "caps_init: engine_holder_init" + BOOT_KIND(holder), holder)
+	var/flags = GLOB.type_derives_cache[holder.type] // type_derive_flags()'s per-type memo read inline: every atom passes here
+	if(isnull(flags))
+		flags = type_derive_flags(holder)
 	if(flags & TYPE_DERIVES_TYPE_VERBS)
 		verb_store_refresh(holder, type_verbs_always(holder)) // login entries wait for Login (type_verbs.dm)
 	if(flags & TYPE_DERIVES_CAPS)
@@ -93,11 +102,20 @@
 		refresh_granted_verbs(holder) // capability verbs are there from init, not a frame later
 	if(flags & TYPE_DERIVES_DEPS)
 		derived_attach(holder)
-	if(rx_type_enrols(holder))
+	var/enrols = plan ? (plan & CTOR_ENROLS) : GLOB?.rx_enrol_cache?[holder.type] // rx_type_enrols()'s answer, from the plan or its cache
+	if(isnull(enrols))
+		enrols = rx_type_enrols(holder)
+	if(enrols)
 		rx_enrol(holder) // per-instance every() work (reactions/work.dm)
-	if(flags || holder.periodic_cadence || holder.periodic_interval)
-		if(!holder.refresh_queued && !(flags & TYPE_DERIVES_PENDING) && type_look_stamped(holder))
+	if(flags)
+		// A stamped type derives nothing: its stamp was recorded by a refresh that left nothing this boot, so its fresh atom owes no first refresh.
+		if(!holder.refresh_queued && type_look_stamped(holder))
+			GLOB.type_look_stamp_skipped++
 			return // the type's default look is empty: the stamp is the mapped appearance it already has (look_stamp.dm)
+		// The boot hold (look_stamp.dm, boot_created_hold()): during a map load, a type whose look verdict is not known yet queues its first
+		// instance as the sample and holds the rest out of the queue, by type, until the settle has the sample's verdict.
+		if(!holder.refresh_queued && boot_created_hold(holder))
+			return
 		// The first refresh is queued, nothing changed: state_changed() would publish a change that did not happen.
 		var/fresh = !holder.refresh_queued
 		refresh_mark(holder, DEP_ALL)
@@ -147,31 +165,6 @@
 		caps[C.ui_key()] = mine
 	if(caps)
 		data["caps"] = caps
-
-// ---- periodic work from capabilities (cadence / cap_should_run / cap_periodic_step) ----
-
-/// Any capability with periodic work that wants to run keeps the holder stepping.
-/atom/should_run()
-	. = ..()
-	if(. || !(type_derive_flags(src) & TYPE_DERIVES_CAPS))
-		return
-	for(var/datum/capability/C as anything in caps_all(src))
-		if(C.cadence && C.cap_should_run(src))
-			return TRUE
-	return FALSE
-
-/// Steps every capability whose periodic work wants to run. A type with its own periodic_step()
-/// calls ..() to keep its capabilities stepping.
-/atom/periodic_step(delta)
-	if(!(type_derive_flags(src) & TYPE_DERIVES_CAPS))
-		return PROCESS_KILL
-	var/stepped = FALSE
-	for(var/datum/capability/C as anything in caps_all(src))
-		if(C.cadence && C.cap_should_run(src))
-			C.cap_periodic_step(src, delta)
-			stepped = TRUE
-	if(!stepped)
-		return PROCESS_KILL
 
 /// The type's capability declarations: its CAPABILITY() lines (parents first). type_list()'s builder: built once per
 /// type, interned by caps_intern_list().

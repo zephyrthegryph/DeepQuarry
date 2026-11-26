@@ -88,51 +88,14 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 		return FALSE
 	return h == entity_handle_of(D)
 
-/// Collapse into latent data keeps the identity: `D`'s handle slot is parked (not freed, generation
-/// unchanged) and every relation view naming D goes dormant under it (rel_go_dormant()). Returns the
-/// slot id to keep on the latent entry, or 0 when D never had a handle.
-/proc/entity_handle_park(datum/D)
-	var/id = D.handle_slot
-	if(!id)
-		return 0
-	rel_go_dormant(D)
-	if(slot_names(id, D))
-		handle_data[id] = null
-		handle_types[id] = null
-		handle_ta[id] = null
-		handle_ib[id] = null
-		handle_parked[id] = TRUE
-	D.handle_slot = 0
-	return id
-
-/// The re-materialized `D` takes over parked slot `id`: every old handle to the collapsed thing
-/// resolves to D again, and its dormant relation views re-link (rel_wake()).
-/proc/entity_handle_unpark(datum/D, id)
-	if(!id || !handle_parked[id])
-		return FALSE
-	if(D.handle_slot)
-		slot_release(D)
-	handle_parked -= id
-	slot_bind(id, D)
-	rel_wake(D, id)
-	return TRUE
-
-/// A parked slot whose latent thing is gone for good (discarded, deleted as data): the slot is
-/// freed and its generation bumped, and its dormant views are dropped.
-/proc/entity_handle_release_parked(id)
-	if(!id || !handle_parked[id])
-		return
-	slot_free(id)
-	GLOB.rel_dormant -= id
-
-/// The datum slot `id` names, or null when it was deleted, parked, or freed. A slot whose datum BYOND collected without qdel() is freed and
+/// The datum slot `id` names, or null when it was deleted or freed. A slot whose datum BYOND collected without qdel() is freed and
 /// reported (a handle is not a reference: when it was the only thing naming its target, BYOND freed the target at once -- that var owns what it
 /// names).
 /proc/slot_resolve(id)
 	READS_FROM() // the slot lookup behind handle_get(): identity bookkeeping, not reactive state
 	var/datum/D = slot_datum(id)
 	if(!D)
-		if(!slot_taken(id) || handle_parked[id])
+		if(!slot_taken(id))
 			return null
 		var/list/types = handle_types
 		var/target_type = id <= length(types) ? types[id] : null

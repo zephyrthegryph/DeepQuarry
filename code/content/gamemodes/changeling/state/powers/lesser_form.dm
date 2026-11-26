@@ -6,8 +6,6 @@
 
 //Transform into a monkey.
 /mob/proc/changeling_lesser_form()
-	set category = VERB_CAT_CHANGELING
-	set name = "Lesser Form (1)"
 
 	var/datum/changeling/changeling = changeling_power(1,0,0)
 	if(!changeling)
@@ -137,9 +135,3 @@
 
 /mob/proc/lesser_transform_apply(datum/act/request/context)
 	return lesser_transform_stage(context.answer.value, TRUE)
-
-/mob/proc/changeling_lesser_transform()
-	set category = VERB_CAT_CHANGELING
-	set name = "Transform (1)"
-
-	return lesser_transform_stage()

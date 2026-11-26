@@ -16,7 +16,7 @@
 			sortTim(stuff, GLOBAL_PROC_REF(cmp_text_asc))
 			var/air = 0
 			var/turf/open/O = T
-			if(istype(O) && O.air)
+			if(istype(O) && O.turf_air())
 				air = 1
 			var/joins = 0
 			var/turf/simulated/wall/W = T

@@ -113,19 +113,93 @@ GLOBAL_VAR_INIT(dq_adjacency_trace, 0)
 				out += "[AM.type]=[refcount(AM)]"
 	return jointext(out, ",")
 
+/// The adjacency handle of the turf ChangeTurf() is replacing in place, or 0 (a handle is a number, not a reference). Its successor is placed in the index within the same call, so the neighbours its removal
+/// touches are not recomputed twice (once without the turf, once with its successor): they wait in `adjacency_pending` and recompute once with the
+/// successor in place.
+GLOBAL_VAR_INIT(adjacency_replacing, 0)
+/// While a replacement runs: kind -> list of the member handles of the neighbours whose recompute waits for the successor.
+GLOBAL_LIST(adjacency_pending)
+
+/// The successor of the replaced turf is in place: the neighbours that nothing recomputed meanwhile recompute now.
+/proc/adjacency_replacement_done()
+	var/list/pending = GLOB.adjacency_pending
+	GLOB.adjacency_pending = null
+	GLOB.adjacency_replacing = 0
+	for(var/kind in pending)
+		adjacency_recompute_handles(pending[kind], kind)
+
 /proc/adjacency_take_out(atom/holder, datum/centry/C)
 	if(!holder.adj_handle)
 		return
 	var/datum/entry/E = C.item
 	var/list/changed = vg_adjacency_remove(adjacency_kind_id(E.args["kind"]), holder.adj_handle)
 	DQ_ADJACENCY_TRACE(holder, "removed from the index")
+	if(GLOB.adjacency_replacing && holder.adj_handle == GLOB.adjacency_replacing && GLOB.adjacency_pending)
+		var/list/waiting = GLOB.adjacency_pending[E.args["kind"]]
+		if(!waiting)
+			waiting = GLOB.adjacency_pending[E.args["kind"]] = list()
+		waiting |= changed
+		adjacency_write(holder, C, 0)
+		return
 	adjacency_recompute_handles(changed, E.args["kind"])
 	DQ_ADJACENCY_TRACE(holder, "neighbours recomputed")
 	adjacency_write(holder, C, 0)
 	DQ_ADJACENCY_TRACE(holder, "mask cleared")
 
+/// While a bulk change holds the recomputes (adjacency_hold_begin()): the member slots, in the order first asked, and slot -> TRUE (a slot is a number,
+/// so the set is an alist beside the ordered list). Each member recomputes once when
+/// the hold drains (adjacency_hold_drain()), instead of once per neighbour that changed: an explosion crater changes most turfs next to each other,
+/// and every changed turf asked its 4-8 neighbours again (14 k recomputes for 2.3 k changed turfs in the supermatter bench).
+GLOBAL_LIST(adjacency_held)
+GLOBAL_ALIST(adjacency_held_seen)
+/// Where adjacency_hold_drain() resumes in the held list.
+GLOBAL_VAR_INIT(adjacency_held_index, 1)
+/// Recomputes held and members recomputed by drains since boot (diagnostics: their ratio is the work the hold saved).
+GLOBAL_VAR_INIT(adjacency_held_asks, 0)
+GLOBAL_VAR_INIT(adjacency_held_runs, 0)
+
+/// Starts holding neighbour recomputes for a bulk change (an explosion's resolve). The holder calls adjacency_hold_drain() until it returns TRUE.
+/proc/adjacency_hold_begin()
+	if(!GLOB.adjacency_held)
+		GLOB.adjacency_held = list()
+		GLOB.adjacency_held_seen = alist()
+		GLOB.adjacency_held_index = 1
+
+/// Recomputes each held member once, oldest first; a recompute asked while draining joins the list. With `tick_checked`, stops when the tick is
+/// over budget and returns FALSE (call again); returns TRUE when the hold is drained and closed.
+/proc/adjacency_hold_drain(tick_checked = TRUE)
+	var/list/held = GLOB.adjacency_held
+	if(!held)
+		return TRUE
+	while(GLOB.adjacency_held_index <= length(held))
+		var/atom/member = slot_datum(held[GLOB.adjacency_held_index++])
+		if(member && !QDELETED(member) && member.adj_handle)
+			GLOB.adjacency_held_runs++
+			var/datum/lifeform_plan/MP = lifeform_plan_of(member)
+			for(var/datum/centry/MC as anything in MP.adjacencies)
+				adjacency_recompute(member, MC)
+		if(tick_checked && TICK_CHECK)
+			return FALSE
+	log_world("ADJACENCY_HOLD: drained [length(held)] member(s); [GLOB.adjacency_held_asks] recompute(s) held, [GLOB.adjacency_held_runs] run since boot")
+	GLOB.adjacency_held = null
+	GLOB.adjacency_held_seen = null
+	GLOB.adjacency_held_index = 1
+	return TRUE
+
 /proc/adjacency_recompute_handles(list/changed, kind)
+	var/list/waiting = GLOB.adjacency_pending?[kind]
+	var/list/held = GLOB.adjacency_held
 	for(var/h in changed)
+		if(waiting)
+			waiting -= h // recomputed here, with the successor in place
+		if(held)
+			var/member_slot = GLOB.adjacency_members[h]
+			if(member_slot)
+				GLOB.adjacency_held_asks++
+				if(!GLOB.adjacency_held_seen[member_slot])
+					GLOB.adjacency_held_seen[member_slot] = TRUE
+					held += member_slot
+			continue
 		var/atom/member = slot_datum(GLOB.adjacency_members[h])
 		if(!member || QDELETED(member))
 			continue
@@ -214,13 +288,24 @@ GLOBAL_VAR_INIT(dq_adjacency_trace, 0)
 					adjacency_recompute(other, OC)
 
 /// A load batch closed (BATCH_WORK_ADJACENCY): each member it queued recomputes once.
+/// Each member joins its neighbours as one construction step (silent construction, refresh.dm): what its joins write (its connections, the
+/// icon_state and dir its look settles on) is published once when the step ends, only where a reader follows it, and its draw is queued once.
 /proc/adjacency_flush_batch(list/queued)
 	for(var/atom/member as anything in queued)
 		if(QDELETED(member) || !member.adj_handle)
 			continue
+		var/reopened = GLOB.silent_construction && !(member.datum_flags & DF_CONSTRUCTING)
+		if(reopened)
+			member.datum_flags |= DF_CONSTRUCTING
 		var/datum/lifeform_plan/P = lifeform_plan_of(member)
 		for(var/datum/centry/C as anything in P.adjacencies)
 			adjacency_recompute(member, C)
+		if(reopened)
+			GLOB.adjacency_joins_constructed++
+			construction_birth(member)
+
+/// Load-batch members whose joins ran as a construction step (adjacency_flush_batch()).
+GLOBAL_VAR_INIT(adjacency_joins_constructed, 0)
 
 /// The BYOND directions a junction mask names: each face it holds, and each corner (NORTHEAST..SOUTHWEST) for the corner bits.
 /proc/adjacency_mask_dirs(mask)

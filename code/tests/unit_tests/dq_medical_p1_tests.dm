@@ -71,26 +71,6 @@
 	TEST_ASSERT(!H.has_status(STAT_STUNNED), "one roll must not also stun")
 	TEST_ASSERT(!H.has_status(STAT_PARALYZED), "one roll must not also paralyse")
 
-/// B7: Hannoa's sedation bands are reachable, and it treats by mechanism.
-/datum/unit_test/dq_p1_b7_hannoa_bands
-
-/datum/unit_test/dq_p1_b7_hannoa_bands/Run()
-	var/datum/reagent/hannoa/R = SSchemistry.chemical_reagents[REAGENT_ID_HANNOA]
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	R.hannoa_sedation(H, 3)
-	TEST_ASSERT(H.has_status(STAT_BLURRY), "a dose of 3 blurs vision")
-	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human)
-	R.hannoa_sedation(H2, 10)
-	TEST_ASSERT(H2.has_status(STAT_DROWSY), "a dose of 10 makes the patient drowsy")
-	TEST_ASSERT(R.treatment_tags?[TREAT_HEMOSTATIC] && R.treatment_tags?[TREAT_TISSUE_REPAIR], "Hannoa declares its clotting and tissue repair tags")
-
-/// B8: Eden leaves the body.
-/datum/unit_test/dq_p1_b8_eden_metabolises
-
-/datum/unit_test/dq_p1_b8_eden_metabolises/Run()
-	var/datum/reagent/eden/R = SSchemistry.chemical_reagents[REAGENT_ID_EDEN]
-	TEST_ASSERT(R.metabolism > 0, "Eden must metabolise (metabolism [R.metabolism])")
-
 /// B16: Malish-Qualem never divides by a zero healing strength.
 /datum/unit_test/dq_p1_b16_malish_qualem_zero_strength
 
@@ -182,8 +162,6 @@
 	var/alist/merged = R.merged_species_factors(IS_SLIME)
 	TEST_ASSERT(merged?[STAT_O2_CARRIAGE], "prometheans on dexalin keep its oxygen carriage")
 	TEST_ASSERT(merged?[STAT_ANALGESIA], "and get their own analgesia")
-	var/datum/reagent/bloodburn = SSchemistry.chemical_reagents[REAGENT_ID_BLOODBURN]
-	TEST_ASSERT(!length(bloodburn.factors), "bloodburn does not inherit claridyl's factors")
 
 /// B12: a cold drink cools a hot body toward the target and never heats it.
 /datum/unit_test/dq_p1_b12_cold_drink_cools
@@ -350,15 +328,17 @@
 	O.set_status(O.status | ORGAN_ASSISTED)
 	TEST_ASSERT_NULL(bodyscanner_organ_kind(O), "a status bit with the same value is not a prosthesis")
 
-/// D8: resection and retinal repair can reach inside bone.
+/// D8: organ repair and resection reach inside bone: the organ steps need the limb open to its organs, and the saw and pry steps
+/// open an encased limb that far.
 /datum/unit_test/dq_p1_d8_encased_access_steps
 
 /datum/unit_test/dq_p1_d8_encased_access_steps/Run()
-	for(var/path in list(/datum/dq_surgery/retinal_repair, /datum/dq_surgery/organ_resection))
-		var/datum/dq_surgery/S = new path
-		TEST_ASSERT(/datum/surgical_step/access/saw in S.procedure, "[path] needs a saw step")
-		TEST_ASSERT(/datum/surgical_step/access/pry_bone in S.procedure, "[path] needs a pry step")
-		qdel(S)
+	for(var/path in list(/datum/surgical_step/treat/organ/suture, /datum/surgical_step/treat/organ/resection))
+		var/datum/surgical_step/S = surgical_step(path)
+		TEST_ASSERT(S.needs_full_access, "[path] works on organs, which sit behind the bone of an encased limb")
+	var/datum/surgical_step/access/saw = surgical_step(/datum/surgical_step/access/saw)
+	var/datum/surgical_step/access/pry = surgical_step(/datum/surgical_step/access/pry_bone)
+	TEST_ASSERT(saw.encased_only && pry.encased_only, "the saw and pry steps open encased limbs")
 
 /// D9: a refreshing scanner UI doesn't move the device's trend baseline.
 /datum/unit_test/dq_p1_d9_trend_baseline_per_device

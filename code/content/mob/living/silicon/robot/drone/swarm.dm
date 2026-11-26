@@ -59,7 +59,7 @@ CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
 /// Declared setup: prepare swarm spells, after the complete parent chain.
 /mob/living/silicon/robot/drone/swarm/proc/prepare_swarm_spells()
 	for(var/spell in spell_setup)
-		src.add_spell(new spell, "nano_spell_ready", /atom/movable/screen/movable/spell_master/swarm)
+		src.add_spell(new spell)
 
 /mob/living/silicon/robot/drone/swarm/setup_module()
 	..()

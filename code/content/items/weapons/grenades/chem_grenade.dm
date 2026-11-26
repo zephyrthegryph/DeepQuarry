@@ -18,6 +18,7 @@
 
 
 CAPABILITIES(/obj/item/grenade/chem_grenade)
+	op("set_timer", menu(), label("Set Timer"), when(PROC_REF(has_timer_detonator)), needs(carried(), req_capable()), then(PROC_REF(timer_menu_chosen)))
 	configure(movable_motion(unacidable = TRUE))
 	configure(item_combat(force = 2.0))
 	// a hand-built casing: 0 empty, 1 parts in, 2 locked (armed by its self-use); the screwdriver locks and unlocks it, ahead of the timer

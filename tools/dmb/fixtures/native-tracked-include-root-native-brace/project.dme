@@ -1,3 +1,0 @@
-/proc/before_include()
-    return 1
-#include "child.dm"

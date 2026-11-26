@@ -10,7 +10,12 @@
 //! These files live beside the ones `tools/build/lib/ui_types.ts` writes from the legacy UI tables; that script leaves a file that carries this
 //! generator's header alone.
 
+use std::collections::BTreeMap;
+
 use crate::sem::gen::{GenCx, GenOut, Generator};
+
+/// Where the files go (relative to the repo root).
+pub const UI_TYPES_OUT: &str = "tgui/packages/tgui/interfaces/generated";
 
 struct UiTypes;
 
@@ -27,48 +32,427 @@ impl Generator for UiTypes {
     fn generate(&self, _cx: &GenCx, _out: &mut GenOut) {}
 
     fn files(&self, cx: &GenCx, out: &mut GenOut) -> Vec<(String, String)> {
-        let markers: Vec<_> = cx
-            .decls()
-            .markers
-            .iter()
-            .map(|m| crate::declare_policy::Marker {
-                name: &m.name,
-                rel: &m.rel,
-                line: m.line,
-                body: &m.body,
-                args: &m.args,
-                body_offset: m.body_offset,
-                line_starts: &m.line_starts,
-            })
-            .collect();
-        let files = crate::ui_types_policy::generate(&crate::ui_types_policy::Input {
-            markers: &markers,
-            budget: None,
-            poll: None,
-        })
-        .expect("legacy ui policy");
-        for d in files.diags {
-            out.diag(&d.rel, d.line, d.msg);
+        // The schemas: (type, var) -> the schema expression as written.
+        let mut schemas: BTreeMap<(String, String), String> = BTreeMap::new();
+        for name in ["TRACKED_SCHEMA", "SCHEMA"] {
+            for m in cx.markers(name) {
+                if let (Some(t), Some(v), Some(s)) = (m.args.first(), m.args.get(1), m.args.get(2)) {
+                    schemas.insert((t.clone(), v.clone()), s.clone());
+                }
+            }
         }
-        files.files
+        // Named shapes (`UI_SCHEMA(name, schema)`): a nested shape several windows share, written `name()` inside a ui_shape().
+        let mut named: BTreeMap<String, String> = BTreeMap::new();
+        for m in cx.markers("UI_SCHEMA") {
+            if let (Some(n), Some(sch)) = (m.args.first(), m.args.get(1)) {
+                named.insert(n.trim().to_string(), sch.trim().to_string());
+            }
+        }
+        NAMED.with(|cell| *cell.borrow_mut() = named.clone());
+        // The window model (crate::sem::ui_windows): each window's holders and the ui_act() ops they answer, capabilities and bundles included.
+        let model = crate::sem::ui_windows::windows(cx.tree, cx.decls());
+        let mut windows: BTreeMap<String, Window> = BTreeMap::new();
+        for (name, wm) in &model {
+            let mut w = Window { owner: wm.owner.clone(), rel: wm.rel.clone(), line: wm.line, fields: Vec::new(), acts: Vec::new(), open: wm.open.clone() };
+            for (owner, body) in &wm.shapes {
+                for part in split_top(body) {
+                    let (fname, explicit) = if let Some((n, schema)) = part.split_once('=').filter(|(n, _)| is_ident(n.trim())) {
+                        (n.trim().to_string(), Some(schema.trim().to_string()))
+                    } else if is_ident(part.trim()) {
+                        (part.trim().to_string(), None)
+                    } else {
+                        continue;
+                    };
+                    if w.fields.iter().any(|f| f.name == fname) {
+                        continue;
+                    }
+                    let schema = explicit.or_else(|| schemas.get(&(owner.clone(), fname.clone())).cloned());
+                    if schema.is_none() {
+                        out.diag(&wm.rel, wm.line, format!("ui_shape({}) of {}: `{}` has no schema (TRACKED_SCHEMA or SCHEMA) to type it from", fname, owner, fname));
+                    }
+                    w.fields.push(Field { name: fname, schema });
+                }
+            }
+            for (owner, rel, line) in &wm.unshaped {
+                out.diag(rel, *line, format!("interface(\"{}\") of {}: declare ui_shape(...) on this host too (every host of a window states the data it sends)", name, owner));
+            }
+            for wa in &wm.acts {
+                let Some(mut act) = ui_act_of(&wa.part, &wa.name) else { continue };
+                act.name = wa.name.clone();
+                for arg in &mut act.args {
+                    if let Some(from) = arg.from.clone() {
+                        arg.schema = schemas.get(&(wa.owner.clone(), from.clone())).cloned();
+                        if arg.schema.is_none() {
+                            out.diag(&wa.rel, wa.line, format!("arg(\"{}\", from = nameof({})) of {}: `{}` has no schema", arg.name, from, wa.owner, from));
+                        }
+                    }
+                }
+                w.acts.push(act);
+            }
+            windows.insert(name.clone(), w);
+        }
+        let mut files = Vec::new();
+        if !named.is_empty() {
+            let mut t = String::from("// GENERATED by tools/analyze: `analyze gen ui_types`. The named shapes (UI_SCHEMA) windows share; not committed.\n\n");
+            for (n, sch) in &named {
+                t.push_str(&format!("/** {} */\nexport type {} = {};\n\n", n, pascal(n), ts_type(sch)));
+            }
+            files.push((format!("{}/_schemas.d.ts", UI_TYPES_OUT), t));
+        }
+        for (name, w) in &windows {
+            files.push((format!("{}/{}.d.ts", UI_TYPES_OUT, name), render_window(name, w)));
+        }
+        files
     }
 }
-#[cfg(test)]
-use crate::ui_types_policy::{call_of, split_top, ts_type};
-pub use crate::ui_types_policy::{describe, UI_TYPES_OUT};
+
+struct Field {
+    name: String,
+    schema: Option<String>,
+}
+
+struct Arg {
+    name: String,
+    schema: Option<String>,
+    from: Option<String>,
+}
+
+struct Act {
+    name: String,
+    args: Vec<Arg>,
+}
+
+struct Window {
+    owner: String,
+    rel: String,
+    line: u32,
+    fields: Vec<Field>,
+    acts: Vec<Act>,
+    /// Why the window's action set is not known from the declarations (it forwards, or an op answers every action).
+    open: Option<String>,
+}
+
+thread_local! {
+    /// The UI_SCHEMA shapes of the run, by name (set by `files()` before any type is rendered).
+    static NAMED: std::cell::RefCell<BTreeMap<String, String>> = std::cell::RefCell::new(BTreeMap::new());
+    /// The named shapes the type being rendered refers to (its imports).
+    static USED: std::cell::RefCell<std::collections::BTreeSet<String>> = std::cell::RefCell::new(std::collections::BTreeSet::new());
+}
+
+/// `diagnosis_report` -> `DiagnosisReport`.
+fn pascal(n: &str) -> String {
+    n.split('_').filter(|p| !p.is_empty()).map(|p| {
+        let mut c = p.chars();
+        c.next().map(|f| f.to_uppercase().collect::<String>() + c.as_str()).unwrap_or_default()
+    }).collect()
+}
+
+fn render_window(name: &str, w: &Window) -> String {
+    USED.with(|u| u.borrow_mut().clear());
+    let body = render_window_body(name, w);
+    let used: Vec<String> = USED.with(|u| u.borrow().iter().cloned().collect());
+    if used.is_empty() {
+        return body;
+    }
+    // The header's two comment lines, then the imports of the named shapes the window uses.
+    let mut lines = body.splitn(3, '\n');
+    let (a, b, rest) = (lines.next().unwrap_or(""), lines.next().unwrap_or(""), lines.next().unwrap_or(""));
+    format!("{}\n{}\nimport type {{ {} }} from './_schemas';\n{}", a, b, used.join(", "), rest)
+}
+
+fn render_window_body(name: &str, w: &Window) -> String {
+    let mut s = String::new();
+    s.push_str("// GENERATED by tools/analyze: `analyze gen ui_types`. Do not edit by hand; edit the declarations it reads.\n");
+    s.push_str(&format!("// Window {}: the ui_shape() and ui_act() ops of {} ({}:{}); not committed: every build regenerates it (`analyze gen`).\n\n", name, w.owner, w.rel, w.line));
+    s.push_str(&format!("export type {}Data = {{\n", name));
+    for f in &w.fields {
+        match &f.schema {
+            Some(schema) => {
+                s.push_str(&format!("  /** {} */\n", describe(schema)));
+                s.push_str(&format!("  {}: {};\n", f.name, ts_type(schema)));
+            }
+            None => s.push_str(&format!("  {}: unknown;\n", f.name)),
+        }
+    }
+    s.push_str("};\n\n");
+    s.push_str(&format!("export type {}Actions = {{\n", name));
+    if let Some(why) = &w.open {
+        s.push_str(&format!("  /** Open action set: {} */\n", why));
+        s.push_str("  [action: string]: Record<string, unknown>;\n");
+    }
+    for a in &w.acts {
+        if a.args.is_empty() {
+            s.push_str(&format!("  {}: Record<string, never>;\n", quote_key(&a.name)));
+            continue;
+        }
+        s.push_str(&format!("  {}: {{\n", quote_key(&a.name)));
+        for arg in &a.args {
+            match &arg.schema {
+                Some(schema) => {
+                    s.push_str(&format!("    /** {} */\n", describe(schema)));
+                    s.push_str(&format!("    {}: {};\n", arg.name, boundary_type(&ts_type(schema))));
+                }
+                None => s.push_str(&format!("    {}: unknown;\n", arg.name)),
+            }
+        }
+        s.push_str("  };\n");
+    }
+    s.push_str("};\n");
+    s
+}
+
+/// An action argument's type as the boundary takes it: schema_check() turns a number sent for a text arg into its text and a text sent for
+/// a number into the number (code/engine/declare/schema.dm), json_decode() makes true/false 1/0, and a null is an absent value.
+fn boundary_type(t: &str) -> String {
+    match t {
+        "string" | "number" => "string | number | boolean | null".to_string(),
+        "boolean" => "boolean | number | null".to_string(),
+        _ => format!("{} | null", t),
+    }
+}
+
+fn quote_key(k: &str) -> String {
+    if is_ident(k) {
+        k.to_string()
+    } else {
+        format!("'{}'", k)
+    }
+}
+
+
+/// The `ui_act(...)` an op part is, if it is one: the window action's name (the first argument when it is text, else the op key) and its args.
+fn ui_act_of(part: &str, key: &str) -> Option<Act> {
+    let (name, body) = call_of(part)?;
+    let parts = if name == "ui_act" {
+        split_top(body)
+    } else if name == "inputs" || name == "binds" {
+        // inputs(hand(), ui_act(...)): look inside.
+        for inner in split_top(body) {
+            if let Some(a) = ui_act_of(&inner, key) {
+                return Some(a);
+            }
+        }
+        return None;
+    } else {
+        return None;
+    };
+    let mut action = key.to_string();
+    let mut args = Vec::new();
+    for (i, p) in parts.iter().enumerate() {
+        let p = p.trim();
+        if i == 0 && p.starts_with('"') {
+            action = p.trim_matches('"').to_string();
+            continue;
+        }
+        let Some(("arg", abody)) = call_of(p) else { continue };
+        let aparts = split_top(abody);
+        let Some(aname) = aparts.first().map(|a| a.trim().trim_matches('"').to_string()) else { continue };
+        let mut schema = None;
+        let mut from = None;
+        for rest in aparts.iter().skip(1) {
+            let rest = rest.trim();
+            if let Some(v) = rest.strip_prefix("from") {
+                let v = v.trim_start().trim_start_matches('=').trim();
+                from = v.strip_prefix("nameof(").and_then(|x| x.strip_suffix(')')).map(|x| x.trim().to_string());
+            } else {
+                schema = Some(rest.to_string());
+            }
+        }
+        args.push(Arg { name: aname, schema, from });
+    }
+    Some(Act { name: action, args })
+}
+
+/// "name(body)" -> (name, body), when the whole text is one call.
+fn call_of(s: &str) -> Option<(&str, &str)> {
+    let s = s.trim();
+    let open = s.find('(')?;
+    if !s.ends_with(')') {
+        return None;
+    }
+    let name = s[..open].trim();
+    if !is_ident(name) {
+        return None;
+    }
+    Some((name, &s[open + 1..s.len() - 1]))
+}
+
+fn is_ident(s: &str) -> bool {
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') && !s.chars().next().unwrap().is_ascii_digit()
+}
+
+/// Splits at top-level commas (not inside (), [] or a string).
+fn split_top(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut depth = 0i32;
+    let mut in_str = false;
+    let bytes: Vec<char> = s.chars().collect();
+    let mut cur = String::new();
+    for (i, c) in bytes.iter().enumerate() {
+        match c {
+            '"' if i == 0 || bytes[i - 1] != '\\' => {
+                in_str = !in_str;
+                cur.push(*c);
+            }
+            '(' | '[' if !in_str => {
+                depth += 1;
+                cur.push(*c);
+            }
+            ')' | ']' if !in_str => {
+                depth -= 1;
+                cur.push(*c);
+            }
+            ',' if !in_str && depth == 0 => {
+                out.push(cur.trim().to_string());
+                cur.clear();
+            }
+            _ => cur.push(*c),
+        }
+    }
+    let last = cur.trim().to_string();
+    if !last.is_empty() {
+        out.push(last);
+    }
+    out
+}
+
+/// The kind of a schema expression ("num", "int", "schema_text" -> "text", ...) and its top-level arguments.
+fn schema_parts(expr: &str) -> (String, Vec<String>) {
+    match call_of(expr) {
+        Some((name, body)) => {
+            let kind = match name {
+                "schema_text" => "text",
+                "schema_ref" => "ref",
+                "schema_path" => "path",
+                other => other,
+            };
+            (kind.to_string(), split_top(body))
+        }
+        None => (expr.trim().to_string(), Vec::new()),
+    }
+}
+
+/// The range text of a schema, as `schema_describe()` prints it at runtime ("num 0..MAX_PUMP_PRESSURE step 1").
+pub fn describe(expr: &str) -> String {
+    let (kind, args) = schema_parts(expr);
+    match kind.as_str() {
+        "int" | "num" => {
+            let mut min = String::new();
+            let mut max = String::new();
+            let mut step = String::new();
+            let mut positional = 0;
+            for a in &args {
+                if let Some((n, v)) = a.split_once('=').filter(|(n, _)| is_ident(n.trim())) {
+                    match n.trim() {
+                        "min" => min = v.trim().to_string(),
+                        "max" => max = v.trim().to_string(),
+                        "step" => step = v.trim().to_string(),
+                        _ => {}
+                    }
+                } else {
+                    positional += 1;
+                    match positional {
+                        1 => min = a.trim().to_string(),
+                        2 => max = a.trim().to_string(),
+                        3 if kind == "num" => step = a.trim().to_string(),
+                        _ => {}
+                    }
+                }
+            }
+            let range = if min.is_empty() && max.is_empty() { String::new() } else { format!(" {}..{}", min, max) };
+            let step = if step.is_empty() { String::new() } else { format!(" step {}", step) };
+            format!("{}{}{}", kind, range, step)
+        }
+        "text" => {
+            let max = args.iter().find(|a| !a.contains('=') && !a.trim().is_empty()).map(|a| a.trim().to_string());
+            match max {
+                Some(m) => format!("text max {}", m),
+                None => "text".to_string(),
+            }
+        }
+        _ => kind,
+    }
+}
+
+/// The TypeScript type of a schema.
+fn ts_type(expr: &str) -> String {
+    let (kind, args) = schema_parts(expr);
+    match kind.as_str() {
+        "bool" => "boolean".into(),
+        "int" | "num" | "flags" => "number".into(),
+        "text" | "path" | "ref" => "string".into(),
+        "enum" => {
+            // enum(list("a", "b")): a union of the literals; anything else is a string.
+            let lits: Vec<String> = args
+                .first()
+                .and_then(|a| call_of(a))
+                .filter(|(n, _)| *n == "list")
+                .map(|(_, body)| split_top(body).into_iter().filter(|x| x.trim().starts_with('"')).map(|x| format!("'{}'", x.trim().trim_matches('"'))).collect())
+                .unwrap_or_default();
+            if lits.is_empty() {
+                "string".into()
+            } else {
+                lits.join(" | ")
+            }
+        }
+        "list_of" => match args.first() {
+            Some(inner) => format!("{}[]", paren_union(&ts_type(inner))),
+            None => "unknown[]".into(),
+        },
+        "map_of" => match (args.first(), args.get(1)) {
+            (Some(_), Some(v)) => format!("Record<string, {}>", ts_type(v)),
+            _ => "Record<string, unknown>".into(),
+        },
+        // row(name = schema, ...): an object with those fields; row() with no fields is any object.
+        "row" => {
+            let fields: Vec<String> = args
+                .iter()
+                .filter_map(|a| a.split_once('=').filter(|(n, _)| is_ident(n.trim())).map(|(n, v)| format!("{}: {}", n.trim(), ts_type(v.trim()))))
+                .collect();
+            if fields.is_empty() {
+                "Record<string, unknown>".into()
+            } else {
+                format!("{{ {} }}", fields.join("; "))
+            }
+        }
+        // nullable(schema): the field may be null (an optional block of the window's data).
+        "nullable" => match args.first() {
+            Some(inner) => format!("{} | null", paren_union(&ts_type(inner))),
+            None => "unknown".into(),
+        },
+        // one_of(a, b, ...): any of the schemas (a recipe or a group of recipes).
+        "one_of" if !args.is_empty() => args.iter().map(|a| paren_union(&ts_type(a))).collect::<Vec<_>>().join(" | "),
+        // A named shape (UI_SCHEMA): its exported type, by name (generated/_schemas.d.ts), so a shape may name itself (a tree).
+        other => {
+            if args.is_empty() && NAMED.with(|cell| cell.borrow().contains_key(other)) {
+                USED.with(|u| u.borrow_mut().insert(pascal(other)));
+                pascal(other)
+            } else {
+                "unknown".into()
+            }
+        }
+    }
+}
+
+fn paren_union(t: &str) -> String {
+    if t.contains(" | ") {
+        format!("({})", t)
+    } else {
+        t.to_string()
+    }
+}
+
 pub fn register(reg: &mut Vec<Box<dyn Generator>>) {
     reg.push(Box::new(UiTypes));
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn the_range_text_is_the_runtime_text() {
-        assert_eq!(
-            describe("num(0, MAX_PUMP_PRESSURE, step = 1)"),
-            "num 0..MAX_PUMP_PRESSURE step 1"
-        );
+        assert_eq!(describe("num(0, MAX_PUMP_PRESSURE, step = 1)"), "num 0..MAX_PUMP_PRESSURE step 1");
         assert_eq!(describe("int(0, 10)"), "int 0..10");
         assert_eq!(describe("int(1)"), "int 1..");
         assert_eq!(describe("int()"), "int");
@@ -82,14 +466,14 @@ mod tests {
         assert_eq!(ts_type("enum(list(\"off\", \"on\"))"), "'off' | 'on'");
         assert_eq!(ts_type("list_of(int(0, 3))"), "number[]");
         assert_eq!(ts_type("schema_text(8)"), "string");
+        assert_eq!(ts_type("list_of(row(name = schema_text(), n = int()))"), "{ name: string; n: number }[]");
+        assert_eq!(ts_type("row()"), "Record<string, unknown>");
+        assert_eq!(ts_type("nullable(row(name = schema_text()))"), "{ name: string } | null");
     }
 
     #[test]
     fn calls_split_at_the_top_level() {
-        assert_eq!(
-            split_top("\"a,b\", f(1, 2), x = [3, 4]"),
-            vec!["\"a,b\"", "f(1, 2)", "x = [3, 4]"]
-        );
+        assert_eq!(split_top("\"a,b\", f(1, 2), x = [3, 4]"), vec!["\"a,b\"", "f(1, 2)", "x = [3, 4]"]);
         assert_eq!(call_of("op(\"x\", hand())"), Some(("op", "\"x\", hand()")));
     }
 }

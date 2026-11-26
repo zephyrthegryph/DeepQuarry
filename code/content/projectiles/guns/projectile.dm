@@ -3,7 +3,6 @@
 	desc = "A gun that fires bullets."
 	icon_state = "revolver"
 	w_class = ITEMSIZE_NORMAL
-	MATERIAL_BULK(MAT_STEEL, 1000)
 	recoil = 1
 	projectile_type = /obj/item/projectile/bullet/pistol/strong	//Only used for chameleon guns
 
@@ -197,7 +196,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 	if(special_weapon_handling && !callback)
 		return OP_DECLINE
 	if(manual_chamber) // Gun Rework
-		perform_op(user, src, "bolt_work", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("stance" = (A.key == "gun_self_hurt" ? I_HURT : I_HELP))) // Gun Rework
+		perform_op(user, src, "bolt_work", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("stance" = (user.op_input_stance() == I_HURT ? I_HURT : I_HELP))) // Gun Rework
 	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else
@@ -526,9 +525,6 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 	if(length(loaded) >= max_shells)
 		to_chat(user, span_warning("[src] is full."))
 		return
-	// The handful may still hold its rounds as a count (C5) if it was
-	// picked straight off a turf or out of a latent holder.
-	H.make_rounds_real()
 	to_chat(user, span_notice("You start feeding rounds into \the [src]."))
 	if(can_feed_from(H))
 		var/datum/op_result/feeding = perform_op(user, src, "feed_rounds", H, ORIGIN_SYSTEM, AUTH_PHYSICAL)
@@ -611,10 +607,6 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 		if(refused)
 			to_chat(user, span_warning(reason_text(refused)))
 			return
-		// Legacy gun code reads stored_ammo directly below (C5); a magazine
-		// picked straight off a turf or out of a latent holder still holds
-		// its rounds as a count until now.
-		AM.make_rounds_real()
 		switch(magazine_method(AM))
 			if(MAGAZINE)
 				if(!move_into(src, nameof(src.ammo_magazine), AM, user))
@@ -684,8 +676,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 
 		to_chat(user, span_notice("You start loading \the [src]."))
 		var/list/rounds = list()
-		storage.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/ammo_casing/ammo in contents_of(storage)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/obj/item/ammo_casing/ammo in contents_of(storage))
 			if(caliber == ammo.caliber)
 				rounds += ammo
 		after(src, 1 SECOND, PROC_REF(load_from_storage), with = list(user, rounds))

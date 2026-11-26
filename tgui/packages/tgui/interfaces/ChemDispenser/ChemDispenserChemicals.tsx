@@ -2,6 +2,8 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Button, Icon, Section, Stack, Tooltip } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { EmptyState } from '../common/EmptyState';
+import type { ChemDispenserActions } from '../generated/ChemDispenser';
 import type { Data, Reagent } from './types';
 
 export const ChemDispenserChemicals = (props: {
@@ -15,18 +17,22 @@ export const ChemDispenserChemicals = (props: {
   buttons: ReactNode;
 }) => {
   const {
-    chemicals,
+    chemicals = [],
     sectionTitle,
     dispenseAct,
     chemicalButtonSelect,
     buttons,
   } = props;
-  const flexFillers: boolean[] = [];
   const sortedChemicals = [...chemicals].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
   return (
     <Section title={sectionTitle} fill scrollable buttons={buttons}>
+      {sortedChemicals.length === 0 && (
+        <EmptyState>
+          No cartridges loaded: insert one to dispense it.
+        </EmptyState>
+      )}
       <Stack direction="row" wrap="wrap" align="flex-start" g={0.3}>
         {sortedChemicals.map((c, i) => (
           <Stack.Item key={i} basis="49%" grow maxWidth="50%">
@@ -43,7 +49,11 @@ export const ChemDispenserChemicals = (props: {
                 <Stack.Item>
                   <Icon name="arrow-circle-down" />
                 </Stack.Item>
-                <Stack.Item grow overflow="hidden">
+                <Stack.Item
+                  grow
+                  overflow="hidden"
+                  style={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}
+                >
                   {c.name}
                 </Stack.Item>
                 <Stack.Item>{`(${c.volume})`}</Stack.Item>
@@ -57,7 +67,7 @@ export const ChemDispenserChemicals = (props: {
 };
 
 export const RecordingBlinker = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, ChemDispenserActions>();
   const recording = !!data.recordingRecipe;
 
   const [blink, setBlink] = useState(false);

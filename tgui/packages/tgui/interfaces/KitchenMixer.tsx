@@ -13,7 +13,7 @@ import { ApplianceStatus, type Data } from './Appliance';
 export const KitchenMixer = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { containersRemovable, our_contents, icon_used } = data;
+  const { containersRemovable, our_contents = [], icon_used } = data;
 
   return (
     <Window width={600} height={580}>

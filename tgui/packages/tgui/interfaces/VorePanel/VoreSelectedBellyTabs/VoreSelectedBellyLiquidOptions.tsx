@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-
 import { liquidToTooltip, reagentToColor } from '../constants';
 import type { BellyLiquidData } from '../types';
 import { VorePanelEditCheckboxes } from '../VorePanelElements/VorePanelEditCheckboxes';
@@ -103,7 +103,7 @@ export const VoreSelectedBellyLiquidOptions = (props: {
           buttons={
             <Stack>
               <Stack.Item>
-                <Box color="label">{`Nutrition / Power: ${liq_gen_resources.toFixed()} %`}</Box>
+                <Label>{`Nutrition / Power: ${liq_gen_resources.toFixed()} %`}</Label>
               </Stack.Item>
             </Stack>
           }

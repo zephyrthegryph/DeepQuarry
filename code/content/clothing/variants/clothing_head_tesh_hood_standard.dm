@@ -29,8 +29,8 @@ GLOBAL_LIST_INIT(dq_variants_head_tesh_hood_standard, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/head/tesh_hood/standard)
-	variants(nameof(variant), PROC_REF(variant_table))
+	variants(nameof(variant), PROC_REF(own_variant_table)) // its own rows replace the parent family's
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).
-/obj/item/clothing/head/tesh_hood/standard/proc/variant_table()
+/obj/item/clothing/head/tesh_hood/standard/proc/own_variant_table()
 	return GLOB.dq_variants_head_tesh_hood_standard

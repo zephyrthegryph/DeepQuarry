@@ -23,7 +23,7 @@
 	return is_injectable_container()
 
 /mob/living/can_be_injected_by(atom/injector)
-	return ..() && (can_inject(null, 0, BP_TORSO) || can_inject(null, 0, BP_GROIN))
+	return ..() && (!inject_refusal(null, BP_TORSO) || !inject_refusal(null, BP_GROIN))
 
 
 /// Water's latent heat, the one rule for water and water-based foam: hot air

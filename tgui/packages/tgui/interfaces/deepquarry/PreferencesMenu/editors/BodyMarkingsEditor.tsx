@@ -10,8 +10,13 @@
 
 import { useMemo, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { getIconFromRefMap } from 'tgui/events/handlers/assets';
 import { Box, Button, Input, Section } from 'tgui-core/components';
+import type {
+  PrefEditorBodyMarkings,
+  PrefEditorBodyMarkingsStatic,
+} from '../../../generated/_schemas';
 import { ColorChoice } from '../colors';
 import { Switch } from '../controls';
 import { ColorizedImage, getImage } from '../helper_components';
@@ -23,25 +28,11 @@ import {
   markingSubgroup,
 } from './markingCategories';
 
-type ZoneState = { color: string; on: number };
-type MarkingState = Record<string, ZoneState | string>;
-type MarkingsData = {
-  /// Marking -> zone (or "color") -> the palette slot it links to.
-  links?: Record<string, Record<string, string>>;
-  markings: Record<string, MarkingState>;
-  /// Marking names the current species cannot wear (the picker hides them by default).
-  incompatible?: string[];
-  species?: string;
-};
-type MarkingStyleMeta = {
-  name: string;
-  body_parts: string[];
-  icon?: string;
-  icon_state?: string;
-};
-type MarkingStatic = {
-  available_styles: Record<string, MarkingStyleMeta>;
-};
+type MarkingsData = PrefEditorBodyMarkings;
+type MarkingState = MarkingsData['markings'][string];
+type ZoneState = Extract<MarkingState[string], { on: number }>;
+type MarkingStyleMeta =
+  PrefEditorBodyMarkingsStatic['available_styles'][string];
 
 const ZONE_LABELS: Record<string, string> = {
   head: 'Head',
@@ -103,14 +94,13 @@ const normalizeStyles = (raw: Record<string, MarkingStyleMeta>) => {
 };
 
 export const BodyMarkingsEditor = ({
-  data,
+  data: d,
   staticData,
   zones,
   zoneLabel,
-}: EditorProps & { zones?: string[]; zoneLabel?: string }) => {
+}: EditorProps<'body_markings'> & { zones?: string[]; zoneLabel?: string }) => {
   const { act } = useBackend();
-  const d = data as MarkingsData;
-  const rawStyles = ((staticData ?? {}) as MarkingStatic).available_styles;
+  const rawStyles = staticData?.available_styles;
   const styles = useMemo(() => normalizeStyles(rawStyles ?? {}), [rawStyles]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -122,15 +112,15 @@ export const BodyMarkingsEditor = ({
 
   return (
     <Section title={zoneLabel ? `Markings: ${zoneLabel}` : 'Markings'}>
-      <Box bold color="label" mb={0.2}>
+      <Label bold mb={0.2}>
         On this character ({layers.length})
-      </Box>
+      </Label>
       {shown.length === 0 && (
-        <Box italic color="label" mb={0.3}>
+        <Label italic mb={0.3}>
           {layers.length && zones
             ? `No markings on the ${zoneLabel?.toLowerCase() ?? 'region'}; ${layers.length} elsewhere.`
             : 'No markings yet. Pick one from the list below.'}
-        </Box>
+        </Label>
       )}
       <Box
         mb={0.6}
@@ -154,7 +144,7 @@ export const BodyMarkingsEditor = ({
         styles={styles}
         layers={layers}
         incompatible={d.incompatible ?? []}
-        species={d.species}
+        species={d.species ?? undefined}
         zones={zones}
         onAdd={(key) => send(act, 'add', { marking: key })}
       />
@@ -500,9 +490,9 @@ const MarkingPicker = ({
           onMouseLeave={() => setHovered(null)}
         >
           {shown.length === 0 && (
-            <Box italic color="label" p={0.3}>
+            <Label italic p={0.3}>
               No markings match.
-            </Box>
+            </Label>
           )}
           {shown.map(({ key, meta, group }) => {
             const header = !lc && group && group !== lastGroup ? group : null;
@@ -511,9 +501,9 @@ const MarkingPicker = ({
             return (
               <Box key={key}>
                 {header && (
-                  <Box bold color="label" mt={0.3} mb={0.1}>
+                  <Label bold mt={0.3} mb={0.1}>
                     {header}
-                  </Box>
+                  </Label>
                 )}
                 <Button
                   fluid
@@ -550,12 +540,12 @@ const MarkingPicker = ({
                     >
                       {meta.name}
                     </Box>
-                    <Box color="label" fontSize="0.85em">
+                    <Label fontSize="0.85em">
                       {parts === 1
                         ? (ZONE_LABELS[meta.body_parts[0]] ??
                           meta.body_parts[0])
                         : `${parts} parts`}
-                    </Box>
+                    </Label>
                   </Box>
                 </Button>
               </Box>
@@ -568,11 +558,11 @@ const MarkingPicker = ({
             styles={styles}
             candidate={previewKey}
           />
-          <Box color="label" fontSize="0.85em" style={{ maxWidth: '10.7em' }}>
+          <Label fontSize="0.85em" style={{ maxWidth: '10.7em' }}>
             {previewKey
               ? styles[previewKey].name
               : 'Point at a marking to try it on'}
-          </Box>
+          </Label>
         </Box>
       </Box>
     </Box>

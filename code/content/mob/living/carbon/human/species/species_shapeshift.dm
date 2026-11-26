@@ -113,7 +113,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_select_hair()
 
 	set name = "Select Hair"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -220,7 +219,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_select_gender()
 
 	set name = "Select Gender"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -254,7 +252,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_select_shape()
 
 	set name = "Select Body Shape"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -297,7 +294,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_select_colour()
 
 	set name = "Select Body Colour"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -323,7 +319,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_select_hair_colors()
 
 	set name = "Select Hair Colors"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -411,7 +406,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_select_eye_colour()
 
 	set name = "Select Eye Color"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -439,7 +433,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 /mob/living/carbon/human/proc/shapeshifter_select_ears()
 	set name = "Select Ears"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -615,7 +608,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 /mob/living/carbon/human/proc/shapeshifter_select_secondary_ears()
 	set name = "Select Secondary Ears"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -693,7 +685,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 /mob/living/carbon/human/proc/shapeshifter_select_tail()
 	set name = "Select Tail"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -703,7 +694,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 /mob/living/carbon/human/proc/shapeshifter_select_wings()
 	set name = "Select Wings"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -714,7 +704,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/promethean_select_opaqueness()
 
 	set name = "Toggle Transparency"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return
@@ -743,7 +732,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_regenerate()
 	set name = "Fully Reform"
 	set desc = "Reload your appearance from whatever character slot you have loaded."
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 	open_request(src, /datum/prompt/choice/shapeshift_reform, PROC_REF(shapeshifter_reform_confirmed), answerer = src, title = "Reformation", question = "Do you want to copy the appearance data of your currently loaded save slot?", choices = list("Reform", "Cancel"), finish_proc = PROC_REF(shapeshifter_regenerate_answered))
 
 /// "Are you sure?", then whether to include flavour text and OOC notes.
@@ -786,7 +774,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_copy_body()
 	set name = "Copy Form"
 	set desc = "If you are aggressively grabbing someone, with their consent, you can turn into a copy of them. (Without their name)."
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 	var/mob/living/character = src
 
 	var/grabbing_but_not_enough
@@ -942,7 +929,6 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 /mob/living/carbon/human/proc/shapeshifter_reassemble()
 
 	set name = "Complete Reform"
-	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(cooldowns_view(src), last_special))
 		return

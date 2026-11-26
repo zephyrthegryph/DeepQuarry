@@ -17,23 +17,13 @@ import {
   ConfigurableRecipeRow,
   ProductConfigurator,
 } from './Fabrication/SelectableRecipe';
-import type {
-  Design,
-  FabricatorData,
-  Material,
-  MaterialMap,
-} from './Fabrication/Types';
+import type { Design, Material, MaterialMap } from './Fabrication/Types';
+import type { FabricatorActions, FabricatorData } from './generated/Fabricator';
 
 export const Fabricator = (props) => {
-  const { act, data } = useBackend<FabricatorData>();
-  const {
-    fabName,
-    onHold,
-    designs,
-    busy,
-    SHEET_MATERIAL_AMOUNT = 0,
-    materials = [],
-  } = data;
+  const { act, data } = useBackend<FabricatorData, FabricatorActions>();
+  const { fabName, onHold, designs, busy, SHEET_MATERIAL_AMOUNT, materials } =
+    data;
 
   // Reduce the material count array to a map of actually available materials.
   const availableMaterials: MaterialMap = {};
@@ -72,7 +62,7 @@ export const Fabricator = (props) => {
                     key={design.id}
                     design={design}
                     available={availableMaterials}
-                    materialChoices={data.materialChoices ?? []}
+                    materialChoices={data.materialChoices}
                     SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
                     onBuild={(materialSlots, quantity) =>
                       act('build', {
@@ -119,7 +109,7 @@ type PrintButtonProps = {
 };
 
 const PrintButton = (props: PrintButtonProps) => {
-  const { act } = useBackend<FabricatorData>();
+  const { act } = useBackend<FabricatorData, FabricatorActions>();
   const { design, quantity, available, SHEET_MATERIAL_AMOUNT } = props;
 
   const canPrint = !Object.entries(design.cost).some(
@@ -198,7 +188,7 @@ type RecipeProps = {
 };
 
 const Recipe = (props: RecipeProps) => {
-  const { act } = useBackend<FabricatorData>();
+  const { act } = useBackend<FabricatorData, FabricatorActions>();
   const { design, available, SHEET_MATERIAL_AMOUNT, onSelect, selected } =
     props;
 

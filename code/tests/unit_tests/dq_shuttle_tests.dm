@@ -98,8 +98,8 @@
 	. = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in contents_of(A))
-			if(!T.blocks_air && T.air)
-				. += T.air.get_moles(/datum/gas/oxygen)
+			if(!T.blocks_air && T.turf_air())
+				. += T.turf_air().get_moles(/datum/gas/oxygen)
 
 /datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/gas_diagnostics(datum/shuttle/shuttle)
 	var/turf_count = 0
@@ -107,11 +107,11 @@
 	var/oxygen = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in contents_of(A))
-			if(T.blocks_air || !T.air)
+			if(T.blocks_air || !T.turf_air())
 				continue
 			turf_count++
-			total_moles += T.air.total_moles()
-			oxygen += T.air.get_moles(/datum/gas/oxygen)
+			total_moles += T.turf_air().total_moles()
+			oxygen += T.turf_air().get_moles(/datum/gas/oxygen)
 	return "turfs=[turf_count], total=[total_moles], oxygen=[oxygen], location=[shuttle.current_location()?.landmark_tag] z=[shuttle.current_location()?.z]"
 
 /datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/wait_for_atmos(cycles)
@@ -124,7 +124,7 @@
 	var/list/queue = list()
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in contents_of(A))
-			if(!T.blocks_air && T.air?.return_pressure() > 80)
+			if(!T.blocks_air && T.turf_air()?.return_pressure() > 80)
 				visited[T] = TRUE
 				queue += T
 	var/head = 1
@@ -180,7 +180,7 @@
 		TEST_ASSERT(shuttle.attempt_move(next_landmark), "Ferry-Demo repeated move [hop] failed")
 		for(var/area/topology_area as anything in shuttle.shuttle_area)
 			for(var/turf/open/topology_turf in topology_area)
-				if(!topology_turf.blocks_air && topology_turf.air)
+				if(!topology_turf.blocks_air && topology_turf.turf_air())
 					TEST_ASSERT(vg_topology_matches(topology_turf), "Rust/DM atmos topology diverged after shuttle move [hop] at [topology_turf.x],[topology_turf.y],[topology_turf.z]")
 		var/immediate_oxygen = measure_oxygen(shuttle)
 		TEST_ASSERT(immediate_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen during turf translation on move [hop]: [baseline] -> [immediate_oxygen]")
@@ -193,7 +193,7 @@
 			SSair.run_gas_frames(1)
 			for(var/area/cycle_area as anything in shuttle.shuttle_area)
 				for(var/turf/open/cycle_turf in cycle_area)
-					if(!cycle_turf.blocks_air && cycle_turf.air)
+					if(!cycle_turf.blocks_air && cycle_turf.turf_air())
 						TEST_ASSERT(vg_topology_matches(cycle_turf), "Rust/DM atmos topology diverged after shuttle move [hop], atmos cycle [cycle], at [cycle_turf.x],[cycle_turf.y],[cycle_turf.z]")
 		var/hop_oxygen = measure_oxygen(shuttle)
 		if(next_landmark == shuttle.landmark_offsite())
@@ -205,8 +205,8 @@
 	. = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in contents_of(A))
-			if(!T.blocks_air && T.air)
-				. += T.air.get_moles(/datum/gas/oxygen)
+			if(!T.blocks_air && T.turf_air())
+				. += T.turf_air().get_moles(/datum/gas/oxygen)
 
 /datum/unit_test/dq_arrivals_shuttle_preserves_air/proc/wait_for_atmos(cycles)
 	// Deterministic gas frames (the test hook), no wall-clock wait.
@@ -226,10 +226,10 @@
 	var/pressurized_turfs_before = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in contents_of(A))
-			if(T.blocks_air || !T.air)
+			if(T.blocks_air || !T.turf_air())
 				continue
-			total_o2_before += T.air.get_moles(/datum/gas/oxygen)
-			if(T.air.return_pressure() > 80)
+			total_o2_before += T.turf_air().get_moles(/datum/gas/oxygen)
+			if(T.turf_air().return_pressure() > 80)
 				pressurized_turfs_before++
 	TEST_ASSERT(pressurized_turfs_before > 0, "arrivals shuttle is already airless off-station")
 	var/list/visited = list()
@@ -259,23 +259,23 @@
 	var/soaked_o2 = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in contents_of(A))
-			if(!T.blocks_air && T.air)
-				soaked_o2 += T.air.get_moles(/datum/gas/oxygen)
+			if(!T.blocks_air && T.turf_air())
+				soaked_o2 += T.turf_air().get_moles(/datum/gas/oxygen)
 				if(T.initial_gas_mix == OPENTURF_DEFAULT_ATMOS)
-					TEST_ASSERT(T.air.return_pressure() > 80, "habitable arrivals shuttle turf became airless while waiting at [T.x],[T.y],[T.z]: [T.air.return_pressure()] kPa in [get_area(T)]")
+					TEST_ASSERT(T.turf_air().return_pressure() > 80, "habitable arrivals shuttle turf became airless while waiting at [T.x],[T.y],[T.z]: [T.turf_air().return_pressure()] kPa in [get_area(T)]")
 	TEST_ASSERT(soaked_o2 >= total_o2_before * 0.99, "arrivals shuttle lost oxygen while waiting off-station: [total_o2_before] -> [soaked_o2]")
 	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_station()), "arrivals shuttle could not move to its station landmark")
 	var/total_o2_after = 0
 	var/pressurized_turfs_after = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in contents_of(A))
-			if(T.blocks_air || !T.air)
+			if(T.blocks_air || !T.turf_air())
 				continue
-			total_o2_after += T.air.get_moles(/datum/gas/oxygen)
-			if(T.air.return_pressure() > 80)
+			total_o2_after += T.turf_air().get_moles(/datum/gas/oxygen)
+			if(T.turf_air().return_pressure() > 80)
 				pressurized_turfs_after++
 			if(T.initial_gas_mix == OPENTURF_DEFAULT_ATMOS)
-				TEST_ASSERT(T.air.return_pressure() > 80, "habitable arrivals shuttle turf arrived airless at [T.x],[T.y],[T.z]: [T.air.return_pressure()] kPa in [get_area(T)]")
+				TEST_ASSERT(T.turf_air().return_pressure() > 80, "habitable arrivals shuttle turf arrived airless at [T.x],[T.y],[T.z]: [T.turf_air().return_pressure()] kPa in [get_area(T)]")
 	TEST_ASSERT(pressurized_turfs_after > 0, "arrivals shuttle became airless after moving")
 	TEST_ASSERT(total_o2_after >= total_o2_before * 0.99, "arrivals shuttle lost oxygen while moving: [total_o2_before] -> [total_o2_after]")
 	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_offsite()), "arrivals shuttle could not return to its off-station landmark")
@@ -298,10 +298,10 @@
 	var/turf/open/component_start
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in contents_of(A))
-			if(T.blocks_air || !T.air)
+			if(T.blocks_air || !T.turf_air())
 				continue
-			total_o2_before += T.air.get_moles(/datum/gas/oxygen)
-			if(T.air.return_pressure() > 80)
+			total_o2_before += T.turf_air().get_moles(/datum/gas/oxygen)
+			if(T.turf_air().return_pressure() > 80)
 				component_start ||= T
 	TEST_ASSERT_NOTNULL(component_start, "escape shuttle is already airless off-station")
 	var/list/visited = list()
@@ -326,19 +326,19 @@
 	var/soaked_o2 = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in contents_of(A))
-			if(!T.blocks_air && T.air)
-				soaked_o2 += T.air.get_moles(/datum/gas/oxygen)
+			if(!T.blocks_air && T.turf_air())
+				soaked_o2 += T.turf_air().get_moles(/datum/gas/oxygen)
 	TEST_ASSERT(soaked_o2 >= total_o2_before * 0.99, "escape shuttle lost oxygen while waiting off-station: [total_o2_before] -> [soaked_o2]")
 	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_station()), "escape shuttle could not move to its station landmark")
 	var/total_o2_after = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in contents_of(A))
-			if(!T.blocks_air && T.air)
-				total_o2_after += T.air.get_moles(/datum/gas/oxygen)
+			if(!T.blocks_air && T.turf_air())
+				total_o2_after += T.turf_air().get_moles(/datum/gas/oxygen)
 	TEST_ASSERT(total_o2_after >= soaked_o2 * 0.99, "escape shuttle lost oxygen while moving: [soaked_o2] -> [total_o2_after]")
 	TEST_ASSERT(shuttle.attempt_move(shuttle.landmark_offsite()), "escape shuttle could not return to its off-station landmark")
 
-/// A move leaves at most one lighting underlay on every dynamic turf it touches, keeps a lighting object on each, and keeps
+/// A move leaves at most one lighting underlay on every dynamic turf it touches, keeps a lighting object on each lit one (an unlit one may have none, and then shows no underlay), and keeps
 /// lighting out of the appearance a landed holder remembers (a stale gradient would come back when the shuttle leaves).
 /datum/unit_test/dq_shuttle_move_keeps_lighting
 
@@ -352,7 +352,10 @@
 	if(!T.has_dynamic_lighting())
 		TEST_ASSERT_EQUAL(lighting_underlays(T.underlays), 0, "[label]: non-dynamic [T.type] at [T.x],[T.y],[T.z] kept a lighting underlay")
 		return
-	TEST_ASSERT_NOTNULL(T.lighting_object, "[label]: dynamic [T.type] at [T.x],[T.y],[T.z] has no lighting object")
+	if(!T.lighting_object)
+		TEST_ASSERT(!T.lighting_corners_lit(), "[label]: lit dynamic [T.type] at [T.x],[T.y],[T.z] has no lighting object")
+		TEST_ASSERT_EQUAL(lighting_underlays(T.underlays), 0, "[label]: [T.type] at [T.x],[T.y],[T.z] has a lighting underlay and no object")
+		return
 	TEST_ASSERT_EQUAL(T.lighting_object.affected_turf, T, "[label]: lighting object at [T.x],[T.y],[T.z] names another turf")
 	TEST_ASSERT(lighting_underlays(T.underlays) <= 1, "[label]: [T.type] at [T.x],[T.y],[T.z] stacked lighting underlays")
 
@@ -381,8 +384,17 @@
 	var/updated = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/T in contents_of(A))
-			if(T.lighting_object)
+			if(T.lighting_ensure_object())
 				T.lighting_object.update()
 				TEST_ASSERT_EQUAL(lighting_underlays(T.underlays), 1, "[T.type] at [T.x],[T.y],[T.z] does not show one lighting underlay after an update")
 				updated++
 	TEST_ASSERT(updated > 0, "no Ferry-Demo turf had a lighting object")
+
+// A ferry names its two stops, not a start tag: the init precheck for a missing home landmark read the
+// empty current_location_tag, so no ferry (arrivals, supply, escape pods) was ever made and the
+// arrivals shuttle never moved.
+/datum/unit_test/dq_ferry_shuttle_start_tag_follows_location
+
+/datum/unit_test/dq_ferry_shuttle_start_tag_follows_location/Run()
+	TEST_ASSERT_EQUAL(shuttle_start_tag(/datum/shuttle/autodock/ferry/arrivals/southern_cross), "arrivals_offsite", "an offsite-start ferry must start at its offsite landmark")
+	TEST_ASSERT_EQUAL(shuttle_start_tag(/datum/shuttle/autodock/overmap/stargazer), "stargazer_dock", "a plain shuttle starts at its current_location_tag")

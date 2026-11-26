@@ -24,7 +24,7 @@
 			var/datum/gene/trait/G = new /datum/gene/trait()
 			G.block = pick(blocks_remaining)
 			var/tex = uppertext(T.name)
-			G.name = "[copytext(tex,1,min( 8, length(tex)+1 ))]:[G.block]"
+			G.set_name("[copytext(tex,1,min( 8, length(tex)+1 ))]:[G.block]")
 			rel_set(T, nameof(T.linked_gene), G)
 			GLOB.dna_activity_bounds[G.block] = T.activity_bounds
 			// Handle global block data

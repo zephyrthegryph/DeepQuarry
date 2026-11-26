@@ -1,22 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Button, Section } from 'tgui-core/components';
 import {
-  FULLSCREEN_OFF,
-  FULLSCREEN_ON,
+  CHAT_ITEMS,
   GAME_ITEMS,
   HELP_ITEMS,
   ICON_SIZES,
   iconSizeCommand,
-  LINK_ITEMS,
   type MenuItem,
+  ROUND_ITEMS,
+  run,
   textModeCommand,
   ZOOM_MODES,
   zoomModeCommand,
 } from './menu';
-
-function run(command: string) {
-  setTimeout(() => Byond.command(command), 0);
-}
 
 function Items({ items }: { items: MenuItem[] }) {
   return (
@@ -49,16 +45,17 @@ export function MenuPage() {
         setTextMode(prop(props, 'text-mode') === 'true');
       },
     );
+    Byond.winget('mainwindow', ['is-fullscreen']).then(
+      (props: Record<string, any>) => {
+        setFullscreen(prop(props, 'is-fullscreen') === 'true');
+      },
+    );
   }, []);
 
+  // The server owns the choice (a saved preference, borderless fullscreen by default).
   function toggleFullscreen() {
-    const on = !fullscreen;
-    setFullscreen(on);
-    Byond.winset('mainwindow', { 'is-maximized': false });
-    Byond.winset('mainwindow', {
-      ...(on ? FULLSCREEN_ON : FULLSCREEN_OFF),
-      'is-maximized': true,
-    });
+    setFullscreen(!fullscreen);
+    run('toggle-fullscreen');
   }
 
   return (
@@ -70,6 +67,12 @@ export function MenuPage() {
             Fullscreen (no title bar)
           </Button>
         </div>
+      </Section>
+      <Section title="Round">
+        <Items items={ROUND_ITEMS} />
+      </Section>
+      <Section title="Chat window">
+        <Items items={CHAT_ITEMS} />
       </Section>
       <Section title="Icon size">
         <div className="menu-row">
@@ -114,9 +117,6 @@ export function MenuPage() {
       </Section>
       <Section title="Help and preferences">
         <Items items={HELP_ITEMS} />
-      </Section>
-      <Section title="Links">
-        <Items items={LINK_ITEMS} />
       </Section>
     </>
   );

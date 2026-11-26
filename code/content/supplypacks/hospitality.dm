@@ -64,8 +64,8 @@
 	contains = list(
 			/obj/random/pizzabox/supplypack = 5,
 			/obj/item/material/knife/plastic,
-			/obj/item/clothing/under/pizzaguy,
-			/obj/item/clothing/head/pizzaguy
+			VARIANT(/obj/item/clothing/under/pizzaguy),
+			VARIANT(/obj/item/clothing/head/pizzaguy)
 			)
 	cost = 15
 	containertype = /obj/structure/closet/crate/freezer/centauri

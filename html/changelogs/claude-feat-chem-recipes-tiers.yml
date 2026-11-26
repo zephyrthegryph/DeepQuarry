@@ -1,0 +1,9 @@
+author: "Claude"
+delete-after: true
+changes:
+  - rscadd: "Chemistry tiers 1 to 3 are made from block structures: about a hundred chemicals have a structure and a tier, the old element-mixing recipes of the converted ones are gone, and the route a structure gives is the recipe."
+  - rscadd: "Sixteen stocked precursor bottles (phenol, salicylic acid, wood aldehyde, the acids, bleach, soda ash, glycerol, silicate, fatty acid, pyridine, alkaloid, sterol, amino acid) in the chemical closet and a cargo crate, plus hydrochloric, nitric, phosphoric and acetic acid, intermediates and the metal salts."
+  - rscadd: "Process chemicals (hydride, strong oxidiser, bleach, nitrating mix, chlorinating agent, coupling agent, caustic digest, yeast, scavenger resin) and dirty one-pot shortcuts for the staples, each leaving its own trace-potent contaminants."
+  - rscadd: "Group clashes: medicines that meet in a beaker or in the stomach react by the groups they carry (acid group and amine make a salt, thiol takes a metal, nitro and amine make nitrosamine), never in the bloodstream."
+  - rscadd: "A clip-on electrode pair for electrolysis, sand in hot lye for silicate, silicone chains (lube) by polymerising silanol, and a cyanide arm of substitution."
+  - qol: "The medical book shows each chemical's tier and whether a recipe is the clean route, a process chemical, a dirty shortcut or a clash."

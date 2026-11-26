@@ -68,18 +68,33 @@
 /obj/item/proc/share_tool_qualities()
 	tool_qualities = intern_list(tool_qualities)
 
-/// The actions a type declares (actions_types) are made for the item.
+/// The actions a type declares (actions_types) are made when the item is first held or worn (equipped()), not at construction: each is a datum, a relation
+/// entry and an observer, and most items are never carried. An item made straight into a mob's hands or slots makes them now.
 /obj/item/proc/make_declared_actions()
-	for(var/path in item_rules_of(src).actions_types)
-		add_item_action(path)
+	if(ismob(loc))
+		ensure_declared_actions()
 
-/// An item left on the default embed chance (-1) takes it from its weight and edge.
-/obj/item/proc/roll_embed_chance()
-	if(combat_of(src).embed_chance < 0)
-		if(combat_of(src).sharp)
-			set_embed_chance(max(5, round(combat_of(src).force/w_class)))
-		else
-			set_embed_chance(max(5, round(combat_of(src).force/(w_class*3))))
+/// Makes the declared actions the item does not have yet. Safe to call again.
+/obj/item/proc/ensure_declared_actions()
+	var/list/declared = item_rules_of(src).actions_types
+	if(!declared)
+		return
+	for(var/path in declared)
+		var/have = FALSE
+		for(var/datum/action/existing as anything in actions)
+			if(existing.type == path)
+				have = TRUE
+				break
+		if(!have)
+			add_item_action(path)
+
+/// The chance (0-100) this item lodges in a body it hits: the one its type declares, or, left on the size default (-1), the one its weight and edge give. Worked out
+/// when asked: an item made once and never swung would otherwise take a private copy of its combat trait at construction just to hold this number.
+/obj/item/proc/embed_chance_now()
+	var/datum/type_trait/item_combat/combat = combat_of(src)
+	if(combat.embed_chance >= 0)
+		return combat.embed_chance
+	return max(5, round(combat.force / (combat.sharp ? w_class : w_class * 3)))
 
 // the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 // Machine components are normally located inside their owner: a component
@@ -331,7 +346,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		else
 			play_sfx(hit_atom, SFX_WEAPONS_THROWTAP, vary = volume)
 	else
-		playsound(src, sounds_of(src).drop, 30, preference = /datum/preference/toggle/drop_sounds)
+		playsound(src, sounds_of(src).drop, 30)
 
 // apparently called whenever an item is removed from a slot, container, or anything else.
 // TO NOTE:
@@ -345,14 +360,6 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	SHOULD_CALL_PARENT(TRUE)
 	if(user)
 		PUBLISH_CHANGE(user, MOB_KEY_HANDS)
-	// Worn/held items stay real for as long as they're worn or held (C10,
-	// containment.md §4.7): a matching equipped() pinned it, and dropping
-	// out of hands or a slot releases that pin. A safe no-op if it was never
-	// pinned this way (an item worn since initial dressing never called
-	// equipped()); over-pinning from a re-equip without a drop in between is
-	// also safe -- it just keeps the item real a while longer, same as
-	// before C10 existed.
-	latent_unpin("equipped")
 	set_appearance_flags(appearance_flags & (~NO_CLIENT_COLOR))
 	// Remove any item actions we temporary gave out.
 	for(var/datum/action/action_item_has as anything in actions)
@@ -401,10 +408,8 @@ ACTION(mob_equipped_item, obj/item/equipped_item, slot, FIXED, notice = /datum/n
 /obj/item/proc/equipped(mob/user, slot)
 	if(user)
 		PUBLISH_CHANGE(user, MOB_KEY_HANDS)
-	// Worn or held: pin it real for as long as that's true (C10, unpinned by
-	// the matching dropped()).
-	latent_pin("equipped")
 	// Give out actions our item has to people who equip it.
+	ensure_declared_actions()
 	for(var/datum/action/action as anything in actions)
 		give_item_action(action, user, slot)
 	hud_layerise()
@@ -413,12 +418,12 @@ ACTION(mob_equipped_item, obj/item/equipped_item, slot, FIXED, notice = /datum/n
 	if(user?.pulling_target() == src) user.stop_pulling()
 	if(dq_item_fits_slot_flags(src, slot))
 		if(sounds_of(src).equip && !muffled_by_belly(user))
-			playsound(src, sounds_of(src).equip, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).equip, 20)
 		else if(!muffled_by_belly(user))
-			playsound(src, sounds_of(src).drop, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).drop, 20)
 	else if(slot == SLOT_ID_HAND_L || slot == SLOT_ID_HAND_R)
 		if(!muffled_by_belly(user))
-			playsound(src, sounds_of(src).pickup, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).pickup, 20)
 	PUBLISH(src, item_equipped, equipper = user, slot = slot)
 	PUBLISH(user, mob_equipped_item, equipped_item = src, slot = slot)
 	user.on_equipment_changed()
@@ -458,6 +463,11 @@ ACTION(mob_equipped_item, obj/item/equipped_item, slot, FIXED, notice = /datum/n
 //Checks before we get to here are: mob is alive, mob is not restrained, paralyzed, asleep, resting, laying, item is on the mob.
 /obj/item/proc/ui_action_click(mob/user, actiontype)
 	attack_self(user)
+
+/// Whether the item's ability `actiontype` is a toggle that is on now (TRUE or FALSE), or null when the ability is not a toggle: the Abilities
+/// tab shows the state on the button.
+/obj/item/proc/action_toggle_state(actiontype)
+	return null
 
 //RETURN VALUES
 //handle_shield should return a positive value to indicate that the attack is blocked and should be prevented.
@@ -842,14 +852,14 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 		user?.client?.note_hover(src)
 		if(QDELETED(src))
 			return
-		if(user?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in user) || isstorage(loc)))
-			after(src, 0.5 SECONDS, PROC_REF(openTip), key = "tip_timer", with = list(A.native?["location"], A.native?["control"], A.params, user))
+		if(((src in user) || isstorage(loc)))
+			after(src, ITEM_TOOLTIP_DELAY, PROC_REF(openTip), key = "tip_timer", with = list(A.native?["location"], A.native?["control"], A.params, user, tooltip_of(user)?.epoch))
 	else
 		cancel_after(src, "tip_timer")
 		closeToolTip(user, src)
 
-/obj/item/proc/openTip(location, control, params, user)
-	openToolTip(user, src, params, title = name, content = desc)
+/obj/item/proc/openTip(location, control, params, user, epoch)
+	openToolTip(user, src, params, title = name, content = desc, epoch = epoch)
 
 // These procs are for RPEDs and part ratings. The concept for this was borrowed from /vg/station.
 // Gets the rating of the item, used in stuff like machine construction.
@@ -1019,8 +1029,6 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	new_voice.set_real_name("[new_voice.real_name]") //We still know their real name though!
 	rel_add(src, nameof(possessed_voice), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-	grant(new_voice, granted_verb(/mob/living/voice/verb/change_name, hidden = TRUE), src) // No changing your name! Bad!
-	grant(new_voice, granted_verb(/mob/living/voice/verb/hang_up, hidden = TRUE), src) // Also you can't hang up. You are the item!
 	src.item_tf_spawnpoint_used() // Item TF spawnpoints
 	if(!istype(src, /obj/item/communicator) && is_item_tf)
 		new_voice.item_tf = is_item_tf 					// allows items to use /me
@@ -1231,7 +1239,6 @@ CAPABILITIES(/obj/item)
 	item_handling(center_x = 16, center_y = 16, randpixel = 6, preserve = 0, no_attack_log = 0, no_random_knockdown = FALSE, cavity_implantable = TRUE) // how it is placed and handled: a type trait (code/game/objects/items/item_handling.dm)
 	setup(PROC_REF(share_tool_qualities))
 	setup(PROC_REF(make_declared_actions))
-	setup(PROC_REF(roll_embed_chance))
 	setup(PROC_REF(note_worn_factor_default))
 	hover(PROC_REF(item_hovered))
 	// The thing this one is attached to (an assembly's valve, a gun's attachment, an electric chair's kit): a sparse link, not a var on /obj/item (item_master()).

@@ -25,6 +25,8 @@
 #define AIRLOCK_REGION_MAX	40
 
 /obj/machinery/embedded_controller/radio/airlock
+	// The shared airlock program: each console subtype opens its own window.
+	abstract_type = /obj/machinery/embedded_controller/radio/airlock
 	/// Where the cycle is (AIRLOCK_STATE_*) and where it is going (AIRLOCK_TARGET_*).
 	var/cycle_state = AIRLOCK_STATE_IDLE
 	var/target_state = AIRLOCK_TARGET_NONE

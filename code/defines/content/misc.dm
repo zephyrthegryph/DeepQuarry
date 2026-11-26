@@ -461,6 +461,8 @@ GLOBAL_LIST_EMPTY(##LIST_NAME);\
 #define VOLUME_CHANNEL_INJURY_SOUNDS "Mob Injury Sounds (Non-Verbal Feedback)" //NYI
 #define VOLUME_CHANNEL_MACHINERY "Machinery Noises"
 #define VOLUME_CHANNEL_MACHINERY_IDLE "Machinery Idle Noises"
+/// Speech blips, emote and radio sounds (the old say, bloop, whisper, subtle, emote and radio sound toggles).
+#define VOLUME_CHANNEL_VOICE "Voices and Emotes"
 
 // Make sure you update this or clients won't be able to adjust the channel
 GLOBAL_LIST_INIT(all_volume_channels, list(
@@ -476,7 +478,8 @@ GLOBAL_LIST_INIT(all_volume_channels, list(
 	VOLUME_CHANNEL_DEATH_SOUNDS,
 	VOLUME_CHANNEL_INJURY_SOUNDS,
 	VOLUME_CHANNEL_MACHINERY,
-	VOLUME_CHANNEL_MACHINERY_IDLE
+	VOLUME_CHANNEL_MACHINERY_IDLE,
+	VOLUME_CHANNEL_VOICE
 ))
 
 #define APPEARANCECHANGER_CHANGED_RACE "Race"
@@ -551,6 +554,24 @@ GLOBAL_LIST_INIT(all_volume_channels, list(
 
 //Herm Gender
 #define HERM "herm"
+
+// Gender choice lists (used by record computers, appearance changer)
+#define all_genders_define_list list(MALE,FEMALE,PLURAL,NEUTER,HERM)
+#define all_genders_text_list list("Male","Female","Plural","Neuter","Herm")
+#define pronoun_set_to_genders list(\
+			"He/Him" = MALE,\
+			"She/Her" = FEMALE,\
+			"It/Its" = NEUTER,\
+			"They/Them" = PLURAL,\
+			"Shi/Hir" = HERM\
+			)
+#define genders_to_pronoun_set list(\
+			MALE = "He/Him",\
+			FEMALE = "She/Her",\
+			NEUTER = "It/Its",\
+			PLURAL = "They/Them",\
+			HERM = "Shi/Hir"\
+			)
 
 // Bluespace shelter deploy checks
 #define SHELTER_DEPLOY_ALLOWED "allowed"
@@ -640,3 +661,21 @@ GLOBAL_LIST_INIT(all_volume_channels, list(
 #define VANTAG_VORE_DE	"vantag_vore_de"
 #define VANTAG_VORE_DD	"vantag_vore_dd"
 #define VANTAG_VORE_DA	"vantag_vore_da"
+
+// Gender choice lists (macros: every file that names them comes after the defines).
+#define all_genders_define_list list(MALE,FEMALE,PLURAL,NEUTER,HERM)
+#define all_genders_text_list list("Male","Female","Plural","Neuter","Herm")
+#define pronoun_set_to_genders list(\
+			"He/Him" = MALE,\
+			"She/Her" = FEMALE,\
+			"It/Its" = NEUTER,\
+			"They/Them" = PLURAL,\
+			"Shi/Hir" = HERM\
+			)
+#define genders_to_pronoun_set list(\
+			MALE = "He/Him",\
+			FEMALE = "She/Her",\
+			NEUTER = "It/Its",\
+			PLURAL = "They/Them",\
+			HERM = "Shi/Hir"\
+			)

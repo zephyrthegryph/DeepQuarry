@@ -25,10 +25,6 @@
 
 	parent_organ = BP_HEAD
 
-	organ_verbs = list(
-		/mob/living/carbon/human/proc/augment_menu,
-		/mob/living/carbon/human/proc/toggle_shades)
-
 	integrated_object_type = /obj/item/clothing/glasses/hud/security/jensenshades
 
 /obj/item/organ/internal/augment/bioaugment/thermalshades/augment_action()
@@ -37,12 +33,19 @@
 
 	owner.toggle_shades()
 
-// Here for posterity and example.
-/mob/living/carbon/human/proc/toggle_shades()
-	set name = "Toggle Integrated Thermoshades"
-	set desc = "Toggle your flash-proof, thermal-integrated sunglasses."
-	set category = VERB_CAT_AUGMENTS
+/// The Toggle Integrated Thermoshades menu entry shows on yourself while you carry a working thermolensing implant.
+/mob/living/carbon/human/proc/toggle_shades_ready(datum/act/op/A)
+	var/obj/item/organ/internal/augment/bioaugment/thermalshades/aug = organ_in(O_AUG_EYES)
+	if(!istype(aug) || !aug.check_verb_compatability())
+		return MSG(req_silent)
+	return null
 
+/mob/living/carbon/human/proc/toggle_shades_chosen(datum/act/op/A)
+	toggle_shades()
+	return OP_OK
+
+/// Toggle your flash-proof, thermal-integrated sunglasses.
+/mob/living/carbon/human/proc/toggle_shades()
 	var/obj/item/organ/internal/augment/aug = organ_in(O_AUG_EYES)
 
 	if(get_equipped_item(SLOT_ID_EYES))

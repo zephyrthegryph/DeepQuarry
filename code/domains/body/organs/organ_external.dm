@@ -194,6 +194,8 @@
 // can be bitten. A limb on the table: the old bench surgery, one tool per stage.
 CAPABILITIES(/obj/item/organ/external)
 	setup(PROC_REF(external_setup))
+	variants(nameof(variant), PROC_REF(variant_table))
+	param(nameof(variant), schema_text())
 	after_init(0, then(PROC_REF(icon_after_init)))
 	owns_one(nameof(tourniquet))
 	owns_one(nameof(nail_polish), /datum/nail_polish)
@@ -416,7 +418,6 @@ CAPABILITIES(/obj/item/organ/external)
 
 	set_dislocated(1)
 	if(istype(owner))
-		grant(owner, granted_verb(/mob/living/carbon/human/proc/relocate), src)
 		owner.body?.invalidate(BODY_DIRTY_ORGANS)
 
 /obj/item/organ/external/proc/relocate()
@@ -428,8 +429,6 @@ CAPABILITIES(/obj/item/organ/external)
 		if(!organ_can_feel_pain())
 			owner.adjust_shock(20, "dislocation reset")
 
-		// Each dislocated limb grants the verb; it stays while another limb is still out.
-		revoke(owner, granted_verb(/mob/living/carbon/human/proc/relocate), src)
 		owner.body?.invalidate(BODY_DIRTY_ORGANS)
 
 /obj/item/organ/external/update_health()
@@ -982,6 +981,19 @@ Note that amputating the affected organ does in fact remove the infection from t
 			for (var/obj/item/organ/external/child in children)
 				child.germ_level += 110 //Burst of infection from a parent organ becoming necrotic
 
+	// Staph infection symptoms, until the limb is necrotic and there is nothing left to feel.
+	if(status & ORGAN_DEAD)
+		return
+	if(. >= 1 && prob(.))
+		owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
+	if(. >= 2 && prob(.))
+		owner.custom_pain("Your [name] burns like it's on fire!",15)
+		germ_level_two_effect()
+
+/// What a limb of this kind adds when its level-two infection burns (nothing, for most).
+/obj/item/organ/external/proc/germ_level_two_effect()
+	return
+
 /// Rebuilds limb integrity from its wounds and updates the BLEEDING status
 /// and fractures.
 /obj/item/organ/external/proc/update_damages()
@@ -1388,11 +1400,11 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if(!R || (data.get_species_name() in R.species_cannot_use))
 			R = GLOB.basic_robolimb
 		if(R)
-			force_icon = R.icon
+			set_force_icon(R.icon)
 			brute_mod *= R.robo_brute_mod
 			burn_mod *= R.robo_burn_mod
-			skip_robo_icon = R.no_icon
-			digi_prosthetic = R.can_be_digitigrade
+			set_skip_robo_icon(R.no_icon)
+			set_digi_prosthetic(R.can_be_digitigrade)
 			if(R.lifelike)
 				set_robotic(ORGAN_LIFELIKE)
 				name = "[initial(name)]"
@@ -1422,7 +1434,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 				if(!thing.vital)
 					replaced_by(thing)
 
-		owner.refresh_modular_limb_verbs()
 
 	if(restore_nanoform)
 		set_robotic(original_robotic)
@@ -1466,7 +1477,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 		owner.visible_message(span_danger("\The [W] sticks in the wound!"))
 	rel_add(src, nameof(implants), W)
 	owner.set_embedded_flag(1)
-	grant(owner, granted_verb(/mob/proc/yank_out_object), owner)
 	owner.throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
 	W.add_blood(owner)
 	if(ismob(W.loc))

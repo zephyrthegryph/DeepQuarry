@@ -18,14 +18,9 @@
 		return FALSE
 
 	var/obj/machinery/machine = target
-	//check for the required tier among the machine's real and latent internals (roadmap C6)
+	//check for the required tier among the machine's internals (roadmap C6)
 	for(var/obj/item/stock_parts/P in machine.slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(P.rating >= required_tier) //>= for backwards research cases when you want the discount done after you did the node
-			return TRUE
-	for(var/datum/latent_entry/entry as anything in machine.latent_entries(CONTAINER_SLOT_INTERNALS))
-		if(!ispath(entry.path, /obj/item/stock_parts))
-			continue
-		if(dq_type_var(entry.path, "rating") >= required_tier)
 			return TRUE
 	experiment_handler.announce_message("Scanned machine is missing high enough quality parts. Expecting tier [required_tier] parts or better.")
 	return FALSE
@@ -51,12 +46,9 @@
 		return FALSE
 
 	var/obj/machinery/machine = target
-	//check among the machine's real and latent internals (roadmap C6)
+	//check among the machine's internals (roadmap C6)
 	for(var/obj/item/stock_parts/P in machine.slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(istype(P, required_stock_part))
-			return TRUE
-	for(var/datum/latent_entry/entry as anything in machine.latent_entries(CONTAINER_SLOT_INTERNALS))
-		if(ispath(entry.path, required_stock_part))
 			return TRUE
 	var/obj/item/stock_parts/part_type = required_stock_part
 	experiment_handler.announce_message("Scanned machine is missing an exact quality part. Expecting tier [initial(part_type.name)] part.")

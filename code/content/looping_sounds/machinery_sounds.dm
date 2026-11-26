@@ -13,7 +13,7 @@
 	mid_length = 60
 	volume = 40
 	extra_range = 10
-	pref_check = /datum/preference/toggle/supermatter_hum
+	volume_chan = VOLUME_CHANNEL_MACHINERY
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -103,7 +103,7 @@
 	mid_length = 70
 	end_sound = 'sound/machines/air_pump/airpumpshutdown.ogg'
 	volume = 15
-	pref_check = /datum/preference/toggle/air_pump_noise
+	volume_chan = VOLUME_CHANNEL_MACHINERY_IDLE
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -122,7 +122,7 @@
 	mid_length = 60
 	volume = 10
 	extra_range = -1 // Short-range
-	pref_check = /datum/preference/toggle/fridge_hum
+	volume_chan = VOLUME_CHANNEL_MACHINERY_IDLE
 	volume_chan = VOLUME_CHANNEL_MACHINERY_IDLE
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

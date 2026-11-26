@@ -1,7 +1,0 @@
-/proc/probe()
-    set SpacemanDMM_should_be_pure = 1
-    var/i = 0
-    i++
-    ++i
-    i--
-    --i

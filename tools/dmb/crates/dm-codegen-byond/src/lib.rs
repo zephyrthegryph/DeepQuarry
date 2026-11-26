@@ -26,20 +26,16 @@ pub mod typed_scopes;
 pub use lower_diagnostics::{undefined_member_message, unresolved_variable_candidate};
 pub use lower_resolver::ProcedureInputs;
 pub use simple::{
-    compile_preparsed_lossless_with_original_defaults, compile_preparsed_lossless_with_resolver,
-    compile_return_expression_with_resolver_and_references, compile_simple_proc,
-    compile_simple_proc_with_bindings, compile_simple_proc_with_original_defaults,
-    compile_simple_proc_with_params, compile_simple_proc_with_resolver,
-    compile_simple_proc_with_resolver_and_debug, compile_statement_view_with_original_defaults,
-    compile_statement_view_with_original_defaults_and_references_at,
+    compile_preparsed_lossless_with_resolver, compile_simple_proc,
+    compile_simple_proc_with_bindings, compile_simple_proc_with_params,
+    compile_simple_proc_with_resolver, compile_simple_proc_with_resolver_and_debug,
     compile_statement_view_with_resolver, compile_statement_view_with_resolver_and_references,
     compile_statement_view_with_resolver_and_references_at, compile_typed_scopes_with_resolver,
     compile_typed_statements_with_resolver, decode_constant_string_literal,
-    decode_native_constant_string_literal, nameof_diagnostic_recovery, nameof_reference,
-    observe_reference_source_features, observe_reference_source_features_with_lexical_locals,
-    typed_statement_view_supported, typed_statements_supported,
-    typed_statements_supported_for_capture, visit_constant_string_literals,
-    visit_native_constant_string_literals, ArgumentMetadata, DebugSourceProvider, DiagnosticAnchor,
+    nameof_diagnostic_recovery, nameof_reference, observe_reference_source_features,
+    observe_reference_source_features_with_lexical_locals, typed_statement_view_supported,
+    typed_statements_supported, typed_statements_supported_for_capture,
+    visit_constant_string_literals, ArgumentMetadata, DebugSourceProvider, DiagnosticAnchor,
     LowerBindings, LowerError, LowerErrorKind, LowerRelated, LowerSpan, NameofDiagnosticRecovery,
     ProcedureWarning, SharedLowerBindings, SimpleProc, SourceFeatures,
 };

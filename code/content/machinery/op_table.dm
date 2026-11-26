@@ -6,12 +6,16 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
+	circuit = VARIANT(/obj/item/circuitboard/optable)
 	var/strapped = 0.0
 	var/obj/machinery/computer/operating/computer = null
 
 /// The patient lying on it; the table checks on them every machine frame while there is one.
 /obj/machinery/optable/var/mob/living/carbon/human/victim
 CAPABILITIES(/obj/machinery/optable)
+	tabletop()
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	configure(atom_rules(throwpass = 1))
 	configure(movable_motion(unacidable = TRUE))
 	configure(obj_rules(surgery_cleanliness = 100))
@@ -20,10 +24,11 @@ CAPABILITIES(/obj/machinery/optable)
 	configure(uses_power(idle = 1, active = 5))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(optable_blast))))
-	op("optable_interaction_hand", hand(), ungated(), then(PROC_REF(optable_interaction_hand)))
-	op("optable_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), label("Lay on table"), then(PROC_REF(optable_interaction_drag)))
-	op("optable_interaction_item", item(/obj/item), then(PROC_REF(optable_interaction_item)))
-	op("optable_climb_onto", menu(), label("Climb On Table"), then(PROC_REF(optable_climb_onto)))
+	op("optable_interaction_hand", hand(), ungated(), needs(req_bolted()), then(PROC_REF(optable_interaction_hand)))
+	op("optable_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), label("Lay on table"), needs(req_bolted()), then(PROC_REF(optable_interaction_drag)))
+	// The old attackby stopped every item here: the last resort, so a tool the machine answers itself (a wrench, a screwdriver) is not swallowed by it.
+	op("optable_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req_bolted()), then(PROC_REF(optable_interaction_item)))
+	op("optable_climb_onto", menu(), label("Climb On Table"), needs(req_bolted()), then(PROC_REF(optable_climb_onto)))
 	ref_one(nameof(victim), /mob/living/carbon/human)
 
 /// A light blast may knock the table flat.
@@ -78,8 +83,7 @@ CAPABILITIES(/obj/machinery/optable)
 	C.set_resting(1)
 	C.update_canmove() // Sync `lying` now so check_victim() does not race the next Life() tick.
 	C.forceMove(get_turf(src))
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/O in contents_of(src))
 		O.forceMove(src.loc)
 	add_fingerprint(user)
 	if(ishuman(C))

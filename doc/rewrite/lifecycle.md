@@ -1,5 +1,7 @@
 # Lifecycle: destruction is a framework transaction
 
+> Superseded in part: latent contents (latent entries, latent-safe types, collapse, pins, the latency policy, REQ_READS_TYPE and SLOT_DROP_TO_LATENT) were removed; contents are always real things. Every mention of them below is history.
+
 Status: **authoritative**. This replaces J1 ("pre-destroy phase", superseded
 commit `ebbcf9adb2` on `rewrite/ledger-joint`) and the destruction parts of
 `containment.md` and `state.md` where they disagree.

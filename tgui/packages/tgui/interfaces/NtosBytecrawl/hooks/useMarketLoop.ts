@@ -5,7 +5,6 @@ import {
   type Dispatch as ReactDispatch,
   type SetStateAction,
   useEffect,
-  useRef,
 } from 'react';
 
 import { MARKET_TICK_MS } from '../constants';
@@ -16,13 +15,7 @@ export function useMarketLoop(
   phase: 'setup' | 'playing',
   setG: ReactDispatch<SetStateAction<GState>>,
   setLines: ReactDispatch<SetStateAction<Line[]>>,
-  act: (action: string, params?: Record<string, unknown>) => void,
 ): void {
-  const actRef = useRef(act);
-  useEffect(() => {
-    actRef.current = act;
-  }, [act]);
-
   useEffect(() => {
     if (phase !== 'playing') return;
 
@@ -42,13 +35,6 @@ export function useMarketLoop(
             },
           ]);
         }
-
-        actRef.current('market_tick', {
-          crd: newMarket.CRD,
-          fin: newMarket.FIN,
-          crp: newMarket.CRP,
-          cls: newMarket.CLS,
-        });
 
         return { ...prev, market: newMarket, lastMarketEvent: newLastEvent };
       });

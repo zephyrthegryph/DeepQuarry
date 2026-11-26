@@ -54,15 +54,15 @@ args=(build --quiet --manifest-path "$manifest")
 if [ "$profile" != "debug" ]; then
 	args+=(--profile "$profile")
 fi
-# The standing build policy keeps every Cargo invocation incremental, including CI.
+# One-shot builds are not incremental (a corrupt incremental cache is what makes rustc panic); DQ_CARGO_INCREMENTAL=1 opts a dev build back in.
 # A rustc panic deletes the target's incremental directories and retries once.
-export CARGO_INCREMENTAL=1 RUSTC_WRAPPER=''
+if [ "${DQ_CARGO_INCREMENTAL:-0}" != "1" ]; then export CARGO_INCREMENTAL=0; fi
 cargo_log="$(mktemp)"
 if ! cargo "${args[@]}" 2> >(tee "$cargo_log" >&2); then
 	if grep -qiE 'the compiler unexpectedly panicked|internal compiler error' "$cargo_log"; then
 		echo "analyze: rustc panicked; removing the incremental directories of $target_dir and retrying once" >&2
 		rm -rf "$target_dir"/*/incremental "$target_dir"/*/*/incremental
-		RUSTC_WRAPPER="" cargo "${args[@]}" >&2 || { rm -f "$cargo_log"; exit 1; }
+		RUSTC_WRAPPER="" CARGO_BUILD_RUSTC_WRAPPER="" cargo "${args[@]}" >&2 || { rm -f "$cargo_log"; exit 1; }
 	else
 		rm -f "$cargo_log"
 		exit 1

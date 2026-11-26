@@ -7,7 +7,12 @@
 import { storage } from 'common/storage';
 import type { BooleanLike } from 'tgui-core/react';
 import { vecAdd, vecMultiply, vecScale, vecSubtract } from 'tgui-core/vector';
+import { mainBounds, measureColumn } from 'tgui-panel/layout/geometry';
+import type { Rect } from 'tgui-panel/layout/model';
+import { configAtom, store } from './events/store';
+import { dragFrame } from './floatPlacement';
 import { createLogger } from './logging';
+import { snapToScreen } from './snap';
 
 export type Point = [number, number];
 type GeometryPayload = Partial<{
@@ -16,15 +21,29 @@ type GeometryPayload = Partial<{
 }>;
 
 const logger = createLogger('drag');
-const pixelRatio = window.devicePixelRatio ?? 1;
+/**
+ * The page's pixel density now. It changes when the window is dragged onto a monitor of another scale; a value read once at load made
+ * every later position and size wrong by that factor, so a window was resized by dragging.
+ */
+const ratioNow = () => window.devicePixelRatio || 1;
 let windowKey = Byond.windowId;
 let dragging = false;
 let resizing = false;
+/** Screen x lines the dragged window's right edge sticks to (the right-hand panel's left edge), set while a drag runs. */
+let columnStops: number[] = [];
+/** The column's screen rect, measured as the drag began, and whether the page is showing its drop hint now. */
+let columnRect: Rect | null = null;
+let hintShown = false;
 let screenOffset: Point = [0, 0];
 let screenOffsetPromise: Promise<Point> | undefined;
+let screenOffsetKnown = false;
 let dragPointOffset: Point;
 let resizeMatrix: Point;
 let initialSize: Point;
+/** The size the window had when the drag began (the page's measure), and the native size winget gave for it: a drag keeps both. */
+let heldSize: Point = [0, 0];
+let heldNative: string | undefined;
+let driftLogged = false;
 let size: Point;
 
 export type ResolvedWindowGeometry = Partial<{
@@ -120,7 +139,7 @@ export function setWindowKey(key: string): void {
 
 // Get window position
 export function getWindowPosition(): Point {
-  return [window.screenLeft * pixelRatio, window.screenTop * pixelRatio];
+  return [window.screenLeft * ratioNow(), window.screenTop * ratioNow()];
 }
 
 /** Native-coordinate position observable without a BYOND winget round trip. */
@@ -130,15 +149,15 @@ export function getNativeWindowPosition(): Point {
 
 // Get window size
 export function getWindowSize(): Point {
-  return [window.innerWidth * pixelRatio, window.innerHeight * pixelRatio];
+  return [window.innerWidth * ratioNow(), window.innerHeight * ratioNow()];
 }
 
 /** Grow the window by `deltaCss` CSS pixels of height, keeping its width. */
 export function growWindowHeight(deltaCss: number): void {
   const [width, height] = getWindowSize();
-  const next = Math.round(height + deltaCss * pixelRatio);
+  const next = Math.round(height + deltaCss * ratioNow());
   logger.log(
-    `fit: growing window ${height} -> ${next} (native px, ratio ${pixelRatio})`,
+    `fit: growing window ${height} -> ${next} (native px, ratio ${ratioNow()})`,
   );
   setWindowSizeBatched([width, next]);
 }
@@ -162,16 +181,31 @@ function setWindowSizeBatched(vec: Point): void {
   scheduleWinset();
 }
 
+/** The largest side a recalled window keeps (physical px), whatever monitor it was sized on. */
+const MAX_WINDOW_SIDE = 8000;
+
 // Get screen position
 function getScreenPosition(): Point {
   return [0 - screenOffset[0], 0 - screenOffset[1]];
 }
 
+/** The top-left of the screen this window is on (its available area), in the pixels window.screenLeft uses. */
+function getScreenOrigin(): Point {
+  const screen = window.screen as Screen & {
+    availLeft?: number;
+    availTop?: number;
+  };
+  return [
+    (screen.availLeft ?? 0) * ratioNow(),
+    (screen.availTop ?? 0) * ratioNow(),
+  ];
+}
+
 // Get screen size
 function getScreenSize(): Point {
   return [
-    window.screen.availWidth * pixelRatio,
-    window.screen.availHeight * pixelRatio,
+    window.screen.availWidth * ratioNow(),
+    window.screen.availHeight * ratioNow(),
   ];
 }
 
@@ -213,6 +247,11 @@ export async function storeWindowGeometry(): Promise<void> {
   };
   geometryCache.set(windowKey, geometry);
   storage.set(windowKey, geometry);
+  // A popped-out window's size is kept by the column page too (saved with its layout), so the next pop out opens at it.
+  Byond.sendMessage('wm/geometry', {
+    size: geometry.size.map(Math.round),
+    pos: geometry.pos.map(Math.round),
+  });
   // Update the list of stored geometries
   const [geometries, trimmedKey] = touchRecents(
     (await storage.get('geometries')) || [],
@@ -269,7 +308,7 @@ export async function recallWindowGeometry(
   let size = geometry?.size || options.size;
   // Convert size from css-pixels to display-pixels
   if (!geometry?.size && options.scale && size) {
-    size = [size[0] * pixelRatio, size[1] * pixelRatio];
+    size = [size[0] * ratioNow(), size[1] * ratioNow()];
   }
 
   if (!options.scale) {
@@ -290,10 +329,11 @@ export async function recallWindowGeometry(
   // Resolve window size without mutating the native window yet. Size,
   // position, and visibility are committed together by revealWindow().
   if (size) {
-    // Constraint size to not exceed available screen area
+    // Only a sanity cap: the window may have been sized on a larger second
+    // monitor, and window.screen is just the monitor this page is on.
     size = [
-      Math.min(areaAvailable[0], size[0]),
-      Math.min(areaAvailable[1], size[1]),
+      Math.min(MAX_WINDOW_SIDE, size[0]),
+      Math.min(MAX_WINDOW_SIDE, size[1]),
     ];
     resolved.size = size;
   }
@@ -329,21 +369,27 @@ export function setupDrag(): Promise<Point> {
   // Calculate screen offset caused by the windows taskbar
   const windowPosition = getWindowPosition();
 
-  const offsetQuery = Byond.winget(Byond.windowId, 'pos')
-    .then(
-      (pos): Point => [pos.x - windowPosition[0], pos.y - windowPosition[1]],
-    )
-    .catch((error): Point => {
-      logger.error('failed to query screen offset', error);
-      return [0, 0];
-    })
-    .then((offset) => offset);
-  const timeout = new Promise<Point>((resolve) => {
-    setTimeout(() => resolve([0, 0]), 500);
-  });
-  screenOffsetPromise = Promise.race([offsetQuery, timeout]).then((offset) => {
-    screenOffset = offset;
+  const offsetQuery = Byond.winget(Byond.windowId, 'pos').then((pos): Point => {
+    screenOffset = [pos.x - windowPosition[0], pos.y - windowPosition[1]];
+    screenOffsetKnown = true;
     logger.debug('screen offset', screenOffset);
+    return screenOffset;
+  });
+  const timeout = new Promise<Point>((resolve) => {
+    setTimeout(() => resolve(screenOffset), 500);
+  });
+  screenOffsetPromise = Promise.race([
+    offsetQuery.catch((error): Point => {
+      logger.error('failed to query screen offset', error);
+      return screenOffset;
+    }),
+    timeout,
+  ]).then((offset) => {
+    if (!screenOffsetKnown) {
+      // A slow or failed query is not a measurement: the zero offset stands in
+      // for now, and the query is asked again on the next use.
+      screenOffsetPromise = undefined;
+    }
     return offset;
   });
   return screenOffsetPromise;
@@ -375,10 +421,40 @@ function constraintPosition(pos: Point, size: Point): [boolean, Point] {
 
 // Start dragging the window
 export function dragStartHandler(event): void {
-  logger.log('drag start');
+  heldSize = getWindowSize();
+  heldNative = undefined;
+  driftLogged = false;
+  // A new drag starts from what the window is now, not from what an earlier one sent.
+  lastSentWinset = {};
+  logger.log('drag start', {
+    size: heldSize,
+    pos: getWindowPosition(),
+    ratio: ratioNow(),
+  });
+  Byond.winget(Byond.windowId, 'size')
+    .then((got) => {
+      if (dragging && got && Number.isFinite(got.x) && Number.isFinite(got.y)) {
+        heldNative = `${got.x}x${got.y}`;
+        logger.log('drag holds native size', heldNative);
+      }
+    })
+    .catch(() => undefined);
   dragging = true;
+  // The right-hand panel's left edge is a place to rest against; measured once as the drag begins.
+  columnStops = [];
+  columnRect = null;
+  hintShown = false;
+  mainBounds()
+    .then((main) => measureColumn(main))
+    .then((column) => {
+      if (dragging && column) {
+        columnStops = [column.x];
+        columnRect = column;
+      }
+    })
+    .catch(() => undefined);
   dragPointOffset = vecSubtract(
-    [event.screenX * pixelRatio, event.screenY * pixelRatio],
+    [event.screenX * ratioNow(), event.screenY * ratioNow()],
     getWindowPosition(),
   ) as Point;
   // Focus click target
@@ -390,13 +466,119 @@ export function dragStartHandler(event): void {
 
 // End dragging the window
 function dragEndHandler(event): void {
-  logger.log('drag end');
+  logger.log('drag end', {
+    size: getWindowSize(),
+    held: heldSize,
+    ratio: ratioNow(),
+  });
   dragMoveHandler(event);
   flushWinsetNow();
   document.removeEventListener('mousemove', dragMoveHandler);
   document.removeEventListener('mouseup', dragEndHandler);
   dragging = false;
+  sendDropHint(null);
   storeWindowGeometry();
+  dockIfOverPanel([event.screenX * ratioNow(), event.screenY * ratioNow()]);
+}
+
+/** How much of a window must lie over the column for it to dock: this share of its area, or of its width. */
+export const DOCK_OVERLAP = 0.6;
+
+/**
+ * Whether a window at `win` (its own rect, screen pixels) is mostly over
+ * the column: at least DOCK_OVERLAP of its area or of its width overlaps
+ * `column`. The cursor does not count, so a big window docks only when
+ * most of it is in, a small one when it is in.
+ */
+export function overlapsColumn(column: Rect, win: Rect): boolean {
+  if (win.w <= 0 || win.h <= 0) return false;
+  const w =
+    Math.min(win.x + win.w, column.x + column.w) - Math.max(win.x, column.x);
+  const h =
+    Math.min(win.y + win.h, column.y + column.h) - Math.max(win.y, column.y);
+  if (w <= 0 || h <= 0) return false;
+  return (w * h) / (win.w * win.h) >= DOCK_OVERLAP || w / win.w >= DOCK_OVERLAP;
+}
+
+/**
+ * Whether a drop of the window at `win` is worth asking the server about:
+ * mostly over the column (overlapsColumn), or always when the column could
+ * not be measured (the page then decides).
+ */
+export function dropNeedsCheck(column: Rect | null, win: Rect): boolean {
+  return !column || overlapsColumn(column, win);
+}
+
+/** The window's own rect: its place and size (screen pixels). */
+function windowRect(): Rect {
+  const [x, y] = getWindowPosition();
+  const [w, h] = getWindowSize();
+  return { x, y, w, h };
+}
+
+/**
+ * A floating window's titlebar drag ended: when most of the window is over
+ * the right-hand column, the server asks the column's page where in its
+ * window list the point falls, and docks the window there
+ * (doc/rewrite/proposals/window_system.md section 12). A drop anywhere else
+ * sends nothing, and a window that may not dock (config.window.dockable
+ * false: character setup, the lobby, admin tools) never asks.
+ */
+async function dockIfOverPanel(pointer: [number, number]): Promise<void> {
+  if (!store.get(configAtom)?.window?.dockable) {
+    return;
+  }
+  const column = await measureColumn(await mainBounds());
+  if (!dropNeedsCheck(column, windowRect())) {
+    logger.log('drop outside the column', pointer);
+    return;
+  }
+  Byond.sendMessage('wm/dropped', {
+    pointer: pointInColumn(column, pointer),
+  });
+}
+
+/**
+ * The point the column page judges: the page decides where in its list a
+ * point falls, and the window's overlap has already decided, so the point
+ * is the pointer held inside the column. The drop and the drop hint send
+ * the same point, so they name the same index.
+ */
+export function pointInColumn(
+  column: Rect | null,
+  pointer: [number, number],
+): { x: number; y: number } {
+  const [px, py] = column
+    ? [
+        Math.min(Math.max(pointer[0], column.x), column.x + column.w),
+        Math.min(Math.max(pointer[1], column.y), column.y + column.h),
+      ]
+    : pointer;
+  return { x: Math.round(px), y: Math.round(py) };
+}
+
+/** Whether the drop hint is up for a drag now: the column is known and most of the window is over it. */
+export function hintWanted(column: Rect | null, win: Rect): boolean {
+  return !!column && overlapsColumn(column, win);
+}
+
+/** Tells the column page where the dragged window would land (a point), or that there is no landing (null). Sent only on a change of shown or hidden, and on each new point. */
+function sendDropHint(point: { x: number; y: number } | null): void {
+  if (!point && !hintShown) return;
+  hintShown = !!point;
+  Byond.sendMessage('wm/drophint', { pointer: point });
+}
+
+/** While a drag runs: shows the page's drop hint when the window may dock and most of it is over the column, else takes it down. */
+function updateDropHint(win: Rect, pointer: [number, number]): void {
+  if (
+    !store.get(configAtom)?.window?.dockable ||
+    !hintWanted(columnRect, win)
+  ) {
+    sendDropHint(null);
+    return;
+  }
+  sendDropHint(pointInColumn(columnRect, pointer));
 }
 
 // Move the window while dragging
@@ -405,12 +587,39 @@ function dragMoveHandler(event: MouseEvent): void {
     return;
   }
   event.preventDefault();
-  setWindowPositionBatched(
+  const pos = snapToScreen(
     vecSubtract(
-      [event.screenX * pixelRatio, event.screenY * pixelRatio],
+      [event.screenX * ratioNow(), event.screenY * ratioNow()],
       dragPointOffset,
     ) as Point,
+    heldSize,
+    getScreenSize(),
+    undefined,
+    getScreenOrigin(),
+    columnStops,
   );
+  // Only the place moves. When the window no longer has the size the drag began with (the system rescaled it on a monitor of another
+  // density), its size is put back in the same transaction.
+  const frame = dragFrame(pos, heldSize, getWindowSize());
+  setWindowPositionBatched(pos);
+  updateDropHint({ x: pos[0], y: pos[1], w: heldSize[0], h: heldSize[1] }, [
+    event.screenX * ratioNow(),
+    event.screenY * ratioNow(),
+  ]);
+  if (frame.drift) {
+    if (!driftLogged) {
+      driftLogged = true;
+      logger.log('drag: size drifted, restoring', {
+        held: heldSize,
+        now: getWindowSize(),
+        ratio: ratioNow(),
+      });
+    }
+    pendingWinset.size = heldNative ?? frame.size;
+    // The window no longer matches what was last sent, so the size goes out even if it equals that.
+    lastSentWinset = { ...lastSentWinset, size: undefined };
+    scheduleWinset();
+  }
 }
 
 // Start resizing the window
@@ -421,7 +630,7 @@ export const resizeStartHandler =
     logger.log('resize start', resizeMatrix);
     resizing = true;
     dragPointOffset = vecSubtract(
-      [event.screenX * pixelRatio, event.screenY * pixelRatio],
+      [event.screenX * ratioNow(), event.screenY * ratioNow()],
       getWindowPosition(),
     ) as Point;
     initialSize = getWindowSize();
@@ -450,7 +659,7 @@ function resizeMoveHandler(event: MouseEvent): void {
   }
   event.preventDefault();
   const currentOffset = vecSubtract(
-    [event.screenX * pixelRatio, event.screenY * pixelRatio],
+    [event.screenX * ratioNow(), event.screenY * ratioNow()],
     getWindowPosition(),
   );
   const delta = vecSubtract(currentOffset, dragPointOffset);
@@ -460,7 +669,7 @@ function resizeMoveHandler(event: MouseEvent): void {
     number,
   ];
   // Sane window size values
-  size[0] = Math.max(size[0], 150 * pixelRatio);
-  size[1] = Math.max(size[1], 50 * pixelRatio);
+  size[0] = Math.max(size[0], 150 * ratioNow());
+  size[1] = Math.max(size[1], 50 * ratioNow());
   setWindowSizeBatched(size);
 }

@@ -31,8 +31,6 @@
 /datum/unit_test/dq_gc_sweep
 	/// The ref searches this run may start (each one walks the world).
 	var/searches_left = 3
-	/// How many subjects were registered with the latency sweep when they were deleted.
-	var/latency_registered = 0
 
 /datum/unit_test/dq_gc_sweep/Run()
 	var/turf/T = test_floor()
@@ -44,10 +42,6 @@
 	// ref text -> label, for every subject deleted. No var of this proc holds a subject past this line.
 	var/list/deleted = dq_gc_sweep_delete(dq_gc_sweep_build(T))
 	TEST_ASSERT(length(deleted) > 10, "the sweep built its subjects")
-	// The latency sweep's holder list holds a hard reference to every registered holder (machines with contents, bags, mobs): a deleted one
-	// must have left it before qdel() returned, not when the sweep's cursor reaches it.
-	TEST_ASSERT(latency_registered > 0, "the sweep had a holder registered with the latency sweep (GLOB.latency_sweep_holders)")
-	TEST_ASSERT_EQUAL(dq_gc_sweep_latency_left(deleted), 0, "deleted holders left GLOB.latency_sweep_holders")
 
 	// One frame's deferred work, then the collector's filter pass once its delay is over.
 	refresh_flush()
@@ -74,7 +68,7 @@
 	dq_gc_sweep_clean_litter(T, floor_before)
 
 /// Force-deletes the items the deleted subjects spilled onto `T` (anything not there before the sweep). Forced, so a spilled box takes its own
-/// contents, latent ones included, with it.
+/// contents with it.
 /datum/unit_test/dq_gc_sweep/proc/dq_gc_sweep_clean_litter(turf/T, list/floor_before)
 	for(var/obj/item/litter in T)
 		if(!QDELETED(litter) && !(litter in floor_before))
@@ -129,14 +123,6 @@
 #endif
 	return failed
 
-/// How many subjects deleted by the sweep are still keys of GLOB.latency_sweep_holders.
-/datum/unit_test/dq_gc_sweep/proc/dq_gc_sweep_latency_left(list/deleted)
-	var/left = 0
-	for(var/holder in GLOB.latency_sweep_holders)
-		if(deleted[ref(holder)])
-			left++
-	return left
-
 /// How many subjects wait in the check queue with a reference besides the queue's own and this proc's var.
 /datum/unit_test/dq_gc_sweep/proc/dq_gc_sweep_held(list/deleted)
 	var/held = 0
@@ -166,8 +152,6 @@
 			continue
 		var/key = ref(D)
 		deleted[key] = labels[i]
-		if(D in GLOB.latency_sweep_holders)
-			latency_registered++
 		qdel(D)
 		if(isnull(D.gc_destroyed))
 			deleted -= key // refused its delete (a kept thing): not a leak

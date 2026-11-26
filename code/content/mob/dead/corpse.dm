@@ -225,7 +225,7 @@ CAPABILITIES(/obj/effect/landmark/mobcorpse)
 
 /obj/effect/landmark/mobcorpse/russian
 	name = "Russian"
-	corpseuniform = /obj/item/clothing/under/soviet
+	corpseuniform = VARIANT(/obj/item/clothing/under/soviet)
 	corpseshoes = /obj/item/clothing/shoes/boots/jackboots
 	corpsehelmet = /obj/item/clothing/head/bearpelt
 

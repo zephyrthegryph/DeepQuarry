@@ -21,13 +21,6 @@
 /datum/system/job/proc/department_name_at(index)
 	return department_datums[index]
 
-/// Job previews keep their actual cached icon; callers cannot edit the cache list.
-/datum/system/job/proc/cached_job_icon(title)
-	return job_icon_cache[title]
-
-/datum/system/job/proc/remember_job_icon(title, preview)
-	job_icon_cache[title] = preview
-
 /datum/system/job/proc/record_shift_keys(title, list/keys)
 	LAZYADDASSOC(shift_keys, title, keys)
 

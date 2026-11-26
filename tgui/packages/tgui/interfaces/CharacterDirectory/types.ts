@@ -1,31 +1,5 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { CharacterDirectoryData } from '../generated/CharacterDirectory';
 
-export type Data = {
-  personalVisibility: BooleanLike;
-  personalTag: string;
-  personalErpTag: string;
-  personalEventTag: string;
-  personalGenderTag: string;
-  personalSexualityTag: string;
-  directory: mobEntry[];
-};
+export type Data = CharacterDirectoryData;
 
-export type mobEntry = {
-  name: string;
-  species: string;
-  ooc_notes_favs: string;
-  ooc_notes_likes: string;
-  ooc_notes_maybes: string;
-  ooc_notes_dislikes: string;
-  ooc_notes_style: BooleanLike;
-  gendertag: string;
-  sexualitytag: string;
-  eventtag: string;
-  ooc_notes: string;
-  tag: string;
-  erptag: string;
-  character_ad: string;
-  flavor_text: string;
-  custom_link: string;
-  photo: string | null;
-};
+export type mobEntry = Data['directory'][number];

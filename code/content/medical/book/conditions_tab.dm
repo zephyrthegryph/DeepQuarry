@@ -6,7 +6,7 @@
 // causes, forward complications (via severity_gate + organ_damage
 // causes), surgeries that treat it, and per-stage symptom/effect data.
 
-/obj/item/book/dq_medical_reference/proc/_dq_book_conditions()
+/proc/_dq_book_conditions()
 	var/list/out = list()
 	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/proto = dq_proto(T)
@@ -273,13 +273,11 @@
 		// Surgeries that treat this condition. The book renders each as
 		// a clickable link to the Surgery tab.
 		var/list/surgeries_treating = list()
-		for(var/ST in subtypesof(/datum/dq_surgery))
-			var/datum/dq_surgery/sp = dq_proto(ST)
-			if(sp.treats && (T in sp.treats))
-				surgeries_treating += list(list(
-					"id"   = "[ST]",
-					"name" = sp.name,
-				))
+		for(var/datum/surgical_step/S as anything in surgical_steps_answering()[T])
+			surgeries_treating += list(list(
+				"id"   = "[S.type]",
+				"name" = S.name,
+			))
 		entry["surgeries"] = surgeries_treating
 
 		// Staged conditions emit one entry per stage with that stage's
@@ -309,9 +307,75 @@
 				seen_symptoms[s["id"]] = TRUE
 				union_symptoms += list(s)
 		entry["symptoms"] = union_symptoms
+		// The seizure condition: what raises and lowers a body's proneness to it.
+		if(T == /datum/affliction/seizure)
+			entry["raised_by"] = _dq_seizure_proneness_sources()
 
 		out += list(entry)
+	out += _dq_book_body_state_conditions()
 	return out
+
+/// Conditions the body keeps as state rather than as an affliction (withdrawal, ear damage): a plain entry each, so a doctor can look them up
+/// and learn what the scanners read for them. Same shape as the entries above.
+/proc/_dq_book_body_state_conditions()
+	return list(
+		_dq_plain_condition_entry("body_state/withdrawal", "withdrawal", "Dependence", \
+			"A body that has come to depend on a chemical goes into withdrawal when it runs short: cravings, chills, weakness and vomiting that get worse the longer it goes without. The basic analyzer reads \"chemical dependance, with signs of withdrawal\"; the improved analyzer names the drug; the advanced analyzer also recommends treatment. A dose of the drug ends it for a while.", \
+			"fades very slowly without the drug, and ends the moment the dependence is gone", \
+			list(list("id" = REAGENT_ID_INAPROVALINE, "name" = dq_reagent_display_name(REAGENT_ID_INAPROVALINE), "band" = dq_describe_cure_strength(0.4))), \
+			list("cravings (\"You're dying for some...\")", "chills and pallor", "weakness and vomiting")),
+		_dq_plain_condition_entry("body_state/ear_damage", "ear damage and deafness", "Senses", \
+			"Flashbangs, concussive blasts and loud weapons damage the ears. Mild damage rings and muffles and heals on its own; wearing ear protection speeds it up. Past a heavy dose the damage does not heal by itself. The basic analyzer reads the degree of ear damage and any deafness.", \
+			"mild damage heals slowly; severe damage does not", \
+			list(list("id" = REAGENT_ID_COCHLEXINE, "name" = dq_reagent_display_name(REAGENT_ID_COCHLEXINE), "band" = dq_describe_cure_strength(2))), \
+			list("ringing and muffled hearing", "deafness")),
+		_dq_plain_condition_entry("body_state/destroyed_eardrum", "destroyed eardrum", "Senses", \
+			"Heavy noise or blast can destroy an eardrum outright (ear damage past the permanent line). No drug rebuilds it. The basic analyzer reads severe, permanent-looking damage to the ears. The Repair Eardrum surgery on the opened head rebuilds the drum; cochlexine then heals what is left.", \
+			"does not heal; needs the Repair Eardrum surgery, then cochlexine", \
+			list(list("id" = REAGENT_ID_COCHLEXINE, "name" = dq_reagent_display_name(REAGENT_ID_COCHLEXINE), "band" = dq_describe_cure_strength(2))), \
+			list("deafness")),
+		_dq_plain_condition_entry("body_state/cataracts", "cataracts", "Senses", \
+			"A clouded lens that blinds the patient, from a welding flash or other eye injury. The body scanner reads cataracts, and the advanced analyzer's guidance names the cure: the Remove Cataracts surgery on the opened head. Imidazoline mends the eye itself but cannot clear a clouded lens.", \
+			"does not clear on its own; needs the Remove Cataracts surgery", \
+			list(), \
+			list("blindness")),
+		_dq_plain_condition_entry("body_state/abnormal_tissue_mass", "abnormal tissue mass (tumour)", "Growths", \
+			"A tumour grows in a limb or the torso, from radiation or other causes, and eventually does its host harm. The body scanner reads an abnormal tissue mass and where it is. It does not answer to drugs: the Resect Necrotic Tissue surgery cuts it out (so does Remove Organ).", \
+			"keeps growing; needs surgery", \
+			list(), \
+			list("pain at the site", "malaise")),
+		_dq_plain_condition_entry("body_state/parasitic_organism", "parasitic organism", "Growths", \
+			"A parasite lodged in the head, chest or abdomen feeds on its host and does odd things to them. The body scanner reads a parasitic organism and where it is. Anthelmin kills it over a few minutes; the Resect Necrotic Tissue surgery cuts it out.", \
+			"stays until it is killed or cut out", \
+			list(list("id" = REAGENT_ID_ANTHELMIN, "name" = dq_reagent_display_name(REAGENT_ID_ANTHELMIN), "band" = dq_describe_cure_strength(1))), \
+			list("hunger", "odd urges")),
+	)
+
+/// One book entry for a body-state condition: the whole shape of a catalogue entry, with the lists a state has no data for left empty.
+/proc/_dq_plain_condition_entry(id, name, category, description, progression, list/cures, list/symptom_names)
+	var/list/symptoms = list()
+	for(var/symptom_name in symptom_names)
+		symptoms += list(list("id" = "[id]/[symptom_name]", "name" = symptom_name, "frequency" = dq_describe_symptom_frequency(60)))
+	return list(
+		"id" = id,
+		"name" = name,
+		"category" = category,
+		"subcategory" = null,
+		"description" = description,
+		"progression" = progression,
+		"cures" = cures,
+		"mechanisms" = list(),
+		"harmful_mechanisms" = list(),
+		"od_cures" = list(),
+		"cure_type" = "stabilising",
+		"worsens" = list(),
+		"causes" = list(),
+		"caused_by_reagents" = list(),
+		"complications" = list(),
+		"surgeries" = list(),
+		"stages" = list(list("id" = null, "name" = null, "description" = null, "symptoms" = symptoms, "effects" = list())),
+		"symptoms" = symptoms,
+	)
 
 
 /// Build one stage entry for the book: id, name (override), description,
@@ -388,4 +452,23 @@
 			if(target_type in spawns)
 				out += cproto
 				break
+	return out
+
+
+/// Every reagent that moves STAT_SEIZURE_PRONENESS (its factor table), as { id, name, value, raises }: what the seizure condition lists as
+/// raising or lowering the chance of a seizure. Read from the reagents, never written out here.
+/proc/_dq_seizure_proneness_sources()
+	var/list/out = list()
+	var/list/registry = SSchemistry.ready().chemical_reagents
+	for(var/id in registry)
+		var/datum/reagent/R = registry[id]
+		var/value = R.factors ? R.factors[STAT_SEIZURE_PRONENESS] : null
+		if(!value)
+			continue
+		out += list(list(
+			"id"     = id,
+			"name"   = dq_reagent_display_name(id),
+			"value"  = value,
+			"raises" = value > 0,
+		))
 	return out

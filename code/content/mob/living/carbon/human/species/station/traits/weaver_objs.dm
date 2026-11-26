@@ -10,7 +10,7 @@
 CAPABILITIES(/obj/effect/weaversilk)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
-	op("hit_weaversilk", item(/obj/item), label("Interaction hit weaversilk"), then(PROC_REF(interaction_hit_weaversilk)))
+	op("hit_weaversilk", item(/obj/item), label("Hit"), then(PROC_REF(interaction_hit_weaversilk)))
 	op("tear_weaversilk", hand(), stance(I_HURT), label("Tear down"), then(PROC_REF(interaction_tear_weaversilk)))
 
 /// Any blast destroys the silk outright.
@@ -145,7 +145,7 @@ CAPABILITIES(/obj/structure/bed/double/weaversilk_nest)
 	..()
 
 CAPABILITIES(/obj/effect/weaversilk/trap)
-	op("swallow", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("swallow", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 // Items
 

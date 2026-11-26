@@ -23,6 +23,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/churn_census)
 	. = ..()
 	take()
 
+/// The counts of every kind in the current window, without ending it (the MC Health panel reads them while the churn source owns the window).
+/// The lists are the live ones: read them, never write them.
+/datum/churn_census/proc/peek()
+	return list("draw" = draws, "timer" = timers, "signal" = signals, "light" = lights, "power_edit" = power_edits)
+
 /// The counts of every kind since the last call, as list(kind = list(key = count)); starts the next window.
 /datum/churn_census/proc/take()
 	. = list("draw" = draws, "timer" = timers, "signal" = signals, "light" = lights, "power_edit" = power_edits)

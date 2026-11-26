@@ -540,9 +540,6 @@ CAPABILITIES(/obj/item/disk/limb/veymed)
 	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/vey_med)))
 
 // Bus disk for Diona mech parts.
-/obj/item/disk/limb/veymed/diona
-	company = "Skrellian Exoskeleton"
-
 /obj/item/disk/limb/wardtakahashi
 	company = "Ward-Takahashi"
 
@@ -560,12 +557,6 @@ CAPABILITIES(/obj/item/disk/limb/xion)
 
 CAPABILITIES(/obj/item/disk/limb/zenghu)
 	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/zeng_hu)))
-
-/obj/item/disk/limb/nanotrasen
-	company = "NanoTrasen"
-
-CAPABILITIES(/obj/item/disk/limb/nanotrasen)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/nanotrasen)))
 
 /obj/item/disk/species
 	name = "Species Bioprints"
@@ -726,9 +717,6 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 	suggested_species = SPECIES_VULPKANIN
 	whitelisted_to = list("arokha")
 
-/obj/item/disk/limb/kitsuhana
-	company = "Kitsuhana"
-
 // silencedmp5a5 : Serdykov Antoz
 /datum/robolimb/white_kryten
 	company = "White Kryten Cybernetics"
@@ -738,9 +726,6 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 	unavailable_to_build = 1
 	built_in_tail = /datum/sprite_accessory/tail/robolimb/white_kryten
 	whitelisted_to = list("silencedmp5a5")
-
-/obj/item/disk/limb/white_kryten
-	company = "White Kryten Cybernetics"
 
 // tucker0666 : Frost
 /datum/robolimb/zenghu_frost
@@ -753,12 +738,6 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 	unavailable_to_build = 1
 	whitelisted_to = list("tucker0666")
 
-/obj/item/disk/limb/zenghu_frost
-	company = "Zeng-Hu (Modified)"
-
-CAPABILITIES(/obj/item/disk/limb/zenghu_frost)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/zeng_hu)))
-
 //Ported from CitRP
 /datum/robolimb/cyber_beast
 	company = "Cyber Tech"
@@ -768,9 +747,6 @@ CAPABILITIES(/obj/item/disk/limb/zenghu_frost)
 	parts = list(BP_HEAD)
 	monitor_icon = 'icons/mob/monitor_icons_vr.dmi'
 	monitor_styles = CYBERBEAST_MONITOR_STYLES
-
-/obj/item/disk/limb/cyber_beast
-	company = "Cyber Tech"
 
 /datum/robolimb/zenghu_glacier
 	company = "Zeng-Hu Glacier"

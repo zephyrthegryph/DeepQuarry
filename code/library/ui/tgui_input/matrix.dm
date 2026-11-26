@@ -72,6 +72,7 @@
 
 CAPABILITIES(/datum/tgui_input_colormatrix)
 	interface("ColorMate")
+	ui_shape(message = schema_text(), title = schema_text(), item_name = nullable(schema_text()), item_sprite = nullable(schema_text()), matrix_only = bool(), activemode = int(), buildhue = num(), buildsat = num(), buildval = num(), matrixcolors = row(rr = num(), rg = num(), rb = num(), gr = num(), gg = num(), gb = num(), br = num(), bg = num(), bb = num(), cr = num(), cg = num(), cb = num()), item_preview = nullable(schema_text()), temp = nullable(schema_text()))
 	op("switch_modes", ui_act("switch_modes", arg("mode", num())), then(PROC_REF(ui_act_switch_modes)))
 	op("choose_color", ui_act("choose_color"), asks(/datum/prompt/color/matrix_active_colour, fields = list("title" = computed(PROC_REF(choose_color_title)), "question" = "Choose a color: ", "default" = computed(PROC_REF(active_color_default))), step = "color"), then(PROC_REF(ui_act_choose_color)))
 	op("paint", ui_act("paint"), then(PROC_REF(ui_act_paint)))
@@ -91,13 +92,14 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 /datum/tgui_input_colormatrix/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_input_colormatrix/tgui_static_data(mob/user)
+/datum/tgui_input_colormatrix/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
-	data["message"] = message
-	data["title"] = title
+	data["message"] = message || ""
+	data["title"] = title || ""
 	data["item_name"] = target().name
-	data["item_sprite"] = icon2base64(get_flat_icon(target(),dir=SOUTH,no_anim=TRUE))
-	data["matrix_only"] = matrix_only
+	var/icon/sprite = flat_picture(target())
+	data["item_sprite"] = sprite ? icon2base64(sprite) : null
+	data["matrix_only"] = matrix_only ? TRUE : FALSE
 	return data
 
 /datum/tgui_input_colormatrix/ui_data(datum/act/eval/A)
@@ -129,11 +131,9 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 		"cg" = color_matrix_last[11],
 		"cb" = color_matrix_last[12],
 	)
-	data["item_preview"] = icon2base64(build_preview(user))
-	if(temp)
-		data["temp"] = temp
-	if(timeout)
-		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
+	var/icon/preview = build_preview(user)
+	data["item_preview"] = preview ? icon2base64(preview) : null
+	data["temp"] = temp || null
 	return data
 
 /datum/tgui_input_colormatrix/proc/ui_act_switch_modes(datum/act/op/A, mode)
@@ -255,13 +255,22 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 		play_sfx(src, SFX_EFFECTS_SPRAY3)
 		if(isanimal(target()))
 			var/mob/living/simple_mob/M = target()
-			M.has_recoloured = TRUE
+			M.set_has_recoloured(TRUE)
 		if(isrobot(target()))
 			var/mob/living/silicon/robot/R = target()
 			R.set_has_recoloured(TRUE)
 	return TRUE
 
 /// Produces the preview image of the item, used in the UI, the way the color is not stacking is a sin.
+/// The flat picture of `A` as it looks now: null while it is drawn (the window shows no picture until picture_landed). The content side draws
+/// it through the shared portrait cache; this default flattens it now.
+/datum/tgui_input_colormatrix/proc/flat_picture(atom/A)
+	return get_flat_icon(A, dir = SOUTH, no_anim = TRUE)
+
+/// A picture flat_picture() asked for landed: the window draws again (its static data holds the item's own picture).
+/datum/tgui_input_colormatrix/proc/picture_landed(picture)
+	update_static_data_for_all_viewers()
+
 /datum/tgui_input_colormatrix/proc/build_preview(mob/user)
 	if(target()) //sanity
 		var/list/cm
@@ -282,23 +291,23 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 					text2num(color_matrix_last[12]),
 				)
 				if(!check_valid_color(cm, user))
-					return get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
+					return flat_picture(target())
 
 			if(COLORMATE_TINT)
 				if(!check_valid_color(activecolor, user))
-					return get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
+					return flat_picture(target())
 
 			if(COLORMATE_HSV)
 				cm = color_matrix_hsv(build_hue, build_sat, build_val)
 				set_color_matrix_last(cm)
 				if(!check_valid_color(cm, user))
-					return get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
+					return flat_picture(target())
 
 		var/cur_color = target().color
-		target().color = null
-		target().color = (active_mode == COLORMATE_TINT ? activecolor : cm)
-		var/icon/preview = get_flat_icon(target(), dir=SOUTH, no_anim=TRUE)
-		target().color = cur_color
+		target().set_color(null)
+		target().set_color((active_mode == COLORMATE_TINT ? activecolor : cm))
+		var/icon/preview = flat_picture(target())
+		target().set_color(cur_color)
 		set_temp("")
 
 		. = preview

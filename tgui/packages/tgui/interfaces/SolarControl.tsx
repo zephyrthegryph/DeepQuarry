@@ -1,30 +1,23 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
-  Box,
   Button,
   LabeledList,
   NumberInput,
-  ProgressBar,
   Section,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  SolarControlActions,
+  SolarControlData,
+} from './generated/SolarControl';
 
-type Data = {
-  generated: number;
-  generated_ratio: number;
-  sun_angle: number;
-  array_angle: number;
-  rotation_rate: number;
-  max_rotation_rate: number;
-  tracking_state: number;
-  connected_panels: number;
-  connected_tracker: BooleanLike;
-};
+type Data = SolarControlData;
 
 export const SolarControl = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SolarControlActions>();
   const {
     generated,
     generated_ratio,
@@ -67,20 +60,19 @@ export const SolarControl = (props) => {
               </Table.Cell>
               <Table.Cell>
                 <LabeledList>
-                  <LabeledList.Item label="Power output">
-                    <ProgressBar
-                      ranges={{
-                        good: [0.66, Infinity],
-                        average: [0.33, 0.66],
-                        bad: [-Infinity, 0.33],
-                      }}
-                      minValue={0}
-                      maxValue={1}
-                      value={generated_ratio}
-                    >
-                      {`${generated} W`}
-                    </ProgressBar>
-                  </LabeledList.Item>
+                  <StatBar
+                    label="Power output"
+                    ranges={{
+                      good: [0.66, Infinity],
+                      average: [0.33, 0.66],
+                      bad: [-Infinity, 0.33],
+                    }}
+                    minValue={0}
+                    maxValue={1}
+                    value={generated_ratio}
+                  >
+                    {`${generated} W`}
+                  </StatBar>
                   <LabeledList.Item label="Star orientation">
                     {sun_angle}°
                   </LabeledList.Item>
@@ -150,9 +142,9 @@ export const SolarControl = (props) => {
                 />
               )}
               {tracking_state === 2 && (
-                <Box inline color="label" mt="3px">
+                <Label inline mt="3px">
                   {`${array_angle}°`} (auto)
-                </Box>
+                </Label>
               )}
             </LabeledList.Item>
           </LabeledList>

@@ -1,3 +1,5 @@
+@use '../console';
+
 .LobbyScreen {
   &.animationsEnabled {
     .typeEffect {
@@ -23,8 +25,8 @@
 
     .sectionLoad {
       animation: section-loading 1s forwards;
-      box-shadow: 0 0 15px;
-      background-color: #202020;
+      box-shadow: var(--console-glow);
+      background-color: console.$console-panel;
     }
 
     .dividerEffect {
@@ -84,18 +86,12 @@
       left: 0;
       bottom: 0;
       right: 0;
-      background:
-        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
-        linear-gradient(
-          90deg,
-          rgba(255, 0, 0, 0.06),
-          rgba(0, 255, 0, 0.02),
-          rgba(0, 0, 255, 0.06)
-        );
+      // The lobby's lines are twice the shared strength (styles/console.scss).
+      @include console.console-scanlines(
+        calc(var(--console-scanline-strength) * 2),
+        8px
+      );
       z-index: 2;
-      background-size:
-        100% 8px,
-        6px 100%;
       pointer-events: none;
     }
 
@@ -114,7 +110,7 @@
     }
 
     @supports (not (-webkit-hyphens: none)) and (not (-moz-appearance: none)) {
-      box-shadow: 0 0 500px 25px rgba(0, 0, 0, 0.9) inset;
+      box-shadow: var(--console-vignette);
     }
   }
 }
@@ -142,7 +138,7 @@
   }
 
   .NanotrasenIcon {
-    background-color: #8dc0ff;
+    background-color: console.$console-accent;
     mask-image: url('../assets/bg-nanotrasen.svg');
     mask-repeat: no-repeat;
     mask-position: center;
@@ -153,12 +149,11 @@
   }
 
   .sectionLoad {
-    border: 3px solid #384e68;
-    background-color: #202020;
+    @include console.console-panel;
   }
 
   .dividerEffect {
-    border-color: #384e68;
+    border-color: console.$console-border;
   }
 }
 

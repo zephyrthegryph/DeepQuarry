@@ -40,7 +40,7 @@
 			M << sound('sound/effects/explosionfar.ogg', volume=10)
 
 	if(front()) //Meanwhile front might have exploded
-		front().layer = ABOVE_JUNK_LAYER //So the beam goes below us. Looks a lot better
+		front().set_layer(ABOVE_JUNK_LAYER) //So the beam goes below us. Looks a lot better
 	play_sfx(start, SFX_MACHINES_DISPERSER_FIRE)
 	handle_beam(start, direction)
 	handle_overbeam()
@@ -81,7 +81,7 @@
 /obj/machinery/computer/ship/disperser/proc/handle_beam(turf/start, direction)
 	start.Beam(get_target_turf(start, direction), "bsa_beam", time = 50, maxdistance = world.maxx)
 	if(front())
-		front().layer = initial(front().layer)
+		front().set_layer(initial(front().layer))
 
 /obj/machinery/computer/ship/disperser/proc/handle_overbeam()
 	linked().Beam(get_step(linked(), overmapdir), "bsa_beam", time = 150, maxdistance = world.maxx)

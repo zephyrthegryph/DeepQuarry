@@ -116,6 +116,9 @@
 #define MOB_CHARGE_WINDUP (1.2 SECONDS)
 /// The action loop's interval while the brain has no target and no tactic running: the idle-selection cadence.
 #define DQ_CALM_TICK (2 SECONDS)
+/// The calm interval is this many times longer for a mob below RELEVANCE_VISIBLE (no player sees it): what it decides while calm (a wander step, an idle pick)
+/// happens out of every player's sight, so it does not need the cadence a watched one has. A threat or a running tactic is never stretched by this.
+#define DQ_CALM_UNSEEN_STRETCH 3
 /// While engaged the brain re-selects at least this often even without an event.
 #define DQ_ENGAGED_RECHECK (1 SECOND)
 

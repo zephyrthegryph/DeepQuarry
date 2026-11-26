@@ -1,11 +1,12 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Image, LabeledList, Stack } from 'tgui-core/components';
-
 import { doEdit } from '../GeneralRecords/functions';
+import type { SecurityRecordsActions } from '../generated/SecurityRecords';
 import type { Data } from './types';
 
 export const SecurityRecordsViewGeneral = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SecurityRecordsActions>();
   const { general } = data;
   if (!general?.fields) {
     return <Box color="bad">General records lost!</Box>;
@@ -33,7 +34,7 @@ export const SecurityRecordsViewGeneral = (props) => {
       <Stack.Item textAlign="right">
         {!!general.has_photos &&
           general.photos!.map((p, i) => (
-            <Box key={i} inline textAlign="center" color="label">
+            <Label key={i} inline textAlign="center">
               <Image
                 src={p.substring(1, p.length - 1)}
                 style={{
@@ -43,7 +44,7 @@ export const SecurityRecordsViewGeneral = (props) => {
               />
               <br />
               Photo #{i + 1}
-            </Box>
+            </Label>
           ))}
         <Box>
           <Button onClick={() => act('photo_front')}>Update Front Photo</Button>

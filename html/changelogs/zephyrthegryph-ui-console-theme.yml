@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Windows without a theme of their own now use the console look (monospace, bordered glowing panels, scanlines)."

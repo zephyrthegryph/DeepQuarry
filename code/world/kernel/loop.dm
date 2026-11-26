@@ -17,6 +17,7 @@ CAPABILITIES(/datum/controller/kernel)
 	ref_one(nameof(sched))
 	owns_one(nameof(stack_end_detector), /datum/stack_end_detector)
 	interface("ControllerOverview")
+	ui_shape(fast_update = bool(), rolling_length = num(), subsystems = list_of(row(name = schema_text(), ref = int(), init_order = int(), last_fire = num(), next_fire = num(), can_fire = bool(), doesnt_fire = bool(), cost_ms = num(), wall_cost_last_ms = num(), cpu_cost_ms = num(), cpu_cost_last_ms = num(), suspended_cost_last_ms = num(), run_slices_last = num(), tick_usage = num(), usage_per_tick = num(), tick_overrun = num(), initialized = bool(), initialization_failure_message = nullable(schema_text()))), world_time = num(), map_cpu = num())
 	op("toggle_fast_update", ui_act("toggle_fast_update"), then(PROC_REF(ui_act_toggle_fast_update)))
 	op("set_rolling_length", ui_act("set_rolling_length", arg("rolling_length", num())), then(PROC_REF(ui_act_set_rolling_length)))
 	op("view_variables", ui_act("view_variables", arg("ref", schema_ref(/datum/system))), then(PROC_REF(ui_act_view_variables)))
@@ -152,6 +153,8 @@ CAPABILITIES(/datum/controller/kernel)
 		if (!watchdog || (watchdog.processing_interval > 0 && (watchdog.lasttick+(watchdog.processing_interval*5)) < world.time)) // ALLOW(sys_world_time_expiry): the kernel loop's own bookkeeping (drift, restart rate limit), not an entity expiry
 			start_watchdog() // (re)start the watchdog
 
+		// The tick ledger's window opens here: everything before the loop resumed this tick is BYOND's (measure/ledger.dm).
+		GLOB.km_ledger.begin(starting_tick_usage)
 		//now do the actual stuff: a laggy map update ahead (skip_ticks) runs only the input phase this tick
 		tick(Kernel.current_ticklimit, init_stage, light = !!Kernel.skip_ticks)
 
@@ -181,6 +184,12 @@ CAPABILITIES(/datum/controller/kernel)
 			if (Kernel.processing * sleep_delta <= world.tick_lag)
 				Kernel.current_ticklimit -= (TICK_LIMIT_RUNNING * 0.25) //reserve the tail 1/4 of the next tick for the loop if we plan on running next tick
 
+		var/fast_update_start = TICK_USAGE
+		var/fast_update_ledger = km_ledger_enter(KM_CAT_KERNEL, "kernel loop", "fast update")
 		Kernel.check_and_perform_fast_update()
+		km_ledger_leave(fast_update_ledger)
+		var/fast_update_ms = TICK_USAGE_TO_MS(fast_update_start)
+		if(fast_update_ms >= KM_SLOW_SPAN_MIN_MS)
+			km_meter().slow.span(KM_SPAN_LOOP, "fast update", fast_update_ms)
 		Kernel.record_performance_tick(max(Kernel.perf_tick_peak_usage, TICK_USAGE))
 		sleep(world.tick_lag * (Kernel.processing * sleep_delta)) // ALLOW(scheduler): the kernel's own loop: it is the scheduler, so it sleeps between ticks

@@ -1,7 +1,0 @@
-/datum/base
-    var/value=0
-    proc/check()
-        set SpacemanDMM_should_be_pure=1
-        value=1
-/datum/base/child/check()
-    value=2

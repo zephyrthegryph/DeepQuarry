@@ -112,7 +112,6 @@ GLOBAL_LIST_INIT(dq_variants_chem_cartridges, list(
 	"rezadone" = list("spawn_reagent" = REAGENT_ID_REZADONE),
 	"roy_rogers" = list("spawn_reagent" = REAGENT_ID_ROYROGERS),
 	"rum" = list("spawn_reagent" = REAGENT_ID_RUM),
-	"ryetalyn" = list("spawn_reagent" = REAGENT_ID_RYETALYN),
 	"sacid" = list("spawn_reagent" = REAGENT_ID_SACID),
 	"sake" = list("spawn_reagent" = REAGENT_ID_SAKE),
 	"silicon" = list("spawn_reagent" = REAGENT_ID_SILICON),

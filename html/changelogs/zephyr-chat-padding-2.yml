@@ -1,0 +1,8 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Chat text sits flush with the tab strip's inset instead of 8px further in, with no gap under the last line"
+  - bugfix: "The chat input switches to Say when you join the round, wherever the channel lists arrive from"
+  - bugfix: "A window popped out by dragging keeps following the pointer if the page loses the drag"
+  - qol: "Popped-out chat has one frame and no status eye; header buttons are centred on one line"
+  - qol: "Windows snap from further away and rest flush against the right-hand panel's left edge"

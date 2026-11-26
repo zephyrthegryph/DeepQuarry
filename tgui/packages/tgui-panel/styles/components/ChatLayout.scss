@@ -1,0 +1,152 @@
+@use '~tgui/styles/console';
+
+// The free space of the tab row moves the floating chat window (it has no OS title bar).
+.ChatDragRow {
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+// The floating window uses the same frame as the docked pane (ChatConsole.scss ::before).
+
+// What a drop would do while the window is dragged into the pin strip.
+.ChatPinHint {
+  position: fixed;
+  left: 50%;
+  top: 40%;
+  transform: translateX(-50%);
+  z-index: 1001;
+  padding: 4px 10px;
+  font-family: console.$console-font;
+  font-weight: 700;
+  font-size: 12px;
+  color: console.$console-accent;
+  background-color: console.$console-panel;
+  border: console.$console-border-width solid console.$console-border;
+  pointer-events: none;
+}
+
+// Page-drawn resize handles on every edge and corner of the floating window
+// (it has no OS frame): thin strips along the edges, larger squares at the
+// corners, above the frame and scanline overlays.
+$edge: 6px;
+$corner: 14px;
+
+.ChatResizeHandle {
+  position: fixed;
+  z-index: 210;
+  touch-action: none;
+
+  &--n,
+  &--s {
+    left: $corner;
+    right: $corner;
+    height: $edge;
+    cursor: ns-resize;
+  }
+
+  &--n {
+    top: 0;
+  }
+
+  &--s {
+    bottom: 0;
+  }
+
+  &--w,
+  &--e {
+    top: $corner;
+    bottom: $corner;
+    width: $edge;
+    cursor: ew-resize;
+  }
+
+  &--w {
+    left: 0;
+  }
+
+  &--e {
+    right: 0;
+  }
+
+  &--nw,
+  &--ne,
+  &--sw,
+  &--se {
+    width: $corner;
+    height: $corner;
+  }
+
+  &--nw {
+    top: 0;
+    left: 0;
+    cursor: nwse-resize;
+  }
+
+  &--ne {
+    top: 0;
+    right: 0;
+    cursor: nesw-resize;
+  }
+
+  &--sw {
+    bottom: 0;
+    left: 0;
+    cursor: nesw-resize;
+  }
+
+  &--se {
+    bottom: 0;
+    right: 0;
+    cursor: nwse-resize;
+    background: linear-gradient(
+      135deg,
+      transparent 0 50%,
+      console.$console-border 50% 60%,
+      transparent 60% 72%,
+      console.$console-border 72% 82%,
+      transparent 82%
+    );
+  }
+}
+
+// Live splitter handles on the docked pane's edges (the chat/stat edge and the
+// map edge). BYOND's own bar for the column split is hidden in the skin, so
+// these are the grip: a few pixels wide, lit on hover so they can be found.
+$grip: 8px;
+
+.ChatSplitHandle {
+  position: fixed;
+  z-index: 210;
+  touch-action: none;
+  background-color: transparent;
+
+  &:hover,
+  &:active {
+    background-color: rgba(141, 192, 255, 0.35);
+  }
+
+  &--top,
+  &--bottom {
+    left: 0;
+    right: 0;
+    height: $grip;
+    cursor: ns-resize;
+  }
+
+  &--top {
+    top: 0;
+  }
+
+  &--bottom {
+    bottom: 0;
+  }
+
+  &--left {
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: $grip;
+    cursor: ew-resize;
+  }
+}

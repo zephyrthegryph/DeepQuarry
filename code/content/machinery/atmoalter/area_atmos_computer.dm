@@ -23,6 +23,7 @@ CAPABILITIES(/obj/machinery/computer/area_atmos)
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	ref_many(nameof(connectedscrubbers))
 	interface("AreaScrubberControl")
+	ui_shape(scrubbers = list_of(row(id = schema_text(), name = schema_text(), on = bool(), pressure = num(), flow_rate = num(), load = num(), area = schema_text())))
 	op("toggle", ui_act("toggle", arg("id", schema_text(4096))), then(PROC_REF(ui_act_toggle)))
 
 /// The connected scrubber with this id, or null.
@@ -45,7 +46,7 @@ CAPABILITIES(/obj/machinery/computer/area_atmos)
 			"pressure" = scrubber.air_contents.return_pressure(),
 			"flow_rate" = scrubber.last_flow_rate,
 			"load" = scrubber.last_power_draw,
-			"area" = get_area(scrubber),
+			"area" = get_area(scrubber)?.name,
 		)))
 
 	return list("scrubbers" = working)

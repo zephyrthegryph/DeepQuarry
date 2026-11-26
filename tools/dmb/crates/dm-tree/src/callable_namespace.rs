@@ -12,17 +12,6 @@ pub(crate) fn collect_view(
     skeletons: crate::skeleton_roster::SkeletonView<'_>,
     intrinsics: &[IntrinsicMember],
 ) -> Result<CallableKinds, TreeError> {
-    collect_view_mode(skeletons,intrinsics,None,None)
-}
-pub(crate) fn collect_checker_diagnostic(
-    skeletons: crate::skeleton_roster::SkeletonView<'_>,
-    intrinsics: &[IntrinsicMember],
-    diagnostics: &mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt,
-    authored: Option<(&SemanticTree, crate::owner_callable::AuthoredCallableLoan<'_>)>,
-) -> Result<CallableKinds, TreeError> {
-    collect_view_mode(skeletons, intrinsics, Some(diagnostics), authored)
-}
-fn collect_view_mode(skeletons:crate::skeleton_roster::SkeletonView<'_>,intrinsics:&[IntrinsicMember],mut diagnostics:Option<&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt>, mut authored: Option<(&SemanticTree, crate::owner_callable::AuthoredCallableLoan<'_>)>)->Result<CallableKinds,TreeError>{
     // A bare callable overrides either callable namespace. Resolve its kind
     // from positive declarations before forming groups, including forward
     // formals and nonlexical parents. Explicit proc/verb declarations retain
@@ -34,9 +23,6 @@ fn collect_view_mode(skeletons:crate::skeleton_roster::SkeletonView<'_>,intrinsi
             callable_kinds.insert((intrinsic.owner, intrinsic.name), intrinsic.kind);
         }
     }
-    if let Some((tree, loan)) = authored.as_mut() {
-        loan.seed(tree, &mut callable_kinds);
-    }
     for skeleton in skeletons {
         if let Skeleton::Member {
             owner,
@@ -46,13 +32,6 @@ fn collect_view_mode(skeletons:crate::skeleton_roster::SkeletonView<'_>,intrinsi
             ..
         } = skeleton
         {
-            // All authored rows for this owner were observed exactly. A
-            // duplicate on any other owner still visits this original ordered
-            // loop, with its own as-of selector and diagnostic side effects.
-            if authored.as_ref().is_some_and(|(_, loan)| loan.covers(*owner)) {
-                continue;
-            }
-            let previous=callable_kinds.get(&(*owner,*name)).copied();
             if let Some(duplicate) = insert_anchor(
                 *owner,
                 *name,
@@ -61,11 +40,7 @@ fn collect_view_mode(skeletons:crate::skeleton_roster::SkeletonView<'_>,intrinsi
                 &mut callable_kinds,
                 &mut callable_formals,
             ) {
-                match diagnostics.as_deref_mut() {
-                    Some(receipt) if previous == Some(*kind) || receipt.role == crate::diagnostic_declarations::DeclarationRole::ImageDir =>
-                        receipt.accept_callable_duplicate(duplicate)?,
-                    _ => return Err(duplicate),
-                }
+                return Err(duplicate);
             }
         }
     }

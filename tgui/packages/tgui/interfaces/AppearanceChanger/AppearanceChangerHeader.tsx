@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Section } from 'tgui-core/components';
-
+import type { AppearanceChangerActions } from '../generated/AppearanceChanger';
 import type { Data } from './types';
 
 export const AppearanceChangerHeader = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AppearanceChangerActions>();
   const { disk, selected_a_record } = data;
   return (
     <Section>

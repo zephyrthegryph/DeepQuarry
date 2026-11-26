@@ -1,10 +1,9 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Icon, Section, Stack } from 'tgui-core/components';
-
-import type { Data } from './types';
+import type { SleeperActions, SleeperData } from '../generated/Sleeper';
 
 export const SleeperEmpty = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<SleeperData, SleeperActions>();
   const { isBeakerLoaded } = data;
   return (
     <Section textAlign="center" flexGrow>

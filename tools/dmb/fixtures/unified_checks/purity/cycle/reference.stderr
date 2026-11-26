@@ -1,7 +1,0 @@
-@FIXTURE@, line 7, column 12:
-error: /proc/probe sets SpacemanDMM_should_be_pure but calls a /proc/b that does impure operations
-- 8:5: SpacemanDMM_should_be_pure set here
-- 9:5: /proc/a() called here
-- 3:5: /proc/b() called here
-- 5:5: Assignment on purity breaking expression happens here
-

@@ -1,5 +1,5 @@
 //! Lazy full-body syntax owned by one build, never persisted with semantic facts.
-use super::{internal, BodyOccurrence, BodySyntaxFailure, ColdFrontend, Diagnostic, ParsedBody};
+use super::{internal, BodyOccurrence, ColdFrontend, Diagnostic, ParsedBody};
 use std::sync::{Mutex, MutexGuard};
 
 /// Startup may inspect stored declarations before lowering takes the same AST.
@@ -108,36 +108,6 @@ impl<'frontend> BodyArena<'frontend> {
         }
     }
 
-    /// Operational failure leaves the slot Unparsed; no error value is cached.
-    pub fn with_parsed_checked<R>(
-        &self,
-        occurrence: &BodyOccurrence,
-        operation: impl FnOnce(&ParsedBody<'frontend>) -> R,
-    ) -> Result<R, BodySyntaxFailure> {
-        let mut slot = self.slot(occurrence)?;
-        self.ensure_parsed_checked(&mut slot, occurrence)?;
-        match &*slot {
-            BodyState::Ready(result) => match result.as_ref() {
-                Ok(parsed) => Ok(operation(parsed)),
-                Err(error) => Err(error.clone().into()),
-            },
-            BodyState::Consumed => Err(internal("parsed body was already consumed").into()),
-            BodyState::Unparsed => unreachable!("checked parse succeeds only with a ready slot"),
-        }
-    }
-    pub fn take_parsed_checked(
-        &self,
-        occurrence: &BodyOccurrence,
-    ) -> Result<ParsedBody<'frontend>, BodySyntaxFailure> {
-        let mut slot = self.slot(occurrence)?;
-        self.ensure_parsed_checked(&mut slot, occurrence)?;
-        match std::mem::replace(&mut *slot, BodyState::Consumed) {
-            BodyState::Ready(result) => (*result).map_err(BodySyntaxFailure::Syntax),
-            BodyState::Consumed => Err(internal("parsed body was already consumed").into()),
-            BodyState::Unparsed => unreachable!("checked parse succeeds only with a ready slot"),
-        }
-    }
-
     /// Move syntax to its final consumer. Even a failed parse is consumed once;
     /// later consumers receive an internal error rather than triggering a reparse.
     pub fn take_parsed(
@@ -202,33 +172,6 @@ impl<'frontend> BodyArena<'frontend> {
         Ok(self.slots[index]
             .lock()
             .unwrap_or_else(|error| error.into_inner()))
-    }
-
-    fn ensure_parsed_checked(
-        &self,
-        slot: &mut BodyState<'frontend>,
-        occurrence: &BodyOccurrence,
-    ) -> Result<(), BodySyntaxFailure> {
-        if matches!(slot, BodyState::Unparsed) {
-            let _profile = dm_profile::item("frontend.body_arena_parse");
-            #[cfg(test)]
-            self.parses
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            let attempt =
-                self.frontend
-                    .parse_body_checked(occurrence)
-                    .and_then(|parsed| match self.statement_support {
-                        Some(supported) => parsed.admit_statements_checked(supported),
-                        None => Ok(parsed),
-                    });
-            let parsed = match attempt {
-                Ok(parsed) => Ok(parsed),
-                Err(BodySyntaxFailure::Syntax(error)) => Err(error),
-                Err(error @ BodySyntaxFailure::Operational(_)) => return Err(error),
-            };
-            *slot = BodyState::Ready(Box::new(parsed));
-        }
-        Ok(())
     }
 
     fn ensure_parsed(&self, slot: &mut BodyState<'frontend>, occurrence: &BodyOccurrence) {
@@ -591,135 +534,5 @@ mod tests {
         assert_eq!(observed.message, error.message);
         assert!(arena.with_parsed(body, |_| ()).is_err());
         assert_eq!(arena.parses.load(Ordering::Relaxed), 0);
-    }
-}
-
-#[cfg(test)]
-mod checked_boundary_tests {
-    use super::*;
-    use crate::frontend::{
-        BodySyntax, BodySyntaxInput, BodySyntaxQueries, DiagnosticKind, DiagnosticStage,
-        SourceLocation,
-    };
-    use std::{
-        io,
-        path::Path,
-        sync::{
-            atomic::{AtomicUsize, Ordering},
-            Arc,
-        },
-    };
-    struct Source;
-    impl dm_preprocess::SourceProvider for Source {
-        fn read(&self, _: &Path) -> Result<String, String> {
-            Ok("/proc/probe()\n    return 1\n".into())
-        }
-    }
-    #[derive(Debug)]
-    struct Host {
-        mode: AtomicUsize,
-        reads: AtomicUsize,
-        location: SourceLocation,
-    }
-    impl BodySyntaxQueries for Host {
-        fn syntax(&self, input: &Arc<BodySyntaxInput>) -> Result<Arc<BodySyntax>, Diagnostic> {
-            input.parse().map(Arc::new)
-        }
-        fn syntax_checked(
-            &self,
-            input: &Arc<BodySyntaxInput>,
-        ) -> Result<Arc<BodySyntax>, BodySyntaxFailure> {
-            self.reads.fetch_add(1, Ordering::Relaxed);
-            match self.mode.load(Ordering::Acquire) {
-                1 => Err(BodySyntaxFailure::Operational(io::Error::new(
-                    io::ErrorKind::Interrupted,
-                    "actual checked cancellation",
-                ))),
-                2 => Err(BodySyntaxFailure::Operational(io::Error::new(
-                    io::ErrorKind::OutOfMemory,
-                    "actual checked quota",
-                ))),
-                3 => Err(BodySyntaxFailure::Syntax(Diagnostic {
-                    kind: DiagnosticKind::SourceError,
-                    stage: DiagnosticStage::Syntax,
-                    message: "original syntax failure".into(),
-                    location: Some(self.location.clone()),
-                })),
-                _ => self.syntax(input).map_err(BodySyntaxFailure::Syntax),
-            }
-        }
-    }
-    fn fixture() -> (ColdFrontend, Arc<Host>) {
-        let frontend = crate::frontend::build(
-            Path::new("checked-body.dme"),
-            &Source,
-            &Default::default(),
-            1,
-        )
-        .unwrap();
-        let host = Arc::new(Host {
-            mode: AtomicUsize::new(1),
-            reads: AtomicUsize::new(0),
-            location: frontend.bodies[0].source.clone(),
-        });
-        (frontend.with_body_queries(host.clone()), host)
-    }
-    #[test]
-    fn checked_arena_operational_failures_leave_unparsed_and_unconsumed_for_retry() {
-        let (frontend, host) = fixture();
-        let body = &frontend.bodies[0];
-        let arena = BodyArena::new_typed(&frontend, |_| true);
-        assert!(
-            matches!(arena.with_parsed_checked(body,|_|()),Err(BodySyntaxFailure::Operational(e))if e.kind()==io::ErrorKind::Interrupted)
-        );
-        assert!(matches!(*arena.slot(body).unwrap(), BodyState::Unparsed));
-        host.mode.store(2, Ordering::Release);
-        assert!(
-            matches!(arena.take_parsed_checked(body),Err(BodySyntaxFailure::Operational(e))if e.kind()==io::ErrorKind::OutOfMemory)
-        );
-        assert!(matches!(*arena.slot(body).unwrap(), BodyState::Unparsed));
-        host.mode.store(0, Ordering::Release);
-        let parsed = arena.take_parsed_checked(body).unwrap();
-        frontend.validate_parsed_body(&parsed, body).unwrap();
-        assert_eq!(host.reads.load(Ordering::Relaxed), 3);
-        assert!(matches!(*arena.slot(body).unwrap(), BodyState::Consumed));
-    }
-    #[test]
-    fn checked_arena_caches_real_syntax_with_original_anchor_and_compatibility_stays_independent() {
-        let (frontend, host) = fixture();
-        let body = &frontend.bodies[0];
-        let arena = BodyArena::new(&frontend);
-        host.mode.store(3, Ordering::Release);
-        let error = arena.with_parsed_checked(body, |_| ()).unwrap_err();
-        assert_eq!(
-            error.syntax().unwrap().location.as_ref(),
-            Some(&body.source)
-        );
-        let reads = host.reads.load(Ordering::Relaxed);
-        host.mode.store(0, Ordering::Release);
-        assert!(matches!(
-            arena.take_parsed_checked(body),
-            Err(BodySyntaxFailure::Syntax(_))
-        ));
-        assert_eq!(host.reads.load(Ordering::Relaxed), reads);
-        assert_eq!(arena.renew(), 1);
-        arena.take_parsed_checked(body).unwrap();
-        host.mode.store(1, Ordering::Release);
-        let compatibility = BodyArena::new(&frontend);
-        compatibility.take_parsed(body).unwrap();
-    }
-    #[test]
-    fn checked_archive_and_frontend_preserve_operational_error_without_diagnostic_conversion() {
-        let (frontend, host) = fixture();
-        let archive = frontend.body_archive().unwrap();
-        assert!(
-            matches!(frontend.parse_body_checked(&frontend.bodies[0]),Err(BodySyntaxFailure::Operational(e))if e.kind()==io::ErrorKind::Interrupted&&e.to_string()=="actual checked cancellation")
-        );
-        assert!(
-            matches!(archive.parse_checked(0),Err(BodySyntaxFailure::Operational(e))if e.kind()==io::ErrorKind::Interrupted)
-        );
-        archive.parse(0).unwrap();
-        host.mode.store(0, Ordering::Release);
-        archive.parse_checked(0).unwrap();
     }
 }

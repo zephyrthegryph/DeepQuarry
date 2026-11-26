@@ -28,8 +28,7 @@
 	set_uses(uses)
 	power_change()
 
-// TGUI migration. The old attack_hand opened AiSlipper.tsx; the
-// Topic-driven toggle/fire actions move to tgui_act. The old attackby kept the
+// The old attack_hand opened AiSlipper.tsx. The old attackby kept the
 // ID-swipe lock/unlock behavior and just closed the UI on lock.
 
 /obj/machinery/ai_slipper/proc/interaction_toggle_lock(datum/act/op/A)
@@ -73,6 +72,7 @@ CAPABILITIES(/obj/machinery/ai_slipper)
 	every(0.5 SECONDS, then(PROC_REF(slip_process)), when = all_of(nameof(cooldown_on), not(nameof(cooldown_stopped))))
 	on_change(nameof(cooldown_on), ANY, then(PROC_REF(reset_cooldown_repeat)))
 	interface("AiSlipper", title = "AI Liquid Dispenser")
+	ui_shape(area_name = schema_text(), locked = bool(), is_silicon = bool(), disabled = bool(), cooldown_on = bool(), uses = int(), cooldown_timeleft = num())
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	op("toggle_on", ui_act("toggle_on"), then(PROC_REF(ui_act_toggle_on)))
 	op("toggle_use", ui_act("toggle_use"), then(PROC_REF(ui_act_toggle_use)))

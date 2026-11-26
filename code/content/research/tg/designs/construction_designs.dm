@@ -128,7 +128,7 @@
 	name = "cable coil"
 	id = "cable_coil"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list(MAT_STEEL = 1500, MAT_GLASS = 600) // For a 30 stack, temporary workaround due to not having the correct /five and /thirty subtypes, and it breaking the lathe math... but it requires repathing all coils mapped to /thirty subtype.
+	materials = list(MAT_COPPER = 1575, MAT_PLASTIC = 525) // a full 30 stack: the coil is made of copper and plastic, 70 units a metre (temporary workaround for the lathe math until the coils have their own /five and /thirty subtypes)
 	build_path = /obj/item/stack/cable_coil
 	category = list(
 		RND_CATEGORY_INITIAL,

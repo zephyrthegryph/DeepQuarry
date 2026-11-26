@@ -33,19 +33,6 @@ pub trait TypedVisitor {
     fn statement(&mut self, _node: &Statement, _path: &[NodeStep]) -> VisitDecision {
         VisitDecision::Descend
     }
-    /// REQUIRED: projected setting syntax must not enter the owned-coordinate
-    /// callback by accident. Consumers use current_span or explicitly decline.
-    fn projected_expression(
-        &mut self,
-        node: crate::ProjectedExprView<'_>,
-        path: &[NodeStep],
-    ) -> VisitDecision;
-    fn leave_projected_expression(
-        &mut self,
-        _node: crate::ProjectedExprView<'_>,
-        _path: &[NodeStep],
-    ) {
-    }
     fn expression(&mut self, _node: &Expr, _path: &[NodeStep]) -> VisitDecision {
         VisitDecision::Descend
     }
@@ -65,7 +52,6 @@ pub fn visit_statement_view(
     let mut walk = Walk {
         visitor,
         mask: view.mask(),
-        locals: view.local_variables(),
         path: Vec::new(),
         report: VisitReport::default(),
     };
@@ -76,78 +62,56 @@ pub fn visit_expression(expression: &Expr, visitor: &mut impl TypedVisitor) -> V
     let mut walk = Walk {
         visitor,
         mask: None,
-        locals: None,
         path: Vec::new(),
         report: VisitReport::default(),
     };
     walk.expression(expression);
     walk.report
 }
-/// Visit only the SAME canonical setting RHS in current source coordinates.
-/// Paths use the ordinary child convention; no source/semantic authority is
-/// minted and no child-view constructor or AST copy is exposed.
-pub fn visit_projected_expression(root:&crate::SettingExpression,visitor:&mut impl TypedVisitor)->VisitReport{
- let mut walk=Walk{visitor,mask:None,locals:None,path:Vec::new(),report:VisitReport::default()};
- walk.projected_expression(root,root.original_expression());walk.report
-}
 /// One authoritative child-index convention for visitors and typed-node recipes.
-pub fn for_each_expression_child<'a>(node:&'a Expr,mut visit:impl FnMut(usize,&'a Expr)) {
-    match try_for_each_expression_child(node,|index,child|{visit(index,child);Ok::<(),std::convert::Infallible>(())}){Ok(())=>(),Err(never)=>match never{}}
-}
-/// Same original child order; actual callback refusal exits before later children.
-pub fn try_for_each_expression_child<'a,E>(node:&'a Expr,mut visit:impl FnMut(usize,&'a Expr)->Result<(),E>)->Result<(),E>{
+pub fn for_each_expression_child<'a>(node: &'a Expr, mut visit: impl FnMut(usize, &'a Expr)) {
     match &node.kind {
-        ExprKind::Literal(text) => {
-            if let Ok(Some(parts)) = text.syntax_parts() {
-                for (index, expression) in parts.expressions.iter().enumerate() {
-                    visit(index, expression)?;
-                }
-            }
-        }
-        ExprKind::Ident(_) | ExprKind::TypePath(_) => {}
+        ExprKind::Ident(_) | ExprKind::Literal(_) | ExprKind::TypePath(_) => {}
         ExprKind::Unary { value, .. }
         | ExprKind::TypeFilter { value, .. }
-        | ExprKind::Group(value) => visit(0, value)?,
+        | ExprKind::Group(value) => visit(0, value),
         ExprKind::Member { object, .. }
         | ExprKind::StaticMember { object, .. }
-        | ExprKind::SafeMember { object, .. } => visit(0, object)?,
+        | ExprKind::SafeMember { object, .. } => visit(0, object),
         ExprKind::Binary { lhs, rhs, .. } => {
-            visit(0, lhs)?;
-            visit(1, rhs)?;
+            visit(0, lhs);
+            visit(1, rhs);
         }
         ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
-            visit(0, object)?;
-            visit(1, index)?;
+            visit(0, object);
+            visit(1, index);
         }
         ExprKind::Conditional {
             condition,
             then_value,
             else_value,
         } => {
-            visit(0, condition)?;
-            visit(1, then_value)?;
-            visit(2, else_value)?;
+            visit(0, condition);
+            visit(1, then_value);
+            visit(2, else_value);
         }
         ExprKind::Call { callee, args } => {
-            visit(0, callee)?;
+            visit(0, callee);
             for (index, arg) in args.iter().enumerate() {
-                visit(index + 1, arg)?;
+                visit(index + 1, arg);
             }
         }
         ExprKind::ObjectInitializer { object, fields } => {
-            visit(0, object)?;
+            visit(0, object);
             for (index, (_, value)) in fields.iter().enumerate() {
-                visit(index + 1, value)?;
+                visit(index + 1, value);
             }
         }
     }
-    Ok(())
 }
-
 struct Walk<'a, V> {
     visitor: &'a mut V,
     mask: Option<&'a StatementMask>,
-    locals: Option<&'a crate::LocalVariableLedger>,
     path: Vec<NodeStep>,
     report: VisitReport,
 }
@@ -204,31 +168,6 @@ impl<V: TypedVisitor> Walk<'_, V> {
         });
         self.visitor.leave_expression(expression, &self.path);
     }
-    fn projected_expression(&mut self, root: &crate::SettingExpression, expression: &Expr) {
-        if self.report.stopped {
-            return;
-        }
-        self.report.expressions += 1;
-        let view = crate::ProjectedExprView::new(root, expression);
-        match self.visitor.projected_expression(view, &self.path) {
-            VisitDecision::Stop => {
-                self.report.stopped = true;
-                self.visitor.leave_projected_expression(view, &self.path);
-                return;
-            }
-            VisitDecision::Skip => {
-                self.visitor.leave_projected_expression(view, &self.path);
-                return;
-            }
-            VisitDecision::Descend => {}
-        }
-        for_each_expression_child(expression, |index, child| {
-            self.path.push(NodeStep::Child(index));
-            self.projected_expression(root, child);
-            self.path.pop();
-        });
-        self.visitor.leave_projected_expression(view, &self.path);
-    }
     fn statement(&mut self, statement: &Statement) {
         if self.report.stopped {
             return;
@@ -248,22 +187,6 @@ impl<V: TypedVisitor> Walk<'_, V> {
                 return;
             }
             VisitDecision::Descend => {}
-        }
-        if let Some(locals) = self.locals {
-            if let Ok(facts) = locals.entries() {
-                let mut root = 4;
-                for fact in facts.iter().filter(|fact| {
-                    fact.name.start >= statement.header_span.start
-                        && fact.name.end <= statement.header_span.end
-                }) {
-                    if let Some(array) = &fact.array_syntax {
-                        for dimension in array.root.dimensions.iter() {
-                            self.root_expression(root, dimension);
-                            root += 1;
-                        }
-                    }
-                }
-            }
         }
         match &statement.kind {
             StatementKind::If {
@@ -290,22 +213,11 @@ impl<V: TypedVisitor> Walk<'_, V> {
                 self.branch(0, body, statement);
             }
             StatementKind::Set { value, .. } => self.root_expression(0, value),
-            StatementKind::ProjectedSet { value, .. } => {
-                self.path.push(NodeStep::Expression(0));
-                self.projected_expression(value, value.original_expression());
-                self.path.pop();
-            }
             StatementKind::For { control, body } => {
                 match control {
                     ForControl::All { .. } => {}
                     ForControl::Each { iterable, .. } | ForControl::Pair { iterable, .. } => {
                         self.root_expression(0, iterable)
-                    }
-                    ForControl::RangeImplicitArray { end, step, .. } => {
-                        self.root_expression(1, end);
-                        if let Some(step) = step {
-                            self.root_expression(2, step);
-                        }
                     }
                     ForControl::Range {
                         start, end, step, ..
@@ -341,7 +253,7 @@ impl<V: TypedVisitor> Walk<'_, V> {
             StatementKind::Switch {
                 selector,
                 cases,
-                else_branch, ..
+                else_branch,
             } => {
                 self.root_expression(0, selector);
                 for (index, case) in cases.iter().enumerate() {
@@ -378,7 +290,6 @@ impl<V: TypedVisitor> Walk<'_, V> {
             }
             StatementKind::Label { body, .. } => self.branch(0, body, statement),
             StatementKind::Throw(value)
-            | StatementKind::Delete(value)
             | StatementKind::Call(value)
             | StatementKind::Expression(value) => self.root_expression(0, value),
             StatementKind::Return(value) | StatementKind::Var { value, .. } => {

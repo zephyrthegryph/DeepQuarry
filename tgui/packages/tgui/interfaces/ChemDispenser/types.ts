@@ -17,4 +17,9 @@ export type Data = {
   recordingRecipe: Recipe[];
 };
 
-export type Reagent = { name: string; id: string; volume: number };
+export type Reagent = {
+  name: string;
+  id: string;
+  volume: number;
+  contaminant?: BooleanLike;
+};

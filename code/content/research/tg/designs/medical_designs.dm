@@ -35,6 +35,54 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
 
+/datum/design_techweb/chem_funnel
+	name = "Funnel"
+	id = "chem_funnel"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 200)
+	build_path = /obj/item/chem_funnel
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_CHEMISTRY,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/chem_electrode
+	name = "Electrode Pair"
+	id = "chem_electrode"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 100, MAT_GRAPHITE = 100)
+	build_path = /obj/item/chem_electrode
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_CHEMISTRY,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/paper_filter
+	name = "Paper Filter"
+	id = "paper_filter"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 50)
+	build_path = /obj/item/chem_filter/paper
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_CHEMISTRY,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/charcoal_filter
+	name = "Charcoal Filter"
+	id = "charcoal_filter"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 50, MAT_GRAPHITE = 100)
+	build_path = /obj/item/chem_filter/charcoal
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_CHEMISTRY,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
 /datum/design_techweb/scalpel
 	name = "Scalpel"
 	id = "scalpel"
@@ -449,3 +497,133 @@
 		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_SCIENCE
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/tourniquet
+	name = "Tourniquet"
+	desc = "A windlass tourniquet that stops the flow into a bleeding limb."
+	id = "tourniquet"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 300, MAT_STEEL = 100)
+	build_path = /obj/item/tourniquet
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/bag_valve_mask
+	name = "Bag-Valve Mask"
+	desc = "A hand-squeezed ventilation mask."
+	id = "bag_valve_mask"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 500)
+	build_path = /obj/item/bag_valve_mask
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/airway_kit
+	name = "Airway Kit"
+	desc = "Tools to clear and secure an obstructed airway."
+	id = "airway_kit"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 300, MAT_STEEL = 200)
+	build_path = /obj/item/airway_kit
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/decompression_needle
+	name = "Decompression Needle"
+	desc = "A large-bore needle that vents trapped air from the chest."
+	id = "decompression_needle"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_STEEL = 200, MAT_PLASTIC = 100)
+	build_path = /obj/item/decompression_needle
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/medical_thermometer
+	name = "Medical Thermometer"
+	desc = "A bedside thermometer."
+	id = "medical_thermometer"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 100, MAT_GLASS = 100)
+	build_path = /obj/item/thermometer_medical
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/bp_cuff
+	name = "Blood Pressure Cuff"
+	desc = "An inflatable cuff for reading blood pressure."
+	id = "bp_cuff"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 300, MAT_STEEL = 100)
+	build_path = /obj/item/bp_cuff
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/pulse_oximeter
+	name = "Pulse Oximeter"
+	desc = "A finger clip that reads pulse and blood oxygen."
+	id = "pulse_oximeter"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 200, MAT_GLASS = 100)
+	build_path = /obj/item/pulse_oximeter
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/hemostatic_gauze
+	name = "Hemostatic Gauze"
+	desc = "Clotting gauze that packs a bleeding wound."
+	id = "hemostatic_gauze"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 500)
+	build_path = /obj/item/stack/medical/field/hemostatic_gauze
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/pressure_bandage
+	name = "Pressure Bandage"
+	desc = "A compressing bandage that holds a wound shut."
+	id = "pressure_bandage"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 500)
+	build_path = /obj/item/stack/medical/field/pressure_bandage
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/chest_seal
+	name = "Chest Seal"
+	desc = "An airtight seal for an open chest wound."
+	id = "chest_seal"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_PLASTIC = 500)
+	build_path = /obj/item/stack/medical/field/chest_seal
+	category = list(
+		RND_CATEGORY_INITIAL,
+		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE

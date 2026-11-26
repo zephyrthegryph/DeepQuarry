@@ -17,7 +17,10 @@
 	var/dna_hash = "\[UNSET\]"
 	var/fingerprint_hash = "\[UNSET\]"
 	var/sex = "\[UNSET\]"
+	/// The photo (a base64 PNG for the window), made the first time it is shown (id_photo()), not when the card is issued.
 	var/front
+	/// Who the photo is of until it is taken (set_id_photo()); the photo is taken of them as they are when it is first shown.
+	var/photo_subject // weak handle: read with photo_subject()
 
 	var/primary_color = rgb(0,0,0) // Obtained by eyedroppering the stripe in the middle of the card
 	var/secondary_color = rgb(0,0,0) // Likewise for the oval in the top-left corner
@@ -51,14 +54,34 @@ CAPABILITIES(/obj/item/card/id)
 	// the old object verb
 	op("read", menu(), label("Read ID Card"), needs(carried()), then(PROC_REF(verb_read)))
 	derives(nameof(access), PROC_REF(starting_access))
+	ref_one(nameof(photo_subject), /mob, weak = TRUE)
 
 /obj/item/card/id/proc/update_name()
 	name = "[src.registered_name]'s ID Card ([src.assignment])"
 
+/// The card's photo will be of `M`. Nothing is drawn now: a flat icon of a dressed human cost about 300 ms of every join (playtest 2026-11-08,
+/// JOIN_TIMING_OUTFIT "post equip and ID info" 378 ms), and most cards are never opened. id_photo() takes it the first time it is shown.
 /obj/item/card/id/proc/set_id_photo(mob/M)
-	M.ImmediateOverlayUpdate()
-	var/icon/F = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)
-	set_front("'data:image/png;base64,[icon2base64(F)]'")
+	set_front(null)
+	rel_set(src, nameof(photo_subject), M)
+
+/// The photo for the card's window: of its subject as they are the first time it is asked for, then kept. It comes from the shared portrait
+/// cache (code/content/appearance/portrait_cache.dm), rendered off the tick; until it lands the window shows no photo, then the photo.
+/obj/item/card/id/proc/id_photo()
+	var/mob/M = photo_subject()
+	if(isnull(front) && M && !QDELETED(M))
+		M.ImmediateOverlayUpdate()
+		var/datum/portrait/P = portrait_request(M, SOUTH, src, PROC_REF(id_photo_ready))
+		if(P)
+			id_photo_ready(P)
+	return front
+
+/// The subject's portrait landed: it is the card's photo from now on.
+/obj/item/card/id/proc/id_photo_ready(datum/portrait/P)
+	if(!isnull(front) || !P?.b64)
+		return
+	set_front("'data:image/png;base64,[P.b64]'")
+	rel_set(src, nameof(photo_subject), null)
 
 /mob/proc/set_id_info(obj/item/card/id/id_card)
 	id_card.set_age(0)
@@ -82,8 +105,6 @@ CAPABILITIES(/obj/item/card/id)
 		id_card.set_species("[bio.custom_species ? "[bio.custom_species] ([species.name])" : species.name]")
 	id_card.set_sex(capitalize(name_gender()))
 
-	// Save time by reusing our ID card photo instead of generating it for the char directory specifically
-	set_chardirectory_photo(id_card.front)
 
 /obj/item/card/id/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -95,7 +116,7 @@ CAPABILITIES(/obj/item/card/id)
 	data["fingerprint_hash"] = fingerprint_hash
 	data["blood_type"] = blood_type
 	data["dna_hash"] = dna_hash
-	data["photo_front"] = front
+	data["photo_front"] = id_photo()
 	return data
 
 /// Old attack_self: flash the card.

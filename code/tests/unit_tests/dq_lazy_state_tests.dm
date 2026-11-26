@@ -134,11 +134,14 @@ CAPABILITIES(/obj/dq_lazy_table_probe)
 
 /datum/unit_test/dq_lazy_state_table_form/Run()
 	var/obj/dq_lazy_table_probe/P = new(test_floor())
-	TEST_ASSERT_EQUAL(P.handle_slot, 0, "a fresh holder has no slot")
+	// A fresh atom may already have a slot: the refresh queue keys its first draw by slot (refresh_queue_push()). What the table form must not do is
+	// give the holder one: a read and a default write leave its slot as it was.
+	var/slot_at_birth = P.handle_slot
 	TEST_ASSERT_EQUAL(STATE_PEEK(P, dq_tab, amount), 4, "no row: the type's default")
-	TEST_ASSERT_EQUAL(P.handle_slot, 0, "a read gives the holder no slot")
+	TEST_ASSERT_EQUAL(P.handle_slot, slot_at_birth, "a read gives the holder no slot")
 	STATE_SET(P, dq_tab, amount, 4)
 	TEST_ASSERT_NULL(dq_tab_peek(P), "a default write with no row makes none")
+	TEST_ASSERT_EQUAL(P.handle_slot, slot_at_birth, "nor does a default write")
 	STATE_SET(P, dq_tab, amount, 9)
 	var/datum/dq_tab_state/S = dq_tab_peek(P)
 	TEST_ASSERT_NOTNULL(S, "a non-default write makes the row")

@@ -3,16 +3,14 @@ import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Image, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  showing_archived: BooleanLike;
-  article: { title: string; cover: string; content: string } | null;
-  all_articles: { name: string; uid: number; archived: BooleanLike }[];
-};
+import { sanitizeText } from '../../sanitize';
+import type {
+  StarcasterChActions,
+  StarcasterChData,
+} from '../generated/StarcasterCh';
 
 export const StarcasterCh = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<StarcasterChData, StarcasterChActions>();
 
   const { article } = data;
 
@@ -30,7 +28,7 @@ export const StarcasterCh = (props) => {
 };
 
 const SelectedArticle = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<StarcasterChData, StarcasterChActions>();
 
   const { article } = data;
 
@@ -52,15 +50,15 @@ const SelectedArticle = (props) => {
       {!!cover && <Image src={resolveAsset(cover)} />}
       {/** biome-ignore lint/security/noDangerouslySetInnerHtml: News articles are written in premade .html files and cannot be edited by players, so it should be
        * safe enough to use dangerouslySetInnerHTML here. */}
-      <div dangerouslySetInnerHTML={{ __html: content }} />
+      <div dangerouslySetInnerHTML={{ __html: sanitizeText(content) }} />
     </Section>
   );
 };
 
 const ViewArticles = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<StarcasterChData, StarcasterChActions>();
 
-  const { showing_archived, all_articles } = data;
+  const { showing_archived, all_articles = [] } = data;
 
   return (
     <Section

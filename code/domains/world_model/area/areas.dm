@@ -65,6 +65,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 /// An area with dynamic lighting is dark of its own (a setup() hook, once its init chain has returned).
 /area/proc/set_ambient_luminosity()
 	luminosity = !(dynamic_lighting)
+	if(GLOB.client_lighting)
+		set_client_visible_shown(TRUE) // an area made after boot joins the visibility plane
 
 /// An area's pass after the map load: its power state and spoiler cover, once its machines exist (area_after_init() is extended by the
 /// away-mission spawns and the turf initializers).
@@ -239,6 +241,9 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	//	new lighting behaviour with obj lights
 		look.state("") // a blank state: state(null) would leave the map sprite ("unknown", the editor colours) showing in game
 	look.overlay(look_cached_image("spoiler_obfuscation", 'icons/misc/static.dmi', null, null, PLANE_MESONS), when = flag_check(AREA_NO_SPOILERS))
+	// Client lighting: an area outside dynamic lighting stays bright over the lighting plane's black base (client_lighting_compare.dm).
+	look.overlay(client_glow_area_white(src))
+	look.overlay(client_visible_tile(), when = client_visible_shown) // the turfs this client sees, for the glow plane's cut (client_lighting_compare.dm)
 
 
 /// An area's channel state flipped (its APC, or the area itself): the things watching the area's power re-check it.
@@ -249,12 +254,14 @@ ACTION(observer_apc, FIXED, notice = /datum/notice/observer_apc)
 /// and `notify` publishes the area's own observer_apc notice. Returns TRUE when a channel flipped.
 /area/proc/set_channels(equip_on, light_on, environ_on, notify = TRUE)
 	var/flipped = FALSE
+	draw_hop_batch_begin() // the draws that read the channels through the area hop: one walk of the area for all three
 	if(set_power_equip(!!equip_on))
 		flipped = TRUE
 	if(set_power_light(!!light_on))
 		flipped = TRUE
 	if(set_power_environ(!!environ_on))
 		flipped = TRUE
+	draw_hop_batch_end()
 	if(flipped && notify)
 		PUBLISH(src, observer_apc)
 	return flipped
@@ -274,6 +281,28 @@ ACTION(observer_apc, FIXED, notice = /datum/notice/observer_apc)
 			return power_environ
 
 	return 0
+
+/// Whether one channel is energized, each reading only its own var (a machine's has_power depends on its channel alone).
+/area/proc/equip_powered()
+	if(!requires_power)
+		return 1
+	if(always_unpowered)
+		return 0
+	return power_equip
+
+/area/proc/light_powered()
+	if(!requires_power)
+		return 1
+	if(always_unpowered)
+		return 0
+	return power_light
+
+/area/proc/environ_powered()
+	if(!requires_power)
+		return 1
+	if(always_unpowered)
+		return 0
+	return power_environ
 
 /// The machines standing in this area: the other end of their power_area relation. Each contributes its draw to the demand stats, and its
 /// has_power reads this area's channels.
@@ -371,9 +400,6 @@ ACTION(observer_apc, FIXED, notice = /datum/notice/observer_apc)
 
 /area/proc/play_ambience(mob/living/L, initial = TRUE)
 	// Ambience goes down here -- make sure to list each area seperately for ease of adding things in later, thanks! Note: areas adjacent to each other should have the same sounds to prevent cutoff when possible.- LastyScratch
-	if(!L?.read_preference(/datum/preference/toggle/play_ambience))
-		return
-
 	var/volume_mod = L.get_preference_volume_channel(VOLUME_CHANNEL_AMBIENCE)
 
 	// If we previously were in an area with force-played ambiance, stop it.
@@ -394,7 +420,7 @@ ACTION(observer_apc, FIXED, notice = /datum/notice/observer_apc)
 		else
 			L << sound(null, channel = CHANNEL_AMBIENCE_FORCED)
 	else if(src.ambience && length(src.ambience))
-		var/ambience_odds = L.read_preference(/datum/preference/numeric/ambience_chance)
+		var/ambience_odds = 35
 		if(prob(ambience_odds) && (COOLDOWN_FINISHED(L.client, ambience_cooldown)))
 			var/sound = DEFAULTPICK(ambience, null)
 			L << sound(sound, repeat = 0, wait = 0, volume = 50 * volume_mod, channel = CHANNEL_AMBIENCE)
@@ -604,7 +630,6 @@ CAPABILITIES(/area)
 	on_change(STAT_DEMAND_ENVIRON, ANY, then(PROC_REF(demand_changed)))
 	ref_many(nameof(valid_spawn_turfs))
 	ref_one(nameof(media_source))
-	ref_many(nameof(all_doors), /obj/machinery/door/firedoor)
 	owns_many(nameof(air_vent_info), /datum/air_device_status)
 	owns_many(nameof(air_scrub_info), /datum/air_device_status)
 

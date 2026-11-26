@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Communicator, changelog, robot editor and medigun windows no longer break when data is missing."
+  - code_imp: "Over a hundred windows now declare their data shape and are typed in the UI."

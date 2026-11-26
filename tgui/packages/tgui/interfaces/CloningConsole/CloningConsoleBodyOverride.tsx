@@ -2,10 +2,11 @@ import { useBackend } from 'tgui/backend';
 import { COLORS } from 'tgui/constants';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 
+import type { CloningConsoleActions } from '../generated/CloningConsole';
 import type { Data, modalData } from './types';
 
 export const viewRecordModalBodyOverride = (modal: modalData) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CloningConsoleActions>();
 
   const { disk, podready } = data;
 
@@ -63,35 +64,10 @@ export const viewRecordModalBodyOverride = (modal: modalData) => {
             onClick={() =>
               act('disk', {
                 option: 'save',
-                savetype: 'ui',
               })
             }
           >
-            Export UI
-          </Button>
-          <Button
-            disabled={!disk}
-            icon="arrow-circle-up"
-            onClick={() =>
-              act('disk', {
-                option: 'save',
-                savetype: 'ue',
-              })
-            }
-          >
-            Export UI and UE
-          </Button>
-          <Button
-            disabled={!disk}
-            icon="arrow-circle-up"
-            onClick={() =>
-              act('disk', {
-                option: 'save',
-                savetype: 'se',
-              })
-            }
-          >
-            Export SE
+            Export
           </Button>
         </LabeledList.Item>
         <LabeledList.Item label="Actions">

@@ -19,6 +19,9 @@
 
 
 
+/obj/item/clothing/shoes/magboots/action_toggle_state(actiontype)
+	return magpulse ? TRUE : FALSE
+
 /obj/item/clothing/shoes/magboots/proc/set_slowdown()
 	set_worn_factor(STAT_ITEM_ENCUMBRANCE, shoes? max(SHOES_SLOWDOWN, shoes.worn_factor(STAT_ITEM_ENCUMBRANCE)): SHOES_SLOWDOWN)	//So you can't put on magboots to make you walk faster.
 	if (magpulse)
@@ -148,8 +151,8 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/vox)
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_magclaws)))
 	fits_as(FIT_VOX)
 
-/proc/req_overshoe_clearance()
-	return part_make(/datum/entry/part/req/acceptance_leaf/overshoe_clearance, list())
+/proc/req_overshoe_clearance(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/overshoe_clearance, list()), fails)
 
 
 /datum/entry/part/req/acceptance_leaf/overshoe_clearance/acceptance_reason(datum/act/op/A)

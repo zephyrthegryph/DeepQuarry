@@ -1,7 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
-  Box,
   Button,
   LabeledList,
   Section,
@@ -89,7 +88,9 @@ export const OmniMixer = (props) => {
                 <PortRow key={port.dir} port={port} config={config} />
               ))
             ) : (
-              <Box color="bad">No Ports Detected</Box>
+              <Table.Row>
+                <Table.Cell color="bad">No Ports Detected</Table.Cell>
+              </Table.Row>
             )}
           </Table>
         </Section>

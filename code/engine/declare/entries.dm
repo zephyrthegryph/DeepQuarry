@@ -43,19 +43,24 @@
 	return E
 
 /// The text that tells two entries apart: kind, key, every argument and every child, by value.
+/// The parts are joined once at the end: appending to the text made a new string per argument, and every one of those
+/// intermediate strings (long, sharing most of their prefix) went into BYOND's string table for each of the ~65 k entries made at boot.
 /proc/entry_signature(kind, key, list/args, list/children)
-	. = "[kind]|[isnull(key) ? "~" : "k[key]"]"
+	var/list/parts = list("[kind]|[isnull(key) ? "~" : "k[key]"]")
 	for(var/name in args)
 		var/v = args[name]
 		// Leaf values are signed inline (the same text datum_signature gives): this runs for every argument of every entry at boot.
 		if(isnum(v))
-			. += "|[name]=n[v]"
+			parts += "|[name]=n[v]"
+		else if(isnull(v))
+			parts += "|[name]=~"
 		else if(istext(v))
-			. += "|[name]=t[length(v)]:[v]"
+			parts += "|[name]=t[length(v)]:[v]"
 		else
-			. += "|[name]=[entry_value_signature(v)]"
+			parts += "|[name]=[entry_value_signature(v)]"
 	for(var/child in children)
-		. += "|(" + entry_value_signature(child) + ")"
+		parts += "|([entry_value_signature(child)])"
+	return jointext(parts, "")
 
 /proc/entry_value_signature(value)
 	if(isnull(value))

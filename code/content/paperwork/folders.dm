@@ -27,7 +27,7 @@ MSG_DEF_SELF(folder/only_paper, "only paper, photos and bundles fit")
 /// A folder shows its papers once it holds any (the slot publishes its occupancy, so the look redraws by itself).
 /obj/item/folder/draw(datum/look/look)
 	..()
-	look.overlay("folder_paper", when = length(slot_contents(CONTAINER_SLOT_PAGES)) > 0)
+	look.overlay("folder_paper", when = slot_occupancy(CONTAINER_SLOT_PAGES) > 0)
 
 /obj/item/folder/blue
 	desc = "A blue folder."
@@ -126,6 +126,7 @@ CAPABILITIES(/obj/item/folder)
 		asks(/datum/prompt/text, fields = list("question" = "What would you like to label the folder?", "title" = "Folder Labelling", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "k98"),
 		then(PROC_REF(folder_label)))
 	interface("Folder")
+	ui_shape(folder_name = schema_text(), items = list_of(row(ref = int(), name = schema_text(), kind = enum(list("paper", "photo", "bundle")))))
 	without("ui_open")
 	op("remove", ui_act("remove", arg("ref", schema_text(32))), then(PROC_REF(ui_act_remove)))
 	op("rename", ui_act("rename", arg("ref", schema_text(32))), then(PROC_REF(ui_act_rename)))

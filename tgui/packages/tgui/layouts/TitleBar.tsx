@@ -12,6 +12,8 @@ type TitleBarProps = Partial<{
   status: number;
   fancy: BooleanLike;
   canClose: BooleanLike;
+  /** The page draws the window's frame: no status icon, no border or glow of the bar's own. */
+  framed: boolean;
   onClose: (e) => void;
   onDragStart: (e) => void;
 }> &
@@ -34,6 +36,7 @@ export function TitleBar(props: TitleBarProps) {
     title,
     status,
     canClose,
+    framed,
     fancy,
     onDragStart,
     onClose,
@@ -49,12 +52,14 @@ export function TitleBar(props: TitleBarProps) {
     title;
 
   return (
-    <div className={classes(['TitleBar', className])}>
+    <div
+      className={classes(['TitleBar', framed && 'TitleBar--framed', className])}
+    >
       <div
         className="TitleBar__dragZone"
         onMouseDown={(e) => fancy && onDragStart?.(e)}
       />
-      {status === undefined ? (
+      {framed ? null : status === undefined ? (
         <Icon className="TitleBar__statusIcon" name="tools" opacity={0.5} />
       ) : (
         <Icon

@@ -23,9 +23,23 @@ export type CargoMarketCounterparty = {
   description: string;
   faction: string;
   color: string;
-  standing: number;
-  standing_tier: string;
+  standing: TradeStanding;
   covert: BooleanLike;
+};
+
+export type TradeStandingLayer = {
+  layer: 'station' | 'department' | 'trader';
+  label: string;
+  standing: number;
+  tier: string;
+  /** Price effect of this layer, in percent. */
+  effect: number;
+};
+
+export type TradeStanding = {
+  layers: TradeStandingLayer[];
+  /** Combined price effect, in percent. */
+  effect: number;
 };
 
 export type CargoMarketListing = {
@@ -44,6 +58,7 @@ export type CargoMarketListing = {
   can_contract: BooleanLike;
   contract_allowance: number;
   expires: string;
+  ship?: string;
 };
 
 export type CargoMarketBid = {
@@ -59,6 +74,7 @@ export type CargoMarketBid = {
   reserved: BooleanLike;
   can_route: BooleanLike;
   expires: string;
+  ship?: string;
 };
 
 export type CargoMarketTransaction = {
@@ -76,7 +92,7 @@ export type CargoMarketTransaction = {
 };
 
 export type CargoMarketCrate = {
-  ref: string;
+  ref: number;
   name: string;
   contents: number;
   bid_id?: string;
@@ -92,6 +108,61 @@ export type CargoMarket = {
   transactions: CargoMarketTransaction[];
   outbound_crates: CargoMarketCrate[];
   is_auditor: BooleanLike;
+  trade_ships: TradeShips;
+};
+
+export type TradeShipSpecial = {
+  name: string;
+  group: string;
+  price: number;
+  catalog: number;
+  contraband: BooleanLike;
+};
+
+export type TradeShip = {
+  id: string;
+  name: string;
+  description: string;
+  counterparty: string;
+  covert: BooleanLike;
+  standing: TradeStanding;
+  departs: string;
+  sell_rate: number;
+  buy_rate: number;
+  special_markup: number;
+  specials: TradeShipSpecial[];
+  mood: string;
+  offers: TradeOffer[];
+  can_department: BooleanLike;
+  can_personal: BooleanLike;
+};
+
+export type TradeOffer = {
+  id: string;
+  crate: string;
+  crate_ref?: string;
+  offered_by: string;
+  ask: number;
+  counter: number;
+  status: 'open' | 'countered' | 'walked' | 'settled';
+  patience: number;
+  reply: string;
+  price: number;
+};
+
+export type TradeCrate = {
+  ref: string;
+  name: string;
+  contents: number;
+  appraisal: number;
+  spread: number;
+  appraiser?: string;
+};
+
+export type TradeShips = {
+  ships: TradeShip[];
+  crates: TradeCrate[];
+  next_ship: string;
 };
 
 export type ModalData = {
@@ -102,7 +173,7 @@ export type ModalData = {
     desc: string;
     cost: number;
     manifest: string[];
-    ref: string;
+    ref: number;
     random: number;
   };
   type: string;
@@ -116,7 +187,7 @@ export type SupplyPack = {
   contraband: BooleanLike;
   manifest: string[];
   random: number;
-  ref: string;
+  ref: number;
 };
 
 type ShuttleStatus = {
@@ -129,7 +200,7 @@ type ShuttleStatus = {
 };
 
 type Order = {
-  ref: string;
+  ref: number;
   status: string;
   cost: number;
   can_approve: BooleanLike;
@@ -137,7 +208,7 @@ type Order = {
 };
 
 type Receipt = {
-  ref: string;
+  ref: number;
   contents: {
     object: string;
     quantity: number;

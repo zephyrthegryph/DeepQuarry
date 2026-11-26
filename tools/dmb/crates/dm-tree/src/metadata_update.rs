@@ -305,9 +305,9 @@ fn default_edits<'a, 'b>(
         let value_bits = literal(&after.declared_initializer, symbols)?;
         let strip = |metadata: &crate::MemberMetadata| {
             let mut metadata = metadata.clone();
-            metadata.field_tail_mut().initializer = None;
-            metadata.field_tail_mut().declared_initializer = None;
-            metadata.canonical = Default::default();
+            metadata.initializer = None;
+            metadata.declared_initializer = None;
+            metadata.canonical = Arc::from([]);
             metadata
         };
         if strip(before) != strip(after) {
@@ -355,15 +355,17 @@ pub(crate) fn dependency_order(
     }
     order
 }
-pub(crate) fn apply_opaque_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&SemanticTree,members:&mut M,index:usize){let _=apply_variable_base(tree,members,index,None);}
-pub(crate) fn apply_original_variable_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&SemanticTree,members:&mut M,index:usize,variables:&crate::checker_builtins::OriginalVariableDeclarations)->bool{apply_variable_base(tree,members,index,Some(variables))}
-fn apply_variable_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&SemanticTree,members:&mut M,index:usize,variables:Option<&crate::checker_builtins::OriginalVariableDeclarations>)->bool{
+pub(crate) fn apply_opaque_base<M: crate::member_binding::MemberWrite + ?Sized>(
+    tree: &SemanticTree,
+    members: &mut M,
+    index: usize,
+) {
     let member = members.member(index);
     if member.definition != DefinitionMode::Override
         || member.previous.is_some()
         || member.kind != MemberKind::Var
     {
-        return false;
+        return;
     }
     let mut owner = Some(member.owner);
     while let Some(current) = owner {
@@ -376,34 +378,19 @@ fn apply_variable_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&Semant
                 dm_ir::DeclaredTypeKnowledge::Unsupported
                 | dm_ir::DeclaredTypeKnowledge::KnownUntyped => None,
             };
-            if member.metadata.declared_type() == declared_type
-                && member.metadata.inherited_opaque().as_ref() == Some(opaque)
+            if member.metadata.declared_type == declared_type
+                && member.metadata.inherited_opaque.as_ref() == Some(opaque)
             {
-                return false;
+                return;
             }
             let mut metadata = member.metadata.as_ref().clone();
-            metadata.field_tail_mut().set_declared_type(declared_type);
-            metadata.field_tail_mut().set_inherited_opaque(Some(opaque.clone()));
+            metadata.declared_type = declared_type;
+            metadata.inherited_opaque = Some(opaque.clone());
             members.set_metadata(index, Arc::new(metadata));
-            return false;
-        }
-        if let Some(base)=variables.and_then(|permit|permit.variable(tree,tree.types[current.index()].path,member.name)){
-            // The authored initializer/constant remains this source override.
-            // Only genuine formal declaration properties come from the catalog.
-            let mut metadata=member.metadata.as_ref().clone();
-            metadata.field_tail_mut().set_declared_type(base.declared_type());
-            metadata.field_tail_mut().set_list_element_type(base.list_element_type());
-            metadata.set_display_name(base.display_name());
-            metadata.flags=base.flags;
-            metadata.field_tail_mut().array=base.array.clone();
-            metadata.field_tail_mut().declared_initializer=base.declared_initializer.clone();
-            metadata.field_tail_mut().set_inherited_opaque(None);
-            members.set_metadata(index,Arc::new(metadata));
-            return true;
+            return;
         }
         owner = tree.parent(current);
     }
-    false
 }
 pub(crate) fn resolve_metadata<M: crate::member_binding::MemberWrite + ?Sized>(
     tree: &SemanticTree,
@@ -418,9 +405,9 @@ pub(crate) fn resolve_metadata<M: crate::member_binding::MemberWrite + ?Sized>(
             if let Some(previous) = member.previous {
                 let inherited = members.member(previous.index()).metadata;
                 let current = member.metadata;
-                if current.inherited_opaque() == inherited.inherited_opaque()
-                    && current.declared_type() == inherited.declared_type()
-                    && current.list_element_type() == inherited.list_element_type()
+                if current.inherited_opaque == inherited.inherited_opaque
+                    && current.declared_type == inherited.declared_type
+                    && current.list_element_type == inherited.list_element_type
                     && current.flags == inherited.flags
                     && current.array == inherited.array
                     && current.declared_initializer == inherited.declared_initializer
@@ -428,12 +415,12 @@ pub(crate) fn resolve_metadata<M: crate::member_binding::MemberWrite + ?Sized>(
                     continue;
                 }
                 let mut metadata = current.as_ref().clone();
-                metadata.field_tail_mut().set_inherited_opaque(inherited.inherited_opaque());
-                metadata.field_tail_mut().set_declared_type(inherited.declared_type());
-                metadata.field_tail_mut().set_list_element_type(inherited.list_element_type());
+                metadata.inherited_opaque = inherited.inherited_opaque.clone();
+                metadata.declared_type = inherited.declared_type;
+                metadata.list_element_type = inherited.list_element_type;
                 metadata.flags = inherited.flags;
-                metadata.field_tail_mut().array = inherited.array.clone();
-                metadata.field_tail_mut().declared_initializer = inherited.declared_initializer.clone();
+                metadata.array = inherited.array.clone();
+                metadata.declared_initializer = inherited.declared_initializer.clone();
                 members.set_metadata(i, Arc::new(metadata));
             }
         }

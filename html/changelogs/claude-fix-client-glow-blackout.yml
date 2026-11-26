@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Running across a chunk edge no longer flashes the screen black for a frame (the view cover was raised for ordinary steps, not only for jumps)"

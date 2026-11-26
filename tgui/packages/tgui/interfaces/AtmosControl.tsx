@@ -3,19 +3,12 @@ import { useBackend } from 'tgui/backend';
 import { NanoMap } from 'tgui/components';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Icon, Section, Stack, Tabs } from 'tgui-core/components';
+import type {
+  AtmosControlActions,
+  AtmosControlData,
+} from './generated/AtmosControl';
 
-type alarm = {
-  name: string;
-  ref: string;
-  danger: number;
-  x: number;
-  y: number;
-  z: number;
-};
-
-type Data = {
-  alarms: alarm[];
-};
+type Data = AtmosControlData;
 
 export const AtmosControl = (props) => {
   return (
@@ -28,9 +21,9 @@ export const AtmosControl = (props) => {
 };
 
 export const AtmosControlContent = (props) => {
-  const { act, data, config } = useBackend<Data>();
+  const { act, data, config } = useBackend<Data, AtmosControlActions>();
 
-  const { alarms } = data;
+  const { alarms = [] } = data;
   alarms.sort((a, b) => a.name.localeCompare(b.name));
 
   const [tabIndex, setTabIndex] = useState(0);

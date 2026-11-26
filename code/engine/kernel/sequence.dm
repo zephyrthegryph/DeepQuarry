@@ -323,8 +323,12 @@ CAPABILITIES(/datum/work_item/sequence)
 						prev = at - lag_floor
 					state.last_at = at
 					if(at > prev)
+						var/member_started = TICK_USAGE
 						seq.run_member(M, at - prev, F)
 						member_runs++
+						var/member_ms = TICK_USAGE_TO_MS(member_started)
+						if(member_ms >= KM_SLOW_CALL_MS)
+							km_slow_call(M, "sequence [seq.type]: one member's turn", member_ms) // a turn this long is named: the ledger row only says which sequence
 		if(i - 1 > length(members_list) || members_list[i - 1] != M)
 			i--
 			target = min(target, length(members_list))

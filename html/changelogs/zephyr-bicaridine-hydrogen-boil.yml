@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Hydrogen and other dissolved gases no longer boil away in seconds on a hot plate before the beaker reaches the band that uses them, so the bicaridine reduction works in a normal beaker"

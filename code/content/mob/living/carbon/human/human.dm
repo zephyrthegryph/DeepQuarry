@@ -33,20 +33,33 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
 /// Its setup hook (setup() in the human's CAPABILITIES): its DNA, blood and alternate look, once its parents' init is done.
 /mob/living/carbon/human/proc/finish_human_init()
+	var/phase_started = TICK_USAGE_REAL
+	var/dna_ms = 0
+	var/vessel_ms = 0
+	var/alt_ms = 0
 	if(dna)
 		dna.ready_dna(src)
 		dna.real_name = real_name
 		sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 		sync_organ_dna()
+	dna_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	phase_started = TICK_USAGE_REAL
 	initialize_vessel()
+	vessel_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	phase_started = TICK_USAGE_REAL
 
 	// Chicken Stuff
 	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
 	var/image/img = image('icons/mob/animal.dmi', src, animal)
 	img.override = TRUE
 	add_alt_appearance("animals", img, displayTo = REGISTRY_MEMBERS(REGISTRY_ALT_FARMANIMALS))
+	alt_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	phase_started = TICK_USAGE_REAL
 	if(TYPE_TABLE_GET(src, initial_species_copy))
 		species.produceCopy(species.traits.Copy(),src,null,FALSE)
+	var/copy_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	if(dna_ms + vessel_ms + alt_ms + copy_ms >= JOIN_BODY_SLOW_MS)
+		log_world("JOIN_TIMING_HUMAN: finish_human_init: DNA, traits, organ DNA [round(dna_ms, 0.1)] ms, vessel [round(vessel_ms, 0.1)] ms, farm animal look [round(alt_ms, 0.1)] ms, species copy [round(copy_ms, 0.1)] ms")
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_HUMANS)
 
@@ -594,7 +607,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	var/msg = strip_html_simple(ask.value)
 	if(msg)
 		LAZYSET(bio.flavor_texts, ask.part, msg)
-		set_flavor()
+		dq_open_flavor_panel(src)
 
 /// The user's HUD of `hud_type` still works and they can act.
 /mob/living/carbon/human/proc/hud_still_usable(mob/user, hud_type)
@@ -828,15 +841,22 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 		return 0
 	return 1
 
-/mob/living/carbon/human/proc/morph()
-	set name = "Morph"
-	set category = VERB_CAT_SUPERPOWER
+/// The Morph menu entry shows on a human with the morph mutation (only an admin hand grants it).
+/mob/living/carbon/human/proc/morph_ready(datum/act/op/A)
+	if(!has_mutation(mMorph))
+		return MSG(req_silent)
+	return null
 
+/mob/living/carbon/human/proc/morph_chosen(datum/act/op/A)
+	morph()
+	return OP_OK
+
+/// Asks for a new look: hair, facial hair and colors, each skippable.
+/mob/living/carbon/human/proc/morph()
 	if(stat!=CONSCIOUS)
 		return
 
-	if(!(has_mutation(mMorph)))
-		revoke(src, granted_verb(/mob/living/carbon/human/proc/morph), verb_source(VERB_SOURCE_ADMIN)) // only an admin hand grants it
+	if(!has_mutation(mMorph))
 		return
 
 	// Offered from the built style lists, which hold no abstract placeholder styles.
@@ -997,7 +1017,6 @@ CAPABILITIES(/datum/morph_review)
 
 /mob/living/carbon/human/proc/remotesay()
 	set name = "Project mind"
-	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
 	if(stat != CONSCIOUS)
 		return
@@ -1080,7 +1099,6 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 /mob/living/carbon/human/proc/remoteobserve()
 	set name = "Remote View"
-	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
 	if(stat != CONSCIOUS)
 		return
@@ -1475,7 +1493,6 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	species.update_vore_belly_def_variant()
 
 /mob/living/carbon/human/proc/bloody_doodle()
-	set category = VERB_CAT_IC_GAME
 	set name = "Write in blood"
 	set desc = "Use blood on your hands to write a short message on the floor or a wall, murder mystery style."
 
@@ -1570,9 +1587,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	return clamp(70 - round(affecting.get_trauma() + affecting.get_burn() / 2), 0, 100)
 
 /// `roll` = FALSE leaves out the thick-hide roll of some species (the one who asks makes it later, with thick_skin_holds()).
-/mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE, roll = TRUE)
-	. = 1
-
+/mob/living/carbon/human/inject_refusal(mob/user, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE, roll = TRUE)
 	if(!target_zone)
 		if(!user)
 			target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
@@ -1580,31 +1595,20 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 			target_zone = hud_of(user)?.zone_sel?.selecting
 
 	var/obj/item/organ/external/affecting = get_organ(target_zone)
-	var/fail_msg
 	if(!affecting)
-		. = 0
-		fail_msg = "They are missing that limb."
-	else if (affecting.robotic == ORGAN_ROBOT && method == INJECT_METHOD_NEEDLE)
-		. = 0
-		fail_msg = "That limb is robotic."
-	else if (affecting.robotic >= ORGAN_LIFELIKE && method == INJECT_METHOD_NEEDLE)
-		. = 0
-		fail_msg = "Your needle refuses to penetrate more than a short distance..."
-	else if(roll && thick_skin_holds(affecting))	// Allows transplanted limbs with thick skin to maintain their resistance.
-		. = 0
-		fail_msg = "Your needle fails to penetrate \the [affecting]'s thick hide..."
-	else
-		switch(target_zone)
-			if(BP_HEAD)
-				if(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).flags & THICKMATERIAL) && !ignore_thickness)
-					. = 0
-			else
-				if(get_equipped_item(SLOT_ID_SUIT) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).flags & THICKMATERIAL) && !ignore_thickness)
-					. = 0
-	if(!. && error_msg && user)
-		if(!fail_msg)
-			fail_msg = "There is no exposed flesh or thin material [target_zone == BP_HEAD ? "on their head" : "on their body"] to inject into."
-		to_chat(user, span_warning("[fail_msg]"))
+		return "They are missing that limb."
+	if(affecting.robotic == ORGAN_ROBOT && method == INJECT_METHOD_NEEDLE)
+		return "That limb is robotic."
+	if(affecting.robotic >= ORGAN_LIFELIKE && method == INJECT_METHOD_NEEDLE)
+		return "Your needle refuses to penetrate more than a short distance..."
+	if(roll && thick_skin_holds(affecting))	// Allows transplanted limbs with thick skin to maintain their resistance.
+		return "Your needle fails to penetrate \the [affecting]'s thick hide..."
+	if(ignore_thickness)
+		return null
+	var/obj/item/cover = get_equipped_item(target_zone == BP_HEAD ? SLOT_ID_HEAD : SLOT_ID_SUIT)
+	if(cover && (worn_of(cover).flags & THICKMATERIAL))
+		return "There is no exposed flesh or thin material [target_zone == BP_HEAD ? "on their head" : "on their body"] to inject into."
+	return null
 
 /// Which flavor entries show on this body right now. General always does. Face hides while gear covers or hides it. Body describes the general
 /// look and coloration, so it hides only under head-to-toe gear: everything worn together covers every part of the body.
@@ -1701,13 +1705,20 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		var/mob/living/carbon/human/human_user = U
 		human_user.bloody_hands(src)
 
-/mob/living/carbon/human/proc/relocate()
-	set category = VERB_CAT_OBJECT
-	set name = "Relocate Joint"
-	set desc = "Pop a joint back into place. Extremely painful."
-	set src in view(1)
+/// The Relocate Joint menu entry shows on a human with a dislocated joint that can be relocated (its parent is not out as well).
+/mob/living/carbon/human/proc/relocate_ready(datum/act/op/A)
+	for(var/obj/item/organ/external/current_limb in organs)
+		if(current_limb.dislocated > 0 && !current_limb.is_parent_dislocated())
+			return null
+	return MSG(req_silent)
 
-	if(body_work_refused(usr))
+/mob/living/carbon/human/proc/relocate_chosen(datum/act/op/A)
+	relocate_joint_start(A.actor)
+	return OP_OK
+
+/// Pop a joint back into place. Extremely painful.
+/mob/living/carbon/human/proc/relocate_joint_start(mob/living/user)
+	if(body_work_refused(user))
 		return
 
 	var/list/limbs = list()
@@ -1716,9 +1727,9 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		if(current_limb && current_limb.dislocated > 0 && !current_limb.is_parent_dislocated()) //if the parent is also dislocated you will have to relocate that first
 			limbs |= current_limb
 	if(!length(limbs))
-		to_chat(usr, span_filter_notice("[src == usr ? "You have" : "[src] has"] no dislocated joint that can be relocated."))
+		to_chat(user, span_filter_notice("[src == user ? "You have" : "[src] has"] no dislocated joint that can be relocated."))
 		return
-	open_request(src, /datum/prompt/choice/relocate_joint, PROC_REF(relocate_joint_chosen), answerer = usr, choices = limbs)
+	open_request(src, /datum/prompt/choice/relocate_joint, PROC_REF(relocate_joint_chosen), answerer = user, choices = limbs)
 	return TRUE
 
 /// Picking a joint on the subject. Re-checked on the answer: next to them, unrestrained, awake,
@@ -1784,7 +1795,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /mob/living/carbon/human/Check_Shoegrip()
 	if(get_equipped_item(SLOT_ID_SHOES) && (worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP) && istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
 		return 1
-	if(stat_value(src, STAT_FLYING)) // Checks to see if they have wings and are stat_value(src, STAT_FLYING).
+	if(src.flying) // Checks to see if they have wings and are src.flying.
 		return 1
 	return 0
 
@@ -1821,13 +1832,19 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /mob/living/carbon/human/proc/toggle_underwear_choices(datum/act/op/A)
 	return GLOB.global_underwear.categories
 
+/// Refuses the chosen underwear category when nothing of it is worn.
+/mob/living/carbon/human/proc/toggle_underwear_refusal(datum/act/op/A)
+	var/datum/category_group/underwear/UWC = A.step_value("category")
+	if(!UWC)
+		return null // unanswered: the asks() step holds it
+	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
+	if(!UWI || UWI.name == "None")
+		return span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"].")
+	return null
+
 /mob/living/carbon/human/proc/toggle_underwear_op(datum/act/op/A)
 	var/datum/category_group/underwear/UWC = A.step_value("category")
 	if(!UWC)
-		return
-	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
-	if(!UWI || UWI.name == "None")
-		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 		return
 	set_hide_underwear_at(UWC.name, !hide_underwear[UWC.name])
 	underwear_edited()
@@ -1916,12 +1933,12 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		else
 			set_layer(HIDING_LAYER)
 
+/// The examine portrait: the shared portrait cache's picture (rendered off the tick; until it lands the examine shows the plain icon).
 /mob/living/carbon/human/examine_icon()
-	var/icon/I = get_cached_examine_icon(src)
-	if(!I)
-		I = getFlatIcon(src, defdir = SOUTH, no_anim = TRUE, force_south = TRUE)
-		set_cached_examine_icon(src, I, 50 SECONDS)
-	return I
+	var/datum/portrait/P = portrait_request(src, SOUTH)
+	if(P?.picture)
+		set_cached_examine_icon(src, P.picture, 50 SECONDS) // the stat panel's Examine tab reads it
+	return P?.picture
 
 /mob/living/carbon/human/proc/get_display_species()
 	//Shows species in tooltip
@@ -2152,13 +2169,12 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /mob/living/carbon/human/proc/synth_reag_toggle()
 	set name = "Toggle Reagent Processing"
-	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle reagent processing as synth."
 	STATE_SET(src, carbon_misc, synth_reag_processing, !STATE_GET(src, carbon_misc, synth_reag_processing))
 
 //Formally used from a paper, gave this to everyone.
 /mob/living/carbon/human/proc/create_area_ready(datum/act/op/A)
-	return stat ? span_warning("You recently tried to create an area. Wait a while before using it again.") : null
+	return stat ? span_warning("You can't do that in your current state.") : null
 
 /mob/living/carbon/human/proc/create_area_op(datum/act/op/A)
 	// The special-ability cooldown is a clock read no requirement may track, so it stays the effect's own check.

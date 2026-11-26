@@ -6,7 +6,6 @@
 	energy_drain = 0
 	range = MECH_MELEE
 	var/coeff = 100
-	var/obj/item/stack/material/fuel
 	var/fuel_type = /obj/item/stack/material/phoron
 	var/fuel_amount = 0
 	var/max_fuel = 150000
@@ -17,11 +16,14 @@
 	equip_type = EQUIP_UTILITY
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
-	owns_one(nameof(fuel), starts = nameof(fuel_type))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	every(0.2 SECONDS, then(PROC_REF(generator_step)), when = nameof(generating))
 
 /obj/item/mecha_parts/mecha_equipment/generator/var/generating = FALSE
+
+/// The fuel's name for messages. The fuel itself is only the fuel_amount count; no stack is held inside, because a held stack would be material the design never paid for.
+/obj/item/mecha_parts/mecha_equipment/generator/proc/fuel_name()
+	return initial(fuel_type.name)
 
 /// One cycle while generating and mounted. Answers TRUE when it shut itself down (the nuclear reactor's pulse reads that).
 /obj/item/mecha_parts/mecha_equipment/generator/proc/generator_step(datum/act/timer/A)
@@ -65,7 +67,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/generator/equip_info_lines()
-	return list("[fuel]: [fuel_amount] cm^3")
+	return list("[fuel_name()]: [fuel_amount] cm^3")
 
 /obj/item/mecha_parts/mecha_equipment/generator/equip_controls()
 	return list(list("key" = "toggle", "label" = "[generating ? "Deactivate" : "Activate"]"))
@@ -81,11 +83,11 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 		var/result = load_fuel(target)
 		var/message
 		if(isnull(result))
-			message = span_warning("[fuel] traces in target minimal. [target] cannot be used as fuel.")
+			message = span_warning("[fuel_name()] traces in target minimal. [target] cannot be used as fuel.")
 		else if(!result)
 			message = "Unit is full."
 		else
-			message = "[result] unit\s of [fuel] successfully loaded."
+			message = "[result] unit\s of [fuel_name()] successfully loaded."
 			update_equip_info()
 		occupant_message(message)
 	return
@@ -111,12 +113,12 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 	var/obj/item/weapon = A.held
 	var/result = load_fuel(weapon)
 	if(isnull(result))
-		act_message(user, src, MSG_SELF(span_warning("[fuel] traces minimal. [weapon] cannot be used as fuel.")), \
+		act_message(user, src, MSG_SELF(span_warning("[fuel_name()] traces minimal. [weapon] cannot be used as fuel.")), \
 			MSG_OTHERS("%U% tries to shove [weapon] into %T%. What a dumb-ass."))
 	else if(!result)
 		to_chat(user, "Unit is full.")
 	else
-		act_message(user, src, MSG_SELF("[result] unit\s of [fuel] successfully loaded."), MSG_OTHERS("%U% loads %T% with [fuel]."))
+		act_message(user, src, MSG_SELF("[result] unit\s of [fuel_name()] successfully loaded."), MSG_OTHERS("%U% loads %T% with [fuel_name()]."))
 	return OP_PASS
 
 /obj/item/mecha_parts/mecha_equipment/generator/critfail()

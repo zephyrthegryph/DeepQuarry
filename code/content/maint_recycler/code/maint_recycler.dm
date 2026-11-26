@@ -119,6 +119,7 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	owns_one(nameof(hatch), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
 	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
 	interface("RecyclerInterface")
+	ui_shape(heldItemName = nullable(schema_text()), heldItemValue = nullable(num()), userName = schema_text(), userBalance = num(), itemIcon = schema_text())
 	without("ui_open")
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("recycle", ui_act("recycle"), then(PROC_REF(ui_act_recycle)))
@@ -401,16 +402,22 @@ TGUI PROCS
 	data["heldItemName"] = inserted_item?.name
 	data["heldItemValue"] = try_get_obj_value(inserted_item)
 	data["userName"] = user.name
-	data["userBalance"] = user_balance(user)
+	data["userBalance"] = user_balance(user) || 0
 
-	var/icon/display
-	if(inserted_item)
-		display = getFlatIcon(inserted_item) //dogshit! fix this! grr!
-	else
-		display = icon(src.icon,"NoItem")
-
-	data["itemIcon"] = "'data:image/png;base64,[icon2base64(display)]'"
+	// The inserted item's picture from the shared portrait cache (drawn off the tick; the empty slot until it lands, then the window
+	// draws again), instead of a flatten on every push. The empty slot's own picture is one constant state.
+	var/display_b64 = inserted_item ? portrait_request(inserted_item, SOUTH, src, PROC_REF(item_picture_landed))?.b64 : null
+	if(!display_b64)
+		var/static/no_item_b64
+		if(!no_item_b64)
+			no_item_b64 = icon2base64(icon(icon, "NoItem"))
+		display_b64 = no_item_b64
+	data["itemIcon"] = "data:image/png;base64,[display_b64]"
 	return data
+
+/// The inserted item's picture landed: the window shows it.
+/obj/machinery/maint_recycler/proc/item_picture_landed(datum/portrait/P)
+	SStgui.update_uis(src)
 
 /obj/machinery/maint_recycler/ui_assets(mob/user)
 	return list(

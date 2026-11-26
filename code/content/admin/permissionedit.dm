@@ -507,10 +507,10 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 	if (findtext(admin_holder.rank_names(), "([admin_ckey])"))
 		var/datum/admin_rank/rank = admin_holder.ranks[1]
-		rank.rights = selected_flags
-		rank.include_rights = selected_flags
-		rank.exclude_rights = NONE
-		rank.can_edit_rights = rank.can_edit_rights
+		rank.set_rights(selected_flags)
+		rank.set_include_rights(selected_flags)
+		rank.set_exclude_rights(NONE)
+		rank.set_can_edit_rights(rank.can_edit_rights)
 	else
 		// Not a modified subrank, need to duplicate the admin_rank datum to prevent modifying others too.
 		var/datum/admin_rank/new_admin_rank = new(
@@ -894,13 +894,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 		switch(what_to_edit)
 			if("Rights")
-				target_rank.include_rights = new_flags
+				target_rank.set_include_rights(new_flags)
 				working_rights = new_flags
 			if("Excluded Rights")
-				target_rank.exclude_rights = new_flags
+				target_rank.set_exclude_rights(new_flags)
 				working_exclude_rights = new_flags
 			if("Edit Rights")
-				target_rank.can_edit_rights = new_flags
+				target_rank.set_can_edit_rights(new_flags)
 				working_can_edit_rights = new_flags
 
 		var/log = "[key_name(user)] has [use_db ? "permenantly" : "temporarially"] updated the [pretty_name] of the [admin_rank] rank to [rights2text(new_flags)]"

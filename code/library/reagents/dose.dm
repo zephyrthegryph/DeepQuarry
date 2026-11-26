@@ -19,7 +19,7 @@
 // What goes is one RES_REAGENTS transaction (reagent_flow.dm: REAGENT_FLOW_INGEST, REAGENT_FLOW_TOUCH, REAGENT_FLOW_TRANSFER), and the thing is used up by
 // the op's consumes() when it commits.
 
-CAPABILITY_TYPE(dose, CAP_DOSE, /datum/capability/lib/dose, key = NONE, route = CHEM_INGEST, dose_wait = 30, pierces = null, cuts_into = null)
+CAPABILITY_TYPE(dose, CAP_DOSE, /datum/capability/lib/dose, key = NONE, route = CHEM_INGEST, dose_wait = 3 SECONDS, pierces = null, cuts_into = null)
 
 MSG_DEF_SELF(dose/limb_missing, "The limb is missing!")
 MSG_DEF_SELF(dose/limb_robotic, "It won't work on a robotic limb!")
@@ -113,8 +113,7 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 	return req(CAP_PROC(mouth_free))
 
 /datum/capability/lib/dose/proc/belly_free(datum/act/op/A)
-	var/mob/living/target = A.target
-	return (target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/reagent_container/from_belly
+	return belly_liquid_refused(A.holder, A.target) ? /datum/msg/reagent_container/from_belly : null
 
 /datum/capability/lib/dose/proc/mouth_free(datum/act/op/A)
 	return (isnull(mouth_blocked_reason(A.actor, A.target))) ? null : /datum/msg/reagent_container/mouth_blocked
@@ -132,17 +131,17 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 
 /datum/capability/lib/dose/proc/limb_not_robotic(datum/act/op/A)
 	var/obj/item/organ/external/affecting = limb_aimed(A)
-	return (isnull(affecting) || affecting.status < ORGAN_ROBOT) ? null : /datum/msg/dose/limb_robotic
+	return (isnull(affecting) || affecting.robotic != ORGAN_ROBOT) ? null : /datum/msg/dose/limb_robotic
 
-/// Whatever covers the limb lets it through (a patch may pierce material, if it says so). The thick hide of some species is a roll made when it goes on.
+/// Whatever covers the limb aimed at (inject_refusal() reads the actor's zone) lets it through (a patch may pierce material, if it says so). The thick hide of some species is a roll made when it goes on.
 /datum/capability/lib/dose/proc/limb_open(datum/act/op/A)
-	var/mob/living/carbon/human/target = A.target
+	var/mob/living/target = A.target
 	var/mob/user = A.actor
 	var/atom/holder = A.holder
 	var/pierce = pierces
 	if(istext(pierce))
 		pierce = holder.vars[pierce]
-	return (!!target.can_inject(user, FALSE, hud_of(user)?.zone_sel?.selecting, pierce, INJECT_METHOD_NEEDLE, FALSE)) ? null : /datum/msg/dose/limb_covered
+	return isnull(target.inject_refusal(user, null, pierce, INJECT_METHOD_NEEDLE, FALSE)) ? null : /datum/msg/dose/limb_covered
 
 /// The roll of a thick hide, for the limb aimed at: TRUE when the thing is turned away.
 /datum/capability/lib/dose/proc/hide_turns_it_away(datum/act/op/A)

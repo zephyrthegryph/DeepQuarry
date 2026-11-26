@@ -38,6 +38,7 @@
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
+	variants(nameof(variant), PROC_REF(variant_table))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN)))
 	fits_as(FIT_NO_TESHARI_VOX)
 	configure(item_worn(covers = FEET, slots = SLOT_FEET))
@@ -133,7 +134,7 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	if(!istype(prey)) return
 	if(!pred.canmove || pred?.buckled_to()) return //We can't be stepping on anyone if src?.buckled_to() or incapable of moving
 	if(pred in src?.buckled_mob_list()) return
-	if(stat_value(pred, STAT_FLYING)) return //If we're stat_value(src, STAT_FLYING), can't really step.
+	if(pred.flying) return //If we're src.flying, can't really step.
 
 	// I kept interactions very similar to normal steppies, and removed some attack logs unless harm intent:
 	// I_HELP: No painful description, messages only sent to prey. Similar to inshoe steppies from before.

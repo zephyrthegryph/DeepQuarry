@@ -246,7 +246,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 
 /mob/living/simple_mob/vore/morph/proc/morph_color()
 	set name = "Pick Color"
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "You can set your color!"
 	open_request(src, /datum/prompt/color, PROC_REF(morph_color_picked), answerer = src, question = "Choose a color.", default = color, timeout = 0)
 
@@ -259,7 +258,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 
 /mob/living/simple_mob/vore/morph/proc/take_over_prey()
 	set name = "Take Over Prey"
-	set category = VERB_CAT_ABILITIES_MORPH
 	set desc = "Take command of your prey's body."
 	if(morphed)
 		to_chat(src, span_warning("You must restore to your original form first!"))

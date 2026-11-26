@@ -110,6 +110,13 @@
 	/// The op result of the last rc_click() (for a failure message).
 	var/datum/op_result/rc_last_click
 
+/// An alternate (alt) click with an empty hand on `target`.
+/datum/unit_test/dq_p2_reagents/proc/rc_click_alt(mob/living/carbon/human/H, atom/target)
+	H.drop_item()
+	STATE_SET(H, cooldowns, next_click, 0)
+	rc_last_click = inbox_click(H, target, null, GESTURE_ALT, ORIGIN_CLICK)
+	rc_settle()
+
 /datum/unit_test/dq_p2_reagents/proc/rc_click(mob/living/carbon/human/H, atom/target, obj/item/held, stance = I_HELP, settle = TRUE)
 	H.drop_item()
 	if(held)

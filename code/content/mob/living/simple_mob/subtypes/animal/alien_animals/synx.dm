@@ -335,7 +335,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 */
 		if(L.reagents) //Seemingly broken. Would probably be really annoying anyways, so probably for the best that it doesn't work. -Azel
 			var/target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
-			if(L.can_inject(src, null, target_zone))
+			if(!L.inject_refusal(src, target_zone))
 				if(prob(poison_chance))
 					to_chat(L, span_warning("You feel a strange substance on you."))
 					L.reagents.add_reagent(poison_type, poison_per_bite)
@@ -390,7 +390,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /mob/living/simple_mob/proc/contort()
 	set name = "contort"
 	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
-	set category = VERB_CAT_ABILITIES_SYNX
 
 	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained())
 		return
@@ -408,7 +407,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /mob/living/simple_mob/animal/synx/proc/disguise()
 	set name = "Toggle Form"
 	set desc = "Switch between amorphous and humanoid forms."
-	set category = VERB_CAT_ABILITIES_SYNX
 
 	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained())
 		return
@@ -432,7 +430,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /mob/living/simple_mob/animal/synx/proc/randomspeech()
 	set name = "speak"
 	set desc = "Take a sentence you heard and speak it."
-	set category = VERB_CAT_ABILITIES_SYNX
 	if(speak && voices)
 		handle_mimic()
 	else
@@ -450,7 +447,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /mob/living/simple_mob/animal/synx/proc/sonar_ping()
 	set name = "Listen In"
 	set desc = "Allows you to listen in to movement and noises around you."
-	set category = VERB_CAT_ABILITIES_SYNX
 
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
@@ -498,7 +494,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /mob/living/simple_mob/animal/synx/proc/distend_stomach()
 	set name = "Distend Stomach"
 	set desc = "Allows you to throw up your stomach, giving your attacks burn damage at the cost of your stomach contents going everywhere. Yuck."
-	set category = VERB_CAT_ABILITIES_SYNX
 
 	if(transformed)
 		to_chat(src,span_warning("Your limbs are in the way!")) //Kind of a weak excuse but since you already can't transform when your stomach is out, this avoids situations calling a sprite that doesn't exist and lightens my workload on making and implementing them
@@ -586,7 +581,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /mob/living/simple_mob/animal/synx/proc/set_style()
 	set name = "Set Style"
 	set desc = "Customise your icons."
-	set category = VERB_CAT_ABILITIES_SYNX
 
 	var/list/options = list("Body","Horns","Marks","Eyes")
 	for(var/option in options)
@@ -704,15 +698,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet)
 /mob/living/simple_mob/animal/synx/ai/pet
 	speak_chance = 2.0666
 
-//HONKMOTHER Code.
-/*/mob/living/simple_mob/animal/synx/proc/honk()
-	set name = "HONK"
-	set desc = "TAAA RAINBOW"
-	set category = VERB_CAT_ABILITIES_SYNX
-	icon_state = "synx_pet_rainbow"
-	icon_living = "synx_pet_rainbow"
-	play_sfx(src.loc, SFX_ITEMS_BIKEHORN)
-*/
 /mob/living/simple_mob/animal/synx/proc/bikehorn()
 	play_sfx(src.loc, SFX_ITEMS_BIKEHORN)
 
@@ -887,23 +872,20 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/clown)
 /mob/living/simple_mob/animal/synx/ai/pet/debug/roll_realname(datum/roller/R)
 	return null
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename()
 	set name = "rename"
 	set desc = "Renames the synx"
-	set category = VERB_CAT_DEBUG
-	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Renaming", question = "What would you like to change name to?", var_name = "name")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = src, title = "Renaming", question = "What would you like to change name to?", var_name = "name")
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc()
 	set name = "redesc"
 	set desc = "Redescribes the synx"
-	set category = VERB_CAT_DEBUG
-	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Redescribing", question = "What would you like to change desc to?", var_name = "desc")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = src, title = "Redescribing", question = "What would you like to change desc to?", var_name = "desc")
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite()
 	set name = "resprite"
 	set desc = "Resprite the synx"
-	set category = VERB_CAT_DEBUG
-	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Respriting", question = "What would you like to change icon_state to?", var_name = "icon_state")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = src, title = "Respriting", question = "What would you like to change icon_state to?", var_name = "icon_state")
 
 /// A debug synx var edit. `var_name` is the var set.
 /datum/prompt/text/synx_debug_var
@@ -932,9 +914,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/disguise, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style, hidden = TRUE)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite)
-	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc)
 
 
 ////////////////////////////////////////

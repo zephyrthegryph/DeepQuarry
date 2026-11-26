@@ -7,16 +7,20 @@
 	P.dress_preview_mob(mannequin)
 	mannequin.set_dir(SOUTH)
 	draw_now(mannequin)
+	// A tail that shows in some facings only is left out of the draw until its facings are baked (tail_part()): wait for them, and the landing redraws the mannequin.
+	var/deadline = world.time + 10 SECONDS
+	UNTIL(!length(GLOB.human_baker.pending) || world.time > deadline)
+	draw_now(mannequin)
 	var/datum/dq_preview_flattener/flattener = new
 	var/list/flat = flattener.flatten(mannequin, SOUTH)
 	return "[json_encode(flat)]|[flattener.unsupported]"
 
-/// The first coloured style of `styles` this character may wear that is not `except` (a colour change must show).
+/// The first coloured style of `styles` this character may wear that is not `except` and has a sprite to draw (a colour change must show).
 /proc/dq_test_wearable_style(datum/preferences/P, list/styles, except)
 	var/list/available = P.get_available_styles(styles)
 	for(var/name in available)
 		var/datum/sprite_accessory/S = available[name]
-		if(istype(S) && S.do_colouration && name != except && !istaurtail(S))
+		if(istype(S) && S.do_colouration && name != except && !istaurtail(S) && icon_exists(S.icon, S.icon_state))
 			return name
 
 /// Each Looks change schedules a preview render (south now, every direction after), and that render draws the change.
@@ -111,15 +115,14 @@
 
 /datum/unit_test/dq_preview_frames_follow_wings/Run()
 	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
-	// Animated: the preview flaps wings that can (the live setting most players have on), so pick wings that animate.
-	P.update_preference(GLOB.preference_entries_by_key["animations_toggle"], TRUE)
+	// The preview no longer animates (the Animate preference was cut in Settings audit 2), so any two coloured wings will do.
 	var/list/animated = list()
 	var/list/available = P.get_available_styles(GLOB.wing_styles_list)
 	for(var/name in available)
 		var/datum/sprite_accessory/wing/W = available[name]
-		if(istype(W) && W.do_colouration && W.ani_state)
+		if(istype(W) && W.do_colouration)
 			animated += name
-	log_world("dq_preview_frames_follow_wings: animated coloured wings: [jointext(animated, ", ")]")
+	log_world("dq_preview_frames_follow_wings: coloured wings: [jointext(animated, ", ")]")
 	var/first = length(animated) ? animated[1] : dq_test_wearable_style(P, GLOB.wing_styles_list)
 	var/second = length(animated) >= 2 ? animated[2] : dq_test_wearable_style(P, GLOB.wing_styles_list, first)
 	TEST_ASSERT_NOTNULL(second, "two coloured wing styles to choose between")

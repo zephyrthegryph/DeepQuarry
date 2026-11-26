@@ -24,6 +24,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	ref_one(nameof(inserted_battery), /obj/item/anobattery)
 	ref_one(nameof(cur_artifact), /obj)
 	interface("XenoarchArtifactHarvester")
+	ui_shape(info = row(no_scanner = bool(), harvesting = int(), inserted_battery = nullable(row(name = schema_text(), stored_charge = num(), capacity = num(), artifact_id = schema_text()))))
 	op("harvest", ui_act("harvest"), then(PROC_REF(ui_act_harvest)))
 	op("stopharvest", ui_act("stopharvest"), then(PROC_REF(ui_act_stopharvest)))
 	op("ejectbattery", ui_act("ejectbattery"), then(PROC_REF(ui_act_ejectbattery)))
@@ -96,24 +97,26 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 
 	data["info"] = list(
 		"no_scanner" = TRUE,
+		"harvesting" = 0,
+		"inserted_battery" = null,
 	)
 	if(owned_scanner())
+		var/list/battery_data = null
+		var/obj/item/anobattery/battery = inserted_battery()
+		if(battery)
+			battery_data = list(
+				"name" = battery.name,
+				"stored_charge" = battery.stored_charge,
+				"capacity" = battery.capacity,
+				"artifact_id" = "N/A",
+			)
+			if(battery.battery_effect)
+				battery_data["artifact_id"] = battery.battery_effect.artifact_id || "???"
 		data["info"] = list(
 			"no_scanner" = FALSE,
 			"harvesting" = harvesting,
-			"inserted_battery" = list(),
+			"inserted_battery" = battery_data,
 		)
-		if(inserted_battery())
-			data["info"]["inserted_battery"] = list(
-				"name" = inserted_battery().name,
-				"stored_charge" = inserted_battery().stored_charge,
-				"capacity" = inserted_battery().capacity,
-				"artifact_id" = null
-			)
-			if(inserted_battery().battery_effect)
-				data["info"]["inserted_battery"]["artifact_id"] = inserted_battery().battery_effect.artifact_id || "???"
-			else
-				data["info"]["inserted_battery"]["artifact_id"] = "N/A"
 	return data
 
 /obj/machinery/artifact_harvester/proc/ui_act_harvest(datum/act/op/A)
@@ -128,8 +131,8 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 		if(harvesting < 0 && inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
 			inserted_battery().battery_effect.ToggleActivate()
 		set_harvesting(0)
-		cur_artifact().anchored = FALSE
-		cur_artifact().in_use = 0
+		cur_artifact().set_anchored(FALSE)
+		cur_artifact().set_in_use(0)
 		rel_clear(src, nameof(/obj/machinery/artifact_harvester::cur_artifact))
 		atom_say("Energy harvesting interrupted.")
 		set_icon_state("incubator")
@@ -255,8 +258,8 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 		if(source_effect)
 			set_harvesting(1)
 			set_use_power(USE_POWER_ACTIVE)
-			cur_artifact().anchored = TRUE
-			cur_artifact().in_use = 1
+			cur_artifact().set_anchored(TRUE)
+			cur_artifact().set_in_use(1)
 			set_icon_state("incubator_on")
 			atom_say("Beginning energy harvesting.")
 
@@ -271,7 +274,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 
 				//copy the new datum into the battery
 				rel_set(inserted_battery(), nameof(/obj/item/anobattery::battery_effect), E)
-				inserted_battery().stored_charge = 0
+				inserted_battery().set_stored_charge(0)
 
 /datum/prompt/choice/artifact_harvest_effect
 	title = "Effect Selection"
@@ -303,25 +306,27 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 
 	if(harvesting > 0)
 		//charge at 33% consumption rate
-		inserted_battery().stored_charge += harvesting_speed
+		var/obj/item/anobattery/charging = inserted_battery()
+		charging.set_stored_charge(charging.stored_charge + harvesting_speed)
 
 		//check if we've finished
 		if(inserted_battery().stored_charge >= inserted_battery().capacity)
 			set_use_power(USE_POWER_IDLE)
 			set_harvesting(0)
-			cur_artifact().anchored = FALSE
-			cur_artifact().in_use = 0
+			cur_artifact().set_anchored(FALSE)
+			cur_artifact().set_in_use(0)
 			rel_clear(src, nameof(cur_artifact))
 			src.visible_message(span_bold("[name]") + " states, \"Battery is full.\"")
 			set_icon_state("incubator")
 
 	else if(harvesting < 0)
 		//dump some charge
-		inserted_battery().stored_charge -= harvesting_speed
+		var/obj/item/anobattery/draining = inserted_battery()
+		draining.set_stored_charge(draining.stored_charge - harvesting_speed)
 
 		//do the effect
 		if(inserted_battery().battery_effect)
-			inserted_battery().battery_effect.periodic_step()
+			inserted_battery().battery_effect.effect_tick()
 
 			//if the effect works by touch, activate it on anyone viewing the console
 			if(inserted_battery().battery_effect.effect == EFFECT_TOUCH)
@@ -333,7 +338,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 		//if there's no charge left, finish
 		if(inserted_battery().stored_charge <= 0)
 			set_use_power(USE_POWER_IDLE)
-			inserted_battery().stored_charge = 0
+			inserted_battery().set_stored_charge(0)
 			set_harvesting(0)
 			if(inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
 				inserted_battery().battery_effect.ToggleActivate()

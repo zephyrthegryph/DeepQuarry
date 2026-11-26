@@ -12,8 +12,6 @@ SYSTEM_DEF(chat)
 	/// Assosciates a ckey with a list of messages to send to them.
 	var/list/list/datum/chat_payload/client_to_payloads = list()
 
-	/// Associates a ckey with an assosciative list of their last CHAT_RELIABILITY_HISTORY_SIZE messages.
-	var/list/list/datum/chat_payload/client_to_reliability_history = list()
 
 	/// Assosciates a ckey with their next sequence number.
 	var/list/client_to_sequence_number = list()
@@ -35,23 +33,15 @@ SYSTEM_DEF(chat)
 	var/datum/chat_payload/payload = new
 	payload.sequence = sequence
 	payload.content = message_data
+	payload.encoded = payload.into_message()
 
-	if(!(target.ckey in client_to_reliability_history))
-		client_to_reliability_history[target.ckey] = list()
-	var/list/client_history = client_to_reliability_history[target.ckey]
-	client_history["[sequence]"] = payload
-
-	if(length(client_history) > CHAT_RELIABILITY_HISTORY_SIZE)
-		var/oldest = text2num(client_history[1])
-		for(var/index in 2 to length(client_history))
-			var/test = text2num(client_history[index])
-			if(test < oldest)
-				oldest = test
-		client_history -= "[oldest]"
+	// The client's recent messages (chat_history.dm): resends and a moved chat window's replay come from it.
+	var/datum/chat_history/history = target.chat_history || target.make_chat_history()
+	history.keep(sequence, payload.encoded)
 	return payload
 
 /datum/system/chat/proc/send_payload_to_client(client/target, datum/chat_payload/payload)
-	target.tgui_panel.window.send_message("chat/message", payload.into_message())
+	target.chat_window()?.send_message("chat/message", payload.encoded || payload.into_message())
 	SEND_TEXT(target, payload.get_content_as_html())
 
 /datum/system/chat/reactions()

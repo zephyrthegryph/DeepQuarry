@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Trimmed the verb panel: removed duplicate and dead commands, no Admin tab for players"

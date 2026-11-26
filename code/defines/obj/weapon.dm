@@ -11,21 +11,6 @@ CAPABILITIES(/obj/item/phone)
 	configure(item_combat(force = 3.0, attack_verbs = list("called", "rang")))
 	configure(item_sounds(hit = SFX_WEAPONS_RING, drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
-/obj/item/rsp
-	name = "\improper Rapid-Seed-Producer (RSP)"
-	desc = "A device used to rapidly deploy seeds."
-	icon = 'icons/obj/items.dmi'
-	icon_state = "rcd"
-	opacity = 0
-	density = FALSE
-	anchored = FALSE
-	var/stored_matter = 0
-	var/mode = 1
-	w_class = ITEMSIZE_NORMAL
-
-CAPABILITIES(/obj/item/rsp)
-	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
-
 /obj/item/bikehorn
 	name = "bike horn"
 	desc = "A horn off of a bicycle."
@@ -145,19 +130,6 @@ CAPABILITIES(/obj/item/staff)
 	desc = "An ebony can with an ivory tip."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "cane"
-
-/obj/item/staff/stick
-	name = "stick"
-	desc = "A great tool to drag someone else's drinks across the bar."
-	icon = 'icons/obj/weapons.dmi'
-	icon_state = "stick"
-	item_state = "cane"
-	w_class = ITEMSIZE_SMALL
-
-CAPABILITIES(/obj/item/staff/stick)
-	configure(movable_motion(throw_range = 5, throw_speed = 1))
-	configure(item_thrown(force = 5.0))
-	configure(item_combat(force = 3.0))
 
 /obj/item/module
 	icon = 'icons/obj/module.dmi'
@@ -358,13 +330,13 @@ MATERIAL_MIX(/obj/item/stock_parts/subspace/amplifier, list(MAT_STEEL = 30,MAT_G
 	icon_state = "subspace_amplifier"
 	desc = "A compact micro-machine capable of amplifying weak subspace transmissions."
 
-MATERIAL_MIX(/obj/item/stock_parts/subspace/treatment, list(MAT_STEEL = 30,MAT_GLASS = 10))
+MATERIAL_MIX(/obj/item/stock_parts/subspace/treatment, list(MAT_STEEL = 20,MAT_GLASS = 5))
 /obj/item/stock_parts/subspace/treatment
 	name = "subspace treatment disk"
 	icon_state = "treatment_disk"
 	desc = "A compact micro-machine capable of stretching out hyper-compressed radio waves."
 
-MATERIAL_MIX(/obj/item/stock_parts/subspace/analyzer, list(MAT_STEEL = 30,MAT_GLASS = 10))
+MATERIAL_MIX(/obj/item/stock_parts/subspace/analyzer, list(MAT_STEEL = 15,MAT_GLASS = 5))
 /obj/item/stock_parts/subspace/analyzer
 	name = "subspace wavelength analyzer"
 	icon_state = "wavelength_analyzer"

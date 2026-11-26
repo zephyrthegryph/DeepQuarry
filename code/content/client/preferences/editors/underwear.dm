@@ -14,6 +14,11 @@
 	hidden = TRUE  // integrated into the loadout editor's panel; actions still dispatch here.
 	pref_keys = list("all_underwear", "all_underwear_metadata")
 
+/// The wire shape of /datum/preference_editor/underwear's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_underwear, row(selections = map_of(schema_text(), schema_text())))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_underwear_static, row(categories = map_of(schema_text(), list_of(row(name = schema_text(), icon = nullable(schema_text()), icon_state = nullable(schema_text()))))))
+
 /datum/preference_editor/underwear/build_ui_data(datum/preferences/preferences)
 	var/list/all_underwear = preferences.read_preference(/datum/preference/all_underwear) || list()
 	var/list/payload = list()

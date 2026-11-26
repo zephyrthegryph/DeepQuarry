@@ -9,9 +9,8 @@
 	..()
 
 // Simple nom proc for if you get ckey'd into a simple_mob mob! Avoids grabs.
-/mob/living/simple_mob/proc/animal_nom(mob/living/T in living_mobs_in_view(1))
+/mob/living/simple_mob/proc/animal_nom(mob/living/T)
 	set name = "Animal Nom"
-	set category = VERB_CAT_ABILITIES_VORE // Moving this to abilities from IC as it's more fitting there
 	set desc = "Since you can't grab, you get a verb!"
 
 	if(vore_active && !voremob_loaded) // On-demand belly loading.
@@ -65,14 +64,14 @@
 			open_request(src, /datum/prompt/choice/animal_digestion/enable, PROC_REF(animal_digestion_answered), answerer = user, question = "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", title = "Enabling [name]'s Digestion", enable_answer = enable_answer, disable_answer = disable_answer)
 			return
 		if(enable_answer == "Enable")
-			vore_selected_of(src).digest_mode = DM_DIGEST
+			vore_selected_of(src).set_digest_mode(DM_DIGEST)
 			after(vore_selected_of(src), 20 MINUTES, TYPE_PROC_REF(/obj/belly, reset_digest_mode), with = list(vore_default_mode))
 	else
 		if(isnull(disable_answer))
 			open_request(src, /datum/prompt/choice/animal_digestion/disable, PROC_REF(animal_digestion_answered), answerer = user, question = "This mob is currently set to process all stomach contents. Do you want to disable this?", title = "Disabling [name]'s Digestion", enable_answer = enable_answer, disable_answer = disable_answer)
 			return
 		if(disable_answer == "Disable")
-			vore_selected_of(src).digest_mode = DM_HOLD
+			vore_selected_of(src).set_digest_mode(DM_HOLD)
 
 // Added as a verb in /mob/living/simple_mob/init_vore() if vore is enabled for this mob.
 /mob/living/simple_mob/proc/toggle_fancygurgle()
@@ -87,7 +86,7 @@
 		to_chat(user, span_warning("[src] isn't vore capable."))
 		return
 
-	vore_selected_of(src).fancy_vore = !vore_selected_of(src).fancy_vore
+	vore_selected_of(src).set_fancy_vore(!vore_selected_of(src).fancy_vore)
 	to_chat(user, "[src] is now using [vore_selected_of(src).fancy_vore ? "Fancy" : "Classic"] vore sounds.")
 
 /mob/living/simple_mob/hit_with_item(obj/item/O, mob/user, attack_modifier)

@@ -238,14 +238,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 /mob/living/simple_mob/vore/bigdragon/proc/toggle_glow()
 	set name = "Toggle Glow"
 	set desc = "Switch between glowing and not glowing."
-	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	set_glow_toggle(!glow_toggle)
 
 /mob/living/simple_mob/vore/bigdragon/proc/sprite_toggle()
 	set name = "Toggle Small Sprite"
 	set desc = "Switches your sprite to a smaller variant so you can see what you're doing. Others will always see your standard sprite instead. "
-	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	if(!small)
 		var/image/I = image(icon = small_icon, icon_state = small_icon_state, loc = src)
@@ -260,7 +258,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 /mob/living/simple_mob/vore/bigdragon/proc/flame_toggle()
 	set name = "Toggle breath attack"
 	set desc = "Toggles whether you will breath attack on harm intent (If you have one)."
-	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	if(norange)
 		to_chat(src, span_userdanger("You don't have a breath attack!"))
@@ -272,7 +269,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 /mob/living/simple_mob/vore/bigdragon/proc/special_toggle()
 	set name = "Toggle special attacks"
 	set desc = "Toggles whether you will tail spin and charge (If you have them)."
-	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	if(nospecial)
 		to_chat(src, span_userdanger("You don't have special attacks!"))
@@ -343,7 +339,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 /mob/living/simple_mob/vore/bigdragon/proc/set_style()
 	set name = "Set Dragon Style"
 	set desc = "Customise your icons."
-	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	var/list/options = list("Underbelly","Body","Ears","Mane","Horns","Eyes")
 	for(var/option in options)
@@ -853,7 +848,6 @@ CAPABILITIES(/obj/item/projectile/bullet/incendiary/dragonflame)
 /mob/living/simple_mob/vore/bigdragon/proc/export_style()
 	set name = "Export style string"
 	set desc = "Export a string of text that can be used to instantly get the current style back using the import style verb"
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	var/output_style = jointext(list(
 		overlay_colors["Underbelly"],
 		under,
@@ -872,7 +866,6 @@ CAPABILITIES(/obj/item/projectile/bullet/incendiary/dragonflame)
 /mob/living/simple_mob/vore/bigdragon/proc/import_style()
 	set name = "Import style string"
 	set desc = "Import a string of text that was made using the import style verb to get back that style"
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	open_request(src, /datum/prompt/text, PROC_REF(import_style_entered), answerer = src, title = "Style loading", question = "Paste the style string you exported with Export Style.", timeout = 0)
 
 /mob/living/simple_mob/vore/bigdragon/proc/import_style_entered(datum/act/request/A)

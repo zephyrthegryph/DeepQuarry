@@ -137,6 +137,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 	op("pai_access_closed", item(/obj/item/card/id), label("Use"), when(req(PROC_REF(swipe_refused))), then(PROC_REF(access_closed)))
 	op("pai_hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(pai_item_hit)))
 	interface("pAIInterface", title = "pAI Software Interface", state = nameof(GLOB.tgui_self_state))
+	ui_shape(available_ram = num(), bought = list_of(row(name = schema_text(), id = schema_text(), on = bool())), not_bought = list_of(row(name = schema_text(), id = schema_text(), ram = num())), emotions = list_of(row(displayText = schema_text(), value = int())), current_emotion = int())
 	op("software", ui_act("software", arg("software", schema_text(4096))), then(PROC_REF(ui_act_software)))
 	op("purchase", ui_act("purchase", arg("purchase", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
 	op("image", ui_act("image", arg("image", num())), then(PROC_REF(ui_act_image)))
@@ -164,7 +165,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 	P.name = P.owner + " (" + P.ownjob + ")"
 	var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 	if(M)
-		M.toff = FALSE
+		M.set_toff(FALSE)
 	return P
 
 /// Its card and the card's radio, and its chassis when a subtype overrides the default (setup()).
@@ -192,7 +193,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 
 	// Meta Info for pAI
 	if (client.prefs)
-		identity().ooc_notes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes))
+		identity().set_ooc_notes(text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes)))
 		identity().ooc_notes_likes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes))
 		identity().ooc_notes_dislikes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes))
 		identity().ooc_notes_favs = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_favs))
@@ -246,7 +247,6 @@ CAPABILITIES(/mob/living/silicon/pai)
 
 /// Verb used to select a chassis from the list of available chassis
 /mob/living/silicon/pai/proc/choose_chassis()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Choose Chassis"
 
 	pai_ui_chassis.tgui_interact(src)

@@ -4,28 +4,21 @@
 
 // ---------------------------------------------------------------- fixtures
 
-/// The laser pointer case: should_run() reads energy, draw() reads pointing, the UI reads energy.
+/// The laser pointer case: draw() reads pointing, the UI reads energy.
 /obj/cap_fixture/dx_deps_laser
 	icon_state = "fixture_base"
-	periodic_cadence = PERIODIC_SLOW
 	var/energy = 8
 	var/max_energy = 8
 	var/pointing = FALSE
 	/// Tracked, but nothing reads it.
 	var/spare = 0
-	var/should_run_calls = 0
 	var/draw_calls = 0
 
 
 /obj/cap_fixture/dx_deps_laser/derived()
 	. = ..()
-	. += runs_while(nameof(energy))
 	. += drawn_from(nameof(pointing))
 	. += ui_from(nameof(energy))
-
-/obj/cap_fixture/dx_deps_laser/should_run()
-	should_run_calls++
-	return energy < max_energy
 
 /obj/cap_fixture/dx_deps_laser/draw(datum/look/look)
 	..()
@@ -132,17 +125,13 @@ SETTER(/obj/cap_fixture/dx_deps_source, glow)
 
 /// A stat read: the stat's var publishes like a tracked var (a body factor is read this way).
 /obj/cap_fixture/dx_deps_factor
-	periodic_cadence = PERIODIC_SLOW
 
 STAT(/obj/cap_fixture/dx_deps_factor, dx_level, SUM)
 STAT(/obj/cap_fixture/dx_deps_factor, dx_other, SUM)
 
 /obj/cap_fixture/dx_deps_factor/derived()
 	. = ..()
-	. += runs_while(nameof(dx_level))
-
-/obj/cap_fixture/dx_deps_factor/should_run()
-	return TRUE
+	. += ui_from(nameof(dx_level))
 
 /// An output that writes state.
 /obj/cap_fixture/dx_deps_writer
@@ -209,36 +198,27 @@ STAT(/obj/cap_fixture/dx_deps_factor, dx_other, SUM)
 	..()
 	into += new /datum/capability/dx_deps_reads
 
-/// An empty runs_while() makes the type exact: only what it (or its capabilities) reads re-derives.
+/// An empty drawn_from() makes the type exact: only what it (or its capabilities) reads re-derives.
 /obj/cap_fixture/dx_deps_cap/derived()
 	. = ..()
-	. += runs_while()
+	. += drawn_from()
 
 // ---------------------------------------------------------------- tests
 
-/// The laser pointer case: a drop in energy wakes the recharge, and only should_run() (and the UI) re-run.
-/datum/unit_test/dx_deps_should_run_wake/Run()
+/// The laser pointer case: a drop in energy re-runs only the UI, a change of pointing only draw().
+/datum/unit_test/dx_deps_reads_reach_their_outputs/Run()
 	var/obj/cap_fixture/dx_deps_laser/F = allocate(/obj/cap_fixture/dx_deps_laser)
 	refresh_flush()
-	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "a full pointer does not recharge")
 	var/draws = F.draw_calls
-	var/checks = F.should_run_calls
 	F.set_energy(3)
-	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_RUN | DEP_UI, "energy is read by should_run() and the UI only")
+	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_UI, "energy is read by the UI only")
 	refresh_flush()
-	TEST_ASSERT((!isnull(F.periodic_pipe)), "the drop woke the recharge")
-	TEST_ASSERT_EQUAL(F.should_run_calls, checks + 1, "should_run() re-checked once")
 	TEST_ASSERT_EQUAL(F.draw_calls, draws, "draw() was not re-run for an energy change")
-	F.set_energy(8)
-	refresh_flush()
-	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "a full pointer parks again")
 	// A change that reaches only draw().
-	checks = F.should_run_calls
 	F.set_pointing(TRUE)
 	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_DRAW, "pointing is read by draw() only")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.draw_calls, draws + 1, "draw() re-ran")
-	TEST_ASSERT_EQUAL(F.should_run_calls, checks, "should_run() did not")
 
 /// A tracked change nobody reads re-derives nothing; a type that declares nothing, and a plain
 /// changed(), re-derive everything.
@@ -247,12 +227,10 @@ STAT(/obj/cap_fixture/dx_deps_factor, dx_other, SUM)
 	var/obj/cap_fixture/dx_deps_legacy/L = allocate(/obj/cap_fixture/dx_deps_legacy)
 	refresh_flush()
 	var/draws = F.draw_calls
-	var/checks = F.should_run_calls
 	F.set_spare(5)
 	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "nothing reads spare: nothing is queued")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.draw_calls, draws, "no draw")
-	TEST_ASSERT_EQUAL(F.should_run_calls, checks, "no should_run()")
 	state_changed(F)
 	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_ALL, "a plain state_changed() still re-derives everything")
 	refresh_flush()
@@ -372,7 +350,7 @@ STAT(/obj/cap_fixture/dx_deps_factor, dx_other, SUM)
 	hold(F, STAT_DX_OTHER, 3, source)
 	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "a stat it does not read")
 	hold(F, STAT_DX_LEVEL, 2, source)
-	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_RUN, "the stat it reads re-checks should_run()")
+	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_UI, "the stat it reads re-checks its reader")
 	refresh_flush()
 	hold(F, STAT_DX_LEVEL, 2, source)
 	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "an unchanged stat")

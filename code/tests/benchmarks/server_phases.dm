@@ -81,11 +81,9 @@
 		metric("startup_init_ms_[name]", systems[name], "ms")
 	wait_for_assets()
 	// First draws left after init (the boot drain deferred to the presentation lane): how many, and how long the lane takes to finish them.
-	metric("startup_draws_left", length(GLOB.refresh_queue), "draws")
-	metric("startup_draws_parked", GLOB.refresh_parked, "draws")
-	detail("park_residual", GLOB.refresh_park_residual)
+	metric("startup_draws_left", length(GLOB.refresh_queue) + draw_depth(), "draws")
 	var/drain_started = REALTIMEOFDAY
-	while(length(GLOB.refresh_queue) > 100 && REALTIMEOFDAY - drain_started < 5 MINUTES)
+	while(length(GLOB.refresh_queue) + draw_depth() > 100 && REALTIMEOFDAY - drain_started < 5 MINUTES)
 		stoplag()
 	metric("startup_draws_finish_s", (REALTIMEOFDAY - drain_started) / 10, "s")
 	wait_fires(SSair, 10)

@@ -1,5 +1,5 @@
+import { Label } from 'tgui/components/Label';
 import { Blink, Box, Section, Stack } from 'tgui-core/components';
-
 import { WikiLogo } from '../../WikiCommon/WikiLogo';
 
 export const WikiNoDataPage = (props) => {
@@ -21,9 +21,9 @@ export const WikiNoDataPage = (props) => {
             </Box>
           </Stack.Item>
           <Stack.Item>
-            <Box textAlign="center" color="label" fontSize="16px">
+            <Label textAlign="center" fontSize="16px">
               Maybe check back later!
-            </Box>
+            </Label>
           </Stack.Item>
         </Stack>
       </Blink>

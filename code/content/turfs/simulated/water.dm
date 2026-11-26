@@ -90,7 +90,7 @@ CAPABILITIES(/turf/simulated/floor/water)
 			water_breath.adjust_gas(gasid, BREATH_MOLES) // They have no oxygen, but non-zero moles and temp
 			heat_set(water_breath, above_air.return_temperature())
 			return water_breath
-	if(L && L.is_bad_swimmer() && depth >= 2 && !L.buckled() && !stat_value(L, STAT_FLYING))
+	if(L && L.is_bad_swimmer() && depth >= 2 && !L.buckled() && !L.flying)
 		if(prob(10))
 			act_message(L, null, MSG_SELF(span_warning("You struggle to keep your head above the water!")), MSG_OTHERS(span_notice("%U% splashes wildly.")))
 		if(L.can_breathe_water())
@@ -116,7 +116,7 @@ CAPABILITIES(/turf/simulated/floor/water)
 /turf/simulated/floor/water/Entered(atom/movable/AM, atom/oldloc)
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING) || L.is_incorporeal())
+		if(dq_get_hovering(L) || L.flying || L.is_incorporeal())
 			return
 		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
@@ -129,7 +129,7 @@ CAPABILITIES(/turf/simulated/floor/water)
 /turf/simulated/floor/water/Exited(atom/movable/AM, atom/newloc)
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING) || L.is_incorporeal())
+		if(dq_get_hovering(L) || L.flying || L.is_incorporeal())
 			return
 		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
@@ -186,8 +186,8 @@ CAPABILITIES(/turf/simulated/floor/water)
 /mob/living/proc/check_submerged()
 	if(src?.buckled_to())
 		return 0
-	if(dq_get_hovering(src) || stat_value(src, STAT_FLYING) || is_incorporeal())
-		if(stat_value(src, STAT_FLYING))
+	if(dq_get_hovering(src) || src.flying || is_incorporeal())
+		if(src.flying)
 			adjust_nutrition(-0.5)
 		return 0
 	if(locate_within(loc, /obj/structure/catwalk))

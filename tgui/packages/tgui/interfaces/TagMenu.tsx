@@ -1,28 +1,15 @@
 // Admin Tag Menu — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-
-type Entry = {
-  index: number;
-  ref: string;
-  name: string;
-  type: string;
-  area_coord: string;
-  health: string;
-  is_marked: BooleanLike;
-};
-
-type Data = {
-  entries: Entry[];
-};
+import type { TagMenuActions, TagMenuData } from './generated/TagMenu';
 
 export const TagMenu = () => {
-  const { data, act } = useBackend<Data>();
-  const { entries } = data;
+  const { data, act } = useBackend<TagMenuData, TagMenuActions>();
+  const { entries = [] } = data;
   return (
     <Window width={620} height={620} title="Tag Menu">
       <Window.Content scrollable>
@@ -44,15 +31,13 @@ export const TagMenu = () => {
                     <Box bold inline>
                       #{e.index}: {e.name}
                     </Box>{' '}
-                    <Box color="label" inline>
-                      ({e.type})
-                    </Box>
+                    <Label inline>({e.type})</Label>
                   </Box>
                   {e.area_coord ? (
-                    <Box ml={1} color="label">
+                    <Label ml={1}>
                       {e.area_coord}
                       {e.health ? ` — ${e.health}` : ''}
-                    </Box>
+                    </Label>
                   ) : null}
                   <Box mt="2px">
                     <Button compact onClick={() => act('vv', { ref: e.ref })}>

@@ -10,8 +10,6 @@
 
 //Grows biological versions of chameleon clothes.
 /mob/proc/changeling_fabricate_clothing()
-	set category = VERB_CAT_CHANGELING
-	set name = "Fabricate Clothing (10)"
 
 	if(changeling_generic_equip_all_slots(GLOB.changeling_fabricated_clothing, cost = 10))
 		return 1
@@ -137,8 +135,7 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/atom/movable/AM in contents_of(src)) //Dump whatever's in the bag before deleting. // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/atom/movable/AM in contents_of(src)) //Dump whatever's in the bag before deleting.
 			AM.forceMove(get_turf(loc))
 		spent(src)
 

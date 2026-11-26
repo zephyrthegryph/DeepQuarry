@@ -64,8 +64,16 @@ CAPABILITIES(/obj/item/reagent_containers/glass)
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(remember_base_text))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOTTLE, pickup = SFX_ITEMS_PICKUP_BOTTLE))
+	owns_one(nameof(funnel), /obj/item/chem_funnel)
+	owns_many(nameof(solids), /obj/item)
+	owns_many(nameof(dissolutions), /datum/solid_progress)
+	owns_one(nameof(electrode), /obj/item/chem_electrode)
 	glass_handling()
+	glass_purification()
+	glass_nesting()
 	glass_container()
+	every(2 SECONDS, then(PROC_REF(dissolve_ticked)), when = PROC_REF(solids_lying_now))
+	owns_one(nameof(nested), /obj/item/reagent_containers/glass)
 
 MSG_DEF_SELF(glass/label_too_long, "The label can be at most 50 characters long.")
 MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too recently, try again later.")
@@ -236,7 +244,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
 	desc = "A large beaker."
 	icon_state = "beakerlarge"
 	material_template = /datum/material_template/container
-	material_total = 5000
+	material_total = 1000
 	volume = 120
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 120
@@ -279,7 +287,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker/bluespace)
 	desc = "A small glass vial."
 	icon_state = "vial"
 	material_template = /datum/material_template/container
-	material_total = 250
+	material_total = 100
 	volume = 30
 	w_class = ITEMSIZE_TINY
 	amount_per_transfer_from_this = 10
@@ -375,6 +383,27 @@ MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with el
 	user.put_in_hands(new /obj/item/clothing/head/helmet/bucket)
 	consume(src, user)
 	return OP_OK
+
+/// A wide basin, bigger than any beaker: stand a small container in it with ice or warm water round it for a bath (code/content/reagents/purification/nesting.dm).
+/obj/item/reagent_containers/glass/basin
+	name = "chemistry basin"
+	desc = "A wide steel basin for baths: stand a small beaker in it with ice or warm water round it. Can hold up to 200 units."
+	icon = 'icons/obj/janitor.dmi'
+	icon_state = "bucket"
+	item_state = "bucket"
+	MATERIAL_BULK(MAT_STEEL, 200)
+	w_class = ITEMSIZE_NORMAL
+	amount_per_transfer_from_this = 20
+	max_transfer_amount = 200
+	volume = 200
+	flags = NONE
+
+/obj/item/reagent_containers/glass/basin/draw(datum/look/look)
+	. = ..()
+	draw_glass(look, initial(icon_state), FALSE, FALSE)
+
+CAPABILITIES(/obj/item/reagent_containers/glass/basin)
+	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/item/reagent_containers/glass/bucket/wood
 	desc = "An old wooden bucket."
@@ -536,6 +565,17 @@ CAPABILITIES(/obj/item/reagent_containers/glass/kettle)
 	name = "vial (" + REAGENT_ID_SUPERMATTER + ")"
 	desc = "A glass vial containing the extremely dangerous results of grinding a shard of supermatter down to a fine powder."
 	prefill = list(REAGENT_ID_SUPERMATTER = 5)
+
+/// The expedition finds the rare feedstock chemistry starts from (code/content/reagents/blocks/structures.dm, the relic and void trees): found, never made.
+/obj/item/reagent_containers/glass/beaker/vial/relic_ichor
+	name = "sealed vial (" + REAGENT_ID_RELICICHOR + ")"
+	desc = "A wax-sealed vial of thick ichor from a vault of an old expedition site."
+	prefill = list(REAGENT_ID_RELICICHOR = 20)
+
+/obj/item/reagent_containers/glass/beaker/vial/void_amber
+	name = "sealed vial (" + REAGENT_ID_VOIDAMBER + ")"
+	desc = "A lead-sealed vial of amber that set around something that was not there."
+	prefill = list(REAGENT_ID_VOIDAMBER = 20)
 
 /obj/item/reagent_containers/glass/beaker/measuring_cup
 	name = "measuring cup"

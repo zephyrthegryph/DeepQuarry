@@ -79,6 +79,7 @@
 
 CAPABILITIES(/obj/item/transfer_valve)
 	interface("TransferValve", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(valve = bool(), tank_one = nullable(schema_text()), tank_two = nullable(schema_text()), attached_device = nullable(schema_text()))
 	without("ui_open")
 	op("tankone", ui_act("tankone"), then(PROC_REF(ui_act_tankone)))
 	op("tanktwo", ui_act("tanktwo"), then(PROC_REF(ui_act_tanktwo)))

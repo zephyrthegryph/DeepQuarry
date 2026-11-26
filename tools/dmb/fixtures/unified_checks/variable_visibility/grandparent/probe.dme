@@ -1,6 +1,0 @@
-/datum/base
-    var/SpacemanDMM_private/p = null
-/datum/base/middle
-    p = null
-/datum/base/middle/child
-    p = null

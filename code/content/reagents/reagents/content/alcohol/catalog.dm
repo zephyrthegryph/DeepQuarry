@@ -1638,9 +1638,6 @@
 	color = "#fff200"
 	wiki_flag = WIKI_DRINK
 
-/datum/reagent/lipozine/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjust_nutrition(-20 * removed)
-
 /datum/reagent/ethanol/pink_russian
 	name = REAGENT_PINKRUSSIAN
 	id = REAGENT_ID_PINKRUSSIAN
@@ -2037,8 +2034,7 @@
 
 //SOUPS. Don't use the base soup reagent.
 /datum/reagent/drink/soup
-	name = REAGENT_SOUP
-	id = REAGENT_ID_SOUP
+	name = REAGENT_DEVELOPER_WARNING // abstract base: only its subtypes are reagents
 	description = "An indistinct soupy mass of nominal goodness, but questionable flavour."
 	taste_description = "upsettingly bland soup"
 	color = "#9a9a9a"
@@ -2059,14 +2055,6 @@
 	taste_description = "earthy mushrooms"
 	color = "#a59a83"
 	allergen_type = ALLERGEN_FUNGI //shrooms!
-
-/datum/reagent/drink/soup/chicken
-	name = REAGENT_CHICKENSOUP
-	id = REAGENT_ID_CHICKENSOUP
-	description = "A fairly thick, warming chicken-based soup."
-	taste_description = "savoury chicken goodness"
-	color = "#d4c574"
-	allergen_type = ALLERGEN_MEAT //plain ol' chimken
 
 /datum/reagent/drink/soup/chicken_noodle
 	name = REAGENT_CHICKENNOODLESOUP
@@ -2112,8 +2100,7 @@
 
 /datum/reagent/drink/coffee/nukie
 
-	name = REAGENT_NUKIE
-	id = REAGENT_ID_NUKIE
+	name = REAGENT_DEVELOPER_WARNING // abstract base: only its subtypes are reagents
 	description = "An extremely concentrated caffinated drink."
 	color = "#102838"
 	adj_temp = 0
@@ -2244,20 +2231,6 @@
 	cup_name = "cup of matcha latte"
 	cup_desc = "A nice and refreshing beverage while you are studying."
 
-/datum/reagent/slimedrink
-	name = REAGENT_SLIMEDRINK
-	id = REAGENT_ID_SLIMEDRINK
-	description = "A gooey semi-liquid produced from your fellow slimey crew members."
-	taste_description = "jiggly"
-	taste_mult = 1.3
-	reagent_state = LIQUID
-	color = "#8bdce5"
-
-	glass_name = REAGENT_SLIMEDRINK
-	glass_desc = "Slime thats safe to drink (relatively)"
-	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
-	industrial_use = REFINERYEXPORT_REASON_FOOD
-
 /datum/reagent/drink/soda
 	ingest_met = REM * 5 //Makes it so soda metabolizes faster, since without this increase, the nutrients it currently gives does nothing. Also, metabolises faster then normal nutrients due to being soda.
 
@@ -2349,9 +2322,7 @@
 	strength = 20
 
 /datum/reagent/drink/freshtea
-	treatment_tags = list(TREAT_ANTITOXIN = 0.3)
-	name = REAGENT_FRESHTEA
-	id = REAGENT_ID_FRESHTEA //Not meant to be obtainable, this is to define effects for teas made from grown teas.
+	name = REAGENT_DEVELOPER_WARNING // abstract base: only its subtypes are reagents
 	description = "Tasty green tea, it has antioxidants, it's good for you! Fresh means it's even healthier!"
 	taste_description = "green tea"
 	color = "#cac162"
@@ -2370,6 +2341,7 @@
 // Fresh tea's antitoxin action is its treatment_tags profile (higher than other tea, still worse than dylovene).
 
 /datum/reagent/drink/freshtea/green
+	treatment_tags = list(TREAT_ANTITOXIN = 0.3)
 	name = REAGENT_FRESHGREENTEA
 	id = REAGENT_ID_FRESHTEAGREEN
 	description = "Floral green tea, it has antioxidants, it's good for you! Fresh means it's even healthier!"
@@ -2426,35 +2398,6 @@
 	cup_icon_state = "cup_tea"
 	cup_name = "cup of tea"
 	cup_desc = "Green tea. It smells a bit off."
-
-/datum/reagent/drink/matchapowder
-	name = REAGENT_MATCHAPOWDER
-	id = REAGENT_ID_MATCHAPOWDER
-	description = "Finely ground green tea. This is about the highest quality matcha you can prepare without traditional methods."
-	taste_description = "heavy bitterness"
-	color = "#86a443"
-
-	glass_name = "matcha powder"
-	glass_desc = "Matcha powder, waiting for brewing."
-
-/datum/reagent/drink/matcha
-	treatment_tags = list(TREAT_ANTITOXIN = 0.45)
-	name = REAGENT_MATCHA
-	id = REAGENT_ID_MATCHA
-	description = "A form of green tea where the leaf is ground and suspended in water rather than steeped. This is considered cooking grade."
-	taste_description = "floral, full-bodied bitterness with a subtle, earthy sweetness"
-	color = "#9bc265"
-	adj_dizzy = -4
-	adj_drowsy = -1
-	adj_sleepy = -3
-	adj_temp = 20
-
-	glass_name = REAGENT_ID_MATCHA
-	glass_desc = "Heavenly matcha. Good for body and spirit."
-
-	cup_icon_state = "cup_tea"
-	cup_name = "cup of matcha"
-	cup_desc = "Heavenly matcha. Good for body and spirit."
 
 // Matcha's antitoxin action is its treatment_tags profile (almost on par with dylovene).
 

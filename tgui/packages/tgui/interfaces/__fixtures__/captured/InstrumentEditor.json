@@ -1,0 +1,37 @@
+{
+	"can_switch_instrument": 0,
+	"possible_instruments": [
+		{
+			"name": "FluidR3 Grand Piano",
+			"id": "r3grand"
+		}
+	],
+	"sustain_modes": [
+		"Linear",
+		"Exponential"
+	],
+	"max_repeats": 10,
+	"min_volume": 1,
+	"max_volume": 75,
+	"note_shift_min": -100,
+	"note_shift_max": 100,
+	"max_line_chars": 300,
+	"max_lines": 1000,
+	"id": "",
+	"note_shift": 0,
+	"sustain_mode": "Linear",
+	"volume": 35,
+	"volume_dropoff_threshold": 0,
+	"sustain_indefinitely": 1,
+	"playing": 0,
+	"repeat": 0,
+	"using_instrument": "FluidR3 Grand Piano",
+	"octaves": 0,
+	"sustain_mode_button": "Linear Sustain Duration (in seconds)",
+	"sustain_mode_duration": 0.5,
+	"sustain_mode_min": 0.1,
+	"sustain_mode_max": 50,
+	"instrument_ready": 1,
+	"bpm": 120,
+	"lines": []
+}

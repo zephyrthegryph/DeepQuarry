@@ -109,7 +109,10 @@ fn plan() -> DirectivePlan {
     }
 }
 fn expanded(source: &str) -> ExpandedRegions {
-    ExpandedRegions::with_text(source.into())
+    ExpandedRegions {
+        text: source.into(),
+        ..Default::default()
+    }
 }
 fn policy() -> CapturePolicy {
     CapturePolicy {

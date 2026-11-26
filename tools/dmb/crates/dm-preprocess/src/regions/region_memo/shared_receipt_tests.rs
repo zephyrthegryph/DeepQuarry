@@ -103,18 +103,6 @@ fn parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire() {
     let bytes = value.to_bytes().unwrap();
     assert_eq!(bytes, dm_wire::encode(EXPANSION_VERSION, &legacy).unwrap());
     assert_eq!(ExpansionRecord::from_bytes(&bytes).unwrap(), value);
-    let mut proof_issued = value.clone();
-    Arc::make_mut(&mut proof_issued.lines)[0].trace_set |= SINGLE_PHYSICAL_MACRO_LINE;
-    assert_eq!(
-        proof_issued.to_bytes().unwrap(),
-        bytes,
-        "private native provenance must never alter the legacy wire"
-    );
-    assert_eq!(
-        proof_issued, value,
-        "producer receipts are outside logical expansion identity"
-    );
-
     let enriched = value
         .with_fragment(9, Span::new(0, 2), Arc::from([1u8, 2]))
         .unwrap();
@@ -189,18 +177,14 @@ fn retained_trace_owners_share_capture_and_rebind_current_definition_origin() {
         .iter()
         .find(|line| !line.macro_expansions.is_empty())
         .unwrap()
-        .macro_expansions.native_owner().unwrap();
+        .macro_expansions;
     let (stored_record, stored) = recorded
         .iter()
         .flat_map(|record| record.lines.iter().map(move |line| (record, line)))
         .find(|(record, line)| !record.trace_tables.set(line).is_empty())
         .unwrap();
-    let stored_name = stored_record
-        .trace_tables
-        .name(&stored_record.trace_tables.set(stored)[0]);
-    let stored_chain = stored_record
-        .trace_tables
-        .chain(&stored_record.trace_tables.set(stored)[0]);
+    let stored_name = stored_record.trace_tables.name(&stored_record.trace_tables.set(stored)[0]);
+    let stored_chain = stored_record.trace_tables.chain(&stored_record.trace_tables.set(stored)[0]);
     assert!(Arc::ptr_eq(&traces[0].name, stored_name));
     assert!(Arc::ptr_eq(&traces[0].replacement_chain, stored_chain));
     // The observed definitions move; the reused body region's exact bytes do not.
@@ -218,7 +202,7 @@ fn retained_trace_owners_share_capture_and_rebind_current_definition_origin() {
         .iter()
         .find(|line| !line.macro_expansions.is_empty())
         .unwrap()
-        .macro_expansions.native_owner().unwrap();
+        .macro_expansions;
     assert!(Arc::ptr_eq(stored_name, &hydrated[0].name));
     assert!(Arc::ptr_eq(stored_chain, &hydrated[0].replacement_chain));
     // Origin path is issued by the current segment definition, never by Trace.

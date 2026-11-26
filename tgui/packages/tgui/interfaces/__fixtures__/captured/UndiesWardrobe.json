@@ -1,0 +1,28 @@
+{
+	"categories": [
+		{
+			"name": "Underwear, top",
+			"item_name": "None",
+			"has_item": 0,
+			"tweaks": []
+		},
+		{
+			"name": "Underwear, bottom",
+			"item_name": "None",
+			"has_item": 0,
+			"tweaks": []
+		},
+		{
+			"name": "Socks",
+			"item_name": "None",
+			"has_item": 0,
+			"tweaks": []
+		},
+		{
+			"name": "Undershirt",
+			"item_name": "None",
+			"has_item": 0,
+			"tweaks": []
+		}
+	]
+}

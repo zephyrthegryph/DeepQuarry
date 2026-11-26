@@ -73,6 +73,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	op("open_ui", hand(), ungated(), label("Open controls"), then(TYPE_PROC_REF(/atom, op_open_ui)))
 	op("mulebot_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load"), then(PROC_REF(mulebot_interaction_drag)))
 	interface("MuleBot", input = menu())
+	ui_shape(suffix = nullable(schema_text()), power = bool(), load = nullable(schema_text()), locked = bool(), auto_return = bool(), crates_only = bool(), hatch = bool(), safety = bool(), issilicon = bool())
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("stop", ui_act("stop"), then(PROC_REF(ui_act_stop)))
 	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
@@ -96,7 +97,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	var/list/data = list()
 	data["suffix"] = suffix
 	data["power"] = on
-	data["load"] = load
+	data["load"] = load?.name // the window shows the load by name
 	data["locked"] = locked
 	data["auto_return"] = auto_return
 	data["crates_only"] = crates_only
@@ -261,7 +262,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 				"work_units" = 1,
 				"cargo_type" = cargo_type,
 				"detail" = "[src] completed an autonomous delivery to [completed_target].",
-			), "automation:[handle_of(src)]:delivery:[world.time]", src)
+			), "automation:[handle_text(handle_of(src))]:delivery:[world.time]", src)
 		resetTarget()
 		if(auto_return && home && (loc != home))
 			rel_set(src, nameof(target), home)

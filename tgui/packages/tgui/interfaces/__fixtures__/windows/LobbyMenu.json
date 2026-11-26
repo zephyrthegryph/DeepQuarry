@@ -1,0 +1,16 @@
+{
+	"ready": false,
+	"server_name": "DeepQuarry",
+	"map": "NSB Southern Cross",
+	"station_time": "12:41",
+	"display_loading": false,
+	"round_start": true,
+	"round_time": "00:00",
+	"new_news": true,
+	"can_submit_feedback": true,
+	"show_station_news": true,
+	"new_station_news": false,
+	"new_changelog": true,
+	"can_start_now": false,
+	"immediate_start": false
+}

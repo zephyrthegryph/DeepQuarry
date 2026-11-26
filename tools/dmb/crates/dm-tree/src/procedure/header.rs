@@ -1,5 +1,5 @@
 //! Borrowed spans over one lexical pass; subviews keep expression-local offsets.
-use dm_syntax::{Span, SpanToken, TokenKind, TokenWindow};
+use dm_syntax::{Span, SpanToken, TokenKind};
 #[derive(Debug)]
 pub(super) struct LexedHeader<'a> {
     source: &'a str,
@@ -8,8 +8,6 @@ pub(super) struct LexedHeader<'a> {
 }
 impl<'a> LexedHeader<'a> {
     pub(super) fn new(source: &'a str) -> Self {
-        #[cfg(test)]
-        LEXICAL_HEADER_CALLS.with(|n| n.set(n.get() + 1));
         let lexed = dm_syntax::lex_spans(source);
         Self {
             source,
@@ -23,63 +21,22 @@ impl<'a> LexedHeader<'a> {
     pub(super) fn view(&self) -> HeaderView<'_> {
         HeaderView {
             source: self.source,
-            tokens: TokenWindow::from_slice(&self.tokens),
+            tokens: &self.tokens,
             range: Span::new(0, self.source.len()),
         }
     }
 }
 #[derive(Clone, Copy)]
-pub(crate) struct HeaderView<'a> {
+pub(super) struct HeaderView<'a> {
     source: &'a str,
-    tokens: TokenWindow<'a>,
+    tokens: &'a [SpanToken],
     range: Span,
 }
 impl<'a> HeaderView<'a> {
-    // Only the sibling original-input producer calls this constructor. A view
-    // never claims filesystem/current-frame authority by itself.
-    /// The real primary event already proves the source/token/header boundary.
-    /// No lexical replay or second token validation walk is needed.
-    pub(super) fn from_primary_header(event:&dm_syntax::OriginalPrimaryHeader<'a>)->Self{Self{source:event.source(),tokens:event.token_window(),range:event.span()}}
-    pub(super) fn original(
-        source: &'a str,
-        tokens: &'a [SpanToken],
-        range: Span,
-    ) -> Result<Self, String> {
-        Self::original_window(source, TokenWindow::from_slice(tokens), range)
-    }
-
-    pub(super) fn original_window(
-        source: &'a str,
-        tokens: TokenWindow<'a>,
-        range: Span,
-    ) -> Result<Self, String> {
-        source
-            .get(range.range())
-            .ok_or("original header range unavailable")?;
-        if tokens
-            .iter()
-            .any(|t| t.span.start < range.start || t.span.end > range.end)
-        {
-            return Err("original header token escaped its issued range".into());
-        }
-        Ok(Self {
-            source,
-            tokens,
-            range,
-        })
-    }
-    pub(super) fn parameter_markers(self)->Result<(Option<usize>,Option<Span>,Option<Span>),String>{let(a,b,c,_)=self.parameter_markers_full()?;Ok((a,b,c))}
-    pub(super) fn parameter_markers_full(self)->Result<(Option<usize>,Option<Span>,Option<Span>,Option<Span>),String>{let parts=dm_syntax::parameter_clause_spans_in_window(self.source,self.tokens,self.range).map_err(str::to_owned)?;let relative=|span:Span|Span::new(span.start-self.range.start,span.end-self.range.start);Ok((parts.assignment.map(|span|span.start-self.range.start),parts.annotation.map(relative),parts.source.map(relative),parts.post_source_annotation.map(relative)))}
-    pub(super) fn span(self) -> Span {
-        self.range
-    }
-    pub(super) fn assignment_index(self) -> Option<usize> {
-        self.assignment()
-    }
     pub(super) fn text(self) -> &'a str {
         &self.source[self.range.range()]
     }
-    pub(super) fn token_window(self) -> TokenWindow<'a> {
+    pub(super) fn tokens(self) -> &'a [SpanToken] {
         self.tokens
     }
     pub(super) fn spelling(self, token: &SpanToken) -> &'a str {
@@ -101,7 +58,7 @@ impl<'a> HeaderView<'a> {
             .partition_point(|token| token.span.start < range.end);
         Self {
             source: self.source,
-            tokens: self.tokens.range(first, last).expect("ordered header token window"),
+            tokens: &self.tokens[first..last],
             range,
         }
     }
@@ -110,44 +67,30 @@ impl<'a> HeaderView<'a> {
         let start = text.len() - text.trim_start().len();
         self.slice(start, start + text.trim().len())
     }
-    fn top_level_items(self) -> impl Iterator<Item = (&'a str, Span)> {
-        let mut depth = 0i32;
-        self.tokens.iter().filter_map(move |token| {
-            let text = self.spelling(&token);
-            match text {
-                "(" | "[" | "{" => {
-                    depth += 1;
-                    None
-                }
-                ")" | "]" | "}" => {
-                    depth -= 1;
-                    None
-                }
-                _ if depth == 0 => Some((text, self.relative_span(&token))),
-                _ => None,
-            }
-        })
-    }
     pub(super) fn top_level(self) -> Vec<(&'a str, Span)> {
-        self.top_level_items().collect()
-    }
-    /// Same original top-level policy, without a temporary token Vec at a native
-    /// setting leaf before its RHS parse admission. First-match order unchanged.
-    pub(super) fn first_top_level(self, wanted: &str) -> Option<Span> {
-        self.top_level_items()
-            .find(|(text, _)| *text == wanted)
-            .map(|(_, span)| span)
+        let mut depth = 0i32;
+        let mut result = Vec::new();
+        for token in self.tokens {
+            let text = self.spelling(token);
+            match text {
+                "(" | "[" | "{" => depth += 1,
+                ")" | "]" | "}" => depth -= 1,
+                _ if depth == 0 => result.push((text, self.relative_span(token))),
+                _ => {}
+            }
+        }
+        result
     }
     pub(super) fn assignment(self) -> Option<usize> {
         let mut depth = 0usize;
-        for token in self.tokens.iter() {
+        for token in self.tokens {
             if !matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation) {
                 continue;
             }
-            match self.spelling(&token) {
+            match self.spelling(token) {
                 "(" | "[" | "{" => depth += 1,
                 ")" | "]" | "}" => depth = depth.saturating_sub(1),
-                "=" if depth == 0 => return Some(self.relative_span(&token).start),
+                "=" if depth == 0 => return Some(self.relative_span(token).start),
                 _ => {}
             }
         }
@@ -155,45 +98,8 @@ impl<'a> HeaderView<'a> {
     }
     pub(super) fn ident(self) -> bool {
         self.tokens.len() == 1
-            && self.tokens.get(0).is_some_and(|token| token.kind == TokenKind::Ident && token.span == self.range)
-    }
-}
-
-#[cfg(test)]
-thread_local! { static LEXICAL_HEADER_CALLS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
-#[cfg(test)]
-pub(super) fn lexical_header_calls() -> usize {
-    LEXICAL_HEADER_CALLS.with(std::cell::Cell::get)
-}
-
-#[cfg(test)]
-mod parameter_clause_tests {
-    use super::*;
-    #[test]
-    fn shared_parameter_markers_match_existing_native_metadata_partition_without_lex() {
-        for source in [
-            "x = list(1,2) as text in choices(\"é,in\")",
-            "x in list(1) as obj|null",
-            "datum/x[2] = null",
-            "x = world.vars[\"as\"]",
-            "x = F(/* as */1) as text",
-        ] {
-            let input = LexedHeader::new(source);
-            assert!(input.valid());
-            let view = input.view();
-            let before = lexical_header_calls();
-            let top = view.top_level();
-            let expected = (
-                view.assignment(),
-                top.iter().find(|(t, _)| *t == "as").map(|(_, s)| *s),
-                top.iter().find(|(t, _)| *t == "in").map(|(_, s)| *s),
-            );
-            assert_eq!(view.parameter_markers().unwrap(), expected, "{source}");
-            assert_eq!(
-                lexical_header_calls(),
-                before,
-                "borrow original tokens; no header relex"
-            );
-        }
+            && self.tokens[0].kind == TokenKind::Ident
+            && self.tokens[0].span.start == self.range.start
+            && self.tokens[0].span.end == self.range.end
     }
 }

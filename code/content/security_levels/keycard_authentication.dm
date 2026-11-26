@@ -36,7 +36,7 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 	var/mob/user = A.actor
 	to_chat(user, "You remove the faceplate from the [src]")
 	var/obj/structure/frame/frame = new /obj/structure/frame(loc)
-	var/obj/item/circuitboard/board = circuit
+	var/obj/item/circuitboard/board = board()
 	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
 	board.forceMove(frame)
 	own_move(board, frame, nameof(frame.circuit)) // the board goes from this machine to the frame
@@ -45,8 +45,7 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 	frame.set_pixel_y(pixel_y)
 	frame.set_dir(dir)
 	frame.set_anchored(TRUE)
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/C in contents_of(src))
 		if(istype(C, /obj/item/circuitboard))
 			C.forceMove(frame)
 			continue
@@ -107,9 +106,14 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 	tgui_interact(user)
 	return OP_OK
 
+MSG_DEF_SELF(keycard_auth/busy, "This device is busy.")
+MSG_DEF_SELF(keycard_auth/no_power, "This device is without power.")
+
 CAPABILITIES(/obj/machinery/keycard_auth)
+	extend(TAG_UI, needs(req(PROC_REF(controls_refusal))))
 	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
 	interface("KeycardAuth", title = "Keycard Authentication")
+	ui_shape(screen = int(1, 2), event = schema_text(), ert_admin_only = int(0, 1))
 	without("ui_open")
 	op("triggerevent", ui_act("triggerevent", arg("event", schema_text(4096))), then(PROC_REF(ui_act_triggerevent)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
@@ -137,20 +141,16 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 	data["ert_admin_only"] = CONFIG_GET(flag/ert_admin_call_only) ? 1 : 0
 	return data
 
-/obj/machinery/keycard_auth/proc/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
+/// The window's buttons refuse while the device is busy or unpowered, or the user is not conscious.
+/obj/machinery/keycard_auth/proc/controls_refusal(datum/act/op/A)
 	if(work_busy(src))
-		to_chat(user, "This device is busy.")
-		return FALSE
-	if(user.stat || !operable())
-		to_chat(user, "This device is without power.")
-		return FALSE
-	return TRUE
+		return /datum/msg/keycard_auth/busy
+	if(A.actor?.stat || !operable())
+		return /datum/msg/keycard_auth/no_power
+	return null
 
 /obj/machinery/keycard_auth/proc/ui_act_triggerevent(datum/act/op/A, event_arg)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	set_event(event_arg)
 	set_screen(2)
 	add_fingerprint(user)
@@ -158,8 +158,6 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 
 /obj/machinery/keycard_auth/proc/ui_act_reset(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	reset()
 	add_fingerprint(user)
 	return TRUE

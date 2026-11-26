@@ -1,5 +1,0 @@
-[lint.check_grep]
-exempt_prefixes=["code/exempt/"]
-reason_codes=["FIXTURE"]
-[lint.check_grep.ceilings]
-legacy_equip_restriction_vars__slot_flags=0

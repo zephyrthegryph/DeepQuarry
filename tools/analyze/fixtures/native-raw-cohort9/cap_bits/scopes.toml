@@ -1,4 +1,0 @@
-[lint.cap_bits.lists]
-registry=["code/a.dm"]
-writers=[]
-write_exempt_prefixes=[]

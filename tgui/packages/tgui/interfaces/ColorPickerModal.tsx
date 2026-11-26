@@ -14,6 +14,7 @@ import React, {
   useState,
 } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   type HsvaColor,
@@ -41,31 +42,21 @@ import { clamp } from 'tgui-core/math';
 import { classes } from 'tgui-core/react';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
+import type {
+  ColorPickerModalActions,
+  ColorPickerModalData,
+} from './generated/ColorPickerModal';
 
-type ColorPickerData = {
-  autofocus: boolean;
-  buttons: string[];
-  message: string;
-  large_buttons: boolean;
-  swapped_buttons: boolean;
-  timeout: number;
-  title: string;
-  default_color: string;
-  presets?: string;
-};
+type ColorPickerData = ColorPickerModalData;
 
 type ColorPickerModalProps = Record<never, never>;
 
 export const ColorPickerModal: React.FC<ColorPickerModalProps> = () => {
-  const { act, data } = useBackend<ColorPickerData>();
-  const {
-    timeout,
-    message,
-    autofocus,
-    default_color = '#000000',
-    presets,
-  } = data;
+  const { act, data } = useBackend<ColorPickerData, ColorPickerModalActions>();
+  const { timeout, message, autofocus, presets } = data;
   let { title } = data;
+  // The server sends '' when the prompt has no starting colour: '' would parse to NaN in every channel.
+  const default_color = data.default_color || '#000000';
 
   const [selectedColor, setSelectedColor] = useState<HsvaColor>(
     hexToHsva(default_color),
@@ -145,9 +136,7 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = () => {
           {message && (
             <Stack.Item m={1}>
               <Section fill>
-                <Box color="label" overflow="hidden">
-                  {message}
-                </Box>
+                <Label overflow="hidden">{message}</Label>
               </Section>
             </Stack.Item>
           )}
@@ -704,38 +693,40 @@ interface HueProps {
   onChange: (newHue: Partial<HsvaColor>) => void;
 }
 
-export const Hue: React.FC<HueProps> = React.memo(({ className, hue, onChange }) => {
-  const handleMove = (interaction: Interaction) => {
-    onChange({ h: 360 * interaction.left });
-  };
+export const Hue: React.FC<HueProps> = React.memo(
+  ({ className, hue, onChange }) => {
+    const handleMove = (interaction: Interaction) => {
+      onChange({ h: 360 * interaction.left });
+    };
 
-  const handleKey = (offset: Interaction) => {
-    onChange({ h: clamp(hue + offset.left * 360, 0, 360) });
-  };
-  const containerRef = useRef<HTMLDivElement>(null);
+    const handleKey = (offset: Interaction) => {
+      onChange({ h: clamp(hue + offset.left * 360, 0, 360) });
+    };
+    const containerRef = useRef<HTMLDivElement>(null);
 
-  const nodeClassName = classes(['react-colorful__hue', className]);
+    const nodeClassName = classes(['react-colorful__hue', className]);
 
-  return (
-    <div className={nodeClassName}>
-      <Interactive
-        containerRef={containerRef}
-        onMove={handleMove}
-        onKey={handleKey}
-        aria-label="Hue"
-        aria-valuenow={Math.round(hue)}
-        aria-valuemax={360}
-        aria-valuemin={0}
-      >
-        <Pointer
-          className="react-colorful__hue-pointer"
-          left={hue / 360}
-          color={hsvaToHslString({ h: hue, s: 100, v: 100, a: 1 })}
-        />
-      </Interactive>
-    </div>
-  );
-});
+    return (
+      <div className={nodeClassName}>
+        <Interactive
+          containerRef={containerRef}
+          onMove={handleMove}
+          onKey={handleKey}
+          aria-label="Hue"
+          aria-valuenow={Math.round(hue)}
+          aria-valuemax={360}
+          aria-valuemin={0}
+        >
+          <Pointer
+            className="react-colorful__hue-pointer"
+            left={hue / 360}
+            color={hsvaToHslString({ h: hue, s: 100, v: 100, a: 1 })}
+          />
+        </Interactive>
+      </div>
+    );
+  },
+);
 
 interface SaturationProps {
   className?: string;

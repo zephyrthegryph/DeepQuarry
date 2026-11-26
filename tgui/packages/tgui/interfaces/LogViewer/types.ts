@@ -1,28 +1,8 @@
-export type LogViewerData = {
-  round_id: number;
-  logging_start_timestamp: string;
-  tree: LogViewerCategoryTree;
-  last_data_update: number;
-  categories: Record<string, LogViewerCategoryData>;
-};
+import type { LogViewerData } from '../generated/LogViewer';
 
-export type LogViewerCategoryTree = {
-  enabled: string[];
-  disabled: string[];
-};
+export type LogViewerCategoryData = LogViewerData['categories'][string];
 
-export type LogViewerCategoryData = {
-  entry_count: number;
-  entries: LogEntryData[];
-};
-
-export type LogEntryData = {
-  id: number;
-  message: string;
-  timestamp: string;
-  semver?: Record<string, string>;
-  data?: any[];
-};
+export type LogEntryData = LogViewerCategoryData['entries'][number];
 
 export type CategoryBarProps = {
   options: string[];

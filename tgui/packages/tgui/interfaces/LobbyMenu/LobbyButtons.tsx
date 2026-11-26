@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Section, Stack } from 'tgui-core/components';
-
+import type { LobbyMenuActions } from '../generated/LobbyMenu';
 import { LobbyButton, TimedDivider } from './LobbyElements';
 import type { LobbyData } from './types';
 
@@ -9,7 +9,7 @@ export const LobbyButtons = (props: {
   readonly hidden: boolean;
   readonly setHidden: (_: boolean) => void;
 }) => {
-  const { act, data } = useBackend<LobbyData>();
+  const { act, data } = useBackend<LobbyData, LobbyMenuActions>();
   const { setModal, hidden, setHidden } = props;
 
   const {
@@ -86,10 +86,6 @@ export const LobbyButtons = (props: {
           View Crew Manifest
         </LobbyButton>
 
-        <LobbyButton index={3} onClick={() => act('open_guide')} icon="book">
-          Guide
-        </LobbyButton>
-
         {can_submit_feedback ? (
           <LobbyButton
             index={3}
@@ -109,7 +105,11 @@ export const LobbyButtons = (props: {
         </LobbyButton>
 
         {show_station_news ? (
-          <LobbyButton index={5} onClick={() => act('')} icon="newspaper">
+          <LobbyButton
+            index={5}
+            onClick={() => act('open_station_news')}
+            icon="newspaper"
+          >
             Show Station News {new_station_news ? '(NEW!)' : null}
           </LobbyButton>
         ) : null}

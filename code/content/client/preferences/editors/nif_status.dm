@@ -10,6 +10,9 @@
 	display_name = "NIF Status"
 	pref_keys = list("nif_path", "nif_durability", "nif_savedata")
 
+/// The wire shape of /datum/preference_editor/nif_status's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_nif_status, row(installed = bool(), nif_type = nullable(schema_text()), display_name = nullable(schema_text()), durability = nullable(num())))
+
 /datum/preference_editor/nif_status/build_ui_data(datum/preferences/preferences)
 	var/obj/item/nif/nif_path = preferences.read_preference(/datum/preference/nif_path)
 	return list(

@@ -200,29 +200,19 @@ CAPABILITIES(/obj/item/assembly_holder)
 	set_secured(TRUE)
 	name = initial(name) + " ([tmr.time] secs)"
 
-	if(loc)
-		grant(loc, granted_verb(/obj/item/assembly_holder/timer_igniter/verb/configure), src)
-
 CAPABILITIES(/obj/item/assembly_holder/timer_igniter)
 	setup(PROC_REF(assemble_parts))
 
-/obj/item/assembly_holder/timer_igniter/detached()
-	if(loc)
-		revoke(loc, granted_verb(/obj/item/assembly_holder/timer_igniter/verb/configure), src)
-	..()
+/// The grenade has a timer-igniter for a detonator (the Set Timer menu entry).
+/obj/item/grenade/chem_grenade/proc/has_timer_detonator(datum/act/A)
+	return istype(detonator, /obj/item/assembly_holder/timer_igniter)
 
-/obj/item/assembly_holder/timer_igniter/verb/configure()
-	set name = "Set Timer"
-	set category = VERB_CAT_OBJECT
-	set src in usr
+/// The Set Timer menu entry.
+/obj/item/grenade/chem_grenade/proc/timer_menu_chosen(datum/act/op/A)
+	configure_detonator_timer(A.actor)
+	return OP_OK
 
-	if(!istype(src, /obj/item/grenade/chem_grenade))
-		to_chat(usr, span_notice("This detonator has no timer."))
-		return
-	var/obj/item/grenade/chem_grenade/grenade = src
-	grenade.configure_detonator_timer(usr)
-
-/// The granted verb runs on the grenade; resolve its current detonator again on an answer.
+/// Set Timer runs on the grenade; resolve its current detonator again on an answer.
 /obj/item/grenade/chem_grenade/proc/configure_detonator_timer(mob/user, timer_answer, answer_ready = FALSE)
 	if(!(user.stat || user.restrained()))
 		var/obj/item/assembly_holder/holder = detonator

@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Section, Tabs } from 'tgui-core/components';
-
+import type { SecurityRecordsActions } from '../generated/SecurityRecords';
 import { SecurityRecordsViewGeneral } from './SecurityRecordsViewGeneral';
 import { SecurityRecordsViewSecurity } from './SecurityRecordsViewSecurity';
 import type { Data } from './types';
@@ -25,7 +25,7 @@ export const SecurityRecordsMaintenance = (props) => {
 };
 
 export const SecurityRecordsView = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SecurityRecordsActions>();
   const { security, printing } = data;
   return (
     <>
@@ -83,7 +83,7 @@ export const SecurityRecordsView = (props) => {
 };
 
 export const SecurityRecordsNavigation = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SecurityRecordsActions>();
   const { screen } = data;
   return (
     <Tabs>

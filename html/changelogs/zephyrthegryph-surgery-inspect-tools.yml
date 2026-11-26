@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Inspecting an opened limb hands-on now lists its surgical findings and the steps that answer to them"
+  - rscdel: "Removed the Survey Surgical Site menu entry and the findings printout on retracting"
+  - qol: "Surgery steps no longer ask which organ: the tool goes to the most urgent finding first, and bleeders are clamped before other steps"

@@ -1,0 +1,10 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Any item now grinds into the feedstock of what it is made of, and about sixty items (circuit boards, light tubes, cells, soap, candles, food, organs, cigarette butts and more) have hand-written rows with the traces they carry"
+  - rscadd: "Every source of stock carries a fixed signature of traces plus a small pool of extras, rolled per round for station stock, dispenser cartridges and the lab's precursor bottles and per lot for ore veins, cargo shipments and expedition sites; hidden until assayed, and every roll is logged"
+  - rscadd: "Ore can be refined to a floor with the shared chemistry processes in the alloy furnace: coal smelts, an oxygen chamber roasts, limestone or soda ash fluxes, a metal salt with power electrorefines, a hard vacuum degasses"
+  - rscadd: "Rubber, nylon, hard plastic, guncotton, aramid and carbon fibre can be polymerised in the alloy furnace from chemistry's units"
+  - rscadd: "Tungsten is a heat-resistant solid metal catalyst for high-temperature crack and reduce, and silicon has a route to silicate for the siloxane core"
+  - qol: "Cleaner, pepper spray, weed killer, sterilizine, luminol and sealant bottles are one refillable spray bottle with a starting fill; a pen relabels it"
+  - bugfix: "Reagents poured into a melt are no longer inert residue: they become the trace they are, char to carbon, boil off or become slag"

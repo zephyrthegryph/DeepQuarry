@@ -7,27 +7,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  JobBanPanelActions,
+  JobBanPanelData,
+} from './generated/JobBanPanel';
 
-type Job = {
-  title: string;
-  display?: string;
-  is_banned: BooleanLike;
-};
-
-type Dept = {
-  title: string;
-  color: string;
-  dept_bantype: string | null;
-  is_dept_banned: BooleanLike;
-  jobs: Job[];
-};
-
-type Data = {
-  target_name: string;
-  target_ref: string;
-  departments: Dept[];
-};
+type Job = JobBanPanelData['departments'][number]['jobs'][number];
 
 const JobButton = (props: { job: Job; onClick: (title: string) => void }) => {
   const { job, onClick } = props;
@@ -43,8 +28,8 @@ const JobButton = (props: { job: Job; onClick: (title: string) => void }) => {
 };
 
 export const JobBanPanel = () => {
-  const { data, act } = useBackend<Data>();
-  const { target_name, departments } = data;
+  const { data, act } = useBackend<JobBanPanelData, JobBanPanelActions>();
+  const { target_name, departments = [] } = data;
 
   return (
     <Window width={760} height={680} title={`Job-Ban Panel: ${target_name}`}>
@@ -53,7 +38,13 @@ export const JobBanPanel = () => {
           <Section
             key={d.title}
             title={
-              <Box style={{ backgroundColor: d.color, padding: '2px 4px' }}>
+              // The department colour as an accent stripe: a full pastel bar is unreadable on the dark console theme.
+              <Box
+                style={{
+                  borderLeft: `4px solid ${d.color}`,
+                  paddingLeft: '6px',
+                }}
+              >
                 <Button
                   compact
                   color={d.is_dept_banned ? 'bad' : 'default'}

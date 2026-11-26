@@ -1,6 +1,6 @@
 // Lifecycle tests (roadmap L2, doc/rewrite/state.md section 6).
 //
-// The sandbox test: for every latent-safe type, Initialize() must not touch
+// The sandbox test: for a fixed set of types, Initialize() must not touch
 // the world, and on_materialize()/on_dematerialize() must round-trip cleanly.
 
 /// Subsystem vars that are bookkeeping, not registration: deletion queues,
@@ -58,8 +58,7 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored_globs, list(
 /// per-name dereferences to find which vars are lists in the first place --
 /// the set of *which* vars are list-valued never changes for the lifetime of
 /// a test world, so dq_lifecycle_sandbox (which snapshots three times per
-/// latent-safe type, ~800+ types) only pays that walk once instead of ~2400
-/// times. Null until dq_lifecycle_snapshot_var_keys() first builds it.
+/// type) only pays that walk once. Null until dq_lifecycle_snapshot_var_keys() first builds it.
 GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 
 /// Builds (and caches) the list-valued-var key set described above.
@@ -198,54 +197,33 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 		. += "processing"
 
 /datum/unit_test/dq_lifecycle_sandbox
-	is_sweep_test = TRUE
-	tier = TEST_TIER_EXHAUSTIVE
 
-/// One latent-safe type from each latent-safe family (latent_safe_types.dm):
-/// the fixed subset the normal-tier representatives of the latent sweeps check.
-/proc/dq_latent_representative_types()
-	return list(
-		/obj/item/stock_parts/capacitor,
-		/obj/item/circuitboard,
-		/obj/item/smes_coil,
-		/obj/item/bluespace_crystal,
-		/obj/item/paper,
-		/obj/item/pen,
-		/obj/item/reagent_containers/pill/paracetamol,
-		/obj/item/light/tube,
-		/obj/item/ammo_casing/a9mm,
-		/obj/item/ammo_magazine/m9mm,
-		/obj/item/clothing/under/color/grey,
-		/obj/item/clothing/suit/armor/vest,
-		/obj/item/clothing/shoes/black,
-		/obj/item/clothing/head/helmet,
-		/obj/item/tool/wrench,
-		/obj/item/trash/candy,
-		/obj/item/stack/rods,
-		/obj/item/stack/material/steel,
-		/obj/item/storage/box,
-		/obj/item/storage/toolbox,
-		/obj/item/storage/backpack,
-		/obj/item/storage/firstaid/regular,
-		/obj/item/radio,
-		/obj/item/card/id,
-	)
-
-/// Normal tier: the sandbox on a fixed subset (every latent-safe family, plus a
-/// listed clean type). The whole-tree sweep runs in CI and nightly.
-/datum/unit_test/dq_lifecycle_sandbox/representative
-	is_sweep_test = FALSE
-	tier = TEST_TIER_NORMAL
-
-/datum/unit_test/dq_lifecycle_sandbox/representative/curated_types()
-	return dq_latent_representative_types() + /obj/item/pda
-
-/// Types that are not latent-safe yet but register with the world only in
-/// on_materialize() (L3). The sandbox test holds them to the same rule. Only
-/// the listed type itself is checked, not its subtypes. Cameras register in
-/// on_materialize() too, but /obj/machinery still starts processing in
+/// The types the sandbox holds to the rule: Initialize() registers nothing with the world, which happens in on_materialize() instead. Only the
+/// listed type itself is checked, not its subtypes. Cameras register in on_materialize() too, but /obj/machinery still starts processing in
 /// Initialize(), so no machine can be listed yet.
 GLOBAL_LIST_INIT(dq_lifecycle_clean_types, list(
+	/obj/item/stock_parts/capacitor,
+	/obj/item/circuitboard,
+	/obj/item/smes_coil,
+	/obj/item/bluespace_crystal,
+	/obj/item/paper,
+	/obj/item/pen,
+	/obj/item/reagent_containers/pill/paracetamol,
+	/obj/item/light/tube,
+	/obj/item/ammo_casing/a9mm,
+	/obj/item/ammo_magazine/m9mm,
+	/obj/item/clothing/under/color/grey,
+	/obj/item/clothing/suit/armor/vest,
+	/obj/item/clothing/shoes/black,
+	/obj/item/clothing/head/helmet,
+	/obj/item/tool/wrench,
+	/obj/item/trash/candy,
+	/obj/item/stack/rods,
+	/obj/item/stack/material/steel,
+	/obj/item/storage/box,
+	/obj/item/storage/toolbox,
+	/obj/item/storage/backpack,
+	/obj/item/storage/firstaid/regular,
 	/obj/item/pda,
 	/obj/item/radio,
 	/obj/item/gps,
@@ -258,12 +236,10 @@ GLOBAL_LIST_INIT(dq_lifecycle_clean_types, list(
 	set_global("dq_lifecycle_snapshot_var_keys", GLOB.dq_lifecycle_snapshot_var_keys)
 	var/list/failures = list()
 	var/tested = 0
-	var/list/tested_paths
-	for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
-		if(!(latent_type_safe(path) || (path in GLOB.dq_lifecycle_clean_types)) || is_abstract(path))
+	for(var/atom/movable/path as anything in GLOB.dq_lifecycle_clean_types)
+		if(is_abstract(path))
 			continue
 		tested++
-		LAZYSET(tested_paths, path, TRUE)
 		// Warm up: the first instance of a type builds per-type caches
 		// (element singletons, schemas, static lists) that are not registrations.
 		qdel(new path)
@@ -286,16 +262,9 @@ GLOBAL_LIST_INIT(dq_lifecycle_clean_types, list(
 		if(length(round_trip))
 			failures += "[path]: on_materialize()/on_dematerialize() did not round-trip: [jointext(round_trip, ", ")]"
 		qdel(sandboxed)
-	TEST_ASSERT(tested > 0, "no latent-safe types found")
-	var/list/curated = curated_types()
-	if(curated)
-		var/list/untested = list()
-		for(var/path in curated)
-			if(!LAZYACCESS(tested_paths, path))
-				untested += "[path]"
-		TEST_ASSERT(!length(untested), "curated types that are not latent-safe (or a listed clean type): [jointext(untested, ", ")]")
+	TEST_ASSERT(tested > 0, "no sandbox types found")
 	if(length(failures))
-		TEST_FAIL("[length(failures)] problem(s) across [tested] latent-safe types:\n[jointext(failures, "\n")]")
+		TEST_FAIL("[length(failures)] problem(s) across [tested] types:\n[jointext(failures, "\n")]")
 
 /// The init path materializes normal atoms, Destroy() dematerializes them, and
 /// the sandbox helper leaves them unmaterialized until asked.

@@ -5,7 +5,7 @@
 	treatment_tags = list(TREAT_RESPIRATORY = 1.0)
 	name = REAGENT_RESPIRODAXON
 	id = REAGENT_ID_RESPIRODAXON
-	description = "Used to repair the tissue of the lungs and similar organs."
+	description = "Used to repair the tissue of the lungs and similar organs: pulmonary contusion, respiratory failure and the airway burns of an inhalation injury. The airway it heals is tender and briefly vulnerable to smoke and gas while the drug is in the blood."
 	taste_description = "metallic"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

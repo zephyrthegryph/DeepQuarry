@@ -388,7 +388,7 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 	// serves any ring near its staleness bound, and the floor admits one pass a second.
 	if(!kernel_admit_lane(lane))
 		return
-	limit = min(TICK_USAGE + pass_avail * lane_share[lane], tick_limit)
+	limit = min(TICK_USAGE + pass_avail * (lane == LANE_PRESENTATION && presentation_boosted() ? SCHED_BOOT_DRAW_SHARE : lane_share[lane]), tick_limit)
 	cap = harness_caps ? harness_caps[lane] : 0
 	calls = 0
 	if(!run_lane_guarded(lane, pass_t))
@@ -420,6 +420,10 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 	if(cap && ++calls >= cap)
 		return TRUE
 	return FALSE
+
+/// TRUE when the tick is already past this lane's share (no call counted): work that cannot be split (one draw, one answer's callback) asks before it starts.
+/datum/time_scheduler/proc/over_tick_limit()
+	return TICK_USAGE > limit
 
 /// run_lane() behind a lane-level guard. Hooks are already isolated per behaviour
 /// (run_slot, call_hook, services, world wakes, derived values); this catches what
@@ -940,7 +944,11 @@ GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 		var/gen_i = L[i + 2]
 		i += 4
 		if(rec)
-			fire_deadline(rec, bid, gen_i, t, reg)
+			// A runtime in one deadline must not abandon the compaction: the bucket and the spare list are restored below whatever fired.
+			try
+				fire_deadline(rec, bid, gen_i, t, reg)
+			catch(var/exception/fault)
+				report_caught(fault, "deadline fire: [fault]")
 		if(i <= n && out_of_budget())
 			ok = FALSE
 	L.len = w - 1

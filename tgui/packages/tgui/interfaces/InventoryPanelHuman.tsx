@@ -161,11 +161,7 @@ export const SlotButton = (props: { slot: slot }) => {
           bottom={0}
         >
           <Stack.Item>
-            <Image
-              src={`data:image/jpeg;base64,${slot.icon}`}
-              width="64px"
-              height="64px"
-            />
+            <Image src={slot.icon} width="64px" height="64px" />
           </Stack.Item>
         </Stack>
       ) : null}

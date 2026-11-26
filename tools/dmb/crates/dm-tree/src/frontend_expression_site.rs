@@ -14,39 +14,6 @@ impl ParsedBody<'_> {
         let Some(body) = self.statement_body() else {
             return Ok(None);
         };
-        if !body.syntax_complete() {
-            return Ok(None);
-        }
-        // This legacy private modifier factory returns an ORIGINAL Expr. It
-        // cannot claim a projected setting node is a current executable Expr.
-        struct ProjectedModifier {
-            wanted: Span,
-            found: bool,
-        }
-        impl dm_syntax::TypedVisitor for ProjectedModifier {
-            fn projected_expression(
-                &mut self,
-                v: dm_syntax::ProjectedExprView<'_>,
-                _: &[dm_syntax::NodeStep],
-            ) -> dm_syntax::VisitDecision {
-                if v.current_span() == self.wanted
-                    && matches!(v.original().kind, ExprKind::ObjectInitializer { .. })
-                {
-                    self.found = true;
-                }
-                dm_syntax::VisitDecision::Descend
-            }
-        }
-        let mut projected = ProjectedModifier {
-            wanted: span,
-            found: false,
-        };
-        dm_syntax::visit_statements(&body.parsed().statements, &mut projected);
-        if projected.found {
-            return Err(
-                "projected setting modifier needs its original setting-source recipe".into(),
-            );
-        }
         let mut found = None;
         let mut duplicate = false;
         statements(&body.parsed().statements, &mut |expr| {
@@ -56,34 +23,51 @@ impl ParsedBody<'_> {
                 }
             }
         });
-        for fact in body
-            .parsed()
-            .local_variables
-            .entries()
-            .map_err(str::to_owned)?
-        {
-            if let Some(array) = &fact.array_syntax {
-                for dimension in array.root.dimensions.iter() {
-                    expression(dimension, &mut |expr| {
-                        if expr.span == span
-                            && matches!(&expr.kind, ExprKind::ObjectInitializer { .. })
-                        {
-                            if found.replace(expr).is_some() {
-                                duplicate = true;
-                            }
-                        }
-                    });
-                }
-            }
-        }
         Ok(if duplicate { None } else { found })
     }
 }
 fn expression<'a>(expr: &'a Expr, visit: &mut impl FnMut(&'a Expr)) {
     visit(expr);
-    dm_syntax::for_each_expression_child(expr, |_, child| expression(child, visit));
+    use ExprKind as E;
+    match &expr.kind {
+        E::Ident(_) | E::Literal(_) | E::TypePath(_) => {}
+        E::Unary { value, .. } | E::Group(value) | E::TypeFilter { value, .. } => {
+            expression(value, visit)
+        }
+        E::Binary { lhs, rhs, .. } => {
+            expression(lhs, visit);
+            expression(rhs, visit);
+        }
+        E::Conditional {
+            condition,
+            then_value,
+            else_value,
+        } => {
+            expression(condition, visit);
+            expression(then_value, visit);
+            expression(else_value, visit);
+        }
+        E::Call { callee, args } => {
+            expression(callee, visit);
+            for arg in args {
+                expression(arg, visit);
+            }
+        }
+        E::Member { object, .. }
+        | E::StaticMember { object, .. }
+        | E::SafeMember { object, .. } => expression(object, visit),
+        E::ObjectInitializer { object, fields } => {
+            expression(object, visit);
+            for (_, value) in fields {
+                expression(value, visit);
+            }
+        }
+        E::Index { object, index } | E::SafeIndex { object, index } => {
+            expression(object, visit);
+            expression(index, visit);
+        }
+    }
 }
-
 fn optional<'a>(expr: &'a Option<Expr>, visit: &mut impl FnMut(&'a Expr)) {
     if let Some(expr) = expr {
         expression(expr, visit);
@@ -110,8 +94,7 @@ fn statements<'a>(body: &'a [Statement], visit: &mut impl FnMut(&'a Expr)) {
                 optional(delay, visit);
                 statements(body, visit);
             }
-            S::ProjectedSet { .. } => (), // exact requested projected modifier was refused above
-            S::Set { value, .. } | S::Throw(value) | S::Delete(value) | S::Call(value) | S::Expression(value) => {
+            S::Set { value, .. } | S::Throw(value) | S::Call(value) | S::Expression(value) => {
                 expression(value, visit)
             }
             S::For { control, body } => {
@@ -119,10 +102,6 @@ fn statements<'a>(body: &'a [Statement], visit: &mut impl FnMut(&'a Expr)) {
                     ForControl::All { .. } => {}
                     ForControl::Each { iterable, .. } | ForControl::Pair { iterable, .. } => {
                         expression(iterable, visit)
-                    }
-                    ForControl::RangeImplicitArray { end, step, .. } => {
-                        expression(end, visit);
-                        optional(step, visit);
                     }
                     ForControl::Range {
                         start, end, step, ..
@@ -151,7 +130,7 @@ fn statements<'a>(body: &'a [Statement], visit: &mut impl FnMut(&'a Expr)) {
             S::Switch {
                 selector,
                 cases,
-                else_branch, ..
+                else_branch,
             } => {
                 expression(selector, visit);
                 for case in cases {

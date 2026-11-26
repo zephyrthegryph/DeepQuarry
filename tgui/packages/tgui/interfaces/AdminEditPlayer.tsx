@@ -6,58 +6,17 @@
 // transformation, etc.) keep their behavior.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Language = { key: string; known: BooleanLike };
-type DnaCell = {
-  block: number;
-  name: string | null;
-  tname: string | null;
-  state: 'active' | 'blocked' | 'inactive' | 'empty';
-};
-
-type Data = {
-  ref: string;
-  name: string;
-  key: string;
-  mob_type: string;
-  has_client: BooleanLike;
-  is_newplayer: BooleanLike;
-  is_human: BooleanLike;
-  is_ai: BooleanLike;
-  is_carbon: BooleanLike;
-  is_small: BooleanLike;
-  is_corgi: BooleanLike;
-  is_animal: BooleanLike;
-  client_name: string | null;
-  client_ref: string | null;
-  player_age?: number;
-  account_join_date?: string;
-  account_age?: number;
-  inactivity_minutes: number;
-  rank_names?: string;
-  editrights_mode?: string;
-  muted: number;
-  can_event: BooleanLike;
-  special_character: number; // 0,1,2
-
-  mute_mask_ic: number;
-  mute_mask_ooc: number;
-  mute_mask_looc: number;
-  mute_mask_pray: number;
-  mute_mask_adminhelp: number;
-  mute_mask_deadchat: number;
-  mute_mask_all: number;
-
-  dna_cells: DnaCell[] | null;
-  dna_se_length?: number;
-
-  languages: Language[];
-};
-
 import type { ActFn } from './common/PanelTypes';
+import type {
+  AdminEditPlayerActions,
+  AdminEditPlayerData,
+} from './generated/AdminEditPlayer';
+
+type Data = AdminEditPlayerData;
+type DnaCell = NonNullable<Data['dna_cells']>[number];
 
 const MuteButton = (props: {
   data: Data;
@@ -368,9 +327,7 @@ const DnaSection = (props: { data: Data; act: ActFn }) => {
         {rows.map((row, rowIdx) => (
           <Stack key={rowIdx}>
             <Stack.Item basis="38px">
-              <Box color="label" textAlign="right">
-                {rowIdx * 5}
-              </Box>
+              <Label textAlign="right">{rowIdx * 5}</Label>
             </Stack.Item>
             {row.map((c) => (
               <Stack.Item key={c.block} basis="120px">
@@ -386,9 +343,7 @@ const DnaSection = (props: { data: Data; act: ActFn }) => {
                     <sub>{c.block}</sub>
                   </Button>
                 ) : (
-                  <Box color="label" textAlign="center">
-                    {c.block}
-                  </Box>
+                  <Label textAlign="center">{c.block}</Label>
                 )}
               </Stack.Item>
             ))}
@@ -409,19 +364,17 @@ const RudimentaryTransformationSection = (props: {
   }
   return (
     <Section title="Rudimentary Transformation">
-      <Box italic color="label" mb={1}>
+      <Label italic mb={1}>
         These transformations create a new mob type and copy stuff over — they
         don't account for MMIs and similar mob-specific things. Prefer the
         buttons in Transformation when possible.
-      </Box>
+      </Label>
       <Box mb="2px">
         <SimpleMakeButton act={act} kind="observer" label="Observer" />
       </Box>
       {RUDIMENTARY_GROUPS.map((group) => (
         <Box key={group.title} mt={1}>
-          <Box mb="2px" color="label">
-            {group.title}:
-          </Box>
+          <Label mb="2px">{group.title}:</Label>
           {group.rows.map((row, i) => (
             <Box key={i} mb="2px">
               {row.map((entry, j) => (
@@ -530,7 +483,7 @@ const LanguageSection = (props: { data: Data; act: ActFn }) => {
   return (
     <Section title="Languages">
       <Stack wrap>
-        {data.languages.map((l) => (
+        {(data.languages ?? []).map((l) => (
           <Stack.Item key={l.key}>
             <Button
               compact
@@ -547,7 +500,7 @@ const LanguageSection = (props: { data: Data; act: ActFn }) => {
 };
 
 export const AdminEditPlayer = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, AdminEditPlayerActions>();
   return (
     <Window width={820} height={780} title={`Edit Player: ${data.key}`}>
       <Window.Content scrollable>

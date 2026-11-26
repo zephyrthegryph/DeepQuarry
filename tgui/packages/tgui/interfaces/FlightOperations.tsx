@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { WebGLCelestialScene } from './FlightOperationsScene';
+import type {
+  FlightOperationsActions,
+  FlightOperationsData,
+} from './generated/FlightOperations';
 
 type Kind =
   | 'system'
@@ -19,17 +24,17 @@ export type FlightDestination = {
   description: string;
   kind: Kind;
   scene_role?: 'celestial' | 'orbital' | 'docked';
-  orbit_parent_id?: string;
-  docked_port_id?: string;
-  docked_host_id?: string;
+  orbit_parent_id?: string | null;
+  docked_port_id?: string | null;
+  docked_host_id?: string | null;
   orbit_radius: number;
   orbit_period: number;
   orbit_phase: number;
   orbit_inclination: number;
   body_radius: number;
   body_color: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   compatible: BooleanLike;
   materialized: BooleanLike;
   is_current: BooleanLike;
@@ -37,33 +42,17 @@ export type FlightDestination = {
 
 export type FlightPlan = {
   id: string;
-  origin_id?: string;
-  destination_id: string;
-  destination: string;
+  origin_id?: string | null;
+  destination_id: string | null;
+  destination: string | null;
   state: number;
   state_name: string;
-  failure?: string;
+  failure?: string | null;
   eta: number;
   departure_at: number;
   arrival_at: number;
   generation_progress: number;
-  generation_stage: string;
-};
-
-type Data = {
-  vessel: string;
-  vessel_destination_id?: string;
-  orbit_parent_id?: string;
-  docked_port_id?: string;
-  server_time: number;
-  destinations: FlightDestination[];
-  plan?: FlightPlan;
-  expedition?: {
-    name: string;
-    objective: string;
-    progress: string;
-    infrastructure?: string;
-  };
+  generation_stage: string | null;
 };
 
 const labelFor = (kind: Kind) =>
@@ -77,12 +66,16 @@ const labelFor = (kind: Kind) =>
   })[kind];
 
 export const FlightOperations = () => {
-  const { act, data } = useBackend<Data>();
-  const system = data.destinations.find((body) => body.kind === 'system');
+  const { act, data } = useBackend<
+    FlightOperationsData,
+    FlightOperationsActions
+  >();
+  const destinations = data.destinations ?? [];
+  const system = destinations.find((body) => body.kind === 'system');
   const [focusId, setFocusId] = useState('system-vir');
   const [selectedId, setSelectedId] = useState<string>();
-  const focus = data.destinations.find((body) => body.id === focusId);
-  const selected = data.destinations.find((body) => body.id === selectedId);
+  const focus = destinations.find((body) => body.id === focusId);
+  const selected = destinations.find((body) => body.id === selectedId);
 
   return (
     <Window
@@ -94,7 +87,7 @@ export const FlightOperations = () => {
         <Stack fill>
           <Stack.Item grow position="relative">
             <WebGLCelestialScene
-              bodies={data.destinations}
+              bodies={destinations}
               focusId={focusId}
               selectedId={selectedId}
               vesselDestinationId={data.vessel_destination_id}
@@ -117,10 +110,10 @@ export const FlightOperations = () => {
                 </Button>
               )}
             </Box>
-            <Box position="absolute" bottom="10px" left="12px" color="label">
+            <Label position="absolute" bottom="10px" left="12px">
               Left drag to orbit · right drag to pan · wheel to zoom · click
               planets to inspect
-            </Box>
+            </Label>
           </Stack.Item>
           <Stack.Item basis="335px">
             <Section title="Navigation" fill scrollable>
@@ -138,7 +131,7 @@ export const FlightOperations = () => {
               </LabeledList>
               {selected ? (
                 <Section mt={2} title={selected.name}>
-                  <Box color="label">{labelFor(selected.kind)}</Box>
+                  <Label>{labelFor(selected.kind)}</Label>
                   <Box mt={1}>{selected.description}</Box>
                   {selected.kind === 'expedition' && (
                     <Box mt={1}>
@@ -171,9 +164,9 @@ export const FlightOperations = () => {
                   )}
                 </Section>
               ) : (
-                <Box mt={2} color="label">
+                <Label mt={2}>
                   Select a planet, station, vessel, or surface site.
-                </Box>
+                </Label>
               )}
               {data.plan && (
                 <Section mt={2} title="Active Jump">
@@ -206,7 +199,7 @@ export const FlightOperations = () => {
                 <Section mt={2} title="Surface Contract">
                   <Box bold>{data.expedition.name}</Box>
                   <Box mt={1}>{data.expedition.objective}</Box>
-                  <Box color="label">{data.expedition.progress}</Box>
+                  <Label>{data.expedition.progress}</Label>
                   {data.expedition.infrastructure && (
                     <Box mt={1} color="average">
                       {data.expedition.infrastructure}

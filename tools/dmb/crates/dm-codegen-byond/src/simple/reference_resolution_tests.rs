@@ -15,9 +15,10 @@ impl dm_ir::Resolver for TypedGlobal {
                 owner,
                 name,
                 fingerprint: 0.into(),
-                data: std::sync::Arc::new(dm_ir::DeclarationMeaning::default().with_field_tail(
-                    dm_ir::DeclarationFieldMeaning { types: dm_ir::FieldTypeIds::new(Some(path), None, None), ..Default::default() },
-                )),
+                data: std::sync::Arc::new(dm_ir::DeclarationMeaning {
+                    declared_type: Some(path),
+                    ..Default::default()
+                }),
             },
             Q::VarStorage { owner: o, name: n } if o == owner && n == name => R::Slot {
                 symbol: name,

@@ -1,4 +1,0 @@
-//! Shared sources with the actual complete required-list configuration.
-#[path="../native-base-vars-workspace/fixture.rs"]mod source;
-pub use source::CASES;
-pub fn files(case:&str)->Vec<(&'static str,Vec<u8>)>{let mut files=source::files(case);let index=files.iter().position(|(relative,_)|*relative=="tools/ci/lint_scopes.toml").unwrap();let(_,overlay)=files.remove(index);let mut config=String::new();let mut keep=true;for line in include_str!("../../../ci/lint_scopes.toml").split_inclusive('\n'){let head=line.trim_start();if head.starts_with('['){let plain=head.strip_prefix("[lint.base_vars").is_some_and(|tail|tail.starts_with('.')||tail.starts_with(']'));let quoted=head.starts_with("[lint.\"base_vars\"");keep=!(plain||quoted);}if keep{config.push_str(line)}}config.push('\n');config.push_str(std::str::from_utf8(&overlay).unwrap());files.push(("tools/ci/lint_scopes.toml",config.into_bytes()));files}

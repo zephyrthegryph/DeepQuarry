@@ -13,11 +13,6 @@ CAPABILITIES(/obj/item/clothing/shoes/syndigaloshes)
 
 
 
-/obj/item/clothing/shoes/mime
-	name = "mime shoes"
-	icon_state = "white"
-	step_volume_mod = 0	//It's a mime
-
 /obj/item/clothing/shoes/galoshes
 	desc = "Rubber boots"
 	name = "galoshes"
@@ -55,17 +50,6 @@ CAPABILITIES(/obj/item/clothing/shoes/sandal)
 
 	configure(item_worn(covers = 0))
 
-
-/obj/item/clothing/shoes/sandals
-	desc = "A pair of simple sandals."
-	name = "sandals"
-	icon_state = "sandals_recolor"
-
-/obj/item/clothing/shoes/flipflop
-	name = "flip flops"
-	desc = "A pair of foam flip flops. For those not afraid to show a little ankle."
-	icon_state = "thongsandal"
-	addblends = "thongsandal_a"
 
 /obj/item/clothing/shoes/cookflop
 	name = "grilling sandals"
@@ -160,11 +144,6 @@ CAPABILITIES(/obj/item/clothing/shoes/cult)
 /obj/item/clothing/shoes/cult/cultify()
 	return
 
-/obj/item/clothing/shoes/cyborg
-	name = "cyborg boots"
-	desc = "Shoes for a cyborg costume"
-	icon_state = "boots"
-
 /obj/item/clothing/shoes/slippers
 	name = "bunny slippers"
 	desc = "Fluffy!"
@@ -207,26 +186,6 @@ CAPABILITIES(/obj/item/clothing/shoes/swimmingfins)
 	fits_anyone()
 	configure(item_worn(flags = NOSLIP))
 
-
-/obj/item/clothing/shoes/athletic
-	name = "athletic shoes"
-	desc = "A pair of sleek athletic shoes. Made by and for the sporty types."
-	icon_state = "sportshoe"
-	addblends = "sportshoe_a"
-	item_state_slots = list(slot_r_hand_str = "sportheld", slot_l_hand_str = "sportheld")
-
-/obj/item/clothing/shoes/skater
-	name = "skater shoes"
-	desc = "A pair of wide shoes with thick soles.  Designed for skating."
-	icon_state = "skatershoe"
-	addblends = "skatershoe_a"
-	item_state_slots = list(slot_r_hand_str = "skaterheld", slot_l_hand_str = "skaterheld")
-
-/obj/item/clothing/shoes/heels
-	name = "high heels"
-	desc = "A pair of high-heeled shoes. Fancy!"
-	icon_state = "heels"
-	addblends = "heels_a"
 
 /obj/item/clothing/shoes/footwraps
 	name = "cloth footwraps"
@@ -281,36 +240,6 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/ranger)
  * 80s
  */
 
-/obj/item/clothing/shoes/sneakerspurple
-	name = "purple sneakers"
-	desc = "A stylish, expensive pair of purple sneakers."
-	icon_state = "sneakerspurple"
-	item_state = "sneakerspurple"
-
-/obj/item/clothing/shoes/sneakersblue
-	name = "blue sneakers"
-	desc = "A stylish, expensive pair of blue sneakers."
-	icon_state = "sneakersblue"
-	item_state = "sneakersblue"
-
-/obj/item/clothing/shoes/sneakersred
-	name = "red sneakers"
-	desc = "A stylish, expensive pair of red sneakers."
-	icon_state = "sneakersred"
-	item_state = "sneakersred"
-
-/obj/item/clothing/shoes/ballet
-	name = "pointe shoes"
-	desc = "These shoes feature long lace straps and flattened off toes. Great for the most elegant of dances!"
-	icon_state = "ballet"
-	item_state = "ballet"
-
-
-/obj/item/clothing/shoes/griffin
-	name = "griffon boots"
-	desc = "A pair of costume boots fashioned after bird talons."
-	icon_state = "griffinboots"
-	item_state = "griffinboots"
 
 /obj/item/clothing/shoes/bhop
 	name = "jump boots"
@@ -389,23 +318,10 @@ CAPABILITIES(/obj/item/clothing/shoes/bhop)
 	item_state = "knight_boots2"
 
 //Antediluvian legwraps
-/obj/item/clothing/shoes/antediluvian
-	name = "antediluvian legwraps"
-	desc = "A pair of wraps with gold inlay that cut off around the ankle."
-	icon_state = "antediluvian"
-	item_state = "antediluvian"
-
 //Alternative flats
 /obj/item/clothing/shoes/flats/white/color/alt
 	icon_state = "flatsalt"
 	item_state = "flatsalt"
-
-/obj/item/clothing/shoes/sandals_elegant
-	name = "elegant sandals"
-	desc = "A pair of sandals with thin straps. It emphasizes the ankles!"
-	icon_state = "sandals_elegant"
-	item_state = "sandals_elegant"
-	addblends = "sandals_elegant_a"
 
 
 /obj/item/clothing/shoes/mech_shoes

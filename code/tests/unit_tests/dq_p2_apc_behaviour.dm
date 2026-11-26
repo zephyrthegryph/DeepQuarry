@@ -331,6 +331,49 @@
 	TEST_ASSERT(A.operating, "the breaker is on again")
 	TEST_ASSERT(L.has_power(), "the light has power again")
 
+/// The lighting channel off and on again from the window's buttons (the values the window sends: its Off sends off-auto, On sends on, Auto sends on-auto), with
+/// client lighting on as in a round: the area's lights go dark and then light again, the fixture on, its light source lit and its glow drawn.
+/datum/unit_test/dq_p2_apc/lighting_channel_off_then_on_relights_the_area
+
+/datum/unit_test/dq_p2_apc/lighting_channel_off_then_on_relights_the_area/run_gate()
+	set_global(nameof(GLOB.client_lighting), FALSE) // a failed run leaves the mode off for the next test
+	dq_smoothing_keep_screens(src)
+	var/obj/machinery/power/apc/A = p2_apc()
+	var/mob/living/carbon/human/H = p2_actor()
+	p2_area.set_requires_power(TRUE)
+	p2_area.power_change()
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, run_loc_floor_bottom_left)
+	p2_apc_resync(A)
+	p2_settle()
+	client_lighting_set(TRUE)
+	SSlighting.light_step(0, TRUE)
+	unlock(H, A)
+	TEST_ASSERT(L.has_power() && L.on, "the light is lit to start (power [L.has_power()], on [L.on])")
+	TEST_ASSERT_NOTNULL(L.light?.glow, "the light glows to start")
+	for(var/mode in list(POWERCHAN_ON, POWERCHAN_ON_AUTO))
+		press(H, A, "channel", list("channel" = POWER_CHANNEL_LIGHTING, "mode" = POWERCHAN_OFF_AUTO))
+		SSlighting.light_step(0, TRUE)
+		TEST_ASSERT_EQUAL(A.lighting, POWERCHAN_OFF, "the lighting channel is off")
+		TEST_ASSERT(!p2_apc_area_powered(A, 1), "the area's lighting channel is dark")
+		TEST_ASSERT(!L.has_power(), "the light lost its power")
+		TEST_ASSERT(!L.on, "the fixture is off with the channel off")
+		var/list/data = A.tgui_data(H)
+		var/list/row = data["powerChannels"][POWER_CHANNEL_LIGHTING + 1]
+		TEST_ASSERT_EQUAL(row["status"], POWERCHAN_OFF, "the window shows the lighting channel off")
+		var/list/on_params = row["topicParams"][mode == POWERCHAN_ON ? "on" : "auto"]
+		press(H, A, "channel", on_params)
+		SSlighting.light_step(0, TRUE)
+		TEST_ASSERT_EQUAL(A.lighting, mode, "the lighting channel is back to [mode]")
+		TEST_ASSERT(p2_apc_area_powered(A, 1), "the area's lighting channel is powered again")
+		TEST_ASSERT(L.has_power(), "the light has its power again")
+		TEST_ASSERT(L.on, "the fixture is on again")
+		TEST_ASSERT(L.light && L.light.light_range > 0, "its light source is lit again")
+		TEST_ASSERT(glow_of(L).range > 0, "its glow has a range again")
+		TEST_ASSERT_NOTNULL(L.light?.glow, "the client glow is drawn again")
+		var/list/rgb = client_flat_light_rgb(get_turf(L))
+		TEST_ASSERT(max(rgb[1], rgb[2], rgb[3]) > 0.3, "the floor under the fixture is lit again ([json_encode(rgb)])")
+	client_lighting_set(FALSE)
+
 // ---------------------------------------------------------------------------------------------------------------------
 // The ID lock
 // ---------------------------------------------------------------------------------------------------------------------
@@ -718,10 +761,10 @@
 	touch(H, A, small)
 	TEST_ASSERT_NULL(A.cell, "a device cell does not fit")
 
-/// With an ID worn, an empty hand on the closed APC toggles the lock by the wearer's own access.
-/datum/unit_test/dq_p2_apc/empty_hand_with_a_worn_id_toggles_the_lock
+/// With an ID worn, an empty hand's plain click opens the window and leaves the lock alone; the lock is the alt-click's or the Menu's, named for what it does.
+/datum/unit_test/dq_p2_apc/empty_hand_click_does_not_toggle_the_lock
 
-/datum/unit_test/dq_p2_apc/empty_hand_with_a_worn_id_toggles_the_lock/run_gate()
+/datum/unit_test/dq_p2_apc/empty_hand_click_does_not_toggle_the_lock/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/card/id/card = id_card()
@@ -729,9 +772,25 @@
 	H.equip_to_slot_or_del(card, SLOT_ID_ID)
 	TEST_ASSERT_EQUAL(H.get_equipped_item(SLOT_ID_ID), card, "the ID is worn")
 	touch(H, A, null)
-	TEST_ASSERT(!p2_apc_locked(A), "the wearer's access unlocked it")
+	TEST_ASSERT(p2_apc_locked(A), "an empty hand's click did not unlock it")
+	var/list/menu = op_menu(H, A, null)
+	var/list/row_locked
+	for(var/list/R in menu)
+		if(R["key"] == "lock.toggle_worn")
+			row_locked = R
+	TEST_ASSERT(row_locked, "the Menu lists the lock while it is locked")
+	TEST_ASSERT_EQUAL(row_locked["label"], "Unlock", "a locked APC's line reads Unlock")
+	test_click(H, A, null, GESTURE_ALT)
+	p2_settle()
+	TEST_ASSERT(!p2_apc_locked(A), "the alt-click unlocked it by the wearer's access")
+	var/list/row_open
+	for(var/list/R in op_menu(H, A, null))
+		if(R["key"] == "lock.toggle_worn")
+			row_open = R
+	TEST_ASSERT(row_open, "the Menu lists the lock while it is open")
+	TEST_ASSERT_EQUAL(row_open["label"], "Lock", "an unlocked APC's line reads Lock")
 	touch(H, A, null)
-	TEST_ASSERT(p2_apc_locked(A), "and locked it again")
+	TEST_ASSERT(!p2_apc_locked(A), "and a plain click still leaves it unlocked")
 
 /// The touch of a hand or a silicon opens the window; a person at an APC with its wire panel open sees the wires instead.
 /datum/unit_test/dq_p2_apc/touch_opens_the_interface_window

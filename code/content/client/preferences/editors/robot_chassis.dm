@@ -17,6 +17,11 @@
 	// Catalog payload gates on play_mode (returns an empty stub for humans/pAIs).
 	static_invalidator_keys = list("play_mode")
 
+/// The wire shape of /datum/preference_editor/robot_chassis's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_robot_chassis, row(module = nullable(schema_text()), chassis = nullable(schema_text())))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_robot_chassis_static, row(all_modules = list_of(schema_text()), chassis_by_module = map_of(schema_text(), list_of(schema_text())), chassis_thumbs = map_of(schema_text(), row(icon = schema_text(), icon_state = schema_text()))))
+
 /datum/preference_editor/robot_chassis/build_ui_data(datum/preferences/preferences)
 	return list(
 		"module" = preferences.read_preference(/datum/preference/text/human/robot_module),

@@ -109,6 +109,13 @@
 #define TREAT_CHEST_COMPRESSION "chest_compression"  // CPR compressions: partial perfusion while the heart is stopped
 #define TREAT_VASOPRESSOR      "vasopressor"  // epinephrine-type: coaxes asystole toward VF, shrinks airway swelling
 #define TREAT_DIGESTIVE        "digestive"  // stomach / intestine / appendix tissue repair
+#define TREAT_ANTIEMETIC       "antiemetic"  // settles nausea (calcium carbonate)
+#define TREAT_ANTICONVULSANT   "anticonvulsant"  // stops and prevents seizures
+#define TREAT_HYDRATION        "hydration"  // oral/IV rehydration: water, salts and sugar (electrolyte drink); feeds the immune response to a cold
+/// Ear damage (mob.ear_damage): at 15 hearing is impaired; at 100 the ears are destroyed and do not heal without surgery (surgery/ears.dm).
+#define EAR_DAMAGE_IMPAIRED    15
+#define EAR_DAMAGE_PERMANENT   100
+#define TREAT_OPIOID_ANTAGONIST "opioid_antagonist"  // knocks opioids off their receptors: reverses an opioid overdose (naloxone)
 // Field stabilisation mechanisms (code/modules/medical/stabilisation/).
 #define TREAT_WOUND_PACKING    "wound_packing"  // packs / dresses a bleeding wound shut (hemostatic gauze, pressure bandage); amount = wounds
 #define TREAT_OCCLUSIVE_SEAL   "occlusive_seal"  // airtight seal over an open chest wound (chest seal); amount = wounds
@@ -125,6 +132,9 @@
 #define TREAT_TENDON_REPAIR    "tendon_repair"  // rejoins a severed tendon
 #define TREAT_FOREIGN_BODY_REMOVAL "foreign_body_removal"  // extracts foreign objects and embedded material
 #define TREAT_LITHOTRIPSY      "lithotripsy"  // breaks up deposits with focused ultrasound
+#define TREAT_BURN_DEEP        "burn_deep"  // deep burns (degrees 4-5: deep burn, carbonised area) and airway burns (dermaline); kelotane-grade burn care barely reaches them
+#define TREAT_ANTIEDEMA        "antiedema"  // shrinks tissue swelling in the airway (airway edema from an inhalation burn)
+#define TREAT_SOULMEND         "soulmend"  // soul dew: the only mechanism that repairs a brain-dead brain (a brain at full damage); every other neural repair stops at brain death
 
 // --- Cardiac rhythms (/datum/affliction/cardiac_arrhythmia) ------------------------------
 /// Normal rhythm; the arrhythmia is settling and will resolve.

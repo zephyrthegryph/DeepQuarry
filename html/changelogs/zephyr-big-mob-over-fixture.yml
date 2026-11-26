@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Large characters are no longer drawn under wall light fixtures, wall torches and neon signs, or under a lit fixture's glow."

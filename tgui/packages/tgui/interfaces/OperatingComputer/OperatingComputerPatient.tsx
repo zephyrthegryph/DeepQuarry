@@ -1,5 +1,6 @@
-import { Box, LabeledList, ProgressBar, Section } from 'tgui-core/components';
-
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
+import { LabeledList, Section } from 'tgui-core/components';
 import {
   DiagnosisFindingsSection,
   DiagnosisVitalsSection,
@@ -17,18 +18,17 @@ export const OperatingComputerPatient = (props: { occupant: occupant }) => {
           <LabeledList.Item label="Status" color={stats[occupant.stat][0]}>
             {stats[occupant.stat][1]}
           </LabeledList.Item>
-          <LabeledList.Item label="Vitality">
-            <ProgressBar
-              minValue={0}
-              maxValue={1}
-              value={occupant.vitality / 100}
-              ranges={{
-                good: [0.5, Infinity],
-                average: [0, 0.5],
-                bad: [-Infinity, 0],
-              }}
-            />
-          </LabeledList.Item>
+          <StatBar
+            label="Vitality"
+            minValue={0}
+            maxValue={1}
+            value={occupant.vitality / 100}
+            ranges={{
+              good: [0.5, Infinity],
+              average: [0, 0.5],
+              bad: [-Infinity, 0],
+            }}
+          />
           {occupant.bloodType ? (
             <LabeledList.Item label="Blood Type">
               {occupant.bloodType}
@@ -47,6 +47,15 @@ export const OperatingComputerPatient = (props: { occupant: occupant }) => {
                   <LabeledList.Item label="Current State">
                     {limb.currentStage}
                   </LabeledList.Item>
+                  <LabeledList.Item label="Findings">
+                    {limb.findings.length ? (
+                      limb.findings.map((finding) => (
+                        <div key={finding}>{finding}</div>
+                      ))
+                    ) : (
+                      <div>Nothing in view needs surgery.</div>
+                    )}
+                  </LabeledList.Item>
                   <LabeledList.Item label="Possible Next Steps">
                     {limb.nextSteps.map((step) => (
                       <div key={step}>{step}</div>
@@ -57,7 +66,7 @@ export const OperatingComputerPatient = (props: { occupant: occupant }) => {
             ))}
           </LabeledList>
         ) : (
-          <Box color="label">No procedure ongoing.</Box>
+          <Label>No procedure ongoing.</Label>
         )}
       </Section>
     </>

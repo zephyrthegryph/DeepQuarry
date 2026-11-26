@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Docked windows (PDA, communicator, machines, APC, vendors, every docked window) show their content in the side panel again, and dragging a window onto the panel docks it visibly."

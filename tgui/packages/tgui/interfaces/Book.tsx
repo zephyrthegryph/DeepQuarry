@@ -3,8 +3,9 @@
 // Read-only viewer. Content is author-provided HTML written via pen tool.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
-import { Box, Section } from 'tgui-core/components';
+import { Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
 
 type Data = {
@@ -22,9 +23,9 @@ export const Book = () => {
       <Window.Content scrollable>
         <Section>
           {author ? (
-            <Box italic color="label" mb={1}>
+            <Label italic mb={1}>
               Penned by {author}.
-            </Box>
+            </Label>
           ) : null}
           <HtmlRenderer html={content} />
         </Section>

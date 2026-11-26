@@ -110,26 +110,27 @@
 		to_chat(infest_target, span_vdanger("Something slimy begins trying to find a way past your helmet..."))
 	else
 		to_chat(infest_target, span_vdanger("Something slimy begins probing at the opening of your ear canal..."))
-	to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
+		to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
 
 /// How long entering takes: longer past a helmet.
 /mob/living/simple_mob/animal/borer/proc/infest_wait(datum/act/op/A)
 	var/mob/living/carbon/human/infest_target = A.target
 	return infest_target.check_head_coverage() ? 5.5 SECONDS : 3 SECONDS
 
+/// Refuses entering a target while the borer is not conscious or the target has no brain to bond to (checked before the wait and again at its end;
+/// reach() keeps the target in range).
+/mob/living/simple_mob/animal/borer/proc/infest_refusal(datum/act/op/A)
+	var/mob/living/carbon/human/infest_target = A.target
+	if(stat)
+		return span_warning("You cannot infest \the [infest_target] in your current state.")
+	if(istype(infest_target) && !infest_target.organ_in(O_BRAIN)) // See section below about replace_brain() being disabled
+		return span_danger("\The [infest_target] has no brain to bond to!")
+	return null
+
 /mob/living/simple_mob/animal/borer/proc/infest_done(datum/act/op/A)
 	var/mob/living/carbon/human/infest_target = A.target
 	var/mob/living/carbon/human/host
 	if(!infest_target || QDELETED(src))
-		return
-	if(stat)
-		to_chat(src, span_warning("You cannot infest \the [infest_target] in your current state."))
-		return
-	if(!(Adjacent(infest_target)))
-		to_chat(src, span_warning("They are no longer in range!"))
-		return
-	if(!infest_target.organ_in(O_BRAIN)) // See section below about replace_brain() being disabled
-		to_chat(src, span_danger("\The [infest_target] has no brain to bond to!"))
 		return
 
 	to_chat(src, span_alien("You wiggle into [infest_target]'s ear."))
@@ -198,12 +199,16 @@
 	if(!host)
 		return
 	if(injection_choice == "Revive Dead Host")
-		if(!can_use_power_in_host())
+		var/revive_refusal = power_in_host_refusal()
+		if(revive_refusal)
+			tell_power_refusal(revive_refusal)
 			return
 		if(controlling)
 			to_chat(src, span_warning("You cannot do that while in full control of a host."))
 			return
-		if(!can_use_power_docile())
+		revive_refusal = power_docile_refusal()
+		if(revive_refusal)
+			tell_power_refusal(revive_refusal)
 			return
 		if(host.stat != DEAD)
 			to_chat(src, span_danger("Your host must be dead!"))
@@ -222,9 +227,9 @@
 		return
 
 	// Is this even legal to do still? We had to wait for a selection...
-	if(!can_use_power_in_host())
-		return
-	if(!can_use_power_docile())
+	var/refusal = power_in_host_refusal() || power_docile_refusal()
+	if(refusal)
+		tell_power_refusal(refusal)
 		return
 	if(controlling)
 		to_chat(src, span_warning("You cannot do that while in full control of a host."))
@@ -252,7 +257,6 @@
 
 /// Does some basic regeneration on a host
 /mob/living/carbon/human/proc/jumpstart()
-	set category = VERB_CAT_ABILITIES_BORER
 	set name = "Revive Host"
 	set desc = "Send a jolt of electricity through your host, reviving them."
 

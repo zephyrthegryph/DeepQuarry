@@ -44,7 +44,7 @@ impl Compiler<'_> {
             )
         })?;
         match self.semantic(lookup.answer(query))? {
-            dm_ir::ResolvedMeaning::Member { data, .. } if data.inherited_opaque().is_none() => {
+            dm_ir::ResolvedMeaning::Member { data, .. } if data.inherited_opaque.is_none() => {
                 Ok(data.flags & 2 == 0)
             }
             _ => self.semantic(Err(error(

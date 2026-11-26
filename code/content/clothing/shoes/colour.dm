@@ -4,43 +4,12 @@
 	icon_state = "black"
 	desc = "A pair of black shoes."
 
-/obj/item/clothing/shoes/brown
-	name = "brown shoes"
-	desc = "A pair of brown shoes."
-	icon_state = "brown"
-
-/obj/item/clothing/shoes/blue
-	name = "blue shoes"
-	icon_state = "blue"
-
-/obj/item/clothing/shoes/green
-	name = "green shoes"
-	icon_state = "green"
-
-/obj/item/clothing/shoes/yellow
-	name = "yellow shoes"
-	icon_state = "yellow"
-
-/obj/item/clothing/shoes/purple
-	name = "purple shoes"
-	icon_state = "purple"
-
-/obj/item/clothing/shoes/red
-	name = "red shoes"
-	desc = "Stylish red shoes."
-	icon_state = "red"
-
 /obj/item/clothing/shoes/white
 	name = "white shoes"
 	icon_state = "white"
 
 CAPABILITIES(/obj/item/clothing/shoes/white)
 	configure(item_protection(permeability = 0.01))
-
-/obj/item/clothing/shoes/rainbow
-	name = "rainbow shoes"
-	desc = "Very colourful shoes."
-	icon_state = "rain_bow"
 
 /obj/item/clothing/shoes/flats
 	name = "black flats"

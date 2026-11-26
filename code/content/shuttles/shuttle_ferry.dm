@@ -30,17 +30,17 @@
 	return landmark_offsite()
 
 /datum/shuttle/autodock/ferry/short_jump(destination)
-	direction = !location // Heading away from where we currently are
+	set_direction(!location) // Heading away from where we currently are
 	. = ..()
 
 /datum/shuttle/autodock/ferry/long_jump(destination, obj/effect/shuttle_landmark/interim, travel_time)
-	direction = !location // Heading away from where we currently are
+	set_direction(!location) // Heading away from where we currently are
 	. = ..()
 
 /datum/shuttle/autodock/ferry/perform_shuttle_move()
 	..()
-	if (current_location() == landmark_station()) location = FERRY_LOCATION_STATION
-	if (current_location() == landmark_offsite()) location = FERRY_LOCATION_OFFSITE
+	if (current_location() == landmark_station()) set_location(FERRY_LOCATION_STATION)
+	if (current_location() == landmark_offsite()) set_location(FERRY_LOCATION_OFFSITE)
 
 // Once we have arrived where we are going, plot a course back!
 /datum/shuttle/autodock/ferry/process_arrived()
@@ -64,3 +64,11 @@
 CAPABILITIES(/datum/shuttle/autodock/ferry)
 	ref_one(nameof(landmark_offsite))
 	ref_one(nameof(landmark_station))
+
+/// The tag of the landmark a shuttle type starts at. A ferry names its stops rather than a start, and starts at the one its location selects.
+/proc/shuttle_start_tag(shuttle_type)
+	if(ispath(shuttle_type, /datum/shuttle/autodock/ferry))
+		var/datum/shuttle/autodock/ferry/ferry_type = shuttle_type
+		return initial(ferry_type.location) == FERRY_LOCATION_STATION ? initial(ferry_type.landmark_station_tag) : initial(ferry_type.landmark_offsite_tag)
+	var/datum/shuttle/plain_type = shuttle_type
+	return initial(plain_type.current_location_tag)

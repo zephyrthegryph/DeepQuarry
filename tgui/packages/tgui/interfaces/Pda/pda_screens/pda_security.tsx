@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-
+import type { PdaActions } from '../../generated/Pda';
 import type { GeneralRecord, RecordList, SecurityRecord } from '../pda_types';
 
 type Data = {
@@ -12,7 +12,7 @@ type Data = {
 };
 
 export const pda_security = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { recordsList, records } = data;
 

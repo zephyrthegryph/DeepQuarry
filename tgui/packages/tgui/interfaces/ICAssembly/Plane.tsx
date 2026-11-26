@@ -6,6 +6,7 @@ import { InfinitePlane } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
 
 import { type Connection, Connections } from '../common/Connections';
+import type { ICAssemblyActions } from '../generated/ICAssembly';
 import { CircuitComponent } from './CircuitComponent';
 import type { PortProps } from './Port';
 import {
@@ -183,7 +184,7 @@ export class Plane extends Component<PlaneProps, PlaneState> {
 
     const connections: Connection[] = [];
 
-    for (const circuit of data.circuits) {
+    for (const circuit of data.circuits ?? []) {
       if (circuit.inputs) {
         for (const input of circuit.inputs) {
           connectionloop: for (const output of input.linked) {
@@ -257,7 +258,7 @@ export class Plane extends Component<PlaneProps, PlaneState> {
         initialLeft={50}
         initialTop={50}
       >
-        {data.circuits.map((circuit) => (
+        {(data.circuits ?? []).map((circuit) => (
           <Circuit
             act={act}
             circuit={circuit}
@@ -280,7 +281,7 @@ export class Plane extends Component<PlaneProps, PlaneState> {
  * act/data as props to the Plane class component.
  */
 export const PlaneWrapper = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ICAssemblyActions>();
   return <Plane act={act} data={data} />;
 };
 
@@ -307,7 +308,7 @@ const Circuit = (
     onPortRightClick,
   } = props;
 
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, ICAssemblyActions>();
 
   // Find stored position for this circuit
   const storedPosition = data.component_positions?.find(

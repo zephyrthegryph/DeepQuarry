@@ -12,50 +12,15 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  InstrumentEditorActions,
+  InstrumentEditorData,
+} from './generated/InstrumentEditor';
 
-type Data = {
-  id: string;
-  using_instrument: string;
-  note_shift_min: number;
-  note_shift_max: number;
-  note_shift: number;
-  octaves: number;
-  sustain_modes: string[];
-  sustain_mode: string;
-  sustain_mode_button: string;
-  sustain_mode_duration: number;
-  instrument_ready: BooleanLike;
-  volume: number;
-  volume_dropoff_threshold: number;
-  min_volume: number;
-  max_volume: number;
-  sustain_indefinitely: BooleanLike;
-  sustain_mode_min: number;
-  sustain_mode_max: number;
-  playing: BooleanLike;
-  max_repeats: number;
-  repeat: number;
-  bpm: number;
-  lines: LineData[];
-  can_switch_instrument: BooleanLike;
-  possible_instruments: InstrumentData[];
-  max_line_chars: number;
-  max_lines: number;
-};
-
-type InstrumentData = {
-  name: string;
-  id: string;
-};
-
-type LineData = {
-  line_count: number;
-  line_text: string;
-};
+type Data = InstrumentEditorData;
 
 export const InstrumentEditor = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, InstrumentEditorActions>();
 
   return (
     <Window width={750} height={500}>
@@ -73,32 +38,32 @@ export const InstrumentEditor = (props) => {
 };
 
 const InstrumentSettings = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, InstrumentEditorActions>();
   const {
     id,
     playing,
-    repeat,
-    max_repeats,
+    repeat = 0,
+    max_repeats = 0,
     can_switch_instrument,
     possible_instruments = [],
     instrument_ready,
     using_instrument,
-    note_shift_min,
-    note_shift_max,
-    note_shift,
+    note_shift_min = 0,
+    note_shift_max = 0,
+    note_shift = 0,
     octaves,
     sustain_modes,
     sustain_mode,
     sustain_mode_button,
-    sustain_mode_duration,
+    sustain_mode_duration = 0,
     sustain_indefinitely,
-    sustain_mode_min,
-    sustain_mode_max,
-    volume,
-    min_volume,
-    max_volume,
-    volume_dropoff_threshold,
-    lines,
+    sustain_mode_min = 0,
+    sustain_mode_max = 0,
+    volume = 0,
+    min_volume = 0,
+    max_volume = 0,
+    volume_dropoff_threshold = 0,
+    lines = [],
   } = data;
 
   const instrument_id_by_name = (name) => {
@@ -276,8 +241,8 @@ const InstrumentSettings = (props) => {
 };
 
 const EditingSettings = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { bpm, lines } = data;
+  const { act, data } = useBackend<Data, InstrumentEditorActions>();
+  const { bpm, lines = [] } = data;
 
   return (
     <Section>
@@ -329,7 +294,7 @@ const EditingSettings = (props) => {
 };
 
 const HelpSection = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, InstrumentEditorActions>();
   const { max_line_chars, max_lines } = data;
 
   return (

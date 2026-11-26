@@ -394,18 +394,6 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 /obj/item/gun/energy/gun/generator/proc/link_generator_cell()
 	rel_set(src, nameof(power_supply), shield_generator()?.bcell)
 
-/obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
-	if(!check_charge(charge_cost))
-		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-		return 0
-	if(!wielded && !isrobot(user))
-		to_chat(user, span_warning("You need to wield the gun with both hands before you can use it on someone!"))
-		return 0
-	if(cooldown)
-		to_chat(user, span_warning("\The [src] are re-energizing!"))
-		return 0
-	return 1
-
 /obj/item/gun/energy/gun/generator/dropped(mob/user, equipping, slot)
 	..() //update twohanding
 	if(shield_generator())
@@ -436,9 +424,6 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 CAPABILITIES(/obj/item/personal_shield_generator/belt)
 	configure(item_worn(slots = SLOT_BELT))
 
-/obj/item/personal_shield_generator/belt/loaded
-	bcell = /obj/item/cell/device/shield_generator
-
 /// The look (the draw sweep: from its template).
 /obj/item/personal_shield_generator/belt/draw(datum/look/look)
 	..()
@@ -446,9 +431,6 @@ CAPABILITIES(/obj/item/personal_shield_generator/belt)
 
 /obj/item/personal_shield_generator/belt/bruteburn //Example of a modified generator.
 	modifier_type = /datum/body_effect/shield_projection/bruteburn
-/obj/item/personal_shield_generator/belt/bruteburn/loaded //If mapped in, ONLY put loaded ones down.
-	bcell = /obj/item/cell/device/shield_generator
-
 // Mining belts
 /obj/item/personal_shield_generator/belt/mining
 	name = "PSG Variant-M"
@@ -462,9 +444,6 @@ CAPABILITIES(/obj/item/personal_shield_generator/belt)
 /obj/item/personal_shield_generator/belt/mining/upgraded
 	upgraded = TRUE
 	modifier_type = /datum/body_effect/shield_projection/mining/strong
-
-/obj/item/personal_shield_generator/belt/mining/upgraded/loaded
-	bcell = /obj/item/cell/device/shield_generator
 
 /// The look (the draw sweep: from its template).
 /obj/item/personal_shield_generator/belt/mining/draw(datum/look/look)

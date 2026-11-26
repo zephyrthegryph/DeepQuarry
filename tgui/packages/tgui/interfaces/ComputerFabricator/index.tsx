@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section } from 'tgui-core/components';
-
+import type { ComputerFabricatorActions } from '../generated/ComputerFabricator';
 import { CfStep1 } from './CfStep1';
 import { CfStep2 } from './CfStep2';
 import { CfStep3 } from './CfStep3';
@@ -9,7 +9,7 @@ import { CfStep4 } from './CfStep4';
 import type { Data } from './types';
 
 export const ComputerFabricator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ComputerFabricatorActions>();
 
   const { state, totalprice } = data;
 
@@ -17,7 +17,7 @@ export const ComputerFabricator = (props) => {
 
   tab[0] = <CfStep1 />;
   tab[1] = <CfStep2 />;
-  tab[2] = <CfStep3 totalprice={totalprice!} />;
+  tab[2] = <CfStep3 totalprice={totalprice} />;
   tab[3] = <CfStep4 />;
 
   return (

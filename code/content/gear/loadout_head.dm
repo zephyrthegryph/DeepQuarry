@@ -169,7 +169,7 @@
 
 /datum/gear/head/fez
 	display_name = "hat, fez"
-	path = /obj/item/clothing/head/fez
+	path = VARIANT(/obj/item/clothing/head/fez)
 
 /datum/gear/head/tophat
 	display_name = "hat, tophat"
@@ -181,7 +181,7 @@
 
 /datum/gear/head/wig
 	display_name = "powdered wig"
-	path = /obj/item/clothing/head/powdered_wig
+	path = VARIANT(/obj/item/clothing/head/powdered_wig)
 
 /datum/gear/head/ushanka
 	display_name = "ushanka"
@@ -377,7 +377,7 @@
 
 /datum/gear/head/wheat
 	display_name = "straw hat"
-	path = /obj/item/clothing/head/wheat
+	path = VARIANT(/obj/item/clothing/head/wheat)
 
 /datum/gear/head/sec_hat_selector
 	display_name = "Security - Basic Headwear"
@@ -501,7 +501,7 @@
 
 /datum/gear/head/wedding
 	display_name = "wedding veil"
-	path = /obj/item/clothing/head/wedding
+	path = VARIANT(/obj/item/clothing/head/wedding)
 
 /datum/gear/head/wedding/New()
 	..()
@@ -513,7 +513,7 @@
 
 /datum/gear/head/buckethat
 	display_name = "hat, bucket"
-	path = /obj/item/clothing/head/buckethat
+	path = VARIANT(/obj/item/clothing/head/buckethat)
 
 /datum/gear/head/buckethat/New()
 	..()
@@ -521,7 +521,7 @@
 
 /datum/gear/head/nonla
 	display_name = "hat, non la"
-	path = /obj/item/clothing/head/nonla
+	path = VARIANT(/obj/item/clothing/head/nonla)
 
 /*
 Talon hats
@@ -538,13 +538,13 @@ Talon hats
 
 /datum/gear/head/tiny_tophat
 	display_name = "tiny tophat"
-	path = /obj/item/clothing/head/tinytophat
+	path = VARIANT(/obj/item/clothing/head/tinytophat)
 
 //Replikant hat
 
 /datum/gear/head/eulrhat
 	display_name = "Sleek side cap"
-	path = /obj/item/clothing/head/eulrhat
+	path = VARIANT(/obj/item/clothing/head/eulrhat)
 
 //Formerly my custom fluff gear, but free to use for anyone, now.
 /datum/gear/head/pirate_hat

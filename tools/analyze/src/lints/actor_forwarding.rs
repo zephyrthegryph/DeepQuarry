@@ -4,7 +4,6 @@
 //! telekinesis reach an atom through their capability adapter. Any definition or call fails.
 //! Matched on the raw text up to the first `//` (so a string holding `//` hides the rest of the line).
 
-use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::tree::{Select, SourceFile};
@@ -13,8 +12,8 @@ use crate::util::{before_slashes, py_strip};
 const HINT: &str = "attack_ai/attack_robot/attack_ghost/attack_tk are gone: declare an INTERACT_SILICON / INTERACT_ROBOT / INTERACT_OBSERVER / INTERACT_TK interaction, or set silicon_use";
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::actor_forwarding::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::actor_forwarding::SCOPE_META_0.group,
+    name: "actor_forwarding",
+    group: "",
     label: "actor_forwarding",
     legacy: "tools/ci/actor_forwarding_lint.py",
     // os.walk: dot-files and dot-directories included.
@@ -22,8 +21,8 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "attack_proc", hint: HINT }],
-    allow: crate::allow_registry_fields::actor_forwarding::ALLOW_0,
-    lists: crate::allow_registry_fields::actor_forwarding::SCOPE_META_0.lists,
+    allow: &[],
+    lists: &[],
 };
 
 struct ActorForwarding;
@@ -33,9 +32,8 @@ impl Lint for ActorForwarding {
         &META
     }
 
-    fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
-        let pattern = fixture.pattern(r"\battack_(ai|robot|ghost|tk)\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"\battack_(ai|robot|ghost|tk)\("));
+    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        let pattern = crate::pat!(r"\battack_(ai|robot|ghost|tk)\(");
         for (number, line) in f.raw().numbered() {
             if pattern.is_match(before_slashes(line)) {
                 out.site_msg("attack_proc", number, py_strip(line));

@@ -1,12 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Table } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
-
+import type { CommunicatorActions } from '../generated/Communicator';
 import { MESSSUBTAB, PHONTAB } from './constants';
 import type { ContactsTabData } from './types';
 
 export const CommunicatorContactTab = (props) => {
-  const { act, data } = useBackend<ContactsTabData>();
+  const { act, data } = useBackend<ContactsTabData, CommunicatorActions>();
 
   const { knownDevices } = data;
 

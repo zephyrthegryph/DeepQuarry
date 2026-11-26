@@ -32,12 +32,9 @@
 
 // The new player owns this dialog (privacy_poll_dialog); owner is a plain relation back.
 
-/// /datum/privacy_poll_dialog's window data.
-/datum/privacy_poll_dialog/ui_data(datum/act/eval/A)
-	return list("answered" = answered)
-
 CAPABILITIES(/datum/privacy_poll_dialog)
 	interface("PrivacyPoll", title = "Player Poll — Privacy", state = nameof(GLOB.tgui_always_state))
+	ui_shape()
 	op("vote", ui_act("vote", arg("choice")), then(PROC_REF(ui_act_vote)))
 	ref_one(nameof(owner))
 
@@ -139,6 +136,7 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 
 CAPABILITIES(/datum/poll_browser_dialog)
 	interface("PollBrowser", title = "Player Polls", state = nameof(GLOB.tgui_always_state))
+	ui_shape(polls = list_of(row(id = int(), question = schema_text())), selected = nullable(row(id = int(), error = nullable(schema_text()), voted = bool(), start_time = nullable(schema_text()), end_time = nullable(schema_text()), question = nullable(schema_text()), poll_type = nullable(schema_text()), multi_max = int(), options = list_of(row(id = int(), text = schema_text(), min = nullable(int()), max = nullable(int()), scale = nullable(list_of(row(value = schema_text(), label = schema_text()))))), voted_option_id = nullable(int()), voted_options = list_of(int()), vote_text = nullable(schema_text()), voted_ratings = list_of(row(text = schema_text(), rating = schema_text())))))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("select", ui_act("select", arg("id", num())), then(PROC_REF(ui_act_select)))
 	op("back", ui_act("back"), then(PROC_REF(ui_act_back)))
@@ -191,9 +189,13 @@ CAPABILITIES(/datum/poll_browser_dialog)
 	if(selected_pollid != pollid)
 		return
 	if(!SSdbcore.IsConnected() || !owner?.ckey)
-		poll_detail_done(pollid, list("id" = pollid, "error" = "Database unavailable.", "voted" = FALSE))
+		poll_detail_done(pollid, blank_detail(pollid, "Database unavailable."))
 		return
 	sql_ask(src, "SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM erro_poll_question WHERE id = :t_pollid", list("t_pollid" = pollid), PROC_REF(poll_detail_loaded), pollid)
+
+/// A poll detail with every key the window reads, empty: the poll's own answers fill it in.
+/datum/poll_browser_dialog/proc/blank_detail(pollid, error = null)
+	return list("id" = pollid, "error" = error, "voted" = FALSE, "start_time" = null, "end_time" = null, "question" = null, "poll_type" = null, "multi_max" = 0, "options" = list(), "voted_option_id" = null, "voted_options" = list(), "vote_text" = null, "voted_ratings" = list())
 
 /// The detail is complete (or failed): it is shown.
 /datum/poll_browser_dialog/proc/poll_detail_done(pollid, list/detail)
@@ -205,7 +207,7 @@ CAPABILITIES(/datum/poll_browser_dialog)
 /datum/poll_browser_dialog/proc/poll_detail_loaded(list/result, error, pollid)
 	if(selected_pollid != pollid)
 		return
-	var/list/detail = list("id" = pollid, "error" = null, "voted" = FALSE)
+	var/list/detail = blank_detail(pollid)
 	var/list/detail_rows = sql_answer_rows(result, error, "poll detail: question [pollid]")
 	if(!length(detail_rows))
 		detail["error"] = "Poll question details not found."
@@ -288,7 +290,7 @@ CAPABILITIES(/datum/poll_browser_dialog)
 /datum/poll_browser_dialog/proc/option_list_from_rows(list/option_rows)
 	var/list/out = list()
 	for(var/list/option_row as anything in option_rows)
-		out += list(list("id" = text2num("[option_row[1]]"), "text" = "[option_row[2]]"))
+		out += list(list("id" = text2num("[option_row[1]]"), "text" = "[option_row[2]]", "min" = null, "max" = null, "scale" = null))
 	return out
 
 /datum/poll_browser_dialog/proc/numval_options_from_rows(list/numval_rows)

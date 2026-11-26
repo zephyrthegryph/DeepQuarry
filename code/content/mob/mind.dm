@@ -110,7 +110,6 @@ ACTION(mob_mind_transferred_out_of, mob/new_character, FIXED, notice = /datum/no
 		changeling_comp = is_changeling(current)			//remove ourself from our old body's mind variable
 		if(changeling_comp)
 			current.remove_changeling_powers()
-			revoke(current, granted_verb(/mob/proc/EvolutionMenu), changeling_comp)
 		rel_clear(current, nameof(current.mind))
 
 	if(new_character.mind)		//remove any mind currently in our new body's mind variable
@@ -437,6 +436,16 @@ ACTION(mob_mind_transferred_out_of, mob/new_character, FIXED, notice = /datum/no
 	if(G)
 		G.reenter_corpse()
 
+/// The directory settings a mind starts the round with: the saved character's settings, editable per round from the character directory afterwards.
+/datum/mind/proc/seed_directory_from(datum/preferences/prefs)
+	set_show_in_directory(num_or_null(prefs.read_preference(/datum/preference/toggle/human/show_in_directory)))
+	set_directory_tag(text_or_null(prefs.read_preference(/datum/preference/choiced/human/directory_tag)))
+	set_directory_erptag(text_or_null(prefs.read_preference(/datum/preference/choiced/human/directory_erptag)))
+	directory_ad = text_or_null(prefs.read_preference(/datum/preference/text/human/directory_ad))
+	set_vantag_preference(text_or_null(prefs.read_preference(/datum/preference/choiced/human/vantag_preference)))
+	set_directory_gendertag(text_or_null(prefs.read_preference(/datum/preference/choiced/human/directory_gendertag)))
+	set_directory_sexualitytag(text_or_null(prefs.read_preference(/datum/preference/choiced/human/directory_sexualitytag)))
+
 //Initialisation procs
 /mob/living/proc/mind_initialize()
 	if(mind)
@@ -457,15 +466,7 @@ ACTION(mob_mind_transferred_out_of, mob/new_character, FIXED, notice = /datum/no
 	if(SSantag.player_is_antag(mind))
 		grant(src.client, granted_verb(/client/proc/aooc), mind) // the mind grants its player aooc while it is an antag
 	if (client?.prefs)
-		// directory tags migrated from legacy /datum/preferences vars
-		// to /datum/preference subtypes.
-		mind.show_in_directory = num_or_null(client.prefs.read_preference(/datum/preference/toggle/human/show_in_directory))
-		mind.directory_tag = text_or_null(client.prefs.read_preference(/datum/preference/choiced/human/directory_tag))
-		mind.directory_erptag = text_or_null(client.prefs.read_preference(/datum/preference/choiced/human/directory_erptag))
-		mind.directory_ad = text_or_null(client.prefs.read_preference(/datum/preference/text/human/directory_ad))
-		mind.vantag_preference = text_or_null(client.prefs.read_preference(/datum/preference/choiced/human/vantag_preference))
-		mind.directory_gendertag = text_or_null(client.prefs.read_preference(/datum/preference/choiced/human/directory_gendertag))
-		mind.directory_sexualitytag = text_or_null(client.prefs.read_preference(/datum/preference/choiced/human/directory_sexualitytag))
+		mind.seed_directory_from(client.prefs)
 
 //HUMAN
 /mob/living/carbon/human/mind_initialize()
@@ -555,3 +556,38 @@ ACTION(mob_mind_transferred_out_of, mob/new_character, FIXED, notice = /datum/no
 		. += objectives
 	if(shared_objectives)
 		. += shared_objectives
+
+// MIND GENDER (a mind answers for its body; with no body, as an object would)
+
+/datum/mind/proc/p_they(temp_gender)
+	return current?.p_they(temp_gender) || "it"
+
+/datum/mind/proc/p_their(temp_gender)
+	return current?.p_their(temp_gender) || "its"
+
+/datum/mind/proc/p_theirs(temp_gender)
+	return current?.p_theirs(temp_gender) || "its"
+
+/datum/mind/proc/p_them(capitalized, temp_gender)
+	return current?.p_them(capitalized, temp_gender) || "it"
+
+/datum/mind/proc/p_have(temp_gender)
+	return current?.p_have(temp_gender) || "has"
+
+/datum/mind/proc/p_are(temp_gender)
+	return current?.p_are(temp_gender) || "is"
+
+/datum/mind/proc/p_were(temp_gender)
+	return current?.p_were(temp_gender) || "was"
+
+/datum/mind/proc/p_do(temp_gender)
+	return current?.p_do(temp_gender) || "does"
+
+/datum/mind/proc/p_s(temp_gender)
+	return current?.p_s(temp_gender) || "s"
+
+/datum/mind/proc/p_es(temp_gender)
+	return current?.p_es(temp_gender) || "es"
+
+/datum/mind/proc/p_themselves(temp_gender)
+	return current?.p_themselves(temp_gender) || "itself"

@@ -19,19 +19,14 @@ import {
   KEY_R,
   KEY_UP,
 } from 'tgui-core/keycodes';
-import type { BooleanLike } from 'tgui-core/react';
 import { resolveAsset } from '../assets';
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 import { logger } from '../logging';
-
-type SpawnSearchData = {
-  initValue: string | null;
-  searchNames: BooleanLike;
-  regexSearch: BooleanLike;
-  fancyTypes: BooleanLike;
-  includeAbstracts: BooleanLike;
-};
+import type {
+  SpawnSearchActions,
+  SpawnSearchData,
+} from './generated/SpawnSearch';
 
 type SpawnAtomData = {
   // Type -> Name
@@ -58,7 +53,7 @@ const initialAtomPathData: AtomPathData = {
 };
 
 export function SpawnSearch() {
-  const { act, data } = useBackend<SpawnSearchData>();
+  const { act, data } = useBackend<SpawnSearchData, SpawnSearchActions>();
   const {
     fancyTypes,
     includeAbstracts,
@@ -363,7 +358,7 @@ type AtomSpanProps = {
 function ListItem(props: AtomSpanProps) {
   const { atomData, item } = props;
 
-  const { data } = useBackend<SpawnSearchData>();
+  const { data } = useBackend<SpawnSearchData, SpawnSearchActions>();
   const { fancyTypes } = data;
 
   const matchingKey = fancyTypes

@@ -57,6 +57,7 @@ CAPABILITIES(/obj/machinery/computer/pod)
 	configure(light_glow(color = "#00b000"))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
 	interface("PodComputer")
+	ui_shape(connected = bool(), timing = bool(), time = num(), power_level = nullable(num()))
 	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
 	op("start_stop", ui_act("start_stop"), then(PROC_REF(ui_act_start_stop)))
 	op("test_alarm", ui_act("test_alarm"), then(PROC_REF(ui_act_test_alarm)))
@@ -71,8 +72,8 @@ CAPABILITIES(/obj/machinery/computer/pod)
 /obj/machinery/computer/pod/ui_data(datum/act/eval/A)
 
 	return list(
-		"connected" = connected(),
-		"timing" = timing,
+		"connected" = !!connected(),
+		"timing" = !!timing,
 		"time" = time,
 		"power_level" = connected()?.power
 	)

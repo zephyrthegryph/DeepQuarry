@@ -55,13 +55,6 @@ CAPABILITIES(/obj/item/mapping_unit)
 	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_use_mapper_holds))), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/obj/item/mapping_unit/deathsquad
-	name = "deathsquad mapping unit"
-	icon_state = "mapping_unit_ds"
-	marker_prefix = "ds"
-	mapper_filter = HOLOMAP_FILTER_DEATHSQUAD
-	hud_frame_hint = "_ds"
-
 /obj/item/mapping_unit/operative
 	name = "nuclear operative mapping unit"
 	icon_state = "mapping_unit_op"
@@ -350,7 +343,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 		if(mob_indicator != HOLOMAP_ERROR)
 
 			// This is so specific because the icons are pixel_x and pixel_y only relative to OUR view of where THEY are relative to us
-			var/marker_cache_key = "[handle_of(HC)]_[HC.marker_prefix]_[mob_indicator]"
+			var/marker_cache_key = "[handle_text(handle_of(HC))]_[HC.marker_prefix]_[mob_indicator]"
 
 			if(!(marker_cache_key in icon_image_cache))
 				var/atom/movable/screen/mapper/marker/mark = new()
@@ -378,7 +371,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 		if(!TB || (TB.z != T_z))
 			continue
 
-		var/marker_cache_key = "[handle_of(HB)]_marker"
+		var/marker_cache_key = "[handle_text(handle_of(HB))]_marker"
 		if(!(marker_cache_key in icon_image_cache))
 			var/atom/movable/screen/mapper/marker/mark = new()
 			mark.set_icon_state("beacon")
@@ -455,11 +448,6 @@ CAPABILITIES(/obj/item/holomap_beacon)
 	set_icon_state("[initial(icon_state)][in_list ? "_on" : ""]")
 	to_chat(user,span_notice("The [src] is now [in_list ? "broadcasting" : "disabled"]."))
 	return TRUE
-
-/obj/item/holomap_beacon/deathsquad
-	name = "deathsquad holomap beacon"
-	icon_state = "holochip_ds"
-	mapper_filter = HOLOMAP_FILTER_DEATHSQUAD
 
 /obj/item/holomap_beacon/operative
 	name = "operative holomap beacon"

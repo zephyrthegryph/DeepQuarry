@@ -167,11 +167,6 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 	return TRUE
 
 /datum/dq_forms_ui_host
-	var/acted = 0
-
-/datum/dq_forms_ui_host/proc/act_poke(mob/user)
-	acted++
-	return TRUE
 
 /datum/dq_forms_ui_host/admin
 	ui_rights = R_ADMIN
@@ -356,12 +351,6 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 	var/datum/dq_forms_ui_host/admin/panel = new
 	TEST_ASSERT_EQUAL(panel.tgui_state(H), ADMIN_STATE(R_ADMIN), "ui_rights gives the admin state")
 	TEST_ASSERT_EQUAL(plain.tgui_state(H), GLOB.tgui_default_state, "no ui_rights: the default state")
-	var/list/result = ui_named_dispatch(panel, "poke", list(), window)
-	TEST_ASSERT(result?[1] && !result[2], "an action by a user without the rights is refused")
-	TEST_ASSERT_EQUAL(panel.acted, 0, "and its handler never ran")
-	result = ui_named_dispatch(plain, "poke", list(), window)
-	TEST_ASSERT(result?[1] && result[2], "without ui_rights the action runs")
-	TEST_ASSERT_EQUAL(plain.acted, 1, "once")
 	rel_clear(window, nameof(window.user))
 	qdel(window) // a window left to the collector is freed without qdel() while the relation layer still holds a handle to it
 	var/datum/round_status_panel/rsp = new

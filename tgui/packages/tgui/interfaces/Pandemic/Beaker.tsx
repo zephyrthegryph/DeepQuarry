@@ -1,18 +1,17 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   Button,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
 import { capitalizeFirst } from 'tgui-core/string';
-
-import type { Data } from './types';
+import type { PandemicActions, PandemicData } from '../generated/Pandemic';
 
 export const BeakerDisplay = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<PandemicData, PandemicActions>();
   const { has_beaker, beaker, has_blood } = data;
   const cant_empty = !has_beaker || !beaker?.volume;
   let content;
@@ -26,16 +25,7 @@ export const BeakerDisplay = (props) => {
       <NoticeBox>No blood sample found in the loaded container.</NoticeBox>
     );
   } else {
-    content = (
-      <Stack vertical>
-        <Stack.Item>
-          <Info />
-        </Stack.Item>
-        <Stack.Item>
-          <Antibodies />
-        </Stack.Item>
-      </Stack>
-    );
+    content = <Info />;
   }
 
   return (
@@ -80,7 +70,7 @@ export const BeakerDisplay = (props) => {
 };
 
 const Info = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<PandemicData, PandemicActions>();
   const { beaker, blood } = data;
   if (!beaker || !blood) {
     return <NoticeBox>No container loaded</NoticeBox>;
@@ -96,23 +86,23 @@ const Info = (props) => {
           <LabeledList.Item label="Type">
             {capitalizeFirst(blood.type)}
           </LabeledList.Item>
+          <Antibodies />
         </LabeledList>
       </Stack.Item>
       <Stack.Item grow={2}>
         <LabeledList>
-          <LabeledList.Item label="Container">
-            <ProgressBar
-              color="darkred"
-              value={beaker.volume}
-              minValue={0}
-              maxValue={beaker.capacity}
-              ranges={{
-                good: [beaker.capacity * 0.85, beaker.capacity],
-                average: [beaker.capacity * 0.25, beaker.capacity * 0.85],
-                bad: [0, beaker.capacity * 0.25],
-              }}
-            />
-          </LabeledList.Item>
+          <StatBar
+            label="Container"
+            color="darkred"
+            value={beaker.volume}
+            minValue={0}
+            maxValue={beaker.capacity}
+            ranges={{
+              good: [beaker.capacity * 0.85, beaker.capacity],
+              average: [beaker.capacity * 0.25, beaker.capacity * 0.85],
+              bad: [0, beaker.capacity * 0.25],
+            }}
+          />
         </LabeledList>
       </Stack.Item>
     </Stack>
@@ -120,35 +110,35 @@ const Info = (props) => {
 };
 
 const Antibodies = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<PandemicData, PandemicActions>();
   const { is_ready, resistances = [] } = data;
   if (!resistances) {
-    return <NoticeBox>Nothing detected.</NoticeBox>;
+    return (
+      <LabeledList.Item label="Antibodies">Nothing detected.</LabeledList.Item>
+    );
   }
 
   return (
-    <LabeledList>
-      <LabeledList.Item label="Antibodies">
-        {!resistances.length
-          ? 'None'
-          : resistances.map((resistance) => {
-              return (
-                <Button
-                  key={resistance.name}
-                  icon="eye-dropper"
-                  disabled={!is_ready}
-                  tooltip="Creates a vaccine bottle."
-                  onClick={() =>
-                    act('create_vaccine_bottle', {
-                      index: resistance.id,
-                    })
-                  }
-                >
-                  {`${resistance.name}`}
-                </Button>
-              );
-            })}
-      </LabeledList.Item>
-    </LabeledList>
+    <LabeledList.Item label="Antibodies">
+      {!resistances.length
+        ? 'None'
+        : resistances.map((resistance) => {
+            return (
+              <Button
+                key={resistance.name}
+                icon="eye-dropper"
+                disabled={!is_ready}
+                tooltip="Creates a vaccine bottle."
+                onClick={() =>
+                  act('create_vaccine_bottle', {
+                    index: resistance.id,
+                  })
+                }
+              >
+                {`${resistance.name}`}
+              </Button>
+            );
+          })}
+    </LabeledList.Item>
   );
 };

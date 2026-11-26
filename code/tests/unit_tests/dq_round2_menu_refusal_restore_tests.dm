@@ -8,10 +8,12 @@
 	set_global(nameof(GLOB.op_menu_builds), GLOB.op_menu_builds)
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/ai_status_display/D = mach(/obj/machinery/ai_status_display, tile(3, 2))
-	var/list/row = find_row(op_menu(H, D, null), "touch")
-	TEST_ASSERT_NOTNULL(row, "Empty-hand Use remains visibly refused")
-	TEST_ASSERT(!row["enabled"], "An empty hand cannot select the item-touch operation")
-	TEST_ASSERT_EQUAL(row["reason"], "needs an item", "The original missing-item refusal remains")
+	// req(/obj/item) is about which thing is used, not its state, so since the menu hides rows that cannot apply (FAILS_HIDDEN,
+	// dq_menu_requirement_fails_kinds) an empty hand does not list the item touch at all: it is in the hidden view.
+	var/list/hidden = list()
+	TEST_ASSERT_NULL(find_row(op_menu(H, D, null, hidden), "touch"), "An empty hand is not offered the item-touch operation")
+	TEST_ASSERT_NOTNULL(find_row(hidden, "touch"), "The empty-hand item touch is in the hidden view")
+	var/list/row
 	var/datum/op_result/rejected = test_menu(H, D, "touch")
 	TEST_ASSERT_EQUAL(rejected?.outcome, ACT_REFUSED, "A public empty-hand menu pick is refused")
 	var/obj/item/I = allocate(/obj/item, H.loc)

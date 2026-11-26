@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
-
+import type { SupplyConsoleActions } from '../generated/SupplyConsole';
 import type { Data } from './types';
 
 export const SupplyConsoleMenuHistoryExport = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SupplyConsoleActions>();
   const { receipts, order_auth } = data;
 
   if (!receipts.length) {

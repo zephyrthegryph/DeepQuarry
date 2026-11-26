@@ -8,18 +8,10 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  locked: BooleanLike;
-  code: string;
-  emagged: BooleanLike;
-  l_setshort: BooleanLike;
-  l_set: BooleanLike;
-};
+import type { SecureSafeActions, SecureSafeData } from './generated/SecureSafe';
 
 const NukeKeypad = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<SecureSafeData, SecureSafeActions>();
 
   const keypadKeys: string[][] = [
     ['1', '4', '7', 'R'],
@@ -31,38 +23,40 @@ const NukeKeypad = (props) => {
   return (
     <Box width="185px">
       <Table width="1px">
-        {keypadKeys.map((keyColumn) => (
-          <Table.Cell key={keyColumn[0]}>
-            {keyColumn.map((key) => (
-              <Button
-                fluid
-                bold
-                key={key}
-                mb="6px"
-                textAlign="center"
-                fontSize="40px"
-                height="50px"
-                lineHeight={1.25}
-                disabled={
-                  !!emagged ||
-                  (!!l_setshort && 1) ||
-                  (key !== 'R' && !locked) ||
-                  (code === 'ERROR' && key !== 'R' && 1)
-                }
-                onClick={() => act('type', { digit: key })}
-              >
-                {key}
-              </Button>
-            ))}
-          </Table.Cell>
-        ))}
+        <Table.Row>
+          {keypadKeys.map((keyColumn) => (
+            <Table.Cell key={keyColumn[0]}>
+              {keyColumn.map((key) => (
+                <Button
+                  fluid
+                  bold
+                  key={key}
+                  mb="6px"
+                  textAlign="center"
+                  fontSize="40px"
+                  height="50px"
+                  lineHeight={1.25}
+                  disabled={
+                    !!emagged ||
+                    (!!l_setshort && 1) ||
+                    (key !== 'R' && !locked) ||
+                    (code === 'ERROR' && key !== 'R' && 1)
+                  }
+                  onClick={() => act('type', { digit: key })}
+                >
+                  {key}
+                </Button>
+              ))}
+            </Table.Cell>
+          ))}
+        </Table.Row>
       </Table>
     </Box>
   );
 };
 
 export const SecureSafe = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<SecureSafeData, SecureSafeActions>();
   const { code, l_setshort, l_set, emagged, locked } = data;
 
   const new_code: boolean = !(!!l_set || !!l_setshort);

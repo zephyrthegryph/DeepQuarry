@@ -71,16 +71,26 @@ GLOBAL_LIST_INIT(ability_keybind_rows, list(
 		list("throw_mode", "Toggle throw mode", KEYBIND_CAT_MOB, ".southwest", null, KB_BOTH("SOUTHWEST", "R", "CTRL+R")),
 		list("drop", "Drop held item", KEYBIND_CAT_MOB, ".northwest", null, list(KEYBIND_PROFILE_DEFAULT = list("NORTHWEST", "Q", "CTRL+Q"), KEYBIND_PROFILE_ROBOT = list("NORTHWEST"))),
 		list("self_use_diagonal", "Use held item (Page Down)", KEYBIND_CAT_MOB, ".southeast", null, KB_BOTH("SOUTHEAST")),
-		list("self_use", "Use held item", KEYBIND_CAT_MOB, "Activate-Held-Object", null, list(KEYBIND_PROFILE_DEFAULT = list("Z", "CTRL+Z"), KEYBIND_PROFILE_ROBOT = list("Z"))),
-		list("robot_self_use", "Use held module (multibelt aware)", KEYBIND_CAT_ROBOT, "Robot-Activate-Held-Object", null, KB_ROBOT("CTRL+Z")),
+		list("self_use", "Use held item", KEYBIND_CAT_MOB, "Use-Held-Item", null, list(KEYBIND_PROFILE_DEFAULT = list("Z", "CTRL+Z"), KEYBIND_PROFILE_ROBOT = list("Z"))),
+		list("robot_self_use", "Use held module (multibelt aware)", KEYBIND_CAT_ROBOT, "Use-Held-Module", null, KB_ROBOT("CTRL+Z")),
 		list("stop_pulling", "Stop pulling", KEYBIND_CAT_MOB, "delete-key-pressed", null, KB_BOTH("DELETE")),
 		list("rest", "Rest", KEYBIND_CAT_MOB, "Rest", null, KB_BOTH("U")),
-		list("rest_left", "Rest (lie left)", KEYBIND_CAT_MOB, "Rest-Left", null, KB_HUMAN("SHIFT+U")),
-		list("rest_right", "Rest (lie right)", KEYBIND_CAT_MOB, "Rest-Right", null, KB_HUMAN("CTRL+U")),
 		list("resist", "Resist", KEYBIND_CAT_MOB, "Resist", null, KB_HUMAN("B")),
 		list("quick_equip", "Quick equip", KEYBIND_CAT_ITEMS, "quick-equip", null, KB_HUMAN("E", "CTRL+E")),
 		list("holster", "Holster", KEYBIND_CAT_ITEMS, "holster", null, KB_HUMAN("H", "CTRL+H")),
 		list("toggle_gun_mode", "Toggle gun aiming mode", KEYBIND_CAT_ITEMS, "toggle-gun-mode", null, KB_BOTH("J", "CTRL+J")),
+		// Unbound until a player binds them: the verb panel no longer lists these commands.
+		list("pull", "Pull something nearby", KEYBIND_CAT_MOB, "Pull", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("succumb", "Succumb to death", KEYBIND_CAT_MOB, "Succumb-to-death", null, list(KEYBIND_PROFILE_DEFAULT = list())),
+		list("move_up", "Move up a level", KEYBIND_CAT_MOVEMENT, "Move-Upwards", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("move_down", "Move down a level", KEYBIND_CAT_MOVEMENT, "Move-Down", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("climb_down", "Climb down the wall you stand on", KEYBIND_CAT_MOVEMENT, "Climb-down-wall", null, list(KEYBIND_PROFILE_DEFAULT = list())),
+		list("toggle_afk", "Toggle AFK", KEYBIND_CAT_MOB, "Toggle-AFK", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("notes", "Notes", KEYBIND_CAT_MOB, "Notes", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("examine_mob", "Examine a mob you can see (even from inside something)", KEYBIND_CAT_MOB, "Mob-Examine", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("vore_panel", "Vore panel", KEYBIND_CAT_MOB, "Vore-Panel", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("spin_view_cw", "Spin the view clockwise", KEYBIND_CAT_CLIENT, "Spin-View-CW", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
+		list("spin_view_ccw", "Spin the view counter-clockwise", KEYBIND_CAT_CLIENT, "Spin-View-CCW", null, list(KEYBIND_PROFILE_DEFAULT = list(), KEYBIND_PROFILE_ROBOT = list())),
 
 		// Combat mode (I6; code/modules/mob/combat_mode.dm). It replaced the intents, on
 		// the same keys: 1 and 4 (help and harm) turn it off and on, the two
@@ -117,7 +127,10 @@ GLOBAL_LIST_INIT(ability_keybind_rows, list(
 		list("emote", "Emote", KEYBIND_CAT_COMMS, "Me-verb", null, KB_BOTH("5", "F4")),
 		list("subtle", "Subtle emote", KEYBIND_CAT_COMMS, "Subtle-verb", null, KB_BOTH("6")),
 		list("whisper", "Whisper", KEYBIND_CAT_COMMS, "Whisper-verb", null, KB_BOTH("Y", "CTRL+Y")),
-		list("ooc", "OOC", KEYBIND_CAT_COMMS, "ooc", null, KB_BOTH("F2")),
+		list("ooc", "OOC", KEYBIND_CAT_COMMS, ".dq-ooc-input", null, KB_BOTH("F2")),
+		// Unbound by default: no key the old skin had is free for them; a player binds one.
+		list("looc", "LOOC", KEYBIND_CAT_COMMS, ".dq-looc-input", null, null),
+		list("radio", "Radio", KEYBIND_CAT_COMMS, ".dq-radio-input", null, null),
 		list("ahelp", "Admin help", KEYBIND_CAT_COMMS, "request-help", null, KB_BOTH("F1")),
 
 		// Client
@@ -146,6 +159,10 @@ GLOBAL_LIST_INIT(ability_keybind_rows, list(
 	// pressed, by the op itself (abilities.dm). The row id stays ability_<old ability id>; the command carries the op key.
 	for(var/list/row as anything in GLOB.ability_keybind_rows)
 		. += list(list(ABILITY_KEYBIND(row[1]), row[2], KEYBIND_CAT_ABILITIES, ".use-ability [row[3]]", null, null))
+	// The first ABILITY_HOTKEY_SLOTS abilities of the mob's list, as it is ordered in the Abilities tab (code/content/abilities/). The plain
+	// digits are taken (1 to 4 are combat mode, 5 and 6 emotes, 1 to 3 a cyborg's modules), so the slots are ALT+digit; a player rebinds them.
+	for(var/slot in 1 to ABILITY_HOTKEY_SLOTS)
+		. += list(list(ABILITY_SLOT_KEYBIND(slot), "Ability in slot [slot]", KEYBIND_CAT_ABILITIES, ".use-ability-slot [slot]", null, KB_BOTH("ALT+[slot]")))
 
 #undef KB_BOTH
 #undef KB_HUMAN

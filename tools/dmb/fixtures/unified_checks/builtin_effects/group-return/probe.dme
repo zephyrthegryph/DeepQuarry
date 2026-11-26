@@ -1,4 +1,0 @@
-var/global_value=0
-/proc/probe()
-    set SpacemanDMM_should_be_pure=1
-    return (global_value=1)

@@ -72,6 +72,7 @@
 
 CAPABILITIES(/datum/computer_file/program/nttransfer)
 	interface("NtosNetTransfer")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool(), error = schema_text(), downloading = bool(), download_size = nullable(num()), download_progress = nullable(num()), download_netspeed = nullable(num()), download_name = nullable(schema_text()), uploading = bool(), upload_clients = int(0), upload_haspassword = bool(), upload_filename = nullable(schema_text()), upload_filelist = list_of(row(uid = num(), filename = schema_text(), size = num())), servers = list_of(row(uid = num(), filename = schema_text(), size = num(), haspassword = bool())))
 	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("uid", schema_ref(/datum/computer_file/program/nttransfer))), asks(/datum/prompt/text, fields = list("question" = "Code 401 Unauthorized. Please enter password:", "title" = "Password required", "timeout" = 0), step = "password", when = PROC_REF(download_needs_password)), then(PROC_REF(ui_act_prg_downloadfile)))
 	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
 	op("PRG_setpassword", ui_act("PRG_setpassword"), asks(/datum/prompt/text, fields = list("question" = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", "title" = "Server security", "default" = "none", "timeout" = 0), step = "password"), then(PROC_REF(ui_act_prg_setpassword)))
@@ -86,6 +87,10 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	data["error"] = error
 
 	data["downloading"] = !!downloaded_file
+	data["download_size"] = null
+	data["download_progress"] = null
+	data["download_netspeed"] = null
+	data["download_name"] = null
 	if(downloaded_file)
 		data["download_size"] = downloaded_file.size
 		data["download_progress"] = download_completion
@@ -93,14 +98,16 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 		data["download_name"] = "[downloaded_file.filename].[downloaded_file.filetype]"
 
 	data["uploading"] = !!provided_file()
+	data["upload_clients"] = 0
+	data["upload_haspassword"] = FALSE
+	data["upload_filename"] = null
 	if(provided_file())
-		data["upload_uid"] = handle_of(src)
 		data["upload_clients"] = length(connected_clients)
-		data["upload_haspassword"] = server_password ? 1 : 0
+		data["upload_haspassword"] = server_password ? TRUE : FALSE
 		data["upload_filename"] = "[provided_file().filename].[provided_file().filetype]"
 
 	data["upload_filelist"] = list()
-	if(upload_menu)
+	if(upload_menu && computer()?.hard_drive)
 		var/list/all_files = list()
 		for(var/datum/computer_file/F in computer().hard_drive.stored_files)
 			all_files.Add(list(list(
@@ -111,7 +118,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 		data["upload_filelist"] = all_files
 
 	data["servers"] = list()
-	if(!(downloaded_file || provided_file() || upload_menu))
+	if(GLOB.ntnet_global && !(downloaded_file || provided_file() || upload_menu))
 		var/list/all_servers = list()
 		for(var/datum/computer_file/program/nttransfer/P in GLOB.ntnet_global.fileservers)
 			if(!P.provided_file())
@@ -120,7 +127,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 				"uid" = handle_of(P), // the server's handle: a download names it back (relations.md D9a)
 				"filename" = "[P.provided_file().filename].[P.provided_file().filetype]",
 				"size" = P.provided_file().size,
-				"haspassword" = P.server_password ? 1 : 0
+				"haspassword" = P.server_password ? TRUE : FALSE
 			)))
 		data["servers"] = all_servers
 
@@ -184,7 +191,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 				return
 			rel_set(src, nameof(/datum/computer_file/program/nttransfer::provided_file), F)
 			rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::fileservers), src)
-			return
+			return TRUE
 	set_error("I/O Error: Unable to locate file on hard drive.")
 	return TRUE
 

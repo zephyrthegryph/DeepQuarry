@@ -1,5 +1,0 @@
-[lint.base_vars]
-exempt_prefixes = ["code/tests/"]
-
-[lint.base_vars.lists]
-record_accessor_prefixes = ["set_", "get_"]

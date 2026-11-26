@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Button, ColorBox, LabeledList, Stack } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
+import type { NineMenActions } from '../generated/NineMen';
 import { numToText } from '../SpaceBattle/constants';
 import type { Data } from './types';
 
@@ -11,7 +12,7 @@ export const PlayerPanel = (props: {
   time: number;
   num: number;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, NineMenActions>();
   const { gameState, player, pieces, time, num } = props;
 
   const player_string = numToText[num - 1];

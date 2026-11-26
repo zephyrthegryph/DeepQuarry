@@ -31,7 +31,6 @@
 
 /mob/living/carbon/human/proc/vr_transform_into_mob()
 	set name = "Transform Into Creature"
-	set category = VERB_CAT_ABILITIES_VR
 	set desc = "Become a different creature"
 
 	perform_op(src, src, "vr_transform", null, ORIGIN_VERB)
@@ -46,14 +45,12 @@
 
 /mob/living/proc/vr_revert_mob_tf()
 	set name = "Revert Transformation"
-	set category = VERB_CAT_ABILITIES_VR
 
 	revert_mob_tf()
 
 // Exiting VR but for ghosts
 /mob/living/carbon/human/proc/fake_exit_vr()
 	set name = "Log Out Of Virtual Reality"
-	set category = VERB_CAT_ABILITIES_VR
 
 	perform_op(src, src, "vr_logout", null, ORIGIN_VERB)
 

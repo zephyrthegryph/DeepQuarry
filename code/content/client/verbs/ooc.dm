@@ -1,7 +1,7 @@
 
 /client/verb/ooc(msg as text)
 	set name = "OOC"
-	set category = VERB_CAT_OOC_CHAT
+	set hidden = TRUE // the chat input (OOC channel) and its key
 
 
 	if(!mob)	return
@@ -82,7 +82,7 @@
 /client/verb/looc(msg as text)
 	set name = "LOOC"
 	set desc = "Local OOC, seen only by those in view."
-	set category = VERB_CAT_OOC_CHAT
+	set hidden = TRUE // the chat input (LOOC channel)
 
 	if(!mob)
 		return
@@ -202,8 +202,11 @@
 
 /client/verb/fit_viewport()
 	set name = "Fit Viewport"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
+	set hidden = TRUE // the Menu page
 	set desc = "Fit the width of the map window to match the viewport"
+
+	// An explicit fit replaces the width the player dragged the splitter to.
+	map_split_forget()
 
 	// Fetch aspect ratio
 	var/view_size = getviewsize(view)
@@ -260,8 +263,8 @@
 		return
 
 	// Calculate and apply a best estimate
-	// +4 pixels are for the width of the splitter's handle
-	var/pct = clamp(100 * (desired_width + 4) / split_width, FIT_VIEWPORT_MIN_PCT, FIT_VIEWPORT_MAX_PCT)
+	// The skin hides the splitter bar (show-splitter = false), so the map gets the whole share
+	var/pct = clamp(100 * desired_width / split_width, FIT_VIEWPORT_MIN_PCT, FIT_VIEWPORT_MAX_PCT)
 	winset(src, SKIN_MAIN_SPLIT, "splitter=[pct]")
 
 	// Apply an ever-lowering offset until we finish or fail: one round trip per step.
@@ -289,8 +292,8 @@
 
 /// Attempt to automatically fit the viewport, assuming the user wants it
 /client/proc/attempt_auto_fit_viewport()
-	if(!prefs.read_preference(/datum/preference/toggle/auto_fit_viewport))
-		return
+	if(prefs.read_preference(/datum/preference/numeric/map_split))
+		return // the player dragged the map/column splitter: their width stands until Fit Viewport is asked for
 	if(fully_created)
 		fit_viewport() // its wingets go through DX-exec
 	else //Delayed to avoid wingets from Login calls.
@@ -299,5 +302,7 @@
 /client/verb/fix_stat_panel()
 	set name = "Fix Stat Panel"
 	set hidden = TRUE
+
+	stat_panel_open(src)
 
 	init_verbs()

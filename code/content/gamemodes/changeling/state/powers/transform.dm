@@ -7,8 +7,6 @@
 
 //Change our DNA to that of somebody we've absorbed.
 /mob/proc/changeling_transform()
-	set category = VERB_CAT_CHANGELING
-	set name = "Transform (5)"
 
 	return changeling_transform_review()
 

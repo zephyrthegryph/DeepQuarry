@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "The right-click menu no longer offers Draw graffiti on a floor to any held item; crayons draw and sharp things engrave"
+  - qol: "The right-click menu's close button now has a bordered box with a hover state"

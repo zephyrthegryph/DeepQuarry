@@ -245,15 +245,6 @@ CAPABILITIES(/obj/item/inducer)
 	cell_type = /obj/item/cell/super
 	charge_guns = TRUE
 
-/obj/item/inducer/hybrid
-	name = "hybrid-tech inducer"
-	desc = "A tool for inductively charging internal power cells. This one has some flashy bits and recharges devices slower, but seems to recharge itself between uses."
-	icon_state = "inducer-hybrid"
-	item_state = "inducer-hybrid"
-	powertransfer = 250
-	cell_type = /obj/item/cell/void
-	charge_guns = TRUE
-
 // A 'human stand-in' cell for recharging 'nutrition' on synthetic humans (wow this is terrible! \o/)
 #define NUTRITION_COEFF 0.05 // 1000 charge = 50 nutrition at 0.05
 /obj/item/cell/standin

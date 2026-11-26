@@ -1,0 +1,11 @@
+{
+	"t": 1,
+	"target": "John Doe",
+	"can_remote": 1,
+	"material": "stone",
+	"identifier": "statue",
+	"adjective": "hardens",
+	"tint": "#ffffff",
+	"able_to_unpetrify": 1,
+	"discard_clothes": 0
+}

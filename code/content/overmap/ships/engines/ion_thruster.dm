@@ -25,7 +25,7 @@
 	return thruster().on && thruster().powered()
 
 /datum/ship_engine/ion/toggle()
-	thruster().on = !thruster().on
+	thruster().set_on(!thruster().on)
 
 /datum/ship_engine/ion/can_burn()
 	return thruster().on && thruster().powered()

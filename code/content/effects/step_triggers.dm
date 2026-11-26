@@ -285,7 +285,7 @@ CAPABILITIES(/obj/effect/step_trigger/autostrip)
 				var/obj/item/dnainjector/D = new /obj/item/dnainjector(locker)
 				D.name = initial(D.name) + " - RESTORE: [gene.name]" //lazy, but we may as well support base genes... even if unused...
 				D.block = gene.block
-				D.buf.types = DNA2_BUF_SE
+				D.buf.set_types(DNA2_BUF_SE)
 				D.SetValue( H.dna.GetSEValue(gene.block) ) // Get original block's value for the injector
 				D.has_radiation = FALSE // safe to use these!
 				// Turn off gene

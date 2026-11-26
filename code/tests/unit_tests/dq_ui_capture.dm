@@ -43,7 +43,7 @@
 	fdel(DQ_UI_CAPTURE_DIR + "timings.json")
 	var/datum/preferences/dq_ui_capture/P = new(DQ_UI_CAPTURE_DIR + "save.json")
 	P.set_current_window(PREFERENCE_TAB_CHARACTER_PREFERENCES)
-	var/list/static_data = P.tgui_static_data(null)
+	var/list/static_data = present_tgui_static_data(P, null)
 	var/list/index = dq_character_category_index(P.read_preference(/datum/preference/text/human/play_mode) || "human")
 	var/list/out = list("static_data" = static_data, "index" = index, "categories" = list())
 	var/list/timings = list()

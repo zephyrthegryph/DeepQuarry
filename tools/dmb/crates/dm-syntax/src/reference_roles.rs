@@ -21,7 +21,6 @@ pub fn assignment_target_access(operator: &str) -> Option<ReferenceAccess> {
 #[derive(Clone, Copy, Debug)]
 pub enum CallTarget<'a> {
     Named(&'a str),
-    GlobalNamed(&'a str),
     Member {
         object: &'a Expr,
         selector: &'a str,
@@ -40,10 +39,6 @@ pub enum CallTarget<'a> {
 pub fn call_target(callee: &Expr) -> CallTarget<'_> {
     match &callee.kind {
         ExprKind::Ident(name) => CallTarget::Named(name),
-        ExprKind::Unary { op, value } if op == "::" => match &value.kind {
-            ExprKind::Ident(name) => CallTarget::GlobalNamed(name),
-            _ => CallTarget::Unsupported,
-        },
         ExprKind::Member {
             object, selector, ..
         } => CallTarget::Member { object, selector },
@@ -70,10 +65,6 @@ pub fn call_target(callee: &Expr) -> CallTarget<'_> {
 pub fn reference_node_name(node: &Expr) -> Option<&str> {
     match &node.kind {
         ExprKind::Ident(name) => Some(name),
-        ExprKind::Unary { op, value } if op == "::" => match &value.kind {
-            ExprKind::Ident(name) => Some(name),
-            _ => None,
-        },
         ExprKind::Member { selector, .. }
         | ExprKind::SafeMember { selector, .. }
         | ExprKind::StaticMember { selector, .. } => Some(selector),
@@ -143,90 +134,5 @@ mod tests {
         };
         assert!(std::ptr::eq(named.key, &**lhs));
         assert!(std::ptr::eq(named.value, &**rhs));
-    }
-}
-
-#[cfg(test)]
-mod explicit_global_call_tests {
-    use super::*;
-    #[test]
-    fn scope_call_retains_explicit_global_role_distinct_from_bare_and_member() {
-        for (text, global) in [
-            ("::req_bool(1)", true),
-            ("req_bool(1)", false),
-            ("global.req_bool(1)", false),
-        ] {
-            let parsed = crate::parse_expression(text);
-            assert!(parsed.diagnostics.is_empty(), "{parsed:?}");
-            let expr = parsed.expr.unwrap();
-            let ExprKind::Call { callee, .. } = &expr.kind else {
-                panic!()
-            };
-            assert_eq!(
-                matches!(call_target(callee), CallTarget::GlobalNamed("req_bool")),
-                global
-            );
-        }
-    }
-    #[test]
-    fn malformed_or_noncall_scope_refs_remain_explicit_errors() {
-        for text in [
-            "::",
-            "::1()",
-            "::name",
-            ": :name()",
-            ":/*not scope*/:name()",
-        ] {
-            assert!(
-                !crate::parse_expression(text).diagnostics.is_empty(),
-                "{text}"
-            );
-        }
-    }
-    #[test]
-    fn scope_maximal_munch_precedes_ternary_and_member_consumption() {
-        for text in [
-            "1:::chosen()",
-            "a?1:::chosen()",
-            "a?1::::chosen()",
-            "a : :chosen()",
-            "a:/*gap*/:chosen()",
-        ] {
-            assert!(
-                !crate::parse_expression(text).diagnostics.is_empty(),
-                "{text}"
-            );
-        }
-        for text in [
-            "a ? ::foo() : ::bar()",
-            "a?1: ::bar()",
-            "a?1:/*gap*/::bar()",
-            "a?1: : :bar()",
-        ] {
-            let parsed = crate::parse_expression(text);
-            if text == "a?1: : :bar()" {
-                assert!(!parsed.diagnostics.is_empty(), "{text}");
-            } else {
-                assert!(parsed.diagnostics.is_empty(), "{text}: {parsed:?}");
-                let expression = parsed.expr.unwrap();
-                let ExprKind::Conditional { else_value, .. } = &expression.kind else {
-                    panic!("{text}")
-                };
-                let ExprKind::Call { callee, .. } = &else_value.kind else {
-                    panic!("{text}")
-                };
-                assert!(
-                    matches!(call_target(callee), CallTarget::GlobalNamed("bar")),
-                    "{text}"
-                );
-            }
-        }
-        let parsed = crate::parse_expression("a::chosen()");
-        assert!(parsed.diagnostics.is_empty(), "{parsed:?}");
-        let expression = parsed.expr.unwrap();
-        let ExprKind::Call { callee, .. } = &expression.kind else {
-            panic!()
-        };
-        assert!(matches!(callee.kind, ExprKind::StaticMember { .. }));
     }
 }

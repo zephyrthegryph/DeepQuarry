@@ -1,0 +1,26 @@
+{
+	"materials": [
+		{ "name": "steel", "ref": 401, "amount": 2500, "color": "#8c8c8c" },
+		{ "name": "glass", "ref": 402, "amount": 1200, "color": "#a6d8e8" }
+	],
+	"SHEET_MATERIAL_AMOUNT": 100,
+	"copyBoard": "micro-manipulator board",
+	"copyBoardReqComponents": [
+		{ "name": "micro-manipulator", "qty": 2 },
+		{ "name": "scanning module", "qty": 1 }
+	],
+	"queue": ["micro-manipulator", "scanning module"],
+	"building": "micro-manipulator",
+	"buildPercent": 45,
+	"error": "100 steel, 20 glass",
+	"recipies": [
+		{
+			"name": "micro-manipulator",
+			"type": "/obj/item/stock_parts/manipulator"
+		},
+		{
+			"name": "scanning module",
+			"type": "/obj/item/stock_parts/scanning_module"
+		}
+	]
+}

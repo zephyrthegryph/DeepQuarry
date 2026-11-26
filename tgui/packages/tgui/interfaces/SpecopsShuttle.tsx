@@ -1,18 +1,16 @@
 // Special Operations Shuttle console — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-
-type Data = {
-  status_message?: string;
-  state?: 'moving' | 'at_station' | 'at_dock';
-  timeleft?: number;
-  destination?: string;
-};
+import type {
+  SpecopsShuttleActions,
+  SpecopsShuttleData,
+} from './generated/SpecopsShuttle';
 
 export const SpecopsShuttle = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<SpecopsShuttleData, SpecopsShuttleActions>();
   const { status_message, state, timeleft, destination } = data;
   return (
     <Window width={460} height={300} title="Special Operations Shuttle">
@@ -27,9 +25,9 @@ export const SpecopsShuttle = () => {
                   Departing for {destination} in {timeleft} seconds.
                 </LabeledList.Item>
               </LabeledList>
-              <Box mt={1} italic color="label">
+              <Label mt={1} italic>
                 The Special Ops. shuttle is already leaving.
-              </Box>
+              </Label>
             </>
           ) : state === 'at_station' ? (
             <>

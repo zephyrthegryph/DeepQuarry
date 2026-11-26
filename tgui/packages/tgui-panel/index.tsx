@@ -5,16 +5,20 @@
  */
 
 import './styles/main.scss';
-import './styles/themes/light.scss';
-import './styles/themes/vchatlight.scss';
-import './styles/themes/vchatdark.scss';
 
 import { createRoot } from 'react-dom/client';
+import {
+  guardedDispatch,
+  installErrorReporting,
+  setErrorChannel,
+} from 'tgui/errors';
 import { setupGlobalEvents } from 'tgui-core/events';
 import { captureExternalLinks } from 'tgui-core/links';
 import { setupHotReloading } from 'tgui-dev-server/link/client';
 import { App } from './app';
+import { sendPage } from './column/host';
 import { bus } from './events/listeners';
+import { fitChatBrowser } from './layout/geometry';
 import { setupPanelFocusHacks } from './panelFocus';
 
 const root = createRoot(document.getElementById('react-root')!);
@@ -40,10 +44,16 @@ function setupApp() {
   setupPanelFocusHacks();
   captureExternalLinks();
 
+  // This page has no tgui datum: its reports go through the column's own channel.
+  setErrorChannel((report) => sendPage('WM-Error', report));
+  installErrorReporting('column page');
+
   render(<App />);
 
   // Dispatch incoming messages as store actions
-  Byond.subscribe((type, payload) => bus.dispatch({ type, payload }));
+  Byond.subscribe((type, payload) =>
+    guardedDispatch(type, () => bus.dispatch({ type, payload })),
+  );
 
   // Unhide the panel
   Byond.winset('outputwindow.legacy_output_selector', {
@@ -51,19 +61,13 @@ function setupApp() {
   });
 
   // Fill our own pane. Not the legacy `output` control: its pane is hidden,
-  // so its size is stale and pinned the chat to a fraction of the pane.
-  // Once the browser matches the pane, its 0,0-100,100 anchors track
-  // every later resize (window, splitter, viewport fit).
-  // Again after a second: the pane may still be laying out after the swap.
-  const fillPane = () =>
-    Byond.winget('output_browser').then((pane: { size: string }) => {
-      Byond.winset('browseroutput', {
-        pos: '0,0',
-        size: pane.size,
-      });
-    });
-  fillPane();
-  setTimeout(fillPane, 1000);
+  // so its size is stale. Sized to what the host really has (fitChatBrowser),
+  // again after a second while the pane lays out; the server's chat/layout
+  // message fits it again whenever the pane moves. Once the browser matches
+  // the pane, its 0,0-100,100 anchors track every later resize.
+  const fill = (reason: string) => fitChatBrowser(reason);
+  fill('start');
+  setTimeout(() => fill('start-settled'), 1000);
 
   // Enable hot module reloading
   if (import.meta.webpackHot) {

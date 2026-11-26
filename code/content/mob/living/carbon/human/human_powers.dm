@@ -4,7 +4,6 @@
 /mob/living/carbon/human/proc/tie_hair()
 	set name = "Tie Hair"
 	set desc = "Style your hair."
-	set category = VERB_CAT_IC_GAME
 
 	if(incapacitated())
 		to_chat(src, span_warning("You can't mess with your hair right now!"))
@@ -33,7 +32,6 @@
 		to_chat(src, span_notice("You're already using that style."))
 
 /mob/living/carbon/human/proc/tackle()
-	set category = VERB_CAT_ABILITIES_GENERAL
 	set name = "Tackle"
 	set desc = "Tackle someone down."
 
@@ -100,7 +98,6 @@
 			O.show_message(span_warning(span_red(span_bold("[src] [failed ? "tried to tackle" : "has tackled"] down [T]!"))), 1)
 
 /mob/living/carbon/human/proc/commune()
-	set category = VERB_CAT_ABILITIES_GENERAL
 	set name = "Commune with creature"
 	set desc = "Send a telepathic message to an unlucky recipient."
 
@@ -142,10 +139,9 @@
 		to_chat(H, span_filter_notice("[span_red("Your nose begins to bleed...")]"))
 		H.drip(1)
 
-/mob/living/carbon/human/proc/psychic_whisper(mob/M as mob in oview())
+/mob/living/carbon/human/proc/psychic_whisper(mob/M)
 	set name = "Psychic Whisper"
 	set desc = "Whisper silently to someone over a distance."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	open_request(src, /datum/prompt/text/telepathy, PROC_REF(psychic_whisper_entered), answerer = src, title = "Psychic Whisper", recipient = M, recipient_expected = !isnull(M))
 
@@ -165,7 +161,6 @@
 /mob/living/carbon/human/proc/diona_split_nymph()
 	set name = "Split"
 	set desc = "Split your humanoid form into its constituent nymphs."
-	set category = VERB_CAT_ABILITIES_DIONA
 	diona_split_into_nymphs(5)	// Separate proc to void argments being supplied when used as a verb
 
 /mob/living/carbon/human/proc/diona_split_into_nymphs(number_of_resulting_nymphs)
@@ -222,7 +217,6 @@
 /mob/living/carbon/human/proc/self_diagnostics()
 	set name = "Self-Diagnostics"
 	set desc = "Run an internal self-diagnostic to check for damage."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(stat == DEAD) return
 
@@ -266,7 +260,6 @@
 /mob/living/carbon/human/proc/sonar_ping()
 	set name = "Listen In"
 	set desc = "Allows you to listen in to movement and noises around you."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
@@ -314,7 +307,6 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 /mob/living/carbon/human/proc/regenerate()
 	set name = "Regenerate"
 	set desc = "Allows you to regrow limbs and heal organs after a period of rest."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	perform_op(src, src, "regenerate", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
@@ -355,8 +347,7 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 			E = null
 		if(!E)
 			var/list/organ_data = src.species.has_limbs[limb_type]
-			var/limb_path = organ_data["path"]
-			var/obj/item/organ/O = new limb_path(src)
+			var/obj/item/organ/O = species_limb_new(organ_data, src)
 			if(!is_registered(src.species))
 				organ_data["descriptor"] = O.name
 			to_chat(src, span_notice("You feel a slithering sensation as your [O.name] reform."))
@@ -383,7 +374,6 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 /mob/living/carbon/human/proc/setmonitor_state()
 	set name = "Set monitor display"
 	set desc = "Set your monitor display"
-	set category = VERB_CAT_IC_SETTINGS
 	if(stat)
 		to_chat(src,span_warning("You must be awake and standing to perform this action!"))
 		return
@@ -440,7 +430,7 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 	var/choice = ask.value
 	var/datum/robolimb/robohead = GLOB.all_robolimbs[E.model]
 	if(robohead?.monitor_icon)
-		E.eye_icon_location = robohead.monitor_icon
+		E.set_eye_icon_location(robohead.monitor_icon)
 		E.set_eye_icon(states[choice])
 		E.eye_icon_override = TRUE
 		to_chat(src,span_warning("You set your monitor to display [choice]!"))
@@ -449,7 +439,6 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 /mob/living/carbon/human/proc/reagent_purge()
 	set name = "Purge Reagents"
 	set desc = "Empty yourself of any reagents you may have consumed or come into contact with."
-	set category = VERB_CAT_IC_GAME
 
 	if(stat == DEAD) return
 
@@ -463,10 +452,9 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 	src.touching.clear_reagents()
 	to_chat(src, span_notice("Reagents purged!"))
 
-/mob/living/carbon/human/verb/toggle_eyes_layer()
+/mob/living/carbon/human/proc/toggle_eyes_layer()
 	set name = "Switch Eyes/Monitor Layer"
 	set desc = "Toggle rendering of eyes/monitor above markings."
-	set category = VERB_CAT_IC_SETTINGS
 
 	if(stat)
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))
@@ -476,7 +464,7 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 		to_chat(src, span_warning("You don't seem to have a head!"))
 		return
 
-	H.eyes_over_markings = !H.eyes_over_markings
+	H.set_eyes_over_markings(!H.eyes_over_markings)
 
 	if(H.robotic)
 		var/datum/robolimb/robohead = GLOB.all_robolimbs[H.model]
@@ -776,7 +764,6 @@ CAPABILITIES(/datum/prompt/number/hand_game_move)
 /mob/living/carbon/human/proc/play_dead()
 	set name = "Play Dead"
 	set desc = "Literally just die on the spot. It's okay, you can get better."
-	set category = VERB_CAT_ABILITIES_SPARKLEDOG
 
 	if(stat)
 		to_chat(src, span_warning("You're too messed up right now to act all messed up, it's, like, for real."))

@@ -136,8 +136,8 @@ CAPABILITIES(/datum/prompt/choice/frame_type_wall)
 	return null
 
 /// req_frame_mount(): the frame's mount_refusal() has nothing against the spot. Asked when the frame is held to a wall; nothing caches it.
-/proc/req_frame_mount()
-	return part_make(/datum/entry/part/req/frame_mount)
+/proc/req_frame_mount(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/frame_mount), fails)
 
 /datum/entry/part/req/frame_mount
 	part_name = "req_frame_mount"
@@ -210,11 +210,3 @@ CAPABILITIES(/datum/prompt/choice/frame_type_wall)
 	icon_state = "mirror_frame"
 	refund_amt = 1
 	build_machine_type = /obj/structure/mirror
-
-/obj/item/frame/fireaxe_cabinet
-	name = "fire axe cabinet frame"
-	desc = "Used for building fire axe cabinets."
-	icon = 'icons/obj/closet.dmi'
-	icon_state = "fireaxe0101"
-	refund_amt = 4
-	build_machine_type = /obj/structure/fireaxecabinet

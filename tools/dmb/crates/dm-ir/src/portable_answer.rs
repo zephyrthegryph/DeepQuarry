@@ -20,11 +20,11 @@ pub struct PortableOpaque {
 fn capture_data(
     data: &DeclarationMeaning,
 ) -> Option<(Box<PortableMeaning>, Option<PortableOpaque>)> {
-    let Some(base) = data.inherited_opaque() else {
+    let Some(base) = &data.inherited_opaque else {
         return Some((Box::new(PortableMeaning::capture(data, false)?), None));
     };
     let mut plain = data.clone();
-    plain.field_tail_mut().set_inherited_opaque(None);
+    plain.inherited_opaque = None;
     let (knowledge, known) = match base.declared_type {
         DeclaredTypeKnowledge::Known(symbol) => (0, Some(symbol)),
         DeclaredTypeKnowledge::KnownUntyped => (1, None),
@@ -46,7 +46,7 @@ fn restore_data(
 ) -> Option<Arc<DeclarationMeaning>> {
     let mut meaning = data.clone().restore(Names::unchecked())?;
     if let Some(base) = opaque {
-        meaning.field_tail_mut().set_inherited_opaque(Some(OpaqueFieldBase {
+        meaning.inherited_opaque = Some(OpaqueFieldBase {
             owner: base.owner,
             name: base.name,
             declared_type: match (base.knowledge, base.known) {
@@ -55,7 +55,7 @@ fn restore_data(
                 (2, None) => DeclaredTypeKnowledge::Unsupported,
                 _ => return None,
             },
-        }));
+        });
     }
     Some(Arc::new(meaning))
 }
@@ -322,17 +322,22 @@ mod tests {
         }
     }
     fn meaning() -> crate::DeclarationMeaning {
-        crate::DeclarationMeaning::new(
-            None,
-            3,
-            Some(Arc::new(crate::ProcedureMetadata {
+        crate::DeclarationMeaning {
+            declared_type: Some(SymbolId::of("/obj")),
+            flags: 3,
+            procedure: Some(Arc::new(crate::ProcedureMetadata {
                 signature: crate::ProcedureSignature {
-                    parameters: Arc::from([crate::Parameter::new(
-                        SymbolId::of("amount"), None, None, 0, dm_syntax::Span::new(0, 6),
-                    ).with_tail(crate::ParameterTail {
+                    parameters: Arc::from([crate::Parameter {
+                        name: SymbolId::of("amount"),
+                        declared_type: None,
+                        list_element_type: None,
+                        flags: 0,
+                        array: None,
                         default: Some(expression("null")),
-                        ..Default::default()
-                    })]),
+                        input_annotation: None,
+                        source_expression: None,
+                        relative_span: dm_syntax::Span::new(0, 6),
+                    }]),
                     variadic: false,
                     return_annotation: Some(expression("num")),
                 },
@@ -344,12 +349,10 @@ mod tests {
                     },
                 )]),
             })),
-            (&b"recipe"[..]).into(),
-        ).with_field_tail(crate::DeclarationFieldMeaning {
-            types: crate::FieldTypeIds::new(Some(SymbolId::of("/obj")), None, None),
             initializer: Some(expression("1")),
+            canonical: Arc::from(&b"recipe"[..]),
             ..Default::default()
-        })
+        }
     }
     #[test]
     fn declaration_chains_round_trip_through_the_wire_with_identical_canonical_bytes() {
@@ -385,26 +388,17 @@ mod tests {
             owner: SymbolId::of("/obj"),
             name: SymbolId::of("x"),
             fingerprint: 1.into(),
-            data: Arc::new(crate::DeclarationMeaning::default().with_field_tail(crate::DeclarationFieldMeaning {
-                types: crate::FieldTypeIds::new(None, None, Some(crate::OpaqueFieldBase {
+            data: Arc::new(crate::DeclarationMeaning {
+                inherited_opaque: Some(crate::OpaqueFieldBase {
                     owner: SymbolId::of("/atom"),
                     name: SymbolId::of("x"),
                     declared_type: crate::DeclaredTypeKnowledge::Known(SymbolId::of("/obj")),
-                })),
+                }),
                 ..Default::default()
-            })),
+            }),
         };
         let wire = PortableResolvedAnswer::capture_declared(&opaque).unwrap();
         assert_eq!(wire.restore(), Some(opaque.clone()));
         assert!(wire.matches_canonical(&opaque.canonical_bytes()));
     }
-    #[test]fn procedure_final_declaration_flag_survives_existing_portable_answer_and_changes_canonical(){
-        let identity=ProcedureIdentity{owner:SymbolId::of("/obj"),name:SymbolId::of("probe"),verb:false,occurrence:0};
-        let mut final_data=meaning();final_data.flags=crate::PROC_FLAG_FINAL;
-        let mut plain=final_data.clone();plain.flags=0;
-        assert_ne!(final_data.canonical_bytes(),plain.canonical_bytes());
-        let answer=ResolvedMeaning::Declaration{identity,definition:ProcedureDefinition::Declare,previous:None,data:Arc::new(final_data)};
-        let wire=PortableResolvedAnswer::capture_declared(&answer).unwrap();let encoded=serde_json::to_vec(&wire).unwrap();let restored:PortableResolvedAnswer=serde_json::from_slice(&encoded).unwrap();assert_eq!(restored.restore(),Some(answer.clone()));assert!(restored.matches_canonical(&answer.canonical_bytes()));
-    }
-
 }

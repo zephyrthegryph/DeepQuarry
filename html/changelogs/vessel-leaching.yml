@@ -1,0 +1,5 @@
+author: "DeepQuarry"
+delete-after: true
+changes:
+  - rscadd: "Reagent vessels leach their own material into harsh or hot contents (heavy metals from metal, plasticiser from plastic, silicate from very hot glass); borosilicate glass leaches nothing, so a beaker printed in it is the acid-proof choice"
+  - qol: "A vessel examine says what it is made of and what it gives up"

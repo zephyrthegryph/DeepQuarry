@@ -4,15 +4,15 @@ export type Data = Partial<
   MultiData &
     ExploData &
     WebData & {
-      shuttle_status: string;
-      shuttle_state: string;
+      shuttle_status: string | null;
+      shuttle_state: string | null;
       has_docking: BooleanLike;
       docking_status: string | null;
       docking_override: BooleanLike;
       can_launch: BooleanLike;
       can_cancel: BooleanLike;
       can_force: BooleanLike;
-      docking_codes: string;
+      docking_codes: string | null;
       subtemplate: string;
     }
 >;
@@ -42,9 +42,9 @@ type ExploData = {
 
 type WebData = {
   shuttle_location: string;
-  future_location: string;
+  future_location: string | null;
   shuttle_state: string;
-  routes: { name: string; index: number; travel_time: number }[];
+  routes: { name: string; index: number; travel_time: string }[];
   has_docking: BooleanLike;
   skip_docking: BooleanLike;
   is_moving: BooleanLike;
@@ -63,15 +63,15 @@ type WebData = {
 };
 
 export type sensor = {
-  pressure: string;
-  nitrogen: string;
-  oxygen: string;
-  carbon_dioxide: string;
-  phoron: string;
-  methane: string;
-  other: string;
-  temp: string;
   reading: BooleanLike;
+  pressure: string | null;
+  n2: string | null;
+  o2: string | null;
+  co2: string | null;
+  plasma: string | null;
+  methane: string | null;
+  other: string | null;
+  temp: string | null;
 };
 
 export type door = { bolted: BooleanLike; open: BooleanLike };

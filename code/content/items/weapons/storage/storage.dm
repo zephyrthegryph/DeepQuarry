@@ -96,7 +96,6 @@ READS_AS(/obj/item/storage/proc/held_count, STORAGE_CONTENTS_KEY)
 READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 /obj/item/storage/proc/feed_replacer(datum/act/op/A)
-	make_contents_real()
 	var/obj/item/lightreplacer/LP = A.held
 	if(LP.uses >= LP.max_uses)
 		return OP_REFUSED
@@ -115,37 +114,16 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 /obj/item/proc/storage_balks(obj/item/storage/S, mob/user)
 	return FALSE
 
-// ---- Latent contents (C5) ----
-// Legacy storage code walks contents directly, so the storage materializes
-// its latent contents before any of it runs: when used, opened, searched,
-// picked up, worn or examined.
-
-/obj/item/storage/latent_generator()
-	return empty ? null : starts_with
-
-/obj/item/storage/latent_generator_clear()
-	set_starts_with(null)
-
-/// Latent only for plain spawns: a variant needs apply_variant(), so it is made now.
-/obj/item/storage/latent_spawn_ok(path, value)
-	return !(islist(value) && length(value) >= 2 && istext(value[2]))
-
-/// Makes the latent contents real before legacy code reads contents.
-/obj/item/storage/proc/make_contents_real()
-	if(has_latent())
-		latent_materialize_all()
-
 // ---- Lifecycle ----
 
-/// Once the storage is made: its starting contents are declared (or dropped), and its capacity grows to fit what it holds.
+/// Once the storage is made: its starting contents are made (or dropped), and its capacity grows to fit what it holds.
 /obj/item/storage/proc/storage_start()
 	if(LAZYLEN(starts_with) && !empty)
 		// starts_with values are list(count, variant). See code/datums/variants/spawn_with_variant.dm.
-		// Latent-safe types without a variant stay declared until the storage
-		// is used (C5); the rest are made now.
 		BOOT_PHASE_BEGIN(bp_declare)
-		dq_latent_declare(src)
-		BOOT_PHASE_END(bp_declare, "storage_start: dq_latent_declare", src)
+		create_spawn_contents(starts_with)
+		set_starts_with(null)
+		BOOT_PHASE_END(bp_declare, "storage_start: create_spawn_contents", src)
 	else
 		starts_with = null
 
@@ -165,29 +143,21 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	..()
 
 /obj/item/storage/equipped(mob/user, slot)
-	make_contents_real()
 	return ..()
 
 /obj/item/storage/examine(mob/user, infix, suffix)
-	make_contents_real()
 	return ..()
 
 // ALLOW(sys_entry_override): virtual contents must be made real before the base emp_act recurses into contents; a reaction runs only after that recursion
 /obj/item/storage/emp_act(severity, recursive)
-	make_contents_real()
 	return ..()
 
 /// Spawned and mapped contents may not fit the type's capacity: grow it to
-/// fit. Runs once at Initialize, over what was made inside (real or, for a
-/// declared generator, its would-be cost).
+/// fit. Runs once at Initialize, over what was made inside.
 /obj/item/storage/proc/calibrate_size()
 	var/total_storage_space = 0
-	for(var/obj/item/I in contents) // ALLOW(latent): declared contents counted below
+	for(var/obj/item/I in contents)
 		total_storage_space += I.get_storage_cost()
-	var/list/generator = latent_is_declared() ? starts_with : null
-	for(var/path in generator)
-		if(dq_latent_eligible(path) && latent_spawn_ok(path, generator[path]))
-			total_storage_space += dq_type_storage_cost(path) * dq_latent_spawn_count(generator[path])
 	if(total_storage_space)
 		set_max_storage_space(max(total_storage_space, max_storage_space))
 
@@ -198,7 +168,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 /// whether `W` can leave where it is. `user` is the mover (may be null).
 /// Text: dq_ledger_refusal() is the boundary that turns the slot's reason (a /datum/msg, admission.md D1) into what a player reads.
 /obj/item/storage/proc/insert_refusal(obj/item/W, mob/user)
-	make_contents_real()
 	return dq_ledger_refusal(W, src, CONTAINER_SLOT_STORAGE, user)
 
 /// Tell `user` why `W` didn't go in.
@@ -264,7 +233,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 /// Takes `W` out to `new_location` (null: the floor under this). Returns TRUE
 /// if it came out. `user` is whoever takes it (may be null).
 /obj/item/storage/proc/remove_from_storage(obj/item/W, atom/new_location, mob/user)
-	make_contents_real()
 	if(!istype(W) || W.loc != src)
 		return FALSE
 
@@ -326,7 +294,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 // ---- Gather and empty ----
 
 /obj/item/storage/proc/gather_all(turf/T, mob/user)
-	make_contents_real()
 	var/list/rejections = list()
 	var/success = 0
 	var/failure = 0
@@ -371,7 +338,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 /// Everything out onto the floor under this.
 /obj/item/storage/proc/drop_contents(mob/user)
-	make_contents_real()
 	if(user)
 		hide_from(user)
 	var/turf/T = get_turf(src)
@@ -380,7 +346,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 //Useful for spilling the contents of containers all over the floor
 /obj/item/storage/proc/spill(dist = 2, turf/T = null)
-	make_contents_real()
 	if (!istype(T))//If its not on the floor this might cause issues
 		T = get_turf(src)
 	for(var/obj/item/I as anything in stored_items())
@@ -388,7 +353,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 		I.tumble(2)
 
 /obj/item/storage/proc/return_inv()
-	make_contents_real()
 	var/list/L = list()
 	L += slot_contents(CONTAINER_SLOT_STORAGE)
 	for(var/obj/item/storage/S in slot_contents(CONTAINER_SLOT_STORAGE))
@@ -407,7 +371,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 		return INPUT_FALLTHROUGH
 
 /obj/item/storage/handle_inventory_drop(mob/user, obj/over_object)
-	make_contents_real()
 	if(!canremove)
 		return TRUE
 
@@ -442,7 +405,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 /// Opens the storage for `user`, or closes it when they are looking into it. FALSE when it did neither (not a living thing).
 /obj/item/storage/proc/toggle_window(mob/user)
-	make_contents_real()
 	if(user in is_seeing)
 		close(user)
 		return TRUE
@@ -453,7 +415,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 /// Picking the storage up: whoever was looking inside stops.
 /obj/item/storage/pickup(mob/user)
-	make_contents_real()
 	for(var/mob/M in range(1))
 		if (M.s_active == src)
 			close(M)
@@ -487,7 +448,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 // ---- Opening and the HUD ----
 
 /obj/item/storage/proc/open(mob/user)
-	make_contents_real()
 	if (use_sound)
 		var/obj/belly/B = user.loc
 		if(isliving(user) && (!isbelly(B) || !(B.mode_flags & DM_FLAG_MUFFLEITEMS)))
@@ -517,7 +477,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 /// Shows the HUD to `user`, making it if nobody else is looking. A viewer
 /// without a client is tracked the same way (can_see_contents() drops it).
 /obj/item/storage/proc/show_to(mob/user)
-	make_contents_real()
 	if(user.s_active != src)
 		for(var/obj/item/I as anything in stored_items())
 			if(I.on_found(user))
@@ -582,6 +541,8 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	/// Relation list view: items placed on screen, in layout order (one per type with
 	/// display_contents_with_number). on_destroy() unpins each.
 	var/list/obj/item/shown
+	/// The catchers the running layout() has not matched to an item yet (null between layouts).
+	var/list/layout_stale
 
 CAPABILITIES(/datum/storage_hud)
 	owns_one(nameof(closer), /atom/movable/screen/close)
@@ -617,8 +578,6 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	GLOB.storage_hud_count--
 	for(var/obj/item/I as anything in shown)
 		I.maptext = ""
-		// The screen is gone; the item is no longer pinned by being shown (C10).
-		I.latent_unpin(src)
 	..()
 
 /datum/storage_hud/proc/new_backdrop(obj/item/storage/master, state)
@@ -636,8 +595,10 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /// Places the items and sizes the backdrop.
 /datum/storage_hud/proc/layout()
-	rel_clear(src, nameof(catchers))
-	rel_set(src, nameof(catchers), list())
+	// The catchers (and the box segments they carry) are kept across a re-layout: one that still stands for a shown item is moved in place, a
+	// new item gets a new one drawn at once, and only the ones left over are deleted. Making them all again leaves the new ones undrawn until the
+	// draw queue reaches them, which shows as the box around every stored item flashing on each insert and removal.
+	layout_stale = catchers ? catchers.Copy() : list()
 	var/list/items = storage.hud_order(storage.stored_items())
 	var/list/counts
 	if(storage.display_contents_with_number)
@@ -652,15 +613,6 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		for(var/obj/item/I as anything in items - samples)
 			I.screen_loc = null
 		items = samples
-	// A shown item is pinned for as long as it's on someone's screen (C10):
-	// materializing it to show it is one thing, but it must not then be
-	// collapsed back out from under a viewer between layout passes.
-	// `shown` is a relation list view: null until the first item is linked (and after rel_clear).
-	var/list/was_shown = shown ? shown.Copy() : list()
-	for(var/obj/item/I as anything in was_shown - items)
-		I.latent_unpin(src)
-	for(var/obj/item/I as anything in items - was_shown)
-		I.latent_pin(src)
 	rel_clear(src, nameof(shown))
 	for(var/obj/item/I as anything in items)
 		rel_add(src, nameof(shown), I)
@@ -668,12 +620,23 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		boxes_layout(counts)
 	else
 		bar_layout()
+	for(var/atom/movable/storage_slot/gone as anything in layout_stale)
+		rel_remove(src, nameof(catchers), gone)
+	layout_stale = null
 
+/// The catcher that stands for `I`: the one it had before this layout, else a new one.
 /datum/storage_hud/proc/add_catcher(obj/item/I)
-	var/atom/movable/storage_slot/SS = new(null, I)
+	var/atom/movable/storage_slot/SS
+	for(var/atom/movable/storage_slot/old as anything in layout_stale)
+		if(old.held_item == I)
+			SS = old
+			layout_stale -= old
+			break
+	if(!SS)
+		SS = new(null, I)
+		rel_add(src, nameof(catchers), SS)
 	SS.screen_loc = I.screen_loc
 	SS.mouse_opacity = MOUSE_OPACITY_OPAQUE
-	rel_add(src, nameof(catchers), SS)
 	return SS
 
 /// Fixed-size storage (belts, boxes): a grid up to seven wide.
@@ -747,17 +710,26 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		M_continue.Scale((endpoint - startpoint - stored_cap_width * 2) / 32, 1)
 		M_continue.Translate(startpoint + stored_cap_width + (endpoint - startpoint - stored_cap_width * 2) / 2 - 16, 0)
 		M_end.Translate(endpoint - stored_cap_width, 0)
-		stored_start.transform = M_start
-		stored_continue.transform = M_continue
-		stored_end.transform = M_end
+		// The catcher hangs off bar_start through vis_contents, so its screen_loc is ignored and it would sit on the first segment
+		// (the topmost catcher took every click there): stretch it over its own segment, and undo that on the bar images it draws.
+		var/matrix/M_catch = matrix()
+		M_catch.Scale(max(1, endpoint - startpoint) / 32, 1)
+		M_catch.Translate((startpoint + endpoint) / 2 - 16, 0)
+		var/matrix/M_undo = matrix(M_catch)
+		M_undo.Invert()
+		stored_start.transform = M_start * M_undo
+		stored_continue.transform = M_continue * M_undo
+		stored_end.transform = M_end * M_undo
 
-		// The icon is 32 wide and anchored at its left edge, the bars hang off bar_start (at 4:16) by startpoint..endpoint: centre it on the segment.
 		I.screen_loc = "4:[round((startpoint+endpoint)/2)],2:16"
 		I.maptext = ""
 		I.hud_layerise()
 		var/atom/movable/storage_slot/SS = add_catcher(I)
 		// The three bar images are shared and mutated per item, so each slot keeps a snapshot of how they look for it now.
 		SS.set_bars(list(new /mutable_appearance(stored_start), new /mutable_appearance(stored_continue), new /mutable_appearance(stored_end)))
+		SS.set_segment(M_catch)
+		draw_now(SS) // its box segments are on it before the client sees the layout
+		log_world("storage_hud: [storage] bar slot for [I] spans [startpoint]..[endpoint] px from the bar start")
 		vis_add(bar_start, SS)
 
 	closer.screen_loc = "4:[storage_width+19],2:16"
@@ -798,16 +770,26 @@ CAPABILITIES(/atom/movable/storage_slot)
 /// The backdrop bar images (start, middle, end) behind the stored item, as they looked when the slot was laid out.
 /atom/movable/storage_slot/var/list/bars
 
+/// Where the catcher sits along the bar: stretched and moved over the item's segment, so a click on the segment reaches this item and not the catcher of another.
+/atom/movable/storage_slot/var/matrix/segment
+
 /atom/movable/storage_slot/draw(datum/look/look)
 	..()
+	if(segment)
+		look.set_transform(segment)
 	for(var/bar in bars)
 		look.overlay(bar)
 
 /// The native Click's actor, handed over by the engine (click_on()): clicking a slot is clicking the stored item, through the clicker's input inbox.
 /atom/movable/storage_slot/proc/slot_click(datum/act/input/A)
 	var/obj/item/I = held_item
-	if(I)
-		input_submit(new /datum/input_event/click(A.actor, slot_click_target(A.actor, I)))
+	if(!I)
+		log_input("Input: [key_name(A.actor)] clicked a storage slot ([src]) that holds nothing: refused.")
+		return TRUE
+	// The click's own params go on with it: a shift click on a stored item is an examine, an alt click its alternate, not a plain use.
+	if(GLOB.fab_trace)
+		log_input("Input: [key_name(A.actor)] clicked the storage slot of [I] ([I.type]) in [I.loc] with params '[A.params]'.")
+	input_submit(new /datum/input_event/click(A.actor, slot_click_target(A.actor, I), null, null, A.params))
 	return TRUE
 
 /// What a click on this slot lands on: with another item in hand, the bag (the hand's item goes into it); with an empty hand, the stored item.
@@ -856,18 +838,6 @@ CAPABILITIES(/atom/movable/storage_slot)
 	return depth
 
 // See inventory_sizes.dm for the defines.
-/// get_storage_cost() of a pristine `path`, from type data (latent entries).
-/proc/dq_type_storage_cost(path)
-	return CACHED(type_storage_costs, path)
-
-DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost), SC_NEVER)
-
-/// Builder for type_storage_costs: probes a pristine instance of `path`.
-/proc/build_type_storage_cost(path)
-	var/obj/item/probe = new_unmaterialized(path, null)
-	. = probe.get_storage_cost()
-	spent(probe)
-
 /obj/item/proc/get_storage_cost()
 	if (item_rules_of(src).storage_cost)
 		return item_rules_of(src).storage_cost
@@ -887,11 +857,9 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 				return ITEMSIZE_COST_NO_CONTAINER
 
 /obj/item/storage/proc/make_exact_fit()
-	make_contents_real()
 	// Runs at Initialize for fitted kits: read contents, don't make a ledger.
 	var/list/items = list()
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/I in contents)
 		items += I
 	set_storage_slots(length(items))
 

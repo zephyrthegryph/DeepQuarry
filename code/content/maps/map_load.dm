@@ -246,11 +246,9 @@ CAPABILITIES(/datum/map_load)
 	// A freshly allocated template z is an independent level unless its own
 	// map_data landmarks explicitly describe a multiz stack. While old_top_z
 	// was the top of the world, HasAbove(old_top_z) masked any stale TRUE entry
-	// in GLOB.z_levels. Growing world.maxz would otherwise activate that latent
+	// in the level map. Growing world.maxz would otherwise activate that latent
 	// edge and vertically join an unrelated shuttle/sector z to this template.
-	if(length(GLOB.z_levels) < old_top_z)
-		GLOB.z_levels.len = old_top_z
-	GLOB.z_levels[old_top_z] = FALSE
+	SSmapping.link_level_up(old_top_z, FALSE)
 	// The builtin makes every turf of the level in this one call: they wait for the chunked init (finish_place()) instead of
 	// initializing inside it, where a full-size level held the world for ten seconds with no chance to yield.
 	var/grow_source = "new z [REF(src)]"

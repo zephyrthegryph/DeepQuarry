@@ -79,14 +79,14 @@
 	TEST_ASSERT_NULL(console.current_br, "nor can a made-up name")
 	own(test_ui(user, console, "view_b_rec", list("ref" = handle_of(listed_body))))
 	TEST_ASSERT_EQUAL(console.current_br, listed_body, "a listed body record opens")
-	TEST_ASSERT_EQUAL(hc_data(console, user)["active_b_rec"]["activerecord"], handle_of(listed_body), "and the window names it by handle")
+	TEST_ASSERT_EQUAL(hc_data(console, user)["active_b_rec"]["realname"], sanitize(listed_body.mydna.name), "and the window shows it")
 	own(test_ui(user, console, "clear_b_rec"))
 	TEST_ASSERT_NULL(console.current_br, "the close button clears it")
 	own(test_ui(user, console, "view_m_rec", list("ref" = handle_of(foreign_mind))))
 	TEST_ASSERT_NULL(console.current_mr, "a mind record the window does not list cannot be opened")
 	own(test_ui(user, console, "view_m_rec", list("ref" = handle_of(listed_mind))))
 	TEST_ASSERT_EQUAL(console.current_mr, listed_mind, "a listed mind record opens")
-	TEST_ASSERT_EQUAL(hc_data(console, user)["active_m_rec"]["activerecord"], handle_of(listed_mind), "and the window names it by handle")
+	TEST_ASSERT_EQUAL(hc_data(console, user)["active_m_rec"]["realname"], sanitize(listed_mind.mindname), "and the window shows it")
 	// a record handed to the console on a disk is the one it already has loaded, and opens
 	own(test_ui(user, console, "clear_m_rec"))
 	rel_set(console, nameof(/obj/machinery/computer/transhuman/resleeving::current_br), foreign_body)
@@ -127,7 +127,7 @@
 	for(var/list/row in data["receipts"])
 		receipt_tokens += row["ref"]
 	TEST_ASSERT(handle_of(receipt) in receipt_tokens, "and the receipt")
-	var/list/static_data = console.tgui_static_data(user)
+	var/list/static_data = present_tgui_static_data(console, user)
 	var/found_pack = FALSE
 	for(var/list/row in static_data["supply_packs"])
 		if(row["ref"] == handle_of(pack))
@@ -239,10 +239,10 @@
 	// the buffer buttons: store this machine, link the stored one to another
 	own(test_ui(user, hub, "buffer"))
 	TEST_ASSERT_EQUAL(tool.buffer(), hub, "the buffer button stores the machine in the multitool")
-	TEST_ASSERT_EQUAL(hub.temp["text"], "-% Successfully stored [handle_of(hub)] [hub.name] in buffer %-", "and says so with its handle and name")
+	TEST_ASSERT_EQUAL(hub.temp["text"], "-% Successfully stored [handle_text(handle_of(hub))] [hub.name] in buffer %-", "and says so with its handle and name")
 	own(test_ui(user, bus, "link"))
 	TEST_ASSERT(hub in bus.links, "the link button links the stored machine")
-	TEST_ASSERT_EQUAL(bus.temp["text"], "-% Successfully linked with [handle_of(hub)] [hub.name] %-", "and says so with its handle and name")
+	TEST_ASSERT_EQUAL(bus.temp["text"], "-% Successfully linked with [handle_text(handle_of(hub))] [hub.name] %-", "and says so with its handle and name")
 	var/list/data = hc_data(bus, user)
 	TEST_ASSERT_EQUAL(length(data["linked"]), 1, "the window lists the link")
 	TEST_ASSERT_EQUAL(data["linked"][1]["ref"], handle_of(hub), "by handle")
@@ -250,7 +250,7 @@
 	TEST_ASSERT_EQUAL(data["linked"][1]["id"], hub.id, "and its id")
 	own(test_ui(user, bus, "unlink", list("unlink" = 1)))
 	TEST_ASSERT(!(hub in bus.links), "the unlink button cuts it")
-	TEST_ASSERT_EQUAL(bus.temp["text"], "-% Removed [handle_of(hub)] [hub.name] from linked entities. %-", "and says so with its handle and name")
+	TEST_ASSERT_EQUAL(bus.temp["text"], "-% Removed [handle_text(handle_of(hub))] [hub.name] from linked entities. %-", "and says so with its handle and name")
 	// a person without a multitool works none of the settings
 	user.drop_item()
 	own(test_ui(user, bus, "link"))

@@ -65,7 +65,7 @@
 /obj/machinery/power/smes/buildable/solar
 	input_attempt = TRUE
 	input_level = 150000
-	output_level = 100000
+	output_level = 150000
 
 /obj/machinery/power/smes/buildable/substation_research
 	initial_charge = 1e7

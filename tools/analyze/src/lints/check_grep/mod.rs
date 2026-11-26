@@ -18,7 +18,6 @@
 //!   the script with identical commands: one rule each.
 
 mod framework;
-pub mod selftest_policy;
 mod parts_code_a;
 mod parts_code_b;
 mod parts_maps;
@@ -33,18 +32,11 @@ use md5::{Digest, Md5};
 
 use crate::baseline::Mode;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, Run, RuleMeta, ScanKind, Sink, Site};
-#[cfg(feature="legacy-sem")]
-use crate::parity::{ParseKind, Parity};
-use crate::parity_types::Finding;
-const COUNT_PATH:&str="(count)";
-const DME_PATH:&str="(dme)";
-const SINGLE_FILE_PATH:&str="(file)";
-fn fixture_base_rule(rule:&str)->&str{rule.split("__").next().unwrap_or(rule)}
+use crate::parity::{base_rule, Finding, ParseKind, Parity, COUNT_PATH, DME_PATH, SINGLE_FILE_PATH};
 use crate::scopes::LintScope;
 use crate::tree::{SourceFile, Tree};
 use framework::*;
 
-const SOURCE_ROOTS:&[(&str,&str)]=&[("code","dm"),("code","ts"),("code","tsx"),("maps","dmm"),("tgui/packages/tgui/interfaces","dm"),("tgui/packages/tgui/interfaces","ts"),("tgui/packages/tgui/interfaces","tsx")];
 const RULE_SEEDS: &str = "r10_bindings_init_seeds_referenced_outside_a_var_edit";
 const RULE_READERS: &str = "r10_bindings_no_member_var_caching_of_a_binding_read";
 const RULE_DEFINES: &str = "thermal_constants_generated_not_redefined_h1";
@@ -114,13 +106,21 @@ impl CheckGrep {
             label: "check_grep",
             legacy: "tools/ci/check_grep.sh",
             select: crate::tree::Select {
-                roots: SOURCE_ROOTS,
+                roots: &[
+                    ("code", "dm"),
+                    ("code", "ts"),
+                    ("code", "tsx"),
+                    ("maps", "dmm"),
+                    ("tgui/packages/tgui/interfaces", "dm"),
+                    ("tgui/packages/tgui/interfaces", "ts"),
+                    ("tgui/packages/tgui/interfaces", "tsx"),
+                ],
                 hidden: true,
             },
             scan: ScanKind::Both,
             policy: Policy::Custom,
             rules: Box::leak(rules.into_boxed_slice()),
-            allow: crate::allow_registry_fields::check_grep::ALLOW_0,
+            allow: &["check_grep"],
             lists: Box::leak(keys.into_boxed_slice()),
         }));
         CheckGrep { parts, compiled: std::sync::OnceLock::new(), groups, single_file, meta }
@@ -130,82 +130,6 @@ impl CheckGrep {
         self.compiled.get_or_init(|| self.parts.iter().map(|p| p.compile()).collect())
     }
 }
-
-impl CheckGrep{
-    fn update_baseline_data(&self,root:&Path,scope:&LintScope,run:&Run,mode:Mode)->std::io::Result<String>{
-        let path=root.join("tools/ci/lint_scopes.toml");
-        self.plan_baseline_data(scope,run,mode,&mut|rule,n|crate::scopes::write_ceiling(&path,"check_grep",rule,n))
-    }
-    fn plan_baseline_data(&self,scope:&LintScope,run:&Run,mode:Mode,apply:&mut dyn FnMut(&str,i64)->std::io::Result<()>)->std::io::Result<String>{
-        let sites = first_hit_only(&self.groups, &run.sites);
-        let mut note = String::new();
-        for (rule, &ceiling) in scope.ceilings.iter() {
-            let count = sites.iter().filter(|s| s.rule == *rule).count() as i64;
-            let new = match mode {
-                Mode::Update => ceiling.min(count),
-                Mode::Seed => count,
-                Mode::Migrate => ceiling,
-            };
-            if new != ceiling {
-                apply(rule,new)?;
-                note.push_str(&format!(" ceiling {} {} -> {};", rule, ceiling, new));
-            }
-        }
-        Ok(format!("check_grep: ceilings in tools/ci/lint_scopes.toml;{}", note))
-    }
-
-    fn finish_data(&self,scope:&LintScope,macros:i64,run:&Run,text:&mut impl std::fmt::Write,source_line:&mut dyn FnMut(&str,usize)->String)->bool{
-        let sites = first_hit_only(&self.groups, &run.sites);
-        let hints: BTreeMap<&str, &str> = self.meta.rules.iter().map(|r| (r.name, r.hint)).collect();
-        let mut failed = false;
-        let mut by_rule: BTreeMap<&str, Vec<&Site>> = BTreeMap::new();
-        for s in &sites {
-            by_rule.entry(s.rule.as_str()).or_default().push(s);
-        }
-        for rm in self.meta.rules {
-            let found = by_rule.get(rm.name).cloned().unwrap_or_default();
-            let hint = hints.get(rm.name).copied().unwrap_or("");
-            let mut body = |s: &Site| if s.msg.is_empty() { source_line(&s.rel, s.line as usize) } else { s.msg.clone() };
-            match if rm.name==RULE_MACROS{Some(macros)}else{scope.ceilings.get(rm.name).copied()} {
-                Some(ceiling) => {
-                    let count = found.len() as i64;
-                    let status = if count > ceiling {
-                        failed = true;
-                        format!("FAIL (rose above its ceiling {})", ceiling)
-                    } else if count < ceiling {
-                        format!("below ceiling {}: lower it with `analyze baseline --update`", ceiling)
-                    } else {
-                        "ok".to_string()
-                    };
-                    let _ = writeln!(text, "check_grep {:<19} {:>6}  (ceiling {})  {}", rm.name, count, ceiling, status);
-                    if count > ceiling {
-                        for s in found.iter().take(60) {
-                            let _ = writeln!(text, "{}:{}: [check_grep/{}] {} -- {}", s.rel, s.line, rm.name, body(s), hint);
-                        }
-                        if found.len() > 60 {
-                            let _ = writeln!(text, "... and {} more", found.len() - 60);
-                        }
-                    }
-                }
-                None => {
-                    for s in found {
-                        failed = true;
-                        let _ = writeln!(text, "{}:{}: [check_grep/{}] {} -- {}", s.rel, s.line, rm.name, body(s), hint);
-                    }
-                }
-            }
-        }
-        failed
-    }
-
-}
-
-
-fn ignored_outputs(text:&str)->impl Iterator<Item=&str>{text.lines().map(str::trim).filter(|l|l.starts_with('/')&&l.ends_with(".dm")&&!l.contains(['*','?','[','!'])).map(|line|&line[1..])}
-fn scan_dme_bytes(relative:&str,bytes:&[u8],out:&mut Sink){let text=String::from_utf8_lossy(bytes);let test_map=regex::Regex::new(r"maps\\.*test.*").unwrap();for(i,line)in text.split('\n').enumerate(){if test_map.is_match(line)&&!strict_allowed(&format!("{relative}:{line}")){out.site_in(RULE_DME,relative,i+1);}}}
-fn scan_changelog_bytes(bytes:Option<&[u8]>,out:&mut Sink){match bytes{Some(bytes)=>{let sum:String=Md5::digest(bytes).iter().map(|b|format!("{b:02x}")).collect();if sum!=CHANGELOG_MD5{out.site_in_msg(RULE_CHANGELOG,CHANGELOG_EXAMPLE,1,format!("md5 is {sum}, not {CHANGELOG_MD5}"));}},None=>out.site_in_msg(RULE_CHANGELOG,CHANGELOG_EXAMPLE,1,"file is missing")}}
-fn scan_toast_bytes(bytes:Option<&[u8]>,out:&mut Sink){if let Some(bytes)=bytes{let text=String::from_utf8_lossy(bytes);let toast=regex::Regex::new(r"^[[:space:]]*TOAST_NOTIFICATION_ON_INIT").unwrap();if let Some(i)=text.split('\n').position(|line|toast.is_match(line)){out.site_in_msg(RULE_TOAST,CONFIG_EXAMPLE,i+1,"TOAST_NOTIFICATION_ON_INIT is enabled");}}}
-fn macro_count_text(text:&str)->i64{regex::Regex::new(r"(?m)^export MACRO_COUNT=(\d+)").unwrap().captures(text).and_then(|c|c[1].parse().ok()).unwrap_or(0)}
 
 // ---- tree-level checks ---------------------------------------------------------------------
 
@@ -219,7 +143,7 @@ fn ignored_output(root: &Path, rel: &str) -> bool {
         .entry(root.to_path_buf())
         .or_insert_with(|| {
             let text = std::fs::read_to_string(root.join(".gitignore")).unwrap_or_default();
-            ignored_outputs(&text).map(str::to_owned).collect()
+            text.lines().map(str::trim).filter(|l| l.starts_with('/') && l.ends_with(".dm") && !l.contains(['*', '?', '[', '!'])).map(|l| l[1..].to_string()).collect()
         })
         .contains(rel)
 }
@@ -276,11 +200,10 @@ fn unique(mut v: Vec<String>) -> Vec<String> {
 }
 
 /// The checks that read their names from the generated bindings (compiled per run).
-fn dynamic_parts(cx:&Cx)->Vec<Compiled>{dynamic_parts_from(cx.tree.get(SEEDS_FILE).map(|f|f.text()),cx.tree.get(BINDINGS_FILE).map(|f|f.text()))}
-
-fn dynamic_parts_from(seeds:Option<&str>,bindings:Option<&str>) -> Vec<Compiled> {
+fn dynamic_parts(cx: &Cx) -> Vec<Compiled> {
     let mut parts = Vec::new();
-    if let Some(text) = seeds {
+    if let Some(f) = cx.tree.get(SEEDS_FILE) {
+        let text = f.text();
         let seeds: Vec<String> =
             unique(names_in(text, r"var/tmp/init_[A-Za-z0-9_]+").into_iter().map(|s| s.replace("var/tmp/", "")).collect());
         if !seeds.is_empty() {
@@ -318,9 +241,9 @@ fn dynamic_parts_from(seeds:Option<&str>,bindings:Option<&str>) -> Vec<Compiled>
             );
         }
     }
-    if let Some(text) = bindings {
+    if let Some(f) = cx.tree.get(BINDINGS_FILE) {
         let rx = regex::Regex::new(r"^#define ([A-Z][A-Z0-9_]*) ").unwrap();
-        let names: Vec<String> = text.split('\n').filter_map(|l| rx.captures(l).map(|c| c[1].to_string())).collect();
+        let names: Vec<String> = f.text().split('\n').filter_map(|l| rx.captures(l).map(|c| c[1].to_string())).collect();
         if !names.is_empty() {
             parts.push(
                 Part::new(
@@ -364,7 +287,14 @@ fn strict_allowed(composite: &str) -> bool {
     R.is_match(composite)
 }
 
-fn macro_count(root:&Path)->i64{macro_count_text(&std::fs::read_to_string(root.join("dependencies.sh")).unwrap_or_default())}
+fn macro_count(root: &Path) -> i64 {
+    let text = std::fs::read_to_string(root.join("dependencies.sh")).unwrap_or_default();
+    regex::Regex::new(r"(?m)^export MACRO_COUNT=(\d+)")
+        .unwrap()
+        .captures(&text)
+        .and_then(|c| c[1].parse().ok())
+        .unwrap_or(0)
+}
 
 /// The ceiling of a counted rule: `[lint.check_grep.ceilings]`, or `MACRO_COUNT` for the colour macros.
 fn ceiling_of(scope: &LintScope, root: &Path, rule: &str) -> Option<i64> {
@@ -374,7 +304,6 @@ fn ceiling_of(scope: &LintScope, root: &Path, rule: &str) -> Option<i64> {
     scope.ceilings.get(rule).copied()
 }
 
-#[cfg(feature="legacy-sem")]
 impl Lint for CheckGrep {
     fn meta(&self) -> &Meta {
         self.meta
@@ -444,10 +373,41 @@ impl Lint for CheckGrep {
             }
         }
 
-        for relative in dme_files(root){scan_dme_bytes(&relative,&std::fs::read(root.join(&relative)).unwrap_or_default(),out);}
-        let changelog=std::fs::read(root.join(CHANGELOG_EXAMPLE));scan_changelog_bytes(changelog.as_deref().ok(),out);
-        for relative in jsx_files(root){out.site_in_msg(RULE_JSX,&relative,1,"JSX file");}
-        let configuration=std::fs::read(root.join(CONFIG_EXAMPLE));scan_toast_bytes(configuration.as_deref().ok(),out);
+        // `rg 'maps\\.*test.*' *.dme`
+        let test_map = regex::Regex::new(r"maps\\.*test.*").unwrap();
+        for dme in dme_files(root) {
+            let text = String::from_utf8_lossy(&std::fs::read(root.join(&dme)).unwrap_or_default()).into_owned();
+            for (i, l) in text.split('\n').enumerate() {
+                if test_map.is_match(l) && !strict_allowed(&format!("{}:{}", dme, l)) {
+                    out.site_in(RULE_DME, &dme, i + 1);
+                }
+            }
+        }
+
+        // `md5sum -c`: the example changelog is pinned
+        match std::fs::read(root.join(CHANGELOG_EXAMPLE)) {
+            Ok(bytes) => {
+                let sum: String = Md5::digest(&bytes).iter().map(|b| format!("{:02x}", b)).collect();
+                if sum != CHANGELOG_MD5 {
+                    out.site_in_msg(RULE_CHANGELOG, CHANGELOG_EXAMPLE, 1, format!("md5 is {}, not {}", sum, CHANGELOG_MD5));
+                }
+            }
+            Err(_) => out.site_in_msg(RULE_CHANGELOG, CHANGELOG_EXAMPLE, 1, "file is missing"),
+        }
+
+        // `ls -1 tgui/**/*.jsx`
+        for rel in jsx_files(root) {
+            out.site_in_msg(RULE_JSX, &rel, 1, "JSX file");
+        }
+
+        // `grep -Eq '^[[:space:]]*TOAST_NOTIFICATION_ON_INIT' config/example/config.txt`
+        if let Ok(bytes) = std::fs::read(root.join(CONFIG_EXAMPLE)) {
+            let text = String::from_utf8_lossy(&bytes);
+            let toast = regex::Regex::new(r"^[[:space:]]*TOAST_NOTIFICATION_ON_INIT").unwrap();
+            if let Some(i) = text.split('\n').position(|l| toast.is_match(l)) {
+                out.site_in_msg(RULE_TOAST, CONFIG_EXAMPLE, i + 1, "TOAST_NOTIFICATION_ON_INIT is enabled");
+            }
+        }
     }
 
     fn extra_inputs(&self, tree: &Tree) -> Vec<String> {
@@ -458,27 +418,129 @@ impl Lint for CheckGrep {
         v
     }
 
-    fn finish(&self,cx:&Cx,run:&Run,text:&mut String)->bool{self.finish_data(cx.scope,macro_count(&cx.tree.root),run,text,&mut|relative,line|cx.tree.site_text(relative,line))}
+    fn finish(&self, cx: &Cx, run: &Run, text: &mut String) -> bool {
+        let root = &cx.tree.root;
+        let sites = first_hit_only(&self.groups, &run.sites);
+        let hints: BTreeMap<&str, &str> = self.meta.rules.iter().map(|r| (r.name, r.hint)).collect();
+        let mut failed = false;
+        let mut by_rule: BTreeMap<&str, Vec<&Site>> = BTreeMap::new();
+        for s in &sites {
+            by_rule.entry(s.rule.as_str()).or_default().push(s);
+        }
+        for rm in self.meta.rules {
+            let found = by_rule.get(rm.name).cloned().unwrap_or_default();
+            let hint = hints.get(rm.name).copied().unwrap_or("");
+            let body = |s: &Site| if s.msg.is_empty() { cx.tree.site_text(&s.rel, s.line as usize) } else { s.msg.clone() };
+            match ceiling_of(cx.scope, root, rm.name) {
+                Some(ceiling) => {
+                    let count = found.len() as i64;
+                    let status = if count > ceiling {
+                        failed = true;
+                        format!("FAIL (rose above its ceiling {})", ceiling)
+                    } else if count < ceiling {
+                        format!("below ceiling {}: lower it with `analyze baseline --update`", ceiling)
+                    } else {
+                        "ok".to_string()
+                    };
+                    let _ = writeln!(text, "check_grep {:<19} {:>6}  (ceiling {})  {}", rm.name, count, ceiling, status);
+                    if count > ceiling {
+                        for s in found.iter().take(60) {
+                            let _ = writeln!(text, "{}:{}: [check_grep/{}] {} -- {}", s.rel, s.line, rm.name, body(s), hint);
+                        }
+                        if found.len() > 60 {
+                            let _ = writeln!(text, "... and {} more", found.len() - 60);
+                        }
+                    }
+                }
+                None => {
+                    for s in found {
+                        failed = true;
+                        let _ = writeln!(text, "{}:{}: [check_grep/{}] {} -- {}", s.rel, s.line, rm.name, body(s), hint);
+                    }
+                }
+            }
+        }
+        failed
+    }
 
-    fn update_baseline(&self,cx:&Cx,run:&Run,mode:Mode)->std::io::Result<String>{self.update_baseline_data(&cx.tree.root,cx.scope,run,mode)}
+    fn update_baseline(&self, cx: &Cx, run: &Run, mode: Mode) -> std::io::Result<String> {
+        let path = cx.tree.root.join("tools").join("ci").join("lint_scopes.toml");
+        let sites = first_hit_only(&self.groups, &run.sites);
+        let mut note = String::new();
+        for (rule, &ceiling) in cx.scope.ceilings.iter() {
+            let count = sites.iter().filter(|s| s.rule == *rule).count() as i64;
+            let new = match mode {
+                Mode::Update => ceiling.min(count),
+                Mode::Seed => count,
+                Mode::Migrate => ceiling,
+            };
+            if new != ceiling {
+                crate::scopes::write_ceiling(&path, "check_grep", rule, new)?;
+                note.push_str(&format!(" ceiling {} {} -> {};", rule, ceiling, new));
+            }
+        }
+        Ok(format!("check_grep: ceilings in tools/ci/lint_scopes.toml;{}", note))
+    }
 
-    fn parity_normalize(&self, root: &Path, scope: &LintScope, findings: Vec<Finding>) -> Vec<Finding> { self.fixture_normalize_data(scope, macro_count(root), findings) }
+    fn parity_normalize(&self, root: &Path, scope: &LintScope, findings: Vec<Finding>) -> Vec<Finding> {
+        // the old `a || b || c`
+        let sites: Vec<Site> = findings
+            .into_iter()
+            .map(|f| Site { rule: f.rule, rel: f.rel, line: f.line, msg: String::new(), key: String::new(), ident: String::new() })
+            .collect();
+        let sites = first_hit_only(&self.groups, &sites);
+        let mut out: Vec<Finding> = Vec::new();
+        let mut counted: BTreeMap<String, i64> = BTreeMap::new();
+        for s in sites {
+            if ceiling_of(scope, root, &s.rule).is_some() {
+                // the script prints only the number of a counted rule, and only above its limit
+                *counted.entry(s.rule.clone()).or_default() += 1;
+                continue;
+            }
+            let rel = if s.rule == RULE_DME {
+                DME_PATH.to_string()
+            } else if self.single_file.contains(&s.rule.as_str()) {
+                SINGLE_FILE_PATH.to_string()
+            } else {
+                s.rel
+            };
+            out.push(Finding { rule: base_rule(&s.rule).to_string(), rel, line: s.line });
+        }
+        for (rule, n) in counted {
+            let limit = ceiling_of(scope, root, &rule).unwrap_or(0);
+            if n > limit {
+                out.push(Finding { rule: base_rule(&rule).to_string(), rel: COUNT_PATH.to_string(), line: n as u32 });
+            }
+        }
+        out.sort();
+        out.dedup_by(|a, b| a.line > 0 && a == b);
+        out
+    }
 
     fn selftest(&self) -> Result<String, String> {
         let tree = Tree::from_files(vec![]);
         let scope = LintScope::default();
-        let cx = Cx { fixture:None, tree: &tree, meta: self.meta, scope: &scope };
-        let f = SourceFile::from_text(selftest_policy::REL, selftest_policy::SOURCE);
-        let mut out = Sink::new();
-        out.cur = f.rel.clone();
-        self.scan_file(&cx, &f, &mut out);
-        let mut got: Vec<(String, usize)> = out.sites.iter().map(|s| (s.rule.clone(), s.line as usize)).collect();
-        let mut keep = crate::derived_selftest_policy::LegacyAssertions;
-        let mut temp = crate::derived_selftest_policy::LegacyAssertions;
-        selftest_policy::assert_sites(&mut got, &mut keep, &mut temp).map_err(|failure| match failure {
-            crate::derived_selftest_policy::Failure::Assertion(text) => text,
-            crate::derived_selftest_policy::Failure::Operational(error) => error.to_string(),
-        })
+        let cx = Cx { tree: &tree, meta: self.meta, scope: &scope };
+        let run = |rel: &str, text: &str| -> Vec<(String, usize)> {
+            let f = SourceFile::from_text(rel, text);
+            let mut out = Sink::new();
+            out.cur = f.rel.clone();
+            self.scan_file(&cx, &f, &mut out);
+            out.sites.iter().map(|s| (s.rule.clone(), s.line as usize)).collect()
+        };
+        let got = run("code/a.dm", "/mob/proc/Life()\n  x\n\tisSynthetic(M) // ALLOW(check_grep): kept\n\tisSynthetic(M)\nno newline");
+        let want = vec![
+            ("life_no_life_procs".to_string(), 1usize),
+            ("space_indentation".to_string(), 2),
+            ("biology_no_issynthetic".to_string(), 4),
+            ("trailing_newlines".to_string(), 5),
+        ];
+        let mut got = got;
+        got.sort_by_key(|(_, l)| *l);
+        if got != want {
+            return Err(format!("unexpected sites {:?}", got));
+        }
+        Ok(String::new())
     }
 
     fn parity(&self) -> Option<Parity> {
@@ -518,11 +580,10 @@ fn first_hit_only(groups: &BTreeMap<&'static str, &'static str>, sites: &[Site])
 }
 
 pub fn register(reg: &mut Registry) {
-    #[cfg(feature="legacy-sem")]reg.add(CheckGrep::new());
-    #[cfg(not(feature="legacy-sem"))]let _=reg;
+    reg.add(CheckGrep::new());
 }
 
-#[cfg(all(test,feature="legacy-sem"))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::parity::slug;
@@ -580,7 +641,7 @@ TRACKED(/obj/item/flagged, slot_flags)
         assert_eq!(positions.len(), 4, "Three self mutations plus nested safe mutation; no whole-line exemption");
         let lint = CheckGrep::new();
         let scope = LintScope::default();
-        let cx = Cx { fixture:None, tree: &tree, meta: lint.meta, scope: &scope };
+        let cx = Cx { tree: &tree, meta: lint.meta, scope: &scope };
         let mut out = Sink::new();
         lint.scan_tree(&cx, &mut out);
         let actual: Vec<usize> = out.sites.iter().filter(|site| site.rule == "legacy_equip_restriction_vars__slot_flags").map(|site| site.line as usize).collect();
@@ -643,7 +704,7 @@ TRACKED(/obj/item/flagged, slot_flags)
         assert!(!masked.contains("local_owner.holder") && !masked.contains("src.holder"));
         let lint = CheckGrep::new();
         let scope = LintScope::default();
-        let cx = Cx { fixture:None, tree: &tree, meta: lint.meta, scope: &scope };
+        let cx = Cx { tree: &tree, meta: lint.meta, scope: &scope };
         let mut out = Sink::new();
         lint.scan_tree(&cx, &mut out);
         let actual: Vec<&str> = out.sites.iter().filter(|s| s.rule == "admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder").map(|s| source.lines().nth(s.line as usize - 1).unwrap().trim()).collect();
@@ -657,7 +718,7 @@ TRACKED(/obj/item/flagged, slot_flags)
         let mut bad = Vec::new();
         for p in &parts {
             assert!(seen.insert(p.rule), "duplicate rule {}", p.rule);
-            if fixture_base_rule(p.rule) != slug(p.title) {
+            if base_rule(p.rule) != slug(p.title) {
                 bad.push(format!("rule {} vs title {:?} (slug {})", p.rule, p.title, slug(p.title)));
             }
         }
@@ -697,7 +758,7 @@ TRACKED(/obj/item/flagged, slot_flags)
         let mut scope = LintScope::default();
         scope.lists.insert("legacy_forms_converted".into(), vec!["code/modules/power/".into(), "code/modules/medical/".into()]);
         scope.lists.insert("legacy_fields_converted".into(), vec!["code/modules/power/".into()]);
-        let cx = Cx { fixture:None, tree: &tree, meta: lint.meta, scope: &scope };
+        let cx = Cx { tree: &tree, meta: lint.meta, scope: &scope };
         let declarations = [
             "DECLARE_INTERACTIONS(/obj/example, INTERACT_HAND(PROC_REF(x)))",
             "EXTEND_INTERACTIONS(/obj/example, INTERACT_HAND(PROC_REF(x)))",
@@ -740,7 +801,7 @@ TRACKED(/obj/item/flagged, slot_flags)
         let l = CheckGrep::new();
         let tree = Tree::from_files(vec![]);
         let scope = LintScope::default();
-        let cx = Cx { fixture:None, tree: &tree, meta: l.meta, scope: &scope };
+        let cx = Cx { tree: &tree, meta: l.meta, scope: &scope };
         let f = SourceFile::from_text(rel, text);
         let mut out = Sink::new();
         out.cur = f.rel.clone();
@@ -770,7 +831,7 @@ TRACKED(/obj/item/flagged, slot_flags)
         let tree = Tree::from_files(vec![]);
         let mut scope = LintScope::default();
         scope.ceilings.insert("heat_ratchet_on_fire_act_overrides_h3".to_string(), 1);
-        let cx = Cx { fixture:None, tree: &tree, meta: l.meta, scope: &scope };
+        let cx = Cx { tree: &tree, meta: l.meta, scope: &scope };
         let site = |line: u32| Site {
             rule: "heat_ratchet_on_fire_act_overrides_h3".into(),
             rel: "code/a.dm".into(),
@@ -806,7 +867,7 @@ TRACKED(/obj/item/flagged, slot_flags)
         let mut tree = Tree::from_files(vec![]);
         tree.root = dir.path().to_path_buf();
         let scope = LintScope::default();
-        let cx = Cx { fixture:None, tree: &tree, meta: l.meta, scope: &scope };
+        let cx = Cx { tree: &tree, meta: l.meta, scope: &scope };
         let mut out = Sink::new();
         l.scan_tree(&cx, &mut out);
         let got: Vec<(String, String, u32)> = out.sites.iter().map(|s| (s.rule.clone(), s.rel.clone(), s.line)).collect();
@@ -829,45 +890,5 @@ TRACKED(/obj/item/flagged, slot_flags)
     #[test]
     fn selftest_passes() {
         assert_eq!(CheckGrep::new().selftest(), Ok(String::new()));
-    }
-}
-
-#[cfg(feature="native-policy")]
-#[path="native.rs"]pub mod native;
-
-// One normalization kernel serves the explicit legacy oracle and native fixture.
-impl CheckGrep { fn fixture_normalize_data(&self,scope:&LintScope,macro_ceiling:i64,findings:Vec<Finding>)->Vec<Finding>{
-        // the old `a || b || c`
-        let sites: Vec<Site> = findings
-            .into_iter()
-            .map(|f| Site { rule: f.rule, rel: f.rel, line: f.line, msg: String::new(), key: String::new(), ident: String::new() })
-            .collect();
-        let sites = first_hit_only(&self.groups, &sites);
-        let mut out: Vec<Finding> = Vec::new();
-        let mut counted: BTreeMap<String, i64> = BTreeMap::new();
-        for s in sites {
-            if (if s.rule == RULE_MACROS { Some(macro_ceiling) } else { scope.ceilings.get(&s.rule).copied() }).is_some() {
-                // the script prints only the number of a counted rule, and only above its limit
-                *counted.entry(s.rule.clone()).or_default() += 1;
-                continue;
-            }
-            let rel = if s.rule == RULE_DME {
-                DME_PATH.to_string()
-            } else if self.single_file.contains(&s.rule.as_str()) {
-                SINGLE_FILE_PATH.to_string()
-            } else {
-                s.rel
-            };
-            out.push(Finding { rule: fixture_base_rule(&s.rule).to_string(), rel, line: s.line });
-        }
-        for (rule, n) in counted {
-            let limit = if rule == RULE_MACROS { macro_ceiling } else { scope.ceilings.get(&rule).copied().unwrap_or(0) };
-            if n > limit {
-                out.push(Finding { rule: fixture_base_rule(&rule).to_string(), rel: COUNT_PATH.to_string(), line: n as u32 });
-            }
-        }
-        out.sort();
-        out.dedup_by(|a, b| a.line > 0 && a == b);
-        out
     }
 }

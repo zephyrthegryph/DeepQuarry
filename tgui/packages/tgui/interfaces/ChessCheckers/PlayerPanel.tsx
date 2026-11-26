@@ -1,6 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { Button, ColorBox, LabeledList, Stack } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
+import type { ChessCheckersActions } from '../generated/ChessCheckers';
 import { numToText } from '../SpaceBattle/constants';
 import { CastlingUsed } from './CommonComponents';
 import type { Data } from './types';
@@ -12,7 +13,7 @@ export const PlayerPanel = (props: {
   castlingUsed: boolean;
   num: number;
 }) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, ChessCheckersActions>();
   const { game_type } = data;
   const { gameState, player, time, castlingUsed, num } = props;
 

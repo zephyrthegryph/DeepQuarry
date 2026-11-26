@@ -1,0 +1,12 @@
+{
+	"state": 0,
+	"devtype": 0,
+	"hw_battery": 1,
+	"hw_disk": 1,
+	"hw_netcard": 0,
+	"hw_tesla": 0,
+	"hw_nanoprint": 0,
+	"hw_card": 0,
+	"hw_cpu": 1,
+	"totalprice": 0
+}

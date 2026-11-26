@@ -21,6 +21,9 @@ CAPABILITIES(/obj/item/ammo_casing)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
+/obj/item/ammo_casing/state_codecs()
+	return ..() + list("BB" = /datum/state_codec/child)
+
 //removes the projectile from the ammo casing
 /obj/item/ammo_casing/proc/expend()
 	. = BB
@@ -148,9 +151,6 @@ CAPABILITIES(/obj/item/ammo_casing)
 
 	var/ammo_type = /obj/item/ammo_casing //ammo type that is initially loaded
 	var/initial_ammo = null
-	/// Pristine ammo_type rounds held as a count (C5), loaded before stored_ammo.
-	/// make_rounds_real() creates them; ammo_count() includes them.
-	var/latent_rounds = 0
 
 	var/can_remove_ammo = TRUE	// Can this thing have bullets removed one-by-one? As of first implementation, only affects smart magazines
 	var/reloading = FALSE		//  Is this magazine being reloaded, currently? - Currently only useful for automatic pickups, ignored by manual reloading.
@@ -183,9 +183,6 @@ CAPABILITIES(/obj/item/ammo_magazine)
 	if(multiple_sprites)
 		initialize_magazine_icondata(src)
 
-	if(initial_ammo && starts_latent())
-		set_latent_rounds(initial_ammo)
-
 	// A lathe can forge a magazine from chosen construction materials,
 	// passing its key as the second Initialize arg — stamp the rounds with it.
 	if(forge_material)
@@ -193,15 +190,11 @@ CAPABILITIES(/obj/item/ammo_magazine)
 		if(forged)
 			set_forged_material(forged)
 
-/// Lying on a turf or in a latent holder, the rounds are a count until something handles the magazine (C5). Forged rounds are always real.
-/obj/item/ammo_magazine/proc/starts_latent()
-	return !forge_material && (isturf(loc) || loc?.latent_contents_enabled()) && dq_latent_eligible(ammo_type)
-
-/// The starting rounds (owns_many(starts =)): initial_ammo (a full magazine when unset) of real rounds, none for a magazine that starts latent.
+/// The starting rounds (owns_many(starts =)): initial_ammo (a full magazine when unset) of real rounds.
 /obj/item/ammo_magazine/proc/make_stored_ammo(current)
 	if(isnull(initial_ammo))
 		initial_ammo = max_ammo
-	if(!initial_ammo || starts_latent())
+	if(!initial_ammo)
 		return
 	. = list()
 	.[ammo_type] = initial_ammo
@@ -214,7 +207,6 @@ CAPABILITIES(/obj/item/ammo_magazine)
 	. = OP_PASS
 	if(!load_from_magazine(W, user))
 		return
-	make_rounds_real()
 	if(istype(W, /obj/item/ammo_casing))
 		var/obj/item/ammo_casing/C = W
 		if(C.caliber != caliber)
@@ -245,7 +237,6 @@ CAPABILITIES(/obj/item/ammo_magazine)
 /// Old attack_self: this dumps all the bullets right on the floor.
 /obj/item/ammo_magazine/proc/magazine_interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	make_rounds_real()
 	if(can_remove_ammo)
 		if(!length(stored_ammo))
 			to_chat(user, span_notice("[src] is already empty!"))
@@ -265,7 +256,6 @@ CAPABILITIES(/obj/item/ammo_magazine)
 /// Old attack_hand: this puts one bullet from the magazine into your hand. FALSE goes on to pickup.
 /obj/item/ammo_magazine/proc/magazine_interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
-	make_rounds_real()
 	if(can_remove_ammo)	// For Smart Magazines
 		if(user.get_inactive_hand() == src)
 			if(length(stored_ammo))
@@ -276,37 +266,9 @@ CAPABILITIES(/obj/item/ammo_magazine)
 				return OP_OK
 	return OP_DECLINE
 
-/// Rounds loaded, real and latent.
+/// Rounds loaded.
 /obj/item/ammo_magazine/proc/ammo_count()
-	return length(stored_ammo) + latent_rounds
-
-/// Creates the latent rounds (C5), ahead of the real ones as Initialize() would have.
-/obj/item/ammo_magazine/proc/make_rounds_real()
-	if(!latent_rounds)
-		return
-	var/list/rounds = list()
-	for(var/i in 1 to latent_rounds)
-		rounds += new ammo_type(src)
-	set_latent_rounds(0)
-	// The new rounds go to the head of the list, in order.
-	var/head = 1
-	for(var/obj/item/ammo_casing/new_round as anything in rounds)
-		if(rel_add(src, nameof(stored_ammo), new_round))
-			moveElement(stored_ammo, length(stored_ammo), head++)
-
-/obj/item/ammo_magazine/pickup(mob/user)
-	make_rounds_real()
-	return ..()
-
-/obj/item/ammo_magazine/equipped(mob/user, slot)
-	make_rounds_real()
-	return ..()
-
-/// Anywhere but a turf or a latent holder, legacy gun code reads stored_ammo.
-/obj/item/ammo_magazine/Moved(atom/old_loc, direction, forced = FALSE, movetime)
-	. = ..()
-	if(latent_rounds && loc && !isturf(loc) && !loc?.latent_contents_enabled())
-		make_rounds_real()
+	return length(stored_ammo)
 
 /obj/item/ammo_magazine/draw(datum/look/look)
 	..()
@@ -315,7 +277,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 		var/new_state = null
 		for(var/idx in 1 to length(icon_keys))
 			var/threshold = LAZYACCESS(icon_keys, idx)
-			if (threshold >= length(stored_ammo) + latent_rounds)
+			if (threshold >= length(stored_ammo))
 				new_state = LAZYACCESS(ammo_states, idx)
 				break
 		look.state(new_state ? new_state : initial(icon_state))
@@ -376,7 +338,6 @@ CAPABILITIES(/obj/item/ammo_magazine/ammo_box)
 /// Old click_alt.
 /obj/item/ammo_magazine/ammo_box/proc/interaction_alt(datum/act/op/A)
 	var/mob/user = A.actor
-	make_rounds_real()
 	if(can_remove_ammo)
 		if(isliving(user) && Adjacent(user))
 			if(length(stored_ammo))

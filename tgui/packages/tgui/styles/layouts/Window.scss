@@ -63,6 +63,11 @@
   background-color: hsl(from var(--color-base) h s calc(l + 15) / 0.25);
 }
 
+// Embedded in the column the page holds several windows: the dimmer covers only its own, not the whole page.
+.Window--embedded .Window__dimmer {
+  position: absolute;
+}
+
 .Window__resizeHandle__se {
   cursor: var(--cursor-se-resize);
   position: fixed;

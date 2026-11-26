@@ -42,18 +42,8 @@ export const ChemicalReactionList = (props: {
           title={'Reveal Potential Instant Reactions'}
         >
           {instant_reactions ? (
-            Array.isArray(instant_reactions) ? (
-              instant_reactions.map((reactionTypes, index) =>
-                getReactionComponents(reactionTypes, 'Breakdown', index + 1),
-              )
-            ) : (
-              Object.keys(instant_reactions).map((reaction) =>
-                getReactionComponents(
-                  instant_reactions[reaction],
-                  'Breakdown',
-                  1,
-                ),
-              )
+            instant_reactions.map((reactionTypes, index) =>
+              getReactionComponents(reactionTypes, 'Breakdown', index + 1),
             )
           ) : (
             <BaseChem />
@@ -68,21 +58,9 @@ export const ChemicalReactionList = (props: {
               color="transparent"
               title={'Reveal Potential Distillery Reactions'}
             >
-              {Array.isArray(distilled_reactions)
-                ? distilled_reactions.map((reactionTypes, index) =>
-                    getReactionComponents(
-                      reactionTypes,
-                      'Destillation',
-                      index + 1,
-                    ),
-                  )
-                : Object.keys(distilled_reactions).map((reaction) =>
-                    getReactionComponents(
-                      distilled_reactions[reaction],
-                      'Destillation',
-                      1,
-                    ),
-                  )}
+              {distilled_reactions.map((reactionTypes, index) =>
+                getReactionComponents(reactionTypes, 'Destillation', index + 1),
+              )}
             </Collapsible>
           </LabeledList.Item>
         </>
@@ -118,14 +96,10 @@ export const ChemicalReactionList = (props: {
 };
 
 function getReactionComponents(
-  reactionTypes: DistillComponent,
+  reactionTypes: Partial<DistillComponent>,
   sectionTitle: string,
   index?: number,
 ) {
-  if (!reactionTypes) {
-    return;
-  }
-
   const componentName = reactionTypes.is_slime
     ? 'Slime Injection'
     : 'Component';

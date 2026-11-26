@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The right-click menu shows plain text in its hover text instead of raw HTML tags"
+  - qol: "The right-click menu on yourself no longer lists every legacy verb"

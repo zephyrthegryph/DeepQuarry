@@ -1,0 +1,11 @@
+{
+	"grid_size": 8,
+	"mine_count": 10,
+	"max_mines": 51,
+	"dealer": null,
+	"placed_mines": null,
+	"revealed_fields": [],
+	"placed_flags": [],
+	"game_state": 0,
+	"is_dealer": 0
+}

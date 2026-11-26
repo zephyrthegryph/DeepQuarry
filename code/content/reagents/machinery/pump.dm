@@ -133,7 +133,7 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 /obj/machinery/pump/proc/cell_inserted(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/cell/W = A.held
-	materialize_parts()
+	adopt_parts()
 	if(!move_into(src, nameof(component_parts), W, user, ledger_slot = CONTAINER_SLOT_INTERNALS))
 		return TRUE
 	to_chat(user, span_notice("You insert the power cell."))

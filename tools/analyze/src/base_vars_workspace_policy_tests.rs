@@ -1,9 +1,0 @@
-//! Entire immutable old declaration-policy extraction proof.
-use crate::lint::Registry;
-#[path="../fixtures/original_policies/base_vars_workspace.rs"]mod original;
-#[path="../fixtures/native-base-vars-workspace/fixture.rs"]mod fixture;
-#[path="../../dmb/shared/test_scratch.rs"]mod scratch;
-fn record(outcome:&crate::run::Outcome)->serde_json::Value{serde_json::json!({"sites":outcome.run.sites,"notes":outcome.run.notes,"allow_used":outcome.allow_used,"failed":outcome.failed,"text":outcome.text})}
-#[test]fn shared_base_vars_policy_preserves_complete_original_sites_records_hot_schema_and_allow_order(){
- for case in fixture::CASES{let root=scratch::dir(&format!("base_vars-workspace-core-{case}"));for(relative,bytes)in fixture::files(case){let target=root.join(relative);std::fs::create_dir_all(target.parent().unwrap()).unwrap();std::fs::write(target,bytes).unwrap();}let options=crate::run::Options{root:root.clone(),lints:vec!["base_vars".into()],no_cache:true,raw:true,..Default::default()};let mut old_registry=Registry::default();original::register(&mut old_registry);let old=crate::run::Engine::new(old_registry,options.clone()).unwrap();let mut current_registry=Registry::default();crate::lints::base_vars::register(&mut current_registry);let current=crate::run::Engine::new(current_registry,options).unwrap();let sem=crate::sem::sem_for(&old.tree).unwrap();assert!(sem.errors.is_empty(),"actual original parsing must succeed: {:?}",sem.errors);let before=old.run_one(old.reg.lints[0].as_ref());let after=current.run_one(current.reg.lints[0].as_ref());assert_eq!(record(&after),record(&before),"complete original report/ALLOW/status for {case}");println!("SHARED_BASE_VARS_WORKSPACE_OLD={}",serde_json::json!({"case":case,"record":record(&before),"source_text":before.run.sites.iter().map(|site|old.tree.site_text(&site.rel,site.line as usize)).collect::<Vec<_>>()}));}
-}

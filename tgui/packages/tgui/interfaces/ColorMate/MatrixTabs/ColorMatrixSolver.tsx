@@ -1,8 +1,13 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
+import type {
+  ColorMateActions,
+  ColorMateData,
+} from '../../generated/ColorMate';
 import { computeMatrixFromPairs, isValidHex } from '../functions';
 import { ColorMatrixColorBox } from '../Helpers/MatrixColorBox';
-import type { ColorPair, ColorUpdate, Data, SelectedId } from '../types';
+import type { ColorPair, ColorUpdate, SelectedId } from '../types';
 
 export const ColorMateMatrixSolver = (props: {
   activeID: SelectedId;
@@ -11,7 +16,7 @@ export const ColorMateMatrixSolver = (props: {
   onColorPairs: React.Dispatch<React.SetStateAction<ColorPair[]>>;
   onPick: ColorUpdate;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<ColorMateData, ColorMateActions>();
   const { activeID, onActiveId, colorPairs, onColorPairs, onPick } = props;
 
   function handleColorUpdate(
@@ -75,11 +80,7 @@ export const ColorMateMatrixSolver = (props: {
           <Stack.Item key={index}>
             <Stack align="center">
               <Stack.Item>
-                <Box
-                  color="label"
-                  inline
-                  preserveWhitespace
-                >{`${index + 1}: `}</Box>
+                <Label inline preserveWhitespace>{`${index + 1}: `}</Label>
                 <Box inline>Source</Box>
               </Stack.Item>
               <Stack.Item>
@@ -115,7 +116,7 @@ export const ColorMateMatrixSolver = (props: {
                 />
               </Stack.Item>
               <Stack.Item>
-                <Box color="label">{`==`}</Box>
+                <Label>{`==`}</Label>
               </Stack.Item>
               <Stack.Item>
                 <Button
@@ -127,7 +128,7 @@ export const ColorMateMatrixSolver = (props: {
                 />
               </Stack.Item>
               <Stack.Item>
-                <Box color="label">{`=>`}</Box>
+                <Label>{`=>`}</Label>
               </Stack.Item>
               <Stack.Item>
                 <Button

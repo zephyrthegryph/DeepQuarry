@@ -3,7 +3,6 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
   Button,
-  Divider,
   LabeledList,
   Section,
   Stack,
@@ -11,23 +10,16 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
-
-type Data = {
-  siliconUser: BooleanLike;
-  locked: BooleanLike;
-  open: BooleanLike;
-  location: string;
-  codes: Record<string, string>;
-};
+import type { NavBeaconActions, NavBeaconData } from './generated/NavBeacon';
 
 export const NavBeacon = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { locked, open, location, codes } = data;
+  const { act, data } = useBackend<NavBeaconData, NavBeaconActions>();
+  const { locked, open, location, codes = {} } = data;
   const [newKey, setNewKey] = useState('');
   const [newVal, setNewVal] = useState('');
 
   return (
-    <Window width={350} height={300}>
+    <Window width={470} height={300}>
       <Window.Content>
         <Section fill scrollable>
           <Stack fill vertical>
@@ -41,7 +33,7 @@ export const NavBeacon = (props) => {
                   <UserAccessButton
                     icon="pen"
                     accessible={!locked && open}
-                    value={location}
+                    value={location ?? ''}
                     onCommit={(value) => act('loc_edit', { new_loc: value })}
                   />
                 </LabeledList.Item>
@@ -97,60 +89,57 @@ export const NavBeacon = (props) => {
                       </Table.Row>
                     ))}
                     {!locked && open && (
-                      <>
-                        <Divider />
-                        <Table.Row>
-                          <Table.Cell>
-                            <Button.Input
-                              fluid
-                              color={codes[newKey] ? 'red' : undefined}
-                              disabled={locked || !open}
-                              value={newKey}
-                              buttonText={newKey ?? '(new val)'}
-                              onCommit={setNewKey}
-                            />
-                          </Table.Cell>
-                          <Table.Cell>
-                            <Stack>
-                              <Stack.Item grow>
-                                <Button.Input
-                                  fluid
-                                  disabled={locked || !open}
-                                  value={newVal}
-                                  buttonText={newVal ?? '(new val)'}
-                                  onCommit={setNewVal}
-                                />
-                              </Stack.Item>
-                              <Stack.Item>
-                                <Button
-                                  disabled={
-                                    !newVal ||
-                                    !newKey ||
-                                    !!codes[newKey] ||
-                                    locked ||
-                                    !open
-                                  }
-                                  color={
-                                    newVal && newKey && !codes[newKey]
-                                      ? 'green'
-                                      : 'red'
-                                  }
-                                  onClick={() => {
-                                    act('trans_add_code', {
-                                      new_key: newKey,
-                                      new_val: newVal,
-                                    });
-                                    setNewKey('');
-                                    setNewVal('');
-                                  }}
-                                >
-                                  +
-                                </Button>
-                              </Stack.Item>
-                            </Stack>
-                          </Table.Cell>
-                        </Table.Row>
-                      </>
+                      <Table.Row>
+                        <Table.Cell>
+                          <Button.Input
+                            fluid
+                            color={codes[newKey] ? 'red' : undefined}
+                            disabled={locked || !open}
+                            value={newKey}
+                            buttonText={newKey ?? '(new val)'}
+                            onCommit={setNewKey}
+                          />
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Stack>
+                            <Stack.Item grow>
+                              <Button.Input
+                                fluid
+                                disabled={locked || !open}
+                                value={newVal}
+                                buttonText={newVal ?? '(new val)'}
+                                onCommit={setNewVal}
+                              />
+                            </Stack.Item>
+                            <Stack.Item>
+                              <Button
+                                disabled={
+                                  !newVal ||
+                                  !newKey ||
+                                  !!codes[newKey] ||
+                                  locked ||
+                                  !open
+                                }
+                                color={
+                                  newVal && newKey && !codes[newKey]
+                                    ? 'green'
+                                    : 'red'
+                                }
+                                onClick={() => {
+                                  act('trans_add_code', {
+                                    new_key: newKey,
+                                    new_val: newVal,
+                                  });
+                                  setNewKey('');
+                                  setNewVal('');
+                                }}
+                              >
+                                +
+                              </Button>
+                            </Stack.Item>
+                          </Stack>
+                        </Table.Cell>
+                      </Table.Row>
                     )}
                   </Table>
                 </LabeledList.Item>

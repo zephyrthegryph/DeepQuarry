@@ -13,6 +13,7 @@ import {
 import { flow } from 'tgui-core/fp';
 import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
+import type { LawManagerActions } from './generated/LawManager';
 
 type Data = {
   ion_law_nr: string;
@@ -31,9 +32,9 @@ type Data = {
   has_supplied_laws: number;
   isAI: BooleanLike;
   isMalf: BooleanLike;
-  isSlaved: BooleanLike;
+  isSlaved: string | null;
   isAdmin: BooleanLike;
-  channel: string;
+  channel: string | null;
   channels: { channel: string }[];
   law_sets: LawPack[];
 };
@@ -41,7 +42,7 @@ type Data = {
 type LawPack = {
   name: string;
   header: string;
-  ref: string;
+  ref: number;
   laws: {
     zeroth_laws: Law[];
     has_zeroth_laws: number;
@@ -57,13 +58,13 @@ type LawPack = {
 type Law = {
   law: string;
   index: number;
-  state: number;
-  ref: string;
-  zero: boolean; // Local UI var
+  state: number | null;
+  ref: number;
+  zero?: boolean; // Local UI var
 };
 
 export const LawManager = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, LawManagerActions>();
 
   const { isSlaved } = data;
 
@@ -78,7 +79,7 @@ export const LawManager = (props) => {
 };
 
 const LawManagerContent = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, LawManagerActions>();
   const [tabIndex, setTabIndex] = useSharedState<number>('lawsTabIndex', 0);
   const [searchLawName, setSearchLawName] = useSharedState<string>(
     'searchLawName',
@@ -92,7 +93,7 @@ const LawManagerContent = (props) => {
     inherent_law,
     supplied_law,
     supplied_law_position,
-    zeroth_laws,
+    zeroth_laws = [],
     has_zeroth_laws,
     ion_laws,
     has_ion_laws,
@@ -104,7 +105,7 @@ const LawManagerContent = (props) => {
     isMalf,
     isAdmin,
     channel,
-    channels,
+    channels = [],
     law_sets,
   } = data;
 
@@ -177,7 +178,7 @@ export const LawManagerLaws = (props: {
   isAI: BooleanLike;
   isMalf: BooleanLike;
   isAdmin: BooleanLike;
-  channel: string;
+  channel: string | null;
   channels: { channel: string }[];
   hasScroll?: boolean;
   sectionHeight?: string;
@@ -202,7 +203,7 @@ export const LawManagerLaws = (props: {
     isMalf,
     isAdmin,
     channel,
-    channels,
+    channels = [],
     hasScroll,
     sectionHeight,
   } = props;

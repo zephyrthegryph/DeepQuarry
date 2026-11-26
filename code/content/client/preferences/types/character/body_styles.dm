@@ -53,9 +53,9 @@
 /datum/preference/text/human/tail_style/get_pref_choices(datum/preferences/preferences)
 	return sprite_accessory_names(GLOB.tail_styles_list)
 
-/// The tail styles, and the Legs picker's Normal and Digitigrade (it shows the taur bodies among the tails' thumbnails).
+/// The tail styles with None as the bare body (as the ears and wings have), and the Legs picker's Normal and Digitigrade (it shows the taur bodies among the tails' thumbnails and leaves the None body out).
 /datum/preference/text/human/tail_style/get_pref_thumbnails(datum/preferences/preferences)
-	var/list/out = sprite_accessory_thumbs(GLOB.tail_styles_list) || list()
+	var/list/out = dq_part_style_thumbs(GLOB.tail_styles_list, preferences)
 	out["plantigrade"] = list("layers" = dq_body_thumb_layers(preferences))
 	out["digitigrade"] = list("layers" = dq_body_thumb_layers(preferences, digitigrade = TRUE))
 	return out
@@ -144,6 +144,17 @@
 	out[""] = list("layers" = dq_body_thumb_layers(preferences), "base" = TRUE)
 	return out
 
+/// A style that means "none" (Bald, Shaved, no gradient) shown as the body without the part, so its box matches the rest.
+/// Keeps the style's channel count when it has a thumbnail already.
+/proc/dq_none_style_thumb(list/thumbs, none_key, datum/preferences/preferences)
+	if(!thumbs)
+		thumbs = list()
+	var/list/old = thumbs[none_key]
+	var/list/entry = list("layers" = dq_body_thumb_layers(preferences))
+	if(old && !isnull(old["channels"]))
+		entry["channels"] = old["channels"]
+	thumbs[none_key] = entry
+	return thumbs
 
 /datum/preference/text/human/bgstate
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
@@ -167,18 +178,8 @@
 	return
 
 
-/datum/preference/numeric/human/equip_preview_mob
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "equip_preview_mob"
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-	minimum = 0
-	maximum = 65535
-	widget = PREF_WIDGET_HIDDEN  // bitfield; surfaced via the two toggles below
-
-// two toggles that mirror the equip_preview_mob bitfield. Cleaner UX than a single
-// 0-65535 numeric. The actual pref stays a bitfield so existing consumers keep working;
-// the toggles bridge into it via apply hooks.
+// What the preview mannequin wears: the loadout, the job outfit. Both default on; the character setup's
+// "Show loadout" / "Show job outfit" switches write them.
 /datum/preference/toggle/human/preview_loadout
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "preview_loadout"
@@ -197,12 +198,6 @@
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/preview_job/apply_to_human(mob/living/carbon/human/target, value)
-	return
-
-/datum/preference/numeric/human/equip_preview_mob/create_default_value()
-	return EQUIP_PREVIEW_ALL
-
-/datum/preference/numeric/human/equip_preview_mob/apply_to_human(mob/living/carbon/human/target, value)
 	return
 
 

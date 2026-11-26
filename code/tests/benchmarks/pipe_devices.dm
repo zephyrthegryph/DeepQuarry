@@ -11,7 +11,7 @@
 /// The next floor with room air that has not been used yet.
 /datum/benchmark/pipe_devices/proc/next_floor(list/used)
 	for(var/turf/simulated/floor/cand in world)
-		if(cand.air && !cand.blocks_air && !(cand in used))
+		if(cand.turf_air() && !cand.blocks_air && !(cand in used))
 			used += cand
 			return cand
 	return null

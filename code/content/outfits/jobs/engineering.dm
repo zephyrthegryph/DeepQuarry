@@ -48,4 +48,4 @@
 	id_type = /obj/item/card/id/engineering/chemical
 	pda_type = /obj/item/pda
 	r_pocket = null // no tray
-	suit = /obj/item/clothing/suit/storage/toggle/labcoat/yellow
+	suit = VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/yellow)

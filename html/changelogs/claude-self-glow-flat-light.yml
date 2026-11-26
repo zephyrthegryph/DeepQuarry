@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "A character a little bigger than a tile no longer shows a glow in its own colours over itself under client lighting"

@@ -54,6 +54,7 @@
 	else
 		animate(src, transform = M, time = anim_time)
 	update_icon_special() //May contain transform-altering things
+	client_flat_light_update(src)
 
 //TODO: Carbon procs in my human update_icons??
 /mob/living/carbon/human/update_hud()	//TODO: do away with this if possible
@@ -150,7 +151,7 @@
 			var/list/_flavor_texts = client.prefs.read_preference(/datum/preference/flavor_texts)
 			bio.flavor_texts = islist(_flavor_texts) ? _flavor_texts.Copy() : list()
 		if(oocnotes)
-			identity().ooc_notes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes))
+			identity().set_ooc_notes(text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes)))
 			identity().ooc_notes_likes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes))
 			identity().ooc_notes_dislikes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes))
 			identity().ooc_notes_favs = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_favs))

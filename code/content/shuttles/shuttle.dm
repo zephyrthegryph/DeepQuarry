@@ -116,6 +116,7 @@ CAPABILITIES(/datum/shuttle)
 /datum/shuttle/proc/set_process_state(new_state)
 	var/wrote = FALSE
 	if(process_state != new_state)
+		log_shuttle("Shuttle [src] process state [process_state] -> [new_state] (moving [moving_status])")
 		process_state = new_state
 		tracked_changed(src, nameof(process_state))
 		wrote = TRUE
@@ -399,7 +400,6 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 				else
 					spent(AM) //it just gets atomized I guess? TODO throw it into space somewhere, prevents people from using shuttles as an atom-smasher
 	dq_destroy_collect_end()
-	var/list/radios = list()
 	// If there was a zlevel above our origin and we own the ceiling, erase our ceiling now we're leaving (one load for all of it)
 	var/list/ceiling_erase = list()
 	if(ceiling_type && HasAbove(current_location().z))
@@ -428,8 +428,6 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 						M.status_at_least(STAT_WEAKENED, 3)
 						if(move_direction)
 							throw_a_mob(M,move_direction)
-		for(var/obj/item/radio/intercom/I in contents_of(A))
-			radios |= I
 
 	// Update our base turfs before we move, so that transparent turfs look good.
 	var/new_base = destination.base_turf || /turf/space
@@ -437,8 +435,10 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 		A.base_turf = new_base
 
 	// Actually do the movement of everything - This replaces origin.move_contents_to(destination)
+	var/translate_start = TICK_USAGE_REAL
 	translate_turfs(turf_translation, current_location().landing_area(), current_location().base_turf)
 	rel_set(src, nameof(current_location), destination)
+	var/translate_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - translate_start)
 
 	// If there's a zlevel above our destination, paint in a ceiling on it so we retain our air
 	if(ceiling_type && HasAbove(current_location().z))
@@ -458,18 +458,17 @@ ACTION(observer_shuttle_pre_move, old_location, destination, FIXED, notice = /da
 	var/list/moved_turfs = list()
 	for(var/turf/source in turf_translation)
 		moved_turfs += turf_translation[source]
+	var/power_start = TICK_USAGE_REAL
 	SSmachines.power_reregister(moved_turfs)
-	for(var/obj/item/radio/intercom/I in radios)
-		if(istype(I))
-			I.update_broadcast_tiles()
+	log_world("SHUTTLE_MOVE_PROFILE: [src] to [destination]: translate_turfs [round(translate_ms, 0.1)] ms, power re-register of [length(moved_turfs)] turf(s) [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - power_start), 0.1)] ms")
 	// Adjust areas of mothershuttle so it doesn't try and bring us with it if it jumps while we aren't on it.
 	if(mothershuttle)
 		var/datum/shuttle/MS = shuttles_shuttles()[mothershuttle]
 		if(MS)
 			if(current_location().landmark_tag == motherdock)
-				MS.shuttle_area |= shuttle_area // We are now on mothershuttle! Bring us along!
+				MS.include_shuttle_area(shuttle_area) // We are now on mothershuttle! Bring us along!
 			else
-				MS.shuttle_area -= shuttle_area // We have left mothershuttle! Don't bring us along!
+				MS.remove_shuttle_area(shuttle_area) // We have left mothershuttle! Don't bring us along!
 
 	return
 

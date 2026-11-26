@@ -36,13 +36,6 @@
 	max_ammo = 30
 	multiple_sprites = null
 
-MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/foam/riot, list(MAT_STEEL = 5040, MAT_PLASTIC = 1800))
-/obj/item/ammo_magazine/ammo_box/foam/riot
-	name = "\improper Donk-Soft riot ammo box"
-	desc = "Contains Donk-Soft riot darts. It's Donk or Don't! Ages 18 and up."
-	icon_state = "foambox_riot"
-	ammo_type = /obj/item/ammo_casing/afoam_dart/riot
-
 /*
  * Cap
  */
@@ -160,7 +153,7 @@ MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b10mm/emp, list(MAT_STEEL = 5200, 
 	icon_state = "box44"
 	caliber = ".44"
 	ammo_type = /obj/item/ammo_casing/a44
-	MATERIAL_BULK(MAT_STEEL, 5040)
+	MATERIAL_BULK(MAT_STEEL, 1440)
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -336,7 +329,7 @@ MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b12g/flash, list(MAT_STEEL = 720, 
  * 14.5mm (anti-materiel rifle round)
  */
 
-MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b145, list(MAT_STEEL = 28000, MAT_PLASTEEL = 3500)) // Makes them a bit more expensive
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b145, list(MAT_STEEL = 7775, MAT_PLASTEEL = 970)) // Makes them a bit more expensive
 /obj/item/ammo_magazine/ammo_box/b145
 	desc = "ammo box (14.5mm)"
 	desc = "A box of 14.5mm rounds"
@@ -346,7 +339,7 @@ MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b145, list(MAT_STEEL = 28000, MAT_
 	max_ammo = 7
 	multiple_sprites = 1
 
-MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b145/highvel, list(MAT_STEEL = 2800, MAT_PLASTEEL = 7000)) // Makes them a bit more expensive
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b145/highvel, list(MAT_STEEL = 2500, MAT_PLASTEEL = 6250)) // Makes them a bit more expensive
 /obj/item/ammo_magazine/ammo_box/b145/highvel
 	desc = "ammo box (14.5mm sabot)"
 	desc = "A box of 14.5mm sabot rounds"
@@ -416,26 +409,6 @@ MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b145/highvel, list(MAT_STEEL = 280
 	icon_state = "paper_wrap"
 	caliber = "7.62mm"
 	ammo_type = /obj/item/ammo_casing/a762
-	MATERIAL_BULK(MAT_STEEL, 1600)
-	max_ammo = 8
-	multiple_sprites = 1
-
-/obj/item/ammo_magazine/ammo_box/b762/surplus/blank
-	name = "ammo wrap (7.62mm blank)"
-	desc = "A paper wrap of 7.62mm blank rounds"
-	icon_state = "paper_wrap"
-	caliber = "7.62mm"
-	ammo_type = /obj/item/ammo_casing/a762/blank
-	MATERIAL_BULK(MAT_STEEL, 720)
-	max_ammo = 8
-	multiple_sprites = 1
-
-/obj/item/ammo_magazine/ammo_box/b762/surplus/hunter
-	name = "ammo wrap (7.62mm hunter)"
-	desc = "A paper wrap of 7.62mm hunter rounds"
-	icon_state = "paper_wrap"
-	caliber = "7.62mm"
-	ammo_type = /obj/item/ammo_casing/a762/hunter
 	MATERIAL_BULK(MAT_STEEL, 1600)
 	max_ammo = 8
 	multiple_sprites = 1

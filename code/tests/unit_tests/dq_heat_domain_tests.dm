@@ -45,7 +45,7 @@
 
 /// Whether `T` holds roughly a standard cell of air near room temperature.
 /proc/heat_test_room_air(turf/simulated/floor/T)
-	var/datum/gas_mixture/air = T.air
+	var/datum/gas_mixture/air = T.turf_air()
 	if(!air)
 		return FALSE
 	return air.total_moles() > MOLES_CELLSTANDARD * 0.5 && abs(air.return_temperature() - T20C) < 10

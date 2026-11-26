@@ -10,7 +10,7 @@
  * * default - If an option is already preselected on the UI. Current values, etc.
  * * timeout - The timeout of the input box, after which the menu will close and qdel itself. Set to zero for no timeout.
  */
-/proc/tgui_input_list(mob/user, message, title = "Select", list/items, default, timeout = 0, strict_modern = FALSE, ui_state = GLOB.tgui_always_state)
+/proc/tgui_input_list(mob/user, message, title = "Select", list/items, default, timeout = 0, ui_state = GLOB.tgui_always_state)
 	if(!length(items))
 		return null
 	if (!istype(user))
@@ -23,9 +23,6 @@
 	if(isnull(user.client))
 		return null
 
-	/// Client does NOT have tgui_input on: Returns regular input
-	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode) && !strict_modern)
-		return input(user, message, title, default) as null|anything in items // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
 	var/datum/tgui_list_input/input = new(user, message, title, items, default, timeout, ui_state)
 	if(input.invalid)
 		spent(input, user)
@@ -102,6 +99,7 @@
 
 CAPABILITIES(/datum/tgui_list_input)
 	interface("ListInputModal")
+	ui_shape(init_value = schema_text(), items = list_of(schema_text()), large_buttons = bool(), message = schema_text(), swapped_buttons = bool(), title = schema_text(), timeout = nullable(num()))
 	op("submit", ui_act("submit", arg("entry")), then(PROC_REF(ui_act_submit)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
@@ -112,19 +110,20 @@ CAPABILITIES(/datum/tgui_list_input)
 /datum/tgui_list_input/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_list_input/tgui_static_data(mob/user)
+/datum/tgui_list_input/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
-	data["init_value"] = default || items[1]
+	data["init_value"] = "[default || items[1]]"
 	data["items"] = items
-	data["large_buttons"] = user.read_preference(/datum/preference/toggle/tgui_large_buttons)
-	data["message"] = message
-	data["swapped_buttons"] = !user.read_preference(/datum/preference/toggle/tgui_swapped_buttons)
-	data["title"] = title
+	data["large_buttons"] = TRUE
+	data["message"] = message || ""
+	data["swapped_buttons"] = TRUE
+	data["title"] = title || ""
 	return data
 
 /// /datum/tgui_list_input's window data.
 /datum/tgui_list_input/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["timeout"] = null
 	if(timeout)
 		data["timeout"] = clamp((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS), 0, 1)
 	return data

@@ -202,6 +202,11 @@
 		return null
 	return length(when_entry.children) ? when_entry.children[1] : null
 
+/// The op context condition_holds() reuses (taken once, at its first evaluation, and never released: one in its pool's count is out for good), held
+/// the way a Menu read holds its shared act (R.menu_scratch); and whether an evaluation holds it now.
+GLOBAL_LIST_EMPTY(condition_shared_act)
+GLOBAL_VAR_INIT(condition_shared_busy, FALSE)
+
 /// A condition of section 5 evaluated now on `holder`: nameof(v) (a truthy var), a stat or key id, not()/all_of()/any_of(), PROC_REF, a requirement.
 /// One evaluator (admission.md wave 8): this is op_cond() in a pooled context whose holder is `holder`. A null condition does not hold.
 PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
@@ -216,13 +221,30 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		return condition_id_holds(holder, cond)
 	if(ctx) // the caller's context for this holder: it keeps and releases it, a run of gates shares one
 		return op_cond(ctx, cond)
-	var/datum/act/op/A = pooled_op_context(holder)
+	// One context serves every evaluation that is not nested in another (a condition asking a condition takes its own): pointed at the holder,
+	// asked, pointed away. Conditions read the context and never write it, as a Menu read's shared act relies on (resolve.dm).
+	if(!length(GLOB.condition_shared_act))
+		GLOB.condition_shared_act += take(/datum/act/op)
+	var/datum/act/op/A = GLOB.condition_shared_act[1]
+	if(GLOB.condition_shared_busy)
+		A = pooled_op_context(holder)
+		try
+			. = op_cond(A, cond)
+		catch(var/exception/fault)
+			A.release()
+			throw fault
+		A.release()
+		return
+	GLOB.condition_shared_busy = TRUE
+	op_context_point(A, holder)
 	try
 		. = op_cond(A, cond)
 	catch(var/exception/fault)
-		A.release()
+		op_context_point(A, null)
+		GLOB.condition_shared_busy = FALSE
 		throw fault
-	A.release()
+	op_context_point(A, null)
+	GLOB.condition_shared_busy = FALSE
 
 /// A numeric condition id: a capability state key (CAPKEY_ID) or, once E3 lands, a stat id. The default reads the key on the holder.
 /proc/condition_id_holds(datum/holder, id)

@@ -1,11 +1,11 @@
-import type { ZodObject } from 'zod';
+import type { ZodMiniObject } from 'zod/mini';
 
 type MergeInput<TObj> = {
   /**
    * A zod object.
-   * @see Writing a Zod Schema: https://zod.dev/basics
+   * @see Writing a Zod Schema: https://zod.dev/basics (zod/mini: the functional API keeps the bundle small)
    */
-  schema: ZodObject<any>;
+  schema: ZodMiniObject<any>;
   /** The input getting merged */
   source: Record<string, unknown>;
   /** The defaults, which is the shape of the output */

@@ -37,6 +37,18 @@
 	/// TRUE once an effect answered OP_PASS: the op commits and the click goes on to the next candidate.
 	var/passed = FALSE
 
+/// The op key of a context. Conditions and requirements read it off the act they are handed (A.key: a surgery step finds its step by it); nothing
+/// subscribes to an act's key, since a wait or a reaction watches entities, never a pooled context. So the change is published only to an act
+/// someone registered on (one with reactive state): a Menu read refills one context per row, and a publish per row was a fifth of a row's cost.
+/datum/act/op/proc/set_key(value)
+	if(key == value)
+		return FALSE
+	key = value
+	if(rx)
+		tracked_changed(src, nameof(key))
+	return TRUE
+SETTER(/datum/act/op, key)
+
 /// A handler reads the value of a captured field here, never off the live holder (resume policies: CAPTURE the snapshot, LATEST the live value).
 /datum/act/op/proc/captured(name)
 	return LAZYACCESS(captured_values, name)
@@ -221,7 +233,8 @@
 // ---- starting an op ----
 
 /// The act and result of a candidate that won: Require, then Wait or Do. Returns the op's /datum/op_result (null outcome while it waits).
-/proc/op_begin(datum/op_cand/C, datum/op_resolution/R, list/arg_values = null, trace = FALSE)
+/// `conds_checked`: the caller tested C's when() conditions just now with nothing run since (a click's winner, the next of a decline chain).
+/proc/op_begin(datum/op_cand/C, datum/op_resolution/R, list/arg_values = null, trace = FALSE, conds_checked = FALSE)
 	RETURN_TYPE(/datum/op_result)
 	var/mob/actor = R.actor
 	var/datum/op_result/result = new
@@ -258,17 +271,21 @@
 	A.oplan = C.oplan // ALLOW(ownership): a pooled transient: reset on release
 	A.binding = C.binding // ALLOW(ownership): a pooled transient: reset on release
 	A.result = result // ALLOW(ownership): a pooled transient: reset on release
-	A.held_name = R.held ? "[R.held]" : null
-	A.target_name = A.target ? "[A.target]" : null
-	A.actor_name = actor ? "[actor]" : null
+	// The names are a snapshot for what outlives this call (a wait, a delayed() part) and for a logged op; an op that runs to its end here has its
+	// log line built from the live atoms (op_log()), so a plain step builds three strings for nothing.
+	if(C.oplan.log_type || length(C.oplan.steps) || length(C.oplan.delayed))
+		A.held_name = R.held ? "[R.held]" : null
+		A.target_name = A.target ? "[A.target]" : null
+		A.actor_name = actor ? "[actor]" : null
 	// UI and topic arguments cross the schema boundary before anything else.
 	if(!isnull(arg_values))
 		A.args = arg_values
 		A.ordered_args = op_ordered_args(C.oplan, C.binding, arg_values)
 	// Match is re-checked here too (a perform_op by key meets it for the first time): a failed when() refuses by key.
-	for(var/cond in C.oplan.conds)
-		if(!op_cond(A, cond))
-			return op_end(A, ACT_REFUSED, /datum/msg/op/not_available)
+	if(!conds_checked)
+		for(var/cond in C.oplan.conds)
+			if(!op_cond(A, cond))
+				return op_end(A, ACT_REFUSED, /datum/msg/op/not_available)
 	var/why = op_require_reason(A, C.oplan, C.binding)
 	if(why)
 		return op_end(A, ACT_REFUSED, why)
@@ -300,17 +317,32 @@
 
 /// The reason Require refuses the op now, or null: the implicit req_capable() of a physical binding, the bay, needs(), the require half of costs
 /// and the pre-checks of the actions the effects start. Nothing is reserved and nothing is written.
-/proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
+/proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B, list/hide = null)
+	GLOB.op_count_requires++
 	lookup_reads_prepare(A.holder, A)
 	// Lazy caches the requirements read are refreshed here, outside the purity guard, so a requirement never writes one.
 	// Settling refreshes caches before anything is read; it is not an admission read, so an enclosing menu read neither records nor is marked
 	// uncacheable by what it touches (a mob's body settle sampled read_once() and made every human's menu rebuild on each read).
+	// Inside a menu read the entities are settled once for the whole read, not once per row: nothing a requirement does writes, so what the
+	// first row's settle brought up to date stays so for the rest (frame slot 6: the entities settled in this read).
 	var/list/menu_frame = GLOB.op_menu_read_frame
 	GLOB.op_menu_read_frame = null
 	try
-		A.holder?.settle_for_reads()
-		A.actor?.settle_for_reads()
-		A.target?.settle_for_reads()
+		if(menu_frame)
+			if(length(menu_frame) < 6)
+				menu_frame.len = 6
+			var/list/settled = menu_frame[6]
+			if(!settled)
+				settled = list()
+				menu_frame[6] = settled
+			for(var/datum/entity as anything in list(A.holder, A.actor, A.target))
+				if(entity && !settled[entity])
+					settled[entity] = TRUE
+					entity.settle_for_reads()
+		else
+			A.holder?.settle_for_reads()
+			A.actor?.settle_for_reads()
+			A.target?.settle_for_reads()
 	catch(var/exception/settle_fault)
 		GLOB.op_menu_read_frame = menu_frame
 		throw settle_fault
@@ -320,7 +352,7 @@
 	try
 		if(GLOB.op_menu_read_frame)
 			op_menu_record_reads(op_watch_reads(A, P))
-		. = op_require_reason_inner(A, P, B)
+		. = op_require_reason_inner(A, P, B, hide)
 	catch(var/exception/fault)
 		GLOB.op_pure_depth = previous_pure_depth
 		throw fault
@@ -330,7 +362,18 @@
 /atom/proc/op_hand_refusal(datum/act/op/A)
 	return null
 
-/proc/op_require_reason_inner(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
+/proc/op_require_reason_inner(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B, list/hide = null)
+	if(hide)
+		// The Menu asks the requirements about who the actor is and what the target is first: one that fails (FAILS_HIDDEN) drops the row.
+		for(var/requirement in P.needs)
+			if(!istype(requirement, /datum/entry/part/req))
+				continue
+			var/datum/entry/part/req/R = requirement
+			if(!R.can_hide() || R.holds(A))
+				continue
+			if(R.hides_when_failed(A))
+				hide += R
+				return null
 	if(B && B.physical() && A.origin != ORIGIN_SYSTEM && !(A.authority & AUTH_ADMIN))
 		var/mob/L = A.actor
 		if(L?.op_uses_actor_stats() && !stat_value(L, STAT_CAN_ACT) && !LAZYACCESS(P.selects, "capable_ignoring"))
@@ -1275,7 +1318,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return
 	var/datum/act/op/A = act
 	if(!A || QDELETED(A))
-		active = FALSE
+		end_pending() // the op must still leave its registries and give up its claim
+		drop_record()
 		return
 	var/mob/M = actor
 	if(oplan.interrupted && resume_act())
@@ -1579,7 +1623,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			return
 	if(!committed && !(A.started || P.log_type))
 		return
-	var/text = "[A.actor_name || "something"] [op_label(P)] [A.target_name || "it"]"
+	var/text = "[A.actor_name || A.actor || "something"] [op_label(P)] [A.target_name || A.target || "it"]"
 	if(!committed)
 		text += " ([outcome == ACT_REPLACED ? "replaced" : "refused"]: [reason_text(reason)])"
 	else if(!A.rolled)

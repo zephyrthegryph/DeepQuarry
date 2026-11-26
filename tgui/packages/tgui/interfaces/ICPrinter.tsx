@@ -1,39 +1,24 @@
 import { useBackend, useSharedState } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
   Button,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
   Tabs,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type { ICPrinterActions, ICPrinterData } from './generated/ICPrinter';
 
-type Data = {
-  categories: category[];
-  metal: number;
-  max_metal: number;
-  metal_per_sheet: number;
-  debug: BooleanLike;
-  upgraded: BooleanLike;
-  can_clone: BooleanLike;
-  assembly_to_clone: string;
-};
+type Data = ICPrinterData;
 
-type category = { name: string; items: item[] };
+type category = Data['categories'][number];
 
-type item = {
-  name: string;
-  desc: string;
-  can_build: BooleanLike;
-  cost: number;
-  path: string;
-};
+type item = category['items'][number];
 
 export const ICPrinter = (props) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, ICPrinterActions>();
 
   const { metal, max_metal, metal_per_sheet, upgraded, can_clone } = data;
 
@@ -46,12 +31,10 @@ export const ICPrinter = (props) => {
               <Stack vertical>
                 <Stack.Item>
                   <LabeledList>
-                    <LabeledList.Item label="Metal">
-                      <ProgressBar value={metal} maxValue={max_metal}>
-                        {metal / metal_per_sheet} /{' '}
-                        {max_metal / metal_per_sheet} sheets
-                      </ProgressBar>
-                    </LabeledList.Item>
+                    <StatBar label="Metal" value={metal} maxValue={max_metal}>
+                      {metal / metal_per_sheet} / {max_metal / metal_per_sheet}{' '}
+                      sheets
+                    </StatBar>
                     <LabeledList.Item label="Circuits Available">
                       {upgraded ? 'Advanced' : 'Regular'}
                     </LabeledList.Item>
@@ -66,10 +49,7 @@ export const ICPrinter = (props) => {
                       icon="file-import"
                       content="Import Circuit"
                       onClick={() => {
-                        act('import_circuit', {
-                          override_type: false,
-                          custom_type: null,
-                        });
+                        act('import_circuit');
                       }}
                       tooltip="Import a circuit design from a JSON file"
                     />
@@ -104,9 +84,9 @@ function canBuild(item: item, data: Data) {
 }
 
 const ICPrinterCategories = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ICPrinterActions>();
 
-  const { categories } = data;
+  const { categories = [] } = data;
 
   const [categoryTarget, setcategoryTarget] = useSharedState<string>(
     'categoryTarget',

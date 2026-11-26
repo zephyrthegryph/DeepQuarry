@@ -35,16 +35,17 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	owns_one(nameof(inserted_gps), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(last_tele_data), /datum/projectile_data)
 	interface("TelesciConsole")
+	ui_shape(noTelepad = bool(), insertedGps = nullable(schema_text()), rotation = num(), currentZ = int(), cooldown = num(), crystalCount = int(), maxCrystals = int(), maxPossibleDistance = num(), maxAllowedDistance = num(), distance = num(), tempMsg = schema_text(), sectorOptions = list_of(int()), lastTeleData = nullable(row(src_x = num(), src_y = num(), distance = num(), time = num())))
 	without("ui_open")
-	op("setrotation", ui_act("setrotation", arg("val", num())), then(PROC_REF(ui_act_setrotation)))
-	op("setdistance", ui_act("setdistance", arg("val", num())), then(PROC_REF(ui_act_setdistance)))
-	op("setz", ui_act("setz", arg("setz", num())), then(PROC_REF(ui_act_setz)))
-	op("ejectGPS", ui_act("ejectGPS"), then(PROC_REF(ui_act_ejectgps)))
-	op("setMemory", ui_act("setMemory"), then(PROC_REF(ui_act_setmemory)))
-	op("send", ui_act("send"), then(PROC_REF(ui_act_send)))
-	op("receive", ui_act("receive"), then(PROC_REF(ui_act_receive)))
-	op("recal", ui_act("recal"), then(PROC_REF(ui_act_recal)))
-	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("setrotation", ui_act("setrotation", arg("val", num())), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_setrotation)))
+	op("setdistance", ui_act("setdistance", arg("val", num())), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_setdistance)))
+	op("setz", ui_act("setz", arg("setz", num())), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_setz)))
+	op("ejectGPS", ui_act("ejectGPS"), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_ejectgps)))
+	op("setMemory", ui_act("setMemory"), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_setmemory)))
+	op("send", ui_act("send"), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_send)))
+	op("receive", ui_act("receive"), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_receive)))
+	op("recal", ui_act("recal"), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_recal)))
+	op("eject", ui_act("eject"), needs(req(PROC_REF(telepad_refusal))), then(PROC_REF(ui_act_eject)))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("insert_crystal", item(/obj/item/bluespace_crystal), priority(OP_PRIORITY_DEFAULT - 1), label("Insert crystal"), needs(req(PROC_REF(has_crystal_slot_holds))), then(PROC_REF(interaction_insert_crystal)))
 	op("insert_gps", item(/obj/item/gps), priority(OP_PRIORITY_DEFAULT - 1), label("Insert GPS"), then(PROC_REF(interaction_insert_gps)))
@@ -115,13 +116,26 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 
 /// /obj/machinery/computer/telescience's window data.
 /obj/machinery/computer/telescience/ui_data(datum/act/eval/A)
-	var/list/data = list()
+	var/list/data = list(
+		"noTelepad" = TRUE,
+		"insertedGps" = null,
+		"rotation" = 0,
+		"currentZ" = 0,
+		"cooldown" = 0,
+		"crystalCount" = 0,
+		"maxCrystals" = 0,
+		"maxPossibleDistance" = 0,
+		"maxAllowedDistance" = 0,
+		"distance" = 0,
+		"tempMsg" = "",
+		"sectorOptions" = list(),
+		"lastTeleData" = null,
+	)
 	if(!telepad())
 		set_in_use(0)     //Yeah so if you deconstruct teleporter while its in the process of shooting it wont disable the console
-		data["noTelepad"] = 1
 	else
-		data["noTelepad"] = 0
-		data["insertedGps"] = inserted_gps
+		data["noTelepad"] = FALSE
+		data["insertedGps"] = inserted_gps?.name
 		data["rotation"] = rotation
 		data["currentZ"] = z_co
 		data["cooldown"] = max(0, min(100, COOLDOWN_TIMELEFT(src, teleport_cooldown) / 10))
@@ -148,44 +162,37 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 
 	return data
 
-/obj/machinery/computer/telescience/proc/ui_gate(datum/act/op/A)
-	if(!telepad() || telepad().panel_open)
-		return FALSE
-	return TRUE
+/// The pad controls need a linked telepad with its panel shut.
+/obj/machinery/computer/telescience/proc/telepad_refusal(datum/act/op/A)
+	if(!telepad())
+		return msg_reason("No telepad is linked.")
+	if(telepad().panel_open)
+		return msg_reason("The telepad's panel is open.")
+	return null
 
 /obj/machinery/computer/telescience/proc/ui_act_setrotation(datum/act/op/A, val)
-	if(!ui_gate(A))
-		return FALSE
 	set_rotation(CLAMP(val, -900, 900))
 	set_rotation(round(rotation, 0.01))
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_setdistance(datum/act/op/A, val)
-	if(!ui_gate(A))
-		return FALSE
 	set_distance(CLAMP(val, 1, get_max_allowed_distance()))
 	set_distance(FLOOR(distance, 1))
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_setz(datum/act/op/A, setz)
-	if(!ui_gate(A))
-		return FALSE
 	var/new_z = setz
 	if(new_z in using_map.player_levels)
 		set_z_co(new_z)
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_ejectgps(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	if(inserted_gps)
 		inserted_gps.forceMove(loc)
 		rel_take(src, nameof(/obj/machinery/computer/telescience::inserted_gps))
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_setmemory(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	if(last_target() && inserted_gps)
 		// TODO - What was this even supposed to do??
 		//inserted_gps.locked_location = last_target
@@ -196,31 +203,23 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 
 /obj/machinery/computer/telescience/proc/ui_act_send(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	sending = 1
 	teleport(user)
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_receive(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	sending = 0
 	teleport(user)
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_recal(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	recalibrate()
 	sparks()
 	set_temp_msg("NOTICE: Calibration successful.")
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_eject(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	eject()
 	set_temp_msg("NOTICE: Bluespace crystals ejected.")
 	return TRUE
@@ -411,8 +410,7 @@ ACTION(telesci_teleport, teleported_things, turf/target_turf, sending, FIXED, no
 			if (istype(ROI, /obj/structure/closet))
 				var/obj/structure/closet/C = ROI
 				log_msg += " ("
-				C.latent_materialize_all() // teleported contents are real (C5)
-				for(var/atom/movable/Q as mob|obj in C) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+				for(var/atom/movable/Q as mob|obj in C)
 					if(ismob(Q))
 						log_msg += "[key_name(Q)], "
 					else

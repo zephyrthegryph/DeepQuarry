@@ -1,5 +1,5 @@
+import { Label } from 'tgui/components/Label';
 import { Box, Section, Table } from 'tgui-core/components';
-
 import type { DiagnosisPart, DiagnosisPartKind } from '../common/Diagnosis';
 import { BAND_INFO } from './constants';
 
@@ -16,7 +16,7 @@ export const BodyScannerMainParts = (props: {
   if (rows.length === 0) {
     return (
       <Section title={title}>
-        <Box color="label">N/A</Box>
+        <Label>N/A</Label>
       </Section>
     );
   }

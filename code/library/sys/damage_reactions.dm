@@ -18,6 +18,7 @@
 /// One round's open hit: the hit action and packet bullet_act() started on `target_ref`, until projectile_hit_end(). The record holds the
 /// only reference to the open hit action until then, so they are relations, not handles.
 /datum/projectile_hit
+	parent_type = /datum/pooled
 	/// The target atom (as a ref) the hit action was started for.
 	var/target_ref
 	var/datum/act/hit_act
@@ -53,7 +54,7 @@ GLOBAL_LIST_EMPTY(projectile_hits)
 	if(isnull(hit))
 		packet.release()
 		return TRUE
-	var/datum/projectile_hit/open = new
+	var/datum/projectile_hit/open = take(/datum/projectile_hit)
 	open.target_ref = ref(src)
 	if(isdatum(hit)) // ACT_PASS is not an action: act_done() ignores it
 		rel_set(open, nameof(open.hit_act), hit)
@@ -71,7 +72,7 @@ GLOBAL_LIST_EMPTY(projectile_hits)
 	var/datum/damage_packet/packet = open.hit_packet
 	rel_clear(open, nameof(open.hit_act))
 	rel_clear(open, nameof(open.hit_packet))
-	qdel(open)
+	open.release()
 	act_done(hit)
 	packet?.release()
 

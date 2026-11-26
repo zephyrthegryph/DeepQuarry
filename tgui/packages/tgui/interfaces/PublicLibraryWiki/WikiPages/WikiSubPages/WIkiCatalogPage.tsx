@@ -1,6 +1,6 @@
 import { Section, Stack } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
-
+import { sanitizeText } from '../../../../sanitize';
 import type { CatalogData } from '../../types';
 
 export const WikiCatalogPage = (props: { catalog: CatalogData }) => {
@@ -10,8 +10,10 @@ export const WikiCatalogPage = (props: { catalog: CatalogData }) => {
     <Section fill scrollable title={capitalize(catalog.name)}>
       <Stack vertical fill>
         <Stack.Item grow>
-          {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Internal catalog pages */}
-          <div dangerouslySetInnerHTML={{ __html: catalog.desc }} />
+          <div
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: Internal catalog pages
+            dangerouslySetInnerHTML={{ __html: sanitizeText(catalog.desc) }}
+          />
         </Stack.Item>
       </Stack>
     </Section>

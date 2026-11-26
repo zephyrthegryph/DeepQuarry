@@ -7,38 +7,16 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type { AdminPaperActions, AdminPaperData } from './generated/AdminPaper';
 
-type TextSeg = {
-  type: 'text';
-  text: string;
-};
-
-type FieldSeg = {
-  type: 'field';
-  id: number;
-  text: string;
-};
-
-type Segment = TextSeg | FieldSeg;
-
-type Data = {
-  title: string;
-  segments: Segment[];
-  stamps: string;
-  header_html: string;
-  footer_html: string;
-  header_on: BooleanLike;
-  footer_on: BooleanLike;
-  is_crayon: BooleanLike;
-};
+type Data = AdminPaperData;
 
 export const AdminPaper = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, AdminPaperActions>();
   const {
     title,
-    segments,
+    segments = [],
     stamps,
     header_html,
     footer_html,

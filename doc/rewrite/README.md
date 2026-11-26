@@ -60,6 +60,7 @@ It does not describe open work. Open work is in `final_api.html` section 19 and 
 | [reactions.md](reactions.md) | Triggers, static vs dynamic, notices, timers, urgent vs wake |
 | [operations_and_actions.md](operations_and_actions.md) | Requirements, affordances, routes, compartments, `cap_op`, actions |
 | [look.md](look.md) | `variant`/`part`/`glow`, the icon naming convention, rename tool |
+| [draw_on_change.md](draw_on_change.md) | when a look is drawn: the draw queue, the appearance cache, default looks, the boot hold |
 | [construction.md](construction.md) | Primitives, joints, ladder presets, conservation test |
 | [pools.md](pools.md) | `/datum/pooled`, reset, poison |
 | [scheduling_and_kernel.md](scheduling_and_kernel.md) | `kernel_tick` phases, systems, work, urgent requests |

@@ -1,28 +1,16 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-  Stack,
-} from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import type {
+  ArcadeBattleActions,
+  ArcadeBattleData,
+} from './generated/ArcadeBattle';
 
-type Data = {
-  name: string;
-  temp: string;
-  enemyAction: string;
-  enemyName: string;
-  playerHP: number;
-  playerMP: number;
-  enemyHP: number;
-  gameOver: BooleanLike;
-};
+type Data = ArcadeBattleData;
 
 export const ArcadeBattle = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ArcadeBattleActions>();
 
   const {
     temp,
@@ -45,54 +33,51 @@ export const ArcadeBattle = (props) => {
           <Stack>
             <Stack.Item>
               <LabeledList>
-                <LabeledList.Item label="Player Health">
-                  <ProgressBar
-                    value={playerHP}
-                    minValue={0}
-                    maxValue={30}
-                    ranges={{
-                      olive: [31, Infinity],
-                      good: [20, 31],
-                      average: [10, 20],
-                      bad: [-Infinity, 10],
-                    }}
-                  >
-                    {playerHP}HP
-                  </ProgressBar>
-                </LabeledList.Item>
-                <LabeledList.Item label="Player Magic">
-                  <ProgressBar
-                    value={playerMP}
-                    minValue={0}
-                    maxValue={10}
-                    ranges={{
-                      purple: [11, Infinity],
-                      violet: [3, 11],
-                      bad: [-Infinity, 3],
-                    }}
-                  >
-                    {playerMP}MP
-                  </ProgressBar>
-                </LabeledList.Item>
+                <StatBar
+                  label="Player Health"
+                  value={playerHP}
+                  minValue={0}
+                  maxValue={30}
+                  ranges={{
+                    olive: [31, Infinity],
+                    good: [20, 31],
+                    average: [10, 20],
+                    bad: [-Infinity, 10],
+                  }}
+                >
+                  {playerHP}HP
+                </StatBar>
+                <StatBar
+                  label="Player Magic"
+                  value={playerMP}
+                  minValue={0}
+                  maxValue={10}
+                  ranges={{
+                    purple: [11, Infinity],
+                    violet: [3, 11],
+                    bad: [-Infinity, 3],
+                  }}
+                >
+                  {playerMP}MP
+                </StatBar>
               </LabeledList>
             </Stack.Item>
             <Stack.Item>
               <LabeledList>
-                <LabeledList.Item label="Enemy HP">
-                  <ProgressBar
-                    value={enemyHP}
-                    minValue={0}
-                    maxValue={45}
-                    ranges={{
-                      olive: [31, Infinity],
-                      good: [20, 31],
-                      average: [10, 20],
-                      bad: [-Infinity, 10],
-                    }}
-                  >
-                    {enemyHP}HP
-                  </ProgressBar>
-                </LabeledList.Item>
+                <StatBar
+                  label="Enemy HP"
+                  value={enemyHP}
+                  minValue={0}
+                  maxValue={45}
+                  ranges={{
+                    olive: [31, Infinity],
+                    good: [20, 31],
+                    average: [10, 20],
+                    bad: [-Infinity, 10],
+                  }}
+                >
+                  {enemyHP}HP
+                </StatBar>
               </LabeledList>
             </Stack.Item>
           </Stack>

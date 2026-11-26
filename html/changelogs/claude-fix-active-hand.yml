@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Swapping or selecting hands only lands on a hand you have that works; losing a hand moves you to one that does, with none selected if you have none, and you never spawn with a missing hand selected."

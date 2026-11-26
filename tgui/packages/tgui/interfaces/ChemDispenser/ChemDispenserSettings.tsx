@@ -18,8 +18,13 @@ export const ChemDispenserSettings = (props: {
   /** Called when the user tries to change the dispensed amount. Arg is the amount the user is trying to set it to. */
   amountAct: (amount: number) => void;
 }) => {
-  const { selectedAmount, availableAmounts, minAmount, maxAmount, amountAct } =
-    props;
+  const {
+    selectedAmount,
+    availableAmounts = [],
+    minAmount,
+    maxAmount,
+    amountAct,
+  } = props;
   return (
     <Section title="Settings" fill>
       <LabeledList>

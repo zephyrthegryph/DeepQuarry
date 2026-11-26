@@ -65,17 +65,6 @@ impl CallableValues {
             Self::Shared { lease, .. } => lease.visit_explained(key, host, accept),
         }
     }
-    // A diagnostic borrower neither adopts this mode's claim nor acquires
-    // another: a successful replay only lends the immutable artifact.
-    pub(super) fn lookup_duplicate_free<R: dm_session::ObservationHost<SourceQuery, SourceAnswer, SourceDomain>>(
-        &self, key: &[u8], host: &R,
-    ) -> Option<Arc<CallableOwner>> {
-        let mut clean = |value: &Arc<CallableOwner>| value.duplicate.is_none();
-        match self {
-            Self::Local(store) => store.visit_explained(key, host, &mut clean).0,
-            Self::Shared { owner, .. } => owner.callables.visit_explained(key, host, &mut clean).0,
-        }
-    }
     pub(super) fn insert_with_owned(
         &self,
         key: Arc<[u8]>,

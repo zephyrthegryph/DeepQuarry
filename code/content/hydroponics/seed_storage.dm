@@ -57,6 +57,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	owns_many(nameof(piles), /datum/seed_pile)
 	owns_many(nameof(piles_contra), /datum/seed_pile)
 	interface("SeedStorage")
+	ui_shape(seeds = list_of(row(name = schema_text(), uid = schema_text(), amount = int(), id = int(), traits = map_of(schema_text(), schema_text()))))
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	op("vend", ui_act("vend", arg("id", num())), then(PROC_REF(ui_act_vend)))
 	op("purge", ui_act("purge", arg("id", num())), then(PROC_REF(ui_act_purge)))
@@ -66,7 +67,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	on_wire(WIRE_SEED_SMART, cut = PROC_REF(smart_wire_cut), pulse = PROC_REF(smart_wire_pulsed))
 	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
 	on_wire(WIRE_SEED_LOCKDOWN, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	anchor(sfx = SFX_ITEMS_RATCHET, attached = MSG(anchor/wrenched_self), detached = MSG(anchor/unwrenched_self))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("insert_seeds", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Insert seeds"), needs(req(PROC_REF(not_locked_down_holds))), then(PROC_REF(interaction_insert_seeds)))
 	op("insert_bag", item(/obj/item/storage/bag/plants), priority(OP_PRIORITY_DEFAULT - 1), label("Empty seed bag"), needs(req(PROC_REF(not_locked_down_holds))), then(PROC_REF(interaction_insert_bag)))
@@ -206,8 +207,6 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	else
 		set_scanner(initial(scanner))
 
-	data["scanner"] = (scanner || list())
-
 	var/list/piles_to_check = piles
 	if(hacked || emagged())
 		piles_to_check = (piles || list()) + piles_contra
@@ -219,22 +218,22 @@ CAPABILITIES(/obj/machinery/seed_storage)
 			continue
 		var/list/seedinfo = list(
 			"name" = seed.seed_name,
-			"uid" = seed.uid,
+			"uid" = "[seed.uid]",
 			"amount" = S.amount,
 			"id" = S.ID,
 		)
 
 		seedinfo["traits"] = list()
 		if("stats" in scanner)
-			seedinfo["traits"]["Endurance"] = seed.get_trait(TRAIT_ENDURANCE)
-			seedinfo["traits"]["Yield"] = seed.get_trait(TRAIT_YIELD)
-			seedinfo["traits"]["Production"] = seed.get_trait(TRAIT_PRODUCTION)
-			seedinfo["traits"]["Potency"] = seed.get_trait(TRAIT_POTENCY)
-			seedinfo["traits"]["Repeat Harvest"] = seed.get_trait(TRAIT_HARVEST_REPEAT)
+			seedinfo["traits"]["Endurance"] = "[seed.get_trait(TRAIT_ENDURANCE)]"
+			seedinfo["traits"]["Yield"] = "[seed.get_trait(TRAIT_YIELD)]"
+			seedinfo["traits"]["Production"] = "[seed.get_trait(TRAIT_PRODUCTION)]"
+			seedinfo["traits"]["Potency"] = "[seed.get_trait(TRAIT_POTENCY)]"
+			seedinfo["traits"]["Repeat Harvest"] = "[seed.get_trait(TRAIT_HARVEST_REPEAT)]"
 		if("temperature" in scanner)
-			seedinfo["traits"]["Ideal Heat"] = seed.get_trait(TRAIT_IDEAL_HEAT)
+			seedinfo["traits"]["Ideal Heat"] = "[seed.get_trait(TRAIT_IDEAL_HEAT)]"
 		if("light" in scanner)
-			seedinfo["traits"]["Ideal Light"] = seed.get_trait(TRAIT_IDEAL_LIGHT)
+			seedinfo["traits"]["Ideal Light"] = "[seed.get_trait(TRAIT_IDEAL_LIGHT)]"
 		if("soil" in scanner)
 			if(seed.get_trait(TRAIT_REQUIRES_NUTRIENTS))
 				if(seed.get_trait(TRAIT_NUTRIENT_CONSUMPTION) < 0.05)
@@ -348,14 +347,6 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
 	spent(N)
 	return TRUE
-
-/obj/machinery/seed_storage/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	playsound(src, sounds_of(tool).use, 50, TRUE)
-	set_anchored(!anchored)
-	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return OP_OK
 
 /obj/machinery/seed_storage/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor

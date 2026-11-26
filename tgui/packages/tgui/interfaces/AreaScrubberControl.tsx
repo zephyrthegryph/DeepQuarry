@@ -2,25 +2,16 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
+import type {
+  AreaScrubberControlActions,
+  AreaScrubberControlData,
+} from './generated/AreaScrubberControl';
 
-type scrubber = {
-  id: string;
-  name: string;
-  on: BooleanLike;
-  pressure: number;
-  flow_rate: number;
-  load: number;
-  area: string;
-};
-
-type Data = {
-  scrubbers: scrubber[];
-};
+type Data = AreaScrubberControlData;
 
 export const AreaScrubberControl = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AreaScrubberControlActions>();
 
   const [showArea, setShowArea] = useState<boolean>(false);
 
@@ -97,7 +88,9 @@ export const AreaScrubberControl = (props) => {
   );
 };
 
-const BigScrubber = (props: { scrubber: scrubber; showArea: boolean }) => {
+type Scrubber = NonNullable<AreaScrubberControlData['scrubbers']>[number];
+
+const BigScrubber = (props: { scrubber: Scrubber; showArea: boolean }) => {
   const { act } = useBackend();
 
   const { scrubber, showArea } = props;

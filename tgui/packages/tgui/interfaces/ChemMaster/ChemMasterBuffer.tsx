@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { BeakerContents } from 'tgui/interfaces/common/BeakerContents';
 import { modalOpen } from 'tgui/interfaces/common/ComplexModal';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
+import { Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
-import { transferAmounts } from './constants';
+import { MixTransfer } from './MixTransfer';
 import type { reagent } from './types';
 
 export const ChemMasterBuffer = (props: {
@@ -19,7 +19,7 @@ export const ChemMasterBuffer = (props: {
       buttons={
         <Stack>
           <Stack.Item>
-            <Box color="label">Transferring to</Box>
+            <Label>Transferring to</Label>
           </Stack.Item>
           <Stack.Item>
             <Button
@@ -34,69 +34,36 @@ export const ChemMasterBuffer = (props: {
       }
     >
       {bufferReagents.length > 0 ? (
-        <BeakerContents
-          beakerLoaded
-          beakerContents={bufferReagents}
-          buttons={(chemical, i) => (
-            <Stack mb={i < bufferReagents.length - 1 && '2px'}>
-              <Stack.Item>
-                <Button
-                  mb="0"
-                  onClick={() =>
-                    modalOpen('analyze', {
-                      idx: i + 1,
-                      beaker: 0,
-                    })
-                  }
-                >
-                  Analyze
-                </Button>
-              </Stack.Item>
-              {transferAmounts.map((am, i) => (
-                <Stack.Item key={i}>
+        <>
+          <MixTransfer
+            action="remove"
+            custom="removecustom"
+            reagents={bufferReagents}
+          />
+          <BeakerContents
+            beakerLoaded
+            beakerContents={bufferReagents}
+            buttons={(chemical, i) => (
+              <Stack mb={i < bufferReagents.length - 1 && '2px'}>
+                <Stack.Item>
                   <Button
                     mb="0"
                     onClick={() =>
-                      act('remove', {
-                        id: chemical.id,
-                        amount: am,
+                      modalOpen('analyze', {
+                        idx: i + 1,
+                        beaker: 0,
                       })
                     }
                   >
-                    {am}
+                    Analyze
                   </Button>
                 </Stack.Item>
-              ))}
-              <Stack.Item>
-                <Button
-                  mb="0"
-                  onClick={() =>
-                    act('remove', {
-                      id: chemical.id,
-                      amount: chemical.volume,
-                    })
-                  }
-                >
-                  All
-                </Button>
-              </Stack.Item>
-              <Stack.Item>
-                <Button
-                  mb="0"
-                  onClick={() =>
-                    modalOpen('removecustom', {
-                      id: chemical.id,
-                    })
-                  }
-                >
-                  Custom...
-                </Button>
-              </Stack.Item>
-            </Stack>
-          )}
-        />
+              </Stack>
+            )}
+          />
+        </>
       ) : (
-        <Box color="label">Buffer is empty.</Box>
+        <Label>Buffer is empty.</Label>
       )}
     </Section>
   );

@@ -125,7 +125,7 @@ SYSTEM_DEF(contracts)
 	observe(subject, /datum/notice/mob_logout, src, then(PROC_REF(on_medical_subject_availability)))
 	observe(subject, /datum/notice/mob_mind_transferred_into, src, then(PROC_REF(on_medical_subject_availability)))
 	observe(subject, /datum/notice/mob_mind_transferred_out_of, src, then(PROC_REF(on_medical_subject_availability)))
-	observe(subject, /datum/notice/moved, src, then(PROC_REF(on_custody_input_changed)))
+	// Walking in and out of the brig is the area's Entered()/Exited() (/area/security/brig): a moved notice per step of every human is not heard.
 	observe(subject, /datum/notice/mob_equipped_item, src, then(PROC_REF(on_custody_input_changed)))
 	observe(subject, /datum/notice/mob_unequipped_item, src, then(PROC_REF(on_custody_input_changed)))
 	refresh_physical_custody(subject)
@@ -150,12 +150,16 @@ SYSTEM_DEF(contracts)
 /datum/system/contracts/proc/refresh_physical_custody(mob/living/carbon/human/subject)
 	if(QDELETED(subject))
 		return FALSE
+	// Asked on every step of every human: when the subject is not in custody now and nobody's custody is running, there is nothing to start
+	// or end, so the identity (two REF() keys, a mint on first use) is not looked up.
+	var/active = is_physically_custodied(subject)
+	if(!active && !length(custody_started_by_subject))
+		return FALSE
 	var/datum/contract_subject_identity/identity = subject_identity(subject)
 	if(!identity)
 		return FALSE
 	var/key = identity.id
 	var/started_at = custody_started_by_subject[key] || 0
-	var/active = is_physically_custodied(subject)
 	if(active && !started_at)
 		var/start_revision = next_custody_revision++
 		custody_started_by_subject[key] = TIME_NOW(CLOCK_WORLD)
@@ -468,7 +472,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		spent(event)
 		return FALSE
 	if(event.occurrence_id)
-		var/dedup_key = "[event.event_type]|[event.occurrence_id]"
+		var/dedup_key = "[event.occurrence_id]|[event.event_type]" // varying part first: see contract_infrastructure_fact_id()
 		if(seen_event_occurrences[dedup_key])
 			events_deduplicated++
 			spent(event)

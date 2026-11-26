@@ -17,7 +17,7 @@
 	var/datum/material/reference = get_material_by_name(MAT_COPPER)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/electrical = conductor ? conductor.conductivity / max(reference.conductivity, 1) : 1
-	var/mechanical = bearings ? (bearings.hardness + bearings.elasticity) / max(steel.hardness + steel.elasticity, 1) : 1
+	var/mechanical = bearings ? (bearings.strength + bearings.toughness) / max(steel.strength + steel.toughness, 1) : 1
 	return clamp(0.8 * sqrt(max(electrical * mechanical, 0)), 0.05, 0.95)
 
 /obj/machinery/proc/material_pump_power(rated_power)
@@ -28,7 +28,7 @@
 	var/datum/material/copper = get_material_by_name(MAT_COPPER)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/motor = conductor ? conductor.conductivity / max(copper.conductivity, 1) : 1
-	var/impeller = working ? working.yield_strength / max(steel.yield_strength, 1) : 1
+	var/impeller = working ? working.yield_strength() / max(steel.yield_strength(), 1) : 1
 	var/datum/material_service/service = material_service_of(src)
 	var/thermal = service ? clamp((0.95 - service.last_stress) / 0.15, 0, 1) : 1
 	var/available = rated_power * clamp(min(motor, impeller), 0.1, 2.5) * thermal
@@ -111,7 +111,7 @@
 	var/datum/material/reference = get_material_by_name(MAT_GLASS)
 	if(!element || !optics)
 		return 0.8
-	var/factor = (element.purity_equivalent() + optics.purity_equivalent()) / max(reference.purity_equivalent() * 2, 1)
+	var/factor = (element.quality() + optics.quality()) / max(reference.quality() * 2, 1)
 	return clamp(0.8 * factor, 0.1, 0.97)
 
 /obj/machinery/power/emitter/proc/emitter_output_limit()
@@ -119,7 +119,7 @@
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
 	var/datum/material/reference = get_material_by_name(MAT_GLASS)
 	var/datum/material/copper = get_material_by_name(MAT_COPPER)
-	var/optical_limit = element ? element.melting_point / max(reference.melting_point, 1) : 1
+	var/optical_limit = element ? element.melting_point() / max(reference.melting_point(), 1) : 1
 	var/electrical_limit = conductor ? conductor.conductivity / max(copper.conductivity, 1) : 1
 	var/datum/material_service/service = material_service_of(src)
 	var/thermal_limit = service ? clamp((0.95 - service.last_stress) / 0.15, 0, 1) : 1

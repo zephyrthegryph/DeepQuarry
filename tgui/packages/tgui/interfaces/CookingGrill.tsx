@@ -13,7 +13,7 @@ import { ApplianceStatus, type Data } from './Appliance';
 export const CookingGrill = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { containersRemovable, our_contents } = data;
+  const { containersRemovable, our_contents = [] } = data;
 
   return (
     <Window width={600} height={600}>

@@ -31,11 +31,7 @@ fn eligible(expr: &Expr) -> bool {
     match &expr.kind {
         ExprKind::Group(inner) => eligible(inner),
         // `"name" || src.name` (NAMEOF) folds to the constant text, as in DreamMaker.
-        ExprKind::Binary { op, lhs, .. }
-            if op == "||" && super::expression::constant_text_truth(lhs) == Some(true) =>
-        {
-            eligible(lhs)
-        }
+        ExprKind::Binary { op, lhs, .. } if op == "||" && super::expression::constant_text_truth(lhs) == Some(true) => eligible(lhs),
         // `nameof(x)` is the text of its argument.
         ExprKind::Call { callee, args } => {
             args.len() == 1 && matches!(&callee.kind, ExprKind::Ident(name) if name == "nameof")
@@ -43,7 +39,7 @@ fn eligible(expr: &Expr) -> bool {
         ExprKind::TypePath(_) => true,
         ExprKind::Literal(raw) if raw == "null" || raw == "TRUE" || raw == "FALSE" => true,
         ExprKind::Literal(raw) if !raw.starts_with("@'") => {
-            matches!(decode_native_constant_string_literal(raw), Ok(Some(_)))
+            matches!(decode_constant_string_literal(raw), Ok(Some(_)))
         }
         _ => false,
     }
@@ -68,24 +64,30 @@ impl Compiler<'_> {
         let emitted = self.result.code.items.split_off(start);
         produced?;
         match emitted.as_slice() {
-            [CodeItem::Instruction(Instruction {
-                opcode: opcode::PUSH_INT,
-                operands,
-            })] => match operands.as_slice() {
+            [
+                CodeItem::Instruction(Instruction {
+                    opcode: opcode::PUSH_INT,
+                    operands,
+                }),
+            ] => match operands.as_slice() {
                 [Word::Immediate(value)] => Ok(ValueWord::Number((*value as f32).to_bits())),
                 _ => Err(error(text, "constant switch integer has invalid operands")),
             },
-            [CodeItem::Instruction(Instruction {
-                opcode: opcode::PUSH_VAL,
-                operands,
-            })] => match operands.as_slice() {
+            [
+                CodeItem::Instruction(Instruction {
+                    opcode: opcode::PUSH_VAL,
+                    operands,
+                }),
+            ] => match operands.as_slice() {
                 [Word::Value(value)] => Ok(value.clone()),
                 _ => Err(error(text, "constant switch value has invalid operands")),
             },
-            [CodeItem::Instruction(Instruction {
-                opcode: opcode::GET_VAR,
-                operands,
-            })] if matches!(operands.as_slice(), [Word::Variable(VariableWord::Null)]) => {
+            [
+                CodeItem::Instruction(Instruction {
+                    opcode: opcode::GET_VAR,
+                    operands,
+                }),
+            ] if matches!(operands.as_slice(), [Word::Variable(VariableWord::Null)]) => {
                 Ok(ValueWord::Null)
             }
             _ => Err(error(
@@ -110,14 +112,11 @@ impl Compiler<'_> {
                     .iter()
                     .map(|alternative| match alternative {
                         SwitchAlternative::Exact(value) => SwitchAlternative::Exact(
-                            self.constant_context_expression(value)
-                                .unwrap_or_else(|| value.clone()),
+                            self.constant_context_expression(value).unwrap_or_else(|| value.clone()),
                         ),
                         SwitchAlternative::Range(low, high) => SwitchAlternative::Range(
-                            self.constant_context_expression(low)
-                                .unwrap_or_else(|| low.clone()),
-                            self.constant_context_expression(high)
-                                .unwrap_or_else(|| high.clone()),
+                            self.constant_context_expression(low).unwrap_or_else(|| low.clone()),
+                            self.constant_context_expression(high).unwrap_or_else(|| high.clone()),
                         ),
                     })
                     .collect()

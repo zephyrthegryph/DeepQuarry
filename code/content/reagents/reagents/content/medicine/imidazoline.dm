@@ -1,8 +1,10 @@
 /datum/reagent/imidazoline
 	treatment_tags = list(TREAT_OCULAR = 1.0)
+	// Repairs the eyes but leaves them sensitive: a flash that lands blinds for twice as long while it is in the blood.
+	factors = alist(STAT_FLASH_VULNERABILITY = 2)
 	name = REAGENT_IMIDAZOLINE
 	id = REAGENT_ID_IMIDAZOLINE
-	description = "Heals eye damage"
+	description = "Heals eye damage and clears blurred vision. The healing eyes are light-sensitive: while the drug is in the blood, a bright flash blinds the patient for longer."
 	taste_description = "dull toxin"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
@@ -14,7 +16,6 @@
 
 /datum/reagent/imidazoline/affect_blood(mob/living/carbon/M, alien, removed)
 	M.status_adjust(STAT_BLURRY, -5)
-	M.status_adjust(STAT_BLINDED, -5)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)

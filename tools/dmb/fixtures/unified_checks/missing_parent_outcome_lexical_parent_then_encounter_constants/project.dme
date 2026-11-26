@@ -1,7 +1,0 @@
-/datum/z
-    parent_type=/datum/missing_z
-/datum/a
-    parent_type=/datum/missing_a
-/proc/probe()
-    set mystery_probe=1
-    missing_probe

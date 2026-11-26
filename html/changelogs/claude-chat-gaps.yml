@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "A floating chat keeps your full saved chat log and saves it, so nothing is lost on reconnect."
+  - bugfix: "The chat shows in the right-hand column from the first moment at login, with no blank gap."
+  - bugfix: "A floating chat looks exactly like the docked one."

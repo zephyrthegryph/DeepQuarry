@@ -202,26 +202,6 @@ CAPABILITIES(/datum/job)
 				message |= A.title_blurb
 	return message
 
-/datum/job/proc/get_job_icon()
-	if(!SSjob.cached_job_icon(title))
-		var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin("#job_icon")
-		dress_mannequin(mannequin)
-		mannequin.set_dir(SOUTH)
-		draw_now(mannequin)
-		var/icon/preview_icon = getFlatIcon(mannequin)
-
-		preview_icon.Scale(preview_icon.Width() * 2, preview_icon.Height() * 2) // Scaling here to prevent blurring in the browser.
-		SSjob.remember_job_icon(title, preview_icon)
-
-	return SSjob.cached_job_icon(title)
-
-/datum/job/proc/dress_mannequin(mob/living/carbon/human/dummy/mannequin/mannequin)
-	mannequin.delete_inventory(TRUE)
-	equip_preview(mannequin)
-	if(mannequin.get_equipped_item(SLOT_ID_BACK))
-		var/obj/O = mannequin.get_equipped_item(SLOT_ID_BACK)
-		consume(O, mannequin)
-
 ///Assigns minimum age by race & brain type. Code says Positronic = mechanical and Drone = digital because nothing can be simple.
 ///Will first check based on brain type, then based on species.
 /datum/job/proc/get_min_age(species_name, brain_type)

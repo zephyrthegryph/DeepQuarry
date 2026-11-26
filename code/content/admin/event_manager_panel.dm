@@ -18,6 +18,7 @@
 
 CAPABILITIES(/datum/event_manager_panel)
 	interface("EventManagerPanel", title = "Event Manager", rights = R_ADMIN|R_EVENT)
+	ui_shape(events_paused = bool(), report_at_round_end = bool(), selected_severity = nullable(schema_text()), severities = nullable(list_of(row(ref = num(), severity = schema_text(), starts_at = schema_text(), starts_in_minutes = num(), delayed = bool(), delay_modifier = num()))), next_events = nullable(list_of(row(ref = num(), severity = schema_text(), queued_name = nullable(schema_text())))), running_events = nullable(list_of(row(ref = num(), severity = schema_text(), name = schema_text(), ends_at = schema_text(), ends_in_minutes = num()))), selected_time_left_minutes = nullable(num()), selected_container_ref = nullable(num()), available_events = nullable(list_of(row(ref = num(), name = schema_text(), weight = num(), min_weight = num(), max_weight = num(), one_shot = bool(), enabled = bool(), current_weight = num()))), new_event = nullable(row(ref = num(), name = nullable(schema_text()), type = nullable(schema_text()), weight = num(), one_shot = bool()))) // the overview keys are sent only with no severity selected, the detail keys only with one
 	op("pause_all", ui_act("pause_all"), then(PROC_REF(ui_act_pause_all)))
 	op("toggle_report", ui_act("toggle_report"), then(PROC_REF(ui_act_toggle_report)))
 	op("inc_timer", ui_act("inc_timer", arg("amount", num()), arg("ref", schema_ref(/datum/event_container))), then(PROC_REF(ui_act_inc_timer)))
@@ -174,10 +175,10 @@ CAPABILITIES(/datum/event_manager_panel)
 		return
 	var/change = 60 * (10 ** clamp(round(amount), 0, 2))
 	if(action == "inc_timer")
-		EC.next_event_time += change
+		EC.set_next_event_time(EC.next_event_time + change)
 		log_and_message_admins("increased timer for [GLOB.severity_to_string[EC.severity]] events by [change/600] minute(s).", user)
 	else
-		EC.next_event_time -= change
+		EC.set_next_event_time(EC.next_event_time - change)
 		log_and_message_admins("decreased timer for [GLOB.severity_to_string[EC.severity]] events by [change/600] minute(s).", user)
 	return TRUE
 
@@ -283,7 +284,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/name = A.step_value("name")
 	if(!name)
 		return
-	EM.name = text_or_null(name)
+	EM.set_name(text_or_null(name))
 	return TRUE
 
 /datum/event_manager_panel/proc/ui_act_set_type(datum/act/op/A, ref)
@@ -313,7 +314,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/weight = A.step_value("weight")
 	if(!isnum(weight) || weight <= 0)
 		return
-	EM.weight = num_or_null(weight)
+	EM.set_weight(num_or_null(weight))
 	if(EM != service.new_event)
 		log_and_message_admins("has changed the weight of the [GLOB.severity_to_string[EM.severity]] event '[EM.name]' to [EM.weight].", user)
 	return TRUE
@@ -328,7 +329,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/datum/event_meta/EM = ref
 	if(!EM)
 		return
-	EM.one_shot = !EM.one_shot
+	EM.set_one_shot(!EM.one_shot)
 	if(EM != service.new_event)
 		log_and_message_admins("has [EM.one_shot ? "set" : "unset"] the oneshot flag for the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
 	return TRUE
@@ -342,7 +343,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	var/datum/event_meta/EM = ref
 	if(!EM)
 		return
-	EM.enabled = !EM.enabled
+	EM.set_enabled(!EM.enabled)
 	log_and_message_admins("has [EM.enabled ? "enabled" : "disabled"] the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
 	return TRUE
 

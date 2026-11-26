@@ -36,9 +36,24 @@ TYPE_TABLE_DECLARE(/obj/structure/mob_spawner, mob_spawner_types, list( \
 // Spawned mobs leave the list when they die (one-sided: the mob's own `nest` var is its side).
 CAPABILITIES(/obj/structure/mob_spawner)
 	setup(PROC_REF(start_spawn_cooldown))
+	setup(PROC_REF(warm_spawn_types))
 	every(PROC_REF(spawn_wait), then(PROC_REF(mob_spawner_step)), when = STAT_RELEVANCE)
 	ref_many(nameof(spawned_mobs))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+/// Setup: the first spawner of a round builds (and deletes) one mob of each type it can spawn, so the one-time per-type tables (declarations, ownership,
+/// capabilities) are built while the map loads and not in the timer callback of the first spawn, a 50 to 60 ms tick. The tables are the ones every later
+/// mob of the type reads; nothing is built twice.
+/obj/structure/mob_spawner/proc/warm_spawn_types()
+	var/static/list/warmed = list()
+	for(var/mob_path in TYPE_TABLE_GET(src, mob_spawner_types))
+		if(warmed[mob_path] || !ispath(mob_path, /mob/living))
+			continue
+		warmed[mob_path] = TRUE
+		var/stamp = TICK_USAGE_REAL
+		var/mob/living/probe = make(mob_path)
+		logger.Log(LOG_CATEGORY_DEBUG, "MOB SPAWNER: warmed [mob_path] in [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp), 0.1)] ms")
+		spent(probe)
 
 /// How long until the next step: when the spawn cooldown ends, so a nest does not wake every 2 s for a spawn that is minutes away. A full nest
 /// looks again in a minute (a spawned mob dying frees a place), a nest that may spawn now in 2 s.
@@ -85,14 +100,14 @@ CAPABILITIES(/obj/structure/mob_spawner)
 	if(total_spawns > 0)
 		total_spawns--
 	if(ispath(mob_path, /mob/living))
-		var/mob/living/L = new mob_path(where)
+		var/mob/living/L = make(mob_path, at = where)
 		set_nest(L, src)
 		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
 			L.set_faction(mob_faction)
 		return L
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
-		var/obj/structure/closet/crate/mimic/O = new mob_path(where)
+		var/obj/structure/closet/crate/mimic/O = make(mob_path, at = where)
 		rel_add(src, nameof(spawned_mobs), O)
 		rel_set(O, nameof(O.nest), src)
 		return O

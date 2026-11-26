@@ -20,18 +20,13 @@ CAPABILITY_TYPE(sensed, CAP_SENSED, /datum/capability/lib/sensed, key = id, id =
 /datum/capability/lib/sensed
 	holder_hooks = HOLDER_HOOK_INIT | HOLDER_HOOK_DESTROY
 
-/datum/capability/lib/sensed/cap_data_type()
-	return /datum/cap_data/sensed
+/// The capability-data key of a declared sensing's subscription on its holder. A declaration's subscription is made the first time it has something
+/// to arm (levels and a cell) and is kept there: a sensing whose limits are empty (a firedoor while it is open, an alarm reading a gas its thresholds
+/// switch off) makes nothing and reads nothing. The holder's capability teardown ends it (caps_destroy()); its destroy hook and sense_forget() tell
+/// Rust first.
+#define SENSED_DATA_KEY(id) "sensed:[id]"
 
-/// One holder's sensing of one value: the declaration's id and the subscription that is registered with Rust.
-/datum/cap_data/sensed
-	var/id
-	var/datum/sense_sub/sub
-
-CAPABILITIES(/datum/cap_data/sensed)
-	owns_one(nameof(sub), /datum/sense_sub)
-
-/// One subscriber of Rust's sensing: the levels of one value of one cell, and who hears the band. A declared sensed() holds one; code that
+/// One subscriber of Rust's sensing: the levels of one value of one cell, and who hears the band. A declared sensed() makes one when it first arms; code that
 /// senses cells it picks as it goes (a mob's air, whatever it stands next to) makes them with sense_gas() and owns them.
 /datum/sense_sub
 	/// The key Rust reports this subscriber under (SSsense numbers them).
@@ -78,24 +73,24 @@ CAPABILITIES(/datum/sense_sub)
 	sensed_arm(A.holder, src)
 
 /datum/capability/lib/sensed/on_holder_destroy(datum/act/eval/A)
-	var/datum/cap_data/sensed/data = sensed_data(A.holder, src, FALSE)
-	if(!data?.sub)
+	var/datum/sense_sub/sub = sensed_sub(A.holder, src)
+	if(!sub)
 		return
-	SSsense.forget(data.sub)
-	rel_clear(data.sub, nameof(data.sub.owner))
+	SSsense.forget(sub)
+	rel_clear(sub, nameof(sub.owner))
 
 /// A holder is being destroyed (engine_forget()): Rust drops every entry of each of its sensings, also when its destroy hook did not run (forgetting twice is nothing).
 /proc/sense_forget(datum/D)
 	for(var/datum/capability/lib/sensed/def as anything in table_cap_defs(table_of(D), CAP_SENSED))
-		var/datum/cap_data/sensed/data = sensed_data(D, def, FALSE)
-		if(data?.sub)
-			SSsense.forget(data.sub)
+		var/datum/sense_sub/sub = sensed_sub(D, def)
+		if(sub)
+			SSsense.forget(sub)
 
-/// The sensing record of `holder`'s declaration `def`, or null.
-/proc/sensed_data(datum/holder, datum/capability/lib/sensed/def, create = TRUE)
-	RETURN_TYPE(/datum/cap_data/sensed)
-	var/datum/activation/act = cap_activation(holder, CAP_SENSED, def.id, create)
-	return act ? activation_data(act) : null
+/// The subscription of `holder`'s declaration `def`, or null while that sensing has never had anything to arm.
+/proc/sensed_sub(datum/holder, datum/capability/lib/sensed/def)
+	RETURN_TYPE(/datum/sense_sub)
+	var/datum/sense_sub/sub = capability_data(holder)?[SENSED_DATA_KEY(def.id)]
+	return istype(sub) ? sub : null
 
 /// What `def` senses on `holder` now, as list(watch code, cell, channel, value), or null when there is nothing to sense (no mixture, a SMES not yet in Rust).
 /datum/capability/lib/sensed/proc/target_of(atom/holder)
@@ -133,27 +128,26 @@ CAPABILITIES(/datum/sense_sub)
 	if(!def.changed || (!isnull(def.bands) + !isnull(def.bands_from) + !isnull(def.limits_from)) != 1)
 		declare_report("sensed on [holder.type]: it needs a handler `changed` and exactly one of bands, bands_from and limits_from")
 		return
-	var/datum/cap_data/sensed/data = sensed_data(holder, def)
-	if(!data)
-		return
-	data.id = def.id
-	var/datum/sense_sub/sub = data.sub
-	if(!sub)
-		sub = new
-		rel_set(data, nameof(data.sub), sub)
-	rel_set(sub, nameof(sub.owner), holder)
-	sub.handler = def.changed
-	sub.id = def.id
-	sub.reading = def.reading
-	sub.hysteresis = def.hysteresis
+	var/datum/sense_sub/sub = sensed_sub(holder, def)
 	var/list/limits = def.limits_of(holder)
 	var/list/levels = limits[1]
 	var/list/stricts = limits[2]
-	var/list/target = def.target_of(holder)
-	if(!length(levels) || !target)
-		SSsense.disarm(sub)
-		sub.band = 0
+	// The cell is looked up (and its value read) only when there are levels to put on it.
+	var/list/target = length(levels) ? def.target_of(holder) : null
+	if(!target)
+		// Nothing to sense now. A sensing that never armed makes nothing (an open firedoor's nine); one that did lets its cell go.
+		if(sub)
+			SSsense.disarm(sub)
+			sub.band = 0
 		return
+	if(!sub)
+		sub = new
+		LAZYSET(capability_runtime(holder).data, SENSED_DATA_KEY(def.id), sub)
+		rel_set(sub, nameof(sub.owner), holder)
+		sub.handler = def.changed
+		sub.id = def.id
+		sub.reading = def.reading
+		sub.hysteresis = def.hysteresis
 	sub.band = sense_band(target[4], levels, stricts)
 	SSsense.arm(sub, target[1], target[2], target[3], levels, stricts)
 
@@ -172,14 +166,14 @@ CAPABILITIES(/datum/sense_sub)
 /// The band `holder` last sensed on its declaration `changed` (0 before the first reading).
 /proc/sensed_band(atom/holder, id)
 	var/datum/capability/lib/sensed/def = cap_of(holder, CAP_SENSED, id)
-	var/datum/cap_data/sensed/data = def ? sensed_data(holder, def, FALSE) : null
-	return data?.sub ? data.sub.band : 0
+	var/datum/sense_sub/sub = def ? sensed_sub(holder, def) : null
+	return sub ? sub.band : 0
 
 /// The levels `holder`'s declaration `id` is registered with now (null when it senses nothing).
 /proc/sensed_levels(atom/holder, id)
 	var/datum/capability/lib/sensed/def = cap_of(holder, CAP_SENSED, id)
-	var/datum/cap_data/sensed/data = def ? sensed_data(holder, def, FALSE) : null
-	return data?.sub?.armed_levels
+	var/datum/sense_sub/sub = def ? sensed_sub(holder, def) : null
+	return sub?.armed_levels
 
 /// Senses channel `reading` of `mixture` against the increasing `levels` (`stricts`: a list parallel to them, TRUE for a level counted only once the value is
 /// past it): `owner`'s `handler` runs as x(band, was) when the band changes. The subscription is the caller's to hold (owns_many) and to qdel; it follows
@@ -336,3 +330,5 @@ SYSTEM_DEF(sense)
 	sub.band = band
 	handled++
 	holder_call(target, sub.handler, list(band, was))
+
+#undef SENSED_DATA_KEY

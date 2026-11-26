@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Operating computer test fixture now carries the per-limb surgery findings the window renders"

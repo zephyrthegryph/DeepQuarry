@@ -1,11 +1,15 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Stack } from 'tgui-core/components';
 import { DIAGNOSIS_BAND } from '../../../common/Diagnosis';
+import type {
+  RobotSleeperActions,
+  RobotSleeperData,
+} from '../../../generated/RobotSleeper';
 import { STAT_TO_COLOR } from '../../constants';
-import type { Data } from '../../types';
 
 export const SleeperPatient = (props: { name: string }) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<RobotSleeperData, RobotSleeperActions>();
   const { our_patient } = data;
   const { name } = props;
 
@@ -68,10 +72,13 @@ export const SleeperPatient = (props: { name: string }) => {
       )}
       {!!our_patient.ingested_reagents &&
         our_patient.ingested_reagents.map((reagent) => (
-          <Stack.Item key={reagent.name}>
-            <Box inline preserveWhitespace color="label">
+          <Stack.Item
+            key={reagent.name}
+            color={reagent.contaminant ? 'grey' : undefined}
+          >
+            <Label inline preserveWhitespace>
               {`${reagent.name}: `}
-            </Box>
+            </Label>
             <Box inline>{Math.round(reagent.volume * 10) / 10} units</Box>
           </Stack.Item>
         ))}

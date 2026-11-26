@@ -1,6 +1,8 @@
+import { useContext, useEffect, useRef } from 'react';
+import { EmbeddedContext } from './embedded';
 import { sendAct } from './events/act';
 import { backendStateAtom, sharedAtom, store } from './events/store';
-import type { BackendState } from './events/types';
+import type { BackendState, TypedAct } from './events/types';
 
 /**
  * Reactive backend state hook. Please use a type to define what the data is
@@ -15,14 +17,24 @@ import type { BackendState } from './events/types';
  *
  * console.log(data.username); // You'll get type safety here
  * ```
+ *
+ * Pass the window's generated actions type second to check act() against the DM ops:
+ * `useBackend<Data, APCActions>()` (import type { APCActions } from './generated/APC').
  */
 export function useBackend<
   TData extends Record<string, unknown>,
->(): BackendState<TData> {
-  const state = store.get(backendStateAtom);
+  TActions = undefined,
+>(): BackendState<TData, TActions> {
+  // Embedded in the right-hand column's page: this window's own store and channel (embedded.ts).
+  const embedded = useContext(EmbeddedContext);
+  const state = (embedded?.store ?? store).get(backendStateAtom);
 
+  const act: typeof sendAct = embedded
+    ? (action: string, payload: Record<string, unknown> = {}) =>
+        embedded.send(`act/${action}`, payload)
+    : sendAct;
   return {
-    act: sendAct,
+    act: act as TypedAct<TActions>,
     ...state,
     data: state.data as TData,
   };
@@ -50,13 +62,14 @@ export const useLocalState = <TState>(
   key: string,
   initialState: TState,
 ): StateWithSetter<TState> => {
-  const sharedStates = store.get(sharedAtom);
+  const owner = useContext(EmbeddedContext)?.store ?? store;
+  const sharedStates = owner.get(sharedAtom);
   const sharedState = key in sharedStates ? sharedStates[key] : initialState;
 
   return [
     sharedState,
     (nextState) => {
-      store.set(sharedAtom, (prev) => ({
+      owner.set(sharedAtom, (prev) => ({
         ...prev,
         [key]: nextState,
       }));
@@ -81,14 +94,14 @@ export const useSharedState = <TState>(
   key: string,
   initialState: TState,
 ): StateWithSetter<TState> => {
-  const sharedStates = store.get(sharedAtom);
+  const embedded = useContext(EmbeddedContext);
+  const sharedStates = (embedded?.store ?? store).get(sharedAtom);
   const sharedState = key in sharedStates ? sharedStates[key] : initialState;
 
   return [
     sharedState,
     (nextState) => {
-      Byond.sendMessage({
-        type: 'setSharedState',
+      const message = {
         key,
         value:
           JSON.stringify(
@@ -96,7 +109,54 @@ export const useSharedState = <TState>(
               ? nextState(sharedState)
               : nextState,
           ) || '',
-      });
+      };
+      if (embedded) {
+        embedded.send('setSharedState', message);
+      } else {
+        Byond.sendMessage({ type: 'setSharedState', ...message });
+      }
     },
   ];
 };
+
+/**
+ * Every message the server sends this window, for an interface with a
+ * protocol of its own (the stat panel: update_verbs, update_stat, ...), in
+ * its own native window or embedded in the right-hand column alike.
+ */
+export function useWindowMessages(
+  handler: (type: string, payload: any) => void,
+): void {
+  const embedded = useContext(EmbeddedContext);
+  const latest = useRef(handler);
+  latest.current = handler;
+  useEffect(() => {
+    let live = true;
+    const listener = (type: string, payload: unknown) => {
+      if (live) latest.current(type, payload);
+    };
+    if (embedded) {
+      embedded.listeners.add(listener);
+      return () => {
+        live = false;
+        embedded.listeners.delete(listener);
+      };
+    }
+    // A native window's listeners cannot be removed: this one goes quiet instead.
+    Byond.subscribe(listener);
+    return () => {
+      live = false;
+    };
+  }, [embedded]);
+}
+
+/** Sends a message of this window's own protocol (not an act), native or embedded alike. */
+export function useWindowSend(): (
+  type: string,
+  payload?: Record<string, unknown>,
+) => void {
+  const embedded = useContext(EmbeddedContext);
+  return embedded
+    ? embedded.send
+    : (type, payload = {}) => Byond.sendMessage(type, payload);
+}

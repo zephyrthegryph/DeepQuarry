@@ -1,6 +1,8 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { AnimatedArrows, AnimatedArrowsLeft } from '../common/AnimatedArrows';
+import type { SpaceBattleActions } from '../generated/SpaceBattle';
 import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelTooltip';
 import { gameStateToText, gameTooltip } from './constants';
 import { stateToColor } from './functions';
@@ -21,10 +23,10 @@ export const PlayerMenu = (props: {
     React.SetStateAction<'horizontal' | 'vertical'>
   >;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SpaceBattleActions>();
 
   const {
-    ship_sizes,
+    ship_sizes = {},
     player_one,
     player_two,
     all_placed,
@@ -144,7 +146,7 @@ export const PlayerMenu = (props: {
         <Stack.Item basis="33%">
           <Stack vertical textAlign="center">
             <Stack.Item>
-              <Box color="label">Status:</Box>
+              <Label>Status:</Label>
             </Stack.Item>
             <Stack.Item>
               <Box color={stateToColor(game_state, !!has_won)}>

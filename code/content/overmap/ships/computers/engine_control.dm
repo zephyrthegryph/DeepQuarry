@@ -18,6 +18,7 @@ CAPABILITIES(/obj/machinery/computer/ship/engines/adv)
 // The engines window: one op per button; the two thrust limits are asked in the window's op (asks()), the answer applied by its handler.
 CAPABILITIES(/obj/machinery/computer/ship/engines)
 	interface("OvermapEngines")
+	ui_shape(global_state = bool(), global_limit = int(), engines_info = list_of(row(eng_type = schema_text(), eng_on = int(), eng_thrust = num(), eng_thrust_limiter = int(), eng_status = list_of(any), eng_reference = int())), total_thrust = num())
 	without("ui_open")
 	op("global_toggle", ui_act("global_toggle"), then(PROC_REF(ui_act_global_toggle)))
 	op("set_global_limit", ui_act("set_global_limit"), asks(/datum/prompt/number/ship_console_global_limit, fields = list("default" = computed(PROC_REF(global_limit_default))), step = "limit"),
@@ -62,6 +63,8 @@ CAPABILITIES(/obj/machinery/computer/ship/engines)
 /// The window data.
 /obj/machinery/computer/ship/engines/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	if(!linked()) // a console with no ship (unlinked, or its ship gone) shows an empty panel
+		return data
 	data["global_state"] = linked().engines_state
 	data["global_limit"] = round(linked().thrust_limit*100)
 	var/total_thrust = 0
@@ -75,7 +78,7 @@ CAPABILITIES(/obj/machinery/computer/ship/engines)
 		rdata["eng_thrust_limiter"] = round(E.get_thrust_limit()*100)
 		var/list/status = E.get_status()
 		if(!islist(status))
-			log_runtime(EXCEPTION("Warning, ship [E.name] ([handle_of(E)]) for [linked().name] returned a non-list status!"))
+			log_runtime(EXCEPTION("Warning, ship [E.name] ([handle_text(handle_of(E))]) for [linked().name] returned a non-list status!"))
 			status = list("Error")
 		rdata["eng_status"] = status
 		rdata["eng_reference"] = handle_of(E)

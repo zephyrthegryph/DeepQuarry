@@ -1,5 +1,8 @@
 // The stat panel system (was SSstatpanels): refreshes every client's stat tabs every 4 ticks. The API is in
 // statpanel_api.dm.
+/// One client's turn in refresh_tabs() at least this long is logged (STATPANELS), with the tab it was on.
+#define STATPANEL_SLOW_MS 5
+
 SYSTEM_DEF(statpanels)
 	name = "Stat Panels"
 	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
@@ -7,10 +10,19 @@ SYSTEM_DEF(statpanels)
 	VAR_PRIVATE/resuming = FALSE
 	var/list/currentrun = list()
 	var/list/global_data
-	var/list/mc_data
-	var/list/mc_metrics
-	var/mc_metrics_generated_at = 0
-	mc_metrics_generated_at = -INFINITY
+	/// ckey -> (section -> the version of it as last sent to that client): what each admin's MC Health panel already holds.
+	var/list/mc_sent_by_client = list()
+	/// What the MC Health panel's data is built into (mc_health.dm), shared by every admin on the panel: made when one first opens it, built a slice a fire.
+	var/datum/mc_health_build/mc_build
+	/// Ready clients on the MC tab at the start of this pass (nothing is built when none is).
+	var/mc_watchers = 0
+	/// The ms of the longest MC send to one client so far, how many sends there were, and how many ran past MC_HEALTH_TURN_MS.
+	var/mc_send_max_ms = 0
+	var/mc_sends = 0
+	var/mc_slow_sends = 0
+	/// The longest single client's turn in refresh_tabs so far, ms, and the turns past STATPANEL_SLOW_MS (the STATPANELS trace line).
+	var/turn_max_ms = 0
+	var/slow_turns = 0
 
 	///how many subsystem fires between most tab updates
 	var/default_wait = 10
@@ -18,10 +30,13 @@ SYSTEM_DEF(statpanels)
 	var/misc_wait = 3
 	///how many subsystem fires between updates of the status tab
 	var/status_wait = 2
-	///how many subsystem fires between updates of the MC tab
-	var/mc_wait = 5
+	///how many subsystem fires (0.4 s each) between updates of the MC tab: about once a second
+	var/mc_wait = 3
 	///how many full runs this subsystem has completed. used for variable rate refreshes.
 	var/num_fires = 0
+
+CAPABILITIES(/datum/system/statpanels)
+	owns_one(nameof(mc_build), /datum/mc_health_build)
 
 /datum/system/statpanels/reactions()
 	. = ..()
@@ -32,6 +47,8 @@ SYSTEM_DEF(statpanels)
 	resuming = FALSE
 	if (!resumed)
 		num_fires++
+	// The Status lines are only read by a status send (every status_wait fires; an immediate send reads the last ones).
+	if (!resumed && (num_fires % status_wait == 0 || !global_data))
 		global_data = list(
 			//"Map: [SSmapping.config?.map_name || "Loading..."]",
 			"Map: [using_map.name]",
@@ -58,8 +75,14 @@ SYSTEM_DEF(statpanels)
 		else if(ticker_ready_for_reboot())
 			global_data += "Reboot: DELAYED"
 
+	if (!resumed)
 		src.currentrun = GLOB.clients.Copy()
-		mc_data = null
+		mc_watchers = 0
+		for(var/client/watcher as anything in GLOB.clients)
+			if(watcher.stat_tab == "MC" && watcher.stat_panel?.is_ready())
+				mc_watchers++
+		if(mc_watchers)
+			mc_build_step()
 
 	var/list/currentrun = src.currentrun
 	while(length(currentrun))
@@ -68,6 +91,7 @@ SYSTEM_DEF(statpanels)
 
 		if(!target?.stat_panel?.is_ready()) // Null target client, client has null stat panel, or stat panel isn't ready
 			continue
+		var/turn_started = TICK_USAGE_REAL
 
 		if(target.stat_tab == "Status" && num_fires % status_wait == 0)
 			set_status_tab(target)
@@ -114,6 +138,11 @@ SYSTEM_DEF(statpanels)
 			if((num_fires % misc_wait == 0))
 				update_misc_tabs(target,target_mob)
 
+		var/turn_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - turn_started)
+		turn_max_ms = max(turn_max_ms, turn_ms)
+		if(turn_ms >= STATPANEL_SLOW_MS)
+			slow_turns++
+			log_world("STATPANELS: one client's turn took [round(turn_ms, 0.1)] ms (tab [target.stat_tab], fire [num_fires]); [slow_turns] such turn(s), longest [round(turn_max_ms, 0.1)] ms")
 		if(KERNEL_OVER_BUDGET)
 			resuming = TRUE
 			return STEP_YIELD
@@ -126,20 +155,23 @@ SYSTEM_DEF(statpanels)
 		if(length(mob_tabs[tab]) == 0 && (tab in target.misc_tabs))
 			target.misc_tabs -= tab
 			target.stat_panel.send_message("remove_misc",tab)
+			target.stat_panel.forget_sent("update_misc:[tab]")
 
 		if(length(mob_tabs[tab]) > 0)
 			if(!(tab in target.misc_tabs))
 				target.misc_tabs += tab
 				target.stat_panel.send_message("create_misc",tab)
+			// Rebuilt every misc_wait fires; the page gets it only when a line changed.
 			target.stat_panel.send_message("update_misc",list(
 				TN = tab, \
 				TC = mob_tabs[tab], \
-			))
+			), same_key = "update_misc:[tab]")
 
 	for(var/tab in target.misc_tabs)
 		if(!(tab in mob_tabs))
 			target.misc_tabs -= tab
 			target.stat_panel.send_message("remove_misc",tab)
+			target.stat_panel.forget_sent("update_misc:[tab]")
 
 /datum/system/statpanels/proc/set_status_tab(client/target)
 	if(!global_data)//statbrowser hasnt fired yet and we were called from immediate_send_stat_data()
@@ -149,77 +181,62 @@ SYSTEM_DEF(statpanels)
 		global_data = global_data,
 		ping_str = "Ping: [round(target.lastping, 1)]ms (Average: [round(target.avgping, 1)]ms)",
 		other_str = target.mob?.get_status_tab_items(),
-	))
+	), same_key = "update_stat")
 
+/// One slice of the MC Health panel's data (mc_health.dm): MC_HEALTH_PUMP_MS of units, once a fire while an admin is on the panel. The build is shared by every
+/// admin on it, and made on the first.
+/datum/system/statpanels/proc/mc_build_step()
+	if(!mc_build)
+		rel_set(src, nameof(mc_build), new /datum/mc_health_build)
+		log_world("MC_HEALTH: the panel's data is being built a slice of [MC_HEALTH_PUMP_MS] ms a fire (groups every [MC_HEALTH_SLOW_EVERY / 10] s, the ledger every [MC_HEALTH_LEDGER_EVERY / 10] s, the tick graph every [MC_HEALTH_FAST_EVERY / 10] s)")
+	var/mc_build_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: build the panel data") // the ledger names the build apart from the send
+	mc_health_pump(mc_build)
+	km_ledger_leave(mc_build_ledger)
+
+/// The MC Health panel's data, sent only to a client on the panel (stat_tab "MC"): the sections it has not got, as the pieces already encoded when they were built (a section
+/// that did not change since the client last got it is skipped). A client that opens the panel or reloads its page gets everything (mc_health_forget()).
 /datum/system/statpanels/proc/set_MC_tab(client/target)
-	var/turf/eye_turf = get_turf(target.eye)
-	var/coord_entry = COORD(eye_turf)
-	if(!mc_data)
-		generate_mc_data()
-	if(!mc_metrics || ELAPSED(src, mc_metrics_generated_at, CLOCK_WORLD) >= 5 SECONDS)
-		mc_metrics = generate_mc_metrics()
-		STAMP(src, mc_metrics_generated_at, CLOCK_WORLD)
-	target.stat_panel.send_message("update_mc", list(
-		"mc_data" = mc_data,
-		"mc_metrics" = mc_metrics,
-		"coord_entry" = coord_entry,
-	))
+	var/datum/mc_health_build/B = mc_build
+	if(!B || !length(B.versions))
+		return
+	var/send_started = TICK_USAGE_REAL
+	var/coord = COORD(get_turf(target.eye))
+	var/key = target.ckey
+	var/list/sent = mc_sent_by_client[key]
+	if(!sent)
+		sent = list()
+		mc_sent_by_client[key] = sent
+	var/list/update = B.client_update(sent, coord)
+	if(!update)
+		return
+	var/sections = update["sections"]
+	var/whole = update["whole"]
+	if(whole)
+		log_tgui(target, "Server health: whole send of [sections] section(s), window [target.stat_panel.id], ready=[target.stat_panel.is_ready() ? 1 : 0].", context = "stat_panel")
+	var/mc_send_ledger = km_ledger_enter(KM_CAT_SYSTEM, "/datum/system/statpanels", "set_MC_tab: send") // the pieces were encoded when built; this joins and sends them
+	if(B.has_href)
+		// A section holds an admin link: the one path that fills it for this client (send_message() scans the JSON).
+		target.stat_panel.send_message("update_mc", list("mc_metrics" = update["changed"] || list(), "partial" = !whole, "coord_entry" = coord))
+	else
+		target.stat_panel.send_encoded("update_mc", update["payload"])
+	km_ledger_leave(mc_send_ledger)
+	var/send_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - send_started)
+	mc_sends++
+	mc_send_max_ms = max(mc_send_max_ms, send_ms)
+	if(send_ms >= MC_HEALTH_TURN_MS)
+		mc_slow_sends++
+		log_world("MC_HEALTH: sending the panel to [key] took [round(send_ms, 0.1)] ms for [sections] section(s); [mc_slow_sends] such send(s) of [mc_sends], longest [round(mc_send_max_ms, 0.1)] ms")
 
-/datum/system/statpanels/proc/generate_mc_metrics()
-	var/list/history = Kernel.perf_tick_usage
-	var/list/rust_allocator = native_allocator_diagnostics()
-	var/history_start = max(1, history.len - 119)
-	var/list/graph = history.len ? history.Copy(history_start) : list()
-	var/list/subsystems = list()
-	// Systems with periodic work (air, lighting, ticker, tgui, garbage ...).
-	for(var/datum/system/S as anything in kernel_pure_systems())
-		if(!S.times_fired && !S.fire_cost)
-			continue
-		subsystems += list(list(
-			"name" = S.name,
-			"state" = "  ",
-			"usage" = 0,
-			"overrun" = S.tick_overrun,
-			"cost" = S.fire_cost,
-			"fires" = S.times_fired,
-			"ref" = handle_of(S),
-		))
-	return list(
-		"tick_budget_ms" = world.tick_lag * 100,
-		"target_tps" = world.fps,
-		"current_usage" = history.len ? history[history.len] : 0,
-		"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
-		"tidi" = time_track_time_dilation_current(),
-		"tidi_fast" = time_track_time_dilation_avg_fast(),
-		"tidi_medium" = time_track_time_dilation_avg(),
-		"tidi_slow" = time_track_time_dilation_avg_slow(),
-		"window_5s" = Kernel.performance_window(5),
-		"window_30s" = Kernel.performance_window(30),
-		"window_5m" = Kernel.performance_window(300),
-		"graph" = graph,
-		"outliers" = Kernel.perf_outliers.Copy(),
-		"subsystems" = subsystems,
-		"kernel" = km_panel_data(),
-		"runtime" = list(
-			"cpu" = world.cpu,
-			"instances" = length(world.contents),
-			"clients" = length(GLOB.clients),
-			"tick_drift" = Kernel.tickdrift,
-			"sleep_delta" = Kernel.sleep_delta,
-			"queue_priority" = 0,
-			"queue_priority_background" = 0,
-			"kernel_ticks" = kernel().ticks,
-			"kernel_last_tick_ms" = kernel().last_tick_ms,
-			"rust_current_bytes" = rust_allocator?.len >= 1 ? rust_allocator[1] : 0,
-			"rust_peak_bytes" = rust_allocator?.len >= 2 ? rust_allocator[2] : 0,
-		),
-	)
+/// The client's panel holds none of the MC Health sections any more (it was opened again or its page reloaded): the next send is whole.
+/datum/system/statpanels/proc/mc_health_forget(client/target)
+	if(target)
+		mc_sent_by_client -= target.ckey
 
 /datum/system/statpanels/proc/set_tickets_tab(client/target)
 	var/list/tickets = list()
 	if(check_rights_for(target, R_ADMIN|R_SERVER|R_MOD|R_MENTOR)) //Prevents non-staff from opening the list of ahelp tickets
 		tickets = GLOB.tickets.stat_entry(target)
-	target.stat_panel.send_message("update_tickets", tickets)
+	target.stat_panel.send_message("update_tickets", tickets, same_key = "update_tickets")
 
 /datum/system/statpanels/proc/set_SDQL2_tab(client/target)
 	var/list/sdql2A = list()
@@ -234,42 +251,6 @@ SYSTEM_DEF(statpanels)
 /// Set up the various action tabs.
 /datum/system/statpanels/proc/set_action_tabs(client/target, mob/target_mob)
 	return
-
-
-
-/datum/system/statpanels/proc/generate_mc_data()
-	mc_data = list(
-		list("CPU:", world.cpu),
-		list("Instances:", "[num2text(length(world.contents), 10)]"),
-		list("World Time:", "[world.time]"),
-		list("Globals:", GLOB.stat_entry(), text_ref(GLOB)),
-		list("[config]:", config.stat_entry(), text_ref(config)),
-		list("Byond:", "(FPS:[world.fps]) (TickCount:[world.time/world.tick_lag]) (TickDrift:[round(Kernel.tickdrift,1)]([round((Kernel.tickdrift/(world.time/world.tick_lag))*100,0.1)]%)) (Internal Tick Usage: [round(MAPTICK_LAST_INTERNAL_TICK_USAGE,0.1)]%)"),
-		list("Kernel Controller:", Kernel.stat_entry(), text_ref(Kernel)),
-		list("Watchdog:", Kernel.watchdog.stat_entry(), text_ref(Kernel.watchdog)),
-		list("","")
-	)
-#if defined(MC_TAB_TRACY_INFO) || defined(SPACEMAN_DMM)
-	var/static/tracy_dll
-	var/static/tracy_present
-	if(isnull(tracy_dll))
-		tracy_dll = TRACY_DLL_PATH
-		tracy_present = fexists(tracy_dll)
-	if(tracy_present)
-		if(Tracy.enabled)
-			mc_data.Insert(2, list(list("byond-tracy:", "Active (reason: [Tracy.init_reason || "N/A"])")))
-		else if(Tracy.error)
-			mc_data.Insert(2, list(list("byond-tracy:", "Errored ([Tracy.error])")))
-		else if(fexists(TRACY_ENABLE_PATH))
-			mc_data.Insert(2, list(list("byond-tracy:", "Queued for next round")))
-		else
-			mc_data.Insert(2, list(list("byond-tracy:", "Inactive")))
-	else
-		mc_data.Insert(2, list(list("byond-tracy:", "[tracy_dll] not present")))
-#endif
-	for(var/datum/system/system as anything in kernel_pure_systems())
-		mc_data[++mc_data.len] = list("(system) [system.name]", system.stat_entry(""), REF(system))
-	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", REF(GLOB.cameranet))
 
 /// Stat panel window declaration
 /client/var/datum/tgui_window/stat_panel

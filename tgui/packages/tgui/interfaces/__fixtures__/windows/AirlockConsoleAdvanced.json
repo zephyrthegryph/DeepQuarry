@@ -1,0 +1,17 @@
+{
+	"panel_open": true,
+	"tags": {
+		"tag_exterior_door": "fore_airlock_outer",
+		"tag_interior_door": "fore_airlock_inner",
+		"tag_chamber_sensor": null
+	},
+	"frequency": 1379,
+	"min_freq": 1201,
+	"max_freq": 1599,
+	"chamber_pressure": 98,
+	"external_pressure": 0,
+	"internal_pressure": 101,
+	"processing": true,
+	"purge": false,
+	"secure": true
+}

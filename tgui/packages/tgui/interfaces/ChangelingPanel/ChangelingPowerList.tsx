@@ -3,6 +3,10 @@ import { useBackend } from 'tgui/backend';
 import { Button, Divider, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
 
+import type {
+  ChangelingPanelActions,
+  ChangelingPanelData,
+} from '../generated/ChangelingPanel';
 import { getButtonColor } from './functions';
 import type { PowerData } from './types';
 
@@ -11,7 +15,7 @@ export const ChangeLingSearchableList = (props: {
   powerData: PowerData[];
   points: number;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<ChangelingPanelData, ChangelingPanelActions>();
 
   const { title, powerData, points } = props;
 

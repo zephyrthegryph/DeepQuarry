@@ -1,43 +1,24 @@
 // Wizard spellbook — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type { SpellbookActions, SpellbookData } from './generated/Spellbook';
 
-type Spell = {
-  id: string;
-  name: string;
-  cooldown: number;
-  desc: string;
-};
-
-type Artefact = {
-  id: string;
-  name: string;
-  desc: string;
-};
-
-type NoClothes = {
-  id: string;
-  name: string;
-  desc: string;
-};
-
-type Data = {
-  temp: string;
-  uses: number;
-  max_uses: number;
-  can_rememorize: BooleanLike;
-  spells: Spell[];
-  artefacts: Artefact[];
-  noclothes: NoClothes;
-};
+type Data = SpellbookData;
 
 export const Spellbook = () => {
-  const { data, act } = useBackend<Data>();
-  const { temp, uses, max_uses, can_rememorize, spells, artefacts, noclothes } =
-    data;
+  const { data, act } = useBackend<Data, SpellbookActions>();
+  const {
+    temp,
+    uses,
+    max_uses,
+    can_rememorize,
+    spells = [],
+    artefacts = [],
+    noclothes,
+  } = data;
   if (temp) {
     return (
       <Window width={520} height={260} title="The Book of Spells">
@@ -61,9 +42,9 @@ export const Spellbook = () => {
               {uses} / {max_uses}
             </LabeledList.Item>
           </LabeledList>
-          <Box mt={1} italic color="label">
+          <Label mt={1} italic>
             The number after the spell name is the cooldown time.
-          </Box>
+          </Label>
         </Section>
         <Section title="Memorize a Spell">
           <Stack vertical>
@@ -72,36 +53,36 @@ export const Spellbook = () => {
                 <Button onClick={() => act('choose', { id: s.id })}>
                   {s.name} ({s.cooldown})
                 </Button>
-                <Box ml={1} italic color="label">
+                <Label ml={1} italic>
                   {s.desc}
-                </Box>
+                </Label>
               </Stack.Item>
             ))}
             <Stack.Item>
               <Button onClick={() => act('choose', { id: noclothes.id })}>
-                {noclothes.name}
+                {noclothes?.name}
               </Button>
-              <Box ml={1} italic color="label">
-                {noclothes.desc}
-              </Box>
+              <Label ml={1} italic>
+                {noclothes?.desc}
+              </Label>
             </Stack.Item>
           </Stack>
         </Section>
         <Section title="Artefacts">
-          <Box italic color="label" mb={1}>
+          <Label italic mb={1}>
             Powerful items imbued with eldritch magics. Summoning one counts
             towards your maximum number of spells. Only experienced wizards
             should attempt to wield them.
-          </Box>
+          </Label>
           <Stack vertical>
             {artefacts.map((a) => (
               <Stack.Item key={a.id}>
                 <Button onClick={() => act('choose', { id: a.id })}>
                   {a.name}
                 </Button>
-                <Box ml={1} italic color="label">
+                <Label ml={1} italic>
                   {a.desc}
-                </Box>
+                </Label>
               </Stack.Item>
             ))}
           </Stack>

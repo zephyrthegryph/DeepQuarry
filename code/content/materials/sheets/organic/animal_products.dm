@@ -45,12 +45,11 @@ CAPABILITIES(/obj/item/stack/material/chitin)
 	sheet_singular_name = "bundle"
 	sheet_plural_name = "bundles"
 	ignition_point = T0C+232
-	melting_point = T0C+300
-	protectiveness = 1
+	heat_resistance = 8.1
 	flags = MATERIAL_PADDING
-	conductive = 0
-	integrity = 40
-	hardness = 5
+	toughness = 20
+	strength = 5
+	conductivity = 2
 
 /datum/material/fur/wool
 	name = MAT_WOOL
@@ -105,7 +104,7 @@ CAPABILITIES(/transformation/stack/fur__gloves)
 
 /transformation/stack/fur__wig
 CAPABILITIES(/transformation/stack/fur__wig)
-	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/clothing/head/powdered_wig, 1)),
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(VARIANT(/obj/item/clothing/head/powdered_wig), 1)),
 		chosen = chosen(title = "wig",
 			subject = /datum/material/fur,
 			build_time = 10 SECONDS,

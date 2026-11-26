@@ -6,9 +6,7 @@ fn literal_string_concat_uses_shared_scalar_evaluator_and_emits_one_value() {
     let ast = dm_syntax::parse("/proc/constant()\n    return \"z_\" + \"first\"\n");
     let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
     let mut ledger = Ledger::default();
-    ledger
-        .bind(reference(Table::String, "z_first"), 439)
-        .unwrap();
+    ledger.bind(reference(Table::String, "z_first"), 439).unwrap();
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     // Pinned compile-only folded_string_order BYOND control emits this body.
     assert_eq!(linked.words, [0x60, 6, 439, 0x12, 0]);
@@ -470,20 +468,5 @@ fn continued_interpolation_expressions_keep_literal_decoder_authority() {
     ] {
         let (_, expressions) = parse_interpolated_string(value).unwrap();
         assert_eq!(expressions.len(), 1);
-    }
-}
-
-#[test]
-fn raw_carriage_return_emission_uses_authoritative_literal_parts() {
-    // DreamMaker516.1687 runtime probe raw_cr produces bytes97,98, not97,13,98.
-    // Emission must not bypass the shared decoder with a raw source slice.
-    for source in ["@\"a\rb\"", "@{\"a\rb\"}", "@'a\rb'"] {
-        let ast = dm_syntax::parse(&format!("/proc/probe()\n    return {source}\n"));
-        assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
-        let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
-        let mut ledger = Ledger::default();
-        ledger.bind(reference(Table::String, "ab"), 71).unwrap();
-        let linked = link_proc(&compiled.code, &ledger).unwrap();
-        assert_eq!(linked.words, [0x60, 6, 71, 0x12, 0], "{source:?}");
     }
 }

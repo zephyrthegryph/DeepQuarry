@@ -1,4 +1,0 @@
-/proc/probe(value)
-    switch(rand(value))
-        if(1)
-            return 0

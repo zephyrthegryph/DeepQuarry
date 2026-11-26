@@ -12,11 +12,8 @@
 
 /client/var/tmp/datum/keybind_editor/keybind_editor
 
-/client/verb/edit_keybindings()
-	set name = "Keybindings"
-	set category = VERB_CAT_OOC_SETTINGS
-	set desc = "Rebind keys and choose what right-click does."
-
+/// Opens the keybinding editor (the Game Preferences window's Keybindings button).
+/client/proc/open_keybind_editor()
 	if(!prefs)
 		return
 	if(!keybind_editor)
@@ -25,6 +22,7 @@
 
 CAPABILITIES(/datum/keybind_editor)
 	interface("KeybindingEditor", state = nameof(GLOB.tgui_always_state))
+	ui_shape(bindings = list_of(row(id = schema_text(), name = schema_text(), category = schema_text(), command = schema_text())), profiles = list_of(row(id = schema_text(), name = schema_text())), right_click_options = list_of(row(id = schema_text(), name = schema_text())), max_keys = int(), profile = schema_text(), keys = map_of(schema_text(), list_of(schema_text())), customised = list_of(schema_text()), right_click = schema_text())
 	op("set_profile", ui_act("set_profile", arg("profile", schema_text(4096))), then(PROC_REF(ui_act_set_profile)))
 	op("set_right_click", ui_act("set_right_click", arg("binding", schema_text(4096))), then(PROC_REF(ui_act_set_right_click)))
 	op("bind", ui_act("bind", arg("id", schema_text(4096)), arg("key", schema_text(4096))), then(PROC_REF(ui_act_bind)))
@@ -32,7 +30,7 @@ CAPABILITIES(/datum/keybind_editor)
 	op("reset", ui_act("reset", arg("id", schema_text(4096))), then(PROC_REF(ui_act_reset)))
 	op("reset_all", ui_act("reset_all"), then(PROC_REF(ui_act_reset_all)))
 
-/datum/keybind_editor/tgui_static_data(mob/user)
+/datum/keybind_editor/ui_static_data(datum/act/eval/A)
 	var/list/bindings = list()
 	var/show_admin = check_rights_for(owner(), R_HOLDER)
 	for(var/id in GLOB.keybindings)

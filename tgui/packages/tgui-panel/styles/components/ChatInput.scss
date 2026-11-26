@@ -1,0 +1,152 @@
+@use 'sass:color';
+@use 'sass:map';
+@use '~tgui/styles/console';
+@use '~tgui/styles/radio-colors' as radio;
+
+.ChatInput {
+  display: flex;
+  // One height and one centre line for the channel and radio buttons, the
+  // field and Send.
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  gap: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  background-color: console.$console-panel;
+  border-top: 2px solid console.$console-border;
+  font-family: console.$console-font;
+  font-weight: 700;
+}
+
+// The channel button: one button on the left, coloured by channel
+// (radio.$mode-colors).
+$channel-colors: radio.$mode-colors;
+
+.ChatInput__channel,
+.ChatInput__radio,
+.ChatInput__send {
+  box-sizing: border-box;
+  padding: 3px 8px;
+  font: inherit;
+  color: console.$console-muted;
+  background-color: console.$console-disabled;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+
+  &:hover {
+    background-color: console.$console-border;
+    color: console.$console-text;
+  }
+}
+
+.ChatInput__channel {
+  flex: 0 0 auto;
+  min-width: 56px;
+  text-align: center;
+  user-select: none;
+  border: 2px solid console.$console-border;
+}
+
+.ChatInput__radio {
+  flex: 0 0 auto;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+  color: map.get(radio.$radio-colors, 'common');
+  border: 2px solid color.adjust(map.get(radio.$radio-colors, 'common'), $lightness: -20%, $space: hsl);
+}
+
+// The department picked on the radio button, in the chat's radio colour; the row's accent follows it.
+@each $name, $color in radio.$radio-colors {
+  .ChatInput__radio--#{$name} {
+    color: $color;
+    border-color: color.adjust($color, $lightness: -20%, $space: hsl);
+
+    &:hover {
+      color: color.adjust($color, $lightness: 8%, $space: hsl);
+      border-color: $color;
+    }
+  }
+
+  .ChatInput--radio-#{$name} {
+    --chat-accent: #{$color};
+  }
+}
+
+@each $name, $color in $channel-colors {
+  .ChatInput__channel--#{$name} {
+    color: $color;
+    border-color: color.adjust($color, $lightness: -20%, $space: hsl);
+
+    &:hover {
+      color: color.adjust($color, $lightness: 8%, $space: hsl);
+      border-color: $color;
+    }
+  }
+
+  .ChatInput--#{$name} {
+    --chat-accent: #{$color};
+  }
+}
+
+// Send is always whole: it never shrinks, whatever the width of the row.
+.ChatInput__send {
+  flex: 0 0 auto;
+  min-width: 56px;
+  text-align: center;
+  color: console.$console-text;
+  background-color: console.$console-green;
+  border: 2px solid color.adjust(console.$console-green, $lightness: 12%, $space: hsl);
+
+  &:hover {
+    background-color: color.adjust(console.$console-green, $lightness: 8%, $space: hsl);
+    color: console.$console-text;
+  }
+}
+
+.ChatInput__field {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0 6px;
+  font: inherit;
+  line-height: 1.2;
+  color: console.$console-text;
+  background-color: console.$console-background;
+  border: 2px solid console.$console-border;
+  border-radius: 0;
+  outline: none;
+
+  // No glow: a flat border in the channel's colour.
+  &:focus {
+    border-color: var(--chat-accent, #{console.$console-accent});
+  }
+}
+
+// The row and, above it, the live speech preview (tgui/styles/dq/speech-preview.scss).
+.ChatInputBox {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+// The row's controls share one box: the same height, no margins, centred.
+.ChatInput__channel,
+.ChatInput__radio,
+.ChatInput__field,
+.ChatInput__send {
+  box-sizing: border-box;
+  height: 24px;
+  margin: 0;
+  align-self: center;
+  vertical-align: middle;
+}

@@ -67,8 +67,7 @@
 		. += seq_step(PROC_REF(life_environment), after = list(LIFE_BODY, "life_chemicals"), when = list("placed", "!in_stasis"), reads = list(MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_AIR, MOB_KEY_BODY_HEAT, MOB_KEY_HEALTH), should_run = PROC_REF(life_environment_due), rewake = PROC_REF(life_environment_rewake), woken_by = LIFE_ENVIRONMENT_WOKEN_BY + list(MOB_KEY_HEALTH = "injure (afflictions)"))
 		. += seq_step(PROC_REF(life_simple_vitals), after = LIFE_TAIL, reads = list(MOB_KEY_HEALTH), once = TRUE, woken_by = list(MOB_KEY_HEALTH = "injure, mend, body invalidate (health); set_stat"))
 		. += seq_step(PROC_REF(life_supernatural), after = LIFE_TAIL, when = "alive", reads = LIFE_STATUS_READS, should_run = PROC_REF(life_supernatural_due), woken_by = list(MOB_KEY_STATUS = "status setters; the purge setter"))
-		. += seq_step(PROC_REF(life_guts), after = list(LIFE_TAIL, "life_special"), when = "alive", reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_guts_due), woken_by = list(MOB_KEY_HEALTH = "an organ adopted or released (adopt_subtree()/release_subtree() invalidate the body)"))
-		. += seq_step(PROC_REF(life_simple_healing), after = list(LIFE_TAIL, "life_guts"), when = "alive", reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_simple_healing_due), woken_by = list(MOB_KEY_HEALTH = "injure; feeding"))
+		. += seq_step(PROC_REF(life_simple_healing), after = list(LIFE_TAIL, "life_special"), when = "alive", reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_simple_healing_due), woken_by = list(MOB_KEY_HEALTH = "injure; feeding"))
 		. += seq_step(PROC_REF(life_type_post), after = list(LIFE_TAIL, "life_weight", "life_visible_name"), should_run = PROC_REF(life_type_post_due), rewake = PROC_REF(life_type_post_rewake), woken_by = list(LIFE_WOKEN_BY_TIME = "a type's own periodic tail work (its rewake)"))
 
 /mob/living/voice/life_steps()

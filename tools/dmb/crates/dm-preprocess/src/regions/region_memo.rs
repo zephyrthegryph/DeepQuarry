@@ -19,9 +19,7 @@ use std::{
     sync::Arc,
 };
 use xxhash_rust::xxh3::Xxh3;
-pub const EXPANSION_VERSION: u32 = 6;
-const SINGLE_PHYSICAL_MACRO_LINE: u32 = 1 << 31;
-const TRACE_SET_MASK: u32 = SINGLE_PHYSICAL_MACRO_LINE - 1;
+pub const EXPANSION_VERSION: u32 = 5;
 pub const FRAGMENT_VERSION: u32 = 1;
 #[cfg(test)]
 mod fragment_tests {
@@ -206,10 +204,6 @@ impl RegionReceipt {
     pub fn output_span(&self) -> Span {
         self.output
     }
-    /// Number of original provenance rows issued by this receipt.
-    pub fn origin_row_count(&self) -> usize {
-        self.rows
-    }
     pub fn record(&self) -> &Arc<ExpansionRecord> {
         &self.record
     }
@@ -261,7 +255,7 @@ impl TraceTables {
         Span::new(trace.start as usize, trace.end as usize)
     }
     fn set(&self, line: &Line) -> &[Trace] {
-        match (line.trace_set & TRACE_SET_MASK).checked_sub(1) {
+        match line.trace_set.checked_sub(1) {
             Some(index) => &self.sets[index as usize],
             None => &[],
         }
@@ -310,9 +304,7 @@ impl TraceInterner {
             return Some(0);
         }
         self.sets.push(traces);
-        u32::try_from(self.sets.len())
-            .ok()
-            .filter(|id| *id <= TRACE_SET_MASK)
+        u32::try_from(self.sets.len()).ok()
     }
     fn finish(self) -> TraceTables {
         TraceTables {
@@ -324,7 +316,7 @@ impl TraceInterner {
 }
 /// One emitted line of a record. Offsets are u32 and an untraced line holds no allocation: records keep one per output
 /// line, so the struct is the dominant cost of a large expansion record. The wire form is [`LineWire`], unchanged.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct Line {
     output_start: u32,
     output_end: u32,
@@ -332,17 +324,6 @@ struct Line {
     /// 1-based index into [`TraceTables::sets`]; 0 for a line without macro traces.
     trace_set: u32,
 }
-// Producer provenance is transient, not serialized record identity. The
-// original byte-for-byte wire and equality contract predate these private bits.
-impl PartialEq for Line {
-    fn eq(&self, other: &Self) -> bool {
-        self.output_start == other.output_start
-            && self.output_end == other.output_end
-            && self.input == other.input
-            && self.trace_set & TRACE_SET_MASK == other.trace_set & TRACE_SET_MASK
-    }
-}
-impl Eq for Line {}
 impl Line {
     fn output(&self) -> Span {
         Span::new(self.output_start as usize, self.output_end as usize)
@@ -366,8 +347,7 @@ impl Line {
         }
     }
     fn from_wire(line: LineWire, interner: &mut TraceInterner) -> Result<Self, &'static str> {
-        let narrow =
-            |value: usize| u32::try_from(value).map_err(|_| "expansion line offset exceeds u32");
+        let narrow = |value: usize| u32::try_from(value).map_err(|_| "expansion line offset exceeds u32");
         Ok(Self {
             output_start: narrow(line.output.start)?,
             output_end: narrow(line.output.end)?,
@@ -382,12 +362,7 @@ impl Line {
                             .ok_or("expansion trace offset exceeds u32")
                     })
                     .collect::<Result<Box<[Trace]>, _>>()?;
-                let set = interner
-                    .set(traces)
-                    .ok_or("expansion trace set count exceeds reserved index range")?;
-                // Disk fields are logical expansion data only. Actual current
-                // expansion must reissue every private provenance bit.
-                set
+                interner.set(traces).ok_or("expansion trace set count exceeds u32")?
             },
         })
     }
@@ -465,11 +440,7 @@ impl Serialize for ExpansionRecord {
             text: &self.text,
             reads: &self.reads,
             locations: &self.locations,
-            lines: self
-                .lines
-                .iter()
-                .map(|line| line.to_wire(&self.trace_tables))
-                .collect(),
+            lines: self.lines.iter().map(|line| line.to_wire(&self.trace_tables)).collect(),
             diagnostics: &self.diagnostics,
             fragments: &self.fragments,
         }
@@ -506,9 +477,7 @@ impl<'de> Deserialize<'de> for ExpansionRecord {
 /// pointer instead of a private copy. Weak, so rows live only while some arena holds them; a clone of the record (a
 /// fragment-enriched copy) starts empty.
 #[derive(Default)]
-pub(super) struct RowsPool(
-    std::sync::Mutex<Vec<std::sync::Weak<super::expansion::output_lines::OutputLines>>>,
-);
+pub(super) struct RowsPool(std::sync::Mutex<Vec<std::sync::Weak<super::expansion::output_lines::OutputLines>>>);
 impl RowsPool {
     pub(super) fn intern(
         &self,
@@ -516,14 +485,7 @@ impl RowsPool {
     ) -> Arc<super::expansion::output_lines::OutputLines> {
         let mut pooled = self.0.lock().unwrap_or_else(|error| error.into_inner());
         pooled.retain(|held| held.strong_count() > 0);
-        if let Some(held) = pooled
-            .iter()
-            .filter_map(std::sync::Weak::upgrade)
-            .find(|held| {
-                held.same_rows(&lines)
-                    && (lines.needs_macro_point_issuance() || !held.needs_macro_point_issuance())
-            })
-        {
+        if let Some(held) = pooled.iter().filter_map(std::sync::Weak::upgrade).find(|held| held.same_rows(&lines)) {
             return held;
         }
         pooled.push(Arc::downgrade(&lines));
@@ -567,22 +529,23 @@ impl ExpansionRecord {
             .saturating_add(vector(&self.locations, |(_, _, name)| name.capacity()))
             .saturating_add(vector(&self.lines, |_| 0))
             .saturating_add(slice::<Box<[Trace]>>(self.trace_tables.sets.len()))
-            .saturating_add(self.trace_tables.sets.iter().fold(0usize, |bytes, set| {
-                bytes.saturating_add(slice::<Trace>(set.len()))
-            }))
-            .saturating_add(slice::<Arc<str>>(self.trace_tables.names.len()))
-            .saturating_add(self.trace_tables.names.iter().fold(0usize, |bytes, name| {
-                bytes.saturating_add(slice::<u8>(name.len()))
-            }))
-            .saturating_add(slice::<Arc<[Arc<str>]>>(self.trace_tables.chains.len()))
             .saturating_add(
                 self.trace_tables
-                    .chains
+                    .sets
                     .iter()
-                    .fold(0usize, |bytes, chain| {
-                        bytes.saturating_add(slice::<Arc<str>>(chain.len()))
-                    }),
+                    .fold(0usize, |bytes, set| bytes.saturating_add(slice::<Trace>(set.len()))),
             )
+            .saturating_add(slice::<Arc<str>>(self.trace_tables.names.len()))
+            .saturating_add(
+                self.trace_tables
+                    .names
+                    .iter()
+                    .fold(0usize, |bytes, name| bytes.saturating_add(slice::<u8>(name.len()))),
+            )
+            .saturating_add(slice::<Arc<[Arc<str>]>>(self.trace_tables.chains.len()))
+            .saturating_add(self.trace_tables.chains.iter().fold(0usize, |bytes, chain| {
+                bytes.saturating_add(slice::<Arc<str>>(chain.len()))
+            }))
             .saturating_add(vector(&self.diagnostics, |error| error.message.capacity()))
             .saturating_add(vector(&self.fragments, |fragment| {
                 slice::<u8>(fragment.payload.len())
@@ -704,10 +667,7 @@ impl MacroLookup for RecordingLookup<'_> {
             .insert((self.input, file));
     }
 }
-fn inputs(
-    plan: &DirectivePlan,
-    index: usize,
-) -> Vec<(usize, super::prepared_source::PreparedLineView<'_>)> {
+fn inputs(plan: &DirectivePlan, index: usize) -> Vec<(usize, super::prepared_source::PreparedLineView<'_>)> {
     plan.regions[index]
         .segments
         .iter()
@@ -765,7 +725,7 @@ pub(super) fn expand(
         if record.locations.iter().any(|(ordinal, file, expected)| {
             input.get(*ordinal).is_none_or(|(_, line)| {
                 if *file {
-                    plan.expansion_path(plan.regions[index].occurrence) != *expected
+                    plan.semantic_path(plan.regions[index].occurrence) != *expected
                 } else {
                     line.source_line.to_string() != *expected
                 }
@@ -810,8 +770,7 @@ pub(super) fn expand(
     let lines = output
         .lines
         .iter()
-        .enumerate()
-        .map(|(output_index, (span, line, source_span, traces))| {
+        .map(|(span, line, source_span, traces)| {
             let ordinal = ordinals
                 .get(&(line, source_span.start, source_span.end))
                 .copied()?;
@@ -823,19 +782,10 @@ pub(super) fn expand(
                     let set = traces
                         .iter()
                         .map(|trace| {
-                            interner.trace(
-                                &trace.name,
-                                trace.invocation_span,
-                                &trace.replacement_chain,
-                            )
+                            interner.trace(&trace.name, trace.invocation_span, &trace.replacement_chain)
                         })
                         .collect::<Option<Box<[Trace]>>>()?;
                     interner.set(set)?
-                        | if output.lines.single_physical_macro_line(output_index) {
-                            SINGLE_PHYSICAL_MACRO_LINE
-                        } else {
-                            0
-                        }
                 },
             })
         })
@@ -870,7 +820,7 @@ pub(super) fn expand(
                 ordinal,
                 file,
                 if file {
-                    plan.expansion_path(plan.regions[index].occurrence)
+                    plan.semantic_path(plan.regions[index].occurrence)
                 } else {
                     input[ordinal].1.source_line.to_string()
                 },
@@ -946,29 +896,14 @@ fn hydrate(
                 }
             })
             .collect();
-        lines.push_with_single_macro_line(
-            (
-                line.output(),
-                current.source_line,
-                current.source_span,
-                trace_arena.freeze_expansions(traces),
-            ),
-            line.trace_set & SINGLE_PHYSICAL_MACRO_LINE != 0,
-        );
+        lines.push((
+            line.output(),
+            current.source_line,
+            current.source_span,
+            trace_arena.freeze_expansions(traces),
+        ));
     }
     output.lines = record.rows.intern(Arc::new(lines.finish()));
-    if output.lines.needs_macro_point_issuance() {
-        // Deserialized spans are hints, not macro byte authority. Reissue via
-        // the real expander using CURRENT plan inputs, never by searching text.
-        let issued = super::expansion::expand_region(plan, index, None);
-        if issued.text == output.text {
-            if let Some(bound) = output.lines.with_issued_provenance_from(&issued.lines) {
-                // Keep record-owned names/chains and CURRENT definition origins.
-                // Only the real issuer's private provenance is grafted across.
-                output.lines = record.rows.intern(Arc::new(bound));
-            }
-        }
-    }
     for error in record.diagnostics.iter() {
         output.diagnostics.push(Diagnostic {
             path: path.clone(),
@@ -1161,7 +1096,7 @@ mod tests {
             let first = output.origins.get(0).unwrap();
             let second = output.origins.get(1).unwrap();
             assert!(first.macro_expansions.is_empty());
-            assert!(Arc::ptr_eq(first.macro_expansions.native_owner().unwrap(), second.macro_expansions.native_owner().unwrap()));
+            assert!(Arc::ptr_eq(first.macro_expansions, second.macro_expansions));
             assert_ne!(first.source_span, second.source_span);
             assert_ne!(first.output_span, second.output_span);
             assert_ne!(first.origin.source_line, second.origin.source_line);
@@ -1186,7 +1121,7 @@ mod tests {
             format!("{:?}", hydrated.origins)
         );
         for output in [&fresh, &hydrated] {
-            let traces = output.origins.get(0).unwrap().macro_expansions.native_owner().unwrap();
+            let traces = output.origins.get(0).unwrap().macro_expansions;
             assert_eq!(traces.len(), 4);
             assert!(Arc::ptr_eq(&traces[0].name, &traces[2].name));
             assert!(Arc::ptr_eq(
@@ -1196,7 +1131,7 @@ mod tests {
             assert_ne!(traces[0].invocation_span, traces[2].invocation_span);
             assert!(Arc::ptr_eq(
                 &traces[0].name,
-                &output.origins.get(1).unwrap().macro_expansions.native_owner().unwrap()[0].name
+                &output.origins.get(1).unwrap().macro_expansions[0].name
             ));
         }
     }

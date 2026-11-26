@@ -1,15 +1,16 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  on: BooleanLike;
-  visible: BooleanLike;
-};
+import type {
+  AssemblyInfraredActions,
+  AssemblyInfraredData,
+} from './generated/AssemblyInfrared';
 
 export const AssemblyInfrared = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    AssemblyInfraredData,
+    AssemblyInfraredActions
+  >();
   const { on, visible } = data;
   return (
     <Window>

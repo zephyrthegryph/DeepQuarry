@@ -1,0 +1,56 @@
+{
+	"name": "Vex",
+	"preview": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+	"groups": [
+		{
+			"title": "Body",
+			"rows": [
+				{
+					"id": "shape",
+					"label": "Body shape",
+					"action": "Change",
+					"desc": "Take the shape of another species.",
+					"value": "Human",
+					"swatch": null,
+					"enabled": 1,
+					"why": null
+				},
+				{
+					"id": "skin",
+					"label": "Body colour",
+					"action": "Pick",
+					"desc": "Select a new body colour.",
+					"value": "#a0c0e0",
+					"swatch": "#a0c0e0",
+					"enabled": 1,
+					"why": null
+				}
+			]
+		},
+		{
+			"title": "Features",
+			"rows": [
+				{
+					"id": "ears",
+					"label": "Ears",
+					"action": "Change",
+					"desc": "Select a pair of ears.",
+					"value": "Normal",
+					"swatch": null,
+					"enabled": 0,
+					"why": "You cannot do that while you are not conscious."
+				},
+				{
+					"id": "tail",
+					"label": "Tail",
+					"action": "Change",
+					"desc": "Select a tail.",
+					"value": "Fox tail",
+					"swatch": null,
+					"enabled": 0,
+					"why": "You cannot do that while you are not conscious."
+				}
+			]
+		}
+	]
+}

@@ -10,7 +10,9 @@
 		/obj/item/reagent_containers/dropper = 2,
 		/obj/item/reagent_containers/glass/beaker = 2,
 		/obj/item/reagent_containers/glass/bottle/inaprovaline = 2,
-		/obj/item/reagent_containers/glass/bottle/antitoxin = 2)
+		/obj/item/reagent_containers/glass/bottle/antitoxin = 2,
+		/obj/item/storage/firstaid/stabilisation,
+		/obj/item/storage/firstaid/resuscitation)
 
 /obj/structure/closet/secure_closet/medical2
 	name = "anesthetics closet"
@@ -46,6 +48,7 @@
 		/obj/item/clothing/under/rank/nursesuit,
 		/obj/item/clothing/head/nursehat,
 		/obj/item/storage/box/freezer = 3,
+		/obj/item/storage/firstaid/diagnostic,
 		/obj/item/storage/belt/medical)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
@@ -69,7 +72,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
 		/obj/item/storage/belt/medical/emt,
 		/obj/item/clothing/mask/gas/clear,
 		/obj/item/clothing/suit/storage/toggle/fr_jacket,
-		/obj/item/clothing/suit/storage/toggle/labcoat/emt,
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/emt),
 		/obj/item/clothing/suit/storage/hooded/wintercoat/medical/para,
 		/obj/item/clothing/shoes/boots/winter/medical,
 		/obj/item/radio/headset/headset_med,
@@ -81,6 +84,9 @@ CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
 		/obj/item/tank/emergency/oxygen/engi,
 		/obj/item/clothing/glasses/hud/health,
 		/obj/item/healthanalyzer,
+		/obj/item/storage/firstaid/stabilisation,
+		/obj/item/storage/firstaid/resuscitation,
+		/obj/item/storage/firstaid/diagnostic,
 		/obj/item/radio/off,
 		/obj/random/medical,
 		/obj/item/tool/crowbar,
@@ -98,12 +104,12 @@ CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
 	starts_with = list(
 		/obj/item/clothing/under/rank/chief_medical_officer,
 		/obj/item/clothing/under/rank/chief_medical_officer/skirt,
-		/obj/item/clothing/suit/storage/toggle/labcoat/cmo,
-		/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt,
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmo),
+		VARIANT(/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt),
 		/obj/item/clothing/suit/storage/toggle/labcoat/modern/cmo,
 		/obj/item/cartridge/cmo,
 		/obj/item/clothing/gloves/sterile/latex,
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/clothing/under/rank/neo_cmo,
 		/obj/item/clothing/under/rank/neo_cmo_skirt,
 		/obj/item/clothing/under/rank/neo_cmo_turtle,
@@ -127,6 +133,9 @@ CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
 		/obj/item/clothing/shoes/white,
 		/obj/item/reagent_containers/glass/beaker/vial,
 		/obj/item/storage/belt/medical,
+		/obj/item/book/dq_medical_reference,
+		/obj/item/storage/firstaid/resuscitation,
+		/obj/item/storage/firstaid/diagnostic,
 		/obj/item/personal_shield_generator/belt/medical/loaded)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
@@ -155,10 +164,29 @@ CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
 		/obj/item/storage/box/beakers,
 		/obj/item/storage/box/autoinjectors,
 		/obj/item/storage/box/syringes,
-		/obj/item/reagent_containers/dropper = 2,
-		/obj/item/reagent_containers/glass/bottle/inaprovaline = 2,
-		/obj/item/reagent_containers/glass/bottle/antitoxin = 2,
+		/obj/item/storage/box/chem_bench_bottles,
+		/obj/item/storage/box/precursors_inorganic,
+		/obj/item/storage/box/precursors_ring,
+		/obj/item/storage/box/precursors_bio,
 		/obj/item/storage/fancy/vials)
+
+
+/// The chemistry lab's supplies: every tool, catalyst, filter, liner and process stock that tier 1 to 3 chemistry needs and the dispenser does not carry
+/// (doc/rewrite/proposals/chemistry_recipes.md, "Chemistry lab stock"). Tier 4 exotic inputs are not here: they come from expeditions, xenobiology and creatures.
+/obj/structure/closet/secure_closet/chemical_supplies
+	name = "chemistry supplies closet"
+	desc = "Filters, funnels, electrodes, catalyst sheets, baths and process stock for the chemistry lab."
+	req_access = list(ACCESS_CHEMISTRY)
+	closet_appearance = /datum/decl/closet_appearance/secure_closet/medical/chemistry
+	storage_capacity = 80
+
+	starts_with = list(
+		/obj/item/storage/box/chem_funnels = 2,
+		/obj/item/storage/box/chem_electrodes,
+		/obj/item/storage/box/chem_catalysts,
+		/obj/item/storage/box/chem_large_beakers,
+		/obj/item/storage/box/chem_baths,
+		/obj/item/storage/box/chem_process_stock)
 
 
 /obj/structure/closet/secure_closet/psych

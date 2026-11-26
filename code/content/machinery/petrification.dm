@@ -22,6 +22,7 @@ CAPABILITIES(/obj/machinery/petrification)
 	configure(uses_power(idle = 100, active = 1000))
 	owns_many(nameof(remotes))
 	interface("PetrificationInterface")
+	ui_shape(t = bool(), target = schema_text(), can_remote = bool(), material = schema_text(), identifier = schema_text(), adjective = schema_text(), tint = schema_text(), able_to_unpetrify = bool(), discard_clothes = bool())
 	op("set_option", ui_act("set_option", arg("option", schema_text(4096))),
 		asks(/datum/prompt/color/statue_tint, step = "tint", fields = list("title" = "Statue color", "question" = computed(PROC_REF(tint_question)), "default" = computed(PROC_REF(tint_default))), when = PROC_REF(choosing_tint)),
 		asks(/datum/prompt/text/statue_option, step = "text", fields = list("title" = computed(PROC_REF(option_title)), "question" = computed(PROC_REF(option_question)), "default" = computed(PROC_REF(option_default)), "option" = computed(PROC_REF(option_name))), when = PROC_REF(choosing_text)),

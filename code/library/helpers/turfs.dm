@@ -92,36 +92,6 @@
 
 	return turf_map
 
-/proc/translate_turfs(list/translation, area/base_area = null, turf/base_turf)
-	var/list/changed_turfs = list()
-	for(var/turf/source in translation)
-
-		var/turf/target = translation[source]
-
-		if(target)
-			if(base_area) ChangeArea(target, get_area(source))
-			var/leave_turf = base_turf ? base_turf : get_base_turf_by_area(base_area ? base_area : source)
-			var/source_x = source.x
-			var/source_y = source.y
-			var/source_z = source.z
-			var/turf/new_destination = translate_turf(source, target, leave_turf)
-			if(new_destination)
-				changed_turfs |= new_destination
-			changed_turfs |= locate(source_x, source_y, source_z)
-			if(base_area) ChangeArea(source, base_area)
-
-	// ChangeTurf initially sees each destination before the shuttle's blocking
-	// objects have been relocated onto it. Republish every moved turf's air-block
-	// mask only after every wall, window, and door is in its final location.
-	// Rust derives each face from the masks on both sides, so the stationary
-	// neighbours need no update of their own.
-	for(var/turf/changed as anything in changed_turfs)
-		changed.air_update_turf(TRUE, FALSE)
-
-	//change the old turfs (Currently done by translate_turf for us)
-	//for(var/turf/source in translation)
-	//	source.ChangeTurf(base_turf ? base_turf : get_base_turf_by_area(source), 1, 1)
-
 // Parmaters for stupid historical reasons are:
 // T - Origin
 // B - Destination

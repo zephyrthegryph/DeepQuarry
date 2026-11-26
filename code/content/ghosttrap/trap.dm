@@ -80,7 +80,7 @@ CAPABILITIES(/datum/ghosttrap)
 		return 0
 	bind_player(target, candidate.ckey, as_ckey = TRUE)
 	if(target.mind)
-		target.mind.assigned_role = "[ghost_trap_role]"
+		target.mind.set_assigned_role("[ghost_trap_role]")
 	announce_ghost_joinleave(candidate, 0, "[ghost_trap_message]")
 	welcome_candidate(target)
 	set_new_name(target)

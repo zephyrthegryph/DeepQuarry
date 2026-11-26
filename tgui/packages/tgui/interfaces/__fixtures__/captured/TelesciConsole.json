@@ -1,0 +1,15 @@
+{
+	"noTelepad": 1,
+	"insertedGps": null,
+	"rotation": 0,
+	"currentZ": 0,
+	"cooldown": 0,
+	"crystalCount": 0,
+	"maxCrystals": 0,
+	"maxPossibleDistance": 0,
+	"maxAllowedDistance": 0,
+	"distance": 0,
+	"tempMsg": "",
+	"sectorOptions": [],
+	"lastTeleData": null
+}

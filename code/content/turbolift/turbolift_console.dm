@@ -168,6 +168,7 @@ CAPABILITIES(/obj/structure/lift/panel)
 	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 	op("interact", observer(), label("View"), then(TYPE_PROC_REF(/atom, op_interact)))
 	interface("Turbolift")
+	ui_shape(doors_open = bool(), fire_mode = bool(), floors = list_of(row(id = int(), ref = num(), queued = bool(), target = bool(), current = bool(), label = nullable(schema_text()), name = nullable(schema_text()))))
 	without("ui_open")
 	op("move_to_floor", ui_act("move_to_floor", arg("ref", schema_text(32))), then(PROC_REF(ui_act_move_to_floor)))
 	op("toggle_doors", ui_act("toggle_doors"), then(PROC_REF(ui_act_toggle_doors)))
@@ -177,8 +178,8 @@ CAPABILITIES(/obj/structure/lift/panel)
 /obj/structure/lift/panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
-	data["doors_open"] = lift().doors_are_open()
-	data["fire_mode"] = lift().fire_mode
+	data["doors_open"] = !!lift().doors_are_open()
+	data["fire_mode"] = !!lift().fire_mode
 
 	var/list/floors = list()
 	for(var/i in lift().floors.len to 1 step -1)
@@ -186,7 +187,7 @@ CAPABILITIES(/obj/structure/lift/panel)
 		floors.Add(list(list(
 			"id" = i,
 			"ref" = handle_of(floor),
-			"queued" = (floor in lift().queued_floors),
+			"queued" = !!(floor in lift().queued_floors),
 			"target" = (lift().target_floor() == floor),
 			"current" = (lift().current_floor() == floor),
 			"label" = floor.label,

@@ -407,6 +407,32 @@
 	take_down_lines()
 
 
+/// A binary device's edge is registered when its second port binds (a pipe came): gas put on its input side moves through to the output.
+/datum/unit_test/dq_atmos_m/pipes/proc/binary_edge_moves_gas(middle)
+	var/list/line = pipe_line(middle)
+	var/obj/machinery/atmospherics/pipe/left = line[1]
+	var/obj/machinery/atmospherics/pipe/right = line[3]
+	var/datum/gas_mixture/left_air = left.return_air()
+	left_air.adjust_gas(GAS_N2, 40)
+	gas_touched(left_air)
+	for(var/i in 1 to 30)
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
+		native_system().drain()
+		am_settle()
+	var/datum/gas_mixture/right_air = right.return_air()
+	TEST_ASSERT(right_air.total_moles() > 1, "the device's edge was registered by its port binds, so gas passes ([right_air.total_moles()])")
+	take_down_lines()
+
+/datum/unit_test/dq_atmos_m/pipes/passive_gate_edge_on_bind
+/datum/unit_test/dq_atmos_m/pipes/passive_gate_edge_on_bind/run_gate()
+	binary_edge_moves_gas(/obj/machinery/atmospherics/binary/passive_gate/on)
+
+/datum/unit_test/dq_atmos_m/pipes/volume_pump_edge_on_bind
+/datum/unit_test/dq_atmos_m/pipes/volume_pump_edge_on_bind/run_gate()
+	binary_edge_moves_gas(/obj/machinery/atmospherics/binary/volume_pump/on)
+
+
 /// The wrench takes a manual valve off.
 /datum/unit_test/dq_atmos_m/pipes/valve_wrench
 /datum/unit_test/dq_atmos_m/pipes/valve_wrench/run_gate()
@@ -876,4 +902,117 @@
 		stoplag()
 		am_settle()
 	TEST_ASSERT(middle.icon_temperature > 500, "hot, it glows ([middle.icon_temperature] K)")
+	take_down_lines()
+
+/// The shutoff valve's leak search steps a pipeline at a time: a leak several pipes away, past an open manual valve, still shuts it; past a shut
+/// manual valve it does not (the leak is in another network, and the search stops at a closed valve).
+/datum/unit_test/dq_atmos_m/pipes/shutoff_valve_far_leak
+/datum/unit_test/dq_atmos_m/pipes/shutoff_valve_far_leak/run_gate()
+	var/list/types = list(/obj/machinery/atmospherics/pipe/cap/visible, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/simple/visible, \
+		/obj/machinery/atmospherics/valve, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/simple/visible, \
+		/obj/machinery/atmospherics/valve/shutoff, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/cap/visible)
+	var/list/made = list()
+	for(var/i in 1 to length(types))
+		var/obj/machinery/atmospherics/M = allocate(types[i], tile(i - 1, 3))
+		M.set_dir(i == length(types) ? WEST : EAST)
+		M.init_dir()
+		M.set_grid_power(TRUE)
+		M.set_broken_condition(FALSE)
+		made += M
+	for(var/obj/machinery/atmospherics/M as anything in made)
+		M.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(made)
+	LAZYADD(ap_lines, made)
+	am_settle()
+	var/obj/machinery/atmospherics/pipe/far = made[2]
+	var/obj/machinery/atmospherics/valve/manual = made[4]
+	var/obj/machinery/atmospherics/valve/shutoff/S = made[7]
+	TEST_ASSERT(S.open, "the shutoff valve starts open")
+	if(manual.open)
+		manual.close()
+	am_settle()
+	far.set_damaged_leak(TRUE)
+	far.handle_leaking()
+	am_settle()
+	TEST_ASSERT(S.open, "a leak past a shut manual valve does not shut it")
+	manual.open()
+	am_settle()
+	S.check_leaks()
+	am_settle()
+	TEST_ASSERT(!S.open, "a leak past an open manual valve, four pipes away, shuts it")
+	far.set_damaged_leak(FALSE)
+	far.handle_leaking()
+	am_settle()
+	take_down_lines()
+
+/// A heat-exchanging pipe knows whether it lies on space from its place when it is made, and its turf tells it when the turf is replaced in play:
+/// breached to space it radiates, a floor rebuilt under it stops it. No port rebind is needed for either.
+/datum/unit_test/dq_atmos_m/pipes/he_pipe_follows_its_turf
+/datum/unit_test/dq_atmos_m/pipes/he_pipe_follows_its_turf/run_gate()
+	var/turf/T = tile(1, 3)
+	var/original = T.type
+	var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/P = allocate(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, T)
+	TEST_ASSERT(!P.in_space, "made on a floor, it does not radiate")
+	var/turf/space/S = T.ChangeTurf(/turf/space)
+	TEST_ASSERT(P.in_space, "its floor breached to space, it radiates")
+	var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/made_on_space = allocate(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, S)
+	TEST_ASSERT(made_on_space.in_space, "made on space, it radiates from the start")
+	qdel(made_on_space)
+	S.ChangeTurf(original)
+	TEST_ASSERT(!P.in_space, "a floor rebuilt under it, it stops")
+	qdel(P)
+
+/// The pipe commit links a region's pipes to their pipeline with rel_set_many(): the pipeline's members and every pipe's parent come out as the
+/// per-pipe rel_set() leaves them (same members, same order, each pipe once, the old line emptied), and a valve shut and opened again (a split, then
+/// a merge into the region kept in place) leaves every pipe in exactly one line that lists it.
+/datum/unit_test/dq_atmos_m/pipes/pipe_commit_links_like_one_at_a_time
+/datum/unit_test/dq_atmos_m/pipes/pipe_commit_links_like_one_at_a_time/run_gate()
+	var/list/pipes = list()
+	for(var/i in 1 to 4)
+		pipes += allocate(/obj/machinery/atmospherics/pipe/simple/visible, tile(i, 5))
+	var/datum/pipeline/one_at_a_time = new
+	for(var/obj/machinery/atmospherics/pipe/P as anything in pipes)
+		rel_set(P, nameof(P.parent), one_at_a_time)
+	var/list/expected = one_at_a_time.members.Copy()
+	var/datum/pipeline/at_once = new
+	TEST_ASSERT_EQUAL(rel_set_many(pipes, nameof(/obj/machinery/atmospherics/pipe::parent), at_once), length(pipes), "every pipe names the new line")
+	TEST_ASSERT_EQUAL(jointext(at_once.members, ","), jointext(expected, ","), "the same members in the same order")
+	TEST_ASSERT_EQUAL(length(one_at_a_time.members), 0, "the old line is emptied as one-at-a-time moves empty it")
+	for(var/obj/machinery/atmospherics/pipe/P as anything in pipes)
+		TEST_ASSERT(P.parent == at_once, "[P] names the new line")
+		rel_clear(P, nameof(P.parent))
+	qdel(one_at_a_time)
+	qdel(at_once)
+	for(var/obj/machinery/atmospherics/pipe/P as anything in pipes)
+		qdel(P)
+	// The commit path: a line split by a shut valve and merged back when it opens.
+	var/list/types = list(/obj/machinery/atmospherics/pipe/cap/visible, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/simple/visible, \
+		/obj/machinery/atmospherics/valve, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/simple/visible, /obj/machinery/atmospherics/pipe/cap/visible)
+	var/list/made = list()
+	for(var/i in 1 to length(types))
+		var/obj/machinery/atmospherics/M = allocate(types[i], tile(i - 1, 3))
+		M.set_dir(i == length(types) ? WEST : EAST)
+		M.init_dir()
+		M.set_grid_power(TRUE)
+		M.set_broken_condition(FALSE)
+		made += M
+	for(var/obj/machinery/atmospherics/M as anything in made)
+		M.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(made)
+	LAZYADD(ap_lines, made)
+	am_settle()
+	var/obj/machinery/atmospherics/valve/V = made[4]
+	for(var/step in list("shut", "open"))
+		if(step == "shut")
+			V.close()
+		else
+			V.open()
+		am_settle()
+		for(var/obj/machinery/atmospherics/pipe/P in made)
+			TEST_ASSERT_NOTNULL(P.parent, "after the valve was [step], [P] is in a line")
+			var/count = 0
+			for(var/obj/machinery/atmospherics/pipe/member as anything in P.parent.members)
+				if(member == P)
+					count++
+			TEST_ASSERT_EQUAL(count, 1, "after the valve was [step], [P]'s line lists it once")
 	take_down_lines()

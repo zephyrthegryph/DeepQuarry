@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { NanoMap } from 'tgui/components';
 import { Box } from 'tgui-core/components';
-
+import type { CrewMonitorActions } from '../generated/CrewMonitor';
 import { getStatColor } from './functions';
 import type { Data } from './types';
 
@@ -9,9 +9,9 @@ export const CrewMonitorMapView = (props: {
   zoom: number;
   onZoom: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const { config, data } = useBackend<Data>();
+  const { config, data } = useBackend<Data, CrewMonitorActions>();
 
-  const { crewmembers } = data;
+  const { crewmembers = [] } = data;
 
   return (
     <Box height="526px" mb="0.5rem" overflow="hidden">

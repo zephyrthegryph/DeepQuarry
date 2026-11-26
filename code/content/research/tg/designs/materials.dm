@@ -685,7 +685,7 @@
 	SET_MATERIAL_DESIGN_NAMEDESC(MAT_LOG)
 	id = MAT_LOG
 	build_type = AUTOLATHE
-	materials = list(MAT_LOG = REAGENTS_PER_LOG)
+	materials = list(MAT_LOG = SHEET_MATERIAL_AMOUNT)
 	build_path = /obj/item/stack/material/log
 	category = list(
 		RND_CATEGORY_INITIAL,
@@ -696,7 +696,7 @@
 	SET_MATERIAL_DESIGN_NAMEDESC(MAT_SIFLOG)
 	id = MAT_SIFLOG
 	build_type = AUTOLATHE
-	materials = list(MAT_SIFLOG = REAGENTS_PER_LOG)
+	materials = list(MAT_SIFLOG = SHEET_MATERIAL_AMOUNT)
 	build_path = /obj/item/stack/material/log/sif
 	category = list(
 		RND_CATEGORY_INITIAL,
@@ -707,7 +707,7 @@
 	SET_MATERIAL_DESIGN_NAMEDESC(MAT_HARDLOG)
 	id = MAT_HARDLOG
 	build_type = AUTOLATHE
-	materials = list(MAT_HARDLOG = REAGENTS_PER_LOG)
+	materials = list(MAT_HARDLOG = SHEET_MATERIAL_AMOUNT)
 	build_path = /obj/item/stack/material/log/hard
 	category = list(
 		RND_CATEGORY_INITIAL,
@@ -718,7 +718,7 @@
 	SET_MATERIAL_DESIGN_NAMEDESC(MAT_WOODEN_STICK)
 	id = MAT_WOODEN_STICK
 	build_type = AUTOLATHE
-	materials = list(MAT_WOODEN_STICK = REAGENTS_PER_ROD)
+	materials = list(MAT_WOODEN_STICK = SHEET_MATERIAL_AMOUNT)
 	build_path = /obj/item/stack/material/stick
 	category = list(
 		RND_CATEGORY_INITIAL,

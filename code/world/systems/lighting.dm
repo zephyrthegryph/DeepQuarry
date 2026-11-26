@@ -10,6 +10,7 @@ SYSTEM_DEF(lighting)
 	periodic_runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY // Do some work during lobby waiting period. May as well.
 	var/sun_mult = 1.0
 	var/static/list/sources_queue = list() // List of lighting sources queued for update.
+	var/static/list/sources_queue_near = list() // Handles (handle_of()) of the queued sources standing in a chunk some viewer holds: drained before sources_queue (queue_source()).
 	var/static/list/corners_queue = list() // List of lighting corners queued for update.
 	var/static/list/objects_queue = list() // List of lighting objects queued for update.
 	var/static/list/sunlight_queue_active = list() // List of turfs that need to have their sunlight updated
@@ -17,7 +18,7 @@ SYSTEM_DEF(lighting)
 	var/list/z_to_pshandler = list()
 
 /datum/system/lighting/stat_entry(msg)
-	msg = "L:[length(sources_queue)]|C:[length(corners_queue)]|O:[length(objects_queue)]"
+	msg = "L:[length(sources_queue_near)]+[length(sources_queue)]|C:[length(corners_queue)]|O:[length(objects_queue)]"
 	return ..()
 
 
@@ -32,6 +33,9 @@ SYSTEM_DEF(lighting)
 	#else
 	if(!initialized)
 		initialized = TRUE
+		GLOB.client_lighting = TRUE // client-rendered glows from round start: no lighting objects (client_glow.dm)
+		log_world("client lighting: on")
+		lighting_smooth_apply()
 		create_all_lighting_objects()
 	#endif
 
@@ -54,30 +58,23 @@ SYSTEM_DEF(lighting)
 	if(!init_tick_checks)
 		KERNEL_SPLIT_TICK
 
-	var/list/queue = sources_queue
+	var/step_start = TICK_USAGE
+	var/start_sources = length(sources_queue) + length(sources_queue_near)
+	var/start_corners = length(corners_queue)
+	var/start_objects = length(objects_queue)
+	var/start_sunlight = length(sunlight_queue_active)
+	var/start_near = length(sources_queue_near)
+	var/list/queue
 	var/i = 0
 
-	// UPDATE SOURCE QUEUE
-	queue = sources_queue
-	while(i < length(queue)) //we don't use for loop here because i cannot be changed during an iteration
-		i += 1
+	// UPDATE SOURCE QUEUE: the lights a viewer holds the chunk of first (a player's own light and the shadows round it never wait behind a power flip across the map), the rest after
+	if(!drain_sources(sources_queue_near, init_tick_checks, TRUE))
+		drain_sources(sources_queue, init_tick_checks)
 
-		var/datum/light_source/L = queue[i]
-		// Which sources keep being re-queued (the churn metrics; world Topic "lightcensus").
-		CHURN_COUNT(lights, L.source_atom ? L.source_atom.type : /datum/light_source)
-		L.update_corners()
-
-		if(!QDELETED(L))
-			L.needs_update = LIGHTING_NO_UPDATE
-		else
-			i -= 1 // update_corners() has removed L from the list, move back so we don't overflow or skip the next element
-
-		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
-		if(!init_tick_checks && KERNEL_OVER_BUDGET)
-			break
-	if (i)
-		queue.Cut(1, i + 1)
-		i = 0
+	var/sources_ms = TICK_USAGE_TO_MS(step_start)
+	var/flush_started = TICK_USAGE
+	client_glow_reconsider_flush(init_tick_checks) // client lighting: the opacity changes since the last step, one redraw per light (client_shadow.dm)
+	var/flush_ms = TICK_USAGE_TO_MS(flush_started)
 
 	if(!init_tick_checks)
 		KERNEL_SPLIT_TICK
@@ -138,6 +135,49 @@ SYSTEM_DEF(lighting)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
+
+	var/smooth_started = TICK_USAGE
+	lighting_smooth_step(init_tick_checks) // corner mode: the turfs sampled since the last step, their corners and tiles (lighting_smoothing.dm)
+
+	// A step over a whole tick: what it had to do and what it left, to tell one huge element from a budget that did not bind.
+	if(!init_tick_checks && TICK_USAGE_TO_MS(step_start) > world.tick_lag * 100)
+		log_world("light_step took [TICK_USAGE_TO_MS(step_start)]ms (limit [Kernel.current_ticklimit]%); parts: sources [round(sources_ms, 0.1)], glow flush [round(flush_ms, 0.1)] ([GLOB.client_glow_last_flush_redrawn] light(s) redrawn, [GLOB.client_glow_last_flush_sighted] viewer(s) took sight), smoothing [round(TICK_USAGE_TO_MS(smooth_started), 0.1)]; start: sources [start_sources] ([start_near] near a viewer), corners [start_corners], objects [start_objects], sunlight [start_sunlight]; left: sources [length(sources_queue) + length(sources_queue_near)], corners [length(corners_queue)], objects [length(objects_queue)], sunlight [length(sunlight_queue_active)]")
+
+/// Drains the light sources in `queue` (one of the two source queues) in order until it is empty or the tick's budget is spent. TRUE when the budget stopped it
+/// with sources left. `handles`: the queue holds handles (the near queue), not the sources.
+/datum/system/lighting/proc/drain_sources(list/queue, init_tick_checks, handles = FALSE)
+	var/i = 0
+	while(i < length(queue)) //we don't use for loop here because i cannot be changed during an iteration
+		i += 1
+
+		var/datum/light_source/L = handles ? handle_get(queue[i]) : queue[i]
+		// A deleted (or marked-for-deletion) source still in the queue is dropped here: stepping back over it while it
+		// stays in place would spin this loop forever.
+		if(QDELETED(L))
+			queue.Cut(i, i + 1)
+			i -= 1
+			continue
+		// Which sources keep being re-queued (the churn metrics; world Topic "lightcensus").
+		CHURN_COUNT(lights, L.source_atom ? L.source_atom.type : /datum/light_source)
+		L.update_corners()
+
+		if(!QDELETED(L))
+			L.needs_update = LIGHTING_NO_UPDATE
+		else
+			// update_corners() deleted L: on_destroy() normally took it out of the list; drop it here if it did not, then
+			// step back so the next element is not skipped.
+			if(i <= length(queue) && (handles ? handle_get(queue[i]) : queue[i]) == L)
+				queue.Cut(i, i + 1)
+			i -= 1
+
+		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
+		if(!init_tick_checks && KERNEL_OVER_BUDGET)
+			if(i)
+				queue.Cut(1, i + 1)
+			return length(queue) > 0
+	if(i)
+		queue.Cut(1, i + 1)
+	return FALSE
 
 /datum/system/lighting/proc/update_sunlight(datum/planet_sunlight_handler/pshandler)
 	if(istype(pshandler))

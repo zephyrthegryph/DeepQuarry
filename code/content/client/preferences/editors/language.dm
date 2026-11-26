@@ -32,6 +32,11 @@
 			continue
 		. += key
 
+/// The wire shape of /datum/preference_editor/language's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_language, row(alternate_languages = list_of(schema_text()), language_keys = map_of(schema_text(), schema_text()), known_languages = list_of(schema_text()), preferred_language = nullable(schema_text()), extra_languages = num(), max_alternate_languages = num(), pickable_languages = list_of(schema_text())))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_language_static, row(all_languages = map_of(schema_text(), row(name = schema_text(), desc = schema_text(), restricted = bool(), default_key = schema_text()))))
+
 /datum/preference_editor/language/build_ui_data(datum/preferences/preferences)
 	var/datum/species/S = GLOB.all_species[preferences.read_preference(/datum/preference/choiced/species)]
 	var/list/alt_languages = preferences.read_preference(/datum/preference/alternate_languages) || list()

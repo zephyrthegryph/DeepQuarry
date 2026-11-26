@@ -133,7 +133,7 @@ SYSTEM_DEF(robot_sprites)
 		RS.set_rest_sprite_options(list())
 		RS.set_sprite_icon(test_sprites[sprite])
 		var/splitted = splittext(sprite, "_")
-		RS.name = splitted[1]
+		RS.set_name(splitted[1])
 		RS.set_sprite_icon_state(splitted[1])
 		splitted = splittext(splitted[2], "x")
 		RS.pixel_x = (32 - text2num(splitted[1])) / 2

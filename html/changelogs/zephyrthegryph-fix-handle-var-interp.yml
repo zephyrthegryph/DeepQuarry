@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Handles kept in a var and made into text later (rule fire counts, contract opportunity actor and diversity totals) keep every digit"

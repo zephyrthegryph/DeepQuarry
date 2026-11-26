@@ -220,8 +220,7 @@ CAPABILITIES(/obj/machinery/gibber)
 	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)
 	if(operating || !occupant)
 		return
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/O in contents_of(src))
 		O.forceMove(src.loc)
 	slot_remove(occupant, get_turf(src))
 	return
@@ -288,8 +287,7 @@ CAPABILITIES(/obj/machinery/gibber)
 
 				byproducts[path] -= 1
 
-	latent_materialize_all() // a walk needs real things (C5)
-	for (var/obj/thing in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for (var/obj/thing in contents)
 		// There's a chance that the gibber will fail to destroy or butcher some evidence.
 		if(istype(thing,/obj/item/organ) && prob(80))
 			var/obj/item/organ/OR = thing

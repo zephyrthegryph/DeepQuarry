@@ -549,11 +549,6 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	return (istype(H) && istype(H.tail_style, taurtype)) ? null : lowertext(no_message)
 
 /* If anyone wants to make some... this is how you would.
-/obj/item/storage/backpack/saddlebag/spider
-	name = "Drider Saddlebags"
-	item_state = "saddlebag_drider"
-	icon_state = "saddlebag_drider"
-	var/taurtype = /datum/sprite_accessory/tail/taur/spider
 */
 
 /obj/item/storage/backpack/saddlebag_common //Shared bag for other taurs with sturdy backs

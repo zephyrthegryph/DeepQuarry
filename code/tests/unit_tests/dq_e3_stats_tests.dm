@@ -19,6 +19,7 @@
 		test_driver_end()
 	GLOB.declare_report_capture = null
 	GLOB.stat_marked = list()
+	GLOB.stat_marked_sorted = 0
 	GLOB.stat_tick_spent = 0
 
 /datum/unit_test/dq_e3/proc/run_e3()

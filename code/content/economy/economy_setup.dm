@@ -62,12 +62,12 @@ GLOBAL_VAR_INIT(economy_init, 0)
 		GLOB.next_account_number = rand(111111, 999999)
 
 		rel_set(GLOB, nameof(GLOB.station_account), new /datum/money_account)
-		GLOB.station_account.owner_name = "[station_name()] Station Account"
-		GLOB.station_account.account_number = rand(111111, 999999)
+		GLOB.station_account.set_owner_name("[station_name()] Station Account")
+		GLOB.station_account.set_account_number(rand(111111, 999999))
 		GLOB.station_account.remote_access_pin = rand(1111, 111111)
 		GLOB.station_account.set_money(75000)
-		GLOB.station_account.department_id = "Station"
-		GLOB.station_account.is_budget_account = TRUE
+		GLOB.station_account.set_department_id("Station")
+		GLOB.station_account.set_is_budget_account(TRUE)
 
 		//create an entry in the account transaction log for when it was created
 		var/datum/transaction/T = new()

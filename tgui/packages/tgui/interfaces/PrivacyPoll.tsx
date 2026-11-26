@@ -5,8 +5,10 @@
 // window. "later" just closes without writing to the DB.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
+import type { PrivacyPollActions } from './generated/PrivacyPoll';
 
 type Choice = {
   key: string;
@@ -43,7 +45,7 @@ const CHOICES: Choice[] = [
 ];
 
 export const PrivacyPoll = () => {
-  const { act } = useBackend();
+  const { act } = useBackend<Record<string, never>, PrivacyPollActions>();
   return (
     <Window width={520} height={520} title="Player Poll — Privacy">
       <Window.Content scrollable>
@@ -71,9 +73,9 @@ export const PrivacyPoll = () => {
                 <Button fluid onClick={() => act('vote', { choice: c.key })}>
                   {c.label}
                 </Button>
-                <Box mt={1} mb={1} color="label">
+                <Label mt={1} mb={1}>
                   {c.desc}
-                </Box>
+                </Label>
               </Stack.Item>
             ))}
           </Stack>

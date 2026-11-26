@@ -10,13 +10,13 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
-
-import type { Data } from './types';
+import type { MessageMonitorActions } from '../generated/MessageMonitor';
+import type { Data, LinkedServer } from './types';
 
 export const MessageMonitorMain = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MessageMonitorActions>();
 
-  const { linkedServer } = data;
+  const linkedServer = data.linkedServer!; // only rendered when a server is linked
 
   return (
     <Section
@@ -45,41 +45,37 @@ export const MessageMonitorMain = (props) => {
           <Box color="good">Good</Box>
         </LabeledList.Item>
       </LabeledList>
-      <Button mt={1} icon="key" onClick={() => act('pass')}>
-        Set Custom Key
-      </Button>
-      <Button.Confirm
-        color="red"
-        confirmIcon="exclamation-triangle"
-        icon="exclamation-triangle"
-      >
-        Clear Message Logs
-      </Button.Confirm>
-      <Button.Confirm
-        color="red"
-        confirmIcon="exclamation-triangle"
-        icon="exclamation-triangle"
-      >
-        Clear Request Logs
-      </Button.Confirm>
+      <Box mt={1}>
+        <Button icon="key" onClick={() => act('pass')}>
+          Set Custom Key
+        </Button>
+        <Button.Confirm
+          color="red"
+          confirmIcon="exclamation-triangle"
+          icon="exclamation-triangle"
+          onClick={() => act('del_pda')}
+        >
+          Clear Message Logs
+        </Button.Confirm>
+        <Button.Confirm
+          color="red"
+          confirmIcon="exclamation-triangle"
+          icon="exclamation-triangle"
+          onClick={() => act('del_rc')}
+        >
+          Clear Request Logs
+        </Button.Confirm>
+      </Box>
     </Section>
   );
 };
 
 export const MessageMonitorLogs = (props: {
-  logs: {
-    ref: string;
-    sender: string;
-    recipient: string;
-    message: string;
-    stamp?: string;
-    id_auth?: string;
-    priority?: string;
-  }[];
+  logs: (LinkedServer['pda_msgs'][number] | LinkedServer['rc_msgs'][number])[];
   pda?: BooleanLike;
   rc?: BooleanLike;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, MessageMonitorActions>();
 
   const { logs, pda, rc } = props;
 
@@ -124,11 +120,19 @@ export const MessageMonitorLogs = (props: {
                   </LabeledList.Item>
                   <LabeledList.Item
                     label="Verification"
-                    color={log.id_auth === 'Unauthenticated' ? 'bad' : 'good'}
+                    color={
+                      'id_auth' in log && log.id_auth === 'Unauthenticated'
+                        ? 'bad'
+                        : 'good'
+                    }
                   >
-                    {!!log.id_auth && decodeHtmlEntities(log.id_auth)}
+                    {'id_auth' in log &&
+                      !!log.id_auth &&
+                      decodeHtmlEntities(log.id_auth)}
                   </LabeledList.Item>
-                  <LabeledList.Item label="Stamp">{log.stamp}</LabeledList.Item>
+                  <LabeledList.Item label="Stamp">
+                    {'stamp' in log && log.stamp}
+                  </LabeledList.Item>
                 </LabeledList>
               ) : (
                 log.message
@@ -142,7 +146,7 @@ export const MessageMonitorLogs = (props: {
 };
 
 export const MessageMonitorAdmin = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MessageMonitorActions>();
 
   const {
     possibleRecipients,
@@ -205,9 +209,9 @@ export const MessageMonitorAdmin = (props) => {
 };
 
 export const MessageMonitorSpamFilter = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MessageMonitorActions>();
 
-  const { linkedServer } = data;
+  const linkedServer = data.linkedServer!; // only rendered when a server is linked
 
   return (
     <Section title="Spam Filtering">

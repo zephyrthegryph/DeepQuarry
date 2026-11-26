@@ -99,7 +99,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/oregrub/lava)
 	if(isliving(A))
 		var/mob/living/L = A
 		var/target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
-		if(L.can_inject(src, null, target_zone))
+		if(!L.inject_refusal(src, target_zone))
 			inject_poison(L, target_zone)
 
 /mob/living/simple_mob/vore/oregrub/on_death(gibbed)

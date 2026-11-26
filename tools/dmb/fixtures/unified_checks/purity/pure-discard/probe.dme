@@ -1,5 +1,0 @@
-/proc/value()
-    set SpacemanDMM_should_be_pure=1
-    return 1
-/proc/probe()
-    value()

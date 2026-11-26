@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
-  Box,
   Button,
   Divider,
   NumberInput,
@@ -8,12 +8,17 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
+import type { RetailScannerActions } from '../generated/RetailScanner';
 import type { Data } from './types';
 
 export const CurrentTransaction = (model) => {
-  const { act, data } = useBackend<Data>();
-  const { current_transactioon, cash_locked, locked, subsidized_checkout } =
-    data;
+  const { act, data } = useBackend<Data, RetailScannerActions>();
+  const {
+    current_transactioon = {} as Data['current_transactioon'],
+    cash_locked,
+    locked,
+    subsidized_checkout,
+  } = data;
 
   const { items, prices } = current_transactioon;
 
@@ -48,10 +53,10 @@ export const CurrentTransaction = (model) => {
       }
     >
       {!!subsidized_checkout && !!Object.keys(current_transactioon).length && (
-        <Box mb={1} color="label">
+        <Label mb={1}>
           The customer will see an itemized personal/subsidy quote and must
           explicitly confirm after presenting their ID or PDA.
-        </Box>
+        </Label>
       )}
       <Table>
         {items && prices && (

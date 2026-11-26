@@ -1,11 +1,11 @@
 // --- Revenant blight -------------------------------------------------------------
 // A spectral wasting that drains the victim's vitality. Clears as the blight
-// is cured (holy water / rest); antitoxin helps a little.
+// is cured (rest, or adranol); antitoxin helps a little.
 /datum/affliction/spectral_blight
 	name = "spectral blight"
 	category = "Infectious"
 	subcategory = "Anomalous"
-	clinical_description = "An anomalous wasting of unknown mechanism. Patients grow pale, cold and confused, as though something is drawing the life from them. Resting and holy water are anecdotally effective; antitoxins only slow it."
+	clinical_description = "An anomalous wasting of unknown mechanism. Patients grow pale, cold and confused, as though something is drawing the life from them. Resting is the safest course, and adranol clears the confusion and haze the blight brings; antitoxins only slow it."
 	injury_category = INJURY_CATEGORY_TOXIC
 	progression_rate = 0
 	consciousness_at_max = 40

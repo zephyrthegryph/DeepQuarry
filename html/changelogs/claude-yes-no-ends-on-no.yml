@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Answering No to the hide-in-food, call or recall shuttle, delete comms message, VV stop animations and VV mass delete confirmations now ends the action instead of doing it anyway"

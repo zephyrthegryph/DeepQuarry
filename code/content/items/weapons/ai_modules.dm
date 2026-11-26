@@ -401,11 +401,6 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	laws_type = /datum/ai_laws/corporate
 
 /******************** Drone ********************/
-/obj/item/aiModule/drone
-	name = "\improper 'Drone' core AI module"
-	desc = "A 'Drone' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws_type = /datum/ai_laws/drone
-
 /****************** P.A.L.A.D.I.N. **************/
 
 /obj/item/aiModule/paladin // -- NEO
@@ -504,17 +499,7 @@ CAPABILITIES(/obj/item/aiModule/syndicate)
 
 /******************** Mercenary Directives ********************/
 
-/obj/item/aiModule/syndicate_override
-	name = "\improper 'Mercenary Directives' core AI module"
-	desc = "A 'Mercenary Directives' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws_type = /datum/ai_laws/syndicate_override
-
 /******************** Spider Clan Directives ********************/
-
-/obj/item/aiModule/ninja_override
-	name = "\improper 'Spider Clan Directives' core AI module"
-	desc = "A 'Spider Clan Directives' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws_type = /datum/ai_laws/ninja_override
 
 /******************** Maintenance ********************/
 
@@ -552,11 +537,6 @@ CAPABILITIES(/obj/item/aiModule/syndicate)
 	laws_type = /datum/ai_laws/balance
 
 /******************** Gravekeeper ********************/
-
-/obj/item/aiModule/gravekeeper
-	name = "\improper 'Gravekeeper' core AI module"
-	desc = "A 'Gravekeeper' Core AI Module: 'Reconfigures the AI's core laws.'"
-	laws_type = /datum/ai_laws/gravekeeper
 
 
 /******************** Predator ********************/

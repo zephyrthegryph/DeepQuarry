@@ -41,6 +41,8 @@ bin="$(bash tools/ci/analyze.sh)" || {
 # DQ_RATCHETS_SELFTESTS=changed (the merge gates set it): the self-tests of a tool (the disk budget, the test-scratch rule, the capability
 # varmap generator's selftest) run only when that tool's own files changed since origin/master; they test the tool, not the tree. Unset
 # or "all" (CI, by hand): every one runs.
+# `--changed-only` is the quick local run: it defaults to "changed" too (the disk budget self-test alone is a minute), unless the variable is set.
+case " $* " in *" --changed-only "*) : "${DQ_RATCHETS_SELFTESTS:=changed}" ;; esac
 selftest_wanted() { # <regex of the tool's files>
 	[ "${DQ_RATCHETS_SELFTESTS:-all}" = changed ] || return 0
 	local base
@@ -59,10 +61,17 @@ gen_names=(gen_capability_varmap_check gen_dme_check)
 if selftest_wanted '^tools/dx/'; then run_gen gen_capability_varmap_selftest tools/dx/gen_capability_varmap.py --selftest; gen_names+=(gen_capability_varmap_selftest)
 else echo "check_ratchets: gen_capability_varmap --selftest skipped (tools/dx unchanged)"; fi
 # deepquarry.dme is generated and committed: stale (a file added, moved or deleted without the build running), or a macro used before
-# its #define in the generated order, fails here with the regenerate command (python3 tools/build/gen_dme.py).
+# its #define in the generated order, fails here with the regenerate command (python3 tools/build/gen_dme.py). The same check covers the
+# test tree's generated include lists (code/tests/_tests.dm, code/tests/unit_tests/_unit_tests.dm: tools/build/gen_test_includes.py).
 run_gen gen_dme_check tools/build/gen_dme.py --check
-if selftest_wanted '^tools/build/(gen_dme\.py|dme_spec\.txt)$'; then run_gen gen_dme_selftest tools/build/gen_dme.py --selftest; gen_names+=(gen_dme_selftest)
+if selftest_wanted '^tools/build/(gen_test_includes\.py|test_includes_spec\.txt)$'; then run_gen gen_test_includes_selftest tools/build/gen_test_includes.py --selftest; gen_names+=(gen_test_includes_selftest); fi
+if selftest_wanted '^tools/build/(gen_dme\.py|dm_filecache\.py|dme_spec\.txt)$'; then run_gen gen_dme_selftest tools/build/gen_dme.py --selftest; gen_names+=(gen_dme_selftest)
 else echo "check_ratchets: gen_dme --selftest skipped (the generator is unchanged)"; fi
+
+# Font Awesome: html/font-awesome/ ships only the icons the code names (tools/fontawesome/subset.py), so an icon added to the code or DM data
+# without rerunning the subset would draw as an empty box. Standard library only.
+run_gen fontawesome_check tools/fontawesome/subset.py --check
+gen_names+=(fontawesome_check)
 
 # Variant families (code/content/variants/README.md): VARIANT() keys exist, and a converted family gets no new data-only leaf type.
 ( "$PY" tools/ci/check_variants.py >"$gen_dir/check_variants.out" 2>&1; echo $? >"$gen_dir/check_variants.rc" ) &
@@ -70,6 +79,7 @@ gen_names+=(check_variants)
 # The mapping dme (StrongDMM) and its stub types follow the variant tables.
 ( "$PY" tools/build/gen_mapping_dme.py --check >"$gen_dir/check_mapping_dme.out" 2>&1; echo $? >"$gen_dir/check_mapping_dme.rc" ) &
 gen_names+=(check_mapping_dme)
+if selftest_wanted '^tools/(build/(gen_mapping_dme|dm_filecache)\.py|ci/(variant_census|check_variants)\.py)$'; then run_gen gen_mapping_incremental tools/build/gen_mapping_dme.py --verify-incremental; gen_names+=(gen_mapping_incremental); fi
 
 # .gitattributes must name files that exist and merge drivers that exist (a move once left the _unit_tests.dm union rule dead).
 ( bash tools/ci/check_gitattributes.sh >"$gen_dir/gitattributes_check.out" 2>&1; echo $? >"$gen_dir/gitattributes_check.rc" ) &
@@ -127,6 +137,14 @@ fi
 if ! selftest_wanted '\.rs$|^tools/ci/check_test_scratch\.sh$'; then echo "check_ratchets: check_test_scratch skipped (no Rust file changed)"
 elif ! bash tools/ci/check_test_scratch.sh; then
 	failed+=("check_test_scratch")
+fi
+
+# Raw Byondapi reference reads (a persistent ref that leaks its DM object) are rejected outside verdigris/ffi/callback/src/held.rs.
+if ! selftest_wanted '^verdigris/.*\.rs$|^tools/ci/check_byond_refs\.py$'; then echo "check_ratchets: check_byond_refs skipped (no verdigris Rust file changed)"
+elif ! "$PY" tools/ci/check_byond_refs.py; then
+	failed+=("check_byond_refs")
+elif ! "$PY" tools/ci/check_byond_refs.py --selftest; then
+	failed+=("check_byond_refs_selftest")
 fi
 
 wait

@@ -1,0 +1,12 @@
+{
+	"visible": 0,
+	"control": "mapwindow.tooltip",
+	"title": "",
+	"theme": "",
+	"cursor_params": "",
+	"screen_loc": "",
+	"view_w": 0,
+	"view_h": 0,
+	"revision": 0,
+	"tile_size": 32
+}

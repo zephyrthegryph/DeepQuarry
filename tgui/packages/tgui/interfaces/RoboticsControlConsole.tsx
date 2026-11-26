@@ -1,49 +1,38 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
   Button,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type {
+  RoboticsControlConsoleActions,
+  RoboticsControlConsoleData,
+} from './generated/RoboticsControlConsole';
 
-type Data = {
-  auth: BooleanLike;
-  can_hack: BooleanLike;
-  cyborgs: cyborg[];
-  safety: BooleanLike;
-  show_detonate_all: BooleanLike;
-};
-
-type cyborg = {
-  name: string;
-  ref: string;
-  locked_down: BooleanLike;
-  locstring: string;
-  status: number;
-  health: number;
-  charge: number | null;
-  cell_capacity: number | null;
-  module: string;
-  synchronization: BooleanLike;
-  is_hacked: BooleanLike;
-  emagged: BooleanLike;
-  hackable: BooleanLike;
-};
+type cyborg = RoboticsControlConsoleData['cyborgs'][number];
 
 export const RoboticsControlConsole = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { can_hack, safety, show_detonate_all, cyborgs = [], auth } = data;
+  const { act, data } = useBackend<
+    RoboticsControlConsoleData,
+    RoboticsControlConsoleActions
+  >();
+  const { can_hack, safety, show_detonate_all, cyborgs, auth } = data;
   return (
     <Window width={500} height={460}>
       <Window.Content scrollable>
         {!!show_detonate_all && (
           <Section title="Emergency Self Destruct">
-            <Button icon={safety ? 'lock' : 'unlock'} selected={safety}>
+            <Button
+              icon={safety ? 'lock' : 'unlock'}
+              selected={safety}
+              onClick={() => act('arm')}
+            >
               {safety ? 'Disable Safety' : 'Enable Safety'}
             </Button>
             <Button
@@ -68,7 +57,10 @@ const Cyborgs = (props: {
   auth: BooleanLike;
 }) => {
   const { cyborgs, can_hack, auth } = props;
-  const { act } = useBackend();
+  const { act } = useBackend<
+    RoboticsControlConsoleData,
+    RoboticsControlConsoleActions
+  >();
   if (!cyborgs.length) {
     return (
       <NoticeBox>No cyborg units detected within access parameters.</NoticeBox>
@@ -144,20 +136,18 @@ const Cyborgs = (props: {
           <LabeledList.Item label="Location">
             <Box>{cyborg.locstring}</Box>
           </LabeledList.Item>
-          <LabeledList.Item label="Integrity">
-            <ProgressBar
-              color={cyborg.health > 50 ? 'good' : 'bad'}
-              value={cyborg.health / 100}
-            />
-          </LabeledList.Item>
+          <StatBar
+            label="Integrity"
+            color={cyborg.health > 50 ? 'good' : 'bad'}
+            value={cyborg.health / 100}
+          />
           {(typeof cyborg.charge === 'number' && (
             <>
-              <LabeledList.Item label="Cell Charge">
-                <ProgressBar
-                  color={cyborg.charge > 30 ? 'good' : 'bad'}
-                  value={cyborg.charge / 100}
-                />
-              </LabeledList.Item>
+              <StatBar
+                label="Cell Charge"
+                color={cyborg.charge > 30 ? 'good' : 'bad'}
+                value={cyborg.charge / 100}
+              />
               <LabeledList.Item label="Cell Capacity">
                 <Box color={cyborg.cell_capacity! < 30000 ? 'average' : 'good'}>
                   {cyborg.cell_capacity}

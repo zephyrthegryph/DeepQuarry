@@ -246,11 +246,6 @@ GLOBAL_LIST(construction_frame_floor)
 	icon_override = 'icons/obj/stock_parts_refinery.dmi'
 	frame_class = FRAME_CLASS_MACHINE
 
-/datum/frame/frame_types/industrial_reagent_filter
-	name = "Industrial Chemical Filter"
-	icon_override = 'icons/obj/stock_parts_refinery.dmi'
-	frame_class = FRAME_CLASS_MACHINE
-
 /datum/frame/frame_types/industrial_reagent_vat
 	name = "Industrial Chemical Vat"
 	icon_override = 'icons/obj/stock_parts_refinery.dmi'
@@ -318,7 +313,7 @@ SOURCE_DEF(frame_class)
 CAPABILITIES(/obj/structure/frame)
 	setup(PROC_REF(prepare_placed_frame))
 	rotatable()
-	construction(native_frame_graph())
+	construction(machine_frame_graph())
 	owns_many(nameof(components))
 	climb()
 	param(nameof(dir), pos = 1)

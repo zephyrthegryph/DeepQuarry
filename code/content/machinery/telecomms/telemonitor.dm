@@ -120,6 +120,7 @@ MSG_DEF_SELF(tcomms_console/buffer_full, "The buffer is full: release it before 
 
 CAPABILITIES(/obj/machinery/computer/telecomms/monitor)
 	interface("TelecommsMachineBrowser")
+	ui_shape(machinelist = list_of(row(id = schema_text(), name = schema_text())), selectedMachine = nullable(row(id = schema_text(), name = schema_text(), links = list_of(row(id = schema_text(), name = schema_text())))), network = schema_text(), temp = nullable(row(color = schema_text(), text = schema_text())))
 	tcomms_probe_console()
 	ref_one(nameof(SelectedMachine), /obj/machinery/telecomms)
 	ref_many(nameof(machinelist))

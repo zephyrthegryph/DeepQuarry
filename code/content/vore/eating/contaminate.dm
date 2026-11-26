@@ -93,16 +93,14 @@ MSG_DEF(sink/washed_gurgled, span_notice("You wash %I% using %T%."), span_notice
 
 //Storages that contaminate contents
 /obj/item/storage/backpack/gurgle_contaminate(atom/movable/item_storage = null, contamination_flavor = "Generic", contamination_color = "green")
-	make_contents_real()
 	if(contents)
-		for(var/obj/item/O in contents) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+		for(var/obj/item/O in contents)
 			O.gurgle_contaminate(item_storage, contamination_flavor, contamination_color)
 	..()
 
 /obj/item/storage/belt/gurgle_contaminate(atom/movable/item_storage = null, contamination_flavor = "Generic", contamination_color = "green")
-	make_contents_real()
 	if(contents)
-		for(var/obj/item/O in contents) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+		for(var/obj/item/O in contents)
 			O.gurgle_contaminate(item_storage, contamination_flavor, contamination_color)
 	..()
 

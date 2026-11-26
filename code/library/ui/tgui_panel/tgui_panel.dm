@@ -13,6 +13,8 @@
 	var/broken = FALSE
 	var/initialized_at = 0
 	var/oldchat = FALSE
+	/// A long entry's packets received so far (speech.dm handle_packets()).
+	var/tmp/list/partial_packets
 	/// Each client notifies on protected playback, so this prevents spamming admins.
 	var/static/admins_warned = 0 // COOLDOWN, shared by every panel
 
@@ -44,9 +46,11 @@ CAPABILITIES(/datum/tgui_panel)
  * Initializes tgui panel.
  */
 /datum/tgui_panel/proc/initialize(force = FALSE)
-	// Deferred a tick, until after the client constructor: a timer, the constructor never waits.
-	after(src, 1 TICKS, PROC_REF(initialize_window))
+	initialize_window()
 
+/// The page, its bundle (CSS and JS) and fonts go out now, at connect, like the stat panel's: a timer here waited for the whole
+/// server init (timers start with the kernel), so the chat pane sat white and showed unstyled text until then. Only the chat
+/// spritesheet waits for a timer: building it can sleep (ensure_ready), and the constructor never waits.
 /datum/tgui_panel/proc/initialize_window()
 	STAMP(src, initialized_at, CLOCK_WORLD)
 	// Perform a clean initialization
@@ -57,11 +61,14 @@ CAPABILITIES(/datum/tgui_panel)
 		))
 	window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/fontawesome))
 	window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/tgfont))
-	window.send_asset(get_asset_datum(/datum/asset/spritesheet_batched/chat))
+	after(src, 1 TICKS, PROC_REF(send_chat_spritesheet))
 	// Other setup
 	request_telemetry()
 	after(src, 5 SECONDS, PROC_REF(on_initialize_timed_out))
 	window.send_message("testTelemetryCommand")
+
+/datum/tgui_panel/proc/send_chat_spritesheet()
+	window.send_asset(get_asset_datum(/datum/asset/spritesheet_batched/chat))
 
 /**
  * private
@@ -77,33 +84,30 @@ CAPABILITIES(/datum/tgui_panel)
  *
  * Callback for handling incoming tgui messages.
  */
-/datum/tgui_panel/proc/on_message(type, payload)
+/datum/tgui_panel/proc/on_message(type, payload, href_list)
+	if(type == "col/page")
+		// The column page's own messages (window_dock.dm).
+		column_page_message(payload)
+		return TRUE
+	if(type == "col/msg")
+		// A message from one of the column page's windows (the stat panel, a docked interface): to that window (column_part.dm).
+		column_message(payload)
+		return TRUE
 	if(type == "ready")
 		broken = FALSE
-		var/list/stored_rounds = CONFIG_GET(flag/chatlog_database_backend) ? vchatlog_get_recent_roundids(client().ckey) : null
-		window.send_message("connected", list(
-			"round_id" = GLOB.round_id, // Sends the round ID to the chat, requires round IDs
-			"chatlog_db_backend" = CONFIG_GET(flag/chatlog_database_backend),
-			"chatlog_api_endpoint" = CONFIG_GET(string/chatlog_database_api_endpoint),
-			"chatlog_stored_rounds" = islist(stored_rounds) ? list("0") + stored_rounds : list("0"),
-		))
-		window.send_message("update", list(
-			"config" = list(
-				"client" = list(
-					"ckey" = client().ckey,
-					"chatlog_token" = client().chatlog_token,
-					"address" = client().address,
-					"computer_id" = client().computer_id,
-				),
-				"server" = list(
-					"round_id" = GLOB.round_id,
-				),
-				"window" = list(
-					"fancy" = FALSE,
-					"locked" = FALSE,
-				),
-			),
-		))
+		send_chat_config(window)
+		// A (re)loaded column page holds no windows: its arrangement and every column window go to it again (column_part.dm).
+		column_page_loaded()
+		// The page is up, so the chat pane can move to where the preference wants it without interrupting the load.
+		client()?.chat_layout_sync()
+		client()?.chat_send_input_state()
+		return TRUE
+	// The chat input row: speech, typing bubbles and the live preview's rules (code/content/client/chat_speech.dm).
+	if(client()?.chat_speech_message(type, payload, href_list))
+		return TRUE
+	// The column page's left edge drags the map/column split.
+	if(type == "layout/mapsplit")
+		client()?.map_split_report(payload?["split"])
 		return TRUE
 	if(type == "audio/setAdminMusicVolume")
 		client().admin_music_volume = payload["volume"]
@@ -118,6 +122,34 @@ CAPABILITIES(/datum/tgui_panel)
 	if(type == "telemetry")
 		analyze_telemetry(payload)
 		return TRUE
+
+/// The chat's connect messages to `window`: the round and chatlog settings ("connected") and the client's config (`update_type`: the
+/// column page's "update"; a floating chat window's "chat/config", since a tgui window's own update is its data).
+/datum/tgui_panel/proc/send_chat_config(datum/tgui_window/window, update_type = "update")
+	var/list/stored_rounds = CONFIG_GET(flag/chatlog_database_backend) ? vchatlog_get_recent_roundids(client().ckey) : null
+	window.send_message("connected", list(
+		"round_id" = GLOB.round_id, // Sends the round ID to the chat, requires round IDs
+		"chatlog_db_backend" = CONFIG_GET(flag/chatlog_database_backend),
+		"chatlog_api_endpoint" = CONFIG_GET(string/chatlog_database_api_endpoint),
+		"chatlog_stored_rounds" = islist(stored_rounds) ? list("0") + stored_rounds : list("0"),
+	))
+	window.send_message(update_type, list(
+		"config" = list(
+			"client" = list(
+				"ckey" = client().ckey,
+				"chatlog_token" = client().chatlog_token,
+				"address" = client().address,
+				"computer_id" = client().computer_id,
+			),
+			"server" = list(
+				"round_id" = GLOB.round_id,
+			),
+			"window" = list(
+				"fancy" = FALSE,
+				"locked" = FALSE,
+			),
+		),
+	))
 
 /**
  * public

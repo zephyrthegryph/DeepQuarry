@@ -437,8 +437,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(!state.armor_deployed && (unfortunate_soul.has_status(STAT_STUNNED) || unfortunate_soul.has_status(STAT_WEAKENED) || unfortunate_soul.has_status(STAT_PARALYZED) || unfortunate_soul.vitality() < 0.75))
 		if(assume_battle_stance(unfortunate_soul, state))
 			unfortunate_soul.mend(TREAT_ANALGESIC, 200) //WAKE UP SAMURI
-			unfortunate_soul.reagents.add_reagent(REAGENT_ID_ADRENALINE, 5)
-			unfortunate_soul.reagents.add_reagent(REAGENT_ID_EPINEPHRINE, 5)
+			unfortunate_soul.reagents.add_reagent(REAGENT_ID_ADRENALINE, 10)
 			unfortunate_soul.reagents.add_reagent(REAGENT_ID_NUMBENZYME, 1)
 			to_chat(unfortunate_soul, span_large(span_bolddanger("Your body surges with adrenaline, and every cell ignites with a primal fight or flight. Your instincts are screaming through every fiber of your body: Escape the danger. Kill the threats. Protect your body. SURVIVE.")))
 			return
@@ -542,7 +541,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	//Handle our organs. We might not heal entirely before we come back, but that's fine. If we die again, we come back again.
 	for(var/obj/item/organ/internal/I in unfortunate_soul.internal_organ_list())
-		I.periodic_step()
 		I.germ_level = max(0, I.germ_level - 25)
 		unfortunate_soul.mend(TREAT_RESTORATION, 2.5, I)
 		if(I.status & ORGAN_DEAD && (I.damage < I.is_broken()) && (I.germ_level < INFECTION_LEVEL_ONE)) //If we have any dead organs, try to revive them.

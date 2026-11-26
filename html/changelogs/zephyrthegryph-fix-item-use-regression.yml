@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The Z key (use the held item) works again; it named a verb that had become a menu entry. The cyborg Ctrl+Z key works too."

@@ -41,8 +41,6 @@ TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 	on_holder_login(source)
 
 /datum/ai_brain/proc/on_holder_login(mob/source)
-	if(source && istype(source, /mob/living))
-		grant(source, granted_verb(/mob/living/proc/dq_use_combat_move), src)
 	// A player-controlled mob is out of its pack (unless it is on autopilot): the pack never perceives or targets for it.
 	if(!autopilot)
 		leave_pack("player took over")
@@ -62,11 +60,18 @@ TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 #define DQ_COMBAT_SILENT_REFUSAL "selection unavailable"
 // ---------------------------------------------------------------------------
 
-/mob/living/proc/dq_use_combat_move()
-	set name = "Use Combat Move"
-	set desc = "Trigger one of your AI mob's special moves."
-	set category = VERB_CAT_COMBAT
+/// The Use Combat Move menu entry shows on a player controlled mob that has an AI brain (a wild critter has no player to offer it to).
+/mob/living/proc/dq_combat_move_ready(datum/act/op/A)
+	if(!ai_brain || !client)
+		return MSG(req_silent)
+	return null
 
+/mob/living/proc/dq_combat_move_chosen(datum/act/op/A)
+	dq_use_combat_move()
+	return OP_OK
+
+/// Trigger one of your AI mob's special moves.
+/mob/living/proc/dq_use_combat_move()
 	dq_combat_move_stage(list())
 
 /mob/living/proc/dq_combat_move_stage(list/state, datum/request/request)

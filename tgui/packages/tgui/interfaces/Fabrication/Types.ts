@@ -18,7 +18,7 @@ export type Material = {
    * An internal reference to the material that the server can use to uniquely
    * identify the material.
    */
-  ref: string;
+  ref: number;
 
   /**
    * The amount of material; 100 units is one sheet.
@@ -77,7 +77,7 @@ export type Design = {
    */
   materialConfigurable?: BooleanLike;
   /** Product geometry used to choose relevant material diagnostics. */
-  materialProfile?: string;
+  materialProfile?: string | null;
   /** Functional construction slots stored on the finished object. */
   materialSlots?: MaterialSlot[];
 };
@@ -86,9 +86,16 @@ export type MaterialSlot = {
   role: string;
   label: string;
   amount: number;
-  defaultMaterial?: string;
+  defaultMaterial?: string | null;
   optional: BooleanLike;
-  description?: string;
+  description?: string | null;
+};
+
+/** One card stat or trait with the steps behind its number ("sulfur -12"). */
+export type MaterialCardRow = {
+  name: string;
+  value: number;
+  breakdown: { label: string; delta: number }[];
 };
 
 /**
@@ -104,15 +111,13 @@ export type MaterialChoice = {
   color: string;
   layers: { role: string; name: string; share: number }[];
   responses: string[];
-  hardness: number;
-  density: number;
-  integrity: number;
-  elasticity: number;
-  brittleness: number;
+  /** The card (strength, toughness, ...) and any traits, each with the steps behind its number. */
+  card: MaterialCardRow[];
+  strength: number;
+  weight: number;
   toughness: number;
   conductivity: number;
   heatResistance: number;
-  thermalInsulation: number;
   corrosionResistance: number;
   pressureLimit: number;
   resistivity?: number;
@@ -123,79 +128,4 @@ export type MaterialChoice = {
   phaseTemperature?: number;
   dielectricStrength?: number;
   meltingPoint?: number;
-};
-
-/**
- * The static and dynamic data made available to a fabricator UI.
- */
-export type FabricatorData = {
-  /**
-   * The materials available to the fabricator, via ore silo or local storage.
-   */
-  materials?: Material[];
-
-  /**
-   * Definition of how much units 1 sheet has.
-   */
-  SHEET_MATERIAL_AMOUNT?: number;
-
-  /**
-   * The name of the fabricator, as displayed on the title bar.
-   */
-  fabName: string;
-
-  /**
-   * Whether mineral access is disabled from the ore silo (contact the
-   * quartermaster).
-   */
-  onHold: BooleanLike;
-
-  /**
-   * The set of designs that this fabricator can print, indexed by their ID.
-   */
-  designs: Record<string, Design>;
-
-  /**
-   * Loaded materials offered in material-selectable designs' pickers.
-   */
-  materialChoices?: MaterialChoice[];
-
-  /**
-   * Whether the fabricator is currently printing an item.
-   */
-  busy: BooleanLike;
-
-  /**
-   * The maximum quantity of material that the fabricator can hold, or `-1`
-   * if the fabricator can hold infinitely many materials (such as the ore
-   * silo).
-   */
-  materialMaximum: number;
-
-  /**
-   * The fabricator's current queue.
-   */
-  queue: {
-    /**
-     * The job ID for this queued job. This is always unique, and can be used
-     * as a `key`.
-     */
-    jobId: number;
-
-    /**
-     * The design ID being printed. Available in `super.designs`.
-     */
-    designId: string;
-
-    /**
-     * If `true`, this design is currently being fabricated, and `timeLeft`
-     * is actively decreasing.
-     */
-    processing: BooleanLike;
-
-    /**
-     * The time left in this design's fabrication, in deciseconds.
-     */
-    timeLeft: number;
-  }[];
 };

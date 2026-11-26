@@ -72,6 +72,9 @@
 	var/species_name = current_species?.name || SPECIES_HUMAN
 	return random_name(gender, species_name)
 
+/datum/tgui_module/late_choices/late_join_name(mob/user)
+	return user.client.prefs.read_preference(/datum/preference/name/real_name)
+
 /// Character's nickname (optional)
 /datum/preference/name/nickname
 	savefile_key = "nickname"

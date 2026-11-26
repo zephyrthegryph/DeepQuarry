@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { ColorSelector } from 'tgui/interfaces/ColorPickerModal';
 import { type HsvaColor, hexToHsva, hsvaToHex } from 'tgui-core/color';
 import { Box, Floating, Stack } from 'tgui-core/components';
@@ -160,7 +161,7 @@ export const VorePanelEditColor = (
     <>
       {!!name_of && (
         <Stack.Item>
-          <Box color="label">{name_of}</Box>
+          <Label>{name_of}</Label>
         </Stack.Item>
       )}
       <Stack.Item shrink>

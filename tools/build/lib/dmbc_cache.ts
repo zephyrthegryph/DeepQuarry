@@ -14,7 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { storeVerdigris, dropVerdigris, type CacheKey } from './verdigris_cache';
 
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 1;
 
 // Everything tools/dmb/build.rs, Cargo and the `include_bytes!` of the engine template read.
 export const DMBC_CACHE_INPUTS = [
@@ -24,11 +24,6 @@ export const DMBC_CACHE_INPUTS = [
   'tools/dmb/src',
   'tools/dmb/crates',
   'tools/dmb/patches',
-  // Native Analyze policy is linked into dmbc. Its local path dependencies
-  // already live under crates; its own code/vendor inputs and shared Rust
-  // includes must participate in both committed identity and dirty detection.
-  'tools/analyze',
-  'tools/dmb/shared',
   'tools/dmb/fixtures/native_template.bin',
 ];
 
@@ -91,36 +86,9 @@ export function readCurrentDmbcVersion(binDir: string = sharedDmbcBinDir()): str
   return null;
 }
 
-/** The runtime version is reread on every call. Only an actually absent
- * pointer permits the documented pre-versioning layout. Maintenance probes
- * above may describe an invalid publication as absent; execution must refuse it. */
+/** The version the next compile runs. Resolved on every call: a process never keeps an older compiler than `current`. */
 export function pinnedDmbcVersion(binDir: string = sharedDmbcBinDir()): string | null {
-  const pointer = `${binDir}/current`;
-  let text: string;
-  try {
-    text = fs.readFileSync(pointer, 'utf8');
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      // readFile also returns ENOENT for a present dangling symlink. Distinguish
-      // that broken pointer from genuine absence before considering old layout.
-      try {
-        fs.lstatSync(pointer);
-      } catch (presenceError) {
-        if ((presenceError as NodeJS.ErrnoException).code === 'ENOENT') return null;
-        throw presenceError;
-      }
-    }
-    throw error;
-  }
-  const id = text.trim();
-  if (!/^[0-9a-f]{16}$/.test(id)) {
-    throw new Error('Published compiler pointer is not a 16-digit lowercase content ID.');
-  }
-  const image = `${dmbcVersionDir(binDir, id)}/dmbc${EXE_SUFFIX}`;
-  if (!fs.statSync(image).isFile()) {
-    throw new Error('Published compiler pointer does not name a compiler file.');
-  }
-  return id;
+  return readCurrentDmbcVersion(binDir);
 }
 
 /** Kept for callers that republished and wanted their own result: resolution is no longer cached, so nothing to drop. */

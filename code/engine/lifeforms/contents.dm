@@ -104,7 +104,7 @@
 		var/list/made = contains_roll(holder, E)
 		var/list/ctor = starts_args_resolve(holder, E.args["args"])
 		// A line with no slot is made straight inside an atom holder, as `new T(src)` was: no arrival move, so the holder's ledger is not
-		// built (and its latent generator resolved into real things) just to place it; InitAtom() records it if a ledger already exists.
+		// built just to place it; InitAtom() records it if a ledger already exists.
 		var/atom/inside = (!E.args["slot"] && isatom(holder)) ? holder : null
 		for(var/key in made)
 			var/list/things = list()

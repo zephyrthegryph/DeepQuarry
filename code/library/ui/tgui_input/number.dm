@@ -27,9 +27,6 @@
 		return null
 
 	// Client does NOT have tgui_input on: Returns regular input
-	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode))
-		var/input_number = input(user, message, title, default) as null|num // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
-		return clamp(round_value ? round(input_number) : input_number, min_value, max_value)
 	var/datum/tgui_input_number/number_input = new(user, message, title, default, max_value, min_value, timeout, round_value, ui_state)
 	number_input.tgui_interact(user)
 	number_input.wait()
@@ -100,6 +97,7 @@
 
 CAPABILITIES(/datum/tgui_input_number)
 	interface("NumberInputModal")
+	ui_shape(init_value = num(), large_buttons = bool(), max_value = num(), message = schema_text(), min_value = num(), swapped_buttons = bool(), title = schema_text(), round_value = bool(), timeout = nullable(num()))
 	op("submit", ui_act("submit", arg("entry", num())), then(PROC_REF(ui_act_submit)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
@@ -110,21 +108,22 @@ CAPABILITIES(/datum/tgui_input_number)
 /datum/tgui_input_number/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_input_number/tgui_static_data(mob/user)
+/datum/tgui_input_number/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 	data["init_value"] = default // Default is a reserved keyword
-	data["large_buttons"] = user.read_preference(/datum/preference/toggle/tgui_large_buttons)
+	data["large_buttons"] = TRUE
 	data["max_value"] = max_value
-	data["message"] = message
+	data["message"] = message || ""
 	data["min_value"] = min_value
-	data["swapped_buttons"] = !user.read_preference(/datum/preference/toggle/tgui_swapped_buttons)
-	data["title"] = title
-	data["round_value"] = round_value
+	data["swapped_buttons"] = TRUE
+	data["title"] = title || ""
+	data["round_value"] = round_value ? TRUE : FALSE
 	return data
 
 /// /datum/tgui_input_number's window data.
 /datum/tgui_input_number/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["timeout"] = null
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data

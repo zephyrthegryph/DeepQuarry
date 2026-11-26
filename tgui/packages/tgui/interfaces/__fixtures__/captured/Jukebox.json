@@ -1,0 +1,11 @@
+{
+	"current_track_ref": null,
+	"current_track": null,
+	"current_genre": null,
+	"percent": 0,
+	"tracks": [],
+	"admin": 0,
+	"playing": 0,
+	"loop_mode": 4,
+	"volume": 0.5
+}

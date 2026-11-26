@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Species picker thumbnails that shared one render (a species whose mannequin looks like another's, Human among them) are all filed when it lands, not only one of them"

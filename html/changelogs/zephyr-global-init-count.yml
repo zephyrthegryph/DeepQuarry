@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Global initialization counts only the InitGlobal procs, so a SCHEMA() on a global no longer logs a count mismatch at boot, and the boot gate now fails on a mismatch"

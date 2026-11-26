@@ -290,14 +290,58 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 		var/turf/open/OT = T
 		if(OT.active_hotspot)
 			qdel(OT.active_hotspot)
-		if(OT.air)
-			OT.air.copy_from(dq_unit_test_block_default_air())
+		if(OT.turf_air() && !unit_test_block_restore_session_air(OT))
+			OT.turf_air().copy_from(dq_unit_test_block_default_air())
 			OT.air_update_turf(TRUE, FALSE)
-		heat_set_solid(OT, T20C)
+		if(!unit_test_block_restore_session_solid(OT))
+			heat_set_solid(OT, T20C)
 	else if(istype(T, /turf/simulated/wall))
 		// A test isolated a pair of turfs with real walls (dq_atmos_test_isolate_pair
 		// et al) and never got to restore them because it errored out early.
 		T.ChangeTurf(/turf/simulated/floor/tiled/steel)
+
+/// Puts a block floor's air back to what the air guard's session baseline holds for it (the air the floor had when the run began, as the guard
+/// keeps it), so the reset never hands the guard air the floor did not have: a block on a room that boots as vacuum stays vacuum, and a floor a
+/// test replaced gets the same air back as its untouched neighbours. FALSE when the guard does not watch the turf (the default air is used then).
+/proc/unit_test_block_restore_session_air(turf/open/T)
+	var/datum/unit_test_guard/guard = GLOB.unit_test_guard
+	var/list/snapshot = guard?.air
+	if(!snapshot)
+		return FALSE
+	var/list/index = snapshot["index"]
+	if(!index)
+		index = list()
+		var/list/turfs = snapshot["turfs"]
+		for(var/i in 1 to length(turfs))
+			index[turfs[i]] = i
+		snapshot["index"] = index
+	var/i = index[T]
+	if(!i)
+		return FALSE
+	unit_test_air_put_back(T, snapshot["readings"], (i - 1) * GAS_READ_STRIDE)
+	return TRUE
+
+/// Puts a block floor's solid temperature back to what the heat guard's session baseline holds for it, as the air reset does for its gas: the
+/// floors of a room settle with its air (the test room's sit near 287 K), and resetting them to T20C made every test that let time pass report the
+/// difference as a leak. FALSE when the guard does not watch the turf (T20C is used then).
+/proc/unit_test_block_restore_session_solid(turf/open/T)
+	var/datum/unit_test_guard/guard = GLOB.unit_test_guard
+	var/list/snapshot = guard?.solids
+	if(!snapshot)
+		return FALSE
+	var/list/index = snapshot["index"]
+	if(!index)
+		index = list()
+		var/list/turfs = snapshot["turfs"]
+		for(var/i in 1 to length(turfs))
+			index[turfs[i]] = i
+		snapshot["index"] = index
+	var/i = index[T]
+	var/list/kelvin = snapshot["k"]
+	if(!i || kelvin[i] < 0)
+		return FALSE
+	heat_set_solid(T, kelvin[i])
+	return TRUE
 
 /// The default air mix a block's open turfs start with -- standard station air.
 /proc/dq_unit_test_block_default_air()
@@ -1351,20 +1395,18 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	var/static/list/ignored = list(
 		"last_round_duration" = TRUE, // a display cache that its first reader fills
 		"dview_mob" = TRUE, // a lazily created singleton (the first dview() call makes it): nothing a test could put back
-		"latency_last_ineligible" = TRUE, // diagnostic text the latency tooling writes about the last pin it refused; it is not simulation state
-		"latency_last_pin_reason" = TRUE, // diagnostic text, same writer: the reason for the last pin
 		"staleness_late_parked" = TRUE, // the staleness checker's per-summary counter: the kernel drains bump it mid-test when they first reach a pre-test entity, and staleness_test_end() zeroes it itself
 		"starting_legal_nifsoft" = TRUE, // a lazily built cache (the nifsoft shop's legal product list, made on its first stock): rebuilding it is the same as keeping it
 		"starting_illegal_nifsoft" = TRUE, // a lazily built cache, same as the legal list: the shop's illegal product list
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
 		"e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
-		"latent_last_refusal" = TRUE, // the text of the latency sweep's last refused collapse, a diagnostic message (the latency tests read it under set_global())
 		"km_attr_a" = TRUE, "km_attr_entry" = TRUE, // the kernel meter's attribution slot: written by a dispatcher, cleared by the timer loop before its next call, read by nothing else
 		"fusion_reactions" = TRUE, // a lazily built cache (the reaction table, made on its first lookup)
 		"word_to_uristrune_table" = TRUE, // a lazily built cache (the rune glyphs, made on their first draw)
 		"acceptable_items" = TRUE, // a lazily built cache (the kitchen's accepted ingredients, made on the first microwave check)
-		"notice_late" = TRUE, "notice_taken" = TRUE, "act_too_deep" = TRUE, "refresh_dispatched_draws_spared" = TRUE, "lazy_states_made" = TRUE, "lazy_states_cleared" = TRUE, "lazy_state_published" = TRUE, // monotonic metrics counters: a first bump from 0 to 1 only looks like a flag flip, so the verdict depended on test order
+		"notice_late" = TRUE, "notice_taken" = TRUE, "act_too_deep" = TRUE, "refresh_dispatched_draws_spared" = TRUE, "lazy_states_made" = TRUE, "lazy_states_cleared" = TRUE, "lazy_state_published" = TRUE, "coalesce_runs" = TRUE, // monotonic metrics counters: a first bump from 0 to 1 only looks like a flag flip, so the verdict depended on test order
+		"footsteps_audible" = TRUE, // a monotonic count of audible steps: a first step from 0 to 1 only looks like a flag flip, and any test that moves a mob near a viewer bumps it
 		"refresh_queue_base" = TRUE, // the refresh queue's place counter: it falls back to 0 whenever a drain empties the queue, so it depends on what ran before, not on what the test did
 	)
 	return ignored
@@ -1448,7 +1490,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		return cache
 	cache = list()
 	for(var/turf/open/T in world)
-		if(T.air && !T.blocks_air && !istype(T, /turf/space))
+		if(T.turf_air() && !T.blocks_air && !istype(T, /turf/space))
 			cache += T
 	log_test("AIR GUARD: watching [length(cache)] turf(s) for leftover air; none excluded")
 	return cache
@@ -1459,10 +1501,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	var/list/live = list()
 	var/list/mixes = list()
 	for(var/turf/open/T as anything in unit_test_air_tracked())
-		if(QDELETED(T) || !istype(T) || !T.air || T.blocks_air)
+		if(QDELETED(T) || !istype(T) || !T.turf_air() || T.blocks_air)
 			continue
 		live += T
-		mixes += T.air
+		mixes += T.turf_air()
 	var/list/readings = read_gas_mixtures(mixes)
 	// The map's cryogenic rooms (air colder than the heat guard's cold-room line) are not judged, like their floors: they warm toward room temperature by design, from
 	// the heat of the APCs and machines standing in them, in whichever test the world happens to be running. `skip` marks them (turf -> their temperature, K).
@@ -1503,7 +1545,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	for(var/k in 1 to length(moved))
 		var/i = moved[k]
 		var/turf/open/T = turfs[i]
-		if(QDELETED(T) || !istype(T) || !T.air || !T.x) // (a turf a test replaced is off the map, its handle names whatever stands there now: not judged)
+		if(QDELETED(T) || !istype(T) || !T.turf_air() || !T.x) // (a turf a test replaced is off the map, its handle names whatever stands there now: not judged)
 			continue
 		if(touched && T.loc)
 			touched[T.loc] = TRUE
@@ -1562,7 +1604,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		return
 	var/list/turfs = list()
 	for(var/turf/open/T as anything in skip)
-		if(!QDELETED(T) && istype(T) && T.air)
+		if(!QDELETED(T) && istype(T) && T.turf_air())
 			turfs += T
 	var/list/now = read_gas_mixtures(unit_test_airs_of(turfs))
 	var/list/by_area = list()
@@ -1584,7 +1626,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 
 /// Puts one turf's air back to the batched record `was` read before the test (offset into it): the gases, then the temperature.
 /proc/unit_test_air_put_back(turf/open/T, list/was, offset)
-	var/datum/gas_mixture/air = T.air
+	var/datum/gas_mixture/air = T.turf_air()
 	air.clear()
 	for(var/gas_id in 0 to GAS_ID_COUNT - 1)
 		var/moles = was[offset + GAS_READ_MOLES(gas_id)]
@@ -1598,11 +1640,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 /proc/unit_test_airs_of(list/turfs)
 	. = list()
 	for(var/turf/open/T as anything in turfs)
-		. += T.air
+		. += T.turf_air()
 
 /// The settings of a map atmospherics machine or air alarm a test can leave changed (and a later test then reads): a machine on or off, a pump's target, an alarm's mode.
 /proc/unit_test_machine_vars()
-	var/static/list/names = list("use_power", "on", "mode", "target_pressure", "set_temperature", "power_setting", "target_temperature", "pumping", "pressure_checks", "rcon_setting", "danger_level", "regulating_temperature", "thermostat_mode", "shorted", "aidisabled", "locked", "panel_open", "stat")
+	var/static/list/names = list("use_power", "on", "mode", "target_pressure", "set_temperature", "power_setting", "target_temperature", "pumping", "pressure_checks", "rcon_setting", "danger_level", "regulating_temperature", "shorted", "aidisabled", "locked", "panel_open", "stat")
 	return names
 
 /// The atmospherics machines and air alarms on the map when the first test starts (built once), the set the machine guard watches.
@@ -1917,12 +1959,14 @@ GLOBAL_VAR(boot_unclean)
 	var/list/leak_lines = list()
 	for(var/type_text in leaks)
 		leak_lines += "[leaks[type_text]] x [type_text]"
-	if(!runtimes && !noise && !length(GLOB.boot_system_failures) && !length(leak_lines))
+	if(!runtimes && !noise && !length(GLOB.boot_system_failures) && !length(leak_lines) && !globals_init_mismatch)
 		log_test("Boot gate: clean (0 runtimes, 0 warnings, 0 leaked slots before the first test).")
 		return
 	GLOB.boot_unclean = "Boot was not clean: [runtimes] runtime(s) and [noise] warning(s) before the first test (data/logs/<run>/boot_report.json, runtime-errors.log)"
 	if(length(leak_lines))
 		GLOB.boot_unclean += "; SLOT LEAK after boot: [jointext(leak_lines, ", ")]"
+	if(globals_init_mismatch)
+		GLOB.boot_unclean += "; the InitGlobal procs do not match the declared globals ([globals_init_mismatch])"
 	if(length(GLOB.boot_system_failures))
 		GLOB.boot_unclean += "; system initialize() threw: [jointext(GLOB.boot_system_failures, " | ")]"
 	log_test("::error title=Boot gate::[GLOB.boot_unclean]")

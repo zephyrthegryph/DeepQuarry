@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
-  Box,
   Button,
   Dropdown,
   Input,
@@ -11,13 +11,13 @@ import {
   Stack,
   TextArea,
 } from 'tgui-core/components';
-
+import type { BanPanelActions } from '../../generated/BanPanel';
 import { ban_types } from '../constants';
 import type { Data } from '../types';
 import { InputHelper } from './Helpers/InputHelper';
 
 export const BanningSection = (props: { possibleJobs: string[] }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, BanPanelActions>();
 
   const { possibleJobs } = props;
 
@@ -133,7 +133,7 @@ export const BanningSection = (props: { possibleJobs: string[] }) => {
         </Stack.Item>
         <Stack.Divider />
         <Stack.Item>
-          <Box color="label">Reason:</Box>
+          <Label>Reason:</Label>
         </Stack.Item>
         <Stack.Item grow>
           <TextArea

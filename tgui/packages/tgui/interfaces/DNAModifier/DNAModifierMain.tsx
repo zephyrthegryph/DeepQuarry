@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Icon, Section, Tabs } from 'tgui-core/components';
-
+import type { DNAModifierActions } from '../generated/DNAModifier';
 import { operations } from './constants';
 import { DNAModifierMainBuffers } from './DNAModifierMainBuffers';
 import { DNAModifierMainRejuvenators } from './DNAMofifierMainTabs/DNAModifierMainRejuvenators';
@@ -8,7 +8,7 @@ import { DNAModifierMainSE } from './DNAMofifierMainTabs/DNAModifierMainSE';
 import type { Data } from './types';
 
 export const DNAModifierMain = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DNAModifierActions>();
 
   const { selectedMenuKey } = data;
 

@@ -78,38 +78,19 @@ impl StatementMask {
 pub struct StatementView<'a> {
     statements: &'a [Statement],
     mask: Option<&'a StatementMask>,
-    locals: Option<&'a crate::LocalVariableLedger>,
 }
 impl<'a> StatementView<'a> {
     pub fn all(statements: &'a [Statement]) -> Self {
         Self {
             statements,
             mask: None,
-            locals: None,
         }
     }
     pub fn masked(statements: &'a [Statement], mask: &'a StatementMask) -> Self {
         Self {
             statements,
             mask: Some(mask),
-            locals: None,
         }
-    }
-    /// Borrow both ledgers from one primary owner; never accept an arbitrary
-    /// separate local table as authority for a statement slice.
-    pub fn from_parsed(parsed: &'a crate::ParsedBody) -> Self {
-        Self {
-            statements: &parsed.statements,
-            mask: None,
-            locals: Some(&parsed.local_variables),
-        }
-    }
-    pub fn with_mask(mut self, mask: &'a StatementMask) -> Self {
-        self.mask = Some(mask);
-        self
-    }
-    pub fn local_variables(self) -> Option<&'a crate::LocalVariableLedger> {
-        self.locals
     }
     pub fn statements(self) -> &'a [Statement] {
         self.statements
@@ -121,7 +102,6 @@ impl<'a> StatementView<'a> {
         Self {
             statements,
             mask: self.mask,
-            locals: self.locals,
         }
     }
     pub fn iter(self) -> impl Iterator<Item = &'a Statement> {
@@ -148,10 +128,7 @@ mod tests {
         let body = crate::parse_body_items(&source.items[0].children);
         assert!(body.diagnostics.is_empty());
         let mask = StatementMask::from_predicate(&body.statements, |statement| {
-            matches!(
-                statement.kind,
-                StatementKind::Set { .. } | StatementKind::ProjectedSet { .. }
-            )
+            matches!(statement.kind, StatementKind::Set { .. })
         });
         let view = StatementView::masked(&body.statements, &mask);
         assert!(std::ptr::eq(view.first().unwrap(), &body.statements[0]));

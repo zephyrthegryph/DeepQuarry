@@ -1,15 +1,3 @@
-export type Data = {
-  possible_modules: string[];
-  whitelisted_modules: string[];
-  mind_name: string;
-  possible_sprites?: spriteOption[];
-  currentName: string;
-  isDefaultName: boolean;
-  theme: string;
-  selected_module?: string;
-  sprite_datum?: string | null;
-  sprite_datum_class?: string | null;
-  sprite_datum_size?: string | null;
-};
+import type { RobotChooseData } from '../generated/RobotChoose';
 
-export type spriteOption = { sprite: string; belly: boolean; type: string };
+export type spriteOption = RobotChooseData['possible_sprites'][number];

@@ -286,7 +286,7 @@ CAPABILITIES(/obj/item/handcuffs/legcuffs)
 	if(target.m_intent != I_WALK)
 		target.set_m_intent(I_WALK)
 		if(target.hud_used && target.hud_used.move_intent)
-			target.hud_used.move_intent.icon_state = "walking"
+			target.hud_used.move_intent.set_icon_state("walking")
 	return OP_OK
 
 /obj/item/handcuffs/legcuffs/equipped(mob/living/user,slot)
@@ -295,7 +295,7 @@ CAPABILITIES(/obj/item/handcuffs/legcuffs)
 		if(user.m_intent != I_WALK)
 			user.set_m_intent(I_WALK)
 			if(user.hud_used && user.hud_used.move_intent)
-				user.hud_used.move_intent.icon_state = "walking"
+				user.hud_used.move_intent.set_icon_state("walking")
 
 
 /obj/item/handcuffs/legcuffs/bola
@@ -340,7 +340,7 @@ CAPABILITIES(/obj/item/handcuffs/legcuffs/bola)
 	if(target.m_intent != I_WALK)
 		target.set_m_intent(I_WALK)
 		if(target.hud_used && target.hud_used.move_intent)
-			target.hud_used.move_intent.icon_state = "walking"
+			target.hud_used.move_intent.set_icon_state("walking")
 	return 1
 
 /obj/item/handcuffs/cable/plantfiber

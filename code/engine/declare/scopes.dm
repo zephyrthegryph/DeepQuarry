@@ -7,7 +7,7 @@
 /// Called from the lifecycle's init step for a type whose table has any (own_table.engine_init).
 /proc/engine_holder_init(datum/holder, mapload)
 	var/datum/type_table/T = table_of(holder)
-	var/datum/init_plan/P = GLOB.init_plan_off ? null : init_plan_of(holder, T)
+	var/datum/init_plan/P = init_plan_of(holder, T) // null only while the declaration globals are still being made: the discovery below runs then
 	if(P)
 		engine_holder_init_planned(holder, mapload, T, P)
 		return
@@ -40,7 +40,7 @@
 	var/datum/type_table/T = table_of(holder)
 	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
 		lifeform_preinit(holder, mapload) // params, per_type tables, rolls: before the parent's init code reads them
-	var/datum/init_plan/P = GLOB?.init_plan_off ? null : init_plan_of(holder, T)
+	var/datum/init_plan/P = init_plan_of(holder, T)
 	if(P)
 		for(var/datum/capability/def as anything in P.preinit_caps)
 			def.run_holder_hook(holder, mapload, HOLDER_HOOK_PREINIT)
@@ -396,3 +396,33 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 
 /datum/relation_definition/slot/proc/is_worn_provider_slot()
 	return FALSE
+
+// ---- compiled pool resets of the hot evaluation contexts (code/engine/state/pool.dm, pool_reset_direct()) ----
+// Every capability hook, condition and notice takes and releases one of these (387 k at a full-map boot); the generic reset wrote each field through
+// D.vars by name. /datum/act's own fields are in code/host/acts/context.dm; a field added there and not here fails the test build's check.
+
+/datum/act/eval/pool_reset_direct()
+	if(type != /datum/act/eval)
+		return FALSE // a subtype (every /datum/notice) adds fields of its own: the generic reset covers them
+	holder = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	cap = null
+	activation = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	source = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	dt = initial(dt)
+	actor = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	observer = FALSE
+	authority = initial(authority)
+	mapload = FALSE
+	return TRUE
+
+/datum/act/notice/pool_reset_direct()
+	if(type != /datum/act/notice)
+		return FALSE // a subtype (every /datum/notice) adds fields of its own: the generic reset covers them
+	holder = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	cap = null
+	activation = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	source = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	target = null // ALLOW(ownership): a pooled context drops the entity it held for one trigger as it is released
+	outcome = initial(outcome)
+	refusal = initial(refusal)
+	return TRUE

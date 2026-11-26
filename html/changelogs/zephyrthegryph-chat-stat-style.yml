@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Chat pane restyled to the console look with one consistent frame (docked and floating), tidier rows and a thin scrollbar"
+  - qol: "Status panel now wears the console styling and CRT scanlines, matching the lobby and chat"

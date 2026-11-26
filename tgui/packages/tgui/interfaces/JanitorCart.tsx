@@ -1,19 +1,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Icon, Image, Stack } from 'tgui-core/components';
+import type {
+  JanitorCartActions,
+  JanitorCartData,
+} from './generated/JanitorCart';
 
-type Data = {
-  mybag: string | null;
-  mybucket: string | null;
-  mymop: string | null;
-  myspray: string | null;
-  myreplacer: string | null;
-  signs: string | null;
-  icons: Record<string, string>;
-};
+type Data = JanitorCartData;
 
 export const JanitorCart = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, JanitorCartActions>();
 
   const { mybag, mybucket, mymop, myspray, myreplacer, signs } = data;
 
@@ -133,11 +129,11 @@ const iconkeysToIcons: Record<string, string> = {
 };
 
 const JanicartIcon = (props: { iconkey: string }) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, JanitorCartActions>();
 
   const { iconkey } = props;
 
-  const { icons } = data;
+  const { icons = {} } = data;
 
   if (iconkey in icons) {
     return (
@@ -156,19 +152,5 @@ const JanicartIcon = (props: { iconkey: string }) => {
     );
   }
 
-  return (
-    <Icon
-      style={{
-        position: 'absolute',
-        left: '4px',
-        right: '0',
-        top: '20px',
-        bottom: '0',
-        width: '64px',
-        height: '64px',
-      }}
-      fontSize={2}
-      name={iconkeysToIcons[iconkey]}
-    />
-  );
+  return <Icon fontSize={2} name={iconkeysToIcons[iconkey]} />;
 };

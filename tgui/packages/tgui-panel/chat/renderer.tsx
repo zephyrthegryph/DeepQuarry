@@ -5,6 +5,7 @@
  */
 
 import { createRoot } from 'react-dom/client';
+import { reportUiError } from 'tgui/errors';
 import { createLogger } from 'tgui/logging';
 import { Tooltip } from 'tgui-core/components';
 import { EventEmitter } from 'tgui-core/events';
@@ -32,7 +33,16 @@ import {
   typeIsImportant,
 } from './model';
 import { highlightNode, linkifyNode } from './replaceInTextNode';
+import {
+  anchoredScrollTop,
+  type ResizeSnapshot,
+  recallChatScroll,
+  rememberChatScroll,
+} from './scrollState';
 import type { Page, SerializedMessage } from './types';
+
+/** How long a restored scroll is held while the log lays out. */
+const RESTORE_HOLD_MS = 2000;
 
 const logger = createLogger('chatRenderer');
 
@@ -167,6 +177,8 @@ class ChatRenderer {
   interleaveColor: string;
   hideImportantInAdminTab: boolean;
   scrollNode: HTMLElement | null;
+  /** True while a restored scroll position is being held (restoreScroll). */
+  restoring = false;
   scrollTracking: boolean;
   handleScroll: (type: any) => void;
   ensureScrollTracking: () => void;
@@ -183,6 +195,8 @@ class ChatRenderer {
     | null;
   databaseBackendEnabled: boolean;
   lastScrollHeight: number;
+  sizeSnapshot: ResizeSnapshot;
+  sizeObserver: ResizeObserver | null;
   ttsVoice: string;
   ttsCategories: Record<string, boolean>;
 
@@ -213,6 +227,8 @@ class ChatRenderer {
     this.scrollNode = null;
     this.scrollTracking = true;
     this.lastScrollHeight = 0;
+    this.sizeSnapshot = { height: 0, top: 0, tracking: true };
+    this.sizeObserver = null;
     this.handleScroll = (evt) => {
       const node = this.scrollNode;
       if (!node) {
@@ -228,6 +244,18 @@ class ChatRenderer {
         store.set(scrollTrackingAtom, scrollTracking);
         logger.debug('tracking', this.scrollTracking);
       }
+      // Only while the box keeps its height: a resize's own clamped scroll is not where the player had been (watchResize()).
+      if (node.clientHeight === this.sizeSnapshot.height) {
+        this.sizeSnapshot = {
+          height: node.clientHeight,
+          top: node.scrollTop,
+          tracking: scrollTracking,
+        };
+      }
+      // The restore's own scrolls are not the player's: they must not overwrite what is being restored.
+      if (!this.restoring) {
+        rememberChatScroll({ top: node.scrollTop, tracking: scrollTracking });
+      }
     };
     // Periodic message pruning
     setInterval(() => this.pruneMessages(), MESSAGE_PRUNE_INTERVAL);
@@ -238,9 +266,14 @@ class ChatRenderer {
   }
 
   mount(node) {
-    // Mount existing root node on top of the new node
-    if (this.rootNode) {
-      node.appendChild(this.rootNode);
+    // The chat moves to a new element (popped out and back in): the messages go into it. The old root is not nested inside the new
+    // one, which would pad the text twice (both are the .Chat box).
+    if (this.rootNode && this.rootNode !== node) {
+      const old = this.rootNode;
+      while (old.firstChild) {
+        node.appendChild(old.firstChild);
+      }
+      this.rootNode = node;
     }
     // Initialize the root node
     else {
@@ -250,6 +283,49 @@ class ChatRenderer {
     this.tryFindScrollable();
     // Flush the queue
     this.tryFlushQueue();
+    this.restoreScroll();
+  }
+
+  /**
+   * Puts the scroll back where the chat was left (scrollState.ts): at the newest line when it was pinned, else at its position. The
+   * log arrives and lays out after the mount, so the restore holds for a moment and stops at the player's first wheel or drag.
+   */
+  restoreScroll() {
+    const node = this.scrollNode;
+    if (!node) return;
+    this.restoring = true;
+    recallChatScroll().then((state) => {
+      if (!state || this.scrollNode !== node) {
+        this.restoring = false;
+        return;
+      }
+      const until = Date.now() + RESTORE_HOLD_MS;
+      const apply = () => {
+        if (state.tracking) {
+          node.scrollTop = node.scrollHeight;
+        } else {
+          node.scrollTop = state.top;
+        }
+      };
+      const stop = () => {
+        this.restoring = false;
+        observer.disconnect();
+        node.removeEventListener('wheel', stop);
+        node.removeEventListener('pointerdown', stop);
+      };
+      const observer = new ResizeObserver(() => {
+        if (Date.now() > until) {
+          stop();
+          return;
+        }
+        apply();
+      });
+      if (this.rootNode) observer.observe(this.rootNode);
+      node.addEventListener('wheel', stop, { passive: true });
+      node.addEventListener('pointerdown', stop);
+      apply();
+      setTimeout(stop, RESTORE_HOLD_MS);
+    });
   }
 
   onStateLoaded() {
@@ -422,8 +498,39 @@ class ChatRenderer {
 
   tryFindScrollable() {
     // Find scrollable parent
+    this.scrollNode?.removeEventListener('scroll', this.handleScroll);
     this.scrollNode = document.getElementById('chat-pane');
     this.scrollNode?.addEventListener('scroll', this.handleScroll);
+    this.watchResize();
+  }
+
+  /**
+   * The log's box gets taller or shorter (the column boundary dragged, the window resized): the bottom stays where it was. A log
+   * pinned to the newest line stays pinned; one scrolled up keeps its bottom-edge message at the same distance from the bottom edge
+   * (anchoredScrollTop), so nothing scrolls up as the pane grows.
+   */
+  watchResize() {
+    this.sizeObserver?.disconnect();
+    this.sizeObserver = null;
+    const node = this.scrollNode;
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    this.sizeSnapshot = {
+      height: node.clientHeight,
+      top: node.scrollTop,
+      tracking: this.scrollTracking,
+    };
+    this.sizeObserver = new ResizeObserver(() => {
+      const before = this.sizeSnapshot;
+      const height = node.clientHeight;
+      if (height === before.height) return;
+      this.sizeSnapshot = { ...before, height };
+      // A first measure, or a restore in progress (its own observer holds the position): nothing to anchor.
+      if (before.height === 0 || this.restoring) return;
+      const top = anchoredScrollTop(before, height, node.scrollHeight);
+      logger.debug('resize', before.height, '->', height, 'top', top);
+      node.scrollTop = top;
+    });
+    this.sizeObserver.observe(node);
   }
 
   setVisualChatLimits(
@@ -597,6 +704,12 @@ class ChatRenderer {
             : message.html;
         } else {
           logger.error('Error: message is missing text payload', message);
+          reportUiError({
+            kind: 'chat-message',
+            name: 'Chat',
+            error: 'message is missing text payload',
+            outcome: 'continued',
+          });
         }
         // Get all nodes in this message that want to be rendered like jsx
         const nodes = node.querySelectorAll('[data-component]');

@@ -8,12 +8,16 @@
 	var/turf/T = dq_containment_floor()
 
 	var/obj/item/flashlight/F = allocate(/obj/item/flashlight, T)
-	TEST_ASSERT_EQUAL(length(F.actions), length(item_rules_of(F).actions_types), "an item makes the actions its type declares")
+	TEST_ASSERT_EQUAL(length(F.actions), 0, "an item made on the floor has made no actions yet")
+	F.ensure_declared_actions()
+	F.ensure_declared_actions()
+	TEST_ASSERT_EQUAL(length(F.actions), length(item_rules_of(F).actions_types), "an item makes the actions its type declares when asked, once")
 
 	var/obj/item/pen/P = allocate(/obj/item/pen, T)
 	var/datum/type_trait/item_combat/combat = combat_of(P)
 	var/expected = max(5, round(combat.force / (combat.sharp ? P.w_class : P.w_class * 3)))
-	TEST_ASSERT_EQUAL(combat_of(P).embed_chance, expected, "an item left on the default embed chance takes it from its weight and edge")
+	TEST_ASSERT_EQUAL(P.embed_chance_now(), expected, "an item left on the default embed chance takes it from its weight and edge")
+	TEST_ASSERT_EQUAL(combat_of(P).embed_chance, -1, "and is not written at construction (no private combat trait copy per item)")
 
 	var/obj/item/tool/crowbar/bar = allocate(/obj/item/tool/crowbar, T)
 	var/obj/item/tool/crowbar/other = allocate(/obj/item/tool/crowbar, T)
@@ -39,15 +43,13 @@
 	TEST_ASSERT_EQUAL(named.default_type, MAT_WARD_METAL, "a random feedstock made with a material keeps it")
 	TEST_ASSERT_EQUAL(named.material.name, MAT_WARD_METAL, "and is made of it")
 
-// A storage declares (or drops) its starting contents and calibrates after the item hooks.
+// A storage makes (or drops) its starting contents and calibrates after the item hooks.
 /datum/unit_test/dq_setup_base_tails_storage
 
 /datum/unit_test/dq_setup_base_tails_storage/Run()
 	var/turf/T = dq_containment_floor()
 	var/obj/item/storage/toolbox/mechanical/box = allocate(/obj/item/storage/toolbox/mechanical, T)
-	TEST_ASSERT(box.has_latent() || length(box.contents), "a toolbox declares its starting contents")
-	box.make_contents_real()
-	TEST_ASSERT(length(box.contents), "and they are made real when it is used")
+	TEST_ASSERT(length(box.contents), "a toolbox makes its starting contents")
 
 // The simulated turf hooks run (radiation, chapel, level, planets, freelook), then the floor lays its flooring.
 /datum/unit_test/dq_setup_base_tails_floor
@@ -66,7 +68,7 @@
 /datum/unit_test/dq_setup_base_tails_machine/Run()
 	var/turf/T = dq_containment_floor()
 	var/obj/machinery/dq_default_parts_probe/M = allocate(/obj/machinery/dq_default_parts_probe, T, WEST)
-	TEST_ASSERT(STATE_PEEK(M, machinery_misc, power_init_complete), "a machine has its power setup done after init")
+	TEST_ASSERT(M.power_started(), "a machine has its power setup done after init")
 	TEST_ASSERT_EQUAL(M.power_area, get_area(M), "and draws from its area")
 	TEST_ASSERT_EQUAL(M.dir, WEST, "a machine made with a facing has it")
 

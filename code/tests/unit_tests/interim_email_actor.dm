@@ -27,9 +27,9 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/computer_file/data/email_account/sender = allocate(/datum/computer_file/data/email_account)
 	var/datum/computer_file/data/email_account/interim_actor/recipient = allocate(/datum/computer_file/data/email_account/interim_actor)
-	sender.login = "interim-sender-[REF(sender)]"
+	sender.set_login("interim-sender-[REF(sender)]")
 	sender.password = "interim-fixture-password"
-	recipient.login = "interim-recipient-[REF(recipient)]"
+	recipient.set_login("interim-recipient-[REF(recipient)]")
 	var/datum/tgui_module/email_client/module = allocate(/datum/tgui_module/email_client)
 	module.set_stored_login(sender.login)
 	module.set_stored_password(sender.password)
@@ -54,7 +54,7 @@
 	test_driver_begin()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/computer_file/data/email_account/interim_actor/recipient = allocate(/datum/computer_file/data/email_account/interim_actor)
-	recipient.login = "interim-broadcast-recipient-[REF(recipient)]"
+	recipient.set_login("interim-broadcast-recipient-[REF(recipient)]")
 	// glob_load skips registering the fixture broadcaster as an additional service address.
 	var/datum/computer_file/data/email_account/service/broadcaster/interim_actor/broadcaster = allocate(/datum/computer_file/data/email_account/service/broadcaster/interim_actor, TRUE)
 	broadcaster.fixture_address = recipient.login

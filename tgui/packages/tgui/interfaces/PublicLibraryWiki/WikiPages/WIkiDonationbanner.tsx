@@ -3,7 +3,9 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, NoticeBox, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
+import type { PublicLibraryWikiActions } from '../../generated/PublicLibraryWiki';
 import { WikiAdColors, WikiDonIcons } from '../constants';
+import type { Data } from '../types';
 
 export function WikiDonationBanner(props: {
   donated: number;
@@ -146,7 +148,7 @@ const WikiDonationContent = (props: {
 
 // Intentionally not state safe
 const DonationButtons = (props) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, PublicLibraryWikiActions>();
 
   const donation = Math.round(Math.random() * 100 + 10);
 

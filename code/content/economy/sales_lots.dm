@@ -19,13 +19,12 @@
 
 /obj/structure/closet/crate/proc/freight_snapshot()
 	var/list/snapshot = list()
-	latent_materialize_all() // the ledger records each real item (C5)
-	for(var/atom/movable/cargo as anything in contents) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	for(var/atom/movable/cargo as anything in contents)
 		if(istype(cargo, /obj/item/paper))
 			var/obj/item/paper/document = cargo
 			if(document.shipping_ledger_data)
 				continue
-		snapshot["[handle_of(cargo)]"] = "[cargo.type]"
+		snapshot["[handle_text(handle_of(cargo))]"] = "[cargo.type]"
 	return snapshot
 
 /obj/structure/closet/crate/proc/shipping_ledger_valid()
@@ -252,7 +251,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/department_storefront, REGISTRY_TRANSACTION_D
 		to_chat(user, span_warning("You cannot release [item] into the storefront."))
 		return OP_OK
 	item.forceMove(src)
-	var/item_ref = "[handle_of(item)]"
+	var/item_ref = "[handle_text(handle_of(item))]"
 	set_stock_suggested_prices_at(item_ref, suggested)
 	set_stock_prices_at(item_ref, price)
 	stock_stocker_accounts[item_ref] = user.mind?.initial_account()?.account_number || 0
@@ -273,6 +272,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	configure(uses_power(idle = 10, active = 100))
 	after_init(0, then(PROC_REF(set_up_storefront)))
 	interface("DepartmentStorefront")
+	ui_shape(department = schema_text(), balance = num(), markup = num(), authorized = bool(), stock = list_of(row(ref = schema_text(), name = schema_text(), desc = schema_text(), suggested = nullable(num()), price = nullable(num()), quantity = int())))
 	without("ui_open")
 	op("buy", ui_act("buy", arg("ref", schema_ref(/obj/item))), needs(req_adjacent()),
 		asks(/datum/prompt/number/storefront_pin, fields = list("question" = "Enter your account PIN", "title" = "Storefront purchase", "price" = computed(PROC_REF(buy_price)), "timeout" = 0), step = "pin", when = PROC_REF(buy_needs_pin)),
@@ -290,7 +290,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	var/list/rows_by_key = list()
 	// Listing never materializes (systems.md §18): stock is placed real by the stocking action.
 	FOR_REAL_CONTENTS(var/obj/item/item as anything, src)
-		var/item_ref = "[handle_of(item)]"
+		var/item_ref = "[handle_text(handle_of(item))]"
 		var/listing_key = "[item.type]|[stock_prices[item_ref]]"
 		var/list/row = rows_by_key[listing_key]
 		if(row)
@@ -315,9 +315,6 @@ CAPABILITIES(/obj/machinery/department_storefront)
 		"stock" = stock,
 	)
 
-/obj/machinery/department_storefront/proc/ui_gate(datum/act/op/A)
-	latent_materialize_all() // a walk needs real things (C5)
-	return TRUE
 
 /// The PIN is asked only when the purchase would get as far as charging an account that is PIN-protected.
 /obj/machinery/department_storefront/proc/buy_needs_pin(datum/act/op/A)
@@ -328,7 +325,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	var/obj/item/card/id/id_card = user.GetIdCard()
 	var/datum/money_account/customer = get_account(id_card?.associated_account_number)
 	var/datum/money_account/provider = storefront_provider()
-	var/price = stock_prices["[handle_of(item)]"]
+	var/price = stock_prices["[handle_text(handle_of(item))]"]
 	if(!customer || !provider || !isnum(price) || price <= 0 || customer == provider)
 		return FALSE
 	return customer.security_level
@@ -340,7 +337,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 /// The price the buyer sees when the PIN is asked, kept with the question.
 /obj/machinery/department_storefront/proc/buy_price(datum/act/op/A)
 	var/obj/item/item = A.args["ref"]
-	return istype(item) ? stock_prices["[handle_of(item)]"] : null
+	return istype(item) ? stock_prices["[handle_text(handle_of(item))]"] : null
 
 /// The PIN question of a purchase: the price it was asked at.
 /datum/prompt/number/storefront_pin
@@ -349,23 +346,19 @@ CAPABILITIES(/obj/machinery/department_storefront)
 
 /obj/machinery/department_storefront/proc/ui_act_buy(datum/act/op/A, ref)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(!isnull(ref) && !(ref in contents_of(src)))
 		return FALSE
 	if(isnull(ref))
 		return FALSE
-	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	var/obj/item/item = ref
 	var/datum/prompt/number/storefront_pin/asked = A.step_answer("pin")
 	return storefront_purchase(item, user, A.step_value("pin"), asked?.price)
 
 /obj/machinery/department_storefront/proc/ui_act_withdraw(datum/act/op/A, ref)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(!isnull(ref) && !(ref in contents_of(src)))
 		return FALSE
-	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	var/obj/item/item = ref
 	if(!item || !storefront_staff_authorized(user))
 		return FALSE
 	storefront_forget_item(item)
@@ -375,38 +368,32 @@ CAPABILITIES(/obj/machinery/department_storefront)
 
 /obj/machinery/department_storefront/proc/ui_act_set_price(datum/act/op/A, price, ref)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(!isnull(ref) && !(ref in contents_of(src)))
 		return FALSE
-	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
-	var/item_ref = item ? "[handle_of(item)]" : null
+	var/obj/item/item = ref
+	var/item_ref = item ? "[handle_text(handle_of(item))]" : null
 	if(!item || !storefront_staff_authorized(user))
 		return FALSE
 	var/new_price = price
 	if(!isnum(new_price) || new_price < 1 || new_price > 100000)
 		return FALSE
 	var/old_price = stock_prices[item_ref]
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-		var/matching_ref = "[handle_of(matching_item)]"
+	for(var/obj/item/matching_item as anything in contents)
+		var/matching_ref = "[handle_text(handle_of(matching_item))]"
 		if(matching_item.type == item.type && stock_prices[matching_ref] == old_price)
 			set_stock_prices_at(matching_ref, round(new_price))
 	return TRUE
 
 /obj/machinery/department_storefront/proc/ui_act_set_markup(datum/act/op/A, markup)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(!storefront_staff_authorized(user))
 		return FALSE
 	var/new_markup = markup
 	if(!isnum(new_markup) || new_markup < -90 || new_markup > 500)
 		return FALSE
 	set_markup_percent(round(new_markup))
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-		var/stock_ref = "[handle_of(stock_item)]"
+	for(var/obj/item/stock_item as anything in contents)
+		var/stock_ref = "[handle_text(handle_of(stock_item))]"
 		set_stock_prices_at(stock_ref, max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100)))
 	return TRUE
 
@@ -417,7 +404,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	var/obj/item/card/id/id_card = user.GetIdCard()
 	var/datum/money_account/customer = get_account(id_card?.associated_account_number)
 	var/datum/money_account/provider = storefront_provider()
-	var/item_ref = "[handle_of(item)]"
+	var/item_ref = "[handle_text(handle_of(item))]"
 	var/price = stock_prices[item_ref]
 	if(!customer || !provider || !isnum(price) || price <= 0 || customer == provider)
 		to_chat(user, span_warning("The sale could not be authorized."))
@@ -440,7 +427,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	var/list/verified = list()
 	items[item.name] = 1
 	prices[item.name] = price
-	verified["[handle_of(item)]"] = price
+	verified["[handle_text(handle_of(item))]"] = price
 	var/list/quote = department_service_quote(customer, department_id, price)
 	if(!quote)
 		to_chat(user, span_warning("Your account cannot cover this purchase."))
@@ -460,7 +447,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	return TRUE
 
 /obj/machinery/department_storefront/proc/storefront_forget_item(obj/item/item)
-	var/item_ref = "[handle_of(item)]"
+	var/item_ref = "[handle_text(handle_of(item))]"
 	remove_stock_prices(item_ref)
 	remove_stock_suggested_prices(item_ref)
 	stock_stocker_accounts -= item_ref

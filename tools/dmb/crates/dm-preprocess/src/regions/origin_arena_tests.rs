@@ -1,5 +1,5 @@
 use super::*;
-fn row(line: usize, path: Arc<PathBuf>, traces: Arc<Box<[MacroExpansion]>>) -> ExpandedOrigin {
+fn row(line: usize, path: Arc<PathBuf>, traces: Arc<Vec<MacroExpansion>>) -> ExpandedOrigin {
     ExpandedOrigin {
         origin: super::super::Origin {
             output_line: line,
@@ -18,7 +18,7 @@ fn row(line: usize, path: Arc<PathBuf>, traces: Arc<Box<[MacroExpansion]>>) -> E
 fn sequential_lines_widen_independently_for_each_large_coordinate() {
     for large_source_line in [true, false] {
         let path = Arc::new(PathBuf::from("included.dm"));
-        let traces = Arc::new(Vec::new().into_boxed_slice());
+        let traces = Arc::new(Vec::new());
         let mut builder = OriginArenaBuilder::default();
         builder.push(row(1, path.clone(), traces.clone()));
         let mut second = row(2, path.clone(), traces.clone());
@@ -50,7 +50,7 @@ fn sequential_lines_widen_independently_for_each_large_coordinate() {
         assert_eq!(view.source_span, Span::new(10, 20));
         assert_eq!(view.region, 2);
         assert!(Arc::ptr_eq(view.origin.path, &path));
-        assert!(Arc::ptr_eq(view.macro_expansions.native_owner().unwrap(), &traces));
+        assert!(Arc::ptr_eq(view.macro_expansions, &traces));
         assert_eq!(arena.get(0).unwrap().origin.source_line, 17);
         assert_eq!(arena.get(2).unwrap().output_span, Span::new(3, 8));
     }
@@ -59,7 +59,7 @@ fn sequential_lines_widen_independently_for_each_large_coordinate() {
 #[test]
 fn clearing_one_clone_preserves_other_owner_and_iterator_boundaries() {
     let path = Arc::new(PathBuf::from("same.dm"));
-    let traces = Arc::new(Vec::new().into_boxed_slice());
+    let traces = Arc::new(Vec::new());
     let mut builder = OriginArenaBuilder::default();
     for line in 1..=3 {
         builder.push(row(line, path.clone(), traces.clone()));
@@ -73,7 +73,7 @@ fn clearing_one_clone_preserves_other_owner_and_iterator_boundaries() {
     assert!(retained.get(usize::MAX).is_none());
     assert!(Arc::ptr_eq(retained.get(0).unwrap().origin.path, &path));
     assert!(Arc::ptr_eq(
-        retained.get(0).unwrap().macro_expansions.native_owner().unwrap(),
+        retained.get(0).unwrap().macro_expansions,
         &traces
     ));
     let mut iter = (&retained).into_iter();
@@ -91,7 +91,7 @@ fn clearing_one_clone_preserves_other_owner_and_iterator_boundaries() {
 #[test]
 fn a_search_from_any_hint_finds_the_same_row_as_the_full_search() {
     let path = Arc::new(PathBuf::from("included.dm"));
-    let traces = Arc::new(Vec::new().into_boxed_slice());
+    let traces = Arc::new(Vec::new());
     let mut builder = OriginArenaBuilder::default();
     // Lines of varying length, with some empty ones.
     let mut end = 0usize;
@@ -114,7 +114,7 @@ fn a_search_from_any_hint_finds_the_same_row_as_the_full_search() {
     assert_eq!(empty.partition_point_near(5, |_| true), 0);
 }
 
-fn region_lines(rows: &[(usize, usize, usize)], traces: &Arc<Box<[MacroExpansion]>>) -> Arc<OutputLines> {
+fn region_lines(rows: &[(usize, usize, usize)], traces: &Arc<Vec<MacroExpansion>>) -> Arc<OutputLines> {
     let mut builder = super::super::expansion::output_lines::OutputLineBuilder::default();
     for &(start, end, line) in rows {
         builder.push((Span::new(start, end), line, Span::new(line * 10, line * 10 + 5), Arc::clone(traces)));
@@ -126,7 +126,7 @@ fn region_lines(rows: &[(usize, usize, usize)], traces: &Arc<Box<[MacroExpansion
 fn region_chunks_answer_like_rows_and_move_whole_on_reuse() {
     let a = Arc::new(PathBuf::from("a.dm"));
     let b = Arc::new(PathBuf::from("b.dm"));
-    let traces = Arc::new(Vec::new().into_boxed_slice());
+    let traces = Arc::new(Vec::new());
     let first = region_lines(&[(0, 4, 1), (4, 9, 2)], &traces);
     let second = region_lines(&[(0, 3, 7), (3, 3, 8), (3, 6, 9)], &traces);
     let mut builder = OriginArenaBuilder::with_capacity(2);

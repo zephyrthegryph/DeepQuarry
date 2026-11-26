@@ -67,17 +67,3 @@
 			var/turf/simulated/S = T
 			S.freeze_floor()
 	return
-
-/datum/reagent/modapplying/vatstabilizer
-	name = REAGENT_VATSTABILIZER
-	id = REAGENT_ID_VATSTABILIZER
-	description = "A compound produced by NanoTrasen using a secret blend of phoron and toxins to stop the rampant growth of a clone beyond intended states."
-	taste_description = "sour glue"
-	color = "#060501"
-	metabolism = REM * 0.2
-
-	modifier_to_add = /datum/body_effect/clone_stabilizer
-	modifier_duration = 30 SECONDS
-
-	supply_conversion_value = REFINERYEXPORT_VALUE_MASSINDUSTRY
-	industrial_use = REFINERYEXPORT_REASON_PHORON

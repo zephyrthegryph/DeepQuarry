@@ -1,5 +1,6 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { activeEmbedded } from 'tgui/embedded';
 import { sendAct } from 'tgui/events/act';
 import { backendStateAtom, store } from 'tgui/events/store';
 import {
@@ -61,7 +62,7 @@ type ActFn = (action: string, params?: Record<string, unknown>) => void;
 
 /** Reads the current modal from the global jotai store synchronously. */
 const currentModal = (): ModalData | null => {
-  const state = store.get(backendStateAtom);
+  const state = (activeEmbedded()?.store ?? store).get(backendStateAtom);
   return (state.data as Data).modal ?? null;
 };
 
@@ -317,5 +318,9 @@ export const ComplexModal = (props: {
  * Safe to call from event handlers and outside React render.
  */
 export const modalOpen = (id: string, args: Record<string, unknown> = {}) => {
-  doModalOpen(sendAct, currentModal(), id, args);
+  const embedded = activeEmbedded();
+  const act: ActFn = embedded
+    ? (action, params = {}) => embedded.send(`act/${action}`, params)
+    : sendAct;
+  doModalOpen(act, currentModal(), id, args);
 };

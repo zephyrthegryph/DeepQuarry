@@ -431,11 +431,11 @@ CAPABILITIES(/obj/machinery/cryopod)
 		//Handle job slot/tater cleanup.
 		var/job = to_despawn.mind.assigned_role
 		SSjob.free_role(job)
-		to_despawn.mind.assigned_role = null
+		to_despawn.mind.set_assigned_role(null)
 
 		if(to_despawn.mind.objectives.len)
 			rel_clear(to_despawn.mind, nameof(/datum/mind::objectives))
-			to_despawn.mind.special_role = null
+			to_despawn.mind.set_special_role(null)
 
 		// Delete them from datacore.
 
@@ -484,7 +484,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 			depart_announce = FALSE
 
 		if(depart_announce)
-			announce.autosay("[to_despawn.real_name][departing_job ? ", [departing_job], " : " "][on_store_message]", "[on_store_name]", announce_channel, using_map.get_map_levels(z, TRUE, om_range = DEFAULT_OVERMAP_RANGE))
+			announce.autosay("[to_despawn.real_name][departing_job ? ", [departing_job], " : " "][on_store_message]", "[on_store_name]", announce_channel, using_map.get_map_levels(z, TRUE, overmap_range = DEFAULT_OVERMAP_RANGE))
 			visible_message(span_notice("\The [initial(name)] [on_store_visible_message_1] [to_despawn.real_name] [on_store_visible_message_2]"), 3)
 
 	// begin: Dont delete mobs-in-mobs

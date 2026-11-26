@@ -1,3 +1,4 @@
+import { StatBar } from 'tgui/components/StatBar';
 import {
   Button,
   Collapsible,
@@ -8,9 +9,8 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
-import { type BooleanLike, classes } from 'tgui-core/react';
+import { classes } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
-
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
 import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
@@ -20,25 +20,11 @@ import {
   ConfigurableRecipeRow,
   ProductConfigurator,
 } from './Fabrication/SelectableRecipe';
-import type {
-  Design,
-  Material,
-  MaterialChoice,
-  MaterialMap,
-} from './Fabrication/Types';
-
-type AutolatheData = {
-  materials: Material[];
-  materialtotal: number;
-  materialsmax: number;
-  SHEET_MATERIAL_AMOUNT: number;
-  designs: Design[];
-  materialChoices?: MaterialChoice[];
-  active: BooleanLike;
-};
+import type { Design, MaterialMap } from './Fabrication/Types';
+import type { AutolatheActions, AutolatheData } from './generated/Autolathe';
 
 export const Autolathe = (props) => {
-  const { act, data } = useBackend<AutolatheData>();
+  const { act, data } = useBackend<AutolatheData, AutolatheActions>();
   const {
     materialtotal,
     materialsmax,
@@ -63,23 +49,22 @@ export const Autolathe = (props) => {
           <Stack.Item>
             <Section title="Total Materials">
               <LabeledList>
-                <LabeledList.Item label="Total Materials">
-                  <ProgressBar
-                    value={materialtotal}
-                    minValue={0}
-                    maxValue={materialsmax}
-                    ranges={{
-                      good: [materialsmax * 0.85, materialsmax],
-                      average: [materialsmax * 0.25, materialsmax * 0.85],
-                      bad: [0, materialsmax * 0.25],
-                    }}
-                  >
-                    {materialtotal / SHEET_MATERIAL_AMOUNT +
-                      '/' +
-                      materialsmax / SHEET_MATERIAL_AMOUNT +
-                      ' sheets'}
-                  </ProgressBar>
-                </LabeledList.Item>
+                <StatBar
+                  label="Total Materials"
+                  value={materialtotal}
+                  minValue={0}
+                  maxValue={materialsmax}
+                  ranges={{
+                    good: [materialsmax * 0.85, materialsmax],
+                    average: [materialsmax * 0.25, materialsmax * 0.85],
+                    bad: [0, materialsmax * 0.25],
+                  }}
+                >
+                  {materialtotal / SHEET_MATERIAL_AMOUNT +
+                    '/' +
+                    materialsmax / SHEET_MATERIAL_AMOUNT +
+                    ' sheets'}
+                </StatBar>
                 <LabeledList.Item>
                   {filteredMaterials.length > 0 && (
                     <Collapsible title="Materials">
@@ -138,7 +123,7 @@ export const Autolathe = (props) => {
                     key={design.id}
                     design={design}
                     available={availableMaterials}
-                    materialChoices={data.materialChoices ?? []}
+                    materialChoices={data.materialChoices}
                     SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
                     onBuild={(materialSlots, quantity) =>
                       act('make', {
@@ -167,7 +152,7 @@ type PrintButtonProps = {
 };
 
 const PrintButton = (props: PrintButtonProps) => {
-  const { act } = useBackend<AutolatheData>();
+  const { act } = useBackend<AutolatheData, AutolatheActions>();
   const { design, quantity, availableMaterials, maxmult } = props;
 
   const canPrint = maxmult >= quantity;
@@ -206,7 +191,7 @@ type AutolatheRecipeProps = {
 };
 
 const AutolatheRecipe = (props: AutolatheRecipeProps) => {
-  const { act } = useBackend<AutolatheData>();
+  const { act } = useBackend<AutolatheData, AutolatheActions>();
   const {
     design,
     availableMaterials,

@@ -1,15 +1,12 @@
 // Hand procs for player-controlled SA's
 /mob/living/simple_mob/swap_hand()
-	set_hand(!hand)
+	var/target = isnull(hand) ? FALSE : !hand
+	if(!hand_works(target))
+		settle_active_hand()
+		return
+	set_hand(target)
 	op_keep_poke(src, OP_KEEP_HAND)
-	if(hud_used.l_hand_hud_object && hud_used.r_hand_hud_object)
-		if(hand)	//This being 1 means the left hand is in use
-			hud_used.l_hand_hud_object.icon_state = "l_hand_active"
-			hud_used.r_hand_hud_object.icon_state = "r_hand_inactive"
-		else
-			hud_used.l_hand_hud_object.icon_state = "l_hand_inactive"
-			hud_used.r_hand_hud_object.icon_state = "r_hand_active"
-	return
+	update_hand_hud()
 
 /mob/living/simple_mob/put_in_hands(obj/item/W) // No hands.
 	if(has_hands)

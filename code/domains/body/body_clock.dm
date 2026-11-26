@@ -101,7 +101,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 			var/share = WOUND_AUTOHEAL_PER_CYCLE * CONFIG_GET(number/organ_regeneration_multiplier) * cycles / (length(wounds) + 1)
 			for(var/datum/affliction/wound/W as anything in wounds.Copy())
 				if(W.damage > 0 && W.can_autoheal() && W.wound_damage() < WOUND_AUTOHEAL_MAX_DAMAGE)
-					W.heal_damage(share)
+					W.heal_damage(share * natural_healing_scale(E, W))
 				// Moving about gets an open wound dirty faster.
 				if(moving && W.infection_check())
 					W.germ_level += 1
@@ -213,10 +213,10 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	if(E.is_robotic() || E.flow_occluded())
 		return 0
 	. = 0
-	// D18b: an open surgical site bleeds only while the incision does (clamped, closed or bloodless sites don't).
+	// D18b: an open surgical site bleeds only while the incision does (clamped, closed or bloodless sites don't), by the patient's clotting.
 	var/datum/affliction/surgical_incision/incision = E.get_incision()
 	if(incision?.is_bleeding())
-		. += 2
+		. += incision.bleed_rate()
 	var/divisor = blood_loss_divisor()
 	for(var/datum/affliction/wound/W as anything in E.get_wounds())
 		if(!W.bleeding())

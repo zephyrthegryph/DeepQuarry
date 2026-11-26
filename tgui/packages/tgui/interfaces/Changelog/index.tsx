@@ -12,6 +12,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
+import type { ChangelogActions, ChangelogData } from '../generated/Changelog';
 
 const icons = {
   add: { icon: 'check-circle', color: 'green' },
@@ -40,8 +41,6 @@ const icons = {
   wip: { icon: 'hammer', color: 'orange' },
 };
 
-type Data = { dates: string[] };
-
 const monthFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'long',
   timeZone: 'UTC',
@@ -58,8 +57,8 @@ const formatDate = (date: string, includeDay = false) =>
   (includeDay ? dayFormatter : monthFormatter).format(new Date(date));
 
 export const Changelog = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { dates = [] } = data;
+  const { act, data } = useBackend<ChangelogData, ChangelogActions>();
+  const dates = data.dates ?? [];
 
   const dateChoices = dates.map((date) => formatDate(date));
 
@@ -82,24 +81,34 @@ export const Changelog = (props) => {
 
       act('get_month', { date });
 
-      fetch(resolveAsset(`${date}.yml`)).then(async (response) => {
-        const result = await response.text();
-        const errorRegex = /^Cannot find/;
+      fetch(resolveAsset(`${date}.yml`))
+        .then(async (response) => {
+          const result = await response.text();
+          const errorRegex = /^Cannot find/;
 
-        if (errorRegex.test(result)) {
-          const timeout = 50 + attemptNumber * 50;
-          setChangelogData(
-            `Loading changelog data${'.'.repeat(attemptNumber + 3)}`,
+          if (errorRegex.test(result)) {
+            const timeout = 50 + attemptNumber * 50;
+            setChangelogData(
+              `Loading changelog data${'.'.repeat(attemptNumber + 3)}`,
+            );
+            setTimeout(() => {
+              getData(date, attemptNumber + 1);
+            }, timeout);
+          } else {
+            import('js-yaml').then((yaml) => {
+              setChangelogData(yaml.load(result, { schema: yaml.CORE_SCHEMA }));
+            });
+          }
+        })
+        .catch(() => {
+          // The asset is not served yet (or the request was refused): retry like a "Cannot find" answer.
+          setTimeout(
+            () => {
+              getData(date, attemptNumber + 1);
+            },
+            50 + attemptNumber * 50,
           );
-          setTimeout(() => {
-            getData(date, attemptNumber + 1);
-          }, timeout);
-        } else {
-          import('js-yaml').then((yaml) => {
-            setChangelogData(yaml.load(result, { schema: yaml.CORE_SCHEMA }));
-          });
-        }
-      });
+        });
     },
     [act],
   );

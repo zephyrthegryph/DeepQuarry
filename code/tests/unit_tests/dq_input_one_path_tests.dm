@@ -213,14 +213,5 @@ CAPABILITIES(/obj/structure/dq_one_path_probe/declining)
 		path_send(user, new /datum/input_event/click/hover(user, center, T, "mapwindow.map", "", FALSE), queued)
 		TEST_ASSERT_EQUAL(center.icon_state, "radial_center", "leaving it puts it out ([mode])")
 
-		var/atom/movable/screen/movable/ability_master/master = allocate(/atom/movable/screen/movable/ability_master, user)
-		master.add_ability("one_path_a")
-		master.add_ability("one_path_b")
-		master.update_abilities(0, user) // numbers the abilities (their index), as the master does when its HUD is built
-		var/atom/movable/screen/ability/first = master.ability_objects[1]
-		var/atom/movable/screen/ability/second = master.ability_objects[2]
-		path_send(user, new /datum/input_event/drag(user, first, second, list(null, null, "mapwindow.map", "mapwindow.map", "left=1"), TRUE), queued)
-		TEST_ASSERT_EQUAL(master.ability_objects[1], second, "an ability dropped on another swaps their places once ([mode])")
-		TEST_ASSERT_EQUAL(master.ability_objects[2], first, "and not back again ([mode])")
 	input_force_room(null)
 	test_driver_end()

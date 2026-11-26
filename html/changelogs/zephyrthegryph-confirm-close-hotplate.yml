@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A prompt window closes when its answer is confirmed"
+  - qol: "The hot plate window shows only the beaker temperature, the dial, the power switch and the power; an empty hand takes a beaker off the plate (a bare plate opens the window; alt-click or the menu opens it with a beaker on)"

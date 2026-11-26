@@ -31,6 +31,11 @@ before code/content/integrated_electronics/subtypes/camera.dm code/content/integ
 before code/content/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
 before code/content/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
 
+# The ability list uses generated ids (STAT_STUNNED, in ids.dm); its folder sorts ahead of every other code/content folder, which would put it before them.
+before code/engine/_generated/ids.dm code/content/abilities/**   # STAT_* ids
+
+before code/library/ui/window_dock/window_dock.dm code/content/client/window_dock.dm   # the content file implements the library's /datum/tgui dock hooks
+
 # Definition precedence. A type's var or proc defined in two files is the later file's (a proc's ..() calls the earlier one): these
 # pairs are the files that redefine what another file defines (mostly the former modular override files under code/content,
 # code/domains and the vore/serdy/alt files). Each keeps the order it had; folding the two definitions into one file removes the rule.
@@ -43,6 +48,7 @@ before code/content/projectiles/guns/projectile/** code/content/projectiles/guns
 before code/content/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
 before code/content/area/away_mission_areas.dm code/content/turfs/initialization/init.dm   # /area/area_after_init()
 before code/content/mob/living/living_movement.dm code/content/vore/eating/stumblevore.dm   # /mob/living/Bump(), Crossed()
+before code/domains/world_model/atom/atoms_movable.dm code/world/kernel/measure/movement.dm   # /atom/movable/Move(): the tick ledger bracket wraps the definition
 before code/content/mob/living/simple_mob/defense.dm code/content/vore/eating/simple_animal.dm   # /mob/living/simple_mob/hit_with_item()
 before code/content/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm code/domains/ai/ports/slime_mob_overrides.dm   # xenobio slime examine(), update_mood()
 before code/content/projectiles/gun.dm code/content/projectiles/targeting/targeting_gun.dm   # /obj/item/gun/dropped(), equipped()
@@ -84,10 +90,9 @@ before code/engine/declare/lifecycle.dm code/library/lifecycle/declarations.dm  
 before code/engine/hooks/content_adapters.dm code/content/state/engine_adapters.dm   # bind_native(), send(), lookup(), ...
 before code/engine/parts/input_adapter.dm code/content/state/engine_adapters.dm   # compatibility_topic()
 before code/engine/refs/transfer.dm code/library/ownership/transfer.dm                 # record(), refusal()
-before code/engine/state/collapse.dm code/content/state/collapse.dm   # describe(), hook_blockers()
 before code/engine/state/construction.dm code/content/state/construction_adapter.dm   # create()
 before code/engine/state/properties/providers.dm code/content/properties/providers.dm   # validate_rules(), variant_values()
-before code/engine/state/schema.dm code/library/state/latent_safe_types.dm              # register_defaults()
+before code/engine/state/schema.dm code/content/state/slot_hook_types.dm                 # register_defaults()
 before code/engine/state/serializer.dm code/content/state/serializer.dm   # identity(), lookup()
 before code/content/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
 before code/content/casino/board_games/four_in_a_row.dm code/content/casino/board_games/tic_tac_toe.dm   # change_win_count()
@@ -114,6 +119,7 @@ file code/engine/_generated/reads.dm
 file code/engine/_generated/deps.dm
 file code/engine/_generated/plans.dm
 file code/engine/_generated/system_accessors.dm
+file code/engine/_generated/sparse_slots.dm
 file code/engine/_generated/declare.dm
 file code/engine/_generated/stats.dm
 file code/engine/_generated/actions.dm
@@ -232,6 +238,7 @@ last code/engine/_generated/plans.dm
 last code/engine/change/plan.dm              # reads CGK_* of plans.dm (and OUTPUT_HOOK_DRAW of engine/present/outputs.dm)
 last code/engine/actions/admission_query.dm  # reads READ_KIND_* of reads.dm
 last code/engine/_generated/system_accessors.dm
+last code/engine/_generated/sparse_slots.dm
 last code/engine/_generated/declare.dm
 last code/engine/_generated/stats.dm
 last code/engine/_generated/actions.dm

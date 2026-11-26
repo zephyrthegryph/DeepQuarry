@@ -47,6 +47,7 @@ CAPABILITIES(/datum/board_game/chess)
 	ref_one(nameof(player_one), /mob)
 	ref_one(nameof(player_two), /mob)
 	interface("ChessCheckers", state = nameof(GLOB.tgui_board_game_state))
+	ui_shape(game_type = schema_text(), player_one = nullable(schema_text()), player_two = nullable(schema_text()), player_one_time = num(), player_two_time = num(), current_board = list_of(list_of(nullable(schema_text()))), selected_figure = list_of(int()), valid_moves = list_of(list_of(int())), game_state = int(), winner = nullable(schema_text()), has_won = bool(), game_flags = int())
 	op("be_player_one", ui_act("be_player_one"), then(PROC_REF(ui_act_be_player_one)))
 	op("be_player_two", ui_act("be_player_two"), then(PROC_REF(ui_act_be_player_two)))
 	op("swap_players", ui_act("swap_players"), then(PROC_REF(ui_act_swap_players)))
@@ -58,7 +59,7 @@ CAPABILITIES(/datum/board_game/chess)
 
 GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 
-/datum/board_game/chess/tgui_static_data(mob/user)
+/datum/board_game/chess/ui_static_data(datum/act/eval/A)
 	return GLOB.chess_static_data
 
 /// /datum/board_game/chess's window data.

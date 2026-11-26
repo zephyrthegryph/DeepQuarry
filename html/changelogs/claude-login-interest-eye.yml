@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - qol: "A login scans only the nearest chunks of its view before the first frame; the rest of the view and the ring are scanned and drawn by the drain behind the cover"

@@ -42,7 +42,6 @@
 		)
 	icon_state = "detective"
 	item_state = "gun"
-	MATERIAL_BULK(MAT_STEEL, 2000)
 	w_class = ITEMSIZE_NORMAL
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
@@ -121,8 +120,7 @@ CAPABILITIES(/obj/item/gun)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("gun_item", item(/obj/item), label("Fit"), then(PROC_REF(gun_item)))
 	op("suicide", ai(), wait(4 SECONDS), on_interrupt(PROC_REF(suicide_reconsidered)), then(PROC_REF(suicide_trigger)))
-	op("gun_self", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Operate"), then(PROC_REF(gun_self)))
-	op("gun_self_hurt", in_hand(), stance(I_HURT), label("Operate"), then(PROC_REF(gun_self)))
+	op("gun_self", in_hand(), label("Operate"), then(PROC_REF(gun_self)))
 	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_give_dna)))
 	op("gun_verb_remove_dna", menu(), label("Remove DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_remove_dna)))
 	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_allow_dna)))
@@ -264,7 +262,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		PreFire(A,user,params) //They're using the new gun system, locate what they're aiming at.
 		return
 
-	if(user && stance == I_HELP && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring)) //regardless of what happens, refuse to shoot out of combat mode
+	if(user && stance == I_HELP) //regardless of what happens, refuse to shoot out of combat mode
 		to_chat(user, span_warning("You refrain from firing your [src] as you are out of combat mode."))
 		return
 
@@ -290,9 +288,23 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 	Fire(A,user,params) //Otherwise, fire normally.
 */
 
+/// Does this gun harm no one it is fired at, so its holder may fire it at themselves in any stance (a size gun, a medigun)? A gun that does harm is fired at
+/// its holder only in combat mode.
+/obj/item/gun/proc/self_fire_safe()
+	return FALSE
+
 /obj/item/gun/attack(mob/living/A, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if (A == user && hud_of(user)?.zone_sel?.selecting == O_MOUTH && !mouthshoot)
 		handle_suicide(user)
+		return ITEM_INTERACT_SUCCESS
+	else if(stance != I_HURT && self_fire_safe())
+		// A gun that harms no one (a size gun, a medigun) fires at whoever is clicked, its holder included, in any stance.
+		Fire(A, user, null, 1, 0, stance)
+		return ITEM_INTERACT_SUCCESS
+	else if(A == user && stance != I_HURT)
+		// A gun that does harm is fired at its holder only in combat mode: say so, so the click is never just dropped.
+		to_chat(user, span_warning("You refrain from pointing \the [src] at yourself out of combat mode."))
+		log_input("Input: [key_name(user)] clicked themselves with [src] ([type]) out of combat mode: refused, the gun is not safe to fire at its holder.")
 		return ITEM_INTERACT_SUCCESS
 	else if(stance == I_HURT) //point blank shooting
 		if(user && user.client && user.aiming && user.aiming.active && user.aiming.aiming_at != A && A != user)
@@ -802,7 +814,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 	return new_mode
 
-/// Old attack_self (the "gun_self" op, "gun_self_hurt" in a hostile stance). `callback` is the projectile gun's re-entry flag (l6_saw). A decline
+/// Old attack_self (the "gun_self" op, in every stance). `callback` is the projectile gun's re-entry flag (l6_saw). A decline
 /// (as the old chain's falsy return) leaves the self-use unhandled. A gun type overrides this and
 /// calls ..() the way the old attack_self chain did.
 /obj/item/gun/proc/gun_self(datum/act/op/A)

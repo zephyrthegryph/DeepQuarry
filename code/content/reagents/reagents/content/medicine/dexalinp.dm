@@ -1,10 +1,11 @@
 /datum/reagent/dexalinp
 	treatment_tags = list(TREAT_OXYGENATION = 1.0)
 	factors = alist(STAT_O2_CARRIAGE = 1.5)
+	hides = list(HIDE_LUNG_HEART)
 	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 25))
 	name = REAGENT_DEXALINP
 	id = REAGENT_ID_DEXALINP
-	description = REAGENT_DEXALINP + " is used in the treatment of oxygen deprivation. It is highly effective."
+	description = REAGENT_DEXALINP + " is used in the treatment of oxygen deprivation (hypoxia). It is highly effective, and with dylovene it treats cyanide poisoning. It masks lung and heart damage on scans while it is in the blood."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

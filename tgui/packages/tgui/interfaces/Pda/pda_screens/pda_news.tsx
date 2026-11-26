@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Image, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
+import type { PdaActions } from '../../generated/Pda';
 
 type Data = {
   feeds: feed[];
@@ -38,7 +39,7 @@ type feed = {
 // Stolen wholesale from communicators. TGUITODO: Merge PDA & Communicator shared code once both are in
 /* News */
 export const pda_news = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { feeds, target_feed } = data;
 
@@ -98,7 +99,7 @@ const NewsTargetFeed = (props: { target_feed: feed }) => {
 };
 
 const NewsFeed = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { feeds, latest_news } = data;
 

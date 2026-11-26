@@ -1,3 +1,0 @@
-#include "child.dm"
-/proc/after()
-    return 1

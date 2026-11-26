@@ -27,7 +27,7 @@ CAPABILITIES(/obj/item/rig_module/self_destruct)
 /obj/item/rig_module/self_destruct/deactivate(forced = FALSE, mob/user)
 	return
 
-/obj/item/rig_module/self_destruct/periodic_step()
+/obj/item/rig_module/self_destruct/module_tick()
 
 	// Not being worn, leave it alone.
 	if(!holder || !holder.wearer() || holder.wearer().get_equipped_item(SLOT_ID_SUIT) != holder)

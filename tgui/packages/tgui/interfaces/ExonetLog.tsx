@@ -13,7 +13,7 @@ type Data = {
 
 export const ExonetLog = () => {
   const { data } = useBackend<Data>();
-  const { lines } = data;
+  const { lines = [] } = data;
   return (
     <Window width={520} height={520} title="Exonet Message Log">
       <Window.Content scrollable>

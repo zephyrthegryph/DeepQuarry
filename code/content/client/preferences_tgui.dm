@@ -74,7 +74,8 @@
 
 	return data
 
-/datum/preferences/tgui_static_data(mob/user)
+/datum/preferences/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["character_profiles"] = create_character_profiles()
@@ -129,15 +130,30 @@
 
 /datum/preferences/proc/ui_act_copy(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!isnewplayer(user))
-		to_chat(user, span_userdanger("You can't change your character slot while being in round."))
-		return FALSE
 	if(!IsGuestKey(user.key))
 		open_copy_dialog(user)
 	return TRUE
 
 /datum/preferences/proc/ui_act_game_prefs(datum/act/op/A)
 	A.actor.client.game_options()
+	return OP_OK
+
+/// A button of the Game Preferences window: opens the volume mixer, the keybinding editor or the MultiShock configuration.
+/datum/preferences/proc/ui_act_open_tool(datum/act/op/A, tool)
+	var/client/player = A.actor.client
+	if(!player || player != client())
+		return OP_REFUSED
+	switch(tool)
+		if(PREF_TOOL_VOLUME)
+			player.open_volume_panel()
+		if(PREF_TOOL_KEYBINDS)
+			player.open_keybind_editor()
+		if(PREF_TOOL_SHOCK)
+			player.open_shock_config()
+		if(PREF_TOOL_IGNORE)
+			player.open_ignore_list()
+		else
+			return OP_REFUSED
 	return OP_OK
 
 /datum/preferences/proc/ui_act_refresh_character_preview(datum/act/op/A)

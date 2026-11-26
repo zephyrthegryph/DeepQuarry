@@ -1,8 +1,0 @@
-﻿#include "code/first.dm"
-#if 0
-#include "code/second.dm"
-#include "code/tests/test.dm"
-#include "code/engine/_generated/stats.dm"
-#include "code/edge.dm"
-#endif
-/datum

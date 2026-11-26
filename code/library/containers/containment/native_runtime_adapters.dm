@@ -1,5 +1,5 @@
 // Concrete world bridges for containment's engine-declared interfaces.
-/atom/create_latent_generator_line(path, value)
+/atom/create_spawn_line(path, value)
 	var/list/spec = dq_resolve_spawn_value(value)
 	for(var/i in 1 to max(1, spec["count"]))
 		spawn_with_variant(path, src, spec["variant"])
@@ -9,9 +9,6 @@
 
 /atom/containment_drop_location()
 	return drop_location()
-
-/atom/containment_blast_exposure(severity)
-	return ex_act(severity)
 
 /atom/containment_armor_share(key, penetration)
 	return dq_armor_average_percent(get_armor().effective(key, penetration)) / 100

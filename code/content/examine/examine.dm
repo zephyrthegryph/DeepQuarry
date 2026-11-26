@@ -71,10 +71,7 @@ SCHEMA(/atom, description_fluff, schema_text())
 
 //override examinate verb to update description holders when things are examined
 //mob verbs are faster than object verbs. See http://www.byond.com/forum/?post=1326139&page=2#comment8198716 for why this isn't atom/verb/examine()
-/mob/verb/examinate(atom/A as mob|obj|turf in _validate_atom(A))
-	set name = "Examine"
-	set category = VERB_CAT_IC_GAME
-
+/mob/proc/examinate(atom/A)
 	if((is_blind(src) || src.stat) && !isobserver(src))
 		to_chat(src, span_notice("Something is there but you can't see it."))
 		return 1
@@ -84,6 +81,9 @@ SCHEMA(/atom, description_fluff, schema_text())
 		return 1
 	if(!is_paralyzed())
 		face_atom(A)
+	if(examine_to_panel())
+		examine_in_panel(A)
+		return
 	var/list/results = A.examine(src)
 	if(!results || !results.len)
 		results = list("You were unable to examine that. Tell a developer!")
@@ -100,9 +100,6 @@ SCHEMA(/atom, description_fluff, schema_text())
 	. = ""
 	if(!(source.client?.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_VERBOSE))
 		return
-	if(!source.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable))
-		return //sorry oldchat
-
 	//do pref check here
 	var/desc_info_temp = A.get_mechanics_info()
 	if(desc_info_temp)
@@ -156,7 +153,7 @@ SCHEMA(/atom, description_fluff, schema_text())
 /mob/verb/mob_examine()
 	set name = "Mob Examine"
 	set desc = "Allows one to examine mobs they can see, even from inside of bellies and objects."
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 	set popup_menu = FALSE
 
 	return mob_examine_stage(FALSE)
@@ -183,6 +180,10 @@ SCHEMA(/atom, description_fluff, schema_text())
 					continue
 				if(ismob(M) && !M.invisibility)
 					if(src && src == M)
+						if(examine_to_panel())
+							examine_in_panel(src)
+							update_examine_panel(src)
+							return
 						var/list/results = src.examine(src)
 						if(!results || !results.len)
 							results = list("You were unable to examine that. Tell a developer!")
@@ -229,6 +230,10 @@ SCHEMA(/atom, description_fluff, schema_text())
 	if(!isbelly(loc) && !istype(loc, /obj/item/holder) && !isAI(src))
 		if(B.z == src.z && !is_paralyzed())
 			face_atom(B)
+	if(examine_to_panel())
+		examine_in_panel(B)
+		update_examine_panel(B)
+		return
 	var/list/results = B.examine(src)
 	if(!results || !results.len)
 		results = list("You were unable to examine that. Tell a developer!")

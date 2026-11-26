@@ -21,7 +21,8 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 	configure(light_glow(color = "#e6ffff"))
 	after_init(0, then(PROC_REF(listen_alarms)))
 	interface("AtmosAlertConsole")
-	op("clear", ui_act("clear", arg("ref", schema_text(32))), then(PROC_REF(ui_act_clear)))
+	ui_shape(priority_alarms = list_of(row(name = schema_text(), ref = num())), minor_alarms = list_of(row(name = schema_text(), ref = num())))
+	op("clear", ui_act("clear", arg("ref", schema_ref(/datum/alarm))), then(PROC_REF(ui_act_clear)))
 
 /obj/machinery/computer/atmos_alert/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -62,9 +63,8 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 	listed += GLOB.atmosphere_alarm.minor_alarms(get_z(src))
 	return listed
 
-/obj/machinery/computer/atmos_alert/proc/ui_act_clear(datum/act/op/A, ref)
-	var/datum/alarm/alarm = ui_member(ref, listed_alarms(), /datum/alarm)
-	if(alarm)
+/obj/machinery/computer/atmos_alert/proc/ui_act_clear(datum/act/op/A, datum/alarm/alarm)
+	if(istype(alarm) && (alarm in listed_alarms()))
 		for(var/datum/alarm_source/alarm_source in alarm.sources)
 			var/obj/machinery/alarm/air_alarm = alarm_source.source
 			if(istype(air_alarm))

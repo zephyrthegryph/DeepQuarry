@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The floating chat resizes from every edge and corner, stays inside the game window's client area (not the title bar), and snaps to the border between the map and the stat panel"
+  - bugfix: "Dragging a docked chat out carries on as a drag of the floating window with no new click"
+  - qol: "Dragging the floating chat over the stat panel outlines the dock target there and makes the chat see-through"
+  - qol: "The chat/stat split and the map/stat split update live while dragged from the chat and stat panel edges"
+  - bugfix: "The lobby page is re-enabled whenever the chat layout settles"

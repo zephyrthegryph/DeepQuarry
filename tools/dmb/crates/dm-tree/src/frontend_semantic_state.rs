@@ -18,30 +18,7 @@ pub struct RetainedSemanticTree {
     splices: u64,
     /// The last published frontend with the project and defines it was built for: the base the next
     /// request's plan and expansion adopt their unchanged include subtrees and regions from.
-    previous: Option<(
-        std::path::PathBuf,
-        std::collections::BTreeMap<String, String>,
-        RememberedFrontend,
-    )>,
-}
-
-/// The existing single predecessor slot retains its actual publication kind.
-/// Diagnostic owners lend preparation data privately; they never become a
-/// public FrontendRevision or an ordinary compiler/source snapshot.
-#[derive(Clone)]
-pub(super) enum RememberedFrontend {
-    Compiler(super::FrontendRevision),
-    Analysis(Arc<super::DiagnosticFrontend>),
-}
-impl std::ops::Deref for RememberedFrontend {
-    type Target=super::ColdFrontend;
-    fn deref(&self)->&Self::Target { match self { Self::Compiler(row)=>row,Self::Analysis(row)=>row.preparation_frontend() } }
-}
-impl RememberedFrontend {
-    pub(super) fn original_primary(&self)->Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>{match self{Self::Analysis(owner)=>owner.preparation_original_primary(),Self::Compiler(_)=>None}}
-    pub(super) fn diagnostic_receipt(&self,tree:&Arc<SemanticTree>)->Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>{match self{Self::Analysis(row)=>row.preparation_receipt(tree),Self::Compiler(_)=>Some(crate::diagnostic_declarations::DiagnosticDeclarationReceipt::reused_valid_tree(tree))}}
-    pub(super) fn diagnostic_records(&self)->Option<Arc<DiagnosticRetainedRecords>> { match self {Self::Analysis(row)=>row.preparation_records(),Self::Compiler(_)=>None} }
-    pub(super) fn original_variables(&self)->Option<crate::checker_builtins::OriginalVariableDeclarations>{match self{Self::Analysis(row)=>row.preparation_original_variables(),Self::Compiler(_)=>None}}
+    previous: Option<(std::path::PathBuf, std::collections::BTreeMap<String, String>, super::FrontendRevision)>,
 }
 struct Entry {
     index: crate::declaration_contributions::KeyedDeclarations,
@@ -62,61 +39,18 @@ impl RetainedSemanticTree {
     ) {
         // The replaced revision usually owns the last references to the previous request's tree,
         // syntax and body arena.
-        release_in_background(self.previous.replace((
-            project.to_path_buf(),
-            defines.clone(),
-            RememberedFrontend::Compiler(revision),
-        )));
-    }
-    /// Retains the actual analysis owner only after its checked preparation.
-    /// Borrow the retained analysis predecessor as DATA. It is not a current
-    /// source scope; consumers must join its mapping to their actual frame.
-    pub fn with_remembered_analysis_source<R>(&self,consume:impl FnOnce(super::DiagnosticSourceView<'_>)->R)->Result<Option<R>,String>{
-        let Some((_,_,RememberedFrontend::Analysis(frontend)))=&self.previous else{return Ok(None)};
-        Ok(Some(consume(frontend.source_view()?)))
-    }
-    pub fn remember_analysis_frontend(&mut self,project:&std::path::Path,defines:&std::collections::BTreeMap<String,String>,frontend:Arc<super::DiagnosticFrontend>)->Result<(),String>{
-        if frontend.preparation_purpose().is_structural(){return Err("structural partial frontend cannot occupy the full-analysis predecessor".into())}
-        let source=frontend.source_view()?;
-        if source.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {return Err("analysis predecessor lacks the actual original context".into())}
-        release_in_background(self.previous.replace((project.to_path_buf(),defines.clone(),RememberedFrontend::Analysis(frontend))));Ok(())
-    }
-    pub(super) fn admits_preparation_owner(&self,frontend:&RememberedFrontend,engine:Option<&EngineSeed>)->bool {
-        match frontend {RememberedFrontend::Compiler(row)=>self.admits_remembered_owner(row,engine),RememberedFrontend::Analysis(row)=>row.preparation_engine_matches(engine)}
-    }
-    pub(super) fn original_type_loan(
-        &self,
-        project: &std::path::Path,
-    ) -> Option<crate::declaration_contributions::TypeContributionLoan<'_>> {
-        let (path, remembered, RememberedFrontend::Analysis(frontend)) = self.previous.as_ref()? else {
-            return None;
-        };
-        if path != project || !remembered.is_empty() {
-            return None;
-        }
-        frontend.original_type_loan()
+        release_in_background(
+            self.previous
+                .replace((project.to_path_buf(), defines.clone(), revision)),
+        );
     }
     pub(super) fn previous_frontend(
         &self,
         project: &std::path::Path,
         defines: &std::collections::BTreeMap<String, String>,
-        environment:dm_preprocess::InitialEnvironment,
-        diagnostic:bool,
-    ) -> Option<RememberedFrontend> {
+    ) -> Option<super::FrontendRevision> {
         let (path, remembered, revision) = self.previous.as_ref()?;
-        (path == project && remembered == defines && revision.plan.initial_environment()==environment
-            && !matches!(revision,RememberedFrontend::Analysis(owner)if (owner.preparation_purpose()==super::DiagnosticPreparationPurpose::OriginalAnalyzePrefix||owner.preparation_purpose().is_structural()))
-            && matches!(revision,RememberedFrontend::Analysis(_))==(diagnostic&&environment==dm_preprocess::InitialEnvironment::OriginalChecker0290)).then(|| revision.clone())
-    }
-    /// One predecessor cache/owner. A complete original recipe can lend both
-    /// diagnostic roles; a primary prefix can only be lent to Analyze.
-    pub(super) fn previous_original_frontend(&self,project:&std::path::Path,defines:&std::collections::BTreeMap<String,String>,allow_prefix:bool,lazy_body_parameters:bool,compact_macro_history:bool)->Option<RememberedFrontend>{self.previous_original_frontend_with_code_mode(project,defines,allow_prefix,lazy_body_parameters,compact_macro_history,false)}
-    pub(super) fn previous_original_frontend_with_code_mode(&self,project:&std::path::Path,defines:&std::collections::BTreeMap<String,String>,allow_prefix:bool,lazy_body_parameters:bool,compact_macro_history:bool,ordinary_code_demand:bool)->Option<RememberedFrontend>{
-      let(path,remembered,revision)=self.previous.as_ref()?;if path!=project||remembered!=defines{return None}
-      if matches!(revision,RememberedFrontend::Analysis(owner)if owner.preparation_purpose().is_structural()){return None}
-      let original=revision.original_primary()?;
-      if original.ordinary_code_demand()!=ordinary_code_demand||original.lazy_body_parameters()!=lazy_body_parameters||original.compact_macro_history()!=compact_macro_history||original.frontier().is_some()&&!allow_prefix{return None}
-      Some(revision.clone())
+        (path == project && remembered == defines).then(|| revision.clone())
     }
     /// Stage source-neutral declaration claims for this request, independently
     /// of the current semantic/query tree. Dropping the guard aborts claims.
@@ -145,12 +79,6 @@ impl RetainedSemanticTree {
         Ok(roster)
     }
 
-    /// Census-only loan of the actual previous analysis owner. It is never a
-    /// source-current receipt or an ordinary compiler frontend conversion.
-    pub fn visit_previous_analysis_storage(&self,mut visit:impl FnMut(super::AnalysisRetentionStorage<'_>)){
-        let Some((_,_,RememberedFrontend::Analysis(owner)))=&self.previous else{return};
-        visit(super::AnalysisRetentionStorage::Allocation{address:Arc::as_ptr(owner)as usize,bytes:std::mem::size_of_val(owner.as_ref())});owner.visit_retention_storage(visit);
-    }
     /// Actual immutable admission spellings; no separately owned text roster.
     pub fn retained_symbol_owner(&self) -> Option<&Arc<dm_ir::SymbolTable>> {
         self.entry.as_ref().map(|entry| &entry.symbols)
@@ -170,27 +98,6 @@ impl RetainedSemanticTree {
             );
         }
     }
-    /// Progress-only physical reuse census. This issues no semantic/source
-    /// admission and is only called after successful current Strict assembly.
-    pub fn shared_original_authored_type_owners(
-        &self,
-        prior: &Self,
-        project: &std::path::Path,
-    ) -> usize {
-        let Some(donor) = prior.original_type_loan(project) else {
-            return 0;
-        };
-        let Some(current) = self.retained_declaration_index() else {
-            return 0;
-        };
-        current.owners().filter(|(id, owner)| {
-            donor.declarations.owner(**id).is_some_and(|original| {
-                original.rows().iter().all(|row| matches!(row.skeleton, Skeleton::Type { .. }))
-                    && Arc::ptr_eq(original.shared_rows(), owner.shared_rows())
-            })
-        }).count()
-    }
-
     /// Diagnostic-only current keyed declaration owner.
     pub fn retained_declaration_index(
         &self,
@@ -235,23 +142,6 @@ impl RetainedSemanticTree {
     ) {
         self.normalization.storage.visit_storage(visit);
     }
-    /// Check the already-retained Strict variant, without exporting its tree
-    /// or granting its source or compiler authority to a diagnostic consumer.
-    pub fn has_current_strict_callable_anchors(
-        &self, project: &std::path::Path, defines: &std::collections::BTreeMap<String, String>,
-    ) -> bool {
-        let Some((path, admitted, RememberedFrontend::Compiler(frontend))) = &self.previous else {
-            return false;
-        };
-        path == project && admitted == defines
-            && frontend.plan.initial_environment() == dm_preprocess::InitialEnvironment::Native5161687
-            && self.entry.as_ref().is_some_and(|entry| Arc::ptr_eq(&entry.tree, &frontend.snapshot.tree))
-    }
-
-    pub(in crate::frontend) fn authored_callable_owners(&self) -> &crate::owner_callable::RetainedCallableOwners {
-        &self.normalization.callables
-    }
-
     pub fn callable_owner_hits(&self) -> usize {
         self.normalization.callables.hits()
     }
@@ -635,8 +525,10 @@ impl RetainedSemanticTree {
                 .as_mut()
                 .expect("updated tree has its retained producer");
             // The previous request's tree, index and occurrence index are freed off the request path.
-            let replaced_index =
-                std::mem::replace(&mut entry.occurrence_index, occurrences.target_index());
+            let replaced_index = std::mem::replace(
+                &mut entry.occurrence_index,
+                occurrences.target_index(),
+            );
             let replaced_tree = std::mem::replace(&mut entry.tree, Arc::clone(&tree));
             let replaced_contributions = std::mem::replace(
                 &mut entry.index,
@@ -663,11 +555,7 @@ impl RetainedSemanticTree {
                 self.symbol_only_rebinds += 1;
             }
             tick!("capture_dependencies");
-            report!(if spliced_dependencies {
-                "splice"
-            } else {
-                "update"
-            });
+            report!(if spliced_dependencies { "splice" } else { "update" });
             return Ok(TreeSnapshot {
                 tree,
                 occurrences: Arc::new(occurrences),
@@ -717,9 +605,7 @@ impl RetainedSemanticTree {
         match (self.entry.as_ref(), index.as_ref()) {
             (Some(entry), Some(current)) if same_engine(entry.engine.as_ref(), engine) => {
                 match Arc::get_mut(&mut snapshot.tree) {
-                    Some(tree) => {
-                        record_change_since(&entry.tree, &entry.index, tree, current, "rebuild")
-                    }
+                    Some(tree) => record_change_since(&entry.tree, &entry.index, tree, current, "rebuild"),
                     None => crate::change_set::record_outcome(
                         "demand tokens full (rebuilt tree already shared)".into(),
                     ),
@@ -822,7 +708,3 @@ pub(crate) fn release_in_background<T: Send + 'static>(value: T) {
         .name("dmb-release".into())
         .spawn(move || drop(value));
 }
-
-#[path = "frontend_diagnostic_retained_records.rs"]
-mod diagnostic_retained_records;
-pub(crate) use diagnostic_retained_records::DiagnosticRetainedRecords;

@@ -33,18 +33,6 @@
 	persistent = TRUE
 	generic_filth = FALSE
 
-	// dir = id in stack
-	var/static/list/setdirs=list(
-		"1"=0,
-		"2"=0,
-		"4"=0,
-		"8"=0,
-		"16"=0,
-		"32"=0,
-		"64"=0,
-		"128"=0
-	)
-
 	// List of laid tracks and their colors.
 	var/list/datum/fluidtrack/stack
 
@@ -59,6 +47,12 @@
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood/tracks)
 	owns_many(nameof(stack), /datum/fluidtrack)
+/// The laid track for one direction bit, found by what it records: positions in the stack shift whenever one is replaced.
+/obj/effect/decal/cleanable/blood/tracks/proc/track_going(direction_bit)
+	for(var/datum/fluidtrack/track as anything in stack)
+		if(track.direction == direction_bit)
+			return track
+
 /obj/effect/decal/cleanable/blood/tracks/proc/AddTracks(list/DNA, comingdir, goingdir, bloodcolor="#A10808")
 	// Shift our goingdir 4 spaces to the left so it's in the GOING bitblock.
 	var/realgoing=goingdir<<4
@@ -79,32 +73,28 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/tracks)
 		if(comingdir&b)
 			// If not wet or not set
 			if(dirs&b)
-				var/sid=setdirs["[b]"]
-				track=LAZYACCESS(stack, sid)
-				if(track.wet==t && track.basecolor==bloodcolor)
+				track=track_going(b)
+				if(track?.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				rel_remove(src, nameof(stack), track)
+				if(track)
+					rel_remove(src, nameof(stack), track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
 			rel_add(src, nameof(stack), track)
-			var/track_idx = LAZYFIND(stack, track)
-			setdirs["[b]"] = track_idx
 
 		// GOING BIT (shift up 4)
 		b=b<<4
 		if(realgoing&b)
 			// If not wet or not set
 			if(dirs&b)
-				var/sid=setdirs["[b]"]
-				track=LAZYACCESS(stack, sid)
-				if(track.wet==t && track.basecolor==bloodcolor)
+				track=track_going(b)
+				if(track?.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				rel_remove(src, nameof(stack), track)
+				if(track)
+					rel_remove(src, nameof(stack), track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
 			rel_add(src, nameof(stack), track)
-			var/track_idx = LAZYFIND(stack, track)
-			setdirs["[b]"] = track_idx
 
 	dirs |= comingdir|realgoing
 	init_forensic_data().merge_blooddna(null,DNA)

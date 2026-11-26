@@ -126,7 +126,6 @@ CAPABILITIES(/obj/structure/bed/bath)
 	desc = "Old fashioned cookies are ready, dear."
 	icon_state = "yeoldovenopen"
 	state_prefix = "yeoldoven"
-	tgui_id = "CookingOvenOld"
 
 //toilet
 
@@ -349,9 +348,3 @@ CAPABILITIES(/obj/item/gun/energy/taser/magic)
 	locked = TRUE
 	breakable = FALSE
 	lock_id = "dungeon"
-
-/obj/item/simple_key/dungeon
-	name = "old key"
-	desc = "A plain, old-timey key, as one might use to unlock a door."
-	icon_state = "dungeon"
-	key_id = "dungeon"

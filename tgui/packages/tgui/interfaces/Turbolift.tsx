@@ -1,28 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type { TurboliftActions, TurboliftData } from './generated/Turbolift';
 
-type Data = {
-  doors_open: BooleanLike;
-  fire_mode: BooleanLike;
-  floors: floor[];
-};
-
-type floor = {
-  id: number;
-  ref: string;
-  queued: BooleanLike;
-  target: BooleanLike;
-  current: BooleanLike;
-  label: string;
-  name: string;
-};
+type Data = TurboliftData;
 
 export const Turbolift = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TurboliftActions>();
 
-  const { floors, doors_open, fire_mode } = data;
+  const { floors = [], doors_open, fire_mode } = data;
 
   return (
     <Window width={480} height={fire_mode ? 285 : 260}>

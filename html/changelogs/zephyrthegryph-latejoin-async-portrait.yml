@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Portrait translations (late-join manifest photos, examine portraits, closet owners) run as a kernel job one layer per step instead of inside the request; the record holds a placeholder until the photo lands"
+  - qol: "The MC Health panel shows the tick graph first, from the first send, and fills in its other cards as their data arrives"

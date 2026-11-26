@@ -1,55 +1,33 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
   Button,
   LabeledList,
+  NoticeBox,
   NumberInput,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  TelecommsMultitoolMenuActions,
+  TelecommsMultitoolMenuData,
+} from './generated/TelecommsMultitoolMenu';
 
-import { TemporaryNotice } from './common/TemporaryNotice';
-
-type Data = {
-  temp: { color: string; text: string } | null;
-  on: BooleanLike;
-  id: string | null;
-  network: string | null;
-  autolinkers: BooleanLike;
-  shadowlink: BooleanLike;
-  options: options;
-  linked: { ref: string; name: string; id: string; index: number }[];
-  filter: { name: string; freq: string }[];
-  multitool: BooleanLike;
-  multitool_buffer: { name: string; id: string } | null;
-};
-
-type options = {
-  use_listening_level: BooleanLike;
-  use_broadcasting: BooleanLike;
-  use_receiving: BooleanLike;
-  listening_level: BooleanLike;
-  broadcasting: BooleanLike;
-  receiving: BooleanLike;
-  use_change_freq: BooleanLike;
-  change_freq: number | undefined;
-  use_broadcast_range: BooleanLike;
-  range: number | undefined;
-  minRange: number | undefined;
-  maxRange: number | undefined;
-  use_receive_range: BooleanLike;
-};
+type Options = TelecommsMultitoolMenuData['options'];
 
 export const TelecommsMultitoolMenu = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<
+    TelecommsMultitoolMenuData,
+    TelecommsMultitoolMenuActions
+  >();
 
   const { options } = data;
 
   return (
-    <Window width={520} height={540}>
+    <Window width={600} height={540}>
       <Window.Content scrollable>
-        <TemporaryNotice />
+        <TelecommsStatusLine />
         <TelecommsMultitoolMenuStatus />
         <TelecommsMultitoolMenuPolymorphicOptions options={options} />
       </Window.Content>
@@ -57,8 +35,36 @@ export const TelecommsMultitoolMenu = (props) => {
   );
 };
 
+// The status line: what the last button did, red when it failed.
+const TelecommsStatusLine = () => {
+  const { act, data } = useBackend<
+    TelecommsMultitoolMenuData,
+    TelecommsMultitoolMenuActions
+  >();
+  const { temp } = data;
+  if (!temp) {
+    return null;
+  }
+  return (
+    <NoticeBox danger={temp.color === 'bad'}>
+      <Box inline verticalAlign="middle">
+        {temp.text}
+      </Box>
+      <Button
+        icon="times-circle"
+        style={{ float: 'right' }}
+        onClick={() => act('cleartemp')}
+      />
+      <Box style={{ clear: 'both' }} />
+    </NoticeBox>
+  );
+};
+
 const TelecommsMultitoolMenuStatus = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    TelecommsMultitoolMenuData,
+    TelecommsMultitoolMenuActions
+  >();
 
   const {
     // All
@@ -67,8 +73,8 @@ const TelecommsMultitoolMenuStatus = (props) => {
     network,
     autolinkers,
     shadowlink,
-    linked,
-    filter,
+    linked = [],
+    filter = [],
     multitool,
     multitool_buffer,
   } = data;
@@ -170,20 +176,19 @@ const TelecommsMultitoolMenuStatus = (props) => {
             {`${f.name} GHz`}
           </Button.Confirm>
         ))}
-        {!filter || filter.length === 0 ? (
-          <Box color="label">No filters.</Box>
-        ) : (
-          ''
-        )}
+        {!filter || filter.length === 0 ? <Label>No filters.</Label> : ''}
       </Section>
     </Section>
   );
 };
 
 const TelecommsMultitoolMenuPolymorphicOptions = (props: {
-  options: options;
+  options: Options;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<
+    TelecommsMultitoolMenuData,
+    TelecommsMultitoolMenuActions
+  >();
 
   const {
     // Relay

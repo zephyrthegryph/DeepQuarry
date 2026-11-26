@@ -6,7 +6,7 @@
 /proc/set_possessed_obj(mob/M, obj/O)
 	return link_set_one(M, LK_POSSESSING, O)
 
-ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an object.", ADMIN_CATEGORY_OBJECT, obj/O as obj in world)
+ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an object.", ADMIN_CATEGORY_GAME, obj/O as obj in world)
 	if(istype(O,/obj/singularity))
 		if(CONFIG_GET(flag/forbid_singulo_possession))
 			to_chat(user, "It is forbidden to possess singularities.")
@@ -31,7 +31,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an objec
 	set_possessed_obj(user.mob, O)
 	feedback_add_details("admin_verb","PO") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB_AND_CONTEXT_MENU(release, R_POSSESS, "Release Object", "Stop possessing an object.", ADMIN_CATEGORY_OBJECT, obj/O as obj in world)
+ADMIN_VERB_AND_CONTEXT_MENU(release, R_POSSESS, "Release Object", "Stop possessing an object.", ADMIN_CATEGORY_GAME, obj/O as obj in world)
 	if(possessed_obj_of(user.mob) && STATE_GET(user.mob, mob_misc, name_archive)) //if you have a name archived and if you are actually relassing an object
 		user.mob.set_real_name(STATE_GET(user.mob, mob_misc, name_archive))
 		user.mob.name = user.mob.real_name

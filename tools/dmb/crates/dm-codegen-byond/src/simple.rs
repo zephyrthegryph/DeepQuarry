@@ -353,47 +353,6 @@ pub fn compile_preparsed_lossless_with_resolver<R: dm_ir::Resolver>(
     )
 }
 
-/// Borrow the same formal roots while preserving the existing lossless body
-/// path. Unsupported roots never fall back to parameter-default text parsing.
-pub fn compile_preparsed_lossless_with_original_defaults<R: dm_ir::Resolver>(
-    body: &[Item],
-    parameters: &dm_syntax::ParameterSignature,
-    source: &str,
-    inputs: &crate::lower_resolver::ProcedureInputs,
-    symbols: &dm_ir::SymbolTable,
-    resolver: &R,
-    debug: Option<&dyn DebugSourceProvider>,
-) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
-    compile_resolver_body(
-        body,
-        Some(TypedInput::LosslessParameters(parameters, source)),
-        inputs,
-        symbols,
-        resolver,
-        debug,
-    )
-}
-/// Standalone/current native compatibility body selection is unchanged; only
-/// formal defaults borrow original roots rather than reparsing their strings.
-pub fn compile_simple_proc_with_original_defaults<R: dm_ir::Resolver>(
-    body: &[Item],
-    parameters: &dm_syntax::ParameterSignature,
-    source: &str,
-    inputs: &crate::lower_resolver::ProcedureInputs,
-    symbols: &dm_ir::SymbolTable,
-    resolver: &R,
-    debug: Option<&dyn DebugSourceProvider>,
-) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
-    compile_resolver_body(
-        body,
-        Some(TypedInput::UnparsedParameters(parameters, source)),
-        inputs,
-        symbols,
-        resolver,
-        debug,
-    )
-}
-
 /// Lower already parsed statements through the same opcode/operand emitter.
 /// No synthetic procedure text or alternate initializer opcode implementation.
 pub fn compile_typed_statements_with_resolver<R: dm_ir::Resolver>(
@@ -423,28 +382,6 @@ pub fn compile_statement_view_with_resolver<R: dm_ir::Resolver>(
     compile_resolver_body(
         &[],
         Some(TypedInput::Statements(view)),
-        inputs,
-        symbols,
-        resolver,
-        debug,
-    )
-}
-
-/// Low-level syntax consumer. The native host must first bind this signature
-/// and source to its exact original occurrence/selected metadata owner. This
-/// function does not issue semantic/source-current authority or parse text.
-pub fn compile_statement_view_with_original_defaults<R: dm_ir::Resolver>(
-    view: dm_syntax::StatementView<'_>,
-    parameters: &dm_syntax::ParameterSignature,
-    source: &str,
-    inputs: &crate::lower_resolver::ProcedureInputs,
-    symbols: &dm_ir::SymbolTable,
-    resolver: &R,
-    debug: Option<&dyn DebugSourceProvider>,
-) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
-    compile_resolver_body(
-        &[],
-        Some(TypedInput::ParameterStatements(view, parameters, source)),
         inputs,
         symbols,
         resolver,
@@ -544,15 +481,7 @@ use resolver_body::compile_resolver_body;
 #[derive(Clone, Copy)]
 enum TypedInput<'a> {
     Lossless,
-    LosslessParameters(&'a dm_syntax::ParameterSignature, &'a str),
-    UnparsedParameters(&'a dm_syntax::ParameterSignature, &'a str),
-    ReturnExpression(&'a Expr, &'a str),
     Statements(dm_syntax::StatementView<'a>),
-    ParameterStatements(
-        dm_syntax::StatementView<'a>,
-        &'a dm_syntax::ParameterSignature,
-        &'a str,
-    ),
     Scopes(&'a [crate::typed_scopes::PreparedScope<'a>]),
     Modified(&'a [(String, Expr)]),
 }
@@ -595,41 +524,20 @@ fn compile_with_lookup_mode(
     let mut compiler = compiler_context::compiler_context(bindings, lookup);
     compiler.reference_capture = if reference_output.is_some() {
         match typed {
-            Some(TypedInput::ReturnExpression(expression, _)) => {
-                Some(reference_facts::ReferenceCapture::expression(expression))
-            }
-            Some(TypedInput::Statements(view) | TypedInput::ParameterStatements(view, _, _)) => {
-                Some(reference_facts::ReferenceCapture::new(
-                    view,
-                    reference_output
-                        .as_ref()
-                        .and_then(|request| request.body_span),
-                ))
-            }
+            Some(TypedInput::Statements(view)) => Some(reference_facts::ReferenceCapture::new(
+                view,
+                reference_output
+                    .as_ref()
+                    .and_then(|request| request.body_span),
+            )),
             _ => None,
         }
     } else {
         None
     };
     compiler.debug = debug;
-    compiler.local_variables = match typed {
-        Some(TypedInput::Statements(view) | TypedInput::ParameterStatements(view, _, _)) => {
-            view.local_variables()
-        }
-        _ => None,
-    };
-    compiler.parameter_roots = match typed {
-        Some(
-            TypedInput::ParameterStatements(_, signature, source)
-            | TypedInput::LosslessParameters(signature, source)
-            | TypedInput::UnparsedParameters(signature, source),
-        ) => Some((signature, source)),
-        _ => None,
-    };
     compiler.statement_mask = match typed {
-        Some(TypedInput::Statements(view) | TypedInput::ParameterStatements(view, _, _)) => {
-            view.mask()
-        }
+        Some(TypedInput::Statements(view)) => view.mask(),
         _ => None,
     };
     if let Some(provider) = debug {
@@ -678,10 +586,7 @@ fn compile_with_lookup_mode(
             }
         }
         result
-    } else if let Some(
-        TypedInput::Statements(statements) | TypedInput::ParameterStatements(statements, _, _),
-    ) = typed
-    {
+    } else if let Some(TypedInput::Statements(statements)) = typed {
         if !typed_statement_view_supported(statements) {
             return Err(vec![error(
                 "typed statements",
@@ -689,27 +594,7 @@ fn compile_with_lookup_mode(
             )]);
         }
         compiler.typed_statements(statements.statements())
-    } else if let Some(TypedInput::ReturnExpression(expression, statement)) = typed {
-        // This is the existing Return(Some) emission contract, borrowing the
-        // real root; no Return node, callable or synthetic source is created.
-        if let Some(provider) = compiler.debug {
-            compiler.debug_current = Some(
-                provider
-                    .ordinal(expression.span.start)
-                    .map_err(|reason| vec![error(statement, &reason)])?,
-            );
-        }
-        compiler.statement_span = Some(LowerSpan {
-            start: expression.span.start,
-            end: expression.span.end,
-        });
-        let previous = std::mem::replace(&mut compiler.nameof_return_context, true);
-        let result = compiler
-            .expression(expression, statement)
-            .map_err(|error| error.at(compiler.statement_span));
-        compiler.nameof_return_context = previous;
-        result.map(|()| compiler.emit(opcode::RET, vec![]))
-    } else if let Some(TypedInput::Lossless | TypedInput::LosslessParameters(_, _)) = typed {
+    } else if let Some(TypedInput::Lossless) = typed {
         compiler.statements(body)
     } else if let Some(TypedInput::Modified(fields)) = typed {
         compiler.modified_fields(fields)
@@ -828,25 +713,19 @@ fn compile_with_lookup_mode(
 
 /// Eligibility for an already filtered executable typed body.
 pub fn typed_statements_supported(statements: &[Statement]) -> bool {
-    supported_statements(statements, false, None, None)
+    supported_statements(statements, false, None)
 }
 /// Eligibility before authoritative stored declarations are removed.
 pub fn typed_statements_supported_for_capture(statements: &[Statement]) -> bool {
-    supported_statements(statements, true, None, None)
+    supported_statements(statements, true, None)
 }
 pub fn typed_statement_view_supported(view: dm_syntax::StatementView<'_>) -> bool {
-    supported_statements(
-        view.statements(),
-        false,
-        view.mask(),
-        view.local_variables(),
-    )
+    supported_statements(view.statements(), false, view.mask())
 }
 fn supported_statements(
     statements: &[Statement],
     stored_declarations: bool,
     mask: Option<&dm_syntax::StatementMask>,
-    locals: Option<&dm_syntax::LocalVariableLedger>,
 ) -> bool {
     statements
         .iter()
@@ -861,40 +740,30 @@ fn supported_statements(
             | StatementKind::Continue
             | StatementKind::ContinueLabel(_)
             | StatementKind::Throw(_)
-            | StatementKind::Delete(_)
             | StatementKind::Goto(_) => true,
             StatementKind::Label { body, .. } => {
-                supported_statements(body, stored_declarations, mask, locals)
+                supported_statements(body, stored_declarations, mask)
             }
             StatementKind::Var { declaration, .. } => {
                 local_name(declaration).is_some()
-                    || locals.is_some_and(|ledger| {
-                        // Exact original array facts can prove a name that the
-                        // legacy slash-based spelling helper cannot see (e.g.
-                        // a division operator inside a dimension). No receipt
-                        // means the unchanged compatibility eligibility applies.
-                        matches!(ledger.in_span(statement.header_span), Ok([fact])
-                            if fact.source_modifiers & 1 == 0
-                                && fact.array_syntax.is_some())
-                    })
                     || (stored_declarations
                         && declaration
                             .split('/')
                             .skip(1)
                             .any(|part| matches!(part, "static" | "const" | "global")))
             }
-            StatementKind::Set { .. } | StatementKind::ProjectedSet { .. } => true,
+            StatementKind::Set { .. } => true,
             StatementKind::While { body, .. }
             | StatementKind::DoWhile { body, .. }
             | StatementKind::Spawn { body, .. } => {
-                supported_statements(body, stored_declarations, mask, locals)
+                supported_statements(body, stored_declarations, mask)
             }
             StatementKind::For {
-                control: ForControl::All { declaration, .. },
+                control: ForControl::All { declaration },
                 body,
             } => {
                 local_name(declaration).is_some()
-                    && supported_statements(body, stored_declarations, mask, locals)
+                    && supported_statements(body, stored_declarations, mask)
             }
             StatementKind::For {
                 control: ForControl::Each { binding, .. },
@@ -906,7 +775,7 @@ fn supported_statements(
                 (local_name(binding).is_some()
                     || (!binding.is_empty()
                         && binding.chars().all(|ch| ch.is_alphanumeric() || ch == '_')))
-                    && supported_statements(body, stored_declarations, mask, locals)
+                    && supported_statements(body, stored_declarations, mask)
             }
             StatementKind::For {
                 control:
@@ -921,43 +790,43 @@ fn supported_statements(
                     local_name(binding).is_some()
                         || (!binding.is_empty()
                             && binding.chars().all(|ch| ch.is_alphanumeric() || ch == '_'))
-                }) && supported_statements(body, stored_declarations, mask, locals)
+                }) && supported_statements(body, stored_declarations, mask)
             }
             StatementKind::For {
                 control: ForControl::Range { .. },
                 body,
-            } => supported_statements(body, stored_declarations, mask, locals),
+            } => supported_statements(body, stored_declarations, mask),
             StatementKind::For {
                 control: ForControl::CStyle { .. },
                 body,
-            } => supported_statements(body, stored_declarations, mask, locals),
+            } => supported_statements(body, stored_declarations, mask),
             StatementKind::Switch {
                 cases, else_branch, ..
             } => {
                 cases
                     .iter()
-                    .all(|case| supported_statements(&case.body, stored_declarations, mask, locals))
-                    && supported_statements(else_branch, stored_declarations, mask, locals)
+                    .all(|case| supported_statements(&case.body, stored_declarations, mask))
+                    && supported_statements(else_branch, stored_declarations, mask)
             }
             StatementKind::Try {
                 body,
                 catch_binding,
                 catch_header_span: _,
                 catch_body,
-            ..} => {
+            } => {
                 catch_binding
                     .as_ref()
                     .is_none_or(|binding| local_name(binding).is_some())
-                    && supported_statements(body, stored_declarations, mask, locals)
-                    && supported_statements(catch_body, stored_declarations, mask, locals)
+                    && supported_statements(body, stored_declarations, mask)
+                    && supported_statements(catch_body, stored_declarations, mask)
             }
             StatementKind::If {
                 then_branch,
                 else_branch,
                 ..
             } => {
-                supported_statements(then_branch, stored_declarations, mask, locals)
-                    && supported_statements(else_branch, stored_declarations, mask, locals)
+                supported_statements(then_branch, stored_declarations, mask)
+                    && supported_statements(else_branch, stored_declarations, mask)
             }
             _ => false,
         })
@@ -1013,8 +882,6 @@ struct Compiler<'a> {
     statement_span: Option<LowerSpan>,
     diagnostic_expression_coordinates: bool,
     statement_mask: Option<&'a dm_syntax::StatementMask>,
-    local_variables: Option<&'a dm_syntax::LocalVariableLedger>,
-    parameter_roots: Option<(&'a dm_syntax::ParameterSignature, &'a str)>,
     // Exact AST node identity, not source-span equality: synthesized expressions
     // can share spans. Only an immediate statement call may discard its result.
     discarded_call_root: Option<*const Expr>,
@@ -1076,8 +943,6 @@ mod receiver_resolution;
 mod reference_facts;
 #[path = "simple/reference_resolution.rs"]
 mod reference_resolution;
-pub use reference_facts::compile_return_expression_with_resolver_and_references;
-pub use reference_facts::compile_statement_view_with_original_defaults_and_references_at;
 pub use reference_facts::compile_statement_view_with_resolver_and_references;
 pub use reference_facts::compile_statement_view_with_resolver_and_references_at;
 #[path = "simple/calls_dispatch.rs"]
@@ -1104,17 +969,12 @@ mod statements;
 mod typed_statements;
 #[path = "simple/typed_switch.rs"]
 mod typed_switch;
-#[cfg(test)]
-use helpers::parse_interpolated_string;
 use helpers::{
-    class_tag, error, family_tag, fold_literal_string_expression, fold_number, is_output_target,
-    member_proc_selector, parenthesized, parse_text_template, source_error, syntax_failure,
-    ATOM_ROOT_TAG,
+    class_tag, error, family_tag, ATOM_ROOT_TAG, fold_literal_string_expression, fold_number, is_output_target,
+    member_proc_selector, parenthesized,
+    parse_interpolated_string, parse_text_template, source_error, syntax_failure,
 };
-pub use helpers::{
-    decode_constant_string_literal, decode_native_constant_string_literal, nameof_reference,
-    visit_constant_string_literals, visit_native_constant_string_literals,
-};
+pub use helpers::{decode_constant_string_literal, nameof_reference, visit_constant_string_literals};
 
 #[cfg(test)]
 #[path = "dynamic_selector_tests.rs"]
@@ -1129,35 +989,3 @@ mod local_declaration_diagnostics;
 #[path = "simple/member_call_validation.rs"]
 mod member_call_validation;
 mod member_var_validation;
-
-#[cfg(test)]
-#[path = "simple/original_parameter_default_tests.rs"]
-mod original_parameter_default_tests;
-
-#[cfg(test)]
-#[path = "simple/original_helper_expression_tests.rs"]
-mod original_helper_expression_tests;
-
-#[cfg(test)]mod pinned_frontend_gap_backend_tests{
- use super::*;
- fn lower(text:&str)->Result<SimpleProc,Vec<LowerError>>{let source=format!("/proc/probe()\n    return {text}\n");let syntax=dm_syntax::parse(&source);assert!(syntax.diagnostics.is_empty(),"{:?}",syntax.diagnostics);compile_simple_proc(&syntax.items[0].children)}
- #[test]fn primary_spaceship_admission_preserves_explicit_typed_backend_refusal_without_an_opcode_guess(){let errors=lower("1 <=> 2").err().expect("backend remains explicitly unsupported");assert_eq!(errors.len(),1);assert_eq!(errors[0].kind,LowerErrorKind::UnsupportedModel);assert_eq!(errors[0].reason,"unsupported binary operator");}
- #[test]fn primary_empty_as_tuple_preserves_existing_empty_as_backend_result_without_intrinsic_guess(){let old=lower("as()").err().expect("existing as intrinsic backend gap");let new=lower("as(())").err().expect("same existing intrinsic gap");assert_eq!(old.len(),1);assert_eq!(old[0].kind,LowerErrorKind::UnsupportedModel);assert_eq!(old[0].reason,"as input-type intrinsic lowering is not implemented");assert_eq!(old.len(),new.len());for(old,new)in old.iter().zip(&new){assert_eq!(old.kind,new.kind);assert_eq!(old.reason,new.reason);assert_ne!(new.kind,LowerErrorKind::Internal);}}
-}
-
-#[cfg(test)]mod original_reference_frontend_backend_boundaries{
- use super::*;
- #[test]fn newly_admitted_original_terms_preserve_explicit_backend_refusals_without_guessing_code(){
-  for(text,reason)in[("&1","unsupported unary operator"),("::src","unsupported unary operator"),(".child/type","unsupported type path literal"),(":child/type","unsupported type path literal")]{let source=format!("/proc/probe()\n    return {text}\n");let syntax=dm_syntax::parse(&source);assert!(syntax.diagnostics.is_empty(),"{text}: {:?}",syntax.diagnostics);let failures=compile_simple_proc(&syntax.items[0].children).err().expect("explicit backend gap");assert_eq!(failures.len(),1,"{text}");assert_eq!(failures[0].kind,LowerErrorKind::UnsupportedModel,"{text}");assert_eq!(failures[0].reason,reason,"{text}");}
- }
-}
-
-#[cfg(test)]mod ind_frontend_backend_boundary{
- use super::*;
- #[test]fn original_nan_token_admission_keeps_explicit_backend_refusal_without_an_opcode_guess(){let syntax=dm_syntax::parse("/proc/probe()\n    return 1.#IND\n");assert!(syntax.diagnostics.is_empty(),"{:?}",syntax.diagnostics);let errors=compile_simple_proc(&syntax.items[0].children).err().expect("existing NaN literal backend gap");assert_eq!(errors.len(),1);assert_eq!(errors[0].kind,LowerErrorKind::UnsupportedModel);assert_eq!(errors[0].reason,"unsupported literal");}
-}
-
-#[cfg(test)]mod multiple_catch_receiver_backend_boundary{
- use super::*;
- #[test]fn original_multiple_catch_parameters_refuse_runtime_lowering_instead_of_silently_binding_last(){let source="/proc/probe()\n    try\n        return 0\n    catch(var/a,var/b)\n        return b\n";let syntax=dm_syntax::parse(source);assert!(syntax.diagnostics.is_empty());let failures=compile_simple_proc(&syntax.items[0].children).err().expect("multiple VM catch receiver lowering remains explicitly unsupported");assert_eq!(failures.len(),1);assert_eq!(failures[0].kind,LowerErrorKind::UnsupportedModel);assert_eq!(failures[0].reason,"multiple catch parameter lowering is not implemented");}
-}

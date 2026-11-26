@@ -98,12 +98,6 @@ CAPABILITIES(/obj/item/storage/lockbox)
 		/obj/item/implanter/loyalty
 	)
 
-/obj/item/storage/lockbox/clusterbang
-	name = "lockbox of clusterbangs"
-	desc = "You have a bad feeling about opening this."
-	req_access = list(ACCESS_SECURITY)
-	starts_with = list(/obj/item/grenade/flashbang/clusterbang)
-
 /obj/item/storage/lockbox/medal
 	name = "lockbox of medals"
 	desc = "A lockbox filled with commemorative medals, it has the NanoTrasen logo stamped on it."

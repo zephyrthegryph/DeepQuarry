@@ -13,7 +13,7 @@
 /obj/item/deadringer/var/activated = FALSE
 /// Cooldown steps left after triggering.
 /obj/item/deadringer/var/timer = 0
-/// Armed or cooling down: periodic_step() runs (its every()).
+/// Armed or cooling down: deadringer_step() runs (its every()).
 CAPABILITIES(/obj/item/deadringer)
 	ref_one(nameof(corpse), /mob/living/carbon/human)
 	ref_one(nameof(watchowner), /mob/living/carbon/human)
@@ -73,13 +73,13 @@ CAPABILITIES(/obj/item/deadringer)
 		if(!(D.ai_brain != null))
 			continue
 		D.ai_brain.lose_target()
-	watchowner().alpha = 7 //10 is too visible, 5 is too in-visible... 7 is difficult to see but manageable.
+	watchowner().set_alpha(7) //10 is too visible, 5 is too in-visible... 7 is difficult to see but manageable.
 	makeacorpse(watchowner())
 	return
 
 /obj/item/deadringer/proc/reveal()
 	if(watchowner())
-		watchowner().alpha = 255
+		watchowner().set_alpha(255)
 		play_sfx(src, SFX_EFFECTS_UNCLOAK)
 	return
 
@@ -149,7 +149,7 @@ CAPABILITIES(/obj/item/deadringer)
 		var/obj/item/clothing/c_type = H.get_equipped_item(SLOT_ID_BACK)
 		temp.disguise(c_type.type)
 		temp.set_canremove(FALSE)
-	corpse().identifying_gender = H.identifying_gender
+	corpse().set_identifying_gender(H.identifying_gender)
 	corpse().bio.flavor_texts = H.bio.flavor_texts?.Copy()
 	corpse().set_real_name(H.real_name)
 	corpse().name = H.name

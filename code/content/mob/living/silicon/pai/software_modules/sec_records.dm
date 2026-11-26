@@ -6,6 +6,7 @@
 
 CAPABILITIES(/datum/pai_software/sec_records)
 	interface("pAISecrecords", state = nameof(GLOB.tgui_always_state))
+	ui_shape(records = list_of(row(name = schema_text(), ref = num())), general = nullable(row(name = schema_text(), id = schema_text(), brain_type = schema_text(), sex = schema_text(), species = schema_text(), age = num(), rank = schema_text(), fingerprint = schema_text(), p_stat = schema_text(), m_stat = schema_text())), security = nullable(row(criminal = schema_text(), mi_crim = schema_text(), mi_crim_d = schema_text(), ma_crim = schema_text(), ma_crim_d = schema_text(), notes = schema_text())), could_not_find = bool())
 	op("select", ui_act("select", arg("select", schema_ref(/datum/data/record))), then(PROC_REF(ui_act_select)))
 
 /datum/pai_software/sec_records/ui_data(datum/act/eval/A)
@@ -23,8 +24,14 @@ CAPABILITIES(/datum/pai_software/sec_records)
 
 	var/datum/data/record/G = user.securityActive1
 	var/datum/data/record/S = user.securityActive2
-	data["general"] = G ? G.fields : null
-	data["security"] = S ? S.fields : null
+	data["general"] = pai_record_general(G)
+	data["security"] = S ? list(
+		"criminal" = S.fields["criminal"],
+		"mi_crim" = S.fields["mi_crim"],
+		"mi_crim_d" = S.fields["mi_crim_d"],
+		"ma_crim" = S.fields["ma_crim"],
+		"ma_crim_d" = S.fields["ma_crim_d"],
+		"notes" = S.fields["notes"]) : null
 	data["could_not_find"] = user.security_cannotfind
 
 	return data

@@ -10,7 +10,7 @@
 // BEGIN RESEARCH DATUMS
 
 /datum/malf_research_ability/manipulation/electrical_pulse
-	ability = /datum/game_mode/malfunction/verb/electrical_pulse
+	ability = /mob/living/silicon/ai/proc/malf_electrical_pulse
 	price = 50
 	name = "Electrical Pulse"
 
@@ -19,7 +19,7 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/electrical_pulse)
 
 
 /datum/malf_research_ability/manipulation/hack_camera
-	ability = /datum/game_mode/malfunction/verb/hack_camera
+	ability = /mob/living/silicon/ai/proc/malf_hack_camera
 	price = 1200
 	name = "Hack Camera"
 
@@ -28,7 +28,7 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/hack_camera)
 
 
 /datum/malf_research_ability/manipulation/emergency_forcefield
-	ability = /datum/game_mode/malfunction/verb/emergency_forcefield
+	ability = /mob/living/silicon/ai/proc/malf_emergency_forcefield
 	price = 3000
 	name = "Emergency Forcefield"
 
@@ -37,19 +37,16 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/emergency_forcefield)
 
 
 /datum/malf_research_ability/manipulation/machine_overload
-	ability = /datum/game_mode/malfunction/verb/machine_overload
+	ability = /mob/living/silicon/ai/proc/malf_machine_overload
 	price = 7500
 	name = "Machine Overload"
 
 // END RESEARCH DATUMS
 // BEGIN ABILITY VERBS
 
-/datum/game_mode/malfunction/verb/electrical_pulse()
-	set name = "Electrical Pulse"
-	set desc = "15 CPU - Sends feedback pulse through station's power grid, overloading some sensitive systems, such as lights."
-	set category = VERB_CAT_SOFTWARE
+/mob/living/silicon/ai/proc/malf_electrical_pulse()
 	var/price = 15
-	var/mob/living/silicon/ai/user = usr
+	var/mob/living/silicon/ai/user = src
 	if(!ability_prechecks(user, price) || !res_spend(user, RES_CPU, price, actor = user))
 		return
 	to_chat(user, "Sending feedback pulse...")
@@ -60,12 +57,9 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/emergency_forcefield)
 			AP.atom_break()
 
 
-/datum/game_mode/malfunction/verb/hack_camera()
-	set name = "Hack Camera"
-	set desc = "100 CPU - Hacks existing camera, allowing you to add upgrade of your choice to it. Alternatively it lets you reactivate broken camera."
-	set category = VERB_CAT_SOFTWARE
+/mob/living/silicon/ai/proc/malf_hack_camera()
 	var/price = 100
-	var/mob/living/silicon/ai/user = usr
+	var/mob/living/silicon/ai/user = src
 
 	if(!ability_prechecks(user, price))
 		return
@@ -123,11 +117,8 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/emergency_forcefield)
 			return OP_REFUSED
 	return OP_OK
 
-/datum/game_mode/malfunction/verb/emergency_forcefield()
-	set name = "Emergency Forcefield"
-	set desc = "275 CPU - Uses station's emergency shielding system to create temporary barrier which lasts for few minutes, but won't resist gunfire."
-	set category = VERB_CAT_SOFTWARE
-	var/mob/living/silicon/ai/user = usr
+/mob/living/silicon/ai/proc/malf_emergency_forcefield()
+	var/mob/living/silicon/ai/user = src
 	user.malf_pick_target(user.malf_visible(/turf), "Emergency Forcefield", "Select where to project the forcefield:", TYPE_PROC_REF(/mob/living/silicon/ai, malf_forcefield_picked))
 
 /mob/living/silicon/ai/proc/malf_forcefield_picked(datum/act/request/A)
@@ -147,12 +138,9 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/emergency_forcefield)
 	after(user, 2 SECONDS, TYPE_PROC_REF(/mob/living/silicon/ai, hacking_done))
 
 
-/datum/game_mode/malfunction/verb/machine_overload()
-	set name = "Machine Overload"
-	set desc = "400 CPU - Causes cyclic short-circuit in machine, resulting in weak explosion after some time."
-	set category = VERB_CAT_SOFTWARE
+/mob/living/silicon/ai/proc/malf_machine_overload()
 	var/price = 400
-	var/mob/living/silicon/ai/user = usr
+	var/mob/living/silicon/ai/user = src
 
 	if(!ability_prechecks(user, price))
 		return

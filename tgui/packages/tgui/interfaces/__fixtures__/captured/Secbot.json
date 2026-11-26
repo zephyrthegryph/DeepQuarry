@@ -1,0 +1,12 @@
+{
+	"on": 1,
+	"open": 0,
+	"locked": 1,
+	"idcheck": null,
+	"check_records": null,
+	"check_arrest": null,
+	"arrest_type": null,
+	"declare_arrests": null,
+	"bot_patrolling": null,
+	"patrol": null
+}

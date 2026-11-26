@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - qol: "The disconnect banner's buttons use the normal button style and sit centred; the chat bar's icons are centred; chat text no longer touches the scrollbar."

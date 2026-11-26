@@ -31,7 +31,7 @@ export const ModifyRobotRadio = (props: { target: Target }) => {
             title="Add Radio Channel"
             searchText={searchChannelAddText}
             onSearchText={setSearchChannelAddText}
-            channels={target.availalbe_channels}
+            channels={target.available_channels}
             action="add_channel"
             buttonColor="green"
             buttonIcon="arrow-right-to-bracket"

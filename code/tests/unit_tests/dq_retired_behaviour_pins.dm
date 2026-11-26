@@ -36,10 +36,19 @@
 	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_type, FOOTSTEP_MOB_CLAW, "enable_footsteps() sets the kind of sounds")
 	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_e_range, -6, "and their range")
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the capability is granted")
-	STATE_SET(walker, footfall, footstep_steps, 0)
+	set_global(nameof(GLOB.footsteps_audible), GLOB.footsteps_audible)
+	var/heard_before = GLOB.footsteps_audible
 	walker.forceMove(next)
 	walker.forceMove(start)
-	TEST_ASSERT(STATE_GET(walker, footfall, footstep_steps) > 0, "each move is a step (counted [STATE_GET(walker, footfall, footstep_steps)])")
+	TEST_ASSERT_EQUAL(GLOB.footsteps_audible, heard_before, "a step in a chunk no observer holds is not counted")
+	TEST_ASSERT_NULL(walker.footfall, "an unheard step made no footfall state")
+	gaze_adjust(start.z, GAZE_CHUNK_OF(start.x), GAZE_CHUNK_OF(start.y), 1)
+	gaze_adjust(next.z, GAZE_CHUNK_OF(next.x), GAZE_CHUNK_OF(next.y), 1)
+	walker.forceMove(next)
+	walker.forceMove(start)
+	gaze_adjust(start.z, GAZE_CHUNK_OF(start.x), GAZE_CHUNK_OF(start.y), -1)
+	gaze_adjust(next.z, GAZE_CHUNK_OF(next.x), GAZE_CHUNK_OF(next.y), -1)
+	TEST_ASSERT(GLOB.footsteps_audible - heard_before >= 2, "each move an observer can hear is a step (counted [GLOB.footsteps_audible - heard_before])")
 	walker.disable_footsteps()
 	var/own_grants = 0
 	for(var/datum/activation/A as anything in walker.rx?.activations)
@@ -47,6 +56,30 @@
 			own_grants++
 	TEST_ASSERT_EQUAL(own_grants, 0, "disable_footsteps() ends the grant enable_footsteps() made")
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the type's own declaration stays")
+
+/// A step plays through handle_footstep() called from /mob/living/Moved(): the mob has the capability, the step is counted in GLOB.footsteps_audible, and no moved notice
+/// is taken for it (nothing wants one on the mob, so a step allocates none).
+/datum/unit_test/dq_footstep_step_takes_no_moved_notice
+
+/datum/unit_test/dq_footstep_step_takes_no_moved_notice/Run()
+	var/turf/start = run_loc_floor_bottom_left
+	var/turf/next = locate(start.x + 1, start.y, start.z)
+	var/mob/living/simple_mob/animal/passive/mouse/walker = allocate(/mob/living/simple_mob/animal/passive/mouse, start)
+	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the test mob has the footstep capability")
+	TEST_ASSERT_NOTNULL(cap_of(walker, CAP_FOOTSTEP), "and handle_footstep() finds it")
+	TEST_ASSERT(!notice_wanted(walker, /datum/notice/moved, ACT_COMMITTED), "nothing wants a moved notice from the mob")
+	gaze_adjust(start.z, GAZE_CHUNK_OF(start.x), GAZE_CHUNK_OF(start.y), 1)
+	gaze_adjust(next.z, GAZE_CHUNK_OF(next.x), GAZE_CHUNK_OF(next.y), 1)
+	set_global(nameof(GLOB.footsteps_audible), GLOB.footsteps_audible)
+	var/heard_before = GLOB.footsteps_audible
+	var/taken_before = GLOB.notice_taken
+	walker.forceMove(next)
+	var/taken_after = GLOB.notice_taken
+	var/steps = GLOB.footsteps_audible - heard_before
+	gaze_adjust(start.z, GAZE_CHUNK_OF(start.x), GAZE_CHUNK_OF(start.y), -1)
+	gaze_adjust(next.z, GAZE_CHUNK_OF(next.x), GAZE_CHUNK_OF(next.y), -1)
+	TEST_ASSERT(steps > 0, "the step reached the footstep capability (counted [steps])")
+	TEST_ASSERT_EQUAL(taken_after - taken_before, 0, "and the step took no notice")
 
 /// Two swarmers on one turf pair up and offset; one leaving unpairs both.
 /datum/unit_test/dq_retired_swarming_pairs_on_a_turf

@@ -1,16 +1,32 @@
 /**
- * The Menu page: everything skin.dmf's native menu bar and link strip did, now
- * that the skin has neither. menu.test.ts holds this list to the old bar.
+ * The Menu page: what skin.dmf's native menu bar did that nothing else does.
+ * Reconnect and ping are in the chat box, quitting is the window's close
+ * button, the chat is a window of the right-hand column, the chat log export is in
+ * the chat settings (Export), and the web links are gone.
  */
 export type MenuItem = { label: string; command: string };
 
 export const GAME_ITEMS: MenuItem[] = [
   { label: 'Quick screenshot (F2)', command: '.screenshot auto' },
   { label: 'Save screenshot as... (Shift+F2)', command: '.screenshot' },
-  { label: 'Reconnect', command: '.reconnect' },
-  { label: 'Check ping', command: '.ping' },
-  { label: 'Quit', command: '.quit' },
+  { label: 'Fit viewport', command: 'fit-viewport' },
+  { label: 'Active playtime', command: 'active-playtime' },
+  { label: 'Server revision', command: 'show-server-revision' },
+  { label: 'Changelog', command: 'changelog' },
 ];
+
+/** Round commands that left the verb panel. */
+export const ROUND_ITEMS: MenuItem[] = [
+  { label: 'Who is online', command: 'who' },
+  { label: 'Vote', command: 'vote' },
+  { label: 'Round info', command: 'check-round-info' },
+  { label: 'Observe', command: 'observe' },
+  { label: 'Return to lobby', command: 'return-to-menu' },
+  { label: 'Cancel camera view', command: 'cancel-camera-view' },
+  { label: 'Incorporeal speed', command: 'set-incorporeal-speed' },
+];
+
+export const CHAT_ITEMS: MenuItem[] = [];
 
 const mapSet = (param: string, value: string | number) =>
   `.winset "mapwindow.map.${param}=${value}"`;
@@ -36,33 +52,35 @@ export const textModeCommand = (on: boolean) => mapSet('text-mode', `${on}`);
 
 export const HELP_ITEMS: MenuItem[] = [
   { label: 'Admin help (F1)', command: 'request-help' },
+  { label: 'Station Wiki', command: 'station-wiki' },
   { label: 'Hotkeys', command: 'hotkeys-help' },
   { label: 'Character Setup', command: 'character-setup' },
   { label: 'Game Options', command: 'game-options' },
+  { label: 'Character Directory', command: 'character-directory' },
+  { label: 'Request Automated Advice', command: 'request-automated-advice' },
 ];
 
-export const LINK_ITEMS: MenuItem[] = [
-  { label: 'Wiki', command: 'wiki' },
-  { label: 'Forum', command: 'forum' },
-  { label: 'Rules', command: 'rules' },
-  { label: 'Map', command: 'map' },
-  { label: 'GitHub', command: 'github' },
-  { label: 'Discord', command: 'discord' },
-  { label: 'Patreon', command: 'patreon' },
+/** The Menu page's sections the panel search reaches (the display controls are not commands one types). */
+export const MENU_SECTIONS: { name: string; items: MenuItem[] }[] = [
+  { name: 'Game', items: GAME_ITEMS },
+  { name: 'Round', items: ROUND_ITEMS },
+  { name: 'Chat', items: CHAT_ITEMS },
+  { name: 'Help', items: HELP_ITEMS },
 ];
 
-/**
- * BYOND has no native borderless mode that keeps moving and resizing, so this is
- * a toggle: maximized with no title bar, and back. Maximize is cleared first
- * because the client ignores a title bar change on an already maximized window.
- */
-export const FULLSCREEN_ON = { titlebar: false, 'can-resize': false };
-export const FULLSCREEN_OFF = { titlebar: true, 'can-resize': true };
+/** The Status view's quick row: what a player reaches for most. */
+export const QUICK_ITEMS: MenuItem[] = HELP_ITEMS.slice(0, 4);
+
+/** Runs a client command after our own focus handling. */
+export function run(command: string) {
+  setTimeout(() => Byond.command(command), 0);
+}
 
 /** Every command the page can send, for the test. */
 export function allCommands(): string[] {
   return [
     ...GAME_ITEMS.map((item) => item.command),
+    ...ROUND_ITEMS.map((item) => item.command),
     ...ICON_SIZES.map((size) => iconSizeCommand(size.value)),
     ...ZOOM_MODES.map((mode) => zoomModeCommand(mode.value)),
     ...HELP_ITEMS.map((item) => item.command),

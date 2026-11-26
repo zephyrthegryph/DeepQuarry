@@ -3,13 +3,14 @@ import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
 
 import { ComplexModal } from '../common/ComplexModal';
+import type { DNAModifierActions } from '../generated/DNAModifier';
 import { DNAModifierIrradiating } from './DNAModifierIrradiating';
 import { DNAModifierMain } from './DNAModifierMain';
 import { DNAModifierOccupant } from './DNAModifierOccupant';
 import type { Data } from './types';
 
 export const DNAModifier = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, DNAModifierActions>();
 
   const { irradiating, occupant } = data;
 

@@ -1,0 +1,14 @@
+{
+	"rawfreq": 1459,
+	"listening": 1,
+	"broadcasting": 0,
+	"subspace": 1,
+	"subspaceSwitchable": 0,
+	"loudspeaker": 1,
+	"mic_cut": 0,
+	"spk_cut": 0,
+	"chan_list": null,
+	"useSyndMode": 0,
+	"minFrequency": 1441,
+	"maxFrequency": 1489
+}

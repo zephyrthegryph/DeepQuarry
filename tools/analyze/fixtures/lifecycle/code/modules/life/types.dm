@@ -1,12 +1,12 @@
 /datum/life
-	latent_safe = TRUE
+	var/clean_marker
 	var/foo
 
 /datum/life/child
 	var/bar
 
 /datum/life/off
-	latent_safe = FALSE
+	var/off_marker
 
 /datum/life/off/inherits_off
 	var/baz
@@ -15,9 +15,9 @@
 	var/x
 
 /obj/item/safe_item
-	latent_safe = TRUE
+	var/clean_marker
 
-/datum/life/Initialize(mapload)
+/obj/item/card/id/Initialize(mapload)
 	. = ..()
 	GLOB.lifelist += src
 	GLOB.lifelist -= src
@@ -55,7 +55,7 @@
   	GLOB.space_tab_indent += 1
 GLOB.not_in_body += 1
 
-/datum/life/child/proc/Initialize(mapload)
+/obj/item/implant/tracking/proc/Initialize(mapload)
 	..()
 	START_PROCESSING(SSfastprocess, src)
 	if(x)

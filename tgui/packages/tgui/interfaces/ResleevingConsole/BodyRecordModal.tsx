@@ -6,7 +6,6 @@ import type { ActiveBodyRecordData } from './types';
 export const BodyRecordModal = (props: { data: ActiveBodyRecordData }) => {
   const { act } = useBackend();
   const {
-    activerecord,
     realname,
     species,
     sex,
@@ -38,24 +37,13 @@ export const BodyRecordModal = (props: { data: ActiveBodyRecordData }) => {
           <Button
             disabled={!can_grow_active}
             icon="user-plus"
-            onClick={() =>
-              act('create', {
-                ref: activerecord,
-              })
-            }
+            onClick={() => act('create')}
           >
             {synthetic ? 'Build' : 'Grow'}
           </Button>
           {/* Traitgenes create a dna injector based off the BR currently selected, to allow normal doctors to reset someone's SEs */}
           {!synthetic ? (
-            <Button
-              icon="syringe"
-              onClick={() =>
-                act('genereset', {
-                  ref: activerecord,
-                })
-              }
-            >
+            <Button icon="syringe" onClick={() => act('genereset')}>
               DNA Reset Injector
             </Button>
           ) : (

@@ -16,6 +16,7 @@
 CAPABILITIES(/datum/game_mode_panel)
 	ref_one(nameof(target_mode))
 	interface("GameModePanel", title = "Edit Game Mode", rights = R_ADMIN|R_EVENT)
+	ui_shape(alive = bool(), mode_name = nullable(schema_text()), config_tag = nullable(schema_text()), ert_enabled = nullable(bool()), respawn_allowed = nullable(bool()), shuttle_delay = nullable(num()), shuttle_auto_recall = nullable(bool()), event_modifier_moderate = nullable(num()), event_modifier_major = nullable(num()), autotraitor = nullable(bool()), antag_scaling_coeff = nullable(num()), core_antag_tags = nullable(list_of(schema_text())), antag_templates = nullable(list_of(row(id = schema_text(), count = num(), cur_max = num())))) // only alive is sent once the mode is gone
 	op("toggle", ui_act("toggle", arg("key", schema_text(4096))), then(PROC_REF(ui_act_toggle)))
 	op("set", ui_act("set", arg("key", schema_text(4096))), then(PROC_REF(ui_act_set)))
 	op("debug_antag", ui_act("debug_antag", arg("id", schema_text(4096))), then(PROC_REF(ui_act_debug_antag)))

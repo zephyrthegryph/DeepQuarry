@@ -71,7 +71,7 @@
 			/obj/item/clothing/suit/caution = 4,
 			/obj/item/storage/bag/trash,
 			/obj/item/lightreplacer,
-			/obj/item/reagent_containers/spray/cleaner,
+			VARIANT(/obj/item/reagent_containers/spray/cleaner),
 			/obj/item/reagent_containers/glass/rag,
 			/obj/item/grenade/chem_grenade/cleaner = 3,
 			/obj/item/vac_attachment,
@@ -303,10 +303,18 @@
 	containername = "Postal Service crate"
 
 
-/datum/supply_pack/supply/freezer
-	name = "Freezer crate"
-	desc = "An empty freezer for storing perishable items."
-	contains = list()
-	cost = 20
-	containertype = /obj/structure/closet/crate/freezer
-	containername = "Freezer crate"
+/datum/supply_pack/supply/salvage_lot
+	name = "Salvage lot"
+	desc = "An unsorted lot of scrap electronics, parts and odds and ends from decommissioned stations, sold as seen. Appraise it, resell it or break it down."
+	lot_table = /loot/cargo_lot/salvage
+	cost = 25
+	containertype = /obj/structure/closet/crate
+	containername = "Salvage lot crate"
+
+/datum/supply_pack/supply/surplus_lot
+	name = "Surplus freight lot"
+	desc = "Unclaimed general freight, sold unopened: boxes of whatever was in them, sundries and medicine. Appraise it, resell it or break it down."
+	lot_table = /loot/cargo_lot/surplus
+	cost = 15
+	containertype = /obj/structure/closet/crate
+	containername = "Surplus freight lot crate"

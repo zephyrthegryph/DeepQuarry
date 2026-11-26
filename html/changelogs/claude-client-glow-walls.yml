@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Client lighting lights walls and closed doors from the side you can see."
+  - bugfix: "Glows from another deck no longer show through open space."
+  - qol: "Softer edges between coloured lights, and dimmer wall devices."

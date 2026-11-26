@@ -9,9 +9,7 @@
 	rel_set(research, nameof(research.owner), src)
 	recalc_cpu()
 
-	grant(src, granted_verb(/datum/game_mode/malfunction/verb/ai_select_hardware), src)
-	grant(src, granted_verb(/datum/game_mode/malfunction/verb/ai_select_research), src)
-	grant(src, granted_verb(/datum/game_mode/malfunction/verb/ai_help), src)
+	grant(src, granted_verb(/mob/living/silicon/ai/proc/malf_panel), src)
 
 	// And greet user with some OOC info.
 	to_chat(user, "You are malfunctioning, you do not have to follow any laws.")
@@ -25,7 +23,7 @@
 
 /mob/living/silicon/ai/proc/stop_malf_finish()
 	var/mob/living/silicon/ai/user = src
-	// Every malf verb goes: the research, its unlocked abilities and the hardware granted them.
+	// Every verb a malf source granted goes: the research, its unlocked abilities and the hardware.
 	var/list/verb_sources = list()
 	if(research)
 		verb_sources |= research.unlocked_abilities
@@ -38,8 +36,7 @@
 		var/datum/capability/def/granted_verb/verb = active.def
 		if(!verb.hidden)
 			revoke(src, verb, active.source)
-	for(var/granted_path in list(/datum/game_mode/malfunction/verb/ai_select_hardware, /datum/game_mode/malfunction/verb/ai_select_research, /datum/game_mode/malfunction/verb/ai_help, /datum/game_mode/malfunction/verb/ai_destroy_station))
-		revoke(src, granted_verb(granted_path), src)
+	revoke(src, granted_verb(/mob/living/silicon/ai/proc/malf_panel), src)
 	rel_clear(src, nameof(research))
 	// Fix hacked APCs (a pair: clearing our side clears each APC's hacker)
 	rel_clear(src, nameof(hacked_apcs))

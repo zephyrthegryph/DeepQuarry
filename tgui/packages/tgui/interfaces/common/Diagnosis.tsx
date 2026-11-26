@@ -2,6 +2,8 @@
 // report_data()). Every medical interface shows the same report: vitals plus
 // findings, with treatment hints when the instrument gives them.
 
+import type { ReactNode } from 'react';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   LabeledList,
@@ -9,69 +11,18 @@ import {
   Table,
   Tooltip,
 } from 'tgui-core/components';
+import type { DiagnosisReport as DiagnosisShape } from '../generated/_schemas';
 
-export type DiagnosisBand =
-  | 'uninjured'
-  | 'minor'
-  | 'moderate'
-  | 'severe'
-  | 'critical';
-
-export type DiagnosisTrend = 'new' | 'worsening' | 'improving' | 'stable';
-
-export type DiagnosisFinding = {
-  name: string;
-  kind: 'condition' | 'sign' | 'lesion' | 'wound';
-  band: DiagnosisBand;
-  location: string;
-  description?: string | null;
-  trend?: DiagnosisTrend | null;
-  hint?: string | null;
-};
-
-// RHYTHM_* (code/__defines/body.dm): what an ECG shows.
-export type HeartRhythm =
-  | 'sinus'
-  | 'post_arrest'
-  | 'tachy'
-  | 'vfib'
-  | 'asystole';
-
-export type DiagnosisVitals = {
-  heartRate?: number | null;
-  heartRhythm?: HeartRhythm | null;
-  bloodPressure?: [number, number] | null;
-  oxygenation?: number | null;
-  respiratoryRate?: number | null;
-  temperature?: number | null;
-  consciousness?: string | null;
-  bloodPercent?: number | null;
-};
-
-export type DiagnosisPartKind = 'external' | 'internal';
-
-export type DiagnosisPart = {
-  name: string;
-  kind?: DiagnosisPartKind;
-  band: DiagnosisBand;
-  flags: string[];
-  implants?: string[] | null;
-};
-
-export type DiagnosisHint = {
-  tag: string;
-  label: string;
-  band: DiagnosisBand;
-};
-
-export type Diagnosis = {
-  status: 'alive' | 'critical' | 'dead';
-  band: DiagnosisBand;
-  vitals: DiagnosisVitals;
-  findings: DiagnosisFinding[];
-  parts: DiagnosisPart[];
-  hints: DiagnosisHint[];
-};
+/** The report's type comes from its DM shape (UI_SCHEMA diagnosis_report, generated/_schemas). */
+export type Diagnosis = DiagnosisShape;
+export type DiagnosisBand = Diagnosis['band'];
+export type DiagnosisTrend = NonNullable<DiagnosisFinding['trend']>;
+export type DiagnosisFinding = Diagnosis['findings'][number];
+export type HeartRhythm = NonNullable<DiagnosisVitals['heartRhythm']>;
+export type DiagnosisVitals = Diagnosis['vitals'];
+export type DiagnosisPartKind = NonNullable<DiagnosisPart['kind']>;
+export type DiagnosisPart = Diagnosis['parts'][number];
+export type DiagnosisHint = Diagnosis['hints'][number];
 
 export const DIAGNOSIS_BAND: Record<
   DiagnosisBand,
@@ -117,21 +68,27 @@ export const HEART_RHYTHM: Record<
   asystole: { label: 'Asystole - not shockable', color: 'bad' },
 };
 
-const isSet = (value: unknown) => value !== null && value !== undefined;
+const isSet = <T,>(value: T | null | undefined): value is T =>
+  value !== null && value !== undefined;
 
 // A vital outside its normal range reads in warning colours.
 const rangeColor = (value: number, low: number, high: number) =>
   value < low || value > high ? 'bad' : 'good';
 
-export const DiagnosisVitalsList = (props: { vitals: DiagnosisVitals }) => {
-  const { vitals } = props;
+export const DiagnosisVitalsList = (props: {
+  vitals: DiagnosisVitals;
+  /** Items shown first, in the same list so their values share its column. */
+  before?: ReactNode;
+}) => {
+  const { vitals, before } = props;
   const pressure = vitals.bloodPressure;
   return (
     <LabeledList>
+      {before}
       {isSet(vitals.heartRate) ? (
         <LabeledList.Item
           label="Heart Rate"
-          color={rangeColor(vitals.heartRate as number, 50, 110)}
+          color={rangeColor(vitals.heartRate, 50, 110)}
         >
           {vitals.heartRate} bpm
         </LabeledList.Item>
@@ -155,7 +112,7 @@ export const DiagnosisVitalsList = (props: { vitals: DiagnosisVitals }) => {
       {isSet(vitals.oxygenation) ? (
         <LabeledList.Item
           label="SpO2"
-          color={rangeColor(vitals.oxygenation as number, 92, 100)}
+          color={rangeColor(vitals.oxygenation, 92, 100)}
         >
           {vitals.oxygenation}%
         </LabeledList.Item>
@@ -163,7 +120,7 @@ export const DiagnosisVitalsList = (props: { vitals: DiagnosisVitals }) => {
       {isSet(vitals.respiratoryRate) ? (
         <LabeledList.Item
           label="Respiration"
-          color={rangeColor(vitals.respiratoryRate as number, 8, 25)}
+          color={rangeColor(vitals.respiratoryRate, 8, 25)}
         >
           {vitals.respiratoryRate} /min
         </LabeledList.Item>
@@ -171,7 +128,7 @@ export const DiagnosisVitalsList = (props: { vitals: DiagnosisVitals }) => {
       {isSet(vitals.temperature) ? (
         <LabeledList.Item
           label="Temperature"
-          color={rangeColor(vitals.temperature as number, 35, 38.5)}
+          color={rangeColor(vitals.temperature, 35, 38.5)}
         >
           {vitals.temperature}&deg;C
         </LabeledList.Item>
@@ -187,7 +144,7 @@ export const DiagnosisVitalsList = (props: { vitals: DiagnosisVitals }) => {
       {isSet(vitals.bloodPercent) ? (
         <LabeledList.Item
           label="Blood Volume"
-          color={rangeColor(vitals.bloodPercent as number, 85, 200)}
+          color={rangeColor(vitals.bloodPercent, 85, 200)}
         >
           {vitals.bloodPercent}%
         </LabeledList.Item>
@@ -215,9 +172,9 @@ const FindingRow = (props: { finding: DiagnosisFinding }) => {
   return (
     <Box mb="2px">
       {finding.kind === 'sign' ? (
-        <Box inline mr={1} color="label" fontSize="0.85em">
+        <Label inline mr={1} fontSize="0.85em">
           SIGN
-        </Box>
+        </Label>
       ) : (
         <Box
           inline
@@ -247,9 +204,9 @@ const FindingRow = (props: { finding: DiagnosisFinding }) => {
         <Box inline>{finding.name}</Box>
       )}
       {finding.hint ? (
-        <Box color="label" fontSize="0.85em" ml={2}>
+        <Label fontSize="0.85em" ml={2}>
           {finding.hint}
-        </Box>
+        </Label>
       ) : null}
     </Box>
   );

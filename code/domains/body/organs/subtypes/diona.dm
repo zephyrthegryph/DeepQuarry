@@ -96,7 +96,7 @@
 	w_class = ITEMSIZE_SMALL
 	body_part = FOOT_LEFT
 	icon_position = LEFT
-	parent_organ = BP_R_LEG
+	parent_organ = BP_L_LEG
 	can_stand = 1
 
 /obj/item/organ/external/diona/foot/right
@@ -177,20 +177,11 @@
 	parent_organ = BP_GROIN
 	organ_tag = O_ANCHOR
 
-/obj/item/organ/internal/diona/node
-	name = "receptor node"
-	parent_organ = BP_HEAD
-	organ_tag = O_RESPONSE
-
-/obj/item/organ/internal/diona/nutrients
-	name = O_NUTRIENT
-	parent_organ = BP_TORSO
-	organ_tag = O_NUTRIENT
-
 // These are different to the standard diona organs as they have a purpose in other
 // species (absorbing radiation and light respectively)
 /obj/item/organ/internal/diona/nutrients
 	name = O_NUTRIENT
+	parent_organ = BP_TORSO
 	organ_tag = O_NUTRIENT
 	icon = 'icons/mob/alien.dmi'
 	icon_state = "claw"

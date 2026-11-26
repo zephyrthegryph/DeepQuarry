@@ -1,27 +1,34 @@
 #define SHOULD_DISABLE_FOOTSTEPS(source)
 
 ///Footstep behaviour (was /datum/element/footstep). Plays footsteps at the mob's location
-///when it is appropriate. A capability hooked on the moved notice; the per-mob settings and step
-///counter live on the mob. L.enable_footsteps() grants it.
+///when it is appropriate. A capability the mob's own Moved() calls directly (handle_footstep(), a granted check, no
+///moved notice allocated per step); the per-mob settings and step counter live on the mob. L.enable_footsteps() grants it.
 CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 /datum/capability/footstep
 
 /datum/capability/footstep/entries()
-	return list(on_notice(/datum/notice/moved, then(CAP_PROC(footstep_moved))))
+	return list()
 
 /mob/living/proc/enable_footsteps(type = FOOTSTEP_MOB_BAREFOOT, volume = 0.1, e_range = -8, vary = FALSE)
 	set_footstep_type(type)
 	set_footstep_volume(volume)
 	set_footstep_e_range(e_range)
 	STATE_SET(src, footfall, footstep_vary, vary)
-	STATE_SET(src, footfall, footstep_steps, 0)
 	grant(src, /datum/capability/footstep, src)
 
 /mob/living/proc/disable_footsteps()
 	revoke(src, /datum/capability/footstep, src)
 
-/datum/capability/footstep/proc/footstep_moved(datum/act/A)
-	var/mob/living/source = A.holder
+/// Steps a mob took where an observer could hear them (the footstep capability's trace: counted, whether or not a sound played).
+GLOBAL_VAR_INIT(footsteps_audible, 0)
+
+/// Steps taken in a chunk no observer holds (no client's view window or its ring reaches it) make no sound anyone could hear, so they are not counted or
+/// prepared at all: the step counter, the turf sound lookup and the playsound are work for a listener. The count restarts when an observer arrives.
+/datum/capability/footstep/proc/footstep_moved(mob/living/source)
+	var/turf/where = source.loc
+	if(isturf(where) && !gaze_covers(where))
+		return
+	GLOB.footsteps_audible++
 	if(ishuman(source))
 		play_humanstep(source)
 	else
@@ -61,7 +68,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	if(source.is_incorporeal())
 		return
 
-	if(source?.buckled_to() || source.throwing || source.movement_type & (STATE_GET(source, vent_crawl, is_ventcrawling) | stat_value(source, STAT_FLYING)))
+	if(source?.buckled_to() || source.throwing || source.movement_type & (STATE_GET(source, vent_crawl, is_ventcrawling) | source.flying))
 		return
 
 	if(source.lying) //play crawling sound if we're lying
@@ -75,17 +82,13 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 			return
 		if(carbon_source.m_intent == I_WALK)
 			return// stealth
-	var/steps = STATE_GET(source, footfall, footstep_steps) + 1
-	STATE_SET(source, footfall, footstep_steps, steps)
-
-	if(steps >= 6)
-		STATE_SET(source, footfall, footstep_steps, 0)
-		steps = 0
-
-	if(steps % 2)
+	// Every second step sounds, from where the mob stands (a cardinal step flips the parity of x + y): the old counter was a write to the mob's footfall state on
+	// every audible step, which published a change of the state and of the mob's footfall key (0.3-0.6 ms a step, and a draw mark of the mob each time).
+	var/parity = source.x + source.y
+	if(parity % 2)
 		return
 
-	if(steps != 0 && !get_gravity(source)) // don't need to step as often when you hop around
+	if(parity % 6 && !get_gravity(source)) // don't need to step as often when you hop around
 		return
 
 	. = list(

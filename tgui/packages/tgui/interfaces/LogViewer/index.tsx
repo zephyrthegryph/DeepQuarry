@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
+import type { LogViewerActions, LogViewerData } from '../generated/LogViewer';
 import { CategoryBar } from './CategoryBar';
 import { CategoryViewer } from './CategoryViewer';
 import { CATEGORY_ALL } from './constants';
-import type { LogViewerCategoryData, LogViewerData } from './types';
+import type { LogViewerCategoryData } from './types';
 
 export const LogViewer = (_: any) => {
-  const { data } = useBackend<LogViewerData>();
+  const { data } = useBackend<LogViewerData, LogViewerActions>();
 
   const [activeCategory, setActiveCategory] = useState('');
 
@@ -38,7 +39,7 @@ export const LogViewer = (_: any) => {
         <Stack vertical fill>
           <Stack.Item>
             <CategoryBar
-              options={data.tree.enabled}
+              options={data.tree?.enabled ?? []}
               active={activeCategory}
               setActive={setActiveCategory}
             />

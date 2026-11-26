@@ -20,6 +20,9 @@
 	density = TRUE
 	opacity = 1
 
+MSG_DEF_SELF(bookcase/secured, "You secure %T% to the floor.")
+MSG_DEF_SELF(bookcase/unfastened, "You unfasten %T% from the floor.")
+
 CAPABILITIES(/obj/structure/bookcase)
 	setup(PROC_REF(collect_initial_books))
 	blast_contents()
@@ -31,7 +34,7 @@ CAPABILITIES(/obj/structure/bookcase)
 	op("title_shelf", item(/obj/item/pen),
 		asks(/datum/prompt/text, fields = list("question" = "What would you like to title this bookshelf?", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k37"),
 		then(PROC_REF(title_shelf)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	anchor(sfx = SFX_ITEMS_RATCHET, volume = 2, attached = MSG(bookcase/secured), detached = MSG(bookcase/unfastened))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), starts(PROC_REF(screwdriver_started)), begins(PROC_REF(screwdriver_begins)), wait(2.5 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
 
 /obj/structure/bookcase/proc/collect_initial_books()
@@ -52,14 +55,6 @@ CAPABILITIES(/obj/structure/bookcase)
 	if(newname)
 		name = ("bookcase ([newname])")
 	return OP_PASS
-
-/obj/structure/bookcase/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	playsound(src, sounds_of(tool).use, 100, 1)
-	to_chat(user, anchored ? span_notice("You unfasten \the [src] from the floor.") : span_notice("You secure \the [src] to the floor."))
-	set_anchored(!anchored)
-	return OP_OK
 
 /obj/structure/bookcase/proc/screwdriver_started(datum/act/op/A)
 	playsound(src, sounds_of(A.held).use, 75, TRUE)
@@ -150,6 +145,7 @@ Book Cart End
 
 CAPABILITIES(/obj/structure/bookcase/manuals/medical)
 	initial_contents(/obj/item/book/manual/medical_cloning)
+	initial_contents(/obj/item/book/dq_medical_reference)
 	initial_contents(/obj/item/book/manual/wiki/medical_diagnostics_manual, count = 3)
 
 /obj/structure/bookcase/manuals/engineering
@@ -346,7 +342,7 @@ CAPABILITIES(/obj/item/book)
 				to_chat(user, "[W]'s screen flashes: 'Book stored in buffer.'")
 			if(1)
 				rel_set(scanner, nameof(scanner.book), src)
-				scanner.computer().buffer_book = src.name
+				scanner.computer().set_buffer_book(src.name)
 				to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book title stored in associated computer buffer.'")
 			if(2)
 				rel_set(scanner, nameof(scanner.book), src)
@@ -411,9 +407,10 @@ CAPABILITIES(/obj/item/book)
 CAPABILITIES(/obj/item/book/bundle)
 	op("read_bundle", in_hand(), label("Read"), then(PROC_REF(interaction_read_bundle)))
 	interface("BookBundle")
+	ui_shape(page = int(), total_pages = int(), page_name = schema_text(), page_kind = enum(list("paper", "photo", "text")), page_info = schema_text(), scribble = schema_text())
 	without("ui_open")
-	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
-	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
+	op("next_page", ui_act("next_page"), needs(carried()), then(PROC_REF(ui_act_next_page)))
+	op("prev_page", ui_act("prev_page"), needs(carried()), then(PROC_REF(ui_act_prev_page)))
 
 /// Old attack_self.
 /obj/item/book/bundle/proc/interaction_read_bundle(datum/act/op/A)
@@ -465,12 +462,9 @@ CAPABILITIES(/obj/item/book/bundle)
 	return data
 
 /obj/item/book/bundle/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
 	if(!..())
 		return FALSE
-	if(!((is_in_holder(src, user)) || (istype(src.loc, /obj/item/folder) && (is_in_holder(src.loc, user)))))
-		to_chat(user, span_notice("You need to hold it in your hands!"))
-		return FALSE
+	var/mob/user = A.actor
 	user.set_machine(src)
 	return TRUE
 

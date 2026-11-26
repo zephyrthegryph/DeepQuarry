@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "A window floated out of the right column now comes to the front where you dropped it, instead of vanishing behind the game window."
+  - bugfix: "The right column is never empty: its last docked window cannot be floated or closed."
+  - bugfix: "The status panel always stays docked in the right column."

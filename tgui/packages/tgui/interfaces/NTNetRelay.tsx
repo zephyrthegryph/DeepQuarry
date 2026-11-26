@@ -1,19 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Icon, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 
 import { FullscreenNotice } from './common/FullscreenNotice';
+import type { NTNetRelayActions, NTNetRelayData } from './generated/NTNetRelay';
 
-type Data = {
-  enabled: BooleanLike;
-  dos_capacity: number;
-  dos_overload: number;
-  dos_crashed: BooleanLike;
-};
+type Data = NTNetRelayData;
 
 export const NTNetRelay = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, NTNetRelayActions>();
 
   const { dos_crashed } = data;
 
@@ -31,7 +26,7 @@ export const NTNetRelay = (props) => {
 };
 
 const NTNetRelayContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NTNetRelayActions>();
 
   const { enabled, dos_overload, dos_capacity } = data;
 
@@ -63,7 +58,7 @@ const NTNetRelayContent = (props) => {
 };
 
 const NTNetRelayCrash = (props) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, NTNetRelayActions>();
 
   return (
     <FullscreenNotice title="ERROR">

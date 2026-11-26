@@ -22,24 +22,20 @@
 		ownrank = ownjob
 	name = newname + " (" + ownjob + ")"
 
-//AI verb and proc for sending PDA messages.
-/obj/item/pda/ai/verb/cmd_pda_open_ui()
-	set category = VERB_CAT_ABILITIES_AI
-	set name = "Use PDA"
-	set src in usr
-
-	if(!can_use(usr))
+/// Opens the PDA for the silicon that carries it (the Use PDA command of their panels).
+/obj/item/pda/ai/proc/open_for(mob/user)
+	if(!can_use(user))
 		return
-	tgui_interact(usr)
+	tgui_interact(user)
 
 /obj/item/pda/ai/can_use()
 	return 1
 
-/obj/item/pda/ai/tgui_static_data(mob/user)
+/obj/item/pda/ai/ui_static_data(datum/act/eval/A)
 	. = ..()
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_owner = loc
-		.["theme"] = robot_owner.get_ui_theme()
+	var/robot_theme = robot_holder_theme(src)
+	if(robot_theme)
+		.["theme"] = robot_theme
 
 CAPABILITIES(/obj/item/pda/ai)
 	op("ai_pda_self", in_hand(), then(PROC_REF(ai_pda_self)))

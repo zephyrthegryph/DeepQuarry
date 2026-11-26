@@ -1,23 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Table } from 'tgui-core/components';
+import type {
+  AdminShuttleControllerActions,
+  AdminShuttleControllerData,
+} from './generated/AdminShuttleController';
 
-type Data = {
-  shuttles: Shuttle[];
-  overmap_ships: OvermapShip[];
-};
-
-type Shuttle = {
-  ref: string;
-  name: string;
-  current_location: string;
-  status: number;
-};
-
-type OvermapShip = {
-  ref: string;
-  name: string;
-};
+type Data = AdminShuttleControllerData;
 
 export const AdminShuttleController = () => {
   return (
@@ -30,17 +19,17 @@ export const AdminShuttleController = () => {
 };
 
 export const ShuttleList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AdminShuttleControllerActions>();
 
-  const { shuttles, overmap_ships } = data;
+  const { shuttles = [], overmap_ships = [] } = data;
 
   const sortedShuttles = [...shuttles].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
 
   const sortedOvermapShips = [...overmap_ships].sort((a, b) => {
-    const a_cmp = a.name?.toLowerCase() || a.name || a.ref;
-    const b_cmp = b.name?.toLowerCase() || b.name || b.ref;
+    const a_cmp = a.name?.toLowerCase() || a.name || String(a.ref);
+    const b_cmp = b.name?.toLowerCase() || b.name || String(b.ref);
 
     return a_cmp.localeCompare(b_cmp);
   });

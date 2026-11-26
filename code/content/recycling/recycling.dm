@@ -117,9 +117,21 @@ MSG_DEF_SELF(recycling/wrong_input, "it doesn't take that")
 	effic_factor = CLAMP01(initial(effic_factor)+total_rating)
 
 /obj/machinery/recycling/crusher/recycle_refusal(obj/item/O)
-	if(!length(O.material_totals()))
+	if(!length(crush_matter(O)))
 		return /datum/msg/recycling/wrong_input
 	return ..()
+
+/// What crushing `O` breaks down to before efficiency: material id -> units, summed over `O` and every item inside it (a
+/// box of scrap, a salvage lot's contents), each counted by breakdown_units(). Each part returns at most what it is made of,
+/// so the whole never returns more than its parts cost to make (dq_recycle_conservation).
+/obj/machinery/recycling/crusher/proc/crush_matter(obj/item/O)
+	. = list()
+	for(var/obj/item/part as anything in O.get_all_contents_type(/obj/item))
+		var/units = breakdown_units(part)
+		var/list/part_matter = part.material_totals()
+		for(var/mat in part_matter)
+			if(part_matter[mat] > 0)
+				.[mat] += part_matter[mat] * units
 
 /// ition: the crusher puts a conveyed thing it can't take out its negative side.
 /obj/machinery/recycling/crusher/divert_item(obj/item/O)
@@ -134,17 +146,25 @@ MSG_DEF_SELF(recycling/wrong_input, "it doesn't take that")
 	set_use_power(USE_POWER_ACTIVE)
 	after(src, 5 SECONDS, PROC_REF(crush_done), with = list(O))
 
-/obj/machinery/recycling/crusher/proc/crush_done(obj/item/O)
-	var/trash = 1 // Trash multiplier
-	var/list/modified_mats = list()
-	if(istype(O,/obj/item/trash)) // Trash multiplier
-		trash = 5 // Trash good
-	if(istype(O,/obj/item/stack))
+/// How many times its recorded materials breaking `O` down returns: a stack's amount (its materials are per unit), one for anything else. Never more than what
+/// it is made of, so no recycler returns more than the thing cost to make (code/tests/unit_tests/dq_fab_conservation_tests.dm).
+/proc/breakdown_units(obj/item/O)
+	if(istype(O, /obj/item/stack))
 		var/obj/item/stack/S = O
-		trash = S.amount
-	var/list/item_matter = O.material_totals()
+		return S.amount
+	return 1
+
+/obj/machinery/recycling/crusher/proc/crush_done(obj/item/O)
+	var/list/modified_mats = list()
+	var/list/item_matter = crush_matter(O)
 	for(var/mat in item_matter)
-		modified_mats[mat] = item_matter[mat] * effic_factor * trash // Trash multiplier
+		modified_mats[mat] = item_matter[mat] * effic_factor
+	if(GLOB.fab_trace)
+		log_world("FAB: [src] crushed [O] and its contents: [fab_matter_text(item_matter, effic_factor)] into debris")
+	// Its contents were counted: they are crushed with it, never dropped intact beside the debris.
+	for(var/obj/item/part as anything in O.get_all_contents_type(/obj/item))
+		if(part != O && !QDELETED(part))
+			consumed(part, src)
 	var/turf/T = get_step(src, dir)
 	for(var/obj/item/debris_pack/D in turf_contents_of_type(T, /obj/item/debris_pack))
 		if(istype(D))

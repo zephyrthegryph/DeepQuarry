@@ -11,8 +11,8 @@ MSG_DEF_SELF(slot/too_big_for_pocket, "too big for a pocket")
 MSG_DEF_SELF(slot/too_big_for_ear, "too big for an ear")
 
 /// size_is(min, max): the held item's w_class is between min and max (max defaults to min). Refused with "too large" or "too small".
-/proc/size_is(min_size, max_size = null)
-	return part_make(/datum/entry/part/req/size_is, list("min" = min_size, "max" = isnull(max_size) ? min_size : max_size))
+/proc/size_is(min_size, max_size = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/size_is, list("min" = min_size, "max" = isnull(max_size) ? min_size : max_size)), fails)
 
 /datum/entry/part/req/size_is
 	part_name = "size_is"

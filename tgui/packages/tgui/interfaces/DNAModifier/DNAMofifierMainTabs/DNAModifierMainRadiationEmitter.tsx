@@ -1,17 +1,11 @@
 import { useBackend } from 'tgui/backend';
-import {
-  Box,
-  Button,
-  Divider,
-  Knob,
-  Section,
-  Stack,
-} from 'tgui-core/components';
-
+import { Label } from 'tgui/components/Label';
+import { Button, Divider, Knob, Section, Stack } from 'tgui-core/components';
+import type { DNAModifierActions } from '../../generated/DNAModifier';
 import type { Data } from '../types';
 
 export const DNAModifierMainRadiationEmitter = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DNAModifierActions>();
 
   const { radiationIntensity, radiationDuration, occupant } = data;
 
@@ -23,7 +17,7 @@ export const DNAModifierMainRadiationEmitter = (props) => {
           <Stack.Item>
             <Stack align="baseline">
               <Stack.Item>
-                <Box color="label">Intensity</Box>
+                <Label>Intensity</Label>
               </Stack.Item>
               <Stack.Item>
                 <Knob
@@ -44,7 +38,7 @@ export const DNAModifierMainRadiationEmitter = (props) => {
           <Stack.Item>
             <Stack align="baseline">
               <Stack.Item>
-                <Box color="label">Duration</Box>
+                <Label>Duration</Label>
               </Stack.Item>
               <Stack.Item>
                 <Knob

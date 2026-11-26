@@ -2,10 +2,12 @@
 	daxon_affect(M, removed)
 
 /datum/reagent/hepanephrodaxon
-	treatment_tags = list(TREAT_HEPATORENAL = 1.0, TREAT_ANTITOXIN = 0.7)
+	treatment_tags = list(TREAT_HEPATORENAL = 1.0)
+	// The filtering organs are busy mending: everything in the blood, toxins included, is cleared more slowly.
+	factors = alist(STAT_METABOLISM_MULT = 0.85)
 	name = REAGENT_HEPANEPHRODAXON
 	id = REAGENT_ID_HEPANEPHRODAXON
-	description = "Used to repair the common tissues involved in filtration."
+	description = "Used to repair the liver and kidneys (hepatorenal failure). While the organs mend, reagents and toxins in the blood clear more slowly, and the drug makes the patient nauseous."
 	taste_description = "glue"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

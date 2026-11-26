@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Any window in the side column except the status panel, the chat included, can be dragged out to float"

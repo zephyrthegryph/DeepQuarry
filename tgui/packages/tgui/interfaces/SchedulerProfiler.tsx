@@ -10,97 +10,17 @@ import {
   Table,
   Tabs,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  SchedulerProfilerActions,
+  SchedulerProfilerData,
+} from './generated/SchedulerProfiler';
 
-type Behaviour = {
-  name: string;
-  type: string;
-  lane: string;
-  runs: number;
-  ms: number;
-  ms_per_s: number;
-  us_per_run: number;
-  call_max_ms: number;
-  late_max: number;
-  deferrals: number;
-  breaches: number;
-  errors: number;
-  wakes: number;
-  parks: number;
-  population: number;
-  parked: number;
-};
-
-type Lane = {
-  name: string;
-  share: number;
-  behaviours: number;
-  runs: number;
-  ms: number;
-  ms_per_s: number;
-  wake_queue: number;
-  world_queue: number;
-};
-
-type Service = {
-  name: string;
-  type: string;
-  initialized: BooleanLike;
-  on_demand: BooleanLike;
-  parked: BooleanLike;
-  resuming: BooleanLike;
-  steps: number;
-  ms: number;
-  ms_per_s: number;
-  avg_ms: number;
-  status: string;
-};
-
-type WorldStep = {
-  step_ms: number;
-  total_wakes: number;
-  last_wakes: number;
-  dropped: number;
-};
-
-type Stage = {
-  key: string;
-  calls: number;
-  ms: number;
-  us_per_call: number;
-};
-
-type Cache = {
-  name: string;
-  hits: number | null;
-  misses: number;
-  hit_rate: number;
-  entries: number;
-  max_entries: number;
-  evictions: number;
-  invalidations: number;
-  kb: number;
-  policy: string;
-};
-
-type Data = {
-  elapsed_s: number;
-  last_run_ms: number;
-  error_count: number;
-  behind: BooleanLike;
-  shared_bucket: BooleanLike;
-  behaviours: Behaviour[];
-  lanes: Lane[];
-  stages: Stage[];
-  services: Service[];
-  caches?: Cache[];
-  world_step?: WorldStep;
-};
+type Data = SchedulerProfilerData;
 
 type SortKey = 'ms' | 'runs' | 'us_per_run' | 'errors';
 
 export const SchedulerProfiler = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SchedulerProfilerActions>();
   const { elapsed_s, last_run_ms, error_count, behind, shared_bucket } = data;
   const [tab, setTab] = useState(0);
   return (
@@ -156,7 +76,7 @@ export const SchedulerProfiler = (props) => {
 };
 
 const LanesTab = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SchedulerProfilerActions>();
   const { lanes = [] } = data;
   return (
     <Section>
@@ -189,7 +109,7 @@ const LanesTab = (props) => {
 };
 
 const BehavioursTab = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SchedulerProfilerActions>();
   const { behaviours = [] } = data;
   const [filter, setFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('ms');
@@ -265,7 +185,7 @@ const BehavioursTab = (props) => {
 };
 
 const StagesTab = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SchedulerProfilerActions>();
   const { stages = [] } = data;
   const rows = [...stages].sort((a, b) => b.ms - a.ms);
   if (!rows.length) {
@@ -299,7 +219,7 @@ const StagesTab = (props) => {
 };
 
 const ServicesTab = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SchedulerProfilerActions>();
   const { services = [], world_step } = data;
   const rows = [...services].sort((a, b) => b.ms - a.ms);
   return (
@@ -358,7 +278,7 @@ const ServicesTab = (props) => {
 };
 
 const CachesTab = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, SchedulerProfilerActions>();
   const caches = [...(data.caches || [])].sort((a, b) => b.kb - a.kb);
   return (
     <Section title="Shared caches (DECLARE_SHARED_CACHE; hits need -DSHARED_CACHE_STATS in release)">

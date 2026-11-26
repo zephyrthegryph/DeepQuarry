@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Haggle with docked trade ships: appraise crates on the supply shuttle as one lot (Cargo staff read value better), name a price, and the ship accepts, counters or rejects by its valuation, standing, wants and mood."
+  - rscadd: "Station Wiki guide to haggling."

@@ -1,0 +1,64 @@
+{
+	"customsender": "System Administrator",
+	"customjob": "Admin",
+	"custommessage": "This is a test, please ignore.",
+	"temp": {
+		"text": "NOTICE: Server selected.",
+		"style": "danger"
+	},
+	"customrecepient": "Jo Park (Station Engineer)",
+	"hacking": 0,
+	"emag": 0,
+	"auth": 1,
+	"linkedServer": {
+		"active": 1,
+		"broke": 0,
+		"pda_msgs": [
+			{
+				"ref": 3001,
+				"sender": "Jo Park",
+				"recipient": "Lee Wu",
+				"message": "Atmos is clear."
+			},
+			{
+				"ref": 3002,
+				"sender": "Lee Wu",
+				"recipient": "Jo Park",
+				"message": "Thanks, on my way."
+			}
+		],
+		"rc_msgs": [
+			{
+				"ref": 3101,
+				"sender": "Engineering",
+				"recipient": "Cargo",
+				"message": "Need steel.",
+				"stamp": "Stamped by the Quartermaster",
+				"id_auth": "Authenticated by Sam Ito"
+			},
+			{
+				"ref": 3102,
+				"sender": "Medbay",
+				"recipient": "Cargo",
+				"message": "Need bandages.",
+				"stamp": "None",
+				"id_auth": "Unauthenticated"
+			}
+		],
+		"spamFilter": [
+			{
+				"index": 1,
+				"token": "free credits"
+			},
+			{
+				"index": 2,
+				"token": "click here"
+			}
+		]
+	},
+	"possibleRecipients": {
+		"Jo Park (Station Engineer)": 2501,
+		"Lee Wu (Atmospheric Technician)": 2502
+	},
+	"isMalfAI": 0
+}

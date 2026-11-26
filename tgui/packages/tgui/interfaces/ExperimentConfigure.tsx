@@ -1,43 +1,32 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
   Button,
   Icon,
-  LabeledList,
   Section,
   Stack,
   Table,
   Tooltip,
 } from 'tgui-core/components';
+import type {
+  ExperimentConfigureActions,
+  ExperimentConfigureData,
+} from './generated/ExperimentConfigure';
 
-type Techweb = {
-  all_servers: string[];
-  ref: string;
-  selected: number;
-  web_id: string;
-  web_org: string;
-};
-
-type ExperimentData = {
-  description: string;
-  name: string;
-  performance_hint: string;
+type ExperimentData = Omit<
+  ExperimentConfigureData['experiments'][number],
+  'progress'
+> & {
   progress: Stage[];
-  ref: string;
-  selected: number;
-  tag: string;
 };
 
 // Value type, Description, Value, AltValue
 type Stage = [string, string, number, number];
 
-type Data = {
-  theme?: string;
-  always_active: boolean;
+type Data = Omit<ExperimentConfigureData, 'experiments'> & {
   experiments: ExperimentData[];
-  has_start_callback: boolean;
-  techwebs: Techweb[];
 };
 
 type ExperimentStageRowProps = {
@@ -85,7 +74,7 @@ function ExperimentStageRow(props: ExperimentStageRowProps) {
 }
 
 function TechwebServer(props) {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, ExperimentConfigureActions>();
   const { techwebs } = props;
 
   return techwebs.map((server, index) => (
@@ -116,18 +105,18 @@ function TechwebServer(props) {
         <span>
           Connectivity to this web is maintained by the following servers...
         </span>
-        <LabeledList>
+        <Box>
           {server.all_servers.map((individual_servers, new_index) => (
             <Box key={new_index}>{individual_servers}</Box>
           ))}
-        </LabeledList>
+        </Box>
       </Box>
     </Box>
   ));
 }
 
 export function Experiment(props) {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, ExperimentConfigureActions>();
   const { exp } = props;
   const { name, description, tag, selected, progress, performance_hint, ref } =
     exp;
@@ -175,7 +164,7 @@ export function Experiment(props) {
 }
 
 export function ExperimentConfigure(props) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ExperimentConfigureActions>();
   const { theme, always_active, has_start_callback } = data;
 
   const techwebs = data.techwebs ?? [];
@@ -209,11 +198,11 @@ export function ExperimentConfigure(props) {
     <Window width={600} height={735} theme={theme}>
       <Window.Content scrollable>
         <Section title="Servers">
-          <Box color="label">
+          <Label>
             {webs.size > 0
               ? 'Please select a techweb to connect to...'
               : 'Found no servers connected to a techweb!'}
-          </Box>
+          </Label>
           {webs.size > 0 &&
             Array.from(webs, ([techweb, techwebs]) => (
               <TechwebServer key={techweb} techwebs={techwebs} />
@@ -227,9 +216,7 @@ export function ExperimentConfigure(props) {
                 className="ExperimentConfigure__ExperimentsContainer"
                 fill
               >
-                <Box mb={1} color="label">
-                  {textContent}
-                </Box>
+                <Label mb={1}>{textContent}</Label>
                 {experiments.map((exp, i) => (
                   <Experiment key={i} exp={exp} />
                 ))}

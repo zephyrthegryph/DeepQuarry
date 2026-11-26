@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "The say popup docks centred on the map just above the hotbar and follows the game window when it is resized"
+  - qol: "Me and Subtle now show the same live formatting preview as Say"

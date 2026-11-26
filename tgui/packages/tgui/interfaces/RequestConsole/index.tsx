@@ -1,7 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Section, Tabs } from 'tgui-core/components';
-
+import type {
+  RequestConsoleActions,
+  RequestConsoleData,
+} from '../generated/RequestConsole';
 import {
   RCS_ANNOUNCE,
   RCS_MAINMENU,
@@ -28,10 +31,9 @@ import {
   RequestConsoleRelay,
   RequestConsoleSupplies,
 } from './RequestConsolTypes';
-import type { Data } from './types';
 
 export const RequestConsole = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<RequestConsoleData, RequestConsoleActions>();
   const { screen, newmessagepriority, announcementConsole } = data;
 
   const body: React.JSX.Element[] = [];
@@ -47,7 +49,7 @@ export const RequestConsole = (props) => {
   body[RCS_ANNOUNCE] = <RequestConsoleAnnounce />;
 
   return (
-    <Window width={520} height={410}>
+    <Window width={620} height={410}>
       <Window.Content scrollable>
         <Tabs>
           <Tabs.Tab

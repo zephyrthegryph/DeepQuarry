@@ -76,12 +76,12 @@
 
 	if(resting)
 		if(isbelly(vore_selected_of(src)))
-			vore_selected_of(src).digest_mode = DM_UNABSORB
+			vore_selected_of(src).set_digest_mode(DM_UNABSORB)
 		ai_brain.go_sleep()
 
 	else
 		if(isbelly(vore_selected_of(src)))
-			vore_selected_of(src).digest_mode = vore_default_mode
+			vore_selected_of(src).set_digest_mode(vore_default_mode)
 		ai_brain.go_wake()
 
 CAPABILITIES(/mob/living/simple_mob/vore/pakkun)

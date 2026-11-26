@@ -115,7 +115,6 @@ CAPABILITIES(/obj/item/storage/wallet/random)
 
 // The colour is chosen from a window: an op of the wallet, reached from the verb a carrier has.
 CAPABILITIES(/obj/item/storage/wallet/poly)
-	held_verb(/obj/item/storage/wallet/poly/proc/change_color, SLOT_ANY_CARRIED)
 	op("recolor", menu(), needs(carried(), req_capable()), label("Change wallet color"),
 		asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))),
 		then(PROC_REF(recolored)))
@@ -126,13 +125,6 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 /obj/item/storage/wallet/poly/proc/roll_colour(datum/roller/R)
 	return R.hex_colour()
 
-/obj/item/storage/wallet/poly/proc/change_color()
-	set name = "Change Wallet Color"
-	set category = VERB_CAT_OBJECT
-	set desc = "Change the color of the wallet."
-	set src in usr
-
-	perform_op(usr, src, "recolor", null, ORIGIN_VERB)
 
 /// The picked colour becomes the wallet's.
 /obj/item/storage/wallet/poly/proc/recolored(datum/act/op/A)

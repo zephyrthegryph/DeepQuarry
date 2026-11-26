@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "PanD.E.M.I.C. vaccine bottles work again; newscaster story restore keeps the caption."
+  - bugfix: "Several machine and pAI windows no longer crash when empty, and buttons that did nothing (message monitor log clearing, revelation activate) work."
+  - qol: "Routine window button presses no longer spam chat."

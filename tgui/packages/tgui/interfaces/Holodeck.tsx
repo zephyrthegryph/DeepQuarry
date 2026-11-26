@@ -1,24 +1,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  supportedPrograms: string[];
-  restrictedPrograms: string[];
-  currentProgram: string;
-  isSilicon: BooleanLike;
-  safetyDisabled: BooleanLike;
-  emagged: BooleanLike;
-  gravity: BooleanLike;
-};
+import type { HolodeckActions, HolodeckData } from './generated/Holodeck';
 
 export const Holodeck = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<HolodeckData, HolodeckActions>();
 
   const {
-    supportedPrograms,
-    restrictedPrograms,
+    supportedPrograms = [],
+    restrictedPrograms = [],
     currentProgram,
     isSilicon,
     safetyDisabled,

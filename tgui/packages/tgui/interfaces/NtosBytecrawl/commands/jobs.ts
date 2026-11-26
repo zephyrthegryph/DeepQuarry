@@ -8,7 +8,7 @@ import type { CommandContext } from './context';
 // ── crack ─────────────────────────────────────────────────────────────────────
 
 export function cmdCrack(args: readonly string[], ctx: CommandContext): void {
-  const { gRef, setG, print, act, scanPool } = ctx;
+  const { gRef, setG, print, scanPool } = ctx;
   const state = gRef.current;
   if (!args[0]) {
     print('Usage: crack <target-id> [--method fragment]', '#ff8800');
@@ -72,15 +72,6 @@ export function cmdCrack(args: readonly string[], ctx: CommandContext): void {
     inv: fragMethod ? { ...prev.inv, FRG: prev.inv.FRG - 1 } : prev.inv,
     nextId: prev.nextId + 1,
   }));
-
-  act('crack', {
-    id: jid,
-    cipher: target.tier.abbrev,
-    gb: target.gb,
-    type: target.type,
-    duration: dur,
-    uptime: uptimeCap ?? null,
-  });
 
   print(
     `[CRACK] Job ${jid} queued: ${target.tier.abbrev} ${target.gb.toFixed(2)}GB ${target.type} | ETA ${fmtTime(dur)}${fragMethod ? ' [FRAGMENT]' : ''}`,
@@ -161,7 +152,7 @@ export function cmdJobs(args: readonly string[], ctx: CommandContext): void {
 // ── cancel ────────────────────────────────────────────────────────────────────
 
 export function cmdCancel(args: readonly string[], ctx: CommandContext): void {
-  const { gRef, setG, print, act } = ctx;
+  const { gRef, setG, print } = ctx;
   if (!args[0]) {
     print('Usage: cancel <job-id>', '#ff8800');
     return;
@@ -173,14 +164,13 @@ export function cmdCancel(args: readonly string[], ctx: CommandContext): void {
     return;
   }
   setG((prev) => ({ ...prev, jobs: prev.jobs.filter((j) => j.id !== jid) }));
-  act('cancel_job', { id: jid });
   print(`Job ${jid} cancelled.`, '#ff8800');
 }
 
 // ── collect ───────────────────────────────────────────────────────────────────
 
 export function cmdCollect(args: readonly string[], ctx: CommandContext): void {
-  const { gRef, setG, print, act } = ctx;
+  const { gRef, setG, print } = ctx;
   const state = gRef.current;
   if (!args[0]) {
     print('Usage: collect <job-id>|all', '#ff8800');
@@ -202,11 +192,6 @@ export function cmdCollect(args: readonly string[], ctx: CommandContext): void {
     print(`Collected ${cid}: ${j.gb.toFixed(2)}GB ${j.type}`, '#33ff33');
   }
   setG((prev) => ({ ...prev, jobs: newJobs, cache: newCache }));
-  if (all) {
-    act('collect_all');
-  } else {
-    act('collect', { id: ready[0].id });
-  }
 }
 
 // ── cache ─────────────────────────────────────────────────────────────────────

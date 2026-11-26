@@ -1,4 +1,4 @@
-// Rules (doc/rewrite/rules.md §4, roadmap P4): compilation to reactor
+// Rules (doc/rewrite/rules.md Â�4, roadmap P4): compilation to reactor
 // triggers, the generated threshold tests, and parity for the rules that
 // replace old code.
 
@@ -179,7 +179,7 @@
 		floor.extinguish()
 		if(floor.active_hotspot)
 			qdel(floor.active_hotspot)
-		heat_set(floor.air, T20C, HEAT_SOURCE_OTHER)
+		heat_set(floor.turf_air(), T20C, HEAT_SOURCE_OTHER)
 		thing = allocate(root, floor)
 	else
 		thing = allocate(root)
@@ -386,9 +386,9 @@
 	var/turf/open/T = test_floor()
 	// A fire needs oxygen to keep burning; the test map's floor has little.
 	var/datum/gas_mixture/saved = new
-	saved.copy_from(T.air)
-	T.air.set_moles(GAS_O2, 20)
-	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
+	saved.copy_from(T.turf_air())
+	T.turf_air().set_moles(GAS_O2, 20)
+	heat_set(T.turf_air(), T20C, HEAT_SOURCE_OTHER)
 	var/obj/item/paper/hot = allocate(/obj/item/paper, T)
 	var/ignition = PROPERTY(hot, PROP_IGNITION_POINT)
 	TEST_ASSERT(ignition > T20C, "paper has an ignition point")
@@ -413,7 +413,7 @@
 	dq_rx_flush()
 	TEST_ASSERT(!(proofed.resistance_flags & ON_FIRE), "fireproof paper still does not burn")
 	hot.extinguish()
-	T.air.copy_from(saved)
+	T.turf_air().copy_from(saved)
 
 // ---- Melting ----
 
@@ -424,11 +424,11 @@
 	var/turf/T = test_floor()
 	var/obj/item/reagent_containers/glass/cooler_bottle/bottle = allocate(/obj/item/reagent_containers/glass/cooler_bottle, T)
 	var/datum/material/plastic = GLOB.name_to_material[MAT_PLASTIC]
-	TEST_ASSERT_EQUAL(PROPERTY(bottle, PROP_MELTING_POINT), plastic.melting_point, "the bottle's melting point is its plastic's, through PROPERTY()")
+	TEST_ASSERT_EQUAL(PROPERTY(bottle, PROP_MELTING_POINT), plastic.melting_point(), "the bottle's melting point is its plastic's, through PROPERTY()")
 	var/obj/item/dq_rule_test/inside = new(bottle)
-	dq_rule_test_write(bottle, PROP_TEMPERATURE, plastic.melting_point - 10)
+	dq_rule_test_write(bottle, PROP_TEMPERATURE, plastic.melting_point() - 10)
 	TEST_ASSERT(!QDELETED(bottle), "below the melting point it keeps its shape")
-	dq_rule_test_write(bottle, PROP_TEMPERATURE, plastic.melting_point + 10)
+	dq_rule_test_write(bottle, PROP_TEMPERATURE, plastic.melting_point() + 10)
 	TEST_ASSERT(QDELETED(bottle), "at the melting point it is replaced")
 	TEST_ASSERT(locate_on(T, /obj/effect/decal/cleanable/molten_item), "by a molten mass")
 	TEST_ASSERT_EQUAL(inside.loc, T, "and what was inside drops out")

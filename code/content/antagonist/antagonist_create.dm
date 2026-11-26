@@ -134,7 +134,7 @@
 	if (newname)
 		player.set_real_name(newname)
 		player.name = player.real_name
-		player.dna.real_name = newname
-	if(player.mind) player.mind.name = player.name
+		player.dna.set_real_name(newname)
+	if(player.mind) player.mind.set_name(player.name)
 	// Update any ID cards.
 	update_access(player)

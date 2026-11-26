@@ -29,6 +29,7 @@ CAPABILITIES(/datum/board_game/four_row)
 	ref_one(nameof(player_one), /mob)
 	ref_one(nameof(player_two), /mob)
 	interface("FourInARow", state = nameof(GLOB.tgui_board_game_state))
+	ui_shape(colors = list_of(schema_text()), player_one = nullable(schema_text()), player_two = nullable(schema_text()), placed_chips_pone = map_of(schema_text(), bool()), placed_chips_ptwo = map_of(schema_text(), bool()), game_state = int(), grid_x_size = int(), grid_y_size = int(), player_one_color = schema_text(), player_two_color = schema_text(), win_count = int(), winner = nullable(schema_text()), has_won = bool(), winning_tiles = list_of(schema_text()))
 	op("be_player_one", ui_act("be_player_one"), then(PROC_REF(ui_act_be_player_one)))
 	op("be_player_two", ui_act("be_player_two"), then(PROC_REF(ui_act_be_player_two)))
 	op("swap_players", ui_act("swap_players"), then(PROC_REF(ui_act_swap_players)))
@@ -42,7 +43,7 @@ CAPABILITIES(/datum/board_game/four_row)
 	op("play_again_swapped", ui_act("play_again_swapped"), then(PROC_REF(ui_act_play_again_swapped)))
 	op("game_action", ui_act("game_action", arg("action", schema_text(64)), arg("data")), then(PROC_REF(ui_act_game_action)))
 
-/datum/board_game/four_row/tgui_static_data(mob/user)
+/datum/board_game/four_row/ui_static_data(datum/act/eval/A)
 	return list(
 		"colors" = possible_colors
 	)

@@ -108,6 +108,12 @@ CAPABILITIES(/obj/item/tool)
 		return TRUE
 	return ..()
 
+/// Every embedded object is a finding of its own (shrapnel, a thrown blade, an implant), as well as what lists the removal tag.
+/datum/surgical_step/treat/extract_foreign_body/findings(mob/living/carbon/human/target, obj/item/organ/external/part, full)
+	. = ..()
+	for(var/atom/movable/embedded as anything in part.implants)
+		. += list(surgical_finding_row("embedded [embedded.name]", part, embedded, src))
+
 /datum/surgical_step/treat/extract_foreign_body/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	..()
 	if(!length(part.implants))

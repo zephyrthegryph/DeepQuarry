@@ -1,5 +1,7 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, NumberInput, Section, Stack } from 'tgui-core/components';
+import type { FourInARowActions } from '../generated/FourInARow';
 import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelTooltip';
 import { gameTooltip } from './constants';
 import { gameStateToText, stateToColor } from './functions';
@@ -7,10 +9,10 @@ import { PlayerPanel } from './PlayerPanel';
 import type { Data } from './types';
 
 export const PlayerMenu = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FourInARowActions>();
 
   const {
-    colors,
+    colors = [],
     player_one,
     player_two,
     game_state,
@@ -111,7 +113,7 @@ export const PlayerMenu = (props) => {
             <Stack.Item>
               <Stack justify="center">
                 <Stack.Item>
-                  <Box color="label">Size:</Box>
+                  <Label>Size:</Label>
                 </Stack.Item>
                 <Stack.Item>
                   {game_state === 0 && isFourRow ? (
@@ -129,7 +131,7 @@ export const PlayerMenu = (props) => {
                 </Stack.Item>
                 <Stack.Item basis="10%" />
                 <Stack.Item>
-                  <Box color="label">Win Con.:</Box>
+                  <Label>Win Con.:</Label>
                 </Stack.Item>
                 <Stack.Item>
                   {game_state === 0 && isFourRow ? (
@@ -147,7 +149,7 @@ export const PlayerMenu = (props) => {
               </Stack>
             </Stack.Item>
             <Stack.Item>
-              <Box color="label">Status:</Box>
+              <Label>Status:</Label>
             </Stack.Item>
             <Stack.Item>
               <Box

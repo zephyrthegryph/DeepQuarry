@@ -73,6 +73,48 @@ export const VoreUserGeneral = (props: {
                 </Button>
               </Stack.Item>
             </Stack>
+            <Stack mt={1}>
+              <Stack.Item basis="49%">
+                <Button
+                  fluid
+                  icon="droplet"
+                  onClick={() => act('check_belly_liquid')}
+                >
+                  Check Belly Liquid
+                </Button>
+              </Stack.Item>
+              <Stack.Item basis="49%" grow>
+                <Button
+                  fluid
+                  icon="right-left"
+                  onClick={() => act('transfer_liquid')}
+                >
+                  Transfer Liquid
+                </Button>
+              </Stack.Item>
+            </Stack>
+            <Stack mt={1}>
+              <Stack.Item basis="49%">
+                <Button
+                  fluid
+                  icon="broom"
+                  tooltip="Clears vore effects that linger after you left a belly."
+                  onClick={() => act('fix_vore_effects')}
+                >
+                  Fix Vore Effects
+                </Button>
+              </Stack.Item>
+              <Stack.Item basis="49%" grow>
+                <Button
+                  fluid
+                  icon="print"
+                  tooltip="Prints your belly messages into chat for copying."
+                  onClick={() => act('print_belly_settings')}
+                >
+                  Print Belly Settings
+                </Button>
+              </Stack.Item>
+            </Stack>
           </Section>
         </Stack.Item>
       </Stack>

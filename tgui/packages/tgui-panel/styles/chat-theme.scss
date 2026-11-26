@@ -1,0 +1,29 @@
+// The chat's look: its components, its message styles and its theme, one sheet for every page that shows the chat. The column page
+// loads it in main.scss; a floating chat window loads it from tgui/interfaces/Chat.tsx. The chat's colours are tokens on the
+// `.chat-theme` box around it (Chat.tsx), so a pooled tgui window that later shows another interface is unchanged by them.
+
+@use 'sass:meta';
+@use './tgchat/chat-tokens' as chat-tokens;
+
+@include meta.load-css('./components/Chat.scss');
+@include meta.load-css('./components/Ping.scss');
+@include meta.load-css('./components/UnreadCount.scss');
+@include meta.load-css('./components/ChatConsole.scss');
+@include meta.load-css('./components/ChatInput.scss');
+
+.chat-theme {
+  // Chat message styles: one sheet, coloured by the theme's tokens (tgchat/chat-tokens.scss), held to the chat's box (its element
+  // rules, links and headings among them, reach nothing else in the window).
+  @include meta.load-css('./tgchat/chat.scss');
+
+  @include chat-tokens.dark;
+
+  --chat-text-color: hsl(210, 50%, 80%);
+  --color-base: hsl(0, 0%, 12.5%);
+  --color-section: hsl(from var(--color-base) h s calc(l - 4.2));
+  --base-gradient-spread: 0;
+
+  height: 100%;
+  background-color: var(--color-base);
+  color: var(--chat-text-color);
+}

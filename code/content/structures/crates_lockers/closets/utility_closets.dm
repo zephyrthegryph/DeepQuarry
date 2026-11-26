@@ -157,7 +157,7 @@ CAPABILITIES(/obj/structure/closet/toolcloset)
 	if(R.chance(40))
 		. += /obj/item/clothing/head/hardhat
 	if(R.chance(30))
-		. += /obj/item/reagent_containers/spray/windowsealant
+		. += VARIANT(/obj/item/reagent_containers/spray/windowsealant)
 
 /*
  * Radiation Closet
@@ -201,7 +201,7 @@ CAPABILITIES(/obj/structure/closet/toolcloset)
 	starts_with = list(
 		/obj/item/clothing/suit/bomb_suit/security,
 		/obj/item/clothing/under/rank/security,
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/clothing/head/bomb_hood/security)
 
 /*

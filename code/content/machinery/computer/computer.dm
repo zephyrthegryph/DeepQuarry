@@ -30,7 +30,7 @@ CAPABILITIES(/obj/machinery/computer)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(computer_emp)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(computer_blob))))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(screen_sound)))
-	op("disconnect", tool(TOOL_SCREWDRIVER), when(nameof(circuit)), wait(2 SECONDS), then(PROC_REF(disconnected)))
+	op("disconnect", tool(TOOL_SCREWDRIVER), when(TYPE_PROC_REF(/obj/machinery, holds_board)), wait(2 SECONDS), then(PROC_REF(disconnected)))
 	op("use_gripper", item(/obj/item/gripper), needs(req(PROC_REF(gripper_holds))), says(MSG(computer/gripper_use)), then(PROC_REF(gripper_used)))
 	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(used_as_hand)))
 

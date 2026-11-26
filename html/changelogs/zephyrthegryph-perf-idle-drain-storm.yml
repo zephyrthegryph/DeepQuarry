@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Raising an alarm no longer sorts and rewrites the handler's whole list (a brownout raised one per APC, about 40 ms each); the order is made when a console reads it"
+  - code_imp: "A spent drain budget is logged at most once per source every 10 seconds, with the count of spills it stands for"

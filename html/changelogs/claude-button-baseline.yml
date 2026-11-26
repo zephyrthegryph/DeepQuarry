@@ -1,0 +1,5 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Buttons in a row now line up: the last one no longer has different spacing."
+  - qol: "The reconnect bar's buttons match each other."

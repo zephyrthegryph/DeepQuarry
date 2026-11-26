@@ -396,8 +396,6 @@ ADMIN_VERB(toggle_antagHUD_use, R_ADMIN, "Toggle antagHUD usage", "Toggles antag
 	var/action=""
 	if(CONFIG_GET(flag/antag_hud_allowed))
 		for(var/mob/observer/dead/dead_mob in user.get_ghosts())
-			if(!check_rights_for(dead_mob.client, R_HOLDER))						//Remove the verb from non-admin ghosts
-				grant(dead_mob, granted_verb(/mob/observer/dead/verb/toggle_antagHUD, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG))
 			if(dead_mob.antagHUD)
 				dead_mob.antagHUD = 0						// Disable it on those that have it enabled
 				dead_mob.has_enabled_antagHUD = 2				// We'll allow them to respawn
@@ -407,8 +405,6 @@ ADMIN_VERB(toggle_antagHUD_use, R_ADMIN, "Toggle antagHUD usage", "Toggles antag
 		action = "disabled"
 	else
 		for(var/mob/observer/dead/dead_mob in user.get_ghosts())
-			if(!check_rights_for(dead_mob.client, R_HOLDER))						// Add the verb back for all non-admin ghosts
-				revoke(dead_mob, granted_verb(/mob/observer/dead/verb/toggle_antagHUD, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG))
 			to_chat(dead_mob, span_boldnotice("The Administrator has enabled AntagHUD"))	// Notify all observers they can now use AntagHUD
 		CONFIG_SET(flag/antag_hud_allowed, TRUE)
 		action = "enabled"
@@ -800,7 +796,7 @@ CAPABILITIES(/datum/respawn_review)
 
 	if(new_character.mind)
 		new_character.mind.loaded_from_ckey = picked_ckey
-		new_character.mind.loaded_from_slot = picked_slot
+		new_character.mind.set_loaded_from_slot(picked_slot)
 
 	for(var/lang in picked_client.prefs.read_preference(/datum/preference/alternate_languages)) // migrated language pref
 		var/datum/language/chosen_language = GLOB.all_languages[lang]
@@ -815,7 +811,7 @@ CAPABILITIES(/datum/respawn_review)
 		if(charjob)
 			SSjob.equip_rank(new_character, charjob, 1)
 			if(new_character.mind)
-				new_character.mind.assigned_role = text_or_null(charjob)
+				new_character.mind.set_assigned_role(text_or_null(charjob))
 				new_character.mind.role_alt_title = SSjob.get_player_alt_title(new_character, charjob)
 			equip_custom_items(new_character) // readded to enable custom_item.txt
 
@@ -828,7 +824,7 @@ CAPABILITIES(/datum/respawn_review)
 		for(var/obj/item/pda/player_pda in contents_of(new_character))
 			player_pda.name = "PDA-[character_name] ([custom_job_title])"
 			player_pda.set_ownjob(custom_job_title)
-		new_character.mind.assigned_role = custom_job_title
+		new_character.mind.set_assigned_role(custom_job_title)
 		new_character.mind.role_alt_title = custom_job_title
 		to_chat(new_character, "Your job title has been changed to [custom_job_title].")
 

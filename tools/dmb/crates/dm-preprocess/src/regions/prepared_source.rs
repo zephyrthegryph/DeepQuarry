@@ -10,7 +10,7 @@ use dm_syntax::Span;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 
 /// Recognize a literal include candidate from an already prepared logical line.
 /// Candidate discovery does not evaluate whether the directive is active.
@@ -31,31 +31,14 @@ pub struct PreparedLine {
     pub text: SourceText,
 }
 
-/// Captured decoded bytes and their one immutable lexical preparation.
-/// Byte-only consumers may borrow the original without preparing ordinary
-/// lines and directives that they will never read.
-#[derive(Debug)]
+/// Prepared bytes and locations are constructed together and cannot be replaced
+/// independently. Text is decoded by the capture boundary before preparation.
+#[derive(Clone, Debug)]
 pub struct PreparedSource {
     original: SourceText,
-    lexical: OnceLock<PreparedLexical>,
-}
-
-#[derive(Clone, Debug)]
-struct PreparedLexical {
     line_starts: Arc<[usize]>,
     lines: prepared_lines::LineStorage,
     directives: directive_index::DirectiveIndex,
-}
-
-impl Clone for PreparedSource {
-    fn clone(&self) -> Self {
-        // Explicit value clones share the same immutable products. The normal
-        // shared source loans clone the Arc without warming the shell.
-        Self {
-            original: self.original.clone(),
-            lexical: OnceLock::from(self.lexical().clone()),
-        }
-    }
 }
 /// Borrowed allocation exposure; no serialization or lexical interpretation.
 pub enum PreparedSourceStorage<'a> {
@@ -64,47 +47,9 @@ pub enum PreparedSourceStorage<'a> {
     Macro(&'a crate::Macro),
 }
 impl PreparedSource {
-    /// Conservative retained backing for a generated literal-include-only header.
-    /// This is DATA geometry, not source/receipt authority or parser scratch.
-    pub fn include_header_retained_bound(bytes:usize,includes:usize)->Option<usize>{
-        let lines=includes.checked_add(1)?;
-        let rows=lines.checked_mul(std::mem::size_of::<PreparedLine>().max(std::mem::size_of::<prepared_lines::CompactLine>()).checked_add(std::mem::size_of::<usize>())?)?;
-        bytes.checked_add(rows)?.checked_add(directive_index::DirectiveIndex::include_header_storage_bound(lines)?)?.checked_add(std::mem::size_of::<Self>()+16*std::mem::size_of::<usize>())?.checked_mul(4)
-    }
-
-    pub(crate) fn include_header_storage_is_unaliased(&self) -> bool {
-        let Some(lexical) = self.lexical.get() else { return false; };
-        if Arc::weak_count(&lexical.line_starts) != 0 || Arc::strong_count(&lexical.line_starts) != 1
-            || !lexical.lines.storage_is_unaliased() || !lexical.directives.storage_is_unaliased() {
-            return false;
-        }
-        let lines = lexical.lines.view();
-        for (index, line) in lines.iter().enumerate() {
-            if !line.text.shares_backing(&self.original) {
-                return false;
-            }
-            if !line.text.trim().is_empty() && !lexical.directives.get(index)
-                .is_some_and(|directive| directive.parts(line.text).0 == "include") {
-                return false;
-            }
-        }
-        // Exactly one SourceText per issued line, one PreparedSource
-        // original, and one Original acquisition. No transformed line
-        // owner or nested macro payload can occur in this closed cohort.
-        lines.len().checked_add(2).is_some_and(|count|self.original.has_private_transformed_backing(count))
-    }
-
-    /// Storage inspection never causes lexical initialization.
-    pub fn resident_lexical_lines(&self) -> Option<(&Arc<[usize]>, PreparedLines<'_>)> {
-        let lexical = self.lexical.get()?;
-        Some((&lexical.line_starts, lexical.lines.view()))
-    }
-
     pub fn visit_storage(&self, mut visit: impl FnMut(PreparedSourceStorage<'_>)) {
-        if let Some(lexical) = self.lexical.get() {
-            lexical.lines.visit_storage(&mut visit);
-            lexical.directives.visit_storage(&mut visit);
-        }
+        self.lines.visit_storage(&mut visit);
+        self.directives.visit_storage(&mut visit);
     }
 
     pub fn new(original: Arc<str>) -> Self {
@@ -112,25 +57,6 @@ impl PreparedSource {
     }
     /// Consume the decoded source allocation without copying its payload.
     pub fn from_text(original: SourceText) -> Self {
-        let source = Self::without_lexical(original);
-        source.ensure_lexical();
-        source
-    }
-
-    fn without_lexical(original: SourceText) -> Self {
-        Self { original, lexical: OnceLock::new() }
-    }
-
-    /// Eager consumers can initialize even a warm byte-only owner.
-    pub fn ensure_lexical(&self) {
-        self.lexical();
-    }
-
-    fn lexical(&self) -> &PreparedLexical {
-        self.lexical.get_or_init(|| Self::prepare_lexical(&self.original))
-    }
-
-    fn prepare_lexical(original: &SourceText) -> PreparedLexical {
         let mut starts = vec![0];
         starts.extend(
             original
@@ -140,7 +66,7 @@ impl PreparedSource {
         );
         // The comment-blanked copy is planning scratch: a line that comments do not touch is viewed from `original`, and
         // only lines that changed are copied into `changed`, so no per-file copy outlives the plan.
-        let stripped = strip_source_comments(original);
+        let stripped = strip_source_comments(&original);
         let uncommented: &str = &stripped;
         let logical = crate::logical_arena::plan(uncommented);
         // Pass one copies the lines comments touched; pass two builds views over the finished arenas.
@@ -148,8 +74,7 @@ impl PreparedSource {
         let mut changed_ranges: Vec<Option<std::ops::Range<usize>>> =
             Vec::with_capacity(logical.lines.len());
         for line in &logical.lines {
-            let touched = !line.transformed
-                && uncommented[line.range.clone()] != original[line.range.clone()];
+            let touched = !line.transformed && uncommented[line.range.clone()] != original[line.range.clone()];
             changed_ranges.push(touched.then(|| {
                 let start = changed.len();
                 changed.push_str(&uncommented[line.range.clone()]);
@@ -190,8 +115,9 @@ impl PreparedSource {
                 }
             }));
         let directives = directive_index::DirectiveIndex::new(lines.view());
-        PreparedLexical {
+        Self {
             directives,
+            original,
             line_starts: starts.into(),
             lines,
         }
@@ -200,21 +126,17 @@ impl PreparedSource {
         &self.original
     }
     pub fn line_starts(&self) -> &Arc<[usize]> {
-        &self.lexical().line_starts
+        &self.line_starts
     }
-    #[cfg(test)]
-    pub(super) fn directive_index(&self) -> &directive_index::DirectiveIndex {
-        &self.lexical().directives
-    }
-
     pub(crate) fn directive(&self, index: usize) -> Option<&directive_syntax::DirectiveSyntax> {
-        self.lexical().directives.get(index)
+        self.directives.get(index)
     }
     pub(crate) fn is_include(&self, index: usize) -> bool {
         self.directive(index).is_some_and(|directive| {
             directive
                 .parts(
-                    self.lines()
+                    self.lines
+                        .view()
                         .get(index)
                         .expect("directive index belongs to prepared lines")
                         .text,
@@ -224,7 +146,7 @@ impl PreparedSource {
         })
     }
     pub fn lines(&self) -> PreparedLines<'_> {
-        self.lexical().lines.view()
+        self.lines.view()
     }
 }
 
@@ -233,21 +155,17 @@ impl PreparedSource {
 /// tree) share one `PreparedSource` instead of each holding its own copy of the text, its comment-stripped view and its
 /// line tables. The pool is weak: it keeps nothing alive, and a source dies with its last session.
 pub fn shared_prepared(text: SourceText) -> Arc<PreparedSource> {
-    let source = shared_prepared_bytes(text);
-    // Leave the interner lock before materializing potentially large products.
-    source.ensure_lexical();
-    source
-}
-
-/// The same exact-text weak interner for consumers that only need captured
-/// bytes. This neither decodes new bytes nor issues a source receipt.
-pub fn shared_prepared_bytes(text: SourceText) -> Arc<PreparedSource> {
     const SHARDS: usize = 64;
-    static POOL: std::sync::OnceLock<Box<[Mutex<PreparedShard>]>> = std::sync::OnceLock::new();
+    struct Shard {
+        sources: std::collections::HashMap<u128, std::sync::Weak<PreparedSource>>,
+        /// Length at which the shard next drops its dead entries.
+        prune_at: usize,
+    }
+    static POOL: std::sync::OnceLock<Box<[Mutex<Shard>]>> = std::sync::OnceLock::new();
     let pool = POOL.get_or_init(|| {
         (0..SHARDS)
             .map(|_| {
-                Mutex::new(PreparedShard {
+                Mutex::new(Shard {
                     sources: Default::default(),
                     prune_at: 4096,
                 })
@@ -267,38 +185,10 @@ pub fn shared_prepared_bytes(text: SourceText) -> Arc<PreparedSource> {
         if held.original().as_str() == text.as_str() {
             return held;
         }
-        return Arc::new(PreparedSource::without_lexical(text));
+        return Arc::new(PreparedSource::from_text(text));
     }
-    let prepared = Arc::new(PreparedSource::without_lexical(text));
-    publish_prepared(shard, digest, prepared)
-}
-
-struct PreparedShard {
-    sources: std::collections::HashMap<u128, std::sync::Weak<PreparedSource>>,
-    /// Length at which the shard next drops its dead entries.
-    prune_at: usize,
-}
-/// Lexical preparation stays outside the mutex; another reader may have
-/// published its shell after our initial miss. Reuse that winner
-/// only after comparing the complete original text. Neither pointer nor digest
-/// becomes an acquisition/source authority.
-fn publish_prepared(
-    shard: &Mutex<PreparedShard>,
-    digest: u128,
-    prepared: Arc<PreparedSource>,
-) -> Arc<PreparedSource> {
+    let prepared = Arc::new(PreparedSource::from_text(text));
     let mut shard = shard.lock().unwrap_or_else(|error| error.into_inner());
-    if let Some(held) = shard
-        .sources
-        .get(&digest)
-        .and_then(std::sync::Weak::upgrade)
-    {
-        return if held.original().as_str() == prepared.original().as_str() {
-            held
-        } else {
-            prepared
-        };
-    }
     shard.sources.insert(digest, Arc::downgrade(&prepared));
     if shard.sources.len() >= shard.prune_at {
         shard.sources.retain(|_, source| source.strong_count() > 0);
@@ -453,28 +343,6 @@ impl<'a, P> PreparedSourceProvider<'a, P> {
     }
 }
 impl<P: crate::SourceProvider> crate::SourceProvider for PreparedSourceProvider<'_, P> {
-    fn original_raw_source_open_admitted(&self,path:&Path,max_bytes:usize,work:&dyn crate::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->std::io::Result<crate::OriginalRawOpenDecision>,before_read:&mut dyn FnMut(usize)->std::io::Result<()>,before_decode:&mut dyn FnMut(crate::OriginalRawAllocationPlan<'_>)->std::io::Result<()>,acquired:&mut dyn FnMut(&crate::SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<crate::OriginalRawReadOutcome>{self.fallback.original_raw_source_open_admitted(path,max_bytes,work,after_open,before_read,before_decode,acquired)}
- fn original_raw_source_open_owned_admitted(&self,path:&Path,max_bytes:usize,work:&dyn crate::source_arena_credit::SourceArenaWork,after_open:&mut dyn FnMut()->std::io::Result<crate::OriginalRawOpenDecision>,before_read:&mut dyn FnMut(usize)->std::io::Result<()>,before_decode:&mut dyn FnMut(crate::OriginalRawAllocationPlan<'_>)->std::io::Result<()>,fund_text:&crate::source_arena_credit::OriginalReadTextFunding<'_>,acquired:&mut dyn FnMut(&crate::SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<crate::OriginalRawReadOutcome>{self.fallback.original_raw_source_open_owned_admitted(path,max_bytes,work,after_open,before_read,before_decode,fund_text,acquired)}
-
-    fn initial_environment(&self)->crate::InitialEnvironment{self.fallback.initial_environment()}
-    // Original demand never promotes captured native line preparations. Only
-    // the actual fallback raw issuer may lend its acquisition and byte view.
-    fn original_raw_source_checked(&self,path:&Path,max_bytes:usize,before_decode:&mut dyn FnMut(usize,bool,bool)->std::io::Result<()>)->std::io::Result<Option<crate::SourceAcquisitionLease>>{self.fallback.original_raw_source_checked(path,max_bytes,before_decode)}
-    fn path_presence_admitted(&self,path:&Path,work:&dyn crate::source_arena_credit::SourceArenaWork)->std::io::Result<bool>{self.fallback.path_presence_admitted(path,work)}
-    fn original_raw_source_admitted(&self,path:&Path,max_bytes:usize,before_read:&mut dyn FnMut(usize)->std::io::Result<()>,before_decode:&mut dyn FnMut(crate::OriginalRawAllocationPlan<'_>)->std::io::Result<()>,acquired:&mut dyn FnMut(&crate::SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<Option<crate::SourceAcquisitionLease>>{self.fallback.original_raw_source_admitted(path,max_bytes,before_read,before_decode,acquired)}
-    fn original_source_bytes<'a>(&'a self,lease:&'a crate::SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{self.fallback.original_source_bytes(lease)}
-
-
-    fn acquired_source(&self, path: &Path) -> Result<Option<crate::AcquiredSource>, String> {
-        if let Some(source) = self.captures.get(path) {
-            Ok(self.fallback.source_acquisition(path, source.original()))
-        } else {
-            self.fallback.acquired_source(path)
-        }
-    }
-    fn source_acquisition(&self, path: &Path, text: &SourceText) -> Option<crate::AcquiredSource> {
-        self.fallback.source_acquisition(path, text)
-    }
     fn read(&self, path: &Path) -> Result<String, String> {
         match self.captures.get(path) {
             Some(source) => Ok(source.original().to_string()),
@@ -694,10 +562,7 @@ mod tests {
         // Nothing is kept alive by the pool: the text is prepared again, to the same result.
         let again = shared_prepared(String::from(text).into());
         assert_eq!(again.original().as_str(), text);
-        assert_eq!(
-            again.lines().len(),
-            PreparedSource::new(Arc::from(text)).lines().len()
-        );
+        assert_eq!(again.lines().len(), PreparedSource::new(Arc::from(text)).lines().len());
     }
     #[test]
     fn issued_preparations_reuse_bytes_and_exact_access_path_policy() {
@@ -845,151 +710,13 @@ fn prepare_phase_bench() {
     let nfiles = files.len();
     let bytes: usize = files.iter().map(String::len).sum();
     let t = std::time::Instant::now();
-    let uncommented: Vec<_> = files
-        .iter()
-        .map(|f| strip_source_comments(f).into_owned())
-        .collect();
+    let uncommented: Vec<_> = files.iter().map(|f| strip_source_comments(f).into_owned()).collect();
     let strip = t.elapsed();
     let t = std::time::Instant::now();
-    let planned = uncommented
-        .iter()
-        .map(|u| crate::logical_arena::plan(u).lines.len())
-        .sum::<usize>();
+    let planned = uncommented.iter().map(|u| crate::logical_arena::plan(u).lines.len()).sum::<usize>();
     let plan = t.elapsed();
     let t = std::time::Instant::now();
-    let total: usize = files
-        .iter()
-        .map(|f| {
-            PreparedSource::from_text(SourceText::from(f.clone()))
-                .lines()
-                .len()
-        })
-        .sum();
+    let total: usize = files.iter().map(|f| PreparedSource::from_text(SourceText::from(f.clone())).lines().len()).sum();
     let all = t.elapsed();
     eprintln!("files={nfiles} bytes={bytes} strip={strip:?} plan={plan:?} ({planned} lines) from_text total={all:?} ({total} lines)");
 }
-
-#[cfg(test)]
-mod prepared_publish_tests {
-    use super::*;
-    fn empty() -> Mutex<PreparedShard> {
-        Mutex::new(PreparedShard {
-            sources: Default::default(),
-            prune_at: 4096,
-        })
-    }
-    #[test]
-    fn staged_concurrent_misses_reuse_the_first_complete_text_winner() {
-        // Both readers already completed their initial miss and preparation.
-        // Explicit staging, not timing, exercises the second publisher race.
-        let shard = empty();
-        let a = Arc::new(PreparedSource::from_text(
-            "/datum/staged_preparation\n".to_owned().into(),
-        ));
-        let b = Arc::new(PreparedSource::from_text(
-            "/datum/staged_preparation\n".to_owned().into(),
-        ));
-        assert!(!Arc::ptr_eq(&a, &b));
-        let first = publish_prepared(&shard, 17, a);
-        let second = publish_prepared(&shard, 17, b);
-        assert!(Arc::ptr_eq(&first, &second));
-        assert!(Arc::ptr_eq(
-            &shard.lock().unwrap().sources[&17].upgrade().unwrap(),
-            &first
-        ));
-    }
-    #[test]
-    fn late_digest_collision_never_reuses_or_displaces_another_text() {
-        let shard = empty();
-        let a = Arc::new(PreparedSource::from_text(
-            "/datum/first_preparation\n".to_owned().into(),
-        ));
-        let b = Arc::new(PreparedSource::from_text(
-            "/datum/foreign_preparation\n".to_owned().into(),
-        ));
-        let first = publish_prepared(&shard, 17, a);
-        let second = publish_prepared(&shard, 17, b);
-        assert!(!Arc::ptr_eq(&first, &second));
-        assert_eq!(second.original().as_str(), "/datum/foreign_preparation\n");
-        assert!(Arc::ptr_eq(
-            &shard.lock().unwrap().sources[&17].upgrade().unwrap(),
-            &first
-        ));
-    }
-}
-
-#[cfg(test)]
-mod deferred_lexical_tests {
-    use super::*;
-
-    #[test]
-    fn byte_only_capture_does_not_prepare_ordinary_lexical_storage() {
-        let bytes = concat!(
-            "#define DEFERRED_ORIGINAL_CONTROL \\\n",
-            "    1 /* joined comment */\n",
-            "/datum/original_lexical_shell_0290\n",
-        );
-        let deferred = shared_prepared_bytes(bytes.to_owned().into());
-        assert_eq!(deferred.original().as_str(), bytes);
-        assert!(deferred.resident_lexical_lines().is_none());
-        deferred.visit_storage(|_| panic!("census materialized a cold lexical owner"));
-        assert!(deferred.resident_lexical_lines().is_none());
-
-        let eager = shared_prepared(bytes.to_owned().into());
-        assert!(Arc::ptr_eq(&deferred, &eager));
-        assert!(deferred.original().same_view(eager.original()));
-        let expected = PreparedSource::from_text(bytes.to_owned().into());
-        let (starts, lines) = deferred.resident_lexical_lines().unwrap();
-        assert_eq!(starts.as_ref(), expected.line_starts().as_ref());
-        assert_eq!(lines.len(), expected.lines().len());
-        for (actual, expected) in lines.iter().zip(expected.lines().iter()) {
-            assert_eq!(actual.source_span, expected.source_span);
-            assert_eq!(actual.source_line, expected.source_line);
-            assert_eq!(actual.source_lines, expected.source_lines);
-            assert_eq!(actual.text.as_str(), expected.text.as_str());
-        }
-        assert!(deferred.directive(0).is_some());
-    }
-
-    #[test]
-    fn simultaneous_lexical_demand_and_explicit_clone_share_materialized_line_owner() {
-        let bytes = "/datum/original_parallel_lexical_shell_0290\n    var/name = 1\n";
-        let shell = shared_prepared_bytes(bytes.to_owned().into());
-        assert!(shell.resident_lexical_lines().is_none());
-        let executor = dm_exec::BuildExecutor::new(2).unwrap();
-        let barrier = std::sync::Barrier::new(2);
-        let roots = Mutex::new(Vec::new());
-        executor.scope(|scope| {
-            for _ in 0..2 {
-                let (shell, roots, barrier) = (&shell, &roots, &barrier);
-                scope.spawn(move |_| {
-                    barrier.wait();
-                    let starts = Arc::clone(shell.line_starts());
-                    roots.lock().unwrap().push(starts);
-                });
-            }
-        });
-        let roots = roots.into_inner().unwrap();
-        assert_eq!(roots.len(), 2);
-        assert!(Arc::ptr_eq(&roots[0], &roots[1]));
-        let copy = shell.as_ref().clone();
-        assert!(Arc::ptr_eq(&roots[0], copy.line_starts()));
-    }
-}
-
-#[cfg(test)]
-mod generated_header_storage_tests{
- use super::*;
- #[test]fn generated_literal_include_header_bound_covers_actual_retained_rows(){
-  let text="#include \"a.dm\"\n".repeat(1024);
-  let bound=PreparedSource::include_header_retained_bound(text.len(),1024).unwrap();
-  let prepared=PreparedSource::from_text(text.into());
-  let mut actual=std::mem::size_of::<PreparedSource>()+prepared.original().len()+std::mem::size_of_val(prepared.line_starts().as_ref());
-  prepared.visit_storage(|view|match view{PreparedSourceStorage::Buffer{bytes,..}=>actual+=bytes,PreparedSourceStorage::String(value)=>actual+=value.capacity(),PreparedSourceStorage::Macro(_)=>panic!("literal include header cannot contain a define")});
-  assert!(actual<=bound);
-  assert!(PreparedSource::include_header_retained_bound(usize::MAX,1).is_none());
-  assert!(PreparedSource::include_header_retained_bound(0,usize::MAX).is_none());
- }
-}
-
-#[cfg(test)]#[path="source_raw_adapter_tests.rs"]mod raw_adapter_tests;

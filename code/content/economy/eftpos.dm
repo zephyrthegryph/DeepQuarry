@@ -72,20 +72,24 @@
 	tgui_interact(user)
 	return TRUE
 
+MSG_DEF_SELF(eftpos/no_account_for_lock, "No account connected to send transactions to.")
+MSG_DEF_SELF(eftpos/unable_to_link, "Unable to link accounts.")
+
 CAPABILITIES(/obj/item/eftpos)
 	setup(PROC_REF(prepare_financial_terminal))
 	ref_one(nameof(linked_account), /datum/money_account)
 	rolls(nameof(access_code), range_of(1111, 111111))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	interface("Eftpos", title = "EFTPOS scanner")
+	ui_shape(eftpos_name = schema_text(), machine_id = schema_text(), transaction_purpose = schema_text(), transaction_amount = num(), transaction_locked = bool(), transaction_paid = bool(), linked_account_name = schema_text())
 	without("ui_open")
 	op("change_code", ui_act("change_code"), then(PROC_REF(ui_act_change_code)))
 	op("change_id", ui_act("change_id"), then(PROC_REF(ui_act_change_id)))
 	op("link_account", ui_act("link_account"), then(PROC_REF(ui_act_link_account)))
 	op("trans_purpose", ui_act("trans_purpose"), then(PROC_REF(ui_act_trans_purpose)))
 	op("trans_value", ui_act("trans_value"), then(PROC_REF(ui_act_trans_value)))
-	op("toggle_lock", ui_act("toggle_lock"), then(PROC_REF(ui_act_toggle_lock)))
-	op("scan_card", ui_act("scan_card"), then(PROC_REF(ui_act_scan_card)))
+	op("toggle_lock", ui_act("toggle_lock"), needs(req(PROC_REF(req_can_toggle_lock), because = MSG(eftpos/no_account_for_lock))), then(PROC_REF(ui_act_toggle_lock)))
+	op("scan_card", ui_act("scan_card"), needs(req(PROC_REF(req_has_linked_account), because = MSG(eftpos/unable_to_link))), then(PROC_REF(ui_act_scan_card)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -282,20 +286,22 @@ CAPABILITIES(/obj/item/eftpos)
 			if(attempt_code == access_code)
 				set_transaction_locked(0)
 				set_transaction_paid(0)
-	else if(linked_account())
-		set_transaction_locked(1)
 	else
-		to_chat(user, "[icon2html(src, user.client)]" + span_warning("No account connected to send transactions to."))
+		set_transaction_locked(1)
 	return TRUE
+
+/// Locking a transaction needs an account to pay into; unlocking never does.
+/obj/item/eftpos/proc/req_can_toggle_lock(datum/act/op/A)
+	return (transaction_locked || linked_account()) ? null : MSG(eftpos/no_account_for_lock)
+
+/obj/item/eftpos/proc/req_has_linked_account(datum/act/op/A)
+	return linked_account() ? null : MSG(eftpos/unable_to_link)
 
 /obj/item/eftpos/proc/ui_act_scan_card(datum/act/op/A)
 	var/mob/user = A.actor
-	if(linked_account())
-		var/obj/item/I = user.get_active_hand()
-		if(istype(I, /obj/item/card))
-			scan_card(I, user = user)
-	else
-		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Unable to link accounts."))
+	var/obj/item/I = user.get_active_hand()
+	if(istype(I, /obj/item/card))
+		scan_card(I, user = user)
 	return TRUE
 
 /obj/item/eftpos/proc/ui_act_reset(datum/act/op/A)

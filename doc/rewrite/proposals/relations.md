@@ -1,5 +1,7 @@
 # Proposal: finishing the relations layer and the stored-reference migration (design only)
 
+> Superseded in part: latent contents (latent entries, latent-safe types, collapse, pins, the latency policy, REQ_READS_TYPE and SLOT_DROP_TO_LATENT) were removed; contents are always real things. Every mention of them below is history.
+
 Status: decisions D1 to D21 approved by the user (2026-10-17), with three final calls written in below (D6 hot paths, D11 native built-ins, D17 `SPILL_FRACTION`); this document is the written form. Docs only: no code, and `final_api.html`
 is not edited (section 11 lists the edits it needs).
 Scope: doc section 6 (`final_api.html`: "Relations", "Storing references", "Naming an entity in data"), `proposals/reference_storage.md`,

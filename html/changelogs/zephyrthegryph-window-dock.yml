@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Window dock: any machine, APC or console window can dock into the right panel (dock button in its titlebar, or drop it on the panel). Docked windows collapse to their titlebar, float back out, close, resize from their bottom edge, reorder by dragging their titlebar, and stack into tabs by dropping one titlebar on another. Your dock layout is remembered."
+  - qol: "Collapsed or background-tab docked windows stop receiving updates until shown."

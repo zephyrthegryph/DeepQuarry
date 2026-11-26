@@ -96,6 +96,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_contrib)
 	var/fast = FALSE
 	/// The relation vars to walk from the written entity back to the reader, nearest the reader first: one for "rel.var", more for "a.b.var".
 	var/list/path
+	/// The contribution that reads this hop when it sits inside a when() block, else null: a reader whose gate is closed is not reached.
+	var/datum/stat_contrib/gated
+
+CAPABILITIES(/datum/stat_hop)
+	ref_one(nameof(gated), /datum/stat_contrib)
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_type_info)
 /// Everything the stat layer knows about one entity type, built from its compiled table. Read-only after build.
@@ -119,6 +124,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_type_info)
 	var/list/consts
 	/// TRUE when instances need their stats computed at init (any static contribution or gating).
 	var/init_needed = FALSE
+	/// The stats an instance computes at init, in rank order (stat_type_init_todo()): built on the first init, never written after.
+	var/list/init_todo
 	/// The relation vars of this type's one-relation hops, whose targets the stat layer indexes (stat_hop_attach).
 	var/list/hop_rels
 	/// "[stat id]" -> its rank: one above the highest rank of any stat it reads on the entity (0 when it reads none).
@@ -157,6 +164,25 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_type_info)
 		return info
 	return stat_type_build(E)
 
+/// Does a write of `key` on E reach the stat layer? stat_input_keys says some type's stat reads the key; this narrows it to E's type: a stat of
+/// E's type reads it (inputs), a contribution of E's type is carried by it (ct_entries) or hops over it (hop_rels), or a reader elsewhere reaches
+/// E through it (stat_hop_index) or a system reads it (stat_sys_vars). Those are everything stat_relation_changed() and stat_inputs_changed()
+/// act on, so FALSE means both would do nothing. Before the type tables exist the answer is TRUE (asked again later, never cached).
+/proc/stat_type_reads_key(datum/E, key)
+	if(!GLOB?.stat_input_keys?[key])
+		return FALSE
+	if(GLOB.stat_hop_index?[key] || GLOB.stat_sys_vars?[key])
+		return TRUE
+	var/datum/stat_type_info/I = stat_type_of(E)
+	if(!I)
+		return !islist(GLOB?.stat_type_index) || table_of(E) == table_empty()
+	if(I.inputs[key] || (I.hop_rels && (key in I.hop_rels)))
+		return TRUE
+	for(var/datum/stat_contrib/ct as anything in I.ct_entries)
+		if(ct.rel == key)
+			return TRUE
+	return FALSE
+
 PROC_SUMMARY(/proc/stat_type_build) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_type_build(datum/E)
 	var/datum/type_table/T = table_of(E)
@@ -174,9 +200,12 @@ PROC_SUMMARY(/proc/stat_type_build) // vars[] / call() dispatcher: the walk cann
 	I.hops = list()
 	I.has_var = list()
 	I.consts = list()
-	for(var/id in GLOB.stat_defs)
+	// Only the stats declared on E's type or an ancestor (most types declare none): asking every stat of the registry was ~600 k
+	// stat_declared_on() calls at boot. The registry order is kept.
+	var/list/declared_here = stat_defs_declared_under(E.type)
+	for(var/id in (length(declared_here) ? GLOB.stat_defs : null))
 		var/datum/stat_def/def = GLOB.stat_defs[id]
-		if(!stat_declared_on(E.type, def))
+		if(!declared_here[def])
 			continue
 		I.defs += def // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 		I.has_var[def.skey] = (def.name in E.vars) ? TRUE : FALSE
@@ -338,11 +367,15 @@ GLOBAL_LIST_INIT(stat_input_keys, stat_input_names_build())
 /// The reads E5's generator recorded for holder proc `proc_name` of E's type (or an ancestor), as input keys: "var", "rel.var", "a.b.var",
 /// "sys:system.var". A read through an actor, held item or target is not an input of the holder and is left out.
 /proc/stat_generated_reads(datum/E, proc_name, datum/act/A = null, datum/lookup_read_scope/scope = null)
-	var/list/keys = lookup_reads_for(E, proc_name, A, scope)
+	return lookup_reads_for(E, proc_name, A, scope) + stat_generated_table_reads(E.type, proc_name)
+
+/// The keys the build's read table (code/_generated/reads.dm) lists for proc `proc_name` of type `path` or the nearest parent that has it:
+/// what the type alone decides, without the lookup reads of an instance.
+/proc/stat_generated_table_reads(path, proc_name)
+	var/list/keys = list()
 	var/list/table = GLOB.generated_reads_table
 	if(!length(table))
 		return keys
-	var/path = E.type
 	var/row
 	while(path)
 		row = table["[path]::[proc_name]"]
@@ -597,6 +630,8 @@ PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the 
 		hop.stat_id = stat_id
 		hop.skey = stat_id ? "[stat_id]" : null
 		hop.ct = stat_id ? null : contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
+		if(contrib && length(contrib.whens))
+			rel_set(hop, nameof(/datum/stat_hop::gated), contrib)
 		hop.settle = length(segments) == 1 ? stat_hop_settle(E, hop.rel_var, hop.remote_var) : SETTLE_MARKED
 		// A factors() entry reading its receiver reads the entity that owns it: that entity's sources are few, so the table follows the write at once.
 		if(contrib?.table_kind && length(segments) == 1)

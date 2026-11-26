@@ -38,7 +38,7 @@ ADMIN_VERB(dq_inspect_contract, R_ADMIN, "Inspect Contract", "Inspect contract s
 			continue
 		html += "<tr><td>[worldtime2stationtime(event.occurred_at)]</td><td>[html_encode(event.id)]</td><td>[html_encode(event.event_type)]</td><td>[html_encode(event.fact_id || "final event")] / [event.fact_revision]</td><td>[event.fact_active ? "yes" : "no"]</td><td>[html_encode(event.actor_name || event.actor_account || event.source_type || "system")]</td><td>[html_encode(event.value("detail") || "")]</td></tr>"
 	html += "</table>"
-	user.mob << browse(html, "window=dq_contract_inspector;size=760x620")
+	dq_admin_report_html(user.mob, "Contract: [contract.id]", html) // a pooled tgui window: docks and floats like every other (window_system.md)
 
 ADMIN_VERB(dq_inspect_contract_board, R_ADMIN, "Inspect Contract Board", "Inspect offer queues, limits, cooldowns, and lifecycle outcomes.", ADMIN_CATEGORY_DEBUG)
 	var/list/summary = SScontracts.lifecycle_summary()
@@ -71,7 +71,7 @@ ADMIN_VERB(dq_inspect_contract_board, R_ADMIN, "Inspect Contract Board", "Inspec
 		var/datum/contract_lifecycle_entry/entry = contracts_lifecycle_history()[index]
 		html += "<tr><td>[worldtime2stationtime(entry.time)]</td><td>[html_encode(entry.action)]</td><td>[html_encode(entry.definition_id)] / [html_encode(entry.contract_id || "candidate")]</td><td>[html_encode(entry.board_key || "none")]</td><td>[html_encode(entry.reason || "") ]</td></tr>"
 	html += "</table>"
-	user.mob << browse(html, "window=dq_contract_board;size=900x680")
+	dq_admin_report_html(user.mob, "Contract Board", html)
 
 /datum/prompt/choice/contract_inspector_review
 	recheck_on_open = TRUE

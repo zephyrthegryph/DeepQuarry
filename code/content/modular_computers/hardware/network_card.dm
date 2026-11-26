@@ -104,8 +104,8 @@ CAPABILITIES(/obj/item/computer_hardware/network_card)
 		var/holderz = get_z(holder2())
 		if(!holderz) //no reception in nullspace
 			return 0
-		var/list/zlevels_in_range = using_map.get_map_levels(holderz, FALSE) // om_range = DEFAULT_OVERMAP_RANGE)
-		var/list/zlevels_in_long_range = using_map.get_map_levels(holderz, TRUE, om_range = DEFAULT_OVERMAP_RANGE) - zlevels_in_range
+		var/list/zlevels_in_range = using_map.get_map_levels(holderz, FALSE) // overmap_range = DEFAULT_OVERMAP_RANGE)
+		var/list/zlevels_in_long_range = using_map.get_map_levels(holderz, TRUE, overmap_range = DEFAULT_OVERMAP_RANGE) - zlevels_in_range
 		var/best = 0
 		for(var/obj/machinery/ntnet_relay/R as anything in GLOB.ntnet_global.relays)
 			//Relay is down

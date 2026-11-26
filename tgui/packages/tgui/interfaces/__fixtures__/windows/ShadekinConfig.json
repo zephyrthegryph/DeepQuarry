@@ -1,0 +1,12 @@
+{
+	"stun_time": 4,
+	"flicker_time": 8,
+	"flicker_color": "#E0EFF0",
+	"flicker_break_chance": 3,
+	"flicker_distance": 6,
+	"no_retreat": 0,
+	"nutrition_energy_conversion": 1,
+	"hide_voice_in_phase": 0,
+	"extended_kin": 1,
+	"savefile_selected": 1
+}

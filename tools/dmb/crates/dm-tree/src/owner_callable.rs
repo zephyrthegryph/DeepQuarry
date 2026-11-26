@@ -32,58 +32,10 @@ impl Default for RetainedCallableOwners {
         }
     }
 }
-/// Optional, request-local borrower of an existing callable artifact owner.
-/// The covered roster is funded by the receiving declaration operation.
-pub(crate) struct AuthoredCallableLoan<'a> {
-    declarations: &'a KeyedDeclarations,
-    prior: &'a RetainedCallableOwners,
-    covered: Vec<SymbolId>,
-    _credit: dm_syntax::SettingRootLease,
-}
-impl<'a> AuthoredCallableLoan<'a> {
-    pub(crate) fn try_new(
-        declarations: &'a KeyedDeclarations,
-        prior: &'a RetainedCallableOwners,
-        admission: &dm_syntax::SettingAdmission<'_>,
-    ) -> std::io::Result<Option<Self>> {
-        let count = declarations.owners().len();
-        let Some(bytes) = count.checked_mul(std::mem::size_of::<SymbolId>()) else {
-            return Ok(None);
-        };
-        let Some(credit) = admission.try_reserve_optimization(bytes)
-            .map_err(|proxy| admission.take_operational_error().unwrap_or(proxy))? else {
-            return Ok(None);
-        };
-        let mut covered = Vec::new();
-        if covered.try_reserve_exact(count).is_err() || covered.capacity() != count {
-            return Ok(None);
-        }
-        Ok(Some(Self { declarations, prior, covered, _credit: credit }))
-    }
-
-    pub(crate) fn seed(&mut self, tree: &SemanticTree, callables: &mut CallableKinds) {
-        self.prior.visit_duplicate_free(tree, self.declarations, |owner, anchors| {
-            self.covered.push(owner);
-            for &(name, kind) in anchors {
-                callables.insert((owner, name), kind);
-            }
-        });
-        self.covered.sort_unstable();
-    }
-
-    pub(crate) fn covers(&self, owner: SymbolId) -> bool {
-        self.covered.binary_search(&owner).is_ok()
-    }
-}
-const KEY_PREFIX: &[u8] = b"owner-callable-anchors-v1";
-fn key_bytes(owner: SymbolId) -> [u8; KEY_PREFIX.len() + std::mem::size_of::<u64>()] {
-    let mut bytes = [0; KEY_PREFIX.len() + std::mem::size_of::<u64>()];
-    bytes[..KEY_PREFIX.len()].copy_from_slice(KEY_PREFIX);
-    bytes[KEY_PREFIX.len()..].copy_from_slice(&owner.bits().to_le_bytes());
-    bytes
-}
 fn key(owner: SymbolId) -> Arc<[u8]> {
-    Arc::from(key_bytes(owner).as_slice())
+    let mut bytes = b"owner-callable-anchors-v1".to_vec();
+    bytes.extend_from_slice(&owner.bits().to_le_bytes());
+    bytes.into()
 }
 impl RetainedCallableOwners {
     pub(crate) fn with_shared(owner: Arc<crate::SharedNormalizedDeclarations>) -> Self {
@@ -108,28 +60,6 @@ impl RetainedCallableOwners {
         ),
     ) {
         self.store.visit_storage(visit);
-    }
-    /// Probe the existing authored artifact under the recipient's actual
-    /// declaration rows. No map or claim from the lender is installed.
-    pub(crate) fn visit_duplicate_free(
-        &self,
-        tree: &SemanticTree,
-        declarations: &KeyedDeclarations,
-        mut visit: impl FnMut(SymbolId, &[(SymbolId, MemberKind)]),
-    ) {
-        let empty = CallableKinds::new();
-        let host = DeclarationHost {
-            declarations,
-            tree,
-            member_keys: &[],
-            callable_kinds: &empty,
-        };
-        for (owner, _) in declarations.owners() {
-            if let Some(value) = self.store.lookup_duplicate_free(&key_bytes(*owner), &host) {
-                self.hits.fetch_add(1, Ordering::Relaxed);
-                visit(*owner, &value.anchors);
-            }
-        }
     }
     pub(crate) fn collect(
         &self,
@@ -249,28 +179,6 @@ mod tests {
             content: 0,
         }
     }
-    #[test]
-    fn authored_callable_loan_funds_its_covered_roster_before_use() {
-        use std::sync::atomic::AtomicUsize;
-        let prior = RetainedCallableOwners::default();
-        let owner = SymbolId::of("/datum/funded");
-        let name = SymbolId::of("action");
-        let (declarations, _) = KeyedDeclarations::capture(None, &[
-            member(owner, name, MemberKind::Proc, DefinitionMode::Declare),
-        ]).unwrap();
-        let used = dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();
-        let exact = std::mem::size_of::<SymbolId>();
-        let limited = dm_syntax::SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (exact - 1), &|| Ok(()));
-        assert!(AuthoredCallableLoan::try_new(&declarations, &prior, &limited).unwrap().is_none());
-        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
-        let admitted = dm_syntax::SettingAdmission::new(&used, dm_syntax::SettingChargeCounter::root_allocation_bytes() + (exact), &|| Ok(()));
-        let loan = AuthoredCallableLoan::try_new(&declarations, &prior, &admitted).unwrap().unwrap();
-        assert_eq!(loan.covered.capacity(), 1);
-        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes() + (exact));
-        drop(loan);
-        assert_eq!(used.load(Ordering::Acquire), dm_syntax::SettingChargeCounter::root_allocation_bytes());
-    }
-
     #[test]
     fn keyed_catalog_matches_encounter_precedence_and_reuses_unchanged_shapes() {
         let retained = RetainedCallableOwners::default();

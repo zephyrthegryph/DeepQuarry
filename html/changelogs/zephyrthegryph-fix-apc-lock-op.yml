@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "An empty-handed click on an APC or air alarm no longer toggles its ID lock; only an ID in hand, an alt-click or the menu does"
+  - bugfix: "The lock line in the right-click menu reads Lock or Unlock for the current state instead of Toggle Worn"

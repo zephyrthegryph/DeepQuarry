@@ -40,6 +40,10 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		return FALSE
 	if(holder.has_any_reagent(X.reagent_blocked))
 		return FALSE
+	if(X.route_id && !chem_route_of(X)?.can_run(holder))
+		return FALSE
+	if(!holder.reaction_temperature_ok(X))
+		return FALSE
 	if(!isnull(X.holds) && !xform_cond_holds(X, holder, X.holds))
 		return FALSE
 	return TRUE
@@ -73,6 +77,11 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 	var/amt_produced = X.result_amount * reaction_progress
 	if(X.result)
 		holder.add_reagent(X.result, amt_produced, data, safety = 1, was_from_belly = belly_reagent)
+		holder.apply_temperature_effects(X, amt_produced)
+		if(X.route_id)
+			chem_route_of(X)?.after_step(holder, amt_produced)
+		for(var/list/byproduct as anything in X.byproducts)
+			holder.add_reagent(byproduct[1], byproduct[2] * reaction_progress, safety = 1)
 
 	xform_effects(X, holder, owner, amt_produced)
 	if(SScontracts && X.result && amt_produced > 0)
@@ -93,7 +102,7 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		seen[1] += reaction_progress
 		seen[2] += amt_produced
 	if(GLOB.xform_trace)
-		log_world("XFORM: [X.rule_type] stepped [reaction_progress] in [holder.my_atom] ([holder.my_atom?.type]); made [amt_produced] of [X.result || "nothing"]")
+		log_world("XFORM: [X.route_id || X.rule_type] stepped [reaction_progress] in [holder.my_atom] ([holder.my_atom?.type]); made [amt_produced] of [X.result || "nothing"]")
 	return reaction_progress
 
 /// What a step does besides moving reagents, in the order the old on_reaction() ran it: the gas taken from the air, the energy booked, what it spawns, the rule's tail.
@@ -140,6 +149,10 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 	if(air)
 		heat_add(air, X.energy, XFORM_HEAT_SOURCE)
 
+/// `steps` rules fired in a settle of this atom's reagents, before they are announced. A vessel overrides it (its material leaches into what it holds); nothing else does.
+/atom/proc/xform_steps_settled(steps)
+	return
+
 /// Settles the reagents of `holder`: steps every rule that holds until none does. Returns the rules that fired, in the order they first did.
 /// Announces them (says, plays, notice) before returning; the caller updates the holder's totals and publishes what it publishes.
 /proc/xform_settle_reagents(datum/reagents/holder)
@@ -171,6 +184,8 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 			log_world("XFORM: settle of [holder.my_atom] ([holder.my_atom?.type]) stopped after [passes] passes; fired: [jointext(names, ", ")]")
 			break
 	while(occurred)
+	if(length(fired))
+		holder.my_atom?.xform_steps_settled(length(fired))
 	for(var/datum/xform/X as anything in fired)
 		xform_announce(X, holder, ledger[X])
 	return fired

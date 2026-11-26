@@ -130,11 +130,8 @@ export function startSettingsMigration(next: MergedSettings): void {
   });
   draftSettings.initialized = true;
   draftSettings.view = defaultSettings.view; // Preserve view state
-  // Before version 2 'light' was the default, so a stored 'light' mostly means
-  // nobody chose. It moves to dark once; choosing light again sticks.
-  if ((next.version ?? 0) < 2 && draftSettings.theme === 'light') {
-    draftSettings.theme = defaultSettings.theme;
-  }
+  // The chat has one theme: a stored `theme` from before is not in the schema,
+  // so smoothMerge drops it and the save below no longer carries it.
   draftSettings.version = defaultSettings.version;
 
   generalSettingsHandler(draftSettings);

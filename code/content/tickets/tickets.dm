@@ -89,7 +89,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/tickets)
 	var/list/dat = list("<html><head><title>[title]</title></head>")
 	dat += "<A href='byond://?_src_=holder;[HrefToken(user)];tickets=[state]'>Refresh</A><br><br>"
 	for(var/datum/ticket/T as anything in l2b)
-		dat += span_adminnotice(span_adminhelp("Ticket #[T.id]") + ": <A href='byond://?_src_=holder;ticket=[handle_of(T)];[HrefToken(user)];ticket_action=ticket'>[T.initiator_key_name]: [T.name]</A>") + "<br>"
+		dat += span_adminnotice(span_adminhelp("Ticket #[T.id]") + ": <A href='byond://?_src_=holder;ticket=[handle_text(handle_of(T))];[HrefToken(user)];ticket_action=ticket'>[T.initiator_key_name]: [T.name]</A>") + "<br>"
 	dat += "</html>"
 	// structured TGUI AdminReport (fallback path; primary tickets
 	// UI is the dedicated TGUI module).
@@ -255,6 +255,7 @@ CAPABILITIES(/obj/effect/statclick/ticket_list)
 CAPABILITIES(/datum/ticket)
 	owns_one(nameof(statclick), /obj/effect/statclick/ticket)
 	interface("Ticket", state = nameof(GLOB.tgui_mentor_state))
+	ui_shape(id = int(), name = schema_text(), ticket_ref = num(), state = schema_text(), level = int(), handler = schema_text(), opened_at = num(), closed_at = num(), opened_at_date = schema_text(), closed_at_date = schema_text(), actions = schema_text(), log = nullable(map_of(schema_text(), schema_text())))
 	op("retitle", ui_act("retitle"), then(PROC_REF(ui_act_retitle)))
 	op("reopen", ui_act("reopen"), then(PROC_REF(ui_act_reopen)))
 	op("legacy", ui_act("legacy"), then(PROC_REF(ui_act_legacy)))
@@ -364,29 +365,29 @@ CAPABILITIES(/datum/ticket)
 		ref_src = handle_of(src)
 
 	if(level == 1)
-		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=reject'>REJT</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=icissue'>IC</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=close'>CLOSE</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=resolve'>RSLVE</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=handleissue'>HANDLE</A>)"
+		. = " (<A href='byond://?_src_=holder;ticket=[handle_text(ref_src)];[HREF_TOKEN_PLACEHOLDER];ticket_action=reject'>REJT</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[handle_text(ref_src)];[HREF_TOKEN_PLACEHOLDER];ticket_action=icissue'>IC</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[handle_text(ref_src)];[HREF_TOKEN_PLACEHOLDER];ticket_action=close'>CLOSE</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[handle_text(ref_src)];[HREF_TOKEN_PLACEHOLDER];ticket_action=resolve'>RSLVE</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[handle_text(ref_src)];[HREF_TOKEN_PLACEHOLDER];ticket_action=handleissue'>HANDLE</A>)"
 	else
-		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=resolve'>RSLVE</A>)"
-		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=escalate'>ESCALATE</A>)"
+		. = " (<A href='byond://?_src_=holder;ticket=[handle_text(ref_src)];[HREF_TOKEN_PLACEHOLDER];ticket_action=resolve'>RSLVE</A>)"
+		. += " (<A href='byond://?_src_=holder;ticket=[handle_text(ref_src)];[HREF_TOKEN_PLACEHOLDER];ticket_action=escalate'>ESCALATE</A>)"
 
 // the ticket panel reads this too
 /datum/ticket/proc/LinkedReplyName(ref_src)
 	if(!ref_src)
 		ref_src = handle_of(src)
-	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=reply'>[initiator_key_name]</A>"
+	return "<A href='byond://?_src_=holder;ticket=[handle_text(ref_src)];[HREF_TOKEN_PLACEHOLDER];ticket_action=reply'>[initiator_key_name]</A>"
 
 //private
 /datum/ticket/proc/TicketHref(msg, ref_src, action = "ticket")
 	if(!ref_src)
 		ref_src = handle_of(src)
-	return "<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=[action]'>[msg]</A>"
+	return "<A href='byond://?_src_=holder;ticket=[handle_text(ref_src)];[HREF_TOKEN_PLACEHOLDER];ticket_action=[action]'>[msg]</A>"
 
 /*
-	var/chat_msg = span_notice("(<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=escalate'>ESCALATE</A>) Ticket [TicketHref("#[id]", ref_src)]" + span_bold(": [LinkedReplyName(ref_src)]:") + " [msg]")
+	var/chat_msg = span_notice("(<A href='byond://?_src_=holder;ticket=[handle_text(ref_src)];[HREF_TOKEN_PLACEHOLDER];ticket_action=escalate'>ESCALATE</A>) Ticket [TicketHref("#[id]", ref_src)]" + span_bold(": [LinkedReplyName(ref_src)]:") + " [msg]")
 	 */
 
 //message from the initiator without a target, all admins will see this
@@ -791,7 +792,7 @@ CAPABILITIES(/obj/effect/statclick/ticket)
 							if(found.mind && found.mind.special_role)
 								is_antag = 1
 							founds += "Name: [found.name]([found.real_name]) Ckey: [found.ckey] [is_antag ? "(Antag)" : null] "
-							var/textentry = "(<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[url_encode(handle_of(found))]'>?</A>|<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HREF_TOKEN_PLACEHOLDER];adminplayerobservefollow=[url_encode(handle_of(found))]'>F</A> "
+							var/textentry = "(<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HREF_TOKEN_PLACEHOLDER];adminmoreinfo=[url_encode(handle_text(handle_of(found)))]'>?</A>|<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HREF_TOKEN_PLACEHOLDER];adminplayerobservefollow=[url_encode(handle_text(handle_of(found)))]'>F</A> "
 							msg += "[original_word]" + span_small((is_antag ? span_red(textentry) : span_black(textentry)))
 							continue
 		msg += "[original_word] "

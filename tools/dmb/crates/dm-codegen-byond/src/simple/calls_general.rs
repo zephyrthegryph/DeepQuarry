@@ -11,26 +11,6 @@ impl Compiler<'_> {
         named_arguments: bool,
         arglist_argument: Option<&Expr>,
     ) -> Result<(), LowerError> {
-        self.named_call_scoped(
-            expr,
-            name,
-            args,
-            statement,
-            named_arguments,
-            arglist_argument,
-            false,
-        )
-    }
-    pub(super) fn named_call_scoped(
-        &mut self,
-        expr: &Expr,
-        name: &str,
-        args: &[Expr],
-        statement: &str,
-        named_arguments: bool,
-        arglist_argument: Option<&Expr>,
-        global_only: bool,
-    ) -> Result<(), LowerError> {
         if name == "input" {
             return self.input_call(args, &[], None, None, statement);
         }
@@ -557,9 +537,8 @@ impl Compiler<'_> {
             self.record_named_intrinsic(expr, name);
             return Ok(());
         }
-        let has_member_proc = !global_only
-            && (self.current_has_declared_member_proc(name)?
-                || self.current_member_proc(name)?.is_some());
+        let has_member_proc = self.current_has_declared_member_proc(name)?
+            || self.current_member_proc(name)?.is_some();
         if !has_member_proc && self.has_global_proc(name)? {
             if named_arguments || arglist_argument.is_some() {
                 if named_arguments {
@@ -613,14 +592,6 @@ impl Compiler<'_> {
                 | "json_decode"
         ) {
             return Err(error(statement, "unlowered built-in call"));
-        }
-        if global_only {
-            let mut failure = error(statement, &format!("unresolved global procedure: {name}"));
-            if self.lookup.is_some() {
-                failure.kind = LowerErrorKind::SourceError;
-                failure.reason = format!("{name}: undefined proc");
-            }
-            return Err(failure);
         }
         {
             let proc_selector = self
@@ -697,7 +668,7 @@ fn hex_color_components(text: &[u8]) -> Option<Vec<u32>> {
 fn constant_color_text(arg: &Expr) -> Option<Vec<u8>> {
     match &arg.kind {
         ExprKind::Group(inner) => constant_color_text(inner),
-        ExprKind::Literal(raw) => decode_native_constant_string_literal(raw).ok().flatten(),
+        ExprKind::Literal(raw) => decode_constant_string_literal(raw).ok().flatten(),
         ExprKind::Call { callee, args }
             if matches!(&callee.kind, ExprKind::Ident(name) if name == "rgb")
                 && (args.len() == 3 || args.len() == 4) =>

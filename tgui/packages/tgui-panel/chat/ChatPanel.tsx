@@ -4,9 +4,10 @@
  * @license MIT
  */
 
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtomValue } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { Button } from 'tgui-core/components';
+import { store } from '../events/store';
 import {
   chatPagesRecordAtom,
   currentPageIdAtom,
@@ -25,7 +26,6 @@ export function ChatPanel(props: Props) {
   const scrollTracking = useAtomValue(scrollTrackingAtom);
   // Page stuff
   const currentPageId = useAtomValue(currentPageIdAtom);
-  const [pagesRecord, setPagesRecord] = useAtom(chatPagesRecordAtom);
 
   /** Mounts the renderer */
   useEffect(() => {
@@ -34,16 +34,44 @@ export function ChatPanel(props: Props) {
     }
   }, []);
 
+  /**
+   * Keeps a pinned chat at the newest line while the window is resized. A
+   * plain DOM write once per frame: no state, no render, no measuring.
+   */
+  useEffect(() => {
+    let frame = 0;
+    const stick = () => {
+      frame = 0;
+      if (chatRenderer.scrollTracking) {
+        chatRenderer.scrollToBottom();
+      }
+    };
+    const onResize = () => {
+      if (!frame) {
+        frame = requestAnimationFrame(stick);
+      }
+    };
+    window.addEventListener('resize', onResize, { passive: true });
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (frame) {
+        cancelAnimationFrame(frame);
+      }
+    };
+  }, []);
+
   /** Resets unread count when scroll tracking is enabled */
   useEffect(() => {
     if (scrollTracking) {
+      // From the record as it is now, not this render's copy.
+      const record = store.get(chatPagesRecordAtom);
       const draft: Page = {
-        ...pagesRecord[currentPageId],
+        ...record[currentPageId],
         unreadCount: 0,
       };
 
-      setPagesRecord({
-        ...pagesRecord,
+      store.set(chatPagesRecordAtom, {
+        ...record,
         [currentPageId]: draft,
       });
     }
@@ -63,18 +91,26 @@ export function ChatPanel(props: Props) {
     });
   }, [props.fontSize, props.lineHeight]);
 
+  return <div className="Chat" ref={ref} />;
+}
+
+/**
+ * The button that jumps back to the newest line. Rendered by the panel inside
+ * the message area (outside the scrolling content), so it floats over the
+ * messages and never over the input row below them.
+ */
+export function ScrollToBottom() {
+  const scrollTracking = useAtomValue(scrollTrackingAtom);
+  if (scrollTracking) {
+    return null;
+  }
   return (
-    <>
-      <div className="Chat" ref={ref} />
-      {!scrollTracking && (
-        <Button
-          className="Chat__scrollButton"
-          icon="arrow-down"
-          onClick={() => chatRenderer.scrollToBottom()}
-        >
-          Scroll to bottom
-        </Button>
-      )}
-    </>
+    <Button
+      className="Chat__scrollButton"
+      icon="arrow-down"
+      onClick={() => chatRenderer.scrollToBottom()}
+    >
+      Scroll to bottom
+    </Button>
   );
 }

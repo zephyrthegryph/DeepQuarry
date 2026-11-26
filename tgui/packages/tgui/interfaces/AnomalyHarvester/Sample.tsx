@@ -1,11 +1,17 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, DmIcon, Section, Stack } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
-import type { Data } from './types';
+import type {
+  AnomalyHarvesterActions,
+  AnomalyHarvesterData,
+} from '../generated/AnomalyHarvester';
 
 export const SampleDisplay = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { samples } = data;
+  const { act, data } = useBackend<
+    AnomalyHarvesterData,
+    AnomalyHarvesterActions
+  >();
+  const { samples = [] } = data;
 
   return (
     <Section

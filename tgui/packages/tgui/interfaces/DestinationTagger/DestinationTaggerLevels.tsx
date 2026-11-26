@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Divider, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type { DestinationTaggerActions } from '../generated/DestinationTagger';
 import type { Data } from './types';
 
 export const DestinationTaggerLevels = (props: { tagSearch: string }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DestinationTaggerActions>();
 
   const { level_names, taggerLocs } = data;
   const { tagSearch } = props;
@@ -68,7 +69,7 @@ const LevelEntry = (props: {
   result: string[];
   tagSearch: string;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DestinationTaggerActions>();
 
   const { currTag } = data;
   const { level, result, tagSearch } = props;

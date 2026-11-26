@@ -1,5 +1,6 @@
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -10,11 +11,11 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { CloningConsoleActions } from '../generated/CloningConsole';
 import type { Data } from './types';
 
 export const CloningConsoleMain = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CloningConsoleActions>();
   const {
     loading,
     scantemp,
@@ -34,9 +35,7 @@ export const CloningConsoleMain = (props) => {
         buttons={
           <Stack>
             <Stack.Item>
-              <Box inline color="label">
-                Scanner Lock:&nbsp;
-              </Box>
+              <Label inline>Scanner Lock:&nbsp;</Label>
             </Stack.Item>
             <Stack.Item>
               <Button
@@ -68,7 +67,7 @@ export const CloningConsoleMain = (props) => {
                 &nbsp; Scanning...
               </Box>
             ) : (
-              <Box color={scantemp.color}>{scantemp.text}</Box>
+              <Box color={scantemp?.color}>{scantemp?.text}</Box>
             )}
           </LabeledList.Item>
           {!!can_brainscan && (
@@ -144,7 +143,7 @@ export const CloningConsoleMain = (props) => {
                     width: '100%',
                   }}
                 />
-                <Box color="label">Pod #{i + 1}</Box>
+                <Label>Pod #{i + 1}</Label>
                 <Box bold color={pod.biomass >= 150 ? 'good' : 'bad'} inline>
                   <Icon name={pod.biomass >= 150 ? 'circle' : 'circle-o'} />
                   &nbsp;
@@ -163,7 +162,7 @@ export const CloningConsoleMain = (props) => {
 };
 
 export const CloningConsoleRecords = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CloningConsoleActions>();
   const { records } = data;
   if (!records.length) {
     return (

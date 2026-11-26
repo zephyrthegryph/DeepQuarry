@@ -35,6 +35,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_table)
 	var/list/caps
 	/// The reports made while building it.
 	var/list/errors
+	/// "kind|key" -> the centry a later declaration of the same key replaces in place (table_add_item()). Copied from the parent table.
+	var/list/keyed
 	/// var names of the rel_grants() entries (relation-scoped grants), or null.
 	var/list/rel_grant_vars
 	/// TRUE when the type declares a while_slotted() entry: the ledger asks before it spends anything on a slot move (scopes.dm).
@@ -104,29 +106,55 @@ GLOBAL_VAR(declare_report_capture)
 		empty.caps = list()
 	return empty
 
-/// The compiled table of `type` without an instance in hand (explain tools, tests): a probe instance is made, asked and deleted.
+/// The compiled table of `type` without an instance in hand (explain tools, tests). No instance is made: the generated block proc of every ancestor that
+/// declares a block is called as a plain proc (src null; it reads nothing of src, only nameof() and PROC_REF() names, which are
+/// compile-time text), so nothing of the type runs: no New(), no Initialize(), no registration. Null for a type with no block anywhere above it.
+/// Each block is a proc its type defines (generated `declared_block_<type>()`, by typed path in declared_entries_procs()): text2path() of
+/// "/T/proc/declared_entries" names only the base /datum definition for an override, which built and cached every table empty. A chain that brings no block for a type that has one is not
+/// cached: it is reported, and the empty result returned uncached so table_of() later builds the real table from an instance.
 /proc/table_of_type(type)
 	RETURN_TYPE(/datum/type_table)
+	if(!ispath(type))
+		return null
 	var/datum/type_table/T = type_table_cache()[type]
 	if(T)
 		return T
-	var/datum/probe = isatom(type) ? null : null
-	if(ispath(type, /atom/movable))
-		probe = new type(null)
-	else if(ispath(type, /datum) && !ispath(type, /atom))
-		probe = new type
-	if(!probe)
+	// The chain declared_entries() would bring, parents first: each ancestor's own block proc (a typed definition, generated), called with no src.
+	var/list/procs = declared_entries_procs()
+	var/list/block_procs = list()
+	var/declarer = null
+	for(var/at = type; at; at = type2parent(at))
+		var/block_proc = procs[at]
+		if(block_proc)
+			block_procs.Insert(1, block_proc)
+			declarer ||= at
+	if(!length(block_procs))
 		return null
-	T = table_build(probe)
-	qdel(probe) // ALLOW(lifecycle): a probe instance made only to read a type's declarations
-	return T
+	var/list/chain = list(new /datum/entry/skip_built)
+	for(var/block_proc in block_procs)
+		try
+			call(block_proc)(chain)
+		catch(var/exception/E)
+			// A block that reads its instance (a var as an entry argument) cannot be built without one: reported, never cached.
+			log_world("table_of_type([type]): [block_proc] faulted without an instance: [E] at [E.file]:[E.line]; table not cached")
+			declare_report("table_of_type([type]): [block_proc] reads its instance ([E] at [E.file]:[E.line]) -- a declaration takes constants, not instance vars")
+			return null
+	if(!length(table_split_blocks(chain)))
+		log_world("table_of_type([type]): the block procs of [declarer] ([jointext(block_procs, ", ")]) brought no block; table not cached")
+		declare_report("table_of_type([type]): the block procs of [declarer] brought no block -- the generated proc map is stale or the proc path did not resolve")
+		return null
+	return table_build_chain(type, chain)
 
 /proc/table_build(datum/D)
 	BOOT_PHASE_BEGIN(bp_chain)
 	var/list/chain = list(new /datum/entry/skip_built)
 	D.declared_entries(chain)
-	var/list/blocks = table_split_blocks(chain)
 	BOOT_PHASE_END(bp_chain, "table_build: declared_entries chain", D)
+	return table_build_chain(D.type, chain)
+
+/// The table of `type` from its declared_entries() chain: each block not yet compiled is compiled on its parent's table, in order.
+/proc/table_build_chain(type, list/chain)
+	var/list/blocks = table_split_blocks(chain)
 	var/datum/type_table/T = null
 	for(var/list/block in blocks)
 		var/datum/entry/block/B = block[1]
@@ -134,16 +162,16 @@ GLOBAL_VAR(declare_report_capture)
 		if(!built)
 			BOOT_PHASE_BEGIN(bp_compile)
 			built = table_compile(B.block_type, T, block[2], entry_origin_text(B.file, B.line), B.file)
-			BOOT_PHASE_END(bp_compile, "table_build: table_compile (block)", D)
+			BOOT_PHASE_END(bp_compile, "table_build: table_compile (block)", null)
 			type_blocks_cache()[B.block_type] = built
 		T = built
 	if(!T)
-		T = table_compile(D.type, null, null, null)
-	else if(T.owner_type != D.type && stat_type_needs_own_table(D.type, T.owner_type))
+		T = table_compile(type, null, null, null)
+	else if(T.owner_type != type && stat_type_needs_own_table(type, T.owner_type))
 		// A type that declares nothing shares its ancestor's table, but a FORMULA stat it declares (STAT lines are not table entries) must be
 		// computed at init: it gets its own table, whose hooks say so.
-		T = table_compile(D.type, T, null, null)
-	type_table_cache()[D.type] = T
+		T = table_compile(type, T, null, null)
+	type_table_cache()[type] = T
 	return T
 
 /// The first item of the chain table_build() asks declared_entries() for: a block whose table is already compiled adds its marker and nothing
@@ -175,6 +203,7 @@ GLOBAL_VAR(declare_report_capture)
 	T.items = parent ? parent.items.Copy() : list()
 	T.caps = parent ? parent.caps.Copy() : list()
 	T.errors = parent?.errors ? parent.errors.Copy() : null
+	T.keyed = parent?.keyed ? parent.keyed.Copy() : null
 	var/origin_now = origin
 	BOOT_PHASE_BEGIN(bp_apply)
 	for(var/item in entry_flatten(entries))
@@ -283,6 +312,11 @@ GLOBAL_VAR(declare_report_capture)
 	table_add_item(T, E, origin, owner, whens, E.key)
 
 /// Adds a centry. `eff_key` is what extend/configure/without address it by.
+///
+/// The one override rule: an entry of a keyed kind (table_keyed_kind(): an op, a relation, a lifecycle form) whose key the table already has
+/// replaces that entry at its position; a new key appends. So a subtype's re-declaration of its parent's op keeps the parent's place in the
+/// menu and the click order, and a later entry of the same block replaces an earlier one the same way. Every consumer (the op index, the
+/// lifeform plan, the relation tables) reads the items once each and never sees two entries of one key.
 /proc/table_add_item(datum/type_table/T, datum/item, origin, owner, list/whens, eff_key)
 	var/datum/centry/C = new
 	C.item = item // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
@@ -290,9 +324,31 @@ GLOBAL_VAR(declare_report_capture)
 	C.owner = owner
 	C.whens = whens
 	C.eff_key = eff_key
+	var/slot_key = table_keyed_kind(item, eff_key)
+	if(slot_key)
+		var/datum/centry/old = T.keyed?[slot_key]
+		var/at = old ? T.items.Find(old) : 0
+		LAZYSET(T.keyed, slot_key, C) // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+		if(at)
+			T.items[at] = C // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+			return C
 	T.items += C // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 	return C
 
+/// The replacement key of an item (see table_add_item()), or null for an item that accumulates (extend, on_change, every, ...). A relation is
+/// keyed by its var, whatever its kind (table_add_relation() checks the kinds agree); an op by its effective key; a lifecycle form by its key.
+/proc/table_keyed_kind(datum/item, eff_key)
+	var/datum/entry/E = item
+	if(!istype(E))
+		return null
+	switch(E.kind)
+		if(ENTRY_REF_ONE, ENTRY_REF_MANY, ENTRY_OWNS_ONE, ENTRY_OWNS_MANY)
+			return "relation|[E.args["var"]]"
+		if(ENTRY_OP)
+			return isnull(eff_key) ? null : "op|[eff_key]"
+	if(isnull(E.key) || !lifeform_kinds()[E.kind])
+		return null
+	return "lifeform|[E.key]"
 
 /proc/declare_rule(rule)
 	return "\[[rule]]"
@@ -360,11 +416,9 @@ GLOBAL_VAR(declare_report_capture)
 /// A relation entry: replaces an earlier one for the same var of the same kind family; a different kind for a var is an error.
 /proc/table_add_relation(datum/type_table/T, datum/entry/E, origin, owner, list/whens)
 	var/var_name = E.args["var"]
-	for(var/i in 1 to length(T.items))
-		var/datum/centry/old = T.items[i]
-		var/datum/entry/OE = old.item
-		if(!istype(OE) || !(OE.kind in list(ENTRY_REF_ONE, ENTRY_REF_MANY, ENTRY_OWNS_ONE, ENTRY_OWNS_MANY)) || OE.args["var"] != var_name)
-			continue
+	var/datum/centry/old = T.keyed?["relation|[var_name]"]
+	var/datum/entry/OE = old?.item
+	if(istype(OE) && (old in T.items))
 		if(OE == E)
 			return
 		var/old_owns = (OE.kind == ENTRY_OWNS_ONE || OE.kind == ENTRY_OWNS_MANY)
@@ -372,9 +426,7 @@ GLOBAL_VAR(declare_report_capture)
 		if(old_owns != new_owns)
 			table_error(T, origin, declare_rule(RULE_RELATION_KIND), "var '[var_name]' is declared [OE.kind] at [old.origin] and [E.kind] here", "one kind per var across the hierarchy: a subtype may change an option, never the kind")
 			return
-		T.items.Cut(i, i + 1)
-		break
-	table_add_item(T, E, origin, owner, whens, E.key)
+	table_add_item(T, E, origin, owner, whens, E.key) // replaces the earlier declaration of the var in place
 
 /// Does an extend()/without() target name something the table has? Text: an entry key. A number: a capability id the table has, or a tag. A
 /// path: an action type. A list of keys (extend(list("a", "b"), ...)): every one of them.
@@ -388,7 +440,7 @@ GLOBAL_VAR(declare_report_capture)
 		return ispath(target, /datum/act) || ispath(target, /datum/notice)
 	if(isnum(target))
 		if(target >= TAG_BASE)
-			return TRUE
+			return !!declared_op_tags()["[target]"] // a tag some op carries (the generated registry; analyze gen rejects an extend of any other)
 		for(var/key in T.caps)
 			var/datum/capability/def = T.caps[key]
 			if(def.cap_id == target)
@@ -520,6 +572,33 @@ GLOBAL_VAR(declare_report_capture)
 	op_validate_table(T, parent)
 	BOOT_PHASE_END(bp_op, "table_validate: op_validate_table", null)
 	modes_validate_table(T)
+	input_validate_table(T, parent)
+
+/// Is `name` a proc (or verb) of `type` or of one of its ancestors? Read from the type tree, without an instance.
+/proc/type_has_proc(type, name)
+	var/t = type
+	while(t)
+		if(text2path("[t]/proc/[name]") || text2path("[t]/verb/[name]"))
+			return TRUE
+		t = type2parent(t)
+	return FALSE
+
+/// A text handler of an input entry (click_on(), drag_onto(), ...) names a proc of the type or, failing that, an op key: input_dispatch() runs an op
+/// for a name with no proc. A name that is neither (a typo, a renamed proc) would silently do nothing at click time, so it is a build error here.
+/proc/input_validate_table(datum/type_table/T, datum/type_table/parent = null)
+	if(!ispath(T.owner_type))
+		return
+	var/datum/op_index/index = null
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_INPUT))
+		var/datum/entry/E = C.item
+		var/handler = E.args["handler"]
+		if(!istext(handler) || type_has_proc(T.owner_type, handler))
+			continue
+		if(!index)
+			index = op_index_of_table(T, parent)
+		if(index.by_key[handler])
+			continue
+		table_error(T, C.origin, declare_rule(RULE_INPUT_HANDLER), "[E.args["input"]] names \"[handler]\", which is neither a proc of the type nor one of its op keys", "name the handler with PROC_REF(x), or give it the key of an op the type declares")
 
 /// Table-level checks a capability definition makes of its own params (a construction graph's start and via).
 /datum/capability/proc/validate_in(datum/type_table/T, origin)

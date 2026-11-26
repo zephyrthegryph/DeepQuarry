@@ -34,7 +34,6 @@
 /mob/living/simple_mob/proc/pounce_toggle()
 	set name = "Toggle Pouncing"
 	set desc = "Toggle pouncing. Doubleclick to pounce."
-	set category = VERB_CAT_ABILITIES_MOB
 
 	if(pouncing)
 		to_chat(src, span_notice("Pouncing toggled off."))
@@ -169,7 +168,6 @@
 /mob/living/simple_mob/proc/neurotoxin()
 	set name = "Toggle Neurotoxic Spit"
 	set desc = "Readies a neurotoxic spit, which paralyzes the target for a short time if they are not wearing protective gear."
-	set category = VERB_CAT_ABILITIES_MOB
 
 	if(spitting)
 		to_chat(src, span_notice("You stop preparing to spit."))
@@ -182,7 +180,6 @@
 /mob/living/simple_mob/proc/acidspit()
 	set name = "Toggle Acid Spit"
 	set desc = "Readies an acidic spit, which burns the target if they are not wearing protective gear."
-	set category = VERB_CAT_ABILITIES_MOB
 
 	if(spitting)
 		to_chat(src, span_notice("You stop preparing to spit."))
@@ -192,10 +189,9 @@
 		spit_projectile = /obj/item/projectile/energy/acid
 		to_chat(src, span_notice("You prepare to spit acid."))
 
-/mob/living/simple_mob/proc/corrosive_acid(O as obj|turf in oview(1)) //If they right click to corrode, an error will flash if its an invalid target./N
+/mob/living/simple_mob/proc/corrosive_acid(atom/O)
 	set name = "Corrosive Acid"
 	set desc = "Drench an object in acid, destroying it over time."
-	set category = VERB_CAT_ABILITIES_MOB
 
 	if(!(O in oview(1)))
 		to_chat(src, span_notice("[O] is too far away."))
@@ -232,7 +228,6 @@
 /mob/living/simple_mob/proc/speen(range = 2)
 	set name = "Spin Attack"
 	set desc = "Spins to strike enemies away from you."
-	set category = VERB_CAT_ABILITIES_MOB
 
 	if(!COOLDOWN_FINISHED(src, speen_last))
 		to_chat(src, span_warning("You cannot spin again so soon."))

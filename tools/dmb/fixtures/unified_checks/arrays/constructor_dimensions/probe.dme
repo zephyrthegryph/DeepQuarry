@@ -1,4 +1,0 @@
-/list/proc/New(a,b)
-    return
-/datum/example/proc/probe()
-    var/datum/value[first_dimension()][][second_dimension()]

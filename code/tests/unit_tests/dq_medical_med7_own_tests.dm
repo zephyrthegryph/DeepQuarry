@@ -104,7 +104,7 @@
 	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	var/datum/affliction/custom/A = H.body.afflict(/datum/affliction/custom, liver, 10)
 	TEST_ASSERT_NOTNULL(A, "setup: the affliction should land")
-	H.body.dirty = 0
+	H.body.set_dirty(0)
 	TEST_ASSERT(H.body.unlink_affliction(A), "the affliction unlinks")
 	TEST_ASSERT_NULL(A.body, "the unlinked affliction has no body")
 	TEST_ASSERT(!(H.body.dirty & BODY_DIRTY_VITALS), "unlinking does not invalidate the body")

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "A window leaving the side column (popped out, closed) gives its height to the Status panel, not the chat, and takes it back when it docks again."
+  - qol: "Windows remember their docked height and their popped-out size separately: popping out opens at the last popped-out size, docking restores the docked height, and each is saved with the layout."

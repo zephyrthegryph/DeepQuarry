@@ -1,16 +1,16 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  locked: BooleanLike;
-  chemImplants: { host: string; units: string; ref: string }[];
-  trackImplants: { host: string; ref: string; id: string; loc: string }[];
-};
+import type {
+  PrisonerManagementActions,
+  PrisonerManagementData,
+} from './generated/PrisonerManagement';
 
 export const PrisonerManagement = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    PrisonerManagementData,
+    PrisonerManagementActions
+  >();
   const { locked, chemImplants, trackImplants } = data;
   return (
     <Window width={500} height={400}>

@@ -26,6 +26,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	op("controls", in_hand(), label("Open shock collar controls"), then(PROC_REF(shock_collar_controls_opened)))
 	interface("ShockCollar")
+	ui_shape(on = bool(), frequency = num(), code = num(), freq_min = num(), freq_max = num(), code_min = num(), code_max = num(), target_size = schema_any(), target_size_min = num(), target_size_max = num()) // the size fields come from the size-changing subtypes; target_size is a number, or "locked" / "code" text
 	without("ui_open")
 	op("freq", ui_act("freq", arg("freq", schema_text(4096))), then(PROC_REF(ui_act_freq)))
 	op("code", ui_act("code", arg("code", num())), then(PROC_REF(ui_act_code)))
@@ -38,7 +39,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 	tgui_interact(A.actor)
 	return OP_OK
 
-/obj/item/clothing/accessory/collar/shock/tgui_static_data(mob/user)
+/obj/item/clothing/accessory/collar/shock/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 
 	data["freq_min"] = PUBLIC_LOW_FREQ

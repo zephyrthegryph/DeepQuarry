@@ -1,7 +1,0 @@
-/proc/probe()
-    filter(type=~"blur")
-    filter(type=!"blur")
-    filter(type=-5)
-    filter(type=&null)
-    filter(type=*null)
-    filter(type=~filter(type=1))

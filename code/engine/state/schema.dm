@@ -4,7 +4,7 @@
  * The schema of a type is its saved vars: every var for which issaved() is true
  * (not tmp, static, global or const), plus a fixed list of built-in appearance
  * vars (STATE_BUILTIN_SAVED). Mark caches, references and runtime handles tmp;
- * tools/ci/state_schema_lint.py flags saved reference vars on latent-safe types.
+ * tools/ci/state_schema_lint.py flags saved reference vars.
  *
  * A blob is a plain list that json_encode() writes and json_decode() reads back:
  *
@@ -18,7 +18,7 @@
  *   )
  *
  * The delta is the saved vars whose values differ from the type's defaults
- * (initial(); for list vars of latent-safe types, a pristine instance), less
+ * (initial()), less
  * those equal to the variant's (state_variant_baseline()).
  *
  * Values are encoded by the codecs in codecs.dm:
@@ -40,12 +40,7 @@
  *   state_hash(list/blob)                           -> md5 of the canonical text
  *   state_saved_vars(datum/D)                       -> the type's schema: list of saved var names
  *   state_is_saved(datum/D, var_name)               -> TRUE if var_name is part of D's saved state
- *   state_type_list_default(path, var_name)         -> a latent-safe type's default for a list var
- *                                                      (initial() is null for lists), or null
  *   state_can_serialize(datum/D, flags)             -> TRUE if state_serialize() would succeed
- *   D.state_collapse_blockers(held_refs = 1)        -> reasons D cannot collapse into a latent entry
- *                                                      (collapse.dm): refused refs, timers, processing,
- *                                                      signal registrations, extra refcount()
  *
  * Hooks on /datum (override per type, call ..() where noted):
  *   state_version                  the type's schema version (tmp var)
@@ -103,12 +98,6 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 /datum/proc/state_exclude()
 	return list()
 
-/// List vars whose Initialize() value can vary per instance (a random roll, or
-/// generated from per-instance state). They never take a sampled type baseline,
-/// so they are saved whenever non-empty.
-/datum/proc/state_nondeterministic_list_vars()
-	return list()
-
 /// Upgrades `vars` (a decoded delta written at schema version `from_version`)
 /// to the current state_version, in place. Call ..() first.
 /datum/proc/state_migrate(list/vars, from_version)
@@ -129,7 +118,7 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 
 /// A reason this object's state cannot be serialized right now, or null. Call ..().
 /// Running behaviour (timers, processing) does not refuse serialization, since
-/// persistence saves running objects; it blocks collapse (collapse.dm).
+/// persistence saves running objects.
 /datum/proc/state_refusal()
 	return null
 
@@ -192,19 +181,6 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 	var/datum/state_schema/schema = state_schema_for(D)
 	return var_name in schema.saved_vars
 
-/// The default value of list var `var_name` on type `path`, which initial()
-/// cannot give. Read from a pristine instance, made once per type, so only
-/// latent-safe types (whose Initialize() has no side effects) answer; others
-/// return null.
-/proc/state_type_list_default(path, var_name)
-	var/atom/movable/typed = path
-	if(!ispath(path, /atom/movable) || !latent_type_safe(typed))
-		return null
-	var/datum/state_context/ctx = new(NONE)
-	var/list/baseline = ctx.list_baseline_of(path)
-	. = isnull(baseline[var_name]) ? null : ctx.decode_value(baseline[var_name])
-	spent(ctx)
-
 /// Canonical text of a blob: keys sorted, numbers normalized. Equal state gives equal text.
 /proc/state_canonical(list/blob)
 	return json_encode(state_canonicalize(blob))
@@ -260,15 +236,6 @@ GLOBAL_DATUM(type_metadata_registry, /datum/type_metadata_registry)
 
 /proc/type_metadata_value(path, key, fallback)
 	return type_metadata_registry().value(path, key, fallback)
-
-/proc/latent_type_safe(path)
-	return ispath(path, /atom/movable) && type_metadata_value(path, TYPE_META_LATENT_SAFE, FALSE)
-
-/atom/proc/latent_contents_enabled()
-	return type_metadata_value(type, TYPE_META_LATENT_CONTENTS, FALSE)
-
-/atom/proc/latent_idle_delay_value()
-	return type_metadata_value(type, TYPE_META_LATENT_IDLE_DELAY, 2 MINUTES)
 
 /atom/movable/proc/slot_hooks_enabled()
 	return type_metadata_value(type, TYPE_META_SLOT_HOOKS, FALSE)

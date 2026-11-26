@@ -271,11 +271,6 @@
 			consume(cashmoney, user)
 	return 1
 
-/obj/machinery/casino_prize_dispenser/ui_assets(mob/user)
-	return list(
-		get_asset_datum(/datum/asset/spritesheet_batched/vending),
-	)
-
 /// /obj/machinery/casino_prize_dispenser's window data.
 /obj/machinery/casino_prize_dispenser/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -296,23 +291,14 @@ CAPABILITIES(/obj/machinery/casino_prize_dispenser)
 	setup(PROC_REF(power_change)) // the dispenser shows its powered or unpowered face from the start, map-loaded too
 	configure(uses_power(idle = 10))
 	interface("CasinoPrizeDispenser")
+	ui_shape(items = map_of(schema_text(), map_of(schema_text(), row(name = schema_text(), price = num(), restriction = nullable(schema_text())))))
 	without("ui_open")
-	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096)), arg("price", num()), arg("restriction", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
+	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096)), arg("price", num()), arg("restriction", schema_text(4096))), needs(req_operable(), req_capable()), then(PROC_REF(ui_act_purchase)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
-/obj/machinery/casino_prize_dispenser/proc/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!operable())
-		return FALSE
-	if(user.stat || user.restrained())
-		return FALSE
-	return TRUE
-
 /obj/machinery/casino_prize_dispenser/proc/ui_act_purchase(datum/act/op/A, cat, name_arg, price_arg, restriction)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	. = TRUE
 	var/paid = FALSE
 	var/category = cat

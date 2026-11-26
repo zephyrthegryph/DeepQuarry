@@ -1,6 +1,6 @@
 // The spatial API (doc/rewrite/containment.md Â§2a): tile queries, as opposed
 // to a holder's own contents (which go through the ledger read API in
-// api.dm/latent.dm). A turf's contents are engine-maintained -- BYOND updates
+// api.dm). A turf's contents are engine-maintained -- BYOND updates
 // them on every move and nothing here can intercept that -- so this is one
 // central, typed wrapper over the existing turf contents list, not a
 // ledger-backed structure. Centralizing call sites here means the

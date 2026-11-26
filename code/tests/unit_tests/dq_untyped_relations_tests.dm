@@ -11,17 +11,18 @@
 		return "[holder.type].[var_name] still names a deleted [target.type]"
 	return null
 
-/// A weak one holds a handle (text), the accessor reads the live target, and null once it is gone; the handle stays.
+/// A weak one holds a handle (a number; text for a turf or client), the accessor reads the live target, and null once it is gone; the handle stays.
 /datum/unit_test/proc/untyped_weak_reads(datum/holder, var_name, datum/target)
 	rel_set(holder, var_name, target)
-	if(!istext(holder.vars[var_name]))
-		return "[holder.type].[var_name] holds no handle"
+	var/handle = holder.vars[var_name]
+	if(isdatum(handle) || handle_get(handle) != target)
+		return "[holder.type].[var_name] holds no handle that names the target"
 	if(call(holder, var_name)() != target)
 		return "[holder.type].[var_name]() does not read the target"
 	qdel(target)
 	if(!isnull(call(holder, var_name)()))
 		return "[holder.type].[var_name]() reads a deleted [target.type]"
-	if(!istext(holder.vars[var_name]))
+	if(holder.vars[var_name] != handle)
 		return "[holder.type].[var_name] lost its handle when the target died"
 	return null
 

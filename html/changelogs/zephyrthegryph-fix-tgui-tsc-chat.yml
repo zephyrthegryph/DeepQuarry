@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Floating chat windows now receive the chat log token, so a popped-out chat loads its stored log"
+  - code_imp: "tgui type check and Biome formatting/import order are clean"

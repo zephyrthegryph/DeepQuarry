@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -12,57 +13,52 @@ import {
   Stack,
   Tabs,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
 import { ProductConfigurator } from './Fabrication/SelectableRecipe';
-import type { Design, MaterialChoice, MaterialSlot } from './Fabrication/Types';
+import type { Design } from './Fabrication/Types';
+import type {
+  PersonalCraftingActions,
+  PersonalCraftingData,
+} from './generated/PersonalCrafting';
 
-type Data = {
-  busy: BooleanLike;
-  display_craftable_only: BooleanLike;
-  display_compact: BooleanLike;
-  craftability: Record<string, number>;
-  crafting_recipes: Record<string, Recipe[]>;
-  materialChoices: MaterialChoice[];
-};
-
-type Recipe = {
-  name: string;
-  ref: string;
-  req_text: string;
-  catalyst_text: string;
-  tool_text: string;
-  has_subcats: BooleanLike;
-  material_slots: MaterialSlot[];
-};
+type Recipe = Extract<
+  PersonalCraftingData['crafting_recipes'][string],
+  unknown[]
+>[number];
 
 type UiCategory = { name: string; category: string; subcategory?: string };
-type UiRecipe = Required<Recipe & { category: string }>;
+type UiRecipe = Recipe & { category: string };
 
-const getUiEntries = (craftingRecipes: Record<string, Recipe[]>) => {
+const getUiEntries = (
+  craftingRecipes: PersonalCraftingData['crafting_recipes'],
+) => {
   const categories: UiCategory[] = [];
   const recipes: UiRecipe[] = [];
   for (const category of Object.keys(craftingRecipes)) {
     const entries = craftingRecipes[category];
-    if ('has_subcats' in entries) {
-      for (const subcategory of Object.keys(entries)) {
-        if (subcategory === 'has_subcats') continue;
-        categories.push({ name: subcategory, category, subcategory });
-        for (const recipe of entries[subcategory])
-          recipes.push({ ...recipe, category: subcategory });
-      }
-    } else {
+    if (Array.isArray(entries)) {
       categories.push({ name: category, category });
       for (const recipe of entries) recipes.push({ ...recipe, category });
+    } else {
+      for (const subcategory of Object.keys(entries)) {
+        const subRecipes = entries[subcategory];
+        if (!Array.isArray(subRecipes)) continue;
+        categories.push({ name: subcategory, category, subcategory });
+        for (const recipe of subRecipes)
+          recipes.push({ ...recipe, category: subcategory });
+      }
     }
   }
   return { categories, recipes };
 };
 
 export const PersonalCrafting = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    PersonalCraftingData,
+    PersonalCraftingActions
+  >();
   const [searchText, setSearchText] = useState('');
-  const { categories, recipes } = getUiEntries(data.crafting_recipes || {});
+  const { categories, recipes } = getUiEntries(data.crafting_recipes ?? {});
   const [tab, setTab] = useState(categories[0]?.name);
   const search = createSearch<Recipe>(searchText, (recipe) => recipe.name);
   const shown = recipes.filter(
@@ -112,14 +108,19 @@ export const PersonalCrafting = () => {
                 </Button.Checkbox>
               }
             >
-              <Input
-                fluid
-                value={searchText}
-                placeholder="Search recipes..."
-                onChange={setSearchText}
-                mb={1}
-              />
-              <CraftingWorkspace recipes={shown} />
+              <Stack vertical fill>
+                <Stack.Item>
+                  <Input
+                    fluid
+                    value={searchText}
+                    placeholder="Search recipes..."
+                    onChange={setSearchText}
+                  />
+                </Stack.Item>
+                <Stack.Item grow style={{ minHeight: 0 }}>
+                  <CraftingWorkspace recipes={shown} />
+                </Stack.Item>
+              </Stack>
             </Section>
           </Stack.Item>
         </Stack>
@@ -129,11 +130,14 @@ export const PersonalCrafting = () => {
 };
 
 const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    PersonalCraftingData,
+    PersonalCraftingActions
+  >();
   const visible = data.display_craftable_only
     ? recipes.filter((recipe) => data.craftability[recipe.ref])
     : recipes;
-  const [selectedRef, setSelectedRef] = useState<string | null>(null);
+  const [selectedRef, setSelectedRef] = useState<number | null>(null);
   const selected =
     visible.find((recipe) => recipe.ref === selectedRef) ?? visible[0];
   const available = Object.fromEntries(
@@ -145,7 +149,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
 
   return (
     <Stack fill>
-      <Stack.Item basis="42%" style={{ overflowY: 'auto' }}>
+      <Stack.Item basis="42%" style={{ overflowY: 'auto', minHeight: 0 }}>
         <Stack vertical>
           {visible.map((recipe) => (
             <Stack.Item key={recipe.ref}>
@@ -158,9 +162,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
                 <Stack align="center">
                   <Stack.Item grow>
                     <Box bold>{recipe.name}</Box>
-                    <Box color="label" fontSize="11px">
-                      {recipe.req_text}
-                    </Box>
+                    <Label fontSize="11px">{recipe.req_text}</Label>
                   </Stack.Item>
                   <Stack.Item>
                     <Icon name="chevron-right" />
@@ -174,7 +176,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
       <Stack.Item grow>
         {!selected ? (
           <Section fill>
-            <Box color="label">No recipes in this category.</Box>
+            <Label>No recipes in this category.</Label>
           </Section>
         ) : selected.material_slots?.length ? (
           <ProductConfigurator
@@ -188,7 +190,7 @@ const CraftingWorkspace = ({ recipes }: { recipes: UiRecipe[] }) => {
                 ]
                   .filter(Boolean)
                   .join(' · '),
-                id: selected.ref,
+                id: String(selected.ref),
                 icon: '',
                 categories: [],
                 cost: {},

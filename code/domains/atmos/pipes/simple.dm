@@ -55,13 +55,13 @@
 	var/plasma_moles = mixture.get_moles(/datum/gas/plasma)
 	var/plasma_fraction = plasma_moles / total_moles
 	if(plasma_fraction > 0.01 && elapsed_seconds > 0 && material)
-		if(material.gas_sorption_capacity > material_sorbed_moles && plasma_moles > 0)
-			var/captured = min(plasma_moles, material.gas_sorption_capacity - material_sorbed_moles, elapsed_seconds * 0.1)
+		if(material.sorbed_gas() > material_sorbed_moles && plasma_moles > 0)
+			var/captured = min(plasma_moles, material.sorbed_gas() - material_sorbed_moles, elapsed_seconds * 0.1)
 			var/energy_before = mixture.thermal_energy()
 			mixture.adjust_moles(/datum/gas/plasma, -captured)
 			material_sorbed_moles += captured
 			material_sorbed_thermal_energy += max(0, energy_before - mixture.thermal_energy())
-			active = material_sorbed_moles < material.gas_sorption_capacity
+			active = material_sorbed_moles < material.sorbed_gas()
 	return active
 
 /obj/machinery/atmospherics/pipe/simple/init_dir()
@@ -316,4 +316,4 @@
 	level = 2
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/simple)
-	setup(PROC_REF(prepare_pipe_renderer))
+	setup(PROC_REF(prepare_pipe_renderer), early = TRUE) // the renderer's icon is set before the chain reads the sprite

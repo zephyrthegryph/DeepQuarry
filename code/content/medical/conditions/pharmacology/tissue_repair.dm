@@ -28,38 +28,6 @@
 		), 2, 3, list("always_spawns" = list(/datum/affliction/internal_hemorrhage))),
 	)
 
-/datum/affliction/overdose/bicaridaze
-	name = "bicaridaze overdose"
-	clinical_description = "Bicaridaze is a topical bicaridine that's absorbed slowly through the skin. At overdose the same antiplatelet effect as bicaridine itself surfaces — bleeding becomes harder to control — with the added burden of cumulative skin/dermal irritation from the carrier."
-	symptom_pool = list(
-		/datum/affliction_symptom/bleeding_visible  = 70,
-		/datum/affliction_symptom/pallor            = 60,
-		/datum/affliction_symptom/skin_burns_minor  = 50,
-	)
-	min_symptoms = 1
-	max_symptoms = 3
-	caused_by_chems = list(REAGENT_ID_BICARIDAZE = 22)
-	caused_by_chems_organ = BP_TORSO
-
-/datum/affliction/overdose/bicaridaze
-	overdose_stage_data = list(
-		list(list(
-			/datum/affliction_symptom/pallor           = 50,
-			/datum/affliction_symptom/skin_burns_minor = 40,
-		), 1, 1),
-		list(list(
-			/datum/affliction_symptom/bleeding_visible = 70,
-			/datum/affliction_symptom/pallor           = 60,
-			/datum/affliction_symptom/skin_burns_minor = 50,
-		), 2, 2),
-		list(list(
-			/datum/affliction_symptom/bleeding_visible = 90,
-			/datum/affliction_symptom/pallor           = 80,
-			/datum/affliction_symptom/skin_burns_minor = 70,
-			/datum/affliction_symptom/dizziness        = 60,
-		), 3, 4),
-	)
-
 /datum/affliction/overdose/kelotane
 	name = "kelotane overdose"
 	clinical_description = "Excess kelotane irritates the digestive tract. Nausea and tissue inflammation as the drug overwhelms the body's normal burn-response pathway."
@@ -190,35 +158,4 @@
 			/datum/affliction_symptom/palpitations        = 75,
 			/datum/affliction_symptom/chest_pain_crushing = 50,
 		), 3, 4, list("organ_damage_per_tick" = 0.85, "organ_damage_type" = INJURY_TOXIN)),
-	)
-
-/datum/affliction/overdose/hannoa
-	name = "hannoa overdose"
-	clinical_description = "Hannoa is a sap-derived clotting agent that metabolises very slowly, so it overdoses easily. Past the threshold its clotting runs away inside the vessels: the veins feel as if they are fusing shut, breathing becomes laboured, and the patient takes blunt tissue damage while wounds keep closing."
-	symptom_pool = list(
-		/datum/affliction_symptom/throbbing_pain    = 70,
-		/datum/affliction_symptom/labored_breathing = 60,
-		/datum/affliction_symptom/drowsy            = 50,
-	)
-	min_symptoms = 1
-	max_symptoms = 3
-	caused_by_chems = list(REAGENT_ID_HANNOA = 8)
-	caused_by_chems_organ = BP_TORSO
-
-/datum/affliction/overdose/hannoa
-	overdose_stage_data = list(
-		list(list(
-			/datum/affliction_symptom/drowsy         = 60,
-			/datum/affliction_symptom/throbbing_pain = 40,
-		), 1, 1),
-		list(list(
-			/datum/affliction_symptom/throbbing_pain    = 70,
-			/datum/affliction_symptom/labored_breathing = 60,
-			/datum/affliction_symptom/drowsy            = 50,
-		), 1, 2),
-		list(list(
-			/datum/affliction_symptom/throbbing_pain    = 90,
-			/datum/affliction_symptom/labored_breathing = 80,
-			/datum/affliction_symptom/cyanosis          = 60,
-		), 2, 3),
 	)

@@ -14,7 +14,7 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/// Radioactive rods pulse radiation (periodic_step()) for as long as they are radioactive.
+/// Radioactive rods pulse radiation (fuel_assembly_step()) for as long as they are radioactive.
 /obj/item/fuel_assembly/var/radioactivity = 0
 CAPABILITIES(/obj/item/fuel_assembly)
 	setup(PROC_REF(prepare_fuel_material))

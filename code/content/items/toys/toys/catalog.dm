@@ -436,15 +436,3 @@ CAPABILITIES(/obj/item/storage/box/timecap)
 /obj/item/toy/snowglobe/snowvillage
 	desc = "Depicts a small, quaint village buried in snow."
 	icon_state = "smolsnowvillage"
-
-/obj/item/toy/snowglobe/tether
-	desc = "Depicts a massive space elevator reaching to the sky."
-	icon_state = "smoltether"
-
-/obj/item/toy/snowglobe/stellardelight
-	desc = "Depicts an interstellar spacecraft."
-	icon_state = "smolstellardelight"
-
-/obj/item/toy/snowglobe/rascalspass
-	desc = "Depicts a nanotrasen facility on a temperate world."
-	icon_state = "smolrascalspass"

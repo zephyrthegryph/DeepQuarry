@@ -74,7 +74,7 @@
 /// Event-driven: moving, equipment, status and the ground changing (MOB_KEY_GROUND) wake it. Only a flier hovering over
 /// open space has per-frame work (flight tires it), so only it comes back on the next frame.
 /mob/living/carbon/human/proc/life_fall_rewake()
-	if(!stat_value(src, STAT_FLYING) || !isturf(src.loc))
+	if(!src.flying || !isturf(src.loc))
 		return 0
 	var/turf/T = src.loc
 	return T.CanZPass(src, DOWN) ? LIFE_CYCLE : 0
@@ -380,7 +380,7 @@
 				life_radiation_sickness_lethal(damage, rad_mod)
 
 	damage *= rad_mod
-	src.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning, INJURE_CONTINUOUS)
+	src.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, null, INJURE_CONTINUOUS)
 	if(organic && length(src.organs))
 		var/obj/item/organ/external/O = pick(src.organs)
 		if(istype(O))
@@ -599,6 +599,7 @@
 	var/exhale_quality = life_breathing_exhaled_gas_buildup(breath, breath_moles, breath_pressure)
 	var/quality = inhale_quality * exhale_quality * life_breathing_methane_displacement(breath, breath_moles, breath_pressure)
 	src.breathe_poison(breath, src.species.poison_type || GAS_PHORON, breath_moles, breath_pressure)
+	src.breathe_irritant_gases(breath, breath_moles, breath_pressure)
 	src.breathe_sleeping_gas(breath, breath_moles, breath_pressure)
 	life_breathing_hallucinated_breath_alerts()
 
@@ -1171,7 +1172,7 @@
 	if(src.vore_prefs.noisy == TRUE && nutrition_of(src) < 250 && prob(10))
 		var/sound/growlsound = sound(get_sfx(SFX_HUNGER_SOUNDS))
 		var/growlmultiplier = 100 - (nutrition_of(src) / 250 * 100)
-		playsound(src, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+		playsound(src, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VORE)
 	if(nutrition_of(src) > 500 && src.vore_prefs.noisy_full == TRUE)
 		var/belch_prob = 5 //Maximum belch prob.
 		if(nutrition_of(src) < 4075)
@@ -1307,7 +1308,7 @@
 	if(!fear)
 		return
 	PUBLISH_CHANGE(src, MOB_KEY_STATUS) // the HUD's fear band follows the count down
-	if(fear >= 80 && src.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
+	if(fear >= 80)
 		if(COOLDOWN_FINISHED(cooldowns_view(src), fear_sound_cooldown))
 			src << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
 			STATE_SET(src, cooldowns, fear_sound_cooldown, world.time + (51 SECONDS))
@@ -1397,6 +1398,8 @@
 
 /// Ears: disability deafness holds; ear damage heals, faster under earmuffs.
 /mob/living/carbon/human/proc/life_status_update_hearing()
+	if(src.ear_damage >= 5 && src.stat == CONSCIOUS && prob(2)) // a patient cue: damaged ears ring and muffle
+		to_chat(src, span_warning(src.ear_damage >= 15 ? pick("Your ears ring painfully and everything sounds muffled.", "You can barely hear anything over the ringing.") : pick("Your ears are ringing.", "Sounds seem faint and far away.")))
 	if(src.sdisabilities & DEAF)	//disabled-deaf, doesn't get better on its own
 		src.status_at_least(STAT_DEAFENED, 1)
 		src.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
@@ -1443,12 +1446,16 @@
 /// P2-F1: the human screen, one proc per overlay family below.
 /mob/living/carbon/human/life_hud()
 	if(src.hud_updateflag) // update our mob's hud overlays, AKA what others see flaoting above our head
+		var/list_started = TICK_USAGE
+		var/list_flags = src.hud_updateflag
 		life_hud_list()
+		KM_SLOW_INNER(list_started, "life_hud_list flags [list_flags] on human")
 
 	// now handle what we see on our screen
 	. = ..()
 	if(!.)
 		return
+	var/screen_started = TICK_USAGE
 
 	if(istype(src.client.eye,/obj/machinery/camera))
 		var/obj/machinery/camera/cam = src.client.eye
@@ -1472,6 +1479,7 @@
 			src.claim_global_hud(GLOB.global_hud.darkMask)
 
 	src.reconcile_global_huds()
+	KM_SLOW_INNER(screen_started, "life_hud screen overlays on human")
 
 /// Severity band of `value` against ascending `thresholds`: 0 below the first, n at or past the nth.
 /mob/living/carbon/human/proc/life_hud_overlay_band(value, list/thresholds)
@@ -1624,7 +1632,7 @@
 		if(no_damage && (E.get_trauma() || E.get_burn()))
 			no_damage = 0
 		var/image/limb_image = E.get_damage_hud_image(limb_trauma_val)
-		key += "|[handle_of(E)][limb_image.color]" // a limb's hud image is made once and kept, so the limb names it
+		key += "|[handle_text(handle_of(E))][limb_image.color]" // a limb's hud image is made once and kept, so the limb names it
 	var/show_pain = trauma_val && src.can_feel_pain()
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
 	if(key == STATE_GET(src, human_misc, health_doll_key))
@@ -2016,7 +2024,7 @@
 	if(!H || (H.is_robotic()))
 		return
 
-	if(src.pulse >= PULSE_2FAST || src.shock_stage >= 10 || (istype(get_turf(src), /turf/space) && src.read_preference(/datum/preference/toggle/play_ambience)))
+	if(src.pulse >= PULSE_2FAST || src.shock_stage >= 10 || (istype(get_turf(src), /turf/space)))
 		//PULSE_THREADY - maximum value for pulse, currently it 5.
 		//High pulse value corresponds to a fast rate of heartbeat.
 		//Divided by 2, otherwise it is too slow.
@@ -2284,12 +2292,14 @@
 //Overriding carbon move proc that forces default hunger factor
 /mob/living/carbon/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
+	MOVE_COST_BEGIN(body_started)
 
 	// Technically this does mean being dragged takes nutrition
+	// One write per step (a run burns twice a walk's share): each write publishes the nutrition key.
 	if(stat != DEAD)
-		adjust_nutrition(hunger_rate_of(src)/-10)
-		if(m_intent == I_RUN)
-			adjust_nutrition(hunger_rate_of(src)/-10)
+		MOVE_COST_BEGIN(nutrition_started)
+		adjust_nutrition(hunger_rate_of(src) / -10 * (m_intent == I_RUN ? 2 : 1))
+		MOVE_COST_END(MOVE_COST_BODY_NUTRITION, nutrition_started)
 
 	// Moving around increases germ_level faster
 	// The roll first: the slot read stays off most moves.
@@ -2297,6 +2307,7 @@
 		var/germs = germs()
 		if(germs < GERM_LEVEL_MOVE_CAP)
 			set_germs(germs + 1)
+	MOVE_COST_END(MOVE_COST_BODY, body_started)
 
 
 /mob/living/carbon

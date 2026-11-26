@@ -158,7 +158,8 @@ CAPABILITIES(/obj/item/uplink)
 
 	return data
 
-/obj/item/uplink/hidden/tgui_static_data(mob/user)
+/obj/item/uplink/hidden/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = ..()
 
 	data["categories"] = list()
@@ -203,6 +204,7 @@ CAPABILITIES(/obj/item/uplink/hidden)
 	every(PROC_REF(offer_delay), then(PROC_REF(next_offer)))
 	op("compact_toggle", ui_act(), then(PROC_REF(ui_act_compact_toggle)))
 	interface("Uplink", title = "Remote Uplink", state = nameof(GLOB.tgui_deep_inventory_state))
+	ui_shape(compactMode = bool(), telecrystals = num(), lockable = bool(), discount_name = schema_text(), discount_amount = num(), offer_expiry = schema_text(), exploit = nullable(row(nanoui_exploit_record = schema_text(), name = schema_text(), sex = schema_text(), age = schema_text(), species = schema_text(), rank = schema_text(), home_system = schema_text(), birthplace = schema_text(), citizenship = schema_text(), faction = schema_text(), religion = schema_text(), fingerprint = schema_text(), antagfaction = schema_text())), locked_records = nullable(list_of(row(name = schema_text(), id = num()))), categories = list_of(row(name = schema_text(), items = nullable(list_of(row(name = schema_text(), cost = num(), desc = schema_text(), ref = num()))))))
 	without("ui_open")
 	op("buy", ui_act("buy", arg("ref", schema_ref())), then(PROC_REF(ui_act_buy)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
@@ -210,7 +212,7 @@ CAPABILITIES(/obj/item/uplink/hidden)
 	op("view_exploits", ui_act("view_exploits", arg("id", num())), then(PROC_REF(ui_act_view_exploits)))
 
 /obj/item/uplink/hidden/proc/ui_act_select(datum/act/op/A, category)
-	selected_cat = category
+	set_selected_cat(category)
 	return TRUE
 
 /obj/item/uplink/hidden/proc/ui_act_compact_toggle(datum/act/op/A)

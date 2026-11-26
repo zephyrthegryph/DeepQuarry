@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Icon } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
 import { FullscreenNotice } from './FullscreenNotice';
 
 type machine = { machineType?: string };
@@ -40,12 +40,12 @@ export const LoginScreen = (props: machine) => {
         <Icon name="user-circle" verticalAlign="middle" size={3} mr="1rem" />
         Guest
       </Box>
-      <Box color="label" my="1rem">
+      <Label my="1rem">
         ID:
         <Button icon="id-card" ml="0.5rem" onClick={() => act('scan')}>
           {scan ? scan : '----------'}
         </Button>
-      </Box>
+      </Label>
       <Button
         icon="sign-in-alt"
         disabled={!scan}
@@ -103,9 +103,6 @@ export const SpecialMachineInteraction = (props: machine) => {
   } else if (machineType === 'Fax') {
     return (
       <Button
-        position="relative"
-        bottom="152px"
-        left="188px"
         icon="share-square"
         onClick={() => act('send_automated_staff_request')}
         tooltip={

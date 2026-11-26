@@ -1,0 +1,7 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "A chat tab's unread number counts only messages you have not seen: one the tab you are viewing showed is never unread elsewhere, and switching tabs no longer brings old counts back."
+  - qol: "Dragging a chat or stat tab slides it along the tab strip only, with the other tabs moving aside live; it no longer floats around the screen."
+  - bugfix: "The chat's ping, music and settings controls, and the chat input row's buttons and box, line up on one height."
+  - qol: "The chat input only offers channels you can use now, from the server: OOC only in the lobby, Radio only with a radio, Whisper and Subtle only in a living body; it updates when you change mob."

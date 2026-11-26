@@ -85,8 +85,8 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard/flexitac)
 	desc = "Good for Roman around."
 	icon_state = "ge_boots"
 
-/proc/req_leg_clearance()
-	return part_make(/datum/entry/part/req/acceptance_leaf/leg_clearance, list())
+/proc/req_leg_clearance(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/leg_clearance, list()), fails)
 
 
 /datum/entry/part/req/acceptance_leaf/leg_clearance/acceptance_reason(datum/act/op/A)

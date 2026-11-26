@@ -61,7 +61,7 @@ CAPABILITIES(/obj/structure/low_wall)
 		spent(src)
 		return
 	set_material(get_material_by_name(materialtype))
-	set_max_integrity(material.integrity)
+	set_max_integrity(material.toughness * MATERIAL_HP_PER_TOUGHNESS)
 	update_integrity(max_integrity)
 
 
@@ -86,7 +86,7 @@ MSG_DEF_SELF(low_wall/assembling_window, span_notice("Assembling window..."))
 	add_fingerprint(user)
 	if(W.loc != user) // This should stop mounted modules ending up outside the module.
 		return OP_OK
-	if(can_place_items() && user.unEquip(W, 0, src.loc) && user.client?.prefs?.read_preference(/datum/preference/toggle/precision_placement))
+	if(can_place_items() && user.unEquip(W, 0, src.loc))
 		auto_align(W, dq_interaction_click_params(user))
 	return OP_OK
 

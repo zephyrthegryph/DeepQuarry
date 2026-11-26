@@ -1,17 +1,12 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { BiogeneratorData } from '../generated/Biogenerator';
 
-export type Sortable = {
-  name: string;
+type Item = BiogeneratorData['items'][string][string];
+
+// affordable is worked out by the window from the points.
+export type Sortable = Item & {
   affordable: number;
-  price: number;
-  max_amount: number;
-  reagent?: BooleanLike;
 };
 
-export type Data = {
-  items: Record<string, Sortable[]>;
-  build_eff: number;
-  points: number;
-  processing: BooleanLike;
-  beaker: boolean;
+export type Data = Omit<BiogeneratorData, 'items'> & {
+  items: Record<string, Record<string, Sortable>>;
 };

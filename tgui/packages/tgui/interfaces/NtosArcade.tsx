@@ -1,5 +1,6 @@
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { NtosWindow } from 'tgui/layouts';
 import {
   AnimatedNumber,
@@ -11,21 +12,10 @@ import {
   Section,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  Hitpoints: number;
-  PlayerHitpoints: number;
-  PlayerMP: number;
-  TicketCount: number;
-  GameActive: BooleanLike;
-  PauseState: BooleanLike;
-  Status: string;
-  BossID: string;
-};
+import type { NtosArcadeActions, NtosArcadeData } from './generated/NtosArcade';
 
 export const NtosArcade = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<NtosArcadeData, NtosArcadeActions>();
 
   const {
     PlayerHitpoints,
@@ -48,40 +38,36 @@ export const NtosArcade = (props) => {
                 <Table.Cell>
                   <Box m={1} />
                   <LabeledList>
-                    <LabeledList.Item label="Player Health">
-                      <ProgressBar
-                        value={PlayerHitpoints}
-                        minValue={0}
-                        maxValue={30}
-                        ranges={{
-                          olive: [31, Infinity],
-                          good: [20, 31],
-                          average: [10, 20],
-                          bad: [-Infinity, 10],
-                        }}
-                      >
-                        {PlayerHitpoints}HP
-                      </ProgressBar>
-                    </LabeledList.Item>
-                    <LabeledList.Item label="Player Magic">
-                      <ProgressBar
-                        value={PlayerMP}
-                        minValue={0}
-                        maxValue={10}
-                        ranges={{
-                          purple: [11, Infinity],
-                          violet: [3, 11],
-                          bad: [-Infinity, 3],
-                        }}
-                      >
-                        {PlayerMP}MP
-                      </ProgressBar>
-                    </LabeledList.Item>
+                    <StatBar
+                      label="Player Health"
+                      value={PlayerHitpoints}
+                      minValue={0}
+                      maxValue={30}
+                      ranges={{
+                        olive: [31, Infinity],
+                        good: [20, 31],
+                        average: [10, 20],
+                        bad: [-Infinity, 10],
+                      }}
+                    >
+                      {PlayerHitpoints}HP
+                    </StatBar>
+                    <StatBar
+                      label="Player Magic"
+                      value={PlayerMP}
+                      minValue={0}
+                      maxValue={10}
+                      ranges={{
+                        purple: [11, Infinity],
+                        violet: [3, 11],
+                        bad: [-Infinity, 3],
+                      }}
+                    >
+                      {PlayerMP}MP
+                    </StatBar>
                   </LabeledList>
                   <Box my={1} mx={4} />
-                  <Section
-                    backgroundColor={PauseState === 1 ? '#1b3622' : '#471915'}
-                  >
+                  <Section backgroundColor={PauseState ? '#1b3622' : '#471915'}>
                     {Status}
                   </Section>
                 </Table.Cell>
@@ -111,7 +97,7 @@ export const NtosArcade = (props) => {
               icon="fist-raised"
               tooltip="Go in for the kill!"
               tooltipPosition="top"
-              disabled={GameActive === 0 || PauseState === 1}
+              disabled={!GameActive || PauseState}
               onClick={() => act('Attack')}
             >
               Attack!
@@ -120,7 +106,7 @@ export const NtosArcade = (props) => {
               icon="band-aid"
               tooltip="Heal yourself!"
               tooltipPosition="top"
-              disabled={GameActive === 0 || PauseState === 1}
+              disabled={!GameActive || PauseState}
               onClick={() => act('Heal')}
             >
               Heal!
@@ -129,7 +115,7 @@ export const NtosArcade = (props) => {
               icon="magic"
               tooltip="Recharge your magic!"
               tooltipPosition="top"
-              disabled={GameActive === 0 || PauseState === 1}
+              disabled={!GameActive || PauseState}
               onClick={() => act('Recharge_Power')}
             >
               Recharge!
@@ -140,7 +126,7 @@ export const NtosArcade = (props) => {
               icon="sync-alt"
               tooltip="One more game couldn't hurt."
               tooltipPosition="top"
-              disabled={GameActive === 1}
+              disabled={GameActive}
               onClick={() => act('Start_Game')}
             >
               Begin Game
@@ -149,7 +135,7 @@ export const NtosArcade = (props) => {
               icon="ticket-alt"
               tooltip="Claim at your local Arcade Computer for Prizes!"
               tooltipPosition="top"
-              disabled={GameActive === 1}
+              disabled={GameActive}
               onClick={() => act('Dispense_Tickets')}
             >
               Claim Tickets

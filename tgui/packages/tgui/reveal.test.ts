@@ -105,6 +105,11 @@ describe('native window reveal', () => {
     expect(winset).toHaveBeenNthCalledWith(3, 'test-window', {
       alpha: 255,
     });
-    expect(sendMessage).toHaveBeenCalledTimes(1);
+    // The one real message; the rest are alpha traces.
+    expect(
+      (sendMessage.mock.calls as unknown[][]).filter(
+        ([type]) => type !== 'wm/log',
+      ),
+    ).toHaveLength(1);
   });
 });

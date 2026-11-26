@@ -1,0 +1,14 @@
+{
+	"on": 1,
+	"open": 1,
+	"locked": 0,
+	"blood": 1,
+	"vocal": 1,
+	"wet_floors": 0,
+	"spray_blood": 1,
+	"version": "v3.0",
+	"rgbpanel": 0,
+	"red_switch": 0,
+	"green_switch": 1,
+	"blue_switch": 0
+}

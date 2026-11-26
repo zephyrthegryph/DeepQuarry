@@ -31,10 +31,6 @@ Nothing else in the console has ID requirements.
 	var/obj/item/disk/design_disk/d_disk
 	/// Determines if the console is locked, and consequently if actions can be performed with it
 	locked = FALSE
-	/// Used for compressing data sent to the UI via static_data as payload size is of concern
-	var/list/id_cache
-	/// Sequence var for the id cache
-	var/id_cache_seq = 1
 	/// Cooldown that prevents hanging the MC when tech disks are copied
 	STATIC_COOLDOWN_DECLARE(cooldowncopy)
 
@@ -44,19 +40,23 @@ Nothing else in the console has ID requirements.
 	if(stored_research)
 		rel_add(stored_research, nameof(stored_research.consoles_accessing), src)
 
+MSG_DEF_SELF(rdconsole/locked, "Console is locked, cannot perform further actions.")
+
 CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	setup(PROC_REF(connect_initial_console))
 	owns_one(nameof(t_disk), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(d_disk), on_destroy = ON_DESTROY_SPILL)
 	interface("Techweb")
+	ui_shape(stored_research = bool(), locked = bool(), nodes = list_of(row(id = schema_text(), is_free = bool(), can_unlock = bool(), have_experiments_done = bool(), tier = num(), enqueued_by_user = bool())), queue_nodes = map_of(schema_text(), schema_text()), experiments = map_of(schema_text(), row(name = schema_text(), description = schema_text(), tag = schema_text(), progress = list_of(list_of(any)), completed = bool(), performance_hint = nullable(schema_text()))), researched_designs = map_of(schema_text(), num()), points = map_of(schema_text(), num()), points_last_tick = map_of(schema_text(), num()), sec_protocols = bool(), t_disk = nullable(row(stored_research = map_of(schema_text(), num()))), d_disk = nullable(row(blueprints = list_of(schema_text()))), static_data = row(node_cache = map_of(schema_text(), row()), design_cache = map_of(schema_text(), list_of(schema_text())), id_cache = list_of(schema_text())), point_types_abbreviations = map_of(schema_text(), schema_text()))
 	without("ui_open")
+	extend(TAG_UI, then(PROC_REF(controls_touched), early = TRUE))
 	op("toggleLock", ui_act("toggleLock"), then(PROC_REF(ui_act_togglelock)))
-	op("researchNode", ui_act("researchNode", arg("node_id", schema_text(4096))), then(PROC_REF(ui_act_researchnode)))
-	op("enqueueNode", ui_act("enqueueNode", arg("node_id", schema_text(4096))), then(PROC_REF(ui_act_enqueuenode)))
-	op("dequeueNode", ui_act("dequeueNode", arg("node_id", schema_text(4096))), then(PROC_REF(ui_act_dequeuenode)))
-	op("ejectDisk", ui_act("ejectDisk", arg("type", schema_text(4096))), then(PROC_REF(ui_act_ejectdisk)))
-	op("uploadDisk", ui_act("uploadDisk", arg("type", schema_text(4096))), then(PROC_REF(ui_act_uploaddisk)))
-	op("loadTech", ui_act("loadTech"), then(PROC_REF(ui_act_loadtech)))
+	op("researchNode", ui_act("researchNode", arg("node_id", schema_text(4096))), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_researchnode)))
+	op("enqueueNode", ui_act("enqueueNode", arg("node_id", schema_text(4096))), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_enqueuenode)))
+	op("dequeueNode", ui_act("dequeueNode", arg("node_id", schema_text(4096))), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_dequeuenode)))
+	op("ejectDisk", ui_act("ejectDisk", arg("type", schema_text(4096))), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_ejectdisk)))
+	op("uploadDisk", ui_act("uploadDisk", arg("type", schema_text(4096))), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_uploaddisk)))
+	op("loadTech", ui_act("loadTech"), needs(req(PROC_REF(unlocked_refusal))), then(PROC_REF(ui_act_loadtech)))
 	op("insert_disk", item(/obj/item/disk), priority(OP_PRIORITY_DEFAULT - 1), label("Insert disk"), then(PROC_REF(interaction_insert_disk)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
@@ -159,23 +159,25 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 /// /obj/machinery/computer/rdconsole_tg's window data.
 /obj/machinery/computer/rdconsole_tg/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
-	var/list/data = list()
-	data["stored_research"] = !!stored_research
-	data["locked"] = locked
-	if(!stored_research) //lack of a research node is all we care about.
-		return data
-	data += list(
+	var/list/data = list(
+		"stored_research" = !!stored_research,
+		"locked" = locked ? TRUE : FALSE,
 		"nodes" = list(),
-		"queue_nodes" = stored_research.queue_node_names(),
+		"queue_nodes" = list(),
 		"experiments" = list(),
-		"researched_designs" = (stored_research.researched_designs || list()),
-		"points" = (stored_research.research_points || list()),
-		"points_last_tick" = (stored_research.last_bitcoins || list()),
-		"web_org" = stored_research.organization,
+		"researched_designs" = list(),
+		"points" = list(),
+		"points_last_tick" = list(),
 		"sec_protocols" = FALSE, // !(obj_flags & EMAGGED),
 		"t_disk" = null,
 		"d_disk" = null,
 	)
+	if(!stored_research) //lack of a research node is all we care about.
+		return data
+	data["queue_nodes"] = stored_research.queue_node_names()
+	data["researched_designs"] = stored_research.researched_designs || list()
+	data["points"] = stored_research.research_points || list()
+	data["points_last_tick"] = stored_research.last_bitcoins || list()
 
 	if(t_disk)
 		data["t_disk"] = list (
@@ -200,9 +202,9 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 
 		data["nodes"] += list(list(
 			"id" = n.id,
-			"is_free" = n.is_free(stored_research),
-			"can_unlock" = stored_research.can_unlock_node(n),
-			"have_experiments_done" = stored_research.have_experiments_for_node(n),
+			"is_free" = n.is_free(stored_research) ? TRUE : FALSE,
+			"can_unlock" = stored_research.can_unlock_node(n) ? TRUE : FALSE,
+			"have_experiments_done" = stored_research.have_experiments_for_node(n) ? TRUE : FALSE,
 			"tier" = LAZYACCESS(stored_research.tiers, n.id),
 			"enqueued_by_user" = enqueued_by_user
 		))
@@ -218,25 +220,26 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 			"description" = ex.description,
 			"tag" = ex.exp_tag,
 			"progress" = ex.check_progress(),
-			"completed" = ex.completed,
+			"completed" = ex.completed ? TRUE : FALSE,
 			"performance_hint" = ex.performance_hint,
 		)
 	return data
 
 /**
- * Compresses an ID to an integer representation using the id_cache, used for deduplication
- * in sent JSON payloads
+ * Compresses an ID to an integer representation using the payload's id cache, used for deduplication
+ * in sent JSON payloads. The cache is built per payload (ui_static_data() sends it beside the data), so an output never writes the console.
  *
  * Arguments:
  * * id - the ID to compress
+ * * id_cache - the payload's id -> compressed id list
  */
-/obj/machinery/computer/rdconsole_tg/proc/compress_id(id)
-	if (!LAZYACCESS(id_cache, id))
-		LAZYSET(id_cache, id, id_cache_seq)
-		id_cache_seq += 1
-	return LAZYACCESS(id_cache, id)
+/obj/machinery/computer/rdconsole_tg/proc/compress_id(id, list/id_cache)
+	if(!id_cache[id])
+		id_cache[id] = length(id_cache) + 1
+	return id_cache[id]
 
-/obj/machinery/computer/rdconsole_tg/tgui_static_data(mob/user)
+/obj/machinery/computer/rdconsole_tg/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	. = list(
 		"static_data" = list(),
 		"point_types_abbreviations" = SSresearch.point_types,
@@ -246,10 +249,11 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	// Note this looks a bit ugly but its to reduce the size of the JSON payload
 	// by the greatest amount that we can, as larger JSON payloads result in
 	// hanging when the user opens the UI
+	var/list/id_cache = list()
 	var/node_cache = list()
 	for (var/node_id in SSresearch.techweb_nodes)
 		var/datum/techweb_node/node = SSresearch.techweb_nodes[node_id] || SSresearch.error_node
-		var/compressed_id = "[compress_id(node.id)]"
+		var/compressed_id = "[compress_id(node.id, id_cache)]"
 		node_cache[compressed_id] = list(
 			"name" = node.display_name,
 			"description" = node.description
@@ -257,19 +261,19 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 		if (LAZYLEN(node.research_costs))
 			node_cache[compressed_id]["costs"] = list()
 			for (var/node_cost in node.research_costs)
-				node_cache[compressed_id]["costs"]["[compress_id(node_cost)]"] = LAZYACCESS(node.research_costs, node_cost)
+				node_cache[compressed_id]["costs"]["[compress_id(node_cost, id_cache)]"] = LAZYACCESS(node.research_costs, node_cost)
 		if (LAZYLEN(node.prereq_ids))
 			node_cache[compressed_id]["prereq_ids"] = list()
 			for (var/prerequisite_node in node.prereq_ids)
-				node_cache[compressed_id]["prereq_ids"] += compress_id(prerequisite_node)
+				node_cache[compressed_id]["prereq_ids"] += compress_id(prerequisite_node, id_cache)
 		if (LAZYLEN(node.design_ids))
 			node_cache[compressed_id]["design_ids"] = list()
 			for (var/unlocked_design in node.design_ids)
-				node_cache[compressed_id]["design_ids"] += compress_id(unlocked_design)
+				node_cache[compressed_id]["design_ids"] += compress_id(unlocked_design, id_cache)
 		if (LAZYLEN(node.unlock_ids))
 			node_cache[compressed_id]["unlock_ids"] = list()
 			for (var/unlocked_node in node.unlock_ids)
-				node_cache[compressed_id]["unlock_ids"] += compress_id(unlocked_node)
+				node_cache[compressed_id]["unlock_ids"] += compress_id(unlocked_node, id_cache)
 		if (LAZYLEN(node.required_experiments))
 			node_cache[compressed_id]["required_experiments"] = node.required_experiments
 		if (LAZYLEN(node.discount_experiments))
@@ -281,7 +285,7 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	var/size32x32 = "[spritesheet.name]32x32"
 	for (var/design_id in SSresearch.techweb_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_designs[design_id] || SSresearch.error_design
-		var/compressed_id = "[compress_id(design.id)]"
+		var/compressed_id = "[compress_id(design.id, id_cache)]"
 		var/css_id = sanitize_css_class_name(design.id)
 		var/size = spritesheet.icon_size_id(css_id)
 		design_cache[compressed_id] = list(
@@ -300,19 +304,17 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 		"id_cache" = flat_id_cache,
 	)
 
-/obj/machinery/computer/rdconsole_tg/proc/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
-	var/action = A.window_action()
-	add_fingerprint(user)
-	if (locked && action != "toggleLock")
-		atom_say("Console is locked, cannot perform further actions.")
-		return FALSE
-	return TRUE
+/// A locked console refuses every button but the lock toggle; the user alone is told (it used to announce it aloud to the room).
+/obj/machinery/computer/rdconsole_tg/proc/unlocked_refusal(datum/act/op/A)
+	if(locked)
+		return /datum/msg/rdconsole/locked
+	return null
+
+/obj/machinery/computer/rdconsole_tg/proc/controls_touched(datum/act/op/A)
+	add_fingerprint(A.actor)
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_togglelock(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	if(allowed(user))
 		set_locked(!locked)
 	else
@@ -321,34 +323,24 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_researchnode(datum/act/op/A, node_id)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	research_node(node_id, user)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_enqueuenode(datum/act/op/A, node_id)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	enqueue_node(node_id, user)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_dequeuenode(datum/act/op/A, node_id)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	dequeue_node(node_id, user)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_ejectdisk(datum/act/op/A, type)
-	if(!ui_gate(A))
-		return FALSE
 	eject_disk(type)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_uploaddisk(datum/act/op/A, type)
-	if(!ui_gate(A))
-		return FALSE
 	if(type == RND_DESIGN_DISK)
 		if(QDELETED(d_disk))
 			atom_say("No design disk inserted!")
@@ -374,8 +366,6 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 //Tech disk-only action.
 
 /obj/machinery/computer/rdconsole_tg/proc/ui_act_loadtech(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	if(!COOLDOWN_FINISHED(src, cooldowncopy)) // prevents MC hang
 		atom_say("Servers busy!")
 		return

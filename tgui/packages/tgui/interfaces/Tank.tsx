@@ -1,37 +1,25 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Button,
   LabeledList,
   NumberInput,
-  ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  connected: BooleanLike;
-  showToggle: BooleanLike;
-  maskConnected: BooleanLike;
-  tankPressure: number;
-  releasePressure: number;
-  defaultReleasePressure: number;
-  minReleasePressure: number;
-  maxReleasePressure: number;
-};
+import type { TankActions, TankData } from './generated/Tank';
 
 export const Tank = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<TankData, TankActions>();
 
   const {
     connected,
-    showToggle = true,
     maskConnected,
-    tankPressure,
-    releasePressure,
+    tankPressure = 0,
+    releasePressure = 0,
     defaultReleasePressure,
-    minReleasePressure,
-    maxReleasePressure,
+    minReleasePressure = 0,
+    maxReleasePressure = 0,
   } = data;
 
   return (
@@ -40,16 +28,14 @@ export const Tank = (props) => {
         <Section
           title="Status"
           buttons={
-            !!showToggle && (
-              <Button
-                icon={connected ? 'air-freshener' : 'lock-open'}
-                selected={connected}
-                disabled={!maskConnected}
-                onClick={() => act('toggle')}
-              >
-                Mask Release Valve
-              </Button>
-            )
+            <Button
+              icon={connected ? 'air-freshener' : 'lock-open'}
+              selected={!!connected}
+              disabled={!maskConnected}
+              onClick={() => act('toggle')}
+            >
+              Mask Release Valve
+            </Button>
           }
         >
           <LabeledList>
@@ -60,18 +46,17 @@ export const Tank = (props) => {
         </Section>
         <Section>
           <LabeledList>
-            <LabeledList.Item label="Pressure">
-              <ProgressBar
-                value={tankPressure / 1013}
-                ranges={{
-                  good: [0.35, Infinity],
-                  average: [0.15, 0.35],
-                  bad: [-Infinity, 0.15],
-                }}
-              >
-                {`${data.tankPressure} kPa`}
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Pressure"
+              value={tankPressure / 1013}
+              ranges={{
+                good: [0.35, Infinity],
+                average: [0.15, 0.35],
+                bad: [-Infinity, 0.15],
+              }}
+            >
+              {`${data.tankPressure} kPa`}
+            </StatBar>
             <LabeledList.Item label="Pressure Regulator">
               <Button
                 icon="fast-backward"

@@ -17,7 +17,7 @@
 	..()
 
 /datum/antagonist/traitor/get_extra_panel_options(datum/mind/player)
-	return "<a href='byond://?src=[REF(player)];[HREF_TOKEN_PLACEHOLDER];common=crystals'>\[set crystals\]</a><a href='byond://?src=[REF(src)];[HREF_TOKEN_PLACEHOLDER];spawn_uplink=[url_encode(handle_of(player.current))]'>\[spawn uplink\]</a>"
+	return "<a href='byond://?src=[REF(player)];[HREF_TOKEN_PLACEHOLDER];common=crystals'>\[set crystals\]</a><a href='byond://?src=[REF(src)];[HREF_TOKEN_PLACEHOLDER];spawn_uplink=[url_encode(handle_text(handle_of(player.current)))]'>\[spawn uplink\]</a>"
 
 CAPABILITIES(/datum/antagonist/traitor)
 	op("spawn_uplink", topic("spawn_uplink", arg("spawn_uplink", schema_ref(/mob/living/carbon/human), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_spawn_uplink)))
@@ -88,7 +88,7 @@ CAPABILITIES(/datum/antagonist/traitor)
 		return 0
 
 	spawn_uplink(traitor_mob)
-	traitor_mob.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
+	traitor_mob.mind.set_tcrystals(DEFAULT_TELECRYSTAL_AMOUNT)
 	traitor_mob.mind.accept_tcrystals = 1
 	// Tell them about people they might want to contact.
 	var/mob/living/carbon/human/M = get_nt_opposed()
@@ -114,7 +114,7 @@ CAPABILITIES(/datum/antagonist/traitor)
 	var/loc = ""
 	var/obj/item/R = locate() //Hide the uplink in a PDA if available, otherwise radio
 
-	var/uplinklocation = traitor_mob.read_preference(/datum/preference/choiced/uplinklocation)
+	var/uplinklocation = "PDA"
 
 	if(uplinklocation == "Headset")
 		R = locate_within(traitor_mob, /obj/item/radio)

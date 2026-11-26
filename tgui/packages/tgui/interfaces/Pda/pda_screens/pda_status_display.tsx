@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList } from 'tgui-core/components';
+import type { PdaActions } from '../../generated/Pda';
 
 type Data = { records: { message1: string; message2: string } | null };
 
 export const pda_status_display = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { records } = data;
 

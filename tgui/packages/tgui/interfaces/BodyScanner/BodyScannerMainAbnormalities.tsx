@@ -1,5 +1,5 @@
+import { Label } from 'tgui/components/Label';
 import { Box, Section } from 'tgui-core/components';
-
 import { abnormalities } from './constants';
 import type { occupant } from './types';
 
@@ -23,7 +23,7 @@ export const BodyScannerMainAbnormalities = (props: { occupant: occupant }) => {
   if (!hasAbnormalities) {
     return (
       <Section title="Abnormalities">
-        <Box color="label">No abnormalities found.</Box>
+        <Label>No abnormalities found.</Label>
       </Section>
     );
   }
@@ -31,11 +31,11 @@ export const BodyScannerMainAbnormalities = (props: { occupant: occupant }) => {
   return (
     <>
       <Section title="Abnormalities">
-        {abnormalities.map((a, i) => {
-          if (occupant[a[0] as string]) {
+        {abnormalities.map(([flag, color, text]) => {
+          if (occupant[flag]) {
             return (
-              <Box key={i} color={a[1] as string} bold={a[1] === 'bad'}>
-                {(a[2] as (occupant: occupant) => string)(occupant)}
+              <Box key={flag} color={color} bold={color === 'bad'}>
+                {text(occupant)}
               </Box>
             );
           }

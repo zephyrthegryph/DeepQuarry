@@ -100,10 +100,6 @@ CAPABILITIES(/obj/item/pen)
 	desc = "A well made and expensive fountain pen."
 	icon_state = "black_fountain"
 
-/obj/item/pen/fountain9
-	desc = "A well made and expensive fountain pen made for gesturing."
-	icon_state = "mime_fountain"
-
 
 /*
  * Multi Pen
@@ -159,7 +155,10 @@ CAPABILITIES(/obj/item/pen/reagent)
 /obj/item/pen/reagent/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	. = ..()
 
-	if(M.can_inject(user,1))
+	var/refusal = M.inject_refusal(user)
+	if(refusal)
+		to_chat(user, span_warning(refusal))
+	else
 		if(reagents.total_volume)
 			if(M.reagents)
 				var/contained = reagents.get_reagents()

@@ -108,11 +108,11 @@
 	var/obj/item/organ/internal/eyes/eyes = target.organ_in(O_EYES)
 	if(eyes)
 		target.injure(INJURY_BLUNT, rand(3,4), eyes, user, flags = INJURE_SILENT)
-		act_message(user, target, others = span_danger("%U% presses [p_their()] [eye_attack_text] into %T%'s [eyes.name]!"))
+		act_message(user, target, others = span_danger("%U% presses [user.p_their()] [eye_attack_text] into %T%'s [eyes.name]!"))
 		var/eye_pain = eyes.organ_can_feel_pain()
 		to_chat(target, span_danger("You experience[(eye_pain) ? "" : " immense pain as you feel" ] [eye_attack_text_victim] being pressed into your [eyes.name][(eye_pain)? "." : "!"]"))
 		return
-	act_message(user, target, others = span_danger("%U% attempts to press [p_their()] [eye_attack_text] into %T%'s eyes, but [target.p_they()] [target.p_do()]n't have any!"))
+	act_message(user, target, others = span_danger("%U% attempts to press [user.p_their()] [eye_attack_text] into %T%'s eyes, but [target.p_they()] [target.p_do()]n't have any!"))
 
 /datum/unarmed_attack/proc/unarmed_override(mob/living/carbon/human/user,mob/living/carbon/human/target,zone)
 	return FALSE //return true if the unarmed override prevents further attacks
@@ -153,7 +153,7 @@
 	attack_damage = CLAMP(attack_damage, 1, 5) // We expect damage input of 1 to 5 for this proc. But we leave this check juuust in case.
 
 	if(target == user)
-		act_message(user, null, others = span_danger("%U% [pick(attack_verb)] [p_themselves()] in the [organ]!"))
+		act_message(user, null, others = span_danger("%U% [pick(attack_verb)] [user.p_themselves()] in the [organ]!"))
 		return FALSE
 
 	if(!target.lying)
@@ -162,20 +162,20 @@
 				// ----- HEAD ----- //
 				switch(attack_damage)
 					if(1 to 2)
-						act_message(user, target, others = span_danger("%U% slapped %T% across [p_their()] cheek!"))
+						act_message(user, target, others = span_danger("%U% slapped %T% across [target.p_their()] cheek!"))
 					if(3 to 4)
 						act_message(user, target, others = pick( 40; span_danger("%U% [pick(attack_verb)] %T% in the head!"), 30; span_danger("%U% struck %T% in the head[pick("", " with a closed fist")]!"), 30; span_danger("%U% threw a hook against %T%'s head!") ))
 					if(5)
-						act_message(user, target, others = pick( 30; span_danger("%U% gave %T% a resounding [pick("slap", "punch")] to the face!"), 40; span_danger("%U% smashed [p_their()] [pick(attack_noun)] into %T%'s face!"), 30; span_danger("%U% gave a strong blow against %T%'s jaw!") ))
+						act_message(user, target, others = pick( 30; span_danger("%U% gave %T% a resounding [pick("slap", "punch")] to the face!"), 40; span_danger("%U% smashed [user.p_their()] [pick(attack_noun)] into %T%'s face!"), 30; span_danger("%U% gave a strong blow against %T%'s jaw!") ))
 			else
 				// ----- BODY ----- //
 				switch(attack_damage)
 					if(1 to 2)	act_message(user, target, others = span_danger("%U% threw a glancing punch at %T%'s [organ]!"))
 					if(1 to 4)	act_message(user, target, others = span_danger("%U% [pick(attack_verb)] %T% in [target.p_their()] [organ]!"))
 					if(5)
-						act_message(user, target, others = pick( 50; span_danger("%U% smashed [p_their()] [pick(attack_noun)] into %T%'s [organ]!"), 50; span_danger("%U% landed a striking [pick(attack_noun)] on %T%'s [organ]!") ))
+						act_message(user, target, others = pick( 50; span_danger("%U% smashed [user.p_their()] [pick(attack_noun)] into %T%'s [organ]!"), 50; span_danger("%U% landed a striking [pick(attack_noun)] on %T%'s [organ]!") ))
 	else
-		act_message(user, target, others = span_danger("%U% [pick("punched", "threw a punch against", "struck", "slammed [p_their()] [pick(attack_noun)] into")] %T%'s [organ]!")) //why do we have a separate set of verbs for lying targets?
+		act_message(user, target, others = span_danger("%U% [pick("punched", "threw a punch against", "struck", "slammed [user.p_their()] [pick(attack_noun)] into")] %T%'s [organ]!")) //why do we have a separate set of verbs for lying targets?
 
 /datum/unarmed_attack/kick
 	attack_name = "kick"

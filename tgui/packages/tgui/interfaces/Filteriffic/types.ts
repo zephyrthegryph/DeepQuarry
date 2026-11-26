@@ -1,3 +1,5 @@
+import type { FilterifficData } from '../generated/Filteriffic';
+
 type MasterFilter = {
   alpha: {
     defaults: {
@@ -157,8 +159,10 @@ export type FilterEntryProps = {
   readonly filterType: string;
 };
 
-export type Data = {
+export type Data = Omit<
+  FilterifficData,
+  'filter_info' | 'target_filter_data'
+> & {
   filter_info: MasterFilter;
-  target_name: string;
   target_filter_data: Record<string, ActiveFilters>;
 };

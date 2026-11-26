@@ -195,8 +195,13 @@
 
 /// menu(button =, bind =, desc =): chosen by key: an ability's button and keybind, or a target's menu entry. `desc` is the hover text the Menu shows beside
 /// the label (what a verb's `set desc` was); op_menu() carries it as the row's "desc".
-/proc/menu(button = null, bind = null, desc = null)
-	return part_make(/datum/entry/part/bind/menu, list("button" = button, "bind" = bind, "desc" = desc))
+/// hint_tool = TRUE beside a tool() binding is no input of its own: the op's tool line stays hidden when the held item does not match, except that
+/// this op is listed greyed, "needs a <tool>", so a player can discover the step (construction() ladders).
+/proc/menu(button = null, bind = null, desc = null, hint_tool = FALSE)
+	var/list/menu_args = list("button" = button, "bind" = bind, "desc" = desc)
+	if(hint_tool)
+		menu_args["hint_tool"] = TRUE
+	return part_make(/datum/entry/part/bind/menu, menu_args)
 
 /// ai(): an AI controller or a script calls the op by key.
 /proc/ai()
@@ -933,8 +938,8 @@
 	stages = PART_STAGE_WAIT
 
 /// req_unclaimed(because =): no claiming op is waiting on the holder (an op without claims() of its own that must not run over one that does).
-/proc/req_unclaimed(because = null)
-	return part_make(/datum/entry/part/req/unclaimed, list("because" = because))
+/proc/req_unclaimed(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/unclaimed, list("because" = because)), fails)
 
 /datum/entry/part/req/unclaimed
 	part_name = "req_unclaimed"
@@ -945,9 +950,10 @@
 
 // ---- metadata ----
 
-/// label("Text"): the op's menu name.
-/proc/label(text)
-	return part_make(/datum/entry/part/label, list("text" = text))
+/// label("Text"): the op's menu name. label("Lock", state = LOCK_LOCKED, state_text = "Unlock") reads `state_text` instead while that state key is set on the
+/// holder (a toggle names what it will do now).
+/proc/label(text, state = null, state_text = null)
+	return part_make(/datum/entry/part/label, list("text" = text, "state" = state, "state_text" = state_text))
 
 /datum/entry/part/label
 	part_name = "label"

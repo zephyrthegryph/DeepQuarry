@@ -172,6 +172,9 @@ CAPABILITIES(/datum/gear)
 			gt.tweak_gear_data(metadata["[i]"], gd)
 	// spawn via helper to apply variant.
 	var/item = spawn_with_variant(gd.path, gd.location, gd.variant)
+	if(!item)
+		WARNING("loadout gear [type] ([display_name]) names [gd.path ? "[gd.path]" : "null"], which makes nothing; skipped")
+		return null
 	if(length(gear_tweaks) && metadata)
 		for(var/i in 1 to length(gear_tweaks))
 			var/datum/gear_tweak/gt = LAZYACCESS(gear_tweaks, i)

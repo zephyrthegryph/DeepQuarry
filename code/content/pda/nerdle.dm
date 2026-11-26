@@ -22,7 +22,7 @@
 
 /datum/data/pda/app/nerdle/start()
 	. = ..()
-	target_word = nerdle_target_word()
+	set_target_word(nerdle_target_word())
 
 /datum/data/pda/app/nerdle/proc/try_guess(guess)
 	if(completed)
@@ -34,7 +34,7 @@
 	var/actual_guess = lowertext(guess)
 
 	serialize_guess(actual_guess)
-	LAZYADD(guesses,actual_guess)
+	add_guesses(actual_guess)
 
 	if(actual_guess == target_word)
 		pda().audible_message("[pda()] says, \"congratulations! You WON! A real NERDLE™️ Champ!\"")
@@ -87,7 +87,7 @@
 		else
 			out[i] = NERDLE_NO
 
-	LAZYADD(serialized_guesses, list(out)) // Wrap it in a list so it stays a list
+	add_serialized_guesses(list(out)) // Wrap it in a list so it stays a list
 
 /datum/data/pda/app/nerdle/update_ui(mob/user, list/data)
 	data["guesses"] = (serialized_guesses || list())

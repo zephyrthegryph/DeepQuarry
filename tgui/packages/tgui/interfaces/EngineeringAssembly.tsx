@@ -1,3 +1,4 @@
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   LabeledList,
@@ -9,35 +10,11 @@ import {
 } from 'tgui-core/components';
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
+import type {
+  EngineeringAssemblyActions,
+  EngineeringAssemblyData,
+} from './generated/EngineeringAssembly';
 
-type Data = {
-  status: string;
-  temperature: number;
-  buffer: number;
-  input: number;
-  output: number;
-  lossEnergy: number;
-  limiting?: string;
-  configuration: number;
-  liner: number;
-  shell: number;
-  fatigue: number;
-  monitoring: boolean;
-  parts: {
-    role: string;
-    material: string;
-    meltingPoint: number;
-    corrosion: number;
-    purpose: string;
-  }[];
-  reading?: Record<string, string | number>;
-  emitter?: {
-    output: number;
-    cadence: number;
-    stored: number;
-    active: boolean;
-  };
-};
 const number = (value: number) => Math.round(value).toLocaleString();
 const measurementFields = [
   ['name', 'Assembly', ''],
@@ -51,7 +28,10 @@ const measurementFields = [
 ] as const;
 
 export const EngineeringAssembly = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<
+    EngineeringAssemblyData,
+    EngineeringAssemblyActions
+  >();
   return (
     <Window width={620} height={620}>
       <Window.Content scrollable>
@@ -116,10 +96,10 @@ export const EngineeringAssembly = () => {
                 {number(data.emitter.stored)} J
               </LabeledList.Item>
             </LabeledList>
-            <Box color="label" mt={1}>
+            <Label mt={1}>
               Output is limited by supplied power, installed parts, and
               temperature. Pulses wait until sufficient energy is stored.
-            </Box>
+            </Label>
           </Section>
         )}
         <Section title="Installed parts">
@@ -127,13 +107,25 @@ export const EngineeringAssembly = () => {
             {data.parts.map((part) => (
               <LabeledList.Item key={part.role} label={part.role}>
                 {part.material}
-                <Box inline ml={1} color="label">
+                <Label inline ml={1}>
                   {number(part.meltingPoint)} K melt · {number(part.corrosion)}{' '}
                   corrosion resistance
-                </Box>
-                <Box color="label" mt={0.5}>
-                  {part.purpose}
-                </Box>
+                </Label>
+                <Label mt={0.5}>{part.purpose}</Label>
+                <Label mt={0.5}>
+                  {(part.stats ?? [])
+                    .map((stat) => {
+                      const steps = stat.breakdown
+                        .map((step) =>
+                          step.label === 'base'
+                            ? `base ${step.delta}`
+                            : `${step.label} ${step.delta > 0 ? '+' : ''}${step.delta}`,
+                        )
+                        .join(', ');
+                      return `${stat.name} ${stat.value}${stat.breakdown.length > 1 ? ` (${steps})` : ''}`;
+                    })
+                    .join(' · ')}
+                </Label>
               </LabeledList.Item>
             ))}
           </LabeledList>
@@ -150,6 +142,7 @@ export const EngineeringAssembly = () => {
                 const value = data.reading?.[key];
                 if (
                   value === undefined ||
+                  value === null ||
                   (key.startsWith('minimum_') && value === 0)
                 ) {
                   return null;

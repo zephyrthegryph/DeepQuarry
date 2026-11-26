@@ -53,10 +53,9 @@
 	return 1
 
 // Free abilities.
-/mob/living/carbon/human/proc/transfer_plasma(mob/living/carbon/human/M as mob in oview())
+/mob/living/carbon/human/proc/transfer_plasma(mob/living/carbon/human/M)
 	set name = "Transfer Plasma"
 	set desc = "Transfer Plasma to another alien"
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if (get_dist(src,M) <= 1)
 		to_chat(src, span_alium("You need to be closer."))
@@ -112,7 +111,6 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 
 	set name = "Lay Egg (500)" //Cost is entire queen reserve, to compensate being able to reproduce on it's own
 	set desc = "Lay an egg that will eventually hatch into a new xenomorph larva. Life finds a way."
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if(!CONFIG_GET(flag/aliens_allowed))
 		to_chat(src, "You begin to lay an egg, but hesitate. You suspect it isn't allowed.")
@@ -133,7 +131,6 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 /mob/living/carbon/human/proc/evolve()
 	set name = "Evolve (500)"
 	set desc = "Produce an internal egg sac capable of spawning children. Only one queen can exist at a time."
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if(alien_queen_exists())
 		to_chat(src, span_notice("We already have an active queen."))
@@ -148,7 +145,6 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 /mob/living/carbon/human/proc/plant()
 	set name = "Plant Weeds (50)"
 	set desc = "Plants some alien weeds"
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if(check_alien_ability(50,1,O_RESIN))
 		act_message(src, null, others = span_alium(span_bold("%U% has planted some alien weeds!")))
@@ -178,10 +174,9 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 		P.fire()
 		play_sfx(src, SFX_WEAPONS_ALIEN_SPITACID)
 
-/mob/living/carbon/human/proc/corrosive_acid(O as obj|turf in oview(1)) //If they right click to corrode, an error will flash if its an invalid target./N
+/mob/living/carbon/human/proc/corrosive_acid(atom/O)
 	set name = "Corrosive Acid (200)"
 	set desc = "Drench an object in acid, destroying it over time."
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if(!(O in oview(1)))
 		to_chat(src, span_alium("[O] is too far away."))
@@ -218,7 +213,6 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 /mob/living/carbon/human/proc/neurotoxin()
 	set name = "Toggle Neurotoxic Spit (40)"
 	set desc = "Readies a neurotoxic spit, which paralyzes the target for a short time if they are not wearing protective gear."
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if(spitting)
 		to_chat(src, span_alium("You stop preparing to spit."))
@@ -239,7 +233,6 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 /mob/living/carbon/human/proc/acidspit()
 	set name = "Toggle Acid Spit (50)"
 	set desc = "Readies an acidic spit, which burns the target if they are not wearing protective gear."
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if(spitting)
 		to_chat(src, span_alium("You stop preparing to spit."))
@@ -260,7 +253,6 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 /mob/living/carbon/human/proc/resin() //Gurgs : Refactored resin ability, big thanks to Jon.
 	set name = "Secrete Resin (75)"
 	set desc = "Secrete tough malleable resin."
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	var/list/options = list("resin door","resin wall","resin membrane","nest","resin blob")
 	for(var/option in options)
@@ -313,7 +305,6 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	return
 
 /mob/living/carbon/human/proc/leap()
-	set category = VERB_CAT_ABILITIES_ALIEN
 	set name = "Leap"
 	set desc = "Leap at a target and grab them aggressively."
 
@@ -384,7 +375,6 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	G.synch()
 
 /mob/living/carbon/human/proc/gut()
-	set category = VERB_CAT_ABILITIES_ALIEN
 	set name = "Slaughter"
 	set desc = "While grabbing someone aggressively, rip their guts out or tear them apart."
 

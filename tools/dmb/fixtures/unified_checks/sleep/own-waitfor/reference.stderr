@@ -1,5 +1,0 @@
-@FIXTURE@, line 1, column 12:
-error: /proc/probe sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)
-- 2:5: SpacemanDMM_should_not_sleep set here
-- 4:5: sleep() called here
-

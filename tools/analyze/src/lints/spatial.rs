@@ -21,8 +21,8 @@ use crate::util::{py_strip, starts_with_any};
 const HINT: &str = "use contents_of()/FOR_CONTENTS/is_inside()/locate_within()/contents_count()/locate_in_list() or the ledger read API (doc/rewrite/containment.md section 2a); a justified keep takes `// ALLOW(spatial): <reason>`";
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::spatial::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::spatial::SCOPE_META_0.group,
+    name: "spatial",
+    group: "",
     label: "spatial",
     legacy: "tools/ci/spatial_lint.py",
     select: CODE_DM,
@@ -34,8 +34,8 @@ static META: Meta = Meta {
         RuleMeta { name: "contents_len", hint: HINT },
         RuleMeta { name: "locate_in", hint: HINT },
     ],
-    allow: crate::allow_registry_fields::spatial::ALLOW_0,
-    lists: crate::allow_registry_fields::spatial::SCOPE_META_0.lists,
+    allow: &["spatial"],
+    lists: &["api_prefixes", "api_files"],
 };
 
 const IMPLICIT_IDENTS: &str = r"(?:src|loc|T|H|M|A|AM|holder|container)";
@@ -58,7 +58,7 @@ impl Spatial {
                 (
                     "locate_in",
                     Pat::new(
-                        r"\blocate\s*\([^()]*\)\s*in\s+(?!(?:[\w.]+\.)?(?:slot_contents|latent_entries|latent_materialize_all|get_all_contents|turf_contents_of_type|area_contents_of_type|contents_property|contents_of)\s*\()",
+                        r"\blocate\s*\([^()]*\)\s*in\s+(?!(?:[\w.]+\.)?(?:slot_contents|get_all_contents|turf_contents_of_type|area_contents_of_type|contents_property|contents_of)\s*\()",
                     ),
                 ),
             ],
@@ -126,12 +126,12 @@ mod tests {
     use crate::scopes::LintScope;
     use crate::tree::Tree;
 
-    fn scan(rel: &str, text: &str) -> Sink<'static> {
+    fn scan(rel: &str, text: &str) -> Sink {
         let mut scope = LintScope::default();
         scope.lists.insert("api_prefixes".to_string(), vec!["code/library/containers/containment/".to_string()]);
         scope.lists.insert("api_files".to_string(), vec!["code/defines/engine/containment.dm".to_string()]);
         let tree = Tree::from_files(vec![]);
-        let cx = Cx { fixture:None, tree: &tree, meta: &META, scope: &scope };
+        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
         let f = SourceFile::from_text(rel, text);
         let mut out = Sink::new();
         out.cur = f.rel.clone();

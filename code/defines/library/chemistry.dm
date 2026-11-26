@@ -38,6 +38,9 @@
 #define REAGENTS_PER_ORE 20
 #define REAGENTS_PER_LOG 40
 #define REAGENTS_PER_HULL 40
+/// Units an item with no recorded materials grinds into, per point of its size (w_class), when it has a hand-written feedstock row (an item that has materials
+/// grinds into what they are worth, never more: code/content/refinery/grinding.dm item_feedstock()).
+#define GRIND_ITEM_UNITS_PER_SIZE 1
 
 // STAT_ANTIMICROBIAL levels
 #define ANTIBIO_NORM	1
@@ -67,7 +70,7 @@
 /// Species unharmed by prion-laden brain matter.
 #define REAGENT_PRION_IMMUNE_SPECIES (SPECIES_TAG_BIT(IS_CHIMERA) | SPECIES_TAG_BIT(IS_SLIME) | SPECIES_TAG_BIT(IS_DIONA) | SPECIES_TAG_BIT(IS_SHADEKIN))
 
-// Injection routes for /mob/living/proc/can_inject() (P2-S9): every injector
+// Injection routes for /mob/living/proc/inject_refusal() (P2-S9): every injector
 // asks the same question and names how it delivers.
 /// A needle (syringe, syringe gun dart): pierces flesh, not plating.
 #define INJECT_METHOD_NEEDLE 1

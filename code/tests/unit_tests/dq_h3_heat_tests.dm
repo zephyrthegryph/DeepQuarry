@@ -24,7 +24,7 @@ CAPABILITIES(/obj/item/dq_h3_fire_probe)
 
 /// Puts the test floor's air back at room temperature (burning test objects heat it).
 /proc/dq_h3_cool_floor(turf/open/T)
-	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
+	heat_set(T.turf_air(), T20C, HEAT_SOURCE_OTHER)
 
 /// wait_for_condition() helper: TRUE once A is warmer than `start`.
 /proc/dq_h3_probe_warmer_than(atom/A, start)
@@ -33,8 +33,8 @@ CAPABILITIES(/obj/item/dq_h3_fire_probe)
 /// A fire needs oxygen; the test map's floor has little. Returns the air to restore.
 /proc/dq_h3_oxygenate(turf/open/T)
 	var/datum/gas_mixture/saved = new
-	saved.copy_from(T.air)
-	T.air.set_moles(GAS_O2, 20)
+	saved.copy_from(T.turf_air())
+	T.turf_air().set_moles(GAS_O2, 20)
 	return saved
 
 /// Heat energy of `things`' bodies above 0 K: capacity x temperature.
@@ -64,15 +64,15 @@ CAPABILITIES(/obj/item/dq_h3_fire_probe)
 	// nothing watched it): the rule fires as soon as it gets a heat body.
 	var/turf/open/T = test_floor()
 	var/datum/gas_mixture/saved = new
-	saved.copy_from(T.air)
+	saved.copy_from(T.turf_air())
 	var/obj/item/paper/late = allocate(/obj/item/paper, T)
-	heat_set(T.air, ignition + 100, HEAT_SOURCE_OTHER)
+	heat_set(T.turf_air(), ignition + 100, HEAT_SOURCE_OTHER)
 	late.add_heat(1)
-	T.air.copy_from(saved)
+	T.turf_air().copy_from(saved)
 	TEST_ASSERT(late.resistance_flags & ON_FIRE, "a first heat body above the ignition point lights it")
 	paper.extinguish()
 	late.extinguish()
-	T.air.copy_from(restore)
+	T.turf_air().copy_from(restore)
 
 /datum/unit_test/dq_h3_melting_at_threshold
 
@@ -225,12 +225,12 @@ CAPABILITIES(/obj/item/dq_h3_fire_probe)
 	dq_h3_cool_floor(test_floor())
 	var/turf/open/T = test_floor()
 	var/datum/gas_mixture/saved = new
-	saved.copy_from(T.air)
+	saved.copy_from(T.turf_air())
 	var/obj/item/dq_h3_fire_probe/probe = allocate(/obj/item/dq_h3_fire_probe, T)
 
-	T.air.set_moles(/datum/gas/oxygen, 300)
-	T.air.set_moles(/datum/gas/plasma, 100)
-	heat_set(T.air, PLASMA_MINIMUM_BURN_TEMPERATURE + 100, HEAT_SOURCE_OTHER)
+	T.turf_air().set_moles(/datum/gas/oxygen, 300)
+	T.turf_air().set_moles(/datum/gas/plasma, 100)
+	heat_set(T.turf_air(), PLASMA_MINIMUM_BURN_TEMPERATURE + 100, HEAT_SOURCE_OTHER)
 	T.hotspot_expose(PLASMA_MINIMUM_BURN_TEMPERATURE + 500, CELL_VOLUME, TRUE)
 	var/obj/effect/hotspot/hotspot = T.active_hotspot
 	TEST_ASSERT(hotspot, "the tile burns")
@@ -261,6 +261,6 @@ CAPABILITIES(/obj/item/dq_h3_fire_probe)
 	for(var/obj/effect/hotspot/other in range(2, T))
 		qdel(other)
 	for(var/turf/open/near in range(2, T))
-		if(near != T && near.air)
-			near.air.set_moles(/datum/gas/plasma, 0)
-	T.air.copy_from(saved)
+		if(near != T && near.turf_air())
+			near.turf_air().set_moles(/datum/gas/plasma, 0)
+	T.turf_air().copy_from(saved)

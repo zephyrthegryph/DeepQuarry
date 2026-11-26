@@ -61,26 +61,38 @@
 	..()
 
 //mob verbs are faster than object verbs. See mob/verb/examine.
+/// Pull: the target named (ctrl-click, the context menu's Pull, a hardsuit's control click) is pulled at once, with no question. The bare verb (the Pull
+/// keybind, which names nothing) pulls what is in front of the mob, else the first mob, else the first object within reach.
 /mob/living/verb/pulled()
 	set name = "Pull"
-	set category = VERB_CAT_OBJECT
+	set hidden = TRUE
 
-	var/list/pullable = list()
+	var/atom/movable/AM = pull_candidate()
+	if(AM)
+		pull_target(AM)
+
+/// What the bare Pull verb pulls: the mob or object in front of the mob, else the first adjacent mob, else the first adjacent object.
+/mob/living/proc/pull_candidate()
+	var/turf/ahead = get_step(src, dir)
+	var/atom/movable/first_obj
+	var/atom/movable/first_mob
 	for(var/atom/movable/candidate in oview(1, src))
-		if(ismob(candidate) || isobj(candidate))
-			pullable[candidate.name] = candidate
-	if(!length(pullable))
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(pull_target_chosen), answerer = src, title = "Pull", question = "Pull what?", choices = pullable, timeout = 0)
+		if(!ismob(candidate) && !isobj(candidate))
+			continue
+		if(candidate.anchored)
+			continue
+		if(candidate.loc == ahead)
+			return candidate
+		if(ismob(candidate))
+			first_mob ||= candidate
+		else
+			first_obj ||= candidate
+	return first_mob || first_obj
 
-/// The mob or object the puller picked, if it is still within reach.
-/mob/living/proc/pull_target_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/prompt = A.answer
-	var/atom/movable/AM = prompt.choices[A.answer.value]
-	if(istype(AM) && AM.Adjacent(src))
-		src.start_pulling(AM)
+/// Pulls `AM` if it is in reach.
+/mob/living/proc/pull_target(atom/movable/AM)
+	if(istype(AM) && AM != src && AM.Adjacent(src))
+		start_pulling(AM)
 
 //mob verbs are faster than object verbs. See above.
 /mob/living/pointed(atom/A as mob|obj|turf in view(client.view, src))
@@ -98,7 +110,7 @@
 
 /mob/living/verb/succumb()
 	set name = "Succumb to death"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 	set desc = "Press this button if you are in crit and wish to die. Use this sparingly (ending a scene, no medical, etc.)"
 	open_request(src, /datum/prompt/choice/succumb, PROC_REF(succumb_ask_again), answerer = src, choices = list("No", "Yes"), title = "Confirm wish to succumb", question = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?")
 
@@ -133,7 +145,7 @@
 
 /mob/living/verb/toggle_afk()
 	set name = "Toggle AFK"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE // a keybinding and auto-AFK reach it
 	set desc = "Mark yourself as Away From Keyboard, or clear that status!"
 	if(STATE_GET(src, connection, away_from_keyboard))
 		remove_status_indicator("afk")
@@ -323,12 +335,6 @@
 /mob/living/proc/UpdateDamageIcon()
 	return
 
-/mob/living/verb/Examine_OOC()
-	set name = "Examine Meta-Info (OOC)"
-	set category = VERB_CAT_OOC_GAME
-	set src in view()
-	do_examine_ooc(usr)
-
 /mob/living/proc/do_examine_ooc(mob/user)
 	//Makes it so SSD people have prefs with fallback to original style.
 	if(CONFIG_GET(flag/allow_metadata))
@@ -346,7 +352,7 @@
 
 /mob/living/verb/resist()
 	set name = "Resist"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(cooldowns_view(src), resist_cooldown)))
 		STATE_SET(src, cooldowns, resist_cooldown, world.time + (RESIST_COOLDOWN))
@@ -405,7 +411,7 @@
 
 /mob/living/verb/lay_down()
 	set name = "Rest"
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	set_resting(!resting)
 	to_chat(src, span_notice("You are now [resting ? "resting" : "getting up"]."))
@@ -416,6 +422,12 @@
 	if(override_blindness_check || !(disabilities() & BLIND))
 		overlay_fullscreen("flash", type)
 		after(src, 2.5 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("flash", 2.5 SECONDS))
+		if(flash_vulnerability > 1)
+			// Eyes made sensitive (imidazoline) are blinded for longer by the same flash.
+			var/extra = round(FLASH_VULNERABILITY_BLIND * (flash_vulnerability - 1))
+			status_adjust(STAT_BLINDED, extra)
+			if(GLOB.chem_trace)
+				log_world("CHEM: flash blinds [src] for [extra] extra (flash_vulnerability [flash_vulnerability])")
 		return 1
 
 /mob/living/proc/cannot_use_vents()
@@ -740,6 +752,7 @@
 	M.Scale(desired_scale_x, desired_scale_y)
 	M.Translate(cent_offset * desired_scale_x, (vis_height/2)*(desired_scale_y-1))
 	src.transform = M
+	client_flat_light_update(src)
 
 // This handles setting the client's color variable, which makes everything look a specific color.
 // This proc is here so it can be called without needing to check if the client exists, or if the client relogs.
@@ -784,16 +797,15 @@
 	else // No colors, so remove the client's color.
 		animate(client, color = null, time = 10)
 
+/// Swaps to the other hand, if it exists and works; a body with one working hand keeps it, one with none selects none.
 /mob/living/swap_hand()
-	set_hand(!hand)
+	var/target = isnull(hand) ? FALSE : !hand
+	if(!hand_works(target))
+		settle_active_hand() // the other hand is gone: stay on (or move to) the one that works
+		return
+	set_hand(target)
 	op_keep_poke(src, OP_KEEP_HAND)
-	if(hud_used?.l_hand_hud_object && hud_used.r_hand_hud_object)
-		if(hand)	//This being 1 means the left hand is in use
-			hud_used.l_hand_hud_object.icon_state = "l_hand_active"
-			hud_used.r_hand_hud_object.icon_state = "r_hand_inactive"
-		else
-			hud_used.l_hand_hud_object.icon_state = "l_hand_inactive"
-			hud_used.r_hand_hud_object.icon_state = "r_hand_active"
+	update_hand_hud()
 
 	// We just swapped hands, so the thing in our inactive hand will notice it's not the focus
 	var/obj/item/I = get_inactive_hand()
@@ -811,8 +823,15 @@
 		if(selhand == "left" || selhand == "l")
 			selhand = 1
 
-	if(selhand != src.hand)
-		swap_hand()
+	// Only a hand that exists and works can be selected.
+	if((selhand ? TRUE : FALSE) != (src.hand ? TRUE : FALSE) || isnull(src.hand))
+		if(hand_works(selhand ? TRUE : FALSE))
+			set_hand(selhand ? TRUE : FALSE)
+			op_keep_poke(src, OP_KEEP_HAND)
+			update_hand_hud()
+			var/obj/item/I = get_inactive_hand()
+			if(I)
+				I.in_inactive_hand(src)
 
 /mob/living/throw_item(atom/target, stance = I_HURT)
 	if(incapacitated() || !target || istype(target, /atom/movable/screen) || is_incorporeal())
@@ -1273,59 +1292,9 @@ CAPABILITIES(/datum/character_setup_button)
 	return FALSE
 
 /mob/living/Check_Shoegrip()
-	if(stat_value(src, STAT_FLYING))
+	if(src.flying)
 		return 1
 	..()
-
-/mob/living/verb/customsay()
-	set category = VERB_CAT_IC_SETTINGS
-	set name = "Customize Speech Verbs"
-	set desc = "Customize the text which appears when you type- e.g. 'says', 'asks', 'exclaims'."
-
-	if(src.client)
-		open_request(src, /datum/prompt/choice, PROC_REF(custom_say_verb_chosen), answerer = src, title = "Select Verb", question = "Which say-verb do you wish to customize?", choices = list("Say", "Whisper", "Ask (?)", "Exclaim/Shout/Yell (!)", "Cancel"), buttons = TRUE, timeout = 0)
-
-/// A custom speech verb; the selector is one of the four speech fields below.
-/datum/prompt/text/custom_say
-	timeout = 0
-	var/say_var
-
-/mob/living/proc/custom_say_verb_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	switch(A.answer.value)
-		if("Say")
-			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Say", question = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
-		if("Whisper")
-			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Whisper", question = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", say_var = "custom_whisper")
-		if("Ask (?)")
-			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Ask", question = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", say_var = "custom_ask")
-		if("Exclaim/Shout/Yell (!)")
-			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Exclaim", question = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", say_var = "custom_exclaim")
-
-/mob/living/proc/custom_say_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/text/custom_say/ask = A.request
-	var/custom_verb = lowertext(ask.value)
-	switch(ask.say_var)
-		if("custom_say")
-			bio.custom_say = custom_verb
-		if("custom_whisper")
-			bio.custom_whisper = custom_verb
-		if("custom_ask")
-			bio.custom_ask = custom_verb
-		if("custom_exclaim")
-			bio.custom_exclaim = custom_verb
-
-/mob/living/verb/set_metainfo()
-	set name = "Set OOC Metainfo"
-	set desc = "Sets OOC notes about yourself or your RP preferences or status."
-	set category = VERB_CAT_OOC_GAME_SETTINGS
-
-	if(usr != src)
-		return
-	ask_metainfo(src, "notes", TRUE, list("likes", "dislikes", "favs", "maybes", "style"))
 
 /mob/living/proc/set_metainfo_panel(mob/user)
 	if(user != src)
@@ -1424,7 +1393,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	if(!identity().ooc_notes)
 		return
 	var/msg = encode_html_emphasis(identity().ooc_notes) // the chat's emphasis markers, as the notes window shows them
-	if(identity().ooc_notes_style && (identity().ooc_notes_favs || identity().ooc_notes_likes || identity().ooc_notes_maybes || identity().ooc_notes_dislikes) && !user.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable)) // Oldchat hates proper formatting
+	if(identity().ooc_notes_style && (identity().ooc_notes_favs || identity().ooc_notes_likes || identity().ooc_notes_maybes || identity().ooc_notes_dislikes) && FALSE) // Oldchat hates proper formatting
 		msg += "<br><br>"
 		msg += "<table><tr>"
 		if(identity().ooc_notes_favs)
@@ -1467,80 +1436,6 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 		if(identity().ooc_notes_dislikes)
 			msg += "<br><br><b>[span_red("DISLIKES")]</b><br>[encode_html_emphasis(dq_sorted_note_lines(identity().ooc_notes_dislikes))]"
 	to_chat(user, span_chatexport("<b>[src]'s Metainfo:</b><br>[msg]"))
-/mob/living/verb/set_custom_link()
-	set name = "Set Custom Link"
-	set desc = "Set a custom link to show up with your examine text."
-	set category = VERB_CAT_IC_SETTINGS
-
-	if(usr != src)
-		return
-	open_request(src, /datum/prompt/text, PROC_REF(custom_link_entered), answerer = src, title = "Custom Link", question = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(STATE_GET(src, living_misc, custom_link)), max_len = 100, timeout = 0)
-
-/mob/living/proc/custom_link_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/new_link = strip_html_simple(A.answer.value)
-	if(new_link && CanUseTopic(src))
-		if(length(new_link) > 100)
-			to_chat(src, span_warning("Your entry is too long, it must be 100 characters or less."))
-			return
-
-		STATE_SET(src, living_misc, custom_link, new_link)
-		to_chat(src, span_notice("Link set: [STATE_GET(src, living_misc, custom_link)]"))
-		log_admin("[src]/[src.ckey] set their custom link to [STATE_GET(src, living_misc, custom_link)]")
-
-/mob/living/verb/set_voice_freq()
-	set name = "Set Voice Frequency"
-	set desc = "Sets your voice frequency to be higher or lower pitched!"
-	set category = VERB_CAT_OOC_GAME_SETTINGS
-
-	var/static/list/preset_voice_freqs = list("high" = MAX_VOICE_FREQ, "middle-high" = 56250, "middle" = 425000, "middle-low"= 28750, "low" = MIN_VOICE_FREQ, "custom" = 1, "random" = 0)
-	open_request(src, /datum/prompt/choice, PROC_REF(voice_freq_preset_chosen), answerer = src, title = "Voice Frequency", question = "What would you like to set your voice frequency to?", choices = preset_voice_freqs, timeout = 0)
-
-/mob/living/proc/voice_freq_preset_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/ask = A.answer
-	var/choice = ask.choices[ask.value]
-	if(choice == 1)
-		open_request(src, /datum/prompt/number, PROC_REF(voice_freq_entered), answerer = src, title = "Custom Voice Frequency", question = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", max_value = MAX_VOICE_FREQ, min_value = MIN_VOICE_FREQ, timeout = 0)
-		return
-	apply_voice_freq(choice)
-
-/mob/living/proc/voice_freq_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	apply_voice_freq(A.answer.value)
-
-/mob/living/proc/apply_voice_freq(choice)
-	if(choice == 0)
-		STATE_SET(src, mob_misc, voice_freq, choice)
-		return
-	STATE_SET(src, mob_misc, voice_freq, clamp(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ))
-
-/mob/living/verb/set_voice_type()
-	set name = "Set Voice Type"
-	set desc = "Sets your voice style!"
-	set category = VERB_CAT_OOC_GAME_SETTINGS
-
-	var/list/sound_choices = SSsounds.ready().talk_sound_sets()
-	// The original empty list opened nothing and did not reset the voice.
-	if(length(sound_choices))
-		open_request(src, /datum/prompt/choice/voice_type, PROC_REF(voice_type_chosen), answerer = src, choices = sound_choices)
-
-/// A cancel resets the voice to the default sounds.
-/datum/prompt/choice/voice_type
-	timeout = 0
-	title = "Voice Sounds"
-	question = "Which set of sounds would you like to use for your character's speech sounds?"
-
-/mob/living/proc/voice_type_chosen(datum/act/request/A)
-	if(!A.answer)
-		var/datum/request/R = A.request
-		if(R.outcome == REQ_CANCELLED && isnull(R.value))
-			STATE_SET(src, mob_misc, voice_sounds_list, DEFAULT_TALK_SOUNDS)
-		return
-	STATE_SET(src, mob_misc, voice_sounds_list, get_talk_sound(A.answer.value))
 
 /// after() target: the mob's AI picks up where it paused.
 /mob/living/proc/ai_brain_resume()
@@ -1558,3 +1453,37 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 		look.overlay(entry)
 	look.overlay(look_overlay_image('icons/obj/glamour.dmi', "animation", plane = PLANE_LIGHTING_ABOVE), when = glamour_shift)
 	look_status_indicators(look)
+
+// ---- The active hand ----
+// `hand` is TRUE for the left hand, FALSE for the right, null for none: swap and select only ever pick a hand that exists and works, and
+// a spawn or any limb change (the part attach/detach hooks, code/domains/body/parts/attach.dm) moves the selection off a hand that is gone.
+
+/// Whether this mob's left (`left` TRUE) or right hand exists and works: its hand slot is declared and usable (the limb is there and not a
+/// stump, the species and the mob allow it). A body may add more (a human's hand must not be dead or mutated).
+/mob/living/proc/hand_works(left)
+	return body_slot_usable(left ? SLOT_ID_HAND_L : SLOT_ID_HAND_R)
+
+/// Keeps the active hand on a hand that works: the current one if it still does, else the right, else the left, else none (null).
+/mob/living/proc/settle_active_hand()
+	if(!isnull(hand) && hand_works(hand ? TRUE : FALSE))
+		return
+	var/next = null
+	if(hand_works(FALSE))
+		next = FALSE
+	else if(hand_works(TRUE))
+		next = TRUE
+	if(next == hand && !isnull(hand))
+		return
+	if(isnull(next) && isnull(hand))
+		update_hand_hud()
+		return
+	log_world("HANDS: [src] ([type]) active hand [isnull(hand) ? "none" : (hand ? "left" : "right")] -> [isnull(next) ? "none" : (next ? "left" : "right")]")
+	set_hand(next)
+	update_hand_hud()
+
+/// Shows which hand is active on the HUD; neither when no hand is.
+/mob/living/proc/update_hand_hud()
+	if(!hud_used?.l_hand_hud_object || !hud_used.r_hand_hud_object)
+		return
+	hud_used.l_hand_hud_object.set_icon_state((!isnull(hand) && hand) ? "l_hand_active" : "l_hand_inactive")
+	hud_used.r_hand_hud_object.set_icon_state((!isnull(hand) && !hand) ? "r_hand_active" : "r_hand_inactive")

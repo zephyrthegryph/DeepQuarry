@@ -1,0 +1,35 @@
+{
+	"pet_name": "Biscuit",
+	"settings": [
+		{
+			"id": "set_name",
+			"label": "Name",
+			"action": "Rename",
+			"desc": "Sets your mob's name. You only get to do this once.",
+			"value": "Biscuit",
+			"swatch": null,
+			"enabled": 1,
+			"why": null
+		},
+		{
+			"id": "pick_color",
+			"label": "Colour",
+			"action": "Pick",
+			"desc": "You can set your colour! Only once.",
+			"value": "#aa5522",
+			"swatch": "#aa5522",
+			"enabled": 0,
+			"why": "You have already picked a colour. Ask an admin to reset it if you must."
+		},
+		{
+			"id": "pick_size",
+			"label": "Size",
+			"action": "Pick",
+			"desc": "Pick a size. Only once.",
+			"value": "100%",
+			"swatch": null,
+			"enabled": 1,
+			"why": null
+		}
+	]
+}

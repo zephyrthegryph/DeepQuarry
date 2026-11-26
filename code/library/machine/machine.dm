@@ -24,8 +24,8 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 
 /// The actor stands on the holder's turf (a machine worked from inside its own tile: a holomap, a pad). Followed through both
 /// movements, so a cached menu updates when either moves.
-/proc/req_on_holder_turf(because = null)
-	return part_make(/datum/entry/part/req/on_holder_turf, list("because" = because))
+/proc/req_on_holder_turf(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/on_holder_turf, list("because" = because)), fails)
 
 /datum/entry/part/req/on_holder_turf
 	part_name = "req_on_holder_turf"
@@ -45,8 +45,8 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 
 /// The held item can leave what holds it (nothing keeps it there: a sticky trait, a ledger slot that refuses): the item() op that puts
 /// it somewhere says why it can't before it is tried. The reason is the release refusal itself.
-/proc/req_held_releasable()
-	return part_make(/datum/entry/part/req/held_releasable)
+/proc/req_held_releasable(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/held_releasable), fails)
 
 /datum/entry/part/req/held_releasable
 	part_name = "req_held_releasable"
@@ -130,14 +130,17 @@ CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT, /datum/capability/lib/wall_mount, ke
 /// STAT_OPERABLE contribution from it.
 /proc/machine_without_area_power()
 	return list(
-		without("area_power"), // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		without("area_power_equip"), // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		without("area_power_light"), // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		without("area_power_environ"), // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 		without("power_operable")) // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 
-/// A machine that never draws power (a pipe): it carries no has_power at all, so an APC flip does not touch it.
+/// A machine that never draws power (a pipe): it carries no has_power at all, so an APC flip does not touch it, and no draw, so it never joins its area's
+/// power (no power_area relation, no demand rows, not among the area's power_machines: machine_power_start() skips it).
 CAPABILITY_DEF(unpowered_machine, CAP_UNPOWERED_MACHINE, key = NONE)
 
 /datum/capability/def/unpowered_machine/entries()
-	return machine_without_area_power()
+	return machine_without_area_power() + list(without(MACHINE_DEMAND_EQUIP_KEY), without(MACHINE_DEMAND_LIGHT_KEY), without(MACHINE_DEMAND_ENVIRON_KEY))
 
 CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE, area_power = TRUE)
 
@@ -167,8 +170,8 @@ CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair 
 	return list(machine_basics(board, repair, frame, powered, area_power), wall_mount(offset, offset_ns))
 
 /// The actor has claws that tear machines open (a species that can_shred() at `force`: a windoor asks 15).
-/proc/req_can_shred(force = 14)
-	return part_make(/datum/entry/part/req/can_shred, list("force" = force))
+/proc/req_can_shred(force = 14, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/can_shred, list("force" = force)), fails)
 
 /datum/entry/part/req/can_shred
 	part_name = "req_can_shred"

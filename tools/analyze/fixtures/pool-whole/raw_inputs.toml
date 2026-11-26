@@ -1,2 +1,0 @@
-sources = ["code/decl.dm", "code/new.dm", "code/leak.dm", "code/factory.dm", "code/reassign.dm", "code/multiple.dm", "code/release.dm", "code/line_string.dm", "code/exempt/library.dm", "code/ignored/ignore.dm", "code/.hidden/ignored.dm"]
-expected_sites = 10

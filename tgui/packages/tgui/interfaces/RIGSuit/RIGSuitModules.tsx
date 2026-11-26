@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { capitalize, toTitleCase } from 'tgui-core/string';
-
 import type { Data } from './types';
 
 export const RIGSuitModules = (props) => {
@@ -27,9 +27,9 @@ export const RIGSuitModules = (props) => {
 
   return (
     <Section title="Modules">
-      <Box color="label" mb="0.2rem" fontSize={1.5}>
+      <Label mb="0.2rem" fontSize={1.5}>
         Selected Primary: {capitalize(primarysystem || 'None')}
-      </Box>
+      </Label>
       {modules?.map((module, i) => (
         <Section
           key={i}

@@ -37,6 +37,7 @@ CAPABILITIES(/obj/item/flamethrower)
 	owns_one(nameof(weldtool), /obj/item/weldingtool, starts = /obj/item/weldingtool, starts_set = list("status" = 0)) // for disassembly
 	every(2 SECONDS, then(PROC_REF(flamethrower_step)), when = nameof(lit))
 	interface("Flamethrower")
+	ui_shape(lit = bool(), constructed = bool(), throw_amount = num(), has_tank = bool(), throw_min = num(), throw_max = num(), fuel_kpa = num())
 	without("ui_open")
 	op("light", ui_act("light"), then(PROC_REF(ui_act_light)))
 	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
@@ -83,7 +84,7 @@ CAPABILITIES(/obj/item/flamethrower/full)
 	if(!lit || !COOLDOWN_FINISHED(src, operating))
 		return
 	if(user && user.get_active_hand() == src)
-		if(stance == I_HELP && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
+		if(stance == I_HELP)
 			to_chat(user, span_warning("You refrain from firing \the [src] as you are out of combat mode."))
 			return
 		if(check_fuel())

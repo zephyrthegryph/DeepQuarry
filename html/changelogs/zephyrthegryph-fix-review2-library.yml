@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Patches and doses no longer refuse bleeding or dead organic limbs as robotic; the immune hub lowers each organ's own rejection; an anomalock heart gains and loses its EMP shield with its core; the diona left foot hangs from the left leg; removing a hive node strips the language from the patient; protected heads keep cannot_gib; infected kidneys and intestines no longer runtime on clientless humans; the ID wire no longer locks an open lock; a fabricator charges power only once materials are there"
+  - code_imp: "Shared blood-colour matching, germ symptoms, belly-liquid check and strip ops; dead legacy reaction aliases and unused resource adapters removed"

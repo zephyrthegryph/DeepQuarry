@@ -9,13 +9,14 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
+import type { WhitelistEditActions } from '../generated/WhitelistEdit';
 import type { Data } from './types';
 
 export const WhitelistAddEnttry = (props: {
   type: string;
   entries: string[];
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, WhitelistEditActions>();
   const { type, entries } = props;
   const [selectedRole, setSelectedRole] = useState('');
   const [ckey, setCkey] = useState('');

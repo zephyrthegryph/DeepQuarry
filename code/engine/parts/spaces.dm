@@ -252,8 +252,8 @@ CAPABILITY_TYPE(space, CAP_SPACE, /datum/capability/lib/space, key = id, id = nu
 
 /// req_door_free(DOOR): the door (a capability id) is not held: each space it closes has no latch holding it shut and no protrusion holding
 /// it open. What cover() and panel() put on their own open ops, so no type writes a needs() for it.
-/proc/req_door_free(door)
-	return part_make(/datum/entry/part/req/door_free, list("door" = door))
+/proc/req_door_free(door, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/door_free, list("door" = door)), fails)
 
 /datum/entry/part/req/door_free
 	part_name = "req_door_free"
@@ -283,8 +283,8 @@ CAPABILITY_TYPE(space, CAP_SPACE, /datum/capability/lib/space, key = id, id = nu
 		. += list(list(holder, "graph:[CAP_CONSTRUCTION]"))
 
 /// req_closed(SPACE_X): the door of the space is shut, else the door's "close it first" reason.
-/proc/req_closed(space_id)
-	return part_make(/datum/entry/part/req/space_closed, list("space" = space_id))
+/proc/req_closed(space_id, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/space_closed, list("space" = space_id)), fails)
 
 /datum/entry/part/req/space_closed
 	part_name = "req_closed"
@@ -311,8 +311,8 @@ CAPABILITY_TYPE(space, CAP_SPACE, /datum/capability/lib/space, key = id, id = nu
 	part_name = "req_space_open"
 	default_reason = /datum/msg/space/closed
 
-/proc/req_space_open(space_id)
-	return part_make(/datum/entry/part/req/space_open, list("space" = space_id))
+/proc/req_space_open(space_id, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/space_open, list("space" = space_id)), fails)
 
 /datum/entry/part/req/space_open/holds(datum/act/op/A)
 	var/atom/holder = A.holder
@@ -327,8 +327,8 @@ CAPABILITY_TYPE(space, CAP_SPACE, /datum/capability/lib/space, key = id, id = nu
 	return istype(holder) ? holder.space_read_keys(src.args["space"]) : list()
 
 /// req_space_empty(SPACE_X): no slot of the space, or of a space inside it, holds anything. The reason names what is there.
-/proc/req_space_empty(space_id)
-	return part_make(/datum/entry/part/req/space_empty, list("space" = space_id))
+/proc/req_space_empty(space_id, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/space_empty, list("space" = space_id)), fails)
 
 /datum/entry/part/req/space_empty
 	part_name = "req_space_empty"

@@ -57,8 +57,6 @@ MSG_DEF(bedsheet/cutting, span_notice("You begin cutting up %T% with %I%."), spa
 		new /obj/item/reagent_containers/glass/rag(T)
 	return TRUE
 
-/obj/item/bedsheet/ghosts_can_use_rotate_verbs()
-	return CONFIG_GET(flag/ghost_interaction)
 
 /obj/item/bedsheet/blue
 	icon_state = "sheetblue"
@@ -183,10 +181,6 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 /obj/item/bedsheet/mimedouble
 	icon_state = "doublesheetmime"
 	item_state = "sheetmime"
-
-/obj/item/bedsheet/clowndouble
-	icon_state = "doublesheetclown"
-	item_state = "sheetrainbow"
 
 /obj/item/bedsheet/captaindouble
 	icon_state = "doublesheetcaptain"
@@ -329,10 +323,6 @@ CAPABILITIES(/obj/structure/bedsheetbin)
 /obj/item/bedsheet/cosmos
 	icon = 'icons/obj/items.dmi'
 	icon_state = "sheetcosmos"
-
-/obj/item/bedsheet/cosmosdouble
-	icon = 'icons/obj/items.dmi'
-	icon_state = "doublesheetcosmos"
 
 /obj/item/bedsheet/pirate
 	icon = 'icons/obj/items.dmi'

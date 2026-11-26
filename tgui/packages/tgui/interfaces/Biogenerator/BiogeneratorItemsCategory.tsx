@@ -8,6 +8,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { BiogeneratorActions } from '../generated/Biogenerator';
 import { canBuyItem } from './functions';
 import type { Data, Sortable } from './types';
 
@@ -41,7 +42,7 @@ const BiogeneratorItemsEntry = (props: {
   build_eff: number;
   beaker: BooleanLike;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BiogeneratorActions>();
   const [amount, setAmount] = useState(1);
   const { title, item, build_eff, beaker } = props;
   const { points } = data;

@@ -10,7 +10,7 @@
 // BEGIN RESEARCH DATUMS
 
 /datum/malf_research_ability/interdiction/recall_shuttle
-	ability = /datum/game_mode/malfunction/verb/recall_shuttle
+	ability = /mob/living/silicon/ai/proc/malf_recall_shuttle
 	price = 75
 	name = "Recall Shuttle"
 
@@ -19,7 +19,7 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/recall_shuttle)
 
 
 /datum/malf_research_ability/interdiction/unlock_cyborg
-	ability = /datum/game_mode/malfunction/verb/unlock_cyborg
+	ability = /mob/living/silicon/ai/proc/malf_unlock_cyborg
 	price = 1200
 	name = "Unlock Cyborg"
 
@@ -28,7 +28,7 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/unlock_cyborg)
 
 
 /datum/malf_research_ability/interdiction/hack_cyborg
-	ability = /datum/game_mode/malfunction/verb/hack_cyborg
+	ability = /mob/living/silicon/ai/proc/malf_hack_cyborg
 	price = 3000
 	name = "Hack Cyborg"
 
@@ -37,19 +37,16 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 
 
 /datum/malf_research_ability/interdiction/hack_ai
-	ability = /datum/game_mode/malfunction/verb/hack_ai
+	ability = /mob/living/silicon/ai/proc/malf_hack_ai
 	price = 7500
 	name = "Hack AI"
 
 // END RESEARCH DATUMS
 // BEGIN ABILITY VERBS
 
-/datum/game_mode/malfunction/verb/recall_shuttle()
-	set name = "Recall Shuttle"
-	set desc = "25 CPU - Sends termination signal to quantum relay aborting current shuttle call."
-	set category = VERB_CAT_SOFTWARE
+/mob/living/silicon/ai/proc/malf_recall_shuttle()
 	var/price = 25
-	var/mob/living/silicon/ai/user = usr
+	var/mob/living/silicon/ai/user = src
 	if(!ability_prechecks(user, price))
 		return
 
@@ -63,12 +60,9 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 	cancel_call_proc(user)
 
 
-/datum/game_mode/malfunction/verb/unlock_cyborg()
-	set name = "Unlock Cyborg"
-	set desc = "125 CPU - Bypasses firewalls on Cyborg lock mechanism, allowing you to override lock command from robotics control console."
-	set category = VERB_CAT_SOFTWARE
+/mob/living/silicon/ai/proc/malf_unlock_cyborg()
 	var/price = 125
-	var/mob/living/silicon/ai/user = usr
+	var/mob/living/silicon/ai/user = src
 
 	if(!ability_prechecks(user, price))
 		return
@@ -129,12 +123,9 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 	user.hacking = 0
 
 
-/datum/game_mode/malfunction/verb/hack_cyborg()
-	set name = "Hack Cyborg"
-	set desc = "350 CPU - Allows you to hack cyborgs which are not slaved to you, bringing them under your control."
-	set category = VERB_CAT_SOFTWARE
+/mob/living/silicon/ai/proc/malf_hack_cyborg()
 	var/price = 350
-	var/mob/living/silicon/ai/user = usr
+	var/mob/living/silicon/ai/user = src
 
 	var/list/L = get_unlinked_cyborgs(user)
 	if(!L.len)
@@ -174,12 +165,9 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 		list(10 SECONDS, "SYSTEM LOG: User Admin disconnected. Changes reverted.", "SYSTEM LOG: Operation keycodes reset. New master AI: [user.name].", "Hack completed.")))
 
 
-/datum/game_mode/malfunction/verb/hack_ai()
-	set name = "Hack AI"
-	set desc = "600 CPU - Allows you to hack other AIs, slaving them under you."
-	set category = VERB_CAT_SOFTWARE
+/mob/living/silicon/ai/proc/malf_hack_ai()
 	var/price = 600
-	var/mob/living/silicon/ai/user = usr
+	var/mob/living/silicon/ai/user = src
 
 	var/list/L = get_other_ais(user)
 	if(!L.len)

@@ -39,11 +39,11 @@ CAPABILITIES(/obj/machinery/igniter)
 
 /// Whether hotspot_expose() on `T` could light or feed a fire.
 /proc/igniter_air_burnable(turf/open/T)
-	if(!istype(T) || !T.air)
+	if(!istype(T) || !T.turf_air())
 		return FALSE
 	if(T.active_hotspot)
 		return TRUE
-	var/datum/gas_mixture/air = T.air
+	var/datum/gas_mixture/air = T.turf_air()
 	if(air.get_moles(/datum/gas/oxygen) < 0.5)
 		return FALSE
 	return air.get_moles(/datum/gas/plasma) > 0.5 || air.get_moles(/datum/gas/tritium) > 0.5 || air.get_moles(/datum/gas/hydrogen) > 0.5 || air.get_moles(/datum/gas/freon) > 0.5

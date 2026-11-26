@@ -29,7 +29,7 @@ STATIC_ENTRY(item_combat)
 	var/attack_speed = DEFAULT_ATTACK_COOLDOWN
 	var/reach = 1
 	var/list/attack_verbs
-	/// Chance (0-100) to embed in a body it hits; 0 never, -1 the size default (roll_embed_chance()).
+	/// Chance (0-100) to embed in a body it hits; 0 never, -1 the size default (embed_chance_now()).
 	var/embed_chance = -1
 	/// INJURY_* this item inflicts as a weapon (or projectile, or thrown); its object damage is derived from it (injury_kind_obj_damage_type()).
 	var/injury_kind = INJURY_BLUNT

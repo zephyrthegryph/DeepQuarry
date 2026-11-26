@@ -3,7 +3,8 @@ import {
   StatStore,
   searchVerbs,
   verbCommand,
-  verbsOfTab,
+  verbGroupsOf,
+  viewsOf,
   visibleTabs,
 } from './store';
 
@@ -37,17 +38,16 @@ describe('stat panel store', () => {
     ]);
   });
 
-  it('groups subcategories and sorts by name', () => {
+  it('groups verbs by view and group, in layout order, by name', () => {
     const { store } = setup();
     store.receive('init_verbs', { verblist });
-    expect(verbsOfTab(store.state, 'Admin').map((g) => g.group)).toEqual([
-      null,
-      'Game',
+    expect(verbGroupsOf(store.state, 'Staff').map((g) => g.group)).toEqual([
+      'Players',
+      'Your admin session',
     ]);
-    expect(verbsOfTab(store.state, 'IC')[0].verbs.map((v) => v[1])).toEqual([
-      'Emote',
-      'Say',
-    ]);
+    expect(
+      verbGroupsOf(store.state, 'Actions')[0].verbs.map((v) => v[1]),
+    ).toEqual(['Emote', 'Say']);
   });
 
   it('a tab that empties goes away and the view returns to Status', () => {
@@ -109,6 +109,38 @@ describe('stat panel store', () => {
     expect(store.state.currentTab).toBe('Examine');
   });
 
+  it('inspect data adds the Inspect tab and switches to it', () => {
+    const { store, sent } = setup();
+    store.receive('update_inspect', { data: { target: 'Pen' }, switch: true });
+    expect(visibleTabs(store.state)).toContain('Inspect');
+    expect(store.state.currentTab).toBe('Inspect');
+    expect(store.state.view).toBe('Inspect');
+    expect(viewsOf(store.state)).toEqual([
+      'Status',
+      'Actions',
+      'Game',
+      'Inspect',
+    ]);
+    expect(store.state.inspect?.target).toBe('Pen');
+    expect(sent).toContainEqual(['Set-Tab', { tab: 'Inspect' }]);
+  });
+
+  it('an inspect refresh keeps the current tab', () => {
+    const { store } = setup();
+    store.receive('update_inspect', { data: { target: 'Pen' }, switch: false });
+    expect(store.state.currentTab).toBe('Status');
+    expect(store.state.view).toBe('Status');
+    expect(viewsOf(store.state)).toContain('Inspect');
+  });
+
+  it('clearing inspect while it is shown goes back to Status', () => {
+    const { store } = setup();
+    store.receive('update_inspect', { data: { target: 'Pen' }, switch: true });
+    store.receive('update_inspect', { data: null, switch: false });
+    expect(store.state.view).toBe('Status');
+    expect(viewsOf(store.state)).not.toContain('Inspect');
+  });
+
   it('misc tabs come and go', () => {
     const { store } = setup();
     store.receive('create_misc', 'Vore');
@@ -129,5 +161,83 @@ describe('stat panel store', () => {
     ]);
     expect(searchVerbs(store.state, ' ')).toEqual([]);
     expect(verbCommand('Fix Stat Panel')).toBe('Fix-Stat-Panel');
+  });
+
+  it('the Abilities tab comes with the first ability and goes with the last', () => {
+    const { sent, store } = setup();
+    store.receive('init_verbs', { verblist });
+    const entry = {
+      ref: 'r1',
+      id: 'Items/x',
+      name: 'Toggle Flashlight',
+      desc: '',
+      category: 'Items',
+      icon: null,
+      cost: null,
+      cooldown: 0,
+      toggled: null,
+      channel: null,
+      refusal: null,
+      slot: 1,
+    };
+    store.receive('update_abilities', {
+      abilities: [entry],
+      resources: [],
+      slots: 9,
+    });
+    expect(visibleTabs(store.state).slice(0, 2)).toEqual([
+      'Status',
+      'Abilities',
+    ]);
+    expect(store.state.abilities?.abilities[0].name).toBe('Toggle Flashlight');
+    store.setTab('Abilities');
+    store.receive('update_abilities', {
+      abilities: [],
+      resources: [],
+      slots: 9,
+    });
+    expect(visibleTabs(store.state)).not.toContain('Abilities');
+    expect(store.state.abilities).toBeNull();
+    expect(store.state.currentTab).toBe('Status');
+    expect(sent.at(-1)).toEqual(['Set-Tab', { tab: 'Status' }]);
+  });
+
+  it('a resource alone is enough for the tab', () => {
+    const { store } = setup();
+    store.receive('update_abilities', {
+      abilities: [],
+      resources: [{ name: 'Energy', value: 50, max: 100 }],
+      slots: 9,
+    });
+    expect(visibleTabs(store.state)).toContain('Abilities');
+  });
+});
+
+describe('MC Health updates', () => {
+  it('merge the sections a partial update carries into the panel data', () => {
+    const store = new StatStore({ sendMessage: () => {} });
+    store.receive('update_mc', {
+      mc_metrics: { header: { current_usage: 20 }, rust: { a: 1 } },
+      partial: false,
+    });
+    store.receive('update_mc', {
+      mc_metrics: { header: { current_usage: 30 } },
+      partial: true,
+    });
+    const data = store.state.mcMetrics as any;
+    expect(data.current_usage).toBe(30);
+    expect(data.rust).toEqual({ a: 1 });
+    store.receive('update_mc', { mc_metrics: { header: {} }, partial: false });
+    expect((store.state.mcMetrics as any).rust).toBeUndefined();
+  });
+});
+
+describe('stat panel store, fail-safe', () => {
+  it('a message it cannot read is dropped, and the next one still lands', () => {
+    const { store } = setup();
+    // A malformed abilities payload (no lists) once threw out of receive().
+    expect(() => store.receive('update_abilities', {})).not.toThrow();
+    store.receive('init_verbs', { verblist });
+    expect(store.state.verbs.length).toBe(verblist.length);
   });
 });

@@ -11,7 +11,7 @@
 	icon_state = "beartrap0"
 	desc = "A mechanically activated leg trap. Low-tech, but reliable. Looks like it could really hurt if you set it off."
 	w_class = ITEMSIZE_NORMAL
-	MATERIAL_BULK(MAT_STEEL, 18750)
+	MATERIAL_BULK(MAT_STEEL, 6000)
 	var/deployed = FALSE
 	var/camo_net = FALSE
 	var/stun_length = 0.25 SECONDS
@@ -175,7 +175,7 @@ CAPABILITIES(/obj/item/beartrap)
 	..()
 
 	if(!QDELETED(src))
-		set_max_integrity(max(1, round(material.integrity / 3)) * MATERIAL_WEAR_UNIT)
+		set_max_integrity(max(1, round(material.toughness * MATERIAL_HP_PER_TOUGHNESS / 3)) * MATERIAL_WEAR_UNIT)
 		update_integrity(max_integrity)
 		name = (material.edge_damage() * force_divisor > 15) ?  "[material.display_name] razor wire" : "[material.display_name] [initial(name)]"
 
@@ -376,9 +376,9 @@ CAPABILITIES(/obj/item/material/barbedwire)
 				return
 			check -= picked
 
-	if(material.is_brittle() && prob(material.hardness))
+	if(material.is_brittle() && prob(material.strength))
 		material_wear(get_integrity())
-	else if(!prob(material.hardness))
+	else if(!prob(material.strength))
 		material_wear(MATERIAL_WEAR_UNIT)
 
 	return

@@ -1,22 +1,23 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
-  Box,
   Button,
   NoticeBox,
   ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  operating: BooleanLike;
-  metal_amount: number;
-};
+import type {
+  AncientDroneFabActions,
+  AncientDroneFabData,
+} from './generated/AncientDroneFab';
 
 export const AncientDroneFab = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    AncientDroneFabData,
+    AncientDroneFabActions
+  >();
 
   const { operating, metal_amount } = data;
 
@@ -94,12 +95,12 @@ export const AncientDroneFab = (props) => {
 };
 
 const ProductionEntry = (props: {
-  action: string;
+  action: keyof AncientDroneFabActions;
   label: string;
   cost: string;
 }) => {
   const { action, label, cost } = props;
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<AncientDroneFabData, AncientDroneFabActions>();
 
   return (
     <Stack.Item>
@@ -108,9 +109,7 @@ const ProductionEntry = (props: {
           <Button onClick={() => act(action)}>{label}</Button>
         </Stack.Item>
         <Stack.Item>
-          <Box inline color="label">
-            ({cost} cc metal)
-          </Box>
+          <Label inline>({cost} cc metal)</Label>
         </Stack.Item>
       </Stack>
     </Stack.Item>

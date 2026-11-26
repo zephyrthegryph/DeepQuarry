@@ -76,7 +76,7 @@
 	name = "Hydroponics Supply Crate"
 	desc = "A set of standard hydroponics supplies. Requires Hydroponics access."
 	contains = list(
-			/obj/item/reagent_containers/spray/plantbgone = 4,
+			VARIANT(/obj/item/reagent_containers/spray/plantbgone) = 4,
 			/obj/item/reagent_containers/glass/bottle/ammonia = 2,
 			/obj/item/material/knife/machete/hatchet,
 			/obj/item/material/minihoe,
@@ -155,7 +155,7 @@
 	desc = "Equipment for dealing with out-of-control weeds. Requires Hydroponics access."
 	contains = list(
 			/obj/item/material/knife/machete/hatchet = 2,
-			/obj/item/reagent_containers/spray/plantbgone = 4,
+			VARIANT(/obj/item/reagent_containers/spray/plantbgone) = 4,
 			/obj/item/clothing/mask/gas/clear = 2,
 			/obj/item/grenade/chem_grenade/antiweed = 2,
 			/obj/item/material/twohanded/fireaxe/scythe

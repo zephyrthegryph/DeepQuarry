@@ -6,7 +6,7 @@
 	basestate = "panel"
 	max_integrity = 350
 	glasstype = /obj/item/stack/tile/maintenance_panel // Yes these are technically windows, drops into their panel on deconstruct and shatter
-	maximal_heat = /datum/material/steel::melting_point
+	maximal_heat = 250 + MATERIAL_REFERENCE_HEAT * 40 // steel melting point (a material melting point is 250 K + 40 per point of heat resistance)
 	force_threshold = 5
 	shardtype = null
 	opacity = 1 // Difficult to see past
@@ -45,7 +45,6 @@ CAPABILITIES(/obj/structure/window/maintenance_panel)
 /obj/structure/window/maintenance_panel/proc/weld_toggle_done(datum/act/op/A)
 	set_anchored(!anchored)
 	update_nearby_tiles(need_rebuild = 1)
-	update_verbs()
 	to_chat(A.actor, span_info("You [anchored ? "weld" : "cut"] the [src] [anchored ? "to" : "off"] the wall."))
 	return OP_OK
 

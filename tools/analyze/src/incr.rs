@@ -35,11 +35,6 @@ use serde::{Deserialize, Serialize};
 use crate::lint::AllowUse;
 use crate::tree::{Hash, SourceFile};
 
-#[path="incr_captured.rs"]mod captured;
-pub(crate) use captured::{captured_compute_scope,CapturedComputeScope};
-#[path="incr_sharded.rs"]mod sharded;
-pub use sharded::{sharded_facts,sharded_keyed};
-
 struct Config {
     dir: PathBuf,
     stamp: String,
@@ -54,7 +49,6 @@ fn cfg() -> &'static Mutex<Option<Config>> {
 
 /// Called by the engine once per run: where the stores live and which stamp they carry.
 pub fn configure(dir: PathBuf, stamp: String, enabled: bool) {
-    if captured::active(){captured::reject("captured compute cannot mutate old cache configuration");}
     *cfg().lock().unwrap() = Some(Config { dir, stamp, enabled });
 }
 
@@ -85,8 +79,6 @@ pub fn suspend(on: bool) {
 }
 
 fn config() -> Option<(PathBuf, String)> {
-    if captured::active(){return None;}
-    #[cfg(test)] captured::observe_config();
     if SUSPENDED.load(std::sync::atomic::Ordering::SeqCst) {
         return None;
     }
@@ -154,7 +146,6 @@ pub fn stamp() -> Option<String> {
 
 /// One value cached under `key`: `compute()` runs only when the stored key differs.
 pub fn cached<T: Serialize + DeserializeOwned>(name: &str, key: Hash, compute: impl FnOnce() -> T) -> T {
-    if captured::active(){return captured::single(compute);}
     let (st, target) = load(name, key);
     if let Some(b) = st.map.get(&0) {
         if let Ok(v) = de::<T>(b) {
@@ -238,9 +229,6 @@ fn keyed_inner<R>(name: &str, ctx: Hash, files: &[&SourceFile], f: impl Fn(&Sour
 where
     R: Serialize + DeserializeOwned + Default + PartialEq + Send,
 {
-    if let Some(scope)=captured::inputs(files){
-        let result=captured::direct(files,f);scope.require().unwrap_or_else(|error|panic!("{error}"));return result;
-    }
     let sharded = files.len() >= SHARD_MIN_FILES;
     let n = if sharded { SHARDS } else { 1 };
     let target = config();
@@ -366,6 +354,3 @@ where
     let rs = keyed(&format!("{}-judge", name), key, files, |file| judge(file, &idx));
     (idx, rs)
 }
-
-#[cfg(test)]
-#[path="incr_captured_tests.rs"]mod captured_tests;

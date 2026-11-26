@@ -39,3 +39,6 @@
 /// Identity transform matrix (xyzw + projection) with 16 values exclusive to particles
 /// list(xx,xy,xz,xw, yx,yy,yz,yw, zx,zy,zz,zw, wx,wy,wz,ww)
 #define TRANSFORM_PROJECTION_MATRIX_IDENTITY list(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+
+/// The colour of a HUD hand slot while its hand cannot be used: greyscale at under half opacity (the matrix scales alpha).
+#define HAND_UNUSABLE_COLOR list(0.33,0.33,0.33,0, 0.59,0.59,0.59,0, 0.11,0.11,0.11,0, 0,0,0,0.45, 0,0,0,0)

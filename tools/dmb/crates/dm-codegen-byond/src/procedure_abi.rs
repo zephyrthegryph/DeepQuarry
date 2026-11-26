@@ -90,8 +90,6 @@ fn expression_text(value: &SymbolicExpression, symbols: &SymbolTable) -> Result<
         .ok_or_else(|| AbiError::invariant("unavailable or malformed symbolic expression spelling"))
 }
 fn compact(text: &str) -> Result<String, AbiError> {
-    #[cfg(test)]
-    FORMAL_RELEX_CALLS.with(|count| count.set(count.get() + 1));
     let lexed = dm_syntax::lex(text);
     if !lexed.diagnostics.is_empty() {
         return Err(AbiError::source("invalid ABI expression syntax"));
@@ -109,49 +107,6 @@ fn compact(text: &str) -> Result<String, AbiError> {
         })
         .map(|t| t.text)
         .collect())
-}
-#[cfg(test)]
-thread_local! { static FORMAL_RELEX_CALLS: std::cell::Cell<usize> = const {std::cell::Cell::new(0)}; }
-fn compatibility_formal_spelling(
-    value: &SymbolicExpression,
-    symbols: &SymbolTable,
-) -> Result<String, AbiError> {
-    compact(&expression_text(value, symbols)?)
-}
-/// Caller has authenticated these original primary-token facts. Unlike the
-/// standalone compatibility adapter, this never renders and re-lexes them.
-fn original_formal_spelling(
-    value: &SymbolicExpression,
-    symbols: &SymbolTable,
-) -> Result<String, AbiError> {
-    let mut text = String::new();
-    let mut previous = None;
-    for token in value.tokens.iter() {
-        let spelling = symbols.text(token.text).ok_or_else(|| {
-            AbiError::invariant("unavailable or malformed symbolic expression spelling")
-        })?;
-        if token
-            .relative_span
-            .end
-            .checked_sub(token.relative_span.start)
-            != Some(spelling.len())
-            || previous.is_some_and(|end| end > token.relative_span.start)
-        {
-            return Err(AbiError::invariant(
-                "unavailable or malformed symbolic expression spelling",
-            ));
-        }
-        previous = Some(token.relative_span.end);
-        if !matches!(
-            token.kind,
-            dm_syntax::TokenKind::Whitespace
-                | dm_syntax::TokenKind::Newline
-                | dm_syntax::TokenKind::Comment
-        ) {
-            text.push_str(spelling);
-        }
-    }
-    Ok(text)
 }
 fn restriction(name: &str) -> Option<u32> {
     Some(match name {
@@ -177,7 +132,6 @@ fn validate_return_annotation(
     annotation: &SymbolicExpression,
     symbols: &SymbolTable,
     evaluate: &mut impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
-    spelling: fn(&SymbolicExpression, &SymbolTable) -> Result<String, AbiError>,
 ) -> Result<(), AbiError> {
     for tokens in annotation
         .tokens
@@ -186,7 +140,7 @@ fn validate_return_annotation(
         let fragment = SymbolicExpression {
             tokens: tokens.to_vec().into(),
         };
-        let part = spelling(&fragment, symbols)?;
+        let part = compact(&expression_text(&fragment, symbols)?)?;
         let part = part.as_str();
         let path = part.strip_prefix('/').is_some_and(|tail| {
             !tail.is_empty()
@@ -374,77 +328,9 @@ pub fn prepare_verified_procedure(
     metadata: &ProcedureMetadata,
     symbols: &SymbolTable,
     body: &[Item],
-    inputs: ProcedureInputs,
-    inherited: InheritedAbi<'_>,
-    mut evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
-) -> Result<PreparedProcedure, AbiError> {
-    prepare_verified_procedure_with_spelling(
-        metadata,
-        symbols,
-        body,
-        inputs,
-        inherited,
-        |_, expression| evaluate(expression),
-        compatibility_formal_spelling,
-    )
-}
-/// Native hosts must bind metadata to the current original frontend occurrence
-/// before using this entry. It shares every ABI policy branch with compatibility;
-/// only formal lexical compaction consumes existing original tokens directly.
-pub fn prepare_verified_procedure_original_tokens(
-    metadata: &ProcedureMetadata,
-    symbols: &SymbolTable,
-    body: &[Item],
-    inputs: ProcedureInputs,
-    inherited: InheritedAbi<'_>,
-    mut evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
-) -> Result<PreparedProcedure, AbiError> {
-    prepare_verified_procedure_with_spelling(
-        metadata,
-        symbols,
-        body,
-        inputs,
-        inherited,
-        |_, expression| evaluate(expression),
-        original_formal_spelling,
-    )
-}
-/// Ephemeral callback domain from this ONE ABI policy walk. This scalar tag
-/// carries no AST/model/source authority and is never serialized into ABI data.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum AbiExpressionSite {
-    Setting,
-    SettingCondition,
-    ReturnAnnotation,
-}
-/// Native original-owner adapter may demand roots only for evaluated settings.
-/// Standalone compatibility entry points above retain their exact callback API.
-pub fn prepare_verified_procedure_original_tokens_with_sites(
-    metadata: &ProcedureMetadata,
-    symbols: &SymbolTable,
-    body: &[Item],
-    inputs: ProcedureInputs,
-    inherited: InheritedAbi<'_>,
-    evaluate: impl FnMut(AbiExpressionSite, &SymbolicExpression) -> Result<SemanticValue, AbiError>,
-) -> Result<PreparedProcedure, AbiError> {
-    prepare_verified_procedure_with_spelling(
-        metadata,
-        symbols,
-        body,
-        inputs,
-        inherited,
-        evaluate,
-        original_formal_spelling,
-    )
-}
-fn prepare_verified_procedure_with_spelling(
-    metadata: &ProcedureMetadata,
-    symbols: &SymbolTable,
-    body: &[Item],
     mut inputs: ProcedureInputs,
     inherited: InheritedAbi<'_>,
-    mut evaluate: impl FnMut(AbiExpressionSite, &SymbolicExpression) -> Result<SemanticValue, AbiError>,
-    formal_spelling: fn(&SymbolicExpression, &SymbolTable) -> Result<String, AbiError>,
+    mut evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
 ) -> Result<PreparedProcedure, AbiError> {
     fn setting_left(items: &[Item]) -> bool {
         items.iter().any(|item| {
@@ -459,10 +345,7 @@ fn prepare_verified_procedure_with_spelling(
     fn select<'a>(
         nodes: &'a [ProcedureSettingNode],
         output: &mut Vec<&'a ProcedureSetting>,
-        evaluate: &mut impl FnMut(
-            AbiExpressionSite,
-            &SymbolicExpression,
-        ) -> Result<SemanticValue, AbiError>,
+        evaluate: &mut impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
     ) -> Result<(), AbiError> {
         for node in nodes {
             match node {
@@ -472,7 +355,7 @@ fn prepare_verified_procedure_with_spelling(
                     then_branch,
                     else_branch,
                 } => {
-                    let truth = match evaluate(AbiExpressionSite::SettingCondition, condition)? {
+                    let truth = match evaluate(condition)? {
                         SemanticValue::Null => false,
                         SemanticValue::NumberBits(bits) if f32::from_bits(bits).is_finite() => {
                             f32::from_bits(bits) != 0.0
@@ -499,12 +382,7 @@ fn prepare_verified_procedure_with_spelling(
     let mut selected = Vec::new();
     select(&metadata.settings, &mut selected, &mut evaluate)?;
     if let Some(annotation) = &metadata.signature.return_annotation {
-        validate_return_annotation(
-            annotation,
-            symbols,
-            &mut |expression| evaluate(AbiExpressionSite::ReturnAnnotation, expression),
-            formal_spelling,
-        )?;
+        validate_return_annotation(annotation, symbols, &mut evaluate)?;
     }
     let mut layout = match inherited {
         InheritedAbi::Fresh => ProcLayout::default(),
@@ -528,7 +406,7 @@ fn prepare_verified_procedure_with_spelling(
                 // argument table restricts its input to the authored element
                 // family. Keep that metadata separate from lexical lookup.
                 if declared_type == Some(dm_ir::SymbolId::of("/list")) {
-                    param.list_element_type().or(declared_type)
+                    param.list_element_type.or(declared_type)
                 } else {
                     declared_type
                 }
@@ -546,7 +424,7 @@ fn prepare_verified_procedure_with_spelling(
             inputs.readonly_parameters.insert(index as u32);
         }
         let declared = param
-            .declared_type()
+            .declared_type
             .map(|id| {
                 symbols
                     .text(id)
@@ -563,7 +441,7 @@ fn prepare_verified_procedure_with_spelling(
         let mut flags = type_flags(restriction_path)?;
         if let Some(annotation) = &param.input_annotation {
             flags = 0;
-            for part in formal_spelling(annotation, symbols)?.split('|') {
+            for part in compact(&expression_text(annotation, symbols)?)?.split('|') {
                 flags |= restriction(part).ok_or_else(|| {
                     fail(format!("unsupported parameter input annotation: {part}"))
                 })?;
@@ -571,7 +449,7 @@ fn prepare_verified_procedure_with_spelling(
             // DreamMaker adds the `null` input bit when an annotated formal with an `in` source defaults to null
             // (`mob/target = null as mob in list`): the prompt then offers a null choice.
             if let (Some(default), Some(_)) = (&param.default, &param.source_expression) {
-                if formal_spelling(default, symbols)? == "null" {
+                if compact(&expression_text(default, symbols)?)? == "null" {
                     flags |= 0x80;
                 }
             }
@@ -591,8 +469,9 @@ fn prepare_verified_procedure_with_spelling(
         let source = param
             .source_expression
             .as_ref()
-            .map(|value| formal_spelling(value, symbols))
+            .map(|v| expression_text(v, symbols))
             .transpose()?;
+        let source = source.map(|s| compact(&s)).transpose()?;
         let encoded = match source.as_deref() {
             None => ArgumentSource::Builtin {
                 kind: 1,
@@ -638,38 +517,30 @@ fn prepare_verified_procedure_with_spelling(
         let name = symbols
             .text(setting.name)
             .ok_or_else(|| AbiError::invariant("setting name spelling unavailable"))?;
-        // Source/checker directives have no runtime ABI meaning. Compile admission
-        // rejects them before lowering; PrepareQuery retains them for policy.
-        // Do not evaluate their symbolic expressions as runtime constants.
-        if name.starts_with("SpacemanDMM_") {
-            continue;
-        }
         if setting.operation == SettingOperation::In && name != "src" {
             return Err(AbiError::source("only src supports an in setting"));
         }
         match name {
-            "name" | "desc" | "category" => {
-                match evaluate(AbiExpressionSite::Setting, &setting.value)? {
-                    SemanticValue::Text(value) => {
-                        let value = value.to_vec();
-                        match name {
-                            "name" => layout.display_name = Some(value),
-                            "desc" => layout.description = Some(value),
-                            _ => {
-                                layout.category = Category::Text(value);
-                                layout.flags &= !0x20;
-                            }
+            "name" | "desc" | "category" => match evaluate(&setting.value)? {
+                SemanticValue::Text(value) => {
+                    let value = value.to_vec();
+                    match name {
+                        "name" => layout.display_name = Some(value),
+                        "desc" => layout.description = Some(value),
+                        _ => {
+                            layout.category = Category::Text(value);
+                            layout.flags &= !0x20;
                         }
                     }
-                    SemanticValue::Null if name == "category" => {
-                        layout.category = Category::Null;
-                        layout.flags |= 0x20;
-                    }
-                    _ => return Err(fail("unsupported textual procedure setting")),
                 }
-            }
+                SemanticValue::Null if name == "category" => {
+                    layout.category = Category::Null;
+                    layout.flags |= 0x20;
+                }
+                _ => return Err(fail("unsupported textual procedure setting")),
+            },
             "waitfor" | "hidden" | "background" | "instant" | "popup_menu" => {
-                let enabled = match number(evaluate(AbiExpressionSite::Setting, &setting.value)?)? {
+                let enabled = match number(evaluate(&setting.value)?)? {
                     0 => false,
                     1 => true,
                     _ => return Err(AbiError::source("boolean setting must be zero or one")),
@@ -688,7 +559,7 @@ fn prepare_verified_procedure_with_spelling(
                 }
             }
             "invisibility" => {
-                let value = number(evaluate(AbiExpressionSite::Setting, &setting.value)?)?;
+                let value = number(evaluate(&setting.value)?)?;
                 if value > 127 {
                     return Err(AbiError::source("invisibility exceeds 127"));
                 }

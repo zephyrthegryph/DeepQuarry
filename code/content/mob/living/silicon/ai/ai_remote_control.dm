@@ -77,8 +77,6 @@
 	deploy_to_shell(A.answer.value, TRUE)
 
 /mob/living/silicon/ai/proc/deploy_to_shell_act()
-	set category = VERB_CAT_AI_COMMANDS
-	set name = "Deploy to Shell"
 	deploy_to_shell() // This is so the AI is not prompted with a list of all mobs when using the 'real' proc.
 
 /mob/living/silicon/ai/proc/disconnect_shell(message = "Your remote connection has been reset!")

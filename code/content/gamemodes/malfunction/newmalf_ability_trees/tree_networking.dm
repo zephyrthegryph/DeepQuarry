@@ -10,7 +10,7 @@
 // BEGIN RESEARCH DATUMS
 
 /datum/malf_research_ability/networking/basic_hack
-	ability = /datum/game_mode/malfunction/verb/basic_encryption_hack
+	ability = /mob/living/silicon/ai/proc/malf_basic_encryption_hack
 	price = 25
 	name = "Basic Encryption Hack"
 
@@ -19,7 +19,7 @@ CAPABILITIES(/datum/malf_research_ability/networking/basic_hack)
 
 
 /datum/malf_research_ability/networking/advanced_hack
-	ability = /datum/game_mode/malfunction/verb/advanced_encryption_hack
+	ability = /mob/living/silicon/ai/proc/malf_advanced_encryption_hack
 	price = 400
 	name = "Advanced Encryption Hack"
 
@@ -28,7 +28,7 @@ CAPABILITIES(/datum/malf_research_ability/networking/advanced_hack)
 
 
 /datum/malf_research_ability/networking/elite_hack
-	ability = /datum/game_mode/malfunction/verb/elite_encryption_hack
+	ability = /mob/living/silicon/ai/proc/malf_elite_encryption_hack
 	price = 1000
 	name = "Elite Encryption Hack"
 
@@ -37,18 +37,15 @@ CAPABILITIES(/datum/malf_research_ability/networking/elite_hack)
 
 
 /datum/malf_research_ability/networking/system_override
-	ability = /datum/game_mode/malfunction/verb/system_override
+	ability = /mob/living/silicon/ai/proc/malf_system_override
 	price = 2750
 	name = "System Override"
 
 // END RESEARCH DATUMS
 // BEGIN ABILITY VERBS
 
-/datum/game_mode/malfunction/verb/basic_encryption_hack()
-	set category = VERB_CAT_SOFTWARE
-	set name = "Basic Encryption Hack"
-	set desc = "10 CPU - Basic encryption hack that allows you to overtake APCs on the station."
-	var/mob/living/silicon/ai/user = usr
+/mob/living/silicon/ai/proc/malf_basic_encryption_hack()
+	var/mob/living/silicon/ai/user = src
 
 	user.malf_pick_target(get_unhacked_apcs(user), "Basic Encryption Hack", "Select an APC to hack:", TYPE_PROC_REF(/mob/living/silicon/ai, malf_apc_hack_picked))
 
@@ -89,12 +86,9 @@ CAPABILITIES(/datum/malf_research_ability/networking/elite_hack)
 	user.hacking = 0
 
 
-/datum/game_mode/malfunction/verb/advanced_encryption_hack()
-	set category = VERB_CAT_SOFTWARE
-	set name = "Advanced Encrypthion Hack"
-	set desc = "75 CPU - Attempts to bypass encryption on the Command Quantum Relay, giving you ability to fake legitimate messages. Has chance of failing."
+/mob/living/silicon/ai/proc/malf_advanced_encryption_hack()
 	var/price = 75
-	var/mob/living/silicon/ai/user = usr
+	var/mob/living/silicon/ai/user = src
 
 	if(!ability_prechecks(user, price))
 		return
@@ -129,12 +123,9 @@ CAPABILITIES(/datum/malf_research_ability/networking/elite_hack)
 	AN.Announce(text, actor = user)
 
 
-/datum/game_mode/malfunction/verb/elite_encryption_hack()
-	set category = VERB_CAT_SOFTWARE
-	set name = "Elite Encryption Hack"
-	set desc = "200 CPU - Allows you to hack station's ALERTCON system, changing alert level. Has high chance of failijng."
+/mob/living/silicon/ai/proc/malf_elite_encryption_hack()
 	var/price = 200
-	var/mob/living/silicon/ai/user = usr
+	var/mob/living/silicon/ai/user = src
 	if(!ability_prechecks(user, price))
 		return
 
@@ -158,11 +149,8 @@ CAPABILITIES(/datum/malf_research_ability/networking/elite_hack)
 	set_security_level(alert_target)
 
 
-/datum/game_mode/malfunction/verb/system_override()
-	set category = VERB_CAT_SOFTWARE
-	set name = "System Override"
-	set desc = "500 CPU - Begins hacking station's primary firewall, quickly overtaking remaining APC systems. When completed grants access to station's self-destruct mechanism. Network administrators will probably notice this."
-	var/mob/living/silicon/ai/user = usr
+/mob/living/silicon/ai/proc/malf_system_override()
+	var/mob/living/silicon/ai/user = src
 	open_request(user, /datum/prompt/choice/malf_system_override, TYPE_PROC_REF(/mob/living/silicon/ai, malf_system_override_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), costs = list("[RES_CPU]" = 500))
 
 /mob/living/silicon/ai/proc/malf_system_override_confirmed(datum/act/request/context)
@@ -222,8 +210,6 @@ CAPABILITIES(/datum/malf_research_ability/networking/elite_hack)
 	user.hack_can_fail = 0
 	user.hacking = 0
 	user.system_override = 2
-	// Granted by the AI's malf research (the AI itself if it has none).
-	grant(user, granted_verb(/datum/game_mode/malfunction/verb/ai_destroy_station), user.research || user)
 
 
 // END ABILITY VERBS

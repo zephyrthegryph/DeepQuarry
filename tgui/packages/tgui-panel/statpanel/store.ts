@@ -4,6 +4,21 @@
  * derived from them instead of kept in the DOM.
  */
 
+import { type AbilitiesData, hasAbilities } from './abilities';
+import type { InspectData } from './inspect';
+import {
+  ADMIN_VIEWS,
+  dataTabOf,
+  groupRank,
+  type PanelView,
+  PLAYER_VIEWS,
+  placeOf,
+  SERVER_PAGES,
+  type ServerPage,
+} from './layout';
+import type { McHealthData } from './mcHealthData';
+import { run } from './menu';
+
 export type Host = {
   sendMessage: (type: string, payload?: object) => void;
 };
@@ -15,12 +30,19 @@ export type State = {
   version: number;
   currentTab: string;
   statusParts: string[];
-  mcParts: (string | number)[][];
-  mcMetrics: any;
+  /** Where the admin's eye is, for the MC Health panel's Advanced section. */
+  mcLocation: string;
+  mcMetrics: McHealthData | null;
   hrefToken: string | null;
   verbs: Verb[];
+  /** Admin verbs the panel does not list but its search finds (init_verbs). */
+  searchable: Verb[];
   spells: string[][];
   examine: string[];
+  inspect: InspectData | null;
+  abilities: AbilitiesData | null;
+  /** Date.now() when the abilities arrived: the cooldowns count down from it. */
+  abilitiesAt: number;
   tickets: string[][];
   misc: Record<string, any[][]>;
   sdql2: string[][];
@@ -28,6 +50,9 @@ export type State = {
   turfName: string;
   turfContents: string[][];
   splitAdminTabs: boolean;
+  /** Which of the five views is shown (layout.ts); currentTab is the server tab whose data it needs, or a card over it. */
+  view: PanelView;
+  serverPage: ServerPage;
 };
 
 export function initialState(): State {
@@ -35,12 +60,16 @@ export function initialState(): State {
     version: 0,
     currentTab: 'Status',
     statusParts: ['Loading...'],
-    mcParts: [['Loading...', '']],
+    mcLocation: '',
     mcMetrics: null,
     hrefToken: null,
     verbs: [],
+    searchable: [],
     spells: [],
     examine: [],
+    inspect: null,
+    abilities: null,
+    abilitiesAt: 0,
     tickets: [],
     misc: {},
     sdql2: [],
@@ -48,6 +77,8 @@ export function initialState(): State {
     turfName: '',
     turfContents: [],
     splitAdminTabs: false,
+    view: 'Status',
+    serverPage: 'Health',
   };
 }
 
@@ -58,7 +89,7 @@ export function tabOfCategory(category: string, split: boolean): string {
   return split && head === 'Admin' ? tail : head;
 }
 
-const PINNED = ['Status', 'MC', 'Tickets'];
+const PINNED = ['Status', 'Abilities', 'MC', 'Tickets'];
 
 function pinOrder(tab: string): number {
   const index = PINNED.indexOf(tab);
@@ -79,23 +110,117 @@ export function visibleTabs(state: State): string[] {
   );
 }
 
-/** Verbs of one tab: top level first, then one group per subcategory. */
-export function verbsOfTab(
+/** The views this client gets: admins (a Staff or Server verb, or the MC or Tickets tab) get all five. */
+export function viewsOf(state: State): PanelView[] {
+  const admin =
+    state.permanentTabs.includes('MC') ||
+    state.permanentTabs.includes('Tickets') ||
+    state.verbs.some((verb) => {
+      const view = placeOf(verb[0]).view;
+      return view === 'Staff' || view === 'Server';
+    });
+  const base = admin ? ADMIN_VIEWS : PLAYER_VIEWS;
+  // Inspect is its own tab beside Status and Actions while something is inspected.
+  return state.inspect ? [...base, 'Inspect'] : base;
+}
+
+/** The verbs a view shows, grouped (layout.ts places each category), groups in layout order, verbs by name. */
+export function verbGroupsOf(
   state: State,
-  tab: string,
-): { group: string | null; verbs: Verb[] }[] {
-  const groups = new Map<string | null, Verb[]>([[null, []]]);
-  for (const verb of state.verbs) {
-    if (tabOfCategory(verb[0], state.splitAdminTabs) !== tab) continue;
-    const group = verb[0].includes('.') ? verb[0].split('.')[1] : null;
-    if (!groups.has(group)) groups.set(group, []);
-    groups.get(group)!.push(verb);
+  view: PanelView,
+): { group: string; verbs: Verb[] }[] {
+  const groups = new Map<string, Verb[]>();
+  // An admin's panel holds only the pinned admin verbs; the Server view is where the rest of the server's tools are reached.
+  const listed = new Set(state.verbs.map((verb) => verb[1]));
+  const shown =
+    view === 'Server'
+      ? [
+          ...state.verbs,
+          ...state.searchable.filter((verb) => !listed.has(verb[1])),
+        ]
+      : state.verbs;
+  for (const verb of shown) {
+    const place = placeOf(verb[0]);
+    if (place.view !== view) continue;
+    if (!groups.has(place.group)) groups.set(place.group, []);
+    groups.get(place.group)!.push(verb);
   }
   const byName = (a: Verb, b: Verb) => a[1].localeCompare(b[1]);
   return [...groups]
-    .filter(([, verbs]) => verbs.length)
-    .sort(([a], [b]) => (a ?? '').localeCompare(b ?? ''))
+    .sort(([a], [b]) => groupRank(a) - groupRank(b) || a.localeCompare(b))
     .map(([group, verbs]) => ({ group, verbs: verbs.sort(byName) }));
+}
+
+/** A search result: what to show, where it lives, the command it runs. */
+export type Found = {
+  label: string;
+  path: string;
+  command: string;
+  /** A panel result: Enter or a click opens this view instead of running a command. */
+  opens?: { view: PanelView; page?: ServerPage };
+};
+
+/** Menu page sections searched with the verbs (menu.ts). */
+export type MenuSection = {
+  name: string;
+  items: { label: string; command: string }[];
+};
+
+/**
+ * One search over everything the panel offers: the verbs of every view this client has (with the view and group they
+ * sit in) and the Menu page's items. Names that start with the query come first, then the rest by name.
+ */
+export function searchAll(
+  state: State,
+  query: string,
+  menu: MenuSection[],
+): Found[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return [];
+  const views = viewsOf(state);
+  const found: Found[] = [];
+  for (const view of views) {
+    if (view.toLowerCase().includes(needle))
+      found.push({ label: view, path: 'Panel', command: '', opens: { view } });
+  }
+  if (views.includes('Server')) {
+    for (const page of SERVER_PAGES) {
+      if (page.toLowerCase().includes(needle))
+        found.push({
+          label: page,
+          path: 'Panel › Server',
+          command: '',
+          opens: { view: 'Server', page },
+        });
+    }
+  }
+  const listed = new Set(state.verbs.map((verb) => verb[1]));
+  const unlisted = state.searchable.filter((verb) => !listed.has(verb[1]));
+  for (const verb of [...state.verbs, ...unlisted]) {
+    if (!verb[1].toLowerCase().includes(needle)) continue;
+    const place = placeOf(verb[0]);
+    if (!views.includes(place.view)) continue;
+    found.push({
+      label: verb[1],
+      path: `${place.view} › ${place.group}`,
+      command: verbCommand(verb[1]),
+    });
+  }
+  for (const section of menu) {
+    for (const item of section.items) {
+      if (!item.label.toLowerCase().includes(needle)) continue;
+      found.push({
+        label: item.label,
+        path: `Game › ${section.name}`,
+        command: item.command,
+      });
+    }
+  }
+  const starts = (f: Found) =>
+    f.label.toLowerCase().startsWith(needle) ? 0 : 1;
+  return found.sort(
+    (a, b) => starts(a) - starts(b) || a.label.localeCompare(b.label),
+  );
 }
 
 export function searchVerbs(state: State, query: string): Verb[] {
@@ -109,6 +234,13 @@ export function searchVerbs(state: State, query: string): Verb[] {
 /** The command a verb click runs. */
 export function verbCommand(name: string): string {
   return name.replace(/\s/g, '-');
+}
+
+/** Two lists of status lines are the same lines in the same order. */
+export function sameLines(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
 }
 
 export class StatStore {
@@ -131,12 +263,33 @@ export class StatStore {
 
   private changed(patch: Partial<State>) {
     const next = { ...this.state, ...patch, version: this.state.version + 1 };
-    // A tab that went away takes the view back to Status.
-    const leaving = !visibleTabs(next).includes(next.currentTab);
-    if (leaving) next.currentTab = 'Status';
+    // A tab that went away (a card's subject, a queries list) takes the panel back to the data its view needs.
+    const home = dataTabOf(next.view, next.serverPage);
+    const leaving =
+      next.currentTab !== home && !visibleTabs(next).includes(next.currentTab);
+    if (leaving) next.currentTab = home;
     this.state = next;
-    if (leaving) this.host.sendMessage('Set-Tab', { tab: 'Status' });
+    if (leaving) this.host.sendMessage('Set-Tab', { tab: home });
     for (const listener of this.listeners) listener();
+  }
+
+  /** Shows a view (and, for Server, a page): the server is told which tab's data to send. */
+  setView(view: PanelView, serverPage: ServerPage = this.state.serverPage) {
+    const tab = dataTabOf(view, serverPage);
+    if (tab !== this.state.currentTab)
+      this.host.sendMessage('Set-Tab', { tab });
+    this.changed({ view, serverPage, currentTab: tab });
+  }
+
+  /** Closes the card over the view (examine, inspect, the turf list). */
+  closeCard() {
+    this.setTab(dataTabOf(this.state.view, this.state.serverPage));
+  }
+
+  /** Acts on a search result: opens a panel, or runs the command. */
+  activate(found: Found) {
+    if (found.opens) this.setView(found.opens.view, found.opens.page);
+    else run(found.command);
   }
 
   setTab(tab: string) {
@@ -173,15 +326,26 @@ export class StatStore {
     return verbs;
   }
 
-  /** One server message. */
+  /** One server message; one it cannot read is logged and dropped, so the panel keeps taking the next. */
   receive(type: string, payload: any) {
+    try {
+      this.receiveUnsafe(type, payload);
+    } catch (error) {
+      console.error(`stat panel: dropped ${type}`, error);
+    }
+  }
+
+  private receiveUnsafe(type: string, payload: any) {
     const { state } = this;
     const tabs = state.permanentTabs;
     switch (type) {
       case 'init_verbs':
         // The server just cut panel_tabs: it needs the permanent tabs back.
         for (const tab of tabs) this.host.sendMessage('Send-Tabs', { tab });
-        this.changed({ verbs: this.addVerbs([], payload.verblist || []) });
+        this.changed({
+          verbs: this.addVerbs([], payload.verblist || []),
+          searchable: payload.searchable || [],
+        });
         break;
       case 'add_verb_list':
         this.changed({ verbs: this.addVerbs(state.verbs, payload) });
@@ -193,22 +357,28 @@ export class StatStore {
         });
         break;
       }
-      case 'update_stat':
-        this.changed({
-          statusParts: [
-            payload.ping_str,
-            ...payload.global_data,
-            ...(payload.other_str || []),
-          ].filter((part) => part !== null && part !== undefined),
-        });
+      case 'update_stat': {
+        const statusParts = [
+          payload.ping_str,
+          ...payload.global_data,
+          ...(payload.other_str || []),
+        ].filter((part) => part !== null && part !== undefined);
+        // Unchanged lines: no new state, so nothing re-renders.
+        if (sameLines(statusParts, state.statusParts)) break;
+        this.changed({ statusParts });
         break;
-      case 'update_mc':
+      }
+      case 'update_mc': {
+        // The server sends only the sections that changed ("partial"); the header's fields sit at the top level of the panel's data.
+        const sections = payload.mc_metrics || {};
+        const base = payload.partial && state.mcMetrics ? state.mcMetrics : {};
         this.changed({
-          mcParts: [['Location:', payload.coord_entry], ...payload.mc_data],
-          mcMetrics: payload.mc_metrics,
+          mcLocation: payload.coord_entry || '',
+          mcMetrics: { ...base, ...sections, ...(sections.header || {}) },
           permanentTabs: this.withTab(tabs, 'MC'),
         });
         break;
+      }
       case 'update_spells':
         this.changed({ spells: payload.actions || [] });
         break;
@@ -307,6 +477,27 @@ export class StatStore {
         });
         if (payload.UPD) this.setTab('Examine');
         break;
+      case 'update_inspect':
+        this.changed({
+          inspect: payload.data ?? null,
+          permanentTabs: payload.data ? this.withTab(tabs, 'Inspect') : tabs,
+        });
+        // A new inspect selects the Inspect tab; a refresh keeps the current one. Clearing it while shown goes home.
+        if (payload.data && payload.switch) this.setView('Inspect');
+        else if (!payload.data && this.state.view === 'Inspect')
+          this.setView('Status');
+        break;
+      case 'update_abilities': {
+        const shown = hasAbilities(payload);
+        this.changed({
+          abilities: shown ? payload : null,
+          abilitiesAt: Date.now(),
+          permanentTabs: shown
+            ? this.withTab(tabs, 'Abilities')
+            : this.withoutTabs(tabs, ['Abilities']),
+        });
+        break;
+      }
       case 'update_split_admin_tabs':
         this.changed({ splitAdminTabs: payload === true });
         break;

@@ -18,6 +18,7 @@
 
 CAPABILITIES(/datum/computer_file/program/filemanager)
 	interface("NtosFileManager")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool(), error = nullable(schema_text()), filedata = nullable(schema_text()), filename = nullable(schema_text()), files = list_of(row(name = schema_text(), type = schema_text(), uid = num(), size = num(), undeletable = bool())), usbconnected = bool(), usbfiles = list_of(row(name = schema_text(), type = schema_text(), uid = num(), size = num(), undeletable = bool())))
 	op("PRG_openfile", ui_act("PRG_openfile", arg("uid", num())), then(PROC_REF(ui_act_prg_openfile)))
 	op("PRG_newtextfile", ui_act("PRG_newtextfile"), asks(/datum/prompt/text, fields = list("title" = "File rename", "question" = "Enter file name or leave blank to cancel:")), then(PROC_REF(ui_act_prg_newtextfile)))
 	op("PRG_closefile", ui_act("PRG_closefile"), then(PROC_REF(ui_act_prg_closefile)))
@@ -210,8 +211,8 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 /datum/computer_file/program/filemanager/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()
 
-	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
-	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer().portable_drive
+	var/obj/item/computer_hardware/hard_drive/HDD = computer()?.hard_drive
+	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer()?.portable_drive
 
 	data["error"] = null
 	if(error)
@@ -237,7 +238,7 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 			else
 				data["filedata"] = pencode2html(file.stored_data)
 				data["filename"] = "[file.filename].[file.filetype]"
-	else
+	else if(HDD)
 		var/list/files = list()
 		for(var/datum/computer_file/F in HDD.stored_files)
 			files += list(list(

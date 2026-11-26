@@ -1,9 +1,0 @@
-/atom/proc/Move()
-    return
-/mob/child
-    var/value=0
-    Move()
-        value=1
-/proc/check(atom/A)
-    set SpacemanDMM_should_be_pure=1
-    A.Move()

@@ -11,22 +11,37 @@
 //!
 //! Hard lint, no baseline.
 
+use std::collections::BTreeSet;
 
 use dreammaker::ast::{Expression, Follow, Term};
 
-use crate::lint::{Cx,Lint,Meta,Registry,Sink};
+use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::tree::CODE_DM;
 
+static META: Meta = Meta {
+    name: "setter_publishes",
+    group: "",
+    label: "setter_publishes",
+    legacy: "",
+    select: CODE_DM,
+    scan: ScanKind::Tree,
+    policy: Policy::Hard,
+    rules: &[
+        RuleMeta { name: "no_publish", hint: "call tracked_changed(src, nameof(v)) on every path that changes the var (or chain to ..()): a write nothing publishes leaves the var silently untracked" },
+        RuleMeta { name: "not_a_setter", hint: "this proc shares the name of a setter but does not write the var, so the var (read by reactive code) cannot get a generated setter: rename the proc" },
+    ],
+    allow: &[],
+    lists: &[],
+};
 
-use crate::setter_publication_policy::META;
-
-use crate::setter_publication_policy as policy;
+const PUBLISHERS: &[&str] = &["tracked_changed", "publish_change", "state_changed", "record_changed", "rel_set", "rel_add", "rel_remove", "own_set", "own_add", "own_put", "own_clear", "timed_set", "vars_write"];
 
 /// Whether `code` publishes: a publisher call, another `set_*()` call (a delegation), or a chain to the parent.
 fn publishes(code: &dreammaker::ast::Block) -> bool {
     let mut found = false;
     crate::sem::ast::walk_block(code, &mut |e, _| {
         let Expression::Base { term, follow } = e else { return };
-        let named = policy::publishes_named;
+        let named = |n: &str| PUBLISHERS.contains(&n) || n.starts_with("set_") || n.starts_with("add_") || n.starts_with("remove_") || n.starts_with("publish");
         match &term.elem {
             Term::ParentCall(_) => found = true,
             Term::Call(n, _) if named(n.as_str()) => found = true,
@@ -50,7 +65,7 @@ fn owned_elsewhere(code: &dreammaker::ast::Block) -> bool {
         if let Expression::Base { term, .. } = e {
             if let Term::Call(n, _) = &term.elem {
                 let n = n.as_str();
-                if policy::owned_base_call(n) {
+                if n == "native_write" || n.starts_with("heat_") || n.starts_with("vg_") {
                     found = true;
                 }
             }
@@ -72,16 +87,19 @@ impl Lint for SetterPublishes {
         let inf = crate::gens::auto_tracked::inferred(tree);
         let Some(set) = inf.as_ref().as_ref() else { return };
         // (definer type, proc name, var, must it be a setter of the var)
-        let mut judged = crate::setter_publication_policy::Judged::new();
-        let mut control=crate::key_policy_control::Compatibility;
-        for (_owner,var,why) in &set.blocked {
-            crate::setter_publication_policy::inferred_judgment(&mut judged,var,why,&mut control).unwrap();
+        let mut judged: BTreeSet<(String, String, String, bool)> = BTreeSet::new();
+        for (_owner, var, why) in &set.blocked {
+            let Some((definer, rest)) = why.split_once(" already defines ") else { continue };
+            let name = rest.trim_end_matches("()");
+            if name == format!("set_{var}") {
+                judged.insert((definer.to_string(), name.to_string(), var.clone(), true));
+            }
         }
-        let decls=crate::sem::decls::Decls::get(tree);
-        for (ty,vars) in &decls.tracked_explicit {
+        let decls = crate::sem::decls::Decls::get(tree);
+        for (ty, vars) in &decls.tracked_explicit {
             for var in vars {
                 if sem.ty(ty).and_then(|t| t.get().procs.get(&format!("set_{var}")).map(|_| ())).is_some() {
-                    crate::setter_publication_policy::explicit_judgment(&mut judged,ty,var,&mut control).unwrap();
+                    judged.insert((ty.clone(), format!("set_{var}"), var.clone(), false));
                 }
             }
         }
@@ -102,9 +120,10 @@ impl Lint for SetterPublishes {
                     continue;
                 }
                 let line = crate::sem::procs::engine_line(&sem.root, rel, v.location.line) as usize;
-                if let Some(finding)=policy::judge(writes,publishes,must){
-                    let message=match finding.message(&definer,&name,&var,&mut crate::key_policy_control::Compatibility){Ok(text)=>text,Err(never)=>match never{}};
-                    out.site_in_msg(finding.rule(),rel,line,message);
+                if writes && !publishes {
+                    out.site_in_msg("no_publish", rel, line, format!("{definer}/{name}() writes {var} and never publishes it"));
+                } else if !writes && !publishes && must {
+                    out.site_in_msg("not_a_setter", rel, line, format!("{definer}/{name}() does not write {var}"));
                 }
             }
         }

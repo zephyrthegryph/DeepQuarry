@@ -9,6 +9,10 @@ import {
   Stack,
 } from 'tgui-core/components';
 
+import type {
+  GhostSpawnActions,
+  GhostSpawnData,
+} from '../../generated/GhostSpawn';
 import {
   describeDroneData,
   describeMouseData,
@@ -18,7 +22,7 @@ import type { describeReturnData, GhostJoinData } from '../types';
 import { SpawnElement } from './SpawnElement';
 
 export const GhostJoin = (props: { all_ghost_join_options: GhostJoinData }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<GhostSpawnData, GhostSpawnActions>();
   const { all_ghost_join_options } = props;
 
   const {

@@ -60,15 +60,48 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 	if(isnull(for_table))
 		for_table = list()
 		GLOB.notice_plans[T] = for_table
-	var/list/known = for_table["[notice_type]"]
+	var/list/known = for_table[notice_type] // keyed by the notice's type path itself: no text is built per publish
 	if(!isnull(known))
 		return known
 	var/list/hooks = list()
 	for(var/datum/hook/H as anything in hook_table_of(T))
 		if(H.kind == HOOK_NOTICE && ispath(notice_type, H.target))
 			hooks += H
-	for_table["[notice_type]"] = hooks
+	for_table[notice_type] = hooks
 	return hooks
+
+/// type -> notice type -> TRUE/FALSE: notice_type_unheard()'s memo.
+GLOBAL_LIST_EMPTY(notice_unheard)
+
+/// TRUE when nothing of E's type can hear `notice_type`: no static hook of its table (notice_hooks_static()) and no legacy on_notice() reaction of its
+/// rx table. Per (type, notice type), memoized once both tables exist. The dynamic listeners (activation hooks, observed notice types) live on E.rx and
+/// are asked by notice_wanted() itself.
+/proc/notice_type_unheard(datum/E, notice_type)
+	var/list/memo = GLOB?.notice_unheard
+	var/list/by_type = memo?[E.type]
+	if(by_type)
+		var/known = by_type[notice_type]
+		if(!isnull(known))
+			return known // an answer is memoized only once both tables exist: the memo is the first thing asked
+	if(!memo || !islist(GLOB.notice_plans) || !islist(GLOB.rx_tables))
+		return FALSE // the tables are still being built: ask the full path, cache nothing
+	var/datum/type_table/T = table_of(E)
+	if(T == table_empty())
+		return FALSE
+	. = !length(notice_hooks_static(T, notice_type))
+	if(.)
+		var/datum/rx_table/RT = GLOB.rx_tables[E.type]
+		if(isnull(RT))
+			RT = rx_table_build(E)
+		if(RT && length(RT.notices))
+			for(var/datum/reaction/R as anything in RT.notices)
+				if(ispath(notice_type, R.key))
+					. = FALSE
+					break
+	if(!by_type)
+		by_type = list()
+		memo[E.type] = by_type
+	by_type[notice_type] = .
 
 /// TRUE when `E` is fully gone as far as notices go: deleted, and past being merely mid-deletion. An entity inside its own destroy transaction (qdel() has
 /// started: its qdeleting notice, the contents it spills, the links it drops) still publishes, and its observers still hear it, until the transaction ends.
@@ -84,7 +117,39 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 /// TRUE when something on E listens for `notice_type` for `outcome` (the committed outcome by default): a type-level or activation hook, or a
 /// legacy on_notice() reaction (committed only).
 /proc/notice_wanted(datum/E, notice_type, outcome = ACT_COMMITTED)
+	GLOB.notice_wanted_calls++
+#if defined(UNIT_TESTS)
+	if(GLOB.notice_wanted_trace)
+		GLOB.notice_wanted_trace["[notice_type] on [E?.type]"]++
+#endif
+	// Nothing of E's type hears it and E has no listener of its own (activation hooks and observed notice types live on E.rx): no table walk. Most publishes
+	// are of this kind, the "created" notice every atom sends its location at init among them (504 k at a full-map boot, heard by nothing).
+	if(!E)
+		return FALSE
+	var/datum/rx_state/S = E.rx
+	if((!S || (!S.notice_types && (!S.hooks || !notice_hooks_live_hear(S, notice_type)))) && notice_type_unheard(E, notice_type))
+		return FALSE
 	return notice_wanted_native(E, notice_type, outcome)
+
+/// Whether any of the activation hooks on `S` is a notice hook that hears `notice_type`. An area carries dozens of activation hooks and hears a notice
+/// from every atom created in it: the notice targets of its hooks are kept per hooks generation (set_hooks_generation()), so asking is one walk of them.
+/proc/notice_hooks_live_hear(datum/rx_state/S, notice_type)
+	if(S.notice_targets_gen != S.hooks_generation || isnull(S.notice_targets))
+		var/list/targets = list()
+		for(var/datum/hook/H as anything in S.hooks)
+			if(H.kind == HOOK_NOTICE)
+				targets |= H.target
+		S.notice_targets = targets
+		S.notice_targets_gen = S.hooks_generation
+	for(var/target in S.notice_targets)
+		if(ispath(notice_type, target))
+			return TRUE
+	return FALSE
+
+/datum/rx_state
+	/// The notice types the activation hooks on this state hear, as of notice_targets_gen (notice_hooks_live_hear()).
+	var/list/notice_targets
+	var/notice_targets_gen = -1
 
 /// notice_wanted()'s body.
 /proc/notice_wanted_native(datum/E, notice_type, outcome = ACT_COMMITTED)
@@ -167,20 +232,31 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 			N.source = holder
 		var/depth = GLOB.act_depth
 		GLOB.act_chain += "[N.type]:[run_on.type]"
+		MOVE_COST_BEGIN(hook_started)
 		try
 			hook_run_parts(H, N, H.entry.children)
 		catch(var/exception/e)
 			dq_report_caught(e, "notice [N.type] hook on [run_on.type]")
+		move_cost_listener(hook_started, "hook", N.type, H, run_on)
 		GLOB.act_depth = depth
 		GLOB.act_chain.len--
 
 /// The next drain point (the kernel's D, P and R drains): the notices queued past the depth cap are delivered, in the order they were queued, at
 /// depth zero; the on_change hooks that were marked run.
-/proc/act_drain_point()
+/// Both drains share the simulation lane's budget (GLOB.stat_tick_spent) and carry what does not fit to the next drain point. `fresh` starts the budget
+/// whole (a direct call); the kernel's drain point passes FALSE.
+/proc/act_drain_point(fresh = TRUE)
+	if(fresh)
+		GLOB.stat_tick_spent = 0
+	// Bracketed under the stat drain's own names so the tick ledger says which part of a drain point the bookkeeping is.
 	if(length(GLOB.notice_late_queue) && !GLOB.notice_draining_late)
-		notice_drain_late()
+		var/late_ledger = km_ledger_enter(KM_CAT_STAT_DRAIN, "drain point", "late notice queue")
+		notice_drain_late(FALSE)
+		km_ledger_leave(late_ledger)
 	if(GLOB.hook_change_pending)
-		hooks_drain_changes()
+		var/hooks_ledger = km_ledger_enter(KM_CAT_STAT_DRAIN, "drain point", "on_change marks")
+		hooks_drain_changes(FALSE)
+		km_ledger_leave(hooks_ledger)
 
 /// The holder of a late-queue row: a handle resolves to a live datum (null once it was deleted); a datum put in a row by hand is itself.
 /proc/notice_late_holder(list/row)
@@ -218,14 +294,18 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 		if(length(GLOB.act_chain) > chain_len)
 			GLOB.act_chain.len = chain_len
 
-/proc/notice_drain_late()
+/proc/notice_drain_late(fresh = TRUE)
+	if(fresh)
+		GLOB.stat_tick_spent = 0
 	GLOB.notice_draining_late = TRUE
+	var/budget = stat_lane_budget(LANE_SIMULATION)
 	var/passes = 0
 	while(length(GLOB.notice_late_queue) && passes < DRAIN_MAX_PASSES)
 		passes++
 		var/list/batch = GLOB.notice_late_queue
 		GLOB.notice_late_queue = list()
-		for(var/list/row as anything in batch)
+		for(var/row_index in 1 to length(batch))
+			var/list/row = batch[row_index]
 			var/datum/holder = notice_late_holder(row)
 			if(!holder || QDELETED(holder))
 				// The receiver was deleted before the drain: it gets nothing and its row is dropped (a holder mid-deletion was delivered to when its
@@ -234,7 +314,25 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 				log_world("ACT: late notice [dropped?.type] dropped: its holder was deleted before the drain (\[[row[4]]\])")
 				dropped?.release()
 				continue
+			var/spent = GLOB.stat_tick_spent
+			// The first delivery of a drain always runs; past the budget the rows not yet delivered go back to the front of the queue, in order, where
+			// a holder's destroy transaction still finds them.
+			if(spent && spent + STAT_EVAL_CHARGE > budget)
+				var/list/rest = batch.Copy(row_index)
+				GLOB.notice_late_queue = rest + GLOB.notice_late_queue
+				GLOB.stat_spills++
+				TEST_REC_SPILL("late notices: [length(rest)] carried at pass [passes]")
+				drain_spill_log("late notice", "ACT: the late notice drain spent its budget of [budget]us; [length(rest)] notice\s resume at the next drain point")
+				GLOB.notice_draining_late = FALSE
+				return
+			var/charge_started = stat_charge_begin()
+			var/late_started = TICK_USAGE
+			var/datum/notice/late_notice = row[2]
+			var/late_ledger = km_ledger_enter(KM_CAT_NOTICE, holder.type, late_notice?.type)
 			notice_late_deliver(holder, row)
+			km_ledger_leave(late_ledger)
+			KM_SLOW_INNER(late_started, "late notice [late_notice?.type] on [holder.type]")
+			GLOB.stat_tick_spent = spent + stat_charge_end(charge_started)
 	if(length(GLOB.notice_late_queue))
 		log_world("ACT: the late notice drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.notice_late_queue)] notice(s) still queued (a handler keeps publishing past the depth cap); they wait for the next drain point")
 	GLOB.notice_draining_late = FALSE

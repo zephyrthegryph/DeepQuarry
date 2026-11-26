@@ -3,16 +3,17 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
+import { SCANLINES_DISABLED_KEY } from 'tgui/layouts/consoleTheme';
 import { Box, Modal, Section, Stack } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
-
+import type { LobbyMenuActions } from '../generated/LobbyMenu';
 import { LobbyContext } from './constants';
 import { LobbyButtons } from './LobbyButtons';
 import { CustomButton } from './LobbyElements';
 import type { LobbyData } from './types';
 
 export const LobbyMenu = (props) => {
-  const { act, data } = useBackend<LobbyData>();
+  const { act, data } = useBackend<LobbyData, LobbyMenuActions>();
 
   const onLoadPlayer = useRef<HTMLAudioElement>(null);
 
@@ -27,7 +28,7 @@ export const LobbyMenu = (props) => {
     (async () => {
       const [filterDisabled, animationsDisabled, audioDisabled] =
         await Promise.all([
-          storage.get('lobby-filter-disabled'),
+          storage.get(SCANLINES_DISABLED_KEY),
           storage.get('lobby-animations-disabled'),
           storage.get('lobby-audio-disabled'),
         ]);
@@ -103,7 +104,7 @@ export const LobbyMenu = (props) => {
                           icon="tv"
                           onClick={() => {
                             storage.set(
-                              'lobby-filter-disabled',
+                              SCANLINES_DISABLED_KEY,
                               !filterDisabled,
                             );
                             setFilterDisabled(!filterDisabled);

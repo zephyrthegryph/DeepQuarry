@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -7,11 +8,11 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { CloningConsoleActions } from '../generated/CloningConsole';
 import type { Data } from './types';
 
 export const CloningConsoleTemp = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CloningConsoleActions>();
   const { temp } = data;
   if (!temp?.text || temp.text.length <= 0) {
     return;
@@ -40,7 +41,7 @@ export const CloningConsoleTemp = (props) => {
 };
 
 export const CloningConsoleStatus = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CloningConsoleActions>();
   const { scanner, numberofpods, autoallowed, autoprocess, disk } = data;
   return (
     <Section
@@ -50,9 +51,7 @@ export const CloningConsoleStatus = (props) => {
           {!!autoallowed && (
             <>
               <Stack.Item>
-                <Box inline color="label">
-                  Auto-processing:&nbsp;
-                </Box>
+                <Label inline>Auto-processing:&nbsp;</Label>
               </Stack.Item>
               <Stack.Item>
                 <Button

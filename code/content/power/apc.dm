@@ -205,6 +205,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	/// (ui_usable()), and the nightshift setting is the one a locked panel leaves to anyone.
 	section(controls, "The APC's window and the buttons in it")
 	interface("APC")
+	ui_shape(locked = bool(), emagged = bool(), externalPower = int(), powerCellStatus = num(), chargeMode = bool(), chargingStatus = int(), totalLoad = num(), failTime = int(), gridCheck = bool(), coverLocked = bool(), siliconUser = bool(), emergencyLights = bool(), powerChannels = list_of(row()), isOperating = bool(), nightshiftLights = bool(), nightshiftSetting = int())
 	op("breaker", ui_act(), toggles(nameof(operating)), logs(LOG_GAME))
 	op("chargemode", ui_act("charge"), toggles(nameof(chargemode)), then(PROC_REF(chargemode_applied)), logs(LOG_GAME))
 	op("coverlock", ui_act("cover"), toggles(nameof(coverlocked)), logs(LOG_GAME))
@@ -618,13 +619,16 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	set_equipment(new_equipment)
 	set_lighting(new_lighting)
 	set_environ(new_environ)
+	var/channel_setters_ms = TICK_USAGE_TO_MS(setters_start)
 	var/charging_start = TICK_USAGE
 	set_charging(new_charging)
 	var/charging_ms = TICK_USAGE_TO_MS(charging_start)
 	var/status_start = TICK_USAGE
 	set_main_status(new_status)
 	var/status_ms = TICK_USAGE_TO_MS(status_start)
+	var/note_start = TICK_USAGE
 	apc_report_cost_note(shown_changed, cell_ms, TICK_USAGE_TO_MS(setters_start))
+	var/note_ms = TICK_USAGE_TO_MS(note_start)
 	power_event_count++ // reports heard (tests: a settled APC hears nothing)
 	alarm = !!alarm
 	var/alarm_start = TICK_USAGE
@@ -635,6 +639,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		else
 			GLOB.power_alarm.clearAlarm(loc, src)
 	var/alarm_ms = TICK_USAGE_TO_MS(alarm_start)
+	var/log_start = TICK_USAGE
 	if(shown_changed)
 		// A channel, status or alarm change is always logged. The charging lamp flips back and forth on a settled station (about 18 reports a second over
 		// 310 APCs), so a charging-only report is logged once per APC_REPORT_LOG_INTERVAL and the line says how many it stands for.
@@ -644,13 +649,14 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 			COOLDOWN_START(src, report_log_cooldown, APC_REPORT_LOG_INTERVAL)
 		else
 			report_log_skipped++
+	var/log_ms = TICK_USAGE_TO_MS(log_start)
 	var/apply_start = TICK_USAGE
 	if(channels_changed)
 		apply_area_power()
 	var/apply_ms = TICK_USAGE_TO_MS(apply_start)
 	var/report_ms = TICK_USAGE_TO_MS(cost_start)
 	if(report_ms >= 50)
-		log_world("APC_REPORT_SLOW: [src] ([area]) took [round(report_ms, 0.1)] ms: charge write [round(cell_ms, 0.1)], charging setter [round(charging_ms, 0.1)], status setter [round(status_ms, 0.1)], alarm [round(alarm_ms, 0.1)], channel apply [round(apply_ms, 0.1)] (channels changed [channels_changed], structural [structural_changed], alarm raised [power_alarm_raised]) at charge [charge]")
+		log_world("APC_REPORT_SLOW: [src] ([area]) took [round(report_ms, 0.1)] ms: charge write [round(cell_ms, 0.1)], charging setter [round(charging_ms, 0.1)], status setter [round(status_ms, 0.1)], alarm [round(alarm_ms, 0.1)], channel apply [round(apply_ms, 0.1)], channel setters [round(channel_setters_ms, 0.1)], cost note [round(note_ms, 0.1)], report log [round(log_ms, 0.1)], unaccounted [round(report_ms - cell_ms - channel_setters_ms - charging_ms - status_ms - note_ms - alarm_ms - log_ms - apply_ms, 0.1)] (channels changed [channels_changed], structural [structural_changed], alarm raised [power_alarm_raised]) at charge [charge]")
 
 /// A report that moved only the charge (null: the cell is not the one Rust charges) and the charging lamp, applied: the cell's charge, the lamp and, when the
 /// lamp changed, the folded APC_REPORT line (a charging-only report is logged once per APC_REPORT_LOG_INTERVAL and says how many it stands for).
@@ -907,23 +913,55 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 		return
 	var/channels_ms = TICK_USAGE_TO_MS(flip_start)
 	apc_flip_note(src, channels_ms, flip_start)
-	contract_power_revision++
-	var/powered_channels = new_power_light + new_power_equip + new_power_environ
-	if(SScontracts)
-		emit_contract_event(CONTRACT_EVENT_POWER_SERVICE_CHANGED, list(
-			"department" = DEPARTMENT_ENGINEERING,
-			"fact_id" = "power-service:[handle_of(src)]",
-			"fact_revision" = contract_power_revision,
-			"service_id" = handle_of(src),
-			"operational" = powered_channels == 3,
-			"metrics" = list(
-				"powered_channels" = powered_channels,
-				"cell_percent" = charge_percent_now(),
-				"load" = channel_load_total(),
-			),
-			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
-		), "power-service:[handle_of(src)]:[contract_power_revision]", src)
+	apc_contract_report_queue(src) // the contract fact is built and published a tick or more later (apc_contract_report_queue()), not inside the native notice that flipped the channels
 	apc_flip_note(src, channels_ms, flip_start, TRUE)
+
+/// TRUE while this APC's power-service contract report waits its slot (a flip in between is folded into it: it reads the state when it runs).
+/obj/machinery/power/apc/var/tmp/contract_report_waiting = FALSE
+
+/// The world time the last queued contract report was given, so reports run one a tick (apc_contract_report_queue()).
+GLOBAL_VAR_INIT(apc_contract_slot, 0)
+/// Contract reports run late, longest time one waited, and the slowest one (ms), for the log.
+GLOBAL_VAR_INIT(apc_contract_late_max, 0)
+GLOBAL_VAR_INIT(apc_contract_ms_max, 0)
+
+/// `apc`'s channels flipped: its power-service report goes to the contracts (apc_contract_report()), at one a tick across the station. The report was 77-134 ms of the native
+/// frame's APC notice (the event, its history and the opportunity windows); a station start flips every APC at once, so each takes its own tick instead.
+/proc/apc_contract_report_queue(obj/machinery/power/apc/apc)
+	if(apc.contract_report_waiting)
+		return
+	apc.contract_report_waiting = TRUE
+	var/now = TIME_NOW(CLOCK_WORLD)
+	var/slot = max(GLOB.apc_contract_slot + 1 TICKS, now + 1 TICKS)
+	GLOB.apc_contract_slot = slot
+	after(apc, slot - now, TYPE_PROC_REF(/obj/machinery/power/apc, apc_contract_report))
+
+/// The deferred power-service contract report of this APC: what its area shows now (operating channels out of three), published once however many flips happened meanwhile.
+/obj/machinery/power/apc/proc/apc_contract_report()
+	contract_report_waiting = FALSE
+	if(QDELETED(src) || !area || !SScontracts)
+		return
+	var/started = TICK_USAGE
+	var/powered_channels = !!area.power_light + !!area.power_equip + !!area.power_environ
+	contract_power_revision++
+	var/handle = handle_text(handle_of(src))
+	emit_contract_event(CONTRACT_EVENT_POWER_SERVICE_CHANGED, list(
+		"department" = DEPARTMENT_ENGINEERING,
+		"fact_id" = "power-service:[handle]",
+		"fact_revision" = contract_power_revision,
+		"service_id" = handle_of(src),
+		"operational" = powered_channels == 3,
+		"metrics" = list(
+			"powered_channels" = powered_channels,
+			"cell_percent" = charge_percent_now(),
+			"load" = channel_load_total(),
+		),
+		"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
+	), "power-service:[handle]:[contract_power_revision]", src)
+	var/ms = TICK_USAGE_TO_MS(started)
+	GLOB.apc_contract_ms_max = max(GLOB.apc_contract_ms_max, ms)
+	if(ms >= 25)
+		log_world("APC_CONTRACT: [src] ([area]) power-service report took [round(ms, 0.1)] ms (slowest so far [round(GLOB.apc_contract_ms_max, 0.1)] ms; report slot queue ends [round(max(0, GLOB.apc_contract_slot - TIME_NOW(CLOCK_WORLD)) / (1 TICKS))] tick(s) out)")
 
 /obj/machinery/power/apc/surplus()
 	if(terminal)

@@ -13,6 +13,7 @@
 	run_layer()
 	GLOB.declare_report_capture = null
 	GLOB.stat_marked = list()
+	GLOB.stat_marked_sorted = 0
 
 /datum/unit_test/dq_stat_layer/proc/run_layer()
 	return

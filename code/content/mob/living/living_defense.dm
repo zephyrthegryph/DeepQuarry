@@ -264,7 +264,6 @@ ACTION(stun_effect, stun_amount, agony_amount, def_zone, atom/used_weapon, elect
 /mob/living/proc/embed(obj/O, def_zone=null)
 	O.forceMove(src)
 	rel_add(src, nameof(embedded), O)
-	grant(src, granted_verb(/mob/proc/yank_out_object), src)
 	throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
 
 //This is called when the mob is thrown into a dense turf
@@ -420,11 +419,6 @@ ACTION(stun_effect, stun_amount, agony_amount, def_zone, atom/used_weapon, elect
 	return injure(INJURY_TOXIN, amount, null, source, 0, paralytic ? /datum/affliction/venom/lingering_poison/paralytic : /datum/affliction/venom/lingering_poison)
 
 #undef LINGERING_POISON_CYCLE
-
-/// P2-S9: can `user` inject this mob at `target_zone` by `method` (INJECT_METHOD_*)?
-/// Every injector calls this one proc; overrides honour armour and hide.
-/mob/living/proc/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
-	return 1
 
 /mob/living/proc/get_organ_target()
 	var/mob/shooter = src

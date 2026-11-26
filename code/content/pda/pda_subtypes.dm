@@ -3,10 +3,6 @@
 	default_cartridge = /obj/item/cartridge/medical
 	icon_state = "pda-m"
 
-/obj/item/pda/viro
-	default_cartridge = /obj/item/cartridge/medical
-	icon_state = "pda-v"
-
 /obj/item/pda/engineering
 	default_cartridge = /obj/item/cartridge/engineering
 	icon_state = "pda-e"
@@ -50,7 +46,7 @@ CAPABILITIES(/obj/item/pda/mime)
 /obj/item/pda/proc/silence_messenger(datum/act/timer/A)
 	var/datum/data/pda/app/M = find_program(/datum/data/pda/app/messenger)
 	if(M)
-		M.notify_silent = TRUE
+		M.set_notify_silent(TRUE)
 
 /obj/item/pda/heads
 	default_cartridge = /obj/item/cartridge/head
@@ -131,11 +127,6 @@ CAPABILITIES(/obj/item/pda/mime)
 
 CAPABILITIES(/obj/item/pda/librarian)
 	after_init(0, then(PROC_REF(silence_messenger))) // Quiet in the library!
-
-/obj/item/pda/clear
-	icon_state = "pda-transp"
-	desc = "A portable microcomputer by Thinktronic Systems, LTD. This is model is a special edition with a transparent case."
-	model_name = "Thinktronic 5230 Personal Data Assistant Deluxe Special Max Turbo Limited Edition"
 
 /obj/item/pda/chef
 	default_cartridge = /obj/item/cartridge/service

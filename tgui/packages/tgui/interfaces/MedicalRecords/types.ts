@@ -54,7 +54,7 @@ export type modalData = {
     rate: number;
     resistance: number;
     species: string;
-    ref: string;
+    ref: number;
     symptoms: {
       stage: number;
       name: string;
@@ -67,7 +67,7 @@ export type modalData = {
 };
 
 type record = {
-  ref: string;
+  ref: number;
   id: string;
   name: string;
 };

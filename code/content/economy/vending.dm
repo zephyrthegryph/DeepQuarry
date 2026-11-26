@@ -151,6 +151,7 @@ CAPABILITIES(/obj/machinery/vending)
 
 	section(window, "The vendor's window and the buttons in it")
 	interface("Vending")
+	ui_shape(chargesMoney = bool(), products = list_of(row()), coin = any, actively_vending = schema_text(), panel = bool(), speaker = bool(), guestNotice = schema_text(), userMoney = num(), user = any)
 	extend("ui_open", when(PROC_REF(bare_touch)), needs(req_on_authority(AUTH_PHYSICAL), req_operable()), then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
 	extend(TAG_UI, needs(req_operable(), req(PROC_REF(customer_capable))))
 	op("vend", ui_act(arg("vend")),
@@ -195,7 +196,101 @@ CAPABILITIES(/obj/machinery/vending)
 	if(length(slogan_list))
 		COOLDOWN_START(src, slogan_cooldown, slogan_delay + rand(0, slogan_delay))
 
-GLOBAL_LIST_EMPTY(vending_products)
+/// Every product type any vendor type stocks, read from the catalog (VENDING_CATALOG_FILE holds every vendor type's stock), so no vendor is made
+/// to list them: type -> TRUE.
+/proc/vending_catalog_product_types()
+	. = list()
+	for(var/vendor_type in subtypesof(/obj/machinery/vending))
+		for(var/section in list("products", "contraband", "premium"))
+			for(var/entry in vending_catalog_section(vendor_type, section))
+				.[entry] = TRUE
+
+// ---- Product pictures: each product's own small asset (the vendor window lists them; the sheet of every vendor's stock is gone) ----
+
+/// The picture of a vendor product (a path, or a VARIANT() reference: the picture is the parent's): list(icon file, state, colour to multiply
+/// or null, whether the state exists), or null for a reference that is no atom. A state that does not exist is logged; the picture is a blank.
+/proc/vending_product_icon_spec(product_ref)
+	var/atom/item = saved_type_path(product_ref)
+	if(!ispath(item, /atom))
+		return null
+	var/icon_file = initial(item.icon)
+	var/icon_state = initial(item.icon_state)
+	// I really don't like the fact that I have to do this, but what the hell else *can* I do to make all of these
+	// random special items work?
+	if(ispath(item, /obj/item/reagent_containers/food/drinks/glass2) && !ispath(item, /obj/item/reagent_containers/food/drinks/glass2/fitnessflask))
+		var/obj/item/reagent_containers/food/drinks/glass2/G = item
+		icon_state = initial(G.base_icon)
+	if(ispath(item, /obj/item/reagent_containers/hypospray/autoinjector))
+		icon_state += "0"
+	if(ispath(item, /obj/item/melee/shock_maul))
+		icon_state += "0"
+	var/c = initial(item.color)
+	var/list/states = icon_states_fast(icon_file)
+	var/valid = (icon_state in states)
+	if(!valid)
+		// Logged, not thrown: the picture is built inside a window's data output, where a runtime would cost the whole window its data.
+		log_world("vending product picture: [item] does not have a valid icon state, icon=[icon_file], icon_state=[json_encode(icon_state)]; using a blank")
+	return list(icon_file, icon_state, (!isnull(c) && c != "#FFFFFF") ? c : null, valid)
+
+/// The product's picture as an asset of its own (cut, coloured, hashed and registered once for the life of the world): its asset name. What the
+/// vendor window shows, so opening a vendor sends a few small pictures and not the whole sheet of every vendor's stock.
+/// Where iconforge writes the recoloured product pictures (one file per file, state and colour, kept for the world).
+#define DQ_VENDPROD_DIR "data/vendprod/"
+
+DECLARE_SHARED_CACHE(vending_product_asset, GLOBAL_PROC_REF(build_vending_product_asset), SC_NEVER)
+
+/proc/build_vending_product_asset(product_ref)
+	var/list/spec = vending_product_icon_spec(product_ref)
+	// A coloured picture is cut and recoloured by rust-g iconforge into a PNG (no /icon Blend, no copy-to-file hash); the rest is the plain state.
+	var/forged = spec?[3] && spec[4] ? vending_product_forge(spec) : null
+	if(forged)
+		return forged
+	return vending_product_asset_byond(spec)
+
+/// The coloured product picture through iconforge: its asset name, or null when iconforge cannot read the file (the BYOND path draws it then).
+/proc/vending_product_forge(list/spec)
+	var/dmi_path = get_icon_dmi_path(spec[1])
+	dmi_path = dmi_path && resolve_icon_dmi_path(dmi_path) // a repacked DMI lives under icons/gen/
+	if(!dmi_path || !rustg_file_exists(dmi_path)) // not on disk: only BYOND has it
+		return null
+	var/static/dir_made = FALSE
+	if(!dir_made)
+		rustg_file_write("", "[DQ_VENDPROD_DIR].keep")
+		dir_made = TRUE
+	var/out_path = "[DQ_VENDPROD_DIR][md5("[dmi_path]|[spec[2]]|[spec[3]]")].png"
+	if(!rustg_file_exists(out_path))
+		var/list/sprite = list("icon_file" = dmi_path, "icon_state" = spec[2], "dir" = SOUTH, "frame" = 1,
+			"transform" = list(list("type" = RUSTG_ICONFORGE_BLEND_COLOR, "color" = spec[3], "blend_mode" = ICON_MULTIPLY)))
+		var/list/result = rustg_iconforge_generate_headless(out_path, json_encode(list("picture" = sprite)), TRUE)
+		if(length(result?["error"]) || !rustg_file_exists(out_path))
+			log_world("vending product picture: iconforge could not draw [dmi_path] [spec[2]] ([json_encode(result)]); drawn by BYOND")
+			return null
+	var/hash = rustg_hash_file(RUSTG_HASH_MD5, out_path)
+	var/key = "vendprod.[hash].png"
+	if(!SSassets.cached_asset(key))
+		SSassets.register_asset(key, fcopy_rsc(file(out_path)), hash)
+	return key
+
+/// The product picture drawn with BYOND /icon procs (the path before iconforge; kept for what iconforge cannot read, and for the bench).
+/proc/vending_product_asset_byond(list/spec)
+	var/icon/picture = (spec && spec[4]) ? icon(spec[1], spec[2], SOUTH, 1) : icon('icons/turf/floors.dmi', "", SOUTH, 1)
+	if(spec?[3])
+		picture.Blend(spec[3], ICON_MULTIPLY)
+	// An uncoloured state of a compiled-in file hashes its rsc copy directly; a coloured one needs the slower copy-to-file hash.
+	var/icon_path = (spec && spec[4] && !spec[3]) ? get_icon_dmi_path(spec[1]) : null
+	var/list/name_and_ref = generate_and_hash_rsc_file(picture, icon_path)
+	var/key = "vendprod.[name_and_ref[3]].png"
+	if(!SSassets.cached_asset(key))
+		SSassets.register_asset(key, name_and_ref[1], name_and_ref[2], icon_path)
+	return key
+
+/// The address of the product's picture for `viewer`, the picture sent to that client (once: the transport remembers what it sent).
+/proc/vending_product_image_url(product_ref, client/viewer)
+	if(!viewer)
+		return null
+	var/key = CACHED_KEY(vending_product_asset, "[product_ref]", product_ref)
+	SSassets.send_assets(viewer, key)
+	return SSassets.get_asset_url(key)
 
 #define VENDING_CATALOG_FILE "strings/vending/catalog.json"
 
@@ -277,7 +372,6 @@ PROC_SUMMARY(/proc/vending_catalog_load) // constant data read once from disk: n
 			product.set_category(category)
 
 			rel_add(src, nameof(product_records), product)
-			GLOB.vending_products[entry] = 1
 
 	if(LAZYLEN(prices))
 		set_has_prices(TRUE)
@@ -322,12 +416,12 @@ PROC_SUMMARY(/proc/vending_catalog_load) // constant data read once from disk: n
 		if(!current_product)
 			continue
 		else
-			// Restocking adds to the latent count; nothing is created.
+			// Restocking adds to the count; nothing is created.
 			var/list/spec = dq_resolve_spawn_value(refill[entry])
 			current_product.refill_products(spec["count"])
 
 // Stock is a stock slot (roadmap C9, code/datums/containment/stock.dm): each
-// product is a record with a latent count, and a real item is made only when
+// product is a record with a count, and a real item is made only when
 // one is vended. Items stocked by hand stay real when their state is their own.
 /obj/machinery/vending/stock_records()
 	return product_records
@@ -449,10 +543,8 @@ PROC_SUMMARY(/proc/vending_catalog_load) // constant data read once from disk: n
 	panel.tgui_interact(A.actor)
 	return OP_OK
 
-/obj/machinery/vending/ui_assets(mob/user)
-	return list(
-		get_asset_datum(/datum/asset/spritesheet_batched/vending),
-	)
+// No ui_assets: the window shows each product's own picture (vending_product_image_url()), sent as it is listed, not the sheet of every vendor's
+// stock (a megabyte on a client's first vendor).
 
 /// The window's data: products of the shown categories, the coin, the panel and the customer.
 /obj/machinery/vending/ui_data(datum/act/eval/A)
@@ -475,6 +567,7 @@ PROC_SUMMARY(/proc/vending_catalog_load) // constant data read once from disk: n
 			"color" = I.display_color,
 			"isatom" = ispath(I.item_path, /atom),
 			"path" = replacetext(replacetext("[I.item_path]", "/obj/item/", ""), "/", "-"),
+			"image" = ispath(I.item_path, /atom) ? vending_product_image_url(I.item_path, A.actor?.client) : null,
 			"amount" = I.get_amount()
 		)))
 

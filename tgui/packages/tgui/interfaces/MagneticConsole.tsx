@@ -3,30 +3,18 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-
-type Magnet = {
-  index: number;
-  ref: string;
-  on: BooleanLike;
-  electricity_level: number;
-  magnetic_field: number;
-};
-
-type Data = {
-  autolink: BooleanLike;
-  frequency: number;
-  code: number;
-  speed: number;
-  path: string;
-  moving: BooleanLike;
-  magnets: Magnet[];
-};
+import type {
+  MagneticConsoleActions,
+  MagneticConsoleData,
+} from './generated/MagneticConsole';
 
 export const MagneticConsole = () => {
-  const { data, act } = useBackend<Data>();
-  const { autolink, frequency, code, speed, path, moving, magnets } = data;
+  const { data, act } = useBackend<
+    MagneticConsoleData,
+    MagneticConsoleActions
+  >();
+  const { autolink, frequency, code, speed, path, moving, magnets = [] } = data;
   return (
     <Window width={520} height={520} title="Magnetic Control Console">
       <Window.Content scrollable>

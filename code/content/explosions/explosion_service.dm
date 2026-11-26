@@ -59,6 +59,15 @@ SYSTEM_DEF(explosions)
 	/// Atoms this epoch destroyed through batched destroy.
 	var/epoch_batched_destroys = 0
 	VAR_PRIVATE/deferred_appearance_update_index = 1
+	/// Lattices that asked for a redraw while the epoch resolved (handle_of(lattice) -> TRUE): each is drawn once when the resolve flushes, instead of
+	/// one timer per request (code/content/structures/lattice.dm). A flush moves them into `deferred_lattice_run` (handles, in request order).
+	VAR_PRIVATE/alist/deferred_lattices = alist()
+	VAR_PRIVATE/list/deferred_lattice_run = list()
+	VAR_PRIVATE/deferred_lattice_index = 1
+	/// Redraw requests the epoch took, and how many of them named a lattice that was already queued (diagnostics).
+	var/epoch_lattice_redraws_asked = 0
+	var/epoch_lattice_redraws_coalesced = 0
+	VAR_PRIVATE/epoch_lattices_drawn = 0
 	VAR_PRIVATE/bulk_resolution_active = FALSE
 	VAR_PRIVATE/list/explosion_resistance_cache = list()
 	VAR_PRIVATE/epoch_atom_collect_ms = 0
@@ -69,6 +78,19 @@ SYSTEM_DEF(explosions)
 	VAR_PRIVATE/atom_profile_stride = 16
 	VAR_PRIVATE/list/atom_profile_cost = list()
 	VAR_PRIVATE/list/atom_profile_calls = list()
+	/// EXPLOSION_SLOW lines logged this epoch (single work items over EXPLOSION_SLOW_ITEM_MS), capped per epoch.
+	VAR_PRIVATE/epoch_slow_logged = 0
+
+#define EXPLOSION_SLOW_ITEM_MS 15
+#define EXPLOSION_SLOW_LOG_CAP 40
+
+/// Logs one work item of an epoch that alone cost more than EXPLOSION_SLOW_ITEM_MS: a single item no tick check can split.
+/datum/system/explosions/proc/trace_slow_item(what, started)
+	var/ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	if(ms < EXPLOSION_SLOW_ITEM_MS || epoch_slow_logged >= EXPLOSION_SLOW_LOG_CAP)
+		return
+	epoch_slow_logged++
+	log_runtime("EXPLOSION_SLOW [round(ms, 0.1)] ms: [what]")
 
 /datum/system/explosions/proc/has_work()
 	return awake
@@ -94,7 +116,9 @@ SYSTEM_DEF(explosions)
 
 /// One kernel run of an epoch: yields when a phase ran over budget (it resumes next tick), parks once the epoch is done.
 /datum/system/explosions/proc/explosion_step(dt)
+	var/step_started = TICK_USAGE_REAL
 	var/done = step_epoch(epoch_resuming)
+	trace_slow_item("whole step (resolve=[resolve_explosions], turf [currentrun_index]/[LAZYLEN(currentrun_keys)], done=[done])", step_started)
 	epoch_resuming = !done
 	if(!done)
 		return STEP_YIELD
@@ -134,6 +158,7 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 		// data, use the data, than discard it from the list using the key!
 		var/key = currentrun_keys[currentrun_index]
 		var/entry_complete = TRUE
+		var/item_started = TICK_USAGE_REAL
 		if(resolve_explosions)
 			entry_complete = fire_resolve_explosions(currentrun[key])
 			if(entry_complete)
@@ -141,6 +166,8 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 		else
 			fire_prepare_explosions(currentrun[key])
 			epoch_turfs_prepared++
+		var/turf/traced_turf = key
+		trace_slow_item("[resolve_explosions ? "resolve" : "prepare"] turf [traced_turf] ([traced_turf.type]) at [traced_turf.x],[traced_turf.y],[traced_turf.z]", item_started)
 		if(entry_complete)
 			currentrun_index++
 		else
@@ -191,7 +218,9 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 		var/heavy_impact_range 	= time_dat[5]
 		var/light_impact_range 	= time_dat[6]
 		var/took 				= (world.time - time_dat[7]) / (1 SECOND) // Horrifyingly, this has always been server performance dependant. Should really only be used for cosmetic stuff.
+		var/publish_started = TICK_USAGE_REAL
 		PUBLISH(WORLD_NOTICE_BUS, world_explosion, epicenter = epicenter, devastation_range = devastation_range, heavy_impact_range = heavy_impact_range, light_impact_range = light_impact_range, took = took)
+		trace_slow_item("world_explosion notice", publish_started)
 		if(TICK_CHECK)
 			return FALSE
 	currentsignals.Cut()
@@ -352,10 +381,7 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 			var/severity = resolved_atoms[handle_of(AM)]
 			if(!severity)
 				continue
-			var/has_latent = AM.has_latent()
-			var/contents_severity = (length(AM.contents) || has_latent) ? explosion_contents_severity_of(AM, severity) : 0
-			if(contents_severity && has_latent)
-				AM.latent_blast(contents_severity) // entries resolve as data (C5)
+			var/contents_severity = length(AM.contents) ? explosion_contents_severity_of(AM, severity) : 0
 			if(contents_severity)
 				FOR_CONTENTS(var/atom/movable/inner as anything, AM)
 					queue_blast(inner, contents_severity)
@@ -368,7 +394,9 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 				atom_profile_cost[atom_type] += TICK_DELTA_TO_MS(TICK_USAGE - atom_started) * atom_profile_stride
 				atom_profile_calls[atom_type] += atom_profile_stride
 			else
+				var/atom_started = TICK_USAGE_REAL
 				AM.ex_act(severity)
+				trace_slow_item("atom [AM.type] severity [severity]", atom_started)
 		// Later atoms of this type (spilled contents) open a fresh batch.
 		var/batch_type = batch[1]
 		if(blast_batches[batch_type] == batch)
@@ -411,17 +439,22 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 	PRIVATE_PROC(TRUE)
 	resolve_explosions = TRUE
 	bulk_resolution_active = TRUE
+	adjacency_hold_begin() // neighbour joins recompute once per member when the resolve flushes (flush_deferred_turf_updates())
 
 /datum/system/explosions/proc/end_resolve()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	resolve_explosions = FALSE
 	bulk_resolution_active = FALSE
+	adjacency_hold_drain(FALSE) // normally drained by flush_deferred_turf_updates(); never leave a hold open past the resolve
+	flush_deferred_lattices(FALSE) // likewise: a redraw asked after the flush (or an aborted resolve) never waits for a resolve that is over
 
 /datum/system/explosions/proc/flush_deferred_turf_updates()
 	while(deferred_turf_update_index <= length(deferred_turf_updates))
 		var/turf/T = deferred_turf_updates[deferred_turf_update_index++]
+		var/change_started = TICK_USAGE_REAL
 		T?.finalize_explosion_deferred_change(FALSE)
+		trace_slow_item("deferred change [T?.type]", change_started)
 		if(TICK_CHECK)
 			return FALSE
 	deferred_turf_updates.Cut()
@@ -433,6 +466,11 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 			return FALSE
 	deferred_appearance_updates.Cut()
 	deferred_appearance_update_index = 1
+	if(!flush_deferred_lattices())
+		return FALSE
+	// Last: the turf updates above may ask neighbours to recompute too, and each held member recomputes once with the crater final.
+	if(!adjacency_hold_drain())
+		return FALSE
 	return TRUE
 
 /datum/system/explosions/proc/suspend_and_invoke_deferred_subsystems()

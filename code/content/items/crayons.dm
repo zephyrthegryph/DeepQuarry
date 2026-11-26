@@ -121,7 +121,11 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 	var/drawtype = ask.value
 	if(!drawtype)
 		return
-	switch(ask.drawing_kind)
+	start_drawing(user, target, ask.drawing_kind, drawtype, ask.click_parameters)
+
+/// Says what is being drawn and starts the crayon's draw op on `target` (a click's prompts and the Menu op both end here).
+/obj/item/pen/crayon/proc/start_drawing(mob/user, atom/target, drawing_kind, drawtype, click_parameters)
+	switch(drawing_kind)
 		if("letter")
 			to_chat(user, "You start drawing a letter on the [target.name].")
 		if("graffiti")
@@ -130,7 +134,7 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 			to_chat(user, "You start drawing a rune on the [target.name].")
 		if("arrow")
 			to_chat(user, "You start drawing an arrow on the [target.name].")
-	perform_op(user, src, "draw", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("surface" = target, "drawtype" = drawtype, "click_parameters" = ask.click_parameters))
+	perform_op(user, src, "draw", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("surface" = target, "drawtype" = drawtype, "click_parameters" = click_parameters))
 
 /// The drawing is a wait of the crayon's own (the surface, the picked drawing and the click come from the prompt chain that started it).
 CAPABILITIES(/obj/item/pen/crayon)
@@ -139,6 +143,23 @@ CAPABILITIES(/obj/item/pen/crayon)
 	configure(item_combat(attack_verbs = list("attacked", "coloured")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	op("draw", ai(), takes("surface", "drawtype", "click_parameters"), wait(PROC_REF(draw_wait)), then(PROC_REF(draw_done)))
+	// The Menu line for drawing on a floor (a click does it through afterattack): asks what to draw.
+	op("draw_on_floor", at_target(/turf/simulated/floor), origin(ORIGIN_MENU), label("Draw graffiti"), \
+		asks(/datum/prompt/choice/crayon_kind, step = "kind"), \
+		asks(/datum/prompt/choice/crayon_drawing, fields = list("drawing_kind" = computed(PROC_REF(floor_drawing_kind))), step = "drawing"), \
+		then(PROC_REF(draw_on_floor_chosen)))
+
+/// The Menu op's second question names the kind its first answer picked.
+/obj/item/pen/crayon/proc/floor_drawing_kind(datum/act/op/A)
+	return A.step_value("kind")
+
+/// Chosen from the Menu on a floor: the same two questions a click asks, as the op's own steps; then the drawing starts.
+/obj/item/pen/crayon/proc/draw_on_floor_chosen(datum/act/op/A)
+	var/drawtype = A.step_value("drawing")
+	if(!drawtype)
+		return OP_FAILED
+	start_drawing(A.actor, A.target, A.step_value("kind"), drawtype, dq_interaction_click_params(A.actor))
+	return OP_OK
 
 /// How long the drawing takes: nothing for an instant crayon.
 /obj/item/pen/crayon/proc/draw_wait(datum/act/op/A)
@@ -182,9 +203,9 @@ CAPABILITIES(/obj/item/pen/crayon)
 		user.adjust_nutrition(1)
 		if(ishuman(user))
 			var/mob/living/carbon/human/human = user
-			human.ingested.add_reagent(REAGENT_ID_CRAYONDUST,min(5,uses)/3)
+			human.ingested.add_reagent(REAGENT_ID_CRAYONDUST, min(5, uses) / 3, colour)
 		else
-			user.reagents.add_reagent(REAGENT_ID_CRAYONDUST,min(5,uses)/3)
+			user.reagents.add_reagent(REAGENT_ID_CRAYONDUST, min(5, uses) / 3, colour)
 		if(uses)
 			uses -= 5
 			if(uses <= 0)

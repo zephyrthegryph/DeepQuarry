@@ -40,7 +40,7 @@ CAPABILITIES(/obj/item/hoist_kit)
 		return msg_reason("you can't do that")
 	if(source_hoist().hoistee())
 		return msg_reason("[source_hoist().hoistee()] is already attached")
-	if(use_check(A.actor, 0))
+	if(use_check_failure(A.actor, 0))
 		return msg_reason("you can't reach the clamp right now")
 	return null
 
@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/hoist_kit)
 CAPABILITIES(/obj/effect/hoist_hook)
 	drag_onto(PROC_REF(drop_input))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(hook_blast_break))))
-	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
 	op("hoist_hook_attach", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Attach"), needs(req(PROC_REF(attach_refusal))), then(PROC_REF(interaction_hoist_hook_attach)))
 	ref_one(nameof(source_hoist))
 
@@ -155,7 +155,7 @@ CAPABILITIES(/obj/structure/hoist)
 	if(ismob(hoistee()))
 		source_hook.unbuckle_mob(hoistee())
 	else
-		hoistee().anchored = FALSE
+		hoistee().set_anchored(FALSE)
 	rel_clear(src, nameof(hoistee))
 	set_layer(NORMAL_LAYER)
 

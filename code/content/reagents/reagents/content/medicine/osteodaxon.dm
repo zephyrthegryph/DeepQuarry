@@ -2,7 +2,7 @@
 	treatment_tags = list(TREAT_BONE_REPAIR = 1.0, TREAT_TISSUE_REPAIR = 0.3)
 	name = REAGENT_OSTEODAXON
 	id = REAGENT_ID_OSTEODAXON
-	description = "An experimental drug used to heal bone fractures."
+	description = "An experimental drug used to heal bone fractures. It knits a bone that has been set; on a fracture that is still unset the bone heals crooked (a malunion that only breaking the bone again can correct), so set the bone first. The growing bone aches while the drug is in the blood, and the regrowth is agonising."
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
 	color = "#C9BCE3"
@@ -28,7 +28,7 @@
 		totalvol += volume
 		if(totalvol >= 1)
 			for(var/obj/item/organ/external/O in H.damaged_limbs())
-				if(dq_reagent_knit_fracture(O))
+				if(dq_reagent_knit_fracture(O, TREAT_BONE_REPAIR)) // knits what it finds: an unset fracture heals crooked (malunion)
 					H.custom_pain(span_danger(span_normal(span_bold("You feel a terrible agony tear through your [O.name]!"))),60,TRUE)
 					H.status_adjust(STAT_WEAKENED, 10)		//Bones being regrown will knock you over
 					H.injure(INJURY_PAIN, 60, O.organ_tag, source = src)

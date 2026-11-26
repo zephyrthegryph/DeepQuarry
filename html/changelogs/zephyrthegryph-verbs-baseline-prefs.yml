@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Settings that were verbs (speech verbs, custom link, OOC notes, voice, speech bubble, autohiss, catchable, special role candidacy, UI style, jukebox volume, stomach sprites, scaling, resize immunity) are removed from the verb panel; they live in Character Setup and Game Preferences"
+  - rscadd: "Game Preferences has Hotkey Buttons, Hardsuit Activation Click, Show Nutrition To Others, Micro Pick-up, Belly Entrance Messages and Liquidbelly Visuals settings, and buttons for the Volume Mixer, Keybindings and MultiShock windows"
+  - bugfix: "Editing voice, speech verbs, speech bubble, custom link or catchable in Character Setup during the round now changes the character you are playing"
+  - qol: "Resist, rest, pull, point, move up and down, climb, spin view, succumb, gun mode, activate held object, Notes, languages, the Menu-page commands and the vore panel commands are hidden from the verb panel; the keybinding editor lists them. Lick and Smell are right-click menu entries. Add Note is a button of the Notes window; Ignore and Unignore are one Ignore List window in Game Preferences; Staffwho is part of Who; Mentorhelp and Request Spice are choices of the Adminhelp window"

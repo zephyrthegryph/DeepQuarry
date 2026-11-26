@@ -6,6 +6,7 @@
 
 CAPABILITIES(/datum/pai_software/signaller)
 	interface("Signaler", title = "Signaler", state = nameof(GLOB.tgui_always_state))
+	ui_shape(frequency = num(), minFrequency = num(), maxFrequency = num(), code = num())
 	op("signal", ui_act("signal"), then(PROC_REF(ui_act_signal)))
 	op("freq", ui_act("freq", arg("freq", num())), then(PROC_REF(ui_act_freq)))
 	op("code", ui_act("code", arg("code", num(1, 100))), then(PROC_REF(ui_act_code)))

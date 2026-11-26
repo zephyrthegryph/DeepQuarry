@@ -21,7 +21,7 @@
 	///Where the difference come from (from higher pressure to lower pressure)
 	var/pressure_direction = 0
 	///Our gas mix
-	var/datum/gas_mixture/air
+	var/datum/gas_mixture/_air
 
 	///If there is an active hotspot on us store a reference to it here
 	var/obj/effect/hotspot/active_hotspot
@@ -40,49 +40,90 @@
 
 CAPABILITIES(/turf/open)
 	owns_one(nameof(active_hotspot), /obj/effect/hotspot)
-	owns_one(nameof(air), /datum/gas_mixture)
-	// One hook for the Initialize() chain and the init_from_table path alike: the mixture first, then the Rust arena registration.
-	setup(PROC_REF(open_air_start))
+	owns_one(nameof(_air), /datum/gas_mixture)
+	// The Rust arena registration of a turf made after the map loaded (the map's turfs register in one call, setup_allturfs()).
+	setup(PROC_REF(open_air_start), mapload = TRUE)
 
-/// The turf's air at setup: the mixture, then its place in the Rust arena (one setup row for every open turf, ~390 k at a map load).
-/turf/open/proc/open_air_start()
+/// A turf made after the map loaded joins the Rust air arena. It makes no mixture: its cell takes its gas from its air
+/// template, and the datum is made when something first reads the air (turf_air()).
+/turf/open/proc/open_air_start(mapload)
 	PRIVATE_PROC(TRUE)
-	setup_open_air()
+	// A turf made in play (ChangeTurf: a breach, a floor built over space) tells the heat-exchanging pipes standing on it whether they now lie on
+	// space; a map-loaded pipe takes it from its place when it is made (its in_space preset).
+	if(!mapload)
+		var/now_space = istype(src, /turf/space)
+		FOR_CONTENTS(var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/pipe, src)
+			pipe.set_in_space(now_space)
+	// The space of a level made while the round runs is already in the arena: the level registered whole when it was made
+	// (/world/proc/increment_max_z(), SSair.register_level_turfs()), so its map-loaded vacuum makes no call of its own.
+	if(mapload && immutable_atmos && GLOB.air_bulk_levels["[z]"])
+		return INITIALIZE_HINT_NORMAL
 	register_open_air()
+	return INITIALIZE_HINT_NORMAL
 
-/// Makes the air of a turf whose own Initialize() has not run yet, for whatever initializes on it first (/datum/system/atoms/InitAtom()). Base turfs have none.
+/// Base turfs make nothing ahead of a read: the air is made when it is first read (turf_air()).
 /turf/proc/settle_air()
 	return
 
-/turf/open/settle_air()
-	if(!air && !blocks_air && !(flags & ATOM_INITIALIZED))
+/// The turf's gas mixture, made the first time something reads it. Null for a turf that blocks air. A turf registered
+/// in the Rust arena already holds its gas there (from its air template, air_template()): the new datum is bound to
+/// that cell. Read before registration, the datum is a copy of the template, and registration moves it into the cell.
+PROC_SUMMARY(/turf/open/proc/turf_air, reads = list(nameof(_air), nameof(blocks_air))) // the air datum, made on first read; its gas is Rust's
+/turf/open/proc/turf_air()
+	RETURN_TYPE(/datum/gas_mixture)
+	if(_air || blocks_air)
+		return _air
+	if(immutable_atmos)
+		_air = shared_immutable_air() // ALLOW(ownership): the round-long immutable vacuum shared by every space/transit turf, held by the static cache; never owned or deleted by a turf
+		return _air
+	if(OP_PURE_ACTIVE)
+		// Read inside a condition or an output, which never write: a handle to the turf's cell that the turf does not keep
+		// (a handle has no arena slot of its own, so dropping it frees nothing), or before the turf is in the arena its
+		// template, read-only. The next read outside such a context makes the turf's own.
+		var/datum/gas_mixture/handle = new /datum/gas_mixture/turf()
+		if(vg_hook_bind_turf_air(src, handle))
+			return handle
+		vg_unregister_gasmixture_hook(handle)
+		return air_template()
+	var/datum/gas_mixture/made = create_gas_mixture()
+	if(!SSair.initialized)
 		GLOB.early_air_made++
-		setup_open_air()
+	else
+		vg_hook_bind_turf_air(src, made)
+	rel_set(src, nameof(_air), made)
+	return _air
 
-/// Gives the turf its gas mixture (a setup() hook).
-/turf/open/proc/setup_open_air()
-	if(air) // made on demand by return_air() before this turf's Initialize(): the one mixture stays
+/// The one immutable mixture every turf with this gas string shares (space, transit). The cache holds it for the round.
+/turf/open/proc/shared_immutable_air()
+	var/static/list/immutable_air = list()
+	. = immutable_air[initial_gas_mix]
+	if(!.)
+		. = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/immutable/space)
+		immutable_air[initial_gas_mix] = .
+
+/// The mixture whose gas this turf's Rust cell starts with when the turf has no datum yet (the Rust core asks, once per
+/// turf type, gas string and temperature). Shared and round-long: never a turf's own. A planetary turf's gas string gets
+/// its planetary reservoir here.
+PROC_SUMMARY(/turf/open/proc/air_template) // a round-long template per turf type, gas string and temperature: nothing that reads it can see it change
+/turf/open/proc/air_template()
+	var/static/list/templates = list()
+	var/key = "[type]|[initial_gas_mix]|[initial_temperature]"
+	. = templates[key]
+	if(.)
 		return
-	if(!blocks_air)
-		if(immutable_atmos)
-			// Space and transit hold nothing but vacuum, so they all share one
-			// cached immutable mixture instead of a mixture (and Rust arena slot)
-			// each. The arena drops writes to it; Destroy() must never qdel it.
-			// Type-table fact: one lookup by the gas string, not a "[string]-[type]" key built per turf.
-			// The cache holds it for the round; no turf owns it (lifecycle_unbind() only lets go).
-			var/static/list/immutable_air = list()
-			var/datum/gas_mixture/shared_air = immutable_air[initial_gas_mix]
-			if(!shared_air)
-				shared_air = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/immutable/space)
-				immutable_air[initial_gas_mix] = shared_air
-			air = shared_air // ALLOW(ownership): the round-long immutable vacuum shared by every space/transit turf, held by the static cache; never owned or deleted by a turf
-		else
-			rel_set(src, nameof(air), create_gas_mixture())
-		if(planetary_atmos)
-			if(!SSair.planetary[initial_gas_mix])
-				var/datum/gas_mixture/immutable/planetary/mix = new
-				mix.parse_string_immutable(initial_gas_mix)
-				SSair.planetary[initial_gas_mix] = mix
+	. = immutable_atmos ? shared_immutable_air() : create_gas_mixture()
+	templates[key] = .
+	if(planetary_atmos && !SSair.planetary[initial_gas_mix])
+		var/datum/gas_mixture/immutable/planetary/mix = new
+		mix.parse_string_immutable(initial_gas_mix)
+		SSair.planetary[initial_gas_mix] = mix
+
+/// The z-level being made right now while the atmos core runs (/world/proc/increment_max_z()), whose turfs register in one call after; 0 otherwise.
+GLOBAL_VAR_INIT(air_level_registering, 0)
+/// The z-levels ("[z]" -> TRUE) the atmos core registered whole when they were made while the round ran.
+GLOBAL_LIST_EMPTY(air_bulk_levels)
+/// Turfs that joined the arena one at a time (register_open_air()) since boot: the cost the level and map registrations save.
+GLOBAL_VAR_INIT(air_turfs_registered_alone, 0)
 
 /// After the turf is initialized: join the Rust air arena when SSair is already running.
 /turf/open/proc/register_open_air()
@@ -92,7 +133,12 @@ CAPABILITIES(/turf/open)
 	// turf then. For turfs created AFTER SSair init (ChangeTurf, runtime spawns)
 	// we register here, with the air-block mask of whatever is already on the
 	// turf, so Rust builds its adjacency.
-	if(SSair.initialized)
+	if(SSair.initialized && GLOB.air_level_registering != z) // a level being made registers whole after (SSair.register_level_turfs())
+		GLOB.air_turfs_registered_alone++
+		// Immutable air (space, transit): the atmos core reads the cell, mask and heat values off the turf in one call; a turf
+		// holding an object that decides air passage in a proc, or with init_air off, takes the DM path.
+		if(immutable_atmos && vg_hook_register_one_turf(src) == 1)
+			return
 		update_air_ref(0, air_block_mask())
 
 /// Phase 1 (unbind): its fire goes out first (it cools the air it sits in),
@@ -105,9 +151,9 @@ CAPABILITIES(/turf/open)
 	rel_clear(src, nameof(active_hotspot))
 	SSair?.remove_from_active(src)
 	if(immutable_atmos)
-		rel_take(src, nameof(air))
+		rel_take(src, nameof(_air))
 	else
-		rel_clear(src, nameof(air))
+		rel_clear(src, nameof(_air))
 
 /////////////////GAS MIXTURE PROCS///////////////////
 
@@ -139,6 +185,7 @@ CAPABILITIES(/turf/open)
 	return mix
 
 /turf/open/assume_air(datum/gas_mixture/giver) //use this for machines to adjust air
+	var/datum/gas_mixture/air = turf_air()
 	if(!giver || !air)
 		return FALSE
 	air.merge(giver)
@@ -175,18 +222,11 @@ CAPABILITIES(/turf/open)
 	// for airless tiles instead of returning null: consumers read 0-pressure vacuum,
 	// which is the correct answer for a wall/space tile, rather than runtiming. The
 	// atmos hot path (share/process_cell) uses .air directly and is unaffected.
-	// A read before SSair registers the turfs reads the turf's own mixture (a main-owned arena slot that holds its real gas); registration moves that same
-	// datum into its field cell, so the reading is the same either side of it. The count is logged when the turfs register (early_air_report()).
+	// A read before SSair registers the turfs makes the turf's own mixture (a copy of its template); registration moves that
+	// datum into its field cell, so the reading is the same either side of it. The count is logged when the turfs register.
 	if(!SSair.initialized)
 		GLOB.early_air_reads++
-	if(!air && !blocks_air && !(flags & ATOM_INITIALIZED))
-		// Asked before this turf's own Initialize() ran, by something that did not initialize on it (/datum/system/atoms/InitAtom() settles the air under
-		// what initializes): a vacuum answer a caller may keep. Loud, so the boot gate names the reader; the air is not made here, a read stays a read.
-		WARNING("return_air() of a turf whose air does not exist yet ([type] at [x],[y],[z]): the reader gets vacuum")
-	return air || ..()
-
-/turf/open/return_analyzable_air()
-	return return_air()
+	return turf_air() || ..()
 
 // /turf/proc/archive + /turf/open/archive removed — turf FDM archiving is Rust-side
 // now (auxmos snapshots inside process_turfs). temperature_archived is still
@@ -226,7 +266,8 @@ CAPABILITIES(/turf/open)
 	// set_temperature() here: writing the arena its own value re-marks the turf active
 	// and causes endless re-processing/re-visualising.)
 	var/list/new_overlay_types = rust_overlay_types
-	if(isnull(rust_overlay_types) && air)
+	var/datum/gas_mixture/air = isnull(rust_overlay_types) ? turf_air() : null
+	if(air)
 		// get_gases() returns an assoc id -> moles (id = gas-type path). Per-gas meta
 		// lives in the global meta table keyed by the same path.
 		var/list/gases = air.get_gases()

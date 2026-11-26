@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Knob, LabeledList } from 'tgui-core/components';
-
+import type { FlamethrowerActions } from '../generated/Flamethrower';
 import type { Data } from './types';
 
 export const Flamethrower = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FlamethrowerActions>();
   const {
     lit,
     fuel_kpa,

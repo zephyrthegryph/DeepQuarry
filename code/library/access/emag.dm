@@ -56,8 +56,8 @@ cap_keys(CAP_EMAG, EMAGGED = MSG(emag/already))
 	return OP_OK
 
 /// The card has a use left.
-/proc/req_emag_card()
-	return part_make(/datum/entry/part/req/emag_card)
+/proc/req_emag_card(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/emag_card), fails)
 
 /datum/entry/part/req/emag_card
 	part_name = "req_emag_card"
@@ -69,8 +69,8 @@ cap_keys(CAP_EMAG, EMAGGED = MSG(emag/already))
 
 /// Is this atom subverted (emagged, or taken over another way: an AI hack adds it by overriding is_subverted())? The requirement
 /// of the controls a hijacked machine refuses.
-/proc/req_not_subverted(because = null)
-	return part_make(/datum/entry/part/req/not_subverted, list("because" = because))
+/proc/req_not_subverted(because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/not_subverted, list("because" = because)), fails)
 
 /datum/entry/part/req/not_subverted
 	part_name = "req_not_subverted"

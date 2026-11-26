@@ -1,6 +1,0 @@
-﻿#if 0
-#include "code/engine/forms.dm"
-#include "code/probe.dm"
-#include "code/tests/test.dm"
-#endif
-/datum

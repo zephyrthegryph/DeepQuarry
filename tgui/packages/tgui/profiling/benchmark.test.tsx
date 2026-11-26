@@ -14,6 +14,8 @@ const TOTAL_BUDGET_MS = 1500;
  * trial cannot fail the test. The budgets are unchanged.
  */
 const TRIALS = 3;
+/** Bun's 5 s default is too tight for several trials on a loaded machine; the budgets below judge speed. */
+const TEST_TIMEOUT_MS = 30_000;
 
 afterEach(cleanup);
 
@@ -59,19 +61,23 @@ function trial(): { total: number; p95: number; commits: number } {
 }
 
 describe('TGUI render benchmark', () => {
-  test('large button interface remains within the development render budget', () => {
-    const trials = Array.from({ length: TRIALS }, trial);
-    const total = Math.min(...trials.map((t) => t.total));
-    const p95 = Math.min(...trials.map((t) => t.p95));
-    console.info(
-      `[tgui benchmark] ${BUTTONS} buttons, ${UPDATES} updates: ` +
-        `${total.toFixed(1)}ms total, ${p95.toFixed(2)}ms commit p95 (fastest of ${TRIALS}: ` +
-        `${trials.map((t) => t.total.toFixed(0)).join('/')}ms)`,
-    );
-    for (const t of trials) expect(t.commits).toBe(UPDATES + 1);
-    expect(p95).toBeLessThan(COMMIT_P95_BUDGET_MS);
-    expect(total).toBeLessThan(TOTAL_BUDGET_MS);
-  });
+  test(
+    'large button interface remains within the development render budget',
+    () => {
+      const trials = Array.from({ length: TRIALS }, trial);
+      const total = Math.min(...trials.map((t) => t.total));
+      const p95 = Math.min(...trials.map((t) => t.p95));
+      console.info(
+        `[tgui benchmark] ${BUTTONS} buttons, ${UPDATES} updates: ` +
+          `${total.toFixed(1)}ms total, ${p95.toFixed(2)}ms commit p95 (fastest of ${TRIALS}: ` +
+          `${trials.map((t) => t.total.toFixed(0)).join('/')}ms)`,
+      );
+      for (const t of trials) expect(t.commits).toBe(UPDATES + 1);
+      expect(p95).toBeLessThan(COMMIT_P95_BUDGET_MS);
+      expect(total).toBeLessThan(TOTAL_BUDGET_MS);
+    },
+    TEST_TIMEOUT_MS,
+  );
 
   test('button descendants retain a pointer cursor across rerenders', () => {
     const style = document.createElement('style');

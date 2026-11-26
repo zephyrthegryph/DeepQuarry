@@ -1,0 +1,12 @@
+{
+	"mapRef": "overmap_map",
+	"sector": "Deep Quarry Approach",
+	"sector_info": "A quiet stretch of space.",
+	"s_x": 10,
+	"s_y": 7,
+	"speed": 3.2,
+	"accel": 0.5,
+	"heading": 90,
+	"viewing": true,
+	"ETAnext": "12 seconds"
+}

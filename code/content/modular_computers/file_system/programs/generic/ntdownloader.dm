@@ -25,15 +25,13 @@
 	usage_flags = PROGRAM_ALL
 	category = PROG_UTIL
 
-	var/tmp/obj/item/modular_computer/my_computer
-
 CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 	op("PRG_reseterror", ui_act("PRG_reseterror"), then(PROC_REF(ui_act_prg_reseterror)))
 	owns_one(nameof(downloaded_file), /datum/computer_file/program)
 	interface("NtosNetDownloader")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool(), downloading = bool(), error = nullable(schema_text()), downloadname = nullable(schema_text()), downloaddesc = nullable(schema_text()), downloadsize = nullable(num()), downloadspeed = nullable(num()), downloadcompletion = nullable(num()), disk_size = num(), disk_used = num(), hackedavailable = bool(), hacked_programs = list_of(row(filename = schema_text(), filedesc = schema_text(), fileinfo = schema_text(), compatibility = schema_text(), size = num(), icon = schema_text())), downloadable_programs = list_of(row(filename = schema_text(), filedesc = schema_text(), fileinfo = schema_text(), compatibility = schema_text(), size = num(), icon = schema_text())), downloads_queue = list_of(schema_text()))
 	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("filename", schema_text(4096))), then(PROC_REF(ui_act_prg_downloadfile)))
 	op("PRG_removequeued", ui_act("PRG_removequeued", arg("filename", schema_text(4096))), then(PROC_REF(ui_act_prg_removequeued)))
-	ref_one(nameof(my_computer))
 
 /datum/computer_file/program/ntnetdownload/kill_program()
 	..()
@@ -139,14 +137,25 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 
 /datum/computer_file/program/ntnetdownload/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
-	rel_set(src, nameof(my_computer), computer())
-	if(!istype(my_computer(), /obj/item/modular_computer))
-		return
-
 	var/list/data = get_header_data()
 
 	data["downloading"] = !!downloaded_file
-	data["error"] = downloaderror || FALSE
+	data["error"] = downloaderror ? downloaderror : null
+	data["downloadname"] = null
+	data["downloaddesc"] = null
+	data["downloadsize"] = null
+	data["downloadspeed"] = null
+	data["downloadcompletion"] = null
+	data["disk_size"] = 0
+	data["disk_used"] = 0
+	data["hackedavailable"] = FALSE
+	data["hacked_programs"] = list()
+	data["downloadable_programs"] = list()
+	data["downloads_queue"] = list()
+
+	var/obj/item/modular_computer/PC = computer()
+	if(!istype(PC) || !PC.hard_drive)
+		return data
 
 	if(downloaded_file) // Download running. Wait please..
 		data["downloadname"] = downloaded_file.filename
@@ -155,13 +164,13 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 		data["downloadspeed"] = download_netspeed
 		data["downloadcompletion"] = round(download_completion, 0.1)
 
-	data["disk_size"] = my_computer().hard_drive.max_capacity
-	data["disk_used"] = my_computer().hard_drive.used_capacity
+	data["disk_size"] = PC.hard_drive.max_capacity
+	data["disk_used"] = PC.hard_drive.used_capacity
 	var/list/all_entries = list()
 	for(var/datum/computer_file/program/P in GLOB.ntnet_global.available_station_software)
 		// Only those programs our user can run will show in the list.
 		// Pass the card inserted in the laptop's slot so slotted IDs are respected.
-		if(!P.can_run(user, 0, null, my_computer().card_slot?.stored_card()) && P.requires_access_to_download || my_computer().hard_drive.find_file_by_name(P.filename))
+		if(!P.can_run(user, 0, null, PC.card_slot?.stored_card()) && P.requires_access_to_download || PC.hard_drive.find_file_by_name(P.filename))
 			continue
 		all_entries.Add(list(list(
 			"filename" = P.filename,
@@ -171,11 +180,10 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 			"size" = P.size,
 			"icon" = P.program_menu_icon
 		)))
-	data["hackedavailable"] = FALSE
 	if(computer_emagged) // If we are running on emagged computer we have access to some "bonus" software
 		var/list/hacked_programs = list()
 		for(var/datum/computer_file/program/P in GLOB.ntnet_global.available_antag_software)
-			if(my_computer().hard_drive.find_file_by_name(P.filename))
+			if(PC.hard_drive.find_file_by_name(P.filename))
 				continue
 			data["hackedavailable"] = TRUE
 			hacked_programs.Add(list(list(
@@ -199,7 +207,3 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 	if(P && P.is_supported_by_hardware(hardflag,0))
 		return "Compatible"
 	return "Incompatible!"
-
-/// The my_computer this refers to (a relation view: null once that is deleted).
-/datum/computer_file/program/ntnetdownload/proc/my_computer() as /obj/item/modular_computer
-	return my_computer

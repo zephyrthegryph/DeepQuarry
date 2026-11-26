@@ -17,7 +17,7 @@ export const ICCameraConsole = (props) => {
   const { act, data } = useBackend<Data>();
   const { mapRef, activeCamera, cameras } = data;
 
-  const sortedCameras = [...cameras]
+  const sortedCameras = [...(cameras ?? [])]
     .filter((c) => c?.name)
     .sort((a, b) => a.name.localeCompare(b.name));
 

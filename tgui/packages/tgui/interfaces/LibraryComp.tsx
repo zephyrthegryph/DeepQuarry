@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -8,60 +9,13 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type {
+  LibraryCompActions,
+  LibraryCompData,
+} from './generated/LibraryComp';
 
-type InventoryBook = {
-  ref: string;
-  name: string;
-};
-
-type Checkout = {
-  ref: string;
-  bookname: string;
-  mobname: string;
-  taken_min: number;
-  due_min: number;
-  overdue: BooleanLike;
-};
-
-type InternalBook = {
-  path: string;
-  name: string;
-  author: string;
-  category: string;
-};
-
-type ExternalBook = {
-  id: string;
-  author: string;
-  title: string;
-  category: string;
-};
-
-type ScannerCache = {
-  name: string;
-  author: string;
-};
-
-type Data = {
-  screenstate: number;
-  emagged: BooleanLike;
-  is_admin: BooleanLike;
-  buffer_book: string;
-  buffer_mob: string;
-  checkout_period: number;
-  world_time_min: number;
-  sort_by: string;
-  has_scanner: BooleanLike;
-  scanner_cache: ScannerCache | null;
-  upload_category: string;
-  has_db: BooleanLike;
-  inventory: InventoryBook[];
-  checkouts: Checkout[];
-  internal_archive: InternalBook[];
-  external_archive: ExternalBook[];
-};
+type Data = LibraryCompData;
 
 const ScreenLabel: Record<number, string> = {
   0: 'Main Menu',
@@ -75,7 +29,7 @@ const ScreenLabel: Record<number, string> = {
 };
 
 export const LibraryComp = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, LibraryCompActions>();
   return (
     <Window
       width={620}
@@ -90,7 +44,7 @@ export const LibraryComp = () => {
 };
 
 const BackToMain = () => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, LibraryCompActions>();
   return (
     <Box mt={2}>
       <Button
@@ -104,7 +58,7 @@ const BackToMain = () => {
 };
 
 const Screen = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, LibraryCompActions>();
   switch (data.screenstate) {
     case 0:
       return <MainMenu />;
@@ -133,7 +87,7 @@ const Screen = () => {
 };
 
 const MainMenu = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Main Menu">
       <Stack vertical>
@@ -189,7 +143,7 @@ const MainMenu = () => {
 };
 
 const Inventory = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Inventory">
       {data.inventory.length === 0 ? (
@@ -215,7 +169,7 @@ const Inventory = () => {
 };
 
 const CheckedOut = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Checked Out Books">
       {data.checkouts.length === 0 ? (
@@ -226,7 +180,7 @@ const CheckedOut = () => {
             <Stack.Item key={b.ref}>
               <Box bold>"{b.bookname}"</Box>
               <Box>Checked out to: {b.mobname}</Box>
-              <Box color="label">
+              <Label>
                 Taken: {b.taken_min} min ago, Due: in{' '}
                 {b.overdue ? (
                   <Box inline color="bad" bold>
@@ -235,7 +189,7 @@ const CheckedOut = () => {
                 ) : (
                   <Box inline>{b.due_min} min</Box>
                 )}
-              </Box>
+              </Label>
               <Button onClick={() => act('checkin', { ref: b.ref })}>
                 Check In
               </Button>
@@ -249,7 +203,7 @@ const CheckedOut = () => {
 };
 
 const CheckoutForm = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Check Out a Book">
       <LabeledList>
@@ -288,7 +242,7 @@ const CheckoutForm = () => {
 };
 
 const SortHeader = ({ field, children }: { field: string; children: any }) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Table.Cell>
       <Button
@@ -303,7 +257,7 @@ const SortHeader = ({ field, children }: { field: string; children: any }) => {
 };
 
 const InternalArchive = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Internal Archive">
       {data.internal_archive.length === 0 ? (
@@ -338,7 +292,7 @@ const InternalArchive = () => {
 };
 
 const Upload = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   const cache = data.scanner_cache;
   return (
     <Section title="Upload a New Title">
@@ -376,7 +330,7 @@ const Upload = () => {
 };
 
 const ForbiddenVault = () => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="Forbidden Lore Vault v 1.3">
       <Box mb={1}>
@@ -392,7 +346,7 @@ const ForbiddenVault = () => {
 };
 
 const ExternalArchive = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryCompActions>();
   return (
     <Section title="External Archive">
       {!data.has_db ? (

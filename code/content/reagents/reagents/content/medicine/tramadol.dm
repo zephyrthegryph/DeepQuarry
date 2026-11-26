@@ -1,9 +1,10 @@
 /datum/reagent/tramadol
-	factors = alist(STAT_ANALGESIA = 80)
-	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 64, STAT_SLOWDOWN = 1, STAT_PENALTY_SCALE = 1.25))
+	treatment_tags = list(TREAT_ANALGESIC = 1.0)
+	factors = alist(STAT_ANALGESIA = 80, STAT_SEIZURE_PRONENESS = 5)
+	species_factors = alist(IS_SLIME = alist(STAT_ANALGESIA = 64, STAT_SEIZURE_PRONENESS = 5, STAT_SLOWDOWN = 1, STAT_PENALTY_SCALE = 1.25))
 	name = REAGENT_TRAMADOL
 	id = REAGENT_ID_TRAMADOL
-	description = "A simple, yet effective painkiller."
+	description = "A strong painkiller for moderate to severe pain. Causes nausea (calcium carbonate settles it), lowers the seizure threshold, and is slightly addictive."
 	taste_description = "sourness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

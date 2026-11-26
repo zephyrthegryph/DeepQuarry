@@ -13,43 +13,19 @@
 // One job = one tight row. Dept color appears as a 4px left bar on each row.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Dropdown, Stack, Tooltip } from 'tgui-core/components';
+import type {
+  PrefEditorOccupation,
+  PrefEditorOccupationStatic,
+} from '../../../generated/_schemas';
 import type { EditorProps } from './index';
 
+type Data = PrefEditorOccupation;
+type Department = PrefEditorOccupationStatic['departments'][string];
+type JobEntry = Department['jobs'][number];
+
 type Priority = 'off' | 'low' | 'med' | 'high';
-
-type JobEntry = {
-  title: string;
-  desc: string;
-  supervisors: string | null;
-  selection_color: string;
-  sorting_order: number;
-  whitelist_only: boolean;
-  min_age: number;
-  total_positions: number;
-  current_positions: number;
-};
-
-type Department = {
-  label: string;
-  color: string;
-  sort: number;
-  jobs: JobEntry[];
-};
-
-type Data = {
-  job_priority: Record<string, Priority>;
-  availability: Record<string, string>;
-  alternate_option: number;
-  alt_titles: Record<string, string>;
-  counts: { high: number; med: number; low: number };
-};
-
-type Static = {
-  departments: Record<string, Department>;
-  alt_options: Array<{ value: number; label: string }>;
-  alt_titles_by_job: Record<string, string[]>;
-};
 
 const PRIORITY_ORDER: Priority[] = ['off', 'low', 'med', 'high'];
 const PRIORITY_LABEL: Record<Priority, string> = {
@@ -79,11 +55,12 @@ const send = (
   params: Record<string, unknown>,
 ) => act('dq_editor_action', { editor: 'occupation', action, params });
 
-export const OccupationEditor = ({ data, staticData }: EditorProps) => {
+export const OccupationEditor = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'occupation'>) => {
   const { act } = useBackend();
-  const d = data as Data;
-  const s = (staticData ?? {}) as Static;
-  const altOptions = s.alt_options ?? [];
+  const altOptions = s?.alt_options ?? [];
   const altOpts = altOptions.map((o) => ({
     value: String(o.value),
     displayText: o.label,
@@ -94,7 +71,7 @@ export const OccupationEditor = ({ data, staticData }: EditorProps) => {
     altOpts.find((o) => o.value === altVal)?.displayText ?? altVal;
 
   // Sort departments by their sorting_order (Command first, then Security, …).
-  const depts = Object.values(s.departments ?? {}).sort(
+  const depts = Object.values(s?.departments ?? {}).sort(
     (a, b) => (b.sort ?? 0) - (a.sort ?? 0),
   );
 
@@ -132,22 +109,18 @@ export const OccupationEditor = ({ data, staticData }: EditorProps) => {
         <Box inline color="green" bold>
           HIGH {d.counts?.high ?? 0}
         </Box>
-        <Box inline color="label">
-          ·
-        </Box>
+        <Label inline>·</Label>
         <Box inline color="yellow" bold>
           MED {d.counts?.med ?? 0}
         </Box>
-        <Box inline color="label">
-          ·
-        </Box>
+        <Label inline>·</Label>
         <Box inline color="orange" bold>
           LOW {d.counts?.low ?? 0}
         </Box>
         <Box style={{ flex: '1 1 auto' }} />
-        <Box inline color="label" fontSize="0.85em">
+        <Label inline fontSize="1em">
           If none available:
-        </Box>
+        </Label>
         <Dropdown
           width="18.333em"
           selected={altVal}
@@ -167,7 +140,7 @@ export const OccupationEditor = ({ data, staticData }: EditorProps) => {
               key={dept.label}
               dept={dept}
               d={d}
-              altTitlesByJob={s.alt_titles_by_job}
+              altTitlesByJob={s?.alt_titles_by_job ?? {}}
             />
           ))}
         </Stack.Item>
@@ -177,7 +150,7 @@ export const OccupationEditor = ({ data, staticData }: EditorProps) => {
               key={dept.label}
               dept={dept}
               d={d}
-              altTitlesByJob={s.alt_titles_by_job}
+              altTitlesByJob={s?.alt_titles_by_job ?? {}}
             />
           ))}
         </Stack.Item>
@@ -200,7 +173,7 @@ const DepartmentBlock = ({
       px={1}
       py={0.25}
       bold
-      fontSize="0.85em"
+      fontSize="1em"
       style={{
         backgroundColor: dept.color ? `${dept.color}33` : 'rgba(0,0,0,0.25)',
         borderLeft: dept.color ? `0.25em solid ${dept.color}` : undefined,
@@ -284,8 +257,8 @@ const JobRow = ({
         cursor: 'pointer',
         userSelect: 'none',
         marginBottom: '1px',
-        minHeight: '1.667em',
-        fontSize: '0.9em',
+        minHeight: '2em',
+        fontSize: '1.1em',
       }}
       onClick={() => cycleTo(false)}
       onContextMenu={(e: React.MouseEvent) => {
@@ -293,94 +266,105 @@ const JobRow = ({
         cycleTo(true);
       }}
     >
-      {/* Title: either an inline dropdown (alt-titled jobs) or plain text. The Tooltip
+      {/* The title column: wide enough for the longest title, wrapping rather than cutting it off. */}
+      <Box
+        style={{
+          flex: '1 1 17em',
+          minWidth: '15em',
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          rowGap: '0.1em',
+        }}
+      >
+        {/* Title: either an inline dropdown (alt-titled jobs) or plain text. The Tooltip
           wraps ONLY the plain-text title — clicking the dropdown moves the cursor off
           the tooltip's hover target so it dismisses on its own. */}
-      {altChoices && !blocked ? (
-        <Box
-          inline
-          style={{ flex: '0 0 auto' }}
-          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          onContextMenu={(e: React.MouseEvent) => e.stopPropagation()}
-        >
-          <Dropdown
-            width="12.5em"
-            selected={altSel}
-            displayText={altSel}
-            options={altOpts}
-            onSelected={(v) =>
-              send(act, 'set_alt_title', { job: job.title, alt: String(v) })
-            }
-          />
-        </Box>
-      ) : (
-        <Tooltip content={tipParts.join('\n') || job.title}>
+        {altChoices && !blocked ? (
           <Box
             inline
+            style={{ flex: '0 0 auto' }}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            onContextMenu={(e: React.MouseEvent) => e.stopPropagation()}
+          >
+            <Dropdown
+              width="12.5em"
+              selected={altSel}
+              displayText={altSel}
+              options={altOpts}
+              onSelected={(v) =>
+                send(act, 'set_alt_title', { job: job.title, alt: String(v) })
+              }
+            />
+          </Box>
+        ) : (
+          <Tooltip content={tipParts.join('\n') || job.title}>
+            <Box
+              inline
+              style={{
+                flex: '0 1 auto',
+                overflowWrap: 'anywhere',
+                textDecoration: blocked ? 'line-through' : undefined,
+              }}
+            >
+              {job.title}
+            </Box>
+          </Tooltip>
+        )}
+        {job.total_positions > 0 && (
+          <Label
+            inline
+            ml={0.5}
+            fontSize="0.85em"
             style={{
               flex: '0 0 auto',
-              textDecoration: blocked ? 'line-through' : undefined,
+              fontVariantNumeric: 'tabular-nums',
+              whiteSpace: 'nowrap',
             }}
           >
-            {job.title}
+            {job.current_positions}/{job.total_positions}
+          </Label>
+        )}
+        {blockReason && (
+          <Box
+            inline
+            ml={0.5}
+            px={0.5}
+            backgroundColor="bad"
+            color="white"
+            fontSize="0.8em"
+            style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
+          >
+            {blockReason}
           </Box>
-        </Tooltip>
-      )}
-      {job.total_positions > 0 && (
-        <Box
-          inline
-          ml={0.5}
-          color="label"
-          fontSize="0.78em"
-          style={{
-            flex: '0 0 auto',
-            fontVariantNumeric: 'tabular-nums',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {job.current_positions}/{job.total_positions}
-        </Box>
-      )}
-      {blockReason && (
-        <Box
-          inline
-          ml={0.5}
-          px={0.5}
-          backgroundColor="bad"
-          color="white"
-          fontSize="0.7em"
-          style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
-        >
-          {blockReason}
-        </Box>
-      )}
-      {!blockReason && !!job.whitelist_only && (
-        <Box
-          inline
-          ml={0.5}
-          px={0.5}
-          backgroundColor="good"
-          color="white"
-          fontSize="0.7em"
-          style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
-        >
-          WL
-        </Box>
-      )}
-      {!blockReason && job.min_age > 0 && (
-        <Box
-          inline
-          ml={0.5}
-          px={0.5}
-          backgroundColor="average"
-          color="white"
-          fontSize="0.7em"
-          style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
-        >
-          AGE {job.min_age}+
-        </Box>
-      )}
-      <Box style={{ flex: '1 1 auto' }} />
+        )}
+        {!blockReason && !!job.whitelist_only && (
+          <Box
+            inline
+            ml={0.5}
+            px={0.5}
+            backgroundColor="good"
+            color="white"
+            fontSize="0.8em"
+            style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
+          >
+            WL
+          </Box>
+        )}
+        {!blockReason && job.min_age > 0 && (
+          <Box
+            inline
+            ml={0.5}
+            px={0.5}
+            backgroundColor="average"
+            color="white"
+            fontSize="0.8em"
+            style={{ flex: '0 0 auto', borderRadius: '0.167em' }}
+          >
+            AGE {job.min_age}+
+          </Box>
+        )}
+      </Box>
       <Box
         inline
         style={{ flex: '0 0 auto' }}

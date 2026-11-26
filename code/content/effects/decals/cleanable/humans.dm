@@ -94,7 +94,7 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 		return
 	if(!istype(perp))
 		return
-	if(stat_value(perp, STAT_FLYING) || dq_get_hovering(perp) || STATE_GET(perp, mob_misc, is_floating)) //if the perp isn't on the ground, they shouldn't be affected by the stuff on the floor.
+	if(perp.flying || dq_get_hovering(perp) || STATE_GET(perp, mob_misc, is_floating)) //if the perp isn't on the ground, they shouldn't be affected by the stuff on the floor.
 		return
 	if(amount < 1)
 		return

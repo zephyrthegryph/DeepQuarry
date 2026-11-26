@@ -15,13 +15,13 @@
 		if("control_vtec")
 			if(R.speed == 0 && R.vtec_active)
 				R.speed = -0.5
-				R.hud_used.control_vtec.icon_state = "speed_1"
+				R.hud_used.control_vtec.set_icon_state("speed_1")
 			else if(R.speed == -0.5 && R.vtec_active)
 				R.speed = -1
-				R.hud_used.control_vtec.icon_state = "speed_2"
+				R.hud_used.control_vtec.set_icon_state("speed_2")
 			else
 				R.speed = 0
-				R.hud_used.control_vtec.icon_state = "speed_0"
+				R.hud_used.control_vtec.set_icon_state("speed_0")
 			return TRUE
 		if("module")
 			R.pick_module()
@@ -92,7 +92,7 @@
 			return TRUE
 		if("PDA - Messenger")
 			ai_user.aiPDA.start_program(ai_user.aiPDA.find_program(/datum/data/pda/app/messenger))
-			ai_user.aiPDA.cmd_pda_open_ui(user)
+			ai_user.aiPDA.open_for(user)
 			return TRUE
 		if("Take Image")
 			ai_user.take_image()

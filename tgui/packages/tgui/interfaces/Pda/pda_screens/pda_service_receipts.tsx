@@ -1,5 +1,7 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, LabeledList, Section, Table } from 'tgui-core/components';
+import type { PdaActions } from '../../generated/Pda';
 
 type ServiceReceipt = {
   invoice_id: number;
@@ -23,7 +25,7 @@ type Data = {
 };
 
 export const pda_service_receipts = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, PdaActions>();
   const receipts = data.service_receipts ?? [];
 
   if (!data.service_receipt_account) {
@@ -36,9 +38,9 @@ export const pda_service_receipts = () => {
 
   if (!receipts.length) {
     return (
-      <Box p={3} textAlign="center" color="label">
+      <Label p={3} textAlign="center">
         No Service invoices are associated with this account.
-      </Box>
+      </Label>
     );
   }
 

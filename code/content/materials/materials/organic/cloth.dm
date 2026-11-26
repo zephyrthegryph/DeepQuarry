@@ -2,15 +2,14 @@
 	name = MAT_CLOTH
 	door_icon_base = "wood"
 	ignition_point = T0C+232
-	melting_point = T0C+300
-	protectiveness = 1 // 4%
+	heat_resistance = 8.1
 	flags = MATERIAL_PADDING
-	conductive = 0
-	integrity = 40
+	toughness = 20
 	pass_stack_colors = TRUE
 	supply_conversion_value = 2
-	hardness = 5
+	strength = 5
 	stack_type = /obj/item/stack/material/cloth
+	conductivity = 2
 
 
 /transformation/stack/cloth__woven_net
@@ -61,7 +60,7 @@ CAPABILITIES(/transformation/stack/cloth__gloves)
 
 /transformation/stack/cloth__wig
 CAPABILITIES(/transformation/stack/cloth__wig)
-	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/clothing/head/powdered_wig, 1)),
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(VARIANT(/obj/item/clothing/head/powdered_wig), 1)),
 		chosen = chosen(title = "wig",
 			subject = /datum/material/cloth,
 			build_time = 10 SECONDS,
@@ -269,12 +268,11 @@ CAPABILITIES(/transformation/stack/cloth__painting_canvas_24x24)
 /datum/material/cloth/syncloth
 	name = MAT_SYNCLOTH
 	ignition_point = T0C+532
-	melting_point = T0C+600
-	integrity = 200
-	protectiveness = 15 // 4%
+	heat_resistance = 15.6
+	toughness = 100
 	pass_stack_colors = TRUE
 	supply_conversion_value = 3
-	hardness = 5
+	strength = 5
 
 /datum/material/cloth/teal
 	name = MAT_CLOTH_TEAL
@@ -356,15 +354,14 @@ CAPABILITIES(/transformation/stack/cloth__painting_canvas_24x24)
 	icon_colour = "#DA020A"
 	flags = MATERIAL_PADDING|MATERIAL_BRITTLE
 	ignition_point = T0C+232
-	melting_point = T0C+300
+	heat_resistance = 8.1
 	sheet_singular_name = "tile"
 	sheet_plural_name = "tiles"
-	protectiveness = 1 // 4%
-	conductive = 0
-	hardness = 5
-	integrity = 40
+	strength = 5
+	toughness = 20
 	supply_conversion_value = 0.25
 	wiki_flag = WIKI_SPOILER
+	conductivity = 2
 
 /datum/material/cotton
 	name = MAT_COTTON
@@ -372,13 +369,12 @@ CAPABILITIES(/transformation/stack/cloth__painting_canvas_24x24)
 	icon_colour = "#FFFFFF"
 	flags = MATERIAL_PADDING|MATERIAL_BRITTLE
 	ignition_point = T0C+232
-	melting_point = T0C+300
-	protectiveness = 1 // 4%
-	conductive = 0
-	hardness = 5
-	integrity = 10
+	heat_resistance = 8.1
+	strength = 5
+	toughness = 5
 	supply_conversion_value = 1
 	stack_type = /obj/item/stack/material/cotton
+	conductivity = 2
 
 /datum/material/fibers
 	name = MAT_FIBERS
@@ -387,14 +383,13 @@ CAPABILITIES(/transformation/stack/cloth__painting_canvas_24x24)
 	icon_colour = "#006b0e"
 	flags = MATERIAL_PADDING|MATERIAL_BRITTLE
 	ignition_point = T0C+232
-	melting_point = T0C+300
-	protectiveness = 1 // 4%
-	conductive = 0
+	heat_resistance = 8.1
 	pass_stack_colors = TRUE
-	hardness = 5
-	integrity = 5
+	strength = 5
+	toughness = 2
 	stack_type = /obj/item/stack/material/fiber
 	supply_conversion_value = 1
+	conductivity = 2
 
 
 //Red Color Fix
@@ -405,10 +400,9 @@ CAPABILITIES(/transformation/stack/cloth__painting_canvas_24x24)
 	icon_colour = "#DA020A"
 	flags = MATERIAL_PADDING
 	ignition_point = T0C+232
-	melting_point = T0C+300
-	protectiveness = 1 // 4%
-	conductive = 0
+	heat_resistance = 8.1
 	supply_conversion_value = 0
+	conductivity = 2
 
 //CARPET materials
 

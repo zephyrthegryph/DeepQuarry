@@ -14,6 +14,13 @@ GLOBAL_LIST_EMPTY(boot_phase_type_us)
 /// phase -> microseconds spent by the first instance of each type that ran it: the once-per-type warm-up (a table built on first use), not per-instance work.
 GLOBAL_LIST_EMPTY(boot_phase_first_us)
 
+/// " (space)", " (turf)", " (mob)" or " (obj)": the row suffix BOOT_KIND() gives an atom (a turf says whether it is space through is_space()).
+/proc/boot_kind(atom/A)
+	if(isturf(A))
+		var/turf/T = A
+		return T.is_space() ? " (space)" : " (turf)"
+	return ismob(A) ? " (mob)" : " (obj)"
+
 /// Adds one timed phase of `A` (an atom, or null).
 /proc/boot_phase_add(phase, us, atom/A)
 	GLOB.boot_phase_us[phase] += us

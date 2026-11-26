@@ -123,8 +123,8 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 	var/failed = FALSE
 
 	// need to test for instant reactions blocking distillation!
-	rel_set(src, nameof(instant_beaker), new /obj/item/reagent_containers/glass/beaker())
-	instant_beaker.reagents.maximum_volume = 5000
+	rel_set(src, nameof(instant_beaker), new /obj/item/reagent_containers/glass/beaker/recipe_bath())
+	instant_beaker.reagents.set_maximum_volume(5000)
 	observe(instant_beaker.reagents, /datum/notice/reagents_holder_reacted, src, then(PROC_REF(get_signal_data)))
 
 	//actual test
@@ -143,15 +143,15 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 				continue
 			var/obj/item/slime_extract/E = new CR.subject_type()
 			QDEL_SWAP(fake_beaker, E)
-			fake_beaker.reagents.maximum_volume = 5000
+			fake_beaker.reagents.set_maximum_volume(5000)
 		else if(CR.regime == REGIME_DISTILLING)
 			// distilling
 			var/obj/distilling_tester/D = new()
 			QDEL_SWAP(fake_beaker, D)
 		else
 			// regular beaker
-			QDEL_SWAP(fake_beaker, new /obj/item/reagent_containers/glass/beaker())
-			fake_beaker.reagents.maximum_volume = 5000
+			QDEL_SWAP(fake_beaker, new /obj/item/reagent_containers/glass/beaker/recipe_bath())
+			fake_beaker.reagents.set_maximum_volume(5000)
 
 		// Perform test! If it fails once, it will perform a deeper check trying to use the inhibitors of anything in the beaker
 		observe(fake_beaker.reagents, /datum/notice/reagents_holder_reacted, src, then(PROC_REF(get_signal_data)))
@@ -187,13 +187,16 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 
 		if(inhib.len) // taken from argument and not reaction! Put in FIRST!
 			for(var/RR in inhib)
-				fake_beaker.reagents.add_reagent(RR, inhib[RR]) // Does not need to scale
+				fake_beaker.reagents.add_reagent(RR, inhib[RR], safety = 1) // Does not need to scale
 		if(CR.reagent_catalysts) // Required for reaction
 			for(var/RR in CR.reagent_catalysts)
-				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.reagent_catalysts, RR)) // Does not need to scale
+				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.reagent_catalysts, RR), safety = 1) // Does not need to scale
+		var/obj/item/reagent_containers/glass/beaker/recipe_bath/bath = fake_beaker
+		if(istype(bath)) // a recipe has a temperature band: the takes go in at a temperature it works at, as in the lab
+			bath.set_bath_temperature(recipe_temperature(CR, bath.reagents))
 		if(CR.reagent_takes)
 			for(var/RR in CR.reagent_takes)
-				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.reagent_takes, RR) * scale)
+				fake_beaker.reagents.add_reagent(RR, LAZYACCESS(CR.reagent_takes, RR) * scale, safety = 1) // everything goes in before anything is let to react: the recipe is judged on the whole mixture, not on the first reagent a catalyst or a route finds alone
 
 		if(CR.regime != REGIME_DISTILLING)
 			fake_beaker.reagents.handle_reactions()
@@ -203,6 +206,10 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 		// This is so multiple reactions with the same requirements, but different temps, can be tested.
 		temp_test += 0.1
 		var/obj/distilling_tester/DD = fake_beaker
+		var/list/still_window = CR.bands[1]
+		DD.current_temp = LERP(still_window[1], still_window[2], temp_test) // the still is at this step's temperature before anything is poured out of it (it starts at 0 K), and the instant recipes are tried at it
+		var/obj/item/reagent_containers/glass/beaker/recipe_bath/instant_bath = instant_beaker
+		instant_bath.set_bath_temperature(DD.current_temp)
 		check_instants()
 		DD.test_distilling(CR,temp_test)
 		check_instants()
@@ -244,6 +251,33 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 		TEST_NOTICE(src, "[CR.rule_type]: Reagents - Used inhibitor for: [test_react]")
 	return RESULT_REACTION_FAILED
 
+/// A beaker held at a set temperature (a recipe is built at the temperature its band asks for, not at whatever the room is).
+/obj/item/reagent_containers/glass/beaker/recipe_bath
+	var/bath_temperature = T20C
+
+/obj/item/reagent_containers/glass/beaker/recipe_bath/get_temperature()
+	return bath_temperature
+
+/// The temperature to build `CR` at: room temperature when its ideal band holds it, else the nearest edge of the ideal band; a recipe that takes ice is built at
+/// freezing (or the nearest band edge) so the ice stays ice; a temperature_in() window of the recipe's own bounds it further.
+/datum/unit_test/chemical_reactions_shall_not_conflict/proc/recipe_temperature(datum/xform/CR, datum/reagents/holder)
+	var/list/band
+	if(CR.route_id)
+		band = chem_route_of(CR)?.band_in(holder)
+	else if(ispath(CR.rule_type, /transformation/chem))
+		band = reaction_temperature_profile(CR.rule_type)
+	var/temperature = T20C
+	if(CR.reagent_takes?[REAGENT_ID_ICE])
+		temperature = T0C
+	if(band)
+		temperature = clamp(temperature, band[2], band[3])
+	for(var/list/window as anything in CR.bands)
+		if(!isnull(window[1]))
+			temperature = max(temperature, window[1])
+		if(!isnull(window[2]))
+			temperature = min(temperature, window[2])
+	return temperature
+
 /datum/unit_test/chemical_reactions_shall_not_conflict/proc/get_signal_data(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/reagents_holder_reacted/event = N
@@ -280,6 +314,10 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 		var/datum/reagent/R = new Rpath()
 		if(!length(R.treatment_tags))
 			continue
+		if(R.name == REAGENT_DEVELOPER_WARNING)
+			var/datum/reagent/parent_reagent = new R.parent_type()
+			if(parent_reagent.treatment_tags ~= R.treatment_tags)
+				continue // an abstract base that only inherits its parent's tags: its subtypes are the reagents
 		checked++
 		TEST_ASSERT(R.id != REAGENT_ID_DEVELOPER_WARNING && R.name != REAGENT_DEVELOPER_WARNING, "[Rpath]: treatment_tags sit on a type that is not a real reagent (no id/name); check for a misspelled path.")
 		for(var/tag in R.treatment_tags)

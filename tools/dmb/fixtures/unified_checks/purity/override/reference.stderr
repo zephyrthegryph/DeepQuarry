@@ -1,6 +1,0 @@
-@FIXTURE@, line 7, column 12:
-error: /proc/probe calls /datum/base/proc/write which has override child proc that does impure operations /datum/base/child/proc/write
-- 8:5: SpacemanDMM_should_not_pure set here
-- 9:6: /datum/base/proc/write() called here
-- 6:9: Assignment on purity breaking expression() called here
-

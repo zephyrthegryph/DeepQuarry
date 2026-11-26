@@ -136,7 +136,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/announcement/priority/security)
 
 /proc/AnnounceArrival(mob/living/carbon/human/character, rank, join_message, channel = "Common", zlevel)
 	if (round_game_state() == GAME_STATE_PLAYING)
-		var/list/zlevels = zlevel ? using_map.get_map_levels(zlevel, TRUE, om_range = DEFAULT_OVERMAP_RANGE) : null
+		var/list/zlevels = zlevel ? using_map.get_map_levels(zlevel, TRUE, overmap_range = DEFAULT_OVERMAP_RANGE) : null
 		if(character.mind.role_alt_title)
 			rank = character.mind.role_alt_title
 		AnnounceArrivalSimple(character.real_name, rank, join_message, channel, zlevels)

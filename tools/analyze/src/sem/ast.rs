@@ -206,7 +206,7 @@ pub fn stmt_blocks(s: &Statement) -> Vec<&Block> {
 
 /// Every expression in a block, recursively (statement expressions and what they nest), with the
 /// line of the statement that holds it.
-pub fn walk_block<'a>(b: &'a [dreammaker::ast::Spanned<Statement>], f: &mut dyn FnMut(&'a Expression, u32)) {
+pub fn walk_block<'a>(b: &'a Block, f: &mut dyn FnMut(&'a Expression, u32)) {
     for st in b.iter() {
         let line = st.location.line;
         for e in stmt_exprs(&st.elem) {

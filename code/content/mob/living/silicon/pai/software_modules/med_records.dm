@@ -6,7 +6,24 @@
 
 CAPABILITIES(/datum/pai_software/med_records)
 	interface("pAIMedrecords", state = nameof(GLOB.tgui_always_state))
+	ui_shape(records = list_of(row(name = schema_text(), ref = num())), general = nullable(row(name = schema_text(), id = schema_text(), brain_type = schema_text(), sex = schema_text(), species = schema_text(), age = num(), rank = schema_text(), fingerprint = schema_text(), p_stat = schema_text(), m_stat = schema_text())), medical = nullable(row(b_type = schema_text(), mi_dis = schema_text(), mi_dis_d = schema_text(), ma_dis = schema_text(), ma_dis_d = schema_text(), alg = schema_text(), alg_d = schema_text(), cdi = schema_text(), cdi_d = schema_text(), notes = schema_text())), could_not_find = bool())
 	op("select", ui_act("select", arg("select", schema_ref(/datum/data/record))), then(PROC_REF(ui_act_select)))
+
+/// The general record fields the pAI record windows show, or null for no record.
+/proc/pai_record_general(datum/data/record/G)
+	if(!G)
+		return null
+	return list(
+		"name" = G.fields["name"],
+		"id" = G.fields["id"],
+		"brain_type" = G.fields["brain_type"],
+		"sex" = G.fields["sex"],
+		"species" = G.fields["species"],
+		"age" = G.fields["age"],
+		"rank" = G.fields["rank"],
+		"fingerprint" = G.fields["fingerprint"],
+		"p_stat" = G.fields["p_stat"],
+		"m_stat" = G.fields["m_stat"])
 
 /datum/pai_software/med_records/ui_data(datum/act/eval/A)
 	var/mob/living/silicon/pai/user = A.actor
@@ -23,8 +40,18 @@ CAPABILITIES(/datum/pai_software/med_records)
 
 	var/datum/data/record/G = user.medicalActive1
 	var/datum/data/record/M = user.medicalActive2
-	data["general"] = G ? G.fields : null
-	data["medical"] = M ? M.fields : null
+	data["general"] = pai_record_general(G)
+	data["medical"] = M ? list(
+		"b_type" = M.fields["b_type"],
+		"mi_dis" = M.fields["mi_dis"],
+		"mi_dis_d" = M.fields["mi_dis_d"],
+		"ma_dis" = M.fields["ma_dis"],
+		"ma_dis_d" = M.fields["ma_dis_d"],
+		"alg" = M.fields["alg"],
+		"alg_d" = M.fields["alg_d"],
+		"cdi" = M.fields["cdi"],
+		"cdi_d" = M.fields["cdi_d"],
+		"notes" = M.fields["notes"]) : null
 	data["could_not_find"] = user.medical_cannotfind
 
 	return data

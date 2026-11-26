@@ -74,13 +74,6 @@ CAPABILITIES(/obj/item/commcard/engineering)
 // Atmospherics Cartridge:
 // Devices
 //  *- Gas scanner
-/obj/item/commcard/atmos
-	name = "\improper BreatheDeep cartridge"
-	icon_state = "cart-a"
-
-CAPABILITIES(/obj/item/commcard/atmos)
-	owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer))
-
 // Medical Cartridge:
 // Devices
 //  *- Halogen Counter
@@ -191,15 +184,6 @@ CAPABILITIES(/obj/item/commcard/signal)
 //  *- Gas Scanner
 // Templates
 //  *- Signaler Access
-/obj/item/commcard/signal/science
-	name = "\improper Signal Ace 2 cartridge"
-	desc = "Complete with integrated radio signaler!"
-	icon_state = "cart-tox"
-	// UI templates inherited
-
-CAPABILITIES(/obj/item/commcard/signal/science)
-	owns_many(nameof(internal_devices), starts = list(/obj/item/assembly/signaler, /obj/item/reagent_scanner, /obj/item/analyzer))
-
 // Supply Cartridge:
 // Templates
 //  *- Supply Records

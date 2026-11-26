@@ -2,17 +2,17 @@ import { Fragment, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { ImageButton, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-
+import type { AppearanceChangerActions } from '../generated/AppearanceChanger';
 import type { BodyStyle, Data, Styles } from './types';
 
 export const AppearanceChangerParts = (props: {
   sectionNames: string[];
   possibleStyles: Styles[][];
-  currentStyle: string[];
+  currentStyle: (string | null)[];
   actions: string[];
   canClear?: boolean;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, AppearanceChangerActions>();
   const { sectionNames, possibleStyles, currentStyle, actions, canClear } =
     props;
   const [searchText, setSearchText] = useState<string>('');
@@ -81,15 +81,15 @@ export const AppearanceChangerParts = (props: {
 export const AppearanceChangerHair = (props: {
   sectionNames: string[];
   possibleStyles: BodyStyle[][];
-  currentStyle: string[];
+  currentStyle: (string | null)[];
   actions: string[];
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, AppearanceChangerActions>();
   const { sectionNames, possibleStyles, currentStyle, actions } = props;
   const [searchText, setSearchText] = useState<string>('');
 
   const selectableStyles = possibleStyles.map((styles: BodyStyle[]) => {
-    const searcher = createSearch<Styles>(searchText, (style) => {
+    const searcher = createSearch<BodyStyle>(searchText, (style) => {
       return style.name;
     });
 

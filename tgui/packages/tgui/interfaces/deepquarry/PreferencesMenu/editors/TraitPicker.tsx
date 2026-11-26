@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -12,29 +13,8 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import type { PrefEditorTraitPickerStatic } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
-
-type TraitData = {
-  blood_color: string;
-  traits_cheating: number;
-  starting_trait_points: number;
-  max_traits: number;
-  points_used: number;
-  total_traits: number;
-  pos_traits: string[];
-  neu_traits: string[];
-  neg_traits: string[];
-};
-
-type TraitStatic = {
-  all_traits: Record<
-    string,
-    { name: string; desc: string; cost: number; category: number }
-  >;
-  positive_traits: string[];
-  neutral_traits: string[];
-  negative_traits: string[];
-};
 
 const send = (
   act: ReturnType<typeof useBackend>['act'],
@@ -48,13 +28,14 @@ const COLUMN_COLOR: Record<'pos' | 'neu' | 'neg', string> = {
   neg: 'bad',
 };
 
-export const TraitPicker = ({ data, staticData }: EditorProps) => {
+export const TraitPicker = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'trait_picker'>) => {
   const { act } = useBackend();
-  const d = data as TraitData;
-  const s = (staticData ?? {}) as TraitStatic;
   const [search, setSearch] = useState('');
 
-  if (!s.all_traits) return null;
+  if (!s) return null;
 
   const pointsRemaining = d.starting_trait_points - d.points_used;
   const traitsRemaining = d.max_traits - d.total_traits;
@@ -112,7 +93,7 @@ export const TraitPicker = ({ data, staticData }: EditorProps) => {
       <Box
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15em), 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 18em), 1fr))',
           gap: '0.5em',
         }}
       >
@@ -163,7 +144,7 @@ const TraitColumn = ({
   categoryKey: 'pos' | 'neu' | 'neg';
   available: string[];
   selected: string[];
-  allTraits: TraitStatic['all_traits'];
+  allTraits: PrefEditorTraitPickerStatic['all_traits'];
   search: string;
 }) => {
   const { act } = useBackend();
@@ -190,13 +171,13 @@ const TraitColumn = ({
       }}
     >
       <Box style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-        <Box mb={0.25} bold color={color} fontSize="0.85em">
+        <Box mb={0.25} bold color={color} fontSize="1.1em">
           Selected
         </Box>
         {selected.length === 0 && (
-          <Box italic mb={0.5} fontSize="0.85em" color="label">
+          <Label italic mb={0.5} fontSize="1.05em">
             None
-          </Box>
+          </Label>
         )}
         {selected.map((path) => {
           const meta = allTraits[path];
@@ -213,7 +194,7 @@ const TraitColumn = ({
             />
           );
         })}
-        <Box mt={0.5} mb={0.25} bold color={color} fontSize="0.85em">
+        <Box mt={0.75} mb={0.25} bold color={color} fontSize="1.1em">
           Available
         </Box>
         {available
@@ -258,7 +239,7 @@ const TraitRow = ({
   const costStr =
     meta.cost === 0 ? '0' : meta.cost > 0 ? `+${meta.cost}` : `${meta.cost}`;
   return (
-    <Box mb={0.1} fontSize="0.85em">
+    <Box mb={0.25} fontSize="1.15em">
       <Box style={{ display: 'flex', alignItems: 'center', gap: '0.333em' }}>
         <Button
           compact
@@ -294,15 +275,13 @@ const TraitRow = ({
           >
             {meta.name}
           </Box>
-          <Box color="label" style={{ flex: '0 0 auto' }}>
-            ({costStr})
-          </Box>
+          <Label style={{ flex: '0 0 auto' }}>({costStr})</Label>
         </Box>
       </Box>
       {open && (
-        <Box color="label" fontSize="0.85em" pl={3} pr={1}>
+        <Label fontSize="1em" pl={3} pr={1}>
           {meta.desc}
-        </Box>
+        </Label>
       )}
     </Box>
   );

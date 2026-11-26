@@ -36,8 +36,7 @@
 
 /// Creates `path` at `original`'s loc (in its holder's slot, if it has one),
 /// carries over its SLOT_DROP_KEEP_WITH contents (moved into the successor's
-/// declared slots) and SLOT_DROP_TO_LATENT contents (folded into the
-/// successor's latent entries), then destroys `original`. Replaces the
+/// declared slots), then destroys `original`. Replaces the
 /// `new X(); qdel(src)` pattern (deconstruction debris, item transforms).
 /// Returns the successor, or null if it couldn't be placed.
 ///
@@ -135,13 +134,6 @@
 /// many were deleted.
 /atom/proc/slot_clear(slot_id)
 	. = 0
-	// DELETE never materializes a latent entry (lifecycle.md Â§3): drop them
-	// as data.
-	if(has_latent())
-		var/datum/ledger/L = dq_ledger(src)
-		for(var/datum/latent_entry/entry as anything in L?.latent_list(slot_id))
-			. += entry.count
-			L.latent_set_count(entry, 0)
 	// A holder without declared slots owns its plain contents: slot_clear()
 	// with no slot named deletes those, the loop this verb replaces.
 	var/list/things = (isnull(slot_id) && !dq_slot_defs_for(src)) ? contents.Copy() : slot_contents(slot_id)

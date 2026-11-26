@@ -7,11 +7,11 @@ import {
   Slider,
   Stack,
 } from 'tgui-core/components';
-
+import type { GeneralAtmoControlActions } from '../generated/GeneralAtmoControl';
 import type { Data } from './types';
 
 export const AtmoControlTankCore = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GeneralAtmoControlActions>();
 
   const {
     // Tanks /obj/machinery/computer/general_air_control

@@ -1,1 +1,0 @@
-#define FIXTURE_BINDING 1

@@ -375,14 +375,6 @@ CAPABILITIES(/obj/item/reagent_containers/pill/arithrazine)
 CAPABILITIES(/obj/item/reagent_containers/pill/corophizine)
 	configure(reagents(add = list(REAGENT_ID_COROPHIZINE = 5), tint = TRUE))
 
-/obj/item/reagent_containers/pill/vermicetol
-	name = REAGENT_VERMICETOL + " (15u)"
-	desc = "An extremely potent drug to treat physical injuries."
-	icon_state = "pill1"
-
-CAPABILITIES(/obj/item/reagent_containers/pill/vermicetol)
-	configure(reagents(add = list(REAGENT_ID_VERMICETOL = 15), tint = TRUE))
-
 /obj/item/reagent_containers/pill/healing_nanites
 	name = REAGENT_HEALINGNANITES + " (30u)"
 	desc = "Miniature medical robots that swiftly restore bodily damage."

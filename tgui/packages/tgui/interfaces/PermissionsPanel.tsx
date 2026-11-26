@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -18,75 +19,17 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type {
+  PermissionsPanelActions,
+  PermissionsPanelData,
+} from './generated/PermissionsPanel';
 
-type AdminRow = {
-  ckey: string;
-  rank: string;
-  permissions: string;
-  deadmined: BooleanLike;
-};
-
-type RankRow = {
-  name: string;
-  source: string;
-  held_by: number;
-  permissions: string;
-  denied: string;
-  editable: string;
-  can_modify: BooleanLike;
-  can_delete: BooleanLike;
-};
-
-type RanksPageData = {
-  rows: RankRow[];
-  can_create: BooleanLike;
-};
-
-type LogEntry = {
-  datetime: string;
-  round_id: string;
-  admin_key: string;
-  operation: string;
-  ckey_actioned: string;
-  log: string;
-};
-
-type LoggingPageData = {
-  log_target: string;
-  log_actor: string;
-  log_operation: string;
-  log_page: number;
-  log_count: number;
-  per_page: number;
-  action_options: string[];
-  entries: LogEntry[];
-};
-
-type HousekeepingPageData = {
-  invalid_admins: { admin: string; rank: string }[];
-  unused_ranks: {
-    name: string;
-    source: string;
-    permissions: string;
-    denied: string;
-    editable: string;
-    can_delete: BooleanLike;
-  }[];
-};
-
-type Data = {
-  page: string;
-  PERMISSIONS_PAGE_PERMISSIONS: string;
-  PERMISSIONS_PAGE_RANKS: string;
-  PERMISSIONS_PAGE_LOGGING: string;
-  PERMISSIONS_PAGE_HOUSEKEEPING: string;
-  permissions_rows?: AdminRow[];
-  ranks_page?: RanksPageData;
-  logging_page?: LoggingPageData;
-  housekeeping_page?: HousekeepingPageData;
-};
+type Data = PermissionsPanelData;
+type AdminRow = NonNullable<Data['permissions_rows']>[number];
+type RanksPageData = NonNullable<Data['ranks_page']>;
+type LoggingPageData = NonNullable<Data['logging_page']>;
+type HousekeepingPageData = NonNullable<Data['housekeeping_page']>;
 
 type ActFn = (a: string, p?: Record<string, any>) => void;
 
@@ -251,9 +194,9 @@ const RanksPage = (props: { data: RanksPageData; act: ActFn }) => {
                 </Button>
               ) : null}
             </Box>
-            <Box ml={1} color="label">
+            <Label ml={1}>
               Source: {r.source} · Held by {r.held_by}
-            </Box>
+            </Label>
             <Box ml={1} style={{ fontFamily: 'monospace', fontSize: '0.85em' }}>
               <Box>Permissions: {r.permissions}</Box>
               {r.denied ? <Box>Denied: {r.denied}</Box> : null}
@@ -436,9 +379,7 @@ const HousekeepingPage = (props: {
                     </Button>
                   ) : null}
                 </Box>
-                <Box ml={1} color="label">
-                  Source: {r.source}
-                </Box>
+                <Label ml={1}>Source: {r.source}</Label>
                 <Box
                   ml={1}
                   style={{ fontFamily: 'monospace', fontSize: '0.85em' }}
@@ -457,7 +398,7 @@ const HousekeepingPage = (props: {
 };
 
 export const PermissionsPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PermissionsPanelActions>();
   return (
     <Window width={820} height={720} title="Permissions">
       <Window.Content scrollable>

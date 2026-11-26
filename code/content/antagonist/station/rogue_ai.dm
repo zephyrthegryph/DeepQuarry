@@ -95,7 +95,7 @@
 	var/newname = A.answer.value
 	if (newname)
 		player.SetName(newname)
-	if(player.mind) player.mind.name = player.name
+	if(player.mind) player.mind.set_name(player.name)
 
 /// The /datum/antagonist/rogue_ai template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
 /proc/antag_malf() as /datum/antagonist/rogue_ai

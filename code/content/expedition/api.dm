@@ -4,6 +4,12 @@
 //   SSexpedition.create_site_descriptor(mission, difficulty, ...)    survey a site that is not generated yet
 //   SSexpedition.generate_site(mission, ...) / materialize_site(site, plan) / release_site(site, reason)
 //   SSexpedition.generate_debug_station(seed, ...)                   admin: a generated station on an expedition z-level
+//   SSexpedition.site_on_level(z)                                    the site generated on a level, or null
+
+/// The expedition site generated on level `z`, or null: what a thing made on that level is a lot of (trace_lot_at(), code/domains/world_model/reagents/trace_sources.dm).
+/datum/system/expedition/proc/site_on_level(z)
+	RETURN_TYPE(/datum/expedition_site)
+	return sites?["[z]"]
 
 /// Why a vessel cannot be given an expedition assignment (a message for its pilot), or null when it can.
 /datum/system/expedition/proc/plot_refusal(datum/flight_vessel/vessel)

@@ -138,56 +138,6 @@ pub enum ResolveQuery {
     MemberCallableName(SymbolId),
     /// Dynamic selector namespace: procedures take priority over verbs by name.
     MemberCallableVerbName(SymbolId),
-    /// Exact authored source chain, excluding uncaptured engine procedures.
-    /// Missing certifies source absence only. Consumers still need the pinned
-    /// engine's builtin contract before interpreting that absence as a builtin.
-    SourceDeclarationChain {
-        owner: SymbolId,
-        name: SymbolId,
-        verb: bool,
-    },
-    /// Whether the captured engine declares this callable on the receiver or
-    /// an ancestor, independently of any authored override or shadow. Positive
-    /// captured rows are definitive; absence requires a complete inventory.
-    IntrinsicCallable {
-        owner: SymbolId,
-        name: SymbolId,
-        verb: bool,
-    },
-    /// Whether any non-global engine proc or verb has this name. Source
-    /// procedures never count, and root global builtins are not methods.
-    IntrinsicCallableName(SymbolId),
-    /// Fixed checker-DSL provenance, distinct from runtime intrinsic inventory.
-    /// A mismatched/incompatible profile is Unsupported, never negative proof.
-    CheckerIntrinsicCallable {
-        profile: crate::PackedU128,
-        owner: SymbolId,
-        name: SymbolId,
-        verb: bool,
-    },
-    CheckerBuiltinVar {
-        profile: crate::PackedU128,
-        owner: SymbolId,
-        name: SymbolId,
-    },
-    CheckerBuiltinProc {
-        profile: crate::PackedU128,
-        owner: SymbolId,
-        name: SymbolId,
-        verb: bool,
-    },
-    /// Captured authored formal variable declaration, excluding runtime-only
-    /// fields and default-value overrides. Missing says SOURCE absence only.
-    SourceVarDeclaration {
-        owner: SymbolId,
-        name: SymbolId,
-    },
-    /// Append-only wire identity. This is NOT ordinary Type/Parent/Ancestry;
-    /// its answer requires the original tree's sealed complete hierarchy view.
-    CertifiedHierarchy {
-        kind: HierarchyQuestion,
-        path: SymbolId,
-    },
     /// Whether the type itself declares (or overrides) at least one procedure, or verb when `verb`, in source. `/T/proc` and `/T/verb`
     /// are type paths only then: DreamMaker rejects `typesof(/mob/living/carbon/verb)` as an undefined type path when nothing
     /// is declared under it, whatever the ancestors or subtypes declare.
@@ -195,17 +145,6 @@ pub enum ResolveQuery {
         owner: SymbolId,
         verb: bool,
     },
-}
-
-/// Qualified ORIGINAL hierarchy question. Member inventory completeness is a
-/// different contract and cannot turn a certified hierarchy's absence unknown.
-#[derive(
-    Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, serde::Serialize, serde::Deserialize,
-)]
-pub enum HierarchyQuestion {
-    Type,
-    Parent,
-    Ancestry,
 }
 
 /// Source declaration form is independent of its executable implementation.
@@ -220,24 +159,14 @@ pub enum ProcedureDefinition {
 impl ResolveQuery {
     pub const fn domain(self) -> ReadDomain {
         match self {
-            // Intrinsic presence, hierarchy and inventory completeness are all
-            // part of the tree's engine-qualified answer world. Do not reuse a
-            // source-only owner certificate for these provenance questions.
-            Self::IntrinsicCallable { .. }
-            | Self::IntrinsicCallableName(_)
-            | Self::CheckerIntrinsicCallable { .. }
-            | Self::CheckerBuiltinVar { .. }
-            | Self::CheckerBuiltinProc { .. }
-            | Self::SourceVarDeclaration { .. } => ReadDomain::Tree,
-            Self::SourceDeclarationChain { .. }
-            | Self::MemberCallableVerbName(_)
-            | Self::MemberCallableName(_) => ReadDomain::OwnerCallable(self),
+            Self::MemberCallableVerbName(_) | Self::MemberCallableName(_) => {
+                ReadDomain::OwnerCallable(self)
+            }
             Self::ProcedureStatic { procedure, .. } => ReadDomain::OwnerProcedureStatic(procedure),
             Self::Resource(_) | Self::ResourceIn { .. } => ReadDomain::ResourceSearch,
-            Self::Type(owner)
-            | Self::Parent(owner)
-            | Self::Ancestry(owner)
-            | Self::CertifiedHierarchy { path: owner, .. } => ReadDomain::OwnerHierarchy(owner),
+            Self::Type(owner) | Self::Parent(owner) | Self::Ancestry(owner) => {
+                ReadDomain::OwnerHierarchy(owner)
+            }
             Self::HasMemberVar { .. }
             | Self::DeclaredVarType { .. }
             | Self::VarStorage { .. }
@@ -326,12 +255,140 @@ impl ResolvedMeaning {
     /// Stable dependency evidence: complete semantic values, no debug formatting
     /// or transient tree arena indexes. Stage versions qualify this encoding.
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
-            .expect("unmetered native canonical allocation failed")
-    }
-    /// SAME byte encoder; transient allocations are funded before growth.
-    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
-        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Meaning(self), work)
+        fn frame(out: &mut Vec<u8>, bytes: &[u8]) {
+            out.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
+            out.extend_from_slice(bytes);
+        }
+        fn symbol(out: &mut Vec<u8>, value: SymbolId) {
+            out.extend_from_slice(&value.bits().to_le_bytes());
+        }
+        let mut out = b"dm-resolved-meaning-v1\0".to_vec();
+        match self {
+            Self::Missing => out.push(0),
+            Self::Unsupported(query) => {
+                out.push(1);
+                frame(
+                    &mut out,
+                    &serde_json::to_vec(query).expect("query serialization is infallible"),
+                );
+            }
+            Self::Presence(value) => {
+                out.extend_from_slice(&[2, u8::from(*value)]);
+            }
+            Self::DeclaredType(value) => {
+                out.extend_from_slice(&[3, u8::from(value.is_some())]);
+                if let Some(value) = value {
+                    symbol(&mut out, *value);
+                }
+            }
+            Self::InstanceField {
+                declaring_owner,
+                name,
+            } => {
+                out.push(4);
+                symbol(&mut out, *declaring_owner);
+                symbol(&mut out, *name);
+            }
+            Self::Value(value) => {
+                out.push(5);
+                frame(&mut out, &value.canonical_bytes());
+            }
+            Self::Slot {
+                symbol: slot,
+                owner,
+                name,
+            } => {
+                out.push(6);
+                symbol(&mut out, *slot);
+                symbol(&mut out, *owner);
+                symbol(&mut out, *name);
+            }
+            Self::Symbol(value) => {
+                out.push(7);
+                symbol(&mut out, *value);
+            }
+            Self::Symbols(values) => {
+                out.push(8);
+                out.extend_from_slice(&(values.len() as u64).to_le_bytes());
+                for value in values.iter() {
+                    symbol(&mut out, *value);
+                }
+            }
+            Self::Members(values) => {
+                out.push(9);
+                out.extend_from_slice(&(values.len() as u64).to_le_bytes());
+                for value in values.iter() {
+                    frame(&mut out, &value.canonical_bytes());
+                }
+            }
+            Self::IntrinsicProc {
+                declaring_owner,
+                name,
+            } => {
+                out.push(10);
+                symbol(&mut out, *declaring_owner);
+                symbol(&mut out, *name);
+            }
+            Self::RetainedProc {
+                declaring_owner,
+                name,
+                verb,
+                engine_identity,
+                ..
+            } => {
+                out.push(11);
+                symbol(&mut out, *declaring_owner);
+                symbol(&mut out, *name);
+                out.push(u8::from(*verb));
+                out.extend_from_slice(&engine_identity.to_le_bytes());
+                // The immutable engine identity qualifies its named callable;
+                // its physical procedure-table index is not semantic evidence.
+            }
+            Self::Member {
+                owner, name, data, ..
+            } => {
+                out.push(12);
+                symbol(&mut out, *owner);
+                symbol(&mut out, *name);
+                frame(&mut out, &data.canonical_bytes());
+            }
+            Self::Resource { path, content } => {
+                out.push(13);
+                symbol(&mut out, *path);
+                out.extend_from_slice(&content.to_le_bytes());
+            }
+            Self::Declaration {
+                identity,
+                definition,
+                previous,
+                data,
+            } => {
+                out.push(15);
+                out.push(u8::from(previous.is_some()));
+                let mut declaration = |identity: &crate::ProcedureIdentity| {
+                    symbol(&mut out, identity.owner);
+                    symbol(&mut out, identity.name);
+                    out.push(u8::from(identity.verb));
+                    out.extend_from_slice(&identity.occurrence.to_le_bytes());
+                };
+                declaration(identity);
+                if let Some(previous) = previous {
+                    declaration(previous);
+                }
+                out.push(match definition {
+                    ProcedureDefinition::Declare => 0,
+                    ProcedureDefinition::Override => 1,
+                    ProcedureDefinition::Reopen => 2,
+                    ProcedureDefinition::Implicit => 3,
+                });
+                frame(&mut out, &data.canonical_bytes());
+            }
+            Self::ProcedureStatic(value) => {
+                out.push(14);
+                frame(&mut out, &value.canonical_bytes());
+            }
+        }
+        out
     }
 }
 
@@ -358,16 +415,6 @@ pub fn procedure_value_query(path: &str) -> Option<ResolveQuery> {
 /// The sole view of other declarations and resource search available to lowering.
 /// Implementations must answer from one immutable build snapshot.
 pub trait Resolver: Sync {
-    /// Exact compiler-issued semantic owner, when this implementation can prove
-    /// it. This opaque address is valid only during the immutable resolver
-    /// borrow: compare it, never dereference, persist, serialize or hash it.
-    /// It is neither answer equality nor an answer-world/cache-version token.
-    /// An unproven wrapper declines; only transparent original-owner delegates
-    /// may forward the provenance of their retained source owner.
-    fn source_owner(&self) -> Option<*const ()> {
-        None
-    }
-
     /// True unless this immutable host has no dependency/semantic read observer.
     /// Exact replay may bypass resolve only when false. Internal memo counters
     /// and issuer storage are not observers; custom wrappers
@@ -471,32 +518,3 @@ mod tests {
 #[cfg(test)]
 #[path = "resolver_sequence_tests.rs"]
 mod sequence_tests;
-
-#[cfg(test)]
-mod hierarchy_wire_tests {
-    use super::*;
-    #[test]
-    fn qualified_hierarchy_wire_tag_is_distinct_and_old_query_json_stays_exact() {
-        let path = SymbolId::of("/datum/wire");
-        let ordinary = serde_json::to_value(ResolveQuery::Type(path)).unwrap();
-        assert_eq!(ordinary, serde_json::json!({"Type":path}));
-        for kind in [
-            HierarchyQuestion::Type,
-            HierarchyQuestion::Parent,
-            HierarchyQuestion::Ancestry,
-        ] {
-            let question = ResolveQuery::CertifiedHierarchy { kind, path };
-            let wire = serde_json::to_value(question).unwrap();
-            assert_eq!(
-                wire,
-                serde_json::json!({"CertifiedHierarchy":{"kind":kind,"path":path}})
-            );
-            assert_ne!(wire, ordinary);
-            assert_eq!(
-                serde_json::from_value::<ResolveQuery>(wire).unwrap(),
-                question
-            );
-            assert_eq!(question.domain(), ReadDomain::OwnerHierarchy(path));
-        }
-    }
-}

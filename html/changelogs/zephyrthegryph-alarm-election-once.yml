@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "An area whose air alarms all lose power elects its main alarm once instead of once per alarm"

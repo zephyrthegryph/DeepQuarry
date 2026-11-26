@@ -1,7 +1,0 @@
-/datum/base
-    var/SpacemanDMM_final/value=0
-/datum/base/child
-    value=1
-/proc/probe()
-    set mystery=1
-    return missing_variable

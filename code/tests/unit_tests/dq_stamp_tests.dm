@@ -44,10 +44,8 @@
 	var/turf/T = dq_containment_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
-	for(var/name in list("last_bumped", "latent_touched_at", "last_move_time", "lifecycle_lifetime_timer"))
+	for(var/name in list("last_bumped", "last_move_time", "lifecycle_lifetime_timer"))
 		TEST_ASSERT(!(name in H.vars), "[name] is no longer a var of a mob")
 		TEST_ASSERT(!(name in pen.vars), "[name] is no longer a var of an item")
-	dq_latent_touch(pen)
-	TEST_ASSERT((TIME_NOW(CLOCK_WORLD, pen) - STATE_PEEK(pen, latency, latent_touched_at)) < 1 SECOND, "a latency touch stamps the atom")
 
 #endif

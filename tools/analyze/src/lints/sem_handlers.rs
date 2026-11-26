@@ -12,6 +12,8 @@
 //!   `A.dt` in a requirement).
 //! * `impure`: a requirement, condition, output or contribution (or any body it follows) that
 //!   writes a tracked var, or calls a setter, hold, release, grant, revoke, `rel_*` or a message.
+//! * `arity`: a handler of a plain-argument entry (setup, param apply/default, preset, rolls, derives, per_type, variants, keeps_if,
+//!   adjacency, on_ending, tooltip, radio_listen; `sem::hooks::ARITY_FORMS`) that needs more parameters (without a default) than the engine passes it; they would arrive null.
 //! * `requirement_return`: a requirement that returns a boolean, or a condition/req_bool callback that returns a non-boolean
 //!   other than TRUE/FALSE (it would read as TRUE and silently allow the op).
 //!
@@ -28,29 +30,73 @@
 use std::collections::BTreeSet;
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::pat::Pat;
 use crate::sem::checks::{act_idents, act_try_pairing, context_escape, Found, DEFAULT_TRY_CALLS};
 use crate::sem::handlers;
 use crate::sem::Sem;
 use crate::tree::CODE_DM;
 
-use crate::sem_handlers_policy::{metadata,STANDARD_OUTPUTS as STD_OUTPUTS};
+const H_UNRESOLVED: &str = "name a proc the type declares, or fix the declaration";
+const H_SIG: &str = "every handler is x(datum/act/A): one parameter of a datum/act type, A.holder always set";
+const H_FIELD: &str = "read only the fields the context type carries (doc/rewrite/final_api.html section 8): use a requirement for A.actor, an output for A.dt";
+const H_ARITY: &str = "declare at most the arguments the entry's engine passes (sem::hooks::ARITY_FORMS names the call), or give the rest a default: DM passes null for a missing one silently";
+const H_IMPURE: &str = "requirements, conditions, outputs and contributions are pure: move the write into an effect (then()) or a setter called from one";
+const H_RETURN: &str = "req callbacks return null to allow or text/a refusal datum to refuse; conditions and transitional req_bool callbacks return TRUE/FALSE";
+const H_PAIR: &str = "act_done(F) or act_cancel(F) on every path after ACT_ATTEMPT (a branch that tests ACT_REFUSED_BY(F), null or ACT_PASS needs neither)";
+const H_ESCAPE: &str = "a context is pooled and lives for one trigger: use A.snapshot() for anything that must outlive it";
+const H_OUTPUT: &str = "an override takes the base's parameters exactly, or it is a silent no-op";
+
+static META: Meta = Meta {
+    name: "sem/handlers",
+    group: "sem",
+    label: "handlers",
+    legacy: "",
+    select: CODE_DM,
+    scan: ScanKind::Tree,
+    policy: Policy::Hard,
+    rules: &[
+        RuleMeta { name: "handler_unresolved", hint: H_UNRESOLVED },
+        RuleMeta { name: "signature", hint: H_SIG },
+        RuleMeta { name: "context_field", hint: H_FIELD },
+        RuleMeta { name: "arity", hint: H_ARITY },
+        RuleMeta { name: "impure", hint: H_IMPURE },
+        RuleMeta { name: "requirement_return", hint: H_RETURN },
+        RuleMeta { name: "act_try_unpaired", hint: H_PAIR },
+        RuleMeta { name: "context_escape", hint: H_ESCAPE },
+        RuleMeta { name: "output_signature", hint: H_OUTPUT },
+    ],
+    allow: &["handlers"],
+    lists: &["try_calls"],
+};
+
+/// Standard outputs: base procs the engine calls by name.
+const STD_OUTPUTS: &[&str] = &["draw", "ui_data", "ui_static_data", "push_to_rust", "examine"];
+
 struct SemHandlers;
+
+fn candidate_re() -> &'static Pat {
+    crate::pat!(r"\bACT_TRY\b|\b(?:e0_)?act_try\b|\bdatum/act\b")
+}
+
+fn engine_output_re() -> &'static Pat {
+    crate::pat!(r"/proc/(?:draw|ui_data|ui_static_data|push_to_rust|examine)\s*\(")
+}
 
 impl Lint for SemHandlers {
     fn meta(&self) -> &Meta {
-        metadata()
+        &META
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let allowed = |out: &mut Sink, rel: &str, line: u32| -> bool {
             match cx.tree.get(rel) {
-                Some(f) => out.allowed(f, line as usize, crate::sem_handlers_report_policy::ALLOW_NAME),
+                Some(f) => out.allowed(f, line as usize, "handlers"),
                 None => false,
             }
         };
-        let mut seen = crate::sem_handlers_report_policy::Seen::default();
+        let mut seen: std::collections::HashSet<(String, String, u32, String)> = std::collections::HashSet::new();
         let mut put = |out: &mut Sink, rule: &'static str, rel: &str, line: u32, msg: String| {
-            if !seen.admit_using(rule, rel, line, &msg, &mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{}) {
+            if rel.is_empty() || !seen.insert((rule.to_string(), rel.to_string(), line, msg.clone())) {
                 return;
             }
             if allowed(out, rel, line) {
@@ -62,8 +108,8 @@ impl Lint for SemHandlers {
         // ---- structural checks over the files that mention an action or a context ----
         let all_files = cx.files();
         // Per-file facts (cached by content): does the file mention an action or a context, and is it an engine output base.
-        let cand_flags: Vec<bool> = crate::incr::facts("sem-handlers-cand", &all_files, |f| crate::sem_handlers_partial_recipe::candidate(&f.code().text));
-        let base_flags: Vec<bool> = crate::incr::facts("sem-handlers-base", &all_files, |f| crate::sem_handlers_partial_recipe::output_base(&f.rel,&f.code().text));
+        let cand_flags: Vec<bool> = crate::incr::facts("sem-handlers-cand", &all_files, |f| candidate_re().is_match(&f.code().text));
+        let base_flags: Vec<bool> = crate::incr::facts("sem-handlers-base", &all_files, |f| f.rel.starts_with("code/engine/") && engine_output_re().is_match(&f.code().text));
         let cands: Vec<String> = all_files.iter().zip(&cand_flags).filter(|(_, c)| **c).map(|(f, _)| f.rel.clone()).collect();
         if !cands.is_empty() {
             let extra: Vec<&str> = cx.list("try_calls").iter().map(|s| s.as_str()).collect();
@@ -145,9 +191,33 @@ impl Lint for SemHandlers {
         }
         let Some(an) = handlers::analyzed(cx.tree) else { return };
         let (sites_before, allow_before) = (out.sites.len(), out.allow_used.len());
+        for (rel, line, msg) in &an.arity {
+            put(out, "arity", rel, *line, msg.clone());
+        }
         for a in &an.handlers {
-            let result=crate::sem_handlers_policy::declared_using(crate::sem_handlers_policy::Declared{hook:&a.h,on:&a.on,proc_found:a.proc_found,type_found:a.type_found,definition:a.def.as_ref().map(|(rel,line)|(rel.as_str(),*line)),parameters:&a.params,bad_context:&a.bad_ctx,impure:&a.impure,returns:&a.returns},&mut crate::key_policy_control::Compatibility,&mut|_,rule,rel,line,message|{put(out,rule,rel,line,message);Ok(())});
-            match result{Ok(())=>{},Err(never)=>match never{}}
+            let h = &a.h;
+            let who = format!("{}::{} ({}())", a.on, h.proc, h.form);
+            if !a.proc_found {
+                let why = if a.type_found { format!("{} has no proc `{}`", a.on, h.proc) } else { format!("type {} does not exist", a.on) };
+                put(out, "handler_unresolved", &h.rel, h.line, format!("{} names a handler that does not resolve: {}", h.form, why));
+                continue;
+            }
+            let (drel, dline) = a.def.clone().unwrap_or((h.rel.clone(), h.line));
+            let is_act = |p: &Vec<String>| p.len() >= 2 && p[0] == "datum" && p[1] == "act";
+            // A UI or topic op's handler also takes the op's declared args, typed, after A.
+            let expected = 1 + h.ui_args.as_ref().map(|v| v.len()).unwrap_or(0);
+            if a.params.len() != expected || a.params.is_empty() || !is_act(&a.params[0]) {
+                put(out, "signature", &drel, dline, format!("{} takes {} parameter(s); a handler is x(datum/act/A){}", who, a.params.len(), if expected > 1 { " plus one parameter per declared arg()" } else { "" }));
+            }
+            for (field, rel, line) in &a.bad_ctx {
+                put(out, "context_field", rel, *line, format!("{} reads A.{}, which a {} context does not carry", who, field, h.ctx.type_path()));
+            }
+            for (what, rel, line) in &a.impure {
+                put(out, "impure", rel, *line, format!("{} is pure ({}) but {}", who, h.form, what));
+            }
+            for f in &a.returns {
+                put(out, f.rule, &drel, f.line, format!("{}: {}", who, f.msg));
+            }
         }
         if !engine_bases {
             let mut part = Sink::new();
@@ -164,14 +234,38 @@ pub fn register(reg: &mut Registry) {
 
 /// Compare an override with the nearest actual engine declaration on its parent_type chain.
 /// Unrelated output protocols (atom draw versus capability draw) do not share a signature.
-fn output_signature_findings(sem:&Sem)->Vec<(String,u32,String)>{
- let mut found=Vec::new();let mut control=crate::key_policy_control::Compatibility;
- for &name in STD_OUTPUTS{let mut output=crate::sem_handlers_output_policy::Output::default();
-  for ty in sem.objtree.iter_types(){let Some(proc)=ty.get().procs.get(name)else{continue};let owner=if ty.get().path.is_empty(){"/"}else{ty.get().path.as_str()};
-   for value in &proc.value{output.push_using(owner,sem.rel(value.location),value.location.line,value.parameters.iter().map(|parameter|parameter.name.as_str()),&mut control).unwrap_or_else(|never|match never{});}
-  }
-  output.finish_using(name,&mut|owner,_|Ok(sem.parent_of(owner)),&mut|relative,line,message,_|{found.push((relative.to_owned(),line,message));Ok(())},&mut control).unwrap_or_else(|never|match never{});
- }found
+fn output_signature_findings(sem: &Sem) -> Vec<(String, u32, String)> {
+    let mut found = Vec::new();
+    for name in STD_OUTPUTS {
+        let mut bases = std::collections::BTreeMap::<String, Vec<String>>::new();
+        let mut defs = Vec::<(String, String, u32, Vec<String>)>::new();
+        for ty in sem.objtree.iter_types() {
+            let Some(tp) = ty.get().procs.get(*name) else { continue };
+            let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
+            for v in &tp.value {
+                let rel = sem.rel(v.location).to_string();
+                let params: Vec<String> = v.parameters.iter().map(|p| p.name.clone()).collect();
+                if rel.starts_with("code/engine/") {
+                    bases.insert(path.clone(), params);
+                } else {
+                    defs.push((path.clone(), rel, v.location.line, params));
+                }
+            }
+        }
+        for (ty, rel, line, params) in defs {
+            let mut ancestor = Some(ty.clone());
+            while let Some(path) = ancestor {
+                if let Some(base_params) = bases.get(&path) {
+                    if &params != base_params {
+                        found.push((rel, line, format!("{}::{}({}) overrides {}::{}({})", ty, name, params.join(", "), path, name, base_params.join(", "))));
+                    }
+                    break;
+                }
+                ancestor = sem.parent_of(&path);
+            }
+        }
+    }
+    found
 }
 
 #[cfg(test)]

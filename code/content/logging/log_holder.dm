@@ -30,9 +30,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/log_holder)
 	var/initialized = FALSE
 	var/shutdown = FALSE
 
-	/// Log file path -> the /datum/verified_log_file that says when it was last confirmed to exist. Saves an fexists() per entry (Q8).
-	var/list/verified_log_files
-
 GENERAL_PROTECT_DATUM(/datum/log_holder)
 
 ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the rounds logs.", ADMIN_CATEGORY_LOGS)
@@ -44,25 +41,11 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 
 	return TRUE
 
-/datum/log_holder/tgui_static_data(mob/user)
-	var/list/data = list(
-		"round_id" = GLOB.round_id,
-		"logging_start_timestamp" = logging_start_timestamp,
-	)
-
-	var/list/tree = list()
-	data["tree"] = tree
+/datum/log_holder/ui_static_data(datum/act/eval/A)
 	var/list/enabled_categories = list()
 	for(var/enabled in log_categories)
 		enabled_categories += enabled
-	tree["enabled"] = enabled_categories
-
-	var/list/disabled_categories = list()
-	for(var/disabled in src.disabled_categories)
-		disabled_categories += disabled
-	tree["disabled"] = disabled_categories
-
-	return data
+	return list("tree" = list("enabled" = enabled_categories))
 
 /// /datum/log_holder's window data.
 /datum/log_holder/ui_data(datum/act/eval/A)
@@ -85,13 +68,11 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	STAMP(src, last_data_update, CLOCK_WORLD)
 
 	set_data_cache_at("categories", category_map)
-	set_data_cache_at("last_data_update", last_data_update)
 
 CAPABILITIES(/datum/log_holder)
-	owns_many(nameof(verified_log_files), /datum/verified_log_file)
 	op("refresh", ui_act(), then(PROC_REF(ui_act_log_refresh)))
 	interface("LogViewer", title = "Log Viewer", rights = R_ADMIN|R_MOD|R_DEBUG)
-	ui_shape()
+	ui_shape(tree = row(enabled = list_of(schema_text())), categories = map_of(schema_text(), row(entry_count = int(), entries = list_of(row(id = int(), message = schema_text(), timestamp = schema_text(), data = nullable(list_of(any)), semver = nullable(map_of(schema_text(), schema_text())))))))
 
 /datum/log_holder/proc/ui_act_log_refresh(datum/act/op/A)
 	cache_ui_data()
@@ -104,9 +85,9 @@ CAPABILITIES(/datum/log_holder)
 		CRASH("Attempted to call init_logging twice!")
 
 	round_id = GLOB.round_id
-	logging_start_timestamp = rustg_unix_timestamp()
+	set_logging_start_timestamp(rustg_unix_timestamp())
 	set_log_categories(list())
-	disabled_categories = list()
+	set_disabled_categories(list())
 
 	human_readable_enabled = CONFIG_GET(flag/log_as_human_readable)
 
@@ -118,13 +99,13 @@ CAPABILITIES(/datum/log_holder)
 		for(var/datum/log_category/sub_category as anything in sub_categories)
 			config_flag = initial(sub_category.config_flag)
 			if(config_flag && !config.Get(config_flag))
-				disabled_categories[initial(sub_category.category)] = TRUE
+				set_disabled_categories_at(initial(sub_category.category), TRUE)
 				sub_categories -= sub_category
 				continue
 
 		config_flag = initial(master_category.config_flag)
 		if(config_flag && !config.Get(config_flag))
-			disabled_categories[initial(master_category.category)] = TRUE
+			set_disabled_categories_at(initial(master_category.category), TRUE)
 			if(!length(sub_categories))
 				continue
 		// enabled, or any of the sub categories are enabled
@@ -205,20 +186,26 @@ GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 
 /// Sets up the given category's file and header.
 /datum/log_holder/proc/init_category_file(datum/log_category/category)
+	// Lines still queued for the old file must land before it is reset.
+	log_file_flush()
 	var/file_path = category.get_output_file(null)
 	if(fexists(file_path)) // already exists? implant a reset marker
-		rustg_file_append(LOG_CATEGORY_RESET_FILE_MARKER, file_path)
+		log_file_append_sync(file_path, LOG_CATEGORY_RESET_FILE_MARKER)
 		fcopy(file_path, get_recovery_file_for(file_path))
-	rustg_file_write("[json_encode(category.category_header)]\n", file_path)
+	var/header = "[json_encode(category.category_header)]\n"
+	log_file_write_sync(file_path, header)
+	log_file_set_header(file_path, header)
 
 	if(!human_readable_enabled)
 		return
 
 	file_path = category.get_output_file(null, "log")
 	if(fexists(file_path))
-		rustg_file_append(LOG_CATEGORY_RESET_FILE_MARKER_READABLE, file_path)
+		log_file_append_sync(file_path, LOG_CATEGORY_RESET_FILE_MARKER_READABLE)
 		fcopy(file_path, get_recovery_file_for(file_path))
-	rustg_file_write("\[[human_readable_timestamp()]\] Starting up round ID [round_id].\n - -------------------------\n", file_path)
+	header = "\[[human_readable_timestamp()]\] Starting up round ID [round_id].\n - -------------------------\n"
+	log_file_write_sync(file_path, header)
+	log_file_set_header(file_path, header)
 
 #undef LOG_CATEGORY_RESET_FILE_MARKER
 #undef LOG_CATEGORY_RESET_FILE_MARKER_READABLE

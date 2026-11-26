@@ -3,24 +3,20 @@ import { Window } from 'tgui/layouts';
 import {
   Button,
   LabeledList,
+  NoticeBox,
   NumberInput,
   Section,
 } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
 import { round } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  timing: number;
-  time: number;
-  range: number;
-  maxRange: number;
-  scanning: BooleanLike;
-};
+import type {
+  AssemblyProxActions,
+  AssemblyProxData,
+} from './generated/AssemblyProx';
 
 export const AssemblyProx = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { timing, time, range, maxRange, scanning } = data;
+  const { act, data } = useBackend<AssemblyProxData, AssemblyProxActions>();
+  const { timing, time = 0, range = 0, maxRange = 0, scanning } = data;
   return (
     <Window>
       <Window.Content>
@@ -73,9 +69,11 @@ export const AssemblyProx = (props) => {
               >
                 {scanning ? 'ARMED' : 'Unarmed'}
               </Button>
-              Movement sensor is active when armed!
             </LabeledList.Item>
           </LabeledList>
+          <NoticeBox info mt={1} mb={0}>
+            The movement sensor is active while armed.
+          </NoticeBox>
         </Section>
       </Window.Content>
     </Window>

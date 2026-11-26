@@ -58,7 +58,7 @@ impl ModifiedInstance {
         lexical_owner: SymbolId,
         resource_context: Option<u128>,
         fields: &[(String, Expr)],
-        decode: impl Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
+        decode: impl Fn(&str) -> Option<Vec<u8>>,
         calls: Option<&dyn crate::constants::PureCalls>,
         resource: impl Fn(&str) -> Result<CapturedModifiedResource, String>,
     ) -> Result<Self, String> {
@@ -79,7 +79,7 @@ impl ModifiedInstance {
         lexical_owner: SymbolId,
         resource_context: Option<u128>,
         fields: &[(String, Expr)],
-        decode: impl Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
+        decode: impl Fn(&str) -> Option<Vec<u8>>,
         calls: Option<&dyn crate::constants::PureCalls>,
         resource: impl Fn(&str) -> Result<CapturedModifiedResource, String>,
         observer: Option<&dyn Fn(&Expr)>,
@@ -101,7 +101,7 @@ impl ModifiedInstance {
         lexical_owner: SymbolId,
         resource_context: Option<u128>,
         fields: &[(String, Expr)],
-        decode: impl Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
+        decode: impl Fn(&str) -> Option<Vec<u8>>,
         calls: Option<&dyn crate::constants::PureCalls>,
         resource: impl Fn(&str) -> Result<CapturedModifiedResource, String>,
         observer: Option<&dyn Fn(&Expr)>,
@@ -147,7 +147,7 @@ impl ModifiedInstance {
         lexical_owner: SymbolId,
         resource_context: Option<u128>,
         fields: &[(String, Expr)],
-        decode: impl Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
+        decode: impl Fn(&str) -> Option<Vec<u8>>,
         calls: Option<&dyn crate::constants::PureCalls>,
     ) -> Result<Self, String> {
         Self::capture_with_resources(
@@ -223,16 +223,7 @@ impl ModifiedInstance {
 }
 fn contains_resources(value: &Expr) -> bool {
     match &value.kind {
-        ExprKind::Literal(value) => match value.original_value(){
-            // Typed scalar/static facts are authoritative before grammar
-            // spelling. Static String contains no lexical child/resource even
-            // when its spelling resembles a resource or runtime decode refuses.
-            Some(dm_syntax::OriginalTokenValue::Resource(_))=>true,
-            Some(dm_syntax::OriginalTokenValue::Int(_)|dm_syntax::OriginalTokenValue::Float(_)|dm_syntax::OriginalTokenValue::String(_))=>false,
-            // Current immutable OriginalLiteralData cannot issue other kinds.
-            Some(_)=>true,
-            None=>value.starts_with('\'') || value.parts().map_or(true, |parts| parts.is_some_and(|parts| parts.expressions.iter().any(contains_resources))),
-        },
+        ExprKind::Literal(value) => value.starts_with('\''),
         ExprKind::Unary { value, .. }
         | ExprKind::Group(value)
         | ExprKind::TypeFilter { value, .. } => contains_resources(value),
@@ -289,30 +280,7 @@ fn expression(
             text(value, bytes);
         }
         ExprKind::Literal(value) => {
-            if let Some(original)=value.original_value(){
-                // SAME canonical descriptor stream, distinct typed-literal tag.
-                // Full canonical bytes (PartialEq), never this descriptor's
-                // short alias hash alone, decide identity. Raw spelling and TU
-                // geometry are not substitutes for actual token VALUE facts.
-                bytes.push(18);
-                match original{
-                    dm_syntax::OriginalTokenValue::Int(number)=>{bytes.push(0);bytes.extend_from_slice(&number.to_le_bytes());},
-                    dm_syntax::OriginalTokenValue::Float(number)=>{bytes.push(1);bytes.extend_from_slice(&number.to_bits().to_le_bytes());},
-                    dm_syntax::OriginalTokenValue::String(text_value)=>{bytes.push(2);bytes.push(value.original_string_mode().expect("actual Original owner") as u8);text(text_value,bytes);},
-                    dm_syntax::OriginalTokenValue::Resource(path)=>{
-                        bytes.push(3);text(path,bytes);
-                        // Preserve existing raw-keyed captured resource proof
-                        // contract while ALSO retaining exact typed path. This
-                        // does not pretend raw->typed resource binding is issued.
-                        if let Some(proof)=resources.get(value.as_str()){
-                            bytes.push(1);bytes.extend_from_slice(&proof.content.to_le_bytes());
-                        }else{bytes.push(0);}
-                    },
-                    _=>unreachable!("immutable Original literal owner issued a non-scalar/template variant"),
-                }
-                return;
-            }
-            if let Some(proof) = resources.get(value.as_str()) {
+            if let Some(proof) = resources.get(value) {
                 bytes.push(17);
                 bytes.extend_from_slice(&proof.content.to_le_bytes());
                 return;
@@ -420,7 +388,7 @@ fn expression(
 }
 fn normalize_with_resources(
     value: &Expr,
-    decode: &impl Fn(&dm_syntax::LiteralText) -> Option<Vec<u8>>,
+    decode: &impl Fn(&str) -> Option<Vec<u8>>,
     calls: Option<&dyn crate::constants::PureCalls>,
     capture: &impl Fn(&str) -> Result<(), String>,
     observer: Option<&dyn Fn(&Expr)>,
@@ -452,15 +420,15 @@ fn normalize_with_resources(
     .map_err(|error| error.reason)?
     {
         let kind = match scalar {
-            Constant::Number(number) if number.is_finite() => ExprKind::Literal(number.to_string().into()),
+            Constant::Number(number) if number.is_finite() => ExprKind::Literal(number.to_string()),
             Constant::Text(text) => {
-                ExprKind::Literal(serde_json::to_string(&text).map_err(|error| error.to_string())?.into())
+                ExprKind::Literal(serde_json::to_string(&text).map_err(|error| error.to_string())?)
             }
             Constant::EncodedText(bytes) => ExprKind::Literal(
                 serde_json::to_string(&String::from_utf8(bytes).map_err(|_| {
                     "modified scalar text needs an exact byte-valued representation"
                 })?)
-                .map_err(|error| error.to_string())?.into(),
+                .map_err(|error| error.to_string())?,
             ),
             Constant::Null => ExprKind::Ident("null".into()),
             Constant::TypePath(path) => ExprKind::TypePath(path),
@@ -719,29 +687,4 @@ mod tests {
         )
         .is_err());
     }
-}
-
-#[cfg(test)]mod original_literal_canonical_tests{
- use super::*;use dm_syntax::{OriginalTokenValue as V,LiteralText,SettingAdmission};use std::sync::atomic::{Ordering};
- fn literal(raw:&str,value:V<&str>,origin:usize,a:&SettingAdmission<'_>)->Expr{Expr{span:dm_syntax::Span::new(origin,origin+raw.len()),kind:ExprKind::Literal(LiteralText::from_original_value_data(raw.to_owned(),origin,value,a).unwrap())}}
- fn descriptor(value:Expr,context:Option<u128>)->ModifiedInstance{ModifiedInstance::capture(SymbolId::of("/obj"),SymbolId::of("/datum"),context,&[("value".into(),value)])}
- #[test]fn same_raw_spelling_never_aliases_distinct_actual_variant_float_bits_or_static_value(){
-  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let values=[V::Int(0),V::Float(0.0),V::Float(-0.0),V::Float(f32::from_bits(0x7fc00111)),V::Float(f32::from_bits(0x7fc00222)),V::String("[static]"),V::String("\"static\""),V::Resource("actual/path")];
-  let all:Vec<_>=values.into_iter().map(|value|descriptor(literal("same raw",value,0,&a),None)).collect();for(i,left)in all.iter().enumerate(){for right in &all[i+1..]{assert_ne!(left.canonical_bytes(),right.canonical_bytes());assert_ne!(left,right,"canonical equality must include actual variant/value, not an alias hash");}}drop(all);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
- }
- #[test]fn exact_typed_value_ignores_cosmetic_raw_and_geometry_while_native_canonical_rules_stay_unchanged(){
-  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let left=descriptor(literal("2147483648",V::Int(0),0,&a),None);let right=descriptor(literal("0",V::Int(0),200,&a),None);assert_eq!(left,right);let native=|raw:&str|descriptor(dm_syntax::parse_expression(raw).expr.unwrap(),None);assert_eq!(native("1"),native("1.0"));assert_ne!(left,native("0"),"Original typed recipe is separate from Native spelling inference");
- }
- #[test]fn only_actual_typed_resource_requires_context_and_raw_key_proof_cannot_override_scalar(){
-  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);for value in [V::Int(0),V::Float(1.0),V::String("[resource-looking]")]{let result=descriptor(literal("'looks_like_resource'",value,0,&a),Some(91));assert!(!result.requires_captured_resources());assert_eq!(result.resource_context(),None);}let result=descriptor(literal("not_resource_spelling",V::Resource("actual/path"),0,&a),Some(91));assert!(result.requires_captured_resources());assert_eq!(result.resource_context(),Some(91));
-  let value=literal("'looks_like_resource'",V::Int(0),0,&a);let proof=CapturedModifiedResource{path:SymbolId::of("actual/path"),content:123};let mut with=Vec::new();let mut plain=Vec::new();expression(&value,&mut with,&BTreeMap::from([("'looks_like_resource'".into(),proof)]));expression(&value,&mut plain,&BTreeMap::new());assert_eq!(with,plain,"resource proof lookup is not allowed to replace genuine numeric VALUE");
- }
- #[test]fn actual_typed_resource_value_and_captured_content_both_enter_canonical_recipe(){
-  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let left=literal("'raw'",V::Resource("first/path"),0,&a);let right=literal("'raw'",V::Resource("second/path"),0,&a);let encode=|value:&Expr,content|{let mut out=Vec::new();expression(value,&mut out,&BTreeMap::from([("'raw'".into(),CapturedModifiedResource{path:SymbolId::of("bound"),content})]));out};assert_ne!(encode(&left,1),encode(&right,1));assert_ne!(encode(&left,1),encode(&left,2));
- }
-}
-
-#[cfg(test)]mod original_string_mode_fingerprint_tests{
- use super::*;use std::sync::{Arc};
- #[test]fn canonical_original_string_facts_include_actual_lexical_mode(){let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&||Ok(()));let mut recipes=Vec::new();for mode in [dm_syntax::OriginalStringMode::Unknown,dm_syntax::OriginalStringMode::Normal,dm_syntax::OriginalStringMode::Raw,dm_syntax::OriginalStringMode::Generated]{let literal=dm_syntax::LiteralText::from_original_value_with_mode_data("same".into(),0,dm_syntax::OriginalTokenValue::String("same"),mode,&a).unwrap();let expr=Expr{span:dm_syntax::Span::new(0,4),kind:ExprKind::Literal(literal)};let mut bytes=Vec::new();expression(&expr,&mut bytes,&BTreeMap::new());assert!(!recipes.contains(&bytes));recipes.push(bytes);}}
 }

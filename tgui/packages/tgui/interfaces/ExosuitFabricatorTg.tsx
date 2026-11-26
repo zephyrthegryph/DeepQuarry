@@ -8,39 +8,33 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
-import { type BooleanLike, classes } from 'tgui-core/react';
+import { classes } from 'tgui-core/react';
 import { MaterialAccessBar } from './common/MaterialAccessBar';
 import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
 import { DesignBrowser } from './Fabrication/DesignBrowser';
 import { MaterialCostSequence } from './Fabrication/MaterialCostSequence';
+import type { Design, Material, MaterialMap } from './Fabrication/Types';
 import type {
-  Design,
-  FabricatorData,
-  Material,
-  MaterialMap,
-} from './Fabrication/Types';
-
-type ExosuitDesign = Design & {
-  constructionTime: number;
-};
+  ExosuitFabricatorTgActions,
+  ExosuitFabricatorTgData,
+} from './generated/ExosuitFabricatorTg';
 
 // Extra stuff for the prosfab to not need it's own UI
 type ProsfabData = Partial<{
-  species_types: string;
+  species_types: string[];
   species: string;
-  manufacturer: string;
-  all_manufacturers: string;
+  manufacturer: string | null;
+  all_manufacturers: { id: string; company: string }[];
 }>;
 
-type ExosuitFabricatorData = FabricatorData &
-  ProsfabData & {
-    processing: BooleanLike;
-    designs: Record<string, ExosuitDesign>;
-  };
+type ExosuitFabricatorData = ExosuitFabricatorTgData & ProsfabData;
 
 export const ExosuitFabricatorTg = (props) => {
-  const { act, data } = useBackend<ExosuitFabricatorData>();
-  const { materials = [], SHEET_MATERIAL_AMOUNT = 0, designs } = data;
+  const { act, data } = useBackend<
+    ExosuitFabricatorData,
+    ExosuitFabricatorTgActions
+  >();
+  const { materials = [], SHEET_MATERIAL_AMOUNT = 0, designs = {} } = data;
 
   const availableMaterials: MaterialMap = {};
 
@@ -114,7 +108,10 @@ type RecipeProps = {
 };
 
 const Recipe = (props: RecipeProps) => {
-  const { act } = useBackend<ExosuitFabricatorData>();
+  const { act } = useBackend<
+    ExosuitFabricatorData,
+    ExosuitFabricatorTgActions
+  >();
   const { design, available, SHEET_MATERIAL_AMOUNT } = props;
 
   const canPrint = !Object.entries(design.cost).some(
@@ -182,10 +179,13 @@ type QueueProps = {
 };
 
 const Queue = (props: QueueProps) => {
-  const { act, data } = useBackend<ExosuitFabricatorData>();
+  const { act, data } = useBackend<
+    ExosuitFabricatorData,
+    ExosuitFabricatorTgActions
+  >();
   const { availableMaterials, SHEET_MATERIAL_AMOUNT } = props;
   const {
-    designs,
+    designs = {},
     processing,
     species,
     species_types,
@@ -294,11 +294,14 @@ type QueueListProps = {
 };
 
 const QueueList = (props: QueueListProps) => {
-  const { act, data } = useBackend<ExosuitFabricatorData>();
+  const { act, data } = useBackend<
+    ExosuitFabricatorData,
+    ExosuitFabricatorTgActions
+  >();
   const { availableMaterials, SHEET_MATERIAL_AMOUNT } = props;
 
   const queue = data.queue || [];
-  const designs = data.designs;
+  const designs = data.designs || {};
 
   if (!queue.length) {
     return null;

@@ -39,7 +39,7 @@ const getItemColor = (
 export const pAIAtmos = (props) => {
   const { data } = useBackend<Data>();
 
-  const { aircontents } = data;
+  const { aircontents = [] } = data;
 
   return (
     <Window width={450} height={600}>

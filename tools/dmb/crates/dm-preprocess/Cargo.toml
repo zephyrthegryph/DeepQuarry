@@ -3,9 +3,6 @@ name = "dm-preprocess"
 version = "0.1.0"
 edition = "2021"
 
-[features]
-original-fill-sample = []
-
 [dependencies]
 dm-session = { path = "../dm-session" }
 dm-exec = { path = "../dm-exec" }
@@ -20,12 +17,3 @@ im = "15.1"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 
 dm-wire = { path = "../dm-wire" }
-
-# Exact pinned Original rgb conversion behavior.
-color_space = "=0.5.4"
-
-[target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_System_Memory", "Win32_System_SystemInformation"] }
-
-[target.'cfg(unix)'.dependencies]
-libc = "0.2"

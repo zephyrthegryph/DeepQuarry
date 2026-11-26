@@ -14,25 +14,13 @@
 
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Input, Stack } from 'tgui-core/components';
 import { HtmlRenderer } from '../../../common/HtmlRenderer';
+import type { PrefEditorSpeciesPickerStatic } from '../../../generated/_schemas';
 import type { EditorProps } from './index';
 
-type Data = {
-  current_species: string;
-  custom_species: string;
-};
-
-type SpeciesMeta = {
-  name: string;
-  pitch: string;
-  blurb: string;
-  thumb_b64?: string;
-};
-
-type Static = {
-  all_species: Record<string, SpeciesMeta>;
-};
+type SpeciesMeta = PrefEditorSpeciesPickerStatic['all_species'][string];
 
 const send = (
   act: ReturnType<typeof useBackend>['act'],
@@ -40,10 +28,11 @@ const send = (
   params: Record<string, unknown>,
 ) => act('dq_editor_action', { editor: 'species_picker', action, params });
 
-export const SpeciesPicker = ({ data, staticData }: EditorProps) => {
+export const SpeciesPicker = ({
+  data: d,
+  staticData: s,
+}: EditorProps<'species_picker'>) => {
   const { act } = useBackend();
-  const d = data as Data;
-  const s = (staticData ?? {}) as Static;
   const [open, setOpen] = useState(false);
   const [customSpecies, setCustomSpecies] = useState(d.custom_species);
 
@@ -54,7 +43,7 @@ export const SpeciesPicker = ({ data, staticData }: EditorProps) => {
     setCustomSpecies(d.custom_species);
   }, [d.custom_species]);
 
-  const allSpecies = s.all_species ?? {};
+  const allSpecies = s?.all_species ?? {};
   const currentMeta = allSpecies[d.current_species];
 
   return (
@@ -74,9 +63,7 @@ export const SpeciesPicker = ({ data, staticData }: EditorProps) => {
         <Stack.Item grow style={{ minWidth: 0 }}>
           <Box bold>{currentMeta?.name ?? d.current_species}</Box>
           {currentMeta?.pitch && (
-            <Box color="label" fontSize="0.85em">
-              {currentMeta.pitch}
-            </Box>
+            <Label fontSize="0.85em">{currentMeta.pitch}</Label>
           )}
         </Stack.Item>
         <Stack.Item>
@@ -86,9 +73,9 @@ export const SpeciesPicker = ({ data, staticData }: EditorProps) => {
         </Stack.Item>
       </Stack>
       <Box mt={0.5}>
-        <Box fontSize="0.78em" color="label" mb={0.25}>
+        <Label fontSize="0.78em" mb={0.25}>
           Display name (optional — shown to others in place of the species name)
-        </Box>
+        </Label>
         <Input
           fluid
           placeholder={currentMeta?.name ?? ''}
@@ -267,25 +254,20 @@ const SpeciesCard = ({
           <Box bold fontSize="1em">
             {meta.name}
             {isSynthetic && (
-              <Box
+              <Label
                 inline
-                color="label"
                 fontSize="0.7em"
                 ml={0.5}
                 style={{ verticalAlign: 'middle' }}
               >
                 (synthetic)
-              </Box>
+              </Label>
             )}
           </Box>
           {meta.pitch && (
-            <Box
-              color="label"
-              fontSize="0.8em"
-              style={{ marginTop: '0.167em' }}
-            >
+            <Label fontSize="0.8em" style={{ marginTop: '0.167em' }}>
               {meta.pitch}
-            </Box>
+            </Label>
           )}
         </Box>
       </Box>

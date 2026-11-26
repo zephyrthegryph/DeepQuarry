@@ -1,22 +1,17 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
-import { Box, Section, Stack, TextArea } from 'tgui-core/components';
+import { Section, Stack, TextArea } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
-import type { BooleanLike } from 'tgui-core/react';
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
+import type {
+  TextInputModalActions,
+  TextInputModalData,
+} from './generated/TextInputModal';
 
-type TextInputData = {
-  large_buttons: boolean;
-  max_length: number;
-  message: string;
-  multiline: boolean;
-  placeholder: string;
-  timeout: number;
-  title: string;
-  spellcheck: BooleanLike;
-};
+type TextInputData = TextInputModalData;
 
 export const sanitizeMultiline = (toSanitize: string) => {
   return toSanitize.replace(/(\n|\r\n){3,}/, '\n\n');
@@ -27,17 +22,11 @@ export const removeAllSkiplines = (toSanitize: string) => {
 };
 
 export const TextInputModal = (props) => {
-  const { act, data } = useBackend<TextInputData>();
-  const {
-    large_buttons,
-    max_length,
-    message = '',
-    multiline,
-    placeholder = '',
-    timeout,
-    title,
-    spellcheck,
-  } = data;
+  const { act, data } = useBackend<TextInputData, TextInputModalActions>();
+  const { large_buttons, max_length, multiline, timeout, title, spellcheck } =
+    data;
+  const message = data.message ?? '';
+  const placeholder = data.placeholder ?? '';
 
   const [input, setInput] = useState(placeholder || '');
 
@@ -74,12 +63,12 @@ export const TextInputModal = (props) => {
 
   return (
     <Window fitContent title={title} width={325} height={windowHeight}>
-      {timeout && <Loader value={timeout} />}
+      {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>
           <Stack fill vertical>
             <Stack.Item>
-              <Box color="label">{message}</Box>
+              <Label>{message}</Label>
             </Stack.Item>
             <Stack.Item grow>
               <TextArea
@@ -89,7 +78,7 @@ export const TextInputModal = (props) => {
                 spellcheck={!!spellcheck}
                 userMarkup={{ u: '_', i: '|', b: '+' }}
                 height={multiline || input.length >= 30 ? '100%' : '1.8rem'}
-                maxLength={max_length}
+                maxLength={max_length ?? undefined}
                 onEscape={() => act('cancel')}
                 onChange={onType}
                 placeholder="Type something..."

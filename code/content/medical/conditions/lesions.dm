@@ -125,6 +125,8 @@
 	var/list/extra = TYPE_TABLE_GET(src, get_extra_treatments)
 	for(var/tag in extra)
 		set_treated_by_at(tag, max(treated_by[tag], extra[tag]))
+	if(istype(O, /obj/item/organ/internal/brain))
+		set_treated_by_at(TREAT_SOULMEND, 1) // the one mechanism that reaches a brain-dead brain (heal())
 	if(self_heals)
 		set_treated_by_at(TREAT_REGENERATION, LESION_REGENERATION_RATE)
 	set_name(O ? lesion_name(O) : initial(name))
@@ -166,14 +168,19 @@ TYPE_TABLE_DECLARE(/datum/affliction/lesion, lesion_symptom_table, null)
 	sync()
 
 /// Heal up to `amount`. `full` ignores the drug floor. Returns the amount
-/// healed. A lesion healed to nothing removes itself.
-/datum/affliction/lesion/proc/heal(amount, full = FALSE)
+/// healed. A lesion healed to nothing removes itself. `revive` is soul dew's
+/// mechanism (TREAT_SOULMEND): it is the only one that works on an organ beyond
+/// repair, and it lifts the organ's death flag so the brain can be mended.
+/datum/affliction/lesion/proc/heal(amount, full = FALSE, revive = FALSE)
 	if(amount <= 0 || damage <= 0)
 		return 0
-	// A dead brain (is_brain_dead()) needs a resleeve: no mechanism repairs it.
+	// A dead brain (is_brain_dead()) is repaired by nothing but soul dew: every other mechanism stops here.
 	var/obj/item/organ/internal/organ = location
 	if(istype(organ) && organ.is_beyond_repair())
-		return 0
+		if(!revive)
+			return 0
+		log_game("SOULMEND: [organ] of [key_name(organ.owner)] is beyond repair; soul dew mends [round(amount, 0.01)] of it")
+		organ.set_status(organ.status & ~ORGAN_DEAD)
 	var/floor = full ? 0 : peak_damage * drug_floor
 	var/healed = clamp(damage - floor, 0, amount)
 	if(healed <= 0)
@@ -248,6 +255,8 @@ TYPE_TABLE_DECLARE(/datum/affliction/lesion, lesion_symptom_table, null)
 		STAMP(src, stabilised_at, CLOCK_WORLD)
 	if(continuous)
 		amount *= LESION_TREATMENT_TICK_SCALE
+	if(tag == TREAT_SOULMEND)
+		return heal(amount, TRUE, TRUE)
 	if(is_full_repair(tag))
 		return heal(amount, TRUE)
 	// A swollen brain takes a drug dose as one organ, through the lesion
@@ -471,6 +480,7 @@ TYPE_TABLE(/datum/affliction/lesion/synthetic/component_fault, get_full_repair_t
 
 /datum/affliction_symptom/lesion_finding
 	name = "organ lesion"
+	clinical_description = "A scanner finding of damaged tissue inside an organ: a bruise, a tear or dead tissue. It shows only on instruments that look inside the body; the specific kind names what surgery answers it."
 	category = "Diagnosable"
 	audiences = SYMPTOM_AUDIENCE_SCANNER
 

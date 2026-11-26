@@ -15,7 +15,7 @@
 	STATE_REF_SET(holder, mob_misc, teleop, other)
 	TEST_ASSERT_EQUAL(STATE_REF(holder, mob_misc, teleop), other, "the weak slot reads the live target")
 	TEST_ASSERT_EQUAL(holder.teleop(), other, "the teleop view reads the slot")
-	TEST_ASSERT(istext(holder.mob_misc.vars["teleop"]), "the field holds a handle, not a reference")
+	TEST_ASSERT(!isdatum(holder.mob_misc.vars["teleop"]) && handle_get(holder.mob_misc.vars["teleop"]) == other, "the field holds a handle, not a reference")
 	STATE_REF_SET(holder, mob_misc, teleop, holder)
 	TEST_ASSERT_EQUAL(STATE_REF(holder, mob_misc, teleop), holder, "a weak slot may name its own holder")
 	STATE_REF_SET(holder, mob_misc, teleop, other)

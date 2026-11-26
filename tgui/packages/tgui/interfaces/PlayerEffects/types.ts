@@ -1,4 +1,3 @@
-export type Data = {
-  real_name: string;
-  player_ckey: string;
-};
+import type { PlayerEffectsData } from '../generated/PlayerEffects';
+
+export type Data = PlayerEffectsData;

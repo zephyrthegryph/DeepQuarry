@@ -108,7 +108,8 @@ Pipelines + Other Objects -> Pipe network
 		var/datum/material/material = engineered_material()
 		. += span_notice("Pressure construction: [material?.display_name || engineered_material_id]; exposed liner integrity [round(material_liner_integrity)]%.")
 
-/// A pipe device takes its colour (or none it cannot show) and sets up its connection directions.
+/// A pipe device takes its colour (or none it cannot show) and sets up its connection directions. Phase 0 (setup(early = TRUE)): the mapper's colour
+/// becomes pipe_color before /atom/Initialize() would apply it as an atom colour.
 /obj/machinery/atmospherics/proc/settle_pipe_color()
 	if(!pipe_color)
 		set_pipe_color(color)

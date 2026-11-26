@@ -94,6 +94,7 @@ CAPABILITIES(/obj/item/gps)
 	emp_disable(5 MINUTES)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 	interface("Gps", state = nameof(GLOB.tgui_inventory_state))
+	ui_shape(theme = nullable(schema_text()), currentArea = schema_text(), power = bool(), tag = schema_text(), localMode = bool(), currentCoords = schema_text(), currentZName = schema_text(), canHide = bool(), isHidden = bool(), signals = list_of(row(ref = num(), gpsTag = schema_text(), areaName = schema_text(), zName = schema_text(), local = bool(), trackingColor = nullable(schema_text()), trackingName = bool(), degrees = nullable(int()), coords = nullable(schema_text()), dist = nullable(num()))))
 	without("ui_open")
 	op("rename", ui_act("rename", arg("value", schema_text(4096))), then(PROC_REF(ui_act_rename)))
 	op("hideSignal", ui_act("hideSignal"), then(PROC_REF(ui_act_hidesignal)))
@@ -202,13 +203,9 @@ CAPABILITIES(/obj/item/gps)
 
 	tgui_interact(user)
 
-/obj/item/gps/tgui_static_data(mob/user)
+/obj/item/gps/ui_static_data(datum/act/eval/A)
 	. = ..()
-	var/robot_theme
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_owner = loc
-		robot_theme = robot_owner.get_ui_theme()
-	.["theme"] = theme || robot_theme
+	.["theme"] = theme || robot_holder_theme(src)
 
 // Compiles all the data not available directly from the GPS
 // Like the positions and directions to all other GPS units
@@ -253,8 +250,8 @@ CAPABILITIES(/obj/item/gps)
 			"areaName" = strip_improper(gps_area.get_name()),
 			"zName" = strip_improper(using_map.get_zlevel_name(gps_turf.z)),
 			"local" = is_local,
-			"trackingColor" = LAZYACCESS(tracking_devices, "[handle_of(current_gps)]"),
-			"trackingName" = LAZYACCESS(showing_tracked_names, "[handle_of(current_gps)]"),
+			"trackingColor" = LAZYACCESS(tracking_devices, "[handle_text(handle_of(current_gps))]"),
+			"trackingName" = !!LAZYACCESS(showing_tracked_names, "[handle_text(handle_of(current_gps))]"),
 		)
 
 		if(!is_poi || is_local)
@@ -315,7 +312,7 @@ CAPABILITIES(/obj/item/gps)
 	var/obj/item/gps/gps = handle_get(ref)
 	if(!istype(gps))
 		return FALSE
-	var/gps_ref = "[handle_of(gps)]"
+	var/gps_ref = "[handle_text(handle_of(gps))]"
 	set_tracking_devices_at(gps_ref, "#00ffff")
 	set_showing_tracked_names_at(gps_ref, TRUE)
 	update_compass(src)
@@ -325,7 +322,7 @@ CAPABILITIES(/obj/item/gps)
 	var/obj/item/gps/gps = handle_get(ref)
 	if(!istype(gps))
 		return FALSE
-	var/gps_ref = "[handle_of(gps)]"
+	var/gps_ref = "[handle_text(handle_of(gps))]"
 	var/new_colour = sanitize_hexcolor(color)
 	if(!new_colour)
 		return FALSE
@@ -340,22 +337,13 @@ CAPABILITIES(/obj/item/gps)
 	icon_state = "gps-com"
 	gps_tag = "COM0"
 
-/obj/item/gps/command/on
-	tracking = TRUE
-
 /obj/item/gps/security
 	icon_state = "gps-sec"
 	gps_tag = "SEC0"
 
-/obj/item/gps/security/on
-	tracking = TRUE
-
 /obj/item/gps/security/hos
 	icon_state = "gps-sec-hos"
 	gps_tag = "HOS0"
-
-/obj/item/gps/security/hos/on
-	tracking = TRUE
 
 /obj/item/gps/medical
 	icon_state = "gps-med"
@@ -368,59 +356,35 @@ CAPABILITIES(/obj/item/gps)
 	icon_state = "gps-med-cmo"
 	gps_tag = "CMO0"
 
-/obj/item/gps/medical/cmo/on
-	tracking = TRUE
-
 /obj/item/gps/science
 	icon_state = "gps-sci"
 	gps_tag = "SCI0"
-
-/obj/item/gps/science/on
-	tracking = TRUE
 
 /obj/item/gps/science/rd
 	icon_state = "gps-sci-rd"
 	gps_tag = "RD0"
 
-/obj/item/gps/science/rd/on
-	tracking = TRUE
-
 /obj/item/gps/engineering
 	icon_state = "gps-eng"
 	gps_tag = "ENG0"
-
-/obj/item/gps/engineering/on
-	tracking = TRUE
 
 /obj/item/gps/engineering/atmos
 	icon_state = "gps-eng-atm"
 	gps_tag = "ATM0"
 
-/obj/item/gps/engineering/atmos/on
-	tracking = TRUE
-
 /obj/item/gps/engineering/ce
 	icon_state = "gps-eng-ce"
 	gps_tag = "CE0"
-
-/obj/item/gps/engineering/ce/on
-	tracking = TRUE
 
 /obj/item/gps/mining
 	icon_state = "gps-mine"
 	gps_tag = "MINE0"
 	desc = "A positioning system helpful for rescuing trapped or injured miners, keeping one on you at all times while mining might just save your life. Alt+click to toggle power."
 
-/obj/item/gps/mining/on
-	tracking = TRUE
-
 /obj/item/gps/explorer
 	icon_state = "gps-exp"
 	gps_tag = "EXP0"
 	desc = "A positioning system helpful for rescuing trapped or injured explorers, keeping one on you at all times while exploring might just save your life. Alt+click to toggle power."
-
-/obj/item/gps/explorer/on
-	tracking = TRUE
 
 /obj/item/gps/robot
 	icon_state = "gps-borg"
@@ -436,10 +400,6 @@ CAPABILITIES(/obj/item/gps)
 	invisibility = INVISIBILITY_MAXIMUM
 	tracking = TRUE // Meant to point to a location, so it needs to be on.
 	anchored = TRUE
-
-/obj/item/gps/internal/base
-	gps_tag = "NT_BASE"
-	desc = "A homing signal from NanoTrasen's outpost."
 
 /obj/item/gps/internal/poi
 	gps_tag = "Unidentified Signal"

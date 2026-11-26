@@ -1,23 +1,17 @@
 import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Box, Button, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-import type { file } from './NtosFileManager';
-
-type Data = {
-  PC_device_theme: string;
-  error: string | null;
-  browsing: BooleanLike;
-  files: file[];
-  usbconnected: BooleanLike;
-  usbfiles: file[];
-  filedata: string | null;
-  filename: string | null;
-};
+import { sanitizeText } from '../sanitize';
+import type {
+  NtosWordProcessorActions,
+  NtosWordProcessorData,
+} from './generated/NtosWordProcessor';
 
 export const NtosWordProcessor = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosWordProcessorData,
+    NtosWordProcessorActions
+  >();
 
   const { PC_device_theme, error, browsing, files, filename, filedata } = data;
 
@@ -95,9 +89,12 @@ export const NtosWordProcessor = (props) => {
                 </Button>
               </Box>
               <Section mt={1}>
-                {/** biome-ignore lint/security/noDangerouslySetInnerHtml: is only ever passed data that has passed through pencode2html
-                 * It should be safe enough to support pencode in this way.*/}
-                <div dangerouslySetInnerHTML={{ __html: filedata! }} />
+                <div
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: only pencode2html output reaches it, so pencode is safe enough here
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeText(filedata ?? ''),
+                  }}
+                />
               </Section>
             </Section>
           )}

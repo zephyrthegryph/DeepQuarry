@@ -24,13 +24,3 @@
 /datum/reagent/drink/tea/icetea/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	apply_species_chill(M, removed)
-
-/datum/reagent/drink/tea/icetea/decaf
-	name = REAGENT_ICETEADECAF
-	id = REAGENT_ID_ICETEADECAF
-	glass_name = "decaf iced tea"
-	cup_name = "decaf iced tea"
-	adj_dizzy = 0
-	adj_drowsy = 0
-	adj_sleepy = 0
-	allergen_type = null

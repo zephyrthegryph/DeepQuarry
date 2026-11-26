@@ -25,6 +25,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 30, active = 200, channel = EQUIP))
 	interface("Photocopier")
+	ui_shape(current_toner = num(), num_copies = int(), has_item = bool(), isAI = bool(), can_AI_print = bool(), has_toner = bool(), max_toner = int())
 	without("ui_open")
 	op("make_copy", ui_act(), then(PROC_REF(ui_act_make_copy)))
 	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
@@ -32,7 +33,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	op("ai_photo", ui_act("ai_photo"), asks(/datum/prompt/choice, fields = list("question" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = computed(PROC_REF(album_names)), "timeout" = 0), step = "picture", when = PROC_REF(album_ready)),
 		then(PROC_REF(ui_act_ai_photo)))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	anchor(sfx = SFX_ITEMS_RATCHET, attached = MSG(anchor/wrenched_self), detached = MSG(anchor/unwrenched_self))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("insert", inputs(item(/obj/item/paper), item(/obj/item/photo), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
 	op("insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 2), label("Insert toner"), then(PROC_REF(interaction_insert_toner)))
@@ -45,7 +46,6 @@ CAPABILITIES(/obj/machinery/photocopier)
 	var/list/data = ..()
 	data["current_toner"] = toner
 	data["num_copies"] = copies
-	data["max_copies"] = maxcopies
 	var/list/computed = ui_data_obj_machinery_photocopier(A.actor, null, null)
 	for(var/key in computed)
 		data[key] = computed[key]
@@ -55,8 +55,8 @@ CAPABILITIES(/obj/machinery/photocopier)
 /obj/machinery/photocopier/proc/ui_data_obj_machinery_photocopier(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["has_item"] = copyitem || has_buckled_mobs() // Ass copying
-	data["isAI"] = ui_viewer_fact(user, "silicon")
+	data["has_item"] = !!(copyitem || has_buckled_mobs()) // Ass copying
+	data["isAI"] = !!ui_viewer_fact(user, "silicon")
 	data["can_AI_print"] = (toner >= 5)
 	data["has_toner"] =	!!toner
 	data["max_toner"] = 40
@@ -72,7 +72,6 @@ CAPABILITIES(/obj/machinery/photocopier)
 	if(copyitem)
 		copyitem.forceMove(user.loc)
 		user.put_in_hands(copyitem)
-		to_chat(user, span_notice("You take \the [copyitem] out of \the [src]."))
 		rel_take(src, nameof(copyitem))
 	else if(has_buckled_mobs())
 		to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
@@ -211,15 +210,6 @@ CAPABILITIES(/obj/machinery/photocopier)
 
 /obj/machinery/photocopier/proc/crowbar_used(datum/act/op/A)
 	return OP_DECLINE
-
-/obj/machinery/photocopier/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	playsound(src, sounds_of(tool).use, 50, TRUE)
-	set_anchored(!anchored)
-	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return OP_OK
-
 
 /// A blast can burst the toner out onto the floor.
 /obj/machinery/photocopier/proc/photocopier_blast_spill(datum/act/A)
@@ -407,6 +397,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 
 /obj/item/toner
 	name = "toner cartridge"
+	desc = "A toner cartridge for the photocopier. Insert it when the copier runs dry."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "tonercartridge"
 	var/toner_amount = 30

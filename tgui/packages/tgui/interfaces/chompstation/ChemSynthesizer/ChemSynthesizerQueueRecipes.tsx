@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 
+import type { ChemSynthesizerActions } from '../../generated/ChemSynthesizer';
 import type { Data } from './types';
 
 export const ChemSynthesizerQueueRecipes = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ChemSynthesizerActions>();
   const {
     busy,
     use_catalyst,
@@ -85,7 +86,11 @@ export const ChemSynthesizerQueueRecipes = (props) => {
                     </Button>
                   </LabeledList.Item>
                 );
-              })) || <Box m={1}>Queue Empty.</Box>}
+              })) || (
+              <LabeledList.Item>
+                <Box m={1}>Queue Empty.</Box>
+              </LabeledList.Item>
+            )}
           </LabeledList>
         </Section>
       </Stack.Item>
@@ -138,7 +143,11 @@ export const ChemSynthesizerQueueRecipes = (props) => {
                     />
                   </LabeledList.Item>
                 );
-              })) || <Box m={1}>No recipes found.</Box>}
+              })) || (
+              <LabeledList.Item>
+                <Box m={1}>No recipes found.</Box>
+              </LabeledList.Item>
+            )}
           </LabeledList>
         </Section>
       </Stack.Item>

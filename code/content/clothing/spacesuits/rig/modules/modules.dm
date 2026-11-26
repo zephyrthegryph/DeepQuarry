@@ -8,7 +8,7 @@
 	var/product_type = "undefined"
 	var/charges = 0
 
-MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, MAT_GLASS = 5000))
+MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 800, MAT_PLASTIC = 1000, MAT_GLASS = 200))
 /obj/item/rig_module
 	name = "hardsuit upgrade"
 	desc = "It looks pretty sciency."
@@ -196,8 +196,8 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 	rel_clear(src, nameof(holder))
 	return
 
-// Called by the hardsuit each rig process tick.
-/obj/item/rig_module/periodic_step()
+// Called by the hardsuit each rig tick (rig.dm); returns the power it draws.
+/obj/item/rig_module/proc/module_tick()
 	if(active)
 		return active_power_cost
 	else

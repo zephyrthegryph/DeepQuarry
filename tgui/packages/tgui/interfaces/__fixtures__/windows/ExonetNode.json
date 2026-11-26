@@ -1,0 +1,10 @@
+{
+	"on": 1,
+	"logs": [
+		"12:04:11 | FROM 5051.2204.1177 TO 5051.0003.9981 | TYPE: text | CONTENT: Hello there",
+		"12:06:42 | FROM 5051.0003.9981 TO 5051.2204.1177 | TYPE: text | CONTENT: Reply received"
+	],
+	"allowPDAs": 1,
+	"allowCommunicators": 0,
+	"allowNewscasters": 1
+}

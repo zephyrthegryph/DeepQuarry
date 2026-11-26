@@ -1,16 +1,16 @@
 import { memo, useMemo, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   Box,
   Button,
   Chart,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
   Table,
 } from 'tgui-core/components';
-
 import { PEAK_DRAW } from './constants';
 import { powerRank } from './functions';
 import { AreaCharge, AreaStatusColorBox } from './PowerMonitorHelpers';
@@ -82,26 +82,24 @@ export const PowerMonitorFocus = (props: { focus: sensor }) => {
         <Stack.Item mx={0.5} width="200px">
           <Section>
             <LabeledList>
-              <LabeledList.Item label="Supply">
-                <ProgressBar
-                  value={supply}
-                  minValue={0}
-                  maxValue={maxValue}
-                  color="teal"
-                >
-                  {`${(supply / 1000).toFixed()} kW`}
-                </ProgressBar>
-              </LabeledList.Item>
-              <LabeledList.Item label="Draw">
-                <ProgressBar
-                  value={demand}
-                  minValue={0}
-                  maxValue={maxValue}
-                  color="pink"
-                >
-                  {`${(demand / 1000).toFixed()} kW`}
-                </ProgressBar>
-              </LabeledList.Item>
+              <StatBar
+                label="Supply"
+                value={supply}
+                minValue={0}
+                maxValue={maxValue}
+                color="teal"
+              >
+                {`${(supply / 1000).toFixed()} kW`}
+              </StatBar>
+              <StatBar
+                label="Draw"
+                value={demand}
+                minValue={0}
+                maxValue={maxValue}
+                color="pink"
+              >
+                {`${(demand / 1000).toFixed()} kW`}
+              </StatBar>
             </LabeledList>
           </Section>
         </Stack.Item>
@@ -128,9 +126,9 @@ export const PowerMonitorFocus = (props: { focus: sensor }) => {
       </Stack>
       <Section>
         <Box mb={1}>
-          <Box inline mr={2} color="label">
+          <Label inline mr={2}>
             Sort by:
-          </Box>
+          </Label>
           <Button.Checkbox
             checked={sortByField === 'name'}
             onClick={() =>

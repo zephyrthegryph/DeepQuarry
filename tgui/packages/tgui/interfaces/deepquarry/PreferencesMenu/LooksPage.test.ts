@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import {
   legChoices,
+  legThumbnails,
   REGION_CARDS,
-  regionForHighlight,
   withNoneChoice,
   withSkin,
 } from './LooksPage';
@@ -11,25 +11,6 @@ describe('Looks categories', () => {
   it('shows every card in exactly one category', () => {
     const cards = Object.values(REGION_CARDS).flat();
     expect(new Set(cards).size).toBe(cards.length);
-  });
-  it('lands a search jump on the category holding the setting', () => {
-    for (const target of [
-      'pref:tail_color2',
-      'pref:hair_style_name',
-      'editor:body_markings',
-      'pref:digitigrade',
-      'group:appearance/wings',
-      'group:appearance/markings',
-      'pref:something_unclaimed',
-    ]) {
-      expect(regionForHighlight(target)).toBe('body');
-    }
-    expect(regionForHighlight('editor:organs')).toBe('organs');
-    expect(regionForHighlight('group:appearance/organs')).toBe('organs');
-  });
-  it('stays put for the left column, which is always shown', () => {
-    expect(regionForHighlight('pref:palette_primary')).toBeNull();
-    expect(regionForHighlight('group:appearance/preview')).toBeNull();
   });
 });
 
@@ -73,5 +54,19 @@ describe('withSkin', () => {
     expect(thumbs[''].layers?.[0].color).toBe('#c8a283');
     expect(thumbs[''].layers?.[1].color).toBeNull();
     expect(thumbs.fox).toEqual({ icon: 'e', icon_state: 'fox' });
+  });
+});
+
+describe('legThumbnails', () => {
+  it('leaves the None body out so it does not sit under a taur sprite', () => {
+    const thumbs = legThumbnails({
+      '': {
+        layers: [{ icon: 'b', icon_state: 'torso_m', color: null }],
+        base: 1,
+      },
+      Horse: { icon: 't', icon_state: 'horse' },
+    });
+    expect(Object.keys(thumbs)).toEqual(['Horse']);
+    expect(legThumbnails(undefined)).toEqual({});
   });
 });

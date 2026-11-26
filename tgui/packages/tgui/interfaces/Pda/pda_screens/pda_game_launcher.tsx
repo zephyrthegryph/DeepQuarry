@@ -1,12 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import type { PdaActions } from '../../generated/Pda';
 
 type Data = {
   available_games: Record<string, string | null>;
 };
 
 export const pda_game_launcher = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { available_games } = data;
 

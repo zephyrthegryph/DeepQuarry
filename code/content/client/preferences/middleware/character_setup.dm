@@ -21,25 +21,7 @@ GLOBAL_LIST_INIT(dq_category_order, list(
 	"traits",
 	"mind_body",
 	"factions",
-	"antag",
 	"game",
-	"misc",
-))
-
-/// Tabs only admins see. Their prefs and editors stay, saved and applied as before; players just do not get the tab.
-GLOBAL_LIST_INIT(dq_admin_only_categories, list("antag"))
-
-/// Whether these prefs' player sees the admin-only tabs (any admin rank).
-/proc/dq_sees_admin_categories(datum/preferences/prefs)
-	var/client/C = prefs?.client()
-	return C && check_rights_for(C, R_ADMIN)
-
-// Rarely-changed categories: the window folds them under one "More" tab (in this order,
-// after every other tab). They stay ordinary categories on the wire; only the tab strip groups them.
-GLOBAL_LIST_INIT(dq_more_categories, list(
-	"antag",
-	"game",
-	"misc",
 ))
 
 // play-mode filter lists.
@@ -75,6 +57,7 @@ GLOBAL_LIST_INIT(dq_robot_mode_hidden_groups, list(
 	"preview",  // Animations toggle / preview_loadout / preview_job don't apply to chassis-sprite previews.
 	"nif",      // Cyborgs don't have NIFs (those are neural interfaces for organic brains).
 	"pai",      // Cyborgs aren't pAIs.
+	"shadekin", // Flicker settings seed the Shadekin panel of an organic body.
 	"demographics",  // Age / bday is meaningless for cyborgs.
 	"background",    // Birthplace, citizenship, religion etc. don't apply to a cyborg in chargen.
 	"records",       // Medical/security records are for organic chars.
@@ -95,7 +78,6 @@ GLOBAL_LIST_INIT(dq_pai_mode_hidden_categories, list(
 	"mind_body",
 	"loadout",
 	"traits",
-	"antag",
 	"occupation",
 ))
 
@@ -119,6 +101,7 @@ GLOBAL_LIST_INIT(dq_pai_mode_hidden_groups, list(
 	"persistence",   // Body resleeve / mind scan — pAIs don't have bodies.
 	"nif",           // pAIs don't have neural interfaces.
 	"directory",     // Vore directory — pAIs aren't on it.
+	"shadekin",      // Flicker settings seed the Shadekin panel of a body.
 	"roleplay",      // RP flavor tied to physical bodies.
 ))
 
@@ -225,10 +208,9 @@ GLOBAL_LIST_INIT(dq_group_display_merge, list("gender" = "name", "demographics" 
 // which is type-registration order (not file order), so "Name" wasn't reliably
 // first in Identity even though the metadata file lists it first.
 GLOBAL_LIST_INIT(dq_group_order, list(
-	"identity"    = list("name", "blood", "species", "spawn", "language", "background", "speech_verbs", "voice", "size", "flavor", "directory", "records", "ooc_notes"),
+	"identity"    = list("name", "species", "spawn", "blood", "language", "background", "speech_verbs", "voice", "size", "flavor", "directory", "records", "ooc_notes"),
 	"appearance"  = list("palette", "chassis", "body", "hair", "ears", "tail", "wings", "markings", "organs", "preview"),
-	"antag"       = list("antag", "be_special"),
-	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai"),
+	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai", "shadekin"),
 ))
 
 /datum/preference_middleware/character_setup/proc/dq_build_category_structure(category_filter, include_details = TRUE)
@@ -245,7 +227,6 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	var/play_mode = preferences().read_preference(/datum/preference/text/human/play_mode) || "human"
 	var/playing_as_robot = (play_mode == "robot")
 	var/playing_as_pai = (play_mode == "pai")
-	var/antag_visible = dq_sees_admin_categories(preferences())
 
 	for(var/pref_type in GLOB.preference_entries)
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
@@ -267,8 +248,6 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		if(cat == PREFERENCE_CATEGORY_MANUALLY_RENDERED || cat == PREFERENCE_CATEGORY_NON_CONTEXTUAL)
 			continue
 		var/grp = pref.get_group(preferences()) || ""
-		if((cat in GLOB.dq_admin_only_categories) && !antag_visible)
-			continue
 
 		// play-mode gating. play_mode is itself a hidden pref so
 		// no escape hatch needed here; the species_picker editor below is
@@ -332,8 +311,6 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	// Mix editors into their categories/groups.
 	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
 		if(editor.hidden)
-			continue
-		if((editor.category in GLOB.dq_admin_only_categories) && !antag_visible)
 			continue
 		// same play-mode gating as for prefs. SpeciesPicker is the
 		// always-visible escape hatch (player needs a way to switch modes).
@@ -418,8 +395,6 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	if(!islist(preferences().dq_category_index))
 		var/play_mode = preferences().read_preference(/datum/preference/text/human/play_mode) || "human"
 		preferences().dq_category_index = dq_character_category_index(play_mode)
-		if(!dq_sees_admin_categories(preferences())) // the shared index holds every tab; players lose the admin-only ones
-			preferences().dq_category_index -= GLOB.dq_admin_only_categories
 	if(!category_key || (category_key in preferences().dq_category_static_cache))
 		return
 	var/list/categories_data = dq_build_category_structure(category_key, TRUE)
@@ -498,7 +473,6 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	data["dq_cache_key"] = "[REF(prefs_datum)]-[prefs_datum.default_slot]"
 	data["dq_active_category"] = prefs_datum.dq_active_category
 	data["dq_category_index"] = prefs_datum.dq_category_index
-	data["dq_more_categories"] = GLOB.dq_more_categories
 	data["dq_structure_version"] = prefs_datum.dq_category_structure_version
 
 	var/window_id = ui?.window()?.id || "unpooled"
@@ -507,17 +481,18 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	var/force_catalogs = !!prefs_datum.dq_force_catalogs_by_window?[window_id]
 	if(force_catalogs)
 		prefs_datum.dq_force_catalogs_by_window -= window_id
-	// The prefetch: every tab's structure, values, editor data and catalogs, once, so later switches render
-	// from the client's cache while the server's answer is still on its way.
-	var/prefetch = !!prefs_datum.dq_prefetch_by_window?[window_id]
+	// The prefetch: one other tab's structure, values, editor data and catalogs per request (the window asks for the
+	// tabs in turn, so no single answer is huge), so later switches render from the client's cache.
+	var/list/prefetch = prefs_datum.dq_prefetch_by_window?[window_id]
 	if(prefetch)
 		prefs_datum.dq_prefetch_by_window -= window_id
 		force_catalogs = TRUE
 	var/list/categories_to_send = list(prefs_datum.dq_active_category)
-	if(prefetch)
-		for(var/category_key in prefs_datum.dq_category_index)
-			dq_ensure_category_cache(category_key)
-			categories_to_send |= category_key
+	for(var/category_key in prefetch)
+		if(!(category_key in prefs_datum.dq_category_index))
+			continue
+		dq_ensure_category_cache(category_key)
+		categories_to_send |= category_key
 
 	LAZYINITLIST(prefs_datum.dq_window_category_versions)
 	if(!islist(prefs_datum.dq_window_category_versions[window_id]))
@@ -526,6 +501,9 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	var/list/category_patch = list()
 	for(var/category_key in categories_to_send)
 		if(window_category_versions[category_key] == prefs_datum.dq_category_structure_version)
+			continue
+		if(!prefs_datum.dq_category_static_cache[category_key])
+			log_world("PREFS_UI: tab [category_key] has no structure for [prefs_datum.client()?.ckey] (the window would wait on it); index [english_list(prefs_datum.dq_category_index)]")
 			continue
 		category_patch[category_key] = prefs_datum.dq_category_static_cache[category_key]
 		window_category_versions[category_key] = prefs_datum.dq_category_structure_version
@@ -554,21 +532,40 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	if(!islist(prefs_datum.dq_window_editor_versions[window_id]))
 		prefs_datum.dq_window_editor_versions[window_id] = list()
 	var/list/window_editor_versions = prefs_datum.dq_window_editor_versions[window_id]
+	// Every shown editor has a key in both payloads (null = not sent this time: the window keeps what it has), so the wire shape has no optional field.
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(editor.hidden)
+			continue
+		editor_data[editor.key] = null
+		editor_static_patch[editor.key] = null
+	var/static_patch_sent = FALSE
+	var/list/editor_timings = list() // editor key -> "data ms/catalog ms", logged when the answer was slow
+	var/list/catalogs_sent = list()
 	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
 		if(editor.hidden || !(editor.category in categories_to_send))
 			continue
+		var/editor_started = TICK_USAGE_REAL
 		editor_data[editor.key] = editor.build_ui_data(prefs_datum)
+		var/data_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - editor_started)
 		var/editor_version = dq_editor_version(editor.key)
 		editor_versions[editor.key] = editor_version
 		if(window_editor_versions[editor.key] == editor_version || !force_catalogs)
+			editor_timings += "[editor.key] [round(data_ms, 0.1)]"
 			continue
+		var/catalog_build_started = TICK_USAGE_REAL
 		editor_static_patch[editor.key] = dq_editor_static_payload(editor)
+		editor_timings += "[editor.key] [round(data_ms, 0.1)]+[round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - catalog_build_started), 0.1)]"
+		catalogs_sent += editor.key
+		static_patch_sent = TRUE
 		window_editor_versions[editor.key] = editor_version
 	data["dq_editor_data"] = editor_data
 	data["dq_editor_versions"] = editor_versions
-	if(length(editor_static_patch))
+	if(static_patch_sent)
 		data["dq_editor_static_patch"] = editor_static_patch
-	data["dq_catalog_build_ms"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - catalog_started)
+	var/build_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - catalog_started)
+	data["dq_catalog_build_ms"] = build_ms
+	if(build_ms >= 40) // an update this slow is logged with where the time went
+		log_world("PREFS_UI_SLOW: [prefs_datum.client()?.ckey] active [prefs_datum.dq_active_category]: ui_data took [round(build_ms, 0.1)] ms for [length(categories_to_send)] tab(s) ([english_list(categories_to_send)]), catalogs sent for [length(catalogs_sent) ? english_list(catalogs_sent) : "none"], force [force_catalogs]; editors data ms (+catalog ms): [length(editor_timings) ? jointext(editor_timings, ", ") : "none"]")
 
 	return data
 
@@ -605,7 +602,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 
 CAPABILITIES(/datum/preference_middleware/character_setup)
 	op("dq_select_category", ui_act("dq_select_category", arg("category", schema_text(4096)), arg("force_catalogs", bool())), then(PROC_REF(ui_act_dq_select_category)))
-	op("dq_prefetch_categories", ui_act("dq_prefetch_categories"), then(PROC_REF(ui_act_dq_prefetch_categories)))
+	op("dq_prefetch_categories", ui_act("dq_prefetch_categories", arg("category", schema_text(4096))), then(PROC_REF(ui_act_dq_prefetch_categories)))
 	op("dq_update_preference", ui_act("dq_update_preference", arg("key", schema_text(4096)), arg("value")), then(PROC_REF(ui_act_dq_update_preference)))
 	op("dq_pick_color", ui_act("dq_pick_color", arg("key", schema_text(4096))), asks(/datum/prompt/color/prefs/entry, fields = list("title" = "Color", "question" = "Pick a color", "default" = computed(PROC_REF(pick_color_default)), "preferences" = computed(PROC_REF(prefs_of_setup)), "pref_key" = computed(PROC_REF(pick_color_key))), step = "color", when = PROC_REF(pick_color_writable)), then(PROC_REF(ui_act_dq_pick_color)))
 	op("dq_inspect_flavor", ui_act("dq_inspect_flavor"), then(PROC_REF(ui_act_dq_inspect_flavor)))
@@ -641,12 +638,17 @@ CAPABILITIES(/datum/preference_middleware/character_setup)
 			if(!editor.hidden && editor.category == category_key)
 				prefs_datum.dq_window_editor_versions[window_id] -= editor.key
 
-/// Sent once by a window after its first page renders: the next update carries every tab (see get_ui_data).
-/datum/preference_middleware/character_setup/proc/ui_act_dq_prefetch_categories(datum/act/op/A)
+/// Sent by a window, one tab at a time, once its page renders: the next update also carries that tab (see get_ui_data).
+/datum/preference_middleware/character_setup/proc/ui_act_dq_prefetch_categories(datum/act/op/A, category)
 	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(A.actor, src)
 	var/datum/preferences/prefs_datum = preferences()
 	LAZYINITLIST(prefs_datum.dq_prefetch_by_window)
-	prefs_datum.dq_prefetch_by_window[ui?.window()?.id || "unpooled"] = TRUE
+	var/window_id = ui?.window()?.id || "unpooled"
+	var/list/wanted = prefs_datum.dq_prefetch_by_window[window_id]
+	if(!islist(wanted))
+		wanted = list()
+		prefs_datum.dq_prefetch_by_window[window_id] = wanted
+	wanted |= category
 	return TRUE
 
 // Single-pref update from the auto-renderer.

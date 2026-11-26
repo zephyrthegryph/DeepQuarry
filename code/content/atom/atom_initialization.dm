@@ -79,9 +79,12 @@
 
 	// Declared instance state (code/datums/lifecycle/declarations.dm): children, gas, reagents,
 	// appearance. Here, at the root of the chain, so a subtype's code after `. = ..()` sees it.
-	BOOT_PHASE_BEGIN(bp_decls)
-	lifecycle_decls_init(src, mapload)
-	BOOT_PHASE_END(bp_decls, "lifecycle_decls_init" + BOOT_KIND(src), src)
+	// A planned type with no preinit, starting occupants or declared gas (space) skips the call (code/engine/declare/ctor_plan.dm).
+	var/decls_plan = CTOR_PLAN_FOR(src)
+	if(!decls_plan || (decls_plan & (CTOR_PREINIT | CTOR_STARTS | CTOR_DECLS_INIT)))
+		BOOT_PHASE_BEGIN(bp_decls)
+		lifecycle_decls_init(src, mapload)
+		BOOT_PHASE_END(bp_decls, "lifecycle_decls_init" + BOOT_KIND(src), src)
 	// Capabilities' per-instance state, then the first look (code/datums/capabilities/).
 	BOOT_PHASE_BEGIN(bp_caps)
 	caps_init(src, mapload)

@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "The floating chat window is held exactly inside the main window again; a maximized main window is measured from its real size instead of its restored position, which had stopped the chat at the window's centre"

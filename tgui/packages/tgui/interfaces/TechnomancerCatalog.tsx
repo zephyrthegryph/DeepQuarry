@@ -5,38 +5,18 @@
 // via tgui_act, no embedded byond:// hrefs.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type {
+  TechnomancerCatalogActions,
+  TechnomancerCatalogData,
+} from './generated/TechnomancerCatalog';
 
-type Spell = {
-  name: string;
-  desc: string;
-  cost: number;
-  spell_power_desc: string;
-  enhancement_desc: string;
-  category: string;
-  hidden: BooleanLike;
-};
+type Data = TechnomancerCatalogData;
 
-type Item = {
-  name: string;
-  desc: string;
-  cost: number;
-};
-
-type Data = {
-  tab: number;
-  spell_tab: string;
-  budget: number;
-  max_budget: number;
-  spells: Spell[];
-  equipment: Item[];
-  consumables: Item[];
-  assistance: Item[];
-  spell_categories: string[];
-};
+type Item = Data['equipment'][number];
 
 const TAB_LABELS = [
   'Functions',
@@ -47,7 +27,7 @@ const TAB_LABELS = [
 ];
 
 export const TechnomancerCatalog = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, TechnomancerCatalogActions>();
   const { tab, budget, max_budget } = data;
 
   return (
@@ -83,7 +63,7 @@ export const TechnomancerCatalog = () => {
 };
 
 const FunctionsTab = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, TechnomancerCatalogActions>();
   const { budget, spell_tab, spell_categories, spells } = data;
   const visible = spells.filter(
     (s) => !s.hidden && (spell_tab === 'All' || s.category === spell_tab),
@@ -135,9 +115,9 @@ const FunctionsTab = () => {
                 )
               }
             >
-              <Box italic color="label" mb={1}>
+              <Label italic mb={1}>
                 {s.desc}
-              </Box>
+              </Label>
               {s.spell_power_desc ? (
                 <Box color="purple">
                   <Box inline bold>
@@ -163,7 +143,7 @@ const FunctionsTab = () => {
 };
 
 const ItemsTab = (props: { items: Item[]; kind: string }) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, TechnomancerCatalogActions>();
   const { budget } = data;
   const { items } = props;
   return (

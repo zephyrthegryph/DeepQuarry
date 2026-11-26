@@ -115,11 +115,7 @@
 	var/datum/tgui_module/robot_ui/robotact
 
 	var/static/list/robot_verbs_default = list(
-		/mob/living/silicon/robot/proc/robot_checklaws,
-		/mob/living/silicon/robot/proc/take_image,
-		/mob/living/silicon/robot/proc/view_images,
-		/mob/living/silicon/robot/proc/delete_images,
-		/mob/living/silicon/robot/proc/ex_reserve_refill, // re-adds the extinquisher refill from water
+		/mob/living/silicon/robot/proc/robot_panel,
 		/mob/living/proc/toggle_rider_reins,
 		/mob/living/proc/vertical_nom,
 		/mob/living/proc/shred_limb,
@@ -521,13 +517,11 @@
 	if (!rbPDA)
 		rel_set(src, nameof(rbPDA), new/obj/item/pda/ai(src))
 	rbPDA.set_name_and_job(name,"[modtype] [braintype]")
-	grant(src, granted_verb(/obj/item/pda/ai/verb/cmd_pda_open_ui), src)
 
 /mob/living/silicon/robot/proc/setup_communicator()
 	if (!communicator)
 		rel_set(src, nameof(communicator), new/obj/item/communicator/integrated(src))
 	communicator.register_device(name, "[modtype] [braintype]")
-	grant(src, granted_verb(/obj/item/communicator/integrated/verb/activate), src)
 
 /mob/living/silicon/robot/drop_from_inventory(obj/item/W, atom/target = null)
 	if(module_active && istype(module_active,/obj/item/gripper))
@@ -562,7 +556,7 @@
 	else
 		braintype = BORG_BRAINTYPE_CYBORG
 
-/mob/living/silicon/robot/proc/updatename(prefix as text)
+/mob/living/silicon/robot/proc/updatename(prefix = null)
 	if(prefix)
 		modtype = prefix
 
@@ -604,22 +598,22 @@
 		identity().ooc_notes_favs = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_favs))
 		identity().ooc_notes_maybes = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_maybes))
 		identity().ooc_notes_style = num_or_null(read_preference(/datum/preference/toggle/living/ooc_notes_style))
-		STATE_SET(src, living_misc, custom_link, text_or_null(client.prefs.read_preference(/datum/preference/text/human/custom_link))) // migrated pref
+		STATE_SET(src, living_misc, custom_link, text_or_null(null)) // migrated pref
 
 ///Essentially, a Activate Held Object mode for borgs that acts just like pressing Z in hotkey mode but also works well with multibelts.
 /mob/living/silicon/robot/proc/alt_mode()
 	if(!checkClickCooldown())
-		return
-
-/mob/living/silicon/robot/proc/alt_mode_op(datum/act/op/A)
-	alt_mode()
+		return FALSE
 
 	setClickCooldown(1)
 
 	var/obj/item/W = module_active
-	if(module_active)
+	if(W)
 		W.attack_self(src)
-	return
+	return TRUE
+
+/mob/living/silicon/robot/proc/alt_mode_op(datum/act/op/A)
+	return alt_mode() ? OP_OK : OP_FAILED
 
 // this function displays jetpack pressure in the stat panel
 // TGPanel
@@ -1039,7 +1033,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	transform_with_anim() //sprite animation
 	uneq_all()
 	hud_used.update_robot_modules_display(TRUE)
-	modtype = initial(modtype)
+	set_modtype(initial(modtype))
 	hud_used?.hands?.icon_state = get_hud_module_icon()
 
 	// Basic upgrades (VTEC, ...) mutate the robot directly (verbs added,
@@ -1239,9 +1233,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		src.camera.clear_all_networks()
 
 /mob/living/silicon/robot/proc/ResetSecurityCodes()
-	set category = VERB_CAT_ABILITIES_SILICON
-	set name = "Reset Identity Codes"
-	set desc = "Scrambles your security and identification codes and resets your current buffers. Unlocks you and permenantly severs you from your AI and the robotics console and will deactivate your camera system."
 
 	UnlinkSelf()
 	to_chat(src, span_filter_notice("Buffers flushed and reset. Camera system shutdown. All systems operational."))
@@ -1258,18 +1249,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	set_lockcharge(state)
 	update_canmove()
 
-/mob/living/silicon/robot/mode()
-	if(!checkClickCooldown())
-		return
-
-	setClickCooldown(1)
-
-	var/obj/item/W = get_active_hand()
-	if (W)
-		W.attack_self(src)
-
-	return
-
 /mob/living/silicon/robot/proc/set_default_module_icon()
 	proto_set(src, nameof(sprite_datum), null)
 	resolve_sprite_datum()
@@ -1280,16 +1259,12 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/add_robot_verbs()
 	for(var/granted_path in robot_verbs_default)
 		grant(src, granted_verb(granted_path), src)
-	for(var/granted_path in silicon_subsystems)
-		grant(src, granted_verb(granted_path), src)
 	grant(src, robot_live(), src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
 		grant(src, robot_recolour(), src)
 
 /mob/living/silicon/robot/proc/remove_robot_verbs()
 	for(var/granted_path in robot_verbs_default)
-		revoke(src, granted_verb(granted_path), src)
-	for(var/granted_path in silicon_subsystems)
 		revoke(src, granted_verb(granted_path), src)
 	revoke(src, robot_live(), src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
@@ -1490,10 +1465,9 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/lay_down()
 	. = ..()
 
-/mob/living/silicon/robot/verb/rest_style()
+/mob/living/silicon/robot/proc/rest_style()
 	set name = "Switch Rest Style"
 	set desc = "Select your resting pose."
-	set category = VERB_CAT_IC_SETTINGS
 
 	if(!sprite_datum || !sprite_datum.has_rest_sprites || sprite_datum.rest_sprite_options.len < 1)
 		to_chat(src, span_notice("Your current appearance doesn't have any resting styles!"))
@@ -1622,6 +1596,11 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		return module.ui_theme
 	return ui_theme
 
+/// The window theme of a tool a robot holds (its loc), or null when no robot holds it.
+/proc/robot_holder_theme(atom/movable/thing)
+	var/mob/living/silicon/robot/robot_owner = thing?.loc
+	return istype(robot_owner) ? robot_owner.get_ui_theme() : null
+
 /mob/living/silicon/robot/handle_special_unlocks()
 	if(!module)
 		return
@@ -1723,9 +1702,8 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/water_res() as /datum/matter_synth
 	return water_res
 
-/mob/living/silicon/robot/proc/ex_reserve_refill()
-	set name = "Refill Extinguisher"
-	set category = VERB_CAT_OBJECT
+/// The Refill Extinguisher menu entry: the module's extinguishers refill from the water reserve.
+/mob/living/silicon/robot/proc/extinguisher_refilled(datum/act/op/A)
 	var/datum/matter_synth/water = water_res()
 	for(var/obj/item/extinguisher/E in module.modules)
 		if(E.reagents.total_volume < E.max_water)
@@ -1738,6 +1716,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 				to_chat(src, span_filter_notice("You refill the extinguisher using your water reserves."))
 			else
 				to_chat(src, span_filter_notice("Insufficient water reserves."))
+	return OP_OK
 
 
 /mob/living/silicon/robot/starting_nutrition()
@@ -1804,6 +1783,7 @@ CAPABILITIES(/mob/living/silicon/robot)
 	op("drop_hat", hand(), label("Drop hat"), priority(OP_PRIORITY_PART), when(PROC_REF(hat_droppable)), starts(PROC_REF(hat_drop_started)), wait(3 SECONDS), then(PROC_REF(hat_dropped)))
 	// Levering the brain out of a stripped chassis (robot.dm): the one doing it stays next to the robot for three seconds.
 	op("extract_mmi", ai(), needs(req_capable()), wait(3 SECONDS), then(TYPE_PROC_REF(/mob/living/silicon/robot, extract_mmi_robot_done)))
+	op("refill_extinguisher", menu(), label("Refill Extinguisher"), when(nameof(water_res)), then(PROC_REF(extinguisher_refilled)))
 	op("break_bolt", menu(), when(PROC_REF(bolt_breakable)), begins(PROC_REF(bolt_break_text)), wait(1.5 MINUTES), then(PROC_REF(bolt_broken)))
 	owns_one(nameof(camera), /obj/machinery/camera)
 	owns_one(nameof(communicator), /obj/item/communicator/integrated)

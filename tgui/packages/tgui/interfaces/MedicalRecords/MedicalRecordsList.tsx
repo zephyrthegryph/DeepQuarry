@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Input } from 'tgui-core/components';
-
+import type { MedicalRecordsActions } from '../generated/MedicalRecords';
 import type { Data } from './types';
 
 export const MedicalRecordsList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MedicalRecordsActions>();
   const { records } = data;
   return (
     <>

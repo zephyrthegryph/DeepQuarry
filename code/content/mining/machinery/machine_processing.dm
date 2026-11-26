@@ -6,6 +6,7 @@
 
 /obj/machinery/mineral/processing_unit_console
 	name = "production machine console"
+	desc = "Sets what the material processor does with each ore and shows the ore it holds."
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "console"
 	layer = ABOVE_WINDOW_LAYER
@@ -36,6 +37,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	// The console's window: an ore's setting, when the button names none, is asked in the op (asks()). A named setting is
 	// PROCESS_NONE .. PROCESS_ALLOY (0..3: the defines are file-local, the declaration compiles elsewhere).
 	interface("MiningOreProcessingConsole")
+	ui_shape(showAllOres = bool(), unclaimedPoints = num(), has_id = bool(), id = nullable(row(name = schema_text(), points = num())), ores = list_of(row(ore = schema_text(), name = schema_text(), amount = num(), processing = int(0, 3))), power = bool(), speed = bool())
 	without("ui_open")
 	op("toggleSmelting", ui_act("toggleSmelting", arg("ore", schema_text(4096)), arg("set", int(0, 3))),
 		asks(/datum/prompt/choice/ore_processing_setting, fields = list("question" = computed(PROC_REF(ore_setting_question)), "title" = "Process Setting", "choices" = list("Smelting", "Compressing", "Alloying", "Nothing")), step = "setting", when = PROC_REF(ore_setting_unnamed)),
@@ -94,6 +96,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 		)
 	else
 		data["has_id"] = FALSE
+		data["id"] = null
 
 	var/list/ores = list()
 	for(var/ore in machine().ores_processing)
@@ -105,8 +108,8 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 		ores.Add(list(list(
 			"ore" = ore,
 			"name" = O.display_name,
-			"amount" = machine().ores_stored[ore],
-			"processing" = LAZYACCESS(machine().ores_processing, ore) ? LAZYACCESS(machine().ores_processing, ore) : 0,
+			"amount" = machine().ores_stored[ore] || 0,
+			"processing" = LAZYACCESS(machine().ores_processing, ore) || 0,
 		)))
 	data["ores"] = ores
 	data["power"] = machine().active
@@ -171,7 +174,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 		if(ACCESS_MINING_STATION in inserted_id.GetAccess())
 			var/datum/money_account/account = get_account(inserted_id.associated_account_number)
 			if(account?.credit(machine().points, name, "Processed ore proceeds", name))
-				machine().points = 0
+				machine().set_points(0)
 		else
 			to_chat(A.actor, span_warning("Required access not found."))
 	return TRUE
@@ -195,6 +198,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 
 /obj/machinery/mineral/processing_unit
 	name = "material processor" //This isn't actually a goddamn furnace, we're in space and it's processing platinum and flammable phoron...
+	desc = "Takes ore in from its input side and smelts, compresses or alloys it into sheets as its console is set, passing them out its output side."
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "furnace"
 	density = TRUE
@@ -204,6 +208,8 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	var/tmp/obj/machinery/mineral/console
 	var/sheets_per_tick = 10
 	var/list/ores_processing
+	/// Ore kind -> the lot of the last loose ore of it taken in (what the sheets smelted from it are rolled as); ore that came in a box or a chunk has no lot of its own.
+	var/list/ore_lots
 	var/list/ores_stored = list() // ALLOW(instance_list): d: filled in New() with an entry per ore
 	active = FALSE
 
@@ -316,6 +322,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit)
 			continue
 		if(!isnull(ores_stored[ore_material]))
 			ores_stored[ore_material]++
+			LAZYSET(ore_lots, ore_material, O.lot_key)
 			set_points(points + ((ore_values[ore_material]*points_mult)))
 
 	//Process our stored ores and spit out sheets.
@@ -390,7 +397,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit)
 				for(var/i=0,i<can_make,i++)
 					ores_stored[metal]--
 					sheets++
-					new M.stack_type(output_marker().loc)
+					lot_stack_new(M.stack_type, output_marker().loc, LAZYACCESS(ore_lots, metal))
 			else
 				ores_stored[metal]--
 				sheets++

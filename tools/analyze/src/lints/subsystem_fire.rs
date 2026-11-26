@@ -7,7 +7,6 @@
 //! on `/datum/controller/subsystem`) is skipped. The `--report` listing of allowed fires is not
 //! reproduced (it is not a finding).
 
-use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::tree::{SourceFile, CODE_DM};
@@ -15,16 +14,16 @@ use crate::tree::{SourceFile, CODE_DM};
 const HINT: &str = "move the periodic work onto an OM lane (world service or feature lane, code/datums/om/world_lanes.dm) or, for a kernel engine, add it to `core` in tools/ci/lint_scopes.toml; a temporary keep takes `// ALLOW(subsystem_fire): <reason>`";
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::subsystem_fire::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::subsystem_fire::SCOPE_META_0.group,
+    name: "subsystem_fire",
+    group: "",
     label: "subsystem_fire",
     legacy: "tools/ci/subsystem_fire_lint.py",
     select: CODE_DM,
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "fire", hint: HINT }],
-    allow: crate::allow_registry_fields::subsystem_fire::ALLOW_0,
-    lists: crate::allow_registry_fields::subsystem_fire::SCOPE_META_0.lists,
+    allow: &["subsystem_fire"],
+    lists: &["core"],
 };
 
 struct SubsystemFire;
@@ -35,8 +34,7 @@ impl Lint for SubsystemFire {
     }
 
     fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
-        let fire = fixture.pattern(r"/datum/controller/subsystem/(\w+)(?:/\w+)*/fire\(",crate::raw_fixture_policy::PatternMode::Match,||crate::pat_match!(r"/datum/controller/subsystem/(\w+)(?:/\w+)*/fire\("));
+        let fire = crate::pat_match!(r"/datum/controller/subsystem/(\w+)(?:/\w+)*/fire\(");
         let core = cx.list("core");
         for (number, line) in f.raw().numbered() {
             let Some(m) = fire.captures(line) else { continue };

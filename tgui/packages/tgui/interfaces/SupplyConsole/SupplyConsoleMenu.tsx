@@ -4,6 +4,7 @@ import { SupplyConsoleMarket } from './SupplyConsoleMarket';
 import { SupplyConsoleMenuHistoryExport } from './SupplyConsoleMenuHistoryExport';
 import { SupplyConsoleMenuOrder } from './SupplyConsoleMenuOrder';
 import { SupplyConsoleMenuOrderList } from './SupplyConsoleMenuOrderList';
+import { SupplyConsoleTradeShips } from './SupplyConsoleTradeShips';
 
 export const SupplyConsoleMenu = (props) => {
   const [tabIndex, setTabIndex] = useState<number>(0);
@@ -16,6 +17,7 @@ export const SupplyConsoleMenu = (props) => {
   tab[3] = <SupplyConsoleMenuOrderList mode="All" />;
   tab[4] = <SupplyConsoleMenuHistoryExport />;
   tab[5] = <SupplyConsoleMarket />;
+  tab[6] = <SupplyConsoleTradeShips />;
 
   return (
     <Section fill title="Menu">
@@ -35,6 +37,13 @@ export const SupplyConsoleMenu = (props) => {
               onClick={() => setTabIndex(5)}
             >
               Market
+            </Tabs.Tab>
+            <Tabs.Tab
+              icon="ship"
+              selected={tabIndex === 6}
+              onClick={() => setTabIndex(6)}
+            >
+              Trade ships
             </Tabs.Tab>
             <Tabs.Tab
               icon="check-circle-o"

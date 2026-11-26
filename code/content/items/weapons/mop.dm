@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/mop)
 			"method" = "manual_mop",
 			"cleaned_units" = 1,
 			"detail" = "Cleaned [T] with [src].",
-		), "sanitation:[handle_of(T)]:[world.time]", src, cleaner)
+		), "sanitation:[handle_text(handle_of(T))]:[world.time]", src, cleaner)
 	user.balloon_alert(user, "you have finished mopping!")
 	return OP_OK
 

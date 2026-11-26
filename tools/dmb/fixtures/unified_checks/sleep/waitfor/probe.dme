@@ -1,6 +1,0 @@
-/proc/blocking()
-    set waitfor=0
-    sleep(1)
-/proc/probe()
-    set SpacemanDMM_should_not_sleep=1
-    blocking()

@@ -1,3 +1,0 @@
-/proc/probe()
-    set SpacemanDMM_should_be_pure=1
-    return fdel("x")

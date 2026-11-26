@@ -14,8 +14,8 @@ GLOBAL_LIST_INIT(dq_variants_accessory_poncho_roles_cloak_boat, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/boat)
-	variants(nameof(variant), PROC_REF(variant_table))
+	variants(nameof(variant), PROC_REF(own_variant_table)) // its own rows replace the parent family's
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).
-/obj/item/clothing/accessory/poncho/roles/cloak/boat/proc/variant_table()
+/obj/item/clothing/accessory/poncho/roles/cloak/boat/proc/own_variant_table()
 	return GLOB.dq_variants_accessory_poncho_roles_cloak_boat

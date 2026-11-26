@@ -58,7 +58,7 @@
 	eyeobj = null
 	reset_perspective(new_eye)
 
-/mob/living/silicon/ai/proc/create_eyeobj(newloc)
+/mob/living/silicon/ai/proc/create_eyeobj(newloc = null)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)
 		destroy_eyeobj()
@@ -95,14 +95,12 @@
 
 /mob/living/silicon/ai/proc/toggle_acceleration()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set category = VERB_CAT_AI_SETTINGS
-	set name = "Toggle Camera Acceleration"
 
 	if(!eyeobj)
 		return
 
 	eyeobj.acceleration = !eyeobj.acceleration
-	to_chat(usr, "Camera acceleration has been toggled [eyeobj.acceleration ? "on" : "off"].")
+	to_chat(src, "Camera acceleration has been toggled [eyeobj.acceleration ? "on" : "off"].")
 
 
 CAPABILITIES(/mob/observer/eye/aiEye)

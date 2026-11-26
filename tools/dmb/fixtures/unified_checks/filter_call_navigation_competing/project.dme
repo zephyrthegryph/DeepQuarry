@@ -1,5 +1,0 @@
-/datum/filter_nav/a/target
-/datum/filter_nav/a/a/target
-/datum/filter_nav/z/target
-/datum/filter_nav/proc/probe()
-    filter(type=:target)

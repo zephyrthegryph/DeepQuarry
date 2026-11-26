@@ -17,9 +17,10 @@
 CAPABILITIES(/obj/machinery/computer/prisoner)
 	configure(light_glow(color = "#a91515"))
 	interface("PrisonerManagement")
-	op("inject", ui_act("inject", arg("imp", schema_text(32)), arg("val", num())), then(PROC_REF(ui_act_inject)))
+	ui_shape(locked = bool(), chemImplants = list_of(row(host = schema_text(), units = num(), ref = int())), trackImplants = list_of(row(host = schema_text(), ref = int(), id = schema_text(), loc = schema_text())))
+	op("inject", ui_act("inject", arg("imp", int()), arg("val", num())), then(PROC_REF(ui_act_inject)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
-	op("warn", ui_act("warn", arg("imp", schema_text(32))), asks(/datum/prompt/text, fields = list("title" = "Enter your message here!", "question" = "Message:")), then(PROC_REF(ui_act_warn)))
+	op("warn", ui_act("warn", arg("imp", int())), asks(/datum/prompt/text, fields = list("title" = "Enter your message here!", "question" = "Message:")), then(PROC_REF(ui_act_warn)))
 
 /obj/machinery/computer/prisoner/ui_data(datum/act/eval/A)
 	var/list/chemImplants = list()
@@ -32,7 +33,7 @@ CAPABILITIES(/obj/machinery/computer/prisoner)
 			if(!C.implanted)
 				continue
 			chemImplants.Add(list(list(
-				"host" = C.imp_in(),
+				"host" = "[C.imp_in()]",
 				"units" = C.reagents.total_volume,
 				"ref" = handle_of(C)
 			)))
@@ -51,7 +52,7 @@ CAPABILITIES(/obj/machinery/computer/prisoner)
 			if(is_vore_jammed(track))
 				loc_display = "E4R@4"
 			trackImplants.Add(list(list(
-				"host" = L,
+				"host" = "[L]",
 				"ref" = handle_of(track),
 				"id" = "[track.id]",
 				"loc" = "[loc_display]",

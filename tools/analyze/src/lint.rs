@@ -25,8 +25,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::scopes::LintScope;
 use crate::tree::{Select, SourceFile, Tree};
-#[path = "lint_captured_sink.rs"]
-mod captured_sink;
 
 /// One flagged place. `msg` is the text after the `[lint/rule]` tag; empty means "the source line".
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -55,7 +53,7 @@ pub struct AllowUse {
 
 /// What a scan produces.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct Sink<'patterns> {
+pub struct Sink {
     pub sites: Vec<Site>,
     pub allow_used: Vec<AllowUse>,
     /// Extra summary lines the lint wants printed (e.g. "state schema lint: 12 types, 0 problems").
@@ -63,121 +61,47 @@ pub struct Sink<'patterns> {
     /// Set by `scan_file`: the file being scanned (so `site` can stamp `rel`).
     #[serde(skip)]
     pub cur: String,
-    #[serde(skip)]
-    bound: Option<captured_sink::Bound>,
-    #[cfg(feature="native-policy")]
-    #[serde(skip)]
-    patterns:Option<SinkPatternLoan<'patterns>>,
-    #[serde(skip)]
-    _patterns_lifetime:std::marker::PhantomData<&'patterns ()>,
 }
 
-impl<'patterns> Sink<'patterns> {
-    /// Copy the unchanged owned finding DATA for the legacy serialized memo.
-    /// An operation-only native provider/first-error loan never enters storage.
-    pub(crate) fn clone_owned_data(&self)->Sink<'static>{Sink{sites:self.sites.clone(),allow_used:self.allow_used.clone(),notes:self.notes.clone(),cur:self.cur.clone(),bound:self.bound.clone(),#[cfg(feature="native-policy")]patterns:None,_patterns_lifetime:std::marker::PhantomData}}
-    pub fn new() -> Self {
+impl Sink {
+    pub fn new() -> Sink {
         Sink::default()
     }
 
     /// A site in the file being scanned (`scan_file`).
     pub fn site(&mut self, rule: &str, line: usize) {
-        self.push_site(Site {
-            rule: rule.to_string(),
-            rel: self.cur.clone(),
-            line: line as u32,
-            msg: String::new(),
-            key: String::new(),
-            ident: String::new(),
-        });
+        self.sites.push(Site { rule: rule.to_string(), rel: self.cur.clone(), line: line as u32, msg: String::new(), key: String::new(), ident: String::new() });
     }
 
     pub fn site_msg(&mut self, rule: &str, line: usize, msg: impl Into<String>) {
-        self.push_site(Site {
-            rule: rule.to_string(),
-            rel: self.cur.clone(),
-            line: line as u32,
-            msg: msg.into(),
-            key: String::new(),
-            ident: String::new(),
-        });
+        self.sites.push(Site { rule: rule.to_string(), rel: self.cur.clone(), line: line as u32, msg: msg.into(), key: String::new(), ident: String::new() });
     }
 
     /// A site in any file (`scan_tree`).
     pub fn site_in(&mut self, rule: &str, rel: &str, line: usize) {
-        self.push_site(Site {
-            rule: rule.to_string(),
-            rel: rel.to_string(),
-            line: line as u32,
-            msg: String::new(),
-            key: String::new(),
-            ident: String::new(),
-        });
+        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: String::new(), key: String::new(), ident: String::new() });
     }
 
     pub fn site_in_msg(&mut self, rule: &str, rel: &str, line: usize, msg: impl Into<String>) {
-        self.push_site(Site {
-            rule: rule.to_string(),
-            rel: rel.to_string(),
-            line: line as u32,
-            msg: msg.into(),
-            key: String::new(),
-            ident: String::new(),
-        });
+        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: String::new(), ident: String::new() });
     }
 
-    pub fn site_keyed(
-        &mut self,
-        rule: &str,
-        rel: &str,
-        line: usize,
-        msg: impl Into<String>,
-        key: impl Into<String>,
-    ) {
-        self.push_site(Site {
-            rule: rule.to_string(),
-            rel: rel.to_string(),
-            line: line as u32,
-            msg: msg.into(),
-            key: key.into(),
-            ident: String::new(),
-        });
+    pub fn site_keyed(&mut self, rule: &str, rel: &str, line: usize, msg: impl Into<String>, key: impl Into<String>) {
+        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: key.into(), ident: String::new() });
     }
 
     /// A declaration site: `ident` is `owner::var`, the baseline fingerprint (see [`Site::ident`]).
-    pub fn site_decl(
-        &mut self,
-        rule: &str,
-        rel: &str,
-        line: usize,
-        msg: impl Into<String>,
-        ident: impl Into<String>,
-    ) {
-        self.push_site(Site {
-            rule: rule.to_string(),
-            rel: rel.to_string(),
-            line: line as u32,
-            msg: msg.into(),
-            key: String::new(),
-            ident: ident.into().replace(['\t', '\n', '\r'], " "),
-        });
+    pub fn site_decl(&mut self, rule: &str, rel: &str, line: usize, msg: impl Into<String>, ident: impl Into<String>) {
+        self.sites.push(Site { rule: rule.to_string(), rel: rel.to_string(), line: line as u32, msg: msg.into(), key: String::new(), ident: ident.into().replace(['\t', '\n', '\r'], " ") });
     }
 
     pub fn note(&mut self, text: impl Into<String>) {
-        self.push_note(text.into());
+        self.notes.push(text.into());
     }
 
     /// `allowed(raw_lines, number, lint)`: is line `number` of `f` kept by an annotation for
     /// `lint`? Records the annotation as used when it is.
     pub fn allowed(&mut self, f: &SourceFile, number: usize, lint: &str) -> bool {
-        #[cfg(feature="native-policy")]if let Some(loan)=self.patterns{
-         let mut control=SinkAllowControl{loan};
-         if let Err(message)=f.require_view_budget(){control.fail(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message));return true}
-         if control.failed(){return true}
-         let pending=crate::allow::kept_using(f,number,lint,&mut control);
-         match pending{Ok(Some(kept))=>{self.use_allow(f,kept.line,lint,kept.code);return true},Ok(None)=>return false,Err(_)=>return true}
-        }
-
         match crate::allow::kept(f, number, lint) {
             Some(k) => {
                 self.use_allow(f, k.line, lint, k.code);
@@ -189,14 +113,6 @@ impl<'patterns> Sink<'patterns> {
 
     /// Same-line only (`allowed_here`).
     pub fn allowed_here(&mut self, f: &SourceFile, number: usize, lint: &str) -> bool {
-        #[cfg(feature="native-policy")]if let Some(loan)=self.patterns{
-         let mut control=SinkAllowControl{loan};
-         if let Err(message)=f.require_view_budget(){control.fail(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message));return true}
-         if control.failed(){return true}
-         let pending=(if number>=1&&number<=f.raw().num_lines(){crate::allow::keeps_with(f.raw().line(number),lint,&mut control).map(|code|code.map(|code|crate::allow::Kept{line:number,code}))}else{Ok(None)});
-         match pending{Ok(Some(kept))=>{self.use_allow(f,kept.line,lint,kept.code);return true},Ok(None)=>return false,Err(_)=>return true}
-        }
-
         match crate::allow::kept_here(f, number, lint) {
             Some(k) => {
                 self.use_allow(f, k.line, lint, k.code);
@@ -207,25 +123,10 @@ impl<'patterns> Sink<'patterns> {
     }
 
     fn use_allow(&mut self, f: &SourceFile, at: usize, lint: &str, code: Option<String>) {
-        let u = AllowUse {
-            rel: f.rel.clone(),
-            line: at as u32,
-            name: lint.to_string(),
-            code: code.unwrap_or_default(),
-        };
-        self.replay_allow(u);
-    }
-
-    /// Replay the unchanged policy's annotation trace through retained admission.
-    /// Captured phases have exactly the fresh-Sink dedup scope of Engine::scan.
-    #[cfg(not(feature = "unified-oracle"))]
-    pub(crate) fn replay_allow(&mut self, u: AllowUse) { self.replay_allow_inner(u); }
-    /// Frozen external oracle code only; this replays DATA, not source authority.
-    #[cfg(feature = "unified-oracle")]
-    pub fn replay_allow(&mut self, u: AllowUse) { self.replay_allow_inner(u); }
-    fn replay_allow_inner(&mut self, u: AllowUse) {
-        let start = self.bound.as_ref().map_or(0, |b| b.allow_start);
-        if !self.allow_used[start..].contains(&u) { self.push_allow(u); }
+        let u = AllowUse { rel: f.rel.clone(), line: at as u32, name: lint.to_string(), code: code.unwrap_or_default() };
+        if !self.allow_used.contains(&u) {
+            self.allow_used.push(u);
+        }
     }
 }
 
@@ -246,10 +147,7 @@ pub enum Policy {
         banned: &'static [&'static str],
     },
     /// Count ceilings keyed by `Site::key` (`name count` lines).
-    Ceilings {
-        baseline: &'static str,
-        header: &'static [&'static str],
-    },
+    Ceilings { baseline: &'static str, header: &'static [&'static str] },
     /// Any site fails; nothing is baselined.
     Hard,
     /// The lint's `finish` decides.
@@ -285,8 +183,6 @@ pub struct Meta {
 }
 
 impl Meta {
-    /// The unique original required-list selection; DATA, not registry/source authority.
-    pub fn missing_scope_lists<'a>(&'a self,scope:&'a LintScope)->impl Iterator<Item=&'static str>+'a{self.lists.iter().copied().filter(move|key|!scope.lists.contains_key(*key))}
     pub fn rule(&self, name: &str) -> Option<&RuleMeta> {
         self.rules.iter().find(|r| r.name == name)
     }
@@ -294,8 +190,6 @@ impl Meta {
 
 /// Everything a scan may look at.
 pub struct Cx<'a> {
-    /// Resource-only borrowed operation; never source/model/EOF authority.
-    pub fixture:Option<&'a crate::raw_fixture_policy::Fixture<'a>>,
     pub tree: &'a Tree,
     pub meta: &'a Meta,
     pub scope: &'a LintScope,
@@ -304,11 +198,7 @@ pub struct Cx<'a> {
 impl<'a> Cx<'a> {
     /// In-scope files minus the lint's configured exemptions, sorted by path.
     pub fn files(&self) -> Vec<&'a SourceFile> {
-        self.tree
-            .select(&self.meta.select)
-            .into_iter()
-            .filter(|f| !self.scope.exempt(&f.rel))
-            .collect()
+        self.tree.select(&self.meta.select).into_iter().filter(|f| !self.scope.exempt(&f.rel)).collect()
     }
 
     /// In-scope files including exempt ones (for an index that must see everything).
@@ -327,7 +217,7 @@ impl<'a> Cx<'a> {
 
     /// A named string table (`[lint.<name>.tables.<key>]`), empty when absent.
     pub fn table(&self, key: &str) -> std::collections::BTreeMap<String, String> {
-        self.scope.owned_table(key)
+        self.scope.table(key).cloned().unwrap_or_default()
     }
 }
 
@@ -379,12 +269,7 @@ pub trait Lint: Send + Sync {
     }
 
     /// Custom baseline rewrite for [`Policy::Custom`].
-    fn update_baseline(
-        &self,
-        _cx: &Cx,
-        _run: &Run,
-        _mode: crate::baseline::Mode,
-    ) -> std::io::Result<String> {
+    fn update_baseline(&self, _cx: &Cx, _run: &Run, _mode: crate::baseline::Mode) -> std::io::Result<String> {
         Ok(String::new())
     }
 
@@ -398,24 +283,13 @@ pub trait Lint: Send + Sync {
     /// Parity only: rewrites the engine's raw findings into the shape the legacy script's output
     /// can be compared in (a script that prints counts instead of sites, merges duplicate checks,
     /// ...). `root` is the tree that was scanned. Default: unchanged.
-    fn parity_normalize(
-        &self,
-        _root: &std::path::Path,
-        _scope: &LintScope,
-        findings: Vec<crate::parity::Finding>,
-    ) -> Vec<crate::parity::Finding> {
+    fn parity_normalize(&self, _root: &std::path::Path, _scope: &LintScope, findings: Vec<crate::parity::Finding>) -> Vec<crate::parity::Finding> {
         findings
     }
 
     /// Fixture tests (the old `--selftest`). Err carries the failure.
     fn selftest(&self) -> Result<String, String> {
         Ok(String::new())
-    }
-
-    /// The SAME fixture assertions with explicit source/finding storage admission.
-    /// Default/inherited callbacks keep their actual original implementation.
-    fn selftest_with_fixture(&self, _fixture: &crate::raw_fixture_policy::Fixture<'_>) -> Result<String, String> {
-        self.selftest()
     }
 
     /// How `analyze parity` compares this lint with its legacy script (None = not comparable).
@@ -436,36 +310,6 @@ impl Registry {
     }
 
     pub fn find(&self, name: &str) -> Option<&dyn Lint> {
-        self.lints
-            .iter()
-            .find(|l| l.meta().name == name)
-            .map(|b| b.as_ref())
+        self.lints.iter().find(|l| l.meta().name == name).map(|b| b.as_ref())
     }
-}
-
-#[cfg(feature="native-policy")]
-#[derive(Clone,Copy)]
-pub(crate) struct SinkPatternLoan<'a>{pub(crate)provider:&'a dyn crate::native_pattern::Provider,pub(crate)first:&'a std::sync::Mutex<Option<std::io::Error>>,pub(crate)budget:&'a std::sync::Arc<crate::captured_generator_budget::Budget>}
-#[cfg(feature="native-policy")]
-impl std::fmt::Debug for SinkPatternLoan<'_>{fn fmt(&self,out:&mut std::fmt::Formatter<'_>)->std::fmt::Result{out.write_str("borrowed native pattern operation")}}
-#[cfg(feature="native-policy")]
-struct SinkAllowControl<'a>{loan:SinkPatternLoan<'a>}
-#[cfg(feature="native-policy")]
-impl SinkAllowControl<'_>{
- fn failed(&self)->bool{self.loan.first.lock().unwrap_or_else(|error|error.into_inner()).is_some()}
- fn fail(&self,actual:std::io::Error)->String{self.loan.first.lock().unwrap_or_else(|error|error.into_inner()).get_or_insert(actual);"native ALLOW retains its actual first IO".into()}
-}
-#[cfg(feature="native-policy")]
-impl crate::key_policy_control::Control for SinkAllowControl<'_>{
- type Error=String;const CHECKED:bool=true;
- fn native_patterns(&self)->Option<&dyn crate::native_pattern::Provider>{Some(self.loan.provider)}
- fn native_pattern_failed(&mut self,actual:std::io::Error)->String{self.fail(actual)}
- fn checkpoint(&mut self)->Result<(),String>{if self.failed(){return Err("native ALLOW already failed".into())}self.loan.budget.require().map_err(|message|self.fail(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))}
- fn reserve(&mut self,n:usize)->Result<(),String>{self.loan.budget.charge(n).map_err(|message|self.fail(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))}
- fn overflow(&mut self)->String{self.fail(std::io::ErrorKind::OutOfMemory.into())}
- fn allocation_failed(&mut self)->String{self.fail(std::io::ErrorKind::OutOfMemory.into())}
-}
-impl<'patterns> Sink<'patterns>{
- #[cfg(feature="native-policy")]
- pub(crate) fn with_pattern_loan(mut self,loan:Option<SinkPatternLoan<'patterns>>)->Self{self.patterns=loan;self}
 }

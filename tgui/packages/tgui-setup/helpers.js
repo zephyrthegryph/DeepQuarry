@@ -292,20 +292,23 @@
     loadedAssetByUrl[url] = options;
     // Generic retry function
     const retry = function () {
-      if (attempt >= RETRY_ATTEMPTS) {
-        let errorMessage = `Error: Failed to load the asset '${url}' after several attempts.`;
-        if (type === 'css') {
-          errorMessage += `\nStylesheet was either not found, or you're trying to load an empty stylesheet that has no CSS rules in it.`;
-        }
-        throw new Error(errorMessage);
+      // The asset may still be on its way (browse_rsc at join), so loading never gives up;
+      // one log line tells the server when it has not arrived after several attempts
+      // (a webroot helper that is not running looks exactly like this from the page).
+      if (attempt === RETRY_ATTEMPTS) {
+        Byond.sendMessage({
+          type: 'log',
+          message: `tgui_error: asset '${url}' failed to load after ${attempt} attempts; still retrying.`,
+        });
       }
       setTimeout(
         () => {
           loadedAssetByUrl[url] = null;
-          options.attempt += 1;
+          options.attempt = attempt + 1;
           loadAsset(options);
         },
-        RETRY_WAIT_INITIAL + attempt * RETRY_WAIT_INCREMENT
+        RETRY_WAIT_INITIAL +
+          Math.min(attempt, RETRY_ATTEMPTS) * RETRY_WAIT_INCREMENT
       );
     };
     // JS specific code

@@ -111,10 +111,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	without("open")
 	op("bottle_self", in_hand(), then(PROC_REF(bottle_self)))
 	op("bottle_item", item(/obj/item), then(PROC_REF(bottle_item)))
+	op("spin", menu(), label("Spin The Bottle"), then(PROC_REF(spin_bottle_effect)))
 	op("smash", menu(), label("Smash Bottle"), needs(carried()),
 		asks(/datum/prompt/choice, fields = list("question" = "Select what you want to smash the bottle on.", "title" = "SMASH!", "choices" = computed(PROC_REF(smash_choices)), "timeout" = 0), step = "target"),
 		then(PROC_REF(smash_bottle_effect)))
-	op("spin", menu(), label("Spin The Bottle"), then(PROC_REF(spin_bottle_effect)))
 	owns_one(nameof(rag), on_destroy = ON_DESTROY_SPILL)
 
 /// Old attackby. A decline falls to the drinks handling, as the old ..() did.

@@ -1,4 +1,6 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { NtosWindow } from 'tgui/layouts';
 import {
   Box,
@@ -10,43 +12,25 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  NtosNetDownloaderActions,
+  NtosNetDownloaderData,
+} from './generated/NtosNetDownloader';
 
-type Data = {
-  PC_device_theme: string;
-  downloading: BooleanLike;
-  error: string | BooleanLike;
-  downloadname: string | undefined;
-  downloaddesc: string | undefined;
-  downloadsize: number | undefined;
-  downloadspeed: number | undefined;
-  downloadcompletion: number | undefined;
-  disk_size: number;
-  disk_used: number;
-  hackedavailable: BooleanLike;
-  hacked_programs: program[];
-  downloadable_programs: program[];
-  downloads_queue: string[];
-};
-
-type program = {
-  filename: string;
-  filedesc: string;
-  fileinfo: string;
-  compatibility: string;
-  size: number;
-  icon: string;
-};
+type program = NtosNetDownloaderData['downloadable_programs'][number];
 
 export const NtosNetDownloader = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNetDownloaderData,
+    NtosNetDownloaderActions
+  >();
   const {
     PC_device_theme,
     disk_size,
     disk_used,
-    downloadable_programs = [],
+    downloadable_programs,
     error,
-    hacked_programs = [],
+    hacked_programs,
     hackedavailable,
   } = data;
   return (
@@ -60,11 +44,14 @@ export const NtosNetDownloader = (props) => {
         )}
         <Section>
           <LabeledList>
-            <LabeledList.Item label="Disk usage">
-              <ProgressBar value={disk_used} minValue={0} maxValue={disk_size}>
-                {`${disk_used} GQ / ${disk_size} GQ`}
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Disk usage"
+              value={disk_used}
+              minValue={0}
+              maxValue={disk_size}
+            >
+              {`${disk_used} GQ / ${disk_size} GQ`}
+            </StatBar>
           </LabeledList>
         </Section>
         <Section>
@@ -90,7 +77,10 @@ export const NtosNetDownloader = (props) => {
 
 const Program = (props: { program: program }) => {
   const { program } = props;
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNetDownloaderData,
+    NtosNetDownloaderActions
+  >();
   const {
     disk_size,
     disk_used,
@@ -115,10 +105,14 @@ const Program = (props: { program: program }) => {
             <ProgressBar
               color="green"
               minValue={0}
-              maxValue={downloadsize}
-              value={downloadcompletion!}
+              maxValue={downloadsize ?? undefined}
+              value={downloadcompletion ?? 0}
             >
-              {((downloadcompletion! / downloadsize!) * 100).toFixed(1)}%&nbsp;
+              {(
+                ((downloadcompletion ?? 0) / (downloadsize || 1)) *
+                100
+              ).toFixed(1)}
+              %&nbsp;
               {`(${downloadspeed}GQ/s)`}
             </ProgressBar>
           )) ||
@@ -162,9 +156,9 @@ const Program = (props: { program: program }) => {
           Not enough disk space!
         </Box>
       )}
-      <Box mt={1} italic color="label" fontSize="12px">
+      <Label mt={1} italic fontSize="12px">
         {program.fileinfo}
-      </Box>
+      </Label>
     </Box>
   );
 };

@@ -3,11 +3,10 @@
 	display_name = "grass"
 	stack_type = /obj/item/stack/tile/grass
 	ignition_point = T0C+300
-	melting_point = T0C+300
-	protectiveness = 0
-	conductive = 0
-	integrity = 10
+	heat_resistance = 8.1
+	toughness = 5
 	supply_conversion_value = 0.1
+	conductivity = 2
 
 /transformation/stack/grass__bush
 CAPABILITIES(/transformation/stack/grass__bush)

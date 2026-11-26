@@ -1,0 +1,5 @@
+author: "Claude"
+delete-after: true
+changes:
+  - rscdel: "Removed eleven settings that did nothing (debug log chat, VV theme toggles, lore news popup, hotkey default, progress bars, instrument toggle, browser style, equip preview bitfield, visitor-antag volunteer). Old saves load and drop them."
+  - qol: "The verb panel no longer lists chat float/dock/reset, fullscreen and Adminhelp, which the Menu page and F1 already offer; Set Default Language is gone (the language panel sets it)."

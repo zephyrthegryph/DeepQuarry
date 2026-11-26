@@ -16,7 +16,7 @@
 	var/datum/mind/M = test.own(new /datum/mind("dq_mind_test_[name]"))
 	M.set_name(name)
 	M.transfer_to(L)
-	M.identity.ooc_notes = "notes of [name]"
+	M.identity.set_ooc_notes("notes of [name]")
 	M.identity.ooc_notes_likes = "likes of [name]"
 	return M
 

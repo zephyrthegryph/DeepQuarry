@@ -19,9 +19,6 @@
 
 //A flashy ability, good for crowd control and sewing chaos.
 /mob/proc/changeling_resonant_shriek()
-	set category = VERB_CAT_CHANGELING
-	set name = "Resonant Shriek (20)"
-	set desc = "Emits a high-frequency sound that confuses and deafens organics, blows out nearby lights, and overloads synthetics' sensors."
 
 	var/datum/changeling/changeling = changeling_power(20,0,100,CONSCIOUS)
 	if(!changeling)
@@ -91,9 +88,6 @@
 
 //EMP version
 /mob/proc/changeling_dissonant_shriek()
-	set category = VERB_CAT_CHANGELING
-	set name = "Dissonant Shriek (20)"
-	set desc = "We shift our vocal cords to release a high-frequency sound that overloads nearby electronics."
 
 	var/datum/changeling/changeling = changeling_power(20,0,100,CONSCIOUS)
 	if(!changeling)

@@ -621,6 +621,11 @@
 	build_path = /obj/machinery/bomb_tester
 	board_type = /datum/frame/frame_types/machine
 	req_components = list( /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/scanning_module = 5)
+/obj/item/circuitboard/bookbinder
+	name = T_BOARD("book binder")
+	build_path = /obj/machinery/bookbinder
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 2 )
 /obj/item/circuitboard/borgupload
 	name = T_BOARD("cyborg upload console")
 	build_path = /obj/machinery/computer/borgupload
@@ -649,6 +654,11 @@
 	icon = 'icons/obj/doors/door_assembly.dmi'
 	icon_state = "door_electronics_smoked"
 	board_type = "other"
+/obj/item/circuitboard/bunsen_burner
+	name = T_BOARD("bunsen burner")
+	build_path = /obj/machinery/bunsen_burner
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/capacitor = 1, /obj/item/stack/cable_coil = 3 )
 /obj/item/circuitboard/candymachine
 	name = T_BOARD("candy machine")
 	desc = "The circuitboard for a candy machine."
@@ -666,6 +676,21 @@
 	build_path = /obj/machinery/appliance/mixer/cereal
 	board_type = /datum/frame/frame_types/machine
 	req_components = list( /obj/item/stock_parts/capacitor = 3, /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/matter_bin = 2)
+/obj/item/circuitboard/chem_condenser
+	name = T_BOARD("condenser")
+	build_path = /obj/machinery/chem_condenser
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stack/material/glass = 2)
+/obj/item/circuitboard/chem_hot_plate
+	name = T_BOARD("hot plate")
+	build_path = /obj/machinery/chem_hot_plate
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/chem_ice_machine
+	name = T_BOARD("ice machine")
+	build_path = /obj/machinery/chem_ice_machine
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stack/cable_coil = 5)
 /obj/item/circuitboard/chem_master
 	name = T_BOARD("ChemMaster 3000")
 	build_path = /obj/machinery/chem_master
@@ -694,6 +719,11 @@
 /obj/item/circuitboard/cloning
 	name = T_BOARD("cloning control console")
 	build_path = /obj/machinery/computer/cloning
+/obj/item/circuitboard/colormate
+	name = T_BOARD("color mate")
+	build_path = /obj/machinery/gear_painter
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/console_screen = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/capacitor = 1 )
 /obj/item/circuitboard/comm_monitor
 	name = T_BOARD("telecommunications monitor console")
 	build_path = /obj/machinery/computer/telecomms/monitor
@@ -895,15 +925,15 @@
 	build_path = /obj/machinery/power
 	board_type = /datum/frame/frame_types/machine
 	req_components = list( /obj/item/stock_parts/spring = 1, /obj/item/stock_parts/motor = 2, /obj/item/stack/cable_coil = 10)
+/obj/item/circuitboard/icecream_vat
+	name = T_BOARD("icecream vat")
+	build_path = /obj/machinery/icecream_vat
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/gear = 1 )
 /obj/item/circuitboard/id_restorer
 	name = T_BOARD("ID restoration console")
 	build_path = /obj/machinery/computer/id_restorer
 	board_type = /datum/frame/frame_types/id_restorer
-/obj/item/circuitboard/industrial_reagent_filter
-	name = T_BOARD("industrial chemical filter")
-	build_path = /obj/machinery/reagent_refinery/filter
-	board_type = /datum/frame/frame_types/industrial_reagent_filter
-	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 1, /obj/item/stack/material/glass/reinforced = 1)
 /obj/item/circuitboard/industrial_reagent_furnace
 	name = T_BOARD("industrial chemical sintering furnace")
 	build_path = /obj/machinery/reagent_refinery/furnace
@@ -972,6 +1002,11 @@
 	name = T_BOARD("keycard authenticator")
 	build_path = /obj/machinery/keycard_auth
 	board_type = /datum/frame/frame_types/keycard_authenticator
+/obj/item/circuitboard/libraryscanner
+	name = T_BOARD("book scanner")
+	build_path = /obj/machinery/libraryscanner
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/console_screen = 1 )
 /obj/item/circuitboard/mass_driver
 	name = T_BOARD("mass driver")
 	build_path = /obj/machinery/mass_driver
@@ -1006,6 +1041,11 @@
 	name = T_BOARD("message server")
 	build_path = /obj/machinery/message_server
 	board_type = /datum/frame/frame_types/machine
+/obj/item/circuitboard/microscope
+	name = T_BOARD("electron microscope")
+	build_path = /obj/machinery/microscope
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1 )
 /obj/item/circuitboard/mining_equipment_vendor
 	name = T_BOARD("Mining Equipment Vendor")
 	board_type = /datum/frame/frame_types/machine
@@ -1040,6 +1080,11 @@
 /obj/item/circuitboard/operating
 	name = T_BOARD("patient monitoring console")
 	build_path = /obj/machinery/computer/operating
+/obj/item/circuitboard/optable
+	name = T_BOARD("operating table")
+	build_path = /obj/machinery/optable
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/capacitor = 1 )
 /obj/item/circuitboard/oven
 	name = T_BOARD("oven")
 	desc = "The circuitboard for an oven."
@@ -1118,6 +1163,11 @@
 	board_type = /datum/frame/frame_types/machine
 	build_path = /obj/machinery/power/quantumpad
 	req_components = list( /obj/item/bluespace_crystal = 1, /obj/item/stock_parts/capacitor = 1, /obj/item/stock_parts/manipulator = 1, /obj/item/stack/cable_coil = 5)
+/obj/item/circuitboard/radiocarbon_spectrometer
+	name = T_BOARD("radiocarbon spectrometer")
+	build_path = /obj/machinery/radiocarbon_spectrometer
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/micro_laser = 1, /obj/item/stock_parts/console_screen = 1 )
 /obj/item/circuitboard/rcon_console
 	name = T_BOARD("RCON remote control console")
 	build_path = /obj/machinery/computer/rcon
@@ -1169,6 +1219,11 @@
 	name = T_BOARD("asteroid belt scanning computer")
 	build_path = /obj/machinery/computer/roguezones
 	hidden = TRUE
+/obj/item/circuitboard/scale
+	name = T_BOARD("scale")
+	build_path = /obj/machinery/scale
+	board_type = /datum/frame/frame_types/machine
+	req_components = list( /obj/item/stock_parts/spring = 2, /obj/item/stock_parts/console_screen = 1 )
 /obj/item/circuitboard/scan_consolenew
 	name = T_BOARD("DNA machine")
 	build_path = /obj/machinery/computer/scan_consolenew
@@ -1220,11 +1275,6 @@
 	name = T_BOARD("sleeper console")
 	build_path = /obj/machinery/sleep_console
 	board_type = /datum/frame/frame_types/medical_console
-/obj/item/circuitboard/smart_centrifuge
-	name = T_BOARD("smart centrifuge")
-	build_path = /obj/machinery/smart_centrifuge
-	board_type = /datum/frame/frame_types/machine
-	req_components = list( /obj/item/stock_parts/scanning_module = 1, /obj/item/stock_parts/motor = 1, /obj/item/stock_parts/gear = 3, /obj/item/stack/material/glass/reinforced = 1)
 /obj/item/circuitboard/solar_control
 	name = T_BOARD("solar control console")
 	build_path = /obj/machinery/power/solar_control
@@ -1325,6 +1375,62 @@
 	icon_state = "altevian_aquila_phoron"
 /obj/item/clothing/accessory/altevian_badge/aquila/silver
 	icon_state = "altevian_aquila_silver"
+/obj/item/clothing/accessory/armor/tag/abneg
+	name = "\improper AB- blood patch"
+	desc = "An embroidered patch indicating the wearer's blood type as AB NEGATIVE."
+	icon_state = "abnegtag"
+/obj/item/clothing/accessory/armor/tag/abpos
+	name = "\improper AB+ blood patch"
+	desc = "An embroidered patch indicating the wearer's blood type as AB POSITIVE."
+	icon_state = "abpostag"
+/obj/item/clothing/accessory/armor/tag/aneg
+	name = "\improper A- blood patch"
+	desc = "An embroidered patch indicating the wearer's blood type as A NEGATIVE."
+	icon_state = "anegtag"
+/obj/item/clothing/accessory/armor/tag/apos
+	name = "\improper A+ blood patch"
+	desc = "An embroidered patch indicating the wearer's blood type as A POSITIVE."
+	icon_state = "apostag"
+/obj/item/clothing/accessory/armor/tag/bneg
+	name = "\improper B- blood patch"
+	desc = "An embroidered patch indicating the wearer's blood type as B NEGATIVE."
+	icon_state = "bnegtag"
+/obj/item/clothing/accessory/armor/tag/bpos
+	name = "\improper B+ blood patch"
+	desc = "An embroidered patch indicating the wearer's blood type as B POSITIVE."
+	icon_state = "bpostag"
+/obj/item/clothing/accessory/armor/tag/com
+	name = "\improper SCG tag"
+	desc = "An armor tag with the words SOLAR CONFEDERATE GOVERNMENT printed in gold lettering on it."
+	icon_state = "comtag"
+/obj/item/clothing/accessory/armor/tag/hedberg
+	name = "\improper HEDBERG-HAMMARSTROM tag"
+	desc = "An armor tag with the name HEDBERG-HAMMARSTROM printed in olive-green lettering on it."
+	icon_state = "saaretag"
+/obj/item/clothing/accessory/armor/tag/nt
+	name = "\improper NANOTRASEN tag"
+	desc = "An armor tag with the word NANOTRASEN printed in red lettering on it and an accompanying company logo."
+	icon_state = "nanotag"
+/obj/item/clothing/accessory/armor/tag/ntwhite
+	name = "White NANOTRASEN tag"
+	desc = "An armor tag with the word NANOTRASEN printed in red-and-white lettering on it and an accompanying company logo."
+	icon_state = "nanotag_white"
+/obj/item/clothing/accessory/armor/tag/oneg
+	name = "\improper O- blood patch"
+	desc = "An embroidered patch indicating the wearer's blood type as O NEGATIVE."
+	icon_state = "onegtag"
+/obj/item/clothing/accessory/armor/tag/opos
+	name = "\improper O+ blood patch"
+	desc = "An embroidered patch indicating the wearer's blood type as O POSITIVE."
+	icon_state = "opostag"
+/obj/item/clothing/accessory/armor/tag/pcrc
+	name = "\improper PCRC tag"
+	desc = "An armor tag with the words PROXIMA CENTAURI RISK CONTROL printed in cyan lettering on it."
+	icon_state = "pcrctag"
+/obj/item/clothing/accessory/armor/tag/sec
+	name = "\improper POLICE tag"
+	desc = "An armor tag with the word POLICE printed in silver lettering on it."
+	icon_state = "sectag"
 /obj/item/clothing/accessory/gaiter/blue
 	name = "blue neck gaiter"
 	icon_state = "gaiter_blue"
@@ -1352,6 +1458,86 @@
 /obj/item/clothing/accessory/gaiter/tan
 	name = "tan neck gaiter"
 	icon_state = "gaiter_tan"
+/obj/item/clothing/accessory/poncho/roles/cloak/antediluvian
+	name = "antediluvian cloak"
+	desc = "A regal looking cloak of white with specks of gold woven into the fabric."
+	icon_state = "antediluvian_cloak"
+	item_state = "antediluvian_cloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/atmos
+	name = "yellow cloak"
+	desc = "A trimmed yellow and blue cloak."
+	icon_state = "atmoscloak"
+	item_state = "atmoscloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/captain
+	name = "site manager's cloak"
+	desc = "An elaborate cloak meant to be worn by the site manager."
+	icon_state = "capcloak"
+	item_state = "capcloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/cargo
+	name = "brown cloak"
+	desc = "A simple brown and black cloak."
+	icon_state = "cargocloak"
+	item_state = "cargocloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/ce
+	name = "chief engineer's cloak"
+	desc = "An elaborate cloak worn by the chief engineer."
+	icon_state = "cecloak"
+	item_state = "cecloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/cmo
+	name = "chief medical officer's cloak"
+	desc = "An elaborate cloak meant to be worn by the chief medical officer."
+	icon_state = "cmocloak"
+	item_state = "cmocloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/engineer
+	name = "gold cloak"
+	desc = "A simple gold and brown cloak."
+	icon_state = "engicloak"
+	item_state = "engicloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/hos
+	name = "head of security's cloak"
+	desc = "An elaborate cloak meant to be worn by the head of security."
+	icon_state = "hoscloak"
+	item_state = "hoscloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/medical
+	name = "blue cloak"
+	desc = "A simple blue and white cloak."
+	icon_state = "medcloak"
+	item_state = "medcloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/mining
+	name = "trimmed purple cloak"
+	desc = "A trimmed purple and brown cloak."
+	icon_state = "miningcloak"
+	item_state = "miningcloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/neo_pcloak
+	name = "\improper Nanotrasen flowing cloak"
+	desc = "A heavy cloak, decorated with red-and-golden embellishments."
+	icon_state = "neo_pcloak"
+	item_state = "neo_pcloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/qm
+	name = "quartermaster's cloak"
+	desc = "An elaborate cloak meant to be worn by the quartermaster."
+	icon_state = "qmcloak"
+	item_state = "qmcloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/rd
+	name = "research director's cloak"
+	desc = "An elaborate cloak meant to be worn by the research director."
+	icon_state = "rdcloak"
+	item_state = "rdcloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/research
+	name = "purple cloak"
+	desc = "A simple purple and white cloak."
+	icon_state = "scicloak"
+	item_state = "scicloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/security
+	name = "red cloak"
+	desc = "A simple red and black cloak."
+	icon_state = "seccloak"
+	item_state = "seccloak"
+/obj/item/clothing/accessory/poncho/roles/cloak/service
+	name = "green cloak"
+	desc = "A simple green and blue cloak."
+	icon_state = "servicecloak"
+	item_state = "servicecloak"
 /obj/item/clothing/accessory/poncho/roles/cloak/boat/atmos
 	name = "atmospherics boat cloak"
 	icon_state = "atmosboatcloak"
@@ -1555,6 +1741,42 @@
 	name = "security-controller replikant chestplate"
 	icon_state = "stcr"
 	desc = "A sloped titanium-composite chest plate fitted for use by 2nd generation biosynthetics. This version sports multiple red adjustable straps and a lack of shoulder pads."
+/obj/item/clothing/accessory/scarf/black
+	name = "black scarf"
+	icon_state = "blackscarf"
+/obj/item/clothing/accessory/scarf/christmas
+	name = "christmas scarf"
+	icon_state = "christmasscarf"
+/obj/item/clothing/accessory/scarf/darkblue
+	name = "dark blue scarf"
+	icon_state = "darkbluescarf"
+/obj/item/clothing/accessory/scarf/lightblue
+	name = "light blue scarf"
+	icon_state = "lightbluescarf"
+/obj/item/clothing/accessory/scarf/orange
+	name = "orange scarf"
+	icon_state = "orangescarf"
+/obj/item/clothing/accessory/scarf/purple
+	name = "purple scarf"
+	icon_state = "purplescarf"
+/obj/item/clothing/accessory/scarf/red
+	name = "red scarf"
+	icon_state = "redscarf"
+/obj/item/clothing/accessory/scarf/stripedblue
+	name = "striped blue scarf"
+	icon_state = "stripedbluescarf"
+/obj/item/clothing/accessory/scarf/stripedgreen
+	name = "striped green scarf"
+	icon_state = "stripedgreenscarf"
+/obj/item/clothing/accessory/scarf/stripedred
+	name = "striped red scarf"
+	icon_state = "stripedredscarf"
+/obj/item/clothing/accessory/scarf/yellow
+	name = "yellow scarf"
+	icon_state = "yellowscarf"
+/obj/item/clothing/accessory/scarf/zebra
+	name = "zebra scarf"
+	icon_state = "zebrascarf"
 /obj/item/clothing/accessory/solgov/rank/ec/officer/o3
 	name = "ranks (O-3 lieutenant)"
 	icon_state = "ecrank_o3"
@@ -1698,6 +1920,153 @@
 /obj/item/clothing/accessory/solgov/rank/marine/officer/o6
 	name = "ranks (O-6 colonel)"
 	desc = "Insignia denoting the rank of Colonel."
+/obj/item/clothing/accessory/sweater/blackneck
+	name = "black turtleneck"
+	desc = "A tight turtleneck, entirely black in coloration."
+	icon_state = "turtleneck_black"
+/obj/item/clothing/accessory/sweater/blue
+	name = "blue sweater"
+	desc = "A warm knit sweater. This one's colored in a lighter blue."
+	icon_state = "sweater_blue"
+/obj/item/clothing/accessory/sweater/flowersweater
+	name = "flowery sweater"
+	desc = "An oversized and flowery pink sweater."
+	icon_state = "flowersweater"
+/obj/item/clothing/accessory/sweater/heart
+	name = "heart sweater"
+	desc = "A warm knit sweater. This one's colored in a lighter blue, and has a big pink heart right in the center!"
+	icon_state = "sweater_blueheart"
+/obj/item/clothing/accessory/sweater/keyhole
+	name = "keyhole sweater"
+	desc = "A lavender sweater with an open chest."
+	icon_state = "keyholesweater"
+/obj/item/clothing/accessory/sweater/mint
+	name = "mint sweater"
+	desc = "A warm knit sweater. This one has a minty tint to it."
+	icon_state = "sweater_mint"
+/obj/item/clothing/accessory/sweater/nt
+	name = "dark blue sweater"
+	desc = "A warm knit sweater. This one's a darker blue."
+	icon_state = "sweater_nt"
+/obj/item/clothing/accessory/sweater/pink
+	name = "pink sweater"
+	desc = "A warm knit sweater. This one's pink in color."
+	icon_state = "sweater_pink"
+/obj/item/clothing/accessory/sweater/redneck
+	name = "red turtleneck"
+	desc = "A comfortable turtleneck in a dark red."
+	icon_state = "turtleneck_red"
+/obj/item/clothing/accessory/sweater/uglyxmas
+	name = "ugly Christmas sweater"
+	desc = "A gift that probably should've stayed in the back of the closet."
+	icon_state = "uglyxmas"
+/obj/item/clothing/accessory/sweater/winterneck
+	name = "Christmas turtleneck"
+	desc = "A really cheesy holiday sweater, it actually kinda itches."
+	icon_state = "turtleneck_winterred"
+/obj/item/clothing/accessory/tie/black
+	name = "black tie"
+	icon_state = "blacktie"
+/obj/item/clothing/accessory/tie/blue_clip
+	name = "blue tie with a clip"
+	icon_state = "bluecliptie"
+/obj/item/clothing/accessory/tie/blue_long
+	name = "blue long tie"
+	icon_state = "bluelongtie"
+/obj/item/clothing/accessory/tie/darkgreen
+	name = "dark green tie"
+	icon_state = "dgreentie"
+/obj/item/clothing/accessory/tie/horrible
+	name = "horrible tie"
+	desc = "A neosilk clip-on tie. This one is disgusting."
+	icon_state = "horribletie"
+/obj/item/clothing/accessory/tie/navy
+	name = "navy tie"
+	icon_state = "navytie"
+/obj/item/clothing/accessory/tie/red
+	name = "red tie"
+	icon_state = "redtie"
+/obj/item/clothing/accessory/tie/red_clip
+	name = "red tie with a clip"
+	icon_state = "redcliptie"
+/obj/item/clothing/accessory/tie/red_long
+	name = "red long tie"
+	icon_state = "redlongtie"
+/obj/item/clothing/accessory/tie/white
+	name = "white tie"
+	icon_state = "whitetie"
+/obj/item/clothing/accessory/tie/yellow
+	name = "yellow tie"
+	icon_state = "yellowtie"
+/obj/item/clothing/head/buckethat
+	name = "bucket hat"
+	desc = "Turns out these are actually called 'gatsby caps' but telling people you wear a bucket is slightly more interesting, so that's what it's called."
+	icon_state = "buckethat"
+/obj/item/clothing/head/chefhat
+	name = "chef's hat"
+	desc = "It's a hat used by chefs to keep hair out of your food. Judging by the food in the mess, they don't work."
+	icon_state = "chefhat"
+/obj/item/clothing/head/eulrhat
+	name = "sleek side cap"
+	desc = "A simple wedge cap with red accents, popular with biosynthetic personnel."
+	icon_state = "eulrhat"
+/obj/item/clothing/head/fancy_crown
+	name = "fancy crown"
+	desc = "How extraordinarily regal!"
+	icon_state = "fancycrown"
+/obj/item/clothing/head/fez
+	name = "fez"
+	icon_state = "fez"
+	desc = "You should wear a fez. Fezzes are cool."
+/obj/item/clothing/head/hairnet
+	name = "hairnet"
+	desc = "A hairnet used to keep the hair out of the way and out of the food."
+	icon_state = "hairnet"
+	sprite_sheets = list( SPECIES_TAJARAN = 'icons/inventory/head/mob_tajaran.dmi' )
+/obj/item/clothing/head/mailman2
+	name = "mailman hat"
+	desc = "A hat used by the mailman to show who's the delivery person here."
+	icon_state = "mailman2"
+/obj/item/clothing/head/neo_irs
+	name = "IRS cap"
+	desc = "a blue cap with the letters 'IRS' emblazoned on the front."
+	icon = 'icons/inventory/head/item.dmi'
+	icon_state = "neo_irs"
+/obj/item/clothing/head/nonla
+	name = "non la"
+	desc = "A conical hat typically woven from leaves, good for keeping the sun AND rain off your head, in case it happens to be sunny while raining."
+	icon_state = "nonla"
+/obj/item/clothing/head/papakha
+	name = "Papakha"
+	desc = "an old beat-up Papakha."
+	icon = 'icons/inventory/head/item.dmi'
+	icon_state = "neo_papakha"
+/obj/item/clothing/head/papakha_white
+	name = "White Papakha"
+	desc = "an old beat-up white papakha."
+	icon = 'icons/inventory/head/item.dmi'
+	icon_state = "neo_papakha_white"
+/obj/item/clothing/head/pizzaguy
+	name = "pizza delivery visor"
+	desc = "A fancy visor showing alignment to pizza delivery service. Extremely risky career choice."
+	icon_state = "pizzadelivery"
+	item_state = "pizzadelivery"
+/obj/item/clothing/head/powdered_wig
+	name = "powdered wig"
+	desc = "A powdered wig."
+	icon_state = "pwig"
+/obj/item/clothing/head/tinytophat
+	name = "tiny tophat"
+	desc = "A tophat that is far too small to properly sit on someone's head!"
+	icon_state = "tiny_tophat"
+/obj/item/clothing/head/wedding
+	name = "wedding veil"
+	desc = "A lace veil worn over the face, typically by a bride during their wedding."
+	icon_state = "weddingveil"
+/obj/item/clothing/head/wheat
+	name = "straw hat"
+	desc = "It's a hat made from synthetic straw. Brought to you by \"Country Girls LLC.\" the choice brand for the galaxy's working class."
+	icon_state = "wheat"
 /obj/item/clothing/head/beret/solgov/borderguard
 	name = "border security beret"
 	desc = "A green beret with a silver emblem, denoting service in the Bureau of Border Security. For border guards who are more inclined towards style than safety."
@@ -1815,6 +2184,100 @@
 /obj/item/clothing/head/tesh_hood/standard/yellow_grey
 	name = "yellow and grey cloak hood"
 	icon_state = "tesh_hood_yg"
+/obj/item/clothing/shoes/antediluvian
+	name = "antediluvian legwraps"
+	desc = "A pair of wraps with gold inlay that cut off around the ankle."
+	icon_state = "antediluvian"
+	item_state = "antediluvian"
+/obj/item/clothing/shoes/athletic
+	name = "athletic shoes"
+	desc = "A pair of sleek athletic shoes. Made by and for the sporty types."
+	icon_state = "sportshoe"
+	addblends = "sportshoe_a"
+	item_state_slots = list(slot_r_hand_str = "sportheld", slot_l_hand_str = "sportheld")
+/obj/item/clothing/shoes/ballet
+	name = "pointe shoes"
+	desc = "These shoes feature long lace straps and flattened off toes. Great for the most elegant of dances!"
+	icon_state = "ballet"
+	item_state = "ballet"
+/obj/item/clothing/shoes/blue
+	name = "blue shoes"
+	icon_state = "blue"
+/obj/item/clothing/shoes/brown
+	name = "brown shoes"
+	desc = "A pair of brown shoes."
+	icon_state = "brown"
+/obj/item/clothing/shoes/cyborg
+	name = "cyborg boots"
+	desc = "Shoes for a cyborg costume"
+	icon_state = "boots"
+/obj/item/clothing/shoes/flipflop
+	name = "flip flops"
+	desc = "A pair of foam flip flops. For those not afraid to show a little ankle."
+	icon_state = "thongsandal"
+	addblends = "thongsandal_a"
+/obj/item/clothing/shoes/green
+	name = "green shoes"
+	icon_state = "green"
+/obj/item/clothing/shoes/griffin
+	name = "griffon boots"
+	desc = "A pair of costume boots fashioned after bird talons."
+	icon_state = "griffinboots"
+	item_state = "griffinboots"
+/obj/item/clothing/shoes/heels
+	name = "high heels"
+	desc = "A pair of high-heeled shoes. Fancy!"
+	icon_state = "heels"
+	addblends = "heels_a"
+/obj/item/clothing/shoes/mime
+	name = "mime shoes"
+	icon_state = "white"
+	step_volume_mod = 0
+/obj/item/clothing/shoes/purple
+	name = "purple shoes"
+	icon_state = "purple"
+/obj/item/clothing/shoes/rainbow
+	name = "rainbow shoes"
+	desc = "Very colourful shoes."
+	icon_state = "rain_bow"
+/obj/item/clothing/shoes/red
+	name = "red shoes"
+	desc = "Stylish red shoes."
+	icon_state = "red"
+/obj/item/clothing/shoes/sandals
+	desc = "A pair of simple sandals."
+	name = "sandals"
+	icon_state = "sandals_recolor"
+/obj/item/clothing/shoes/sandals_elegant
+	name = "elegant sandals"
+	desc = "A pair of sandals with thin straps. It emphasizes the ankles!"
+	icon_state = "sandals_elegant"
+	item_state = "sandals_elegant"
+	addblends = "sandals_elegant_a"
+/obj/item/clothing/shoes/skater
+	name = "skater shoes"
+	desc = "A pair of wide shoes with thick soles.  Designed for skating."
+	icon_state = "skatershoe"
+	addblends = "skatershoe_a"
+	item_state_slots = list(slot_r_hand_str = "skaterheld", slot_l_hand_str = "skaterheld")
+/obj/item/clothing/shoes/sneakersblue
+	name = "blue sneakers"
+	desc = "A stylish, expensive pair of blue sneakers."
+	icon_state = "sneakersblue"
+	item_state = "sneakersblue"
+/obj/item/clothing/shoes/sneakerspurple
+	name = "purple sneakers"
+	desc = "A stylish, expensive pair of purple sneakers."
+	icon_state = "sneakerspurple"
+	item_state = "sneakerspurple"
+/obj/item/clothing/shoes/sneakersred
+	name = "red sneakers"
+	desc = "A stylish, expensive pair of red sneakers."
+	icon_state = "sneakersred"
+	item_state = "sneakersred"
+/obj/item/clothing/shoes/yellow
+	name = "yellow shoes"
+	icon_state = "yellow"
 /obj/item/clothing/suit/captunic/capjacket/altevian_admiral/dark
 	name = "dark altevian officer's suit"
 	icon_state = "altevian-admiral-dark"
@@ -1943,6 +2406,572 @@
 /obj/item/clothing/suit/storage/teshari/beltcloak/standard/yellow_grey
 	name = "yellow belted cloak"
 	icon_state = "tesh_beltcloak_yg"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_blue
+	name = "black and blue cloak"
+	icon_state = "tesh_cloak_bbl"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_brown
+	name = "black and brown cloak"
+	icon_state = "tesh_cloak_bbr"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_glow
+	name = "black and glowing cloak"
+	icon_state = "tesh_cloak_bglowing"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_green
+	name = "black and green cloak"
+	icon_state = "tesh_cloak_bgr"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_grey
+	name = "black and grey cloak"
+	icon_state = "tesh_cloak_bg"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_orange
+	name = "black and orange cloak"
+	icon_state = "tesh_cloak_bo"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_pink
+	name = "black and pink cloak"
+	icon_state = "tesh_cloak_bpi"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_purple
+	name = "black and purple cloak"
+	icon_state = "tesh_cloak_bp"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_red
+	name = "black and red cloak"
+	icon_state = "tesh_cloak_br"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_white
+	name = "black and white cloak"
+	icon_state = "tesh_cloak_bw"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/black_yellow
+	name = "black and yellow cloak"
+	icon_state = "tesh_cloak_by"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/blue_grey
+	name = "blue and grey cloak"
+	icon_state = "tesh_cloak_blug"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/brown_grey
+	name = "brown and grey cloak"
+	icon_state = "tesh_cloak_brg"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/dark_retrowave
+	name = "dark aesthetic cloak"
+	icon_state = "tesh_cloak_dretrowave"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/green_grey
+	name = "green and grey cloak"
+	icon_state = "tesh_cloak_gg"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/orange
+	name = "orange cloak"
+	icon_state = "tesh_cloak_on"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/orange_grey
+	name = "orange and grey cloak"
+	icon_state = "tesh_cloak_og"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/pink_grey
+	name = "pink and grey cloak"
+	icon_state = "tesh_cloak_pig"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/purple_grey
+	name = "purple and grey cloak"
+	icon_state = "tesh_cloak_pg"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/rainbow
+	name = "rainbow cloak"
+	icon_state = "tesh_cloak_rainbow"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/red_grey
+	name = "red and grey cloak"
+	icon_state = "tesh_cloak_rg"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/white_grey
+	name = "white and grey cloak"
+	icon_state = "tesh_cloak_wg"
+/obj/item/clothing/suit/storage/teshari/cloak/standard/yellow_grey
+	name = "yellow and grey cloak"
+	icon_state = "tesh_cloak_yg"
+/obj/item/clothing/suit/storage/toggle/hoodie/black
+	name = "black hoodie"
+	desc = "A warm, black sweatshirt."
+	icon_state = "black_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
+/obj/item/clothing/suit/storage/toggle/hoodie/blue
+	name = "blue hoodie"
+	desc = "A warm, blue sweatshirt."
+	icon_state = "blue_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_blue", slot_l_hand_str = "suit_blue")
+/obj/item/clothing/suit/storage/toggle/hoodie/cti
+	name = "CTI hoodie"
+	desc = "A warm, black sweatshirt.  It bears the letters CTI on the back, a lettering to the prestigious university in Tau Ceti, Ceti Technical Institute.  There is a blue supernova embroidered on the front, the emblem of CTI."
+	icon_state = "cti_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
+/obj/item/clothing/suit/storage/toggle/hoodie/green
+	name = "green hoodie"
+	desc = "A warm, green sweatshirt."
+	icon_state = "green_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_olive", slot_l_hand_str = "suit_olive")
+/obj/item/clothing/suit/storage/toggle/hoodie/mu
+	name = "mojave university hoodie"
+	desc = "A warm, gray sweatshirt.  It bears the letters MU on the front, a lettering to the well-known public college, Mojave University."
+	icon_state = "mu_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_grey", slot_l_hand_str = "suit_grey")
+/obj/item/clothing/suit/storage/toggle/hoodie/nrti
+	name = "New Reykjavik Technical Institute hoodie"
+	desc = "A warm, gray sweatshirt. It bears the letters NRT on the back, in reference to Sif's premiere technical institute."
+	icon_state = "nrti_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_grey", slot_l_hand_str = "suit_grey")
+/obj/item/clothing/suit/storage/toggle/hoodie/nt
+	name = "NT hoodie"
+	desc = "A warm, blue sweatshirt.  It proudly bears the silver NanoTrasen insignia lettering on the back.  The edges are trimmed with silver."
+	icon_state = "nt_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_blue", slot_l_hand_str = "suit_blue")
+/obj/item/clothing/suit/storage/toggle/hoodie/orange
+	name = "orange hoodie"
+	desc = "A warm, orange sweatshirt."
+	icon_state = "orange_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_orange", slot_l_hand_str = "suit_orange")
+/obj/item/clothing/suit/storage/toggle/hoodie/red
+	name = "red hoodie"
+	desc = "A warm, red sweatshirt."
+	icon_state = "red_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_red", slot_l_hand_str = "suit_red")
+/obj/item/clothing/suit/storage/toggle/hoodie/smw
+	name = "Space Mountain Wind hoodie"
+	desc = "A warm, black sweatshirt.  It has the logo for the popular softdrink Space Mountain Wind on both the front and the back."
+	icon_state = "smw_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
+/obj/item/clothing/suit/storage/toggle/hoodie/talon
+	name = "Talon hoodie"
+	desc = "A warm, blue sweatshirt bearing ITV Talon markings."
+	icon_state = "talonhoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_blue", slot_l_hand_str = "suit_blue")
+/obj/item/clothing/suit/storage/toggle/hoodie/yellow
+	name = "yellow hoodie"
+	desc = "A warm, yellow sweatshirt."
+	icon_state = "yellow_hoodie"
+	item_state_slots = list(slot_r_hand_str = "suit_yellow", slot_l_hand_str = "suit_yellow")
+/obj/item/clothing/suit/storage/toggle/labcoat/blue
+	name = "blue labcoat"
+	desc = "A suit that protects against minor chemical spills. This one is blue."
+	icon_state = "blue_labcoat"
+	item_state_slots = list(slot_r_hand_str = "blue_labcoat", slot_l_hand_str = "blue_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/blue_edge
+	name = "blue-edged labcoat"
+	desc = "A suit that protects against minor chemical spills. This one has blue trim."
+	icon_state = "blue_edge_labcoat"
+/obj/item/clothing/suit/storage/toggle/labcoat/chemist
+	name = JOB_CHEMIST + " labcoat"
+	desc = "A suit that protects against minor chemical spills. Has an orange stripe on the shoulder."
+	icon_state = "labcoat_chem"
+	item_state_slots = list(slot_r_hand_str = "chemist_labcoat", slot_l_hand_str = "chemist_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/cmo
+	name = "chief medical officer's labcoat"
+	desc = "Bluer than the standard model."
+	icon_state = "labcoat_cmo"
+	item_state_slots = list(slot_r_hand_str = "cmo_labcoat", slot_l_hand_str = "cmo_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt
+	name = "chief medical officer's labcoat"
+	desc = "A labcoat with command blue highlights."
+	icon_state = "labcoat_cmoalt"
+	item_state_slots = list(slot_r_hand_str = "cmo_labcoat", slot_l_hand_str = "cmo_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/emt
+	name = "EMT's labcoat"
+	desc = "A dark blue labcoat with reflective strips for emergency medical technicians."
+	icon_state = "labcoat_emt"
+	item_state_slots = list(slot_r_hand_str = "emt_labcoat", slot_l_hand_str = "emt_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/genetics
+	name = JOB_GENETICIST + " labcoat"
+	desc = "A suit that protects against minor chemical spills. Has a blue stripe on the shoulder."
+	icon_state = "labcoat_gen"
+	item_state_slots = list(slot_r_hand_str = "genetics_labcoat", slot_l_hand_str = "genetics_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/green
+	name = "green labcoat"
+	desc = "A suit that protects against minor chemical spills. This one is green."
+	icon_state = "green_labcoat"
+	item_state_slots = list(slot_r_hand_str = "green_labcoat", slot_l_hand_str = "green_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/mad
+	name = "The Mad's labcoat"
+	desc = "It makes you look capable of konking someone on the noggin and shooting them into space."
+	icon_state = "green_labcoat"
+	item_state_slots = list(slot_r_hand_str = "green_labcoat", slot_l_hand_str = "green_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_blueemt
+	name = "dark blue EMT jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_blueemt"
+	item_state_slots = list(slot_r_hand_str = "emt_labcoat", slot_l_hand_str = "emt_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_bluemed
+	name = "paramedic's jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_bluemed"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_bodyguard_dep
+	name = "bodyguard's jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_bodyguard_dep"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_cargo_dep
+	name = "cargo department jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_cargo_dep"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_civ_dep
+	name = "off-duty department jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_civ_dep"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_emt
+	name = "EMT jacket"
+	desc = "A dark blue labcoat with reflective strips for emergency medical technicians."
+	icon_state = "neo_emt"
+	item_state_slots = list(slot_r_hand_str = "emt_labcoat", slot_l_hand_str = "emt_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_engi_dep
+	name = "engineer's department jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_engi_dep"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_highvis
+	name = "high visibility jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_coat_highvis"
+	item_state_slots = list(slot_r_hand_str = "emt_labcoat", slot_l_hand_str = "emt_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_hopformal
+	name = "hop's formal jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_hopformal"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_hos_parade
+	name = "head of security's parade jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_hos_parade"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_hosformal_blue
+	name = "head of security's blue formal jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_hosformal_blue"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_labcoat
+	name = "long labcoat"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_labcoat"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_leather
+	name = "leather hoodie"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_leather"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_med_dep
+	name = "medical department jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_med_dep"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_police
+	name = "traffic officer's jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_police"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_ranger
+	name = "ranger's cloak"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_leather"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_redemt
+	name = "red EMT jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_redemt"
+	item_state_slots = list(slot_r_hand_str = "emt_labcoat", slot_l_hand_str = "emt_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_robo_coat
+	name = "robotics labcoat"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_robo_coat"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_sci_dep
+	name = "science department jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_sci_dep"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_sec_blue_dep
+	name = "blue security department jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_sec_blue_dep"
+/obj/item/clothing/suit/storage/toggle/labcoat/neo_sec_red_dep
+	name = "red security department jacket"
+	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
+	icon_state = "neo_sec_red_dep"
+/obj/item/clothing/suit/storage/toggle/labcoat/orange
+	name = "orange labcoat"
+	desc = "A suit that protects against minor chemical spills. This one is orange."
+	icon_state = "orange_labcoat"
+	item_state_slots = list(slot_r_hand_str = "orange_labcoat", slot_l_hand_str = "orange_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/pink
+	name = "pink labcoat"
+	desc = "A suit that protects against minor chemical spills. This one is pink."
+	icon_state = "pink_labcoat"
+	item_state_slots = list(slot_r_hand_str = "pink_labcoat", slot_l_hand_str = "pink_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/plaguedoctor
+	name = "golden plague doctor suit"
+	desc = "If it worked then, it works now. This classic design comes in gold."
+	icon_state = "plaguedoctor2"
+/obj/item/clothing/suit/storage/toggle/labcoat/purple
+	name = "purple labcoat"
+	desc = "A suit that protects against minor chemical spills. This one is purple."
+	icon_state = "purple_labcoat"
+	item_state_slots = list(slot_r_hand_str = "purple_labcoat", slot_l_hand_str = "purple_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/rd
+	name = "research director's labcoat"
+	desc = "A flashy labcoat with purple markings. It belongs to the " + JOB_RESEARCH_DIRECTOR + "."
+	icon_state = "labcoat_rd"
+	item_state_slots = list(slot_r_hand_str = "science_labcoat", slot_l_hand_str = "science_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/red
+	name = "red labcoat"
+	desc = "A suit that protects against minor chemical spills. This one is red."
+	icon_state = "red_labcoat"
+	item_state_slots = list(slot_r_hand_str = "red_labcoat", slot_l_hand_str = "red_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/roboticist
+	name = JOB_ROBOTICIST + " labcoat"
+	desc = "More like an eccentric coat than a labcoat. Helps pass off bloodstains as part of the aesthetic. Comes with red shoulder pads."
+	icon_state = "labcoat_robo"
+	item_state_slots = list(slot_r_hand_str = "labcoat", slot_l_hand_str = "labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/science
+	name = JOB_SCIENTIST + " labcoat"
+	desc = "A suit that protects against minor chemical spills. Has a purple stripe on the shoulder."
+	icon_state = "labcoat_tox"
+	item_state_slots = list(slot_r_hand_str = "science_labcoat", slot_l_hand_str = "science_labcoat")
+/obj/item/clothing/suit/storage/toggle/labcoat/yellow
+	name = "yellow labcoat"
+	desc = "A suit that protects against minor chemical spills. This one is yellow."
+	icon_state = "yellow_labcoat"
+	item_state_slots = list(slot_r_hand_str = "yellow_labcoat", slot_l_hand_str = "yellow_labcoat")
+/obj/item/clothing/under/ascetic
+	name = "plain ascetic garb"
+	desc = "Popular with freshly grown vatborn and new age cultists alike."
+	icon_state = "ascetic"
+	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
+/obj/item/clothing/under/assistantformal
+	name = "assistant's formal uniform"
+	desc = "An assistant's formal-wear. Why an assistant needs formal-wear is still unknown."
+	icon_state = "assistant_formal"
+	item_state_slots = list(slot_r_hand_str = "lawyer_black", slot_l_hand_str = "lawyer_black")
+/obj/item/clothing/under/bathrobe
+	name = "bathrobe"
+	desc = "A fluffy robe to keep you from showing off to the world."
+	icon_state = "bathrobe"
+	worn_state = "bathrobe"
+/obj/item/clothing/under/blackngold
+	name = "black and gold gown"
+	desc = "A black and gold gown. You get the impression this is typically worn for religious purposes."
+	icon_state = "blackngold"
+/obj/item/clothing/under/boater
+	name = "boater outfit"
+	desc = "A classic outfit for those with a nautical inclination."
+	icon_state = "boater"
+	worn_state = "boater"
+/obj/item/clothing/under/bunnysuit
+	name = "bunny suit"
+	desc = "A bunny suit, extremely skimpy. Tails and ears sold seperately."
+	icon_state = "bunnysuit_colour"
+/obj/item/clothing/under/bunnysuit_maid
+	name = "bunny suit"
+	desc = "A black and white bunny suit, extremely skimpy. Tails and ears sold seperately."
+	icon_state = "bunnysuit_maid"
+/obj/item/clothing/under/captain_fly
+	name = "rogue's uniform"
+	desc = "For the man who doesn't care because he's still free."
+	icon_state = "captain_fly"
+	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
+/obj/item/clothing/under/captainformal
+	name = "site manager's formal uniform"
+	desc = "A " + JOB_SITE_MANAGER + "'s formal-wear, for special occasions."
+	icon_state = "captain_formal"
+	item_state_slots = list(slot_r_hand_str = "lawyer_blue", slot_l_hand_str = "lawyer_blue")
+/obj/item/clothing/under/curator
+	name = "curator uniform"
+	desc = "A rugged uniform suitable for treasure hunting."
+	icon_state = "curator"
+	worn_state = "curator"
+/obj/item/clothing/under/disheveled
+	name = "disheveled suit"
+	desc = "What might pass as well maintained formal attire. If you're blind."
+	icon_state = "disheveled"
+/obj/item/clothing/under/fienddress
+	name = "fiendish dress"
+	desc = "A red and black dress befitting someone from the dark pits themselves… Or someone way too edgy."
+	icon_state = "fienddress"
+/obj/item/clothing/under/fiendsuit
+	name = "fiendish suit"
+	desc = "A red and black suit befitting someone from the dark pits themselves… Or someone way too edgy."
+	icon_state = "fiendsuit"
+/obj/item/clothing/under/frontier
+	name = "frontier clothes"
+	desc = "A rugged flannel shirt and denim overalls. A popular style among frontier colonists."
+	icon_state = "frontier"
+	worn_state = "frontier"
+/obj/item/clothing/under/gimmick
+	name = "gimmick jumpsuit"
+	desc = "Something about this jumpsuit feels... off..."
+	icon_state = "grey"
+	item_state_slots = list(slot_r_hand_str = "grey", slot_l_hand_str = "grey")
+/obj/item/clothing/under/gsa
+	name = "\improper Galactic Survey utility uniform"
+	desc = "A jumpsuit belonging to the Galactic Survey Administration, SolGov's scientific exploration division."
+	icon_state = "gsa"
+	worn_state = "gsa"
+	rolled_sleeves = 0
+/obj/item/clothing/under/half_moon
+	name = "half moon outfit"
+	desc = "This eminently fashionable outfit consists of a tailored latex leotard and daringly cut white shorts. Paired with plunging off-color stockings, it's to die for."
+	icon_state = "half_moon"
+/obj/item/clothing/under/haltertop
+	name = "halter top"
+	desc = "Jean shorts and a black halter top. Perfect for casual Fridays!"
+	icon_state = "haltertop"
+/obj/item/clothing/under/hosformalfem
+	name = "head of security's formal uniform"
+	desc = "A female head of security's formal-wear, for special occasions."
+	icon_state = "hos_formal_fem"
+	item_state_slots = list(slot_r_hand_str = "lawyer_red", slot_l_hand_str = "lawyer_red")
+/obj/item/clothing/under/hosformalmale
+	name = "head of security's formal uniform"
+	desc = "A male head of security's formal-wear, for special occasions."
+	icon_state = "hos_formal_male"
+	item_state_slots = list(slot_r_hand_str = "lawyer_red", slot_l_hand_str = "lawyer_red")
+/obj/item/clothing/under/imperial
+	desc = "imperial military jumpsuit"
+	icon_state = "crimson"
+	item_state = "crimson"
+/obj/item/clothing/under/johnny
+	name = "johnny~~ jumpsuit"
+	desc = "Johnny~~"
+	icon_state = "johnny"
+/obj/item/clothing/under/leotard
+	name = "black leotard"
+	desc = "A black leotard with a piece of semi-transparent cloth near the bust. Perfect for showing off cleavage. Bunny ears not included."
+	icon_state = "leotard"
+/obj/item/clothing/under/leotardcolor
+	name = "colored leotard"
+	desc = "A colorable leotard with a piece of semi-transparent cloth near the bust. Perfect for showing off cleavage. Bunny ears not included."
+	icon_state = "leotard_color"
+/obj/item/clothing/under/librarian
+	name = "sensible suit"
+	desc = "It's very... sensible."
+	icon_state = "red_suit"
+	item_state_slots = list(slot_r_hand_str = "lawyer_red", slot_l_hand_str = "lawyer_red")
+/obj/item/clothing/under/mime
+	name = "mime's outfit"
+	desc = "It's not very colourful."
+	icon_state = "mime"
+/obj/item/clothing/under/modjump
+	name = "modern jumpsuit"
+	desc = "A stylish jumpsuit of modern culture."
+	icon_state = "mod_jump"
+	worn_state = "mod_jump"
+	item_state_slots = list(slot_r_hand_str = "orange", slot_l_hand_str = "orange")
+/obj/item/clothing/under/modjump2
+	name = "modern outfit"
+	desc = "A stylish outfit of modern culture."
+	icon_state = "mod_jump2"
+	worn_state = "mod_jump2"
+	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
+/obj/item/clothing/under/modjump3
+	name = "cyber jumpsuit"
+	desc = "A cool cyberpunk styled jumpsuit. The lights on the back glitched out and don't work."
+	icon_state = "cyber"
+	worn_state = "cyber"
+	item_state_slots = list(slot_r_hand_str = "grey", slot_l_hand_str = "grey")
+/obj/item/clothing/under/oldwoman
+	name = "Old Woman's Attire"
+	desc = "A typical outfit for the older woman, a lovely cardigan and comfortable skirt."
+	icon_state = "oldwoman"
+	item_state_slots = list(slot_r_hand_str = "johnny", slot_l_hand_str = "johnny")
+/obj/item/clothing/under/owl
+	name = "owl uniform"
+	desc = "A jumpsuit with owl wings. Photorealistic owl feathers! Twooooo!"
+	icon_state = "owl"
+/obj/item/clothing/under/pizzaguy
+	name = "pizza delivery uniform"
+	desc = "A dedicated outfit for pizza delivery people, one of most dangerous occupations around these parts. Can be rolled up for extra show of skin."
+	rolled_down_icon_override = FALSE
+	icon_state = "pizzadelivery"
+	item_state = "pizzadelivery"
+	rolled_down = 0
+/obj/item/clothing/under/psyche
+	name = "psychedelic jumpsuit"
+	desc = "Groovy!"
+	icon_state = "psyche"
+/obj/item/clothing/under/redcoat
+	name = "redcoat uniform"
+	desc = "Looks old."
+	icon_state = "redcoat"
+	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
+/obj/item/clothing/under/relaxwear_1
+	name = "casual outfit"
+	desc = "Something casual to wear out on the town. Pairs well with the holiday season."
+	icon_state = "relaxwear_1"
+	worn_state = "relaxwear_1"
+	starting_accessories = list(/obj/item/clothing/accessory/wcoat/swvest/red)
+/obj/item/clothing/under/relaxwear_2
+	name = "relaxing outfit"
+	desc = "A comfy looking set of clothes to relax in, even if the style is a bit dated."
+	icon_state = "relaxwear_2"
+	worn_state = "relaxwear_2"
+	starting_accessories = list(/obj/item/clothing/accessory/wcoat/swvest/green)
+/obj/item/clothing/under/retrosweater
+	name = "retro sweater"
+	desc = "A rugged cableknit sweater and leather pants, fit for a dashing space adventurer."
+	icon_state = "retro_sweater"
+/obj/item/clothing/under/reverse_bunnysuit
+	name = "reverse bunny suit"
+	desc = "A reverse bunny suit, literally just covers everything except the bits you're supposed to. Tails and ears sold seperately."
+	icon_state = "reverse_bunnysuit_colour"
+/obj/item/clothing/under/reverse_bunnysuit_maid
+	name = "reverse bunny suit"
+	desc = "A maid themed reverse bunny suit, literally just covers everything except the bits you're supposed to. Tails and ears sold seperately."
+	icon_state = "reverse_bunnysuit_maid"
+/obj/item/clothing/under/reverse_bunnytop
+	name = "reverse bunny suit"
+	desc = "A reverse bunny suit, literally just covers everything except the bits you're supposed to. Tails and ears sold seperately."
+	icon_state = "reverse_bunnytop_colour"
+/obj/item/clothing/under/reverse_bunnytop_maid
+	name = "reverse bunny suit"
+	desc = "A maid themed reverse bunny suit, literally just covers everything except the bits you're supposed to. Tails and ears sold seperately."
+	icon_state = "reverse_bunnytop_maid"
+/obj/item/clothing/under/rippedpunk
+	name = "ripped punk jeans"
+	desc = "Black ripped jeans and a fishnet top. How punk."
+	icon_state = "rippedpunk"
+/obj/item/clothing/under/rustler
+	name = "rustler outfit"
+	desc = "A rugged outfit for rustling cattle out on the frontier."
+	icon_state = "rustler"
+	worn_state = "rustler"
+/obj/item/clothing/under/serviceoveralls
+	name = "workman outfit"
+	desc = "The very image of a working man. Not that you're probably doing work."
+	icon_state = "mechanic"
+	item_state_slots = list(slot_r_hand_str = "cargo", slot_l_hand_str = "cargo")
+	rolled_sleeves = 0
+/obj/item/clothing/under/sheerblue
+	name = "sheer blue dress"
+	desc = "An entirely sheer blue dress. Best worn with something underneath!"
+	icon_state = "sheerblue"
+/obj/item/clothing/under/sl_suit
+	desc = "It's a very amish looking suit."
+	name = "amish suit"
+	icon_state = "sl_suit"
+	rolled_sleeves = 0
+/obj/item/clothing/under/soviet
+	name = "soviet uniform"
+	desc = "For the Motherland!"
+	icon_state = "soviet"
+	item_state_slots = list(slot_r_hand_str = "grey", slot_l_hand_str = "grey")
+	has_sensor = 0
+/obj/item/clothing/under/stripeddungarees
+	name = "striped dungarees"
+	desc = "A colourful set of striped dungarees, pretty funny lookin'."
+	icon_state = "striped_clown_uniform"
+/obj/item/clothing/under/tanktop
+	name = "tank top"
+	desc = "The most versatile top ever created."
+	icon_state = "tanktop"
+/obj/item/clothing/under/tourist_1
+	name = "summer outfit"
+	desc = "The perfect outfit to wear out of town."
+	icon_state = "tourist_1"
+	worn_state = "tourist_1"
+/obj/item/clothing/under/tourist_2
+	name = "summer outfit"
+	desc = "The perfect outfit to wear out of town."
+	icon_state = "tourist_2"
+	worn_state = "tourist_2"
+/obj/item/clothing/under/vampirehunter
+	name = "18th century outfit"
+	desc = "A flashy, if rather stiff set of ancient-styled slacks and tabard. The unyielding nature of the clothes often make one walk stiffly, but with divine purpose."
+	icon_state = "belmont"
+/obj/item/clothing/under/vrsuit
+	name = "VR Suit"
+	desc = "An ancient suit used by studio companies long ago to make their virtual reality bones work better."
+	sensor_mode = 3
+	icon = 'icons/inventory/uniform/item_ch.dmi'
+	icon_override = 'icons/inventory/uniform/mob_ch.dmi'
+	icon_state = "vrsuit"
+/obj/item/clothing/under/waiter
+	name = "waiter's outfit"
+	desc = "It's a very smart uniform with a special pocket for tip."
+	icon_state = "waiter"
+	rolled_sleeves = 0
+/obj/item/clothing/under/wednesday
+	name = "cropped sweater skirt"
+	desc = "A cropped green sweater and matching miniskirt."
+	icon_state = "wednesday"
 /obj/item/clothing/under/cohesion/decal
 	name = "purple decaled cohesion suit"
 	icon_state = "cohesionsuit_decal"
@@ -1959,6 +2988,281 @@
 	name = "red striped cohesion suit"
 	icon_state = "cohesionsuit_striped"
 	desc = "A black cohesion suit with red stripes intended to assist Prometheans in maintaining their form and prevent direct skin exposure."
+/obj/item/clothing/under/color/fjumpsuit/aquaf
+	name = "aqua feminine jumpsuit"
+	icon_state = "aqua"
+	worn_state = "aquaf"
+/obj/item/clothing/under/color/fjumpsuit/bluef
+	name = "blue feminine jumpsuit"
+	icon_state = "blue"
+	worn_state = "bluef"
+/obj/item/clothing/under/color/fjumpsuit/brownf
+	name = "brown feminine jumpsuit"
+	icon_state = "brown"
+	worn_state = "brownf"
+/obj/item/clothing/under/color/fjumpsuit/darkbluef
+	name = "dark blue feminine jumpsuit"
+	icon_state = "darkblue"
+	worn_state = "darkbluef"
+/obj/item/clothing/under/color/fjumpsuit/darkredf
+	name = "dark red feminine jumpsuit"
+	icon_state = "darkred"
+	worn_state = "darkredf"
+/obj/item/clothing/under/color/fjumpsuit/greenf
+	name = "green feminine jumpsuit"
+	icon_state = "green"
+	worn_state = "greenf"
+/obj/item/clothing/under/color/fjumpsuit/lightbluef
+	name = "light blue feminine jumpsuit"
+	icon_state = "lightblue"
+	worn_state = "lightbluef"
+/obj/item/clothing/under/color/fjumpsuit/lightbrownf
+	name = "light brown feminine jumpsuit"
+	icon_state = "lightbrown"
+	worn_state = "lightbrownf"
+/obj/item/clothing/under/color/fjumpsuit/lightgreenf
+	name = "light green feminine jumpsuit"
+	icon_state = "lightgreen"
+	worn_state = "lightgreenf"
+/obj/item/clothing/under/color/fjumpsuit/lightpurplef
+	name = "light purple feminine jumpsuit"
+	icon_state = "lightpurple"
+	worn_state = "lightpurplef"
+/obj/item/clothing/under/color/fjumpsuit/lightredf
+	name = "light red feminine jumpsuit"
+	icon_state = "lightred"
+	worn_state = "lightredf"
+/obj/item/clothing/under/color/fjumpsuit/maroonf
+	name = "maroon feminine jumpsuit"
+	icon_state = "maroon"
+	worn_state = "maroonf"
+/obj/item/clothing/under/color/fjumpsuit/pinkf
+	name = "pink feminine jumpsuit"
+	icon_state = "pink"
+	worn_state = "pinkf"
+/obj/item/clothing/under/color/fjumpsuit/purplef
+	name = "purple feminine jumpsuit"
+	icon_state = "purple"
+	worn_state = "purplef"
+/obj/item/clothing/under/color/fjumpsuit/redf
+	name = "red feminine jumpsuit"
+	icon_state = "red"
+	worn_state = "redf"
+/obj/item/clothing/under/color/fjumpsuit/yellowf
+	name = "yellow feminine jumpsuit"
+	icon_state = "yellow"
+	worn_state = "yellowf"
+/obj/item/clothing/under/color/fjumpsuit/yellowgreenf
+	name = "yellow-green feminine jumpsuit"
+	icon_state = "yellowgreen"
+	worn_state = "yellowgreenf"
+/obj/item/clothing/under/corp/aether
+	name = "\improper Aether jumpsuit"
+	desc = "A jumpsuit belonging to Aether Atmospherics and Recycling, a Trans-Stellar that supplies recycling and atmospheric systems to colonies."
+	icon_state = "aether"
+	worn_state = "aether"
+/obj/item/clothing/under/corp/centauri
+	name = "\improper Centauri Provisions jumpsuit"
+	desc = "A jumpsuit belonging to Centauri Provisions, a Trans-Stellar best known for its food and drink products."
+	icon_state = "centauri"
+	worn_state = "centauri"
+/obj/item/clothing/under/corp/confederacy
+	name = "\improper Confederacy uniform"
+	desc = "A military uniform belonging to the Confederacy of Man, an independent human government."
+	icon_state = "confed"
+	worn_state = "confed"
+/obj/item/clothing/under/corp/focal
+	name = "\improper Focal Point jumpsuit"
+	desc = "A jumpsuit belonging to Focal Point Energistics, an engineering megacorporation."
+	icon_state = "focal"
+	worn_state = "focal"
+/obj/item/clothing/under/corp/grayson
+	name = "\improper Grayson overalls"
+	desc = "A set of overalls belonging to Grayson Manufactories, a mining Trans-Stellar."
+	icon_state = "grayson_mech"
+	worn_state = "grayson_mech"
+/obj/item/clothing/under/corp/grayson_jump
+	name = "\improper Grayson jumpsuit"
+	desc = "A jumpsuit belonging to Grayson Manufactories, a mining Trans-Stellar."
+	icon_state = "grayson"
+	worn_state = "grayson"
+	rolled_sleeves = 0
+/obj/item/clothing/under/corp/hephaestus
+	name = "\improper Hephaestus jumpsuit"
+	desc = "A jumpsuit belonging to Hephaestus, a Trans-Stellar best known for high-grade arms manufacturing."
+	icon_state = "heph"
+	worn_state = "heph"
+	rolled_sleeves = 0
+/obj/item/clothing/under/corp/kaleidoscope
+	name = "\improper Kaleidoscope uniform"
+	desc = "A science uniform belonging to Kaleidoscope Cosmetics, a cosmetic and gene-modification trans-stellar."
+	icon_state = "kaleido"
+	worn_state = "kaleido"
+	rolled_sleeves = 0
+/obj/item/clothing/under/corp/morpheus
+	name = "\improper Morpheus jumpsuit"
+	desc = "A uniform belonging to Morpheus Cyberkinetics, a positronic-run cybernetics Trans-Stellar."
+	icon_state = "morpheus"
+	worn_state = "morpheus"
+/obj/item/clothing/under/corp/pcrc
+	name = "\improper PCRC uniform"
+	desc = "A uniform belonging to Proxima Centauri Risk Control, a private security firm."
+	icon_state = "pcrc"
+	item_state = "jensensuit"
+	worn_state = "pcrc"
+/obj/item/clothing/under/corp/saare
+	name = "\improper SAARE uniform"
+	desc = "A dress uniform belonging to Stealth Assault Enterprises, a minor private military corporation."
+	icon_state = "saare"
+	worn_state = "saare"
+/obj/item/clothing/under/corp/veymed
+	name = "\improper Vey-Med uniform"
+	desc = "A uniform belonging to Vey-Medical, a Skrellian biomedical Trans-Stellar."
+	icon_state = "veymed"
+	worn_state = "veymed"
+	rolled_sleeves = 0
+/obj/item/clothing/under/corp/wardt
+	name = "\improper Ward-Takahashi jumpsuit"
+	desc = "A jumpsuit belonging to Ward-Takahashi, a Trans-Stellar in the consumer goods market."
+	icon_state = "robotics2"
+	worn_state = "robotics2"
+/obj/item/clothing/under/corp/wulf
+	name = "\improper Wulf jumpsuit"
+	desc = "A jumpsuit belonging to Wulf Aeronautics, a ship-building and propulsion systems Trans-Stellar."
+	icon_state = "wulf"
+	worn_state = "wulf"
+	rolled_sleeves = 0
+/obj/item/clothing/under/corp/xion
+	name = "\improper Xion jumpsuit"
+	desc = "A jumpsuit belonging to Xion Manufacturing, an industrial equipment Trans-Stellar."
+	icon_state = "xion"
+	worn_state = "xion"
+	rolled_sleeves = 0
+/obj/item/clothing/under/corp/zenghu
+	name = "\improper Zeng-Hu jumpsuit"
+	desc = "A jumpsuit belonging to Zeng-Hu Pharmaceuticals, a Trans-Stellar in the business of exactly what you'd expect.."
+	icon_state = "zenghu"
+	worn_state = "zenghu"
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/red))
+	rolled_sleeves = 0
+/obj/item/clothing/under/dress/alpine
+	name = "alpine dress"
+	desc = "A green and white dress that makes you want to yodel."
+	icon_state = "corsetdress"
+/obj/item/clothing/under/dress/bluedress
+	name = "blue dress"
+	desc = "A plain blue dress with a white belt."
+	icon_state = "bluedress"
+/obj/item/clothing/under/dress/cbridesmaid
+	name = "fancy dress"
+	desc = "A cute, flirty dress. Good for weddings and fancy parties, or if you just want to look fashionable. Perfect for recoloring!"
+	icon_state = "cbridesmaid"
+/obj/item/clothing/under/dress/cdress_fire
+	name = "flame dress"
+	desc = "A small black dress with a flames print on it. Perfect for recoloring!"
+	icon_state = "cflame_dress"
+/obj/item/clothing/under/dress/countess
+	name = "countess dress"
+	desc = "A red and black dress fit for a countess."
+	icon_state = "countess"
+/obj/item/clothing/under/dress/cropdress
+	name = "crop dress"
+	desc = "A red skirt and longsleeved button-up crop top."
+	icon_state = "cropdress"
+/obj/item/clothing/under/dress/cswoopdress
+	name = "swoop dress"
+	desc = "A fancy gown for those who like to show leg. Perfect for recoloring!"
+	icon_state = "cswoopdress"
+/obj/item/clothing/under/dress/darkred
+	name = "fancy dark red dress"
+	desc = "A short, red dress with a black belt. Fancy."
+	icon_state = "darkreddress"
+/obj/item/clothing/under/dress/dress_fire
+	name = "flame dress"
+	desc = "A small black dress with blue flames print on it."
+	icon_state = "dress_fire"
+/obj/item/clothing/under/dress/dress_green
+	name = "green dress"
+	desc = "A simple, tight fitting green dress."
+	icon_state = "dress_green"
+/obj/item/clothing/under/dress/dress_orange
+	name = "orange dress"
+	desc = "A fancy orange gown for those who like to show leg."
+	icon_state = "dress_orange"
+/obj/item/clothing/under/dress/dress_pink
+	name = "pink dress"
+	desc = "A simple, tight fitting pink dress."
+	icon_state = "dress_pink"
+/obj/item/clothing/under/dress/dress_saloon
+	name = "saloon girl dress"
+	desc = "A old western inspired gown for the girl who likes to drink."
+	icon_state = "dress_saloon"
+	item_state_slots = list(slot_r_hand_str = "dress_white", slot_l_hand_str = "dress_white")
+/obj/item/clothing/under/dress/dress_yellow
+	name = "yellow dress"
+	desc = "A flirty, little yellow dress."
+	icon_state = "dress_yellow"
+/obj/item/clothing/under/dress/flamenco
+	name = "flamenco dress"
+	desc = "A Mexican flamenco dress."
+	icon_state = "flamenco"
+/obj/item/clothing/under/dress/goldwrap
+	name = "golden dress"
+	desc = "A dress so ostentatious that you feel poorer just looking at it."
+	icon_state = "golddress"
+/obj/item/clothing/under/dress/gothic2
+	name = "lacey gothic dress"
+	desc = "An elegant gothic dress with lace decorations."
+	icon_state = "gothic2"
+/obj/item/clothing/under/dress/hightrousers
+	name = "high-waisted trousers"
+	desc = "A waistline this high is just made for ripping bodices, swashing buckles, or - just occasionally - sucking blood."
+	icon_state = "gayvampire"
+/obj/item/clothing/under/dress/lilacdress
+	name = "lilac dress"
+	desc = "A simple black dress adorned in fake purple lilacs."
+	icon_state = "lilacdress"
+/obj/item/clothing/under/dress/pentagram
+	name = "pentagram dress"
+	desc = "A black dress with straps over the chest in the shape of a pentagram."
+	icon_state = "pentagram"
+/obj/item/clothing/under/dress/redeveninggown
+	name = "red evening gown"
+	desc = "Fancy dress for space bar singers."
+	icon_state = "red_evening_gown"
+/obj/item/clothing/under/dress/sailordress
+	name = "sailor dress"
+	desc = "Formal wear for a leading lady."
+	icon_state = "sailor_dress"
+/obj/item/clothing/under/dress/stripeddress
+	name = "striped dress"
+	desc = "Fashion in space."
+	icon_state = "striped_dress"
+/obj/item/clothing/under/dress/verglasdress
+	name = "verglas dress"
+	desc = "The modern twist on a forgotten pattern, the Verglas style utilizes comfortable velvet and silver white satin to create an otherworldly effect evocative of winter, or the void."
+	icon_state = "verglas_dress"
+/obj/item/clothing/under/dress/vneck
+	name = "v-neck dress"
+	desc = "A black v-neck dress with an exaggerated neckline covered in a sheer mesh."
+	icon_state = "vneckdress"
+/obj/item/clothing/under/dress/wench
+	name = "wench's dress"
+	desc = "A white dress styled like a Ye Old Barmaid. Saucy!"
+	icon_state = "wench"
+/obj/item/clothing/under/dress/westernbustle
+	name = "western bustle"
+	desc = "A western bustle dress from Earth's late 1800's."
+	icon_state = "westernbustle"
+/obj/item/clothing/under/dress/white3
+	name = "short dress"
+	desc = "A short, plain dress."
+	icon_state = "whitedress3"
+	addblends = "whitedress3_a"
+/obj/item/clothing/under/dress/yellowswoop
+	name = "yellow swooped dress"
+	desc = "A yellow dress that swoops to the side."
+	icon_state = "yellowswoop"
 /obj/item/clothing/under/explorer/utility/engineering
 	name = "\improper explorer engineering uniform"
 	icon_state = "blackutility_eng"
@@ -1975,6 +3279,50 @@
 	name = "\improper explorer supply uniform"
 	icon_state = "blackutility_sup"
 	desc = "The utility uniform of the Explorer's association, made from biohazard resistant material. This one has silver trim and brown blazes."
+/obj/item/clothing/under/pants/baggy/black
+	name = "baggy black pants"
+	desc = "These pants are dark, like your soul."
+	icon_state = "baggy_blackpants"
+/obj/item/clothing/under/pants/baggy/blackjeans
+	name = "baggy black jeans"
+	desc = "Only for those who can pull it off."
+	icon_state = "baggy_jeansblack"
+/obj/item/clothing/under/pants/baggy/camo
+	name = "baggy camo pants"
+	desc = "A pair of woodland camouflage pants. Probably not the best choice for a space station."
+	icon_state = "baggy_camopants"
+/obj/item/clothing/under/pants/baggy/classicjeans
+	name = "baggy classic jeans"
+	desc = "You feel cooler already."
+	icon_state = "baggy_jeansclassic"
+/obj/item/clothing/under/pants/baggy/greyjeans
+	name = "baggy grey jeans"
+	desc = "Only for those who can pull it off."
+	icon_state = "baggy_jeansgrey"
+/obj/item/clothing/under/pants/baggy/khaki
+	name = "baggy khaki pants"
+	desc = "A pair of dust beige khaki pants."
+	icon_state = "baggy_khaki"
+/obj/item/clothing/under/pants/baggy/mustangjeans
+	name = "maggy must hang jeans"
+	desc = "Made in the finest space jeans factory this side of Alpha Centauri."
+	icon_state = "baggy_jeansmustang"
+/obj/item/clothing/under/pants/baggy/red
+	name = "baggy red pants"
+	desc = "Bright red pants. Overflowing with personality."
+	icon_state = "baggy_redpants"
+/obj/item/clothing/under/pants/baggy/tan
+	name = "baggy tan pants"
+	desc = "Some tan pants. You look like a white collar worker with these on."
+	icon_state = "baggy_tanpants"
+/obj/item/clothing/under/pants/baggy/track
+	name = "baggy track pants"
+	desc = "A pair of track pants, for the athletic."
+	icon_state = "baggy_trackpants"
+/obj/item/clothing/under/pants/baggy/youngfolksjeans
+	name = "baggy young folks jeans"
+	desc = "For those tired of boring old jeans. Relive the passion of your youth!"
+	icon_state = "baggy_jeansyoungfolks"
 /obj/item/clothing/under/rank/bodyguard_skirt
 	name = "bodyguard's skirt"
 	desc = "it has a tag denoting it's made by Total Gear & Co."
@@ -2524,6 +3872,73 @@
 	desc = "It's the standard issue pretty-boy outfit, as seen on Holo-Vision."
 	icon_state = "vice"
 	item_state_slots = list(slot_r_hand_str = "grey", slot_l_hand_str = "grey")
+/obj/item/clothing/under/skirt/colorable/high
+	name = "high skirt"
+	desc = "A skirt that rests at the waist instead of the hips."
+	icon_state = "skirt_high"
+	item_state = "skirt_high"
+	worn_state = "skirt_high"
+/obj/item/clothing/under/skirt/colorable/jumper
+	name = "jumper skirt"
+	desc = "A skirt that's held up by suspenders."
+	icon_state = "skirt_jumper"
+	item_state = "skirt_jumper"
+	worn_state = "skirt_jumper"
+/obj/item/clothing/under/skirt/colorable/jumperdress
+	name = "jumper dress"
+	desc = "A dress held up by suspenders. Not quite a skirt anymore."
+	icon_state = "skirt_jumperdress"
+	item_state = "skirt_jumperdress"
+	worn_state = "skirt_jumperdress"
+/obj/item/clothing/under/skirt/colorable/long
+	name = "long skirt"
+	icon_state = "skirt_long"
+	item_state = "skirt_long"
+	worn_state = "skirt_long"
+/obj/item/clothing/under/skirt/colorable/pencil
+	name = "pencil skirt"
+	desc = "A short skirt that's almost as thin as a pencil. Almost."
+	icon_state = "skirt_pencil"
+	item_state = "skirt_pencil"
+	worn_state = "skirt_pencil"
+/obj/item/clothing/under/skirt/colorable/plaid
+	name = "plaid skirt"
+	desc = "A skirt featuring a plaid pattern."
+	icon_state = "skirt_plaid"
+	item_state = "skirt_plaid"
+	worn_state = "skirt_plaid"
+/obj/item/clothing/under/skirt/colorable/puffy
+	icon_state = "skirt_puffy"
+	item_state = "skirt_puffy"
+	worn_state = "skirt_puffy"
+/obj/item/clothing/under/skirt/colorable/short
+	name = "short skirt"
+	desc = "A far too short pleated skirt."
+	icon_state = "skirt_short"
+	item_state = "skirt_short"
+	worn_state = "skirt_short"
+/obj/item/clothing/under/skirt/colorable/short_split
+	name = "short skirt (split)"
+	desc = "A far too short pleated skirt with an open split down one side."
+	icon_state = "skirt_short_split"
+	item_state = "skirt_short_split"
+	worn_state = "skirt_short_split"
+/obj/item/clothing/under/skirt/colorable/skater
+	desc = "A skirt with loose frills."
+	icon_state = "skirt_skater"
+	item_state = "skirt_skater"
+	worn_state = "skirt_skater"
+/obj/item/clothing/under/skirt/colorable/swept
+	name = "swept skirt"
+	desc = "A skirt with an angled hem; shorter on one side, longer on the other, like a sweep."
+	icon_state = "skirt_swept"
+	item_state = "skirt_swept"
+	worn_state = "skirt_swept"
+/obj/item/clothing/under/skirt/colorable/tube
+	desc = "A long thin skirt that trails beyond the knees."
+	icon_state = "skirt_tube"
+	item_state = "skirt_tube"
+	worn_state = "skirt_tube"
 /obj/item/clothing/under/teshari/smock/blackutility
 	name = "Teshari utility uniform"
 	icon_state = "teshari_blackutility"
@@ -2572,6 +3987,82 @@
 /obj/item/clothing/under/teshari/smock/dress/security
 	name = "small security dress"
 	icon_state = "tesh_dress_security"
+/obj/item/clothing/under/teshari/undercoat/jobs/atmos
+	name = "atmospherics undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_ATMOSPHERIC_TECHNICIAN
+	icon_state = "tesh_uniform_atmos"
+/obj/item/clothing/under/teshari/undercoat/jobs/cap
+	name = "site manager undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_SITE_MANAGER
+	icon_state = "tesh_uniform_cap"
+/obj/item/clothing/under/teshari/undercoat/jobs/cargo
+	name = "cargo undercoat"
+	desc = "A traditional Teshari garb made for the Cargo department"
+	icon_state = "tesh_uniform_car"
+/obj/item/clothing/under/teshari/undercoat/jobs/ce
+	name = "chief engineer undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_CHIEF_ENGINEER
+	icon_state = "tesh_uniform_ce"
+/obj/item/clothing/under/teshari/undercoat/jobs/chemistry
+	name = "chemist undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_CHEMIST
+	icon_state = "tesh_uniform_chem"
+/obj/item/clothing/under/teshari/undercoat/jobs/cmo
+	name = "chief medical officer undercoat"
+	desc = "A traditional Teshari garb made for the Chief Medical Officer"
+	icon_state = "tesh_uniform_cmo"
+/obj/item/clothing/under/teshari/undercoat/jobs/engineer
+	name = "engineering undercoat"
+	desc = "A traditional Teshari garb made for the Engineering department"
+	icon_state = "tesh_uniform_engie"
+/obj/item/clothing/under/teshari/undercoat/jobs/hop
+	name = "head of personnel undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_HEAD_OF_PERSONNEL
+	icon_state = "tesh_uniform_hop"
+/obj/item/clothing/under/teshari/undercoat/jobs/iaa
+	name = "internal affairs undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_INTERNAL_AFFAIRS_AGENT
+	icon_state = "tesh_uniform_iaa"
+/obj/item/clothing/under/teshari/undercoat/jobs/medical
+	name = "medical undercoat"
+	desc = "A traditional Teshari garb made for the Medical department"
+	icon_state = "tesh_uniform_doc"
+/obj/item/clothing/under/teshari/undercoat/jobs/mining
+	name = "mining undercoat"
+	desc = "A traditional Teshari garb made for Mining"
+	icon_state = "tesh_uniform_mine"
+/obj/item/clothing/under/teshari/undercoat/jobs/para
+	name = "paramedic undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_PARAMEDIC
+	icon_state = "tesh_uniform_para"
+/obj/item/clothing/under/teshari/undercoat/jobs/psych
+	name = "psychiatrist undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_PSYCHIATRIST
+	icon_state = "tesh_uniform_psych"
+/obj/item/clothing/under/teshari/undercoat/jobs/qm
+	name = "quartermaster undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_QUARTERMASTER
+	icon_state = "tesh_uniform_qm"
+/obj/item/clothing/under/teshari/undercoat/jobs/rd
+	name = "research director undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_RESEARCH_DIRECTOR
+	icon_state = "tesh_uniform_rd"
+/obj/item/clothing/under/teshari/undercoat/jobs/robo
+	name = "roboticist undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_ROBOTICIST
+	icon_state = "tesh_uniform_robo"
+/obj/item/clothing/under/teshari/undercoat/jobs/sci
+	name = "scientist undercoat"
+	desc = "A traditional Teshari garb made for the Science department"
+	icon_state = "tesh_uniform_sci"
+/obj/item/clothing/under/teshari/undercoat/jobs/service
+	name = "service undercoat"
+	desc = "A traditional Teshari garb made for the Service department"
+	icon_state = "tesh_uniform_serv"
+/obj/item/clothing/under/teshari/undercoat/jobs/viro
+	name = "virologist undercoat"
+	desc = "A traditional Teshari garb made for the " + JOB_ALT_VIROLOGIST
+	icon_state = "tesh_uniform_viro"
 /obj/item/clothing/under/teshari/undercoat/standard/worksuit/blackblue
 	name = "small black and blue worksuit"
 	icon_state = "teshari_black_blue_worksuit"
@@ -2852,8 +4343,6 @@
 	spawn_reagent = REAGENT_ID_ROYROGERS
 /obj/item/reagent_containers/chem_disp_cartridge/rum
 	spawn_reagent = REAGENT_ID_RUM
-/obj/item/reagent_containers/chem_disp_cartridge/ryetalyn
-	spawn_reagent = REAGENT_ID_RYETALYN
 /obj/item/reagent_containers/chem_disp_cartridge/sacid
 	spawn_reagent = REAGENT_ID_SACID
 /obj/item/reagent_containers/chem_disp_cartridge/sake

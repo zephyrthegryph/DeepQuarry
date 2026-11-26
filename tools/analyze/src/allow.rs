@@ -27,24 +27,11 @@ pub struct Allow {
 }
 
 /// The annotation on `line`, if any (`allow_annotations.parse`).
-pub fn parse(line:&str)->Option<Allow>{match parse_with(line,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}
-
-pub fn parse_with<C: crate::key_policy_control::Control>(line: &str, control:&mut C) -> Result<Option<Allow>,C::Error> {
+pub fn parse(line: &str) -> Option<Allow> {
     if !line.contains("ALLOW(") {
-        return Ok(None);
+        return None;
     }
-    control.checkpoint()?;
-    let captured={
-     #[cfg(feature="native-policy")]if control.native_patterns().is_some(){crate::key_policy_control::captures_static(control,r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$",line,0,||crate::pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$"))?}else{    let pattern = pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$");
-    crate::key_policy_control::reserve(control,||pattern.capture_group_count().checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(128))?;
-    pattern.captures(line)
-}
-     #[cfg(not(feature="native-policy"))]{    let pattern = pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$");
-    crate::key_policy_control::reserve(control,||pattern.capture_group_count().checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(128))?;
-    pattern.captures(line)
-}
-    };
-    let Some(c)=captured else{return Ok(None)};
+    let c = pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$").captures(line)?;
     let mut names = BTreeSet::new();
     let mut codes = BTreeMap::new();
     for entry in c.s(1).split(',') {
@@ -56,22 +43,20 @@ pub fn parse_with<C: crate::key_policy_control::Control>(line: &str, control:&mu
             Some((lint, code)) => {
                 let (lint, code) = (util::py_strip(lint), util::py_strip(code));
                 if !lint.is_empty() {
-                    if !names.contains(lint){crate::key_policy_control::reserve(control,||lint.len().checked_mul(4)?.checked_add(2048))?;names.insert(lint.to_string());}
+                    names.insert(lint.to_string());
                     if !code.is_empty() {
-                        crate::key_policy_control::reserve(control,||lint.len().checked_add(code.len())?.checked_mul(4)?.checked_add(if codes.contains_key(lint){128}else{2048}))?;
                         codes.insert(lint.to_string(), code.to_string());
                     }
                 }
             }
             None => {
-                if !names.contains(entry){crate::key_policy_control::reserve(control,||entry.len().checked_mul(4)?.checked_add(2048))?;names.insert(entry.to_string());}
+                names.insert(entry.to_string());
             }
         }
     }
     let has_colon = !c.s(2).is_empty();
-    let reason = if has_colon { crate::key_policy_control::own(control,c.s(3))? } else { String::new() };
-    control.checkpoint()?;
-    Ok(Some(Allow { names, codes, reason, has_colon }))
+    let reason = if has_colon { c.s(3).to_string() } else { String::new() };
+    Some(Allow { names, codes, reason, has_colon })
 }
 
 /// Names an annotation keeps: only when it has a reason (`allow_annotations.names_on`).
@@ -90,37 +75,30 @@ pub struct Kept {
 }
 
 fn keeps(line: &str, lint: &str) -> Option<Option<String>> {
-    match keeps_with(line,lint,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}
-}
-/// SAME annotation acceptance used by original line queries and native local
-/// source loans. This is membership DATA, never a source/usage completion.
-pub(crate) fn keeps_with<C:crate::key_policy_control::Control>(line:&str,lint:&str,control:&mut C)->Result<Option<Option<String>>,C::Error>{
-    match parse_with(line,control)?{
-        Some(mut annotation) if !annotation.reason.is_empty()&&annotation.names.contains(lint)=>Ok(Some(annotation.codes.remove(lint))),
-        _=>Ok(None),
+    match parse(line) {
+        Some(a) if !a.reason.is_empty() && a.names.contains(lint) => Some(a.codes.get(lint).cloned()),
+        _ => None,
     }
 }
 
 /// Whether 1-based line `number` of `file` is kept for `lint`: the annotation is on the line
 /// itself, or on a comment-only line directly above it.
-pub fn kept(file:&SourceFile,number:usize,lint:&str)->Option<Kept>{kept_using(file,number,lint,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
-/// Same line/above query with actual existing operation allocation control.
-pub fn kept_using<C:crate::key_policy_control::Control>(file:&SourceFile,number:usize,lint:&str,control:&mut C)->Result<Option<Kept>,C::Error>{
+pub fn kept(file: &SourceFile, number: usize, lint: &str) -> Option<Kept> {
     let raw = file.raw();
     if number >= 1 && number <= raw.num_lines() {
-        if let Some(code) = keeps_with(raw.line(number),lint,control)? {
-            return Ok(Some(Kept { line:number,code }));
+        if let Some(code) = keeps(raw.line(number), lint) {
+            return Some(Kept { line: number, code });
         }
     }
     if number >= 2 {
         let above = raw.line(number - 1);
         if util::py_lstrip(above).starts_with("//") {
-            if let Some(code) = keeps_with(above,lint,control)? {
-                return Ok(Some(Kept { line:number-1,code }));
+            if let Some(code) = keeps(above, lint) {
+                return Some(Kept { line: number - 1, code });
             }
         }
     }
-    Ok(None)
+    None
 }
 
 /// The annotation's line number only (`kept(..).map(|k| k.line)`).

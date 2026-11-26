@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Icon, NoticeBox, Stack, Tabs } from 'tgui-core/components';
-
+import type { VorePanelActions } from '../generated/VorePanel';
 import type { Data } from './types';
 import { VoreBellySelectionAndCustomization } from './VorePanelMainTabs/VoreBellySelectionAndCustomization';
 import { VoreInsidePanel } from './VorePanelMainTabs/VoreInsidePanel';
@@ -20,7 +20,7 @@ import { VoreContentsPreyPanel } from './VoreSelectedBellyTabs/VoreContentsPreyP
  */
 
 export const VorePanel = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, VorePanelActions>();
 
   const {
     active_tab,
@@ -145,7 +145,7 @@ export const VorePanel = () => {
                 Bellies
                 <Icon name="list" ml={0.5} />
               </Tabs.Tab>
-              {!!inside.ref && (
+              {!!inside?.ref && (
                 <Tabs.Tab
                   selected={active_tab === 1}
                   onClick={() => act('change_tab', { tab: 1 })}

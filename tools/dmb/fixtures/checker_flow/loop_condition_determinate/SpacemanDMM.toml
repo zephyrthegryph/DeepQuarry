@@ -1,4 +1,0 @@
-[diagnostics]
-control_condition_static = "off"
-unreachable_code = "off"
-if_condition_determinate = "off"

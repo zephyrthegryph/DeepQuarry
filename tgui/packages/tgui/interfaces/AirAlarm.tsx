@@ -6,48 +6,13 @@ import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
 import { Scrubber, Vent } from './common/AtmosControls';
-import type { single_scrubber, single_vent } from './common/CommonTypes';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
+import type { AirAlarmActions, AirAlarmData } from './generated/AirAlarm';
 
-type Data = {
-  locked: BooleanLike;
-  siliconUser: BooleanLike;
-  remoteUser: BooleanLike;
-  environment_data: {
-    name: string;
-    value: number;
-    unit: string;
-    danger_level: number;
-  }[];
-  danger_level: number;
-  target_temperature: string;
-  rcon: number;
-  atmos_alarm: BooleanLike;
-  fire_alarm: BooleanLike;
-  emagged: BooleanLike; // Seems unused
-  mode: number;
-  thresholds: thresholds[];
-  scrubbers: single_scrubber[];
-  vents: single_vent[];
-  modes: {
-    name: string;
-    mode: number;
-    selected: BooleanLike;
-    danger: BooleanLike;
-  }[];
-};
-
-type thresholds = {
-  name: string;
-  settings: {
-    env: string;
-    val: number;
-    selected: number;
-  }[];
-};
+type Data = AirAlarmData;
 
 export const AirAlarm = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AirAlarmActions>();
 
   const { locked, siliconUser, remoteUser } = data;
 
@@ -73,9 +38,9 @@ export const AirAlarm = (props) => {
 };
 
 const AirAlarmStatus = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, AirAlarmActions>();
 
-  const { environment_data, atmos_alarm, fire_alarm, emagged } = data;
+  const { environment_data, atmos_alarm, fire_alarm } = data;
 
   const entries = (environment_data || []).filter(
     (entry) => entry.value >= 0.01,
@@ -131,18 +96,13 @@ const AirAlarmStatus = (props) => {
             Cannot obtain air sample for analysis.
           </LabeledList.Item>
         )}
-        {!!emagged && (
-          <LabeledList.Item label="Warning" color="bad">
-            Safety measures offline. Device may exhibit abnormal behavior.
-          </LabeledList.Item>
-        )}
       </LabeledList>
     </Section>
   );
 };
 
 const AirAlarmUnlockedControl = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AirAlarmActions>();
   const { target_temperature, rcon } = data;
   return (
     <Section title="Comfort Settings">
@@ -223,7 +183,7 @@ const AirAlarmControl = (props) => {
 // --------------------------------------------------------
 
 const AirAlarmControlHome = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AirAlarmActions>();
   const { mode, atmos_alarm } = data;
   return (
     <>
@@ -270,7 +230,7 @@ const AirAlarmControlHome = (props) => {
 // --------------------------------------------------------
 
 const AirAlarmControlVents = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, AirAlarmActions>();
   const { vents } = data;
   if (!vents || vents.length === 0) {
     return 'Nothing to show';
@@ -282,7 +242,7 @@ const AirAlarmControlVents = (props) => {
 // --------------------------------------------------------
 
 const AirAlarmControlScrubbers = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, AirAlarmActions>();
   const { scrubbers } = data;
   if (!scrubbers || scrubbers.length === 0) {
     return 'Nothing to show';
@@ -296,7 +256,7 @@ const AirAlarmControlScrubbers = (props) => {
 // --------------------------------------------------------
 
 const AirAlarmControlModes = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AirAlarmActions>();
   const { modes } = data;
   if (!modes || modes.length === 0) {
     return 'Nothing to show';
@@ -320,7 +280,7 @@ const AirAlarmControlModes = (props) => {
 // --------------------------------------------------------
 
 const AirAlarmControlThresholds = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AirAlarmActions>();
   const { thresholds } = data;
   return (
     <table className="LabeledList" style={{ width: '100%' }}>

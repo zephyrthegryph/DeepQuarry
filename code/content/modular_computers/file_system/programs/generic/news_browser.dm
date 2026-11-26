@@ -23,6 +23,7 @@ CAPABILITIES(/datum/computer_file/program/newsbrowser)
 	op("PRG_toggle_archived", ui_act("PRG_toggle_archived"), then(PROC_REF(ui_act_prg_toggle_archived)))
 	owns_one(nameof(loaded_article), /datum/computer_file/data/news_article)
 	interface("NtosNewsBrowser")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool(), message = schema_text(), showing_archived = bool(), download = nullable(row(download_progress = num(), download_maxprogress = num(), download_rate = num())), article = nullable(row(title = schema_text(), cover = nullable(schema_text()), content = schema_text())), all_articles = list_of(row(name = schema_text(), size = num(), uid = num(), archived = bool())))
 	op("PRG_openarticle", ui_act("PRG_openarticle", arg("uid", num())), then(PROC_REF(ui_act_prg_openarticle)))
 	op("PRG_savearticle", ui_act("PRG_savearticle"), asks(/datum/prompt/text, fields = list("title" = "Save article", "question" = "Enter file name or leave blank to cancel:", "default" = computed(PROC_REF(article_default_name)))), then(PROC_REF(ui_act_prg_savearticle)))
 
@@ -72,7 +73,7 @@ CAPABILITIES(/datum/computer_file/program/newsbrowser)
 				"name" = F.filename,
 				"size" = F.size,
 				"uid" = F.uid,
-				"archived" = F.archived
+				"archived" = F.archived ? TRUE : FALSE
 			)))
 	data["all_articles"] = all_articles
 

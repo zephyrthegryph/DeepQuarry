@@ -12,7 +12,6 @@
 
 
 CAPABILITIES(/obj/item/mining_scanner)
-	held_verb(/obj/item/mining_scanner/proc/toggle_sediment_scan, SLOT_ANY_CARRIED)
 	op("scan", in_hand(), label("Scan deposits"), then(PROC_REF(scan_started), early = TRUE), wait(PROC_REF(scan_delay)), then(PROC_REF(scanned)))
 	op("toggle_sediment", menu(), label("Toggle Sediment Scan"), needs(carried()), then(PROC_REF(sediment_toggled)))
 
@@ -28,11 +27,6 @@ CAPABILITIES(/obj/item/mining_scanner)
 	ScanTurf(get_turf(A.actor), A.actor)
 	return OP_OK
 
-/obj/item/mining_scanner/proc/toggle_sediment_scan()
-	set name = "Toggle Sediment Scan"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-	perform_op(usr, src, "toggle_sediment", null, ORIGIN_VERB)
 
 /obj/item/mining_scanner/proc/sediment_toggled(datum/act/op/A)
 	to_chat(A.actor, span_notice("\The [src] will [sediment_scan ? "no longer" : "now"] scan for reagents."))
@@ -123,16 +117,10 @@ CAPABILITIES(/obj/item/mining_scanner)
 	exact = TRUE
 
 CAPABILITIES(/obj/item/mining_scanner/advanced)
-	held_verb(/obj/item/mining_scanner/advanced/proc/set_scanner_range, SLOT_ANY_CARRIED)
 	op("set_range", inputs(hand(), menu()), gesture(GESTURE_ALT), label("Set Scanner Range"),
-		needs(req_adjacent(), req_on_origin(ORIGIN_VERB | ORIGIN_MENU, carried())),
+		needs(req_adjacent(), req_on_origin(ORIGIN_MENU, carried())),
 		asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), then(PROC_REF(range_picked)))
 
-/obj/item/mining_scanner/advanced/proc/set_scanner_range()
-	set name = "Set Scanner Range"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-	perform_op(usr, src, "set_range", null, ORIGIN_VERB)
 
 /obj/item/mining_scanner/advanced/proc/range_picked(datum/act/op/A)
 	var/datum/prompt/choice/picked = A.answer

@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
-import { Button, ColorBox, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import { Button, Section, Table } from 'tgui-core/components';
+import type { NtosMainActions, NtosMainData } from './generated/NtosMain';
 
 const PROGRAM_ICONS = {
   compconfig: 'cog',
@@ -21,34 +21,13 @@ const PROGRAM_ICONS = {
   shipping: 'tags',
 };
 
-type Data = {
-  device_theme: string;
-  login: user;
-  removable_media: string[];
-  programs: {
-    name: string;
-    desc: string;
-    icon: string;
-    running: BooleanLike;
-    autorun: BooleanLike;
-  }[];
-  has_light: BooleanLike;
-  light_on: BooleanLike;
-  comp_light_color: BooleanLike;
-};
-
-type user = { IDName: string | undefined; IDJob: string | undefined };
-
 export const NtosMain = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<NtosMainData, NtosMainActions>();
   const {
-    device_theme,
-    programs = [],
-    has_light,
-    light_on,
-    comp_light_color,
-    removable_media = [],
-    login = {} as user,
+    PC_device_theme: device_theme,
+    programs,
+    removable_media,
+    login,
   } = data;
   return (
     <NtosWindow
@@ -60,22 +39,6 @@ export const NtosMain = (props) => {
       height={500}
     >
       <NtosWindow.Content scrollable>
-        {!!has_light && (
-          <Section>
-            <Button
-              width="144px"
-              icon="lightbulb"
-              selected={light_on}
-              onClick={() => act('PC_toggle_light')}
-            >
-              Flashlight: {light_on ? 'ON' : 'OFF'}
-            </Button>
-            <Button ml={1} onClick={() => act('PC_light_color')}>
-              Color:
-              <ColorBox ml={1} color={comp_light_color} />
-            </Button>
-          </Section>
-        )}
         <Section
           title="User Login"
           buttons={
@@ -89,8 +52,12 @@ export const NtosMain = (props) => {
           }
         >
           <Table>
-            <Table.Row>ID Name: {login.IDName}</Table.Row>
-            <Table.Row>Assignment: {login.IDJob}</Table.Row>
+            <Table.Row>
+              <Table.Cell>ID Name: {login.IDName}</Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>Assignment: {login.IDJob}</Table.Cell>
+            </Table.Row>
           </Table>
         </Section>
         {!!removable_media.length && (

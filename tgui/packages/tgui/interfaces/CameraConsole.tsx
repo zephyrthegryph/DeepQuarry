@@ -9,19 +9,19 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import { type BooleanLike, classes } from 'tgui-core/react';
+import { classes } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
+import { EmptyState } from './common/EmptyState';
+import type {
+  CameraConsoleActions,
+  CameraConsoleData,
+} from './generated/CameraConsole';
 
-type activeCamera = { name: string; status: BooleanLike } | null;
+export type Data = CameraConsoleData;
 
-export type camera = { name: string; networks: string[] };
+type activeCamera = Data['activeCamera'];
 
-export type Data = {
-  activeCamera: activeCamera;
-  mapRef: string;
-  cameras: camera[];
-  allNetworks: string[];
-};
+export type camera = Data['cameras'][number];
 
 /**
  * Returns previous and next camera names relative to the currently
@@ -76,10 +76,10 @@ export const selectCameras = (
 };
 
 export const CameraConsole = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CameraConsoleActions>();
   const { mapRef, activeCamera } = data;
 
-  const { cameras } = data;
+  const { cameras = [] } = data;
 
   const selected_cameras: camera[] = selectCameras(cameras);
   const [prevCameraName, nextCameraName]: string[] = prevNextCamera(
@@ -137,10 +137,10 @@ export const CameraConsole = (props) => {
 };
 
 export const CameraConsoleContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CameraConsoleActions>();
   const [searchText, setSearchText] = useState<string>('');
   const [networkFilter, setNetworkFilter] = useState<string>('');
-  const { activeCamera, allNetworks, cameras } = data;
+  const { activeCamera, allNetworks = [], cameras = [] } = data;
   allNetworks.sort();
   const selected_cameras: camera[] = selectCameras(
     cameras,
@@ -160,12 +160,12 @@ export const CameraConsoleContent = (props) => {
       </Stack.Item>
       <Stack.Item>
         <Stack>
-          <Stack.Item>
+          <Stack.Item grow>
             <Dropdown
               searchInput
               autoScroll={false}
               mb={1}
-              width={networkFilter ? '155px' : '177px'}
+              width="100%"
               selected={networkFilter}
               displayText={networkFilter || 'No Filter'}
               options={allNetworks}
@@ -190,6 +190,13 @@ export const CameraConsoleContent = (props) => {
       </Stack.Item>
       <Stack.Item height="100%">
         <Section fill scrollable>
+          {selected_cameras.length === 0 && (
+            <EmptyState>
+              {cameras.length
+                ? 'No camera matches the search or filter.'
+                : "No cameras on this console's networks."}
+            </EmptyState>
+          )}
           {selected_cameras.map((camera) => (
             // We're not using the component here because performance
             // would be absolutely abysmal (50+ ms for each re-render).

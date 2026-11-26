@@ -1,7 +1,0 @@
-var/global_value=0
-/proc/write()
-    global_value=1
-/proc/probe()
-    set SpacemanDMM_should_be_pure=1
-    spawn(0)
-        write()

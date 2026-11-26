@@ -7,13 +7,17 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
-
+import type { SupplyConsoleActions } from '../generated/SupplyConsole';
 import type { Data } from './types';
 
 export const SupplyConsoleShuttleStatus = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SupplyConsoleActions>();
 
   const { supply_points, shuttle, shuttle_auth } = data;
+
+  if (!shuttle) {
+    return null;
+  }
 
   let shuttle_buttons: React.JSX.Element | string = '';
   let showShuttleForce = false;
@@ -84,9 +88,11 @@ export const SupplyConsoleShuttleStatus = (props) => {
               </Stack>
             }
           >
-            {shuttle.location}
+            {shuttle.location ?? 'No supply shuttle in range'}
           </LabeledList.Item>
-          <LabeledList.Item label="Engine">{shuttle.engine}</LabeledList.Item>
+          <LabeledList.Item label="Engine">
+            {shuttle.engine ?? '—'}
+          </LabeledList.Item>
           {shuttle.mode === 4 ? (
             <LabeledList.Item label="ETA">
               {shuttle.time > 1 ? formatTime(shuttle.time) : 'LATE'}

@@ -62,6 +62,7 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(restoring), wakes_on = list(nameof(restoring)))
 	extend("disconnect", needs(req(PROC_REF(no_ai_loaded))))
 	interface("AiRestorer")
+	ui_shape(AI_present = bool(), error = nullable(schema_text()), name = schema_text(), restoring = bool(), health = num(), isDead = bool(), laws = list_of(schema_text()))
 	op("PRG_beginReconstruction", ui_act("PRG_beginReconstruction"), then(PROC_REF(ui_act_prg_beginreconstruction)))
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
 	op("use_card", item(/obj/item/aicard), priority(OP_PRIORITY_DEFAULT - 1), label("Use AI card"), needs(req(PROC_REF(can_use_card))), then(PROC_REF(interaction_use_card)))
@@ -71,9 +72,13 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 /obj/machinery/computer/aifixer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
-	data["ejectable"] = FALSE
 	data["AI_present"] = FALSE
 	data["error"] = null
+	data["name"] = ""
+	data["restoring"] = FALSE
+	data["health"] = 0
+	data["isDead"] = FALSE
+	data["laws"] = list()
 	if(!occupier())
 		data["error"] = "Please transfer an AI unit."
 	else

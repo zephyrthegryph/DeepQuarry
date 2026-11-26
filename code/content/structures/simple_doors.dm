@@ -49,7 +49,7 @@
 	set_material(get_material_by_name(material_name))
 	if(!material)
 		return
-	set_max_integrity(max(1,round(material.integrity/10)) * 10)
+	set_max_integrity(max(1,round(material.toughness * MATERIAL_HP_PER_TOUGHNESS / 10)) * 10)
 	update_integrity(max_integrity)
 	set_icon_state(material.door_icon_base)
 	name = "[material.display_name] door"
@@ -239,7 +239,7 @@ MSG_DEF(simple_door/digging, null, span_danger("%U% starts digging %T%!"))
 	visible_message(span_danger("The [src] is destroyed!"))
 
 /obj/structure/simple_door/proc/radiate_step(datum/act/A)
-	// material.radioactivity moved to a component; query the helper.
+	// A material's radioactivity is a trait; query the helper.
 	var/rad = dq_material_radioactivity(material)
 	if(!rad)
 		return
@@ -398,10 +398,8 @@ CAPABILITIES(/obj/structure/simple_door/resin)
 	icon_base = "flock"
 	icon_reinf = "flock"
 	icon_colour = "#FFFFFF"
-	density = 30 // weight renamed to density.
-	hardness = 200
-	protectiveness = 5 // 20%
-	conductive = 0
+	weight = 30 // weight renamed to density.
+	strength = 200
 	conductivity = 0
 	door_icon_base = "flockdoor"
 	sheet_singular_name = "quanta"

@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "ID card photos, character directory cards, examine portraits, owned closets and the vore panel draw from one shared portrait cache, rendered off the server tick."

@@ -1,9 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { ChemDispenserSettings } from '../ChemDispenser/ChemDispenserSettings';
+import type { BorgHypoActions } from '../generated/BorgHypo';
 import type { Data } from './types';
 
 export const BorgHypoSettings = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BorgHypoActions>();
   const { amount, minTransferAmount, maxTransferAmount, transferAmounts } =
     data;
   return (

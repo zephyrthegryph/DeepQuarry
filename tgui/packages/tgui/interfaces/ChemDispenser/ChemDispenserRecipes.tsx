@@ -1,6 +1,8 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import type { ChemDispenserActions } from '../generated/ChemDispenser';
 import { handleImportData } from '../PlushieEditor/function';
 import { exportRecipes } from './functions';
 import type { Data, Recipe } from './types';
@@ -9,7 +11,7 @@ export const ChemDispenserRecipes = (props: {
   /** Associated list of saved recipe macros. */
   recipes: Record<string, Recipe[]>;
   /** The current recipe macro that's being recorded, if any. We assume we aren't recording a recipe if this is undefined! */
-  recordingRecipe: Recipe[];
+  recordingRecipe: Recipe[] | null;
   /** Called when the user attempts to start a recipe recording. */
   recordAct: () => void;
   /** Called when the user attempts to cancel a recipe recording. */
@@ -25,9 +27,9 @@ export const ChemDispenserRecipes = (props: {
   /** Called when the user attempts to remove a recipe macro. */
   removeAct: (recipe: string) => void;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, ChemDispenserActions>();
   const {
-    recipes,
+    recipes = {},
     recordingRecipe,
     recordAct,
     cancelAct,
@@ -107,14 +109,14 @@ export const ChemDispenserRecipes = (props: {
           <Box color="green" fontSize={1.2} bold>
             Recording In Progress...
           </Box>
-          <Box color="label">
+          <Label>
             Press dispenser buttons in the order you wish for them to be
             repeated, then click{' '}
             <Box color="good" inline>
               Save
             </Box>
             .
-          </Box>
+          </Label>
           <Box color="average" mb={1}>
             Alternatively, if you mess up the recipe and want to discard this
             recording, click{' '}

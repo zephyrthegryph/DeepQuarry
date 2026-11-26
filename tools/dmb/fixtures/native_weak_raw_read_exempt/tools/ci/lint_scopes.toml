@@ -1,2 +1,0 @@
-[lint.weak_raw_read]
-exempt_files=['code/probe.dm']

@@ -1,0 +1,550 @@
+{
+	"access_list": [
+		{
+			"id": 1,
+			"name": "Security Equipment",
+			"region": 1,
+			"access_type": 2
+		},
+		{
+			"id": 2,
+			"name": "Holding Cells",
+			"region": 1,
+			"access_type": 2
+		},
+		{
+			"id": 3,
+			"name": "Armory",
+			"region": 1,
+			"access_type": 2
+		},
+		{
+			"id": 4,
+			"name": "Forensics",
+			"region": 1,
+			"access_type": 2
+		},
+		{
+			"id": 5,
+			"name": "Medical",
+			"region": 2,
+			"access_type": 2
+		},
+		{
+			"id": 6,
+			"name": "Morgue",
+			"region": 2,
+			"access_type": 2
+		},
+		{
+			"id": 7,
+			"name": "R&D Lab",
+			"region": 3,
+			"access_type": 2
+		},
+		{
+			"id": 8,
+			"name": "Toxins Lab",
+			"region": 3,
+			"access_type": 2
+		},
+		{
+			"id": 9,
+			"name": "Genetics Lab",
+			"region": 2,
+			"access_type": 2
+		},
+		{
+			"id": 10,
+			"name": "Engineering",
+			"region": 4,
+			"access_type": 2
+		},
+		{
+			"id": 11,
+			"name": "Engine Room",
+			"region": 4,
+			"access_type": 2
+		},
+		{
+			"id": 12,
+			"name": "Maintenance",
+			"region": 4,
+			"access_type": 2
+		},
+		{
+			"id": 13,
+			"name": "External Airlocks",
+			"region": 4,
+			"access_type": 2
+		},
+		{
+			"id": 14,
+			"name": "Emergency Storage",
+			"region": 4,
+			"access_type": 2
+		},
+		{
+			"id": 15,
+			"name": "ID Computer",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 16,
+			"name": "AI Upload",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 17,
+			"name": "Teleporter",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 18,
+			"name": "EVA",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 19,
+			"name": "Bridge",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 20,
+			"name": "Site Manager",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 21,
+			"name": "Personal Lockers",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 22,
+			"name": "Chapel Office",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 23,
+			"name": "Technical Storage",
+			"region": 4,
+			"access_type": 2
+		},
+		{
+			"id": 24,
+			"name": "Atmospherics",
+			"region": 4,
+			"access_type": 2
+		},
+		{
+			"id": 25,
+			"name": "Bar",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 26,
+			"name": "Custodial Closet",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 27,
+			"name": "Crematorium",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 28,
+			"name": "Kitchen",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 29,
+			"name": "Robotics",
+			"region": 3,
+			"access_type": 2
+		},
+		{
+			"id": 30,
+			"name": "Research Director",
+			"region": 3,
+			"access_type": 2
+		},
+		{
+			"id": 31,
+			"name": "Cargo Bay",
+			"region": 7,
+			"access_type": 2
+		},
+		{
+			"id": 32,
+			"name": "Construction Areas",
+			"region": 4,
+			"access_type": 2
+		},
+		{
+			"id": 33,
+			"name": "Chemistry Lab",
+			"region": 2,
+			"access_type": 2
+		},
+		{
+			"id": 34,
+			"name": "Cargo Bot Delivery",
+			"region": 7,
+			"access_type": 2
+		},
+		{
+			"id": 35,
+			"name": "Hydroponics",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 36,
+			"name": "Manufacturing",
+			"region": -1,
+			"access_type": 0
+		},
+		{
+			"id": 37,
+			"name": "Library",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 38,
+			"name": "Internal Affairs",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 39,
+			"name": "Virology",
+			"region": 2,
+			"access_type": 2
+		},
+		{
+			"id": 40,
+			"name": "Chief Medical Officer",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 41,
+			"name": "Quartermaster",
+			"region": 7,
+			"access_type": 2
+		},
+		{
+			"id": 42,
+			"name": "Station Network",
+			"region": 3,
+			"access_type": 2
+		},
+		{
+			"id": 43,
+			"name": "Explorer",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 44,
+			"name": "Pathfinder",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 45,
+			"name": "Surgery",
+			"region": 2,
+			"access_type": 2
+		},
+		{
+			"id": 47,
+			"name": "Science",
+			"region": 3,
+			"access_type": 2
+		},
+		{
+			"id": 48,
+			"name": "Mining",
+			"region": 7,
+			"access_type": 2
+		},
+		{
+			"id": 49,
+			"name": "Mining Office",
+			"region": -1,
+			"access_type": 0
+		},
+		{
+			"id": 50,
+			"name": "Cargo Office",
+			"region": 7,
+			"access_type": 2
+		},
+		{
+			"id": 53,
+			"name": "Main Vault",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 54,
+			"name": "Mining EVA",
+			"region": 7,
+			"access_type": 2
+		},
+		{
+			"id": 55,
+			"name": "Xenobiology Lab",
+			"region": 3,
+			"access_type": 2
+		},
+		{
+			"id": 56,
+			"name": "Chief Engineer",
+			"region": 4,
+			"access_type": 2
+		},
+		{
+			"id": 57,
+			"name": "Head of Personnel",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 58,
+			"name": "Head of Security",
+			"region": 1,
+			"access_type": 2
+		},
+		{
+			"id": 59,
+			"name": "RC Announcements",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 60,
+			"name": "Keycode Auth. Device",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 61,
+			"name": "Telecommunications",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 62,
+			"name": "Gateway",
+			"region": 5,
+			"access_type": 2
+		},
+		{
+			"id": 63,
+			"name": "Security",
+			"region": 1,
+			"access_type": 2
+		},
+		{
+			"id": 64,
+			"name": "Psychiatrist's Office",
+			"region": 2,
+			"access_type": 2
+		},
+		{
+			"id": 65,
+			"name": "Xenoarchaeology",
+			"region": 3,
+			"access_type": 2
+		},
+		{
+			"id": 66,
+			"name": "Medical Equipment",
+			"region": 2,
+			"access_type": 2
+		},
+		{
+			"id": 67,
+			"name": "Pilot",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 72,
+			"name": "Entertainment Backstage",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 77,
+			"name": "Xenobotany Garden",
+			"region": 3,
+			"access_type": 2
+		},
+		{
+			"id": 101,
+			"name": "General Facilities",
+			"region": -1,
+			"access_type": 1
+		},
+		{
+			"id": 102,
+			"name": "Entertainment Facilities",
+			"region": -1,
+			"access_type": 1
+		},
+		{
+			"id": 103,
+			"name": "Emergency Response Team Prep",
+			"region": -1,
+			"access_type": 1
+		},
+		{
+			"id": 104,
+			"name": "Medical Facilities",
+			"region": -1,
+			"access_type": 1
+		},
+		{
+			"id": 105,
+			"name": "Dormitories",
+			"region": -1,
+			"access_type": 1
+		},
+		{
+			"id": 106,
+			"name": "Storage",
+			"region": -1,
+			"access_type": 1
+		},
+		{
+			"id": 107,
+			"name": "Central Command Teleporter",
+			"region": -1,
+			"access_type": 1
+		},
+		{
+			"id": 108,
+			"name": "Emergency Response Team Administration",
+			"region": -1,
+			"access_type": 1
+		},
+		{
+			"id": 109,
+			"name": "Central Command Administration",
+			"region": -1,
+			"access_type": 1
+		},
+		{
+			"id": 136,
+			"name": "Clown Office",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 137,
+			"name": "Tomfoolery Closet",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 138,
+			"name": "Mime Office",
+			"region": 6,
+			"access_type": 2
+		},
+		{
+			"id": 150,
+			"name": "Syndicate",
+			"region": -1,
+			"access_type": 4
+		},
+		{
+			"id": 199,
+			"name": "Synthetic",
+			"region": -1,
+			"access_type": 0
+		},
+		{
+			"id": 200,
+			"name": "Crate cash",
+			"region": -1,
+			"access_type": 0
+		},
+		{
+			"id": 160,
+			"name": "Trader",
+			"region": -1,
+			"access_type": 8
+		},
+		{
+			"id": 300,
+			"name": "#%_^&*@!",
+			"region": -1,
+			"access_type": 8
+		},
+		{
+			"id": 301,
+			"name": "Talon General",
+			"region": -1,
+			"access_type": 8
+		},
+		{
+			"id": 302,
+			"name": "Talon bridge",
+			"region": -1,
+			"access_type": 8
+		},
+		{
+			"id": 303,
+			"name": "Talon medical",
+			"region": -1,
+			"access_type": 8
+		},
+		{
+			"id": 304,
+			"name": "Talon engineer",
+			"region": -1,
+			"access_type": 8
+		},
+		{
+			"id": 305,
+			"name": "Talon cargo",
+			"region": -1,
+			"access_type": 8
+		},
+		{
+			"id": 306,
+			"name": "Talon security",
+			"region": -1,
+			"access_type": 8
+		},
+		{
+			"id": 307,
+			"name": "Talon pilot shuttles",
+			"region": -1,
+			"access_type": 8
+		},
+		{
+			"id": 511,
+			"name": "Lost",
+			"region": -1,
+			"access_type": 0
+		}
+	]
+}

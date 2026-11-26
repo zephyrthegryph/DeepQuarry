@@ -1,3 +1,0 @@
-sources = ["code/z.dm", "code/a.dm"]
-expected_rows = 2
-expected_diagnostics = 5

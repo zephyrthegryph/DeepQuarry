@@ -20,9 +20,9 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	reagents(nameof(max_volume))
 	owns_many(nameof(syringes), /obj/item/reagent_containers/syringe)
 	interface("MechaSyringeGun")
+	ui_shape(synth_speed = int(), total_volume = num(), max_volume = num(), known_reagents = list_of(row(id = schema_text(), name = schema_text(), selected = bool())), current_reagents = list_of(row(id = schema_text(), name = schema_text(), volume = num(), contaminant = bool())))
 	without("ui_open")
 	op("select_reagents", ui_act("select_reagents", arg("reagents")), then(PROC_REF(ui_act_select_reagents)))
-	op("purge_reagent", ui_act("purge_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_purge_reagent)))
 	op("purge_all", ui_act("purge_all"), then(PROC_REF(ui_act_purge_all)))
 	every(0.2 SECONDS, then(PROC_REF(syringe_gun_step)), when = nameof(synthesizing))
 
@@ -119,15 +119,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["synth_speed"] = synth_speed
-	var/list/merged_1 = ui_data_obj_item_mecha_parts_mecha_equipment_tool_syringe_gun(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
-
-/// /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun's window data.
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_data_obj_item_mecha_parts_mecha_equipment_tool_syringe_gun(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
 	data["total_volume"] = round(reagents?.total_volume || 0, 0.001)
 	data["max_volume"] = reagents?.maximum_volume || 0
 	var/list/known = list()
@@ -140,12 +131,13 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	data["known_reagents"] = known
 	var/list/current = list()
 	if(reagents)
-		for(var/datum/reagent/R in reagents.reagent_list)
+		for(var/datum/reagent/R as anything in reagents.listed_reagents()) // the contaminants last
 			if(R.volume > 0)
 				current += list(list(
 					"id" = R.id,
 					"name" = "[R]",
 					"volume" = round(R.volume, 0.001),
+					"contaminant" = istype(R, /datum/reagent/contaminant),
 				))
 	data["current_reagents"] = current
 	return data
@@ -165,13 +157,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	set_processed_reagents(selected)
 	set_synthesizing(synthesis_wanted())
 	if(processed_reagents.len)
-		occupant_message("Reagent processing started.")
 		src.mecha_log_message("Reagent processing started.")
-	return TRUE
-
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_act_purge_reagent(datum/act/op/A, id)
-	if(id)
-		reagents.del_reagent(id)
 	return TRUE
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_act_purge_all(datum/act/op/A)

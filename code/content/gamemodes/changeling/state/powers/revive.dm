@@ -9,9 +9,6 @@
 
 //Revive from revival stasis
 /mob/proc/changeling_revive()
-	set category = VERB_CAT_CHANGELING
-	set name = "Revive"
-	set desc = "We are ready to revive ourselves on command."
 
 	var/datum/changeling/changeling = changeling_power(0,0,100,DEAD)
 	if(!changeling)

@@ -1,0 +1,79 @@
+{
+	"emagged": false,
+	"message_current_id": 2,
+	"message_current": {
+		"id": 2,
+		"title": "Supply shipment",
+		"contents": "Your requested supplies have arrived at the cargo dock."
+	},
+	"is_ai": false,
+	"menu_state": 1,
+	"authenticated": 2,
+	"authmax": true,
+	"boss_short": "Central Command",
+	"stat_display": {
+		"type": "message",
+		"line_1": "Welcome",
+		"line_2": "aboard",
+		"presets": [
+			{
+				"name": "blank",
+				"label": "Clear",
+				"desc": "Blank"
+			},
+			{
+				"name": "time",
+				"label": "Station Time",
+				"desc": "Shows the time"
+			},
+			{
+				"name": "shuttle",
+				"label": "Shuttle ETA",
+				"desc": "Shows the shuttle ETA"
+			},
+			{
+				"name": "message",
+				"label": "Message",
+				"desc": "Two-line message"
+			}
+		]
+	},
+	"security_level": 1,
+	"security_level_color": "blue",
+	"str_security_level": "Blue",
+	"levels": [
+		{
+			"id": 0,
+			"name": "Green",
+			"icon": "shield"
+		},
+		{
+			"id": 1,
+			"name": "Blue",
+			"icon": "shield"
+		},
+		{
+			"id": 2,
+			"name": "Red",
+			"icon": "shield"
+		}
+	],
+	"messages": [
+		{
+			"id": 1,
+			"title": "Welcome",
+			"contents": "Welcome to the station."
+		},
+		{
+			"id": 2,
+			"title": "Supply shipment",
+			"contents": "Your requested supplies have arrived at the cargo dock."
+		}
+	],
+	"message_deletion_allowed": true,
+	"msg_cooldown": 0,
+	"cc_cooldown": 0,
+	"esc_callable": true,
+	"esc_recallable": false,
+	"esc_status": "Evacuation shuttle is available"
+}

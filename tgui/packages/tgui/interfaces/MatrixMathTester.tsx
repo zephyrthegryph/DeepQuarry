@@ -8,6 +8,10 @@ import {
   Section,
   Table,
 } from 'tgui-core/components';
+import type {
+  MatrixMathTesterActions,
+  MatrixMathTesterData,
+} from './generated/MatrixMathTester';
 
 const MatrixMathTesterInput = (props: { value: number; varName: string }) => {
   const { act } = useBackend();
@@ -26,25 +30,18 @@ const MatrixMathTesterInput = (props: { value: number; varName: string }) => {
   );
 };
 
-type MatrixData = {
-  matrix_a: number;
-  matrix_b: number;
-  matrix_c: number;
-  matrix_d: number;
-  matrix_e: number;
-  matrix_f: number;
-  pixelated: boolean;
-};
-
 export const MatrixMathTester = (props) => {
-  const { act, data } = useBackend<MatrixData>();
+  const { act, data } = useBackend<
+    MatrixMathTesterData,
+    MatrixMathTesterActions
+  >();
   const {
-    matrix_a,
-    matrix_b,
-    matrix_c,
-    matrix_d,
-    matrix_e,
-    matrix_f,
+    matrix_a = 0,
+    matrix_b = 0,
+    matrix_c = 0,
+    matrix_d = 0,
+    matrix_e = 0,
+    matrix_f = 0,
     pixelated,
   } = data;
   const [scaleX, setScaleX] = useState(1);
@@ -73,7 +70,7 @@ export const MatrixMathTester = (props) => {
                 <MatrixMathTesterInput value={matrix_d} varName="d" />
               </Table.Cell>
               <Table.Cell>
-                <Input disabled placeholder="0 (fixed value)" fluid />
+                <Input disabled placeholder="0 (fixed)" fluid />
               </Table.Cell>
             </Table.Row>
             <Table.Row>
@@ -84,7 +81,7 @@ export const MatrixMathTester = (props) => {
                 <MatrixMathTesterInput value={matrix_e} varName="e" />
               </Table.Cell>
               <Table.Cell>
-                <Input disabled placeholder="0 (fixed value)" fluid />
+                <Input disabled placeholder="0 (fixed)" fluid />
               </Table.Cell>
             </Table.Row>
             <Table.Row>
@@ -95,7 +92,7 @@ export const MatrixMathTester = (props) => {
                 <MatrixMathTesterInput value={matrix_f} varName="f" />
               </Table.Cell>
               <Table.Cell>
-                <Input disabled placeholder="1 (fixed value)" fluid />
+                <Input disabled placeholder="1 (fixed)" fluid />
               </Table.Cell>
             </Table.Row>
           </Table>

@@ -23,7 +23,19 @@ CAPABILITIES(/transformation/grinding)
 /proc/grinding_ore_rule_for(item_type)
 	RETURN_TYPE(/datum/xform)
 	var/datum/xform/rule = grinding_rule_for(item_type)
-	return (rule && rule.takes[1][1] == XCUR_ITEM) ? rule : null
+	return (rule && rule.takes[1][1] == XCUR_ITEM && ispath(item_type, /obj/item/ore)) ? rule : null
+
+/// The rule for an ordinary item (not a sheet, not an ore): the hand-written row of the item's own type, or of the nearest type above it (a row for the light tubes
+/// covers every kind of tube), or null.
+/proc/grinding_item_rule_for(item_type)
+	RETURN_TYPE(/datum/xform)
+	var/path = item_type
+	while(ispath(path, /obj/item))
+		var/datum/xform/rule = grinding_rule_for(path)
+		if(rule && rule.takes[1][1] == XCUR_ITEM && !ispath(path, /obj/item/ore))
+			return rule
+		path = type2parent(path)
+	return null
 
 /// The reagent ids a grinding rule makes, in order, a reagent named twice twice.
 /datum/xform/proc/grind_ids()
@@ -31,6 +43,82 @@ CAPABILITIES(/transformation/grinding)
 	. = list()
 	for(var/list/row as anything in makes)
 		. += row[2]
+
+/// reagent id => weight for an item row: the amounts of its terms, summed per reagent (the share of the item's feedstock that reagent is; a trace it carries is a small
+/// weight beside the rest).
+/datum/xform/proc/grind_weights()
+	RETURN_TYPE(/list)
+	. = list()
+	for(var/list/row as anything in makes)
+		.[row[2]] = (.[row[2]] || 0) + row[3]
+
+/// Can a grinder take this: a row of its own, contents it can pour out, or something it is made of. Anything else is not suitable for blending.
+/proc/item_grindable(atom/movable/AM)
+	if(AM.reagents?.total_volume > 0)
+		return TRUE
+	if(!isitem(AM))
+		return FALSE
+	var/obj/item/O = AM
+	if(grinding_rule_for(O.type) || grinding_item_rule_for(O.type))
+		return TRUE
+	return length(O.get_material_composition()) > 0
+
+/// What an ordinary item grinds into, as reagent id => units. Any item grinds into the feedstock of what it is made of: each of its materials, sheet for sheet, into what a
+/// sheet of it grinds into (a sheet is REAGENTS_PER_SHEET units, so an item never grinds into more than it cost to make). An item with a hand-written row grinds into the
+/// row's reagents, by weight, in that same volume (or, when it records no materials, GRIND_ITEM_UNITS_PER_SIZE a point of size, a stack that for each of its units).
+/proc/item_feedstock(obj/item/O)
+	RETURN_TYPE(/list)
+	var/list/result = list()
+	var/obj/item/stack/stack = O
+	var/is_stack = istype(stack)
+	var/list/by_material = list()
+	var/materials_volume = 0
+	if(!is_stack)
+		var/list/composition = O.get_material_composition()
+		for(var/datum/material/M as anything in composition)
+			var/datum/xform/sheet_rule = grinding_sheet_rule_for(M.stack_type)
+			if(!sheet_rule || composition[M] <= 0)
+				continue
+			var/list/ids = sheet_rule.grind_ids()
+			var/volume = composition[M] / SHEET_MATERIAL_AMOUNT * REAGENTS_PER_SHEET
+			materials_volume += volume
+			for(var/id in ids)
+				by_material[id] = (by_material[id] || 0) + volume / length(ids)
+	var/datum/xform/row = grinding_item_rule_for(O.type)
+	if(!row)
+		return by_material
+	var/total = materials_volume > 0 ? materials_volume : GRIND_ITEM_UNITS_PER_SIZE * max(O.w_class, 1) * (is_stack ? stack.get_amount() : 1)
+	var/list/weights = row.grind_weights()
+	var/weight_sum = 0
+	for(var/id in weights)
+		weight_sum += weights[id]
+	if(weight_sum <= 0)
+		return by_material
+	for(var/id in weights)
+		result[id] = total * weights[id] / weight_sum
+	return result
+
+/// The contaminant reagents (id => units) that `taken` of a stack's sheets carry when ground: its rolled traces, by the vocabulary a melt shares (material_traces.dm). A
+/// stack's traces are rolled the first time they are asked.
+/proc/stack_trace_contaminants(obj/item/stack/material/stack, taken, units_per_sheet)
+	. = list()
+	if(!istype(stack) || taken <= 0 || stack.get_amount() <= 0)
+		return
+	stack.ensure_traces()
+	for(var/trace_id in stack.trace_amounts)
+		var/contaminant_id = contaminant_of_material_trace(trace_id)
+		if(!contaminant_id)
+			continue
+		.[contaminant_id] = (.[contaminant_id] || 0) + stack.trace_amounts[trace_id] * (taken / stack.get_amount()) * units_per_sheet
+
+/// The contaminant reagents (id => units) one ground ore carries: what its vein was rolled with (trace_roll(), a lot of its own), hidden until now.
+/proc/ore_trace_contaminants(obj/item/ore/ore)
+	. = list()
+	if(!istype(ore))
+		return
+	var/list/roll = trace_roll(ore.trace_source_id(), TRACE_SCOPE_LOT, ore.lot_key || "loose [ore.material]")
+	for(var/contaminant_id in roll)
+		.[contaminant_id] = roll[contaminant_id] * TRACE_ORE_UNITS * TRACE_LOT_DIRT
 
 /transformation/grinding/stack_material_plastic
 CAPABILITIES(/transformation/grinding/stack_material_plastic)
@@ -112,7 +200,7 @@ CAPABILITIES(/transformation/grinding/stack_material_plasteel)
 /transformation/grinding/stack_material_sandstone
 CAPABILITIES(/transformation/grinding/stack_material_sandstone)
 	configure(transformation(takes = list(stack_term(/obj/item/stack/material/sandstone, 1)),
-		makes = list(reagent(REAGENT_ID_SILICON, 1), reagent(REAGENT_ID_OXYGEN, 1))))
+		makes = list(reagent(REAGENT_ID_SAND, 2))))
 
 /transformation/grinding/stack_material_marble
 CAPABILITIES(/transformation/grinding/stack_material_marble)
@@ -206,6 +294,37 @@ CAPABILITIES(/transformation/grinding/stack_material_concrete)
 CAPABILITIES(/transformation/grinding/stack_material_cardboard)
 	configure(transformation(takes = list(stack_term(/obj/item/stack/material/cardboard, 1)),
 		makes = list(reagent(REAGENT_ID_WOODPULP, 1))))
+
+// Polymers: each breaks back into the units it was made of (code/content/materials/engineering/material_polymers.dm), a sheet for a sheet's worth
+/transformation/grinding/stack_material_rubber
+CAPABILITIES(/transformation/grinding/stack_material_rubber)
+	configure(transformation(takes = list(stack_term(/obj/item/stack/material/rubber, 1)),
+		makes = list(reagent(REAGENT_ID_FATTYACID, 1), reagent(REAGENT_ID_SULFUR, 1))))
+
+/transformation/grinding/stack_material_nylon
+CAPABILITIES(/transformation/grinding/stack_material_nylon)
+	configure(transformation(takes = list(stack_term(/obj/item/stack/material/nylon, 1)),
+		makes = list(reagent(REAGENT_ID_FATTYACID, 1), reagent(REAGENT_ID_DIETHYLAMINE, 1))))
+
+/transformation/grinding/stack_material_hard_plastic
+CAPABILITIES(/transformation/grinding/stack_material_hard_plastic)
+	configure(transformation(takes = list(stack_term(/obj/item/stack/material/hard_plastic, 1)),
+		makes = list(reagent(REAGENT_ID_PHENOL, 1), reagent(REAGENT_ID_WOODALDEHYDE, 1))))
+
+/transformation/grinding/stack_material_guncotton
+CAPABILITIES(/transformation/grinding/stack_material_guncotton)
+	configure(transformation(takes = list(stack_term(/obj/item/stack/material/guncotton, 1)),
+		makes = list(reagent(REAGENT_ID_WOODPULP, 1), reagent(REAGENT_ID_NITRICACID, 1))))
+
+/transformation/grinding/stack_material_aramid
+CAPABILITIES(/transformation/grinding/stack_material_aramid)
+	configure(transformation(takes = list(stack_term(/obj/item/stack/material/aramid, 1)),
+		makes = list(reagent(REAGENT_ID_MYELAMINE, 1))))
+
+/transformation/grinding/stack_material_carbon_fibre
+CAPABILITIES(/transformation/grinding/stack_material_carbon_fibre)
+	configure(transformation(takes = list(stack_term(/obj/item/stack/material/carbon_fibre, 1)),
+		makes = list(reagent(REAGENT_ID_CARBON, 1))))
 
 // Woods
 /transformation/grinding/stack_material_wood
@@ -447,12 +566,16 @@ CAPABILITIES(/transformation/grinding/ore_bauxite)
 				var/remove_amount = stack.reagents_per_sheet()
 				var/amount_to_take = max(0,min(stack.get_amount(),round(remaining_volume/remove_amount)))
 				if(amount_to_take)
+					// The traces the sheets carry come out with them, as the contaminant reagents they are (read before the sheets are used).
+					var/list/carried = stack_trace_contaminants(stack, amount_to_take, remove_amount)
 					stack.use(amount_to_take)
 					if(QDELETED(stack))
 						holdingitems -= stack
 					amount_to_take = (amount_to_take/(sheet_components.len))
 					for(var/i in sheet_components)
 						R.add_reagent(i, (amount_to_take*remove_amount))
+					for(var/contaminant_id in carried)
+						R.add_reagent(contaminant_id, carried[contaminant_id])
 					continue
 
 		else if(ore_rule)
@@ -461,26 +584,34 @@ CAPABILITIES(/transformation/grinding/ore_bauxite)
 				var/list/ore_components = ore_rule.grind_ids()
 				if(remaining_volume >= REAGENTS_PER_ORE)
 					holdingitems -= D
+					var/list/carried = ore_trace_contaminants(D)
 					consumed(D, R.my_atom)
 					var/amount_to_take = (REAGENTS_PER_ORE/(ore_components.len))
 					for(var/i in ore_components)
 						R.add_reagent(i, amount_to_take)
+					for(var/contaminant_id in carried)
+						R.add_reagent(contaminant_id, carried[contaminant_id])
 					continue
 
-		else if(O.reagents && O.reagents.total_volume > 0)
-			O.reagents.trans_to_obj(R.my_atom, min(O.reagents.total_volume, remaining_volume))
-			if(O.reagents.total_volume == 0)
-				holdingitems -= O
-				consumed(O, R.my_atom)
-			if (R.total_volume >= R.maximum_volume)
-				break
-
 		else
-			// Cronch
-			holdingitems -= O
-			consumed(O, R.my_atom)
+			grind_item_to_reagents(O, R, holdingitems)
 
 	return (R.total_volume > start_volume)
+
+/// Grinds one ordinary item: what it holds pours out first (an item that cannot be emptied into the room there is stays in the grinder), then it is ground into the
+/// feedstock of what it is made of (item_feedstock()). An item that is neither holding nor made of anything is crunched.
+/proc/grind_item_to_reagents(obj/item/O, datum/reagents/R, list/holdingitems)
+	if(O.reagents && O.reagents.total_volume > 0)
+		O.reagents.trans_to_obj(R.my_atom, min(O.reagents.total_volume, R.maximum_volume - R.total_volume))
+		if(O.reagents.total_volume > 0)
+			return
+	var/list/feedstock = item_feedstock(O)
+	for(var/id in feedstock)
+		R.add_reagent(id, feedstock[id])
+	if(GLOB.chem_trace && length(feedstock))
+		log_world("CHEM: [O] ([O.type]) ground into [contaminants_text(feedstock)]")
+	holdingitems -= O
+	consumed(O, R.my_atom)
 
 // start: Repurposed coffee grinders and supermatter do not mix.
 /proc/puny_protons(regrets = 0, atom/our_atom, list/holdingitems)

@@ -53,7 +53,6 @@ CAPABILITIES(/obj/item/ammo_magazine/handful)
 /obj/item/ammo_magazine/handful/proc/handful_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	make_rounds_real()
 	// Merge two handfuls: pour the other one into this, up to capacity.
 	if(istype(W, /obj/item/ammo_magazine/handful))
 		. = OP_PASS

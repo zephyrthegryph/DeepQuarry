@@ -44,7 +44,6 @@ MSG_DEF_SELF(window/dismantle_refused, "You're not sure how to dismantle it prop
 /obj/structure/window/proc/anchor_toggled(datum/act/op/A)
 	set_anchored(!anchored)
 	update_nearby_tiles(need_rebuild = TRUE)
-	update_verbs()
 	to_chat(A.actor, span_notice("You have [anchored ? "" : "un"]fastened the [reinf ? "frame" : "window"] [anchored ? "to" : "from"] the floor."))
 	return OP_OK
 

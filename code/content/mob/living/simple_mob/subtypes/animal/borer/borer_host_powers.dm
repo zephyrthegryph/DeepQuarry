@@ -3,7 +3,6 @@
  */
 /mob/living/carbon/proc/release_control()
 
-	set category = VERB_CAT_ABILITIES_BRAINSLUG
 	set name = "Release Control"
 	set desc = "Release control of your host's body."
 
@@ -20,7 +19,6 @@
  *  Brain slug proc for tormenting the host.
  */
 /mob/living/carbon/proc/punish_host()
-	set category = VERB_CAT_ABILITIES_BRAINSLUG
 	set name = "Torment host"
 	set desc = "Punish your host with agony."
 
@@ -29,7 +27,9 @@
 		return
 	if(!B.host_brain)
 		return
-	if(!B.can_use_power_docile())
+	var/refusal = B.power_docile_refusal()
+	if(refusal)
+		B.tell_power_refusal(refusal)
 		return
 	if(!B.use_chems(BORER_POWER_COST_TORTURE))
 		return
@@ -45,14 +45,15 @@
  *  Brain slug proc for spitting up new borers. They are ghostjoin by default, but are infertile.
  */
 /mob/living/carbon/proc/spawn_larvae()
-	set category = VERB_CAT_ABILITIES_BRAINSLUG
 	set name = "Reproduce"
 	set desc = "Spawn several young."
 
 	var/mob/living/simple_mob/animal/borer/B = has_brain_worms()
-	if(!B || !B.can_use_power_controlling_host())
+	if(!B)
 		return
-	if(!B.can_use_power_docile())
+	var/refusal = B.power_controlling_host_refusal() || B.power_docile_refusal()
+	if(refusal)
+		B.tell_power_refusal(refusal)
 		return
 	if(!B.antag)
 		to_chat(src, span_warning("You cannot reproduce, you are infertile!"))

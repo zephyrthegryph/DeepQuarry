@@ -1,0 +1,257 @@
+{
+	"screen": "stocks",
+	"stationName": "NSS Ade-testing",
+	"balance": 5000,
+	"viewMode": "Full",
+	"stocks": [
+		{
+			"REF": 1,
+			"valueChange": -1,
+			"bankrupt": 0,
+			"ID": "SIK",
+			"Name": "SIK",
+			"Value": 67,
+			"Owned": 0,
+			"Avail": 278607,
+			"Unification": "0",
+			"Products": [
+				"The fission stun baton. ",
+				"The wide-range laser gun. ",
+				"The mass-market machine gun. ",
+				"The heat-seeking missile. ",
+				"The species-targeting bomb. "
+			]
+		},
+		{
+			"REF": 2,
+			"valueChange": 1,
+			"bankrupt": 0,
+			"ID": "NERIC",
+			"Name": "Nerfnics",
+			"Value": 26,
+			"Owned": 0,
+			"Avail": 580318,
+			"Unification": "0",
+			"Products": [
+				"The perpetual-motion bomb. ",
+				"The stealth bomb. "
+			]
+		},
+		{
+			"REF": 3,
+			"valueChange": 0,
+			"bankrupt": 0,
+			"ID": "ST",
+			"Name": "Sector",
+			"Value": 98,
+			"Owned": 0,
+			"Avail": 695902,
+			"Unification": "0",
+			"Products": [
+				"The professional Cyborg 93 PDA. ",
+				"The extreme Universe 15 PDA. ",
+				"The professional Cyborg 94 PDA. "
+			]
+		},
+		{
+			"REF": 4,
+			"valueChange": 0,
+			"bankrupt": 0,
+			"ID": "NG",
+			"Name": "National Gadgets",
+			"Value": 29,
+			"Owned": 0,
+			"Avail": 558357,
+			"Unification": "0",
+			"Products": [
+				"lansopphen, the purgative. ",
+				"morphvir, the sleeping pill. ",
+				"vicodane, the suppository. "
+			]
+		},
+		{
+			"REF": 5,
+			"valueChange": 1,
+			"bankrupt": 0,
+			"ID": "TT",
+			"Name": "Tomato",
+			"Value": 61,
+			"Owned": 0,
+			"Avail": 720726,
+			"Unification": "0",
+			"Products": [
+				"The high performance Semper Fi 2 keyboard. ",
+				"The extreme Phantom 91 keyboard. "
+			]
+		},
+		{
+			"REF": 6,
+			"valueChange": 1,
+			"bankrupt": 0,
+			"ID": "R",
+			"Name": "Rhubarb",
+			"Value": 36,
+			"Owned": 0,
+			"Avail": 536613,
+			"Unification": "0",
+			"Products": [
+				"The homeopathic xenomorph meat product line. ",
+				"The paleolithic goat meat product line. ",
+				"The vat-grown mimic meat product line. ",
+				"The bio fly meat product line. "
+			]
+		},
+		{
+			"REF": 7,
+			"valueChange": 0,
+			"bankrupt": 0,
+			"ID": "RI",
+			"Name": "Robustcoin",
+			"Value": 44,
+			"Owned": 0,
+			"Avail": 423999,
+			"Unification": "0",
+			"Products": [
+				"The Robustcoin Xperience 55 tablet computer. ",
+				"The extreme Universe 95 PDA. ",
+				"The bleeding edge Cyborg 47 mobile phone. ",
+				"Engin-Y 89 newscaster. "
+			]
+		},
+		{
+			"REF": 8,
+			"valueChange": 0,
+			"bankrupt": 0,
+			"ID": "FOK",
+			"Name": "FOK",
+			"Value": 21,
+			"Owned": 0,
+			"Avail": 594007,
+			"Unification": "0",
+			"Products": [
+				"The bluespace-powered Athlete 5 keyboard. ",
+				"The professional Athlete 17 graphics card. ",
+				"The bleeding edge Athlete 56 nanobots. "
+			]
+		},
+		{
+			"REF": 9,
+			"valueChange": 0,
+			"bankrupt": 0,
+			"ID": "CAB",
+			"Name": "Carbontech",
+			"Value": 22,
+			"Owned": 0,
+			"Avail": 398091,
+			"Unification": "0",
+			"Products": [
+				"The Carbontech cattle prod +5. ",
+				"The Carbontech cultivator +11. ",
+				"The semi-automatic plough X8029. ",
+				"The drone-mounted sickle maximus. ",
+				"Carbontech's cattle prod hybrid. "
+			]
+		},
+		{
+			"REF": 10,
+			"valueChange": -1,
+			"bankrupt": 0,
+			"ID": "GL",
+			"Name": "Giga Limited",
+			"Value": 68,
+			"Owned": 0,
+			"Avail": 327703,
+			"Unification": "0",
+			"Products": [
+				"dexpirin, the sleeping pill. ",
+				"asaminophen, the steroid. "
+			]
+		},
+		{
+			"REF": 11,
+			"valueChange": -1,
+			"bankrupt": 0,
+			"ID": "NIC",
+			"Name": "NIC",
+			"Value": 120,
+			"Owned": 0,
+			"Avail": 258166,
+			"Unification": "0",
+			"Products": [
+				"The diet chicken meat product line. ",
+				"The sugar-free wendigo meat product line. ",
+				"The organic wendigo meat product line. "
+			]
+		},
+		{
+			"REF": 12,
+			"valueChange": 1,
+			"bankrupt": 0,
+			"ID": "RUT",
+			"Name": "Robusttric",
+			"Value": 41,
+			"Owned": 0,
+			"Avail": 580382,
+			"Unification": "0",
+			"Products": [
+				"The stealth grenade. ",
+				"The smart energy gun. ",
+				"The sentient machine gun. "
+			]
+		},
+		{
+			"REF": 13,
+			"valueChange": 0,
+			"bankrupt": 0,
+			"ID": "WS",
+			"Name": "Wood Stores",
+			"Value": 71,
+			"Owned": 0,
+			"Avail": 476998,
+			"Unification": "0",
+			"Products": [
+				"The reclaimed lizard meat product line. ",
+				"The diet human meat product line. ",
+				"The organic human meat product line. ",
+				"The reclaimed corgi meat product line. ",
+				"The diet mystery meat product line. "
+			]
+		},
+		{
+			"REF": 14,
+			"valueChange": -1,
+			"bankrupt": 0,
+			"ID": "PH",
+			"Name": "Pumpkin Health",
+			"Value": 121,
+			"Owned": 0,
+			"Avail": 432212,
+			"Unification": "0",
+			"Products": [
+				"butpirin, the steroid. ",
+				"morphphen, the antiretroviral. "
+			]
+		},
+		{
+			"REF": 15,
+			"valueChange": 0,
+			"bankrupt": 0,
+			"ID": "GAM",
+			"Name": "GAM",
+			"Value": 105,
+			"Owned": 0,
+			"Avail": 707304,
+			"Unification": "0",
+			"Products": [
+				"The bluespace laser gun. ",
+				"The bluespace grenade. "
+			]
+		}
+	],
+	"logs": [],
+	"name": null,
+	"events": [],
+	"articles": [],
+	"maxValue": 100,
+	"values": []
+}

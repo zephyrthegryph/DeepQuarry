@@ -50,12 +50,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/afoam_dart/riot, list(MAT_STEEL = 210, MAT_PL
 	projectile_type = /obj/item/projectile/bullet/pistol/strong
 	MATERIAL_BULK(MAT_STEEL, 210)
 
-/obj/item/ammo_casing/a357/bb
-	desc = "A .357 BB."
-	projectile_type = /obj/item/projectile/bullet/bb
-	MATERIAL_BULK(MAT_PLASTIC, 20)
-	caseless = TRUE
-
 /obj/item/ammo_casing/a357/rubber
 	desc = "A .357 rubber bullet casing."
 	caliber = ".357"
@@ -97,12 +91,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a38/emp, list(MAT_STEEL = 130, MAT_URANIUM = 
 	icon_state = "empcasing"
 	projectile_type = /obj/item/projectile/ion/small
 
-/obj/item/ammo_casing/a38/bb
-	desc = "A .38 BB."
-	projectile_type = /obj/item/projectile/bullet/bb
-	MATERIAL_BULK(MAT_PLASTIC, 20)
-	caseless = TRUE
-
 /*
  * .44
  */
@@ -123,12 +111,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a38/emp, list(MAT_STEEL = 130, MAT_URANIUM = 
 	desc = "A proprietary Hedberg-Hammarstrom .44 bullet casing designed for use in revolving rifles."
 	projectile_type = /obj/item/projectile/bullet/rifle/a44rifle
 	MATERIAL_BULK(MAT_STEEL, 210)
-
-/obj/item/ammo_casing/a44/bb
-	desc = "A .44 BB."
-	projectile_type = /obj/item/projectile/bullet/bb
-	MATERIAL_BULK(MAT_PLASTIC, 20)
-	caseless = TRUE
 
 /*
  * .75 (aka Gyrojet Rockets, aka admin abuse)
@@ -173,12 +155,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a38/emp, list(MAT_STEEL = 130, MAT_URANIUM = 
 	desc = "A 9mm practice bullet casing."
 	icon_state = "r-casing"
 	projectile_type = /obj/item/projectile/bullet/practice
-
-/obj/item/ammo_casing/a9mm/bb
-	desc = "A 9mm BB."
-	projectile_type = /obj/item/projectile/bullet/bb
-	MATERIAL_BULK(MAT_PLASTIC, 20)
-	caseless = TRUE
 
 /*
  * .45
@@ -226,12 +202,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a45/hp, list(MAT_STEEL = 60, MAT_PLASTIC = 15
 	desc = "A .45 hollow-point bullet casing."
 	projectile_type = /obj/item/projectile/bullet/pistol/medium/hp
 
-/obj/item/ammo_casing/a45/bb
-	desc = "A .45 BB."
-	projectile_type = /obj/item/projectile/bullet/bb
-	MATERIAL_BULK(MAT_PLASTIC, 20)
-	caseless = TRUE
-
 /*
  * 10mm
  */
@@ -260,12 +230,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a10mm/emp, list(MAT_STEEL = 130, MAT_URANIUM 
 	desc = "A 10mm bullet casing fitted with a single-use ion pulse generator."
 	projectile_type = /obj/item/projectile/ion/small
 	icon_state = "empcasing"
-
-/obj/item/ammo_casing/a10mm/bb
-	desc = "A 10mm BB."
-	projectile_type = /obj/item/projectile/bullet/bb
-	MATERIAL_BULK(MAT_PLASTIC, 20)
-	caseless = TRUE
 
 /*
  * 12g (aka shotgun ammo)
@@ -348,11 +312,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a12g/flechette, list(MAT_STEEL = 360, MAT_PLA
 	caliber = "12g"
 	projectile_type = /obj/item/projectile/scatter/flechette
 
-/obj/item/ammo_casing/a12g/bb
-	desc = "A shotgun BB shell."
-	projectile_type = /obj/item/projectile/bullet/pellet/shotgun/bb // Shotgun
-	MATERIAL_BULK(MAT_PLASTIC, 120) // 6 pellets
-
 /*
  * 7.62mm
  */
@@ -388,12 +347,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a12g/flechette, list(MAT_STEEL = 360, MAT_PLA
 	desc = "A 7.62mm hunting bullet casing."
 	projectile_type = /obj/item/projectile/bullet/rifle/a762/hunter
 
-/obj/item/ammo_casing/a762/bb
-	desc = "A 7.62mm BB."
-	projectile_type = /obj/item/projectile/bullet/bb
-	MATERIAL_BULK(MAT_PLASTIC, 20)
-	caseless = TRUE
-
 /*
  * 14.5mm (anti-materiel rifle round)
  */
@@ -405,7 +358,7 @@ MATERIAL_MIX(/obj/item/ammo_casing/a145, list(MAT_STEEL = 4000, MAT_PLASTEEL = 5
 	caliber = "14.5mm"
 	projectile_type = /obj/item/projectile/bullet/rifle/a145
 
-MATERIAL_MIX(/obj/item/ammo_casing/a145/highvel, list(MAT_STEEL = 4000, MAT_PLASTEEL = 1000)) // Makes them a bit more expensive
+MATERIAL_MIX(/obj/item/ammo_casing/a145/highvel, list(MAT_STEEL = 1245, MAT_PLASTEEL = 310)) // Makes them a bit more expensive
 /obj/item/ammo_casing/a145/highvel
 	desc = "A 14.5mm sabot shell."
 	projectile_type = /obj/item/projectile/bullet/rifle/a145/highvel
@@ -444,12 +397,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a145/highvel, list(MAT_STEEL = 4000, MAT_PLAS
 /obj/item/ammo_casing/a545/hunter
 	desc = "A 5.45mm hunting bullet casing."
 	projectile_type = /obj/item/projectile/bullet/rifle/a545/hunter
-
-/obj/item/ammo_casing/a545/bb
-	desc = "A 5.45mm BB."
-	projectile_type = /obj/item/projectile/bullet/bb
-	MATERIAL_BULK(MAT_PLASTIC, 20)
-	caseless = TRUE
 
 /*
  * 5mm Caseless
@@ -510,14 +457,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a12g/silver, list(DEFAULT_WALL_MATERIAL = 360
 	caliber = "9x39mm"
 	icon_state = "rifle-casing"
 	projectile_type = /obj/item/projectile/bullet/rifle/a9x39
-
-/obj/item/ammo_casing/a9x39/ap
-	desc = "An armor piercing 9x39mm round"
-	projectile_type = /obj/item/projectile/bullet/rifle/a9x39/ap
-
-/obj/item/ammo_casing/a9x39/rubber
-	desc = "A less-lethal 9x39mm round"
-	projectile_type = /obj/item/projectile/bullet/rifle/a9x39/rubber
 
 /obj/item/ammo_casing/a762/rubber
 	desc = "A less-lethal 7.62mm round"
@@ -583,12 +522,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a12g/silver, list(DEFAULT_WALL_MATERIAL = 360
 	caliber = "12.7x108mm"
 	icon_state = "lcasing"
 	projectile_type = /obj/item/projectile/bullet/rifle/a127x108
-
-/obj/item/ammo_casing/a127x108/hv
-	desc = "A high velocity 12.7x108mm round"
-	caliber = "12.7x108mm"
-	icon_state = "lcasing"
-	projectile_type = /obj/item/projectile/bullet/rifle/a145
 
 /************************************************************************/
 /*

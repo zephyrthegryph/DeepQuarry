@@ -8,9 +8,6 @@
 	verbpath = /mob/proc/changeling_transformation_sting
 
 /mob/proc/changeling_transformation_sting()
-	set category = VERB_CAT_CHANGELING
-	set name = "Transformation sting (40)"
-	set desc="Sting target"
 	return changeling_transformation_sting_stage()
 
 /mob/proc/changeling_transformation_sting_stage(dna_answer, mob/living/carbon/selected_target)

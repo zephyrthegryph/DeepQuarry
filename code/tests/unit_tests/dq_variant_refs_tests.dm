@@ -292,8 +292,8 @@
 	TEST_ASSERT(!edible_trash_item(sound_board), "any other board is not")
 	var/obj/machinery/computer/message_monitor/console = allocate(/obj/machinery/computer/message_monitor, T)
 	TEST_ASSERT_EQUAL(initial(console.circuit), VARIANT(/obj/item/circuitboard/message_monitor), "a machine names its circuit by reference")
-	var/obj/item/circuitboard/board = console.materialize_circuit()
-	TEST_ASSERT(istype(board), "the circuit is made when something needs it")
+	var/obj/item/circuitboard/board = console.circuit
+	TEST_ASSERT(istype(board), "the circuit is a real board")
 	TEST_ASSERT(variant_is(board, VARIANT(/obj/item/circuitboard/message_monitor)), "and is the row's board")
 	TEST_ASSERT(islist(dq_type_var(VARIANT(/obj/item/circuitboard/autolathe), "req_components")), "a reference's parts are read from its row")
 	TEST_ASSERT_EQUAL(dq_type_var(VARIANT(/obj/item/circuitboard/autolathe), "build_path"), /obj/machinery/autolathe, "and its machine too")

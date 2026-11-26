@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Borders between stacked column entries (stat panel, chat, docked windows) collapse into one border instead of a double-width seam"

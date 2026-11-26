@@ -329,7 +329,6 @@
 /mob/living/proc/shadekin_control_panel()
 	set name = "Shadekin Control Panel"
 	set desc = "Allows you to adjust the settings of various shadekin settings!"
-	set category = VERB_CAT_ABILITIES_SHADEKIN
 
 	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
@@ -348,7 +347,10 @@
 CAPABILITIES(/datum/shadekin)
 	ref_one(nameof(owner), /mob/living)
 	ref_many(nameof(active_dark_maws))
+	on_change(nameof(dark_energy), ANY, then(PROC_REF(energy_changed)))
+	on_change(nameof(max_dark_energy), ANY, then(PROC_REF(energy_changed)))
 	interface("ShadekinConfig", title = "Shadekin Config")
+	ui_shape(stun_time = num(), flicker_time = num(), flicker_color = nullable(schema_text()), flicker_break_chance = num(), flicker_distance = num(), no_retreat = bool(), nutrition_energy_conversion = bool(), hide_voice_in_phase = bool(), extended_kin = bool(), savefile_selected = bool())
 	op("adjust_time", ui_act("adjust_time", arg("val", num())), then(PROC_REF(ui_act_adjust_time)))
 	op("adjust_color", ui_act("adjust_color"), asks(/datum/prompt/color, fields = list("question" = "Select a color you wish the lights to flicker as (Default is #E0EFF0)", "default" = computed(PROC_REF(flicker_color_default)), "title" = "Color Selector", "timeout" = 0), step = "color"), then(PROC_REF(ui_act_adjust_color)))
 	op("adjust_break", ui_act("adjust_break", arg("val", num())), then(PROC_REF(ui_act_adjust_break)))

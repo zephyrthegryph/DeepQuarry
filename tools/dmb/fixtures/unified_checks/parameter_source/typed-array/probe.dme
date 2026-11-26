@@ -1,6 +1,0 @@
-/var/global/counter
-/datum/box/proc/work()
-    counter = 1
-/proc/check(datum/box/items[])
-    set SpacemanDMM_should_be_pure = 1
-    items[1].work()

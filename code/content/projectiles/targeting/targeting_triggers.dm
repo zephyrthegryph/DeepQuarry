@@ -21,7 +21,7 @@
 		return
 	owner().setClickCooldown(0.5 SECONDS) // Spam prevention, essentially.
 	// A reflex shot is not an input: the aimer's posture (combat mode) decides the safety.
-	if(!owner().combat_mode && owner().client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
+	if(!owner().combat_mode)
 		to_chat(owner(), span_warning("You refrain from firing \the [aiming_with()] as you are out of combat mode."))
 		return
 	owner().visible_message(span_danger("\The [owner()] pulls the trigger reflexively!"))

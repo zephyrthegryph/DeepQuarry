@@ -1,0 +1,1227 @@
+{
+	"designs": {
+		"rigmodule_belt_basic": {
+			"name": "Advanced Suit Control Belt",
+			"desc": "A belt holding a compressed space-suit.",
+			"cost": [],
+			"id": "rigmodule_belt_basic",
+			"categories": [
+				"initial",
+				"/MOD Modules"
+			],
+			"icon": "rigmodulebeltbasic",
+			"constructionTime": 32
+		},
+		"zero_rig_module": {
+			"name": "Zero Suit Control Module",
+			"desc": "A very bare bones and stylish suit designed for pilots with advanced holographic interfaces for the task.",
+			"cost": [],
+			"id": "zero_rig_module",
+			"categories": [
+				"initial",
+				"/MOD Modules"
+			],
+			"icon": "zerorigmodule",
+			"constructionTime": 32
+		},
+		"rig_device_pen": {
+			"name": "hardsuit mounted pen",
+			"desc": "A suit-mounted pen.",
+			"cost": {
+				"plasteel": 1000,
+				"plastic": 500,
+				"phoron": 500,
+				"graphite": 100
+			},
+			"id": "rig_device_pen",
+			"categories": [
+				"initial",
+				"/MOD Modules/Service Modules"
+			],
+			"icon": "rigdevicepen",
+			"constructionTime": 32
+		},
+		"rig_device_paperdispenser": {
+			"name": "hardsuit mounted paper dispenser",
+			"desc": "A suit-mounted paper dispenser.",
+			"cost": {
+				"plasteel": 1000,
+				"plastic": 500,
+				"phoron": 500,
+				"graphite": 100
+			},
+			"id": "rig_device_paperdispenser",
+			"categories": [
+				"initial",
+				"/MOD Modules/Service Modules"
+			],
+			"icon": "rigdevicepaperdispenser",
+			"constructionTime": 32
+		}
+	},
+	"SHEET_MATERIAL_AMOUNT": 2000,
+	"processing": 0,
+	"materials": [
+		{
+			"name": "wax",
+			"ref": 1,
+			"amount": 0,
+			"color": "#fff343",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "voltaic crystal",
+			"ref": 2,
+			"amount": 0,
+			"color": "#6fd0ff",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "thermic ceramic",
+			"ref": 3,
+			"amount": 0,
+			"color": "#ff8b52",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "kinetic crystal",
+			"ref": 4,
+			"amount": 0,
+			"color": "#b7c0ce",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "ward metal",
+			"ref": 5,
+			"amount": 0,
+			"color": "#72e8b5",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "spore biomass",
+			"ref": 6,
+			"amount": 0,
+			"color": "#8fcf5a",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "etching ceramic",
+			"ref": 7,
+			"amount": 0,
+			"color": "#caff4d",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "lumen crystal",
+			"ref": 8,
+			"amount": 0,
+			"color": "#fff36f",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "rift glass",
+			"ref": 9,
+			"amount": 0,
+			"color": "#a86fff",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "alienalloy",
+			"ref": 10,
+			"amount": 0,
+			"color": "#6C7364",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "elevatorium",
+			"ref": 11,
+			"amount": 0,
+			"color": "#666666",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "dungeonium",
+			"ref": 12,
+			"amount": 0,
+			"color": "#FFFFFF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "bedrock",
+			"ref": 13,
+			"amount": 0,
+			"color": "#FFFFFF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "alium",
+			"ref": 14,
+			"amount": 0,
+			"color": "#FFFFFF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "cult",
+			"ref": 15,
+			"amount": 0,
+			"color": "#402821",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "cult2",
+			"ref": 16,
+			"amount": 0,
+			"color": "#402821",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "glass",
+			"ref": 17,
+			"amount": 0,
+			"color": "#00E1FF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "rglass",
+			"ref": 18,
+			"amount": 0,
+			"color": "#00E1FF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "borosilicate glass",
+			"ref": 19,
+			"amount": 0,
+			"color": "#FC2BC5",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "reinforced borosilicate glass",
+			"ref": 20,
+			"amount": 0,
+			"color": "#FC2BC5",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "ti-glass",
+			"ref": 21,
+			"amount": 0,
+			"color": "#A7A3A6",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "plastitanium glass",
+			"ref": 22,
+			"amount": 0,
+			"color": "#676366",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "steel",
+			"ref": 23,
+			"amount": 0,
+			"color": "#666666",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "holosteel",
+			"ref": 24,
+			"amount": 0,
+			"color": "#666666",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "steel hull",
+			"ref": 25,
+			"amount": 0,
+			"color": "#666677",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "plastic",
+			"ref": 26,
+			"amount": 0,
+			"color": "#CCCCCC",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "holoplastic",
+			"ref": 27,
+			"amount": 0,
+			"color": "#CCCCCC",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "wood",
+			"ref": 28,
+			"amount": 0,
+			"color": "#9c5930",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "holowood",
+			"ref": 29,
+			"amount": 0,
+			"color": "#9c5930",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "alien wood",
+			"ref": 30,
+			"amount": 0,
+			"color": "#0099cc",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "hardwood",
+			"ref": 31,
+			"amount": 0,
+			"color": "#42291a",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "log",
+			"ref": 32,
+			"amount": 0,
+			"color": "#9c5930",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "alien log",
+			"ref": 33,
+			"amount": 0,
+			"color": "#0099cc",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "hardwood log",
+			"ref": 34,
+			"amount": 0,
+			"color": "#6f432a",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "wooden stick",
+			"ref": 35,
+			"amount": 0,
+			"color": "#824B28",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "birch",
+			"ref": 36,
+			"amount": 0,
+			"color": "#f6dec0",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "pine",
+			"ref": 37,
+			"amount": 0,
+			"color": "#cd9d6f",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "oak",
+			"ref": 38,
+			"amount": 0,
+			"color": "#674928",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "acacia",
+			"ref": 39,
+			"amount": 0,
+			"color": "#b75e12",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "redwood",
+			"ref": 40,
+			"amount": 0,
+			"color": "#a45a52",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "flesh",
+			"ref": 41,
+			"amount": 0,
+			"color": "#dd90aa",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": " ",
+			"ref": 42,
+			"amount": 0,
+			"color": "#000000",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "darkglass",
+			"ref": 43,
+			"amount": 0,
+			"color": "#FFFFFF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "fancyblack",
+			"ref": 44,
+			"amount": 0,
+			"color": "#FFFFFF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "snow",
+			"ref": 45,
+			"amount": 0,
+			"color": "#FFFFFF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "packed snow",
+			"ref": 46,
+			"amount": 0,
+			"color": "#D8FDFF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "plasteel",
+			"ref": 47,
+			"amount": 0,
+			"color": "#777777",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "plasteel hull",
+			"ref": 48,
+			"amount": 0,
+			"color": "#777788",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "plasteel rebar",
+			"ref": 49,
+			"amount": 0,
+			"color": "#6A6A6A",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "durasteel",
+			"ref": 50,
+			"amount": 0,
+			"color": "#6EA7BE",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "durasteel hull",
+			"ref": 51,
+			"amount": 0,
+			"color": "#45829a",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "titanium",
+			"ref": 52,
+			"amount": 0,
+			"color": "#D1E6E3",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "titanium hull",
+			"ref": 53,
+			"amount": 0,
+			"color": "#D1E6E3",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "morphium",
+			"ref": 54,
+			"amount": 0,
+			"color": "#37115A",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "morphium hull",
+			"ref": 55,
+			"amount": 0,
+			"color": "#37115A",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "plastitanium",
+			"ref": 56,
+			"amount": 0,
+			"color": "#585658",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "plastitanium hull",
+			"ref": 57,
+			"amount": 0,
+			"color": "#585658",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "gold",
+			"ref": 58,
+			"amount": 0,
+			"color": "#EDD12F",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "gold hull",
+			"ref": 59,
+			"amount": 0,
+			"color": "#EDD12F",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "biomass",
+			"ref": 60,
+			"amount": 0,
+			"color": null,
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "chitin",
+			"ref": 61,
+			"amount": 0,
+			"color": "#8d6653",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "deathclaw scale",
+			"ref": 62,
+			"amount": 0,
+			"color": "#8d6653",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "dragon scale",
+			"ref": 63,
+			"amount": 0,
+			"color": "#ffffff",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "phoron dragon scale",
+			"ref": 64,
+			"amount": 0,
+			"color": "#8d6653",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "xenochitin",
+			"ref": 65,
+			"amount": 0,
+			"color": "#8d6653",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "resin",
+			"ref": 66,
+			"amount": 0,
+			"color": "#ffffff",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "strange wisp",
+			"ref": 67,
+			"amount": 0,
+			"color": "#F13C00",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "frost scale",
+			"ref": 68,
+			"amount": 0,
+			"color": "#0000CC",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "crystal scale",
+			"ref": 69,
+			"amount": 0,
+			"color": "#006633",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "furred scale",
+			"ref": 70,
+			"amount": 0,
+			"color": "#006633",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "shell chitin",
+			"ref": 71,
+			"amount": 0,
+			"color": "#006633",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "flockium",
+			"ref": 72,
+			"amount": 0,
+			"color": "#FFFFFF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "algae",
+			"ref": 73,
+			"amount": 0,
+			"color": "#557722",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "placeholder",
+			"ref": 74,
+			"amount": 0,
+			"color": null,
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "phoron",
+			"ref": 75,
+			"amount": 0,
+			"color": "#FC2BC5",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "diamond",
+			"ref": 76,
+			"amount": 0,
+			"color": "#00FFE1",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "quartz",
+			"ref": 77,
+			"amount": 0,
+			"color": "#e6d7df",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "painite",
+			"ref": 78,
+			"amount": 0,
+			"color": "#6b4947",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "void opal",
+			"ref": 79,
+			"amount": 0,
+			"color": "#0f0f0f",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "valhollide",
+			"ref": 80,
+			"amount": 0,
+			"color": "#FFF3B2",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "verdantium",
+			"ref": 81,
+			"amount": 0,
+			"color": "#4FE95A",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "stable glamour",
+			"ref": 82,
+			"amount": 0,
+			"color": "#fffee7",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "energized agate",
+			"ref": 83,
+			"amount": 0,
+			"color": "#FF3300",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "cardboard",
+			"ref": 84,
+			"amount": 0,
+			"color": "#AAAAAA",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "foam",
+			"ref": 85,
+			"amount": 0,
+			"color": "#ff9900",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "rubber",
+			"ref": 86,
+			"amount": 0,
+			"color": "#2d2d30",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "nylon",
+			"ref": 87,
+			"amount": 0,
+			"color": "#d8d2c2",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "hard plastic",
+			"ref": 88,
+			"amount": 0,
+			"color": "#5b3a24",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "guncotton",
+			"ref": 89,
+			"amount": 0,
+			"color": "#f1efe6",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "aramid",
+			"ref": 90,
+			"amount": 0,
+			"color": "#d6b83c",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "carbon fibre",
+			"ref": 91,
+			"amount": 0,
+			"color": "#26272b",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "sandstone",
+			"ref": 92,
+			"amount": 0,
+			"color": "#D9C179",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "marble",
+			"ref": 93,
+			"amount": 0,
+			"color": "#AAAAAA",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "flint",
+			"ref": 94,
+			"amount": 0,
+			"color": "#9e9c99",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "concrete",
+			"ref": 95,
+			"amount": 0,
+			"color": "#808080",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "supermatter",
+			"ref": 96,
+			"amount": 0,
+			"color": "#FFFF00",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "iron",
+			"ref": 97,
+			"amount": 0,
+			"color": "#5C5454",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "lead",
+			"ref": 98,
+			"amount": 0,
+			"color": "#273956",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "silver",
+			"ref": 99,
+			"amount": 0,
+			"color": "#D1E6E3",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "platinum",
+			"ref": 100,
+			"amount": 0,
+			"color": "#9999FF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "uranium",
+			"ref": 101,
+			"amount": 0,
+			"color": "#007A00",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "mhydrogen",
+			"ref": 102,
+			"amount": 0,
+			"color": "#E6C5DE",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "deuterium",
+			"ref": 103,
+			"amount": 0,
+			"color": "#999999",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "tritium",
+			"ref": 104,
+			"amount": 0,
+			"color": "#777777",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "osmium",
+			"ref": 105,
+			"amount": 0,
+			"color": "#9999FF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "graphite",
+			"ref": 106,
+			"amount": 0,
+			"color": "#333333",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "bronze",
+			"ref": 107,
+			"amount": 0,
+			"color": "#EDD12F",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "tin",
+			"ref": 108,
+			"amount": 0,
+			"color": null,
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "nickel",
+			"ref": 109,
+			"amount": 0,
+			"color": "#aeb8aa",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "chromium",
+			"ref": 110,
+			"amount": 0,
+			"color": "#cad4da",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "tungsten",
+			"ref": 111,
+			"amount": 0,
+			"color": "#676b72",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "technical ceramic",
+			"ref": 112,
+			"amount": 0,
+			"color": "#b2afaf",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "copper",
+			"ref": 113,
+			"amount": 0,
+			"color": "#af633e",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "aluminium",
+			"ref": 114,
+			"amount": 0,
+			"color": "#e5e2d0",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "cloth",
+			"ref": 115,
+			"amount": 0,
+			"color": null,
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "syncloth",
+			"ref": 116,
+			"amount": 0,
+			"color": null,
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "teal",
+			"ref": 117,
+			"amount": 0,
+			"color": "#00EAFA",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "black",
+			"ref": 118,
+			"amount": 0,
+			"color": "#505050",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "green",
+			"ref": 119,
+			"amount": 0,
+			"color": "#01C608",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "purple",
+			"ref": 120,
+			"amount": 0,
+			"color": "#9C56C4",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "blue",
+			"ref": 121,
+			"amount": 0,
+			"color": "#6B6FE3",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "beige",
+			"ref": 122,
+			"amount": 0,
+			"color": "#E8E7C8",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "brown",
+			"ref": 123,
+			"amount": 0,
+			"color": "#5C4831",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "lime",
+			"ref": 124,
+			"amount": 0,
+			"color": "#62E36C",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "yellow",
+			"ref": 125,
+			"amount": 0,
+			"color": "#EEF573",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "orange",
+			"ref": 126,
+			"amount": 0,
+			"color": "#E3BF49",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "red carpet",
+			"ref": 127,
+			"amount": 0,
+			"color": "#DA020A",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "teal carpet",
+			"ref": 128,
+			"amount": 0,
+			"color": "#007575",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "black carpet",
+			"ref": 129,
+			"amount": 0,
+			"color": "#1B171E",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "blue carpet",
+			"ref": 130,
+			"amount": 0,
+			"color": "#122CDF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "turquoise carpet",
+			"ref": 131,
+			"amount": 0,
+			"color": "#41A997",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "silver blue carpet",
+			"ref": 132,
+			"amount": 0,
+			"color": "#547EC6",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "pink carpet",
+			"ref": 133,
+			"amount": 0,
+			"color": "#E12C87",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "purple carpet",
+			"ref": 134,
+			"amount": 0,
+			"color": "#B500A6",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "orange carpet",
+			"ref": 135,
+			"amount": 0,
+			"color": "#D1D000",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "cotton",
+			"ref": 136,
+			"amount": 0,
+			"color": "#FFFFFF",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "fibers",
+			"ref": 137,
+			"amount": 0,
+			"color": "#006b0e",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "carpet",
+			"ref": 138,
+			"amount": 0,
+			"color": "#DA020A",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "grass",
+			"ref": 139,
+			"amount": 0,
+			"color": null,
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "leather",
+			"ref": 140,
+			"amount": 0,
+			"color": "#5C4831",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "fur",
+			"ref": 141,
+			"amount": 0,
+			"color": "#fff2d3",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "wool",
+			"ref": 142,
+			"amount": 0,
+			"color": "#fff2d3",
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "smolebricks",
+			"ref": 143,
+			"amount": 0,
+			"color": null,
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "engineering test conductor",
+			"ref": 144,
+			"amount": 0,
+			"color": null,
+			"sheets": 0,
+			"removable": 0
+		},
+		{
+			"name": "engineering test buffer",
+			"ref": 145,
+			"amount": 0,
+			"color": null,
+			"sheets": 0,
+			"removable": 0
+		}
+	],
+	"queue": []
+}

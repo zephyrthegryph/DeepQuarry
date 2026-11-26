@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Section, Stack } from 'tgui-core/components';
-
+import type { ShuttleControlActions } from '../generated/ShuttleControl';
 import type { Data } from './types';
 
 export const ShuttleControlSharedShuttleControls = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShuttleControlActions>();
 
   const { can_launch, can_cancel, can_force } = data;
 

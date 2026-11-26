@@ -1,7 +1,0 @@
-/obj/structure/machinery/power/apc{
-	pixel_x = 24
-	},
-/obj/structure/machinery/power/apc/x{
-	dir = 4;
-	pixel_y = 100
-	},

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Windows that send a datum handle back as a text argument keep every digit of it"
+  - refactor: "TGUI ref fields are typed as the numeric handles the server sends"

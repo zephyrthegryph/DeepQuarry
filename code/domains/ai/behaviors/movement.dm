@@ -46,6 +46,7 @@
 	priority_class = DQ_BEHAVIOR_PRIORITY_IDLE
 	target_kind = DQ_TARGET_NONE
 	no_threat_required = TRUE
+	instant = TRUE
 
 /datum/ai_behavior/idle_wander/evaluate(datum/ai_brain/brain, atom/source)
 	if(brain.primary_target())
@@ -54,7 +55,8 @@
 		return null  // honor the legacy wander toggle
 	return DQAI_RESULT(1, brain.holder)
 
-/datum/ai_behavior/idle_wander/tick(datum/ai_brain/brain, atom/target, atom/source)
+/// One wander step now and then, done in the run that picked it: a brain with nothing to do needs no tick of its own for it.
+/datum/ai_behavior/idle_wander/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()
 	if(!owner)
 		return DQ_BEHAVIOR_FAILED

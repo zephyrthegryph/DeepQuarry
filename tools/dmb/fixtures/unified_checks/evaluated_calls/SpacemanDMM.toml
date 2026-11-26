@@ -1,6 +1,0 @@
-# Explicitly scoped undefined-proc oracle, no reference output filtering.
-# These two other families are still observed by native event unit tests.
-[diagnostics]
-proc_call_static_type = "off"
-proc_has_no_parent = "off"
-unreachable_code = "off"

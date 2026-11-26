@@ -8,13 +8,10 @@ const skin = readFileSync(
   'utf8',
 );
 
-/** What the native menu bar did, before it left skin.dmf. */
+/** What the native menu bar did, before it left skin.dmf, less what moved elsewhere (reconnect, ping, quit: the chat box and the window). */
 const NATIVE_MENU_COMMANDS = [
   '.screenshot auto',
   '.screenshot',
-  '.reconnect',
-  '.ping',
-  '.quit',
   '.winset "mapwindow.map.icon-size=0"',
   '.winset "mapwindow.map.icon-size=128"',
   '.winset "mapwindow.map.icon-size=96"',
@@ -37,6 +34,8 @@ describe('stat panel menu', () => {
       .split('\n\n')[0];
     expect(split).toContain('splitter = 70');
     expect(split).toContain('saved-params = ""');
+    // No BYOND bar between the map and the column (the gap): the pages draw the handle.
+    expect(split).toContain('show-splitter = false');
   });
 
   it('reaches every command of the old native menu bar', () => {

@@ -354,10 +354,76 @@
 	set_area_power(FALSE)
 	TEST_ASSERT(!L.on, "no longer on the grid")
 	TEST_ASSERT(p2l_emergency(L), "on emergency power")
-	TEST_ASSERT_EQUAL(glow_of(L).range, 6 * 0.25, "a quarter of its range")
+	TEST_ASSERT_EQUAL(glow_of(L).range, L.brightness_range * L.bulb_emergency_brightness_mul, "its emergency share of its range")
 	TEST_ASSERT_EQUAL(glow_of(L).color, L.bulb_emergency_colour, "emergency red")
 	TEST_ASSERT_EQUAL(glow_of(L).power, L.bulb_emergency_pow_mul, "the first level of emergency output")
 	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_IDLE, "it draws idle power")
+
+/// Going on emergency power reads the stock cell's charge as it is: the cell item is made only when charge is taken from it, and the full charge
+/// still holds the first emergency level.
+/datum/unit_test/dq_p2_lights/emergency_light_keeps_its_stock_cell_as_data
+
+/datum/unit_test/dq_p2_lights/emergency_light_keeps_its_stock_cell_as_data/run_gate()
+	var/obj/machinery/light/L = light()
+	TEST_ASSERT(isnull(L.cell) && !isnull(L.stock_cell_charge), "a placed fixture's cell is a stock charge")
+	set_area_power(FALSE)
+	TEST_ASSERT(p2l_emergency(L), "on emergency power")
+	TEST_ASSERT(isnull(L.cell), "with no cell item made")
+	TEST_ASSERT_EQUAL(glow_of(L).power, L.bulb_emergency_pow_mul, "at the first level of emergency output")
+	TEST_ASSERT_EQUAL(L.emergency_charge(), initial(/obj/item/cell/emergency_light::charge), "its charge untouched")
+	TEST_ASSERT(L.emergency_discharge_wait() > 2 SECONDS, "and its discharge waits on that charge")
+
+/// A fixture going dark leaves its active draw alone (it is idle, which is what it draws); back on, it draws for its glow as before.
+/datum/unit_test/dq_p2_lights/a_dark_fixture_keeps_its_active_draw
+
+/datum/unit_test/dq_p2_lights/a_dark_fixture_keeps_its_active_draw/run_gate()
+	var/obj/machinery/light/L = light()
+	var/lit_draw = power_of(L).active
+	TEST_ASSERT_EQUAL(lit_draw, 12, "a lit tube draws for its glow")
+	set_area_power(FALSE)
+	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_IDLE, "dark, it draws idle power")
+	TEST_ASSERT_EQUAL(L.get_power_usage(), power_of(L).idle, "and its usage is the idle draw")
+	TEST_ASSERT_EQUAL(power_of(L).active, lit_draw, "its active draw is left as it was")
+	set_area_power(TRUE)
+	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_ACTIVE, "back on, active")
+	TEST_ASSERT_EQUAL(L.get_power_usage(), lit_draw, "drawing for its glow")
+
+/// The emergency sprite of an unpowered fixture: the lit tube overlay tinted red over the unlit body, plus its emissive copy, while the cell gives light; none
+/// with a flat cell, and none once the cell's light is gone.
+/proc/p2l_lit_overlays(obj/machinery/light/L, tint = null)
+	refresh_flush()
+	var/n = 0
+	for(var/overlay in L.overlays)
+		var/mutable_appearance/MA = new(overlay)
+		if(MA.icon_state == "[L.base_state]-overlay" && (isnull(tint) || lowertext("[MA.color]") == lowertext(tint)))
+			n++
+	return n
+
+/datum/unit_test/dq_p2_lights/an_unpowered_fixture_shows_its_emergency_sprite
+
+/datum/unit_test/dq_p2_lights/an_unpowered_fixture_shows_its_emergency_sprite/run_gate()
+	var/obj/machinery/light/L = light()
+	TEST_ASSERT(p2l_lit_overlays(L, L.overlay_color) > 0, "lit on the grid: the white lit overlay")
+	set_area_power(FALSE)
+	TEST_ASSERT(p2l_emergency(L), "on emergency power")
+	TEST_ASSERT_EQUAL(L.icon_state, "[L.base_state]0", "the body is the unlit one")
+	TEST_ASSERT(p2l_lit_overlays(L, L.bulb_emergency_colour) > 0, "the red emergency overlay is drawn")
+	TEST_ASSERT_EQUAL(p2l_lit_overlays(L, L.overlay_color), 0, "and not the white one")
+	L.stock_cell_charge = 0 // the cell runs flat
+	L.refresh_light(FALSE)
+	settle()
+	TEST_ASSERT_EQUAL(p2l_lit_overlays(L), 0, "with the cell's light gone the fixture is dark")
+	set_area_power(TRUE)
+	TEST_ASSERT(p2l_lit_overlays(L, L.overlay_color) > 0, "power back: the white lit overlay again")
+
+/datum/unit_test/dq_p2_lights/an_unpowered_fixture_with_a_flat_cell_is_dark
+
+/datum/unit_test/dq_p2_lights/an_unpowered_fixture_with_a_flat_cell_is_dark/run_gate()
+	var/obj/machinery/light/L = light()
+	L.stock_cell_charge = 0
+	set_area_power(FALSE)
+	TEST_ASSERT(!p2l_emergency(L), "no charge, no emergency")
+	TEST_ASSERT_EQUAL(p2l_lit_overlays(L), 0, "no lit overlay of any colour")
 
 /// A fixture with no cell goes dark when the area loses power.
 /datum/unit_test/dq_p2_lights/area_power_loss_darkens_a_fixture_without_a_cell

@@ -75,11 +75,13 @@
 
 /// Waits for deferred asset generation so it isn't measured as scenario work.
 /datum/benchmark/proc/wait_for_assets(timeout_seconds = 120)
+	timeout_seconds = param("asset_timeout", timeout_seconds) // --arg=asset_timeout=N: a slow sheet generation on a loaded machine
 	var/waited = 0
 	while((length(asset_loading_generate_queue()) || asset_loading_assets_generating() || asset_loading_last_queue_len()) && waited++ < world.fps * timeout_seconds)
 		stoplag()
 	if(waited >= world.fps * timeout_seconds)
 		fail("deferred assets did not settle within [timeout_seconds]s")
+	metric("assets_settle_seconds", waited / world.fps, "s", "none")
 
 /// Sleeps until `subsystem` has fired `count` more times.
 /datum/benchmark/proc/wait_fires(datum/system/subsystem, count, timeout_seconds = 300)
@@ -181,6 +183,9 @@
 	detail("[prefix]_world_step", world_step)
 	detail("[prefix]_outliers", Kernel.perf_outliers.Copy())
 	detail("[prefix]_worst_tick", LAZYCOPY(Kernel.perf_worst_tick))
+	// What is inside sched_core and appearance_drain, by callback, reaction and redrawn type (cumulative since boot; the
+	// settle rows count only what ran after init): names the owner type and proc behind a heavy tick.
+	detail("[prefix]_attribution", km_meter().attr.report(30))
 	if(profiling)
 		SSprofiler.StopProfiling()
 		SSprofiler.DumpFile(allow_yield = FALSE)
@@ -534,6 +539,10 @@
 		"writes_published" = GLOB.plan_reader_probes,
 		"writes_preinit" = GLOB.state_changed_preinit_skipped,
 		"relation_writes_spared" = GLOB.own_field_memo_spared,
+		"relation_writes_full_path" = GLOB.own_field_full_paths,
+		"construction_writes_noted" = GLOB.construction_writes_noted,
+		"construction_writes_published" = GLOB.construction_writes_published,
+		"ctor_plans_built" = ctor_plans_built,
 		"stat_evals" = GLOB.stat_evals,
 		"stat_read_computes" = GLOB.stat_read_computes,
 		"rel_index_writes" = GLOB.rel_index_writes,
@@ -542,9 +551,10 @@
 		"looks_changed" = looks["changed"] || 0,
 		"looks_same" = looks["same"] || 0,
 		"draws_spared" = GLOB.refresh_dispatched_draws_spared,
-		"draws_parked" = GLOB.refresh_parked,
-		"unparked_by_client" = GLOB.refresh_parked_near,
-		"unparked_by_mark" = GLOB.refresh_parked_woken,
+		"draws_dirtied" = GLOB.draw_n["dirtied"],
+		"draws_filed" = GLOB.draw_n["filed_total"],
+		"draws_drained" = GLOB.draw_n["drawn"],
+		"draw_drain_ms" = GLOB.draw_drain_ms,
 	)
 
 /datum/benchmark/proc/work_metrics(prefix, list/since)

@@ -300,7 +300,7 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 //called to set the atom's dir and used to add behaviour to dir-changes
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
-	if(WANTS(src, /datum/notice/atom_dir_change))
+	if(new_dir != dir && WANTS(src, /datum/notice/atom_dir_change)) // a turn that changes nothing tells nobody (every step of a mob sets its dir)
 		PUBLISH(src, atom_dir_change, old_dir = dir, new_dir = new_dir)
 	var/old_dir = dir
 	dir = new_dir
@@ -406,7 +406,7 @@ SETTER(/atom, invisibility)
 	if(istype(M))
 		if (!istype(M.dna, /datum/dna))
 			rel_set(M, nameof(M.dna), new /datum/dna(null))
-			M.dna.real_name = M.real_name
+			M.dna.set_real_name(M.real_name)
 		M.check_dna()
 		dq_set_blood_color(src, M.species.get_blood_colour(M))
 	. = 1
@@ -507,9 +507,6 @@ SETTER(/atom, invisibility)
 
 /atom/movable/onDropInto(atom/movable/AM)
 	return loc // If onDropInto returns something, then dropInto will attempt to drop AM there.
-
-/atom/proc/InsertedContents()
-	return contents
 
 /atom/proc/get_gravity(turf/T)
 	if(!T || !isturf(T))
@@ -730,8 +727,6 @@ PROC_SUMMARY(/atom/proc/get_oversized_icon_offsets) // sampled: where a message 
 		var/atom/checked_atom = .[++i]
 		if(checked_atom.flags & ignore_flag_1)
 			continue
-		if(checked_atom?.latent_contents_enabled())
-			checked_atom.latent_materialize_all() // a search needs real things (C5)
 		. += checked_atom.contents
 
 /// Identical to get_all_contents but returns a list of atoms of the type passed in the argument.
@@ -741,8 +736,6 @@ PROC_SUMMARY(/atom/proc/get_oversized_icon_offsets) // sampled: where a message 
 	var/i = 0
 	while(i < length(processing_list))
 		var/atom/checked_atom = processing_list[++i]
-		if(checked_atom?.latent_contents_enabled())
-			checked_atom.latent_materialize_all() // a search needs real things (C5)
 		processing_list += checked_atom.contents
 		if(istype(checked_atom, type))
 			. += checked_atom
@@ -820,7 +813,7 @@ CAPABILITIES(/atom)
 	op("vv_empulse", topic_in(VV_TOPIC, VV_HK_TRIGGER_EMP), then(PROC_REF(vv_topic_emp)))
 	op("vv_atom_transform", topic_in(VV_TOPIC, VV_HK_MODIFY_TRANSFORM), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_modify_transform)))
 	op("vv_atom_spin", topic_in(VV_TOPIC, VV_HK_SPIN_ANIMATION), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_spin_animation)))
-	op("vv_stop_animations", topic_in(VV_TOPIC, VV_HK_STOP_ALL_ANIMATIONS), needs(req_rights(R_VAREDIT)), asks(/datum/prompt/yes_no, fields = list("title" = "Stop Animating", "question" = "Are you sure?", "rights" = R_VAREDIT, "timeout" = 0), step = "sure"), then(PROC_REF(vv_topic_stop_animations)))
+	op("vv_stop_animations", topic_in(VV_TOPIC, VV_HK_STOP_ALL_ANIMATIONS), needs(req_rights(R_VAREDIT)), asks(/datum/prompt/yes_no, fields = list("title" = "Stop Animating", "question" = "Are you sure?", "rights" = R_VAREDIT, "timeout" = 0), step = "sure", ends_on_no = TRUE), then(PROC_REF(vv_topic_stop_animations)))
 	op("vv_auto_rename", topic_in(VV_TOPIC, VV_HK_AUTO_RENAME), needs(req_rights(R_VAREDIT)), asks(/datum/prompt/text, fields = list("title" = "Automatic Rename", "question" = "What do you want to rename this to?", "rights" = R_VAREDIT, "timeout" = 0), step = "name"), then(PROC_REF(vv_topic_auto_rename)))
 	op("vv_edit_filters", topic_in(VV_TOPIC, VV_HK_EDIT_FILTERS), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_filters)))
 	op("vv_test_matrixes", topic_in(VV_TOPIC, VV_HK_TEST_MATRIXES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_test_matrixes)))

@@ -33,12 +33,13 @@
 
 CAPABILITIES(/mob/living/bot/floorbot)
 	interface("Floorbot")
+	ui_shape(on = bool(), open = bool(), locked = bool(), vocal = bool(), amount = num(), possible_bmode = list_of(schema_text()), improvefloors = nullable(bool()), eattiles = nullable(bool()), maketiles = nullable(bool()), bmode = nullable(schema_text()))
 	op("start", ui_act("start"), then(PROC_REF(ui_act_start)))
 	op("vocal", ui_act("vocal"), when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_vocal)))
 	op("improve", ui_act("improve"), when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_improve)))
 	op("tiles", ui_act("tiles"), when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_tiles)))
 	op("make", ui_act("make"), when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_make)))
-	op("bridgemode", ui_act("bridgemode", arg("dir")), when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_bridgemode)))
+	op("bridgemode", ui_act("bridgemode", arg("dir", schema_text(16))), when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_bridgemode)))
 
 /// The window's data: the bot's state, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
 /mob/living/bot/floorbot/ui_data(datum/act/eval/A)
@@ -280,8 +281,7 @@ CAPABILITIES(/mob/living/bot/floorbot)
 	var/turf/Tsec = get_turf(src)
 
 	var/obj/item/storage/toolbox/mechanical/N = new /obj/item/storage/toolbox/mechanical(Tsec)
-	N.latent_discard()
-	QDEL_LIST(N.contents) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
+	QDEL_LIST(N.contents)
 	new /obj/item/assembly/prox_sensor(Tsec)
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)

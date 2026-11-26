@@ -1,0 +1,24 @@
+{
+	"drones": [
+		{
+			"name": "Maint Drone 117",
+			"active": 1,
+			"charge": 1800,
+			"maxCharge": 2000,
+			"loc": "Atmospherics",
+			"ref": 5101
+		},
+		{
+			"name": "Maint Drone 204",
+			"active": 0,
+			"charge": 0,
+			"maxCharge": 2000,
+			"loc": "Engineering Hallway",
+			"ref": 5102
+		}
+	],
+	"fabricator": 1,
+	"fabPower": 1,
+	"areas": ["Engineering", "Atmospherics", "Cargo Bay"],
+	"selected_area": "Engineering"
+}

@@ -1,16 +1,16 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
+import type {
+  FileCabinetActions,
+  FileCabinetData,
+} from './generated/FileCabinet';
 
-type Data = {
-  cabinet_name: string;
-  contents: string[];
-  contents_ref: string[];
-};
+type Data = FileCabinetData;
 
 export const FileCabinet = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { cabinet_name, contents, contents_ref } = data;
+  const { act, data } = useBackend<Data, FileCabinetActions>();
+  const { cabinet_name, contents = [], contents_ref } = data;
   return (
     <Window title={cabinet_name || 'Filing Cabinet'} width={350} height={300}>
       <Window.Content backgroundColor="#B88F3D" scrollable>

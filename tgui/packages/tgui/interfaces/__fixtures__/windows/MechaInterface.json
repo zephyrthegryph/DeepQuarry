@@ -1,0 +1,152 @@
+{
+	"view": "main",
+	"title": "Ripley",
+	"main": {
+		"damage_reports": [
+			{
+				"key": "repair_int_control_lost",
+				"label": "Internal control lost",
+				"has_repair": 1
+			},
+			{
+				"key": "damage_2",
+				"label": "Hydraulics leaking",
+				"has_repair": 0
+			}
+		],
+		"high_pressure": 0,
+		"has_armor": 1,
+		"armor_percent": 82.5,
+		"has_hull": 1,
+		"hull_percent": 64,
+		"integrity_percent": 71.3,
+		"cell_percent": 88,
+		"use_internal_tank": 1,
+		"tank_pressure": 101.3,
+		"tank_temp_k": 293.2,
+		"tank_temp_c": 20,
+		"cabin_pressure": 101.3,
+		"cabin_temp_k": 293.1,
+		"cabin_temp_c": 19.9,
+		"lights": 1,
+		"dna_lock": "A1B2C3D4",
+		"defence_mode_possible": 1,
+		"defence_mode": 0,
+		"overload_possible": 1,
+		"overload": 0,
+		"smoke_possible": 1,
+		"smoke_reserve": 5,
+		"thrusters_possible": 1,
+		"thrusters": 0,
+		"cargo": [
+			{
+				"id": 1048577,
+				"name": "ore crate"
+			},
+			{
+				"id": 1048578,
+				"name": "toolbox"
+			}
+		],
+		"radio_mic": 1,
+		"radio_spk": 0,
+		"radio_freq": "145.9",
+		"airtank_disconnect": 0,
+		"airtank_connect": 1,
+		"id_upload_locked": 1,
+		"maint_access": 0,
+		"equipment": [
+			{
+				"id": 1048600,
+				"name": "hydraulic clamp",
+				"kind": "Hull",
+				"ready": 1,
+				"selected": 1,
+				"info_lines": ["Cargo: 1/10"],
+				"controls": [
+					{
+						"key": "mode",
+						"label": "Mode 1",
+						"value": 1
+					},
+					{
+						"key": "toggle",
+						"label": "Toggle",
+						"value": null
+					}
+				]
+			},
+			{
+				"id": 1048601,
+				"name": "drill",
+				"kind": "Weapon",
+				"ready": 0,
+				"selected": 0,
+				"info_lines": [],
+				"controls": []
+			}
+		],
+		"commands": [
+			{
+				"key": "toggle_zoom",
+				"label": "Toggle zoom mode"
+			},
+			{
+				"key": "smoke",
+				"label": "Smoke"
+			}
+		],
+		"slots": [
+			{
+				"label": "Hull",
+				"used": 1,
+				"max": 2
+			},
+			{
+				"label": "Weapon",
+				"used": 1,
+				"max": 1
+			},
+			{
+				"label": "Utility",
+				"used": 0,
+				"max": 2
+			}
+		],
+		"can_eject": 1
+	},
+	"log_entries": [
+		{
+			"time": "Mon Nov 12 10:04:22",
+			"message": "Armor plating damaged."
+		},
+		{
+			"time": "Mon Nov 12 10:05:01",
+			"message": "Internal control restored."
+		}
+	],
+	"access": {
+		"current": [
+			{
+				"id": 11,
+				"name": "Engineering"
+			}
+		],
+		"available": [
+			{
+				"id": 12,
+				"name": "Mining"
+			},
+			{
+				"id": 13,
+				"name": "Cargo"
+			}
+		]
+	},
+	"maint": {
+		"can_req_access": 1,
+		"can_maint_access": 1,
+		"can_set_air": 0,
+		"can_remove_passenger": 0
+	}
+}

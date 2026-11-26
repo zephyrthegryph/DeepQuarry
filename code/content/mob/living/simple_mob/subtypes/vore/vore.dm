@@ -13,7 +13,7 @@
 
 /mob/living/proc/login_prefs()
 
-	identity().ooc_notes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes))
+	identity().set_ooc_notes(text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes)))
 	identity().ooc_notes_likes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes))
 	identity().ooc_notes_dislikes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes))
 	identity().ooc_notes_favs = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_favs))
@@ -82,7 +82,6 @@
 /mob/living/simple_mob/proc/set_name()
 	set name = "Set Name"
 	set desc = "Sets your mobs name. You only get to do this once."
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	if(limit_renames && nameset)
 		to_chat(src, span_userdanger("You've already set your name. Ask an admin to toggle \"nameset\" to 0 if you really must."))
 		return
@@ -98,12 +97,11 @@
 	if (newname)
 		name = newname
 		set_voice_name(newname)
-		nameset = 1
+		set_nameset(1)
 
 /mob/living/simple_mob/proc/set_desc()
 	set name = "Set Description"
 	set desc = "Set your description."
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	open_request(src, /datum/prompt/text, PROC_REF(desc_set_entered), answerer = src, title = "Description set", question = "Set your description. Max 4096 chars.", multiline = TRUE, encode = FALSE, timeout = 0)
 
 /mob/living/simple_mob/proc/desc_set_entered(datum/act/request/A)
@@ -117,7 +115,6 @@
 /mob/living/simple_mob/proc/choose_gender()
 	set name = "Set Gender"
 	set desc = "Set your gender."
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	open_request(src, /datum/prompt/choice, PROC_REF(gender_set_chosen), answerer = src, title = "Set Gender", question = "Please select a gender:", choices = list(FEMALE, MALE, NEUTER, PLURAL), timeout = 0)
 
 /mob/living/simple_mob/proc/gender_set_chosen(datum/act/request/A)

@@ -4,25 +4,11 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
-
-type Ban = {
-  key_id: string;
-  key: string;
-  id: string;
-  ip: string;
-  reason: string;
-  by: string;
-  expiry: string;
-};
-
-type Data = {
-  bans: Ban[];
-  count: number;
-};
+import type { UnbanPanelActions, UnbanPanelData } from './generated/UnbanPanel';
 
 export const UnbanPanel = () => {
-  const { data, act } = useBackend<Data>();
-  const { bans, count } = data;
+  const { data, act } = useBackend<UnbanPanelData, UnbanPanelActions>();
+  const { bans = [], count } = data;
   return (
     <Window width={760} height={620} title={`Unban (${count})`}>
       <Window.Content scrollable>

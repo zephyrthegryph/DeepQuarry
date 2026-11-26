@@ -496,7 +496,7 @@ ACTION(mob_unequipped_item, obj/item/item, atom/target_, FIXED, notice = /datum/
 	on_equipment_changed()
 	return TRUE
 
-/mob/proc/delete_inventory(include_hands)
+/mob/proc/delete_inventory(include_hands = FALSE)
 	for(var/entry in get_equipped_items())
 		consume(entry, src)
 

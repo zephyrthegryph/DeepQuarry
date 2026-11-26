@@ -49,7 +49,8 @@
 	menu.set_visible(TRUE)
 	menu.set_cursor_params(istext(params) ? params : "")
 	menu.set_revision(menu.revision + 1)
-	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]).")
+	var/list/view_size = getviewsize(player.view || world.view)
+	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]) params=\"[menu.cursor_params]\" view=[view_size[1]]x[view_size[2]] icon_size=[world.icon_size] self=[target == user ? "yes" : "no"].")
 	menu.tgui_interact(user)
 	return TRUE
 
@@ -79,10 +80,12 @@ CAPABILITIES(/datum/interaction_menu)
 	ref_one(nameof(target))
 	owns_one(nameof(menu_window), /datum/tgui_window)
 	interface("InteractionMenu", state = nameof(GLOB.tgui_always_state), pinned = TRUE)
+	ui_shape(visible = bool(), control = schema_text(), cursor_params = schema_text(), view_w = int(), view_h = int(), tile_size = int(), revision = int(), target = nullable(schema_text()), role = nullable(schema_text()), distance = nullable(schema_text()), available = nullable(list_of(row(id = schema_text(), name = nullable(schema_text()), desc = nullable(schema_text()), category = nullable(schema_text()), keys = list_of(schema_text())))), blocked = nullable(list_of(row(id = schema_text(), name = nullable(schema_text()), desc = nullable(schema_text()), category = nullable(schema_text()), reason = nullable(schema_text())))), actions = nullable(list_of(row(id = schema_text(), name = schema_text()))), verbs = nullable(list_of(schema_text())), hidden = nullable(list_of(row(id = schema_text(), name = schema_text(), hidden_by = schema_text())))) // everything after target is sent only while a target is set
 	op("run", ui_act("run", arg("id", schema_text(4096))), then(PROC_REF(ui_act_run)))
 	op("action", ui_act("action", arg("id", schema_text(4096))), then(PROC_REF(ui_act_action)))
 	op("verb", ui_act("verb", arg("name", schema_text(4096))), then(PROC_REF(ui_act_verb)))
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+	op("placed", ui_act("placed", arg("report", schema_text(4096))), then(PROC_REF(ui_act_placed)))
 	ref_one(nameof(owner))
 
 /// /datum/interaction_menu's window data.
@@ -110,36 +113,78 @@ CAPABILITIES(/datum/interaction_menu)
 	var/obj/item/held = user.get_active_hand()
 	var/list/available = list()
 	var/list/blocked = list()
-	for(var/list/row as anything in op_menu(user, target, held))
+	var/list/hidden_rows = list()
+	for(var/list/row as anything in op_menu(user, target, held, hidden_rows))
 		if(row["enabled"])
 			available += list(list(
 				"id" = row["key"],
-				"name" = row["label"],
-				"desc" = row["desc"],
+				"name" = interaction_menu_plain(row["label"]),
+				"desc" = interaction_menu_plain(row["desc"]),
 				"category" = null,
 				"keys" = list(),
 			))
 		else
 			blocked += list(list(
 				"id" = row["key"],
-				"name" = row["label"],
-				"desc" = row["desc"],
+				"name" = interaction_menu_plain(row["label"]),
+				"desc" = interaction_menu_plain(row["desc"]),
 				"category" = null,
-				"reason" = row["reason"],
+				"reason" = interaction_menu_plain(row["reason"]),
 			))
 	var/list/verb_names = list()
-	for(var/procpath/target_verb as anything in target.verbs)
-		if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
-			continue
-		verb_names += target_verb.name
-	sortTim(verb_names, GLOBAL_PROC_REF(cmp_text_asc))
+	// Legacy verbs are the target's own context verbs, so only those a player would pick from a popup are listed: in reach (choosing
+	// one is refused out of reach, ui_act_verb()), and not on the user's own
+	// body, whose verbs are the verb panel's and the keys' (a self menu of every mob verb is noise next to its ops).
+	if(interaction_menu_can_reach(user, target) && !interaction_menu_is_self(user, target))
+		verb_names = interaction_menu_verb_names(target)
+	var/list/admin_view = null
+	if(user.client && check_rights_for(user.client, R_DEBUG | R_ADMIN))
+		// The "Show hidden" view for staff: each row left out, with the requirement that left it out.
+		admin_view = list()
+		for(var/list/hidden_row as anything in hidden_rows)
+			admin_view += list(list("id" = hidden_row["key"], "name" = hidden_row["label"], "hidden_by" = hidden_row["hidden_by"]))
 	return list(
-		"target" = capitalize(target.name),
+		"target" = capitalize(interaction_menu_plain(target.name)),
+		"role" = interaction_menu_role(target),
+		"distance" = interaction_menu_distance(user, target),
 		"available" = available,
 		"blocked" = blocked,
 		"actions" = interaction_menu_actions(user, target),
 		"verbs" = verb_names,
+		"hidden" = admin_view,
 	)
+
+/// Text for the menu: tags stripped and entities decoded, since the page draws it as plain text (a refusal or description
+/// written with markup would otherwise show its tags). Null when nothing is left.
+/proc/interaction_menu_plain(text)
+	if(!istext(text))
+		return null
+	var/plain = trim(html_decode(strip_html_properly(text)))
+	return length(plain) ? plain : null
+
+/// Is `target` the user's own body (the mob itself, or the mob its client controls)?
+/proc/interaction_menu_is_self(mob/user, atom/target)
+	return target == user || (user.client && target == user.client.mob)
+
+/// The "ROLE" half of the menu's subtitle: a mob's assigned role, else what kind of thing the target is.
+/proc/interaction_menu_role(atom/target)
+	if(ismob(target))
+		var/mob/M = target
+		return M.mind?.assigned_role || (isliving(M) ? "Living" : "Mob")
+	if(isobj(target))
+		return "Object"
+	if(isturf(target))
+		return "Turf"
+	return "Thing"
+
+/// The "DISTANCE" half of the menu's subtitle: SELF, ADJACENT or the tile count.
+/proc/interaction_menu_distance(mob/user, atom/target)
+	if(target == user)
+		return "SELF"
+	if(user.Adjacent(target))
+		return "ADJACENT"
+	var/dist = get_dist(user, target)
+	return "[dist] TILE[dist == 1 ? "" : "S"]"
 
 /// The mob actions the native popup offered for any target, as list(id, name).
 /proc/interaction_menu_actions(mob/user, atom/target)
@@ -206,6 +251,11 @@ CAPABILITIES(/datum/interaction_menu)
 	hide()
 	return TRUE
 
+/// The page reports where it put the popup (the map size, the parsed cursor and the final position), so a misplaced menu can be read off the log.
+/datum/interaction_menu/proc/ui_act_placed(datum/act/op/A, report)
+	log_input("Input: [owner() ? key_name(owner()) : "nobody"] interaction menu placed: [report]")
+	return TRUE
+
 /// Runs the op `key` of `target` chosen in the Menu (ORIGIN_MENU), with what the user holds. TRUE when it ran or started.
 /proc/run_chosen_op(mob/user, atom/target, key)
 	if(!user || !target || !istext(key))
@@ -236,3 +286,25 @@ CAPABILITIES(/datum/interaction_menu)
 	return owner
 
 #undef INTERACTION_MENU_CONTROL
+
+/// shape -> the sorted verb names (interaction_menu_verb_names()).
+GLOBAL_LIST_EMPTY(interaction_menu_verb_shapes)
+
+/// The sorted names of `target`'s pickable context verbs (not hidden, named, not a "." command), kept per (type, the exact verb set): a target
+/// granted or stripped any verb has another key. Joining the verbs is one pass; filtering and sorting them is what the key saves. A copy is returned.
+/proc/interaction_menu_verb_names(atom/target)
+	var/list/by_shape = GLOB.interaction_menu_verb_shapes
+	// The whole verb set, in order, is the key: two targets share a list only when they carry the same verbs.
+	var/shape = "[target.type]|[jointext(target.verbs, ",")]"
+	var/list/names = by_shape[shape]
+	if(isnull(names))
+		names = list()
+		for(var/procpath/target_verb as anything in target.verbs)
+			if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
+				continue
+			names += target_verb.name
+		sortTim(names, GLOBAL_PROC_REF(cmp_text_asc))
+		if(length(by_shape) > 512)
+			by_shape.Cut()
+		by_shape[shape] = names
+	return names.Copy()

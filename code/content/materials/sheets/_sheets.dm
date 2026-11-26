@@ -42,6 +42,9 @@ CAPABILITIES(/obj/item/stack/material)
 
 /obj/item/stack/material/proc/stack_material_setup()
 	randpixel_xy()
+	// A stack made in a shipment being unpacked, or on an expedition site's level, is a lot of its own (a lot a smelter set already stands).
+	if(isnull(lot_key))
+		lot_key = trace_lot_at(src)
 
 	set_recipes(material.get_recipes())
 	set_stacktype(material.stack_type)
@@ -49,7 +52,7 @@ CAPABILITIES(/obj/item/stack/material)
 	if(apply_colour)
 		set_color(material.icon_colour)
 
-	if(!material.conductive)
+	if(!material.conductive())
 		flags |= NOCONDUCT
 
 	update_strings()
@@ -80,18 +83,36 @@ CAPABILITIES(/obj/item/stack/material)
 	return ..()
 
 /obj/item/stack/material/use(used)
+	var/before = amount
 	. = ..()
 	if(QDELETED(src))
 		return
+	// The sheets used took their share of the traces with them.
+	if(. && before > 0 && length(trace_amounts))
+		scale_traces(amount / before)
 	update_strings()
 
+/// Whether `other` is the same kind of stock, so the two merge. Plain stock merges on its material whatever lot it came from.
+/obj/item/stack/material/proc/can_merge_with(obj/item/stack/material/other)
+	return material?.name == other.material?.name
+
+/// Stock merges like pouring a beaker of solid into another: traces average by amount, and the merged stack is unassayed if either half was.
 /obj/item/stack/material/transfer_to(obj/item/stack/S, tamount=null, type_verified)
 	var/obj/item/stack/material/M = S
-	if(!istype(M) || material.name != M.material.name)
+	if(!istype(M) || !can_merge_with(M))
 		return 0
-	if(feedstock_lot_id && M.feedstock_lot_id && feedstock_lot_id != M.feedstock_lot_id)
-		return 0
+	ensure_traces()
+	M.ensure_traces()
+	var/before = get_amount()
+	var/both_assayed = assayed && M.assayed
 	var/transfer = ..(S,tamount,1)
+	if(transfer && before > 0)
+		var/fraction = transfer / before
+		for(var/trace_id in LAZYCOPY(trace_amounts))
+			var/moved = trace_amounts[trace_id] * fraction
+			trace_amounts[trace_id] -= moved
+			LAZYSET(M.trace_amounts, trace_id, (LAZYACCESS(M.trace_amounts, trace_id) || 0) + moved)
+		M.assayed = both_assayed
 	if(!QDELETED(src))
 		update_strings()
 	if(M)
@@ -99,6 +120,9 @@ CAPABILITIES(/obj/item/stack/material)
 	return transfer
 
 /obj/item/stack/material/split(tamount)
+	ensure_traces()
+	var/before = amount
+	var/list/old_traces = LAZYCOPY(trace_amounts)
 	var/obj/item/stack/material/new_stack = ..()
 	if(!new_stack)
 		return null
@@ -106,10 +130,13 @@ CAPABILITIES(/obj/item/stack/material)
 	new_stack.set_material(material)
 	new_stack.set_recipes(material.get_recipes())
 	new_stack.set_stacktype(material.stack_type)
-	new_stack.feedstock_purity = feedstock_purity
-	new_stack.feedstock_lot_id = feedstock_lot_id
-	new_stack.feedstock_trace = feedstock_trace
-	new_stack.feedstock_trace_units = feedstock_trace_units
+	new_stack.traces_rolled = TRUE
+	new_stack.assayed = assayed
+	if(before > 0)
+		for(var/trace_id in old_traces)
+			LAZYSET(new_stack.trace_amounts, trace_id, old_traces[trace_id] * new_stack.amount / before)
+			if(!QDELETED(src))
+				trace_amounts[trace_id] = old_traces[trace_id] * amount / before
 	new_stack.update_strings()
 	return new_stack
 
@@ -128,5 +155,10 @@ CAPABILITIES(/obj/item/stack/material)
 		return OP_PASS
 	else if(istype(W, /obj/item/stack/rods))
 		material.build_rod_product(user, W, src)
+		return OP_PASS
+	else if(istype(W, /obj/item/analyzer) && !istype(material, /datum/material/processed_alloy))
+		// The spectrometer: reads the traces in this stack and marks it assayed.
+		var/list/lines = assay(user)
+		to_chat(user, span_notice("Spectrometry of [src]: [length(lines) ? jointext(lines, "; ") : "no traces"]."))
 		return OP_PASS
 	return OP_DECLINE

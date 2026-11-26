@@ -69,7 +69,6 @@
 	consume(src)
 
 /obj/structure/closet/statue/dump_contents()
-	latent_materialize_all()
 
 	for(var/obj/O in slot_contents())
 		O.forceMove(get_turf(src))

@@ -150,8 +150,7 @@
 		var/list/organ_data = target.species.has_limbs["[part_name]"]
 		if(!organ_data)
 			continue
-		var/new_limb_type = organ_data["path"]
-		var/obj/item/organ/external/new_limb = new new_limb_type(target)
+		var/obj/item/organ/external/new_limb = species_limb_new(organ_data, target)
 		new_limb.robotize(L.model_info)
 		if(L.sabotaged)
 			new_limb.sabotaged = 1

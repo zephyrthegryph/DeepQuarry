@@ -78,7 +78,7 @@ CAPABILITIES(/datum/pipe_port)
 
 CAPABILITIES(/obj/machinery/atmospherics)
 	configure(movable_motion(unacidable = TRUE))
-	setup(PROC_REF(settle_pipe_color))
+	setup(PROC_REF(settle_pipe_color), early = TRUE) // before the chain: the root then sees no mapper colour to apply and take off again
 	configure(uses_power(idle = 0, active = 0, channel = ENVIRON))
 	blast_contents() // a ventcrawler in the pipes takes the full blast
 	ref_one(nameof(node1))
@@ -106,6 +106,15 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		air = new(max(rust_pipe_port_volume(index), 1))
 		rel_add(src, nameof(rust_unbound_port_air), air, "[index]")
 	return air
+
+/// Whether port `index` joins the boot upsert (setup_rust_pipenets()): a port with air.
+/obj/machinery/atmospherics/proc/rust_pipe_port_present(index)
+	return !!rust_pipe_port_air(index)
+
+/// The gas port `index` brings to its region at the boot upsert: its air, or null for none (Rust then starts the port empty, at TCMB, as an empty
+/// mixture would).
+/obj/machinery/atmospherics/proc/rust_pipe_port_seed_air(index)
+	return rust_pipe_port_air(index)
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_volume(index)
 	return 0
@@ -205,12 +214,12 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		var/port_id = rust_pipe_port_ids[index]
 		var/port_volume = rust_pipe_port_volume(index)
 		var/turf/open/release_turf = get_turf(src)
-		var/release_to = port_volume > 0 && release_turf?.air ? release_turf.air : 0
+		var/release_to = port_volume > 0 && release_turf?.turf_air() ? release_turf.turf_air() : 0
 		// Batched destroy: one removal call for the whole doomed set (init_and_turfs.md §4.4).
 		if(dq_pipe_port_remove(src, port_id, release_to))
 			continue
 		if(release_to)
-			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE_TO_MIXTURE, port_id, release_to, release_turf.air.return_volume())
+			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE_TO_MIXTURE, port_id, release_to, release_turf.turf_air().return_volume())
 		else
 			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE, port_id)
 		rust_free_pipe_port(port_id)
@@ -443,19 +452,24 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	// (init_and_turfs.md §3.3 step 4), not one call per port and edge.
 	var/list/upserts = list()
 	var/list/edges = list()
+	var/phase_started = REALTIMEOFDAY
+	var/list/phase_s = list()
 
 	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		machine.rust_allocate_pipe_ports()
 		for(var/index = 1 to machine.rust_pipe_port_count())
-			var/datum/gas_mixture/port_air = machine.rust_pipe_port_air(index)
-			if(!port_air)
+			if(!machine.rust_pipe_port_present(index))
 				continue
 			upserts += machine.rust_pipe_port_ids[index]
-			upserts += port_air
+			upserts += machine.rust_pipe_port_seed_air(index)
 			upserts += machine.rust_pipe_port_volume(index)
 
+	phase_s["ports and port air"] = (REALTIMEOFDAY - phase_started) / 10
+	phase_started = REALTIMEOFDAY
 	if(length(upserts))
 		vg_pipe_upsert_list(upserts)
+	phase_s["upsert"] = (REALTIMEOFDAY - phase_started) / 10
+	phase_started = REALTIMEOFDAY
 
 	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		for(var/index = 1 to machine.rust_pipe_port_count())
@@ -478,10 +492,19 @@ CAPABILITIES(/obj/machinery/atmospherics)
 			edges += machine.rust_pipe_port_ids[first_index]
 			edges += machine.rust_pipe_port_ids[second_index]
 
+	phase_s["edges"] = (REALTIMEOFDAY - phase_started) / 10
+	phase_started = REALTIMEOFDAY
 	if(length(edges))
 		vg_pipe_connect_list(edges)
+	phase_s["connect"] = (REALTIMEOFDAY - phase_started) / 10
+	phase_started = REALTIMEOFDAY
 	rust_pipe_topology_dirty = TRUE
 	rust_commit_pending_pipenets()
+	phase_s["commit"] = (REALTIMEOFDAY - phase_started) / 10
+	var/list/parts = list()
+	for(var/name in phase_s)
+		parts += "[name] [phase_s[name]]s"
+	log_world("AIR_INIT: rust pipenets for [length(upserts) / 3] port(s), [length(edges) / 2] edge(s): [jointext(parts, ", ")]")
 
 /// Commits this batch of topology edits to the Rust pipe network (R7) and
 /// rebuilds the compatibility wrappers of every region whose membership
@@ -631,8 +654,9 @@ CAPABILITIES(/obj/machinery/atmospherics)
 			rel_clear(pipeline, nameof(pipeline.leaks))
 			rel_set(pipeline, nameof(pipeline.network), network)
 			network.add_line_member(pipeline)
+		// One write for the lot (rel_set_many(): the pipeline's members list is read and appended once); the per-pipe rel_set() cost 0.11 ms a pipe.
+		rel_set_many(joined_pipes, nameof(/obj/machinery/atmospherics/pipe::parent), pipeline)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in joined_pipes)
-			rel_set(pipe, nameof(pipe.parent), pipeline)
 			if(pipe.leaking)
 				rel_add(pipeline, nameof(pipeline.leaks), pipe)
 				rel_add(network, nameof(network.leaks), pipe)
@@ -699,8 +723,8 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		atmos_air_set(pipeline, "air", region_air)
 		rel_clear(pipeline, nameof(pipeline.leaks))
 		rel_set(pipeline, nameof(pipeline.network), network)
+		rel_set_many(region_pipes, nameof(/obj/machinery/atmospherics/pipe::parent), pipeline) // two-sided: adds the pipes to pipeline.members, in one write
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in region_pipes)
-			rel_set(pipe, nameof(pipe.parent), pipeline) // two-sided: adds the pipe to pipeline.members
 			if(pipe.leaking)
 				rel_add(pipeline, nameof(pipeline.leaks), pipe)
 				rel_add(network, nameof(network.leaks), pipe)
@@ -725,6 +749,14 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	if(!air_temporary)
 		rel_set(src, nameof(air_temporary), new /datum/gas_mixture(max(volume, 1)))
 	return air_temporary
+
+/// A fixed pipe is always a port; it seeds its region with gas only when it has some (a mapped tank, a pipeline's share): an empty pipe gets no
+/// throwaway mixture (10 k of them were made and destroyed at boot).
+/obj/machinery/atmospherics/pipe/rust_pipe_port_present(index)
+	return TRUE
+
+/obj/machinery/atmospherics/pipe/rust_pipe_port_seed_air(index)
+	return parent?.air || air_temporary
 
 /obj/machinery/atmospherics/pipe/rust_pipe_port_volume(index)
 	return volume

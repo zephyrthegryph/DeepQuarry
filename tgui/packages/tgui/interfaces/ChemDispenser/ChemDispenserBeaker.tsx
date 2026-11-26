@@ -1,12 +1,12 @@
 import { useBackend } from 'tgui/backend';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
-
+import { Label } from 'tgui/components/Label';
+import { Button, Section, Stack } from 'tgui-core/components';
 import { BeakerContents } from '../common/BeakerContents';
-import { removeAmounts } from './constants';
+import type { ChemDispenserActions } from '../generated/ChemDispenser';
 import type { Data } from './types';
 
 export const ChemDispenserBeaker = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ChemDispenserActions>();
   const {
     isBeakerLoaded,
     beakerCurrentVolume,
@@ -23,6 +23,7 @@ export const ChemDispenserBeaker = (props) => {
       id: r.id,
       name: r.id.replace(/_/, ' '),
       volume: r.amount,
+      contaminant: false,
     }));
 
   return (
@@ -34,9 +35,9 @@ export const ChemDispenserBeaker = (props) => {
         <Stack>
           <Stack.Item>
             {!!isBeakerLoaded && (
-              <Box inline color="label" mr={2}>
+              <Label inline mr={2}>
                 {beakerCurrentVolume} / {beakerMaxVolume} units
-              </Box>
+              </Label>
             )}
           </Stack.Item>
           <Stack.Item>
@@ -54,52 +55,6 @@ export const ChemDispenserBeaker = (props) => {
       <BeakerContents
         beakerLoaded={recordedContents || isBeakerLoaded}
         beakerContents={recordedContents || beakerContents}
-        buttons={(chemical) => (
-          <Stack>
-            <Stack.Item>
-              <Button
-                icon="compress-arrows-alt"
-                disabled={recording}
-                onClick={() =>
-                  act('remove', {
-                    reagent: chemical.id,
-                    amount: -1,
-                  })
-                }
-              >
-                Isolate
-              </Button>
-            </Stack.Item>
-            {removeAmounts.map((a, i) => (
-              <Stack.Item key={i}>
-                <Button
-                  disabled={recording}
-                  onClick={() =>
-                    act('remove', {
-                      reagent: chemical.id,
-                      amount: a,
-                    })
-                  }
-                >
-                  {a}
-                </Button>
-              </Stack.Item>
-            ))}
-            <Stack.Item>
-              <Button
-                disabled={recording}
-                onClick={() =>
-                  act('remove', {
-                    reagent: chemical.id,
-                    amount: chemical.volume,
-                  })
-                }
-              >
-                ALL
-              </Button>
-            </Stack.Item>
-          </Stack>
-        )}
       />
     </Section>
   );

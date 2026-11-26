@@ -6,6 +6,7 @@
 	icon_state = "microscope"
 	anchored = TRUE
 	density = TRUE
+	circuit = VARIANT(/obj/item/circuitboard/microscope)
 
 	var/tmp/obj/item/sample
 	var/report_num = 0
@@ -107,6 +108,9 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 	rel_clear(src, nameof(sample))
 
 CAPABILITIES(/obj/machinery/microscope)
+	tabletop(carry = TRUE)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	ref_one(nameof(sample), /obj/item)
 	drag_onto(PROC_REF(mousedrop_input))
 	op("microscope_insert_sample", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert sample"), needs(req_is(nameof(sample), FALSE, because = MSG(microscope/sample)), req_held_releasable()), then(PROC_REF(interaction_attackby)))

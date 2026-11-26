@@ -15,6 +15,7 @@ fundamental differences
 	tgui_id = "KitchenMixer"
 
 CAPABILITIES(/obj/machinery/appliance/mixer)
+	ui_shape(icon_used = any)
 	setup(PROC_REF(prepare_mixer_selection))
 	configure(uses_power(active = 3000, idle = 50))
 	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))

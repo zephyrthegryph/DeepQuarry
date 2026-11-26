@@ -90,7 +90,7 @@
 	var/mob/living/simple_mob/e0_fixture/M = actor()
 	var/mob/living/simple_mob/e0_fixture/patient = actor()
 	var/obj/item/lib_fixture/syringe/S = filled(/obj/item/lib_fixture/syringe, 10)
-	patient.reagents.maximum_volume = 20
+	patient.reagents.set_maximum_volume(20)
 	var/datum/op_result/injecting = test_click(M, patient, S)
 	TEST_ASSERT_NOTNULL(injecting, "a syringe clicked on a mob resolves")
 	TEST_ASSERT_EQUAL(injecting.key, "reagent_container.inject", "to the inject op")

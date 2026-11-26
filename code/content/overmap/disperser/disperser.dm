@@ -11,7 +11,7 @@
 /obj/machinery/disperser/examine(mob/user)
 	. = ..()
 	if(panel_open)
-		to_chat(user, "The maintenance panel is open.")
+		. += "The maintenance panel is open."
 
 /obj/machinery/disperser/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor

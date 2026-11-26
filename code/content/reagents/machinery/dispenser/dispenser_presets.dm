@@ -29,7 +29,6 @@
 	name = "medicine dispenser"
 	spawn_cartridges = list(
 			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/inaprov),
-			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/ryetalyn),
 			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/paracetamol),
 			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/tramadol),
 			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/oxycodone),
@@ -231,7 +230,6 @@
 	spawn_cartridges = list(
 			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/inaprov),
 			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/dylovene),
-			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/ryetalyn),
 			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/tramadol),
 			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/oxycodone),
 			VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/sterilizine),

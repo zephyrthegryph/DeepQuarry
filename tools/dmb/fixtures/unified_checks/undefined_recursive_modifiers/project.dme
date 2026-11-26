@@ -1,5 +1,0 @@
-/datum/type_probe
-/proc/probe(list/static/datum/good,list/static/missing/bad,list/static/list/const/missing/deep,list/static/empty)
-    var/list/static/datum/local_good
-    var/list/static/missing/local_bad
-    return good

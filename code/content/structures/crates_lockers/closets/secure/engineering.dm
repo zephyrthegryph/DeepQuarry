@@ -17,7 +17,7 @@
 		/obj/item/clothing/head/hardhat/white,
 		// /obj/item/clothing/head/welding, // Removal: Locker bloat, grr. They get fancy goggles or can raid the welding supplies locker for one of these.
 		/obj/item/clothing/gloves/heavy_engineer, // chief gets the good shit
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/cartridge/ce,
 		/obj/item/radio/headset/heads/ce,
 		/obj/item/radio/headset/alt/heads/ce,
@@ -37,7 +37,7 @@
 		/obj/item/clothing/head/beret/engineering/ce,
 		/obj/item/clothing/head/beret/engineering/ce/white,
 		/obj/item/tank/emergency/oxygen/double, // chief gets the good shit
-		/obj/item/reagent_containers/spray/windowsealant, // 
+		VARIANT(/obj/item/reagent_containers/spray/windowsealant), // 
 		/obj/item/holosign_creator/combifan,
 		/obj/item/rcd/advanced/loaded,
 		/obj/item/pipe_dispenser)
@@ -112,7 +112,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/engineering_chief)
 		/obj/item/clothing/shoes/boots/winter/engineering,
 		/obj/item/tank/emergency/oxygen/engi,
 		/obj/item/storage/belt/utility,
-		/obj/item/reagent_containers/spray/windowsealant,
+		VARIANT(/obj/item/reagent_containers/spray/windowsealant),
 		/obj/item/areaeditor/blueprints/engineers)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/engineering_personal)

@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Joining no longer leaves you with nothing: outfit items from collapsed clothing families are made correctly, and one bad item is skipped and logged instead of ending the whole equip"

@@ -23,10 +23,10 @@
 			p.radio.tgui_interact(p)
 
 		if("pda")
-			p.pda.cmd_pda_open_ui()
+			p.pda.open_for(p)
 
 		if("communicator")
-			p.communicator.activate()
+			p.communicator.use_by(p)
 
 		if("known languages")
 			p.check_languages()
@@ -364,11 +364,18 @@
 	if(!.)
 		return
 
+	life_hud_place()
+
+/// Folded while it rides in its card.
+/mob/living/silicon/pai/life_hud_place()
+	. = ..()
+	if(!.)
+		return
 	if(src.pai_fold_display)
 		if(src.loc == src.card)
-			src.pai_fold_display.icon_state = "folded"
+			src.pai_fold_display.set_icon_state("folded")
 		else
-			src.pai_fold_display.icon_state = "unfolded"
+			src.pai_fold_display.set_icon_state("unfolded")
 
 /mob/living/silicon/pai/life_hud_health_icons()
 	. = ..()
@@ -417,6 +424,5 @@
 
 	hud_used.hidden_inventory_update()
 	hud_used.persistant_inventory_update()
-	update_action_buttons()
 	hud_used.reorganize_alerts()
 	return TRUE

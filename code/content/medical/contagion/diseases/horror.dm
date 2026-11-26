@@ -15,8 +15,8 @@
 	spread_text = "UNKNOWN BIOLOGICAL AGENT"
 	spread_flags = DISEASE_SPREAD_BLOOD
 	virus_modifiers = BYPASSES_IMMUNITY | SPREAD_DEAD
-	cure_text = REAGENT_ID_HOLYWATER
-	cures = list(REAGENT_ID_HOLYWATER)
+	cure_text = REAGENT_REZADONE + " (genetic repair) before the final stage"
+	cures = list(REAGENT_ID_REZADONE)
 	agent = "Infectious Cellular Growth"
 	desc = "Unknown infection only known to be present in specific regions of space. \
 	The host's cells are slowly rewritten and replaced. Unknown effects if left untreated."

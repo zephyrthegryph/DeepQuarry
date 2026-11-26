@@ -2,14 +2,20 @@ import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack } from 'tgui-core/components';
+import type { SpaceBattleActions } from '../generated/SpaceBattle';
 import { GameArea } from './GameArea';
 import { PlayerMenu } from './PlayerMenu';
 import type { Data } from './types';
 
 export const SpaceBattle = (props) => {
-  const { data } = useBackend<Data>();
-  const { ship_sizes, game_state, current_player, player_one, player_two } =
-    data;
+  const { data } = useBackend<Data, SpaceBattleActions>();
+  const {
+    ship_sizes = {},
+    game_state,
+    current_player,
+    player_one,
+    player_two,
+  } = data;
 
   const [playerOnePlaceShip, setPlayerOnePlaceShip] = useState<string>(
     Object.keys(ship_sizes)[0],

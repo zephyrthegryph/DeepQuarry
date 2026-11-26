@@ -9,9 +9,6 @@
 	verbpath = /mob/proc/changeling_cryo_sting
 
 /mob/proc/changeling_cryo_sting()
-	set category = VERB_CAT_CHANGELING
-	set name = "Cryogenic Sting (20)"
-	set desc = "Chills and freezes a biological creature."
 	return changeling_cryo_sting_stage()
 
 /mob/proc/changeling_cryo_sting_stage(mob/living/carbon/selected_target)

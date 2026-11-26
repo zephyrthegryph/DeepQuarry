@@ -48,7 +48,7 @@
 	var/list/active_recipe //volatile, when given an item it removes it
 	var/current_step = 0 //current step for icon states
 
-/// Are we waiting for the timer to get negatives? periodic_step() works the recipe while set (its every()).
+/// Are we waiting for the timer to get negatives? event_collector_step() works the recipe while set (its every()).
 /obj/structure/event_collector/var/awaiting_next_recipe = FALSE
 CAPABILITIES(/obj/structure/event_collector)
 	every(2 SECONDS, then(PROC_REF(event_collector_step)), when = nameof(awaiting_next_recipe))

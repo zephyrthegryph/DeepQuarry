@@ -972,7 +972,7 @@
 /datum/unit_test/dq_timed_pin_w7/proc/r_tongue(mob/living/silicon/robot/R, water_held = 100)
 	var/obj/item/robot_tongue/L = allocate(/obj/item/robot_tongue, R)
 	L.water = new /datum/matter_synth(500)
-	L.water.energy = water_held
+	L.water.set_energy(water_held)
 	return L
 
 // ---- Hound tongue: dog_modules.dm robot_tongue/afterattack (5 seconds, per target kind) ----

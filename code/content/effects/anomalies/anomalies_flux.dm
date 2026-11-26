@@ -31,8 +31,8 @@ CAPABILITIES(/obj/effect/anomaly/flux)
 	setup(PROC_REF(start_flux_filters))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	param(nameof(emp_zap), pos = 3)
-	op("flux_shock", hand(), ungated(), label("Interaction flux shock"), then(PROC_REF(interaction_flux_shock)))
-	op("flux_shock_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Interaction flux shock"), then(PROC_REF(interaction_flux_shock)))
+	op("flux_shock", hand(), ungated(), label("Touch"), then(PROC_REF(interaction_flux_shock)))
+	op("flux_shock_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Touch"), then(PROC_REF(interaction_flux_shock)))
 
 /// Something walked into it (the bump action's notice).
 /obj/effect/anomaly/flux/proc/bumped_into(datum/act/A)

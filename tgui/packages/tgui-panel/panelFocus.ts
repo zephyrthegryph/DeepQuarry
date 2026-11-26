@@ -15,6 +15,26 @@ import { vecLength, vecSubtract } from 'tgui-core/vector';
 // text you can select with the mouse.
 const MIN_SELECTION_DISTANCE = 10;
 
+/** The chat input row keeps focus while the player types in it. */
+function isChatInputFocused(): boolean {
+  return !!document.activeElement?.hasAttribute('data-chat-input');
+}
+
+/**
+ * A text field has the keyboard: the chat input, the stat panel's search, or
+ * an input in a docked interface (the column holds them all, section 12).
+ * Keys go to it; anything else hands them back to the map.
+ */
+function isTyping(): boolean {
+  const active = document.activeElement as HTMLElement | null;
+  if (!active) return false;
+  return (
+    active.tagName === 'INPUT' ||
+    active.tagName === 'TEXTAREA' ||
+    active.isContentEditable
+  );
+}
+
 function deferredFocusMap(): void {
   setTimeout(focusMap);
 }
@@ -42,13 +62,13 @@ export function setupPanelFocusHacks(): void {
         focusStolen = true;
       }
     }
-    if (!focusStolen) {
+    if (!focusStolen && !isChatInputFocused() && !isTyping()) {
       deferredFocusMap();
     }
   });
 
   globalEvents.on('keydown', (key) => {
-    if (key.isModifierKey()) {
+    if (key.isModifierKey() || isChatInputFocused() || isTyping()) {
       return;
     }
     deferredFocusMap();

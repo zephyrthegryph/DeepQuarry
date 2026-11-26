@@ -1,3 +1,0 @@
-[lint.auto_tracked.lists]
-include = ["/datum/manual::spare", "/datum/manual::value"]
-exclude = ["/datum/probe::excluded"]

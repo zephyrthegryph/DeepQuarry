@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The say popup can be dragged anywhere, including off the game window; it remembers its place, and double-clicking its frame docks it again. It can no longer be resized below a usable size."

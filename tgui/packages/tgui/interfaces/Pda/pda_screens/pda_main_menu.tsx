@@ -1,24 +1,9 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Icon, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type { PdaActions, PdaData } from '../../generated/Pda';
 
-type Data = {
-  owner: string;
-  ownjob: string;
-  idInserted: boolean;
-  categories: string[];
-  apps: Record<string, category>[];
-  pai: BooleanLike;
-  notifying: Record<string | number, BooleanLike>;
-};
-
-type category = {
-  name: string;
-  icon: string;
-  notify_icon: string;
-  ref: string;
-};
+type PdaApp = PdaData['apps'][string][number];
 
 const specialIconColors = {
   'Enable Flashlight': '#0f0',
@@ -26,11 +11,11 @@ const specialIconColors = {
 };
 
 export const pda_main_menu = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<PdaData, PdaActions>();
 
   const [showTransition, setShowTransition] = useState('');
 
-  const startProgram = (program: category) => {
+  const startProgram = (program: PdaApp) => {
     if (
       program.name.startsWith('Enable') ||
       program.name.startsWith('Disable')
@@ -83,7 +68,7 @@ export const pda_main_menu = (props) => {
             } else {
               return (
                 <LabeledList.Item label={name} key={name}>
-                  {valid_apps.map((app: category) => (
+                  {valid_apps.map((app: PdaApp) => (
                     <Button
                       key={app.ref}
                       icon={app.ref in notifying ? app.notify_icon : app.icon}

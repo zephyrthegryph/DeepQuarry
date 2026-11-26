@@ -1,3 +1,11 @@
+/// Whether the character's species (a custom species: its base) has the Shadekin state the flicker settings seed.
+/proc/dq_shadekin_species_chosen(datum/preferences/preferences)
+	var/species_name = preferences?.read_preference(/datum/preference/choiced/species)
+	if(species_name == SPECIES_CUSTOM)
+		species_name = preferences.read_preference(/datum/preference/text/human/custom_base)
+	var/datum/species/chosen = GLOB.all_species[species_name]
+	return !!(chosen && (/datum/shadekin/full in chosen.species_component))
+
 /datum/preference/color/living/flicker_color
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
 	savefile_identifier = PREFERENCE_CHARACTER
@@ -6,6 +14,12 @@
 
 /datum/preference/color/living/flicker_color/create_default_value()
 	return "#E0EFF0"
+
+/// Shown on the Game tab only for a species with the Shadekin state; the value is saved either way.
+/datum/preference/color/living/flicker_color/get_widget(datum/preferences/preferences)
+	if(!dq_shadekin_species_chosen(preferences))
+		return PREF_WIDGET_HIDDEN
+	return ..()
 
 /datum/preference/color/living/flicker_color/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()
@@ -23,6 +37,12 @@
 /datum/preference/numeric/living/flicker_time/create_default_value()
 	return 10
 
+/// Shown on the Game tab only for a species with the Shadekin state; the value is saved either way.
+/datum/preference/numeric/living/flicker_time/get_widget(datum/preferences/preferences)
+	if(!dq_shadekin_species_chosen(preferences))
+		return PREF_WIDGET_HIDDEN
+	return ..()
+
 /datum/preference/numeric/living/flicker_time/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()
 	if(our_SK)
@@ -39,6 +59,12 @@
 /datum/preference/numeric/living/flicker_break_chance/create_default_value()
 	return 0
 
+/// Shown on the Game tab only for a species with the Shadekin state; the value is saved either way.
+/datum/preference/numeric/living/flicker_break_chance/get_widget(datum/preferences/preferences)
+	if(!dq_shadekin_species_chosen(preferences))
+		return PREF_WIDGET_HIDDEN
+	return ..()
+
 /datum/preference/numeric/living/flicker_break_chance/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()
 	if(our_SK)
@@ -54,6 +80,12 @@
 
 /datum/preference/numeric/living/flicker_distance/create_default_value()
 	return 4
+
+/// Shown on the Game tab only for a species with the Shadekin state; the value is saved either way.
+/datum/preference/numeric/living/flicker_distance/get_widget(datum/preferences/preferences)
+	if(!dq_shadekin_species_chosen(preferences))
+		return PREF_WIDGET_HIDDEN
+	return ..()
 
 /datum/preference/numeric/living/flicker_distance/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()

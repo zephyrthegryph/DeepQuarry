@@ -1,6 +1,7 @@
 // Vending machine log — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -15,7 +16,7 @@ type Data = {
 
 export const VendingLog = () => {
   const { data } = useBackend<Data>();
-  const { machine_name, user_name, entries } = data;
+  const { machine_name, user_name, entries = [] } = data;
   return (
     <Window width={680} height={620} title={`${machine_name} Vending Log`}>
       <Window.Content scrollable>
@@ -36,10 +37,7 @@ export const VendingLog = () => {
                     <Box inline color={e[1] === 'vend' ? 'good' : 'average'}>
                       {e[1]}
                     </Box>{' '}
-                    — <Box inline>{e[4]}</Box>{' '}
-                    <Box inline color="label">
-                      @ {e[3]}
-                    </Box>
+                    — <Box inline>{e[4]}</Box> <Label inline>@ {e[3]}</Label>
                   </Box>
                 </Stack.Item>
               ))}

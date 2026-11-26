@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Map-placed atoms no longer keep a reference from the round-start air scan, so they are collected after qdel"

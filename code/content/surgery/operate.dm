@@ -45,6 +45,9 @@
 
 /datum/surgical_step/treat/organ/suture
 	name = "Repair Organ"
+	finds = TRUE
+	book_category = "Organs"
+	about = "Closing tears, bruises, ischemic and toxic injury in one organ with sutures."
 	allowed_tools = list(
 		/obj/item/surgical/FixOVein = 100,
 		/obj/item/stack/medical/advanced/bruise_pack = 60,
@@ -64,6 +67,9 @@
 
 /datum/surgical_step/treat/organ/resection
 	name = "Resect Necrotic Tissue"
+	finds = TRUE
+	book_category = "Organs"
+	about = "Cutting dead tissue out of one organ, or a tumour or parasitic growth out of the limb that holds it (the body scanner reads these as an abnormal tissue mass or a parasitic organism). Sutures do not touch necrosis; only resection removes it."
 	allowed_tools = list(
 		/obj/item/surgical/scalpel = 100,
 		/obj/item/material/knife = 50,
@@ -78,6 +84,32 @@
 	complication_kind = INJURY_CUT
 	complication_amount = 8
 	complication_affliction = /datum/affliction/lesion/laceration
+
+/// A tumour or parasitic growth: cut out by resection, whole (the engineered glands are implants, not growths).
+/proc/is_resectable_growth(atom/thing)
+	return istype(thing, /obj/item/organ/internal/malignant/tumor) || istype(thing, /obj/item/organ/internal/malignant/parasite)
+
+/datum/surgical_step/treat/organ/resection/location_needs_treatment(mob/living/carbon/human/target, location)
+	return is_resectable_growth(location) || ..()
+
+/datum/surgical_step/treat/organ/resection/findings(mob/living/carbon/human/target, obj/item/organ/external/part, full)
+	. = ..()
+	if(!full)
+		return
+	for(var/obj/item/organ/internal/I as anything in part.held_organs())
+		if(I.owner == target && is_resectable_growth(I))
+			. += list(surgical_finding_row(istype(I, /obj/item/organ/internal/malignant/tumor) ? "abnormal tissue mass" : "parasitic organism", I, I, src))
+
+/datum/surgical_step/treat/organ/resection/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
+	if(!is_resectable_growth(work_target))
+		return ..()
+	var/obj/item/organ/internal/growth = work_target
+	if(growth.owner != target)
+		return
+	log_game("SURGERY: [key_name(user)] cut [growth] ([growth.type]) out of [key_name(target)]'s [part]")
+	add_attack_logs(user, target, "Resected [growth.name]")
+	growth.removed(user)
+	spent(growth)
 
 /datum/surgical_step/treat/organ/system_restore
 	name = "Repair Prosthetic Organ"
@@ -99,6 +131,9 @@
 
 /datum/surgical_step/treat/vessel_repair
 	name = "Repair Blood Vessels"
+	finds = TRUE
+	book_category = "Vascular"
+	about = "Mending a torn artery or an internal bleed that pressure and clamps only slow."
 	allowed_tools = list(
 		/obj/item/surgical/FixOVein = 100,
 		/obj/item/stack/cable_coil = 50,
@@ -119,6 +154,9 @@
 
 /datum/surgical_step/treat/tendon_repair
 	name = "Repair Tendon"
+	finds = TRUE
+	book_category = "Limb"
+	about = "Finding and rejoining a severed tendon so the limb works again."
 	allowed_tools = list(/obj/item/surgical/FixOVein = 100)
 	zones = list(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND, BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
 	needs_full_access = FALSE
@@ -135,6 +173,9 @@
 /// releasing pressure trapped in a compartment.
 /datum/surgical_step/treat/decompression
 	name = "Surgical Decompression"
+	finds = TRUE
+	book_category = "Chest"
+	about = "Releasing pressure trapped in a limb compartment, the pleural space or the skull."
 	allowed_tools = list(
 		/obj/item/surgical/scalpel = 100,
 		/obj/item/surgical/hemostat = 80,
@@ -154,6 +195,9 @@
 
 /datum/surgical_step/treat/debridement
 	name = "Debride Dead Tissue"
+	finds = TRUE
+	book_category = "Soft Tissue"
+	about = "Cutting away dead or badly infected tissue so the healthy tissue around it can recover."
 	allowed_tools = list(
 		/obj/item/surgical/scalpel = 100,
 		/obj/item/surgical/bioregen = 90,
@@ -212,12 +256,16 @@
 
 /datum/surgical_step/treat/extract_foreign_body
 	name = "Extract Foreign Body"
+	finds = TRUE
+	book_category = "Trauma"
+	about = "Working shrapnel, embedded weapons and implants out of the limb, and drawing out what a deposit leaves behind."
 	allowed_tools = list(
 		/obj/item/surgical/hemostat = 100,
 		/obj/item/material/kitchen/utensil/fork = 50,
 	)
 	allowed_tool_qualities = list(TOOL_WIRECUTTER = 75)
 	scope = SURGERY_SCOPE_REGION
+	min_depth = FLESH_RETRACTED
 	treatments = list(TREAT_FOREIGN_BODY_REMOVAL = 100)
 	begin_text = "extracting foreign material from"
 	end_text = "extracts foreign material from"
@@ -227,6 +275,9 @@
 
 /datum/surgical_step/treat/reoxygenate
 	name = "Reoxygenate Tissue"
+	finds = TRUE
+	book_category = "Soft Tissue"
+	about = "Restoring tissue that starved of oxygen where a drug would not reach it."
 	allowed_tools = list(/obj/item/surgical/bioregen = 100)
 	scope = SURGERY_SCOPE_REGION
 	treatments = list(TREAT_OXYGENATION = 50)
@@ -247,6 +298,9 @@
 
 /datum/surgical_step/treat/lithotripsy
 	name = "Ultrasound Lithotripsy"
+	finds = TRUE
+	book_category = "Special"
+	about = "Breaking up stones and deposits with focused ultrasound."
 	allowed_tools = list(/obj/item/autopsy_scanner = 100)
 	scope = SURGERY_SCOPE_REGION
 	treatments = list(TREAT_LITHOTRIPSY = 100)

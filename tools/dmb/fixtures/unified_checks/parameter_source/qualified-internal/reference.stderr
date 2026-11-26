@@ -1,7 +1,0 @@
-@FIXTURE@, line 4, column 28:
-error: undefined type: /datum/tmp/box
-
-@FIXTURE@, line 6, column 6:
-warning: proc call requires static type: "work"
-- 4:12: add additional type info here
-

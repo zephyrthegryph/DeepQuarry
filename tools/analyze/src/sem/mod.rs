@@ -19,7 +19,7 @@ pub mod ctor_args;
 pub mod handlers;
 pub mod hooks;
 pub mod cli;
-pub use crate::declaration_markers as decls;
+pub mod decls;
 pub mod globals;
 pub mod graph;
 pub mod layering;
@@ -33,6 +33,7 @@ pub mod body_facts;
 pub mod oracle;
 pub mod procs;
 pub mod reads;
+pub mod ui_windows;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -66,7 +67,13 @@ impl VarSig {
     }
 }
 
-pub use crate::reactive_read_facts::is_object_type;
+const VALUE_TYPES: &[&str] = &["/list", "/text", "/num", "/string", "/icon", "/sound", "/mutable_appearance", "/image", "/matrix", "/regex", "/savefile", "/client", "/world", "/exception", "/path", "/color", "/alist"];
+
+/// True for a declared type that names a game object (anything but the value types above or
+/// `""`). `/image` and the other appearance types are values for reads purposes.
+pub fn is_object_type(declared: &str) -> bool {
+    !declared.is_empty() && !VALUE_TYPES.iter().any(|v| declared == *v || declared.starts_with(&format!("{}/", v)))
+}
 
 /// A proc body with the facts the walkers need.
 pub struct ProcBody<'a> {
@@ -108,21 +115,6 @@ pub struct Sem {
     writes: std::sync::OnceLock<reads::WriteIndex>,
 }
 
-// Explicit independent legacy oracle preparation. This never becomes a full
-// semantic cache/walk-store owner or a native source capability.
-enum OriginalPreparation{Ordinary,#[cfg(feature="unified-oracle")]Generation(ObservedGenerationOmissions)}
-impl OriginalPreparation{fn is_generation(&self)->bool{match self{Self::Ordinary=>false,#[cfg(feature="unified-oracle")]Self::Generation(_)=>true}}}
-#[cfg(feature="unified-oracle")]
-pub struct ObservedGenerationOmissions{root:PathBuf,paths:Vec<PathBuf>}
-#[cfg(feature="unified-oracle")]
-impl ObservedGenerationOmissions{
- pub fn probe(root:&Path)->std::io::Result<Self>{
-  if !root.is_absolute(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"generation oracle root must be absolute"))}let root=dm_preprocess::regions::canonical_path(root);let mut paths=Vec::new();
-  for generator in gen::registry(){let relative=if !generator.output().is_empty(){format!("{}/{}",gen::OUT_DIR,generator.output())}else if generator.name()=="derived_reads"{crate::reactive_reaction_policy::GENERATED_REL.to_owned()}else{continue};let path=root.join(relative);match std::fs::symlink_metadata(&path){Ok(_)=>(),Err(actual)if actual.kind()==std::io::ErrorKind::NotFound=>paths.push(path),Err(actual)=>return Err(actual)}}paths.sort();paths.dedup();Ok(Self{root,paths})
- }
- pub fn paths(&self)->impl Iterator<Item=&Path>{self.paths.iter().map(PathBuf::as_path)}
-}
-
 impl Sem {
     /// Parses the environment. A tree with a non-empty `deepquarry.dme` uses it (include order
     /// matters for define visibility); anything else (a fixture) gets a synthesized `.dme` that
@@ -138,12 +130,7 @@ impl Sem {
         Sem::build_with(root, tree, Some(files))
     }
 
-    fn build_with(root:&Path,tree:&Tree,only:Option<&[String]>)->Result<Sem,String>{Self::build_original(root,tree,only,OriginalPreparation::Ordinary)}
-    #[cfg(feature="unified-oracle")]
-    pub fn build_generation_original(root:&Path,tree:&Tree,observed:ObservedGenerationOmissions)->Result<Sem,String>{if dm_preprocess::regions::canonical_path(root)!=observed.root||dm_preprocess::regions::canonical_path(&tree.root)!=observed.root{return Err("old generation omissions belong to another root/tree".into())}if observed.paths.is_empty(){return Err("old generation preparation requires actual registered negatives; use the ordinary full path".into())}Self::build_original(root,tree,None,OriginalPreparation::Generation(observed))}
-    fn build_original(root: &Path, tree: &Tree, only: Option<&[String]>, preparation:OriginalPreparation) -> Result<Sem, String> {
-        let generation=preparation.is_generation();
-        tree.require_legacy_semantics("legacy semantic model construction")?;
+    fn build_with(root: &Path, tree: &Tree, only: Option<&[String]>) -> Result<Sem, String> {
         // The synthesized .dme lives in a temp dir, so every path it names must be absolute.
         let abs_root: PathBuf = if root.is_absolute() { root.to_path_buf() } else { std::env::current_dir().map_err(|e| e.to_string())?.join(root) };
         let root = abs_root.as_path();
@@ -186,13 +173,9 @@ impl Sem {
             (p, Some(dir))
         };
         let t_build = std::time::Instant::now();
-        let parsed=match preparation{
-            OriginalPreparation::Ordinary=>if real{model_store::obtain(root,tree,&dme_path)?}else{parse_dme(&dme_path,&[],None)?},
-            #[cfg(feature="unified-oracle")]
-            OriginalPreparation::Generation(observed)=>{if !real||only.is_some(){return Err("old generation oracle requires its actual DME".into())}parse_source(&dme_path,&[],Source::Generation(observed.paths),false)?},
-        };
+        let parsed = if real { model_store::obtain(root, tree, &dme_path)? } else { parse_dme(&dme_path, &[], None)? };
         let model_store::Parsed { objtree, files: file_list, errors, env, structure, .. } = parsed;
-        let env_key = if real && !generation { env.unwrap_or_else(|| model_store::environment(tree, root, &dme_path, &file_list)) } else { 0 };
+        let env_key = if real { env.unwrap_or_else(|| model_store::environment(tree, root, &dme_path, &file_list)) } else { 0 };
         let t_parsed = t_build.elapsed();
         let mut files: HashMap<dreammaker::FileId, String> = HashMap::new();
         let mut def_index: HashMap<String, Vec<(u32, String, String)>> = HashMap::new();
@@ -302,7 +285,7 @@ impl Sem {
             eprintln!("analyze: sem build: parse {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
         }
         let file_keys: HashMap<dreammaker::FileId, u128> = files.iter().filter_map(|(id, rel)| tree.get(rel).map(|f| (*id, f.hash))).collect();
-        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real && !generation, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), globals: Default::default(), writes: Default::default() })
+        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), globals: Default::default(), writes: Default::default() })
     }
 
     pub fn rel(&self, loc: Location) -> &str {
@@ -313,11 +296,7 @@ impl Sem {
     }
 
     /// The file a location is in, without recording it in the footprint.
-    #[cfg(not(feature="unified-oracle"))]
-    pub(crate) fn file_of(&self,loc:Location)->Option<&str>{self.file_of_inner(loc)}
-    #[cfg(feature="unified-oracle")]
-    pub fn file_of(&self,loc:Location)->Option<&str>{self.file_of_inner(loc)}
-    fn file_of_inner(&self, loc: Location) -> Option<&str> {
+    pub(crate) fn file_of(&self, loc: Location) -> Option<&str> {
         if loc.is_builtins() {
             return None;
         }
@@ -535,8 +514,6 @@ pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<S
 pub(crate) enum Source {
     /// The `.dme` (or text standing in for it: includes resolve against the real `.dme`'s directory).
     Dme(Option<String>),
-    #[cfg(feature="unified-oracle")]
-    Generation(Vec<PathBuf>),
     /// Files read one after the other, starting with the macro state the stored history had at the start of the first: (registered path,
     /// path on disk). See `model_store`.
     Alone(std::sync::Arc<dreammaker::preprocessor::StoredDefineHistory>, Vec<(PathBuf, PathBuf)>),
@@ -567,8 +544,6 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
             }
             let stored = {
                 let mut pp = match source {
-                    #[cfg(feature="unified-oracle")]
-                    Source::Generation(paths)=>dreammaker::preprocessor::Preprocessor::new(&ctx,dme_for_pp.clone()).map_err(|e|format!("{}: {}",dme_for_pp.display(),e))?.with_observed_generation_omissions(paths),
                     Source::Dme(Some(t)) => dreammaker::preprocessor::Preprocessor::from_buffer(&ctx, dme_for_pp.clone(), t),
                     Source::Dme(None) => dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?,
                     Source::Alone(hist, files) => {
@@ -628,7 +603,58 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
     Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines })
 }
 
-use crate::layering_raw_policy::{Event as LayerEvent,events as layering_events};
+/// One line of a file as the layering index reads it (see `Sem::build_with`).
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+enum LayerEvent {
+    /// `/type/var/x`: the type owns a field (if the model has the type).
+    Owner(String),
+    /// A `CAPABILITY_TYPE` / `CAPABILITY_DEF` marker's type.
+    Type(String),
+    /// A non-empty line's indent (pops the header stack).
+    Indent(u32),
+    /// A bare type header at an indent.
+    Header(u32, String),
+}
+
+fn layering_events(code: &str, capability_type: &regex::Regex, capability_def: &regex::Regex) -> Vec<LayerEvent> {
+    let mut out = Vec::new();
+    let mut headers: Vec<usize> = Vec::new();
+    for raw in code.lines() {
+        let text = raw.trim();
+        if text.is_empty() { continue; }
+        // An uninitialized absolute field declaration can carry no
+        // useful value/declaration location in ObjectTree. Its explicit
+        // owner is still an actual definition, not a typed reference.
+        let declaration = text.split_whitespace().next().unwrap_or("");
+        if declaration.starts_with('/') {
+            if let Some((owner, member)) = declaration.split_once("/var/") {
+                if !member.is_empty() {
+                    out.push(LayerEvent::Owner(owner.to_string()));
+                }
+            }
+        }
+        if let Some(cap) = capability_type.captures(text) {
+            out.push(LayerEvent::Type(cap[1].to_string()));
+        }
+        if let Some(cap) = capability_def.captures(text) {
+            out.push(LayerEvent::Type(format!("/datum/capability/def/{}", &cap[1])));
+        }
+        let indent = raw.len() - raw.trim_start().len();
+        // An indent can only pop a header stack entry at or past it: kept only while some earlier header could be on the stack.
+        if headers.last().is_some_and(|n| *n >= indent) {
+            while headers.last().is_some_and(|n| *n >= indent) { headers.pop(); }
+            out.push(LayerEvent::Indent(indent as u32));
+        }
+        // A bare type header is a definition. Typed arguments, locals,
+        // member declarations and proc definitions are only references.
+        let header = text.trim_end_matches('{').trim();
+        if !header.is_empty() && header.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '/') {
+            out.push(LayerEvent::Header(indent as u32, header.to_string()));
+            headers.push(indent);
+        }
+    }
+    out
+}
 
 fn tempfile_dir(root: &Path) -> PathBuf {
     static SEQ: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
@@ -664,23 +690,8 @@ impl crate::lint::Cx<'_> {
     }
 }
 
-/// Explicit oracle-only partial original owner installed in this exact private
-/// Tree memo so unchanged frozen Auto/Deps/read producers share ONE old Sem.
-/// Real registered negatives are reprobed by build_generation_original; this
-/// never produces ordinary full semantics or seeds model_store/incremental.
-#[cfg(feature="unified-oracle")]
-pub fn generation_original_for(tree:&Tree,observed:ObservedGenerationOmissions)->Result<SemHandle,String>{
- let sem=Sem::build_generation_original(&tree.root,tree,observed)?;
- if !sem.errors.is_empty(){return Err(format!("partial original parser errors: {:?}",sem.errors))}
- if sem.full{return Err("partial generation oracle unexpectedly produced a full model".into())}
- let mut inserted=false;let owner=tree.memo("sem/model",||{inserted=true;SemBox{sem:Some(sem)}});
- if !inserted{return Err("partial generation oracle requires a fresh exact Tree memo".into())}
- Ok(SemHandle(owner))
-}
-
 /// The memoized semantic model of `tree`.
 pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
-    if tree.require_legacy_semantics("legacy semantic model access").is_err(){return None}
     let b = tree.memo("sem/model", || SemBox {
         sem: {
             walk_cache::prefetch();
@@ -694,8 +705,6 @@ pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
         },
     });
     if b.sem.is_some() {
-        #[cfg(feature="unified-oracle")]
-        if b.sem.as_ref().is_some_and(|sem|!sem.full){return Some(SemHandle(b))}
         model_store::save_later(b.clone());
         if b.sem.as_ref().map(|s| s.full).unwrap_or(false) {
             walk_cache::set_model(b.clone());
@@ -859,16 +868,4 @@ mod tests {
         assert_eq!(sem.reader_ident("code/probe.dm", 7), "/obj/a::two");
         assert_eq!(sem.reader_ident("code/other.dm", 3), "?");
     }
-}
-
-/// Oracle-only OS fault schedule at the real marker/second-reader frontier.
-/// It stores only the result of the SAME old parse_source call, never caller
-/// None/ErrorKind. No production native source or availability grant escapes.
-#[cfg(all(test,feature="legacy-sem"))]
-pub(crate) fn delete_after_real_marker_for_derived_oracle(tree:&Tree)->Result<String,String>{
- let project=tree.root.join("deepquarry.dme");let marker=std::fs::read_to_string(&project).map_err(|e|e.to_string())?;
- if !marker.contains("#include"){return Err("oracle requires actual physical Original marker branch".into())}
- std::fs::remove_file(&project).map_err(|e|e.to_string())?;
- let failure=match parse_source(&project,&[],Source::Dme(None),false){Err(actual)=>actual,Ok(_)=>return Err("oracle actual deleted second-reader root unexpectedly prepared".into())};
- let mut inserted=false;let owner=tree.memo("sem/model",||{inserted=true;SemBox{sem:None}});if !inserted||owner.sem.is_some(){return Err("oracle source failure cannot replace earlier semantic evidence".into())}Ok(failure)
 }

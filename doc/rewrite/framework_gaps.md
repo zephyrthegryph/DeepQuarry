@@ -194,7 +194,7 @@ Status: **DONE** = built in code/engine (or code/library) and documented in fina
 | K10 | entry points | An action started from a prompt answer (`*_chosen`, `*_agreed(datum/act/request/A)`, about 40 mob sites), a mob `MouseDrop`, `afterattack` on a foreign target, or a legacy `*_act` override has no op entry point. | Reshape those flows as ops (`asks()` / verbs). The sweep. |
 | K11 **DONE** | `om_task_periodic_running` | No replacement query. | `every_running(E)`. The periodic lanes `PERIODIC_REFLECTORS` / `PERIODIC_THROWING` remain (asserted by `dq_world_lanes_f3_tests`). |
 | K12 (open) | refusal text | A claiming op's target-busy refusal is the fixed `/datum/msg/op/claimed`. | Open: `claims(because =)`. |
-| K13 (open) | requirements with effects | `can_store_atom()` (thinktank) says things while it checks. | Open: split the check from the message. |
+| K13 (fixed) | requirements with effects | `can_store_atom()` (thinktank) said things while it checked. | Fixed (5850785a1c): the check is split from the message. |
 | K14 **DONE (verified 2026-11-04)** | `req()` / `when(req())` reading what a mob wears | `get_equipped_item()` calls `dq_ledger()` (no `READS_FROM`, no tracked key, only `slot_occupancy()` has a `READS_AS`), so a requirement that asks "does a mask cover the face" fails `sem/reads`. Blocks the bag-valve mask and the airway kit (code/content/medical/instruments/resuscitation.dm). | An accessor for the item in a slot with a `READS_AS` key, or a `req_worn_covers(slot, flags)`. |
 | K15 **DONE (verified 2026-11-04)** | `ai()` ops: a range keep | The mob work tasks (ants, spiders, the cloak) ended when the worker was more than a tile from the turf; an `ai()` op drops the `ADJACENT` keep (`op_default_keeps()` keeps it only for `REACH_ADJACENT` bindings), so a worker that strays further still finishes. Pins: `ant_builder_steps_aside` records one step. | A `keeps` bit for "within N of the target", or `ADJACENT` for `reach(REACH_RANGE(n))`. |
 | K16 | `asks()` from an op: the prompt's `owner` | `request_open()` is handed the pending op as the owner; a prompt whose `recheck_extra()` reads `owner` as the holder (`candybowl_repeat`) closed at once ("gone"). `subject` is the holder. | Documented: read `subject` in `recheck_extra()` of a prompt an op asks. |
@@ -788,7 +788,7 @@ J7 :: fixed :: fix :: proc/rig_emp_malfunction :: code/content/clothing/spacesui
 K8 :: fixed :: gap :: or when its holder or target is gone :: code/engine/parts/part.dm :: the on_interrupt() doc comment no longer says it skips a deleted target
 K8 :: fixed :: fix :: proc/borrow_ended :: code/engine/parts/run.dm :: a waiting op runs its on_interrupt() when its target is deleted
 K12 :: open :: gap :: default_reason = /datum/msg/op/claimed :: code/engine/parts/part.dm :: a claim refusal is still the fixed /datum/msg/op/claimed; claims() has no because =
-K13 :: open :: gap :: proc/can_store_atom :: code/content/mob/living/silicon/robot/subtypes/thinktank :: can_store_atom() still speaks while it checks
+K13 :: fixed :: gap :: proc/can_store_atom :: code/content/mob/living/silicon/robot/subtypes/thinktank :: can_store_atom() no longer speaks while it checks
 K14 :: fixed :: fix :: READS_AS\(/mob/proc/get_equipped_item :: code/content/mob/inventory.dm :: get_equipped_item has a READS_AS key (SLOT_OCCUPANCY_KEY)
 K15 :: fixed :: fix :: policy >= REACH_RANGE_BASE :: code/engine/parts/run.dm :: op_default_keeps() keeps ADJACENT for a range reach, not only REACH_ADJACENT
 IO5 :: fixed :: fix :: if\(islist\(current\)\) :: code/engine/lifeforms/rolls.dm :: roll_target_untouched() treats a list var as untouched
@@ -815,7 +815,7 @@ KD80 :: fixed :: gap :: attached_overlays :: code/content/assembly :: the hand-k
 KD82 :: fixed :: fix :: postmark_roll :: code/content/mail/mail.dm :: the postmark offset is rolled once and stored; the draw rolls nothing
 KD87 :: fixed :: gap :: \bupdate_icons\(\) :: code/content/mob/living/bot code/content/mob/living/carbon/alien code/content/blob2 code/content/mob/living/simple_mob/subtypes/blob :: no update_icons( is left: bots, diona, alien and blob draw their state
 R1 :: kept :: gap :: LAZYREMOVE\(corner\.affecting, src\) // ALLOW\(ownership\) :: code/content/lighting/lighting_source.dm :: reviewed: the corner and source pair stays a hand-kept hot reverse index (lint_scopes.toml stored_refs, /datum/lighting_corner::affecting)
-R2 :: open :: gap :: rel_add\(A, nameof\(A\.all_doors\), src\) :: code/content/machinery/doors/firedoor.dm :: a door still joins its area list from its own init; sectors_to_initialize is a reviewed one-shot boot queue
+R2 :: open :: gap :: rel_add\(src, nameof\(areas_added\), A\) :: code/content/machinery/doors/firedoor.dm :: a door still joins its areas (one links() pair, areas_added <-> all_doors) from its own setup; sectors_to_initialize is a reviewed one-shot boot queue
 R3 :: open :: gap :: LAZYACCESS\(step_answers, name\) :: code/engine/parts/run.dm :: the pooled op act still holds the answered prompt in step_answers
 R4 :: fixed :: fix :: ref_many\(nameof\(adminfaxes\)\) :: code/world/controllers/globals.dm :: GLOB owns adminfaxes as a declared ref_many
 R5 :: fixed :: gap :: rx_notice_queue :: code :: the rx_notice_queue var is gone from code

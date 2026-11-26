@@ -44,23 +44,6 @@
 /**
  * public
  *
- * Static Data to be sent to the UI.
- *
- * Static data differs from normal data in that it's large data that should be
- * sent infrequently. This is implemented optionally for heavy uis that would
- * be sending a lot of redundant data frequently. Gets squished into one
- * object on the frontend side, but the static part is cached.
- *
- * required user mob The mob interacting with the UI.
- *
- * return list Statuic Data to be sent to the UI.
- */
-/datum/proc/tgui_static_data(mob/user)
-	return list()
-
-/**
- * public
- *
  * Forces an update on static data. Should be done manually whenever something
  * happens to change static data.
  *
@@ -112,10 +95,11 @@ ACTION(ui_act, mob/usr_, action, FIXED, notice = /datum/notice/ui_act)
 	var/datum/op_result/button = present_ui_act(src, ui.user, action, params, ui)
 	if(button)
 		return TRUE
-	// A named action proc, ui_<action>(mob/user, named args...) (code/datums/capabilities/ui_actions.dm).
-	var/list/named = ui_named_dispatch(src, action, params, ui)
-	if(named)
-		return named[2]
+	// The modal actions every window has (ComplexModal): the answer to, or the close of, the window's current modal (code/library/ui/tgui/modal.dm).
+	if(action == OP_UI_MODAL_ANSWER)
+		return tgui_modal_window_answer(src, ui.user, params?["id"], params?["answer"])
+	if(action == OP_UI_MODAL_CLOSE)
+		return tgui_modal_window_close(src)
 	// The one action every window has: the layout toggle (tgui LayoutToggle) writes the viewer's layout preference
 	// (write_preference() validates the value).
 	if(action == "change_ui_state")
@@ -123,17 +107,10 @@ ACTION(ui_act, mob/usr_, action, FIXED, notice = /datum/notice/ui_act)
 		if(istext(new_state) && length(new_state) <= 64)
 			ui.user?.client?.prefs.write_preference(GLOB.preference_entries[/datum/preference/choiced/tgui_layout], new_state)
 		return FALSE
-	return FALSE // no op, capability or named proc answers `action`
-
-/**
- * public
- *
- * Called on a UI when the UI crashed.
- *
- * required payload list A list of the payload supposed to be set on the regular UI.
- */
-/datum/proc/tgui_fallback(list/payload, mob/user)
-	SHOULD_CALL_PARENT(TRUE)
+	// No op or forward answers `action`: a client sent a name the window does not declare (the ui_actions lint checks
+	// literal act() names; this catches computed ones and stale clients). Logged, never silent.
+	log_world("UI: [ui.user] pressed '[action]' in [src.type]'s window: no ui_act() op or forward answers it")
+	return FALSE
 
 /**
  * public
@@ -220,26 +197,6 @@ ACTION(ui_act, mob/usr_, action, FIXED, notice = /datum/notice/ui_act)
  * client/verb/uiclose(), which closes the ui window
  */
 /datum/proc/tgui_close(mob/user)
-
-/**
- * verb
- *
- * Used by a client to fix broken TGUI windows caused by opening a UI window before assets load.
- * Probably not very performant and forcibly destroys a bunch of windows, so it has some warnings attached.
- * Conveniently, also allows devs to force a dev server reattach without relogging, since it yeets windows.
- */
-/client/verb/tgui_fix_white()
-	set desc = "Only use this if you have a broken TGUI window occupying your screen!"
-	set name = "Fix TGUI"
-	set category = VERB_CAT_OOC_DEBUG
-
-	if(alert(src, "Only use this verb if you have a white TGUI window stuck on your screen.", "Fix TGUI", "Continue", "Nevermind") != "Continue") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
-		return
-
-	SStgui.close_user_uis(mob)
-	if(alert(src, "Did that fix the problem?", "Fix TGUI", "Yes", "No") == "No") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
-		SStgui.force_close_all_windows(mob)
-		alert(src, "UIs should be fixed now. If not, please cry to your nearest coder.", "Fix TGUI") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
 
 /**
  * verb

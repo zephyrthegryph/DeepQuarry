@@ -8,30 +8,13 @@
 // The DM side toggles `wire_view` to switch which view is shown.
 
 import { useBackend } from 'tgui/backend';
+import { YesNo } from 'tgui/components/YesNo';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type WireEntry = {
-  name: string;
-  cut: BooleanLike;
-};
-
-type Data = {
-  wire_view: BooleanLike;
-  // main view
-  auth: BooleanLike;
-  yes_code: BooleanLike;
-  timing: BooleanLike;
-  timeleft: number;
-  safety: BooleanLike;
-  anchored: BooleanLike;
-  code_display: string;
-  status_label: string;
-  // wire view
-  wires: WireEntry[];
-  lighthack: BooleanLike;
-};
+import type {
+  NuclearBombActions,
+  NuclearBombData,
+} from './generated/NuclearBomb';
 
 const KEYPAD: Array<string[]> = [
   ['1', '2', '3'],
@@ -41,7 +24,7 @@ const KEYPAD: Array<string[]> = [
 ];
 
 export const NuclearBomb = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<NuclearBombData, NuclearBombActions>();
   return (
     <Window width={400} height={540}>
       <Window.Content>
@@ -52,7 +35,7 @@ export const NuclearBomb = () => {
 };
 
 const MainView = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<NuclearBombData, NuclearBombActions>();
   const {
     auth,
     yes_code,
@@ -85,7 +68,7 @@ const MainView = () => {
               {timeleft}s
             </Box>
             <Button
-              disabled={!canControl}
+              disabled={!canControl || !!safety}
               color={timing ? 'bad' : 'good'}
               onClick={() => act('timer')}
             >
@@ -165,7 +148,7 @@ const MainView = () => {
 };
 
 const WireView = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<NuclearBombData, NuclearBombActions>();
   const { wires, timing, safety, lighthack } = data;
   return (
     <>
@@ -200,9 +183,7 @@ const WireView = () => {
             </Box>
           </LabeledList.Item>
           <LabeledList.Item label="Sound">
-            <Box color={safety ? 'good' : 'bad'}>
-              {safety ? 'quiet' : 'whirring'}
-            </Box>
+            <YesNo value={safety} yes="quiet" no="whirring" />
           </LabeledList.Item>
           <LabeledList.Item label="Lights">
             <Box color={lighthack ? 'bad' : 'good'}>

@@ -211,7 +211,6 @@ CAPABILITIES(/mob/living/dominated_brain)
 
 //Welcome to the adapted borer code.
 /mob/proc/dominate_predator()
-	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Dominate Predator"
 	set desc = "Connect to and dominate the brain of your predator."
 
@@ -392,7 +391,6 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 		to_chat(pred, span_notice("The dominant sensation fades away..."))
 
 /mob/proc/release_predator()
-	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Restore Control"
 	set desc = "Release control of your predator's body."
 
@@ -410,7 +408,6 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 	revoke(src, granted_verb(/mob/proc/release_predator), src)
 
 /mob/living/proc/dominate_prey()
-	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Dominate Prey"
 	set desc = "Connect to and dominate the brain of your prey."
 
@@ -575,7 +572,6 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	to_chat(src, span_warning("Your attempt to regain your body has been interrupted..."))
 
 /mob/living/proc/lend_prey_control()
-	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Give Prey Control"
 	set desc = "Allow prey control of your body."
 
@@ -591,31 +587,27 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 		return
 	open_request(src, /datum/prompt/choice, PROC_REF(lend_prey_control_chosen), answerer = src, title = "Give Prey Control", question = "Select a mob to give control:", choices = possible_mobs, timeout = 0)
 
-/// Whether we can hand our body to `prey` right now; says why not.
-/mob/living/proc/can_lend_prey_control(mob/living/prey)
-	var/mob/living/pred = src
+/// Why we cannot hand our body to `prey` right now, or null when we can. Never prints: the two steps of the player's choice show it.
+/mob/living/proc/lend_prey_control_refusal(mob/living/prey)
 	if(prey.stat == DEAD)
-		to_chat(pred, span_warning("You cannot do that to this prey."))
-		return FALSE
+		return span_warning("You cannot do that to this prey.")
 	if(!prey.ckey)
-		to_chat(pred, span_notice("\The [prey] cannot take control."))
-		return FALSE
-	if(isrobot(pred) && jobban_isbanned(prey, JOB_CYBORG))
-		to_chat(pred, span_warning("Forces beyond your comprehension prevent you from giving [prey] control."))
-		return FALSE
+		return span_notice("\The [prey] cannot take control.")
+	if(isrobot(src) && jobban_isbanned(prey, JOB_CYBORG))
+		return span_warning("Forces beyond your comprehension prevent you from giving [prey] control.")
 	if(STATE_GET(prey, vore_fx, prey_controlled))
-		to_chat(pred, span_warning("\The [prey] is already under someone's control and cannot be given control of your body."))
-		return FALSE
-	if(STATE_GET(pred, vore_fx, prey_controlled))
-		to_chat(pred, span_warning("You are already controlling someone's body."))
-		return FALSE
-	return TRUE
+		return span_warning("\The [prey] is already under someone's control and cannot be given control of your body.")
+	if(STATE_GET(src, vore_fx, prey_controlled))
+		return span_warning("You are already controlling someone's body.")
+	return null
 
 /mob/living/proc/lend_prey_control_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/mob/living/prey = A.answer.value
-	if(!can_lend_prey_control(prey))
+	var/lend_refusal = lend_prey_control_refusal(prey)
+	if(lend_refusal)
+		to_chat(src, lend_refusal)
 		return
 	var/datum/control_transfer_review/lend_prey_control/review = new
 	rel_set(review, nameof(review.actor), src)
@@ -662,7 +654,9 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 /mob/living/proc/lend_prey_control_agreed(datum/control_transfer_review/lend_prey_control/seq)
 	var/mob/living/prey = seq.prey
 	var/mob/living/pred = src
-	if(!can_lend_prey_control(prey))
+	var/lend_refusal = lend_prey_control_refusal(prey)
+	if(lend_refusal)
+		to_chat(src, lend_refusal)
 		return
 	to_chat(pred, span_warning("You diminish your will, reducing it and allowing will of your prey to take over..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you are given control over them!"))

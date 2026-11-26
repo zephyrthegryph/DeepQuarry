@@ -165,7 +165,7 @@
 	TEST_ASSERT_EQUAL(M.total_overruns, 1, "usage over 100 is an overrun")
 	TEST_ASSERT_EQUAL(M.streak, 1, "the streak starts")
 	var/list/top = M.last_overrun_top
-	TEST_ASSERT_EQUAL(length(top), KM_TOP_N, "the top three are recorded")
+	TEST_ASSERT_EQUAL(length(top), 3, "the overrun line names the top three")
 	TEST_ASSERT_EQUAL(top[1]["key"], "km_test_a", "the biggest system first")
 	TEST_ASSERT_EQUAL(top[2]["key"], "km_test_b", "then the next: its two charges added up")
 	TEST_ASSERT_EQUAL(top[3]["key"], "km_test_c", "then the third; the fourth is left out")
@@ -186,7 +186,7 @@
 	TEST_ASSERT_EQUAL(entry[4], 24, "the maptick")
 	TEST_ASSERT(abs(entry[5] - 0.4) < 0.001, "the input cost")
 	var/list/keys = entry[7]
-	TEST_ASSERT_EQUAL(jointext(keys, ","), "km_test_a,km_test_b,km_test_c", "and the top systems in order")
+	TEST_ASSERT_EQUAL(jointext(keys, ","), "km_test_a,km_test_b,km_test_c,km_test_d", "and the systems in order, up to KM_TOP_N")
 
 	// A second overrun: the streak grows, and the systems' overrun shares follow the ms they spent on overruns.
 	M.charge(b, 30)
@@ -625,6 +625,27 @@
 	qdel(attr)
 	return
 
+/// The profiler's walk of the table a few rows at a time is the report made at once.
+/datum/unit_test/dq_km_attr_walk_matches_report
+
+/datum/unit_test/dq_km_attr_walk_matches_report/Run()
+	var/datum/km_attr/attr = new
+	var/list/types = list(/obj/machinery/light, /obj/item/gun, /obj/structure/table, /obj/machinery/door)
+	for(var/t in types)
+		for(var/i in 1 to 30)
+			attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, t, "cb[i]", i * 0.5)
+	attr.note(KA_KIND_DRAW, KM_SYS_APPEARANCE, /obj/machinery/light, "draw", 3)
+	attr.end_tick(FALSE)
+	var/list/whole = attr.report(5)
+	var/datum/km_attr_walk/W = attr.walk_begin(5)
+	var/turns = 1
+	while(!attr.walk_step(W, 0))
+		turns++
+		TEST_ASSERT(turns <= length(types) + 2, "the walk ends")
+	TEST_ASSERT(turns > 1, "a spent budget leaves the rest for the next turn ([turns] turns)")
+	TEST_ASSERT_EQUAL(json_encode(attr.walk_result(W)), json_encode(whole), "the slices add up to the report")
+	qdel(attr)
+
 /// The bookkeeping cost, measured: the whole per-call price of an attributed callback (two TICK_USAGE reads and note()) over a working set of
 /// keys, with the allocation check. The bound is generous (the test world is a loaded machine); the measured figure is logged.
 /datum/unit_test/dq_km_attr_overhead
@@ -662,4 +683,82 @@
 	TEST_ASSERT(total_us < 15, "an attributed call costs [total_us] us; the bookkeeping must stay a few microseconds")
 	TEST_ASSERT(sink >= 0, "the bare loop ran")
 	qdel(attr)
+	return
+
+// ---------------------------------------------------------------- the slow-tick trace
+
+/// A work-item owner whose handler takes a couple of milliseconds, for a span the trace must name.
+/datum/test_work_owner/slow_burner
+
+/datum/test_work_owner/slow_burner/proc/burn(dt)
+	var/started = TICK_USAGE
+	while(TICK_USAGE_TO_MS(started) < 3)
+		continue
+
+/datum/unit_test/dq_km_slow_tick_trace_names_items
+
+/datum/unit_test/dq_km_slow_tick_trace_names_items/Run()
+	var/datum/tick_meter/M = new(16)
+	var/datum/slow_tick/S = M.slow
+	S.span(KM_SPAN_ITEM, "test:small_item", 0.4, KERNEL_PHASE_P)
+	S.span(KM_SPAN_ITEM, "test:slow_item", 120, KERNEL_PHASE_P)
+	S.span(KM_SPAN_ITEM, "test:mid_item", 15, KERNEL_PHASE_K)
+	M.attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/light, "heavy_timer", 40)
+	M.charge(KM_SYS_SCHED_CORE, 55)
+	// Under the threshold: nothing is traced, and the ring still empties.
+	M.end_tick(150, 0)
+	TEST_ASSERT_EQUAL(S.traces, 0, "a tick under the threshold is not traced")
+	TEST_ASSERT_EQUAL(S.n, 0, "and its spans are gone")
+	S.span(KM_SPAN_ITEM, "test:small_item", 0.4, KERNEL_PHASE_P)
+	S.span(KM_SPAN_ITEM, "test:slow_item", 120, KERNEL_PHASE_P)
+	S.span(KM_SPAN_ITEM, "test:mid_item", 15, KERNEL_PHASE_K)
+	M.attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/light, "heavy_timer", 40)
+	M.charge(KM_SYS_SCHED_CORE, 55)
+	var/list/phases = list(20, 0, 0, 0, 0, 126, 0, 0)
+	S.note_kernel(phases, 150, 1, 146, 4, alist("vg_frame" = 0))
+	M.end_tick(600, 0)
+	TEST_ASSERT_EQUAL(S.traces, 1, "a tick over 200% is traced")
+	var/list/top = S.last_rows
+	TEST_ASSERT_EQUAL(top[1][2], "test:slow_item", "the slowest item ranks first: [S.last_trace]")
+	TEST_ASSERT_EQUAL(top[1][3], 120, "with its time")
+	TEST_ASSERT(findtext(S.last_trace, "item test:slow_item 120ms"), "the line names it: [S.last_trace]")
+	TEST_ASSERT(findtext(S.last_trace, "/obj/machinery/light -> heavy_timer 40ms"), "and the timer callback behind sched_core: [S.last_trace]")
+	TEST_ASSERT(findtext(S.last_trace, "sched_core 55ms"), "and the system charges: [S.last_trace]")
+	// Phase K took 20 ms and one 15 ms item explains it; phase P took 126 with 120.4 itemised; the rest are rows of their own.
+	TEST_ASSERT(findtext(S.last_trace, "phase K time not itemised 5ms"), "time a phase's items do not cover is its own row: [S.last_trace]")
+	TEST_ASSERT(findtext(S.last_trace, "K=20 P=126"), "the header lists the phases: [S.last_trace]")
+	TEST_ASSERT_EQUAL(S.n, 0, "the ring is empty for the next tick")
+	TEST_ASSERT_EQUAL(S.kview, null, "and so is the kernel's view")
+	// A full ring keeps the heaviest spans.
+	for(var/i in 1 to KM_SLOW_SPANS + 5)
+		S.span(KM_SPAN_ITEM, "filler", 1, KERNEL_PHASE_P)
+	S.span(KM_SPAN_ITEM, "late_heavy", 90, KERNEL_PHASE_P)
+	var/found = FALSE
+	for(var/i in 1 to S.n)
+		if(S.span_name[i] == "late_heavy")
+			found = TRUE
+	TEST_ASSERT(found, "a heavy span arriving at a full ring displaces a light one")
+	TEST_ASSERT_EQUAL(S.n, KM_SLOW_SPANS, "the ring never grows past its size")
+	qdel(M)
+	return
+
+/datum/unit_test/dq_km_slow_tick_run_item_records_a_span
+
+/datum/unit_test/dq_km_slow_tick_run_item_records_a_span/Run()
+	var/datum/controller/kernel/K = new
+	K.expect_errors = TRUE
+	var/datum/tick_meter/live = km_meter()
+	live.slow.clear()
+	var/datum/test_work_owner/slow_burner/O = new
+	var/datum/work_item/test_fixture/W = K.register_work(/datum/test_work_owner/slow_burner, test_work_item(O, TYPE_PROC_REF(/datum/test_work_owner/slow_burner, burn), phase = KERNEL_PHASE_R))
+	TEST_ASSERT(K.run_item(W, WORK_TEST_LIMIT, 100), "the slow item ran")
+	var/datum/slow_tick/S = live.slow
+	var/at = 0
+	for(var/i in 1 to S.n)
+		if(S.span_name[i] == W.key)
+			at = i
+	TEST_ASSERT(at, "the run left a span named by the item's key ([S.n] spans)")
+	TEST_ASSERT(S.span_ms[at] >= 2, "with its time: [S.span_ms[at]] ms")
+	TEST_ASSERT_EQUAL(S.span_phase[at], KERNEL_PHASE_R, "and its phase")
+	S.clear()
 	return

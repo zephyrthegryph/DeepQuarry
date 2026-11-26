@@ -25,8 +25,8 @@
 					/obj/item/storage/backpack/satchel/sec,
 					/obj/item/clothing/shoes/boots/marine,
 					/obj/item/clothing/suit/armor/bulletproof,
-					/obj/item/clothing/under/soviet,
-					/obj/item/reagent_containers/spray/pepper,
+					VARIANT(/obj/item/clothing/under/soviet),
+					VARIANT(/obj/item/reagent_containers/spray/pepper),
 					/obj/item/melee/classic_baton,
 					/obj/item/ammo_magazine/makarov=2,
 					/obj/item/gun/projectile/serdy_pistols/makarov)
@@ -63,7 +63,7 @@
 					/obj/item/clothing/shoes/boots/winter/engineering,
 					/obj/item/tank/emergency/oxygen/engi,
 					/obj/item/storage/belt/utility,
-					/obj/item/reagent_containers/spray/windowsealant)
+					VARIANT(/obj/item/reagent_containers/spray/windowsealant))
 
 /obj/structure/closet/secure_closet/detective/snowfield
 	starts_with = list(
@@ -81,9 +81,9 @@
 					/obj/item/storage/backpack/security,
 					/obj/item/storage/backpack/satchel/sec,
 					/obj/item/clothing/shoes/boots/marine,
-					/obj/item/clothing/under/soviet,
+					VARIANT(/obj/item/clothing/under/soviet),
 					/obj/item/melee/classic_baton,
-					/obj/item/reagent_containers/spray/pepper,
+					VARIANT(/obj/item/reagent_containers/spray/pepper),
 					/obj/item/flash,
 					/obj/item/ammo_magazine/s357=2,
 					/obj/item/gun/projectile/revolver/nagant)
@@ -108,6 +108,6 @@
 					/obj/item/clothing/shoes/boots/marine,
 					/obj/item/ammo_magazine/s357=2,
 					/obj/item/gun/projectile/revolver/nagant/skinned,
-					/obj/item/clothing/under/soviet,
-					/obj/item/reagent_containers/spray/pepper,
+					VARIANT(/obj/item/clothing/under/soviet),
+					VARIANT(/obj/item/reagent_containers/spray/pepper),
 					/obj/item/melee/classic_baton)

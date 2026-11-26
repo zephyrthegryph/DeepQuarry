@@ -1,6 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
+import type {
+  RobotChooseActions,
+  RobotChooseData,
+} from '../generated/RobotChoose';
 
 export const IconSection = (props: {
   currentName: string;
@@ -9,7 +13,7 @@ export const IconSection = (props: {
   sprite?: string | null;
   size?: string | null;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<RobotChooseData, RobotChooseActions>();
   const { currentName, mindName, isDefaultName, sprite, size } = props;
 
   return (

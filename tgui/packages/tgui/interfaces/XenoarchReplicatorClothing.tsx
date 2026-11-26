@@ -2,16 +2,17 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button } from 'tgui-core/components';
 
-import type { tgui_construction } from './common/CommonTypes';
+import type {
+  XenoarchReplicatorClothingActions,
+  XenoarchReplicatorClothingData,
+} from './generated/XenoarchReplicatorClothing';
 
-type Data = {
-  tgui_construction: tgui_construction;
-};
+type Data = XenoarchReplicatorClothingData;
 
 export const XenoarchReplicatorClothing = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchReplicatorClothingActions>();
 
-  const { tgui_construction } = data;
+  const { tgui_construction = [] } = data;
 
   return (
     <Window theme="abductor" width={400} height={400}>

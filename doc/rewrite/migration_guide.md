@@ -191,7 +191,6 @@ spontaneous vore (an om behaviour attached with `DECLARE_BEHAVIOUR` and `om_atta
 ```dm
 /obj/item/laser_pointer/derived()
 	. = ..()
-	. += runs_while(nameof(energy))          // should_run(): re-checked when energy changes; wakes or parks the cadence
 	. += drawn_from(nameof(pointing))        // draw() and hidden_verbs()
 	. += ui_from(nameof(energy))             // tgui_data(): the open windows are pushed
 	. += derive(nameof(power_state), nameof(stat), rel(nameof(power_area), nameof(/area::equip_on)))  // cached var, computed by derive_power_state()

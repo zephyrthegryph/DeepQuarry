@@ -60,7 +60,7 @@
 /datum/unit_test/dq_ref_text_admin_links_carry_handles/Run()
 	var/turf/T = run_loc_floor_bottom_left || locate(1, 1, 1)
 	var/mob/living/L = allocate(/mob/living, T)
-	var/token = url_encode("[handle_of(L)]")
+	var/token = url_encode("[handle_text(handle_of(L))]")
 	var/jump = admin_jump_link(L, "holder")
 	TEST_ASSERT(findtext(jump, "adminplayerobservejump=[token]"), "the jump link names its target by handle")
 	TEST_ASSERT(!findtext(jump, "\[0x"), "and carries no raw ref text")

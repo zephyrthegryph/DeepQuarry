@@ -1,7 +1,7 @@
 @use 'sass:meta';
-@use '~tgui-core/styles';
+@use '~tgui/styles/console';
 
-@include meta.load-css('~tgui/styles/reset.scss');
+// The column page (tgui-panel/styles/main.scss) loads the reset and the DQ layer; this sheet is scoped to .stat-root.
 
 // tgui-panel/settings/palette.ts; palette.test.ts holds these to it.
 .dark:root {
@@ -17,34 +17,13 @@
   --base-gradient-spread: 0;
 }
 
-.light:root {
-  --stat-base: #eeeeee;
-  --stat-section: #ffffff;
-  --stat-text: #000000;
-  --stat-link: #003399;
-  --stat-muted: #59636e;
-  --stat-line: hsla(0, 0%, 0%, 0.15);
-  --stat-track: hsla(0, 0%, 0%, 0.15);
-  --color-base: var(--stat-base);
-  --color-section: var(--stat-section);
-  --base-gradient-spread: 0;
-}
 
-html,
-body {
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  background-color: var(--stat-base);
-  color: var(--stat-text);
-  scrollbar-color: var(--color-scrollbar-thumb, #373737) var(--stat-section);
-}
-
-body {
+.stat-root {
   font-size: 12px;
+  color: var(--stat-text);
 }
 
-a {
+.stat-root a {
   color: var(--stat-link);
   text-decoration: none;
 
@@ -53,12 +32,12 @@ a {
   }
 }
 
-img {
+.stat-root img {
   image-rendering: pixelated;
   vertical-align: middle;
 }
 
-h3 {
+.stat-root h3 {
   margin: 0.75em 0 0.35em;
   font-size: 1em;
 }
@@ -66,69 +45,31 @@ h3 {
 .stat-root {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
 }
 
-// Underlined tgui-core Tabs, as in the chat. Tabs wrap onto more rows by
-// default; "scrollable" keeps one row that scrolls; "classic" is denser.
-.stat-tabs {
+// A freeze on the Server page.
+.mc-stall {
+  color: var(--color-bad, #d33);
+  padding: 2px 0;
+}
+
+// The view tabs and, at their right, the search.
+.stat-tabrow {
   display: flex;
-  flex-wrap: wrap;
-  flex: none;
-  gap: var(--space-s) var(--space-m);
-  align-items: flex-end;
-  padding: 0 var(--space-m);
-  background-color: var(--stat-section);
-  border-bottom: 1px solid var(--stat-line);
+  align-items: center;
+  gap: 3px;
 
-  .stat-tabs__list {
-    flex: 1 1 16em;
-    flex-wrap: wrap;
+  .DqTabs {
+    flex: 1 1 0;
     min-width: 0;
-    margin: 0;
-    padding: var(--space-s) 0 0;
-    background-color: transparent;
-  }
-
-  .Tab {
-    min-width: 0;
-    min-height: 2em;
-  }
-
-  .Tab .Tab__text {
-    margin: 0 var(--space-ml);
-    white-space: nowrap;
-  }
-
-  &--classic {
-    .Tab {
-      min-height: 1.6em;
-    }
-
-    .Tab .Tab__text {
-      margin: 0 var(--space-sm);
-    }
-  }
-
-  &--scrollable {
-    flex-wrap: nowrap;
-
-    .stat-tabs__list {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: thin;
-    }
-
-    .Tab {
-      flex-shrink: 0;
-    }
   }
 }
 
 .stat-search {
-  flex: 0 1 13em;
-  min-width: 8em;
-  margin: var(--space-s) 0 var(--space-sm) auto;
+  flex: 0 1 11em;
+  min-width: 6em;
+  margin-right: 3px;
 }
 
 .stat-content {
@@ -147,7 +88,8 @@ h3 {
   margin-bottom: 0.25em;
 }
 
-.verb-grid {
+// .stat-root: the column page also loads tgui-core scoped under .EmbeddedInterface, after this sheet, at equal specificity.
+.stat-root .verb-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10em, 1fr));
   gap: var(--space-s);
@@ -216,7 +158,8 @@ h3 {
   }
 }
 
-.menu-row {
+// .stat-root: the column page also loads tgui-core scoped under .EmbeddedInterface, after this sheet, at equal specificity.
+.stat-root .menu-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.2em;
@@ -227,266 +170,1002 @@ h3 {
   }
 }
 
-.mc-dashboard {
+// The MC Health panel (McHealth.tsx).
+.mch {
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
 }
 
-.mc-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr));
+.mch-health {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.mch-verdict {
+  display: flex;
+  align-items: center;
   gap: var(--space-m);
 }
 
-.mc-navigation.Tabs {
-  flex-wrap: wrap;
-  margin: calc(-1 * var(--space-s)) 0 0;
-  padding: 0;
-  background-color: transparent;
-  border-bottom: 1px solid var(--stat-line);
+.mch-pill {
+  padding: 1px 8px;
+  border-radius: var(--border-radius-medium);
+  font-weight: bold;
+  text-transform: uppercase;
 
-  .Tab {
-    min-width: 0;
-    min-height: 1.8em;
+  &--good {
+    background-color: hsl(100, 55%, 30%);
   }
 
-  .Tab .Tab__text {
-    margin: 0 var(--space-m);
+  &--average {
+    background-color: hsl(40, 70%, 35%);
+  }
+
+  &--bad {
+    background-color: hsl(0, 60%, 38%);
   }
 }
 
-.mc-metric-card,
-.mc-panel {
-  padding: var(--space-m) var(--space-ml);
-  background-color: var(--stat-section);
+.mch-why,
+.mch-muted,
+.mch-sum {
+  color: var(--stat-muted);
+}
+
+.mch-gauge {
+  position: relative;
+  height: 1.4em;
+  border: 1px solid var(--stat-line);
+  border-radius: var(--border-radius-small);
+  overflow: hidden;
+
+  span {
+    position: relative;
+    padding-left: var(--space-sm);
+    line-height: 1.4em;
+  }
+
+  &__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+
+    &--good {
+      background-color: hsla(100, 55%, 40%, 0.6);
+    }
+
+    &--average {
+      background-color: hsla(40, 70%, 45%, 0.6);
+    }
+
+    &--bad {
+      background-color: hsla(0, 60%, 45%, 0.6);
+    }
+  }
+}
+
+.mch-headline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  margin-bottom: var(--space-sm);
+}
+
+.mch-big {
+  font-size: 2.2em;
+  line-height: 1;
+
+  &--good {
+    color: hsl(100, 55%, 60%);
+  }
+
+  &--average {
+    color: hsl(40, 80%, 60%);
+  }
+
+  &--bad {
+    color: hsl(0, 75%, 65%);
+  }
+}
+
+.mch-facts {
+  margin-top: var(--space-xs);
+  color: var(--stat-muted);
+}
+
+.mch-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.mch-part {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-m);
+  padding: 1px var(--space-sm);
+  background-color: var(--stat-line);
+  overflow: hidden;
+
+  &__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background-color: hsla(210, 50%, 50%, 0.55);
+  }
+
+  &--unknown &__fill {
+    background-color: hsla(40, 70%, 45%, 0.55);
+  }
+
+  &__name,
+  &__ms {
+    position: relative;
+  }
+
+  &__name {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__ms {
+    flex: none;
+  }
+}
+
+.mch-behind {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-m);
+  padding-left: var(--space-ml);
+  color: var(--stat-muted);
+  font-size: 0.9em;
+}
+
+.mch-overrun__head {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: 2px;
+}
+
+.mch-overrun__top {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mch-tickuse {
+  margin-bottom: 2px;
+  font-weight: bold;
+}
+
+.mch-kpis,
+.mch-dist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7em, 1fr));
+  gap: var(--space-xs) var(--space-m);
+}
+
+.mch-kpi {
+  display: flex;
+  flex-direction: column;
+
+  span,
+  small {
+    color: var(--stat-muted);
+    font-size: 0.9em;
+  }
+}
+
+.mch-card {
   border: 1px solid var(--stat-line);
   border-radius: var(--border-radius-medium);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+    padding: var(--space-sm) var(--space-ml);
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    h3 {
+      margin: 0;
+      font-size: 1em;
+    }
+  }
+
+  &__body {
+    padding: var(--space-sm) var(--space-ml) var(--space-ml);
+    border-top: 1px solid var(--stat-line);
+  }
 }
 
-.mc-panel h3 + .mc-panel-hint {
-  display: block;
-  margin-top: calc(-1 * var(--space-s));
+.mch-sum {
+  margin-left: auto;
 }
 
-// Neutral unless a threshold is crossed; then the value and edge take the colour.
-.mc-metric-card {
+.mch-winsel {
   display: flex;
-  flex-direction: column;
   gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
 
-  &--warning {
-    border-color: hsl(from var(--color-average) h s l / 0.6);
-
-    .mc-metric-value {
-      color: var(--color-average);
-    }
+  button {
+    border: 1px solid var(--stat-line);
+    background: none;
+    color: var(--stat-muted);
+    cursor: pointer;
   }
 
-  &--critical {
-    border-color: hsl(from var(--color-bad) h s l / 0.7);
-
-    .mc-metric-value {
-      color: var(--color-bad);
-    }
+  .mch-on {
+    color: var(--stat-text);
+    border-color: var(--stat-text);
   }
 }
 
-.mc-metric-label {
-  color: var(--stat-muted);
-  font-size: 0.78em;
-  font-weight: bold;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.mc-metric-value {
-  font-size: 1.6em;
-  font-weight: bold;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.mc-metric-detail,
-.mc-panel-hint,
-.mc-outlier-note,
-.mc-empty {
-  color: var(--stat-muted);
-  font-size: 0.82em;
-}
-
-.mc-panel h3 {
-  margin: 0 0 0.35em;
-}
-
-.mc-tick-graph {
+.mch-timeline {
   position: relative;
   display: flex;
   align-items: flex-end;
   gap: 1px;
-  height: 7em;
-  margin-top: 0.4em;
-  overflow: hidden;
+  height: 60px;
 }
 
-.mc-tick-bar {
-  flex: 1 1 1px;
+.mch-bar {
+  flex: 1;
   min-width: 1px;
-}
+  background-color: hsl(210, 40%, 55%);
+  cursor: pointer;
 
-.mc-tick-bar,
-.mc-subsystem-used,
-.mc-breakdown-bar {
-  &.healthy {
-    background-color: var(--color-good);
+  &--over {
+    background-color: hsl(0, 70%, 55%);
   }
 
-  &.warning {
-    background-color: var(--color-average);
-  }
-
-  &.critical {
-    background-color: var(--color-bad);
+  &--pinned {
+    outline: 1px solid var(--stat-text);
   }
 }
 
-.mc-budget-line {
+.mch-budget {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 50%;
-  border-top: 1px dashed var(--color-bad);
+  border-top: 1px dashed var(--stat-muted);
   pointer-events: none;
 }
 
-.mc-performance-table {
+.mch-line {
+  margin: var(--space-sm) 0;
+}
+
+/* A fixed-height area: showing or changing a tick's details never moves the graph or anything under it, so the bar under the mouse stays under it. */
+.mch-tickdetail {
+  box-sizing: border-box;
+  height: 12em;
+  margin: var(--space-sm) 0;
+  overflow-y: auto;
+}
+
+.mch-stack {
+  display: flex;
+  height: 8px;
+  margin-bottom: var(--space-sm);
+  background-color: var(--stat-line);
+
+  div:nth-child(odd) {
+    background-color: hsl(210, 45%, 55%);
+  }
+
+  div:nth-child(even) {
+    background-color: hsl(190, 40%, 45%);
+  }
+}
+
+.mch-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82em;
 
-  th,
-  td {
-    padding: 0.25em;
-    text-align: right;
-    border-bottom: 1px solid var(--stat-line);
-  }
-
-  th:first-child,
-  td:first-child {
+  th {
     text-align: left;
+    color: var(--stat-muted);
+    font-weight: normal;
+  }
+
+  td,
+  th {
+    padding: 1px var(--space-sm) 1px 0;
   }
 }
 
-.mc-subsystem-row {
-  display: grid;
-  grid-template-columns: minmax(8em, 1fr) minmax(7em, 2fr) auto;
-  gap: 0.45em;
-  align-items: center;
-  margin: 0.23em 0;
-  font-size: 0.82em;
+.mch-row--expandable {
+  cursor: pointer;
 }
 
-.mc-subsystem-name {
+.mch-row--behind td {
+  padding-left: var(--space-ml);
+  color: var(--stat-muted);
+  font-size: 0.9em;
+}
+
+.mch-subhead {
+  margin-top: var(--space-m);
+  color: var(--stat-muted);
+  font-weight: bold;
+}
+
+.mch-overrun {
+  padding: 2px 0;
+  border-top: 1px solid var(--stat-line);
+  cursor: pointer;
+}
+
+.mch-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m);
+  margin-bottom: var(--space-sm);
+}
+
+.mch-link {
+  border: 0;
+  background: none;
+  color: var(--stat-link, #6699ff);
+  cursor: pointer;
+  padding: 0;
+}
+
+// The console look (tgui/styles/console.scss), as the lobby and the chat pane
+// wear it: bold monospace chrome, #202020 panels, 3px #384e68 frame with
+// glow, solid blue buttons, CRT scanlines over the whole page.
+.dark:root {
+  @include console.console-component-vars;
+}
+
+
+.stat-root {
+  background-color: console.$console-panel;
+  font-family: console.$console-font;
+  font-weight: 700;
+
+  // The column frames its windows (tgui-panel/column): no page frame of its own.
+
+
+  a {
+    color: console.$console-accent;
+  }
+
+  h3 {
+    margin: 0.75em 0 0.35em;
+    padding-bottom: 0.2em;
+    color: console.$console-accent;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 2px solid console.$console-border;
+  }
+
+  .DqTabs:not(.DqTabs--small) {
+    margin: 3px 3px 0;
+  }
+
+  .stat-content {
+    margin: 0 3px 3px;
+    padding: 8px 10px;
+  }
+
+  .stat-table td,
+  .mc-performance-table th,
+  .mc-performance-table td,
+  .mc-outlier,
+  .mc-runtime-item {
+    border-bottom-color: console.$console-border;
+  }
+
+  .mc-metric-card,
+  .mc-panel,
+  .mc-details {
+    background-color: console.$console-panel;
+    border: 2px solid console.$console-border;
+    border-radius: 0;
+  }
+
+  .mc-subsystem-track,
+  .mc-breakdown-track {
+    border-radius: 0;
+  }
+
+  // Body text stays readable where the game writes prose.
+  .examine,
+  .status-line,
+  .stat-empty {
+    font-family: Verdana, Geneva, sans-serif;
+    font-weight: 400;
+  }
+}
+
+// Live map/column splitter handle on the stat panel's left edge (layout/ChatLayout.tsx MapSplitHandle).
+.ChatSplitHandle {
+  position: fixed;
+  z-index: 210;
+  touch-action: none;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+}
+
+// The Inspect tab (InspectTab.tsx), in the console theme.
+.inspect {
+  font-weight: 400;
+}
+
+// The header is the DQ TitleBar (tgui/dq/TitleBar.tsx), flush with the page.
+.inspect__header {
+  margin-bottom: 0.5em;
+  padding: 0 0 0.35em;
+}
+
+.inspect__body {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.inspect__main {
+  flex: 1 1 14em;
+  min-width: 0;
+  line-height: 1.5;
+}
+
+.inspect__text {
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+.inspect__note {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+
+.inspect__noteTitle {
+  color: console.$console-muted;
+}
+
+.inspect__heading {
+  margin-top: 6px;
+  color: console.$console-accent;
+}
+
+.inspect__worn {
+  display: grid;
+  grid-template-columns: 7em 1fr;
+  gap: 1px 8px;
+}
+
+.inspect__slot {
+  color: console.$console-muted;
+}
+
+.inspect__item {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: console.$console-accent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.inspect__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.inspect__chip {
+  padding: 1px 6px;
+  border: 1px solid console.$console-border;
+  color: #9fc3ef;
+
+  &--danger {
+    border-color: console.$console-danger;
+    color: #ff9a9a;
+  }
+
+  &--warning {
+    border-color: #b07a1e;
+    color: #ffc66b;
+  }
+}
+
+// A subtle dark panel with a thin console border; the picture is drawn at whole multiples of its size.
+.inspect__portrait {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: content-box;
+  // Reserved at the largest picture size, so the picture arriving does not shift the layout.
+  width: 160px;
+  height: 160px;
+  padding: 6px;
+  background-color: var(--stat-section);
+  border: 1px solid console.$console-border;
+
+  img {
+    display: block;
+    image-rendering: pixelated;
+  }
+}
+
+.inspect__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 0.75em;
+  padding-top: 0.5em;
+  border-top: 1px solid console.$console-border;
+}
+
+.inspect__row {
+  display: flex;
+  gap: 5px;
+}
+
+.inspect__button {
+  flex: 1;
+  box-sizing: border-box;
+  border: 0;
+  padding: 4px 8px;
+  background: console.$console-button;
+  color: console.$console-text;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #4a6d96;
+  }
+
+  &--primary {
+    background: console.$console-green;
+
+    &:hover {
+      background: #3b9443;
+    }
+  }
+}
+
+// The Abilities tab (AbilitiesTab.tsx), in the console theme.
+.abilities {
+  font-weight: 400;
+}
+
+.abilities__status {
+  margin-bottom: 0.6em;
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid console.$console-border;
+}
+
+.abilities__resource,
+.abilities__active {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.abilities__resourceName {
+  min-width: 4.5em;
+  color: console.$console-accent;
+  font-size: 0.9em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.abilities__bar {
+  position: relative;
+  flex: 1 1 8em;
+  height: 1.2em;
+  background: console.$console-disabled;
+}
+
+.abilities__barFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: console.$console-green;
+}
+
+.abilities__barText {
+  position: relative;
+  display: block;
+  text-align: center;
+  line-height: 1.2em;
+  font-size: 0.9em;
+}
+
+.abilities__chip {
+  padding: 0 6px;
+  background: console.$console-button;
+  font-size: 0.9em;
+}
+
+.abilities__heading {
+  margin: 0.4em 0 0.25em;
+  color: console.$console-accent;
+  font-size: 0.9em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.abilities__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11em, 1fr));
+  gap: 4px;
+}
+
+.abilities__button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  border: 0;
+  padding: 3px 6px;
+  background: console.$console-button;
+  color: console.$console-text;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #4a6d96;
+  }
+
+  &--on {
+    outline: 1px solid console.$console-green;
+  }
+
+  &--refused {
+    opacity: 0.45;
+  }
+
+  &--dragged {
+    opacity: 0.3;
+  }
+}
+
+.abilities__slot {
+  flex: none;
+  min-width: 1.1em;
+  color: console.$console-accent;
+  font-weight: 700;
+  text-align: center;
+}
+
+.abilities__icon {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+/* A sprite of the abilities sheet: 32px cells, shown at the icon's 24px. */
+.abilities__icon--sheet {
+  overflow: hidden;
+
+  > span {
+    transform: scale(0.75);
+    transform-origin: top left;
+  }
+}
+
+.abilities__name {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.mc-subsystem-track,
-.mc-breakdown-track {
-  display: flex;
-  height: 0.6em;
-  overflow: hidden;
-  background-color: var(--stat-track);
-  border-radius: 1em;
-}
-
-.mc-subsystem-used,
-.mc-subsystem-overrun,
-.mc-breakdown-bar {
+.abilities__state,
+.abilities__cost,
+.abilities__cool {
   flex: none;
-  height: 100%;
+  font-size: 0.85em;
+  color: console.$console-muted;
 }
 
-.mc-subsystem-overrun {
-  background-color: hsl(from var(--color-bad) h s calc(l * 0.6));
+.abilities__channel {
+  position: absolute;
+  inset: auto auto 0 0;
+  height: 3px;
+  background: console.$console-green;
 }
 
-.mc-subsystem-value {
-  text-align: right;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.mc-outlier {
-  padding: 0.27em 0;
+// The window dock (DockArea.tsx): docked tgui windows are placed over .dock-body.
+.dock-area {
+  flex: 0 1 auto;
+  // Inside the frame, the same 3px gap as the tab row and the content (.stat-root below): docked windows sat over the frame edge.
+  margin: 3px 3px 0;
+  max-height: 75vh;
+  overflow: hidden auto;
   border-bottom: 1px solid var(--stat-line);
-  font-size: 0.82em;
 }
 
-.mc-outlier-heading {
-  width: 100%;
-  padding: 0.2em;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  font-family: monospace;
-}
+// Entries slide aside live while one is dragged (the DQ tab strip's motion, along y). No transition: the docked windows are
+// placed from the entries' rects each frame, and an eased slide would leave them a frame behind.
+.dock-group {
+  position: relative;
+  border-top: 1px solid var(--stat-line);
 
-.mc-outlier-breakdown {
-  margin: 0.3em 0.5em 0.5em 1em;
-}
+  &--dragged {
+    z-index: 3;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    cursor: grabbing;
+  }
 
-.mc-breakdown-row {
-  display: grid;
-  grid-template-columns: minmax(9em, 1.2fr) minmax(6em, 2fr) 4em;
-  gap: 0.4em;
-  align-items: center;
-  margin: 0.2em 0;
-}
+  &--floating {
+    opacity: 0.6;
+  }
 
-.mc-runtime-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.3em 0.8em;
-}
-
-.mc-runtime-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5em;
-  padding: 0.2em 0;
-  border-bottom: 1px solid var(--stat-line);
-  font-size: 0.82em;
-
-  span {
-    color: var(--stat-muted);
+  // Where a tab pulled out of a stack lands as its own entry.
+  &--insert {
+    box-shadow: inset 0 3px 0 rgba(141, 192, 255, 0.9);
   }
 }
 
-.mc-details {
-  margin-top: var(--space-m);
-  border: 1px solid var(--stat-line);
-  border-radius: var(--border-radius-medium);
+.dock-insert-end {
+  height: 3px;
+  background: rgba(141, 192, 255, 0.9);
+}
 
-  summary {
-    padding: var(--space-sm) var(--space-ml);
-    cursor: pointer;
-    color: var(--stat-muted);
-    font-weight: bold;
+.dock-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 22px;
+  padding: 0 2px;
+  background: var(--stat-section);
+  cursor: grab;
+  user-select: none;
 
-    &:hover {
-      color: var(--stat-text);
+  &--lit {
+    outline: 2px dashed #8dc0ff;
+  }
+}
+
+.dock-title,
+.dock-tabs {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dock-tabs {
+  margin: 0;
+}
+
+.dock-body {
+  position: relative;
+  background: var(--stat-base);
+}
+
+.dock-body__ghost {
+  padding: 8px;
+  color: var(--stat-muted);
+  border: 1px dashed var(--stat-line);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.dock-grip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 6px;
+  cursor: ns-resize;
+  z-index: 2;
+}
+
+.dock-tab {
+  display: inline-block;
+  padding: 0 4px;
+}
+
+// ---- The five views (layout.ts): collapsible groups, the card over a view, the Server sub-pages. ----
+
+.stat-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+
+  // The pane scrolls: its rows keep their height instead of being squeezed to fit it.
+  > *,
+  .mch > *,
+  .mch-health > * {
+    flex: none;
+  }
+}
+
+.stat-group {
+  flex: none;
+  background-color: console.$console-panel;
+  border: 2px solid console.$console-border;
+
+  &--danger {
+    border-color: console.$console-danger;
+
+    .stat-group__name {
+      color: #ff9a9a;
+    }
+
+    .Button {
+      background-color: console.$console-danger;
     }
   }
+}
 
-  &[open] summary {
-    border-bottom: 1px solid var(--stat-line);
+.stat-group__head {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  width: 100%;
+  padding: 0.25em 0.5em;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+
+  &:hover .stat-group__name {
+    color: console.$console-accent;
+  }
+}
+
+.stat-group__chev {
+  width: 0.8em;
+  color: console.$console-accent;
+}
+
+.stat-group__name {
+  flex: 1;
+  color: console.$console-text;
+}
+
+.stat-group__count {
+  color: console.$console-dim;
+  font-weight: 400;
+}
+
+.stat-group__body {
+  padding: 0 0.35em 0.35em;
+}
+
+.stat-badge {
+  display: inline-block;
+  padding: 0 0.3em;
+  margin-left: 0.2em;
+  font-size: 0.8em;
+  color: #fff;
+  background-color: console.$console-danger;
+}
+
+// .stat-root: the column page also loads tgui-core scoped under .EmbeddedInterface, after this sheet, at equal specificity.
+.stat-root .stat-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-s);
+
+  .Button {
+    margin: 0;
+  }
+}
+
+.stat-subnav {
+  display: flex;
+  gap: 2px;
+
+  button {
+    flex: 1;
+    padding: 0.2em;
+    font: inherit;
+    color: console.$console-muted;
+    background-color: console.$console-panel;
+    border: 2px solid console.$console-border;
+    cursor: pointer;
   }
 
-  .stat-table {
-    margin: var(--space-s) 0;
+  .stat-subnav--on {
+    color: console.$console-text;
+    background-color: console.$console-button;
   }
+}
+
+// Examine, inspect and the turf list: a card over the view, not a tab of their own.
+.stat-card {
+  position: sticky;
+  top: 0;
+  order: -1;
+  z-index: 2;
+  max-height: 70%;
+  display: flex;
+  flex-direction: column;
+  background-color: console.$console-background;
+  border: 2px solid console.$console-accent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.stat-card__head {
+  display: flex;
+  align-items: center;
+  padding: 0.2em 0.5em;
+  border-bottom: 1px solid var(--stat-line);
+}
+
+.stat-card__title {
+  flex: 1;
+  color: console.$console-text;
+}
+
+.stat-card__close {
+  font: inherit;
+  font-size: 1.2em;
+  line-height: 1;
+  color: console.$console-muted;
+  background: none;
+  border: 0;
+  cursor: pointer;
+
+  &:hover {
+    color: console.$console-text;
+  }
+}
+
+.stat-card__body {
+  overflow: hidden auto;
+  padding: 0.35em 0.5em;
+}
+
+// Search results: one per row, with where the item lives.
+// .stat-root: the column page also loads tgui-core scoped under .EmbeddedInterface, after this sheet, at equal specificity.
+.stat-root .stat-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12em, 1fr));
+  gap: var(--space-s);
+
+  .Button {
+    margin: 0;
+    white-space: normal;
+  }
+}
+
+.stat-results__path {
+  display: block;
+  font-size: 0.8em;
+  font-weight: 400;
+  color: console.$console-dim;
 }

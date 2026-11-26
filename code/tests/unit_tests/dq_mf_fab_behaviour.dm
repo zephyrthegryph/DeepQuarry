@@ -23,7 +23,7 @@
 
 /// The designs the window offers `user` (its static data).
 /proc/mffab_design_count(obj/machinery/M, mob/user)
-	var/list/data = M.tgui_static_data(user)
+	var/list/data = present_tgui_static_data(M, user)
 	return length(data["designs"])
 
 /// The designs the autolathe knows without a disk.

@@ -1,0 +1,184 @@
+{
+	"tgui_construction": [
+		{
+			"key": "a white, dog shaped hole",
+			"background": "white",
+			"icon": "dog",
+			"foreground": "black"
+		},
+		{
+			"key": "a yellow, square shaped switch",
+			"background": "yellow",
+			"icon": "square",
+			"foreground": "yellow"
+		},
+		{
+			"key": "a blue, round shaped lever",
+			"background": "blue",
+			"icon": "circle",
+			"foreground": "red"
+		},
+		{
+			"key": "a orange, diamond shaped hole",
+			"background": "orange",
+			"icon": "gem",
+			"foreground": "black"
+		},
+		{
+			"key": "a green, heart shaped lever",
+			"background": "green",
+			"icon": "heart",
+			"foreground": "red"
+		},
+		{
+			"key": "a white, human shaped pad",
+			"background": "white",
+			"icon": "user",
+			"foreground": "white"
+		},
+		{
+			"key": "a blue, heart shaped lever",
+			"background": "blue",
+			"icon": "heart",
+			"foreground": "red"
+		},
+		{
+			"key": "a blue, heart shaped toggle",
+			"background": "blue",
+			"icon": "heart",
+			"foreground": "pink"
+		},
+		{
+			"key": "a red, round shaped pad",
+			"background": "red",
+			"icon": "circle",
+			"foreground": "white"
+		},
+		{
+			"key": "a purple, human shaped button",
+			"background": "purple",
+			"icon": "user",
+			"foreground": "black"
+		},
+		{
+			"key": "a green, human shaped lever",
+			"background": "green",
+			"icon": "user",
+			"foreground": "red"
+		},
+		{
+			"key": "a purple, diamond shaped lever",
+			"background": "purple",
+			"icon": "gem",
+			"foreground": "red"
+		},
+		{
+			"key": "a red, human shaped toggle",
+			"background": "red",
+			"icon": "user",
+			"foreground": "pink"
+		},
+		{
+			"key": "a blue, dog shaped switch",
+			"background": "blue",
+			"icon": "dog",
+			"foreground": "yellow"
+		},
+		{
+			"key": "a green, round shaped lever",
+			"background": "green",
+			"icon": "circle",
+			"foreground": "red"
+		},
+		{
+			"key": "a green, dog shaped toggle",
+			"background": "green",
+			"icon": "dog",
+			"foreground": "pink"
+		},
+		{
+			"key": "a red, heart shaped lever",
+			"background": "red",
+			"icon": "heart",
+			"foreground": "red"
+		},
+		{
+			"key": "a blue, round shaped switch",
+			"background": "blue",
+			"icon": "circle",
+			"foreground": "yellow"
+		},
+		{
+			"key": "a yellow, human shaped lever",
+			"background": "yellow",
+			"icon": "user",
+			"foreground": "red"
+		},
+		{
+			"key": "a orange, heart shaped toggle",
+			"background": "orange",
+			"icon": "heart",
+			"foreground": "pink"
+		},
+		{
+			"key": "a red, round shaped toggle",
+			"background": "red",
+			"icon": "circle",
+			"foreground": "pink"
+		},
+		{
+			"key": "a purple, diamond shaped pad",
+			"background": "purple",
+			"icon": "gem",
+			"foreground": "white"
+		},
+		{
+			"key": "a white, dog shaped switch",
+			"background": "white",
+			"icon": "dog",
+			"foreground": "yellow"
+		},
+		{
+			"key": "a purple, diamond shaped toggle",
+			"background": "purple",
+			"icon": "gem",
+			"foreground": "pink"
+		},
+		{
+			"key": "a blue, dog shaped pad",
+			"background": "blue",
+			"icon": "dog",
+			"foreground": "white"
+		},
+		{
+			"key": "a blue, diamond shaped hole",
+			"background": "blue",
+			"icon": "gem",
+			"foreground": "black"
+		},
+		{
+			"key": "a red, diamond shaped pad",
+			"background": "red",
+			"icon": "gem",
+			"foreground": "white"
+		},
+		{
+			"key": "a blue, dog shaped hole",
+			"background": "blue",
+			"icon": "dog",
+			"foreground": "black"
+		},
+		{
+			"key": "a white, round shaped lever",
+			"background": "white",
+			"icon": "circle",
+			"foreground": "red"
+		},
+		{
+			"key": "a purple, round shaped toggle",
+			"background": "purple",
+			"icon": "circle",
+			"foreground": "pink"
+		}
+	]
+}

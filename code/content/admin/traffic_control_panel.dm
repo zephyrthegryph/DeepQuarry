@@ -13,31 +13,23 @@
 	data["temp"] = temp
 	data["network"] = network
 	data["screen"] = screen
-	var/list/merged_1 = ui_data_obj_machinery_computer_telecomms_traffic(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
-
-/// /obj/machinery/computer/telecomms/traffic's window data.
-/obj/machinery/computer/telecomms/traffic/proc/ui_data_obj_machinery_computer_telecomms_traffic(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
+	var/list/server_rows = list()
 	if(screen == 0)
-		var/list/server_rows = list()
 		for(var/obj/machinery/telecomms/T in servers)
 			server_rows += list(list(
 				"id" = T.id,
 				"name" = T.name,
-				"ref" = "[T.id]",
 			))
-		data["servers"] = server_rows
-	else if(screen == 1 && SelectedServer())
+	data["servers"] = server_rows
+	data["selected_id"] = null
+	data["autoruncode"] = FALSE
+	if(screen == 1 && SelectedServer())
 		data["selected_id"] = SelectedServer().id
 		data["autoruncode"] = !!SelectedServer().autoruncode
 	return data
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_clear_temp(datum/act/op/A)
-	set_temp("")
+	set_temp(null)
 	return OP_OK
 
 /obj/machinery/computer/telecomms/traffic/proc/ui_act_set_network(datum/act/op/A)

@@ -1,11 +1,3 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { FlamethrowerData } from '../generated/Flamethrower';
 
-export type Data = {
-  constructed: BooleanLike;
-  lit: BooleanLike;
-  has_tank: BooleanLike;
-  throw_amount: number;
-  throw_min: number;
-  throw_max: number;
-  fuel_kpa: number;
-};
+export type Data = FlamethrowerData;

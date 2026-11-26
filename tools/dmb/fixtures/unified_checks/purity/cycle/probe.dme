@@ -1,9 +1,0 @@
-var/global_value=0
-/proc/a()
-    b()
-/proc/b()
-    global_value=1
-    a()
-/proc/probe()
-    set SpacemanDMM_should_be_pure=1
-    a()

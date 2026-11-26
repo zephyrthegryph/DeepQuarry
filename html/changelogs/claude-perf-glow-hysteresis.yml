@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - qol: "Held glows stay until they are a chunk clear of view, so crossing a chunk edge back and forth no longer re-sends them"

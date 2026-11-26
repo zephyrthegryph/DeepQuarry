@@ -1,31 +1,8 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { ChemSynthesizerData } from '../../generated/ChemSynthesizer';
 
-export type Data = {
-  busy: BooleanLike;
-  production_mode: BooleanLike;
-  panel_open: BooleanLike;
-  use_catalyst: BooleanLike;
-  drug_substance: number;
-  bottle_icon: string;
-  pill_icon: string;
-  patch_icon: string;
-  queue: { name: string; index: number }[];
-  recipes: { name: string }[];
-  rxn_vessel: reagent[];
-  catalyst: BooleanLike;
-  catalyst_reagents: reagent[];
-  catalystCurrentVolume: number | null;
-  catalystMaxVolume: number | null;
-  chemicals: { title: string; id: string; amount: number }[];
-  modal: modalData;
-};
+export type Data = ChemSynthesizerData;
 
-export type reagent = {
-  name: string;
-  volume: number;
-  description: string;
-  id: string;
-};
+export type reagent = ChemSynthesizerData['rxn_vessel'][number];
 
 export type modalData = {
   id: string;

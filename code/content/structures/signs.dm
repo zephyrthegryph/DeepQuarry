@@ -1223,10 +1223,6 @@ CAPABILITIES(/obj/structure/sign/flag)
 	desc = "The bright blue flag of the Solar Confederate Government."
 	flag_path = "solgov"
 
-/obj/item/flag/sol/l
-	name = "large Solar Confederate Government flag"
-	flag_size = 1
-
 //NanoTrasen
 /obj/structure/sign/flag/nt
 	name = "NanoTrasen corporate flag"
@@ -1244,10 +1240,6 @@ CAPABILITIES(/obj/structure/sign/flag)
 	name = "NanoTrasen corporate flag"
 	desc = "A flag portraying the logo of the NanoTrasen corporation."
 	flag_path = "nanotrasen"
-
-/obj/item/flag/nt/l
-	name = "large NanoTrasen corporate flag"
-	flag_size = 1
 
 //Vir
 /obj/structure/sign/flag/vir
@@ -1278,10 +1270,6 @@ CAPABILITIES(/obj/item/flag/vir)
 	a half century of war between the Sif Planetary Government - or SifGov - and corporate interests in Kara orbit, in order to qualify for full membership \
 	in the Solar Confederate Government. Following the Karan Wars it would be almost a century before Trans-Stellar Corporations were allowed their typical \
 	freedom to operate unobstructed in the Vir system."))
-
-/obj/item/flag/vir/l
-	name = "large Vir Governmental Authority flag"
-	flag_size = 1
 
 //Almach Association
 
@@ -1314,10 +1302,6 @@ CAPABILITIES(/obj/item/flag/almach_a)
 	the Association flag remains a popular symbol with mercurials and secessionists alike. To some, the Almach Association is seen as the first step towards the SCG's \
 	\"inevitable\" dissolution."))
 
-/obj/item/flag/almach_a/l
-	name = "large Almach Association flag"
-	flag_size = 1
-
 //Almach Protectorate
 /obj/structure/sign/flag/almach_p
 	name = "Almach Protectorate flag"
@@ -1347,10 +1331,6 @@ CAPABILITIES(/obj/item/flag/almach_p)
 	Intended to be closely overseen by the Skrellian Far Kingdom, the Skathari Incursion left the Protectorate functionally independent in many regards, \
 	leading to the proliferation of previously restricted genetic modification technology into SolGov territory. However, the Protectorate was also left \
 	without meaningful military support, and has suffered sorely in the years since as the Relan-led government has struggled to remilitarize."))
-
-/obj/item/flag/almach_p/l
-	name = "large Almach Protectorate flag"
-	flag_size = 1
 
 //Vystholm
 /obj/structure/sign/flag/vystholm
@@ -1382,10 +1362,6 @@ CAPABILITIES(/obj/item/flag/vystholm)
 	to the Skathari Incursion and has since undertaken a campaign of raiding, terrorism and espionage against established governments, particularly the Tajaran \
 	Pearlshield Coalition."))
 
-/obj/item/flag/vystholm/l
-	name = "large Vystholm flag"
-	flag_size = 1
-
 //Five Arrows
 /obj/structure/sign/flag/fivearrows
 	name = "Five Arrows flag"
@@ -1414,10 +1390,6 @@ CAPABILITIES(/obj/item/flag/fivearrows)
 	failures in aiding the Sagittarius Heights during the Skathari Incursion. The success of the government in achieving effective local defense and prosperity has \
 	since attracted the membership of Kauq'xum, a remote Skrellian colony. The Five Arrows formed the model for SolGov's own semi-autonomous \"Regional Blocs\"."))
 
-/obj/item/flag/fivearrows/l
-	name = "large Five Arrows flag"
-	flag_size = 1
-
 //Pirates
 /obj/structure/sign/flag/pirate
 	name = "pirate flag"
@@ -1436,10 +1408,6 @@ CAPABILITIES(/obj/item/flag/fivearrows)
 	desc = "Shiver me timbers, hoist the black!"
 	flag_path = "pirate"
 
-/obj/item/flag/pirate/l
-	name = "large pirate flag"
-	flag_size = 1
-
 //Catpirate
 /obj/structure/sign/flag/catpirate
 	name = "Tajaran pirate flag"
@@ -1457,10 +1425,6 @@ CAPABILITIES(/obj/item/flag/fivearrows)
 	name = "Tajaran pirate flag"
 	desc = "Shiver me whiskers, hoist the black!"
 	flag_path = "catpirate"
-
-/obj/item/flag/catpirate/l
-	name = "large Tajaran pirate flag"
-	flag_size = 1
 
 //Political Parties
 /obj/structure/sign/flag/icarus

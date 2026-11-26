@@ -1,0 +1,52 @@
+{
+	"status": "Nominal",
+	"temperature": 248,
+	"buffer": 17500,
+	"input": 37500,
+	"output": 30000,
+	"lossEnergy": 450000,
+	"parts": [
+		{
+			"role": "structure",
+			"material": "Steel",
+			"meltingPoint": 1810,
+			"corrosion": 65,
+			"purpose": "Carries mechanical load: 250 yield strength, 50 fracture toughness."
+		},
+		{
+			"role": "conductor",
+			"material": "Cryogenic copper alloy",
+			"meltingPoint": 1300,
+			"corrosion": 75,
+			"purpose": "Carries power: 90 conductivity."
+		},
+		{
+			"role": "emitter",
+			"material": "Glass",
+			"meltingPoint": 1700,
+			"corrosion": 90,
+			"purpose": "Shapes or measures output: 8% reflectivity, 1700 K thermal limit."
+		}
+	],
+	"limiting": "Thermal buffer has 32,500 J remaining",
+	"liner": 100,
+	"shell": 96,
+	"fatigue": 4,
+	"monitoring": 1,
+	"reading": {
+		"name": "emitter",
+		"assembly": "EA-1042",
+		"duration": 42.5,
+		"minimum_output_watts": 29000,
+		"minimum_flow_moles": 0,
+		"minimum_pressure_kpa": 0,
+		"maximum_temperature_k": 262,
+		"efficiency": 0.78
+	},
+	"emitter": {
+		"output": 1,
+		"cadence": 1,
+		"stored": 180000,
+		"active": 1
+	}
+}

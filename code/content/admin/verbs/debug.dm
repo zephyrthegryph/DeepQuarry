@@ -225,12 +225,6 @@ ADMIN_VERB(cmd_debug_make_powernets, R_DEBUG, "Make Powernets", "Send every cabl
 	message_admins("[key_name_admin(user)] has remade the power network.")
 	feedback_add_details("admin_verb","MPWN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(cmd_debug_tog_aliens, R_DEBUG, "Toggle Aliens", "Toggle if aliens are allowed.", ADMIN_CATEGORY_SERVER_GAME)
-	CONFIG_SET(flag/aliens_allowed, !CONFIG_GET(flag/aliens_allowed))
-	log_admin("[key_name(user)] has turned aliens [CONFIG_GET(flag/aliens_allowed) ? "on" : "off"].")
-	message_admins("[key_name_admin(user)] has turned aliens [CONFIG_GET(flag/aliens_allowed) ? "on" : "off"].")
-	feedback_add_details("admin_verb","TAL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-
 ADMIN_VERB(cmd_display_del_log, R_DEBUG, "Display del() Log", "Display del's log of everything that's passed through it.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	var/list/dellog = list(span_bold("List of things that have gone through qdel this round") + "<BR><BR><ol>")
 	sortTim(garbage_items(), cmp=/proc/cmp_qdel_item_time, associative = TRUE)

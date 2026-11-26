@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -8,21 +9,22 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import type { VoreSweeperActions } from '../generated/VoreSweeper';
 import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelTooltip';
 import { gameStateToColor, gameStateToIcon, gameTooltip } from './constants';
 import { getRemainingMines, getScoreColor } from './functions';
 import type { Data } from './types';
 
 export const PlayerMenu = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, VoreSweeperActions>();
 
   const {
-    grid_size,
-    mine_count,
-    max_mines,
+    grid_size = 0,
+    mine_count = 0,
+    max_mines = 0,
     dealer,
     placed_mines,
-    placed_flags,
+    placed_flags = {},
     game_state,
     is_dealer,
   } = data;
@@ -165,9 +167,9 @@ export const PlayerMenu = (props) => {
         <Stack.Item>
           <Stack fill>
             <Stack.Item grow>
-              <Box preserveWhitespace inline color="label">
+              <Label preserveWhitespace inline>
                 {`Remaining Mines: `}
-              </Box>
+              </Label>
               <Box
                 fontSize={2}
                 inline

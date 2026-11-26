@@ -16,6 +16,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	part_replacement()
 	op("toggleStatus", ui_act("toggleStatus"), then(PROC_REF(ui_act_togglestatus)))
 	interface("GasTemperatureSystem")
+	ui_shape(on = bool(), gasPressure = num(), gasTemperature = num(), minGasTemperature = num(), maxGasTemperature = num(), targetGasTemperature = num(), powerSetting = num(), gasTemperatureClass = schema_text(), reagentVolume = num(), reagentMaximum = num(), reagentPower = num())
 	op("setGasTemperature", ui_act("setGasTemperature", arg("temp", num())), then(PROC_REF(ui_act_setgastemperature)))
 	op("setPower", ui_act("setPower", arg("value", num())), then(PROC_REF(ui_act_setpower)))
 
@@ -114,7 +115,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 /obj/machinery/atmospherics/unary/heater/proc/ui_data_obj_machinery_atmospherics_unary_heater(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/list/data = list()
-	data["on"] = use_power ? 1 : 0
+	data["on"] = use_power ? TRUE : FALSE
 	var/air_temperature = air_contents.return_temperature()
 	data["gasPressure"] = round(air_contents.return_pressure())
 	data["gasTemperature"] = round(air_temperature)

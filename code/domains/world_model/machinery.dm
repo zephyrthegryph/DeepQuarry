@@ -10,9 +10,6 @@ Overview:
 
 Class Variables:
 
-	power_init_complete (boolean)
-		Indicates that we have have registered our static power usage with the area.
-
 	use_power (num)
 		current state of auto power use.
 		Possible Values:
@@ -105,11 +102,10 @@ Class Procs:
 	/// The area the machine draws its power through, as a relation (the other end of the area's power_machines): the machine contributes
 	/// its draw to that area's demand stats and reads that area's channels for its power. Written only by the base machine's own area
 	/// handling (rel_set() in Initialize and area_changed()).
-	var/tmp/area/power_area // ALLOW(base_vars): the machine-to-area relation (links() in this block) that area_gives_power() and the three demand contributions read; every powered machine has one, set by machinery_power.dm on move, so no subset of types could hold it
+	var/tmp/area/power_area // ALLOW(base_vars): the machine-to-area relation (links() in this block) that area_gives_equip() and its siblings and the three demand contributions read; every powered machine has one, set by machinery_power.dm on move, so no subset of types could hold it
 	/// The has_power reading power_change() last acted on: a flip is a difference from it (power_change()'s result).
 	var/tmp/power_seen = TRUE // ALLOW(base_vars): the has_power reading power_change() last acted on; about 144 hand calls of power_change() across types reach it besides the on_change hook, so it dedups on every machine type, not one capability
-	/// Cache of the real part objects once materialize_parts() has pulled
-	/// them out of the CONTAINER_SLOT_INTERNALS latent entries (roadmap C6):
+	/// The part objects adopt_parts() found in CONTAINER_SLOT_INTERNALS:
 	/// null until then. The circuit board is not in this list; see `circuit`.
 	var/list/component_parts = null
 	var/tmp/uid
@@ -138,17 +134,22 @@ CAPABILITIES(/obj/machinery)
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
 	// The area's channel flip reaches every machine through this read (its generated deps invalidate it). A type that runs on its own supply, or
 	// delays its loss, drops this entry by its key and says its own.
-	contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_power), key = "area_power", reason = MSG(power/unpowered), reads = list(USES_POWER_KEY, "power_area.requires_power", "power_area.power_equip", "power_area.power_light", "power_area.power_environ"))
+	// One contribution per channel, active while the machine draws on that channel and reading only that channel's var: a flip of one channel
+	// marks and re-evaluates the machines on it, not every machine in the area (an APC stepping a channel down is a common event).
+	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_equip), key = "area_power_equip", reason = MSG(power/unpowered), reads = list(USES_POWER_KEY, "power_area.requires_power", "power_area.power_equip")), reads = list(USES_POWER_KEY))
+	when(TYPE_PROC_REF(/obj/machinery, draws_light), contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_light), key = "area_power_light", reason = MSG(power/unpowered), reads = list(USES_POWER_KEY, "power_area.requires_power", "power_area.power_light")), reads = list(USES_POWER_KEY))
+	when(TYPE_PROC_REF(/obj/machinery, draws_environ), contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_environ), key = "area_power_environ", reason = MSG(power/unpowered), reads = list(USES_POWER_KEY, "power_area.requires_power", "power_area.power_environ")), reads = list(USES_POWER_KEY))
 	contributes(STAT_OPERABLE, STAT_HAS_POWER, key = "power_operable")
 	// A flip of has_power, whatever wrote it (the area's channel, an override's contribution, a hold): the machine acts on it. The stat reads the
 	// area's tracked channel vars, so a channel write reaches every machine on it through this hook at the next drain; nothing walks the area.
 	on_change(STAT_HAS_POWER, ANY, then(PROC_REF(has_power_changed)))
 	// The machine's draw is a contribution to its area's demand on the channel it is on (doc/rewrite/power_grid.md): no tally to keep.
 	links(/obj/machinery::power_area, /area::power_machines, b_many = TRUE)
-	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes_to(nameof(power_area), STAT_DEMAND_EQUIP, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
-	when(TYPE_PROC_REF(/obj/machinery, draws_light), contributes_to(nameof(power_area), STAT_DEMAND_LIGHT, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
-	when(TYPE_PROC_REF(/obj/machinery, draws_environ), contributes_to(nameof(power_area), STAT_DEMAND_ENVIRON, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
-	owns_one(nameof(circuit), /obj/item/circuitboard)
+	// Keyed so that a machine that never draws (unpowered_machine(), a pipe) drops them and never joins its area's power at all.
+	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes_to(nameof(power_area), STAT_DEMAND_EQUIP, TYPE_PROC_REF(/obj/machinery, power_demand), key = MACHINE_DEMAND_EQUIP_KEY, reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
+	when(TYPE_PROC_REF(/obj/machinery, draws_light), contributes_to(nameof(power_area), STAT_DEMAND_LIGHT, TYPE_PROC_REF(/obj/machinery, power_demand), key = MACHINE_DEMAND_LIGHT_KEY, reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
+	when(TYPE_PROC_REF(/obj/machinery, draws_environ), contributes_to(nameof(power_area), STAT_DEMAND_ENVIRON, TYPE_PROC_REF(/obj/machinery, power_demand), key = MACHINE_DEMAND_ENVIRON_KEY, reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
+	owns_one(nameof(circuit), /obj/item/circuitboard, starts = PROC_REF(start_circuit))
 	owns_many(nameof(component_parts))
 	param(nameof(dir_at_make), pos = 1, keep = FALSE)
 	setup(PROC_REF(machine_start), mapload = TRUE)
@@ -173,25 +174,46 @@ CAPABILITIES(/obj/machinery)
 
 REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
-/// The board plus its req_components, as a spawn list (roadmap C6): resolved
-/// lazily into latent entries in CONTAINER_SLOT_INTERNALS the first time
-/// anything asks the ledger an exact question (RefreshParts's rating reads
-/// included), so a mapped machine's board and parts stay data at boot.
-/obj/machinery/latent_generator()
-	if(!circuit)
+/// A machine's board and default parts are made with it (owns_one(circuit, starts =)): `current` is the board the type names (a path or a VARIANT()
+/// reference; an instance a map put there is kept). The board is made inside the machine, then the parts default_parts() lists.
+/// A machine the map makes keeps its board as data (the machinery_misc stock_circuit field) until board() is asked for it; its default parts are still made.
+/obj/machinery/proc/start_circuit(current, mapload)
+	if(isnull(current) || isdatum(current))
+		return current
+	if(mapload)
+		STATE_SET(src, machinery_misc, stock_circuit, current)
+		create_spawn_contents(default_parts(current))
 		return null
-	var/list/gen = list()
-	gen[circuit] = 1
-	var/list/req = dq_type_var(circuit, "req_components")
+	var/obj/item/circuitboard/board = variant_new(current, src)
+	if(!istype(board))
+		return null
+	create_spawn_contents(default_parts(board))
+	return board
+
+/// The machine's board, made from stock_circuit the first time it is needed (a mapped machine's board is data until then).
+/obj/machinery/proc/board()
+	var/stock = circuit ? null : STATE_PEEK(src, machinery_misc, stock_circuit)
+	if(stock)
+		STATE_SET(src, machinery_misc, stock_circuit, null)
+		var/obj/item/circuitboard/B = variant_new(stock, src)
+		if(istype(B))
+			rel_set(src, nameof(circuit), B)
+	return circuit
+
+/// Whether the machine has a board, real or still data.
+/obj/machinery/proc/holds_board(datum/act/A)
+	return !!(circuit || STATE_PEEK(src, machinery_misc, stock_circuit))
+
+/// What a machine is made with besides its board, as a spawn list: the board's req_components. A type whose board declares none lists its parts itself.
+/// `board` is the board or the path / VARIANT() it is made from.
+/obj/machinery/proc/default_parts(board)
+	var/list/parts = list()
+	var/list/req = dq_type_var(board, "req_components")
 	for(var/comp_path in req)
 		var/comp_amt = req[comp_path]
 		if(comp_amt)
-			gen[comp_path] = (gen[comp_path] || 0) + comp_amt
-	return gen
-
-/// A machine's board may be named by a VARIANT() reference (circuit = VARIANT(/obj/item/circuitboard/...)) and stay data like a path does.
-/obj/machinery/latent_variants_ok()
-	return TRUE
+			parts[comp_path] = (parts[comp_path] || 0) + comp_amt
+	return parts
 
 /// The facing a machine is built with (its constructor param).
 /obj/machinery/var/dir_at_make // ALLOW(base_vars): the param() var for new /obj/machinery/x(loc, dir) (pos = 1); a param is a var of the type that declares it, read once by machine_start's set_dir() and reset (keep = FALSE)
@@ -204,10 +226,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		set_broken_condition(TRUE)
 	if(isnum(dir_at_make))
 		set_dir(dir_at_make)
-	// The board stays a type path (roadmap C6): it is only ever materialized
-	// into a real /obj/item/circuitboard when something needs the physical
-	// item (deconstruction, admin var edit, a frame move). See
-	// materialize_circuit().
 	if(!mapload)
 		power_change()
 
@@ -223,6 +241,39 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	else
 		H.moveToNullspace() // a machine destroyed in nullspace puts its occupant out to nullspace: it must not go with the machine
 	H.reset_perspective()
+
+/// One-off power draw from the machine's area. The library's machine capabilities (fabricators) pay through these; the draw channel
+/// is the machine's own (`power_of`, code/content/machinery/machinery_power.dm).
+// DEPRECATED! - USE use_power_oneoff() instead!
+/obj/machinery/proc/use_power(amount, chan = -1) // defaults to power_channel
+	return src.use_power_oneoff(amount, chan);
+
+// This will have this machine have its area eat this much power next tick, and not afterwards. Do not use for continued power draw.
+// Returns actual amount drawn (In theory this could be less than the amount asked for. In pratice it won't be FOR NOW)
+/obj/machinery/proc/use_power_oneoff(amount, chan = CURRENT_CHANNEL)
+	var/area/A = get_area(src)		// make sure it's in an area
+	if(!A)
+		return
+	if(chan == CURRENT_CHANNEL)
+		chan = power_of(src).channel
+	return A.use_power_oneoff(amount, chan)
+
+// Check if we CAN use a given amount of extra power as a one off. Returns amount we could use without actually using it.
+// For backwards compatibilty this returns true if the channel is powered. This is consistant with pre-static-power
+// behavior of APC powerd machines, but at some point we might want to make this a bit cooler.
+/obj/machinery/proc/can_use_power_oneoff(amount, chan = CURRENT_CHANNEL)
+	if(powered(chan))
+		return amount // If channel is powered then you can do it.
+	return 0
+
+/// What this machine draws while active (its own value once one was set at run time). The library's machine capabilities (fabricators)
+/// price a run by it without naming the power trait (`power_of`, code/content/machinery/machinery_power.dm).
+/obj/machinery/proc/active_power_draw()
+	return power_of(src).active
+
+/// What a machine type declares it draws while active (no instance).
+/proc/active_power_draw_of_type(type)
+	return power_of_type(type).active
 
 /// TRUE for a type that is made with its own switch off (cookers).
 /obj/machinery/proc/starts_switched_off()
@@ -284,8 +335,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// the built-in per-datum `vars` list instead, which is always dynamic.
 PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/dq_type_var(path, var_name)
-	// A caller may already hold a materialized instance (the board, once
-	// materialize_parts() resolved it) rather than a bare path: read it
+	// A caller may already hold an instance (the board) rather than a bare
+	// path: read it
 	// directly, since it already IS "a real instance" of its own exact type.
 	if(istext(path)) // a VARIANT() reference: the row's value, else the parent type's
 		var/list/row = dq_variant_vars(saved_type_path(path), variant_key(path))
@@ -312,55 +363,49 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 	return value
 
 /// Returns the sum of the rating values of all installed parts that are
-/// subtypes of part_type (roadmap C6): real objects already materialized in
-/// CONTAINER_SLOT_INTERNALS, plus latent entries not yet materialized there.
+/// subtypes of part_type (roadmap C6): the parts in CONTAINER_SLOT_INTERNALS.
 /obj/machinery/proc/total_component_rating_of_type(part_type)
 	. = 0
 	for(var/obj/item/stock_parts/P in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(istype(P, part_type))
 			. += P.rating
-	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
-		if(ispath(entry.path, part_type))
-			. += dq_type_var(entry.path, "rating") * entry.count
 
 /// Alias of total_component_rating_of_type(), named to match get_part_count().
 /obj/machinery/proc/get_part_rating(part_type)
 	return total_component_rating_of_type(part_type)
 
-/// Returns how many installed parts are subtypes of part_type: real objects
-/// plus latent entries, in CONTAINER_SLOT_INTERNALS (roadmap C6).
+/// Returns how many installed parts are subtypes of part_type, in
+/// CONTAINER_SLOT_INTERNALS (roadmap C6).
 /obj/machinery/proc/get_part_count(part_type)
 	. = 0
 	for(var/obj/item/stock_parts/P in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(istype(P, part_type))
 			.++
-	for(var/datum/latent_entry/entry as anything in latent_entries(CONTAINER_SLOT_INTERNALS))
-		if(ispath(entry.path, part_type))
-			. += entry.count
 
-/// Materializes the board (roadmap C6): if `circuit` is still a type path,
-/// pulls the real board (and every other latent entry in
-/// CONTAINER_SLOT_INTERNALS) out through the ledger. Idempotent.
-/obj/machinery/proc/materialize_circuit()
-	if(ispath(circuit) || istext(circuit)) // a path, or a VARIANT() reference
-		materialize_parts()
-	return circuit
+/// What the machine holds besides its board and its parts (the things put into it).
+/obj/machinery/proc/loose_contents()
+	return (contents - (component_parts || list())) - circuit
 
-/// Materializes every latent entry in CONTAINER_SLOT_INTERNALS (roadmap C6):
-/// the board becomes `circuit`, everything else becomes `component_parts`. A
-/// no-op once component_parts is already a real list, so it's safe to call
-/// defensively before anything that reads or moves real parts: deconstruction,
-/// an RPED swap, admin var edits.
-/obj/machinery/proc/materialize_parts()
+/// Adopts what is in CONTAINER_SLOT_INTERNALS: the board becomes `circuit` if
+/// none is held, everything else becomes `component_parts`. A no-op once
+/// component_parts is already a list, so it's safe to call defensively before
+/// anything that reads or moves the parts: deconstruction, an RPED swap, admin
+/// var edits.
+/obj/machinery/proc/adopt_parts()
 	if(component_parts)
 		return
-	latent_materialize_all(CONTAINER_SLOT_INTERNALS)
 	rel_take_all(src, nameof(component_parts))
+	adopt_internals()
+
+/// Takes every unowned item in CONTAINER_SLOT_INTERNALS as the board (when none is held) or a part. Things put in later (a microwave's
+/// ingredients) arrive after this and stay loose.
+/obj/machinery/proc/adopt_internals()
 	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(owner_of(I)) // already held by a var (an APC's cell, a camera's assembly): not a loose part
 			continue
 		if(istype(I, /obj/item/circuitboard))
-			rel_set(src, nameof(circuit), I)
+			if(!circuit || ispath(circuit))
+				rel_set(src, nameof(circuit), I)
 		else
 			rel_add(src, nameof(component_parts), I)
 
@@ -448,8 +493,8 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		if(!material)
 			continue
 		part_count++
-		total_integrity += material.integrity
-		total_dielectric += material.dielectric_strength
+		total_integrity += material.toughness * MATERIAL_HP_PER_TOUGHNESS
+		total_dielectric += material.dielectric_strength()
 		manifest += "[part.name]: [material.display_name]"
 	STATE_SET(src, machinery_misc, material_component_manifest, length(manifest) ? manifest : null)
 	if(!part_count)
@@ -499,16 +544,14 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	return 0
 
 /// Kept for the ~85 existing call sites in individual machines' Initialize().
-/// There is nothing left to build eagerly (roadmap C6): the board and its
-/// req_components are declared through latent_generator() and resolved into
-/// CONTAINER_SLOT_INTERNALS entries lazily, the first time anything (this
-/// RefreshParts() call included) asks the ledger an exact question.
+/// The board and its default parts were made with the machine (start_circuit()).
 /obj/machinery/proc/default_apply_parts()
 	rel_take_all(src, nameof(component_parts))
+	adopt_internals() // the default parts are the machine's from the start, so loose_contents() never counts them as things put in
 	RefreshParts()
 
 /obj/machinery/proc/default_use_hicell()
-	materialize_parts()
+	adopt_parts()
 	var/obj/item/cell/C = locate_in_list(component_parts, /obj/item/cell)
 	if(C)
 		own_take_member(src, nameof(component_parts), C)
@@ -524,9 +567,9 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	var/parts_replaced = FALSE
 	if(!istype(R))
 		return 0
-	if(!circuit)
+	if(!board())
 		return 0
-	materialize_parts()
+	adopt_parts()
 	to_chat(user, span_notice("Following parts detected in [src]:"))
 	for(var/obj/item/C in component_parts)
 		to_chat(user, span_notice("    [C.name]"))
@@ -570,7 +613,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 		needs(req(TYPE_PROC_REF(/obj/machinery, has_board), silent = TRUE)), begins(MSG(machine/display_disconnecting)), then(TYPE_PROC_REF(/obj/machinery, display_disconnected)))
 
 /obj/machinery/proc/has_board(datum/act/op/A)
-	return (!!circuit) ? null : /datum/msg/req_silent
+	return holds_board() ? null : /datum/msg/req_silent
 
 /obj/machinery/proc/display_disconnected(datum/act/op/A)
 	if(broken_now())
@@ -586,15 +629,13 @@ ACTION(obj_deconstruct, disassembled, FIXED, notice = /datum/notice/obj_deconstr
 /obj/machinery/proc/dismantle()
 	PUBLISH(src, obj_deconstruct, disassembled = FALSE)
 	play_sfx(src, SFX_ITEMS_CROWBAR)
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/I in contents)
 		if(istype(I,/obj/item/card/id))
 			I.forceMove(src.loc)
 
-	if(!circuit)
+	if(!board())
 		return 0
-	materialize_circuit()
-	materialize_parts()
+	adopt_parts()
 	var/obj/structure/frame/A = new /obj/structure/frame(src.loc)
 	var/obj/item/circuitboard/M = circuit
 	M.forceMove(A)
@@ -645,10 +686,8 @@ ACTION(obj_deconstruct, disassembled, FIXED, notice = /datum/notice/obj_deconstr
  * nor reports them as stale component_parts.
  */
 /obj/machinery/atom_deconstruct(disassembled = TRUE)
-	// Real objects must exist to be scattered as salvage by /obj/deconstruct()'s
-	// generic contents-to-turf pass, so materialize before letting go of them.
-	materialize_circuit()
-	materialize_parts()
+	board() // a board still data is salvage too
+	adopt_parts()
 	rel_take_all(src, nameof(component_parts))
 	rel_take(src, nameof(circuit))
 	return ..()

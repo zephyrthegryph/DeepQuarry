@@ -30,8 +30,8 @@ GLOBAL_LIST_INIT(dq_teshari_undercoat_variants, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/under/teshari/undercoat/standard)
-	variants(nameof(variant), PROC_REF(variant_table))
+	variants(nameof(variant), PROC_REF(own_variant_table)) // its own rows replace the parent family's
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).
-/obj/item/clothing/under/teshari/undercoat/standard/proc/variant_table()
+/obj/item/clothing/under/teshari/undercoat/standard/proc/own_variant_table()
 	return GLOB.dq_teshari_undercoat_variants

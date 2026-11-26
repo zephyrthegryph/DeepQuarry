@@ -13,6 +13,7 @@ import {
 } from 'tgui-core/components';
 import { PrefColorSwatch } from './colors';
 import { SearchableDropdown, Segmented, SliderBox, Switch } from './controls';
+import { useExpandOnFocus } from './FormattingTextArea';
 import {
   ColorizedImage,
   CustomImageButton,
@@ -72,16 +73,19 @@ const BufferedTextArea = ({
 }) => {
   const [draft, setDraft] = useState(value);
   useEffect(() => setDraft(value), [value]);
+  const expand = useExpandOnFocus('8em');
   return (
-    <TextArea
-      fluid
-      height="5em"
-      value={draft}
-      onChange={(v) => setDraft(v)}
-      onBlur={() => {
-        if (draft !== value) onCommit(draft);
-      }}
-    />
+    <div {...expand.handlers}>
+      <TextArea
+        fluid
+        height={expand.height}
+        value={draft}
+        onChange={(v) => setDraft(v)}
+        onBlur={() => {
+          if (draft !== value) onCommit(draft);
+        }}
+      />
+    </div>
   );
 };
 
@@ -146,6 +150,25 @@ export const resolveWidget = (item: PrefWidgetItem): ResolvedWidget => {
   }
 };
 
+/// Rows whose control is short (a switch, a few buttons, a swatch) sit side by side in a wrapping line instead of
+/// each taking a row of the label grid.
+export const isInlineWidget = (item: PrefWidgetItem) =>
+  ['switch', 'segmented', 'color'].includes(resolveWidget(item)) ||
+  INLINE_KEYS.has(item.key);
+
+/// Rows that read as one line with their neighbour whatever their control (blood type beside blood colour).
+const INLINE_KEYS = new Set(['b_type']);
+
+/// A dropdown is as wide as its longest option (up to a cap), not the whole column; a list of short options (blood types) is narrow.
+const menuWidth = (choices: Array<[string, string]>) => {
+  const longest = choices.reduce(
+    (n, [, label]) => Math.max(n, label.length),
+    0,
+  );
+  if (longest <= 4) return '6em';
+  return `min(100%, max(9em, calc(${Math.max(longest, 6)}ch + 3.5em)), 24em)`;
+};
+
 export const PrefWidget = ({ item, onPick }: Props) => {
   const { act } = useBackend();
 
@@ -172,13 +195,15 @@ export const PrefWidget = ({ item, onPick }: Props) => {
       const max = Number((item.props.max as number | undefined) ?? 100);
       const step = Number((item.props.step as number | undefined) ?? 1);
       return (
-        <SliderBox
-          serverValue={Number(item.value ?? min)}
-          min={min}
-          max={max}
-          step={step}
-          onCommit={(v) => sendUpdate(act, item.key, v)}
-        />
+        <Box style={{ maxWidth: '28em' }}>
+          <SliderBox
+            serverValue={Number(item.value ?? min)}
+            min={min}
+            max={max}
+            step={step}
+            onCommit={(v) => sendUpdate(act, item.key, v)}
+          />
+        </Box>
       );
     }
 
@@ -240,14 +265,16 @@ export const PrefWidget = ({ item, onPick }: Props) => {
 
     case 'search_dropdown':
       return (
-        <SearchableDropdown
-          options={normalizeChoices(item.choices)}
-          value={String(item.value ?? '')}
-          onSelect={(val) => sendUpdate(act, item.key, val)}
-          tooltips={
-            item.props?.option_tooltips as Record<string, string> | undefined
-          }
-        />
+        <Box style={{ width: menuWidth(normalizeChoices(item.choices)) }}>
+          <SearchableDropdown
+            options={normalizeChoices(item.choices)}
+            value={String(item.value ?? '')}
+            onSelect={(val) => sendUpdate(act, item.key, val)}
+            tooltips={
+              item.props?.option_tooltips as Record<string, string> | undefined
+            }
+          />
+        </Box>
       );
 
     case 'dropdown': {
@@ -261,13 +288,15 @@ export const PrefWidget = ({ item, onPick }: Props) => {
       const currentLabel =
         options.find((o) => o.value === currentVal)?.displayText ?? currentVal;
       return (
-        <Dropdown
-          fluid
-          selected={currentVal}
-          displayText={currentLabel}
-          options={options}
-          onSelected={(val) => sendUpdate(act, item.key, val)}
-        />
+        <Box style={{ width: menuWidth(choices) }}>
+          <Dropdown
+            fluid
+            selected={currentVal}
+            displayText={currentLabel}
+            options={options}
+            onSelected={(val) => sendUpdate(act, item.key, val)}
+          />
+        </Box>
       );
     }
 
@@ -376,7 +405,7 @@ export const thumbLayers = (
   thumbs: Record<string, PrefThumbnail>,
   value: string,
 ): ImageLayer[] | null => {
-  const t = thumbs[value];
+  const t = thumbs[value] ?? (isNoneValue(value) ? thumbs[''] : undefined);
   if (!t) return null;
   if (t.layers?.length) return t.layers;
   if (!t.icon || !t.icon_state) return null;

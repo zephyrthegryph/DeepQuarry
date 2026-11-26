@@ -25,7 +25,6 @@
 
 /obj/item/modular_computer/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["device_theme"] = device_theme
 	var/list/merged_1 = ui_data_obj_item_modular_computer(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -36,7 +35,7 @@
 /obj/item/modular_computer/proc/ui_data_obj_item_modular_computer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 
-	data["login"] = list()
+	data["login"] = list(IDName = null, IDJob = null)
 	var/obj/item/computer_hardware/card_slot/cardholder = card_slot
 	if(cardholder)
 		var/obj/item/card/id/stored_card = cardholder.stored_card()
@@ -68,10 +67,6 @@
 			"running" = running,
 			"autorun" = (istype(autorun) && (autorun.stored_data == P.filename)) ? 1 : 0
 		))
-
-	data["has_light"] = FALSE // has_light
-	data["light_on"] = FALSE // light_on
-	data["comp_light_color"] = null // comp_light_color
 
 	return data
 

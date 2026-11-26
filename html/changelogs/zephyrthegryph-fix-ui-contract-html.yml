@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Emails, notes, files, news, guest passes, library entries and admin tickets now sanitize their HTML before showing it."

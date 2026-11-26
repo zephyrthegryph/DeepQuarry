@@ -99,8 +99,9 @@ PUBLISHED_BY(/mob/living, body, MOB_KEY_HEALTH)
 	return link_set_one(L, LK_NEST, nest)
 
 
-/// Flight: TRUE while anything holds the mob aloft (wings, a flying ability, a dragon's charge). Read stat_value(L, STAT_FLYING); write set_flying().
-STAT(/mob/living, flying, ANY, virtual = TRUE)
+/// Flight: TRUE while anything holds the mob aloft (wings, a flying ability, a dragon's charge). Read L.flying (the stat's var, settled by the stat layer: a step reads it
+/// several times, so it is a plain var read, not a composed stat_value()); write set_flying().
+STAT(/mob/living, flying, ANY)
 SOURCE_DEF(flight)
 
 /// Starts (TRUE) or stops (FALSE) the mob's own flight, the SRC_FLIGHT hold on STAT_FLYING.
@@ -147,9 +148,20 @@ CAPABILITIES(/mob/living)
 	owns_one(nameof(vent_crawl), /datum/vent_crawl_state, lazy = TRUE)
 	owns_one(nameof(vore_fx), /datum/vore_fx_state, lazy = TRUE)
 	ref_one(nameof(default_language), /datum/language)
+	op("hardsuit_interface", menu(desc = "Open the interface of the hardsuit you are loaded into."), label("Open Hardsuit Interface"), needs(req_self(), req(PROC_REF(hardsuit_interface_ready), fails = FAILS_HIDDEN)), then(PROC_REF(open_hardsuit_interface_chosen)))
+	op("combat_move", menu(desc = "Trigger one of your AI mob's special moves."), label("Use Combat Move"), needs(req_self(), req(PROC_REF(dq_combat_move_ready), fails = FAILS_HIDDEN)), then(PROC_REF(dq_combat_move_chosen)))
+	op("abilities_panel", menu(desc = "Every ability your species, traits and form give you, in one window."), label("Abilities"), needs(req_self()), then(PROC_REF(abilities_panel_chosen)))
+	op("ling_evolution", menu(desc = "Adapt yourself carefully."), label("Evolution Menu"), needs(req_self(), req(PROC_REF(changeling_menu_ready), fails = FAILS_HIDDEN)), then(PROC_REF(changeling_evolution_chosen)))
+	op("ling_respec", menu(desc = "Forget your adaptations and choose again."), label("Re-adapt"), needs(req_self(), req(PROC_REF(changeling_menu_ready), fails = FAILS_HIDDEN)), then(PROC_REF(changeling_respec_chosen)))
+	op("ling_hive_channel", menu(desc = "Channel DNA in the airwaves to allow other changelings to absorb it."), label("Hive Channel"), needs(req_self(), req(PROC_REF(changeling_hive_ready), fails = FAILS_HIDDEN)), then(PROC_REF(changeling_hiveupload_chosen)))
+	op("ling_hive_absorb", menu(desc = "Absorb a single DNA from the airwaves."), label("Hive Absorb"), needs(req_self(), req(PROC_REF(changeling_hive_ready), fails = FAILS_HIDDEN)), then(PROC_REF(changeling_hivedownload_chosen)))
+	op("toggle_self_surgery", menu(desc = "Toggles the 'safeties' on self-surgery, allowing you to do so."), label("Allow Self Surgery"), needs(req_self()), then(PROC_REF(toggle_selfsurgery_chosen)))
+	op("activate_held", menu(desc = "Use the item in your active hand."), label("Activate Held Object"), needs(req_self(), req(PROC_REF(activate_held_ready), fails = FAILS_HIDDEN)), then(PROC_REF(activate_held_chosen)))
 	op("mob_sleep", menu(), label("Sleep"), needs(req_self()), then(PROC_REF(mob_sleep_op)))
 	op("check_default_language", menu(), label("Check Default Language"), needs(req_self()), then(PROC_REF(check_default_language_op)))
 	op("give", menu(), label("Give"), needs(req_self()), asks(/datum/prompt/choice, fields = list("question" = "Give to whom?", "title" = "Give", "choices" = computed(PROC_REF(give_recipients)), "timeout" = 0), step = "recipient"), then(PROC_REF(give_op)))
+	op("lick", menu(desc = "Lick someone nearby!"), label("Lick"), needs(req_adjacent(), req_capable()), then(PROC_REF(lick_op)))
+	op("smell", menu(desc = "Smell someone nearby!"), label("Smell"), needs(req_adjacent(), req_capable()), then(PROC_REF(smell_op)))
 	op("look_up", menu(desc = "Look above you, and hope there's no ceiling spiders."), label("Look Up"), needs(req_self()), then(PROC_REF(look_up_op)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	setup(PROC_REF(prime_hud_list))
@@ -186,7 +198,9 @@ CAPABILITIES(/mob/living)
 	// (a MOB_KEY_* fact its producer publishes, or a var's setter); the generator adds what the handler's procs read (reaction_reads()). HUD and sight
 	// run at most once a LIFE_PRESENT_MIN_INTERVAL, the first change at once and the rest in one trailing run (a walking player raises a location change most ticks) and only for the mobs their gate wants.
 	on_change(cond_published(MOB_KEY_STATUS, nameof(stat)), ANY, when(PROC_REF(life_canmove_wanted)), then(PROC_REF(life_canmove_changed)))
-	on_change(cond_published(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, MOB_KEY_VIEW, MOB_KEY_HUD_FLAGS, MOB_KEY_NUTRITION, "stat:[STAT_ON_FIRE]", nameof(stat), nameof(sdisabilities), nameof(ear_damage)), ANY, when(PROC_REF(life_hud_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_hud_changed)))
+	on_change(cond_published(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, MOB_KEY_VIEW, MOB_KEY_HUD_FLAGS, MOB_KEY_NUTRITION, "stat:[STAT_ON_FIRE]", nameof(stat), nameof(sdisabilities), nameof(ear_damage)), ANY, when(PROC_REF(life_hud_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_hud_changed)))
+	// A step changes only what the HUD reads from the place (night vision's light level, a robot's air, a pAI's card): that is its own cheap reaction, not the whole HUD pass.
+	on_change(cond_published(MOB_KEY_LOC), ANY, when(PROC_REF(life_hud_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_hud_place_changed)))
 	on_change(cond_published(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, MOB_KEY_VIEW, nameof(stat), nameof(sdisabilities), nameof(tf_mob_holder), nameof(virtual_reality_mob)), ANY, when(PROC_REF(life_vision_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_vision_changed)))
 	owns_one(nameof(aiming), /obj/aiming_overlay)
 	// a human builds its body in set_species(), before init, so its organs have part slots to attach into; the var then holds it and nothing is made here
@@ -208,3 +222,9 @@ CAPABILITIES(/mob/living)
 	on_change(STAT_CLOCK_RATE_BIO, ANY, then(PROC_REF(clock_rate_bio_changed)))
 	drag_onto(PROC_REF(drop_input))
 	links(LINK_END(/mob/living, LK_AUTOFIRE_GUN), LINK_END(/obj/item/gun, LK_AUTOFIRE_USERS), sparse = TRUE, b_many = TRUE) // the gun a held trigger fires (autofire_gun())
+
+/// P2-S9: why `user` cannot inject this mob at `target_zone` by `method` (INJECT_METHOD_*), or null when it can.
+/// Every injector calls this one proc; overrides honour armour and hide. It never prints: the one player action that asked shows the reason.
+/// `roll` = FALSE leaves out a thick hide's chance roll (only a human has one).
+/mob/living/proc/inject_refusal(mob/user, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE, roll = TRUE)
+	return null

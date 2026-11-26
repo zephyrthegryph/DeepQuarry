@@ -32,19 +32,16 @@
 			"can_plot_expedition" = shuttle.moving_status == SHUTTLE_IDLE && can_plot_expedition()
 		)
 
-/obj/machinery/computer/shuttle_control/explore/console_gate(mob/user)
-	if(!..())
-		return FALSE
+/obj/machinery/computer/shuttle_control/explore/console_refusal(mob/user)
+	. = ..()
+	if(.)
+		return
 	var/datum/shuttle/autodock/overmap/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!istype(shuttle))
-		to_chat(user, span_warning("Unable to establish link with the shuttle."))
-		return FALSE
-	return TRUE
+		return "Unable to establish link with the shuttle."
 
 /obj/machinery/computer/shuttle_control/explore/proc/ui_act_plot_expedition(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/overmap/shuttle = shuttles_shuttles()[shuttle_tag]
 	plot_expedition(user, shuttle, A.step_value("k105"), A.step_value("k109"))
 	return TRUE
@@ -76,8 +73,6 @@
 /obj/machinery/computer/shuttle_control/explore/proc/ui_act_pick(datum/act/op/A)
 	var/mob/user = A.actor
 	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
-	if(!ui_gate(A))
-		return FALSE
 	return explore_destination_stage(ui, FALSE)
 
 /obj/machinery/computer/shuttle_control/explore/proc/explore_destination_stage(datum/tgui/ui, answered, selected, datum/request/request)
@@ -109,8 +104,8 @@
 	if(!A.answer || isnull(A.answer.value))
 		return
 	var/obj/machinery/computer/shuttle_control/explore/console = src_object()
-	var/allowed = console.console_gate(user)
-	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
+	var/refusal = console.console_late_refusal(user)
+	A.request.captured["late_refusal"] = refusal ? "the console action is unavailable" : null
 	if(request_recheck(A.request))
 		return
 	if(console.explore_destination_stage(src, TRUE, A.answer.value, A.request))

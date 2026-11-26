@@ -230,6 +230,56 @@
 	TEST_ASSERT(N.delivery_changed_ms == 0 && N.delivery_notices_ms == 0, "only the crossed kind was timed")
 	TEST_ASSERT(N.last_slowest_ms > 0 ? findtext(N.last_slowest, "CROSSED") : !length(N.last_slowest), "the slowest record, when one was timed, is named by its kind")
 
+/// A paced frame that runs out of delivery budget keeps the rest of its outbox, in order, and the next frame delivers it first; a hand-stepped
+/// frame (not budgeted) delivers all of it.
+/datum/unit_test/dq_native_delivery_defers_past_budget
+
+/datum/unit_test/dq_native_delivery_defers_past_budget/Run()
+	var/datum/system/native/N = native_system()
+	var/saved_budget = N.delivery_budget_ms
+	N.delivery_budget_ms = 0 // every record after the first is over budget
+	var/list/outbox = list(NATIVE_REC_CROSSED, 0, 0, 0, NATIVE_REC_CROSSED, 0, 1, 0, NATIVE_REC_CROSSED, 0, 2, 0)
+	N.deliver(outbox.Copy(), budgeted = FALSE)
+	TEST_ASSERT_EQUAL(N.last_records, 3, "an unbudgeted delivery handed over all three records")
+	TEST_ASSERT_NULL(N.deferred_box, "an unbudgeted delivery left nothing waiting")
+	N.deliver(outbox.Copy(), budgeted = TRUE)
+	TEST_ASSERT_EQUAL(N.last_records, 1, "a budgeted delivery over budget handed over only the first record")
+	TEST_ASSERT_EQUAL(length(N.deferred_box), 8, "the other two records wait")
+	TEST_ASSERT_EQUAL(N.deferred_box[3], 1, "the waiting records start with the second one, in emission order")
+	N.deliver(list(), budgeted = TRUE)
+	TEST_ASSERT_EQUAL(N.last_records, 1, "the next frame delivered the oldest waiting record first")
+	TEST_ASSERT_EQUAL(length(N.deferred_box), 4, "one record still waits")
+	N.delivery_budget_ms = saved_budget
+	N.deliver(list(), budgeted = TRUE)
+	TEST_ASSERT_EQUAL(N.last_records, 1, "the last waiting record was delivered")
+	TEST_ASSERT_NULL(N.deferred_box, "nothing waits any more")
+	TEST_ASSERT_EQUAL(N.deferred_frames, 0, "the streak was closed and traced")
+
+/// Closed deferral streaks are summed and logged as one line per interval, after the frame, never from inside deliver().
+/datum/unit_test/dq_native_deferral_summary_is_rate_limited
+
+/datum/unit_test/dq_native_deferral_summary_is_rate_limited/Run()
+	var/datum/system/native/N = native_system()
+	var/saved_budget = N.delivery_budget_ms
+	var/saved_at = N.summary_logged_at
+	N.flush_deferral_summary(TRUE) // clear anything earlier tests left
+	N.delivery_budget_ms = 0
+	var/list/outbox = list(NATIVE_REC_CROSSED, 0, 0, 0, NATIVE_REC_CROSSED, 0, 1, 0)
+	for(var/streak in 1 to 3)
+		N.deliver(outbox.Copy(), budgeted = TRUE)
+		N.deliver(list(), budgeted = TRUE)
+	N.delivery_budget_ms = saved_budget
+	TEST_ASSERT_EQUAL(N.summary_streaks, 3, "three closed streaks wait for the next line, none was logged by deliver()")
+	TEST_ASSERT_EQUAL(N.summary_frames, 3, "each streak left records for one later frame")
+	N.summary_logged_at = REALTIMEOFDAY
+	TEST_ASSERT(!N.flush_deferral_summary(), "a line logged just now holds the summary back")
+	TEST_ASSERT_EQUAL(N.summary_streaks, 3, "a held-back summary keeps its streaks")
+	N.summary_logged_at = REALTIMEOFDAY - NATIVE_DELIVERY_SUMMARY_INTERVAL - 1
+	TEST_ASSERT(N.flush_deferral_summary(), "after the interval the summary is logged")
+	TEST_ASSERT_EQUAL(N.summary_streaks, 0, "logging the summary clears it")
+	TEST_ASSERT(!N.flush_deferral_summary(TRUE), "nothing waiting, nothing logged")
+	N.summary_logged_at = saved_at
+
 /// A native frame past NATIVE_SLOW_FRAME_MS is reported with the Rust phases that grew: the report counts itself and keeps the counters
 /// the next report diffs against.
 /datum/unit_test/dq_native_slow_frame_is_reported
@@ -242,6 +292,10 @@
 	N.report_slow_frame()
 	TEST_ASSERT_EQUAL(N.slow_frames, before + 2, "each slow-frame report counts itself")
 	TEST_ASSERT(islist(N.slow_frame_prev), "a report keeps the phase counters for the next one to diff")
+	var/list/family = verdigris_metrics_family("frame.")
+	TEST_ASSERT(islist(family), "the frame family reads back as a list")
+	for(var/name in family)
+		TEST_ASSERT(findtext(name, "frame.") == 1, "the family read holds only frame metrics ([name])")
 	N.slow_frame_prev = saved
 	N.slow_frames = before
 

@@ -1,0 +1,7 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "Chemistry windows list contaminants in grey below the real chemicals."
+  - bugfix: "A dispense of N units now puts exactly N units in the beaker; the source's trace contaminants are taken out of the N instead of added on top."
+  - balance: "Contaminants are plain reagents again: a transfer by reagent no longer drags them along with their chem."
+  - balance: "The chemical dispenser's per-reagent Isolate and remove buttons are gone, and the chem master moves the whole mix instead of picking one chemical out."

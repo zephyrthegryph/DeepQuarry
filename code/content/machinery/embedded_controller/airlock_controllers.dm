@@ -120,6 +120,12 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_tag_question)), "title" = computed(PROC_REF(edit_tag_title)), "default" = computed(PROC_REF(edit_tag_default)), "max_len" = 30, "name_text" = TRUE, "timeout" = 0), step = "tag"),
 		then(PROC_REF(ui_act_edit_tag)))
 	op("set_frequency", ui_act("set_frequency", arg("freq", num())), at(SPACE_PANEL), then(PROC_REF(ui_act_set_frequency)))
+	// the program commands the airlock consoles share (cycle, force, abort), each refused unless the type lists it
+	op("cycle_ext", ui_act("cycle_ext"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
+	op("cycle_int", ui_act("cycle_int"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
+	op("force_ext", ui_act("force_ext"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
+	op("force_int", ui_act("force_int"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
+	op("abort", ui_act("abort"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
 	extend("machine_panel", needs(req(PROC_REF(may_deconstruct), silent = TRUE)))
 	extend("machine_panel_close", needs(req(PROC_REF(may_deconstruct), silent = TRUE)))
 	extend("machine_deconstruct", needs(req(PROC_REF(may_deconstruct), silent = TRUE)))
@@ -183,8 +189,13 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 	..()
 	look.hide("airlock_control_open")
 
-// Each controller's window picks its console by internalTemplateName (tgui/packages/tgui/interfaces/EmbeddedController/index.tsx throws
-// without one) and reads the airlock's state. dq_ops_menu_airlock_controller_window pins them.
+// Each console opens its own window; the panel part (panel_open, tags, frequency, min_freq, max_freq) comes from the airlock's ui_data().
+
+CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller)
+	interface("AirlockConsoleAdvanced")
+	ui_shape(panel_open = bool(), tags = nullable(map_of(schema_text(), nullable(schema_text()))), frequency = nullable(num()), min_freq = nullable(num()), max_freq = nullable(num()), chamber_pressure = num(), external_pressure = num(), internal_pressure = num(), processing = bool(), purge = bool(), secure = bool())
+	op("purge", ui_act("purge"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
+	op("secure", ui_act("secure"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
 
 /obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller/ui_data(datum/act/eval/A)
 	. = ..()
@@ -194,7 +205,10 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 	.["processing"] = cycling()
 	.["purge"] = purge
 	.["secure"] = secure
-	.["internalTemplateName"] = "AirlockConsoleAdvanced"
+
+CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/airlock_controller)
+	interface("AirlockConsoleSimple")
+	ui_shape(panel_open = bool(), tags = nullable(map_of(schema_text(), nullable(schema_text()))), frequency = nullable(num()), min_freq = nullable(num()), max_freq = nullable(num()), chamber_pressure = num(), exterior_status = row(state = enum(list("open", "closed")), lock = enum(list("locked", "unlocked"))), interior_status = row(state = enum(list("open", "closed")), lock = enum(list("locked", "unlocked"))), processing = bool())
 
 /obj/machinery/embedded_controller/radio/airlock/airlock_controller/ui_data(datum/act/eval/A)
 	. = ..()
@@ -202,11 +216,15 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 	.["exterior_status"] = exterior_status()
 	.["interior_status"] = interior_status()
 	.["processing"] = cycling()
-	.["internalTemplateName"] = "AirlockConsoleSimple"
+
+CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/access_controller)
+	interface("DoorAccessConsole")
+	ui_shape(panel_open = bool(), tags = nullable(map_of(schema_text(), nullable(schema_text()))), frequency = nullable(num()), min_freq = nullable(num()), max_freq = nullable(num()), exterior_status = row(state = enum(list("open", "closed")), lock = enum(list("locked", "unlocked"))), interior_status = row(state = enum(list("open", "closed")), lock = enum(list("locked", "unlocked"))), processing = bool())
+	op("cycle_ext_door", ui_act("cycle_ext_door"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
+	op("cycle_int_door", ui_act("cycle_int_door"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
 
 /obj/machinery/embedded_controller/radio/airlock/access_controller/ui_data(datum/act/eval/A)
 	. = ..()
 	.["exterior_status"] = exterior_status()
 	.["interior_status"] = interior_status()
 	.["processing"] = cycling()
-	.["internalTemplateName"] = "DoorAccessConsole"

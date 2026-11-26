@@ -2,8 +2,6 @@
  * Creates a TGUI window with a text input. Returns the user's response.
  *
  * This proc should be used to create windows for text entry that the caller will wait for a response from.
- * If tgui fancy chat is turned off: Will return a normal input. If max_length is specified, will return
- * stripped_multiline_input.
  *
  * Arguments:
  * * user - The user to show the text input to.
@@ -33,18 +31,6 @@
 		return null
 
 	// Client does NOT have tgui_input on: Returns regular input
-	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode))
-		if(encode)
-			if(multiline)
-				return stripped_multiline_input(user, message, title, default, PREVENT_CHARACTER_TRIM_LOSS(max_length))
-			else
-				return tgui_text_name_filter(stripped_input(user, message, title, default, PREVENT_CHARACTER_TRIM_LOSS(max_length)), max_length)
-		else
-			if(multiline)
-				return input(user, message, title, default) as message|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
-			else
-				return tgui_text_name_filter(input(user, message, title, default) as text|null, max_length) // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
-
 	var/datum/tgui_input_text/text_input = new(user, message, title, default, max_length, multiline, encode, timeout, ui_state)
 	text_input.tgui_interact(user)
 	text_input.wait()
@@ -105,6 +91,7 @@
 
 CAPABILITIES(/datum/tgui_input_text)
 	interface("TextInputModal")
+	ui_shape(large_buttons = bool(), max_length = nullable(num()), message = schema_text(), multiline = bool(), placeholder = schema_text(), swapped_buttons = bool(), title = schema_text(), spellcheck = bool(), timeout = nullable(num()))
 	op("submit", ui_act("submit", arg("entry", schema_text(4096))), then(PROC_REF(ui_act_submit)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
@@ -115,21 +102,23 @@ CAPABILITIES(/datum/tgui_input_text)
 /datum/tgui_input_text/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_input_text/tgui_static_data(mob/user)
+/datum/tgui_input_text/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-	data["large_buttons"] = user.read_preference(/datum/preference/toggle/tgui_large_buttons)
-	data["max_length"] = max_length
-	data["message"] = message
-	data["multiline"] = multiline
-	data["placeholder"] = default // Default is a reserved keyword
-	data["swapped_buttons"] = !user.read_preference(/datum/preference/toggle/tgui_swapped_buttons)
-	data["title"] = title
+	data["large_buttons"] = TRUE
+	data["max_length"] = max_length || null
+	data["message"] = message || ""
+	data["multiline"] = multiline ? TRUE : FALSE
+	data["placeholder"] = default || "" // Default is a reserved keyword
+	data["swapped_buttons"] = TRUE
+	data["title"] = title || ""
 	data["spellcheck"] = user.read_preference(/datum/preference/toggle/tgui_use_spellcheck)
 	return data
 
 /// /datum/tgui_input_text's window data.
 /datum/tgui_input_text/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["timeout"] = null
 	if(timeout)
 		data["timeout"] = clamp((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS), 0, 1)
 	return data

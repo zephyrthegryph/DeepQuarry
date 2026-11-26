@@ -47,7 +47,6 @@
 	update_state()
 
 	update_nearby_tiles(need_rebuild=1)
-	make_rotatable()
 
 
 /obj/structure/windoor_assembly/CanPass(atom/movable/mover, turf/target)
@@ -89,6 +88,8 @@ MSG_DEF_SELF(windoor_assembly/broken_board, "The assembly has broken airlock ele
 
 CAPABILITIES(/obj/structure/windoor_assembly)
 	setup(PROC_REF(face_start_dir))
+	rotatable()
+	on_notice(/datum/notice/atom_dir_change, then(PROC_REF(dir_changed_tiles)))
 	setup(PROC_REF(prepare_assembly_controls))
 	construction(start(STAGE_WINDOOR_ASSEMBLY_FRAME),
 		stage(STAGE_WINDOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))),
@@ -213,14 +214,10 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	..()
 	look.state("[facing]_[secure]windoor_assembly[sprite_state()]")
 
-/obj/structure/windoor_assembly/handle_rotation_verbs(angle, mob/user)
-	var/wired = sprite_state() == "02"
-	if(wired)
-		update_nearby_tiles(need_rebuild=1) //Compel updates before
-	. = ..()
-	if(.)
-		if(wired)
-			update_nearby_tiles(need_rebuild=1)
+/// Turning a wired assembly changes which sides block air.
+/obj/structure/windoor_assembly/proc/dir_changed_tiles(datum/act/notice/A)
+	if(sprite_state() == "02")
+		update_nearby_tiles(need_rebuild=1)
 
 /// Flips the windoor assembly: whether the door opens to the left or the right.
 /obj/structure/windoor_assembly/proc/flipped(datum/act/op/A)

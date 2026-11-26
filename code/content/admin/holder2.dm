@@ -81,6 +81,7 @@ CAPABILITIES(/datum/admins)
 	owns_one(nameof(spawn_panel), /datum/spawnpanel)
 	owns_one(nameof(tgui_game_panel), /datum/game_panel)
 	owns_one(nameof(tgui_player_panel), /datum/player_panel)
+	owns_one(nameof(verb_browser), /datum/admin_verb_browser)
 	op("unbanf", topic("unbanf", arg("unbanf", schema_text(), optional = TRUE)), needs(req_rights(R_BAN)), asks(/datum/prompt/choice/admin_ban_topic, fields = list("question" = computed(PROC_REF(unbanf_question)), "title" = "Confirmation", "choices" = list("Yes", "No")), step = "confirm"), then(PROC_REF(topic_unbanf)))
 	op("warn", topic("warn", arg("warn", schema_text(), optional = TRUE)), needs(req_rights(R_MOD|R_ADMIN)), then(PROC_REF(topic_warn)))
 	op("unbane", topic("unbane", arg("unbane", schema_text(), optional = TRUE)), needs(req_rights(R_BAN)), asks(/datum/prompt/choice/admin_ban_topic, fields = list("question" = "Temporary Ban?", "title" = "Temporary Ban", "choices" = list("Yes", "No")), step = "temp"), asks(/datum/prompt/number/admin_ban_topic, fields = list("question" = "How long (in minutes)? (Default: 1440)", "title" = "Ban time", "default" = computed(PROC_REF(unbane_default_minutes))), step = "minutes", when = PROC_REF(ban_is_temporary)), asks(/datum/prompt/text/admin_ban_topic, fields = list("question" = "Reason?", "title" = "reason", "default" = computed(PROC_REF(unbane_default_reason))), step = "reason"), then(PROC_REF(topic_unbane)))
@@ -247,7 +248,7 @@ CAPABILITIES(/datum/admins)
 		return
 	GLOB.deadmins -= target
 	GLOB.admin_datums[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
-	deadmined = FALSE
+	set_deadmined(FALSE)
 	if (GLOB.directory[target])
 		associate(GLOB.directory[target]) //find the client for a ckey if they are connected and associate them with us
 
@@ -257,7 +258,7 @@ CAPABILITIES(/datum/admins)
 		return
 	GLOB.deadmins[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
 	GLOB.admin_datums -= target
-	deadmined = TRUE
+	set_deadmined(TRUE)
 
 	var/client/client = owner() || GLOB.directory[target]
 

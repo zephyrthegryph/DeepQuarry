@@ -365,7 +365,7 @@ CAPABILITIES(/obj/belly)
 	if(owner && istype(owner.loc,/turf/simulated) && !cycle_sloshed && reagents.total_volume > 0)
 		var/S = pick(GLOB.slosh)
 		if(S)
-			playsound(owner.loc, S, sound_volume * (reagents.total_volume / 100), FALSE, frequency = noise_freq, preference = /datum/preference/toggle/digestion_noises)
+			playsound(owner.loc, S, sound_volume * (reagents.total_volume / 100), FALSE, frequency = noise_freq, volume_channel = VOLUME_CHANNEL_VORE)
 			cycle_sloshed = TRUE
 	if(dq_get_belly_cycles(thing)) // Reset only a count that exists: no component per eaten thing.
 		dq_set_belly_cycles(thing, 0) //reset cycle count
@@ -402,7 +402,7 @@ CAPABILITIES(/obj/belly)
 		if(special_entrance_sound) // Custom sound set by mob's init_vore or ingame varedits.
 			soundfile = special_entrance_sound
 		if(soundfile)
-			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
+			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, volume_channel = VOLUME_CHANNEL_VORE)
 			recent_sound = TRUE
 
 	if(reagents.total_volume >= 5 && !isliving(thing) && (item_digest_mode == IM_DIGEST || item_digest_mode == IM_DIGEST_PARALLEL))
@@ -532,7 +532,7 @@ CAPABILITIES(/obj/belly)
 		else
 			soundfile = GLOB.fancy_release_sounds[release_sound]
 		if(soundfile)
-			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
+			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, volume_channel = VOLUME_CHANNEL_VORE)
 
 	return count
 
@@ -618,7 +618,7 @@ CAPABILITIES(/obj/belly)
 		else
 			soundfile = GLOB.fancy_release_sounds[release_sound]
 		if(soundfile)
-			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
+			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, volume_channel = VOLUME_CHANNEL_VORE)
 
 	if(!owner.ckey && escape_stun)
 		owner.status_at_least(STAT_WEAKENED, escape_stun)
@@ -1181,15 +1181,12 @@ CAPABILITIES(/obj/belly)
 		return TRUE
 	else
 		var/list/modified_mats = list()
-		var/trash = 1
-		if(istype(O,/obj/item/trash))
-			trash = 5
-		if(istype(O,/obj/item/stack))
-			var/obj/item/stack/S = O
-			trash = S.amount
+		var/units = breakdown_units(O)
 		var/list/item_matter = O.material_totals()
 		for(var/mat in item_matter)
-			modified_mats[mat] = item_matter[mat] * trash
+			modified_mats[mat] = item_matter[mat] * units
+		if(GLOB.fab_trace)
+			log_world("FAB: [src] digested [O] ([units] unit\s) into debris: [fab_matter_text(item_matter, units)]")
 		for(var/obj/item/debris_pack/digested/D in contents)
 			D.add_materials(modified_mats)
 			if(O.w_class > D.w_class)

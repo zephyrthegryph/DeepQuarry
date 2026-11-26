@@ -1,0 +1,67 @@
+{
+	"compactMode": false,
+	"telecrystals": 12,
+	"lockable": true,
+	"discount_name": "Syndicate Energy Sword",
+	"discount_amount": 20,
+	"offer_expiry": "14:30",
+	"exploit": {
+		"nanoui_exploit_record": "Exploit record",
+		"name": "Jo Park",
+		"sex": "Female",
+		"age": "29",
+		"species": "Human",
+		"rank": "Engineer",
+		"home_system": "Sol",
+		"birthplace": "Mars",
+		"citizenship": "Sol Central",
+		"faction": "NanoTrasen",
+		"religion": "None",
+		"fingerprint": "a1b2c3d4",
+		"antagfaction": "None"
+	},
+	"locked_records": [
+		{
+			"name": "Jo Park",
+			"id": 1
+		},
+		{
+			"name": "Sam Ito",
+			"id": 2
+		}
+	],
+	"categories": [
+		{
+			"name": "Weapons",
+			"items": [
+				{
+					"name": "Energy Sword",
+					"cost": 8,
+					"desc": "A silent blade of pure energy.",
+					"ref": 1401
+				},
+				{
+					"name": "Ammo Box",
+					"cost": 2,
+					"desc": "A box of spare ammo.",
+					"ref": 1402
+				}
+			]
+		},
+		{
+			"name": "Stealth",
+			"items": [
+				{
+					"name": "Chameleon Kit",
+					"cost": 4,
+					"desc": "Change your appearance.",
+					"ref": 1403
+				}
+			]
+		},
+		{
+			"name": "Empty",
+			"items": null
+		}
+	]
+}

@@ -8,7 +8,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
-
+import type { CommunicatorActions } from '../generated/Communicator';
 import { HOMETAB } from './constants';
 import type { Data } from './types';
 
@@ -21,7 +21,7 @@ export const TemplateError = (props: { currentTab: number }) => {
   );
 };
 export const CommunicatorHeader = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { time, connectionStatus, owner, occupation } = data;
 
@@ -48,7 +48,7 @@ export const CommunicatorFooter = (props: {
   videoSetting: number;
   setVideoSetting: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { flashlight } = data;
 
@@ -101,7 +101,7 @@ export const VideoComm = (props: {
   videoSetting: number;
   setVideoSetting: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const { mapRef } = data;
 

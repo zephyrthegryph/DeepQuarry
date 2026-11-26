@@ -12,6 +12,7 @@
 
 CAPABILITIES(/datum/spawn_menu)
 	interface("SpawnSearch", rights = R_SPAWN)
+	ui_shape(initValue = nullable(schema_text()), searchNames = bool(), regexSearch = bool(), fancyTypes = bool(), includeAbstracts = bool())
 	op("setRegexSearch", ui_act("setRegexSearch", arg("regexSearch", bool())), then(PROC_REF(ui_act_setregexsearch)))
 	op("setNameSearch", ui_act("setNameSearch", arg("searchNames", bool())), then(PROC_REF(ui_act_setnamesearch)))
 	op("setFancyTypes", ui_act("setFancyTypes", arg("fancyTypes", bool())), then(PROC_REF(ui_act_setfancytypes)))

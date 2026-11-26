@@ -248,7 +248,6 @@ const GASES = [
   },
 ] as const;
 
-
 // Returns gas label based on gasId
 // Checks GASES for both id (all chars lowercase)
 // and name (each word start capitalized, to match standards in code\defines\gases.dm)

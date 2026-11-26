@@ -1,0 +1,44 @@
+// The one spacing rule for tgui-core's Button. The library gives a button right and bottom margins and removes them
+// from :last-child, so the last button of any row was shorter than its neighbours and a flex row stretched or
+// mis-centred them. Here a button's margin does not depend on its position: equal above and below, so a row stays on
+// one centre line and a wrapped row keeps its gap; the space between neighbours belongs to the pair.
+// Loaded after tgui-core by each entry (dq/index.scss); buttons.test.ts holds the entries to one copy of the library.
+
+.Button {
+  margin: calc(var(--space-xs) / 2) 0;
+  // The library's inline-block sits on its text baseline, which an icon-only button does not share.
+  vertical-align: middle;
+}
+
+// Specificity of the library's own :last-child rule, which would otherwise remove the bottom half.
+.Button:last-child {
+  margin-bottom: calc(var(--space-xs) / 2);
+}
+
+// :where keeps these as weak as a plain class, so a row's own margin rule still wins.
+:where(.Button) + .Button,
+:where(.Button) + :where(.Input, .NumberInput, .Dropdown) {
+  margin-left: var(--space-xs);
+}
+
+// Stacked full-width buttons: block margins collapse, so the gap is set between the pair.
+.Button--fluid,
+.Button--fluid:last-child {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+:where(.Button--fluid) + .Button--fluid {
+  margin-top: var(--space-xs);
+  margin-left: 0;
+}
+
+.Button--ellipsis {
+  margin-right: calc(-1 * var(--space-s));
+}
+
+// A Stack owns its spacing (the library's own rule, restated after the ones above).
+.Stack > .Button,
+.Stack__item > .Button {
+  margin: 0;
+}

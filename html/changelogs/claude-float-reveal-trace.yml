@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "Log every floating window's reveal, to diagnose floated windows that never appear."

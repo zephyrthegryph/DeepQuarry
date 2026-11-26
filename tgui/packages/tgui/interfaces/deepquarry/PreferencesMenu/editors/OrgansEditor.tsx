@@ -4,39 +4,11 @@
 // is kept but not applied (organs apply hook), so restoring the parent brings it back.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button } from 'tgui-core/components';
 import { ColorChoice } from '../colors';
 import { optionBar, SearchableDropdown, Segmented } from '../controls';
 import type { EditorProps } from './index';
-
-type ExternalState = {
-  status: 'normal' | 'amputated' | 'cyborg';
-  model?: string | null;
-  /// A robotic limb's own tint, and the palette slot it follows if any.
-  color?: string | null;
-  link?: string;
-  own_color?: boolean;
-  /// The cybernetic ancestor that rules out Normal for this limb.
-  forced_by?: string | null;
-  /// The amputated ancestor this limb is lost with.
-  lost_via?: string | null;
-};
-type Data = {
-  /// This species' own limbs are robotic: one colour for the whole body.
-  robotic_body?: boolean | number;
-  body_color?: string;
-  body_link?: string;
-  externals: Record<string, ExternalState>;
-  internals: Record<string, string>;
-  external_labels?: Record<string, string>;
-  internal_labels?: Record<string, string>;
-  external_order?: string[];
-  internal_order?: string[];
-};
-
-type Static = {
-  limb_models?: string[];
-};
 
 const EXTERNAL_STATES: Array<{
   key: 'normal' | 'amputated' | 'cyborg';
@@ -87,13 +59,11 @@ const asOptions = (
   states.map((o) => [o.key, o.label, o.color]);
 
 export const OrgansEditor = ({
-  data,
-  staticData,
+  data: d,
+  staticData: s,
   focusLimb,
-}: EditorProps & { focusLimb?: string | null }) => {
+}: EditorProps<'organs'> & { focusLimb?: string | null }) => {
   const { act } = useBackend();
-  const d = data as Data;
-  const s = (staticData ?? {}) as Static;
 
   const send = (action: string, params: Record<string, unknown>) =>
     act('dq_editor_action', { editor: 'organs', action, params });
@@ -103,7 +73,7 @@ export const OrgansEditor = ({
   const internalLabels = d.internal_labels ?? {};
   const externalOrder = d.external_order ?? Object.keys(d.externals ?? {});
   const internalOrder = d.internal_order ?? Object.keys(d.internals ?? {});
-  const limbModels = s.limb_models ?? [];
+  const limbModels = s?.limb_models ?? [];
   const statusOf = (limb: string) => d.externals?.[limb]?.status ?? 'normal';
   const organOf = (organ: string) => d.internals?.[organ] ?? 'normal';
 
@@ -118,9 +88,9 @@ export const OrgansEditor = ({
     >
       {!!d.robotic_body && (
         <Box style={{ flex: '1 1 100%' }}>
-          <Box bold color="label" mb={0.2}>
+          <Label bold mb={0.2}>
             Body colour
-          </Box>
+          </Label>
           <ColorChoice
             color={d.body_color ?? '#ffffff'}
             link={d.body_link}
@@ -136,12 +106,35 @@ export const OrgansEditor = ({
         </Box>
       )}
       <Box style={LIST_STYLE}>
-        <Box bold color="label" mb={0.2}>
+        <Label bold mb={0.2}>
           Limbs
-        </Box>
+        </Label>
         {externalOrder.map((limb) => {
           const state = d.externals?.[limb] ?? { status: 'normal' };
           const lostVia = state.lost_via;
+          // A taur body has no legs or feet of its own: the row greys out and keeps its saved setting.
+          if (state.taur) {
+            return (
+              <Box
+                key={limb}
+                style={{
+                  ...rowStyle(EXTERNAL_STATES, 'normal', focusLimb === limb),
+                  opacity: 0.55,
+                }}
+              >
+                <Box style={{ flex: '0 0 6em' }}>
+                  {externalLabels[limb] ?? limb}
+                </Box>
+                <Segmented
+                  disabled
+                  options={asOptions(EXTERNAL_STATES)}
+                  value="normal"
+                  onSelect={() => {}}
+                />
+                <Label>Replaced by the taur body</Label>
+              </Box>
+            );
+          }
           if (lostVia) {
             const saved = EXTERNAL_STATES.find((o) => o.key === state.status);
             return (
@@ -161,11 +154,11 @@ export const OrgansEditor = ({
                   value="amputated"
                   onSelect={() => {}}
                 />
-                <Box color="label">
+                <Label>
                   Lost with {externalLabels[lostVia] ?? lostVia}
                   {state.status !== 'normal' &&
                     ` (saved ${saved?.label ?? state.status}, not applied)`}
-                </Box>
+                </Label>
               </Box>
             );
           }
@@ -228,9 +221,9 @@ export const OrgansEditor = ({
         })}
       </Box>
       <Box style={LIST_STYLE}>
-        <Box bold color="label" mb={0.2}>
+        <Label bold mb={0.2}>
           Organs
-        </Box>
+        </Label>
         {internalOrder.map((organ) => (
           <Box
             key={organ}

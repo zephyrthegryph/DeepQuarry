@@ -9,9 +9,6 @@
 	verbpath = /mob/proc/changeling_blind_sting
 
 /mob/proc/changeling_blind_sting()
-	set category = VERB_CAT_CHANGELING
-	set name = "Blind sting (20)"
-	set desc="Sting target"
 	return changeling_blind_sting_stage()
 
 /mob/proc/changeling_blind_sting_stage(mob/living/carbon/selected_target)

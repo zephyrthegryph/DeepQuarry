@@ -287,7 +287,7 @@ CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets/rig)
 			MSG_OTHERS(span_notice("%U% retracts %T% with a click and a hiss.")), \
 			MSG_BLIND(span_notice("You hear a click and a hiss.")))
 		play_sfx(src, SFX_ITEMS_HELMETDEPLOY)
-		storing_module().active = FALSE
+		storing_module().set_active(FALSE)
 	else
 		QDEL_NULL(src)
 

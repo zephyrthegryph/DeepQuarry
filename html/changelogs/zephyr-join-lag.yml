@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The profile no longer names a whole shuttle move after the last turf's after_init(); a shuttle move logs SHUTTLE_MOVE_PROFILE with where its time went"

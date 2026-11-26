@@ -36,7 +36,7 @@
 		user.show_message(span_notice("Virus sent!"), 1)
 		var/datum/data/pda/app/M = P.find_program(/datum/data/pda/app/messenger)
 		if(M)
-			M.notify_silent = 1
+			M.set_notify_silent(1)
 		P.ttone = "silence"
 
 
@@ -84,7 +84,7 @@
 			P.lock_code = lock_code
 		// else
 			// P.hidden_uplink.hidden_crystals += P.hidden_uplink.uses //Temporarially hide the PDA's crystals, so you can't steal telecrystals.
-		item_hidden_uplink(P).active = TRUE
+		item_hidden_uplink(P).set_active(TRUE)
 
 /// The messenger this refers to (a relation view: null once that is deleted).
 /datum/data/pda/messenger_plugin/proc/messenger() as /datum/data/pda/app/messenger

@@ -1,0 +1,51 @@
+// The DQ title bar (dq/TitleBar.tsx) and its boxed close button.
+
+@use '../console';
+
+.DqTitleBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 6px 10px;
+  border-bottom: 2px solid console.$console-border;
+  font-family: console.$console-font;
+}
+
+.DqTitleBar__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.DqTitleBar__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  color: console.$console-text;
+}
+
+.DqTitleBar__subtitle {
+  color: console.$console-accent;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.DqCloseButton {
+  box-sizing: border-box;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid console.$console-border;
+  background: console.$console-button;
+  color: console.$console-muted;
+  font: 700 12px console.$console-font;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: console.$console-button-hover;
+    color: console.$console-text;
+  }
+}

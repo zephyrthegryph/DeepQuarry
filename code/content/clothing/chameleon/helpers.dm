@@ -37,10 +37,10 @@
 /// test creating one, ever mutates a global. Each list leaves out the chameleon type itself (it would disguise as itself)
 /// and the types that break the illusion.
 /proc/chameleon_choices_build()
-	GLOB.chamelion_jumpsuit_choices = generate_chameleon_choices(/obj/item/clothing/under, list(/obj/item/clothing/under/chameleon, /obj/item/clothing/under/gimmick))
+	GLOB.chamelion_jumpsuit_choices = generate_chameleon_choices(/obj/item/clothing/under, list(/obj/item/clothing/under/chameleon, VARIANT(/obj/item/clothing/under/gimmick)))
 	GLOB.chamelion_head_choices = generate_chameleon_choices(/obj/item/clothing/head, list(/obj/item/clothing/head/chameleon))
 	GLOB.chamelion_suit_choices = generate_chameleon_choices(/obj/item/clothing/suit, list(/obj/item/clothing/suit/chameleon, /obj/item/clothing/suit/cyborg_suit, /obj/item/clothing/suit/justice, /obj/item/clothing/suit/greatcoat))
-	GLOB.chamelion_shoe_choices = generate_chameleon_choices(/obj/item/clothing/shoes, list(/obj/item/clothing/shoes/chameleon, /obj/item/clothing/shoes/syndigaloshes, /obj/item/clothing/shoes/cyborg))
+	GLOB.chamelion_shoe_choices = generate_chameleon_choices(/obj/item/clothing/shoes, list(/obj/item/clothing/shoes/chameleon, /obj/item/clothing/shoes/syndigaloshes, VARIANT(/obj/item/clothing/shoes/cyborg)))
 	GLOB.chamelion_back_choices = generate_chameleon_choices(/obj/item/storage/backpack, list(/obj/item/storage/backpack/chameleon, /obj/item/storage/backpack/satchel/withwallet))
 	GLOB.chamelion_glove_choices = generate_chameleon_choices(/obj/item/clothing/gloves, list(/obj/item/clothing/gloves/chameleon))
 	GLOB.chamelion_mask_choices = generate_chameleon_choices(/obj/item/clothing/mask, list(/obj/item/clothing/mask/chameleon))

@@ -26,19 +26,18 @@ const H_REF_KEY: &str = "do not key a list by a REF() text: it outlives its enti
 doc/rewrite/proposals/relations.md D9";
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::entity_ids::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::entity_ids::SCOPE_META_0.group,
+    name: "entity_ids",
+    group: "",
     label: "entity_ids",
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "counter_id", hint: H_COUNTER }, RuleMeta { name: "ref_key", hint: H_REF_KEY }],
-    allow: crate::allow_registry_fields::entity_ids::ALLOW_0,
-    lists: crate::allow_registry_fields::entity_ids::SCOPE_META_0.lists,
+    allow: &[],
+    lists: &[],
 };
 
-const ENTITY_PATTERN_SOURCES:&[&str]=&[r"(?:\+\+\s*(?:[A-Za-z_]\w*\.)?([A-Za-z_]\w*)|(?<![\w.])(?:[A-Za-z_]\w*\.)?([A-Za-z_]\w*)\s*\+\+)",r"(?i)(?:uid|^id$|_id$|^next_\w*id$|_id_(?:counter|ticker)$|^id_assign$|^(?:next_)?serial\w*$|_serial$)",r#"\[\s*"[^"\n]*\[\s*(?:REF|ref)\("#,r#"(?<![+|])-=\s*"[^"\n]*\[\s*(?:REF|ref)\("#];
 struct EntityIds {
     /// `++name` or `name++` (with an optional `GLOB.` / `src.` receiver); group 1 or 2 is the counter's name.
     counter: Pat,
@@ -51,16 +50,21 @@ struct EntityIds {
 impl EntityIds {
     fn new() -> EntityIds {
         EntityIds {
-            counter: Pat::new(ENTITY_PATTERN_SOURCES[0]),
-            id_name: Pat::new(ENTITY_PATTERN_SOURCES[1]),
+            counter: Pat::new(r"(?:\+\+\s*(?:[A-Za-z_]\w*\.)?([A-Za-z_]\w*)|(?<![\w.])(?:[A-Za-z_]\w*\.)?([A-Za-z_]\w*)\s*\+\+)"),
+            id_name: Pat::new(r"(?i)(?:uid|^id$|_id$|^next_\w*id$|_id_(?:counter|ticker)$|^id_assign$|^(?:next_)?serial\w*$|_serial$)"),
             ref_key: vec![
-                Pat::new(ENTITY_PATTERN_SOURCES[2]),
-                Pat::new(ENTITY_PATTERN_SOURCES[3]),
+                Pat::new(r#"\[\s*"[^"\n]*\[\s*(?:REF|ref)\("#),
+                Pat::new(r#"(?<![+|])-=\s*"[^"\n]*\[\s*(?:REF|ref)\("#),
             ],
         }
     }
 
-    fn counter_id(&self,line:&str)->bool{counter_id_using(line,&self.counter,&self.id_name)}
+    fn counter_id(&self, line: &str) -> bool {
+        self.counter.captures_iter(line).iter().any(|c| {
+            let name = c.get(1).or_else(|| c.get(2)).unwrap_or("");
+            self.id_name.is_match(name)
+        })
+    }
 }
 
 /// The raw line without a trailing `//` comment that sits outside a string.
@@ -88,7 +92,27 @@ impl Lint for EntityIds {
         &META
     }
 
-    fn scan_file(&self,_cx:&Cx,f:&SourceFile,out:&mut Sink){scan_using(f,out,|line|self.counter_id(line),|line|self.ref_key.iter().any(|p|p.is_match(line)))}
+    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        let code = f.code();
+        let raw = f.raw();
+        for (i, line) in code.lines().enumerate() {
+            let n = i + 1;
+            let t = line.trim_start();
+            if t.starts_with('#') || t.is_empty() {
+                continue;
+            }
+            // An id is often minted inside a string embed ("DQ-[next_id++]") and a REF() key is one, both blanked in the code view:
+            // read the raw line, its comment removed.
+            let r = strip_comment(raw.line(n));
+            if r.contains("++") && self.counter_id(r) {
+                out.site("counter_id", n);
+                continue;
+            }
+            if (r.contains("REF(") || r.contains("ref(")) && self.ref_key.iter().any(|p| p.is_match(r)) {
+                out.site("ref_key", n);
+            }
+        }
+    }
 }
 
 pub fn register(reg: &mut Registry) {
@@ -135,53 +159,3 @@ mod tests {
         }
     }
 }
-
-fn counter_id_using<P:crate::raw_fixture_policy::PatternApi>(line:&str,counter:&P,id_name:&P)->bool{
-        counter.captures_iter(line).iter().any(|c| {
-            let name = c.get(1).or_else(|| c.get(2)).unwrap_or("");
-            id_name.is_match(name)
-        })
-
-}
-
-fn scan_using(f:&SourceFile,out:&mut Sink,counter_id:impl Fn(&str)->bool,ref_key:impl Fn(&str)->bool){
-        let code = f.code();
-        let raw = f.raw();
-        for (i, line) in code.lines().enumerate() {
-            let n = i + 1;
-            let t = line.trim_start();
-            if t.starts_with('#') || t.is_empty() {
-                continue;
-            }
-            // An id is often minted inside a string embed ("DQ-[next_id++]") and a REF() key is one, both blanked in the code view:
-            // read the raw line, its comment removed.
-            let r = strip_comment(raw.line(n));
-            if r.contains("++") && counter_id(r) {
-                out.site("counter_id", n);
-                continue;
-            }
-            if (r.contains("REF(") || r.contains("ref(")) && ref_key(r) {
-                out.site("ref_key", n);
-            }
-        }
-
-}
-
-#[cfg(feature="native-policy")]
-struct NativeEntityIds{legacy:std::sync::OnceLock<EntityIds>}
-#[cfg(feature="native-policy")]
-impl Lint for NativeEntityIds{
- fn meta(&self)->&Meta{&META}
- fn scan_file(&self,cx:&Cx,f:&SourceFile,out:&mut Sink){
-  if let Some(fixture)=cx.fixture{
-   let p0=fixture.pattern(ENTITY_PATTERN_SOURCES[0],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(ENTITY_PATTERN_SOURCES[0]));
-   let p1=fixture.pattern(ENTITY_PATTERN_SOURCES[1],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(ENTITY_PATTERN_SOURCES[1]));
-   let p2=fixture.pattern(ENTITY_PATTERN_SOURCES[2],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(ENTITY_PATTERN_SOURCES[2]));
-   let p3=fixture.pattern(ENTITY_PATTERN_SOURCES[3],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(ENTITY_PATTERN_SOURCES[3]));
-   use crate::raw_fixture_policy::PatternApi as _;
-   scan_using(f,out,|line|counter_id_using(line,&p0,&p1),|line|p2.is_match(line)||p3.is_match(line))
-  }else{self.legacy.get_or_init(EntityIds::new).scan_file(cx,f,out)}
- }
-}
-#[cfg(feature="native-policy")]
-pub fn register_native(reg:&mut Registry){reg.add(NativeEntityIds{legacy:std::sync::OnceLock::new()})}

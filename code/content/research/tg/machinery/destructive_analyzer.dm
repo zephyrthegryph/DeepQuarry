@@ -31,6 +31,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	configure(uses_power(idle = 30, active = 2500))
 	owns_one(nameof(rmat), /datum/remote_materials, starts = PROC_REF(make_rmat))
 	interface("DestructiveAnalyzer")
+	ui_shape(research_point_id = schema_text(), server_connected = bool(), node_data = nullable(list_of(row(node_name = schema_text(), node_id = schema_text(), node_hidden = bool()))), item_icon = nullable(schema_text()), indestructible = bool(), loaded_item = nullable(schema_text()), already_deconstructed = bool(), recoverable_points = nullable(schema_text()))
 	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
 	extend("part_replacement.replace", needs(req(PROC_REF(idle), because = MSG(analyzer/busy))))
 	op("eject_item", ui_act("eject_item"), then(PROC_REF(ui_act_eject_item)))
@@ -138,8 +139,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 
 	// We want the lowest-part tier rating in the RPED so we only recycle the lowest-tier parts.
 	var/lowest_rating = INFINITY
-	replacer.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/B in contents_of(replacer))
 		if(B.rped_rating() < lowest_rating)
 			lowest_rating = B.rped_rating()
 	if(lowest_rating == INFINITY)
@@ -149,8 +149,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	var/datum/material_container/materials = get_silo_material_container_datum(TRUE)
 	if(!materials)
 		return
-	replacer.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/B in contents_of(replacer))
 		if(B.rped_rating() > lowest_rating)
 			continue
 		materials.insert_item(B, decon_mod, src)
@@ -188,11 +187,15 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	var/list/data = list()
 	data["server_connected"] = !!stored_research
 	data["node_data"] = null
+	data["item_icon"] = null
+	data["indestructible"] = FALSE
+	data["already_deconstructed"] = FALSE
+	data["recoverable_points"] = null
 	var/obj/item/current_item = loaded_item
 	if(current_item)
 		data["item_icon"] = icon2base64(getFlatIcon(image(icon = current_item.icon, icon_state = current_item.icon_state), no_anim = TRUE))
-		data["indestructible"] = is_type_in_list(current_item, GLOB.item_deconstruction_blacklist)
-		data["loaded_item"] = current_item
+		data["indestructible"] = is_type_in_list(current_item, GLOB.item_deconstruction_blacklist) ? TRUE : FALSE
+		data["loaded_item"] = current_item.name
 		data["already_deconstructed"] = !!LAZYACCESS(stored_research.deconstructed_items, current_item.type)
 		var/list/points = techweb_item_point_check(current_item)
 		data["recoverable_points"] = techweb_point_display_generic(points)
@@ -209,7 +212,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 		data["loaded_item"] = null
 	return data
 
-/obj/machinery/rnd/destructive_analyzer/tgui_static_data(mob/user)
+/obj/machinery/rnd/destructive_analyzer/ui_static_data(datum/act/eval/A)
 	var/list/data = list()
 	data["research_point_id"] = DESTRUCTIVE_ANALYZER_DESTROY_POINTS
 	return data

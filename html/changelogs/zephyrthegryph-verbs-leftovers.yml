@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The abilities that needed a target (psychic whisper, project mind, lick wounds, plasma transfer, corrosive acid, mounting, nomming, conversions) ask for it in the Abilities panel instead of the verb tab, and the last Abilities.* verb tabs are gone"
+  - qol: "Cyborgs, AIs and pAIs open their built-in communicator and PDA from their panel commands"

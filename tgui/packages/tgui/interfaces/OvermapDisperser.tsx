@@ -8,21 +8,14 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 
 import { OvermapPanControls } from './common/Overmap';
+import type {
+  OvermapDisperserActions,
+  OvermapDisperserData,
+} from './generated/OvermapDisperser';
 
-type Data = {
-  faillink: BooleanLike;
-  calibration: number[] | null;
-  overmapdir: number | null;
-  cal_accuracy: number;
-  strength: number;
-  range: number;
-  next_shot: number;
-  nopower: BooleanLike;
-  chargeload: string | null;
-};
+type Data = OvermapDisperserData;
 
 export const OvermapDisperser = (props) => {
   return (
@@ -35,7 +28,7 @@ export const OvermapDisperser = (props) => {
 };
 
 const OvermapDisperserContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OvermapDisperserActions>();
   const {
     faillink,
     calibration,
@@ -102,7 +95,7 @@ const OvermapDisperserContent = (props) => {
             Pre-Calibration
           </Button>
           <Box mt={1}>
-            {calibration!.map((cal, i) => (
+            {(calibration ?? []).map((cal, i) => (
               <Box key={i}>
                 Cal #{i}:
                 <Button

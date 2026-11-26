@@ -7,15 +7,12 @@
 // live atom: global lists, radio and network joins, processing and reactor
 // subscriptions, global signal registrations, lighting and radiation updates.
 // SSatoms.InitAtom() runs it right after Initialize() (and after an immediate
-// after_init()), so creation in the world, map load and a latent entry
-// becoming real all go through it.
+// after_init()), so creation in the world and map load go through it.
 //
-// on_dematerialize() is its exact inverse. /atom/Destroy() runs it, and a
-// collapse into a latent entry runs it before the object is deleted.
+// on_dematerialize() is its exact inverse. /atom/Destroy() runs it.
 //
 // Both must be safe to call on any initialized atom, and the pair must leave
-// the world exactly as it found it (dq_lifecycle_sandbox checks this for every
-// latent-safe type). Call materialize()/dematerialize(), never the hooks
+// the world exactly as it found it. Call materialize()/dematerialize(), never the hooks
 // directly: the wrappers keep ATOM_MATERIALIZED honest.
 
 /// While positive, SSatoms.InitAtom() initializes atoms without materializing
@@ -35,11 +32,6 @@
 	BOOT_PHASE_BEGIN(bp_on)
 	on_materialize()
 	BOOT_PHASE_END(bp_on, "materialize: on_materialize (all hooks)" + BOOT_KIND(src), src)
-	// A ledger built while sandboxed skipped the latency sweep; join it now.
-	BOOT_PHASE_BEGIN(bp_ledger)
-	if(containment_ledger() && latent_contents_enabled())
-		dq_latency_sweep_register(src)
-	BOOT_PHASE_END(bp_ledger, "materialize: latency sweep register" + BOOT_KIND(src), src)
 	BOOT_PHASE_BEGIN(bp_contents)
 	if(ismovable(src))
 		for(var/atom/movable/content as anything in contents)
@@ -60,7 +52,6 @@
 				content.dematerialize()
 	flags &= ~ATOM_MATERIALIZED
 	on_dematerialize()
-	dq_latency_sweep_unregister(src) // left the live world: no longer a sweep candidate
 	return TRUE
 
 /// World registration. See the top of this file.
@@ -94,6 +85,9 @@
 	if(own_table_of(src).materialize_work)
 		rel_keyed_materialize(src)
 	BOOT_PHASE_END(bp_keyed, "materialize: rel_keyed_materialize" + BOOT_KIND(src), src)
+	// A draw that reads its area's vars (hops.dm, area_hop_readers): an area's var change marks it without walking the area.
+	if(ismovable(src))
+		hop_area_reader_join(src)
 
 /// The exact inverse of on_materialize(). See the top of this file.
 /atom/proc/on_dematerialize()
@@ -102,6 +96,8 @@
 	var/table = atom_type_table(src)
 	if(own_table_of(src).materialize_work)
 		rel_keyed_dematerialize(src)
+	if(ismovable(src))
+		hop_area_reader_leave(src)
 	if(table & TYPE_TABLE_HAS_DECLS)
 		lifecycle_decls_dematerialize(src, lifecycle_decls_of(src))
 	if(table & TYPE_TABLE_HAS_REGISTRIES)

@@ -3,7 +3,7 @@
 //
 
 /client/verb/mentorhelp(msg as text)
-	set category = VERB_CAT_ADMIN
+	set hidden = TRUE // the Adminhelp window (F1) asks which help you want
 	set name = "Mentorhelp"
 
 	//handle muting and automuting
@@ -109,14 +109,16 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 //
 
 /client/verb/requesthelp()
-	set category = VERB_CAT_ADMIN
 	set name = "Request help"
 	set hidden = 1
 
-	var/mhelp = ticket_help_question(usr, "requesthelp", "k72", null, length(args) ? args[1] : null, "Select the help you need.", "Request for Help", list("Adminhelp", "Mentorhelp"))
+	var/mhelp = ticket_help_question(usr, "requesthelp", "k72", null, length(args) ? args[1] : null, "Select the help you need.", "Request for Help", list("Adminhelp", "Mentorhelp", "Request Spice"))
 	if(isnull(mhelp))
 		return
 	if(!mhelp)
+		return
+	if(mhelp == "Request Spice")
+		adminspice()
 		return
 
 	// encode = FALSE: mentorhelp()/adminhelp() sanitize their own argument, so encoding here would double-encode it.
@@ -133,7 +135,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	adminhelp(msg)
 
 /client/verb/adminhelp(msg as text)
-	set category = VERB_CAT_ADMIN
+	set hidden = TRUE // Request help (F1, the Menu page) asks for it
 	set name = "Adminhelp"
 
 	//handle muting and automuting
@@ -239,7 +241,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	http_get_async("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 
 /client/verb/adminspice()
-	set category = VERB_CAT_ADMIN
+	set hidden = TRUE // a choice of the Adminhelp window (F1)
 	set name = "Request Spice"
 	set desc = "Request admins to spice round up for you"
 
@@ -385,7 +387,6 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	return null
 
 /client/proc/cmd_mentor_pm(whom, msg, datum/ticket/T)
-	set category = VERB_CAT_ADMIN
 	set name = "Mentor-PM"
 	set hidden = 1
 
@@ -458,7 +459,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 		if (src.current_ticket() && src.current_ticket().level == 0)
 			src.current_ticket().AddInteraction(interaction_message)
 
-	to_chat(recipient, span_mentor(span_italics("Mentor-PM from-" + span_bold("<a href='byond://?mentorhelp_msg=[url_encode(handle_of(src))]'>[src]</a>") + ": [msg]")))
+	to_chat(recipient, span_mentor(span_italics("Mentor-PM from-" + span_bold("<a href='byond://?mentorhelp_msg=[url_encode(handle_text(handle_of(src)))]'>[src]</a>") + ": [msg]")))
 	to_chat(src, span_mentor(span_italics("Mentor-PM to-" + span_bold("[recipient]") + ": [msg]")))
 
 	log_admin("[key_name(src)]->[key_name(recipient)]: [msg]")

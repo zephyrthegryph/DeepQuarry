@@ -14,12 +14,6 @@ this file deals with hats/headwear. */
 	icon = 'icons/inventory/head/item.dmi'
 	icon_state = "neo_softcap"
 
-/obj/item/clothing/head/neo_irs
-	name = "IRS cap"
-	desc = "a blue cap with the letters 'IRS' emblazoned on the front."
-	icon = 'icons/inventory/head/item.dmi'
-	icon_state = "neo_irs"
-
 /obj/item/clothing/head/ushanka/neo_ushanka
 	name = "Ushanka"
 	desc = "an old beat-up ushanka."
@@ -31,18 +25,6 @@ this file deals with hats/headwear. */
 	desc = "a light-blue ushanka."
 	icon = 'icons/inventory/head/item.dmi'
 	icon_state = "neo_blue_ushanka"
-
-/obj/item/clothing/head/papakha
-	name = "Papakha"
-	desc = "an old beat-up Papakha."
-	icon = 'icons/inventory/head/item.dmi'
-	icon_state = "neo_papakha"
-
-/obj/item/clothing/head/papakha_white
-	name = "White Papakha"
-	desc = "an old beat-up white papakha."
-	icon = 'icons/inventory/head/item.dmi'
-	icon_state = "neo_papakha_white"
 
 /obj/item/clothing/head/helmet/HoS/hat/red
 	name = "Red " + JOB_HEAD_OF_SECURITY + " Hat"

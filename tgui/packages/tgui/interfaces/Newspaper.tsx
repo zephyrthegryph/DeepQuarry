@@ -6,43 +6,24 @@
 // photos are omitted in this view.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { NewspaperActions, NewspaperData } from './generated/Newspaper';
 
-type Message = {
-  title: string;
-  body: string;
-  author: string;
-  message_type: string;
-};
-
-type Channel = {
-  name: string;
-  author: string;
-  censored: BooleanLike;
-  messages: Message[];
-};
-
-type Wanted = {
-  author: string;
-  body: string;
-} | null;
-
-type Data = {
-  company_name: string;
-  channels: Channel[];
-  wanted: Wanted;
-  scribble: string;
-  scribble_page: number;
-  curr_page: number;
-};
+type Data = NewspaperData;
 
 export const Newspaper = () => {
-  const { data, act } = useBackend<Data>();
-  const { company_name, channels, wanted, scribble, scribble_page, curr_page } =
-    data;
+  const { data, act } = useBackend<Data, NewspaperActions>();
+  const {
+    company_name,
+    channels = [],
+    wanted,
+    scribble,
+    scribble_page,
+    curr_page,
+  } = data;
 
   const pages = channels.length;
   const totalPages = 1 + pages + 1; // cover + channels + wanted
@@ -53,10 +34,10 @@ export const Newspaper = () => {
       <Box textAlign="center" fontSize="1.6em" bold>
         The Griffon
       </Box>
-      <Box textAlign="center" italic color="label" mb={2}>
+      <Label textAlign="center" italic mb={2}>
         {company_name}-standard newspaper, for use on {company_name} Space
         Facilities
-      </Box>
+      </Label>
       <Box bold mb={1}>
         Contents:
       </Box>
@@ -70,19 +51,14 @@ export const Newspaper = () => {
             <Stack.Item>
               <Box bold color="bad">
                 ** Important Security Announcement ** —{' '}
-                <Box inline color="label">
-                  page {pages + 2}
-                </Box>
+                <Label inline>page {pages + 2}</Label>
               </Box>
             </Stack.Item>
           ) : null}
           {channels.map((c, i) => (
             <Stack.Item key={c.name}>
               <Box bold>
-                {c.name}{' '}
-                <Box inline color="label">
-                  page {i + 2}
-                </Box>
+                {c.name} <Label inline>page {i + 2}</Label>
               </Box>
             </Stack.Item>
           ))}
@@ -97,9 +73,9 @@ export const Newspaper = () => {
     if (!c) return null;
     return (
       <Section title={c.name}>
-        <Box color="label" italic mb={1}>
+        <Label italic mb={1}>
           created by {c.author}
-        </Box>
+        </Label>
         {c.censored ? (
           <Box color="bad" italic>
             This channel was deemed dangerous to the general welfare of the
@@ -114,9 +90,9 @@ export const Newspaper = () => {
               <Stack.Item key={i}>
                 <Box bold>{m.title}</Box>
                 <Box>{m.body}</Box>
-                <Box color="label" italic fontSize="0.85em" mb={1}>
+                <Label italic fontSize="0.85em" mb={1}>
                   [{m.message_type} by {m.author}]
-                </Box>
+                </Label>
               </Stack.Item>
             ))}
           </Stack>
@@ -152,10 +128,10 @@ export const Newspaper = () => {
         {curr_page >= 1 && curr_page <= pages ? renderChannel() : null}
         {curr_page === pages + 1 ? renderWanted() : null}
         {showScribble ? (
-          <Box italic color="label" mt={1}>
+          <Label italic mt={1}>
             There is a small scribble near the end of this page… It reads: "
             {scribble}"
-          </Box>
+          </Label>
         ) : null}
         <Box mt={2}>
           {curr_page > 0 ? (
@@ -163,9 +139,9 @@ export const Newspaper = () => {
               Previous Page
             </Button>
           ) : null}{' '}
-          <Box inline color="label" mx={2}>
+          <Label inline mx={2}>
             Page {curr_page + 1} of {totalPages}
-          </Box>
+          </Label>
           {curr_page < totalPages - 1 ? (
             <Button icon="arrow-right" onClick={() => act('next_page')}>
               Next Page

@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Client lighting: a wall lit only from its far side stays dark from your side."

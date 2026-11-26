@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Burnt-food smoke chokes whoever stands in it again, not only on entering."
+  - bugfix: "Compactor energy nets shrink their captive again, and shadekin dark nets fade in bright light again."
+  - bugfix: "Hallucinated attackers clean themselves up once nobody can see them."
+  - code_imp: "Removed the old periodic cadences; every() is the one form for repeating work."

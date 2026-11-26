@@ -25,6 +25,8 @@ GLOBAL_VAR(stat_force_settle) // SETTLE_INLINE / SETTLE_MARKED: the apc_flip_50 
 GLOBAL_VAR_INIT(stat_spills, 0)
 GLOBAL_VAR_INIT(stat_tick_spent, 0) // what this kernel pass's marked drains have charged to the lane so far
 GLOBAL_VAR_INIT(stat_evals, 0)
+/// Hop reaches skipped because the reading contribution's when() gate was closed on the reader.
+GLOBAL_VAR_INIT(stat_hops_gated, 0)
 /// Settles the init frame queued instead of running (stat_settle_defer), how many it ran when the frame closed or a read needed them, and for how many targets.
 GLOBAL_VAR_INIT(stat_deferred, 0)
 GLOBAL_VAR_INIT(stat_deferred_settles, 0)
@@ -32,6 +34,11 @@ GLOBAL_VAR_INIT(stat_deferred_targets, 0)
 /// The slots of the targets that have queued settles (rec.pending); a slot whose rows a read already settled is skipped when the frame closes.
 GLOBAL_LIST_EMPTY(stat_pending_slots)
 GLOBAL_LIST_EMPTY(stat_read_compute_by) // BENCHMARK builds: "type:stat" -> uncached read computes
+#if defined(UNIT_TESTS)
+/// "stat id on holder type" -> reads while a test traces them (the step-cost test); null: off.
+GLOBAL_LIST(stat_value_trace)
+#endif
+GLOBAL_VAR_INIT(stat_value_reads, 0) // stat_value() calls (the step-cost test counts the reads a player step makes)
 GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the value because nothing was cached (the bench's idle stat metric)
 
 /// Calls holder proc `proc_name` (a contribution's or a formula's handler) with the shared evaluation context.
@@ -53,6 +60,11 @@ PROC_SUMMARY(/proc/stat_call) // vars[] / call() dispatcher: the walk cannot ent
 PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_value(datum/E, stat_id)
 	READS_FROM(E)
+	GLOB.stat_value_reads++
+#if defined(UNIT_TESTS)
+	if(GLOB.stat_value_trace)
+		GLOB.stat_value_trace["[stat_id] on [E?.type]"]++
+#endif
 	var/datum/stat_def/def = stat_def_of(stat_id)
 	if(!def)
 		// A condition reading a stat that does not exist would just read false for ever.
@@ -258,6 +270,23 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 /// stat_compute() for the rules a row list adds nothing to (ALL, ANY, SUM, PRODUCT, MAX, MIN, MASK_OR) on a stat none of whose rows exist: no row
 /// list, no combine call. The constant comes first and the contributions follow in order, as in the general path, so the value is the same.
 /proc/stat_compute_fast(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec)
+	// The contributions gated by a holder proc share one evaluation context (as stat_relation_changed()'s run does): a context per gate was
+	// a take and a release per condition (a machine's power stat asks three).
+	var/datum/act/op/ctx = null
+	for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
+		if(C.gate_kinds && (CG_PROC in C.gate_kinds))
+			ctx = pooled_op_context(E)
+			break
+	if(!ctx)
+		return stat_compute_fast_with(E, def, I, rec, null)
+	try
+		. = stat_compute_fast_with(E, def, I, rec, ctx)
+	catch(var/exception/fault)
+		ctx.release()
+		throw fault
+	ctx.release()
+
+/proc/stat_compute_fast_with(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec, datum/act/op/ctx)
 	var/rule = def.rule
 	var/has_const = FALSE
 	var/constant = null
@@ -272,26 +301,26 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 			if(has_const && !constant)
 				return FALSE
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C) && !stat_contrib_value(E, def, C))
+				if(stat_contrib_active(E, C, ctx) && !stat_contrib_value(E, def, C))
 					return FALSE
 			return TRUE
 		if(STAT_RULE_ANY)
 			if(has_const && constant)
 				return TRUE
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C) && stat_contrib_value(E, def, C))
+				if(stat_contrib_active(E, C, ctx) && stat_contrib_value(E, def, C))
 					return TRUE
 			return FALSE
 		if(STAT_RULE_PRODUCT)
 			. = has_const ? constant : 1
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C))
+				if(stat_contrib_active(E, C, ctx))
 					. *= stat_contrib_value(E, def, C)
 		if(STAT_RULE_MASK_OR)
 			var/any_member = has_const
 			. = has_const ? constant : 0
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C))
+				if(stat_contrib_active(E, C, ctx))
 					. |= stat_contrib_value(E, def, C)
 					any_member = TRUE
 			if(!any_member)
@@ -300,7 +329,7 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 			. = has_const ? constant : null
 			var/is_max = (rule == STAT_RULE_MAX)
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(!stat_contrib_active(E, C))
+				if(!stat_contrib_active(E, C, ctx))
 					continue
 				var/v = stat_contrib_value(E, def, C)
 				if(isnull(.) || (is_max ? (v > .) : (v < .)))
@@ -310,7 +339,7 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 		else
 			. = has_const ? constant : 0
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
-				if(stat_contrib_active(E, C))
+				if(stat_contrib_active(E, C, ctx))
 					. += stat_contrib_value(E, def, C)
 
 /// A boolean stat's contribution as TRUE or FALSE; any other value as it is.
@@ -454,13 +483,51 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 	if(!I || !I.init_needed)
 		return
 	var/datum/stat_record/rec = stat_ensure_inited(E, I)
-	var/list/todo = list()
-	for(var/datum/stat_def/def as anything in I.defs)
-		if(length(I.contribs[def.skey]) || def.rule == STAT_RULE_FORMULA || rec.constants?[def.skey])
-			todo += def
-	todo = stat_sort_by_rank(I, todo)
+	// The stats every instance computes (a contribution or a formula), in rank order, are a fact of the type: built once (stat_type_init_todo()). Only
+	// an instance whose map edits made a stat var a constant computes that stat too, and builds its own list.
+	var/list/todo = I.init_todo || stat_type_init_todo(I)
+	if(rec.constants)
+		todo = list()
+		for(var/datum/stat_def/def as anything in I.defs)
+			if(length(I.contribs[def.skey]) || def.rule == STAT_RULE_FORMULA || rec.constants[def.skey])
+				todo += def
+		todo = stat_sort_by_rank(I, todo)
+	var/census_start = GLOB.stat_template_census ? TICK_USAGE_REAL : 0
+	// A per-type template (stat_templates.md): an instance whose computes read only its own vars, all at the type's defaults, ends with the values the
+	// type's first such instance computed. Test builds compute the first instances of each type both ways and compare.
+	var/list/template = (!rec.constants && stat_template_instance_ok(E, I, rec, todo)) ? GLOB.stat_templates[E.type] : null
+	#if defined(UNIT_TESTS)
+	if(template && GLOB.stat_template_checked[E.type] < 3)
+		GLOB.stat_template_checked[E.type]++
+		template = null
+		for(var/datum/stat_def/def as anything in todo)
+			stat_recompute(E, def, TRUE)
+		var/list/computed = stat_template_values(E, I, todo)
+		var/list/held = GLOB.stat_templates[E.type]
+		if(!(computed ~= held)) // in order: each value against the same stat's
+			stack_trace("STAT TEMPLATE MISMATCH: [E.type] computes [json_encode(computed)], its template holds [json_encode(GLOB.stat_templates[E.type])]")
+		todo = list()
+	#endif
+	if(template)
+		GLOB.stat_templates_served++
+		for(var/i in 1 to length(todo))
+			var/datum/stat_def/def = todo[i]
+			var/value = template[i]
+			if(I.has_var[def.skey])
+				if(E.vars[def.name] != value)
+					stat_store(E, def, value, I)
+			else if(value != STAT_TEMPLATE_UNSTORED)
+				stat_store(E, def, value, I) // a virtual stat the full compute stored (stat_recompute() keeps one that equals its base once its inputs are tracked)
+		todo = list()
+	else if(!rec.constants && isnull(GLOB.stat_templates[E.type]) && stat_template_instance_ok(E, I, rec, todo))
+		for(var/datum/stat_def/def as anything in todo)
+			stat_recompute(E, def, TRUE)
+		GLOB.stat_templates[E.type] = stat_template_values(E, I, todo)
+		todo = list()
 	for(var/datum/stat_def/def as anything in todo)
 		stat_recompute(E, def, TRUE)
+	if(GLOB.stat_template_census)
+		stat_template_census_note(E, I, rec, census_start)
 	for(var/datum/stat_hop/sys as anything in I.hops["sys"])
 		var/list/readers = GLOB.stat_sys_index[sys.system]
 		if(!readers)
@@ -474,6 +541,15 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 		stat_ct_update(E, ct)
 	for(var/rel_var in I.hop_rels)
 		stat_hop_attach(E, rel_var)
+
+/// The stats of type I that every instance computes at init (a contribution or a formula), in rank order: built once and kept on I (read-only after).
+/proc/stat_type_init_todo(datum/stat_type_info/I)
+	var/list/todo = list()
+	for(var/datum/stat_def/def as anything in I.defs)
+		if(length(I.contribs[def.skey]) || def.rule == STAT_RULE_FORMULA)
+			todo += def
+	I.init_todo = stat_sort_by_rank(I, todo)
+	return I.init_todo
 
 /// The defs sorted by rank, lowest first (a stable insertion sort: a handful of stats per type).
 /proc/stat_sort_by_rank(datum/stat_type_info/I, list/defs)
@@ -622,8 +698,22 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 	for(var/i in 1 to length(targets) step 2)
 		stat_hop_reach(targets[i], targets[i + 1])
 
+/// TRUE when `reader` is built and the when() gate of `gated` (the contribution that reads the hop) is closed on it.
+/proc/stat_hop_gate_closed(datum/reader, datum/stat_contrib/gated)
+	if(isatom(reader))
+		var/atom/built = reader
+		if(!(built.flags & ATOM_INITIALIZED))
+			return FALSE
+	return !stat_contrib_active(reader, gated)
+
 /// One reader reached through `hop`: settled at once or marked for the next marked drain.
 /proc/stat_hop_reach(datum/reader, datum/stat_hop/hop)
+	// A contribution inside a closed when() adds nothing, whatever the far var did (a machine that does not draw on the area's environment channel
+	// has no use for its flip): the reader is not reached. When the gate opens, its own inputs recompute the stat from the far var as it then is.
+	var/datum/stat_contrib/gated = hop.gated
+	if(gated && stat_hop_gate_closed(reader, gated))
+		GLOB.stat_hops_gated++
+		return
 	var/settle = GLOB.stat_force_settle || hop.settle
 	if(hop.ct)
 		if(settle == SETTLE_INLINE)
@@ -745,8 +835,8 @@ GLOBAL_LIST_EMPTY(stat_hop_applicable)
 			continue
 		var/list/readers = GLOB.stat_sys_index[system_key]
 		for(var/datum/reader as anything in readers)
+			// stat_sys_forget() takes a reader out when it is destroyed; one in the middle of its destroy is skipped
 			if(QDELETED(reader))
-				readers -= reader
 				continue
 			var/datum/stat_type_info/I = stat_type_of(reader)
 			if(!I)
@@ -818,7 +908,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 		rec.ct_targets = list()
 	rec.ct_targets[ct_key] = SLOT(target)
 	BOOT_PHASE_BEGIN(bp_set)
-	stat_row_set(target, def, E, value, ct.priority, ct.row_key)
+	stat_row_set(target, def, E, value, ct.priority, ct.row_key, fresh = !held_before)
 	BOOT_PHASE_END(bp_set, "stat_ct_update: row_set [def.name]", E)
 
 /// A factors() entry of E: the table it names, at its scale and stacks now, held on `target` as rows of E (part = the entry's), or released while its
@@ -960,10 +1050,12 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		. += 1
 
 /// Places (or updates) an untimed keyed row without the hold() checks: the contribution engine's own writes. Settles the stat inline.
-/proc/stat_row_set(datum/target, datum/stat_def/def, source, value, priority, key)
+/// `fresh`: the caller knows `source` holds no row of this stat and key on `target` (a contribution that never held one there): the row is added without
+/// the find, which scans every row of the stat the target holds (an area holds one per machine, so a map load's power joins were quadratic per area).
+/proc/stat_row_set(datum/target, datum/stat_def/def, source, value, priority, key, fresh = FALSE)
 	var/datum/stat_record/rec = stat_record_of(target)
 	BOOT_PHASE_BEGIN(bp_find)
-	var/list/row = stat_hold_find(rec, def.id, source, key)
+	var/list/row = fresh ? null : stat_hold_find(rec, def.id, source, key)
 	BOOT_PHASE_END(bp_find, "stat_row_set: hold_find [def.name]", target)
 	if(row)
 		if(stat_values_equal(row[H_VALUE], value) && row[H_PRIORITY] == priority)
@@ -1067,8 +1159,9 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 	var/passes = 0
 	while(length(GLOB.stat_marked) && passes < DRAIN_MAX_PASSES)
 		passes++
-		var/list/batch = stat_sort_marked(GLOB.stat_marked)
+		var/list/batch = stat_sort_marked(GLOB.stat_marked, min(GLOB.stat_marked_sorted, length(GLOB.stat_marked)))
 		GLOB.stat_marked = list()
+		GLOB.stat_marked_sorted = 0
 		for(var/i in 1 to length(batch))
 			var/list/row = batch[i]
 			var/datum/E = slot_datum(row[1])
@@ -1080,18 +1173,23 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 			if(spent && spent + STAT_EVAL_CHARGE > budget)
 				var/list/rest = batch.Copy(i)
 				GLOB.stat_marked = rest + GLOB.stat_marked
+				GLOB.stat_marked_sorted = length(rest) // already in rank order: the next drain sorts only what was marked after it and merges
 				GLOB.stat_spills++
 				TEST_REC_SPILL("[lane]:[def ? def.name : "ct"] x[length(rest)] at pass [passes]")
-				log_world("STATS: marked drain on lane [lane] spent its budget of [budget]us; [length(rest)] evaluation\s resume at the next drain (first: [E.type] [def ? def.name : "contributes_to"])")
+				drain_spill_log("stats lane [lane]", "STATS: marked drain on lane [lane] spent its budget of [budget]us; [length(rest)] evaluation\s resume at the next drain (first: [E.type] [def ? def.name : "contributes_to"])")
 				return
 			var/datum/stat_record/rec = E.rx?.stats
 			if(rec?.marked)
 				rec.marked -= def ? def.skey : ct.row_key
 			var/started = stat_charge_begin()
+			var/eval_started = TICK_USAGE
+			var/eval_ledger = km_ledger_enter(KM_CAT_STAT_EVAL, E.type, def ? def.name : "contributes_to")
 			if(ct)
 				stat_ct_update(E, ct)
 			else
 				stat_settle_def(E, def)
+			km_ledger_leave(eval_ledger)
+			KM_SLOW_INNER(eval_started, "stat [E.type] [def ? def.name : "contributes_to"]")
 			.++
 			spent += stat_charge_end(started)
 			GLOB.stat_tick_spent = spent
@@ -1100,31 +1198,70 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 		TEST_REC_SPILL("[lane]: [length(GLOB.stat_marked)] marked evaluations past [DRAIN_MAX_PASSES] passes")
 		log_world("STATS: marked drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.stat_marked)] still marked; the rest spills to the next drain point")
 
-/// The batch in rank order (the entity's own type's rank of the stat), first marked first among equals.
-/proc/stat_sort_marked(list/batch)
-	var/list/keyed = list()
-	for(var/list/row as anything in batch)
+/// How many rows at the head of GLOB.stat_marked are a spilled drain's rest, already in rank order (stat_drain_marked()).
+GLOBAL_VAR_INIT(stat_marked_sorted, 0)
+
+/// The rank a marked row recomputes at (the entity's own type's rank of the stat; 0 for a contribution or a gone entity), kept on the row as its
+/// 4th element once asked.
+/proc/stat_marked_rank(list/row)
+	if(length(row) >= 4)
+		return row[4]
+	var/rank = 0
+	var/datum/stat_def/def = row[2]
+	if(def)
 		var/datum/E = slot_datum(row[1])
-		var/datum/stat_def/def = row[2]
-		var/rank = 0
-		if(def && !QDELETED(E))
+		if(!QDELETED(E))
 			var/datum/stat_type_info/I = stat_type_of(E)
 			rank = I?.ranks?[def.skey] || 0
-		keyed += list(list(rank, row))
-	// stable insertion by rank
-	var/list/out = list()
-	for(var/list/pair as anything in keyed)
-		var/at = length(out) + 1
-		for(var/i in length(out) to 1 step -1)
-			var/list/other = out[i]
-			if(other[1] <= pair[1])
-				break
-			at = i
-		out.Insert(at, list(pair))
-	var/list/rows = list()
-	for(var/list/pair as anything in out)
-		rows += list(pair[2])
-	return rows
+	row += rank
+	return rank
+
+/// The batch in rank order (the entity's own type's rank of the stat), first marked first among equals. Its first `sorted` rows are already in that
+/// order (a spilled drain's rest): only the rows after them are sorted, and the two runs merged, so a backlog is not sorted again at every drain point.
+/proc/stat_sort_marked(list/batch, sorted = 0)
+	if(sorted >= length(batch))
+		return batch
+	var/list/tail = sorted ? batch.Copy(sorted + 1) : batch
+	// Stable bucket sort of the tail: one bucket per rank, filled in batch order, emitted by ascending rank.
+	var/list/buckets = list() // "[rank]" -> rows in batch order
+	var/list/ranks = list()
+	for(var/list/row as anything in tail)
+		var/rank = stat_marked_rank(row)
+		var/key = "[rank]"
+		var/list/bucket = buckets[key]
+		if(!bucket)
+			bucket = list()
+			buckets[key] = bucket
+			ranks += rank
+		bucket += list(row)
+	var/list/rows
+	if(length(ranks) == 1)
+		rows = buckets[buckets[1]]
+	else
+		sortTim(ranks, GLOBAL_PROC_REF(cmp_numeric_asc))
+		rows = list()
+		for(var/rank in ranks)
+			rows += buckets["[rank]"]
+	if(!sorted)
+		return rows
+	// Merge: the backlog's rows come first among equal ranks (they were marked first).
+	var/list/merged = list()
+	var/i = 1
+	var/j = 1
+	var/n_tail = length(rows)
+	while(i <= sorted && j <= n_tail)
+		if(stat_marked_rank(rows[j]) < stat_marked_rank(batch[i]))
+			merged += list(rows[j++])
+		else
+			merged += list(batch[i++])
+	while(i <= sorted)
+		merged += list(batch[i++])
+	while(j <= n_tail)
+		merged += list(rows[j++])
+	return merged
+
+/// Drain points that found the lane's budget spent with work waiting and left it untouched (a counter for tests and the profiler).
+GLOBAL_VAR_INIT(stat_drain_skipped, 0)
 
 /// The kernel's drain point (the start of phases D, P and R): the marked stats recompute under the simulation lane's budget. Costs one list length
 /// when nothing is marked. While a map loads (a load frame is open, even one suspended between chunks) it does nothing: initial evaluation is
@@ -1132,15 +1269,34 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 /proc/stat_drain_point()
 	if(materialization_host().map_loading())
 		return
-	act_drain_point() // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
+	// A drain point after the lane's budget is spent runs nothing: it must not touch what waits (every drain below takes its whole backlog apart
+	// and puts the rest back before it finds the budget gone), so it costs the same whether ten holders are marked or ten thousand.
+	var/drain_ledger = km_ledger_enter(KM_CAT_STAT_DRAIN, "drain point", "budget check")
+	var/budget_spent = GLOB.stat_tick_spent && GLOB.stat_tick_spent + STAT_EVAL_CHARGE > stat_lane_budget(LANE_SIMULATION)
+	km_ledger_leave(drain_ledger)
+	if(budget_spent)
+		if(length(GLOB.stat_marked) || GLOB.hook_change_pending || length(GLOB.notice_late_queue))
+			GLOB.stat_spills++
+			GLOB.stat_drain_skipped++
+			TEST_REC_SPILL("drain point: the lane's budget is spent with work still marked")
+		return
+	var/act_started = TICK_USAGE
+	act_drain_point(FALSE) // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
+	KM_SLOW_INNER(act_started, "act_drain_point (late notices and on_change hooks)")
 	// The stats a pass settles publish their changes, which mark on_change hooks (a machine's has_power flip, its power_change()): those run in
 	// the same drain, and what they mark is settled after them, so a tracked write reaches its readers' reactions in one drain, not the next.
 	var/passes = 0
 	while(length(GLOB.stat_marked) && passes < DRAIN_MAX_PASSES)
 		passes++
 		var/spills = GLOB.stat_spills
+		var/marked_started = TICK_USAGE
+		var/marked_ledger = km_ledger_enter(KM_CAT_STAT_DRAIN, "drain point", "marked stats")
 		stat_drain_marked(LANE_SIMULATION, FALSE)
-		act_drain_point()
+		km_ledger_leave(marked_ledger)
+		KM_SLOW_INNER(marked_started, "stat_drain_marked pass [passes]")
+		act_started = TICK_USAGE
+		act_drain_point(FALSE)
+		KM_SLOW_INNER(act_started, "act_drain_point after pass [passes]")
 		if(GLOB.stat_spills != spills)
 			break // the lane's budget is spent: the rest resumes at the next drain
 
@@ -1222,3 +1378,121 @@ PROC_SUMMARY(/proc/stat_hop_attach) // vars[] / call() dispatcher: the walk cann
 				if(!length(rrec.hop_targets))
 					rrec.hop_targets = null
 	rec.hop_in = null
+
+// ---- the template census (stat_templates.md; -params bench_stat_template_census=1) ----
+
+/// TRUE measures the init stat computes and which of them a per-type template could serve. Off unless the world asks.
+GLOBAL_VAR_INIT(stat_template_census, FALSE)
+/// "eligible" / "ineligible" -> list(instances, tick-usage percent spent); and per eligible type -> list(instances, percent).
+GLOBAL_LIST_EMPTY(stat_template_census_rows)
+
+/// TRUE when type I's init computes read nothing outside the instance: no hop, no system, no contributes_to across a relation, no read through a
+/// relation ("x.y") and no capability key (stat_templates.md, "When an instance may take the template").
+/proc/stat_template_type_eligible(datum/stat_type_info/I)
+	var/static/list/verdicts = list()
+	if(!isnull(verdicts[I.owner_type]))
+		return verdicts[I.owner_type]
+	. = TRUE
+	if(length(I.hop_rels) || length(I.hops) || length(I.ct_entries) || length(I.untracked))
+		. = FALSE
+	else
+		for(var/skey in I.contribs)
+			for(var/datum/stat_contrib/C as anything in I.contribs[skey])
+				if(C.value_kind == CV_CAPKEY)
+					. = FALSE
+				for(var/read in C.reads)
+					if(findtext("[read]", ".") || findtext("[read]", "capkey"))
+						. = FALSE
+	verdicts[I.owner_type] = .
+
+/// One instance's init computes: time and whether a template could have served it (type eligible, no map-edited stat constant, no own value on an input).
+/proc/stat_template_census_note(datum/E, datum/stat_type_info/I, datum/stat_record/rec, start)
+	var/spent = TICK_USAGE_REAL - start
+	if(spent < 0)
+		spent = 0 // the computes crossed a tick: not counted as time, still counted as an instance
+	var/eligible = stat_template_type_eligible(I) && !rec.constants
+	if(eligible)
+		for(var/key in I.inputs)
+			if(istext(key) && (key in E.vars) && E.vars[key] != initial(E.vars[key]))
+				eligible = FALSE
+				break
+	var/bucket = eligible ? "eligible" : "ineligible"
+	var/list/row = GLOB.stat_template_census_rows[bucket] || list(0, 0)
+	row[1]++
+	row[2] += spent
+	GLOB.stat_template_census_rows[bucket] = row
+	if(eligible)
+		var/type_key = "[E.type]"
+		var/list/type_row = GLOB.stat_template_census_rows[type_key] || list(0, 0)
+		type_row[1]++
+		type_row[2] += spent
+		GLOB.stat_template_census_rows[type_key] = type_row
+
+/proc/stat_template_census_report()
+	for(var/bucket in list("eligible", "ineligible"))
+		var/list/row = GLOB.stat_template_census_rows[bucket] || list(0, 0)
+		log_world("STAT TEMPLATE CENSUS: [bucket]: [row[1]] instance(s), [round(row[2], 0.1)]% of a tick in total")
+	var/list/types = list()
+	for(var/key in GLOB.stat_template_census_rows)
+		if(key != "eligible" && key != "ineligible")
+			var/list/type_row = GLOB.stat_template_census_rows[key]
+			types[key] = type_row[2]
+	var/list/sorted = sortTim(types, GLOBAL_PROC_REF(cmp_numeric_dsc), TRUE)
+	var/shown = 0
+	for(var/key in sorted)
+		var/list/type_row = GLOB.stat_template_census_rows[key]
+		log_world("STAT TEMPLATE CENSUS: [key]: [type_row[1]] instance(s), [round(type_row[2], 0.1)]%")
+		if(++shown >= 25)
+			break
+
+// ---- per-type templates of the init computes (stat_templates.md) ----
+
+/// type -> the values its template-eligible instances end their init computes with, parallel to the type's init_todo.
+GLOBAL_LIST_EMPTY(stat_templates)
+/// Instances whose init computes a template served.
+GLOBAL_VAR_INIT(stat_templates_served, 0)
+#if defined(UNIT_TESTS)
+/// type -> how many of its instances computed both ways (the parity check).
+GLOBAL_LIST_EMPTY(stat_template_checked)
+#endif
+
+/// TRUE when E's init computes may be served by its type's template: the type reads nothing outside the instance, every stat it computes is a plain
+/// var of a fast rule, the instance holds nothing yet and every input var is at the type's default.
+/proc/stat_template_instance_ok(datum/E, datum/stat_type_info/I, datum/stat_record/rec, list/todo)
+	if(rec.holds || rec.by_stat || rec.virtual || !stat_template_type_eligible(I) || !stat_template_defs_ok(I, todo))
+		return FALSE
+	for(var/key in I.inputs)
+		if(!istext(key) || !(key in E.vars))
+			return FALSE
+		var/value = E.vars[key]
+		if(value != initial(E.vars[key]) || islist(value))
+			return FALSE
+	return TRUE
+
+/// TRUE when every stat of `todo` is computed by a fast rule (no formula, no keyed stat, no status), so the template is the values it ends with.
+/proc/stat_template_defs_ok(datum/stat_type_info/I, list/todo)
+	var/static/list/verdicts = list()
+	var/known = verdicts[I.owner_type]
+	if(!isnull(known))
+		return known
+	. = length(todo) > 0
+	for(var/datum/stat_def/def as anything in todo)
+		if(!def.fast || def.is_formula || def.keyed || def.units || def.id == STAT_RELEVANCE || def.id == STAT_SUSPENDED || def.id == STAT_CLOCK_RATE_BIO)
+			. = FALSE
+			break
+	verdicts[I.owner_type] = .
+
+/// The values E's stats of `todo` hold now, in order: a var's value, or a virtual stat's stored value (STAT_TEMPLATE_UNSTORED when none was stored).
+/// Null when one is a list (the type is not templated).
+/proc/stat_template_values(datum/E, datum/stat_type_info/I, list/todo)
+	. = list()
+	var/list/virtual = E.rx?.stats?.virtual
+	for(var/datum/stat_def/def as anything in todo)
+		var/value
+		if(I.has_var[def.skey])
+			value = E.vars[def.name]
+		else
+			value = (virtual && (def.skey in virtual)) ? virtual[def.skey] : STAT_TEMPLATE_UNSTORED
+		if(islist(value))
+			return null
+		. += value

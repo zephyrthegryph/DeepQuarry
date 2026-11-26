@@ -101,7 +101,7 @@ GLOBAL_LIST_EMPTY(lazy_state_tables)
 
 /// The state of `feature` that `H` holds, or null. Never gives the holder a slot.
 /proc/lazy_state_peek(datum/H, feature)
-	var/slot = H?.handle_slot
+	var/slot = slot_known(H)
 	if(!slot)
 		return null
 	var/alist/rows = GLOB.lazy_state_tables[feature]
@@ -139,12 +139,12 @@ GLOBAL_LIST_EMPTY(lazy_state_tables)
 	if(!S)
 		return
 	var/alist/rows = GLOB.lazy_state_tables[feature]
-	rows -= holder.handle_slot // the row was the state's only reference and it names no slot of its own: BYOND frees it
+	rows -= slot_known(holder) // the row was the state's only reference and it names no slot of its own: BYOND frees it
 	GLOB.lazy_states_cleared++
 
 /// engine_forget(): a destroyed holder leaves every table.
 /proc/lazy_state_forget(datum/D)
-	var/slot = D.handle_slot
+	var/slot = slot_known(D)
 	if(!slot || !length(GLOB.lazy_state_tables))
 		return
 	for(var/feature in GLOB.lazy_state_tables)
@@ -202,12 +202,10 @@ GLOBAL_LIST_EMPTY(lazy_state_weak_fields_by_type)
 	GLOB.lazy_state_defaults_by_type["[state_type]"] = defaults
 	return defaults
 
-/// Whether every field of state `S` is at its type's default (the state can go).
+/// Whether every field of state `S` is at its type's default (the state can go). Walks the type's own fields (lazy_state_defaults(), cached),
+/// never the datum vars every state shares.
 /proc/lazy_state_all_default(datum/S)
-	var/list/base_names = lazy_state_base_names()
-	for(var/name in S.vars)
-		if(base_names[name])
-			continue
+	for(var/name in lazy_state_defaults(S.type))
 		var/value = S.vars[name]
 		var/default = initial(S.vars[name])
 		if(value != default || isnull(value) != isnull(default))

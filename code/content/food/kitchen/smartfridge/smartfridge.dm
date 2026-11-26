@@ -41,6 +41,7 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge, starts = /datum/looping_sound/fridge)
 	owns_many(nameof(item_records))
 	interface("SmartVend")
+	ui_shape(name = schema_text(), secure = bool(), locked = int(), contents = list_of(row(name = schema_text(), index = int(), amount = int())))
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	// Release takes `amount` out of record `index`; with no amount it asks how many (the old act_ask re-run).
 	op("release", ui_act("Release", arg("amount", num(default = 0)), arg("index", num())),
@@ -84,7 +85,7 @@ CAPABILITIES(/obj/machinery/smartfridge)
 // Stock is a stock slot (roadmap C9, code/datums/containment/stock.dm).
 // Inserted items whose state serializes and matches the record's fold into
 // its count; items with state of their own stay real in the stock slot.
-// Deconstruction spills everything, latent copies made real.
+// Deconstruction spills everything, counted copies made real.
 /obj/machinery/smartfridge/stock_records()
 	return item_records
 
@@ -205,15 +206,14 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	else if(istype(O, /obj/item/storage/bag))
 		var/obj/item/storage/bag/P = O
 		var/plants_loaded = 0
-		P.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/G in contents_of(P)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/obj/G in contents_of(P))
 			if(accept_check(G))
 				P.remove_from_storage(G) //fixes ui bug - Pull Request 5515
 				stock(G)
 				plants_loaded = 1
 		if(plants_loaded)
 			act_message(user, src, MSG_SELF(span_notice("You load %T% with %I%.")), MSG_OTHERS(span_notice("%U% loads %T% with %I%.")), item = P)
-			if(contents_count(P) > 0) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+			if(contents_count(P) > 0)
 				to_chat(user, span_notice("Some items are refused."))
 
 	else if(istype(O, /obj/item/gripper)) // Grippers. ~Mechoid.

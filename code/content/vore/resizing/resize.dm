@@ -195,7 +195,6 @@
 
 /mob/living/proc/set_size()
 	set name = "Adjust Mass"
-	set category = VERB_CAT_ABILITIES_GENERAL //Seeing as prometheans have an IC reason to be changing mass.
 
 	open_request(src, /datum/prompt/number/personal_mass, PROC_REF(personal_mass_answered), answerer = src, default = size_multiplier * 100)
 
@@ -278,7 +277,7 @@
 			src_message = "You carefully step over [tmob]."
 			tmob_message = "[src] steps over you carefully!"
 			var/mob/living/carbon/human/H = src
-			if(stat_value(H, STAT_FLYING))
+			if(H.flying)
 				return TRUE //Silently pass without a message.
 			if(istaurtail(H.tail_style))
 				var/datum/sprite_accessory/tail/taur/tail = H.tail_style
@@ -311,10 +310,10 @@
 /mob/living/proc/handle_micro_bump_other(mob/living/tmob, nofetish = 0, stance = I_HURT) // changed a lot in this whole proc tbh, to bring back micro combat balance
 	ASSERT(istype(tmob))
 	//If we're flying, don't do any special interactions.
-	if(stat_value(src, STAT_FLYING))
+	if(src.flying)
 		return
 	//If the prey is flying, don't smush them.
-	if(stat_value(tmob, STAT_FLYING))
+	if(tmob.flying)
 		return
 	//We can't be stepping on anyone
 	if(!canmove || src?.buckled_to())
@@ -455,14 +454,6 @@
 		to_chat(pred, span_danger("[message_pred]"))
 		to_chat(prey, span_danger("[message_prey]"))
 		return TRUE
-
-/mob/living/verb/toggle_pickups()
-	set name = "Toggle Micro Pick-up"
-	set desc = "Toggles whether your help (combat mode off) action attempts to pick up the micro or pet/hug/help them. Does not disable participation in pick-up mechanics entirely, refer to Vore Panel preferences for that."
-	set category = VERB_CAT_IC_SETTINGS
-
-	STATE_SET(src, living_misc, pickup_active, !STATE_GET(src, living_misc, pickup_active))
-	to_chat(src, span_filter_notice("You will [STATE_GET(src, living_misc, pickup_active) ? "now" : "no longer"] attempt to pick up mobs when clicking them with combat mode off."))
 
 #undef STEP_TEXT_OWNER
 #undef STEP_TEXT_PREY

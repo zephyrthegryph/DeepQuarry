@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Added the electrolyte drink (water, salt and sugar), sold in NanoMed Plus; it provides the new rehydration treatment and is the cold's fluids cure"
+  - balance: "Iron saline now rehydrates slowly instead of being the named cold cure"
+  - code_imp: "Removed the Hydrogen chloride trace contaminant; hydrochloric acid is the one real reagent"

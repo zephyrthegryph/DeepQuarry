@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Client glow masks are baked by the Rust extension on its own thread (full-quality fade, no step cap) instead of an iconforge sprite built and JSON-encoded in DM"

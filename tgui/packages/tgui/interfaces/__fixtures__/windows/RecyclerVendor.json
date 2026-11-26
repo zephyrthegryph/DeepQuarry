@@ -1,0 +1,33 @@
+{
+	"items": [
+		{
+			"category": "Furniture",
+			"name": "Carpet roll",
+			"cost": 10,
+			"desc": "A roll of carpet.",
+			"ad": "Soft underfoot!",
+			"icon": "carpet",
+			"index": 1
+		},
+		{
+			"category": "Furniture",
+			"name": "Bar stool",
+			"cost": 6,
+			"desc": "A sturdy stool.",
+			"ad": "Take a seat.",
+			"icon": "stool",
+			"index": 2
+		},
+		{
+			"category": "Tools",
+			"name": "Welder",
+			"cost": 25,
+			"desc": "A welding tool.",
+			"ad": "Hot deals.",
+			"icon": "welder",
+			"index": 3
+		}
+	],
+	"userBalance": 42,
+	"userName": "Jane Doe"
+}

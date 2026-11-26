@@ -136,21 +136,21 @@
 	TEST_ASSERT_NULL(fail, fail)
 	step = "newscaster"
 	// The newscaster: a channel or Wanted draft that cannot be sent is refused before the confirmation.
-	holder.admincaster_feed_channel().channel_name = ""
+	holder.admincaster_feed_channel().set_channel_name("")
 	holder.admincaster_resync()
 	fail = refused_without_question(perform(actor, holder, "ac_submit_new_channel"), /datum/msg/admin_topic/channel_unsubmittable, "an unnamed channel")
 	TEST_ASSERT_NULL(fail, fail)
-	holder.admincaster_feed_channel().channel_name = "Guards Test Channel"
+	holder.admincaster_feed_channel().set_channel_name("Guards Test Channel")
 	holder.admincaster_resync()
 	fail = asks_question(perform(actor, holder, "ac_submit_new_channel"), made, "a named channel")
 	TEST_ASSERT_NULL(fail, fail)
-	holder.admincaster_feed_message.author = ""
-	holder.admincaster_feed_message.body = ""
+	holder.admincaster_feed_message.set_author("")
+	holder.admincaster_feed_message.set_body("")
 	holder.admincaster_resync()
 	fail = refused_without_question(perform(actor, holder, "ac_submit_wanted", list("ac_submit_wanted" = 1)), /datum/msg/admin_topic/wanted_unsubmittable, "a Wanted draft with no name")
 	TEST_ASSERT_NULL(fail, fail)
-	holder.admincaster_feed_message.author = "Somebody"
-	holder.admincaster_feed_message.body = "Wanted for tests"
+	holder.admincaster_feed_message.set_author("Somebody")
+	holder.admincaster_feed_message.set_body("Wanted for tests")
 	holder.admincaster_resync()
 	fail = asks_question(perform(actor, holder, "ac_submit_wanted", list("ac_submit_wanted" = 1)), made, "a Wanted draft that can be sent")
 	TEST_ASSERT_NULL(fail, fail)

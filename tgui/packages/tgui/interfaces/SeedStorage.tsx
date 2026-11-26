@@ -8,35 +8,16 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
-
-type Data = {
-  scanner: string[];
-  seeds: seed[];
-};
-
-type seed = {
-  name: string;
-  uid: string;
-  amount: number;
-  id: number;
-  traits: {
-    Endurance: string;
-    Yield: string;
-    Production: string;
-    Potency: string;
-    'Repeat Harvest': string;
-    'Ideal Heat': string;
-    'Ideal Light': string;
-    'Nutrient Consumption': string;
-    'Water Consumption': string;
-    notes: string;
-  };
-};
+import { EmptyState } from './common/EmptyState';
+import type {
+  SeedStorageActions,
+  SeedStorageData,
+} from './generated/SeedStorage';
 
 export const SeedStorage = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<SeedStorageData, SeedStorageActions>();
 
-  const { seeds } = data;
+  const { seeds = [] } = data;
 
   seeds.sort((a, b) =>
     a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
@@ -46,6 +27,7 @@ export const SeedStorage = (props) => {
     <Window width={600} height={760}>
       <Window.Content scrollable>
         <Section title="Seeds">
+          {seeds.length === 0 && <EmptyState>No seeds stored.</EmptyState>}
           {seeds.map((seed) => (
             <Stack mt={-1} key={seed.name + seed.uid}>
               <Stack.Item basis="60%">

@@ -117,7 +117,7 @@ LIST_STATE(/obj/e1_fixture, e1_tags, kind = KIND_SET)
 	name = "e1 changed fixture"
 
 CAPABILITIES(/obj/e1_fixture/changed)
-	extend("toggle", entry_of("part", "needs"))
+	extend("toggle", needs(req_empty_hand()))
 	configure(e1_widget("a", power = 9))
 	without(CAP_E1_SOLO)
 
@@ -198,9 +198,6 @@ TRACKED_SCHEMA(/obj/e1_schema, mode, enum(list("off", "on", "syphon")))
 TRACKED_SCHEMA(/obj/e1_schema, label, schema_text(8))
 SCHEMA(/obj/e1_schema, count, int(1, 9))
 
-#ifndef MAX_PUMP_PRESSURE
-#define MAX_PUMP_PRESSURE 15000
-#endif
 
 // ---- the state graph of section 12 (proof 9): a door assembly with two paths to finished ----
 

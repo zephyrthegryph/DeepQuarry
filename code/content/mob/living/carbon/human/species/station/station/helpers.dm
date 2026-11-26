@@ -5,7 +5,6 @@
 /mob/living/carbon/human/proc/plant_weak()
 	set name = "Plant Weeds (150)"
 	set desc = "Plants some alien weeds."
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if(check_alien_ability(150,1,O_RESIN))
 		act_message(src, null, others = span_alium(span_bold("%U% has planted some alien weeds!")))
@@ -13,11 +12,10 @@
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 	return
 
-/mob/living/carbon/human/proc/check_plasma_amount(mob/living/carbon/human/M as mob)
+/mob/living/carbon/human/proc/check_plasma_amount()
 	set name = "Check Plasma Reserves"
-	set category = VERB_CAT_ABILITIES_ALIEN
 
-	var/obj/item/organ/internal/xenos/plasmavessel/I = M.organ_in(O_PLASMA)
+	var/obj/item/organ/internal/xenos/plasmavessel/I = organ_in(O_PLASMA)
 	if(!istype(I))
 		to_chat(src, span_alium("Our plasma vessel is missing!"))
 		return
@@ -28,7 +26,6 @@
 /mob/living/carbon/human/proc/resin_weak() // Technically stronger in some aspects.
 	set name = "Secrete Resin (25)"
 	set desc = "Secrete tough, malleable resin in front of us."
-	set category = VERB_CAT_ABILITIES_ALIEN
 
 	var/list/options = list("resin door","resin wall","resin membrane","nest","resin blob")
 	for(var/option in options)

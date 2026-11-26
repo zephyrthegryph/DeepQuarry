@@ -54,10 +54,12 @@
 	var/obj/item/ammo_magazine/m9mm/M = allocate(/obj/item/ammo_magazine/m9mm, T)
 	refresh_flush()
 	var/before = M.rx?.look_key
-	TEST_ASSERT(M.latent_rounds > 0, "a fresh magazine holds its rounds as a count")
-	M.set_latent_rounds(0)
+	TEST_ASSERT(length(M.stored_ammo) > 0, "a fresh magazine holds its rounds")
+	for(var/obj/item/ammo_casing/round as anything in M.stored_ammo.Copy())
+		own_take_member(M, nameof(M.stored_ammo), round)
+		qdel(round)
 	refresh_flush()
-	TEST_ASSERT(M.rx?.look_key != before, "a magazine that lost a round redraws without an update_icon() call")
+	TEST_ASSERT(M.rx?.look_key != before, "a magazine that lost its rounds redraws without an update_icon() call")
 
 /datum/unit_test/dq_draw_items_swapping_cells_redraws_the_gun
 

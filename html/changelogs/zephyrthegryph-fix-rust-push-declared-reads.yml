@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Passive gate and volume pump register their pipe edge when a port binds, with no hand-written push list"

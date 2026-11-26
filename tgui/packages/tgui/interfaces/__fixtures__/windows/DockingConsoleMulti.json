@@ -1,0 +1,13 @@
+{
+	"docking_status": "docked",
+	"airlocks": [
+		{
+			"name": "Port airlock",
+			"override_enabled": false
+		},
+		{
+			"name": "Starboard airlock",
+			"override_enabled": true
+		}
+	]
+}

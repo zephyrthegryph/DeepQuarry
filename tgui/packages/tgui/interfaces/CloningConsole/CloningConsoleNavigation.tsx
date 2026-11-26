@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Tabs } from 'tgui-core/components';
-
+import type { CloningConsoleActions } from '../generated/CloningConsole';
 import type { Data } from './types';
 
 export const CloningConsoleNavigation = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CloningConsoleActions>();
   const { menu } = data;
   return (
     <Tabs>

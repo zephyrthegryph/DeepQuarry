@@ -1,5 +1,0 @@
-@FIXTURE@, line 3, column 8:
-error: /proc/p does impure operations
-- 4:5: SpacemanDMM_should_be_pure set here
-- 5:11: LShift onto mob happens here
-

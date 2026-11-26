@@ -19,12 +19,12 @@
 		"physical_item_id" = handle_of(src),
 		"item_type" = type,
 		"item_name" = name,
-		"fact_id" = "production:[handle_of(src)]",
+		"fact_id" = "production:[handle_text(handle_of(src))]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
 		"metrics" = list("value" = STATE_PEEK(src, economy, economic_export_value)),
 		"detail" = "Fabricated [name] for [department].",
-	), "item-produced:[handle_of(src)]", src)
+	), "item-produced:[handle_text(handle_of(src))]", src)
 	// Preserve specialized export valuation and never count an object twice.
 	make_sellable(/datum/sellable/manufactured)
 
@@ -137,8 +137,11 @@
 		return null
 
 
+/// The turf's tiles came or went (levelupdate()), or a wall or its builder hides it: a thing that hides under flooring goes out of sight under intact
+/// tiles (hide_under_floor()); anything else stays as it is. A type overrides this only for state of its own beyond its invisibility.
 /obj/proc/hide(h)
-	return
+	if(hides_under_flooring())
+		hide_under_floor(src, h)
 
 /obj/proc/hides_under_flooring()
 	return 0
@@ -286,8 +289,10 @@ CAPABILITIES(/obj)
 	obj_rules(tk_reach = TRUE, redgate_allowed = TRUE, micro_target = FALSE, surgery_cleanliness = 0) // its per-type rules: a type trait (code/game/objects/obj_rules.dm)
 	extend(TAG_TOPIC, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate), id = "topic_usable")))
 	extend(TAG_TOPIC, then(PROC_REF(topic_touched), early = TRUE))
+	op("micro_interact", menu(desc = "Micros can enter, or move between objects with this! Non-micros can reach into objects to search for micros!"), label("Micro Interact"), needs(req(PROC_REF(micro_interact_ready), fails = FAILS_HIDDEN)), then(PROC_REF(micro_interact_op)))
+	op("micro_interact_inside", menu(desc = "Exit, or move to another micro-enterable object."), label("Micro Interact"), needs(req(PROC_REF(micro_inside_ready), fails = FAILS_HIDDEN)), asks(/datum/prompt/choice/micro_action, fields = list("timeout" = 0), step = "action"), then(PROC_REF(micro_inside_chosen)))
 	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
 	links(LINK_END(/obj, LK_DISPOSAL_CONNECTION), LINK_END(/datum/disposal_system_connection, LK_DISPOSAL_CONNECTION_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the disposal network connection, gone with the object (disposal_connection())
 	links(LINK_END(/obj, LK_REACTIVE_ICON), LINK_END(/datum/reactive_icon_update, LK_REACTIVE_ICON_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the reactive icon, gone with its object (reactive_icon())
 	links(LINK_END(/obj, LK_TALKING_ATOM), LINK_END(/datum/talking_atom, LK_TALKING_ATOM_OF), sparse = TRUE, b_on_other_deleted = OTHER_DELETE_ME) // the speech state of a talking find, gone with it (talking_atom())
-	op("vv_mass_delete_type", topic_in(VV_TOPIC, VV_HK_MASS_DEL_TYPE), needs(req_rights(R_DEBUG|R_SERVER)), asks(/datum/prompt/choice/mass_delete_scope, step = "scope"), asks(/datum/prompt/yes_no/mass_delete, step = "sure", when = PROC_REF(mass_delete_not_cancelled)), asks(/datum/prompt/yes_no/mass_delete, fields = list("second" = TRUE), step = "again", when = PROC_REF(mass_delete_not_cancelled)), then(PROC_REF(vv_topic_mass_delete_type)))
+	op("vv_mass_delete_type", topic_in(VV_TOPIC, VV_HK_MASS_DEL_TYPE), needs(req_rights(R_DEBUG|R_SERVER)), asks(/datum/prompt/choice/mass_delete_scope, step = "scope"), asks(/datum/prompt/yes_no/mass_delete, step = "sure", when = PROC_REF(mass_delete_not_cancelled), ends_on_no = TRUE), asks(/datum/prompt/yes_no/mass_delete, fields = list("second" = TRUE), step = "again", when = PROC_REF(mass_delete_not_cancelled), ends_on_no = TRUE), then(PROC_REF(vv_topic_mass_delete_type)))

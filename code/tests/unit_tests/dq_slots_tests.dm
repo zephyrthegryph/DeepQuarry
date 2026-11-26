@@ -65,7 +65,7 @@
 	var/datum/slot_probe/D = new
 	var/h = handle_of(D)
 	TEST_ASSERT(isnum(h), "a datum's handle is a number")
-	TEST_ASSERT_EQUAL(handle_get("[handle_of(D)]"), D, "handle_get reads the number's text form too")
+	TEST_ASSERT_EQUAL(handle_get("[handle_text(handle_of(D))]"), D, "handle_get reads the number's text form too")
 	var/turf/T = run_loc_floor_bottom_left
 	TEST_ASSERT(istext(handle_of(T)), "a turf's handle is its text")
 	TEST_ASSERT_EQUAL(handle_get(handle_of(T)), T, "and resolves")
@@ -101,3 +101,52 @@
 			slot_free(id)
 	TEST_ASSERT_EQUAL(slot_leak_report(log = FALSE)["/datum/slot_probe"] || 0, before, "and once released it is no longer reported")
 	qdel(held)
+
+/// A handle from 1e6 on keeps every digit as text: "[h]" would give "1.04858e+06", handle_text() the whole number, and handle_get() reads it back.
+/datum/unit_test/dq_slots_handle_text_high/Run()
+	var/datum/slot_probe/D = new
+	var/id = slot_of(D)
+	handle_gens[id] = 3 // a slot in its fourth life: 3 * SLOT_SPAN + id is above 1.5 million
+	var/h = handle_of(D)
+	TEST_ASSERT(h > 1048577, "the handle is above 1048577: [h]")
+	var/text = handle_text(h)
+	TEST_ASSERT(istext(text) && !findtext(text, "e+") && !findtext(text, "."), "its text is whole digits: [text]")
+	TEST_ASSERT_EQUAL(text2num(text), h, "and reads back as the same number")
+	TEST_ASSERT_EQUAL(handle_get(text), D, "handle_get resolves the text")
+	TEST_ASSERT_EQUAL(handle_get(h), D, "and the number")
+	TEST_ASSERT_EQUAL(handle_text(handle_of(D)), text, "the helper wraps handle_of directly")
+	var/list/by_key = list()
+	by_key[handle_text(handle_of(D))] = TRUE // a text-keyed table, as the tracked lists that cannot be alists are
+	TEST_ASSERT(by_key[text], "a text key made again finds the same entry")
+	var/turf/T = run_loc_floor_bottom_left
+	TEST_ASSERT_EQUAL(handle_text(handle_of(T)), handle_of(T), "a turf's text handle passes through unchanged")
+	TEST_ASSERT_NULL(handle_text(null), "nothing is nothing")
+	qdel(D)
+	TEST_ASSERT_NULL(handle_get(text), "and the text stops resolving once the datum is deleted")
+
+/// A handle stored in a var or a table and made into text later (a log key built from a token, an actor total keyed by a handle) keeps every digit too.
+/datum/unit_test/dq_slots_stored_handle_text_high/Run()
+	var/datum/slot_probe/D = new
+	var/id = slot_of(D)
+	handle_gens[id] = 3
+	var/stored = handle_of(D) // kept in a var, read back by a proc that only gets the number
+	TEST_ASSERT(stored > 1048577, "the stored handle is above 1048577: [stored]")
+	set_global("dq_rule_recording", TRUE)
+	GLOB.dq_rule_fire_log.Cut()
+	var/datum/rule/rule = new /datum/rule/heat_behaviour/rag_ignites
+	dq_rule_record_fire(D, rule)
+	TEST_ASSERT_EQUAL(dq_rule_fire_count_of(stored, rule), 1, "a fire log read by the stored handle finds the entry written from the datum")
+	TEST_ASSERT_EQUAL(dq_rule_fire_count(D, rule), 1, "and by the datum")
+	set_global("dq_rule_recording", FALSE)
+	GLOB.dq_rule_fire_log.Cut()
+	var/list/totals = list()
+	var/datum/slot_probe/E = new
+	var/id_b = slot_of(E)
+	handle_gens[id_b] = 3
+	var/other = handle_of(E)
+	totals["[handle_text(stored)]"] = 1
+	totals["[handle_text(other)]"] = 2
+	TEST_ASSERT_EQUAL(length(totals), 2, "two high handles stay two keys (6-digit text would merge neighbours)")
+	qdel(E)
+	qdel(D)
+	qdel(rule)

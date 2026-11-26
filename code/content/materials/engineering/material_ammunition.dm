@@ -11,8 +11,8 @@
 	name = "[material.display_name] [initial(name)]"
 	set_color(material.icon_colour)
 	if(BB)
-		BB.damage = max(1, round(BB.damage * clamp(0.75 + material.density / 240 + material.hardness / 400, 0.75, 1.25)))
-		BB.set_armor_penetration(max(0, combat_of(BB).armor_penetration + round((material.hardness - material.brittleness * 0.35) / 12)))
+		BB.damage = max(1, round(BB.damage * clamp(0.75 + material.weight / 240 + material.strength / 400, 0.75, 1.25)))
+		BB.set_armor_penetration(max(0, combat_of(BB).armor_penetration + round((material.strength - material.brittleness() * 0.35) / 12)))
 	material.dq_apply_material_behaviors(BB)
 
 /obj/item/ammo_casing/proc/set_forged_materials(datum/material/core, datum/material/jacket, datum/material/case_material, datum/material/primer)
@@ -20,11 +20,11 @@
 	if(!BB)
 		return
 	if(jacket)
-		BB.set_armor_penetration(combat_of(BB).armor_penetration + (clamp(round((jacket.hardness + jacket.fracture_toughness - jacket.brittleness) / 20) - 5, -5, 12)))
+		BB.set_armor_penetration(combat_of(BB).armor_penetration + (clamp(round((jacket.strength + jacket.fracture_toughness() - jacket.brittleness()) / 20) - 5, -5, 12)))
 	if(case_material)
-		BB.accuracy += clamp(round((case_material.elasticity + case_material.heat_resistance - case_material.brittleness) / 25) - 3, -6, 6)
+		BB.accuracy += clamp(round(((case_material.toughness - MATERIAL_REFERENCE_TOUGHNESS) + (case_material.heat_resistance - MATERIAL_REFERENCE_HEAT) - case_material.brittleness()) / 25) - 3, -6, 6)
 	if(primer)
-		BB.accuracy += clamp(round((primer.reactivity + primer.purity_equivalent()) / 30) - 3, -4, 5)
+		BB.accuracy += clamp(round(((100 - primer.corrosion_resistance) + primer.quality()) / 30) - 3, -4, 5)
 
 /obj/item/ammo_magazine
 	var/tmp/datum/material/forged_material_static
@@ -50,7 +50,7 @@
 		return
 	if(istype(forged, /datum/material/processed_alloy))
 		var/datum/material/processed_alloy/processed = forged
-		examine_text += span_notice("Forged projectile stock: hardness [processed.hardness], density [processed.density], brittleness [processed.brittleness].")
+		examine_text += span_notice("Forged projectile stock: strength [processed.strength], weight [processed.weight], brittleness [processed.brittleness()].")
 
 /// A shared definition/flyweight (never cleared).
 /obj/item/ammo_casing/proc/forged_material() as /datum/material

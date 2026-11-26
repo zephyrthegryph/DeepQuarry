@@ -1,18 +1,6 @@
 // Oxygenation, cardiac stabilisers and thermoregulation: pharmacological side effects, overdoses and interactions.
 // Families and the stage template: _pharmacology.dm.
 
-/datum/affliction/chem_side_effect/dexalinp_dysphoria
-	name = "dexalin-plus dysphoria"
-	clinical_description = "Dexalin-plus carries an oxygenation-related stimulant rush. Some patients report mild confusion and dissociative effects while on therapeutic dose. Resolves as the chem clears."
-	symptom_pool = list(
-		/datum/affliction_symptom/confusion = 70,
-		/datum/affliction_symptom/dizziness = 50,
-	)
-	min_symptoms = 1
-	max_symptoms = 2
-	caused_by_chems = list(REAGENT_ID_DEXALINP = 5)
-	caused_by_chems_organ = O_BRAIN
-
 /datum/affliction/overdose/dexalin
 	name = "dexalin overdose"
 	clinical_description = "Excess dexalin disrupts normal oxygen exchange — paradoxically, too much makes breathing less effective."
@@ -140,7 +128,7 @@
 
 /datum/affliction/overdose/leporazine
 	name = "leporazine overdose"
-	clinical_description = "Leporazine overdose causes thermoregulatory chaos — the patient's temperature swings unpredictably, accompanied by chills and sweats."
+	clinical_description = "Leporazine overdose reverses the thermoregulation it normally gives: the body is pushed further from a normal temperature (a hot patient gets hotter, a cold one colder), with chills and sweats."
 	symptom_pool = list(
 		/datum/affliction_symptom/chills            = 70,
 		/datum/affliction_symptom/fever_sensation   = 60,

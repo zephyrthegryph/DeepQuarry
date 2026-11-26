@@ -42,12 +42,13 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	layer = BELOW_MOB_LAYER
 	use_power = USE_POWER_ACTIVE
 	max_integrity = 20
-	/// What light is currently in the socket. Use bulb() to read it.
+	/// What light is currently in the socket. Use bulb() to read it: a stock bulb is made the first time it is read.
 	var/obj/item/light/installed_light
-	/// A pristine light_type bulb held as data (C5): its status, switchcount and rigged are the fixture's own. bulb() makes it real.
-	var/latent_bulb = FALSE
-	/// Charge of a pristine emergency cell held as data (C5), or null for none. emergency_cell() makes it real.
-	var/latent_cell_charge = null
+	/// A stock light_type bulb held as data (containment.md section 5, "created on first use"): its status, switchcount and rigged are the fixture's own.
+	/// bulb() makes it real, the first time something takes it, swaps it or needs the item.
+	var/stock_bulb = FALSE
+	/// The charge of a stock emergency cell held as data, or null for none: emergency_cell() makes it real, the first time its charge is used.
+	var/stock_cell_charge = null
 	on = 0					// 1 if on, 0 if off
 	var/brightness_range
 	var/brightness_power
@@ -74,17 +75,19 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
 	var/emergency_mode = FALSE	// if true, the light is in emergency mode
 	var/no_emergency = FALSE	// if true, this light cannot ever have an emergency mode
-	var/bulb_emergency_brightness_mul = 0.25	// multiplier for this light's base brightness in emergency power mode
+	var/bulb_emergency_brightness_mul = 0.5	// multiplier for this light's base brightness in emergency power mode
 	var/bulb_emergency_colour = "#FF3232"	// determines the colour of the light while it's in emergency mode
-	var/bulb_emergency_pow_mul = 0.75	// the multiplier for determining the light's power in emergency mode
-	var/bulb_emergency_pow_min = 0.5	// the minimum value for the light's power in emergency mode
+	var/bulb_emergency_pow_mul = 1.5	// the multiplier for determining the light's power in emergency mode
+	var/bulb_emergency_pow_min = 1	// the minimum value for the light's power in emergency mode
 	var/nightshift_allowed = TRUE
 	var/brightness_range_ns
 	var/brightness_power_ns
 	var/brightness_color_ns
 	var/overlay_color = LIGHT_COLOR_INCANDESCENT_TUBE
 	var/flickering = FALSE
-	var/overlay_above_everything = TRUE
+	/// TRUE: the lit glow is drawn on the lighting-above plane, over every mob (an overhead lamp, which hangs above heads). FALSE: it is
+	/// drawn with the fixture on its own plane and layer, so a mob in front of it covers it, with an emissive copy beneath that lets the glow through the dark.
+	var/overlay_above_everything = FALSE
 	/// The area's lights power state the fixture last acted on (so a channel change that changes nothing here does nothing). Null: a fixture
 	/// the map load left unpowered, which has lost no power: its emergency cell stays off until power has reached it and gone again.
 	var/tmp/last_area_power = null
@@ -211,6 +214,11 @@ CAPABILITIES(/obj/machinery/light)
 
 // ---- what it looks like ----
 
+/// The fixture is lit by its emergency cell: off the grid and in emergency mode (refresh_light() ends the mode when the cell runs out). Its draw shows the lit
+/// tube in the emergency colour then.
+/obj/machinery/light/proc/emergency_lit()
+	return !on && emergency_mode
+
 /// The fixture's picture: the bulb's state, and the glow of a lit tube.
 /obj/machinery/light/draw(datum/look/look)
 	..()
@@ -219,10 +227,15 @@ CAPABILITIES(/obj/machinery/light)
 			if(shows_alerts && current_alert && on)
 				look.state("[base_state]-alert-[current_alert]")
 				look.overlay(light_overlay(FALSE, "[base_state]-alert-[current_alert]"))
+				look.overlay(light_emissive("[base_state]-alert-[current_alert]"), when = !overlay_above_everything)
 			else
 				look.state("[base_state][on]")
 				if(on)
 					look.overlay(light_overlay())
+					look.overlay(light_emissive(), when = !overlay_above_everything)
+				else if(emergency_lit())
+					look.overlay(light_overlay(TRUE, null, null, bulb_emergency_colour))
+					look.overlay(light_emissive(), when = !overlay_above_everything)
 		if(LIGHT_EMPTY)
 			look.state("[base_state]-empty")
 		if(LIGHT_BURNED)
@@ -239,21 +252,32 @@ CAPABILITIES(/obj/machinery/light)
 			look.state("flampshade[on]")
 			if(on)
 				look.overlay(light_overlay(TRUE, null, "flampshade"))
+				look.overlay(light_emissive(null, "flampshade"), when = !overlay_above_everything)
+			else if(emergency_lit())
+				look.overlay(light_overlay(TRUE, null, "flampshade", bulb_emergency_colour))
+				look.overlay(light_emissive(null, "flampshade"), when = !overlay_above_everything)
 		if(LIGHT_EMPTY, LIGHT_BURNED, LIGHT_BROKEN)
 			look.state("flampshade0")
 
-/// The lit glow over the sprite: tinted by the light's colour, above the lighting or emissive.
-/obj/machinery/light/proc/light_overlay(do_color = TRUE, provided_state = null, state_base = null)
+/// The lit glow over the sprite, tinted by the light's colour. An overhead lamp draws it on the lighting-above plane; any other fixture draws it on
+/// its own plane at its own layer, so a mob standing in front of the fixture (a large one reaching over it) covers it like the fixture.
+/obj/machinery/light/proc/light_overlay(do_color = TRUE, provided_state = null, state_base = null, tint = null)
 	var/image/overlay_layer
 	if(provided_state)
 		overlay_layer = image(icon, "[provided_state]-overlay")
 	else
 		overlay_layer = image(icon, "[state_base || base_state]-overlay")
 	overlay_layer.appearance_flags = RESET_COLOR|KEEP_APART
-	if(overlay_color && do_color)
-		overlay_layer.color = overlay_color
-	overlay_layer.plane = overlay_above_everything ? PLANE_LIGHTING_ABOVE : PLANE_EMISSIVE
+	if(do_color && (tint || overlay_color))
+		overlay_layer.color = tint || overlay_color
+	if(overlay_above_everything)
+		overlay_layer.plane = PLANE_LIGHTING_ABOVE
 	return overlay_layer
+
+/// The glow's emissive copy, for a fixture whose glow shares its plane with the mobs: it lets the glow through the dark, and the emissive blocker of
+/// a mob in front of the fixture stops it, as a mob's own glow is stopped by nothing under it.
+/obj/machinery/light/proc/light_emissive(provided_state = null, state_base = null)
+	return emissive_appearance(icon, "[provided_state || state_base || base_state]-overlay")
 
 /// Within two tiles the fixture says what is in it.
 /obj/machinery/light/proc/examine_status(datum/act/op/A)
@@ -273,7 +297,7 @@ CAPABILITIES(/obj/machinery/light)
 /obj/machinery/light/proc/examine_charge(datum/act/op/A)
 	if(!has_cell())
 		return null
-	var/charge = cell ? cell.charge : latent_cell_charge
+	var/charge = cell ? cell.charge : stock_cell_charge
 	var/maxcharge = cell ? cell.maxcharge : initial(/obj/item/cell/emergency_light::maxcharge)
 	if(cell && emergency_discharge_started)
 		charge = max(0, charge - LIGHT_EMERGENCY_POWER_USE * (max(0, TIME_NOW(CLOCK_WORLD) - emergency_discharge_started) / (2 SECONDS)))
@@ -358,7 +382,7 @@ CAPABILITIES(/obj/machinery/light)
 				set_use_power(USE_POWER_ACTIVE)
 				set_glow(src, GLOW(correct_range, correct_power, correct_color))
 				set_overlay_color(correct_overlay)
-		if(cell?.charge < cell?.maxcharge)
+		if(emergency_charge_short())
 			schedule_emergency_recharge()
 	else if(!isnull(last_area_power) && has_emergency_power(LIGHT_EMERGENCY_POWER_USE) && !turned_off()) // not on a fixture that never had power (start_up_fixture())
 		set_use_power(USE_POWER_IDLE)
@@ -366,8 +390,13 @@ CAPABILITIES(/obj/machinery/light)
 		begin_emergency_discharge()
 	else
 		set_use_power(USE_POWER_IDLE)
+		set_emergency_mode(FALSE) // the cell is flat (or the fixture may not use it): no emergency sprite
 		set_glow(src, GLOW(0, null, null))
-	update_active_power_usage((glow_of(src).range * glow_of(src).power) * LIGHTING_POWER_FACTOR)
+	// The active draw counts only while the lamp is on (use_power ACTIVE); a dark or emergency lamp is idle and draws its idle power. It follows the
+	// lamp's glow while on and is left alone otherwise: a write republishes the power trait and re-settles every power-gated stat of the fixture
+	// (about 1.2 ms a fixture when an area's lights go dark together), and turning back on finds the same draw and writes nothing.
+	if(on)
+		update_active_power_usage((glow_of(src).range * glow_of(src).power) * LIGHTING_POWER_FACTOR)
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/machinery/light/proc/smashed_by(datum/act/hit/generic/A)
@@ -394,15 +423,15 @@ CAPABILITIES(/obj/machinery/light)
 /obj/machinery/light/get_cell()
 	return emergency_cell()
 
-/// Whether a bulb is fitted, real or latent.
+/// Whether a bulb is fitted, real or stock.
 /obj/machinery/light/proc/has_bulb()
-	return installed_light || latent_bulb
+	return installed_light || stock_bulb
 
-/// The fitted bulb, made real if it was latent (C5). Null when empty.
+/// The fitted bulb, made real if it was the stock one. Null when empty.
 /obj/machinery/light/proc/bulb()
 	RETURN_TYPE(/obj/item/light)
-	if(latent_bulb)
-		latent_bulb = FALSE
+	if(stock_bulb)
+		stock_bulb = FALSE
 		var/obj/item/light/made = new light_type(src)
 		rel_set(src, nameof(installed_light), made)
 		made.set_status(status)
@@ -410,25 +439,42 @@ CAPABILITIES(/obj/machinery/light)
 		made.rigged = rigged
 	return installed_light
 
-/// Whether an emergency cell is fitted, real or latent.
-/obj/machinery/light/proc/has_cell()
-	return cell || !isnull(latent_cell_charge)
+/// The socket lets its bulb go without anyone taking it (its glass went into a light replacer's shards).
+/obj/machinery/light/proc/discard_bulb()
+	stock_bulb = FALSE
+	rel_clear(src, nameof(installed_light))
 
-/// The emergency cell, made real if it was latent (C5). Null when none.
+/// Whether an emergency cell is fitted, real or stock.
+/obj/machinery/light/proc/has_cell()
+	return cell || !isnull(stock_cell_charge)
+
+/// The emergency cell, made real if it was the stock one. Null when none.
 /obj/machinery/light/proc/emergency_cell()
 	RETURN_TYPE(/obj/item/cell/emergency_light)
-	if(!isnull(latent_cell_charge))
-		var/charge = latent_cell_charge
-		latent_cell_charge = null
+	if(!isnull(stock_cell_charge))
+		var/charge = stock_cell_charge
+		stock_cell_charge = null
 		rel_set(src, nameof(cell), new /obj/item/cell/emergency_light(src))
 		cell.set_charge(charge)
 	return cell
 
-/// A pristine emergency cell as data: what /obj/item/cell/emergency_light's Initialize() would give here (no charge in a naturally depowered area).
+/// The fixture lets its own emergency cell go (a frame's cell takes its place): the stock charge, or the real cell.
+/obj/machinery/light/proc/forget_stock_cell()
+	stock_cell_charge = null
+	if(cell)
+		spent(cell)
+
+/// The emergency cell holds less than it can (a real one, or a stock one that started flat in a naturally depowered area): it recharges on power.
+/obj/machinery/light/proc/emergency_charge_short()
+	if(cell)
+		return cell.charge < cell.maxcharge
+	return !isnull(stock_cell_charge) && stock_cell_charge < initial(/obj/item/cell/emergency_light::maxcharge)
+
+/// The fixture's emergency cell, held as a stock charge until it is used: what /obj/item/cell/emergency_light's own setup would give here (no charge in a
+/// naturally depowered area, drain_if_area_depowered()).
 /obj/machinery/light/proc/declare_emergency_cell()
 	var/area/A = get_area(src)
-	var/obj/item/cell/emergency_light/typed = /obj/item/cell/emergency_light
-	latent_cell_charge = (!A?.lightswitch || !glow_of(A).power) ? 0 : initial(typed.charge)
+	stock_cell_charge = (!A?.lightswitch || !glow_of(A).power) ? 0 : initial(/obj/item/cell/emergency_light::charge)
 
 /obj/machinery/light/proc/get_fitting_name()
 	var/obj/item/light/L = light_type
@@ -472,7 +518,7 @@ CAPABILITIES(/obj/machinery/light)
 	rel_set(src, nameof(installed_light), L)
 	. = TRUE
 	update_from_bulb(L)
-	latent_bulb = FALSE
+	stock_bulb = FALSE
 
 	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
 	refresh_light()
@@ -487,7 +533,7 @@ CAPABILITIES(/obj/machinery/light)
 /obj/machinery/light/proc/remove_bulb()
 	switchcount = 0
 	rel_take(src, nameof(installed_light))
-	latent_bulb = FALSE
+	stock_bulb = FALSE
 	set_bulb_status(LIGHT_EMPTY)
 	refresh_light()
 
@@ -637,7 +683,7 @@ CAPABILITIES(/obj/machinery/light)
 /obj/machinery/light/proc/has_emergency_power(pwr)
 	if(no_emergency || area_emergency_off || !has_cell())
 		return FALSE
-	var/charge = cell ? cell.charge : latent_cell_charge
+	var/charge = cell ? cell.charge : stock_cell_charge
 	if(pwr ? charge >= pwr : charge)
 		return status == LIGHT_OK
 
@@ -647,6 +693,13 @@ CAPABILITIES(/obj/machinery/light)
 		return FALSE
 	if(!has_emergency_power(pwr))
 		return FALSE
+	// A zero draw (the first emergency look) reads the stock charge as it is: the cell is made only when charge is really taken.
+	if(pwr <= 0 && !cell)
+		if(stock_cell_charge > 750)
+			emergency_cell() // the overcharged cell's short below works on the real one
+		else
+			set_glow(src, GLOW(brightness_range * bulb_emergency_brightness_mul, emergency_level_for(stock_cell_charge, emergency_capacity()), bulb_emergency_colour))
+			return TRUE
 	var/obj/item/cell/C = emergency_cell()
 	if(C.charge > 750) //it's meant to handle 120 W, ya doofus. Not Anymore!!
 		visible_message(span_warning("[src] short-circuits from too powerful of a power cell!"))
@@ -662,13 +715,27 @@ CAPABILITIES(/obj/machinery/light)
 /// (bulb_emergency_pow_min of bulb_emergency_pow_mul), then at that dimmed level until the cell runs out. Two levels, not a ramp: every station
 /// light that loses power at the same moment changes level at the same moment, and each level change is a lighting update of every fixture in the dark.
 /obj/machinery/light/proc/emergency_light_power(obj/item/cell/C)
-	if(!C?.maxcharge || bulb_emergency_pow_mul <= bulb_emergency_pow_min)
+	return emergency_level_for(C?.charge, C?.maxcharge)
+
+/// The emergency output for a cell holding `charge` of `maxcharge` (a real cell's numbers or the stock charge's).
+/obj/machinery/light/proc/emergency_level_for(charge, maxcharge)
+	if(!maxcharge || bulb_emergency_pow_mul <= bulb_emergency_pow_min)
 		return bulb_emergency_pow_min
-	return C.charge > emergency_dim_charge(C) ? bulb_emergency_pow_mul : bulb_emergency_pow_min
+	return charge > emergency_dim_for(maxcharge) ? bulb_emergency_pow_mul : bulb_emergency_pow_min
 
 /// The cell charge below which the emergency output drops to its dimmed level.
 /obj/machinery/light/proc/emergency_dim_charge(obj/item/cell/C)
-	return bulb_emergency_pow_mul > 0 ? bulb_emergency_pow_min / bulb_emergency_pow_mul * C.maxcharge : 0
+	return emergency_dim_for(C.maxcharge)
+
+/obj/machinery/light/proc/emergency_dim_for(maxcharge)
+	return bulb_emergency_pow_mul > 0 ? bulb_emergency_pow_min / bulb_emergency_pow_mul * maxcharge : 0
+
+/// The emergency cell's charge and capacity, from the real cell or the stock charge (no cell is made).
+/obj/machinery/light/proc/emergency_charge()
+	return cell ? cell.charge : (stock_cell_charge || 0)
+
+/obj/machinery/light/proc/emergency_capacity()
+	return cell ? cell.maxcharge : initial(/obj/item/cell/emergency_light::maxcharge)
 
 // ---- flicker ----
 
@@ -808,26 +875,28 @@ CAPABILITIES(/obj/machinery/light)
 /// cell runs out. The drain is settled in one batch then: a fixture in an unpowered area wakes twice over its cell's half hour, not every few
 /// seconds (each wake is a timer, a redraw and a lighting update, and a station has a thousand such fixtures that all lose power together).
 /obj/machinery/light/proc/emergency_discharge_wait()
-	var/obj/item/cell/C = emergency_cell()
-	if(!C?.maxcharge)
+	var/maxcharge = has_cell() ? emergency_capacity() : 0
+	if(!maxcharge)
 		return 2 SECONDS
+	var/charge = emergency_charge()
 	// The charge at which it runs out, or drops to the dimmed level if that comes first.
 	var/target = LIGHT_EMERGENCY_POWER_USE
-	var/dim = emergency_dim_charge(C)
-	if(C.charge > dim && bulb_emergency_pow_mul > bulb_emergency_pow_min)
+	var/dim = emergency_dim_for(maxcharge)
+	if(charge > dim && bulb_emergency_pow_mul > bulb_emergency_pow_min)
 		target = max(target, dim)
 	// LIGHT_EMERGENCY_POWER_USE every two seconds; one decisecond past the crossing, and never sooner than one drain step.
-	return max((C.charge - target) / LIGHT_EMERGENCY_POWER_USE * (2 SECONDS) + 1, 2 SECONDS)
+	return max((charge - target) / LIGHT_EMERGENCY_POWER_USE * (2 SECONDS) + 1, 2 SECONDS)
 
 /obj/machinery/light/proc/schedule_emergency_recharge()
-	if(!cell || cell.charge >= cell.maxcharge || !has_power() || after_pending(src, "recharge"))
+	if(!emergency_charge_short() || !has_power() || after_pending(src, "recharge"))
 		return
+	emergency_cell() // charging works the real cell
 	// Charging is time based. Preserve the historical rate of 0.4 charge every two seconds while stable power is available.
 	var/charge_steps = CEILING((cell.maxcharge - cell.charge) / (LIGHT_EMERGENCY_POWER_USE * 2), 1)
 	after(src, charge_steps * (2 SECONDS), PROC_REF(finish_emergency_recharge), key = "recharge", clock = CLOCK_OWN)
 
 /obj/machinery/light/proc/finish_emergency_recharge(datum/act/A)
-	if(QDELETED(src) || !cell || !has_power())
+	if(QDELETED(src) || !emergency_cell() || !has_power())
 		return
 	cell.give(cell.maxcharge - cell.charge)
 	refresh_light(FALSE)
@@ -861,7 +930,7 @@ CAPABILITIES(/obj/machinery/light)
 		if(on)
 			fx_sparks(src, 3)
 	set_bulb_status(LIGHT_BROKEN)
-	if(installed_light) // a latent bulb takes the fixture's status
+	if(installed_light) // the bulb takes the fixture's status
 		installed_light.set_status(status)
 	refresh_light()
 
@@ -988,14 +1057,6 @@ CAPABILITIES(/obj/machinery/light)
 	color = "#028bda"
 	brightness_color = "#028bda"
 	init_brightness_range = 4
-
-/obj/item/light/bulb/fire
-	name = "fire bulb"
-	desc = "A replacement fire bulb."
-	icon_state = "fbulb"
-	base_state = "fbulb"
-	item_state = "egg4"
-	MATERIAL_BULK(MAT_GLASS, 100)
 
 
 CAPABILITIES(/obj/item/light)
@@ -1224,7 +1285,7 @@ CAPABILITIES(/obj/item/light)
 /obj/machinery/light/var/tmp/obj/machinery/light_construct/construct_at_make
 
 // create a new lighting fixture
-/// A light built from a frame starts empty and faces the frame's way; a mapped one carries its bulb as data, and every light powers up.
+/// A light built from a frame starts empty and faces the frame's way; a mapped one is made with its bulb, and every light powers up.
 /obj/machinery/light/proc/start_up_fixture(mapload)
 	if(start_with_cell && !no_emergency)
 		declare_emergency_cell()
@@ -1236,22 +1297,18 @@ CAPABILITIES(/obj/item/light)
 		construct.transfer_fingerprints_to(src)
 		set_dir(construct.dir)
 	else
-		latent_bulb = TRUE // the bulb is data until someone takes it (C5)
-		var/obj/item/light/L = get_light_type_instance(light_type) //This is fine, but old code.
+		stock_bulb = TRUE // the bulb is data until something needs the item (bulb())
+		var/obj/item/light/L = get_light_type_instance(light_type) // the type's bulb, for its numbers
 		update_from_bulb(L)
 		if(prob(L.broken_chance))
 			broken(1)
 
-	rel_set(src, nameof(power_area), get_area(src))
-	set_on(powered())
+	set_on(powered()) // its power_area is the machine core's (machine_power_start())
 	// Map load: a fixture with no power at load has lost none. It stays dark and keeps its cell (null: no power seen yet) until power reaches
 	// it; the emergency cell starts on a loss after that (area_power_changed(): an APC failing, a cut, the area's after-load settle taking
 	// the power an APC-less area started with). A fixture built later in a dark room has lost its power to its builder: it lights from its cell.
 	last_area_power = (mapload && !on) ? null : !!has_power()
 	refresh_light(0)
-	// ition, so large mobs stop looking stupid in front of lights.
-	if (dir == SOUTH) // Lights are backwards, SOUTH lights face north (they are on south wall)
-		layer = ABOVE_MOB_LAYER
 
 // Wall tube lights
 /obj/item/light/tube
@@ -1295,7 +1352,6 @@ CAPABILITIES(/obj/item/light)
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
 	construct_type = /obj/machinery/light_construct/floortube
-	overlay_above_everything = FALSE
 
 /obj/machinery/light/floortube/flicker
 	auto_flicker = TRUE
@@ -1377,11 +1433,8 @@ CAPABILITIES(/obj/item/light)
 	light_type = /obj/item/light/bulb/torch
 	shows_alerts = FALSE
 	anchored = TRUE
-	plane = ABOVE_MOB_PLANE
-	layer = ABOVE_MOB_LAYER
 	construct_type = null
 	overlay_color = LIGHT_COLOR_INCANDESCENT_BULB
-	overlay_above_everything = TRUE
 
 /// A wall torch is no socket to smash or fill.
 CAPABILITIES(/obj/machinery/light/small/torch)

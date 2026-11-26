@@ -207,7 +207,7 @@ CAPABILITIES(/obj/item/projectile/bullet/chemdart)
 	if(blocked < 2)
 		if(isliving(target))
 			var/mob/living/L = target
-			if(L.can_inject(target_zone=def_zone))
+			if(!L.inject_refusal(target_zone=def_zone))
 				reagents.trans_to_mob(L, reagent_amount, CHEM_BLOOD)
 		else if(istype(target, /obj/item/reagent_containers/food) || istype(target, /obj/item/slime_extract))
 			reagents.trans_to_obj(target, reagent_amount)

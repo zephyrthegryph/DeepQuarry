@@ -95,3 +95,39 @@
 	var/obj/item/organ/heart = M.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "the butchered heart is found loose in the interior slot")
 	TEST_ASSERT(M.has_internal_organ(heart), "has_internal_organ agrees")
+
+/// A diona left foot hangs from the left leg, the right foot from the right leg (the part tree attaches by parent_organ).
+/datum/unit_test/dq_diona_foot_parents
+
+/datum/unit_test/dq_diona_foot_parents/Run()
+	TEST_ASSERT_EQUAL(/obj/item/organ/external/diona/foot::parent_organ, BP_L_LEG, "the diona left foot hangs from the left leg")
+	TEST_ASSERT_EQUAL(/obj/item/organ/external/diona/foot/right::parent_organ, BP_R_LEG, "the diona right foot hangs from the right leg")
+
+/// The immune hub lowers every organ's own rejection, never resets it to the hub's value.
+/datum/unit_test/dq_immune_hub_lowers_each_organs_rejection
+
+/datum/unit_test/dq_immune_hub_lowers_each_organs_rejection/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/internal/immunehub/hub = allocate(/obj/item/organ/internal/immunehub)
+	TEST_ASSERT(move_into(H.get_organ(BP_TORSO), SLOT_ID_PART_ORGANS, hub), "the hub goes into the torso")
+	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
+	TEST_ASSERT_NOTNULL(heart, "a human has a heart")
+	hub.rejecting = 0
+	heart.rejecting = 25
+	hub.handle_organ_proc_special(1)
+	TEST_ASSERT_EQUAL(heart.rejecting, 25 - hub.rejection_adjust, "the heart's rejection fell by the hub's adjustment from its own value")
+
+/// Taking a hive node out of a patient strips the hivemind language from the patient, not from the surgeon.
+/datum/unit_test/dq_hive_node_removal_strips_the_patient
+
+/datum/unit_test/dq_hive_node_removal_strips_the_patient/Run()
+	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/internal/xenos/hivenode/node = allocate(/obj/item/organ/internal/xenos/hivenode)
+	TEST_ASSERT(move_into(patient.get_organ(BP_TORSO), SLOT_ID_PART_ORGANS, node), "the node goes into the patient's torso")
+	patient.add_language(LANGUAGE_HIVEMIND)
+	surgeon.add_language(LANGUAGE_HIVEMIND)
+	node.removed(surgeon)
+	var/datum/language/hive = GLOB.all_languages[LANGUAGE_HIVEMIND]
+	TEST_ASSERT(!(hive in patient.languages), "the patient lost the hivemind language with the node")
+	TEST_ASSERT(hive in surgeon.languages, "the surgeon kept their own language")

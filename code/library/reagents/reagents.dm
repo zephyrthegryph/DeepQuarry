@@ -41,6 +41,11 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 
 /datum/capability/lib/reagents
 	holder_hooks = HOLDER_HOOK_PREINIT
+	/// starting_template()'s answer for `template_regime`: the shared id -> amount list, FALSE when this declaration can't have one, null unasked.
+	var/tmp/template_cache
+	var/tmp/template_regime
+	/// The template's units: a holder smaller than this is filled add by add (each add clamps to the space left).
+	var/tmp/template_total = 0
 
 /// configure(reagents(...)): `add` merges into the inherited adds (amounts sum), `starts` replaces the contents and drops inherited adds.
 /datum/capability/lib/reagents/reconfigure_ctor(list/ctor, list/changes)
@@ -81,6 +86,13 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 	var/max_volume = reagents_volume_of(holder)
 	var/holder_type = (istext(src.holder) && (src.holder in holder.vars)) ? holder.vars[src.holder] : src.holder // nameof(var): the holder's own type var
 	holder.create_reagents(max_volume, ispath(holder_type, /datum/reagents) ? holder_type : /datum/reagents)
+	// A starting set no transformation can take (every rule needs a reagent or catalyst it lacks) settles to nothing: each add skips its settle.
+	var/list/template = starting_template(holder, max_volume)
+	if(template)
+		fill_starting(holder, template)
+		return
+	var/list/ids = declared_ids(holder)
+	var/inert = !isnull(ids) && reagents_set_inert(holder.reagents.xform_regime(), ids)
 	var/total = 0
 	for(var/id_var in starts_from)
 		var/id = holder.vars[id_var]
@@ -89,7 +101,7 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 			continue
 		total += amount
 		// The data of a reagent named by a var is keyed by that var's name (data = list(nameof(id var) = ...)), or by the id itself.
-		holder.reagents.add_reagent(id, amount, (data && !isnull(data[id_var])) ? reagents_data_of(holder, id_var) : reagents_data_of(holder, id))
+		holder.reagents.add_reagent(id, amount, (data && !isnull(data[id_var])) ? reagents_data_of(holder, id_var) : reagents_data_of(holder, id), inert)
 	var/declared = FALSE
 	for(var/id in starts)
 		var/amount = reagents_amount_of(holder, starts[id])
@@ -97,14 +109,14 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 			continue
 		total += amount
 		declared = TRUE
-		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
+		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id), inert)
 	for(var/id in add)
 		var/amount = reagents_amount_of(holder, add[id])
 		if(amount <= 0)
 			continue
 		total += amount
 		declared = TRUE
-		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
+		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id), inert)
 	if(contents_from)
 		var/list/rolled = istext(contents_from) && (contents_from in holder.vars) ? holder.vars[contents_from] : holder_call(holder, contents_from)
 		for(var/id in rolled)
@@ -113,18 +125,86 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 				continue
 			total += amount
 			declared = TRUE
-			holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
+			holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id), inert)
 	for(var/id in last)
 		var/amount = reagents_amount_of(holder, last[id])
 		if(amount <= 0)
 			continue
 		total += amount
 		declared = TRUE
-		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
-	if(tint && declared)
-		holder.set_color(holder.reagents.get_color())
+		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id), inert)
+	if(declared)
+		tint_holder(holder)
 	if(total > max_volume)
 		WARNING("[holder]([holder.type]) declares more reagents ([total]) than its volume ([max_volume])")
+
+/// The starting reagents as one ordered id -> amount list when they are the same for every holder of this declaration (numbers only: no var or
+/// proc amounts, no data, no starts_from or contents_from), fit this holder's volume and settle to nothing; else null and the holder is filled
+/// add by add. Worked out once per declaration and regime, and shared: fill_from_template() only reads it.
+/datum/capability/lib/reagents/proc/starting_template(atom/holder, max_volume)
+	if(starts_from || contents_from || data)
+		return null
+	var/regime = holder.reagents.xform_regime()
+	if(template_regime != regime || isnull(template_cache))
+		build_template(regime)
+	// One reagent is no cheaper in one pass (making the reagent datum is the cost; bench tmp A/B: 424 us add vs 527 us filled): it goes add by add.
+	if(!template_cache || length(template_cache) == 1 || template_total > max_volume)
+		return null
+	return template_cache
+
+/datum/capability/lib/reagents/proc/build_template(regime)
+	var/list/built = list()
+	var/total = 0
+	for(var/list/part in list(starts, add, last))
+		for(var/id in part)
+			var/amount = part[id]
+			if(isnull(amount))
+				amount = 1
+			if(!isnum(amount) || (id in built))
+				return remember_template(regime, FALSE)
+			if(amount <= 0)
+				continue
+			built[id] = amount
+			total += amount
+	if(!reagents_set_inert(regime, built))
+		return remember_template(regime, FALSE)
+	template_total = total
+	return remember_template(regime, built)
+
+/datum/capability/lib/reagents/proc/remember_template(regime, list/built)
+	template_regime = regime
+	template_cache = built
+	return built || null
+
+/// A holder filled from its declaration's template in one pass; an empty declaration starts empty (nothing added, nothing told of a change).
+/datum/capability/lib/reagents/proc/fill_starting(atom/holder, list/template)
+	if(!length(template))
+		return
+	holder.reagents.fill_from_template(template)
+	tint_holder(holder)
+
+/// tint = TRUE: the holder takes the colour of what it was filled with.
+/datum/capability/lib/reagents/proc/tint_holder(atom/holder)
+	if(tint)
+		BOOT_PHASE_BEGIN(bp_tint)
+		holder.set_color(holder.reagents.get_color())
+		BOOT_PHASE_END(bp_tint, "reagents: tint_holder", holder)
+
+/// The ids this declaration puts in `holder`, or null when it takes a computed contents_from list.
+/datum/capability/lib/reagents/proc/declared_ids(atom/holder)
+	. = list()
+	for(var/id_var in starts_from)
+		var/id = holder.vars[id_var]
+		if(id)
+			. |= id
+	for(var/id in starts)
+		. |= id
+	for(var/id in add)
+		. |= id
+	if(contents_from)
+		return null // a recipe answered at init is read once, by the add: such a holder settles after every add as it always did
+	for(var/id in last)
+		. |= id
 
 /// The volume the declaration gives this holder: a number, a holder var named by nameof(), or a holder proc's answer.
 /datum/capability/lib/reagents/proc/reagents_volume_of(atom/holder)
@@ -154,3 +234,47 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 	if(istext(value))
 		value = (value in holder.vars) ? holder.vars[value] : holder_call(holder, value)
 	return value
+
+/// A mob that does not take what a belly made refuses a holder whose contents came from one (a dose, a drink, an injection, a feeding).
+/proc/belly_liquid_refused(atom/holder, atom/target)
+	var/mob/M = target
+	if(!istype(M))
+		return FALSE
+	return M.refuses_belly_liquid(holder)
+
+/// Whether this mob refuses a holder whose contents came from a belly. Nothing is a belly's before the content layer says so.
+/mob/proc/refuses_belly_liquid(atom/holder)
+	return FALSE
+
+/// Whether no transformation of `regime` can fire on a holder holding only `ids`: every rule indexed under one of them needs a reagent or a catalyst
+/// outside the set (xform_matches() asks for all of them), so the settle after each add would find nothing. Cached per regime and set.
+/proc/reagents_set_inert(regime, list/ids)
+	if(!length(ids))
+		return TRUE
+	var/list/sorted = sortList(ids.Copy())
+	return CACHED(reagents_set_inert, "[regime]|[jointext(sorted, ",")]")
+
+DECLARE_SHARED_CACHE(reagents_set_inert, GLOBAL_PROC_REF(reagents_set_inert_build), SC_NEVER)
+
+/proc/reagents_set_inert_build(key)
+	var/bar = findtext(key, "|")
+	var/regime = copytext(key, 1, bar)
+	if(isnum(text2num(regime)))
+		regime = text2num(regime)
+	var/list/ids = splittext(copytext(key, bar + 1), ",")
+	var/list/lookup = xform_bucket_table(MEDIUM_REAGENTS, regime)
+	for(var/id in ids)
+		for(var/datum/xform/X as anything in lookup[id])
+			var/possible = TRUE
+			for(var/need in X.reagent_takes)
+				if(!(need in ids))
+					possible = FALSE
+					break
+			if(possible)
+				for(var/need in X.reagent_catalysts)
+					if(!(need in ids))
+						possible = FALSE
+						break
+			if(possible)
+				return FALSE
+	return TRUE

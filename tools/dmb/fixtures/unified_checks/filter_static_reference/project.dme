@@ -1,8 +1,0 @@
-/datum/static_base/proc/work()
-    return 0
-/datum/static_child
-    parent_type=/datum/static_base
-/datum/static_child/work()
-    return 0
-/datum/static_child/proc/probe()
-    filter(type=src::work(doesnotexist))

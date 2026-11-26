@@ -25,96 +25,30 @@
 
 	// Attributes
 	var/cut_delay = 0            // Delay in ticks when cutting through this wall.
-	// radioactivity / luminescence / toxicity are numeric vars further down (see the
-	// material property block); read via dq_material_*() and applied by material_behaviors.dm.
 	var/ignition_point           // K, point at which the material catches on fire.
-	var/melting_point = 1800     // K, walls will take damage if they're next to a fire hotter than this
-	// integrity moved into the property system below.
-	var/protectiveness = 10      // How well this material works as armor.  Higher numbers are better, diminishing returns applies.
 	var/opacity = 1              // Is the material transparent? 0.5< makes transparent walls/doors.
 	var/reflectivity = 0         // How reflective to light is the material?  Currently used for laser reflection and defense.
-	var/explosion_resistance = 5 // Only used by walls currently.
 	var/negation = 0             // Objects that respect this will randomly absorb impacts with this var as the percent chance.
 	var/spatial_instability = 0  // Objects that have trouble staying in the same physical space by sheer laws of nature have this. Percent for respecting items to cause teleportation.
-	var/conductive = 1           // Objects without this var add NOCONDUCT to flags on spawn.
-	// conductivity moved into the property system below.
 	var/list/composite_material  // If set, object matter var will be a list containing these values.
-	var/radiation_resistance = 0 // Radiation resistance, which is added on top of a material's density for blocking radiation. Needed to make lead special without superrobust weapons.
+	var/radiation_resistance = 0 // Radiation resistance, which is added on top of a material's weight for blocking radiation. Needed to make lead special without superrobust weapons.
 	var/supply_conversion_value  // Supply points per sheet that this material sells for.
 	var/can_sharpen = TRUE // Is this material compatible with a sharpening kit?
 
-	// material property system.
-	//
-	// The eleven property vars below are read-heavy numeric stats. Every
-	// material can carry every stat (default 0). Static materials declare
-	// what's gameplay-relevant; /datum/material/dynamic rolls all of them
-	// from class-aware ranges at creation time. There are no implicit
-	// upstream-style defaults — 0 means "this material does not
-	// contribute to that axis."
-	//
-	// Behavior properties: plain numeric magnitudes. Read via
-	// dq_material_luminescence/radioactivity/toxicity (material_behaviors.dm) and
-	// applied to items by configure_material_behaviors(). 0 = inert on that axis.
-	var/luminescence = 0   // passive light range driver (~0-80)
-	var/radioactivity = 0  // per-tick irradiation strength
-	var/toxicity = 0       // per-tick toxin dose to a bare holder
-	// Mechanical
-	var/hardness = 0
-	var/density = 0                  // Was upstream `weight`.
-	var/integrity = 0
-	var/elasticity = 0
-	var/brittleness = 0              // Debuff stat: high brittleness = parts can shatter.
-	// Thermal
-	var/heat_resistance = 0
-	var/thermal_insulation = 0
-	// Electrical / magnetic
-	var/conductivity = 0
-	var/magnetism = 0
-	// Chemical
-	var/reactivity = 0
-	var/corrosion_resistance = 0
-	// Constitutive properties consumed by the shared composite-material simulation.
-	// Object geometry turns these intrinsic values into cable, pipe, vessel, and
-	// structural ratings; do not store an object's final rating on the material.
-	var/electrical_resistivity = 1
-	var/specific_heat = 450
-	var/yield_strength = 150
-	var/fracture_toughness = 50
-	var/dielectric_strength = 10
-	var/critical_temperature = 0
-	var/critical_current_density = 0
-	var/phase_change_temperature = 0
-	var/phase_change_capacity = 0
-	var/catalytic_activity = 0
-	/// Continuous physical response coefficients. These are constitutive values,
-	/// not named powers: manufactured geometry decides which ones can operate.
-	var/thermoelectric_coefficient = 0
-	var/piezoelectric_coefficient = 0
-	var/electrogenic_rate = 0
-	var/shape_recovery_rate = 0
-	var/shape_recovery_temperature = 0
-	var/radiovoltaic_efficiency = 0
-	var/scintillation_efficiency = 0
-	/// Energy deposited by emitters or particle beams which a compatible cell can retain.
-	var/field_energy_capacity = 0
-	/// Fraction of an emitter/PA pulse captured instead of becoming waste heat.
-	var/field_charge_efficiency = 0
-	/// Passive heat released by an energized or fusion-stabilized material form.
-	var/exothermic_heat_rate = 0
-	/// Powered coefficient for moving heat through a deliberately constructed thermal assembly.
-	var/heat_pump_coefficient = 0
-	/// Temperature at which the material becomes an efficient thermal conductor.
-	var/thermal_switch_temperature = 0
-	var/thermal_switch_ratio = 1
-	var/reactive_energy_capacity = 0
-	var/antimicrobial_activity = 0
-	var/hemostatic_activity = 0
-	var/biocompatibility = 0
-	var/gas_sorption_capacity = 0
-	var/reagent_porosity = 0
-	// Trait holder (component-driven behaviors attached at New() or roll
-	// time live as full /datum/component children on this material).
+	// The card (doc/material_engineering_implementation.md): six core stats on one scale. Every other number a
+	// material shows (hit points, yield, melting point, resistivity, armour value, ...) is derived from these in
+	// properties.dm, never stored; a processed alloy's card is computed from its batch and keeps the steps behind
+	// each number in stat_notes.
+	var/strength = 20             // Denting, cutting and armour resistance.
+	var/toughness = 20            // How much punishment it takes before it fails; low against strength means brittle.
+	var/heat_resistance = 38.75   // Melting point is 250 K + 40 per point (steel, 1800 K).
+	var/conductivity = 15         // One axis for electricity and heat; below 8 it does not conduct at all.
+	var/corrosion_resistance = 50 // 100 is inert; reactivity is its inverse.
+	var/weight = 20               // Mass per sheet: handling, armour slowdown, radiation shielding.
+	/// Traits the material has: trait id (MT_*) -> strength 0-100. A material lacks a trait if it has no entry.
 	var/list/traits
+	/// Processed materials: card stat or trait id -> list of list(label, delta) the number was built from, starting with "base".
+	var/list/stat_notes
 
 	// Placeholder vars for the time being, todo properly integrate windows/light tiles/rods.
 	var/created_window
@@ -122,8 +56,6 @@
 	var/rod_product
 	var/wire_product
 	var/list/window_options
-
-	// hardness/weight moved into the property system above.
 
 	// Noise when someone is faceplanted onto a table made of this material.
 	var/tableslam_noise = 'sound/weapons/tablehit1.ogg'
@@ -166,17 +98,6 @@
 // Make sure we have a display name and shard icon even if they aren't explicitly set.
 /datum/material/New()
 	..()
-	// Backfill physical coefficients from the long-standing material data. New
-	// materials may override any coefficient explicitly; ordinary materials still
-	// gain distinct constitutive behavior without a parallel lookup table.
-	if(electrical_resistivity == initial(electrical_resistivity))
-		electrical_resistivity = 100 / max(conductivity, 0.1)
-	if(yield_strength == initial(yield_strength))
-		yield_strength = max(hardness * 5, integrity * 0.75, 25)
-	if(fracture_toughness == initial(fracture_toughness))
-		fracture_toughness = max(10, elasticity * 0.5 + integrity * 0.15 - brittleness * 0.2)
-	if(dielectric_strength == initial(dielectric_strength) && !conductive)
-		dielectric_strength = max(25, 110 - conductivity)
 	if(!display_name)
 		display_name = name
 	if(!use_name)
@@ -205,7 +126,7 @@
 // Structures made of a behaving material self-process to irradiate; items use the
 // the material_emission behaviour instead (see material_behaviors.dm).
 /datum/material/proc/products_need_process()
-	return (radioactivity > 0) || (toxicity > 0)
+	return trait(MT_RADIOACTIVE) > 0 || trait(MT_TOXIC) > 0
 
 // Used by walls when qdel()ing to avoid neighbor merging.
 /datum/material/placeholder

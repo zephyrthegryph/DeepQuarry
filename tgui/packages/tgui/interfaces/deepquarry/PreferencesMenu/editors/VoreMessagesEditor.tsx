@@ -6,8 +6,6 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
-type Data = { heat: string[]; cold: string[] };
-
 const MessageList = ({
   which,
   messages,
@@ -117,8 +115,9 @@ const MessageList = ({
   );
 };
 
-export const VoreMessagesEditor = ({ data }: EditorProps) => {
-  const d = data as Data;
+export const VoreMessagesEditor = ({
+  data: d,
+}: EditorProps<'vore_messages'>) => {
   return (
     <Box
       style={{

@@ -10,6 +10,9 @@
 	display_name = "Hot & Cold Messages"
 	pref_keys = list("custom_heat", "custom_cold")
 
+/// The wire shape of /datum/preference_editor/vore_messages's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_vore_messages, row(heat = list_of(schema_text()), cold = list_of(schema_text())))
+
 /datum/preference_editor/vore_messages/build_ui_data(datum/preferences/preferences)
 	return list(
 		"heat" = preferences.read_preference(/datum/preference/custom_heat) || list(),

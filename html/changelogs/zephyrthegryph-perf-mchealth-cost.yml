@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The admin MC Health tab is built a few ms a fire, encoded once for every admin, and its slow groups refresh every 5 s (the ledger every 30 s)"
+  - code_imp: "The profiler's sample turns and the attribution and ledger walks are cut by row, with a per-turn budget"

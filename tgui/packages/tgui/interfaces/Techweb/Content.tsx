@@ -12,7 +12,7 @@ export function TechwebContent(props) {
     points_last_tick,
     point_types_abbreviations = [],
     points,
-    queue_nodes = [],
+    queue_nodes = {},
     sec_protocols,
     t_disk,
   } = data;
@@ -40,7 +40,7 @@ export function TechwebContent(props) {
                 </LabeledList.Item>
               ))}
               <LabeledList.Item label="Queue">
-                {queue_nodes.length !== 0
+                {Object.keys(queue_nodes).length !== 0
                   ? Object.keys(queue_nodes).map((node_id) => (
                       <Button
                         key={node_id}

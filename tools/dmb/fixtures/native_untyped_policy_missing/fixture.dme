@@ -1,5 +1,0 @@
-#include "code/00_macros.dm"
-#include "code/a_probe.dm"
-#include "code/positions.dm"
-#include "code/raw_schema.dm"
-#include "code/z_schema.dm"

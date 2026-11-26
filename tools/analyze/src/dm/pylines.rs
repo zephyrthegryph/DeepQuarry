@@ -12,21 +12,19 @@ use crate::tree::SourceFile;
 use crate::util::py_lstrip;
 
 /// `text.splitlines()`.
-pub fn py_splitlines(text:&str)->Vec<&str>{py_splitlines_using(text,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
-pub fn py_splitlines_using<'a,C:crate::key_policy_control::Control>(text:&'a str,control:&mut C)->Result<Vec<&'a str>,C::Error>{
+pub fn py_splitlines(text: &str) -> Vec<&str> {
     let mut out = Vec::new();
     let mut start = 0;
     for (i, c) in text.char_indices() {
-        control.checkpoint()?;
         if matches!(c, '\n' | '\r' | '\u{0b}' | '\u{0c}' | '\u{1c}' | '\u{1d}' | '\u{1e}' | '\u{85}' | '\u{2028}' | '\u{2029}') {
-            crate::key_policy_control::row(control,&mut out)?;out.push(&text[start..i]);
+            out.push(&text[start..i]);
             start = i + c.len_utf8();
         }
     }
     if start < text.len() {
-        crate::key_policy_control::row(control,&mut out)?;out.push(&text[start..]);
+        out.push(&text[start..]);
     }
-    Ok(out)
+    out
 }
 
 /// `allow_annotations.allowed(lines, number, lint)` over an arbitrary line list: the annotation is on
@@ -55,7 +53,9 @@ pub fn allowed_in(out: &mut Sink, f: &SourceFile, lines: &[&str], number: usize,
     match hit {
         Some((at, code)) => {
             let u = AllowUse { rel: f.rel.clone(), line: at as u32, name: lint.to_string(), code: code.unwrap_or_default() };
-            out.replay_allow(u);
+            if !out.allow_used.contains(&u) {
+                out.allow_used.push(u);
+            }
             true
         }
         None => false,
@@ -77,23 +77,14 @@ pub fn allowed_in_recorded(f: &SourceFile, lines: &[&str], number: usize, lint: 
 /// Runs `run` (which may record ALLOW uses through `sys::kept_recorded` / [`allowed_in_recorded`],
 /// directly or through `incr` caches that replay them) and moves what it recorded into `out`.
 pub fn recorded_into<T>(out: &mut Sink, run: impl FnOnce() -> T) -> T {
-    // Unwind restores exactly the caller's preexisting trace, discarding only
-    // this failed operation's annotations; success keeps the old replay order.
-    struct Restore(Option<Vec<crate::lint::AllowUse>>);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            if let Some(before) = self.0.take() {
-                let _ = crate::dm::sys::take_recorded();
-                crate::dm::sys::restore_recorded(before);
-            }
-        }
-    }
-    let restore = Restore(Some(crate::dm::sys::take_recorded()));
+    let before = crate::dm::sys::take_recorded();
     let result = run();
     for u in crate::dm::sys::take_recorded() {
-        out.replay_allow(u);
+        if !out.allow_used.contains(&u) {
+            out.allow_used.push(u);
+        }
     }
-    drop(restore);
+    crate::dm::sys::restore_recorded(before);
     result
 }
 
@@ -101,28 +92,6 @@ pub fn recorded_into<T>(out: &mut Sink, run: impl FnOnce() -> T) -> T {
 mod tests {
     use super::*;
 
-    #[test]
-    fn recorded_scope_restores_caller_trace_after_actual_unwind() {
-        use crate::lint::AllowUse;
-        let saved = crate::dm::sys::take_recorded();
-        let caller = AllowUse { rel: "code/caller.dm".into(), line: 1,
-            name: "latent".into(), code: "CALLER".into() };
-        let failed = AllowUse { rel: "code/failed.dm".into(), line: 2,
-            name: "latent".into(), code: "FAILED".into() };
-        crate::dm::sys::restore_recorded(vec![caller.clone()]);
-        let mut sink = Sink::bounded(4, 16384);
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            recorded_into(&mut sink, || {
-                crate::dm::sys::replay_recorded(vec![failed]);
-                panic!("real failed policy callback");
-            });
-        }));
-        assert!(result.is_err());
-        assert!(sink.allow_used.is_empty());
-        let restored = crate::dm::sys::take_recorded();
-        crate::dm::sys::restore_recorded(saved);
-        assert_eq!(restored, vec![caller]);
-    }
     #[test]
     fn splitlines_matches_python() {
         assert_eq!(py_splitlines("a\nb\n"), ["a", "b"]);

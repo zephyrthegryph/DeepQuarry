@@ -26,6 +26,7 @@ KB_DATUM = 4.0
 SKIP_DIRS = ("code/tests/",)
 MACRO_ROOT = re.compile(r"^([A-Z_][A-Z0-9_]*)\s*\(\s*(/[\w/]+)")
 HEAD_OK = re.compile(r"^/?[\w.]+(/[\w.]+)*$")
+SPECIAL = re.compile(r"[/{\"']")
 
 
 def clean(text):
@@ -33,6 +34,14 @@ def clean(text):
     out = []
     i, n = 0, len(text)
     while i < n:
+        # Copy the run of ordinary characters up to the next one that can start a comment or literal in one slice.
+        m = SPECIAL.search(text, i)
+        k = n if m is None else m.start()
+        if k > i:
+            out.append(text[i:k])
+            i = k
+            if i >= n:
+                break
         c = text[i]
         two = text[i:i + 2]
         if two == "//":
@@ -240,31 +249,43 @@ def parse_file(args):
     return {p: (t.procs, t.caps, t.newvars, t.overrides, t.files) for p, t in types.items()}
 
 
-def analyse(root):
-    """Scans root/code; returns {type path: T}."""
-    from multiprocessing import Pool
+def analyse(root, cache=None):
+    """Scans root/code; returns {type path: T}. `cache` (tools/build/dm_filecache.FileCache) keeps each file's parse by its stat, so
+    a run after a few edits parses only those files (the result is the same)."""
+    # Serial on purpose: a process pool started from the bun build runner on Windows stalled ~30 min and then raised
+    # BrokenProcessPool (spawned workers re-run the parent's startup under the runner's inherited handles), and with clean()
+    # copying ordinary text in bulk the whole scan takes a few seconds, so workers bought nothing.
     jobs = []
-    for dp, dn, fn in os.walk(os.path.join(root, "code")):
-        dn.sort()
-        for f in sorted(fn):
-            if f.endswith(".dm"):
-                full = os.path.join(dp, f)
-                rel = os.path.relpath(full, root).replace("\\", "/")
-                if not rel.startswith(SKIP_DIRS):
-                    jobs.append((full, rel))
+    if cache is not None:
+        sys.path.insert(0, os.path.join(root, "tools", "build"))
+        import dm_filecache
+
+        for rel, full, size, mtime in dm_filecache.walk(os.path.join(root, "code"), root):
+            if not rel.startswith(SKIP_DIRS):
+                jobs.append((rel, full, size, mtime))
+        parts = [cache.get(("census", rel), size, mtime, lambda full=full, rel=rel: parse_file((full, rel))) for rel, full, size, mtime in jobs]
+    else:
+        for dp, dn, fn in os.walk(os.path.join(root, "code")):
+            dn.sort()
+            for f in sorted(fn):
+                if f.endswith(".dm"):
+                    full = os.path.join(dp, f)
+                    rel = os.path.relpath(full, root).replace("\\", "/")
+                    if not rel.startswith(SKIP_DIRS):
+                        jobs.append((full, rel))
+        parts = map(parse_file, jobs)
     types = {}
-    with Pool(max(1, min(8, os.cpu_count() or 2))) as pool:
-        for part in pool.imap(parse_file, jobs, chunksize=64):
-            for p, (procs, caps, newvars, overrides, files) in part.items():
-                t = types.get(p)
-                if t is None:
-                    t = types[p] = T(p)
-                t.procs |= procs
-                t.caps += caps
-                t.newvars |= newvars
-                for k, v in overrides.items():
-                    t.overrides.setdefault(k, v)
-                t.files |= files
+    for part in parts:
+        for p, (procs, caps, newvars, overrides, files) in part.items():
+            t = types.get(p)
+            if t is None:
+                t = types[p] = T(p)
+            t.procs |= procs
+            t.caps += caps
+            t.newvars |= newvars
+            for k, v in overrides.items():
+                t.overrides.setdefault(k, v)
+            t.files |= files
     for p in types:
         parts = p.strip("/").split("/")
         for k in range(len(parts) - 1, 0, -1):

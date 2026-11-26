@@ -2,17 +2,20 @@
 //! These nodes have not been value-visited: ordinary name/resource/call adapters
 //! are never invoked, and the caller keeps its original short-circuit result.
 use dm_syntax::{Expr, ExprKind};
-pub(super) fn observe_unevaluated(expression:&Expr,observer:Option<&dyn Fn(&Expr)>){
-    match try_observe_unevaluated(expression,observer,&||Ok::<(),std::convert::Infallible>(())){Ok(())=>(),Err(never)=>match never{}}
-}
-pub(super) fn try_observe_unevaluated<E,G>(expression:&Expr,observer:Option<&dyn Fn(&Expr)>,enter:&impl Fn()->Result<G,E>)->Result<(),E>{
-    let Some(observer)=observer else{return Ok(())};
-    let frame=enter()?;
-    observe_admitted(expression,observer,enter,frame)
-}
-fn observe_admitted<E,G>(expression:&Expr,observer:&dyn Fn(&Expr),enter:&impl Fn()->Result<G,E>,_frame:G)->Result<(),E>{
-    if let ExprKind::Call{callee,args}=&expression.kind{if matches!(&callee.kind,ExprKind::Ident(name)if name=="nameof"){if let [argument]=args.as_slice(){observer(argument);}}}
-    dm_syntax::try_for_each_expression_child(expression,|_,child|try_observe_unevaluated(child,Some(observer),enter))
+pub(super) fn observe_unevaluated(expression: &Expr, observer: Option<&dyn Fn(&Expr)>) {
+    let Some(observer) = observer else {
+        return;
+    };
+    if let ExprKind::Call { callee, args } = &expression.kind {
+        if matches!(&callee.kind, ExprKind::Ident(name) if name == "nameof") {
+            if let [argument] = args.as_slice() {
+                observer(argument);
+            }
+        }
+    }
+    dm_syntax::for_each_expression_child(expression, |_, child| {
+        observe_unevaluated(child, Some(observer));
+    });
 }
 
 #[cfg(test)]

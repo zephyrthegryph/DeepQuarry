@@ -296,3 +296,62 @@ fn population_space_shortage_is_an_error() {
     cache.check_population_space(0).unwrap();
     assert!(cache.check_population_space(u64::MAX).is_err());
 }
+
+fn compressible(content: u128) -> Record {
+    let mut payload = Vec::new();
+    for n in 0..20_000u32 {
+        payload.extend_from_slice(&(n % 97).to_le_bytes());
+    }
+    Record {
+        key: RecordKey {
+            stage: 4,
+            version: 1,
+            content,
+        },
+        symbols: vec![],
+        payload: Arc::from(payload),
+    }
+}
+#[test]
+fn compressible_payloads_are_stored_smaller_and_read_back_identically() {
+    let root = Temp::new();
+    let cache = Cache::open(&root.0, Limits::default()).unwrap();
+    let values = [compressible(1), compressible(2), record(3, 1)];
+    let id = cache.publish(&values).unwrap();
+    let on_disk = fs::metadata(root.0.join(format!("{id:032x}.seg"))).unwrap().len() as usize;
+    assert!(on_disk < values[0].payload.len(), "{on_disk} bytes for two {}-byte payloads", values[0].payload.len());
+    let snapshot = cache.snapshot().unwrap();
+    for value in &values {
+        let view = snapshot.get(value.key, |_, _| Ok(())).unwrap();
+        assert_eq!(view.payload, value.payload.as_ref());
+        assert_eq!(view.payload.as_ptr() as usize % 16, 0);
+    }
+    let mapped = snapshot
+        .get_candidate_mapped(values[0].key, |bytes, _| Ok(bytes == values[0].payload.as_ref()))
+        .unwrap();
+    assert_eq!(mapped.bytes(), values[0].payload.as_ref());
+    let tail = mapped.subrange(100..200).unwrap();
+    assert_eq!(tail.bytes(), &values[0].payload[100..200]);
+    let again = snapshot.get_candidate_backed(values[1].key, |bytes, _, backing| {
+        Ok(backing.bytes() == bytes && bytes == values[1].payload.as_ref())
+    });
+    assert!(again.is_some());
+    assert!(snapshot.rejected().is_empty());
+}
+#[test]
+fn format_one_segments_still_open() {
+    let (id, mut bytes) = segment::encode(&[record(1, 1)], &[], Limits::default()).unwrap();
+    assert_ne!(id, 0);
+    bytes[8..12].copy_from_slice(&1u32.to_le_bytes());
+    let metadata_len = u64::from_le_bytes(bytes[24..32].try_into().unwrap()) as usize;
+    let mut framing = xxhash_rust::xxh3::Xxh3::new();
+    framing.update(&bytes[..56]);
+    framing.update(&bytes[72..72 + metadata_len]);
+    bytes[56..72].copy_from_slice(&framing.digest128().to_le_bytes());
+    let root = Temp::new();
+    let path = root.0.join("old.seg");
+    fs::write(&path, &bytes).unwrap();
+    let segment = Segment::open(&path, Limits::default()).unwrap();
+    let view = segment.get(record(1, 1).key, |_, _| Ok(())).unwrap().unwrap();
+    assert_eq!(view.payload, b"payload-1");
+}

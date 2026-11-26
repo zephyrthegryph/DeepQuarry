@@ -4,9 +4,6 @@
 // client/Destroy is qdel(session) and nothing is missed. /datum/persistent_client stays per
 // player; the session is per connection.
 
-/// How long an asset flush waits for the client's ack before continuing anyway.
-#define ASSET_FLUSH_TIMEOUT (5 SECONDS)
-
 /client/var/tmp/datum/client_session/session
 
 /datum/client_session
@@ -62,7 +59,7 @@ CAPABILITIES(/datum/client_session)
 /// Deletes every connection-scoped datum the client holds, then drops the waiters.
 /datum/client_session/on_destroy(force)
 	if(client)
-		var/static/list/owned_vars = list("stat_panel", "tgui_say", "tgui_shocker", "tgui_panel", "loot_panel", "tooltips", "media", "interaction_menu", "keybind_editor", "volume_panel", "fakeConversations")
+		var/static/list/owned_vars = list("stat_panel", "tgui_shocker", "tgui_panel", "loot_panel", "tooltips", "media", "interaction_menu", "inspect_panel", "ability_panel", "window_dock", "keybind_editor", "volume_panel", "fakeConversations")
 		for(var/var_name in owned_vars)
 			var/datum/owned = client.vars[var_name]
 			if(owned)
@@ -102,6 +99,20 @@ CAPABILITIES(/datum/client_session)
 	var/list/waiter_args = waiter[3]
 	call(target, waiter[2])(arglist(waiter_args || list())) // the continuation of an asset flush, run from the ack topic or the timeout
 
+/// The ack of job `job` arrived: its waiter runs, and so do the waiters of every earlier job still pending. Every verify page goes to the same
+/// browser window, so a page sent before the previous one has loaded replaces it and the earlier job's ack is never sent, though the browse queue is FIFO
+/// and the later ack proves every resource sent before it has arrived. Without this, a burst of glow shape deliveries (one job each) answered only its last
+/// job and the rest waited out ASSET_FLUSH_TIMEOUT, then swapped their glows to an icon the client may not have had: the glows blinked while walking.
+/datum/client_session/proc/asset_jobs_finished_through(job)
+	var/list/earlier = list()
+	for(var/key in asset_waiters)
+		if(text2num(key) < job)
+			earlier += text2num(key)
+	sortTim(earlier, GLOBAL_PROC_REF(cmp_numeric_asc))
+	for(var/earlier_job in earlier)
+		asset_job_finished(earlier_job)
+	asset_job_finished(job)
+
 /// Process asset cache client topic calls for `"asset_cache_confirm_arrival=[INT]"`.
 /// Returns null for a valid arrival (handled), else the job id (or TRUE) for the caller to reject.
 /datum/client_session/proc/confirm_asset_arrival(job_id)
@@ -111,6 +122,6 @@ CAPABILITIES(/datum/client_session)
 	if(asset_cache_job > 0 && asset_cache_job <= last_asset_job && !LAZYACCESS(completed_asset_jobs, "[asset_cache_job]"))
 		LAZYSET(completed_asset_jobs, "[asset_cache_job]", TRUE)
 		last_completed_asset_job = max(last_completed_asset_job, asset_cache_job)
-		asset_job_finished(asset_cache_job)
+		asset_jobs_finished_through(asset_cache_job)
 		return null
 	return asset_cache_job || TRUE

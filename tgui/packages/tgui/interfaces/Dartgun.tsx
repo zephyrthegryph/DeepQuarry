@@ -1,30 +1,15 @@
 // Dartgun mixing control — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-
-type Reagent = {
-  name: string;
-  volume: number;
-};
-
-type Beaker = {
-  index: number;
-  reagents: Reagent[];
-  mixing: BooleanLike;
-};
-
-type Data = {
-  beakers: Beaker[];
-  ammo_count: number | null;
-};
+import type { DartgunActions, DartgunData } from './generated/Dartgun';
 
 export const Dartgun = () => {
-  const { data, act } = useBackend<Data>();
-  const { beakers, ammo_count } = data;
+  const { data, act } = useBackend<DartgunData, DartgunActions>();
+  const { beakers = [], ammo_count } = data;
   return (
     <Window width={460} height={460} title="Dartgun mixing control">
       <Window.Content scrollable>
@@ -37,16 +22,21 @@ export const Dartgun = () => {
                 <Stack.Item key={b.index}>
                   <Box bold>Beaker {b.index}</Box>
                   {b.reagents.length === 0 ? (
-                    <Box color="label" italic>
-                      empty
-                    </Box>
+                    <Label italic>empty</Label>
                   ) : (
                     <>
-                      <Box ml={1} color="label">
-                        {b.reagents
-                          .map((r) => `${r.volume}u ${r.name}`)
-                          .join(', ')}
-                      </Box>
+                      <Label ml={1}>
+                        {b.reagents.map((r, i) => (
+                          <Box
+                            key={r.name}
+                            inline
+                            color={r.contaminant ? 'grey' : undefined}
+                          >
+                            {i > 0 ? ', ' : ''}
+                            {`${r.volume}u ${r.name}`}
+                          </Box>
+                        ))}
+                      </Label>
                       <Box mt="2px">
                         <Button
                           compact

@@ -141,22 +141,6 @@ CAPABILITIES(/obj/item/implantcase/adrenalin)
 	owns_one(nameof(imp), starts = /obj/item/implant/adrenalin, on_destroy = ON_DESTROY_CONTAINED)
 
 
-/obj/item/implantcase/dexplosive
-	name = "glass case - 'explosive'"
-	desc = "A case containing an explosive."
-	icon_state = "implantcase-r"
-
-CAPABILITIES(/obj/item/implantcase/dexplosive)
-	owns_one(nameof(imp), starts = /obj/item/implant/dexplosive, on_destroy = ON_DESTROY_CONTAINED)
-
-
-/obj/item/implantcase/health
-	name = "glass case - 'health'"
-	desc = "A case containing a health tracking implant."
-	icon_state = "implantcase-b"
-
-CAPABILITIES(/obj/item/implantcase/health)
-	owns_one(nameof(imp), starts = /obj/item/implant/health, on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/implantcase/language
 	name = "glass case - 'GalCom'"

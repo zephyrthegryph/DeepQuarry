@@ -12,16 +12,16 @@ const HINT: &str = "write vis_contents / client.images / client.screen through t
 not accepted. doc/rewrite/proposals/relations.md D11";
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::native_ref_write::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::native_ref_write::SCOPE_META_0.group,
+    name: "native_ref_write",
+    group: "",
     label: "native_ref_write",
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "raw_write", hint: HINT }],
-    allow: crate::allow_registry_fields::native_ref_write::ALLOW_0,
-    lists: crate::allow_registry_fields::native_ref_write::SCOPE_META_0.lists,
+    allow: &[],
+    lists: &[],
 };
 
 struct NativeRefWrite {

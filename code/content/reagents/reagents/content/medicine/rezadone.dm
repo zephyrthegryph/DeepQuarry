@@ -11,9 +11,10 @@
 		TREAT_ANTIRADIATION = 0.25,
 		TREAT_OXYGENATION = 0.1,
 	)
+	strains = alist(O_LIVER = DRUG_STRAIN_HEAVY)
 	name = REAGENT_REZADONE
 	id = REAGENT_ID_REZADONE
-	description = "A powder with almost magical properties, this substance can effectively treat genetic damage in humanoids, though excessive consumption has side effects."
+	description = "A powder with almost magical properties: it repairs genetic damage and, more moderately, tissue damage, burns and poisoning. It is made only from reagent-grade ingredients, it strains the liver heavily, it undoes arithrazine, and excessive consumption has side effects."
 	taste_description = "bitterness"
 	reagent_state = SOLID
 	dermal_absorption = 0 //solid powder

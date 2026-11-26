@@ -44,6 +44,8 @@
 	var/list/hop_in
 	/// What this datum's own hop relations name now: rel var -> the target's slot, so a change finds the list to leave.
 	var/list/hop_targets
+	/// clock (as text) -> the expiry its stat_expiry timer is armed for (stat_expiry_arm()).
+	var/list/expiry_armed
 
 /datum/rx_state
 	/// The stat layer's record, or null.
@@ -402,24 +404,48 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 
 // ---- expiry ----
 
-/// The entity's next deadline is one timer per clock. Arms it for the earliest hold that has one.
-/proc/stat_expiry_reschedule(datum/E)
+/// The entity's next deadline is one timer per clock. Arms it for the earliest hold that has one. The expiry each timer is armed for is kept on the
+/// record, so a hold that lands after the earliest one (the usual case) or a release of another row touches no timer: only a changed earliest expiry
+/// (or none left) re-arms or cancels. `rearm` forces every timer to be set again (a clock rate moved under it).
+/proc/stat_expiry_reschedule(datum/E, rearm = FALSE)
 	var/datum/stat_record/rec = E.rx?.stats
-	var/list/earliest = list() // clock -> remaining
+	var/world_at
+	var/own_at
+	var/bio_at
 	for(var/list/row as anything in rec?.holds)
-		if(!row[H_EXPIRES])
+		var/at = row[H_EXPIRES]
+		if(!at)
 			continue
-		var/clock = row[H_CLOCK]
-		var/remaining = max(row[H_EXPIRES] - stat_clock_now(E, clock), 1)
-		if(isnull(earliest["[clock]"]) || remaining < earliest["[clock]"])
-			earliest["[clock]"] = remaining
-	for(var/clock in list(HOLD_CLOCK_WORLD, HOLD_CLOCK_OWN, HOLD_CLOCK_BIO))
-		var/key = "stat_expiry:[clock]"
-		var/remaining = earliest["[clock]"]
-		if(isnull(remaining))
+		switch(row[H_CLOCK])
+			if(HOLD_CLOCK_WORLD)
+				if(isnull(world_at) || at < world_at)
+					world_at = at
+			if(HOLD_CLOCK_OWN)
+				if(isnull(own_at) || at < own_at)
+					own_at = at
+			if(HOLD_CLOCK_BIO)
+				if(isnull(bio_at) || at < bio_at)
+					bio_at = at
+	stat_expiry_arm(E, rec, HOLD_CLOCK_WORLD, world_at, rearm)
+	stat_expiry_arm(E, rec, HOLD_CLOCK_OWN, own_at, rearm)
+	stat_expiry_arm(E, rec, HOLD_CLOCK_BIO, bio_at, rearm)
+
+/// The timer of `clock` on E, set for the earliest expiry `at` (null: no timed hold on that clock) unless it is armed for that expiry already.
+/proc/stat_expiry_arm(datum/E, datum/stat_record/rec, clock, at, rearm)
+	var/key = "stat_expiry:[clock]"
+	var/armed = rec?.expiry_armed?["[clock]"]
+	if(isnull(at))
+		if(!isnull(armed) || rearm)
 			cancel_after(E, key)
-		else
-			after(E, remaining, GLOBAL_PROC_REF(stat_expire), key = key, clock = (clock == HOLD_CLOCK_WORLD ? CLOCK_WORLD : CLOCK_OWN), with = list(E, clock), keeps_dead = TRUE)
+			if(rec?.expiry_armed)
+				rec.expiry_armed -= "[clock]"
+		return
+	if(!rearm && armed == at)
+		return
+	var/remaining = max(at - stat_clock_now(E, clock), 1)
+	after(E, remaining, GLOBAL_PROC_REF(stat_expire), key = key, clock = (clock == HOLD_CLOCK_WORLD ? CLOCK_WORLD : CLOCK_OWN), with = list(E, clock), keeps_dead = TRUE)
+	if(rec)
+		LAZYSET(rec.expiry_armed, "[clock]", at)
 
 /// A deadline fired: every hold of that clock that is due ends, and its stats settle.
 /proc/stat_expire(datum/E, clock)
@@ -428,6 +454,8 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 	var/datum/stat_record/rec = E.rx?.stats
 	if(!rec?.holds)
 		return
+	if(rec.expiry_armed) // this timer has fired: nothing is armed on the clock until the reschedule below sets it again
+		rec.expiry_armed -= "[clock]"
 	var/now = stat_clock_now(E, clock)
 	var/list/due = list()
 	for(var/list/row as anything in rec.holds)
@@ -439,6 +467,16 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		stat_expiry_reschedule(E)
 
 // ---- teardown ----
+
+/// Takes a destroyed entity out of the reader sets of the systems it reads through a SYSTEM_ACCESSOR (the sets hold a strong ref).
+/proc/stat_sys_forget(datum/E)
+	var/datum/stat_type_info/I = stat_type_of(E)
+	if(!I)
+		return
+	for(var/datum/stat_hop/sys as anything in I.hops["sys"])
+		var/list/readers = GLOB.stat_sys_index[sys.system]
+		if(readers)
+			readers -= E
 
 /// The destroy transaction's call for a dying datum, as a source and as a holder. As a source: every hold it keeps on any
 /// entity ends, unless it was placed with outlives_source = TRUE (its source is then forgotten). As a holder: its rows go, and the sources' indexes forget it.
@@ -464,6 +502,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		if(length(gone))
 			stat_release_rows(target, trec, gone)
 	rec.held_on = null
+	stat_sys_forget(D)
 	stat_hop_teardown(D, rec)
 	// As a holder.
 	for(var/list/row as anything in rec.holds)

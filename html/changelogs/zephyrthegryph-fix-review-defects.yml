@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Protein and nutriment cubes expand into their slabs again when wetted."

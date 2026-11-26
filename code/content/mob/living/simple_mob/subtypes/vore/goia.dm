@@ -107,7 +107,6 @@
 /mob/living/simple_mob/vore/zorgoia/proc/recolor() //Base sprite wont need a radical menu selection
 	set name = "Change Color"
 	set desc = "Change your main color."
-	set category = VERB_CAT_ABILITIES_GENERAL
 	open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick new colors:", title = "Color", default = goia_overlays["zorgoia_main"], overlay = "zorgoia_main")
 
 /// One of the zorgoia's overlay colours, picked after its style (if it has one). The style lands with the colour.
@@ -134,7 +133,6 @@
 /mob/living/simple_mob/vore/zorgoia/proc/appearance_switch() //This is just copypastas of the radial menu code, each block of code is the options for each bit of customisation... all 9 of them
 	set name = "Adjust Mob Markings"
 	set desc = "Change your markings and mob colors."
-	set category = VERB_CAT_ABILITIES_GENERAL
 
 	var/list/options = list("Belly","Spike","Ears","Spots","Claws","Spines","Fluff","Underbelly","Eyes")
 	for(var/option in options)
@@ -346,7 +344,6 @@ TYPE_TABLE(/mob/living/simple_mob/vore/zorgoia, injection_reagent_table, list(RE
 /mob/living/simple_mob/vore/zorgoia/proc/export_style()
 	set name = "Export style string"
 	set desc = "Export a string of text that can be used to instantly get the current style back using the import style verb"
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	var/output_style = jointext(list(
 		goia_overlays["zorgoia_main"],
 		goia_overlays["main"], // No alt styles for it currently
@@ -373,7 +370,6 @@ TYPE_TABLE(/mob/living/simple_mob/vore/zorgoia, injection_reagent_table, list(RE
 /mob/living/simple_mob/vore/zorgoia/proc/import_style()
 	set name = "Import style string"
 	set desc = "Import a string of text that was made using the import style verb to get back that style"
-	set category = VERB_CAT_ABILITIES_SETTINGS
 	open_request(src, /datum/prompt/text, PROC_REF(import_style_entered), answerer = src, title = "Style loading", question = "Paste the style string you exported with Export Style.", max_len = 250, timeout = 0)
 
 /mob/living/simple_mob/vore/zorgoia/proc/import_style_entered(datum/act/request/A)

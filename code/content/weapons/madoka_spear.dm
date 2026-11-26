@@ -93,7 +93,7 @@ CAPABILITIES(/obj/item/oldtwohanded)
 
 ///////////OFFHAND///////////////
 /obj/item/oldtwohanded/offhand
-	w_class = 5.0
+	w_class = ITEMSIZE_HUGE
 	icon_state = "offhand"
 	name = "offhand"
 
@@ -114,7 +114,7 @@ CAPABILITIES(/obj/item/oldtwohanded)
 	base_icon = "spearglass"
 	name = "spear"
 	desc = "A haphazardly-constructed yet still deadly weapon of ancient design."
-	w_class = 4.0
+	w_class = ITEMSIZE_LARGE
 	force_wielded = 22 // Was 13, Buffed - RR
 
 CAPABILITIES(/obj/item/oldtwohanded/spear)

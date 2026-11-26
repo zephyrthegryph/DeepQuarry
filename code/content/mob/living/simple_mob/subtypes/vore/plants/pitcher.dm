@@ -253,17 +253,17 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 			if(istype(L, /mob/living/carbon/human/monkey))
 				L.set_nutrition(0) //No stuffing monkeys with protein shakes for massive nutrition.
 			if(!L.vore_prefs.digestable)
-				vore_selected_of(src).digest_mode = DM_DRAIN
+				vore_selected_of(src).set_digest_mode(DM_DRAIN)
 				N = 1
 				hasindigestable = 1
 				continue
 			else
-				vore_selected_of(src).digest_mode = DM_DIGEST
+				vore_selected_of(src).set_digest_mode(DM_DIGEST)
 				N = 1
 				hasdigestable = 1
 				continue
 		if(hasdigestable && hasindigestable)
-			vore_selected_of(src).digest_mode = DM_DIGEST //Let's digest until we digest all the digestable prey, then move onto draining indigestable prey.
+			vore_selected_of(src).set_digest_mode(DM_DIGEST) //Let's digest until we digest all the digestable prey, then move onto draining indigestable prey.
 		if(!N)
 			vore_selected_of(src).release_all_contents() //If there's no prey, spit out everything.
 
@@ -334,6 +334,8 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/pitcher_fruit)
 	configure(reagents(add = list(REAGENT_ID_PITCHERNECTAR = 5, REAGENT_ID_PARALYZE_FLUID = 5)))
+	// A pitcher fruit is never wrapped: its use-in-hand is planting, not the snack's unwrap (both took in_hand at one tier).
+	without("unwrap")
 	op("pitcher_fruit_self", in_hand(), label("Plant"), then(PROC_REF(pitcher_fruit_self)))
 	derives(nameof(seed), PROC_REF(seed_of_pit))
 	owns_one(nameof(pit), starts = VARIANT(/obj/item/seeds/pitcherseed), on_destroy = ON_DESTROY_CONTAINED)

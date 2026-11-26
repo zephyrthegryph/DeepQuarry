@@ -124,15 +124,27 @@
 			Entered(AM)
 
 	//Lighting related
-	set_luminosity(!(dynamic_lighting))
+	// client lighting: BYOND shows every turf, the lighting plane darkens. A turf whose luminosity already holds it (a space turf's type default) is not
+	// written: set_luminosity() would only assign the same value (or keep it, for a fake-sunlit tile).
+	var/lum = GLOB.client_lighting || !(dynamic_lighting)
+	if(luminosity != lum)
+		set_luminosity(lum)
+	if(GLOB.client_lighting && SSlighting.is_initialized() && !has_dynamic_lighting())
+		client_glow_white(TRUE) // a turf made outside dynamic lighting stays bright over the black base
 
 	if(opacity)
 		directional_opacity = ALL_CARDINALS
+		client_glow_wall_sync() // a wall made after boot joins the walls plane
+		sight_opacity_changed(src)
 
 	//Pathfinding related
 	if(movement_cost && path_weight == 1) // This updates pathweight automatically. //
 		path_weight = movement_cost
 
+	// The decks above and below hear of a new turf (a transparent one redraws what it shows). Not while the world's map loads: every turf is
+	// being made then, and a transparent turf sets itself up from the deck below when it initializes (make_z_transparent()).
+	if(atoms_booting())
+		return
 	// GetAbove()/GetBelow() inlined: src is already the turf, and most z-levels have no neighbour.
 	if(HasAbove(z))
 		var/turf/Ab = get_step(src, UP)

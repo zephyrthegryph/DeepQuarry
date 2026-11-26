@@ -1,4 +1,0 @@
-/proc/local()
-    var/SpacemanDMM_private/SpacemanDMM_protected/x
-    return
-    var/SpacemanDMM_private/y

@@ -57,8 +57,6 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 	/// How long the event may wait in the inbox before it is too late, in deciseconds (INPUT_MAX_WAIT_*), or null for never: a Topic, a tgui action, say, point
 	/// and a menu pick are what the player asked for, whenever they are served. The gate checks it when the event resolves.
 	var/max_wait = null
-	/// TRUE when an expired event is dropped without telling the player (feedback such as a hover).
-	var/silent_expiry = FALSE
 	/// FALSE for inputs the rate limit does not apply to (the server's own: a reboot, the synthetic load).
 	var/rate_limited = TRUE
 	/// coalesce_key() as enqueue() read it when it filed the event: the queue scans compare this, not a proc call and a string build per queued event.
@@ -102,6 +100,11 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 /// Has the event waited longer than its max_wait?
 /datum/input_event/proc/expired()
 	return !isnull(max_wait) && (op_now() - arrived_clock) > max_wait
+
+/// May a full inbox shed this event (when it can coalesce)? An input that only ever undoes something (a tooltip's close) must not be lost: what it
+/// closes would stay open.
+/datum/input_event/proc/sheddable()
+	return TRUE
 
 /// Does the work, as `actor`. Returns the op's /datum/op_result or null.
 /datum/input_event/proc/resolve()
@@ -235,7 +238,6 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 /datum/input_event/click/hover
 	metered_as_click = FALSE
 	max_wait = INPUT_MAX_WAIT_FEEDBACK
-	silent_expiry = TRUE
 	/// TRUE on enter, FALSE on exit.
 	var/entered = TRUE
 
@@ -245,6 +247,13 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 
 /datum/input_event/click/hover/coalesce_key()
 	return target ? "hover:[REF(target)]" : "hover"
+
+/// An exit closes what the enter opened (a tooltip, a lit slice): it is run however late it is and never shed, or that stays open (a tooltip stuck on screen).
+/datum/input_event/click/hover/expired()
+	return entered && ..()
+
+/datum/input_event/click/hover/sheddable()
+	return entered
 
 /datum/input_event/click/hover/event_key()
 	return "input.hover"
@@ -262,13 +271,16 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 /datum/input_event/click/pressed
 	metered_as_click = FALSE
 	max_wait = INPUT_MAX_WAIT_FEEDBACK
-	silent_expiry = TRUE
 
 /datum/input_event/click/pressed/event_key()
 	return "input.pressed"
 
 /datum/input_event/click/pressed/coalesce_key()
 	return null
+
+/// A press closes the tooltip of what it lands on: run however late it is.
+/datum/input_event/click/pressed/expired()
+	return FALSE
 
 /datum/input_event/click/pressed/resolve()
 	actor.input_pressed(target, params)
@@ -287,7 +299,6 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 	kind = mouse_kind
 	if(kind == INPUT_MOUSE_DRAG)
 		max_wait = INPUT_MAX_WAIT_FEEDBACK
-		silent_expiry = TRUE
 	if(dragged_over)
 		over = dragged_over // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 
@@ -528,6 +539,8 @@ SYSTEM_DEF(input)
 	/// The deepest any inbox got.
 	var/queue_high_water = 0
 	var/last_drop_log = 0
+	/// When the last expired input was logged (one line a second at most).
+	var/last_expiry_log = 0
 	/// Inputs refused over a client's hard cap or rate limit, and inputs that waited past their max_wait, since boot.
 	var/hard_refused = 0
 	var/rate_refused = 0
@@ -612,12 +625,12 @@ SYSTEM_DEF(input)
 		var/dropped = FALSE
 		for(var/i in 1 to length(queue))
 			var/datum/input_event/older = queue[i]
-			if(older.queued_key)
+			if(older.queued_key && older.sheddable())
 				queue.Cut(i, i + 1)
 				note_drop(older, "the inbox is full")
 				dropped = TRUE
 				break
-		if(!dropped && key)
+		if(!dropped && key && E.sheddable())
 			// Nothing in the inbox can be shed and this one could be: it goes.
 			note_drop(E, "the inbox is full of inputs that cannot be dropped")
 			return
@@ -655,8 +668,11 @@ SYSTEM_DEF(input)
 	if(reason)
 		if(reason == /datum/msg/input/too_late)
 			expired++
-			if(!E.silent_expiry)
-				op_tell(E.actor, reason)
+			// Not told to the player (playtest 2026-11-08: three of these in chat during a stalled join read as the server losing their input). Only
+			// clicks, drags, the wheel and hover feedback expire; a Topic, a verb or a window action never does. The log keeps the count.
+			if(world.time - last_expiry_log >= 1 SECONDS) // ALLOW(sys_world_time_expiry): the inbox's own log throttle, not an entity expiry
+				last_expiry_log = world.time // ALLOW(sys_world_time_write): the inbox's own log throttle, not an entity expiry
+				log_world("Input: a [E.type] from [E.actor ? key_name(E.actor) : "nobody"] waited past its [E.max_wait] ds and was dropped ([expired] so far).")
 		else
 			dropped_stale++
 		TEST_REC_OUTCOME(E.event_key(), ACT_REFUSED, reason, E.actor)

@@ -125,8 +125,20 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 		if(A)
 			drifted_areas[A] = TRUE
 
+/// Is the thermostat state of this air alarm the one its room calls for? The alarm's own scan sets it from the room's air (thermostat_state()), and a test that lets
+/// world time pass lets that scan run: the room may be off its target from the start of the run (a mapped room the guard never saw drift, because the air moved before
+/// it began watching), so the alarm starts or stops regulating in whichever test the world happens to be running. The world's answer is not the test's leak; a
+/// state the room does not call for is.
+/datum/unit_test_guard/proc/alarm_regulation_follows_room(obj/machinery/alarm/A)
+	if(QDELETED(A) || !A.controls_room())
+		return FALSE
+	var/datum/gas_sample/room = gas_sample(A.loc.return_air())
+	return A.regulating_temperature == A.thermostat_state(room, !A.tlv_level("temperature", A.target_temperature))
+
 /// A thermostat setting that follows the room: an air alarm's use_power/regulating_temperature, a freezer's or heater's use_power/pumping.
 /datum/unit_test_guard/proc/is_thermostat_answer(obj/machinery/M, name)
+	if(istype(M, /obj/machinery/alarm) && name == "regulating_temperature" && alarm_regulation_follows_room(M))
+		return TRUE
 	if(!drifted_areas[get_area(M)])
 		return FALSE
 	if(istype(M, /obj/machinery/alarm))
@@ -200,15 +212,31 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 		snapshot["airs"] = airs
 		snapshot["watch"] = vg_air_watch_new(airs)
 		changed = vg_air_watch_changed(snapshot["watch"], snapshot["revs"])
+	// A turf replaced since (ChangeTurf) holds another mixture than the handle the snapshot keeps: the old handle's revision says nothing about the
+	// air standing there now, so its index is judged too, through the current turf's air, and the handle is rebound to it below.
+	var/list/replaced = unit_test_air_replaced(snapshot)
+	if(length(replaced))
+		changed = changed ? (changed | replaced) : replaced
 	if(length(changed))
 		var/list/fresh = list()
 		for(var/i in changed)
 			var/turf/open/T = turfs[i]
-			var/datum/gas_mixture/air = QDELETED(T) ? null : T.air
+			var/datum/gas_mixture/air = QDELETED(T) ? null : T.turf_air()
 			airs[i] = air
 			fresh += air
 		vg_air_watch_rebind(snapshot["watch"], changed, fresh)
 	return changed
+
+/// Indices of the snapshot's turfs whose air is no longer the mixture the snapshot holds for them: the turf at that place was replaced (its air
+/// datum is another one, or not made yet). A plain var read per turf, no call.
+/proc/unit_test_air_replaced(list/snapshot)
+	var/list/airs = snapshot["airs"]
+	var/list/turfs = snapshot["turfs"]
+	. = list()
+	for(var/i in 1 to length(turfs))
+		var/turf/open/T = turfs[i]
+		if(istype(T) && T._air != airs[i])
+			. += i
 
 /// Makes the snapshot current for the mixtures that changed (a between-test drift becomes the baseline): their readings, revisions and cold-room marks.
 /proc/unit_test_air_refresh(list/snapshot)

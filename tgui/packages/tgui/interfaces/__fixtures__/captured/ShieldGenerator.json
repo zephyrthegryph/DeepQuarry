@@ -1,0 +1,20 @@
+{
+	"locked": 0,
+	"lockedData": {
+		"capacitors": [],
+		"active": 0,
+		"failing": 0,
+		"radius": 3,
+		"max_radius": 150,
+		"z_range": 0,
+		"max_z_range": 10,
+		"average_field_strength": 0,
+		"target_field_strength": 10,
+		"max_field_strength": 10,
+		"shields": 0,
+		"upkeep": 0,
+		"strengthen_rate": 0.2,
+		"max_strengthen_rate": 0.5,
+		"gen_power": 0
+	}
+}

@@ -9,25 +9,22 @@ import {
   Table,
 } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
+import type {
+  IcecreamVatActions,
+  IcecreamVatData,
+} from './generated/IcecreamVat';
 
-type IceMachineData = {
-  index: number;
-  name: string;
-  amount_left: number;
-  ingredients: string[];
-};
-
-type Data = {
-  current_flavor: string;
-  icecrem_data: IceMachineData[];
-  cone_data: IceMachineData[];
-  reagent_data: { name: string; volume: number; id: string }[];
-};
+type IceMachineData = IcecreamVatData['icecrem_data'][number];
 
 export const IcecreamVat = (props) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<IcecreamVatData, IcecreamVatActions>();
 
-  const { current_flavor, icecrem_data, cone_data, reagent_data } = data;
+  const {
+    current_flavor,
+    icecrem_data = [],
+    cone_data = [],
+    reagent_data = [],
+  } = data;
 
   return (
     <Window width={630} height={420}>
@@ -85,23 +82,28 @@ export const IcecreamVat = (props) => {
             </Section>
           </Stack.Item>
           <Stack.Item grow>
-            <Section fill title="Reagents" scrollable>
+            <Section
+              fill
+              title="Reagents"
+              scrollable
+              buttons={
+                <Button.Confirm
+                  icon="trash"
+                  onClick={() => act('clear_reagents')}
+                >
+                  Empty vat
+                </Button.Confirm>
+              }
+            >
               <Table collapsing>
                 <Table.Row>
                   <Table.Cell>Reagent</Table.Cell>
                   <Table.Cell>Amount</Table.Cell>
-                  <Table.Cell />
                 </Table.Row>
                 {reagent_data.map((reagent) => (
                   <Table.Row key={reagent.id}>
                     <Table.Cell color="label">{`${reagent.name}:`}</Table.Cell>
                     <Table.Cell textAlign="center">{reagent.volume}</Table.Cell>
-                    <Table.Cell>
-                      <Button.Confirm
-                        icon="trash"
-                        onClick={() => act('clear_reagent', { id: reagent.id })}
-                      />
-                    </Table.Cell>
                   </Table.Row>
                 ))}
               </Table>
@@ -120,7 +122,7 @@ const IceCreamEntry = (props: {
   machineData: IceMachineData;
   type: string;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<IcecreamVatData, IcecreamVatActions>();
 
   const { selectable, iceIndex, current_flavor, machineData, type } = props;
   const [productionAmount, setProductionAmount] = useState(1);

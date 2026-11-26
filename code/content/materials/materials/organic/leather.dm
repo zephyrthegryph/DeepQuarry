@@ -5,11 +5,10 @@
 	stack_type = /obj/item/stack/material/leather
 	flags = MATERIAL_PADDING
 	ignition_point = T0C+300
-	melting_point = T0C+300
-	protectiveness = 3 // 13%
-	conductive = 0
-	integrity = 40
+	heat_resistance = 8.1
+	toughness = 20
 	supply_conversion_value = 2
+	conductivity = 2
 
 /transformation/stack/leather__bedsheet
 CAPABILITIES(/transformation/stack/leather__bedsheet)
@@ -50,7 +49,7 @@ CAPABILITIES(/transformation/stack/leather__gloves)
 
 /transformation/stack/leather__wig
 CAPABILITIES(/transformation/stack/leather__wig)
-	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/clothing/head/powdered_wig, 1)),
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(VARIANT(/obj/item/clothing/head/powdered_wig), 1)),
 		chosen = chosen(title = "wig",
 			subject = /datum/material/leather,
 			build_time = 10 SECONDS,

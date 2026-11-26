@@ -72,7 +72,7 @@ CAPABILITIES(/obj/machinery/botany)
 	op("eject_packet", ui_act("eject_packet"), then(PROC_REF(ui_act_eject_packet)))
 	op("eject_disk", ui_act("eject_disk"), then(PROC_REF(ui_act_eject_disk)))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	anchor(sfx = SFX_ITEMS_RATCHET, volume = 2, attached = MSG(anchor/secured_self), detached = MSG(anchor/unsecured_self))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("open_ui_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	op("load_seed", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Load seed"), needs(req(PROC_REF(botany_no_seed_holds))), then(PROC_REF(interaction_load_seed)))
@@ -161,14 +161,6 @@ CAPABILITIES(/obj/machinery/botany)
 /obj/machinery/botany/proc/screwdriver_used(datum/act/op/A)
 	return OP_DECLINE
 
-/obj/machinery/botany/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	playsound(src, sounds_of(tool).use, 100, TRUE)
-	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-	set_anchored(!anchored)
-	return OP_OK
-
 /obj/machinery/botany/proc/crowbar_used(datum/act/op/A)
 	if(active)
 		return OP_OK
@@ -209,7 +201,7 @@ CAPABILITIES(/obj/machinery/botany)
 	if(seed)
 		data["loaded"] = "[seed.name]"
 	else
-		data["loaded"] = 0
+		data["loaded"] = null
 
 	if(genetics())
 		data["hasGenetics"] = 1
@@ -218,7 +210,7 @@ CAPABILITIES(/obj/machinery/botany)
 			data["sourceName"] += " (variety #[genetics().uid])"
 	else
 		data["hasGenetics"] = 0
-		data["sourceName"] = 0
+		data["sourceName"] = null
 
 	return data
 
@@ -318,6 +310,7 @@ CAPABILITIES(/obj/machinery/botany)
 
 CAPABILITIES(/obj/machinery/botany/editor)
 	interface("BotanyEditor")
+	ui_shape(activity = bool(), degradation = num(), disk = bool(), loaded = nullable(schema_text()), sourceName = nullable(schema_text()), locus = nullable(schema_text()))
 	without("ui_open")
 	op("apply_gene", ui_act("apply_gene"), then(PROC_REF(ui_act_apply_gene)))
 
@@ -343,13 +336,13 @@ CAPABILITIES(/obj/machinery/botany/editor)
 
 	else
 		data["disk"] = 0
-		data["sourceName"] = 0
-		data["locus"] = 0
+		data["sourceName"] = null
+		data["locus"] = null
 
 	if(seed)
 		data["loaded"] = "[seed.name]"
 	else
-		data["loaded"] = 0
+		data["loaded"] = null
 
 	return data
 
@@ -391,6 +384,7 @@ CAPABILITIES(/obj/machinery/botany/editor)
 CAPABILITIES(/obj/machinery/botany/extractor)
 	owns_one(nameof(genetics_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	interface("BotanyIsolator")
+	ui_shape(geneMasks = list_of(row(tag = schema_text(), mask = schema_text())), activity = bool(), degradation = num(), disk = bool(), loaded = nullable(schema_text()), hasGenetics = bool(), sourceName = nullable(schema_text()))
 	without("ui_open")
 	op("scan_genome", ui_act("scan_genome"), then(PROC_REF(ui_act_scan_genome)))
 	op("get_gene", ui_act("get_gene", arg("get_gene", schema_text(4096))), then(PROC_REF(ui_act_get_gene)))

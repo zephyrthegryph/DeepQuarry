@@ -243,7 +243,7 @@ CAPABILITIES(/obj/item/reagent_containers/hypospray/autoinjector)
 	name = "purity hypo"
 	desc = "A refined version of the standard autoinjector, allowing greater capacity.  This variant excels at \
 	resolving viruses, infections, radiation, and genetic maladies."
-	filled_reagents = list(REAGENT_ID_SPACEACILLIN = 4, REAGENT_ID_ARITHRAZINE = 5, REAGENT_ID_PRUSSIANBLUE = 5, REAGENT_ID_RYETALYN = 1)
+	filled_reagents = list(REAGENT_ID_SPACEACILLIN = 4, REAGENT_ID_ARITHRAZINE = 5, REAGENT_ID_PRUSSIANBLUE = 5, REAGENT_ID_REZADONE = 1)
 
 /obj/item/reagent_containers/hypospray/autoinjector/biginjector/pain
 	name = "pain hypo"
@@ -341,13 +341,6 @@ CAPABILITIES(/obj/item/reagent_containers/hypospray/autoinjector)
 	This contains unstable mutagen, which makes using this a very bad idea. It will either \
 	ruin your genetic health, turn you into a Five Points violation, or both!"
 	filled_reagents = list(REAGENT_ID_MUTAGEN = 15)
-
-/obj/item/reagent_containers/hypospray/autoinjector/biginjector/lexorin
-	name = "lexorin injector"
-	desc = "A refined version of the standard autoinjector, allowing greater capacity. \
-	This contains lexorin, a dangerous toxin that stops respiration, and has been \
-	implicated in several high-profile assassinations in the past."
-	filled_reagents = list(REAGENT_ID_LEXORIN = 15)
 
 /obj/item/reagent_containers/hypospray/autoinjector/biginjector/healing_nanites
 	name = "medical nanite injector"

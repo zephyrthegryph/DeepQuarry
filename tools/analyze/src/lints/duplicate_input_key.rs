@@ -1,25 +1,82 @@
-//! Shared input-key adapter.
-use crate::lint::{Cx,Lint,Meta,Registry,Sink};
-use crate::raw_tree_duplicate_input_key_policy as policy;
-struct DuplicateInputKey{p:policy::Patterns}
-impl Lint for DuplicateInputKey{fn meta(&self)->&Meta{&policy::META}fn scan_tree(&self,cx:&Cx,out:&mut Sink){let mut rows=Vec::new();for f in cx.files(){policy::declared(f,&self.p,|ty,key,line|rows.push((ty.to_string(),key.to_string(),f.rel.clone(),line)))}policy::assemble(rows.iter().map(|(ty,key,rel,line)|(ty.as_str(),key.as_str(),rel.as_str(),*line)),out)}}
-pub fn register(reg:&mut Registry){reg.add(DuplicateInputKey{p:policy::Patterns::new()})}
+//! `duplicate_input_key`: a type declares each input entry once.
+//!
+//! `click_on()`, `double_click_on()`, `drag_onto()`, `drag_over()`, `hover()` and `tooltip()` each build an entry with a fixed key (`input:drag_onto`, ...),
+//! and a type's table holds one entry per key: a second declaration of the same key (in the same CAPABILITIES block, or in another block of the same type
+//! in another file) silently replaces the first, so its handler never runs. One handler per input: it dispatches the cases itself and answers
+//! `INPUT_FALLTHROUGH` for the ones it does not take. A hard ban, no baseline.
 
-#[cfg(feature="native-policy")]
-struct NativeDuplicateInputKey{legacy:std::sync::OnceLock<DuplicateInputKey>}
-#[cfg(feature="native-policy")]
-impl Lint for NativeDuplicateInputKey{
- fn meta(&self)->&Meta{&policy::META}
- fn scan_tree(&self,cx:&Cx,out:&mut Sink){
-  let Some(fixture)=cx.fixture else{return self.legacy.get_or_init(||DuplicateInputKey{p:policy::Patterns::new()}).scan_tree(cx,out)};
-  let patterns=policy::native_patterns(fixture);let mut rows=Vec::new();
-  for file in cx.files(){
-   let mut first=None;
-   let parsed=fixture.declared_input_keys(file,&patterns,|ty,key,line|{if first.is_none(){let row=(||{let row=(fixture.own(ty)?,fixture.own(key)?,fixture.own(&file.rel)?,line);fixture.push(&mut rows,row)})();if let Err(error)=row{first=Some(error)}}});
-   if let Some(error)=first{fixture.note_scan(Err(error));return}if let Err(error)=parsed{fixture.note_scan(Err(error));return}
-  }
-  policy::assemble(rows.iter().map(|(ty,key,rel,line)|(ty.as_str(),key.as_str(),rel.as_str(),*line)),out)
- }
+use std::collections::HashMap;
+
+use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::pat::Pat;
+use crate::tree::CODE_DM;
+
+const HINT: &str = "one handler per input key for a type: merge the handlers into one proc that tries each case in priority order and answers INPUT_FALLTHROUGH for the cases it does not take";
+
+static META: Meta = Meta {
+    name: "duplicate_input_key",
+    group: "",
+    label: "duplicate_input_key",
+    legacy: "",
+    select: CODE_DM,
+    scan: ScanKind::Tree,
+    policy: Policy::Hard,
+    rules: &[RuleMeta { name: "duplicate_input_key", hint: HINT }],
+    allow: &[],
+    lists: &[],
+};
+
+struct DuplicateInputKey {
+    block: Pat,
+    entry: Pat,
 }
-#[cfg(feature="native-policy")]
-pub fn register_native(reg:&mut Registry){reg.add(NativeDuplicateInputKey{legacy:std::sync::OnceLock::new()})}
+
+/// The input entries declared at the top level of `CAPABILITIES` blocks: (type, key, file, line), in file order.
+fn declared(cx: &Cx, block: &Pat, entry: &Pat) -> Vec<(String, String, String, usize)> {
+    let mut found = Vec::new();
+    for f in cx.files() {
+        let mut current: Option<String> = None;
+        for (number, line) in f.code().numbered() {
+            if line.trim().is_empty() {
+                continue;
+            }
+            if !line.starts_with(['\t', ' ']) {
+                current = block.captures(line.trim_end()).map(|m| m.s(1).to_string());
+                continue;
+            }
+            let Some(ty) = &current else { continue };
+            if !line.starts_with('\t') || line.starts_with("\t\t") {
+                continue;
+            }
+            if let Some(m) = entry.captures(line.trim_start()) {
+                found.push((ty.clone(), m.s(1).to_string(), f.rel.clone(), number));
+            }
+        }
+    }
+    found
+}
+
+impl Lint for DuplicateInputKey {
+    fn meta(&self) -> &Meta {
+        &META
+    }
+
+    fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
+        let mut first: HashMap<(String, String), (String, usize)> = HashMap::new();
+        for (ty, key, rel, line) in declared(cx, &self.block, &self.entry) {
+            match first.get(&(ty.clone(), key.clone())) {
+                Some((r0, l0)) => out.site_in_msg("duplicate_input_key", &rel, line, format!("{} declares {}() twice (first at {}:{}): the later one replaces the earlier", ty, key, r0, l0)),
+                None => {
+                    first.insert((ty, key), (rel, line));
+                }
+            }
+        }
+    }
+}
+
+pub fn register(reg: &mut Registry) {
+    reg.add(DuplicateInputKey {
+        block: Pat::new(r"^CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]"),
+        entry: Pat::new(r"^(click_on|double_click_on|drag_onto|drag_over|hover|tooltip)\("),
+    });
+}

@@ -1,7 +1,0 @@
-{
-  "exe_sha256": "bafd54168a539e61d8c3f71d9778e92de76d7ffbf11c693541e10be10c9633ba",
-  "source_sha256": "fc4a4e7583c66b36605c6e6312c77053c06e95aa4ca60e6b27a7608a4edb0722",
-  "returncode": 1,
-  "stderr": "E:\\projects\\dq-wt\\pool-c2\\data\\unified-analysis\\effect-transient-owner-index-oracle\\probe.dme, line 8, column 12:\nerror: /proc/check sets SpacemanDMM_should_be_pure but calls a /datum/box/proc/work[1/2] that does impure operations\n- 9:5: SpacemanDMM_should_be_pure set here\n- 10:6: /datum/box/proc/work[1/2]() called here\n- 5:5: Assignment on purity breaking expression happens here\n\n",
-  "stdout": "============================================================\nParsing E:\\projects\\dq-wt\\pool-c2\\data\\unified-analysis\\effect-transient-owner-index-oracle\\probe.dme...\n\n============================================================\nAnalyzing variables...\n\n============================================================\nGathering proc settings...\n\n============================================================\nAnalyzing proc bodies...\n\n============================================================\nAnalyzing proc override validity...\n\n============================================================\nAnalyzing proc call tree...\n\n============================================================\nFound 1 diagnostics\n"
-}

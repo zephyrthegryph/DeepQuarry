@@ -21,6 +21,7 @@ MSG_DEF_SELF(tcomms_console/no_entry, "There is no such log entry on the server 
 CAPABILITIES(/obj/machinery/computer/telecomms/server)
 	ref_one(nameof(SelectedServer), /obj/machinery/telecomms/server)
 	interface("TelecommsLogBrowser")
+	ui_shape(servers = list_of(row(id = schema_text(), name = schema_text())), selectedServer = nullable(row(id = schema_text(), totalTraffic = num(), logs = list_of(row(input_type = schema_text(), id = int(), parameters = row(uspeech = nullable(bool()), intelligible = nullable(bool()), message = nullable(schema_text()), name = nullable(schema_text()), race = nullable(schema_text()), job = nullable(schema_text()), timecode = nullable(schema_text())))))), universal_translate = bool(), network = schema_text(), temp = nullable(row(color = schema_text(), text = schema_text())))
 	tcomms_probe_console()
 	op("delete", ui_act("delete", arg("id", num())), needs(req(PROC_REF(may_delete)), req(PROC_REF(entry_exists))), then(PROC_REF(ui_act_delete)))
 	ref_one(nameof(SelectedServer), /obj/machinery/telecomms/server)
@@ -94,7 +95,6 @@ CAPABILITIES(/obj/machinery/computer/telecomms/server)
 				parameters["[log_param]"] = LAZYACCESS(C.parameters, "[log_param]")
 
 			logs.Add(list(list(
-				"name" = C.name,
 				"input_type" = C.input_type,
 				"id" = i,
 				"parameters" = parameters,

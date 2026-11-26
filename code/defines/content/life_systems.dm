@@ -118,6 +118,8 @@
 #define LIFE_PRESENT_MIN_INTERVAL (0.5 SECONDS)
 /// Observer upkeep (ghosts, AI eyes, blob overmind) runs this often.
 #define OBSERVER_UPKEEP_INTERVAL (LIFE_CYCLE)
+/// The mob service's profile dump writes at least this many lines in a step before it asks whether the tick has room (dump_profile()).
+#define MOB_PROFILE_MIN_LINES 4
 /// Every Nth Life frame is timed per step (the mob service's two-minute profile).
 #ifndef NO_STAGE_PROFILE
 #define LIFE_PROFILE_STRIDE 16

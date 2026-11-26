@@ -1,0 +1,451 @@
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { waitFor } from '@testing-library/react';
+import { gameDataAtom } from 'tgui/events/store';
+import { canFloat } from './Column';
+import { CHAT_PENDING, ColumnHost, dropIndex } from './host';
+import { DOCK_SAVE_MAX, serializeSaved } from './model';
+
+const byond = (globalThis as any).Byond;
+const original = byond.sendMessage;
+let sent: any[] = [];
+
+beforeEach(() => {
+  sent = [];
+  byond.sendMessage = (type: string, payload: any) =>
+    sent.push({ type, payload });
+});
+afterEach(() => {
+  byond.sendMessage = original;
+});
+
+/** A server message as the column page receives it for a window (col/msg's {type, payload}). */
+const msg = (type: string, payload: unknown) => ({ type, payload });
+
+const forWindow = (wid: string) =>
+  sent.filter((m) => m.type === 'col/msg' && m.payload.wid === wid);
+
+describe('the column page', () => {
+  it('starts empty: the chat and the stat panel are server windows like any other', () => {
+    const host = new ColumnHost();
+    expect(Object.keys(host.state.windows)).toEqual([]);
+    expect(host.state.groups).toHaveLength(0);
+  });
+
+  it('opens a docked interface, routes its messages to its own store, and names it from its first update', () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-1', kind: 'tgui' });
+    expect(forWindow('col-1')).toContainEqual({
+      type: 'col/msg',
+      payload: { wid: 'col-1', type: 'ready', payload: {} },
+    });
+    host.receive('col/msg', {
+      wid: 'col-1',
+      ...msg('update', {
+        config: { interface: { name: 'Pda' }, title: 'PDA' },
+        data: { owner: 'Nick' },
+      }),
+    });
+    const backend = host.backends.get('col-1')!;
+    expect(backend.store.get(gameDataAtom)).toEqual({ owner: 'Nick' });
+    expect(host.state.windows['col-1']).toMatchObject({
+      iface: 'Pda',
+      title: 'PDA',
+      kind: 'tgui',
+    });
+    // It acts on its own channel, wrapped for its id.
+    backend.send('act/select', { app: 'notes' });
+    expect(forWindow('col-1').at(-1)).toEqual({
+      type: 'col/msg',
+      payload: { wid: 'col-1', type: 'act/select', payload: { app: 'notes' } },
+    });
+  });
+
+  it('keeps the list index a window was opened at when its interface is named', () => {
+    const host = new ColumnHost();
+    const name = (wid: string, iface: string) =>
+      host.receive('col/msg', {
+        wid,
+        ...msg('update', {
+          config: { interface: { name: iface }, title: iface },
+        }),
+      });
+    host.receive('col/open', { wid: 'col-1', kind: 'tgui' });
+    name('col-1', 'Pda');
+    host.receive('col/open', { wid: 'col-2', kind: 'tgui' });
+    name('col-2', 'Notes');
+    // Dropped at the head of the list: naming it must not move it to the unplaced spot.
+    host.receive('col/open', { wid: 'col-3', kind: 'tgui', at: 0 });
+    name('col-3', 'Radio');
+    expect(host.state.groups.map((g) => g.windows[0])).toEqual([
+      'col-3',
+      'col-1',
+      'col-2',
+    ]);
+  });
+
+  it('answers a window ping and drops a closed window', () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-2', kind: 'tgui' });
+    host.receive('col/msg', { wid: 'col-2', ...msg('ping', { n: 1 }) });
+    expect(forWindow('col-2').at(-1)?.payload).toEqual({
+      wid: 'col-2',
+      type: 'ping/reply',
+      payload: { n: 1 },
+    });
+    host.receive('col/close', { wid: 'col-2' });
+    expect(host.state.windows['col-2']).toBeUndefined();
+    expect(host.backends.has('col-2')).toBe(false);
+    // A late message for it reaches nothing.
+    expect(() =>
+      host.receive('col/msg', { wid: 'col-2', ...msg('update', {}) }),
+    ).not.toThrow();
+  });
+
+  it('docks the stat panel like any other window: its own entry', () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-1', kind: 'tgui' });
+    host.receive('col/msg', {
+      wid: 'col-1',
+      ...msg('update', {
+        config: { interface: { name: 'StatPanel' }, title: 'Status' },
+      }),
+    });
+    expect(host.state.windows['col-1']).toMatchObject({
+      iface: 'StatPanel',
+      title: 'Status',
+      kind: 'tgui',
+    });
+    expect(host.state.groups.map((g) => g.windows)).toEqual([['col-1']]);
+    // Its own protocol's messages reach its window's listeners (useWindowMessages).
+    const got: unknown[] = [];
+    host.backends
+      .get('col-1')!
+      .listeners.add((type, payload) => got.push([type, payload]));
+    host.receive('col/msg', {
+      wid: 'col-1',
+      ...msg('update_verbs', { n: 1 }),
+    });
+    expect(got).toEqual([['update_verbs', { n: 1 }]]);
+  });
+
+  it('tells the server which docked windows are off screen: a background tab, a collapsed entry', () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-1', kind: 'tgui' });
+    host.receive('col/open', { wid: 'col-2', kind: 'tgui' });
+    const views = (wid: string) =>
+      forWindow(wid)
+        .filter((m) => m.payload.type === 'wm/view')
+        .map((m) => m.payload.payload.hidden);
+    // Each alone in its entry: both shown.
+    expect(views('col-1')).toEqual([false]);
+    expect(views('col-2')).toEqual([false]);
+    const of = (wid: string) =>
+      host.state.groups.find((g) => g.windows.includes(wid))!;
+    // Stacked: the stack shows col-1 (the dropped one is active), col-2 behind it... whichever is not active is hidden.
+    host.dispatch({
+      type: 'joinGroup',
+      group: of('col-2').id,
+      into: of('col-1').id,
+    });
+    const stack = of('col-1');
+    const behind = stack.windows.find((w) => w !== stack.active)!;
+    expect(views(behind).at(-1)).toBe(true);
+    expect(views(stack.active).at(-1)).toBe(false);
+    // Collapsed: both hidden; expanded again: the active one is shown, once.
+    host.dispatch({ type: 'collapse', group: stack.id, collapsed: true });
+    expect(views(stack.active).at(-1)).toBe(true);
+    const before = views(behind).length;
+    host.dispatch({ type: 'collapse', group: stack.id, collapsed: false });
+    expect(views(stack.active).at(-1)).toBe(false);
+    expect(views(behind).length).toBe(before);
+    // Switching tabs swaps which one is fed.
+    host.activate(behind);
+    expect(views(behind).at(-1)).toBe(false);
+  });
+
+  it('drops a window message that is not an envelope', () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-4', kind: 'tgui' });
+    const got: unknown[] = [];
+    host.backends.get('col-4')!.listeners.add((type) => got.push(type));
+    for (const junk of [
+      { wid: 'col-4' },
+      { wid: 'col-4', type: 5 },
+      { wid: 'col-4', raw: '%7B' },
+    ]) {
+      expect(() => host.receive('col/msg', junk)).not.toThrow();
+    }
+    expect(got).toEqual([]);
+  });
+});
+
+describe('the chat at login', () => {
+  const chatUpdate = (wid: string) => ({
+    wid,
+    ...msg('update', {
+      config: { interface: { name: 'Chat' }, title: 'Chat' },
+      data: { draft: '', session: 's1' },
+    }),
+  });
+
+  it('stands in for the chat from the first moment, and the Chat window takes its place', async () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-stat', kind: 'tgui' });
+    host.receive('col/msg', {
+      wid: 'col-stat',
+      ...msg('update', {
+        config: { interface: { name: 'StatPanel' }, title: 'Status' },
+      }),
+    });
+    host.receive('col/init', { saved: '' });
+    // The page's own chat, docked where the Chat window will be, before the server's window arrives.
+    expect(host.state.windows[CHAT_PENDING]).toMatchObject({
+      iface: 'Chat',
+      kind: 'pending',
+    });
+    expect(host.state.groups.map((g) => g.windows)).toEqual([
+      ['col-stat'],
+      [CHAT_PENDING],
+    ]);
+    host.receive('col/open', { wid: 'col-chat', kind: 'tgui' });
+    host.receive('col/msg', chatUpdate('col-chat'));
+    await waitFor(() =>
+      expect(host.state.windows[CHAT_PENDING]).toBeUndefined(),
+    );
+    // In the stand-in's place, not wherever its window first landed.
+    expect(host.state.groups.map((g) => g.windows)).toEqual([
+      ['col-stat'],
+      ['col-chat'],
+    ]);
+    expect(host.state.windows['col-chat']).toMatchObject({
+      iface: 'Chat',
+      kind: 'tgui',
+    });
+  });
+
+  it('has no stand-in for a chat the player floated', () => {
+    const host = new ColumnHost();
+    host.receive('col/init', {
+      saved: JSON.stringify({ Chat: { dock: false, group: 'g1' } }),
+    });
+    expect(host.state.windows[CHAT_PENDING]).toBeUndefined();
+  });
+});
+
+describe('a column window message', () => {
+  it('arrives as one envelope {wid, type, payload}, decoded once with the page message', () => {
+    const host = new ColumnHost();
+    host.receive('col/open', { wid: 'col-9', kind: 'tgui' });
+    const got: unknown[] = [];
+    host.backends
+      .get('col-9')!
+      .listeners.add((type, payload) => got.push([type, payload]));
+    host.receive('col/msg', {
+      wid: 'col-9',
+      type: 'update_stat',
+      payload: { ping_str: 'Ping: 42ms' },
+    });
+    // Asset mappings come the same way (tgui_window.dm send_encoded()).
+    host.receive('col/msg', {
+      wid: 'col-9',
+      ...msg('asset/mappings', { a: 1 }),
+    });
+    expect(got).toEqual([
+      ['update_stat', { ping_str: 'Ping: 42ms' }],
+      ['asset/mappings', { a: 1 }],
+    ]);
+  });
+});
+
+describe('what the column keeps', () => {
+  const open = (
+    host: ColumnHost,
+    wid: string,
+    iface: string,
+    floatable = true,
+    closable = floatable,
+  ) => {
+    host.receive('col/open', { wid, kind: 'tgui' });
+    host.receive('col/msg', {
+      wid,
+      type: 'update',
+      payload: {
+        config: {
+          interface: { name: iface },
+          title: iface,
+          window: { floatable, collapsible: floatable, closable },
+        },
+        data: {},
+      },
+    });
+  };
+  const floats = () => sent.filter((m) => m.payload?.type === 'wm/float');
+  const closes = () => sent.filter((m) => m.payload?.type === 'close');
+
+  it('never floats or closes the stat panel', () => {
+    const host = new ColumnHost();
+    open(host, 'col-stat', 'StatPanel', false);
+    open(host, 'col-chat', 'Chat', true, false);
+    expect(host.mayCollapse({ windows: ['col-stat'] })).toBe(false);
+    expect(host.mayLeave('col-stat')).toBe(false);
+    host.float('col-stat', { x: 5, y: 5 });
+    host.close('col-stat');
+    expect(floats()).toEqual([]);
+    expect(closes()).toEqual([]);
+    expect(host.mayLeave('col-chat')).toBe(true);
+    // The chat offers no buttons (the server keeps it open) but is dragged out like any window; the stat panel never is.
+    expect(host.hasWindowButtons('col-chat')).toBe(false);
+    expect(canFloat(host, 'col-chat')).toBe(true);
+    expect(canFloat(host, 'col-stat')).toBe(false);
+  });
+
+  it('never floats or closes its last window', () => {
+    const host = new ColumnHost();
+    open(host, 'col-pda', 'Pda');
+    expect(host.mayLeave('col-pda')).toBe(false);
+    host.float('col-pda');
+    host.close('col-pda');
+    expect(floats()).toEqual([]);
+    expect(closes()).toEqual([]);
+    open(host, 'col-chat', 'Chat');
+    expect(host.mayLeave('col-pda')).toBe(true);
+    host.float('col-pda');
+    expect(floats()).toHaveLength(1);
+  });
+});
+
+describe('the saved layout', () => {
+  it('never hears of column window ids, and keeps saving as windows come and go', () => {
+    const host = new ColumnHost();
+    for (let n = 1; n <= 120; n++) {
+      const wid = `col-${n}`;
+      host.receive('col/open', { wid, kind: 'tgui' });
+      expect(
+        Object.keys(host.state.saved).some((k) => k.startsWith('col-')),
+      ).toBe(false);
+      host.receive('col/close', { wid });
+    }
+    expect(Object.keys(host.state.saved)).toEqual([]);
+    host.receive('col/open', { wid: 'col-121', kind: 'tgui' });
+    host.receive('col/msg', {
+      wid: 'col-121',
+      type: 'update',
+      payload: {
+        config: { interface: { name: 'Pda' }, title: 'Pda' },
+        data: {},
+      },
+    });
+    expect(Object.keys(host.state.saved)).toEqual(['Pda']);
+    expect(serializeSaved(host.state.saved).length).toBeLessThan(DOCK_SAVE_MAX);
+  });
+
+  it('drops column window ids from the layout the server sends', () => {
+    const host = new ColumnHost();
+    const place = { dock: true, group: 'g1', order: 0, tab: 0, height: 260 };
+    host.receive('col/init', {
+      saved: JSON.stringify({ 'col-1': place, 'col-2': place, Pda: place }),
+    });
+    expect(Object.keys(host.state.saved).sort()).toEqual(
+      ['Chat', 'Pda'].filter((k) => k in host.state.saved),
+    );
+    expect(
+      Object.keys(host.state.saved).some((k) => k.startsWith('col-')),
+    ).toBe(false);
+  });
+});
+
+describe('dropIndex', () => {
+  it('lands before the first entry whose middle is below the point, else last', () => {
+    const boxes = [
+      { top: 0, height: 400 },
+      { top: 403, height: 597 },
+    ];
+    expect(dropIndex(boxes, 100)).toBe(0);
+    expect(dropIndex(boxes, 300)).toBe(1);
+    expect(dropIndex(boxes, 900)).toBe(2);
+  });
+
+  describe('two sizes per window', () => {
+    const update = (host: ColumnHost, wid: string, iface: string) => {
+      host.receive('col/open', { wid, kind: 'tgui' });
+      host.receive('col/msg', {
+        wid,
+        ...msg('update', {
+          config: { interface: { name: iface }, title: iface },
+          data: {},
+        }),
+      });
+    };
+    const heightOf = (host: ColumnHost, iface: string) =>
+      host.state.groups.find((g) =>
+        g.windows.some((id) => host.state.windows[id]?.iface === iface),
+      )?.height;
+    const MAX: [number, number] = [8000, 8000];
+
+    it('pop out, resize popped, pop in, resize docked, pop out again: each mode keeps its own size', () => {
+      const host = new ColumnHost();
+      update(host, 'col-1', 'StatPanel');
+      update(host, 'col-2', 'Apc');
+      update(host, 'col-3', 'Chat');
+      // Docked 200 (its saved inline height).
+      host.dispatch({
+        type: 'resize',
+        group: host.state.groups[1].id,
+        height: 200,
+      });
+      // First pop out: no popped size yet, so the default (not the 200-high entry).
+      const first = host.poppedSize('col-2', 1, MAX);
+      expect(first).toEqual([400, 600]);
+      host.close('col-2');
+      host.receive('col/close', { wid: 'col-2' });
+      // The popped window is resized: its geometry reaches the page.
+      host.receive('col/geometry', {
+        iface: 'Apc',
+        size: [700, 500],
+        pos: [30, 40],
+      });
+      // Docking again (the native window was 500 high): back at its own inline height, not the popped one.
+      host.receive('col/open', {
+        wid: 'col-2',
+        kind: 'tgui',
+        height: 500,
+      });
+      update(host, 'col-2', 'Apc');
+      expect(heightOf(host, 'Apc')).toBe(200);
+      // Resize docked: only the inline height moves.
+      host.dispatch({
+        type: 'resize',
+        group: host.state.groups.find((g) =>
+          g.windows.some((id) => host.state.windows[id]?.iface === 'Apc'),
+        )!.id,
+        height: 320,
+      });
+      expect(host.state.saved.Apc.float?.size).toEqual([700, 500]);
+      // Popping out again opens at the popped size, wherever the docked height went.
+      expect(host.poppedSize('col-2', 1, MAX)).toEqual([700, 500]);
+      // A resize while popped changes the popped size only.
+      host.receive('col/geometry', { iface: 'Apc', size: [640, 480] });
+      expect(host.state.saved.Apc.height).toBe(320);
+      expect(host.poppedSize('col-2', 1, MAX)).toEqual([640, 480]);
+    });
+
+    it('both sizes persist with the layout', () => {
+      const host = new ColumnHost();
+      update(host, 'col-1', 'Apc');
+      update(host, 'col-2', 'Chat');
+      host.receive('col/geometry', {
+        iface: 'Apc',
+        size: [700, 500],
+        pos: [30, 40],
+      });
+      const text = serializeSaved(host.state.saved);
+      const again = new ColumnHost();
+      again.receive('col/init', { saved: text });
+      expect(again.state.saved.Apc.float).toEqual({
+        size: [700, 500],
+        pos: [30, 40],
+      });
+      expect(again.state.saved.Apc.height).toBe(host.state.saved.Apc.height);
+    });
+  });
+});

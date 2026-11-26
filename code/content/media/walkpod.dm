@@ -37,6 +37,7 @@ CAPABILITIES(/obj/item/walkpod)
 	op("play", ui_act(), then(PROC_REF(ui_act_play)))
 	owns_one(nameof(deployed_headpods), /obj/item/headpods)
 	interface("Jukebox", title = "PodZu Music Player")
+	ui_shape(playing = bool(), loop_mode = int(), volume = num(0, 1), current_track_ref = nullable(int()), current_track = nullable(row(ref = int(), title = schema_text(), artist = schema_text(), genre = schema_text(), duration = num())), current_genre = nullable(schema_text()), percent = num(0, 1), tracks = list_of(row(ref = int(), title = schema_text(), artist = schema_text(), genre = schema_text(), duration = num())), admin = bool())
 	without("ui_open")
 	op("change_track", ui_act("change_track", arg("change_track", schema_ref(/datum/track))), then(PROC_REF(ui_act_change_track)))
 	op("loopmode", ui_act("loopmode", arg("loopmode", num())), then(PROC_REF(ui_act_loopmode)))
@@ -201,12 +202,13 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 		data["current_track_ref"] = handle_of(current_track())  // Convenient shortcut
 		data["current_track"] = current_track().toTguiList()
 		data["current_genre"] = current_track().genre
-	data["percent"] = (playing && current_track()) ? min(100, round((world.time - media_start_time) / current_track().duration)) : 0;
+	data["percent"] = (playing && current_track()) ? min(1, (world.time - media_start_time) / current_track().duration) : 0
 
 	var/list/tgui_tracks = list()
 	for(var/datum/track/T in getTracksList())
 		tgui_tracks.Add(list(T.toTguiList()))
 	data["tracks"] = tgui_tracks
+	data["admin"] = FALSE // the pocket player has no admin track tools
 
 	return data
 
@@ -235,9 +237,7 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 	return OP_OK
 
 /obj/item/walkpod/proc/ui_act_play(datum/act/op/A)
-	if(current_track() == null)
-		to_chat(A.actor, "No track selected.")
-	else
+	if(current_track())
 		StartPlaying()
 	return OP_OK
 

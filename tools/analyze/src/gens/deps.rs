@@ -25,7 +25,7 @@ use crate::sem::handlers;
 use crate::sem::reads::{Annotations, ReadKind, ReadSet, ReadsEngine, VarClass, WriteIndex};
 
 /// The diagnostics of a reads walk that leave a consumer's inputs incomplete.
-pub const UNRESOLVED_RULES: &[&str] = &["unannotated_global", "dynamic_read", "hop_not_relation", "ffi_call"];
+pub const UNRESOLVED_RULES: &[&str] = &["unannotated_global", "dynamic_read", "hop_not_relation", "ffi_call", "unresolved_global"];
 
 /// Engine procs a consumer may call whose reads the runtime registers itself, so the opaque crossing hides nothing: the stat and capability-key
 /// readers resolve to inputs the stat layer indexes (stat_value of a literal id is a stat read; cap_key_get a capability key read).
@@ -41,6 +41,10 @@ fn note_reads(set: &ReadSet, reads: &mut BTreeSet<(String, String)>) {
         if r.kind == ReadKind::Var && !r.owner.is_empty() {
             reads.insert((r.owner.clone(), r.var.clone()));
         }
+        // A var of a datum reached through global state (`GLOB.net.wanted_issue().author`): the runtime binds the chain and hears the var.
+        if let ReadKind::Global(g) = &r.kind {
+            reads.insert((g.owner.clone(), g.field.clone()));
+        }
     }
 }
 
@@ -55,7 +59,14 @@ fn is_generated_setter(eng: &ReadsEngine, callee: &str) -> bool {
 }
 
 /// One untracked read of a consumer: what it is, and where the read sits.
-pub use crate::reactive_facts::{DepsAnalysis, Leaf, Untracked};
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Untracked {
+    pub what: String,
+    /// The type that declares the var read (empty when the finding is not a var read).
+    pub owner: String,
+    pub rel: String,
+    pub line: u32,
+}
 
 /// The hops an output's subscriptions follow only one step from the holder: a draw (or another derived output) redraws from its own vars, from
 /// the entities it declares it watches (`look.watch()`, a derived() hop over a relation), and from a var one container, turf or area hop away
@@ -110,6 +121,15 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, outp
     out.sort();
     out.dedup();
     out
+}
+
+/// A `nameof(v)` a declaration names as a stat input: inside contributes()/contributes_to()/factors(), or inside a when() that wraps one.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Leaf {
+    pub owner: String,
+    pub var: String,
+    pub rel: String,
+    pub line: u32,
 }
 
 fn is_word(b: u8) -> bool {
@@ -225,6 +245,38 @@ pub fn marker_driven_vars(m: &Marker) -> Vec<String> {
 }
 
 /// Every consumer of a stat or a draw and its untracked reads, computed once per tree (the generator and the lint share it).
+pub struct DepsAnalysis {
+    /// "<type>::<proc>" -> its untracked reads.
+    pub consumers: BTreeMap<String, Vec<Untracked>>,
+    /// The consumers that are draw() procs (the lint reports them as `draw_untracked`).
+    pub draws: BTreeSet<String>,
+    /// Untracked leaves, per declaring type.
+    pub leaves: Vec<Leaf>,
+    /// "<type>" -> the holder vars its own draw() reads.
+    pub draw_reads: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>" -> the published keys its own draw() reads through a READS_AS accessor (`nutrition_of(src)` stands for MOB_KEY_NUTRITION), as the
+    /// DM text of the key (a define is written `[MOB_KEY_NUTRITION]` so the compile resolves it): a PUBLISH_CHANGE of one redraws the thing.
+    pub draw_keys: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>" -> what its own draw() reads one container, turf or area hop away, as "<hop>.<var>".
+    pub draw_hops: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>" -> the first segment of every hop chain its own draw() reads (a link var on the holder, `cell` of `cell.charge`): a write of the
+    /// link changes what the draw sees. The change graph's plans (`gen plans`) mark these PLAN_DRAW too.
+    pub draw_links: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>::hidden_verbs" / "<type>::granted_verbs" -> the holder vars (and hop chains' first segments) that proc reads, and whether its
+    /// walk left a read unresolved: the verb outputs share the draw's refresh bit, so the plans need them before a write may skip a redraw.
+    pub verb_reads: BTreeMap<String, (BTreeSet<String>, bool)>,
+    /// The var names contribution and condition handlers and STAT formulas read (a holder var, each link of a hop chain, a system var): the
+    /// over-inclusive stat input set `gen plans` writes takes them beside the declared names.
+    pub stat_reads: BTreeSet<String>,
+    /// Every `(declaring type, var)` a consumer reads off the holder (or through a declared relation hop), whatever its class: the read
+    /// set `gens::auto_tracked` turns into tracked vars.
+    pub reads: BTreeSet<(String, String)>,
+    /// The reads of `reads` no declaration makes reactive (see `gens::auto_tracked::candidate`): the vars the inference tracks.
+    pub candidates: BTreeSet<(String, String)>,
+    /// "<type>::<proc>" of a draw, a contribution or a STAT formula -> where it samples with `read_once()` (rule `sampled_in_look`).
+    pub sampled: BTreeMap<String, BTreeSet<(String, u32)>>,
+}
+
 /// What each consumer's reads leave the graph unable to see change, over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual
 /// calls the union of their overrides, global procs walked like any proc and global state classified (`sem/globals.rs`). The `untracked_inputs`
 /// lint and the generated `deps.dm` read this.
@@ -477,7 +529,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     // every var it reads must publish, or the window never hears a write. The reads count here; nothing is added to the consumer table.
     {
         let mut seen_ui = BTreeSet::new();
-        for d in crate::sem::procs::proc_defs(&sem, &["ui_data", "tgui_data"]) {
+        for d in crate::sem::procs::proc_defs(&sem, &["ui_data", "ui_static_data", "tgui_data"]) {
             if d.owner == "/" || d.owner == "/datum" || d.rel.starts_with("code/engine/") || !seen_ui.insert(format!("{}::{}", d.owner, d.name)) {
                 continue;
             }
@@ -487,6 +539,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             for r in &set.reads {
                 if r.kind == ReadKind::Var && !r.owner.is_empty() && r.owner != "/datum" {
                     reads.insert((r.owner.clone(), r.var.clone()));
+                }
+                if let ReadKind::Global(g) = &r.kind {
+                    reads.insert((g.owner.clone(), g.field.clone()));
                 }
             }
         }

@@ -49,7 +49,9 @@ CAPABILITIES(/turf/simulated/floor)
 	setup(PROC_REF(floor_start))
 	op("floor_item_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(floor_item_help)))
 	op("floor_item_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 2), label("Hit the floor"), then(PROC_REF(floor_item_disarm)))
-	op("floor_item_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), label("Draw graffiti"), then(PROC_REF(floor_item_grab)))
+	op("floor_item_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(floor_item_grab)))
+	// The Menu line for engraving: only for something sharp on a surface that takes it (a click in the grab stance still reaches it through floor_item_grab).
+	op("floor_engrave_graffiti", item(/obj/item), origin(ORIGIN_MENU), priority(OP_PRIORITY_DEFAULT - 3), label("Engrave graffiti"), when(req(TYPE_PROC_REF(/turf, engraved_by_held))), then(PROC_REF(floor_graffiti_alt)))
 	op("floor_item_hurt", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 2), label("Hit the floor"), then(PROC_REF(floor_item_hurt)))
 	floor_construction()
 	// Laying a flooring from a stack in hand: the build time is the flooring's (floor_item starts it).

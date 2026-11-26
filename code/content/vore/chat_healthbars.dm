@@ -65,8 +65,6 @@
 	if(!reciever.client)	//No one is home, don't bother
 		return
 	if(!override)	//Did the person push the verb? Ignore the pref
-		if(!reciever.client.prefs?.read_preference(/datum/preference/toggle/vore_health_bars))
-			return
 	if(!istype(src.loc, /obj/belly)) // not in a belly? don't bother
 		return
 	var/ourpercent = vitality() * 100

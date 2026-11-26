@@ -11,7 +11,7 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import { capitalize, decodeHtmlEntities } from 'tgui-core/string';
-
+import type { AppearanceChangerActions } from '../generated/AppearanceChanger';
 import {
   AppearanceChangerGender,
   AppearanceChangerSpecies,
@@ -43,7 +43,7 @@ import {
 import type { Data } from './types';
 
 export const AppearanceChanger = (props) => {
-  const { act, config, data } = useBackend<Data>();
+  const { act, config, data } = useBackend<Data, AppearanceChangerActions>();
 
   const {
     name,
@@ -301,7 +301,7 @@ export const AppearanceChanger = (props) => {
                   </Stack.Item>
                 </Stack>
               </Section>
-              <Tabs>
+              <Tabs vertical>
                 {change_race ? (
                   <Tabs.Tab
                     selected={tabIndex === TAB_RACE}

@@ -82,7 +82,7 @@ pub fn expand_regions_reusing(
     if !prev.diagnostics.is_empty()
         || !prev.lexical_diagnostics.is_empty()
         || !plan.diagnostics.is_empty()
-        || !prev.tokens.window().is_empty()
+        || !prev.tokens.is_empty()
         || reuse.regions.len() != plan.regions.len()
     {
         return None;
@@ -131,20 +131,19 @@ pub fn expand_regions_reusing(
         .filter_map(|(&region, source)| source.is_none().then_some(region))
         .collect();
     // Admission keys: a copied region keeps its key; the others are hashed.
-    let input_keys: Option<Vec<Option<[u8; 16]>>> =
-        memo.input_admissions().and_then(|admissions| {
-            if prev.input_keys.len() == 0 {
-                return None;
-            }
-            let keys: Vec<_> = (0..plan.regions.len())
-                .map(|region| match reuse.regions[region] {
-                    Some(previous) => prev.input_keys.get(previous).copied().flatten(),
-                    None => ExpansionInputs::region_key(plan, region),
-                })
-                .collect();
-            admissions.retain_keys(&keys);
-            Some(keys)
-        });
+    let input_keys: Option<Vec<Option<[u8; 16]>>> = memo.input_admissions().and_then(|admissions| {
+        if prev.input_keys.len() == 0 {
+            return None;
+        }
+        let keys: Vec<_> = (0..plan.regions.len())
+            .map(|region| match reuse.regions[region] {
+                Some(previous) => prev.input_keys.get(previous).copied().flatten(),
+                None => ExpansionInputs::region_key(plan, region),
+            })
+            .collect();
+        admissions.retain_keys(&keys);
+        Some(keys)
+    });
     let input_keys = match input_keys {
         Some(keys) => keys,
         None => match memo.input_admissions() {
@@ -182,9 +181,7 @@ pub fn expand_regions_reusing(
             parts.push(RowPart::Fresh {
                 region,
                 new_start: start,
-                path: plan.occurrences[plan.regions[region].occurrence]
-                    .path
-                    .clone(),
+                path: plan.occurrences[plan.regions[region].occurrence].path.clone(),
                 lines,
             });
             stats.expanded += 1;
@@ -237,8 +234,6 @@ pub fn expand_regions_reusing(
     let text_elapsed = text_started.elapsed();
     let rows_started = std::time::Instant::now();
     let origins = prev.origins.assembled(parts)?;
-    let text = SourceText::from(text);
-    let origins = super::origin_byte_layout::bind_current_layout(plan, &text, origins);
     stats.prepare = prepare;
     stats.expand = expand;
     stats.text = text_elapsed;
@@ -246,10 +241,10 @@ pub fn expand_regions_reusing(
     Some((
         ExpandedRegions {
             input_keys: Arc::new(input_keys),
-            text,
-            tokens: Vec::new().into(),
+            text: SourceText::from(text),
+            tokens: Vec::new(),
             origins,
-            dense_emission_regions: emission,
+            emission_regions: emission,
             diagnostics: Vec::new(),
             receipts,
             lexical_diagnostics: Vec::new(),
@@ -261,9 +256,6 @@ pub fn expand_regions_reusing(
 /// Whether a reusing expansion equals a full one (verification mode): the text, every origin row
 /// field, the receipts' spans and row counts, and the emission order.
 pub fn expansions_equal(a: &ExpandedRegions, b: &ExpandedRegions) -> Result<(), String> {
-    if !a.origins.equivalent_byte_layout(&b.origins) {
-        return Err("original byte layout proofs differ".into());
-    }
     if a.text.as_str() != b.text.as_str() {
         return Err("joined text differs".into());
     }
@@ -287,14 +279,13 @@ pub fn expansions_equal(a: &ExpandedRegions, b: &ExpandedRegions) -> Result<(), 
         }
     }
     if a.receipts.len() != b.receipts.len()
-        || a.receipts
-            .iter()
-            .zip(&b.receipts)
-            .any(|(x, y)| x.region != y.region || x.output != y.output || x.rows != y.rows)
+        || a.receipts.iter().zip(&b.receipts).any(|(x, y)| {
+            x.region != y.region || x.output != y.output || x.rows != y.rows
+        })
     {
         return Err("receipts differ".into());
     }
-    if !a.same_emission_regions(b) || a.diagnostics.len() != b.diagnostics.len() {
+    if a.emission_regions != b.emission_regions || a.diagnostics.len() != b.diagnostics.len() {
         return Err("emission order or diagnostics differ".into());
     }
     Ok(())
@@ -305,7 +296,6 @@ pub fn expansions_equal(a: &ExpandedRegions, b: &ExpandedRegions) -> Result<(), 
 /// (including its include-return and end-of-file cursors), ordered item, source text, line start,
 /// dependency, terminal macro and `FILE_DIR`.
 pub fn plans_equal(a: &DirectivePlan, b: &DirectivePlan) -> Result<(), String> {
-    if a.initial_environment!=b.initial_environment{return Err("initial preprocessing environment differs".into())}
     if a.regions.len() != b.regions.len() || a.items.len() != b.items.len() {
         return Err("region or item count differs".into());
     }

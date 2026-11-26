@@ -12,6 +12,16 @@
 /// Runs the init declarations on A. Called at the end of /atom/Initialize() and from
 /// table_initialize(); a non-atom datum with declarations calls it from its own New().
 /proc/lifecycle_decls_init(datum/D, mapload = FALSE)
+	// The atom InitAtom() is initializing reads its construction plan (code/engine/declare/ctor_plan.dm): no table is asked.
+	var/plan = CTOR_PLAN_FOR(D)
+	if(plan)
+		if(plan & CTOR_PREINIT)
+			engine_holder_preinit(D, mapload)
+		if(plan & CTOR_STARTS)
+			own_init_starts(D, null, mapload)
+		if(plan & CTOR_DECLS_INIT)
+			lifecycle_decls_of(D).create_gas(D)
+		return
 	// Starting occupants first (the old step 1, default children): gas, reagents and a subtype's
 	// Initialize() after `. = ..()` may read them. Every atom passes here (~500k at boot): the table read is the
 	// shared cache's fast path, inlined, and the proc runs only for a type that declares one.
@@ -60,7 +70,7 @@
 		var/datum/target = GLOB.vars[service[1]]
 		if(target && service[3])
 			call(target, service[3])(A)
-	// A destroy already released them in phase 1; this covers collapse into a latent entry.
+	// A destroy already released them in phase 1.
 	if(decls.binders && !QDELING(A))
 		lifecycle_decls_unbind(A)
 

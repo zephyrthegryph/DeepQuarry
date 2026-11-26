@@ -9,19 +9,7 @@
 	var/skip_gear = coverage[1]
 	var/skip_body = coverage[2]
 
-	//This is what hides what
-	var/list/hidden = list(
-		BP_GROIN = skip_body & EXAMINE_SKIPGROIN,
-		BP_TORSO = skip_body & EXAMINE_SKIPBODY,
-		BP_HEAD  = skip_body & EXAMINE_SKIPHEAD,
-		BP_L_ARM = skip_body & EXAMINE_SKIPARMS,
-		BP_R_ARM = skip_body & EXAMINE_SKIPARMS,
-		BP_L_HAND= skip_body & EXAMINE_SKIPHANDS,
-		BP_R_HAND= skip_body & EXAMINE_SKIPHANDS,
-		BP_L_FOOT= skip_body & EXAMINE_SKIPFEET,
-		BP_R_FOOT= skip_body & EXAMINE_SKIPFEET,
-		BP_L_LEG = skip_body & EXAMINE_SKIPLEGS,
-		BP_R_LEG = skip_body & EXAMINE_SKIPLEGS)
+	var/list/hidden = examine_hidden_limbs(skip_body)
 
 	var/list/msg = list("This is [icon2html(src, user.client)] <EM>[src.name]</EM>[examine_name_ender(skip_gear, skip_body, looks_synth)]")
 	msg += examine_gear_lines(user, skip_gear, skip_body)
@@ -45,6 +33,21 @@
 		msg += "<br>[p_They()] [current_pose]" //<br> intentional, extra gap.
 
 	return msg
+
+/// Which limbs worn gear hides from view: limb tag to nonzero when hidden.
+/mob/living/carbon/human/proc/examine_hidden_limbs(skip_body)
+	return list(
+		BP_GROIN = skip_body & EXAMINE_SKIPGROIN,
+		BP_TORSO = skip_body & EXAMINE_SKIPBODY,
+		BP_HEAD  = skip_body & EXAMINE_SKIPHEAD,
+		BP_L_ARM = skip_body & EXAMINE_SKIPARMS,
+		BP_R_ARM = skip_body & EXAMINE_SKIPARMS,
+		BP_L_HAND= skip_body & EXAMINE_SKIPHANDS,
+		BP_R_HAND= skip_body & EXAMINE_SKIPHANDS,
+		BP_L_FOOT= skip_body & EXAMINE_SKIPFEET,
+		BP_R_FOOT= skip_body & EXAMINE_SKIPFEET,
+		BP_L_LEG = skip_body & EXAMINE_SKIPLEGS,
+		BP_R_LEG = skip_body & EXAMINE_SKIPLEGS)
 
 /// What worn gear hides: list(EXAMINE_SKIP* gear flags, EXAMINE_SKIP* body flags).
 /mob/living/carbon/human/proc/examine_coverage()

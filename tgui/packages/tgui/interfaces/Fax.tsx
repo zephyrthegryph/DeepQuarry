@@ -7,26 +7,15 @@ import {
   NoticeBox,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 
 import { LoginInfo } from './common/LoginInfo';
 import { LoginScreen } from './common/LoginScreen';
+import type { FaxActions, FaxData } from './generated/Fax';
 
-type Data = {
-  scan: string | null;
-  authenticated: string | null;
-  rank: string;
-  isAI: BooleanLike;
-  isRobot: BooleanLike;
-  adminDepartments: string[];
-  bossName: string;
-  copyItem: string;
-  cooldown: number;
-  destination: string;
-};
+type Data = FaxData;
 
 export const Fax = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, FaxActions>();
 
   const { authenticated, copyItem } = data;
 
@@ -58,7 +47,7 @@ export const Fax = (props) => {
 };
 
 export const FaxContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FaxActions>();
 
   const { bossName, copyItem, cooldown, destination } = data;
 
@@ -106,7 +95,7 @@ export const FaxContent = (props) => {
 };
 
 const RemoveItem = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FaxActions>();
 
   const { copyItem } = data;
 
@@ -124,7 +113,7 @@ const RemoveItem = (props) => {
 };
 
 const AutomatedStaffRequest = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FaxActions>();
 
   const { adminDepartments, destination, copyItem } = data;
   const staffRequestDepartment: Set<string> = new Set(adminDepartments);
@@ -134,7 +123,10 @@ const AutomatedStaffRequest = (props) => {
     flexiblePadding = '1.5rem';
   }
 
-  if (!copyItem || (copyItem && staffRequestDepartment.has(destination))) {
+  if (
+    !copyItem ||
+    (copyItem && destination && staffRequestDepartment.has(destination))
+  ) {
     return (
       <Box mt="1.5rem">
         <b>Or submit an automated staff request.</b> <br /> <br />

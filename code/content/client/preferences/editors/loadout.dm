@@ -190,6 +190,11 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 			out["[SLOT_ID_TIE]"] = tie_names.Join(", ")
 	return out
 
+/// The wire shape of /datum/preference_editor/loadout's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_loadout, row(loadout_key = schema_text(), loadouts = list_of(row(key = schema_text(), label = schema_text(), priority = nullable(schema_text()), count = num(), cost = num())), prioritized_jobs = list_of(schema_text()), pda_slot = nullable(schema_text()), by_body_slot = map_of(schema_text(), list_of(schema_text())), inherited_by_body_slot = map_of(schema_text(), list_of(schema_text())), tweak_values_by_item = map_of(schema_text(), map_of(schema_text(), schema_text())), tweak_meta_by_item = map_of(schema_text(), map_of(schema_text(), one_of(schema_text(), num(), bool(), list_of(schema_text())))), icon_data_by_item = map_of(schema_text(), row(icon = schema_text(), icon_state = nullable(schema_text()))), inherited_items = list_of(schema_text()), total_cost = num(), max_gear_cost = num(), job_defaults = map_of(schema_text(), schema_text()), preview_job = nullable(schema_text()), underwear = pref_editor_underwear()))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_loadout_static, row(categories = map_of(schema_text(), list_of(row(name = schema_text(), desc = schema_text(), cost = num(), allowed_roles = nullable(list_of(schema_text())), show_roles = bool(), body_slot = schema_text(), whitelisted = nullable(schema_text()), tweaks = list_of(row(key = schema_text(), label = schema_text(), kind = enum(list("text", "textarea", "color", "choice", "boolean", "tf_toggle", "channels", "modal")), compact = bool(), choices = nullable(list_of(schema_text())), channels = nullable(list_of(schema_text()))))))), body_slots = list_of(row(id = schema_text(), label = schema_text(), group = schema_text(), multi = bool())), underwear = pref_editor_underwear_static()))
+
 /datum/preference_editor/loadout/build_ui_data(datum/preferences/preferences)
 	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
 	var/loadout_key = _current_slot(preferences)
@@ -296,6 +301,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 		list(
 			"key"   = "_default",
 			"label" = "Default",
+			"priority" = null,
 			"count" = LAZYLEN(gear_list["_default"]),
 			"cost"  = _list_cost(gear_list["_default"]),
 		)
@@ -329,14 +335,10 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	// case anything else still references the proc with two args (slated to drop).
 	var/list/job_defaults = job_default_labels(preview_job, null)
 
-	// Pull dynamic data from the (hidden) starting-kit and underwear editors so the
+	// Pull dynamic data from the (hidden) underwear editor so the
 	// loadout panel can show all of it in one place. The editors themselves don't render on
 	// their own; their action dispatch still works because they're registered.
-	var/list/sk_data = list()
 	var/list/uw_data = list()
-	var/datum/preference_editor/sk = GLOB.preference_editors_by_key["starting_kit"]
-	if(sk)
-		sk_data = sk.build_ui_data(preferences)
 	var/datum/preference_editor/uw = GLOB.preference_editors_by_key["underwear"]
 	if(uw)
 		uw_data = uw.build_ui_data(preferences)
@@ -373,7 +375,6 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 		"max_gear_cost" = MAX_GEAR_COST,
 		"job_defaults" = job_defaults,
 		"preview_job" = preview_job ? preview_job.title : null,
-		"starting_kit" = sk_data,
 		"underwear" = uw_data,
 	)
 
@@ -432,6 +433,8 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 					"label"   = dq_gear_tweak_label(gt),
 					"kind"    = _kind,
 					"compact" = dq_gear_tweak_compact(_kind) ? TRUE : FALSE,
+					"choices" = null,
+					"channels" = null,
 				)
 				var/list/choices = dq_gear_tweak_choices(gt)
 				if(choices)
@@ -456,19 +459,19 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	// embed starting-kit and underwear static payloads so the loadout React side
 	// can render those controls inline. The standalone editors are marked hidden=TRUE so
 	// they don't render their own panels.
-	var/list/sk_static = list()
 	var/list/uw_static = list()
-	var/datum/preference_editor/sk = GLOB.preference_editors_by_key["starting_kit"]
-	if(sk)
-		sk_static = sk.build_ui_static_data(preferences)
 	var/datum/preference_editor/uw = GLOB.preference_editors_by_key["underwear"]
 	if(uw)
 		uw_static = uw.build_ui_static_data(preferences)
 
+	// Every slot row carries "multi" (only the Accessories row sets it in the table), so the wire shape has no optional field.
+	var/list/body_slots = list()
+	for(var/list/slot_row in TYPE_TABLE_GET(src, body_slot_table))
+		body_slots += list(list("id" = slot_row["id"], "label" = slot_row["label"], "group" = slot_row["group"], "multi" = slot_row["multi"] ? TRUE : FALSE))
+
 	return list(
 		"categories" = categories,
-		"body_slots" = TYPE_TABLE_GET(src, body_slot_table),
-		"starting_kit" = sk_static,
+		"body_slots" = body_slots,
 		"underwear" = uw_static,
 	)
 

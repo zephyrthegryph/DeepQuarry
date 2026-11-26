@@ -181,28 +181,29 @@
 	TEST_ASSERT("demographics" in GLOB.dq_robot_mode_hidden_groups, "gating still reads the real group")
 	TEST_ASSERT(!("gender" in GLOB.dq_group_order["identity"]), "the merged groups are not ordered separately")
 
-/// The loadout tab's preview wears the job outfit with both preview toggles off, and other tabs still honour them; no job set falls back to Intern.
+/// The preview always wears the job outfit (the preview toggles were cut, 2218cf5b76), on the loadout tab and elsewhere; no job set falls back to Intern.
 /datum/unit_test/dq_loadout_tab_preview_dressed
 
 /datum/unit_test/dq_loadout_tab_preview_dressed/Run()
-	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "preview_loadout" = 0, "preview_job" = 0))
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN))
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	P.dress_preview_mob(H)
-	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_UNIFORM), "with the toggles off another tab shows no outfit")
+	TEST_ASSERT_NOTNULL(H.get_equipped_item(SLOT_ID_UNIFORM), "another tab shows the job outfit")
 	H.delete_inventory(TRUE)
 	P.dress_preview_mob(H, TRUE)
-	TEST_ASSERT_NOTNULL(H.get_equipped_item(SLOT_ID_UNIFORM), "the loadout tab shows the job outfit anyway")
+	TEST_ASSERT_NOTNULL(H.get_equipped_item(SLOT_ID_UNIFORM), "the loadout tab shows the job outfit")
+	own_turf_contents(run_loc_floor_bottom_left) // kit with no free slot (the survival box) lands on the test floor
 
-/// Voice settings are in Identity; the antag tab is admin-only and a clientless (player) prefs does not see it.
-/datum/unit_test/dq_voice_in_identity_antag_hidden
+/// Voice settings are in Identity, and there is no antag tab (the role opt-ins have no settings page).
+/datum/unit_test/dq_voice_in_identity_no_antag_tab
 
-/datum/unit_test/dq_voice_in_identity_antag_hidden/Run()
+/datum/unit_test/dq_voice_in_identity_no_antag_tab/Run()
 	var/datum/preference/voice = GLOB.preference_entries[/datum/preference/text/human/voice_sound]
 	TEST_ASSERT_EQUAL(voice.get_category(null), "identity", "voice sound is in Identity")
 	TEST_ASSERT("voice" in GLOB.dq_group_order["identity"], "and ordered there")
-	TEST_ASSERT("antag" in GLOB.dq_admin_only_categories, "antag is admin-only")
-	TEST_ASSERT(!dq_sees_admin_categories(new /datum/preferences/dq_test_stub), "a player does not see it")
-	TEST_ASSERT("antag" in dq_character_category_index("human"), "the shared index still holds it for admins")
+	for(var/mode in list("human", "robot", "pai"))
+		TEST_ASSERT(!("antag" in dq_character_category_index(mode)), "no antag tab in [mode] mode")
+	TEST_ASSERT_NULL(GLOB.preference_editors_by_key["antag_optin"], "the opt-in editor is gone")
 
 /// Size is part of Identity, and the flavor inspection is the examine's own text for this character.
 /datum/unit_test/dq_size_in_identity_and_inspection
@@ -271,6 +272,33 @@
 /// Examine, the More link and the OOC notes in chat style text the way the character setup previews it: emphasis markers and "||" spoilers.
 /datum/unit_test/dq_flavor_and_notes_formatting
 
+/// A taur body has no legs or feet of its own: the limb list greys them, the editor refuses them, the other limbs stay editable.
+/datum/unit_test/dq_taur_locks_leg_limbs
+
+/datum/unit_test/dq_taur_locks_leg_limbs/Run()
+	var/taur_name
+	for(var/key in GLOB.tail_styles_list)
+		var/datum/sprite_accessory/S = GLOB.tail_styles_list[key]
+		if(istype(S) && istaurtail(S))
+			taur_name = S.name
+			break
+	TEST_ASSERT_NOTNULL(taur_name, "there is a taur body")
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN))
+	var/datum/preference_editor/organs/editor = GLOB.preference_editors_by_key["organs"]
+	TEST_ASSERT(!editor.build_ui_data(P)["externals"][BP_L_LEG]["taur"], "a normal body's legs are free")
+	TEST_ASSERT_EQUAL(editor.ui_act_set_external_status(null, list("limb" = BP_L_LEG, "status" = "amputated"), P, null, null), PREF_UPDATE_ACCEPTED, "and can be changed")
+	var/datum/preference_editor/legs/legs = GLOB.preference_editors_by_key["legs"]
+	TEST_ASSERT_EQUAL(legs.handle_action(P, "set_leg_style", list("style" = taur_name), null), PREF_UPDATE_ACCEPTED, "a taur body is chosen")
+	var/list/externals = editor.build_ui_data(P)["externals"]
+	for(var/limb in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT))
+		TEST_ASSERT(externals[limb]["taur"], "[limb] is greyed under a taur body")
+	TEST_ASSERT(!externals[BP_L_ARM]["taur"], "the arms are not")
+	TEST_ASSERT_EQUAL(editor.ui_act_set_external_status(null, list("limb" = BP_R_LEG, "status" = "cyborg"), P, null, null), PREF_UPDATE_REJECTED, "a leg's setting is refused")
+	TEST_ASSERT_EQUAL(editor.ui_act_set_external_status(null, list("limb" = BP_L_ARM, "status" = "cyborg"), P, null, null), PREF_UPDATE_ACCEPTED, "an arm's is not")
+	var/list/organ_data = P.read_preference(/datum/preference/organ_data)
+	TEST_ASSERT_EQUAL(organ_data[BP_L_LEG], "amputated", "the saved leg setting is kept")
+
+
 /datum/unit_test/dq_flavor_and_notes_formatting/Run()
 	var/rendered = dq_render_flavor("A +bold+ |soft| _under_ ||secret|| end")
 	TEST_ASSERT(findtext(rendered, "<b>bold</b>"), "emphasis: [rendered]")
@@ -290,12 +318,12 @@
 	TEST_ASSERT(topic_dispatch(H, viewer, list("flavor_more" = "1")), "the More link answers")
 	var/list/said = test_chat_of(viewer)
 	TEST_ASSERT(length(said) && findtext(said[length(said)], "loud") && !findtext(said[length(said)], "+loud+"), "More prints it formatted: [jointext(said, " | ")]")
-	H.identity().ooc_notes = "Likes +cats+"
+	H.identity().set_ooc_notes("Likes +cats+")
 	H.print_ooc_notes_chat(viewer)
 	said = test_chat_of(viewer)
 	TEST_ASSERT(length(said) && findtext(said[length(said)], "cats") && !findtext(said[length(said)], "+cats+"), "OOC notes in chat are formatted: [jointext(said, " | ")]")
 
-/// Private notes are gone from the save; OOC lists read sorted; weight is clamped to a real range; announce is set from the birthday row.
+/// Private notes are gone from the save; OOC lists read sorted; weight is clamped to a real range.
 /datum/unit_test/dq_setup_list_batch
 
 /datum/unit_test/dq_setup_list_batch/Run()
@@ -306,6 +334,3 @@
 	P = dq_test_load_character(list("species" = SPECIES_HUMAN, "weight_vr" = 3))
 	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/weight_vr), WEIGHT_MIN, "a tiny saved weight is clamped")
 	TEST_ASSERT_EQUAL(dq_sorted_note_lines("pears\nApples\n\nbananas\napples"), "Apples\napples\nbananas\npears", "sorted, case ignored, ties in written order")
-	var/datum/preference_editor/birthday/editor = GLOB.preference_editors_by_key["birthday"]
-	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_announce", list("value" = 1), null), PREF_UPDATE_ACCEPTED, "announce is set from the birthday row")
-	TEST_ASSERT(P.read_preference(/datum/preference/toggle/human/bday_announce), "and saved")

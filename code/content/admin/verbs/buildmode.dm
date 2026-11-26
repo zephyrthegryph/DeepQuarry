@@ -1001,7 +1001,7 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 	if(!str || !length(str)) //cancel
 		return
 	newA = new /area/buildmode
-	newA.dynamic_lighting = FALSE // Without this it's pitch black if you build anywhere but space.
+	newA.set_dynamic_lighting(FALSE) // Without this it's pitch black if you build anywhere but space.
 	newA.luminosity = TRUE // Without this it's pitch black if you build anywhere but space.
 	newA.setup(str)
 	newA.has_gravity = oldA.has_gravity

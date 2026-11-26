@@ -115,6 +115,7 @@ MSG_DEF_SELF(robotics/other_cyborg_control, "Cyborgs cannot control other cyborg
 CAPABILITIES(/obj/machinery/computer/robotics)
 	configure(light_glow(color = "#a97faa"))
 	interface("RoboticsControlConsole")
+	ui_shape(safety = bool(), auth = bool(), can_hack = bool(), cyborgs = list_of(row(name = schema_text(), ref = int(), locked_down = bool(), locstring = schema_text(), status = int(), health = num(), charge = nullable(num()), cell_capacity = nullable(num()), module = schema_text(), synchronization = nullable(schema_text()), is_hacked = bool(), emagged = bool(), hackable = bool())), show_detonate_all = bool())
 	op("arm", ui_act("arm"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_arm)))
 	op("nuke", ui_act("nuke"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_nuke)))
 	op("killbot", ui_act("killbot", arg("ref", num())), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_killbot)))
@@ -127,9 +128,9 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 /obj/machinery/computer/robotics/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()
-	data["safety"] = safety
-	data["auth"] = is_authenticated(user)
-	data["can_hack"] = can_hack_any(user)
+	data["safety"] = !!safety
+	data["auth"] = !!is_authenticated(user)
+	data["can_hack"] = !!can_hack_any(user)
 	data["cyborgs"] = list()
 	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(!console_shows(R))
@@ -139,20 +140,20 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 		var/list/cyborg_data = list(
 			name = R.name,
 			ref = handle_of(R),
-			locked_down = R.lockcharge,
+			locked_down = !!R.lockcharge,
 			locstring = "[cyborg_area.name] ([T.x], [T.y])",
 			status = R.stat,
 			health = round(R.vitality() * 100, 0.1),
 			charge = R.cell ? round(R.cell.percent()) : null,
 			cell_capacity = R.cell ? R.cell.maxcharge : null,
 			module = R.module ? R.module.name : "No Module Detected",
-			synchronization = R.connected_ai,
-			is_hacked =  R.connected_ai && R.emagged,
-			emagged = R.emagged,
-			hackable = can_hack(user, R),
+			synchronization = R.connected_ai?.name,
+			is_hacked = !!(R.connected_ai && R.emagged),
+			emagged = !!R.emagged,
+			hackable = !!can_hack(user, R),
 		)
 		data["cyborgs"] += list(cyborg_data)
-	data["show_detonate_all"] = (data["auth"] && length(data["cyborgs"]) > 0 && ishuman(user))
+	data["show_detonate_all"] = !!(data["auth"] && length(data["cyborgs"]) > 0 && ishuman(user))
 	return data
 
 /// Every button needs the operator to be authenticated (the old window guard).
@@ -161,7 +162,6 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 
 /obj/machinery/computer/robotics/proc/ui_act_arm(datum/act/op/A)
 	set_safety(!safety)
-	to_chat(A.actor, span_notice("You [safety ? "disarm" : "arm"] the emergency self destruct."))
 	. = TRUE
 
 /obj/machinery/computer/robotics/proc/ui_act_nuke(datum/act/op/A)

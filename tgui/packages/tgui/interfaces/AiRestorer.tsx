@@ -1,25 +1,16 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
   Button,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type { AiRestorerActions, AiRestorerData } from './generated/AiRestorer';
 
-type Data = {
-  AI_present: boolean;
-  error: string | null;
-  name: string;
-  laws: string[];
-  isDead: boolean;
-  restoring: BooleanLike;
-  health: number;
-  ejectable: boolean;
-};
+type Data = AiRestorerData;
 
 export const AiRestorer = () => {
   return (
@@ -32,33 +23,14 @@ export const AiRestorer = () => {
 };
 
 export const AiRestorerContent = (props) => {
-  const { act, data } = useBackend<Data>();
-  const {
-    AI_present,
-    error,
-    name,
-    laws,
-    isDead,
-    restoring,
-    health,
-    ejectable,
-  } = data;
+  const { act, data } = useBackend<Data, AiRestorerActions>();
+  const { AI_present, error, name, laws, isDead, restoring, health } = data;
   return (
     <>
       {error && <NoticeBox textAlign="center">{error}</NoticeBox>}
-      {!!ejectable && (
-        <Button
-          fluid
-          icon="eject"
-          disabled={!AI_present}
-          onClick={() => act('PRG_eject')}
-        >
-          {AI_present ? name : '----------'}
-        </Button>
-      )}
       {!!AI_present && (
         <Section
-          title={ejectable ? 'System Status' : name}
+          title={name}
           buttons={
             <Box inline bold color={isDead ? 'bad' : 'good'}>
               {isDead ? 'Nonfunctional' : 'Functional'}
@@ -66,18 +38,17 @@ export const AiRestorerContent = (props) => {
           }
         >
           <LabeledList>
-            <LabeledList.Item label="Integrity">
-              <ProgressBar
-                value={health}
-                minValue={0}
-                maxValue={100}
-                ranges={{
-                  good: [70, Infinity],
-                  average: [50, 70],
-                  bad: [-Infinity, 50],
-                }}
-              />
-            </LabeledList.Item>
+            <StatBar
+              label="Integrity"
+              value={health}
+              minValue={0}
+              maxValue={100}
+              ranges={{
+                good: [70, Infinity],
+                average: [50, 70],
+                bad: [-Infinity, 50],
+              }}
+            />
           </LabeledList>
           {!!restoring && (
             <Box bold textAlign="center" fontSize="20px" color="good" mt={1}>

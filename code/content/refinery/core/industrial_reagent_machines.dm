@@ -136,7 +136,7 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 	return OP_OK
 
 /// Transfers reagents from us to the next machine. Calls handle_transfer() on any target machines to check if they can accept reagents.
-/obj/machinery/reagent_refinery/proc/transfer_tank( datum/reagents/RT, obj/machinery/reagent_refinery/target, source_forward_dir, filter_id = "")
+/obj/machinery/reagent_refinery/proc/transfer_tank( datum/reagents/RT, obj/machinery/reagent_refinery/target, source_forward_dir)
 	PROTECTED_PROC(TRUE)
 	if(RT.total_volume <= 0 || !anchored || !target.anchored)
 		return 0
@@ -144,19 +144,15 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 		return 0
 	if(!istype(target,/obj/machinery/reagent_refinery) || istype(target,/obj/machinery/reagent_refinery/grinder)) // Grinders don't allow input
 		return 0
-	var/transfered = target.handle_transfer(src,RT,source_forward_dir, amount_per_transfer_from_this, filter_id)
+	var/transfered = target.handle_transfer(src,RT,source_forward_dir, amount_per_transfer_from_this)
 	if(transfered > 0 && power_of(src).active > 0)
 		use_power_oneoff(power_of(src).active)
 	return transfered
 
 /// Handles reagent recieving from transfer_tank(), returns how much reagent was transfered if successful. Overriden to prevent access from certain sides or for filtering.
-/obj/machinery/reagent_refinery/proc/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "") // Handle transfers in an override, instead of one monster function that typechecks like transfer_tank() used to be
+/obj/machinery/reagent_refinery/proc/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate) // Handle transfers in an override, instead of one monster function that typechecks like transfer_tank() used to be
 	// Transfer to target in amounts every process tick!
-	if(filter_id == "")
-		var/amount = RT.trans_to_obj(src, transfer_rate)
-		return amount
-	// Split out reagent...
-	return RT.trans_id_to(src, filter_id, transfer_rate, TRUE)
+	return RT.trans_to_obj(src, transfer_rate)
 
 /obj/machinery/reagent_refinery/proc/refinery_transfer()
 	if(amount_per_transfer_from_this <= 0 || reagents.total_volume <= 0)
@@ -191,8 +187,6 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 	// Pipe markings
 	if(flags & REFINERY_TUTORIAL_INPUT)
 		examine_list += "The red pipe marks the input. "
-	if(flags & REFINERY_TUTORIAL_FILTER)
-		examine_list += "The purple pipe marks the filtered output. "
 	// No power needed
 	if(flags & REFINERY_TUTORIAL_NOPOWER)
 		examine_list += "Does not require power. "
@@ -209,19 +203,6 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 		// Waste processors do not connect to anything as outgoing
 		if(istype(other,/obj/machinery/reagent_refinery/waste_processor))
 			continue
-
-		// Filter allows side connection
-		if(istype(other,/obj/machinery/reagent_refinery/filter))
-			var/obj/machinery/reagent_refinery/filter/filt = other
-			var/check_dir = 0
-			if(filt.get_filter_side() == 1)
-				check_dir = turn(filt.dir, 270)
-			else
-				check_dir = turn(filt.dir, 90)
-			if(check_dir == GLOB.reverse_dir[direction])
-				var/image/intake = image(icon, icon_state = overlay_state, dir = direction)
-				. += intake
-				continue
 
 		// Splitter only allows side connections
 		if(istype(other,/obj/machinery/reagent_refinery/splitter))

@@ -8,6 +8,8 @@ SYSTEM_DEF(ticker)
 
 	/// state of current round (used by process()) Use the defines GAME_STATE_* !
 	var/current_state = GAME_STATE_STARTUP
+	/// How many times the lobby windows were pushed (a state change or an immediate-start change); tests read it.
+	var/lobby_refreshes = 0
 	/// Boolean to track if round should be forcibly ended next ticker tick.
 	/// Set by admin intervention ([ADMIN_FORCE_END_ROUND])
 	/// or a "round-ending" event, like summoning Nar'Sie, a blob victory, the nuke going off, etc. ([FORCE_END_ROUND])
@@ -29,6 +31,10 @@ SYSTEM_DEF(ticker)
 	var/ready_for_reboot = FALSE //all roundend preparation done with, all that's left is reboot
 
 	var/tipped = FALSE //Did we broadcast the tip of the day yet?
+
+	/// The stage setup() is in, and when it began (setup_stage()).
+	var/setup_stage_name
+	var/setup_stage_at = 0
 
 	var/timeLeft //pregame timer
 	COOLDOWN_DECLARE(start_at)
@@ -95,7 +101,7 @@ SYSTEM_DEF(ticker)
 			to_chat(world, span_boldnotice("Welcome to [station_name()]!"))
 			for(var/channel_tag in CONFIG_GET(str_list/channel_announce_new_game))
 				send2chat(new /datum/tgs_message_content("New round starting on [using_map.full_name] ([using_map.name])!"), channel_tag)
-			current_state = GAME_STATE_PREGAME
+			set_current_state(GAME_STATE_PREGAME)
 
 			round_step(0)
 		if(GAME_STATE_PREGAME)
@@ -126,7 +132,7 @@ SYSTEM_DEF(ticker)
 			if(timeLeft <= 0 && round_start_blocked())
 				return
 			if(timeLeft <= 0)
-				current_state = GAME_STATE_SETTING_UP
+				set_current_state(GAME_STATE_SETTING_UP)
 				Kernel.SetRunLevel(RUNLEVEL_SETUP)
 				if(start_immediately)
 					round_step(0)
@@ -134,7 +140,7 @@ SYSTEM_DEF(ticker)
 		if(GAME_STATE_SETTING_UP)
 			if(!setup())
 				//setup failed
-				current_state = GAME_STATE_STARTUP
+				set_current_state(GAME_STATE_STARTUP)
 				COOLDOWN_START(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10))
 				timeLeft = null
 				Kernel.SetRunLevel(RUNLEVEL_LOBBY)
@@ -146,7 +152,7 @@ SYSTEM_DEF(ticker)
 				return // wait until explosion is done.
 
 			if(force_ending)
-				current_state = GAME_STATE_FINISHED
+				set_current_state(GAME_STATE_FINISHED)
 				mode.set_mode_running(FALSE)
 				declare_completion(force_ending)
 				Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
@@ -163,7 +169,7 @@ SYSTEM_DEF(ticker)
 
 				if(game_finished && mode_finished)
 					end_game_state = END_GAME_READY_TO_END
-					current_state = GAME_STATE_FINISHED
+					set_current_state(GAME_STATE_FINISHED)
 					mode.set_mode_running(FALSE)
 					Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 					declare_completion() // its SQL and TGS chat run off-thread (io_job, send2chat)
@@ -190,16 +196,21 @@ SYSTEM_DEF(ticker)
 #endif
 
 	CHECK_TICK
+	setup_stage("choose the game mode")
 	setup_choose_gamemode()
 	// TODO
 
 	CHECK_TICK
+	setup_stage("economy")
 	setup_economy()
+	setup_stage("create the characters")
 	create_characters() //Create player characters
+	setup_stage("collect the minds")
 	collect_minds()
+	setup_stage("equip the characters")
 	equip_characters()
 
-
+	setup_stage("round start events")
 	for(var/list/row as anything in round_start_events)
 		round_start_fire(row)
 	LAZYCLEARLIST(round_start_events)
@@ -210,7 +221,9 @@ SYSTEM_DEF(ticker)
 	SSserver_metrics.round_started()
 
 	// Spawn randomized items
+	setup_stage("multi point items")
 	spawn_multi_point_items()
+	setup_stage("AI cores, docking codes, solars")
 
 	// Place empty AI cores once we know who is playing AI
 	for(var/obj/effect/landmark/start/S in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
@@ -226,13 +239,14 @@ SYSTEM_DEF(ticker)
 	for(var/obj/machinery/power/solar_control/SC as anything in REGISTRY_MEMBERS(REGISTRY_SOLAR_CONTROLS))
 		SC.auto_start()
 
+	setup_stage(null)
 	log_world("Game start took [(world.timeofday - init_start)/10]s")
 	SSdbcore.SetRoundStart() // an io_job write; returns at once
 
 	to_chat(world, span_notice(span_bold("Welcome to [station_name()], enjoy your stay!")))
 	play_simple_announcement(world, ANNOUNCER_MSG_ROUND_START)
 
-	current_state = GAME_STATE_PLAYING
+	set_current_state(GAME_STATE_PLAYING)
 	mode.set_mode_running(TRUE)
 	Kernel.SetRunLevel(RUNLEVEL_GAME)
 
@@ -248,6 +262,14 @@ SYSTEM_DEF(ticker)
 #endif
 
 	return TRUE
+
+/// The stage of setup() that begins now (null: setup is over): the one before it is closed and its real time logged, so a round start that holds the
+/// server (82 s on 2026-11-13, most of it five logins of one player) names where. Real time, not tick usage: a stage can run over several ticks.
+/datum/system/ticker/proc/setup_stage(stage)
+	if(setup_stage_name)
+		log_world("ROUND_SETUP: [setup_stage_name] took [round((REALTIMEOFDAY - setup_stage_at) / 10, 0.1)] s")
+	setup_stage_name = stage
+	setup_stage_at = REALTIMEOFDAY
 
 /datum/system/ticker/proc/PostSetup()
 	mode.post_setup()
@@ -367,7 +389,7 @@ SYSTEM_DEF(ticker)
 			if(!player.spawn_checks_vr(player.mind.assigned_role))
 				var/datum/job/job_datum = SSjob.get_job(J.title)
 				job_datum.current_positions--
-				player.mind.assigned_role = null
+				player.mind.set_assigned_role(null)
 				continue
 
 			// Snowflakey AI treatment

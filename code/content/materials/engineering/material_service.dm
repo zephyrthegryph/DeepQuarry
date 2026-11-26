@@ -108,7 +108,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	material_service_event(MATERIAL_EVENT_CORROSION, corrosion)
 	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
 	if(structure)
-		material_service_event(MATERIAL_EVENT_TEMPERATURE, max(internal_temperature, external_temperature) / max(structure.melting_point, 1), max(internal_temperature, external_temperature))
+		material_service_event(MATERIAL_EVENT_TEMPERATURE, max(internal_temperature, external_temperature) / max(structure.melting_point(), 1), max(internal_temperature, external_temperature))
 	return material_service_of(src)
 
 /obj/proc/material_service_can_retire(datum/material_service/service)
@@ -454,19 +454,19 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	var/datum/material/thermal = owner().material_for_role(MATERIAL_ROLE_THERMAL) || owner().primary_construction_material()
 	thermal_stock_static = thermal
 	electrical_stock_static = owner().material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	thermal_capacity = max((thermal?.specific_heat || 125) * MATERIAL_SERVICE_REFERENCE_MASS, 1000)
+	thermal_capacity = max((thermal?.specific_heat() || 125) * MATERIAL_SERVICE_REFERENCE_MASS, 1000)
 	if(!heat_store)
 		set_heat_store(heat_store_create(thermal_capacity, T20C))
 	else
 		heat_store_set_capacity(heat_store, thermal_capacity)
 	// An exothermic stock is a heat source for as long as the assembly is in service.
-	heat_store_set_power(heat_store, thermal?.exothermic_heat_rate || 0)
+	heat_store_set_power(heat_store, (thermal?.trait(MT_EXOTHERMIC) || 0) * 5)
 	if(thermal_material_id == thermal?.name)
 		return
 	thermal_material_id = thermal?.name
 	// Fresh stock is at the assembly temperature. A cryogenic phase material starts discharged at room temperature (its plateau's latent
 	// heat held) and must actually be cooled first.
-	heat_store_set_phase(heat_store, thermal?.phase_change_temperature || 0, thermal?.phase_change_capacity || 0)
+	heat_store_set_phase(heat_store, thermal?.phase_change_temperature() || 0, thermal?.phase_change_capacity() || 0)
 
 /// The assembly's temperature, K.
 /datum/material_service/proc/temperature()
@@ -496,7 +496,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	if(istype(owner(), /obj/structure/cable))
 		var/obj/structure/cable/cable = owner()
 		var/datum/material/conductor = electrical_stock()
-		var/crossed_critical = conductor?.critical_temperature && ((now < conductor.critical_temperature) != (electrical_reference_temperature < conductor.critical_temperature))
+		var/crossed_critical = conductor?.critical_temperature() && ((now < conductor.critical_temperature()) != (electrical_reference_temperature < conductor.critical_temperature()))
 		if(abs(now - electrical_reference_temperature) >= 0.1 || crossed_critical)
 			if(cable.material_overlay?.material_graph)
 				cable.material_overlay.material_graph.invalidate_cable(cable)
@@ -548,10 +548,10 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	if(!istype(owner(), /obj/item/cell))
 		return null
 	var/datum/material/conductor = owner().material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	if(!conductor?.thermoelectric_coefficient)
+	if(!conductor?.trait(MT_THERMOELECTRIC))
 		return null
 	var/obj/item/cell/cell = owner()
-	return cell.amount_missing() > 0 ? clamp(conductor.thermoelectric_coefficient, 0, 1) : 0
+	return cell.amount_missing() > 0 ? clamp(conductor.trait(MT_THERMOELECTRIC) / 100, 0, 1) : 0
 
 /// Brings the links' conductances to the assembly's temperature now, and pays a thermoelectric engine's work into the cell (what the cell
 /// cannot take goes back into the assembly as heat). Returns TRUE while heat still flows.
@@ -612,7 +612,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	active = chemical_rate > 0
 	var/old_temperature = last_environment_temperature
 	// An exothermic stock heats itself (its heat store's power, initialize_thermal_stock()).
-	if(thermal_stock()?.exothermic_heat_rate > 0)
+	if(thermal_stock()?.trait(MT_EXOTHERMIC) > 0)
 		active = TRUE
 	var/list/air_ports = owner().material_service_gases()
 	var/datum/gas_mixture/highest_load_port
@@ -641,7 +641,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	active = refresh_heat_links(ambient) || active
 	temperature_moved(old_temperature)
 	var/datum/material/structure = owner().material_for_role(MATERIAL_ROLE_STRUCTURE) || owner().primary_construction_material()
-	last_stress = structure ? temperature() / max(structure.melting_point, 1) : 0
+	last_stress = structure ? temperature() / max(structure.melting_point(), 1) : 0
 	set_status(material_assembly_view(owner()).leaking ? "Leaking" : (last_stress >= 1 ? "Overheated" : (last_pressure_load >= MATERIAL_PRESSURE_FATIGUE_RATIO ? "Pressure fatigue" : (last_pressure_load >= MATERIAL_PRESSURE_STRESS_RATIO ? "Pressure stress" : (last_stress > 0.8 ? "Thermal stress" : "Nominal")))))
 	if(last_stress >= 1 && elapsed > 0)
 		owner().take_damage((last_stress - 0.9) * 5 * elapsed, BURN, FIRE)

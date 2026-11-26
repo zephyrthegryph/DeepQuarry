@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Opening a door no longer leaves the door and the room behind it dark for a moment under client lighting."

@@ -38,7 +38,6 @@ CAPABILITIES(/datum/malf_research)
 	if(!get_focus())
 		return
 	to_chat(owner_ref(), span_bold("Research Completed") + ": [get_focus().name]")
-	grant(owner_ref(), granted_verb(get_focus().ability), get_focus())
 	var/datum/malf_research_ability/done = get_focus()
 	rel_move(src, nameof(available_abilities), src, nameof(unlocked_abilities), done)
 	if(done.next)

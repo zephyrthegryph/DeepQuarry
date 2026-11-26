@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Fixed several machine and console windows sending or reading the wrong data (shuttle cloak, ID computer Custom job, anomalous battery power button, stock exchange)."
+  - qol: "Some windows no longer print chat messages for button presses the window already shows."

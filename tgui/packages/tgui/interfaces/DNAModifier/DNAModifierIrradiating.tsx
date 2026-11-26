@@ -1,3 +1,4 @@
+import { Label } from 'tgui/components/Label';
 import { Box, Dimmer, Icon } from 'tgui-core/components';
 
 export const DNAModifierIrradiating = (props: { duration: number }) => {
@@ -12,11 +13,11 @@ export const DNAModifierIrradiating = (props: { duration: number }) => {
           <Icon name="radiation" />
         </h1>
       </Box>
-      <Box color="label">
+      <Label>
         <h3>
           For {props.duration} second{props.duration === 1 ? '' : 's'}
         </h3>
-      </Box>
+      </Label>
     </Dimmer>
   );
 };

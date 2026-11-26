@@ -15,9 +15,9 @@
 	max_stages = 5
 	stage_prob = 5
 	spread_flags = DISEASE_SPREAD_NON_CONTAGIOUS
-	cure_text = REAGENT_HOLYWATER + " or rest"
+	cure_text = "Rest, or " + REAGENT_ADRANOL + " (it clears the confusion and lifts the haze)"
 	spread_text = "None"
-	cures = list(REAGENT_ID_HOLYWATER)
+	cures = list(REAGENT_ID_ADRANOL)
 	cure_chance = 30
 	agent = "Unholy Forces"
 	disease_flags = CURABLE | CAN_NOT_POPULATE

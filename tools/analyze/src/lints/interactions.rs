@@ -10,13 +10,30 @@
 //! the nearest declaring ancestor decides, and an annotated site still stops the walk up; the
 //! annotation is read on every declaring line, whether or not that site survives the overwrite.
 
+use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::lint::{AllowUse,Cx,Lint,Meta,Registry,Sink};
+use crate::lint::{AllowUse, Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
+use crate::pat;
+use crate::tree::CODE_DM;
 
-use crate::raw_tree_interactions_policy as policy;
+static META: Meta = Meta {
+    name: "interactions",
+    group: "",
+    label: "interactions",
+    legacy: "tools/ci/interactions_lint.py",
+    select: CODE_DM,
+    scan: ScanKind::Tree,
+    policy: Policy::Hard,
+    rules: &[RuleMeta {
+        name: "shadow",
+        hint: "use EXTEND_INTERACTIONS, or annotate `// ALLOW(interactions): reason`",
+    }],
+    allow: &["interactions"],
+    lists: &[],
+};
 
 /// One file's `DECLARE_INTERACTIONS` / `get_interactions()` sites: `(type path, line, allowed)`.
 #[derive(Serialize, Deserialize, Default, PartialEq)]
@@ -29,10 +46,64 @@ struct Interactions;
 
 impl Lint for Interactions {
     fn meta(&self) -> &Meta {
-        &policy::META
+        &META
     }
 
-    fn scan_tree(&self,cx:&Cx,out:&mut Sink){let files=cx.files();let facts:Vec<Facts>=crate::incr::sharded_facts("interactions-facts",&files,|f|{let mut sink=Sink::new();let mut x=Facts::default();policy::declarations(f,|ty,line|{let ok=sink.allowed(f,line,"interactions");x.decls.push((ty.to_string(),line as u32,ok));});x.uses=sink.allow_used;x});let mut rows=Vec::new();for(f,x)in files.iter().zip(facts){for u in x.uses{out.replay_allow(u)}for(ty,line,ok)in x.decls{rows.push((ty,f.rel.clone(),line as usize,ok))}}policy::assemble(rows.iter().map(|(ty,rel,line,ok)|(ty.as_str(),rel.as_str(),*line,*ok)),out)}
+    fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
+        // type path -> (rel, line, allowed)
+        let mut sites: BTreeMap<String, (String, usize, bool)> = BTreeMap::new();
+        let files = cx.files();
+        let facts: Vec<Facts> = crate::dm::ownership_index::sharded_facts("interactions-facts", &files, |f| {
+            let mut sink = Sink::new();
+            let mut x = Facts::default();
+            for (number, line) in f.raw().numbered() {
+                let m = pat!(r"^\s*DECLARE_INTERACTIONS\(\s*(/[\w/]+)")
+                    .captures(line)
+                    .or_else(|| pat!(r"^(/[\w/]+)/get_interactions\(\)").captures(line));
+                if let Some(m) = m {
+                    let ok = sink.allowed(f, number, "interactions");
+                    x.decls.push((m.s(1).to_string(), number as u32, ok));
+                }
+            }
+            x.uses = sink.allow_used;
+            x
+        });
+        for (f, x) in files.iter().zip(facts) {
+            for u in x.uses {
+                if !out.allow_used.contains(&u) {
+                    out.allow_used.push(u);
+                }
+            }
+            for (path, number, ok) in x.decls {
+                sites.insert(path, (f.rel.clone(), number as usize, ok));
+            }
+        }
+        let mut bad = 0;
+        for (path, (rel, number, ok)) in &sites {
+            let parts: Vec<&str> = path.split('/').collect();
+            let mut cut = parts.len() as i64 - 1;
+            while cut > 1 {
+                let ancestor = parts[..cut as usize].join("/");
+                if let Some((arel, anum, _)) = sites.get(&ancestor) {
+                    if !ok {
+                        bad += 1;
+                        out.site_in_msg(
+                            "shadow",
+                            rel,
+                            *number,
+                            format!(
+                                "DECLARE_INTERACTIONS({}) discards {}'s specs ({}:{}): use EXTEND_INTERACTIONS, or annotate `// ALLOW(interactions): reason`",
+                                path, ancestor, arel, anum
+                            ),
+                        );
+                    }
+                    break;
+                }
+                cut -= 1;
+            }
+        }
+        out.note(format!("interactions_lint: {} declaring types, {} unannotated shadowing sites", sites.len(), bad));
+    }
 
     fn parity(&self) -> Option<Parity> {
         Some(Parity {

@@ -784,7 +784,7 @@
 // medical allergens
 /datum/trait/negative/medical_allergy
 	name = "Allergy: " + REAGENT_TRICORDRAZINE
-	desc = "You're highly allergic to " + REAGENT_TRICORDRAZINE + " and " + REAGENT_TRICORLIDAZE + ", be sure to write that in your medical record! NB: By taking this trait, you acknowledge there is a significant risk your character may suffer a fatal reaction if exposed to this substance."
+	desc = "You're highly allergic to " + REAGENT_TRICORDRAZINE + ", be sure to write that in your medical record! NB: By taking this trait, you acknowledge there is a significant risk your character may suffer a fatal reaction if exposed to this substance."
 	cost = -1
 	custom_only = FALSE
 	var/medallergen = MEDALLERGEN_TRICORD
@@ -806,7 +806,7 @@
 
 /datum/trait/negative/medical_allergy/bicard
 	name = "Allergy: " + REAGENT_BICARIDINE
-	desc = "You're highly allergic to " + REAGENT_BICARIDINE + " and " + REAGENT_BICARIDAZE + ", be sure to write that in your medical record! NB: By taking this trait, you acknowledge there is a significant risk your character may suffer a fatal reaction if exposed to this substance."
+	desc = "You're highly allergic to " + REAGENT_BICARIDINE + ", be sure to write that in your medical record! NB: By taking this trait, you acknowledge there is a significant risk your character may suffer a fatal reaction if exposed to this substance."
 	medallergen = MEDALLERGEN_BICARD
 
 /datum/trait/negative/medical_allergy/dylo
@@ -826,7 +826,7 @@
 
 /datum/trait/negative/medical_allergy/kelotane
 	name = "Allergy: " + REAGENT_KELOTANE
-	desc = "You're highly allergic to " + REAGENT_KELOTANE + ", " + REAGENT_DERMALINE + " and " + REAGENT_DERMALAZE + ", be sure to write that in your medical record! NB: By taking this trait, you acknowledge there is a significant risk your character may suffer a fatal reaction if exposed to this substance."
+	desc = "You're highly allergic to " + REAGENT_KELOTANE + " and " + REAGENT_DERMALINE + ", be sure to write that in your medical record! NB: By taking this trait, you acknowledge there is a significant risk your character may suffer a fatal reaction if exposed to this substance."
 	medallergen = MEDALLERGEN_KELOTANE
 
 

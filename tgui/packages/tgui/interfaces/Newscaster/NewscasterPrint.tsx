@@ -1,13 +1,16 @@
 import { useBackend } from 'tgui/backend';
-import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-
+import { Label } from 'tgui/components/Label';
+import { Button, LabeledList, Section } from 'tgui-core/components';
+import type {
+  NewscasterActions,
+  NewscasterData,
+} from '../generated/Newscaster';
 import { NEWSCASTER_SCREEN_MAIN } from './constants';
-import type { Data } from './types';
 
 export const NewscasterPrint = (props: {
   setScreen: React.Dispatch<React.SetStateAction<string>>;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<NewscasterData, NewscasterActions>();
 
   const { total_num, active_num, message_num, paper_remaining } = data;
 
@@ -22,11 +25,11 @@ export const NewscasterPrint = (props: {
         </Button>
       }
     >
-      <Box color="label" mb={1}>
+      <Label mb={1}>
         Newscaster currently serves a total of {total_num} Feed channels,{' '}
         {active_num} of which are active, and a total of {message_num} Feed
         stories.
-      </Box>
+      </Label>
       <LabeledList>
         <LabeledList.Item label="Liquid Paper remaining">
           {paper_remaining * 100} cm&sup3;

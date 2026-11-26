@@ -1,4 +1,0 @@
-[diagnostics]
-private_proc = "off"
-protected_proc = "off"
-disabled_directive = "off"

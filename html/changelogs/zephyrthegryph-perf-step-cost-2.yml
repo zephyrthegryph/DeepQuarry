@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A human's footsteps sound again (the human footstep override had left out the footstep capability)"
+  - code_imp: "A mob's step no longer walks its relation index to find followers, no longer counts footsteps in a state write, and no longer asks about a dir change that changed nothing"

@@ -1,6 +1,5 @@
 import { storage } from 'common/storage';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
-import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Box } from 'tgui-core/components';
 import type { CommandContext } from './commands';
@@ -15,8 +14,6 @@ const W = 720;
 const H = 540;
 
 export const NtosBytecrawl = (_props: unknown) => {
-  const { act } = useBackend();
-
   // ── Terminal output lines ──────────────────────────────────────────────────
   const [lines, setLines] = useState<Line[]>([]);
   const outputRef = useRef<HTMLDivElement>(null);
@@ -63,7 +60,7 @@ export const NtosBytecrawl = (_props: unknown) => {
   const [setupInput, setSetupInput] = useState('');
 
   // ── Game loop (tick + market tick intervals) ───────────────────────────────
-  useGameLoop(g.phase, gRef, setG, setLines, act);
+  useGameLoop(g.phase, gRef, setG, setLines);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const print = (text: string, color?: string) =>
@@ -77,7 +74,6 @@ export const NtosBytecrawl = (_props: unknown) => {
     setG,
     print,
     clearLines,
-    act,
     scanPool,
   };
 
@@ -123,7 +119,6 @@ export const NtosBytecrawl = (_props: unknown) => {
     if (e.key !== 'Enter') return;
     const name = setupInput.trim() || 'ghost';
     setG((prev) => ({ ...prev, handle: name, phase: 'playing' }));
-    act('init', { handle: name });
     print(`Identity locked: ${name}`, '#33ff33');
     print('');
     print('BYTECRAWL v1.0 ready. Type help for commands.');

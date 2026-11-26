@@ -18,11 +18,11 @@ CAPABILITIES(/datum/data/pda/app/main_menu)
 
 	var/list/notifying[0]
 	for(var/P in pda().notifying_programs)
-		notifying["[handle_of(P)]"] = 1
+		notifying["[handle_text(handle_of(P))]"] = 1
 	data["notifying"] = notifying
 
 /datum/data/pda/app/main_menu/proc/ui_act_updateinfo(datum/act/op/A)
-	pda().ownjob = pda().id.assignment
+	pda().set_ownjob(pda().id.assignment)
 	pda().ownrank = pda().id.rank
 	pda().name = "PDA-[pda().owner] ([pda().ownjob])"
 	return OP_OK
@@ -81,8 +81,8 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 
 		// display greeting!
 		greeted = TRUE
-		note = "Thank you for choosing the [pda().model_name]!"
-		notetitle = "Congratulations!"
+		set_note("Thank you for choosing the [pda().model_name]!")
+		set_notetitle("Congratulations!")
 
 /datum/data/pda/app/notekeeper/update_ui(mob/user, list/data)
 	data["note"] = note									// current pda notes
@@ -94,9 +94,9 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 	if(isnull(n))
 		return
 	if(pda().loc == user)
-		note = adminscrub(n)
+		set_note(adminscrub(n))
 		notehtml = html_decode(note)
-		note = replacetext(note, "\n", "<br>")
+		set_note(replacetext(note, "\n", "<br>"))
 	else
 		pda().close(user)
 	return TRUE
@@ -107,7 +107,7 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 	if(isnull(n))
 		return
 	if(pda().loc == user)
-		notetitle = adminscrub(n)
+		set_notetitle(adminscrub(n))
 	else
 		pda().close(user)
 	return TRUE
@@ -238,15 +238,15 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 	set_storednotes_at(currentnote, note)
 	set_storedtitles_at(currentnote, notetitle)
 
-	currentnote = noteindex
+	set_currentnote(noteindex)
 
-	note = storednotes[currentnote]
-	notetitle = storedtitles[currentnote]
+	set_note(storednotes[currentnote])
+	set_notetitle(storedtitles[currentnote])
 
 	// update text on keeper, silly swapping!
-	note = replacetext(note, "<br>", "\n")
+	set_note(replacetext(note, "<br>", "\n"))
 	notehtml = html_decode(note)
-	note = replacetext(note, "\n", "<br>")
+	set_note(replacetext(note, "\n", "<br>"))
 
 /datum/data/pda/app/manifest
 	name = "Crew Manifest"
@@ -288,7 +288,7 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 CAPABILITIES(/datum/data/pda/app/news)
 	op("newsfeed", ui_act("newsfeed", arg("newsfeed", num())), then(PROC_REF(ui_act_newsfeed)))
 /datum/data/pda/app/news/proc/ui_act_newsfeed(datum/act/op/A, newsfeed)
-	newsfeed_channel = newsfeed
+	set_newsfeed_channel(newsfeed)
 
 /datum/data/pda/app/news/proc/compile_news()
 	var/list/feeds = list()
@@ -452,15 +452,15 @@ CAPABILITIES(/datum/data/pda/app/timeclock)
 				return
 	if(newjob)
 		newjob.register_shift_key(user.client.ckey)
-		pda().id.access = newjob.get_access()
-		pda().id.rank = newjob.title
-		pda().id.assignment = newassignment
+		pda().id.set_access(newjob.get_access())
+		pda().id.set_rank(newjob.title)
+		pda().id.set_assignment(newassignment)
 		pda().id.name = text("[pda().id.registered_name]'s ID Card ([pda().id.assignment])")
 		GLOB.data_core.manifest_modify(pda().id.registered_name, pda().id.assignment, pda().id.rank)
 		STAMP(pda().id, last_job_switch, CLOCK_WORLD)
 		callHook("reassign_employee", list(pda().id))
 		newjob.current_positions++
-		user.mind.assigned_role = text_or_null(pda().id.rank)
+		user.mind.set_assigned_role(text_or_null(pda().id.rank))
 		user.mind.role_alt_title = text_or_null(pda().id.assignment)
 		announce.autosay("[pda().id.registered_name] has moved On-Duty as [pda().id.assignment].", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))
 	return
@@ -481,14 +481,14 @@ CAPABILITIES(/datum/data/pda/app/timeclock)
 			break
 	if(ptojob)
 		var/oldtitle = pda().id.assignment
-		pda().id.access = ptojob.get_access()
-		pda().id.rank = ptojob.title
-		pda().id.assignment = ptojob.title
+		pda().id.set_access(ptojob.get_access())
+		pda().id.set_rank(ptojob.title)
+		pda().id.set_assignment(ptojob.title)
 		pda().id.name = text("[pda().id.registered_name]'s ID Card ([pda().id.assignment])")
 		GLOB.data_core.manifest_modify(pda().id.registered_name, pda().id.assignment, pda().id.rank)
 		STAMP(pda().id, last_job_switch, CLOCK_WORLD)
 		callHook("reassign_employee", list(pda().id))
-		user.mind.assigned_role = ptojob.title
+		user.mind.set_assigned_role(ptojob.title)
 		user.mind.role_alt_title = ptojob.title
 		foundjob.current_positions--
 		announce.autosay("[pda().id.registered_name], [oldtitle], has moved Off-Duty.", "Employee Oversight", channel, zlevels = using_map.get_map_levels(get_z(src)))

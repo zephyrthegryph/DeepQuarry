@@ -53,6 +53,8 @@ GLOBAL_LIST_INIT(expedition_loot_pools, list(
 		/obj/item/denecrotizer = 4,
 		VARIANT(/obj/fiftyspawner/diamond) = 2,
 		/obj/item/stack/material/exotic_feedstock/random = 6,
+		/obj/item/reagent_containers/glass/beaker/vial/relic_ichor = 3,
+		/obj/item/reagent_containers/glass/beaker/vial/void_amber = 3,
 	),
 	list( // EXP_LOOT_EXOTIC
 		/obj/item/aliencoin/phoron = 6,

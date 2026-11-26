@@ -12,6 +12,10 @@ import {
 } from 'tgui-core/components';
 
 import { useBackend } from '../../backend';
+import type {
+  SpawnPanelActions,
+  SpawnPanelData,
+} from '../generated/SpawnPanel';
 import {
   directionNames,
   directionRotation,
@@ -20,23 +24,18 @@ import {
 } from './constants';
 import type { IconSettings } from './index';
 
-export type SpawnPanelData = {
-  icon: string;
-  iconState: string;
-  iconStates: string[];
-  selected_object?: string;
-  precise_mode: string;
-};
+/** The spawn op's arguments (spawn_panel.dm, create-atom-action). */
+export type SpawnArgs = Partial<SpawnPanelActions['create-atom-action']>;
 
 interface CreateObjectSettingsProps {
-  onCreateObject?: (obj: Record<string, unknown>) => void;
+  onCreateObject?: (args: SpawnArgs) => void;
   setAdvancedSettings: (value: boolean) => void;
   iconSettings: IconSettings;
 }
 
 export function CreateObjectSettings(props: CreateObjectSettingsProps) {
   const { onCreateObject, setAdvancedSettings, iconSettings } = props;
-  const { act, data } = useBackend<SpawnPanelData>();
+  const { act, data } = useBackend<SpawnPanelData, SpawnPanelActions>();
 
   const [amount, setAmount] = useState(1);
   const [cordsType, setCordsType] = useState(0);
@@ -233,11 +232,22 @@ export function CreateObjectSettings(props: CreateObjectSettingsProps) {
 
     act('update-settings', currentSettings);
 
+    // The spawn op's own arguments (spawn_panel.dm, create-atom-action): the direction is `dir` there.
+    const spawnArgs: SpawnArgs = {
+      atom_amount: amount,
+      offset_type: currentSettings.offset_type,
+      where_target_type: spawnLocation,
+      dir: currentSettings.atom_dir,
+      offset: currentSettings.offset,
+      atom_name: objectName,
+      atom_icon_size: iconSettings.iconSize,
+    };
+
     if (!isTargetMode) {
       if (onCreateObject) {
-        onCreateObject(currentSettings);
+        onCreateObject(spawnArgs);
       } else {
-        act('create-atom-action', currentSettings);
+        act('create-atom-action', spawnArgs);
       }
     } else {
       if (isPreciseModeActive) {

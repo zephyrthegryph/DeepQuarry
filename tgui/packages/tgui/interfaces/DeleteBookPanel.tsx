@@ -1,26 +1,21 @@
 // Admin Delete Book panel — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
-
-type Book = {
-  id: string;
-  author: string;
-  title: string;
-  category: string;
-};
-
-type Data = {
-  books: Book[];
-  error: string;
-  sort_by: string;
-};
+import type {
+  DeleteBookPanelActions,
+  DeleteBookPanelData,
+} from './generated/DeleteBookPanel';
 
 export const DeleteBookPanel = () => {
-  const { data, act } = useBackend<Data>();
-  const { books, error, sort_by } = data;
+  const { data, act } = useBackend<
+    DeleteBookPanelData,
+    DeleteBookPanelActions
+  >();
+  const { books = [], error, sort_by } = data;
   if (error) {
     return (
       <Window width={520} height={260} title="Delete Book">
@@ -41,12 +36,10 @@ export const DeleteBookPanel = () => {
           title={`Administrative Management — ${books.length} books`}
           buttons={
             <>
-              <Button onClick={() => act('order_by_id')} icon="hashtag">
+              <Button compact onClick={() => act('order_by_id')} icon="hashtag">
                 Order by SS13BN
               </Button>{' '}
-              <Box inline color="label">
-                Sort by:
-              </Box>{' '}
+              <Label inline>Sort by:</Label>{' '}
               <Button
                 compact
                 selected={sort_by === 'author'}
@@ -78,9 +71,9 @@ export const DeleteBookPanel = () => {
               {books.map((b) => (
                 <Stack.Item key={b.id}>
                   <Box bold>{b.title}</Box>
-                  <Box ml={1} color="label">
+                  <Label ml={1}>
                     {b.author} — {b.category}
-                  </Box>
+                  </Label>
                   <Box ml={1}>
                     <Button
                       compact

@@ -17,7 +17,18 @@ describe('window geometry manifest', () => {
   });
 
   test('extracts static dimensions and safely represents dynamic dimensions', () => {
-    expect(manifest.APC).toEqual({ width: 450, height: 475, exact: true });
+    expect(manifest.APC).toEqual({ width: 500, height: 475, exact: true });
+    // An NtosWindow with no size opens at NtosWindow's defaults; one that names a size keeps it.
+    expect(manifest.NtosNetMonitor).toEqual({
+      width: 575,
+      height: 700,
+      exact: true,
+    });
+    expect(manifest.NtosArcade).toEqual({
+      width: 450,
+      height: 350,
+      exact: true,
+    });
     expect(manifest.AirAlarm).toEqual({
       width: 440,
       height: 650,

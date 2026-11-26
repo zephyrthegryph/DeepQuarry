@@ -347,10 +347,11 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	// AI-only mob: verb must NOT be present yet (would bloat verbs list of
 	// every wild critter).
-	TEST_ASSERT(!(/mob/living/proc/dq_use_combat_move in S.verbs), "verb was added before client login")
+	TEST_ASSERT(!(/mob/living/proc/dq_use_combat_move in S.verbs), "the dispatcher is a menu entry, never a verb")
+	TEST_ASSERT(!isnull(S.dq_combat_move_ready(null)), "the menu entry is hidden while no player controls the mob")
 	// Simulate the login signal handler firing.
 	S.ai_brain.on_holder_login(S)
-	TEST_ASSERT(/mob/living/proc/dq_use_combat_move in S.verbs, "on_holder_login didn't add the dispatcher verb")
+	TEST_ASSERT(!(/mob/living/proc/dq_use_combat_move in S.verbs), "login grants no verb")
 
 
 // --- runtime: set_attack_on_sight flips ai_attack_on_sight -------------------
@@ -375,11 +376,11 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 /datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human)
-	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK, "an idle AI brain is not on the calm cadence")
+	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK * DQ_CALM_UNSEEN_STRETCH, "an idle AI brain is not on the calm cadence (no player sees this one)")
 	hunter.ai_brain.give_target(target, TRUE)
 	TEST_ASSERT(hunter.ai_brain.action_interval() <= DQ_ACTION_TICK, "an AI brain with a combat target is not on the action cadence")
 	hunter.ai_brain.lose_target()
-	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK, "an AI brain stayed on the action cadence after losing its combat target")
+	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK * DQ_CALM_UNSEEN_STRETCH, "an AI brain stayed on the action cadence after losing its combat target")
 
 
 // --- runtime: aggro-on-damage: retaliate_to_attacker drives primary_threat ---

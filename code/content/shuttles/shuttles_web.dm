@@ -238,8 +238,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	var/list/routes[0]
 	var/datum/shuttle/autodock/web_shuttle/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!istype(shuttle))
-		to_chat(user, span_warning("Unable to establish link with the shuttle."))
-		return
+		return // console_refusal() already logs the missing link
 
 	var/list/R = shuttle.web_master.get_available_routes()
 	for(var/i = 1 to length(R))
@@ -289,11 +288,11 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 		"future_location" = future_location,
 		"shuttle_state" = shuttle_state,
 		"routes" = routes,
-		"has_docking" = shuttle.shuttle_docking_controller? 1 : 0,
-		"skip_docking" = shuttle.skip_docking_checks(),
+		"has_docking" = shuttle.shuttle_docking_controller ? TRUE : FALSE,
+		"skip_docking" = !!shuttle.skip_docking_checks(),
 		"is_moving" = shuttle.moving_status != SHUTTLE_IDLE,
 		"docking_status" = shuttle.shuttle_docking_controller? shuttle.shuttle_docking_controller.get_docking_status() : null,
-		"docking_override" = shuttle.shuttle_docking_controller? shuttle.shuttle_docking_controller.override_enabled : null,
+		"docking_override" = shuttle.shuttle_docking_controller ? !!shuttle.shuttle_docking_controller.override_enabled : FALSE,
 		"is_in_transit" = shuttle.has_arrive_time(),
 		"travel_progress" = between(0, percent_finished, 100),
 		"time_left" = round( (total_time - elapsed_time) / 10),
@@ -309,29 +308,25 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 	return data
 
-/obj/machinery/computer/shuttle_control/web/console_gate(mob/user)
-	if(!..())
-		return FALSE
+/obj/machinery/computer/shuttle_control/web/console_refusal(mob/user)
+	. = ..()
+	if(.)
+		return
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(!istype(WS))
-		message_admins("ERROR: Shuttle computer ([src]) ([shuttle_tag]) could not find their shuttle in the shuttles list.")
-		return FALSE
+		// a requirement is read on every check: the misconfiguration goes to the shuttle log, not to every admin each time
+		log_shuttle("ERROR: Shuttle computer ([src]) ([shuttle_tag]) could not find their shuttle in the shuttles list.")
+		return /datum/msg/req_silent
 	if(WS.moving_status != SHUTTLE_IDLE)
-		to_chat(user, span_blue("[WS.visible_name] is busy moving."))
-		return FALSE
-	return TRUE
+		return "[WS.visible_name] is busy moving."
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_rename_command(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	WS.rename_shuttle(user)
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_dock_command(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(WS.autopilot)
 		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
@@ -340,8 +335,6 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_undock_command(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(WS.autopilot)
 		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
@@ -350,8 +343,6 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_toggle_cloaking(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(!WS.can_cloak)
 		return
@@ -362,15 +353,11 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 		to_chat(user, span_danger("Ship stealth systems have been deactivated. The station will be warned of our arrival."))
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_toggle_autopilot(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	WS.adjust_autopilot(!WS.autopilot)
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_traverse(datum/act/op/A, traverse)
 	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 
 	var/index = traverse
@@ -486,7 +473,7 @@ CAPABILITIES(/obj/machinery/shuttle_sensor)
 	return PROCESS_KILL //nty
 
 /obj/machinery/shuttle_sensor/proc/air_list()
-	. = list("reading" = FALSE)
+	. = list("reading" = FALSE, "pressure" = null, GAS_N2 = null, GAS_O2 = null, GAS_CO2 = null, GAS_PHORON = null, GAS_CH4 = null, "other" = null, "temp" = null)
 	var/turf/T = get_step(src,dir)
 
 	if(isnull(T))

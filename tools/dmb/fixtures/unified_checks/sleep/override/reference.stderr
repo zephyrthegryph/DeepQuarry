@@ -1,6 +1,0 @@
-@FIXTURE@, line 5, column 12:
-error: /proc/probe calls /datum/base/proc/blocking which has override child proc that sleeps /datum/base/child/proc/blocking
-- 6:5: SpacemanDMM_should_not_sleep set here
-- 7:6: /datum/base/proc/blocking() called here
-- 4:5: sleep() called here
-

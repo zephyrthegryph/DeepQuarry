@@ -182,3 +182,34 @@ fn finish_content_collision_preserves_destination_and_cleans_every_private_file(
     let remaining = remaining_entries(&directory);
     assert_eq!(remaining, vec![destination]);
 }
+#[test]
+fn compressed_streamed_segment_matches_the_encoder_and_retained_stages_stay_verbatim() {
+    let directory = Directory::new();
+    let cache = directory.cache();
+    let plain = |content: u128, stage: u32, byte: u8| Record {
+        key: RecordKey { stage, version: 1, content },
+        symbols: vec![],
+        payload: Arc::from(vec![byte; 200_000]),
+    };
+    // Stage 4 compresses; stage 2 (retained mapped by a session) is stored verbatim; a framed record packs as one blob.
+    let framed = crate::encode_variants(&[vec![5; 50_000], vec![6; 50_000]]).unwrap();
+    let values = vec![
+        // (The spool writes records in key order, so the encoder gets them that way too.)
+        plain(2, 2, 7),
+        plain(1, 4, 7),
+        Record { key: RecordKey { stage: 4, version: 1, content: 3 }, symbols: vec![], payload: Arc::from(framed) },
+    ];
+    let (expected_id, expected_bytes) =
+        crate::segment::encode(&values, &[], crate::Limits::default()).unwrap();
+    assert!(expected_bytes.len() < 300_000 + 3 * 200, "{} bytes", expected_bytes.len());
+    let mut spool = cache.batch_spool().unwrap();
+    for value in values {
+        spool.append(value).unwrap();
+    }
+    let report = spool.finish().unwrap();
+    assert_eq!(report.segment, Some(expected_id));
+    assert_eq!(
+        std::fs::read(directory.0.join(format!("{expected_id:032x}.seg"))).unwrap(),
+        expected_bytes
+    );
+}

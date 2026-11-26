@@ -14,7 +14,6 @@
 	var/tmp/obj/item/grenade/chambered
 	var/list/grenades
 	var/max_grenades = 5 //holds this + one in the chamber
-	MATERIAL_BULK(MAT_STEEL, 2000)
 	special_handling = TRUE
 	var/underslung = FALSE
 
@@ -102,7 +101,7 @@ CAPABILITIES(/obj/item/gun/launcher/grenade)
 
 /obj/item/gun/launcher/grenade/consume_next_projectile()
 	if(chambered())
-		chambered().det_time = 10
+		chambered().set_det_time(10)
 		chambered().activate(null)
 	return chambered()
 

@@ -1,13 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Section, Tabs } from 'tgui-core/components';
-
+import type { UplinkActions } from '../generated/Uplink';
 import type { Data } from './types';
 
 export const UplinkHeader = (props: {
   screen: number;
   setScreen: React.Dispatch<React.SetStateAction<number>>;
 }) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, UplinkActions>();
 
   const { screen, setScreen } = props;
 

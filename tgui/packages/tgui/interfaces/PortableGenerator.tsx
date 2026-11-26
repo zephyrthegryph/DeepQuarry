@@ -1,35 +1,22 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
   Button,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  PortableGeneratorActions,
+  PortableGeneratorData,
+} from './generated/PortableGenerator';
 
-type Data = {
-  fuel_stored: number;
-  fuel_capacity: number;
-  anchored: BooleanLike;
-  active: BooleanLike;
-  ready_to_boot: BooleanLike;
-  sheet_name: string;
-  fuel_usage: number;
-  temperature_current: number;
-  temperature_max: number;
-  temperature_overheat: number;
-  unsafe_output: BooleanLike;
-  power_output: number;
-  power_generated: number;
-  connected: BooleanLike;
-  power_available: number;
-};
+type Data = PortableGeneratorData;
 
 export const PortableGenerator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PortableGeneratorActions>();
 
   const {
     fuel_stored,
@@ -89,30 +76,28 @@ export const PortableGenerator = (props) => {
                 {fuel_stored}cm&sup3; {sheet_name}
               </Box>
             </LabeledList.Item>
-            <LabeledList.Item label="Current fuel level">
-              <ProgressBar
-                value={fuel_stored / fuel_capacity}
-                ranges={{
-                  good: [0.5, Infinity],
-                  average: [0.15, 0.5],
-                  bad: [-Infinity, 0.15],
-                }}
-              >
-                {fuel_stored}cm&sup3; / {fuel_capacity}cm&sup3;
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Current fuel level"
+              value={fuel_stored / fuel_capacity}
+              ranges={{
+                good: [0.5, Infinity],
+                average: [0.15, 0.5],
+                bad: [-Infinity, 0.15],
+              }}
+            >
+              {fuel_stored}cm&sup3; / {fuel_capacity}cm&sup3;
+            </StatBar>
             <LabeledList.Item label="Fuel Usage">
               {fuel_usage} cm&sup3;/s
             </LabeledList.Item>
-            <LabeledList.Item label="Temperature">
-              <ProgressBar
-                value={temperature_current}
-                maxValue={temperature_max + 30}
-                color={temperature_overheat ? 'bad' : 'good'}
-              >
-                {temperature_current.toFixed()}&deg;C
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Temperature"
+              value={temperature_current}
+              maxValue={temperature_max + 30}
+              color={temperature_overheat ? 'bad' : 'good'}
+            >
+              {(temperature_current ?? 0).toFixed()}&deg;C
+            </StatBar>
           </LabeledList>
         </Section>
         <Section title="Output">

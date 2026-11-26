@@ -1,26 +1,20 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
   Button,
   LabeledList,
-  ProgressBar,
+  NoticeBox,
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  OvermapShipSensorsActions,
+  OvermapShipSensorsData,
+} from './generated/OvermapShipSensors';
 
-type Data = {
-  viewing: BooleanLike;
-  on: BooleanLike;
-  range: string | number;
-  health: number;
-  max_health: number;
-  heat: number;
-  critical_heat: number;
-  status: string;
-  contacts: { name: string; ref: string; bearing: number }[];
-};
+type Data = OvermapShipSensorsData;
 
 export const OvermapShipSensors = (props) => {
   return (
@@ -33,7 +27,7 @@ export const OvermapShipSensors = (props) => {
 };
 
 export const OvermapShipSensorsContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OvermapShipSensorsActions>();
   const {
     viewing,
     on,
@@ -43,7 +37,7 @@ export const OvermapShipSensorsContent = (props) => {
     heat,
     critical_heat,
     status,
-    contacts,
+    contacts = [],
   } = data;
 
   return (
@@ -77,43 +71,45 @@ export const OvermapShipSensorsContent = (props) => {
           <LabeledList.Item label="Status">{status}</LabeledList.Item>
           <LabeledList.Item label="Range">
             <Button icon="signal" onClick={() => act('range')}>
-              {range}
+              {range ?? 'N/A'}
             </Button>
           </LabeledList.Item>
-          <LabeledList.Item label="Integrity">
-            <ProgressBar
-              ranges={{
-                good: [max_health * 0.75, Infinity],
-                average: [max_health * 0.25, max_health * 0.75],
-                bad: [-Infinity, max_health * 0.25],
-              }}
-              value={health}
-              maxValue={max_health}
-            >
-              {health} / {max_health}
-            </ProgressBar>
-          </LabeledList.Item>
-          <LabeledList.Item label="Temperature">
-            <ProgressBar
-              ranges={{
-                bad: [critical_heat * 0.75, Infinity],
-                average: [critical_heat * 0.5, critical_heat * 0.75],
-                good: [-Infinity, critical_heat * 0.5],
-              }}
-              value={heat}
-              maxValue={critical_heat}
-            >
-              {(heat < critical_heat * 0.5 && <Box>Temperature low.</Box>) ||
-                (heat < critical_heat * 0.75 && (
-                  <Box>Sensor temperature high!</Box>
-                )) || (
-                  <Box>
-                    TEMPERATURE CRITICAL: Disable or reduce power immediately!
-                  </Box>
-                )}
-            </ProgressBar>
-          </LabeledList.Item>
+          <StatBar
+            label="Integrity"
+            ranges={{
+              good: [max_health * 0.75, Infinity],
+              average: [max_health * 0.25, max_health * 0.75],
+              bad: [-Infinity, max_health * 0.25],
+            }}
+            value={health}
+            maxValue={max_health}
+          >
+            {health} / {max_health}
+          </StatBar>
+          <StatBar
+            label="Temperature"
+            ranges={{
+              bad: [critical_heat * 0.75, Infinity],
+              average: [critical_heat * 0.5, critical_heat * 0.75],
+              good: [-Infinity, critical_heat * 0.5],
+            }}
+            value={heat}
+            maxValue={critical_heat}
+          >
+            {(typeof heat !== 'number' && 'No reading') ||
+              (heat < critical_heat * 0.5 && 'Low') ||
+              (heat < critical_heat * 0.75 && 'High') ||
+              'Critical'}
+          </StatBar>
         </LabeledList>
+        {typeof heat === 'number' &&
+          critical_heat > 0 &&
+          heat >= critical_heat * 0.75 && (
+            <NoticeBox danger mt={1}>
+              Temperature critical: disable the sensors or reduce their power
+              now.
+            </NoticeBox>
+          )}
       </Section>
       <Section title="Contacts">
         {(contacts.length &&

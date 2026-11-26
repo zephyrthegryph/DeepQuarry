@@ -15,10 +15,13 @@
 //   describe     findings carry the clinical description
 //   hints        the report carries treatment_demand() as hints
 //   trends       findings carry a trend against the previous scan
+//   signs        reads the vitals-level signs of conditions its senses can't image (affliction.signs_label(): "shock",
+//                "suspected fracture", "organ damage (heart)"), never the name, level or lab detail
 //   scan_level   SCANNABLE_* reagent / GM-affliction detection tier
 //   scanner_machine  a medbay machine (GM afflictions show only when the GM
 //                allows scanners to see them)
 //   sees_fake_death  reads through feigned death
+//   sees_masked      reads through drug masking (hides = list(HIDE_*), code/content/reagents/drug_profile.dm)
 
 /datum/diagnostic_profile
 	var/name = "unknown instrument"
@@ -29,10 +32,13 @@
 	var/localize = FALSE
 	var/describe = FALSE
 	var/hints = FALSE
+	var/signs = FALSE
 	var/trends = FALSE
 	var/scan_level = SCANNABLE_BENEFICIAL
 	var/scanner_machine = FALSE
 	var/sees_fake_death = FALSE
+	/// Reads through the readings a drug masks (HIDE_*): admin scans.
+	var/sees_masked = FALSE
 
 /// Profile type -> its registered singleton (created on first use).
 GLOBAL_LIST_EMPTY(diagnostic_profiles)
@@ -76,11 +82,12 @@ REGISTRY_TYPE(/datum/diagnostic_profile, GLOBAL_PROC_REF(registry_diagnostic_pro
 	senses = NONE
 	vitals = VITALS_PULSE | VITALS_SPO2 | VITALS_TEMP
 
-/// Basic health analyzer: surface sensors, organic only.
+/// Basic health analyzer: surface sensors, organic only. It also reads the vitals-level signs of what it can't image (signs).
 /datum/diagnostic_profile/health_analyzer
 	name = "health analyzer"
 	senses = PRESENT_VISIBLE | PRESENT_SURFACE
 	biology = BIOLOGY_ORGANIC
+	signs = TRUE
 	vitals = VITALS_PULSE | VITALS_SPO2 | VITALS_TEMP | VITALS_CONSCIOUSNESS
 
 /datum/diagnostic_profile/health_analyzer/improved
@@ -196,3 +203,4 @@ REGISTRY_TYPE(/datum/diagnostic_profile, GLOBAL_PROC_REF(registry_diagnostic_pro
 	hints = TRUE
 	scan_level = SCANNABLE_UNSCANNABLE
 	sees_fake_death = TRUE
+	sees_masked = TRUE

@@ -10,6 +10,7 @@ import {
   Slider,
   Stack,
 } from 'tgui-core/components';
+import type { PlushieEditorActions } from '../../generated/PlushieEditor';
 import { downloadJson, handleImportData, useOverlayMap } from '../function';
 import type { Data } from '../types';
 import { ActiveOverlaysGrid } from './ActiveOverlayGrid';
@@ -24,8 +25,8 @@ export const SidebarPanel: React.FC<SidebarPanelProps> = ({
   selectedOverlay,
   setSelectedOverlay,
 }) => {
-  const { act, data } = useBackend<Data>();
-  const { base_color, icon, name, overlays } = data;
+  const { act, data } = useBackend<Data, PlushieEditorActions>();
+  const { base_color, icon, name, overlays = [] } = data;
   const overlayMap = useOverlayMap(overlays);
 
   function toggleOverlay(icon_state: string) {

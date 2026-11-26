@@ -9,7 +9,7 @@ import {
   Stack,
   Tooltip,
 } from 'tgui-core/components';
-
+import type { PreferencesMenuActions } from '../generated/PreferencesMenu';
 import type { PreferencesMenuData } from './data';
 import features from './preferences/features';
 import { FeatureValueInput } from './preferences/features/base';
@@ -19,6 +19,14 @@ type PreferenceChild = {
   name: string;
   children: ReactNode;
 };
+
+// The windows a button here opens; the values are the PREF_TOOL_* of code/defines/host/preferences.dm.
+const TOOLS = [
+  { tool: 'volume', label: 'Volume Mixer', icon: 'volume-high' },
+  { tool: 'keybinds', label: 'Keybindings', icon: 'keyboard' },
+  { tool: 'shock', label: 'MultiShock', icon: 'bolt' },
+  { tool: 'ignore', label: 'Ignore List', icon: 'user-slash' },
+];
 
 const binaryInsertPreference = (
   collection: PreferenceChild[],
@@ -34,12 +42,15 @@ const sortByName = (array: [string, PreferenceChild[]][]) =>
   array.map((k, _) => sortPref(k)).sort((a, b) => a[0].localeCompare(b[0]));
 
 export const GamePreferencesPage = (props) => {
-  const { act, data } = useBackend<PreferencesMenuData>();
+  const { act, data } = useBackend<
+    PreferencesMenuData,
+    PreferencesMenuActions
+  >();
 
   const gamePreferences: Record<string, PreferenceChild[]> = {};
 
   for (const [featureId, value] of Object.entries(
-    data.character_preferences.game_preferences,
+    data.character_preferences?.game_preferences ?? {},
   )) {
     const feature = features[featureId];
 
@@ -129,6 +140,20 @@ export const GamePreferencesPage = (props) => {
       {!gamePreferenceEntries.length && (
         <Section title="No Results">No results found.</Section>
       )}
+      <Section>
+        <Stack wrap>
+          {TOOLS.map((entry) => (
+            <Stack.Item key={entry.tool}>
+              <Button
+                icon={entry.icon}
+                onClick={() => act('open_tool', { tool: entry.tool })}
+              >
+                {entry.label}
+              </Button>
+            </Stack.Item>
+          ))}
+        </Stack>
+      </Section>
       <Box position="absolute" right={4} top={4} style={{ zIndex: '100' }}>
         {searchVisible && (
           <Input width={16} value={search} onChange={(val) => setSearch(val)} />

@@ -5,7 +5,7 @@
 	icon = 'icons/obj/sandbags.dmi'
 	icon_state = "sandbag"
 	w_class = ITEMSIZE_LARGE
-	MATERIAL_BULK(MAT_CLOTH, SHEET_MATERIAL_AMOUNT * 2)
+	MATERIAL_BULK(MAT_CLOTH, SHEET_MATERIAL_AMOUNT / 4)
 	max_amount = 30
 	no_variants = TRUE
 	stacktype = /obj/item/stack/sandbags

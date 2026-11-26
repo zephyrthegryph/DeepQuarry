@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/rnd/production)
 	examine_line(PROC_REF(build_time_text))
 	interface("Fabricator")
 	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
-	ui_shape(busy = bool(), materials = list_of(row()), materialChoices = list_of(row()), onHold = bool(), materialMaximum = num(), queue = list_of(row()))
+	ui_shape(busy = bool(), materials = list_of(lathe_material()), materialChoices = list_of(lathe_material_choice()), onHold = bool(), SHEET_MATERIAL_AMOUNT = num(), designs = map_of(schema_text(), fabricator_design()), fabName = schema_text())
 
 /// Its link to the ore silo (owns_one(starts =)): only a machine the map places links to the silo.
 /obj/machinery/rnd/production/proc/make_remote_materials(current, mapload)
@@ -103,16 +103,15 @@ CAPABILITIES(/obj/machinery/rnd/production)
 /obj/machinery/rnd/production/proc/update_designs()
 	PROTECTED_PROC(TRUE)
 	var/previous_design_count = LAZYLEN(available_designs)
-	LAZYCLEARLIST(available_designs)
+	clear_available_designs()
 	for(var/design_id in stored_research.researched_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
 		if(design.build_type & allowed_buildtypes)
-			LAZYOR(available_designs, design)
+			include_available_designs(design)
 	var/design_delta = LAZYLEN(available_designs) - previous_design_count
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")
 		play_sfx(src, SFX_MACHINES_TWOBEEP)
-	update_static_data_for_all_viewers()
 
 /// Designs come and go in bursts: one refresh two seconds after the first of them.
 /obj/machinery/rnd/production/proc/on_techweb_update(datum/act/notice/A)
@@ -188,7 +187,6 @@ CAPABILITIES(/obj/machinery/rnd/production)
 	var/total_storage = get_part_rating(/obj/item/stock_parts/matter_bin) * 37.5 * SHEET_MATERIAL_AMOUNT
 	materials.set_local_size(total_storage)
 	set_efficiency_coeff(compute_efficiency())
-	update_static_data_for_all_viewers()
 
 ///Computes this machines cost efficiency based on the available parts
 /obj/machinery/rnd/production/proc/compute_efficiency()
@@ -203,7 +201,8 @@ CAPABILITIES(/obj/machinery/rnd/production)
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	)
 
-/obj/machinery/rnd/production/tgui_static_data(mob/user)
+/obj/machinery/rnd/production/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = ..()
 	var/list/designs = list()
 	for(var/datum/design_techweb/design in available_designs)
@@ -211,7 +210,8 @@ CAPABILITIES(/obj/machinery/rnd/production)
 			designs[design.id] = fabricator_design_row(design, efficiency_coeff)
 	data["designs"] = designs
 	data["fabName"] = name
-	var/list/material_data = materials.mat_container()?.tgui_static_data(user)
+	data["SHEET_MATERIAL_AMOUNT"] = SHEET_MATERIAL_AMOUNT
+	var/list/material_data = present_tgui_static_data(materials.mat_container(), user)
 	if(material_data)
 		data += material_data
 	return data
@@ -222,12 +222,8 @@ CAPABILITIES(/obj/machinery/rnd/production)
 		// Loaded materials offered in the per-design material picker (selectable designs).
 		"materialChoices" = lathe_material_choice_list(materials?.mat_container()),
 		"onHold" = FALSE,
-		"materialMaximum" = materials.local_size,
-		"queue" = list(),
 	)
-	var/list/material_data = materials.mat_container()?.material_list_data(A.actor)
-	if(material_data)
-		data["materials"] = material_data
+	data["materials"] = materials.mat_container()?.material_list_data(A.actor) || list()
 	return data
 
 // Shared: loaded materials (>= 1 sheet) offered in a lathe's per-design material
@@ -243,6 +239,8 @@ CAPABILITIES(/obj/machinery/rnd/production)
 		out += list(material_choice_tgui(mat, amount))
 	return out
 
+UI_SCHEMA(lathe_material_choice, row(id = schema_text(), label = schema_text(), sheets = int(), color = schema_text(), layers = list_of(row(role = schema_text(), name = schema_text(), share = num())), responses = list_of(schema_text()), card = list_of(row(name = schema_text(), value = num(), breakdown = list_of(row(label = schema_text(), delta = num())))), strength = num(), weight = num(), toughness = num(), conductivity = num(), heatResistance = num(), corrosionResistance = num(), pressureLimit = num(), resistivity = num(), criticalTemperature = num(), criticalCurrentDensity = num(), specificHeat = num(), phaseCapacity = num(), phaseTemperature = num(), dielectricStrength = num(), meltingPoint = num()))
+
 /// One canonical material presentation for lathes and hand crafting.
 /proc/material_choice_tgui(datum/material/mat, amount)
 	return list(
@@ -252,23 +250,20 @@ CAPABILITIES(/obj/machinery/rnd/production)
 			"color" = mat.icon_colour || "#aaaaaa",
 			"layers" = list(),
 			"responses" = mat.material_response_summary(),
-			"hardness" = round(mat.hardness),
-			"density" = round(mat.density),
-			"integrity" = round(mat.integrity),
-			"elasticity" = round(mat.elasticity),
-			"brittleness" = round(mat.brittleness),
-			"toughness" = round(mat.fracture_toughness),
+			"card" = mat.card_rows(),
+			"strength" = round(mat.strength),
+			"weight" = round(mat.weight),
+			"toughness" = round(mat.toughness),
 			"conductivity" = round(mat.conductivity),
 			"heatResistance" = round(mat.heat_resistance),
-			"thermalInsulation" = round(mat.thermal_insulation),
 			"corrosionResistance" = round(mat.corrosion_resistance),
 			"pressureLimit" = round(mat.pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, T20C) / ONE_ATMOSPHERE, 0.1),
-			"resistivity" = mat.electrical_resistivity,
-			"criticalTemperature" = mat.critical_temperature,
-			"criticalCurrentDensity" = mat.critical_current_density,
-			"specificHeat" = mat.specific_heat,
-			"phaseCapacity" = mat.phase_change_capacity,
-			"phaseTemperature" = mat.phase_change_temperature,
-			"dielectricStrength" = mat.dielectric_strength,
-			"meltingPoint" = mat.melting_point,
+			"resistivity" = mat.electrical_resistivity(),
+			"criticalTemperature" = mat.critical_temperature(),
+			"criticalCurrentDensity" = mat.critical_current_density(),
+			"specificHeat" = mat.specific_heat(),
+			"phaseCapacity" = mat.phase_change_capacity(),
+			"phaseTemperature" = mat.phase_change_temperature(),
+			"dielectricStrength" = mat.dielectric_strength(),
+			"meltingPoint" = mat.melting_point(),
 		)

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   AnimatedNumber,
   Box,
   Icon,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
@@ -33,19 +34,26 @@ type Circulator = {
 export const TEGenerator = (props) => {
   const { data } = useBackend<Data>();
 
-  const { totalOutput, maxTotalOutput, thermalOutput, primary, secondary } =
-    data;
+  const {
+    totalOutput = 0,
+    maxTotalOutput = 0,
+    thermalOutput = 0,
+    primary,
+    secondary,
+  } = data;
 
   return (
     <Window width={550} height={350}>
       <Window.Content>
         <Section title="Status">
           <LabeledList>
-            <LabeledList.Item label="Total Output">
-              <ProgressBar value={totalOutput} maxValue={maxTotalOutput}>
-                {formatPower(totalOutput)}
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Total Output"
+              value={totalOutput}
+              maxValue={maxTotalOutput}
+            >
+              {formatPower(totalOutput)}
+            </StatBar>
             <LabeledList.Item label="Thermal Output">
               {formatPower(thermalOutput)}
             </LabeledList.Item>
@@ -93,9 +101,7 @@ const TEGCirculator = (props: { name: string; values: Circulator }) => {
               <CirculatorFanSpinner value={flowCapacity} />
             </Stack.Item>
             <Stack.Item>
-              <Box color="label" fontSize={1.2}>
-                Flow Capacity
-              </Box>
+              <Label fontSize={1.2}>Flow Capacity</Label>
               <Box>
                 <AnimatedNumber
                   value={flowCapacity}

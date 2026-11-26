@@ -187,3 +187,34 @@
 	qdel(pack)
 	TEST_ASSERT_EQUAL(GLOB.storage_hud_count, baseline, "an open storage takes its HUD with it")
 	TEST_ASSERT_NULL(first.s_active, "the viewer isn't left looking at a deleted storage")
+
+/// A bag's click catchers hang off the bar start, so each must cover its own segment: the first item's catcher used to sit under every later one
+/// and a click on the first item picked up the last.
+/datum/unit_test/dq_storage_bar_catchers_cover_own_segment
+
+/datum/unit_test/dq_storage_bar_catchers_cover_own_segment/Run()
+	var/turf/T = dq_containment_floor()
+	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human, T)
+	var/obj/item/storage/backpack/pack = allocate(/obj/item/storage/backpack, T)
+	var/list/obj/item/stored = list()
+	for(var/i in 1 to 3)
+		var/obj/item/I = dq_storage_item(T, ITEMSIZE_SMALL)
+		TEST_ASSERT(pack.insert_item(I), "item [i] goes in")
+		stored += I
+	pack.open(viewer)
+	var/datum/storage_hud/hud = pack.hud
+	TEST_ASSERT_EQUAL(length(hud.catchers), 3, "one catcher per item")
+	var/list/centers = list()
+	for(var/atom/movable/storage_slot/SS as anything in hud.catchers)
+		TEST_ASSERT_NOTNULL(SS.segment, "[SS] is placed over its segment")
+		centers += SS.segment.c
+	// Slot 1 must be left of slot 2 and 3, and each catcher's centre is the one its item is drawn at.
+	TEST_ASSERT(centers[1] < centers[2] && centers[2] < centers[3], "catcher centres run left to right: [centers[1]], [centers[2]], [centers[3]]")
+	for(var/i in 1 to 3)
+		var/atom/movable/storage_slot/SS = hud.catchers[i]
+		TEST_ASSERT_EQUAL(SS.held_item, hud.shown[i], "catcher [i] holds shown item [i]")
+		var/obj/item/I = hud.shown[i]
+		var/list/loc_parts = splittext(copytext(I.screen_loc, 3), ",") // "4:mid" -> offset
+		var/mid = text2num(copytext(loc_parts[1], 1))
+		TEST_ASSERT(abs((mid - 16) - SS.segment.c) < 1.5, "catcher [i] centre [SS.segment.c] matches its item's segment centre [mid - 16]")
+	pack.close(viewer)

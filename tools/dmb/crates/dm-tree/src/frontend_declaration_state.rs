@@ -32,7 +32,6 @@ struct DeclarationClaims {
     keys: AtomicUsize,
     hits: AtomicUsize,
     symbols: std::sync::Mutex<Arc<ActiveSymbols>>,
-    body_candidates:std::sync::Mutex<Option<super::relative_declarations::BodyCodeCandidates>>,
 }
 impl Default for DeclarationClaims {
     fn default() -> Self {
@@ -44,7 +43,6 @@ impl Default for DeclarationClaims {
             keys: AtomicUsize::new(0),
             hits: AtomicUsize::new(0),
             symbols: std::sync::Mutex::new(Arc::new(ActiveSymbols::default())),
-            body_candidates:std::sync::Mutex::new(None),
         }
     }
 }
@@ -153,13 +151,6 @@ impl DeclarationClaims {
         key.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(text.as_bytes()).to_le_bytes());
         key
     }
-    /// Input-capability schema: old fixture contributions with no original
-    /// header input cannot satisfy a native header-owning declaration request.
-    pub(super) fn original_header_key(text: &str) -> Vec<u8> {
-        let mut key = Self::key(text);
-        key.extend_from_slice(b"\0original-header-input-v1");
-        key
-    }
     pub(super) fn retain(&self, keys: &[Vec<u8>]) {
         self.values.retain(keys);
         self.keys.store(keys.len(), Ordering::Relaxed);
@@ -173,35 +164,6 @@ impl DeclarationClaims {
         let bound = self.values.get(key, text, offset)?;
         self.hits.fetch_add(1, Ordering::Relaxed);
         Some(bound)
-    }
-    pub(super) fn get_shared_checked(&self,key:&[u8],text:&str,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
-        let bound=self.values.get_checked(key,text,offset,a)?;
-        if bound.is_some(){self.hits.fetch_add(1,Ordering::Relaxed);}Ok(bound)
-    }
-    /// Original token-value path: only the SAME completed fresh primary facts
-    /// can validate a retained contribution. Hash/display equality is not enough.
-    pub(super) fn get_shared_original_literals_checked(&self,key:&[u8],text:&str,offset:usize,headers:&crate::procedure::OriginalProcedureHeaders,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
-        if headers.original_literal_facts()?.is_none(){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual Original literal fact production is unissued"))}
-        let bound=self.values.get_checked(key,text,offset,a)?;
-        if let Some(current)=bound.as_ref(){
-            if !current.value.syntax.original_literals_match_headers(headers,a)?{return Ok(None)}
-            self.hits.fetch_add(1,Ordering::Relaxed);
-        }
-        Ok(bound)
-    }
-    pub(super) fn capture_source_headers_checked(&self,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
-        let pending=CurrentContribution::fresh_source_headers_using(source,offset,items,facts,ledger,Some(headers),Some(a));if let Some(actual)=a.take_operational_error(){return Err(actual)}let Some(mut current)=pending else{return Ok(None)};
-        if !current.value.syntax.initializer_admission_matches(a)?{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"fresh checked contribution lacks original producer admission"));}
-        if !self.values.is_shared() && self.values.publish_checked(key,&mut current,a)?.is_none(){return Ok(None);}
-        Ok(Some(current))
-    }
-    pub(super) fn capture_source_headers_converged_checked(&self,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,previous:&super::relative_declarations::BodyCodeCandidates,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
-        let pending=Contribution::capture_source_with_admission(source,offset,items,facts,ledger,Some(headers),Some(a));if let Some(actual)=a.take_operational_error(){return Err(actual)}let Some(mut value)=pending else{return Ok(None)};
-        let syntax=Arc::get_mut(&mut value.syntax).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"fresh actual syntax escaped before code convergence"))?;
-        syntax.converge_body_codes(previous,a)?;
-        let text=value.source.clone();let Some(mut current)=CurrentContribution::bind(Arc::new(value),&text,offset)else{return Ok(None)};
-        if !self.values.is_shared()&&self.values.publish_checked(key,&mut current,a)?.is_none(){return Ok(None)}
-        Ok(Some(current))
     }
     pub(super) fn capture(
         &self,
@@ -223,19 +185,7 @@ impl DeclarationClaims {
         facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
     ) -> Option<CurrentContribution> {
-        self.capture_source_headers(key, source, offset, items, facts, ledger, None)
-    }
-    pub(super) fn capture_source_headers(
-        &self,
-        key: &[u8],
-        source: dm_preprocess::SourceText,
-        offset: usize,
-        items: Vec<Item>,
-        facts: crate::AdaptedDeclarations,
-        ledger: AllocationLedger,
-        headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
-    ) -> Option<CurrentContribution> {
-        let value = Contribution::capture_source(source, offset, items, facts, ledger, headers)?;
+        let value = Contribution::capture_source(source, offset, items, facts, ledger)?;
         let text = value.source.clone();
         let mut current = CurrentContribution::bind(Arc::new(value), &text, offset)?;
         if !self.values.is_shared() {
@@ -333,17 +283,6 @@ fn items_spans(items: &mut [Item], text: &str, from: usize, to: usize) -> Option
     for item in items {
         item.span = span(item.span, text, from, to)?;
         item.header_span = span(item.header_span, text, from, to)?;
-        item.declaration_cursor = match item.declaration_cursor {
-            Some(at) => {
-                let relative = at.checked_sub(from)?;
-                text.as_bytes().get(relative)?;
-                if !text.is_char_boundary(relative) {
-                    return None;
-                }
-                Some(relative.checked_add(to)?)
-            }
-            None => None,
-        };
         items_spans(&mut item.children, text, from, to)?;
     }
     Some(())
@@ -372,7 +311,7 @@ fn rebase(
         origin.span.start = u32::try_from(mapped.start).ok()?;
         origin.span.end = u32::try_from(mapped.end).ok()?;
     }
-    let mut events=(from!=to).then(EventBuilder::new);
+    let mut events = EventBuilder::new();
     for mut event in ledger.events.iter() {
         event.span = span(event.span, text, from, to)?;
         event.header_span = span(event.header_span, text, from, to)?;
@@ -387,11 +326,10 @@ fn rebase(
             AllocationKind::Parent { value, .. } => *value = span(*value, text, from, to)?,
             AllocationKind::Type { .. } | AllocationKind::Namespace { .. } => {}
         }
-        if let Some(events)=events.as_mut(){events.push(event);}
+        events.push(event);
     }
-    Some(match events {
-        Some(events)=>AllocationLedger{events:events.finish()},
-        None=>ledger.clone(),
+    Some(AllocationLedger {
+        events: events.finish(),
     })
 }
 
@@ -423,10 +361,7 @@ mod tests {
             "/obj/beta\n    var/shared = 1\n    proc/run()\n        return 2\n",
             "/obj/epsilon\n    var/fresh_name = 5\n",
         ];
-        let all: Vec<_> = texts
-            .iter()
-            .map(|text| symbols_contribution(text))
-            .collect();
+        let all: Vec<_> = texts.iter().map(|text| symbols_contribution(text)).collect();
         let mut active = ActiveSymbols::default();
         active.update(&all[..4]).unwrap();
         let ordered = |table: &SymbolTable| {
@@ -466,10 +401,7 @@ mod tests {
             assert_eq!(ordered(&delta), ordered(&expected), "step {index}");
             assert_eq!(active.counts, fresh.counts, "step {index}");
             if index == 0 {
-                assert!(
-                    Arc::ptr_eq(&before, &delta),
-                    "equal spellings keep the table"
-                );
+                assert!(Arc::ptr_eq(&before, &delta), "equal spellings keep the table");
             }
         }
     }
@@ -735,38 +667,14 @@ impl CurrentContribution {
         facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
     ) -> Option<Self> {
-        Self::fresh_source_headers(source, offset, items, facts, ledger, None)
-    }
-    pub(super) fn fresh_source_headers(
-        source: dm_preprocess::SourceText,
-        offset: usize,
-        items: Vec<Item>,
-        facts: crate::AdaptedDeclarations,
-        ledger: AllocationLedger,
-        headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
-    ) -> Option<Self> {Self::fresh_source_headers_using(source,offset,items,facts,ledger,headers,None)}
-    pub(super) fn fresh_source_headers_using(source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Option<Arc<crate::procedure::OriginalProcedureHeaders>>,a:Option<&dm_syntax::SettingAdmission<'_>>)->Option<Self>{Self::fresh_source_headers_mode(source,offset,items,facts,ledger,headers,a,false)}
-    pub(super) fn fresh_source_headers_mode(source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Option<Arc<crate::procedure::OriginalProcedureHeaders>>,a:Option<&dm_syntax::SettingAdmission<'_>>,ordinary_demand:bool)->Option<Self>{
         let text = source.clone();
         Self::bind(
-            Arc::new(Contribution::capture_source_with_mode(
-                source, offset, items, facts, ledger, headers,a,ordinary_demand,
+            Arc::new(Contribution::capture_source(
+                source, offset, items, facts, ledger,
             )?),
             &text,
             offset,
         )
-    }
-    pub(super) fn adopt_original_items(
-        source:dm_preprocess::SourceText, items:dm_syntax::OriginalCommittedItems,
-        facts:crate::AdaptedDeclarations, ledger:AllocationLedger,
-        headers:Arc<crate::procedure::OriginalProcedureHeaders>,
-        a:&dm_syntax::SettingAdmission<'_>,
-    )->Option<Self>{Self::adopt_original_items_mode(source,items,facts,ledger,headers,a,false)}
-    pub(super) fn adopt_original_items_mode(source:dm_preprocess::SourceText,items:dm_syntax::OriginalCommittedItems,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,a:&dm_syntax::SettingAdmission<'_>,ordinary_demand:bool)->Option<Self>{
-        let text=source.clone();
-        let value=Contribution::capture_source_using(source,0,facts,ledger,|source,settings|
-            RelativeSyntax::adopt_original_items_mode(items,source.clone(),settings,headers,a,ordinary_demand))?;
-        Self::bind(Arc::new(value),&text,0)
     }
     pub(super) fn symbols(&self) -> &SymbolTable {
         &self.value.facts.symbols
@@ -793,21 +701,12 @@ impl Contribution {
         source: dm_preprocess::SourceText,
         offset: usize,
         mut items: Vec<Item>,
-        facts: crate::AdaptedDeclarations,
+        mut facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
-        headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
-    ) -> Option<Self> {Self::capture_source_with_admission(source,offset,items,facts,ledger,headers,None)}
-    fn capture_source_with_admission(source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Option<Arc<crate::procedure::OriginalProcedureHeaders>>,a:Option<&dm_syntax::SettingAdmission<'_>>)->Option<Self>{Self::capture_source_with_mode(source,offset,items,facts,ledger,headers,a,false)}
-    fn capture_source_with_mode(source:dm_preprocess::SourceText,offset:usize,mut items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Option<Arc<crate::procedure::OriginalProcedureHeaders>>,a:Option<&dm_syntax::SettingAdmission<'_>>,ordinary_demand:bool)->Option<Self>{
-        items_spans(&mut items,source.as_ref(),offset,0)?;
-        Self::capture_source_using(source,offset,facts,ledger,|source,settings|
-            RelativeSyntax::capture_with_settings_headers_mode(items,source.clone(),settings,headers,a,ordinary_demand))
-    }
-    fn capture_source_using(
-        source:dm_preprocess::SourceText,offset:usize,mut facts:crate::AdaptedDeclarations,ledger:AllocationLedger,
-        make_syntax:impl FnOnce(&dm_preprocess::SourceText,&std::collections::BTreeMap<usize,Arc<dm_ir::ProcedureMetadata>>)->Result<RelativeSyntax,super::relative_declarations::BindingError>,
-    )->Option<Self>{
-        let ledger = rebase(&mut facts, &ledger, source.as_ref(), offset, 0)?;
+    ) -> Option<Self> {
+        let text = source.as_ref();
+        items_spans(&mut items, text, offset, 0)?;
+        let ledger = rebase(&mut facts, &ledger, text, offset, 0)?;
         let settings = facts
             .skeletons
             .iter()
@@ -822,7 +721,8 @@ impl Contribution {
                     .map(|owner| (origin.span.start as usize, Arc::clone(owner)))
             })
             .collect();
-        let syntax=Arc::new(make_syntax(&source,&settings).ok()?);
+        let syntax =
+            Arc::new(RelativeSyntax::capture_with_settings(items, source.clone(), &settings).ok()?);
         let skeletons = Arc::new(std::mem::take(&mut facts.skeletons));
         let event_leaf = crate::allocation_ledger::ValidatedEventLeaf::new(ledger.events.clone());
         let origin_max = facts
@@ -855,7 +755,6 @@ impl Contribution {
             items.to_vec(),
             facts.clone(),
             ledger.clone(),
-            None,
         )
     }
     #[cfg(test)]
@@ -1033,19 +932,4 @@ impl ActiveSymbols {
         self.symbols = Arc::new(symbols);
         Ok(self.symbols.clone())
     }
-}
-
-#[cfg(test)]
-#[path="frontend_declaration_state/initializer_checked_tests.rs"]
-mod initializer_checked_tests;
-
-impl CurrentContribution{
- /// Only a genuinely fresh unshared current leaf is eligible. Reuse is the
- /// existing exact body/header/profile producer, never a hash-based CodeID.
- pub(in crate::frontend) fn converge_original_code(self,previous:&mut super::relative_declarations::OriginalBodyCodeConvergence<'_>,chunk:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Self>{
-  let Self{mut value,syntax,offset,stored}=self;if stored{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"published current contribution cannot be mutated for original code convergence"))}
-  drop(syntax);let actual=Arc::get_mut(&mut value).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original current contribution escaped before body-code convergence"))?;
-  let syntax=Arc::get_mut(&mut actual.syntax).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original current syntax escaped before body-code convergence"))?;previous.converge(syntax,chunk,a)?;
-  let source=actual.source.clone();Self::bind(value,&source,offset).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"original current code could not rebind its actual native contribution"))
- }
 }

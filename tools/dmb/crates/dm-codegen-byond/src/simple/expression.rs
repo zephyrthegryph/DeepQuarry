@@ -2,20 +2,6 @@
 use super::*;
 
 impl Compiler<'_> {
-    // The SAME captured resource lookup/side-effect emitter serves both issued
-    // typed values and the unchanged ordinary authored resource path.
-    fn emit_literal_resource(&mut self,path:&str,statement:&str)->Result<(),LowerError>{
-        let path=match self.lookup{
-            Some(lookup)=>self.semantic(lookup.resource(path))?,
-            None=>*self.bindings.resource_ids.get(path).ok_or_else(||error(statement,"resource literal requires captured resource identity"))?,
-        };
-        if self.seen_resources.insert(path){self.result.resources.push(path);}
-        self.emit(opcode::PUSH_VAL,vec![Word::Value(ValueWord::Resource(path))]);Ok(())
-    }
-    fn emit_static_literal_bytes(&mut self,bytes:Vec<u8>){
-        let value=match String::from_utf8(bytes){Ok(value)=>self.intern_string(&value),Err(error)=>self.intern_format_template(error.into_bytes())};
-        self.emit(opcode::PUSH_VAL,vec![Word::Value(ValueWord::String(value))]);
-    }
     /// Lowers code DreamMaker drops (the dead side of a constant condition) so that its diagnostics and source features still count,
     /// and discards the instructions.
     pub(super) fn lower_dead(
@@ -241,18 +227,7 @@ impl Compiler<'_> {
                 self.result.code.items.push(CodeItem::Label(end_label));
             }
             ExprKind::Literal(literal) => {
-                if let Some(value)=literal.original_value(){
-                    match value{
-                        dm_syntax::OriginalTokenValue::Int(value)=>self.emit(opcode::PUSH_VAL,vec![Word::Value(ValueWord::Number((value as f32).to_bits()))]),
-                        dm_syntax::OriginalTokenValue::Float(value)=>self.emit(opcode::PUSH_VAL,vec![Word::Value(ValueWord::Number(value.to_bits()))]),
-                        dm_syntax::OriginalTokenValue::Resource(path)=>self.emit_literal_resource(path,statement)?,
-                        dm_syntax::OriginalTokenValue::String(_)=>{
-                            let bytes=decode_native_constant_string_literal(literal).map_err(|reason|error(statement,&reason))?.ok_or_else(||error(statement,"missing issued static String runtime value"))?;
-                            self.emit_static_literal_bytes(bytes);
-                        },
-                        _=>return Err(error(statement,"unsupported typed Original literal")),
-                    }
-                }else if literal == "null" {
+                if literal == "null" {
                     // DreamMaker reads an authored null through the Null variable reader (two words) and pushes a null
                     // for an omitted argument (`f(1,,3)`, a zero-width literal; three words). The difference decides
                     // whether a large initializer fits the 65,535-word procedure limit.
@@ -265,31 +240,50 @@ impl Compiler<'_> {
                     self.emit(opcode::PUSH_INT, vec![Word::Immediate(0)]);
                 } else if literal == "TRUE" {
                     self.emit(opcode::PUSH_INT, vec![Word::Immediate(1)]);
-                } else if (literal.starts_with("@\"")
-                    && literal.ends_with('"')
-                    && literal.len() >= 3)
-                    || (literal.starts_with("@{\"")
-                        && literal.ends_with("\"}")
-                        && literal.len() >= 5)
-                    || (literal.starts_with("@'") && literal.ends_with('\'') && literal.len() >= 3)
-                    || (literal.starts_with('"') && literal.ends_with('"') && literal.len() >= 2)
+                } else if literal.starts_with("@{\"")
+                    && literal.ends_with("\"}")
+                    && literal.len() >= 5
+                {
+                    let value = literal[3..literal.len() - 2].to_owned();
+                    self.intern_string(&value);
+                    self.emit(
+                        opcode::PUSH_VAL,
+                        vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
+                    );
+                } else if literal.starts_with("@\"") && literal.ends_with('"') && literal.len() >= 3
+                {
+                    let value = literal[2..literal.len() - 1].to_owned();
+                    self.intern_string(&value);
+                    self.emit(
+                        opcode::PUSH_VAL,
+                        vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
+                    );
+                } else if (literal.starts_with('"') && literal.ends_with('"') && literal.len() >= 2)
                     || (literal.starts_with("{\"")
                         && literal.ends_with("\"}")
                         && literal.len() >= 4)
                 {
-                    let parts = literal
-                        .parts()
-                        .map_err(|reason| error(statement, reason))?
-                        .ok_or_else(|| error(statement, "missing native string literal parts"))?;
-                    let template = &parts.template;
-                    let expressions = &parts.expressions;
-                    if expressions.is_empty() {
-                        self.emit_static_literal_bytes(template.clone());
+                    let value = if literal.starts_with("{\"") {
+                        &literal[2..literal.len() - 2]
                     } else {
-                        for expression in expressions {
+                        &literal[1..literal.len() - 1]
+                    };
+                    let (template, expressions) = parse_interpolated_string(value)
+                        .map_err(|reason| error(statement, &reason))?;
+                    if expressions.is_empty() {
+                        let value = match String::from_utf8(template.clone()) {
+                            Ok(value) => self.intern_string(&value),
+                            Err(_) => self.intern_format_template(template),
+                        };
+                        self.emit(
+                            opcode::PUSH_VAL,
+                            vec![Word::Value(ValueWord::String(value))],
+                        );
+                    } else {
+                        for expression in &expressions {
                             self.expression(expression, statement)?;
                         }
-                        let key = self.intern_format_template(template.clone());
+                        let key = self.intern_format_template(template);
                         self.emit(
                             2,
                             vec![
@@ -298,6 +292,14 @@ impl Compiler<'_> {
                             ],
                         );
                     }
+                } else if literal.starts_with("@'") && literal.ends_with('\'') && literal.len() >= 3
+                {
+                    let value = literal[2..literal.len() - 1].to_owned();
+                    self.intern_string(&value);
+                    self.emit(
+                        opcode::PUSH_VAL,
+                        vec![Word::Value(ValueWord::String(SymbolId::of(&value)))],
+                    );
                 } else if literal.starts_with('\'') && literal.ends_with('\'') && literal.len() >= 2
                 {
                     let path = &literal[1..literal.len() - 1];
@@ -307,7 +309,22 @@ impl Compiler<'_> {
                             "escaped or interpolated resource path is unsupported",
                         ));
                     }
-                    self.emit_literal_resource(path,statement)?;
+                    let path = match self.lookup {
+                        Some(lookup) => self.semantic(lookup.resource(path))?,
+                        None => *self.bindings.resource_ids.get(path).ok_or_else(|| {
+                            error(
+                                statement,
+                                "resource literal requires captured resource identity",
+                            )
+                        })?,
+                    };
+                    if self.seen_resources.insert(path) {
+                        self.result.resources.push(path);
+                    }
+                    self.emit(
+                        opcode::PUSH_VAL,
+                        vec![Word::Value(ValueWord::Resource(path))],
+                    );
                 } else if let Ok(number) = literal.parse::<f32>() {
                     self.emit(
                         opcode::PUSH_VAL,
@@ -398,7 +415,7 @@ impl Compiler<'_> {
                 if dm_syntax::is_literal_identifier(name) {
                     self.record_selection(expr, name, dm_ir::SelectedMeaning::Literal);
                     let literal = Expr {
-                        kind: ExprKind::Literal(name.clone().into()),
+                        kind: ExprKind::Literal(name.clone()),
                         span: expr.span,
                     };
                     return self.expression(&literal, statement);
@@ -1017,10 +1034,10 @@ pub(super) fn constant_text_truth(expr: &Expr) -> Option<bool> {
     let ExprKind::Literal(raw) = &expr.kind else {
         return None;
     };
-    if raw.original_value().is_none() && raw.starts_with("@'") {
+    if raw.starts_with("@'") {
         return None;
     }
-    match decode_native_constant_string_literal(raw) {
+    match decode_constant_string_literal(raw) {
         Ok(Some(text)) => Some(!text.is_empty()),
         _ => None,
     }
@@ -1193,33 +1210,4 @@ impl Compiler<'_> {
         }
         Ok(kept)
     }
-}
-
-#[cfg(test)]mod original_typed_emit_tests{
- use super::*;use dm_syntax::{Span,LiteralText,OriginalTokenValue,SettingAdmission};
- struct NoQueries;impl dm_ir::Resolver for NoQueries{fn resolve(&self,q:dm_ir::ResolveQuery)->dm_ir::ResolvedMeaning{panic!("scalar literal queried {q:?}")}}
- fn emit(value:LiteralText,resolver:&impl dm_ir::Resolver)->Result<crate::lower_resolver::ResolverProc,Vec<LowerError>>{emit_expression(Expr{span:Span::new(7,8),kind:ExprKind::Literal(value)},resolver)}
- fn emit_expression(expression:Expr,resolver:&impl dm_ir::Resolver)->Result<crate::lower_resolver::ResolverProc,Vec<LowerError>>{
-  let statement=Statement{kind:StatementKind::Return(Some(expression)),span:Span::new(0,8),header_span:Span::new(0,8),raw_header:"return value".into()};
-  compile_typed_statements_with_resolver(&[statement],&crate::ProcedureInputs::default(),&dm_ir::SymbolTable::default(),resolver,None)
- }
- #[test]fn actual_numeric_bytecode_uses_value_bits_not_misleading_grammar_spelling(){
-  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
-  for(raw,value,authored)in[("FALSE",OriginalTokenValue::Int(7),"7"),("0",OriginalTokenValue::Float(1.25),"1.25"),("0",OriginalTokenValue::Float(-0.0),"-0.0")]{
-   let actual=emit(LiteralText::from_original_value_data(raw.into(),7,value,&a).unwrap(),&NoQueries).ok().unwrap();
-   let parsed=dm_syntax::parse_expression(authored);assert!(parsed.diagnostics.is_empty());
-   let expected=emit_expression(parsed.expr.unwrap(),&NoQueries).ok().unwrap();
-   // The existing emitter selects PUSH_INT for exact small nonnegative integers,
-   // including its existing zero normalization. Compare complete actual code,
-   // not a presumed unoptimized PUSH_VAL representation.
-   assert_eq!(actual.procedure.code,expected.procedure.code,"typed {authored} must use the SAME existing numeric emitter, independently of displayed {raw}");
-  }
- }
- #[test]fn actual_resource_bytecode_resolves_the_issued_path_without_raw_string_inference(){
-  struct Resource;impl dm_ir::Resolver for Resource{fn resolve(&self,q:dm_ir::ResolveQuery)->dm_ir::ResolvedMeaning{let path=match q{dm_ir::ResolveQuery::Resource(path)|dm_ir::ResolveQuery::ResourceIn{path,..}=>path,other=>panic!("unexpected {other:?}")};assert_eq!(path,SymbolId::of("actual.bin"));dm_ir::ResolvedMeaning::Resource{path,content:99u128.into()}}}
-  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let literal=LiteralText::from_original_value_data("\"not the resource\"".into(),7,OriginalTokenValue::Resource("actual.bin"),&a).unwrap();let actual=emit(literal,&Resource).ok().unwrap();assert!(actual.procedure.code.items.iter().any(|item|matches!(item,CodeItem::Instruction(i)if i.operands.iter().any(|word|matches!(word,Word::Value(ValueWord::Resource(99)))))));
- }
- #[test]fn unissued_string_runtime_never_falls_through_to_raw_number_emission(){
-  let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let value=LiteralText::from_original_value_data("0".into(),7,OriginalTokenValue::String("[static]"),&a).unwrap();let errors=emit(value,&NoQueries).err().unwrap();assert!(errors.iter().any(|e|e.reason.contains("not yet issued")));
- }
 }

@@ -40,6 +40,8 @@ type Bind = {
   name: string;
   path: string;
   args: string[] | null; // null = variadic
+  /** Parameter types and return type, whitespace-normalized: part of the ABI hash, so a changed signature with the same arity is caught. */
+  signature: string;
   docs: string[];
   file: string;
 };
@@ -170,6 +172,10 @@ export function scan(root: string): { binds: Bind[]; defines: Define[] } {
           if (rest[j] === ')') depth--;
         }
         const params = splitTopLevel(rest.slice(start, j - 1));
+        const brace = rest.indexOf('{', j);
+        const ret = /^\s*->\s*([^{]*)/.exec(rest.slice(j, brace < 0 ? undefined : brace));
+        const norm = (t: string) => t.replace(/\s+/g, ' ').trim();
+        const signature = `${params.map((p) => norm(p.split(':').slice(1).join(':'))).join(',')}->${ret ? norm(ret[1]) : '()'}`;
         const features = cfgFeatures(lines, i - 1);
         if (features.length && !rel.startsWith(GAS_CRATE)) {
           throw new Error(`${rel}:${i + 1}: feature-gated binds are only supported in vg-gas`);
@@ -181,6 +187,7 @@ export function scan(root: string): { binds: Bind[]; defines: Define[] } {
           args: m[1] === 'bind_raw_args' ? null : params.map(argName),
           docs: precedingDocs(lines, i - 1),
           file: rel,
+          signature,
         });
         continue;
       }
@@ -649,15 +656,19 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
   }
   dm += '\n';
 
+  // The per-domain bind/reconcile stubs live on /atom/movable, not /datum: their only
+  // callers are /atom/movable's vg_bind()/vg_reconcile() below, and every per-type
+  // override is an /atom/movable subtype (checked where it is emitted). BYOND keeps a
+  // slot for every (type, inherited proc) pair, so a /datum stub costs ~1.2 MB each.
   for (const domain of byDomain.keys()) {
-    dm += `/// Binds this datum's ${domain} component (if the type declares one) and\n`;
+    dm += `/// Binds this atom's ${domain} component (if the type declares one) and\n`;
     dm += `/// returns the (possibly newly created) entity handle. Overridden per\n`;
     dm += `/// bound type below.\n`;
-    dm += `/datum/proc/vg_bind_${domain}(entity)\n\treturn entity\n\n`;
-    dm += `/// Reconciler (§7): mismatches between this datum's declared inputs and\n`;
+    dm += `/atom/movable/proc/vg_bind_${domain}(entity)\n\treturn entity\n\n`;
+    dm += `/// Reconciler (§7): mismatches between this atom's declared inputs and\n`;
     dm += `/// what Rust has stored for its ${domain} component, repairing as it goes.\n`;
     dm += `/// Overridden per bound type below.\n`;
-    dm += `/datum/proc/vg_reconcile_${domain}()\n\treturn list()\n\n`;
+    dm += `/atom/movable/proc/vg_reconcile_${domain}()\n\treturn list()\n\n`;
   }
 
   for (const comp of components) {
@@ -801,6 +812,9 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
       ...configFields.filter((f) => !f.array).map((f) => `${fid(f)}, init_${f.name}`),
       ...inputFields.map((f) => `${fid(f)}, ${lower}_input_${f.name}()`),
     ];
+    if (dmType !== '/atom/movable' && !dmAncestors(dmType).includes('/atom/movable')) {
+      throw new Error(`${comp.file}: #[vg::component] binds per type on \`${dmType}\`, which is not an /atom/movable; the vg_bind_<domain> stubs live on /atom/movable (bind a non-atom through a free-function row)`);
+    }
     dm += `${dmType}/vg_bind_${domain}(entity)\n\treturn vg_component_bind(entity, ${codeDefine}, list(${init.join(', ')}))\n\n`;
 
     if (inputFields.length) {
@@ -939,7 +953,7 @@ function domainEventsCanonical(d: DomainEvents): string {
 
 function abiOf(binds: Bind[], defines: Define[], components: Component[], domainEvents: DomainEvents[]): string {
   const canonical = [
-    ...binds.map((b) => `${b.name}(${b.args === null ? '...' : b.args.length})`),
+    ...binds.map((b) => `${b.name}(${b.args === null ? '...' : b.args.length})${b.signature}`),
     ...defines.map((d) => `${d.name}=${d.value}`),
     ...components.map(componentCanonical),
     ...domainEvents.map(domainEventsCanonical),

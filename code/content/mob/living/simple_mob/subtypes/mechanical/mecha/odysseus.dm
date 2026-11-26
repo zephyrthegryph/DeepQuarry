@@ -46,7 +46,7 @@
 		var/mob/living/L = A
 
 		var/target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
-		if(L.can_inject(src, null, target_zone))
+		if(!L.inject_refusal(src, target_zone))
 			to_chat(L, span_warning("You feel a tiny prick."))
 			if(L.get_poison_protection() < 1)
 				L.lingering_poison(1, 30 SECONDS, src)
@@ -63,7 +63,7 @@
 /obj/item/projectile/fake_syringe/on_hit(atom/target, blocked = 0, def_zone = null)
 	if(isliving(target))
 		var/mob/living/L = target
-		if(!L.can_inject(null, null, def_zone, piercing))
+		if(L.inject_refusal(null, def_zone, piercing))
 			return FALSE
 		to_chat(L, span_warning("You feel a tiny prick."))
 	return ..() // This will add the modifier and return the correct value.

@@ -1,0 +1,23 @@
+{
+	"locked": 0,
+	"one_access": 1,
+	"last_configurator": "Jo Park",
+	"all_selected": 0,
+	"accesses": [
+		{
+			"id": 10,
+			"name": "Engine Room",
+			"selected": 1
+		},
+		{
+			"id": 11,
+			"name": "Engineering",
+			"selected": 0
+		},
+		{
+			"id": 24,
+			"name": "Atmospherics",
+			"selected": 1
+		}
+	]
+}

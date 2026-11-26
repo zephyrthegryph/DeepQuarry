@@ -155,6 +155,9 @@ CAPABILITIES(/datum/prompt/text/electronics_rename)
 
 	return data
 
+/// One pin in the assembly window (tgui_pin_data()); rawdata is whatever the pin holds.
+UI_SCHEMA(ic_pin, row(type = schema_text(), name = schema_text(), data = schema_text(), rawdata = any, ref = num(), linked = list_of(row(ref = num(), name = schema_text(), holder_ref = num(), holder_name = schema_text()))))
+
 /obj/item/integrated_circuit/proc/tgui_pin_data(datum/integrated_io/io)
 	if(!istype(io))
 		return list()

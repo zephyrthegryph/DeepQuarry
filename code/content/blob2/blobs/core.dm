@@ -213,7 +213,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		rel_set(src, nameof(overmind), B)
 		sync_overmind_look()
 		if(B.mind && !B.mind.special_role)
-			B.mind.special_role = "Blob Overmind"
+			B.mind.set_special_role("Blob Overmind")
 		return TRUE
 	return FALSE
 

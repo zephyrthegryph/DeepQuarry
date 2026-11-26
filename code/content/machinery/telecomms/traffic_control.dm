@@ -14,7 +14,6 @@
 	circuit = VARIANT(/obj/item/circuitboard/comm_traffic)
 	req_access = list(ACCESS_TCOMSAT)
 
-	temp = ""
 
 	var/storedcode = ""			// code stored
 
@@ -110,7 +109,7 @@
 
 		if("scan")
 			if(length(servers) > 0)
-				set_temp(span_red("- FAILED: CANNOT PROBE WHEN BUFFER FULL -"))
+				report("- FAILED: CANNOT PROBE WHEN BUFFER FULL -", "bad")
 
 			else
 				for(var/obj/machinery/telecomms/server/T in range(25, src))
@@ -118,9 +117,9 @@
 						rel_add(src, nameof(servers), T)
 
 				if(!length(servers))
-					set_temp(span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -"))
+					report("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -", "bad")
 				else
-					set_temp(span_blue("- [length(servers)] SERVERS PROBED & BUFFERED -"))
+					report("- [length(servers)] SERVERS PROBED & BUFFERED -", "good")
 
 				set_screen(0)
 
@@ -156,14 +155,14 @@
 	var/newnet = A.step_value("network")
 	if(newnet && ((user in range(1, src)) || (A.authority & AUTH_REMOTE_ACCESS)))
 		if(length(newnet) > 15)
-			set_temp(span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -"))
+			report("- FAILED: NETWORK TAG STRING TOO LENGTHY -", "bad")
 
 		else
 
 			set_network(newnet)
 			set_screen(0)
 			rel_clear(src, nameof(servers))
-			set_temp(span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -"))
+			report("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -", "good")
 
 CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	every(0.5 SECONDS, then(PROC_REF(update_ide_tick)), when = nameof(editingcode))
@@ -171,6 +170,7 @@ CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	ref_many(nameof(viewingcode), /mob)
 	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
 	interface("TrafficControl", title = "Telecommunications Traffic Control", state = nameof(GLOB.tgui_default_state))
+	ui_shape(temp = nullable(row(color = schema_text(), text = schema_text())), network = schema_text(), screen = int(), servers = list_of(row(id = schema_text(), name = schema_text())), selected_id = nullable(schema_text()), autoruncode = bool())
 	without("ui_open")
 	op("set_network", ui_act("set_network"), needs(req(PROC_REF(network_prompt_access))), asks(/datum/prompt/text, step = "network", fields = list("title" = "Comm Monitor", "question" = "Which network do you want to view?", "default" = computed(PROC_REF(network_prompt_default)), "max_len" = 15, "ask_flags" = ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_set_network)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))

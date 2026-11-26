@@ -8,13 +8,14 @@ import {
   type ComponentProps,
   type PropsWithChildren,
   type ReactNode,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react';
 import { UI_DISABLED, UI_INTERACTIVE } from 'tgui/constants';
-import { type Box, KeyListener } from 'tgui-core/components';
+import { type Box, Button, KeyListener } from 'tgui-core/components';
 import type { KeyEvent } from 'tgui-core/events';
 import { KEY_ALT } from 'tgui-core/keycodes';
 import { type BooleanLike, classes } from 'tgui-core/react';
@@ -30,13 +31,16 @@ import {
   setWindowPosition,
   storeWindowGeometry,
 } from '../drag';
+import { EmbeddedContext } from '../embedded';
 import { suspendStart } from '../events/handlers/suspense';
+import { parseFloatAt, underPointer } from '../floatPlacement';
 import { createLogger } from '../logging';
 import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
-import { claimReveal, revealWindow } from '../reveal';
+import { claimReveal, isProfiling, revealWindow, traceAlpha } from '../reveal';
 import { getStaticWindowGeometry } from '../windowGeometry';
-import { fitOverflow, measureContentBottom } from './fitWindow';
+import { resolveTheme, useConsoleScanlines } from './consoleTheme';
+import { fitOverflow, measureNaturalBottom } from './fitWindow';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
 
@@ -57,6 +61,18 @@ function parsePreappliedGeometry(geometry?: {
   };
 }
 
+let floatDoneSubscribed = false;
+
+/** The column page finished a live drag of this window (it floated with the button down): its place is kept like any other drag's. */
+function ensureFloatDoneSubscription(): void {
+  if (floatDoneSubscribed) return;
+  floatDoneSubscribed = true;
+  Byond.subscribeTo('floatdone', () => {
+    logger.log('live float drag done, storing geometry');
+    storeWindowGeometry();
+  });
+}
+
 function ensureResetPositionSubscription(): void {
   if (resetPositionSubscribed) return;
   resetPositionSubscribed = true;
@@ -74,13 +90,56 @@ type Props = Partial<{
   title: string;
   width: number;
   fitted: boolean;
+  /** The page draws the window's frame (the chat): the title bar has no status icon, border or glow of its own. */
+  framed: boolean;
   /** Grow the window until all of its content shows (see fitWindow.ts). */
   fitContent: boolean;
   scrollbars: boolean;
 }> &
   PropsWithChildren;
 
+/**
+ * A tgui window. In its own native window it is the full frame (title bar,
+ * geometry, reveal, resize); embedded in the right-hand column's page
+ * (EmbeddedInterface) it is only its content, and the column's window manager
+ * draws the frame, as it does for the chat and the stat panel.
+ */
 export function Window(props: Props) {
+  return useContext(EmbeddedContext) ? (
+    <EmbeddedWindow {...props} />
+  ) : (
+    <NativeWindow {...props} />
+  );
+}
+
+function EmbeddedWindow(props: Props) {
+  const { theme, children } = props;
+  const { config } = useBackend();
+  // No useConsoleScanlines: it sets a page-wide variable, and the column page keeps its own.
+  const showDimmer =
+    config.user &&
+    (config.user.observer
+      ? config.status < UI_DISABLED
+      : config.status < UI_INTERACTIVE);
+  const readOnly = !!config.user?.observer && config.status < UI_INTERACTIVE;
+  return (
+    <Layout
+      className={classes([
+        'Window',
+        'Window--embedded',
+        readOnly && 'Window--readonly',
+      ])}
+      theme={theme}
+    >
+      <div className="Window__rest">
+        {children}
+        {showDimmer && <div className="Window__dimmer" />}
+      </div>
+    </Layout>
+  );
+}
+
+function NativeWindow(props: Props) {
   const {
     canClose = true,
     theme,
@@ -90,11 +149,13 @@ export function Window(props: Props) {
     width: requestedWidth,
     height: requestedHeight,
     fitted,
+    framed,
     fitContent,
     scrollbars = true,
   } = props;
 
   const { config, suspended, debug } = useBackend();
+  useConsoleScanlines(resolveTheme(theme));
   const defaultGeometry = getStaticWindowGeometry(config?.interface?.name);
   const width = requestedWidth ?? defaultGeometry?.width;
   const height = requestedHeight ?? defaultGeometry?.height;
@@ -114,6 +175,7 @@ export function Window(props: Props) {
     claimReveal();
     profileTransition('layout-hide-start');
     if (config?.window?.native_shell) {
+      traceAlpha(0, 'layout-hide');
       Byond.winset(Byond.windowId, { alpha: 0 });
     }
     Byond.winset(Byond.windowId, {
@@ -123,7 +185,15 @@ export function Window(props: Props) {
     if (!isReadyToRender) setIsReadyToRender(true);
   }, [config?.window?.native_shell]);
 
+  useEffect(ensureFloatDoneSubscription, []);
+
   const { scale } = config?.window || false;
+  // A float out of the column comes with one update (float_at); the next update clears it, and that must not cancel the
+  // placement of the reveal already under way. Held here until a reveal uses it.
+  const pendingFloat = useRef<string | null>(null);
+  if (config.window?.float_at) {
+    pendingFloat.current = config.window.float_at;
+  }
 
   useLayoutEffect(() => {
     let cancelled = false;
@@ -161,8 +231,48 @@ export function Window(props: Props) {
         if (cancelled) {
           return;
         }
+        const float = pendingFloat.current;
+        const kept = parseFloatAt(float)?.size ?? null;
+        if (kept) {
+          // It keeps the size it had in the column, not its saved or default floating size.
+          logger.log(
+            'floated from the dock keeping its size',
+            kept,
+            geometry?.size,
+          );
+          geometry = { ...geometry, size: kept };
+        }
+        const under = underPointer(float, geometry?.size);
+        if (under) {
+          // Pulled out of the dock: it opens under the pointer, as a popped-out chat does.
+          geometry = { ...geometry, pos: under };
+          logger.log('floated from the dock under the pointer', under);
+        }
         profileStartup('geometry_finished', config.interface?.name);
-        await revealWindow(config.window?.generation, geometry);
+        // Every floating reveal is traced (while profiling), not only a pull-out: a saved floating window at login comes this way too.
+        floatTrace('reveal-start', {
+          iface: config.interface?.name,
+          at: float,
+          under,
+          geometry,
+          screen: [window.screen.width, window.screen.height],
+          dpr: window.devicePixelRatio,
+        });
+        const revealed = await revealWindow(
+          config.window?.generation,
+          geometry,
+        );
+        floatTrace('reveal-done', { revealed });
+        void floatTraceNative();
+        if (float) {
+          pendingFloat.current = null;
+          // Tells the column page this window is up, so a drag still going on moves it (wm/floated).
+          Byond.sendMessage('wm/floated', { window: Byond.windowId });
+        }
+        if (under) {
+          // Remembered, so the next geometry recall (float_at is sent once) keeps it there.
+          storeWindowGeometry();
+        }
         logger.log('set to visible');
       };
 
@@ -200,9 +310,9 @@ export function Window(props: Props) {
     const fit = () => {
       const root =
         rest.querySelector<HTMLElement>('.Window__contentPadding') ?? rest;
-      const over = fitOverflow(measureContentBottom(root), window.innerHeight);
-      if (over > 0) {
-        growWindowHeight(over);
+      const grow = fitOverflow(measureNaturalBottom(root), window.innerHeight);
+      if (grow > 0) {
+        growWindowHeight(grow);
       }
     };
     fit();
@@ -215,6 +325,7 @@ export function Window(props: Props) {
   }, [fitContent, suspended, isReadyToRender]);
 
   const fancy = config.window?.fancy;
+  const dockable = !!config.window?.dockable;
 
   // Determine when to show dimmer
   const showDimmer =
@@ -238,11 +349,28 @@ export function Window(props: Props) {
           title={title || decodeHtmlEntities(config.title)}
           status={config.status}
           fancy={fancy}
+          framed={framed}
           onDragStart={dragStartHandler}
           onClose={suspendStart}
           canClose={canClose}
         >
           {buttons}
+          {dockable && (
+            <Button
+              icon="table-columns"
+              tooltip="Dock in the side panel"
+              tooltipPosition="bottom-start"
+              color="transparent"
+              onClick={() =>
+                // The body height goes with it: the column entry opens as tall as this window was.
+                Byond.sendMessage('wm/dock', {
+                  height: Math.round(
+                    restRef.current?.getBoundingClientRect().height ?? 0,
+                  ),
+                })
+              }
+            />
+          )}
         </TitleBar>
       )}
       <div
@@ -287,6 +415,7 @@ type ContentProps = Partial<{
 
 function WindowContent(props: ContentProps) {
   const { className, fitted, children, ...rest } = props;
+  const { config } = useBackend();
   const [altDown, setAltDown] = useState(false);
 
   useEffect(ensureResetPositionSubscription, []);
@@ -301,6 +430,7 @@ function WindowContent(props: ContentProps) {
     <Layout.Content
       onMouseDown={dragStartIfAltHeld}
       className={classes(['Window__content', className])}
+      scrollKey={config?.interface?.name}
       {...rest}
     >
       <KeyListener
@@ -326,3 +456,39 @@ function WindowContent(props: ContentProps) {
 }
 
 Window.Content = WindowContent;
+
+/**
+ * The window place that puts a screen point ("x,y", physical px) on the
+ * middle of the window's titlebar, or null when there is no point.
+ */
+/** One step of a float's reveal, in the server's tgui log: a float that never shows is diagnosed from these. */
+function floatTrace(step: string, detail: Record<string, unknown>): void {
+  if (!isProfiling()) return;
+  Byond.sendMessage('wm/log', {
+    float: step,
+    window: Byond.windowId,
+    ...detail,
+  });
+}
+
+/** What the client says the window is after the reveal, sampled so a later change shows (trace only: nothing acts on it). */
+async function floatTraceNative(): Promise<void> {
+  if (!isProfiling()) return;
+  let elapsed = 0;
+  for (const at of [0, 50, 500, 2000]) {
+    await new Promise((resolve) => setTimeout(resolve, at - elapsed));
+    elapsed = at;
+    try {
+      const state = await Byond.winget(Byond.windowId, [
+        'is-visible',
+        'alpha',
+        'pos',
+        'size',
+        'is-minimized',
+      ]);
+      floatTrace('native-after-reveal', { after_ms: at, state });
+    } catch (error) {
+      floatTrace('native-query-failed', { error: String(error) });
+    }
+  }
+}

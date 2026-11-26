@@ -1,0 +1,49 @@
+@use '../console';
+
+// The right-click popup (interfaces/InteractionMenu.tsx): a console panel.
+// The browser element is sized to the box, so the glow is drawn inside it.
+.InteractionMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: max-content;
+  min-width: 200px;
+  max-width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  @include console.console-panel;
+  box-shadow: var(--console-glow-inset);
+  color: console.$console-text;
+  font: 700 12px console.$console-font;
+}
+
+// The header and rows are the DQ TitleBar and ListRow (tgui/dq/).
+
+.InteractionMenu__actions {
+  display: flex;
+  gap: 5px;
+  padding: 8px 10px 10px;
+  border-top: 2px solid console.$console-border;
+}
+
+.InteractionMenu__action {
+  box-sizing: border-box;
+  border: 0;
+  padding: 4px 8px;
+  font: inherit;
+  white-space: nowrap;
+  flex: 1;
+  background: console.$console-button;
+  color: console.$console-text;
+  text-align: center;
+  cursor: pointer;
+
+  &:hover {
+    background: console.$console-button-hover;
+  }
+}
+
+.InteractionMenu__verbs {
+  border-top: 2px solid console.$console-border;
+}

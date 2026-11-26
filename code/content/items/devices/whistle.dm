@@ -17,17 +17,11 @@ MSG_DEF_SELF(hailer/fried_slot, "The hailer is fried. You can't even fit the seq
 CAPABILITIES(/obj/item/hailer)
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
-	held_verb(/obj/item/hailer/proc/set_hailer_message, SLOT_ANY_CARRIED)
 	op("hail", in_hand(), label("Hail"), cooldown(2 SECONDS), then(PROC_REF(hailed)))
 	op("set_message", menu(), label("Set Hailer Message"), needs(carried(), req_capable(), req(PROC_REF(unfried), because = MSG(hailer/fried))),
 		asks(/datum/prompt/text, keeps = 0, fields = list("timeout" = 0, "question" = "Please enter new message (leave blank to reset).")), then(PROC_REF(message_picked)))
 	emag(list(needs(req(PROC_REF(unfried), because = MSG(hailer/fried_slot))), then(PROC_REF(overloaded))), repeatable = TRUE)
 
-/obj/item/hailer/proc/set_hailer_message()
-	set name = "Set Hailer Message"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-	perform_op(usr, src, "set_message", null, ORIGIN_VERB)
 
 /obj/item/hailer/proc/unfried(datum/act/op/A)
 	return (isnull(insults)) ? null : "the hailer is fried, the tiny input screen just shows a waving ASCII penis"

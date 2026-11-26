@@ -87,7 +87,7 @@ CAPABILITIES(/mob/living/simple_mob/vore)
 
 	// Move the ghost in
 	if(D.mind)
-		D.mind.active = TRUE
+		D.mind.set_active(TRUE)
 		D.mind.transfer_to(src)
 	else
 		bind_player(src, D.ckey, as_ckey = TRUE)

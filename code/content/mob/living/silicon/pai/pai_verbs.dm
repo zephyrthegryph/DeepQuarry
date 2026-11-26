@@ -11,8 +11,6 @@
 	return 1
 
 /mob/living/silicon/pai/cancel_camera()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set name = "Cancel Camera View"
 	reset_perspective()
 
 /mob/living/silicon/pai/reset_perspective(atom/new_eye)
@@ -33,7 +31,6 @@
 	reset_record_view()
 
 /mob/living/silicon/pai/proc/choose_verbs()
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Choose Speech Verbs"
 
 	open_request(src, /datum/prompt/choice, PROC_REF(speech_verbs_chosen), answerer = src, title = "Theme Choice", question = "What theme would you like to use for your speech verbs?", choices = GLOB.possible_say_verbs, timeout = 0)
@@ -128,12 +125,11 @@
 			continue
 		else if(isobserver(G) && G.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
 			if((client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) || check_rights_for(G.client, R_HOLDER)) && \
-			G.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle))
+			G.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
 				to_chat(G, span_filter_say(span_cult("[src.name]'s screen prints, \"[message]\"")))
 
-/mob/living/silicon/pai/proc/pai_nom(mob/living/T in oview(1))
+/mob/living/silicon/pai/proc/pai_nom(mob/living/T)
 	set name = "pAI Nom"
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set desc = "Allows you to eat someone while unfolded. Can't be used while in card form."
 
 	if (stat != CONSCIOUS)

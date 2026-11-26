@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "The look-verdict cache is versioned, written atomically, ignores a corrupt file, saves verdicts learned after boot, and never spares an instance with edited look vars"

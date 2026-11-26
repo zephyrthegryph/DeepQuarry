@@ -49,6 +49,8 @@
 	var/alist/watched_looks
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
+	/// A finished look held by the appearance cache (look_cache.dm): the change key it was built with. Null on the shared builder.
+	var/made_key
 
 GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 
@@ -297,9 +299,8 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	LAZYADD(overlays, look_overlay_image(holder.icon, "[state]-eyes", plane = PLANE_LIGHTING_ABOVE, color = color, appearance_flags = holder.appearance_flags))
 
 /**
- * What `holder` (the atom being drawn) keeps in `slot` (null: its default slot) that is a `type`, as the types held: real things by their own type, and latent
- * ones (a cabinet's declared guns, not made yet) by the type of their entry, once each. A draw that only classifies its contents (a gun cabinet counting energy
- * and projectile guns) reads this and materializes nothing. The draw hears the slot's occupancy: a thing entering or leaving, and a latent entry made or used.
+ * What `holder` (the atom being drawn) keeps in `slot` (null: its default slot) that is a `type`, as the types held, each thing by its own type. A draw
+ * that only classifies its contents (a gun cabinet counting energy and projectile guns) reads this. The draw hears the slot's occupancy: a thing entering or leaving.
  *	for(var/kind in look.contents_of(src, CONTAINER_SLOT_INTERIOR, /obj/item/gun))
  *		if(ispath(kind, /obj/item/gun/energy))
  */
@@ -665,17 +666,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		return SHARED_CACHE_UID(runtime_icon)
 	return "[icon]"
 
-#define LOOK_SET_ICON (1<<0)
-#define LOOK_SET_ICON_STATE (1<<1)
-#define LOOK_SET_COLOR (1<<2)
-#define LOOK_SET_ALPHA (1<<3)
-#define LOOK_SET_TRANSFORM (1<<4)
-#define LOOK_SET_DIR (1<<5)
-#define LOOK_SET_PLANE (1<<6)
-#define LOOK_SET_LAYER (1<<7)
-#define LOOK_SET_LIGHT (1<<8)
-#define LOOK_SET_OFFSET (1<<9)
-#define LOOK_SET_INVISIBILITY (1<<10)
 
 /// Applies the look to A. Only what the look set is touched; what it set last time and not now is
 /// taken back: overlays, filters and vis_contents are removed, and a base property (icon, color,
@@ -819,17 +809,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	if(flick_state)
 		flick(flick_state, A)
 
-#undef LOOK_SET_ICON
-#undef LOOK_SET_ICON_STATE
-#undef LOOK_SET_COLOR
-#undef LOOK_SET_ALPHA
-#undef LOOK_SET_INVISIBILITY
-#undef LOOK_SET_TRANSFORM
-#undef LOOK_SET_DIR
-#undef LOOK_SET_PLANE
-#undef LOOK_SET_LAYER
-#undef LOOK_SET_LIGHT
-#undef LOOK_SET_OFFSET
 
 
 // ---- transient visuals: look_flash() ----

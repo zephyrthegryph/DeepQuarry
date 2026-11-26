@@ -75,15 +75,14 @@
 	late.arrived_clock -= INPUT_MAX_WAIT_CLICK + 1 SECONDS
 	test_phase(KERNEL_PHASE_K)
 	TEST_ASSERT_EQUAL(SSinput.expired - expired_before, 1, "a click that waited past its limit expires")
-	TEST_ASSERT_EQUAL(length(user.told), 1, "the player is told it was too late")
-	TEST_ASSERT(findtext(user.told[1], "waited too long"), "with the reason")
+	TEST_ASSERT_EQUAL(length(user.told), 0, "the player is not told: an expired input only goes to the log")
 
 	var/datum/input_event/click/hover/hovered = new(user, target, T, "mapwindow.map", "")
 	input_submit(hovered)
 	hovered.arrived_clock -= INPUT_MAX_WAIT_FEEDBACK + 1 SECONDS
 	test_phase(KERNEL_PHASE_K)
 	TEST_ASSERT_EQUAL(SSinput.expired - expired_before, 2, "a late hover expires too")
-	TEST_ASSERT_EQUAL(length(user.told), 1, "silently")
+	TEST_ASSERT_EQUAL(length(user.told), 0, "silently")
 
 	var/datum/input_event/click/fresh = new(user, target, T, "mapwindow.map", "left=1")
 	input_submit(fresh)

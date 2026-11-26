@@ -1,8 +1,0 @@
-﻿#include "code/first.dm"
-#if 0
-#include "code/second.dm"
-#include "code/block.dm"
-#include "code/tests/test.dm"
-#include "code/engine/_generated/ids.dm"
-#endif
-/datum

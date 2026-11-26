@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - admin: "The Server page lists freezes: real time the server was held between ticks, even when no system was charged."

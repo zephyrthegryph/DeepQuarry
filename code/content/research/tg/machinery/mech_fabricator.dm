@@ -82,6 +82,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 
 	section(window, "The window: the designs, the queue and its buttons")
 	interface("ExosuitFabricatorTg")
+	ui_shape(designs = map_of(schema_text(), row(name = schema_text(), desc = schema_text(), cost = map_of(schema_text(), num()), id = schema_text(), categories = list_of(schema_text()), icon = schema_text(), constructionTime = num())), SHEET_MATERIAL_AMOUNT = num(), processing = bool(), materials = list_of(row(name = schema_text(), ref = num(), amount = num(), color = schema_text(), sheets = int(), removable = bool())), queue = list_of(row(jobId = int(), designId = schema_text(), processing = bool(), timeLeft = num())))
 	op("build", ui_act(arg("designs", list_of(schema_text(256))), arg("now", bool())), then(PROC_REF(ui_act_build)))
 	op("del_queue_part", ui_act(arg("index", int(1, 1000))), then(PROC_REF(ui_act_del_queue_part)))
 	op("clear_queue", ui_act(), then(PROC_REF(ui_act_clear_queue)))
@@ -142,8 +143,6 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 		after(src, round((new_time / part_time) * left), PROC_REF(part_finished), key = "exofab_part")
 		part_time = new_time
 
-	update_static_data_for_all_viewers()
-
 /obj/machinery/mecha_part_fabricator_tg/proc/status_text(datum/act/A)
 	return span_notice("The status display reads: Storing up to <b>[rmat.local_size]</b> material units.<br>Material consumption at <b>[component_coeff*100]%</b>.<br>Build time reduced by <b>[100-time_coeff*100]%</b>.")
 
@@ -153,23 +152,21 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 /obj/machinery/mecha_part_fabricator_tg/proc/update_menu_tech()
 	var/previous_design_count = LAZYLEN(available_designs)
 
-	LAZYCLEARLIST(available_designs)
+	clear_available_designs()
 	for(var/v in stored_research().researched_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(v)
 
 		if(design.build_type & fab_type)
-			LAZYOR(available_designs, design)
+			include_available_designs(design)
 
 	for(var/datum/design_techweb/illegal_disign in illegal_local_designs)
-		LAZYOR(available_designs, illegal_disign)
+		include_available_designs(illegal_disign)
 
 	var/design_delta = LAZYLEN(available_designs) - previous_design_count
 
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")
 		play_sfx(src, SFX_MACHINES_TWOBEEP)
-
-	update_static_data_for_all_viewers()
 
 // ---- the queue ----
 
@@ -230,6 +227,16 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 
 	return FALSE
 
+/// What one part of `D` costs, by material: its effective table (a design with a material template keeps its cost in the template's slots, not in `materials`),
+/// so the part is charged what it is recorded as made of.
+/proc/mechfab_cost(datum/design_techweb/D)
+	. = list()
+	var/list/effective = D.effective_materials(null) || D.materials
+	for(var/key in effective)
+		var/datum/material/M = istype(key, /datum/material) ? key : get_material_by_name(key)
+		if(istype(M))
+			.[M] += effective[key]
+
 /**
  * Starts the build process for a given design datum.
  *
@@ -257,12 +264,15 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 		if(verbose)
 			atom_say("Mineral access is on hold, please contact the quartermaster.")
 		return FALSE
-	if(!materials.has_materials(D.materials, component_coeff))
+	var/list/needed = mechfab_cost(D)
+	if(!materials.has_materials(needed, component_coeff))
 		if(verbose)
 			atom_say("Not enough resources. Processing stopped.")
 		return FALSE
 
-	rmat.use_materials(D.materials, component_coeff, 1, "built", "[D.name]")
+	rmat.use_materials(needed, component_coeff, 1, "built", "[D.name]")
+	if(GLOB.fab_trace)
+		log_world("FAB: [src] takes [fab_matter_text(needed, component_coeff)] for [D.id]")
 	set_being_built(D)
 	cap_key_set(src, FABRICATOR_PRINTING, TRUE, null)
 	current_producer_account = producer_account
@@ -303,7 +313,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/dispense_built_part(datum/design_techweb/dispensed_design)
 	var/obj/item/built_part = create_new_part(dispensed_design)
-	split_materials_uniformly(dispensed_design.materials, component_coeff, built_part)
+	split_materials_uniformly(mechfab_cost(dispensed_design), component_coeff, built_part)
 	built_part.set_economic_provenance(DEPARTMENT_RESEARCH, max(25, dispensed_design.construction_time), current_producer_account)
 	current_producer_account = 0
 
@@ -380,7 +390,8 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	)
 
-/obj/machinery/mecha_part_fabricator_tg/tgui_static_data(mob/user)
+/obj/machinery/mecha_part_fabricator_tg/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = ..()
 
 	var/list/designs = list()
@@ -408,18 +419,17 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 
 	data["designs"] = designs
 
-	var/list/material_data = rmat.mat_container()?.tgui_static_data(user)
+	data["SHEET_MATERIAL_AMOUNT"] = SHEET_MATERIAL_AMOUNT
+	var/list/material_data = present_tgui_static_data(rmat.mat_container(), user)
 	if(material_data)
 		data += material_data
 
 	return data
 
 /obj/machinery/mecha_part_fabricator_tg/ui_data(datum/act/eval/A)
-	var/list/data = list("processing" = process_queue)
+	var/list/data = list("processing" = process_queue ? TRUE : FALSE)
 
-	var/list/material_data = rmat.mat_container()?.material_list_data(A.actor)
-	if(material_data)
-		data["materials"] = material_data
+	data["materials"] = rmat.mat_container()?.material_list_data(A.actor) || list()
 	data["queue"] = list()
 
 	if(being_built)

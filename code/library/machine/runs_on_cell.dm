@@ -27,7 +27,7 @@ CAPABILITY_TYPE(runs_on_cell, CAP_RUNS_ON_CELL, /datum/capability/lib/runs_on_ce
 
 /// The holder's cell is read once its starting contents exist.
 /datum/capability/lib/runs_on_cell/on_holder_init(datum/act/eval/A)
-	settle(A.holder, can_feed(A.holder))
+	settle(A.holder, can_feed(A.holder), TRUE)
 
 /// Watts' worth of charge one step takes.
 /datum/capability/lib/runs_on_cell/proc/step_amount(datum/holder)
@@ -39,13 +39,15 @@ CAPABILITY_TYPE(runs_on_cell, CAP_RUNS_ON_CELL, /datum/capability/lib/runs_on_ce
 	var/obj/item/cell/C = holder.vars[cell_var]
 	return istype(C) && C.charge >= step_amount(holder)
 
-/// Writes the powered state when it differs, and runs on_lost on a crossing to unpowered.
-/datum/capability/lib/runs_on_cell/proc/settle(datum/holder, powered)
+/// Writes the powered state when it differs, and runs on_lost on a crossing to unpowered. `initial`: the first reading at init, which is the starting
+/// state and not a crossing, so it is not logged.
+/datum/capability/lib/runs_on_cell/proc/settle(datum/holder, powered, initial = FALSE)
 	powered = !!powered
 	if(!!holder.vars[powered_var] == powered)
 		return
 	op_write_key(holder, powered_var, powered)
-	log_world("RUNS_ON_CELL: [holder.type] [powered ? "has" : "lost"] cell power")
+	if(!initial)
+		log_world("RUNS_ON_CELL: [holder.type] [powered ? "has" : "lost"] cell power")
 	if(!powered && on_lost)
 		call(holder, on_lost)()
 

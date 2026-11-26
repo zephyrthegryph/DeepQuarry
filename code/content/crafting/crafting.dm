@@ -401,10 +401,7 @@
 
 /datum/personal_crafting/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["category"] = cur_category
-	data["subcategory"] = cur_subcategory
 	data["display_craftable_only"] = display_craftable_only
-	data["display_compact"] = display_compact
 	var/list/merged_1 = ui_data_datum_personal_crafting(A.actor, null, null)
 	if(islist(merged_1))
 		for(var/merged_key_1 in merged_1)
@@ -414,7 +411,7 @@
 /// /datum/personal_crafting's window data.
 /datum/personal_crafting/proc/ui_data_datum_personal_crafting(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// ANNOYING. We won't know what category will be on top (and thus first selected) in the UI
-	// until we crunch all the resources in tgui_static_data. So it just sets a hint and we
+	// until we crunch all the resources in ui_static_data. So it just sets a hint and we
 	// consume it and set the category on the first UI open
 	if(tgui_category_hint)
 		set_cur_category(tgui_category_hint)
@@ -459,12 +456,13 @@
 			var/datum/material_template/recipe_blueprint = material_template_singleton(R.material_template)
 			var/list/defaults = recipe_blueprint.resolve()
 			can_craft = defaults && crafting_materials_available(surroundings, R, defaults)
-		craftability["[handle_of(R)]"] = can_craft
+		craftability["[handle_text(handle_of(R))]"] = can_craft
 
 	data["craftability"] = craftability
 	return data
 
-/datum/personal_crafting/tgui_static_data(mob/user)
+/datum/personal_crafting/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	var/list/crafting_recipes = list()
@@ -490,12 +488,15 @@
 	data["crafting_recipes"] = crafting_recipes
 	return data
 
+UI_SCHEMA(crafting_recipe, row(name = schema_text(), ref = num(), req_text = schema_text(), catalyst_text = schema_text(), tool_text = schema_text(), material_slots = list_of(row(role = schema_text(), label = schema_text(), amount = num(), defaultMaterial = nullable(schema_text()), optional = bool(), description = nullable(schema_text())))))
+
 CAPABILITIES(/datum/personal_crafting)
 	per_type(nameof(categories), PROC_REF(build_categories), copy_on_write = TRUE)
 	ref_one(nameof(owner), /mob)
 	op("toggle_recipes", ui_act(), then(PROC_REF(ui_act_toggle_recipes)))
 	op("toggle_compact", ui_act(), then(PROC_REF(ui_act_toggle_compact)))
 	interface("PersonalCrafting", state = nameof(GLOB.tgui_not_incapacitated_turf_state))
+	ui_shape(display_craftable_only = bool(), busy = bool(), materialChoices = list_of(lathe_material_choice()), craftability = map_of(schema_text(), bool()), crafting_recipes = map_of(schema_text(), one_of(list_of(crafting_recipe()), map_of(schema_text(), one_of(list_of(crafting_recipe()), num()))))) // a category holds its recipe list, or its subcategories' lists beside a has_subcats flag
 	// Crafting takes the recipe's time, standing still; the component is claimed (busy) until it ends.
 	op("make", ui_act("make", arg("materialSlots"), arg("recipe", schema_ref())), claims(), starts(PROC_REF(make_started)), wait(PROC_REF(make_time)), on_interrupt(PROC_REF(make_interrupted)), then(PROC_REF(make_done)))
 	op("set_category", ui_act("set_category", arg("category", schema_text(4096)), arg("subcategory", schema_text(4096))), then(PROC_REF(ui_act_set_category)))

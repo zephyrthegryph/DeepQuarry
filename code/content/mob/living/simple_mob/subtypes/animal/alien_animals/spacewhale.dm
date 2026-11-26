@@ -20,7 +20,7 @@
 	icon_living = "space_whale"
 	icon_dead = "space_ghost_dead"
 
-	om_child_type = /obj/effect/overmap/visitable/simplemob/spacewhale
+	overmap_child_type = /obj/effect/overmap/visitable/simplemob/spacewhale
 
 	response_help  = "pets"
 	response_disarm = "gently pushes aside"

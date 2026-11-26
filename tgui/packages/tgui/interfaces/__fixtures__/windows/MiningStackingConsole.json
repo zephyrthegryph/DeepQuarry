@@ -1,0 +1,8 @@
+{
+	"stacktypes": [
+		{ "type": "steel", "amt": 23 },
+		{ "type": "glass", "amt": 8 },
+		{ "type": "plasteel", "amt": 3 }
+	],
+	"stackingAmt": 50
+}

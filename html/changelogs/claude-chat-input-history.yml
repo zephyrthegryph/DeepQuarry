@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The chat input row recalls your last 20 messages with Up/Down, has a radio channel selector built from your headset, and switches to a channel when you type its :x prefix."

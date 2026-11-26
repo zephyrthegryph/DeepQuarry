@@ -38,3 +38,18 @@
 #define ABILITY_ID_ROBOT_PICK_SHELL "drone_shell.pick_shell"
 #define ABILITY_ID_ROBOT_SET_MAIL_TAG "drone_mail.set_mail_tag"
 #define ABILITY_ID_ROBOT_EJECT_CARGO "platform_cargo.eject_cargo"
+
+// ---- The ability list (code/content/abilities/) ----
+// One ordered list per mob, shown as the Abilities tab of the stat panel. Each entry is a /datum/action; its category says which source it
+// came from and groups it in the tab.
+
+#define ABILITY_CATEGORY_ITEMS "Items"
+#define ABILITY_CATEGORY_SPECIES "Species"
+#define ABILITY_CATEGORY_SPELLS "Spells"
+#define ABILITY_CATEGORY_IMPLANTS "Implants"
+
+/// The keybinding id of the hotkey of the ability in list slot `slot`.
+#define ABILITY_SLOT_KEYBIND(slot) "ability_slot_[slot]"
+
+/// How many abilities have a number hotkey (the first ones in the list's order).
+#define ABILITY_HOTKEY_SLOTS 9

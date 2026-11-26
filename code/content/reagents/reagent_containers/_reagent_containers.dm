@@ -8,6 +8,10 @@
 	var/max_transfer_amount = 30
 	var/min_transfer_amount = 5
 	var/volume = 30
+	/// The sensing of this container's temperature against its recipes' band edges, or null (reaction_watch.dm).
+	var/tmp/datum/sense_sub/heat/reaction_watch
+	/// The edges it senses.
+	var/tmp/list/reaction_watch_levels
 
 /// What one transfer from this moves: the setting var of a container that is not converted yet.
 /obj/item/reagent_containers/legacy_transfer_amount()
@@ -18,6 +22,7 @@
 CAPABILITIES(/obj/item/reagent_containers)
 	configure(item_handling(cavity_implantable = FALSE))
 	reagents(nameof(volume))
+	owns_one(nameof(reaction_watch), /datum/sense_sub/heat)
 
 /obj/item/reagent_containers/afterattack(obj/target, mob/user, flag)
 	return
@@ -78,3 +83,6 @@ CAPABILITIES(/obj/item/reagent_containers)
 		balloon_alert(A.actor, "\The [A.held] burns the blood in \the [src].")
 		B.changling_blood_test(reagents)
 	return OP_OK
+
+/mob/living/refuses_belly_liquid(atom/holder)
+	return !vore_prefs.consume_liquid_belly && reagents_from_belly(holder)

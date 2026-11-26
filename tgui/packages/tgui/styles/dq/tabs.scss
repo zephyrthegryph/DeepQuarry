@@ -1,0 +1,174 @@
+// The DQ tab row (dq/Tabs.tsx): the stat panel's, the chat's and the
+// Inspect/MC sub-tabs. The tabs sit on the row's 2px bottom rule (the row aligns its items
+// to the end and has no bottom padding), so the selected tab's underline, the
+// tgui-core .Tab:before indicator, is drawn on that rule.
+
+@use '../console';
+@use './row-control';
+
+.DqTabs {
+  // One height for everything on the row: the tabs, the add button and the end controls share it, bottom-aligned on the rule, so they
+  // share one top, one bottom and one centre.
+  --dq-row-control-height: 26px;
+  // The controls that are not tabs (the add button, the ping box, the music and settings buttons, the stat search box) are one pixel
+  // shorter and centred between the row's top edge and the rule, not seated on it like the tabs: --dq-row-end-height is their height and
+  // --dq-row-end-lift how far their group reaches up over the row's top padding, so the gap above them is the gap above the rule.
+  --dq-row-end-height: calc(var(--dq-row-control-height) - 1px);
+  --dq-row-end-lift: 3px;
+
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px 8px;
+  padding: 4px 6px 0;
+  background-color: console.$console-panel;
+  border-bottom: 2px solid console.$console-border;
+
+  .DqTabs__list {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border-bottom: 0;
+    background-color: transparent;
+  }
+
+  // The selected-tab indicator is absolutely placed on the row's rule; the library's bottom padding for it would lift the label a pixel
+  // above the centre line the row's buttons share.
+  .DqTabs__list .Tab {
+    padding-bottom: 0;
+  }
+
+  .Tab {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--dq-row-control-height);
+    min-width: 0;
+    min-height: 0;
+    margin-right: 2px;
+    font-family: console.$console-font;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  .Tab .Tab__text {
+    margin: 0 var(--space-ml);
+    white-space: nowrap;
+  }
+
+  .DqTabs__after {
+    display: flex;
+    flex: none;
+    align-items: center;
+    align-self: stretch;
+    margin-top: calc(-1 * var(--dq-row-end-lift));
+
+    > .Button {
+      @include row-control.button(var(--dq-row-end-height, 22px));
+    }
+  }
+
+  // Row-end content (buttons, a search box), centred on the tabs and clear
+  // of the bottom rule.
+  .DqTabs__end {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+    align-self: stretch;
+    margin-top: calc(-1 * var(--dq-row-end-lift));
+    margin-left: auto;
+
+    // Every control here (the chat's ping indicator, music and settings
+    // buttons) is one height on one centre line, whatever its content.
+    > * {
+      box-sizing: border-box;
+      height: var(--dq-row-end-height, 22px);
+      margin: 0;
+      align-self: center;
+      vertical-align: middle;
+    }
+
+    > .Button {
+      @include row-control.button(var(--dq-row-end-height, 22px));
+    }
+  }
+
+  // The tab strip: the area a dragged tab is held inside (dq/Tabs.tsx clamps it).
+  .DqTabs__strip {
+    position: relative;
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  // A movable tab takes the pointer itself (no text selection, no native drag ghost).
+  .DqTabs__tab--movable {
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+  }
+
+  // While a tab is dragged the others slide aside to make room.
+  &--dragging .Tab {
+    transition: transform 120ms ease-out;
+  }
+
+  &--dragging .DqTabs__tab--dragged {
+    position: relative;
+    z-index: 1;
+    cursor: grabbing;
+    transition: none;
+    background-color: console.$console-panel;
+    box-shadow: 0 0 0 1px console.$console-accent;
+  }
+
+  &--classic {
+    .Tab {
+      height: auto;
+      min-height: 1.6em;
+    }
+
+    .Tab .Tab__text {
+      margin: 0 var(--space-sm);
+    }
+  }
+
+  // A sub-tab row inside a page: no panel background or padding, smaller tabs.
+  &--small {
+    padding: 0;
+    margin-bottom: 0.5em;
+    background-color: transparent;
+
+    .Tab {
+      height: auto;
+      min-height: 1.6em;
+      font-size: 11px;
+      max-width: 12em;
+    }
+
+    .Tab .Tab__text {
+      margin: 0 var(--space-sm);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  &--scrollable {
+    flex-wrap: nowrap;
+
+    .DqTabs__list {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .Tab {
+      flex-shrink: 0;
+    }
+  }
+}

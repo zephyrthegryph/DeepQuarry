@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A drain point after the tick's simulation budget is spent no longer takes the whole backlog of marked hooks, stats and notices apart; the lag from a large backlog of marked on_change hooks is gone."
+  - code_imp: "The tick ledger splits the drain point into budget check, late notice queue, on_change marks and marked stats."

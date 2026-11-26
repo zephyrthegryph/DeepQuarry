@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - admin: "Added the Lighting Overhang Test debug verb: cycles SEE_BLACKNESS, KEEP_APART on light masks and forced dark-turf luminosity on yourself, to find why large characters are not darkened where they overhang dark tiles"

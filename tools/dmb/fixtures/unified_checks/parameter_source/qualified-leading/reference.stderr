@@ -1,6 +1,0 @@
-@FIXTURE@, line 4, column 12:
-error: /proc/check sets SpacemanDMM_should_be_pure but calls a /datum/box/proc/work that does impure operations
-- 5:5: SpacemanDMM_should_be_pure set here
-- 6:6: /datum/box/proc/work() called here
-- 3:5: Assignment on purity breaking expression happens here
-

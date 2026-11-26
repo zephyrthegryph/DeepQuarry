@@ -1,6 +1,6 @@
 // fw-gaps3 content pins for the tgui modals as in-window questions: the chem master, the chemical synthesizer and the chemical dispenser. Written on
-// the legacy modal handlers first (ui_modal_opened / ui_modal_answered). A modal opens through the engine's op when the host has one for "modal:<id>",
-// else through the legacy act_modal_open(); the client's answer is act_modal_answer() on both.
+// the legacy modal handlers first (ui_modal_opened / ui_modal_answered). A modal opens through the engine's op for "modal:<id>"; the client's answer
+// is the engine's modal_answer window action (tgui_modal_window_answer()).
 
 /datum/unit_test/dq_fwg3_modal
 	abstract_type = /datum/unit_test/dq_fwg3_modal
@@ -24,14 +24,12 @@
 
 /// Opens modal `id` of `host`'s window as the client's modal_open does.
 /proc/fwg3_modal_open(mob/user, datum/host, id, list/arguments)
-	var/datum/op_result/R = test_ui(user, host, OP_UI_MODAL_OPEN, list("id" = id, "arguments" = arguments || list()))
-	if(!R)
-		host.act_modal_open(user, id, arguments || list())
+	test_ui(user, host, OP_UI_MODAL_OPEN, list("id" = id, "arguments" = arguments || list()))
 	return tgui_modal_data(host)
 
 /// Answers the window's modal `id` as the client's modal_answer does.
 /proc/fwg3_modal_answer(mob/user, datum/host, id, answer, list/arguments)
-	host.act_modal_answer(user, id, answer, arguments || list())
+	tgui_modal_window_answer(host, user, id, answer)
 	test_time(1)
 
 /datum/unit_test/dq_fwg3_modal/proc/modal_open(mob/user, datum/host, id, list/arguments)
@@ -58,7 +56,7 @@
 	H.put_in_active_hand(B)
 	test_click(H, M, B)
 	TEST_ASSERT_EQUAL(M.beaker, B, "the beaker loads")
-	hc_ui(H, M, "add", list("id" = REAGENT_ID_WATER, "amount" = 40))
+	hc_ui(H, M, "add", list("amount" = 40))
 	TEST_ASSERT_EQUAL(M.reagents.get_reagent_amount(REAGENT_ID_WATER), 40, "the add button moves its amount")
 	var/list/modal = modal_open(H, M, "create_pill", list("num" = 2))
 	TEST_ASSERT_NOTNULL(modal, "the pill question is open")
@@ -76,21 +74,21 @@
 	modal = modal_open(H, M, "analyze", list("idx" = 1, "beaker" = 0))
 	TEST_ASSERT_NOTNULL(modal, "analyze shows a message")
 	TEST_ASSERT_EQUAL(modal["args"]?["analysis"]?["name"], "Water", "with the reagent's analysis")
-	M.act_modal_close(H, "analyze")
+	tgui_modal_window_close(M)
 	var/mode = M.mode
 	hc_ui(H, M, "toggle")
 	TEST_ASSERT(M.mode != mode, "toggle flips the mode")
 	// the buffer's custom amounts chain to the add and remove buttons (the legacy answer re-ran tgui_act() through the open window, so these two are
 	// pinned on the converted form only)
 	var/before = M.reagents.get_reagent_amount(REAGENT_ID_WATER)
-	modal = modal_open(H, M, "addcustom", list("id" = REAGENT_ID_WATER))
+	modal = modal_open(H, M, "addcustom")
 	TEST_ASSERT_NOTNULL(modal, "the add-custom question is the window's modal")
 	TEST_ASSERT_EQUAL(modal["id"], "addcustom", "under its id")
-	modal_answer(H, M, "addcustom", "10", list("id" = REAGENT_ID_WATER))
+	modal_answer(H, M, "addcustom", "10")
 	TEST_ASSERT_EQUAL(M.reagents.get_reagent_amount(REAGENT_ID_WATER), before + 10, "the answered amount moved to the buffer")
 	TEST_ASSERT_NULL(tgui_modal_data(M), "and the modal closed")
-	modal_open(H, M, "removecustom", list("id" = REAGENT_ID_WATER))
-	modal_answer(H, M, "removecustom", "10", list("id" = REAGENT_ID_WATER))
+	modal_open(H, M, "removecustom")
+	modal_answer(H, M, "removecustom", "10")
 	TEST_ASSERT_EQUAL(M.reagents.get_reagent_amount(REAGENT_ID_WATER), before, "removecustom takes the answered amount out")
 	M.reagents.add_reagent(REAGENT_ID_WATER, 30)
 	modal_open(H, M, "create_bottle_multiple")
@@ -147,7 +145,7 @@
 	hc_ui(H, D, "cancel_recording")
 	TEST_ASSERT_NULL(D.recording_recipe, "cancel drops the recording")
 	hc_ui(H, D, "remove", list("reagent" = REAGENT_ID_WATER, "amount" = 5))
-	TEST_ASSERT_EQUAL(B.reagents.get_reagent_amount(REAGENT_ID_WATER), 10, "remove takes reagent out of the beaker")
+	TEST_ASSERT_EQUAL(B.reagents.get_reagent_amount(REAGENT_ID_WATER), 15, "the per-reagent remove button is gone")
 	D.atom_break()
 	hc_ui(H, D, "amount", list("amount" = 30))
 	TEST_ASSERT_EQUAL(D.amount, 15, "a broken dispenser ignores its buttons")

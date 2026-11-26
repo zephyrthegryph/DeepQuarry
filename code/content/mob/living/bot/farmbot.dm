@@ -37,6 +37,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	owns_one(nameof(tank), /obj/structure/reagent_dispensers/watertank)
 	ref_one(nameof(tank_at_make), /obj/structure/reagent_dispensers/watertank)
 	interface("Farmbot", input = menu())
+	ui_shape(on = bool(), locked = bool(), tank = bool(), tankVolume = num(), tankMaxVolume = num(), waters_trays = bool(), refills_water = bool(), uproots_weeds = bool(), replaces_nutriment = bool())
 	op("touch", hand(), stance(I_HELP), label("Open controls"), then(PROC_REF(farmbot_touched)))
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("water", ui_act("water"), then(PROC_REF(ui_act_water)))
@@ -46,31 +47,18 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	param(nameof(tank_at_make), pos = 1, apply = PROC_REF(take_tank), keep = FALSE)
 	owns_one(nameof(tank), on_destroy = ON_DESTROY_CONTAINED)
 
-/// The window's data: the bot's state, its tank, and the settings while the panel is unlocked.
+/// The window's data: the bot's state, its tank, and its behaviour settings (the window shows them while the panel is unlocked).
 /mob/living/bot/farmbot/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["on"] = on
 	data["locked"] = locked
 	data["tank"] = !!tank
-	if(tank)
-		data["tankVolume"] = tank.reagents.total_volume
-		data["tankMaxVolume"] = tank.reagents.maximum_volume
-
-	data["waters_trays"] = null
-	data["refills_water"] = null
-	data["uproots_weeds"] = null
-	data["replaces_nutriment"] = null
-	data["collects_produce"] = null
-	data["removes_dead"] = null
-
-	if(!locked)
-		data["waters_trays"] = waters_trays
-		data["refills_water"] = refills_water
-		data["uproots_weeds"] = uproots_weeds
-		data["replaces_nutriment"] = replaces_nutriment
-		data["collects_produce"] = collects_produce
-		data["removes_dead"] = removes_dead
-
+	data["tankVolume"] = tank ? tank.reagents.total_volume : 0
+	data["tankMaxVolume"] = tank ? tank.reagents.maximum_volume : 0
+	data["waters_trays"] = !!waters_trays
+	data["refills_water"] = !!refills_water
+	data["uproots_weeds"] = !!uproots_weeds
+	data["replaces_nutriment"] = !!replaces_nutriment
 	return data
 
 

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Disk budget: the whole-cache total cap no longer squeezes the compiler cache, analyzer cache, compile roots or Verdigris caches (squeeze = no); leased cargo targets kept the cache over the total on every pass, so each pass deleted every idle compiler-cache segment and the next compile recomputed and rewrote 1-2 GB"

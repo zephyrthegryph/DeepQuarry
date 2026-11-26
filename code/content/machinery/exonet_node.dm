@@ -63,6 +63,7 @@ CAPABILITIES(/obj/machinery/exonet_node)
 	op("toggle_newscaster_port", ui_act("toggle_newscaster_port"), then(PROC_REF(ui_act_toggle_newscaster_port)))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
 	interface("ExonetNode")
+	ui_shape(on = bool(), logs = list_of(schema_text()), allowPDAs = bool(), allowCommunicators = bool(), allowNewscasters = bool())
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /// A mapped node describes the section of the Exonet it connects (once the map is loaded).

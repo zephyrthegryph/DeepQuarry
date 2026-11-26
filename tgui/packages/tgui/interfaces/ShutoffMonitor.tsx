@@ -1,19 +1,12 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  ShutoffMonitorActions,
+  ShutoffMonitorData,
+} from './generated/ShutoffMonitor';
 
-type Data = {
-  valves: {
-    name: string;
-    enabled: BooleanLike;
-    open: BooleanLike;
-    x: number;
-    y: number;
-    z: number;
-    ref: string;
-  }[];
-};
+type Data = ShutoffMonitorData;
 
 export const ShutoffMonitor = (props) => (
   <Window width={627} height={700}>
@@ -24,9 +17,9 @@ export const ShutoffMonitor = (props) => (
 );
 
 export const ShutoffMonitorContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShutoffMonitorActions>();
 
-  const { valves } = data;
+  const { valves = [] } = data;
 
   return (
     <Section title="Valves">

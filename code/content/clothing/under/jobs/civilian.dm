@@ -87,7 +87,7 @@ CAPABILITIES(/obj/item/clothing/under/rank/hydroponics)
 	icon_state = "internalaffairs"
 	item_state_slots = list(slot_r_hand_str = "ba_suit", slot_l_hand_str = "ba_suit")
 	rolled_sleeves = 0
-	starting_accessories = list(/obj/item/clothing/accessory/tie/black)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/black))
 
 /obj/item/clothing/under/rank/internalaffairs/skirt
 	desc = "The plain, professional attire of an " + JOB_INTERNAL_AFFAIRS_AGENT + ". The top button is sewn shut."
@@ -145,7 +145,7 @@ CAPABILITIES(/obj/item/clothing/under/rank/hydroponics)
 	desc = "A classy suit."
 	icon_state = "bluesuit"
 	item_state_slots = list(slot_r_hand_str = "lawyer_blue", slot_l_hand_str = "lawyer_blue")
-	starting_accessories = list(/obj/item/clothing/accessory/tie/red)
+	starting_accessories = list(VARIANT(/obj/item/clothing/accessory/tie/red))
 
 /obj/item/clothing/under/lawyer/bluesuit/skirt
 	name = "blue skirt suit"
@@ -165,23 +165,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/hydroponics)
 	desc = "A classic suit for the older gentleman, with built in back support."
 	icon_state = "oldman"
 	item_state_slots = list(slot_r_hand_str = "johnny", slot_l_hand_str = "johnny")
-
-/obj/item/clothing/under/oldwoman
-	name = "Old Woman's Attire"
-	desc = "A typical outfit for the older woman, a lovely cardigan and comfortable skirt."
-	icon_state = "oldwoman"
-	item_state_slots = list(slot_r_hand_str = "johnny", slot_l_hand_str = "johnny")
-
-/obj/item/clothing/under/librarian
-	name = "sensible suit"
-	desc = "It's very... sensible."
-	icon_state = "red_suit"
-	item_state_slots = list(slot_r_hand_str = "lawyer_red", slot_l_hand_str = "lawyer_red")
-
-/obj/item/clothing/under/mime
-	name = "mime's outfit"
-	desc = "It's not very colourful."
-	icon_state = "mime"
 
 /obj/item/clothing/under/rank/mailman2
 	name = "mailman's suit"

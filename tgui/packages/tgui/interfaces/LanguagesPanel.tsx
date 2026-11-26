@@ -1,29 +1,17 @@
 // Known Languages — structured TGUI panel.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
-
-type LanguageRow = {
-  id: string;
-  name: string;
-  key: string;
-  custom_key: string | null;
-  description: string;
-  can_speak: BooleanLike;
-  is_default: BooleanLike;
-};
-
-type Data = {
-  has_default: BooleanLike;
-  default_name: string | null;
-  languages: LanguageRow[];
-};
+import type {
+  LanguagesPanelActions,
+  LanguagesPanelData,
+} from './generated/LanguagesPanel';
 
 export const LanguagesPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<LanguagesPanelData, LanguagesPanelActions>();
   const { has_default, default_name, languages } = data;
   return (
     <Window width={560} height={620} title="Known Languages">
@@ -53,9 +41,7 @@ export const LanguagesPanel = () => {
                   <Box inline bold>
                     {l.name}
                   </Box>{' '}
-                  <Box inline color="label">
-                    ({l.custom_key || l.key})
-                  </Box>{' '}
+                  <Label inline>({l.custom_key || l.key})</Label>{' '}
                   <Button
                     compact
                     onClick={() => act('edit_key', { language: l.id })}
@@ -79,9 +65,9 @@ export const LanguagesPanel = () => {
                     </Box>
                   )}
                 </Box>
-                <Box ml={1} mt="2px" italic color="label">
+                <Label ml={1} mt="2px" italic>
                   {l.description}
-                </Box>
+                </Label>
               </Stack.Item>
             ))}
           </Stack>

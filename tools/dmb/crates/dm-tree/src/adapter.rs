@@ -2,19 +2,14 @@
 //! executable bodies stay in the syntax layer and never enter tree identity.
 use crate::{DefinitionMode, MemberKind, MemberMetadata, Provenance, Skeleton};
 use dm_ir::{FileId, Span, SymbolId, SymbolTable, TypePath};
-use dm_syntax::{AstFile, ItemKind, OriginalItems, TokenKind};
-use crate::normalize::ProjectedItem;
+use dm_syntax::{AstFile, Item, ItemKind, TokenKind};
 use std::sync::Arc;
-#[path="adapter_initializer_demand.rs"]
-mod initializer_demand;
-use initializer_demand::{AdapterDemand,SettingRows,WalkFailure};
 
 #[derive(Clone, Debug)]
 pub struct AdapterError {
     pub kind: dm_syntax::DiagnosticKind,
     pub span: Span,
     pub message: String,
-    pub original_fatal: Option<crate::OriginalParameterFatal>,
 }
 #[derive(Clone, Debug)]
 pub struct AdaptedDeclarations {
@@ -84,172 +79,23 @@ pub(crate) fn from_ast_with_source(
         Some(source),
     )
 }
-/// Native-only route. The header input was issued from the SAME original
-/// declaration tokens/source owner; the returned temporary receipt lets the
-/// allocation ledger consume existing signature results instead of parsing twice.
-pub(crate) fn from_ast_with_source_headers<'a>(
-    ast: &'a AstFile,
-    symbols: SymbolTable,
-    file: FileId,
-    include_occurrence: u32,
-    region: u128,
-    source: &str,
-    headers: &'a crate::procedure::OriginalProcedureHeaders,
-    offset: usize,
-) -> Result<
-    (
-        AdaptedDeclarations,
-        crate::procedure::HeaderAllocationReceipt<'a>,
-    ),
-    Vec<AdapterError>,
-> {
-    let (facts, rows) = from_ast_with_cursor_issued(
-        ast,
-        symbols,
-        file,
-        include_occurrence,
-        region,
-        "/",
-        Some(source),
-        Some((headers, offset)),
-    )?;
-    let receipt =
-        crate::procedure::HeaderAllocationReceipt::from_rows(&ast.items, headers, offset, rows)
-            .map_err(|message| {
-                vec![AdapterError {
-                    original_fatal: None,
-                    kind: dm_syntax::DiagnosticKind::Unsupported,
-                    span: Span {
-                        file,
-                        start: 0,
-                        end: 0,
-                    },
-                    message,
-                }]
-            })?;
-    Ok((facts, receipt))
-}
-
-/// Opaque completed checked adapter operation. No fact/model owner is copied;
-/// the header consumes this stack token before the facts move into the result.
-pub(crate) struct CompletedInitializerAdapter<'facts,'ast>{facts:&'facts AdaptedDeclarations,header:&'ast crate::procedure::OriginalProcedureHeaders}
-impl<'facts,'ast> CompletedInitializerAdapter<'facts,'ast>{
-    pub(crate) fn header_owner(&self)->&'ast crate::procedure::OriginalProcedureHeaders{self.header}
-    pub(crate) fn facts(&self)->&AdaptedDeclarations{self.facts}
-}
-pub(crate) fn from_ast_with_source_headers_checked<'a>(ast:&'a AstFile,symbols:SymbolTable,file:FileId,include_occurrence:u32,region:u128,source:&str,headers:&'a crate::procedure::OriginalProcedureHeaders,offset:usize,admission:&dm_syntax::SettingAdmission<'_>)->Result<Result<(AdaptedDeclarations,crate::procedure::HeaderAllocationReceipt<'a>),Vec<AdapterError>>,std::io::Error>{
-    let demand=initializer_demand::Checked::new(admission);
-    demand.checkpoint()?;
-    let result=from_ast_with_cursor_issued_using(ast,symbols,file,include_occurrence,region,"/",Some(source),Some((headers,offset)),&demand)?;
-    let result=match result {
-        Err(errors)=>Err(errors),
-        Ok((facts,rows))=>match crate::procedure::HeaderAllocationReceipt::from_rows_checked(&ast.items,headers,offset,rows,admission){
-            Ok(receipt)=>Ok((facts,receipt)),
-            Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(actual))=>return Err(actual),
-            Err(crate::procedure::header_input::OriginalHeaderFailure::Source(message))=>Err(vec![AdapterError{
-                    original_fatal: None,kind:dm_syntax::DiagnosticKind::Unsupported,span:Span{file,start:offset as u32,end:offset as u32},message}]),
-        },
-    };
-    demand.checkpoint()?;
-    if let Ok((facts,receipt))=&result{
-        let completed=CompletedInitializerAdapter{facts,header:receipt.inputs};
-        match headers.complete_initializer_admission(completed,admission){
-            Ok(())=>(),
-            Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(actual))=>return Err(actual),
-            Err(crate::procedure::header_input::OriginalHeaderFailure::Source(message))=>return Ok(Err(vec![AdapterError{
-                    original_fatal: None,kind:dm_syntax::DiagnosticKind::Unsupported,span:Span{file,start:offset as u32,end:offset as u32},message}])),
-        }
-    }
-    Ok(result)
-}
 fn from_ast_with_cursor(
     ast: &AstFile,
-    symbols: SymbolTable,
+    mut symbols: SymbolTable,
     file: FileId,
     include_occurrence: u32,
     region: u128,
     owner: &str,
     source: Option<&str>,
 ) -> Result<AdaptedDeclarations, Vec<AdapterError>> {
-    from_ast_with_cursor_issued(
-        ast,
-        symbols,
-        file,
-        include_occurrence,
-        region,
-        owner,
-        source,
-        None,
-    )
-    .map(|(facts, _)| facts)
-}
-fn from_ast_with_cursor_issued(
-    ast: &AstFile,
-    mut symbols: SymbolTable,
-    file: FileId,
-    include_occurrence: u32,
-    region: u128,
-    owner: &str,
-    source: Option<&str>,
-    headers: Option<(&crate::procedure::OriginalProcedureHeaders, usize)>,
-) -> Result<
-    (
-        AdaptedDeclarations,
-        crate::procedure::header_input::HeaderAllocationRows,
-    ),
-    Vec<AdapterError>,
-> {
-    match from_ast_with_cursor_issued_using(ast,symbols,file,include_occurrence,region,owner,source,headers,&initializer_demand::Compatibility){Ok(result)=>result,Err(never)=>match never{}}
-}
-fn from_ast_with_cursor_issued_using<D:AdapterDemand>(
-    ast: &AstFile,
-    symbols: SymbolTable,
-    file: FileId,
-    include_occurrence: u32,
-    region: u128,
-    owner: &str,
-    source: Option<&str>,
-    headers: Option<(&crate::procedure::OriginalProcedureHeaders, usize)>,
-    demand:&D,
-) -> Result<Result<
-    (
-        AdaptedDeclarations,
-        crate::procedure::header_input::HeaderAllocationRows,
-    ),
-    Vec<AdapterError>,
->,D::Operational> {
-    let progress=from_items_with_cursor_progress_using(OriginalItems::from_items(&ast.items),&ast.diagnostics,symbols,file,include_occurrence,region,owner,source,headers,demand,false,None)?;
-    if progress.errors.is_empty(){Ok(Ok((progress.facts,progress.header_rows)))}else{Ok(Err(progress.errors))}
-}
-fn from_items_with_cursor_progress_using<D:AdapterDemand>(
-    items: OriginalItems<'_>,
-    diagnostics: &[dm_syntax::Diagnostic],
-    mut symbols: SymbolTable,
-    file: FileId,
-    include_occurrence: u32,
-    region: u128,
-    owner: &str,
-    source: Option<&str>,
-    headers: Option<(&crate::procedure::OriginalProcedureHeaders, usize)>,
-    demand:&D,
-    skip_general_constants:bool,
-    prepared_signatures:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
-) -> Result<DeclarationAdapterProgress,D::Operational> {
-    use crate::procedure::header_input::HeaderAllocationRows;
-    let mut header_rows = if let (Some(prepared),Some((_,offset))) = (&prepared_signatures,headers) {
-        HeaderAllocationRows::new_prepared(prepared.share_actual_headers(), offset)
-    } else {
-        HeaderAllocationRows::new(false)
-    };
     let mut result = AdaptedDeclarations {
         symbols: SymbolTable::default(),
         skeletons: Vec::new(),
         origins: Vec::new(),
     };
     let mut errors = Vec::new();
-    for diagnostic in diagnostics {
+    for diagnostic in &ast.diagnostics {
         errors.push(AdapterError {
-                    original_fatal: None,
             kind: diagnostic.kind,
             span: Span {
                 file,
@@ -259,13 +105,9 @@ fn from_items_with_cursor_progress_using<D:AdapterDemand>(
             message: diagnostic.message.clone(),
         });
     }
+    let normalized = crate::normalize::declarations_in_scope(&ast.items, owner);
     let mut context = AdapterContext {
         source,
-        headers,
-        demand,
-        skip_general_constants,
-        prepared_signatures,
-        header_rows: &mut header_rows,
         file,
         include_occurrence,
         region,
@@ -274,21 +116,21 @@ fn from_items_with_cursor_progress_using<D:AdapterDemand>(
         errors: &mut errors,
         no_expansion: Arc::from([]),
     };
-    let mut containing_owner=owner.to_owned();
-    let visited=crate::normalize::visit_declarations_in_scope(items,owner,&mut || demand.checkpoint(),&mut |item|walk(std::iter::once(item),&mut containing_owner,&mut context));
-    #[cfg(debug_assertions)]
-    if visited.is_err()&&std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some(){
-        if let Some(prepared)=context.prepared_signatures.as_deref(){context.demand.trace_prepared_failure(prepared,context.symbols,context.result);}
-    }
-    visited?;
-    context.demand.checkpoint()?;
+    walk(&normalized, owner, &mut context);
     // The walk grows both vectors by doubling; the result is retained per region, so release the slack.
     result.skeletons.shrink_to_fit();
     result.origins.shrink_to_fit();
     result.symbols = symbols;
-    Ok(DeclarationAdapterProgress{facts:result,header_rows,errors})
+    if errors.is_empty() {
+        Ok(result)
+    } else {
+        Err(errors)
+    }
 }
-pub(crate) fn absolute(owner: &str, path: &str) -> Result<String, String> {
+fn symbol(table: &mut SymbolTable, text: &str) -> Result<SymbolId, String> {
+    table.intern(text).map_err(|error| error.to_string())
+}
+fn absolute(owner: &str, path: &str) -> Result<String, String> {
     let path = path.trim_end_matches('/');
     let full = if path.is_empty() {
         owner.into()
@@ -302,62 +144,46 @@ pub(crate) fn absolute(owner: &str, path: &str) -> Result<String, String> {
     TypePath::parse(&full).map_err(str::to_owned)?;
     Ok(full)
 }
-pub(crate) use dm_ir::CANONICAL_HEADER_PREFIX;
-
-/// One canonical token record. The default lexer supplies both the spelling
-/// and the span used to distinguish adjacent operators and punctuation.
-pub(crate) fn canonical_header_token<E>(
-    token: dm_syntax::SpanToken,
-    spelling: &str,
-    previous: &mut Option<(TokenKind, usize)>,
-    mut write: impl FnMut(&[u8]) -> Result<(), E>,
-) -> Result<(), E> {
-    if matches!(token.kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment) {
-        return Ok(());
-    }
-    let sensitive = previous.is_some_and(|(kind, _)| matches!(kind, TokenKind::Operator | TokenKind::Punctuation))
-        && matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation);
-    let mut frame = [0; 10];
-    frame[0] = if sensitive {
-        if previous.is_some_and(|(_, end)| end == token.span.start) { 1 } else { 2 }
-    } else { 0 };
-    frame[1] = token.kind as u8;
-    frame[2..].copy_from_slice(&(spelling.len() as u64).to_le_bytes());
-    *previous = Some((token.kind, token.span.end));
-    write(&frame)?;
-    write(spelling.as_bytes())
-}
-
 /// Lossless token spellings with explicit kind/length framing. Whitespace and
 /// comments are omitted; string contents and source settings are not rewritten.
-pub(crate) fn canonical(text: &str) -> Result<Arc<[u8]>, String> {
+fn canonical(text: &str) -> Result<Arc<[u8]>, String> {
     let tokens = dm_syntax::lex(text);
     if !tokens.diagnostics.is_empty() {
         return Err("invalid tokens in declaration metadata".into());
     }
-    let mut bytes = CANONICAL_HEADER_PREFIX.to_vec();
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(b"dm-declaration-tokens-v1\0");
     let mut previous = None;
     for token in tokens.tokens {
-        let span = dm_syntax::SpanToken { kind: token.kind, span: token.span };
-        match canonical_header_token(span, &token.text, &mut previous, |chunk| {
-            bytes.extend_from_slice(chunk);
-            Ok::<_, std::convert::Infallible>(())
-        }) {
-            Ok(()) => (),
-            Err(never) => match never {},
+        if matches!(
+            token.kind,
+            TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+        ) {
+            continue;
         }
+        let sensitive = previous
+            .is_some_and(|(kind, _)| matches!(kind, TokenKind::Operator | TokenKind::Punctuation))
+            && matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation);
+        bytes.push(if sensitive {
+            if previous.is_some_and(|(_, end)| end == token.span.start) {
+                1
+            } else {
+                2
+            }
+        } else {
+            0
+        });
+        previous = Some((token.kind, token.span.end));
+        bytes.push(token.kind as u8);
+        bytes.extend_from_slice(&(token.text.len() as u64).to_le_bytes());
+        bytes.extend_from_slice(token.text.as_bytes());
     }
     Ok(bytes.into())
 }
-struct AdapterContext<'a,'op,D:AdapterDemand> {
-    skip_general_constants:bool,
-    prepared_signatures:Option<&'a mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
-    demand:&'op D,
+struct AdapterContext<'a> {
     /// The one empty expansion stack every origin of this walk shares.
     no_expansion: Arc<[Span]>,
     source: Option<&'a str>,
-    headers: Option<(&'a crate::procedure::OriginalProcedureHeaders, usize)>,
-    header_rows: &'a mut crate::procedure::header_input::HeaderAllocationRows,
     file: FileId,
     include_occurrence: u32,
     region: u128,
@@ -365,43 +191,22 @@ struct AdapterContext<'a,'op,D:AdapterDemand> {
     result: &'a mut AdaptedDeclarations,
     errors: &'a mut Vec<AdapterError>,
 }
-impl<D:AdapterDemand> AdapterContext<'_,'_,D>{
-    fn symbol(&mut self,text:&str)->Result<SymbolId,WalkFailure<D::Operational>>{
-        self.demand.intern_adapter_spelling(self.symbols,text,self.prepared_signatures.as_deref_mut())
-    }
-    fn member_name(&mut self,text:&str,header:dm_syntax::Span)->Result<SymbolId,WalkFailure<D::Operational>>{
-        // This is an optional immutable byte-storage hint, not a declaration
-        // identity or a new source grant. The existing bound owner rechecks
-        // the exact UTF-8 bytes and falls back to owned compact slabs on miss.
-        let source_start=self.source.and_then(|source|{
-            let offset=self.headers.map_or(0,|(_,offset)|offset);
-            let start=header.start.checked_add(offset)?;
-            let end=header.end.checked_add(offset)?;
-            let local=source.get(start..end)?.rfind(text)?;
-            start.checked_add(local)
-        });
-        self.demand.intern_member_name(self.symbols,text,source_start,self.prepared_signatures.as_deref_mut())
-    }
-}
-fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>, containing_owner: &mut String, context: &mut AdapterContext<'_,'_,D>)->Result<(),D::Operational> {
+fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
     let file = context.file;
     let include_occurrence = context.include_occurrence;
     let region = context.region;
+    let mut containing_owner = owner.to_owned();
     for item in items {
         let owner = containing_owner.as_str();
         let span = Span {
             file,
-            start: item.raw.span().start as u32,
-            end: item.raw.span().end as u32,
+            start: item.span.start as u32,
+            end: item.span.end as u32,
         };
         let header = item.header.trim();
         let mut header_declarations = Vec::new();
-        let mut settings_footprints = crate::procedure::adapter_rows::AdapterRows::default();
-        let mut original_settings_payload = None;
-        let mut header_argument_offset = None;
         let mut source_argument_span = None;
-        let mut original_parameter_fatal = None;
-        let adapted = (|| -> Result<Option<Skeleton>, WalkFailure<D::Operational>> {
+        let adapted = (|| -> Result<Option<Skeleton>, String> {
             match item.kind {
                 ItemKind::Type => {
                     let path = absolute(owner, header)?;
@@ -414,22 +219,27 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         );
                     }
                     let mut parent = None;
-                    for child in item.children() {
-                        if let Some((name, value)) = child.header().split_once('=') {
+                    for child in &item.children {
+                        if let Some((name, value)) = child.header.split_once('=') {
                             if name.trim() == "parent_type" {
                                 let value = absolute("/", value.trim())?;
-                                parent = Some(context.symbol(&value)?)
+                                parent = Some(symbol(context.symbols, &value)?)
                             }
                         }
                     }
                     Ok(Some(Skeleton::Type {
-                        path: context.symbol(&path)?,
+                        path: symbol(context.symbols, &path)?,
                         explicit_parent: parent,
                     }))
                 }
                 ItemKind::Var => {
-                    let variable=context.demand.variable(item.raw.header_span(),header,context.headers)?;
-                    let declaration=variable.declaration();
+                    let (declaration, initializer) = dm_syntax::top_level_assignment_index(header)
+                        .map_or((header, None), |index| {
+                            (header[..index].trim(), Some(header[index + 1..].trim()))
+                        });
+                    let initializer = initializer
+                        .map(crate::procedure::variable_initializer)
+                        .transpose()?;
                     let separator = declaration
                         .match_indices("var/")
                         .find(|(index, _)| *index == 0 || declaration.as_bytes()[index - 1] == b'/')
@@ -478,14 +288,15 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     let projection = dm_syntax::project_declaration_type(&authored_type);
                     let list_element_type = projection
                         .list_element_path
-                        .map(|path| context.symbol(&format!("/{path}")))
+                        .map(|path| symbol(context.symbols, &format!("/{path}")))
                         .transpose()?;
                     let declared_type = if declaration.contains('[') {
-                        Some(context.symbol("/list")?)
+                        Some(symbol(context.symbols, "/list")?)
                     } else if type_parts.is_empty() {
                         None
                     } else {
-                        Some(context.symbol(
+                        Some(symbol(
+                            context.symbols,
                             dm_syntax::project_declaration_type(&format!(
                                 "/{}",
                                 type_parts.join("/")
@@ -493,57 +304,55 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                             .runtime_path,
                         )?)
                     };
-                    let symbolic_initializer=variable.symbolic(context.symbols)?;
-                    let resolved_constant=if flags&2!=0&&!context.skip_general_constants{context.demand.constant(&variable,symbolic_initializer.as_ref(),context.symbols)?}else{None};
+                    let symbolic_initializer = initializer
+                        .map(|text| crate::procedure::expression(text, context.symbols))
+                        .transpose()?;
+                    let resolved_constant = if flags & 2 != 0 {
+                        initializer
+                            .and_then(|text| {
+                                crate::constants::evaluate_with(text, |_| None, |_| None, |_| None)
+                            })
+                            .map(|value| value.to_semantic(context.symbols))
+                            .transpose()
+                            .map_err(|error| error.to_string())?
+                    } else {
+                        None
+                    };
                     let element_type = if type_parts.is_empty() {
                         None
                     } else {
-                        Some(context.symbol(
+                        Some(symbol(
+                            context.symbols,
                             &format!("/{}", type_parts.join("/")),
                         )?)
                     };
                     let array =
                         crate::procedure::parse_array(declaration, element_type, context.symbols)?;
-                    let fields = dm_ir::DeclarationFieldMeaning {
-                        types: dm_ir::FieldTypeIds::new(declared_type, list_element_type, None),
+                    let metadata = MemberMetadata {
+                        inherited_opaque: None,
+                        declared_type,
+                        list_element_type,
+                        display_name: None,
+                        flags,
+                        procedure: None,
                         array,
                         declared_initializer: symbolic_initializer.clone(),
                         initializer: symbolic_initializer,
                         resolved_constant,
+                        canonical: canonical(header)?,
                     };
-                    let metadata = MemberMetadata::new(None, flags, None, canonical(header)?.into());
-                    let content = metadata.canonical.xxh3_128();
+                    let content = xxhash_rust::xxh3::xxh3_128(&metadata.canonical);
                     Ok(Some(Skeleton::Member {
-                        owner: context.symbol(&owner)?,
-                        name: context.member_name(raw_name,item.raw.header_span())?,
+                        owner: symbol(context.symbols, &owner)?,
+                        name: symbol(context.symbols, raw_name)?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Declare,
-                        // The field tail stays with the variable metadata owner.
-                        metadata: Arc::new(metadata.with_field_tail(fields)),
+                        metadata: Arc::new(metadata),
                         content,
                     }))
                 }
                 ItemKind::Proc | ItemKind::Verb => {
-                    let issued = context
-                        .headers
-                        .map(|(headers, offset)| headers.parts(item.raw.header_span(), offset, header))
-                        .transpose()?;
-                    let legacy = if issued.is_none() {
-                        Some(signature_parts(header)?)
-                    } else {
-                        None
-                    };
-                    let raw = issued
-                        .as_ref()
-                        .map(|p| p.prefix)
-                        .unwrap_or_else(|| legacy.as_ref().expect("compatibility header").0);
-                    let (arguments, trailing) =
-                        legacy.as_ref().map(|v| (v.1, v.2)).unwrap_or(("", ""));
-                    header_argument_offset = Some(if let Some(parts) = issued.as_ref() {
-                        parts.argument_offset
-                    } else {
-                        arguments.as_ptr() as usize - item.header.as_ptr() as usize
-                    });
+                    let (raw, arguments, trailing) = signature_parts(header)?;
                     // DM accepts an optional path separator before the formal
                     // argument list: receive_signal/(datum/signal/signal).
                     let raw = raw.trim().trim_end_matches('/');
@@ -559,12 +368,6 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         .or_else(|| raw.rsplit_once(&format!("/{marker}")))
                         .or_else(|| raw.rsplit_once('/'))
                         .unwrap_or(("", raw));
-                    // SAME normalized declaration namespace used by both original
-                    // header receipts and the compatibility adapter. Only the
-                    // original proc/verb modifier is consumed; type-owner parts
-                    // and implicit implementation paths remain untouched.
-                    let mut procedure_flags=0u32;
-                    let name=if explicit{let mut name=name;while let Some(tail)=name.strip_prefix("final/"){procedure_flags|=dm_ir::PROC_FLAG_FINAL;name=tail;}name}else{name};
                     let owner = if prefix == "/" || (prefix.is_empty() && raw.starts_with('/')) {
                         "/".into()
                     } else if prefix.is_empty() {
@@ -575,22 +378,11 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                     if name.is_empty() || name.contains('/') {
                         return Err("invalid procedure name".into());
                     }
-                    let typed_settings = if let Some((headers, offset)) = context.headers {
-                        let (nodes, footprints) = context.demand.original_settings(
-                            item.raw.children(),
-                            context.symbols,
-                            headers,
-                            offset,
-                            context.prepared_signatures.as_deref_mut(),
-                        )?;
-                        settings_footprints = footprints;
-                        SettingRows::Original(nodes)
-                    } else {
-                        SettingRows::Existing(crate::settings::extract_settings_in_items(item.raw.children(), context.symbols)?)
-                    };
+                    let typed_settings =
+                        crate::settings::extract_settings(&item.children, context.symbols)?;
                     let mut display_name = None;
-                    for child in item.children() {
-                        let setting = child.header().trim();
+                    for child in &item.children {
+                        let setting = child.header.trim();
                         if setting.starts_with("set ") {
                             if let Some(value) = setting.strip_prefix("set name = ") {
                                 if let Some(value) = value
@@ -598,32 +390,23 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                                     .strip_prefix('"')
                                     .and_then(|v| v.strip_suffix('"'))
                                 {
-                                    display_name = Some(context.symbol(value)?)
+                                    display_name = Some(symbol(context.symbols, value)?)
                                 }
                             }
                         }
                     }
-                    let parsed_signature = if let Some(prepared)=context.prepared_signatures.as_deref_mut(){
-                        let(headers,offset)=context.headers.ok_or("prepared primary signature has no actual original header owner")?;
-                        let(actual,argument_offset)=prepared.take(item.raw.header_span(),offset,headers)?;
-                        header_argument_offset=Some(argument_offset);actual
-                    }else{if let Some(parts) = issued.as_ref() {
-                        parts.parse(context.symbols)
-                    } else {
-                        crate::procedure::parse_signature_declarations(
-                            arguments,
-                            trailing,
-                            context.symbols,
-                        )
-                    }
+                    let parsed_signature = crate::procedure::parse_signature_declarations(
+                        arguments,
+                        trailing,
+                        context.symbols,
+                    )
                     .map_err(|error| {
-                        original_parameter_fatal=error.original_fatal;
                         source_argument_span =
                             if error.after_header {
                                 // DreamMaker reports an empty formal at the next
                                 // declaration/body token after reading the header.
                                 let checked = context.source.and_then(|source| {
-                                    match dm_syntax::lookahead_after(source, item.raw.header_span().end) {
+                                    match dm_syntax::lookahead_after(source, item.header_span.end) {
                                         dm_syntax::LexerLookahead::Token(token) => {
                                             Some(token.span.start)
                                         }
@@ -632,8 +415,8 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                                     }
                                 });
                                 let cursor = checked.unwrap_or_else(|| {
-                                    item.children().next().map_or(item.raw.header_span().end, |child| {
-                                        child.header_span().start
+                                    item.children.first().map_or(item.header_span.end, |child| {
+                                        child.header_span.start
                                     })
                                 });
                                 Some(Span {
@@ -643,81 +426,59 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                                 })
                             } else {
                                 error.source_span.map(|argument| {
-                                    let offset = header_argument_offset
-                                        .expect("current signature argument offset");
+                                    let offset =
+                                        arguments.as_ptr() as usize - item.header.as_ptr() as usize;
                                     Span {
                                         file,
-                                        start: (item.raw.header_span().start + offset + argument.start)
+                                        start: (item.header_span.start + offset + argument.start)
                                             as u32,
-                                        end: (item.raw.header_span().start + offset + argument.end)
+                                        end: (item.header_span.start + offset + argument.end)
                                             as u32,
                                     }
                                 })
                             };
                         error.message
-                    })?};
+                    })?;
                     header_declarations = parsed_signature.declarations;
-                    let demand = context.demand;
-                    let lexical_header = demand.lexical_procedure_header(
-                        header, context.prepared_signatures.is_some(),
-                    )?;
-                    let path = format!("{}/{}{name}", owner.trim_end_matches('/'), marker);
-                    let source_start = issued.as_ref().and_then(|parts| {
-                        // The primary opening token bounds the physical prefix;
-                        // normalized prefix coordinates alone are never a loan.
-                        let start = item.raw.header_span().start;
-                        let width = parts.argument_offset.checked_sub(1)?;
-                        (width == path.len() && raw.starts_with('/')).then_some(start)
-                    });
-                    context.demand.intern_callable_path(
-                        context.symbols, &path, source_start, context.prepared_signatures.as_deref_mut(),
-                    )?;
-                    let owner_id = context.symbol(&owner)?;
-                    let name_id = context.member_name(name,item.raw.header_span())?;
-                    let procedure = Some(context.demand.procedure_metadata(
-                        parsed_signature.signature, typed_settings, context.prepared_signatures.as_deref_mut(),
-                    ).map_err(WalkFailure::Operational)?);
-                    let (semantic_header, content) = context.demand.procedure_canonical(
-                        lexical_header, procedure.as_ref().unwrap(), context.prepared_signatures.as_deref_mut(),
-                    ).inspect_err(|_| {
-                        #[cfg(debug_assertions)]
-                        if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
-                            eprintln!("ORIGINAL_ADAPTER_CANONICAL_FAILURE span={:?} declarations={}",
-                                item.raw.header_span(), context.result.skeletons.len());
-                        }
-                    }).map_err(WalkFailure::Operational)?;
-
-                    if context.headers.is_some() {
-                        let owner = procedure.as_ref().ok_or("original proc metadata owner is missing")?;
-                        if owner.settings.is_empty() && owner.signature.return_annotation.is_none() {
-                            if !settings_footprints.is_empty() {
-                                return Err("empty original settings have footprints".into());
-                            }
-                        } else {
-                            original_settings_payload = Some(crate::procedure::header_input::HeaderSettingsPayload {
-                                body: item.raw.span(),
-                                owner: Arc::clone(owner),
-                                footprints: std::mem::take(&mut settings_footprints),
-                            });
-                        }
-                    }
-
-                    let metadata = MemberMetadata::new(display_name, procedure_flags, procedure, semantic_header);
+                    let typed_signature = parsed_signature.signature;
+                    let procedure = Some(Arc::new(crate::ProcedureMetadata {
+                        signature: typed_signature,
+                        settings: typed_settings,
+                    }));
+                    let mut semantic_header = canonical(header)?.to_vec();
+                    semantic_header
+                        .extend_from_slice(&procedure.as_ref().unwrap().canonical_bytes());
+                    let metadata = MemberMetadata {
+                        inherited_opaque: None,
+                        declared_type: None,
+                        list_element_type: None,
+                        display_name,
+                        flags: 0,
+                        procedure,
+                        array: None,
+                        initializer: None,
+                        declared_initializer: None,
+                        resolved_constant: None,
+                        canonical: semantic_header.into(),
+                    };
                     let kind = if item.kind == ItemKind::Verb {
                         MemberKind::Verb
                     } else {
                         MemberKind::Proc
                     };
+                    let path = format!("{}/{}{name}", owner.trim_end_matches('/'), marker);
+                    symbol(context.symbols, &path)?;
+                    let content = xxhash_rust::xxh3::xxh3_128(&metadata.canonical);
                     Ok(Some(Skeleton::Member {
-                        owner: owner_id,
-                        name: name_id,
+                        owner: symbol(context.symbols, &owner)?,
+                        name: symbol(context.symbols, name)?,
                         kind,
                         mode: if explicit {
                             DefinitionMode::Declare
                         } else {
                             DefinitionMode::Implicit
                         },
-                        metadata: context.demand.member_metadata(metadata,context.prepared_signatures.as_deref_mut()).map_err(WalkFailure::Operational)?,
+                        metadata: Arc::new(metadata),
                         content,
                     }))
                 }
@@ -738,20 +499,24 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         None => (owner.to_owned(), target),
                     };
                     if name.is_empty() || name.contains('[') {
-                        return Err(format!("unsupported field assignment: {header}").into());
+                        return Err(format!("unsupported field assignment: {header}"));
                     }
-                    let fields = dm_ir::DeclarationFieldMeaning {
-                        initializer: Some(context.demand.assignment(item.raw.header_span(),header,index,context.headers,context.symbols)?),
-                        ..Default::default()
+                    let metadata = MemberMetadata {
+                        inherited_opaque: None,
+                        initializer: Some(crate::procedure::expression(
+                            header[index + 1..].trim(),
+                            context.symbols,
+                        )?),
+                        canonical: canonical(&header[index + 1..])?,
+                        ..MemberMetadata::default()
                     };
-                    let metadata = MemberMetadata::new(None, 0, None, canonical(&header[index + 1..])?.into());
-                    let content = metadata.canonical.xxh3_128();
+                    let content = xxhash_rust::xxh3::xxh3_128(&metadata.canonical);
                     Ok(Some(Skeleton::Member {
-                        owner: context.symbol(&assignment_owner)?,
-                        name: context.member_name(name,item.raw.header_span())?,
+                        owner: symbol(context.symbols, &assignment_owner)?,
+                        name: symbol(context.symbols, name)?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Override,
-                        metadata: Arc::new(metadata.with_field_tail(fields)),
+                        metadata: Arc::new(metadata),
                         content,
                     }))
                 }
@@ -759,13 +524,15 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
         })();
         match adapted {
             Ok(Some(skeleton)) => {
-                for declaration in &header_declarations {
+                for declaration in header_declarations {
+                    let (_, arguments, _) =
+                        signature_parts(header).expect("validated procedure signature");
                     let argument_offset =
-                        header_argument_offset.expect("validated signature argument offset");
+                        arguments.as_ptr() as usize - item.header.as_ptr() as usize;
                     let start =
-                        item.raw.header_span().start + argument_offset + declaration.relative_span.start;
+                        item.header_span.start + argument_offset + declaration.relative_span.start;
                     let end =
-                        item.raw.header_span().start + argument_offset + declaration.relative_span.end;
+                        item.header_span.start + argument_offset + declaration.relative_span.end;
                     context.result.skeletons.push(Skeleton::Type {
                         path: declaration.path,
                         explicit_parent: None,
@@ -781,26 +548,6 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                         expansion_stack: Arc::clone(&context.no_expansion),
                     });
                 }
-                if context.headers.is_some() && matches!(item.kind, ItemKind::Proc | ItemKind::Verb)
-                {
-                    let settings = original_settings_payload
-                        .map(|payload|context.demand.header_settings_tail(payload)).transpose()?;
-                    let row = crate::procedure::header_input::HeaderAllocationRow {
-                        header: item.raw.header_span(),
-                        argument_offset: header_argument_offset.expect("issued signature"),
-                        declarations: header_declarations,
-                        settings,
-                    };
-                    if !context.demand.stage_header_row(context.header_rows, row)? {
-                        context.errors.push(AdapterError {
-                    original_fatal: None,
-                            kind: dm_syntax::DiagnosticKind::Unsupported,
-                            span,
-                            message: "original header allocation receipt capacity refused".into(),
-                        });
-                        continue;
-                    }
-                }
                 context.result.skeletons.push(skeleton);
                 context.result.origins.push(Provenance {
                     span,
@@ -810,29 +557,13 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
                 });
                 if item.kind == ItemKind::Type {
                     if let Ok(path) = absolute(owner, header) {
-                        *containing_owner = path.clone();
-                        let mut child_owner=path;
-                        walk(item.children().map(ProjectedItem::authored),&mut child_owner,context)?;
-                        context.demand.checkpoint()?;
+                        containing_owner = path.clone();
+                        walk(&item.children, &path, context)
                     }
                 }
             }
             Ok(None) => {}
-            Err(WalkFailure::Operational(actual)) => {
-                #[cfg(debug_assertions)]
-                if std::env::var_os("DMB_ORIGINAL_TRACE_STAGES").is_some() {
-                    eprintln!(
-                        "ORIGINAL_ADAPTER_ALLOCATION_FAILURE span={:?} declarations={} compact_spellings={} pooled_metadata_hits={}",
-                        item.raw.header_span(), context.result.skeletons.len(),
-                        context.symbols.compact_spelling_len(),
-                        context.prepared_signatures.as_deref().map_or(0, |actual| actual.plain_metadata_hits_for_trace()),
-                    );
-
-                }
-                return Err(actual);
-            }
-            Err(WalkFailure::Source(message)) => context.errors.push(AdapterError {
-                    original_fatal: original_parameter_fatal,
+            Err(message) => context.errors.push(AdapterError {
                 kind: if source_argument_span.is_some() {
                     dm_syntax::DiagnosticKind::Expression
                 } else {
@@ -843,7 +574,6 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
             }),
         }
     }
-    Ok(())
 }
 
 #[cfg(test)]
@@ -851,8 +581,6 @@ fn walk<'src,D:AdapterDemand>(items: impl IntoIterator<Item=ProjectedItem<'src>>
 mod tests;
 
 pub(crate) fn signature_parts(header: &str) -> Result<(&str, &str, &str), String> {
-    #[cfg(test)]
-    SIGNATURE_PART_LEXES.with(|n| n.set(n.get() + 1));
     let tokens = dm_syntax::lex(header);
     let mut open = None;
     let mut depth = 0;
@@ -898,18 +626,6 @@ pub enum SnapshotError {
     Inventory(crate::InventoryError),
 }
 impl AdaptedDeclarations {
-    /// Finish the original builder in the narrow checker diagnostic domain.
-    /// Only inherited VAR redeclarations are retained as errors. All other
-    /// structural failures still refuse; ordinary finish/compile stays strict.
-    pub fn finish_checker_diagnostic_observed(
-        self,
-        seed: Option<&crate::frontend::EngineSeed>,
-        on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
-        executor: &dm_exec::BuildExecutor,
-    ) -> Result<crate::DiagnosticDeclarations, SnapshotError> {
-        SharedAdaptedDeclarations::from(self)
-            .finish_checker_diagnostic_observed(seed, on_error, executor)
-    }
     /// Append expansion fragments in semantic emission order. Symbol collisions
     /// are checked even when independently parsed fragments share numeric IDs.
     pub fn append(&mut self, other: AdaptedDeclarations) -> Result<(), dm_ir::SymbolCollision> {
@@ -969,55 +685,17 @@ impl AdaptedDeclarations {
             executor,
             normalization,
             None,
-            None,
-            None,
-            None,
         )
     }
 }
 impl SharedAdaptedDeclarations {
-    pub(crate) fn finish_checker_diagnostic_observed(
-        self,
-        seed: Option<&crate::frontend::EngineSeed>,
-        on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
-        executor: &dm_exec::BuildExecutor,
-    ) -> Result<crate::DiagnosticDeclarations, SnapshotError> {
-        self.finish_checker_diagnostic_with_variables(seed,on_error,executor,None)
-    }
-    pub(crate) fn finish_checker_diagnostic_with_variables(
-        self,seed:Option<&crate::frontend::EngineSeed>,
-        on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),
-        executor:&dm_exec::BuildExecutor,
-        variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,
-    )->Result<crate::DiagnosticDeclarations,SnapshotError>{
-        self.finish_diagnostic_with_primary(seed,on_error,executor,variables,None,[None;4],crate::diagnostic_declarations::DeclarationRole::Ordinary,None)
-    }
-    pub(crate) fn finish_original_diagnostic_with_variables(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>,sealed:crate::diagnostic_declarations::OriginalSealedParents,role:crate::diagnostic_declarations::DeclarationRole,authored_callables: Option<crate::owner_callable::AuthoredCallableLoan<'_>>)->Result<crate::DiagnosticDeclarations,SnapshotError>{self.finish_diagnostic_with_primary(seed,on_error,executor,variables,Some(primary),sealed,role,authored_callables)}
-    fn finish_diagnostic_with_primary(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,sealed:crate::diagnostic_declarations::OriginalSealedParents,role:crate::diagnostic_declarations::DeclarationRole,authored_callables: Option<crate::owner_callable::AuthoredCallableLoan<'_>>)->Result<crate::DiagnosticDeclarations,SnapshotError>{
-        let mut receipt = crate::diagnostic_declarations::DiagnosticDeclarationReceipt::new();
-        if variables.is_some() && primary.is_some() { receipt.role = role; }
-        receipt.original_variables=variables;
-        receipt.original_sealed_parents = sealed;
-        let snapshot = self.finish_execution(
-            seed,
-            on_error,
-            Some(executor),
-            None,
-            None,
-            Some(&mut receipt),
-            primary,
-            authored_callables,
-        )?;
-        Ok(crate::DiagnosticDeclarations::bind(snapshot, receipt))
-    }
-
     pub(crate) fn finish_with_engine_observed_on_executor(
         self,
         seed: Option<&crate::frontend::EngineSeed>,
         on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
         executor: &dm_exec::BuildExecutor,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_execution(seed, on_error, Some(executor), None, None, None, None, None)
+        self.finish_execution(seed, on_error, Some(executor), None, None)
     }
     pub(crate) fn finish_with_engine_normalization(
         self,
@@ -1030,16 +708,7 @@ impl SharedAdaptedDeclarations {
         )>,
         structural: Option<crate::metadata_update::StructuralMetadata<'_>>,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_execution(
-            seed,
-            on_error,
-            Some(executor),
-            normalization,
-            structural,
-            None,
-            None,
-            None,
-        )
+        self.finish_execution(seed, on_error, Some(executor), normalization, structural)
     }
     fn finish_execution(
         self,
@@ -1051,14 +720,11 @@ impl SharedAdaptedDeclarations {
             &crate::owner_normalization::RetainedNormalization,
         )>,
         structural: Option<crate::metadata_update::StructuralMetadata<'_>>,
-        diagnostics: Option<&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt>,
-        primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,
-        authored_callables: Option<crate::owner_callable::AuthoredCallableLoan<'_>>,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let origins = self.origins.into_owned();
         let mut skeletons = crate::skeleton_roster::SkeletonRoster::default();
         let seed_timer = dm_profile::detail_timer("tree.seed_hierarchy");
-        let hierarchy = seed_hierarchy_rows_using(self.skeletons.iter(), seed, |owner, parent| diagnostics.as_deref().is_some_and(|receipt| receipt.masks_original_sealed_parent(owner, parent))).map_err(|error| {
+        let hierarchy = seed_hierarchy_rows(self.skeletons.iter(), seed).map_err(|error| {
             let error = SnapshotError::Tree(error);
             on_error(&error, &self.skeletons.view().diagnostic_rows(), &origins);
             error
@@ -1076,39 +742,20 @@ impl SharedAdaptedDeclarations {
             ));
         }
         let engine_count = skeletons.len();
-        // The pinned Checker accepts this authored edge. The ordinary
-        // builder and engine-only rows cannot grant the exception.
-        let original_authored_client_parent = primary.is_some()
-            && crate::checker_builtins::OriginalVariableDeclarations::for_seed(seed).is_some()
-            && self.skeletons.iter().any(|row| matches!(row,
-                Skeleton::Type { path, explicit_parent: Some(parent) }
-                if *path == SymbolId::of("/client") && *parent == SymbolId::of("/datum")
-            ));
         skeletons.append(self.skeletons);
         drop(seed_timer);
         let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
         let intrinsics = seed.map_or(&[][..], |seed| seed.intrinsics.as_ref());
         let build_timer = dm_profile::detail_timer("tree.build_members");
-        let mut tree = match diagnostics {
-            Some(receipt) => crate::build_checker_diagnostic_members(
-                self.symbols,
-                skeletons.view(),
-                fields,
-                intrinsics,
-                seed.is_none(),
-                receipt,
-                authored_callables,
-            ),
-            None => crate::build_with_intrinsic_members_structural(
-                self.symbols,
-                skeletons.view(),
-                fields,
-                intrinsics,
-                seed.is_none(),
-                normalization,
-                structural,
-            ),
-        }
+        let mut tree = crate::build_with_intrinsic_members_structural(
+            self.symbols,
+            skeletons.view(),
+            fields,
+            intrinsics,
+            seed.is_none(),
+            normalization,
+            structural,
+        )
         .map_err(|error| {
             let error = SnapshotError::Tree(error);
             on_error(
@@ -1181,9 +828,6 @@ impl SharedAdaptedDeclarations {
             },
         )?);
         drop(_occurrence_timer);
-        tree.checker_profile_validation.clear();
-        tree.original_authored_client_parent = original_authored_client_parent;
-        tree.original_input_retention=primary;
         let tree = Arc::new(tree);
         Ok(TreeSnapshot { tree, occurrences })
     }
@@ -1201,13 +845,6 @@ fn seed_hierarchy_rows<'a>(
     skeletons: impl IntoIterator<Item = &'a Skeleton>,
     seed: Option<&crate::frontend::EngineSeed>,
 ) -> Result<Option<crate::EngineHierarchy>, crate::TreeError> {
-    seed_hierarchy_rows_using(skeletons, seed, |_, _| false)
-}
-fn seed_hierarchy_rows_using<'a>(
-    skeletons: impl IntoIterator<Item = &'a Skeleton>,
-    seed: Option<&crate::frontend::EngineSeed>,
-    masked: impl Fn(SymbolId, SymbolId) -> bool,
-) -> Result<Option<crate::EngineHierarchy>, crate::TreeError> {
     let mut authored_parents = std::collections::HashMap::new();
     for row in skeletons {
         if let Skeleton::Type {
@@ -1215,7 +852,6 @@ fn seed_hierarchy_rows_using<'a>(
             explicit_parent: Some(parent),
         } = row
         {
-            if masked(*path, *parent) { continue; }
             if let Some(previous) = authored_parents.insert(*path, *parent) {
                 if previous != *parent {
                     return Err(crate::TreeError::ConflictingParent(*path));
@@ -1263,33 +899,4 @@ pub(crate) fn projected_identity_indexed(
         seed.map_or(&[][..], |seed| seed.fields.as_ref()),
     );
     Ok((identity, hierarchy))
-}
-
-#[cfg(test)]
-thread_local! { static SIGNATURE_PART_LEXES: std::cell::Cell<usize> = const {std::cell::Cell::new(0)}; }
-#[cfg(test)]
-pub(crate) fn signature_part_lexes() -> usize {
-    SIGNATURE_PART_LEXES.with(std::cell::Cell::get)
-}
-
-#[cfg(test)]
-#[path="adapter_checked_tests.rs"]
-mod checked_tests;
-
-/// Genuine adapter products only. This is not a graph, source proof, semantic
-/// availability result, header-completion token or compiler admission.
-pub(crate) struct DeclarationAdapterProgress{facts:AdaptedDeclarations,header_rows:crate::procedure::header_input::HeaderAllocationRows,errors:Vec<AdapterError>}
-impl DeclarationAdapterProgress{
- pub(crate) fn facts(&self)->&AdaptedDeclarations{&self.facts}
- pub(crate) fn errors(&self)->&[AdapterError]{&self.errors}
- pub(crate) fn into_parts(self)->(AdaptedDeclarations,crate::procedure::header_input::HeaderAllocationRows,Vec<AdapterError>){(self.facts,self.header_rows,self.errors)}
-}
-/// Caller must hold the current primary Original product (already truncated
-/// before type-child prescans) and its SAME header/admission owners. A blanket
-/// full AST plus a failure span is not accepted by the frontend input issuer.
-pub(crate) fn from_original_primary_progress_checked(items:OriginalItems<'_>,diagnostics:&[dm_syntax::Diagnostic],symbols:SymbolTable,file:FileId,include_occurrence:u32,region:u128,expanded:&str,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,admission:&dm_syntax::SettingAdmission<'_>,skip_general_constants:bool,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures)->Result<DeclarationAdapterProgress,std::io::Error>{
- let demand=initializer_demand::Checked::new(admission);demand.checkpoint()?;
- let progress=from_items_with_cursor_progress_using(items,diagnostics,symbols,file,include_occurrence,region,"/",Some(expanded),Some((headers,offset)),&demand,skip_general_constants,Some(prepared))?;
- if progress.errors.is_empty(){let completed=CompletedInitializerAdapter{facts:&progress.facts,header:headers};headers.complete_initializer_admission(completed,admission).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>std::io::Error::new(std::io::ErrorKind::Unsupported,message)})?;}
- demand.checkpoint()?;Ok(progress)
 }

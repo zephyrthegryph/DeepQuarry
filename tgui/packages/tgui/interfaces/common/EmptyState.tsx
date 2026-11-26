@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Box } from 'tgui-core/components';
+import { Label } from 'tgui/components/Label';
 
 type Props = {
   message?: ReactNode;
@@ -8,9 +8,5 @@ type Props = {
 
 export const EmptyState = (props: Props) => {
   const { message, children } = props;
-  return (
-    <Box italic color="label">
-      {message ?? children}
-    </Box>
-  );
+  return <Label italic>{message ?? children}</Label>;
 };

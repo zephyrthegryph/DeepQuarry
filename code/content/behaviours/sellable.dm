@@ -99,7 +99,7 @@
 		"physical_item_id" = handle_of(source),
 		"quantity" = export_row["quantity"],
 		"in_crate" = in_crate,
-		"fact_id" = "export:[handle_of(source)]",
+		"fact_id" = "export:[handle_text(handle_of(source))]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
 		"metrics" = list("value" = SSsupply.export_revenue(export_row["value"])),
@@ -109,19 +109,17 @@
 		var/obj/item/stack/material/processed_alloy/stock = source
 		var/datum/material_batch/batch = stock.physical_batch()
 		if(batch)
-			stock.ensure_feedstock_lot()
 			contract_context["material_fingerprint"] = batch.fingerprint()
-			contract_context["material_lot_id"] = stock.feedstock_lot_id
+			contract_context["material_lot_id"] = copytext(batch.fingerprint(), 1, 9)
 			contract_context["material_amount"] = stock.get_amount()
-			contract_context["purity"] = batch.purity
-			contract_context["hardness"] = batch.hardness
+			contract_context["quality"] = 100 - batch.flaws
+			contract_context["strength"] = batch.strength
 			contract_context["toughness"] = batch.toughness
 			contract_context["conductivity"] = batch.conductivity
 			contract_context["heat_resistance"] = batch.heat_resistance
 			contract_context["corrosion_resistance"] = batch.corrosion_resistance
-			contract_context["defect_fraction"] = batch.structure[MATERIAL_STRUCTURE_DEFECT]
-			contract_context["oxidation"] = batch.oxidation
-	emit_contract_event(CONTRACT_EVENT_ITEM_EXPORTED, contract_context, "item-exported:[handle_of(source)]", source)
+			contract_context["flaws"] = batch.flaws
+	emit_contract_event(CONTRACT_EVENT_ITEM_EXPORTED, contract_context, "item-exported:[handle_text(handle_of(source))]", source)
 	return TRUE
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

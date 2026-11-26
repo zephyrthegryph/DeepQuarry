@@ -10,7 +10,6 @@
 //! contains the text `ALLOW(organ_slots)` is skipped (a substring test, not the `allowed()` helper:
 //! no comment-line-above form, and any prefix of a comment counts).
 
-use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
@@ -18,8 +17,8 @@ use crate::tree::{Select, SourceFile};
 use crate::util::py_strip;
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::organ_slots::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::organ_slots::SCOPE_META_0.group,
+    name: "organ_slots",
+    group: "",
     label: "organ_slots",
     legacy: "tools/ci/organ_slots_lint.py",
     select: Select { roots: &[("code", "dm")], hidden: true },
@@ -29,8 +28,8 @@ static META: Meta = Meta {
         name: "internal_organs",
         hint: "use organ_in(tag), INTERNAL_ORGANS(M) or limb.held_organs() (code/domains/body/parts/queries.dm)",
     }],
-    allow: crate::allow_registry_fields::organ_slots::ALLOW_0,
-    lists: crate::allow_registry_fields::organ_slots::SCOPE_META_0.lists,
+    allow: &["organ_slots"],
+    lists: &[],
 };
 
 struct OrganSlots;
@@ -66,13 +65,12 @@ impl Lint for OrganSlots {
         &META
     }
 
-    fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
+    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
         for (i, line) in py_splitlines(&f.raw().text).into_iter().enumerate() {
             if line.contains("ALLOW(organ_slots)") {
                 continue;
             }
-            if fixture.pattern(r"(?<![\w])internal_organs(_by_name)?\b",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"(?<![\w])internal_organs(_by_name)?\b")).is_match(line) {
+            if pat!(r"(?<![\w])internal_organs(_by_name)?\b").is_match(line) {
                 out.site_msg("internal_organs", i + 1, py_strip(line));
             }
         }

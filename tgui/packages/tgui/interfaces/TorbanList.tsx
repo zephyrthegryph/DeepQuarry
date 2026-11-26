@@ -1,6 +1,7 @@
 // Torban (ToR exit-address ban list) — structured TGUI read-only viewer.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
@@ -11,7 +12,7 @@ type Data = {
 
 export const TorbanList = () => {
   const { data } = useBackend<Data>();
-  const { addresses } = data;
+  const { addresses = [] } = data;
   return (
     <Window width={460} height={500} title="Torban">
       <Window.Content scrollable>
@@ -22,10 +23,7 @@ export const TorbanList = () => {
             <Stack vertical>
               {addresses.map((a, i) => (
                 <Stack.Item key={i}>
-                  <Box color="label" inline>
-                    #{i + 1}
-                  </Box>{' '}
-                  <Box inline>{a}</Box>
+                  <Label inline>#{i + 1}</Label> <Box inline>{a}</Box>
                 </Stack.Item>
               ))}
             </Stack>

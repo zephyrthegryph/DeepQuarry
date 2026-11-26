@@ -1,25 +1,5 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { OperatingComputerData } from '../generated/OperatingComputer';
 
-import type { Diagnosis } from '../common/Diagnosis';
+export type Data = OperatingComputerData;
 
-export type Data = {
-  hasOccupant: BooleanLike;
-  occupant: occupant;
-  verbose: BooleanLike;
-  spo2Alarm: number;
-  choice: BooleanLike;
-  health: BooleanLike;
-  crit: BooleanLike;
-  healthAlarm: number;
-  spo2: BooleanLike;
-};
-
-export type occupant = {
-  name: string;
-  stat: number;
-  vitality: number;
-  paralysis: number;
-  diagnosis: Diagnosis;
-  bloodType: string | undefined;
-  surgery: { name: string; currentStage: string; nextSteps: string[] }[] | null;
-};
+export type occupant = NonNullable<Data['occupant']>;

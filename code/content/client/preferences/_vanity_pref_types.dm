@@ -29,10 +29,8 @@ GLOBAL_LIST_INIT(vanity_pref_types, list(
 	// Hair / face
 	/datum/preference/text/human/h_style,
 	/datum/preference/text/human/f_style,
-	/datum/preference/text/human/grad_style,
 	/datum/preference/color/human/hair_color,
 	/datum/preference/color/human/facial_color,
-	/datum/preference/color/human/grad_color,
 
 	// Ears
 	/datum/preference/text/human/ear_style,
@@ -40,7 +38,6 @@ GLOBAL_LIST_INIT(vanity_pref_types, list(
 	/datum/preference/color/human/ears_color1,
 	/datum/preference/color/human/ears_color2,
 	/datum/preference/color/human/ears_color3,
-	/datum/preference/numeric/human/ears_alpha,
 	/datum/preference/ear_secondary_colors,
 
 	// Tail
@@ -48,14 +45,12 @@ GLOBAL_LIST_INIT(vanity_pref_types, list(
 	/datum/preference/color/human/tail_color1,
 	/datum/preference/color/human/tail_color2,
 	/datum/preference/color/human/tail_color3,
-	/datum/preference/numeric/human/tail_alpha,
 
 	// Wings
 	/datum/preference/text/human/wing_style,
 	/datum/preference/color/human/wing_color1,
 	/datum/preference/color/human/wing_color2,
 	/datum/preference/color/human/wing_color3,
-	/datum/preference/numeric/human/wing_alpha,
 
 	// Markings
 	/datum/preference/body_markings,
@@ -82,7 +77,6 @@ GLOBAL_LIST_INIT(vanity_pref_types, list(
 
 	// Flavor + OOC (gated by copy_flavour / copy_ooc_notes flags)
 	/datum/preference/flavor_texts,
-	/datum/preference/text/human/custom_link,
 	/datum/preference/text/living/ooc_notes,
 	/datum/preference/text/living/ooc_notes_likes,
 	/datum/preference/text/living/ooc_notes_dislikes,

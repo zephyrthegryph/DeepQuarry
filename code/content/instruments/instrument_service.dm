@@ -44,4 +44,4 @@ SYSTEM_DEF(instruments)
 		if(!I.id)
 			spent(I)
 			continue
-		instrument_data[I.id] = I
+		set_instrument_data_at(I.id, I)

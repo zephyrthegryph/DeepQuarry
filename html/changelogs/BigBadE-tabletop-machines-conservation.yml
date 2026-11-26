@@ -1,0 +1,8 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "The chemistry hot plate and condenser are real machines with circuit boards: build them from a machine frame and dismantle them with a crowbar. Boards are printable at the circuit imprinter after Chemical Synthesis research."
+  - rscadd: "Bunsen burners, scales, electron microscopes, book scanners, book binders, color mates, icecream vats, radiocarbon spectrometers, operating tables and slime and monkey processors now have circuit boards and can be built and dismantled."
+  - bugfix: "Recycling trash in a crusher or a belly no longer returns five times the materials it is made of."
+  - code_imp: "Stack recipes make their product through one proc shared with a new conservation test; added FAB: trace lines (fab_trace) for prints and recipes."
+  - code_imp: "Added material conservation sweeps over every design and stack recipe: nothing may break down into more than it cost."

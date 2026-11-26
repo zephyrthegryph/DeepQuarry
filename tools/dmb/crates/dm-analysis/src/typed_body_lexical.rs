@@ -259,19 +259,6 @@ impl Binder {
     }
 }
 impl TypedVisitor for Binder {
-    fn projected_expression(
-        &mut self,
-        view: dm_syntax::ProjectedExprView<'_>,
-        path: &[dm_syntax::NodeStep],
-    ) -> dm_syntax::VisitDecision {
-        self.gap(
-            path,
-            view.current_span(),
-            "setting must be normalized before executable binding",
-        );
-        dm_syntax::VisitDecision::Skip
-    }
-
     fn statement(&mut self, node: &Statement, path: &[NodeStep]) -> VisitDecision {
         let scoped = matches!(
             &node.kind,
@@ -292,7 +279,7 @@ impl TypedVisitor for Binder {
         match &node.kind {
             StatementKind::Var { declaration, .. } => self.declaration(declaration, node, path),
             StatementKind::For { control, .. } => match control {
-                ForControl::All { declaration, .. } => self.declaration(declaration, node, path),
+                ForControl::All { declaration } => self.declaration(declaration, node, path),
                 ForControl::Each { binding, .. } => {
                     let binding = binding
                         .rsplit_once(" as ")
@@ -319,17 +306,14 @@ impl TypedVisitor for Binder {
                         }
                     }
                 }
-                ForControl::Range { binding, .. }
-                | ForControl::RangeImplicitArray { binding, .. } => {
-                    self.iterator(binding, node, path)
-                }
+                ForControl::Range { binding, .. } => self.iterator(binding, node, path),
                 ForControl::CStyle {
                     initializer: Some(ForInitializer::Declare { declaration, .. }),
                     ..
                 } => self.declaration(declaration, node, path),
                 ForControl::CStyle { .. } => {}
             },
-            StatementKind::Set { .. } | StatementKind::ProjectedSet { .. } => {
+            StatementKind::Set { .. } => {
                 self.gap(
                     path,
                     node.header_span,
@@ -419,23 +403,6 @@ impl TypedVisitor for Binder {
                             .any(|arg| dm_syntax::named_argument(arg).is_some());
                         frame.arglist_wrapper = dm_syntax::arglist_argument(args).is_some()
                             && !matches!(dm_syntax::call_target(callee),dm_syntax::CallTarget::Member {object,..} if dm_syntax::is_global_receiver(object));
-                    }
-                    dm_syntax::CallTarget::GlobalNamed(name) => {
-                        let mut callee_path = path.to_vec();
-                        callee_path.push(NodeStep::Child(0));
-                        self.selectors.push(SelectorReference {
-                            selector: Arc::from(name),
-                            path: callee_path,
-                            span: callee.span,
-                            receiver_path: None,
-                            kind: SelectorKind::GlobalProcedure,
-                        });
-                        self.gap(
-                            path,
-                            node.span,
-                            "explicit global argument roles require compiler policy",
-                        );
-                        return VisitDecision::Skip;
                     }
                     dm_syntax::CallTarget::Named(name) => {
                         let mut callee_path = path.to_vec();
@@ -550,6 +517,11 @@ impl TypedVisitor for Binder {
                 );
                 return VisitDecision::Skip;
             }
+            ExprKind::Literal(text) if text.starts_with('"') && text.contains('[') => self.gap(
+                path,
+                node.span,
+                "string interpolation references are not represented as typed children",
+            ),
             _ => {}
         }
         VisitDecision::Descend

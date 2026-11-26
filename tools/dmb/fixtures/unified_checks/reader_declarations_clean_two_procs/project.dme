@@ -1,6 +1,0 @@
-/datum/z/proc/work()
-    set mystery_z=1
-    missing_z
-/datum/a/proc/work()
-    set mystery_a=1
-    missing_a

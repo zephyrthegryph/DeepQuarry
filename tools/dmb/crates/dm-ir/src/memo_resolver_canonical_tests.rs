@@ -32,7 +32,7 @@ fn canonical_request_memo_lazily_shares_bounded_bytes() {
 fn canonical_oversize_bytes_compute_without_retaining_them() {
     let mut answer = super::declaration_tests::declaration();
     if let ResolvedMeaning::Declaration { data, .. } = &mut answer {
-        Arc::make_mut(data).canonical = vec![7u8; 5000].into();
+        Arc::make_mut(data).canonical = Arc::from(vec![7u8; 5000]);
     }
     let host = Provider {
         calls: AtomicUsize::new(0),

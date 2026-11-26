@@ -14,16 +14,16 @@
 
 /datum/unit_test/dq_medical_dirty_domains_wake_exactly/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.body.dirty &= ~BODY_DIRTY_CONDITIONS
+	H.body.set_dirty(H.body.dirty & (~BODY_DIRTY_CONDITIONS))
 	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "test human has no heart")
 	H.injure(INJURY_BLUNT, 1, heart, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_ORGANS, "organ damage did not invalidate organ conditions")
-	H.body.dirty &= ~BODY_DIRTY_CONDITIONS
+	H.body.set_dirty(H.body.dirty & (~BODY_DIRTY_CONDITIONS))
 	H.bloodstr.add_reagent(REAGENT_ID_INAPROVALINE, 1)
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_CHEMS, "bloodstream mutation did not invalidate chem conditions")
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_TREATMENT, "bloodstream mutation did not invalidate the treatment snapshot")
-	H.body.dirty &= ~BODY_DIRTY_CONDITIONS
+	H.body.set_dirty(H.body.dirty & (~BODY_DIRTY_CONDITIONS))
 	STATE_SET(H, dq_vitals, dq_last_bodytemperature, -1)
 	H.dq_refresh_metric_dirty_state()
 	TEST_ASSERT(H.body.dirty & BODY_DIRTY_METRICS, "metric signature change did not invalidate metric conditions")
@@ -130,9 +130,9 @@
 	TEST_ASSERT(before_cure > 0, "severity must rise above 0 before testing cure")
 
 	// Inject a strong dose of cure reagent into the bloodstream and tick.
-	// bicaridaze cures internal_hemorrhage at 1.4/tick — more than the
+	// bicaridine cures internal_hemorrhage at 1.4/tick — more than the
 	// 0.25/tick passive rise. Severity should fall.
-	H.bloodstr.add_reagent(REAGENT_ID_BICARIDAZE, 50)
+	H.bloodstr.add_reagent(REAGENT_ID_BICARIDINE, 50)
 	for(var/i in 1 to 5)
 		C.tick()
 	TEST_ASSERT(C.severity < before_cure, "cure reagent did not lower severity ([before_cure] -> [C.severity])")
@@ -159,8 +159,8 @@
 
 	// Put the chem in the gut — that's where it lands when a player
 	// swallows a pill. Bloodstr is empty.
-	H.ingested.add_reagent(REAGENT_ID_BICARIDAZE, 50)
-	TEST_ASSERT(!H.bloodstr.has_reagent(REAGENT_ID_BICARIDAZE), "bloodstr should be empty pre-tick (chem is in gut)")
+	H.ingested.add_reagent(REAGENT_ID_BICARIDINE, 50)
+	TEST_ASSERT(!H.bloodstr.has_reagent(REAGENT_ID_BICARIDINE), "bloodstr should be empty pre-tick (chem is in gut)")
 	for(var/i in 1 to 5)
 		C.tick()
 	TEST_ASSERT(C.severity < before_cure, "swallowed cure should lower severity ([before_cure] -> [C.severity])")

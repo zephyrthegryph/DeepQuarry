@@ -29,6 +29,33 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
 
+/datum/design_techweb/board/chem_hot_plate
+	SET_CIRCUIT_DESIGN_NAMEDESC("hot plate")
+	id = "chem_hot_plate"
+	build_path = VARIANT(/obj/item/circuitboard/chem_hot_plate)
+	category = list(
+		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_CHEMISTRY
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/board/chem_ice_machine
+	SET_CIRCUIT_DESIGN_NAMEDESC("ice machine")
+	id = "chem_ice_machine"
+	build_path = VARIANT(/obj/item/circuitboard/chem_ice_machine)
+	category = list(
+		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_CHEMISTRY
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/board/chem_condenser
+	SET_CIRCUIT_DESIGN_NAMEDESC("condenser")
+	id = "chem_condenser"
+	build_path = VARIANT(/obj/item/circuitboard/chem_condenser)
+	category = list(
+		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_CHEMISTRY
+	)
+	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
+
 /datum/design_techweb/board/crewconsole
 	SET_CIRCUIT_DESIGN_NAMEDESC("crew monitoring console")
 	id = "crewconsole"
@@ -98,16 +125,6 @@
 		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_MEDICAL
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_SCIENCE
-
-/datum/design_techweb/board/smart_centrifuge
-	SET_CIRCUIT_DESIGN_NAMEDESC("smart centrifuge")
-	id = "smart_centrifuge"
-	// req_tech = list(TECH_MAGNET = 2, TECH_DATA = 1, TECH_MATERIAL = 2)
-	build_path = VARIANT(/obj/item/circuitboard/smart_centrifuge)
-	category = list(
-		RND_CATEGORY_MACHINE + RND_SUBCATEGORY_MACHINE_MEDICAL
-	)
-	departmental_flags = DEPARTMENT_BITFLAG_MEDICAL | DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
 
 /datum/design_techweb/board/chem_analyzer
 	SET_CIRCUIT_DESIGN_NAMEDESC("chem analyzer PRO")

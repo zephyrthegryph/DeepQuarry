@@ -20,6 +20,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 	ref_many(nameof(ore_connected_machines))
 	owns_one(nameof(materials), /datum/material_container, starts = PROC_REF(make_materials))
 	interface("OreSilo")
+	ui_shape(SHEET_MATERIAL_AMOUNT = num(), materials = list_of(row(name = schema_text(), ref = num(), amount = num(), color = schema_text(), sheets = int(), removable = bool())), machines = list_of(row(icon = schema_text(), icon_state = schema_text(), name = schema_text(), onHold = bool(), location = schema_text())), logs = list_of(row(rawMaterials = schema_text(), machineName = schema_text(), areaName = schema_text(), action = schema_text(), amount = num(), time = schema_text(), noun = schema_text())))
 	op("remove", ui_act("remove", arg("id", num())), then(PROC_REF(ui_act_remove)))
 	op("hold", ui_act("hold", arg("id", num())), then(PROC_REF(ui_act_hold)))
 	op("remove_mat", ui_act("remove_mat", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_remove_mat)))
@@ -102,8 +103,9 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials)
 	)
 
-/obj/machinery/ore_silo/tgui_static_data(mob/user)
-	return materials.tgui_static_data(user)
+/obj/machinery/ore_silo/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	return present_tgui_static_data(materials, user)
 
 /// /obj/machinery/ore_silo's window data.
 /obj/machinery/ore_silo/ui_data(datum/act/eval/A)
@@ -117,7 +119,8 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		var/atom/parent = remote.owner
 		data["machines"] += list(
 			list(
-				"icon" = icon2base64(icon(initial(parent.icon), initial(parent.icon_state), frame = 1)),
+				"icon" = initial(parent.icon), // the window draws it with DmIcon from the icon file and state
+				"icon_state" = initial(parent.icon_state),
 				"name" = parent.name,
 				"onHold" = (remote in holds),
 				"location" = get_area_name(parent, TRUE),

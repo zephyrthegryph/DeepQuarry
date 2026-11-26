@@ -3,6 +3,7 @@ CAPABILITIES(/datum/error_viewer)
 	op("refresh", ui_act(), then(PROC_REF(ui_act_refresh)))
 	op("back", ui_act(), then(PROC_REF(ui_act_back)))
 	interface("ErrorViewer", title = "Error Viewer", rights = R_ADMIN|R_DEBUG)
+	ui_shape(view_kind = enum(list("cache", "source", "entry", "unknown")), title = schema_text(), back_ref = nullable(schema_text()), linear = bool(), total_runtimes = int(), total_skipped = int(), items = nullable(list_of(row(ref = schema_text(), name = schema_text(), is_skip_count = bool()))), desc = nullable(schema_text()), usr_ref = nullable(schema_text()), usr_loc_ref = nullable(schema_text()), usr_loc_x = nullable(int()), usr_loc_y = nullable(int()), usr_loc_z = nullable(int())) // items and the entry keys are sent only by the view that shows them
 	op("set_mode", ui_act("set_mode", arg("mode", schema_text(4096))), then(PROC_REF(ui_act_set_mode)))
 	op("navigate", ui_act("navigate", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_navigate)))
 	op("vv_usr", ui_act("vv_usr"), then(PROC_REF(ui_act_vv_usr)))

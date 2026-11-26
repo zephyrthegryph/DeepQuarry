@@ -1,23 +1,19 @@
 // Syndicate (Virgo) beacon — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  temp: string;
-  selfdestructing: BooleanLike;
-  charges: number;
-  recognized: BooleanLike;
-  connection_severed: BooleanLike;
-  user_ref: string;
-  user_name: string;
-  honorific: string;
-};
+import type {
+  SyndicateBeaconActions,
+  SyndicateBeaconData,
+} from './generated/SyndicateBeacon';
 
 export const SyndicateBeacon = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<
+    SyndicateBeaconData,
+    SyndicateBeaconActions
+  >();
   const {
     temp,
     selfdestructing,
@@ -60,9 +56,9 @@ export const SyndicateBeacon = () => {
             </>
           )}
           {temp ? (
-            <Box italic color="label" mt={2}>
+            <Label italic mt={2}>
               {temp}
-            </Box>
+            </Label>
           ) : null}
         </Section>
       </Window.Content>

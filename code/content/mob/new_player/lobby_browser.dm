@@ -47,21 +47,13 @@
 	data["display_loading"] = ticker_current_state() == GAME_STATE_STARTUP
 	data["round_start"] = !ticker_mode() || ticker_current_state() <= GAME_STATE_PREGAME
 	data["round_time"] = roundduration2text()
-	data["new_news"] = client?.check_for_new_server_news()
+	data["new_news"] = !!client?.check_for_new_server_news()
 	data["can_submit_feedback"] = SSsqlite.can_submit_feedback(client)
-	data["show_station_news"] = GLOB.news_data.station_newspaper()
+	data["show_station_news"] = !!GLOB.news_data.station_newspaper()
 	data["new_station_news"] = client.prefs.lastlorenews != GLOB.news_data.newsindex
 	data["new_changelog"] = read_preference(/datum/preference/text/lastchangelog) != GLOB.changelog_hash
 	data["can_start_now"] = client.is_localhost() && check_rights_for(client, R_SERVER)
 	data["immediate_start"] = ticker_start_immediately() || ticker_current_state() > GAME_STATE_PREGAME
-
-	return data
-
-/mob/new_player/tgui_static_data(mob/user)
-	var/list/data = ..()
-
-	data["bg"] = 'icons/misc/loading.dmi'
-	data["bg_state"] = "loading"
 
 	return data
 
@@ -134,15 +126,6 @@
 	client.changes()
 	return TRUE
 
-/// The lobby's Guide button: the configured wiki, when there is one.
-/mob/new_player/proc/ui_act_open_guide(datum/act/op/A)
-	var/url = CONFIG_GET(string/wikiurl)
-	if(!url)
-		to_chat(A.actor, span_warning("This server has no guide configured."))
-		return TRUE
-	client << link(url)
-	return TRUE
-
 /mob/new_player/proc/ui_act_keyboard(datum/act/op/A)
 	var/mob/user = A.actor
 	playsound_local(user, get_sfx(SFX_KEYBOARD), vol = 20)
@@ -192,12 +175,8 @@
 
 		announce_ghost_joinleave(src)
 
-		if(client.prefs.read_preference(/datum/preference/toggle/human/name_is_always_random))
-			client.prefs.update_preference_by_type(/datum/preference/name/real_name, random_name(client.prefs.read_preference(/datum/preference/choiced/gender/identifying)))
 		observer.set_real_name(client.prefs.read_preference(/datum/preference/name/real_name))
 		observer.name = observer.real_name
-		if(!check_rights_for(client, R_HOLDER) && !CONFIG_GET(flag/antag_hud_allowed))           // For new ghosts we remove the verb from even showing up if it's not allowed.
-			grant(observer, granted_verb(/mob/observer/dead/verb/toggle_antagHUD, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG)) // Poor guys, don't know what they are missing!
 
 		bind_player(observer, key)
 

@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - rscadd: "The chat is a window like the others: it docks in the right-hand column by default and can float out and dock back, keeping its recent messages and your unsent draft."

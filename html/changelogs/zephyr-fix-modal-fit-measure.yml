@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Prompt windows fit their content by measuring its natural height, so they no longer grow in steps when the content stretches with the window."

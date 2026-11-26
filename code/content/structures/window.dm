@@ -110,7 +110,6 @@
 	visible_message(span_danger("[src] was hit by [source]."))
 	if(!reinf && get_integrity() - source.thrown_impact_force(throwingdatum) <= 7)
 		set_anchored(FALSE)
-		update_verbs()
 		step(src, get_dir(source, src))
 	..()
 
@@ -249,18 +248,16 @@ MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tin
 	take_damage(damage, BRUTE, MELEE)
 	return
 
-/obj/structure/window/handle_rotation_verbs(angle, mob/user)
-	if(is_fulltile())
-		return FALSE
-	update_nearby_tiles(need_rebuild=1) //Compel updates before
-	. = ..()
-	if(.)
-		update_nearby_tiles(need_rebuild=1)
+/// Turning the pane changes which sides block air.
+/obj/structure/window/proc/dir_changed_tiles(datum/act/notice/A)
+	update_nearby_tiles(need_rebuild=1)
 
 CAPABILITIES(/obj/structure/window)
 	configure(atom_shielding(announce_bands = TRUE, damage_wear = "cracks"))
 	setup(PROC_REF(window_setup))
-	setup(PROC_REF(register_window_controls))
+	rotatable()
+	extend(CAP_ROTATABLE, when(not(nameof(fulltile))))
+	on_notice(/datum/notice/atom_dir_change, then(PROC_REF(dir_changed_tiles)))
 	setup(PROC_REF(refresh_window_tiles))
 	smoothing()
 	rolls(nameof(tilt_sign), pick_one(list(-1, 1)))
@@ -314,19 +311,6 @@ CAPABILITIES(/obj/structure/window)
 	if(is_fulltile())
 		return TRUE
 	return ..()
-
-//Updates the availabiliy of the rotation verbs
-/obj/structure/window/proc/update_verbs()
-	var/list/rotate_caps = rotate_verb_defs()
-	if(anchored || is_fulltile())
-		revoke(src, rotate_caps[2], src)
-		revoke(src, rotate_caps[1], src)
-		revoke(src, rotate_caps[3], src)
-	else if(!is_fulltile())
-		grant(src, rotate_caps[2], src)
-		grant(src, rotate_caps[1], src)
-		grant(src, rotate_caps[3], src)
-
 
 /// Which way the sprite of a slim window leans as it takes damage, rolled once (1 or -1).
 /obj/structure/window/var/tilt_sign = 1
@@ -681,11 +665,6 @@ CAPABILITIES(/obj/machinery/button/windowtint)
 	var/obj/item/stack/material/stack_type = glasstype
 	var/material_id = stack_type ? initial(stack_type.default_type) : MAT_GLASS
 	set_rad_insulation(material_rad_insulation(material_id, is_fulltile() ? RAD_FULLTILE_WINDOW_THICKNESS_MM : RAD_WINDOW_THICKNESS_MM, RAD_VERY_LIGHT_INSULATION))
-
-/// The rotation verbs follow the window's state: a loose slim pane turns, an anchored or full-tile one does not (so none is granted
-/// first to be revoked again).
-/obj/structure/window/proc/register_window_controls()
-	update_verbs()
 
 /obj/structure/window/proc/refresh_window_tiles()
 	update_nearby_tiles(need_rebuild=1)

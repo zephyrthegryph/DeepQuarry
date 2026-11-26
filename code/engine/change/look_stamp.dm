@@ -1,14 +1,29 @@
-// ---- the default-look stamp (doc/rewrite/proposals/change_graph.md section 7, step 5) ----
+// ---- the default look: what a fresh atom already shows needs no draw (doc/rewrite/draw_on_change.md section 4) ----
 //
-// A fresh atom's first refresh is queued at creation (caps_init()) with DEP_CREATED beside DEP_ALL; any real mark clears the bit
-// (refresh_mark()). The first fresh instance of a type that the drain refreshes records whether the type's default look is empty
-// (type_look_default_empty()): it drew nothing, hides and grants no verbs, watches nothing, has no derived values, side effects or
-// periodic work. For such a type a fresh instance's first refresh does nothing, so the stamp is the mapped appearance it already has:
-// later instances are not queued at creation, and ones queued before the verdict (a map load) are dropped by the drain and by
-// refresh_settle_created() at boot. A type whose default look is not empty keeps its forced first draw.
+// A fresh atom's first refresh is queued at creation (caps_init()) with DEP_CREATED beside DEP_ALL; any real mark clears the bit (refresh_mark()). An atom
+// still carrying it is in its type's default state. The first fresh instance of a type that is refreshed records whether the type's default look is empty
+// (type_look_default_empty()): it drew nothing, hides and grants no verbs, watches nothing, has no derived values, side effects or periodic work. For such a
+// type a fresh instance's first refresh does nothing, so the stamp is the mapped appearance it already has: later instances are not queued at creation,
+// and ones queued before the verdict (a map load) are dropped when the boot settles (refresh_settle_created()) and by the drain. A type whose default look
+// is not empty keeps its first draw, which the appearance cache makes cheap (look_cache.dm).
+//
+// A type the generated declarations say derives nothing (no draw, no verbs, no capabilities, no values) is not queued at all (caps_init()). The verdict of
+// the others is learned by sampling, once per boot: nothing is written to disk. An instance of a type whose draw is keyed by the cache (look_cache_key())
+// is stamped only while its inputs are the sample's (type_look_stamped()): a fresh instance a map var edit changed is drawn.
 
 /// Type path -> TRUE (the default look is empty: no first draw) or FALSE (a first draw is kept). Absent: not sampled yet.
 GLOBAL_LIST_EMPTY(type_look_stamp)
+/// Type path -> the cache key of the sample's inputs, for a stamped type the cache can key (look_cache_key()). Absent: any instance is stamped.
+GLOBAL_LIST_EMPTY(type_look_stamp_key)
+/// Type path -> the full cache key (look_cache_key(), base vars included) of the inputs of the type's sampled instance before its first draw, for a type whose sampled
+/// draw left that instance's appearance as the map made it and that the cache can key. A fresh instance of such a type whose own key is the same has the same
+/// inputs, so its draw would leave the map's look as it is: it is spared the draw (type_look_noop_matches()). Sound because look_cache_vars_build() keys only a
+/// type whose draw reads nothing but the vars its plan names (a draw that reads a published key, a stat or a neighbour is never keyed).
+GLOBAL_ALIST_EMPTY(type_look_noop_key)
+#if defined(UNIT_TESTS)
+/// Type path -> the look key the sampled draw made, for a type in type_look_noop_key: a test build draws each spared atom once more and compares (LOOK SKIP DRIFT).
+GLOBAL_ALIST_EMPTY(type_look_noop_made)
+#endif
 /// Fresh entities the stamp spared a first refresh (the draw-queue test and the boot log read it).
 GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 
@@ -20,7 +35,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	var/flags = GLOB.type_derives_cache[A.type]
 	if(isnull(flags) || (flags & (TYPE_DERIVES_PENDING | TYPE_DERIVES_SIDE | TYPE_DERIVES_DEPS)))
 		return FALSE
-	if(A.periodic_cadence || A.periodic_interval || LAZYLEN(A.open_tguis))
+	if(LAZYLEN(A.open_tguis))
 		return FALSE
 	if(A.rx && (!isnull(A.rx.look_key) || A.rx.refresh_hidden_verbs || A.rx.refresh_granted_verbs))
 		return FALSE
@@ -28,21 +43,60 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 		return FALSE // it watches something or flashes: not a look the mapped appearance stands for
 	return TRUE
 
-/// TRUE when a fresh `D` of a stamped type needs no first refresh (its type's verdict is in and its default look is empty).
+/// TRUE when a fresh `D` of a stamped type needs no first refresh: its type's verdict is in and its default look is empty, and (for a type whose draw the
+/// cache keys) its inputs are the sample's.
 /proc/type_look_stamped(datum/D)
-	if(!GLOB.type_look_stamp[D.type] || D.periodic_cadence || D.periodic_interval || LAZYLEN(D.open_tguis))
+	if(!GLOB.type_look_stamp[D.type] || LAZYLEN(D.open_tguis))
 		return FALSE
 	var/flags = GLOB.type_derives_cache[D.type]
-	return !isnull(flags) && !(flags & TYPE_DERIVES_PENDING)
+	if(isnull(flags) || (flags & TYPE_DERIVES_PENDING))
+		return FALSE
+	var/sample_key = GLOB.type_look_stamp_key[D.type]
+	if(sample_key && isatom(D) && look_cache_key(D, FALSE) != sample_key)
+		return FALSE
+	return TRUE
+
+/// TRUE when a fresh `A` of a type whose sampled draw left the map's look as it was has the sample's inputs (the same full cache key): its first draw would leave
+/// the look as it is, so it owes none.
+/proc/type_look_noop_matches(atom/A)
+	var/sample_key = GLOB.type_look_noop_key[A.type]
+	if(!sample_key || LAZYLEN(A.open_tguis))
+		return FALSE
+	if(look_cache_key(A, TRUE) != sample_key)
+		return FALSE
+#if defined(UNIT_TESTS)
+	var/made = GLOB.type_look_noop_made[A.type]
+	var/key = refresh_look_draw(A, FALSE, null)
+	if(key != made && !GLOB.look_cache_drift_expected)
+		stack_trace("LOOK CACHE DRIFT: [A.type] has the inputs of its type's no-op sample but a fresh draw does not make its look ([refresh_key_difference(made, key)])")
+#endif
+	return TRUE
+
+/// Whether the draw just made for `A` (the shared builder still holds it) is one a fresh instance can be spared: it sets nothing besides the look the map already
+/// shows (no held state, light, effect, flick or watch), the type derives nothing else, and the atom hides and grants no verbs and watches nothing.
+/proc/type_look_noop_sample(atom/A)
+	var/flags = GLOB.type_derives_cache[A.type]
+	if(isnull(flags) || (flags & (TYPE_DERIVES_PENDING | TYPE_DERIVES_SIDE | TYPE_DERIVES_DEPS)))
+		return FALSE
+	if(LAZYLEN(A.open_tguis) || (A.rx && (A.rx.refresh_hidden_verbs || A.rx.refresh_granted_verbs)) || capability_data(A)?[/datum/cap_engine_state])
+		return FALSE
+	var/datum/look/L = GLOB.look_builder
+	return !(L.held_state || L.light_spec || L.effects || L.flick_state || L.watched || L.watched_worn || L.watched_looks)
 
 /// Records the stamp from a fresh instance's first refresh, once per type.
 /proc/type_look_stamp_record(datum/D)
-	if(isnull(GLOB.type_look_stamp[D.type]))
-		GLOB.type_look_stamp[D.type] = type_look_default_empty(D)
+	if(!isnull(GLOB.type_look_stamp[D.type]))
+		return
+	var/stamped = type_look_default_empty(D)
+	GLOB.type_look_stamp[D.type] = stamped
+	if(stamped && isatom(D))
+		var/key = look_cache_key(D, FALSE)
+		if(key)
+			GLOB.type_look_stamp_key[D.type] = key
 
-/// Boot (after every system's members are ready): one fresh sample per type still waiting for a verdict is refreshed now, then every
-/// queued fresh instance of a type whose default look is empty leaves the queue. A map load queues every atom before any drain has run
-/// (310 k space turfs on the station map), and a clientless world does not run the presentation lane until someone connects.
+/// Boot (after every system's members are ready): one fresh sample per type still waiting for a verdict is refreshed now, then every queued fresh instance
+/// of a type whose default look is empty leaves the queue, and each held atom (boot_created_hold()) is released by its type's verdict. What is left to draw
+/// goes to the draw queue (draw_file()) or stays in the refresh queue when it has outputs besides its look.
 /proc/refresh_settle_created()
 	var/start = REALTIMEOFDAY
 	var/list/Q = GLOB.refresh_queue
@@ -51,125 +105,74 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	var/list/sampled = list()
 	for(var/i in 1 to length(Q))
 		var/datum/D = Q[i]
-		if(isnull(D) || !(D.refresh_queued & DEP_CREATED) || sampled[D.type] || !isnull(GLOB.type_look_stamp[D.type]) || QDELETED(D))
+		if(isnull(D) || sampled[D.type] || QDELETED(D) || !D.refresh_queued)
+			continue
+		// A fresh instance samples the verdict. A type every instance of which was written during init has none left on its creation mark: it is drawn
+		// with the rest.
+		if(!((D.refresh_queued & DEP_CREATED) && isnull(GLOB.type_look_stamp[D.type])))
 			continue
 		sampled[D.type] = TRUE
 		var/pending = D.refresh_queued & ~DEP_CREATED
 		var/bits = D.refresh_bits
 		D.refresh_queued = 0
 		D.refresh_bits = 0
+		refresh_queue_drop(D)
 		if(!refresh_wanted_queued(D))
 			continue
-		var/gameplay_before = isatom(D) ? look_gameplay_state(D) : null
+		var/atom/sample_atom = isatom(D) ? D : null
+		var/sample_appearance = sample_atom?.appearance // to tell whether the sampled draw changed what the map made
+		var/sample_key = (sample_atom && !ismob(sample_atom)) ? look_cache_key(sample_atom, TRUE) : null
 		try
 			refresh_one(D, bits, pending)
 		catch(var/exception/e)
 			dq_report_caught(e, "refresh of [D.type]")
 			continue
 		type_look_stamp_record(D)
-		if(!isnull(gameplay_before))
-			look_lazy_record(D, gameplay_before)
+		if(sample_key && !GLOB.type_look_stamp[D.type] && sample_atom.appearance == sample_appearance && type_look_noop_sample(sample_atom))
+			GLOB.type_look_noop_key[D.type] = sample_key
+#if defined(UNIT_TESTS)
+			GLOB.type_look_noop_made[D.type] = sample_atom.rx?.look_key
+#endif
+	var/sampled_at = REALTIMEOFDAY
 	var/list/kept = list()
 	var/skipped = 0
+	var/filed = 0
 	for(var/datum/D as anything in Q)
 		if(isnull(D) || !D.refresh_queued)
 			continue
-		if(D.refresh_queued & DEP_CREATED && type_look_stamped(D))
+		if((D.refresh_queued & DEP_CREATED) && (type_look_stamped(D) || (isatom(D) && type_look_noop_matches(D))))
 			D.refresh_queued = 0
 			D.refresh_bits = 0
 			skipped++
 			continue
+		if(isatom(D) && !refresh_eager(D))
+			filed++ // its look is all it owes: the draw queue takes it, by the chunk it stands in
+			draw_file(D)
+			continue
 		kept += D
 	refresh_queue_replace(kept)
+	var/walked_at = REALTIMEOFDAY
+	skipped += boot_created_release() // the atoms held by type while the map loaded: an empty default look owes nothing, the rest are marked now
+	log_world("refresh settle phases (ms): sample [(sampled_at - start) * 100], queue walk [(walked_at - sampled_at) * 100], held release [(REALTIMEOFDAY - walked_at) * 100]")
 	GLOB.type_look_stamp_skipped += skipped
 	log_world("refresh queue by kind after the settle: [refresh_kind_census(Q)]")
-	log_world("refresh settle: [before] queued at boot, [length(sampled)] type(s) sampled, [skipped] fresh atom(s) dropped (empty default look), [length(Q)] left, [(REALTIMEOFDAY - start) * 100] ms")
+	log_world("refresh settle: [before] queued at boot, [length(sampled)] type(s) sampled, [skipped] fresh atom(s) dropped (empty default look), [filed] first draw(s) filed by chunk, [length(Q)] left in the refresh queue, [draw_depth()] filed in all, [(REALTIMEOFDAY - start) * 100] ms")
 
-/// Queued first draws that ran ahead of the backlog because a client was near (logged with the periodic look stats).
-GLOBAL_VAR_INIT(refresh_near_drawn, 0)
-
-/// Boot: draws every first refresh the settle left queued, with no budget (nobody is connected to wait on it, and the same draws would otherwise
-/// run in the presentation lane for a minute after "Initializations complete", costing the first players their frame time). One line per pass
-/// (queued, left, milliseconds) so a slow or stuck boot shows where it is.
+/// Boot: draws everything still owed, with no budget (a test world reads looks right after boot, and nobody is connected to wait on a server's boot).
+/// One line per pass (queued, left, milliseconds) so a slow or stuck boot shows where it is.
 /proc/refresh_boot_drain()
 	var/start = REALTIMEOFDAY
-	var/before = length(GLOB.refresh_queue)
+	var/before = length(GLOB.refresh_queue) + draw_depth()
 	var/passes = 0
-	while(length(GLOB.refresh_queue) && passes < 20)
+	while((length(GLOB.refresh_queue) || length(GLOB.draw_buckets)) && passes < 20)
 		passes++
-		var/queued = length(GLOB.refresh_queue)
+		var/queued = length(GLOB.refresh_queue) + draw_depth()
 		var/pass_start = REALTIMEOFDAY
 		refresh_drain(null)
-		log_world("refresh boot drain pass [passes]: [queued] queued, [length(GLOB.refresh_queue)] left, [(REALTIMEOFDAY - pass_start) * 100] ms")
+		draw_drain(null)
+		log_world("refresh boot drain pass [passes]: [queued] queued, [length(GLOB.refresh_queue) + draw_depth()] left, [(REALTIMEOFDAY - pass_start) * 100] ms")
 	world.presentation_flush()
-	log_world("refresh boot drain: [before] queued, [length(GLOB.refresh_queue)] left after [passes] pass(es), [(REALTIMEOFDAY - start) * 100] ms")
-
-// ---- lazy first draw (the parked backlog) ----
-//
-// A server leaves the map's first draws to the presentation lane (host.dm). Most of them are of atoms nobody looks at before something else marks them, so
-// the ones whose first draw is purely a picture do not wait in the queue at all: they are parked (DEP_PARKED), draw when a client comes near
-// (interest_enter(), interest.dm) and draw, with everything else they owe, the moment anything marks them (refresh_mark()). A type qualifies when its sampled first
-// draw changed nothing but the look (no light, opacity, density or verbs) and the type derives nothing else (no values, side effects, capabilities that
-// watch, periodic work, windows). The verdict comes from one fresh instance per type, as the default-look stamp's does.
-
-/// Type path -> TRUE: the sampled first draw changed only the look. Absent or FALSE: the type's first draws stay queued.
-GLOBAL_LIST_EMPTY(type_look_lazy)
-/// First draws parked at boot, and the ones drawn since because a client came near.
-GLOBAL_VAR_INIT(refresh_parked, 0)
-GLOBAL_VAR_INIT(refresh_parked_near, 0)
-
-/// What a draw must leave alone for the atom's first draw to be deferrable: everything that is not the picture but still shapes play.
-/proc/look_gameplay_state(atom/A)
-	return "[A.luminosity]|[A.opacity]|[A.density]|[A.look_light_key()]|[length(A.verbs)]"
-
-/// Type path -> why its first draws stay queued (absent for a lazy type): the rule that excluded it, for the park census.
-GLOBAL_LIST_EMPTY(type_look_lazy_why)
-
-/// After a fresh instance's first refresh: records the type's lazy verdict (once per type) from whether the refresh changed only its look.
-/proc/look_lazy_record(atom/A, gameplay_before)
-	if(!isnull(GLOB.type_look_lazy[A.type]))
-		return
-	var/why = look_lazy_block(A)
-	if(isnull(why) && look_gameplay_state(A) != gameplay_before)
-		why = "the first draw moved light, opacity, density or verbs"
-	GLOB.type_look_lazy[A.type] = isnull(why)
-	if(why)
-		GLOB.type_look_lazy_why[A.type] = why
-
-/// The rule that keeps `A`'s type from deriving nothing but a look, or null when it does.
-/proc/look_lazy_block(atom/A)
-	if(ismob(A))
-		return "mob"
-	var/flags = GLOB.type_derives_cache[A.type]
-	if(isnull(flags))
-		return "derive flags unknown"
-	if(flags & TYPE_DERIVES_PENDING)
-		return "derives: pending"
-	if(flags & TYPE_DERIVES_SIDE)
-		return "derives: side effects"
-	if(flags & TYPE_DERIVES_DEPS)
-		return "derives: values (deps)"
-	if(A.periodic_cadence || A.periodic_interval)
-		return "periodic work"
-	if(LAZYLEN(A.open_tguis))
-		return "open window"
-	if(A.rx && (A.rx.refresh_hidden_verbs || A.rx.refresh_granted_verbs))
-		return "hides or grants verbs"
-	if(capability_data(A)?[/datum/cap_engine_state])
-		return "capability watches or flashes"
-	return null
-
-/// Whether `A` derives nothing but a look: the type_look_default_empty() test, minus the look.
-/proc/look_cosmetic_only(atom/A)
-	return isnull(look_lazy_block(A))
-
-/// Parked first draws that a real mark had touched before the park (look-only marks made during init); the boot log reads it.
-GLOBAL_VAR_INIT(refresh_parked_marked, 0)
-
-/// TRUE when everything pending on `D` that would do anything for it is presentation: its queued bits restricted to its live outputs are within DEP_DRAW.
-/proc/refresh_pending_look_only(datum/D)
-	var/pending = D.refresh_queued & ~(DEP_CREATED | DEP_PARKED)
-	return !(pending & refresh_live_outputs(D) & ~DEP_DRAW)
+	log_world("refresh boot drain: [before] queued, [length(GLOB.refresh_queue) + draw_depth()] left after [passes] pass(es), [(REALTIMEOFDAY - start) * 100] ms")
 
 /// The kinds of work queued in `Q`, as one line: entries whose live pending bits are look only, values, effects, UI/periodic, and entries with nothing live
 /// (a mark that does nothing). Counted per entry, an entry counts under each kind it holds; `datums` is the part of `entries` that are not atoms.
@@ -187,7 +190,7 @@ GLOBAL_VAR_INIT(refresh_parked_marked, 0)
 		entries++
 		if(!isatom(D))
 			datums++
-		var/live = (D.refresh_queued & ~(DEP_CREATED | DEP_PARKED)) & refresh_live_outputs(D)
+		var/live = (D.refresh_queued & ~DEP_CREATED) & refresh_live_outputs(D)
 		if(!live)
 			dead++
 			continue
@@ -197,84 +200,93 @@ GLOBAL_VAR_INIT(refresh_parked_marked, 0)
 			values++
 		if(live & (DEP_PUSH | DEP_LEGACY))
 			effects++
-		if(live & (DEP_UI | DEP_RUN))
+		if(live & DEP_UI)
 			windows++
-	return "[entries] entries ([datums] datums): look [look], values [values], effects [effects], ui/run [windows], nothing live [dead]"
+	return "[entries] entries ([datums] datums): look [look], values [values], effects [effects], ui [windows], nothing live [dead]"
 
-/// Whether a fresh queued `A` may be parked: its type's verdict is lazy and this instance has nothing the verdict did not see.
-/proc/look_lazy_ok(atom/A)
-	if(!GLOB.type_look_lazy[A.type] || A.periodic_cadence || A.periodic_interval || LAZYLEN(A.open_tguis))
+// ---- the boot hold: the fresh atoms of a map load wait by type for their type's verdict ----
+//
+// A type's look verdict (type_look_stamp) is learned from one sampled first draw. Before it is known, a map load used to queue every fresh atom for its
+// first refresh (519 k at a full-map boot), and the settle walked them all to drop the 368 k of types whose default look is empty. Now the first fresh
+// instance of a type with no verdict yet is queued as its sample, and every later one is held out of every queue (DF_BOOT_HELD), in its type's bucket.
+// refresh_settle_created() decides each bucket from the sample: an empty default look owes nothing; any other is marked for its first refresh as
+// before. A write to a held atom marks nothing: the settle draws it once, with what it was written, never an atom at a time.
+
+/// type -> the fresh atoms of a map load held for the type's verdict (boot_created_hold()). Empty outside a load's settle window.
+GLOBAL_LIST_EMPTY(boot_created_buckets)
+/// type -> TRUE once a fresh instance of the type has been queued as its sample during a map load.
+GLOBAL_LIST_EMPTY(boot_created_sampled)
+/// TRUE once the boot settle ran: a later map load (an expedition, a template) queues its fresh atoms as before, since no settle follows it.
+GLOBAL_VAR_INIT(boot_created_settled, FALSE)
+/// Fresh atoms held by type, and how many of them the settle released without a draw.
+GLOBAL_VAR_INIT(boot_created_held, 0)
+GLOBAL_VAR_INIT(boot_created_dropped, 0)
+
+/// caps_init(), for a fresh `A` not yet queued: TRUE when it is held instead of queued (made by the boot map load, a type with no verdict, its sample
+/// already queued). FALSE queues it as before; the first such instance of a type is recorded as the sample.
+/// Only an atom on the map (a turf, or anything with a turf under it) waits: a client's HUD (its plane masters and fullscreen overlays, which live in
+/// nullspace) made while the server boots, for a player who connects early, is drawn at once.
+/proc/boot_created_hold(atom/A)
+	if(GLOB.boot_created_settled || ismob(A) || isnull(get_turf(A)) || !materialization_host().frame_running())
+		return FALSE // the cheap tests first: this runs for every atom created at boot
+	if(!isnull(GLOB.type_look_stamp[A.type]))
 		return FALSE
-	return !ismob(A)
+	if(!GLOB.boot_created_sampled[A.type])
+		GLOB.boot_created_sampled[A.type] = TRUE
+		return FALSE
+	var/list/bucket = GLOB.boot_created_buckets[A.type]
+	if(!bucket)
+		bucket = list()
+		GLOB.boot_created_buckets[A.type] = bucket
+	bucket += A
+	A.datum_flags |= DF_BOOT_HELD
+	GLOB.boot_created_held++
+	return TRUE
 
-/// Boot, after refresh_settle_created(): every fresh queued atom of a lazy type leaves the queue, parked. Returns how many; logged with the milliseconds.
-/proc/refresh_park_backlog()
-	var/start = REALTIMEOFDAY
-#ifdef BENCHMARK
-	if(text2num(world.params?["bench_no_park"]))
-		return 0 // --arg=no_park=1: the same boot without parking, for a before/after
-#endif
-	var/list/Q = GLOB.refresh_queue
-	log_world("refresh queue by kind before the park: [refresh_kind_census(Q)]")
-	var/list/kept = list()
-	var/parked = 0
-	var/marked_parked = 0
-	for(var/datum/D as anything in Q)
-		if(isnull(D) || !D.refresh_queued || D.refresh_queued == DEP_PARKED)
-			continue // (a stale duplicate of an atom already parked leaves too)
-		// What is pending is judged by kind, not by whether a real mark touched it: a lazy type's live outputs are its look alone, so a mark made
-		// while the map was still initializing (a pipe joining its neighbours, a cable's network) is presentation too and waits for a viewer like
-		// the creation mark does (doc/rewrite/proposals/demand_driven_refresh.md 2.2).
-		if(isatom(D) && look_lazy_ok(D) && refresh_pending_look_only(D))
-			if(!(D.refresh_queued & DEP_CREATED))
-				marked_parked++
-			D.refresh_queued = DEP_PARKED
-			D.refresh_bits = 0
-			parked++
-			continue
-		kept += D
-	refresh_queue_replace(kept)
-	GLOB.refresh_parked += parked
-	GLOB.refresh_parked_marked += marked_parked
-	GLOB.refresh_park_residual = refresh_park_residual_text(Q)
-	log_world("refresh park: [parked] first draw(s) parked for a client to come near ([marked_parked] of them marked since creation, look only), [length(Q)] kept queued, [(REALTIMEOFDAY - start) * 100] ms")
-	log_world("refresh queue by kind after the park: [refresh_kind_census(Q)]")
-	log_world("refresh park residual (kept queued, by type and the rule that kept it): [GLOB.refresh_park_residual]")
-	return parked
+/// refresh_forget(): a held atom is destroyed before the settle: it leaves its bucket (it was appended last, so the search from the end is short).
+/proc/boot_created_forget(datum/D)
+	D.datum_flags &= ~DF_BOOT_HELD
+	var/list/bucket = GLOB.boot_created_buckets?[D.type]
+	bucket?.Remove(D)
 
-/// The park census of what stayed queued: the busiest types with the rule that excluded each ("not sampled" when no instance of the type was refreshed first).
-GLOBAL_VAR_INIT(refresh_park_residual, "")
-
-/// The `top` types with the most queued entries in `Q`, each with the rule that kept it out of the park, as one line. Totals by rule come first.
-/proc/refresh_park_residual_text(list/Q, top = 25)
-	var/list/by_type = list()
-	var/list/by_rule = list()
-	for(var/datum/D as anything in Q)
-		if(isnull(D))
-			continue
-		var/why
-		if(!isatom(D))
-			why = "not an atom"
-		else if(isnull(GLOB.type_look_lazy[D.type]))
-			why = "type not sampled"
-		else if(GLOB.type_look_lazy[D.type])
-			why = "instance: periodic work or open window"
-		else
-			why = GLOB.type_look_lazy_why[D.type] || "verdict false"
-		var/key = "[D.type] ([why])"
-		by_type[key] = (by_type[key] || 0) + 1
-		by_rule[why] = (by_rule[why] || 0) + 1
-	var/text = "rules:"
-	for(var/rule in by_rule)
-		text += " [rule] x[by_rule[rule]],"
-	text += " types:"
-	for(var/n in 1 to top)
+/// refresh_settle_created(), once the samples are drawn: each bucket by its type's verdict. Returns how many held atoms owed nothing.
+/proc/boot_created_release()
+	var/list/buckets = GLOB.boot_created_buckets
+	GLOB.boot_created_buckets = list()
+	GLOB.boot_created_sampled = list()
+	GLOB.boot_created_settled = TRUE
+	. = 0
+	var/list/marked = list() // type -> held atoms of it that owe a first draw: what the boot will draw
+	var/same_as_map = 0 // of the dropped, atoms with the inputs of a sample whose draw showed what the map already shows
+	for(var/type in buckets)
+		var/list/bucket = buckets[type]
+		var/empty = GLOB.type_look_stamp[type]
+		for(var/atom/A as anything in bucket)
+			if(QDELETED(A) || !(A.datum_flags & DF_BOOT_HELD))
+				continue // deleted, or released already
+			A.datum_flags &= ~DF_BOOT_HELD
+			if(empty && type_look_stamped(A))
+				.++
+				continue
+			if(type_look_noop_matches(A))
+				.++
+				same_as_map++
+				continue
+			marked["[type]"]++
+			refresh_mark(A, DEP_ALL)
+			A.refresh_queued |= DEP_CREATED
+	GLOB.boot_created_dropped += .
+	var/text = "held atoms released to draw, by type (stamp verdict in brackets)"
+	var/shown = 0
+	var/total = 0
+	for(var/name in marked)
+		total += marked[name]
+	while(shown < 15 && length(marked))
 		var/best
-		for(var/key in by_type)
-			if(isnull(best) || by_type[key] > by_type[best])
-				best = key
-		if(isnull(best))
-			break
-		text += " [best] x[by_type[best]],"
-		by_type -= best
-	return text
+		for(var/name in marked)
+			if(isnull(best) || marked[name] > marked[best])
+				best = name
+		text += "; [best] x[marked[best]] [GLOB.type_look_stamp[text2path(best)] ? "(stamped, instances differ from the sample)" : "(draws something)"]"
+		marked -= best
+		shown++
+	log_world("boot release: [total] held atom(s) marked for a first draw ([same_as_map] of the dropped ones have the inputs of a sample whose draw left the map's look as it was), [.] dropped without a draw. [text]")

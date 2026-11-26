@@ -1,9 +1,0 @@
-@FIXTURE@, line 4, column 31:
-error: undefined proc: "end_bound" on (global)
-
-@FIXTURE@, line 4, column 15:
-error: undefined proc: "dimension" on (global)
-
-@FIXTURE@, line 5, column 9:
-error: undefined proc: "missing_body" on (global)
-

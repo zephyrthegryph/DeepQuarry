@@ -31,6 +31,11 @@
 	display_name = "Species"
 	pref_keys = list("species", "custom_species", "custom_base", "play_mode")
 
+/// The wire shape of /datum/preference_editor/species_picker's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_species_picker, row(current_species = schema_text(), custom_species = schema_text()))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_species_picker_static, row(all_species = map_of(schema_text(), row(name = schema_text(), pitch = schema_text(), blurb = schema_text(), thumb_b64 = nullable(schema_text())))))
+
 /datum/preference_editor/species_picker/build_ui_data(datum/preferences/preferences)
 	var/play_mode = preferences.read_preference(/datum/preference/text/human/play_mode) || "human"
 	var/current_species
@@ -77,11 +82,19 @@ GLOBAL_PROTECT(dq_species_preview_cache_warm_init)
 
 /proc/dq_warm_species_preview_cache()
 	. = list()
+	var/list/slow = list()
 	for(var/species_name in GLOB.playable_species)
 		var/datum/species/S = GLOB.all_species[species_name]
 		if(!S || species_name == SPECIES_CUSTOM)
 			continue
-		dq_species_preview_b64(S)
+		// A species with a "preview" state is filed now. One without needs a mannequin built (a few hundred ms, the body's icons): those are
+		// built one at a time in the background once the world runs (dq_species_preview_warm_next), so nobody's picker pays for one.
+		if(icon_exists(S.icobase, "preview"))
+			dq_species_preview_b64(S)
+		else
+			slow += species_name
+	if(length(slow))
+		after(null, 10 SECONDS, GLOBAL_PROC_REF(dq_species_preview_warm_next), clock = CLOCK_WORLD, with = list(slow))
 	// Synthetic Robot / pAI entries share the same cache so the picker can
 	// render them through the same <img data:...> path as real species.
 	var/icon/r = icon('icons/mob/robot/default.dmi', "default", dir = SOUTH, frame = 1, moving = FALSE)
@@ -89,28 +102,110 @@ GLOBAL_PROTECT(dq_species_preview_cache_warm_init)
 	var/icon/p = icon('icons/mob/pai.dmi', "pai-repairbot", dir = SOUTH, frame = 1, moving = FALSE)
 	GLOB.dq_species_preview_cache["__pai__"] = icon2base64(p)
 
+/// A client is joining now (its login checks are outstanding, or it connected in the last minute): the background thumbnail builds wait.
+/proc/dq_species_preview_someone_joining()
+	for(var/client/C as anything in GLOB.clients)
+		if(C.login_pending || ELAPSED(C, connection_time, CLOCK_WORLD) < 1 MINUTES)
+			return TRUE
+	return FALSE
+
+/// Builds the thumbnail of the next species in `remaining` (one mannequin per step, two seconds apart), then the next. A step waits while a
+/// client is joining or the tick is already over its budget (a mannequin costs a few hundred ms). Logs each build and the end.
+/proc/dq_species_preview_warm_next(list/remaining, built = 0, deferred = 0)
+	if(length(remaining) && (dq_species_preview_someone_joining() || KERNEL_OVER_BUDGET))
+		after(null, 2 SECONDS, GLOBAL_PROC_REF(dq_species_preview_warm_next), clock = CLOCK_WORLD, with = list(remaining, built, deferred + 1))
+		return
+	while(length(remaining))
+		var/species_name = remaining[1]
+		remaining.Cut(1, 2)
+		var/datum/species/S = GLOB.all_species[species_name]
+		if(!S || GLOB.dq_species_preview_cache[species_name])
+			continue
+		var/started = TICK_USAGE_REAL
+		dq_species_preview_b64(S)
+		built++
+		log_world("SPECIES_WARMUP built the [species_name] thumbnail mannequin in [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started), 0.1)] ms ([length(remaining)] left)")
+		break
+	if(length(remaining))
+		after(null, 2 SECONDS, GLOBAL_PROC_REF(dq_species_preview_warm_next), clock = CLOCK_WORLD, with = list(remaining, built, deferred))
+		return
+	log_world("SPECIES_WARMUP done: [built] species built in the background, [deferred] steps waited for a joining client or a busy tick")
+	GLOB.dq_species_preview_warmed = TRUE
+
+/// TRUE once the background thumbnail builds after init are done (the warm-up test reads it).
+GLOBAL_VAR_INIT(dq_species_preview_warmed, FALSE)
+
+/// Species thumbnails rendering in the portrait cache: species name -> when it was asked for (a render that never landed is asked again).
+GLOBAL_LIST_EMPTY(dq_species_preview_waits)
+/// The portrait key of each rendering thumbnail -> the names of the species waiting on it, for the waiter.
+GLOBAL_LIST_EMPTY(dq_species_preview_keys)
+GLOBAL_DATUM_INIT(dq_species_preview_waiter, /datum/dq_species_preview_waiter, new)
+
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/dq_species_preview_waiter)
+/// Called back by the portrait cache when a species thumbnail lands.
+/datum/dq_species_preview_waiter
+
+/// The thumbnail landed: filed for every species that asked for this picture (two species whose mannequins look alike share one render and
+/// one callback, so every pending ask it answers is filed, not the first only), and every player's species picker catalog is rebuilt and
+/// pushed (the placeholder is replaced in place).
+/datum/dq_species_preview_waiter/proc/landed(datum/portrait/P)
+	var/filed = 0
+	for(var/asked in GLOB.dq_species_preview_keys.Copy())
+		if(!P.answers(asked))
+			continue
+		for(var/species_name in GLOB.dq_species_preview_keys[asked])
+			GLOB.dq_species_preview_waits -= species_name
+			GLOB.dq_species_preview_cache[species_name] = P.b64
+			filed++
+			log_world("SPECIES_THUMB filed the [species_name] thumbnail from portrait [P.key || "(uncached)"]")
+		GLOB.dq_species_preview_keys -= asked
+	if(!filed)
+		return
+	var/datum/preference_editor/editor = GLOB.preference_editors_by_key["species_picker"]
+	if(!editor)
+		return
+	for(var/ckey in GLOB.preferences_datums)
+		var/datum/preferences/prefs = GLOB.preferences_datums[ckey]
+		if(!prefs)
+			continue
+		if(islist(prefs.dq_editor_static_cache))
+			prefs.dq_editor_static_cache -= editor.key
+		LAZYINITLIST(prefs.dq_editor_static_versions)
+		prefs.dq_editor_static_versions[editor.key] = (prefs.dq_editor_static_versions[editor.key] || 1) + 1
+		prefs.dq_schedule_static_push()
+
 /proc/dq_species_preview_b64(datum/species/S)
 	if(!istype(S))
 		return null
 	if(GLOB.dq_species_preview_cache[S.name])
 		return GLOB.dq_species_preview_cache[S.name]
+	var/asked_at = GLOB.dq_species_preview_waits[S.name]
+	if(asked_at && TIME_NOW(CLOCK_WORLD) - asked_at < 15 SECONDS)
+		return null // rendering: the waiter files it and pushes the pickers (a render that never landed is asked again after 15 s)
 	var/icon/result_icon
 	// Fast path: species's icobase has a "preview" state. Pure icon flatten.
 	if(icon_exists(S.icobase, "preview"))
 		result_icon = icon(S.icobase, "preview", dir = SOUTH, frame = 1, moving = FALSE)
 	else
-		// Slow path for species without a "preview" state (Human, Alrune,
-		// etc.): spawn a throwaway mannequin in null-space, set its species,
-		// flatten to PNG, qdel. ~1s per species, only runs once per world,
-		// wrapped in try/catch so a single bad species can't hang the
-		// init loop. Pre-warmed at world startup via dq_warm_species_preview_cache.
+		// Slow path for species without a "preview" state (Human, Alrune, etc.): a throwaway mannequin in null-space wears the species, and
+		// the shared portrait cache renders it off the tick (the translation reads the look now; the mannequin goes at once). The picker
+		// shows no thumbnail until it lands, then every open picker gets it (dq_species_preview_waiter/landed).
 		try
 			var/mob/living/carbon/human/dummy/mannequin/M = new(null)
 			rel_set(M, nameof(M.dna), new /datum/dna(null))
 			M.set_species(S.name)
 			draw_now(M)
-			result_icon = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)
+			var/datum/portrait/P = portrait_request(M, SOUTH, GLOB.dq_species_preview_waiter, TYPE_PROC_REF(/datum/dq_species_preview_waiter, landed))
+			if(!P)
+				var/key = portrait_key_of(M, SOUTH)
+				if(key)
+					LAZYADD(GLOB.dq_species_preview_keys[key], S.name)
+					GLOB.dq_species_preview_waits[S.name] = TIME_NOW(CLOCK_WORLD)
 			spent(M)
+			if(!P?.b64)
+				return null
+			GLOB.dq_species_preview_cache[S.name] = P.b64
+			return P.b64
 		catch(var/exception/e)
 			dq_report_caught(e, "dq_species_preview_b64 slow path failed for [S.name]")
 			return null

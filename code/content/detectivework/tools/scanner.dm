@@ -246,12 +246,6 @@ CAPABILITIES(/obj/item/detective_scanner)
 		rel_clear(src, nameof(stored))
 		to_chat(user, span_notice("Forensic data erase complete."))
 
-/obj/item/detective_scanner/advanced
-	name = "advanced forensic scanner"
-	icon_state = "forensic_neo"
-	reveal_fibers = TRUE
-	reveal_incompletes = TRUE
-
 /proc/detective_scanner_blood_report(mob/user, atom/target)
 	var/list/blooddna = target?.forensic_data?.get_blooddna()
 	for(var/blood in blooddna)

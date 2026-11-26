@@ -97,7 +97,7 @@
 		else
 			hud.screen_loc = ui_lhand
 
-/obj/item/grab/periodic_step()
+/obj/item/grab/proc/grab_tick()
 	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	if(QDELETED(src)) // GC is trying to delete us, we'll kill our processing so we can cleanly GC
 		return PROCESS_KILL

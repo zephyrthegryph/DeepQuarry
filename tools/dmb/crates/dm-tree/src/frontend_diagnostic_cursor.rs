@@ -11,102 +11,6 @@ enum CapturedCursor {
     },
 }
 impl ColdFrontend {
-    /// Factory issuance over original primary newline cursors and the existing
-    /// checked diagnostic continuation resolver. No source text is reparsed.
-    pub(super) fn issue_declaration_compatibility(&mut self) {
-        use super::source_export_mapping::DeclarationCompatibility;
-        let mut rows = Vec::new();
-        for (ordinal, cursor) in self.source_export_mapping.primary_declaration_cursors() {
-            if self.expanded.text.as_bytes().get(cursor) != Some(&10u8) {
-                continue;
-            }
-            let before = self.location(cursor);
-            let next_token = dm_syntax::next_significant_token(&self.expanded.text, cursor + 1);
-            let next = next_token.as_ref().and_then(|token| self.location(token.span.start));
-            if before
-                .as_ref()
-                .zip(next.as_ref())
-                .is_some_and(|(a, b)| a.include_occurrence == b.include_occurrence)
-            {
-                continue;
-            }
-            let mut row = DeclarationCompatibility {
-                ordinal,
-                occurrence: None,
-                line: 0,
-                column: 0,
-                source_len: 0,
-                logical_boundary: true,
-            };
-            if let Some(CapturedCursor::Boundary {
-                location: Some(location),
-                ..
-            }) = self.diagnostic_cursor_kind(cursor + 1, true)
-            {
-                if let Some(included) = self.plan.occurrences().get(location.include_occurrence) {
-                    if let Some(eof) = included.logical_eof_cursor() {
-                        if let (Some(file), Some(acquired)) = (
-                            self.files
-                                .iter()
-                                .find(|file| file.path == included.path && file.captured),
-                            self.plan
-                                .source_acquisitions()
-                                .get(&location.include_occurrence),
-                        ) {
-                            if included.parent.is_none()&&location.line==eof.line()
-                                &&location.encounter_ordinal==eof.encounter()
-                                &&location.span.start as usize==file.text.len()
-                                &&location.span.start==location.span.end
-                                &&acquired.source_text().same_view(&file.text)
-                                // Pinned LocationTracker.next() advances after a real LF;
-                                // Lexer.next() then emits its final newline at column1.
-                                // Without real LF the planner has not proved that column.
-                                &&file.text.ends_with('\n')
-                            {
-                                row.occurrence = Some(location.include_occurrence);
-                                row.line = eof.line();
-                                row.column = 1;
-                                row.source_len = file.text.len();
-                            }
-                        }
-                    }
-                }
-            }
-            // The expanded primary token is the declaration lexer's next token,
-            // including a sibling reached after directives. The general diagnostic
-            // resolver intentionally stops at directive anchors instead. Issue
-            // this token's existing primary-source point; do not
-            // turn an unissued boundary or a LINE-only receipt into a column.
-            if let (Some(before), Some(token), Some(location)) = (
-                before.as_ref(), next_token.as_ref(), next.as_ref(),
-            ) {
-                if let (Some(included), Some(acquired), Some(file), Ok(point)) = (
-                    self.plan.occurrences().get(location.include_occurrence),
-                    self.plan.source_acquisitions().get(&location.include_occurrence),
-                    self.files.iter().find(|file| file.path == location.path && file.captured),
-                    self.source_export_mapping.borrowed_source_note_point(token.span.start),
-                ) {
-                    let (path, line, column) = point.physical_coordinates();
-                    if before.include_occurrence != location.include_occurrence
-                        && path == included.path.as_path()
-                        && file.id == location.span.file
-                        && acquired.source_text().same_view(&file.text)
-                    {
-                        row.occurrence = Some(location.include_occurrence);
-                        row.line = line;
-                        row.column = column;
-                        row.source_len = acquired.source_text().len();
-                        row.logical_boundary = false;
-                    }
-                }
-            }
-            rows.push(row);
-        }
-        Arc::get_mut(&mut self.source_export_mapping)
-            .expect("unpublished mapping")
-            .bind_declaration_compatibility(rows.into_boxed_slice());
-    }
-
     /// Resolve a lexer cursor after a current expanded body offset. Include
     /// returns use the directive planner's checked decoded resume position.
     pub fn diagnostic_cursor_after(&self, end: usize) -> Option<(Arc<str>, usize)> {
@@ -124,9 +28,6 @@ impl ColdFrontend {
         }
     }
     fn diagnostic_cursor(&self, end: usize) -> Option<CapturedCursor> {
-        self.diagnostic_cursor_kind(end, false)
-    }
-    fn diagnostic_cursor_kind(&self, end: usize, declaration_eof: bool) -> Option<CapturedCursor> {
         let text = self.expanded.text.as_ref();
         if end == 0 || end > text.len() || !text.is_char_boundary(end) {
             return None;
@@ -140,10 +41,10 @@ impl ColdFrontend {
             }
         }
         let mut occurrence = before.include_occurrence;
-        for _ in 0..=self.plan.occurrences().len() {
-            let included = self.plan.occurrences().get(occurrence)?;
+        for _ in 0..=self.plan.occurrences.len() {
+            let included = self.plan.occurrences.get(occurrence)?;
             if let Some(cursor) = included.return_cursor() {
-                let parent = self.plan.occurrences().get(cursor.parent_occurrence())?;
+                let parent = self.plan.occurrences.get(cursor.parent_occurrence())?;
                 if included.parent != Some(cursor.parent_occurrence()) {
                     return None;
                 }
@@ -159,16 +60,6 @@ impl ColdFrontend {
                     if next.include_occurrence == cursor.parent_occurrence() {
                         return Some(CapturedCursor::Token(next.clone()));
                     }
-                }
-                // Declarations at terminal separators use the completed reader's
-                // real EOF progression, not error-recovery directive anchors.
-                // No remaining expanded language token plus each privately
-                // issued child EOF/return receipt proves omitted directives and
-                // empty repeated includes were actually consumed by this plan.
-                if declaration_eof && next.is_none() {
-                    included.logical_eof_cursor()?;
-                    occurrence = cursor.parent_occurrence();
-                    continue;
                 }
                 if let Some(line) = cursor.directive_anchor_line() {
                     return self.return_cursor_boundary(
@@ -228,7 +119,7 @@ impl ColdFrontend {
         if line == 0 {
             return None;
         }
-        let included = self.plan.occurrences().get(occurrence)?;
+        let included = self.plan.occurrences.get(occurrence)?;
         let file = self
             .files
             .iter()
@@ -237,12 +128,12 @@ impl ColdFrontend {
             return None;
         }
         let location = encounter
-            .filter(|ordinal| *ordinal <= self.plan.items().len())
+            .filter(|ordinal| *ordinal <= self.plan.items.len())
             .and_then(|encounter_ordinal| {
                 let mut chain = vec![occurrence];
                 let mut current = occurrence;
-                for _ in 0..self.plan.occurrences().len() {
-                    match self.plan.occurrences().get(current)?.parent {
+                for _ in 0..self.plan.occurrences.len() {
+                    match self.plan.occurrences.get(current)?.parent {
                         Some(parent) => {
                             chain.push(parent);
                             current = parent;
@@ -262,7 +153,7 @@ impl ColdFrontend {
                                 include_occurrence: occurrence,
                                 include_chain: chain.into(),
                                 // Physical directive-reader boundaries are not macro-expanded tokens.
-                                macro_expansions: Default::default(),
+                                macro_expansions: Arc::new(Vec::new()),
                             });
                         }
                     }
@@ -321,7 +212,7 @@ mod tests {
         assert_eq!(location.include_occurrence, 0);
         assert_eq!(
             location.encounter_ordinal,
-            frontend.plan.occurrences()[0].eof_cursor_encounter().unwrap()
+            frontend.plan.occurrences[0].eof_cursor_encounter().unwrap()
         );
         assert_eq!(
             location.span.file,
@@ -352,12 +243,12 @@ mod tests {
             let (path, line) = frontend.diagnostic_cursor_after(end).unwrap();
             assert_eq!(path.as_ref(), "cursor.dme");
             assert_eq!(line, expected);
-            let occurrence = frontend.plan.occurrences().last().unwrap();
+            let occurrence = frontend.plan.occurrences.last().unwrap();
             let cursor = occurrence.return_cursor().unwrap();
-            let source = frontend.plan.source_texts().get(frontend.plan.occurrences()
+            let source = &frontend.plan.source_texts[frontend.plan.occurrences
                 [cursor.parent_occurrence()]
             .path
-            .as_ref()).unwrap();
+            .as_ref()];
             assert!(cursor.decoded_offset() <= source.len());
             assert!(source.is_char_boundary(cursor.decoded_offset()));
         }

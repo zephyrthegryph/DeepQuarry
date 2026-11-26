@@ -5,6 +5,7 @@
 
 @use 'sass:meta';
 @use 'sass:color';
+@use './tgchat/chat-tokens' as chat-tokens;
 
 // Components
 @use '~tgui-core/styles';
@@ -20,19 +21,25 @@
 @include meta.load-css('~tgui/styles/atomic/text.scss');
 
 // Components specific to tgui-panel
-@include meta.load-css('./components/Chat.scss');
-@include meta.load-css('./components/Ping.scss');
-@include meta.load-css('./components/Notifications.scss');
-@include meta.load-css('./components/UnreadCount.scss');
+@include meta.load-css('~tgui/styles/dq/index.scss');
+// The chat's own sheet and theme, the one a floating chat window loads too (chat-theme.scss).
+@include meta.load-css('./chat-theme.scss');
+@include meta.load-css('./components/ChatLayout.scss');
+@include meta.load-css('./components/Column.scss');
+@include meta.load-css('../statpanel/statpanel.scss');
 
 // Layouts
 @include meta.load-css('~tgui/styles/layouts/Layout.scss');
 @include meta.load-css('~tgui/styles/layouts/Window.scss');
 
-// tgchat styles
-@include meta.load-css('./tgchat/chat-dark.scss');
+// Chat message styles: one sheet, coloured by the theme's tokens
+// (tgchat/chat-tokens.scss).
+@include meta.load-css('./tgchat/chat.scss');
+
 
 :root {
+  @include chat-tokens.dark;
+
   --chat-text-color: hsl(210, 50%, 80%);
 
   --color-base: hsl(0, 0%, 12.5%);

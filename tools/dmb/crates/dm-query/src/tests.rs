@@ -9,29 +9,6 @@ const CYCLE: Kind = Kind(5);
 const NOISE: Kind = Kind(6);
 const BASE: u128 = 10_000;
 
-#[test]
-fn executing_context_database_identity_is_exact_and_adds_no_dependencies() {
-    let first = Arc::new(Db::new());
-    let second = Arc::new(Db::new());
-    for db in [&first, &second] {
-        db.define_input(INPUT, "same-input");
-        db.set_input(input(1), 7u64, 7);
-    }
-    let actual = Arc::downgrade(&first);
-    let other = Arc::downgrade(&second);
-    let derived = key(TOTAL, 1);
-    first.define(TOTAL, "context-identity", move |ctx, _| {
-        assert!(ctx.is_database(&actual.upgrade().unwrap()));
-        assert!(!ctx.is_database(&other.upgrade().unwrap()));
-        assert_eq!(ctx.dependency_count(), 0);
-        let value = *ctx.input::<u64>(input(1))?;
-        assert_eq!(ctx.dependency_count(), 1);
-        outcome(value)
-    });
-    assert_eq!(*first.get::<u64>(derived, Arc::new(())).unwrap(), 7);
-    assert!(first.dependants(&[input(1)]).contains(&derived));
-}
-
 fn input(n: u128) -> Key {
     Key::new(INPUT, n)
 }
@@ -77,10 +54,7 @@ fn total(db: &Db, n: u128) -> u64 {
     *db.get::<u64>(key(TOTAL, n), param(n)).unwrap()
 }
 fn runs(counts: &Arc<[AtomicUsize; 2]>) -> (usize, usize) {
-    (
-        counts[0].load(Ordering::SeqCst),
-        counts[1].load(Ordering::SeqCst),
-    )
+    (counts[0].load(Ordering::SeqCst), counts[1].load(Ordering::SeqCst))
 }
 
 #[test]
@@ -144,11 +118,7 @@ fn dependencies_follow_the_branch_taken_and_reverse_edges_update() {
     db.define_input(INPUT, "input");
     db.define(CHOOSE, "choose", |ctx, _| {
         let pick = *ctx.input::<u64>(input(0))?;
-        let n = if pick == 0 {
-            *ctx.input::<u64>(input(1))?
-        } else {
-            *ctx.input::<u64>(input(2))?
-        };
+        let n = if pick == 0 { *ctx.input::<u64>(input(1))? } else { *ctx.input::<u64>(input(2))? };
         outcome(n)
     });
     set(&db, 0, 0);
@@ -192,10 +162,7 @@ fn a_cycle_is_an_error_not_a_hang() {
     let error = db.get::<u64>(key(CYCLE, 0), param(0)).unwrap_err();
     assert!(matches!(error, QueryError::Cycle(_)), "{error:?}");
     // The failed nodes are not left busy: a second attempt gives the same answer.
-    assert!(matches!(
-        db.get::<u64>(key(CYCLE, 0), param(0)),
-        Err(QueryError::Cycle(_))
-    ));
+    assert!(matches!(db.get::<u64>(key(CYCLE, 0), param(0)), Err(QueryError::Cycle(_))));
 }
 
 #[test]
@@ -235,11 +202,9 @@ fn eviction_only_touches_the_named_kinds() {
 fn removing_a_dependency_reruns_its_dependants() {
     let db = Db::new();
     db.define_input(INPUT, "input");
-    db.define(CHOOSE, "present", |ctx, _| {
-        match ctx.input::<u64>(input(1)) {
-            Ok(value) => outcome(*value),
-            Err(_) => outcome(0),
-        }
+    db.define(CHOOSE, "present", |ctx, _| match ctx.input::<u64>(input(1)) {
+        Ok(value) => outcome(*value),
+        Err(_) => outcome(0),
     });
     set(&db, 1, 7);
     let present = key(CHOOSE, 0);
@@ -284,9 +249,7 @@ fn a_panicking_query_does_not_wedge_the_node() {
     });
     set(&db, 1, 1);
     let flaky = key(NOISE, 0);
-    let first = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        db.get::<u64>(flaky, param(0))
-    }));
+    let first = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| db.get::<u64>(flaky, param(0))));
     assert!(first.is_err());
     assert_eq!(*db.get::<u64>(flaky, param(0)).unwrap(), 5);
 }
@@ -370,159 +333,4 @@ fn million_queries_revalidate_in_parallel() {
     let warm = fetch_all(&db);
     eprintln!("million: cold {cold:?}, revalidate after one change {warm:?}");
     assert_eq!(db.stats(PARITY).computed, N as u64 + 1);
-}
-
-#[test]
-fn per_key_value_charge_tracks_eviction_and_removal() {
-    let db = Db::new();
-    let kind = Kind(61000);
-    let key = Key::new(kind, 1);
-    db.define(kind, "charge-test", |_, _| Ok(Outcome::new(7u32, 7, 123)));
-    assert_eq!(db.value_bytes_at(key), 0);
-    assert_eq!(*db.get::<u32>(key, Arc::new(())).unwrap(), 7);
-    assert_eq!(db.value_bytes_at(key), 123);
-    db.evict_values(&[kind]);
-    assert_eq!(db.value_bytes_at(key), 0);
-    db.get::<u32>(key, Arc::new(())).unwrap();
-    db.remove(key);
-    assert_eq!(db.value_bytes_at(key), 0);
-}
-
-#[test]
-fn retained_observation_never_revalidates_and_scoped_input_can_drop() {
-    let counts = counters();
-    let db = database(&counts);
-    set(&db, 1, 3);
-    set(&db, BASE, 10);
-    assert_eq!(total(&db, 1), 11);
-    set(&db, 1, 4);
-    assert_eq!(*db.retained_value::<u64>(key(TOTAL, 1)).unwrap(), 11);
-    assert_eq!(runs(&counts), (1, 1));
-    assert_eq!(total(&db, 1), 10);
-    assert_eq!(runs(&counts), (2, 2));
-    assert_eq!(db.evict_value_at(input(1)), 0); // inputs have no derived charge
-    assert!(db.retained_value::<u64>(input(1)).is_none());
-    assert!(db.set_input(input(1), 4u64, 5)); // refill even equal hash
-    assert_eq!(total(&db, 1), 10);
-}
-#[test]
-fn retained_observation_cannot_compute_missing_or_wrong_typed_values() {
-    let counts = counters();
-    let db = database(&counts);
-    assert!(db.retained_value::<u64>(key(TOTAL, 1)).is_none());
-    assert_eq!(runs(&counts), (0, 0));
-    set(&db, 1, 4);
-    assert!(db.retained_value::<String>(input(1)).is_none());
-}
-
-#[test]
-fn operational_dependency_failure_is_not_an_outcome_and_same_key_retries() {
-    use std::io;
-    let db = Db::new();
-    let leaf = Key::new(Kind(62000), 1);
-    let outer = Key::new(Kind(62001), 1);
-    let stopped = Arc::new(AtomicBool::new(true));
-    let runs = Arc::new(AtomicUsize::new(0));
-    let mode = stopped.clone();
-    let count = runs.clone();
-    db.define(leaf.kind, "operational-leaf", move |_, _| {
-        count.fetch_add(1, Ordering::Relaxed);
-        if mode.load(Ordering::Acquire) {
-            return Err(QueryError::operational(
-                leaf,
-                io::Error::new(io::ErrorKind::Interrupted, "actual cancellation source"),
-            ));
-        }
-        Ok(Outcome::new(19u32, 19, 100))
-    });
-    db.define(outer.kind, "operational-dependent", move |ctx, _| {
-        let v = ctx.get::<u32>(leaf, Arc::new(()))?;
-        Ok(Outcome::new(*v, 19, 200))
-    });
-    let error = db.get::<u32>(outer, Arc::new(())).unwrap_err();
-    let owner = error.clone().into_operational().unwrap();
-    assert_eq!(owner.kind(), io::ErrorKind::Interrupted);
-    assert_eq!(owner.error().to_string(), "actual cancellation source");
-    assert_eq!(error, error.clone());
-    assert_eq!(db.value_bytes_at(leaf), 0);
-    assert_eq!(db.value_bytes_at(outer), 0);
-    assert_eq!(db.stats(leaf.kind).computed, 0);
-    assert_eq!(db.stats(outer.kind).computed, 0);
-    stopped.store(false, Ordering::Release);
-    assert_eq!(*db.get::<u32>(outer, Arc::new(())).unwrap(), 19);
-    assert_eq!(runs.load(Ordering::Relaxed), 2);
-    assert_eq!(db.stats(outer.kind).computed, 1);
-}
-#[test]
-fn operational_quota_after_value_eviction_retries_without_poisoning_metadata() {
-    use std::io;
-    let db = Db::new();
-    let key = Key::new(Kind(62002), 1);
-    let stopped = Arc::new(AtomicBool::new(false));
-    let mode = stopped.clone();
-    db.define(key.kind, "quota-refill", move |_, _| {
-        if mode.load(Ordering::Acquire) {
-            Err(QueryError::operational(
-                key,
-                io::Error::new(io::ErrorKind::OutOfMemory, "actual quota source"),
-            ))
-        } else {
-            Ok(Outcome::new(23u32, 23, 321))
-        }
-    });
-    assert_eq!(*db.get::<u32>(key, Arc::new(())).unwrap(), 23);
-    db.evict_values(&[key.kind]);
-    stopped.store(true, Ordering::Release);
-    assert_eq!(
-        db.get::<u32>(key, Arc::new(()))
-            .unwrap_err()
-            .into_operational()
-            .unwrap()
-            .kind(),
-        io::ErrorKind::OutOfMemory
-    );
-    assert_eq!(db.value_bytes_at(key), 0);
-    stopped.store(false, Ordering::Release);
-    assert_eq!(*db.get::<u32>(key, Arc::new(())).unwrap(), 23);
-    assert_eq!(db.stats(key.kind).computed, 2);
-}
-#[test]
-fn operational_green_verification_does_not_mark_revision_current_or_log_false_mismatch() {
-    use std::io;
-    let db = Db::new();
-    let key = Key::new(Kind(62003), 1);
-    let stop = Arc::new(AtomicBool::new(false));
-    let mode = stop.clone();
-    let runs = Arc::new(AtomicUsize::new(0));
-    let count = runs.clone();
-    db.define(key.kind, "verifying-operation", move |_, _| {
-        count.fetch_add(1, Ordering::Relaxed);
-        if mode.load(Ordering::Acquire) {
-            return Err(QueryError::operational(
-                key,
-                io::Error::new(io::ErrorKind::Interrupted, "verify cancellation"),
-            ));
-        }
-        Ok(Outcome::new(31u32, 31, 123))
-    });
-    db.get::<u32>(key, Arc::new(())).unwrap();
-    db.set_verify(true);
-    db.set_input(Key::new(Kind(62004), 1), 1u32, 1);
-    stop.store(true, Ordering::Release);
-    assert_eq!(
-        db.get::<u32>(key, Arc::new(()))
-            .unwrap_err()
-            .into_operational()
-            .unwrap()
-            .kind(),
-        io::ErrorKind::Interrupted
-    );
-    assert!(db.verify_failures().is_empty());
-    stop.store(false, Ordering::Release);
-    assert_eq!(*db.get::<u32>(key, Arc::new(())).unwrap(), 31);
-    assert_eq!(
-        runs.load(Ordering::Relaxed),
-        3,
-        "same-revision retry must re-run interrupted verification"
-    );
 }

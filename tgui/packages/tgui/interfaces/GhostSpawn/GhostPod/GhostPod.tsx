@@ -10,7 +10,7 @@ export const GhostPod = (props: {
   user_z: number;
 }) => {
   const [selectedType, setSelectedType] = useState<string>('');
-  const [selectedPod, setSelectedPod] = useState<string>('');
+  const [selectedPod, setSelectedPod] = useState<number | null>(null);
 
   const { all_ghost_pods, user_z } = props;
 

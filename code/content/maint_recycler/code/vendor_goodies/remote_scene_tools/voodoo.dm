@@ -106,6 +106,7 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 		return null
 	input = image(input, dir = SOUTH) // the wearer's layers are shared images: the doll turns and outlines its own copy (a dir set after the copy is lost on an overlay)
 
+	input.appearance_flags |= KEEP_TOGETHER // a layer made of parts takes the transform and the filters as one picture
 	input.transform = newtransform
 	input.layer = FLOAT_LAYER
 	if(outline_width > 0)

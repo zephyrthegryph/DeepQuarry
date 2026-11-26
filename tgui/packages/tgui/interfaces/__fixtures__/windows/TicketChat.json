@@ -1,0 +1,9 @@
+{
+	"id": 42,
+	"level": 1,
+	"handler": "zephyr",
+	"log": {
+		"1": "<b>jopark</b>: Help, the engine is on fire.",
+		"2": "<b>zephyr</b>: On my way."
+	}
+}

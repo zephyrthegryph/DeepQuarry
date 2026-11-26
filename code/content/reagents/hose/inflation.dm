@@ -9,7 +9,6 @@
 	if(!ishuman(new_carrier))
 		return FALSE
 	. = ..()
-	revoke(human_owner(), granted_verb(/atom/proc/disconnect_hose), src)
 
 /datum/hose_connector/inflation/on_examine(datum/act/notice/N)
 	return
@@ -26,15 +25,6 @@
 
 /datum/hose_connector/inflation/get_id()
 	return "\The [human_owner()]'s [get_destination_name()]"
-
-// Adding and removing the verb is more complex on humans... This code also expects only ONE hose connector
-/datum/hose_connector/inflation/connect(datum/hose/H)
-	. = ..()
-	grant(human_owner(), granted_verb(/atom/proc/disconnect_hose), src)
-
-/datum/hose_connector/inflation/remove_hose()
-	revoke(human_owner(), granted_verb(/atom/proc/disconnect_hose), src)
-	. = ..()
 
 // Succ command center
 /// Chooses where the hose goes into the owner, then (a timed action) connects it and calls

@@ -271,11 +271,6 @@ CAPABILITIES(/obj/item/shield_projector)
 /obj/item/shield_projector/rectangle/automatic
 	always_on = TRUE
 
-/obj/item/shield_projector/rectangle/automatic/weak
-	max_integrity = 200
-	size_x = 2
-	size_y = 2
-
 // Horrible implementation below.
 /obj/item/shield_projector/rectangle/create_shields()
 	if(!..())

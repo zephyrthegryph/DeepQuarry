@@ -91,6 +91,7 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 		needs(req(PROC_REF(no_catalyst), silent = TRUE), req(PROC_REF(clamp_works)), req(PROC_REF(can_extract_from))),
 		then(PROC_REF(catalyst_set)))
 	interface("ChemSynthesizer", observe = TRUE)
+	ui_shape(busy = bool(), production_mode = bool(), panel_open = bool(), use_catalyst = bool(), drug_substance = int(1, 3), bottle_icon = num(), pill_icon = num(), patch_icon = num(), queue = list_of(row(name = schema_text(), index = int())), recipes = list_of(row(name = schema_text())), rxn_vessel = list_of(row(name = schema_text(), volume = num(), description = schema_text(), id = schema_text(), contaminant = bool())), catalyst = bool(), catalyst_reagents = list_of(row(name = schema_text(), volume = num(), description = schema_text(), id = schema_text(), contaminant = bool())), catalystCurrentVolume = nullable(num()), catalystMaxVolume = nullable(num()), chemicals = list_of(row(title = schema_text(), id = schema_text(), amount = num())), modal = any)
 	extend("ui_observe", needs(req_operable()))
 	op("start_queue", ui_act("start_queue"), then(PROC_REF(ui_act_start_queue)))
 	op("rem_queue", ui_act("rem_queue", arg("q_index", num())), then(PROC_REF(ui_act_rem_queue)))
@@ -296,7 +297,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 			if(C && C.reagents.total_volume < C.reagents.maximum_volume)
 				var/to_restore = min(C.reagents.maximum_volume - C.reagents.total_volume, 5)
 				use_power(to_restore * 500)
-				C.reagents.add_reagent(id, to_restore)
+				C.add_stock(id, to_restore)
 				. = 1
 		if(.)
 			SStgui.update_uis(src)
@@ -304,10 +305,10 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 /// The window's data.
 /obj/machinery/chemical_synthesizer/ui_data(datum/act/eval/A)
 	. = list()
-	.["busy"] = busy
-	.["production_mode"] = production_mode
-	.["panel_open"] = panel_open
-	.["use_catalyst"] = use_catalyst
+	.["busy"] = busy ? TRUE : FALSE
+	.["production_mode"] = production_mode ? TRUE : FALSE
+	.["panel_open"] = panel_open ? TRUE : FALSE
+	.["use_catalyst"] = use_catalyst ? TRUE : FALSE
 	.["drug_substance"] = drug_substance
 	.["bottle_icon"] = bottle_icon
 	.["pill_icon"] = pill_icon
@@ -334,18 +335,11 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 
 
 	// Read data from the reaction vessel.
-	var/list/vessel_reagents_list = list()
-	data["rxn_vessel"] = vessel_reagents_list
-	for(var/datum/reagent/R in src.reagents.reagent_list)
-		vessel_reagents_list[++vessel_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "description" = R.description, "id" = R.id)
+	data["rxn_vessel"] = src.reagents.ui_rows(describe = TRUE) // the contaminants last, flagged
 
 	// Read data from the catalyst, if present.
-	data["catalyst"] = catalyst ? 1 : 0
-	if(catalyst)
-		var/list/catalyst_reagents_list = list()
-		data["catalyst_reagents"] = catalyst_reagents_list
-		for(var/datum/reagent/R in catalyst.reagents.reagent_list)
-			catalyst_reagents_list[++catalyst_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "description" = R.description, "id" = R.id)
+	data["catalyst"] = catalyst ? TRUE : FALSE
+	data["catalyst_reagents"] = catalyst ? catalyst.reagents.ui_rows(describe = TRUE) : list()
 
 	if(catalyst)
 		data["catalystCurrentVolume"] = catalyst.reagents.total_volume
@@ -357,7 +351,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	var/chemicals[0]
 	for(var/label in cartridges)
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
-		chemicals.Add(list(list("title" = label, "id" = label, "amount" = C.reagents.total_volume))) // list in a list because Byond merges the first list
+		chemicals.Add(list(list("title" = label, "id" = label, "amount" = C.fill_volume()))) // list in a list because Byond merges the first list
 	data["chemicals"] = chemicals
 
 	// the window's modal (the engine adds it too; the key is always sent, as it was)
@@ -752,6 +746,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		stall()
 		return
 
+	var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 	if(quantity > reagents.get_free_space())
 		visible_message(span_warning("The [src] beeps loudly, flashing a 'maximum volume exceeded' error!"), "You hear loud beeping!")
 		play_sfx(src, SFX_WEAPONS_SMG_EMPTY_ALARM)
@@ -759,14 +754,13 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		return
 
 	// If there isn't enough reagent left for this step, try again in a minute.
-	var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
-	if(quantity > C.reagents.total_volume)
+	if(quantity > C.fill_volume())
 		visible_message(span_notice("The [src] flashes an 'insufficient reagents' warning."))
 		after(src, 1 MINUTE, PROC_REF(perform_reaction), with = list(r_id, step))
 		return
 
 	// After all this mess of code, we reach the line where the magic happens.
-	C.reagents.trans_to_holder(src.reagents, quantity)
+	C.dispense_to_holder(src.reagents, quantity)
 	work_start(src) // a cartridge to refill
 	play_sfx(src, SFX_MACHINES_HPLC_BINARY_PUMP)
 

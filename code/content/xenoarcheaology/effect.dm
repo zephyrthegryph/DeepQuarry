@@ -103,7 +103,7 @@
 /datum/artifact_effect/proc/DoEffectPulse(atom/holder)
 /datum/artifact_effect/proc/UpdateMove()
 
-/datum/artifact_effect/periodic_step()
+/datum/artifact_effect/proc/effect_tick()
 	if(chargelevel < chargelevelmax)
 		chargelevel++
 

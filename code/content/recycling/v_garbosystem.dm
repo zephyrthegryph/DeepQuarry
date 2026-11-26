@@ -26,7 +26,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 /obj/machinery/v_garbosystem/examine(mob/user, infix, suffix)
 	. = ..()
 	. += span_infoplain("The internal fluid tank reads: [reagents.total_volume]/[reagents.maximum_volume]")
-	if(contents_count(src) || has_latent()) // ALLOW(latent): latent entries checked
+	if(contents_count(src))
 		. += span_warning("There are items in the filter's trap!")
 
 /// Old attack_hand: never called ..().
@@ -84,8 +84,7 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 	var/mob/user = A.actor
 	if(!operating)
 		to_chat(user, span_notice("You crowbar the filter hatch open, releasing the items trapped within."))
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/atom/movable/item in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/atom/movable/item in contents)
 			item.forceMove(loc)
 	else
 		to_chat(user, span_warning("Unable to empty filter while the machine is running."))

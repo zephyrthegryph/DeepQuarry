@@ -3,10 +3,10 @@
 /datum/unit_test/dq_flight_plan_owns_destination_lease/Run()
 	var/obj/effect/target = new(null)
 	var/datum/flight_destination/destination = new
-	destination.id = "unit-test-destination"
-	destination.name = "Unit Test Destination"
+	destination.set_id("unit-test-destination")
+	destination.set_name("Unit Test Destination")
 	rel_set(destination, nameof(destination.target), target)
-	destination.required_capabilities = FLIGHT_CAP_STRATEGIC
+	destination.set_required_capabilities(FLIGHT_CAP_STRATEGIC)
 	var/datum/flight_vessel/vessel = new
 	vessel.name = "Unit Test Vessel"
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC
@@ -42,9 +42,9 @@
 /datum/unit_test/dq_incompatible_flight_plan_fails_closed/Run()
 	var/obj/effect/target = new(null)
 	var/datum/flight_destination/destination = new
-	destination.name = "Surface Site"
+	destination.set_name("Surface Site")
 	rel_set(destination, nameof(destination.target), target)
-	destination.required_capabilities = FLIGHT_CAP_LAND
+	destination.set_required_capabilities(FLIGHT_CAP_LAND)
 	var/datum/flight_vessel/vessel = new
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC
 	var/datum/flight_plan/plan = new(vessel, null, destination)
@@ -201,9 +201,9 @@
 
 /datum/unit_test/dq_station_route_rejects_carrier_port_alias/Run()
 	var/datum/flight_destination/station = new
-	station.id = "unit-station"
+	station.set_id("unit-station")
 	var/datum/flight_destination/carrier = new
-	carrier.id = "unit-carrier"
+	carrier.set_id("unit-carrier")
 	var/datum/flight_port/port = new
 	port.host_destination_id = carrier.id
 	port.serves_destination_ids = list(carrier.id)
@@ -236,8 +236,8 @@
 	var/obj/effect/overmap/visitable/ship/ship = new(null)
 	var/obj/effect/target = new(null)
 	var/datum/flight_destination/station = new
-	station.id = "unit-station-orbit"
-	station.kind = FLIGHT_DEST_STATION
+	station.set_id("unit-station-orbit")
+	station.set_kind(FLIGHT_DEST_STATION)
 	rel_set(station, nameof(station.target), target)
 	var/datum/flight_vessel/vessel = new
 	rel_set(vessel, nameof(vessel.ship), ship)
@@ -258,7 +258,7 @@
 
 /datum/unit_test/dq_failed_flight_releases_all_leases/Run()
 	var/datum/flight_destination/destination = new
-	destination.id = "unit-failure-destination"
+	destination.set_id("unit-failure-destination")
 	var/datum/flight_vessel/vessel = new
 	var/datum/flight_port/port = new
 	var/datum/flight_plan/plan = new(vessel, null, destination)
@@ -278,7 +278,7 @@
 /datum/unit_test/dq_expedition_generation_begins_in_transit/Run()
 	var/datum/expedition_site/site = new
 	var/datum/flight_destination/destination = new
-	destination.id = "unit-expedition-destination"
+	destination.set_id("unit-expedition-destination")
 	rel_set(destination, nameof(destination.expedition), site)
 	var/datum/flight_vessel/vessel = new
 	var/datum/flight_plan/plan = new(vessel, null, destination)

@@ -1,13 +1,14 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-
+import type { ShuttleControlActions } from '../generated/ShuttleControl';
 import { getDockingStatus } from './functions';
 import type { Data } from './types';
 
 export const ShuttleControlSharedShuttleStatus = (props: {
   engineName?: string;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShuttleControlActions>();
   const { engineName = 'Bluespace Drive' } = props;
   const {
     shuttle_status,
@@ -19,9 +20,7 @@ export const ShuttleControlSharedShuttleStatus = (props: {
   } = data;
   return (
     <Section title="Shuttle Status">
-      <Box color="label" mb={1}>
-        {shuttle_status}
-      </Box>
+      <Label mb={1}>{shuttle_status}</Label>
       <LabeledList>
         <LabeledList.Item label={engineName}>
           {(shuttle_state === 'idle' && (

@@ -240,7 +240,7 @@ CAPABILITIES(/obj/item/multitool/ai_detector/cyborg)
 
 CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 	without("ui_open")
-	op("cyborg_coil_self", in_hand(), label("Change colour"), asks(/datum/prompt/choice, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Cable Colour", "question" = "Pick new colour.", "choices" = computed(PROC_REF(cable_colour_options)), "timeout" = 0), step = "colour"), then(PROC_REF(cyborg_coil_self)))
+	op("cyborg_coil_self", inputs(in_hand(), menu()), label("Change colour"), asks(/datum/prompt/choice, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Cable Colour", "question" = "Pick new colour.", "choices" = computed(PROC_REF(cable_colour_options)), "timeout" = 0), step = "colour"), then(PROC_REF(cyborg_coil_self)))
 
 /// Old attack_self: ask the colour, then apply it.
 /obj/item/stack/cable_coil/cyborg/proc/cyborg_coil_self(datum/act/op/A)
@@ -249,17 +249,6 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 
 /obj/item/stack/cable_coil/cyborg/proc/cable_colour_options(datum/act/A)
 	return GLOB.possible_cable_coil_colours
-
-/obj/item/stack/cable_coil/cyborg/proc/set_colour(mob/user)
-	set name = "Change Colour"
-	set category = VERB_CAT_OBJECT
-
-	open_request(src, /datum/prompt/choice, PROC_REF(cable_colour_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Cable Colour", question = "Pick new colour.", choices = GLOB.possible_cable_coil_colours, timeout = 0)
-
-/obj/item/stack/cable_coil/cyborg/proc/cable_colour_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	apply_cable_colour(A.answer.value, A.request.answerer)
 
 /obj/item/stack/cable_coil/cyborg/proc/apply_cable_colour(colour, mob/user)
 	set_cable_color(colour, user)
@@ -474,8 +463,8 @@ MSG_DEF_SELF(robot/not_a_synth, "That is not a matter synthesizer.")
 MSG_DEF_SELF(robot/synth_installed, "That synthesizer is already installed.")
 
 /// req_synth_takes(): the robot (the holder) can take this matter synth type (the candidate): it is one, and its module has none of that kind yet.
-/proc/req_synth_takes()
-	return part_make(/datum/entry/part/req/synth_takes)
+/proc/req_synth_takes(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/synth_takes), fails)
 
 /datum/entry/part/req/synth_takes
 	part_name = "req_synth_takes"
@@ -648,7 +637,7 @@ CAPABILITIES(/obj/item/gripper)
 	op("item_hurt", item(/obj/item), stance(I_HURT), then(PROC_REF(interaction_item_hurt)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), then(PROC_REF(interaction_alt)))
 	op("gripper_drop", menu(), label("Drop Item"), needs(carried()), then(PROC_REF(gripper_verb_drop)))
-	// Self-use: the ring of pockets (optional: closing it uses the wrapped item). While it is open it holds the gripper, which blocks every other use (is_in_use()).
+	// Self-use: the ring of pockets (optional: closing it uses the wrapped item). While it is open it holds the gripper, which blocks every other use (in_use_refusal()).
 	op("pocket_menu", in_hand(), label("Select pocket"), claims(CLAIM_TARGET), needs(req(PROC_REF(pocket_menu_holds), because = PROC_REF(pocket_menu_refusal))), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(pocket_choices)), "radial" = TRUE, "anchor" = computed(PROC_REF(pocket_anchor)), "radius" = 40, "require_near" = TRUE, "autopick_single_option" = FALSE, "timeout" = 0), step = "pocket"), on_interrupt(PROC_REF(pocket_menu_closed)), then(PROC_REF(pocket_chosen)))
 
 /// The help-stance item use of the gripper: the shared handler with its stance.
@@ -705,13 +694,13 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 
 /obj/item/gripper/item_ctrl_click(mob/user)
 	var/obj/item/wrapped = get_wrapped_item()
-	if(wrapped && !is_in_use(user, FALSE))
+	if(wrapped && isnull(in_use_refusal()))
 		wrapped.attack_self(user)
 
 /// Old click_alt.
 /obj/item/gripper/proc/interaction_alt(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!is_in_use(user, FALSE))
+	if(isnull(in_use_refusal()))
 		drop_item(user)
 	return OP_OK
 
@@ -761,11 +750,6 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 	icon_state = "gripper-sci"
 	desc = "A simple grasping tool suited to assist in a wide array of research applications."
 
-/obj/item/gripper/circuit
-	name = "circuit assembly gripper"
-	icon_state = "gripper-circ"
-	desc = "A complex grasping tool used for working with circuitry."
-
 /obj/item/gripper/service //Used to handle food, drinks, seeds, and cards.
 	name = "service gripper"
 	icon_state = "gripper-sheet"
@@ -805,13 +789,6 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 	name = "robotics organ gripper"
 	icon_state = "gripper-flesh"
 	desc = "A specialized grasping tool used in robotics work."
-
-/obj/item/gripper/no_use/mech
-	name = "exosuit gripper"
-	icon_state = "gripper-mech"
-	desc = "A large, heavy-duty grasping tool used in construction of mechs."
-
-	special_handling = TRUE
 
 /obj/item/gripper/no_use //Used when you want to hold and put items in other things, but not able to 'use' the item
 
@@ -912,9 +889,6 @@ CAPABILITIES(/obj/item/gripper/research)
 	holder_takes(req_type(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER), because = MSG(slot/doesnt_take)))
 
 
-CAPABILITIES(/obj/item/gripper/circuit)
-	holder_takes(req_type(list(CIRCUIT_GRIPPER), because = MSG(slot/doesnt_take)))
-
 
 CAPABILITIES(/obj/item/gripper/service)
 	holder_takes(req_type(list(SERVICE_GRIPPER), because = MSG(slot/doesnt_take)))
@@ -935,9 +909,6 @@ CAPABILITIES(/obj/item/gripper/no_use/organ)
 CAPABILITIES(/obj/item/gripper/no_use/organ/robotics)
 	holder_takes(req_type(list(ROBOTICS_ORGAN_GRIPPER), because = MSG(slot/doesnt_take)))
 
-
-CAPABILITIES(/obj/item/gripper/no_use/mech)
-	holder_takes(req_type(list(EXOSUIT_GRIPPER), because = MSG(slot/doesnt_take)))
 
 
 CAPABILITIES(/obj/item/gripper/no_use/loader)

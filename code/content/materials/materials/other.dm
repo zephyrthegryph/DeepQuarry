@@ -4,11 +4,10 @@
 	icon_colour = "#dd90aa"
 	sheet_singular_name = "meat"
 	sheet_plural_name = "meats"
-	integrity = 1200
-	melting_point = 6000
-	explosion_resistance = 200
-	hardness = 500
-	density = 500
+	toughness = 600
+	heat_resistance = 143.8
+	strength = 500
+	weight = 500
 	wiki_flag = WIKI_SPOILER
 	supply_conversion_value = 0
 
@@ -18,8 +17,8 @@
 	icon_colour = "#000000"
 	sheet_singular_name = "fluff"
 	sheet_plural_name = "fluffs"
-	hardness = 60
-	density = 20 //Strong as iron.
+	strength = 60
+	weight = 20 //Strong as iron.
 	wiki_flag = WIKI_SPOILER
 	supply_conversion_value = 0
 

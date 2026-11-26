@@ -19,23 +19,6 @@
 		return species.handle_autohiss(message, L, picked["mode"])
 	return apply_autohiss(message, L, picked["mode"], picked["basic"], picked["extra"], picked["exempt"])
 
-/client/verb/toggle_autohiss()
-	set name = "Toggle Auto-Hiss"
-	set desc = "Choose how your speech is automatically changed: your species' way, off, or any other hiss."
-	set category = VERB_CAT_OOC_GAME_SETTINGS
-
-	mob?.ask_autohiss_choice()
-
-/// Asks which autohiss to use; the answer is the character's saved choice.
-/mob/proc/ask_autohiss_choice()
-	open_request(src, /datum/prompt/choice, PROC_REF(autohiss_choice_answered), answerer = src, title = "Auto-Hiss", question = "How should your speech be changed? It is now: [read_preference(/datum/preference/text/human/autohiss)].", choices = assoc_to_keys(GLOB.autohiss_choices), timeout = 0)
-
-/mob/proc/autohiss_choice_answered(datum/act/request/A)
-	if(!A.answer || !client || !GLOB.autohiss_choices[A.answer.value])
-		return
-	write_preference_directly(/datum/preference/text/human/autohiss, A.answer.value)
-	to_chat(src, "Auto-hiss is now [A.answer.value]: [GLOB.autohiss_choices[A.answer.value]["words"]]")
-
 /// "s becomes ss, sss or ssss; x becomes ks": the map, in words.
 /proc/autohiss_map_words(list/map)
 	var/list/rules = list()
@@ -198,3 +181,17 @@ GLOBAL_LIST_INIT(autohiss_choices, build_autohiss_choices())
 
 	return jointext(., null)
 
+/// The say preview's autohiss map: the species' own hiss (the say modal, language_rules.dm).
+/mob/living/carbon/human/say_hiss_rules()
+	var/list/picked = client?.prefs ? GLOB.autohiss_choices[client.prefs.read_preference(/datum/preference/text/human/autohiss)] : null
+	if(!picked || picked["mode"] == AUTOHISS_OFF)
+		return null
+	var/own = picked["species"]
+	var/list/basic = own ? species?.autohiss_basic_map : picked["basic"]
+	if(!basic)
+		return null
+	return list(
+		"basic" = basic,
+		"extra" = picked["mode"] == AUTOHISS_FULL ? (own ? species.autohiss_extra_map : picked["extra"]) : null,
+		"exempt" = (own ? species.autohiss_exempt : picked["exempt"]) || list(),
+	)

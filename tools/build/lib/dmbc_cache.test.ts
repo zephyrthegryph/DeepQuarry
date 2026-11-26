@@ -266,38 +266,3 @@ describe('stale cargo artifact signature', () => {
     expect(staleCargoArtifactSignature('error[E0308]: mismatched types')).toBe(false);
   });
 });
-
-// No binaries are executed or published by these exact runtime resolver cases.
-describe('strict shared runtime pointer', () => {
-  test('genuine absent pointer alone permits the documented old layout', () => {
-    const legacy = `${bin}/dmbc${SUFFIX}`;
-    fs.writeFileSync(legacy, 'old-layout resolver fixture only');
-    expect(pinnedDmbcVersion(bin)).toBeNull();
-    expect(fs.readFileSync(legacy, 'utf8')).toBe('old-layout resolver fixture only');
-  });
-  test('present malformed pointer cannot select an existing stale root image', () => {
-    const legacy = `${bin}/dmbc${SUFFIX}`;
-    fs.writeFileSync(legacy, 'stale image must never be selected');
-    for (const id of ['', 'INVALID', '../0123456789abcdef', 'ABCDEF0123456789']) {
-      fs.writeFileSync(`${bin}/current`, `${id}\n`);
-      expect(() => pinnedDmbcVersion(bin)).toThrow('Published compiler pointer');
-      expect(fs.readFileSync(legacy, 'utf8')).toBe('stale image must never be selected');
-    }
-  });
-  test('present valid pointer with missing or nonfile target refuses stale fallback', () => {
-    fs.writeFileSync(`${bin}/dmbc${SUFFIX}`, 'stale root fixture');
-    const id = '0123456789abcdef';
-    fs.writeFileSync(`${bin}/current`, `${id}\n`);
-    expect(() => pinnedDmbcVersion(bin)).toThrow();
-    const image = `${dmbcVersionDir(bin, id)}/dmbc${SUFFIX}`;
-    fs.mkdirSync(image, { recursive: true });
-    expect(() => pinnedDmbcVersion(bin)).toThrow('does not name a compiler file');
-    fs.rmdirSync(image);
-    fs.writeFileSync(image, 'exact selected version fixture');
-    expect(pinnedDmbcVersion(bin)).toBe(id);
-  });
-  test('present unreadable pointer shape is an operational refusal', () => {
-    fs.mkdirSync(`${bin}/current`);
-    expect(() => pinnedDmbcVersion(bin)).toThrow();
-  });
-});

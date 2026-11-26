@@ -396,7 +396,7 @@ CAPABILITIES(/datum/faction_agent_record)
 		record = contact_contract && get_agent_record(contact_contract.owner_account_number)
 	if(!record || !isnum(amount) || amount <= 0)
 		return FALSE
-	record.exposure = CLAMP(record.exposure + round(amount), 0, FACTION_AGENT_MAX_EXPOSURE)
+	record.set_exposure(CLAMP(record.exposure + round(amount), 0, FACTION_AGENT_MAX_EXPOSURE))
 	emit_contract_event(CONTRACT_EVENT_COVERT_MARKET_ACTIVITY, list(
 		"actor_account" = account_number,
 		"principal_account" = record.account_number,

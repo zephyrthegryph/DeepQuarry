@@ -16,7 +16,11 @@ import {
 } from 'tgui-core/components';
 import { KEY } from 'tgui-core/keys';
 import { round, toFixed } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
+import { sanitizeAdminHtml } from '../sanitize';
+import type {
+  TicketsPanelActions,
+  TicketsPanelData,
+} from './generated/TicketsPanel';
 
 const AdminLevel = {
   0: 'Mentor',
@@ -53,31 +57,9 @@ const StateColor = {
   unknown: 'orange',
 };
 
-type Data = {
-  tickets: Ticket[];
+type Data = TicketsPanelData;
 
-  selected_ticket?: Ticket;
-  is_admin: BooleanLike;
-};
-
-type Ticket = {
-  id: number;
-  title: string;
-  name: string;
-  state: string;
-  level: number;
-  handler: string;
-  ishandled: BooleanLike;
-  opened_at: number;
-  closed_at: number;
-  opened_at_date: string;
-  closed_at_date: string;
-  actions: string;
-  log: string[];
-
-  ref: string;
-  selected: BooleanLike;
-};
+type Ticket = Data['tickets'][number];
 
 const getFilteredTickets = (
   tickets: Ticket[],
@@ -99,8 +81,8 @@ const getFilteredTickets = (
 };
 
 export const TicketsPanel = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { tickets, selected_ticket, is_admin } = data;
+  const { act, data } = useBackend<Data, TicketsPanelActions>();
+  const { tickets = [], selected_ticket, is_admin } = data;
 
   const [stateFilter, setStateFilter] = useState('open');
   const [levelFilter, setLevelFilter] = useState(2);
@@ -266,7 +248,7 @@ export const TicketsPanel = (props) => {
                             <div
                               // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
                               dangerouslySetInnerHTML={{
-                                __html: selected_ticket.name,
+                                __html: sanitizeAdminHtml(selected_ticket.name),
                               }}
                             />
                           </Stack.Item>
@@ -319,7 +301,7 @@ export const TicketsPanel = (props) => {
                         <div
                           // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
                           dangerouslySetInnerHTML={{
-                            __html: selected_ticket.actions,
+                            __html: sanitizeAdminHtml(selected_ticket.actions),
                           }}
                         />
                       </LabeledList.Item>
@@ -331,14 +313,16 @@ export const TicketsPanel = (props) => {
                   <Section fill ref={messagesEndRef} scrollable title="Log">
                     <Stack fill direction="column">
                       <Stack.Item grow>
-                        {Object.keys(selected_ticket.log)
+                        {Object.keys(selected_ticket.log ?? {})
                           .slice(0)
                           .map((L, i) => (
                             <div
                               key={i}
                               // biome-ignore lint/security/noDangerouslySetInnerHtml: Ticket data
                               dangerouslySetInnerHTML={{
-                                __html: selected_ticket.log[L],
+                                __html: sanitizeAdminHtml(
+                                  selected_ticket.log?.[L] ?? '',
+                                ),
                               }}
                             />
                           ))}

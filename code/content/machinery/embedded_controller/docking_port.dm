@@ -142,6 +142,11 @@ SETTER(/datum/docking_port, dock_state)
 
 /// Client: starts undocking (only the client can).
 /datum/docking_port/proc/initiate_undocking()
+	if(dock_state == DOCK_DOCKING && control_mode == DOCK_MODE_CLIENT)
+		// The airlocks never finished preparing, so it never docked: a shuttle asked to leave must not wait on a dock that is not coming.
+		log_game("Docking [id_tag] asked to undock while still docking with [peer?.id_tag || "none"]: abandoning the docking")
+		force_undock()
+		return
 	if(dock_state != DOCK_DOCKED || control_mode != DOCK_MODE_CLIENT)
 		return
 	ready_reported = FALSE

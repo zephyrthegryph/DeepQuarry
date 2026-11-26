@@ -18,7 +18,6 @@ pub(super) struct Pass<'a> {
     pub(super) predefined: Option<&'a dyn Resolver>,
     pub(super) calls: Option<&'a dyn PureCalls>,
     pub(super) artifacts: Option<&'a dyn ScalarArtifacts>,
-    pub(super) original:Option<original_source::OriginalScalarPass<'a>>,
 }
 impl Pass<'_> {
     fn member(&self, owner: SymbolId, name: SymbolId) -> Option<MemberId> {
@@ -27,14 +26,11 @@ impl Pass<'_> {
             .lookup_type(owner)
             .and_then(|owner| self.tree.resolve(owner, name, MemberKind::Var))
     }
-    pub(super) fn query(&self,query:ScalarQuery)->ScalarOutcome{self.query_checked(query).unwrap_or_else(|_|unreachable!("compatibility scalar pass has no operational source provider"))}
-    pub(super) fn checkpoint(&self)->Result<(),crate::frontend::BodySyntaxFailure>{match &self.original{Some(source)=>source.checkpoint(),None=>Ok(())}}
-    pub(super) fn query_checked(&self, query:ScalarQuery)->Result<ScalarOutcome,crate::frontend::BodySyntaxFailure>{
-        self.checkpoint()?;
+    pub(super) fn query(&self, query: ScalarQuery) -> ScalarOutcome {
         {
             let memo = self.memo.borrow();
             if let Some(value) = memo.values.get(&query) {
-                return Ok(value.clone());
+                return value.clone();
             }
             if let Some(index) = memo.active.iter().position(|active| *active == query) {
                 let mut cycle = memo.active[index..].to_vec();
@@ -44,19 +40,18 @@ impl Pass<'_> {
                     .min_by_key(|(_, key)| **key)
                     .map_or(0, |(index, _)| index);
                 cycle.rotate_left(first);
-                return Ok(ScalarOutcome::Cycle(cycle.into()));
+                return ScalarOutcome::Cycle(cycle.into());
             }
         }
         self.memo.borrow_mut().active.push(query);
-        let outcome=(||{
-        let _frame=self.original.as_ref().map(|source|source.admission.evaluation_frame()).transpose().map_err(crate::frontend::BodySyntaxFailure::Operational)?;
         let checkpoint = {
             let memo = self.memo.borrow();
             (memo.inserted.len(), memo.predefined_changes.len())
         };
         self.observe(ScalarReadQuery::PurePolicy);
-        let operand=self.original_operand(query)?;
-        let cached=if matches!(&operand,original_source::OriginalOperand::RejectedSyntax){None}else{match self.artifacts{Some(artifacts)if self.original.is_some()=>artifacts.lookup_checked(query,&|read|self.answer_checked(read))?,Some(artifacts)=>artifacts.lookup(query,&|read|self.answer(read)),None=>None}};
+        let cached = self
+            .artifacts
+            .and_then(|artifacts| artifacts.lookup(query, &|read| self.answer(read)));
         if cached.is_none() {
             let mut memo = self.memo.borrow_mut();
             while memo.inserted.len() > checkpoint.0 {
@@ -91,9 +86,8 @@ impl Pass<'_> {
             cached.outcome.clone()
         } else {
             self.observe(ScalarReadQuery::PurePolicy);
-            self.evaluate_checked(query,&operand)?
+            self.evaluate(query)
         };
-        self.checkpoint()?;
         let mut memo = self.memo.borrow_mut();
         if self.artifacts.is_some()
             && (matches!(value, ScalarOutcome::Cycle(_)) || memo.cyclic.contains(&query))
@@ -136,65 +130,82 @@ impl Pass<'_> {
             }
         }
         drop(memo);
-        self.checkpoint()?;
         let mut memo = self.memo.borrow_mut();
+        memo.active.pop();
         memo.values.insert(query, value.clone());
         if self.artifacts.is_some() {
             memo.inserted.push(query);
         }
-        Ok(value)
-        })();
-        self.memo.borrow_mut().active.pop();
-        outcome
+        value
     }
-    pub(super) fn original_operand(&self,query:ScalarQuery)->Result<original_source::OriginalOperand<'_>,crate::frontend::BodySyntaxFailure>{
-        let Some(source)=&self.original else{return Ok(original_source::OriginalOperand::Unavailable)};
-        let original_source::Selected::Expression(selected)=self.select(query)else{return Ok(original_source::OriginalOperand::Unavailable)};
-        let input=source.context.scalar_expression_admitted(&selected,source.admission)?;
-        match input.prepare(source.admission){Ok(root)=>Ok(original_source::OriginalOperand::Root(root)),Err(crate::frontend::BodySyntaxFailure::Syntax(_))=>Ok(original_source::OriginalOperand::RejectedSyntax),Err(actual@crate::frontend::BodySyntaxFailure::Operational(_))=>Err(actual)}
-    }
-    fn select(&self,query:ScalarQuery)->original_source::Selected<'_>{
-        let(_,owner,name)=query.parts();
-        let Some(id)=self.member(owner,name)else{return original_source::Selected::Outcome(ScalarOutcome::Unsupported(UnsupportedReason::MissingDeclaration))};
-        let node=self.tree.member(id).expect("resolved member belongs to tree");let metadata=&node.metadata;
-        if metadata.inherited_opaque().is_some()&&!matches!(query,ScalarQuery::EffectiveDefault{..}){return original_source::Selected::Outcome(ScalarOutcome::Unsupported(UnsupportedReason::OpaqueInheritedMetadata))}
-        if matches!(query,ScalarQuery::Const{..})&&metadata.flags&2==0{return original_source::Selected::Outcome(ScalarOutcome::Unsupported(UnsupportedReason::NotConst))}
-        let(expression,scope,source_member)=match query{
-            ScalarQuery::DeclaredDefault{..}=>{let declaration=self.tree.override_chain(id).into_iter().rev().find(|id|self.tree.member(*id).is_some_and(|node|node.definition==DefinitionMode::Declare));let scope=declaration.and_then(|id|self.tree.member(id)).map_or(node.owner,|node|node.owner);(metadata.declared_initializer.as_ref(),scope,declaration.unwrap_or(id))},
-            _=>(metadata.initializer.as_ref(),node.owner,id),
+    fn evaluate(&self, query: ScalarQuery) -> ScalarOutcome {
+        let (_, owner, name) = query.parts();
+        let Some(id) = self.member(owner, name) else {
+            return ScalarOutcome::Unsupported(UnsupportedReason::MissingDeclaration);
         };
-        let Some(expression)=expression else{return original_source::Selected::Outcome(ScalarOutcome::Unsupported(UnsupportedReason::MissingInitializer))};
-        original_source::Selected::Expression(SelectedScalarExpression{tree:self.tree,query,member:id,source_member,expression,scope})
-    }
-    fn evaluate_checked(&self,query:ScalarQuery,operand:&original_source::OriginalOperand<'_>)->Result<ScalarOutcome,crate::frontend::BodySyntaxFailure>{
-        // Cold replay rolls back attempted receipt reads. Re-enter the SAME
-        // selector to record its member/flag dependency for this fresh result.
-        let selected=match self.select(query){original_source::Selected::Outcome(value)=>return Ok(value),original_source::Selected::Expression(selected)=>selected};
-        let expression=selected.expression;let scope=selected.scope;
-        if self.artifacts.is_some(){for token in expression.tokens.iter(){self.spelling(token.text);}}
-        let failure=RefCell::new(None);
-        let resolve=|name:&str|->Result<Option<Constant>,crate::frontend::BodySyntaxFailure>{
+        let node = self
+            .tree
+            .member(id)
+            .expect("resolved member belongs to tree");
+        let metadata = &node.metadata;
+        if metadata.inherited_opaque.is_some()
+            && !matches!(query, ScalarQuery::EffectiveDefault { .. })
+        {
+            return ScalarOutcome::Unsupported(UnsupportedReason::OpaqueInheritedMetadata);
+        }
+        if matches!(query, ScalarQuery::Const { .. }) && metadata.flags & 2 == 0 {
+            return ScalarOutcome::Unsupported(UnsupportedReason::NotConst);
+        }
+        let (expression, scope) = match query {
+            ScalarQuery::DeclaredDefault { .. } => {
+                let declaration = self.tree.override_chain(id).into_iter().rev().find(|id| {
+                    self.tree
+                        .member(*id)
+                        .is_some_and(|node| node.definition == DefinitionMode::Declare)
+                });
+                let owner = declaration
+                    .and_then(|id| self.tree.member(id))
+                    .map_or(node.owner, |node| node.owner);
+                (metadata.declared_initializer.as_ref(), owner)
+            }
+            _ => (metadata.initializer.as_ref(), node.owner),
+        };
+        let Some(expression) = expression else {
+            return ScalarOutcome::Unsupported(UnsupportedReason::MissingInitializer);
+        };
+        if self.artifacts.is_some() {
+            for token in expression.tokens.iter() {
+                self.spelling(token.text);
+            }
+        }
+        let Some(text) = expression.source_text(self.tree.symbols()) else {
+            return ScalarOutcome::Unsupported(UnsupportedReason::RuntimeOrUnsupportedExpression);
+        };
+        let failure = RefCell::new(None);
+        let result = evaluate_with_resources_and_calls(
+            &text,
+            |name| {
                 // The intrinsic is lexical, but authored fields/globals retain
                 // ordinary identifier shadowing precedence.
                 if name == "__TYPE__" {
-                    let Some(lexical_owner)=self.tree.type_node(scope).map(|node|node.path)else{return Ok(None)};
+                    let lexical_owner = self.tree.type_node(scope)?.path;
                     let symbol = SymbolId::of(name);
                     if self.member(lexical_owner, symbol).is_none()
                         && self.member(SymbolId::of("/"), symbol).is_none()
                     {
                         if lexical_owner == SymbolId::of("/") {
-                            return Ok(Some(Constant::Null));
+                            return Some(Constant::Null);
                         }
                         if !matches!(self.meaning(ResolveQuery::Type(lexical_owner)),
                             ResolvedMeaning::Symbol(found) if found == lexical_owner)
                         {
                             *failure.borrow_mut() =
                                 Some(ScalarOutcome::Unsupported(UnsupportedReason::UnknownType));
-                            return Ok(None);
+                            return None;
                         }
-                        return Ok(self
+                        return self
                             .spelling(lexical_owner)
-                            .map(|path| Constant::TypePath(path.to_string())));
+                            .map(|path| Constant::TypePath(path.to_string()));
                     }
                 }
                 let dependency = if let Some((path, name)) = name.rsplit_once("::") {
@@ -203,7 +214,7 @@ impl Pass<'_> {
                         name: SymbolId::of(name),
                     }
                 } else {
-                    let Some(owner)=self.tree.type_node(scope).map(|node|node.path)else{return Ok(None)};
+                    let owner = self.tree.type_node(scope)?.path;
                     let name = SymbolId::of(name);
                     let owner = if self.member(owner, name).is_some() {
                         owner
@@ -218,12 +229,12 @@ impl Pass<'_> {
                     .entry(query)
                     .or_default()
                     .insert(dependency);
-                let dependency_value = self.query_checked(dependency)?;
+                let dependency_value = self.query(dependency);
                 self.record(
                     ScalarReadQuery::Dependency(dependency),
                     ScalarReadAnswer::Dependency(dependency_value.clone()),
                 );
-                Ok(match dependency_value {
+                match dependency_value {
                     ScalarOutcome::Value(value) => self.to_constant(&value),
                     ScalarOutcome::Unsupported(UnsupportedReason::MissingDeclaration)
                         if !name.contains("::") && self.predefined.is_some() =>
@@ -264,25 +275,42 @@ impl Pass<'_> {
                         }
                         None
                     }
-                })
-        };
-        let decode=|raw:&dm_syntax::LiteralText|{let result=(self.backend.decode_string)(raw);if result.is_none()&&failure.borrow().is_none(){*failure.borrow_mut()=Some(ScalarOutcome::Unsupported(UnsupportedReason::BackendInterpretation));}Ok::<_,crate::frontend::BodySyntaxFailure>(result)};
-        let nameof=|expression:&Expr|{let result=(self.backend.nameof)(expression);if result.is_none()&&failure.borrow().is_none(){*failure.borrow_mut()=Some(ScalarOutcome::Unsupported(UnsupportedReason::BackendInterpretation));}Ok::<_,crate::frontend::BodySyntaxFailure>(result)};
-        fn compatibility<T>(value:Result<T,crate::frontend::BodySyntaxFailure>)->T{value.unwrap_or_else(|_|unreachable!("compatibility scalar callback has no source operational error"))}
-        let result=match operand{
-            original_source::OriginalOperand::Root(root)=>match crate::constants::try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(root.ast(),&resolve,&decode,&nameof,|_|Ok(None),self.calls,None,||self.original.as_ref().map(|source|source.admission.evaluation_frame()).transpose().map_err(crate::frontend::BodySyntaxFailure::Operational)){
-                Ok(value)=>Ok(value),Err(crate::constants::ConstantEvaluationFailure::PureCall(error))=>Err(error),Err(crate::constants::ConstantEvaluationFailure::Callback(actual))=>return Err(actual),
+                }
             },
-            original_source::OriginalOperand::RejectedSyntax=>Ok(None),
-            original_source::OriginalOperand::Unavailable=>{let Some(text)=expression.source_text(self.tree.symbols())else{return Ok(ScalarOutcome::Unsupported(UnsupportedReason::RuntimeOrUnsupportedExpression))};evaluate_with_resources_and_calls(&text,|name|compatibility(resolve(name)),|raw|compatibility(decode(raw)),|expr|compatibility(nameof(expr)),|_|None,self.calls)},
-        };
-        Ok(match result{
-            Err(error)=>failure.into_inner().unwrap_or(ScalarOutcome::RejectedPureCall(error)),
-            Ok(Some(value))=>self.to_semantic(value).map_or(ScalarOutcome::Unsupported(UnsupportedReason::UnknownType),ScalarOutcome::Value),
-            Ok(None)=>failure.into_inner().unwrap_or(ScalarOutcome::Unsupported(UnsupportedReason::RuntimeOrUnsupportedExpression)),
-        })
+            |raw| {
+                let result = (self.backend.decode_string)(raw);
+                if result.is_none() && failure.borrow().is_none() {
+                    *failure.borrow_mut() = Some(ScalarOutcome::Unsupported(
+                        UnsupportedReason::BackendInterpretation,
+                    ));
+                }
+                result
+            },
+            |expression| {
+                let result = (self.backend.nameof)(expression);
+                if result.is_none() && failure.borrow().is_none() {
+                    *failure.borrow_mut() = Some(ScalarOutcome::Unsupported(
+                        UnsupportedReason::BackendInterpretation,
+                    ));
+                }
+                result
+            },
+            |_| None,
+            self.calls,
+        );
+        match result {
+            Err(error) => failure
+                .into_inner()
+                .unwrap_or(ScalarOutcome::RejectedPureCall(error)),
+            Ok(Some(value)) => self.to_semantic(value).map_or(
+                ScalarOutcome::Unsupported(UnsupportedReason::UnknownType),
+                ScalarOutcome::Value,
+            ),
+            Ok(None) => failure.into_inner().unwrap_or(ScalarOutcome::Unsupported(
+                UnsupportedReason::RuntimeOrUnsupportedExpression,
+            )),
+        }
     }
-
 }
 
 impl Pass<'_> {
@@ -307,7 +335,6 @@ impl Pass<'_> {
             let _ = self.answer(&query);
         }
     }
-    fn answer_checked(&self,query:&ScalarReadQuery)->Result<ScalarReadAnswer,crate::frontend::BodySyntaxFailure>{self.checkpoint()?;if let ScalarReadQuery::Dependency(dependency)=query{let value=ScalarReadAnswer::Dependency(self.query_checked(*dependency)?);self.record(query.clone(),value.clone());Ok(value)}else{Ok(self.answer(query))}}
     fn answer(&self, query: &ScalarReadQuery) -> ScalarReadAnswer {
         let answer = match *query {
             ScalarReadQuery::PurePolicy => ScalarReadAnswer::PurePolicy(

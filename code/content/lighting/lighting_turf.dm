@@ -23,6 +23,9 @@
 
 // Causes any affecting light sources to be queued for a visibility update, for example a door got opened.
 /turf/proc/reconsider_lights()
+	if(GLOB.client_lighting)
+		client_glow_reconsider(src) // client lighting: glowing lights in reach redraw their shadow masks
+		lighting_smooth_dirty_turf(src) // corner lighting: this turf is sampled again (a wall takes no light, an opened door takes it)
 	lighting_corner_NE?.vis_update()
 	lighting_corner_SE?.vis_update()
 	lighting_corner_SW?.vis_update()
@@ -35,6 +38,8 @@
 		// a stale lighting gradient as part of the turf's permanent appearance.
 		lighting_object.removefromturf()
 		spent(lighting_object, force = TRUE)
+	else
+		set_luminosity(1) // what a removed lighting object leaves (lighting_object on_destroy)
 
 /// A copy of this turf's underlays without its lighting underlay: what a snapshot of the turf's appearance keeps. The lighting object stays.
 /turf/proc/underlays_without_lighting()
@@ -49,17 +54,52 @@
 	underlays = snapshot.Copy()
 	lighting_object?.addtoturf()
 
-// Builds a lighting object for us, but only if our area is dynamic.
+// Readies a dynamic turf for lighting, but only if our area is dynamic. The lighting object itself is made on first need
+// (lighting_ensure_object): an unlit turf without one looks the same as one showing "dark" (luminosity 0 over the black
+// lighting backdrop), so a map of mostly dark turfs costs no object, underlay or update for them.
 /turf/proc/lighting_build_overlay()
-	if(!has_dynamic_lighting())
+	if(!has_dynamic_lighting() || (GLOB.client_lighting && !GLOB.client_lighting_compare))
 		return
 
 	lighting_clear_overlay()
-	new/datum/lighting_object(src)
+	if(GLOB.client_lighting_compare || lighting_needs_object()) // compare mode: every turf shows BYOND, so every one carries its darkness
+		new/datum/lighting_object(src)
+		return
+	set_luminosity(0)
+	if(CONFIG_GET(number/starlight))
+		for(var/turf/space/space_tile in RANGE_TURFS(1, src))
+			space_tile.update_starlight()
+
+/// TRUE when this dynamic turf must show a lighting object now rather than on first light: a corner already carries light.
+/turf/proc/lighting_needs_object()
+	return lighting_corners_lit()
+
+/// TRUE when any of this turf's lighting corners carries light.
+/turf/proc/lighting_corners_lit()
+	var/datum/lighting_corner/C = lighting_corner_NE
+	if(C && (C.lum_r || C.lum_g || C.lum_b))
+		return TRUE
+	C = lighting_corner_SE
+	if(C && (C.lum_r || C.lum_g || C.lum_b))
+		return TRUE
+	C = lighting_corner_SW
+	if(C && (C.lum_r || C.lum_g || C.lum_b))
+		return TRUE
+	C = lighting_corner_NW
+	return C && (C.lum_r || C.lum_g || C.lum_b)
+
+/// This turf's lighting object, made now if the turf is dynamic and has none yet (a light reached it, or a reader needs its lum).
+/turf/proc/lighting_ensure_object() as /datum/lighting_object
+	if(!lighting_object && (!GLOB.client_lighting || GLOB.client_lighting_compare) && SSlighting.is_initialized() && has_dynamic_lighting())
+		new/datum/lighting_object(src)
+	return lighting_object
 
 // Used to get a scaled lumcount.
 /turf/proc/get_lumcount(minlum = 0, maxlum = 1)
-	if (!lighting_object)
+	// Client lighting: no corners; the level is worked out from the glowing lights in reach (client_light_level.dm).
+	if(GLOB.client_lighting && SSlighting.is_initialized() && has_dynamic_lighting())
+		return CLAMP01((client_light_level(src) - minlum) / (maxlum - minlum) + dynamic_lumcount)
+	if (!lighting_object && (!SSlighting.is_initialized() || !has_dynamic_lighting()))
 		return 1
 
 	var/totallums = 0
@@ -118,7 +158,9 @@
 	if(opacity)
 		directional_opacity = ALL_CARDINALS
 		if(. != directional_opacity)
+			sight_opacity_changed(src)
 			reconsider_lights()
+			client_glow_wall_sync()
 		return
 	directional_opacity = NONE
 	for(var/atom/movable/opacity_source as anything in opacity_sources)
@@ -127,6 +169,9 @@
 		else //If fulltile and opaque, then the whole tile blocks view, no need to continue checking.
 			directional_opacity = ALL_CARDINALS
 			break
+	if(. != directional_opacity)
+		sight_opacity_changed(src)
+		client_glow_wall_sync()
 	if(. != directional_opacity && (. == ALL_CARDINALS || directional_opacity == ALL_CARDINALS))
 		reconsider_lights() //The lighting system only cares whether the tile is fully concealed from all directions or not.
 

@@ -14,7 +14,6 @@
 //   loadout    — Starting Kit + Underwear + Gear builder
 //   occupation — Job priorities
 //   traits     — Trait picker
-//   antag      — Antag opt-ins, antag faction, visibility, etc.
 //   vore       — Vore basics, directory, thermal messages
 //   game       — Persistence, NIF, PAI char config (niche / collapsed)
 
@@ -31,7 +30,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// SpeciesPicker editor (Robot / pAI entries set it).
 	tag_pref(., /datum/preference/name/real_name, "identity", "name")
 	tag_pref(., /datum/preference/name/nickname, "identity", "name")
-	tag_pref(., /datum/preference/toggle/human/name_is_always_random, "identity", "name", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/text/human/play_mode, "identity", "species", PREF_WIDGET_HIDDEN)
 	// Gender
 	// Gender. identifying gender is merged into biological — see
@@ -44,7 +42,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// Age is a NumberInput (not a slider) — easier to type a specific number,
 	// matches how weight is rendered.
 	tag_pref(., /datum/preference/numeric/human/age, "identity", "demographics", PREF_WIDGET_NUMBER)
-	tag_pref(., /datum/preference/toggle/human/bday_announce, "identity", "demographics", PREF_WIDGET_HIDDEN) // on the Birthday editor's row
 	// Species — owned by the species_picker editor; underlying prefs hidden
 	// from the auto-renderer so the popup is the only entry point.
 	tag_pref(., /datum/preference/choiced/species, "identity", "species", PREF_WIDGET_HIDDEN)
@@ -63,6 +60,7 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/text/human/custom_whisper, "identity", "speech_verbs")
 	tag_pref(., /datum/preference/text/human/custom_ask, "identity", "speech_verbs")
 	tag_pref(., /datum/preference/text/human/custom_exclaim, "identity", "speech_verbs")
+	tag_pref(., /datum/preference/text/human/autohiss, "identity", "speech_verbs")
 	// Language (formerly its own tab). extra_languages is a derived stat
 	// (computed from traits, NIF, etc.) — not a player-editable preference.
 	tag_pref(., /datum/preference/numeric/human/extra_languages, "identity", "language", PREF_WIDGET_HIDDEN)
@@ -70,7 +68,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/alternate_languages, "identity", "language", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/language_custom_keys, "identity", "language", PREF_WIDGET_HIDDEN)
 	// Flavor / custom link
-	tag_pref(., /datum/preference/text/human/custom_link, "identity", "flavor")
 	tag_pref(., /datum/preference/flavor_texts, "identity", "flavor", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/flavour_texts_robot, "identity", "flavor", PREF_WIDGET_HIDDEN)
 	// Records (collapsible — long-form text)
@@ -129,7 +126,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// Markings (handled by editor)
 	tag_pref(., /datum/preference/body_markings, "appearance", "markings", PREF_WIDGET_HIDDEN)
 	// Preview controls
-	tag_pref(., /datum/preference/numeric/human/equip_preview_mob, "appearance", "preview", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/toggle/human/preview_loadout, "appearance", "preview")
 	tag_pref(., /datum/preference/toggle/human/preview_job, "appearance", "preview")
 	tag_pref(., /datum/preference/toggle/human/animations_toggle, "appearance", "preview")
@@ -151,8 +147,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// headset/backbag/pdachoice prefs deleted; their variants are loadout gear
 	// datums now. Remaining starting-kit prefs (no_jacket toggle, ringtone, comm visibility)
 	// stay hidden and surface via the starting_kit editor or the loadout panel.
-	tag_pref(., /datum/preference/text/human/ringtone, "loadout", "starting_kit", PREF_WIDGET_HIDDEN)
-	tag_pref(., /datum/preference/toggle/human/communicator_visibility, "loadout", "starting_kit", PREF_WIDGET_HIDDEN)
 	// Composite (editors)
 	tag_pref(., /datum/preference/all_underwear, "loadout", "underwear", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/all_underwear_metadata, "loadout", null, PREF_WIDGET_HIDDEN)
@@ -178,22 +172,12 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/typed_list/body_perks, "mind_body", null, PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/typed_list/mind_perks, "mind_body", null, PREF_WIDGET_HIDDEN)
 
-	//// ANTAG ////
-	tag_pref(., /datum/preference/numeric/human/be_special, "antag", null, PREF_WIDGET_HIDDEN)
-	tag_pref(., /datum/preference/text/human/antag_faction, "antag")
-	tag_pref(., /datum/preference/choiced/human/antag_vis, "antag")
-	tag_pref(., /datum/preference/text/human/exploit_record, "antag", null, PREF_WIDGET_LONGTEXT)
-	tag_pref(., /datum/preference/toggle/human/vantag_volunteer, "antag")
-	tag_pref(., /datum/preference/choiced/human/vantag_preference, "antag")
-	tag_pref(., /datum/preference/choiced/uplinklocation, "antag")
-
 	// VORE TAB REMOVED — prefs moved into Game / Identity. Backup/resleeve
 	// prefs go to Game/Persistence (they're save-state). Vore directory
 	// (player-facing ad copy) goes to Identity/Directory. Thermal messages
 	// and personal kink prefs go to Game/Roleplay.
 	tag_pref(., /datum/preference/text/human/vore_egg_type, "game", "roleplay")
-	tag_pref(., /datum/preference/text/human/autohiss, "identity", "speech_verbs")
-	tag_pref(., /datum/preference/numeric/human/sensorpref, "game", "input")
+	tag_pref(., /datum/preference/choiced/human/sensorpref, "game", "input")
 	tag_pref(., /datum/preference/toggle/human/ignore_shoes, "game", "roleplay")
 	// Backup / persistence
 	tag_pref(., /datum/preference/toggle/human/capture_crystal, "game", "persistence")
@@ -225,6 +209,11 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/color/pai_eye_color, "game", "pai")
 	tag_pref(., /datum/preference/text/pai_chassis, "game", "pai")
 	tag_pref(., /datum/preference/text/pai_emotion, "game", "pai")
+	// Shadekin flicker: the saved value seeds the per-round Shadekin panel.
+	tag_pref(., /datum/preference/color/living/flicker_color, "game", "shadekin")
+	tag_pref(., /datum/preference/numeric/living/flicker_time, "game", "shadekin")
+	tag_pref(., /datum/preference/numeric/living/flicker_break_chance, "game", "shadekin")
+	tag_pref(., /datum/preference/numeric/living/flicker_distance, "game", "shadekin")
 	// NIF (handled by editor)
 	tag_pref(., /datum/preference/nif_path, "game", "nif", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/numeric/nif_durability, "game", "nif", PREF_WIDGET_HIDDEN)
@@ -249,9 +238,9 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 			continue
 		var/list/entry = .[pref_type]
 		if(entry["category"])
-			pref.category = entry["category"]
+			pref.set_category(entry["category"])
 		if(entry["group"])
-			pref.group = entry["group"]
+			pref.set_group(entry["group"])
 		if(entry["widget"])
 			pref.widget = entry["widget"]
 
@@ -270,8 +259,8 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	if(!instance)
 		return
 	if(category)
-		instance.category = category
+		instance.set_category(category)
 	if(group)
-		instance.group = group
+		instance.set_group(group)
 	if(widget)
 		instance.widget = widget

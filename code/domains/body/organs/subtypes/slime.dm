@@ -1,62 +1,3 @@
-/obj/item/organ/external/chest/unbreakable/slime
-	nonsolid = 1
-	max_damage = 60 // matching our changes to broken bones for less squishy people.
-	encased = 0
-	spread_dam = 1
-
-/obj/item/organ/external/groin/unbreakable/slime
-	nonsolid = 1
-	max_damage = 50 // matching our changes to broken bones for less squishy people.
-	spread_dam = 1
-
-/obj/item/organ/external/arm/unbreakable/slime
-	nonsolid = 1
-	max_damage = 35 // matching our changes to broken bones for less squishy people.
-	spread_dam = 1
-
-/obj/item/organ/external/arm/right/unbreakable/slime
-	nonsolid = 1
-	max_damage = 35 // matching our changes to broken bones for less squishy people.
-	spread_dam = 1
-
-/obj/item/organ/external/leg/unbreakable/slime
-	nonsolid = 1
-	max_damage = 35 // matching our changes to broken bones for less squishy people.
-	spread_dam = 1
-
-/obj/item/organ/external/leg/right/unbreakable/slime
-	nonsolid = 1
-	max_damage = 35 // matching our changes to broken bones for less squishy people.
-	spread_dam = 1
-
-/obj/item/organ/external/foot/unbreakable/slime
-	nonsolid = 1
-	max_damage = 35 // matching our changes to broken bones for less squishy people.
-	spread_dam = 1
-
-/obj/item/organ/external/foot/right/unbreakable/slime
-	nonsolid = 1
-	max_damage = 35 // matching our changes to broken bones for less squishy people.
-	spread_dam = 1
-
-/obj/item/organ/external/hand/unbreakable/slime
-	nonsolid = 1
-	max_damage = 35 // matching our changes to broken bones for less squishy people.
-	spread_dam = 1
-
-/obj/item/organ/external/hand/right/unbreakable/slime
-	nonsolid = 1
-	max_damage = 35 // matching our changes to broken bones for less squishy people.
-	spread_dam = 1
-
-/obj/item/organ/external/head/unbreakable/slime	//They don't need this anymore.
-	nonsolid = 1
-	cannot_gib = FALSE
-	vital = FALSE
-	max_damage = 45 // matching our changes to broken bones for less squishy people.
-	encased = FALSE
-	spread_dam = 1
-
 /*
  * Internal Slime organs.
  */
@@ -142,39 +83,6 @@ CAPABILITIES(/obj/item/organ/internal/regennetwork)
 	name = "toxoregenesis network"
 	organ_tag = O_REGTOX
 
-
-/obj/item/organ/external/chest/unbreakable/slime
-	transparent = 1
-
-/obj/item/organ/external/groin/unbreakable/slime
-	transparent = 1
-
-/obj/item/organ/external/arm/unbreakable/slime
-	transparent = 1
-
-/obj/item/organ/external/arm/right/unbreakable/slime
-	transparent = 1
-
-/obj/item/organ/external/leg/unbreakable/slime
-	transparent = 1
-
-/obj/item/organ/external/leg/right/unbreakable/slime
-	transparent = 1
-
-/obj/item/organ/external/foot/unbreakable/slime
-	transparent = 1
-
-/obj/item/organ/external/foot/right/unbreakable/slime
-	transparent = 1
-
-/obj/item/organ/external/hand/unbreakable/slime
-	transparent = 1
-
-/obj/item/organ/external/hand/right/unbreakable/slime
-	transparent = 1
-
-/obj/item/organ/external/head/unbreakable/slime
-	transparent = 1
 
 // This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/heart/grey/colormatch/slime/life_step_idle()

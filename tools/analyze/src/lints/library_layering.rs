@@ -8,7 +8,7 @@ use crate::tree::CODE_DM;
 
 const HINT: &str = "library code may not name content: move the content-specific implementation to code/content/, declare a virtual proc in the library and implement it there, or move the shared type into code/domains/world_model/";
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::library_layering::SCOPE_META_0.name, group: crate::allow_registry_fields::library_layering::SCOPE_META_0.group, label: "library_layering", legacy: "",
+    name: "library_layering", group: "", label: "library_layering", legacy: "",
     select: CODE_DM, scan: ScanKind::Tree,
     policy: Policy::Sites {
         baseline: "tools/ci/library_layering_baseline.txt",
@@ -20,7 +20,7 @@ static META: Meta = Meta {
         banned: &[],
     },
     rules: &[RuleMeta { name: "external_dependency", hint: HINT }, RuleMeta { name: "semantic_model", hint: "repair the parsed environment; library layering cannot pass without the semantic model" }],
-    allow: crate::allow_registry_fields::library_layering::ALLOW_0, lists: crate::allow_registry_fields::library_layering::SCOPE_META_0.lists,
+    allow: &[], lists: &[],
 };
 struct LibraryLayering;
 impl Lint for LibraryLayering {

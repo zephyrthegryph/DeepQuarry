@@ -283,9 +283,6 @@ CAPABILITIES(/obj/item/storage/mrebag)
 	icon_state = "pouch_small"
 	starts_with = list(/obj/random/mre/side)
 
-/obj/item/storage/mrebag/side/menu10
-	starts_with = list(/obj/item/reagent_containers/food/snacks/meatcube)
-
 /obj/item/storage/mrebag/dessert
 	name = "dessert"
 	desc = "A vacuum-sealed bag containing the MRE's dessert."

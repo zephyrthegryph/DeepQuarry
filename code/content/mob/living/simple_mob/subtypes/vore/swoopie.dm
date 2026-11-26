@@ -232,8 +232,7 @@
 					to_chat(src, "\The [D] has already began flushing, you're too late to grab whatever was inside!")
 					return TRUE
 				var/foundstuff = 0 //Check if we actually found anything in the bin...
-				D.latent_materialize_all() // a walk needs real things (C5)
-				for(var/atom/movable/AM in D) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+				for(var/atom/movable/AM in D)
 					if(istype(AM, /mob/living))
 						var/mob/living/M = AM
 						if(!can_spontaneous_vore(src, M))

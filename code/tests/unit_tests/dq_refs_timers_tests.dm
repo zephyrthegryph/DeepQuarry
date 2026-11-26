@@ -1,5 +1,4 @@
-// The timers of the references lane (D1 step 7): the wheel names a record by handle, keyed timers live in the owner's record, a latent entry
-// carries its thing's timers, and a borrower hears that its target was deleted (borrow_ended, K8).
+// The timers of the references lane (D1 step 7): the wheel names a record by handle, keyed timers live in the owner's record, and a borrower hears that its target was deleted (borrow_ended, K8).
 
 /// Entries on the test scheduler's deadline wheel that name `rec_handle`.
 /proc/refs_wheel_entries(datum/time_scheduler/sched, rec_handle)
@@ -79,66 +78,6 @@
 	TEST_ASSERT_EQUAL(probe.last_arg, "second", "with its own arguments")
 	TEST_ASSERT(!after_pending(owner, "k"), "and the key is clear")
 	TEST_ASSERT_NULL(owner.sched_rec.timer_keys, "the table went with its last key")
-
-/// A latent collapse carries the thing's own-clock timers as data; the materialized thing re-arms them with the time they had left.
-/datum/unit_test/dq_timer_survives_latent_collapse
-
-/datum/unit_test/dq_timer_survives_latent_collapse/Run()
-	set_global(nameof(GLOB.latent_last_refusal), GLOB.latent_last_refusal)
-	var/datum/time_scheduler/sched = scheduler_test_begin()
-	defer_cleanup(null, GLOBAL_PROC_REF(scheduler_test_end))
-	var/datum/refs_timer_probe/probe = allocate(/datum/refs_timer_probe)
-	var/obj/structure/closet/closet = allocate(/obj/structure/closet, test_floor())
-	var/obj/item/pen/pen = new(closet)
-	after(pen, 5 SECONDS, GLOBAL_PROC_REF(refs_timer_probe_fire), with = list(probe, "plain"))
-	after(pen, 9 SECONDS, GLOBAL_PROC_REF(refs_timer_probe_fire), key = "late", with = list(probe, "keyed"))
-	sched.advance(2)
-	TEST_ASSERT(!pen.latent_collapse_refusal(), "a pen with own-clock timers may collapse: [pen.latent_collapse_refusal()]")
-	TEST_ASSERT(pen.latent_collapse(), "it collapses: [GLOB.latent_last_refusal]")
-	TEST_ASSERT(QDELETED(pen), "the pen is gone")
-	sched.advance(30)
-	TEST_ASSERT_EQUAL(probe.fired, 0, "a latent thing is data: its timers do not run")
-	var/list/made = closet.latent_materialize_all()
-	TEST_ASSERT_EQUAL(length(made), 1, "it comes back")
-	var/obj/item/pen/back = own(made[1])
-	TEST_ASSERT_EQUAL(sched.timer_count(back), 2, "with both timers re-armed")
-	TEST_ASSERT(after_pending(back, "late"), "and the key back")
-	sched.advance(2)
-	TEST_ASSERT_EQUAL(probe.fired, 0, "the plain timer had 3 s left")
-	sched.advance(2)
-	TEST_ASSERT_EQUAL(probe.fired, 1, "so it fires 3 s after the pen came back")
-	TEST_ASSERT_EQUAL(probe.last_arg, "plain", "the plain one")
-	sched.advance(6)
-	TEST_ASSERT_EQUAL(probe.fired, 2, "and the keyed one 7 s after")
-	TEST_ASSERT_EQUAL(probe.last_arg, "keyed", "with its arguments")
-	TEST_ASSERT(!after_pending(back, "late"), "its key cleared when it fired")
-
-/// Collapsing and materializing again and again keeps one timer, not a growing set, and things without timers still merge into one entry.
-/datum/unit_test/dq_timer_latent_round_trips_keep_one_timer
-
-/datum/unit_test/dq_timer_latent_round_trips_keep_one_timer/Run()
-	set_global(nameof(GLOB.latent_last_refusal), GLOB.latent_last_refusal)
-	var/datum/time_scheduler/sched = scheduler_test_begin()
-	defer_cleanup(null, GLOBAL_PROC_REF(scheduler_test_end))
-	var/datum/refs_timer_probe/probe = allocate(/datum/refs_timer_probe)
-	var/obj/structure/closet/closet = allocate(/obj/structure/closet, test_floor())
-	var/obj/item/pen/pen = new(closet)
-	after(pen, 10 SECONDS, GLOBAL_PROC_REF(refs_timer_probe_fire), with = list(probe, "once"))
-	for(var/round in 1 to 3)
-		TEST_ASSERT(pen.latent_collapse(), "round [round] collapses: [GLOB.latent_last_refusal]")
-		var/list/made = closet.latent_materialize_all()
-		TEST_ASSERT_EQUAL(length(made), 1, "round [round] comes back")
-		pen = own(made[1])
-		TEST_ASSERT_EQUAL(sched.timer_count(pen), 1, "round [round] has one timer")
-		var/list/problems = closet.containment_ledger().verify()
-		TEST_ASSERT(!length(problems), "round [round] leaves the ledger consistent (the thing took its old handle back): [jointext(problems, "; ")]")
-	sched.advance(11)
-	TEST_ASSERT_EQUAL(probe.fired, 1, "it fires once")
-	var/obj/item/pen/plain_a = new(closet)
-	var/obj/item/pen/plain_b = new(closet)
-	TEST_ASSERT(plain_a.latent_collapse() && plain_b.latent_collapse(), "two pens without timers collapse")
-	TEST_ASSERT_EQUAL(length(closet.latent_entries()), 1, "and share one entry")
-	TEST_ASSERT_EQUAL(closet.latent_count(), 2, "of two")
 
 /// K8: a waiting op hears that its target was deleted, runs its on_interrupt() with no target and the reason, and ends.
 /datum/unit_test/dq_borrow_ended_runs_on_interrupt

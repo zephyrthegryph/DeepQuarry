@@ -7,6 +7,9 @@
 //   maint      — maintenance console actions
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
+import { YesNo } from 'tgui/components/YesNo';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -16,112 +19,16 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type {
+  MechaInterfaceActions,
+  MechaInterfaceData,
+} from './generated/MechaInterface';
 
-type DamageReport = {
-  key: string;
-  label: string;
-  has_repair: BooleanLike;
-};
-
-type Cargo = {
-  id: string;
-  name: string;
-};
-
-type EquipControl = {
-  key: string;
-  label: string;
-  value?: number;
-};
-
-type EquipPiece = {
-  id: string;
-  name: string;
-  kind: string;
-  ready: BooleanLike;
-  selected: BooleanLike;
-  info_lines: string[];
-  controls: EquipControl[];
-};
-
-type Command = {
-  key: string;
-  label: string;
-};
-
-type EquipSlotInfo = {
-  label: string;
-  used: number;
-  max: number;
-};
-
-type LogEntry = {
-  time: string;
-  message: string;
-};
-
-type AccessKey = {
-  id: number;
-  name: string;
-};
-
-type Data = {
-  view: 'main' | 'log' | 'access' | 'maint';
-  title: string;
-  // main view
-  damage_reports: DamageReport[];
-  high_pressure: BooleanLike;
-  has_armor: BooleanLike;
-  armor_percent: number;
-  has_hull: BooleanLike;
-  hull_percent: number;
-  integrity_percent: number;
-  cell_percent: number | null;
-  use_internal_tank: BooleanLike;
-  tank_pressure: number | string;
-  tank_temp_k: number | string;
-  tank_temp_c: number | string;
-  cabin_pressure: number;
-  cabin_temp_k: number;
-  cabin_temp_c: number;
-  lights: BooleanLike;
-  dna_lock: string;
-  defence_mode_possible: BooleanLike;
-  defence_mode: BooleanLike;
-  overload_possible: BooleanLike;
-  overload: BooleanLike;
-  smoke_possible: BooleanLike;
-  smoke_reserve: number;
-  thrusters_possible: BooleanLike;
-  thrusters: BooleanLike;
-  cargo: Cargo[];
-  radio_mic: BooleanLike;
-  radio_spk: BooleanLike;
-  radio_freq: string;
-  airtank_disconnect: BooleanLike;
-  airtank_connect: BooleanLike;
-  id_upload_locked: BooleanLike;
-  maint_access: BooleanLike;
-  equipment: EquipPiece[];
-  commands: Command[];
-  slots: EquipSlotInfo[];
-  can_eject: BooleanLike;
-  // log view
-  log_entries: LogEntry[];
-  // access view
-  access_current: AccessKey[];
-  access_available: AccessKey[];
-  // maint view
-  maint_can_req_access: BooleanLike;
-  maint_can_maint_access: BooleanLike;
-  maint_can_set_air: BooleanLike;
-  maint_can_remove_passenger: BooleanLike;
-};
+type Main = NonNullable<MechaInterfaceData['main']>;
 
 export const MechaInterface = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<MechaInterfaceData, MechaInterfaceActions>();
   return (
     <Window width={680} height={780} title={data.title}>
       <Window.Content scrollable>
@@ -142,14 +49,18 @@ export const MechaInterface = () => {
 };
 
 const MainView = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<MechaInterfaceData, MechaInterfaceActions>();
+  const { main } = data;
+  if (!main) {
+    return null;
+  }
   return (
     <>
-      <DamageBanner />
-      <StatsPanel />
-      <CommandsPanel />
-      <EquipmentPanel />
-      {data.can_eject ? (
+      <DamageBanner main={main} />
+      <StatsPanel main={main} />
+      <CommandsPanel main={main} />
+      <EquipmentPanel main={main} />
+      {main.can_eject ? (
         <Section>
           <Button
             fluid
@@ -165,9 +76,9 @@ const MainView = () => {
   );
 };
 
-const DamageBanner = () => {
-  const { data, act } = useBackend<Data>();
-  const { damage_reports, high_pressure, integrity_percent } = data;
+const DamageBanner = (props: { main: Main }) => {
+  const { act } = useBackend<MechaInterfaceData, MechaInterfaceActions>();
+  const { damage_reports, high_pressure, integrity_percent } = props.main;
   const critical = integrity_percent < 30;
   if (damage_reports.length === 0 && !high_pressure && !critical) return null;
   return (
@@ -200,8 +111,8 @@ const DamageBanner = () => {
 const integrityColor = (pct: number) =>
   pct < 30 ? 'bad' : pct < 70 ? 'average' : 'good';
 
-const StatsPanel = () => {
-  const { data, act } = useBackend<Data>();
+const StatsPanel = (props: { main: Main }) => {
+  const { act } = useBackend<MechaInterfaceData, MechaInterfaceActions>();
   const {
     has_armor,
     armor_percent,
@@ -227,7 +138,7 @@ const StatsPanel = () => {
     thrusters_possible,
     thrusters,
     cargo,
-  } = data;
+  } = props.main;
   return (
     <Section title="Status">
       <LabeledList>
@@ -245,20 +156,19 @@ const StatsPanel = () => {
             <Box color="bad">HULL MISSING</Box>
           )}
         </LabeledList.Item>
-        <LabeledList.Item label="Chassis">
-          <ProgressBar
-            value={integrity_percent}
-            minValue={0}
-            maxValue={100}
-            ranges={{
-              bad: [-Infinity, 30],
-              average: [30, 70],
-              good: [70, Infinity],
-            }}
-          >
-            {integrity_percent}%
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Chassis"
+          value={integrity_percent}
+          minValue={0}
+          maxValue={100}
+          ranges={{
+            bad: [-Infinity, 30],
+            average: [30, 70],
+            good: [70, Infinity],
+          }}
+        >
+          {integrity_percent}%
+        </StatBar>
         <LabeledList.Item label="Powercell">
           {cell_percent === null ? (
             <Box color="bad">No powercell installed</Box>
@@ -281,7 +191,9 @@ const StatsPanel = () => {
           {use_internal_tank ? 'Internal Airtank' : 'Environment'}
         </LabeledList.Item>
         <LabeledList.Item label="Airtank">
-          {tank_pressure} kPa, {tank_temp_k} K ({tank_temp_c}°C)
+          {tank_pressure === null
+            ? 'None'
+            : `${tank_pressure} kPa, ${tank_temp_k ?? 'Unknown'} K (${tank_temp_c ?? 'Unknown'}°C)`}
         </LabeledList.Item>
         <LabeledList.Item label="Cabin">
           {cabin_pressure} kPa, {cabin_temp_k} K ({cabin_temp_c}°C)
@@ -336,8 +248,8 @@ const StatsPanel = () => {
   );
 };
 
-const CommandsPanel = () => {
-  const { data, act } = useBackend<Data>();
+const CommandsPanel = (props: { main: Main }) => {
+  const { act } = useBackend<MechaInterfaceData, MechaInterfaceActions>();
   const {
     lights,
     radio_mic,
@@ -348,7 +260,7 @@ const CommandsPanel = () => {
     id_upload_locked,
     maint_access,
     commands,
-  } = data;
+  } = props.main;
   return (
     <>
       {commands.length > 0 ? (
@@ -418,9 +330,9 @@ const CommandsPanel = () => {
   );
 };
 
-const EquipmentPanel = () => {
-  const { data, act } = useBackend<Data>();
-  const { equipment, slots } = data;
+const EquipmentPanel = (props: { main: Main }) => {
+  const { act } = useBackend<MechaInterfaceData, MechaInterfaceActions>();
+  const { equipment, slots } = props.main;
   return (
     <Section title="Equipment">
       {equipment.length === 0 ? (
@@ -448,13 +360,9 @@ const EquipmentPanel = () => {
                   </>
                 }
               >
-                <Box color={e.ready ? 'good' : 'bad'}>
-                  {e.ready ? 'Ready' : 'Not ready'}
-                </Box>
+                <YesNo value={e.ready} yes="Ready" no="Not ready" />
                 {e.info_lines.map((line, i) => (
-                  <Box key={i} color="label">
-                    {line}
-                  </Box>
+                  <Label key={i}>{line}</Label>
                 ))}
                 {e.controls.length > 0 ? (
                   <Box mt={0.5}>
@@ -465,7 +373,7 @@ const EquipmentPanel = () => {
                           act('equip_control', {
                             id: e.id,
                             control: c.key,
-                            value: c.value,
+                            value: c.value ?? undefined,
                           })
                         }
                       >
@@ -494,16 +402,19 @@ const EquipmentPanel = () => {
 };
 
 const LogView = () => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<MechaInterfaceData, MechaInterfaceActions>();
+  const logEntries = data.log_entries ?? [];
   return (
     <Section title="Internal Log">
-      {data.log_entries.length === 0 ? (
+      {logEntries.length === 0 ? (
         <EmptyState>No entries.</EmptyState>
       ) : (
         <Stack vertical>
-          {data.log_entries.map((e, i) => (
+          {logEntries.map((e, i) => (
             <Stack.Item key={i}>
-              <Box bold>{e.time}</Box>
+              <Box bold>
+                ({e.time}) ({e.year})
+              </Box>
               <Box ml={2}>{e.message}</Box>
             </Stack.Item>
           ))}
@@ -514,15 +425,19 @@ const LogView = () => {
 };
 
 const AccessView = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<MechaInterfaceData, MechaInterfaceActions>();
+  const { access } = data;
+  if (!access) {
+    return null;
+  }
   return (
     <>
       <Section title="Operation Keycodes">
-        {data.access_current.length === 0 ? (
+        {access.current.length === 0 ? (
           <EmptyState>No keycodes required.</EmptyState>
         ) : (
           <Stack vertical>
-            {data.access_current.map((k) => (
+            {access.current.map((k) => (
               <Stack.Item key={k.id}>
                 <Button
                   color="bad"
@@ -537,11 +452,11 @@ const AccessView = () => {
         )}
       </Section>
       <Section title="Available on portable device">
-        {data.access_available.length === 0 ? (
+        {access.available.length === 0 ? (
           <EmptyState>No additional keycodes available on card.</EmptyState>
         ) : (
           <Stack vertical>
-            {data.access_available.map((k) => (
+            {access.available.map((k) => (
               <Stack.Item key={k.id}>
                 <Button
                   color="good"
@@ -565,25 +480,29 @@ const AccessView = () => {
 };
 
 const MaintView = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<MechaInterfaceData, MechaInterfaceActions>();
+  const { maint } = data;
+  if (!maint) {
+    return null;
+  }
   return (
     <Section title="Maintenance Console">
-      {data.maint_can_req_access ? (
+      {maint.can_req_access ? (
         <Button fluid onClick={() => act('maint_req_access')}>
           Edit operation keycodes
         </Button>
       ) : null}
-      {data.maint_can_maint_access ? (
+      {maint.can_maint_access ? (
         <Button fluid onClick={() => act('maint_protocol')}>
           Initiate maintenance protocol
         </Button>
       ) : null}
-      {data.maint_can_set_air ? (
+      {maint.can_set_air ? (
         <Button fluid onClick={() => act('maint_set_air')}>
           Set Cabin Air Pressure
         </Button>
       ) : null}
-      {data.maint_can_remove_passenger ? (
+      {maint.can_remove_passenger ? (
         <Button fluid onClick={() => act('maint_remove_passenger')}>
           Remove Passenger
         </Button>

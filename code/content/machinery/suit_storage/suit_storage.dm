@@ -31,6 +31,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	owns_one(nameof(SUIT), /obj/item/clothing/suit/space, starts = nameof(suit_type))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(suit_storage_blast))))
 	interface("SuitStorageUnit", state = nameof(GLOB.tgui_notcontained_state))
+	ui_shape(helmet = nullable(schema_text()), suit = nullable(schema_text()), mask = nullable(schema_text()), occupied = bool(), broken = bool(), panelopen = bool(), locked = bool(), open = bool(), safeties = bool(), uv_active = bool(), uv_super = int())
 	op("door", ui_act("door"), then(PROC_REF(ui_act_door)))
 	op("dispense", ui_act("dispense", arg("item", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
 	op("uv", ui_act("uv"), then(PROC_REF(ui_act_uv)))
@@ -106,7 +107,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		data["mask"] = MASK.name
 	else
 		data["mask"] = null
-	data["storage"] = null
 	if(OCCUPANT)
 		data["occupied"] = TRUE
 	else
@@ -185,10 +185,8 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 
 	else  //welp, the guy is protected, we can continue
 		if(issuperUV)
-			to_chat(user, span_info("You slide the dial back towards \"185nm\"."))
 			set_issuperUV(0)
 		else
-			to_chat(user, span_info("You crank the dial all the way up to \"15nm\"."))
 			set_issuperUV(1)
 		return
 
@@ -198,7 +196,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		return
 
 	else
-		to_chat(user, span_info("You push the button. The coloured LED next to it changes."))
 		set_safetieson(!safetieson)
 
 
@@ -279,7 +276,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	if(!HELMET && !MASK && !SUIT && !OCCUPANT) //shit's empty yo
 		to_chat(user, span_warning("Unit storage bays empty. Nothing to disinfect -- Aborting."))
 		return
-	to_chat(user, span_notice("You start the Unit's cauterisation cycle."))
 	cycletime_left = 20
 	set_isUV(1)
 	if(OCCUPANT && !islocked)

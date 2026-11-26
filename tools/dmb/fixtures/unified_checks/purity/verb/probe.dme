@@ -1,3 +1,0 @@
-/mob/verb/probe(x)
-    set SpacemanDMM_should_be_pure=1
-    x++

@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   AnimatedNumber,
@@ -29,6 +30,7 @@ export type Data = {
     container: string | null;
   }[];
   is_open?: BooleanLike;
+  state_prefix?: string;
   icon_used?: string;
   reagents?: { name: string; volume: number; max: number };
 };
@@ -85,16 +87,15 @@ export const ApplianceStatus = (props) => {
           </LabeledList.Item>
         )}
         {!!temperature && (
-          <LabeledList.Item label="Temperature">
-            <ProgressBar
-              color={temperatureEnough ? 'good' : 'blue'}
-              value={temperature}
-              maxValue={optimalTemp}
-            >
-              <AnimatedNumber value={temperature} />
-              &deg;C / {optimalTemp}&deg;C
-            </ProgressBar>
-          </LabeledList.Item>
+          <StatBar
+            label="Temperature"
+            color={temperatureEnough ? 'good' : 'blue'}
+            value={temperature}
+            maxValue={optimalTemp}
+          >
+            <AnimatedNumber value={temperature} />
+            &deg;C / {optimalTemp}&deg;C
+          </StatBar>
         )}
         {!!efficiency && (
           <LabeledList.Item label="Efficiency">
@@ -102,16 +103,15 @@ export const ApplianceStatus = (props) => {
           </LabeledList.Item>
         )}
         {!!reagents && (
-          <LabeledList.Item label={reagents.name}>
-            <ProgressBar
-              color="yellow"
-              value={reagents.volume}
-              maxValue={reagents.max}
-            >
-              <AnimatedNumber value={Math.round(reagents.volume)} />u /{' '}
-              {reagents.max}u
-            </ProgressBar>
-          </LabeledList.Item>
+          <StatBar
+            label={reagents.name}
+            color="yellow"
+            value={reagents.volume}
+            maxValue={reagents.max}
+          >
+            <AnimatedNumber value={Math.round(reagents.volume)} />u /{' '}
+            {reagents.max}u
+          </StatBar>
         )}
       </LabeledList>
     </Section>
@@ -121,7 +121,7 @@ export const ApplianceStatus = (props) => {
 export const Appliance = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { containersRemovable, our_contents } = data;
+  const { containersRemovable, our_contents = [] } = data;
 
   return (
     <Window width={600} height={600}>

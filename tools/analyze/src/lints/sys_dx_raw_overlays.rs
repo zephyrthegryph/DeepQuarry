@@ -3,47 +3,33 @@
 //! `overlays -=` outside the look builder. A hard ban: the baseline is empty. The engine files that compile looks to overlays are
 //! exempt by path in `[lint."sys/dx_raw_overlays"]` of tools/ci/lint_scopes.toml.
 
-use crate::raw_fixture_policy::PatternApi as _;
 use crate::dm::sys::{register_module, SysModule};
 use crate::lint::{Registry, RuleMeta};
 use crate::pat;
 use crate::tree::SourceFile;
 
-use crate::allow_registry_fields::sys_dx_raw_overlays::RULES;
+const RULES: &[RuleMeta] = &[RuleMeta {
+    name: "dx_raw_overlays",
+    hint: "draw the layer in draw(datum/look/look) (look.overlay/glow/gauge), not a raw overlay write (design review M9)",
+}];
 
 /// `scan_file` of the Python: one site per sanitized line with a raw overlay write.
-fn scan_lines(f:&SourceFile,out:&mut Vec<(&'static str,usize)>){
-    scan_lines_using(f,out,&crate::raw_fixture_policy::Fixture::legacy()).expect("legacy scanner has no admission refusal")
-}
-fn scan_lines_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),String>{
-    fixture.check()?;
-    let raw = fixture.pattern(r"(?<![\w/])(?:add_overlay|cut_overlays?)\s*\(|(?<![\w/])overlays\s*[-+]=",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?<![\w/])(?:add_overlay|cut_overlays?)\s*\(|(?<![\w/])overlays\s*[-+]="));
+fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
+    let raw = pat!(r"(?<![\w/])(?:add_overlay|cut_overlays?)\s*\(|(?<![\w/])overlays\s*[-+]=");
     for (number, code) in f.clean().numbered() {
         // Both alternatives need the word "overlay" in the line.
         if code.contains("overlay") && raw.is_match(code) {
-            fixture.push(out,("dx_raw_overlays", number))?;
+            out.push(("dx_raw_overlays", number));
         }
     }
-    Ok(())
 }
 
-
-fn scan_file(f:&SourceFile,out:&mut Vec<(&'static str,usize)>){
-    scan_file_using(f,out,&crate::raw_fixture_policy::Fixture::legacy()).expect("legacy scanner has no admission refusal")
+fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
+    scan_lines(f, out);
 }
-fn scan_file_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),String>{
-    fixture.check()?;
-    scan_lines_using(f,out,fixture)?;
-    Ok(())
-}
-
 
 fn selftest() -> Result<String, String> {
-    selftest_with_fixture(&crate::raw_fixture_policy::Fixture::legacy())
-}
-
-fn selftest_with_fixture(fixture: &crate::raw_fixture_policy::Fixture<'_>) -> Result<String, String> {
-    let fixture_lines = [
+    let fixture = [
         "add_overlay(\"lights\")",
         "A.cut_overlay(old)",
         "overlays += image(icon, \"x\")",
@@ -56,19 +42,19 @@ fn selftest_with_fixture(fixture: &crate::raw_fixture_policy::Fixture<'_>) -> Re
         "add_overlay_lighting(src, 3, 1)",
         "overlays == null",
     ];
-    let f = fixture.file("x.dm", &fixture.join(&fixture_lines,"\n")?)?;
+    let f = SourceFile::from_text("x.dm", &fixture.join("\n"));
     let mut v = Vec::new();
-    scan_lines_using(&f,&mut v,fixture)?;
-    let got: Vec<usize> = fixture.collect(v.into_iter().map(|(_, n)| n))?;
-    if got != [1, 2, 3, 4, 5] {
-        return Err(fixture.detail(format_args!("dx_raw_overlays selftest: got {:?}", got))?);
+    scan_lines(&f, &mut v);
+    let got: Vec<usize> = v.into_iter().map(|(_, n)| n).collect();
+    if got != vec![1, 2, 3, 4, 5] {
+        return Err(format!("dx_raw_overlays selftest: got {:?}", got));
     }
-    Ok(fixture.own("dx_raw_overlays")?)
+    Ok("dx_raw_overlays".to_string())
 }
 
 pub fn register(reg: &mut Registry) {
     register_module(
         reg,
-        SysModule { name: crate::allow_registry_fields::sys_dx_raw_overlays::SCOPE_MODULE_NAME, rules: RULES, file_scan: Some(scan_file), fixture_file_scan:Some(scan_file_using), selftest: Some(selftest), fixture_selftest: Some(selftest_with_fixture), py_selftest: true, ..SysModule::DEFAULT },
+        SysModule { name: "dx_raw_overlays", rules: RULES, file_scan: Some(scan_file), selftest: Some(selftest), py_selftest: true, ..SysModule::DEFAULT },
     );
 }

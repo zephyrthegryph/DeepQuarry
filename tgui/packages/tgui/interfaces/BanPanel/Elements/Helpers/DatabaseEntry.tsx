@@ -1,13 +1,13 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Divider, Stack, Table } from 'tgui-core/components';
-
+import type { BanPanelActions } from '../../../generated/BanPanel';
 import { getBoxColor } from '../../functions';
 import type { Data, DatabaseRecord } from '../../types';
 
 // This list is of the format: banid, bantime, bantype, reason, job, duration, expiration,
 //     ckey, ackey, unbanned, unbanckey, unbantime, edits, ip, cid
 export const DatabaseEntry = (props: { databaseRecord: DatabaseRecord }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, BanPanelActions>();
 
   const { databaseRecord } = props;
 

@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The look verdict cache save appends only the newly learned types to a journal instead of rewriting every verdict in one tick"
+  - code_imp: "Client glow store warm-up and shape arrival are spread over ticks inside a budget; slow steps are logged"
+  - code_imp: "Closets loaded with the map are filled one item at a time by a budgeted queue (CLOSET_FILL trace)"
+  - code_imp: "A late joiner's manifest photos are requested over the next two ticks; the no-image picture is encoded once"
+  - code_imp: "The MC Health panel builds one slow group per send, and slow groups and stat panel turns are logged"

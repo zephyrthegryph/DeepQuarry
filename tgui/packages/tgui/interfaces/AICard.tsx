@@ -1,28 +1,11 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-} from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  name: string;
-  has_ai: BooleanLike;
-  integrity: number;
-  backup_capacitor: number;
-  flushing: BooleanLike;
-  has_laws: BooleanLike;
-  laws: string[];
-  wireless: BooleanLike;
-  radio: BooleanLike;
-};
+import { Box, Button, LabeledList, Section } from 'tgui-core/components';
+import type { AICardActions, AICardData } from './generated/AICard';
 
 export const AICard = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<AICardData, AICardActions>();
 
   const {
     name,
@@ -76,19 +59,20 @@ export const AICard = (props) => {
             </Box>
             <Box>
               <LabeledList>
-                <LabeledList.Item label="Integrity">
-                  <ProgressBar color={integrityColor} value={integrity / 100} />
-                </LabeledList.Item>
-                <LabeledList.Item label="Power">
-                  <ProgressBar
-                    color={powerColor}
-                    value={backup_capacitor / 100}
-                  />
-                </LabeledList.Item>
+                <StatBar
+                  label="Integrity"
+                  color={integrityColor}
+                  value={integrity / 100}
+                />
+                <StatBar
+                  label="Power"
+                  color={powerColor}
+                  value={backup_capacitor / 100}
+                />
               </LabeledList>
             </Box>
             <Box color="red">
-              <h2>{flushing === 1 ? 'Wipe of AI in progress...' : ''}</h2>
+              <h2>{flushing ? 'Wipe of AI in progress...' : ''}</h2>
             </Box>
           </Section>
 

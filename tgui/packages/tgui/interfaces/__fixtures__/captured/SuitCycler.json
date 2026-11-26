@@ -1,0 +1,42 @@
+{
+	"departments": [
+		"No Change",
+		"Engineering",
+		"Atmospherics",
+		"HAZMAT",
+		"Construction",
+		"Mining",
+		"Medical",
+		"Biohazard",
+		"Emergency Medical Response",
+		"Security",
+		"Crowd Control",
+		"Security EVA"
+	],
+	"species": [
+		"No Change",
+		"Human",
+		"Skrell",
+		"Unathi",
+		"Tajara",
+		"Teshari",
+		"Akula",
+		"Sergal",
+		"Vulpkanin",
+		"Altevian",
+		"Metamorphic"
+	],
+	"userHasAccess": 0,
+	"locked": 1,
+	"active": 0,
+	"uv_active": 0,
+	"max_uv_level": 3,
+	"helmet": null,
+	"suit": null,
+	"damage": null,
+	"occupied": 0,
+	"model_text": "",
+	"can_repair": null,
+	"safeties": 1,
+	"uv_level": 2
+}

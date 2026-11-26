@@ -105,16 +105,6 @@ impl<W: Write> Rows<'_, W> {
     }
 }
 impl<W: Write> TypedVisitor for Rows<'_, W> {
-    fn projected_expression(
-        &mut self,
-        view: dm_syntax::ProjectedExprView<'_>,
-        path: &[dm_syntax::NodeStep],
-    ) -> dm_syntax::VisitDecision {
-        let node = view.original();
-        let span = view.current_span();
-        self.emit(json!({"schema":SCHEMA,"row":"expression","member":self.member,"declaration":self.declaration,"path":Self::path(path),"syntax":expression_syntax(&node.kind),"span":[span.start,span.end]}))
-    }
-
     fn statement(&mut self, node: &Statement, path: &[NodeStep]) -> VisitDecision {
         self.emit(
             json!({"schema":SCHEMA,"row":"statement","member":self.member,
@@ -136,7 +126,7 @@ impl<W: Write> TypedVisitor for Rows<'_, W> {
 fn expression_syntax(kind: &ExprKind) -> Value {
     match kind {
         ExprKind::Ident(name) => json!({"kind":"identifier","name":name}),
-        ExprKind::Literal(text) => json!({"kind":"literal","text":text.as_str()}),
+        ExprKind::Literal(text) => json!({"kind":"literal","text":text}),
         ExprKind::TypePath(path) => json!({"kind":"type_path","path":path}),
         ExprKind::Unary { op, .. } => json!({"kind":"unary","operator":op}),
         ExprKind::Binary { op, .. } => json!({"kind":"binary","operator":op}),

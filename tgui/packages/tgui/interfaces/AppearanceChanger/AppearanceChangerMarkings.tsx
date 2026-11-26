@@ -11,12 +11,12 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-
+import type { AppearanceChangerActions } from '../generated/AppearanceChanger';
 import { MARKINGS_PER_PAGE } from './constants';
 import type { BodyStyle, Data } from './types';
 
 export const AppearanceChangerMarkings = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AppearanceChangerActions>();
 
   const { markings, marking_styles } = data;
 

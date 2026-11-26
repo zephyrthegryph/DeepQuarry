@@ -4,7 +4,6 @@
 //! act_message runtime) that carries a self message, names the actor/user in its text, is the second
 //! half of a `to_chat(X)` + `X.visible_message` pair, or the retired interaction message fields.
 
-use crate::raw_fixture_policy::PatternApi as _;
 use crate::dm::sys::{register_module, SysModule};
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
@@ -12,7 +11,10 @@ use crate::tree::SourceFile;
 use crate::util::{is_py_space, py_lstrip, py_strip};
 use crate::{pat, pat_match};
 
-use crate::allow_registry_fields::sys_messages::RULES;
+const RULES: &[RuleMeta] = &[RuleMeta {
+    name: "visible_pair",
+    hint: "act_message(user, target, MSG_SELF(), MSG_OTHERS(), MSG_BLIND()) or act_message_t() (doc/rewrite/systems.md section 15)",
+}];
 
 const RUNTIME_PREFIX: &str = "code/content/messages/";
 
@@ -73,48 +75,31 @@ fn split_args(text: &str, start: usize) -> (Vec<String>, usize) {
 }
 
 /// `[R]`, and the actor's name read off it: `[R.name]`, `[R.real_name]`.
-macro_rules! named_source{($format:ident,$name:expr)=>{$format!(r"\[\s*{}(?:\.(?:name|real_name))?\s*\]",$name)}}
-const NAMED_SOURCES:&[&str]=&[r"\[\s*src(?:\.(?:name|real_name))?\s*\]",r"\[\s*user(?:\.(?:name|real_name))?\s*\]",r"\[\s*usr(?:\.(?:name|real_name))?\s*\]"];
-fn named_using(arg:&str,name:&str,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<bool,String>{
- fixture.check()?;
- #[cfg(feature="native-policy")]if fixture.has_native_patterns(){
-  use crate::raw_fixture_policy::PatternMode;
-  let pattern=match name{
-   "src"=>fixture.pattern(NAMED_SOURCES[0],PatternMode::Search,||pat!(NAMED_SOURCES[0])),
-   "user"=>fixture.pattern(NAMED_SOURCES[1],PatternMode::Search,||pat!(NAMED_SOURCES[1])),
-   "usr"=>fixture.pattern(NAMED_SOURCES[2],PatternMode::Search,||pat!(NAMED_SOURCES[2])),
-   _=>{let escaped=fixture.escape_pattern(name)?;fixture.formatted_pattern(named_source!(format_args,escaped),PatternMode::Search)?}
-  };
-  let matched=pattern.is_match(arg);fixture.check()?;return Ok(matched)
- }
-Ok(match name {
-        "src" => pat!(NAMED_SOURCES[0]).is_match(arg),
-        "user" => pat!(NAMED_SOURCES[1]).is_match(arg),
-        "usr" => pat!(NAMED_SOURCES[2]).is_match(arg),
-        _ => Pat::cached(&named_source!(format,regex::escape(name))).is_match(arg),
-    })
+fn named(arg: &str, name: &str) -> bool {
+    match name {
+        "src" => pat!(r"\[\s*src(?:\.(?:name|real_name))?\s*\]").is_match(arg),
+        "user" => pat!(r"\[\s*user(?:\.(?:name|real_name))?\s*\]").is_match(arg),
+        "usr" => pat!(r"\[\s*usr(?:\.(?:name|real_name))?\s*\]").is_match(arg),
+        _ => Pat::cached(&format!(r"\[\s*{}(?:\.(?:name|real_name))?\s*\]", regex::escape(name))).is_match(arg),
+    }
 }
 
-
-macro_rules! receiver_source{($format:ident,$name:expr)=>{$format!(r"\bmob/[\w/]*\b{}\b",$name)}}
-fn scan(f:&SourceFile,out:&mut Vec<(&'static str,usize)>){scan_using(f,out,&crate::raw_fixture_policy::Fixture::legacy()).expect("legacy scan has no resource refusal")}
-fn scan_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<(),String>{fixture.check()?;
-
+fn scan(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
     let rel = f.rel.replace('\\', "/");
     if rel.starts_with(RUNTIME_PREFIX) || !rel.ends_with(".dm") {
-        return Ok(());
+        return;
     }
     let raw = f.raw();
     let lines = raw.lines_vec();
     for (idx, line) in lines.iter().enumerate() {
         let code = line.split("//").next().unwrap_or("");
-        if fixture.pattern(r"(?<![\w.])(message_self|message_others|start_messages|fill_message)\b",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"(?<![\w.])(message_self|message_others|start_messages|fill_message)\b")).is_match(code) && !line.contains("ALLOW(sys_visible_pair)") {
+        if pat!(r"(?<![\w.])(message_self|message_others|start_messages|fill_message)\b").is_match(code) && !line.contains("ALLOW(sys_visible_pair)") {
             out.push(("visible_pair", idx + 1));
         }
     }
     let text = raw.text.as_str();
     if !text.contains("visible_message") {
-        return Ok(());
+        return;
     }
     // Line start offsets, and the enclosing proc for each line.
     let mut starts = vec![0usize];
@@ -126,7 +111,7 @@ fn scan_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::r
     let mut cur_type: Option<String> = None;
     let mut cur_start = 0usize;
     for (idx, line) in lines.iter().enumerate() {
-        if let Some(m) = fixture.pattern(r"^(/[\w/]+?)(?:/proc|/verb)?/(\w+)\s*\(([^)]*)\)",crate::raw_fixture_policy::PatternMode::Match,||pat_match!(r"^(/[\w/]+?)(?:/proc|/verb)?/(\w+)\s*\(([^)]*)\)")).captures(line) {
+        if let Some(m) = pat_match!(r"^(/[\w/]+?)(?:/proc|/verb)?/(\w+)\s*\(([^)]*)\)").captures(line) {
             cur_type = Some(m.s(1).to_string());
             cur_start = idx;
         } else if !line.is_empty() && !line.chars().next().map(is_py_space).unwrap_or(false) && !line.starts_with("//") && !line.starts_with('#') {
@@ -136,7 +121,7 @@ fn scan_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::r
         proc_start[idx] = cur_start;
     }
     let mut line_of = 0usize;
-    for m in fixture.pattern(r"(?:\b([A-Za-z_]\w*)\s*\.\s*)?\bvisible_message\s*\(",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"(?:\b([A-Za-z_]\w*)\s*\.\s*)?\bvisible_message\s*\(")).captures_iter(text) {
+    for m in pat!(r"(?:\b([A-Za-z_]\w*)\s*\.\s*)?\bvisible_message\s*\(").captures_iter(text) {
         let mstart = m.start(0);
         while starts[line_of + 1] <= mstart {
             line_of += 1;
@@ -155,7 +140,7 @@ fn scan_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::r
         let mut args: Vec<String> = Vec::new();
         let mut kw: Vec<(String, String)> = Vec::new();
         for a in raw_args {
-            if let Some(km) = fixture.pattern(r"(?s)([A-Za-z_]\w*)\s*=(?!=)(.*)$",crate::raw_fixture_policy::PatternMode::Match,||pat_match!(r"(?s)([A-Za-z_]\w*)\s*=(?!=)(.*)$")).captures(&a) {
+            if let Some(km) = pat_match!(r"(?s)([A-Za-z_]\w*)\s*=(?!=)(.*)$").captures(&a) {
                 let (k, v) = (km.s(1).to_string(), py_strip(km.s(2)).to_string());
                 match kw.iter_mut().find(|e| e.0 == k) {
                     Some(e) => e.1 = v,
@@ -181,7 +166,7 @@ fn scan_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::r
                     recv_is_mob = true;
                 } else {
                     let head = lines[proc_start[line_of]..=line_of].join("\n");
-                    recv_is_mob = receiver_mob_using(&head,r,fixture)?;
+                    recv_is_mob = Pat::cached(&format!(r"\bmob/[\w/]*\b{}\b", regex::escape(r))).is_match(&head);
                 }
             }
             None => {
@@ -198,14 +183,14 @@ fn scan_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::r
         // 2. the actor names itself or its user
         let joined = args.iter().take(3).cloned().collect::<Vec<_>>().join(" ");
         if let Some(r) = recv {
-            if recv_is_mob && named_using(&joined,r,fixture)? && r != "src" {
+            if recv_is_mob && named(&joined, r) && r != "src" {
                 flagged = true;
             }
         }
-        if (recv.is_none() || recv == Some("src")) && in_mob && named_using(&joined,"src",fixture)? {
+        if (recv.is_none() || recv == Some("src")) && in_mob && named(&joined, "src") {
             flagged = true;
         }
-        if named_using(&joined,"user",fixture)? || named_using(&joined,"usr",fixture)? {
+        if named(&joined, "user") || named(&joined, "usr") {
             flagged = true;
         }
         // 3. to_chat(X) then X.visible_message
@@ -214,7 +199,7 @@ fn scan_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::r
             while prev > 0 && py_strip(lines[prev]).is_empty() {
                 prev -= 1;
             }
-            if let Some(tc) = fixture.pattern(r"^\s*to_chat\s*\(\s*([A-Za-z_]\w*)\s*,",crate::raw_fixture_policy::PatternMode::Match,||pat_match!(r"^\s*to_chat\s*\(\s*([A-Za-z_]\w*)\s*,")).captures(lines[prev]) {
+            if let Some(tc) = pat_match!(r"^\s*to_chat\s*\(\s*([A-Za-z_]\w*)\s*,").captures(lines[prev]) {
                 if tc.s(1) == recv.unwrap_or("src") {
                     flagged = true;
                 }
@@ -224,22 +209,8 @@ fn scan_using(f:&SourceFile,out:&mut Vec<(&'static str,usize)>,fixture:&crate::r
             out.push(("visible_pair", line_of + 1));
         }
     }
-
-fixture.check()?;Ok(())
 }
-
 
 pub fn register(reg: &mut Registry) {
-    register_module(reg, SysModule { name: crate::allow_registry_fields::sys_messages::SCOPE_MODULE_NAME, rules: RULES, file_scan: Some(scan),fixture_file_scan:Some(scan_using), ..SysModule::DEFAULT });
-}
-
-
-fn receiver_mob_using(head:&str,name:&str,fixture:&crate::raw_fixture_policy::Fixture<'_>)->Result<bool,String>{
- fixture.check()?;
- #[cfg(feature="native-policy")]if fixture.has_native_patterns(){
-  use crate::raw_fixture_policy::PatternMode;
-  let escaped=fixture.escape_pattern(name)?;let pattern=fixture.formatted_pattern(receiver_source!(format_args,escaped),PatternMode::Search)?;
-  let matched=pattern.is_match(head);fixture.check()?;return Ok(matched)
- }
- Ok(Pat::cached(&receiver_source!(format,regex::escape(name))).is_match(head))
+    register_module(reg, SysModule { name: "messages", rules: RULES, file_scan: Some(scan), ..SysModule::DEFAULT });
 }

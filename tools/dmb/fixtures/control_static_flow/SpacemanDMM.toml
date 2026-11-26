@@ -1,6 +1,0 @@
-# Explicit scoped oracle configuration: compare control_condition_static only.
-# No reference-output filtering hides these unrelated diagnostic families.
-[diagnostics]
-unreachable_code = "off"
-if_condition_determinate = "off"
-loop_condition_determinate = "off"

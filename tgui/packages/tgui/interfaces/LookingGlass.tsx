@@ -1,19 +1,17 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  LookingGlassActions,
+  LookingGlassData,
+} from './generated/LookingGlass';
 
-type Data = {
-  supportedPrograms: string[];
-  currentProgram: string;
-  immersion: BooleanLike;
-  gravity: BooleanLike;
-};
+type Data = LookingGlassData;
 
 export const LookingGlass = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, LookingGlassActions>();
 
-  const { supportedPrograms, currentProgram, immersion, gravity } = data;
+  const { supportedPrograms = [], currentProgram, immersion, gravity } = data;
 
   const height = Math.min(180 + supportedPrograms.length * 23, 600);
 

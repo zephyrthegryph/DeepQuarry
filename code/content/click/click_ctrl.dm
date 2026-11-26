@@ -34,7 +34,8 @@
 		return
 
 	. = TRUE
-	pulled(target)
+	if(ismovable(target))
+		pull_target(target)
 
 /// Tag (default: ctrl + middle click): admins tag the datum; others Pull.
 /mob/proc/action_tag(atom/A)

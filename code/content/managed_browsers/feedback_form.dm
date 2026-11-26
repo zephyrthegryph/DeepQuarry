@@ -42,6 +42,7 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 
 CAPABILITIES(/datum/managed_browser/feedback_form)
 	interface("FeedbackForm", state = nameof(GLOB.tgui_always_state))
+	ui_shape(topic = nullable(schema_text()), hide_author = bool(), body = schema_text(), author_ckey = nullable(schema_text()), author_hashed = schema_text(), can_be_private = bool(), topics = list_of(schema_text()), max_length = int(), cooldown_days = num())
 	op("edit_body", ui_act("edit_body"), asks(/datum/prompt/text/feedback_body, fields = list("default" = computed(PROC_REF(body_default))), step = "body"), then(PROC_REF(ui_act_edit_body)))
 	op("set_hide_author", ui_act("set_hide_author", arg("hide", bool())), then(PROC_REF(ui_act_set_hide_author)))
 	op("choose_topic", ui_act("choose_topic"), asks(/datum/prompt/choice/feedback_topic, fields = list("choices" = computed(PROC_REF(topic_choices))), step = "topic"), then(PROC_REF(ui_act_choose_topic)))
@@ -54,15 +55,6 @@ CAPABILITIES(/datum/managed_browser/feedback_form)
 	var/list/data = list()
 	data["topic"] = feedback_topic
 	data["hide_author"] = feedback_hide_author
-	var/list/merged_1 = ui_data_datum_managed_browser_feedback_form(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
-
-/// /datum/managed_browser/feedback_form's window data.
-/datum/managed_browser/feedback_form/proc/ui_data_datum_managed_browser_feedback_form(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
 	data["body"] = feedback_body || ""
 	data["author_ckey"] = my_client()?.ckey
 	data["author_hashed"] = my_client() ? md5(ckey(lowertext(my_client().ckey + (SSsqlite.get_feedback_pepper() || "")))) : ""

@@ -16,7 +16,7 @@
 	data["occupied"] = occupant ? TRUE : FALSE
 
 	if(!(occupant && ishuman(occupant)))
-		data["occupant"] = list()
+		data["occupant"] = null
 		return data
 
 	var/mob/living/carbon/human/H = occupant
@@ -81,7 +81,7 @@
 	var/has_withdrawl = FALSE
 	for(var/addic in H.get_all_addictions())
 		var/level = H.get_addiction_to_reagent(addic)
-		if(level > 0 && level < 80)
+		if(level > 0 && level < 80 && !H.reading_hidden(HIDE_SYMPTOM_SUPPRESSION))
 			has_withdrawl = TRUE
 			break
 	out["hasWithdrawl"] = has_withdrawl
@@ -96,7 +96,7 @@
 /obj/machinery/bodyscanner/proc/dq_emit_reagents(mob/living/carbon/human/H, list/out)
 	var/list/reagentData = list()
 	if(H.reagents.reagent_list.len >= 1)
-		for(var/datum/reagent/R in H.reagents.reagent_list)
+		for(var/datum/reagent/R as anything in H.reagents.listed_reagents()) // the contaminants last
 			// `R.scannable` is the MIN scan_level needed to detect this reagent
 			// (0 BENEFICIAL .. 3 SECRETIVE .. 99 UNSCANNABLE). Skip when our
 			// scan_level can't reach it. The previous `>=` was inverted —
@@ -107,12 +107,13 @@
 				"name"     = R.name,
 				"amount"   = R.volume,
 				"overdose" = (R.overdose && R.volume > R.overdose) ? TRUE : FALSE,
+				"contaminant" = istype(R, /datum/reagent/contaminant),
 			))
 	out["reagents"] = length(reagentData) ? reagentData : null
 
 	var/list/ingestedData = list()
 	if(H.ingested.reagent_list.len >= 1)
-		for(var/datum/reagent/R in H.ingested.reagent_list)
+		for(var/datum/reagent/R as anything in H.ingested.listed_reagents())
 			// Apply the same scan_level gate to ingested — was missing
 			// entirely, leaking unscannable chems via the ingested list.
 			if(R.scannable > scan_level)
@@ -121,6 +122,7 @@
 				"name"     = R.name,
 				"amount"   = R.volume,
 				"overdose" = (R.overdose && R.volume > R.overdose) ? TRUE : FALSE,
+				"contaminant" = istype(R, /datum/reagent/contaminant),
 			))
 	out["ingested"] = length(ingestedData) ? ingestedData : null
 

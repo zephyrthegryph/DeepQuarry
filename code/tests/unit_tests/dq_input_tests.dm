@@ -71,8 +71,8 @@
 		"[KEYBIND_PROFILE_ROBOT]|CTRL+X|.northeast",
 		"[KEYBIND_PROFILE_ROBOT]|Y|Whisper-verb",
 		"[KEYBIND_PROFILE_ROBOT]|CTRL+Y|Whisper-verb",
-		"[KEYBIND_PROFILE_ROBOT]|Z|Activate-Held-Object",
-		"[KEYBIND_PROFILE_ROBOT]|CTRL+Z|Robot-Activate-Held-Object",
+		"[KEYBIND_PROFILE_ROBOT]|Z|Use-Held-Item",
+		"[KEYBIND_PROFILE_ROBOT]|CTRL+Z|Use-Held-Module",
 		"[KEYBIND_PROFILE_ROBOT]|U|Rest",
 		"[KEYBIND_PROFILE_ROBOT]|NUMPAD1|body-r-leg",
 		"[KEYBIND_PROFILE_ROBOT]|NUMPAD2|body-groin",
@@ -83,7 +83,7 @@
 		"[KEYBIND_PROFILE_ROBOT]|NUMPAD8|body-toggle-head",
 		"[KEYBIND_PROFILE_ROBOT]|F1|request-help",
 		"[KEYBIND_PROFILE_ROBOT]|CTRL+SHIFT+F1+REP|.options",
-		"[KEYBIND_PROFILE_ROBOT]|F2|ooc",
+		"[KEYBIND_PROFILE_ROBOT]|F2|.dq-ooc-input",
 		"[KEYBIND_PROFILE_ROBOT]|F2+REP|.screenshot auto",
 		"[KEYBIND_PROFILE_ROBOT]|SHIFT+F2+REP|.screenshot",
 		"[KEYBIND_PROFILE_ROBOT]|F3|Say-verb",
@@ -172,11 +172,9 @@
 		"[KEYBIND_PROFILE_DEFAULT]|CTRL+X|.northeast",
 		"[KEYBIND_PROFILE_DEFAULT]|Y|Whisper-verb",
 		"[KEYBIND_PROFILE_DEFAULT]|CTRL+Y|Whisper-verb",
-		"[KEYBIND_PROFILE_DEFAULT]|Z|Activate-Held-Object",
-		"[KEYBIND_PROFILE_DEFAULT]|CTRL+Z|Activate-Held-Object",
+		"[KEYBIND_PROFILE_DEFAULT]|Z|Use-Held-Item",
+		"[KEYBIND_PROFILE_DEFAULT]|CTRL+Z|Use-Held-Item",
 		"[KEYBIND_PROFILE_DEFAULT]|U|Rest",
-		"[KEYBIND_PROFILE_DEFAULT]|SHIFT+U|Rest-Left",
-		"[KEYBIND_PROFILE_DEFAULT]|CTRL+U|Rest-Right",
 		"[KEYBIND_PROFILE_DEFAULT]|B|Resist",
 		"[KEYBIND_PROFILE_DEFAULT]|NUMPAD1|body-r-leg",
 		"[KEYBIND_PROFILE_DEFAULT]|NUMPAD2|body-groin",
@@ -187,7 +185,7 @@
 		"[KEYBIND_PROFILE_DEFAULT]|NUMPAD8|body-toggle-head",
 		"[KEYBIND_PROFILE_DEFAULT]|F1|request-help",
 		"[KEYBIND_PROFILE_DEFAULT]|CTRL+SHIFT+F1+REP|.options",
-		"[KEYBIND_PROFILE_DEFAULT]|F2|ooc",
+		"[KEYBIND_PROFILE_DEFAULT]|F2|.dq-ooc-input",
 		"[KEYBIND_PROFILE_DEFAULT]|F2+REP|.screenshot auto",
 		"[KEYBIND_PROFILE_DEFAULT]|SHIFT+F2+REP|.screenshot",
 		"[KEYBIND_PROFILE_DEFAULT]|F3|Say-verb",
@@ -202,6 +200,25 @@
 		"[KEYBIND_PROFILE_DEFAULT]|F12|F12",
 		"[KEYBIND_PROFILE_DEFAULT]|CTRL+SHIFT+ADD|planeup",
 		"[KEYBIND_PROFILE_DEFAULT]|CTRL+SHIFT+SUBTRACT|planedown",
+		// The ability slot keys (the Abilities tab, code/content/abilities/): the plain digits are taken, so ALT+digit.
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+1|.use-ability-slot 1",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+2|.use-ability-slot 2",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+3|.use-ability-slot 3",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+4|.use-ability-slot 4",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+5|.use-ability-slot 5",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+6|.use-ability-slot 6",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+7|.use-ability-slot 7",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+8|.use-ability-slot 8",
+		"[KEYBIND_PROFILE_DEFAULT]|ALT+9|.use-ability-slot 9",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+1|.use-ability-slot 1",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+2|.use-ability-slot 2",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+3|.use-ability-slot 3",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+4|.use-ability-slot 4",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+5|.use-ability-slot 5",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+6|.use-ability-slot 6",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+7|.use-ability-slot 7",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+8|.use-ability-slot 8",
+		"[KEYBIND_PROFILE_ROBOT]|ALT+9|.use-ability-slot 9",
 	)
 
 /datum/unit_test/dq_keybinding_defaults_match_old_skin/Run()
@@ -454,3 +471,147 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 	TEST_ASSERT_NOTNULL(window, "the window settings are written")
 	TEST_ASSERT_EQUAL(window["mainwindow.macro"], KEYBIND_MACRO_SET, "the main window uses the macro set")
 	TEST_ASSERT_EQUAL(window["mapwindow.map.focus"], "true", "the map takes keyboard focus")
+
+/// `set hidden` is not readable at runtime (procpath.hidden is null), so the panel lists a verb by its category: the
+/// verbs kept off the panel and run by name (the Menu page, hotkeys, UI buttons) carry no category, and a categorised verb is listed.
+/datum/unit_test/dq_hidden_categorised_verb_not_listed
+
+/datum/proc/dq_test_listed_verb()
+	set name = "Dq Test Listed"
+	set category = VERB_CAT_OOC_DEBUG
+
+/datum/proc/dq_test_hidden_verb()
+	set name = "Dq Test Hidden"
+	set hidden = TRUE
+
+/datum/unit_test/dq_hidden_categorised_verb_not_listed/Run()
+	TEST_ASSERT(verb_panel_listed(/datum/proc/dq_test_listed_verb), "a categorised verb is listed")
+	TEST_ASSERT(!verb_panel_listed(/datum/proc/dq_test_hidden_verb), "a hidden verb is not listed")
+	// Verbs earlier cleanups hid; the Menu page and hotkeys run them by name.
+	var/list/hidden_by_cleanup = list(
+		/client/verb/character_setup, /client/verb/game_options, /client/verb/hotkeys_help,
+		/client/verb/show_active_playtime, /client/verb/requesthelp,
+		/mob/verb/me_verb_subtle_custom, /mob/verb/psay, /mob/verb/pme, /mob/living/verb/player_narrate,
+		/client/verb/toggle_fullscreen, /client/verb/adminhelp,
+		/client/verb/who, /client/verb/vote, /mob/verb/check_round_info, /mob/verb/abandon_mob, /mob/verb/observe, /mob/verb/cancel_camera,
+		/client/verb/set_incorporeal_speed, /client/verb/ooc, /client/verb/looc,
+	)
+	for(var/path in hidden_by_cleanup)
+		TEST_ASSERT(!verb_panel_listed(path), "[path] must not be listed in the verb panel")
+
+/// The BYOND client commands that are built in (no verb of ours behind them).
+GLOBAL_LIST_INIT(dq_builtin_client_commands, list(".northeast", ".northwest", ".southeast", ".southwest", ".options", ".screenshot", ".reconnect", ".quit", ".winset", ".output", ".configure"))
+
+/// Every verb (and proc granted as a verb: it carries a category) a client or a mob type declares, by path. text2path() cannot name a `verb` or `proc` branch, so each type that declares verbs is listed here; a type missing from it makes the test report a dead command it should not, which is the cue to add it.
+/datum/unit_test/proc/dq_command_verb_paths()
+	return typesof(/client/verb) + typesof(/client/proc) \
+		+ typesof(/mob/verb) + typesof(/mob/proc) \
+		+ typesof(/mob/living/verb) + typesof(/mob/living/proc) \
+		+ typesof(/mob/living/carbon/brain/verb) + typesof(/mob/living/carbon/brain/caught_soul/verb) \
+		+ typesof(/mob/living/carbon/human/verb) + typesof(/mob/living/carbon/human/proc) \
+		+ typesof(/mob/living/silicon/proc) + typesof(/mob/living/silicon/robot/verb) \
+		+ typesof(/mob/living/silicon/ai/verb) + typesof(/mob/living/silicon/ai/proc) \
+		+ typesof(/mob/living/simple_mob/proc) \
+		+ typesof(/mob/observer/dead/verb)
+
+/// Every verb name a command can reach, normalized the way BYOND matches a typed command (lowercase, spaces as hyphens), and the admin verbs.
+/datum/unit_test/proc/dq_command_verb_names()
+	var/list/names = list()
+	for(var/verb_path in dq_command_verb_paths())
+		var/procpath/P = verb_path
+		if(!istext(P.name) || !length(P.name))
+			continue
+		names[dq_normalize_command(P.name)] = TRUE
+	for(var/admin_verb in SSadmin_verbs.admin_verbs_by_type)
+		var/datum/admin_verb/singleton = SSadmin_verbs.admin_verbs_by_type[admin_verb]
+		names[dq_normalize_command(singleton.name)] = TRUE
+	return names
+
+/proc/dq_normalize_command(name)
+	return replacetext(lowertext(name), " ", "-")
+
+/// Whether `command` (a verb name and its arguments, as a key, macro or button sends it) names a verb that exists or a BYOND built-in; null when it does, else the reason.
+/datum/unit_test/proc/dq_command_problem(command, list/names)
+	if(!istext(command) || !length(command))
+		return null
+	var/list/words = splittext(command, " ")
+	var/head = words[1]
+	if(head in GLOB.dq_builtin_client_commands)
+		return null
+	if(head == ".winset" || head == ".output")
+		return null
+	if(!names[dq_normalize_command(head)])
+		return "names [head], which is not a verb"
+	return null
+
+/// Every command a default keybinding sends (key down and key up), and every command the stat panel menu sends, names a verb that exists. The Z key once named a verb that had been removed, and silently did nothing.
+/datum/unit_test/dq_keybinding_commands_resolve
+
+/datum/unit_test/dq_keybinding_commands_resolve/Run()
+	var/list/names = dq_command_verb_names()
+	TEST_ASSERT(length(names) > 100, "the verb table was built ([length(names)] names)")
+	var/list/failures = list()
+	for(var/list/row as anything in keybinding_definitions())
+		for(var/index in 4 to 5)
+			var/problem = dq_command_problem(row[index], names)
+			if(problem)
+				failures += "the [row[1]] binding's [index == 4 ? "command" : "release command"] [problem]"
+	var/menu_text = file2text("tgui/packages/tgui-panel/statpanel/menu.ts")
+	TEST_ASSERT(menu_text, "the stat panel menu source is readable")
+	var/list/commands = list()
+	var/pos = findtext(menu_text, "command: '")
+	while(pos)
+		var/start = pos + length("command: '")
+		var/stop = findtext(menu_text, "'", start)
+		commands += copytext(menu_text, start, stop)
+		pos = findtext(menu_text, "command: '", stop)
+	TEST_ASSERT(length(commands) > 10, "the stat panel menu commands were read ([length(commands)])")
+	for(var/command in commands)
+		var/problem = dq_command_problem(command, names)
+		if(problem)
+			failures += "the stat panel menu command [command] [problem]"
+	TEST_ASSERT(!length(failures), "dead commands: [jointext(failures, "; ")]")
+
+/// Every speech hotkey (the say popup is gone) is a binding whose command focuses the chat input row in its channel, and every channel the
+/// row offers is one a hotkey can open.
+/datum/unit_test/dq_speech_hotkeys_focus_chat_input
+
+/datum/unit_test/dq_speech_hotkeys_focus_chat_input/Run()
+	var/list/expected = list(
+		"say" = "Say-verb",
+		"emote" = "Me-verb",
+		"subtle" = "Subtle-verb",
+		"whisper" = "Whisper-verb",
+		"ooc" = ".dq-ooc-input",
+		"looc" = ".dq-looc-input",
+		"radio" = ".dq-radio-input",
+	)
+	var/list/rows = list()
+	for(var/list/row as anything in keybinding_definitions())
+		rows[row[1]] = row[4]
+	for(var/id in expected)
+		TEST_ASSERT_EQUAL(rows[id], expected[id], "the [id] hotkey sends its speech command")
+	for(var/channel in list(SAY_CHANNEL, RADIO_CHANNEL, ME_CHANNEL, WHIS_CHANNEL, SUBTLE_CHANNEL, OOC_CHANNEL, LOOC_CHANNEL))
+		TEST_ASSERT(channel in GLOB.chat_input_channels, "[channel] can be focused in the chat input row")
+	TEST_ASSERT(!(ADMIN_CHANNEL in GLOB.chat_input_channels), "the admin channel is not a chat input channel")
+	var/datum/preferences/dq_test_stub/P = new()
+	var/list/save = list("TGUI_SAY" = 1, "TGUI_SAY_LIGHT_MODE" = 0, "tgui_say_height" = 1, "tgui_say_width" = 360, "tgui_say_emotes" = 1, "CHAT_INLINE_INPUT" = 1, "TGUI_SAY_PREVIEW" = 1)
+	save["CHAT_OOC"] = 1
+	P.drop_retired_player_keys(save)
+	TEST_ASSERT_EQUAL(length(save), 1, "an old save's say popup keys are dropped")
+	TEST_ASSERT(save["CHAT_OOC"] == 1, "a live setting is kept")
+
+/// The chat input row shows only the channels the speaker can use now, from the server: the lobby has OOC only; a body speaks, emotes,
+/// whispers and uses LOOC; Radio needs a headset.
+/datum/unit_test/dq_chat_input_channels_follow_the_mob
+
+/datum/unit_test/dq_chat_input_channels_follow_the_mob/Run()
+	var/mob/new_player/lobby = allocate(/mob/new_player)
+	TEST_ASSERT_EQUAL(jointext(lobby.chat_input_channels(), ","), OOC_CHANNEL, "the lobby has OOC only")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/list/channels = H.chat_input_channels()
+	for(var/channel in list(SAY_CHANNEL, ME_CHANNEL, WHIS_CHANNEL, SUBTLE_CHANNEL, OOC_CHANNEL, LOOC_CHANNEL))
+		TEST_ASSERT(channel in channels, "a living body has [channel]")
+	TEST_ASSERT_EQUAL(!!(RADIO_CHANNEL in channels), !!length(H.chat_radio_sets()), "Radio shows exactly when the body has a radio")
+	for(var/channel in channels)
+		TEST_ASSERT(channel in GLOB.chat_input_channels, "[channel] is a channel the row knows")

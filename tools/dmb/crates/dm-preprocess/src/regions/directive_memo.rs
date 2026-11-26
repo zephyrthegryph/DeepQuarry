@@ -179,28 +179,12 @@ pub(super) fn context(
     original: &crate::SourceText,
     lines: PreparedLines<'_>,
 ) -> Option<(crate::SourceText, u128, u128)> {
-    context_in_environment(original, lines, crate::InitialEnvironment::Native5161687, "", false, 0)
-}
-
-pub(super) fn context_in_environment(
-    original: &crate::SourceText, lines: PreparedLines<'_>,
-    environment: crate::InitialEnvironment, semantic_path: &str, main: bool, incoming_macro_fingerprint:u128,
-) -> Option<(crate::SourceText, u128, u128)> {
     let first = lines.first()?;
     let end = lines.last()?.source_span.end;
     original.get(first.source_span.start..end)?;
     let source = original.view(first.source_span.start..end);
     let mut control = Xxh3::new();
     control.update(&DIRECTIVE_VERSION.to_le_bytes());
-    if environment != crate::InitialEnvironment::Native5161687 {
-        control.update(b"analysis-initial-environment-v1");
-        control.update(&environment.profile().to_le_bytes());
-        control.update(&incoming_macro_fingerprint.to_le_bytes());
-        control.update(&(semantic_path.len() as u64).to_le_bytes());
-        control.update(semantic_path.as_bytes());
-        control.update(&[u8::from(main)]);
-        control.update(&(first.source_line as u64).to_le_bytes());
-    }
     for line in lines.iter() {
         for number in [
             line.source_span.start - first.source_span.start,

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The floating chat has no title bar or frame, stays inside the main window when dragged or resized, and has the console border"
+  - qol: "Dragging the floating chat into the right strip of the window pins it into the right column, which the stat panel then shares"

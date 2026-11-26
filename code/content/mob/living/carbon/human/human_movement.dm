@@ -105,6 +105,7 @@
 
 /mob/living/carbon/human/Moved()
 	. = ..()
+	MOVE_COST_BEGIN(body_started)
 	if(embedded_flag)
 		handle_embedded_objects() //Moving with objects stuck in you can cause bad times.
 
@@ -112,13 +113,14 @@
 		STATE_SET(src, posing, pose, null)
 		STATE_SET(src, posing, pose_move, FALSE)
 		remove_pose_indicator()
+	MOVE_COST_END(MOVE_COST_BODY, body_started)
 
 // Similar to above, but for turf slowdown.
 /mob/living/carbon/human/proc/calculate_turf_slowdown(turf/T, direct)
 	if(!T)
 		return 0
 
-	if(T.movement_cost && !stat_value(src, STAT_FLYING)) //If you are stat_value(src, STAT_FLYING) you are probably not affected by the terrain on the ground.
+	if(T.movement_cost && !flying) //If you are flying you are probably not affected by the terrain on the ground.
 		var/turf_move_cost = T.movement_cost
 		if(locate_on(T, /obj/structure/catwalk)) //catwalks prevent turfs from slowing your
 			return 0
@@ -172,7 +174,7 @@
 	if(species.can_space_freemove || (species.can_zero_g_move && !istype(get_turf(src), /turf/space)))
 		return TRUE
 
-	if(stat_value(src, STAT_FLYING)) //If you're stat_value(src, STAT_FLYING), you glide around!
+	if(flying) //If you're flying, you glide around!
 		return TRUE
 
 	//Do we have a working jetpack?
@@ -187,8 +189,8 @@
 
 // Handle footstep sounds
 /mob/living/carbon/human/handle_footstep(turf/T)
-	if(get_equipped_item(SLOT_ID_SHOES) && loc == T && get_gravity(loc) && !stat_value(src, STAT_FLYING))
-		var/obj/item/shoes = get_equipped_item(SLOT_ID_SHOES)
+	. = ..() // the footstep capability's sound (the override used to leave it out: a human's step made none)
+	var/obj/item/shoes = get_equipped_item(SLOT_ID_SHOES)
+	if(shoes && WANTS(shoes, /datum/notice/shoes_step) && loc == T && get_gravity(loc) && !flying) // asked first: most shoes have no listener, and the gravity and flight reads are for one
 		PUBLISH(shoes, shoes_step, wearer = src, m_intent = m_intent)
-	return
 

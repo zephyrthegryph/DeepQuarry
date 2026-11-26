@@ -2,7 +2,7 @@
 	name = MAT_BIOMASS
 	icon_colour = null
 	stack_type = null
-	integrity = 600
+	toughness = 300
 	icon_base = "diona"
 	icon_reinf = "noreinf"
 	supply_conversion_value = 1
@@ -19,17 +19,15 @@
 	stack_type = /obj/item/stack/material/chitin
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
-	integrity = 60
-	density = 10
+	toughness = 30
+	weight = 10
 	ignition_point = T0C+400
-	melting_point = T0C+500
-	protectiveness = 20
-	conductive = 0
+	heat_resistance = 13.1
 	supply_conversion_value = 4
+	conductivity = 2
 
 
 /datum/material/chitin
-	protectiveness = 25
 	reflectivity = 0.05
 
 
@@ -38,10 +36,9 @@
 	icon_colour = "#8d6653"
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
-	hardness = 50
-	protectiveness = 40
+	strength = 50
 	reflectivity = 0.4
-	conductivity = 1
+	conductivity = 8
 	supply_conversion_value = 0
 
 /datum/material/dragonscale
@@ -49,10 +46,9 @@
 	icon_colour = "#ffffff"
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
-	hardness = 50
-	protectiveness = 75
+	strength = 50
 	reflectivity = 0.6
-	conductivity = 1
+	conductivity = 8
 	supply_conversion_value = 0
 
 /datum/material/phorondragonscale
@@ -60,10 +56,9 @@
 	icon_colour = "#8d6653"
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
-	hardness = 10
-	protectiveness = 80
+	strength = 10
 	reflectivity = 0.8
-	conductivity = 1
+	conductivity = 8
 	supply_conversion_value = 0
 
 /datum/material/xenochitin
@@ -71,8 +66,7 @@
 	icon_colour = "#8d6653"
 	icon_base = "solid"
 	icon_reinf = "reinf_mesh"
-	hardness = 40
-	protectiveness = 40
+	strength = 40
 	reflectivity = 0.6
-	conductivity = 0.5
+	conductivity = 8
 	supply_conversion_value = 0

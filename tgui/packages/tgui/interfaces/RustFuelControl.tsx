@@ -1,7 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import { EmptyState } from './common/EmptyState';
+import type {
+  RustFuelControlActions,
+  RustFuelControlData,
+} from './generated/RustFuelControl';
 
 export const RustFuelControl = () => (
   <Window width={627} height={700}>
@@ -11,24 +15,12 @@ export const RustFuelControl = () => (
   </Window>
 );
 
-type Data = {
-  fuels: {
-    name: string;
-    x;
-    y;
-    z;
-    active: BooleanLike;
-    deployed: BooleanLike;
-    ref: string;
-    fuel_amt;
-    fuel_type;
-  }[];
-};
+type Data = RustFuelControlData;
 
 export const RustFuelContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RustFuelControlActions>();
 
-  const { fuels } = data;
+  const { fuels = [] } = data;
 
   return (
     <Section
@@ -39,6 +31,11 @@ export const RustFuelContent = (props) => {
         </Button>
       }
     >
+      {fuels.length === 0 && (
+        <EmptyState>
+          No fuel injectors are linked. Set the tag to match one.
+        </EmptyState>
+      )}
       <Table>
         <Table.Row header>
           <Table.Cell>Name</Table.Cell>

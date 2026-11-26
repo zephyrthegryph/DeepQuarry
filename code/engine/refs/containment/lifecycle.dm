@@ -37,16 +37,16 @@
 /// `forced`: the destroy is a forced one (qdel(force = TRUE): cleanup, admin delete). Its SPILL slots delete their contents instead of
 /// spilling them (admission.md D10: spill is the default for gameplay destruction; a forced delete leaves no litter).
 /atom/movable/proc/dq_lifecycle_resolve_contents(forced = FALSE)
-	var/datum/ledger/L = dq_ledger(src, destroying = TRUE) // builds it (and resolves a latent generator) if this is its first use
+	var/datum/ledger/L = dq_ledger(src, destroying = TRUE) // builds it if this is its first use
 	if(!L)
 		return
 	var/atom/drop = containment_drop_location()
 	var/atom/movable/successor = containment_successor()
-	// Slot types that keep latent contents of their own (stock records) apply their policy to
-	// them first; the ledger then handles the real things. The L1 move lost this call.
+	// Slot types that keep records of their own (stock) apply their policy to
+	// them first; the ledger then handles the real things.
 	for(var/datum/relation_definition/slot/def as anything in L.defs)
 		if(!def.is_mind_slot)
-			def.drop_latent(src, drop)
+			def.drop_records(src, drop)
 	for(var/datum/relation_definition/slot/def as anything in L.defs)
 		if(def.is_mind_slot)
 			continue
@@ -62,7 +62,6 @@
 		for(var/atom/movable/thing as anything in things.Copy())
 			if(!QDELETED(thing))
 				dq_lifecycle_resolve_slot_entry(src, def, thing, drop, successor, forced)
-	dq_lifecycle_resolve_latent(L, drop, successor, forced)
 
 /// End of phase 3: the contents phase must have carried out every slot's policy. Checked here,
 /// while the ledger still exists: phase 4 disposes of its runtime-owned ledger through
@@ -70,13 +69,13 @@
 /// reported holder-kept contents (a machine's radio, a sleeper's beaker) as unreleased.
 /atom/movable/proc/dq_lifecycle_check_released()
 	if((containment_ledger() || dq_slot_defs_for(src)) && dq_holds_unreleased())
-		stack_trace("[type] still holds contents/latent entries after the destroy transaction's contents phase -- it should have released them: [dq_unreleased_report()]")
+		stack_trace("[type] still holds contents after the destroy transaction's contents phase -- it should have released them: [dq_unreleased_report()]")
 
 /// The contents phase's check that it did its job: TRUE when something still sits in a
 /// slot whose policy the transaction must carry out. SLOT_DROP_HOLDER slots (a mob's worn and
 /// held items) and mind slots keep their contents on purpose: the base Destroy() deletes them.
 /atom/movable/proc/dq_holds_unreleased()
-	if(!length(contents) && !has_latent())
+	if(!length(contents))
 		return FALSE
 	var/datum/ledger/L = containment_ledger()
 	if(!L)
@@ -88,17 +87,17 @@
 	for(var/datum/relation_definition/slot/def as anything in L.defs)
 		if(def.drop_policy == SLOT_DROP_HOLDER || def.is_mind_slot)
 			continue
-		if(length(L.slots[def.slot_id]) || length(L.latent_list(def.slot_id)))
+		if(length(L.slots[def.slot_id]))
 			return TRUE
 	return FALSE
 
 /// What dq_holds_unreleased() objected to, for Destroy()'s stack trace: each offending slot with
-/// its real things and latent entry count, plus contents no slot accounts for.
+/// its things, plus contents no slot accounts for.
 /atom/movable/proc/dq_unreleased_report()
 	var/list/parts = list()
 	var/datum/ledger/L = containment_ledger()
 	if(!L)
-		parts += "no ledger (latent_contents=[latent_contents_enabled()], latent_declared=[latent_is_declared()], generator lines=[length(latent_generator())])"
+		parts += "no ledger"
 		for(var/atom/movable/thing as anything in contents)
 			parts += "[thing] ([thing.type])"
 		return jointext(parts, "; ")
@@ -109,9 +108,8 @@
 		var/list/names = list()
 		for(var/atom/movable/thing as anything in things)
 			names += "[thing] ([thing.type], loc=[thing.loc == src ? "holder" : thing.loc])"
-		var/latent_n = length(L.latent_list(def.slot_id))
-		if(length(names) || latent_n)
-			parts += "slot [def.slot_id] (policy [def.drop_policy]): [jointext(names, ", ")] latent entries=[latent_n]"
+		if(length(names))
+			parts += "slot [def.slot_id] (policy [def.drop_policy]): [jointext(names, ", ")]"
 	return jointext(parts, "; ")
 
 /// Lifecycle property (doc/rewrite/proposals/relations.md D17): a thing that must outlive its container's deletion whatever the slot's drop policy
@@ -127,23 +125,12 @@
 	if(forced && policy == SLOT_DROP_SPILL) // a forced delete leaves no litter (admission.md D10)
 		policy = SLOT_DROP_DELETE
 	// survives_container() is checked after the forced conversion and before the DELETE branch: a deleting slot spills such a thing instead
-	// (a latent entry cannot hold one), on a forced delete too (admission.md D10).
-	if((policy == SLOT_DROP_DELETE || policy == SLOT_DROP_TO_LATENT) && thing.survives_container())
+	// on a forced delete too (admission.md D10).
+	if(policy == SLOT_DROP_DELETE && thing.survives_container())
 		log_world("LIFECYCLE: [thing] ([thing.type]) survives the deletion of [holder] ([holder.type]); slot [def.slot_id] policy [policy] became SPILL")
 		policy = SLOT_DROP_SPILL
 	switch(policy)
 		if(SLOT_DROP_DELETE)
-			spent(thing)
-			return
-		if(SLOT_DROP_TO_LATENT)
-			var/atom/movable/target = def.latent_successor(holder)
-			if(target && !QDELETED(target))
-				var/list/blob = dq_stock_blob(thing)
-				if(target.latent_add(thing.type, 1, blob))
-					spent(thing)
-					return
-			// No successor yet (debris/wreckage not built here): the data
-			// would just be lost either way, so it goes with the holder.
 			spent(thing)
 			return
 		if(SLOT_DROP_KEEP_WITH)
@@ -165,43 +152,9 @@
 	if(thing.loc == holder)
 		spent(thing)
 
-/// Drop policies for latent entries, as data (damage.md Â§6): deleted (and
-/// holder-kept) entries are removed; SPILL/TRANSFER/TO_LATENT/KEEP_WITH entries stay latent if
-/// they land in another latent holder, and are created only where they land
-/// on a turf. Mirrors dq_lifecycle_resolve_slot_entry() for real things.
-/proc/dq_lifecycle_resolve_latent(datum/ledger/L, atom/drop, atom/movable/successor, forced = FALSE)
-	var/atom/movable/holder = L.holder()
-	for(var/datum/latent_entry/entry as anything in L.latent_list())
-		var/datum/relation_definition/slot/def = L.def_by_id(entry.slot)
-		var/path = entry.path
-		var/list/blob = entry.blob
-		var/n = entry.count
-		L.latent_set_count(entry, 0)
-		// SLOT_DROP_HOLDER: the base Destroy() deletes a holder-kept slot's real contents
-		// (a machine's board and parts, a body's worn items), so its latent entries go with
-		// the holder too. Spilling them made every deleted machine drop its unbuilt parts.
-		if(def.drop_policy == SLOT_DROP_DELETE || def.drop_policy == SLOT_DROP_HOLDER || (forced && def.drop_policy == SLOT_DROP_SPILL))
-			continue
-		var/atom/target
-		switch(def.drop_policy)
-			if(SLOT_DROP_TO_LATENT)
-				target = def.latent_successor(holder)
-			if(SLOT_DROP_KEEP_WITH)
-				target = successor
-			if(SLOT_DROP_TRANSFER)
-				target = def.drop_resolver(holder, null, drop)
-		if(!target)
-			target = drop
-		if(!target || QDELETED(target))
-			continue
-		if(!isturf(target) && target.latent_add(path, n, blob))
-			continue
-		for(var/i in 1 to n)
-			dq_latent_create(path, blob, target)
-
 /// L3 (doc/rewrite/lifecycle.md Â§5): the successor replace_with() is
 /// building, set just before it qdels the original. SLOT_DROP_KEEP_WITH
 /// slots move their contents here instead of spilling; read (and cleared)
-/// only by dq_lifecycle_resolve_contents()/dq_lifecycle_resolve_latent()
+/// only by dq_lifecycle_resolve_contents()
 /// during this one transaction.
-// Scoped to one destroy transaction; set and cleared by dq_lifecycle_resolve_contents()/_latent()
+// Scoped to one destroy transaction; set and cleared by dq_lifecycle_resolve_contents()

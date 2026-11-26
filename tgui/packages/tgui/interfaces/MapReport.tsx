@@ -1,6 +1,7 @@
 // Map verify report — structured TGUI panel for admin map-load diagnostics.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
@@ -18,7 +19,13 @@ type Data = {
 
 export const MapReport = () => {
   const { data } = useBackend<Data>();
-  const { original_path, crashed, loadable, bad_paths, bad_keys } = data;
+  const {
+    original_path,
+    crashed,
+    loadable,
+    bad_paths = [],
+    bad_keys = [],
+  } = data;
   return (
     <Window width={680} height={560} title={`Map Report: ${original_path}`}>
       <Window.Content scrollable>
@@ -47,9 +54,9 @@ export const MapReport = () => {
                   <Box>
                     <b>{p.path}</b>
                   </Box>
-                  <Box ml={1} color="label">
+                  <Label ml={1}>
                     used in {p.keys.length}: {p.keys.join(', ')}
-                  </Box>
+                  </Label>
                 </Stack.Item>
               ))}
             </Stack>
@@ -64,15 +71,11 @@ export const MapReport = () => {
                     <b>{k.key}</b>
                   </Box>
                   {k.messages.length === 1 ? (
-                    <Box ml={1} color="label">
-                      {k.messages[0]}
-                    </Box>
+                    <Label ml={1}>{k.messages[0]}</Label>
                   ) : (
                     <Box ml={1}>
                       {k.messages.map((m, i) => (
-                        <Box key={i} color="label">
-                          • {m}
-                        </Box>
+                        <Label key={i}>• {m}</Label>
                       ))}
                     </Box>
                   )}

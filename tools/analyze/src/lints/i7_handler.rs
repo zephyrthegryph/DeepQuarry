@@ -9,7 +9,6 @@
 //! on any line start; the type path may contain spaces. The comment and string content are not
 //! stripped, so a definition-shaped line in a comment or string at column 0 counts.
 
-use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::tree::{Select, SourceFile};
@@ -17,8 +16,8 @@ use crate::tree::{Select, SourceFile};
 const HINT: &str = "declare interactions instead (DECLARE_INTERACTIONS / EXTEND_INTERACTIONS, code/defines/engine/interactions.dm)";
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::i7_handler::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::i7_handler::SCOPE_META_0.group,
+    name: "i7_handler",
+    group: "",
     label: "i7_handler",
     legacy: "tools/ci/i7_handler_lint.py",
     // pathlib rglob: dot-files and dot-directories included.
@@ -26,8 +25,8 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "handler_override", hint: HINT }],
-    allow: crate::allow_registry_fields::i7_handler::ALLOW_0,
-    lists: crate::allow_registry_fields::i7_handler::SCOPE_META_0.lists,
+    allow: &[],
+    lists: &["allowed"],
 };
 
 struct I7Handler;
@@ -38,8 +37,7 @@ impl Lint for I7Handler {
     }
 
     fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
-        let handler = fixture.pattern(r"(?m)^(/\w[\w/ ]*?)/(attackby|attack_hand|attack_self|click_alt)\(",crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(r"(?m)^(/\w[\w/ ]*?)/(attackby|attack_hand|attack_self|click_alt)\("));
+        let handler = crate::pat!(r"(?m)^(/\w[\w/ ]*?)/(attackby|attack_hand|attack_self|click_alt)\(");
         let allowed = cx.list("allowed");
         let text = f.text();
         for m in handler.captures_iter(text) {

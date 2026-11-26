@@ -9,6 +9,5 @@ export type CommandContext = {
   readonly setG: (updater: (prev: GState) => GState) => void;
   readonly print: (text: string, color?: string) => void;
   readonly clearLines: () => void;
-  readonly act: (action: string, params?: Record<string, unknown>) => void;
   readonly scanPool: MutableRefObject<ScanEntry[]>;
 };

@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Input, Section, Stack } from 'tgui-core/components';
+import type { PdaActions } from '../../generated/Pda';
 
 type Data = {
   guesses: number[][]; // Serialized guesses (NERDLE_YES, NERDLE_CLOSE, NERDLE_NO)
@@ -10,7 +11,7 @@ type Data = {
 };
 
 export const pda_nerdle = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, PdaActions>();
 
   const { guesses, guesses_raw, max, used_guesses, target_word } = data;
 

@@ -52,6 +52,16 @@
 /datum/affliction/proc/diagnostic_hint(datum/diagnostic_profile/P)
 	return null
 
+/// What an instrument that only reads vitals-level signs (profile.signs: the basic health analyzer) says of this affliction when
+/// it can't image it: a coarse phrase ("shock", "suspected fracture", "organ damage (heart)"), never the name, level or lab detail.
+/// Null = no sign beyond the symptoms it presents (signs.dm).
+/datum/affliction/proc/signs_label()
+	return null
+
+/// What the naked eye sees of this affliction whatever its symptoms rolled (signs.dm), or null.
+/datum/affliction/proc/visible_sign()
+	return null
+
 /// DIAG_FINDING_* kind of the finding this affliction produces.
 /datum/affliction/proc/finding_kind()
 	return DIAG_FINDING_CONDITION

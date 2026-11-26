@@ -494,7 +494,7 @@
 		if (!length(shorttype))
 			shorttype = "/"
 
-		.["[D]([shorttype])[handle_of(D)]#[i]"] = D
+		.["[D]([shorttype])[handle_text(handle_of(D))]#[i]"] = D
 
 // ---------------------------------------------------------------- the tools' own sequences
 

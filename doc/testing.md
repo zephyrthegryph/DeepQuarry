@@ -5,7 +5,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 `tools/build/build.sh`. Both take the same targets and `-D` defines.
 
 
-**What to run before landing is your judgement.** Nothing gates master (`bash tools/dq_land.sh`, `doc/rewrite/agent_workflow.md` section 29): run the focused tests that fit the change, and `bash tools/ci/check_ratchets.sh --changed-only` before a DM change. A UI or docs fix may need neither a compile nor a world. Mentions below of gates, stamps and lane-ready describe tools no longer on the landing path.
+**What to run before landing is your judgement.** Nothing gates master (`bash tools/dq_land.sh`, `doc/rewrite/agent_workflow.md` section 29): run the focused tests that fit the change, and `bash tools/ci/check_ratchets.sh --changed-only` before a DM change. A UI or docs fix may need neither a compile nor a world. The merge gates, push stamps and the batch train are gone (agent_workflow.md section 29).
 
 ## Quick reference
 
@@ -18,7 +18,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 | A few tests only (use this while developing) | `bash tools/dq_focused_test.sh <name> [...]` (bare names, `/datum/unit_test/` paths or quoted `*` globs; `--repeat=N`) | compile + about 25 s |
 | Unit tests on Southern Cross | `tools/build/build.sh dm-test -DCITESTING_FULL_MAP` | much longer |
 | Focused tests on Southern Cross | `bash tools/dq_focused_test.sh --full-map /datum/unit_test/<name>` | |
-| DM lint + TGUI lint and types | `tools/build/build.sh lint` | a few minutes |
+| Analyze lints + TGUI lint and types | `tools/build/build.sh lint` | a few minutes |
 | TGUI tests | `tools/build/build.sh tgui-test` | under a minute |
 | Build everything | `bin/build.cmd` · `tools/build/build.sh` | |
 | Rust extension | `cd verdigris && cargo test --package verdigris` | |
@@ -45,13 +45,14 @@ Test targets (`dm-test`, `test-repeat`, so every `dq_focused_test.sh` run) load 
 (`verdigris/Cargo.toml` `[profile.lane]`: inherits release, no LTO, line-table debug info, 256 codegen units, incremental,
 opt-level 2 for the workspace crates and 3 for dependencies) and linked with `rust-lld` (`verdigris/.cargo/config.toml`).
 `release` with thin LTO is still what CI (`CI` set), `build.sh` (all-up build), the server and benchmarks build.
+The local test server (`tools/dq_test_server.sh` sets `DQ_VERDIGRIS_PROFILE=server`) loads a DLL built with `[profile.server]`: opt-level 3 for the whole workspace, no LTO, 16 codegen units, line-table debug info, incremental. A Rust edit rebuilds in minutes instead of the ~17 min thin-LTO `release` build. Its cargo target (`<test-server>/verdigris/target`) is kept between restarts (`test-server` is a permanent worktree in `tools/ci/disk_budget.toml`), which is what makes it incremental. Production (`build.sh dm`/`build`), CI, benchmarks and the GCP deploy stay on `release`; the cache key and stamp carry `server` too. A server restart still reruns the `dme` and `gen` steps after any master change (their skip key covers every .dm file, so one changed file regenerates the manifest and the analyzer output in full).
 `DQ_VERDIGRIS_PROFILE=release` makes a test run use the production profile. The shared cache key and the
 `verdigris.dll.profile` stamp next to the DLL carry the profile, so a lane DLL is never reused as a production one.
-Incremental policy: every maintained Cargo entry point forces `CARGO_INCREMENTAL=1`, including CI, gates and retries.
-Earlier `DQ_CARGO_INCREMENTAL=0` and caller opt-outs are ignored. The incompatible `RUSTC_WRAPPER` is cleared;
-workspace instrumentation (`RUSTC_WORKSPACE_WRAPPER`) is preserved. Keep the same target and profile between builds.
-If rustc panics on a corrupt incremental directory, the tooling deletes only that target's incremental directories
-and retries once, still incrementally (tested in `lib/cargo_ice.test.ts`).
+Incremental policy: lane and dev cargo runs are incremental where their profile says so (`lib/cargo_ice.ts`);
+`DQ_CARGO_INCREMENTAL=0` forces `CARGO_INCREMENTAL=0` for any run; CI and the one-shot gate builds
+(`analyze_test_cache`, the `*_equiv.sh` scripts) are non-incremental. Never export `CARGO_INCREMENTAL=1` yourself: sccache
+(the machine's rustc wrapper) refuses to run when it is set. If rustc panics on a corrupt incremental directory, the tooling
+deletes the target's incremental directories and retries once (tested in `lib/cargo_ice.test.ts`).
 Measured on this machine with other lanes building (noisy), one-line edit then `cargo build` of the DLL for i686:
 
 | Edit in | `release` (non-incremental, thin LTO, link.exe) | `lane` (incremental, lld) |
@@ -151,7 +152,7 @@ them can hide a failure in the full suite, which still does all of them:
 A test sets `boot_needs = list(BOOT_NEED_...)` (`code/defines/engine/_boot_needs.dm`) to name the boot work it reads. The default,
 null, means "needs all of it". A focused world skips a piece of work only when **every** selected test declared a list that
 leaves it out (`unit_test_boot_skips()`), and logs `BOOT DEFERRED: ...` to `runtime.log` and `tests.log` for each skip. The
-full suite, the merge gates and production never skip any of it. A test that starts needing one of these adds it to its list.
+full suite and production never skip any of it. A test that starts needing one of these adds it to its list.
 
 | Token | Skipped work | If a test needs it |
 |---|---|---|
@@ -247,7 +248,7 @@ machine slot, queue time is reported apart (`FOCUSED RUN TIME: queued N min`), a
 (5400) is stopped. Do not wrap the tool in `timeout`; the built-in cap replaces it. A native compile the resident compiler cannot admit
 (exit 75, "admission deadline expired") queues again, holding its compile-root slot, up to `DQ_NATIVE_ADMISSION_MAX_MIN` (30)
 instead of failing (`tools/ci/test_admission_retry.sh`).
-A focused run compiles only `deepquarry.test.dme` (the game plus `UNIT_TESTS` code); the game-only production compile + DreamChecker is not part of them. It runs at integration (`dq_push_master.sh` when no `dm.ok` stamp exists; the batch train) and in CI. A lane proof records `dm=0`, so a reused proof never produces a `dm.ok`.
+A focused run compiles only `deepquarry.test.dme` (the game plus `UNIT_TESTS` code); the game-only production compile is not part of it. CI runs the production compile (and DreamChecker, "DreamChecker policy" below).
 Nothing gates master any more (`bash tools/dq_land.sh` merges and pushes); a run's cap is `DQ_FOCUSED_MAX_MIN`, and the exhaustive refusal is unchanged. The shared compile root (`tools/build/lib/compile_root.ts`) never copies or deletes `*.lk` lock files
 (held by a running DreamDaemon/DreamMaker) and retries a busy (EBUSY) copy for a few seconds before failing with a message. `tools/ci/test_focused_caps.sh` tests the caps against a fake world.
 
@@ -257,10 +258,10 @@ every cell of a large matrix:
 - `dq_constraint_parity/equip`, `/storage` and `/suit_storage`, and
   `dq_constraint_declarations_compile`;
 - `dq_property_type_values_valid`;
-- `dq_lifecycle_sandbox` and `dq_state_latent_round_trip`;
+- `dq_lifecycle_sandbox`;
 - `dq_rule_thresholds` and `dq_balance_harness`;
 - `all_clothing_shall_be_valid` and `dq_containment_conservation_fuzz`;
-- `dq_all_species_handle_breath_safely` and `dq_latent_closet_types`;
+- `dq_all_species_handle_breath_safely`;
 - `dq_rust_adjacency_matches_pairwise_rule` and `dq_construction_mech_all_blueprints_round_trip`.
 
 Each one has a normal-tier representative, a `.../representative` subtype that
@@ -598,7 +599,7 @@ Fresh worktrees should not pay cold build costs:
   (`doc/rewrite/agent_workflow.md` section 10), so concurrent builds queue instead of competing.
 - **Analyzer profile.** `DQ_ANALYZE_PROFILE` picks the cargo profile. Locally the default is `dev-fast`
   (`tools/analyze/Cargo.toml`: opt-level 2, no LTO, 256 codegen units, incremental; binary at
-  `target/dev-fast/analyze`). CI (`CI` set) uses `release`; the gates and the push script use the local default (the findings of
+  `target/dev-fast/analyze`). CI (`CI` set) uses `release`; local runs use the default (the findings of
   the two are identical: checked on the whole tree). Measured on
   this machine with 9-16 cargo/rustc/dm processes from other lanes running (noisy), cargo rebuild of
   `analyze` after an edit under `tools/analyze/src`, and a cold `analyze check --no-cache` of the whole
@@ -850,14 +851,13 @@ what it measured.
 
 ## Linting
 
-`tools/build/build.sh lint` runs DreamChecker (SpacemanDMM) and the TGUI Biome and
-TypeScript checks. DreamChecker is skipped with a notice if it is not installed;
-install it with `tools/ci/install_spaceman_dmm.sh dreamchecker`, or put
-`dreamchecker.exe` in `%USERPROFILE%/SpacemanDMM/`.
+`tools/build/build.sh lint` runs the analyze engine and the TGUI Biome and TypeScript checks. It does not run
+DreamChecker (off by the user's decision); the `dream-checker` target still runs it on request. Install it with
+`tools/ci/install_spaceman_dmm.sh dreamchecker`, or put `dreamchecker.exe` in `%USERPROFILE%/SpacemanDMM/`.
 
 ### Shared compile roots, daemon lifetime, cache budget
 
-`build.sh dm`/`dm-test` compile through one root per DME variant under `E:/dq-cache/dmb-roots/<variant>` (junctions to the worktree's input
+`build.sh dm`/`dm-test` compile through one root per DME variant under `E:/dq-cache/dmb-roots/<variant>-l1` (`-l1`: its outputs are hard links to the sealed pair-store files, `DMB_INSTALL_LINK=0` selects the plain `<variant>` root and copies; junctions to the worktree's input
 directories, `tools/build/lib/compile_root.ts`; `DQ_SHARED_ROOT=0` compiles in the worktree), so a compile after switching worktrees reuses the
 resident session (measured 8-18 s against 100-170 s cold) and the output is equivalent to a fresh build (`dmb-equiv --ignore-debug`; a
 patched output may keep unreferenced old strings, so it is not byte-identical). The daemon now exits after 60 minutes idle (was 10), matching
@@ -870,9 +870,12 @@ paths, wall times and miss causes.
 SpacemanDMM's DreamChecker has no incremental or changed-files mode: every run parses and checks the whole tree (2+ minutes on
 every core, in parallel with the compile). It used to run inside every `build.sh dm`, so a local `dm`, `server` or test build paid
 for it each time. Now `dm` runs it only where its verdict is required: `DQ_DREAMCHECKER=1`, a `CI` environment, or when you
-ask for it (`DQ_DREAMCHECKER=1 build.sh dm`). `build.sh lint` always runs it (explicit lint). Whatever runs it does so at
+ask for it (`DQ_DREAMCHECKER=1 build.sh dm`, or the `dream-checker` target). `build.sh lint` does not run it. Whatever runs it does so at
 below-normal priority (`DQ_PRIORITY=normal` opts out). Local builds log one line saying it was skipped. The analyze engine's
 ratchets (`check_ratchets.sh`, incremental per file) still run wherever they ran before.
+
+Who runs it: CI (when it is installed). Agents do not run it while the user has it switched off (AGENTS.md
+section 3a, last rule); `build.sh dm` without `DQ_DREAMCHECKER=1` never starts it.
 
 CI also runs these scripts, all from the repository root:
 

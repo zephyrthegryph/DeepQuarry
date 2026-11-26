@@ -179,6 +179,7 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 	setup(PROC_REF(seed_wire_states))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("NuclearBomb", title = "Nuclear Fission Explosive")
+	ui_shape(wire_view = bool(), lighthack = bool(), wires = list_of(row(name = schema_text(), cut = bool())), auth = bool(), yes_code = bool(), timing = bool(), safety = bool(), anchored = bool(), status_label = schema_text(), code_display = schema_text(), timeleft = num())
 	op("auth", ui_act("auth"), then(PROC_REF(ui_act_auth)))
 	op("type", ui_act("type", arg("key", schema_text(4096))), then(PROC_REF(ui_act_type)))
 	op("time", ui_act("time", arg("delta", num())), then(PROC_REF(ui_act_time)))
@@ -305,11 +306,7 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 	return TRUE
 
 /obj/machinery/nuclearbomb/proc/ui_act_timer(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!auth() || !yes_code || timing == -1.0)
-		return TRUE
-	if(safety)
-		to_chat(user, span_warning("The safety is still on."))
+	if(!auth() || !yes_code || timing == -1.0 || safety) // the window greys the button while the safety is on
 		return TRUE
 	set_timing(!timing)
 	if(timing)

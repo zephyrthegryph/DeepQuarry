@@ -1,0 +1,6 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Walking no longer redraws the whole HUD on every step: a move redraws only night vision (and a robot's air alert, a pAI's fold display)"
+  - bugfix: "The draw and refresh passes start no draw on a tick that is already spent, the sweep waits for a tick with room, and a connected client's step into a new light chunk is taken a tick later instead of inside the step"
+  - code_imp: "The I/O poll pass holds back on a spent tick, names slow deliveries (IO_SLOW), human bake eviction is a few files a landing, and the MOVE_COST trace splits the eye part into proximity cell, gaze hold and glow holder (GLOW_SLOW and DRAW_SLOW lines added)"

@@ -22,7 +22,7 @@
 		TEST_ASSERT(custom && !QDELETED(custom), "The generic bracelet accepts the actual material: [material_key]")
 		TEST_ASSERT_EQUAL(fixed.get_material(), expected, "The fixed bracelet retains the exact registered material")
 		TEST_ASSERT_EQUAL(custom.get_material(), expected, "The generic bracelet honors its caller's material")
-		TEST_ASSERT_EQUAL(fixed.max_integrity, max(1, round(expected.integrity / 10)) * MATERIAL_WEAR_UNIT, "The parent applies the chosen material's integrity")
+		TEST_ASSERT_EQUAL(fixed.max_integrity, max(1, round(expected.toughness * MATERIAL_HP_PER_TOUGHNESS / 10)) * MATERIAL_WEAR_UNIT, "The parent applies the chosen material's integrity")
 		TEST_ASSERT_EQUAL(fixed.max_integrity, custom.max_integrity, "Fixed and custom forms receive the same parent material behavior")
 		TEST_ASSERT_EQUAL(lowertext(fixed.color), lowertext(expected.icon_colour), "The real bracelet appearance uses the chosen material")
 		TEST_ASSERT_EQUAL(fixed.name, "[expected.display_name] bracelet", "The fixed bracelet displays its chosen material")

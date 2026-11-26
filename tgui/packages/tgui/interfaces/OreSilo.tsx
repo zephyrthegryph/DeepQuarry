@@ -3,6 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
   Box,
+  DmIcon,
   Icon,
   LabeledList,
   NoticeBox,
@@ -15,40 +16,20 @@ import {
 import { classes } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
 import { MaterialAccessBar } from './common/MaterialAccessBar';
-import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
 import type { Material } from './Fabrication/Types';
+import type { OreSiloActions, OreSiloData } from './generated/OreSilo';
 
-type Machine = {
-  name: string;
-  icon: string;
-  onHold: boolean;
-  location: string;
-};
+type Machine = OreSiloData['machines'][number];
 
-type Log = {
-  rawMaterials: string;
-  machineName: string;
-  areaName: string;
-  action: string;
-  amount: number;
-  time: string;
-  noun: string;
-};
+type Log = OreSiloData['logs'][number];
 
 enum Tab {
   Machines,
   Logs,
 }
 
-type Data = {
-  SHEET_MATERIAL_AMOUNT: number;
-  materials: Material[];
-  machines: Machine[];
-  logs: Log[];
-};
-
 export const OreSilo = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<OreSiloData, OreSiloActions>();
   const { SHEET_MATERIAL_AMOUNT, machines, logs } = data;
 
   const [currentTab, setCurrentTab] = useState<Tab>(Tab.Logs);
@@ -78,12 +59,12 @@ export const OreSilo = (props) => {
           <Stack.Item grow>
             {currentTab === Tab.Machines ? (
               <MachineList
-                machines={machines!}
+                machines={machines}
                 onPause={(index) => act('hold', { id: index })}
                 onRemove={(index) => act('remove', { id: index })}
               />
             ) : null}
-            {currentTab === Tab.Logs ? <LogsList logs={logs!} /> : null}
+            {currentTab === Tab.Logs ? <LogsList logs={logs} /> : null}
           </Stack.Item>
           <Stack.Item>
             <Section fill>
@@ -148,11 +129,22 @@ const MachineDisplay = (props: MachineProps) => {
 
   return (
     <Box className="FabricatorRecipe">
-      <TechWebRecipeIcon
-        icon={machine.icon}
-        name={machineName}
-        canPrint={machine.onHold}
-      />
+      <Box
+        className={classes([
+          'FabricatorRecipe__Title',
+          machine.onHold && 'FabricatorRecipe__Title--disabled',
+        ])}
+      >
+        <Box className="FabricatorRecipe__Icon">
+          <DmIcon
+            icon={machine.icon}
+            icon_state={machine.icon_state}
+            width="32px"
+            height="32px"
+          />
+        </Box>
+        <Box className="FabricatorRecipe__Label">{machineName}</Box>
+      </Box>
       <Tooltip
         content={
           machine.onHold

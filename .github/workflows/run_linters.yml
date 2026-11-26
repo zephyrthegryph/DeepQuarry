@@ -74,9 +74,6 @@ jobs:
         with:
           components: rustfmt, clippy
       - name: Build the analyze lint engine
-        env:
-          CARGO_INCREMENTAL: '1'
-          RUSTC_WRAPPER: ''
         run: cargo build --release --manifest-path tools/analyze/Cargo.toml
       # The generated DM is not committed (doc/rewrite/agent_workflow.md): write it before anything
       # below reads or compiles the tree. Fails on a generator diagnostic or a missing .dme include.
@@ -84,9 +81,6 @@ jobs:
         run: tools/analyze/target/release/analyze gen | grep -v '^fresh '; test "${PIPESTATUS[0]}" = 0
         shell: bash
       - name: Build DM health analyzer
-        env:
-          CARGO_INCREMENTAL: '1'
-          RUSTC_WRAPPER: ''
         run: cargo build --release --manifest-path tools/dm-health/Cargo.toml
       - name: Run DM health and CI checks
         run: tools/dm-health/target/release/dm-health ci-suite
@@ -103,9 +97,6 @@ jobs:
       - name: Ratcheted rewrite lints (the analyze engine: scheduler, declared refs, lifecycle, containment, check_grep, ...)
         run: bash tools/ci/check_ratchets.sh
       - name: Analyze engine tests (per-lint fixtures)
-        env:
-          CARGO_INCREMENTAL: '1'
-          RUSTC_WRAPPER: ''
         run: cargo test --release --manifest-path tools/analyze/Cargo.toml
       - name: Check Rust core consolidation
         run: python3 tools/ci/check_rust_core_consolidation.py
@@ -120,19 +111,10 @@ jobs:
         run: bash tools/ci/gen_verdigris_bindings.sh
       - name: Verdigris cargo fmt
         working-directory: verdigris
-        env:
-          CARGO_INCREMENTAL: '1'
-          RUSTC_WRAPPER: ''
         run: cargo fmt --all --check
       - name: Verdigris cargo clippy
         working-directory: verdigris
-        env:
-          CARGO_INCREMENTAL: '1'
-          RUSTC_WRAPPER: ''
         run: cargo clippy --package verdigris --package vg-core --package vg-layout --package vg-heat --package vg-power --all-targets -- -D warnings
       - name: Verdigris cargo test
         working-directory: verdigris
-        env:
-          CARGO_INCREMENTAL: '1'
-          RUSTC_WRAPPER: ''
         run: cargo test

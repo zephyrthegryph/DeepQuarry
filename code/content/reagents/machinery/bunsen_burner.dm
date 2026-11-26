@@ -5,6 +5,7 @@
 	icon_state = "bunsen0"
 	/// Heat the flame puts into the burner and what sits on it, W.
 	var/heat_power = BUNSEN_HEAT_POWER
+	circuit = VARIANT(/obj/item/circuitboard/bunsen_burner)
 	var/obj/item/reagent_containers/held_container
 
 /obj/machinery/bunsen_burner/var/heating = FALSE
@@ -89,7 +90,9 @@
 /// Boils its container; runs while heating (declared).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/bunsen_burner)
-	configure(machine_rules(maintenance_flags = MACHINE_MAINT_PANEL | MACHINE_MAINT_WRENCH))
+	tabletop(carry = TRUE)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	owns_one(nameof(held_container), /obj/item/reagent_containers)
 	op("place_container", item(/obj/item), label("Place container"), then(PROC_REF(interaction_place_container)))
 	op("remove_container", hand(), label("Remove container"), then(PROC_REF(interaction_remove_container)))
@@ -117,6 +120,9 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 	// Slosh and toss. We use an internal distilling container, react it in there, then pass it back.
 	held_container.reagents.trans_to_obj(src, held_container.reagents.total_volume)
 	reagents.handle_reactions()
+	var/list/vapour = reagents.boil_step(MACHINE_SERVICE_INTERVAL / (1 SECONDS)) // what is above its boiling point leaves as vapour, into the air of the burner's tile (the condenser works with the hot plate)
+	if(length(vapour))
+		vent_vapour_at(get_turf(src), vapour, src)
 	reagents.trans_to_obj(held_container, reagents.total_volume)
 
 	// every 25 degree step, do a message to show we are working

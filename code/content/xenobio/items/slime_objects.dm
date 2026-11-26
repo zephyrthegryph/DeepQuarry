@@ -134,7 +134,7 @@ CAPABILITIES(/datum/slime_cube_invitation_review)
 	var/mob/living/carbon/human/S = new(get_turf(src))
 	S.client = candidate.client
 	to_chat(S, span_infoplain(span_bold("You are a promethean, brought into existence on [station_name()].")))
-	S.mind.assigned_role = JOB_PROMETHEAN
+	S.mind.set_assigned_role(JOB_PROMETHEAN)
 	S.set_species("Promethean")
 	S.shapeshifter_set_colour("#2398FF")
 	visible_message(span_warning("The monkey cube suddenly takes the shape of a humanoid!"))
@@ -151,9 +151,9 @@ CAPABILITIES(/datum/slime_cube_invitation_review)
 	if(newname)
 		S.set_real_name(newname)
 		S.name = S.real_name
-		S.dna.real_name = newname
+		S.dna.set_real_name(newname)
 	if(S.mind)
-		S.mind.name = S.name
+		S.mind.set_name(S.name)
 	consume(src, S)
 
 // More or less functionally identical to the telecrystal tele.
@@ -287,27 +287,6 @@ CAPABILITIES(/obj/item/slime_irradiator)
 	icon_state = "slimepouch"
 
 //Slime Chems
-
-/datum/reagent/myelamine/slime
-	name = "Agent A"
-	id = REAGENT_ID_SLIMEBLEEDFIXER
-	description = "A slimy liquid which appears to rapidly clot internal hemorrhages by increasing the effectiveness of platelets at low quantities.  Toxic in high quantities."
-	taste_description = "slime"
-	overdose = 5
-
-/datum/reagent/osteodaxon/slime
-	name = "Agent B"
-	id = REAGENT_ID_SLIMEBONEFIXER
-	description = "A slimy liquid which can be used to heal bone fractures at low quantities.  Toxic in high quantities."
-	taste_description = "slime"
-	overdose = 5
-
-/datum/reagent/peridaxon/slime
-	name = "Agent C"
-	id = REAGENT_ID_SLIMEORGANFIXER
-	description = "A slimy liquid which is used to encourage recovery of internal organs and nervous systems in low quantities.  Toxic in high quantities."
-	taste_description = "slime"
-	overdose = 5
 
 /datum/reagent/nutriment/glucose/slime
 	name = "Slime Goop"

@@ -200,9 +200,6 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	// and autopunctuation is turned on, add a period.
 	// This must be done right here, before parse_languages is called, to make sure it's in the last multilingual say piece.
 	if(contains_az09(copytext(message, length(message))))
-		if(client?.prefs?.read_preference(/datum/preference/toggle/autopunctuation))
-			message += "."
-
 	//Parse the language code and consume it
 	var/list/message_pieces = parse_languages(message)
 	if(istype(message_pieces, /datum/multilingual_say_piece)) // Little quark for dealing with hivemind/signlang languages.
@@ -376,7 +373,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			continue
 
 		// Ghosts don't hear whispers
-		if(whispering && isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_see_whisubtle) || \
+		if(whispering && isobserver(M) && (!M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears) || \
 		(!(client?.prefs?.read_preference(/datum/preference/toggle/whisubtle_vis) || (isbelly(M.loc) && src == M.loc:owner))  && !check_rights_for(M.client, R_HOLDER))))
 			M.show_message(span_game(span_say(span_name(src.name) + " [w_not_heard].")), 2)
 			continue
@@ -417,14 +414,14 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		message = "([message_mode == "headset" ? "Common" : capitalize(message_mode)]) [message]" //Adds radio keys used if available
 	if(whispering)
 		if(do_sound && message)
-			blooploop(message, extrarange = -6, volume = 25, sound_preference = /datum/preference/toggle/whisper_sounds)
-			// playsound(T, pick(voice_sounds_list), 25, TRUE, extrarange = -6, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/whisper_sounds) // ignore_walls = TRUE
+			blooploop(message, extrarange = -6, volume = 25)
+			// playsound(T, pick(voice_sounds_list), 25, TRUE, extrarange = -6, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VOICE) // ignore_walls = TRUE
 
 		log_talk(message, LOG_WHISPER, color="#aeaeae")
 	else
 		if(do_sound && message)
 			blooploop(message, volume = 75)
-			// playsound(T, pick(voice_sounds_list), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/say_sounds) // ignore_walls = TRUE
+			// playsound(T, pick(voice_sounds_list), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VOICE) // ignore_walls = TRUE
 		log_talk(message, LOG_SAY, color="#c0c0c0")
 	return 1
 
@@ -437,7 +434,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 #define BLOOPER_MAX_BLOOPERS 24
 #define BLOOPER_MAX_TIME (1.5 SECONDS)
 
-/mob/living/proc/blooper(extrarange = 0, volume, sound_preference = /datum/preference/toggle/bloop_sounds)
+/mob/living/proc/blooper(extrarange = 0, volume)
 	playsound(\
 		src,\
 		pick(STATE_GET(src, mob_misc, voice_sounds_list)),\
@@ -448,17 +445,17 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		is_global = TRUE,\
 		frequency = STATE_GET(src, mob_misc, voice_freq) > 0 ? STATE_GET(src, mob_misc, voice_freq) : null,\
 		ignore_walls = TRUE,\
-		preference = sound_preference,
+		volume_channel = VOLUME_CHANNEL_VOICE,
 	) // Ignore_walls set to TRUE
 
-/mob/living/proc/blooploop(message, extrarange = 0, volume, sound_preference = /datum/preference/toggle/say_sounds, bloop_preference = /datum/preference/toggle/bloop_sounds)
+/mob/living/proc/blooploop(message, extrarange = 0, volume)
 	var/bloopers = min(round((LAZYLEN(message) / BLOOPER_SPEED)) + 1, BLOOPER_MAX_BLOOPERS)
 	var/total_delay
-	playsound(src, pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume, TRUE, extrarange = extrarange, falloff = 1 , is_global = TRUE, frequency = STATE_GET(src, mob_misc, voice_freq) > 0 ? STATE_GET(src, mob_misc, voice_freq) : null, ignore_walls = FALSE, preference = sound_preference)
+	playsound(src, pick(STATE_GET(src, mob_misc, voice_sounds_list)), volume, TRUE, extrarange = extrarange, falloff = 1 , is_global = TRUE, frequency = STATE_GET(src, mob_misc, voice_freq) > 0 ? STATE_GET(src, mob_misc, voice_freq) : null, ignore_walls = FALSE, volume_channel = VOLUME_CHANNEL_VOICE)
 	for(var/i in 1 to bloopers)
 		if(total_delay > BLOOPER_MAX_TIME)
 			break
-		after(src, total_delay, PROC_REF(blooper), with = list(extrarange, volume, bloop_preference))
+		after(src, total_delay, PROC_REF(blooper), with = list(extrarange, volume))
 		total_delay += rand(\
 			DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE), \
 			DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE) + DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE)) TICKS

@@ -4,7 +4,7 @@ set -uo pipefail
 for _v in $(compgen -e | grep -E '^(DQ_|GIT_CONFIG_)'); do unset "$_v"; done; unset _v
 unset MSYS_NO_PATHCONV
 here="$(cd "$(dirname "$0")/../.." && pwd)"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+tmp="$(mktemp -d)"; trap '[ -n "${KEEP:-}" ] || rm -rf "$tmp"' EXIT
 fail=0
 ok() { echo "PASS: $1"; }; bad() { echo "FAIL: $1"; fail=1; }
 land="$here/tools/dq_land.sh"
@@ -39,11 +39,15 @@ echo mine >code/b.dm; git add -A; git commit -qm resolved; out="$(bash "$land" 2
 [ "$rc" = 0 ] && ok "after resolving it lands" || bad "resolved: rc=$rc $out"
 # a deepquarry.dme both sides edited at the same line merges through the dq-dme driver, not into a conflict
 git fetch -q origin; git switch -qc l/dme-base origin/master; mkdir -p tools/build
-cp "$here/tools/build/dme_merge_driver.sh" "$here/tools/build/gen_dme.py" "$here/tools/build/dme_spec.txt" tools/build/; cp "$here/.gitattributes" .gitattributes
+cp "$here/tools/build/dme_merge_driver.sh" "$here/tools/build/gen_dme.py" tools/build/; printf "scan code\n" >tools/build/dme_spec.txt; cp "$here/.gitattributes" .gitattributes
 printf '#include "code\\a.dm"\n#include "code\\b.dm"\n' >deepquarry.dme; echo c >code/c.dm; echo d >code/d.dm; git add -A; git commit -qm dme; bash "$land" >/dev/null 2>&1; git fetch -q origin
 git switch -qc l/dme-theirs origin/master; printf '#include "code\\a.dm"\n#include "code\\c.dm"\n#include "code\\b.dm"\n' >deepquarry.dme; git commit -qam theirs; git push -q origin HEAD:master; git fetch -q origin
 git switch -qc l/dme-mine HEAD~1; printf '#include "code\\a.dm"\n#include "code\\d.dm"\n#include "code\\b.dm"\n' >deepquarry.dme; git commit -qam mine; out="$(bash "$land" 2>&1)"; rc=$?
 if [ "$rc" = 0 ] && git show origin/master:deepquarry.dme | grep -q 'c\.dm' && git show origin/master:deepquarry.dme | grep -q 'd\.dm' && ! git show origin/master:deepquarry.dme | grep -q '<<<<'; then ok "a deepquarry.dme conflict resolves through the driver"; else bad "dme: rc=$rc $out"; fi
+# a lane whose merged manifest is stale (an order gen_dme.py would not write) lands with it regenerated, never stale
+git fetch -q origin; git switch -qc l/dme-stale origin/master; mkdir -p tools/build; cp "$here/tools/build/gen_dme.py" tools/build/; printf "scan code\n" >tools/build/dme_spec.txt; echo e >code/e.dm; printf '#include "code\\e.dm"\n#include "code\\a.dm"\n' >deepquarry.dme; git add -A; git commit -qm stale; out="$(bash "$land" 2>&1)"; rc=$?
+want="$(python3 tools/build/gen_dme.py >/dev/null 2>&1; cat deepquarry.dme)"
+if [ "$rc" = 0 ] && grep -q 'regenerated' <<<"$out" && [ "$(git show origin/master:deepquarry.dme)" = "$want" ] && [ -z "$(git status --porcelain)" ]; then ok "a stale manifest is regenerated and committed before the push"; else bad "stale dme: rc=$rc $out"; fi
 git switch -q master; out="$(bash "$land" 2>&1)"; rc=$?
 if [ "$rc" != 0 ] && grep -q 'on master' <<<"$out"; then ok "master itself is refused"; else bad "master: rc=$rc $out"; fi
 git switch -q l/plain

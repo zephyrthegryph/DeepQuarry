@@ -16,6 +16,6 @@
 	per_type_forget(D)
 	staleness_forget(D)
 	derived_forget(D)
-	interest_forget(D)
+	init_open_forget(D)
 	refresh_forget(D)
 	sense_forget(D)

@@ -2,7 +2,6 @@
 /mob/proc/adjust_hive_range()
 	set name = "Adjust Special Language Range"
 	set desc = "Changes the range you will transmit your hive language to!"
-	set category = VERB_CAT_IC_SETTINGS
 
 	open_request(src, /datum/prompt/choice, PROC_REF(hive_range_chosen), answerer = src, title = "Adjust special language range", question = "What range?", choices = list("Global","This Z level","Local", "Subtle"), buttons = TRUE, timeout = 0)
 

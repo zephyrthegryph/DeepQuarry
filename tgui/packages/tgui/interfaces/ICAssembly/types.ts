@@ -1,50 +1,14 @@
-export type Data = {
-  total_parts: number;
-  max_components: number;
-  total_complexity: number;
-  max_complexity: number;
-  battery_charge: number;
-  battery_max: number;
-  net_power: number;
-  circuits: CircuitData[];
-  component_positions: ComponentPosition[];
-};
+import type { ICAssemblyData } from '../generated/ICAssembly';
 
-export type ComponentPosition = {
-  ref: string;
-  x: number;
-  y: number;
-};
+export type Data = ICAssemblyData;
 
-export type CircuitData = {
-  name: string;
-  desc: string;
-  ref: string;
-  removable: boolean;
-  complexity: number;
-  power_draw_idle: number;
-  power_draw_per_use: number;
-  extended_desc: string;
-  inputs?: PortData[];
-  outputs?: PortData[];
-  activators?: PortData[];
-};
+export type ComponentPosition = Data['component_positions'][number];
 
-export type PortData = {
-  type: string;
-  name: string;
-  data: string;
-  rawdata: string;
-  ref: string;
-  linked: LinkedPortData[];
-};
+export type CircuitData = Data['circuits'][number];
 
-export type LinkedPortData = {
-  ref: string;
-  name: string;
-  holder_ref: string;
-  holder_name: string;
-};
+export type PortData = CircuitData['inputs'][number];
+
+export type LinkedPortData = PortData['linked'][number];
 
 export enum PortTypes {
   IC_FORMAT_ANY = '<ANY>',

@@ -4,53 +4,23 @@
 // hidden mapwindow.interaction_menu BROWSER element (a map child, like the
 // hover tooltip), not in a separate window: we measure the rendered rows, size
 // the element to them and place it at the clicked pixel in ONE winset (pos +
-// size + is-visible), so it appears already placed. The cursor math is the
-// tooltip's (Tooltip.tsx): tile -> pixel through the rendered map size and its
-// letterbox offsets, plus the pixel inside the tile.
+// size + is-visible), so it appears already placed. The cursor math is in
+// InteractionMenuPlacement.ts: tile -> pixel through the map's icon-size (0 =
+// stretched to fit, letterboxed), plus the pixel inside the tile.
 //
 // It renders a bare <div> rather than a tgui <Window> (whose chrome paints a
 // full window). Picking a row, the close button, Escape or the next click on the
 // map hide it.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Available = {
-  id: string;
-  name: string;
-  desc?: string | null;
-  category: string | null;
-  keys: string[];
-};
-
-type Blocked = {
-  id: string;
-  name: string;
-  desc?: string | null;
-  category: string | null;
-  reason: string;
-};
-
-type Action = {
-  id: string;
-  name: string;
-};
-
-type Data = {
-  visible: BooleanLike;
-  control: string;
-  cursor_params: string;
-  view_w: number;
-  view_h: number;
-  tile_size: number;
-  revision: number;
-  target: string | null;
-  available?: Available[];
-  blocked?: Blocked[];
-  actions?: Action[];
-  verbs?: string[];
-};
+import { ListRow, ListRows, TitleBar } from 'tgui/dq';
+import { CONSOLE_THEME } from 'tgui/layouts/consoleTheme';
+import type {
+  InteractionMenuActions,
+  InteractionMenuData,
+} from './generated/InteractionMenu';
+import { cursorInMap, placeMenu } from './InteractionMenuPlacement';
 
 const MENU_RESET_CSS = `
 html, body, #react-root, .InteractionMenuRoot,
@@ -66,99 +36,35 @@ html, body, #react-root, .InteractionMenuRoot {
   position: fixed !important;
   inset: 0 !important;
 }
-.InteractionMenu__row {
-  display: block;
-  width: 100%;
-  padding: 2px 10px;
-  border: 0;
-  background: transparent;
-  color: #e6e6e6;
-  text-align: left;
-  font: 12px Verdana, Geneva, sans-serif;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.InteractionMenu__row:hover {
-  background: #3e6189;
-  color: #ffffff;
-}
-.InteractionMenu__blocked {
-  padding: 2px 10px;
-  color: #7a7a7a;
-  font: 12px Verdana, Geneva, sans-serif;
-  white-space: nowrap;
-}
-.InteractionMenu__separator {
-  height: 1px;
-  margin: 3px 4px;
-  background: #4a4a4a;
-}
-.InteractionMenu__title {
-  display: flex;
-  padding: 3px 4px 3px 10px;
-  color: #9fb4cc;
-  font: bold 12px Verdana, Geneva, sans-serif;
-  white-space: nowrap;
-}
 `;
 
 const MAX_HEIGHT = 420;
 
-const parseSemiParams = (s: string): Record<string, string> => {
-  const out: Record<string, string> = {};
-  for (const part of (s || '').split(/[;&]/)) {
-    if (!part) continue;
-    const eq = part.indexOf('=');
-    if (eq < 0) continue;
-    out[part.slice(0, eq)] = decodeURIComponent(part.slice(eq + 1));
-  }
-  return out;
-};
+/** "ROLE // DISTANCE", whichever halves the server sent. */
+export const menuSubtitle = (
+  role?: string | null,
+  distance?: string | null,
+): string =>
+  [role, distance]
+    .filter((part): part is string => !!part)
+    .map((part) => part.toUpperCase())
+    .join(' // ');
 
-/** The cursor position inside the map element, in device pixels, or null when the click carried none. */
-const cursorInMap = (
-  data: Data,
-  mapW: number,
-  mapH: number,
-  renderedW: number,
-  renderedH: number,
-): [number, number] | null => {
-  const params = parseSemiParams(data.cursor_params);
-  const screenLoc = params['screen-loc'] ?? '';
-  const [xRaw, yRaw] = screenLoc.split(',');
-  if (!xRaw || !yRaw) {
-    return null;
-  }
-  // "x:px,y:py" (a secondary map would prefix "map:"; take the last two fields).
-  const xParts = xRaw.split(':');
-  const yParts = yRaw.split(':');
-  const tileX = parseInt(xParts[xParts.length - 2] ?? '', 10);
-  const pixelX = parseInt(xParts[xParts.length - 1] ?? '', 10);
-  const tileY = parseInt(yParts[0] ?? '', 10);
-  const pixelY = parseInt(yParts[1] ?? '', 10);
-  if (!tileX || !tileY || !pixelX || !pixelY) {
-    return null;
-  }
-  const tile = data.tile_size || 32;
-  const iconW = renderedW / data.view_w;
-  const iconH = renderedH / data.view_h;
-  const leftOffset = (mapW - renderedW) / 2;
-  const topOffset = (mapH - renderedH) / 2;
-  const x = leftOffset + (tileX - 1 + (pixelX - 1) / tile) * iconW;
-  const y = topOffset + (data.view_h - tileY + (tile - pixelY) / tile) * iconH;
-  return [Math.round(x), Math.round(y)];
-};
+/** The short label of a basic action button ("Point at" is "Point"). */
+export const actionLabel = (name: string): string => name.replace(/ at$/i, '');
 
 export const InteractionMenu = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    InteractionMenuData,
+    InteractionMenuActions
+  >();
   const boxRef = useRef<HTMLDivElement>(null);
-  const {
-    target,
-    available = [],
-    blocked = [],
-    actions = [],
-    verbs = [],
-  } = data;
+  const { target, role, distance, hidden = null } = data;
+  const available = data.available ?? [];
+  const blocked = data.blocked ?? [];
+  const actions = data.actions ?? [];
+  const verbs = data.verbs ?? [];
+  const [showHidden, setShowHidden] = useState(false);
 
   // Place and show (or hide) the element whenever the server opens or hides us.
   useEffect(() => {
@@ -170,14 +76,13 @@ export const InteractionMenu = () => {
     let cancelled = false;
     Promise.all([
       Byond.winget('mapwindow.map', 'size'),
-      Byond.winget('mapwindow.map', 'view-size'),
+      Byond.winget('mapwindow.map', 'icon-size'),
     ])
-      .then(([rawSize, rawViewSize]: any[]) => {
+      .then(([rawSize, rawIconSize]: any[]) => {
         if (cancelled) return;
         const mapW = Number(rawSize?.x) || 0;
         const mapH = Number(rawSize?.y) || 0;
-        const renderedW = Number(rawViewSize?.x) || mapW;
-        const renderedH = Number(rawViewSize?.y) || mapH;
+        const iconSize = Number(rawIconSize) || 0;
         if (!mapW || !mapH || !data.view_w || !data.view_h) {
           return;
         }
@@ -185,28 +90,38 @@ export const InteractionMenu = () => {
         const place = () => {
           if (cancelled) return;
           const box = boxRef.current;
+          // The border box (border included): scrollWidth/scrollHeight leave the border out, which cut it off.
+          const rect = box?.getBoundingClientRect();
           const w = Math.min(
-            Math.ceil(((box?.scrollWidth || 200) + 2) * pixelRatio),
+            Math.ceil((rect?.width || 200) * pixelRatio),
             mapW,
           );
           const h = Math.min(
-            Math.ceil(
-              Math.min(box?.scrollHeight || 120, MAX_HEIGHT) * pixelRatio,
-            ),
+            Math.ceil(Math.min(rect?.height || 120, MAX_HEIGHT) * pixelRatio),
             mapH,
           );
-          const cursor = cursorInMap(
-            data,
+          const parsed = cursorInMap(data.cursor_params, {
             mapW,
             mapH,
-            renderedW,
-            renderedH,
-          ) ?? [Math.round((mapW - w) / 2), Math.round((mapH - h) / 2)];
-          // Open down and right of the cursor, flipped at the map's edges, as the native popup does.
-          let px = cursor[0];
-          let py = cursor[1];
-          if (px + w > mapW) px = Math.max(0, px - w);
-          if (py + h > mapH) py = Math.max(0, py - h);
+            iconSize,
+            viewW: data.view_w,
+            viewH: data.view_h,
+            tileSize: data.tile_size,
+          });
+          const cursor = parsed ?? [
+            Math.round((mapW - w) / 2),
+            Math.round((mapH - h) / 2),
+          ];
+          // Open down and right of the cursor, flipped and clamped at the map's edges, as the native popup does.
+          const [px, py] = placeMenu(cursor, w, h, mapW, mapH);
+          // Reported to the server log so a misplaced menu can be read off it.
+          act('placed', {
+            report:
+              `params="${data.cursor_params}" map=${mapW}x${mapH} ` +
+              `icon_size=${iconSize} view=${data.view_w}x${data.view_h} ` +
+              `tile=${data.tile_size} box=${w}x${h} dpr=${pixelRatio} ` +
+              `cursor=${parsed ? parsed.join(',') : 'none'} pos=${px},${py}`,
+          });
           Byond.winset(winId, {
             pos: `${px},${py}`,
             size: `${w}x${h}`,
@@ -234,6 +149,11 @@ export const InteractionMenu = () => {
     target,
   ]);
 
+  // The popup is a bare page (no <Window>), so it takes the console theme the way Layout does.
+  useEffect(() => {
+    document.documentElement.className = `theme-${CONSOLE_THEME}`;
+  }, []);
+
   // Escape closes the popup.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -254,89 +174,64 @@ export const InteractionMenu = () => {
   return (
     <div className="InteractionMenuRoot">
       <style>{MENU_RESET_CSS}</style>
-      <div
-        ref={boxRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: 'max-content',
-          minWidth: 140,
-          maxWidth: 320,
-          maxHeight: MAX_HEIGHT,
-          overflowY: 'auto',
-          padding: '2px 0',
-          border: '1px solid #5a5a5a',
-          backgroundColor: '#252525',
-          boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
-          boxSizing: 'border-box',
-        }}
-      >
-        <div className="InteractionMenu__title">
-          <span style={{ flexGrow: 1, overflow: 'hidden' }}>
-            {target || 'Nothing'}
-          </span>
-          <button
-            type="button"
-            className="InteractionMenu__row"
-            style={{ width: 'auto', padding: '0 4px' }}
-            onClick={() => act('close')}
-          >
-            ×
-          </button>
-        </div>
+      <div ref={boxRef} className="InteractionMenu">
+        <TitleBar
+          title={target || 'Nothing'}
+          subtitle={target ? menuSubtitle(role, distance) : undefined}
+          onClose={() => act('close')}
+        />
         {target && nothing && (
-          <div className="InteractionMenu__blocked">Nothing to do here.</div>
+          <ListRows>
+            <ListRow blocked>Nothing to do here.</ListRow>
+          </ListRows>
         )}
-        {available.map((entry) => (
-          <button
-            type="button"
-            key={entry.id}
-            className="InteractionMenu__row"
-            title={entry.desc ?? undefined}
-            onClick={() => act('run', { id: entry.id })}
-          >
-            {entry.name}
-          </button>
-        ))}
-        {blocked.map((entry) => (
-          <div
-            key={entry.id}
-            className="InteractionMenu__blocked"
-            title={entry.reason || entry.desc || undefined}
-          >
-            {entry.name}
-            {entry.reason ? ` (${entry.reason})` : ''}
-          </div>
-        ))}
+        {(available.length > 0 || blocked.length > 0) && (
+          <ListRows>
+            {available.map((entry) => (
+              <ListRow
+                key={entry.id}
+                title={entry.desc ?? undefined}
+                trailing={entry.keys?.[0]}
+                onClick={() => act('run', { id: entry.id })}
+              >
+                {`> ${entry.name}`}
+              </ListRow>
+            ))}
+            {blocked.map((entry) => (
+              <ListRow
+                key={entry.id}
+                blocked
+                reason={entry.reason || undefined}
+                title={entry.reason || entry.desc || undefined}
+              >
+                {`x ${entry.name}`}
+              </ListRow>
+            ))}
+          </ListRows>
+        )}
         {target && actions.length > 0 && (
-          <div className="InteractionMenu__separator" />
+          <div className="InteractionMenu__actions">
+            {actions.map((entry) => (
+              <button
+                type="button"
+                key={entry.id}
+                className="InteractionMenu__action"
+                onClick={() => act('action', { id: entry.id })}
+              >
+                {actionLabel(entry.name)}
+              </button>
+            ))}
+          </div>
         )}
-        {target &&
-          actions.map((entry) => (
-            <button
-              type="button"
-              key={entry.id}
-              className="InteractionMenu__row"
-              onClick={() => act('action', { id: entry.id })}
-            >
-              {entry.name}
-            </button>
-          ))}
         {target && verbs.length > 0 && (
-          <div className="InteractionMenu__separator" />
+          <ListRows className="InteractionMenu__verbs">
+            {verbs.map((name) => (
+              <ListRow key={name} onClick={() => act('verb', { name })}>
+                {`> ${name}`}
+              </ListRow>
+            ))}
+          </ListRows>
         )}
-        {target &&
-          verbs.map((name) => (
-            <button
-              type="button"
-              key={name}
-              className="InteractionMenu__row"
-              onClick={() => act('verb', { name })}
-            >
-              {name}
-            </button>
-          ))}
       </div>
     </div>
   );

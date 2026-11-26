@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Three of Southern Cross's four solar arrays start tracking at round start, and their storage units pass on everything the arrays make"
+  - bugfix: "Power cells and storage units drain per second as designed, not once per half-second world step (they emptied four times too fast)"

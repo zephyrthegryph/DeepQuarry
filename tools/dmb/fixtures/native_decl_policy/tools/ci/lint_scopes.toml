@@ -1,2 +1,0 @@
-[lint.decl]
-exempt_files = ["code/exempt.dm"]

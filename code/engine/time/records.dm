@@ -380,7 +380,7 @@ CAPABILITIES(/datum/scheduler_record)
 /proc/entity_raise_change(datum/E, bits, force_refresh = FALSE)
 	if(E.change_listen & bits)
 		entity_dispatch_change(E, bits)
-	if(force_refresh || (isatom(E) && REFRESH_IDLE(E) && (GLOB.type_derives_cache[E.type] || E.periodic_cadence || E.periodic_interval)))
+	if(force_refresh || (isatom(E) && REFRESH_IDLE(E) && (GLOB.type_derives_cache[E.type])))
 		refresh_mark(E, DEP_ALL, bits)
 
 /proc/entity_dispatch_change(datum/E, bits)

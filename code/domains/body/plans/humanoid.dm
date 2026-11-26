@@ -362,7 +362,7 @@
 			for(var/stat in worn_of(I).worn_factors)
 				table[stat] = worn_of(I).worn_factors[stat]
 			table[STAT_ITEM_ENCUMBRANCE] = (I == stored) ? 0 : worn_encumbrance(worn_of(I).worn_factors[STAT_ITEM_ENCUMBRANCE], mod)
-		var/key = "[FACTOR_SOURCE_WORN][handle_of(I)]"
+		var/key = "[FACTOR_SOURCE_WORN][handle_text(handle_of(I))]"
 		kept += key
 		set_factor_source(key, table)
 	// A held item adds its encumbrance only when it slows the carrier.
@@ -370,7 +370,7 @@
 		var/obj/item/held = H.get_equipped_item(hand)
 		if(!istype(held) || held.worn_factor(STAT_ITEM_ENCUMBRANCE) <= 0)
 			continue
-		var/key = "[FACTOR_SOURCE_WORN][handle_of(held)]"
+		var/key = "[FACTOR_SOURCE_WORN][handle_text(handle_of(held))]"
 		kept += key
 		set_factor_source(key, alist(STAT_ITEM_ENCUMBRANCE = held.worn_factor(STAT_ITEM_ENCUMBRANCE) * mod))
 	drop_factor_sources(FACTOR_SOURCE_WORN, kept)

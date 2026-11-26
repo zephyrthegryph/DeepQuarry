@@ -35,6 +35,7 @@
 	var/optimal_oil = 2500 //25 litres of cooking oil
 
 CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
+	ui_shape(reagents = any)
 	configure(uses_power(active = 12 KILOWATTS, idle = 3.6 KILOWATTS))
 	hose_sockets(list(/datum/hose_connector/input/fryer))
 	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer, starts = /datum/looping_sound/deep_fryer)
@@ -57,7 +58,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 			message += span_warning(" UNDERFILLED")
 		else if(oil_level > 1.05) //A little bit of wiggle room
 			message += span_warning(" OVERFILLED")
-		to_chat(user, message)
+		. += message
 
 /obj/machinery/appliance/cooker/fryer/ui_data(datum/act/eval/A)
 	var/list/data = ..()

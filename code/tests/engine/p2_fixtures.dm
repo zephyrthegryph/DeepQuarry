@@ -28,11 +28,18 @@ CAPABILITIES(/obj/p2_hit/taker)
 /obj/p2_hit/taker/proc/take_over(datum/act/A)
 	took++
 
+/// Halves every amount of a hit's packet.
+/proc/p2_hit_halve(datum/act/hit/A)
+	var/list/amounts = A.packet?.amounts
+	for(var/i in 1 to length(amounts))
+		if(isnum(amounts[i]) && amounts[i] > 0)
+			amounts[i] *= 0.5
+
 /// Halves every hit through the generic hit, and refuses fire.
 /obj/p2_hit/halver
 
 CAPABILITIES(/obj/p2_hit/halver)
-	extend(/datum/act/hit, adjusts("packet.amounts", scale = 0.5))
+	extend(/datum/act/hit, adjusts_with(GLOBAL_PROC_REF(p2_hit_halve)))
 	extend(/datum/act/hit/fire, needs(req(PROC_REF(never))))
 
 /obj/p2_hit/halver/proc/never(datum/act/A)

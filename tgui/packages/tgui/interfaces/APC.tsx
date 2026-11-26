@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -6,14 +7,13 @@ import {
   Dimmer,
   Icon,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-
 import { FullscreenNotice } from './common/FullscreenNotice';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
+import type { APCActions } from './generated/APC';
 
 type Data = {
   gridCheck: BooleanLike;
@@ -45,7 +45,7 @@ type Data = {
 };
 
 export const APC = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, APCActions>();
 
   const { gridCheck, failTime } = data;
 
@@ -58,7 +58,7 @@ export const APC = (props) => {
   }
 
   return (
-    <Window width={450} height={475}>
+    <Window width={500} height={475}>
       <Window.Content scrollable>{body}</Window.Content>
     </Window>
   );
@@ -115,7 +115,7 @@ const malfMap: Record<
 };
 
 const ApcContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, APCActions>();
 
   const {
     locked,
@@ -171,9 +171,7 @@ const ApcContent = (props) => {
           >
             [ {externalPowerStatus.externalPowerText} ]
           </LabeledList.Item>
-          <LabeledList.Item label="Power Cell">
-            <ProgressBar color="good" value={adjustedCellChange} />
-          </LabeledList.Item>
+          <StatBar label="Power Cell" color="good" value={adjustedCellChange} />
           <LabeledList.Item
             label="Charge Mode"
             color={chargingPowerStatus.color}
@@ -206,6 +204,8 @@ const ApcContent = (props) => {
                       <Box
                         inline
                         mx={2}
+                        width="2.5em"
+                        textAlign="center"
                         color={channel.status >= 2 ? 'good' : 'bad'}
                       >
                         {channel.status >= 2 ? 'On' : 'Off'}
@@ -363,7 +363,7 @@ const GridCheck = (props) => {
 };
 
 const ApcFailure = (props) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, APCActions>();
 
   const { locked, siliconUser, failTime } = data;
 

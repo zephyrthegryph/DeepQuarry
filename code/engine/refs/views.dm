@@ -18,10 +18,6 @@
 /// z (text) -> turf slot (slot_of()) -> that turf's reverse index (as refs_in). A turf keeps no index of
 /// its own: ChangeTurf() resets its vars, while its ref (its position) stays.
 GLOBAL_LIST_EMPTY(rel_turf_index)
-/// Handle slot -> flat list, stride 2: source slot (slot_of()), var name. Edges to an entity that
-/// collapsed into latent data, re-linked when it re-materializes into the same handle slot.
-GLOBAL_ALIST_EMPTY(rel_dormant)
-
 /// Relation var names, interned: a reverse index row keeps the small integer, not the name text. Real globals (the kernel creates its systems
 /// before GLOB exists, and a system links its children), made on first use.
 GLOBAL_REAL(rel_ids_by_name, /alist)
@@ -310,6 +306,88 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 		own_field_changed(source, var_name)
 	return target
 
+/// rel_set(holder, var_name, target) for every holder of `holders`, one target: a pipeline taking its pipes, each pipe's `parent`. What it writes and
+/// announces is what the per-holder calls would (each holder's var, its reverse-index row and watch, the partner list and its rows, the relation
+/// hooks), with the partner side done once: its membership read once as a set instead of a scan or an index lookup per holder, the new members
+/// appended in one step and the partner var announced once. A holder this fast form does not cover (an owned or weak var, a list view, a
+/// links(conflict = REFUSE) end, a partner that is not a plain list, an undeclared view) takes rel_set() itself. Returns how many holders now name `target`.
+/proc/rel_set_many(list/holders, var_name, datum/target)
+	. = 0
+	if(!isdatum(target) || QDELETED(target))
+		for(var/datum/H as anything in holders)
+			rel_set(H, var_name, target)
+		return
+	var/list/fast = list() // the holders the fast form takes, in order
+	var/list/entries = list() // parallel: each one's declaration
+	var/list/pentry
+	var/partner_var
+	for(var/datum/H as anything in holders)
+		if(!isdatum(H) || QDELETED(H))
+			continue
+		if(H.vars[var_name] == target)
+			.++
+			continue
+		var/list/entry = (rel_kind(H, var_name) == OWNK_REL && !list_state_of(H, var_name)) ? _rel_entry(H, var_name) : null
+		var/ok = entry && !entry[OWNE_LIST] && !(length(entry) >= OWNE_CONFLICT && entry[OWNE_CONFLICT]) && entry[OWNE_PARTNER] && entry[OWNE_ARG] != RELS_PLAIN
+		if(ok)
+			if(isnull(partner_var))
+				partner_var = entry[OWNE_PARTNER]
+				pentry = (partner_var in target.vars) ? own_table_of(target).entries[partner_var] : null
+			ok = entry[OWNE_PARTNER] == partner_var && pentry && pentry[OWNE_KIND] == OWNK_REL && pentry[OWNE_LIST] && !istype(target.vars[partner_var], /alist) && own_type_ok(H, var_name, entry, target) && own_guard(H, target, "rel_set_many([var_name])")
+		if(!ok)
+			if(rel_set(H, var_name, target) == target)
+				.++
+			continue
+		fast += H
+		entries += list(entry)
+	if(!length(fast))
+		return
+	GLOB.rel_set_many_holders += length(fast)
+	var/list/TL = target.vars[partner_var]
+	var/first = 1
+	if(!REL_LISTLIKE(TL))
+		// The partner has no list yet: the first holder links the ordinary way, which makes it.
+		var/datum/H1 = fast[1]
+		var/datum/old1 = H1.vars[var_name]
+		if(old1)
+			_rel_detach(H1, var_name, old1, entries[1], notify_source = TRUE)
+		_rel_attach(H1, var_name, target, entries[1])
+		TL = target.vars[partner_var]
+		first = 2
+	// 1. Each holder leaves its old target and names the new one (its write announced, its reverse row and watch), as rel_view_set() does; the
+	// partner side waits for the batch.
+	for(var/i in first to length(fast))
+		var/datum/H = fast[i]
+		var/datum/old = H.vars[var_name]
+		if(old)
+			_rel_detach(H, var_name, old, entries[i], notify_source = TRUE)
+		_rel_attach(H, var_name, target, entries[i], with_partner = FALSE)
+	// 2. The partner list takes the holders it does not hold yet, in one append (its membership read once as a set), each with its reverse row.
+	if(first <= length(fast))
+		var/alist/present = alist()
+		for(var/member in TL)
+			present[member] = TRUE
+		var/list/joining = list()
+		for(var/i in first to length(fast))
+			var/datum/H = fast[i]
+			if(!present[H])
+				present[H] = TRUE
+				joining += H
+		TL += joining // absent (checked above)
+		for(var/datum/H as anything in joining)
+			_rel_index(H, target, partner_var)
+			if(pentry[OWNE_WATCH])
+				_rel_watch(H, target)
+		// 3. The partner var announced once for the batch (its readers run once per drain either way).
+		if(length(joining))
+			own_field_changed(target, partner_var)
+	for(var/datum/H as anything in fast)
+		activations_relation_changed(H, var_name)
+	. += length(fast)
+
+/// Holders rel_set_many() took on its fast form (the rest went through rel_set()).
+GLOBAL_VAR_INIT(rel_set_many_holders, 0)
+
 /// Adds `target` to source.var_name (a list REF view). A symmetric or pair view adds the other side.
 /proc/rel_view_add(datum/source, var_name, datum/target, key = null, refusable = FALSE)
 	var/list/entry = _rel_entry(source, var_name, TRUE)
@@ -425,14 +503,19 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 	if(REL_LISTLIKE(value))
 		var/list/L = value
 		var/list/members = istype(L, /alist) ? rel_list_members(L) : L.Copy()
-		for(var/datum/target as anything in members)
-			_rel_detach(source, var_name, target, entry)
+		// Emptied in one cut, then every member unlinked without touching the list again (one removal per member would scan it each time) and one publish.
 		// The list stays (emptied), not nulled: `L.len` readers keep working.
+		L.Cut()
+		rel_keys_clear(source, var_name)
+		for(var/datum/target as anything in members)
+			_rel_detach(source, var_name, target, entry, FALSE)
+		if(length(members))
+			own_field_changed(source, var_name)
 	else
 		_rel_detach(source, var_name, value, entry)
 
 /// Links source.var_name -> target: writes the view, indexes it, and sets the partner side.
-/proc/_rel_attach(datum/source, var_name, datum/target, list/entry)
+/proc/_rel_attach(datum/source, var_name, datum/target, list/entry, with_partner = TRUE)
 	BOOT_PHASE_COUNT("rel_attach: [source.type].[var_name]")
 	if(entry[OWNE_LIST])
 		var/list/L = source.vars[var_name]
@@ -461,6 +544,8 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 	BOOT_PHASE_END(bp_idx, "rel_attach: _rel_index(target) [target.type]/[var_name]", null)
 	if(entry[OWNE_WATCH])
 		_rel_watch(target, source)
+	if(!with_partner)
+		return // rel_set_many(): the partner side is written once for the batch
 	var/partner_var = entry[OWNE_PARTNER]
 	if(!partner_var || entry[OWNE_ARG] == RELS_PLAIN || !isdatum(target))
 		return
@@ -626,12 +711,27 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 /proc/rel_sources_via(datum/target, var_name)
 	READS_FROM(target)
 	. = list()
-	for(var/list/pair as anything in rel_sources(target))
-		if(pair[2] == var_name)
-			. += pair[1]
+	var/list/index = target ? _rel_index_of(target) : null
+	// The row's name ids are compared first: a target many sources name (a human: its organs, its body, what it wears) resolves only the
+	// sources that name it through `var_name`, with no (source, name) pair built per row.
+	for(var/source_ref in index)
+		var/row = index[source_ref]
+		var/named = FALSE
+		if(islist(row))
+			for(var/id in row)
+				if(rel_names_by_id[id] == var_name)
+					named = TRUE
+					break
+		else
+			named = !isnull(row) && rel_names_by_id[row] == var_name
+		if(!named)
+			continue
+		var/datum/S = slot_datum(source_ref)
+		if(isdatum(S))
+			. += S
 
 /// How many references to `target` relation views hold (one per single view, one per list view
-/// holding it). For refcount accounting (latent collapse).
+/// holding it). 
 /proc/rel_incoming_refs(datum/target)
 	. = 0
 	var/list/index = target ? _rel_index_of(target) : null
@@ -678,6 +778,7 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 					var/list/L = value
 					if(D in L)
 						L -= D
+						own_field_changed(S, name)
 						dropped = TRUE
 				if(!dropped)
 					continue
@@ -702,10 +803,13 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 		if(REL_LISTLIKE(value))
 			var/list/L = value
 			var/list/members = istype(L, /alist) ? rel_list_members(L) : L.Copy()
-			for(var/datum/target as anything in members)
-				_rel_detach(D, var_name, target, entry)
+			// The list is emptied in one cut (an alist keeps a reference to its object keys even when freed) and the var goes: each member is unlinked
+			// without scanning or publishing the list it is leaving, with one publish at the end.
+			L.Cut()
 			D.vars[var_name] = null // ALLOW(api): relation teardown clears the view var; the relation machinery is the accessor
 			rel_keys_clear(D, var_name)
+			for(var/datum/target as anything in members)
+				_rel_detach(D, var_name, target, entry, FALSE)
 			own_field_changed(D, var_name)
 		else
 			_rel_detach(D, var_name, value, entry)
@@ -740,46 +844,8 @@ GLOBAL_ALIST_EMPTY(rel_pending)
 					var/list/views = value
 					if(T in views)
 						views -= T
+						own_field_changed(S, name)
 						.++
-
-// ---------------------------------------------------------------- latent identity
-
-/// `D` is collapsing into latent data but keeps its handle slot: every view naming it goes
-/// dormant under that handle instead of being lost, and re-links in rel_wake().
-/proc/rel_go_dormant(datum/D)
-	rel_pending_flush(D)
-	var/list/index = D.refs_in
-	var/h = D.handle_slot
-	if(!index || !h)
-		return
-	var/list/dormant = GLOB.rel_dormant[h]
-	if(!dormant)
-		dormant = list()
-		GLOB.rel_dormant[h] = dormant
-	for(var/source_ref in index)
-		var/datum/S = slot_datum(source_ref)
-		for(var/name in rel_names_of(index[source_ref]))
-			if(_rel_source_names(S, name, D)) // a stale entry (between prunes) is not a view
-				dormant += list(source_ref, name)
-
-/// `D` re-materialized into handle slot `h`: the dormant views re-link to it.
-/proc/rel_wake(datum/D, h)
-	var/list/dormant = GLOB.rel_dormant[h]
-	if(!dormant)
-		return
-	GLOB.rel_dormant -= h
-	for(var/i in 1 to length(dormant) step 2)
-		var/datum/S = slot_datum(dormant[i])
-		var/name = dormant[i + 1]
-		if(!isdatum(S) || QDELETED(S) || !(name in S.vars))
-			continue
-		var/list/entry = own_table_of(S).entries[name]
-		if(!entry)
-			continue
-		if(entry[OWNE_LIST])
-			rel_add(S, name, D)
-		else if(isnull(S.vars[name]))
-			rel_set(S, name, D)
 
 // ---------------------------------------------------------------- replace_with identity
 

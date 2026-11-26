@@ -1,24 +1,23 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   AnimatedNumber,
   Box,
   Button,
   Icon,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
-
 import { DiagnosisVitalsList } from '../common/Diagnosis';
+import type { CryoActions } from '../generated/Cryo';
 import { statNames } from './constants';
 import type { Data } from './types';
 
 export const CryoContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CryoActions>();
   const {
     isOperating,
-    hasOccupant,
     occupant,
     cellTemperature,
     cellTemperatureStatus,
@@ -33,30 +32,29 @@ export const CryoContent = (props) => {
           <Button
             icon="user-slash"
             onClick={() => act('ejectOccupant')}
-            disabled={!hasOccupant}
+            disabled={!occupant}
           >
             Eject
           </Button>
         }
       >
-        {hasOccupant ? (
+        {occupant ? (
           <LabeledList>
             <LabeledList.Item label="Occupant">
               {occupant.name || 'Unknown'}
             </LabeledList.Item>
-            <LabeledList.Item label="Health">
-              <ProgressBar
-                minValue={0}
-                maxValue={1}
-                value={occupant.vitality / 100}
-                color={occupant.critical ? 'average' : 'good'}
-              >
-                <AnimatedNumber
-                  value={occupant.vitality}
-                  format={(value) => `${value.toFixed()}%`}
-                />
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Health"
+              minValue={0}
+              maxValue={1}
+              value={occupant.vitality / 100}
+              color={occupant.critical ? 'average' : 'good'}
+            >
+              <AnimatedNumber
+                value={occupant.vitality}
+                format={(value) => `${value.toFixed()}%`}
+              />
+            </StatBar>
             <LabeledList.Item
               label="Status"
               color={statNames[occupant.stat][0]}
@@ -126,7 +124,7 @@ export const CryoContent = (props) => {
 };
 
 const CryoBeaker = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CryoActions>();
   const { isBeakerLoaded, beakerLabel, beakerVolume } = data;
   if (isBeakerLoaded) {
     return (

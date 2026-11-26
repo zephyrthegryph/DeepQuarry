@@ -2,17 +2,6 @@ use super::*;
 #[path = "frontend_emission_order.rs"]
 mod emission_order;
 
-fn retained_resolution_symbols(
-    adapted: &crate::SharedAdaptedDeclarations,
-    records: Option<&super::DiagnosticRetainedRecords>,
-) -> Option<Arc<SymbolTable>> {
-    records.map(super::DiagnosticRetainedRecords::resolution_symbols).or_else(|| {
-        let catalog = adapted.symbol_catalog.as_ref()?;
-        adapted.symbols.is_empty_overlay_of(&catalog.symbols)
-            .then(|| Arc::clone(&catalog.symbols))
-    })
-}
-
 pub fn build<P: SourceProvider>(
     project: &Path,
     provider: &P,
@@ -85,184 +74,11 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     config: FrontendConfig<'_>,
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
     executor: &dm_exec::BuildExecutor,
-    semantic_state: Option<&mut RetainedSemanticTree>,
-) -> Result<ColdFrontend, Vec<Diagnostic>> {
-    build_with_executor_and_semantic_state_for_policy(
-        project,
-        provider,
-        defines,
-        config,
-        memo,
-        executor,
-        semantic_state,
-        false,
-    )
-}
-/// Rich policy preparation shares the existing primary token query after a
-/// portable declaration restore. No additional work for ordinary compilation.
-pub fn build_with_executor_and_semantic_state_for_policy<P: SourceProvider>(
-    project: &Path,
-    provider: &P,
-    defines: &BTreeMap<String, String>,
-    config: FrontendConfig<'_>,
-    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
-    executor: &dm_exec::BuildExecutor,
-    semantic_state: Option<&mut RetainedSemanticTree>,
-    require_primary_headers: bool,
-) -> Result<ColdFrontend, Vec<Diagnostic>> {
-    build_with_executor_and_semantic_state_for_policy_mode(
-        project,
-        provider,
-        defines,
-        config,
-        memo,
-        executor,
-        semantic_state,
-        require_primary_headers,
-        None,
-    )
-}
-/// Select this mode UP FRONT. Never retry a failed strict build as a checker
-/// graph. It uses the exact same parser/adapter/builder and refuses all errors
-/// outside the explicitly recorded inherited-VAR declaration domain. Original
-/// unknown setting syntax is retained for checking and prevents compiler promotion.
-pub fn build_for_checker_diagnostics<P: SourceProvider>(
-    project: &Path,
-    provider: &P,
-    defines: &BTreeMap<String, String>,
-    config: FrontendConfig<'_>,
-    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
-    executor: &dm_exec::BuildExecutor,
-) -> Result<DiagnosticFrontend, Vec<Diagnostic>> {
-    if provider.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(vec![Diagnostic{kind:DiagnosticKind::UnsupportedModel,stage:DiagnosticStage::Declaration,message:"Original diagnostic preparation is unissued without the actual checked native resource host".into(),location:None}])}
-
-    let mut receipt = None;
-    let frontend = build_with_executor_and_semantic_state_for_policy_mode(
-        project,
-        provider,
-        defines,
-        config,
-        memo,
-        executor,
-        None,
-        true,
-        Some(&mut receipt),
-    )?;
-    DiagnosticFrontend::bind(
-        frontend,
-        receipt.ok_or_else(|| {
-            vec![internal(
-                "diagnostic builder did not issue its original graph receipt",
-            )]
-        })?,
-    )
-}
-pub fn build_for_checker_diagnostics_with_state<P: SourceProvider>(
-    project: &Path,
-    provider: &P,
-    defines: &BTreeMap<String, String>,
-    config: FrontendConfig<'_>,
-    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
-    executor: &dm_exec::BuildExecutor,
-    state: Option<&mut RetainedSemanticTree>,
-) -> Result<DiagnosticFrontend, Vec<Diagnostic>> {
-    if provider.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(vec![Diagnostic{kind:DiagnosticKind::UnsupportedModel,stage:DiagnosticStage::Declaration,message:"Original diagnostic preparation is unissued without the actual checked native resource host".into(),location:None}])}
-
-    let mut receipt = None;
-    let frontend = build_with_executor_and_semantic_state_for_policy_mode(
-        project,
-        provider,
-        defines,
-        config,
-        memo,
-        executor,
-        state,
-        true,
-        Some(&mut receipt),
-    )?;
-    DiagnosticFrontend::bind(
-        frontend,
-        receipt.ok_or_else(|| {
-            vec![internal(
-                "diagnostic builder did not issue its original graph receipt",
-            )]
-        })?,
-    )
-}
-/// Checked original declaration producer; caller supplies its existing host.
-/// No source-root feature or request routing is enabled by this additive API.
-pub fn build_with_executor_and_semantic_state_for_policy_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,host:&Arc<dyn SettingExpressionQueries>)->Result<ColdFrontend,FrontendBuildFailure>{
-    build_with_executor_and_semantic_state_with_original_types(
-        project, provider, defines, config, memo, executor, state, require_primary_headers, host, None,
-    )
-}
-
-/// Prepare Strict declarations from the current provider. An optional complete
-/// Original predecessor can lend only equal span-free authored type owners.
-pub fn build_with_executor_and_semantic_state_with_original_types<P: SourceProvider>(
-    project: &Path,
-    provider: &P,
-    defines: &BTreeMap<String, String>,
-    config: FrontendConfig<'_>,
-    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
-    executor: &dm_exec::BuildExecutor,
-    state: Option<&mut RetainedSemanticTree>,
-    require_primary_headers: bool,
-    host: &Arc<dyn SettingExpressionQueries>,
-    original: Option<&RetainedSemanticTree>,
-) -> Result<ColdFrontend, FrontendBuildFailure> {
-    use super::declaration_demand::Demand;
-    // Original's default predecessor has no caller defines. Strict's own
-    // target defines still drive its current preprocessing and row proof.
-    let type_loan = original.and_then(|prior| prior.original_type_loan(project));
-    let demand = super::declaration_demand::Checked { parse_only_reporting:false, host, body_host:None, type_loan };
-    let result=build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,state,require_primary_headers,None,&demand);
-    demand.finish(result)
-}
-pub fn build_for_checker_diagnostics_with_state_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
-    use super::declaration_demand::Demand;
-    let demand=super::declaration_demand::Checked{parse_only_reporting:false,host,body_host:None,type_loan:None};
-    let mut receipt=None;
-    let result=(||{
-        let frontend=build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,state,true,Some(&mut receipt),&demand)?;
-        DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("diagnostic builder did not issue its original graph receipt")])?).map_err(FrontendBuildFailure::from)
-    })();
-    demand.finish(result)
-}
-fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
-    project: &Path,
-    provider: &P,
-    defines: &BTreeMap<String, String>,
-    config: FrontendConfig<'_>,
-    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
-    executor: &dm_exec::BuildExecutor,
     mut semantic_state: Option<&mut RetainedSemanticTree>,
-    require_primary_headers: bool,
-    diagnostic: Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
-    build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,semantic_state,require_primary_headers,diagnostic,&super::declaration_demand::Compatibility)
-}
-fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:super::declaration_demand::Demand>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,mut semantic_state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,diagnostic:Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,demand:&D)->Result<ColdFrontend,D::Failure>{
-    build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,defines,config,memo,executor,semantic_state,require_primary_headers,diagnostic,demand,None,crate::diagnostic_declarations::DeclarationRole::Ordinary,None,false,false)
-}
-fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvider,D:super::declaration_demand::Demand>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,semantic_state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,diagnostic:Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,demand:&D,original:Option<&mut Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>>,role:crate::diagnostic_declarations::DeclarationRole,prior_callables:Option<&crate::owner_callable::RetainedCallableOwners>,lazy_body_parameters:bool,compact_compound:bool)->Result<ColdFrontend,D::Failure>{build_with_executor_and_semantic_state_for_policy_demand_body_mode(project,provider,defines,config,memo,executor,semantic_state,require_primary_headers,diagnostic,demand,original,role,prior_callables,lazy_body_parameters,compact_compound,false)}
-fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourceProvider,D:super::declaration_demand::Demand>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,mut semantic_state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,diagnostic:Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,demand:&D,original:Option<&mut Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>>,role:crate::diagnostic_declarations::DeclarationRole,prior_callables:Option<&crate::owner_callable::RetainedCallableOwners>,lazy_body_parameters:bool,compact_compound:bool,ordinary_code_demand:bool)->Result<ColdFrontend,D::Failure>{
-    demand.run(|permit|permit.checkpoint())?;
-    if compact_compound&&(!lazy_body_parameters||role!=crate::diagnostic_declarations::DeclarationRole::Ordinary){return Err(vec![internal("compact Original history requires its existing compound role")].into())}
-    let original_role=original.is_some();
-    let original_mode=diagnostic.is_some()&&provider.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290&&crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).is_some()&&demand.run(|permit|Ok(permit.original_primary_admitted()))?;
-    if original_role&&provider.initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(vec![internal("Original Analyze role requires its actual Original source environment")].into())}
-    if role != crate::diagnostic_declarations::DeclarationRole::Ordinary && (!original_mode || !original_role || semantic_state.is_some()) {
-        let message = if role == crate::diagnostic_declarations::DeclarationRole::ImageDir {
-            "ImageDir requires its one actual Original analysis preparation"
-        } else {
-            "Handler structural role requires its one actual Original partial preparation"
-        };
-        return Err(vec![internal(message)].into());
-    }
-    let declaration_request = if original_mode{None}else{semantic_state
+    let declaration_request = semantic_state
         .as_ref()
-        .and_then(|state| state.declarations.compatibility_request())};
+        .and_then(|state| state.declarations.compatibility_request());
     let total_start = Instant::now();
     let mut timings = FrontendTimings::default();
     let captured = Captured {
@@ -281,26 +97,15 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
     let profile_stage = dm_profile::stage("frontend.directive_planning");
     // The previous request's frontend, when this session built one for the same project and
     // defines: every unchanged include subtree of its plan is adopted, not interpreted again.
-    // SAME predecessor/engine/model cache, authenticated by its actual primary
-    // outcome. Ordinary complete recipes cannot fabricate Original outcomes.
-    let previous = if original_mode{semantic_state.as_ref().and_then(|state|state.previous_original_frontend_with_code_mode(project,defines,original_role,lazy_body_parameters,compact_compound,ordinary_code_demand))}else{semantic_state
+    let previous = semantic_state
         .as_ref()
-        .and_then(|state| state.previous_frontend(project,defines,provider.initial_environment(),diagnostic.is_some()))};
-    let (plan,plan_reuse,expanded,mut prepared_original)=if original_mode{
-        let(plan,expanded,prepared)=demand.run(|permit|permit.original_stream_declarations_with_code_mode(project,provider,defines,executor,config.engine,previous.as_ref().map(|row|row.syntax.as_ref()),original_role&&!demand.parse_only_reporting(),lazy_body_parameters,compact_compound,ordinary_code_demand))?;
-        timings.directive_planning=stage_start.elapsed();
-        observe(config,FrontendStage::DirectivePlanning,ProgressKind::Completed,timings.directive_planning,plan.regions().len(),plan.regions().len());
-        crate::change_set::record_outcome(format!("frontend actual Original stream: directive/token/formal/native primary consumed once; {} source regions; {:.3}s",plan.regions().len(),timings.directive_planning.as_secs_f64()));
-        dm_profile::request_mark("frontend.original_stream_done");
-        drop(profile_stage);
-        (plan,dm_preprocess::regions::PlanReuse::default(),expanded,Some(prepared))
-    }else{
+        .and_then(|state| state.previous_frontend(project, defines));
     let (mut plan, mut plan_reuse) = dm_preprocess::regions::plan_regions_incremental(
         project,
         &captured,
         defines,
         memo,
-        previous.as_ref().and_then(|previous| previous.plan.ordinary()),
+        previous.as_ref().map(|previous| &previous.plan),
     );
     if verify_enabled() && previous.is_some() {
         let full = match memo {
@@ -441,8 +246,6 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
         plan.regions.len(),
     );
     drop(profile_stage);
-        (FrontendDirectivePlan::Ordinary(plan),plan_reuse,expanded,None)
-    };
     let provenance_start = Instant::now();
     observe(
         config,
@@ -450,21 +253,20 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
         ProgressKind::Started,
         Duration::ZERO,
         0,
-        plan.occurrences().len(),
+        plan.occurrences.len(),
     );
     let profile_stage = dm_profile::stage("frontend.source_indexing");
-    let captured_sources=captured.sources.into_inner();
-    let sources=if plan.is_original_diagnostic(){plan.source_texts()}else{dm_preprocess::regions::SourceTexts::ordinary(&captured_sources)};
+    let sources = captured.sources.into_inner();
     // A patched plan has the previous plan's occurrences at the same places, so the previous
     // source index stands except for the files that were requested again.
     let index_started = Instant::now();
     let reused_index = previous.as_ref().and_then(|previous| {
         let rebuilt = plan_reuse.rebuilt_files.as_ref()?;
-        let same_places = plan.occurrences().len() == previous.plan.occurrences().len()
+        let same_places = plan.occurrences.len() == previous.plan.occurrences.len()
             && plan
-                .occurrences()
+                .occurrences
                 .iter()
-                .zip(previous.plan.occurrences())
+                .zip(&previous.plan.occurrences)
                 .all(|(now, was)| Arc::ptr_eq(&now.path, &was.path) || now.path == was.path);
         if !same_places {
             return None;
@@ -481,7 +283,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
                     .cloned()
                     .unwrap_or_else(|| dm_preprocess::SourceText::from("")),
                 line_starts: plan
-                    .source_line_starts()
+                    .source_line_starts
                     .get(path)
                     .cloned()
                     .unwrap_or_else(|| Arc::from([0_usize])),
@@ -492,20 +294,16 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
     let source_index_reused = reused_index.is_some();
     let (files, by_path) = match reused_index {
         Some(index) => index,
-        None => build_source_index_geometry(plan.source_geometry(),sources,false)?,
+        None => build_source_index(&plan, &sources)?,
     };
     crate::change_set::record_outcome(format!(
         "frontend source index {}: {:.3}s",
-        if source_index_reused {
-            "reused"
-        } else {
-            "built"
-        },
+        if source_index_reused { "reused" } else { "built" },
         index_started.elapsed().as_secs_f64()
     ));
     let mapping = Mapping {
         projection: Default::default(),
-        plan: plan.source_geometry(),
+        plan: &plan,
         expanded: &expanded,
         files: &files,
         by_path: &by_path,
@@ -517,9 +315,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
         .iter()
         .flat_map(|diagnostic| {
             if diagnostic.kind == dm_preprocess::DiagnosticKind::Macro
-                && diagnostic
-                    .message
-                    .starts_with("unterminated text expression")
+                && diagnostic.message.starts_with("unterminated text expression")
             {
                 // The expression runs to the end of the file, so only the first one is read.
                 return if text_expression_files.insert(diagnostic.path.clone()) {
@@ -529,23 +325,23 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
                 };
             }
             vec![Diagnostic {
-                kind: match diagnostic.kind {
-                    dm_preprocess::DiagnosticKind::Unsupported => DiagnosticKind::UnsupportedModel,
-                    dm_preprocess::DiagnosticKind::Io
-                    | dm_preprocess::DiagnosticKind::Include
-                    | dm_preprocess::DiagnosticKind::Conditional
-                    | dm_preprocess::DiagnosticKind::Macro
-                    | dm_preprocess::DiagnosticKind::Directive
-                    | dm_preprocess::DiagnosticKind::UserError => DiagnosticKind::SourceError,
-                },
-                stage: DiagnosticStage::Preprocess,
-                // DreamMaker echoes the directive with the author's text.
-                message: if diagnostic.kind == dm_preprocess::DiagnosticKind::UserError {
-                    format!("#error {}", diagnostic.message.trim())
-                } else {
-                    diagnostic.message.clone()
-                },
-                location: mapping.line(&diagnostic.path, diagnostic.line),
+            kind: match diagnostic.kind {
+                dm_preprocess::DiagnosticKind::Unsupported => DiagnosticKind::UnsupportedModel,
+                dm_preprocess::DiagnosticKind::Io
+                | dm_preprocess::DiagnosticKind::Include
+                | dm_preprocess::DiagnosticKind::Conditional
+                | dm_preprocess::DiagnosticKind::Macro
+                | dm_preprocess::DiagnosticKind::Directive
+                | dm_preprocess::DiagnosticKind::UserError => DiagnosticKind::SourceError,
+            },
+            stage: DiagnosticStage::Preprocess,
+            // DreamMaker echoes the directive with the author's text.
+            message: if diagnostic.kind == dm_preprocess::DiagnosticKind::UserError {
+                format!("#error {}", diagnostic.message.trim())
+            } else {
+                diagnostic.message.clone()
+            },
+            location: mapping.line(&diagnostic.path, diagnostic.line),
             }]
         })
         .collect();
@@ -562,64 +358,6 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
         files.len(),
     );
     drop(profile_stage);
-    // Current native preparation/planning/expansion has issued ALL new input
-    // facts and acquisition leases. Reuse no program merely from a hash.
-    drop(mapping);
-    let admitted_previous=match previous.as_ref(){Some(old)=>demand.run(|permit|permit.syntax(&old.syntax))?,None=>false};
-    let (plan, expanded, files, by_path, mut timings) = if diagnostics.is_empty() && admitted_previous
-        && previous
-            .as_ref()
-            .zip(semantic_state.as_ref())
-            .is_some_and(|(old, state)| state.admits_preparation_owner(old, config.engine))
-    {
-        let old = previous
-            .as_ref()
-            .expect("checked original remembered owner");
-        match ColdFrontend::reissue_unchanged_program(
-            old,
-            plan,
-            expanded,
-            files,
-            by_path,
-            timings,
-            require_primary_headers,
-        ) {
-            Ok(mut frontend) => {
-                frontend.timings.total = total_start.elapsed();
-                let frontend=demand.attach(frontend)?;
-                demand.run(|permit|permit.checkpoint())?;
-                if let Some(state) = semantic_state.as_deref_mut() {
-                    state.record_original_program_reuse();
-                }
-                // Return through the same private branch below, never parse or
-                // normalize an unchanged program a second time.
-                if let Some(slot) = diagnostic {
-                    let mut receipt=old.diagnostic_receipt(&frontend.snapshot.tree).ok_or_else(||vec![internal("unchanged diagnostic error owner no longer authenticates")])?;
-                    receipt.retained_records=old.diagnostic_records();
-                    // Renew only the actual previous declaration loan after the
-                    // existing owner/engine/program reuse proof and current seed join.
-                    if frontend.plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290&&crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).is_some(){receipt.original_variables=old.original_variables();}
-                    *slot=Some(receipt);
-                }
-                if let Some(request) = &declaration_request {
-                    request.publish_successful();
-                }
-                if let Some(slot)=original{*slot=old.original_primary();}
-                return Ok(frontend);
-            }
-            Err(parts) => parts,
-        }
-    } else {
-        (plan, expanded, files, by_path, timings)
-    };
-    let mapping = Mapping {
-        projection: Default::default(),
-        plan: plan.source_geometry(),
-        expanded: &expanded,
-        files: &files,
-        by_path: &by_path,
-        hints: Default::default(),
-    };
     let parse_start = Instant::now();
     observe(
         config,
@@ -630,10 +368,6 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
         0,
     );
     let profile_stage = dm_profile::stage("frontend.declaration_parsing");
-    let (parsed,original_primary)=if original_mode{
-        let prepared=prepared_original.take().ok_or_else(||vec![internal("actual streamed Original primary product was not carried to declaration assembly")])?;
-        (prepared.parsed,Some(prepared.retention))
-    }else{(declaration_parse::parse_declarations_with_demand_profile(&expanded,config,memo,executor,semantic_state.as_deref().map(|state|&state.declarations),demand,diagnostic.is_some())?,None)};
     let ParsedDeclarations {
         syntax,
         diagnostics: syntax_diagnostics,
@@ -641,7 +375,13 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
         allocation_ledger,
         declaration_errors,
         reuse_stats,
-    } = parsed;
+    } = declaration_parse::parse_declarations_with_state(
+        &expanded,
+        config,
+        memo,
+        executor,
+        semantic_state.as_deref().map(|state| &state.declarations),
+    )?;
     timings.declaration_reuse = reuse_stats;
     diagnostics.extend(
         syntax_diagnostics
@@ -654,16 +394,13 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
             })
             // The preprocessor already reported an unterminated text expression, which consumes the rest of its file.
             .filter(|diagnostic| {
-                !(diagnostic
-                    .message
-                    .starts_with("unterminated text expression")
+                !(diagnostic.message.starts_with("unterminated text expression")
                     && diagnostic.location.as_ref().is_some_and(|location| {
                         text_expression_files.contains(location.path.as_path())
                     }))
             }),
     );
     let syntax = Arc::new(syntax);
-    if original_mode&&!original_role{if let Some(primary)=&original_primary{if primary.frontier().is_some(){return Err(demand.run(|permit|permit.original_primary_failure(primary,&syntax,&mapping,&plan))?.into())}}}
     diagnostics.sort_by_key(|diagnostic| {
         diagnostic
             .location
@@ -673,31 +410,18 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
             })
     });
     if !diagnostics.is_empty() {
-        demand.run(|permit|permit.checkpoint())?;
-        return Err(diagnostics.into());
+        return Err(diagnostics);
     }
     if !declaration_errors.is_empty() {
-        demand.run(|permit|permit.checkpoint())?;
-        let first_outer_block=if diagnostic.is_some()&&plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{
-            demand.run(|permit|syntax.first_original_outer_block_using(&||permit.checkpoint()))?.map_err(|reason|vec![internal(reason)])?
-        }else{None};
-
         return Err(declaration_errors
             .into_iter()
             .map(|error| Diagnostic {
-                kind: if diagnostic.is_some()&&plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{error.original_fatal.and_then(|receipt|{
-                    // SAME native original token/macro byte projection used by
-                    // retained checker bodies; never derive a column by slicing.
-                    let native=mapping.output(receipt.token_span().start)?;
-                    let original=source_export_mapping::original_note_point_in(&expanded.origins,receipt.token_span().start,|region|{let include=mapping.plan.regions.get(region).ok_or("fatal original region absent")?.occurrence;let acquired=mapping.plan.source_acquisitions.get(&include).ok_or("fatal original source acquisition absent")?;Ok((include,acquired))},|include|Ok(&mapping.plan.occurrences.get(include).ok_or("fatal original include absent")?.path)).ok()?;
-                    if native.path.as_path()!=original.path.as_path()||native.line!=original.line{return None}
-                    Some(DiagnosticKind::OriginalFatalParameter{reason:receipt,byte_column:original.byte_column,indentation:receipt.prior_outer_block()||first_outer_block.is_some_and(|at|at<receipt.token_span().start)})
-                }).unwrap_or_else(||syntax_kind(error.kind))}else{syntax_kind(error.kind)},
+                kind: syntax_kind(error.kind),
                 stage: DiagnosticStage::Declaration,
-                message: if let Some(receipt)=error.original_fatal{receipt.message()}else{error.message},
-                location: mapping.output(if diagnostic.is_some()&&plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{error.original_fatal.map_or(error.span.start as usize,|receipt|receipt.token_span().start)}else{error.span.start as usize}),
+                message: error.message,
+                location: mapping.output(error.span.start as usize),
             })
-            .collect::<Vec<_>>().into());
+            .collect());
     }
     timings.declaration_parsing = parse_start.elapsed();
     observe(
@@ -719,9 +443,48 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
     );
     let profile_stage = dm_profile::stage("frontend.declaration_origins");
     let provenance_start = Instant::now();
-    let (expanded_spans, declaration_regions, current_origins) =
-        project_declaration_origins(&mapping, &adapted.origins)?;
-    adapted.origins = current_origins;
+    let expanded_spans: Vec<_> = adapted.origins.iter().map(|origin| origin.span).collect();
+    // Hash each original region once, not once for every declaration in it.
+    let region_hashes: Vec<_> = plan
+        .regions
+        .iter()
+        .map(|region| {
+            let path = plan.occurrences[region.occurrence].path.as_ref();
+            let file = by_path
+                .get(path)
+                .and_then(|id| files.get(id.index()))
+                .ok_or_else(|| vec![internal("include region has no captured source")])?;
+            file.text
+                .span_fingerprint(region.source_span.range())
+                .ok_or_else(|| vec![internal("include region lies outside captured source")])
+        })
+        .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
+    let mut declaration_regions = Vec::with_capacity(adapted.origins.len());
+    let mut current_origins = Vec::with_capacity(adapted.origins.len());
+    for origin in adapted.origins.iter() {
+        let expanded_origin = mapping
+            .origin(origin.span.start as usize)
+            .ok_or_else(|| vec![internal("declaration has no current expansion origin")])?;
+        // Declaration provenance needs the source span and occurrence, not a
+        // complete diagnostic location (which also allocates an include chain).
+        // Reuse the expansion lookup above instead of building that temporary.
+        let file = mapping
+            .file_of(expanded_origin.origin.path)
+            .ok_or_else(|| vec![internal("declaration has no captured source file")])?;
+        declaration_regions.push(expanded_origin.region);
+        let span = source_span(file, expanded_origin.source_span)?;
+        let include_occurrence = u32::try_from(plan.regions[expanded_origin.region].occurrence)
+            .map_err(|_| vec![internal("too many include occurrences")])?;
+        let region = region_hashes[expanded_origin.region];
+        let expansion_stack = mapping.expansion_stack(expanded_origin.macro_expansions)?;
+        current_origins.push(crate::Provenance {
+            span,
+            include_occurrence,
+            region,
+            expansion_stack,
+        });
+    }
+    adapted.origins = current_origins.into();
     timings.provenance_and_body_indexing += provenance_start.elapsed();
     observe(
         config,
@@ -742,20 +505,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
         adapted.skeletons.len(),
     );
     let profile_stage = dm_profile::stage("frontend.tree_resolution");
-    let diagnostic_records = if original_primary.as_ref().is_some_and(|primary|primary.frontier().is_some()){None}else{diagnostic.as_ref().and_then(|_| {
-        semantic_state.as_deref().and_then(|state| {
-            super::DiagnosticRetainedRecords::capture(&adapted, config.engine, Some(state))
-        })
-    })};
-    // Format against the pre-build dictionary. The builder can intern
-    // synthetic lexical paths, so borrowing the eventual tree would change
-    // what the observer sees on failure. The exact retained records already
-    // own this input dictionary for a complete stateful diagnostic frontend.
-    let retained_symbols = retained_resolution_symbols(&adapted, diagnostic_records.as_ref());
-    let resolution_symbols = retained_symbols.as_deref().map_or_else(
-        || std::borrow::Cow::Owned(adapted.symbols.clone()),
-        std::borrow::Cow::Borrowed,
-    );
+    let resolution_symbols = adapted.symbols.clone();
     let mut resolution_diagnostic = None;
     let on_error =
         |error: &SnapshotError, skeletons: &[Skeleton], origins: &[crate::Provenance]| {
@@ -769,47 +519,12 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
                 config.engine.map_or(&[][..], |seed| &seed.intrinsics[..]),
             ));
         };
-    let snapshot = if let Some(slot) = diagnostic {
-        let variables=if plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine)}else{None};
-        if variables.is_some(){dm_profile::request_mark("frontend.original_builtin_variable_declarations");}
-        let prepared = if let Some(primary)=&original_primary{
-            let sealed = if original_role {
-                [None;4]
-            } else {
-                demand.run(|permit| original_sealed_parents_using(&syntax, &adapted, config.engine, permit))?
-            };
-            let authored = if let Some((records, prior)) = diagnostic_records.as_ref().zip(prior_callables) {
-                demand.run(|permit| permit.borrow_authored_callables(records.authored_declarations(), prior))?
-            } else {
-                None
-            };
-            adapted.finish_original_diagnostic_with_variables(config.engine,on_error,executor,variables,Arc::clone(primary),sealed,role,authored)
-        }else{adapted.finish_checker_diagnostic_with_variables(config.engine,on_error,executor,variables)}
-            .map_err(|_| {
-                resolution_diagnostic
-                    .take()
-                    .expect("fatal diagnostic preparation notifies original observer")
-            })?;
-        let (snapshot, mut receipt) = prepared.into_parts();
-        if receipt.is_clean() {
-            receipt.retained_records =
-                diagnostic_records.map(|records| Arc::new(records.bind(&snapshot.tree)));
-        }
-
-        *slot = Some(receipt);
-        snapshot
-    } else {
-        let snapshot = match semantic_state.as_deref_mut() {
-            Some(state) => state.resolve(adapted, config.engine, on_error, executor),
-            None => {
-                adapted.finish_with_engine_observed_on_executor(config.engine, on_error, executor)
-            }
-        }
-        .map_err(|_| resolution_diagnostic.expect("resolution failure must notify observer"))?;
-        snapshot
-    };
+    let snapshot = match semantic_state.as_deref_mut() {
+        Some(state) => state.resolve(adapted, config.engine, on_error, executor),
+        None => adapted.finish_with_engine_observed_on_executor(config.engine, on_error, executor),
+    }
+    .map_err(|_| resolution_diagnostic.expect("resolution failure must notify observer"))?;
     timings.tree_resolution = resolution_start.elapsed();
-    dm_profile::request_mark("frontend.tree_resolution_done");
     observe(
         config,
         FrontendStage::TreeResolution,
@@ -829,7 +544,21 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
     );
     let profile_stage = dm_profile::stage("frontend.body_indexing");
     let provenance_start = Instant::now();
-    let declarations_by_start=resolved_callable_declarations(&expanded_spans,&snapshot.tree);
+    let declarations_by_start: HashMap<_, _> = expanded_spans
+        .iter()
+        .enumerate()
+        .filter_map(|(index, span)| match snapshot.tree.declarations()[index] {
+            Target::Member(member)
+                if matches!(
+                    snapshot.tree.member(member)?.kind,
+                    MemberKind::Proc | MemberKind::Verb
+                ) =>
+            {
+                Some((span.start as usize, (OccurrenceId(index as u32), member)))
+            }
+            _ => None,
+        })
+        .collect();
     let mut bodies = Vec::new();
     let mut issued_settings = Vec::new();
     let mut body_codes = Vec::new();
@@ -842,13 +571,11 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
         &mut issued_settings,
         &mut body_codes,
     )?;
-    dm_profile::request_mark("frontend.body_collection_done");
     let callable_roster = match semantic_state {
         Some(state) => state.bind_callable_roster(&snapshot.tree, &bodies),
         None => CallableRoster::issue(&snapshot.tree, &bodies),
     }
     .map_err(|message| vec![internal(&message)])?;
-    dm_profile::request_mark("frontend.callable_roster_done");
 
     // Ineligible/custom metadata preserves the ordinary downstream ABI error path.
     let abi_settings_complete = callable_roster.abi().is_some_and(|abi| {
@@ -862,8 +589,10 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
                     })
                 })
     });
-    let mut ranks = vec![0; plan.regions().len()];
-    expanded.write_last_emission_ranks(&mut ranks);
+    let mut ranks = vec![0; plan.regions.len()];
+    for (rank, region) in expanded.emission_regions.iter().enumerate() {
+        ranks[*region] = rank;
+    }
     let emission_order = emission_order::ordered_occurrences(&declaration_regions, &ranks);
     timings.provenance_and_body_indexing += provenance_start.elapsed();
     observe(
@@ -877,6 +606,9 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
     drop(profile_stage);
     timings.total = total_start.elapsed();
     let bodies: Arc<[BodyOccurrence]> = bodies.into();
+    if let Some(request) = &declaration_request {
+        request.publish_successful();
+    }
     let issued_body_codes = bodies
         .iter()
         .zip(body_codes)
@@ -889,53 +621,8 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
             ),
         })
         .collect();
-    dm_profile::request_mark("frontend.body_termination_done");
     let files: Arc<[SourceFile]> = files.into();
     let source_by_path = by_path;
-    let declaration_qualifiers = expanded_spans
-        .iter()
-        .enumerate()
-        .map(|(index, span)| match snapshot.tree.declarations()[index] {
-            Target::Member(member)
-                if snapshot
-                    .tree
-                    .member(member)
-                    .is_some_and(|node| node.kind == MemberKind::Var) =>
-            {
-                if require_primary_headers {
-                    syntax
-                        .declaration_checker_qualifiers_at_for_policy(span.start as usize)
-                        .unwrap_or(dm_syntax::UNKNOWN_HEADER_QUALIFIERS)
-                } else {
-                    dm_syntax::UNKNOWN_HEADER_QUALIFIERS
-                }
-            }
-            _ => dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
-        })
-        .collect::<Vec<_>>()
-        .into_boxed_slice();
-    let declaration_cursors = expanded_spans
-        .into_iter()
-        .enumerate()
-        .map(|(index, span)| match snapshot.tree.declarations()[index] {
-            Target::Member(member)
-                if snapshot
-                    .tree
-                    .member(member)
-                    .is_some_and(|node| node.kind == MemberKind::Var) =>
-            {
-                (if require_primary_headers {
-                    syntax.declaration_cursor_at_for_policy(span.start as usize)
-                } else {
-                    syntax.declaration_cursor_at(span.start as usize)
-                })
-                .and_then(|at| u32::try_from(at).ok())
-                .unwrap_or(u32::MAX)
-            }
-            _ => u32::MAX,
-        })
-        .collect::<Vec<_>>()
-        .into_boxed_slice();
     let source_export_mapping = Arc::new(source_export_mapping::SourceExportMapping::capture(
         &plan,
         &expanded,
@@ -943,16 +630,8 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
         &source_by_path,
         &snapshot.occurrences,
         &snapshot.tree,
-        declaration_cursors,
-        declaration_qualifiers,
-        original_primary.clone(),
     ));
-    dm_profile::request_mark("frontend.source_export_done");
-    let mut frontend = ColdFrontend {
-        original_primary:original_primary.clone(),
-        body_queries: None,
-        reused_body_queries: false,
-        setting_expression_queries: None,
+    Ok(ColdFrontend {
         source_export_mapping,
         callable_roster,
         abi_settings_complete,
@@ -986,89 +665,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand_body_mode<P:SourcePr
         issued_settings: issued_settings.into(),
         bodies,
         emission_order: emission_order.into(),
-    };
-    // The structural Handler reader cannot issue declaration diagnostics.
-    // Its findings use the bound callable and body locations above.
-    if require_primary_headers && role != crate::diagnostic_declarations::DeclarationRole::HandlersStructural {
-        frontend.issue_declaration_compatibility();
-    }
-    dm_profile::request_mark("frontend.declaration_compatibility_done");
-    let frontend=demand.attach(frontend)?;
-    demand.run(|permit|permit.checkpoint())?;
-    if let Some(request)=&declaration_request{request.publish_successful();}
-    if let Some(slot)=original{*slot=original_primary;}
-    Ok(frontend)
-}
-
-
-
-pub(super) fn resolved_callable_declarations(spans:&[Span],tree:&crate::SemanticTree)->HashMap<usize,(OccurrenceId,MemberId)>{
-    let declarations_by_start: HashMap<_, _> = spans
-        .iter()
-        .enumerate()
-        .filter_map(|(index, span)| match tree.declarations()[index] {
-            Target::Member(member)
-                if matches!(
-                    tree.member(member)?.kind,
-                    MemberKind::Proc | MemberKind::Verb
-                ) =>
-            {
-                Some((span.start as usize, (OccurrenceId(index as u32), member)))
-            }
-            _ => None,
-        })
-        .collect();
-    declarations_by_start
-}
-
-/// SAME original provenance projector for complete and generation-only native
-/// assembly. The borrowed mapping carries no compiler-completeness receipt.
-pub(super) fn project_declaration_origins(
-    mapping:&Mapping<'_>, origins:&crate::relative_origins::OriginRoster,
-)->Result<(Vec<Span>,Vec<usize>,crate::relative_origins::OriginRoster),Vec<Diagnostic>> {
-    let expanded_spans: Vec<_> = origins.iter().map(|origin| origin.span).collect();
-    // Hash each original region once, not once for every declaration in it.
-    let region_hashes: Vec<_> = mapping.plan
-        .regions
-        .iter()
-        .map(|region| {
-            let path = mapping.plan.occurrences[region.occurrence].path.as_ref();
-            let file = mapping.by_path
-                .get(path)
-                .and_then(|id| mapping.files.get(id.index()))
-                .ok_or_else(|| vec![internal("include region has no captured source")])?;
-            file.text
-                .span_fingerprint(region.source_span.range())
-                .ok_or_else(|| vec![internal("include region lies outside captured source")])
-        })
-        .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
-    let mut declaration_regions = Vec::with_capacity(origins.len());
-    let mut current_origins = Vec::with_capacity(origins.len());
-    for origin in origins.iter() {
-        let expanded_origin = mapping
-            .origin(origin.span.start as usize)
-            .ok_or_else(|| vec![internal("declaration has no current expansion origin")])?;
-        // Declaration provenance needs the source span and occurrence, not a
-        // complete diagnostic location (which also allocates an include chain).
-        // Reuse the expansion lookup above instead of building that temporary.
-        let file = mapping
-            .file_of(expanded_origin.origin.path)
-            .ok_or_else(|| vec![internal("declaration has no captured source file")])?;
-        declaration_regions.push(expanded_origin.region);
-        let span = source_span(file, expanded_origin.source_span)?;
-        let include_occurrence = u32::try_from(mapping.plan.regions[expanded_origin.region].occurrence)
-            .map_err(|_| vec![internal("too many include occurrences")])?;
-        let region = region_hashes[expanded_origin.region];
-        let expansion_stack = mapping.expansion_stack(expanded_origin.macro_expansions)?;
-        current_origins.push(crate::Provenance {
-            span,
-            include_occurrence,
-            region,
-            expansion_stack,
-        });
-    }
-    Ok((expanded_spans, declaration_regions, current_origins.into()))
-
+    })
 }
 
 /// Every distinct file of the plan, in the order its first occurrence appears, with the text the
@@ -1077,19 +674,9 @@ fn build_source_index(
     plan: &DirectivePlan,
     sources: &BTreeMap<PathBuf, dm_preprocess::SourceText>,
 ) -> Result<(Vec<SourceFile>, Arc<HashMap<PathBuf, FileId>>), Vec<Diagnostic>> {
-    build_source_index_geometry(plan.source_geometry(),dm_preprocess::regions::SourceTexts::ordinary(sources),false)
-}
-pub(super) fn build_source_index_geometry(
-    plan:dm_preprocess::regions::SourcePlanGeometry<'_>,
-    sources:dm_preprocess::regions::SourceTexts<'_>,
-    captured_only:bool,
-)->Result<(Vec<SourceFile>,Arc<HashMap<PathBuf,FileId>>),Vec<Diagnostic>> {
     let mut files = Vec::new();
     let mut by_path = HashMap::new();
-    for occurrence in plan.occurrences {
-        // Generation has explicit negative occurrences, never empty files.
-        // The ordinary path retains its existing non-text coordinate rows.
-        if captured_only && !sources.contains_key(occurrence.path.as_ref()){continue}
+    for occurrence in &plan.occurrences {
         if by_path.contains_key(occurrence.path.as_ref()) {
             continue;
         }
@@ -1169,259 +756,4 @@ fn text_expression_diagnostics(
         ));
     }
     found
-}
-
-/// Close only the pinned own-formal / known absolute builtin RHS cohort,
-/// before the existing seed or declaration builder sees a changed edge.
-fn original_sealed_parents_using<E: From<Vec<Diagnostic>> + Send>(
-    syntax: &DeclarationSyntax,
-    adapted: &crate::adapter::SharedAdaptedDeclarations,
-    seed: Option<&EngineSeed>,
-    permit: &dyn super::declaration_demand::Permit<Failure = E>,
-) -> Result<crate::diagnostic_declarations::OriginalSealedParents, E> {
-    let unsupported = || vec![Diagnostic {
-        kind: DiagnosticKind::UnsupportedModel,
-        stage: DiagnosticStage::Declaration,
-        message: "Original sealed parent assignment lacks a single issued known builtin RHS".into(),
-        location: None,
-    }];
-    let names = ["/datum", "/list", "/alist", "/savefile", "/world", "/vector", "/pixloc", "/callee"];
-    let ids = names.map(dm_ir::SymbolId::of);
-    let root = dm_ir::SymbolId::of("/");
-    let mut rows = [None;4];
-    let mut visited = 0;
-    for row in adapted.skeletons.iter() {
-        visited += 1;
-        if visited % 512 == 0 { permit.checkpoint()?; }
-        let Skeleton::Type { path, explicit_parent: Some(requested) } = row else { continue; };
-        let Some(index) = ids.iter().position(|owner| owner == path) else { continue; };
-        let selected = rows.get_mut(index).ok_or_else(&unsupported)?;
-        let hierarchy = &seed.ok_or_else(&unsupported)?.hierarchy.parents;
-        if selected.is_some()
-            || *requested == root
-            || !hierarchy.iter().any(|&(owner, parent)| owner == *path && parent == Some(root))
-            || !hierarchy.iter().any(|&(owner, _)| owner == *requested)
-        {
-            return Err(unsupported().into());
-        }
-        *selected = Some((*path, *requested));
-    }
-    if rows.iter().all(Option::is_none) { return Ok(rows); }
-
-    let mut seen = [false;4];
-    for item in syntax.items() {
-        permit.checkpoint()?;
-        if item.kind() != dm_syntax::ItemKind::Type { continue; }
-        let Some(index) = names[..4].iter().position(|name| *name == item.header().trim()) else { continue; };
-        let Some((_, requested)) = rows[index] else { continue; };
-        let requested = adapted.symbols.text(requested).ok_or_else(&unsupported)?;
-        for child in item.children() {
-            permit.checkpoint()?;
-            let Some((name, value)) = child.header().split_once('=') else { continue; };
-            if name.trim() != "parent_type" { continue; }
-            if seen[index] || value.trim() != requested || !requested.starts_with('/')
-                || child.declaration_cursor().is_none()
-            {
-                return Err(unsupported().into());
-            }
-            seen[index] = true;
-        }
-    }
-    if rows.iter().enumerate().any(|(index, row)| row.is_some() && !seen[index]) {
-        return Err(unsupported().into());
-    }
-    Ok(rows)
-}
-
-/// Explicit Original Analyze purpose selected before the one native frontend
-/// pass. Checker-fatal APIs and ordinary compiler admission remain unchanged.
-pub fn build_for_original_analysis_with_state_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
-    build_for_original_analysis_with_callable_anchors_checked(project, provider, defines, config, memo, executor, state, host, None)
-}
-
-/// Optional non-escaping loan of an existing Strict memo. The recipient
-/// must still independently prepare its actual Original source and tree.
-pub fn build_for_original_analysis_with_callable_anchors_checked<P:SourceProvider>(
-    project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,
-    memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,
-    state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>,
-    prior_strict:Option<&RetainedSemanticTree>,
-)->Result<DiagnosticFrontend,FrontendBuildFailure>{
-    build_for_original_analysis_with_parameter_mode(project,provider,defines,config,memo,executor,state,host,prior_strict,false,false)
-}
-
-/// Narrow admitted entry for joined Checker+Analyze+compiler reports.
-/// The caller must select the already-qualified private compact Checker route.
-#[doc(hidden)]
-pub fn build_for_original_compound_with_callable_anchors_checked<P:SourceProvider>(
-    project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,
-    memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,
-    state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>,
-    prior_strict:Option<&RetainedSemanticTree>,
-)->Result<DiagnosticFrontend,FrontendBuildFailure>{
-    build_for_original_analysis_with_parameter_mode(project,provider,defines,config,memo,executor,state,host,prior_strict,true,true)
-}
-
-/// Native full Analyze uses the same actual complete stream/history/model,
-/// with finalized header metadata realized only under the existing host permit.
-/// This is neither the compound macro-history route nor committed BODY adoption.
-#[doc(hidden)]
-pub fn build_for_original_native_parameter_demand_with_callable_anchors_checked<P:SourceProvider>(
-    project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,
-    memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,
-    state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>,
-    prior_strict:Option<&RetainedSemanticTree>,
-)->Result<DiagnosticFrontend,FrontendBuildFailure>{
-    build_for_original_analysis_with_parameter_mode(project,provider,defines,config,memo,executor,state,host,prior_strict,true,false)
-}
-
-/// Native-only ordinary Code/Input demand. Full actual history/purpose/EOF
-/// behavior is the existing Analyze path; committed BODY producer is untouched.
-#[doc(hidden)]
-pub fn build_for_original_native_body_demand_with_callable_anchors_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>,prior_strict:Option<&RetainedSemanticTree>)->Result<DiagnosticFrontend,FrontendBuildFailure>{build_for_original_analysis_with_parameter_and_code_mode(project,provider,defines,config,memo,executor,state,host,prior_strict,true,false,true)}
-
-fn build_for_original_analysis_with_parameter_mode<P:SourceProvider>(
-    project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,
-    memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,
-    state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>,
-    prior_strict:Option<&RetainedSemanticTree>,lazy_body_parameters:bool,compact_compound:bool,
-)->Result<DiagnosticFrontend,FrontendBuildFailure>{build_for_original_analysis_with_parameter_and_code_mode(project,provider,defines,config,memo,executor,state,host,prior_strict,lazy_body_parameters,compact_compound,false)}
-fn build_for_original_analysis_with_parameter_and_code_mode<P:SourceProvider>(
-    project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,
-    memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,
-    state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>,
-    prior_strict:Option<&RetainedSemanticTree>,lazy_body_parameters:bool,compact_compound:bool,ordinary_code_demand:bool,
-)->Result<DiagnosticFrontend,FrontendBuildFailure>{
- use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{parse_only_reporting:false,host,body_host:None,type_loan:None};let mut receipt=None;let mut primary=None;
- let result=(||{
-  let frontend=build_with_executor_and_semantic_state_for_policy_demand_body_mode(project,provider,defines,config,memo,executor,state,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::Ordinary,prior_strict.map(RetainedSemanticTree::authored_callable_owners),lazy_body_parameters,compact_compound,ordinary_code_demand)?;
-  let diagnostic=DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("original analysis builder lacks its actual native graph receipt")])?).map_err(FrontendBuildFailure::from)?;
-  diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("original analysis builder lacks its actual primary preparation owner")])?).map_err(FrontendBuildFailure::from)
- })();demand.finish(result)
-}
-
-/// The sole preparation for a selected ImageDir operation. It uses the same
-/// admitted Original primary/archive and issues no reusable checker state.
-pub fn build_for_original_image_dir_checked<P:SourceProvider>(
-    project:&Path, provider:&P, defines:&BTreeMap<String,String>, config:FrontendConfig<'_>,
-    executor:&dm_exec::BuildExecutor, host:&Arc<dyn SettingExpressionQueries>,
-)->Result<super::OriginalImageDirFrontend,FrontendBuildFailure>{
-    use super::declaration_demand::Demand;
-    let demand=super::declaration_demand::Checked{parse_only_reporting:false,host,body_host:None,type_loan:None};
-    let mut receipt=None;
-    let mut primary=None;
-    let result=(||{
-        let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(
-            project,provider,defines,config,None,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::ImageDir,None,false,false)?;
-        let diagnostic=DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("ImageDir declaration receipt absent")])?)?;
-        let diagnostic=diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("ImageDir primary receipt absent")])?)?;
-        super::diagnostic_preparation::OriginalImageDirFrontend::issue(diagnostic).map_err(FrontendBuildFailure::from)
-    })();
-    demand.finish(result)
-}
-
-/// Separate partial-TU purpose selected BEFORE the same native source pass.
-/// No compiler semantic-state predecessor can be reused or published here.
-/// The host must bind its captured synthetic recipe/root acquisition separately.
-pub fn build_for_original_handlers_structural_checked<P:SourceProvider>(project:&Path,provider:&P,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
- build_original_handlers_structural_checked(project,provider,config,memo,executor,host,false)
-}
-
-/// Internal joined staging still uses the ordinary Handler producer and formal
-/// ledger. Only the duplicate finalized metadata is realized on BODY demand.
-#[doc(hidden)]
-pub fn build_for_joined_original_handlers_structural_checked<P:SourceProvider>(project:&Path,provider:&P,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
- build_original_handlers_structural_checked(project,provider,config,memo,executor,host,true)
-}
-
-fn build_original_handlers_structural_checked<P:SourceProvider>(project:&Path,provider:&P,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>,lazy_body_parameters:bool)->Result<DiagnosticFrontend,FrontendBuildFailure>{
- use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{parse_only_reporting:false,host,body_host:None,type_loan:None};let mut receipt=None;let mut primary=None;let defines=BTreeMap::new();
- let result=(||{
-  let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,&defines,config,memo,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::HandlersStructural,None,lazy_body_parameters,false)?;
-  let diagnostic=DiagnosticFrontend::bind_handlers_structural(frontend,receipt.ok_or_else(||vec![internal("handlers structural builder lacks its actual native graph receipt")])?).map_err(FrontendBuildFailure::from)?;
-  diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("handlers structural builder lacks its actual primary preparation owner")])?).map_err(FrontendBuildFailure::from)
- })();demand.finish(result)
-}
-
-
-#[cfg(test)]
-mod resolution_symbols_tests {
-    use super::*;
-
-    #[test]
-    fn formatter_reuses_actual_retained_dictionary_and_only_exact_catalogs() {
-        let ast = dm_syntax::parse("/datum/diagnostic_probe\n    var/value = 1\n");
-        let adapted = crate::from_ast(&ast, SymbolTable::default(), dm_ir::FileId(0), 0, 0)
-            .expect("actual authored declarations");
-        let mut adapted = crate::SharedAdaptedDeclarations::from(adapted);
-        assert!(retained_resolution_symbols(&adapted, None).is_none());
-        let records = super::super::DiagnosticRetainedRecords::capture(&adapted, None, None)
-            .expect("actual retained declaration records");
-        let issued = records.resolution_symbols();
-        let formatted = retained_resolution_symbols(&adapted, Some(&records)).unwrap();
-        assert!(Arc::ptr_eq(&issued, &formatted));
-        assert_eq!(formatted.text(dm_ir::SymbolId::of("value")), Some("value"));
-
-        let catalog = super::super::symbol_catalog::SymbolCatalog::capture(
-            None, Arc::new(adapted.symbols), None,
-        ).unwrap();
-        adapted.symbols = SymbolTable::overlay(Arc::clone(&catalog.symbols));
-        adapted.symbol_catalog = Some(Arc::clone(&catalog));
-        let formatted = retained_resolution_symbols(&adapted, None).unwrap();
-        assert!(Arc::ptr_eq(&catalog.symbols, &formatted));
-        adapted.symbols.intern("local_delta").unwrap();
-        assert!(retained_resolution_symbols(&adapted, None).is_none());
-    }
-
-    #[test]
-    fn retained_formatter_keeps_duplicate_messages_and_locations() {
-        struct Source;
-        impl SourceProvider for Source {
-            fn read(&self, _: &Path) -> Result<String, String> {
-                Ok("/datum/example\n    var/static/value = 1\n    var/static/value = 2\n".into())
-            }
-        }
-        let executor = dm_exec::BuildExecutor::new(1).unwrap();
-        let config = FrontendConfig { workers: 1, engine: None, observer: None };
-        let mut state = RetainedSemanticTree::new();
-        let check = |retained| {
-            let result = build_for_checker_diagnostics_with_state(
-                Path::new("resolution-symbols.dme"), &Source, &BTreeMap::new(),
-                config, None, &executor, retained,
-            );
-            let errors = match result {
-                Ok(_) => panic!("duplicate variable cannot publish a checker tree"),
-                Err(errors) => errors,
-            };
-            errors.into_iter().map(|row| {
-                assert_eq!(row.kind, DiagnosticKind::SourceError);
-                (row.location.unwrap().line, row.message)
-            }).collect::<Vec<_>>()
-        };
-        let fresh = check(None);
-        assert_eq!(fresh, [
-            (2, "value: duplicate definition".to_owned()),
-            (3, "value: previous definition".to_owned()),
-        ]);
-        assert_eq!(check(Some(&mut state)), fresh);
-        assert!(state.snapshot_tree().is_none());
-    }
-}
-
-/// Opt-in actual procedure-commit syntax products on the existing native host.
-/// Structural TT refusals remain explicit; this is not a CLI/default parity claim.
-pub fn build_for_committed_body_syntax_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,state:Option<&mut RetainedSemanticTree>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>,bodies:&Arc<dyn BodySyntaxQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
- use super::declaration_demand::Demand;
- if provider.initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290||crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).is_none(){return Err(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"committed BODY syntax requires actual Original checker preparation")))}
- let demand=super::declaration_demand::Checked{parse_only_reporting:false,host,body_host:Some(bodies),type_loan:None};let mut receipt=None;
- let result=(||{let frontend=build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,None,executor,state,true,Some(&mut receipt),&demand)?;DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("committed BODY builder omitted actual graph receipt")])?).map_err(FrontendBuildFailure::from)})();demand.finish(result)
-}
-
-/// Explicit report-only syntax preparation on the same procedure-commit producer.
-/// A typed formal fatal retains the actual prefix; no partial Input is settled.
-pub fn build_for_parse_only_syntax_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,executor:&dm_exec::BuildExecutor,host:&Arc<dyn SettingExpressionQueries>,bodies:&Arc<dyn BodySyntaxQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
- use super::declaration_demand::Demand;
- if provider.initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290||crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).is_none(){return Err(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"parse-only syntax requires actual Original checker preparation")))}
- let demand=super::declaration_demand::Checked{parse_only_reporting:true,host,body_host:Some(bodies),type_loan:None};let mut receipt=None;let mut primary=None;
- let result=(||{let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,defines,config,None,executor,None,true,Some(&mut receipt),&demand,Some(&mut primary),crate::diagnostic_declarations::DeclarationRole::Ordinary,None,false,false)?;let diagnostic=DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("parse-only builder omitted actual graph receipt")])?).map_err(FrontendBuildFailure::from)?;diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("parse-only builder omitted actual primary owner")])?).map_err(FrontendBuildFailure::from)})();demand.finish(result)
 }

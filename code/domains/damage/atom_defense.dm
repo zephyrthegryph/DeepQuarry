@@ -40,11 +40,14 @@
 	update_integrity(get_integrity() - damage_amount)
 	PUBLISH(src, atom_take_damage, damage_amount = damage_amount, damage_type = damage_type, damage_flag = damage_flag, sound_effect = sound_effect, attack_dir = attack_dir, aurmor_penetration = armour_penetration)
 	contract_report_station_damage(src, previous_atom_integrity - get_integrity())
-	if(isobj(src) && max_integrity > 0)
-		var/obj/damaged_object = src
-		damaged_object.material_service_event(MATERIAL_EVENT_DAMAGE, 1 - get_integrity() / max_integrity)
+	var/material_severity = (isobj(src) && max_integrity > 0) ? 1 - get_integrity() / max_integrity : null
 
 	settle_integrity_crossings(previous_atom_integrity, damage_flag)
+	// The material service is admitted after the crossings, and only for an object the hit left standing: a blast admitted one for every
+	// object it was about to destroy (about a third of the 498 services a station blast created), and the destruction deleted it at once.
+	if(!isnull(material_severity) && !QDELETED(src))
+		var/obj/damaged_object = src
+		damaged_object.material_service_event(MATERIAL_EVENT_DAMAGE, material_severity)
 
 /// The one damage path's break/destroy default, bound to nothing: every atom that uses integrity gets it from take_damage().
 /// Breaks when integrity falls to integrity_failure (a fraction of max_integrity; 0 declares no breaking point), then destroys at 0,

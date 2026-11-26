@@ -1,0 +1,9 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Dragging a docked window's grip resizes it and its neighbour across the boundary; the chat only takes what is left"
+  - bugfix: "A docked window that is out of reach dims only itself, not the whole right-hand column"
+  - qol: "A newly docked window takes its space from the Status panel first, then from the chat"
+  - bugfix: "The Status panel no longer offers a float button"
+  - bugfix: "Reordering docked windows keeps each window's scroll position"
+  - bugfix: "Dragging the chat from the bottom to the top of the column drops it in the first slot"

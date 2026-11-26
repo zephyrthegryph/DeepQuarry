@@ -64,41 +64,41 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_trait)
 			merged[name] = changes.args[name]
 	return entry_make(kind, null, merged)
 
-/// One shared trait per declaring table, indexed by every type under it.
+/// One shared trait per declaring table, indexed by the table (a type reads it through its table).
 /datum/entry_engine/type_trait/static_built(list/by_type)
 	GLOB.type_trait_tables[kind] = type_trait_table_build(by_type, kind, trait_type)
 
-/// type -> the shared trait of `kind` for every type in `by_type` whose table declares one. Each table is visited once (not each type: the grouping
-/// of types by table and the first entry of each kind per table come from static_table_groups(), built once at setup), and one trait is built per
-/// declaring table, shared by the types under it, so the cost is the tables plus the types that get a trait. The equality test
-/// (dq_table_cache_tests.dm) compares it with the scanning original, including which types share a trait object.
+/// table -> the shared trait of `kind` for every table of `by_type` that declares one. Each table is visited once (the grouping of types by table
+/// and the first entry of each kind per table come from static_table_groups(), built once at setup), and one trait is built per distinct declaring
+/// entry, shared by the tables that hold it. Keyed by table, not by type: a type reads its table first (type_trait_of()), so the build writes one row
+/// per table instead of one per type (25 kinds over 22 k types was 220 k rows and most of the build's 1.2 s). The equality test
+/// (dq_table_cache_tests.dm) compares it, read per type, with the scanning original, including which types share a trait object.
 /proc/type_trait_table_build(list/by_type, kind, trait_type)
-	var/list/types_by_table
 	var/list/first_by_kind
-	if(by_type == SSstatic_entries.tables_by_type && SSstatic_entries.types_by_table)
-		types_by_table = SSstatic_entries.types_by_table
+	if(by_type == SSstatic_entries.tables_by_type && SSstatic_entries.first_by_kind)
 		first_by_kind = SSstatic_entries.first_by_kind
 	else
-		var/list/groups = static_table_groups(by_type)
-		types_by_table = groups[1]
-		first_by_kind = groups[2]
+		first_by_kind = static_table_groups(by_type)[2]
 	var/list/table = list()
-	var/tables_built = 0
-	for(var/datum/type_table/T as anything in types_by_table)
+	// Entries are interned, so a subtype table that inherits its declaration unchanged holds the very entry its parent's does: one trait per
+	// distinct entry, not per table (5100 tables of atom_rules came down to a few hundred distinct entries; each trait was an apply_args walk).
+	var/list/built_of_entry = list()
+	for(var/datum/type_table/T as anything in first_by_kind)
 		var/datum/centry/C = first_by_kind[T][kind]
 		var/datum/entry/E = C?.item
 		if(!E)
 			continue
-		var/datum/type_trait/made = new trait_type
-		made.kind = kind
-		made.apply_args(E.args)
-		tables_built++
-		for(var/type in types_by_table[T])
-			table[type] = made
-	log_world("TYPE_TRAIT_TABLE: [kind] built [tables_built] traits for [length(table)] types")
+		var/datum/type_trait/made = built_of_entry[E]
+		if(!made)
+			made = new trait_type
+			made.kind = kind
+			made.apply_args(E.args)
+			built_of_entry[E] = made
+		table[T] = made
+	log_world("TYPE_TRAIT_TABLE: [kind] built [length(built_of_entry)] traits for [length(table)] tables")
 	return table
 
-/// kind -> type -> the shared /datum/type_trait (built once at setup by the kinds' engines).
+/// kind -> type table -> the shared /datum/type_trait (built once at setup by the kinds' engines); a type reads it through SSstatic_entries.tables_by_type.
 GLOBAL_LIST_EMPTY(type_trait_tables)
 
 /// kind -> the trait a type with no declaration reads (the datum's defaults).
@@ -110,12 +110,15 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 	RETURN_TYPE(/datum/type_trait)
 	if(isnull(holder))
 		return type_trait_default(kind) // a read through an empty slot (worn?.x): the kind's defaults
-	var/datum/type_trait/own = per_type_copy_peek(holder, kind)
-	if(own)
-		return own
+	if(GLOB.per_type_copies[kind]) // only a kind some holder copied on write has an instance's own trait to look for
+		var/datum/type_trait/own = per_type_copy_peek(holder, kind)
+		if(own)
+			return own
 	if(!SSstatic_entries.ready)
 		static_entries_ensure("type_trait_of([holder.type], [kind])")
-	var/datum/type_trait/shared = GLOB.type_trait_tables[kind]?[holder.type]
+	var/datum/type_table/T = SSstatic_entries.tables_by_type[holder.type] // type_trait_shared(), inlined: this read runs on every trait read
+	var/list/by_table = T && GLOB.type_trait_tables[kind]
+	var/datum/type_trait/shared = by_table?[T]
 	if(shared)
 		return shared
 	return type_trait_default(kind)
@@ -126,7 +129,16 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 	RETURN_TYPE(/datum/type_trait)
 	if(!SSstatic_entries.ready)
 		static_entries_ensure("type_trait_of_type([type], [kind])")
-	return GLOB.type_trait_tables[kind]?[type] || type_trait_default(kind)
+	return type_trait_shared(type, kind) || type_trait_default(kind)
+
+/// The shared trait of `kind` that `type`'s table declares, or null. Setup must have run.
+/proc/type_trait_shared(type, kind)
+	RETURN_TYPE(/datum/type_trait)
+	var/datum/type_table/T = SSstatic_entries.tables_by_type[type]
+	if(!T)
+		return null
+	var/list/by_table = GLOB.type_trait_tables[kind]
+	return by_table?[T]
 
 /// The kind's defaults (a type under no declaration).
 /proc/type_trait_default(kind)
@@ -148,15 +160,20 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 /proc/type_trait_own(datum/holder, kind)
 	RETURN_TYPE(/datum/type_trait)
 	var/datum/type_trait/own = per_type_copy_peek(holder, kind)
-	if(own)
+	if(own && !GLOB.type_trait_interned[own])
 		return own
-	var/datum/type_trait/shared = type_trait_of(holder, kind)
+	var/datum/type_trait/shared = own || type_trait_of(holder, kind) // an interned variant is shared: a private write copies it
 	own = shared.copy()
 	own.kind = kind
 	return per_type_copy_make(holder, kind, own)
 
 /// Sets one field of `holder`'s trait of `kind` at run time: the holder's own copy (copy on write), then the kind's key is published so readers
 /// follow. Returns TRUE when the value changed. The domain setters (set_active_power_usage(), set_hitsound()) are this with a fixed field.
+/// trait -> field -> value text -> the interned variant trait that write makes of that trait (set_trait()); and variant -> TRUE. Round-long: a variant is a
+/// flyweight like the type's own trait, and the table stays as small as the set of distinct writes.
+GLOBAL_LIST_EMPTY(type_trait_variants)
+GLOBAL_LIST_EMPTY(type_trait_interned)
+
 /proc/set_trait(datum/holder, kind, field, value)
 	var/datum/type_trait/now = type_trait_of(holder, kind)
 	if(!(field in now.vars))
@@ -164,8 +181,33 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 		return FALSE
 	if(now.vars[field] == value)
 		return FALSE
-	var/datum/type_trait/own = type_trait_own(holder, kind)
-	own.vars[field] = value // ALLOW(api): the one generic trait writer; the field is checked against the trait's vars above
+	// Copy on write, shared: instances that make the same write to the same trait (every item of one blueprint sets the same fields) hold one interned
+	// variant, not a copy each. A variant is read-only; a holder writing it again moves to the next variant (or a private copy, for a value that is not
+	// plain data), so no holder ever writes a trait another holder reads.
+	var/datum/type_trait/own = per_type_copy_peek(holder, kind)
+	var/datum/type_trait/target
+	if((!own || GLOB.type_trait_interned[own]) && (isnull(value) || isnum(value) || istext(value) || ispath(value)))
+		var/list/by_field = GLOB.type_trait_variants[now]
+		if(!by_field)
+			by_field = list()
+			GLOB.type_trait_variants[now] = by_field
+		var/list/by_value = by_field[field]
+		if(!by_value)
+			by_value = list()
+			by_field[field] = by_value
+		var/value_key = isnull(value) ? "~null" : "[isnum(value) ? "#" : ""][value]" // text keys: a number would index the list
+		var/datum/type_trait/variant = by_value[value_key]
+		if(!variant)
+			variant = now.copy()
+			variant.kind = kind
+			by_value[value_key] = variant
+			GLOB.type_trait_interned[variant] = TRUE
+			target = variant // written once, below, as the variant is made
+		per_type_copy_make(holder, kind, variant)
+	else
+		target = type_trait_own(holder, kind)
+	if(target)
+		target.vars[field] = value // ALLOW(api): the one generic trait writer; the field is checked against the trait's vars above
 	var/key = type_trait_engine(kind)?.publish_key
 	if(key)
 		tracked_changed(holder, key)

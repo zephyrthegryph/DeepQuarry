@@ -18,6 +18,23 @@
 	refresh_flush()
 	TEST_ASSERT_EQUAL(A.icon_state, "", "and the area is blank again when it ends")
 
+/// No area shows its map-editor sprite in game once the world is up, whatever way its first draw was scheduled (a parked, stamped or never-queued draw
+/// leaves the mapped icon_state: "Space", "Emergency Storage" on the tiles). Nothing here flushes the refresh queue first.
+/datum/unit_test/dq_areas_show_no_map_sprite
+
+/datum/unit_test/dq_areas_show_no_map_sprite/Run()
+	var/checked = 0
+	var/list/shown = list()
+	for(var/area/A in world)
+		if(!length(A.contents))
+			continue
+		checked++
+		if(A.icon_state in list("", "party", "red", "blue-red"))
+			continue
+		shown += "[A.type]=[A.icon_state]"
+	TEST_ASSERT(checked, "the world has areas with turfs")
+	TEST_ASSERT(!length(shown), "[length(shown)] area(s) still show a map-editor sprite: [jointext(shown.Copy(1, min(length(shown), 12) + 1), ", ")]")
+
 /// An item equipped onto the toggled inventory bar while it is folded gets no screen position (so it is not drawn on the screen);
 /// the always-shown slots keep theirs. Slot ids are text, so this must not be an ordering test on them.
 /datum/unit_test/dq_folded_inventory_hides_equipped_items

@@ -83,8 +83,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_plan)
 	/// on_interrupt(): the handler that runs when the wait is broken.
 	var/interrupted
 	var/label
+	/// label(state =, state_text =): the state key whose being set swaps the label for `label_state_text`, or null.
+	var/label_state
+	var/label_state_text
 	/// An explicit OP_PRIORITY_X, or null.
 	var/priority_tier
+	/// The first key of the click order, ahead of the tier: the tier, raised to OP_PRIORITY_PART for an op bound to a tool, item, stack or put_in (op_plan_finish()).
+	var/band = OP_PRIORITY_NORMAL
 	/// list("above"|"below", key), or null.
 	var/list/priority_rel
 	/// What a canonical click_order() puts this op above: list(list(input, key pattern, ...), ...), nearest first; or null.
@@ -106,6 +111,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_plan)
 	var/tier = OP_PRIORITY_NORMAL
 	/// Build problems found while compiling this plan (also reported through table_error()).
 	var/list/problems
+	/// What a Menu read can know of the op without its state (op_menu_never_lists()): null until asked, 0 nothing, 1 never a Menu line,
+	/// 2 a line only on the actor's own holder. Derived from the immutable parts, once.
+	var/menu_static
+	/// P.conds in the order op_conds_cheapest_first() tests them, made on first use.
+	var/list/conds_ordered
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 /// The compiled ops of a type table, by key and in order.
@@ -118,6 +128,23 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 	var/list/topic_plans
 	/// How many op items (centry of kind op, built or not) the index was built over: a subtype's table that only appends numbers its own ops from here.
 	var/op_items = 0
+
+/datum/op_index
+	/// op key -> button name of the ops of this index that have a menu() button (op_index_buttons()), made on first use.
+	var/list/button_cache
+
+/// The ops of a compiled index that show as abilities (a menu() binding with a button): op key -> button name. An index never changes once
+/// built, so this is interned on it; a holder's ability list (sync_op_abilities()) reads it on every capability change.
+/proc/op_index_buttons(datum/op_index/index)
+	if(isnull(index.button_cache))
+		var/list/buttons = list()
+		for(var/datum/op_plan/plan as anything in index.ordered)
+			for(var/datum/entry/part/bind/binding as anything in plan.bindings)
+				if(binding.bind_kind == BIND_MENU && istext(binding.args?["button"]))
+					buttons[plan.key] = binding.args["button"]
+					break
+		index.button_cache = buttons
+	return index.button_cache
 
 /datum/type_table
 	/// The compiled ops of the table (made on first use), and the ones each granted capability definition would bring to a holder of it, by definition key.
@@ -150,9 +177,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 		var/datum/op_plan/P = op_plan_build(T, C, E, extends, seq, report)
 		if(!P)
 			continue
-		if(index.by_key[P.key])
-			// A later declaration of a key replaces the earlier one at the same level (a subtype's own op beats its parent's).
-			index.ordered -= index.by_key[P.key]
+		// One plan per key: the table already replaced an earlier declaration of the key in place (table_add_item()).
 		index.by_key[P.key] = P // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 		index.ordered += P // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 		if(base)
@@ -458,17 +483,22 @@ GLOBAL_VAR_INIT(op_plans_built, 0)
 			P.topic_key = B.args["key"]
 			P.topic_namespace = B.args["namespace"]
 	// Tier: an explicit priority, else the highest tier the parts yield.
+	var/part_floor = OP_PRIORITY_NORMAL
+	for(var/datum/entry/part/bind/B as anything in P.bindings)
+		part_floor = max(part_floor, B.yielded_tier())
+	for(var/datum/entry/part/effect/F as anything in P.effects)
+		part_floor = max(part_floor, F.yielded_tier())
 	if(!isnull(P.priority_tier))
 		P.tier = P.priority_tier
 	else
 		var/tier = OP_PRIORITY_NORMAL
 		if(P.hostile)
 			tier = max(tier, OP_PRIORITY_ATTACK)
-		for(var/datum/entry/part/bind/B as anything in P.bindings)
-			tier = max(tier, B.yielded_tier())
-		for(var/datum/entry/part/effect/F as anything in P.effects)
-			tier = max(tier, F.yielded_tier())
-		P.tier = tier
+		P.tier = max(tier, part_floor)
+	// Band: the order's first key, ahead of the tier. What a tool, item, stack or put_in yields (OP_PRIORITY_PART) is a floor no pin goes under: a legacy
+	// OP_PRIORITY_DEFAULT - 1 on a wrench op would let the holder's own hand() op answer a click with the tool in hand, and the more specific held-item op
+	// always wins (final_api.html section 1 "Precedence"). The pin still orders such ops among themselves (the tier is the second key).
+	P.band = max(P.tier, part_floor)
 	op_derive_claims(P)
 	if(length(P.captured) && !length(P.steps))
 		op_problem(T, P, report, RULE_OP_PART, "captures() on an op with no wait(), asks() or confirms()", "captures() snapshots fields when the op first suspends at a workflow step: an op without one has nothing to capture")
@@ -619,6 +649,8 @@ GLOBAL_VAR_INIT(op_plans_built, 0)
 
 /datum/entry/part/label/compile(datum/op_plan/P, level)
 	P.label = src.args["text"]
+	P.label_state = src.args["state"]
+	P.label_state_text = src.args["state_text"]
 
 /datum/entry/part/priority/compile(datum/op_plan/P, level)
 	var/value = src.args["value"]

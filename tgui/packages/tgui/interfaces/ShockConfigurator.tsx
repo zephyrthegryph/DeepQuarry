@@ -11,21 +11,10 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-// These are straight from https://docs.pishock.com/multishock/multishock-websocket-api.html
-type MultishockAPIShocker = {
-  name: string;
-  identifier: number;
-};
-
-type MultishockAPIDevice = {
-  name: string;
-  id: number;
-  shockers: Array<MultishockAPIShocker>;
-};
-
-type MultishockAPIAvailableDevices = Array<MultishockAPIDevice>;
+import type {
+  ShockConfiguratorActions,
+  ShockConfiguratorData,
+} from './generated/ShockConfigurator';
 
 // KEEP THIS UP TO DATE WITH code/__defines/shock.dm
 enum ShockFlags {
@@ -33,24 +22,16 @@ enum ShockFlags {
   Digestion = 2,
 }
 
-type Data = {
-  port: number;
-  authKey: string;
-  connected: BooleanLike;
-  intensity: number;
-  duration: number;
-  selectedDevice: number;
-  availableDevices: MultishockAPIAvailableDevices;
-  enabledFlags: ShockFlags;
-};
-
 export const ShockConfigurator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    ShockConfiguratorData,
+    ShockConfiguratorActions
+  >();
   const {
-    port,
+    port = 0,
     connected,
-    intensity,
-    duration,
+    intensity = 0,
+    duration = 0,
     selectedDevice,
     availableDevices,
     enabledFlags,

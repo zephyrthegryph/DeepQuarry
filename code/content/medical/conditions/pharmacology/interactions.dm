@@ -1,22 +1,6 @@
 // Drug interactions: two chems in the body together: pharmacological side effects, overdoses and interactions.
 // Families and the stage template: _pharmacology.dm.
 
-/datum/affliction/chem_interaction/tachycardia_chem
-	factors = alist(STAT_HEART_RATE = 30)
-	name = "drug-induced tachycardia"
-	clinical_description = "Inaprovaline (depressant) and hyperzine (stimulant) given together produce erratic, fast heart rate. Resolves when either chem clears."
-	symptom_pool = list(
-		/datum/affliction_symptom/palpitations = 90,
-		/datum/affliction_symptom/short_breath = 50,
-	)
-	min_symptoms = 1
-	max_symptoms = 2
-	caused_by_chems = list(
-		REAGENT_ID_INAPROVALINE = 2,
-		REAGENT_ID_HYPERZINE    = 2,
-	)
-	caused_by_chems_organ = O_HEART
-
 /datum/affliction/chem_interaction/bicaridine_antibiotic_interference
 	name = "antibiotic interference"
 	clinical_description = "Bicaridine's antiplatelet activity interferes with spaceacillin absorption. Spaceacillin treats infections at 40% of its normal effectiveness while both are in the body."
@@ -28,6 +12,33 @@
 		REAGENT_ID_SPACEACILLIN = 2,
 	)
 	caused_by_chems_organ = O_LIVER
+
+/datum/affliction/chem_interaction/rezadone_arithrazine_cancel
+	name = "arithrazine cancelled"
+	clinical_description = "Rezadone's cellular repair undoes what arithrazine does: arithrazine has no effect while rezadone is in the body."
+	min_symptoms = 0
+	max_symptoms = 0
+	interferes_with = list(REAGENT_ID_ARITHRAZINE = 0)
+	caused_by_chems = list(
+		REAGENT_ID_REZADONE    = 2,
+		REAGENT_ID_ARITHRAZINE = 2,
+	)
+	caused_by_chems_organ = O_LIVER
+
+/datum/affliction/chem_interaction/myelamine_cordradaxon_conflict
+	name = "clotting against repair"
+	clinical_description = "Myelamine's clotting and cordradaxon's cardiac repair work against each other: both work at half strength while the two are in the body together."
+	min_symptoms = 0
+	max_symptoms = 0
+	interferes_with = list(
+		REAGENT_ID_MYELAMINE   = 0.5,
+		REAGENT_ID_CORDRADAXON = 0.5,
+	)
+	caused_by_chems = list(
+		REAGENT_ID_MYELAMINE   = 2,
+		REAGENT_ID_CORDRADAXON = 2,
+	)
+	caused_by_chems_organ = O_HEART
 
 /datum/affliction/chem_interaction/opioid_co_administration
 	name = "compound CNS depression"
@@ -101,27 +112,43 @@
 	)
 	caused_by_chems_organ = O_BRAIN
 
-/datum/affliction/chem_interaction/cardiac_stress_interaction
-	factors = alist(STAT_HEART_RATE = 25, STAT_BP_SYSTOLIC = 10)
-	name = "cardiac stress"
-	clinical_description = "Stimulant-driven tachycardia compounds the load on a heart that's actively trying to repair itself. Hyperzine and cordradaxon together stress the cardiac muscle even as the latter tries to heal it."
+/datum/affliction/chem_interaction/calcium_antitoxin_binding
+	name = "antitoxin binding"
+	clinical_description = "Calcium carbonate binds Dylovene in the gut and the blood. Dylovene treats poisoning at half its normal effectiveness while both are in the body."
+	min_symptoms = 0
+	max_symptoms = 0
+	interferes_with = list(REAGENT_ID_ANTITOXIN = 0.5)
+	caused_by_chems = list(
+		REAGENT_ID_CALCIUMCARBONATE = 2,
+		REAGENT_ID_ANTITOXIN        = 2,
+	)
+	caused_by_chems_organ = O_LIVER
+
+/datum/affliction/chem_interaction/carthatoline_iron_binding
+	name = "iron binding"
+	clinical_description = "Carthatoline strips iron out of the blood along with the toxins. Iron saline restores blood volume at half its normal rate while both are in the body."
+	min_symptoms = 0
+	max_symptoms = 0
+	interferes_with = list(REAGENT_ID_IRONSALINE = 0.5)
+	caused_by_chems = list(
+		REAGENT_ID_IRONSALINE   = 2,
+		REAGENT_ID_CARTHATOLINE = 2,
+	)
+	caused_by_chems_organ = O_LIVER
+
+/datum/affliction/chem_interaction/adranol_anticonvulsant_sedation
+	name = "stacked drowsiness"
+	clinical_description = "Adranol and an anticonvulsant together stack their sedating effects: the patient is noticeably drowsy and slow. Resolves when either chem clears."
 	symptom_pool = list(
-		/datum/affliction_symptom/palpitations       = 90,
-		/datum/affliction_symptom/sharp_chest_pain   = 50,
+		/datum/affliction_symptom/drowsy = 100,
 	)
 	min_symptoms = 1
-	max_symptoms = 2
-	// Reduce cordradaxon's effectiveness AND damage the heart organ
-	// while the combo holds. The interference handles the cure-rate
-	// reduction; the organ_damage_* fields stack heart damage like
-	// the heart_damage condition does.
-	interferes_with = list(REAGENT_ID_CORDRADAXON = 0.6)
-	organ_damage_threshold = 0
-	organ_damage_type = "internal"
-	organ_damage_per_tick = 0.4
-	organ_damage_targets = list(O_HEART)
+	max_symptoms = 1
+	factors = alist(STAT_SLOWDOWN = 0.3, STAT_MOTOR_CONTROL = 0.97)
+	spontaneous_emotes = list("yawn", "nod off")
+	spontaneous_emote_prob = 4
 	caused_by_chems = list(
-		REAGENT_ID_HYPERZINE   = 3,
-		REAGENT_ID_CORDRADAXON = 2,
+		REAGENT_ID_ADRANOL        = 2,
+		REAGENT_ID_ANTICONVULSANT = 2,
 	)
-	caused_by_chems_organ = O_HEART
+	caused_by_chems_organ = O_BRAIN

@@ -1,9 +1,10 @@
 // Surgery framework.
 //
-// A procedure is a sequence of steps on one limb:
-//   access  (incise, retract, saw, pry; unscrew and open a panel)
-//   operate (repair, resect, set, remove, insert, implant)
-//   close   (set the bone layer, cauterize; secure the panel)
+// There are no fixed procedures. The only fixed bookends are access (incise, retract, saw, pry; unscrew and open a panel) and
+// close (set the bone layer, cauterize; secure the panel). Between them the opened limb shows its findings (findings.dm): every
+// affliction, foreign body, crooked bone or growth in it that a step answers to. The surgeon picks the step that fits each
+// finding, in any order:
+//   operate (repair, resect, set, re-break, remove, extract, insert, implant)
 //
 // Access state is the limb's /datum/affliction/surgical_incision
 // (incision.dm): it bleeds and gathers germs until it is closed, and its
@@ -17,11 +18,11 @@
 // (is_needed()). Closing an incision is the same thing: the incision is
 // treated by TREAT_SURGICAL_CLOSURE / TREAT_PANEL_CLOSURE / TREAT_BONE_SETTING.
 //
-// Outcome: success_chance() = tool quality x surface x surgeon x patient.
-// A failed step calls complicate(), which injures the patient with a specific
-// complication (a cut vessel bleeds, a nicked organ gets a lesion).
-// Sterility: surgeon germs spread to the limb, a dirty surface seeds germs,
-// and an open incision keeps gathering germs by its sterility until closed.
+// Outcome: success_chance() = tool quality x surface x surgeon. A failed step calls complicate(), which injures the patient
+// with a specific complication (a cut vessel bleeds, a nicked organ gets a lesion). The patient's state is not a die roll:
+// a patient who feels the step flinches (flinch(), felt_pain()), the open site bleeds as the patient's blood clots
+// (STAT_BLEEDING), and it gathers germs by how sterile the surface, the surgeon's hands and the patient's skin were when it
+// was opened.
 //
 // Synthetic and nanoform limbs use the same steps with repair tags (plating,
 // wiring, system restore, panel closure); a step's `part_biology` defaults to
@@ -62,6 +63,15 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 	var/phase = SURGERY_PHASE_OPERATE
 	/// Higher priority steps are offered first.
 	var/priority = 0
+	/// A finding step: the opened limb lists what this step answers to (findings(), findings.dm) and the medical book has an
+	/// entry for it.
+	var/finds = FALSE
+	/// One sentence for the medical book: what the step is for.
+	var/about = ""
+	/// The medical book's group for the step.
+	var/book_category = "Special"
+	/// Afflictions the step answers to beyond those that list one of its treatment tags (a step with no tag of its own).
+	var/list/extra_treats
 
 	/// typepath -> quality (0-100).
 	var/list/allowed_tools
@@ -212,6 +222,45 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 		if(location_needs_treatment(target, I))
 			.[I.name] = I
 
+/// How urgent `location` is for this step: the worst severity of the afflictions there that its treatments answer to.
+/datum/surgical_step/proc/target_urgency(mob/living/carbon/human/target, atom/location)
+	. = 0
+	for(var/datum/affliction/A as anything in target.body.afflictions_at(location))
+		if(istype(A, /datum/affliction/surgical_incision))
+			continue
+		for(var/tag in treatments)
+			if(A.treatment_rate(tag))
+				. = max(., A.severity)
+				break
+
+/// Is this location one of the step's findings (what the limb lists as the problem, rather than just a place the step can work)?
+/datum/surgical_step/proc/target_is_finding(mob/living/carbon/human/target, obj/item/organ/external/part, atom/location)
+	for(var/list/row as anything in findings(target, part, TRUE))
+		if(row["where"] == location)
+			return TRUE
+	return FALSE
+
+/// `target_choices()` in the order the step works through them: finding organs first, then by severity, then by name. The
+/// first is what a tool use lands on; nobody is asked.
+/datum/surgical_step/proc/ordered_target_choices(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
+	var/list/choices = target_choices(user, target, part, tool)
+	if(length(choices) < 2)
+		return choices
+	var/list/names = list()
+	var/list/rank = list()
+	for(var/name in choices)
+		var/atom/location = choices[name]
+		names += name
+		rank[name] = (target_is_finding(target, part, location) ? 1000 : 0) + target_urgency(target, location)
+	for(var/i in 2 to length(names))
+		var/j = i
+		while(j > 1 && (rank[names[j]] > rank[names[j - 1]] || (rank[names[j]] == rank[names[j - 1]] && names[j] < names[j - 1])))
+			names.Swap(j, j - 1)
+			j--
+	. = list()
+	for(var/name in names)
+		.[name] = choices[name]
+
 /// Is the chosen target still valid after the step's delay?
 /datum/surgical_step/proc/target_still_valid(mob/living/carbon/human/target, obj/item/organ/external/part, atom/work_target)
 	if(QDELETED(part) || part.owner != target)
@@ -237,30 +286,69 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 /proc/surgery_surface_mult(cleanliness)
 	return SURGERY_FLOOR_SURFACE_MULT + (1 - SURGERY_FLOOR_SURFACE_MULT) * clamp(cleanliness, 0, 100) / 100
 
-/// Patient multiplier: a conscious patient who feels the step flinches. Pain
-/// relief (STAT_ANALGESIA) and sedation (STAT_SEDATION) take the step's pain off;
-/// unconscious or pain-immune patients hold still. Only parts that feel pain
-/// count: a prosthetic panel doesn't hurt to open.
-/datum/surgical_step/proc/patient_mult(mob/living/carbon/human/target, obj/item/organ/external/part)
+/// How much of the step the patient feels (0 = nothing). A patient who is awake feels the step's pain less what pain relief
+/// (STAT_ANALGESIA) and sedation (STAT_SEDATION) take off it; unconscious or pain-immune patients feel nothing, and neither
+/// does a prosthetic part: a panel doesn't hurt to open. Anaesthesia, sleep and painkillers all just have to bring this to 0.
+/datum/surgical_step/proc/felt_pain(mob/living/carbon/human/target, obj/item/organ/external/part)
 	if(!pain || target.stat != CONSCIOUS)
-		return 1
-	if(!(target.body.biology_of(part) & BIOLOGY_ORGANIC) || !target.dq_feels_pain())
-		return 1
+		return 0
+	if(!part || !(target.body.biology_of(part) & BIOLOGY_ORGANIC) || !target.dq_feels_pain())
+		return 0
 	if(target.pain_immunity)
-		return 1
-	var/felt = pain - target.analgesia - target.sedation
-	if(felt <= 0)
-		return 1
-	return 1 - SURGERY_PAIN_PENALTY * clamp(felt / pain, 0, 1)
+		return 0
+	return max(0, pain - target.analgesia - target.sedation)
 
-/// Chance (0-100) this step succeeds.
+/// Chance (0-100) this step succeeds: the tool, the surface and the surgeon. The patient is not part of it; a patient who feels
+/// the step makes it flinch (flinch()).
 /datum/surgical_step/proc/success_chance(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, cleanliness)
 	. = tool_quality(tool)
 	. *= surgery_surface_mult(cleanliness)
 	. *= surgeon_skill(user, target)
-	if(part)
-		. *= patient_mult(target, part)
 	. = clamp(round(., 1), 0, 100)
+
+/// A patient who feels the step moves under the blade: the step goes wrong the way a slip would, with the same complication.
+/datum/surgical_step/proc/flinch(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target, felt)
+	var/what = work_target ? "[work_target]" : "body"
+	act_message(user, target, MSG_SELF(span_danger("%T% flinches as you work on [what] with %I%!")), \
+		MSG_OTHERS(span_danger("%T% flinches as %U% works on [what] with %I%!")), \
+		item = tool)
+	user.balloon_alert_visible("[target] flinches", "[target] flinches")
+	if(part?.organ_can_feel_pain())
+		target.emote("scream")
+	log_game("SURGERY: [key_name(target)] flinched under [key_name(user)] during [name] ([felt] pain felt, no relief)")
+	complicate(user, target, part, tool, work_target)
+
+/// The afflictions this step answers to, as typepaths: those that list one of its treatment tags, and the extras it names.
+/datum/surgical_step/proc/treated_afflictions()
+	. = list()
+	for(var/affliction_type in extra_treats)
+		. |= affliction_type
+	for(var/affliction_type in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
+		if(ispath(affliction_type, /datum/affliction/surgical_incision))
+			continue
+		var/datum/affliction/proto = dq_proto(affliction_type)
+		for(var/tag in treatments)
+			if(proto.treatment_rate(tag))
+				. |= affliction_type
+				break
+
+/// What this step answers to in `part`, for the findings list: one row per finding (surgical_finding_row()). `full` is true
+/// when the limb is open far enough to reach its organs. Base: every affliction in scope that responds to a treatment tag.
+/datum/surgical_step/proc/findings(mob/living/carbon/human/target, obj/item/organ/external/part, full)
+	. = list()
+	if(!finds || !length(treatments))
+		return
+	for(var/location in treatment_locations(target, part))
+		if(location != part && needs_full_access && !full)
+			continue
+		var/location_biology = target.body.biology_of(location)
+		for(var/datum/affliction/A as anything in target.body.afflictions_at(location))
+			if(istype(A, /datum/affliction/surgical_incision))
+				continue
+			for(var/tag in treatments)
+				if(A.treatment_rate(tag) && (treatment_tag_biology(tag) & location_biology))
+					. += list(surgical_finding_row(A.name, location, A, src))
+					break
 
 // --- Effects --------------------------------------------------------------------------
 
@@ -341,7 +429,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 /// A surgical step with this tool finished on the patient's zone: whether it succeeded.
 ACTION(material_surgery, mob/living/carbon/human/patient, zone, success, FIXED, notice = /datum/notice/material_surgery)
 
-/mob/living/carbon/human/proc/surgical_step_ended(success, obj/item/tool, datum/surgical_step/step, mob/living/user, zone, cleanliness, obj/item/organ/external/part, atom/work_target, chance)
+/mob/living/carbon/human/proc/surgical_step_ended(success, obj/item/tool, datum/surgical_step/step, mob/living/user, zone, cleanliness, obj/item/organ/external/part, atom/work_target, chance, felt = 0)
+	if(felt > 0)
+		success = FALSE // the patient felt it and flinched
 	if(success)
 		step.perform(user, src, part, tool, work_target)
 		step.finish_message(user, src, part, tool, work_target)
@@ -349,16 +439,32 @@ ACTION(material_surgery, mob/living/carbon/human/patient, zone, success, FIXED, 
 		if(user != src && department_for_mob(user) == DEPARTMENT_MEDICAL)
 			charge_mob_for_department_service(src, DEPARTMENT_MEDICAL, 5, "Surgical care: [step.name]", user.real_name)
 	else
-		step.complicate(user, src, part, tool, work_target)
+		if(felt > 0)
+			step.flinch(user, src, part, tool, work_target, felt)
+		else
+			step.complicate(user, src, part, tool, work_target)
 		PUBLISH(tool, material_surgery, patient = src, zone = zone, success = FALSE)
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	log_game("SURGERY: [key_name(user)] [success ? "completed" : "failed"] [step.name] on [key_name(src)] at [zone] (chance [chance]%, surface [cleanliness])")
+	log_game("SURGERY: [key_name(user)] [success ? "completed" : (felt > 0 ? "flinched during" : "failed")] [step.name] on [key_name(src)] at [zone] (chance [chance]%, surface [cleanliness], pain felt [felt])")
 
 	// A dirty surface seeds the site with germs.
 	part = get_organ(zone)
 	if(part && step.infection_risk && prob(100 - cleanliness))
 		part.adjust_germ_level(rand(10, 20))
 
+
+/// How sterile a site is when it is cut (0-100): the surface it is cut on, less what an unprepared surgeon (bare hands) and unscrubbed
+/// skin (the limb's germs) cost it. It is the sterility the open incision gathers germs by until it is closed, so a patient who
+/// was not prepped is the one who comes out of surgery with an infection.
+/mob/living/carbon/human/proc/surgical_site_sterility(mob/living/user, obj/item/organ/external/part, cleanliness)
+	. = isnull(cleanliness) ? 0 : cleanliness
+	if(ishuman(user))
+		var/mob/living/carbon/human/surgeon = user
+		if(!surgeon.get_equipped_item(SLOT_ID_GLOVES))
+			. -= SURGERY_NO_GLOVES_STERILITY
+	if(part)
+		. -= SURGERY_UNPREPPED_SKIN_STERILITY * clamp(part.germ_level / INFECTION_LEVEL_ONE, 0, 1)
+	return clamp(., 0, 100)
 
 /proc/spread_germs_to_organ(obj/item/organ/external/E, mob/living/carbon/human/user)
 	if(!istype(user) || !istype(E))

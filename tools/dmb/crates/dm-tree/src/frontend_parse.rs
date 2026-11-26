@@ -46,12 +46,6 @@ pub(super) fn parse_declarations_with_state(
     executor: &dm_exec::BuildExecutor,
     retained: Option<&super::declaration_state::RetainedDeclarations>,
 ) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
-    parse_declarations_with_demand(expanded,config,memo,executor,retained,&super::declaration_demand::Compatibility)
-}
-pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand>(expanded:&ExpandedRegions,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,retained:Option<&super::declaration_state::RetainedDeclarations>,demand:&D)->Result<ParsedDeclarations,D::Failure>{parse_declarations_with_demand_profile(expanded,config,memo,executor,retained,demand,false)}
-pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand::Demand>(expanded:&ExpandedRegions,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,retained:Option<&super::declaration_state::RetainedDeclarations>,demand:&D,checker_settings:bool)->Result<ParsedDeclarations,D::Failure>{
-    demand.run(|permit|permit.checkpoint())?;
-    let parser_version=if checker_settings{parserwire::VERSION|0x8000_0000}else{parserwire::VERSION};
     let source = expanded.text.as_ref();
     let parse_start = Instant::now();
     let profile_scan = dm_profile::stage("frontend.grammar_scan");
@@ -68,7 +62,7 @@ pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand
             |text, offset| fresh_chunks.push((offset, text.len())),
         );
         if report.skipped_declarations != 0 {
-            return Err(vec![internal("grammar chunker omitted a declaration")].into());
+            return Err(vec![internal("grammar chunker omitted a declaration")]);
         }
     }
     let chunks = retained_descriptors
@@ -82,7 +76,7 @@ pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand
         let keys: Vec<_> = chunks
             .iter()
             .map(|&(offset, len)| {
-                {let mut key=super::declaration_state::RetainedDeclarations::original_header_key(&source[offset..offset+len]);if checker_settings{key.extend_from_slice(b"\0checker-diagnostic-settings-v1");}key}
+                super::declaration_state::RetainedDeclarations::key(&source[offset..offset + len])
             })
             .collect();
         state.retain(&keys);
@@ -107,355 +101,308 @@ pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand
     let next = std::sync::atomic::AtomicUsize::new(0);
     let parse = || {
         executor.scope(|scope| {
-            let (sender, receiver) = std::sync::mpsc::sync_channel(worker_count * 2);
-            for _ in 0..worker_count {
-                let sender = sender.clone();
-                let chunks = &chunks;
-                let retained_keys = &retained_keys;
-                let next = &next;
-                let (
-                    region_hits,
-                    independent_hits,
-                    facts_hits,
-                    parsed_chunks,
-                    lookup_ns,
-                    facts_ns,
-                    shared_ns,
-                ) = (
-                    &region_hits,
-                    &independent_hits,
-                    &facts_hits,
-                    &parsed_chunks,
-                    &lookup_ns,
-                    &facts_ns,
-                    &shared_ns,
-                );
-                scope.spawn(move |_| {
-                    let _profile_worker = dm_profile::stage("frontend.declaration_parsing");
-                    loop {
-                        let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        let Some(&(offset, len)) = chunks.get(index) else {
-                            break;
-                        };
-                        let result=demand.run(|permit| {
-                        permit.checkpoint()?;
-                        let text = &source[offset..offset + len];
-                        let shared_started = Instant::now();
-                        let shared = match retained.zip(retained_keys.as_ref()) {
-                            Some((state,keys))=>permit.get(state,&keys[index],text,offset)?,
-                            None=>None,
-                        };
-                        shared_ns.fetch_add(
-                            shared_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
-                            std::sync::atomic::Ordering::Relaxed,
-                        );
-                        if let Some(current) = shared {
-                            facts_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                            permit.checkpoint()?;
-                            return Ok((index,offset,Vec::new(),None,Ok(current)));
-                        }
-                        let lookup_start = Instant::now();
-                        let profile_lookup =
-                            dm_profile::item("frontend.fragment_lookup_decode_parse");
-                        let receipt_index = expanded
-                            .receipts
-                            .partition_point(|receipt| receipt.output_span().end <= offset);
-                        let receipt = expanded.receipts.get(receipt_index).filter(|receipt| {
-                            receipt.output_span().start <= offset
-                                && offset + len <= receipt.output_span().end
-                        });
-                        let relative = receipt.map(|receipt| {
-                            dm_syntax::Span::new(
-                                offset - receipt.output_span().start,
-                                offset + len - receipt.output_span().start,
-                            )
-                        });
-                        // Retain only the contained region's immutable bytes.
-                        // A view into the joined project would pin unrelated
-                        // historical regions after a one-chunk source edit.
-                        let mut source_owner = receipt.zip(relative).and_then(|(receipt, span)| {
-                            receipt
-                                .record()
-                                .shared_output_text()
-                                .checked_view(span.range())
-                                .filter(|owner| owner.as_ref() == text)
-                        });
-                        let cached = receipt
-                            .zip(relative)
-                            .and_then(|(receipt, span)| {
-                                receipt.record().fragment(parser_version, span)
-                            })
-                            .and_then(|bytes| parserwire::decode_with_facts(bytes, text));
-                        if cached.is_some() {
-                            region_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        }
-                        let independent = if cached.is_none() {
-                            memo.and_then(|memo| {
-                                let key = dm_preprocess::regions::FragmentRecord::lookup_key(
-                                    parser_version,
-                                    text,
-                                );
-                                let mut accepted = None;
-                                memo.visit_fragment_candidates(key, &mut |record| {
-                                    if !record.matches(parser_version, text) {
-                                        return false;
-                                    }
-                                    accepted =
-                                        parserwire::decode_with_facts(record.payload(), text);
-                                    if accepted.is_some() {
-                                        // This already validated exact sidecar owns just
-                                        // this chunk, rather than a larger region arena.
-                                        source_owner =
-                                            Some(Arc::clone(record.shared_source()).into());
-                                    }
-                                    accepted.is_some()
-                                });
-                                accepted
-                            })
-                        } else {
-                            None
-                        };
-                        let independent_hit = independent.is_some();
-                        if independent_hit {
-                            independent_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        }
-                        let cached = cached.or(independent);
-                        let cached_fragment_hit = cached.is_some();
-                        let (mut parsed, errors, cached_facts, primary_tokens) = match cached {
-                            Some((items, errors, facts)) => (items, errors, facts, None),
-                            None => {
-                                parsed_chunks.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                                let ast = dm_syntax::parse_declaration_skeleton(text);
-                                // Without an issued contained-region receipt, preserve
-                                // the original one-pass cold compaction/rebase path.
-                                let items = compact_declarations(
-                                    ast.items,
-                                    if receipt.is_some() || independent_hit {
-                                        0
-                                    } else {
-                                        offset
-                                    },
-                                );
-                                (items, ast.diagnostics, None, Some(ast.tokens))
+        let (sender, receiver) = std::sync::mpsc::sync_channel(worker_count * 2);
+        for _ in 0..worker_count {
+                    let sender = sender.clone();
+                    let chunks = &chunks;
+                    let retained_keys = &retained_keys;
+                    let next = &next;
+                    let (
+                        region_hits,
+                        independent_hits,
+                        facts_hits,
+                        parsed_chunks,
+                        lookup_ns,
+                        facts_ns,
+                        shared_ns,
+                    ) = (
+                        &region_hits,
+                        &independent_hits,
+                        &facts_hits,
+                        &parsed_chunks,
+                        &lookup_ns,
+                        &facts_ns,
+                        &shared_ns,
+                    );
+                    scope.spawn(move |_| {
+                        let _profile_worker = dm_profile::stage("frontend.declaration_parsing");
+                        loop {
+                            let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            let Some(&(offset, len)) = chunks.get(index) else {
+                                break;
+                            };
+                            let text = &source[offset..offset + len];
+                            let shared_started = Instant::now();
+                            let shared = retained.zip(retained_keys.as_ref())
+                                .and_then(|(state, keys)| state.get_shared(&keys[index], text, offset));
+                            shared_ns.fetch_add(
+                                shared_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                                std::sync::atomic::Ordering::Relaxed,
+                            );
+                            if let Some(current) = shared {
+                                facts_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                if sender.send((index, offset, Vec::new(), None, Ok(current))).is_err() { break; }
+                                continue;
                             }
-                        };
-                        if receipt.is_some() || independent_hit {
-                            shift_items(&mut parsed, offset);
-                        }
-                        // Grammar-safe chunks are complete root-context units,
-                        // including any declaration continued across include regions.
-                        // Facts use a small local spelling table, never a cloned tree.
-                        let ast = AstFile {
-                            items: parsed,
-                            ..AstFile::default()
-                        };
-                        // Native current input owns ONE contained source + original
-                        // header token recipe. No extra read or normalized model.
-                        let source_owner = source_owner.unwrap_or_else(|| text.into());
-                        let original_headers=permit.headers(source_owner.clone(),&ast.items,offset,primary_tokens,checker_settings)?;
-                        let admitted_facts=if checker_settings{None}else{permit.cached_facts(cached_facts.as_deref(),text,offset)};
-                        let has_cached_facts = admitted_facts.is_some();
-                        drop(profile_lookup);
-                        lookup_ns.fetch_add(
-                            lookup_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
-                            std::sync::atomic::Ordering::Relaxed,
-                        );
-                        if has_cached_facts {
-                            facts_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        }
-                        let facts_start = Instant::now();
-                        let profile_facts = dm_profile::item("frontend.fresh_declaration_facts");
-                        let mut facts = if let Err(message) = &original_headers {
-                            Err(vec![crate::AdapterError {
-                                            original_fatal: None,
-                                kind: dm_syntax::DiagnosticKind::Unsupported,
-                                span: dm_ir::Span {
-                                    file: FileId(0),
-                                    start: offset as u32,
-                                    end: offset as u32,
-                                },
-                                message: message.clone(),
-                            }])
-                        } else if let Some(facts) = admitted_facts {
-                            Ok(facts)
-                        } else if errors.is_empty() {
-                            permit.adapt(&ast,source,original_headers.as_ref().expect("validated original headers"),offset)?
-                            .and_then(
-                                |(mut adapted, header_receipt)| {
-                                    crate::allocation_ledger::capture_with_header_receipt(
-                                        &ast.items,
-                                        "/",
-                                        &mut adapted.symbols,
-                                        &header_receipt,
-                                    )
-                                    .map(|ledger| (adapted, ledger))
-                                    .map_err(|error| {
-                                        vec![crate::AdapterError {
-                                            original_fatal: None,
-                                            kind: dm_syntax::DiagnosticKind::Unsupported,
-                                            span: dm_ir::Span {
-                                                file: FileId(0),
-                                                start: error.span.start as u32,
-                                                end: error.span.end as u32,
-                                            },
-                                            message: error.message,
-                                        }]
-                                    })
-                                },
-                            )
-                        } else {
-                            Err(Vec::new())
-                        };
-                        let parsed = ast.items;
-                        drop(profile_facts);
-                        facts_ns.fetch_add(
-                            facts_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
-                            std::sync::atomic::Ordering::Relaxed,
-                        );
-                        let produced_payload =
-                            if memo.is_some() && (!cached_fragment_hit || !has_cached_facts) {
-                                let payload = facts
-                                    .as_ref()
-                                    .map_or(Ok(None), |(facts, ledger)| {
-                                        if checker_settings{Ok(None)}else{chunkfacts::encode(facts, ledger, offset).map(Some)}
-                                    })
-                                    .and_then(|facts_bytes| {
-                                        parserwire::encode_with_facts(
-                                            &parsed,
-                                            &errors,
-                                            offset,
-                                            facts_bytes,
-                                        )
+                            let lookup_start = Instant::now();
+                            let profile_lookup =
+                                dm_profile::item("frontend.fragment_lookup_decode_parse");
+                            let receipt_index = expanded
+                                .receipts
+                                .partition_point(|receipt| receipt.output_span().end <= offset);
+                            let receipt = expanded.receipts.get(receipt_index).filter(|receipt| {
+                                receipt.output_span().start <= offset
+                                    && offset + len <= receipt.output_span().end
+                            });
+                            let relative = receipt.map(|receipt| {
+                                dm_syntax::Span::new(
+                                    offset - receipt.output_span().start,
+                                    offset + len - receipt.output_span().start,
+                                )
+                            });
+                            // Retain only the contained region's immutable bytes.
+                            // A view into the joined project would pin unrelated
+                            // historical regions after a one-chunk source edit.
+                            let mut source_owner = receipt.zip(relative).and_then(|(receipt, span)| {
+                                receipt.record().shared_output_text().checked_view(span.range())
+                                    .filter(|owner| owner.as_ref() == text)
+                            });
+                            let cached = receipt
+                                .zip(relative)
+                                .and_then(|(receipt, span)| {
+                                    receipt.record().fragment(parserwire::VERSION, span)
+                                })
+                                .and_then(|bytes| parserwire::decode_with_facts(bytes, text));
+                            if cached.is_some() {
+                                region_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            }
+                            let independent = if cached.is_none() {
+                                memo.and_then(|memo| {
+                                    let key = dm_preprocess::regions::FragmentRecord::lookup_key(
+                                        parserwire::VERSION,
+                                        text,
+                                    );
+                                    let mut accepted = None;
+                                    memo.visit_fragment_candidates(key, &mut |record| {
+                                        if !record.matches(parserwire::VERSION, text) { return false; }
+                                        accepted = parserwire::decode_with_facts(record.payload(), text);
+                                        if accepted.is_some() {
+                                            // This already validated exact sidecar owns just
+                                            // this chunk, rather than a larger region arena.
+                                            source_owner = Some(Arc::clone(record.shared_source()).into());
+                                        }
+                                        accepted.is_some()
                                     });
-                                match payload {
-                                    Ok(bytes) => Some(Arc::<[u8]>::from(bytes)),
-                                    Err(message) => {
-                                        facts = Err(vec![crate::AdapterError {
-                                            original_fatal: None,
-                                            kind: dm_syntax::DiagnosticKind::Unsupported,
-                                            span: dm_ir::Span {
-                                                file: FileId(0),
-                                                start: offset as u32,
-                                                end: offset as u32,
-                                            },
-                                            message: format!(
-                                                "cache population encoding failed: {message}"
-                                            ),
-                                        }]);
-                                        None
-                                    }
-                                }
+                                    accepted
+                                })
                             } else {
                                 None
                             };
-                        let fragment = if has_cached_facts {
-                            None
-                        } else {
-                            receipt.zip(relative).and_then(|(_, span)| {
-                                produced_payload
-                                    .as_ref()
-                                    .map(|bytes| (receipt_index, span, Arc::clone(bytes)))
-                            })
-                        };
-                        let current = match facts {Err(errors)=>Err(errors),Ok((facts,ledger))=>{
-                            let headers = Some(Arc::clone(
-                                original_headers
-                                    .as_ref()
-                                    .expect("valid facts require original header input"),
-                            ));
-                            let current = if let (Some(state), Some(keys)) =
-                                (retained, retained_keys.as_ref())
-                            {
-                                permit.capture(state,&keys[index],source_owner.clone(),offset,parsed,facts,ledger,Arc::clone(headers.as_ref().expect("fresh original headers")))?
-                            } else {
-                                super::declaration_state::CurrentContribution::fresh_source_headers(
-                                    source_owner.clone(),
-                                    offset,
-                                    parsed,
-                                    facts,
-                                    ledger,
-                                    headers,
-                                )
+                            let independent_hit = independent.is_some();
+                            if independent_hit {
+                                independent_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            }
+                            let cached = cached.or(independent);
+                            let cached_fragment_hit = cached.is_some();
+                            let (mut parsed, errors, cached_facts) = match cached {
+                                Some((items, errors, facts)) => (items, errors, facts),
+                                None => {
+                                    parsed_chunks
+                                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                    let ast = dm_syntax::parse_declaration_skeleton(text);
+                                    // Without an issued contained-region receipt, preserve
+                                    // the original one-pass cold compaction/rebase path.
+                                    let items = compact_declarations(
+                                        ast.items,
+                                        if receipt.is_some() || independent_hit {
+                                            0
+                                        } else {
+                                            offset
+                                        },
+                                    );
+                                    (items, ast.diagnostics, None)
+                                }
                             };
-                            current.ok_or_else(|| {
-                                vec![crate::AdapterError {
-                                            original_fatal: None,
-                                    kind: dm_syntax::DiagnosticKind::Unsupported,
-                                    span: dm_ir::Span {
-                                        file: FileId(0),
-                                        start: offset as u32,
-                                        end: offset as u32,
-                                    },
-                                    message: "relative declaration binding failed".into(),
-                                }]
-                            })
-                        }};
-                        if !cached_fragment_hit {
-                            if let Some(memo) = memo {
-                                if let Some(bytes) = &produced_payload {
-                                    if let Some(record) =
-                                        dm_preprocess::regions::FragmentRecord::new_shared_source(
-                                            parser_version,
-                                            current.as_ref().map_or_else(
-                                                |_| Arc::from(text),
-                                                |bound| bound.shared_source(),
-                                            ),
-                                            Arc::clone(bytes),
+                            if receipt.is_some() || independent_hit {
+                                shift_items(&mut parsed, offset);
+                            }
+                            // Grammar-safe chunks are complete root-context units,
+                            // including any declaration continued across include regions.
+                            // Facts use a small local spelling table, never a cloned tree.
+                            let ast = AstFile {
+                                items: parsed,
+                                ..AstFile::default()
+                            };
+                            let admitted_facts = cached_facts
+                                .as_deref()
+                                .and_then(|bytes| chunkfacts::decode(bytes, text, offset));
+                            let has_cached_facts = admitted_facts.is_some();
+                            drop(profile_lookup);
+                            lookup_ns.fetch_add(
+                                lookup_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                                std::sync::atomic::Ordering::Relaxed,
+                            );
+                            if has_cached_facts {
+                                facts_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            }
+                            let facts_start = Instant::now();
+                            let profile_facts =
+                                dm_profile::item("frontend.fresh_declaration_facts");
+                            let mut facts = if let Some(facts) = admitted_facts {
+                                Ok(facts)
+                            } else if errors.is_empty() {
+                                crate::adapter::from_ast_with_source(&ast, SymbolTable::default(), FileId(0), 0, 0, source)
+                                    .and_then(|mut adapted| {
+                                        crate::allocation_ledger::capture(
+                                            &ast.items,
+                                            "/",
+                                            &mut adapted.symbols,
                                         )
-                                    {
-                                        memo.insert_fragment(Arc::new(record));
+                                        .map(|ledger| (adapted, ledger))
+                                        .map_err(|error| {
+                                            vec![crate::AdapterError {
+                                                kind: dm_syntax::DiagnosticKind::Unsupported,
+                                                span: dm_ir::Span {
+                                                    file: FileId(0),
+                                                    start: error.span.start as u32,
+                                                    end: error.span.end as u32,
+                                                },
+                                                message: error.message,
+                                            }]
+                                        })
+                                    })
+                            } else {
+                                Err(Vec::new())
+                            };
+                            let parsed = ast.items;
+                            drop(profile_facts);
+                            facts_ns.fetch_add(
+                                facts_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                                std::sync::atomic::Ordering::Relaxed,
+                            );
+                            let produced_payload =
+                                if memo.is_some() && (!cached_fragment_hit || !has_cached_facts) {
+                                    let payload = facts
+                                        .as_ref()
+                                        .map_or(Ok(None), |(facts, ledger)| {
+                                            chunkfacts::encode(facts, ledger, offset).map(Some)
+                                        })
+                                        .and_then(|facts_bytes| {
+                                            parserwire::encode_with_facts(
+                                                &parsed,
+                                                &errors,
+                                                offset,
+                                                facts_bytes,
+                                            )
+                                        });
+                                    match payload {
+                                        Ok(bytes) => Some(Arc::<[u8]>::from(bytes)),
+                                        Err(message) => {
+                                            facts = Err(vec![crate::AdapterError {
+                                                kind: dm_syntax::DiagnosticKind::Unsupported,
+                                                span: dm_ir::Span {
+                                                    file: FileId(0),
+                                                    start: offset as u32,
+                                                    end: offset as u32,
+                                                },
+                                                message: format!(
+                                                    "cache population encoding failed: {message}"
+                                                ),
+                                            }]);
+                                            None
+                                        }
+                                    }
+                                } else {
+                                    None
+                                };
+                            let fragment = if has_cached_facts {
+                                None
+                            } else {
+                                receipt.zip(relative).and_then(|(_, span)| {
+                                    produced_payload.as_ref().map(|bytes| (receipt_index, span, Arc::clone(bytes)))
+                                })
+                            };
+                            let current = facts.and_then(|(facts,ledger)| {
+                                let current = if let (Some(state),Some(keys))=(retained,retained_keys.as_ref()) {
+                                    if let Some(owner) = source_owner {
+                                        state.capture_source(&keys[index],owner,offset,parsed,facts,ledger)
+                                    } else {
+                                        state.capture(&keys[index],text,offset,parsed,facts,ledger)
+                                    }
+                                } else {
+                                    if let Some(owner) = source_owner {
+                                        super::declaration_state::CurrentContribution::fresh_source(owner,offset,parsed,facts,ledger)
+                                    } else {
+                                        super::declaration_state::CurrentContribution::fresh(text,offset,parsed,facts,ledger)
+                                    }
+                                };
+                                current.ok_or_else(||vec![crate::AdapterError{kind:dm_syntax::DiagnosticKind::Unsupported,span:dm_ir::Span{file:FileId(0),start:offset as u32,end:offset as u32},message:"relative declaration binding failed".into()}])
+                            });
+                            if !cached_fragment_hit {
+                                if let Some(memo) = memo {
+                                    if let Some(bytes) = &produced_payload {
+                                        if let Some(record) =
+                                            dm_preprocess::regions::FragmentRecord::new_shared_source(
+                                                parserwire::VERSION,
+                                                current.as_ref().map_or_else(|_| Arc::from(text), |bound| bound.shared_source()),
+                                                Arc::clone(bytes),
+                                            )
+                                        {
+                                            memo.insert_fragment(Arc::new(record));
+                                        }
                                     }
                                 }
                             }
+                            if sender
+                                .send((index, offset, errors, fragment, current))
+                                .is_err()
+                            {
+                                break;
+                            }
                         }
-                        permit.checkpoint()?;
-                        Ok((index,offset,errors,fragment,current))
-                        });
-                        if sender.send((index,result)).is_err(){break;}
-                    }
-                });
-            }
-            drop(sender);
-            let mut ordered = Vec::with_capacity(chunks.len());
-            // The receiver is the only consumer of the workers' bounded channel: a progress line per
-            // few results (1,268 lines over a pipe, about 0.5 s per request) stalls every worker behind
-            // it. Progress is time-driven instead, and the last result always reports.
-            let mut last_progress = parse_start;
-            for result in receiver {
-                ordered.push(result);
-                if ordered.len() == chunks.len() || last_progress.elapsed() >= PROGRESS_INTERVAL {
-                    last_progress = Instant::now();
-                    observe(
-                        config,
-                        FrontendStage::DeclarationParsing,
-                        ProgressKind::Advanced,
-                        parse_start.elapsed(),
-                        ordered.len(),
-                        chunks.len(),
-                    );
+                    });
                 }
+        drop(sender);
+        let mut ordered = Vec::with_capacity(chunks.len());
+        // The receiver is the only consumer of the workers' bounded channel: a progress line per
+        // few results (1,268 lines over a pipe, about 0.5 s per request) stalls every worker behind
+        // it. Progress is time-driven instead, and the last result always reports.
+        let mut last_progress = parse_start;
+        for result in receiver {
+            ordered.push(result);
+            if ordered.len() == chunks.len()
+                || last_progress.elapsed() >= PROGRESS_INTERVAL
+            {
+                last_progress = Instant::now();
+                observe(
+                    config,
+                    FrontendStage::DeclarationParsing,
+                    ProgressKind::Advanced,
+                    parse_start.elapsed(),
+                    ordered.len(),
+                    chunks.len(),
+                );
             }
-            ordered
-        })
+        }
+        ordered
+    })
     };
     let mut ordered = std::panic::catch_unwind(std::panic::AssertUnwindSafe(parse))
         .map_err(|_| vec![internal("declaration parsing worker panicked")])?;
-    ordered.sort_by_key(|(index,_)|*index);
-    // Every worker is already joined/drained. Do not let source diagnostics in
-    // one chunk discard another completed chunk's actual operational failure.
-    let mut ready=Vec::with_capacity(ordered.len());
-    let mut first_failure=None;
-    for (_,result) in ordered {match result{Ok(chunk)=>ready.push(chunk),Err(actual)=>demand.merge_failure(&mut first_failure,actual)}}
-    if let Some(actual)=first_failure{return Err(actual)}
-    let mut ordered=ready;
+    ordered.sort_by_key(|(index, _, _, _, _)| *index);
     drop(workers_timer);
     let workers_elapsed = workers_started.elapsed();
     let adopt_started = Instant::now();
     let adopt_timer = dm_profile::detail_timer("decl.adopt_authored");
     if let Some(state) = retained {
         if ordered.iter().all(|(_, _, _, _, current)| current.is_ok()) {
-            demand.run(|permit|permit.adopt(state,&mut ordered))?
-                .ok_or_else(||vec![internal("exact authored declaration adoption failed")])?;
+            state
+                .adopt_authored(
+                    ordered
+                        .iter_mut()
+                        .filter_map(|(_, _, _, _, current)| current.as_mut().ok()),
+                )
+                .ok_or_else(|| vec![internal("exact authored declaration adoption failed")])?;
         }
     }
     drop(adopt_timer);
@@ -502,7 +449,7 @@ pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand
             let record = updated
                 .entry(index)
                 .or_insert_with(|| expanded.receipts[index].record().as_ref().clone());
-            record.append_fragment(parser_version, span, bytes);
+            record.append_fragment(parserwire::VERSION, span, bytes);
         }
         diagnostics.extend(errors.into_iter().map(|error| (offset, error)));
     }
@@ -521,7 +468,6 @@ pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand
     }
     let catalog_elapsed = catalog_started.elapsed();
     let publish_started = Instant::now();
-    demand.run(|permit|permit.checkpoint())?;
     if let Some(memo) = memo {
         for record in updated.into_values() {
             memo.insert(Arc::new(record));

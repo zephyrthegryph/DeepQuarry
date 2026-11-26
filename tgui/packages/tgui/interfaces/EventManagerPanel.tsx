@@ -5,70 +5,19 @@
 // picks which one based on whether `selected_severity` is set.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
-import { Box, Button, Section, Stack, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import { Button, Section, Stack, Table } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
+import type {
+  EventManagerPanelActions,
+  EventManagerPanelData,
+} from './generated/EventManagerPanel';
 
-type SeverityRow = {
-  ref: string;
-  severity: string;
-  starts_at: string;
-  starts_in_minutes: number;
-  delayed: BooleanLike;
-  delay_modifier: number;
-};
-
-type NextEventRow = {
-  ref: string;
-  severity: string;
-  queued_name: string | null;
-};
-
-type RunningEvent = {
-  ref: string;
-  severity: string;
-  name: string;
-  ends_at: string;
-  ends_in_minutes: number;
-};
-
-type AvailableEvent = {
-  ref: string;
-  name: string;
-  weight: number;
-  min_weight: number;
-  max_weight: number;
-  one_shot: BooleanLike;
-  enabled: BooleanLike;
-  current_weight: number;
-};
-
-type NewEvent = {
-  ref: string;
-  name: string | null;
-  type: string | null;
-  weight: number;
-  one_shot: BooleanLike;
-};
-
-type Data = {
-  events_paused: BooleanLike;
-  report_at_round_end: BooleanLike;
-  selected_severity: string | null;
-  // Overview-mode fields
-  severities?: SeverityRow[];
-  next_events?: NextEventRow[];
-  running_events?: RunningEvent[];
-  // Detail-mode fields
-  selected_time_left_minutes?: number;
-  selected_container_ref?: string;
-  available_events?: AvailableEvent[];
-  new_event?: NewEvent;
-};
+type Data = EventManagerPanelData;
 
 export const EventManagerPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, EventManagerPanelActions>();
   if (data.selected_severity) {
     return <DetailView data={data} act={act} />;
   }
@@ -114,10 +63,10 @@ const OverviewView = (props: {
           title="Event Manager"
           buttons={<HeaderButtons data={data} act={act} />}
         >
-          <Box color="label" mb={1}>
+          <Label mb={1}>
             Configure when events fire, queue the next event per severity, or
             stop a running event.
-          </Box>
+          </Label>
         </Section>
 
         <Section title="Event Start">
@@ -270,7 +219,7 @@ const DetailView = (props: {
   const { data, act } = props;
   const events = data.available_events ?? [];
   const new_event = data.new_event;
-  const container_ref = data.selected_container_ref ?? '';
+  const container_ref = data.selected_container_ref;
   return (
     <Window
       width={820}
@@ -289,10 +238,10 @@ const DetailView = (props: {
             </>
           }
         >
-          <Box color="label" mb={1}>
+          <Label mb={1}>
             Time till next event in this severity:{' '}
             {data.selected_time_left_minutes} min
-          </Box>
+          </Label>
           {events.length === 0 ? (
             <EmptyState>No events configured at this severity.</EmptyState>
           ) : (

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native delivery deferral is logged as one summary line per 30 seconds, written after the frame is timed instead of inside delivery"

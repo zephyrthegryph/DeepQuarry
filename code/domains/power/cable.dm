@@ -230,8 +230,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	if(engineered_material_id)
 		var/datum/material/material = engineered_material()
 		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service_of(src)?.temperature() || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
-		if(material?.critical_temperature)
-			. += span_notice("Superconducting envelope: below [round(material.critical_temperature, 0.1)] K and [round(material.critical_current_density)] relative current density.")
+		if(material?.critical_temperature())
+			. += span_notice("Superconducting envelope: below [round(material.critical_temperature(), 0.1)] K and [round(material.critical_current_density())] relative current density.")
 
 // Rotating cables requires d1 and d2 to be rotated
 /obj/structure/cable/set_dir(new_dir)
@@ -447,7 +447,7 @@ CAPABILITIES(/obj/structure/cable)
 
 /obj/item/stack/cable_coil
 	material_template = /datum/material_template/cable
-	material_total = SHEET_MATERIAL_AMOUNT
+	material_total = 70
 	name = "cable coil"
 	icon = 'icons/obj/power.dmi'
 	icon_state = "coil"

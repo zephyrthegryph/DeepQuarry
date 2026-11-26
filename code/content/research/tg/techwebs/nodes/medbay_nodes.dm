@@ -5,6 +5,9 @@
 	description = "Essential medical tools to patch you up while medbay is still intact."
 	design_ids = list(
 		"operating",
+		"optable",
+		"scale",
+		"bunsen_burner",
 		"scan_console",
 		"medicalbed",
 		// "defibmountdefault",
@@ -54,6 +57,9 @@
 	prereq_ids = list(TECHWEB_NODE_MEDBAY_EQUIP)
 	design_ids = list(
 		"chemmaster",
+		"chem_hot_plate",
+		"chem_ice_machine",
+		"chem_condenser",
 		"reagent_scanner",
 		"mass_spectrometer",
 		"improved_analyzer",
@@ -83,7 +89,6 @@
 	prereq_ids = list(TECHWEB_NODE_CHEM_SYNTHESIS)
 	design_ids = list(
 		"chem_analyzer",
-		"smart_centrifuge",
 	)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_2_POINTS)
 	announce_channels = list(CHANNEL_ENGINEERING,CHANNEL_MEDICAL)

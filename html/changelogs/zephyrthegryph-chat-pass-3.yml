@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The chat's Scroll to bottom button sits inside the message area and no longer covers the input row or the Send button"
+  - bugfix: "The docked chat is sized to its part of the column when it loads and whenever it moves, so it no longer runs past the bottom of the screen"
+  - bugfix: "The chat pane's place is read from the skin on each new connection, so it stays pinned across relogs and round restarts"
+  - qol: "The docked chat's edge is resized with the page's live handle (BYOND's own split bar, which only applied on release, is hidden)"
+  - qol: "A pinned chat stays at the newest message while the window is resized"
+  - qol: "Chat window restyled in the console look: compact tabs, 12px messages, whole Send button, console dividers"

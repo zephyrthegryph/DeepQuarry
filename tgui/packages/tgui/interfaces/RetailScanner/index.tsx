@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Stack, Tabs } from 'tgui-core/components';
+import type { RetailScannerActions } from '../generated/RetailScanner';
 import { CurrentTransaction } from './CurrentTransaction';
 import { RetailScannerSettings } from './RetailScannerSettings';
 import { TransactionLog } from './TransactionLog';
 import type { Data } from './types';
 
 export const RetailScanner = (model) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, RetailScannerActions>();
   const { machine_id } = data;
 
   const [selected, setSelectedTab] = useState(0);

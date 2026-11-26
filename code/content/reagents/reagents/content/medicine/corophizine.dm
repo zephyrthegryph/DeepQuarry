@@ -1,9 +1,12 @@
 /datum/reagent/corophizine
 	treatment_tags = list(TREAT_ANTIMICROBIAL = 1.3)
-	factors = alist(STAT_ANTIMICROBIAL = ANTIBIO_SUPER)
+	// Strong enough for sepsis and septic shock; it also thins the clotting (wounds bleed 30% faster) and strains the kidneys.
+	factors = alist(STAT_ANTIMICROBIAL = ANTIBIO_SUPER, STAT_BLEEDING = 1.3)
+	strains = alist(O_KIDNEYS = DRUG_STRAIN_MODERATE)
+	hides = list(HIDE_FEVER)
 	name = REAGENT_COROPHIZINE
 	id = REAGENT_ID_COROPHIZINE
-	description = "A wide-spectrum antibiotic drug. Powerful and uncomfortable in equal doses."
+	description = "A wide-spectrum antibiotic for sepsis and septic shock. Powerful and uncomfortable in equal doses: it interferes with clotting so wounds bleed more, strains the kidneys, upsets the gut, and hides a fever from instruments."
 	taste_description = "burnt toast"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
@@ -41,7 +44,7 @@
 				if(prob(25))
 					to_chat(M, span_danger("Your pneumatic fluids seize for a moment."))
 				M.status_at_least(STAT_STUNNED, 2)
-				after(M, 3 SECONDS, TYPE_PROC_REF(/datum, status_at_least), with = list(STAT_WEAKENED, 2))
+				after(M, 3 SECONDS, TYPE_PROC_REF(/mob, status_at_least), with = list(STAT_WEAKENED, 2))
 		if(dose >= 10 || toxic_load >= 25) //Internal skeletal tubes are rupturing, allowing the chemical to breach them.
 			M.injure(INJURY_TOXIN, removed * 4, source = src)
 			M.status_adjust(STAT_JITTERY, 5)
@@ -50,7 +53,7 @@
 			M.adjust_nutrition(-20)
 		if(M.injury_load(INJURY_CATEGORY_PHYSICAL) >= 60 && toxic_load >= 60 && M.injury_load(INJURY_CATEGORY_NEURAL) >= 30) //Total Structural Failure. Limbs start splattering.
 			var/obj/item/organ/external/O = pick(H.organs)
-			if(prob(20) && !istype(O, /obj/item/organ/external/chest/unbreakable/slime) && !istype(O, /obj/item/organ/external/groin/unbreakable/slime))
+			if(prob(20) && O.variant != LIMB_VARIANT_SLIME_CHEST && O.variant != LIMB_VARIANT_SLIME_GROIN)
 				to_chat(M, span_critical("You feel your [O] begin to dissolve, before it sloughs from your body."))
 				O.droplimb(TRUE, DROPLIMB_ACID)
 		return

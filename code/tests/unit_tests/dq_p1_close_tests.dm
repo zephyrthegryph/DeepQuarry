@@ -208,19 +208,19 @@
 	var/obj/item/e2_bench_key7/key7 = allocate(/obj/item/e2_bench_key7)
 	var/obj/item/e2_bench_key9/key9 = allocate(/obj/item/e2_bench_key9)
 	var/datum/type_table/T = table_of(S)
-	var/before = length(T.op_row_cache)
+	var/before = length(op_index_of_table(T).op_row_cache)
 	var/datum/op_resolution/R7 = op_resolve(M, S, key7, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null)
 	var/datum/op_cand/winner = op_resolution_winner(R7)
-	var/after_first = length(T.op_row_cache)
+	var/after_first = length(op_index_of_table(T).op_row_cache)
 	// the stack's own thirty-one ops: the base types of the stack and the actor bring candidates of their own that this index does not prune
 	var/candidates_with_key7 = 0
 	for(var/datum/op_cand/stack_cand as anything in R7.all)
 		if(stack_cand.holder == S && (stack_cand.oplan.key == "hand_use" || copytext(stack_cand.oplan.key, 1, 4) == "key"))
 			candidates_with_key7++
 	op_resolve(M, S, key7, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null)
-	var/after_same_shape = length(T.op_row_cache)
+	var/after_same_shape = length(op_index_of_table(T).op_row_cache)
 	var/datum/op_resolution/R9 = op_resolve(M, S, key9, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null)
-	var/after_other_type = length(T.op_row_cache)
+	var/after_other_type = length(op_index_of_table(T).op_row_cache)
 	var/datum/op_cand/winner9 = op_resolution_winner(R9)
 	TEST_ASSERT_EQUAL(winner?.oplan?.key, "key7", "a key7 click resolves to its own op")
 	TEST_ASSERT_EQUAL(winner9?.oplan?.key, "key9", "a key9 click resolves to its own")

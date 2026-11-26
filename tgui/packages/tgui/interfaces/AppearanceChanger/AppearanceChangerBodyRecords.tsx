@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Section } from 'tgui-core/components';
-
+import type { AppearanceChangerActions } from '../generated/AppearanceChanger';
 import type { Data } from './types';
 
 export const AppearanceChangerBodyRecords = () => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AppearanceChangerActions>();
   const { character_records, stock_records } = data;
   return (
     <Section title="Bodyrecord Database">

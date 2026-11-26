@@ -39,6 +39,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	ref_one(nameof(target), /mob/living/silicon/robot)
 	ref_one(nameof(multibelt_holder), /obj/item/robotic_multibelt)
 	interface("ModifyRobot", title = "Modify Robot", rights = R_ADMIN|R_EVENT|R_DEBUG)
+	ui_shape(ion_law = schema_text(), zeroth_law = schema_text(), inherent_law = schema_text(), supplied_law = schema_text(), supplied_law_position = int(), theme = nullable(schema_text()), target = nullable(row(name = schema_text(), ckey = nullable(schema_text()), module = nullable(schema_text()), emagged = bool(), crisis_override = bool(), active_restrictions = nullable(list_of(schema_text())), possible_restrictions = list_of(schema_text()), active = bool(), sprite = nullable(schema_text()), sprite_size = nullable(schema_text()), modules = list_of(row(name = schema_text(), ref = num(), icon = schema_text(), desc = schema_text())), whitelisted_upgrades = list_of(row(name = schema_text(), path = schema_text())), blacklisted_upgrades = list_of(row(name = schema_text(), path = schema_text())), utility_upgrades = list_of(row(name = schema_text(), path = schema_text())), basic_upgrades = list_of(row(name = schema_text(), path = schema_text(), installed = int())), advanced_upgrades = list_of(row(name = schema_text(), path = schema_text(), installed = int())), restricted_upgrades = list_of(row(name = schema_text(), path = schema_text(), installed = int())), radio_channels = list_of(schema_text()), available_channels = list_of(schema_text()), pka = nullable(row(name = schema_text(), modkits = list_of(row(name = schema_text(), path = schema_path(), costs = num(), denied = bool(), denied_by = schema_text())), installed_modkits = list_of(row(name = schema_text(), ref = num(), costs = num())), capacity = num(), max_capacity = num())), multibelt = list_of(row(name = schema_text(), ref = num(), integrated_tools = list_of(row(name = schema_text(), ref = num())), tools = list_of(row(name = schema_text(), path = schema_path())))), components = list_of(row(name = schema_text(), ref = num(), brute_damage = num(), electronics_damage = num(), max_damage = num(), idle_usage = num(), active_usage = num(), installed = int(), exists = bool())), active_access = list_of(row(id = num(), name = schema_text())))), model_options = nullable(list_of(schema_text())), source = nullable(row(model = schema_text(), sprite = schema_text(), sprite_size = nullable(schema_text()), modules = list_of(row(name = schema_text(), ref = num(), icon = schema_text(), desc = schema_text())))), cell = nullable(row(name = nullable(schema_text()), charge = nullable(num()), maxcharge = nullable(num()))), cell_options = nullable(map_of(schema_text(), row(path = schema_text(), charge = num(), max_charge = num(), charge_amount = num(), self_charge = bool(), max_damage = num()))), camera_options = nullable(map_of(schema_text(), row(path = schema_text(), max_damage = num(), idle_usage = num(), active_usage = num()))), radio_options = nullable(map_of(schema_text(), row(path = schema_text(), max_damage = num(), idle_usage = num(), active_usage = num()))), actuator_options = nullable(map_of(schema_text(), row(path = schema_text(), max_damage = num(), idle_usage = num(), active_usage = num()))), diagnosis_options = nullable(map_of(schema_text(), row(path = schema_text(), max_damage = num(), idle_usage = num(), active_usage = num()))), comms_options = nullable(map_of(schema_text(), row(path = schema_text(), max_damage = num(), idle_usage = num(), active_usage = num()))), armour_options = nullable(map_of(schema_text(), row(path = schema_text(), max_damage = num(), idle_usage = num(), active_usage = num()))), current_gear = nullable(map_of(schema_text(), schema_text())), id_icon = nullable(schema_text()), access_options = nullable(list_of(row(id = num(), name = schema_text()))), all_robots = list_of(row(displayText = schema_text(), value = num())), ion_law_nr = schema_text(), zeroth_laws = list_of(row(law = schema_text(), index = int(), state = int(), ref = num())), has_zeroth_laws = int(), ion_laws = list_of(row(law = schema_text(), index = int(), state = int(), ref = num())), has_ion_laws = int(), inherent_laws = list_of(row(law = schema_text(), index = int(), state = int(), ref = num())), has_inherent_laws = int(), supplied_laws = list_of(row(law = schema_text(), index = int(), state = int(), ref = num())), has_supplied_laws = int(), isAI = bool(), isMalf = bool(), isSlaved = nullable(schema_text()), active_ais = list_of(row(displayText = schema_text(), value = num())), selected_ai = nullable(schema_text()), channel = schema_text(), channels = list_of(row(channel = schema_text())), law_sets = list_of(row(name = schema_text(), header = schema_text(), ref = num(), laws = row(zeroth_laws = list_of(row(law = schema_text(), index = int(), state = int(), ref = num())), has_zeroth_laws = int(), ion_laws = list_of(row(law = schema_text(), index = int(), state = int(), ref = num())), has_ion_laws = int(), inherent_laws = list_of(row(law = schema_text(), index = int(), state = int(), ref = num())), has_inherent_laws = int(), supplied_laws = list_of(row(law = schema_text(), index = int(), state = int(), ref = num())), has_supplied_laws = int())))) // the module-only keys are null with no module on the target
 
 	section(modules, "The Modify Robot panel's name, target, module, upgrades, modkits and tools")
 	op("rename", ui_act("rename", arg("new_name", schema_text(4096))), then(PROC_REF(ui_act_rename)))
@@ -138,7 +139,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 		.["target"] = list()
 		.["target"]["name"] = target().name
 		.["target"]["ckey"] = target().ckey
-		.["target"]["module"] = target().module
+		.["target"]["module"] = target().module ? target().modtype : null
 		.["target"]["emagged"] = target().emagged
 		.["target"]["crisis_override"] = target().crisis_override
 		.["target"]["active_restrictions"] = target().restrict_modules_to
@@ -161,20 +162,21 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 			.["target"] += get_upgrades()
 			var/obj/item/robot_module/target_module = target().module
 			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target_module.modules, /obj/item/gun/energy/kinetic_accelerator)
-			if(kin)
-				.["target"]["pka"] += get_pka(kin)
+			.["target"]["pka"] = kin ? get_pka(kin) : null
+			var/list/multibelts = list()
 			for(var/obj/item/robotic_multibelt/multibelt in target_module.modules)
-				.["target"]["multibelt"] += list(get_mult_belt(multibelt))
+				multibelts += list(get_mult_belt(multibelt))
+			.["target"]["multibelt"] = multibelts
 
 			// Radio section
 			var/list/radio_channels = list()
 			for(var/channel in target().radio.channels)
 				radio_channels += channel
-			var/list/availalbe_channels = list()
+			var/list/available_channels = list()
 			for(var/channel in (GLOB.radiochannels - target().radio.channels))
-				availalbe_channels += channel
+				available_channels += channel
 			.["target"]["radio_channels"] = radio_channels
-			.["target"]["availalbe_channels"] = availalbe_channels
+			.["target"]["available_channels"] = available_channels
 			// Components
 			.["target"]["components"] = get_components()
 			.["cell"] = list("name" = target().cell?.name, "charge" = target().cell?.charge, "maxcharge" = target().cell?.maxcharge)
@@ -200,7 +202,24 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 			.["access_options"] = access_options
 			// Section for source data for the module we might want to salvage
 			if(source)
-				.["source"] += get_module_source(user, spritesheet)
+				.["source"] = get_module_source(user, spritesheet)
+		else
+			.["target"]["active"] = FALSE
+			.["target"]["sprite"] = null
+			.["target"]["sprite_size"] = null
+			.["target"]["modules"] = list()
+			.["target"]["whitelisted_upgrades"] = list()
+			.["target"]["blacklisted_upgrades"] = list()
+			.["target"]["utility_upgrades"] = list()
+			.["target"]["basic_upgrades"] = list()
+			.["target"]["advanced_upgrades"] = list()
+			.["target"]["restricted_upgrades"] = list()
+			.["target"]["radio_channels"] = list()
+			.["target"]["available_channels"] = list()
+			.["target"]["pka"] = null
+			.["target"]["multibelt"] = list()
+			.["target"]["components"] = list()
+			.["target"]["active_access"] = list()
 	var/list/all_robots = list()
 	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_SILICONS))
 		if(!R.loc)
@@ -235,7 +254,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/ui_act_rename(datum/act/op/A, new_name)
 	target().name = new_name
-	target().custom_name = new_name
+	target().set_custom_name(new_name)
 	target().set_real_name(new_name)
 	return TRUE
 
@@ -329,7 +348,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	target().uneq_all()
 	target().hud_used?.update_robot_modules_display(TRUE)
 	rel_clear(target(), nameof(/mob/living/silicon/robot::module))
-	target().modtype = mod_type
+	target().set_modtype(mod_type)
 	module_type = GLOB.robot_modules[mod_type]
 	target().transform_with_anim()
 	new module_type(target())
@@ -456,11 +475,11 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(selected_radio_channel == CHANNEL_RAIDER)
 		rel_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/raider(target())
-		target().radio.syndie = 1
+		target().radio.set_syndie(1)
 	if(selected_radio_channel == CHANNEL_MERCENARY)
 		rel_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/syndicate(target())
-		target().radio.syndie = 1
+		target().radio.set_syndie(1)
 	target().module.channels += list("[selected_radio_channel]" = 1)
 	target().radio.channels[selected_radio_channel] = LAZYACCESS(target().module.channels, selected_radio_channel)
 	rel_add(target().radio, nameof(/obj/item/radio::secure_radio_connections), SSradio.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT), selected_radio_channel)
@@ -475,8 +494,8 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if((selected_radio_channel == CHANNEL_MERCENARY || selected_radio_channel == CHANNEL_RAIDER) && !(LAZYACCESS(target().module.channels, CHANNEL_RAIDER) || LAZYACCESS(target().module.channels, CHANNEL_MERCENARY)))
 		rel_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = null
-		target().radio.syndie = 0
-	target().radio.channels = list()
+		target().radio.set_syndie(0)
+	target().radio.set_channels(list())
 	for(var/n_chan in target().module.channels)
 		target().radio.channels[n_chan] = LAZYACCESS(target().module.channels, n_chan)
 	SSradio.remove_object(target().radio, GLOB.radiochannels[selected_radio_channel])
@@ -538,29 +557,29 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_add_access(datum/act/op/A, access)
-	target().idcard.access += access
+	target().idcard.add_access(access)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_rem_access(datum/act/op/A, access)
-	target().idcard.access -= access
+	target().idcard.remove_access(access)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_add_centcom(datum/act/op/A)
-	target().idcard.access |= SSaccess.get_all_centcom_access()
+	target().idcard.include_access(SSaccess.get_all_centcom_access())
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_rem_centcom(datum/act/op/A)
-	target().idcard.access -= SSaccess.get_all_centcom_access()
+	target().idcard.remove_access(SSaccess.get_all_centcom_access())
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_add_station(datum/act/op/A)
-	target().idcard.access |= SSaccess.get_all_station_access()
-	target().idcard.access |= ACCESS_SYNTH
+	target().idcard.include_access(SSaccess.get_all_station_access())
+	target().idcard.include_access(ACCESS_SYNTH)
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_rem_station(datum/act/op/A)
-	target().idcard.access -= SSaccess.get_all_station_access()
-	target().idcard.access -= ACCESS_SYNTH
+	target().idcard.remove_access(SSaccess.get_all_station_access())
+	target().idcard.remove_access(ACCESS_SYNTH)
 	return OP_OK
 
 /datum/eventkit/modify_robot/proc/ui_act_law_channel(datum/act/op/A, law_channel)
@@ -769,7 +788,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/get_module_source(mob/user, datum/asset/spritesheet_batched/robot_icons/spritesheet)
 	var/list/source_list = list()
-	source_list["model"] = source.module
+	source_list["model"] = source.modtype
 	source_list["sprite"] = sanitize_css_class_name("[source.sprite_datum.type]")
 	source_list["sprite_size"] = spritesheet?.icon_size_id(source_list["sprite"] + "S")
 	var/list/source_items = list()
@@ -867,7 +886,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 					break
 			if(denied)
 				continue
-		modkits += list(list("name" = initial(single_modkit.name), "path" = single_modkit, "costs" = initial(single_modkit.cost)))
+		modkits += list(list("name" = initial(single_modkit.name), "path" = single_modkit, "costs" = initial(single_modkit.cost), "denied" = FALSE, "denied_by" = ""))
 	pka["modkits"] = modkits
 	pka["capacity"] = kin.get_remaining_mod_capacity()
 	pka["max_capacity"] = kin.max_mod_capacity
@@ -936,7 +955,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	var/list/components = list()
 	for(var/component in typesof(path))
 		var/obj/item/robot_parts/robot_component/C = component
-		components += list("[initial(C.name)]" = list("path" = "[component]", "idle_usage" = "[C.idle_usage]", "active_usage" = "[C.active_usage]", "max_damage" = "[C.max_damage]"))
+		components += list("[initial(C.name)]" = list("path" = "[component]", "idle_usage" = initial(C.idle_usage), "active_usage" = initial(C.active_usage), "max_damage" = initial(C.max_damage)))
 	return components
 
 /datum/eventkit/modify_robot/proc/get_gear()

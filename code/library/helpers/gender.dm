@@ -1,63 +1,64 @@
 #define GET_TARGET_PRONOUN(target, pronoun, gender) call(target, ALL_PRONOUNS[pronoun])(gender)
 
-// DATUM GENDER
-// They don't have gender (often), but everything else does.
+// ATOM GENDER DEFAULTS
+// Only atoms (and clients, below) have pronouns. They are not /datum procs: BYOND keeps a proc-table slot for every inherited proc of every type,
+// so each /datum proc costs about 1 MB across the ~45 k datum types that never use it.
 
-/datum/proc/p_they(temp_gender)
+/atom/proc/p_they(temp_gender)
 	return "it"
 
-/datum/proc/p_They(temp_gender)
+/atom/proc/p_They(temp_gender)
 	return capitalize(p_they(temp_gender))
 
-/datum/proc/p_their(temp_gender)
+/atom/proc/p_their(temp_gender)
 	return "its"
 
-/datum/proc/p_Their(temp_gender)
+/atom/proc/p_Their(temp_gender)
 	return capitalize(p_their(temp_gender))
 
-/datum/proc/p_theirs(temp_gender)
+/atom/proc/p_theirs(temp_gender)
 	return "its"
 
-/datum/proc/p_Theirs(temp_gender)
+/atom/proc/p_Theirs(temp_gender)
 	return capitalize(p_theirs(temp_gender))
 
-/datum/proc/p_them(temp_gender)
+/atom/proc/p_them(temp_gender)
 	return "it"
 
-/datum/proc/p_Them(temp_gender)
+/atom/proc/p_Them(temp_gender)
 	return capitalize(p_them(temp_gender))
 
-/datum/proc/p_have(temp_gender)
+/atom/proc/p_have(temp_gender)
 	return "has"
 
-/datum/proc/p_are(temp_gender)
+/atom/proc/p_are(temp_gender)
 	return "is"
 
-/datum/proc/p_were(temp_gender)
+/atom/proc/p_were(temp_gender)
 	return "was"
 
-/datum/proc/p_do(temp_gender)
+/atom/proc/p_do(temp_gender)
 	return "does"
 
-/datum/proc/p_theyve(temp_gender)
+/atom/proc/p_theyve(temp_gender)
 	return p_they(temp_gender) + "'" + copytext_char(p_have(temp_gender), 3)
 
-/datum/proc/p_Theyve(temp_gender)
+/atom/proc/p_Theyve(temp_gender)
 	return p_They(temp_gender) + "'" + copytext_char(p_have(temp_gender), 3)
 
-/datum/proc/p_theyre(temp_gender)
+/atom/proc/p_theyre(temp_gender)
 	return p_they(temp_gender) + "'" + copytext_char(p_are(temp_gender), 2)
 
-/datum/proc/p_Theyre(temp_gender)
+/atom/proc/p_Theyre(temp_gender)
 	return p_They(temp_gender) + "'" + copytext_char(p_are(temp_gender), 2)
 
-/datum/proc/p_s(temp_gender)
+/atom/proc/p_s(temp_gender)
 	return "s"
 
-/datum/proc/p_es(temp_gender)
+/atom/proc/p_es(temp_gender)
 	return "es"
 
-/datum/proc/p_themselves(temp_gender)
+/atom/proc/p_themselves(temp_gender)
 	return "itself"
 
 /proc/plural_s(datum/source, pluralize)
@@ -77,7 +78,7 @@
 
 /// A proc to replace pronouns in a string with the appropriate pronouns for a target atom.
 /// Uses associative list access from a __DEFINE list, since associative access is slightly faster
-/datum/proc/REPLACE_PRONOUNS(target_string, atom/targeted_atom, targeted_gender = null)
+/atom/proc/REPLACE_PRONOUNS(target_string, atom/targeted_atom, targeted_gender = null)
 	/// If someone specifies targeted_gender we choose that,
 	/// otherwise we go off the gender of our object
 	var/gender
@@ -96,7 +97,7 @@
 
 // CLIENT GENDER
 
-/client/p_they(temp_gender)
+/client/proc/p_they(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	switch(temp_gender)
@@ -111,7 +112,7 @@
 		else
 			return "they"
 
-/client/p_their(temp_gender)
+/client/proc/p_their(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	switch(temp_gender)
@@ -126,7 +127,7 @@
 		else
 			return "their"
 
-/client/p_theirs(temp_gender)
+/client/proc/p_theirs(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	switch(temp_gender)
@@ -141,7 +142,7 @@
 		else
 			return "theirs"
 
-/client/p_them(temp_gender)
+/client/proc/p_them(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	switch(temp_gender)
@@ -156,47 +157,47 @@
 		else
 			return "them"
 
-/client/p_have(temp_gender)
+/client/proc/p_have(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "have"
 	return "has"
 
-/client/p_are(temp_gender)
+/client/proc/p_are(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "are"
 	return "is"
 
-/client/p_were(temp_gender)
+/client/proc/p_were(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "were"
 	return "was"
 
-/client/p_do(temp_gender)
+/client/proc/p_do(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	if(temp_gender == PLURAL)
 		return "do"
 	return "does"
 
-/client/p_s(temp_gender)
+/client/proc/p_s(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	if(temp_gender != PLURAL)
 		return "s"
 
-/client/p_es(temp_gender)
+/client/proc/p_es(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	if(temp_gender != PLURAL && temp_gender != NEUTER)
 		return "es"
 
-/client/p_themselves(temp_gender)
+/client/proc/p_themselves(temp_gender)
 	if(!temp_gender)
 		temp_gender = read_once(gender)
 	switch(temp_gender)
@@ -583,38 +584,3 @@
 			return "hirself"
 		else
 			return "itself"
-
-// MIND GENDER
-
-/datum/mind/p_they(temp_gender)
-	return current?.p_they(temp_gender) || ..()
-
-/datum/mind/p_their(temp_gender)
-	return current?.p_their(temp_gender) || ..()
-
-/datum/mind/p_theirs(temp_gender)
-	return current?.p_theirs(temp_gender) || ..()
-
-/datum/mind/p_them(capitalized, temp_gender)
-	return current?.p_them(capitalized, temp_gender) || ..()
-
-/datum/mind/p_have(temp_gender)
-	return current?.p_have(temp_gender) || ..()
-
-/datum/mind/p_are(temp_gender)
-	return current?.p_are(temp_gender) || ..()
-
-/datum/mind/p_were(temp_gender)
-	return current?.p_were(temp_gender) || ..()
-
-/datum/mind/p_do(temp_gender)
-	return current?.p_do(temp_gender) || ..()
-
-/datum/mind/p_s(temp_gender)
-	return current?.p_s(temp_gender) || ..()
-
-/datum/mind/p_es(temp_gender)
-	return current?.p_es(temp_gender) || ..()
-
-/datum/mind/p_themselves(temp_gender)
-	return current?.p_themselves(temp_gender) || ..()

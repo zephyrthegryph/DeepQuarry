@@ -1,39 +1,9 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { DiagnosisBand } from '../common/Diagnosis';
+import type { BodyScannerData } from '../generated/BodyScanner';
 
-import type { Diagnosis, DiagnosisBand } from '../common/Diagnosis';
+export type Data = BodyScannerData;
 
-export type Data = {
-  occupied: BooleanLike;
-  occupant: occupant;
-};
+/** The scanned person (null while the scanner is empty); diagnosis is the shared report (UI_SCHEMA diagnosis_report). */
+export type occupant = NonNullable<BodyScannerData['occupant']>;
 
 export type DamageBand = DiagnosisBand;
-
-export type occupant = {
-  name: string;
-  species: string;
-  stat: number;
-  fakedeath: BooleanLike;
-  healthBand: DamageBand;
-  hasVirus: number;
-  paralysisSeconds: number;
-  hasBorer: BooleanLike;
-  colourblind: BooleanLike;
-  reagents: reagent[];
-  ingested: reagent[];
-  blind: BooleanLike;
-  nearsighted: BooleanLike;
-  brokenspine: BooleanLike;
-  livingPrey: number;
-  humanPrey: number;
-  objectPrey: number;
-  weight: number;
-  husked: BooleanLike;
-  hasWithdrawl: BooleanLike;
-  hasAllergens: BooleanLike;
-  allergens: string[] | null;
-  diagnosis: Diagnosis;
-  worstFinding: DamageBand;
-};
-
-type reagent = { name: string; amount: number; overdose: BooleanLike };

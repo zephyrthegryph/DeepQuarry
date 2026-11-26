@@ -24,18 +24,6 @@ pub enum Mode {
 
 pub type Counter = HashMap<(String, String), i64>;
 
-/// Normalized source evidence for client-side reporting and fingerprints.
-/// This is report data only: it grants no current native source/query authority.
-/// Native clients must validate the response's as-of binding before supplying it;
-/// they must not re-read mutable source or synthesize a semantic Tree to render.
-pub trait SiteText {
-    fn site_text(&self,rel:&str,line:usize)->String;
-}
-impl SiteText for Tree {
-    fn site_text(&self,rel:&str,line:usize)->String{Tree::site_text(self,rel,line)}
-}
-
-
 /// The fingerprint text a ratchet compares for `rule`. An `init_lines` site is the job a line does in an `Initialize()` body, not
 /// its spelling: a write `x = v` and the call of its setter `set_x(v)` (`src.set_x(v)`) are the same site, so converting a write to
 /// its setter (which the `tracked` lint requires) neither adds a site nor hides one. Every other rule compares the text as written.
@@ -58,101 +46,18 @@ pub fn canon_text(rule: &str, text: &str) -> String {
 
 /// `read_sites`: `{rule: Counter((file, text))}`.
 pub fn read_sites(path: &Path) -> BTreeMap<String, Counter> {
-    let Ok(text) = std::fs::read_to_string(path) else { return BTreeMap::new() };
-    parse_sites_text(text)
-}
-/// Shared baseline interpretation; native admission lends the actual read.
-pub(crate) fn parse_sites_text(text:String)->BTreeMap<String,Counter>{
-    let mut base:BTreeMap<String,Counter>=BTreeMap::new();
-    for (rule, file, txt) in sites_lines(&text).filter_map(parse_sites_row) {
+    let mut base: BTreeMap<String, Counter> = BTreeMap::new();
+    let Ok(text) = std::fs::read_to_string(path) else { return base };
+    let text = crate::util::universal_newlines(text);
+    for line in text.split('\n') {
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let mut parts = line.splitn(3, '\t');
+        let (Some(rule), Some(file), Some(txt)) = (parts.next(), parts.next(), parts.next()) else { continue };
         *base.entry(rule.to_string()).or_default().entry((file.to_string(), canon_text(rule, txt))).or_insert(0) += 1;
     }
     base
-}
-
-/// A CRLF pair yields one extra empty segment, which the row grammar
-/// already ignores. Standalone CR and LF are both line terminators.
-pub(crate) fn sites_lines(text: &str) -> impl Iterator<Item = &str> {
-    text.split(['\r', '\n'])
-}
-
-pub(crate) fn parse_sites_row(line: &str) -> Option<(&str, &str, &str)> {
-    if line.is_empty() || line.starts_with('#') {
-        return None;
-    }
-    let mut parts = line.splitn(3, '\t');
-    Some((parts.next()?, parts.next()?, parts.next()?))
-}
-
-#[derive(Default)]
-struct ProjectedRule<'a> {
-    known: i64,
-    remaining: BTreeMap<&'a str, BTreeMap<String, i64>>,
-}
-
-/// Only actual finding keys are retained. Known still counts every parsed
-/// row for the rule, including duplicates and keys with no current finding.
-#[derive(Default)]
-pub(crate) struct ProjectedSites<'a>(BTreeMap<&'static str, ProjectedRule<'a>>);
-
-impl<'a> ProjectedSites<'a> {
-    pub(crate) fn register_rule(&mut self, rule: &'static str) {
-        self.0.entry(rule).or_default();
-    }
-
-    pub(crate) fn register_site(&mut self, site: &'a Site, line: &str) {
-        if let Some(rule) = self.0.get_mut(site.rule.as_str()) {
-            rule.remaining.entry(site.rel.as_str()).or_default().entry(fp_of(site, line)).or_default();
-        }
-    }
-
-    /// The producer excludes canon-transforming rules before using this fold.
-    pub(crate) fn observe_literal_row(&mut self, rule: &str, file: &str, fingerprint: &str) -> Option<()> {
-        if let Some(rule) = self.0.get_mut(rule) {
-            rule.known = rule.known.checked_add(1)?;
-            if let Some(count) = rule.remaining.get_mut(file).and_then(|rows| rows.get_mut(fingerprint)) {
-                *count = count.checked_add(1)?;
-            }
-        }
-        Some(())
-    }
-}
-
-enum RuleAllowance<'a> {
-    Full(Counter),
-    Projected { rule: ProjectedRule<'a>, claimed: i64 },
-}
-
-impl RuleAllowance<'_> {
-    fn known(&self) -> i64 {
-        match self {
-            Self::Full(rows) => rows.values().sum(),
-            Self::Projected { rule, .. } => rule.known,
-        }
-    }
-
-    fn claim(&mut self, site: &Site, fp: &str) -> bool {
-        let (count, claimed) = match self {
-            Self::Full(rows) => (rows.get_mut(&(site.rel.clone(), fp.to_owned())), None),
-            Self::Projected { rule, claimed } =>
-                (rule.remaining.get_mut(site.rel.as_str()).and_then(|rows| rows.get_mut(fp)), Some(claimed)),
-        };
-        match count {
-            Some(n) if *n > 0 => {
-                *n -= 1;
-                if let Some(claimed) = claimed { *claimed += 1; }
-                true
-            }
-            _ => false,
-        }
-    }
-
-    fn gone(&self) -> i64 {
-        match self {
-            Self::Full(rows) => rows.values().filter(|value| **value > 0).sum(),
-            Self::Projected { rule, claimed } => rule.known - *claimed,
-        }
-    }
 }
 
 /// A site with its fingerprint text.
@@ -177,7 +82,7 @@ pub fn fp_of(site: &Site, text: &str) -> String {
     }
 }
 
-pub fn fingerprints<'a,S:SiteText+?Sized>(tree: &S, found: &[&'a Site]) -> Vec<Fp<'a>> {
+pub fn fingerprints<'a>(tree: &Tree, found: &[&'a Site]) -> Vec<Fp<'a>> {
     found
         .iter()
         .map(|s| {
@@ -190,29 +95,15 @@ pub fn fingerprints<'a,S:SiteText+?Sized>(tree: &S, found: &[&'a Site]) -> Vec<F
 
 /// `write_sites`. `rules` lists the rules to write, in order; `by_rule` maps a rule to its sites.
 /// Returns the number of rows written.
-pub fn write_sites<S:SiteText+?Sized>(
+pub fn write_sites(
     path: &Path,
     header: &[&str],
-    tree: &S,
+    tree: &Tree,
     by_rule: &[(&str, Vec<&Site>)],
     rules: &[&str],
     mode: Mode,
 ) -> std::io::Result<usize> {
     let old = read_sites(path);
-    let (out, count) = render_sites(&old, header, tree, by_rule, rules, mode)?;
-    if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    std::fs::write(path, out)?;
-    Ok(count)
-}
-
-/// Pure baseline DATA rendering over supplied captured old counters and SiteText.
-/// This grants no filesystem target/currentness or permission to publish.
-pub fn render_sites<S:SiteText+?Sized>(
-    old: &BTreeMap<String, Counter>, header: &[&str], tree: &S,
-    by_rule: &[(&str, Vec<&Site>)], rules: &[&str], mode: Mode,
-) -> std::io::Result<(String, usize)> {
     let mut rows: Vec<String> = Vec::new();
     let lookup: HashMap<&str, &Vec<&Site>> = by_rule.iter().map(|(r, s)| (*r, s)).collect();
     let mut rule_list: Vec<&str> = rules.to_vec();
@@ -281,68 +172,43 @@ pub fn render_sites<S:SiteText+?Sized>(
     lines.extend(rows.iter().cloned());
     out.push_str(&lines.join("\n"));
     out.push('\n');
-    Ok((out, rows.len()))
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    std::fs::write(path, out)?;
+    Ok(rows.len())
 }
 
 /// The ratchet check against a fingerprint baseline (`check_sites`). Appends the report to `out`
 /// and returns true on any new site.
-pub fn check_sites<S:SiteText+?Sized>(
+pub fn check_sites(
     label: &str,
-    tree: &S,
+    tree: &Tree,
     by_rule: &[(&str, Vec<&Site>)],
     hints: &dyn Fn(&str) -> String,
     path: &Path,
     banned: &[&str],
     out: &mut String,
 ) -> bool {
-    let base=read_sites(path);
-    check_sites_with_base(label,tree,by_rule,hints,&base,banned,out)
-}
-pub(crate) fn check_sites_with_base<S:SiteText+?Sized>(
-    label: &str,
-    tree: &S,
-    by_rule: &[(&str, Vec<&Site>)],
-    hints: &dyn Fn(&str) -> String,
-    base: &BTreeMap<String,Counter>,
-    banned: &[&str],
-    out: &mut String,
-) -> bool {
-
-    check_sites_with_allowance(label, tree, by_rule, hints, banned, out,
-        |rule| RuleAllowance::Full(base.get(rule).cloned().unwrap_or_default()))
-}
-
-pub(crate) fn check_sites_with_projection<S: SiteText + ?Sized>(
-    label: &str,
-    tree: &S,
-    by_rule: &[(&str, Vec<&Site>)],
-    hints: &dyn Fn(&str) -> String,
-    mut base: ProjectedSites<'_>,
-    banned: &[&str],
-    out: &mut String,
-) -> bool {
-    check_sites_with_allowance(label, tree, by_rule, hints, banned, out,
-        |rule| RuleAllowance::Projected { rule: base.0.remove(rule).unwrap_or_default(), claimed: 0 })
-}
-
-fn check_sites_with_allowance<'a, S: SiteText + ?Sized>(
-    label: &str, tree: &S, by_rule: &[(&str, Vec<&Site>)], hints: &dyn Fn(&str) -> String,
-    banned: &[&str], out: &mut String, mut allowance: impl FnMut(&str) -> RuleAllowance<'a>,
-) -> bool {
+    let base = read_sites(path);
     let mut failed = false;
     let mut new_lines: Vec<String> = Vec::new();
     for (rule, found) in by_rule {
-        let mut budget = if banned.contains(rule) { RuleAllowance::Full(Counter::new()) } else { allowance(rule) };
-        let known = budget.known();
+        let mut budget: Counter = if banned.contains(rule) { Counter::new() } else { base.get(*rule).cloned().unwrap_or_default() };
+        let known: i64 = budget.values().sum();
         let mut fresh: Vec<(String, u32, String)> = Vec::new();
         for fp in fingerprints(tree, found) {
-            if !budget.claim(fp.site, &fp.fp) {
-                // A declaration site carries its own message (the lines that offend); the declaration line alone does not help.
-                let shown = if fp.site.msg.is_empty() || fp.site.ident.is_empty() { fp.text } else { fp.site.msg.clone() };
-                fresh.push((fp.site.rel.clone(), fp.site.line, shown));
+            let key = (fp.site.rel.clone(), fp.fp.clone());
+            match budget.get_mut(&key) {
+                Some(b) if *b > 0 => *b -= 1,
+                _ => {
+                    // A declaration site carries its own message (the lines that offend); the declaration line alone does not help.
+                    let shown = if fp.site.msg.is_empty() || fp.site.ident.is_empty() { fp.text } else { fp.site.msg.clone() };
+                    fresh.push((fp.site.rel.clone(), fp.site.line, shown))
+                }
             }
         }
-        let gone = budget.gone();
+        let gone: i64 = budget.values().filter(|v| **v > 0).sum();
         let status = if !fresh.is_empty() {
             failed = true;
             format!("FAIL ({} new site{})", fresh.len(), if fresh.len() == 1 { "" } else { "s" })
@@ -373,13 +239,9 @@ fn check_sites_with_allowance<'a, S: SiteText + ?Sized>(
 
 /// `read_baseline`: `{name: ceiling}` from `name count` lines.
 pub fn read_ceilings(path: &Path) -> BTreeMap<String, i64> {
-    let Ok(text) = std::fs::read_to_string(path) else { return BTreeMap::new() };
-    parse_ceilings_text(&text)
-}
-
-pub(crate) fn parse_ceilings_text(text: &str) -> BTreeMap<String, i64> {
     let mut base = BTreeMap::new();
-    for line in text.split(['\r', '\n']) {
+    let Ok(text) = std::fs::read_to_string(path) else { return base };
+    for line in crate::util::universal_newlines(text).split('\n') {
         let line = line.split('#').next().unwrap_or("");
         let line = line.trim();
         if line.is_empty() {
@@ -396,19 +258,15 @@ pub(crate) fn parse_ceilings_text(text: &str) -> BTreeMap<String, i64> {
 }
 
 /// `write_baseline`.
-/// Pure count-baseline rendering over captured DATA. No target/currentness grant.
-pub fn render_ceilings(header:&[&str],counts:&BTreeMap<String,i64>)->String {
-    let mut lines: Vec<String> = header.iter().map(|h| format!("# {}", h)).collect();
-    for (name, count) in counts { lines.push(format!("{} {}", name, count)); }
-    lines.join("\n") + "\n"
-}
-
 pub fn write_ceilings(path: &Path, header: &[&str], counts: &BTreeMap<String, i64>) -> std::io::Result<()> {
-    let text = render_ceilings(header, counts);
+    let mut lines: Vec<String> = header.iter().map(|h| format!("# {}", h)).collect();
+    for (name, count) in counts {
+        lines.push(format!("{} {}", name, count));
+    }
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
-    std::fs::write(path, text)
+    std::fs::write(path, lines.join("\n") + "\n")
 }
 
 /// Counts of sites per `Site::key`.
@@ -424,12 +282,6 @@ pub fn key_counts(sites: &[Site]) -> BTreeMap<String, i64> {
 /// sites of each failing key, then one summary line (`system_boundary_lint.main`).
 pub fn check_ceilings(label: &str, sites: &[Site], rules: &[&str], path: &Path, out: &mut String) -> bool {
     let base = read_ceilings(path);
-    check_ceilings_with_base(label, sites, rules, &base, out)
-}
-
-pub(crate) fn check_ceilings_with_base(
-    label: &str, sites: &[Site], rules: &[&str], base: &BTreeMap<String, i64>, out: &mut String,
-) -> bool {
     let counts = key_counts(sites);
     let mut failed = false;
     for (key, count) in &counts {
@@ -460,27 +312,15 @@ pub(crate) fn check_ceilings_with_base(
     failed
 }
 
-fn lowered_ceilings(base:&BTreeMap<String,i64>,sites:&[Site])->BTreeMap<String,i64>{
+/// `--update` for ceilings: lower each ceiling to the current count, drop keys with none.
+pub fn update_ceilings(path: &Path, header: &[&str], sites: &[Site]) -> std::io::Result<usize> {
+    let base = read_ceilings(path);
     let counts = key_counts(sites);
     let kept: BTreeMap<String, i64> = base
         .iter()
         .filter(|(k, _)| counts.get(*k).copied().unwrap_or(0) > 0)
         .map(|(k, v)| (k.clone(), (*v).min(counts[k])))
         .collect();
-    kept
-}
-
-/// Exact shrink-only old-key update over supplied captured counts. The caller
-/// owns source completion, target identity and output allocation admission.
-pub fn render_updated_ceilings(base:&BTreeMap<String,i64>,header:&[&str],sites:&[Site])->(String,usize){
-    let kept=lowered_ceilings(base,sites);let count=kept.len();
-    (render_ceilings(header,&kept),count)
-}
-
-/// `--update` for ceilings: lower each ceiling to the current count, drop keys with none.
-pub fn update_ceilings(path: &Path, header: &[&str], sites: &[Site]) -> std::io::Result<usize> {
-    let base = read_ceilings(path);
-    let kept = lowered_ceilings(&base, sites);
     write_ceilings(path, header, &kept)?;
     Ok(kept.len())
 }
@@ -729,55 +569,4 @@ r	code/a.dm	stale text
         let mut out = String::new();
         assert!(!check_sites("t", &tree, &by_rule, &|_| String::new(), &path, &[], &mut out), "{out}");
     }
-}
-
-#[cfg(test)]
-#[path="baseline_source_tests.rs"]mod source_contract_tests;
-
-#[cfg(test)]
-mod captured_baseline_render_controls {
-    use super::*;
-    struct CapturedText;
-    impl SiteText for CapturedText {
-        fn site_text(&self,relative:&str,line:usize)->String {
-            assert_eq!(relative,"code/a.dm");
-            match line {1|2=>"spawn(1)".into(),3=>"spawn(2)".into(),_=>panic!("uncaptured source row")}
-        }
-    }
-    fn found(line:u32)->Site {Site{rule:"spawn".into(),rel:"code/a.dm".into(),line,msg:String::new(),key:String::new(),ident:String::new()}}
-    #[test]
-    fn captured_baseline_render_update_keeps_only_old_multiplicity_and_never_adds_new_sites() {
-        let old=parse_sites_text("spawn\tcode/a.dm\tspawn(1)\nspawn\tcode/a.dm\tspawn(1)\nspawn\tcode/gone.dm\tspawn(9)\n".into());
-        let sites=[found(1),found(2),found(3)];let groups=[("spawn",sites.iter().collect())];
-        let(text,count)=render_sites(&old,&["captured"],&CapturedText,&groups,&["spawn"],Mode::Update).unwrap();
-        assert_eq!(count,2);assert_eq!(text,"# captured\nspawn\tcode/a.dm\tspawn(1)\nspawn\tcode/a.dm\tspawn(1)\n");
-        let(text,count)=render_sites(&BTreeMap::new(),&[],&CapturedText,&groups,&["spawn"],Mode::Update).unwrap();
-        assert_eq!((text.as_str(),count),("\n",0));
-    }
-    #[test]
-    fn captured_baseline_render_migrate_keeps_unclaimed_old_rows_and_seed_remains_explicit() {
-        let old=parse_sites_text("spawn\tcode/gone.dm\tspawn(9)\n".into());let sites=[found(3)];let groups=[("spawn",sites.iter().collect())];
-        let(text,count)=render_sites(&old,&[],&CapturedText,&groups,&["spawn"],Mode::Migrate).unwrap();assert_eq!((text.as_str(),count),("spawn\tcode/gone.dm\tspawn(9)\n",1));
-        let(text,count)=render_sites(&old,&[],&CapturedText,&groups,&["spawn"],Mode::Seed).unwrap();assert_eq!((text.as_str(),count),("spawn\tcode/a.dm\tspawn(2)\n",1));
-    }
-}
-
-#[cfg(test)]mod captured_ceilings_render_controls{
- use super::*;
- fn found(key:&str)->Site{Site{rule:"r".into(),rel:"code/a.dm".into(),line:1,msg:String::new(),key:key.into(),ident:String::new()}}
- #[test]fn captured_count_update_lowers_only_old_keys_preserves_min_and_drops_zero(){
-  let old=BTreeMap::from([("a".into(),5),("b".into(),1),("gone".into(),9)]);
-  let sites=[found("a"),found("a"),found("b"),found("b"),found("new"),found("new")];
-  let(text,count)=render_updated_ceilings(&old,&["captured count baseline"],&sites);
-  assert_eq!(count,2);assert_eq!(text,"# captured count baseline\na 2\nb 1\n");
-  assert_eq!(render_updated_ceilings(&BTreeMap::new(),&[],&sites),("\n".into(),0));
- }
- #[test]fn captured_count_update_keeps_original_negative_ceiling_and_exact_empty_header_bytes(){
-  let old=BTreeMap::from([("a".into(),-1),("gone".into(),0)]);
-  assert_eq!(render_updated_ceilings(&old,&[],&[found("a")]),("a -1\n".into(),1));
-  let counts=BTreeMap::from([("b".into(),2),("a".into(),1)]);
-  let mut legacy:Vec<String>=["first","second"].iter().map(|h|format!("# {}",h)).collect();
-  for(name,count)in &counts{legacy.push(format!("{} {}",name,count));}
-  assert_eq!(render_ceilings(&["first","second"],&counts),legacy.join("\n")+"\n");
- }
 }

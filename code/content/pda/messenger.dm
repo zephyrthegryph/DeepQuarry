@@ -22,9 +22,9 @@
 	data["silent"] = notify_silent						// does the pda make noise when it receives a message?
 	data["toff"] = toff									// is the messenger function turned off?
 	data["active_conversation"] = active_conversation	// Which conversation are we following right now?
-	data["enable_message_embeds"] = user?.client?.prefs?.read_preference(/datum/preference/toggle/messenger_embeds)
+	data["enable_message_embeds"] = TRUE
 
-	has_back = active_conversation
+	set_has_back(active_conversation)
 	if(active_conversation)
 		data["messages"] = (tnote || list())
 		for(var/c in tnote)
@@ -76,12 +76,12 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 
 /datum/data/pda/app/messenger/proc/ui_act_toggle_messenger(datum/act/op/A)
 	unnotify()
-	toff = !toff
+	set_toff(!toff)
 	return OP_OK
 
 /datum/data/pda/app/messenger/proc/ui_act_toggle_ringer(datum/act/op/A)
 	unnotify()
-	notify_silent = !notify_silent
+	set_notify_silent(!notify_silent)
 	return OP_OK
 
 /datum/data/pda/app/messenger/proc/ui_act_clear(datum/act/op/A, option)
@@ -89,17 +89,17 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 		return FALSE
 	. = TRUE
 	if(option == "All")
-		LAZYCLEARLIST(tnote)
-		LAZYCLEARLIST(conversations)
+		clear_tnote()
+		clear_conversations()
 	if(option == "Convo")
 		var/new_tnote[0]
 		for(var/i in tnote)
 			if(i["target"] != active_conversation)
 				new_tnote[++new_tnote.len] = i
-		tnote = new_tnote
-		LAZYREMOVE(conversations, active_conversation)
+		set_tnote(new_tnote)
+		remove_conversations(active_conversation)
 
-	active_conversation = null
+	set_active_conversation(null)
 
 /datum/data/pda/app/messenger/proc/ui_act_message(datum/act/op/A, target)
 	var/mob/user = A.actor
@@ -112,7 +112,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 	create_message(user, P)
 	var/target_ref = handle_of(P)
 	if(target_ref in conversations)            // Need to make sure the message went through, if not welp.
-		active_conversation = target_ref
+		set_active_conversation(target_ref)
 
 /datum/data/pda/app/messenger/proc/ui_act_select_conversation(datum/act/op/A, target)
 	if(!ui_gate(A))
@@ -121,7 +121,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 	var/P = target
 	for(var/n in conversations)
 		if(P == n)
-			active_conversation = P
+			set_active_conversation(P)
 
 /datum/data/pda/app/messenger/proc/ui_act_messenger_plugin(datum/act/op/A, plugin_arg, target)
 	var/mob/user = A.actor
@@ -142,7 +142,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 
 /datum/data/pda/app/messenger/proc/ui_act_back(datum/act/op/A)
 	unnotify()
-	active_conversation = null
+	set_active_conversation(null)
 	return OP_OK
 
 // Specifically here for the chat message.
@@ -157,7 +157,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 	create_message(user, P)
 	var/target_ref = handle_of(P)
 	if(target_ref in conversations)            // Need to make sure the message went through, if not welp.
-		active_conversation = target_ref
+		set_active_conversation(target_ref)
 	return TRUE
 
 
@@ -251,14 +251,14 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 	return pda().owner && !toff && !hidden
 
 /datum/data/pda/app/messenger/proc/receive_message(list/data, ref)
-	LAZYADD(tnote, list(data))
+	add_tnote(list(data))
 	if(!LAZYFIND(conversations, ref))
-		LAZYADD(conversations, ref)
+		add_conversations(ref)
 	if(!data["sent"])
 		var/owner = data["owner"]
 		var/job = data["job"]
 		var/message = data["message"]
-		notify(span_bold("Message from [owner] ([job]), ") + "\"[message]\" (<a href='byond://?src=[REF(src)];choice=Message;target=[ref]'>Reply</a>)")
+		notify(span_bold("Message from [owner] ([job]), ") + "\"[message]\" (<a href='byond://?src=[REF(src)];choice=Message;target=[handle_text(ref)]'>Reply</a>)")
 
 /datum/data/pda/app/messenger/multicast
 /datum/data/pda/app/messenger/multicast/receive_message(list/data, ref)
@@ -290,4 +290,4 @@ Invoked by /obj/item/pda/proc/createPropFakeConversation_admin(var/mob/M)
 /datum/data/pda/app/messenger/proc/createFakeMessage(fakeName, fakeRef, fakeJob, sent, message)
 	receive_message(list("sent" = sent, "owner" = "[fakeName]", "job" = "[fakeJob]", "message" = "[message]", "target" = "[fakeRef]"), fakeRef)
 	if(!LAZYACCESS(fakepdas, fakeRef))
-		LAZYSET(fakepdas, fakeRef, fakeName)
+		set_fakepdas_at(fakeRef, fakeName)

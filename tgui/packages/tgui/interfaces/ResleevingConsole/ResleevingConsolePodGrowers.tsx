@@ -1,11 +1,12 @@
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Icon, Image, ProgressBar } from 'tgui-core/components';
-
+import type { ResleevingConsoleActions } from '../generated/ResleevingConsole';
 import type { Data } from './types';
 
 export const ResleevingConsolePodGrowers = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ResleevingConsoleActions>();
   const { pods, spods, selected_pod } = data;
 
   if (pods?.length) {
@@ -58,7 +59,7 @@ export const ResleevingConsolePodGrowers = (props) => {
               width: '100%',
             }}
           />
-          <Box color="label">{pod.name}</Box>
+          <Label>{pod.name}</Label>
           <Box bold color={pod.biomass >= 150 ? 'good' : 'bad'} inline>
             <Icon name={pod.biomass >= 150 ? 'circle' : 'circle-o'} />
             &nbsp;

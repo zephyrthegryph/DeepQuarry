@@ -8,27 +8,10 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  on: BooleanLike;
-  open: BooleanLike;
-  beaker: BooleanLike;
-  beaker_total: number;
-  beaker_max: number;
-  locked: BooleanLike;
-  min_urgency: number | null;
-  urgency_bands: string[];
-  injection_amount_min: number;
-  injection_amount: number | null;
-  injection_amount_max: number;
-  use_beaker: BooleanLike;
-  declare_treatment: BooleanLike;
-  vocal: BooleanLike;
-};
+import type { MedbotActions, MedbotData } from './generated/Medbot';
 
 export const Medbot = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<MedbotData, MedbotActions>();
 
   const {
     on,
@@ -48,7 +31,7 @@ export const Medbot = (props) => {
   } = data;
 
   return (
-    <Window width={400} height={600}>
+    <Window width={470} height={600}>
       <Window.Content scrollable>
         <Section
           title="Automatic Medical Unit v2.0"
@@ -112,7 +95,7 @@ export const Medbot = (props) => {
                   step={1}
                   minValue={injection_amount_min}
                   maxValue={injection_amount_max}
-                  value={injection_amount!}
+                  value={injection_amount ?? 0}
                   onChange={(val: number) => act('adj_inject', { val: val })}
                 />
               </LabeledList.Item>

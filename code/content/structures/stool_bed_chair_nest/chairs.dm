@@ -49,7 +49,7 @@ CAPABILITIES(/obj/structure/bed/chair)
 /obj/structure/bed/chair/proc/interaction_tk(datum/act/op/A)
 	if(has_buckled_mobs())
 		return OP_DECLINE
-	rotate_clockwise()
+	set_dir(turn(dir, 270))
 	return TRUE
 
 /// Tracked, set from post_buckle_mob() on every buckle and unbuckle: the armrests are drawn over the rider.

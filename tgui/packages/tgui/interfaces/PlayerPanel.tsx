@@ -15,22 +15,13 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  PlayerPanelActions,
+  PlayerPanelData,
+} from './generated/PlayerPanel';
 
-type Player = {
-  name: string;
-  real_name: string;
-  key: string;
-  connected: BooleanLike;
-  job: string;
-  is_antagonist: number;
-  ref: string;
-  ip: string;
-};
-
-type Data = {
-  players: Player[];
-};
+type Data = PlayerPanelData;
+type Player = Data['players'][number];
 
 type SortKey = 'name' | 'real_name' | 'key' | 'job';
 
@@ -52,7 +43,7 @@ const compareBy = (a: Player, b: Player, key: SortKey): number => {
 };
 
 export const PlayerPanel = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, PlayerPanelActions>();
   const players = data.players ?? [];
   const [filter, setFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('key');

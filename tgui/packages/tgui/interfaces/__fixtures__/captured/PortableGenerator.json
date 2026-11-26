@@ -1,0 +1,17 @@
+{
+	"anchored": 0,
+	"temperature_current": 0,
+	"temperature_max": 300,
+	"temperature_overheat": 0,
+	"active": 0,
+	"sheet_name": "Phoron Sheets",
+	"fuel_stored": 0,
+	"fuel_capacity": 50000,
+	"fuel_usage": 0,
+	"connected": 0,
+	"ready_to_boot": 0,
+	"power_generated": "20 kW",
+	"power_output": "20 kW",
+	"unsafe_output": 0,
+	"power_available": ""
+}

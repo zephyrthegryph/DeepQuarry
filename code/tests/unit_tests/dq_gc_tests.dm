@@ -138,10 +138,8 @@
 	qdel(E)
 	TEST_ASSERT(QDELETED(ec), "ecig cartridge not destroyed with its master")
 
-// Deleting a mob with a shadekin component must not resurrect HUD objects:
-// the component's Destroy() used to rebuild owner.ability_master AFTER
-// /mob/Destroy had already cleared it — allocating a fresh screen atom inside
-// the dying mob (my_mob ref + contents + var = immortal cycle pinning the mob).
+// Deleting a mob with a shadekin component must leave nothing behind that pins the mob: the shadekin state goes with it, and so do the
+// abilities it granted.
 /datum/unit_test/dq_shadekin_mob_deletion_leaves_no_hud
 
 /datum/unit_test/dq_shadekin_mob_deletion_leaves_no_hud/Run()
@@ -151,7 +149,7 @@
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "mob Destroy() did not run")
 	TEST_ASSERT(QDELETED(SK), "shadekin datum was not destroyed with its mob")
-	TEST_ASSERT(isnull(H.ability_master), "mob deletion left a resurrected ability_master screen object — immortal GC cycle")
+	TEST_ASSERT(!length(H.actions), "mob deletion left abilities in the list of the dead mob")
 
 // Deleting a container must Destroy() every item inside it — the base
 // /atom/movable/Destroy contents loop had the same live-list skip hazard
@@ -310,3 +308,22 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/dq_gc_kept)
 	TEST_ASSERT_EQUAL(I.hard_deletes, 0, "a leak is not hard-deleted")
 	TEST_ASSERT(!isnull(holder.kept), "the holder still reads the subject: it was not freed under it")
 	holder.kept = null
+
+// The radio system watches a listening device once, however many frequencies it joined; destroyed, it leaves all of them.
+/datum/unit_test/dq_radio_device_on_two_frequencies_leaves_both
+
+/datum/unit_test/dq_radio_device_on_two_frequencies_leaves_both/Run()
+	var/obj/item/radio/headset/R = new(null)
+	SSradio.add_object(R, ERT_FREQ)
+	SSradio.add_object(R, DTH_FREQ)
+	TEST_ASSERT_EQUAL(length(SSradio.listening[num2text(slot_known(R), 12)]), length(SSradio.listening[num2text(slot_known(R), 12)] | list("[ERT_FREQ]", "[DTH_FREQ]")), "the system records both frequencies the device joined")
+	SSradio.remove_object(R, DTH_FREQ)
+	TEST_ASSERT(("[ERT_FREQ]" in SSradio.listening[num2text(slot_known(R), 12)]) && !("[DTH_FREQ]" in SSradio.listening[num2text(slot_known(R), 12)]), "leaving one frequency keeps the other")
+	SSradio.add_object(R, DTH_FREQ)
+	var/handle = num2text(slot_known(R), 12)
+	qdel(R)
+	TEST_ASSERT(!(handle in SSradio.listening), "a destroyed device keeps no membership record")
+	for(var/freq in list(ERT_FREQ, DTH_FREQ))
+		var/datum/radio_frequency/F = SSradio.return_frequency(freq)
+		for(var/filter_key in F.devices)
+			TEST_ASSERT(!(R in F.devices[filter_key]), "a destroyed device is still listening on [freq]")

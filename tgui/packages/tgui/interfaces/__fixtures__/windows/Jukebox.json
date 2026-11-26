@@ -1,0 +1,39 @@
+{
+	"playing": 1,
+	"loop_mode": 4,
+	"volume": 0.5,
+	"current_track_ref": 101,
+	"current_track": {
+		"ref": 101,
+		"title": "Space Oddity",
+		"artist": "Dave B.",
+		"genre": "Rock",
+		"duration": 3000
+	},
+	"current_genre": "Rock",
+	"percent": 0.4,
+	"tracks": [
+		{
+			"ref": 101,
+			"title": "Space Oddity",
+			"artist": "Dave B.",
+			"genre": "Rock",
+			"duration": 3000
+		},
+		{
+			"ref": 102,
+			"title": "Lunar Waltz",
+			"artist": "Selene",
+			"genre": "Classical",
+			"duration": 1800
+		},
+		{
+			"ref": 103,
+			"title": "Hidden Beat",
+			"artist": "Unknown",
+			"genre": "Admin",
+			"duration": 2400
+		}
+	],
+	"admin": 1
+}

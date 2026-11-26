@@ -1,22 +1,14 @@
 // Set Flavour Text — structured TGUI.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
-import { Box, Button, Section, Stack } from 'tgui-core/components';
+import { Button, Section, Stack } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
-
-type Part = {
-  key: string;
-  label: string;
-  preview: string;
-};
-
-type Data = {
-  parts: Part[];
-};
+import type { FlavorTextActions, FlavorTextData } from './generated/FlavorText';
 
 export const FlavorText = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<FlavorTextData, FlavorTextActions>();
   const { parts } = data;
   return (
     <Window width={560} height={500} title="Update Flavour Text">
@@ -44,7 +36,7 @@ export const FlavorText = () => {
                   </Stack.Item>
                   <Stack.Item grow>
                     {p.preview ? (
-                      <Box color="label">{p.preview}</Box>
+                      <Label>{p.preview}</Label>
                     ) : (
                       <EmptyState>(not set)</EmptyState>
                     )}

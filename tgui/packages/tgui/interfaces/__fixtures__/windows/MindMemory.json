@@ -1,0 +1,9 @@
+{
+	"name": "Jo Park",
+	"memory": "<b>Bank account:</b> 4471-2213, PIN 5532<br>The quartermaster owes me a favour.",
+	"ambitions": "Get the station's last working jukebox into the bar.",
+	"objectives": [
+		{ "text": "Steal the Chief Engineer's hardsuit." },
+		{ "text": "Escape on the shuttle alive." }
+	]
+}

@@ -287,16 +287,31 @@ pub fn called_here(tree: &Tree, sem: &crate::sem::Sem, defs: &HashMap<String, Ve
     // A call whose receiver has a static type speaks for that type only: `locked` is declared on forty types, and a typed
     // `door.set_locked()` says nothing about the other thirty-nine.
     let typed = typed_set_calls(tree);
-    let typed_for: Vec<&BTreeSet<String>> = names.iter().filter_map(|n| typed.get(n)).collect();
+    // A receiver the scan could not type (`company().set_v()`, UNTYPED) is not a typed call: counting it here would make the var's only call
+    // (the one `analyze fix` wrote through a call chain) speak for no type, drop the var and its setter, and leave the call not compiling.
+    let typed_for: Vec<&BTreeSet<String>> = names.iter().filter_map(|n| typed.get(n)).filter(|types| types.iter().any(|t| t != UNTYPED)).collect();
     if !typed_for.is_empty() {
-        return typed_for.iter().any(|types| types.iter().any(related));
+        return typed_for.iter().any(|types| types.iter().filter(|t| *t != UNTYPED).any(related));
     }
     // Only calls whose receiver could not be typed name it: the name is enough when no unrelated type owns a hand-written proc of it.
     names.iter().all(|n| defs.get(n).is_none_or(|types| types.iter().all(related)))
 }
 
 /// One var the generator tracks.
-pub use crate::auto_tracking_policy::{Auto, AutoSet};
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Auto {
+    pub ty: String,
+    pub var: String,
+    pub list: bool,
+}
+
+/// What the inference decided.
+#[derive(Default)]
+pub struct AutoSet {
+    pub tracked: Vec<Auto>,
+    /// `(type, var, why)` candidates left alone.
+    pub blocked: Vec<(String, String, String)>,
+}
 
 /// Whether a proc definition at `loc` is the expansion of a `TRACKED(T, v)` line (the macro writes `set_v` at the line of its invocation): that is
 /// the declaration the generator replaces, not a hand-written proc it would clash with.
@@ -347,8 +362,7 @@ pub fn decide(tree: &Tree, sem: &crate::sem::Sem, candidates: &BTreeSet<(String,
             if sig.file == AUTO_REL {
                 return why("declared in the generated file");
             }
-            // code/library/ui/tgui/modules/ holds window hosts (content); the rest of code/library/ui/tgui/ is the engine's own.
-            if crate::sem::reads::ENGINE_DIRS.iter().any(|d| sig.file.starts_with(d)) && !sig.file.starts_with("code/library/ui/tgui/modules/") {
+            if crate::sem::reads::ENGINE_DIRS.iter().any(|d| sig.file.starts_with(d)) {
                 return why("engine-internal state: the framework's own bookkeeping publishes itself");
             }
             if sig.file.contains("benchmarks/") {

@@ -25,7 +25,7 @@
 		software_data["name"] = S.name
 		software_data["id"] = S.id
 		if(key in software)
-			software_data["on"] = S.is_active(src)
+			software_data["on"] = !!S.is_active(src)
 			bought_software.Add(list(software_data))
 		else
 			software_data["ram"] = S.ram_cost
@@ -51,6 +51,8 @@
 /mob/living/silicon/pai/proc/ui_act_software(datum/act/op/A, software_id)
 	var/soft = software_id
 	var/datum/pai_software/S = software[soft] ? GLOB.pai_software_by_key[soft] : null
+	if(!S)
+		return FALSE
 	if(S.toggle)
 		S.toggle(src)
 	else

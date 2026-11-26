@@ -11,20 +11,24 @@ import {
   Table,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
+import type {
+  MaterialStackActions,
+  MaterialStackData,
+} from './generated/MaterialStack';
 
-type Data = { amount: number; recipes: Record<string, recipe>[] };
+type RecipeTree = MaterialStackData['recipes'];
+type Entry = RecipeTree[string];
+type recipe = Exclude<Entry, RecipeTree>;
 
-type recipe = {
-  res_amount: number;
-  max_res_amount: number;
-  req_amount: number;
-  ref: string;
-};
+/** A recipe (it has a ref) rather than a group of further entries. */
+const isRecipe = (entry: Entry): entry is recipe =>
+  typeof entry.ref === 'number';
 
 export const MaterialStack = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<MaterialStackData, MaterialStackActions>();
 
-  const { amount, recipes } = data;
+  const { amount } = data;
+  const recipes = data.recipes ?? {};
   const [searchText, setSearchText] = useState('');
 
   return (
@@ -50,10 +54,7 @@ export const MaterialStack = (props) => {
   );
 };
 
-const RecipeList = (props: {
-  recipes: Record<string, recipe>[];
-  searchText: string;
-}) => {
+const RecipeList = (props: { recipes: RecipeTree; searchText: string }) => {
   const { recipes, searchText } = props;
 
   const sortedKeys = Object.keys(recipes).sort();
@@ -69,8 +70,6 @@ const RecipeList = (props: {
   // let nonCategories = sortedKeys.filter(item => recipes[item].ref !== undefined);
   // let categories = sortedKeys.filter(item => recipes[item].ref === undefined);
 
-
-
   return filteredKeys.map((title, index) => {
     // if (title === "--DIVIDER--") {
     //   return (
@@ -80,7 +79,7 @@ const RecipeList = (props: {
     //   );
     // }
     const recipe = recipes[title];
-    if (recipe.ref === undefined) {
+    if (!isRecipe(recipe)) {
       return (
         <Collapsible key={index} ml={1} mb={-0.7} color="label" title={title}>
           <Box ml={1}>
@@ -103,7 +102,7 @@ const buildMultiplier = (recipe: recipe, amount: number) => {
 };
 
 const Multipliers = (props) => {
-  const { act, data } = useBackend();
+  const { act, data } = useBackend<MaterialStackData, MaterialStackActions>();
 
   const { recipe, maxMultiplier } = props;
 
@@ -152,7 +151,7 @@ const Multipliers = (props) => {
 };
 
 const Recipe = (props: { recipe: recipe; title: string }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<MaterialStackData, MaterialStackActions>();
 
   const { amount } = data;
 

@@ -117,6 +117,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 	section(controls, "The unit's window and the buttons in it")
 	interface("Smes")
+	ui_shape(capacity = num(), capacityPercent = num(), charge = num(), inputAttempt = bool(), inputting = num(), inputLevel = num(), inputLevel_text = schema_text(), inputLevelMax = num(), inputAvailable = num(), outputAttempt = bool(), outputting = num(), outputLevel = num(), outputLevel_text = schema_text(), outputLevelMax = num(), outputUsed = num())
 	extend("ui_open", ungated()) // a unit with no input terminal (unwired, so not operable) still shows its window; its buttons stay behind the operable gate
 	op("tryinput", ui_act(), toggles(nameof(input_attempt)), then(PROC_REF(input_switched)))
 	op("tryoutput", ui_act(), toggles(nameof(output_attempt)), then(PROC_REF(output_switched)))

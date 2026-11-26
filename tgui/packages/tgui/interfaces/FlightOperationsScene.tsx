@@ -273,8 +273,8 @@ type CelestialSceneProps = {
   bodies: FlightDestination[];
   focusId: string;
   selectedId?: string;
-  vesselDestinationId?: string;
-  plan?: FlightPlan;
+  vesselDestinationId?: string | null;
+  plan?: FlightPlan | null;
   serverTime: number;
   onFocus: (id: string) => void;
   onSelect: (id: string) => void;
@@ -377,7 +377,7 @@ export const WebGLCelestialScene = (initialProps: CelestialSceneProps) => {
           trajectoryOrigin.current?.planId === props.plan.id
             ? trajectoryOrigin.current.position
             : positions.get(props.plan.origin_id || '');
-        const end = positions.get(props.plan.destination_id);
+        const end = positions.get(props.plan.destination_id || '');
         if (start && end) {
           const duration = Math.max(
             1,
@@ -522,7 +522,7 @@ export const WebGLCelestialScene = (initialProps: CelestialSceneProps) => {
           trajectoryOrigin.current?.planId === props.plan.id
             ? trajectoryOrigin.current.position
             : positions.get(props.plan.origin_id || '');
-        const end = positions.get(props.plan.destination_id);
+        const end = positions.get(props.plan.destination_id || '');
         if (start && end) {
           const trajectory: Vec3[] = [];
           const control = add(mul(add(start, end), 0.5), {

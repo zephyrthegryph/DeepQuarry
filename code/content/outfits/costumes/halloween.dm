@@ -15,7 +15,8 @@
 
 /datum/decl/hierarchy/outfit/costume/professional
 	name = OUTFIT_COSTUME("Professional")
-	uniform = /obj/item/clothing/under/suit_jacket{ starting_accessories=list(/obj/item/clothing/accessory/wcoat) }
+	uniform = /obj/item/clothing/under/suit_jacket
+	uniform_accessories = list(/obj/item/clothing/accessory/wcoat = 1)
 	shoes = /obj/item/clothing/shoes/black
 	gloves = /obj/item/clothing/gloves/black
 	glasses = /obj/item/clothing/glasses/fakesunglasses
@@ -23,8 +24,7 @@
 
 /datum/decl/hierarchy/outfit/costume/professional/post_equip(mob/living/carbon/human/H)
 	var/obj/item/storage/briefcase/new_briefcase = new(H)
-	new_briefcase.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/briefcase_item in new_briefcase) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/briefcase_item in new_briefcase)
 		spent(briefcase_item, H)
 	new /obj/item/gun/projectile/pistol/toy(new_briefcase)
 	new /obj/item/ammo_magazine/mfoam_dart/pistol(new_briefcase)
@@ -33,7 +33,7 @@
 
 /datum/decl/hierarchy/outfit/costume/horrorcop
 	name = OUTFIT_COSTUME("Slasher Movie Cop")
-	uniform = /obj/item/clothing/under/corp/pcrc{ starting_accessories=list(/obj/item/clothing/accessory/holster/hip) }
+	uniform = VARIANT(/obj/item/clothing/under/corp/pcrc)
 	shoes = /obj/item/clothing/shoes/black
 	gloves = /obj/item/clothing/gloves/black
 	glasses = /obj/item/clothing/glasses/fakesunglasses
@@ -43,6 +43,8 @@
 
 /datum/decl/hierarchy/outfit/costume/horrorcop/post_equip(mob/living/carbon/human/H)
 	var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_UNIFORM)
+	var/obj/item/clothing/accessory/holster/hip/holster = new(U)
+	U.attach_accessory(null, holster)
 	if(LAZYLEN(U.accessories))
 		for(var/obj/item/clothing/accessory/A in U.accessories)
 			if(istype(A, /obj/item/clothing/accessory/holster))
@@ -51,7 +53,8 @@
 
 /datum/decl/hierarchy/outfit/costume/cowboy
 	name = OUTFIT_COSTUME("Cowboy")
-	uniform = /obj/item/clothing/under/pants{ starting_accessories=list(/obj/item/clothing/accessory/holster/hip) }
+	uniform = /obj/item/clothing/under/pants
+	uniform_accessories = list(/obj/item/clothing/accessory/holster/hip = 1)
 	shoes = /obj/item/clothing/shoes/boots/cowboy
 	head = /obj/item/clothing/head/cowboy
 	gloves = /obj/item/clothing/gloves/fingerless
@@ -68,7 +71,8 @@
 
 /datum/decl/hierarchy/outfit/costume/lumberjack
 	name = OUTFIT_COSTUME("Lumberjack")
-	uniform = /obj/item/clothing/under/pants{ starting_accessories=list(/obj/item/clothing/accessory/sweater/blackneck) }
+	uniform = /obj/item/clothing/under/pants
+	uniform_accessories = list(VARIANT(/obj/item/clothing/accessory/sweater/blackneck) = 1)
 	shoes = /obj/item/clothing/shoes/boots/workboots
 	head = /obj/item/clothing/head/beanie
 	gloves = /obj/item/clothing/gloves/fingerless
@@ -109,14 +113,15 @@
 /datum/decl/hierarchy/outfit/costume/pirate
 	name = OUTFIT_COSTUME("Pirate")
 	uniform = /obj/item/clothing/under/pirate
-	shoes = /obj/item/clothing/shoes/brown
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	head = /obj/item/clothing/head/pirate
 	suit = /obj/item/clothing/suit/pirate
 	glasses = /obj/item/clothing/glasses/eyepatch
 
 /datum/decl/hierarchy/outfit/costume/whiteout
 	name = OUTFIT_COSTUME("Snow Ghost")
-	uniform = /obj/item/clothing/under/color/white{ starting_accessories=list(/obj/item/clothing/accessory/scarf/white) }
+	uniform = /obj/item/clothing/under/color/white
+	uniform_accessories = list(/obj/item/clothing/accessory/scarf/white = 1)
 	shoes = /obj/item/clothing/shoes/white
 	suit = /obj/item/clothing/suit/storage/hooded/chaplain_hoodie/whiteout
 	gloves = /obj/item/clothing/gloves/white
@@ -125,7 +130,7 @@
 /datum/decl/hierarchy/outfit/costume/marine
 	name = OUTFIT_COSTUME("Ruin Marine")
 	uniform = /obj/item/clothing/under/color/grey
-	shoes = /obj/item/clothing/shoes/brown
+	shoes = VARIANT(/obj/item/clothing/shoes/brown)
 	head = /obj/item/clothing/head/marine
 	suit = /obj/item/clothing/suit/marine
 	r_hand = /obj/item/gun/projectile/revolver/toy/sawnoff

@@ -128,45 +128,45 @@ Variables you may want to make use of are:
 				))
 		if(2) //No broken bones.
 			set_has_limbs(list(
-				BP_TORSO =  list("path" = /obj/item/organ/external/chest/unbreakable),
-				BP_GROIN =  list("path" = /obj/item/organ/external/groin/unbreakable),
-				BP_HEAD =   list("path" = /obj/item/organ/external/head/unbreakable),
-				BP_L_ARM =  list("path" = /obj/item/organ/external/arm/unbreakable),
-				BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right/unbreakable),
-				BP_L_LEG =  list("path" = /obj/item/organ/external/leg/unbreakable),
-				BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right/unbreakable),
-				BP_L_HAND = list("path" = /obj/item/organ/external/hand/unbreakable),
-				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/unbreakable),
-				BP_L_FOOT = list("path" = /obj/item/organ/external/foot/unbreakable),
-				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/unbreakable)
+				BP_TORSO =  list("path" = /obj/item/organ/external/chest, "variant" = LIMB_VARIANT_UNBREAKABLE),
+				BP_GROIN =  list("path" = /obj/item/organ/external/groin, "variant" = LIMB_VARIANT_UNBREAKABLE),
+				BP_HEAD =   list("path" = /obj/item/organ/external/head, "variant" = LIMB_VARIANT_UNBREAKABLE),
+				BP_L_ARM =  list("path" = /obj/item/organ/external/arm, "variant" = LIMB_VARIANT_UNBREAKABLE),
+				BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right, "variant" = LIMB_VARIANT_UNBREAKABLE),
+				BP_L_LEG =  list("path" = /obj/item/organ/external/leg, "variant" = LIMB_VARIANT_UNBREAKABLE),
+				BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right, "variant" = LIMB_VARIANT_UNBREAKABLE),
+				BP_L_HAND = list("path" = /obj/item/organ/external/hand, "variant" = LIMB_VARIANT_UNBREAKABLE),
+				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right, "variant" = LIMB_VARIANT_UNBREAKABLE),
+				BP_L_FOOT = list("path" = /obj/item/organ/external/foot, "variant" = LIMB_VARIANT_UNBREAKABLE),
+				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right, "variant" = LIMB_VARIANT_UNBREAKABLE)
 				))
 		if(3) //No removing from the body.
 			set_has_limbs(list(
-				BP_TORSO =  list("path" = /obj/item/organ/external/chest/unseverable),
-				BP_GROIN =  list("path" = /obj/item/organ/external/groin/unseverable),
-				BP_HEAD =   list("path" = /obj/item/organ/external/head/unseverable),
-				BP_L_ARM =  list("path" = /obj/item/organ/external/arm/unseverable),
-				BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right/unseverable),
-				BP_L_LEG =  list("path" = /obj/item/organ/external/leg/unseverable),
-				BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right/unseverable),
-				BP_L_HAND = list("path" = /obj/item/organ/external/hand/unseverable),
-				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/unseverable),
-				BP_L_FOOT = list("path" = /obj/item/organ/external/foot/unseverable),
-				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/unseverable)
+				BP_TORSO =  list("path" = /obj/item/organ/external/chest, "variant" = LIMB_VARIANT_UNSEVERABLE),
+				BP_GROIN =  list("path" = /obj/item/organ/external/groin, "variant" = LIMB_VARIANT_UNSEVERABLE),
+				BP_HEAD =   list("path" = /obj/item/organ/external/head, "variant" = LIMB_VARIANT_UNSEVERABLE_HEAD),
+				BP_L_ARM =  list("path" = /obj/item/organ/external/arm, "variant" = LIMB_VARIANT_UNSEVERABLE),
+				BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right, "variant" = LIMB_VARIANT_UNSEVERABLE),
+				BP_L_LEG =  list("path" = /obj/item/organ/external/leg, "variant" = LIMB_VARIANT_UNSEVERABLE),
+				BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right, "variant" = LIMB_VARIANT_UNSEVERABLE),
+				BP_L_HAND = list("path" = /obj/item/organ/external/hand, "variant" = LIMB_VARIANT_UNSEVERABLE),
+				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right, "variant" = LIMB_VARIANT_UNSEVERABLE),
+				BP_L_FOOT = list("path" = /obj/item/organ/external/foot, "variant" = LIMB_VARIANT_UNSEVERABLE),
+				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right, "variant" = LIMB_VARIANT_UNSEVERABLE)
 				))
 		if(4) //No breaking, OR removing from the body. For things that are more monsterous.
 			set_has_limbs(list(
-				BP_TORSO =  list("path" = /obj/item/organ/external/chest/indestructible),
-				BP_GROIN =  list("path" = /obj/item/organ/external/groin/indestructible),
-				BP_HEAD =   list("path" = /obj/item/organ/external/head/indestructible),
-				BP_L_ARM =  list("path" = /obj/item/organ/external/arm/indestructible),
-				BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right/indestructible),
-				BP_L_LEG =  list("path" = /obj/item/organ/external/leg/indestructible),
-				BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right/indestructible),
-				BP_L_HAND = list("path" = /obj/item/organ/external/hand/indestructible),
-				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/indestructible),
-				BP_L_FOOT = list("path" = /obj/item/organ/external/foot/indestructible),
-				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/indestructible)
+				BP_TORSO =  list("path" = /obj/item/organ/external/chest, "variant" = LIMB_VARIANT_INDESTRUCTIBLE),
+				BP_GROIN =  list("path" = /obj/item/organ/external/groin, "variant" = LIMB_VARIANT_INDESTRUCTIBLE),
+				BP_HEAD =   list("path" = /obj/item/organ/external/head, "variant" = LIMB_VARIANT_INDESTRUCTIBLE_HEAD),
+				BP_L_ARM =  list("path" = /obj/item/organ/external/arm, "variant" = LIMB_VARIANT_INDESTRUCTIBLE),
+				BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right, "variant" = LIMB_VARIANT_INDESTRUCTIBLE),
+				BP_L_LEG =  list("path" = /obj/item/organ/external/leg, "variant" = LIMB_VARIANT_INDESTRUCTIBLE),
+				BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right, "variant" = LIMB_VARIANT_INDESTRUCTIBLE),
+				BP_L_HAND = list("path" = /obj/item/organ/external/hand, "variant" = LIMB_VARIANT_INDESTRUCTIBLE),
+				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right, "variant" = LIMB_VARIANT_INDESTRUCTIBLE),
+				BP_L_FOOT = list("path" = /obj/item/organ/external/foot, "variant" = LIMB_VARIANT_INDESTRUCTIBLE),
+				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right, "variant" = LIMB_VARIANT_INDESTRUCTIBLE)
 				))
 	return
 

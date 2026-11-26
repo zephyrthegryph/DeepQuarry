@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Chemical contaminants are now real reagents with their own volume: they transfer, mix, ingest and metabolise like any reagent, harm the patient from their own metabolism, and never react."
+  - balance: "Purity is a property of the mixture (contaminant volume over total volume); graded recipes check the grade of the beaker they run in. Dispensers and synthesizers hand out stock together with the contaminants that come with it, and recharging no longer raises a cartridge's purity."
+  - qol: "Scanners, the chem master, the chemical analyzer and the health scanner list each contaminant on its own line with its volume, and give the mixture's grade."

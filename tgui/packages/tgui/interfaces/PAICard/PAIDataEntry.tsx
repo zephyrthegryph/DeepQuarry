@@ -2,6 +2,7 @@ import { useBackend } from 'tgui/backend';
 import { Button, Icon, Section, Stack, Tooltip } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
 import { gender2icon } from '../deepquarry/shared/gender';
+import type { PAICardActions } from '../generated/PAICard';
 import { genderToColor } from './constants';
 import { PaiIcon } from './PaiIcon';
 import type { Data, DetailedInvitePAIData } from './types';
@@ -10,7 +11,7 @@ export const PAIDataEntry = (props: {
   paiEntry: DetailedInvitePAIData;
   detailed?: boolean;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, PAICardActions>();
 
   const { paiEntry, detailed } = props;
 

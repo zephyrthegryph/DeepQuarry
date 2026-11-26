@@ -28,6 +28,10 @@
 #define ENTRY_USES_POWER "uses_power"
 /// The change key a machine's uses_power() values publish under when one is set at run time (power_of() reads as it).
 #define USES_POWER_KEY "uses_power"
+/// The keys of a machine's three channel draws on its area's demand (contributes_to() in /obj/machinery's block): unpowered_machine() drops them by these.
+#define MACHINE_DEMAND_EQUIP_KEY "power_demand_equip"
+#define MACHINE_DEMAND_LIGHT_KEY "power_demand_light"
+#define MACHINE_DEMAND_ENVIRON_KEY "power_demand_environ"
 #define TOTAL   4 // For total power used only.
 
 // Bitflags for machine stat variable.

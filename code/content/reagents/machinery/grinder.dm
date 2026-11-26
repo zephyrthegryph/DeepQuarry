@@ -113,7 +113,7 @@ CAPABILITIES(/obj/machinery/reagentgrinder)
 
 		return TRUE
 
-	if(!grinding_rule_for(O.type) && (!O.reagents || !O.reagents.total_volume))
+	if(!item_grindable(O))
 		to_chat(user, "\The [O] is not suitable for blending.")
 		return TRUE
 

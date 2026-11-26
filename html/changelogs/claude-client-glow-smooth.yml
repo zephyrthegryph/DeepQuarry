@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Client lighting: floors between lights no longer fall dark, and overlapping lights blend without tile-shaped seams."
+  - admin: "Toggle Client Lighting switches between client and server lighting again."

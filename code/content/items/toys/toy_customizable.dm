@@ -41,7 +41,8 @@
 		"base_color" = fabric_color,
 		"name" = name,
 		"icon" = icon,
-		"preview" = icon2base64(get_flat_icon(src)),
+		// From the shared portrait cache (drawn off the tick; null until it lands, then the window draws again: preview_landed).
+		"preview" = portrait_request(src, dir, src, PROC_REF(preview_landed))?.b64,
 		"possible_overlays" = possible_overlay_data,
 		"overlays" = our_overlays
 	)
@@ -168,6 +169,7 @@
 CAPABILITIES(/obj/item/toy/plushie/customizable)
 	op("clear", ui_act(), then(PROC_REF(ui_act_clear)))
 	interface("PlushieEditor", state = nameof(GLOB.tgui_conscious_state))
+	ui_shape(base_color = schema_text(), name = schema_text(), icon = schema_text(), preview = nullable(schema_text()), possible_overlays = list_of(row(name = schema_text(), icon_state = schema_text())), overlays = list_of(row(icon_state = schema_text(), name = schema_text(), color = schema_text(), alpha = num())))
 	without("ui_open")
 	op("add_overlay", ui_act("add_overlay", arg("new_overlay", schema_text(4096))), then(PROC_REF(ui_act_add_overlay)))
 	op("remove_overlay", ui_act("remove_overlay", arg("removed_overlay", schema_text(4096))), then(PROC_REF(ui_act_remove_overlay)))
@@ -235,3 +237,7 @@ CAPABILITIES(/obj/item/toy/plushie/customizable)
 		"thick_h_1" = "Horns, Thick, L",
 		"thick_h_2" = "Horns, Thick, R"
 	)
+
+/// The plushie's new picture landed: the editor shows it.
+/obj/item/toy/plushie/customizable/proc/preview_landed(datum/portrait/P)
+	SStgui.update_uis(src)

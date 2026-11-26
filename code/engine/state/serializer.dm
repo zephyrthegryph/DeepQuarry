@@ -14,10 +14,6 @@
 	var/list/saved_vars
 	/// var name -> codec path, from state_codecs().
 	var/list/codecs
-	/// var name -> encoded pristine value, for list vars of latent-safe types (null otherwise).
-	var/list/list_baseline
-	/// List vars whose Initialize() result is not a stable per-type baseline.
-	var/list/nondeterministic_list_vars
 
 GLOBAL_LIST_EMPTY(state_schemas)
 
@@ -73,7 +69,6 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if(isatom(D))
 		schema.saved_vars += OP_KEY_CAP_STATE
 	schema.codecs = D.state_codecs()
-	schema.nondeterministic_list_vars = D.state_nondeterministic_list_vars()
 	GLOB.state_schemas[D.type] = schema
 	return schema
 
@@ -118,16 +113,10 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/list/by_id
 	/// Materialize: list(target, blob) pairs whose vars are applied once the tree exists.
 	var/list/pending
-	/// The root is latent-safe: list vars of the whole subtree compare against pristine instances.
-	var/latent_root = FALSE
 
 /datum/state_context/New(flags)
 	..()
 	src.flags = flags
-
-/// The id tables hold every atom the call touched as keys. A qdel'd context
-/// waits in the GC queue, so drop them now or those atoms carry a hidden
-/// reference (collapse's refcount check would see an outside holder).
 
 /datum/state_context/proc/refuse(reason)
 	LAZYADD(errors, reason)
@@ -142,8 +131,6 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		return null
 	ids = alist()
 	ids[handle_of(D)] = ""
-	var/atom/movable/movable = D
-	latent_root = istype(movable) && latent_type_safe(movable.type)
 	if((flags & STATE_CONTENTS) && isatom(D))
 		assign_ids(D, "")
 	. = serialize_datum(D, flags)
@@ -171,14 +158,10 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/list/blob = list()
 	blob[STATE_KEY_TYPE] = "[D.type]"
 	blob[STATE_KEY_VERSION] = D.state_version
-	// A declared latent generator (starts_with) resolves into entries before the delta is taken:
-	// resolving clears the generator, and a delta read first saved the generator as a var, so the
-	// copy came back with the generator restored but not declared (neither latent nor real, and
-	// Destroy() reported it as unreleased contents).
 	var/datum/ledger/L
 	if((flags & STATE_CONTENTS) && isatom(D))
 		var/atom/resolving = D
-		L = resolving.containment_ledger() || (resolving.has_latent() ? dq_ledger(resolving) : null)
+		L = resolving.containment_ledger()
 	var/list/delta = encode_delta(D, schema)
 	if(length(delta))
 		blob[STATE_KEY_VARS] = delta
@@ -202,21 +185,12 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 				child_blob[STATE_KEY_SLOT] = record[LEDGER_E_SLOT]
 			children += list(child_blob)
 		blob[STATE_KEY_CONTENTS] = children
-		if(L?.latent_total)
-			var/list/latent = list()
-			for(var/datum/latent_entry/entry as anything in L.latent_list())
-				var/list/encoded = list("type" = "[entry.path]", "count" = entry.count, "slot" = entry.slot)
-				if(entry.blob)
-					encoded["state"] = entry.blob
-				latent += list(encoded)
-			blob[STATE_KEY_LATENT] = latent
 	return errors ? null : blob
 
 /datum/state_context/proc/encode_delta(datum/D, datum/state_schema/schema)
 	var/list/delta = list()
 	var/list/excluded = D.state_exclude()
 	var/list/variant = D.state_variant_baseline()
-	var/latent = latent_root && ismovable(D)
 	for(var/name in schema.saved_vars)
 		if(name in excluded)
 			continue
@@ -246,58 +220,8 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 				continue
 		else
 			encoded = encode_value(value, "[D.type].[name]")
-		if(islist(value) && list_matches_baseline(D, schema, name, encoded, latent))
-			continue
 		delta[name] = encoded
 	return delta
-
-/// Lists have no usable initial(), so other types save every list var that is
-/// set (as the pre-L1 serializer did). In a latent-safe subtree a list matches
-/// the pristine instance's value, and an empty list matches an unset one.
-/datum/state_context/proc/list_matches_baseline(datum/D, datum/state_schema/schema, name, encoded, latent)
-	if(!latent)
-		return FALSE
-	var/list/L = D.vars[name]
-	var/list/baselines = list_baseline_of(D.type)
-	var/baseline = baselines[name]
-	if(isnull(baseline))
-		return !length(L)
-	return state_canonical(baseline) == state_canonical(encoded)
-
-/// Encoded list vars of a pristine instance of `path`, made once and cached on its schema.
-/datum/state_context/proc/list_baseline_of(path)
-	var/datum/state_schema/schema = GLOB.state_schemas[path]
-	if(schema?.list_baseline)
-		return schema.list_baseline
-	var/list/baseline = pristine_lists(path)
-	schema = GLOB.state_schemas[path]
-	schema.list_baseline = baseline
-	return baseline
-
-/// Encoded list vars of a fresh instance of `path`, for latent-safe types.
-/datum/state_context/proc/pristine_lists(path)
-	. = list()
-	var/datum/probe = state_new_unmaterialized(path, null) // sandboxed: no world registration (L2)
-	var/datum/state_context/probe_ctx = new(NONE)
-	probe_ctx.ids = alist()
-	var/datum/state_schema/schema = state_schema_for(probe)
-	for(var/name in schema.saved_vars)
-		// These lists can vary per instance at Initialize(): whatever a type
-		// declares in state_nondeterministic_list_vars() (random scrap
-		// composition, generated sprite-state tables). A baseline sampled from
-		// one instance would swallow every other instance that matched it, and a
-		// restored copy would then re-roll. Skipping falls back to "matches if empty".
-		if(name == OP_KEY_CAP_STATE || (name in schema.nondeterministic_list_vars))
-			continue
-		var/value = probe.vars[name]
-		if(!islist(value))
-			continue
-		var/encoded = probe_ctx.encode_value(value, "[path].[name]")
-		if(!probe_ctx.errors)
-			.[name] = encoded
-		probe_ctx.errors = null
-	spent(probe_ctx)
-	spent(probe)
 
 /// Encodes one value. `where` names the var for error messages.
 /datum/state_context/proc/encode_value(value, where)
@@ -473,11 +397,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_registry_adapter)
 			var/value = A.vars[name]
 			if(isdatum(value) && (value in removed))
 				A.vars[name] = null // ALLOW(api): state serializer: restores saved vars
-	// The blob's latent entries replace whatever the holder declared at init.
-	if(A?.latent_contents_enabled())
-		A.latent_generator_clear()
-		A.set_latent_declared(FALSE)
-		A.containment_ledger()?.latent_clear()
 	var/index = 0
 	for(var/list/child_blob as anything in blob[STATE_KEY_CONTENTS])
 		index++
@@ -490,10 +409,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_registry_adapter)
 				L.reslot(child, slot)
 			else
 				refuse("[A.type] has no slot [slot]")
-	for(var/list/encoded as anything in blob[STATE_KEY_LATENT])
-		var/path = text2path(encoded["type"])
-		if(!path || !A.latent_add(path, encoded["count"], encoded["state"], encoded["slot"]))
-			refuse("[A.type] refused latent entry [encoded["type"]]")
 
 /// Applies vars (and legacy component blobs) everywhere, then runs state_post_apply() children first.
 /datum/state_context/proc/finish_tree()

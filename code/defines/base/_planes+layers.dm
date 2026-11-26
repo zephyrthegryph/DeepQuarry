@@ -136,6 +136,11 @@ What is the naming convention for planes or layers?
 #define PLANE_PLANETLIGHTING	4 //Lighting on planets
 
 #define PLANE_LIGHTING			5 //Where the lighting (and darkness) lives
+/// Client lighting on PLANE_LIGHTING: a white tile, and above it the glows. Ordinary layers, above the black screen base.
+#define CLIENT_GLOW_WHITE_LAYER 5
+#define CLIENT_GLOW_LAYER 6
+/// A big atom's flat silhouette on PLANE_CLIENT_GLOW: above every glow, it replaces the light under the sprite with its turf's level (client_flat_light.dm).
+#define CLIENT_GLOW_FLAT_LAYER 7
 	#define LIGHTING_RENDER_TARGET	"LIGHT_PLANE"
 
 #define PLANE_O_LIGHTING_VISUAL	6 //For masking the lighting plane
@@ -152,6 +157,14 @@ What is the naming convention for planes or layers?
 
 #define PLANE_GHOSTS			10 //Spooooooooky ghooooooosts
 #define PLANE_AI_EYE			11 //The AI eye lives here
+#define PLANE_CLIENT_GLOW		12 //Client glows in lighting compare mode: a hidden render target, relayed onto PLANE_LIGHTING for clients on the client view (client_lighting_compare.dm)
+	#define CLIENT_GLOW_RENDER_TARGET "*CLIENT_GLOW_PLANE"
+#define PLANE_CLIENT_VISIBLE	13 //One white tile on every turf this client sees (its area's overlay): a hidden render target that cuts the glow plane (client_lighting_compare.dm)
+	#define CLIENT_VISIBLE_RENDER_TARGET "*CLIENT_VISIBLE_PLANE"
+#define PLANE_CLIENT_WALLS		14 //One white tile on every opaque turf: a hidden render target limiting the wall spread to opaque tiles (client_lighting_compare.dm)
+	#define CLIENT_WALLS_RENDER_TARGET "*CLIENT_WALLS_PLANE"
+#define PLANE_CLIENT_SPREAD		25 //The glow plane bloomed and cut to opaque tiles: a hidden render target added by the lighting master; a whole number: a fractional plane loses its master and the spread vanishes (client rig) (client_lighting_compare.dm)
+	#define CLIENT_SPREAD_RENDER_TARGET "*CLIENT_SPREAD_PLANE"
 
 // "Character HUDs", aka HUDs, but not the game's UI. Things like medhuds. I know Planes say they must be intergers, but it's lies.
 #define PLANE_CH_STATUS			15 //Status icon

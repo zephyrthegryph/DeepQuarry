@@ -145,40 +145,40 @@ GLOBAL_LIST_INIT(status_policies, status_policies_build(list(
 
 /// TRUE while status `id` is in effect (any source, timed or held), and no immunity zeroes it. A status starting or ending publishes
 /// MOB_KEY_STATUS (status_flipped()), which a reader of has_status() subscribes to.
-READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
-/datum/proc/has_status(id)
+READS_AS(/mob/proc/has_status, MOB_KEY_STATUS)
+/mob/proc/has_status(id)
 	var/value = stat_value(src, id)
 	return isnum(value) && value > 0
 
 /// TRUE while this entity is immune to status `id`.
-/datum/proc/status_immune(id)
+/mob/proc/status_immune(id)
 	return !!stat_value(src, STAT_IMMUNE(id))
 
 /// The own dose's hold row of `id`, or null.
-/datum/proc/status_dose(id)
+/mob/proc/status_dose(id)
 	return stat_hold_row_of(src, id, SRC_STATUS)
 
 /// Deciseconds of biological time until the own dose of `id` ends (0 when there is none). A hold from another source has no duration and
 /// doesn't count: read has_status() for "in effect at all".
-/datum/proc/status_remaining(id)
+/mob/proc/status_remaining(id)
 	var/list/row = status_dose(id)
 	if(!row || !row[H_EXPIRES])
 		return 0
 	return max(row[H_EXPIRES] - stat_clock_now(src, HOLD_CLOCK_BIO), 0)
 
 /// status_remaining() in units at the current rate, rounded up.
-/datum/proc/status_units(id)
+/mob/proc/status_units(id)
 	var/left = status_remaining(id)
 	return left ? CEILING(left * status_rate(id) / LIFE_CYCLE, 1) : 0
 
 /// status_remaining() in seconds, for readouts.
-/datum/proc/status_seconds(id)
+/mob/proc/status_seconds(id)
 	return status_remaining(id) / (1 SECONDS)
 
 // ---------------------------------------------------------------- writing
 
 /// "Can't go below": the own dose lasts at least `amount` units from now. Never shortens.
-/datum/proc/status_at_least(id, amount)
+/mob/proc/status_at_least(id, amount)
 	var/datum/status_policy/P = status_policy(id)
 	amount = status_increase(P, amount)
 	if(amount <= 0)
@@ -195,7 +195,7 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 	return TRUE
 
 /// Exactly `amount` units from now for the own dose; 0 ends it (other sources' holds stay).
-/datum/proc/status_set(id, amount)
+/mob/proc/status_set(id, amount)
 	var/datum/status_policy/P = status_policy(id)
 	if(amount <= 0)
 		release(src, id, SRC_STATUS)
@@ -211,7 +211,7 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 
 /// Adds `amount` units to the own dose; negative shortens it, and at or below now ends it. An increase is admitted and scaled like
 /// status_at_least(); a capped status never exceeds its cap.
-/datum/proc/status_adjust(id, amount)
+/mob/proc/status_adjust(id, amount)
 	var/datum/status_policy/P = status_policy(id)
 	if(amount > 0)
 		amount = status_increase(P, amount)
@@ -230,12 +230,12 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 	return TRUE
 
 /// Ends the own dose (other sources' holds stay).
-/datum/proc/status_end(id)
+/mob/proc/status_end(id)
 	release(src, id, SRC_STATUS)
 
 /// The rate of `id` may have changed (resting, a blindfold): what is left of the own dose is rescaled so the same number of units remains,
 /// worn off at the new rate from now on.
-/datum/proc/status_rate_check(id)
+/mob/proc/status_rate_check(id)
 	var/list/row = status_dose(id)
 	if(!row || !row[H_EXPIRES])
 		return
@@ -249,7 +249,7 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 // ---------------------------------------------------------------- admission, rates and hooks
 
 /// An increase: admitted, then scaled. Returns the units to add, 0 when refused.
-/datum/proc/status_increase(datum/status_policy/P, amount)
+/mob/proc/status_increase(datum/status_policy/P, amount)
 	if(amount <= 0 || !status_admit(P, amount))
 		return 0
 	if(P.scaled)
@@ -258,12 +258,12 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 		status_increased(P)
 	return amount
 
-/datum/proc/status_increased(datum/status_policy/P)
+/mob/proc/status_increased(datum/status_policy/P)
 	if(P.on_increase && ismob(src))
 		call(src, P.on_increase)()
 
 /// Admission of an increase: the immunity; an admitted one is announced (its notice) before it applies.
-/datum/proc/status_admit(datum/status_policy/P, amount)
+/mob/proc/status_admit(datum/status_policy/P, amount)
 	if(status_immune(P.id))
 		return FALSE
 	if(P.announce)
@@ -271,24 +271,24 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 	return TRUE
 
 /// Units of status `id` that wear off per LIFE_CYCLE on this entity.
-/datum/proc/status_rate(id)
+/mob/proc/status_rate(id)
 	var/datum/status_policy/P = status_policy(id)
 	if(P.wear_resting && status_resting())
 		return P.wear_resting
 	return P.wear
 
 /// TRUE while this entity rests (statuses with a wear_resting wear off at it).
-/datum/proc/status_resting()
+/mob/proc/status_resting()
 	return FALSE
 
 /// Scales an increase of a `scaled` status (resistances).
-/datum/proc/status_scale(id, amount)
+/mob/proc/status_scale(id, amount)
 	return amount
 
 /// The stat layer: status `id` started (`active`) or ended on this entity. Its hooks run, its presentation follows, and the mob's status
 /// change is announced (MOB_KEY_STATUS).
-PROC_SUMMARY(/datum/proc/status_flipped) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
-/datum/proc/status_flipped(id, active)
+PROC_SUMMARY(/mob/proc/status_flipped) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
+/mob/proc/status_flipped(id, active)
 	var/datum/status_policy/P = status_policies()["[id]"]
 	if(!P)
 		return
@@ -301,7 +301,7 @@ PROC_SUMMARY(/datum/proc/status_flipped) // vars[] / call() dispatcher: the walk
 	PUBLISH_CHANGE(src, MOB_KEY_STATUS)
 
 /// A status with an alert or indicator started (`active`) or ended.
-/datum/proc/status_shown(datum/status_policy/P, active)
+/mob/proc/status_shown(datum/status_policy/P, active)
 	return
 
 // ---------------------------------------------------------------- godmode and immunity sources

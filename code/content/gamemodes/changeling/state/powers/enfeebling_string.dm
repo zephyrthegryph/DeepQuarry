@@ -22,9 +22,6 @@
 	factors = alist(STAT_MELEE_DAMAGE = 0.5, STAT_INCOMING_ALL = 1.35, STAT_ENDURANCE_MULT = 0.5)
 
 /mob/proc/changeling_enfeebling_string()
-	set category = VERB_CAT_CHANGELING
-	set name = "Enfeebling Sting (30)"
-	set desc = "Reduces the maximum health of a victim for a few minutes.."
 	return changeling_enfeebling_string_stage()
 
 /mob/proc/changeling_enfeebling_string_stage(mob/living/carbon/selected_target)

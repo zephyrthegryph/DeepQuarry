@@ -116,6 +116,7 @@ Thus, the two variables affect pump operation are set in New():
 		"pressure_set" = round(get_target_pressure()*100),	//Nano UI can't handle rounded non-integers, apparently.
 		"max_pressure" = max_pressure_setting,
 		"last_flow_rate" = round(get_flow_rate()*10),
+		"last_power_draw" = round(last_power_draw),
 		"max_power_draw" = get_power_rating(),
 	)
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Window } from 'tgui/layouts';
 import { Stack, Tabs } from 'tgui-core/components';
 import { CharacterSelector } from './ImportElements/CharacterSelector';
@@ -20,11 +20,22 @@ export const VorePanelImport = () => {
   const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
 
-  const filteredData = Object.fromEntries(
-    Array.from(selectedCharacters).map((name) => [name, characterData[name]]),
+  // Memoized: the effects below depend on these, and a fresh object every render re-ran them forever.
+  const filteredData = useMemo(
+    () =>
+      Object.fromEntries(
+        Array.from(selectedCharacters).map((name) => [
+          name,
+          characterData[name],
+        ]),
+      ),
+    [selectedCharacters, characterData],
   );
 
-  const ourCharacters = Object.keys(characterData);
+  const ourCharacters = useMemo(
+    () => Object.keys(characterData),
+    [characterData],
+  );
 
   useEffect(() => {
     if (!activeTab && selectedCharacters.size) {

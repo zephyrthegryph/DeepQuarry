@@ -1,4 +1,4 @@
-import * as z from 'zod';
+import * as z from 'zod/mini';
 
 export type ChatPages = {
   chatPages: Record<string, Page>;

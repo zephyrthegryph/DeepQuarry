@@ -77,35 +77,6 @@ impl DeclarationValues {
             }
         }
     }
-    /// SAME exact source replay and candidate loop, with checked producer/domain
-    /// admission before any pending claim. Actual IO never becomes a cache miss.
-    pub(super) fn get_checked(&self,key:&[u8],text:&str,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
-        checked_status(a)?;
-        let mut bound=None;
-        let lease=match self{Self::Local(_,lease)|Self::Shared(_,lease)=>lease};
-        let(receipt,_)=lease.try_visit_explained_accepted(key,&Host(text),&mut|value|->std::io::Result<bool>{
-            if !value.syntax.initializer_admission_matches(a)?{return Ok(false);}
-            bound=CurrentContribution::bind(Arc::clone(value),text,offset);
-            Ok(bound.is_some())
-        })?;
-        checked_status(a)?;
-        Ok(receipt.and_then(|receipt|bound.filter(|current|Arc::ptr_eq(&current.value,&receipt.value)).map(|mut current|{current.stored=true;current})))
-    }
-    /// A fresh checked producer must retain its actual original header even
-    /// when an older contribution has equal source and read ledger. Use the
-    /// existing physical-variant path; never replace escaped owners or graft.
-    pub(super) fn publish_checked(&self,key:&[u8],current:&mut CurrentContribution,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<()>>{
-        if !current.value.syntax.initializer_admission_matches(a)?{
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"checked declaration publication lacks completed same-counter original header"));
-        }
-        let lease=match self{Self::Local(_,lease)|Self::Shared(_,lease)=>lease};
-        let reads=vec![Observation{query:(),domain:(),answer:ChunkSourceAnswer::Owned(current.value.source.clone())}].into();
-        let Some(value)=lease.insert_fresh_with_qualified_receipt(Arc::from(key),reads,0,||current.value.as_ref().clone())else{return Ok(None)};
-        if !Arc::ptr_eq(&value.syntax,&current.value.syntax)||!value.syntax.initializer_admission_matches(a)?{
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"fresh declaration publication substituted original header owner"));
-        }
-        current.value=value;current.stored=true;Ok(Some(()))
-    }
     pub(super) fn publish(&self, key: &[u8], current: &mut CurrentContribution) -> Option<()> {
         let value = match self {
             Self::Local(_, lease) | Self::Shared(_, lease) => lease.insert_with_owned(
@@ -124,16 +95,9 @@ impl DeclarationValues {
         {
             return None;
         }
-        // The same native source owner can be upgraded by a fresh primary parse.
-        // Share only source-code facts; original acquisition receipts stay current.
-        value.syntax.adopt_primary_headers(&current.value.syntax);
         current.value = value;
         current.stored = true;
         Some(())
-    }
-    pub(super) fn visit_claimed_body_candidates(&self,index:&mut super::super::relative_declarations::BodyCodeCandidates,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
-        let lease=match self{Self::Local(_,lease)|Self::Shared(_,lease)=>lease};
-        lease.try_visit_claimed_values(&||checked_status(a),&mut|value|index.capture(&value.syntax,a))
     }
     pub(super) fn visit_storage(&self, mut visit: impl FnMut(DeclarationStorageView<'_>)) {
         match self {
@@ -153,13 +117,15 @@ impl DeclarationValues {
                         capacity,
                         element_size,
                     }),
-                    ObservedArtifactStorageView::Entry { key, reads, value } => {
-                        visit(DeclarationStorageView::SharedEntry {
-                            key,
-                            reads,
-                            contribution: value.view(),
-                        })
-                    }
+                    ObservedArtifactStorageView::Entry {
+                        key,
+                        reads,
+                        value,
+                    } => visit(DeclarationStorageView::SharedEntry {
+                        key,
+                        reads,
+                        contribution: value.view(),
+                    }),
                 })
             }
         }
@@ -184,5 +150,3 @@ impl Contribution {
 #[cfg(test)]
 #[path = "shared_tests.rs"]
 mod tests;
-
-fn checked_status(a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{let status=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(actual);}status}

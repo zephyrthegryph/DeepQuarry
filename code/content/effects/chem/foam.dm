@@ -36,7 +36,7 @@ CAPABILITIES(/obj/effect/effect/foam)
 	return 3 + metal * 3
 
 /obj/effect/effect/foam/proc/post_spread(datum/act/A)
-	periodic_step()
+	foam_step()
 	checkReagents()
 
 /obj/effect/effect/foam/proc/pre_harden(datum/act/A)
@@ -56,7 +56,7 @@ CAPABILITIES(/obj/effect/effect/foam)
 		for(var/obj/O in turf_contents_of_type(T, /obj))
 			reagents.touch_obj(O)
 
-/obj/effect/effect/foam/periodic_step()
+/obj/effect/effect/foam/proc/foam_step()
 	if(--amount < 0)
 		return
 

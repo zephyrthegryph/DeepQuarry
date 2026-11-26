@@ -16,24 +16,36 @@ use crate::tree::SourceFile;
 
 /// The NTFS name key: upper-cased UTF-16 code units (a character whose upper case is more than one
 /// character keeps its own: the `$UpCase` table is a per-code-unit map).
-fn name_key_using<C:crate::key_policy_control::Control>(name:&str,c:&mut C)->Result<Vec<u16>,C::Error>{let mut out=Vec::new();if C::CHECKED{let count=name.len().checked_mul(4).ok_or_else(||c.overflow())?;crate::key_policy_control::reserve(c,||count.checked_mul(std::mem::size_of::<u16>())?.checked_add(128))?;out.try_reserve_exact(name.len()).map_err(|_|c.allocation_failed())?;if out.capacity()>count{return Err(c.allocation_failed())}}for ch in name.chars(){c.checkpoint()?;let mut up=ch.to_uppercase();let u=match(up.next(),up.next()){(Some(u),None)=>u,_=>ch};let mut buf=[0u16;2];out.extend_from_slice(u.encode_utf16(&mut buf));}Ok(out)}
+fn name_key(name: &str) -> Vec<u16> {
+    let mut out = Vec::with_capacity(name.len());
+    for c in name.chars() {
+        let mut up = c.to_uppercase();
+        let u = match (up.next(), up.next()) {
+            (Some(u), None) => u,
+            _ => c,
+        };
+        let mut buf = [0u16; 2];
+        out.extend_from_slice(u.encode_utf16(&mut buf));
+    }
+    out
+}
 
 /// `(is_dir, name key)` per path component: files (false) sort before directories (true) at each
 /// level, the entries of each kind in name order.
-pub type WalkKey=Vec<(bool,Vec<u16>)>;
-pub fn walk_key_using<C:crate::key_policy_control::Control>(rel:&str,c:&mut C)->Result<WalkKey,C::Error>{let count=rel.bytes().try_fold(1usize,|n,byte|{c.checkpoint()?;if byte==b'/'{n.checked_add(1).ok_or_else(||c.overflow())}else{Ok(n)}})?;let mut out=Vec::new();if C::CHECKED{let bound=count.checked_mul(4).ok_or_else(||c.overflow())?;crate::key_policy_control::reserve(c,||bound.checked_mul(std::mem::size_of::<(bool,Vec<u16>)>())?.checked_add(128))?;out.try_reserve_exact(count).map_err(|_|c.allocation_failed())?;if out.capacity()>bound{return Err(c.allocation_failed())}}for(index,part)in rel.split('/').enumerate(){c.checkpoint()?;out.push((index+1!=count,name_key_using(part,c)?));}Ok(out)}
-fn walk_key(rel:&str)->WalkKey{walk_key_using(rel,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+fn walk_key(rel: &str) -> Vec<(bool, Vec<u16>)> {
+    let parts: Vec<&str> = rel.split('/').collect();
+    let last = parts.len() - 1;
+    parts.iter().enumerate().map(|(i, p)| (i != last, name_key(p))).collect()
+}
 
-pub fn cmp_keys(a:&[(bool,Vec<u16>)],b:&[(bool,Vec<u16>)])->Ordering{cmp_keys_using(a,b,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
-pub fn cmp_keys_using<C:crate::key_policy_control::Control>(a:&[(bool,Vec<u16>)],b:&[(bool,Vec<u16>)],control:&mut C)->Result<Ordering,C::Error>{
+fn cmp_keys(a: &[(bool, Vec<u16>)], b: &[(bool, Vec<u16>)]) -> Ordering {
     for (x, y) in a.iter().zip(b.iter()) {
-        control.checkpoint()?;
         match x.0.cmp(&y.0).then_with(|| x.1.cmp(&y.1)) {
             Ordering::Equal => {}
-            o => return Ok(o),
+            o => return o,
         }
     }
-    Ok(a.len().cmp(&b.len()))
+    a.len().cmp(&b.len())
 }
 
 /// `files` in `os.walk` order (NTFS `scandir` order within each directory).

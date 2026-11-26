@@ -1,56 +1,12 @@
 /datum/mind
 	var/list/learned_spells
 
-/// Refreshes the spell HUD buttons. Part of every mob's upkeep (living mobs: the upkeep system).
-/mob/proc/update_spell_masters()
-	if(spell_masters && spell_masters.len)
-		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
-			spell_master.update_spells(0, src)
-
-/mob/Login()
-	..()
-	if(spell_masters)
-		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
-			spell_master.toggle_open()
-			client_screen_remove(client, spell_master)
-
-// TODO: Investigate if this matters
-// /mob/Stat()
-// 	. = ..()
-// 	if(. && spell_list && spell_list.len)
-// 		for(var/spell/S in spell_list)
-// 			if((!S.connected_button) || !statpanel(S.panel))
-// 				continue //Not showing the noclothes spell
-// 			switch(S.charge_type)
-// 				if(Sp_RECHARGE)
-// 					statpanel(S.panel,"[S.charge_counter/10.0]/[S.charge_max/10]",S.connected_button)
-// 				if(Sp_CHARGES)
-// 					statpanel(S.panel,"[S.charge_counter]/[S.charge_max]",S.connected_button)
-// 				if(Sp_HOLDVAR)
-// 					statpanel(S.panel,"[S.holder_var_type] [S.holder_var_amount]",S.connected_button)
-
-/mob/proc/add_spell(datum/spell/spell_to_add, spell_base = "wiz_spell_ready", master_type = /atom/movable/screen/movable/spell_master)
-	if(length(spell_masters))
-		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
-			if(spell_master.type == master_type)
-				rel_add(src, nameof(spell_list), spell_to_add)
-				spell_master.add_spell(spell_to_add)
-				if(mind)
-					rel_add(mind, nameof(mind.learned_spells), spell_to_add)
-				return 1
-
-	var/atom/movable/screen/movable/spell_master/new_spell_master = new master_type //we're here because either we didn't find our type, or we have no spell masters to attach to
-	if(client)
-		client_screen_add(src.client, new_spell_master)
-	rel_set(new_spell_master, nameof(new_spell_master.spell_holder), src)
-	new_spell_master.add_spell(spell_to_add)
-	if(spell_base)
-		new_spell_master.set_icon_state(spell_base)
-	rel_add(src, nameof(spell_masters), new_spell_master)
+/// The mob learns a spell: it joins its spell list and its ability list (the Abilities tab), and its mind remembers it.
+/mob/proc/add_spell(datum/spell/spell_to_add)
 	rel_add(src, nameof(spell_list), spell_to_add)
+	grant_spell_ability(src, spell_to_add)
 	if(mind)
 		rel_add(mind, nameof(mind.learned_spells), spell_to_add)
-
 	return 1
 
 /mob/proc/remove_spell(datum/spell/spell_to_remove)
@@ -60,25 +16,20 @@
 	if(!(spell_to_remove in spell_list))
 		return
 
-	if(!length(spell_masters))
-		return
-
 	if(mind)
 		rel_remove(mind, nameof(mind.learned_spells), spell_to_remove)
 	rel_remove(src, nameof(spell_list), spell_to_remove)
-	for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
-		spell_master.remove_spell(spell_to_remove)
+	revoke_spell_ability(src, spell_to_remove)
 	return 1
 
+/// Silences every spell the mob has for `amount`.
 /mob/proc/silence_spells(amount = 0)
 	if(!(amount >= 0))
 		return
 
-	if(!length(spell_masters))
-		return
-
-	for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
-		spell_master.silence_spells(amount)
+	for(var/datum/spell/spell as anything in spell_list)
+		spell.silenced = amount
+	abilities_changed()
 
 
 //This is pretty much just copied from construct_spells but adjusted so anyone can use them

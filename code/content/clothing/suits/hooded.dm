@@ -610,12 +610,12 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/command)
 	configure(atom_rules(armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"))
-	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/gun/energy,	/obj/item/reagent_containers/spray/pepper,/obj/item/gun/projectile,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/melee/baton, /obj/item/handcuffs,/obj/item/clothing/head/helmet))
+	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes,	/obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/gun/energy,	/obj/item/reagent_containers/spray,/obj/item/gun/projectile,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/melee/baton, /obj/item/handcuffs,/obj/item/clothing/head/helmet))
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/security)
 	configure(atom_rules(armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"))
-	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/gun/energy,	/obj/item/reagent_containers/spray/pepper,/obj/item/gun/projectile,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/melee/baton,	/obj/item/handcuffs,/obj/item/clothing/head/helmet))
+	suit_storage(list (/obj/item/pen, /obj/item/paper, /obj/item/flashlight,/obj/item/tank/emergency/oxygen, /obj/item/storage/fancy/cigarettes, /obj/item/storage/box/matches, /obj/item/reagent_containers/food/drinks/flask, /obj/item/suit_cooling_unit, /obj/item/gun/energy,	/obj/item/reagent_containers/spray,/obj/item/gun/projectile,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/melee/baton,	/obj/item/handcuffs,/obj/item/clothing/head/helmet))
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/medical)

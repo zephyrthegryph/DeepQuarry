@@ -8,6 +8,7 @@ import {
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
+import type { ParticleEditActions } from '../generated/ParticleEdit';
 import type { ParticleUIData } from './data';
 import {
   EntryCoord,
@@ -32,7 +33,7 @@ type ParticleEditContext = {
 export const ParticleContext = createContext({} as ParticleEditContext);
 
 export const ParticleEdit = (props) => {
-  const { act, data } = useBackend<ParticleUIData>();
+  const { act, data } = useBackend<ParticleUIData, ParticleEditActions>();
   const [desc, setDesc] = useState('');
 
   const {
@@ -73,30 +74,30 @@ export const ParticleEdit = (props) => {
       >
         {desc ? <ShowDesc /> : null}
         <Window.Content scrollable>
-          <LabeledList>
-            <Section
-              title={'Affects entire set'}
-              buttons={
-                <>
-                  <Button
-                    icon={'question'}
-                    onClick={() => setDesc('generator')}
-                    tooltip={'Generator information'}
-                  />
-                  <Button
-                    icon={'sync'}
-                    onClick={() => act('new_type')}
-                    tooltip={'Change type'}
-                  />
-                  <Button
-                    icon={'x'}
-                    color={'red'}
-                    onClick={() => act('delete_and_close')}
-                    tooltip={'Delete and close UI'}
-                  />
-                </>
-              }
-            >
+          <Section
+            title={'Affects entire set'}
+            buttons={
+              <>
+                <Button
+                  icon={'question'}
+                  onClick={() => setDesc('generator')}
+                  tooltip={'Generator information'}
+                />
+                <Button
+                  icon={'sync'}
+                  onClick={() => act('new_type')}
+                  tooltip={'Change type'}
+                />
+                <Button
+                  icon={'x'}
+                  color={'red'}
+                  onClick={() => act('delete_and_close')}
+                  tooltip={'Delete and close UI'}
+                />
+              </>
+            }
+          >
+            <LabeledList>
               <EntryFloat name={'Width'} var_name={'width'} float={width} />
               <EntryFloat name={'Height'} var_name={'height'} float={height} />
               <EntryFloat name={'Count'} var_name={'count'} float={count} />
@@ -130,8 +131,10 @@ export const ParticleEdit = (props) => {
                 var_name={'transform'}
                 transform={transform}
               />
-            </Section>
-            <Section title={'Evaluated on particle creation'}>
+            </LabeledList>
+          </Section>
+          <Section title={'Evaluated on particle creation'}>
+            <LabeledList>
               <EntryIcon name={'Icon'} var_name={'icon'} icon_state={icon} />
               <EntryIconState
                 name={'Icon State'}
@@ -198,16 +201,18 @@ export const ParticleEdit = (props) => {
                 var_name={'friction'}
                 float={friction}
               />
-            </Section>
-            <Section title={'Evaluated every tick'}>
+            </LabeledList>
+          </Section>
+          <Section title={'Evaluated every tick'}>
+            <LabeledList>
               <EntryGeneratorNumbersList
                 name={'Drift'}
                 var_name={'drift'}
                 allow_z
                 input={drift}
               />
-            </Section>
-          </LabeledList>
+            </LabeledList>
+          </Section>
         </Window.Content>
       </Window>
     </ParticleContext.Provider>

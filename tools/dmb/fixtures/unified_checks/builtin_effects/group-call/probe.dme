@@ -1,6 +1,0 @@
-var/global_value=0
-/proc/helper(x)
-    return x
-/proc/probe()
-    set SpacemanDMM_should_be_pure=1
-    helper((global_value=1))

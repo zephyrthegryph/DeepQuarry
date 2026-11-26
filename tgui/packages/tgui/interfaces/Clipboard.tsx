@@ -7,26 +7,14 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type { ClipboardActions, ClipboardData } from './generated/Clipboard';
 
-type Kind = 'paper' | 'photo';
-
-type Item = {
-  ref: string;
-  name: string;
-  kind: Kind;
-  is_top: BooleanLike;
-};
-
-type Data = {
-  has_pen: BooleanLike;
-  items: Item[];
-};
+type Data = ClipboardData;
 
 export const Clipboard = () => {
-  const { data, act } = useBackend<Data>();
-  const { has_pen, items } = data;
+  const { data, act } = useBackend<Data, ClipboardActions>();
+  const { has_pen, items = [] } = data;
 
   return (
     <Window width={480} height={440} title="Clipboard">

@@ -3,10 +3,14 @@
 	icon = 'icons/obj/machines/fitness_machines_vr.dmi'
 	icon_state = "scale"
 	desc = "A scale used to measure ones weight relative to their size and species."
-	anchored = TRUE // Set to 0 when we can construct or dismantle these.
+	anchored = TRUE
 	use_power = USE_POWER_OFF
+	circuit = VARIANT(/obj/item/circuitboard/scale)
 
 CAPABILITIES(/obj/machinery/scale)
+	tabletop(carry = TRUE)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	configure(uses_power(idle = 0, active = 0))
 	op("scale_weigh_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Weigh"), then(PROC_REF(scale_weigh_hand)))
 

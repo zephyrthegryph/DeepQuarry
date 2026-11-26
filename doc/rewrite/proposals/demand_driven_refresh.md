@@ -1,6 +1,6 @@
 # Demand-driven refresh: one mechanism for every derived output
 
-Status: phases 1 to 3 landed (3: `code/engine/change/interest.dm`, section 3a below). Lane `engine/demand-refresh`. Supersedes `E:/projects/dq-lazy-draw.md`: the lazy first draw
+Status: **section 3 (chunk interest, lazy draw) is superseded by [../draw_on_change.md](../draw_on_change.md)**: `interest.dm`, parking and the verdict file are deleted; every dirty atom is drawn, nearest a client first. Sections 1, 2, 4 to 8 below are history. Phases 1 and 2 landed. Lane `engine/demand-refresh`. Supersedes `E:/projects/dq-lazy-draw.md`: the lazy first draw
 (`DEP_PARKED`, `refresh_park_backlog()`, `refresh_drain_near()`) is a policy inside this mechanism, to be absorbed by it, not extended.
 
 ## 1. The problem, in numbers

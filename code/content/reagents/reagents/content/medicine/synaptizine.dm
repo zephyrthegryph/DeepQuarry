@@ -2,11 +2,13 @@
 
 /datum/reagent/synaptizine
 	treatment_tags = list(TREAT_NEURAL_REPAIR = 1.0)
-	factors = alist(STAT_ANALGESIA = 20)
-	species_factors = alist(IS_DIONA = null, IS_SLIME = alist(STAT_ANALGESIA = 10))
+	// Nerves made sensitive: pain is felt a third more strongly while it is in the blood.
+	factors = alist(STAT_INCOMING_PAIN = 1.3)
+	species_factors = alist(IS_DIONA = null)
+	strains = alist(O_HEART = DRUG_STRAIN_MODERATE)
 	name = REAGENT_SYNAPTIZINE
 	id = REAGENT_ID_SYNAPTIZINE
-	description = REAGENT_SYNAPTIZINE + " is used to treat various diseases."
+	description = REAGENT_SYNAPTIZINE + " repairs nerve damage and shortens the time a patient is stunned or knocked down. It raises pain sensitivity, strains the heart and makes the patient jittery."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2
@@ -32,9 +34,10 @@
 			M.mend(TREAT_TISSUE_REPAIR, 2 * removed)
 			M.mend(TREAT_BURN_CARE, 1 * removed)
 	M.status_adjust(STAT_DROWSY, -5)
-	M.status_adjust(STAT_PARALYZED, -1)
-	M.status_adjust(STAT_STUNNED, -1)
-	M.status_adjust(STAT_WEAKENED, -1)
+	// Stun recovery: knockdowns wear off three times as fast while it is in the blood.
+	M.status_adjust(STAT_PARALYZED, -3)
+	M.status_adjust(STAT_STUNNED, -3)
+	M.status_adjust(STAT_WEAKENED, -3)
 	holder.remove_reagent(REAGENT_ID_MINDBREAKER, 5)
 	M.status_adjust(STAT_HALLUCINATING, -10)
 	M.injure(INJURY_TOXIN, 10 * removed * chem_effective, source = src) // It used to be incredibly deadly due to an oversight. Not anymore!

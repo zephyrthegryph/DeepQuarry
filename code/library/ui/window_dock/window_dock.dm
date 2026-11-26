@@ -1,0 +1,105 @@
+// The window dock's library half (doc/rewrite/proposals/window_system.md): the per-window state the transport reads (docked,
+// hidden from pushes) and the hooks the transport calls. The dock itself, its messages and the saved layout are client content:
+// code/content/client/window_dock.dm implements the hooks.
+
+/// Interfaces that stay separate windows: prompts that must sit on top of everything until answered.
+GLOBAL_LIST_INIT(window_dock_modal_interfaces, list(
+	"AlertModal" = TRUE,
+	"BitfieldInput" = TRUE,
+	"CheckboxInput" = TRUE,
+	"ColorPickerModal" = TRUE,
+	"KeyComboModal" = TRUE,
+	"ListInputModal" = TRUE,
+	"NumberInputModal" = TRUE,
+	"TextInputModal" = TRUE,
+))
+
+/// Interfaces that never dock: big or full-screen windows (character setup, the lobby, admin tools) that are never offered the dock
+/// button or a drop on the column, and never open in it.
+GLOBAL_LIST_INIT(window_dock_never_docked, list(
+	"PreferencesMenu" = TRUE,
+	"LobbyMenu" = TRUE,
+	"AdminVerbBrowser" = TRUE,
+	"BanPanel" = TRUE,
+	"PermissionsPanel" = TRUE,
+	"PlayerPanel" = TRUE,
+	"ViewVariables" = TRUE,
+	"SpawnPanel" = TRUE,
+))
+
+/// Interfaces that open docked in the right-hand column until the player floats them (the saved layout then says).
+GLOBAL_LIST_INIT(window_dock_default_docked, list(
+	"Chat" = TRUE,
+	"StatPanel" = TRUE,
+))
+
+/// Interfaces that never float: they stay docked in the right-hand column whatever the saved layout says, and the column offers
+/// no float for them (the column is never without the stat panel).
+GLOBAL_LIST_INIT(window_dock_always_docked, list(
+	"StatPanel" = TRUE,
+))
+
+/// Interfaces always open: each connection starts them docked whatever was saved, a float lasts that connection only, and they never close.
+GLOBAL_LIST_INIT(window_dock_always_open, list(
+	"Chat" = TRUE,
+))
+
+/datum/tgui
+	/// In the right-hand column's page (a column part, column_part.dm) rather than its own native window.
+	var/docked = FALSE
+	/// Docked and off screen (collapsed, or behind another tab in the column): no data goes out.
+	var/view_hidden = FALSE
+	/// Data was owed while hidden: one full update when shown.
+	var/view_stale = FALSE
+	/// Floated out of the column: the screen point ("x,y", physical pixels) its native window opens under, for the update that opens it; "x,y,w,h" when
+	/// the window also keeps the size it had in the column.
+	var/float_at
+
+SCHEMA(/datum/tgui, float_at, schema_text())
+
+/// Whether this interface may live in the column at all: not a modal prompt, not a child of another UI.
+/datum/tgui/proc/dockable_interface()
+	return !GLOB.window_dock_modal_interfaces[interface] && !GLOB.window_dock_never_docked[interface] && !parent_ui()
+
+/// Whether this docked UI may leave the column (float, or close): never one that is always docked, never the column's last window
+/// (the column is never empty). Content answers (window_dock.dm).
+/datum/tgui/proc/may_leave_column(closing)
+	return TRUE
+
+/// Whether this UI may dock or float: a pooled native window or a column part, of a dockable interface.
+/datum/tgui/proc/dockable()
+	return (!!window()?.pooled || istype(window(), /datum/tgui_window/column_part)) && dockable_interface()
+
+/// Shows or hides this docked UI's data: hidden, pushes stop; shown again, a stale UI gets one full update.
+/datum/tgui/proc/dock_hide(hidden)
+	hidden = !!hidden
+	if(view_hidden == hidden)
+		return
+	view_hidden = hidden
+	if(!hidden && view_stale)
+		view_stale = FALSE
+		send_full_update()
+
+/// Hook: the window a newly opening UI renders in when it belongs in the column (a fresh column part), or null for a pooled native one.
+/datum/tgui/proc/dock_window()
+	return null
+
+/// Hook: the UI is opening (tgui.dm open()), its window chosen.
+/datum/tgui/proc/dock_on_open()
+	docked = istype(window(), /datum/tgui_window/column_part)
+
+/// Hook: a docked UI is closing (tgui.dm close()).
+/datum/tgui/proc/dock_on_close()
+	return
+
+/// A screen point from a page payload (`{x, y}`) as "x,y" text, or null; with a size (`{x, y}`, the size the window had in the column) "x,y,w,h".
+/proc/dock_point_text(list/point, list/size)
+	if(!islist(point) || !isnum(point["x"]) || !isnum(point["y"]))
+		return null
+	if(islist(size) && isnum(size["x"]) && isnum(size["y"]) && size["x"] > 0 && size["y"] > 0)
+		return "[round(point["x"])],[round(point["y"])],[round(size["x"])],[round(size["y"])]"
+	return "[round(point["x"])],[round(point["y"])]"
+
+/// Hook: a dock message from this UI's page (`wm/dock`, `wm/float`, `wm/geometry`, `wm/dropped`, `wm/log`).
+/datum/tgui/proc/dock_message(type, list/payload)
+	return

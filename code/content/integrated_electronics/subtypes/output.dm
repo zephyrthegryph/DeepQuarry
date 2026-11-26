@@ -361,6 +361,9 @@ CAPABILITIES(/obj/item/integrated_circuit/output/sound)
 	power_draw_idle = 0 // Raises to 500 when active, like a regular holopad.
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	var/obj/effect/overlay/holographic/hologram = null // Reference to the hologram effect, and also used to see if component is active.
+	/// The colour pin when the hologram was made (its picture lands later and is toned to it).
+	var/hologram_color
+SCHEMA(/obj/item/integrated_circuit/output/holographic_projector, hologram_color, schema_text())
 //	var/datum/beam/holo_beam = null // A visual effect, to make it easy to know where a hologram is coming from.
 	// It is commented out due to picking up the assembly killing the beam.
 
@@ -432,11 +435,12 @@ CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
 	if(istype(AM) && assembly())
 		if(AM in view(get_turf(src))) // It must be able to 'see' the object it will copy.
 			rel_set(src, nameof(hologram), new /obj/effect/overlay/holographic(src))
-			var/icon/holo_icon = getHologramIcon(getFlatIcon(AM), no_color = TRUE)
-		//	holo_icon.GrayScale() // So it looks better colored.
-			if(holo_color) // The color pin should ensure that it is a valid hex.
-				holo_icon.ColorTone(holo_color)
-			hologram.icon = holo_icon
+			// The copied object's animated picture comes from the shared portrait cache (drawn off the tick): the hologram is blank until it
+			// lands (hologram_picture_landed), then shows it.
+			hologram_color = holo_color
+			var/datum/portrait/P = portrait_request(AM, AM.dir, src, PROC_REF(hologram_picture_landed), animated = TRUE)
+			if(P)
+				hologram_picture_landed(P)
 			hologram.name = "[AM.name] (Hologram)"
 			update_hologram()
 
@@ -444,6 +448,15 @@ CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
 			set_power_draw_idle(500)
 			return TRUE
 	return FALSE
+
+/// The copied object's picture landed: the hologram shows it (as getHologramIcon of its flat picture, toned to the colour pin).
+/obj/item/integrated_circuit/output/holographic_projector/proc/hologram_picture_landed(datum/portrait/P)
+	if(!hologram || !P?.picture)
+		return
+	var/icon/holo_icon = getHologramIcon(icon(P.picture), no_color = TRUE) // a copy: the cached picture is shared
+	if(hologram_color) // The color pin should ensure that it is a valid hex.
+		holo_icon.ColorTone(hologram_color)
+	hologram.icon = holo_icon
 
 /obj/item/integrated_circuit/output/holographic_projector/proc/destroy_hologram()
 	rel_clear(src, nameof(hologram))

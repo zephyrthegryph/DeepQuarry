@@ -202,11 +202,11 @@
 		size = min(world.maxx - 2, world.maxy - 2)
 	var/list/turf/open/turfs = build_floor_fixture(size)
 	for(var/turf/open/fixture_turf as anything in turfs)
-		for(var/datum/gas/gas as anything in fixture_turf.air.get_gases())
-			fixture_turf.air.set_moles(gas, 0)
+		for(var/datum/gas/gas as anything in fixture_turf.turf_air().get_gases())
+			fixture_turf.turf_air().set_moles(gas, 0)
 		if((fixture_turf.x + fixture_turf.y) % 2)
-			fixture_turf.air.set_moles(/datum/gas/oxygen, 500)
-			heat_set(fixture_turf.air, T20C)
+			fixture_turf.turf_air().set_moles(/datum/gas/oxygen, 500)
+			heat_set(fixture_turf.turf_air(), T20C)
 		fixture_turf.air_update_turf(FALSE, FALSE)
 	count_metric("atmos_large_turfs", length(turfs), "turfs", "none")
 	measure_atmos_cycles("atmos_large", param("cycles", 120))
@@ -231,6 +231,8 @@
 		var/turf/corner = event_turfs[1]
 		event_center = locate(33, 33, corner.z)
 		stoplag()
+		if(param("client_lighting", 0))
+			client_lighting_fixture(event_turfs, event_center) // client lighting on, with lights, walls and viewers (client_lighting_play.dm)
 		switch(event_name)
 			if("large_explosion")
 				measure_event(event_name, PROC_REF(trigger_large_explosion))
@@ -238,19 +240,20 @@
 				measure_event(event_name, PROC_REF(trigger_supermatter))
 			if("mass_fire")
 				for(var/turf/open/T as anything in event_turfs)
-					T.air.set_moles(/datum/gas/oxygen, 300)
-					T.air.set_moles(/datum/gas/plasma, 100)
-					heat_set(T.air, PLASMA_MINIMUM_BURN_TEMPERATURE + 100)
+					T.turf_air().set_moles(/datum/gas/oxygen, 300)
+					T.turf_air().set_moles(/datum/gas/plasma, 100)
+					heat_set(T.turf_air(), PLASMA_MINIMUM_BURN_TEMPERATURE + 100)
 					T.air_update_turf(FALSE, FALSE)
 				measure_event(event_name, PROC_REF(trigger_mass_fire))
 			if("decompression")
 				for(var/turf/open/T as anything in event_turfs)
-					T.air.set_moles(/datum/gas/oxygen, 500)
-					heat_set(T.air, T20C)
+					T.turf_air().set_moles(/datum/gas/oxygen, 500)
+					heat_set(T.turf_air(), T20C)
 					T.air_update_turf(FALSE, FALSE)
 				measure_event(event_name, PROC_REF(trigger_decompression))
 			else
 				fail("unknown event '[event_name]'")
+		client_lighting_fixture_report()
 
 /datum/benchmark/major_events/proc/measure_event(event_name, trigger, atmos_cycles = 60)
 	begin_window()
@@ -782,64 +785,6 @@
 
 /// The fixture floor, rebuilt per event by Run().
 // turfs, never freed
-
-/// Compare actual research-console cache allocation before and after lazy-list changes.
-/// Run separately on each revision: bench --scenario=rdconsole_id_cache --arg=consoles=200 --arg=ids=20 --arg=lookups=100.
-/datum/benchmark/rdconsole_id_cache
-	id = "rdconsole_id_cache"
-	description = "Research consoles: untouched ID-cache allocation and actual payload deduplication"
-
-/datum/benchmark/rdconsole_id_cache/Run()
-	var/consoles_n = max(1, param("consoles", 200))
-	var/ids_n = max(1, param("ids", 20))
-	var/lookups_n = max(1, param("lookups", 100))
-	var/list/consoles = list()
-	var/list/ids = list()
-	for(var/i in 1 to ids_n)
-		ids += "benchmark-id-[i]"
-	var/turf/T = locate(10, 10, 1)
-	mark("before_consoles")
-	begin_window()
-	var/start = REALTIMEOFDAY
-	for(var/i in 1 to consoles_n)
-		consoles += new /obj/machinery/computer/rdconsole_tg(T)
-	metric("console_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
-	end_window("console_allocation")
-	mark("untouched_consoles")
-	var/untouched_lists = 0
-	var/untouched_entries = 0
-	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
-		if(islist(console.id_cache))
-			untouched_lists++
-		untouched_entries += length(console.id_cache)
-	count_metric("untouched_id_cache_lists", untouched_lists, "lists")
-	count_metric("untouched_id_cache_entries", untouched_entries, "entries")
-	begin_window()
-	start = REALTIMEOFDAY
-	var/mapping_errors = 0
-	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
-		for(var/round in 1 to lookups_n)
-			for(var/i in 1 to ids_n)
-				if(console.compress_id(ids[i]) != i)
-					mapping_errors++
-	metric("deduplication_ms", (REALTIMEOFDAY - start) * 100, "ms")
-	end_window("deduplication")
-	mark("populated_consoles")
-	var/populated_lists = 0
-	var/populated_entries = 0
-	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
-		if(islist(console.id_cache))
-			populated_lists++
-		populated_entries += length(console.id_cache)
-	count_metric("populated_id_cache_lists", populated_lists, "lists")
-	count_metric("populated_id_cache_entries", populated_entries, "entries")
-	count_metric("deduplication_mapping_errors", mapping_errors, "errors")
-	count_metric("consoles", consoles_n, "consoles")
-	count_metric("distinct_ids_per_console", ids_n, "IDs")
-	count_metric("compression_calls", consoles_n * lookups_n * ids_n, "calls")
-	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
-		qdel(console)
-	mark("after_console_cleanup")
 
 /// Actual airlock histories before and after the lazy-list change. Run both revisions with identical parameters.
 /datum/benchmark/airlock_history_lists

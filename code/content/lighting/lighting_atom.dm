@@ -17,6 +17,8 @@
 	// blocks_emissive (EMISSIVE_BLOCK_NONE, _GENERIC or _UNIQUE) is the movable_motion type trait: motion_of(A).blocks_emissive
 	///Internal holder for emissive blocker object, do not use directly use motion_of(A).blocks_emissive
 	var/tmp/atom/movable/emissive_blocker/em_block
+	///The flat light a sprite bigger than a tile carries under client lighting (client_flat_light.dm).
+	var/tmp/atom/movable/client_flat_light/flat_light
 
 
 // Will update the light (duh).
@@ -78,30 +80,6 @@ SETTER(/atom, opacity)
 		return
 	recalculate_directional_opacity()
 
-/atom/proc/flash_lighting_fx(_range = FLASH_LIGHT_RANGE, _power = FLASH_LIGHT_POWER, _color = COLOR_WHITE, _duration = FLASH_LIGHT_DURATION)
-	return
-
-
-/turf/flash_lighting_fx(_range = FLASH_LIGHT_RANGE, _power = FLASH_LIGHT_POWER, _color = COLOR_WHITE, _duration = FLASH_LIGHT_DURATION)
-	if(!_duration)
-		stack_trace("Lighting FX obj created on a turf without a duration")
-	new /obj/effect/dummy/lighting_obj (src, _range, _power, _color, _duration)
-
-
-/obj/flash_lighting_fx(_range = FLASH_LIGHT_RANGE, _power = FLASH_LIGHT_POWER, _color = COLOR_WHITE, _duration = FLASH_LIGHT_DURATION)
-	if(!_duration)
-		stack_trace("Lighting FX obj created on a obj without a duration")
-	new /obj/effect/dummy/lighting_obj (get_turf(src), _range, _power, _color, _duration)
-
-
-/mob/living/flash_lighting_fx(_range = FLASH_LIGHT_RANGE, _power = FLASH_LIGHT_POWER, _color = COLOR_WHITE, _duration = FLASH_LIGHT_DURATION)
-	mob_light(_range, _power, _color, _duration)
-
-
-/mob/living/proc/mob_light(_range, _power, _color, _duration)
-	var/obj/effect/dummy/lighting_obj/moblight/mob_light_obj = new (src, _range, _power, _color, _duration)
-	return mob_light_obj
-
 /// Whether `A` casts light now: its switch is on and its glow has a range and a power. The one definition update_light() and the tests use.
 /proc/atom_casts_light(atom/A)
 	if(!A.light_on)
@@ -112,11 +90,26 @@ SETTER(/atom, opacity)
 /// A light input (the switch, the range, the power or the colour) changed: a static light's source follows it now. A movable not yet in the
 /// world is skipped (on_materialize() makes its source), as is anything before its Initialize(); overlay lights follow the notices.
 /atom/proc/light_changed()
-	if(atom_rules_of(src).light_system != STATIC_LIGHT || !(flags & ATOM_INITIALIZED))
+	if(!(flags & ATOM_INITIALIZED))
 		return
 	if(ismovable(src) && !(flags & ATOM_MATERIALIZED))
 		return
-	update_light()
+	if(atom_rules_of(src).light_system == STATIC_LIGHT)
+		update_light()
+	else if(ismovable(src) && atom_casts_light(src))
+		// The first time a movable light casts, its overlay light is made (on_materialize() makes none for a dark one); later changes follow its notices.
+		var/atom/movable/lamp = src
+		lamp.add_movable_light()
+
+/// Makes the overlay light of a movable that casts one (MOVABLE_LIGHT or MOVABLE_LIGHT_DIRECTIONAL) when it has none yet. Nothing for any other light system.
+/atom/movable/proc/add_movable_light()
+	if(overlay_light)
+		return
+	switch(atom_rules_of(src).light_system)
+		if(MOVABLE_LIGHT)
+			add_overlay_lighting(src, starts_on = light_on)
+		if(MOVABLE_LIGHT_DIRECTIONAL)
+			add_overlay_lighting(src, is_directional = TRUE, starts_on = light_on)
 
 /// Setter for the light power of this atom.
 /atom/proc/set_light_power(new_power)
@@ -197,4 +190,5 @@ SETTER(/atom, light_on)
 
 CAPABILITIES_PART(/atom/movable, lighting)
 	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
+	owns_one(nameof(flat_light), /atom/movable/client_flat_light)
 	owns_one(nameof(overlay_light), /datum/overlay_lighting)

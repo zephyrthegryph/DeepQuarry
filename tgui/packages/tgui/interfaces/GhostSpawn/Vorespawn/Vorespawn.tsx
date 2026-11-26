@@ -3,12 +3,16 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
 
+import type {
+  GhostSpawnActions,
+  GhostSpawnData,
+} from '../../generated/GhostSpawn';
 import type { DropdownEntry, VoreSpawnData } from '../types';
 
 export const Vorespawn = (props: {
   all_vore_spawns: Record<string, VoreSpawnData>;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<GhostSpawnData, GhostSpawnActions>();
   const { all_vore_spawns } = props;
 
   const [selectedPlayer, setSelectedPlayer] = useState<string>('');

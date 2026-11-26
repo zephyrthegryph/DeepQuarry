@@ -1,4 +1,4 @@
-import * as z from 'zod';
+import * as z from 'zod/mini';
 import type { ChatPages } from '../chat/types';
 
 const viewSchema = z.object({
@@ -29,7 +29,6 @@ export const settingsSchema = z.object({
   statLinked: z.boolean(),
   statTabsStyle: z.string(),
   storedTypes: z.record(z.string(), z.boolean()),
-  theme: z.enum(['light', 'dark', 'vchatlight', 'vchatdark']),
   ttsCategories: z.record(z.string(), z.boolean()),
   ttsVoice: z.string(),
   version: z.number(),

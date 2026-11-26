@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { FIT_TOLERANCE, fitOverflow, measureContentBottom } from './fitWindow';
+import { FIT_TOLERANCE, fitOverflow, measureNaturalBottom } from './fitWindow';
 
 describe('fitOverflow', () => {
   it('is zero when the content fits', () => {
@@ -14,39 +14,60 @@ describe('fitOverflow', () => {
   });
 });
 
-function box(bottom: number, style: Record<string, string> = {}, tag = 'div') {
-  const el = document.createElement(tag);
-  Object.assign(el.style, style);
-  el.getBoundingClientRect = () =>
-    ({
-      top: 0,
-      bottom,
-      height: bottom,
-      width: 100,
-      left: 0,
-      right: 100,
-    }) as DOMRect;
-  return el;
-}
-
-describe('measureContentBottom', () => {
-  it('finds a child that overflows its parent and adds ancestor padding', () => {
-    const root = box(168, { paddingBottom: '7px' });
-    const section = box(168, { paddingBottom: '5px' });
-    const message = box(300);
-    section.appendChild(message);
-    root.appendChild(section);
+describe('measureNaturalBottom', () => {
+  // A root whose height follows the window unless released to auto, like
+  // .Window__contentPadding with a fill Section inside.
+  function fillRoot(windowHeight: number, naturalHeight: number) {
+    const root = document.createElement('div');
+    Object.assign(root.style, { height: '100px', marginBottom: '8px' });
+    root.getBoundingClientRect = () => {
+      const height =
+        root.style.height === 'auto' ? naturalHeight : windowHeight;
+      return {
+        top: 40,
+        bottom: 40 + height,
+        height,
+        width: 100,
+        left: 0,
+        right: 100,
+      } as DOMRect;
+    };
     document.body.appendChild(root);
-    // message bottom 300 + section padding 5 + root padding 7
-    expect(measureContentBottom(root)).toBe(312);
+    return root;
+  }
+
+  it('reads the natural height plus the bottom margin', () => {
+    const root = fillRoot(168, 130);
+    expect(measureNaturalBottom(root)).toBe(40 + 130 + 8);
     root.remove();
   });
-  it('does not exceed the window when nothing overflows', () => {
-    const root = box(168, { paddingBottom: '7px' });
-    const inner = box(100);
-    root.appendChild(inner);
-    document.body.appendChild(root);
-    expect(fitOverflow(measureContentBottom(root), 168)).toBe(0);
+  it('is independent of the window height, so growing cannot loop', () => {
+    const results = [168, 240, 408, 900].map((h) => {
+      const root = fillRoot(h, 130);
+      const bottom = measureNaturalBottom(root);
+      root.remove();
+      return bottom;
+    });
+    expect(new Set(results).size).toBe(1);
+  });
+  it('settles after one grow: the fit it asks for satisfies itself', () => {
+    const root = fillRoot(168, 300);
+    let inner = 168;
+    for (let i = 0; i < 5; i++) {
+      inner += fitOverflow(measureNaturalBottom(root), inner);
+    }
+    expect(inner).toBe(40 + 300 + 8);
+    expect(fitOverflow(measureNaturalBottom(root), inner)).toBe(0);
+    root.remove();
+  });
+  it('restores the inline styles it touched', () => {
+    const root = fillRoot(168, 130);
+    const list = document.createElement('div');
+    list.style.overflowY = 'auto';
+    root.appendChild(list);
+    measureNaturalBottom(root);
+    expect(root.style.height).toBe('100px');
+    expect(list.style.maxHeight).toBe('');
     root.remove();
   });
 });

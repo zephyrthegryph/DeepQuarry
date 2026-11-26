@@ -2,7 +2,7 @@ import { Component, type ComponentProps } from 'react';
 import { Box, Button, Icon, Stack } from 'tgui-core/components';
 import { shallowDiffers } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
-
+import { sanitizeText } from '../../sanitize';
 import { Port, type PortProps } from './Port';
 import {
   type CircuitData,
@@ -189,7 +189,7 @@ export class CircuitComponent extends Component<CircuitProps, CircuitState> {
                         <div
                           // biome-ignore lint/security/noDangerouslySetInnerHtml: All of the descriptions are pulled from the game files
                           dangerouslySetInnerHTML={{
-                            __html: circuit.extended_desc,
+                            __html: sanitizeText(circuit.extended_desc),
                           }}
                         />
                       }

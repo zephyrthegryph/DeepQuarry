@@ -5,6 +5,7 @@
 
 /obj/item/paicard
 	name = "personal AI device"
+	desc = "A pocket-sized personal AI. Insert it in your hand to ask a pAI personality to join; it can then talk, read records and run its software."
 	icon = 'icons/obj/pda.dmi'
 	icon_state = "pai"
 	item_state = "electronic"
@@ -57,6 +58,7 @@ CAPABILITIES(/obj/item/paicard)
 	owns_one(nameof(radio), /obj/item/radio/borg/pai)
 	owns_one(nameof(signaler), /obj/item/assembly/signaler)
 	interface("PAICard", title = "Personal AI Device")
+	ui_shape(active_pai_data = nullable(row(name = schema_text(), color = schema_text(), chassis = schema_text(), health = num(), law_zero = schema_text(), law_extra = nullable(schema_text()), master_name = nullable(schema_text()), master_dna = nullable(schema_text()), screen_msg = nullable(schema_text()), radio_data = nullable(row(radio_transmit = bool(), radio_recieve = bool())), sprite_datum_class = schema_text(), sprite_datum_size = schema_text(), emag_data = nullable(row(emag_systems = list_of(schema_text()), selected_system = schema_text())))), selected_pai_data = nullable(row(ref = num(), name = schema_text(), gender = schema_text(), role = schema_text(), ad = schema_text(), eyecolor = schema_text(), chassis = schema_text(), emotion = schema_text(), sprite_datum_class = schema_text(), sprite_datum_size = schema_text(), description = schema_text(), comments = schema_text())), available_pais = nullable(list_of(row(ref = num(), name = schema_text(), gender = schema_text(), role = schema_text(), ad = schema_text(), eyecolor = schema_text(), chassis = schema_text(), emotion = schema_text(), sprite_datum_class = schema_text(), sprite_datum_size = schema_text()))), waiting_for_response = bool())
 	without("ui_open")
 	op("preview", ui_act("preview", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_preview)))
 	op("clear_preview", ui_act("clear_preview"), then(PROC_REF(ui_act_clear_preview)))
@@ -203,7 +205,6 @@ CAPABILITIES(/obj/item/paicard)
 		"selected_pai_data" = null,
 		"available_pais" = null,
 		"waiting_for_response" = in_use,
-		"emag_systems" = null,
 	)
 
 	if(pai) // Only set pai data if we have one
@@ -723,10 +724,10 @@ MSG_DEF_SELF(paicard/remove_first, span_warning("You would need to remove the in
 	var/datum/prompt/R = A.answer
 	switch(R?.value)
 		if("Add Access")
-			pai.idcard.access |= ID.access
+			pai.idcard.include_access(ID.access)
 			to_chat(user, span_notice("You add the access from the [I] to [src]."))
 		if("Remove Access")
-			pai.idcard.access = list()
+			pai.idcard.set_access(list())
 			to_chat(user, span_notice("You remove the access from [src]."))
 	return OP_OK
 

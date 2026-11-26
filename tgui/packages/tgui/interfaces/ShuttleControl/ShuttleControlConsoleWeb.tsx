@@ -1,20 +1,14 @@
 import { useBackend } from 'tgui/backend';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { StatBar } from 'tgui/components/StatBar';
+import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
-
+import type { ShuttleControlActions } from '../generated/ShuttleControl';
 import { getDockingStatus } from './functions';
 import type { Data } from './types';
 
 /* Ugh. Just ugh. */
 export const ShuttleControlConsoleWeb = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ShuttleControlActions>();
 
   const {
     autopilot,
@@ -122,7 +116,7 @@ export const ShuttleControlConsoleWeb = (props) => {
                   <Button
                     selected={cloaked}
                     icon={cloaked ? 'eye' : 'eye-o'}
-                    onClick={() => act('toggle_cloaked')}
+                    onClick={() => act('toggle_cloaking')}
                   >
                     {cloaked ? 'Enabled' : 'Disabled'}
                   </Button>
@@ -171,16 +165,15 @@ export const ShuttleControlConsoleWeb = (props) => {
       {(is_in_transit && (
         <Section title="Transit ETA">
           <LabeledList>
-            <LabeledList.Item label="Distance from target">
-              <ProgressBar
-                color="good"
-                minValue={0}
-                maxValue={100}
-                value={travel_progress!}
-              >
-                {time_left}s
-              </ProgressBar>
-            </LabeledList.Item>
+            <StatBar
+              label="Distance from target"
+              color="good"
+              minValue={0}
+              maxValue={100}
+              value={travel_progress!}
+            >
+              {time_left}s
+            </StatBar>
           </LabeledList>
         </Section>
       )) ||
@@ -240,16 +233,16 @@ export const ShuttleControlConsoleWeb = (props) => {
                       {sensor.temp}&deg;C
                     </LabeledList.Item>
                     <LabeledList.Item label="Oxygen">
-                      {sensor.oxygen}%
+                      {sensor.o2}%
                     </LabeledList.Item>
                     <LabeledList.Item label="Nitrogen">
-                      {sensor.nitrogen}%
+                      {sensor.n2}%
                     </LabeledList.Item>
                     <LabeledList.Item label="Carbon Dioxide">
-                      {sensor.carbon_dioxide}%
+                      {sensor.co2}%
                     </LabeledList.Item>
                     <LabeledList.Item label="Phoron">
-                      {sensor.phoron}%
+                      {sensor.plasma}%
                     </LabeledList.Item>
                     <LabeledList.Item label="Methane">
                       {sensor.methane}%

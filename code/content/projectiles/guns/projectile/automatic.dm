@@ -709,15 +709,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/sol)
 	look.overlay("smg_[ratio]")
 
 //--------------- StG-60 ----------------
-/obj/item/ammo_magazine/m792
-	name = "box mag (7.92x33mm Kurz)"
-	icon = 'icons/obj/ammo_vr.dmi'
-	icon_state = "stg_30rnd"
-	caliber = "7.92x33mm"
-	ammo_type = /obj/item/ammo_casing/a792
-	max_ammo = 30
-	mag_type = MAGAZINE
-
 /obj/item/ammo_casing/a792
 	desc = "A 7.92x33mm Kurz casing."
 	icon_state = "rifle-casing"
@@ -747,27 +738,17 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/sol)
 /obj/item/projectile/bullet/rifle/a95
 	damage = 40
 
-/obj/item/ammo_magazine/m95/empty
-	initial_ammo = 0
-
 //---------------- PDW ------------------
 /obj/item/ammo_magazine/m9mml
 	name = "\improper SMG magazine (9mm)"
 	icon = 'icons/obj/ammo_vr.dmi'
 	icon_state = "smg"
 	mag_type = MAGAZINE
-	MATERIAL_BULK(MAT_STEEL, 1800)
+	MATERIAL_BULK(MAT_STEEL, 1500)
 	caliber = "9mm"
 	ammo_type = /obj/item/ammo_casing/a9mm
 	max_ammo = 30
 	multiple_sprites = 1
-
-/obj/item/ammo_magazine/m9mml/empty
-	initial_ammo = 0
-
-/obj/item/ammo_magazine/m9mml/ap
-	name = "\improper SMG magazine (9mm armor-piercing)"
-	ammo_type = /obj/item/ammo_casing/a9mm/ap
 
 /obj/item/gun/projectile/automatic/mg42
 	name = "MG42"

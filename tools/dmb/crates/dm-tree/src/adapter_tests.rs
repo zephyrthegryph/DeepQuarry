@@ -373,7 +373,7 @@ fn optional_separator_before_procedure_arguments_preserves_owner_and_name() {
         assert_eq!(*kind, MemberKind::Proc);
         let parameter = &metadata.procedure.as_ref().unwrap().signature.parameters[0];
         assert_eq!(parameter.name, SymbolId::of("signal"));
-        assert_eq!(parameter.declared_type(), Some(SymbolId::of("/datum/signal")));
+        assert_eq!(parameter.declared_type, Some(SymbolId::of("/datum/signal")));
     }
 }
 #[test]
@@ -457,7 +457,7 @@ fn repeated_var_namespace_keeps_declaring_owner_and_runtime_type() {
         Some(field.owner),
         tree.lookup_type(SymbolId::of("/datum/base"))
     );
-    assert_eq!(field.metadata.declared_type(), Some(SymbolId::of("/obj")));
+    assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/obj")));
 }
 #[test]
 fn typed_list_declarations_expose_the_runtime_container_type() {
@@ -468,7 +468,7 @@ fn typed_list_declarations_expose_the_runtime_container_type() {
         .iter()
         .find(|member| member.name == SymbolId::of("feedback"))
         .unwrap();
-    assert_eq!(field.metadata.declared_type(), Some(SymbolId::of("/list")));
+    assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/list")));
     assert!(
         field.metadata.array.is_none(),
         "a typed list is not a sized array"
@@ -486,7 +486,7 @@ fn typed_list_declarations_expose_the_runtime_container_type() {
             .unwrap()
             .signature
             .parameters[0]
-            .declared_type(),
+            .declared_type,
         Some(SymbolId::of("/list"))
     );
 }
@@ -501,7 +501,7 @@ fn namespaces_arrays_defaults_and_settings_bridge_to_tree() {
                 .unwrap(),
         )
         .unwrap();
-    assert_eq!(array.metadata.declared_type(), Some(SymbolId::of("/list")));
+    assert_eq!(array.metadata.declared_type, Some(SymbolId::of("/list")));
     assert_eq!(array.metadata.flags & 1, 1);
     let proc = tree
         .member(
@@ -509,7 +509,7 @@ fn namespaces_arrays_defaults_and_settings_bridge_to_tree() {
                 .unwrap(),
         )
         .unwrap();
-    assert_eq!(proc.metadata.display_name(), Some(SymbolId::of("Reader")));
+    assert_eq!(proc.metadata.display_name, Some(SymbolId::of("Reader")));
     assert!(proc.metadata.procedure.is_some());
     assert_eq!(
         OccurrenceTable::build(&tree, result.origins)
@@ -530,7 +530,7 @@ fn inherited_field_assignment_preserves_type_and_flags() {
                 .unwrap(),
         )
         .unwrap();
-    assert_eq!(field.metadata.declared_type(), Some(SymbolId::of("/list")));
+    assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/list")));
     assert_eq!(field.metadata.flags & 4, 4);
     assert!(field.previous.is_some());
 }
@@ -546,9 +546,9 @@ fn typed_list_hints_survive_formal_inheritance_without_changing_container() {
                     .unwrap(),
             )
             .unwrap();
-        assert_eq!(field.metadata.declared_type(), Some(SymbolId::of("/list")));
+        assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/list")));
         assert_eq!(
-            field.metadata.list_element_type(),
+            field.metadata.list_element_type,
             Some(SymbolId::of("/datum/item"))
         );
         assert!(field.metadata.array.is_none());
@@ -563,7 +563,7 @@ fn forward_multilevel_field_inheritance_resolves_in_dependency_order() {
         .resolve(child, SymbolId::of("value"), MemberKind::Var)
         .unwrap();
     assert_eq!(
-        tree.member(id).unwrap().metadata.declared_type(),
+        tree.member(id).unwrap().metadata.declared_type,
         Some(SymbolId::of("/list"))
     );
     assert_eq!(tree.member(id).unwrap().metadata.flags & 4, 4);
@@ -780,131 +780,4 @@ fn malformed_signature_current_expanded_cursor_survives_compact_frontend() {
             assert_eq!(location.path.file_name().unwrap(), "signature.dm");
         }
     }
-}
-
-#[test]
-fn diagnostic_declarations_preserve_original_declares_without_changing_compile_rejection() {
-    let source = "/datum/base\n    var/p = 1\n/datum/base/child\n    var/p = 2\n";
-    let adapted = from_ast(
-        &dm_syntax::parse(source),
-        SymbolTable::default(),
-        FileId(3),
-        7,
-        11,
-    )
-    .unwrap();
-    let strict = adapted.clone().finish().unwrap_err();
-    assert!(matches!(
-        strict,
-        SnapshotError::Tree(crate::TreeError::InheritedDuplicate {
-            kind: MemberKind::Var,
-            ..
-        })
-    ));
-    let executor = dm_exec::BuildExecutor::new(1).unwrap();
-    let result = adapted
-        .clone()
-        .finish_checker_diagnostic_observed(None, |_, _, _| {}, &executor)
-        .unwrap();
-    assert!(!result.runtime_admissible());
-    assert!(result.authenticates(result.tree()));
-    assert_eq!(result.errors().len(), 1);
-    assert_eq!(
-        result.errors()[0],
-        crate::TreeError::InheritedDuplicate {
-            owner: SymbolId::of("/datum/base/child"),
-            previous_owner: SymbolId::of("/datum/base"),
-            name: SymbolId::of("p"),
-            kind: MemberKind::Var
-        }
-    );
-    let parent = result
-        .tree()
-        .lookup_type(SymbolId::of("/datum/base"))
-        .unwrap();
-    let child = result
-        .tree()
-        .lookup_type(SymbolId::of("/datum/base/child"))
-        .unwrap();
-    let base = result
-        .tree()
-        .resolve(parent, SymbolId::of("p"), MemberKind::Var)
-        .unwrap();
-    let own = result
-        .tree()
-        .resolve(child, SymbolId::of("p"), MemberKind::Var)
-        .unwrap();
-    assert_eq!(
-        result.tree().member(own).unwrap().definition,
-        DefinitionMode::Declare
-    );
-    assert_eq!(result.tree().member(own).unwrap().previous, Some(base));
-    assert_eq!(
-        result.occurrences().source_order().len(),
-        adapted.origins.len()
-    );
-    assert!(adapted.finish().is_err(),"diagnostic success must not change the default compiler or poison a shared normalization cache");
-}
-#[test]
-fn diagnostic_declaration_domain_refuses_every_non_var_or_non_inherited_error() {
-    let executor = dm_exec::BuildExecutor::new(1).unwrap();
-    for source in [
-        "/datum/base\n    var/p=1\n    var/p=2\n",
-        "/datum/base/proc/p()\n/datum/base/child/proc/p()\n",
-    ] {
-        let adapted = from_ast(
-            &dm_syntax::parse(source),
-            SymbolTable::default(),
-            FileId(3),
-            7,
-            11,
-        )
-        .unwrap();
-        assert!(adapted
-            .finish_checker_diagnostic_observed(None, |_, _, _| {}, &executor)
-            .is_err());
-    }
-}
-
-#[test]
-fn canonical_dictionary_uses_actual_punctuation_frames_only_when_funded_layout_wins() {
-    use dm_ir::{CanonicalBytes, Parameter, ProcedureMetadata, ProcedureSignature};
-    let procedure = ProcedureMetadata {
-        signature: ProcedureSignature {
-            parameters: Arc::from([Parameter::new(
-                SymbolId::of("one"), Some(SymbolId::of("/datum")), None, 0,
-                dm_syntax::Span::new(0, 3),
-            )]),
-            variadic: false,
-            return_annotation: None,
-        },
-        settings: Arc::from([]),
-    };
-    let header = super::canonical("/datum/probe/proc/value(datum/one,datum/two)").unwrap();
-    let mut raw = header.to_vec();
-    let suffix_start = raw.len();
-    raw.extend(procedure.canonical_bytes());
-    let baseline = CanonicalBytes::plan(&raw).seal();
-    let plan = CanonicalBytes::plan_procedure(&raw, suffix_start);
-    let capacity = plan.storage_len();
-    let compact = plan.seal();
-    assert_eq!(compact.storage_arc().len(), capacity);
-    let alignment = std::mem::align_of::<usize>();
-    assert!(capacity.next_multiple_of(alignment) < baseline.storage_arc().len().next_multiple_of(alignment));
-    let mut saw_static_frame = false;
-    compact.try_for_each_chunk(|chunk| {
-        saw_static_frame |= chunk.len() == 11 && chunk[1] == dm_syntax::TokenKind::Punctuation as u8
-            && chunk[2..10] == 1u64.to_le_bytes() && b"()/,".contains(&chunk[10]);
-        Ok::<_, ()>(())
-    }).unwrap();
-    assert!(saw_static_frame);
-    assert_eq!(compact, baseline);
-    assert_eq!(compact.xxh3_128(), xxhash_rust::xxh3::xxh3_128(&raw));
-    assert_eq!(compact.to_vec(), raw);
-
-    let mut changed = raw.clone();
-    let width = dm_ir::CANONICAL_HEADER_PREFIX.len() + 2;
-    changed[width..width + 8].fill(255);
-    let fallback = CanonicalBytes::plan_procedure(&changed, suffix_start).seal();
-    assert_eq!(fallback.to_vec(), changed);
 }

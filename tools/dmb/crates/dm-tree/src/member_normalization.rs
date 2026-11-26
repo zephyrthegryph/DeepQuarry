@@ -2,9 +2,15 @@
 //! Namespace and predecessor semantics remain authoritative here.
 use crate::*;
 use std::collections::HashMap;
-pub(crate) fn formal_chain<T:Copy+PartialEq>(ids:&[T],is_formal:impl FnMut(T)->bool)->Vec<T>{formal_chain_mode(ids,is_formal,false)}
-fn formal_chain_mode<T:Copy+PartialEq>(ids:&[T],mut is_formal:impl FnMut(T)->bool,diagnostic_callables:bool)->Vec<T>{
- if diagnostic_callables{let mut chain=Vec::with_capacity(ids.len());for &id in ids.iter().rev(){if is_formal(id){chain.push(id)}}for &id in ids{if !is_formal(id){chain.push(id)}}chain}else{let formal=ids.iter().copied().find(|&id|is_formal(id));formal.into_iter().chain(ids.iter().copied().filter(|id|Some(*id)!=formal)).collect()}
+pub(crate) fn formal_chain<T: Copy + PartialEq>(
+    ids: &[T],
+    mut is_formal: impl FnMut(T) -> bool,
+) -> Vec<T> {
+    let formal = ids.iter().copied().find(|&id| is_formal(id));
+    formal
+        .into_iter()
+        .chain(ids.iter().copied().filter(|id| Some(*id) != formal))
+        .collect()
 }
 pub(crate) fn normalize_groups<M: crate::member_binding::MemberWrite + ?Sized>(
     tree: &mut SemanticTree,
@@ -12,20 +18,11 @@ pub(crate) fn normalize_groups<M: crate::member_binding::MemberWrite + ?Sized>(
     modes: &[DefinitionMode],
     groups: HashMap<(TypeId, SymbolId, MemberKind), Vec<MemberId>>,
 ) {
-    normalize_groups_mode(tree,members,modes,groups,false)
-}
-pub(crate) fn normalize_groups_mode<M: crate::member_binding::MemberWrite + ?Sized>(
-    tree: &mut SemanticTree,
-    members: &mut M,
-    modes: &[DefinitionMode],
-    groups: HashMap<(TypeId, SymbolId, MemberKind), Vec<MemberId>>,
-    diagnostic_callables:bool,
-) {
     // Formal definitions establish a group's base irrespective of source
     // position; overrides keep encounter order. BYOND compile-only probes show
     // implicit-before-formal and formal-before-implicit compile identically.
     for (key, ids) in groups {
-        let chain = formal_chain_mode(&ids, |id| modes[id.index()] == DefinitionMode::Declare,diagnostic_callables&&matches!(key.2,MemberKind::Proc|MemberKind::Verb));
+        let chain = formal_chain(&ids, |id| modes[id.index()] == DefinitionMode::Declare);
         let mut previous = None;
         for id in &chain {
             members.set_previous(id.index(), previous);
@@ -44,31 +41,14 @@ pub(crate) fn resolve_previous<M: crate::member_binding::MemberWrite + ?Sized>(
     callable_kinds: &crate::callable_namespace::CallableKinds,
     indices: impl IntoIterator<Item = usize>,
 ) -> Result<(), TreeError> {
-    resolve_previous_diagnostic(tree, members, modes, root, callable_kinds, indices, None)
-}
-pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite + ?Sized>(
-    tree: &SemanticTree,
-    members: &mut M,
-    modes: &[DefinitionMode],
-    root: SymbolId,
-    callable_kinds: &crate::callable_namespace::CallableKinds,
-    indices: impl IntoIterator<Item = usize>,
-    mut diagnostics: Option<&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt>,
-) -> Result<(), TreeError> {
-    let original_variables=diagnostics.as_deref().and_then(|receipt|receipt.original_variables);
-    let handlers_structural = diagnostics.as_deref().is_some_and(|receipt|
-        receipt.role == crate::diagnostic_declarations::DeclarationRole::HandlersStructural);
     for i in indices {
-        if let Err(error) = callable_namespace::validate_explicit(
-            tree, members.member(i), modes[i], root, callable_kinds,
-        ) {
-            // Only the single Original ImageDir preparation preserves this
-            // authored cross-kind child. Other resolver/compile roles refuse.
-            match diagnostics.as_deref_mut() {
-                Some(receipt) if receipt.role == crate::diagnostic_declarations::DeclarationRole::ImageDir => receipt.accept_callable_duplicate(error)?,
-                _ => return Err(error),
-            }
-        }
+        callable_namespace::validate_explicit(
+            tree,
+            members.member(i),
+            modes[i],
+            root,
+            callable_kinds,
+        )?;
         if members.member(i).previous.is_none() {
             let node = members.member(i);
             let mut parent = tree.parent(node.owner);
@@ -86,7 +66,6 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
             if modes[i] == DefinitionMode::Declare {
                 if let Some(previous) = previous {
                     let mut previous_owner = members.member(previous.index()).owner;
-                    let mut has_inherited_formal = false;
                     // Assignments in an intermediate parent do not redeclare the
                     // variable. Locate the actual formal declaration through the
                     // same current owner/member chains, including forward owners.
@@ -94,14 +73,6 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
                     while let Some(owner) = declaration_owner {
                         if tree.types[owner.index()].path == root {
                             break;
-                        }
-                        // A real builtin declaration still counts even when an
-                        // intervening source row is a value-only assignment.
-                        if handlers_structural && node.kind == MemberKind::Var
-                            && original_variables.is_some_and(|variables|
-                                variables.variable(tree, tree.types[owner.index()].path, node.name).is_some())
-                        {
-                            has_inherited_formal = true;
                         }
                         let mut selected = tree.direct.get(&(owner, node.name, node.kind)).copied();
                         let mut found = false;
@@ -112,7 +83,6 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
                             }
                             if modes[id.index()] == DefinitionMode::Declare {
                                 previous_owner = owner;
-                                has_inherited_formal = true;
                                 found = true;
                                 break;
                             }
@@ -123,31 +93,20 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
                         }
                         declaration_owner = tree.parent(owner);
                     }
-                    let error = TreeError::InheritedDuplicate {
+                    return Err(TreeError::InheritedDuplicate {
                         owner: tree.types[node.owner.index()].path,
                         previous_owner: tree.types[previous_owner.index()].path,
                         name: node.name,
                         kind: node.kind,
-                    };
-                    if !handlers_structural || node.kind != MemberKind::Var || has_inherited_formal {
-                        if let Some(receipt) = diagnostics.as_deref_mut() {
-                            receipt.accept(error)?;
-                        } else {
-                            return Err(error);
-                        }
-                    }
+                    });
                 }
             }
             members.set_previous(i, previous);
-            let original_base=if let Some(variables)=original_variables.as_ref(){metadata_update::apply_original_variable_base(tree,members,i,variables)}else{metadata_update::apply_opaque_base(tree,members,i);false};
+            metadata_update::apply_opaque_base(tree, members, i);
             let node = members.member(i);
             if modes[i] == DefinitionMode::Override
                 && previous.is_none()
-                && node.metadata.inherited_opaque().is_none()
-                && !original_base
-                // The pinned partial ObjectTree inserts the value with no
-                // VarDeclaration when the selected TU omits the base field.
-                && !(handlers_structural && node.kind == MemberKind::Var)
+                && node.metadata.inherited_opaque.is_none()
             {
                 let mut ancestry = Vec::new();
                 let mut cursor = Some(node.owner);

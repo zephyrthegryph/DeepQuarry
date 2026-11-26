@@ -7,10 +7,11 @@
 // pixels with image-rendering: pixelated. See /datum/preferences/proc/update_character_previews
 // in code/modules/client/preferences.dm.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
+import { createLogger } from '../../../logging';
 import { CategoryPage } from './CategoryPage';
 import {
   ColorToolsContext,
@@ -18,32 +19,37 @@ import {
   type SlotName,
   slotColors,
 } from './colors';
+import type { EditorDataCache, EditorStaticCache } from './editors';
 import { labelForCategory } from './labels';
-import {
-  buildSearchIndex,
-  SearchHighlightContext,
-  type SearchHit,
-  SettingsSearch,
-} from './search';
 import type {
   CharacterPreviewAssets,
   CharacterSetupData,
   PrefCategory,
 } from './types';
 
+const logger = createLogger('prefs');
+
 let catalogOwner = '';
 let cachedStructureVersion = 0;
 const categoryCache: Record<string, PrefCategory> = {};
-const editorStaticCache: Record<string, Record<string, unknown>> = {};
+/// Tabs whose cached page predates the latest structure version: shown, but asked for again.
+const staleCategories = new Set<string>();
+const editorStaticCache: EditorStaticCache = {};
 const editorStaticVersions: Record<string, number | string> = {};
-const editorDataCache: Record<string, Record<string, unknown>> = {};
+const editorDataCache: EditorDataCache = {};
 /// Widget values and preview frames persist across updates: the server sends values for
 /// the categories it is answering for, and the preview only when it changed.
 const valuesCache: Record<string, unknown> = {};
 const colorLinksCache: Record<string, string> = {};
 let previewCache: CharacterPreviewAssets = {};
-/// The owner (prefs + slot) whose every-tab prefetch has been requested.
-let prefetchedOwner = '';
+/// The tabs whose prefetch has been requested ("owner|structure version|tab"): one tab per request, so no answer is huge.
+const prefetchRequested = new Set<string>();
+
+/// The entries of a per-editor payload that the server answered (not null).
+const answered = <T extends object>(payload: T | null | undefined) =>
+  Object.fromEntries(
+    Object.entries(payload ?? {}).filter(([, value]) => value != null),
+  ) as { [K in keyof T]?: NonNullable<T[K]> };
 
 const clearRecord = (record: Record<string, unknown>) => {
   for (const key of Object.keys(record)) delete record[key];
@@ -168,28 +174,38 @@ export const DQCharacterSetup = () => {
     catalogOwner = owner;
     cachedStructureVersion = 0;
     clearRecord(categoryCache);
+    staleCategories.clear();
     clearRecord(editorStaticCache);
     clearRecord(editorStaticVersions);
     clearRecord(editorDataCache);
     clearRecord(valuesCache);
     clearRecord(colorLinksCache);
+    prefetchRequested.clear();
   }
   const structureVersion = data.dq_structure_version ?? 1;
   if (cachedStructureVersion !== structureVersion) {
+    // A new structure (a species or taur change rebuilt the pages) arrives as patches for the tabs it touched. The
+    // pages already held stay on screen and are replaced in place, so a change never blanks the tab being edited;
+    // a tab not patched yet is asked for again when it is opened.
     cachedStructureVersion = structureVersion;
-    clearRecord(categoryCache);
+    for (const key of Object.keys(categoryCache)) staleCategories.add(key);
+    prefetchRequested.clear();
   }
   for (const category of data.dq_categories ?? []) {
     categoryCache[category.category] = category;
+    staleCategories.delete(category.category);
   }
-  Object.assign(categoryCache, data.dq_category_patch ?? {});
-  const staticPatch =
-    data.dq_editor_static_patch ?? data.dq_editor_static ?? {};
+  for (const [key, page] of Object.entries(data.dq_category_patch ?? {})) {
+    categoryCache[key] = page;
+    staleCategories.delete(key);
+  }
+  // The server sends null for an editor it did not answer for: the window keeps what it has.
+  const staticPatch = answered(data.dq_editor_static_patch);
   Object.assign(editorStaticCache, staticPatch);
   for (const key of Object.keys(staticPatch)) {
     editorStaticVersions[key] = data.dq_editor_versions?.[key] ?? 1;
   }
-  Object.assign(editorDataCache, data.dq_editor_data ?? {});
+  Object.assign(editorDataCache, answered(data.dq_editor_data));
   Object.assign(valuesCache, data.dq_values ?? {});
   Object.assign(colorLinksCache, data.dq_color_links ?? {});
   if (data.character_preview_assets) {
@@ -200,13 +216,6 @@ export const DQCharacterSetup = () => {
   const values = valuesCache;
   const previewAssets = previewCache;
   const [selected, setSelected] = useState<string | null>(null);
-  const moreCategories = (data.dq_more_categories ?? []).filter((c) =>
-    categoryIndex.includes(c),
-  );
-  const mainCategories = categoryIndex.filter(
-    (c) => !moreCategories.includes(c),
-  );
-  const [highlight, setHighlight] = useState<string | null>(null);
   const [brush, setBrush] = useState<SlotName | null>(null);
   const colorTools = {
     slots: slotColors(values),
@@ -215,50 +224,15 @@ export const DQCharacterSetup = () => {
     brush,
     setBrush,
   };
-  const [pendingAnchor, setPendingAnchor] = useState<string | null>(null);
-  // Rebuilt when a category structure arrives (the prefetch fills every tab).
-  const searchKey = `${categoryIndex.join('|')}#${Object.keys(categoryCache).length}#${structureVersion}`;
-  const searchHits = useMemo(
-    () => buildSearchIndex(categoryIndex, categoryCache),
-    [searchKey],
-  );
+  const requestedAt = useRef<Record<string, number>>({});
   const selectCategory = (category: string) => {
     setSelected(category);
+    requestedAt.current[category] = performance.now();
     act('dq_select_category', {
       category,
-      force_catalogs: !categoryCache[category],
+      force_catalogs: !categoryCache[category] || staleCategories.has(category),
     });
   };
-  const jumpTo = (hit: SearchHit) => {
-    if (hit.category !== selected) selectCategory(hit.category);
-    setPendingAnchor(hit.anchor || null);
-    setHighlight(hit.anchor || null);
-  };
-  // After a jump, wait for the page to render the anchor, then scroll it into view.
-  useEffect(() => {
-    if (!pendingAnchor) return;
-    let tries = 0;
-    const timer = setInterval(() => {
-      const el = document.querySelector(
-        `[data-dq-anchor="${CSS.escape(pendingAnchor)}"]`,
-      );
-      tries++;
-      if (el) {
-        el.scrollIntoView({ block: 'center' });
-        setPendingAnchor(null);
-        clearInterval(timer);
-      } else if (tries > 40) {
-        setPendingAnchor(null);
-        clearInterval(timer);
-      }
-    }, 50);
-    return () => clearInterval(timer);
-  }, [pendingAnchor]);
-  useEffect(() => {
-    if (!highlight) return;
-    const timer = setTimeout(() => setHighlight(null), 2500);
-    return () => clearTimeout(timer);
-  }, [highlight]);
 
   // Land on the first available category once data arrives. Without this, the initial
   // poll with empty `categories` locks `selected = null` and the tab strip renders
@@ -301,19 +275,76 @@ export const DQCharacterSetup = () => {
     selectedPage,
   ]);
 
-  // Once the first page has its catalogs, ask for every other tab in the background so
-  // later switches render from this cache at once (the server's answer then only
-  // refreshes values).
+  // How long a tab took from the click to its page (the log is where "the Loadout tab is slow" gets measured).
   useEffect(() => {
-    if (prefetchedOwner === owner || !selectedPage || missingEditorCatalog) {
+    if (!selected || !selectedPage) return;
+    const asked = requestedAt.current[selected];
+    if (asked === undefined) return;
+    delete requestedAt.current[selected];
+    logger.log(
+      `tab ${selected} ready in ${Math.round(performance.now() - asked)} ms (${missingEditorCatalog ? 'catalogs still pending' : 'complete'})`,
+    );
+  }, [selected, selectedPage, missingEditorCatalog]);
+
+  // A tab with no page after a while is asked for again (and the wait logged), so a lost answer cannot leave it on
+  // "Loading category..." for good.
+  useEffect(() => {
+    if (!selected || selectedPage) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries++;
+      logger.warn(
+        `tab ${selected} still has no page after ${tries * 2} s; asking again (server active tab ${data.dq_active_category ?? 'none'})`,
+      );
+      requestedAt.current[selected] ??= performance.now();
+      act('dq_select_category', { category: selected, force_catalogs: true });
+      if (tries >= 10) clearInterval(timer);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [act, selected, selectedPage, data.dq_active_category]);
+
+  // Once the first page has its catalogs, ask for every other tab in the background, one at a time (the next after
+  // the last one's page has arrived), so later switches render from this cache at once and no answer is huge.
+  const [prefetching, setPrefetching] = useState<string | null>(null);
+  useEffect(() => {
+    if (!prefetching) return;
+    if (categoryCache[prefetching] && !staleCategories.has(prefetching)) {
+      setPrefetching(null);
       return;
     }
-    const timer = setTimeout(() => {
-      prefetchedOwner = owner;
-      act('dq_prefetch_categories');
-    }, 300);
+    const timer = setTimeout(() => setPrefetching(null), 3000);
     return () => clearTimeout(timer);
-  }, [act, owner, selectedPage, missingEditorCatalog]);
+  }, [
+    prefetching,
+    selectedPage,
+    data.dq_structure_version,
+    data.dq_category_patch,
+  ]);
+  useEffect(() => {
+    if (prefetching || !selectedPage || missingEditorCatalog) return;
+    const next = categoryIndex.find(
+      (c) =>
+        c !== selected &&
+        (!categoryCache[c] || staleCategories.has(c)) &&
+        !prefetchRequested.has(`${owner}|${structureVersion}|${c}`),
+    );
+    if (!next) return;
+    const timer = setTimeout(() => {
+      prefetchRequested.add(`${owner}|${structureVersion}|${next}`);
+      act('dq_prefetch_categories', { category: next });
+      setPrefetching(next);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [
+    act,
+    owner,
+    structureVersion,
+    selected,
+    selectedPage,
+    missingEditorCatalog,
+    prefetching,
+    categoryIndex,
+  ]);
 
   const pageIsFullHeight =
     selectedPage?.groups.some((g) =>
@@ -363,7 +394,6 @@ export const DQCharacterSetup = () => {
                   <Button icon="copy" onClick={() => act('copy')}>
                     Copy
                   </Button>
-                  <SettingsSearch hits={searchHits} onPick={jumpTo} />
                   <Box style={{ flex: 1 }} />
                   <Button
                     icon="sliders"
@@ -376,7 +406,7 @@ export const DQCharacterSetup = () => {
               </Stack.Item>
               <Stack.Item>
                 <Tabs fluid>
-                  {mainCategories.map((category) => (
+                  {categoryIndex.map((category) => (
                     <Tabs.Tab
                       key={category}
                       selected={category === selected}
@@ -385,37 +415,8 @@ export const DQCharacterSetup = () => {
                       {labelForCategory(category)}
                     </Tabs.Tab>
                   ))}
-                  {moreCategories.length > 0 && (
-                    <Tabs.Tab
-                      key="__more"
-                      icon="ellipsis"
-                      selected={!!selected && moreCategories.includes(selected)}
-                      onClick={() => {
-                        if (!selected || !moreCategories.includes(selected)) {
-                          selectCategory(moreCategories[0]);
-                        }
-                      }}
-                    >
-                      More
-                    </Tabs.Tab>
-                  )}
                 </Tabs>
               </Stack.Item>
-              {!!selected && moreCategories.includes(selected) && (
-                <Stack.Item>
-                  <Tabs>
-                    {moreCategories.map((category) => (
-                      <Tabs.Tab
-                        key={category}
-                        selected={category === selected}
-                        onClick={() => selectCategory(category)}
-                      >
-                        {labelForCategory(category)}
-                      </Tabs.Tab>
-                    ))}
-                  </Tabs>
-                </Stack.Item>
-              )}
               <Stack.Item grow>
                 <Section fill fitted scrollable={!pageIsFullHeight}>
                   {selectedPage ? (
@@ -423,17 +424,15 @@ export const DQCharacterSetup = () => {
                       p={0.5}
                       style={{ height: pageIsFullHeight ? '100%' : 'auto' }}
                     >
-                      <SearchHighlightContext.Provider value={highlight}>
-                        <ColorToolsContext.Provider value={colorTools}>
-                          <CategoryPage
-                            page={selectedPage}
-                            staticData={editorStaticCache}
-                            values={values}
-                            editorData={editorDataCache}
-                            fillHeight={pageIsFullHeight}
-                          />
-                        </ColorToolsContext.Provider>
-                      </SearchHighlightContext.Provider>
+                      <ColorToolsContext.Provider value={colorTools}>
+                        <CategoryPage
+                          page={selectedPage}
+                          staticData={editorStaticCache}
+                          values={values}
+                          editorData={editorDataCache}
+                          fillHeight={pageIsFullHeight}
+                        />
+                      </ColorToolsContext.Provider>
                     </Box>
                   ) : (
                     <Box p={2} color="label">

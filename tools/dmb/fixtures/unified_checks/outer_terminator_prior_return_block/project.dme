@@ -1,4 +1,0 @@
-/proc/a()
-    return 1
-/proc/bad(x=)
-    return 2

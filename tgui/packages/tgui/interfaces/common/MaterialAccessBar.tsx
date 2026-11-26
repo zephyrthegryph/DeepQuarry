@@ -1,6 +1,6 @@
 import { sortBy } from 'es-toolkit';
 import { useState } from 'react';
-import { AnimatedNumber, Button, Stack } from 'tgui-core/components';
+import { AnimatedNumber, Box, Button, Stack } from 'tgui-core/components';
 import { formatSiUnit } from 'tgui-core/format';
 import { classes } from 'tgui-core/react';
 import { toTitleCase } from 'tgui-core/string';
@@ -54,13 +54,24 @@ export type MaterialAccessBarProps = {
 const LABEL_FORMAT = (value: number) => formatSiUnit(value, 0);
 
 export const MaterialAccessBar = (props: MaterialAccessBarProps) => {
-  const { availableMaterials, SHEET_MATERIAL_AMOUNT, onEjectRequested } = props;
+  const {
+    availableMaterials = [],
+    SHEET_MATERIAL_AMOUNT,
+    onEjectRequested,
+  } = props;
 
+  const loaded = availableMaterials.filter((material) => material.amount > 0);
+  if (loaded.length === 0) {
+    return (
+      <Box color="label" p={0.5}>
+        No materials loaded.
+      </Box>
+    );
+  }
   return (
     <Stack wrap>
-      {sortBy(availableMaterials, [(m: Material) => MATERIAL_RARITY[m.name]])
-        .filter((material) => material.amount > 0)
-        .map((material) => (
+      {sortBy(loaded, [(m: Material) => MATERIAL_RARITY[m.name]]).map(
+        (material) => (
           <Stack.Item grow basis={4.5} key={material.ref}>
             <MaterialCounter
               material={material}
@@ -70,7 +81,8 @@ export const MaterialAccessBar = (props: MaterialAccessBarProps) => {
               }
             />
           </Stack.Item>
-        ))}
+        ),
+      )}
     </Stack>
   );
 };

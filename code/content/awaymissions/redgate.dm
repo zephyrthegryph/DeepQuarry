@@ -197,16 +197,6 @@ CAPABILITIES(/obj/structure/redgate/away)
 	icon_state = "redblacir"
 	base_turf = /turf/simulated/mineral/floor/cave
 
-/obj/item/paper/teppiranch
-	name = "elegantly scrawled note"
-	info = {"<i>Goeleigh,<BR><BR>
-
-	This isn't how I wanted to give this message to you. They say that the light is coming this way, and we won't even know it's here until it's upon us. There's no way to know when it will arrive, so we can't really afford to wait around. My family has secured us a ride on a ship, and we'll be going to one of the rimward colonies. They say that they are making strides to build some new kind of gate there, something that will take us far from that light, somewhere safe. We can't really bring the animals, but perhaps you can make some arrangements for them.<BR><BR>
-
-	As soon as you read this, get yourself out of here and come find us. We left you enough money to make the trip in the usual spot. We'll be in the registry once we arrive. We're waiting for you.<BR><BR>
-
-	Yours, Medley</i>"}
-
 // City areas, there are soooo many
 
 // Islands areas
@@ -381,17 +371,6 @@ CAPABILITIES(/obj/structure/flag_base)
 	var/mob/living/carbon/human/last_holder
 	var/last_holder_name = "" // the holder's name as text, so the announcements still name a holder who is gone
 	var/last_team
-
-/obj/item/laserdome_hyperball_prop
-	name = "demonstration HYPERball"
-	desc = "Because regular balls aren't exciting enough, the future needs HYPERballs!"
-	icon = 'icons/obj/flags.dmi'
-	icon_state = "hyperball"
-	w_class = ITEMSIZE_NO_CONTAINER
-
-CAPABILITIES(/obj/item/laserdome_hyperball_prop)
-	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 3)))
-	configure(obj_rules(redgate_allowed = FALSE))
 
 /obj/item/laserdome_hyperball/proc/remember_start_pos()
 	rel_set(src, nameof(start_pos), src.loc)	//save our starting location for later

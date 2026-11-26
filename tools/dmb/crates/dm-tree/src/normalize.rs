@@ -1,58 +1,9 @@
 //! Normalize declaration namespaces without changing source spans or proc bodies.
-use dm_syntax::{ItemKind, OriginalItem, OriginalItems};
-use std::borrow::Cow;
-#[cfg(test)]
-use dm_syntax::Item;
+use dm_syntax::{Item, ItemKind};
 
-#[derive(Clone, Copy)]
-enum Children { All, ParentClauses, Empty }
-
-/// Stack-scoped spelling projection over the exact authored item. Only
-/// headers that need namespace/absolute spelling allocate; body items are
-/// always lent from the producer, never cloned into a second tree.
-pub(crate) struct ProjectedItem<'a> {
-    pub(crate) raw: OriginalItem<'a>,
-    pub(crate) kind: ItemKind,
-    pub(crate) header: Cow<'a, str>,
-    children: Children,
-}
-impl<'a> ProjectedItem<'a> {
-    pub(crate) fn authored(raw: OriginalItem<'a>) -> Self {
-        Self { raw, kind:raw.kind(), header:Cow::Borrowed(raw.header()), children:Children::All }
-    }
-    pub(crate) fn children(&self) -> impl Iterator<Item=OriginalItem<'a>> {
-        let children=self.children;
-        self.raw.children().iter().take(if matches!(children,Children::Empty){0}else{usize::MAX}).filter(move |child|match children {
-            Children::All=>true,
-            Children::ParentClauses=>child.header().trim_start().starts_with("parent_type"),
-            Children::Empty=>false,
-        })
-    }
-}
-
-pub(crate) fn visit_declarations_in_scope<'a,E>(
-    items: OriginalItems<'a>, owner: &str,
-    checkpoint: &mut impl FnMut()->Result<(),E>,
-    visit: &mut impl FnMut(ProjectedItem<'a>)->Result<(),E>,
-)->Result<(),E>{walk(items,owner,None,checkpoint,visit)}
-
-#[cfg(test)]
 pub(crate) fn declarations_in_scope(items: &[Item], owner: &str) -> Vec<Item> {
-    fn materialize(item: ProjectedItem<'_>) -> Item {
-        let children = item.children().map(ProjectedItem::authored).map(materialize).collect();
-        Item {
-            kind: item.kind, header: item.header.into_owned(), span: item.raw.span(),
-            header_span: item.raw.header_span(), declaration_cursor: item.raw.declaration_cursor(),
-            checker_qualifiers: item.raw.checker_qualifiers(),
-            original_outer_terminator: item.raw.original_outer_terminator(),
-            indent: item.raw.indent(), children,
-        }
-    }
-    let mut result=Vec::new();
-    visit_declarations_in_scope(OriginalItems::from_items(items),owner,&mut || Ok(()),&mut |item| {
-        result.push(materialize(item));
-        Ok::<_,std::convert::Infallible>(())
-    }).unwrap();
+    let mut result = Vec::new();
+    walk(items, owner, None, &mut result);
     result
 }
 fn path(owner: &str, raw: &str) -> String {
@@ -71,38 +22,43 @@ fn path(owner: &str, raw: &str) -> String {
         )
     }
 }
-fn walk<'a,E>(
-    items: OriginalItems<'a>, owner: &str, namespace: Option<&str>,
-    checkpoint: &mut impl FnMut()->Result<(),E>,
-    visit: &mut impl FnMut(ProjectedItem<'a>)->Result<(),E>,
-)->Result<(),E>{
-    for item in items.iter() {
-        checkpoint()?;
-        let header = item.header().trim();
+fn projected_item(item: &Item, kind: ItemKind, header: String, children: Vec<Item>) -> Item {
+    Item {
+        kind,
+        header,
+        span: item.span,
+        header_span: item.header_span,
+        indent: item.indent,
+        children,
+    }
+}
+fn walk(items: &[Item], owner: &str, namespace: Option<&str>, out: &mut Vec<Item>) {
+    for item in items {
+        let header = item.header.trim();
         if let Some(namespace) = namespace {
             let root = namespace.split('/').next().unwrap();
             if !header.contains('(')
                 && dm_syntax::top_level_assignment_index(header).is_none()
-                && !item.children().is_empty()
+                && !item.children.is_empty()
             {
                 walk(
-                    item.children(),
+                    &item.children,
                     owner,
                     Some(&format!("{namespace}/{header}")),
-                    checkpoint,
-                    visit,
-                )?;
+                    out,
+                );
                 continue;
             }
-            let mut member = ProjectedItem::authored(item);
+            let mut member = item.clone();
+            member.header = format!("{namespace}/{header}");
             member.kind = match root {
                 "var" => ItemKind::Var,
                 "verb" => ItemKind::Verb,
                 _ => ItemKind::Proc,
             };
             // Preserve containing owner as an absolute member path.
-            member.header = Cow::Owned(path(owner, &format!("{namespace}/{header}")));
-            visit(member)?;
+            member.header = path(owner, &member.header);
+            out.push(member);
             continue;
         }
         // Namespace markers belong to the declaration target, never its value.
@@ -136,33 +92,55 @@ fn walk<'a,E>(
             let tail = parts[index..].join("/");
             if !header.contains('(')
                 && dm_syntax::top_level_assignment_index(header).is_none()
-                && !item.children().is_empty()
+                && !item.children.is_empty()
             {
-                walk(item.children(), &member_owner, Some(&tail), checkpoint, visit)?;
+                walk(&item.children, &member_owner, Some(&tail), out);
                 continue;
             }
-            let mut member = ProjectedItem::authored(item);
+            let mut member = item.clone();
             let suffix = &header[declaration.len()..];
-            member.header = Cow::Owned(format!("{}/{}{}", member_owner.trim_end_matches('/'), tail, suffix));
-            visit(member)?;
+            member.header = format!("{}/{}{}", member_owner.trim_end_matches('/'), tail, suffix);
+            out.push(member);
             continue;
         }
-        if item.kind() == ItemKind::Type {
+        if item.kind == ItemKind::Type {
             let new_owner = path(owner, header);
-            visit(ProjectedItem { raw:item, kind:item.kind(), header:Cow::Owned(new_owner.clone()), children:Children::ParentClauses })?;
-            walk(item.children(), &new_owner, None, checkpoint, visit)?;
+            // Clone only the children retained in the type projection. Cloning
+            // the whole subtree here and discarding it repeats descendant copies
+            // at each nested type before the traversal emits those descendants.
+            let ty = projected_item(
+                item,
+                item.kind,
+                new_owner.clone(),
+                item.children
+                    .iter()
+                    .filter(|child| child.header.trim_start().starts_with("parent_type"))
+                    .cloned()
+                    .collect(),
+            );
+            out.push(ty);
+            walk(&item.children, &new_owner, None, out);
             continue;
         }
-        let mut member = ProjectedItem::authored(item);
+        let mut member = item.clone();
         if header.starts_with('/') && dm_syntax::top_level_assignment_index(header).is_some() {
             if let Some(index) = dm_syntax::top_level_assignment_index(header) {
                 if let Some((target_owner, name)) = header[..index].trim().rsplit_once('/') {
-                    let owner = if target_owner.is_empty() { "/" } else { target_owner };
-                    visit(ProjectedItem { raw:item, kind:ItemKind::Type, header:Cow::Borrowed(owner), children:Children::Empty })?;
-                    member.header = Cow::Owned(format!("{name} = {}", header[index + 1..].trim()));
+                    let ty = projected_item(
+                        item,
+                        ItemKind::Type,
+                        if target_owner.is_empty() {
+                            "/".into()
+                        } else {
+                            target_owner.into()
+                        },
+                        Vec::new(),
+                    );
+                    out.push(ty);
+                    member.header = format!("{name} = {}", header[index + 1..].trim());
                 }
             }
-        } else if matches!(item.kind(), ItemKind::Unknown | ItemKind::Statement) {
+        } else if matches!(item.kind, ItemKind::Unknown | ItemKind::Statement) {
             if let Some(index) = dm_syntax::top_level_assignment_index(header) {
                 let target = header[..index].trim();
                 // Flattening a nested type must not change the lexical owner of
@@ -171,20 +149,19 @@ fn walk<'a,E>(
                 if target != "parent_type" {
                     // Preserve the target exactly: type path normalization
                     // would erase a malformed trailing slash before validation.
-                    member.header = Cow::Owned(format!(
+                    member.header = format!(
                         "{}/{}{}",
                         owner.trim_end_matches('/'),
                         target,
                         &header[index..]
-                    ));
+                    );
                 }
             }
-        } else if matches!(item.kind(), ItemKind::Proc | ItemKind::Verb) {
-            member.header = Cow::Owned(path(owner, header));
+        } else if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
+            member.header = path(owner, header);
         }
-        visit(member)?;
+        out.push(member);
     }
-    Ok(())
 }
 
 #[cfg(test)]
@@ -204,9 +181,6 @@ mod tests {
                 header: header.into(),
                 span: item.span,
                 header_span: item.header_span,
-                declaration_cursor: item.declaration_cursor,
-                checker_qualifiers: item.checker_qualifiers,
-        original_outer_terminator: item.original_outer_terminator,
                 indent: item.indent,
                 children,
             }

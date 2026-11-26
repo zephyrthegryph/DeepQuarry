@@ -88,7 +88,7 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 // Called when the machine's has_power flips (has_power_changed(), the stat's on_change hook), and by hand where a type re-reads its own power.
 // Returns TRUE when has_power changed since the last call. Can be overridden.
 /obj/machinery/proc/power_change()
-	var/now = !!stat_value(src, STAT_HAS_POWER) // the grid's reading, a contribution (area_gives_power()), recomputed on read when its inputs moved
+	var/now = !!stat_value(src, STAT_HAS_POWER) // the grid's reading, a contribution (the area_gives_* reads), recomputed on read when its inputs moved
 	if(now == power_seen)
 		return FALSE
 	power_seen = now
@@ -104,13 +104,22 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 /obj/machinery/proc/has_power_changed(datum/act/A)
 	power_change()
 
-/// STAT_HAS_POWER's reading of the grid: the machine's area has its channel energized. A machine with no area has power (nothing darkens it).
-/obj/machinery/proc/area_gives_power(datum/act/A)
+/// STAT_HAS_POWER's reading of the grid, one proc per channel (each reads only its own channel var, so a flip of one channel re-evaluates only the
+/// machines drawing on it): the machine's area has the channel energized. A machine with no area has power (nothing darkens it).
+/obj/machinery/proc/area_gives_equip(datum/act/A)
 	var/area/served = power_area
-	return !served || served.powered(power_of(src).channel)
+	return !served || served.equip_powered()
+
+/obj/machinery/proc/area_gives_light(datum/act/A)
+	var/area/served = power_area
+	return !served || served.light_powered()
+
+/obj/machinery/proc/area_gives_environ(datum/act/A)
+	var/area/served = power_area
+	return !served || served.environ_powered()
 
 /**
- * COMPATIBILITY SHIM. The grid no longer writes the powered state: the machine's STAT_HAS_POWER is the area's channel read (area_gives_power()),
+ * COMPATIBILITY SHIM. The grid no longer writes the powered state: the machine's STAT_HAS_POWER is the area's channel read (the area_gives_* reads),
  * and power_change() only acts on its flips. set_powered() remains as a manual override (a hold on STAT_HAS_POWER, source SRC_GRID, the NOPOWER
  * bit's own writer) for the benchmark's old path and for callers that force a machine dark; it goes with them.
  * The power capability's "powered" state (G8): a change publishes MACHINE_KEY_STAT and MACHINE_KEY_POWERED to its readers.
@@ -126,37 +135,25 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 /obj/machinery/proc/get_power_usage()
 	return POWER_CONSUMPTION
 
-// DEPRECATED! - USE use_power_oneoff() instead!
-/obj/machinery/proc/use_power(amount, chan = -1) // defaults to power_channel
-	return src.use_power_oneoff(amount, chan);
-
-// This will have this machine have its area eat this much power next tick, and not afterwards. Do not use for continued power draw.
-// Returns actual amount drawn (In theory this could be less than the amount asked for. In pratice it won't be FOR NOW)
-/obj/machinery/proc/use_power_oneoff(amount, chan = CURRENT_CHANNEL)
-	var/area/A = get_area(src)		// make sure it's in an area
-	if(!A)
-		return
-	if(chan == CURRENT_CHANNEL)
-		chan = power_of(src).channel
-	return A.use_power_oneoff(amount, chan)
-
-// Check if we CAN use a given amount of extra power as a one off. Returns amount we could use without actually using it.
-// For backwards compatibilty this returns true if the channel is powered. This is consistant with pre-static-power
-// behavior of APC powerd machines, but at some point we might want to make this a bit cooler.
-/obj/machinery/proc/can_use_power_oneoff(amount, chan = CURRENT_CHANNEL)
-	if(powered(chan))
-		return amount // If channel is powered then you can do it.
-	return 0
-
 // Do not do power stuff in New/Initialize until after ..()
-/// The machine reports its draw and joins its area's power once it is made.
+/// Whether this machine never draws power (unpowered_machine(), a pipe): it has no power_area and is not among its area's power_machines.
+/obj/machinery/proc/draws_no_power()
+	return !!cap_of(src, CAP_UNPOWERED_MACHINE)
+
+/// Whether the machine has begun to follow its area's power: it is initialized (machine_power_start() runs in its init; a move before that
+/// has nothing to update). Read from the init flag, not a per-machine lazy-state row.
+/obj/machinery/proc/power_started()
+	return !!(flags & ATOM_INITIALIZED)
+
+/// The machine reports its draw and joins its area's power once it is made (a machine that never draws joins nothing).
 /obj/machinery/proc/machine_power_start()
 	// only add this if we init on a non-turf (and non-null)
 	if(!STATE_PEEK(src, machinery_misc, recursive_set) && loc && !isturf(loc))
 		STATE_SET(src, machinery_misc, recursive_set, TRUE)
 		dq_add_recursive_move(src)
 		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
-	STATE_SET(src, machinery_misc, power_init_complete, TRUE)
+	if(draws_no_power())
+		return
 	rel_set(src, nameof(power_area), get_area(src)) // the machine's draw reaches the area's demand with the relation
 
 // Or in Destroy at all, but especially after the ..().
@@ -179,19 +176,28 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 
 /obj/machinery/proc/update_power_on_move(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(loc, /obj/item/tabletop_pack))
+		return // carried: the pack's own moves change no area's power
 	var/datum/notice/movable_attempted_move/event = A
 	power_area_moved(event.old_loc, event.new_loc)
 
 /obj/machinery/proc/power_area_moved(atom/old_loc, atom/new_loc)
-	var/area/old_area = get_area(old_loc)
-	var/area/new_area = get_area(new_loc)
+	var/area/old_area = power_served_area(old_loc)
+	var/area/new_area = power_served_area(new_loc)
 	if(old_area != new_area)
 		area_changed(old_area, new_area)
+
+/// The area whose power a machine standing in `where` draws on: its area, and none while it is carried inside a tabletop pack (it draws nothing and
+/// belongs to no area's power until it is set down).
+/obj/machinery/proc/power_served_area(atom/where)
+	if(istype(where, /obj/item/tabletop_pack))
+		return null
+	return get_area(where)
 
 /obj/machinery/proc/area_changed(area/old_area, area/new_area)
 	if(old_area == new_area)
 		return
-	if(!STATE_PEEK(src, machinery_misc, power_init_complete))
+	if(!power_started() || draws_no_power())
 		return
 	rel_set(src, nameof(power_area), new_area) // the draw follows the relation: it leaves the old area's demand and joins the new one's
 	power_change() // Force check in case the old area was powered and the new one isn't or vice versa.

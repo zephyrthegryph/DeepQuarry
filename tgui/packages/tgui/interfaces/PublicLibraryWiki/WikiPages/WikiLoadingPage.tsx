@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Divider,
@@ -6,7 +7,6 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
 import { WikiLogo } from '../WikiCommon/WikiLogo';
 
 export const WikiLoadingPage = (props: { endTime: number; tipp: string }) => {
@@ -39,9 +39,7 @@ export const WikiLoadingPage = (props: { endTime: number; tipp: string }) => {
         </Stack.Item>
         <Divider />
         <Stack.Item>
-          <Box textAlign="center" color="label">
-            Did you know?
-          </Box>
+          <Label textAlign="center">Did you know?</Label>
         </Stack.Item>
         <Stack.Item>
           <Box textAlign="center" color="red">

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscdel: "Removed the smart centrifuge and the industrial chemical filter, which isolated or passed one chosen reagent, and the per-reagent pass-through in the refinery line."
+  - balance: "The rig chemical dispenser takes a container whole or refuses it, instead of stripping out the reagents it can store."

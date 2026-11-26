@@ -179,10 +179,6 @@
 /// (DQ Medical, O2/O4) and machine internals (stock.dm, C6). Nothing else
 /// may add a new use.
 #define SLOT_DROP_HOLDER 4
-/// Contents fold into latent entries on a declared successor instead of
-/// staying real (doc/rewrite/lifecycle.md §3's TO_LATENT): debris, wreckage.
-/// /datum/relation_definition/slot/proc/latent_successor(holder) names it.
-#define SLOT_DROP_TO_LATENT 5
 /// Moves into a slot of replace_with()'s successor (doc/rewrite/lifecycle.md
 /// §3's KEEP_WITH(slot)); falls back to SPILL when nothing is replacing the
 /// holder. /datum/relation_definition/slot/proc/keep_with_slot() names the destination slot.
@@ -230,10 +226,6 @@
 /// DQ Medical's clock framework (K1): a holder-provided clock following
 /// this thing. Reserved here; K1 writes the handler.
 #define MOVE_HOOK_CLOCK (1<<0)
-/// C10 (latency policy): reserved here; C10 writes the handler. C10's
-/// dq_latent_touch in note_enter stays unconditional -- only its
-/// collapse-cancel uses this bit.
-#define MOVE_HOOK_LATENCY (1<<1)
 /// Set (by the ledger, not by hand) on any holder with a hooked descendant
 /// somewhere in its slots, so a move of the holder itself knows to walk in
 /// and fire that descendant's hooks too, since the descendant's own `loc`
@@ -246,11 +238,7 @@
 /// `FOR_CONTENTS(var/atom/movable/AM as anything, T)`
 #define FOR_CONTENTS(decl, holder) for(decl in (holder).contents)
 
-/// Walk over only the *materialized* direct contents of `holder`: never resolves a latent
-/// generator and never materializes an entry (doc/rewrite/systems.md section 18). The read for
-/// UI data and examine text, which must not change what exists by looking at it; show latent
-/// things from type data (latent_names(), latent_count()) and materialize in the action that
-/// takes them. Non-copying: the body must not move things in or out.
+/// Walk over the direct contents of `holder` (UI data and examine text read this way). Non-copying: the body must not move things in or out.
 /// `FOR_REAL_CONTENTS(var/obj/item/I as anything, src)`
 #define FOR_REAL_CONTENTS(decl, holder) for(decl in (holder).contents)
 

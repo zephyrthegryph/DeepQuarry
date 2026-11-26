@@ -1,18 +1,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  GravityGeneratorActions,
+  GravityGeneratorData,
+} from './generated/GravityGenerator';
 
-type Data = {
-  breaker: BooleanLike;
-  charge_count: number;
-  charging_state: number;
-  on: BooleanLike;
-  operational: BooleanLike;
-};
+type Data = GravityGeneratorData;
 
 export const GravityGenerator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GravityGeneratorActions>();
 
   const { breaker, charge_count } = data;
 

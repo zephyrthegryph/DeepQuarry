@@ -3,15 +3,7 @@
 import { Box } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
-type NifData = {
-  installed: boolean;
-  nif_type: string | null;
-  display_name: string | null;
-  durability: number | null;
-};
-
-export const NifStatusPanel = ({ data }: EditorProps) => {
-  const d = data as NifData;
+export const NifStatusPanel = ({ data: d }: EditorProps<'nif_status'>) => {
   if (!d.installed) {
     return <Box italic>No NIF installed.</Box>;
   }

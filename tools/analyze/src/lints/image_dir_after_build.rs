@@ -14,13 +14,29 @@ use std::collections::HashMap;
 
 use dreammaker::ast::{Block, Expression, Follow, ProcReturnType, Statement, Term};
 
-use crate::lint::{Cx, Lint, Meta, Registry, Sink};
+use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::lints::stored_refs::{collect_locals, path_of, Place, ProcScope};
 use crate::sem::ast::{stmt_blocks, strip_parens, walk_block};
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
+use crate::tree::CODE_DM;
 
-use crate::image_dir_policy::{MESSAGE, META, RULE};
+const HINT: &str = "a dir assigned to an image or mutable_appearance after it is built is dropped when it becomes an overlay or underlay, whatever the value. \
+Build the image with its dir: image(icon, loc, icon_state, layer, dir), image(of, dir = d) or look_overlay_image(..., dir =). A mutable_appearance has no \
+dir argument: use an image, or leave the dir to the holder. dq_overlay_dir_renders holds the rule";
+
+static META: Meta = Meta {
+    name: "image_dir_after_build",
+    group: "",
+    label: "image_dir_after_build",
+    legacy: "",
+    select: CODE_DM,
+    scan: ScanKind::Tree,
+    policy: Policy::Hard,
+    rules: &[RuleMeta { name: "dir_after_build", hint: HINT }],
+    allow: &[],
+    lists: &["exempt_files"],
+};
 
 struct ImageDirAfterBuild;
 
@@ -29,7 +45,7 @@ fn is_image(sem: &Sem, ty: &str) -> bool {
 }
 
 /// A proc's declared return type: `as /type`, else a `RETURN_TYPE(/type)` (`set SpacemanDMM_return_type = /type`) in its body.
-fn return_type(sem: &Sem, ty: &str, name: &str) -> Option<String> {
+pub(crate) fn return_type(sem: &Sem, ty: &str, name: &str) -> Option<String> {
     let t = sem.ty(ty)?;
     if let Some(d) = t.get_proc_declaration(name) {
         if let ProcReturnType::TypePath(p) = &d.return_type {
@@ -188,7 +204,7 @@ impl Lint for ImageDirAfterBuild {
         rows.sort();
         rows.dedup();
         for (rel, line) in rows {
-            out.site_in_msg(RULE, &rel, engine_line(root, &rel, line) as usize, MESSAGE);
+            out.site_in_msg("dir_after_build", &rel, engine_line(root, &rel, line) as usize, "`.dir` assigned to an image or mutable_appearance after it is built".to_string());
         }
     }
 }

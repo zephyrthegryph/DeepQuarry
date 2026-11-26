@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -13,56 +14,36 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { scale } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
 import { decodeHtmlEntities } from 'tgui-core/string';
+import type {
+  XenoarchSpectrometerActions,
+  XenoarchSpectrometerData,
+} from './generated/XenoarchSpectrometer';
 
-type Data = {
-  scanned_item: string;
-  scanned_item_desc: string;
-  last_scan_data: string;
-  scanning: BooleanLike;
-
-  // Mechanics
-  scan_progress: number;
-  scanner_rpm: number;
-  scanner_rpm_delta: number;
-  radiation: number;
-  heat: number;
-  coolant: number;
-
-  // Constants
-  IDEAL_RPM: number;
-  RPM_MAX_DELTA: number;
-  RPM_MAX: number;
-  TARGET_RADIATION: number;
-  RADIATION_MAX: number;
-  HEAT_FAILURE_THRESHOLD: number;
-  HEAT_MAX: number;
-  COOLANT_MAX: number;
-};
+type Data = XenoarchSpectrometerData;
 
 export const XenoarchSpectrometer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchSpectrometerActions>();
 
   const {
     scanned_item,
     scanned_item_desc,
-    last_scan_data,
+    last_scan_data = '',
     scanning,
-    scan_progress,
-    scanner_rpm,
-    scanner_rpm_delta,
-    radiation,
-    heat,
-    coolant,
-    IDEAL_RPM,
-    RPM_MAX_DELTA,
-    RPM_MAX,
-    TARGET_RADIATION,
-    RADIATION_MAX,
-    HEAT_FAILURE_THRESHOLD,
-    HEAT_MAX,
-    COOLANT_MAX,
+    scan_progress = 0,
+    scanner_rpm = 0,
+    scanner_rpm_delta = 0,
+    radiation = 0,
+    heat = 0,
+    coolant = 0,
+    IDEAL_RPM = 1,
+    RPM_MAX_DELTA = 1,
+    RPM_MAX = 1,
+    TARGET_RADIATION = 1,
+    RADIATION_MAX = 1,
+    HEAT_FAILURE_THRESHOLD = 1,
+    HEAT_MAX = 1,
+    COOLANT_MAX = 1,
   } = data;
 
   return (
@@ -190,14 +171,14 @@ export const Spinner = (props: {
 };
 
 export const LeftPanel = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchSpectrometerActions>();
 
   const {
-    scan_progress,
-    scanner_rpm,
-    scanner_rpm_delta,
-    RPM_MAX_DELTA,
-    RPM_MAX,
+    scan_progress = 0,
+    scanner_rpm = 0,
+    scanner_rpm_delta = 0,
+    RPM_MAX_DELTA = 1,
+    RPM_MAX = 1,
   } = data;
 
   return (
@@ -208,9 +189,12 @@ export const LeftPanel = (props) => {
         </Stack.Item>
       </Stack>
       <LabeledList>
-        <LabeledList.Item label="Completion">
-          <ProgressBar value={scan_progress} minValue={0} maxValue={100} />
-        </LabeledList.Item>
+        <StatBar
+          label="Completion"
+          value={scan_progress}
+          minValue={0}
+          maxValue={100}
+        />
         <LabeledList.Item
           label="RPM"
           buttons={
@@ -233,16 +217,16 @@ export const LeftPanel = (props) => {
   );
 };
 export const RightPanel = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchSpectrometerActions>();
 
   const {
-    radiation,
-    heat,
-    coolant,
-    RADIATION_MAX,
-    HEAT_FAILURE_THRESHOLD,
-    HEAT_MAX,
-    COOLANT_MAX,
+    radiation = 0,
+    heat = 0,
+    coolant = 0,
+    RADIATION_MAX = 1,
+    HEAT_FAILURE_THRESHOLD = 1,
+    HEAT_MAX = 1,
+    COOLANT_MAX = 1,
   } = data;
 
   return (

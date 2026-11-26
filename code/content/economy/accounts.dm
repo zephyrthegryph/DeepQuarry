@@ -68,11 +68,11 @@ SETTER(/datum/money_account, security_level)
 		return FALSE
 	set_money(money + amount)
 	record_transaction(source_name, purpose, amount, terminal_id)
-	total_revenue += amount
+	set_total_revenue(total_revenue + amount)
 	if(tracks_budget_period())
-		monthly_income += amount
+		set_monthly_income(monthly_income + amount)
 		LAZYINITLIST(monthly_income_sources)
-		monthly_income_sources[source_name] = (monthly_income_sources[source_name] || 0) + amount
+		set_monthly_income_sources_at(source_name, (monthly_income_sources[source_name] || 0) + amount)
 	if(external)
 		SSsupply?.record_currency_created(amount, source_name)
 	return TRUE
@@ -86,11 +86,11 @@ SETTER(/datum/money_account, security_level)
 	var/operating_spend = min(money, amount)
 	set_money(money - operating_spend)
 	if(operating_spend < amount)
-		savings -= amount - operating_spend
+		set_savings(savings - (amount - operating_spend))
 	record_transaction(target_name, purpose, -amount, terminal_id)
-	total_expenses += amount
+	set_total_expenses(total_expenses + amount)
 	if(tracks_budget_period())
-		monthly_expenses += amount
+		set_monthly_expenses(monthly_expenses + amount)
 	if(external)
 		SSsupply?.record_currency_destroyed(amount, target_name)
 	return TRUE
@@ -107,12 +107,12 @@ SETTER(/datum/money_account, security_level)
 /datum/money_account/proc/roll_accounting_period()
 	if(!tracks_budget_period())
 		return FALSE
-	last_month_income = monthly_income
-	last_month_expenses = monthly_expenses
+	set_last_month_income(monthly_income)
+	set_last_month_expenses(monthly_expenses)
 	last_month_income_sources = monthly_income_sources
-	monthly_income = 0
-	monthly_expenses = 0
-	monthly_income_sources = null
+	set_monthly_income(0)
+	set_monthly_expenses(0)
+	set_monthly_income_sources(null)
 	return TRUE
 
 /datum/money_account/proc/roll_budget_period()
@@ -120,7 +120,7 @@ SETTER(/datum/money_account, security_level)
 		return FALSE
 	roll_accounting_period()
 	if(money > 0)
-		savings += money
+		set_savings(savings + money)
 		record_transaction(owner_name, "Unused operating funds moved to savings", 0, "Automated budget cycle")
 		set_money(0)
 	return TRUE

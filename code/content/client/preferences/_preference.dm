@@ -108,6 +108,10 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	/// is for PREFERENCE_CHARACTER.
 	var/can_randomize = TRUE
 
+	/// A PREFERENCE_CHARACTER pref whose value also shows on the mob the player is playing right now: an
+	/// edit made in character setup during the round reaches that mob at once, as a change made in game did before.
+	var/applies_live = FALSE
+
 
 
 
@@ -319,6 +323,14 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 /mob/proc/read_preference(preference_type)
 	return client?.prefs?.read_preference(preference_type)
 
+/// The player's value of a preference, or the preference's own default for a mob nobody plays (an NPC reads as a player who never changed it).
+/mob/proc/preference_or_default(preference_type)
+	var/value = read_preference(preference_type)
+	if(!isnull(value))
+		return value
+	var/datum/preference/entry = GLOB.preference_entries[preference_type]
+	return entry.create_default_value()
+
 /// Write a /datum/preference type and return its value directly to the json.
 /// Please use SScharacter_setup.queue_preferences_save(prefs) when you edit multiple at once and set direct_write to WRITE_PREF_MANUAL
 /// Additionally, if you want something to be changed IN ROUND and change a pref for THAT CHARACTER'S SAVESLOT, ensure save_to_played_slot = TRUE!
@@ -462,6 +474,10 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			// species change is the south-only cost (~250 ms) instead of the
 			// full 4-direction cost (~1 s).
 			update_preview_icon_lazy()
+		if(preference.applies_live && preference.savefile_identifier == PREFERENCE_CHARACTER)
+			var/mob/living/playing = client()?.mob
+			if(isliving(playing))
+				preference.apply_pref_to(playing, read_preference(preference.type))
 	catch(var/exception/e)
 		dq_report_caught(e, "update_preference runtimed (key=[preference.savefile_key])")
 		// Undo only this frame's increment (nested frames each unwind their own), then

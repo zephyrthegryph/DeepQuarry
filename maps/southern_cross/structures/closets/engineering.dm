@@ -12,7 +12,7 @@
 		/obj/item/clothing/under/rank/chief_engineer,
 		/obj/item/clothing/under/rank/chief_engineer/skirt,
 		/obj/item/clothing/head/hardhat/white,
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/cartridge/ce,
 		/obj/item/radio/headset/heads/ce,
 		/obj/item/radio/headset/alt/heads/ce,

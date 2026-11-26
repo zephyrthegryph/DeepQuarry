@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Chat now floats in its own window you can move and resize; the stat panel takes the full right side. Dock it back with the Floating chat option or the Menu page, and reset a lost window there too."

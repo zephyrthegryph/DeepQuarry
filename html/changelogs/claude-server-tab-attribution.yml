@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - qol: "The Server tab names up to eight systems per tick, time before the kernel and map send, and says when time is not attributed."
+  - bugfix: "The Server tab's sections no longer get squeezed by its scroll area."

@@ -1,8 +1,218 @@
-//! InstanceList delegates lexical facts/final ordering to one shared policy.
-use std::collections::{BTreeSet,HashMap,HashSet};
-use crate::{dm::{ownership_index as oi,singletons::is_singleton,walk::walk_order},incr,lint::{Cx,Lint,Meta,Registry,Sink},parity::Parity,tree::SourceFile};
-use crate::instance_list_policy::{LINT,META,Facts,Judged,facts_of};
-#[cfg(test)]use crate::instance_list_policy::{scan_decls,strip_comment};
+//! Port of `tools/ci/instance_list_lint.py`: type-level list vars that allocate a list for every
+//! instance (AGENTS.md section 3a).
+//!
+//! `var/list/foo = list()` (or `new/list`, `new()`, `list/foo[4]`) in a type body runs once per
+//! instance at creation, so every instance gets its own list even if it never uses it. A declaration
+//! that really is per-instance and non-empty carries `// ALLOW(instance_list): <reason>`; legacy ones
+//! were baselined once; none remain (a hard ban). Singletons (`dm::singletons`) are exempt; unit
+//! tests, benchmarks and the vendored TGS DMAPI are exempt by path (`[lint.instance_list]` in
+//! `tools/ci/lint_scopes.toml`, the old `allow_annotations.exempt_path()`).
+//!
+//! Quirks kept from the Python:
+//! * the scan is an `os.walk` of `code/` (dot-files and dot-directories included);
+//! * a declaration is reported once per `type/var` name across the whole tree: `found.setdefault`
+//!   keeps the first one in `os.walk` order (`dm::walk::walk_order`), and later ones are dropped, but
+//!   the ALLOW question is still asked about each (an annotated first declaration does not hide a
+//!   second, unannotated one);
+//! * the sites are emitted sorted as the strings `"rel:line"` (so `:10` sorts before `:9`);
+//! * indentation is counted in tabs only: a space-indented line is at depth 0, where it is read as a
+//!   type header or a top-level proc;
+//! * at depth 0 the shared-modifier test is a substring test on the modifier text
+//!   (`var/staticky/list/x` counts as `static`), inside a type body it is an exact segment test;
+//! * a singleton (`dm::singletons`) is exempt: a type under the two root prefixes, the type a `SYSTEM_DEF` or a
+//!   `GLOBAL_DATUM_INIT(name, /type, new...)` makes the one instance of.
+
+use std::collections::{BTreeSet, HashMap, HashSet};
+
+use serde::{Deserialize, Serialize};
+
+use crate::dm::ownership_index as oi;
+use crate::dm::singletons::is_singleton;
+use crate::dm::walk::walk_order;
+use crate::incr;
+use crate::lint::{AllowUse, Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::parity::Parity;
+use crate::pat::Pat;
+use crate::tree::{Select, SourceFile};
+use crate::{pat, pat_match};
+use crate::util::{py_rstrip, py_strip};
+
+const LINT: &str = "instance_list";
+const SHARED_MODS: &[&str] = &["static", "global", "const"];
+
+static META: Meta = Meta {
+    name: "instance_list",
+    group: "",
+    label: "instance_list",
+    legacy: "tools/ci/instance_list_lint.py",
+    // os.walk: dot-files and dot-directories included.
+    select: Select { roots: &[("code", "dm")], hidden: true },
+    scan: ScanKind::Tree,
+    policy: Policy::Hard,
+    rules: &[RuleMeta {
+        name: "instance_list",
+        hint: "allocates a list per instance: use a static var or getter (constant table), a lazy list (usually empty) or a starting list (`per_type(nameof(v), PROC_REF(build), copy_on_write = TRUE)`, AGENTS.md 3a); if it really is per-instance and always filled, mark it `// ALLOW(instance_list): <reason>`",
+    }],
+    allow: &["instance_list"],
+    lists: &[],
+};
+
+/// `var/[mods/]list/[typed/path/]name = list(...) | new/list(...) | new(...) | new`.
+fn init_re() -> &'static Pat {
+    pat_match!(
+        r"^(?:var/)?((?:\w+/)*?)list/(?:\w+/)*?(\w+)\s*(?:=\s*(?:list\s*\(|alist\s*\(|new\s*/list|new\s*\(|new\s*$)|\[\s*\w+\s*\])"
+    )
+}
+
+/// `strip_comment`: cut a `//` that is not inside a string (an escaped quote is skipped, as the
+/// Python's `text[i - 1] != "\\"` does).
+fn strip_comment(text: &str) -> &str {
+    let mut in_str: Option<char> = None;
+    let mut prev = '\0';
+    for (i, ch) in text.char_indices() {
+        if let Some(q) = in_str {
+            if ch == q && prev != '\\' {
+                in_str = None;
+            }
+        } else if ch == '"' || ch == '\'' {
+            in_str = Some(ch);
+        } else if text[i..].starts_with("//") {
+            return py_rstrip(&text[..i]);
+        }
+        prev = ch;
+    }
+    py_rstrip(text)
+}
+
+/// `indent_of`: the number of leading tabs.
+fn indent_of(line: &str) -> usize {
+    line.len() - line.trim_start_matches('\t').len()
+}
+
+/// `scan_file`: `(type_path, var_name, line number)` of every per-instance list declaration.
+fn scan_decls(f: &SourceFile) -> Vec<(String, String, usize)> {
+    let mut found = Vec::new();
+    let mut type_path: Option<String> = None;
+    let mut in_proc = false;
+    let mut proc_indent = 0usize;
+    let mut var_block: Option<(usize, String)> = None; // (indent, modifiers) of an open `var` block
+    let mut in_comment = false;
+    for (number, raw) in f.raw().numbered() {
+        let line = raw.trim_end_matches('\r');
+        let stripped = py_strip(line);
+        if in_comment {
+            if stripped.contains("*/") {
+                in_comment = false;
+            }
+            continue;
+        }
+        if stripped.starts_with("/*") && !stripped.contains("*/") {
+            in_comment = true;
+            continue;
+        }
+        if stripped.is_empty() || stripped.starts_with("//") || stripped.starts_with('#') {
+            continue;
+        }
+        let depth = indent_of(line);
+        let body = strip_comment(stripped);
+        if depth == 0 {
+            var_block = None;
+            in_proc = false;
+            type_path = None;
+            if body.contains('(') {
+                in_proc = true; // a top-level proc definition
+                continue;
+            }
+            if !body.starts_with('/') {
+                continue;
+            }
+            if let Some(m) = pat_match!(r"^(/[\w/]+?)/var/(.*)$").captures(body) {
+                let candidate = format!("var/{}", m.s(2));
+                if let Some(decl) = init_re().captures(&candidate) {
+                    // A substring test on the modifier text, not a segment test.
+                    if !SHARED_MODS.iter().any(|s| decl.s(1).contains(s)) {
+                        found.push((m.s(1).to_string(), decl.s(2).to_string(), number));
+                    }
+                }
+                continue;
+            }
+            type_path = Some(py_strip(body.trim_end_matches('{')).to_string());
+            continue;
+        }
+        let Some(tp) = type_path.as_ref() else { continue };
+        if in_proc {
+            if depth > proc_indent {
+                continue;
+            }
+            in_proc = false;
+        }
+        if let Some((d, _)) = &var_block {
+            if depth <= *d {
+                var_block = None;
+            }
+        }
+        if var_block.is_none() && pat_match!(r"^(?:(?:proc|verb)/)?\w+\(.*\)\s*$").is_match(body) {
+            in_proc = true;
+            proc_indent = depth;
+            continue;
+        }
+        if var_block.is_none() && pat_match!(r"^var(?:/(?:static|global|tmp|const))*$").is_match(body) {
+            var_block = Some((depth, body[3..].trim_matches('/').to_string()));
+            continue;
+        }
+        let candidate = if body.starts_with("var/") {
+            body.to_string()
+        } else if let Some((_, mods)) = &var_block {
+            format!("var/{}{}{}", mods, if mods.is_empty() { "" } else { "/" }, body)
+        } else {
+            continue;
+        };
+        if let Some(decl) = init_re().captures(&candidate) {
+            if !decl.s(1).split('/').any(|m| SHARED_MODS.contains(&m)) {
+                found.push((tp.clone(), decl.s(2).to_string(), number));
+            }
+        }
+    }
+    found
+}
+
+/// One file's contribution: its per-instance list declarations and the `GLOBAL_DATUM_INIT` types
+/// it creates.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Facts {
+    decls: Vec<(String, String, u32)>,
+    globals: Vec<String>,
+}
+
+/// One file's declarations that survive the singleton and ALLOW questions.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Judged {
+    decls: Vec<(String, String, u32)>,
+    uses: Vec<AllowUse>,
+}
+
+fn facts_of(f: &SourceFile) -> Facts {
+    let decls = scan_decls(f).into_iter().map(|(t, v, n)| (t, v, n as u32)).collect();
+    let mut globals: Vec<String> = Vec::new();
+    if f.rel.starts_with("code/") {
+        let text = f.raw().text.as_str();
+        if text.contains("GLOBAL_DATUM_INIT") {
+            for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\b").captures_iter(text) {
+                globals.push(m.s(1).to_string());
+            }
+        }
+        if text.contains("SYSTEM_DEF(") {
+            // SYSTEM_DEF(x) declares the one instance of /datum/system/x.
+            for m in pat!(r"(?m)^SYSTEM_DEF\((\w+)\)").captures_iter(text) {
+                globals.push(format!("/datum/system/{}", m.s(1)));
+            }
+        }
+    }
+    globals.sort();
+    globals.dedup();
+    Facts { decls, globals }
+}
+
 struct InstanceList;
 
 impl Lint for InstanceList {
@@ -40,7 +250,25 @@ impl Lint for InstanceList {
             j.uses = sink.allow_used;
             j
         });
-        let output=std::cell::RefCell::new(out);crate::instance_list_policy::finish_using(files.iter().zip(judged.iter()).map(|(file,judged)|(file.rel.as_str(),judged)),&mut crate::key_policy_control::Compatibility,&mut|value,_|{let mut out=output.borrow_mut();if !out.allow_used.contains(value){out.allow_used.push(value.clone());}Ok(())},&mut|_,relative,line,_|{output.borrow_mut().site_in(LINT,relative,line as usize);Ok(())}).unwrap_or_else(|never|match never{});
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut found: Vec<(String, &str, usize)> = Vec::new();
+        for (f, j) in files.iter().zip(judged) {
+            for u in j.uses {
+                if !out.allow_used.contains(&u) {
+                    out.allow_used.push(u);
+                }
+            }
+            for (type_path, var_name, number) in j.decls {
+                if seen.insert(format!("{}/{}", type_path, var_name)) {
+                    found.push((format!("{}:{}", f.rel, number), f.rel.as_str(), number as usize));
+                }
+            }
+        }
+        // `sorted(found.values())`: the strings, not (file, number).
+        found.sort_by(|a, b| a.0.cmp(&b.0));
+        for (_, rel, number) in found {
+            out.site_in(LINT, rel, number);
+        }
     }
 
     fn parity(&self) -> Option<Parity> {

@@ -258,6 +258,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(DebugContagions, R_DEBUG, "Debug Contagions", "Show 
 		return
 	var/list/lines = list("<b>Contagions on [key_name(L)]</b>")
 	for(var/datum/affliction/contagion/D as anything in L.get_contagions())
-		lines += "[D.name] ([D.type]): stage [D.stage]/[D.max_stages], severity [D.severity], immunity [round(D.immunity, 0.1)]/[CONTAGION_IMMUNITY_CLEAR], spread [D.spread_flags], modifiers [D.virus_modifiers], lane [D.periodic_pipe || "parked"]"
+		lines += "[D.name] ([D.type]): stage [D.stage]/[D.max_stages], severity [D.severity], immunity [round(D.immunity, 0.1)]/[CONTAGION_IMMUNITY_CLEAR], spread [D.spread_flags], modifiers [D.virus_modifiers], lane [every_running(D) ? "running" : "parked"]"
 	lines += "Immunities: [english_list(L.get_contagion_immunities(), "none")]"
 	to_chat(user, jointext(lines, "<br>"))

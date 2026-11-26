@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { NoticeBox, Tabs } from 'tgui-core/components';
-
+import type { PlayerEffectsActions } from '../generated/PlayerEffects';
 import { ControlAbilities } from './PlayerEffectsTabs/ControlAbilities';
 import { ControlAdmin } from './PlayerEffectsTabs/ControlAdmin';
 import { ControlFixes } from './PlayerEffectsTabs/ControlFixes';
@@ -12,7 +12,7 @@ import { ControlSmites } from './PlayerEffectsTabs/ControlSmites';
 import type { Data } from './types';
 
 export const PlayerEffects = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, PlayerEffectsActions>();
 
   const { real_name, player_ckey } = data;
 
@@ -28,7 +28,7 @@ export const PlayerEffects = (props) => {
   tabs[5] = <ControlFixes />;
 
   return (
-    <Window width={400} height={600}>
+    <Window width={520} height={600}>
       <Window.Content scrollable>
         <Tabs>
           <Tabs.Tab selected={tab === 0} onClick={() => setTab(0)}>

@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A runtime in a change-crossing handler no longer stops every later change from being delivered; a runtime in a timed deadline no longer loses its bucket"
+  - bugfix: "Deleted entities leave the system-accessor stat readers, the worn-look watch and the scope bindings they held"
+  - code_imp: "Relation teardown detaches list members in one pass and publishes plain-list losses; output calls share one guarded helper"

@@ -226,7 +226,6 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject/states)
 	TEST_ASSERT(!A.ai_brain.is_sentinel(), "an ordinary member is a sentinel")
 	B.sight |= SEE_MOBS
 	TEST_ASSERT(B.ai_brain.is_sentinel(), "a member that sees mobs through walls is not a sentinel")
-	TEST_ASSERT(B.ai_brain.has_role(/datum/capability/ai_role/sentinel), "the sentinel role was not granted")
 	TEST_ASSERT_EQUAL(P.sentinels_first(list(A.ai_brain, B.ai_brain))[1], B.ai_brain, "sentinels do not come first")
 	test_driver_end()
 

@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
-import { Box, Button, Stack } from 'tgui-core/components';
+import { Label } from 'tgui/components/Label';
+import { Button, Stack } from 'tgui-core/components';
 
 type InputButtonsData = {
   large_buttons: boolean;
@@ -78,19 +79,21 @@ export const InputButtons = (props: InputButtonsProps) => {
       justify="space-around"
     >
       {large_buttons ? (
-        <Stack.Item grow>{cancelButton}</Stack.Item>
+        <Stack.Item grow basis={0}>
+          {cancelButton}
+        </Stack.Item>
       ) : (
         <Stack.Item>{cancelButton}</Stack.Item>
       )}
       {!large_buttons && message && (
         <Stack.Item>
-          <Box color="label" textAlign="center">
-            {message}
-          </Box>
+          <Label textAlign="center">{message}</Label>
         </Stack.Item>
       )}
       {large_buttons ? (
-        <Stack.Item grow>{submitButton}</Stack.Item>
+        <Stack.Item grow basis={0}>
+          {submitButton}
+        </Stack.Item>
       ) : (
         <Stack.Item>{submitButton}</Stack.Item>
       )}

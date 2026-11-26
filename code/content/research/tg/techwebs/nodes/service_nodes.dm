@@ -10,6 +10,9 @@
 		"ear_translator",
 		"walkpod",
 		"juke_remote",
+		"bookbinder",
+		"libraryscanner",
+		"colormate",
 		"mail_scanner",
 		"floor_painter",
 		"fax",
@@ -228,6 +231,7 @@
 	description = "When standard-issue tubed food no longer satisfies the station crew's appetite..."
 	design_ids = list(
 		"microwave_board",
+		"icecream_vat",
 		// "microwave",
 		// "bowl",
 		// "plate",

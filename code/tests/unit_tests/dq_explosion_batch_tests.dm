@@ -236,3 +236,37 @@ CAPABILITIES(/obj/structure/dq_blast_probe)
 	TEST_ASSERT_EQUAL(SSexplosions.pending_blast_count(), 0, "blasts were left queued after the epoch")
 	TEST_ASSERT(length(GLOB.dq_blast_probe_log) >= 6, "only [length(GLOB.dq_blast_probe_log)] of 6 probes got a packet")
 	TEST_ASSERT(!SScontracts.is_contract_batching(), "the epoch ended with its contract batch still open")
+
+/// Lattices that ask for a redraw while an epoch resolves are queued once and drawn when the resolve flushes: no timer is armed, and the
+/// drawn state is the final layout's.
+/datum/unit_test/dq_explosion_lattice_redraw_deferred
+
+/datum/unit_test/dq_explosion_lattice_redraw_deferred/Run()
+	var/turf/space/open_a
+	var/turf/space/open_b
+	for(var/turf/space/S in world)
+		var/turf/east = get_step(S, EAST)
+		if(istype(east, /turf/space))
+			open_a = S
+			open_b = east
+			break
+	TEST_ASSERT(open_a && open_b, "the test world has two space turfs side by side")
+	var/asked_before = SSexplosions.epoch_lattice_redraws_asked
+	var/coalesced_before = SSexplosions.epoch_lattice_redraws_coalesced
+	set_var(SSexplosions, "bulk_resolution_active", TRUE)
+	var/obj/structure/lattice/first = allocate(/obj/structure/lattice, open_a)
+	var/obj/structure/lattice/second = allocate(/obj/structure/lattice, open_b)
+	TEST_ASSERT(!QDELETED(first) && !QDELETED(second), "both lattices stay on open space")
+	TEST_ASSERT(!after_pending(first, "overlays"), "no redraw timer is armed for a lattice made during the resolve")
+	TEST_ASSERT(!after_pending(second, "overlays"), "nor for its neighbour")
+	TEST_ASSERT(SSexplosions.epoch_lattice_redraws_asked - asked_before >= 3, "the lattices asked for [SSexplosions.epoch_lattice_redraws_asked - asked_before] redraws (two of their own, one for the neighbour)")
+	TEST_ASSERT(SSexplosions.epoch_lattice_redraws_coalesced - coalesced_before >= 1, "the neighbour's request joined the one already queued")
+	first.set_icon_state("latticeblank")
+	second.set_icon_state("latticeblank")
+	TEST_ASSERT(SSexplosions.flush_deferred_lattices(FALSE), "the queued lattices drain in one call")
+	set_var(SSexplosions, "bulk_resolution_active", FALSE)
+	TEST_ASSERT_NOTEQUAL(first.icon_state, "latticeblank", "the first lattice was drawn by the flush")
+	TEST_ASSERT_NOTEQUAL(second.icon_state, "latticeblank", "the second lattice was drawn by the flush")
+	var/drawn_state = first.icon_state
+	first.update_overlays_now()
+	TEST_ASSERT_EQUAL(first.icon_state, drawn_state, "it shows the same sides the timed redraw shows")

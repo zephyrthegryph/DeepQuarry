@@ -213,38 +213,9 @@
 
 	return hear
 
-/proc/get_mobs_in_radio_ranges(list/obj/item/radio/radios)
-
-	. = list()
-	// Returns a list of mobs who can hear any of the radios given in @radios
-	for(var/obj/item/radio/R as anything in radios)
-		if(get_turf(R))
-			for(var/turf/T in R.can_broadcast_to())
-				for (var/atom/movable/hearing in contents_of(T))
-					var/list/hearing_listeners = dq_get_recursive_listeners(hearing)
-					if (hearing_listeners)
-						. |= hearing_listeners
-
-	for (var/mob/M as anything in .)
-		if (!istype(M) || !M.client)
-			. -= M
-	for (var/mob/observer/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		. |= O
-
-/mob/proc/can_hear_radio(list/hearturfs)
+/// Whether this ghost's player hears and sees everything (the Ghost ears setting, preferences/types/game/ghost.dm).
+/mob/proc/ghost_hears_all()
 	return FALSE
-
-/mob/living/can_hear_radio(list/hearturfs)
-	return get_turf(src) in hearturfs
-
-/mob/living/silicon/robot/can_hear_radio(list/hearturfs)
-	var/turf/T = get_turf(src)
-	var/obj/item/radio/borg/R = hearturfs[T] // this should be an assoc list of turf-to-radio
-
-	return R // radio, true, false, what's the difference
-
-/mob/observer/dead/can_hear_radio(list/hearturfs)
-	return client?.prefs?.read_preference(/datum/preference/toggle/ghost_radio)
 
 
 //Uses dview to quickly return mobs and objects in view,
@@ -294,11 +265,8 @@
 		var/mob/M = mob
 		if(M && M.stat == DEAD && remote_ghosts && !STATE_GET(M, mob_misc, forbid_seeing_deadchat))
 			switch(type)
-				if(1) //Audio messages use ghost_ears
-					if(M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
-						mobs |= M
-				if(2) //Visual messages use ghost_sight
-					if(M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_sight))
+				if(1, 2) // audio and visual messages: the Ghost ears setting
+					if(M.ghost_hears_all())
 						mobs |= M
 
 	//For objects below the top level who still want to hear
@@ -563,7 +531,7 @@
 		// fallback for walls and other airless turfs. Sensors must inspect the
 		// actual turf-owned mixture or walls become fake 0 K / 0 kPa samples.
 		turfs[index] = T
-		mixtures[index] = open_turf?.air
+		mixtures[index] = open_turf?.turf_air()
 	// One batched arena read for all four neighbours.
 	var/list/readings = read_gas_mixtures(mixtures)
 	var/minp = 16777216
@@ -603,7 +571,7 @@
 		var/turf/T = get_turf(get_step(loc, directions[index]))
 		var/turf/open/open_turf = istype(T, /turf/open) ? T : null
 		turfs[index] = T
-		mixtures[index] = open_turf?.air
+		mixtures[index] = open_turf?.turf_air()
 	// One batched arena read for all four neighbours.
 	var/list/readings = read_gas_mixtures(mixtures)
 	var/list/temps = new/list(4)

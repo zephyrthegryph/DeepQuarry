@@ -15,6 +15,7 @@ import {
   versionAtom,
 } from './atoms';
 import { rebuildRoundTracking, saveChatToStorage } from './helpers';
+import { claimLogLoad, logLoadedNow, registerLogLoader } from './log';
 import { startChatStateMigration } from './migration';
 import { createMessage } from './model';
 import { chatRenderer } from './renderer';
@@ -106,6 +107,7 @@ export function useChatPersistence() {
 
     if (loaded && settings.saveInterval) {
       saveInterval = setInterval(() => {
+        // Whichever page shows the chat (the column, or its floating window) keeps the stored log.
         if (!game.databaseBackendEnabled) {
           saveChatToStorage();
         }
@@ -171,14 +173,10 @@ export function useChatPersistence() {
   }, [loaded, chatRenderer.messages.length]);
 
   useEffect(() => {
-    async function fetchChat() {
-      if (!loaded || !game.userData) {
-        return;
-      }
-
+    async function loadStoredLog(): Promise<void> {
       let messages: SerializedMessage[] = [];
 
-      if (game.userData.token) {
+      if (game.userData?.token) {
         messages = await loadChatFromDBStorage(game.userData);
       } else {
         messages = await loadChatFromStorage();
@@ -187,8 +185,20 @@ export function useChatPersistence() {
       if (messages) {
         handleMessages(messages);
       }
+    }
+
+    async function fetchChat() {
+      if (!loaded || !game.userData) {
+        return;
+      }
+      registerLogLoader(loadStoredLog);
+      // Once per page: a chat window that docks again remounts here, and its lines are still on the page (chat/log.ts).
+      if (claimLogLoad()) {
+        await loadStoredLog();
+      }
 
       chatRenderer.onStateLoaded();
+      logLoadedNow();
     }
 
     fetchChat();

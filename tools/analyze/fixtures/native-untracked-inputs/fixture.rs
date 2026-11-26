@@ -1,4 +1,0 @@
-//! Initial source-only variations shared by old/native consumer tests.
-#[path="../native-sem-reads/fixture.rs"]mod semantic;
-pub const CASES:&[&str]=&["basic","sampled","allowed","exempt"];
-pub fn files(case:&str)->Option<Vec<(String,Vec<u8>)>>{if !CASES.contains(&case){return None}let mut rows=semantic::files("basic")?;for(relative,bytes)in &mut rows{if relative=="code/modules/apc/apc.dm"{let mut source=String::from_utf8(std::mem::take(bytes)).unwrap();if case=="sampled"{source.push_str("\n/obj/machinery/apc/proc/draw()\n\treturn read_once(mode)\n");}if case=="allowed"{source=source.replace("return vars[\"on\"]","return vars[\"on\"] // ALLOW(untracked_inputs): this deliberately unresolved fixture read is retained");}*bytes=source.into_bytes();}}if case=="exempt"{rows.push(("tools/ci/lint_scopes.toml".into(),b"[lint.untracked_inputs]\nexempt_files = [\"code/modules/apc/apc.dm\"]\n".to_vec()));}Some(rows)}

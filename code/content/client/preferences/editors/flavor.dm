@@ -40,6 +40,11 @@ GLOBAL_LIST_INIT(dq_flavor_zone_sources, list(
 	display_name = "Flavor Text"
 	pref_keys = list("flavor_texts", "flavour_texts_robot")
 
+/// The wire shape of /datum/preference_editor/flavor's build_ui_data() (an empty assoc list encodes as [] in JSON).
+UI_SCHEMA(pref_editor_flavor, row(flavor_texts = map_of(schema_text(), schema_text()), flavour_texts_robot = map_of(schema_text(), schema_text()), play_mode = enum(list("human", "robot", "pai"))))
+/// ...and of its build_ui_static_data().
+UI_SCHEMA(pref_editor_flavor_static, row(flavor_zones = list_of(schema_text()), robot_modules = list_of(schema_text())))
+
 /datum/preference_editor/flavor/build_ui_data(datum/preferences/preferences)
 	// play_mode-derived is_robot flag is passed through so React
 	// shows only the body flavor block for humans and only the robot flavor

@@ -6,21 +6,35 @@
 //
 //   anchor()                                   a wrench anchors and unanchors it
 //   anchor(empty = nameof(charging))           ...but not while the named holder var holds something (a charger with a cell in it)
+//   anchor(sfx = SFX_ITEMS_RATCHET)            ...with the ratchet sound (`volume` is play_sfx()'s volume factor, 1 by default)
+//   anchor(attached = MSG(x), detached = MSG(y))   ...saying its own messages for the two outcomes
+//   anchor(delay = 2 SECONDS)                  ...taking that long; a refusal of its own is extend("anchor.toggle", needs(...))
 
 MSG_DEF(anchor/attached, "You attach %T% to the ground.", "%U% attaches %T% to the ground.")
 MSG_DEF(anchor/detached, "You detach %T% from the ground.", "%U% detaches %T% from the ground.")
 MSG_DEF_SELF(anchor/occupied, "Remove what is in it first.")
 
-CAPABILITY_TYPE(anchor, CAP_ANCHOR, /datum/capability/lib/anchor, key = NONE, tool = TOOL_WRENCH, empty = null)
+// Messages for a wrench on a fixture, for `attached` and `detached`: said to the wrencher alone (_self) or to onlookers as well.
+MSG_DEF(anchor/wrenched, "You wrench %T%.", "%U% wrenches %T%.")
+MSG_DEF(anchor/unwrenched, "You unwrench %T%.", "%U% unwrenches %T%.")
+MSG_DEF_SELF(anchor/wrenched_self, "You wrench %T%.")
+MSG_DEF_SELF(anchor/unwrenched_self, "You unwrench %T%.")
+MSG_DEF_SELF(anchor/secured_self, "You secure %T%.")
+MSG_DEF_SELF(anchor/unsecured_self, "You unsecure %T%.")
+
+CAPABILITY_TYPE(anchor, CAP_ANCHOR, /datum/capability/lib/anchor, key = NONE, tool = TOOL_WRENCH, empty = null, sfx = null, volume = 1, delay = 0, attached = null, detached = null)
 
 /datum/capability/lib/anchor
 
 /datum/capability/lib/anchor/entries()
-	if(empty)
-		return list(op("toggle", tool(tool), wait(0), needs(req_empty(empty, because = MSG(anchor/occupied))), toggles(nameof(/atom/movable::anchored)), says(CAP_PROC(toggled_message))))
-	return list(op("toggle", tool(tool), wait(0), toggles(nameof(/atom/movable::anchored)), says(CAP_PROC(toggled_message))))
+	return list(op("toggle", tool(tool), wait(delay), \
+		empty ? needs(req_empty(empty, because = MSG(anchor/occupied))) : null, \
+		toggles(nameof(/atom/movable::anchored)), says(CAP_PROC(toggled_message)), \
+		sfx ? plays(sfx, volume = volume) : null))
 
 /// What anchor.toggle just did: attached or detached.
 /datum/capability/lib/anchor/proc/toggled_message(datum/act/A)
 	var/atom/movable/holder = A.holder
-	return holder.anchored ? /datum/msg/anchor/attached : /datum/msg/anchor/detached
+	if(holder.anchored)
+		return attached || /datum/msg/anchor/attached
+	return detached || /datum/msg/anchor/detached

@@ -9,21 +9,16 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import { EmptyState } from './common/EmptyState';
+import type {
+  OvermapEnginesActions,
+  OvermapEnginesData,
+} from './generated/OvermapEngines';
 
-type Data = {
-  global_state: BooleanLike;
-  global_limit: number;
-  engines_info: {
-    eng_type: string;
-    eng_on: BooleanLike;
-    eng_thrust: number;
-    eng_thrust_limiter: number;
-    eng_status: string[];
-    eng_reference: string;
-  }[];
-  total_thrust: number;
-};
+type Data = OvermapEnginesData;
+
+// A plain line, or a line and its color.
+type EngineStatus = string | [string, string];
 
 export const OvermapEngines = (props) => {
   return (
@@ -36,11 +31,11 @@ export const OvermapEngines = (props) => {
 };
 
 export const OvermapEnginesContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, OvermapEnginesActions>();
   const {
     global_state, // This indicates all engines being powered up or not
     global_limit, // Global Thrust limit
-    engines_info, // Array of engines
+    engines_info = [], // Array of engines
     total_thrust, // Total thrust of all engines together
   } = data;
   return (
@@ -70,11 +65,14 @@ export const OvermapEnginesContent = (props) => {
             />
           </LabeledList.Item>
           <LabeledList.Item label="Total Thrust">
-            <AnimatedNumber value={total_thrust} />
+            <AnimatedNumber value={total_thrust ?? 0} />
           </LabeledList.Item>
         </LabeledList>
       </Section>
       <Section title="Engines" height="340px" style={{ overflowY: 'auto' }}>
+        {engines_info.length === 0 && (
+          <EmptyState>No engines are connected to this console.</EmptyState>
+        )}
         {engines_info.map((engine, i) => (
           <Stack mt={i !== 0 && -1} key={i}>
             <Stack.Item basis="80%">
@@ -114,17 +112,19 @@ export const OvermapEnginesContent = (props) => {
                             : 'Booting'
                           : 'Offline'}
                       </Box>
-                      {engine.eng_status.map((status, index) => {
-                        if (Array.isArray(status)) {
-                          return (
-                            <Box key={index} color={status[1]}>
-                              {status[0]}
-                            </Box>
-                          );
-                        } else {
-                          return <Box key={index}>{status}</Box>;
-                        }
-                      })}
+                      {(engine.eng_status as EngineStatus[]).map(
+                        (status, index) => {
+                          if (Array.isArray(status)) {
+                            return (
+                              <Box key={index} color={status[1]}>
+                                {status[0]}
+                              </Box>
+                            );
+                          } else {
+                            return <Box key={index}>{status}</Box>;
+                          }
+                        },
+                      )}
                     </LabeledList.Item>
                     <LabeledList.Item label="Current Thrust">
                       {engine.eng_thrust}

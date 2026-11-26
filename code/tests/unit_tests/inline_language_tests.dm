@@ -45,7 +45,7 @@
 		. += "[inline_language_label(S.speaking)]=[S.message]"
 	return jointext(., "|")
 
-/// The same table the tgui-say preview parser runs: the two cannot drift apart without one of them failing.
+/// The same table the chat input preview parser (tgui/dq/speech) runs: the two cannot drift apart without one of them failing.
 /datum/unit_test/inline_language_shared_cases
 
 /datum/unit_test/inline_language_shared_cases/Run()
@@ -154,7 +154,7 @@
 	H.set_language_keys(list())
 	TEST_ASSERT_EQUAL(H.language_for_prefix(language_default_prefix(siik)), siik, "with no keys, the language's own key answers")
 
-/// The data tgui-say's preview parses with: the speaker's own keys and only what the server rules say.
+/// The data the chat input preview parses with: the speaker's own keys and only what the server rules say.
 /datum/unit_test/inline_language_preview_rules
 
 /datum/unit_test/inline_language_preview_rules/Run()

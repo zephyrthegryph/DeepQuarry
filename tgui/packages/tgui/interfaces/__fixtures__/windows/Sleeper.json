@@ -1,0 +1,119 @@
+{
+	"amounts": [5, 10],
+	"maxchem": 20,
+	"dialysis": 0,
+	"stomachpumping": 1,
+	"auto_eject_dead": 0,
+	"hasOccupant": 1,
+	"occupant": {
+		"name": "Jane Doe",
+		"stat": 0,
+		"vitality": 72,
+		"critical": 0,
+		"diagnosis": {
+			"status": "alive",
+			"band": "moderate",
+			"vitals": {
+				"heartRate": 88,
+				"bloodPressure": [118, 76],
+				"oxygenation": 96,
+				"respiratoryRate": 16,
+				"heartRhythm": "sinus",
+				"temperature": 36.8,
+				"consciousness": "alert",
+				"bloodPercent": 92
+			},
+			"findings": [
+				{
+					"name": "Laceration",
+					"kind": "wound",
+					"band": "moderate",
+					"location": "left arm",
+					"description": "A deep cut.",
+					"trend": "worsening",
+					"hint": "Apply a bandage."
+				},
+				{
+					"name": "Bruising",
+					"kind": "sign",
+					"band": "minor",
+					"location": "chest",
+					"description": "Discolouration.",
+					"trend": "stable",
+					"hint": "Rest."
+				}
+			],
+			"parts": [
+				{
+					"name": "left arm",
+					"kind": "external",
+					"band": "moderate",
+					"flags": ["bleeding"],
+					"implants": ["tracker"]
+				},
+				{
+					"name": "heart",
+					"kind": "internal",
+					"band": "uninjured",
+					"flags": [],
+					"implants": ["pacemaker"]
+				}
+			],
+			"hints": [
+				{
+					"tag": "bandage_wounds",
+					"label": "Bandage wounds",
+					"band": "moderate"
+				},
+				{
+					"tag": "rest",
+					"label": "Rest",
+					"band": "minor"
+				}
+			]
+		},
+		"hasBlood": 1,
+		"bodyTemperature": 309.5,
+		"maxTemp": 600,
+		"temperatureSuitability": 0,
+		"btCelsius": 36.4,
+		"btFaren": 97.5,
+		"pulse": 88,
+		"bloodLevel": 520,
+		"bloodMax": 560,
+		"bloodPercent": 92.86
+	},
+	"isBeakerLoaded": 1,
+	"beakerMaxSpace": 120,
+	"beakerFreeSpace": 90,
+	"stasis": "None (100%)",
+	"chemicals": [
+		{
+			"title": "Inaprovaline",
+			"id": "inaprovaline",
+			"occ_amount": 4.5,
+			"pretty_amount": 4.5,
+			"injectable": 1,
+			"overdosing": 0,
+			"od_warning": 0
+		},
+		{
+			"title": "Dexalin",
+			"id": "dexalin",
+			"occ_amount": 18,
+			"pretty_amount": 18,
+			"injectable": 1,
+			"overdosing": 0,
+			"od_warning": 1
+		},
+		{
+			"title": "Anti-Toxin",
+			"id": "anti_toxin",
+			"occ_amount": 0,
+			"pretty_amount": 0,
+			"injectable": 1,
+			"overdosing": 0,
+			"od_warning": 0
+		}
+	]
+}

@@ -154,3 +154,103 @@ do { \
 
 /// A light fixture draws 2 W per luminosity * range (refresh_light(); the fixtures declare it per type, lighting_fixture_glow.dm).
 #define LIGHTING_POWER_FACTOR 2
+
+// Client lighting (code/content/lighting/client_*.dm).
+/// Side of the chunks glowing lights are indexed by, in turfs.
+#define CLIENT_GLOW_CHUNK 8
+/// A holder's crossing or sight refresh that takes this long (ms) is logged whatever the lighting trace says (GLOW_SLOW).
+#define CLIENT_GLOW_SLOW_CROSSING_MS 8
+/// The longest reach a glow is drawn and indexed for, in turfs.
+#define CLIENT_GLOW_MAX_RANGE 6
+/// The chunk a turf coordinate (x or y) is in.
+#define CLIENT_GLOW_CHUNK_OF(coord) round(((coord) - 1) / CLIENT_GLOW_CHUNK)
+/// How far a light's glow reaches from its turf on each axis, in turfs: its reach box is the square of this radius about its turf. The chunk index, the holders'
+/// boxes and the opacity lookups all measure a light by this one number.
+#define CLIENT_GLOW_RADIUS(L) clamp(CEILING((L).light_range, 1), 1, CLIENT_GLOW_MAX_RANGE)
+/// TRUE when the square of radius `r` about (sx, sy) lies clear of box list(x0, y0, x1, y1).
+#define CLIENT_GLOW_CLEAR_OF(sx, sy, r, box) (((sx) + (r) < (box)[1]) || ((sx) - (r) > (box)[3]) || ((sy) + (r) < (box)[2]) || ((sy) - (r) > (box)[4]))
+/// How many chunks past the reach box a held glow is kept before it is dropped (the keep box). A glow is acquired by the reach box alone, so this
+/// widens only what is kept: a walk back over this many chunks makes and drops nothing. The held count grows with the keep box's area, which is
+/// (chunk + 2 * view half + 2 * keep + 2 * reach range) squared: for the play log's 15x15 view, 2 chunks is 1.7 times the area of 1 (the 111-133 glows held
+/// at 1 chunk come to about 190-230, under 460 client images) and 3 chunks would be 2.7 times (about 300-360 glows, 720 images), so 2 is the bound chosen.
+#define CLIENT_GLOW_KEEP_CHUNKS 2
+/// The most dropped glow images (and, apart, hide images) one holder keeps to reuse; past it a dropped image is simply let go.
+#define CLIENT_GLOW_POOL_MAX 64
+/// Server milliseconds one turn of the glow baker (telling viewers of arrived shapes, starting bakes, working out door twins) may spend before it leaves the rest to the next tick.
+#define CLIENT_GLOW_TURN_BUDGET_MS 4
+/// A baker turn that cost this many ms is written to the world log with the time of each stage.
+#define CLIENT_GLOW_TURN_SLOW_MS 8
+/// Server milliseconds one step of a client holder's acquire queue (the glow images a delta crossing makes for lights newly in reach) may spend before it leaves the rest to the next tick.
+#define CLIENT_GLOW_ACQUIRE_BUDGET_MS 4
+/// The longest a client's held glows wait to follow its eye's sight after it moved inside a chunk (a stand on a turf it no longer sees is a blink). Opacity changes
+/// near the eye are followed once per tick (the lighting step).
+#define CLIENT_GLOW_SIGHT_INTERVAL (2 TICKS)
+/// Server milliseconds one step of a client holder's delta crossing walk (the chunks along the moved box edges, the drops and acquisitions they find) may spend inside the crossing before it leaves the rest to the next tick.
+#define CLIENT_GLOW_DELTA_BUDGET_MS 1.5
+/// Server milliseconds one step of a client holder's full scan (a login, a teleport) may spend before it leaves the rest of the chunks to the next ticks: nearest the eye first.
+#define CLIENT_GLOW_SCAN_BUDGET_MS 4
+/// Where the Rust baker writes baked shadow masks (it keeps them there, within a file and byte budget, until they enter the resource cache and after).
+#define CLIENT_GLOW_MASK_DIR "data/client_glow_masks/"
+/// Baked shadow masks kept; shapes asked for at once; bakes running at once.
+#define CLIENT_GLOW_MASK_CACHE_MAX 8192
+#define CLIENT_GLOW_MASK_QUEUE_MAX 512
+/// The doors a light readies the other state of ahead (client_glow_twins_ready()): its shape with each of its nearest doors flipped is baked and on every viewer before the door moves.
+#define CLIENT_GLOW_TWIN_MAX 4
+/// Twin shapes sent to one viewer per tick: a viewer that takes many lights at once must not be sent all their twins in one.
+#define CLIENT_GLOW_TWIN_PER_TICK 3
+/// Lights redrawn for an opacity change in a chunk some viewer holds per lighting step, whatever the tick budget says: a door beside a viewer never waits behind the budget.
+#define CLIENT_GLOW_NEAR_REDRAW_MAX 16
+/// Past this many milliseconds of one flush the near lights wait for the next step too.
+#define CLIENT_GLOW_NEAR_REDRAW_MS 6
+#define CLIENT_GLOW_MASK_BAKES_MAX 16
+/// How long a client with no session (so no asset ack to wait for) is given to receive a new baked glow PNG before held glows swap to it.
+#define CLIENT_GLOW_ICON_DELIVERY (0.5 SECONDS)
+/// The bloom that carries floor light about a tile onto the walls beside it: its blur, its growth before the blur (pixels), its strength.
+#define CLIENT_GLOW_SPREAD_SIZE 20
+#define CLIENT_GLOW_SPREAD_OFFSET 4
+#define CLIENT_GLOW_SPREAD_ALPHA 160
+/// The blur over the whole glow plane that softens every tile-shaped cut, so neighbouring colours blend (one filter per client, none per light), always on:
+/// its size in pixels, about 0.4 of a tile. Wider bleeds light past walls (the blur runs after the wall cut).
+#define LIGHTING_SMOOTH_BLUR_SIZE 12
+/// A stair tile is lit as its floor is, scaled so the way it goes reads: the piece you step onto to go up is lighter, the one you step off the top to go down is darker.
+#define LIGHTING_STAIR_UP_SCALE 1.3
+#define LIGHTING_STAIR_DOWN_SCALE 0.7
+/// Corner lighting (code/content/lighting/lighting_smoothing.dm), on top of the blur: each turf is shaded from four corner values (a gradient underlay per
+/// lit turf) in place of the glows. The state of LIGHTING_ICON that holds the four corner gradients (the first, unnamed one: icons/effects/lighting_object.dmi.toml).
+#define LIGHTING_SMOOTH_GRADIENT_STATE ""
+/// Corner mode: turfs sampled and tiles redrawn per lighting step at most, the least done before the tick budget is looked at, and how often the counters are logged.
+#define LIGHTING_SMOOTH_SAMPLES_MAX 384
+#define LIGHTING_SMOOTH_RENDERS_MAX 512
+#define LIGHTING_SMOOTH_MIN_SAMPLES 8
+#define LIGHTING_SMOOTH_MIN_RENDERS 16
+/// The most milliseconds a lighting step spends on corner sampling and drawing (once the minimum is done), in a running round.
+#define LIGHTING_SMOOTH_BUDGET_MS 3
+/// The steps a corner level is told apart in (a redraw that lands on the same steps keeps the underlay it has).
+#define LIGHTING_SMOOTH_LEVEL_STEPS 32
+#define LIGHTING_SMOOTH_LOG_EVERY (10 SECONDS)
+/// A light this short (a wall device, a console) draws at CLIENT_GLOW_SMALL_SCALE of its power.
+#define CLIENT_GLOW_SMALL_RANGE 2
+#define CLIENT_GLOW_SMALL_SCALE 0.5
+/// How long a light must stand on one turf before it goes back from the plain glow to its baked cut.
+#define CLIENT_GLOW_SETTLE_TIME (5 SECONDS)
+
+/// What a client's screen shows of client lighting (client.lighting_screen).
+#define CLIENT_GLOW_SCREEN_NONE 0
+#define CLIENT_GLOW_SCREEN_BASE 1
+#define CLIENT_GLOW_SCREEN_COMPARE_DM 2
+#define CLIENT_GLOW_SCREEN_COMPARE_GLOW 3
+
+/// The darksight overlay (night vision): a flat, grey, additive disc over the dark. Any sight at all shows DARKSIGHT_BASE_STRENGTH of it, a disc as wide as the sight (the
+/// small darkvision every character has: a human's 2 tiles); past DARKSIGHT_MIN_SIGHT it grows to full strength at DARKSIGHT_FULL_SIGHT, and it never adds more than DARKSIGHT_MAX_ALPHA of white. Its icon is a flat disc (no hot spot) that fades over its outer 40%.
+#define DARKSIGHT_MIN_SIGHT 2
+#define DARKSIGHT_FULL_SIGHT 8
+/// The share of full strength a mob with any darksight gets: a dim hint of the floor around it.
+#define DARKSIGHT_BASE_STRENGTH 0.25
+#define DARKSIGHT_MAX_ALPHA 0.35
+/// The radius, in tiles, of the overlay icon (480 px).
+#define DARKSIGHT_ICON_RADIUS 7.5
+/// The overlay's night-vision tint: a desaturated grey-green, multiplied into the disc.
+#define DARKSIGHT_TINT "#9fb0a6"
+
+/// The place of tile (x, y) in a level's sample table (lighting_smoothing.dm): a flat list of maxx * maxy slots, row by row.
+#define LIGHTING_SMOOTH_INDEX(x, y) (((y) - 1) * world.maxx + (x))

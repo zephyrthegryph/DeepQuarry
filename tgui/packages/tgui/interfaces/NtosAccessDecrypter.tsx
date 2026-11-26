@@ -1,20 +1,17 @@
 import { useBackend } from 'tgui/backend';
 import { NtosWindow } from 'tgui/layouts';
 import { Box, Button, NoticeBox, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
+import type {
+  NtosAccessDecrypterActions,
+  NtosAccessDecrypterData,
+} from './generated/NtosAccessDecrypter';
 import { IdentificationComputerRegions } from './IdentificationComputer';
 
-type Data = {
-  message: string | null;
-  running: BooleanLike;
-  rate: number;
-  factor: number;
-  regions: string[];
-};
-
 export const NtosAccessDecrypter = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosAccessDecrypterData,
+    NtosAccessDecrypterActions
+  >();
 
   const { message, running, rate, factor, regions } = data;
 

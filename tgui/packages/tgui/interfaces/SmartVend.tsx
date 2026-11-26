@@ -11,17 +11,12 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { createSearch } from 'tgui-core/string';
+import type { SmartVendActions, SmartVendData } from './generated/SmartVend';
 
-type Data = {
-  contents: Content[];
-  name: string;
-  locked: BooleanLike;
-  secure: BooleanLike;
-};
+type Data = SmartVendData;
 
-type Content = { name: string; index: number; amount: number };
+type Content = Data['contents'][number];
 
 const sortTypes = {
   Alphabetical: (a: Content, b: Content) => a.name.localeCompare(b.name),
@@ -29,12 +24,12 @@ const sortTypes = {
 };
 
 export const SmartVend = (props) => {
-  const { config, data } = useBackend<Data>();
+  const { config, data } = useBackend<Data, SmartVendActions>();
   const [searchText, setSearchText] = useState('');
   const [sortOrder, setSortOrder] = useState('Alphabetical');
   const [descending, setDescending] = useState(false);
 
-  const { secure, locked, contents } = data;
+  const { secure, locked, contents = [] } = data;
 
   return (
     <Window width={640} height={550}>

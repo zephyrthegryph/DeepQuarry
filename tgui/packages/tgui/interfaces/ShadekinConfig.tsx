@@ -9,24 +9,14 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  ShadekinConfigActions,
+  ShadekinConfigData,
+} from './generated/ShadekinConfig';
 import { VorePanelTooltip } from './VorePanel/VorePanelElements/VorePanelTooltip';
 
-type Data = {
-  stun_time: number;
-  flicker_time: number;
-  flicker_color: string | null;
-  flicker_break_chance: number;
-  flicker_distance: number;
-  no_retreat: BooleanLike;
-  extended_kin: BooleanLike;
-  savefile_selected: BooleanLike;
-  nutrition_energy_conversion: number;
-  hide_voice_in_phase: BooleanLike;
-};
-
 export const ShadekinConfig = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<ShadekinConfigData, ShadekinConfigActions>();
 
   const {
     stun_time,
@@ -84,7 +74,7 @@ export const ShadekinConfig = (props) => {
                     </Stack.Item>
                     <Stack.Item>
                       <VorePanelTooltip
-                        tooltip="Adjust how long lights flicker when you phase in! (Min 10 Max 20 times!)"
+                        tooltip="Adjust how long lights flicker when you phase in! (Min 2 Max 20 times!)"
                         displayText="?"
                       />
                     </Stack.Item>
@@ -154,32 +144,36 @@ export const ShadekinConfig = (props) => {
           </Stack.Item>
           <Stack.Item>
             <Section fill title="Phase Settings">
-              <LabeledList.Item label="Hide Voice in Phase">
-                <Button.Checkbox
-                  tooltip="Toggle if your voice should be hidden (showing as 'Something') when phased!"
-                  checked={hide_voice_in_phase}
-                  onClick={() => act('toggle_voice')}
-                />
-              </LabeledList.Item>
+              <LabeledList>
+                <LabeledList.Item label="Hide Voice in Phase">
+                  <Button.Checkbox
+                    tooltip="Toggle if your voice should be hidden (showing as 'Something') when phased!"
+                    checked={hide_voice_in_phase}
+                    onClick={() => act('toggle_voice')}
+                  />
+                </LabeledList.Item>
+              </LabeledList>
             </Section>
           </Stack.Item>
           {!!extended_kin && (
             <Stack.Item>
               <Section fill title="Misc Settings">
-                <LabeledList.Item label="Retreat on Death">
-                  <Button.Checkbox
-                    tooltip="Toggle if you wish to return to the Dark Retreat upon death!"
-                    checked={!no_retreat}
-                    onClick={() => act('toggle_retreat')}
-                  />
-                </LabeledList.Item>
-                <LabeledList.Item label="Nutrition Conversion">
-                  <Button.Checkbox
-                    tooltip="Toggle to have dark energy and nutrition being converted into each other when full!"
-                    checked={nutrition_energy_conversion}
-                    onClick={() => act('toggle_nutrition')}
-                  />
-                </LabeledList.Item>
+                <LabeledList>
+                  <LabeledList.Item label="Retreat on Death">
+                    <Button.Checkbox
+                      tooltip="Toggle if you wish to return to the Dark Retreat upon death!"
+                      checked={!no_retreat}
+                      onClick={() => act('toggle_retreat')}
+                    />
+                  </LabeledList.Item>
+                  <LabeledList.Item label="Nutrition Conversion">
+                    <Button.Checkbox
+                      tooltip="Toggle to have dark energy and nutrition being converted into each other when full!"
+                      checked={nutrition_energy_conversion}
+                      onClick={() => act('toggle_nutrition')}
+                    />
+                  </LabeledList.Item>
+                </LabeledList>
               </Section>
             </Stack.Item>
           )}

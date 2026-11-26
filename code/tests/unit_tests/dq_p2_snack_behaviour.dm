@@ -225,7 +225,7 @@
 	TEST_ASSERT_EQUAL(rc_units(S), units, "a wrapped one is not eaten")
 	rc_use(H, S)
 	TEST_ASSERT(!sn_wrapped(S), "using it takes the wrapper off")
-	var/obj/item/trash/lunacakewrap/wrap = locate() in H
+	var/obj/item/trash/wrap = locate() in H
 	TEST_ASSERT_NOTNULL(wrap, "the wrapper is in the hand")
 	rc_click(H, H, S, I_HELP, FALSE)
 	TEST_ASSERT(rc_units(S) < units, "and it can be eaten")
@@ -344,7 +344,8 @@
 /datum/unit_test/dq_p2_reagents/egg_is_coloured/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/food/snacks/egg/egg = sn_snack(/obj/item/reagent_containers/food/snacks/egg)
-	var/obj/item/pen/crayon/crayon = allocate(/obj/item/pen/crayon/red, run_loc_floor_bottom_left)
+	var/obj/item/pen/crayon/crayon = allocate(/obj/item/pen/crayon, run_loc_floor_bottom_left)
+	crayon.set_colourName("red")
 	rc_click(H, egg, crayon, I_HELP)
 	TEST_ASSERT_EQUAL(egg.icon_state, "egg-red", "the egg is red")
 	crayon.set_colourName("black")

@@ -18,7 +18,8 @@
 //   rate          how far one step goes, a fraction of the limit: RATE_INSTANT (the default), half_life(n), rate(r).
 //   yield         below 1, the rule is inhibited while the product is a large share of the mixture (1: no limit).   floor: a remainder under
 //                 this many reaction units completes the rule.
-//   makes         the terms produced.   The product of a reagent rule is its first reagent term.
+//   makes         the terms produced.   The product of a reagent rule is its first reagent term; its further reagent terms are by-products, made per reaction unit
+//                 alongside it (a neutralisation makes salts and water).
 //   made          units per reaction unit that the tail is told were made when the rule has no product term (a rule that spawns things reports how many).
 //   data          TYPE_PROC_REF(/type, x): x(holder, extent) returns the data of the product, read before anything is taken.
 //   with_data     the constant data of the product (a paint's colour), for a rule whose data does not depend on the settle.
@@ -137,6 +138,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/list/reagent_takes
 	var/list/reagent_catalysts
 	var/list/reagent_blocked
+	/// The id of the generated route this rule is (code/domains/world_model/reagents/blocks/routes.dm), or null for a declared rule.
+	var/route_id
 	/// The gas terms of a gas rule as gas type => minimum moles (the shape the dispatcher reads the mixture's readings in), or null.
 	var/list/gas_takes
 	/// A gas rule's temperature window (null: open), read from its temperature_in() condition.
@@ -227,6 +230,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	/// The reagent a reagent rule makes and how much per reaction unit.
 	var/result
 	var/result_amount = 0
+	/// The reagent terms a reagent rule makes after its product, as rows of list(reagent id, units per reaction unit), or null.
+	var/list/byproducts
 	/// The number of terms taken: the specificity of the rule.
 	var/specificity = 0
 	/// The type a subject_is() condition pins, or null.
@@ -322,34 +327,42 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	sortTim(GLOB.xform_rules, GLOBAL_PROC_REF(cmp_xform_asc))
 	for(var/datum/xform/X as anything in GLOB.xform_rules)
 		GLOB.xform_owners[X.rule_type] = new X.rule_type
-		var/list/by_regime = GLOB.xform_index[X.medium]
-		if(!by_regime)
-			by_regime = list()
-			GLOB.xform_index[X.medium] = by_regime
-		var/list/by_key = by_regime[X.regime]
-		if(!by_key)
-			by_key = list()
-			by_regime[X.regime] = by_key
-		LAZYINITLIST(by_key[X.anchor])
-		by_key[X.anchor] += X
-		var/list/listed_by_regime = GLOB.xform_by_regime[X.medium]
-		if(!listed_by_regime)
-			listed_by_regime = list()
-			GLOB.xform_by_regime[X.medium] = listed_by_regime
-		LAZYINITLIST(listed_by_regime[X.regime])
-		listed_by_regime[X.regime] += X
-		if(X.result)
-			var/list/products_by_regime = GLOB.xform_by_product[X.medium]
-			if(!products_by_regime)
-				products_by_regime = list()
-				GLOB.xform_by_product[X.medium] = products_by_regime
-			var/list/by_product = products_by_regime[X.regime]
-			if(!by_product)
-				by_product = list()
-				products_by_regime[X.regime] = by_product
-			LAZYINITLIST(by_product[X.result])
-			by_product[X.result] += X
+		xform_index_rule(X)
+	chem_routes_install() // the generated chemistry routes join the table when the reagents are known
 	log_world("Transformations compiled: [length(GLOB.xform_rules)] rule(s) in [(REALTIMEOFDAY - started) / 10] s")
+
+/// Files one compiled rule in the indexes (by anchor, by regime, by product). `touched` collects the lists it added to, for a caller that sorts them afterwards.
+/proc/xform_index_rule(datum/xform/X, list/touched = null)
+	var/list/by_regime = GLOB.xform_index[X.medium]
+	if(!by_regime)
+		by_regime = list()
+		GLOB.xform_index[X.medium] = by_regime
+	var/list/by_key = by_regime[X.regime]
+	if(!by_key)
+		by_key = list()
+		by_regime[X.regime] = by_key
+	LAZYINITLIST(by_key[X.anchor])
+	by_key[X.anchor] += X
+	touched?.Add(list(by_key[X.anchor]))
+	var/list/listed_by_regime = GLOB.xform_by_regime[X.medium]
+	if(!listed_by_regime)
+		listed_by_regime = list()
+		GLOB.xform_by_regime[X.medium] = listed_by_regime
+	LAZYINITLIST(listed_by_regime[X.regime])
+	listed_by_regime[X.regime] += X
+	touched?.Add(list(listed_by_regime[X.regime]))
+	if(X.result)
+		var/list/products_by_regime = GLOB.xform_by_product[X.medium]
+		if(!products_by_regime)
+			products_by_regime = list()
+			GLOB.xform_by_product[X.medium] = products_by_regime
+		var/list/by_product = products_by_regime[X.regime]
+		if(!by_product)
+			by_product = list()
+			products_by_regime[X.regime] = by_product
+		LAZYINITLIST(by_product[X.result])
+		by_product[X.result] += X
+		touched?.Add(list(by_product[X.result]))
 
 /// One rule's flyweight from its merged entry, or null (and a report) when it cannot compile.
 /proc/xform_compile(type, datum/entry/E, order, origin)
@@ -440,7 +453,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		for(var/list/row as anything in X.makes)
 			if(row[1] == XCUR_ITEM)
 				X.result = row[2]
-				X.result_amount = row[3]
+				X.set_result_amount(row[3])
 				break
 		X.cooks_in = arguments["cooks_in"] || 0
 		X.cook_time = arguments["cook_time"] || 0
@@ -457,10 +470,18 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		for(var/list/row as anything in X.makes)
 			if(row[1] == XCUR_REAGENT)
 				X.result = row[2]
-				X.result_amount = row[3]
+				X.set_result_amount(row[3])
 				break
+		var/passed_product = FALSE
+		for(var/list/row as anything in X.makes)
+			if(row[1] != XCUR_REAGENT)
+				continue
+			if(!passed_product)
+				passed_product = TRUE
+				continue
+			LAZYADD(X.byproducts, list(list(row[2], row[3])))
 		if(!X.result && !isnull(arguments["made"]))
-			X.result_amount = arguments["made"]
+			X.set_result_amount(arguments["made"])
 	if(X.medium == MEDIUM_GAS)
 		X.gas_takes = xform_assoc(X.takes, XCUR_GAS)
 	for(var/list/row as anything in xform_rows(arguments["takes_ambient"]))

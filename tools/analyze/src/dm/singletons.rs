@@ -15,7 +15,7 @@ use crate::pat;
 use crate::tree::{SourceFile, Tree};
 
 /// `SINGLETON_ROOTS`.
-pub use crate::base_var_candidate_policy::{SINGLETON_ROOTS,is_singleton};
+pub const SINGLETON_ROOTS: &[&str] = &["/datum/world_service", "/datum/controller"];
 
 /// `singleton_types()`: the exact types some `GLOBAL_DATUM_INIT(name, /type, new...)` creates. The
 /// Python walked every `.dm` under `code/` with `os.walk` (dot-files and dot-directories included),
@@ -52,6 +52,11 @@ pub fn singleton_types(tree: &Tree, files: &[&SourceFile]) -> Arc<HashSet<String
 }
 
 /// `is_singleton(type_path, globals_)`.
+pub fn is_singleton(type_path: &str, globals: &HashSet<String>) -> bool {
+    globals.contains(type_path)
+        || SINGLETON_ROOTS.iter().any(|r| type_path == *r || (type_path.starts_with(r) && type_path.as_bytes().get(r.len()) == Some(&b'/')))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,23 +1,17 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  id: string;
-  turrets: {
-    id: string;
-    active: BooleanLike;
-    ref: string;
-    effective_range: string;
-    reaction_wheel_delay: string;
-    recharge_time: string;
-  }[];
-};
+import type {
+  PointDefenseControlActions,
+  PointDefenseControlData,
+} from './generated/PointDefenseControl';
 
 export const PointDefenseControl = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { id, turrets } = data;
+  const { act, data } = useBackend<
+    PointDefenseControlData,
+    PointDefenseControlActions
+  >();
+  const { id, turrets = [] } = data;
   return (
     <Window width={400} height={600}>
       <Window.Content scrollable>

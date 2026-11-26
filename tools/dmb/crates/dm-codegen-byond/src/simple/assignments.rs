@@ -1,12 +1,6 @@
 //! Assignments lowering over the shared compiler context.
 use super::*;
 
-#[cfg(test)]
-std::thread_local! { static TEXT_PARSE_CALLS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
-#[cfg(test)]
-pub(super) fn text_parse_calls() -> usize {
-    TEXT_PARSE_CALLS.with(|count| count.get())
-}
 impl Compiler<'_> {
     pub(super) fn assign_expr(
         &mut self,
@@ -293,8 +287,6 @@ impl Compiler<'_> {
         expression: &str,
         statement: &str,
     ) -> Result<(), LowerError> {
-        #[cfg(test)]
-        TEXT_PARSE_CALLS.with(|count| count.set(count.get() + 1));
         let parsed = parse_expression(expression);
         if !parsed.diagnostics.is_empty() {
             return Err(syntax_failure(statement, &parsed.diagnostics));
@@ -474,7 +466,7 @@ impl Compiler<'_> {
         statement: &str,
     ) -> Result<(), LowerError> {
         let clobbers = !matches!(&value.kind, ExprKind::Ident(_) | ExprKind::TypePath(_))
-            && !matches!(&value.kind, ExprKind::Literal(text) if literal_preserves_assignment_cache(text));
+            && !matches!(&value.kind, ExprKind::Literal(text) if !text.contains('['));
         let receiver =
             clobbers && matches!(variable, VariableWord::CacheIndex | VariableWord::Field(_));
         let index = clobbers && matches!(variable, VariableWord::CacheIndex);
@@ -731,7 +723,10 @@ impl Compiler<'_> {
         if matches!(&expr.kind, ExprKind::Call { callee, args }
             if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(name) if name == "locate"))
         {
-            let type_name = dm_syntax::local_type_path(declaration)
+            let type_name = declaration
+                .strip_prefix("var/")
+                .and_then(|raw| raw.rsplit_once('/'))
+                .map(|(path, _)| path)
                 .filter(|path| !path.is_empty())
                 .ok_or_else(|| error(statement, "locate() requires a typed assignment"))?;
             let path = runtime_declaration_path(type_name);
@@ -756,7 +751,10 @@ impl Compiler<'_> {
                 && matches!(&lhs.kind, ExprKind::Call { callee, args }
                     if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(name) if name == "locate"))
             {
-                let type_name = dm_syntax::local_type_path(declaration)
+                let type_name = declaration
+                    .strip_prefix("var/")
+                    .and_then(|raw| raw.rsplit_once('/'))
+                    .map(|(path, _)| path)
                     .filter(|path| !path.is_empty())
                     .ok_or_else(|| error(statement, "locate() requires a typed assignment"))?;
                 let path = runtime_declaration_path(type_name);
@@ -804,7 +802,7 @@ impl Compiler<'_> {
             self.local_initializer(then_value, declaration, statement)?;
             self.emit(opcode::JMP, vec![Word::Branch(end_label)]);
             self.result.code.items.push(CodeItem::Label(else_label));
-            if matches!(&else_value.kind, ExprKind::Literal(value) if value.original_value().is_none() && value == "null") {
+            if matches!(&else_value.kind, ExprKind::Literal(value) if value == "null") {
                 self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Null)]);
             } else {
                 self.local_initializer(else_value, declaration, statement)?;
@@ -846,7 +844,10 @@ impl Compiler<'_> {
             _ => None,
         };
         if let Some(args) = inferred_new_args.or(implied_args) {
-            let type_name = dm_syntax::local_type_path(declaration)
+            let type_name = declaration
+                .strip_prefix("var/")
+                .and_then(|raw| raw.rsplit_once('/'))
+                .map(|(path, _)| path)
                 .filter(|path| !path.is_empty())
                 .or_else(|| declaration.trim_end().ends_with("[]").then_some("list"))
                 .ok_or_else(|| error(statement, "inferred new requires a typed local"))?;
@@ -923,12 +924,7 @@ fn path_like_target(statement: &str) -> bool {
 /// so a shared (`global`) variable behind it can be read or written without evaluating it.
 pub(super) fn is_reference_chain(expr: &Expr) -> bool {
     match &expr.kind {
-        ExprKind::Literal(text) => match text.original_value(){
-            Some(dm_syntax::OriginalTokenValue::Int(_)|dm_syntax::OriginalTokenValue::Float(_)|dm_syntax::OriginalTokenValue::String(_)|dm_syntax::OriginalTokenValue::Resource(_))=>true,
-            Some(_)=>false,
-            None=>text.parts().is_ok_and(|parts|parts.is_none_or(|parts|parts.expressions.is_empty())),
-        },
-        ExprKind::Ident(_) | ExprKind::TypePath(_) => true,
+        ExprKind::Ident(_) | ExprKind::TypePath(_) | ExprKind::Literal(_) => true,
         ExprKind::Group(inner) => is_reference_chain(inner),
         ExprKind::Member { object, .. } => is_reference_chain(object),
         _ => false,
@@ -1041,17 +1037,4 @@ fn safe_member_chain(target: &Expr) -> Option<SafeChain> {
             .map(|node| selector_of(node))
             .collect(),
     })
-}
-
-fn literal_preserves_assignment_cache(text:&dm_syntax::LiteralText)->bool{
- match text.original_value(){
-  Some(dm_syntax::OriginalTokenValue::Int(_)|dm_syntax::OriginalTokenValue::Float(_)|dm_syntax::OriginalTokenValue::String(_)|dm_syntax::OriginalTokenValue::Resource(_))=>true,
-  Some(_)=>false,
-  None=>!text.contains('['),
- }
-}
-#[cfg(test)]mod original_assignment_literal_effect_tests{
- use super::*;use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission,Span};use std::sync::{atomic::{Ordering}};
- #[test]fn actual_static_original_values_are_pure_reference_receivers_and_do_not_clobber_cache(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));for value in [V::Int(0),V::Float(3.0),V::String("[static]"),V::Resource("[path]")]{let text=LiteralText::from_original_value_data("\"looks[effect()]\"".into(),0,value,&a).unwrap();assert!(literal_preserves_assignment_cache(&text));let expr=Expr{span:Span::new(0,text.len()),kind:ExprKind::Literal(text)};assert!(is_reference_chain(&expr));let grouped=Expr{span:expr.span,kind:ExprKind::Group(Box::new(expr))};assert!(is_reference_chain(&grouped));}assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
- #[test]fn ordinary_interpolation_and_call_effect_paths_remain_unchanged(){for raw in ["1","\"static\"","'path.dmi'"]{let expr=dm_syntax::parse_expression(raw).expr.unwrap();assert!(is_reference_chain(&expr));if let ExprKind::Literal(text)=expr.kind{assert!(literal_preserves_assignment_cache(&text));}}let expr=dm_syntax::parse_expression("\"x[effect()]\"").expr.unwrap();assert!(!is_reference_chain(&expr));if let ExprKind::Literal(text)=expr.kind{assert!(!literal_preserves_assignment_cache(&text));}assert!(!is_reference_chain(&dm_syntax::parse_expression("effect()").expr.unwrap()));}
 }

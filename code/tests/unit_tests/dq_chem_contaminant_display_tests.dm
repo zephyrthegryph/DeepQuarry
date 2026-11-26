@@ -1,0 +1,153 @@
+// What a chemistry window shows and what a dispense gives: a dispense of N units is N units in all (the source's impurities are taken out of the N), the
+// window rows list the contaminants last and flag them, and no machine pulls a single chemical out of a mixture.
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// A chemical dispenser with a hydrogen cartridge and an empty beaker set in it.
+/datum/unit_test/proc/dq_cdisp_dispenser()
+	var/obj/machinery/chemical_dispenser/ert/D = allocate(/obj/machinery/chemical_dispenser/ert, test_floor())
+	var/obj/item/reagent_containers/chem_disp_cartridge/C = own(variant_new(VARIANT(/obj/item/reagent_containers/chem_disp_cartridge/hydrogen), test_floor()))
+	D.cartridges[C.label] = C
+	var/obj/item/reagent_containers/glass/beaker/large/B = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
+	move_into(D, nameof(D.container), B)
+	return D
+
+/// 10u dispensed is exactly 10u in the beaker, contaminants included, and what the window reads out is the same figure.
+/datum/unit_test/dq_chem_dispense_gives_exactly_the_amount
+	boot_needs = list()
+
+/datum/unit_test/dq_chem_dispense_gives_exactly_the_amount/Run()
+	var/obj/machinery/chemical_dispenser/D = dq_cdisp_dispenser()
+	var/obj/item/reagent_containers/chem_disp_cartridge/C
+	for(var/label in D.cartridges)
+		C = D.cartridges[label]
+		break
+	TEST_ASSERT_NOTNULL(C, "the dispenser holds a cartridge")
+	TEST_ASSERT(C.reagents.contaminant_volume() > 0, "the cartridge carries trace contaminants")
+	var/datum/act/op/stub = new
+	D.set_amount(10)
+	D.ui_act_dispense(stub, C.label)
+	var/datum/reagents/H = D.container.reagents
+	TEST_ASSERT(abs(H.total_volume - 10) < 0.001, "10u dispensed is 10u in the beaker ([H.total_volume])")
+	TEST_ASSERT(H.contaminant_volume() > 0, "the traces are among them")
+	TEST_ASSERT(H.get_reagent_amount(REAGENT_ID_HYDROGEN) < 10, "taken out of the 10u, not added to it")
+	var/list/data = D.ui_data_part_chemical_dispenser(null)
+	TEST_ASSERT(abs(data["beakerCurrentVolume"] - 10) < 0.001, "and the window's count says 10")
+	var/shown = 0
+	for(var/list/row in data["beakerContents"])
+		shown += row["volume"]
+	TEST_ASSERT(abs(shown - 10) < 0.001, "its rows add up to 10 ([shown])")
+	// A holder (the synthesizer's pull) and a second dispense add up the same way.
+	var/datum/reagents/vessel = new /datum/reagents(100)
+	var/moved = C.dispense_to_holder(vessel, 10)
+	TEST_ASSERT(abs(moved - 10) < 0.001 && abs(vessel.total_volume - 10) < 0.001, "10u into a holder is 10u")
+	D.ui_act_dispense(stub, C.label)
+	TEST_ASSERT(abs(H.total_volume - 20) < 0.001, "two dispenses are 20u")
+	// A bottled or recharged source adds its amount in all, too.
+	var/datum/reagents/bottle = new /datum/reagents(100)
+	var/added = bottle.add_sourced_reagent(REAGENT_ID_HYDROGEN, 30, chem_source_profile(REAGENT_ID_HYDROGEN, "test lot", GRADE_STANDARD))
+	TEST_ASSERT(abs(added - 30) < 0.001 && abs(bottle.total_volume - 30) < 0.001, "30u of a sourced reagent is 30u in all ([bottle.total_volume])")
+
+/// The rows of every listing put the contaminants after the real chemicals and flag them.
+/datum/unit_test/dq_chem_window_rows_put_contaminants_last
+	boot_needs = list()
+
+/datum/unit_test/dq_chem_window_rows_put_contaminants_last/Run()
+	var/obj/item/reagent_containers/glass/beaker/large/B = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
+	// The contaminants go in first, so a plain listing would show them first.
+	B.reagents.add_reagent(REAGENT_ID_CONTAMINANT_HEAVY_METAL, 2, safety = 1)
+	B.reagents.add_reagent(REAGENT_ID_DEXALIN, 10, safety = 1)
+	B.reagents.add_reagent(REAGENT_ID_CONTAMINANT_SALTS, 1, safety = 1)
+	B.reagents.add_reagent(REAGENT_ID_ANTITOXIN, 5, safety = 1)
+	var/list/rows = B.reagents.ui_rows()
+	TEST_ASSERT_EQUAL(length(rows), 4, "four rows")
+	var/seen_contaminant = FALSE
+	for(var/list/row in rows)
+		if(row["contaminant"])
+			seen_contaminant = TRUE
+		else
+			TEST_ASSERT(!seen_contaminant, "[row["name"]] is a real chemical listed after a contaminant")
+	TEST_ASSERT(rows[3]["contaminant"] && rows[4]["contaminant"], "the last two rows are the contaminants")
+	TEST_ASSERT(!rows[1]["contaminant"] && !rows[2]["contaminant"], "and the first two are not flagged")
+	// The windows read the same rows.
+	var/obj/machinery/chemical_dispenser/ert/D = allocate(/obj/machinery/chemical_dispenser/ert, test_floor())
+	move_into(D, nameof(D.container), B)
+	var/list/shown = D.ui_data_part_chemical_dispenser(null)["beakerContents"]
+	TEST_ASSERT(shown[3]["contaminant"] && shown[4]["contaminant"] && !shown[1]["contaminant"], "the dispenser's beaker rows list them last, flagged")
+	var/obj/machinery/chem_master/M = allocate(/obj/machinery/chem_master, test_floor())
+	var/obj/item/reagent_containers/glass/beaker/large/other = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
+	other.reagents.add_reagent(REAGENT_ID_CONTAMINANT_SULFUR, 1, safety = 1)
+	other.reagents.add_reagent(REAGENT_ID_DEXALIN, 4, safety = 1)
+	move_into(M, nameof(M.beaker), other)
+	var/list/master = M.ui_data_part_chem_master(null)["beaker_reagents"]
+	TEST_ASSERT(!master[1]["contaminant"] && master[2]["contaminant"], "the chem master's beaker rows list them last, flagged")
+	var/list/order = other.reagents.listed_reagents()
+	var/datum/reagent/first = order[1]
+	TEST_ASSERT_EQUAL(first.id, REAGENT_ID_DEXALIN, "and its analysis numbers its rows in that order")
+
+/// The per-chemical separations are gone: no isolate, no per-reagent remove in the dispenser, and the chem master moves only the whole mix.
+/datum/unit_test/dq_chem_no_single_chem_separation
+	boot_needs = list()
+
+/datum/unit_test/dq_chem_no_single_chem_separation/Run()
+	var/obj/machinery/chemical_dispenser/ert/D = allocate(/obj/machinery/chemical_dispenser/ert, test_floor())
+	TEST_ASSERT(!hascall(D, "ui_act_remove"), "the dispenser has no per-reagent remove or isolate")
+	var/datum/reagents/H = dq_contam_holder()
+	TEST_ASSERT(!hascall(H, "isolate_reagent"), "a holder cannot isolate one reagent")
+	var/obj/machinery/chem_master/M = allocate(/obj/machinery/chem_master, test_floor())
+	var/obj/item/reagent_containers/glass/beaker/large/B = allocate(/obj/item/reagent_containers/glass/beaker/large, test_floor())
+	B.reagents.add_reagent(REAGENT_ID_DEXALIN, 30, safety = 1)
+	B.reagents.add_reagent(REAGENT_ID_ANTITOXIN, 10, safety = 1)
+	move_into(M, nameof(M.beaker), B)
+	var/datum/act/op/stub = new
+	M.ui_act_add(stub, 20)
+	TEST_ASSERT(abs(M.reagents.get_reagent_amount(REAGENT_ID_DEXALIN) - 15) < 0.001, "the chem master takes the mix: half the dexalin")
+	TEST_ASSERT(abs(M.reagents.get_reagent_amount(REAGENT_ID_ANTITOXIN) - 5) < 0.001, "and half the antitoxin")
+	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/gun = allocate(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, test_floor())
+	TEST_ASSERT(!hascall(gun, "ui_act_purge_reagent"), "the mecha syringe gun cannot purge one reagent")
+	var/obj/machinery/icecream_vat/vat = allocate(/obj/machinery/icecream_vat, test_floor())
+	TEST_ASSERT(!hascall(vat, "ui_act_clear_reagent"), "the ice cream vat cannot drop one reagent")
+	vat.reagents.clear_reagents()
+	vat.reagents.add_reagent(REAGENT_ID_SUGAR, 10, safety = 1)
+	vat.reagents.add_reagent(REAGENT_ID_MILK, 10, safety = 1)
+	vat.ui_act_clear_reagents(stub)
+	TEST_ASSERT_EQUAL(vat.reagents.total_volume, 0, "the vat empties as a whole")
+	var/obj/item/mecha_parts/mecha_equipment/tool/sleeper/mecha_sleeper = allocate(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, test_floor())
+	TEST_ASSERT(!hascall(mecha_sleeper, "inject_reagent"), "the mecha sleeper has no per-reagent injection from the gun's stock")
+	var/obj/machinery/reagent_refinery/furnace/furnace = allocate(/obj/machinery/reagent_refinery/furnace, test_floor())
+	TEST_ASSERT(!hascall(furnace, "interaction_set_filter") && !hascall(furnace, "filter_choice_table"), "the furnace has no reagent pick")
+	TEST_ASSERT(!("filter_reagent_id" in furnace.vars), "and holds no chosen reagent")
+	TEST_ASSERT(!hascall(furnace, "interaction_use") && !hascall(furnace, "set_filter_choices"), "and no op handler to choose one")
+	TEST_ASSERT(isnull(text2path("/obj/machinery/smart_centrifuge")), "the centrifuge that isolated each reagent is gone")
+	TEST_ASSERT(isnull(text2path("/obj/machinery/reagent_refinery/filter")), "the refinery filter that passed one chosen reagent is gone")
+	var/mob/living/carbon/human/wearer = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/rig_module/chem_dispenser/rig_dispenser = allocate(/obj/item/rig_module/chem_dispenser, test_floor())
+	var/obj/item/reagent_containers/glass/beaker/mixed = allocate(/obj/item/reagent_containers/glass/beaker, test_floor())
+	mixed.reagents.add_reagent(REAGENT_ID_ANTITOXIN, 10, safety = 1)
+	mixed.reagents.add_reagent(REAGENT_ID_PHORON, 10, safety = 1)
+	rig_dispenser.accepts_item(mixed, wearer)
+	TEST_ASSERT(abs(mixed.reagents.get_reagent_amount(REAGENT_ID_ANTITOXIN) - 10) < 0.001, "the rig dispenser leaves a mix it cannot wholly store untouched")
+	TEST_ASSERT(abs(mixed.reagents.get_reagent_amount(REAGENT_ID_PHORON) - 10) < 0.001, "and does not strip out the part it could store")
+
+#endif
+
+/// The furnace takes the whole mix: what has a sheet form becomes sheets in proportion, the rest is spent, and nothing is left in the tank.
+/datum/unit_test/dq_furnace_sinters_whole_mix
+	boot_needs = list()
+
+/datum/unit_test/dq_furnace_sinters_whole_mix/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/reagent_refinery/furnace/F = allocate(/obj/machinery/reagent_refinery/furnace, T)
+	F.reagents.add_reagent(REAGENT_ID_IRON, 40, safety = 1)
+	F.reagents.add_reagent(REAGENT_ID_COPPER, 20, safety = 1)
+	F.reagents.add_reagent(REAGENT_ID_CONTAMINANT_SULFUR, 10, safety = 1)
+	F.reagents.add_reagent(REAGENT_ID_DEXALIN, 15, safety = 1)
+	TEST_ASSERT(!GLOB.reagent_sheets[REAGENT_ID_DEXALIN] && !GLOB.reagent_sheets[REAGENT_ID_CONTAMINANT_SULFUR], "the fixture's spent reagents have no sheet form")
+	var/list/made = F.sinter_mix()
+	TEST_ASSERT_EQUAL(made[MAT_IRON], 40 / REAGENTS_PER_SHEET, "iron makes sheets by its own share")
+	TEST_ASSERT_EQUAL(made[MAT_COPPER], 20 / REAGENTS_PER_SHEET, "copper makes sheets by its own share")
+	TEST_ASSERT_EQUAL(made.len, 2, "the reagents with no sheet form make none")
+	TEST_ASSERT_EQUAL(F.reagents.total_volume, 0, "the whole input is consumed")
+	TEST_ASSERT(!length(F.sinter_mix()), "an empty tank makes nothing")
+	for(var/obj/item/stack/material/S in get_step(T, turn(F.dir, 90)))
+		qdel(S)

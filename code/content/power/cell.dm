@@ -8,7 +8,7 @@ SCHEMA(/obj/item/cell, c_uid, num())
 
 /obj/item/cell
 	material_template = /datum/material_template/cell
-	material_total = 2 * SHEET_MATERIAL_AMOUNT
+	material_total = 700
 	name = "power cell"
 	desc = "A rechargable electrochemical power cell."
 	icon = 'icons/obj/power_cells.dmi' // swap to 'icons/obj/power_cells_.dmi' for new sprites. // Enable new sprites
@@ -94,7 +94,7 @@ CAPABILITIES(/obj/item/cell)
 	if(material_assembly_view(src).custom)
 		return TRUE
 	var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL) || primary_construction_material()
-	if(thermal?.exothermic_heat_rate > 0)
+	if(thermal?.trait(MT_EXOTHERMIC) > 0)
 		return TRUE
 	if(!GLOB.cells_ambient_ready)
 		GLOB.cells_awaiting_ambient += handle_of(src) // a handle, not the cell: held until init completes, which is when the air is real (cells_ambient_checked())
@@ -133,9 +133,13 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 	// A cell's temperature and electrical phase are functional state even for
 	// the standard construction. Unlike idle machine housings, cells therefore
 	// always need a service datum; it sleeps dependency-driven when stable.
+	BOOT_PHASE_BEGIN(bp_blueprint)
 	apply_blueprint_effects()
+	BOOT_PHASE_END(bp_blueprint, "cell start_up: blueprint effects", src)
+	BOOT_PHASE_BEGIN(bp_service)
 	if(material_service_needed_at_start())
 		enable_material_service()
+	BOOT_PHASE_END(bp_service, "cell start_up: material service check", src)
 	c_uid = next_serial(power_cell)
 
 /obj/item/cell/get_cell()
@@ -174,7 +178,7 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 		look.overlay("[initial(icon_state)]_[charge_step]")
 
 /// Keeps charge_step on the quarter step of the stored charge (it changes, and the cell redraws, only when the step does) and charged on whether any is stored.
-/obj/item/cell/proc/update_charge_step(datum/act/A)
+/obj/item/cell/proc/update_charge_step(datum/act/A = null)
 	var/step = clamp(round(percent() * 4 / 100, 1), 0, 4) * 25
 	if(step != charge_step)
 		set_charge_step(step)
@@ -219,15 +223,15 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 /obj/item/cell/proc/update_superconducting_state(requested_output = 0)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
 	var/datum/material_service/service = material_service_of(src)
-	if(!conductor?.critical_temperature || !service)
+	if(!conductor?.critical_temperature() || !service)
 		material_superconducting = FALSE
 		material_quenched = FALSE
 		return FALSE
 	var/temperature = service.temperature()
 	var/current_density = max(requested_output / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE / MATERIAL_CABLE_REFERENCE_AREA
-	var/within_current = current_density <= conductor.critical_current_density
+	var/within_current = current_density <= conductor.critical_current_density()
 	if(material_quenched)
-		if(temperature <= conductor.critical_temperature - MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN)
+		if(temperature <= conductor.critical_temperature() - MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN)
 			material_quenched = FALSE
 			material_superconducting = within_current
 			material_phase_feedback(FALSE)
@@ -235,7 +239,7 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 			material_superconducting = FALSE
 		return material_superconducting
 	var/was_superconducting = material_superconducting
-	material_superconducting = temperature < conductor.critical_temperature && within_current
+	material_superconducting = temperature < conductor.critical_temperature() && within_current
 	if(was_superconducting && !material_superconducting)
 		material_quenched = TRUE
 		material_phase_feedback(TRUE)
@@ -259,7 +263,7 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 	if(base_cost <= 0 || device_limit <= 1 || !update_superconducting_state(base_cost))
 		return 1
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	var/current_limited_cost = conductor.critical_current_density * MATERIAL_CABLE_REFERENCE_AREA * MATERIAL_SERVICE_NOMINAL_VOLTAGE * CELLRATE
+	var/current_limited_cost = conductor.critical_current_density() * MATERIAL_CABLE_REFERENCE_AREA * MATERIAL_SERVICE_NOMINAL_VOLTAGE * CELLRATE
 	var/available_cost = min(material_available_output(base_cost * device_limit), current_limited_cost)
 	return clamp(available_cost / base_cost, 1, device_limit)
 
@@ -272,7 +276,7 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 		return
 	service.add_heat((base_cost * (multiplier - 1) / CELLRATE) * MATERIAL_SUPERCONDUCTING_OVERDRIVE_HEAT)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	if(conductor?.critical_temperature && service.temperature() >= conductor.critical_temperature)
+	if(conductor?.critical_temperature() && service.temperature() >= conductor.critical_temperature())
 		material_superconducting = FALSE
 		material_quenched = TRUE
 		material_phase_feedback(TRUE)
@@ -287,16 +291,18 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 		return 0
 	var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	if(!thermal?.heat_pump_coefficient || !conductor?.critical_temperature)
+	// The pump is the thermoelectric trait run backwards: the same coupling of heat and charge.
+	var/heat_pump_coefficient = (thermal?.trait(MT_THERMOELECTRIC) || 0) / 100
+	if(!heat_pump_coefficient || !conductor?.critical_temperature())
 		return 0
-	var/target_temperature = conductor.critical_temperature - MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN
+	var/target_temperature = conductor.critical_temperature() - MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN
 	if(service.temperature() <= target_temperature)
 		return 0
 	var/available_cooling = (service.temperature() - target_temperature) * service.thermal_mass()
-	var/requested_cooling = min(available_cooling, delivered_charge / CELLRATE * thermal.heat_pump_coefficient * 6)
-	var/work_joules = requested_cooling / max(thermal.heat_pump_coefficient, 0.1)
+	var/requested_cooling = min(available_cooling, delivered_charge / CELLRATE * heat_pump_coefficient * 6)
+	var/work_joules = requested_cooling / max(heat_pump_coefficient, 0.1)
 	var/work_charge = min(charge, work_joules * CELLRATE)
-	var/moved_heat = work_charge / CELLRATE * thermal.heat_pump_coefficient
+	var/moved_heat = work_charge / CELLRATE * heat_pump_coefficient
 	if(moved_heat <= 0)
 		return 0
 	set_charge(charge - work_charge)

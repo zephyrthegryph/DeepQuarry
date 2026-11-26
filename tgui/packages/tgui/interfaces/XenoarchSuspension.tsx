@@ -7,18 +7,15 @@ import {
   ProgressBar,
   Section,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  XenoarchSuspensionActions,
+  XenoarchSuspensionData,
+} from './generated/XenoarchSuspension';
 
-type Data = {
-  cell: BooleanLike;
-  cellCharge: number;
-  cellMaxCharge: number;
-  locked: BooleanLike;
-  suspension_field: BooleanLike;
-};
+type Data = XenoarchSuspensionData;
 
 export const XenoarchSuspension = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, XenoarchSuspensionActions>();
 
   const { cell, cellCharge, cellMaxCharge, locked, suspension_field } = data;
 

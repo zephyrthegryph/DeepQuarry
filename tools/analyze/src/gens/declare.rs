@@ -14,7 +14,7 @@
 //!   `declared_entries()`: the entries of its `CAPABILITIES(T, ...)` list, copied as written. The proc is defined on `T`, so `nameof(var)`
 //!   and `PROC_REF(x)` resolve against the type, and each entry carries its own line for the explain tools.
 //!
-//! The entry text is copied except for these rewrites (E4 adds `adjusts(a.b, ...)` and `on_change(nameof(a.b), ...)`, whose paths become text): `link(A::a, B::b)` (DM's `link` is a keyword) becomes `entry_link("A::a", "B::b")`,
+//! The entry text is copied except for these rewrites (E4 adds `on_change(nameof(a.b), ...)`, whose path becomes text): `link(A::a, B::b)` (DM's `link` is a keyword) becomes `entry_link("A::a", "B::b")`,
 //! and `configure(CAP_X, "selector", param = value)` becomes `configure(<constructor of CAP_X>("selector", param = value))`.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -405,13 +405,6 @@ fn entry_text(raw: &str, caps: &[Cap], globals: &BTreeSet<String>) -> String {
             format!("entry_link({})", parts.join(", "))
         });
     }
-    // adjusts(packet.amount, ...): the field path is text (DM has no value for `packet.amount` outside the action's own context).
-    t = rewrite_calls(&t, "adjusts", &|a| {
-        let Some(first) = a.first() else { return "adjusts()".to_string() };
-        let mut parts = vec![if first.starts_with('"') { first.clone() } else { quote(first) }];
-        parts.extend(a.iter().skip(1).cloned());
-        format!("adjusts({})", parts.join(", "))
-    });
     // on_change(nameof(terminal.charge), ANY, ...): nameof() of a path gives only the last name, so the whole path is text.
     t = rewrite_calls(&t, "on_change", &|a| {
         let Some(first) = a.first() else { return "on_change()".to_string() };
@@ -481,6 +474,8 @@ impl Generator for Declare {
         weak_accessors(cx, out);
         lazy_accessors(cx, out);
         static_blocks(cx, out, &caps, &globals, &statics);
+        block_types(cx, out);
+        op_tags(cx, out);
         make_procs(cx, out);
         for d in std::mem::take(&mut tests.diags) {
             out.diag(&d.rel, d.line, d.msg);
@@ -537,6 +532,121 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
     out.blank();
     for (i, chunk) in chunks.iter().enumerate() {
         out.line(format!("/proc/declared_static_blocks_part{}(list/into)", i + 1));
+        for row in chunk.iter() {
+            for l in row {
+                out.line(l.clone());
+            }
+        }
+        out.blank();
+    }
+}
+
+/// Every type that declares a CAPABILITIES block, so a test can compile every block's table without waiting for an instance of the type
+/// to be made (dq_declare_every_block_compiles). Rows go into numbered part procs of at most 500 rows (DM's proc size limit).
+/// The op tags (TAG_X) some declaration gives an op with `tag(TAG_X)`, plus the ones the engine gives (TAG_UI, TAG_TOPIC). An `extend(TAG_X,
+/// ...)` of a tag no op carries reaches nothing: it is a generation error here, and table_resolves() (code/engine/declare/table.dm) reports it
+/// from `declared_op_tags()` when a table is built.
+fn op_tags(cx: &GenCx, out: &mut GenOut) {
+    const IMPLICIT: &[&str] = &["TAG_UI", "TAG_TOPIC"];
+    let tag_re = crate::pat!(r"\btag\(\s*(TAG_[A-Z0-9_]+)\s*\)");
+    let extend_re = crate::pat!(r"\bextend\(\s*(TAG_[A-Z0-9_]+)\s*,");
+    let mut prod: BTreeSet<String> = IMPLICIT.iter().map(|s| s.to_string()).collect();
+    let mut test: BTreeSet<String> = BTreeSet::new();
+    let mut extends: Vec<(String, u32, String, bool)> = Vec::new();
+    for f in cx.tree.select(&crate::tree::CODE_DM) {
+        if f.rel.starts_with("code/engine/_generated/") {
+            continue;
+        }
+        let test_only = crate::sem::gen::test_only(&f.rel);
+        let text = &f.code().text;
+        if !text.contains("TAG_") {
+            continue;
+        }
+        for (n, line) in text.lines().enumerate() {
+            if line.trim_start().starts_with("#define") {
+                continue;
+            }
+            for c in tag_re.captures_iter(line) {
+                let name = c.s(1).to_string();
+                if test_only { test.insert(name); } else { prod.insert(name); }
+            }
+            for c in extend_re.captures_iter(line) {
+                extends.push((f.rel.clone(), n as u32 + 1, c.s(1).to_string(), test_only));
+            }
+        }
+    }
+    for (rel, line, name, test_only) in &extends {
+        if !prod.contains(name) && !(*test_only && test.contains(name)) {
+            out.diag(rel, *line, format!("extend({}, ...) names a tag no op carries: give the ops it means tag({}), or extend them by key", name, name));
+        }
+    }
+    let test: Vec<&String> = test.iter().filter(|t| !prod.contains(*t)).collect();
+    out.doc("declared_op_tags(): the TAG_X some op carries (tag(TAG_X) in a declaration, or TAG_UI/TAG_TOPIC from the engine) -> TRUE.");
+    out.line("/proc/declared_op_tags()");
+    out.line("\tvar/static/list/tags");
+    out.line("\tif(!tags)");
+    out.line("\t\ttags = list()");
+    for t in &prod {
+        out.line(format!("\t\ttags[\"[{}]\"] = TRUE", t));
+    }
+    if !test.is_empty() {
+        out.line(crate::sem::gen::TEST_GUARD);
+        for t in &test {
+            out.line(format!("\t\ttags[\"[{}]\"] = TRUE", t));
+        }
+        out.line("#endif");
+    }
+    out.line("\treturn tags");
+    out.blank();
+}
+
+/// The proc a type's CAPABILITIES block is generated into: a definition unique to the type (`declared_block_obj_item`), called by its
+/// declared_entries() override and, with no instance, by table_of_type().
+fn block_proc_name(ty: &str) -> String {
+    format!("declared_block{}", ty.trim().replace('/', "_"))
+}
+
+fn block_types(cx: &GenCx, out: &mut GenOut) {
+    out.doc("declared_block_types(): every type with a CAPABILITIES block, sorted.");
+    let all: Vec<&Marker> = cx.markers("CAPABILITIES").collect();
+    let (groups, _) = type_blocks(&all);
+    let mut rows: Vec<Vec<String>> = Vec::new();
+    for (ty, blocks) in groups {
+        let Some(m) = blocks.first().filter(|m| m.part.is_none()).copied() else { continue };
+        let test_only = crate::sem::gen::test_only(&m.rel);
+        let mut row: Vec<String> = Vec::new();
+        if test_only {
+            row.push(crate::sem::gen::TEST_GUARD.to_string());
+        }
+        row.push(format!("\tinto += {}", ty.trim()));
+        // The type's own block proc by a typed proc path (a definition, not the declared_entries() override: text2path() of an override's
+        // text finds only the base definition), so table_of_type() can call each block without an instance.
+        row.push(format!("\tprocs?[{0}] = {0}/proc/{1}", ty.trim(), block_proc_name(ty.trim())));
+        if test_only {
+            row.push("#endif".to_string());
+        }
+        rows.push(row);
+    }
+    let chunks: Vec<&[Vec<String>]> = rows.chunks(500).collect();
+    out.line("/proc/declared_block_types()");
+    out.line("\t. = list()");
+    for i in 0..chunks.len() {
+        out.line(format!("\tdeclared_block_types_part{}(.)", i + 1));
+    }
+    out.blank();
+    out.doc("declared_entries_procs(): block type -> its declared_entries() override (a typed proc path), for table_of_type().");
+    out.line("/proc/declared_entries_procs()");
+    out.line("\tvar/static/list/procs");
+    out.line("\tif(!procs)");
+    out.line("\t\tprocs = list()");
+    out.line("\t\tvar/list/types = list()");
+    for i in 0..chunks.len() {
+        out.line(format!("\t\tdeclared_block_types_part{}(types, procs)", i + 1));
+    }
+    out.line("\treturn procs");
+    out.blank();
+    for (i, chunk) in chunks.iter().enumerate() {
+        out.line(format!("/proc/declared_block_types_part{}(list/into, list/procs)", i + 1));
         for row in chunk.iter() {
             for l in row {
                 out.line(l.clone());
@@ -966,8 +1076,13 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String
             let Some(root) = blocks.first().filter(|m| m.part.is_none()).copied() else { continue };
             let ty = ty.as_str();
             out.doc(format!("CAPABILITIES({}) at {}:{}", ty, root.rel, root.line));
+            // The block itself is a proc the type defines (not an override), so it has a typed proc path the native compiler and BYOND both
+            // resolve: table_of_type() calls each ancestor's block proc with no instance (declared_entries_procs()).
             out.line(format!("{}/declared_entries(list/into)", ty));
             out.line("\t..(into)");
+            out.line(format!("\t{}(into)", block_proc_name(ty)));
+            out.blank();
+            out.line(format!("{}/proc/{}(list/into)", ty, block_proc_name(ty)));
             out.line(format!("\tinto += entry_block({}, {}, {})", quote(&root.rel), root.line, ty));
             // table_build() marks the chain it asks for: a block whose table is already compiled is not read, so its constructors are not run again.
             out.line(format!("\tif(declare_block_skipped(into, {}))", ty));
@@ -1315,7 +1430,8 @@ CAPABILITIES(/obj/ripens, \
     #[test]
     fn a_capabilities_list_becomes_declared_entries_with_a_line_per_entry() {
         let (_, decl, _) = gen(vec![("code/a.dm", SRC)]);
-        assert!(decl.contains("/obj/thing/declared_entries(list/into)\n\t..(into)\n\tinto += entry_block(\"code/a.dm\", 11, /obj/thing)"), "{}", decl);
+        assert!(decl.contains("/obj/thing/declared_entries(list/into)\n\t..(into)\n\tdeclared_block_obj_thing(into)"), "{}", decl);
+        assert!(decl.contains("/obj/thing/proc/declared_block_obj_thing(list/into)\n\tinto += entry_block(\"code/a.dm\", 11, /obj/thing)"), "{}", decl);
         assert!(decl.contains("into += entry_line(12)\n\tinto += list(global.widget(\"a\", power = 2))"), "{}", decl);
         assert!(decl.contains("entry_link(\"/obj/thing::partner\", \"/obj/thing::partner\")"), "link is rewritten: {}", decl);
         assert!(decl.contains("configure(global.widget(\"a\", power = 9))"), "configure(CAP_X, ...) is rewritten to the constructor: {}", decl);
@@ -1450,14 +1566,12 @@ CAPABILITIES(/obj/ripens, \
     }
 
     #[test]
-    fn adjusts_and_on_change_paths_become_text() {
+    fn on_change_paths_become_text() {
         let (_, decl, diags) = gen(vec![("code/a.dm", "CAPABILITIES(/obj/thing, \
-	extend(/datum/act/hit, adjusts(packet.amount, scale = 0.5)), \
 	on_change(nameof(terminal.charge), ANY, then(PROC_REF(x))), \
 	on_change(nameof(on), ENTER, then(PROC_REF(y))))
 ")]);
         assert!(diags.is_empty(), "{:?}", diags);
-        assert!(decl.contains("adjusts(\"packet.amount\", scale = 0.5)"), "{}", decl);
         assert!(decl.contains("on_change(\"terminal.charge\", ANY"), "{}", decl);
         assert!(decl.contains("on_change(nameof(on), ENTER"), "a plain nameof stays: {}", decl);
     }

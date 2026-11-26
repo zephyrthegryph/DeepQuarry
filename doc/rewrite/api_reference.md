@@ -208,7 +208,7 @@ Notes: `hold_until` (`code/engine/stats/store.dm:112`) and `hold_override` (`cod
 #### `hold_table(E, source, table, scale =, stacks =, part =)`
 Need: place a source's whole table of stat values at once.
 Defined: `code/engine/stats/tables.dm:66`
-Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:824`.
+Example: tables are keyed by stat id, `alist(STAT_SLOWDOWN = 1)`; the engine applies each `factors()` entry through it at `code/engine/stats/recompute.dm:914`.
 Replaces / bans: `BF_*`, `factor(`.
 Notes: normally reached through `factors()` rather than called.
 
@@ -409,7 +409,7 @@ Notes: declare the var (`var/datum/burn_state/burn`) and the entry; the state ty
 #### `links(a_end, b_end, ...)`
 Need: a paired relation whose two ends are kept in step.
 Defined: `code/engine/declare/entries.dm:219`
-Example: `links(/obj/structure/redgate::target, /obj/structure/redgate::target)`, `code/content/awaymissions/redgate.dm:608`
+Example: `links(/obj/structure/redgate::target, /obj/structure/redgate::target)`, `code/content/awaymissions/redgate.dm:587`
 Replaces / bans: the `REL` pair macros.
 Notes: `analyze gen declare` rewrites the call to `entry_link()`; calling `links()` directly crashes. A `sparse = TRUE` pair keeps its ends in the holders' records and is written with `LINK_END`.
 
@@ -425,7 +425,7 @@ Need: the one write verb set for declared relations; each dispatches on the decl
 Defined: `code/engine/declare/relations.dm:360`, `rel_add` at `code/engine/declare/relations.dm:390`
 Example: `rel_set(src, nameof(focused_obj), req_thing)`, `code/content/admin/access_viewer.dm:81`
 Replaces / bans: `own_set` accessors.
-Notes: a raw write to a declared relation var skips the reverse index and the teardown.
+Notes: a raw write to a declared relation var skips the reverse index and the teardown. Many holders onto one target (a pipeline taking its pipes) is `rel_set_many(holders, var_name, target)` (`code/engine/refs/views.dm:314`): what one `rel_set()` per holder leaves, with the partner list's membership read once, one append and one announcement of the partner var.
 
 #### `slot_of(D)`, `handle_of(D)` and `handle_get(h)`: slots and numeric handles
 Need: name a datum by a whole number (a table key) or hold a weak handle to it in a var, list, timer or payload.
@@ -466,7 +466,7 @@ Notes: the destroy transaction (`code/library/lifecycle/transaction.dm:25`) runs
 #### `/datum/notice/borrow_ended` (the borrower hears its target was deleted)
 Need: react when a datum you borrow through a relation is deleted, before you are cleared or deleted with it.
 Defined: `code/engine/change/lifecycle_notices.dm:14`
-Example: `on_notice(/datum/notice/borrow_ended, then(PROC_REF(borrow_ended)))`, `code/engine/parts/run.dm:473` (the waiting op runs its `on_interrupt()`, K8).
+Example: `on_notice(/datum/notice/borrow_ended, then(PROC_REF(borrow_ended)))`, `code/engine/parts/run.dm:514` (the waiting op runs its `on_interrupt()`, K8).
 Replaces / bans: nothing; `on_unlink = PROC_REF(x)` on the relation still runs for every unlink, this one is only the target's deletion.
 Notes: published from relation teardown (phase 4 of the target's destroy transaction) after the borrower's var was cleared; the payload is the borrower's var name (`relation`) and the deleted target's type (`other_type`), never the target. A handler must not touch the target.
 
@@ -535,24 +535,24 @@ Notes: handler `x(datum/act/input/A)` with `A.actor`, `A.over`, `A.entered`, `A.
 
 #### `ACTION(name, fields..., FIXED, notice =)` and `ACT_ATTEMPT(E, token, args)`, `act_done(A)`, `act_cancel(A)`
 Need: a typed world event that others may refuse, take over or modify.
-Defined: `ACTION` at `code/defines/engine/declare/markers.dm:54`, `ACT_ATTEMPT` at `code/defines/engine/declare/actions.dm:10`, `act_done` at `code/engine/actions/act.dm:260`
+Defined: `ACTION` at `code/defines/engine/declare/markers.dm:54`, `ACT_ATTEMPT` at `code/defines/engine/declare/actions.dm:10`, `act_done` at `code/engine/actions/act.dm:229`
 Example: `var/datum/act/attack_self/use = ACT_ATTEMPT(src, attack_self, user)` then `if(ACT_REFUSED_BY(use)) return TRUE` then `act_done(use)`, `code/content/click/item_attack.dm:33`
 Replaces / bans: `intercept()`, `OM_EMIT`, `DAMAGE_REACTION`, `om_hook`, `TOPIC_ACTION`.
 Notes: `ACT_ATTEMPT` returns an act, `ACT_PASS` (nothing hooked) or a refusal. `ACTION(name, FIXED, notice = /datum/notice/x)` is an event nothing can refuse (`code/library/input/input_notices.dm:5`).
 
-#### `extend(/datum/act/x, needs(...) | instead(...) | adjusts(...))`
+#### `extend(/datum/act/x, needs(...) | instead(...) | adjusts_with(...))`
 Need: refuse, take over or modify another type's action or op from your own block.
-Defined: `extend` at `code/engine/declare/entries.dm:250`, `instead` at `code/engine/actions/hooks.dm:66`, `adjusts` at `code/engine/actions/hooks.dm:71`
+Defined: `extend` at `code/engine/declare/entries.dm:250`, `instead` at `code/engine/actions/hooks.dm:66`, `adjusts_with` at `code/engine/actions/hooks.dm:72`
 Example: `extend(/datum/act/hit, instead(then(PROC_REF(mousetrap_thrown_trigger))))`, `code/content/assembly/mousetrap.dm:70`
 Replaces / bans: `intercept()` and `acceptance()` (banned outside the engine).
-Notes: an `instead()` with no `then` takes nothing. `adjusts_with(PROC_REF)` is the code form of `adjusts`.
+Notes: an `instead()` with no `then` takes nothing. `adjusts_with(PROC_REF(x))` modifies the act in flight: `x(A)` writes its fields (the constant `adjusts(field, by =, scale =)` form had no content caller and is gone).
 
 #### `on_notice(/datum/notice/x, then(...))` and `observe(source, trigger, listener, parts...)`
 Need: react after an event, on the type (`on_notice`) or on one source (`observe`).
-Defined: `on_notice` at `code/engine/actions/hooks.dm:96`, `observe` at `code/engine/actions/hooks.dm:159`
+Defined: `on_notice` at `code/engine/actions/hooks.dm:105`, `observe` at `code/engine/actions/hooks.dm:168`, `observe_notices` at `code/engine/actions/hooks.dm:212`
 Example: `on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))`, `code/content/artifice/telecube.dm:221`
 Replaces / bans: `om_hook`.
-Notes: `on_op("key", ...)` is sugar for an op-done notice.
+Notes: `on_op("key", ...)` is sugar for an op-done notice. `observe_notices(source, listener, list(/datum/notice/a = then(...), ...))` follows several notices of one source through one grant (one activation, ended by `unobserve()` of any of them): for a listener that always takes and drops the same notices together, such as a light following its holder (`code/content/lighting/overlay_lighting.dm`).
 
 #### `PUBLISH(E, token, args)`
 Need: publish a past-tense fact that cannot be refused.
@@ -593,7 +593,7 @@ Notes: a new requirement is a native `/datum/entry/part/req` in `code/library/re
 
 #### `all_of(...)`, `any_of(...)`, `not(cond, because =)`
 Need: compose conditions and requirements into a tree.
-Defined: `all_of` at `code/engine/parts/cond.dm:677`, `any_of` at `code/engine/parts/cond.dm:704`, `not` at `code/engine/parts/cond.dm:595`
+Defined: `all_of` at `code/engine/parts/cond.dm:813`, `any_of` at `code/engine/parts/cond.dm:704`, `not` at `code/engine/parts/cond.dm:595`
 Example: `every(PROC_REF(magnet_delay), then(PROC_REF(magnet_move_step)), when = all_of(nameof(path_moving), not(nameof(path_stopped))))`, `code/content/admin/magnetic_console_panel.dm:18`
 Replaces / bans: `cond_not`, `cond_all`, `cond_any`, `none_of`.
 Notes: take a var name, a stat id, a `PROC_REF` or a requirement.
@@ -664,7 +664,7 @@ Need: describe how an atom looks as a function of tracked state; a tracked write
 Defined: `/datum/look` at `code/engine/present/appearance_builder.dm:7`, `state` at `code/engine/present/appearance_builder.dm:88`, `overlay` at `code/engine/present/appearance_builder.dm:100`, `watch` at `code/engine/present/appearance_builder.dm:223`
 Example: `/obj/effect/blob/draw(datum/look/look)` then `..()` then `look.state("[appearance_state()]")`, `code/content/blob/blob.dm:37`
 Replaces / bans: `update_icon(`, `update_icons(`, the `APPEARANCE_*` look forms, raw `add_overlay()` and `overlays +=`.
-Notes: the builder is reused and keyed, so an identical result churns no overlays. `look_overlay_image(...)` (`code/engine/present/appearance_builder.dm:470`) builds an overlay with plane, colour or flags; `look_cached_image` (`code/engine/present/appearance_builder.dm:919`) is the appearance cache. Cache appearances, not raw `/icon`. Draws never sleep and never write.
+Notes: the builder is reused and keyed, so an identical result churns no overlays. `look_overlay_image(...)` (`code/engine/present/appearance_builder.dm:470`) builds an overlay with plane, colour or flags; `look_cached_image` (`code/engine/present/appearance_builder.dm:900`) is the appearance cache. Cache appearances, not raw `/icon`. Draws never sleep and never write.
 
 #### `interface("Window", title =, rights =, state =, forwards =)`
 Need: declare the tgui window a type opens.
@@ -822,7 +822,7 @@ Gas ids are integers on the wire (`GAS_IDX`, `GAS_ID_*`, `code/defines/content/a
 #### `gas_sample(air)` and `read_gas_mixtures(list)`
 Need: the per-frame read cache; one call returns pressure, temperature, volume, heat capacity and every gas.
 Defined: `code/domains/atmos/gas.dm:61`
-Example: `var/datum/gas_sample/S = gas_sample(environment)`, `code/content/machinery/air_alarm.dm:401`
+Example: `var/datum/gas_sample/S = gas_sample(environment)`, `code/content/machinery/air_alarm.dm:463`
 Replaces / bans: several getter calls per mixture in a loop.
 Notes: a snapshot; it does not follow the mixture. Use `S.partial_pressure(id)`.
 
@@ -858,7 +858,7 @@ Notes: `air.react(holder)` walks the rules in declaration order; DM decides stoi
 
 #### `set_power_supply(watts)`, `add_avail(watts)`, `use_power_oneoff`, `power_net_*`
 Need: producers book supply; consumers draw; machines bind to the Rust cable network.
-Defined: `code/domains/power/supply.dm:21`, `add_avail` at `code/domains/power/supply.dm:13`, `use_power_oneoff` at `code/content/machinery/machinery_power.dm:135`, `code/domains/power/power_net_api.dm:5`
+Defined: `code/domains/power/supply.dm:21`, `add_avail` at `code/domains/power/supply.dm:13`, `use_power_oneoff` at `code/domains/world_model/machinery.dm:235`, `code/domains/power/power_net_api.dm:5`
 Example: `set_power_supply(amount)` writes `native_write(src, NATIVE_PRODUCER_SUPPLY, amount)`, `code/domains/power/supply.dm:26`
 Replaces / bans: DM-side powernet math; `use_power(` (deprecated).
 Notes: `set_power_supply` is persistent and a repeat is free; `add_avail` is for the next step only. Declare consumption with the `powered(channel)` capability (`code/domains/power/powered.dm:1`). `apc.charge_now()` pulls the exact charge from Rust.
@@ -873,7 +873,7 @@ Notes: reactions are `/transformation/...` rules settled by `handle_reactions()`
 #### Material science
 Need: engineered materials that change assembly behaviour.
 Defined: `code/content/materials/engineering/material_service.dm:1`
-Example: `damaged_object.material_service_event(MATERIAL_EVENT_DAMAGE, ...)`, `code/domains/damage/atom_defense.dm:45`
+Example: `material_service_event(MATERIAL_EVENT_WORK, rated > 0 ? input_energy / rated : 0)`, `code/content/materials/engineering/material_equipment.dm:61`
 Replaces / bans: none.
 Notes: `material_service_of(O)` is null until the object is admitted to continuous exposure. See `doc/material_engineering_implementation.md`.
 
@@ -928,21 +928,21 @@ DM holds handles; simulation state lives in Rust (verdigris). `vg_*` binds are g
 #### Generated binds: Rust functions become `vg_*` procs
 Need: call Rust from DM.
 Defined: `frame_set_tick_lag` at `verdigris/ffi/src/frame.rs:94` (the Rust fn becomes `vg_frame_set_tick_lag`)
-Example: `vg_frame_set_tick_lag(world.tick_lag)`, `code/domains/verdigris/system.dm:66`
+Example: `vg_frame_set_tick_lag(world.tick_lag)`, `code/domains/verdigris/system.dm:101`
 Replaces / bans: raw `call_ext` (rejected outside its allow list); `vg_*` in content (`banned_outside` in `tools/ci/lint_scopes.toml`).
 Notes: to add a bind write the Rust fn with `#[auxmacros::bind]` and run `tools/build/build.sh verdigris-bindings`. The output `code/__defines/verdigris/_bindings.dm` is gitignored. `verdigris_init(VERDIGRIS_ABI)` checks the ABI hash at boot. Wrap binds in a domain `*_api.dm` proc as `code/domains/verdigris/native_api.dm` does.
 
 #### `native_read(E, key, index)` and `native_write(E, key, value, index)`
 Need: read or write a Rust-owned component field; `key` is `NATIVE_KEY(code, field)`.
-Defined: `native_read` at `code/domains/verdigris/system.dm:325`, `native_write` at `code/domains/verdigris/system.dm:306`
+Defined: `native_read` at `code/domains/verdigris/system.dm:464`, `native_write` at `code/domains/verdigris/system.dm:445`
 Example: `native_write(serving, NATIVE_APC_STATIC_LOAD, equip_load, 0)`, `code/content/machinery/power_bridge.dm:64`
 Replaces / bans: DM mirrors of Rust-owned fields.
 Notes: reads are cached per frame by (entity, key). The domain wrapper (`heat_body_*`, `power_net_*`, `atmos_*`) wins where one exists.
 
 #### `vg_frame` and the outbox
 Need: the one per-tick call into the simulation; Rust events come back as records.
-Defined: `code/domains/verdigris/system.dm:95`
-Example: `var/list/box = vg_frame(elapsed, budget)`, `code/domains/verdigris/system.dm:95`
+Defined: `code/domains/verdigris/system.dm:132`
+Example: `var/list/box = vg_frame(elapsed, budget)`, `code/domains/verdigris/system.dm:132`
 Replaces / bans: `vg_world_tick`, `vg_drain_events`, `vg_world_step`.
 Notes: records are `NATIVE_REC_CHANGED` / `NOTICE` / `CROSSED`, delivered as `native_publish_change`, `native_publish_notice` and `native_crossed`. A frame over `NATIVE_SLOW_FRAME_MS` is logged with the Rust phases that grew.
 
@@ -971,6 +971,7 @@ Macros are in `code/defines/host/` and `code/defines/engine/`; procs in `code/ho
 | A holder's contents | `contents_of(atom, type)`, `locate_within()`, `contents_count()` | `code/engine/refs/containment/spatial.dm:78` |
 | What is on a tile or in an area | `turf_contents_of_type()`, `locate_on()`, `area_contents_of_type()` | `code/engine/refs/containment/spatial.dm:19` |
 | Line-of-sight and range lists | `dview()`, `urange()` | `code/host/helpers/view_range.dm:12` |
+| Turfs a viewer sees through the world opacity layer (symmetric shadowcasting in Rust; light uses it) | `sight_view_turfs(center, range)`; a turf whose opacity changes calls `sight_opacity_changed(T)` | `code/domains/verdigris/sight/api.dm:9` |
 | A server config entry | `CONFIG_GET(X)` | `code/defines/host/configuration.dm:2` |
 
 #### `GLOBAL_LIST_INIT(X, v)`, `GLOBAL_DATUM_INIT(X, T, v)`
@@ -990,7 +991,7 @@ Notes: membership follows the lifecycle, so nobody adds or removes by hand. `REG
 #### `contents_of(atom, type)`, `locate_within(atom, type)`, `turf_contents_of_type(T, type)`, `locate_on(T, type)`
 Need: read a holder's contents, a tile, or an area without raw `contents` / `loc` reads.
 Defined: `code/engine/refs/containment/spatial.dm:78`, `locate_within` at `code/engine/refs/containment/spatial.dm:92`, `turf_contents_of_type` at `code/engine/refs/containment/spatial.dm:19`
-Example: `for(var/obj/tool in contents_of(mult_belt))`, `code/content/admin/modify_robot.dm:891`
+Example: `for(var/obj/tool in contents_of(mult_belt))`, `code/content/admin/modify_robot.dm:910`
 Replaces / bans: `in X.contents`, `length(contents)`, `locate(...) in` over a raw list (the `spatial` lint, outright ban).
 Notes: a justified raw read carries `// ALLOW(spatial): reason`.
 
@@ -1005,7 +1006,7 @@ Notes: register a new file in `code/tests/unit_tests/_unit_tests.dm` by hand. `T
 
 #### `allocate(type, ...)`, `set_global`, `set_var`, `set_config`, `defer_cleanup`
 Need: create objects and change shared state in a test with teardown that runs even on failure.
-Defined: `allocate` at `code/tests/unit_tests/unit_test.dm:969`, `set_global` at `code/tests/unit_tests/unit_test.dm:683`, `defer_cleanup` at `code/tests/unit_tests/unit_test.dm:698`
+Defined: `allocate` at `code/tests/unit_tests/unit_test.dm:1016`, `set_global` at `code/tests/unit_tests/unit_test.dm:730`, `defer_cleanup` at `code/tests/unit_tests/unit_test.dm:745`
 Example: `defer_cleanup(src, PROC_REF(restore_tile), x, y, z, original_type)`, `code/tests/unit_tests/dq_a7_initialization_tests.dm:81`
 Replaces / bans: raw global writes in tests (the state guard logs `STATE LEAK`).
 Notes: put objects on the test's own block, not at a fixed coordinate.
@@ -1088,7 +1089,7 @@ you are extending the winner, or the design is changing (section 1 of "Before yo
 | Pending-work queues | `GLOB.refresh_queue` (`code/engine/change/refresh.dm:262`); `refresh_push_queue`; `GLOB.stat_marked`; `rx_drain`; `look_effects_due` | Write tracked state and let the engine mark; never queue work by hand. | `engine/demand-refresh` (S2.4: one scheduler with lanes) |
 | Watches on Rust state | `watched()` (`code/domains/heat/watched.dm:45`); `world_watch_*` (`code/engine/time/world_watches.dm:47`); `sense_heat` (`code/domains/heat/heat_sense.dm:58`); `gas_dependency_watch` (`code/domains/atmos/gasmixtures/gas_mixture.dm:157`); `sensed` (`code/domains/verdigris/sense.dm:18`); `on_cross` | Reactive code: `watched()` or `sensed()`. Imperative code: the `*_watch_*` procs. Do not add a sixth. | `native/sensing` (S5: `sensed()` / `on_sense()`), after `gas/watch-on-read` |
 | Timers | `after()`; `every()`; `after_init()`; `job()`; `wait()` on an op; `COOLDOWN_*` (a var, not a timer) | Delays are `after`, periodic work is `every` with `when =`, yielding work is `job`. | `engine/refs` (S4.7: timer fixes) |
-| Appearance caches | `look_cached_image` (`code/engine/present/appearance_builder.dm:919`); the look key `rx.look_key`; `GLOB.overlay_cache` (`code/library/helpers/global_lists.dm:641`); `set_cached_examine_icon` (`code/host/helpers/icons.dm:342`); `getFlatIcon` (`code/host/helpers/icons.dm:103`) | `draw(look)` with `look_overlay_image` / `look_cached_image`. | none scheduled; do not add a cache |
+| Appearance caches | `look_cached_image` (`code/engine/present/appearance_builder.dm:900`); the look key `rx.look_key`; `GLOB.overlay_cache` (`code/content/core/global_lists.dm:641`); `set_cached_examine_icon` (`code/host/helpers/icons.dm:342`); `getFlatIcon` (`code/host/helpers/icons.dm:103`) | `draw(look)` with `look_overlay_image` / `look_cached_image`. | none scheduled; do not add a cache |
 | Temperature reads and writes | `get_temperature()` (`code/domains/heat/heat.dm:28`); `body_temperature()`; `return_temperature()` on a mixture; `set_bodytemperature` / `adjust_bodytemperature` | Reads: `get_temperature` (`body_temperature` for mobs, `return_temperature` for mixtures). Writes: always `heat_add` / `heat_set` with a `HEAT_SOURCE_*`. | none; the wrappers stay |
 | Gas getters | per-call `return_*` / `get_moles`; batched `gas_sample` / `read_gas_mixtures`; `adjust_gas`, `adjust_moles`, `set_gas` (one bind) | `gas_sample` for multi-field reads, `adjust_gas` for writes. `assume_gas` is a stable compatibility shim. | `native/sensing` (S5.3-S5.4: snapshot reads and batched writes) |
 | Damage entry points | `receive_damage` / `deal_damage`; `take_damage`; `injure`; `bullet_act`; `ex_act` | Damage from a source: `deal_damage` / `receive_damage`. Integrity-internal ticks: `take_damage`. A mob always sinks into `injure`. | none |

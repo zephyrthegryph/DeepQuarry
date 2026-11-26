@@ -1,0 +1,41 @@
+// The speech preview (tgui/dq/speech/LanguagePreview.tsx): the speaker's own
+// message as it will read, under the chat input row.
+@use '../console';
+
+.SpeechPreview {
+  padding: 2px 8px 4px;
+  font-family: console.$console-font;
+  font-size: 11px;
+  line-height: 15px;
+  max-height: 90px;
+  overflow-y: auto;
+  color: console.$console-text;
+  background-color: console.$console-panel;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.SpeechPreview__name {
+  font-weight: bold;
+}
+
+.SpeechPreview__language {
+  border: 1px solid currentColor;
+  border-radius: 0.2rem;
+  font-size: 9px;
+  margin-right: 2px;
+  opacity: 0.75;
+  padding: 0 2px;
+}
+
+// The formatting or language active at the caret (Ctrl+B/I/U, Ctrl+1..9).
+.SpeechIndicator {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0 4px;
+  font-size: 9px;
+  opacity: 0.8;
+  color: console.$console-muted;
+  border: 1px solid console.$console-border;
+  pointer-events: none;
+}

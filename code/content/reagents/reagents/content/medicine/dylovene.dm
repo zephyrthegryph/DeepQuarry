@@ -1,8 +1,10 @@
 /datum/reagent/dylovene
 	treatment_tags = list(TREAT_ANTITOXIN = 0.6)
+	// It binds what is swallowed: while it is in the blood, a smaller share of every oral drug is absorbed.
+	factors = alist(STAT_INGEST_ABSORPTION = 0.6)
 	name = REAGENT_ANTITOXIN
 	id = REAGENT_ID_ANTITOXIN
-	description = REAGENT_ANTITOXIN + " is a broad-spectrum antitoxin."
+	description = REAGENT_ANTITOXIN + " is a broad-spectrum antitoxin: it treats poisoning and animal venoms. It binds swallowed drugs, so pills and drinks taken with it are absorbed poorly, and it makes the patient nauseous."
 	taste_description = "a roll of gauze"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

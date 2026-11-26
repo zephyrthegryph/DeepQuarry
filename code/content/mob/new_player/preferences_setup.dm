@@ -169,10 +169,9 @@
 		rel_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
 	copy_to(mannequin, TRUE)
 
-	// equip_preview_mob bitfield replaced by two toggles. Keep the same
-	// boolean shape so the rest of this proc is untouched.
+	// The two preview toggles; the loadout tab (show_outfit) shows both whatever they say.
 	var/_preview_loadout = show_outfit || read_preference(/datum/preference/toggle/human/preview_loadout)
-	var/_preview_job     = show_outfit || read_preference(/datum/preference/toggle/human/preview_job)
+	var/_preview_job = show_outfit || read_preference(/datum/preference/toggle/human/preview_job)
 	if(!_preview_loadout && !_preview_job)
 		return
 
@@ -249,7 +248,7 @@
 
 // Preview rebuild runs synchronously so pref changes feel instant; only
 // the static_data PUSH to tgui viewers is deferred. The push is what was hitting
-// BYOND's recursion limit on size_multiplier — send_full_update + tgui_static_data
+// BYOND's recursion limit on size_multiplier — send_full_update + ui_static_data
 // + middleware.get_ui_static_data walks every editor catalog AND every pref via
 // compile_character_preferences. Combined with the apply pipeline depth from
 // /mob/living/carbon/human/update_transform on a size change, it tipped over.

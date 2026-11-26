@@ -7,8 +7,7 @@
 	Generally coatings are intended for deep frying foods
 */
 /datum/reagent/nutriment/coating
-	name = REAGENT_COATING
-	id = REAGENT_ID_COATING
+	name = REAGENT_DEVELOPER_WARNING // abstract base: only its subtypes are reagents
 	nutriment_factor = 6 //Less dense than the food itself, but coatings still add extra calories
 	var/messaged = 0
 	var/icon_raw

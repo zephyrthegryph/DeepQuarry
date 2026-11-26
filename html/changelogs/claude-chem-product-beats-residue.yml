@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Chemistry routes that make a chemical now run before routes that end in organic residue, so nitrosalicylic acid and hydrogen make bicaridine instead of residue"

@@ -75,6 +75,7 @@
 	savefile_key = "fuzzy"
 	default_value = FALSE
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/fuzzy/apply_to_human(mob/living/carbon/human/target, value)
@@ -86,6 +87,7 @@
 	savefile_key = "offset_override"
 	default_value = TRUE
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/offset_override/apply_to_human(mob/living/carbon/human/target, value)
@@ -96,6 +98,7 @@
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "voice_freq"
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 	// was 0..999999 (every audible frequency ever); the useful range for voice
 	// pitching is roughly 20000-80000Hz with 42500 as the natural-sounding default.
@@ -114,6 +117,7 @@
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "voice_sound"
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 	maximum_value_length = MAX_NAME_LEN
 
@@ -134,6 +138,7 @@
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "custom_speech_bubble"
 	savefile_identifier = PREFERENCE_CHARACTER
+	applies_live = TRUE
 	can_randomize = FALSE
 	maximum_value_length = MAX_NAME_LEN
 
@@ -145,6 +150,8 @@
 
 /datum/preference/text/human/custom_speech_bubble/apply_to_human(mob/living/carbon/human/target, value)
 	target.bio.custom_speech_bubble = text_or_null(value)
+	if(target.dna)
+		target.dna.custom_speech_bubble = text_or_null(value)
 
 
 /datum/preference/text/human/custom_footstep

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Stack } from 'tgui-core/components';
+import type { SpaceBattleActions } from '../generated/SpaceBattle';
 import { numToText } from './constants';
 import { getNextAvailableShip } from './functions';
 import type { Data } from './types';
@@ -18,7 +19,7 @@ export const PlayerPanel = (props: {
     React.SetStateAction<'horizontal' | 'vertical'>
   >;
 }) => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, SpaceBattleActions>();
   const { current_player } = data;
   const {
     gameState,

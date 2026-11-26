@@ -120,7 +120,7 @@
 			to_chat(new_voice, span_infoplain(span_bold("If you want to end the call, use the 'Hang Up' verb.  The other person can also hang up at any time.")))
 			to_chat(new_voice, span_infoplain(span_bold("Remember, your character does not know anything you've learned from observing!")))
 			if(new_voice.mind)
-				new_voice.mind.assigned_role = JOB_DISEMBODIED_VOICE
+				new_voice.mind.set_assigned_role(JOB_DISEMBODIED_VOICE)
 			if(user)
 				to_chat(user, span_notice("[icon2html(src,new_voice.client)] Your communicator is now connected to [candidate_name]'s communicator."))
 
@@ -281,20 +281,13 @@
 // Verb: join_as_voice()
 // Parameters: None
 // Description: Allows ghosts to call communicators, if they meet all the requirements.
-/mob/observer/dead/verb/join_as_voice()
-	set category = VERB_CAT_GHOST_MESSAGE
-	set name = "Call Communicator"
-	set desc = "If there is a communicator available, send a request to speak through it.  This will reset your respawn timer, if someone picks up."
-
+/mob/observer/dead/proc/join_as_voice()
 	if(ticker_current_state() < GAME_STATE_PLAYING)
 		to_chat(src, span_danger("The game hasn't started yet!"))
 		return
 
 	if (!src.stat)
 		return
-
-	if (usr != src)
-		return //something is terribly wrong
 
 	var/prefs_name = src.client.prefs.read_preference(/datum/preference/name/real_name)
 	open_request(src, /datum/prompt/choice/join_as_voice, PROC_REF(join_as_voice_confirmed), answerer = src, question = "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", prefs_name = prefs_name)

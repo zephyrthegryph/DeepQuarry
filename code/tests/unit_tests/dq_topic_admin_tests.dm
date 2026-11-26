@@ -43,7 +43,7 @@
 	TEST_ASSERT_EQUAL(holder.admincaster_feed_message.title, "Breaking news", "the answer reached the op's effect")
 	TEST_ASSERT_EQUAL(holder.refreshes, 1, "and the panel refreshed once")
 	// a link that confirms: a named channel can be created, so its confirmation opens
-	holder.admincaster_feed_channel().channel_name = "Dq Test Channel"
+	holder.admincaster_feed_channel().set_channel_name("Dq Test Channel")
 	holder.admincaster_resync()
 	test_prompts_reset()
 	click(actor, holder, "ac_submit_new_channel", AUTH_ADMIN)

@@ -65,7 +65,7 @@ CAPABILITIES(/datum/system/events)
 
 /datum/system/events/proc/delay_events(severity, delay)
 	var/datum/event_container/EC = event_containers[severity]
-	EC.next_event_time += delay
+	EC.set_next_event_time(EC.next_event_time + delay)
 
 /datum/system/events/proc/RoundEnd()
 	if(!report_at_round_end)

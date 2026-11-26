@@ -357,10 +357,12 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 /datum/capability/lib/wires/proc/holder_value(datum/holder, value)
 	return istext(value) ? call(holder, value)() : value
 
-/// The record is made when the holder initializes: the round's layout is laid out by the first holder, and a holder that starts with a wire cut
-/// (a lathe mapped hacked) says so through `starts_cut` before anyone looks.
+/// The record is made the first time anything works or reads the layout (wiring_of(), containment.md section 5: wires are made on first use): a holder
+/// whose wires nobody touches has none, and reads as every wire whole (wiring_peek()). A holder that starts with a wire cut (a lathe mapped hacked) makes
+/// it when it initializes, so its starts_cut wires are cut before anyone looks.
 /datum/capability/lib/wires/on_holder_init(datum/act/eval/A)
-	wiring_make(A.holder)
+	if(starts_cut)
+		wiring_make(A.holder)
 
 /// The holder goes: the signalers on its wires drop out of it.
 /datum/capability/lib/wires/on_holder_destroy(datum/act/eval/A)
@@ -372,8 +374,17 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 		W.detach(color)
 	rel_set(W, nameof(W.owner), null)
 
-/// The holder's wire record, or null when it has no wires capability. Made when the holder initializes (wiring_make()).
+/// The holder's wire record, made now if it has none yet (the first cut, pulse, window or layout read), or null when it has no wires capability or is
+/// being deleted. A pure read of the wire state is wiring_peek(): a record that was never made is every wire whole.
 /proc/wiring_of(datum/holder)
+	RETURN_TYPE(/datum/cap_data/wires)
+	var/datum/cap_data/wires/W = wiring_peek(holder)
+	if(W || !holder || QDELETED(holder))
+		return W
+	return wiring_make(holder)
+
+/// The holder's wire record if it was made, else null (no wires capability, or nobody has worked or read its layout yet: every wire is whole).
+/proc/wiring_peek(datum/holder)
 	RETURN_TYPE(/datum/cap_data/wires)
 	READS_FROM(holder)
 	if(!holder)
@@ -383,10 +394,10 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 	return istype(W) ? W : null
 
 /// Makes the holder's wire record: the wires its capabilities bring, the duds up to the count, the colour layout (the round's for the wiring's
-/// name, or its own when it randomizes), the wires it starts with cut. Once, when the holder initializes.
+/// name, or its own when it randomizes), the wires it starts with cut. Once, on first use (or when a holder with starts_cut initializes).
 /proc/wiring_make(datum/holder)
 	RETURN_TYPE(/datum/cap_data/wires)
-	var/datum/cap_data/wires/W = wiring_of(holder)
+	var/datum/cap_data/wires/W = wiring_peek(holder)
 	if(W)
 		return W
 	var/datum/capability/lib/wires/def = cap_of(holder, CAP_WIRES)
@@ -438,6 +449,7 @@ CAPABILITIES(/datum/cap_data/wires)
 	ref_one(nameof(owner)) // the record's back view of its holder, which owns the record through its wires activation
 	owns_many(nameof(assemblies))
 	interface("Wires", state = nameof(GLOB.tgui_physical_state))
+	ui_shape(wires = list_of(row(seen_color = schema_text(), color_name = schema_text(), color = schema_text(), wire = nullable(schema_text()), cut = bool(), attached = bool())), status = list_of(schema_text()))
 	op("cut", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
 		req(PROC_REF(holds_cutters))), then(PROC_REF(cut_pressed)))
 	op("pulse", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
@@ -559,8 +571,8 @@ CAPABILITIES(/datum/cap_data/wires)
 	return null
 
 /// req_wires_in_reach(): a window button of the wire record answers only while its owner's wires are in the actor's reach.
-/proc/req_wires_in_reach()
-	return part_make(/datum/entry/part/req/wires_in_reach)
+/proc/req_wires_in_reach(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/wires_in_reach), fails)
 
 /datum/entry/part/req/wires_in_reach
 	part_name = "req_wires_in_reach"
@@ -703,8 +715,8 @@ CAPABILITIES(/datum/cap_data/wires)
 			"color_name" = color_name,
 			"color" = color,
 			"wire" = see_names && !wire_is_dud(colors[color]) ? colors[color] : null,
-			"cut" = is_cut(colors[color]),
-			"attached" = !!LAZYACCESS(assemblies, color)))
+			"cut" = is_cut(colors[color]) ? TRUE : FALSE,
+			"attached" = LAZYACCESS(assemblies, color) ? TRUE : FALSE))
 	var/list/status = status_lines()
 	if(replace_colors)
 		for(var/i in 1 to length(status))
@@ -740,14 +752,14 @@ CAPABILITIES(/datum/cap_data/wires)
 /// The last mob that worked a wire of `holder` (cut, mended or pulsed it), or null when it is gone.
 /proc/wires_last_user(datum/holder)
 	RETURN_TYPE(/mob)
-	var/datum/cap_data/wires/W = wiring_of(holder)
+	var/datum/cap_data/wires/W = wiring_peek(holder)
 	var/mob/user = W?.last_user()
 	return istype(user) && !QDELETED(user) ? user : null
 
 /// Is `wire` of `holder` cut?
 /proc/wire_is_cut(datum/holder, wire)
 	READS_FROM(holder)
-	var/datum/cap_data/wires/W = wiring_of(holder)
+	var/datum/cap_data/wires/W = wiring_peek(holder)
 	return W ? W.is_cut(wire) : FALSE
 
 /// Cuts the wire if it is intact. TRUE when it changed.
@@ -756,7 +768,7 @@ CAPABILITIES(/datum/cap_data/wires)
 
 /// Mends the wire if it is cut. TRUE when it changed.
 /proc/wires_mend(datum/holder, wire, mob/user)
-	return wiring_of(holder)?.mend_wire(wire, user) || FALSE
+	return wiring_peek(holder)?.mend_wire(wire, user) || FALSE
 
 /// The cut button's toggle: cuts an intact wire, mends a cut one.
 /proc/wires_toggle(datum/holder, wire, mob/user)
@@ -779,14 +791,14 @@ CAPABILITIES(/datum/cap_data/wires)
 /// Mends every cut wire: how many changed.
 /proc/wires_mend_all(datum/holder)
 	. = 0
-	var/datum/cap_data/wires/W = wiring_of(holder)
+	var/datum/cap_data/wires/W = wiring_peek(holder)
 	for(var/wire in W?.cut?.Copy())
 		. += W.mend_wire(wire)
 
 /// Every wire whole again at once, with no notice published (a camera's reset): the capabilities that brought the wires release what the cut
 /// wires held; anything a type's own on_wire() hooks did is the caller's to undo.
 /proc/wires_repair(datum/holder)
-	var/datum/cap_data/wires/W = wiring_of(holder)
+	var/datum/cap_data/wires/W = wiring_peek(holder)
 	if(!W)
 		return
 	var/list/was_cut = W.cut
@@ -808,7 +820,7 @@ CAPABILITIES(/datum/cap_data/wires)
 /// Is every wire of the holder cut?
 /proc/wires_all_cut(datum/holder)
 	READS_FROM(holder)
-	var/datum/cap_data/wires/W = wiring_of(holder)
+	var/datum/cap_data/wires/W = wiring_peek(holder)
 	return W && length(W.cut) == length(W.colors)
 
 // Cut/mend publishes this holder's wire-state key; requirements observe that key
@@ -851,27 +863,27 @@ READS_AS(/proc/wires_all_cut, WIRES_KEY)
 
 /// Takes the signaler off the wire of `color`: it drops beside the holder. The signaler, or null.
 /proc/wire_detach_signaler(datum/holder, color)
-	return wiring_of(holder)?.detach(color)
+	return wiring_peek(holder)?.detach(color)
 
 /// The signaler on the wire of `color`, or null.
 /proc/wire_signaler_at(datum/holder, color)
-	return LAZYACCESS(wiring_of(holder)?.assemblies, color)
+	return LAZYACCESS(wiring_peek(holder)?.assemblies, color)
 
 /// Takes every signaler off the holder's wires (a disarmed mine kicks them off).
 /proc/wires_detach_all(datum/holder)
-	var/datum/cap_data/wires/W = wiring_of(holder)
+	var/datum/cap_data/wires/W = wiring_peek(holder)
 	for(var/color in W?.assemblies?.Copy())
 		W.detach(color)
 
 // ---- requirements and the effect that read and write the wires ----
 
 /// req_wire(W): the wire is intact.
-/proc/req_wire(wire, because = null)
-	return part_make(/datum/entry/part/req/wire, list("wire" = wire, "cut" = FALSE, "because" = because))
+/proc/req_wire(wire, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/wire, list("wire" = wire, "cut" = FALSE, "because" = because)), fails)
 
 /// req_wire_cut(W): the wire is cut.
-/proc/req_wire_cut(wire, because = null)
-	return part_make(/datum/entry/part/req/wire, list("wire" = wire, "cut" = TRUE, "because" = because))
+/proc/req_wire_cut(wire, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/wire, list("wire" = wire, "cut" = TRUE, "because" = because)), fails)
 
 /datum/entry/part/req/wire
 	part_name = "req_wire"

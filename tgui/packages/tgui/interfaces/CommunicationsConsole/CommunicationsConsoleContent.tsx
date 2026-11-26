@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Box } from 'tgui-core/components';
-
+import type { CommunicationsConsoleActions } from '../generated/CommunicationsConsole';
 import { CommunicationsConsoleAuth } from './CommunicationsConsoleAuth';
 import { CommunicationsConsoleMain } from './CommunicationsConsoleMain';
 import { CommunicationsConsoleMessage } from './CommunicationsConsoleMessage';
@@ -8,7 +8,7 @@ import { CommunicationsConsoleStatusDisplay } from './CommunicationsConsoleStatu
 import type { Data } from './types';
 
 export const CommunicationsConsoleContent = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, CommunicationsConsoleActions>();
 
   const { menu_state } = data;
 
@@ -26,7 +26,7 @@ export const CommunicationsConsoleContent = (props) => {
   );
 };
 
-const DefaultError = (props: { menu_state: string }) => {
+const DefaultError = (props: { menu_state: number }) => {
   const { menu_state } = props;
 
   return (

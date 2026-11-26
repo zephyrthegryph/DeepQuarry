@@ -285,10 +285,10 @@
 			ash()
 
 // Injections.
-/mob/living/simple_mob/can_inject(mob/user, error_msg, target_zone, ignore_thickness, method = INJECT_METHOD_NEEDLE)
-	if(ignore_thickness)
-		return TRUE
-	return !thick_armor
+/mob/living/simple_mob/inject_refusal(mob/user, target_zone, ignore_thickness, method = INJECT_METHOD_NEEDLE)
+	if(ignore_thickness || !thick_armor)
+		return null
+	return "\The [src]'s hide is too thick to inject."
 
 /mob/living/simple_mob
 	/// Played whenever the mob is touched, hit with an item or struck by something thrown (the horrors' shrieks).

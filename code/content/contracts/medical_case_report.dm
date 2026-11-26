@@ -181,7 +181,6 @@ GLOBAL_LIST_INIT(medical_rare_case_types, list(
 		/datum/affliction/compartment_syndrome,
 		/datum/affliction/tissue_necrosis,
 		/datum/affliction/septic_shock,
-		/datum/affliction/chronic_radiation,
 		/datum/affliction/ischemic_vision_loss,
 		/datum/affliction/genetic_damage,
 	))

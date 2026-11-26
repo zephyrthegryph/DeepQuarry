@@ -1,0 +1,6 @@
+{
+	"all_decals": ["Eyes", "Stripe", "Hazard"],
+	"all_animations": ["Spin", "Wave"],
+	"active_decals": ["Stripe", "Eyes"],
+	"theme": "ntos"
+}

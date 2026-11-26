@@ -13497,8 +13497,12 @@
 "aCf" = (
 /obj/item/clothing/head/soft/mime,
 /obj/item/clothing/mask/gas/mime,
-/obj/item/clothing/shoes/mime,
-/obj/item/clothing/under/mime,
+/obj/item/clothing/shoes{
+	variant = "mime"
+	},
+/obj/item/clothing/under{
+	variant = "mime"
+	},
 /obj/random/crate,
 /turf/simulated/floor,
 /area/construction/firstdeck/construction3)
@@ -18113,12 +18117,6 @@
 /obj/structure/closet/emcloset,
 /turf/simulated/floor/plating,
 /area/maintenance/firstdeck/aftstarboard)
-"aLx" = (
-/obj/effect/landmark{
-	name = "JoinLateTeleporter"
-	},
-/turf/simulated/floor/tiled,
-/area/teleporter)
 "aLy" = (
 /obj/machinery/light{
 	dir = 8
@@ -22423,15 +22421,6 @@
 "aTW" = (
 /turf/simulated/floor/tiled/monotile,
 /area/security/checkpoint3)
-"aTX" = (
-/obj/effect/landmark{
-	name = "JoinLateTeleporter"
-	},
-/obj/structure/extinguisher_cabinet{
-	pixel_x = -28
-	},
-/turf/simulated/floor/tiled,
-/area/teleporter)
 "aTY" = (
 /obj/machinery/firealarm{
 	dir = 8;
@@ -27032,7 +27021,9 @@
 "bca" = (
 /obj/structure/table/standard,
 /obj/machinery/recharger,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/effect/floor_decal/borderfloor{
 	dir = 4
 	},
@@ -30077,9 +30068,15 @@
 	dir = 4;
 	max_integrity = 1e+006
 	},
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
 /obj/machinery/door/window/northright,
 /turf/simulated/floor/tiled,
 /area/security/security_ses)
@@ -32435,7 +32432,9 @@
 /obj/structure/disposalpipe/segment{
 	dir = 4
 	},
-/obj/item/reagent_containers/spray/pepper,
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
 /obj/item/flash,
 /turf/simulated/floor/lino,
 /area/security/detectives_office)
@@ -35055,7 +35054,9 @@
 /area/security/detectives_office)
 "bqc" = (
 /obj/structure/table/reinforced,
-/obj/item/reagent_containers/spray/luminol,
+/obj/item/reagent_containers/spray{
+	variant = "luminol"
+	},
 /obj/item/uv_light,
 /obj/item/clothing/gloves/sterile/latex,
 /obj/machinery/requests_console{
@@ -35121,7 +35122,9 @@
 /area/security/detectives_office)
 "bqj" = (
 /obj/structure/closet/secure_closet/detective,
-/obj/item/reagent_containers/spray/pepper,
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
 /obj/item/flash,
 /turf/simulated/floor/lino,
 /area/security/detectives_office)
@@ -38014,12 +38017,16 @@
 	departmentType = 1;
 	pixel_y = 28
 	},
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/structure/table/steel,
 /obj/item/storage/box/mousetraps,
 /obj/item/storage/box/lights/mixed,
 /obj/item/storage/box/lights/mixed,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/machinery/newscaster{
 	pixel_x = 30
 	},
@@ -51632,7 +51639,9 @@
 	pixel_x = 5
 	},
 /obj/item/t_scanner,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/random/tech_supply,
 /obj/random/tech_supply,
 /turf/simulated/floor/tiled,
@@ -59729,7 +59738,6 @@
 /turf/simulated/floor/tiled/white,
 /area/medical/virology)
 "cmu" = (
-/obj/machinery/smart_centrifuge,
 /obj/machinery/camera/network/medbay{
 	c_tag = "MED - Virology Starboard";
 	dir = 8
@@ -61249,7 +61257,9 @@
 	pixel_x = -6;
 	pixel_y = 8
 	},
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/machinery/requests_console{
 	department = "Virology";
 	name = "Virology Requests Console";
@@ -64242,55 +64252,6 @@
 	},
 /turf/simulated/floor/tiled/white,
 /area/medical/chemistry)
-"cws" = (
-/obj/structure/table/reinforced,
-/obj/item/reagent_containers/glass/beaker/large,
-/obj/item/reagent_containers/dropper,
-/obj/machinery/firealarm{
-	pixel_y = 24
-	},
-/obj/effect/floor_decal/borderfloorwhite{
-	dir = 1
-	},
-/obj/effect/floor_decal/corner/beige/border{
-	dir = 1
-	},
-/turf/simulated/floor/tiled/white,
-/area/medical/chemistry)
-"cwt" = (
-/obj/structure/table/reinforced,
-/obj/item/mass_spectrometer/adv,
-/obj/item/clothing/glasses/science,
-/obj/item/clothing/glasses/science,
-/obj/machinery/computer/security/telescreen/entertainment{
-	pixel_y = 32
-	},
-/obj/machinery/light{
-	dir = 1
-	},
-/obj/effect/floor_decal/borderfloorwhite{
-	dir = 1
-	},
-/obj/effect/floor_decal/corner/beige/border{
-	dir = 1
-	},
-/turf/simulated/floor/tiled/white,
-/area/medical/chemistry)
-"cwu" = (
-/obj/structure/table/reinforced,
-/obj/item/reagent_containers/glass/beaker/large,
-/obj/item/reagent_containers/dropper,
-/obj/structure/extinguisher_cabinet{
-	pixel_y = 30
-	},
-/obj/effect/floor_decal/borderfloorwhite{
-	dir = 1
-	},
-/obj/effect/floor_decal/corner/beige/border{
-	dir = 1
-	},
-/turf/simulated/floor/tiled/white,
-/area/medical/chemistry)
 "cwv" = (
 /obj/machinery/chemical_dispenser/full,
 /obj/machinery/status_display{
@@ -65225,12 +65186,6 @@
 	},
 /turf/simulated/floor/tiled/white,
 /area/medical/chemistry)
-"cys" = (
-/obj/structure/table/reinforced,
-/obj/item/storage/box/beakers,
-/obj/item/reagent_containers/dropper,
-/turf/simulated/floor/tiled/white,
-/area/medical/chemistry)
 "cyt" = (
 /obj/machinery/chem_master,
 /obj/effect/floor_decal/borderfloorwhite/corner{
@@ -65822,10 +65777,13 @@
 /obj/structure/table/glass,
 /obj/item/reagent_containers/food/drinks/britcup,
 /obj/random/medical,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = -5
 	},
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/effect/floor_decal/corner/paleblue/diagonal{
 	dir = 4
 	},
@@ -65978,6 +65936,10 @@
 /turf/simulated/floor/tiled/white,
 /area/medical/chemistry)
 "czX" = (
+/turf/simulated/floor/tiled/white,
+/area/medical/chemistry)
+"aLx" = (
+/obj/structure/closet/secure_closet/chemical_supplies,
 /turf/simulated/floor/tiled/white,
 /area/medical/chemistry)
 "czY" = (
@@ -68632,22 +68594,6 @@
 	},
 /turf/simulated/floor/tiled/white,
 /area/medical/chemistry)
-"cEV" = (
-/obj/item/stack/material/phoron,
-/obj/item/stack/material/phoron,
-/obj/item/stack/material/phoron,
-/obj/item/stack/material/phoron,
-/obj/item/stack/material/phoron,
-/obj/structure/table/glass,
-/obj/machinery/light,
-/obj/effect/floor_decal/borderfloorwhite/corner{
-	dir = 8
-	},
-/obj/effect/floor_decal/corner/beige/bordercorner{
-	dir = 8
-	},
-/turf/simulated/floor/tiled/white,
-/area/medical/chemistry)
 "cEW" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
@@ -68701,7 +68647,8 @@
 /obj/effect/floor_decal/corner/beige/border{
 	dir = 6
 	},
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the 'Space' from Space Cleaner and written in Chemistry. Scrawled on the back is, 'Okay, whoever filled this with polytrinic acid, it was only funny the first time. It was hard enough replacing the CMO's first cat!'";
 	name = "Chemistry Cleaner"
 	},
@@ -71173,7 +71120,9 @@
 	c_tag = "Second Deck - Center Five";
 	dir = 1
 	},
-/obj/item/clothing/accessory/scarf/christmas,
+/obj/item/clothing/accessory/scarf{
+	variant = "christmas"
+	},
 /turf/simulated/floor/tiled/hydro,
 /area/hallway/primary/seconddeck/apcenter)
 "cJp" = (
@@ -72164,7 +72113,8 @@
 	pixel_y = -22
 	},
 /obj/machinery/recharger,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = -5
 	},
 /turf/simulated/floor/tiled/dark,
@@ -75535,11 +75485,13 @@
 /area/medical/sleeper)
 "cRA" = (
 /obj/structure/table/glass,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = 2;
 	pixel_y = 2
 	},
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = -2;
 	pixel_y = -2
 	},
@@ -81501,7 +81453,8 @@
 /obj/item/surgical/bonegel,
 /obj/item/stack/nanopaste,
 /obj/item/autopsy_scanner,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the Space from Space Cleaner and written in Surgery. 'Do not remove under punishment of death!!!' is scrawled on the back.";
 	name = "Surgery Cleaner";
 	pixel_x = 2;
@@ -81913,7 +81866,8 @@
 /obj/structure/table/standard,
 /obj/item/surgical/surgicaldrill,
 /obj/item/autopsy_scanner,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the Space from Space Cleaner and written in Surgery. 'Do not remove under punishment of death!!!' is scrawled on the back.";
 	name = "Surgery Cleaner";
 	pixel_x = 2;
@@ -82001,7 +81955,8 @@
 /obj/structure/table/standard,
 /obj/item/surgical/surgicaldrill,
 /obj/item/autopsy_scanner,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the Space from Space Cleaner and written in Surgery. 'Do not remove under punishment of death!!!' is scrawled on the back.";
 	name = "Surgery Cleaner";
 	pixel_x = 2;
@@ -88251,7 +88206,9 @@
 "dqn" = (
 /obj/item/clothing/gloves/rainbow,
 /obj/item/clothing/head/soft/rainbow,
-/obj/item/clothing/shoes/rainbow,
+/obj/item/clothing/shoes{
+	variant = "rainbow"
+	},
 /obj/item/clothing/under/color/rainbow,
 /obj/item/bedsheet/rainbow,
 /obj/item/pen/crayon/rainbow,
@@ -94395,8 +94352,12 @@
 "dCm" = (
 /obj/item/clothing/head/soft/mime,
 /obj/item/clothing/mask/gas/mime,
-/obj/item/clothing/shoes/mime,
-/obj/item/clothing/under/mime,
+/obj/item/clothing/shoes{
+	variant = "mime"
+	},
+/obj/item/clothing/under{
+	variant = "mime"
+	},
 /obj/random/crate,
 /turf/simulated/floor/plating,
 /area/construction/seconddeck/construction2)
@@ -96093,7 +96054,7 @@
 	icon_state = "0-2"
 	},
 /obj/machinery/power/solar_control{
-	auto_start = 2;
+	auto_start = 1;
 	dir = 4;
 	id = "foreportsolar";
 	name = "Fore Port Solar Control"
@@ -104568,7 +104529,7 @@
 "dWE" = (
 /obj/structure/cable/yellow,
 /obj/machinery/power/solar_control{
-	auto_start = 2;
+	auto_start = 1;
 	dir = 4;
 	id = "aftportsolar";
 	name = "Aft Port Solar Control"
@@ -104706,7 +104667,7 @@
 "dWX" = (
 /obj/structure/cable/yellow,
 /obj/machinery/power/solar_control{
-	auto_start = 2;
+	auto_start = 1;
 	dir = 8;
 	id = "aftstarboardsolar";
 	name = "Aft Starboard Solar Control"
@@ -106466,7 +106427,9 @@
 "eae" = (
 /obj/structure/table/standard,
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /turf/simulated/floor/tiled,
 /area/rnd/xenobiology)
 "eaf" = (
@@ -108759,6 +108722,84 @@
 /turf/simulated/floor/plating,
 /area/quartermaster/foyer)
 
+"aTX" = (
+/obj/structure/table/reinforced,
+/obj/machinery/chem_hot_plate,
+/obj/machinery/chem_condenser,
+/obj/machinery/firealarm{
+	pixel_y = 24
+	},
+/obj/effect/floor_decal/borderfloorwhite{
+	dir = 1
+	},
+/obj/effect/floor_decal/corner/beige/border{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/white,
+/area/medical/chemistry)
+"aXg" = (
+/obj/structure/table/reinforced,
+/obj/machinery/chem_hot_plate,
+/obj/structure/extinguisher_cabinet{
+	pixel_y = 30
+	},
+/obj/effect/floor_decal/borderfloorwhite{
+	dir = 1
+	},
+/obj/effect/floor_decal/corner/beige/border{
+	dir = 1
+	},
+/turf/simulated/floor/tiled/white,
+/area/medical/chemistry)
+"bkK" = (
+/obj/structure/table/reinforced,
+/obj/machinery/chem_ice_machine,
+/obj/item/storage/box/beakers,
+/obj/item/reagent_containers/dropper,
+/obj/item/storage/box/chem_funnels,
+/obj/item/stack/material/phoron,
+/obj/item/stack/material/phoron,
+/obj/item/stack/material/phoron,
+/obj/item/stack/material/phoron,
+/obj/item/stack/material/phoron,
+/turf/simulated/floor/tiled/white,
+/area/medical/chemistry)
+"bJw" = (
+/obj/structure/table/reinforced,
+/obj/item/reagent_containers/glass/basin,
+/obj/item/mass_spectrometer/adv,
+/obj/item/clothing/glasses/science,
+/obj/item/clothing/glasses/science,
+/obj/machinery/computer/security/telescreen/entertainment{
+	pixel_y = 32
+	},
+/obj/machinery/light{
+	dir = 1
+	},
+/obj/effect/floor_decal/borderfloorwhite{
+	dir = 1
+	},
+/obj/effect/floor_decal/corner/beige/border{
+	dir = 1
+	},
+/obj/item/reagent_containers/glass/beaker/large,
+/obj/item/reagent_containers/glass/beaker/large,
+/obj/item/reagent_containers/dropper,
+/obj/item/reagent_containers/dropper,
+/turf/simulated/floor/tiled/white,
+/area/medical/chemistry)
+"bJx" = (
+/obj/structure/table/glass,
+/obj/machinery/light,
+/obj/effect/floor_decal/borderfloorwhite/corner{
+	dir = 8
+	},
+/obj/effect/floor_decal/corner/beige/bordercorner{
+	dir = 8
+	},
+/obj/machinery/chem_hot_plate,
+/turf/simulated/floor/tiled/white,
+/area/medical/chemistry)
 (1,1,1) = {"
 aaa
 aaa
@@ -174294,6 +174335,7 @@ aaa
 aaa
 aaa
 "}
+
 (1,1,2) = {"
 aaa
 aaa
@@ -208598,8 +208640,8 @@ bWG
 bZO
 cbH
 ceM
-aTX
-aLx
+chU
+bYj
 dMr
 bWD
 dxo
@@ -208855,7 +208897,7 @@ bWD
 cbe
 cbJ
 ceN
-aLx
+bYj
 cny
 ecF
 bWD
@@ -218632,12 +218674,12 @@ cpu
 crh
 cdv
 cuG
-cws
+aTX
 cyr
 czX
 cBN
 czX
-cEV
+bJx
 cGx
 cIj
 cJS
@@ -218889,8 +218931,8 @@ cie
 cri
 csX
 cuG
-cwt
-cys
+bJw
+bkK
 czY
 cBM
 cDp
@@ -219146,11 +219188,11 @@ cin
 cdt
 cfm
 cuG
-cwu
+aXg
 cyr
 czX
 cBK
-czX
+aLx
 cEX
 cww
 cIl
@@ -239829,6 +239871,7 @@ aaa
 aaa
 aaa
 "}
+
 (1,1,3) = {"
 aaa
 aaa

@@ -2,20 +2,19 @@
 	name = MAT_RESIN
 	icon_colour = "#ffffff" // No longer needed
 	icon_base = "resin"
-	integrity = 50 // Same as wood.
-	hardness = 15 // Same as wood.
+	toughness = 25
+	strength = 15 // Same as wood.
 	table_icon_base = "stone"
 	dooropen_noise = SFX_EFFECTS_ATTACKBLOB
 	door_icon_base = "resin"
 	icon_reinf = "reinf_mesh"
-	melting_point = T0C+300
+	heat_resistance = 8.1
 	sheet_singular_name = "blob"
 	sheet_plural_name = "blobs"
-	conductive = 0
-	explosion_resistance = 60
 	radiation_resistance = 10
 	stack_type = /obj/item/stack/material/resin
 	supply_conversion_value = 2
+	conductivity = 2
 
 /datum/material/resin/can_open_material_door(mob/living/user)
 	var/mob/living/carbon/M = user

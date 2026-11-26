@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section, Table, Tooltip } from 'tgui-core/components';
-
+import type { ComputerFabricatorActions } from '../generated/ComputerFabricator';
 import type { Data } from './types';
 
 export const CfStep2 = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ComputerFabricatorActions>();
 
   const {
     totalprice,

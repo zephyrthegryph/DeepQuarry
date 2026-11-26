@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Client lighting: a light's glow no longer sits on the wall beside it, so it cannot be seen from the far side."

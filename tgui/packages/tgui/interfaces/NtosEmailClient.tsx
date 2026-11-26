@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { NtosWindow } from 'tgui/layouts';
 import {
   AnimatedNumber,
@@ -6,62 +7,24 @@ import {
   Button,
   Input,
   LabeledList,
-  ProgressBar,
   Section,
   Stack,
   Table,
   Tabs,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
+import { sanitizeText } from '../sanitize';
+import type {
+  NtosEmailClientActions,
+  NtosEmailClientData,
+} from './generated/NtosEmailClient';
 
-type Data = {
-  PC_device_theme: string;
-  accounts: account[] | null;
-  addressbook: BooleanLike;
-  cur_attachment_filename: string | null;
-  cur_attachment_size: number | null;
-  cur_body: string | null;
-  cur_hasattachment: BooleanLike;
-  cur_source: string | null;
-  cur_timestamp: string | null;
-  cur_title: string | null;
-  cur_uid: string | null;
-  current_account: account | null;
-  down_filename: string | null;
-  down_progress: number | null;
-  down_size: number | null;
-  down_speed: number | null;
-  downloading: BooleanLike;
-  error: string | null;
-  folder: string | null;
-  label_deleted: string | null;
-  label_inbox: string | null;
-  label_spam: string | null;
-  messagecount: number | null;
-  messages: message[] | null;
-  msg_attachment_filename: string | null;
-  msg_attachment_size: number | null;
-  msg_body: string | null;
-  msg_hasattachment: BooleanLike;
-  msg_recipient: string | null;
-  msg_title: string | null;
-  new_message: BooleanLike;
-  stored_login: string | null;
-  stored_password: string | null;
-};
-
-type message = {
-  title: string;
-  body: string;
-  source: string;
-  timestamp: string;
-  uid: string;
-};
+type Data = NtosEmailClientData;
 
 type account = { login: string };
 
 export const NtosEmailClient = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, NtosEmailClientActions>();
 
   const { PC_device_theme, error, downloading, current_account } = data;
 
@@ -83,7 +46,7 @@ export const NtosEmailClient = (props) => {
 };
 
 const NtosEmailClientDownloading = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, NtosEmailClientActions>();
 
   const { down_filename, down_progress, down_size, down_speed } = data;
 
@@ -96,27 +59,26 @@ const NtosEmailClientDownloading = (props) => {
         <LabeledList.Item label="Speed">
           <AnimatedNumber value={down_speed!} /> GQ/s
         </LabeledList.Item>
-        <LabeledList.Item label="Progress">
-          <ProgressBar
-            color="good"
-            value={down_progress!}
-            maxValue={down_size!}
-          >
-            {down_progress +
-              '/' +
-              down_size +
-              ' (' +
-              ((down_progress! / down_size!) * 100).toFixed(1) +
-              '%)'}
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Progress"
+          color="good"
+          value={down_progress!}
+          maxValue={down_size!}
+        >
+          {down_progress +
+            '/' +
+            down_size +
+            ' (' +
+            ((down_progress! / down_size!) * 100).toFixed(1) +
+            '%)'}
+        </StatBar>
       </LabeledList>
     </Section>
   );
 };
 
 const NtosEmailClientContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailClientActions>();
 
   const { current_account, addressbook, new_message, cur_title, accounts } =
     data;
@@ -169,7 +131,7 @@ const NtosEmailClientContent = (props) => {
 };
 
 const NtosEmailClientInbox = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailClientActions>();
 
   const { folder, messagecount, messages } = data;
 
@@ -239,7 +201,7 @@ const NtosEmailClientInbox = (props) => {
 export const NtosEmailClientViewMessage = (props: {
   administrator?: BooleanLike;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailClientActions>();
 
   // This is used to let NtosEmailAdministration use the same code for spying on emails
   // Administrators don't have access to attachments or the message UID, so we need to avoid
@@ -262,7 +224,7 @@ export const NtosEmailClientViewMessage = (props: {
       title={cur_title}
       buttons={
         administrator ? (
-          <Button icon="times" onClick={() => act('back')} />
+          <Button icon="times" onClick={() => act('cancel')} />
         ) : (
           <Stack>
             <Stack.Item>
@@ -304,7 +266,7 @@ export const NtosEmailClientViewMessage = (props: {
                 icon="times"
                 tooltip="Close"
                 tooltipPosition="left"
-                onClick={() => act('cancel', { cancel: cur_uid })}
+                onClick={() => act('cancel')}
               />
             </Stack.Item>
           </Stack>
@@ -322,9 +284,10 @@ export const NtosEmailClientViewMessage = (props: {
           ''}
         <LabeledList.Item label="Message" verticalAlign="top">
           <Section>
-            {/** biome-ignore lint/security/noDangerouslySetInnerHtml: is only ever passed data that has passed through pencode2html
-             * It should be safe enough to support pencode in this way. */}
-            <div dangerouslySetInnerHTML={{ __html: cur_body! }} />
+            <div
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: only pencode2html output reaches it, so pencode is safe enough here
+              dangerouslySetInnerHTML={{ __html: sanitizeText(cur_body ?? '') }}
+            />
           </Section>
         </LabeledList.Item>
       </LabeledList>
@@ -333,7 +296,7 @@ export const NtosEmailClientViewMessage = (props: {
 };
 
 const NtosEmailClientAddressBook = (props: { accounts: account[] }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, NtosEmailClientActions>();
 
   const { accounts } = props;
 
@@ -344,7 +307,7 @@ const NtosEmailClientAddressBook = (props: { accounts: account[] }) => {
         <Button
           color="bad"
           icon="times"
-          onClick={() => act('set_recipient', { set_recipient: null })}
+          onClick={() => act('set_recipient', { set_recipient: '' })}
         />
       }
     >
@@ -362,7 +325,7 @@ const NtosEmailClientAddressBook = (props: { accounts: account[] }) => {
 };
 
 const NtosEmailClientNewMessage = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailClientActions>();
 
   const {
     msg_title = '',
@@ -445,9 +408,12 @@ const NtosEmailClientNewMessage = (props) => {
           <Stack>
             <Stack.Item grow>
               <Section width="99%" inline>
-                {/** biome-ignore lint/security/noDangerouslySetInnerHtml: is only ever passed data that has passed through pencode2html
-                 * It should be safe enough to support pencode in this way. */}
-                <div dangerouslySetInnerHTML={{ __html: msg_body! }} />
+                <div
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: only pencode2html output reaches it, so pencode is safe enough here
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeText(msg_body ?? ''),
+                  }}
+                />
               </Section>
             </Stack.Item>
             <Stack.Item>
@@ -467,7 +433,7 @@ const NtosEmailClientNewMessage = (props) => {
 };
 
 const NtosEmailClientError = (props: { error: string }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, NtosEmailClientActions>();
   const { error } = props;
   return (
     <Section
@@ -484,7 +450,7 @@ const NtosEmailClientError = (props: { error: string }) => {
 };
 
 const NtosEmailClientLogin = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosEmailClientActions>();
 
   const { stored_login = '', stored_password = '' } = data;
 

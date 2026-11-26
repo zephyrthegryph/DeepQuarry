@@ -315,7 +315,7 @@ PROC_SUMMARY(/proc/schema_check) // vars[] / call() dispatcher: the walk cannot 
 			return list(value, null)
 		if(SCHEMA_TEXT)
 			if(boundary && isnum(value) && value == value)
-				value = "[value]" // a window sends a typed-in or selected number for a text field: its text (the legacy UI_ARG_TEXT parse)
+				value = num2text(value, 16) // a window sends a typed-in or selected number (a handle too) for a text field: its whole-number text, never the 6-digit "1.04858e+06" form
 			if(!istext(value))
 				return list(SCHEMA_REJECT, "[value] is not text")
 			var/t = value

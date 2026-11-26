@@ -5,6 +5,7 @@
 
 CAPABILITIES(/datum/integrated_io/list)
 	interface("ListPin", state = nameof(GLOB.tgui_always_state))
+	ui_shape(name = schema_text(), length = int(), entries = list_of(row(pos = int(), display = schema_text())))
 	op("add", ui_act("add"), then(PROC_REF(ui_act_add)))
 	op("swap", ui_act("swap"), then(PROC_REF(ui_act_swap)))
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))

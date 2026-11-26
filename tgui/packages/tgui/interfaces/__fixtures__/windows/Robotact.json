@@ -1,0 +1,73 @@
+{
+	"modules_static": [
+		{
+			"ref": 6101,
+			"name": "welding tool",
+			"icon": "icons/obj/tools.dmi",
+			"icon_state": "welder"
+		},
+		{
+			"ref": 6102,
+			"name": "wrench",
+			"icon": "icons/obj/tools.dmi",
+			"icon_state": "wrench"
+		},
+		{
+			"ref": 6103,
+			"name": "crowbar",
+			"icon": "icons/obj/tools.dmi",
+			"icon_state": "crowbar"
+		}
+	],
+	"emag_modules_static": [
+		{
+			"ref": 6104,
+			"name": "energy blade",
+			"icon": "icons/obj/weapons.dmi",
+			"icon_state": "blade"
+		}
+	],
+	"module_name": "Engineering",
+	"theme": "ntos",
+	"name": "Unit 7",
+	"ai": "Aegis",
+	"charge": 9000,
+	"max_charge": 10000,
+	"health": 85,
+	"max_health": 100,
+	"light_color": "#FFFFFF",
+	"weapon_lock": 0,
+	"modules": { "6101": 1, "6102": 2, "6103": 0 },
+	"emag_modules": { "6104": 0 },
+	"diag_functional": 1,
+	"components": [
+		{
+			"key": 1,
+			"name": "actuator",
+			"band": "minor",
+			"idle_usage": 5,
+			"is_powered": 1,
+			"toggled": 1
+		},
+		{
+			"key": 2,
+			"name": "radio",
+			"band": "uninjured",
+			"idle_usage": 1,
+			"is_powered": 1,
+			"toggled": 1
+		},
+		{
+			"key": 3,
+			"name": "power cell",
+			"band": null,
+			"idle_usage": 0,
+			"is_powered": 0,
+			"toggled": 1
+		}
+	],
+	"faults": [
+		{ "name": "sparking wire", "band": "moderate", "location": "actuator" },
+		{ "name": "scorched plating", "band": "minor", "location": "chassis" }
+	]
+}

@@ -5,23 +5,14 @@
 // pages show name + scribble only.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
 import { HtmlRenderer } from './common/HtmlRenderer';
-
-type Kind = 'paper' | 'photo' | 'text';
-
-type Data = {
-  page: number;
-  total_pages: number;
-  page_name: string;
-  page_kind: Kind;
-  page_info: string;
-  scribble: string;
-};
+import type { BookBundleActions, BookBundleData } from './generated/BookBundle';
 
 export const BookBundle = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<BookBundleData, BookBundleActions>();
   const { page, total_pages, page_name, page_kind, page_info, scribble } = data;
   const isFirst = page === 1;
   const isLast = page === total_pages;
@@ -33,9 +24,9 @@ export const BookBundle = () => {
           <Button icon="arrow-left" onClick={() => act('prev_page')}>
             {isFirst ? 'Front' : 'Previous Page'}
           </Button>{' '}
-          <Box inline color="label" mx={2}>
+          <Label inline mx={2}>
             Page {page} of {total_pages}
-          </Box>
+          </Label>
           <Button icon="arrow-right" onClick={() => act('next_page')}>
             {isLast ? 'Back' : 'Next Page'}
           </Button>
@@ -43,9 +34,9 @@ export const BookBundle = () => {
         <Section title={page_kind === 'photo' ? page_name : ''}>
           {page_kind === 'photo' ? (
             <>
-              <Box italic color="label" mb={1}>
+              <Label italic mb={1}>
                 Photo: {page_name}
-              </Box>
+              </Label>
               {scribble ? (
                 <Box>
                   Written on the back:{' '}

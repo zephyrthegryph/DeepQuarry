@@ -1,0 +1,751 @@
+{
+	"items": {
+		"Weapons": {
+			"Scepter": {
+				"name": "Scepter",
+				"price": 500,
+				"restriction": "weapons"
+			},
+			"Chain of Command": {
+				"name": "Chain of Command",
+				"price": 250,
+				"restriction": "weapons"
+			},
+			"Size Gun": {
+				"name": "Size Gun",
+				"price": 100,
+				"restriction": "weapons"
+			},
+			"Advanced Particle Rifle": {
+				"name": "Advanced Particle Rifle",
+				"price": 500,
+				"restriction": "weapons"
+			},
+			"Temperature Gun": {
+				"name": "Temperature Gun",
+				"price": 250,
+				"restriction": "weapons"
+			},
+			"Alien Pistol": {
+				"name": "Alien Pistol",
+				"price": 1000,
+				"restriction": "weapons"
+			},
+			"Floral Gun": {
+				"name": "Floral Gun",
+				"price": 250,
+				"restriction": "weapons"
+			},
+			"Net Gun": {
+				"name": "Net Gun",
+				"price": 500,
+				"restriction": "weapons"
+			}
+		},
+		"Gear": {
+			"Experimental Welder": {
+				"name": "Experimental Welder",
+				"price": 500,
+				"restriction": "gear"
+			},
+			"Alien Belt": {
+				"name": "Alien Belt",
+				"price": 500,
+				"restriction": "gear"
+			},
+			"Alien Armor": {
+				"name": "Alien Armor",
+				"price": 1000,
+				"restriction": "gear"
+			},
+			"Monocoole": {
+				"name": "Monocoole",
+				"price": 1000,
+				"restriction": "gear"
+			},
+			"Chameleon Tie": {
+				"name": "Chameleon Tie",
+				"price": 250,
+				"restriction": "gear"
+			},
+			"Chemsprayer": {
+				"name": "Chemsprayer",
+				"price": 250,
+				"restriction": "gear"
+			},
+			"Bluespace Beaker": {
+				"name": "Bluespace Beaker",
+				"price": 200,
+				"restriction": "gear"
+			},
+			"Cryo Beaker": {
+				"name": "Cryo Beaker",
+				"price": 200,
+				"restriction": "gear"
+			}
+		},
+		"Clothing": {
+			"Purple cap": {
+				"name": "Purple cap",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"Shark mask": {
+				"name": "Shark mask",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"Pig mask": {
+				"name": "Pig mask",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"Luchador mask": {
+				"name": "Luchador mask",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"Horse mask": {
+				"name": "Horse mask",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"Goblin mask": {
+				"name": "Goblin mask",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"Fake moustache": {
+				"name": "Fake moustache",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"Dolphin mask": {
+				"name": "Dolphin mask",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"Demon mask": {
+				"name": "Demon mask",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"Chameleon mask": {
+				"name": "Chameleon mask",
+				"price": 250,
+				"restriction": "clothing"
+			},
+			"Ian costume": {
+				"name": "Ian costume",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"Carp costume": {
+				"name": "Carp costume",
+				"price": 50,
+				"restriction": "clothing"
+			},
+			"White bunnygirl outfit": {
+				"name": "White bunnygirl outfit",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Black bunnygirl outfit": {
+				"name": "Black bunnygirl outfit",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Sexy mime costume": {
+				"name": "Sexy mime costume",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Sexy clown costume": {
+				"name": "Sexy clown costume",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Catgirl costume": {
+				"name": "Catgirl costume",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Wizard costume": {
+				"name": "Wizard costume",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Chicken costume": {
+				"name": "Chicken costume",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Gladiator costume": {
+				"name": "Gladiator costume",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Pirate costume": {
+				"name": "Pirate costume",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Commie costume": {
+				"name": "Commie costume",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Imperium monk costume": {
+				"name": "Imperium monk costume",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Plague doctor costume": {
+				"name": "Plague doctor costume",
+				"price": 100,
+				"restriction": "clothing"
+			},
+			"Witch costume": {
+				"name": "Witch costume",
+				"price": 100,
+				"restriction": "clothing"
+			}
+		},
+		"Miscellaneous": {
+			"Toy sword": {
+				"name": "Toy sword",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Waterflower": {
+				"name": "Waterflower",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Horse stick": {
+				"name": "Horse stick",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"katana": {
+				"name": "katana",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Conch": {
+				"name": "Conch",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Eight ball": {
+				"name": "Eight ball",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Foam sword": {
+				"name": "Foam sword",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Foam crossbow": {
+				"name": "Foam crossbow",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Whistle": {
+				"name": "Whistle",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Golden cup": {
+				"name": "Golden cup",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Quality cigars": {
+				"name": "Quality cigars",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Casino wallet (kept after event)": {
+				"name": "Casino wallet (kept after event)",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Casino cards": {
+				"name": "Casino cards",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Casino Sentient Prize Collar": {
+				"name": "Casino Sentient Prize Collar",
+				"price": 50,
+				"restriction": "misc"
+			},
+			"Instrument: Accordion": {
+				"name": "Instrument: Accordion",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Banjo": {
+				"name": "Instrument: Banjo",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Musical bikehorn": {
+				"name": "Instrument: Musical bikehorn",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Electric guitar": {
+				"name": "Instrument: Electric guitar",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Glockenspiel": {
+				"name": "Instrument: Glockenspiel",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Guitar": {
+				"name": "Instrument: Guitar",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Harmonica": {
+				"name": "Instrument: Harmonica",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Keytar": {
+				"name": "Instrument: Keytar",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Synthethic Piano": {
+				"name": "Instrument: Synthethic Piano",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Recorder": {
+				"name": "Instrument: Recorder",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Saxophone": {
+				"name": "Instrument: Saxophone",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Trombone": {
+				"name": "Instrument: Trombone",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Trumpet": {
+				"name": "Instrument: Trumpet",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Violin": {
+				"name": "Instrument: Violin",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Xylophone": {
+				"name": "Instrument: Xylophone",
+				"price": 100,
+				"restriction": "misc"
+			},
+			"Instrument: Golden fiddle": {
+				"name": "Instrument: Golden fiddle",
+				"price": 250,
+				"restriction": "misc"
+			},
+			"Instrument: Trumpet (warning: spooky)": {
+				"name": "Instrument: Trumpet (warning: spooky)",
+				"price": 200,
+				"restriction": "misc"
+			},
+			"Instrument: Trombone (warning: spooky)": {
+				"name": "Instrument: Trombone (warning: spooky)",
+				"price": 200,
+				"restriction": "misc"
+			},
+			"Instrument: Saxophone (warning: spooky)": {
+				"name": "Instrument: Saxophone (warning: spooky)",
+				"price": 200,
+				"restriction": "misc"
+			},
+			"Instrument: Musical Moth (you monster)": {
+				"name": "Instrument: Musical Moth (you monster)",
+				"price": 100,
+				"restriction": "misc"
+			}
+		},
+		"Drinks": {
+			"Redeemer's brew": {
+				"name": "Redeemer's brew",
+				"price": 50,
+				"restriction": "drinks"
+			},
+			"Poison wine": {
+				"name": "Poison wine",
+				"price": 50,
+				"restriction": "drinks"
+			},
+			"Patron": {
+				"name": "Patron",
+				"price": 50,
+				"restriction": "drinks"
+			},
+			"Holy water": {
+				"name": "Holy water",
+				"price": 50,
+				"restriction": "drinks"
+			},
+			"Goldschlager": {
+				"name": "Goldschlager",
+				"price": 50,
+				"restriction": "drinks"
+			},
+			"Champagne": {
+				"name": "Champagne",
+				"price": 50,
+				"restriction": "drinks"
+			},
+			"Bottle of Nothing": {
+				"name": "Bottle of Nothing",
+				"price": 50,
+				"restriction": "drinks"
+			},
+			"Whiskey bliss": {
+				"name": "Whiskey bliss",
+				"price": 50,
+				"restriction": "drinks"
+			},
+			"Snaps": {
+				"name": "Snaps",
+				"price": 50,
+				"restriction": "drinks"
+			}
+		},
+		"Pets": {
+			"Casino Geese": {
+				"name": "Casino Geese",
+				"price": 200,
+				"restriction": "pets"
+			},
+			"Goat": {
+				"name": "Goat",
+				"price": 150,
+				"restriction": "pets"
+			},
+			"Armadillo": {
+				"name": "Armadillo",
+				"price": 150,
+				"restriction": "pets"
+			},
+			"Cat": {
+				"name": "Cat",
+				"price": 150,
+				"restriction": "pets"
+			},
+			"Chicken": {
+				"name": "Chicken",
+				"price": 200,
+				"restriction": "pets"
+			},
+			"Cow": {
+				"name": "Cow",
+				"price": 200,
+				"restriction": "pets"
+			},
+			"Corgi": {
+				"name": "Corgi",
+				"price": 200,
+				"restriction": "pets"
+			},
+			"Fox": {
+				"name": "Fox",
+				"price": 150,
+				"restriction": "pets"
+			},
+			"Lizard": {
+				"name": "Lizard",
+				"price": 150,
+				"restriction": "pets"
+			},
+			"Penguin": {
+				"name": "Penguin",
+				"price": 150,
+				"restriction": "pets"
+			},
+			"Snake": {
+				"name": "Snake",
+				"price": 200,
+				"restriction": "pets"
+			},
+			"Yithian": {
+				"name": "Yithian",
+				"price": 200,
+				"restriction": "pets"
+			},
+			"Tindalos": {
+				"name": "Tindalos",
+				"price": 200,
+				"restriction": "pets"
+			},
+			"Fennec": {
+				"name": "Fennec",
+				"price": 300,
+				"restriction": "pets"
+			},
+			"Red panda": {
+				"name": "Red panda",
+				"price": 300,
+				"restriction": "pets"
+			},
+			"Horse": {
+				"name": "Horse",
+				"price": 300,
+				"restriction": "pets"
+			},
+			"Otie": {
+				"name": "Otie",
+				"price": 500,
+				"restriction": "pets"
+			},
+			"Absolute unit of an Otie": {
+				"name": "Absolute unit of an Otie",
+				"price": 500,
+				"restriction": "pets"
+			},
+			"Zorgoia": {
+				"name": "Zorgoia",
+				"price": 500,
+				"restriction": "pets"
+			}
+		},
+		"Mechs and Rigs": {
+			"Mech:Mining Ripley": {
+				"name": "Mech:Mining Ripley",
+				"price": 1000,
+				"restriction": "mechs"
+			},
+			"Mech:Firefighter Ripley": {
+				"name": "Mech:Firefighter Ripley",
+				"price": 750,
+				"restriction": "mechs"
+			},
+			"Mech:Serenity": {
+				"name": "Mech:Serenity",
+				"price": 1500,
+				"restriction": "mechs"
+			},
+			"Mech:Odysseus": {
+				"name": "Mech:Odysseus",
+				"price": 1250,
+				"restriction": "mechs"
+			},
+			"Mech:Phazon Scuttlebug": {
+				"name": "Mech:Phazon Scuttlebug",
+				"price": 2000,
+				"restriction": "mechs"
+			},
+			"Mech:Phazon Janus": {
+				"name": "Mech:Phazon Janus",
+				"price": 2500,
+				"restriction": "mechs"
+			},
+			"Mech:Scarab": {
+				"name": "Mech:Scarab",
+				"price": 500,
+				"restriction": "mechs"
+			},
+			"Mech:Shuttlepod": {
+				"name": "Mech:Shuttlepod",
+				"price": 250,
+				"restriction": "mechs"
+			},
+			"Mech:Shuttlecraft": {
+				"name": "Mech:Shuttlecraft",
+				"price": 500,
+				"restriction": "mechs"
+			},
+			"Rig: Solgov engineering hardsuit control module": {
+				"name": "Rig: Solgov engineering hardsuit control module",
+				"price": 500,
+				"restriction": "mechs"
+			},
+			"Rig: Solgov medical hardsuit control module": {
+				"name": "Rig: Solgov medical hardsuit control module",
+				"price": 500,
+				"restriction": "mechs"
+			},
+			"Rig: Advanced hardsuit control module": {
+				"name": "Rig: Advanced hardsuit control module",
+				"price": 500,
+				"restriction": "mechs"
+			},
+			"Rig: Pursuit hardsuit control module": {
+				"name": "Rig: Pursuit hardsuit control module",
+				"price": 750,
+				"restriction": "mechs"
+			},
+			"Rig: Combat hardsuit control module": {
+				"name": "Rig: Combat hardsuit control module",
+				"price": 750,
+				"restriction": "mechs"
+			},
+			"Rig: ERT-J suit control module (Elite Janitor NT approved)": {
+				"name": "Rig: ERT-J suit control module (Elite Janitor NT approved)",
+				"price": 250,
+				"restriction": "mechs"
+			},
+			"Rig: Augmented tie (Elite Paper-Pusher NT approved)": {
+				"name": "Rig: Augmented tie (Elite Paper-Pusher NT approved)",
+				"price": 250,
+				"restriction": "mechs"
+			},
+			"Rig: Industrial suit control module": {
+				"name": "Rig: Industrial suit control module",
+				"price": 300,
+				"restriction": "mechs"
+			},
+			"Rig: Rescue suit control module": {
+				"name": "Rig: Rescue suit control module",
+				"price": 300,
+				"restriction": "mechs"
+			}
+		},
+		"Implants and Genemods": {
+			"Implanter (Remember to get one unless you want to borrow from station!)": {
+				"name": "Implanter (Remember to get one unless you want to borrow from station!)",
+				"price": 100,
+				"restriction": "implants"
+			},
+			"Implant: Tazer": {
+				"name": "Implant: Tazer",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Implant: Medkit": {
+				"name": "Implant: Medkit",
+				"price": 500,
+				"restriction": "implants"
+			},
+			"Implant: Shades": {
+				"name": "Implant: Shades",
+				"price": 750,
+				"restriction": "implants"
+			},
+			"Implant: Sprinter": {
+				"name": "Implant: Sprinter",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Implant: Toolkit": {
+				"name": "Implant: Toolkit",
+				"price": 500,
+				"restriction": "implants"
+			},
+			"Implant: Language": {
+				"name": "Implant: Language",
+				"price": 500,
+				"restriction": "implants"
+			},
+			"Implant: Analyzer": {
+				"name": "Implant: Analyzer",
+				"price": 500,
+				"restriction": "implants"
+			},
+			"Implant: Size control": {
+				"name": "Implant: Size control",
+				"price": 500,
+				"restriction": "implants"
+			},
+			"Implant: Adrenaline": {
+				"name": "Implant: Adrenaline",
+				"price": 500,
+				"restriction": "implants"
+			},
+			"Implant: Armblade": {
+				"name": "Implant: Armblade",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Implant: Wrist dartgun": {
+				"name": "Implant: Wrist dartgun",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Implant: Freedom": {
+				"name": "Implant: Freedom",
+				"price": 500,
+				"restriction": "implants"
+			},
+			"Implant: Handblade": {
+				"name": "Implant: Handblade",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Implant: Hand laser": {
+				"name": "Implant: Hand laser",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Implant: Loyalty": {
+				"name": "Implant: Loyalty",
+				"price": 500,
+				"restriction": "implants"
+			},
+			"Implant: Restraining bolt": {
+				"name": "Implant: Restraining bolt",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Implant: Surge": {
+				"name": "Implant: Surge",
+				"price": 500,
+				"restriction": "implants"
+			},
+			"Implant: Wrist sword": {
+				"name": "Implant: Wrist sword",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Genemod: No breath": {
+				"name": "Genemod: No breath",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Genemod: Regenerate": {
+				"name": "Genemod: Regenerate",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Genemod: Remote view": {
+				"name": "Genemod: Remote view",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Genemod: Sprinter": {
+				"name": "Genemod: Sprinter",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Genemod: Telekinesis": {
+				"name": "Genemod: Telekinesis",
+				"price": 1000,
+				"restriction": "implants"
+			},
+			"Genemod: X-ray": {
+				"name": "Genemod: X-ray",
+				"price": 1000,
+				"restriction": "implants"
+			}
+		},
+		"Event": []
+	}
+}

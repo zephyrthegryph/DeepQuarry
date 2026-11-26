@@ -54,6 +54,13 @@
 /// Though not the maximum renderable ByondUis within tgui, this is the maximum that the server will manage per-UI
 #define TGUI_MANAGED_BYONDUI_LIMIT 10
 
+/// The most distinct shared-state keys (useSharedState) one tgui host datum keeps; a new key past it is refused, an existing key may still change.
+#define TGUI_SHARED_STATE_MAX_KEYS 64
+/// The longest shared-state key a client may set, in characters.
+#define TGUI_SHARED_STATE_MAX_KEY_LEN 128
+/// The longest shared-state value (JSON text) a client may set, in characters.
+#define TGUI_SHARED_STATE_MAX_VALUE_LEN 16384
+
 // These are defines instead of being inline, as they're being sent over
 // from tgui-core, so can't be easily played with
 #define TGUI_MANAGED_BYONDUI_TYPE_RENDER "renderByondUi"
@@ -83,3 +90,9 @@
 #define UI_PUSH_DATA (1<<0)
 #define UI_PUSH_INTERACT (1<<1)
 #define UI_PUSH_STATUS (1<<2)
+
+/// What a column part (code/library/ui/tgui/column_part.dm) is in the right-hand column's page.
+#define COLUMN_PART_TGUI "tgui"
+/// The head of a column window's message (column_part.dm wrap_message()): `{"type":"col/msg","payload":{"wid":"` url-encoded.
+#define COLUMN_ENVELOPE_HEAD "%7b%22type%22%3a%22col/msg%22%2c%22payload%22%3a%7b%22wid%22%3a%22"
+

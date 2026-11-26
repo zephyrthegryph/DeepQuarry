@@ -1,38 +1,3 @@
-/datum/resource/uses
-	res_id = RES_USES
-	name = "uses"
-
-/datum/resource/uses/holder_of(datum/act/op/A)
-	return A.held
-
-/datum/resource/uses/available(datum/act/op/A)
-	var/n = op_var(A.held, "uses")
-	return isnum(n) ? n : 0
-
-/datum/resource/uses/commit(datum/reservation/R)
-	var/datum/D = R.held
-	if(D && ("uses" in D.vars))
-		D.vars["uses"] -= R.amount
-
-/// RES_CHARGE: the held item's cell charge, per use.
-/datum/resource/charge
-	res_id = RES_CHARGE
-	name = "charge"
-
-/datum/resource/charge/holder_of(datum/act/op/A)
-	return A.held
-
-/datum/resource/charge/available(datum/act/op/A)
-	var/atom/movable/AM = A.held
-	var/obj/item/cell/C = istype(AM) ? AM.get_cell() : null
-	return C ? C.charge : 0
-
-/datum/resource/charge/commit(datum/reservation/R)
-	var/atom/movable/AM = R.held
-	var/obj/item/cell/C = istype(AM) ? AM.get_cell() : null
-	if(!C || !C.use(R.amount))
-		return OP_FAILED
-
 /// RES_FUEL: the held tool's fuel (a welder).
 /datum/resource/fuel
 	res_id = RES_FUEL
@@ -149,20 +114,6 @@
 		call(D, "set_dark_energy")(new_value)
 	else
 		D.vars["dark_energy"] = new_value // ALLOW(api): a resource adapter spends the var it reads: its own state
-
-/// RES_BLOOD: the actor's blood volume.
-/datum/resource/blood
-	res_id = RES_BLOOD
-	name = "blood"
-
-/datum/resource/blood/available(datum/act/op/A)
-	var/n = op_var(A.actor, "blood_volume")
-	return isnum(n) ? n : 0
-
-/datum/resource/blood/commit(datum/reservation/R)
-	var/datum/D = R.holder
-	if(D && ("blood_volume" in D.vars))
-		D.vars["blood_volume"] -= R.amount
 
 /// RES_REAGENTS is the library's adapter: code/library/reagents/reagent_flow.dm (a transfer reserves the source's volume and the target's capacity).
 

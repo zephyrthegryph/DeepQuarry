@@ -2,13 +2,12 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Section } from 'tgui-core/components';
 import { toTitleCase } from 'tgui-core/string';
-
-type Data = { detail_color: string; color_list: Record<string, string> };
+import type { ICDetailerActions, ICDetailerData } from './generated/ICDetailer';
 
 export const ICDetailer = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<ICDetailerData, ICDetailerActions>();
 
-  const { detail_color, color_list } = data;
+  const { detail_color, color_list = {} } = data;
 
   return (
     <Window width={420} height={254}>
@@ -19,7 +18,7 @@ export const ICDetailer = (props) => {
               key={key}
               ml={0}
               mr={0}
-              mb={-0.4}
+              mb={0}
               mt={0}
               tooltip={toTitleCase(key)}
               tooltipPosition={i % 6 === 5 ? 'left' : 'right'}

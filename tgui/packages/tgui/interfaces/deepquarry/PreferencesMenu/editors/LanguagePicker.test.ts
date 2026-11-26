@@ -5,6 +5,7 @@ const meta = (name: string, restricted = false, desc = '') => ({
   name,
   desc,
   restricted,
+  default_key: '',
 });
 const entries: [string, ReturnType<typeof meta>][] = [
   ['Galcom', meta('Galcom', false, 'Common tongue')],
@@ -20,7 +21,6 @@ describe('filterLanguages', () => {
       entries,
       new Set(['Galcom', 'Sol Common', 'Hivemind']),
       new Set(),
-      '',
     );
     expect(rows.map(([k]) => k)).toEqual(['Galcom', 'Sol Common']);
   });
@@ -29,20 +29,11 @@ describe('filterLanguages', () => {
       entries,
       new Set(['Galcom']),
       new Set(['Secret']),
-      '',
     );
     expect(rows.map(([k]) => k)).toEqual(['Secret', 'Galcom']);
   });
   it('lists everything unrestricted when the server sent no pickable set', () => {
-    expect(filterLanguages(entries, null, new Set(), '')).toHaveLength(4);
-  });
-  it('searches name and description, case-insensitively', () => {
-    expect(
-      filterLanguages(entries, null, new Set(), 'SOL').map(([k]) => k),
-    ).toEqual(['Sol Common']);
-    expect(
-      filterLanguages(entries, null, new Set(), 'tongue').map(([k]) => k),
-    ).toEqual(['Galcom']);
+    expect(filterLanguages(entries, null, new Set())).toHaveLength(4);
   });
 });
 

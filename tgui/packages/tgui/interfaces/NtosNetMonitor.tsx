@@ -9,26 +9,15 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  NtosNetMonitorActions,
+  NtosNetMonitorData,
+} from './generated/NtosNetMonitor';
 
-type Data = {
-  ntnetstatus: BooleanLike;
-  ntnetrelays: number;
-  idsstatus: BooleanLike;
-  idsalarm: BooleanLike;
-  config_softwaredownload: BooleanLike;
-  config_peertopeer: BooleanLike;
-  config_communication: BooleanLike;
-  config_systemcontrol: BooleanLike;
-  ntnetlogs: { entry: string }[] | [];
-  minlogs: number;
-  maxlogs: number;
-  banned_nids: number[];
-  ntnetmaxlogs: number;
-};
+type Data = NtosNetMonitorData;
 
 export const NtosNetMonitor = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NtosNetMonitorActions>();
   const {
     ntnetrelays,
     ntnetstatus,
@@ -38,10 +27,10 @@ export const NtosNetMonitor = (props) => {
     config_systemcontrol,
     idsalarm,
     idsstatus,
-    ntnetmaxlogs,
-    maxlogs,
-    minlogs,
-    banned_nids,
+    ntnetmaxlogs = 0,
+    maxlogs = 0,
+    minlogs = 0,
+    banned_nids = [],
     ntnetlogs = [],
   } = data;
   return (
@@ -81,7 +70,7 @@ export const NtosNetMonitor = (props) => {
                 <Button
                   icon={config_softwaredownload ? 'power-off' : 'times'}
                   selected={config_softwaredownload}
-                  onClick={() => act('toggle_function', { id: '1' })}
+                  onClick={() => act('toggle_function', { id: 1 })}
                 >
                   {config_softwaredownload ? 'ENABLED' : 'DISABLED'}
                 </Button>
@@ -93,7 +82,7 @@ export const NtosNetMonitor = (props) => {
                 <Button
                   icon={config_peertopeer ? 'power-off' : 'times'}
                   selected={config_peertopeer}
-                  onClick={() => act('toggle_function', { id: '2' })}
+                  onClick={() => act('toggle_function', { id: 2 })}
                 >
                   {config_peertopeer ? 'ENABLED' : 'DISABLED'}
                 </Button>
@@ -105,7 +94,7 @@ export const NtosNetMonitor = (props) => {
                 <Button
                   icon={config_communication ? 'power-off' : 'times'}
                   selected={config_communication}
-                  onClick={() => act('toggle_function', { id: '3' })}
+                  onClick={() => act('toggle_function', { id: 3 })}
                 >
                   {config_communication ? 'ENABLED' : 'DISABLED'}
                 </Button>
@@ -117,7 +106,7 @@ export const NtosNetMonitor = (props) => {
                 <Button
                   icon={config_systemcontrol ? 'power-off' : 'times'}
                   selected={config_systemcontrol}
-                  onClick={() => act('toggle_function', { id: '4' })}
+                  onClick={() => act('toggle_function', { id: 4 })}
                 >
                   {config_systemcontrol ? 'ENABLED' : 'DISABLED'}
                 </Button>

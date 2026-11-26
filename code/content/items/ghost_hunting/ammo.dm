@@ -27,11 +27,6 @@
 	MATERIAL_BULK(MAT_STEEL, 210)
 
 //38
-/obj/item/ammo_magazine/s38/spectral
-	name = "speedloader (.38 spectral)"
-	icon_state = "T38"
-	ammo_type = /obj/item/ammo_casing/a38/spectral
-
 /obj/item/ammo_magazine/ammo_box/b38/spectral
 	name = "ammo box (.38 spectral)"
 	icon_state = "pistol_p"

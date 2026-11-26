@@ -55,6 +55,7 @@
 
 CAPABILITIES(/datum/spawnpanel)
 	interface("SpawnPanel", rights = R_SPAWN)
+	ui_shape(icon = nullable(schema_text()), iconState = nullable(schema_text()), precise_mode = enum(list("Off", "Target", "Mark", "Copy")), iconStates = list_of(schema_text()), selected_object = schema_text())
 	op("select-new-DMI", ui_act("select-new-DMI"), then(PROC_REF(ui_act_select_new_dmi)))
 	op("set-apply-icon-override", ui_act("set-apply-icon-override", arg("value", bool())), then(PROC_REF(ui_act_set_apply_icon_override)))
 	op("reset-DMI-icon", ui_act("reset-DMI-icon"), then(PROC_REF(ui_act_reset_dmi_icon)))
@@ -300,8 +301,6 @@ CAPABILITIES(/datum/spawnpanel)
 	var/list/data = list()
 	data["icon"] = selected_atom_icon
 	data["iconState"] = selected_atom_icon_state
-	data["iconSize"] = atom_icon_size
-	data["apply_icon_override"] = apply_icon_override
 	data["precise_mode"] = precise_mode
 	var/list/merged_1 = ui_data_datum_spawnpanel(A.actor, null, null)
 	if(islist(merged_1))

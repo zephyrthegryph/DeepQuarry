@@ -1,3 +1,3 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { SecretsData } from '../generated/Secrets';
 
-export type Data = { is_debugger: BooleanLike; is_funmin: BooleanLike };
+export type Data = SecretsData;

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { registerInterfacePreparer } from '../../interfacePreparation';
 import {
+  backendStateAtom,
   configAtom,
   gameDataAtom,
   gameStaticDataAtom,
@@ -119,5 +120,35 @@ describe('backend resume ordering', () => {
     resolvers.get('SecondInterface')?.();
     await Promise.resolve();
     expect(store.get(suspendedAtom)).toBeFalse();
+  });
+});
+
+describe('data replacement', () => {
+  const push = (payload: Record<string, unknown>) =>
+    update({
+      config: {
+        interface: { name: 'SameInterface' },
+        window: { generation: 9, size: [400, 400] },
+      } as Config,
+      ...payload,
+    } as unknown as UpdatePayload);
+
+  test('a key the server stops sending disappears', () => {
+    push({ data: { a: 1, b: 2 }, static_data: { s: 1 } });
+    push({ data: { a: 3 } });
+    expect(store.get(gameDataAtom)).toEqual({ a: 3 });
+    // A push without static data keeps the static block.
+    expect(store.get(gameStaticDataAtom)).toEqual({ s: 1 });
+  });
+
+  test('a payload without data keeps the previous data', () => {
+    push({ data: { a: 1 } });
+    push({});
+    expect(store.get(gameDataAtom)).toEqual({ a: 1 });
+  });
+
+  test('dynamic data wins over static data on a shared key', () => {
+    push({ data: { k: 'dynamic' }, static_data: { k: 'static', s: 1 } });
+    expect(store.get(backendStateAtom).data).toEqual({ k: 'dynamic', s: 1 });
   });
 });

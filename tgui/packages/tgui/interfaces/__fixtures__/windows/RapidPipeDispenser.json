@@ -1,0 +1,73 @@
+{
+	"category": 0,
+	"piping_layer": 3,
+	"pipe_layers": {
+		"Regular Layer": 1,
+		"Supply Layer": 2,
+		"Scrubber Layer": 4
+	},
+	"preview_rows": [
+		{
+			"previews": [
+				{
+					"selected": true,
+					"dir": "1",
+					"dir_name": "North",
+					"icon_state": "simple",
+					"flipped": false
+				},
+				{
+					"selected": false,
+					"dir": "2",
+					"dir_name": "South",
+					"icon_state": "simple",
+					"flipped": false
+				}
+			]
+		}
+	],
+	"categories": [
+		{
+			"cat_name": "Atmospherics",
+			"recipes": [
+				{
+					"pipe_name": "Pipe",
+					"pipe_index": 1,
+					"selected": true
+				},
+				{
+					"pipe_name": "Manifold",
+					"pipe_index": 2,
+					"selected": false
+				},
+				{
+					"pipe_name": "Bent Pipe",
+					"pipe_index": 3,
+					"selected": false
+				}
+			]
+		},
+		{
+			"cat_name": "Devices",
+			"recipes": [
+				{
+					"pipe_name": "Pump",
+					"pipe_index": 4,
+					"selected": false
+				},
+				{
+					"pipe_name": "Vent",
+					"pipe_index": 5,
+					"selected": false
+				}
+			]
+		}
+	],
+	"selected_color": "cyan",
+	"paint_colors": {
+		"grey": "#bbbbbb",
+		"cyan": "#00cccc",
+		"red": "#ff4444"
+	},
+	"mode": 1
+}

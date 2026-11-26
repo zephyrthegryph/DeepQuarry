@@ -14,6 +14,10 @@
 			lifeform_datum_new(src) // the lifecycle forms of a plain datum, its make() record and its owns_* starts = (code/engine/lifeforms/)
 		else if(has_declarations)
 			lifecycle_initialize(src)
-		if(rx_type_enrols(src))
+		// rx_type_enrols()'s per-type cache read inline: every datum made passes here (1.1 M at a full-map boot), almost none enrol.
+		var/enrols = GLOB?.rx_enrol_cache?[type]
+		if(isnull(enrols))
+			enrols = rx_type_enrols(src)
+		if(enrols)
 			rx_enrol(src) // per-instance every() work: a type that declares it is enrolled by being made
 	return ..()

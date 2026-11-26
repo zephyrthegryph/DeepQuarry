@@ -73,7 +73,7 @@
 		BIOGEN_ITEM("Robust Harvest", /obj/item/reagent_containers/glass/bottle/robustharvest, 5, 50),
 		BIOGEN_ITEM("Diethylamine", /obj/item/reagent_containers/glass/bottle/diethylamine, 5, 60),
 		BIOGEN_ITEM("Mutagen", /obj/item/reagent_containers/glass/bottle/mutagen, 15, 50),
-		BIOGEN_ITEM("Plant-B-Gone", /obj/item/reagent_containers/spray/plantbgone, 5, 50),
+		BIOGEN_ITEM("Plant-B-Gone", VARIANT(/obj/item/reagent_containers/spray/plantbgone), 5, 50),
 	)
 	.["Exotic Seeds"] = list(
 		BIOGEN_ITEM("Mystery seed pack", /obj/item/seeds/random, 5, 150),
@@ -95,7 +95,7 @@
 		BIOGEN_ITEM("Winter Coat", /obj/item/clothing/suit/storage/hooded/wintercoat, 1, 500),
 	)
 
-/obj/machinery/biogenerator/tgui_static_data(mob/user)
+/obj/machinery/biogenerator/ui_static_data(datum/act/eval/A)
 	var/list/static_data = list()
 
 	// Available items - in static data because we don't wanna compute this list every time! It hardly changes.
@@ -133,6 +133,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 	per_type(nameof(item_list), PROC_REF(build_item_list))
 	configure(uses_power(idle = 40))
 	interface("Biogenerator")
+	ui_shape(items = map_of(schema_text(), map_of(schema_text(), row(name = schema_text(), price = num(), max_amount = num(), reagent = nullable(bool())))), beaker = bool(), build_eff = num(), points = num(), processing = bool())
 	op("activate", ui_act("activate"), then(PROC_REF(ui_act_activate)))
 	op("detach", ui_act("detach"), then(PROC_REF(ui_act_detach)))
 	op("purchase", ui_act("purchase", arg("amount", num()), arg("cat", schema_text(4096)), arg("name", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
@@ -227,8 +228,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 		to_chat(user, span_notice("\The [src] is currently processing."))
 	else if(istype(O, /obj/item/storage/bag/plants))
 		var/i = 0
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents)
 			i++
 		if(i >= 10)
 			to_chat(user, span_notice("\The [src] is already full! Activate it."))
@@ -248,8 +248,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 		to_chat(user, span_notice("You cannot put this in \the [src]."))
 	else
 		var/i = 0
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents)
 			i++
 		if(i >= 10)
 			to_chat(user, span_notice("\The [src] is full! Activate it."))
@@ -275,8 +274,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 		to_chat(user, span_notice("The biogenerator is in the process of working."))
 		return
 	var/S = 0
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/reagent_containers/food/snacks/grown/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/item/reagent_containers/food/snacks/grown/I in contents)
 		S += 5
 		if(I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) < 0.1)
 			set_points(points + 1)

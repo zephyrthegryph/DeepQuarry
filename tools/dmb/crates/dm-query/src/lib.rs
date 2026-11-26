@@ -50,9 +50,6 @@ impl Key {
     }
 }
 
-#[path = "../../../shared/operational_error.rs"]
-mod operational_error;
-pub use operational_error::OperationalError;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum QueryError {
     /// The query (transitively) read itself.
@@ -61,22 +58,6 @@ pub enum QueryError {
     Missing(Key),
     /// The kind has no registered function.
     UnknownKind(Kind),
-    /// Never an Outcome, parameter or semantic refusal. Same-key retries rerun.
-    Operational { key: Key, error: OperationalError },
-}
-impl QueryError {
-    pub fn operational(key: Key, error: std::io::Error) -> Self {
-        Self::Operational {
-            key,
-            error: OperationalError::new(error),
-        }
-    }
-    pub fn into_operational(self) -> Result<OperationalError, Self> {
-        match self {
-            Self::Operational { error, .. } => Ok(error),
-            other => Err(other),
-        }
-    }
 }
 
 /// Result of one computation: the value, its content hash and an estimate of its size.
@@ -87,11 +68,7 @@ pub struct Outcome {
 }
 impl Outcome {
     pub fn new<T: Any + Send + Sync>(value: T, hash: Hash, bytes: usize) -> Self {
-        Self {
-            value: Arc::new(value),
-            hash,
-            bytes,
-        }
+        Self { value: Arc::new(value), hash, bytes }
     }
 }
 
@@ -190,10 +167,7 @@ impl Db {
     pub fn new() -> Self {
         Self {
             shards: (0..SHARDS)
-                .map(|_| Shard {
-                    state: Mutex::new(State::default()),
-                    wake: Condvar::new(),
-                })
+                .map(|_| Shard { state: Mutex::new(State::default()), wake: Condvar::new() })
                 .collect(),
             revision: AtomicU64::new(1),
             kinds: RwLock::new(HashMap::new()),
@@ -203,27 +177,16 @@ impl Db {
     }
 
     fn lock(&self, key: Key) -> MutexGuard<'_, State> {
-        self.shards[shard_of(key)]
-            .state
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
+        self.shards[shard_of(key)].state.lock().unwrap_or_else(|error| error.into_inner())
     }
     fn wake(&self, key: Key) {
         self.shards[shard_of(key)].wake.notify_all();
     }
     fn wait<'a>(&self, key: Key, guard: MutexGuard<'a, State>) -> MutexGuard<'a, State> {
-        self.shards[shard_of(key)]
-            .wake
-            .wait(guard)
-            .unwrap_or_else(|error| error.into_inner())
+        self.shards[shard_of(key)].wake.wait(guard).unwrap_or_else(|error| error.into_inner())
     }
     fn all_shards(&self) -> impl Iterator<Item = MutexGuard<'_, State>> {
-        self.shards.iter().map(|shard| {
-            shard
-                .state
-                .lock()
-                .unwrap_or_else(|error| error.into_inner())
-        })
+        self.shards.iter().map(|shard| shard.state.lock().unwrap_or_else(|error| error.into_inner()))
     }
 
     /// Register an input kind (values set with [`Db::set_input`]).
@@ -231,13 +194,7 @@ impl Db {
         self.kinds
             .write()
             .unwrap_or_else(|error| error.into_inner())
-            .insert(
-                kind,
-                Arc::new(KindDef {
-                    name,
-                    compute: None,
-                }),
-            );
+            .insert(kind, Arc::new(KindDef { name, compute: None }));
     }
 
     /// Register a derived kind. `compute` must be deterministic in the values it reads.
@@ -250,13 +207,7 @@ impl Db {
         self.kinds
             .write()
             .unwrap_or_else(|error| error.into_inner())
-            .insert(
-                kind,
-                Arc::new(KindDef {
-                    name,
-                    compute: Some(Box::new(compute)),
-                }),
-            );
+            .insert(kind, Arc::new(KindDef { name, compute: Some(Box::new(compute)) }));
     }
 
     fn kind_def(&self, kind: Kind) -> Result<Arc<KindDef>, QueryError> {
@@ -277,10 +228,7 @@ impl Db {
         self.verify.store(on, Ordering::Relaxed);
     }
     pub fn verify_failures(&self) -> Vec<String> {
-        self.verify_failures
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .clone()
+        self.verify_failures.lock().unwrap_or_else(|error| error.into_inner()).clone()
     }
 
     /// Set an input. Returns whether it changed (the revision advances only then).
@@ -336,64 +284,10 @@ impl Db {
         downcast(done.value, key)
     }
 
-    /// Fetch through the ordinary derived-node kernel, borrowing an actual
-    /// first computation only for this call. No borrowed closure/data is stored:
-    /// later verification or eviction uses the registered kind and owned Params.
-    /// The scoped operation must implement the SAME deterministic kind contract
-    /// for these Params; this does not authorize an alternate result/meaning.
-    /// This is graph computation only, never source/currentness authority.
-    pub fn get_with_scoped_computation<T:Any+Send+Sync>(
-        &self,key:Key,params:Value,
-        compute:impl FnOnce(&mut Ctx<'_>,&Value)->Result<Outcome,QueryError>,
-    )->Result<Arc<T>,QueryError>{
-        let mut compute=Some(compute);
-        let mut scoped=|ctx:&mut Ctx<'_>,params:&Value|{
-            let actual=compute.take().ok_or_else(||QueryError::operational(key,std::io::Error::new(std::io::ErrorKind::InvalidInput,"scoped query computation was already consumed")))?;
-            actual(ctx,params)
-        };
-        let done=self.ensure_with_scoped(key,Some(params),true,Some(&mut scoped))?;
-        downcast(done.value,key)
-    }
-
     /// Value of an input.
     pub fn input<T: Any + Send + Sync>(&self, key: Key) -> Option<Arc<T>> {
         let done = self.ensure(key, None, true).ok()?;
         downcast(done.value, key).ok()
-    }
-
-    /// Observe an already-retained value without computing/revalidating it or
-    /// recording a dependency. The returned value may be stale: callers may use
-    /// it ONLY as an optimization after independently authenticating every
-    /// contribution against their current input. Never an admission proof.
-    pub fn retained_value<T: Any + Send + Sync>(&self, key: Key) -> Option<Arc<T>> {
-        let state = self.shards[shard_of(key)]
-            .state
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        let node = state.nodes.get(&key)?;
-        if node.busy.is_some() {
-            return None;
-        }
-        node.value.as_ref()?.clone().downcast::<T>().ok()
-    }
-
-    /// Drop one input or derived payload after a scoped consumer finishes.
-    /// Preserve its dependency/hash metadata; a subsequent input must be
-    /// reinstalled, and a subsequent derived read recomputes normally.
-    /// Never evict a value while its query is being computed.
-    pub fn evict_value_at(&self, key: Key) -> usize {
-        let mut state = self.shards[shard_of(key)]
-            .state
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        let Some(node) = state.nodes.get_mut(&key) else {
-            return 0;
-        };
-        if node.busy.is_some() {
-            return 0;
-        }
-        node.value = None;
-        std::mem::take(&mut node.bytes)
     }
 
     /// Revalidate and return only the content hash.
@@ -401,22 +295,7 @@ impl Db {
         Ok(self.ensure(key, Some(params), false)?.hash)
     }
 
-    fn ensure(
-        &self,
-        key: Key,
-        params: Option<Value>,
-        need_value: bool,
-    ) -> Result<Done, QueryError> {
-        self.ensure_with_scoped(key,params,need_value,None)
-    }
-
-    fn ensure_with_scoped(
-        &self,
-        key: Key,
-        params: Option<Value>,
-        need_value: bool,
-        mut scoped:Option<&mut dyn FnMut(&mut Ctx<'_>,&Value)->Result<Outcome,QueryError>>,
-    ) -> Result<Done, QueryError> {
+    fn ensure(&self, key: Key, params: Option<Value>, need_value: bool) -> Result<Done, QueryError> {
         let me = std::thread::current().id();
         loop {
             let mut state = self.lock(key);
@@ -444,14 +323,10 @@ impl Db {
                     },
                 );
                 drop(state);
-                return self.run(key, &params, revision, true,scoped.take());
+                return self.run(key, &params, revision, true);
             };
             if node.input {
-                return Ok(Done {
-                    value: node.value.clone(),
-                    hash: node.hash,
-                    changed_at: node.changed_at,
-                });
+                return Ok(Done { value: node.value.clone(), hash: node.hash, changed_at: node.changed_at });
             }
             if let Some(params) = params.clone() {
                 node.params = params;
@@ -469,13 +344,9 @@ impl Db {
                     node.busy = Some(me);
                     let params = node.params.clone();
                     drop(state);
-                    return self.run(key, &params, revision, false,scoped.take());
+                    return self.run(key, &params, revision, false);
                 }
-                return Ok(Done {
-                    value: node.value.clone(),
-                    hash: node.hash,
-                    changed_at: node.changed_at,
-                });
+                return Ok(Done { value: node.value.clone(), hash: node.hash, changed_at: node.changed_at });
             }
             node.busy = Some(me);
             let deps = node.deps.clone();
@@ -483,11 +354,7 @@ impl Db {
             let params = node.params.clone();
             let never = verified == 0;
             drop(state);
-            let mut guard = Busy {
-                db: self,
-                key,
-                armed: true,
-            };
+            let mut guard = Busy { db: self, key, armed: true };
             let mut clean = !never;
             if clean {
                 for dep in deps {
@@ -508,14 +375,7 @@ impl Db {
             }
             if !clean {
                 guard.armed = false;
-                return self.run(key, &params, revision, false,scoped.take());
-            }
-            // Verification is an operation, not a semantic failure value. Keep
-            // the node busy/unverified until it succeeds so cancellation cannot
-            // mark this revision green and bypass verification on same-key retry.
-            if self.verify.load(Ordering::Relaxed) {
-                let hash = { self.lock(key).nodes[&key].hash };
-                self.verify_green(key, &params, hash)?;
+                return self.run(key, &params, revision, false);
             }
             let mut state = self.lock(key);
             let done;
@@ -523,17 +383,17 @@ impl Db {
                 let node = state.nodes.get_mut(&key).expect("busy node stays");
                 node.verified_at = revision;
                 node.busy = None;
-                done = Done {
-                    value: node.value.clone(),
-                    hash: node.hash,
-                    changed_at: node.changed_at,
-                };
+                done = Done { value: node.value.clone(), hash: node.hash, changed_at: node.changed_at };
             }
             state.stats.entry(key.kind).or_default().green += 1;
             let have_value = done.value.is_some();
+            let hash = done.hash;
             drop(state);
             guard.armed = false;
             self.wake(key);
+            if self.verify.load(Ordering::Relaxed) {
+                self.verify_green(key, &params, hash);
+            }
             if need_value && !have_value {
                 let mut state = self.lock(key);
                 let node = state.nodes.get_mut(&key).expect("node stays");
@@ -542,57 +402,27 @@ impl Db {
                 }
                 node.busy = Some(me);
                 drop(state);
-                return self.run(key, &params, revision, false,scoped.take());
+                return self.run(key, &params, revision, false);
             }
             return Ok(done);
         }
     }
 
-    fn verify_green(&self, key: Key, params: &Value, hash: Hash) -> Result<(), QueryError> {
-        let Ok(def) = self.kind_def(key.kind) else {
-            return Ok(());
-        };
-        let Some(compute) = &def.compute else {
-            return Ok(());
-        };
-        let mut ctx = Ctx {
-            db: self,
-            deps: Vec::new(),
-            seen: HashSet::new(),
-        };
+    fn verify_green(&self, key: Key, params: &Value, hash: Hash) {
+        let Ok(def) = self.kind_def(key.kind) else { return };
+        let Some(compute) = &def.compute else { return };
+        let mut ctx = Ctx { db: self, deps: Vec::new(), seen: HashSet::new() };
         let message = match compute(&mut ctx, params) {
-            Ok(outcome) if outcome.hash == hash => return Ok(()),
-            Err(error @ QueryError::Operational { .. }) => return Err(error),
-            Ok(_) => format!(
-                "{} {:x}: green but recomputed value differs",
-                def.name, key.id
-            ),
-            Err(error) => format!(
-                "{} {:x}: green but recompute failed: {error:?}",
-                def.name, key.id
-            ),
+            Ok(outcome) if outcome.hash == hash => return,
+            Ok(_) => format!("{} {:x}: green but recomputed value differs", def.name, key.id),
+            Err(error) => format!("{} {:x}: green but recompute failed: {error:?}", def.name, key.id),
         };
-        self.verify_failures
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .push(message);
-        Ok(())
+        self.verify_failures.lock().unwrap_or_else(|error| error.into_inner()).push(message);
     }
 
     /// Run the function of a node already marked busy by this thread.
-    fn run(
-        &self,
-        key: Key,
-        params: &Value,
-        revision: u64,
-        fresh: bool,
-        scoped:Option<&mut dyn FnMut(&mut Ctx<'_>,&Value)->Result<Outcome,QueryError>>,
-    ) -> Result<Done, QueryError> {
-        let mut guard = Busy {
-            db: self,
-            key,
-            armed: true,
-        };
+    fn run(&self, key: Key, params: &Value, revision: u64, fresh: bool) -> Result<Done, QueryError> {
+        let mut guard = Busy { db: self, key, armed: true };
         let fail = |db: &Db, guard: &mut Busy<'_>, error: QueryError| {
             if fresh {
                 db.drop_fresh(key);
@@ -607,14 +437,8 @@ impl Db {
         let Some(compute) = def.compute.as_ref() else {
             return fail(self, &mut guard, QueryError::UnknownKind(key.kind));
         };
-        let mut ctx = Ctx {
-            db: self,
-            deps: Vec::new(),
-            seen: HashSet::new(),
-        };
-        // The borrowed first computation is never kept on the node. Its
-        // ordinary owned Params remain for the registered later recomputation.
-        let result = match scoped{Some(scoped)=>scoped(&mut ctx,params),None=>compute(&mut ctx, params)};
+        let mut ctx = Ctx { db: self, deps: Vec::new(), seen: HashSet::new() };
+        let result = compute(&mut ctx, params);
         let deps = ctx.deps;
         let outcome = match result {
             Ok(outcome) => outcome,
@@ -627,11 +451,7 @@ impl Db {
         {
             let Some(node) = state.nodes.get_mut(&key) else {
                 guard.armed = false;
-                return Ok(Done {
-                    value: Some(outcome.value),
-                    hash: outcome.hash,
-                    changed_at: revision,
-                });
+                return Ok(Done { value: Some(outcome.value), hash: outcome.hash, changed_at: revision });
             };
             cutoff = node.verified_at != 0 && node.hash == outcome.hash;
             if !cutoff {
@@ -643,11 +463,7 @@ impl Db {
             old_deps = std::mem::replace(&mut node.deps, deps.clone());
             node.verified_at = revision;
             node.busy = None;
-            done = Done {
-                value: Some(outcome.value),
-                hash: outcome.hash,
-                changed_at: node.changed_at,
-            };
+            done = Done { value: Some(outcome.value), hash: outcome.hash, changed_at: node.changed_at };
         }
         let stats = state.stats.entry(key.kind).or_default();
         stats.computed += 1;
@@ -733,47 +549,9 @@ impl Db {
         freed
     }
 
-pub fn evict_value_if_current<T:Any+Send+Sync>(&self,key:Key,expected:&Arc<T>)->usize{
-        let (retired,bytes)={let mut state=self.shards[shard_of(key)].state.lock().unwrap_or_else(|e|e.into_inner());let Some(node)=state.nodes.get_mut(&key)else{return 0};if node.input||node.busy.is_some()||!node.value.as_ref().and_then(|value|value.downcast_ref::<T>()).is_some_and(|value|std::ptr::eq(value,expected.as_ref())){return 0}
-        let retired=node.value.take();let bytes=std::mem::take(&mut node.bytes);state.stats.entry(key.kind).or_default().evicted+=1;(retired,bytes)};drop(retired);bytes
-    }
-
-    /// Proactive pressure retirement of cache-only completed values. Escaped
-    /// strong/weak aliases keep their value/charge; no estimated byte count
-    /// authorizes a refund. Actual Drop runs OUTSIDE every shard lock.
-    pub fn evict_unborrowed_values(&self,kinds:&[Kind])->usize{
-        let mut freed=0usize;
-        for shard in self.shards.iter(){loop{
-            let retired={let mut state=shard.state.lock().unwrap_or_else(|e|e.into_inner());
-                let candidate=state.nodes.iter().find_map(|(key,node)|{
-                    if node.input||node.busy.is_some()||(!kinds.is_empty()&&!kinds.contains(&key.kind)){return None}
-                    let value=node.value.as_ref()?;
-                    (Arc::strong_count(value)==1&&Arc::weak_count(value)==0).then_some(*key)
-                });
-                let Some(key)=candidate else{break};let node=state.nodes.get_mut(&key).expect("selected actual node");
-                let value=node.value.take();let bytes=std::mem::take(&mut node.bytes);state.stats.entry(key.kind).or_default().evicted+=1;(value,bytes)
-            };
-            freed=freed.saturating_add(retired.1);drop(retired.0);
-        }}freed
-    }
-
     /// Estimated bytes held by derived values.
     pub fn value_bytes(&self) -> usize {
-        self.all_shards()
-            .map(|state| state.nodes.values().map(|node| node.bytes).sum::<usize>())
-            .sum()
-    }
-
-    /// Current retained-value charge for one key, without scanning the graph.
-    /// Parameters/metadata are separate; an evicted or absent value costs zero.
-    pub fn value_bytes_at(&self, key: Key) -> usize {
-        self.shards[shard_of(key)]
-            .state
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .nodes
-            .get(&key)
-            .map_or(0, |node| node.bytes)
+        self.all_shards().map(|state| state.nodes.values().map(|node| node.bytes).sum::<usize>()).sum()
     }
 
     pub fn len(&self) -> usize {
@@ -796,9 +574,6 @@ pub fn evict_value_if_current<T:Any+Send+Sync>(&self,key:Key,expected:&Arc<T>)->
         total
     }
 
-    /// Read-only cumulative counters, not query/value/source authority.
-    /// No row or map is allocated; overflow refuses an observation.
-    pub fn total_stats(&self)->Option<KindStats>{let mut total=KindStats::default();for state in self.all_shards(){for stats in state.stats.values(){total.green=total.green.checked_add(stats.green)?;total.computed=total.computed.checked_add(stats.computed)?;total.cutoff=total.cutoff.checked_add(stats.cutoff)?;total.evicted=total.evicted.checked_add(stats.evicted)?;}}Some(total)}
     pub fn kind_name(&self, kind: Kind) -> &'static str {
         self.kind_def(kind).map(|def| def.name).unwrap_or("?")
     }
@@ -817,24 +592,6 @@ pub struct Ctx<'a> {
     seen: HashSet<Key>,
 }
 impl Ctx<'_> {
-    /// Compare the actual executing database without adding a dependency or
-    /// exposing another query endpoint. Equal keys/values are not this identity.
-    pub fn is_database(&self, database: &Db) -> bool {
-        std::ptr::eq(self.db, database)
-    }
-
-    /// Release derived child payloads; hashes and already recorded dynamic
-    /// dependency edges remain. Caller-held Arc loans retain their payload.
-    /// Resource-only inspection of the exact cached physical owner. This does
-    /// not record a semantic read; an actual query still uses get/hash.
-    pub fn retained_value<T:Any+Send+Sync>(&self,key:Key)->Option<Arc<T>>{self.db.retained_value(key)}
-    pub fn evict_values(&self,kinds:&[Kind])->usize{self.db.evict_values(kinds)}
-    pub fn evict_value_if_current<T:Any+Send+Sync>(&self,key:Key,expected:&Arc<T>)->usize{self.db.evict_value_if_current(key,expected)}
-
-    /// Read-only admission observations of the SAME dynamic dependency set.
-    pub fn has_dependency(&self,key:Key)->bool{self.seen.contains(&key)}
-    pub fn dependency_count(&self)->usize{self.deps.len()}
-
     fn note(&mut self, key: Key) {
         if self.seen.insert(key) {
             self.deps.push(key);
@@ -842,11 +599,7 @@ impl Ctx<'_> {
     }
 
     /// Read a derived query's value.
-    pub fn get<T: Any + Send + Sync>(
-        &mut self,
-        key: Key,
-        params: Value,
-    ) -> Result<Arc<T>, QueryError> {
+    pub fn get<T: Any + Send + Sync>(&mut self, key: Key, params: Value) -> Result<Arc<T>, QueryError> {
         self.note(key);
         self.db.get(key, params)
     }
@@ -872,43 +625,3 @@ impl Ctx<'_> {
 
 #[cfg(test)]
 mod tests;
-
-#[cfg(test)]mod retained_eviction_tests{use super::*;
- #[test]fn exact_retained_child_witness_never_evicts_equal_replacement_and_keeps_parent_hash_dependencies(){let db=Db::default();let child=Key::new(Kind(241),1);let parent=Key::new(Kind(242),2);db.define(child.kind,"retained child",move|_,_|Ok(Outcome::new(vec![1u8,2,3],17,3)));db.define(parent.kind,"retained parent",move|ctx,_|{let value=ctx.get::<Vec<u8>>(child,Arc::new(()))?;Ok(Outcome::new(value.len(),23,std::mem::size_of::<usize>()))});let first=db.get::<usize>(parent,Arc::new(())).unwrap();let old=db.get::<Vec<u8>>(child,Arc::new(())).unwrap();assert_eq!(db.evict_value_if_current(child,&Arc::new(vec![1u8,2,3])),0);assert_eq!(db.value_bytes_at(child),3);assert_eq!(db.evict_value_if_current(child,&old),3);assert_eq!(db.value_bytes_at(child),0);assert_eq!(old.as_slice(),[1,2,3]);assert!(db.dependants(&[child]).contains(&parent));assert!(Arc::ptr_eq(&first,&db.get::<usize>(parent,Arc::new(())).unwrap()));let fresh=db.get::<Vec<u8>>(child,Arc::new(())).unwrap();assert!(!Arc::ptr_eq(&old,&fresh));assert_eq!(db.evict_value_if_current(child,&old),0);assert_eq!(db.value_bytes_at(child),3);assert_eq!(db.evict_value_if_current(child,&fresh),3);}
-}
-
-#[cfg(test)]mod scoped_first_computation_controls{
- use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
- #[test]fn scoped_first_computation_uses_same_memo_dependencies_bytes_and_normal_recompute(){
-  let db=Db::new();let source=Key::new(Kind(247),1);let child=Key::new(Kind(248),2);db.define_input(source.kind,"actual source");db.set_input(source,2usize,2);let normal=Arc::new(AtomicUsize::new(0));let seen=Arc::clone(&normal);
-  db.define(child.kind,"same derived contract",move|ctx,params|{seen.fetch_add(1,Ordering::SeqCst);let value=*ctx.input::<usize>(source)? * *params.downcast_ref::<usize>().unwrap();Ok(Outcome::new(value,value as u128,16))});
-  let borrowed=String::from("abc");let calls=AtomicUsize::new(0);let first=db.get_with_scoped_computation::<usize>(child,Arc::new(borrowed.len()),|ctx,_|{calls.fetch_add(1,Ordering::SeqCst);let value=*ctx.input::<usize>(source)?*borrowed.len();Ok(Outcome::new(value,value as u128,16))}).unwrap();
-  assert_eq!(*first,6);assert_eq!(calls.load(Ordering::SeqCst),1);assert_eq!(normal.load(Ordering::SeqCst),0);assert_eq!(db.stats(child.kind).computed,1);assert_eq!(db.value_bytes_at(child),16);assert!(db.dependants(&[source]).contains(&child));
-  let cached=db.get_with_scoped_computation::<usize>(child,Arc::new(3usize),|_,_|panic!("current value must not run an alternate callback")).unwrap();assert!(Arc::ptr_eq(&first,&cached));
-  assert_eq!(db.evict_values(&[child.kind]),16);assert_eq!(db.value_bytes_at(child),0);assert!(db.dependants(&[source]).contains(&child));let again=db.get::<usize>(child,Arc::new(3usize)).unwrap();assert_eq!(*again,6);assert!(!Arc::ptr_eq(&first,&again));assert_eq!(normal.load(Ordering::SeqCst),1);
-  db.set_input(source,4usize,4);assert_eq!(*db.get::<usize>(child,Arc::new(3usize)).unwrap(),12);assert_eq!(normal.load(Ordering::SeqCst),2);assert_eq!(calls.load(Ordering::SeqCst),1);
- }
- #[test]fn scoped_computation_keeps_actual_missing_input_dependency_for_later_registered_kind(){
-  let db=Db::new();let missing=Key::new(Kind(249),1);let child=Key::new(Kind(250),2);db.define_input(missing.kind,"actual optional source");
-  fn value(ctx:&mut Ctx<'_>,key:Key)->Result<usize,QueryError>{match ctx.input::<usize>(key){Ok(value)=>Ok(*value),Err(QueryError::Missing(actual))if actual==key=>Ok(0),Err(error)=>Err(error)}}
-  db.define(child.kind,"same optional source contract",move|ctx,_|{let v=value(ctx,missing)?;Ok(Outcome::new(v,v as u128,8))});
-  assert_eq!(*db.get_with_scoped_computation::<usize>(child,Arc::new(()),|ctx,_|{let v=value(ctx,missing)?;Ok(Outcome::new(v,v as u128,8))}).unwrap(),0);assert!(db.dependants(&[missing]).contains(&child));db.set_input(missing,7usize,7);assert_eq!(*db.get::<usize>(child,Arc::new(())).unwrap(),7);assert_eq!(db.stats(child.kind).computed,2);
- }
- #[test]fn scoped_computation_actual_io_and_borrowed_capture_leave_no_value_or_stuck_busy(){
-  let db=Db::new();let key=Key::new(Kind(251),1);db.define(key.kind,"same recoverable contract",|_,_|Ok(Outcome::new(21usize,21,8)));let drops=AtomicUsize::new(0);struct Capture<'a>(&'a AtomicUsize);impl Drop for Capture<'_>{fn drop(&mut self){self.0.fetch_add(1,Ordering::SeqCst);}}
-  let capture=Capture(&drops);let error=db.get_with_scoped_computation::<usize>(key,Arc::new(()),move|_,_|{let _borrow=&capture;Err(QueryError::operational(key,std::io::Error::from_raw_os_error(1450)))}).unwrap_err();assert_eq!(error.into_operational().unwrap().into_io().raw_os_error(),Some(1450));assert_eq!(drops.load(Ordering::SeqCst),1);assert_eq!(db.stats(key.kind).computed,0);assert_eq!(db.value_bytes_at(key),0);assert!(db.retained_value::<usize>(key).is_none());assert_eq!(*db.get::<usize>(key,Arc::new(())).unwrap(),21);
- }
- #[test]fn scoped_computation_keeps_cycle_detection_and_unwind_cleanup(){
-  let db=Db::new();let key=Key::new(Kind(252),1);db.define(key.kind,"same normal contract",|_,_|Ok(Outcome::new(9usize,9,8)));let error=db.get_with_scoped_computation::<usize>(key,Arc::new(()),|ctx,_|{let v=ctx.get::<usize>(key,Arc::new(()))?;Ok(Outcome::new(*v,9,8))}).unwrap_err();assert!(matches!(error,QueryError::Cycle(actual)if actual==key));assert_eq!(db.value_bytes_at(key),0);
-  assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{let _=db.get_with_scoped_computation::<usize>(key,Arc::new(()),|_,_|panic!("actual producer unwind"));})).is_err());assert_eq!(*db.get::<usize>(key,Arc::new(())).unwrap(),9);assert_eq!(db.stats(key.kind).computed,1);
- }
-}
-
-#[cfg(test)]mod unborrowed_pressure_eviction_controls{
- use super::*;
- #[test]fn pressure_eviction_keeps_inputs_and_escaped_strong_or_weak_values_and_only_drops_after_unlock(){
-  struct ReentrantDrop{db:std::sync::Weak<Db>,dropped:Arc<std::sync::atomic::AtomicUsize>}impl Drop for ReentrantDrop{fn drop(&mut self){if let Some(db)=self.db.upgrade(){let _=db.value_bytes();}self.dropped.fetch_add(1,Ordering::AcqRel);}}
-  let db=Arc::new(Db::new());let kind=Kind(901);let input=Kind(902);db.define_input(input,"pressure-input");db.set_input(Key::new(input,1),7u64,1);let original=Arc::downgrade(&db);let dropped=Arc::new(std::sync::atomic::AtomicUsize::new(0));let observed=dropped.clone();db.define(kind,"pressure-value",move|_,_|Ok(Outcome::new(ReentrantDrop{db:original.clone(),dropped:observed.clone()},1,8)));
-  let key=Key::new(kind,1);let escaped=db.get::<ReentrantDrop>(key,Arc::new(())).unwrap();let weak=Arc::downgrade(&escaped);assert_eq!(db.evict_unborrowed_values(&[kind]),0);drop(escaped);assert_eq!(db.evict_unborrowed_values(&[kind]),0,"even a weak value alias prevents payload retirement");drop(weak);assert_eq!(db.evict_unborrowed_values(&[kind]),8);assert_eq!(dropped.load(Ordering::Acquire),1,"real destructor reentered the Db only after shard unlock");assert_eq!(db.input::<u64>(Key::new(input,1)).as_deref(),Some(&7));assert_eq!(db.value_bytes_at(key),0);
- }
-}

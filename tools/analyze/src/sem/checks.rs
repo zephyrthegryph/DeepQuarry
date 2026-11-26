@@ -11,7 +11,7 @@ use dreammaker::ast::{AssignOp, BinaryOp, Block, Expression, Follow, Spanned, St
 use super::ast::{as_call, as_ident, calls_in, stmt_blocks, stmt_exprs, strip_parens, walk_block, walk_expr};
 
 /// Calls that start a world action (the macro `ACT_TRY` must survive expansion as one of these).
-pub use crate::sem_handlers_partial_recipe::DEFAULT_TRY_CALLS;
+pub const DEFAULT_TRY_CALLS: &[&str] = &["ACT_ATTEMPT", "ACT_TRY", "act_try", "e0_act_try"];
 /// Calls that end one.
 pub const CLOSE_CALLS: &[&str] = &["act_done", "act_cancel"];
 
@@ -27,24 +27,167 @@ pub struct Found {
 /// "Every ACT_TRY has act_done or act_cancel on every path of the same proc." A returned
 /// `null` (refused or taken over) and the ACT_PASS sentinel carry no act to close, so a branch
 /// that tests the result for null or `ACT_PASS` is clean.
-pub fn act_try_pairing(code:&Block,try_calls:&[&str],out:&mut Vec<Found>){match crate::sem_handlers_pair_policy::collect_using(&OldPairSyntax{try_calls},code.as_ref(),&mut crate::key_policy_control::Compatibility){Ok(rows)=>out.extend(rows.into_iter().map(|row|Found{rule:"act_try_unpaired",line:row.line,msg:row.msg})),Err(never)=>match never{}}}
-struct OldPairSyntax<'a>{try_calls:&'a[&'a str]}
-impl crate::sem_handlers_pair_policy::Syntax<crate::key_policy_control::Compatibility> for OldPairSyntax<'_>{
- type Statement=Spanned<Statement>;type Expression=Expression;
- fn seen_try(&self,block:&[Self::Statement],_:&mut crate::key_policy_control::Compatibility)->Result<bool,std::convert::Infallible>{let mut seen=false;walk_block(block,&mut|e,_|if matches!(as_call(e),Some((name,_))if self.try_calls.contains(&name)){seen=true});Ok(seen)}
- fn line(&self,statement:&Self::Statement,_:&mut crate::key_policy_control::Compatibility)->Result<u32,std::convert::Infallible>{Ok(statement.location.line)}
- fn step<'a>(&'a self,statement:&'a Self::Statement,_:&mut crate::key_policy_control::Compatibility)->Result<crate::sem_handlers_pair_policy::Step<'a,Self::Statement,Self::Expression>,std::convert::Infallible>{use crate::sem_handlers_pair_policy::{Step,Var};Ok(match &statement.elem{
-  Statement::Return(e)=>Step::Return(e.as_ref()),Statement::Throw(_)|Statement::Crash(_)=>Step::Terminate,
-  Statement::If{arms,else_arm}=>Step::Conditional{arms:arms.iter().map(|(condition,body)|(&condition.elem,body.as_ref())).collect(),otherwise:else_arm.as_deref()},
-  Statement::Expr(Expression::AssignOp{op,lhs,rhs})=>Step::Assign{lhs,rhs,plain:*op==AssignOp::Assign},Statement::Expr(e)=>Step::Simple(e),
-  Statement::Var(var)=>Step::Variables{values:vec![Var{name:&var.name,value:var.value.as_ref()}],grouped:false},Statement::Vars(vars)=>Step::Variables{values:vars.iter().map(|var|Var{name:var.name.as_str(),value:var.value.as_ref()}).collect(),grouped:true},
-  other=>Step::Other{expressions:stmt_exprs(other),blocks:stmt_blocks(other).into_iter().map(|body|body.as_ref()).collect(),exhaustive:matches!(other,Statement::Switch{default:Some(_),..})},
- })}
- fn is_try(&self,e:&Expression,_:&mut crate::key_policy_control::Compatibility)->Result<bool,std::convert::Infallible>{Ok(matches!(as_call(strip_parens(e)),Some((name,_))if self.try_calls.contains(&name)))}
- fn bare_name<'a>(&self,e:&'a Expression)->Option<&'a str>{as_ident(strip_parens(e))}
- fn closes(&self,e:&Expression,pending:&mut crate::sem_handlers_pair_policy::Pending,_:&mut crate::key_policy_control::Compatibility)->Result<(),std::convert::Infallible>{calls_in(e,&mut|name,args|{if CLOSE_CALLS.contains(&name){if let Some(id)=args.first().and_then(|arg|as_ident(strip_parens(arg))){pending.close(id);}}});Ok(())}
- fn null_tested(&self,e:&Expression,_:&mut crate::key_policy_control::Compatibility)->Result<Vec<String>,std::convert::Infallible>{Ok(null_tested(e))}
- fn non_null_tested(&self,e:&Expression,_:&mut crate::key_policy_control::Compatibility)->Result<Vec<String>,std::convert::Infallible>{Ok(non_null_tested(e))}
+pub fn act_try_pairing(code: &Block, try_calls: &[&str], out: &mut Vec<Found>) {
+    let mut seen_try = false;
+    walk_block(code, &mut |e, _| {
+        if let Some((n, _)) = as_call(e) {
+            if try_calls.contains(&n) {
+                seen_try = true;
+            }
+        }
+    });
+    if !seen_try {
+        return;
+    }
+    let mut ctx = Pair { try_calls, found: Vec::new() };
+    let end = ctx.block(code, BTreeMap::new());
+    if let Some(pending) = end {
+        for (var, line) in pending {
+            ctx.found.push(Found { rule: "act_try_unpaired", line, msg: format!("ACT_ATTEMPT into `{}` reaches the end of the proc without act_done or act_cancel", var) });
+        }
+    }
+    ctx.found.sort_by_key(|f| (f.line, f.msg.clone()));
+    ctx.found.dedup();
+    out.extend(ctx.found);
+}
+
+struct Pair<'a> {
+    try_calls: &'a [&'a str],
+    found: Vec<Found>,
+}
+
+type Pending = BTreeMap<String, u32>;
+
+fn merge(outs: Vec<Pending>) -> Option<Pending> {
+    if outs.is_empty() {
+        return None;
+    }
+    let mut m = Pending::new();
+    for o in outs {
+        for (k, v) in o {
+            m.entry(k).or_insert(v);
+        }
+    }
+    Some(m)
+}
+
+impl<'a> Pair<'a> {
+    fn is_try(&self, e: &Expression) -> bool {
+        matches!(as_call(strip_parens(e)), Some((n, _)) if self.try_calls.contains(&n))
+    }
+
+    /// Closes every `act_done(X)` / `act_cancel(X)` in `e`.
+    fn closes(&self, e: &Expression, pending: &mut Pending) {
+        calls_in(e, &mut |n, args| {
+            if CLOSE_CALLS.contains(&n) {
+                if let Some(id) = args.first().and_then(|a| as_ident(strip_parens(a))) {
+                    pending.remove(id);
+                }
+            }
+        });
+    }
+
+    fn block(&mut self, b: &Block, mut pending: Pending) -> Option<Pending> {
+        for st in b.iter() {
+            let line = st.location.line;
+            match &st.elem {
+                Statement::Return(e) => {
+                    let mut p = pending.clone();
+                    if let Some(e) = e {
+                        self.closes(e, &mut p);
+                    }
+                    for (var, at) in p {
+                        self.found.push(Found { rule: "act_try_unpaired", line: at, msg: format!("ACT_ATTEMPT into `{}` is returned past at line {} without act_done or act_cancel", var, line) });
+                    }
+                    return None;
+                }
+                Statement::Throw(_) | Statement::Crash(_) => return None,
+                Statement::If { arms, else_arm } => {
+                    let mut outs: Vec<Pending> = Vec::new();
+                    let mut on_false = pending.clone();
+                    for (cond, blk) in arms {
+                        self.closes(&cond.elem, &mut on_false);
+                        let mut inner = on_false.clone();
+                        for x in null_tested(&cond.elem) {
+                            inner.remove(&x);
+                        }
+                        if let Some(o) = self.block(blk, inner) {
+                            outs.push(o);
+                        }
+                        for x in non_null_tested(&cond.elem) {
+                            on_false.remove(&x);
+                        }
+                    }
+                    match else_arm {
+                        Some(eb) => {
+                            if let Some(o) = self.block(eb, on_false) {
+                                outs.push(o);
+                            }
+                        }
+                        None => outs.push(on_false),
+                    }
+                    pending = merge(outs)?;
+                }
+                Statement::Expr(e) => self.simple(e, line, &mut pending),
+                Statement::Var(vs) => {
+                    if let Some(v) = &vs.value {
+                        if self.is_try(v) {
+                            pending.insert(vs.name.clone(), line);
+                        } else {
+                            self.closes(v, &mut pending);
+                        }
+                    }
+                }
+                Statement::Vars(list) => {
+                    for vs in list {
+                        if let Some(v) = &vs.value {
+                            if self.is_try(v) {
+                                pending.insert(vs.name.clone(), line);
+                            }
+                        }
+                    }
+                }
+                other => {
+                    for e in stmt_exprs(other) {
+                        self.closes(e, &mut pending);
+                    }
+                    let blocks = stmt_blocks(other);
+                    if blocks.is_empty() {
+                        continue;
+                    }
+                    let is_switch = matches!(other, Statement::Switch { default: Some(_), .. });
+                    let mut outs: Vec<Pending> = Vec::new();
+                    if !is_switch {
+                        // The body may run zero times (loops), or a try/catch arm may be skipped.
+                        outs.push(pending.clone());
+                    }
+                    for blk in blocks {
+                        if let Some(o) = self.block(blk, pending.clone()) {
+                            outs.push(o);
+                        }
+                    }
+                    pending = merge(outs)?;
+                }
+            }
+        }
+        Some(pending)
+    }
+
+    fn simple(&mut self, e: &Expression, line: u32, pending: &mut Pending) {
+        match e {
+            Expression::AssignOp { op: AssignOp::Assign, lhs, rhs } if self.is_try(rhs) => {
+                if let Some(id) = as_ident(strip_parens(lhs)) {
+                    pending.insert(id.to_string(), line);
+                } else {
+                    self.found.push(Found { rule: "act_try_unpaired", line, msg: "ACT_ATTEMPT result is stored where act_done cannot name it; assign it to a local".to_string() });
+                }
+            }
+            _ if self.is_try(e) => {
+                self.found.push(Found { rule: "act_try_unpaired", line, msg: "ACT_ATTEMPT result is dropped: nothing can act_done or act_cancel it".to_string() });
+            }
+            _ => self.closes(e, pending),
+        }
+    }
 }
 
 /// Idents the condition proves null (or the ACT_PASS sentinel) when TRUE: `!X`, `isnull(X)`,
@@ -296,11 +439,47 @@ pub fn requirement_returns(code: &Block, out: &mut Vec<Found>) {
 }
 
 fn non_reason(expression: &Expression) -> Option<&'static str> {
-    match crate::sem_handlers_policy::invalid_return_using(expression,crate::sem_handlers_policy::ReturnProtocol::Requirement,&mut crate::key_policy_control::Compatibility){Ok(why)=>why,Err(never)=>match never{}}
+    match strip_parens(expression) {
+        Expression::Base { term, follow } => {
+            if follow.iter().any(|item| matches!(item.elem, Follow::Unary(UnaryOp::Not))) {
+                return Some("a boolean");
+            }
+            match &term.elem {
+                Term::Int(_) | Term::Float(_) => Some("a number/boolean"),
+                Term::List(_) => Some("a list"),
+                Term::Prefab(prefab) => {
+                    let path = prefab.path.iter().map(|(_, name)| name.as_str()).collect::<Vec<_>>().join("/");
+                    if path == "datum/msg" || path.starts_with("datum/msg/") { None } else { Some("a non-refusal type path") }
+                }
+                _ => None,
+            }
+        }
+        Expression::BinaryOp { op: BinaryOp::Eq | BinaryOp::NotEq, .. } => Some("a boolean comparison"),
+        Expression::TernaryOp { if_, else_, .. } => non_reason(if_).or_else(|| non_reason(else_)),
+        _ => None,
+    }
 }
 
 fn non_boolean(e: &Expression) -> Option<&'static str> {
-    match crate::sem_handlers_policy::invalid_return_using(e,crate::sem_handlers_policy::ReturnProtocol::Boolean,&mut crate::key_policy_control::Compatibility){Ok(why)=>why,Err(never)=>match never{}}
+    let e = strip_parens(e);
+    match e {
+        Expression::Base { term, follow } => {
+            if follow.iter().any(|f| matches!(f.elem, Follow::Unary(UnaryOp::Not))) {
+                return None;
+            }
+            match &term.elem {
+                Term::String(_) | Term::InterpString(..) => Some("text"),
+                Term::Null => Some("null"),
+                Term::Prefab(_) => Some("a type path"),
+                Term::List(_) => Some("a list"),
+                Term::Int(i) if *i != 0 && *i != 1 => Some("a number other than TRUE/FALSE"),
+                Term::Float(_) => Some("a number other than TRUE/FALSE"),
+                _ => None,
+            }
+        }
+        Expression::TernaryOp { if_, else_, .. } => non_boolean(if_).or_else(|| non_boolean(else_)),
+        _ => None,
+    }
 }
 
 /// Locals and params of a proc that are act-typed, by declared type path.
@@ -394,9 +573,21 @@ pub fn named_argument_positions(sem: &super::Sem, file: &str) -> BTreeSet<(usize
 /// Exact self slot-flags reads that are the old value of a registered tracked setter
 /// mutation. No conditions or arbitrary callback arguments receive this treatment.
 pub fn slot_flags_mutation_positions(sem: &super::Sem, decls: &super::decls::Decls, file: &str) -> BTreeSet<(usize, usize)> {
-    struct Mask;
-    impl crate::check_grep_semantic_policy::MaskView<Expression> for Mask{fn mask<'a>(&self,e:&'a Expression)->crate::check_grep_semantic_policy::Mask<'a,Expression>{use crate::check_grep_semantic_policy::Mask as View;match strip_parens(e){Expression::BinaryOp{op:BinaryOp::BitAnd|BinaryOp::BitOr|BinaryOp::BitXor|BinaryOp::LShift|BinaryOp::RShift,lhs,rhs}=>View::Both(lhs,rhs),Expression::Base{term,follow}=>{if !follow.iter().all(|f|matches!(&f.elem,Follow::Unary(UnaryOp::BitNot|UnaryOp::Neg))){return View::Other}match &term.elem{Term::Int(_)|Term::Float(_)=>View::Number,Term::Ident(name)=>View::Name(name.as_str()),Term::Expr(inner)=>View::Through(inner),_=>View::Other}},_=>View::Other}}}
-    fn mask(e:&Expression)->bool{crate::check_grep_semantic_policy::mask(&Mask,e,&mut||Ok::<_,std::convert::Infallible>(())).unwrap_or_else(|never|match never{})}
+    fn mask(e: &Expression) -> bool {
+        match strip_parens(e) {
+            Expression::BinaryOp { op: BinaryOp::BitAnd | BinaryOp::BitOr | BinaryOp::BitXor | BinaryOp::LShift | BinaryOp::RShift, lhs, rhs } => mask(lhs) && mask(rhs),
+            Expression::Base { term, follow } => {
+                if !follow.iter().all(|f| matches!(&f.elem, Follow::Unary(UnaryOp::BitNot | UnaryOp::Neg))) { return false; }
+                match &term.elem {
+                    Term::Int(_) | Term::Float(_) => true,
+                    Term::Ident(n) => n.as_str() != "slot_flags" && n.as_str() != "src",
+                    Term::Expr(inner) => mask(inner),
+                    _ => false,
+                }
+            }
+            _ => false,
+        }
+    }
     fn shadows(b: &Block) -> bool {
         b.iter().any(|s| match &s.elem {
             Statement::Var(v) if v.name.as_str() == "slot_flags" => true,
@@ -487,7 +678,11 @@ pub fn act_holder_positions(sem: &super::Sem, file: &str, text: &str) -> BTreeSe
             if sem.rel(term.location) != file { return; }
             let Some(line) = text.lines().nth(term.location.line as usize - 1) else { return; };
             let start = term.location.column as usize - 1;
-            if let Some(column)=crate::check_grep_semantic_policy::holder_column(line,start,receiver.as_str()){positions.insert((term.location.line as usize,column));}
+            let Some(tail) = line.get(start..) else { return; };
+            let Some(after_name) = tail.strip_prefix(receiver.as_str()) else { return; };
+            let optional = after_name.starts_with('?');
+            if !(after_name.starts_with(".holder") || after_name.starts_with("?.holder")) { return; }
+            positions.insert((term.location.line as usize, start + receiver.len() + usize::from(optional) + 1));
         });
     }
     positions

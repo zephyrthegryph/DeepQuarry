@@ -13,29 +13,12 @@ import {
   Tabs,
 } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
+import type {
+  KeybindingEditorActions,
+  KeybindingEditorData,
+} from './generated/KeybindingEditor';
 
-type Binding = {
-  id: string;
-  name: string;
-  category: string;
-  command: string;
-};
-
-type Option = {
-  id: string;
-  name: string;
-};
-
-type Data = {
-  bindings: Binding[];
-  profiles: Option[];
-  right_click_options: Option[];
-  max_keys: number;
-  profile: string;
-  keys: Record<string, string[]>;
-  customised: string[];
-  right_click: string;
-};
+type Data = KeybindingEditorData;
 
 // DOM key names to BYOND macro key names.
 const DOM_TO_BYOND: Record<string, string> = {
@@ -87,11 +70,11 @@ function byondKeyName(event: React.KeyboardEvent<HTMLDivElement>): string {
 }
 
 export const KeybindingEditor = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, KeybindingEditorActions>();
   const {
-    bindings,
-    profiles,
-    right_click_options,
+    bindings = [],
+    profiles = [],
+    right_click_options = [],
     max_keys,
     profile,
     keys,
@@ -140,7 +123,7 @@ export const KeybindingEditor = (props) => {
     right_click;
 
   return (
-    <Window title="Keybindings" width={560} height={640}>
+    <Window title="Keybindings" width={720} height={640}>
       <Window.Content onKeyDown={handleKeyDown} scrollable>
         <Section title="Mouse">
           <LabeledList>
@@ -205,8 +188,7 @@ export const KeybindingEditor = (props) => {
           )}
           {capturing && (
             <NoticeBox info>
-              Press a key (with Ctrl, Alt or Shift if you like). Escape
-              cancels.
+              Press a key (with Ctrl, Alt or Shift if you like). Escape cancels.
             </NoticeBox>
           )}
           <Stack vertical mt={1}>

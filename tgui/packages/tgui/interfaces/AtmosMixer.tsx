@@ -23,10 +23,10 @@ export const AtmosMixer = (props) => {
 
   const {
     on,
-    set_pressure,
-    max_pressure,
-    node1_concentration,
-    node2_concentration,
+    set_pressure = 0,
+    max_pressure = 0,
+    node1_concentration = 0,
+    node2_concentration = 0,
     node1_dir,
     node2_dir,
   } = data;

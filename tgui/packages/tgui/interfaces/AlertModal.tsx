@@ -1,21 +1,13 @@
 import { type KeyboardEvent, useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
-import { Autofocus, Box, Button, Section, Stack } from 'tgui-core/components';
+import { Autofocus, Button, Section, Stack } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
-import type { BooleanLike } from 'tgui-core/react';
-
 import { Loader } from './common/Loader';
+import type { AlertModalActions, AlertModalData } from './generated/AlertModal';
 
-type Data = {
-  autofocus: BooleanLike;
-  buttons: string[];
-  large_buttons: BooleanLike;
-  message: string;
-  swapped_buttons: BooleanLike;
-  timeout: number;
-  title: string;
-};
+type Data = AlertModalData;
 
 enum DIRECTION {
   Increment = 1,
@@ -23,7 +15,7 @@ enum DIRECTION {
 }
 
 export function AlertModal(props) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AlertModalActions>();
   const {
     autofocus,
     buttons = [],
@@ -38,7 +30,10 @@ export function AlertModal(props) {
     // default font height is 12 in tgui
     font = `${fontsize}x ${font}`;
     const c = document.createElement('canvas');
-    const ctx = c.getContext('2d') as CanvasRenderingContext2D;
+    const ctx = c.getContext('2d');
+    if (!ctx) {
+      return text.length * fontsize;
+    }
     ctx.font = font;
     return ctx.measureText(text).width;
   }
@@ -102,8 +97,8 @@ export function AlertModal(props) {
       <Window.Content onKeyDown={keyDownHandler}>
         <Section fill>
           <Stack fill vertical>
-            <Stack.Item m={1} grow>
-              <Box color="label">{message}</Box>
+            <Stack.Item grow>
+              <Label p={1}>{message}</Label>
             </Stack.Item>
             <Stack.Item grow>
               {!!autofocus && <Autofocus />}
@@ -128,7 +123,7 @@ type ButtonDisplayProps = {
  * Displays a list of buttons ordered by user prefs.
  */
 function HorizontalButtons(props: ButtonDisplayProps) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AlertModalActions>();
   const { buttons = [], large_buttons, swapped_buttons } = data;
   const { selected } = props;
 
@@ -159,7 +154,7 @@ function HorizontalButtons(props: ButtonDisplayProps) {
  * should just be using a list input in that case.
  */
 function VerticalButtons(props: ButtonDisplayProps) {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, AlertModalActions>();
   const { buttons = [], large_buttons, swapped_buttons } = data;
   const { selected } = props;
 

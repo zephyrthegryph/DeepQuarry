@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Human wound pictures (one bake per limb) and animated-tail facing splits are composed by iconforge off the main thread instead of /icon operations in a draw"

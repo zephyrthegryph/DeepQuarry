@@ -120,7 +120,7 @@ TYPE_TABLE(/mob/living/simple_mob/slime, get_ai_target_selectors, list( \
 		var/always_stun = my_slime.slime_state && my_slime.slime_state.always_stun
 		if((!L.lying && prob(30 + (my_slime.power_charge * 7))) || (!L.lying && always_stun))
 			my_slime.set_use_stance(I_DISARM)
-		else if(my_slime.can_consume(L) && L.lying)
+		else if(!my_slime.consume_refusal(L) && L.lying)
 			my_slime.set_use_stance(I_GRAB)
 		else
 			my_slime.set_use_stance(I_HURT)

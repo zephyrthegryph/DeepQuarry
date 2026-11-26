@@ -1,0 +1,8 @@
+{
+	"default_name": "punch",
+	"attacks": [
+		{ "ref": 5101, "name": "punch", "is_default": 1 },
+		{ "ref": 5102, "name": "kick", "is_default": 0 },
+		{ "ref": 5103, "name": "bite", "is_default": 0 }
+	]
+}

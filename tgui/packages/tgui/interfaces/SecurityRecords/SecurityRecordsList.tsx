@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Input } from 'tgui-core/components';
-
+import type { SecurityRecordsActions } from '../generated/SecurityRecords';
 import type { Data } from './types';
 
 export const SecurityRecordsList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SecurityRecordsActions>();
   const { records } = data;
   return (
     <>

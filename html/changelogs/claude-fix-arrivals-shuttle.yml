@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Ferry shuttles (arrivals, supply, escape pods, emergency) are created again, so the arrivals shuttle reaches the station"

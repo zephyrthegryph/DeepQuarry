@@ -45,7 +45,7 @@
 	// Walls (blocks_air) are fine: Rust short-circuits on blocks_air before
 	// reading air. Only skip registering an airless tile that doesn't block air;
 	// always let the unregister (flag < 0) path through.
-	if(flag >= 0 && !blocks_air && isnull(air))
+	if(flag >= 0 && !blocks_air && isnull(turf_air()))
 		return
 	// Register with SIMULATION_ANY so the Rust FDM processes this turf; the
 	// negative unregister flag passes straight through.

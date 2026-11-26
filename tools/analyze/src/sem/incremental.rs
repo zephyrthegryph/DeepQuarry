@@ -59,7 +59,7 @@ pub struct Record {
     #[serde(skip)]
     pub type_loc: BTreeMap<String, String>,
     pub footprint: Vec<String>,
-    pub sinks: BTreeMap<String, Sink<'static>>,
+    pub sinks: BTreeMap<String, Sink>,
     /// Generator name -> (text, diagnostics) of a generator that used the full model.
     pub gens: BTreeMap<String, GenCache>,
 }
@@ -143,7 +143,7 @@ pub(crate) fn bare_hash(tree: &Tree, rel: &str) -> Hash {
     const STATEMENTS: &[&str] = &["return", "break", "continue", "else", "do", "sleep", "goto", "try", "catch", "finally", "spawn", "set", "new", "null"];
     let mut lines: Vec<String> = Vec::new();
     let code: String = match tree.get(rel) {
-        Some(f) => f.code().text.to_string(),
+        Some(f) => f.code().text.clone(),
         None => crate::strip::code_only(&text_of(tree, rel)),
     };
     for line in code.lines() {
@@ -163,7 +163,7 @@ pub(crate) fn bare_hash(tree: &Tree, rel: &str) -> Hash {
 }
 
 /// The text of an included file, from the tree or (a file no lint selected) from disk.
-pub fn text_of(tree: &Tree, rel: &str) -> String {
+pub(crate) fn text_of(tree: &Tree, rel: &str) -> String {
     match tree.get(rel) {
         Some(f) => f.text().to_string(),
         None => tree.read_extra(rel).map(|t| t.as_ref().clone()).unwrap_or_default(),
@@ -491,7 +491,7 @@ pub fn store(tree: &Tree, lint: &str, sink: &Sink) {
     let p = pending(tree);
     let mut g = p.lock().unwrap();
     if let Some(rec) = g.as_mut() {
-        rec.sinks.insert(lint.to_string(), sink.clone_owned_data());
+        rec.sinks.insert(lint.to_string(), sink.clone());
         save(rec);
     }
 }

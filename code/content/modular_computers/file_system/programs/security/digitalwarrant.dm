@@ -21,15 +21,16 @@
 
 CAPABILITIES(/datum/computer_file/program/digitalwarrant)
 	interface("NtosDigitalWarrant")
+	ui_shape(warrantname = nullable(schema_text()), warrantcharges = nullable(schema_text()), warrantauth = nullable(schema_text()), type = nullable(schema_text()), allwarrants = list_of(row(warrantname = schema_text(), charges = schema_text(), auth = schema_text(), id = int(), arrestsearch = schema_text())), PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool())
 	op("back", ui_act("back"), then(PROC_REF(ui_act_back)))
 	op("editwarrant", ui_act("editwarrant", arg("id", schema_ref(/datum/data/record/warrant))), then(PROC_REF(ui_act_editwarrant)))
 	op("addwarrant", ui_act("addwarrant"), needs(req(PROC_REF(warrant_id_ok))), asks(/datum/prompt/choice, fields = list("title" = "Warrant Type", "question" = "Do you want to create a search-, or an arrest warrant?", "choices" = list("Search", "Arrest", "Cancel"))), then(PROC_REF(ui_act_addwarrant)))
-	op("savewarrant", ui_act("savewarrant"), then(PROC_REF(ui_act_savewarrant)))
-	op("deletewarrant", ui_act("deletewarrant"), then(PROC_REF(ui_act_deletewarrant)))
+	op("savewarrant", ui_act("savewarrant"), needs(req(PROC_REF(warrant_id_ok))), then(PROC_REF(ui_act_savewarrant)))
+	op("deletewarrant", ui_act("deletewarrant"), needs(req(PROC_REF(warrant_id_ok))), then(PROC_REF(ui_act_deletewarrant)))
 	op("editwarrantname", ui_act("editwarrantname"), needs(req(PROC_REF(warrant_id_ok))), asks(/datum/prompt/choice, fields = list("title" = "Name Choice", "question" = "Please input name:", "choices" = computed(PROC_REF(general_names)))), then(PROC_REF(ui_act_editwarrantname)))
 	op("editwarrantnamecustom", ui_act("editwarrantnamecustom"), needs(req(PROC_REF(warrant_id_ok))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = "Please input name")), then(PROC_REF(ui_act_editwarrantnamecustom)))
 	op("editwarrantcharges", ui_act("editwarrantcharges"), needs(req(PROC_REF(warrant_id_ok))), asks(/datum/prompt/text, fields = list("title" = "Charges", "question" = "Please input charges", "default" = computed(PROC_REF(charges_default)))), then(PROC_REF(ui_act_editwarrantcharges)))
-	op("editwarrantauth", ui_act("editwarrantauth"), then(PROC_REF(ui_act_editwarrantauth)))
+	op("editwarrantauth", ui_act("editwarrantauth"), needs(req(PROC_REF(warrant_id_ok))), needs(req(PROC_REF(warrant_hos_ok))), then(PROC_REF(ui_act_editwarrantauth)))
 	ref_one(nameof(activewarrant_ref))
 
 /datum/computer_file/program/digitalwarrant/ui_data(datum/act/eval/A)
@@ -80,6 +81,14 @@ CAPABILITIES(/datum/computer_file/program/digitalwarrant)
 
 MSG_DEF_SELF(digitalwarrant/no_id, "Authentication error: Unable to locate ID with appropriate access to allow this operation.")
 
+/// Only a head of security's ID may authorize a warrant.
+/datum/computer_file/program/digitalwarrant/proc/warrant_hos_ok(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/I = user.GetIdCard()
+	return (istype(I) && (ACCESS_HOS in I.GetAccess())) ? null : MSG(digitalwarrant/no_hos)
+
+MSG_DEF_SELF(digitalwarrant/no_hos, "You don't have the access to do this!")
+
 /datum/computer_file/program/digitalwarrant/proc/general_names(datum/act/op/A)
 	var/namelist = list()
 	for(var/datum/data/record/t in GLOB.data_core.general)
@@ -109,21 +118,11 @@ MSG_DEF_SELF(digitalwarrant/no_id, "Authentication error: Unable to locate ID wi
 	rel_set(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref), W)
 
 /datum/computer_file/program/digitalwarrant/proc/ui_act_savewarrant(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/card/id/I = user.GetIdCard()
-	if(!istype(I) || !I.registered_name || !(ACCESS_SECURITY in I.GetAccess()))
-		to_chat(user, "Authentication error: Unable to locate ID with appropriate access to allow this operation.")
-		return
 	. = TRUE
 	rel_add(GLOB.data_core, nameof(/datum/datacore::warrants), activewarrant())
 	rel_clear(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref))
 
 /datum/computer_file/program/digitalwarrant/proc/ui_act_deletewarrant(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/card/id/I = user.GetIdCard()
-	if(!istype(I) || !I.registered_name || !(ACCESS_SECURITY in I.GetAccess()))
-		to_chat(user, "Authentication error: Unable to locate ID with appropriate access to allow this operation.")
-		return
 	. = TRUE
 	rel_remove(GLOB.data_core, nameof(/datum/datacore::warrants), activewarrant())
 	rel_clear(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref))
@@ -157,15 +156,9 @@ MSG_DEF_SELF(digitalwarrant/no_id, "Authentication error: Unable to locate ID wi
 /datum/computer_file/program/digitalwarrant/proc/ui_act_editwarrantauth(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/card/id/I = user.GetIdCard()
-	if(!istype(I) || !I.registered_name || !(ACCESS_SECURITY in I.GetAccess()))
-		to_chat(user, "Authentication error: Unable to locate ID with appropriate access to allow this operation.")
-		return
 	. = TRUE
 	if(!activewarrant())
 		return
-	if(!(ACCESS_HOS in I.GetAccess())) // begin
-		to_chat(user, span_warning("You don't have the access to do this!"))
-		return // end
 	activewarrant().fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 
 /// A strong internal reference (tmp): this holder is what keeps it alive.

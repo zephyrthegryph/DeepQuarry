@@ -42,4 +42,6 @@
 
 	// Move, but only if we actually are planing to move, or we need to clear the next move vars
 	if(movement_dir || must_call_move)
+		var/key_entered = TICK_USAGE_REAL
 		user.Move(get_step(src, movement_dir), movement_dir)
+		move_cost_outside(key_entered, src)

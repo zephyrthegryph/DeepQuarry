@@ -34,7 +34,7 @@
 	if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator))
 		return FALSE
 	if(channel == "Whis" || channel == "Subtle" || channel == "whisper" || channel == "subtle")
-		if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
+		if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator))
 			return FALSE
 	if(mob.status_flags & FAKEDEATH)
 		return FALSE
@@ -55,7 +55,7 @@
 	if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator) || !has_trait(client_mob, TRAIT_THINKING_IN_CHARACTER))
 		return FALSE
 	if(channel == "Whis" || channel == "Subtle" || channel == "whisper" || channel == "subtle")
-		if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
+		if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator))
 			return FALSE
 	client_mob.create_typing_indicator()
 	after(src, 5 SECONDS, PROC_REF(stop_typing), key = "typing_stop:[json_encode(list(channel))]", with = list(channel))
@@ -72,7 +72,7 @@
 	if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator) || !has_trait(client_mob, TRAIT_THINKING_IN_CHARACTER))
 		return FALSE
 	if(channel == "Whis" || channel == "Subtle" || channel == "whisper" || channel == "subtle")
-		if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
+		if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator))
 			return FALSE
 	client_mob.create_thinking_indicator()
 

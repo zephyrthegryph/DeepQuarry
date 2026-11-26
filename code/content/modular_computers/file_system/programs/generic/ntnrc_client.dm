@@ -24,6 +24,7 @@
 
 CAPABILITIES(/datum/computer_file/program/chatclient)
 	interface("NtosNetChat")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool(), can_admin = bool(), active_channel = nullable(num()), username = schema_text(), adminmode = bool(), all_channels = list_of(row(chan = schema_text(), id = num())), title = nullable(schema_text()), authed = bool(), clients = list_of(row(name = schema_text())), messages = list_of(row(msg = schema_text())), is_operator = bool())
 	op("PRG_speak", ui_act("PRG_speak", arg("message", schema_text(4096))), then(PROC_REF(ui_act_prg_speak)))
 	op("PRG_joinchannel", ui_act("PRG_joinchannel", arg("id", num())), then(PROC_REF(ui_act_prg_joinchannel)))
 	op("PRG_leavechannel", ui_act("PRG_leavechannel"), then(PROC_REF(ui_act_prg_leavechannel)))
@@ -80,7 +81,7 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 	var/datum/ntnet_conversation/C = new /datum/ntnet_conversation()
 	C.add_client(src)
 	rel_set(C, nameof(/datum/ntnet_conversation::operator), src)
-	C.title = text_or_null(channel_title)
+	C.set_title(text_or_null(channel_title))
 	set_active_channel(C.id)
 	return TRUE
 
@@ -144,7 +145,7 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 	if(!newname || !channel)
 		return
 	channel.add_status_message("Channel renamed from [channel.title] to [newname] by operator.")
-	channel.title = text_or_null(newname)
+	channel.set_title(text_or_null(newname))
 	return TRUE
 
 /datum/computer_file/program/chatclient/proc/ui_act_prg_deletechannel(datum/act/op/A)
@@ -193,19 +194,25 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 		channel.remove_client(src)
 	..()
 
-/datum/computer_file/program/chatclient/tgui_static_data(mob/user)
+/datum/computer_file/program/chatclient/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-	data["can_admin"] = can_run(user, FALSE, ACCESS_NETWORK)
+	data["can_admin"] = !!can_run(user, FALSE, ACCESS_NETWORK)
 	return data
 
 /datum/computer_file/program/chatclient/ui_data(datum/act/eval/A)
-	if(!GLOB.ntnet_global) // chat_channels is lazy; no channels still shows the client
-		return list()
-
 	var/list/data = get_header_data()
 	data["active_channel"] = active_channel
 	data["username"] = username
 	data["adminmode"] = netadmin_mode
+	data["all_channels"] = list()
+	data["title"] = null
+	data["authed"] = FALSE
+	data["clients"] = list()
+	data["messages"] = list()
+	data["is_operator"] = FALSE
+	if(!GLOB.ntnet_global) // chat_channels is lazy; no channels still shows the client
+		return data
 
 	var/list/all_channels = list()
 	for(var/datum/ntnet_conversation/conv as anything in GLOB.ntnet_global.chat_channels)
@@ -243,12 +250,5 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 				)))
 			data["messages"] = messages
 			data["is_operator"] = (channel.channel_operator() == src) || netadmin_mode
-		else
-			data["clients"] = list()
-			data["messages"] = list()
-	else
-		data["clients"] = list()
-		data["authed"] = FALSE
-		data["messages"] = list()
 
 	return data

@@ -13,6 +13,43 @@
 
 	var/spawn_reagent = null
 	var/label = ""
+	/// The grade of the stock this cartridge comes filled with (GRADE_*): Standard from the chemical supply, Pharma for the medicine cartridges.
+	var/source_grade = GRADE_STANDARD
+	/// Names the source in chem_source_profile(): cartridges with the same key and reagent hold the same per-round impurities.
+	var/source_key = "chemical supply"
+
+/// Puts `amount` units of the stock `reagent_id` in, with the contaminants its source comes with (chem_source_profile(): units of each per unit of stock;
+/// nothing for a reagent that cannot carry impurities). As much as fits. Returns the units of stock added. The starting fill and the recharge of a
+/// dispenser or synthesizer both come through here, so they add contaminants in the same proportions and a recharge never raises purity.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/add_stock(reagent_id, amount)
+	if(!reagents)
+		return 0
+	return reagents.add_sourced_reagent(reagent_id, amount, chem_source_profile(reagent_id, source_key, source_grade))
+
+/// The starting stock: full, as stock and the contaminants of its source.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/fill_stock()
+	if(spawn_reagent)
+		add_stock(spawn_reagent, volume)
+
+/// Units the cartridge holds, traces included: what its fill gauge and the dispenser's grid show. A starting cartridge is full: its volume, whatever
+/// share of it is the source's trace impurities.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/fill_volume()
+	return round(reagents.total_volume, 0.01)
+
+/// Dispenses `units` of the mixture into `target` (an atom: a beaker): exactly that many units in all, the source's impurities taken out of them, never added to
+/// them. Returns the units moved (less when the cartridge or the target runs short).
+/obj/item/reagent_containers/chem_disp_cartridge/proc/dispense_to(atom/target, units)
+	var/moved = reagents.trans_to(target, units) || 0
+	if(GLOB.chem_trace)
+		log_world("CHEM: [src] dispensed [round(moved, 0.001)]u of [round(units, 0.001)]u asked into [target], contaminants [round(target.reagents?.contaminant_volume(), 0.001)]u of the beaker now")
+	return moved
+
+/// Dispenses `units` of the mixture into the holder `target`, as dispense_to() does. Returns the units moved.
+/obj/item/reagent_containers/chem_disp_cartridge/proc/dispense_to_holder(datum/reagents/target, units)
+	var/moved = reagents.trans_to_holder(target, units) || 0
+	if(GLOB.chem_trace)
+		log_world("CHEM: [src] dispensed [round(moved, 0.001)]u of [round(units, 0.001)]u asked into a holder")
+	return moved
 
 /obj/item/reagent_containers/chem_disp_cartridge/proc/label_initial_chemical()
 	if(spawn_reagent)
@@ -38,7 +75,7 @@ CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge)
 	variants(nameof(variant), PROC_REF(variant_table))
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(label_initial_chemical))
-	configure(reagents(starts_from = list(nameof(spawn_reagent) = nameof(volume))))
+	setup(PROC_REF(fill_stock))
 	reagent_container(
 		volume = nameof(volume),
 		lid = TRUE,
@@ -57,3 +94,9 @@ CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge)
 	var/datum/prompt/R = A.answer
 	setLabel(R?.value, A.actor)
 	return OP_OK
+
+/// The cartridge's fill gauge follows its contents: a dispenser's recharge adds stock with no other change to the cartridge, so the look watches the holder
+/// (without it the cached look kept the old fill level: a REFRESH DRIFT / STALE draw).
+/obj/item/reagent_containers/chem_disp_cartridge/draw(datum/look/look)
+	..()
+	look.watch(reagents)

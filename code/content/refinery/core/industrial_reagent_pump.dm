@@ -40,11 +40,11 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pump)
 	if(R?.total_volume >= 5)
 		look.overlay(look_overlay_image(icon, "pump_r", color = R.tint, dir = dir))
 
-/obj/machinery/reagent_refinery/pump/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
+/obj/machinery/reagent_refinery/pump/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate)
 	// pumps, furnaces, splitters and filters can only be FED in a straight line
 	if(source_forward_dir != dir)
 		return 0
-	. = ..(origin_machine, RT, source_forward_dir, transfer_rate, filter_id)
+	. = ..(origin_machine, RT, source_forward_dir, transfer_rate)
 
 /obj/machinery/reagent_refinery/pump/examine(mob/user, infix, suffix)
 	. = ..()

@@ -1,0 +1,28 @@
+{
+	"records": [
+		{ "name": "Jane Doe", "ref": 4101 },
+		{ "name": "John Smith", "ref": 4102 },
+		{ "name": "Rex Robot", "ref": 4103 }
+	],
+	"general": {
+		"name": "Jane Doe",
+		"id": "A1B2C3",
+		"brain_type": "Biological",
+		"sex": "Female",
+		"species": "Human",
+		"age": 31,
+		"rank": "Engineer",
+		"fingerprint": "deadbeef",
+		"p_stat": "Active",
+		"m_stat": "Stable"
+	},
+	"security": {
+		"criminal": "None",
+		"mi_crim": "Trespass",
+		"mi_crim_d": "Entered maintenance.",
+		"ma_crim": "None",
+		"ma_crim_d": "No major crimes.",
+		"notes": "Cooperative."
+	},
+	"could_not_find": 0
+}

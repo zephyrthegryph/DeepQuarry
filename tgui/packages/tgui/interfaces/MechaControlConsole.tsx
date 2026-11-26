@@ -1,4 +1,6 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -11,30 +13,17 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { decodeHtmlEntities, toTitleCase } from 'tgui-core/string';
-
-type Data = {
-  beacons: {
-    ref: string;
-    charge: string;
-    name: string;
-    health: number;
-    maxHealth: number;
-    cell: string;
-    cellCharge: number;
-    cellMaxCharge: number;
-    airtank: number;
-    pilot: string;
-    location: string;
-    active: string | null;
-    cargoUsed: number;
-    cargoMax: number;
-  }[];
-  stored_data: { time: string; year: number; message: string }[];
-};
+import type {
+  MechaControlConsoleActions,
+  MechaControlConsoleData,
+} from './generated/MechaControlConsole';
 
 export const MechaControlConsole = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { beacons = [], stored_data = [] } = data;
+  const { act, data } = useBackend<
+    MechaControlConsoleData,
+    MechaControlConsoleActions
+  >();
+  const { beacons, stored_data } = data;
   return (
     <Window width={600} height={600}>
       <Window.Content scrollable>
@@ -50,9 +39,9 @@ export const MechaControlConsole = (props) => {
             >
               {stored_data.map((data) => (
                 <Box key={data.time}>
-                  <Box color="label">
+                  <Label>
                     ({data.time}) ({data.year})
-                  </Box>
+                  </Label>
                   <Box>{decodeHtmlEntities(data.message)}</Box>
                 </Box>
               ))}
@@ -97,20 +86,16 @@ export const MechaControlConsole = (props) => {
               }
             >
               <LabeledList>
-                <LabeledList.Item label="Health">
-                  <ProgressBar
-                    ranges={{
-                      good: [beacon.maxHealth * 0.75, Infinity],
-                      average: [
-                        beacon.maxHealth * 0.5,
-                        beacon.maxHealth * 0.75,
-                      ],
-                      bad: [-Infinity, beacon.maxHealth * 0.5],
-                    }}
-                    value={beacon.health}
-                    maxValue={beacon.maxHealth}
-                  />
-                </LabeledList.Item>
+                <StatBar
+                  label="Health"
+                  ranges={{
+                    good: [beacon.maxHealth * 0.75, Infinity],
+                    average: [beacon.maxHealth * 0.5, beacon.maxHealth * 0.75],
+                    bad: [-Infinity, beacon.maxHealth * 0.5],
+                  }}
+                  value={beacon.health}
+                  maxValue={beacon.maxHealth}
+                />
                 <LabeledList.Item label="Cell Charge">
                   {(beacon.cell && (
                     <ProgressBar
@@ -140,20 +125,16 @@ export const MechaControlConsole = (props) => {
                   {beacon.active || 'None'}
                 </LabeledList.Item>
                 {beacon.cargoMax ? (
-                  <LabeledList.Item label="Cargo Space">
-                    <ProgressBar
-                      ranges={{
-                        bad: [beacon.cargoMax * 0.75, Infinity],
-                        average: [
-                          beacon.cargoMax * 0.5,
-                          beacon.cargoMax * 0.75,
-                        ],
-                        good: [-Infinity, beacon.cargoMax * 0.5],
-                      }}
-                      value={beacon.cargoUsed}
-                      maxValue={beacon.cargoMax}
-                    />
-                  </LabeledList.Item>
+                  <StatBar
+                    label="Cargo Space"
+                    ranges={{
+                      bad: [beacon.cargoMax * 0.75, Infinity],
+                      average: [beacon.cargoMax * 0.5, beacon.cargoMax * 0.75],
+                      good: [-Infinity, beacon.cargoMax * 0.5],
+                    }}
+                    value={beacon.cargoUsed}
+                    maxValue={beacon.cargoMax}
+                  />
                 ) : (
                   ''
                 )}

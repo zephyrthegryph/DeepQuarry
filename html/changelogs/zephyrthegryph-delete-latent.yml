@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Removed latent contents (entries, generators, lazy materialization, collapse, the latency sweep and policy, pins, the latent-safe type list and their lints and tests): storage, closet, machine, light and magazine contents are real things made at init"

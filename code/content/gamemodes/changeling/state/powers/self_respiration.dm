@@ -9,9 +9,6 @@
 
 //No breathing required
 /mob/proc/changeling_self_respiration()
-	set category = VERB_CAT_CHANGELING
-	set name = "Toggle Breathing"
-	set desc = "We choose whether or not to breathe."
 
 	var/datum/changeling/changeling = changeling_power(0,0,100,UNCONSCIOUS)
 	if(!changeling)

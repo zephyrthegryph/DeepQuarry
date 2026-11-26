@@ -16,144 +16,18 @@
 	else
 		client?.media?.stop_music()
 
-/datum/preference/toggle/play_ambience
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_AMBIENCE"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/play_ambience/apply_to_client(client/client, value)
-	if(!value)
-		client << sound(null, repeat = 0, wait = 0, volume = 0, channel = CHANNEL_AMBIENCE_FORCED)
-		client << sound(null, repeat = 0, wait = 0, volume = 0, channel = CHANNEL_AMBIENCE)
-
-/datum/preference/toggle/play_jukebox
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_JUKEBOX"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/play_jukebox/apply_to_client(client/client, value)
-	if(value)
-		client?.mob?.update_music()
-	else
-		client?.mob?.stop_all_music()
-
-/datum/preference/toggle/instrument_toggle
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_INSTRUMENT"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/emote_noises
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "EMOTE_NOISES"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/radio_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "RADIO_SOUNDS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/say_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SAY_SOUNDS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/bloop_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "BLOOP_SOUNDS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/emote_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "EMOTE_SOUNDS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/whisper_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "WHISPER_SOUNDS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/subtle_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SUBTLE_SOUNDS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/air_pump_noise
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_AIRPUMP"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/old_door_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_OLDDOORS"
-	default_value = FALSE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/department_door_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_DEPARTMENTDOORS"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/pickup_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_PICKED"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/drop_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_DROPPED"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/weather_sounds
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_WEATHER"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/supermatter_hum
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_SUPERMATTER"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_PLAYER
-
 /datum/preference/toggle/play_mentorhelp_ping
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "SOUND_MENTORHELP"
 	default_value = TRUE
 	savefile_identifier = PREFERENCE_PLAYER
 
-/datum/preference/numeric/ambience_freq
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "ambience_freq"
-	savefile_identifier = PREFERENCE_PLAYER
-	minimum = 0
-	maximum = 60
-
-/datum/preference/numeric/ambience_freq/create_default_value()
-	return 5
-
-/datum/preference/numeric/ambience_chance
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "ambience_chance"
-	savefile_identifier = PREFERENCE_PLAYER
-	minimum = 0
-	maximum = 100
-
-/datum/preference/numeric/ambience_chance/create_default_value()
-	return 35
+/// Staff only: mentors and admins hear the ping.
+/datum/preference/toggle/play_mentorhelp_ping/is_accessible(datum/preferences/preferences)
+	. = ..()
+	if(!.)
+		return
+	return check_rights_for(preferences.client(), R_ADMIN|R_MOD|R_MENTOR)
 
 // Volume channels
 /datum/preference/volume_channels
@@ -196,18 +70,29 @@
 	var/list/volume_channels = prefs.read_preference(/datum/preference/volume_channels)
 	return volume_channels["[volume_channel]"]
 
+/// The product of the volume channel's setting and the master volume, from one read of the preference (each read copies the channels list; a sound was reading it twice a hearer).
+/client/proc/get_sound_volume_factor(volume_channel)
+	if(!prefs)
+		return 1
+	var/list/volume_channels = prefs.read_preference(/datum/preference/volume_channels)
+	var/factor = volume_channels["[VOLUME_CHANNEL_MASTER]"]
+	if(volume_channel)
+		factor *= volume_channels["[volume_channel]"]
+	return factor
+
 // Neat little volume adjuster thing in case you don't wanna touch preferences by hand you lazy fuck
 /datum/volume_panel
 
 CAPABILITIES(/datum/volume_panel)
 	interface("VolumePanel", title = "Volume Panel", state = nameof(GLOB.tgui_always_state))
+	ui_shape(volume_channels = map_of(schema_text(), num()))
 	op("adjust_volume", ui_act("adjust_volume", arg("channel", schema_text(4096)), arg("vol", num())), then(PROC_REF(ui_act_adjust_volume)))
 
 /// /datum/volume_panel's window data.
 /datum/volume_panel/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	if(!user.client || !user.client.prefs)
-		return list("error" = TRUE)
+		return list()
 
 	var/list/data = list()
 	data["volume_channels"] = user.client.prefs.read_preference(/datum/preference/volume_channels)
@@ -231,11 +116,8 @@ CAPABILITIES(/datum/volume_panel)
 		P.write_preference_by_type(/datum/preference/volume_channels, volume_channels)
 		return TRUE
 
-/client/verb/volume_panel()
-	set name = "Volume Panel"
-	set category = VERB_CAT_PREFERENCES_SOUNDS
-	set desc = "Allows you to adjust volume levels on the fly."
-
+/// Opens the volume mixer (the Game Preferences window's Volume Mixer button).
+/client/proc/open_volume_panel()
 	if(!volume_panel)
 		rel_set(src, nameof(volume_panel), new /datum/volume_panel(src))
 
@@ -266,9 +148,4 @@ CAPABILITIES(/datum/volume_panel)
 /datum/preference/numeric/volume/sound_instruments
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "sound_instruments"
-	savefile_identifier = PREFERENCE_PLAYER
-
-/datum/preference/toggle/fridge_hum
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "SOUND_FRIDGEHUM"
 	savefile_identifier = PREFERENCE_PLAYER

@@ -146,7 +146,7 @@
 			SScontracts.withdraw_candidate(candidate, "Agency test cleanup")
 	TEST_ASSERT_EQUAL(agent_offers, CARGO_MARKET_AGENT_OFFERS, "agency did not publish the expected private offer choice")
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations.get_agent_record(account.account_number)
-	record.contracts_completed = FACTION_AGENT_TRUSTED_COMPLETIONS
+	record.set_contracts_completed(FACTION_AGENT_TRUSTED_COMPLETIONS)
 	TEST_ASSERT(GLOB.station_faction_relations.refresh_agent_tier(record), "qualified accredited agent did not reach trusted status")
 	TEST_ASSERT("agent_red_exfiltration" in SScontracts.agent_contract_definition_ids(record), "trusted non-Syndicate agent was not offered a faction-appropriate red mandate")
 	var/personal_key = "[account.account_number]"
@@ -255,7 +255,7 @@
 	hostile.state = CONTRACT_ACTIVE
 	hostile.owner_account_number = account.account_number
 	hostile.agent_faction = REPUTATION_FACTION_ECLIPSE
-	hostile.red_contract = TRUE
+	hostile.set_red_contract(TRUE)
 	hostile.base_reward = 1000
 	hostile.reward = 1000
 	TEST_ASSERT(hostile.select_operation_approach(null, agent, AGENT_APPROACH_HOSTILE, null), "red commission rejected its explicitly authorized hostile approach")

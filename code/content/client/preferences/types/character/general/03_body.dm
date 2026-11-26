@@ -172,4 +172,3 @@
 
 /datum/preference/numeric/human/ears_alpha/create_default_value()
 	return 255 //no randomization here.
-

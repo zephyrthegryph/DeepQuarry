@@ -159,7 +159,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	return TRUE
 
 /client/proc/topic_reload_statbrowser(mob/user)
-	stat_panel.reinitialize()
+	stat_panel_open(src)
 	return TRUE
 
 /client/proc/topic_asset_cache_preload_data(mob/user, preload_data)
@@ -213,7 +213,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return null
 
 	if(!CONFIG_GET(flag/guests_allowed) && IsGuestKey(key))
-		alert(src,"This server doesn't allow guest accounts to play. Please go to https://www.byond.com/ and register for a key.","Guest") // ALLOW(scheduler): the client is deleted next, so the message must block until it's read
+		// world/IsBanned() already refuses guests with this reason; this is the fallback (an admin guest key, OVERRIDE_BAN_SYSTEM).
+		// The chat panel is not loaded yet in New(), so the line goes straight to the skin's output, then the client goes.
+		src << "This server doesn't allow guest accounts to play. Please go to https://www.byond.com/ and register for a key."
 		del(src) // ALLOW(scheduler): client: disconnects the client
 		return
 
@@ -235,12 +237,8 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		chatlog_token = vchatlog_generate_token(ckey, GLOB.round_id)
 
 	winset(src, null, list("browser-options" = "find,refresh"))
-	// Instantiate stat panel
-	rel_set(src, nameof(stat_panel), new /datum/tgui_window(src, SKIN_STAT_BROWSER))
-	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
 	// Instantiate tgui panel
-	rel_set(src, nameof(tgui_say), new /datum/tgui_say(src, SKIN_TGUI_SAY))
 	rel_set(src, nameof(tgui_shocker), new /datum/tgui_shock(src, SKIN_TGUI_SHOCK))
 	initialize_commandbar_spy()
 	rel_set(src, nameof(tgui_panel), new /datum/tgui_panel(src, SKIN_CHAT_BROWSER))
@@ -309,22 +307,20 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(prefs)
 		prefs.selecting_slots = FALSE
 
-	// Initialize stat panel
-	// The React page (tgui/packages/tgui-panel/statpanel). If its bundle never mounts, the inline
-	// script shows this reload link instead of leaving the pane blank.
-	stat_panel.initialize(
-		assets = list(get_asset_datum(/datum/asset/simple/tgui_statpanel)),
-		inline_html = "<div id='statpanel-fallback' style='display:none;padding:1em;color:#B3CCE6;background:#202020;font:12px Verdana,sans-serif'>The stat panel did not load. <a style='color:#6699FF' href='byond://?src=[REF(src)];reload_statbrowser=1'>Reload it</a>, or reconnect if that does not help.</div>",
-		inline_js = "setTimeout(function(){if(window.__statpanelMounted)return;document.getElementById('statpanel-fallback').style.display='block';Byond.winset(Byond.windowId,{'is-visible':true});},10000);",
-	)
 	after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
 
 	acquire_dpi()
 
 	tgui_panel.initialize()
 
-	// Initialize tgui panel
-	tgui_say.initialize()
+	// Before anything opens a pooled window: this closes and forgets every pooled shell the client still has.
+	SStgui.reconcile_client_windows(src)
+
+	// The stat panel: a tgui window like any other (stat_panel_window.dm), docked in the right-hand column unless the player floated it.
+	stat_panel_open(src)
+	// The chat: a tgui window too (chat_ui.dm), docked in the column unless the player floated it.
+	chat_ui_open(src)
+
 	tgui_shocker.initialize()
 
 	rel_set(src, nameof(loot_panel), new /datum/lootpanel(src))
@@ -351,11 +347,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	attempt_auto_fit_viewport()
 	fully_created = TRUE
-	SStgui.reconcile_client_windows(src)
 	SStgui.schedule_client_prewarm(src)
 
 	// Now that we're fully initialized, use our prefs
-	if(prefs?.read_preference(/datum/preference/toggle/browser_dev_tools))
+	if(prefs?.read_preference(/datum/preference/toggle/browser_dev_tools) && check_rights_for(src, R_DEBUG))
 		winset(src, null, "browser-options=[DEFAULT_CLIENT_BROWSER_OPTIONS],devtools")
 
 	//////////////
@@ -602,11 +597,11 @@ GLOBAL_VAR_INIT(login_seq, 0)
 		login_admit()
 		return
 	var/sql_id = 0
-	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
+	set_player_age(0)	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
 	if(length(player_rows))
 		var/list/player_row = player_rows[1]
 		sql_id = player_row[1]
-		player_age = text2num(player_row[2])
+		set_player_age(text2num(player_row[2]))
 
 	login_http_ask("http://byond.com/members/[ckey]?format=text", PROC_REF(login_join_date_answered), sql_id)
 
@@ -915,7 +910,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 
 /client/verb/character_setup()
 	set name = "Character Setup"
-	set category = VERB_CAT_PREFERENCES_CHARACTER
+	set hidden = TRUE
 
 	prefs.current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
 	prefs.update_tgui_static_data(mob)
@@ -923,7 +918,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 
 /client/verb/game_options()
 	set name = "Game Options"
-	set category = VERB_CAT_PREFERENCES_GAME
+	set hidden = TRUE
 
 	prefs.current_window = PREFERENCE_TAB_GAME_PREFERENCES
 	prefs.update_tgui_static_data(mob)
@@ -949,51 +944,9 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	to_chat(src, span_warning("If you feel this is in error, you can contact an administrator out-of-game (for example, on Discord)."))
 	spent(src)
 
-/client/verb/toggle_fullscreen()
-	set name = "Toggle Fullscreen"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-
-	fullscreen = !fullscreen
-
-	if (fullscreen)
-		winset(usr, SKIN_MAINWINDOW, "on-size=")
-		winset(usr, SKIN_MAINWINDOW, "titlebar=false")
-		winset(usr, SKIN_MAINWINDOW, "can-resize=false")
-		winset(usr, SKIN_MAINWINDOW, "is-maximized=false")
-		winset(usr, SKIN_MAINWINDOW, "is-maximized=true")
-	else
-		winset(usr, SKIN_MAINWINDOW, "titlebar=true")
-		winset(usr, SKIN_MAINWINDOW, "can-resize=true")
-		winset(usr, SKIN_MAINWINDOW, "is-maximized=false")
-		winset(usr, SKIN_MAINWINDOW, "on-size=attempt_auto_fit_viewport") // The attempt_auto_fit_viewport() proc is not implemented yet
-	attempt_auto_fit_viewport()
-
-/*we use TGPanel
-/client/verb/toggle_verb_panel()
-	set name = "Toggle Verbs"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-
-	show_verb_panel = !show_verb_panel
-
-	to_chat(src, "Your verbs are now [show_verb_panel ? "on" : "off. To turn them back on, type 'toggle-verbs' into the command bar."].")
-*/
-
-/*
-/client/verb/toggle_status_bar()
-	set name = "Toggle Status Bar"
-	set category = VERB_CAT_OOC_CLIENT_SETTINGS
-
-	show_status_bar = !show_status_bar
-
-	if (show_status_bar)
-		winset(usr, "input", "is-visible=true")
-	else
-		winset(usr, "input", "is-visible=false")
-*/
-
 /client/verb/show_active_playtime()
 	set name = "Active Playtime"
-	set category = VERB_CAT_OOC_GAME
+	set hidden = TRUE // the Menu page
 
 	if(!play_hours.len)
 		to_chat(src, span_warning("Persistent playtime disabled!"))
@@ -1012,19 +965,32 @@ GLOBAL_VAR_INIT(login_seq, 0)
 /client/proc/init_verbs()
 	if(IsAdminAdvancedProcCall())
 		return
+	// Admin rights attach during client/New, before the panel opens; the page asks for the list with Update-Verbs once it is up.
+	if(!stat_panel)
+		return
 	var/list/verblist = list()
 	panel_tabs.Cut()
+	// An admin's panel holds only the admin verbs they pinned, all under one tab; the rest are in the Admin Verbs browser.
+	var/list/pinned_names = admin_holder_of(src) ? admin_verb_panel_names(src) : null
 	for(var/thing in (verbs + mob?.verbs))
 		var/procpath/verb_to_init = thing
 		if(!verb_to_init)
 			continue
-		if(verb_to_init.hidden)
+		if(!verb_panel_listed(verb_to_init))
 			continue
-		if(!istext(verb_to_init.category))
-			continue
-		panel_tabs |= verb_to_init.category
-		verblist[++verblist.len] = list(verb_to_init.category, verb_to_init.name, verb_to_init.desc)
-	src.stat_panel.send_message("init_verbs", list(panel_tabs = panel_tabs, verblist = verblist))
+		var/category = verb_to_init.category
+		if(pinned_names && SSadmin_verbs.is_admin_verb_name(verb_to_init.name))
+			if(!(verb_to_init.name in pinned_names))
+				continue
+			category = ADMIN_CATEGORY_MAIN
+		panel_tabs |= category
+		verblist[++verblist.len] = list(category, verb_to_init.name, verb_to_init.desc)
+	// The rest of the admin's verbs are not on the panel, but its search finds them (the browser's list: what their rights allow).
+	var/list/searchable = list()
+	if(pinned_names)
+		for(var/datum/admin_verb/listed as anything in admin_verbs_listed_for(src))
+			searchable[++searchable.len] = list(listed.category, listed.name)
+	src.stat_panel.send_message("init_verbs", list(panel_tabs = panel_tabs, verblist = verblist, searchable = searchable))
 
 /client/proc/check_panel_loaded()
 	if(stat_panel && stat_panel.is_ready())
@@ -1038,6 +1004,8 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	switch(type)
 		if("Update-Verbs")
 			init_verbs()
+			SSstatpanels.mc_health_forget(src) // a reloaded page holds no MC Health sections
+			mob?.abilities_changed() // the panel is ready to show the Abilities tab
 		if("Remove-Tabs")
 			panel_tabs -= payload["tab"]
 		if("Send-Tabs")
@@ -1046,7 +1014,16 @@ GLOBAL_VAR_INIT(login_seq, 0)
 			panel_tabs = list()
 		if("Set-Tab")
 			stat_tab = payload["tab"]
-			SSstatpanels.immediate_send_stat_data(src)
+			var/sent_now = SSstatpanels.immediate_send_stat_data(src)
+			log_tgui(src, "Stat panel tab set to [stat_tab]: ready=[stat_panel?.is_ready() ? 1 : 0] holder=[holder ? 1 : 0] sent_now=[sent_now ? 1 : 0].", context = "stat_panel")
+		if("Inspect-Act")
+			// A button in the Inspect tab (code/content/examine/inspect_panel.dm).
+			if(islist(payload) && istext(payload["act"]))
+				inspect_panel?.act(payload["act"], payload)
+		if("Abilities-Act")
+			// A button or a drag in the Abilities tab (code/content/abilities/ability_panel.dm).
+			if(islist(payload) && istext(payload["act"]))
+				ability_panel_of(src).act(payload["act"], payload)
 
 /// This grabs the DPI of the user per their skin (a winget round trip, through DX-exec)
 /client/proc/acquire_dpi()
@@ -1071,6 +1048,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	if(new_eye == eye)
 		return
 	eye = new_eye
+	hide_tooltip()
 	SSproximity.eye_update(src)
 
 /mob/proc/is_remote_viewing()

@@ -77,7 +77,7 @@
 		return
 	record.counter_offer_queued = FALSE
 	if(contract.closure_code == CONTRACT_CLOSE_COMPLETED)
-		record.exposure = max(0, record.exposure - FACTION_AGENT_INVESTIGATION_THRESHOLD)
+		record.set_exposure(max(0, record.exposure - FACTION_AGENT_INVESTIGATION_THRESHOLD))
 		adjust_personal_faction_reputation(record.account_number, record.faction_id, -AGENT_INVESTIGATION_REPUTATION_PENALTY)
 		for(var/datum/contract/faction_agent/agent_contract in active_contracts.Copy())
 			if(agent_contract.owner_account_number != record.account_number)
@@ -99,12 +99,12 @@
 			GLOB.station_faction_relations.accredit_agent(contract.owner_account_number)
 		else
 			if(contract.closure_code == CONTRACT_CLOSE_FAILED)
-				record.contracts_failed++
+				record.set_contracts_failed(record.contracts_failed + 1)
 			after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_vetting), with = list(contract.owner_account_number, contract.agent_faction))
 		return
 	if(contract.closure_code == CONTRACT_CLOSE_COMPLETED)
-		record.contracts_completed++
+		record.set_contracts_completed(record.contracts_completed + 1)
 	else if(contract.closure_code == CONTRACT_CLOSE_FAILED)
-		record.contracts_failed++
+		record.set_contracts_failed(record.contracts_failed + 1)
 	GLOB.station_faction_relations.refresh_agent_tier(record)
 	after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_offers), with = list(contract.owner_account_number, contract.agent_faction))

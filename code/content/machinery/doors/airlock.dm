@@ -215,6 +215,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 	section(controls, "The remote control window (an AI's, a cyborg's, an admin ghost's) and a silicon's gestures over its link")
 	interface("AiAirlock")
+	ui_shape(power = row(main = int(), main_timeleft = num(), backup = int(), backup_timeleft = num()), id_scanner = bool(), lights = bool(), opened = bool(), wires = row(main_1 = bool(), main_2 = bool(), backup_1 = bool(), backup_2 = bool(), shock = bool(), id_scanner = bool(), bolts = bool(), lights = bool(), safe = bool(), timing = bool()), bolted = bool(), electrified = bool(), electrified_left = num(), welded = bool(), emergency = bool(), safe = bool(), speed = bool())
 	extend("ui_open", inputs(remote())) // silicons only: remote() replaces the hand binding
 	without("silicon_hand") // a silicon's plain click opens the window (ui_open), never the hand's Use
 	extend(TAG_UI, needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
@@ -492,7 +493,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	power["backup_timeleft"] = backup_carries(A) ? 0 : ((backup_power_out && !backup_cables_cut()) ? round(backup_left / 10, 1) : -1)
 	data["power"] = power
 	data["id_scanner"] = !aiDisabledIdScanner
-	data["lights"] = lights
+	data["lights"] = !!lights
 	data["opened"] = !density
 	var/list/wire = list()
 	wire["main_1"] = !wire_is_cut(src, WIRE_MAIN_POWER1)
@@ -506,8 +507,8 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	wire["safe"] = !wire_is_cut(src, WIRE_SAFETY)
 	wire["timing"] = !wire_is_cut(src, WIRE_SPEED)
 	data["wires"] = wire
-	data["bolted"] = bolted
-	data["electrified"] = electrified
+	data["bolted"] = !!bolted
+	data["electrified"] = !!electrified
 	var/shock_left = 0
 	for(var/source in held_by(src, STAT_ELECTRIFIED))
 		var/left = hold_left(src, STAT_ELECTRIFIED, source)
@@ -516,10 +517,10 @@ CAPABILITIES(/obj/machinery/door/airlock)
 			break
 		shock_left = max(shock_left, left)
 	data["electrified_left"] = shock_left > 0 ? round(shock_left / 10, 1) : (electrified ? -1 : 0)
-	data["welded"] = weld_shut_welded(src)
-	data["emergency"] = door_emergency_engaged(src)
+	data["welded"] = !!weld_shut_welded(src)
+	data["emergency"] = !!door_emergency_engaged(src)
 	data["safe"] = !!safe
-	data["speed"] = normalspeed
+	data["speed"] = !!normalspeed
 	return data
 
 // ---- the touch ----
@@ -1035,15 +1036,25 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/proc/play_motion_sound(opening)
 	var/powered = power_systems_on()
 	var/turf/here = get_turf(src)
-	for(var/mob/M in hearers(world.view * 2, here))
+	if(!here)
+		return
+	// Only a client hears it, so the view hearers() works out (a 29x29 square of turfs) is asked only when a client stands within its range.
+	var/range = world.view * 2
+	var/client_near = FALSE
+	for(var/client/C as anything in GLOB.clients)
+		var/turf/T = get_turf(C.mob)
+		if(T && T.z == here.z && get_dist(T, here) <= range)
+			client_near = TRUE
+			break
+	if(!client_near)
+		return
+	for(var/mob/M in hearers(range, here))
 		if(!M.client)
 			continue
 		var/sound
 		if(!powered)
 			sound = open_sound_unpowered
-		else if(M.read_preference(/datum/preference/toggle/old_door_sounds))
-			sound = opening ? legacy_open_powered : legacy_close_powered
-		else if(M.read_preference(/datum/preference/toggle/department_door_sounds) && (opening ? department_open_powered : department_close_powered))
+		else if((opening ? department_open_powered : department_close_powered))
 			sound = opening ? department_open_powered : department_close_powered
 		else
 			sound = opening ? open_sound_powered : close_sound_powered
@@ -1271,8 +1282,7 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the slots of the airl
 /obj/structure/closet/airlock_crush(crush_damage)
 	..()
 	take_damage(crush_damage, BRUTE)
-	latent_materialize_all() // crushing reaches the contents (C5)
-	for(var/atom/movable/AM in contents_of(src)) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
+	for(var/atom/movable/AM in contents_of(src))
 		AM.airlock_crush()
 	return TRUE
 
@@ -1316,6 +1326,8 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the slots of the airl
 /datum/cap_data/wires/airlock
 
 CAPABILITIES(/datum/cap_data/wires/airlock)
+	interface("WiresAirlock", state = nameof(GLOB.tgui_physical_state))
+	ui_shape(wires = list_of(row(seen_color = schema_text(), color_name = schema_text(), color = schema_text(), wire = nullable(schema_text()), cut = bool(), attached = bool())), status = list_of(schema_text()), id_tag = nullable(schema_text()), frequency = nullable(num()), min_freq = num(), max_freq = num())
 	op("set_id_tag", ui_act(), needs(req_wires_in_reach()),
 		asks(/datum/prompt/text, fields = list("title" = "ID Tag", "question" = "Enter a new ID tag", "default" = computed(PROC_REF(id_tag_now)), "max_len" = 60)),
 		then(PROC_REF(id_tag_answered)))

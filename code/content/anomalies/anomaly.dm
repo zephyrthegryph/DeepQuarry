@@ -59,12 +59,6 @@ CAPABILITIES(/obj/item/anomaly_releaser)
 	has_core = FALSE
 
 // The one for antags and evil-doers
-/obj/item/anomaly_releaser/antag
-	has_core = TRUE
-	will_anchor = TRUE
-	gives_stats = FALSE // Evil and fucked up...
-	desc = "Single-use injector that releases and stabilizes anomalies by injecting an unknown substance. This one seems odd."
-
 /obj/item/anomaly_scanner/get_mechanics_info(list/additional_information)
 	return ..(list("Danger type adds severity. Unstable changes state. Containment stabilizes at the cost of health. Transformation adds modifiers.") + additional_information)
 
@@ -96,11 +90,11 @@ CAPABILITIES(/obj/item/anomaly_scanner)
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/anomaly_scanner/tgui_static_data(mob/user)
+/obj/item/anomaly_scanner/ui_static_data(datum/act/eval/A)
 	. = ..()
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_owner = loc
-		.["theme"] = robot_owner.get_ui_theme()
+	var/robot_theme = robot_holder_theme(src)
+	if(robot_theme)
+		.["theme"] = robot_theme
 
 /// /obj/item/anomaly_scanner's window data.
 /obj/item/anomaly_scanner/ui_data(datum/act/eval/A)

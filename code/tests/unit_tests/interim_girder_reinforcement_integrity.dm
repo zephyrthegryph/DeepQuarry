@@ -11,8 +11,8 @@
 		var/datum/material/reinforcement = get_material_by_name(material_case[2])
 		var/obj/structure/girder/girder = allocate(/obj/structure/girder, T)
 		girder.set_material(frame_material)
-		var/base_integrity = round(frame_material.integrity)
-		var/reinforced_integrity = base_integrity + round(reinforcement.integrity / 2)
+		var/base_integrity = round(frame_material.toughness * MATERIAL_HP_PER_TOUGHNESS)
+		var/reinforced_integrity = base_integrity + round(reinforcement.toughness)
 		TEST_ASSERT_EQUAL(girder.max_integrity, base_integrity, "the actual unreinforced frame starts with its own material allowance")
 		girder.reinf_material = reinforcement
 		girder.reinforce_girder()

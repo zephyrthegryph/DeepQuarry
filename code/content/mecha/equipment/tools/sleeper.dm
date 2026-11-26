@@ -103,9 +103,10 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	interface("MechaSleeper", title = "Mounted Sleeper")
+	ui_shape(has_occupant = bool(), occupant_name = schema_text(), status = schema_text(), health_percent = num(), diagnosis = nullable(diagnosis_report()), body_temp_c = num(), body_temp_f = num(), reagents = list_of(row(name = schema_text(), volume = num(), contaminant = bool())), syringe_volume = num())
 	without("ui_open")
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
-	op("inject", ui_act("inject", arg("reagent", schema_text(64))), then(PROC_REF(ui_act_inject)))
+	op("inject", ui_act("inject"), then(PROC_REF(ui_act_inject)))
 	every(1 SECOND, then(PROC_REF(sleeper_step)), when = nameof(sustaining))
 
 /// /obj/item/mecha_parts/mecha_equipment/tool/sleeper's window data.
@@ -121,7 +122,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 		data["body_temp_c"] = 0
 		data["body_temp_f"] = 0
 		data["reagents"] = list()
-		data["injectables"] = list()
+		data["syringe_volume"] = 0
 		return data
 	data["occupant_name"] = occupant.name
 	switch(occupant.stat)
@@ -141,53 +142,41 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	data["body_temp_f"] = round(occupant.body_temperature() * 1.8 - 459.67, 0.1)
 	var/list/rlist = list()
 	if(occupant.reagents)
-		for(var/datum/reagent/R in occupant.reagents.reagent_list)
+		for(var/datum/reagent/R as anything in occupant.reagents.listed_reagents()) // the contaminants last
 			if(R.volume > 0)
-				rlist += list(list("name" = "[R]", "volume" = round(R.volume, 0.01)))
+				rlist += list(list("name" = "[R]", "volume" = round(R.volume, 0.01), "contaminant" = istype(R, /datum/reagent/contaminant)))
 	data["reagents"] = rlist
-	var/list/inj = list()
 	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = locate_within(chassis, /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
-	if(SG?.reagents && islist(SG.reagents.reagent_list))
-		for(var/datum/reagent/R in SG.reagents.reagent_list)
-			if(R.volume > 0)
-				inj += list(list(
-					"id" = R.id,
-					"name" = R.name,
-				))
-	data["injectables"] = inj
+	data["syringe_volume"] = round(SG?.reagents?.total_volume || 0, 0.01)
 	return data
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/ui_act_eject(datum/act/op/A)
 	go_out()
 	return TRUE
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/ui_act_inject(datum/act/op/A, reagent)
-	if(!istext(reagent))
-		return FALSE
-	// the window offers the reagents of the exosuit's syringe gun (the first one it carries)
+/// Injects a measure of the syringe gun's whole mix, in proportion; never one chosen reagent.
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/ui_act_inject(datum/act/op/A)
+	// the window offers the exosuit's syringe gun (the first one it carries)
 	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = locate_within(chassis, /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
-	if(!SG?.reagents)
+	if(!SG?.reagents || SG.reagents.total_volume <= 0)
 		return FALSE
-	for(var/datum/reagent/R in SG.reagents.reagent_list)
-		if(R.id == reagent && R.volume > 0)
-			inject_reagent(R, SG)
-			return TRUE
-	return FALSE
+	inject_mix(SG)
+	return TRUE
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/inject_reagent(datum/reagent/R,obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG)
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/inject_mix(obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
-	if(!R || !occupant || !SG || !(SG in chassis.equipment))
+	if(!occupant || !SG || !(SG in chassis.equipment))
 		return 0
-	var/to_inject = min(R.volume, inject_amount)
-	if(to_inject && occupant.reagents.get_reagent_amount(R.id) + to_inject > inject_amount*4)
-		occupant_message(span_warning("Sleeper safeties prohibit you from injecting more than [inject_amount*4] units of [R.name]."))
-	else
-		occupant_message(span_notice("Injecting [occupant] with [to_inject] units of [R.name]."))
-		src.mecha_log_message("Injecting [occupant] with [to_inject] units of [R.name].")
-		SG.reagents.remove_reagent(R.id,to_inject)
-		occupant.reagents.add_reagent(R.id,to_inject)
-		update_equip_info()
-	return
+	var/to_inject = min(SG.reagents.total_volume, inject_amount)
+	if(to_inject <= 0)
+		return 0
+	if(occupant.reagents.total_volume + to_inject > inject_amount*4)
+		occupant_message(span_warning("Sleeper safeties prohibit you from injecting more than [inject_amount*4] units into the occupant."))
+		return 0
+	src.mecha_log_message("Injecting [occupant] with [to_inject] units of the syringe gun's mix.")
+	SG.reagents.trans_to_holder(occupant.reagents, to_inject)
+	update_equip_info()
+	return to_inject
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/update_equip_info()
 	SStgui.update_uis(src)

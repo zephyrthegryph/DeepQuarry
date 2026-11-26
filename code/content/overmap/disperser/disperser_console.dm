@@ -115,13 +115,15 @@
 CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	setup(PROC_REF(prepare_disperser_parts))
 	interface("OvermapDisperser")
+	ui_shape(faillink = bool(), calibration = nullable(list_of(int())), overmapdir = nullable(int()), cal_accuracy = num(), strength = int(), range = int(), next_shot = int(), nopower = bool(), chargeload = nullable(schema_text()))
 	without("ui_open")
 	op("choose", ui_act("choose", arg("dir", num())), then(PROC_REF(ui_act_choose)))
 	op("calibration", ui_act("calibration", arg("calibration", num())), asks(/datum/prompt/number/disperser_setting/calibration, step = "value"), then(PROC_REF(ui_act_calibration)))
 	op("skill_calibration", ui_act("skill_calibration"), then(PROC_REF(ui_act_skill_calibration)))
 	op("strength", ui_act("strength"), asks(/datum/prompt/number/disperser_setting/strength, step = "value"), then(PROC_REF(ui_act_strength)))
 	op("range", ui_act("range"), asks(/datum/prompt/number/disperser_setting/range, step = "value"), then(PROC_REF(ui_act_range)))
-	op(BURN, ui_act(BURN), then(PROC_REF(ui_act_burn)))
+	// the window's Fire ORB button sends "fire" (BURN is the damage type "burn", which no button sends)
+	op(BURN, ui_act("fire"), then(PROC_REF(ui_act_burn)))
 	ref_one(nameof(back))
 	ref_one(nameof(front))
 	ref_one(nameof(middle))
@@ -147,7 +149,6 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	data["range"] = 0
 	data["next_shot"] = -1
 	data["nopower"] = TRUE
-	data["skill"] = FALSE
 	data["chargeload"] = null
 
 	if(!link_parts())
@@ -172,38 +173,32 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	return data
 
 /// The console's guard: it works a linked ship.
-/obj/machinery/computer/ship/disperser/ui_gate(datum/act/op/A)
-	if(!..())
-		return FALSE
-	return !!linked()
+/obj/machinery/computer/ship/disperser/controls_refusal(datum/act/op/A)
+	. = ..()
+	if(.)
+		return
+	if(!linked())
+		return /datum/msg/req_silent
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_choose(datum/act/op/A, dir)
-	if(!ui_gate(A))
-		return FALSE
 	set_overmapdir(sanitize_integer(dir, 0, 9, 0))
 	reset_calibration()
 	terminal_typed(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_calibration(datum/act/op/A, calibration_index)
-	if(!ui_gate(A))
-		return FALSE
 	var/calnum = sanitize_integer(calibration_index, 0, caldigit)
 	set_calibration_at(calnum + 1, sanitize_integer(A.step_value("value"), 0, 9, 0))
 	terminal_typed(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_skill_calibration(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	for(var/i = 1 to 2)
 		set_calibration_at(i, calexpected[i])
 	terminal_typed(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_strength(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/value = A.step_value("value")
 	if(value)
 		set_strength(sanitize_integer(value, 1, 5, 1))
@@ -212,8 +207,6 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	return TRUE
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_range(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/value = A.step_value("value")
 	if(value)
 		set_range(sanitize_integer(value, 1, 5, 1))
@@ -222,8 +215,6 @@ CAPABILITIES(/obj/machinery/computer/ship/disperser)
 	return TRUE
 
 /obj/machinery/computer/ship/disperser/proc/ui_act_burn(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	fire(A.actor)
 	terminal_typed(A.actor)
 	return TRUE

@@ -24,7 +24,7 @@ mod parserwire;
 use crate::{MemberId, MemberKind, OccurrenceId, Skeleton, SnapshotError, Target, TreeSnapshot};
 use dm_ir::{FileId, Span, SymbolTable};
 use dm_preprocess::regions::{
-    plan_regions, DirectivePlan, ExpandedOriginView, ExpandedRegions, MacroTrace, NonTextKind,
+    plan_regions, DirectivePlan, ExpandedOriginView, ExpandedRegions, MacroExpansion, NonTextKind,
 };
 use dm_preprocess::SourceProvider;
 use dm_syntax::{AstFile, Item, ItemKind};
@@ -57,7 +57,7 @@ pub struct SourceLocation {
     pub encounter_ordinal: usize,
     pub include_occurrence: usize,
     pub include_chain: Arc<[usize]>,
-    pub macro_expansions: MacroTrace,
+    pub macro_expansions: Arc<Vec<MacroExpansion>>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -72,10 +72,6 @@ pub enum DiagnosticStage {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DiagnosticKind {
     SourceError,
-    OriginalFatalInput{reason:crate::OriginalInputParameterFatal,byte_column:usize,indentation:bool},
-    OriginalFatalParameter{reason:crate::OriginalParameterFatal,byte_column:usize,indentation:bool},
-    OriginalFormalNotice{notice:crate::OriginalFormalNotice,byte_column:usize},
-    OriginalFatalDeclaration{reason:dm_syntax::OriginalDeclarationFatal,byte_column:usize,indentation:bool},
     UnsupportedModel,
     Internal,
 }
@@ -87,19 +83,6 @@ pub struct Diagnostic {
     pub message: String,
     pub location: Option<SourceLocation>,
 }
-
-/// A fatal ORIGINAL native preparation failure. Borrowed report DATA only:
-/// it cannot issue a graph, promote a compiler result or claim source currentness.
-
-
-pub struct OriginalFatalPreparationOutcome<'a>{diagnostic:&'a Diagnostic,prior:&'a[Diagnostic],byte_column:usize,indentation:bool}
-pub struct OriginalFormalNoticeOutcome<'a>{diagnostic:&'a Diagnostic,notice:crate::OriginalFormalNotice,byte_column:usize}
-impl OriginalFormalNoticeOutcome<'_>{pub fn message(&self)->&str{&self.diagnostic.message}pub fn registration(&self)->(Option<&'static str>,crate::OriginalFormalNoticeLevel){self.notice.registration()}pub fn location(&self)->(&Path,usize,usize){let point=self.diagnostic.location.as_ref().expect("actual formal notice source point");(point.path.as_path(),point.line,self.byte_column)}}
-impl OriginalFatalPreparationOutcome<'_>{pub fn prior_notices(&self)->impl Iterator<Item=OriginalFormalNoticeOutcome<'_>>{self.prior.iter().map(|diagnostic|{let DiagnosticKind::OriginalFormalNotice{notice,byte_column}=diagnostic.kind else{unreachable!("private actual formal prefix")};OriginalFormalNoticeOutcome{diagnostic,notice,byte_column}})}pub fn message(&self)->&str{&self.diagnostic.message}pub fn location(&self)->(&Path,usize,usize){let point=self.diagnostic.location.as_ref().expect("private native mapped failure");(point.path.as_path(),point.line,self.byte_column)}pub fn severity(&self)->&'static str{"error"}pub fn write_notes(&self,out:&mut impl std::io::Write)->std::io::Result<()>{if self.indentation{let(_,line,_)=self.location();writeln!(out,"- {}:1: check for extra indentation at the start of the next line",line+1)?;}writeln!(out,"- fatal error: the parser cannot continue")?;writeln!(out,"- constant evaluation will be skipped")}pub fn notes(&self)->Vec<String>{let mut notes=Vec::with_capacity(if self.indentation{3}else{2});if self.indentation{let(_,line,_)=self.location();notes.push(format!("{}:1: check for extra indentation at the start of the next line",line+1));}notes.push("fatal error: the parser cannot continue".into());notes.push("constant evaluation will be skipped".into());notes}pub fn continues_analysis(&self)->bool{false}pub fn compiler_admissible(&self)->bool{false}}
-/// Only a real first fatal declaration failure is represented. Other native
-/// diagnostics remain unsupported here, never a fabricated empty full report.
-pub fn original_fatal_preparation_outcome(diagnostics:&[Diagnostic])->Option<OriginalFatalPreparationOutcome<'_>>{let(first,prior)=diagnostics.split_last()?;if prior.iter().any(|row|!matches!(row.kind,DiagnosticKind::OriginalFormalNotice{..})||row.location.is_none()){return None}let(byte_column,indentation)=match first.kind{DiagnosticKind::OriginalFatalInput{byte_column,indentation,..}|DiagnosticKind::OriginalFatalParameter{byte_column,indentation,..}|DiagnosticKind::OriginalFatalDeclaration{byte_column,indentation,..}=>(byte_column,indentation),_=>return None};first.location.as_ref()?;Some(OriginalFatalPreparationOutcome{diagnostic:first,prior,byte_column,indentation})}
-impl DiagnosticKind{pub fn is_source_error(self)->bool{matches!(self,Self::SourceError|Self::OriginalFatalInput{..}|Self::OriginalFatalParameter{..}|Self::OriginalFatalDeclaration{..})||matches!(self,Self::OriginalFormalNotice{notice,..}if notice.registration().1==crate::OriginalFormalNoticeLevel::Error)}}
 
 /// Bodies refer into the current expanded source arena, independently of the semantic
 /// tree. Editing executable statements changes this occurrence, not tree identity.
@@ -226,10 +209,9 @@ pub struct EngineModelStatus {
 
 #[derive(Clone, Debug)]
 pub struct ColdFrontend {
-    original_primary:Option<Arc<original_declaration_input::OriginalPrimaryRetention>>,
     pub timings: FrontendTimings,
     pub engine: Option<EngineModelStatus>,
-    pub plan: FrontendDirectivePlan,
+    pub plan: DirectivePlan,
     pub expanded: ExpandedRegions,
     pub syntax: Arc<DeclarationSyntax>,
     /// Original grammar groups, before flattened declaration normalization.
@@ -250,31 +232,9 @@ pub struct ColdFrontend {
     /// or reorders origins independently from their declaration targets.
     pub emission_order: Arc<[OccurrenceId]>,
     source_export_mapping: Arc<source_export_mapping::SourceExportMapping>,
-    body_queries: Option<body_queries::BodyQueries>,
-    reused_body_queries: bool,
-    setting_expression_queries: Option<std::sync::Weak<dyn SettingExpressionQueries>>,
-}
-
-/// Readonly storage census view of existing frontend payloads. It lends no
-/// compiler/runtime receiver and grants no source-current or completion proof.
-pub struct FrontendStorageView<'a>{
- pub plan:&'a FrontendDirectivePlan,pub expanded:&'a ExpandedRegions,pub syntax:&'a Arc<DeclarationSyntax>,pub allocation_ledger:&'a Arc<crate::allocation_ledger::AllocationLedger>,pub snapshot:&'a TreeSnapshot,pub files:&'a Arc<[SourceFile]>,pub bodies:&'a Arc<[BodyOccurrence]>,pub emission_order:&'a Arc<[OccurrenceId]>,frontend:&'a ColdFrontend,
-}
-impl FrontendStorageView<'_>{
- pub fn callable_roster(&self)->Result<&Arc<CallableRoster>,String>{self.frontend.callable_roster()}
- pub fn source_export_mapping(&self)->Option<&Arc<SourceExportMapping>>{self.frontend.source_export_mapping()}
- pub fn visit_body_code_storage(&self,visit:impl FnMut(usize,usize,usize)){self.frontend.visit_body_code_storage(visit)}
- pub fn settings_owner_storage(&self)->&Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]>{self.frontend.settings_owner_storage()}
-}
-
-/// Actual borrowed retained-analysis allocations; no source/query authority.
-pub enum AnalysisRetentionStorage<'a>{
- Allocation{address:usize,bytes:usize},Source(DiagnosticSourceView<'a>),Declarations(&'a crate::declaration_contributions::KeyedDeclarations),Symbols(&'a Arc<dm_ir::SymbolTable>),SymbolTable(&'a dm_ir::SymbolTable),Engine(&'a EngineSeed),Receipt(&'a Arc<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>),
 }
 
 impl ColdFrontend {
-    pub fn storage_view(&self)->FrontendStorageView<'_>{FrontendStorageView{plan:&self.plan,expanded:&self.expanded,syntax:&self.syntax,allocation_ledger:&self.allocation_ledger,snapshot:&self.snapshot,files:&self.files,bodies:&self.bodies,emission_order:&self.emission_order,frontend:self}}
-
     pub fn settings_owner_storage(&self) -> &Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]> {
         &self.issued_settings
     }
@@ -387,67 +347,13 @@ impl ColdFrontend {
         }
         Ok(())
     }
-    /// Genuine header-only loan: no BODY query or statement grammar demand.
-    pub fn header_parameters_using<'a>(&'a self,occurrence:&BodyOccurrence,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<SourceParameterView<'a>,BodySyntaxFailure>{
-      checkpoint().map_err(BodySyntaxFailure::Operational)?;
-      self.compact_body(occurrence)?;
-      let issued=&self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
-      let(parameters,projection)=self.issued_syntax.original_header_parameters_header_only(issued.expanded_span).map_err(|error|internal(&error.message))?;
-      let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
-      body_archive::checked_source_parameters_projected(&self.snapshot.tree,issued,header,parameters,&self.issued_arena,Some(projection),&||checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())
-    }
-    pub fn with_header_parameters_admitted<T>(
-      &self, occurrence:&BodyOccurrence, a:&dm_syntax::SettingAdmission<'_>,
-      consume:impl for<'loan> FnOnce(SourceParameterView<'loan>)->Result<T,BodySyntaxFailure>,
-    )->Result<T,BodySyntaxFailure>{
-      a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
-      self.compact_body(occurrence)?;
-      let issued=&self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
-      self.issued_syntax.with_original_header_parameters_admitted_header_only(issued.expanded_span,a,|parameters,projection|{
-       let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
-       let view=body_archive::checked_source_parameters_projected(&self.snapshot.tree,issued,header,parameters,&self.issued_arena,Some(projection),&||a.checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())?;
-       consume(view)
-      })
-    }
     pub fn parse_body<'a>(
         &'a self,
         occurrence: &BodyOccurrence,
     ) -> Result<ParsedBody<'a>, Diagnostic> {
-        self.parse_body_with(occurrence, |input, host| input.obtain(host))
-    }
-    /// Native callers retain operational failure separately from source syntax.
-    pub fn parse_body_checked<'a>(
-        &'a self,
-        occurrence: &BodyOccurrence,
-    ) -> Result<ParsedBody<'a>, BodySyntaxFailure> {
-        if self.body_queries.is_some(){let ordinal=*self.body_by_declaration.get(&occurrence.declaration).ok_or_else(||internal("body declaration ordinal absent"))?;self.syntax_input_checked(ordinal,&||Ok(()))?;}
-        self.parse_body_with(occurrence, |input, host| input.obtain_checked(host))
-    }
-    fn parse_body_with<'a, E: From<Diagnostic>>(
-        &'a self,
-        occurrence: &BodyOccurrence,
-        obtain: impl FnOnce(&Arc<BodySyntaxInput>, &dyn BodySyntaxQueries) -> Result<Arc<BodySyntax>, E>,
-    ) -> Result<ParsedBody<'a>, E> {
         self.compact_body(occurrence)?;
         let issued = &self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
-        if let Some(queries) = &self.body_queries {
-            let ordinal = self.body_by_declaration[&occurrence.declaration];
-            let input=queries.inputs.issued(ordinal).ok_or_else(||internal("native body Input is not issued; use checked ordinal demand"))?;
-            let shared = obtain(&input, queries.host.as_ref())?;
-            return Ok(ParsedBody {
-                statements: None,
-                statement_attempted: false,
-                static_receipt: std::sync::OnceLock::new(),
-                item: shared.item.clone(),
-                parameters: shared.parameters.clone(),
-                shared_syntax: Some(shared),
-                issuer: self,
-                occurrence: issued,
-            });
-        }
-        let original = self
-            .issued_syntax
-            .parse_original_procedure(issued.expanded_span, self.body_code(issued)?.identity())
+        let item = dm_syntax::parse_proc_at_span(&self.issued_arena, issued.expanded_span)
             .map_err(|error| Diagnostic {
                 kind: syntax_kind(error.kind),
                 stage: DiagnosticStage::Syntax,
@@ -458,11 +364,9 @@ impl ColdFrontend {
             })?;
         Ok(ParsedBody {
             statements: None,
-            shared_syntax: None,
             statement_attempted: false,
             static_receipt: std::sync::OnceLock::new(),
-            item: original.item,
-            parameters: original.parameters.into_shared(),
+            item,
             issuer: self,
             occurrence: issued,
         })
@@ -490,7 +394,7 @@ impl ColdFrontend {
     pub fn location(&self, expanded_offset: usize) -> Option<SourceLocation> {
         Mapping {
             projection: Default::default(),
-            plan: self.plan.source_geometry(),
+            plan: &self.plan,
             expanded: &self.expanded,
             files: &self.files,
             by_path: &self.source_by_path,
@@ -504,7 +408,7 @@ impl ColdFrontend {
     pub fn debug_site(&self, expanded_offset: usize) -> Option<(Arc<str>, usize)> {
         Mapping {
             projection: Default::default(),
-            plan: self.plan.source_geometry(),
+            plan: &self.plan,
             expanded: &self.expanded,
             files: &self.files,
             by_path: &self.source_by_path,
@@ -597,42 +501,15 @@ impl<'a> IssuedBodyInput<'a> {
     }
 }
 
-#[path = "frontend_body_code.rs"]
-mod body_code;
 #[path = "frontend_relative_declarations.rs"]
 mod relative_declarations;
+#[path = "frontend_body_code.rs"]
+mod body_code;
 pub use body_code::IssuedBodyCode;
-#[path = "frontend_body_queries.rs"]
-mod body_queries;
-#[path="frontend_committed_bodies.rs"]pub(crate) mod committed_bodies;
-#[path = "frontend_abi_source.rs"]
-mod abi_source;
-pub use abi_source::{OriginalAbiSourceInput,OriginalAbiExpressionKind,OriginalAbiExpressionProvenance};
-#[path = "frontend_initializer_source.rs"]
-mod initializer_source;
-pub use initializer_source::{OriginalUtilityValues,UtilityVariableOrigin,UtilityConstantError,OriginalUtilityErrors,OriginalDeclarationDimensions,OriginalInitializerRootProvenance,OriginalInitializerDimensionInput,OriginalInitializerDimensions,
-    OriginalDeclarationExpressionContext, OriginalDeclarationExpressionInput,
-    InitializerExpressionRecipe, OriginalInitializerContext, OriginalInitializerExpression,
-    OriginalInitializerExpressionInput,
-};
-#[path = "frontend_setting_source.rs"]
-mod setting_source;
-pub use body_queries::{BorrowedBodyUtilityPoint,BodySyntax, BodySyntaxInput, BodySyntaxInputWeak, BodySyntaxQueries,CurrentBodySyntax,OriginalBodySyntaxProduct,OriginalBodySyntaxError};
-#[path = "frontend_setting_queries.rs"]
-mod setting_queries;
-pub use setting_queries::{
-    ReturnAnnotationInput, SettingExpressionInput, SettingExpressionQueries, SettingStatementsInput,
-};
-#[path = "frontend_body_failure.rs"]
-mod body_failure;
-pub use body_failure::BodySyntaxFailure;
 #[path = "frontend_body_archive.rs"]
 mod body_archive;
-pub use body_archive::{OriginalArchiveOwner, OriginalParentSourceFailure,
-    AnnotationCandidateRoster, ArchivedBody, BodyArchive, CheckerVariableProperties, CallableHeaderSource,
-    OriginalHeaderExpressionHandle, SourceHeaderExpressions, SourceLocalView, SourceParameterView,
-};
-pub use relative_declarations::{BodyCodeIdentity,BodyCodeWeak};
+pub use body_archive::{ArchivedBody, BodyArchive};
+pub use relative_declarations::BodyCodeIdentity;
 pub use relative_declarations::{CurrentSyntaxChunk, DeclarationSyntax, ItemView, RelativeSyntax};
 #[path = "body_arena.rs"]
 mod body_arena;
@@ -640,15 +517,13 @@ pub use body_arena::{BodyArena, BodyArenaStorage};
 
 #[path = "frontend_static_receipt.rs"]
 mod static_receipt;
-pub use static_receipt::{InitializerFrameReceipt, IssuedStaticPlan, RelativeStaticPlan};
+pub use static_receipt::{IssuedStaticPlan, RelativeStaticPlan};
 #[path = "frontend_expression_site.rs"]
 mod expression_site;
 
 pub struct ParsedBody<'a> {
     static_receipt: std::sync::OnceLock<Result<Arc<IssuedStaticPlan>, String>>,
     item: Item,
-    parameters: dm_syntax::SharedParameterSignature,
-    shared_syntax: Option<Arc<body_queries::BodySyntax>>,
     statements: Option<Arc<StatementBody>>,
     statement_attempted: bool,
     issuer: &'a ColdFrontend,
@@ -658,95 +533,10 @@ pub struct ParsedBody<'a> {
 /// Full lossless children are released once the target admits this model.
 pub struct StatementBody {
     parsed: dm_syntax::ParsedBody,
-    // Actual admitted parser/normalization DATA; authority stays with current binding.
-    native_parser_facts:Option<dm_syntax::NativeBodyParserFacts>,
-    syntax_complete: std::sync::OnceLock<bool>,
     declaration_headers: std::collections::HashSet<(usize, usize)>,
     stored_candidates: bool,
-    // LAST: source-free literal credit survives every original payload buffer.
-    literal_admission:Option<dm_syntax::BodyLiteralAdmission>,
 }
-impl Drop for StatementBody{fn drop(&mut self){let parsed=std::mem::take(&mut self.parsed);drop(std::mem::take(&mut self.declaration_headers));dm_syntax::drop_body_literal_syntax(parsed,self.literal_admission.take());}}
 impl StatementBody {
-    /// Storage completion of this exact native parse, not source/semantic authority.
-    pub fn has_native_literal_syntax(&self)->bool{self.literal_admission.is_some()}
-    /// Resource-domain readiness only; exact source/occurrence joins remain with the archive.
-    pub fn is_native_literal_syntax_admitted_by(&self,a:&dm_syntax::SettingAdmission<'_>)->bool{self.literal_admission.as_ref().is_some_and(|actual|actual.is_admitted_by(a))}
-    pub fn visit_literal_admission_storage(&self,visit:impl FnMut(usize,usize)){if let Some(a)=&self.literal_admission{a.visit_storage(visit);}}
-
-    /// Recovering syntax can contain Unsupported nodes without a parser
-    /// diagnostic (some semantic diagnostics are deferred). Analysis consumers
-    /// must reject both, not turn an omitted node into a successful proof.
-    /// Shared once per issued syntax owner; compile-only callers stay lazy.
-    pub fn syntax_complete(&self) -> bool {
-        *self.syntax_complete.get_or_init(||self.syntax_complete_using(false))
-    }
-    /// Original primary syntax readiness only. Runtime text decoding remains
-    /// separately refused by syntax_complete()/LiteralText::parts(). No parse
-    /// or cache is created here for unprepared source literals.
-    pub fn original_literal_syntax_complete(&self)->bool{self.syntax_complete_using(true)}
-    fn syntax_complete_using(&self,original_literals:bool)->bool{
-            if !self.parsed.diagnostics.is_empty()
-                || self.parsed.pending_bodies.iter().any(|pending| {
-                    pending.missing_body()
-                        || pending.termination == dm_syntax::BodyTermination::Unknown
-                })
-            {
-                return false;
-            }
-            struct Coverage<'a> {
-                valid: bool,
-                parsed: &'a dm_syntax::ParsedBody,
-                original_literals:bool,
-            }
-            impl dm_syntax::TypedVisitor for Coverage<'_> {
-                fn projected_expression(
-                    &mut self,
-                    view: dm_syntax::ProjectedExprView<'_>,
-                    path: &[dm_syntax::NodeStep],
-                ) -> dm_syntax::VisitDecision {
-                    // Explicitly shape/identity-only; no original span is used as current.
-                    self.expression(view.original(), path)
-                }
-
-                fn statement(
-                    &mut self,
-                    node: &dm_syntax::Statement,
-                    _: &[dm_syntax::NodeStep],
-                ) -> dm_syntax::VisitDecision {
-                    if let dm_syntax::StatementKind::If { condition, .. }
-                    | dm_syntax::StatementKind::DoWhile { condition, .. } = &node.kind
-                    {
-                        if self.parsed.control_origin(condition.span).is_none() {
-                            self.valid = false;
-                            return dm_syntax::VisitDecision::Stop;
-                        }
-                    }
-                    dm_syntax::VisitDecision::Descend
-                }
-                fn expression(
-                    &mut self,
-                    node: &dm_syntax::Expr,
-                    _: &[dm_syntax::NodeStep],
-                ) -> dm_syntax::VisitDecision {
-                    if let dm_syntax::ExprKind::Literal(text) = &node.kind {
-                        let valid=if self.original_literals{match text.prepared_syntax_parts(){Some(Ok(_))=>true,Some(Err(_))=>false,None=>text.shared_storage().is_none()}}else{text.parts().is_ok()};
-                        if !valid {
-                            self.valid = false;
-                            return dm_syntax::VisitDecision::Stop;
-                        }
-                    }
-                    dm_syntax::VisitDecision::Descend
-                }
-            }
-            let mut coverage = Coverage {
-                valid: true,
-                parsed: &self.parsed,
-                original_literals,
-            };
-            let report = dm_syntax::visit_statements(&self.parsed.statements, &mut coverage);
-            coverage.valid && report.unsupported_statements == 0
-    }
     pub fn parsed(&self) -> &dm_syntax::ParsedBody {
         &self.parsed
     }
@@ -763,57 +553,10 @@ impl StatementBody {
         &self.declaration_headers
     }
     pub fn view(&self) -> dm_syntax::StatementView<'_> {
-        dm_syntax::StatementView::from_parsed(&self.parsed)
+        dm_syntax::StatementView::all(&self.parsed.statements)
     }
 }
 impl ParsedBody<'_> {
-    pub fn source_locals(&self) -> Result<SourceLocalView<'_>, String> {
-        self.issuer
-            .validate_parsed_body(self, self.occurrence)
-            .map_err(|e| e.message)?;
-        let syntax = self
-            .statements
-            .as_deref()
-            .ok_or("local source body syntax was not issued")?;
-        body_archive::checked_source_locals(
-            &self.issuer.snapshot.tree,
-            self.occurrence,
-            syntax,
-            &self.issuer.issued_arena,
-        )
-    }
-
-    pub fn source_parameters(&self) -> Result<SourceParameterView<'_>, String> {
-        self.issuer
-            .validate_parsed_body(self, self.occurrence)
-            .map_err(|e| e.message)?;
-        body_archive::checked_source_parameters(
-            &self.issuer.snapshot.tree,
-            self.occurrence,
-            &self.item,
-            &self.parameters,
-            &self.issuer.issued_arena,
-        )
-    }
-    /// Borrow optional roots only after the original callable/header receipt
-    /// and selected original metadata have been bound to this exact occurrence.
-    pub fn source_header_expressions(&self) -> Result<SourceHeaderExpressions<'_>, String> {
-        self.source_parameters()?.header_expressions()
-    }
-    pub fn checker_parameters(
-        &self,
-        profile: dm_ir::PackedU128,
-    ) -> Result<SourceParameterView<'_>, String> {
-        self.issuer
-            .snapshot
-            .tree
-            .validate_checker_builtin_profile(profile)
-            .map_err(|e| format!("parameter checker profile: {e:?}"))?;
-        self.source_parameters()
-    }
-    pub fn parameter_storage(&self) -> &dm_syntax::SharedParameterSignature {
-        &self.parameters
-    }
     pub fn item(&self) -> &Item {
         &self.item
     }
@@ -836,58 +579,17 @@ impl ParsedBody<'_> {
     pub fn into_parts(self) -> (Item, Option<Arc<StatementBody>>) {
         (self.item, self.statements)
     }
-    /// Kind4 already carries its checked shared model. One-shot native demand
-    /// uses ONLY the attached settings provider/direct permit, never a new Db or
-    /// a full-body query attachment. Unattached compatibility demand with a
-    /// proved empty settings roster keeps the ordinary statement parser path.
-    pub(super) fn admit_statements_checked(
-        mut self,
-        supported: fn(&[dm_syntax::Statement]) -> bool,
-    ) -> Result<Self, BodySyntaxFailure> {
-        if self.shared_syntax.is_some() {
-            return Ok(self.admit_statements(supported));
-        }
-        let proof = self
-            .issuer
-            .procedure_settings(self.occurrence)
-            .map_err(BodySyntaxFailure::Syntax)?;
-        let proof = proof.ok_or_else(|| {
-            BodySyntaxFailure::Syntax(internal("original statement settings receipt unavailable"))
-        })?;
-        // A native provider also admits ordinary literal children/statics after
-        // an ACTUAL checked body request, even when this body has no Set.
-        // Unattached compatibility frontends retain the ordinary fast path.
-        if proof.owner.settings.is_empty() && self.issuer.setting_expression_queries.is_none() {
-            return Ok(self.admit_statements(supported));
-        }
-        let statements =
-            self.issuer
-                .setting_statements(self.occurrence, &mut self.item, supported)?;
-        self.statement_attempted = true;
-        self.statements = Some(statements);
-        Ok(self)
-    }
     pub(super) fn admit_statements(
         mut self,
         supported: fn(&[dm_syntax::Statement]) -> bool,
     ) -> Self {
         self.statement_attempted = true;
-        self.statements = if let Some(shared) = self.shared_syntax.take() {
-            let statements = Arc::clone(&shared.statements);
-            if statements.parsed().diagnostics.is_empty()
-                && supported(&statements.parsed().statements)
-            {
-                self.item.children = Vec::new();
-            }
-            Some(statements)
-        } else {
-            Some(body_archive::parse_statements(
-                &mut self.item,
-                &self.issuer.issued_arena,
-                &self.issuer.issued_syntax,
-                supported,
-            ))
-        };
+        self.statements = Some(body_archive::parse_statements(
+            &mut self.item,
+            &self.issuer.issued_arena,
+            &self.issuer.issued_syntax,
+            supported,
+        ));
 
         self
     }
@@ -899,35 +601,6 @@ struct Captured<'a, P> {
 }
 
 impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
-    fn initial_environment(&self)->dm_preprocess::InitialEnvironment{self.provider.initial_environment()}
-    fn original_raw_source_checked(&self,path:&Path,max_bytes:usize,before_decode:&mut dyn FnMut(usize,bool,bool)->std::io::Result<()>)->std::io::Result<Option<dm_preprocess::SourceAcquisitionLease>>{
-        let lease=self.provider.original_raw_source_checked(path,max_bytes,before_decode)?;
-        if let Some(lease)=&lease{self.sources.borrow_mut().insert(path.to_owned(),lease.source_text().clone());}
-        Ok(lease)
-    }
-    fn original_source_bytes<'a>(&'a self,lease:&'a dm_preprocess::SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{self.provider.original_source_bytes(lease)}
-
-
-    fn acquired_source(
-        &self,
-        path: &Path,
-    ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
-        let acquired = self.provider.acquired_source(path)?;
-        if let Some(acquired) = &acquired {
-            self.sources
-                .borrow_mut()
-                .insert(path.to_owned(), acquired.prepared().original().clone());
-        }
-        Ok(acquired)
-    }
-    fn source_acquisition(
-        &self,
-        path: &Path,
-        text: &dm_preprocess::SourceText,
-    ) -> Option<dm_preprocess::AcquiredSource> {
-        // Projection only: never call read/prepared_source to obtain evidence.
-        self.provider.source_acquisition(path, text)
-    }
     fn prepared_source(
         &self,
         path: &Path,
@@ -959,38 +632,17 @@ impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
 #[cfg(test)]
 #[path = "frontend_ast_capacity.rs"]
 mod ast_capacity;
-#[path = "frontend_diagnostic_preparation.rs"]
-mod diagnostic_preparation;
 #[path = "frontend_pipeline.rs"]
 mod pipeline;
-pub use diagnostic_preparation::{CleanOriginalImageDirArchive, CleanOriginalImageDirProof, DecodedSourceCandidates, DiagnosticFrontend, DiagnosticSourceView, OriginalImageDirFrontend,OriginalCommittedBodyDiagnostic,ParseOnlySyntaxSource,OriginalParserFormalNotice};
-pub use body_archive::OriginalImageDirCallable;
-#[path="frontend_original_notices.rs"]mod original_notices;
-pub use original_notices::{OriginalDiagnosticPoint,OriginalPreprocessNotice,OriginalPreprocessNotes,OriginalPreprocessNotices,OriginalPreprocessNoticeOwner,OriginalPreprocessNoticeStorage};
 pub use pipeline::{
-    build, build_for_checker_diagnostics, build_for_checker_diagnostics_with_state,
-    build_with_config, build_with_executor, build_with_executor_and_semantic_state,
-    build_with_executor_and_semantic_state_for_policy, build_with_expansion_memo,
-    build_with_executor_and_semantic_state_for_policy_checked,
-    build_with_executor_and_semantic_state_with_original_types,
-    build_for_checker_diagnostics_with_state_checked,
-    build_for_committed_body_syntax_checked,
-    build_for_parse_only_syntax_checked,
-    build_for_original_analysis_with_callable_anchors_checked,
-    build_for_original_native_parameter_demand_with_callable_anchors_checked,
-    build_for_original_native_body_demand_with_callable_anchors_checked,
-    build_for_original_compound_with_callable_anchors_checked,
-    build_for_original_analysis_with_state_checked,
-    build_for_original_image_dir_checked,
-    build_for_joined_original_handlers_structural_checked,
-    build_for_original_handlers_structural_checked,
+    build, build_with_config, build_with_executor, build_with_executor_and_semantic_state,
+    build_with_expansion_memo,
 };
 #[path = "frontend_semantic_state.rs"]
 mod semantic_state;
 #[path = "frontend_symbol_catalog.rs"]
 pub(crate) mod symbol_catalog;
 pub use crate::owner_normalization::NormalizationStorageView;
-pub(crate) use semantic_state::DiagnosticRetainedRecords;
 pub use semantic_state::RetainedSemanticTree;
 #[path = "frontend_grammar_roster.rs"]
 mod grammar_roster;
@@ -1002,15 +654,6 @@ pub use declaration_state::{
     ChunkSourceAnswer, DeclarationContributionView, DeclarationRequest, DeclarationRetentionStats,
     DeclarationStorageView,
 };
-#[path="frontend_declaration_demand.rs"]
-mod declaration_demand;
-#[path="frontend_diagnostic_rows.rs"]
-mod diagnostic_rows;
-pub use diagnostic_rows::FrontendDiagnostics;
-pub use declaration_demand::FrontendBuildFailure;
-#[path="frontend_generation.rs"]
-mod generation;
-pub use generation::{GenerationDeclarationFrame, GenerationPreparationFailure, prepare_generation_declarations, prepare_generation_question_declarations,prepare_generation_declaration_plan,prepare_generation_declarations_from_plan,GenerationDeclareTypeQuestions,GenerationNativeQuestions,GenerationBodyLoan,GenerationDefinitionPoint,GenerationSourcePoint};
 #[path = "frontend_parse.rs"]
 mod declaration_parse;
 #[cfg(test)]
@@ -1043,9 +686,6 @@ fn shift_items(items: &mut [Item], offset: usize) {
         item.span.end += offset;
         item.header_span.start += offset;
         item.header_span.end += offset;
-        item.declaration_cursor = item
-            .declaration_cursor
-            .and_then(|at| at.checked_add(offset));
         shift_items(&mut item.children, offset);
     }
 }
@@ -1058,9 +698,6 @@ fn compact_declarations(items: Vec<Item>, offset: usize) -> Vec<Item> {
             item.span.end += offset;
             item.header_span.start += offset;
             item.header_span.end += offset;
-            item.declaration_cursor = item
-                .declaration_cursor
-                .and_then(|at| at.checked_add(offset));
             if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
                 item.children = crate::settings::compact_setting_items(item.children);
             }
@@ -1080,14 +717,12 @@ fn source_span(file: FileId, span: dm_syntax::Span) -> Result<Span, Vec<Diagnost
 
 #[path = "frontend_source_export_mapping.rs"]
 mod source_export_mapping;
-pub use source_export_mapping::{
-    OriginalCheckerSourceRegistry, OriginalCheckerLocation, SourceDeclarationPolicyCursor, SourceExportMapping, SourceNoteOrigin, SourcePolicyLineOrigin, BorrowedSourceNoteOrigin, StoredOriginalReportedPoint,
-};
+pub use source_export_mapping::SourceExportMapping;
 #[path = "frontend_source_projection.rs"]
 mod source_projection;
 struct Mapping<'a> {
     projection: source_projection::CurrentSourceProjection,
-    plan: dm_preprocess::regions::SourcePlanGeometry<'a>,
+    plan: &'a DirectivePlan,
     expanded: &'a ExpandedRegions,
     files: &'a [SourceFile],
     by_path: &'a HashMap<PathBuf, FileId>,
@@ -1106,9 +741,7 @@ impl Mapping<'_> {
         let index = self
             .expanded
             .origins
-            .partition_point_near(self.hints.row.get(), |origin| {
-                origin.output_span.end <= offset
-            });
+            .partition_point_near(self.hints.row.get(), |origin| origin.output_span.end <= offset);
         self.hints.row.set(index);
         self.expanded
             .origins
@@ -1182,7 +815,7 @@ impl Mapping<'_> {
                 .map_or(occurrence, |region| region.encounter_ordinal),
             include_occurrence: occurrence,
             include_chain: self.include_chain(occurrence),
-            macro_expansions: Default::default(),
+            macro_expansions: Arc::new(Vec::new()),
         })
     }
     fn chain(&self, mut occurrence: usize) -> Vec<usize> {
@@ -1236,7 +869,8 @@ fn resolution_error(
                         member.name == *name
                             && member.kind == *kind
                             && authored_ancestry(*owner, skeletons, symbols).contains(&member.owner)
-                    }) || symbols.text(*name).is_none_or(|name| {
+                    })
+                        || symbols.text(*name).is_none_or(|name| {
                         let plain = plain_datum_owner(*owner, skeletons, symbols);
                         match kind {
                             MemberKind::Var => dm_ir::builtin_names::is_builtin_var_in(plain, name),
@@ -1275,10 +909,10 @@ fn collect_bodies(
     mapping: &Mapping<'_>,
     bodies: &mut Vec<BodyOccurrence>,
     settings: &mut Vec<Option<Arc<dm_ir::ProcedureMetadata>>>,
-    codes: &mut Vec<Option<Arc<BodyCodeIdentity>>>,
+    codes: &mut Vec<Arc<BodyCodeIdentity>>,
 ) -> Result<(), Vec<Diagnostic>> {
     for recipe in syntax.body_recipes() {
-        codes.push(recipe.issued_code());
+        codes.push(recipe.code_identity());
         let span = recipe.span();
         let declaration = declarations
             .get(&span.start)
@@ -1393,91 +1027,3 @@ pub(crate) use declaration_state::shared::SharedContributionStore;
 #[cfg(test)]
 #[path = "frontend_settings_receipt_tests.rs"]
 mod settings_receipt_tests;
-
-#[path = "frontend_initial_setting_prefix.rs"]
-mod initial_setting_prefix;
-pub use initial_setting_prefix::{InitialSettingPrefix,InitialSettingSource};
-
-#[cfg(test)]
-mod primary_cursor_rebase_tests {
-    use super::*;
-    #[test]
-    fn cold_compaction_and_warm_rebase_shift_the_same_primary_cursor() {
-        let source = "/datum/probe\n    var/item = 1\n    var/other\n";
-        let parsed = dm_syntax::parse_declaration_skeleton(source);
-        assert!(parsed.diagnostics.is_empty());
-        let mut shifted = parsed.items.clone();
-        shift_items(&mut shifted, 117);
-        let compacted = compact_declarations(parsed.items, 117);
-        for (cold, warm) in compacted[0].children.iter().zip(&shifted[0].children) {
-            assert_eq!(cold.declaration_cursor, warm.declaration_cursor);
-            assert!(cold.declaration_cursor.unwrap() >= 117);
-        }
-        assert_eq!(
-            compacted[0].children[0].declaration_cursor,
-            source.find('=').map(|at| at + 117)
-        );
-    }
-    #[test]
-    fn later_top_level_type_chunks_do_not_fail_relative_cursor_binding() {
-        struct Source;
-        impl dm_preprocess::SourceProvider for Source {
-            fn read(&self, _: &Path) -> Result<String, String> {
-                Ok("/datum/first\n    var/value\n/datum/second\n    var/other\n".into())
-            }
-        }
-        build(
-            Path::new("primary-offset.dm"),
-            &Source,
-            &Default::default(),
-            1,
-        )
-        .unwrap();
-    }
-}
-
-#[path = "frontend_unchanged_program.rs"]
-mod unchanged_program;
-
-impl<'frontend> ParsedBody<'frontend> {
-    /// Preserve the existing original root owner before ABI preparation consumes
-    /// this wrapper. The handle retains no Item/Expr/occurrence clone or parser.
-    pub fn share_header_expressions(
-        &self,
-    ) -> Result<OriginalHeaderExpressionHandle<'frontend>, String> {
-        self.source_parameters()?;
-        body_archive::capture_header_expression_handle(
-            self.issuer,
-            self.occurrence,
-            self.parameters.clone(),
-        )
-    }
-}
-
-#[cfg(test)]
-#[path="frontend_declaration_checked_tests.rs"]
-mod declaration_checked_tests;
-
-pub use body_archive::BorrowedCallableOriginError;
-
-/// Original primary-token DATA borrowed only through an issued archived body.
-pub use crate::procedure::header_input::OriginalBodyTokens;
-
-pub use body_archive::CurrentArchivedBody;
-
-#[path="frontend_original_declaration_input.rs"]pub(crate) mod original_declaration_input;
-#[path="frontend_original_stream.rs"]pub(crate) mod original_stream;
-#[path="frontend_directive_plan.rs"]mod directive_plan;
-pub use directive_plan::FrontendDirectivePlan;
-
-pub use diagnostic_preparation::{HandlersStructuralSource,OriginalAnalysisCompleteness,DiagnosticPreparationPurpose,ORIGINAL_ANALYZE_PREPARATION_VERSION};
-
-pub use body_queries::{OriginalBodyDisposition,OriginalBodyCodeGrant,NativeBodyDisposition,NativeBodyCodeGrant};
-
-#[path="frontend_original_signature_funding.rs"]mod original_signature_funding;
-pub use original_signature_funding::{OriginalSignatureAliasGroup,OriginalSignatureAliasCensus};
-
-impl OriginalFatalPreparationOutcome<'_>{
- /// SAME pinned fatal notes in DMError Debug-display form, without an owned Vec.
- pub fn write_sem_message(&self,out:&mut dyn std::fmt::Write)->std::fmt::Result{write!(out,"{}",self.message())?;if self.indentation{let(_,line,_)=self.location();write!(out,"\n- {}:1: check for extra indentation at the start of the next line",line+1)?;}write!(out,"\n- fatal error: the parser cannot continue\n- constant evaluation will be skipped")}
-}

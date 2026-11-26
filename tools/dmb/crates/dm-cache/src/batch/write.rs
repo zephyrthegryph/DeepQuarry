@@ -32,6 +32,17 @@ fn copy(
     }
     Ok(())
 }
+/// A spooled payload's original bytes.
+fn read_payload(source: &mut File, extent: Extent) -> Result<Vec<u8>, CacheError> {
+    source.seek(SeekFrom::Start(extent.at))?;
+    let mut bytes = vec![0; extent.len as usize];
+    source.read_exact(&mut bytes)?;
+    if extent.packed {
+        crate::segment::AlignedBytes::unpack(&bytes)
+    } else {
+        Ok(bytes)
+    }
+}
 impl BatchSpool {
     pub(super) fn finish_inner(&mut self) -> Result<BatchReport, CacheError> {
         let count =
@@ -71,30 +82,30 @@ impl BatchSpool {
                 emit(output, &mut checksum, &len.to_le_bytes())?;
                 copy(source, output, &mut checksum, *extent)?;
             }
-            let payload_len = if entry.framed {
-                entry
-                    .payloads
-                    .iter()
-                    .try_fold(12u64, |len, item| len.checked_add(8)?.checked_add(item.len))
-            } else {
-                entry.payloads.first().map(|item| item.len)
-            }
-            .ok_or_else(|| invalid("payload length overflow"))?;
-            emit(output, &mut checksum, &payload_len.to_le_bytes())?;
-            let padding = (16 - output.stream_position()? % 16) % 16;
-            emit(output, &mut checksum, &[0; 16][..padding as usize])?;
+            // The record's logical payload (the variant frame around the spooled variants, or the one raw payload), packed exactly as
+            // the in-memory encoder packs it so both writers produce identical segments.
+            let mut logical = Vec::new();
             if entry.framed {
                 let count = u32::try_from(entry.payloads.len())
                     .map_err(|_| invalid("variant count overflow"))?;
-                emit(output, &mut checksum, b"DMCVAR01")?;
-                emit(output, &mut checksum, &count.to_le_bytes())?;
+                logical.extend_from_slice(b"DMCVAR01");
+                logical.extend_from_slice(&count.to_le_bytes());
             }
             for extent in &entry.payloads {
+                let bytes = read_payload(source, *extent)?;
                 if entry.framed {
-                    emit(output, &mut checksum, &extent.len.to_le_bytes())?;
+                    logical.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
                 }
-                copy(source, output, &mut checksum, *extent)?;
+                logical.extend_from_slice(&bytes);
             }
+            let packed = crate::segment::pack_payload(key.stage, &logical);
+            let stored: &[u8] = packed.as_deref().unwrap_or(&logical);
+            let payload_len = stored.len() as u64
+                | if packed.is_some() { crate::segment::COMPRESSED } else { 0 };
+            emit(output, &mut checksum, &payload_len.to_le_bytes())?;
+            let padding = (16 - output.stream_position()? % 16) % 16;
+            emit(output, &mut checksum, &[0; 16][..padding as usize])?;
+            emit(output, &mut checksum, stored)?;
             variants = variants
                 .checked_add(entry.payloads.len())
                 .ok_or_else(|| invalid("variant count overflow"))?;
@@ -120,7 +131,7 @@ impl BatchSpool {
         let id = identity.digest128();
         let mut header = Vec::with_capacity(HEADER as usize);
         header.extend_from_slice(b"DMBCSEG1");
-        header.extend_from_slice(&1u32.to_le_bytes());
+        header.extend_from_slice(&crate::segment::FORMAT.to_le_bytes());
         header.extend_from_slice(&0u32.to_le_bytes());
         header.extend_from_slice(&length.to_le_bytes());
         header.extend_from_slice(&(metadata_len as u64).to_le_bytes());

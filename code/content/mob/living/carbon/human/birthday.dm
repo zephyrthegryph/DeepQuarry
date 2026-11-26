@@ -25,10 +25,6 @@
 	if(birthday)	//woo
 		msg = "Today is your birthday! Do you want to increase your character's listed age?"
 		/*
-		if(read_preference(/datum/preference/toggle/human/bday_announce))
-			var/list/sounds = list('sound/voice/birth.ogg')
-			var/oursound = pickweight(sounds)
-			GLOB.command_announcement.Announce("Confirmed presence of BIRTHDAY aboard the station! It is [src.real_name]'s birthday or similar sort of celebration, name day, hatchday, WHATEVER! We encourage you to go find [src.real_name] and show them how we celebrate around here! Have a secure day!", "BIRTHDAY!", oursound)
 		*/
 	else
 		msg = "Your birthday has passed! Do you want to increase your character's listed age?"	//sad, but thus is the life of an adult

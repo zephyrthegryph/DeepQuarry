@@ -71,6 +71,10 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 	TREAT_CHEST_COMPRESSION = "Chest compressions", \
 	TREAT_VASOPRESSOR      = "Vasopressor", \
 	TREAT_DIGESTIVE        = "Digestive repair", \
+	TREAT_ANTIEMETIC       = "Antiemetic", \
+	TREAT_HYDRATION        = "Rehydration", \
+	TREAT_ANTICONVULSANT   = "Anticonvulsant", \
+	TREAT_OPIOID_ANTAGONIST = "Opioid antagonist", \
 	TREAT_WOUND_PACKING    = "Wound packing", \
 	TREAT_OCCLUSIVE_SEAL   = "Occlusive seal", \
 	TREAT_REGENERATION     = "Natural regeneration", \
@@ -83,6 +87,9 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 	TREAT_TENDON_REPAIR    = "Tendon repair", \
 	TREAT_FOREIGN_BODY_REMOVAL = "Foreign body removal", \
 	TREAT_LITHOTRIPSY      = "Lithotripsy", \
+	TREAT_BURN_DEEP        = "Deep burn care", \
+	TREAT_ANTIEDEMA        = "Anti-edema", \
+	TREAT_SOULMEND         = "Soul mending", \
 ))
 
 /proc/dq_treatment_tag_name(tag)
@@ -102,6 +109,8 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 			return TRUE // the body itself, powers, magic, admin, steel fed to a refactory
 		if(TREAT_SURGICAL_CLOSURE, TREAT_PANEL_CLOSURE, TREAT_BONE_SETTING, TREAT_VESSEL_REPAIR, TREAT_TENDON_REPAIR, TREAT_FOREIGN_BODY_REMOVAL, TREAT_LITHOTRIPSY)
 			return TRUE // surgical procedure steps
+		if(TREAT_SOULMEND)
+			return TRUE // soul dew mends it directly, in a body that is dead
 	return FALSE
 
 /// Biologies a treatment mechanism works on. Biological mechanisms (every
@@ -128,8 +137,8 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 /// Only reagents that carry tags appear.
 /proc/build_dq_reagent_tag_table()
 	var/list/table = list()
-	// Tags are NOT inherited: a subtype (dermalaze, inaprovalaze, slime
-	// fixers…) only treats if it declares its own, different profile. DM
+	// Tags are NOT inherited: a subtype (slime fixers…)
+	// only treats if it declares its own, different profile. DM
 	// builds list defaults per instance, so compare contents, not refs.
 	var/list/tags_by_type = list()
 	for(var/id in SSchemistry.ready().chemical_reagents)

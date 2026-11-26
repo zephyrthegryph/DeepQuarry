@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Wall-mounted lights no longer centre their glow on the wall, and a light that stops moving gets its wall cut back."
+  - balance: "Small device glows are dimmer."
+  - bugfix: "Light on walls now falls off like the floor beside it."

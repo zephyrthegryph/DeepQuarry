@@ -90,35 +90,127 @@
 	refresh_flush()
 	return md5(icon2base64(getFlatIcon(H, SOUTH)))
 
-/// A tail is drawn under the uniform from the south and over it from the north.
+/// A tail is drawn under the uniform from the south and over it from the north, with no redraw when the human turns.
 /datum/unit_test/dq_human_draw_tail_layers_against_uniform
 
 /datum/unit_test/dq_human_draw_tail_layers_against_uniform/Run()
+	test_driver_begin()
 	var/mob/living/carbon/human/H = dq_hd_body(list(), "tail")
 	dq_hd_set(H, "tail_style", GLOB.tail_styles_list[/datum/sprite_accessory/tail/squirrel])
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
 	H.set_dir(SOUTH)
-	var/list/south = H.look_layers()
-	TEST_ASSERT(south[TAIL_LOWER_LAYER], "facing south the tail is on the lower layer")
-	TEST_ASSERT(!south[TAIL_UPPER_LAYER], "and not on the upper one")
+	refresh_flush()
+	dq_hb_settle() // each copy's facing split is baked off the main thread (human_bake.dm)
+	// The tail is on both layers, each copy drawn only in its own facings: BYOND shows the frame for the dir, so a turn redraws nothing.
+	var/list/layers = H.look_layers()
+	var/image/lower = layers[TAIL_LOWER_LAYER]
+	var/image/upper = layers[TAIL_UPPER_LAYER]
+	TEST_ASSERT(lower && upper, "the tail is drawn on the lower and the upper layer")
 	TEST_ASSERT(TAIL_LOWER_LAYER < UNIFORM_LAYER, "the lower tail layer sits under the uniform")
-	var/south_picture = dq_hd_picture(H)
-	H.set_dir(NORTH)
-	var/list/north = H.look_layers()
-	TEST_ASSERT(north[TAIL_UPPER_LAYER], "facing north the tail is on the upper layer")
-	TEST_ASSERT(!north[TAIL_LOWER_LAYER], "and not on the lower one")
 	TEST_ASSERT(TAIL_UPPER_LAYER > UNIFORM_LAYER, "the upper tail layer sits over the uniform")
-	TEST_ASSERT(dq_hd_picture(H) != south_picture, "the facing changes the drawn human")
+	TEST_ASSERT(dq_hd_blank_facing(lower, NORTH), "the lower copy shows nothing facing north")
+	TEST_ASSERT(!dq_hd_blank_facing(lower, SOUTH), "the lower copy shows the tail facing south")
+	TEST_ASSERT(dq_hd_blank_facing(upper, SOUTH), "the upper copy shows nothing facing south")
+	TEST_ASSERT(!dq_hd_blank_facing(upper, NORTH), "the upper copy shows the tail facing north")
+	var/south_key = H.rx?.look_key
+	H.set_dir(NORTH)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(H.rx?.look_key, south_key, "turning round leaves the look as it is (no redraw)")
+	test_driver_end()
+
+/// TRUE when the layer has no visible pixel facing `facing`: its own icon and every part it is made of (emissive blockers are not part of the picture).
+/datum/unit_test/proc/dq_hd_blank_facing(I, facing)
+	if(I.icon)
+		var/icon/frame = icon(I.icon, I.icon_state, facing)
+		for(var/x in 1 to frame.Width())
+			for(var/y in 1 to frame.Height())
+				if(frame.GetPixel(x, y))
+					return FALSE
+	for(var/part in I.overlays)
+		var/mutable_appearance/MA = new(part)
+		if(MA.plane != FLOAT_PLANE)
+			continue
+		if(!dq_hd_blank_facing(MA, facing))
+			return FALSE
+	return TRUE
 
 /// An injury draws its overlay and healing it takes the overlay off.
 /datum/unit_test/dq_human_draw_damage_overlay_follows_injury
 
 /datum/unit_test/dq_human_draw_damage_overlay_follows_injury/Run()
+	test_driver_begin()
 	var/mob/living/carbon/human/H = dq_hd_body(list(), "damage")
 	TEST_ASSERT(!H.look_layers()[MOB_DAM_LAYER], "an unhurt human has no damage overlay")
 	var/unhurt = dq_hd_picture(H)
 	H.injure(INJURY_BURN, 60, BP_TORSO, flags = INJURE_SILENT)
+	refresh_flush()
+	dq_hb_settle() // the wound's picture is baked off the main thread (human_bake.dm)
 	TEST_ASSERT(H.look_layers()[MOB_DAM_LAYER], "a burn on the torso draws a damage overlay")
 	TEST_ASSERT(dq_hd_picture(H) != unhurt, "and the drawn human shows it")
 	H.fully_heal()
 	TEST_ASSERT(!H.look_layers()[MOB_DAM_LAYER], "healing takes the overlay off")
+	test_driver_end()
+
+/// The body is one blank image carrying the limbs as overlays.
+/datum/unit_test/dq_human_draw_layered_body
+
+/datum/unit_test/dq_human_draw_layered_body/Run()
+	var/mob/living/carbon/human/H = dq_hd_body(list(), "layered")
+	var/list/body = H.body_look(new /datum/look)
+	var/image/layered = body[2]
+	TEST_ASSERT(length(layered.overlays) >= 5, "the limbs are overlays of the body image")
+
+/// A hulk, a husk and a skeleton are layered too: the hulk's green is one colour over the whole body, the husk's tone is one over its limbs, the skeleton draws the skeleton sprites.
+/datum/unit_test/dq_human_draw_layered_forms
+
+/datum/unit_test/dq_human_draw_layered_forms/Run()
+	var/mob/living/carbon/human/H = dq_hd_body(list(), "forms")
+	var/list/plain = H.build_layered_body_look('icons/mob/human.dmi', FALSE, FALSE)
+	var/list/hulk = H.build_layered_body_look('icons/mob/human.dmi', TRUE, FALSE)
+	var/image/hulk_body = hulk[2]
+	TEST_ASSERT(hulk_body.color, "a hulk's body carries the green")
+	TEST_ASSERT(hulk_body.appearance_flags & KEEP_TOGETHER, "and the green covers the body as one picture")
+	var/image/plain_body = plain[2]
+	TEST_ASSERT(!plain_body.color, "a plain body is not tinted as a whole")
+	TEST_ASSERT_EQUAL(length(hulk_body.overlays), length(plain_body.overlays), "a hulk has the same parts as a plain body")
+	var/list/husk = H.build_layered_body_look('icons/mob/human.dmi', FALSE, FALSE, TRUE)
+	var/image/husk_body = husk[2]
+	TEST_ASSERT(husk_body.appearance_flags & KEEP_TOGETHER, "the husk's tone covers the body as one picture")
+	var/image/toned = husk_body.overlays[1]
+	TEST_ASSERT(islist(toned.color), "the husk's limbs carry the tone as a colour matrix")
+	var/list/skeleton = H.build_layered_body_look('icons/mob/human.dmi', FALSE, TRUE)
+	var/image/skeleton_body = skeleton[2]
+	TEST_ASSERT(length(skeleton_body.overlays) >= 5, "a skeleton is made of its limbs")
+
+/// The head draws its eyes and its hair as layers: no composited icon stands in for them.
+/datum/unit_test/dq_human_draw_layered_face
+
+/datum/unit_test/dq_human_draw_layered_face/Run()
+	var/mob/living/carbon/human/H = dq_hd_body(list(), "face")
+	H.looks.set_hair_style(dq_profile_style(H, GLOB.hair_styles_list, "Short Hair"))
+	H.looks.set_hair_color(rgb(200, 40, 90))
+	refresh_flush()
+	var/image/hair = H.look_layers()[HAIR_LAYER]
+	TEST_ASSERT(hair, "a haired human draws a hair layer")
+	TEST_ASSERT_EQUAL(hair.icon_state, "blank", "the hair layer is a group of tinted parts on a blank, not one composited icon")
+	TEST_ASSERT(length(hair.overlays) >= 1, "the hair is a part of the group")
+	var/list/body = H.body_look(new /datum/look)
+	var/image/body_image = body[2]
+	var/with_head = length(body_image.overlays)
+	var/obj/item/organ/external/head/head = H.limb_tagged(BP_HEAD)
+	TEST_ASSERT(length(head.layered_parts(FALSE)) >= 2, "the head is its sprite and its eyes, as parts")
+	TEST_ASSERT(with_head >= 6, "the head's parts are in the body")
+
+/// Wings are drawn over the suit and under the back item (a backpack hides the wing roots, not the other way round), and every layer is its own index.
+/datum/unit_test/dq_human_draw_wing_under_back
+
+/datum/unit_test/dq_human_draw_wing_under_back/Run()
+	TEST_ASSERT(WING_LAYER > SUIT_LAYER, "wings are over the suit")
+	TEST_ASSERT(WING_LAYER > TAIL_UPPER_LAYER, "wings are over the tail seen from behind")
+	TEST_ASSERT(WING_LAYER < BACK_LAYER, "wings are under the back item")
+	var/list/seen = list()
+	for(var/layer in list(MUTATIONS_LAYER, TAIL_LOWER_LAYER, WING_LOWER_LAYER, BODYPARTS_LAYER, SKIN_LAYER, BLOOD_LAYER, MOB_DAM_LAYER, SURGERY_LAYER, UNDERWEAR_LAYER, SHOES_LAYER_ALT, TAIL_UPPER_LAYER_LOW, UNIFORM_LAYER, ID_LAYER, SHOES_LAYER, GLOVES_LAYER, BELT_LAYER, SUIT_LAYER, TAIL_UPPER_LAYER, GLASSES_LAYER, BELT_LAYER_ALT, SUIT_STORE_LAYER, WING_LAYER, BACK_LAYER, HAIR_LAYER, HAIR_ACCESSORY_LAYER, EARS_LAYER, EYES_LAYER, FACEMASK_LAYER, GLASSES_LAYER_ALT, HEAD_LAYER, HANDCUFF_LAYER, LEGCUFF_LAYER, L_HAND_LAYER, R_HAND_LAYER, VORE_BELLY_LAYER, VORE_TAIL_LAYER, TAIL_UPPER_LAYER_HIGH, MODIFIER_EFFECTS_LAYER, FIRE_LAYER, MOB_WATER_LAYER, TARGETED_LAYER, ACCESSORY_BLOCKER_LAYER))
+		TEST_ASSERT(!seen["[layer]"], "layer index [layer] is used once")
+		TEST_ASSERT(layer >= 1 && layer <= TOTAL_LAYERS, "layer index [layer] is within TOTAL_LAYERS")
+		seen["[layer]"] = TRUE
+	TEST_ASSERT_EQUAL(length(seen), TOTAL_LAYERS, "every index up to TOTAL_LAYERS is a layer")

@@ -1,20 +1,20 @@
 import { useBackend } from 'tgui/backend';
+import { YesNo } from 'tgui/components/YesNo';
 import { Window } from 'tgui/layouts';
-import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import { Button, LabeledList, Section } from 'tgui-core/components';
+import type {
+  ParticleAcceleratorActions,
+  ParticleAcceleratorData,
+} from './generated/ParticleAccelerator';
 
-type Data = {
-  assembled: BooleanLike;
-  power: BooleanLike;
-  strength: number;
-};
+type Data = ParticleAcceleratorData;
 
 export const ParticleAccelerator = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, ParticleAcceleratorActions>();
   const { assembled, power, strength } = data;
   return (
-    <Window width={350} height={185}>
-      <Window.Content>
+    <Window width={350} height={215}>
+      <Window.Content scrollable>
         <Section>
           <LabeledList>
             <LabeledList.Item
@@ -25,11 +25,11 @@ export const ParticleAccelerator = (props) => {
                 </Button>
               }
             >
-              <Box color={assembled ? 'good' : 'bad'}>
-                {assembled
-                  ? 'Ready - All parts in place'
-                  : 'Unable to detect all parts'}
-              </Box>
+              <YesNo
+                value={assembled}
+                yes="Ready - All parts in place"
+                no="Unable to detect all parts"
+              />
             </LabeledList.Item>
           </LabeledList>
         </Section>

@@ -8,13 +8,15 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 
+import type { PublicLibraryWikiActions } from '../../generated/PublicLibraryWiki';
 import { WikiPages } from '../constants';
+import type { Data } from '../types';
 
 export const WikiMainPage = (props: {
   displayedAds: string[][];
   donationSuccess: boolean;
 }) => {
-  const { act } = useBackend();
+  const { act } = useBackend<Data, PublicLibraryWikiActions>();
 
   const { displayedAds, donationSuccess } = props;
 

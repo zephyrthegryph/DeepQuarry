@@ -1,24 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  access: number[] | null;
-  area: area[];
-  giver: string | null;
-  giveName: string;
-  reason: string;
-  duration: number;
-  mode: BooleanLike;
-  log: string[];
-  uid: number;
-};
-
-type area = { area: string; area_name: string; on: BooleanLike };
+import { sanitizeText } from '../sanitize';
+import type { GuestPassActions, GuestPassData } from './generated/GuestPass';
 
 export const GuestPass = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<GuestPassData, GuestPassActions>();
 
   const { area, giver, giveName, reason, duration, mode, log, uid } = data;
 
@@ -48,8 +35,11 @@ export const GuestPass = (props) => {
             <Section title="Logs">
               {(log.length &&
                 log.map((l) => (
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: These are internally generated only.
-                  <div key={l} dangerouslySetInnerHTML={{ __html: l }} />
+                  <div
+                    key={l}
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: These are internally generated only.
+                    dangerouslySetInnerHTML={{ __html: sanitizeText(l) }}
+                  />
                 ))) || <Box>No logs.</Box>}
             </Section>
           </Section>

@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - qol: "A joining player's nearby lights are placed first and the rest of the glow scan is spread over the following ticks, removing a 300 ms login stall"
+  - code_imp: "Join tracing names the steps of body creation and equip (JOIN_TIMING_HUMAN, finer JOIN_TIMING_EQUIP, slow loadout items)"

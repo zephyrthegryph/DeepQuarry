@@ -25,6 +25,8 @@
 	grind_items_to_reagents(held, R)
 	var/list/parts = list()
 	for(var/datum/reagent/reagent as anything in R.reagent_list)
+		if(istype(reagent, /datum/reagent/contaminant))
+			continue // the traces a sheet or an ore carries are rolled for the round (trace_roll()): dq_trace_* tests pin them
 		parts += "[reagent.id]=[round(reagent.volume, 0.01)]"
 	sortTim(parts, GLOBAL_PROC_REF(cmp_text_asc))
 	qdel(box)
@@ -35,6 +37,8 @@
 	var/list/rows = list()
 	for(var/datum/xform/rule as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_GRINDING))
 		var/item_type = rule.takes[1][2]
+		if(rule.takes[1][1] == XCUR_ITEM && !ispath(item_type, /obj/item/ore))
+			continue // a hand-written row for an ordinary item (grinding_items.dm): dq_grinding_item_* tests pin those
 		var/text = "[rule.takes[1][1] == XCUR_STACK ? "sheet" : "ore"]: [jointext(rule.grind_ids(), ",")]"
 		if(!ispath(item_type, /obj/item/stack/material/supermatter))
 			text += "; ground: [outcome(item_type, T)]"

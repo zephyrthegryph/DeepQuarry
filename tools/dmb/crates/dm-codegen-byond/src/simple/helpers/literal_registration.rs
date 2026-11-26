@@ -1,6 +1,5 @@
 //! Constant payload leaves through the same interpolation parser as emission.
-use super::{Expr, ExprKind};
-use dm_syntax::LiteralText;
+use super::{string_literal_parts, Expr, ExprKind};
 
 /// Visit cooked constant string literal payloads in source expression order.
 /// A dynamic template is not itself a constant payload; all its interpolation
@@ -11,25 +10,15 @@ pub fn visit_constant_string_literals(
     raw: &str,
     mut visitor: impl FnMut(&[u8]),
 ) -> Result<(), String> {
-    visit_literal(&LiteralText::from(raw), &mut visitor)
-}
-
-pub fn visit_native_constant_string_literals(
-    raw: &LiteralText,
-    mut visitor: impl FnMut(&[u8]),
-) -> Result<(), String> {
     visit_literal(raw, &mut visitor)
 }
-fn visit_literal(raw: &LiteralText, visitor: &mut dyn FnMut(&[u8])) -> Result<(), String> {
-    if raw.original_value().is_some(){
-        if let Some(bytes)=super::decode_native_constant_string_literal(raw)?{visitor(&bytes);}
-        return Ok(());
-    }
-    let Some(parts) = raw.parts().map_err(str::to_owned)? else {
+
+fn visit_literal(raw: &str, visitor: &mut dyn FnMut(&[u8])) -> Result<(), String> {
+    let Some((bytes, expressions)) = string_literal_parts(raw)? else {
         return Ok(());
     };
-    if parts.expressions.is_empty() {
-        visitor(&parts.template);
+    if expressions.is_empty() {
+        visitor(&bytes);
         return Ok(());
     }
     struct Leaves<'a> {
@@ -37,15 +26,6 @@ fn visit_literal(raw: &LiteralText, visitor: &mut dyn FnMut(&[u8])) -> Result<()
         error: Option<String>,
     }
     impl dm_syntax::TypedVisitor for Leaves<'_> {
-        fn projected_expression(
-            &mut self,
-            view: dm_syntax::ProjectedExprView<'_>,
-            path: &[dm_syntax::NodeStep],
-        ) -> dm_syntax::VisitDecision {
-            // Explicitly shape/identity-only; no original span is used as current.
-            self.expression(view.original(), path)
-        }
-
         fn expression(
             &mut self,
             expression: &Expr,
@@ -57,18 +37,14 @@ fn visit_literal(raw: &LiteralText, visitor: &mut dyn FnMut(&[u8])) -> Result<()
                     return dm_syntax::VisitDecision::Stop;
                 }
             }
-            if matches!(expression.kind, ExprKind::Literal(_)) {
-                dm_syntax::VisitDecision::Skip
-            } else {
-                dm_syntax::VisitDecision::Descend
-            }
+            dm_syntax::VisitDecision::Descend
         }
     }
     let mut leaves = Leaves {
         visitor,
         error: None,
     };
-    for expression in &parts.expressions {
+    for expression in &expressions {
         dm_syntax::visit_expression(expression, &mut leaves);
         if let Some(error) = leaves.error.take() {
             return Err(error);

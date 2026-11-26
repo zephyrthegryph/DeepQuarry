@@ -83,15 +83,6 @@ CAPABILITIES(/obj/item/encryptionkey)
 	channels = list(CHANNEL_MEDICAL = 1, CHANNEL_COMMAND = 1)
 
 /*
-/obj/item/encryptionkey/headset_mine
-	name = "mining radio encryption key"
-	icon_state = "mine_cypherkey"
-	channels = list("Mining" = 1)
-
-/obj/item/encryptionkey/heads/qm
-	name = "quartermaster's encryption key"
-	icon_state = "qm_cypherkey"
-	channels = list("Cargo" = 1, "Mining" = 1)
 */
 /obj/item/encryptionkey/headset_cargo
 	name = "supply radio encryption key"

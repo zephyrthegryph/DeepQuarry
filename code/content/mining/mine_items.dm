@@ -78,7 +78,7 @@ MATERIAL_MIX(/obj/item/pickaxe/advdrill, list(MAT_STEEL = 4000, MAT_PLASTEEL = 2
 	desc = "Yours is the drill that will pierce through the rock walls."
 	drill_verb = "drilling"
 
-MATERIAL_MIX(/obj/item/pickaxe/diamonddrill, list(MAT_STEEL = 4500, MAT_PLASTEEL = 3000, MAT_DIAMONDS = 1000))
+MATERIAL_MIX(/obj/item/pickaxe/diamonddrill, list(MAT_STEEL = 3000, MAT_PLASTEEL = 2000, MAT_DIAMOND = 1000))
 /obj/item/pickaxe/diamonddrill //When people ask about the badass leader of the mining tools, they are talking about ME!
 	name = "diamond mining drill"
 	icon_state = "diamonddrill"
@@ -107,7 +107,7 @@ MATERIAL_MIX(/obj/item/pickaxe/diamonddrill, list(MAT_STEEL = 4500, MAT_PLASTEEL
 	drill_verb = "hammering"
 	destroy_artefacts = TRUE
 
-MATERIAL_MIX(/obj/item/pickaxe/plasmacutter, list(MAT_STEEL = 3000, MAT_PLASTEEL = 1500, MAT_DIAMONDS = 500, MAT_PHORON = 500))
+MATERIAL_MIX(/obj/item/pickaxe/plasmacutter, list(MAT_STEEL = 1500, MAT_PLASTEEL = 700, MAT_DIAMOND = 300, MAT_PHORON = 500))
 /obj/item/pickaxe/plasmacutter
 	name = "plasma cutter"
 	desc = "A rock cutter that uses bursts of hot plasma. You could use it to cut limbs off of xenos! Or, you know, mine stuff."
@@ -209,7 +209,7 @@ CAPABILITIES(/obj/item/shovel/spade)
 	desc = "A sharp tool for climbers and hikers to break up ice and keep themselves from slipping on a steep slope."
 	icon_state = "icepick"
 	item_state = "icepick"
-	MATERIAL_BULK(MAT_STEEL, 12000) //Same as a knife
+	MATERIAL_BULK(MAT_STEEL, 300) // a kitchen knife is a tenth of a sheet and a half: steel scaled by its force divisor 0.15
 
 CAPABILITIES(/obj/item/ice_pick)
 	configure(item_thrown(force = 0))

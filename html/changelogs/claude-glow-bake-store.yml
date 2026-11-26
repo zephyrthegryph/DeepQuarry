@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Light shapes are readied before you walk up to them and kept between rounds, so glows settle sooner."

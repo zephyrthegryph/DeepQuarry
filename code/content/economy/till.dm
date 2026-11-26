@@ -423,7 +423,7 @@ CAPABILITIES(/datum/till)
 		. = 1
 	rebuild_ticket()
 	if(!STATE_PEEK(O, economy, economic_sale_invoice_id))
-		LAZYSET(verified_sale_items, "[handle_of(O)]", price)
+		LAZYSET(verified_sale_items, "[handle_text(handle_of(O))]", price)
 	ticket_changed()
 	// Animation and sound
 	if(scan_flick)

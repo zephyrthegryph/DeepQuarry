@@ -6,18 +6,15 @@ import { isAlphabetic, isNumeric, KEY } from 'tgui-core/keys';
 
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
+import type {
+  ListInputModalActions,
+  ListInputModalData,
+} from './generated/ListInputModal';
 
-type ListInputData = {
-  init_value: string;
-  items: string[];
-  large_buttons: boolean;
-  message: string;
-  timeout: number;
-  title: string;
-};
+type ListInputData = ListInputModalData;
 
 export const ListInputModal = (props) => {
-  const { act, data } = useBackend<ListInputData>();
+  const { act, data } = useBackend<ListInputData, ListInputModalActions>();
   const {
     items = [],
     message = '',
@@ -124,7 +121,7 @@ export const ListInputModal = (props) => {
 
   return (
     <Window fitContent title={title} width={325} height={windowHeight}>
-      {timeout && <Loader value={timeout} />}
+      {!!timeout && <Loader value={timeout} />}
       <Window.Content
         onKeyDown={(event) => {
           handleKeyDown(event);
@@ -188,7 +185,7 @@ export const ListInputModal = (props) => {
  * If a search query is provided, filters the items.
  */
 const ListDisplay = (props) => {
-  const { act } = useBackend<ListInputData>();
+  const { act } = useBackend<ListInputData, ListInputModalActions>();
   const { filteredItems, onClick, onFocusSearch, searchBarVisible, selected } =
     props;
 

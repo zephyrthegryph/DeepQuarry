@@ -3,13 +3,14 @@ import { Window } from 'tgui/layouts';
 import { Box } from 'tgui-core/components';
 
 import { TemporaryNotice } from '../common/TemporaryNotice';
+import type { MessageMonitorActions } from '../generated/MessageMonitor';
 import { MessageMonitorContent } from './MessageMonitorContent';
 import { MessageMonitorHack } from './MessageMonitorHack';
 import { MessageMonitorLogin } from './MessageMonitorLogin';
 import type { Data } from './types';
 
 export const MessageMonitor = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, MessageMonitorActions>();
 
   const { auth, linkedServer, hacking, emag } = data;
 
@@ -25,7 +26,7 @@ export const MessageMonitor = (props) => {
   }
 
   return (
-    <Window width={670} height={450}>
+    <Window width={740} height={450}>
       <Window.Content scrollable>
         <TemporaryNotice />
         {body}

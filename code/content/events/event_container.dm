@@ -29,7 +29,7 @@ CAPABILITIES(/datum/event_container)
 		set_event_delay()
 
 	if(delayed || !CONFIG_GET(flag/allow_random_events))
-		next_event_time += (world.time - last_world_time)
+		set_next_event_time(next_event_time + ((world.time - last_world_time)))
 	else if(ELAPSED(src, next_event_time, CLOCK_WORLD) > 0)
 		start_event()
 
@@ -44,7 +44,7 @@ CAPABILITIES(/datum/event_container)
 		// Set when the event of this type was last fired, and prepare the next event start
 		ALAZYSET(last_event_time, handle_of(next_event()), world.time)
 		set_event_delay()
-		next_event().enabled = !next_event().one_shot	// This event will no longer be available in the random rotation if one shot
+		next_event().set_enabled(!next_event().one_shot)	// This event will no longer be available in the random rotation if one shot
 
 		var/new_event_type_path = next_event().event_type
 		new new_event_type_path(next_event())	// Events are added and removed from the processing queue in their New/kill procs
@@ -53,7 +53,7 @@ CAPABILITIES(/datum/event_container)
 		rel_clear(src, nameof(next_event))						// When set to null, a random event will be selected next time
 	else
 		// If not, wait for one minute, instead of one tick, before checking again.
-		next_event_time += (60 * 10)
+		set_next_event_time(next_event_time + ((60 * 10)))
 
 
 /datum/event_container/proc/acquire_event()
@@ -224,7 +224,7 @@ CAPABILITIES(/datum/event_container)
 // This keeps them in the rotation, but disabled, so they can be enabled with a click if desired that round.
 /datum/event_container/proc/add_disabled_events(list/disabled_events)
 	for(var/datum/event_meta/EM in disabled_events)
-		EM.enabled = 0
+		EM.set_enabled(0)
 		rel_add(src, nameof(event_pool), EM)
 		rel_add(src, nameof(available_events), EM)
 

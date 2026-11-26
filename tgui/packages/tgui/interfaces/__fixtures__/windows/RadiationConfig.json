@@ -1,0 +1,9 @@
+{
+	"glowing": 1,
+	"radiation_color": "#c3f314",
+	"glowtoggle": 1,
+	"radiation_nutrition": 0,
+	"nutrition_toggle": 1,
+	"radiation_nutrition_cap": 1000,
+	"current_nutrition": 450
+}

@@ -9,6 +9,7 @@
 //   lock()                                       cards and PDAs; starts open
 //   lock(starts_locked = nameof(lock_at_start))  starts locked while the holder's lock_at_start var says so (a map may clear it per instance)
 //   lock(id_types = list(/obj/item/card/id), alt = FALSE)   only an ID in hand works it, and an alt-click is left to the holder (a lockbox opens on one)
+//   lock(touch = TRUE)                           the plain click of an empty hand works the lock too, for the one carrying the access (a locker's door)
 //   lock(wire = WIRE_IDSCAN)                     brings the ID scan wire (on a holder with wires()): the lock works only while it is intact, and a
 //                                                pulse opens the lock for 30 seconds
 
@@ -19,7 +20,7 @@ MSG_DEF_SELF(lock/is_unlocked, "It is unlocked.")
 MSG_DEF_SELF(lock/denied, "Access denied.")
 MSG_DEF_SELF(lock/engaged, "It is locked.")
 
-CAPABILITY_TYPE(lock, CAP_LOCK, /datum/capability/lib/lock, key = NONE, id_types = null, starts_locked = FALSE, alt = TRUE, powered = TRUE, guarded = TRUE, wire = null)
+CAPABILITY_TYPE(lock, CAP_LOCK, /datum/capability/lib/lock, key = NONE, id_types = null, starts_locked = FALSE, alt = TRUE, touch = FALSE, powered = TRUE, guarded = TRUE, wire = null)
 cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 
 /datum/capability/lib/lock
@@ -37,7 +38,8 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 		// A card (or PDA) on the holder: the card in hand is the credential.
 		op("toggle", inputs(swipe), needs(guards, req_credential_in_hand(cards, because = MSG(lock/denied))), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)),
 		// An alt-click, with or without something in hand: what the actor carries is the credential.
-		alt ? op("toggle_worn", inputs(hand()), priority(OP_PRIORITY_PART), when(CAP_PROC(worn_credential_offered)), needs(guards), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)) : null,
+		// Only an alt-click (or the Menu) unless `touch`: an empty hand's plain click is the holder's own (its window), never the lock's.
+		alt ? op("toggle_worn", inputs(hand(), menu()), touch ? null : gesture(GESTURE_ALT), label("Lock", state = LOCK_LOCKED, state_text = "Unlock"), priority(OP_PRIORITY_PART), when(CAP_PROC(worn_credential_offered)), needs(guards), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)) : null,
 		extend(TAG_UI, needs(req_unlocked_for_actor(id = "lock"))),
 		extend(TAG_CONTROL, needs(req_unlocked_for_actor(id = "lock"))),
 		examine_line(MSG(lock/is_locked), when = LOCK_LOCKED),
@@ -48,8 +50,11 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 
 /// The ID scan wire pulsed (WIRE_DEF in code/library/machine/wires.dm): the lock lets go, and locks again 30 seconds later.
 /datum/capability/lib/lock/proc/id_wire_pulsed(datum/holder, pulsed_wire, mob/user)
+	// only a lock the pulse opened is shut again: one that was already open stays as it was
+	var/was_locked = lock_locked(holder)
 	cap_key_set(holder, LOCK_LOCKED, FALSE, null)
-	after(holder, 30 SECONDS, GLOBAL_PROC_REF(lock_wire_relocks), key = "id_scan_relock", with = list(holder))
+	if(was_locked)
+		after(holder, 30 SECONDS, GLOBAL_PROC_REF(lock_wire_relocks), key = "id_scan_relock", with = list(holder))
 
 /proc/lock_wire_relocks(datum/holder)
 	if(holder && !QDELETED(holder))
@@ -73,13 +78,13 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 // ---- credentials ----
 
 /// req_credential_in_hand(types): the card in the actor's hand is one of `types` and grants the holder's access (nothing required: anyone).
-/proc/req_credential_in_hand(list/types, because = null)
-	return part_make(/datum/entry/part/req/credential, list("types" = types, "in_hand" = TRUE, "because" = because))
+/proc/req_credential_in_hand(list/types, because = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/credential, list("types" = types, "in_hand" = TRUE, "because" = because)), fails)
 
 /// req_credential_worn(types): the actor carries (worn ID or PDA, a silicon's own access) what grants the holder's access.
-/proc/req_credential_worn(list/types, because = null)
+/proc/req_credential_worn(list/types, because = null, fails = null)
 	RETURN_TYPE(/datum/entry/part/req/credential)
-	return part_make(/datum/entry/part/req/credential, list("types" = types, "in_hand" = FALSE, "because" = because))
+	return req_fails_wrap(part_make(/datum/entry/part/req/credential, list("types" = types, "in_hand" = FALSE, "because" = because)), fails)
 
 /datum/entry/part/req/credential
 	part_name = "req_credential"
@@ -95,8 +100,8 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 	return !!access_credential(holder, A.actor, src.args["in_hand"] ? A.held : null, needs[1], needs[2], src.args["types"])
 
 /// req_unlocked_for_actor(): the holder's lock is open, or the actor works a locked machine anyway (a silicon, an admin ghost).
-/proc/req_unlocked_for_actor(id = null)
-	return part_make(/datum/entry/part/req/unlocked_for_actor, list("id" = id))
+/proc/req_unlocked_for_actor(id = null, fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/unlocked_for_actor, list("id" = id)), fails)
 
 /datum/entry/part/req/unlocked_for_actor
 	part_name = "req_unlocked"

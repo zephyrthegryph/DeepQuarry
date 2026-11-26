@@ -6,7 +6,7 @@
 	table_icon_base = "stone"
 	icon_colour = "#FC2BC5"
 	shard_type = SHARD_SHARD
-	hardness = 30
+	strength = 30
 	door_icon_base = "stone"
 	sheet_singular_name = "crystal"
 	sheet_plural_name = "crystals"
@@ -21,11 +21,10 @@
 	icon_colour = "#00FFE1"
 	opacity = 0.4
 	reflectivity = 0.6
-	conductive = 0
 	conductivity = 1
 	shard_type = SHARD_SHARD
 	tableslam_noise = 'sound/effects/Glasshit.ogg'
-	hardness = 100
+	strength = 100
 	supply_conversion_value = 8
 	icon_base = "stone"
 	table_icon_base = "stone"
@@ -67,10 +66,10 @@
 	flags = MATERIAL_UNMELTABLE
 	cut_delay = 60
 	reflectivity = 0
-	conductivity = 1
+	conductivity = 8
 	shard_type = SHARD_SHARD
 	tableslam_noise = 'sound/effects/Glasshit.ogg'
-	hardness = 100
+	strength = 100
 	sheet_singular_name = "gem"
 	sheet_plural_name = "gems"
 	supply_conversion_value = 30	// These are hilariously rare.
@@ -85,12 +84,10 @@
 	door_icon_base = "stone"
 	icon_reinf = "reinf_mesh"
 	icon_colour = "#FFF3B2"
-	protectiveness = 30
-	integrity = 240
-	density = 30
-	hardness = 45
+	toughness = 120
+	weight = 30
+	strength = 45
 	negation = 2
-	conductive = 0
 	conductivity = 5
 	reflectivity = 0.5
 	radiation_resistance = 20
@@ -108,10 +105,9 @@
 	door_icon_base = "metal"
 	icon_reinf = "reinf_metal"
 	icon_colour = "#4FE95A"
-	integrity = 80
-	protectiveness = 15
-	density = 15
-	hardness = 30
+	toughness = 40
+	weight = 15
+	strength = 30
 	shard_type = SHARD_SHARD
 	negation = 15
 	conductivity = 60
@@ -130,15 +126,12 @@
 	door_icon_base = "metal"
 	icon_colour = "#37115A"
 	icon_reinf = "reinf_metal"
-	protectiveness = 60
-	integrity = 300
-	conductive = 0
+	toughness = 150
 	conductivity = 1.5
-	hardness = 90
+	strength = 90
 	shard_type = SHARD_SHARD
-	density = 30
+	weight = 30
 	negation = 25
-	explosion_resistance = 85
 	reflectivity = 0.2
 	radiation_resistance = 10
 	supply_conversion_value = 13
@@ -152,15 +145,12 @@
 	door_icon_base = "stone"
 	icon_colour = "#fffee7"
 	icon_reinf = "reinf_mesh"
-	protectiveness = 70
-	integrity = 300
-	conductive = 1
+	toughness = 150
 	conductivity = 20
-	hardness = 120
+	strength = 120
 	shard_type = SHARD_SHARD
-	density = 20
+	weight = 20
 	negation = 35
-	explosion_resistance = 20
 	reflectivity = 1
 	radiation_resistance = 100
 	supply_conversion_value = 15
@@ -287,7 +277,7 @@ CAPABILITIES(/transformation/stack/glamour__gloves)
 
 /transformation/stack/glamour__wig
 CAPABILITIES(/transformation/stack/glamour__wig)
-	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/clothing/head/powdered_wig, 1)),
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(VARIANT(/obj/item/clothing/head/powdered_wig), 1)),
 		chosen = chosen(title = "wig",
 			subject = /datum/material/glamour,
 			build_time = 10 SECONDS,
@@ -509,19 +499,17 @@ CAPABILITIES(/transformation/stack/glamour__glamour_arrow)
 	icon_colour = "#FF3300"
 	stack_type = /obj/item/stack/material/weathered_agate
 	ignition_point = 2400
-	melting_point = 2200
-	protectiveness = 70
+	heat_resistance = 48.8
 	opacity = 0.3
 	reflectivity = 0.5
-	explosion_resistance = 13
 	negation = 12
 	spatial_instability = 18
 	radiation_resistance = 18
 	supply_conversion_value = 12
 	can_sharpen = TRUE
 
-	hardness = 70
-	density = 5
+	strength = 70
+	weight = 5
 
 	shard_type = SHARD_SHARD
 	tableslam_noise = 'sound/effects/Glasshit.ogg'
@@ -532,9 +520,7 @@ CAPABILITIES(/transformation/stack/glamour__glamour_arrow)
 
 
 /datum/material/valhollide //buffed protection and reflectivity
-	protectiveness = 70
 	reflectivity = 0.75
 
 
 /datum/material/morphium //buffed protection
-	protectiveness = 65

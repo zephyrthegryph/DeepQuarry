@@ -68,7 +68,7 @@ CAPABILITIES(/obj/item/grenade)
 				C.throw_mode_on()
 	return OP_OK
 
-/obj/item/grenade/proc/activate(mob/user as mob)
+/obj/item/grenade/proc/activate(mob/user = null)
 	if(active)
 		return
 

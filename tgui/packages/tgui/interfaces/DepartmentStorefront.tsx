@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import {
-  Box,
   Button,
   Flex,
   Input,
@@ -10,27 +10,17 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
-type StockItem = {
-  ref: string;
-  name: string;
-  desc: string;
-  suggested: number;
-  price: number;
-  quantity: number;
-};
-
-type Data = {
-  department: string;
-  balance: number;
-  markup: number;
-  authorized: boolean;
-  stock: StockItem[];
-};
+import type {
+  DepartmentStorefrontActions,
+  DepartmentStorefrontData,
+} from './generated/DepartmentStorefront';
 
 export const DepartmentStorefront = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { department, balance, markup, authorized, stock } = data;
+  const { act, data } = useBackend<
+    DepartmentStorefrontData,
+    DepartmentStorefrontActions
+  >();
+  const { department, balance, markup, authorized, stock = [] } = data;
 
   return (
     <Window width={620} height={560} title={`${department} Storefront`}>
@@ -63,9 +53,9 @@ export const DepartmentStorefront = (props) => {
         </Section>
         <Section title="Available goods">
           {!stock.length && (
-            <Box color="label" textAlign="center" py={4}>
+            <Label textAlign="center" py={4}>
               No goods are currently stocked.
-            </Box>
+            </Label>
           )}
           <Stack vertical>
             {stock.map((item) => (
@@ -82,9 +72,7 @@ export const DepartmentStorefront = (props) => {
                     </Button>
                   }
                 >
-                  <Box color="label" mb={1}>
-                    {item.desc}
-                  </Box>
+                  <Label mb={1}>{item.desc}</Label>
                   <Flex align="center">
                     <Flex.Item grow>
                       Suggested market price: {item.suggested} Th

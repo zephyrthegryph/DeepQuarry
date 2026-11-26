@@ -40,11 +40,9 @@ pub struct SysModule {
     /// Rules that take no ALLOW annotation (`NO_ALLOW`).
     pub no_allow: &'static [&'static str],
     pub file_scan: Option<FileScan>,
-    pub fixture_file_scan:Option<fn(&SourceFile,&mut Vec<(&'static str,usize)>,&crate::raw_fixture_policy::Fixture<'_>)->Result<(),String>>,
     pub files_scan: Option<FilesScan>,
     /// The module's fixture tests (`selftest()` in the Python).
     pub selftest: Option<fn() -> Result<String, String>>,
-    pub fixture_selftest: Option<fn(&crate::raw_fixture_policy::Fixture<'_>) -> Result<String, String>>,
     /// Whether the Python module has a `selftest()` (parity runs `sys_lint.py --selftest --only`).
     pub py_selftest: bool,
 }
@@ -57,10 +55,8 @@ impl SysModule {
         allow_extra_rules: &[],
         no_allow: &[],
         file_scan: None,
-        fixture_file_scan:None,
         files_scan: None,
         selftest: None,
-        fixture_selftest: None,
         py_selftest: false,
     };
 }
@@ -74,42 +70,34 @@ fn leak<T: ?Sized>(b: Box<T>) -> &'static T {
     Box::leak(b)
 }
 
-pub fn policy_selection()->crate::tree::Select{CODE_MAPS_DM}
-
 pub fn register_module(reg: &mut Registry, module: SysModule) {
+    let name: &'static str = leak(format!("sys/{}", module.name).into_boxed_str());
+    let mut allow: Vec<&'static str> = module
+        .rules
+        .iter()
+        .map(|r| leak(format!("sys_{}", r.name).into_boxed_str()) as &'static str)
+        .collect();
+    for a in module.allow_extra {
+        allow.push(leak(format!("sys_{}", a).into_boxed_str()));
+    }
     let scan = match (module.file_scan.is_some(), module.files_scan.is_some()) {
         (true, true) => ScanKind::Both,
         (true, false) => ScanKind::File,
         _ => ScanKind::Tree,
     };
-    let meta=module_metadata(&module,scan);
-    reg.add(SysLint { module, meta });
-}
-
-/// Unique original static descriptor builder; no scan callback is invoked.
-pub(crate) fn module_metadata(module:&SysModule,scan:ScanKind)->Meta {
-    let name: &'static str = leak(crate::allow_registry_fields::legacy_scope_sys_name(module.name).into_boxed_str());
-    let mut allow: Vec<&'static str> = module
-        .rules
-        .iter()
-        .map(|r| leak(crate::allow_registry_fields::legacy_sys_name(r.name).into_boxed_str()) as &'static str)
-        .collect();
-    for a in module.allow_extra {
-        allow.push(leak(crate::allow_registry_fields::legacy_sys_name(a).into_boxed_str()));
-    }
-
-    Meta {
+    let meta = Meta {
         name,
-        group: crate::allow_registry_fields::SYS_SCOPE_GROUP,
+        group: "sys",
         label: name,
         legacy: "tools/ci/sys_lint.py",
-        select: policy_selection(),
+        select: CODE_MAPS_DM,
         scan,
         policy: Policy::Hard,
         rules: module.rules,
         allow: leak(allow.into_boxed_slice()),
-        lists: crate::allow_registry_fields::SYS_SCOPE_LISTS,
-    }
+        lists: &[],
+    };
+    reg.add(SysLint { module, meta });
 }
 
 thread_local! {
@@ -119,13 +107,20 @@ thread_local! {
 /// `allow::kept` for a module that asks an ALLOW question inside its own scan (outside the
 /// wrapper's `sys_<rule>` check, e.g. `ALLOW(cooldown)`): records the annotation as used, so the
 /// unused-ALLOW check sees it. The wrapper moves the records into the scan's `Sink`.
-pub fn kept_recorded(f:&SourceFile,number:usize,name:&str)->bool{kept_recorded_using(f,number,name,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
-/// Same actual annotation query and trace, with the caller's existing control.
-/// This records usage DATA only and does not issue a source/completion role.
-pub(crate) fn kept_recorded_using<C:crate::key_policy_control::Control>(f:&SourceFile,number:usize,name:&str,control:&mut C)->Result<bool,C::Error>{
- let Some(k)=crate::allow::kept_using(f,number,name,control)?else{return Ok(false)};
- let u=crate::lint::AllowUse{rel:crate::key_policy_control::own(control,&f.rel)?,line:k.line as u32,name:crate::key_policy_control::own(control,name)?,code:k.code.unwrap_or_default()};
- EXTRA_USED.with(|e|{let mut rows=e.borrow_mut();if !rows.contains(&u){crate::key_policy_control::row(control,&mut rows)?;rows.push(u);}Ok::<(),C::Error>(())})?;Ok(true)
+pub fn kept_recorded(f: &SourceFile, number: usize, name: &str) -> bool {
+    match crate::allow::kept(f, number, name) {
+        Some(k) => {
+            EXTRA_USED.with(|e| {
+                let u = crate::lint::AllowUse { rel: f.rel.clone(), line: k.line as u32, name: name.to_string(), code: k.code.unwrap_or_default() };
+                let mut e = e.borrow_mut();
+                if !e.contains(&u) {
+                    e.push(u);
+                }
+            });
+            true
+        }
+        None => false,
+    }
 }
 
 /// Takes the calling thread's recorded ALLOW uses (the incremental cache captures them per file).
@@ -150,10 +145,12 @@ pub fn replay_recorded(v: Vec<crate::lint::AllowUse>) {
     });
 }
 
-pub(crate) fn drain_extra(out: &mut Sink) {
+fn drain_extra(out: &mut Sink) {
     EXTRA_USED.with(|e| {
         for u in e.borrow_mut().drain(..) {
-            out.replay_allow(u);
+            if !out.allow_used.contains(&u) {
+                out.allow_used.push(u);
+            }
         }
     });
 }
@@ -179,12 +176,10 @@ impl Lint for SysLint {
         &self.meta
     }
 
-    fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
+    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
         let Some(scan) = self.module.file_scan else { return };
         let mut found = Vec::new();
-        if let (Some(fixture),Some(checked))=(cx.fixture,self.module.fixture_file_scan){
-            fixture.note_scan(checked(f,&mut found,fixture));
-        }else{scan(f,&mut found);}
+        scan(f, &mut found);
         drain_extra(out);
         for (rule, line) in found {
             if !self.kept(out, f, rule, line) {
@@ -217,13 +212,6 @@ impl Lint for SysLint {
         }
     }
 
-    fn selftest_with_fixture(&self, fixture: &crate::raw_fixture_policy::Fixture<'_>) -> Result<String, String> {
-        match self.module.fixture_selftest {
-            Some(callback) => callback(fixture),
-            None => self.selftest(),
-        }
-    }
-
     fn parity(&self) -> Option<Parity> {
         let m = self.module.name;
         // The argument vectors must be 'static; leak the few small ones per module.
@@ -251,6 +239,16 @@ pub fn col0(line: &str) -> bool {
 
 /// `_in_family` / `_resolvable`: `path` or one of its ancestors (cut at the last `/`, stopping at
 /// a cut index <= 0) is in `roots`.
-pub fn in_family(path:&str,roots:&std::collections::HashSet<String>)->bool{in_family_using(path,roots,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
-/// Same nearest ancestor membership, with caller's existing typed operation poll.
-pub fn in_family_using<C:crate::key_policy_control::Control>(mut path:&str,roots:&std::collections::HashSet<String>,c:&mut C)->Result<bool,C::Error>{while !path.is_empty(){c.checkpoint()?;if roots.contains(path){return Ok(true)}match path.rfind('/'){Some(cut)if cut>0=>path=&path[..cut],_=>return Ok(false)}}Ok(false)}
+pub fn in_family(path: &str, roots: &std::collections::HashSet<String>) -> bool {
+    let mut path = path;
+    while !path.is_empty() {
+        if roots.contains(path) {
+            return true;
+        }
+        match path.rfind('/') {
+            Some(cut) if cut > 0 => path = &path[..cut],
+            _ => return false,
+        }
+    }
+    false
+}

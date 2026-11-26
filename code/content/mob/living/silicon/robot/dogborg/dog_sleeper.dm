@@ -81,6 +81,7 @@ CAPABILITIES(/obj/item/dogborg/sleeper)
 	owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper, starts = when(nameof(ore_storage), /obj/item/ore_bag/sleeper), starts_args = NO_LOC)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("RobotSleeper", state = nameof(GLOB.tgui_conscious_state))
+	ui_shape(name = schema_text(), theme = schema_text(), chems = nullable(list_of(row(id = schema_text(), name = schema_text()))), our_patient = nullable(row(name = schema_text(), stat = int(), pulse = schema_text(), crit_pulse = bool(), health = int(), max_health = int(), findings = list_of(row(name = schema_text(), band = enum(list("uninjured", "minor", "moderate", "severe", "critical")))), paralysis = num(), braindamage = bool(), clonedamage = bool(), ingested_reagents = list_of(row(name = schema_text(), volume = num(), contaminant = bool())))), eject_port = enum(list("disposal", "ingestion")), cleaning = bool(), medsensor = bool(), delivery = bool(), delivery_tag = schema_text(), delivery_lists = map_of(schema_text(), list_of(schema_text())), compactor = bool(), max_item_count = num(), ore_storage = bool(), current_capacity = num(), max_ore_storage = num(), contents = list_of(schema_text()), deliveryslot_1 = list_of(schema_text()), deliveryslot_2 = list_of(schema_text()), deliveryslot_3 = list_of(schema_text()), items_preserved = list_of(schema_text()), has_destructive_analyzer = bool(), techweb_name = nullable(schema_text()))
 	without("ui_open")
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("clean", ui_act("clean"), then(PROC_REF(ui_act_clean)))
@@ -177,7 +178,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	act_message(user, src, MSG_SELF(span_notice("Your %T% lights up as [H] slips inside. Life support functions engaged.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside.")))
 	log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
-	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, volume_channel = VOLUME_CHANNEL_VORE)
 	return OP_OK
 
 /// A thing put in the compactor (an item, a mouse): the compartment may have filled up meanwhile.
@@ -189,7 +190,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	target.forceMove(src)
 	act_message(user, target, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as [target.name] slips inside.")))
-	playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+	playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, volume_channel = VOLUME_CHANNEL_VORE)
 	if(delivery)
 		if(islist(deliverylists[delivery_tag]))
 			set_deliverylists_at(delivery_tag, deliverylists[delivery_tag] | target)
@@ -208,7 +209,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	act_message(user, trashman, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as %T% slips inside.")))
 	log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HREF_TOKEN_PLACEHOLDER];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
-	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, volume_channel = VOLUME_CHANNEL_VORE)
 	if(delivery)
 		if(islist(deliverylists[delivery_tag]))
 			set_deliverylists_at(delivery_tag, deliverylists[delivery_tag] | trashman)
@@ -296,22 +297,31 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 /obj/item/dogborg/sleeper/ui_title(mob/user)
 	return "[name] Console"
 
-/obj/item/dogborg/sleeper/tgui_static_data(mob/user)
+/obj/item/dogborg/sleeper/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
-
-	if(!isrobot(user))
+	data["name"] = name
+	data["theme"] = "ntos"
+	data["chems"] = null
+	// The sleeper is a robot's module: its owner (its loc) sets the theme, whoever views it.
+	var/mob/living/silicon/robot/robot_user = loc
+	if(!istype(robot_user))
 		return data
 
-	var/mob/living/silicon/robot/robot_user = user
 	var/list/robot_chems = list()
 	for(var/re in TYPE_TABLE_GET(src, sleeper_injection_chems))
 		var/datum/reagent/possible_reagent = SSchemistry.ready().chemical_reagents[re]
 		UNTYPED_LIST_ADD(robot_chems, list("id" = possible_reagent.id, "name" = possible_reagent.name))
 
-	data["name"] = name
 	data["theme"] = robot_user.get_ui_theme()
 	data["chems"] = robot_chems
 	return data
+
+/// The names the window lists for a list of things (it counts them by name).
+/obj/item/dogborg/sleeper/proc/listed_names(list/things)
+	var/list/names = list()
+	for(var/thing in things)
+		names += "[thing]"
+	return names
 
 /// /obj/item/dogborg/sleeper's window data.
 /obj/item/dogborg/sleeper/ui_data(datum/act/eval/A)
@@ -320,8 +330,8 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	if(patient)
 		var/list/ingested_reagents = list()
 		if(patient.reagents.reagent_list.len)
-			for(var/datum/reagent/ingested in patient.reagents.reagent_list)
-				UNTYPED_LIST_ADD(ingested_reagents, list("name" = ingested.name, "volume" = ingested.volume))
+			for(var/datum/reagent/ingested as anything in patient.reagents.listed_reagents()) // the contaminants last
+				UNTYPED_LIST_ADD(ingested_reagents, list("name" = ingested.name, "volume" = ingested.volume, "contaminant" = istype(ingested, /datum/reagent/contaminant)))
 
 		var/datum/diagnosis/D = patient.diagnose(/datum/diagnostic_profile/automation)
 		var/list/findings = list()
@@ -331,7 +341,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		patient_data = list(
 			"name" = patient.name,
 			"stat" = patient.stat,
-			"pulse" = patient.get_pulse(GETPULSE_TOOL),
+			"pulse" = "[patient.get_pulse(GETPULSE_TOOL)]",
 			"crit_pulse" = (patient.pulse == PULSE_NONE || patient.pulse == PULSE_THREADY),
 			// Old +100..-100 readout scale, derived from vitality.
 			"health" = round((2 * patient.vitality() - 1) * 100),
@@ -349,25 +359,28 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	if(ore_storage)
 		current_capacity = ore_bag.current_capacity
 		max_ore_storage = ore_bag.max_storage_space
+	var/list/listed_deliveries = list()
+	for(var/tag in deliverylists)
+		listed_deliveries[tag] = listed_names(deliverylists[tag])
 	var/list/data = list(
 		"our_patient" = patient_data,
 		"eject_port" = eject_port,
-		"cleaning" = cleaning,
-		"medsensor" = medsensor,
-		"delivery" = delivery,
+		"cleaning" = !!cleaning,
+		"medsensor" = !!medsensor,
+		"delivery" = !!delivery,
 		"delivery_tag" = delivery_tag,
-		"delivery_lists" = deliverylists,
-		"compactor" = compactor,
+		"delivery_lists" = listed_deliveries,
+		"compactor" = !!compactor,
 		"max_item_count" = max_item_count,
-		"ore_storage" = ore_storage,
+		"ore_storage" = !!ore_storage,
 		"current_capacity" = current_capacity,
 		"max_ore_storage" = max_ore_storage,
-		"contents" = contents,
-		"deliveryslot_1" = (deliveryslot_1 || list()),
-		"deliveryslot_2" = (deliveryslot_2 || list()),
-		"deliveryslot_3" = (deliveryslot_3 || list()),
-		"items_preserved" = items_preserved || list(),
-		"has_destructive_analyzer" = analyzer,
+		"contents" = listed_names(contents),
+		"deliveryslot_1" = listed_names(deliveryslot_1),
+		"deliveryslot_2" = listed_names(deliveryslot_2),
+		"deliveryslot_3" = listed_names(deliveryslot_3),
+		"items_preserved" = listed_names(items_preserved),
+		"has_destructive_analyzer" = !!analyzer,
 		"techweb_name" = handler?.linked_web() ? "[handler.linked_web().id] / [handler.linked_web().organization]" : null
 	)
 	return data
@@ -466,8 +479,6 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			else if(patient.reagents.get_reagent_amount(chem) + 10 <= 20) //No overdoses for you
 				patient.reagents.add_reagent(chem, inject_amount)
 				drain(SLEEPER_INJECT_COST)
-			var/units = round(patient.reagents.get_reagent_amount(chem))
-			to_chat(hound, span_notice("Injecting [units] unit\s of [SSchemistry.ready().chemical_reagents[chem]] into occupant.")) //If they were immersed, the reagents wouldn't leave with them.
 
 /// The belly light: busy (red) while cleaning, crowded or holding the dead;
 /// green with a living patient. The robot only redraws when it changes.
@@ -528,7 +539,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 
 	if(prob(20))
 		var/churnsound = SFX_CLASSIC_DIGESTION_SOUNDS
-		playsound(src, churnsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+		playsound(src, churnsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VORE)
 	//If the timing is right, and there are items to be touched
 	if(SSair.cycles_run()%3==1)
 		// digest_brute / digest_burn are rates per BELLY_BASELINE_TICK, applied as
@@ -549,11 +560,11 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 /// The belly is empty: announce it and stop cleaning.
 /obj/item/dogborg/sleeper/proc/finish_clean_cycle()
 	var/finisher = SFX_CLASSIC_DEATH_SOUNDS
-	playsound(src, finisher, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	playsound(src, finisher, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VORE)
 	to_chat(hound, span_notice("Your [src.name] is now clean. Ending self-cleaning cycle."))
 	set_cleaning(0)
 	update_patient()
-	play_sfx(src, SFX_MACHINES_DING, 2, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	play_sfx(src, SFX_MACHINES_DING, 2, falloff = 0.1, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VORE)
 
 /// One digestion pass on a living occupant; indigestible ones are preserved.
 /obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)
@@ -575,7 +586,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	to_chat(hound, span_notice("You feel your belly slowly churn around [T], breaking them down into a soft slurry to be used as power for your systems."))
 	to_chat(T, span_notice("You feel [hound]'s belly slowly churn around your form, breaking you down into a soft slurry to be used as power for [hound]'s systems."))
 	var/deathsound = SFX_CLASSIC_DEATH_SOUNDS
-	playsound(src, deathsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	playsound(src, deathsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, volume_channel = VOLUME_CHANNEL_VORE)
 	if(is_vore_predator(T))
 		for(var/obj/belly/B as anything in T.vore_organs)
 			for(var/atom/movable/thing in B)

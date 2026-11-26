@@ -24,7 +24,7 @@ CAPABILITIES(/obj/item/reagent_scanner)
 		return
 
 	if(!isnull(O.reagents))
-		if(!O.is_open_container() && !istype(O,/obj/machinery/reagent_refinery)) // The idea is that the scanner has to touch the reagents somehow. This is done to prevent cheesing unidentified autoinjectors. Reagent refinery has ports for convenient testing!
+		if(!O.is_open_container() && !istype(O,/obj/machinery/reagent_refinery) && !istype(O, /obj/item/reagent_containers/pill)) // The idea is that the scanner has to touch the reagents somehow. This is done to prevent cheesing unidentified autoinjectors. Reagent refinery has ports for convenient testing!
 			to_chat(user, span_warning("\The [O] is sealed, and cannot be scanned by \the [src] until unsealed."))
 			return
 
@@ -32,7 +32,11 @@ CAPABILITIES(/obj/item/reagent_scanner)
 		if(O.reagents.reagent_list.len > 0)
 			var/one_percent = O.reagents.total_volume / 100
 			for (var/datum/reagent/R in O.reagents.reagent_list)
-				dat += "\n \t " + span_notice("[R][details ? ": [R.volume / one_percent]%" : ""]")
+				// Contaminants are reagents: each is a line of its own. The advanced scanner prints the amount and share, the basic one the name.
+				dat += "\n \t " + span_notice(details ? "[R.name] [round(R.volume, 0.1)]u: [R.volume / one_percent]%" : "[R]")
+			var/mixture = O.reagents.purity_summary()
+			if(mixture)
+				dat += "\n \t " + span_notice("Mixture: [mixture]")
 		if(dat)
 			to_chat(user, span_notice("Chemicals found: [dat]"))
 		else

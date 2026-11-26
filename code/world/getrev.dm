@@ -52,7 +52,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/getrev)
 		. += "<a href=\"[CONFIG_GET(string/githuburl)]/pull/[tm.number]\">#[tm.number][details]</a><br>"
 
 /client/verb/showrevinfo()
-	set category = VERB_CAT_OOC_GAME
+	set hidden = TRUE // the Menu page
 	set name = "Show Server Revision"
 	set desc = "Check the current server code revision"
 

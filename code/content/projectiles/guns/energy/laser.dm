@@ -10,7 +10,6 @@
 	wielded_item_state = "laser-wielded"
 	fire_delay = 8
 	w_class = ITEMSIZE_LARGE //huge was dumb for this.
-	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/beam/midlaser
 	one_handed_penalty = 30
 
@@ -289,7 +288,6 @@ CAPABILITIES(/obj/item/gun/energy/lasershotgun)
 	icon_state = "ge_pistol"
 	item_state = "ge_pistol"
 	w_class = ITEMSIZE_NORMAL
-	MATERIAL_BULK(MAT_STEEL, 2000)
 	fire_sound = SFX_WEAPONS_MANDALORIAN
 	projectile_type = /obj/item/projectile/beam/imperial
 
@@ -307,7 +305,6 @@ CAPABILITIES(/obj/item/gun/energy/imperial)
 	item_state = "mininglaser"
 	fire_delay = 8
 	w_class = ITEMSIZE_LARGE
-	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/beam/mininglaser
 
 	firemodes = list(
@@ -329,7 +326,6 @@ CAPABILITIES(/obj/item/gun/energy/mininglaser)
 	item_state = "laser"
 	fire_delay = 6
 	w_class = ITEMSIZE_NORMAL
-	MATERIAL_BULK(MAT_STEEL, 1500)
 	projectile_type = /obj/item/projectile/beam/midlaser
 
 CAPABILITIES(/obj/item/gun/energy/laser/old)
@@ -658,7 +654,7 @@ CAPABILITIES(/obj/item/gun/energy/gun/burst/mg42)
 	item_state = "gauss"
 	desc = "An older model of the experimental Gauss weapon series produced by Hephaestus industries. As it is unable to pass through glass, it was phased out during the mars-sol conflict due to the invention of laser carbines.Nevertheless, it still packs a punch and is easy to maintain, making it a favorite amongst sol privateers."
 	fire_sound = SFX_WEAPONS_LASER4 //lighter damage sound //CHMOMPEdit - Sound moved to modular files to prevent conflict with an upstream laser sound file
-	w_class = 2
+	w_class = ITEMSIZE_SMALL
 	projectile_type = /obj/item/projectile/energy/gauss
 	charge_cost = 250
 	self_recharge = 1

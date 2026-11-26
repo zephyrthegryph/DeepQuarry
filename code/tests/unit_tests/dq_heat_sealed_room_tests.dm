@@ -2,7 +2,7 @@
 
 /// The temperatures around a sealed test floor, for the log: its air, its floor solid and each walled neighbour.
 /proc/dq_heat_room_report(turf/simulated/floor/T)
-	var/list/parts = list("air [round(T.air.return_temperature(), 0.001)]", "floor [round(T.get_temperature(), 0.001)]")
+	var/list/parts = list("air [round(T.turf_air().return_temperature(), 0.001)]", "floor [round(T.get_temperature(), 0.001)]")
 	for(var/dir in GLOB.cardinals_multiz)
 		var/turf/N = get_step_multiz(T, dir)
 		if(N)
@@ -20,11 +20,11 @@
 	dq_atmos_test_isolate_pair(T, T)
 	dq_atmos_test_fill_standard_air(T)
 	T.air_update_turf(TRUE, FALSE)
-	var/start = T.air.return_temperature()
+	var/start = T.turf_air().return_temperature()
 	log_test("SEALED ROOM t=0: [dq_heat_room_report(T)]")
 	for(var/i in 1 to 6)
 		SSair.run_gas_frames(10)
 		log_test("SEALED ROOM t=[i * 10]: [dq_heat_room_report(T)]")
-	var/drift = T.air.return_temperature() - start
+	var/drift = T.turf_air().return_temperature() - start
 	TEST_ASSERT(abs(drift) < 0.2, "a sealed room drifted [round(drift, 0.01)] K in a minute ([dq_heat_room_report(T)])")
 

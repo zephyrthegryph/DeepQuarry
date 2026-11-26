@@ -73,8 +73,8 @@ CAPABILITIES(/obj/item/clothing/mask/synthfacemask)
 /obj/item/clothing/mask/synthfacemask/proc/maskmaster() as /mob/living/carbon
 	return maskmaster
 
-/proc/req_robotic_head()
-	return part_make(/datum/entry/part/req/acceptance_leaf/robotic_head, list())
+/proc/req_robotic_head(fails = null)
+	return req_fails_wrap(part_make(/datum/entry/part/req/acceptance_leaf/robotic_head, list()), fails)
 
 
 /datum/entry/part/req/acceptance_leaf/robotic_head/acceptance_reason(datum/act/op/A)

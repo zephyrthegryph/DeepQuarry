@@ -125,7 +125,7 @@ CAPABILITIES(/obj/item/storage/toolbox/syndicate)
 		/obj/item/material/minihoe,
 		/obj/item/material/knife/machete/hatchet,
 		/obj/item/tool/wirecutters/clippers/trimmers,
-		/obj/item/reagent_containers/spray/plantbgone,
+		VARIANT(/obj/item/reagent_containers/spray/plantbgone),
 		/obj/item/reagent_containers/glass/beaker
 	)
 

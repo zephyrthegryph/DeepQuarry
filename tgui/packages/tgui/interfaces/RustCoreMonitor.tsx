@@ -1,7 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Knob, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import { EmptyState } from './common/EmptyState';
+import type {
+  RustCoreMonitorActions,
+  RustCoreMonitorData,
+} from './generated/RustCoreMonitor';
 
 export const RustCoreMonitor = () => (
   <Window width={627} height={700}>
@@ -11,26 +15,12 @@ export const RustCoreMonitor = () => (
   </Window>
 );
 
-type Data = {
-  cores: {
-    name: string;
-    x: number;
-    y: number;
-    z: number;
-    has_field: BooleanLike;
-    core_operational: BooleanLike;
-    ref: string;
-    reactant_dump: BooleanLike;
-    field_instability: number;
-    field_temperature: number;
-    target_field_strength: number;
-  }[];
-};
+type Data = RustCoreMonitorData;
 
 export const RustCoreMonitorContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RustCoreMonitorActions>();
 
-  const { cores } = data;
+  const { cores = [] } = data;
 
   return (
     <Section
@@ -41,18 +31,21 @@ export const RustCoreMonitorContent = (props) => {
         </Button>
       }
     >
+      {cores.length === 0 && (
+        <EmptyState>
+          No fusion cores are linked. Set the tag to match a core.
+        </EmptyState>
+      )}
       <Table>
         <Table.Row header>
           <Table.Cell>Name</Table.Cell>
           <Table.Cell>Position</Table.Cell>
-          <Table.Cell>Field Status</Table.Cell>
-          <Table.Cell>Reactant Mode</Table.Cell>
-          <Table.Cell>Field Instability</Table.Cell>
-          <Table.Cell>Field Temperature</Table.Cell>
-          <Table.Cell style={{ textAlign: 'center' }}>
-            Field Strength
-          </Table.Cell>
-          <Table.Cell>Plasma Content</Table.Cell>
+          <Table.Cell>Field</Table.Cell>
+          <Table.Cell>Reactants</Table.Cell>
+          <Table.Cell>Instability</Table.Cell>
+          <Table.Cell>Temp.</Table.Cell>
+          <Table.Cell style={{ textAlign: 'center' }}>Strength</Table.Cell>
+          <Table.Cell>Plasma</Table.Cell>
         </Table.Row>
         {cores.map((core) => (
           <Table.Row key={core.name}>

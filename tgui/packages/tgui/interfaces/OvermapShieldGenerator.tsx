@@ -1,4 +1,6 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   AnimatedNumber,
@@ -9,40 +11,12 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  OvermapShieldGeneratorActions,
+  OvermapShieldGeneratorData,
+} from './generated/OvermapShieldGenerator';
 
-type Data = {
-  running: number;
-  modes: {
-    name: string;
-    desc: string;
-    flag: number;
-    status: BooleanLike;
-    hacked: BooleanLike;
-    multiplier: number;
-  }[];
-  overloaded: BooleanLike;
-  mitigation_max: number;
-  mitigation_physical: number;
-  mitigation_em: number;
-  mitigation_heat: number;
-  field_integrity: number;
-  max_energy: number;
-  current_energy: number;
-  percentage_energy: number;
-  total_segments: number;
-  functional_segments: number;
-  field_radius: number;
-  target_radius: number;
-  input_cap_kw: number;
-  upkeep_power_usage: number;
-  power_usage: number;
-  hacked: BooleanLike;
-  offline_for: number;
-  idle_multiplier: number;
-  idle_valid_values: number[];
-  spinup_counter: number;
-};
+type Data = OvermapShieldGeneratorData;
 
 export const OvermapShieldGenerator = (props) => {
   return (
@@ -55,8 +29,8 @@ export const OvermapShieldGenerator = (props) => {
 };
 
 const OvermapShieldGeneratorContent = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { modes, offline_for } = data;
+  const { act, data } = useBackend<Data, OvermapShieldGeneratorActions>();
+  const { modes = [], offline_for } = data;
 
   if (offline_for) {
     return (
@@ -87,7 +61,7 @@ const OvermapShieldGeneratorContent = (props) => {
               </Button>
             }
           >
-            <Box color="label">{mode.desc}</Box>
+            <Label>{mode.desc}</Label>
             <Box mt={0.5}>Multiplier: {mode.multiplier}</Box>
           </Section>
         ))}
@@ -97,7 +71,7 @@ const OvermapShieldGeneratorContent = (props) => {
 };
 
 const OvermapShieldGeneratorStatus = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, OvermapShieldGeneratorActions>();
   const {
     running,
     overloaded,
@@ -138,11 +112,13 @@ const OvermapShieldGeneratorStatus = (props) => {
         <LabeledList.Item label="Generator is">
           {tab[running] || <Box color="bad">Offline</Box>}
         </LabeledList.Item>
-        <LabeledList.Item label="Energy Storage">
-          <ProgressBar value={current_energy} maxValue={max_energy}>
-            {current_energy} / {max_energy} MJ ({percentage_energy}%)
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Energy Storage"
+          value={current_energy}
+          maxValue={max_energy}
+        >
+          {current_energy} / {max_energy} MJ ({percentage_energy}%)
+        </StatBar>
         <LabeledList.Item label="Shield Integrity">
           <AnimatedNumber value={field_integrity} />%
         </LabeledList.Item>
@@ -179,8 +155,8 @@ const OvermapShieldGeneratorStatus = (props) => {
 };
 
 const OvermapShieldGeneratorControls = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { running, hacked, idle_multiplier, idle_valid_values } = data;
+  const { act, data } = useBackend<Data, OvermapShieldGeneratorActions>();
+  const { running, hacked, idle_multiplier, idle_valid_values = [] } = data;
 
   return (
     <Section

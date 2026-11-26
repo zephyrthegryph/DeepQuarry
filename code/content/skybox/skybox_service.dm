@@ -37,6 +37,10 @@ SYSTEM_DEF(skybox)
 	normal_space.layer = TURF_LAYER
 	normal_space.icon = 'icons/turf/space.dmi'
 	normal_space.icon_state = "white"
+	// Space is shown without dynamic lighting (luminosity 1, what turf_instance_setup() gives a turf outside it). Luminosity is part of the
+	// appearance, so every space turf that takes one of these appearances in space_appearance() already has it; without it each of the ~184 k
+	// space turfs at a minitest boot wrote luminosity back to 1 right after, one set_luminosity() call and one appearance change per turf.
+	normal_space.luminosity = 1
 
 	//Static
 	for (var/i in 0 to 25)

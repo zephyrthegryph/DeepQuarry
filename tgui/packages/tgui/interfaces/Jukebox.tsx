@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
 import {
   Box,
@@ -9,38 +10,17 @@ import {
   Input,
   LabeledList,
   NumberInput,
-  ProgressBar,
   Section,
   Slider,
   Stack,
 } from 'tgui-core/components';
 import { formatTime } from 'tgui-core/format';
 import { round, toFixed } from 'tgui-core/math';
-import type { BooleanLike } from 'tgui-core/react';
 import { capitalize } from 'tgui-core/string';
-
-type Data = {
-  playing: BooleanLike;
-  loop_mode: number;
-  volume: number;
-  current_track_ref: string | null;
-  current_track: track | null;
-  current_genre: string | null;
-  percent: number;
-  tracks: track[];
-  admin: BooleanLike;
-};
-
-type track = {
-  ref: string;
-  title: string;
-  artist: string;
-  genre: string;
-  duration: number;
-};
+import type { JukeboxActions, JukeboxData } from './generated/Jukebox';
 
 export const Jukebox = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<JukeboxData, JukeboxActions>();
 
   const {
     playing,
@@ -50,7 +30,7 @@ export const Jukebox = (props) => {
     current_track,
     current_genre,
     percent,
-    tracks,
+    tracks = [],
     admin,
   } = data;
 
@@ -141,9 +121,12 @@ export const Jukebox = (props) => {
                 Once
               </Button>
             </LabeledList.Item>
-            <LabeledList.Item label="Progress">
-              <ProgressBar value={percent} maxValue={1} color="good" />
-            </LabeledList.Item>
+            <StatBar
+              label="Progress"
+              value={percent}
+              maxValue={1}
+              color="good"
+            />
             <LabeledList.Item label="Volume">
               <Slider
                 minValue={0}

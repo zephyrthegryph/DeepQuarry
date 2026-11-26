@@ -45,10 +45,6 @@
 /obj/machinery/chem_master/proc/pill_bottle_loaded(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/storage/pill_bottle/PB = A.held
-	// The machine reads .contents directly below (C5); a bottle loaded
-	// straight off a turf or out of a latent holder still holds its
-	// pills as a declared generator until now.
-	PB.make_contents_real()
 	if(!move_into(src, nameof(src.loaded_pill_bottle), PB, user))
 		return OP_OK
 	to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")
@@ -77,11 +73,12 @@ CAPABILITIES(/obj/machinery/chem_master)
 	op("load_pill_bottle", item(/obj/item/storage/pill_bottle), label("Load pill bottle"),
 		needs(req(PROC_REF(chem_master_no_pill_bottle))), then(PROC_REF(pill_bottle_loaded)))
 	interface("ChemMaster")
+	ui_shape(condi = bool(), pillsprite = schema_text(), bottlesprite = schema_text(), printing = bool(), loaded_pill_bottle = bool(), loaded_pill_bottle_name = nullable(schema_text()), loaded_pill_bottle_contents_len = nullable(int()), loaded_pill_bottle_storage_slots = nullable(num()), beaker = bool(), beaker_reagents = list_of(row(name = schema_text(), volume = num(), description = schema_text(), id = schema_text(), contaminant = bool())), buffer_reagents = list_of(row(name = schema_text(), volume = num(), id = schema_text(), description = schema_text(), contaminant = bool())), mode = bool(), modal = any)
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("ejectp", ui_act("ejectp"), then(PROC_REF(ui_act_ejectp)))
 	op("print", ui_act("print", arg("beaker", num(default = 0)), arg("idx", num(default = 0))), then(PROC_REF(ui_act_print)))
-	op("add", ui_act("add", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_add)))
-	op("remove", ui_act("remove", arg("amount", num()), arg("id")), then(PROC_REF(ui_act_remove)))
+	op("add", ui_act("add", arg("amount", num())), then(PROC_REF(ui_act_add)))
+	op("remove", ui_act("remove", arg("amount", num())), then(PROC_REF(ui_act_remove)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("create_condi_bottle", ui_act("create_condi_bottle"), then(PROC_REF(ui_act_create_condi_bottle)))
 	op("analyze", ui_act("modal:analyze", arg("arguments")), then(PROC_REF(modal_analyze)))
@@ -132,10 +129,10 @@ CAPABILITIES(/obj/machinery/chem_master)
 /// The window's data.
 /obj/machinery/chem_master/ui_data(datum/act/eval/A)
 	. = list()
-	.["condi"] = condi
-	.["pillsprite"] = pillsprite
-	.["bottlesprite"] = bottlesprite
-	.["printing"] = printing
+	.["condi"] = condi ? TRUE : FALSE
+	.["pillsprite"] = "[pillsprite]"
+	.["bottlesprite"] = "[bottlesprite]"
+	.["printing"] = printing ? TRUE : FALSE
 	var/list/part = ui_data_part_chem_master(A)
 	for(var/key in part)
 		.[key] = part[key]
@@ -146,24 +143,20 @@ CAPABILITIES(/obj/machinery/chem_master)
 
 
 	data["loaded_pill_bottle"] = !!loaded_pill_bottle
-	if(loaded_pill_bottle)
-		data["loaded_pill_bottle_name"] = loaded_pill_bottle.name
-		data["loaded_pill_bottle_contents_len"] = contents_count(loaded_pill_bottle)
-		data["loaded_pill_bottle_storage_slots"] = loaded_pill_bottle.max_storage_space
+	data["loaded_pill_bottle_name"] = loaded_pill_bottle?.name
+	data["loaded_pill_bottle_contents_len"] = loaded_pill_bottle ? contents_count(loaded_pill_bottle) : null
+	data["loaded_pill_bottle_storage_slots"] = loaded_pill_bottle?.max_storage_space
 
 	data["beaker"] = !!beaker
+	var/list/beaker_reagents_list = list()
+	var/list/buffer_reagents_list = list()
 	if(beaker)
-		var/list/beaker_reagents_list = list()
-		data["beaker_reagents"] = beaker_reagents_list
-		for(var/datum/reagent/R in beaker.reagents?.reagent_list)
-			beaker_reagents_list[++beaker_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "description" = R.description, "id" = R.id)
+		beaker_reagents_list = beaker.reagents ? beaker.reagents.ui_rows(describe = TRUE) : list()
+		buffer_reagents_list = reagents.ui_rows(describe = TRUE)
+	data["beaker_reagents"] = beaker_reagents_list
+	data["buffer_reagents"] = buffer_reagents_list
 
-		var/list/buffer_reagents_list = list()
-		data["buffer_reagents"] = buffer_reagents_list
-		for(var/datum/reagent/R in reagents.reagent_list)
-			buffer_reagents_list[++buffer_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "id" = R.id, "description" = R.description)
-
-	data["mode"] = mode
+	data["mode"] = mode ? TRUE : FALSE
 
 	// the window's modal (the engine adds it too; the key is always sent, as it was)
 	data["modal"] = tgui_modal_data(src)
@@ -281,7 +274,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 	arguments = islist(arguments) ? arguments.Copy() : list()
 	var/idx = text2num(arguments["idx"]) || 0
 	var/from_beaker = text2num(arguments["beaker"]) || FALSE
-	var/reagent_list = (from_beaker && beaker) ? beaker.reagents.reagent_list : reagents.reagent_list
+	var/list/reagent_list = ((from_beaker && beaker) ? beaker.reagents : reagents).listed_reagents() // the order the window lists
 	if(idx < 1 || idx > length(reagent_list))
 		return
 	var/datum/reagent/R = reagent_list[idx]
@@ -314,17 +307,15 @@ CAPABILITIES(/obj/machinery/chem_master)
 
 /obj/machinery/chem_master/proc/modal_addcustom(datum/act/op/A, list/arguments)
 	var/amount = isgoodnumber(A.step_value("amount"))
-	var/id = islist(arguments) ? arguments["id"] : null
-	if(!amount || !id)
+	if(!amount)
 		return
-	return ui_act_add(A, amount, id)
+	return ui_act_add(A, amount)
 
 /obj/machinery/chem_master/proc/modal_removecustom(datum/act/op/A, list/arguments)
 	var/amount = isgoodnumber(A.step_value("amount"))
-	var/id = islist(arguments) ? arguments["id"] : null
-	if(!amount || !id)
+	if(!amount)
 		return
-	return ui_act_remove(A, amount, id)
+	return ui_act_remove(A, amount)
 
 /obj/machinery/chem_master/proc/modal_create_condi_pack(datum/act/op/A, list/arguments)
 	add_fingerprint(A.actor)
@@ -457,7 +448,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 	if(printing || condi)
 		return
 
-	var/reagent_list = (from_beaker && beaker) ? beaker.reagents.reagent_list : reagents.reagent_list
+	var/list/reagent_list = ((from_beaker && beaker) ? beaker.reagents : reagents).listed_reagents() // the order the window lists
 	if(idx < 1 || idx > length(reagent_list))
 		return
 
@@ -479,27 +470,33 @@ CAPABILITIES(/obj/machinery/chem_master)
 	P.name = "Chemical Analysis - [R.name]"
 	after(src, 5 SECONDS, PROC_REF(printing_done))
 
-/obj/machinery/chem_master/proc/ui_act_add(datum/act/op/A, amount, id)
+/// Moves `amount` units of the beaker's mixture into the buffer: the whole mix, every reagent in the share it has in the beaker (no machine picks one chemical out).
+/obj/machinery/chem_master/proc/ui_act_add(datum/act/op/A, amount)
 	add_fingerprint(A.actor)
 	. = TRUE
-	if(!beaker)
+	if(!beaker || !beaker.reagents)
 		return
-	var/datum/reagents/R = beaker.reagents
-	if(!id || !amount || amount <= 0) // negative amounts pass a bare falsy check and reach trans_id_to
+	if(!amount || amount <= 0) // negative amounts pass a bare falsy check
 		return
-	R.trans_id_to(src, id, amount)
+	var/moved = beaker.reagents.trans_to_holder(reagents, amount)
+	if(GLOB.chem_trace)
+		log_world("CHEM: [src] moved [round(moved, 0.001)]u of the beaker's mixture into the buffer")
 
-/obj/machinery/chem_master/proc/ui_act_remove(datum/act/op/A, amount, id)
+/// Moves `amount` units of the buffer's mixture to the beaker (mode) or throws them away: the whole mix, as ui_act_add() does.
+/obj/machinery/chem_master/proc/ui_act_remove(datum/act/op/A, amount)
 	add_fingerprint(A.actor)
 	. = TRUE
 	if(!beaker)
 		return
-	if(!id || !amount || amount <= 0) // see "add": reject crafted negative amounts
+	if(!amount || amount <= 0) // see "add": reject crafted negative amounts
 		return
+	var/moved
 	if(mode)
-		reagents.trans_id_to(beaker, id, amount)
+		moved = reagents.trans_to_holder(beaker.reagents, amount)
 	else
-		reagents.remove_reagent(id, amount)
+		moved = reagents.remove_any(amount)
+	if(GLOB.chem_trace)
+		log_world("CHEM: [src] [mode ? "moved" : "discarded"] [round(moved, 0.001)]u of the buffer's mixture")
 
 /obj/machinery/chem_master/proc/ui_act_eject(datum/act/op/A)
 	var/mob/user = A.actor

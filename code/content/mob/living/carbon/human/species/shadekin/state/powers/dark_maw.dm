@@ -216,8 +216,11 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 			return
 	. = ..()
 
-/obj/effect/energy_net/dark/periodic_step()
-	. = ..()
+// The tangle fades in light, checked every 2 seconds (SSobj's old step, lost with the cadences).
+CAPABILITIES(/obj/effect/energy_net/dark)
+	every(2 SECONDS, then(PROC_REF(dark_net_step)))
+
+/obj/effect/energy_net/dark/proc/dark_net_step(datum/act/A)
 	var/turf/T = get_turf(src)
 	if(!istype(T) || T.get_lumcount() >= 0.6)
 		visible_message(span_notice("The tangle of dark tendrils fades away in the light."))

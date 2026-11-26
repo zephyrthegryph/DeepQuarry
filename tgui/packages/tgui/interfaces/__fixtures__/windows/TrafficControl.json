@@ -1,0 +1,20 @@
+{
+	"temp": {
+		"color": "good",
+		"text": "- 2 SERVERS PROBED & BUFFERED -"
+	},
+	"network": "tcommsat",
+	"screen": 0,
+	"servers": [
+		{
+			"id": "server-1",
+			"name": "Common Server"
+		},
+		{
+			"id": "server-2",
+			"name": "Command Server"
+		}
+	],
+	"selected_id": "server-1",
+	"autoruncode": 1
+}

@@ -1,0 +1,8 @@
+{
+	"docking_status": "undocked",
+	"override_enabled": true,
+	"exterior_status": {
+		"state": "closed",
+		"lock": "locked"
+	}
+}

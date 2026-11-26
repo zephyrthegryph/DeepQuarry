@@ -1,7 +1,6 @@
 //! Coordinator admission adopts exact shared authored metadata into current leaves.
 use super::*;
 use crate::declaration_contributions::KeyedDeclarations;
-enum AdoptionFailure<E>{Declined,Operational(E)}
 pub(super) struct AdmittedAuthored {
     index: KeyedDeclarations,
     pub(super) leaves: Vec<Arc<Vec<crate::Skeleton>>>,
@@ -181,35 +180,14 @@ impl DeclarationClaims {
         // Public compatibility overlays cannot reuse a receipt for different rows.
         index.skeletons().eq(skeletons.iter()).then_some(index)
     }
-    pub(crate) fn adopt_authored<'a>(&self,currents:impl IntoIterator<Item=&'a mut CurrentContribution>)->Option<()>{
-        if self.authored.is_none(){return Some(());}
-        match self.adopt_authored_using::<std::convert::Infallible>(currents,None,|_|Ok(()),|current|{
-            let key=RetainedDeclarations::key(&current.value.source);
-            self.values.publish(&key,current).ok_or(AdoptionFailure::Declined)
-        }){Ok(())=>Some(()),Err(AdoptionFailure::Declined)=>None,Err(AdoptionFailure::Operational(never))=>match never{}}
-    }
-    pub(crate) fn adopt_authored_checked<'a>(&self,currents:impl IntoIterator<Item=&'a mut CurrentContribution>,a:&dm_syntax::SettingAdmission<'_>,loan:Option<crate::declaration_contributions::TypeContributionLoan<'_>>)->std::io::Result<Option<()>>{
-        let result=self.adopt_authored_using(currents,loan,|current|{
-            if !current.value.syntax.initializer_admission_matches(a).map_err(AdoptionFailure::Operational)?{return Err(AdoptionFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"checked authored adoption lacks completed original header")));}Ok(())
-        },|current|{
-            let key=RetainedDeclarations::original_header_key(&current.value.source);
-            self.values.publish_checked(&key,current,a).map_err(AdoptionFailure::Operational)?.ok_or(AdoptionFailure::Declined)
-        });
-        match result{Ok(())=>Ok(Some(())),Err(AdoptionFailure::Declined)=>Ok(None),Err(AdoptionFailure::Operational(actual))=>Err(actual)}
-    }
-    fn adopt_authored_using<'a,E>(
+    pub(crate) fn adopt_authored<'a>(
         &self,
         currents: impl IntoIterator<Item = &'a mut CurrentContribution>,
-        loan: Option<crate::declaration_contributions::TypeContributionLoan<'_>>,
-        mut admit:impl FnMut(&CurrentContribution)->Result<(),AdoptionFailure<E>>,
-        mut publish:impl FnMut(&mut CurrentContribution)->Result<(),AdoptionFailure<E>>,
-    ) -> Result<(),AdoptionFailure<E>> {
+    ) -> Option<()> {
         let Some(authored) = &self.authored else {
-            for current in currents{admit(current)?;}
-            return Ok(());
+            return Some(());
         };
         let mut currents: Vec<_> = currents.into_iter().collect();
-        for current in &currents{admit(current)?;}
         let leaves: Vec<_> = currents.iter().map(|current| current.skeletons()).collect();
         let reused = {
             let previous = self
@@ -233,28 +211,22 @@ impl DeclarationClaims {
             // Sharing the previous leaf backing does not transfer its lease.
             // Replay and claim the exact rows for this pending request as well.
             let index = authored.adopt(index);
-            return self.publish_authored_using(currents,index,&mut publish);
+            return self.publish_authored(currents, index);
         }
         let mut roster = crate::skeleton_roster::SkeletonRoster::default();
         for current in &currents {
-            if loan.is_some() {
-                roster.push_positional_leaf(current.skeletons());
-            } else {
-                roster.push_leaf(current.skeletons());
-            }
+            roster.push_leaf(current.skeletons());
         }
         let (index, _) = {
             let previous = self
                 .authored_current
                 .lock()
                 .unwrap_or_else(|error| error.into_inner());
-            KeyedDeclarations::capture_view_with_type_loan(
+            KeyedDeclarations::capture_view(
                 previous.as_ref().map(|value| &value.index),
                 roster.view(),
-                loan,
-                |index| Some(currents.get(roster.leaf_index(index)?)?.symbols()),
             )
-            .map_err(|_|AdoptionFailure::Declined)?
+            .ok()?
         };
         let index = authored.adopt(index);
         let mut rows = index.skeletons();
@@ -262,9 +234,9 @@ impl DeclarationClaims {
             let mut changed = false;
             let start = rows.clone();
             for original in current.value.skeletons.iter() {
-                let shared = rows.next().ok_or(AdoptionFailure::Declined)?;
+                let shared = rows.next()?;
                 if original != shared {
-                    return Err(AdoptionFailure::Declined);
+                    return None;
                 }
                 if let (
                     crate::Skeleton::Member { metadata: a, .. },
@@ -292,22 +264,22 @@ impl DeclarationClaims {
             current.stored = false;
         }
         if rows.next().is_some() {
-            return Err(AdoptionFailure::Declined);
+            return None;
         }
         drop(rows);
-        self.publish_authored_using(currents,index,&mut publish)
+        self.publish_authored(currents, index)
     }
-    fn publish_authored_using<E>(
+    fn publish_authored(
         &self,
         currents: Vec<&mut CurrentContribution>,
         index: KeyedDeclarations,
-        publish:&mut impl FnMut(&mut CurrentContribution)->Result<(),AdoptionFailure<E>>,
-    ) -> Result<(),AdoptionFailure<E>> {
+    ) -> Option<()> {
         let mut leaves = Vec::with_capacity(currents.len());
         for current in currents {
             // A value the store already holds under its key needs no second publication.
             if !current.stored {
-                publish(current)?;
+                let key = RetainedDeclarations::key(&current.value.source);
+                self.values.publish(&key, current)?;
             }
             leaves.push(current.skeletons());
         }
@@ -316,6 +288,6 @@ impl DeclarationClaims {
             .lock()
             .unwrap_or_else(|error| error.into_inner()) =
             Some(Arc::new(AdmittedAuthored { index, leaves }));
-        Ok(())
+        Some(())
     }
 }

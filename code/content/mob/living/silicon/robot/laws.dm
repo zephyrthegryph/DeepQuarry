@@ -54,6 +54,4 @@
 	return
 
 /mob/living/silicon/robot/proc/robot_checklaws()
-	set category = VERB_CAT_ABILITIES_SILICON
-	set name = "State Laws"
 	subsystem_law_manager()

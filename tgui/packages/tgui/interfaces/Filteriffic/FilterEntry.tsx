@@ -6,7 +6,7 @@ import {
   NumberInput,
   Section,
 } from 'tgui-core/components';
-
+import type { FilterifficActions } from '../generated/Filteriffic';
 import { FilterDataEntry } from './FilterTypes/FilterDataEntry';
 import type { ActiveFilters, Data } from './types';
 
@@ -14,13 +14,15 @@ export const FilterEntry = (props: {
   readonly name: string;
   readonly filterDataEntry: ActiveFilters;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, FilterifficActions>();
   const { name, filterDataEntry } = props;
   const { type, priority, ...restOfProps } = filterDataEntry;
 
-  const filterDefaults = data.filter_info;
+  const filterDefaults = data.filter_info || {};
 
-  const targetFilterPossibleKeys = Object.keys(filterDefaults[type].defaults);
+  const targetFilterPossibleKeys = Object.keys(
+    filterDefaults[type]?.defaults || {},
+  );
 
   return (
     <Collapsible
@@ -61,7 +63,7 @@ export const FilterEntry = (props: {
       <Section>
         <LabeledList>
           {targetFilterPossibleKeys.map((entryName) => {
-            const defaults = filterDefaults[type].defaults;
+            const defaults = filterDefaults[type]?.defaults || {};
             const value = restOfProps[entryName] || defaults[entryName];
             const hasValue = value !== defaults[entryName];
             return (

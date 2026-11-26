@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The human look cache counts its builds, the /icon operations they make and their cost (human_look_stats_line()), with tests that a plain body draws with no /icon operation, a warm draw builds nothing and a one-part change builds only that part"

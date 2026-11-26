@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Button, LabeledList, Section } from 'tgui-core/components';
-
+import type { RCONActions } from '../generated/RCON';
 import type { Data } from './types';
 
 export const RCONBreakerList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RCONActions>();
 
   const { breaker_info } = data;
 

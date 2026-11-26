@@ -64,9 +64,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// What right-click does on the map: INPUT_ACTION_MENU (the interaction menu) or INPUT_ACTION_ALTERNATE.
 	var/right_click_binding = INPUT_ACTION_MENU
 
-	// THIS IS NOT SAVED
-	// WE JUST HAVE NOWHERE ELSE TO STORE IT
-	var/list/action_button_screen_locs
 
 	///If they are currently in the process of swapping slots, don't let them open 999 windows for it and get confused
 	var/selecting_slots = FALSE
@@ -133,13 +130,15 @@ CAPABILITIES(/datum/preferences)
 	op("save", ui_act(), then(PROC_REF(ui_act_save)))
 	op("reload", ui_act(), then(PROC_REF(ui_act_reload)))
 	op("game_prefs", ui_act(), then(PROC_REF(ui_act_game_prefs)))
+	op("open_tool", ui_act("open_tool", arg("tool", schema_text(64))), then(PROC_REF(ui_act_open_tool)))
 	op("cycle_background", ui_act(), then(PROC_REF(ui_act_cycle_background)))
 	owns_one(nameof(savefile), /datum/json_savefile)
 	owns_many(nameof(middleware), /datum/preference_middleware)
 	interface("PreferencesMenu", title = "Preferences", state = nameof(GLOB.tgui_always_state), forwards = nameof(middleware))
+	ui_shape(active_slot = int(), window = int(), character_profiles = list_of(nullable(schema_text())), character_preferences = row(game_preferences = map_of(schema_text(), schema_any())), saved_notification = bool(), character_preview_version = int(), character_preview_assets = row(south = nullable(schema_text()), north = nullable(schema_text()), east = nullable(schema_text()), west = nullable(schema_text()), bg = nullable(schema_text())), dq_server_profile = row(pre_backend_ms = num(), preview_render_ms = num()), dq_cache_key = schema_text(), dq_active_category = schema_text(), dq_category_index = list_of(schema_text()), dq_structure_version = int(), dq_category_patch = map_of(schema_text(), row()), dq_values = map_of(schema_text(), schema_any()), dq_color_links = map_of(schema_text(), schema_text()), dq_editor_data = row(birthday = nullable(pref_editor_birthday()), body_markings = nullable(pref_editor_body_markings()), ear_secondary = nullable(pref_editor_ear_secondary()), faction_affiliations = nullable(pref_editor_faction_affiliations()), flavor = nullable(pref_editor_flavor()), language = nullable(pref_editor_language()), loadout = nullable(pref_editor_loadout()), mind_body = nullable(pref_editor_mind_body()), nif_status = nullable(pref_editor_nif_status()), occupation = nullable(pref_editor_occupation()), organs = nullable(pref_editor_organs()), persistence = nullable(pref_editor_persistence()), robot_chassis = nullable(pref_editor_robot_chassis()), species_picker = nullable(pref_editor_species_picker()), trait_picker = nullable(pref_editor_trait_picker()), vore_messages = nullable(pref_editor_vore_messages())), dq_editor_versions = map_of(schema_text(), one_of(num(), schema_text())), dq_editor_static_patch = nullable(row(birthday = nullable(pref_editor_birthday_static()), body_markings = nullable(pref_editor_body_markings_static()), faction_affiliations = nullable(pref_editor_faction_affiliations_static()), flavor = nullable(pref_editor_flavor_static()), language = nullable(pref_editor_language_static()), loadout = nullable(pref_editor_loadout_static()), mind_body = nullable(pref_editor_mind_body_static()), occupation = nullable(pref_editor_occupation_static()), organs = nullable(pref_editor_organs_static()), persistence = nullable(pref_editor_persistence_static()), robot_chassis = nullable(pref_editor_robot_chassis_static()), species_picker = nullable(pref_editor_species_picker_static()), trait_picker = nullable(pref_editor_trait_picker_static()))), dq_catalog_build_ms = num(), dq_text_markers = map_of(schema_text(), schema_text())) // dq_editor_data / dq_editor_static_patch: one nullable field per shown editor (null = not sent this time), each editor's shape declared beside its build_ui_data() in preferences/editors/; dq_values and dq_category_patch stay open (a pref's value and widget props are whatever that pref declares), typed by deepquarry/PreferencesMenu/types.ts
 	op("load", ui_act("load"), then(PROC_REF(ui_act_load)))
 	op("resetslot", ui_act("resetslot"), needs(req(PROC_REF(slot_reset_refusal))), asks(/datum/prompt/choice/preference_slot_reset, fields = list("question" = "This will reset the current slot. Continue?"), step = "first", when = PROC_REF(slot_reset_open)), asks(/datum/prompt/choice/preference_slot_reset, fields = list("question" = "Are you completely sure that you want to reset this character slot?"), step = "second", when = PROC_REF(slot_reset_confirmed_once)), then(PROC_REF(ui_act_resetslot)))
-	op("copy", ui_act("copy"), then(PROC_REF(ui_act_copy)))
+	op("copy", ui_act("copy"), needs(req(PROC_REF(slot_reset_refusal))), then(PROC_REF(ui_act_copy)))
 	op("refresh_character_preview", ui_act("refresh_character_preview"), then(PROC_REF(ui_act_refresh_character_preview)))
 	op("set_preference", ui_act("set_preference", arg("preference", schema_text(4096)), arg("value")), then(PROC_REF(ui_act_set_preference)))
 	op("set_color_preference", ui_act("set_color_preference", arg("preference", schema_text(4096))), asks(/datum/prompt/color/prefs/entry, fields = list("question" = "Select new color", "default" = computed(PROC_REF(color_pref_default)), "preferences" = computed(PROC_REF(prefs_self)), "pref_key" = computed(PROC_REF(color_pref_key))), step = "color", when = PROC_REF(color_pref_valid)), then(PROC_REF(ui_act_set_color_preference)))
@@ -276,12 +275,12 @@ CAPABILITIES(/datum/preferences)
 	sanitize_preferences()
 
 	// This needs to happen before anything else becuase it sets some variables.
+	var/copy_started = TICK_USAGE_REAL
+	var/list/step_ms = list()
+	var/step_started = TICK_USAGE_REAL
 	character.set_species(read_preference(/datum/preference/choiced/species))
+	step_ms["set_species"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
 	// Special Case: This references variables owned by two different datums, so do it here.
-	if(read_preference(/datum/preference/toggle/human/name_is_always_random))
-		// write_ instead of update_ to avoid update_preference_by_type calling copy_to again.
-		write_preference_by_type(/datum/preference/name/real_name, random_name(read_preference(/datum/preference/choiced/gender/identifying), read_preference(/datum/preference/choiced/species)))
-
 	// apply pipeline:
 	//   1. Per-pref apply() walks every PREFERENCE_CHARACTER pref in priority order.
 	//   2. /datum/preference_apply_hook subtypes run after, for cross-pref orchestration that
@@ -289,21 +288,40 @@ CAPABILITIES(/datum/preferences)
 	//      markings overlay rebuild, NIF spawn, body backup, finalize).
 	//   Bay player_setup.copy_to_mob() is no longer called; all its logic has moved to
 	//   per-pref apply_to_human and /datum/preference_apply_hook subtypes.
+	var/prefs_started = TICK_USAGE_REAL
 	for(var/datum/preference/preference as anything in get_preferences_in_priority_order())
 		if(preference.savefile_identifier != PREFERENCE_CHARACTER)
 			continue
 
+		step_started = TICK_USAGE_REAL
 		preference.apply(character, read_preference(preference.type), src)
+		step_ms["pref [preference.type]"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	var/prefs_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - prefs_started)
 
+	var/hooks_started = TICK_USAGE_REAL
 	for(var/datum/preference_apply_hook/hook as anything in GLOB.preference_apply_hooks)
 		if(hook.skip_on_preview && ismannequin(character))
 			continue
+		step_started = TICK_USAGE_REAL
 		hook.apply(character, src)
+		step_ms["hook [hook.type]"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+	var/hooks_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - hooks_started)
 
 	// Sync up all their organs one final time. force_update_limbs + regenerate_icons are
 	// already handled by /datum/preference_apply_hook/finalize; we still need the body /
 	// mutation / underwear / hair passes that aren't part of the hook.
+	step_started = TICK_USAGE_REAL
 	character.force_update_organs()
+	step_ms["force_update_organs"] = TICK_DELTA_TO_MS(TICK_USAGE_REAL - step_started)
+
+	// JOIN_TIMING: where a character's preference application goes; only the steps over 5 ms are listed.
+	var/total_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - copy_started)
+	if(total_ms >= 20)
+		var/slow = ""
+		for(var/step_name in step_ms)
+			if(step_ms[step_name] >= 5)
+				slow += ", [step_name] [round(step_ms[step_name], 0.1)] ms"
+		log_world("JOIN_TIMING_PREFS: copy_to [round(total_ms, 0.1)] ms (per-pref applies [round(prefs_ms, 0.1)] ms, hooks [round(hooks_ms, 0.1)] ms)[slow]")
 
 /datum/preferences/proc/open_load_dialog(mob/user)
 	return slot_dialog_stage(user, FALSE)
@@ -500,7 +518,7 @@ CAPABILITIES(/datum/preferences)
 	character.dna.base_species = bodytype_selected
 	var/datum/species/private_species = rel_private(character, nameof(character.species)) // PROTO: private copy
 	private_species.set_base_species(bodytype_selected)
-	private_species.icobase = private_species.get_icobase()
+	private_species.set_icobase(private_species.get_icobase())
 	private_species.deform = private_species.get_icobase(get_deform = TRUE)
 	private_species.vanity_base_fit = text_or_null(bodytype_selected)
 	if(istype(character.species, /datum/species/shapeshifter))
@@ -522,26 +540,6 @@ CAPABILITIES(/datum/preferences)
 // show_in_directory, directory_*, sensorpref, capture_crystal,
 // auto_backup_implant, borg_petting migrated to /datum/preference subtypes
 // (see code/content/client/preferences/types/character/directory.dm).
-
-/client/verb/toggle_capture_crystal()
-	set name = "Toggle Catchable"
-	set category = VERB_CAT_PREFERENCES_CHARACTER
-	set desc = "Toggles being catchable with capture crystals."
-
-	var/mob/living/L = mob
-
-	var/cur = prefs.read_preference(/datum/preference/toggle/human/capture_crystal)
-	prefs.update_preference_by_type(/datum/preference/toggle/human/capture_crystal, !cur)
-	if(cur)
-		to_chat(src, "You are no longer catchable.")
-	else
-		to_chat(src, "You are now catchable.")
-	if(L && istype(L))
-		STATE_SET(L, capture, capture_crystal, !cur ? TRUE : FALSE)
-	SScharacter_setup.queue_preferences_save(prefs)
-
-	feedback_add_details("admin_verb","TCaptureCrystal") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-
 
 /// The client this refers to (a relation view: null once that is deleted).
 /datum/preferences/proc/client() as /client

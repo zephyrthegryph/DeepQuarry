@@ -5,32 +5,22 @@ use std::{
     sync::{Arc, Mutex, OnceLock, Weak},
 };
 
-use crate::source_text_reservation::ReservedSourceBuffer;
-
+#[derive(Clone)]
 enum TextBacking {
     Original(Arc<str>),
     Transformed(String),
-    Reserved(ReservedSourceBuffer),
 }
 impl TextBacking {
     fn text(&self) -> &str {
         match self {
             Self::Original(text) => text,
             Self::Transformed(text) => text,
-            Self::Reserved(text) => text.as_str(),
         }
     }
 }
 struct Backing {
     text: TextBacking,
-    fingerprints: OnceLock<Mutex<SpanFingerprints>>,
-    // Last: actual text/fingerprint allocations drop before their resource root.
-    _source_arena_payload: Option<crate::source_arena_credit::SourceArenaCredit>,
-}
-#[derive(Default)]
-struct SpanFingerprints {
-    entries: Vec<SpanFingerprint>,
-    frozen: bool,
+    fingerprints: OnceLock<Mutex<Vec<SpanFingerprint>>>,
 }
 #[derive(Clone, Copy)]
 struct SpanFingerprint {
@@ -46,105 +36,32 @@ impl Backing {
 pub struct SourceText {
     backing: Arc<Backing>,
     range: Range<usize>,
-    _source_arena_control:Option<crate::source_arena_credit::SourceArenaControlCredit>,
 }
 /// Weak storage lifetime observation; it carries no compiler issuance authority.
 #[derive(Clone)]
 pub struct WeakSourceText {
     backing: Weak<Backing>,
     range: Range<usize>,
-    // Only resource credit, never source payload/identity/model authority.
-    _source_arena_control:Option<crate::source_arena_credit::SourceArenaControlCredit>,
 }
 impl WeakSourceText {
-    /// Inventory the actual fixed backing allocation retained by this Weak,
-    /// including after payload destruction. Never dereferences a dead owner;
-    /// addresses here are census metadata, not a source-identity proof.
-    pub fn visit_backing_storage(&self,visit:impl FnOnce(usize,usize,usize)){
-        let bytes=std::mem::size_of::<Backing>();
-        visit(self.backing.as_ptr() as usize,if self.backing.strong_count()>0{bytes}else{0},bytes);
-    }
-    /// Resource-control metadata only; observes no source payload and never
-    /// upgrades a dead backing or issues a source/currentness grant.
-    pub fn visit_derived_resource_storage(&self,mut visit:impl FnMut(usize,usize)){if let Some(credit)=&self._source_arena_control{credit.visit_storage(&mut visit)}}
     pub fn upgrade(&self) -> Option<SourceText> {
         Some(SourceText {
             backing: self.backing.upgrade()?,
             range: self.range.clone(),
-            _source_arena_control:self._source_arena_control.clone(),
         })
     }
 }
 /// Borrow actual backing allocations for a deduplicated retained-owner census.
-/// Transformed storage exposes its physical capacity without copying its payload.
+/// Transformed storage exposes its String capacity without copying its payload.
 pub enum SourceTextStorage<'a> {
     Original(&'a Arc<str>),
     Transformed(&'a String),
-    Reserved { text: &'a str, committed: usize },
 }
 impl SourceText {
-    pub fn source_arena_control_bytes()->std::io::Result<usize>{std::mem::size_of::<Backing>().checked_add(2*std::mem::size_of::<usize>()).ok_or_else(||std::io::ErrorKind::OutOfMemory.into())}
-    /// Adopt the SAME transformed source allocation under the existing shared
-    /// input/source family. Neither credit carries acquisition/model authority.
-    /// String payload and last-weak control metadata have distinct lifetimes.
-    pub fn from_source_arena(text:String,payload:crate::source_arena_credit::SourceArenaCredit,control:crate::source_arena_credit::SourceArenaControlCredit)->std::io::Result<Self>{
-        let capacity = text.capacity();
-        Self::adopt_transformed(TextBacking::Transformed(text), capacity, payload, control)
-    }
-
-    pub(crate) fn from_reserved_source_arena(
-        text: ReservedSourceBuffer,
-        payload: crate::source_arena_credit::SourceArenaCredit,
-        control: crate::source_arena_credit::SourceArenaControlCredit,
-    ) -> std::io::Result<Self> {
-        let capacity = text.capacity();
-        Self::adopt_transformed(TextBacking::Reserved(text), capacity, payload, control)
-    }
-
-    fn adopt_transformed(
-        text: TextBacking,
-        capacity: usize,
-        payload: crate::source_arena_credit::SourceArenaCredit,
-        control: crate::source_arena_credit::SourceArenaControlCredit,
-    ) -> std::io::Result<Self> {
-        // Tuple fields drop left to right, including on failed validation.
-        // Release the actual backing before either allocation credit.
-        let pending = (text, payload, control);
-        if pending.1.reserved_bytes() < capacity
-            || pending.2.reserved_bytes() < Self::source_arena_control_bytes()?
-        {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::OutOfMemory,
-                "transformed source adoption exceeds its actual input-family allocation credit",
-            ));
-        }
-        let (text, payload, control) = pending;
-        let length = text.text().len();
-        let backing = Backing {
-            text,
-            fingerprints: OnceLock::new(),
-            _source_arena_payload: Some(payload),
-        };
-        Ok(Self { backing: Arc::new(backing), range: 0..length, _source_arena_control: Some(control) })
-    }
-    pub fn source_arena_payload_credit(&self)->Option<&crate::source_arena_credit::SourceArenaCredit>{self.backing._source_arena_payload.as_ref()}
-    pub fn source_arena_control_credit(&self)->Option<&crate::source_arena_credit::SourceArenaControlCredit>{self._source_arena_control.as_ref()}
-    /// Real resource owner/control allocations only, never duplicate reserved
-    /// bytes as a second copy of the source payload.
-    pub fn visit_derived_resource_storage(&self,mut visit:impl FnMut(usize,usize)){
-      if let Some(credit)=self.source_arena_payload_credit(){credit.visit_storage(&mut visit)}if let Some(credit)=self.source_arena_control_credit(){credit.visit_storage(&mut visit)}
-    }
-    /// SAME historical Analyze display-line projection of compiler-decoded
-    /// original text. Bare CR adds display rows; CRLF adds only its LF row.
-    pub fn analyze_display_line(&self,native_line:usize)->Option<usize>{
-        let text=self.as_str().as_bytes();let mut line=1usize;let mut extra=0usize;for(offset,byte)in text.iter().enumerate(){if *byte==b'\n'{line+=1;}else if *byte==b'\r'&&text.get(offset+1)!=Some(&b'\n')&&line<native_line{extra+=1;}}
-        if native_line==0||native_line>line{None}else{Some(native_line+extra)}
-    }
     pub fn downgrade(&self) -> WeakSourceText {
         WeakSourceText {
             backing: Arc::downgrade(&self.backing),
             range: self.range.clone(),
-            _source_arena_control:self._source_arena_control.clone(),
         }
     }
     pub fn as_str(&self) -> &str {
@@ -160,10 +77,6 @@ impl SourceText {
                 text: TextBacking::Transformed(text),
                 ..
             } => SourceTextStorage::Transformed(text),
-            Backing { text: TextBacking::Reserved(text), .. } => SourceTextStorage::Reserved {
-                text: text.as_str(),
-                committed: text.capacity(),
-            },
         };
         visitor(
             Arc::as_ptr(&self.backing) as usize,
@@ -182,15 +95,15 @@ impl SourceText {
         let cache = self
             .backing
             .fingerprints
-            .get_or_init(Default::default);
-        let mut cache = cache.lock().unwrap_or_else(|poison| poison.into_inner());
-        match cache.entries.binary_search_by_key(&absolute, |entry| entry.range) {
-            Ok(index) => Some(cache.entries[index].digest),
+            .get_or_init(|| Mutex::new(Vec::new()));
+        let mut entries = cache.lock().unwrap_or_else(|poison| poison.into_inner());
+        match entries.binary_search_by_key(&absolute, |entry| entry.range) {
+            Ok(index) => Some(entries[index].digest),
             Err(index) => {
                 let digest = xxhash_rust::xxh3::xxh3_128(text.as_bytes());
                 // Bound arbitrary span-history retention independently of input size.
-                if !cache.frozen && cache.entries.len() < 4096 {
-                    cache.entries.insert(
+                if entries.len() < 4096 {
+                    entries.insert(
                         index,
                         SpanFingerprint {
                             range: absolute,
@@ -202,40 +115,10 @@ impl SourceText {
             }
         }
     }
-    /// A Native consumer may retain the already-admitted Original payload,
-    /// but must not grow its span cache outside that source family's budget.
-    /// Preserve existing entries and use the same lock as cache insertion.
-    pub(crate) fn freeze_span_fingerprint_growth(&self) {
-        self.backing.fingerprints.get_or_init(Default::default)
-            .lock().unwrap_or_else(|poison| poison.into_inner()).frozen = true;
-    }
-    /// Only an ordinary full UTF-8 backing within the actual raw grant may
-    /// replace a freshly read String. Compare the bytes before freezing its
-    /// optional span cache. The ledger will observe this same stable capacity.
-    pub(crate) fn can_reuse_for_exact_raw_utf8(&self, fresh: &String) -> bool {
-        let TextBacking::Transformed(prior) = &self.backing.text else { return false; };
-        if self._source_arena_control.is_some() || self.backing._source_arena_payload.is_some()
-            || self.range != (0..prior.len()) || prior.capacity() > fresh.capacity()
-            || prior.as_bytes() != fresh.as_bytes()
-        {
-            return false;
-        }
-        let mut fingerprints = self.backing.fingerprints.get_or_init(Default::default)
-            .lock().unwrap_or_else(|poison| poison.into_inner());
-        let capacity = fingerprints.entries.capacity()
-            .checked_mul(std::mem::size_of::<SpanFingerprint>())
-            .and_then(|bytes| bytes.checked_add(prior.capacity()));
-        if capacity.is_none_or(|bytes| bytes > fresh.capacity()) {
-            return false;
-        }
-        fingerprints.frozen = true;
-        true
-    }
     /// Borrow memo storage for pointer-deduplicated retained-owner accounting.
     pub fn visit_fingerprint_storage(&self, visitor: impl FnOnce(usize, usize, usize)) {
         if let Some(cache) = self.backing.fingerprints.get() {
-            let cache = cache.lock().unwrap_or_else(|poison| poison.into_inner());
-            let entries = &cache.entries;
+            let entries = cache.lock().unwrap_or_else(|poison| poison.into_inner());
             visitor(
                 entries.as_ptr() as usize,
                 entries.len() * std::mem::size_of::<SpanFingerprint>(),
@@ -248,40 +131,14 @@ impl SourceText {
     pub fn same_view(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.backing, &other.backing) && self.range == other.range
     }
-    /// Resource-only equality for replacing a retained view with a smaller
-    /// reference to its already authenticated owner. This grants no source role.
-    #[cfg(test)]
-    pub(crate) fn same_retained_view(&self, other: &Self) -> bool {
-        self.same_view(other) && self.same_retained_control(other)
-    }
-    fn same_retained_control(&self, other: &Self) -> bool {
-        match (&self._source_arena_control, &other._source_arena_control) {
-            (None, None) => true,
-            (Some(left), Some(right)) => std::ptr::addr_eq(left.owner(), right.owner()),
-            _ => false,
-        }
-    }
-    /// Compare the exact retained view a checked relative range would issue,
-    /// without cloning its backing or control. This grants no source role.
-    pub(crate) fn matches_retained_subview(&self, range: Range<usize>, other: &Self) -> bool {
-        Arc::ptr_eq(&self.backing, &other.backing)
-            && self.checked_absolute_range(range).is_some_and(|range| range == other.range)
-            && self.same_retained_control(other)
-    }
-
-    fn checked_absolute_range(&self, range: Range<usize>) -> Option<Range<usize>> {
-        self.as_str().get(range.clone())?;
-        Some(self.range.start.checked_add(range.start)?..self.range.start.checked_add(range.end)?)
-    }
-
     /// Share an exact byte view only when both endpoints are valid UTF-8 bounds.
     /// Content storage alone grants no parser, revision or occurrence authority.
     pub fn checked_view(&self, range: Range<usize>) -> Option<Self> {
-        let range = self.checked_absolute_range(range)?;
+        self.as_str().get(range.clone())?;
         Some(Self {
             backing: Arc::clone(&self.backing),
-            range,
-            _source_arena_control:self._source_arena_control.clone(),
+            range: self.range.start.checked_add(range.start)?
+                ..self.range.start.checked_add(range.end)?,
         })
     }
     /// Borrow an existing full string owner for compatibility consumers. A
@@ -292,12 +149,7 @@ impl SourceText {
             _ => None,
         }
     }
-    pub(crate) fn has_private_transformed_backing(&self, issued_owners: usize) -> bool {
-        matches!(&self.backing.text, TextBacking::Transformed(_))
-            && Arc::weak_count(&self.backing) == 0
-            && Arc::strong_count(&self.backing) == issued_owners
-    }
-
+    #[cfg(test)]
     pub(crate) fn shares_backing(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.backing, &other.backing)
     }
@@ -307,7 +159,6 @@ impl SourceText {
         Self {
             backing: Arc::clone(&self.backing),
             range: (self.range.start + range.start)..(self.range.start + range.end),
-            _source_arena_control:self._source_arena_control.clone(),
         }
     }
 }
@@ -323,10 +174,8 @@ impl From<Arc<str>> for SourceText {
             backing: Arc::new(Backing {
                 text: TextBacking::Original(text),
                 fingerprints: OnceLock::new(),
-                _source_arena_payload: None,
             }),
             range: 0..length,
-            _source_arena_control:None,
         }
     }
 }
@@ -337,10 +186,8 @@ impl From<String> for SourceText {
             backing: Arc::new(Backing {
                 text: TextBacking::Transformed(text),
                 fingerprints: OnceLock::new(),
-                _source_arena_payload: None,
             }),
             range: 0..length,
-            _source_arena_control:None,
         }
     }
 }
@@ -398,31 +245,6 @@ mod tests {
         assert!(weak.upgrade().is_some(), "view retains its immutable owner");
         drop(selected);
         assert!(weak.upgrade().is_none());
-    }
-
-    #[test]
-    fn retained_subview_comparison_matches_checked_view_for_utf8_and_nested_ranges() {
-        let source = SourceText::from(String::from("xééyz"));
-        let nested = source.checked_view(1..6).unwrap();
-        let first = source.checked_view(1..3).unwrap();
-        let second = source.checked_view(3..5).unwrap();
-        let empty = source.checked_view(3..3).unwrap();
-        let foreign = SourceText::from("é");
-        let backing_refs = Arc::strong_count(&source.backing);
-        for start in 0..=source.len() + 1 {
-            for end in (0..=source.len() + 1).chain(std::iter::once(usize::MAX)) {
-                for candidate in [&first, &second, &empty, &nested, &foreign] {
-                    let expected = nested.checked_view(start..end)
-                        .is_some_and(|view| view.same_retained_view(candidate));
-                    assert_eq!(nested.matches_retained_subview(start..end, candidate), expected);
-                }
-            }
-        }
-        assert!(nested.matches_retained_subview(0..2, &first));
-        assert!(!nested.matches_retained_subview(0..2, &second));
-        assert!(!nested.matches_retained_subview(0..2, &foreign));
-        assert!(nested.matches_retained_subview(2..2, &empty));
-        assert_eq!(Arc::strong_count(&source.backing), backing_refs);
     }
 
     #[test]
@@ -504,7 +326,9 @@ mod tests {
                 assert_eq!(text.as_ptr(), pointer);
                 assert_eq!(text.capacity(), capacity);
             }
-            _ => panic!("owned string was copied into a different backing"),
+            SourceTextStorage::Original(_) => {
+                panic!("owned string was copied into a different backing")
+            }
         });
     }
 
@@ -536,7 +360,7 @@ mod tests {
             .text
             .visit_storage(|_, _, storage| match storage {
                 SourceTextStorage::Original(text) => assert!(Arc::ptr_eq(text, &original)),
-                _ => panic!("ordinary source line was copied"),
+                SourceTextStorage::Transformed(_) => panic!("ordinary source line was copied"),
             });
         assert_eq!(lines.get(2).unwrap().text.as_str(), "#define X 1  + 2\n");
         assert_eq!(lines.get(3).unwrap().text.as_str(), "#define Y 3  + 4\n");
@@ -565,60 +389,4 @@ mod tests {
             assert!(matches!(storage, SourceTextStorage::Transformed(_)));
         });
     }
-}
-
-#[cfg(test)]mod actual_source_arena_credit_tests{
- use super::*;use crate::source_arena_credit::{SourceArenaCredit,SourceArenaCreditOwner};use std::sync::atomic::{AtomicUsize,Ordering};
- struct Credit{bytes:usize,used:Arc<AtomicUsize>}
- impl Drop for Credit{fn drop(&mut self){self.used.fetch_sub(self.bytes,Ordering::AcqRel);}}
- impl SourceArenaCreditOwner for Credit{fn as_any(&self)->&dyn std::any::Any{self}fn reserved_bytes(&self)->usize{self.bytes}fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize)){visit(self as*const Self as usize,std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>());}}
- fn credit(bytes:usize,used:&Arc<AtomicUsize>)->SourceArenaCredit{used.fetch_add(bytes,Ordering::AcqRel);SourceArenaCredit::from_resource_owner(Arc::new(Credit{bytes,used:Arc::clone(used)}))}
- #[test]fn actual_source_arena_moves_string_and_payload_refunds_at_last_strong_while_control_waits_for_last_weak(){
-  let used=Arc::new(AtomicUsize::new(0));let text=String::from("α native source arena\n");let pointer=text.as_ptr();let capacity=text.capacity();let metadata=std::mem::size_of::<Backing>()+2*std::mem::size_of::<usize>();let source=SourceText::from_source_arena(text,credit(capacity,&used),credit(metadata,&used).into_control()).unwrap();assert_eq!(source.as_str().as_ptr(),pointer);let view=source.checked_view(3..source.len()).unwrap();let weak=source.downgrade();let last_weak=weak.clone();drop(source);assert_eq!(used.load(Ordering::Acquire),capacity+metadata);assert!(weak.upgrade().is_some());drop(view);assert!(weak.upgrade().is_none());assert_eq!(used.load(Ordering::Acquire),metadata,"String payload is actually gone; weak aliases retain only control credit");let mut observed=Vec::new();weak.visit_derived_resource_storage(|address,bytes|observed.push((address,bytes)));assert!(!observed.is_empty());assert!(observed.iter().all(|(_,bytes)|*bytes>0));assert!(weak.upgrade().is_none(),"resource census did not revive a dead source");drop(weak);assert_eq!(used.load(Ordering::Acquire),metadata);drop(last_weak);assert_eq!(used.load(Ordering::Acquire),0);
- }
- #[test]
- fn shared_native_fingerprints_do_not_grow_original_backing() {
-  let original: SourceText = String::from("α exact immutable source text").into();
-  let expected = original.span_fingerprint(0..2).unwrap();
-  let storage = |source: &SourceText| {
-   let mut storage = None;
-   source.visit_fingerprint_storage(|address, len, capacity| storage = Some((address, len, capacity)));
-   storage
-  };
-  let before = storage(&original);
-  original.freeze_span_fingerprint_growth();
-  let native = original.clone();
-  assert_eq!(native.span_fingerprint(0..2), Some(expected));
-  for end in 3..=native.len() {
-   assert_eq!(native.span_fingerprint(2..end),
-    Some(xxhash_rust::xxh3::xxh3_128(&native.as_bytes()[2..end])));
-  }
-  assert_eq!(storage(&native), before);
-  assert_eq!(storage(&original), before);
- }
- #[test]
- fn retained_subview_comparison_requires_same_source_arena_control() {
-  let used=Arc::new(AtomicUsize::new(0));
-  let text=String::from("α native");
-  let capacity=text.capacity();
-  let metadata=SourceText::source_arena_control_bytes().unwrap();
-  let source=SourceText::from_source_arena(text,credit(capacity,&used),
-      credit(metadata,&used).into_control()).unwrap();
-  let exact=source.checked_view(0..2).unwrap();
-  let mut foreign=exact.clone();
-  foreign._source_arena_control=Some(credit(metadata,&used).into_control());
-  let mut missing=exact.clone();
-  missing._source_arena_control=None;
-  assert!(source.matches_retained_subview(0..2,&exact));
-  for candidate in [&foreign,&missing] {
-   assert!(exact.same_view(candidate));
-   assert!(!source.matches_retained_subview(0..2,candidate));
-   assert!(!exact.same_retained_view(candidate));
-  }
-  drop((source,exact,foreign,missing));
-  assert_eq!(used.load(Ordering::Acquire),0);
- }
- #[test]fn actual_source_arena_rejects_unfunded_payload_or_control_before_backing_adoption_and_keeps_ordinary_sources_unmarked(){
-  let used=Arc::new(AtomicUsize::new(0));let text=String::from("actual allocation");let capacity=text.capacity();let metadata=std::mem::size_of::<Backing>()+2*std::mem::size_of::<usize>();assert_eq!(SourceText::from_source_arena(text,credit(capacity-1,&used),credit(metadata,&used).into_control()).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);let text=String::from("actual allocation");assert_eq!(SourceText::from_source_arena(text,credit(capacity,&used),credit(metadata-1,&used).into_control()).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);let ordinary:SourceText="same ordinary Native source".into();assert!(ordinary.source_arena_payload_credit().is_none());assert!(ordinary.source_arena_control_credit().is_none());
- }
 }

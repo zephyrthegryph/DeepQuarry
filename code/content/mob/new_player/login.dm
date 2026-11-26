@@ -24,6 +24,8 @@ REGISTRY_MEMBERSHIP(/mob/new_player, REGISTRY_NEW_PLAYERS)
 
 	after(src, 4 SECONDS, PROC_REF(do_after_login))
 	initialize_lobby_screen()
+	// This Login does not chain to /mob/Login(): the chat input row learns here that the lobby has OOC only.
+	client?.chat_send_input_state()
 
 /mob/new_player/proc/do_after_login()
 	PRIVATE_PROC(TRUE)

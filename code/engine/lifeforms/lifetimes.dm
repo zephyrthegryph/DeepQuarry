@@ -238,7 +238,12 @@ GLOBAL_ALIST_EMPTY(lives_scope_of)
 		return
 	if(old)
 		bound -= var_name
-		if(!(old in bound.Copy()))
+		var/still_bound = FALSE
+		for(var/other_var in bound) // bound maps var name -> scope slot: another var may still name the same scope
+			if(bound[other_var] == old)
+				still_bound = TRUE
+				break
+		if(!still_bound)
 			lives_in_drop(old, holder_slot)
 		if(!length(bound))
 			GLOB.lives_scope_of -= holder_slot
@@ -271,13 +276,15 @@ GLOBAL_ALIST_EMPTY(lives_scope_of)
 	GLOB.lives_in -= scope_slot
 	scope_datum.lifeform_scoped = FALSE
 	for(var/holder_slot in living)
-		GLOB.lives_scope_of -= holder_slot
+		lives_while_teardown_slot(holder_slot) // leaves the holder's other scopes too, so they keep no slot of it
 		var/datum/holder = slot_datum(holder_slot)
 		if(holder && !QDELETED(holder))
 			lifeform_end(holder, END_OWNER, scope_datum)
 
 /proc/lives_while_teardown(datum/holder)
-	var/holder_slot = SLOT_KNOWN(holder)
+	lives_while_teardown_slot(SLOT_KNOWN(holder))
+
+/proc/lives_while_teardown_slot(holder_slot)
 	var/list/bound = GLOB.lives_scope_of[holder_slot]
 	GLOB.lives_scope_of -= holder_slot
 	for(var/var_name in bound)

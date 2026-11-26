@@ -128,8 +128,6 @@
 
 	var/tmp/examine_icon	//Cached examine icon source (icon2html text), useful for statpanel
 
-	//Hide top bars
-	var/fullscreen = FALSE
 	//Hide status bar
 	var/show_status_bar = TRUE
 
@@ -192,9 +190,12 @@ CAPABILITIES(/client)
 	ref_one(nameof(loot_panel))
 	ref_one(nameof(tgui_shocker))
 	ref_one(nameof(stat_panel))
+	ref_one(nameof(chat_ui_window))
+	owns_one(nameof(chat_history), /datum/chat_history)
+	owns_one(nameof(stat_panel_ui), /datum/stat_panel_ui)
+	owns_one(nameof(chat_ui), /datum/chat_ui)
 	ref_one(nameof(keybind_editor))
 	ref_one(nameof(media))
-	ref_one(nameof(tgui_say))
 	ref_one(nameof(tgui_panel))
 	ref_one(nameof(prefs_vr))
 	ref_one(nameof(dq_vv_panel))
@@ -207,3 +208,6 @@ CAPABILITIES(/client)
 	ref_one(nameof(proximity_eye))
 	owns_one(nameof(verb_store), /datum/client_verbs)
 	owns_one(nameof(interaction_menu), /datum/interaction_menu)
+	owns_one(nameof(inspect_panel), /datum/inspect_panel)
+	owns_one(nameof(ability_panel), /datum/ability_panel)
+	owns_one(nameof(window_dock), /datum/window_dock)

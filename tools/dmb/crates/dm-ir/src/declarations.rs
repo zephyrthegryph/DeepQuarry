@@ -3,6 +3,9 @@
 use crate::{SymbolId, SymbolTable};
 use dm_syntax::{Span, TokenKind};
 use std::sync::Arc;
+fn write_byte(write: &mut impl FnMut(&[u8]), byte: u8) {
+    write(&[byte]);
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ExpressionToken {
@@ -17,34 +20,24 @@ pub struct SymbolicExpression {
 }
 impl SymbolicExpression {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
-            .expect("unmetered native canonical allocation failed")
-    }
-    /// SAME byte encoder; transient allocations are funded before growth.
-    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
-        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Expression(self), work)
+        let mut bytes = Vec::new();
+        self.write_canonical(|chunk| bytes.extend_from_slice(chunk));
+        bytes
     }
     pub fn canonical_len(&self) -> usize {
         // Each canonical token has adjacency/kind bytes and one u64 SymbolId.
-        self.try_canonical_len().expect("canonical symbolic length overflow")
-    }
-    pub(crate) fn try_canonical_len(&self) -> std::io::Result<usize> {
-        self.tokens.len().checked_mul(10).and_then(|n| n.checked_add(b"dm-symbolic-expression-v1\0".len()))
-            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::OutOfMemory,"canonical symbolic length overflow"))
+        b"dm-symbolic-expression-v1\0".len() + self.tokens.len() * 10
     }
     pub fn write_canonical(&self, mut write: impl FnMut(&[u8])) {
-        self.try_write_canonical(&mut |bytes| { write(bytes); Ok(()) })
-            .expect("infallible canonical token sink failed");
-    }
-    pub(crate) fn try_write_canonical(&self, write: &mut dyn FnMut(&[u8]) -> std::io::Result<()>) -> std::io::Result<()> {
-        write(b"dm-symbolic-expression-v1\0")?;
+        write(b"dm-symbolic-expression-v1\0");
         let mut previous = None;
         for token in self.tokens.iter() {
             let sensitive =
                 previous.is_some_and(|(kind, _)| {
                     matches!(kind, TokenKind::Operator | TokenKind::Punctuation)
                 }) && matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation);
-            write(&[
+            write_byte(
+                &mut write,
                 if sensitive {
                     if previous.is_some_and(|(_, end)| end == token.relative_span.start) {
                         1
@@ -54,12 +47,11 @@ impl SymbolicExpression {
                 } else {
                     0
                 },
-            ])?;
+            );
             previous = Some((token.kind, token.relative_span.end));
-            write(&[token.kind as u8])?;
-            write(&token.text.bits().to_le_bytes())?;
+            write_byte(&mut write, token.kind as u8);
+            write(&token.text.bits().to_le_bytes());
         }
-            Ok(())
     }
     /// Reconstruct token spelling with equivalent adjacency. Whitespace/comments
     /// need not be retained, but joining operator characters changes DM meaning.
@@ -91,116 +83,20 @@ impl SymbolicExpression {
         xxhash_rust::xxh3::xxh3_128(&self.canonical_bytes())
     }
 }
-/// Optional authored expression and array data. Plain parameters share the
-/// empty static view and retain no tail allocation.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct ParameterTail {
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Parameter {
+    pub name: SymbolId,
+    pub declared_type: Option<SymbolId>,
+    /// Authored list/T element hint, distinct from the runtime /list container.
+    pub list_element_type: Option<SymbolId>,
+    /// Declaration modifiers, using the shared variable declaration flag masks.
+    pub flags: u32,
     pub array: Option<Arc<ArrayDeclaration>>,
     pub default: Option<SymbolicExpression>,
     pub input_annotation: Option<SymbolicExpression>,
     pub source_expression: Option<SymbolicExpression>,
-}
-static EMPTY_PARAMETER_TAIL: ParameterTail = ParameterTail {
-    array: None,
-    default: None,
-    input_annotation: None,
-    source_expression: None,
-};
-
-impl ParameterTail {
-    /// Includes the physical Arc control, excluding separately shared children.
-    pub const fn arc_allocation_bytes() -> usize {
-        let control = 2 * std::mem::size_of::<usize>();
-        let align = std::mem::align_of::<Self>();
-        control.div_ceil(align) * align + std::mem::size_of::<Self>()
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Parameter {
-    pub name: SymbolId,
-    // Absent IDs are normalized to zero; presence is independent
-    // from all possible 64-bit symbol IDs, including zero.
-    type_ids: [SymbolId; 2],
-    /// Declaration modifiers, using the shared variable declaration flag masks.
-    pub flags: u32,
-    type_presence: u8,
     /// Location in this signature's argument text for the occurrence mapper.
     pub relative_span: Span,
-    tail: Option<Arc<ParameterTail>>,
-}
-
-impl Parameter {
-    pub fn new(
-        name: SymbolId, declared_type: Option<SymbolId>, list_element_type: Option<SymbolId>,
-        flags: u32, relative_span: Span,
-    ) -> Self {
-        Self {
-            name, flags, relative_span, tail: None,
-            type_ids: [declared_type.unwrap_or(SymbolId::ZERO), list_element_type.unwrap_or(SymbolId::ZERO)],
-            type_presence: u8::from(declared_type.is_some()) | (u8::from(list_element_type.is_some()) << 1),
-        }
-    }
-
-    pub fn declared_type(&self) -> Option<SymbolId> {
-        (self.type_presence & 1 != 0).then_some(self.type_ids[0])
-    }
-
-    /// Authored list/T element hint, distinct from the runtime /list container.
-    pub fn list_element_type(&self) -> Option<SymbolId> {
-        (self.type_presence & 2 != 0).then_some(self.type_ids[1])
-    }
-
-    pub fn with_tail(mut self, tail: ParameterTail) -> Self {
-        self.tail = (tail != EMPTY_PARAMETER_TAIL).then(|| Arc::new(tail));
-        self
-    }
-
-    /// Borrow only the actual physical tail, for allocation accounting and
-    /// detached-resource observation.
-    pub fn tail_allocation(&self) -> Option<&Arc<ParameterTail>> {
-        self.tail.as_ref()
-    }
-}
-
-impl std::ops::Deref for Parameter {
-    type Target = ParameterTail;
-    fn deref(&self) -> &Self::Target {
-        self.tail.as_deref().unwrap_or(&EMPTY_PARAMETER_TAIL)
-    }
-}
-
-#[cfg(test)]
-mod parameter_storage_tests {
-    use super::*;
-
-    #[test]
-    fn compact_parameter_keeps_zero_type_ids_wide_spans_and_the_exact_tail_alias() {
-        let zero: SymbolId = serde_json::from_str("0").unwrap();
-        let span = Span::new(usize::MAX - 2, usize::MAX - 1);
-        let name = SymbolId::of("name");
-        let empty = Parameter::new(name, None, None, u32::MAX, span);
-        let typed = Parameter::new(name, Some(zero), Some(zero), u32::MAX, span);
-        assert_ne!(empty, typed);
-        assert_eq!(typed.declared_type(), Some(zero));
-        assert_eq!(typed.list_element_type(), Some(zero));
-        assert_eq!(typed.relative_span, span);
-        assert_eq!(typed.flags, u32::MAX);
-        assert!(typed.tail_allocation().is_none());
-        assert_eq!(typed.clone().with_tail(ParameterTail::default()), typed);
-        let value = typed.with_tail(ParameterTail {
-            default: Some(SymbolicExpression { tokens: Arc::from([]) }),
-            ..Default::default()
-        });
-        let alias = value.clone();
-        assert_eq!(value, alias);
-        assert!(Arc::ptr_eq(value.tail_allocation().unwrap(), alias.tail_allocation().unwrap()));
-        #[cfg(target_pointer_width = "64")]
-        {
-            assert_eq!(std::mem::size_of::<Parameter>(), 56);
-            assert_eq!(ParameterTail::arc_allocation_bytes(), 72);
-        }
-    }
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProcedureSignature {
@@ -240,15 +136,51 @@ pub struct ProcedureMetadata {
     /// Source setting order and branch structure, without early guard evaluation.
     pub settings: Arc<[ProcedureSettingNode]>,
 }
-
+fn append_expression(bytes: &mut Vec<u8>, value: Option<&SymbolicExpression>) {
+    bytes.push(u8::from(value.is_some()));
+    if let Some(value) = value {
+        let data = value.canonical_bytes();
+        bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
+        bytes.extend_from_slice(&data);
+    }
+}
 impl ProcedureSignature {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
-            .expect("unmetered native canonical allocation failed")
-    }
-    /// SAME byte encoder; transient allocations are funded before growth.
-    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
-        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Signature(self), work)
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(b"dm-procedure-signature-v2\0");
+        bytes.push(u8::from(self.variadic));
+        bytes.extend_from_slice(&(self.parameters.len() as u64).to_le_bytes());
+        for parameter in self.parameters.iter() {
+            bytes.extend_from_slice(&parameter.name.bits().to_le_bytes());
+            bytes.extend_from_slice(&parameter.flags.to_le_bytes());
+            bytes.push(u8::from(parameter.array.is_some()));
+            if let Some(array) = &parameter.array {
+                let encoded = array.canonical_bytes();
+                bytes.extend_from_slice(&(encoded.len() as u64).to_le_bytes());
+                bytes.extend_from_slice(&encoded);
+            }
+            bytes.push(u8::from(parameter.declared_type.is_some()));
+            bytes.extend_from_slice(
+                &parameter
+                    .declared_type
+                    .map(SymbolId::bits)
+                    .unwrap_or(0)
+                    .to_le_bytes(),
+            );
+            append_expression(&mut bytes, parameter.default.as_ref());
+            bytes.push(u8::from(parameter.list_element_type.is_some()));
+            bytes.extend_from_slice(
+                &parameter
+                    .list_element_type
+                    .map(SymbolId::bits)
+                    .unwrap_or(0)
+                    .to_le_bytes(),
+            );
+            append_expression(&mut bytes, parameter.input_annotation.as_ref());
+            append_expression(&mut bytes, parameter.source_expression.as_ref());
+        }
+        append_expression(&mut bytes, self.return_annotation.as_ref());
+        bytes
     }
 }
 impl ProcedureMetadata {
@@ -261,23 +193,46 @@ impl ProcedureMetadata {
         })
     }
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
-            .expect("unmetered native canonical allocation failed")
-    }
-    /// SAME byte encoder; transient allocations are funded before growth.
-    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
-        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Procedure(self), work)
-    }
-
-    /// Append the identical encoding into the caller's funded final buffer.
-    #[doc(hidden)]
-    pub fn append_canonical_using(
-        &self, out: &mut dyn crate::CanonicalByteSink, work: &mut dyn crate::CanonicalWork,
-    ) -> std::io::Result<()> {
-        crate::canonical_encoding::append_procedure(self, out, work)
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(b"dm-procedure-metadata-v2\0");
+        let signature = self.signature.canonical_bytes();
+        bytes.extend_from_slice(&(signature.len() as u64).to_le_bytes());
+        bytes.extend_from_slice(&signature);
+        append_settings(&mut bytes, &self.settings);
+        bytes
     }
 }
-
+fn append_settings(bytes: &mut Vec<u8>, nodes: &[ProcedureSettingNode]) {
+    bytes.extend_from_slice(&(nodes.len() as u64).to_le_bytes());
+    for node in nodes {
+        match node {
+            ProcedureSettingNode::Setting(setting) => {
+                bytes.push(0);
+                bytes.extend_from_slice(&setting.name.bits().to_le_bytes());
+                bytes.push(setting.operation as u8);
+                append_expression(bytes, Some(&setting.value));
+            }
+            ProcedureSettingNode::Conditional {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                bytes.push(1);
+                append_expression(bytes, Some(condition));
+                append_settings(bytes, then_branch);
+                append_settings(bytes, else_branch);
+            }
+            ProcedureSettingNode::UnsupportedContext {
+                canonical_header,
+                children,
+            } => {
+                bytes.push(2);
+                append_expression(bytes, Some(canonical_header));
+                append_settings(bytes, children);
+            }
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ArrayDeclaration {
     /// One None means unsized []; Some expressions must resolve to valid sizes.
@@ -286,12 +241,9 @@ pub struct ArrayDeclaration {
 }
 impl ArrayDeclaration {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
-            .expect("unmetered native canonical allocation failed")
-    }
-    /// SAME byte encoder; transient allocations are funded before growth.
-    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
-        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Array(self), work)
+        let mut bytes = Vec::new();
+        self.write_canonical(|chunk| bytes.extend_from_slice(chunk));
+        bytes
     }
     pub fn canonical_len(&self) -> usize {
         b"dm-array-declaration-v1\0".len()
@@ -309,27 +261,23 @@ impl ArrayDeclaration {
                 .sum::<usize>()
     }
     pub fn write_canonical(&self, mut write: impl FnMut(&[u8])) {
-        self.try_write_canonical(&mut|bytes|{write(bytes);Ok(())}).expect("infallible array canonical sink failed");
-    }
-    pub(crate) fn try_write_canonical(&self,write:&mut dyn FnMut(&[u8])->std::io::Result<()>)->std::io::Result<()> {
-        write(b"dm-array-declaration-v1\0")?;
-        write(&[u8::from(self.element_type.is_some())])?;
+        write(b"dm-array-declaration-v1\0");
+        write_byte(&mut write, u8::from(self.element_type.is_some()));
         write(
             &self
                 .element_type
                 .map(SymbolId::bits)
                 .unwrap_or(0)
                 .to_le_bytes(),
-        )?;
-        write(&(self.dimensions.len() as u64).to_le_bytes())?;
+        );
+        write(&(self.dimensions.len() as u64).to_le_bytes());
         for dimension in self.dimensions.iter() {
-            write(&[u8::from(dimension.is_some())])?;
+            write_byte(&mut write, u8::from(dimension.is_some()));
             if let Some(expression) = dimension {
-                write(&(expression.try_canonical_len()? as u64).to_le_bytes())?;
-                expression.try_write_canonical(write)?;
+                write(&(expression.canonical_len() as u64).to_le_bytes());
+                expression.write_canonical(&mut write);
             }
         }
-            Ok(())
     }
 }
 
@@ -352,12 +300,56 @@ pub enum SemanticValue {
 }
 impl SemanticValue {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
-            .expect("unmetered native canonical allocation failed")
-    }
-    /// SAME byte encoder; transient allocations are funded before growth.
-    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
-        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Semantic(self), work)
+        let mut bytes = Vec::new();
+        match self {
+            Self::Null => bytes.push(0),
+            Self::NumberBits(number) => {
+                bytes.push(1);
+                bytes.extend_from_slice(&number.to_le_bytes());
+            }
+            Self::Text(text) => {
+                bytes.push(2);
+                bytes.extend_from_slice(&(text.len() as u64).to_le_bytes());
+                bytes.extend_from_slice(text);
+            }
+            Self::Type(path) => {
+                bytes.push(3);
+                bytes.extend_from_slice(&path.bits().to_le_bytes());
+            }
+            Self::Procedure(procedure) => {
+                bytes.push(6);
+                bytes.extend_from_slice(&procedure.owner.bits().to_le_bytes());
+                bytes.extend_from_slice(&procedure.name.bits().to_le_bytes());
+                bytes.push(u8::from(procedure.verb));
+                bytes.extend_from_slice(&procedure.occurrence.to_le_bytes());
+            }
+            Self::ModifiedInstance(instance) => {
+                bytes.push(7);
+                let data = instance.canonical_bytes();
+                bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
+                bytes.extend_from_slice(data);
+            }
+            Self::Resource(path) => {
+                bytes.push(4);
+                bytes.extend_from_slice(&path.bits().to_le_bytes());
+            }
+            Self::List(entries) => {
+                bytes.push(5);
+                bytes.extend_from_slice(&(entries.len() as u64).to_le_bytes());
+                for (key, value) in entries.iter() {
+                    bytes.push(u8::from(key.is_some()));
+                    if let Some(key) = key {
+                        let data = key.canonical_bytes();
+                        bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
+                        bytes.extend_from_slice(&data);
+                    }
+                    let data = value.canonical_bytes();
+                    bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
+                    bytes.extend_from_slice(&data);
+                }
+            }
+        }
+        bytes
     }
 }
 /// Metadata is canonical semantic data, not original source text. The adapter
@@ -379,206 +371,102 @@ pub struct OpaqueFieldBase {
 }
 impl OpaqueFieldBase {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
-            .expect("unmetered native canonical allocation failed")
-    }
-    /// SAME byte encoder; transient allocations are funded before growth.
-    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
-        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Opaque(self), work)
-    }
-}
-
-/// Exact optional type IDs and inherited opaque knowledge in one inline block.
-#[derive(Clone, Copy, Eq, PartialEq)]
-pub struct FieldTypeIds {
-    ids: [SymbolId; 5],
-    state: u8,
-}
-
-impl Default for FieldTypeIds {
-    fn default() -> Self { Self::new(None, None, None) }
-}
-
-impl std::fmt::Debug for FieldTypeIds {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("FieldTypeIds")
-            .field("declared_type", &self.optional(0))
-            .field("list_element_type", &self.optional(1))
-            .field("inherited_opaque", &self.opaque())
-            .finish()
-    }
-}
-
-impl FieldTypeIds {
-    const EMPTY: Self = Self { ids: [SymbolId::ZERO; 5], state: 0 };
-
-    pub fn new(declared: Option<SymbolId>, element: Option<SymbolId>, opaque: Option<OpaqueFieldBase>) -> Self {
-        let mut result = Self::EMPTY;
-        result.set_optional(0, declared);
-        result.set_optional(1, element);
-        result.set_opaque(opaque);
-        result
-    }
-
-    fn optional(&self, index: usize) -> Option<SymbolId> {
-        (self.state & (1 << index) != 0).then_some(self.ids[index])
-    }
-
-    fn set_optional(&mut self, index: usize, id: Option<SymbolId>) {
-        let bit = 1 << index;
-        self.state = (self.state & !bit) | (u8::from(id.is_some()) << index);
-        self.ids[index] = id.unwrap_or(SymbolId::ZERO);
-    }
-
-    fn opaque(&self) -> Option<OpaqueFieldBase> {
-        let declared_type = match self.state >> 2 {
-            0 => return None,
-            1 => DeclaredTypeKnowledge::Known(self.ids[4]),
-            2 => DeclaredTypeKnowledge::KnownUntyped,
-            3 => DeclaredTypeKnowledge::Unsupported,
-            _ => unreachable!("private field type state"),
-        };
-        Some(OpaqueFieldBase { owner: self.ids[2], name: self.ids[3], declared_type })
-    }
-
-    fn set_opaque(&mut self, opaque: Option<OpaqueFieldBase>) {
-        self.state &= 3;
-        self.ids[2..].fill(SymbolId::ZERO);
-        if let Some(base) = opaque {
-            self.ids[2] = base.owner;
-            self.ids[3] = base.name;
-            self.state |= match base.declared_type {
-                DeclaredTypeKnowledge::Known(id) => {
-                    self.ids[4] = id;
-                    1 << 2
-                }
-                DeclaredTypeKnowledge::KnownUntyped => 2 << 2,
-                DeclaredTypeKnowledge::Unsupported => 3 << 2,
-            };
+        let mut bytes = b"dm-opaque-intrinsic-field-v1\0".to_vec();
+        bytes.extend_from_slice(&self.owner.bits().to_le_bytes());
+        bytes.extend_from_slice(&self.name.bits().to_le_bytes());
+        match self.declared_type {
+            DeclaredTypeKnowledge::Known(path) => {
+                bytes.push(1);
+                bytes.extend_from_slice(&path.bits().to_le_bytes());
+            }
+            DeclaredTypeKnowledge::Unsupported => bytes.push(0),
+            DeclaredTypeKnowledge::KnownUntyped => bytes.push(2),
         }
+        bytes
     }
 }
 
-/// Fields used by variable values and declarations. A procedure meaning
-/// normally has none of these facts and retains no field allocation.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct DeclarationFieldMeaning {
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DeclarationMeaning {
     /// Authored overrides preserve their exact initializer, but flags, array
     /// shape and formal default are unknown when this inherited base is opaque.
-    pub types: FieldTypeIds,
+    /// Consumers must not interpret syntax-only zero/None as inherited values.
+    pub inherited_opaque: Option<OpaqueFieldBase>,
+    pub declared_type: Option<SymbolId>,
+    /// Formal authored list/T hint. Inherited opaque metadata leaves it unknown.
+    pub list_element_type: Option<SymbolId>,
+    pub display_name: Option<SymbolId>,
+    pub flags: u32,
+    pub procedure: Option<Arc<ProcedureMetadata>>,
     pub array: Option<Arc<ArrayDeclaration>>,
     pub initializer: Option<SymbolicExpression>,
     /// Formal field declaration default, retained apart from class overrides.
     pub declared_initializer: Option<SymbolicExpression>,
     pub resolved_constant: Option<SemanticValue>,
-}
-
-static EMPTY_FIELD_MEANING: DeclarationFieldMeaning = DeclarationFieldMeaning {
-    types: FieldTypeIds::EMPTY,
-    array: None,
-    initializer: None,
-    declared_initializer: None,
-    resolved_constant: None,
-};
-
-impl DeclarationFieldMeaning {
-    pub fn declared_type(&self) -> Option<SymbolId> { self.types.optional(0) }
-
-    /// Formal authored list/T hint. Inherited opaque metadata leaves it unknown.
-    pub fn list_element_type(&self) -> Option<SymbolId> { self.types.optional(1) }
-
-    pub fn inherited_opaque(&self) -> Option<OpaqueFieldBase> { self.types.opaque() }
-
-    pub fn set_declared_type(&mut self, id: Option<SymbolId>) { self.types.set_optional(0, id); }
-    pub fn set_list_element_type(&mut self, id: Option<SymbolId>) { self.types.set_optional(1, id); }
-    pub fn set_inherited_opaque(&mut self, opaque: Option<OpaqueFieldBase>) { self.types.set_opaque(opaque); }
-
-    /// Exact additional allocation made by with_field_tail.
-    pub fn allocation_bytes(&self) -> usize {
-        if self == &EMPTY_FIELD_MEANING { 0 } else { std::mem::size_of::<Self>() }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct DeclarationMeaning {
-    display_name: SymbolId,
-    has_display_name: bool,
-    /// Variable masks for fields; PROC_FLAG_FINAL for procedure/verb declarations.
-    pub flags: u32,
-    pub procedure: Option<Arc<ProcedureMetadata>>,
-    pub canonical: crate::CanonicalBytes,
-    fields: Option<Box<DeclarationFieldMeaning>>,
+    pub canonical: Arc<[u8]>,
 }
 impl DeclarationMeaning {
-    pub fn new(
-        display_name: Option<SymbolId>,
-        flags: u32,
-        procedure: Option<Arc<ProcedureMetadata>>,
-        canonical: crate::CanonicalBytes,
-    ) -> Self {
-        Self {
-            display_name: display_name.unwrap_or(SymbolId::ZERO),
-            has_display_name: display_name.is_some(),
-            flags,
-            procedure,
-            canonical,
-            fields: None,
-        }
-    }
-
-    pub fn display_name(&self) -> Option<SymbolId> {
-        self.has_display_name.then_some(self.display_name)
-    }
-
-    pub fn set_display_name(&mut self, display_name: Option<SymbolId>) {
-        self.display_name = display_name.unwrap_or(SymbolId::ZERO);
-        self.has_display_name = display_name.is_some();
-    }
-
-    /// Install the actual value tail, allocating exactly allocation_bytes().
-    pub fn with_field_tail(mut self, fields: DeclarationFieldMeaning) -> Self {
-        self.fields = (fields.allocation_bytes() != 0).then(|| Box::new(fields));
-        self
-    }
-
-    /// The physical allocation, absent for ordinary procedures and empty data.
-    pub fn field_tail_allocation(&self) -> Option<&DeclarationFieldMeaning> {
-        self.fields.as_deref()
-    }
-
-    /// Explicit mutation may allocate a tail. A metered writer must admit
-    /// size_of::<DeclarationFieldMeaning>() first if the tail is absent.
-    pub fn field_tail_mut(&mut self) -> &mut DeclarationFieldMeaning {
-        self.fields.get_or_insert_with(|| Box::new(DeclarationFieldMeaning::default()))
-    }
-
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
-            .expect("unmetered native canonical allocation failed")
-    }
-    /// SAME byte encoder; transient allocations are funded before growth.
-    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
-        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Declaration(self), work)
+        fn part(out: &mut Vec<u8>, bytes: &[u8]) {
+            out.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
+            out.extend_from_slice(bytes);
+        }
+        fn optional(out: &mut Vec<u8>, bytes: Option<Vec<u8>>) {
+            out.push(u8::from(bytes.is_some()));
+            if let Some(bytes) = bytes {
+                part(out, &bytes);
+            }
+        }
+        let mut out = b"dm-declaration-meaning-v1\0".to_vec();
+        optional(
+            &mut out,
+            self.inherited_opaque.as_ref().map(|v| v.canonical_bytes()),
+        );
+        for value in [
+            self.declared_type,
+            self.list_element_type,
+            self.display_name,
+        ] {
+            optional(&mut out, value.map(|v| v.bits().to_le_bytes().to_vec()));
+        }
+        out.extend_from_slice(&self.flags.to_le_bytes());
+        optional(
+            &mut out,
+            self.procedure.as_ref().map(|v| v.canonical_bytes()),
+        );
+        optional(&mut out, self.array.as_ref().map(|v| v.canonical_bytes()));
+        optional(
+            &mut out,
+            self.initializer.as_ref().map(|v| v.canonical_bytes()),
+        );
+        optional(
+            &mut out,
+            self.declared_initializer
+                .as_ref()
+                .map(|v| v.canonical_bytes()),
+        );
+        optional(
+            &mut out,
+            self.resolved_constant.as_ref().map(|v| v.canonical_bytes()),
+        );
+        part(&mut out, &self.canonical);
+        out
     }
 }
 impl Default for DeclarationMeaning {
     fn default() -> Self {
-        Self::new(None, 0, None, crate::CanonicalBytes::default())
+        Self {
+            inherited_opaque: None,
+            declared_type: None,
+            list_element_type: None,
+            display_name: None,
+            flags: 0,
+            procedure: None,
+            array: None,
+            initializer: None,
+            declared_initializer: None,
+            resolved_constant: None,
+            canonical: Arc::from([]),
+        }
     }
 }
-
-impl std::ops::Deref for DeclarationMeaning {
-    type Target = DeclarationFieldMeaning;
-    fn deref(&self) -> &Self::Target {
-        self.field_tail_allocation().unwrap_or(&EMPTY_FIELD_MEANING)
-    }
-}
-
-impl PartialEq for DeclarationMeaning {
-    fn eq(&self, other: &Self) -> bool {
-        self.display_name() == other.display_name() && self.flags == other.flags
-            && self.procedure == other.procedure && self.canonical == other.canonical
-            && **self == **other
-    }
-}
-impl Eq for DeclarationMeaning {}

@@ -60,7 +60,7 @@
 /mob/living/simple_mob/slime/xenobio/apply_melee_effects(mob/living/L, stance = I_HURT)
 	if(istype(L) && stance == I_HURT)
 		// Pump them full of toxins, if able.
-		if(L.reagents && L.can_inject() && reagent_injected)
+		if(L.reagents && !L.inject_refusal() && reagent_injected)
 			L.reagents.add_reagent(reagent_injected, injection_amount)
 
 		// Feed off of their flesh, if able.

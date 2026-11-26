@@ -25,16 +25,16 @@ const DESTROY_HINT: &str = "Destroy() overrides are banned outside the core chai
 const QDEL_HINT: &str = "use consume()/replace_with()/expire()/slot_clear()/ledger_empty()/delete_on_death (code/library/lifecycle/verbs.dm)";
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::lifecycle_counts::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::lifecycle_counts::SCOPE_META_0.group,
+    name: "lifecycle_counts",
+    group: "",
     label: "lifecycle",
     legacy: "tools/ci/lifecycle_counts_lint.py",
     select: CODE_MAPS_DM,
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "destroy", hint: DESTROY_HINT }, RuleMeta { name: "qdel", hint: QDEL_HINT }],
-    allow: crate::allow_registry_fields::lifecycle_counts::ALLOW_0,
-    lists: crate::allow_registry_fields::lifecycle_counts::SCOPE_META_0.lists,
+    allow: &["lifecycle"],
+    lists: &["exempt_prefixes", "exempt_files"],
 };
 
 /// The core `Destroy()` chain phase 7 calls after `on_destroy()`; nothing else may override it.
@@ -115,12 +115,12 @@ mod tests {
     use crate::scopes::LintScope;
     use crate::tree::Tree;
 
-    fn scan(rel: &str, text: &str) -> Sink<'static> {
+    fn scan(rel: &str, text: &str) -> Sink {
         let mut scope = LintScope::default();
         scope.lists.insert("exempt_prefixes".to_string(), vec!["code/__defines/".to_string()]);
         scope.lists.insert("exempt_files".to_string(), vec!["code/library/lifecycle/verbs.dm".to_string()]);
         let tree = Tree::from_files(vec![]);
-        let cx = Cx { fixture:None, tree: &tree, meta: &META, scope: &scope };
+        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
         let f = SourceFile::from_text(rel, text);
         let mut out = Sink::new();
         out.cur = f.rel.clone();

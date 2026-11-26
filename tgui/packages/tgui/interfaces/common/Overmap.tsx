@@ -24,7 +24,7 @@ export const OvermapFlightData = (props) => {
     <LabeledList>
       <LabeledList.Item label="ETA To Next Grid">{ETAnext}</LabeledList.Item>
       <LabeledList.Item label="Speed" color={speed_color}>
-        {speed.toFixed(2)} Gm/h
+        {(speed ?? 0).toFixed(2)} Gm/h
       </LabeledList.Item>
       <LabeledList.Item label="Acceleration">{accel} Gm/h</LabeledList.Item>
       <LabeledList.Item label="Heading">{heading}&deg;</LabeledList.Item>

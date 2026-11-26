@@ -4,7 +4,7 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::Instant;
 
@@ -15,9 +15,93 @@ use dq_analyze::run::{self, Engine, Options};
 /// engine now, so every annotation's usage is visible to it).
 const NATIVE_UNUSED_DEFAULT: bool = true;
 
-use dq_analyze::cli_usage::HELP;
+const HELP: &str = "analyze: DeepQuarry's lint/analysis engine
 
-use dq_analyze::cli_arguments::{Args,parse,find_root};
+USAGE
+  analyze check [--lint NAME...] [--changed-only] [--no-cache] [--rehash] [--raw] [--ci] [--root DIR]
+      Run lints (default: all). Exit 1 if any fails. --raw ignores baselines (every site is new);
+      --changed-only judges only files changed against origin/master and the working tree.
+  analyze baseline --update|--seed|--migrate [--lint NAME...]
+      Rewrite ratchet baselines: --update only ever drops fixed sites; --seed records every site;
+      --migrate rewrites line-text rows as identity rows (@owner::...) without adding or dropping one.
+  analyze parity [NAME... | --all] [--bless] [--fixtures-only]
+      Run the legacy Python lint and the engine port on this tree (and on tools/analyze/fixtures/)
+      and diff the findings. --bless writes expected.txt from a clean fixture comparison.
+  analyze timing [--lint NAME...] [--no-cache]
+      A full check with a per-lint timing table.
+  analyze selftest [--lint NAME...]     Run each lint's fixture tests.
+  analyze list                          The registered lints.
+  analyze frontend-diff                 Compare the text scanner with the dreammaker parser.
+  analyze gen [--check] [NAME...]       Write (or check) the generated DM under code/engine/_generated/.
+  analyze codemod list | NAME [--check|--apply|--revert] [--path PREFIX...] [--write-residue]
+      AST-aware rewriters (phase 2.5); `analyze codemod help`.
+  analyze base-vars-dead [--tsv] [--few]
+      Base-type vars nothing reads (dead or write-only), by name over code/ and maps/.
+  analyze sem reads /type proc | oracle [--all]
+                                        Semantic queries: a handler's reads; the reads spike oracle.
+
+A lint is selected by its name or its group (`sys` selects every sys/* lint).";
+
+struct Args {
+    cmd: String,
+    lints: Vec<String>,
+    flags: Vec<String>,
+    root: Option<PathBuf>,
+}
+
+fn parse(argv: Vec<String>) -> Args {
+    let mut it = argv.into_iter().skip(1);
+    let cmd = it.next().unwrap_or_else(|| "help".to_string());
+    let mut lints = Vec::new();
+    let mut flags = Vec::new();
+    let mut root = None;
+    let mut taking_lints = false;
+    let mut rest: Vec<String> = it.collect();
+    let mut i = 0;
+    while i < rest.len() {
+        let a = std::mem::take(&mut rest[i]);
+        i += 1;
+        match a.as_str() {
+            "--lint" => taking_lints = true,
+            "--root" => {
+                root = rest.get(i).map(PathBuf::from);
+                i += 1;
+                taking_lints = false;
+            }
+            s if s.starts_with("--") => {
+                flags.push(s.to_string());
+                taking_lints = false;
+            }
+            _ => {
+                if taking_lints || cmd == "parity" {
+                    for n in a.split(',') {
+                        if !n.is_empty() {
+                            lints.push(n.to_string());
+                        }
+                    }
+                } else {
+                    flags.push(a);
+                }
+            }
+        }
+    }
+    Args { cmd, lints, flags, root }
+}
+
+fn find_root(explicit: Option<PathBuf>) -> PathBuf {
+    if let Some(r) = explicit {
+        return r;
+    }
+    let mut dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    loop {
+        if dir.join("deepquarry.dme").exists() {
+            return dir;
+        }
+        if !dir.pop() {
+            return std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        }
+    }
+}
 
 /// An unused-ALLOW verdict that came out of warm caches is confirmed by one cold run (an empty private cache, no shared seed, no gen
 /// store): the verdict must depend on the tree alone, and a cached lint result that lost an annotation's use would otherwise fail a gate
@@ -96,18 +180,6 @@ fn options(args: &Args, root: &Path) -> Options {
 }
 
 fn main() -> ExitCode {
-    let native_args=std::env::args().collect::<Vec<_>>();
-    if native_args.get(1).is_some_and(|arg|arg=="native-checker"){return dq_analyze::native_cli_client::checker_text_cli(&native_args[2..]);}
-    if native_args.get(1).is_some_and(|arg|arg=="list")&&native_args.iter().skip(2).any(|arg|arg=="--native-dmbc"){if let Some(exit)=dq_analyze::native_cli_client::metadata_utility_cli(&native_args[1..]){return exit;}}
-    if let Some(exit) = dq_analyze::native_cli_client::workspace_check(&native_args[1..]) {
-        return exit;
-    }
-    if native_args.get(1).is_some_and(|arg|arg=="native-query"){return dq_analyze::native_cli_client::cli(&native_args[2..]);}
-    if native_args.get(1).is_some_and(|arg|arg=="native-exclusions"){return dq_analyze::native_cli_client::exclusions_cli(&native_args[2..]);}
-    if native_args.get(1).is_some_and(|arg|arg=="native-check"){return dq_analyze::native_cli_client::policy_cli(&native_args[2..],false);}
-    if native_args.get(1).is_some_and(|arg|arg=="native-baseline"){return dq_analyze::native_cli_client::policy_cli(&native_args[2..],true);}
-    if native_args.get(1).is_some_and(|arg|arg=="native-gen"){return dq_analyze::native_cli_client::generation_cli(&native_args[2..]);}
-    if native_args.get(1).is_some_and(|arg|arg=="gen")&&native_args.iter().skip(2).any(|arg|arg.starts_with("--native")){eprintln!("use analyze native-gen --dmbc ABSOLUTE_EXE REQUEST.json; refusing legacy fallback");return ExitCode::from(2);}
     let code = real_main();
     // Hand the cache files this run rewrote to the other worktrees (src/shared.rs).
     dq_analyze::shared::publish();
@@ -226,10 +298,10 @@ fn real_main() -> ExitCode {
                 print_timing(&engine, &outcomes, t0.elapsed());
             }
             if failed.is_empty() {
-                print!("{}",dq_analyze::policy_finish::result_line(&failed));
+                println!("All ratchet lints passed.");
                 ExitCode::SUCCESS
             } else {
-                print!("{}",dq_analyze::policy_finish::result_line(&failed));
+                println!("Ratchet lints failed: {}", failed.join(" "));
                 ExitCode::FAILURE
             }
         }

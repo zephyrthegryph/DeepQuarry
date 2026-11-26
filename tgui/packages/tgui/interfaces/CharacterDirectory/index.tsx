@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
-import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-
+import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import type { CharacterDirectoryActions } from '../generated/CharacterDirectory';
 import { CharacterDirectoryList } from './CharacterDirectoryList';
 import { ViewCharacter } from './CharacterDirectoryViewCharacter';
 import type { Data, mobEntry } from './types';
 
 export const CharacterDirectory = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CharacterDirectoryActions>();
 
   const {
     personalVisibility,
@@ -35,9 +36,9 @@ export const CharacterDirectory = (props) => {
               buttons={
                 <Stack>
                   <Stack.Item>
-                    <Box color="label" inline>
+                    <Label inline>
                       Save to current preferences slot:&nbsp;
-                    </Box>
+                    </Label>
                   </Stack.Item>
                   <Stack.Item>
                     <Button

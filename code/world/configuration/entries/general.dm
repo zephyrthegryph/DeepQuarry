@@ -805,6 +805,12 @@
 /datum/config_entry/number/drift_dump_threshold
 	default = 4 SECONDS
 
+/// A tick that runs past this percentage of a tick is written to the debug log with every piece of work that ran in it and its time
+/// (code/world/kernel/measure/slow_tick.dm). 0 turns the trace off.
+/datum/config_entry/number/slow_tick_trace_percent
+	default = 200
+	min_val = 0
+
 /datum/config_entry/number/drift_profile_delay
 	default = 2 MINUTES
 
@@ -834,3 +840,8 @@
 
 /// log vore interactions
 /datum/config_entry/flag/log_vore
+
+/// Per-event client lighting diagnostics (a chunk crossing, a delivery ack, a flat light recolour, a flush) are written to the game log. Off by default: they run
+/// on every crossing and light change. Warnings and anomalies are written regardless.
+/datum/config_entry/flag/lighting_trace
+

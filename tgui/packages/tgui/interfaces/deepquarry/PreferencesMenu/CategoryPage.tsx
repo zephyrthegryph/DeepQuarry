@@ -12,18 +12,13 @@
 //    dominate vertical space.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Section } from 'tgui-core/components';
-import { getEditor } from './editors';
+import type { EditorDataCache, EditorStaticCache } from './editors';
+import { PrefEditor } from './editors/PrefEditor';
 import { LooksPage, looksHasBody } from './LooksPage';
 import { labelForGroup, labelForKey } from './labels';
-import { PrefWidget, resolveWidget } from './PrefWidget';
-import {
-  editorAnchor,
-  groupAnchor,
-  highlightStyle,
-  prefAnchor,
-  useSearchHighlight,
-} from './search';
+import { isInlineWidget, PrefWidget, resolveWidget } from './PrefWidget';
 import { type SwitcherEntry, TextSwitcher } from './TextSwitcher';
 import type {
   PrefCategory,
@@ -34,9 +29,9 @@ import type {
 
 type Props = {
   page: PrefCategory;
-  staticData?: Record<string, Record<string, unknown>>;
+  staticData?: EditorStaticCache;
   values: Record<string, unknown>;
-  editorData: Record<string, Record<string, unknown>>;
+  editorData: EditorDataCache;
   /// When true, this page hosts a full-height editor (e.g. loadout). Skip the
   /// grid layout and let the editor own the container directly.
   fillHeight?: boolean;
@@ -48,7 +43,6 @@ type Props = {
 const FULL_WIDTH_EDITORS = new Set<string>([
   'trait_picker',
   'occupation',
-  'antag_optin',
   'organs',
   'body_markings',
   'flavor',
@@ -80,7 +74,6 @@ export const CategoryPage = ({
         {page.groups.map((group, gi) => (
           <GroupBlock
             key={`${gi}-${group.group}`}
-            category={page.category}
             group={group}
             staticData={staticData}
             values={values}
@@ -115,7 +108,6 @@ export const CategoryPage = ({
             }
           >
             <GroupBlock
-              category={page.category}
               group={group}
               staticData={staticData}
               values={values}
@@ -218,21 +210,66 @@ export const WidgetGrid = ({
 }: {
   widgets: PrefWidgetItem[];
   values: Record<string, unknown>;
+}) => {
+  const shown = widgets.filter(
+    (item) => DEPENDENT_ROWS[item.key]?.(values) ?? true,
+  );
+  const inline = shown.filter(isInlineWidget);
+  const rows = shown.filter((item) => !isInlineWidget(item));
+  return (
+    <Box>
+      {rows.length > 0 && (
+        <Box
+          style={{
+            display: 'grid',
+            gridTemplateColumns:
+              'minmax(min(100%, 6em), max-content) minmax(0, 1fr)',
+            columnGap: '0.75em',
+            rowGap: '0.3em',
+            alignItems: 'center',
+          }}
+        >
+          {rows.map((item) => (
+            <WidgetRow key={item.key} item={item} values={values} />
+          ))}
+        </Box>
+      )}
+      {inline.length > 0 && (
+        <Box
+          mt={rows.length > 0 ? 0.5 : 0}
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            columnGap: '0.75em',
+            rowGap: '0.4em',
+          }}
+        >
+          {inline.map((item) => (
+            <InlineWidget key={item.key} item={item} values={values} />
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+/// A short control with its label beside it, flowing in a line with the others.
+const InlineWidget = ({
+  item,
+  values,
+}: {
+  item: PrefWidgetItem;
+  values: Record<string, unknown>;
 }) => (
-  <Box
-    style={{
-      display: 'grid',
-      gridTemplateColumns: 'minmax(min(100%, 6em), max-content) minmax(0, 1fr)',
-      columnGap: '0.75em',
-      rowGap: '0.3em',
-      alignItems: 'center',
-    }}
-  >
-    {widgets
-      .filter((item) => DEPENDENT_ROWS[item.key]?.(values) ?? true)
-      .map((item) => (
-        <WidgetRow key={item.key} item={item} values={values} />
-      ))}
+  <Box style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5em' }}>
+    <Label>{labelForKey(item.key, item.label)}:</Label>
+    <PrefWidget
+      item={{
+        ...item,
+        value: Object.hasOwn(values, item.key) ? values[item.key] : item.value,
+      }}
+    />
   </Box>
 );
 
@@ -243,26 +280,21 @@ const WidgetRow = ({
   item: PrefWidgetItem;
   values: Record<string, unknown>;
 }) => {
-  const anchor = prefAnchor(item.key);
-  const lit = useSearchHighlight(anchor);
   return (
     <Box
-      data-dq-anchor={anchor}
       style={{
         display: 'contents',
       }}
     >
-      <Box
-        color="label"
+      <Label
         style={{
           maxWidth: '14em',
           overflowWrap: 'anywhere',
-          ...highlightStyle(lit),
         }}
       >
         {labelForKey(item.key, item.label)}:
-      </Box>
-      <Box style={{ minWidth: 0, ...highlightStyle(lit) }}>
+      </Label>
+      <Box style={{ minWidth: 0 }}>
         <PrefWidget
           item={{
             ...item,
@@ -277,18 +309,16 @@ const WidgetRow = ({
 };
 
 const GroupBlock = ({
-  category,
   group,
   staticData,
   values,
   editorData,
   fillHeight,
 }: {
-  category: string;
   group: PrefGroup;
-  staticData?: Record<string, Record<string, unknown>>;
+  staticData?: EditorStaticCache;
   values: Record<string, unknown>;
-  editorData: Record<string, Record<string, unknown>>;
+  editorData: EditorDataCache;
   fillHeight?: boolean;
 }) => {
   const widgets = group.items.filter(
@@ -300,8 +330,6 @@ const GroupBlock = ({
     : [];
   const plain = widgets.filter((w) => !switched.includes(w));
   const hasTitle = !!group.group;
-  const anchor = groupAnchor(category, group.group);
-  const lit = useSearchHighlight(anchor);
 
   // Full-height editor pages (Loadout, Mind & Body) MUST fill the panel. Render the editor(s)
   // directly in a height:100% container even when the group carries a title — a titled, non-fill
@@ -341,14 +369,13 @@ const GroupBlock = ({
   }
 
   return (
-    <Section
-      title={hasTitle ? labelForGroup(group.group) : null}
-      data-dq-anchor={anchor}
-      style={highlightStyle(lit)}
-    >
+    <Section title={hasTitle ? labelForGroup(group.group) : null}>
       {group.group === 'flavor' &&
         editors.map((item, idx) => (
-          <Box key={`editor:${item.key}-${idx}`} mb={plain.length > 0 ? 0.5 : 0}>
+          <Box
+            key={`editor:${item.key}-${idx}`}
+            mb={plain.length > 0 ? 0.5 : 0}
+          >
             <EditorBlock
               item={item}
               editorData={editorData}
@@ -366,17 +393,17 @@ const GroupBlock = ({
       )}
       {group.group !== 'flavor' &&
         editors.map((item, idx) => (
-        <Box
-          key={`editor:${item.key}-${idx}`}
-          mt={widgets.length > 0 ? 0.5 : 0}
-        >
-          <EditorBlock
-            item={item}
-            editorData={editorData}
-            staticData={staticData}
-          />
-        </Box>
-      ))}
+          <Box
+            key={`editor:${item.key}-${idx}`}
+            mt={widgets.length > 0 ? 0.5 : 0}
+          >
+            <EditorBlock
+              item={item}
+              editorData={editorData}
+              staticData={staticData}
+            />
+          </Box>
+        ))}
     </Section>
   );
 };
@@ -387,21 +414,16 @@ const EditorBlock = ({
   staticData,
 }: {
   item: PrefGroupItem;
-  editorData: Record<string, Record<string, unknown>>;
-  staticData?: Record<string, Record<string, unknown>>;
+  editorData: EditorDataCache;
+  staticData?: EditorStaticCache;
 }) => {
-  const anchor = editorAnchor(item.key);
-  const lit = useSearchHighlight(anchor);
   if (item.type !== 'editor') return null;
-  const Editor = getEditor(item.key);
   return (
-    <Box
-      data-dq-anchor={anchor}
-      style={{ height: '100%', ...highlightStyle(lit) }}
-    >
-      <Editor
-        data={editorData[item.key] ?? item.data ?? {}}
-        staticData={staticData?.[item.key]}
+    <Box style={{ height: '100%' }}>
+      <PrefEditor
+        editorKey={item.key}
+        editorData={editorData}
+        staticData={staticData}
       />
     </Box>
   );

@@ -73,6 +73,18 @@
 	var/last_pick_at = 0
 	/// The op the active tactic is waiting on (act_waiting()), null when none.
 	var/datum/op_result/waiting_op = null
+	/// What rebuild_behaviors() last built from: the innate list, the two flags the build injects from, and whether any entry had a source. An unchanged build is skipped.
+	var/tmp/list/built_innate = null
+	var/tmp/built_mauling = FALSE
+	var/tmp/built_returns_home = FALSE
+	var/tmp/built_sourced = FALSE
+	/// Builds done and skipped as unchanged, and instant behaviours run without becoming active (diagnostics and the cost tests).
+	var/tmp/rebuilds_done = 0
+	var/tmp/rebuilds_skipped = 0
+	var/tmp/instants_run = 0
+	/// Where the last strategic run's time went, in ms: rebuilding behaviours, the pack's backstop perception, the threat pick, behaviour selection and the
+	/// instant behaviour it ran (a wander step goes through the op pipeline). ai_slow_tick_log() prints it so a slow run names its stage.
+	var/tmp/list/strategic_stage_ms
 
 CAPABILITIES(/datum/ai_brain)
 	ref_one(nameof(holder), /mob/living)
@@ -100,13 +112,8 @@ CAPABILITIES(/datum/ai_brain)
 	target_selector_chain = list(/datum/target_selector/closest)
 	rel_set(src, nameof(home_turf), get_turf(owner))
 	manage_processing(DQAI_PROCESSING)
-	observe(holder, /datum/notice/mob_statchange, src, then(PROC_REF(on_stat_change)))
-	observe(holder, /datum/notice/living_injured, src, then(PROC_REF(on_holder_injured)))
-	// Lazily add the player-castable-moves dispatcher verb on login — avoids
-	// bloating the verbs list of every wild simple_mob in the round.
-	observe(holder, /datum/notice/mob_login, src, then(PROC_REF(on_holder_login_event)))
-	observe(holder, /datum/notice/mob_logout, src, then(PROC_REF(on_holder_logout_event)))
-	observe(holder, /datum/notice/standing_changed, src, then(PROC_REF(standings_changed)))
+	// The holder's stat, injury, login, logout and standing notices reach the brain through the on_notice() entries of /mob/living's ai part
+	// (mob_living.dm), not a grant per brain: a brain costs no observer.
 	if(holder.client)
 		on_holder_login(holder)
 	rebuild_behaviors()
@@ -179,10 +186,14 @@ CAPABILITIES(/datum/ai_brain)
 		return
 	if(holder.client && !autopilot)
 		return
+	var/stage_t = TICK_USAGE
 	rebuild_behaviors()
+	stage_t = strategic_stage("rebuild", stage_t)
 	// Perception is the pack's: this is only the backstop for a pack nothing has stirred for a window.
 	pack?.perceive_if_due()
+	stage_t = strategic_stage("perceive", stage_t)
 	update_primary_threat()
+	stage_t = strategic_stage("threat", stage_t)
 	selection_dirty = TRUE
 	if(primary_threat)
 		// Combat: the quarter-second tactical loop owns behavior selection.
@@ -191,16 +202,26 @@ CAPABILITIES(/datum/ai_brain)
 		return
 	// Calm: this is the place no-threat behaviors (wander, idle speak, walk_to_destination, return_home, follow_leader, scavenge, ...) get
 	// selected, on the slow cadence rather than per action tick.
+	var/instants_before = instants_run
 	var/idle_pending = pick_and_run()
+	strategic_stage("pick", stage_t)
 	if(active_behavior_type)
 		// A tick-driven idle behavior is running: the loop drives it until it finishes.
 		defer_strategic(2 SECONDS)
 		return
-	defer_strategic(idle_strategic_interval)
+	// An instant idle behavior just ran (a wander step, a bark): the next run of the loop picks again, as it did after a tick-driven one finished.
+	defer_strategic(instants_run != instants_before ? 0 : idle_strategic_interval)
 	// Only park when nothing idle wants to run and no one-shot walk is queued. A brain with an idle behavior scoring > 0 (or cooling down
 	// toward one) stays on the slow cadence so it actually gets to act.
 	if(!idle_pending && !destination())
 		park_calm()
+
+/// Records the ms since `t` against stage `name` of this run (the first stage of a run clears the last run's) and returns the new "since".
+/datum/ai_brain/proc/strategic_stage(name, t)
+	if(name == "rebuild" || !strategic_stage_ms)
+		strategic_stage_ms = list()
+	strategic_stage_ms[name] = TICK_USAGE_TO_MS(t)
+	return TICK_USAGE
 
 /// Tactical tick. Fast — 250ms. Runs while a threat exists OR while a
 /// tick-driven behavior (combat or idle) is active; see sync_fast_processing.
@@ -251,35 +272,48 @@ CAPABILITIES(/datum/ai_brain)
 /datum/ai_brain/proc/rebuild_behaviors()
 	if(!holder)
 		return
-	var/list/old = effective_behaviors
-	effective_behaviors = list()
-	rel_clear(src, nameof(behavior_sources))
-
-	// Innate behaviors via the mob's getter — falls back to the default factory
+	// Innate behaviors via the mob's getter � falls back to the default factory
 	// for simple_mobs that haven't been hand-tuned yet.
 	var/list/innate = TYPE_TABLE_GET(holder, get_ai_behaviors)
 	if(!innate && istype(holder, /mob/living/simple_mob))
 		innate = dq_default_behavior_list_for(holder)
+	var/list/held = holder.get_all_held_items()
+	var/list/effects = holder.body_effects()
+	// Nothing held, no body effect, the same innate list and flags as the last build that had none of them: the result is the one already there.
+	if(effective_behaviors && !built_sourced && !length(held) && !length(effects) && innate == built_innate && mauling == built_mauling && returns_home == built_returns_home)
+		rebuilds_skipped++
+		return
+	rebuilds_done++
+	var/list/old = effective_behaviors
+	effective_behaviors = list()
+	rel_clear(src, nameof(behavior_sources))
+	built_innate = innate
+	built_mauling = mauling
+	built_returns_home = returns_home
+	built_sourced = FALSE
+
 	if(innate)
 		for(var/btype as anything in innate)
 			effective_behaviors[btype] = null
 
 	// Equipment-granted (held items).
-	for(var/obj/item/I as anything in holder.get_all_held_items())
+	for(var/obj/item/I as anything in held)
 		var/list/granted = TYPE_TABLE_GET(I, item_granted_behaviors)
 		if(granted)
 			var/source_ref = ref(I) // effective_behaviors keeps the ref text only; the source itself is behavior_sources
 			for(var/btype as anything in granted)
 				rel_add(src, nameof(behavior_sources), I)
 				effective_behaviors[btype] = source_ref
+				built_sourced = TRUE
 
 	// Modifier-granted (statuses, buffs).
-	for(var/effect_type in holder.body_effects())
+	for(var/effect_type in effects)
 		var/list/granted = body_effect_def(effect_type).get_dq_granted_behaviors()
 		if(granted)
 			for(var/btype as anything in granted)
 				rel_add(src, nameof(behavior_sources), holder)
 				effective_behaviors[btype] = ref(holder)
+				built_sourced = TRUE
 
 	// Inject behaviors implied by legacy-compat flags so callers can flip
 	// brain.returns_home = TRUE on a mob even after spawn and have it work.
@@ -381,6 +415,10 @@ CAPABILITIES(/datum/ai_brain)
 	return TRUE
 
 /datum/ai_brain/proc/run_behavior(btype, atom/target, atom/source)
+	var/datum/ai_behavior/instant = dq_get_behavior(btype)
+	if(instant.instant)
+		run_instant(instant, btype, target, source)
+		return
 	if(active_behavior_type)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	active_behavior_type = btype
@@ -389,7 +427,8 @@ CAPABILITIES(/datum/ai_brain)
 	var/datum/ai_behavior/B = dq_get_behavior(btype)
 	LAZYINITLIST(started_counts)
 	started_counts[btype] = (started_counts[btype] || 0) + 1
-	trace("start [btype] on [target]")
+	if(traced || GLOB.ai_trace_all)
+		trace("start [btype] on [target]")
 	var/result = B.start(src, target, source)
 	if(result == DQ_BEHAVIOR_DONE)
 		stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
@@ -398,11 +437,24 @@ CAPABILITIES(/datum/ai_brain)
 	else
 		assess_state() // a fleeing tactic running makes the brain fleeing
 
+/// An instant behaviour (its whole effect is its start()) runs and ends in one call: it never becomes the active behaviour, so nothing is bound,
+/// released or re-assessed around it. A start() that does not answer DONE has no tick to carry on in, so that is a failure. The calm brain's wander and
+/// idle speech are these: a run of the action loop does the whole thing instead of one run to start it and a second to tick and stop it.
+/datum/ai_brain/proc/run_instant(datum/ai_behavior/B, btype, atom/target, atom/source)
+	instants_run++
+	LAZYINITLIST(started_counts)
+	started_counts[btype] = (started_counts[btype] || 0) + 1
+	if(traced || GLOB.ai_trace_all)
+		trace("instant [btype] on [target]")
+	var/result = B.start(src, target, source)
+	B.stop(src, target, source, result == DQ_BEHAVIOR_DONE ? DQ_BEHAVIOR_STOP_COMPLETED : DQ_BEHAVIOR_STOP_FAILED)
+
 /datum/ai_brain/proc/stop_active(reason)
 	if(!active_behavior_type)
 		return
 	var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
-	trace("stop [active_behavior_type] (reason [reason])")
+	if(traced || GLOB.ai_trace_all)
+		trace("stop [active_behavior_type] (reason [reason])")
 	cancel_waiting_op()
 	B.stop(src, active_target(), active_source(), reason)
 	active_behavior_type = null

@@ -8,17 +8,17 @@ import {
   Stack,
 } from 'tgui-core/components';
 import { capitalize } from 'tgui-core/string';
-
+import type { RapidPipeDispenserActions } from '../generated/RapidPipeDispenser';
 import { ICON_BY_CATEGORY_NAME, ROOT_CATEGORIES, TOOLS } from './constants';
 import type { Data } from './types';
 
 export const SelectionSection = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RapidPipeDispenserActions>();
   const {
     category: rootCategoryIndex,
     selected_color,
     mode,
-    paint_colors,
+    paint_colors = {},
   } = data;
   return (
     <Section>
@@ -57,7 +57,7 @@ export const SelectionSection = (props) => {
         </LabeledList.Item>
         <LabeledList.Item label="Color">
           <Box inline width="64px" color={paint_colors[selected_color]}>
-            {capitalize(selected_color)}
+            {capitalize(selected_color ?? '')}
           </Box>
           {Object.keys(paint_colors).map((colorName) => (
             <ColorBox

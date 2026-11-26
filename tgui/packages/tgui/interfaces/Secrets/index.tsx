@@ -9,12 +9,12 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { SecretsActions } from '../generated/Secrets';
 import { TAB2NAME } from './constants';
 import type { Data } from './types';
 
 export const Secrets = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, SecretsActions>();
   const { is_debugger, is_funmin } = data;
   const [tabIndex, setTabIndex] = useState(2);
   const TabComponent = TAB2NAME[tabIndex - 1].component();

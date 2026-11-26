@@ -151,12 +151,11 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 /obj/machinery/dna_scannernew/proc/eject_occupant()
 	var/mob/living/carbon/WC = get_occupant()
 	go_out()
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+	for(var/obj/O in contents_of(src))
 		if((!istype(O,/obj/item/reagent_containers)) && (!variant_is(O, VARIANT(/obj/item/circuitboard/clonescanner))) && (!istype(O,/obj/item/stock_parts)) && (!istype(O,/obj/item/stack/cable_coil)))
 			O.forceMove(get_turf(src)) //Ejects items that manage to get in there (exluding the components)
 	if(!WC)
-		for(var/mob/M in contents_of(src))//Failsafe so you can get mobs out // ALLOW(latent): mobs are never latent
+		for(var/mob/M in contents_of(src))//Failsafe so you can get mobs out
 			M.forceMove(get_turf(src))
 
 /// Old MouseDrop_T: allows borgs to clone people without external assistance.
@@ -312,8 +311,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	if((!WC || locked))
 		return
 	if(istype(WC,/mob/living/carbon/brain))
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/obj/O in contents_of(src))
 			if(istype(O,/obj/item/organ/internal/brain))
 				O.forceMove(get_turf(src))
 				slot_remove(WC, O)
@@ -369,6 +367,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	owns_many(nameof(buffers), /datum/transhuman/body_record)
 	ref_one(nameof(connected), /obj/machinery/dna_scannernew)
 	interface("DNAModifier")
+	ui_shape(selectedMenuKey = schema_text(), isInjectorReady = bool(), radiationIntensity = num(), radiationDuration = num(), irradiating = num(), selectedSEBlock = int(), selectedSESubBlock = int(), locked = bool(), hasOccupant = bool(), hasDisk = bool(), disk = row(data = nullable(list_of(int())), owner = nullable(schema_text()), label = nullable(schema_text()), type = nullable(schema_text()), ue = bool()), buffers = list_of(row(data = nullable(list_of(int())), owner = nullable(schema_text()), label = nullable(schema_text()), type = nullable(schema_text()), ue = bool())), dnaBlockSize = int(), occupant = row(name = nullable(schema_text()), stat = nullable(int()), isViableSubject = nullable(bool()), health = nullable(num()), maxHealth = nullable(num()), uniqueEnzymes = nullable(schema_text()), uniqueIdentity = nullable(schema_text()), structuralEnzymes = nullable(schema_text()), radiationLevel = nullable(num())), isBeakerLoaded = bool(), beakerLabel = nullable(schema_text()), beakerVolume = num(), modal = nullable(row(id = schema_text(), text = schema_text(), args = row(), type = schema_text(), value = nullable(schema_text())))) // modal args are whatever the opening call passed
 	extend("ui_open", needs(req(PROC_REF(scanner_connected)), req(PROC_REF(not_the_occupant))))
 	extend(TAG_UI, needs(req(PROC_REF(scanner_connected)), req(PROC_REF(not_irradiating))))
 	extend(TAG_UI, then(PROC_REF(window_touched), early = TRUE))
@@ -485,16 +484,11 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	data["radiationIntensity"] = radiation_intensity
 	data["radiationDuration"] = radiation_duration
 	data["irradiating"] = irradiating
-	data["selectedUIBlock"] = selected_ui_block
-	data["selectedUISubBlock"] = selected_ui_subblock
 	data["selectedSEBlock"] = selected_se_block
 	data["selectedSESubBlock"] = selected_se_subblock
-	data["selectedUITarget"] = selected_ui_target
-	data["selectedUITargetHex"] = selected_ui_target_hex
-	if(!connected())
-		return data
-	data["locked"] = src.connected().locked
-	data["hasOccupant"] = connected().get_occupant() ? 1 : 0
+	// No scanner linked: the same keys, empty, so the window draws its empty state.
+	data["locked"] = connected()?.locked || FALSE
+	data["hasOccupant"] = connected()?.get_occupant() ? 1 : 0
 
 	data["hasDisk"] = disk ? 1 : 0
 
@@ -529,7 +523,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 		occupantData["isViableSubject"] = null
 		occupantData["health"] = null
 		occupantData["maxHealth"] = null
-		occupantData["minHealth"] = null
 		occupantData["uniqueEnzymes"] = null
 		occupantData["uniqueIdentity"] = null
 		occupantData["structuralEnzymes"] = null
@@ -551,17 +544,16 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 		// Vitality is reported as a 0..100 percentage; the UI bar reads health / maxHealth.
 		occupantData["health"] = round(WC.vitality() * 100)
 		occupantData["maxHealth"] = 100
-		occupantData["minHealth"] = 0
 		occupantData["uniqueEnzymes"] = WC.dna.unique_enzymes
 		occupantData["uniqueIdentity"] = WC.dna.GetUniIdentity()
 		occupantData["structuralEnzymes"] = WC.dna.GetStrucEnzymes()
 		occupantData["radiationLevel"] = WC.radiation
 	data["occupant"] = occupantData;
 
-	data["isBeakerLoaded"] = connected().beaker ? 1 : 0
+	data["isBeakerLoaded"] = connected()?.beaker ? 1 : 0
 	data["beakerLabel"] = null
 	data["beakerVolume"] = 0
-	if(connected().beaker)
+	if(connected()?.beaker)
 		data["beakerLabel"] = connected().beaker.label_text ? connected().beaker.label_text : null
 		if(connected().beaker.reagents && connected().beaker.reagents.reagent_list.len)
 			for(var/datum/reagent/R in connected().beaker.reagents.reagent_list)
@@ -673,10 +665,10 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 				// Traitgenes Properly clone records
 				var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
 				databuf.init_from_mob(WC)
-				databuf.mydna.types = DNA2_BUF_SE // structurals only
+				databuf.mydna.set_types(DNA2_BUF_SE) // structurals only
 				if(ishuman(WC))
 					var/mob/living/carbon/human/H = WC
-					databuf.mydna.dna.real_name = H.dna.real_name
+					databuf.mydna.dna.set_real_name(H.dna.real_name)
 					databuf.mydna.gender = H.gender
 				rel_add(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), databuf, bufferId)
 			return TRUE
@@ -694,7 +686,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 			play_sfx(src, SFX_KEYBOARD)
 			var/label = A.step_value("label")
 			if(!isnull(label))
-				buffer.mydna.name = text_or_null(label) // Traitgenes Use bodyrecords
+				buffer.mydna.set_name(text_or_null(label)) // Traitgenes Use bodyrecords
 			return TRUE
 		if("transfer")
 			var/mob/living/carbon/WC = connected()?.get_occupant()
@@ -726,7 +718,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 			// Traitgenes Properly clone records
 			var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
 			databuf.init_from_br(disk.stored)
-			databuf.mydna.types = DNA2_BUF_SE // structurals only
+			databuf.mydna.set_types(DNA2_BUF_SE) // structurals only
 			rel_add(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), databuf, bufferId)
 		if("saveDisk")
 			play_sfx(src, SFX_KEYBOARD)
@@ -736,7 +728,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 			// Traitgenes Properly clone records
 			rel_set(disk, nameof(disk.stored), new /datum/transhuman/body_record())
 			disk.stored.init_from_br(buf)
-			disk.stored.mydna.types = DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE // DNA disks need to maintain their data
+			disk.stored.mydna.set_types(DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE) // DNA disks need to maintain their data
 			disk.name = "Body Design Disk ('[buf.mydna.name]')"
 			return TRUE
 		if("sleeveDisk")
@@ -780,7 +772,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	// Create it
 	var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords
 	var/obj/item/dnainjector/I = new()
-	buf.mydna.types = DNA2_BUF_SE // Traitgenes SE only, use the designer for UI and UEs, super broken in this codebase due to years of no one respecting genetics...
+	buf.mydna.set_types(DNA2_BUF_SE) // Traitgenes SE only, use the designer for UI and UEs, super broken in this codebase due to years of no one respecting genetics...
 	I.forceMove(loc)
 	I.name += " ([buf.mydna.name])"
 	if(copy_buffer)
@@ -910,7 +902,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	var/datum/transhuman/body_record/buf = buffers[bufferId] // Traitgenes- Use bodyrecords
 	if(buf.mydna.types & DNA2_BUF_SE)
 		// Apply SEs only to the current occupant!
-		WC.dna.SE = buf.mydna.dna.SE.Copy()
+		WC.dna.set_SE(buf.mydna.dna.SE.Copy())
 		WC.dna.UpdateSE()
 		domutcheck(WC,connected(), MUTCHK_FORCED | MUTCHK_HIDEMSG) // TOO MANY MUTATIONS FOR MESSAGES
 		WC.UpdateAppearance()

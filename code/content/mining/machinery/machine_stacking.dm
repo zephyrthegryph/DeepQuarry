@@ -2,6 +2,7 @@
 
 /obj/machinery/mineral/stacking_unit_console
 	name = "stacking machine console"
+	desc = "Shows what the stacking machine holds, sets how big a stack it releases, and releases a partial stack on demand."
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "console"
 	layer = ABOVE_WINDOW_LAYER
@@ -28,6 +29,7 @@
 CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 	setup(PROC_REF(bind_stacking_machine))
 	interface("MiningStackingConsole")
+	ui_shape(stacktypes = list_of(row(type = schema_text(), amt = num())), stackingAmt = num())
 	op("change_stack", ui_act("change_stack", arg("amt", num(1, 50))), then(PROC_REF(ui_act_change_stack)))
 	op("release_stack", ui_act("release_stack", arg("stack", schema_text(4096))), then(PROC_REF(ui_act_release_stack)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
@@ -69,6 +71,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 
 /obj/machinery/mineral/stacking_machine
 	name = "stacking machine"
+	desc = "Collects loose sheets from its input side into full stacks and releases them out its output side."
 	icon = 'icons/obj/machines/mining_machines.dmi'
 	icon_state = "stacker"
 	density = TRUE

@@ -4,7 +4,7 @@
 /mob/verb/toggle_gun_mode()
 	set name = "Toggle Gun Mode"
 	set desc = "Begin or stop aiming."
-	set category = VERB_CAT_IC_GAME
+	set hidden = TRUE
 
 	if(isliving(src))
 		var/mob/living/M = src
@@ -49,5 +49,5 @@
 	tracked_changed(src, nameof(m_intent))
 	if(hud_used)
 		if (hud_used.move_intent)
-			hud_used.move_intent.icon_state = intent == I_WALK ? "walking" : "running"
+			hud_used.move_intent.set_icon_state(intent == I_WALK ? "walking" : "running")
 

@@ -5,19 +5,19 @@
  */
 
 import { useAtom, useAtomValue } from 'jotai';
-import { useState } from 'react';
 import { Pane } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
 import { visibleAtom } from './audio/atoms';
 import { NowPlayingWidget } from './audio/NowPlayingWidget';
-import { ChatPanel } from './chat/ChatPanel';
+import { ChatPanel, ScrollToBottom } from './chat/ChatPanel';
 import { ChatTabs } from './chat/ChatTabs';
 import { useChatPersistence } from './chat/use-chat-persistence';
+import { useChatScanlines } from './consoleScanlines';
 import { gameAtom } from './game/atoms';
 import { useKeepAlive } from './game/use-keep-alive';
-import { Notifications } from './Notifications';
+import { ChatInput } from './input/ChatInput';
 import { PingIndicator } from './ping/PingIndicator';
-import { ReconnectButton } from './reconnect';
+import { useAutoReconnect } from './reconnect';
 import { settingsVisibleAtom } from './settings/atoms';
 import { SettingsPanel } from './settings/SettingsPanel';
 import { useSettings } from './settings/use-settings';
@@ -27,23 +27,20 @@ export function Panel(props) {
   const game = useAtomValue(gameAtom);
   const { settings } = useSettings();
   const [settingsVisible, setSettingsVisible] = useAtom(settingsVisibleAtom);
-  const [dismissedWarning, setDismissedWarning] = useState(false);
   useChatPersistence();
-  useKeepAlive(setDismissedWarning);
+  useAutoReconnect(!!game.connectionLostAt || !!game.roundRestartedAt);
+  useChatScanlines();
+  useKeepAlive();
 
   return (
-    <Pane theme={settings.theme} canSuspend={false}>
+    // The chat is a window of the right-hand column (column/Column.tsx): the column frames, moves and sizes it.
+    <Pane canSuspend={false} className="ChatConsole">
       <Stack fill vertical>
         <Stack.Item>
           <Section fitted>
-            <Stack mx={0.5} my={0.25} align="center">
-              <Stack.Item grow>
-                <ChatTabs />
-              </Stack.Item>
-              <Stack.Item>
+            <div className="ChatDragRow">
+              <ChatTabs>
                 <PingIndicator />
-              </Stack.Item>
-              <Stack.Item>
                 <Button
                   selected={audioVisible}
                   icon="music"
@@ -53,8 +50,6 @@ export function Panel(props) {
                     setAudioVisible((v) => !v);
                   }}
                 />
-              </Stack.Item>
-              <Stack.Item>
                 <Button
                   icon={settingsVisible ? 'times' : 'cog'}
                   selected={settingsVisible}
@@ -62,8 +57,8 @@ export function Panel(props) {
                   tooltipPosition="bottom-start"
                   onClick={() => setSettingsVisible((v) => !v)}
                 />
-              </Stack.Item>
-            </Stack>
+              </ChatTabs>
+            </div>
           </Section>
         </Stack.Item>
         {audioVisible && (
@@ -80,32 +75,15 @@ export function Panel(props) {
         )}
         <Stack.Item grow>
           <Section fill fitted position="relative">
-            <Pane.Content scrollable id="chat-pane">
+            {/* fitted: no Window__contentPadding (a 0.5rem margin all round, 0.5rem under the last line); .Chat pads itself. */}
+            <Pane.Content fitted scrollable id="chat-pane">
               <ChatPanel lineHeight={settings.lineHeight} />
             </Pane.Content>
-            <Notifications>
-              {settings.showReconnectWarning &&
-                game.connectionLostAt &&
-                !dismissedWarning && (
-                  <Notifications.Item
-                    rightSlot={
-                      <ReconnectButton
-                        onDismissedWarning={setDismissedWarning}
-                      />
-                    }
-                  >
-                    You are either AFK, experiencing lag or the connection has
-                    closed.
-                  </Notifications.Item>
-                )}
-              {settings.showReconnectWarning && game.roundRestartedAt && (
-                <Notifications.Item>
-                  The connection has been closed because the server is
-                  restarting. Please wait while you automatically reconnect.
-                </Notifications.Item>
-              )}
-            </Notifications>
+            <ScrollToBottom />
           </Section>
+        </Stack.Item>
+        <Stack.Item>
+          <ChatInput />
         </Stack.Item>
       </Stack>
     </Pane>

@@ -1,5 +1,0 @@
-/datum/base/proc/work()
-/datum/base/proc/work()
-/proc/probe()
-    set mystery_probe=1
-    missing_probe

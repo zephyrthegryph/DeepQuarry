@@ -10,41 +10,32 @@ import {
   Section,
   Slider,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  GasTemperatureSystemActions,
+  GasTemperatureSystemData,
+} from './generated/GasTemperatureSystem';
 
-type Data = {
-  on: BooleanLike;
-  gasPressure: number;
-  gasTemperature: number;
-  minGasTemperature: number;
-  maxGasTemperature: number;
-  targetGasTemperature: number;
-  powerSetting: number;
-  gasTemperatureClass: string;
-  reagentVolume: number;
-  reagentMaximum: number;
-  reagentPower: number;
-};
+type Data = GasTemperatureSystemData;
 
 export const GasTemperatureSystem = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GasTemperatureSystemActions>();
 
   const {
     on,
     gasPressure,
-    gasTemperature,
+    gasTemperature = 0,
     minGasTemperature,
     maxGasTemperature,
     targetGasTemperature,
     gasTemperatureClass,
-    powerSetting,
+    powerSetting = 0,
     reagentPower,
-    reagentMaximum,
-    reagentVolume,
+    reagentMaximum = 1,
+    reagentVolume = 0,
   } = data;
 
   return (
-    <Window width={270} height={270}>
+    <Window width={420} height={270}>
       <Window.Content>
         <Section
           title="Controls"

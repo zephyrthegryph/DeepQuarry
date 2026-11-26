@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - rscadd: "The stat panel is a window like any other: it starts docked in the right-hand column, and you can float it out (Float button or drag its header out) and dock it back."

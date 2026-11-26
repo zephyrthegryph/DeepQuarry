@@ -1,6 +1,6 @@
 //! Immutable indexed line provenance, with exact wide fallback.
 use super::expansion::output_lines::OutputLines;
-use super::{ExpandedOrigin, MacroExpansion, MacroTraceView};
+use super::{ExpandedOrigin, MacroExpansion};
 use dm_syntax::Span;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
@@ -16,7 +16,7 @@ pub struct ExpandedOriginView<'a> {
     pub output_span: Span,
     pub source_span: Span,
     pub region: usize,
-    pub macro_expansions: MacroTraceView<'a>,
+    pub macro_expansions: &'a Arc<Vec<MacroExpansion>>,
 }
 #[derive(Clone, Copy, Debug)]
 struct Compact {
@@ -66,38 +66,22 @@ struct Chunk {
 }
 #[derive(Debug)]
 enum Records {
-    Raw(super::origin_raw_rows::OriginalRawOrigins),
     Compact(Box<[Compact]>),
     Wide(Box<[Wide]>),
     /// Rows by region: a session holds one chunk per region, not one row per output line.
-    Chunked {
-        chunks: Box<[Chunk]>,
-        len: usize,
-    },
+    Chunked { chunks: Box<[Chunk]>, len: usize },
 }
+#[derive(Debug)]
 struct Inner {
     records: Records,
     paths: Box<[Arc<PathBuf>]>,
-    traces: Box<[Arc<Box<[MacroExpansion]>>]>,
+    traces: Box<[Arc<Vec<MacroExpansion>>]>,
     /// The chunk the last lookup landed in (lookups mostly move forward a little).
     hint: std::sync::atomic::AtomicUsize,
-    original_credit: Option<dm_syntax::SettingRootLease>,
-    original_metadata: Option<dm_syntax::SharedSettingRetention>,
 }
-// No public Weak/Arc escape exists. On the last arena clone the actual Arc
-// control allocation is freed before the funded Inner payload is destroyed.
-// This keeps its fixed-allocation lease live through physical deallocation.
-#[derive(Clone)]
-struct OriginOwner(Option<Arc<Inner>>);
-impl From<Arc<Inner>> for OriginOwner{fn from(value:Arc<Inner>)->Self{Self(Some(value))}}
-impl std::ops::Deref for OriginOwner{type Target=Arc<Inner>;fn deref(&self)->&Self::Target{self.0.as_ref().expect("live origin arena")}}
-impl Drop for OriginOwner{fn drop(&mut self){if let Some(owner)=self.0.take(){if let Some(inner)=Arc::into_inner(owner){drop(inner)}}}}
 /// Clones share immutable records and the original exact path/trace allocations.
 #[derive(Clone)]
-pub struct ExpandedOriginArena(
-    OriginOwner,
-    Option<Arc<super::origin_byte_layout::ByteLayoutLedger>>,
-);
+pub struct ExpandedOriginArena(Arc<Inner>);
 impl std::fmt::Debug for ExpandedOriginArena {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_list().entries(self.iter()).finish()
@@ -105,46 +89,21 @@ impl std::fmt::Debug for ExpandedOriginArena {
 }
 impl Default for ExpandedOriginArena {
     fn default() -> Self {
-        Self(
-            OriginOwner::from(Arc::new(Inner {
-                records: Records::Compact(Box::new([])),
-                paths: Box::new([]),
-                traces: Box::new([]),
-                hint: Default::default(),
-                original_credit: None,
-                original_metadata: None,
-            })),
-            None,
-        )
+        Self(Arc::new(Inner {
+            records: Records::Compact(Box::new([])),
+            paths: Box::new([]),
+            traces: Box::new([]),
+            hint: Default::default(),
+        }))
     }
 }
 impl ExpandedOriginArena {
-    pub(super) fn from_actual_raw_rows_using(rows:super::origin_raw_rows::OriginalRawOrigins,metadata:dm_syntax::SharedSettingRetention,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Self>{
-        a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
-        if !rows.is_admitted_by(a)||!metadata.is_admitted_by(a){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"raw mapping rows belong to another admission"))}
-        let bytes=std::mem::size_of::<Inner>().checked_add(2*std::mem::size_of::<usize>()).ok_or(std::io::ErrorKind::OutOfMemory)?;
-        let credit=a.reserve(bytes).map_err(|e|a.take_operational_error().unwrap_or(e))?;
-        Ok(Self(OriginOwner::from(Arc::new(Inner{records:Records::Raw(rows),paths:Box::new([]),traces:Box::new([]),hint:Default::default(),original_credit:Some(credit),original_metadata:Some(metadata)})),None))
-    }
-    /// None denotes the ordinary native row representation. Raw records return
-    /// an explicit producer-owned terminal-boundary decision, never inference
-    /// from a physical line envelope ending at source_text.len().
-    /// Readonly coordinate DATA for the existing source-map equality recipe.
-    /// No source-role authority follows from these actual producer facts.
-    pub fn original_raw_point_geometry(&self,index:usize)->Option<(usize,super::OriginalByteCursor,Span,Span,bool)>{match &self.0.records{Records::Raw(rows)=>rows.geometry(index),_=>None}}
-    pub fn original_raw_source_end_at(&self,index:usize,offset:usize)->Option<bool>{match &self.0.records{Records::Raw(rows)=>Some(rows.source_end_at(index,offset)),_=>None}}
     /// Physical immutable provenance owner, never a content hash shortcut.
     pub fn same_owner(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.0, &other.0)
-            && match (&self.1, &other.1) {
-                (Some(a), Some(b)) => Arc::ptr_eq(a, b),
-                (None, None) => true,
-                _ => false,
-            }
     }
     pub fn len(&self) -> usize {
         match &self.0.records {
-            Records::Raw(rows) => rows.len(),
             Records::Compact(v) => v.len(),
             Records::Wide(v) => v.len(),
             Records::Chunked { len, .. } => *len,
@@ -171,15 +130,6 @@ impl ExpandedOriginArena {
         }
         found
     }
-    pub(super) fn has_original_emission_ordinals(&self) -> bool {
-        matches!(&self.0.records, Records::Raw(rows) if rows.has_delivered_binding())
-    }
-    pub(super) fn write_original_emission_ranks(&self, ranks: &mut [usize]) -> bool {
-        let Records::Raw(rows) = &self.0.records else { return false };
-        if !rows.has_delivered_binding() { return false; }
-        rows.write_last_emission_ranks(ranks);
-        true
-    }
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -188,7 +138,6 @@ impl ExpandedOriginArena {
     }
     pub fn get(&self, index: usize) -> Option<ExpandedOriginView<'_>> {
         let value = match &self.0.records {
-            Records::Raw(rows) => return rows.get(index),
             Records::Compact(v) => v.get(index)?.wide(index),
             Records::Wide(v) => *v.get(index)?,
             Records::Chunked { chunks, len } => {
@@ -208,7 +157,7 @@ impl ExpandedOriginArena {
                     output_span: Span::new(base + output.start, base + output.end),
                     source_span,
                     region: chunk.region as usize,
-                    macro_expansions: traces.into(),
+                    macro_expansions: traces,
                 });
             }
         };
@@ -221,7 +170,7 @@ impl ExpandedOriginArena {
             output_span: value.output_span,
             source_span: value.source_span,
             region: value.region,
-            macro_expansions: (&self.0.traces[value.traces]).into(),
+            macro_expansions: &self.0.traces[value.traces],
         })
     }
     pub fn last(&self) -> Option<ExpandedOriginView<'_>> {
@@ -312,35 +261,13 @@ impl ExpandedOriginArena {
             std::mem::size_of::<Inner>(),
         );
         match &self.0.records {
-            Records::Raw(rows) => rows.visit_storage(&mut visit),
             Records::Compact(v) => boxed(v, &mut visit),
             Records::Wide(v) => boxed(v, &mut visit),
             // The rows themselves are the records' shared allocations (census: expansion records).
-            Records::Chunked { chunks, .. } => {
-                boxed(chunks, &mut visit);
-                for chunk in chunks.iter() {
-                    visit(
-                        Arc::as_ptr(&chunk.lines) as usize,
-                        1,
-                        std::mem::size_of_val(chunk.lines.as_ref()),
-                    );
-                    chunk.lines.visit_owned_storage(&mut visit);
-                }
-            }
+            Records::Chunked { chunks, .. } => boxed(chunks, &mut visit),
         }
-        if let Some(credit)=&self.0.original_credit { credit.visit_counter_storage(|p,n|visit(p,n,n)); }
-        if let Some(metadata)=&self.0.original_metadata{let mut first=true;metadata.visit_storage(|p,n|{let bytes=if first{first=false;n+2*std::mem::size_of::<usize>()}else{n};visit(p,1,bytes);});}
-
         boxed(&self.0.paths, &mut visit);
         boxed(&self.0.traces, &mut visit);
-        if let Some(layout) = &self.1 {
-            visit(
-                Arc::as_ptr(layout) as usize,
-                1,
-                std::mem::size_of_val(layout.as_ref()),
-            );
-            layout.visit_storage(&mut visit);
-        }
     }
 }
 /// One region's rows of an assembled arena (`ExpandedOriginArena::assembled`).
@@ -467,17 +394,12 @@ impl ExpandedOriginArena {
                 .filter_map(|(value, used)| used.then_some(value))
                 .collect();
         }
-        Some(Self(
-            OriginOwner::from(Arc::new(Inner {
-                records: Records::Compact(records.into_boxed_slice()),
-                paths: paths.into_boxed_slice(),
-                traces: traces.into_boxed_slice(),
-                hint: Default::default(),
-                original_credit: None,
-                original_metadata: None,
-            })),
-            None,
-        ))
+        Some(Self(Arc::new(Inner {
+            records: Records::Compact(records.into_boxed_slice()),
+            paths: paths.into_boxed_slice(),
+            traces: traces.into_boxed_slice(),
+            hint: Default::default(),
+        })))
     }
     /// `assembled` for a chunked arena: reused runs move whole chunks (they are region-aligned), fresh regions add theirs.
     fn assembled_chunks(&self, old: &[Chunk], parts: Vec<RowPart>) -> Option<Self> {
@@ -525,10 +447,7 @@ impl ExpandedOriginArena {
                     if lines.len() == 0 {
                         continue;
                     }
-                    if !matches!(
-                        *lines,
-                        OutputLines::Compact(_) | OutputLines::Certified { .. }
-                    ) {
+                    if !matches!(*lines, OutputLines::Compact(_)) {
                         return None;
                     }
                     let output_len = u32::try_from(lines.output_end()).ok()?;
@@ -572,26 +491,17 @@ impl ExpandedOriginArena {
             for chunk in &mut chunks {
                 chunk.path = map[chunk.path as usize];
             }
-            paths = paths
-                .into_iter()
-                .zip(&used)
-                .filter_map(|(value, used)| used.then_some(value))
-                .collect();
+            paths = paths.into_iter().zip(&used).filter_map(|(value, used)| used.then_some(value)).collect();
         }
-        Some(Self(
-            OriginOwner::from(Arc::new(Inner {
-                records: Records::Chunked {
-                    chunks: chunks.into_boxed_slice(),
-                    len: rows,
-                },
-                paths: paths.into_boxed_slice(),
-                traces: Box::new([]),
-                hint: Default::default(),
-                original_credit: None,
-                original_metadata: None,
-            })),
-            None,
-        ))
+        Some(Self(Arc::new(Inner {
+            records: Records::Chunked {
+                chunks: chunks.into_boxed_slice(),
+                len: rows,
+            },
+            paths: paths.into_boxed_slice(),
+            traces: Box::new([]),
+            hint: Default::default(),
+        })))
     }
 }
 pub struct OriginIter<'a> {
@@ -637,7 +547,7 @@ pub(super) struct OriginArenaBuilder {
     compact: Vec<Compact>,
     wide: Option<Vec<Wide>>,
     paths: Vec<Arc<PathBuf>>,
-    traces: Vec<Arc<Box<[MacroExpansion]>>>,
+    traces: Vec<Arc<Vec<MacroExpansion>>>,
     last_path: Option<(usize, usize)>,
     last_trace: Option<(usize, usize)>,
     path_indexes: HashMap<usize, usize>,
@@ -685,10 +595,7 @@ impl OriginArenaBuilder {
         let output_len = lines.output_end();
         let fits = self.wide.is_none()
             && self.compact.is_empty()
-            && matches!(
-                *lines,
-                OutputLines::Compact(_) | OutputLines::Certified { .. }
-            )
+            && matches!(*lines, OutputLines::Compact(_))
             && u32::try_from(output_base + output_len).is_ok()
             && u32::try_from(region).is_ok()
             && u32::try_from(self.chunk_rows + lines.len()).is_ok();
@@ -715,21 +622,10 @@ impl OriginArenaBuilder {
         self.chunk_rows = 0;
         for chunk in chunks {
             let path = Arc::clone(&self.paths[chunk.path as usize]);
-            self.push_rows(
-                &chunk.lines,
-                chunk.output_base as usize,
-                chunk.region as usize,
-                &path,
-            );
+            self.push_rows(&chunk.lines, chunk.output_base as usize, chunk.region as usize, &path);
         }
     }
-    fn push_rows(
-        &mut self,
-        lines: &OutputLines,
-        output_base: usize,
-        region: usize,
-        path: &Arc<PathBuf>,
-    ) {
+    fn push_rows(&mut self, lines: &OutputLines, output_base: usize, region: usize, path: &Arc<PathBuf>) {
         for (relative, source_line, source_span, traces) in lines.iter() {
             let output_line = self.len() + 1;
             self.push(ExpandedOrigin {
@@ -796,30 +692,25 @@ impl OriginArenaBuilder {
         }
     }
     pub(super) fn finish(self) -> ExpandedOriginArena {
-        ExpandedOriginArena(
-            OriginOwner::from(Arc::new(Inner {
-                records: match self.wide {
-                    Some(v) => Records::Wide(v.into_boxed_slice()),
-                    None if !self.chunks.is_empty() => Records::Chunked {
-                        chunks: self.chunks.into_boxed_slice(),
-                        len: self.chunk_rows,
-                    },
-                    None => Records::Compact(self.compact.into_boxed_slice()),
+        ExpandedOriginArena(Arc::new(Inner {
+            records: match self.wide {
+                Some(v) => Records::Wide(v.into_boxed_slice()),
+                None if !self.chunks.is_empty() => Records::Chunked {
+                    chunks: self.chunks.into_boxed_slice(),
+                    len: self.chunk_rows,
                 },
-                paths: self.paths.into_boxed_slice(),
-                traces: self.traces.into_boxed_slice(),
-                hint: Default::default(),
-                original_credit: None,
-                original_metadata: None,
-            })),
-            None,
-        )
+                None => Records::Compact(self.compact.into_boxed_slice()),
+            },
+            paths: self.paths.into_boxed_slice(),
+            traces: self.traces.into_boxed_slice(),
+            hint: Default::default(),
+        }))
     }
 }
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn input(line: usize, path: Arc<PathBuf>, traces: Arc<Box<[MacroExpansion]>>) -> ExpandedOrigin {
+    fn input(line: usize, path: Arc<PathBuf>, traces: Arc<Vec<MacroExpansion>>) -> ExpandedOrigin {
         ExpandedOrigin {
             origin: super::super::Origin {
                 output_line: line,
@@ -835,7 +726,7 @@ mod tests {
     #[test]
     fn borrowed_views_preserve_fields_and_original_arc_sharing() {
         let path = Arc::new(PathBuf::from("included.dm"));
-        let traces = Arc::new(Vec::new().into_boxed_slice());
+        let traces = Arc::new(Vec::new());
         let mut b = OriginArenaBuilder::default();
         b.push(input(1, path.clone(), traces.clone()));
         b.push(input(2, path.clone(), traces.clone()));
@@ -847,7 +738,7 @@ mod tests {
         assert_eq!(v.source_span, Span::new(10, 20));
         assert_eq!(v.region, 2);
         assert!(Arc::ptr_eq(v.origin.path, &path));
-        assert!(v.macro_expansions.same_owner((&traces).into()));
+        assert!(Arc::ptr_eq(v.macro_expansions, &traces));
         assert_eq!(a.partition_point(|v| v.origin.output_line < 2), 1);
         assert_eq!(a.iter().next_back().unwrap().origin.output_line, 2);
         assert_eq!(std::mem::size_of::<Compact>(), 32);
@@ -858,8 +749,8 @@ mod tests {
     fn consecutive_and_alternating_pointer_rosters_preserve_distinct_equal_paths() {
         let a = Arc::new(PathBuf::from("same.dm"));
         let b = Arc::new(PathBuf::from("same.dm"));
-        let x = Arc::new(Vec::new().into_boxed_slice());
-        let y = Arc::new(Vec::new().into_boxed_slice());
+        let x = Arc::new(Vec::new());
+        let y = Arc::new(Vec::new());
         let mut builder = OriginArenaBuilder::default();
         for (index, (path, trace)) in [(&a, &x), (&a, &x), (&b, &y), (&a, &x), (&b, &x)]
             .into_iter()
@@ -874,7 +765,7 @@ mod tests {
         {
             let view = arena.get(index).unwrap();
             assert!(Arc::ptr_eq(view.origin.path, path));
-            assert!(view.macro_expansions.same_owner(trace.into()));
+            assert!(Arc::ptr_eq(view.macro_expansions, trace));
         }
         assert_eq!(arena.0.paths.len(), 2);
         assert_eq!(arena.0.traces.len(), 2);
@@ -882,7 +773,7 @@ mod tests {
     #[test]
     fn irregular_output_line_and_wide_usize_fields_never_truncate() {
         let path = Arc::new(PathBuf::from("x"));
-        let traces = Arc::new(Vec::new().into_boxed_slice());
+        let traces = Arc::new(Vec::new());
         let mut b = OriginArenaBuilder::default();
         b.push(input(1, path.clone(), traces.clone()));
         let mut x = input(usize::MAX, path, traces);
@@ -902,157 +793,3 @@ mod tests {
 #[cfg(test)]
 #[path = "origin_arena_tests.rs"]
 mod boundary_tests;
-
-impl ExpandedOriginArena {
-    pub(super) fn with_byte_layout(
-        self,
-        layout: super::origin_byte_layout::ByteLayoutLedger,
-    ) -> Self {
-        assert_eq!(
-            self.len(),
-            layout.rows(),
-            "layout must bind every actual native origin row"
-        );
-        Self(self.0, Some(Arc::new(layout)))
-    }
-    pub fn byte_layout_regions(&self) -> Option<&Arc<[(usize, usize)]>> {
-        self.1.as_ref().map(|layout| layout.regions())
-    }
-    pub fn original_byte_cursor(
-        &self,
-        index: usize,
-        occurrence: usize,
-        lease: &crate::SourceAcquisitionLease,
-        offset: usize,
-    ) -> Result<super::origin_byte_layout::OriginalByteCursor, &'static str> {
-        if let Records::Raw(rows)=&self.0.records{return rows.point(index,occurrence,lease,offset)}
-        let origin = self
-            .get(index)
-            .ok_or("native original layout row unavailable")?;
-        self.1
-            .as_ref()
-            .ok_or("native original byte layout was not issued")?
-            .locate(index, origin, occurrence, lease, offset)
-    }
-    pub(super) fn macro_points_for_row(
-        &self,
-        index: usize,
-    ) -> Option<&Arc<[crate::macro_expansion::MacroBytePoint]>> {
-        let Records::Chunked { chunks, len } = &self.0.records else {
-            return None;
-        };
-        if index >= *len {
-            return None;
-        }
-        let chunk = &chunks[self.chunk_of(chunks, index)];
-        chunk.lines.macro_points(index - chunk.first as usize)
-    }
-    /// Checker token point. Physical projection remains strict above: macro
-    /// output is not physical source text, even when its invocation is known.
-    pub fn source_note_cursor(
-        &self,
-        index: usize,
-        occurrence: usize,
-        lease: &crate::SourceAcquisitionLease,
-        offset: usize,
-    ) -> Result<super::origin_byte_layout::OriginalByteCursor, &'static str> {
-        if let Records::Raw(rows)=&self.0.records{return rows.point(index,occurrence,lease,offset)}
-        if let Ok(point) = self.original_byte_cursor(index, occurrence, lease, offset) {
-            return Ok(point);
-        }
-        let origin = self
-            .get(index)
-            .ok_or("native checker origin row unavailable")?;
-        let line = self.original_policy_line(index, occurrence, lease, offset)?;
-        let points = self
-            .macro_points_for_row(index)
-            .ok_or("macro byte point was not issued for this transform")?;
-        let delta = offset
-            .checked_sub(origin.output_span.start)
-            .ok_or("macro output before row")?;
-        let raw = lease
-            .source_text()
-            .get(origin.source_span.range())
-            .ok_or("macro original physical line unavailable")?;
-        let body = raw.trim_end_matches(['\r', '\n']);
-        if body.contains(['\r', '\n']) {
-            return Err("macro physical line is joined");
-        }
-        let column = if delta + 1 == origin.output_span.end - origin.output_span.start {
-            // The existing region emitter appends LF after direct line expansion.
-            // A real acquired LF is required: final synthetic EOF is never a
-            // physical byte. Bare macro declarations consume this next token.
-            if !raw.ends_with('\n') {
-                return Err("macro terminator is synthetic EOF");
-            }
-            body.len() + usize::from(raw.ends_with("\r\n"))
-        } else {
-            let point = points
-                .get(points.partition_point(|point| point.output.end <= delta))
-                .filter(|point| point.output.start <= delta && delta < point.output.end)
-                .ok_or("macro output byte outside issued token intervals")?;
-            let column = point
-                .source_start
-                .checked_add(if point.invocation {
-                    0
-                } else {
-                    delta - point.output.start
-                })
-                .ok_or("macro original byte column overflow")?;
-            if column >= body.len() {
-                return Err("macro point outside physical body");
-            }
-            column
-        };
-        if column >= raw.len() || !raw.is_char_boundary(column) {
-            return Err("macro original point outside certified physical bytes");
-        }
-        Ok(super::origin_byte_layout::OriginalByteCursor {
-            line,
-            byte_column: column + 1,
-            source_offset: origin
-                .source_span
-                .start
-                .checked_add(column)
-                .ok_or("macro source offset overflow")?,
-        })
-    }
-    pub(super) fn equivalent_byte_layout(&self, other: &Self) -> bool {
-        match (&self.0.records,&other.0.records){(Records::Raw(a),Records::Raw(b))=>return a.equivalent(b),(Records::Raw(_),_)|(_,Records::Raw(_))=>return false,_=>()}
-        match (&self.1, &other.1) {
-            (Some(a), Some(b)) => a.equivalent(b),
-            (None, None) => true,
-            _ => false,
-        }
-    }
-}
-
-impl ExpandedOriginArena {
-    pub(super) fn single_physical_macro_line(&self, index: usize) -> bool {
-        match &self.0.records {
-            Records::Chunked { chunks, len } if index < *len => {
-                let chunk = &chunks[self.chunk_of(chunks, index)];
-                chunk
-                    .lines
-                    .single_physical_macro_line(index - chunk.first as usize)
-            }
-            _ => false,
-        }
-    }
-    pub fn original_policy_line(
-        &self,
-        index: usize,
-        occurrence: usize,
-        lease: &crate::SourceAcquisitionLease,
-        offset: usize,
-    ) -> Result<usize, &'static str> {
-        if let Records::Raw(rows)=&self.0.records{return rows.policy_line(index,occurrence,lease,offset)}
-        let origin = self
-            .get(index)
-            .ok_or("native policy-line row unavailable")?;
-        self.1
-            .as_ref()
-            .ok_or("native policy-line layout unavailable")?
-            .locate_policy_line(index, origin, occurrence, lease, offset)
-    }
-}

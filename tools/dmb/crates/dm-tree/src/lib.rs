@@ -21,9 +21,7 @@ pub mod maps;
 mod member_arena;
 mod member_binding;
 use member_binding::{MemberRead, MemberWrite};
-pub mod diagnostic_declarations;
 mod member_normalization;
-pub use diagnostic_declarations::DiagnosticDeclarations;
 mod metadata_update;
 pub use host_declaration_selection::HostDeclarationSelection;
 pub mod owner_callable;
@@ -34,15 +32,11 @@ pub use member_arena::MemberArena;
 pub use owner_normalization::{
     NormalizationStorageView, ResolvedMember, SharedNormalizedDeclarations,
 };
-mod certified_hierarchy;
-pub mod checker_builtins;
 pub mod non_text;
 mod normalize;
 mod procedure;
-pub use procedure::{OriginalInputParameterFatal,OriginalParameterFatal,OriginalFormalNotice,OriginalFormalNoticeLevel};
 pub mod procedure_statics;
 mod resolver;
-pub use certified_hierarchy::{HierarchyAnswer, HierarchyAnswerKind, HierarchyView};
 pub mod settings;
 pub mod type_paths;
 mod variable_facts;
@@ -134,10 +128,6 @@ pub enum Target {
 }
 #[derive(Clone, Debug)]
 pub struct SemanticTree {
-    original_input_retention:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,
-    // Only the pinned Original declaration adapter can issue this proof.
-    original_authored_client_parent: bool,
-    checker_profile_validation: checker_builtins::ProfileValidation,
     symbols: Arc<SymbolTable>,
     types: Arc<[TypeNode]>,
     members: MemberArena,
@@ -227,9 +217,6 @@ pub enum TreeError {
     ConflictingParent(SymbolId),
     InheritanceCycle(SymbolId),
     MissingParent(SymbolId),
-    /// Original diagnostic preparation only: unresolved authored parent, with
-    /// the original reader root fallback. Never compiler admission.
-    OriginalMissingParent { owner: SymbolId, parent: SymbolId },
     Duplicate {
         owner: SymbolId,
         name: SymbolId,
@@ -377,7 +364,7 @@ impl SemanticTree {
             let member = &self.members[id.index()];
             (
                 self.symbols
-                    .text(member.metadata.display_name().unwrap_or(member.name))
+                    .text(member.metadata.display_name.unwrap_or(member.name))
                     .unwrap_or(""),
                 self.symbols.text(member.name).unwrap_or(""),
             )
@@ -494,53 +481,6 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
     )
 }
 pub(crate) fn build_with_intrinsic_members_structural(
-    symbols: SymbolTable,
-    skeletons: skeleton_roster::SkeletonView<'_>,
-    fields: &[dm_ir::OpaqueFieldBase],
-    intrinsics: &[IntrinsicMember],
-    rebuild_inventory: bool,
-    normalization: Option<(
-        &declaration_contributions::KeyedDeclarations,
-        &owner_normalization::RetainedNormalization,
-    )>,
-    structural: Option<metadata_update::StructuralMetadata<'_>>,
-) -> Result<SemanticTree, TreeError> {
-    build_with_intrinsic_members_structural_mode(
-        symbols,
-        skeletons,
-        fields,
-        intrinsics,
-        rebuild_inventory,
-        normalization,
-        structural,
-        None,
-        None,
-    )
-}
-/// Diagnostic construction can borrow only source-neutral authored callable
-/// anchors. Member binding, intrinsic anchors and diagnostics stay local.
-pub(crate) fn build_checker_diagnostic_members(
-    symbols: SymbolTable,
-    skeletons: skeleton_roster::SkeletonView<'_>,
-    fields: &[dm_ir::OpaqueFieldBase],
-    intrinsics: &[IntrinsicMember],
-    rebuild_inventory: bool,
-    diagnostics: &mut diagnostic_declarations::DiagnosticDeclarationReceipt,
-    authored_callables: Option<crate::owner_callable::AuthoredCallableLoan<'_>>,
-) -> Result<SemanticTree, TreeError> {
-    build_with_intrinsic_members_structural_mode(
-        symbols,
-        skeletons,
-        fields,
-        intrinsics,
-        rebuild_inventory,
-        None,
-        None,
-        Some(diagnostics),
-        authored_callables,
-    )
-}
-fn build_with_intrinsic_members_structural_mode(
     mut symbols: SymbolTable,
     skeletons: skeleton_roster::SkeletonView<'_>,
     fields: &[dm_ir::OpaqueFieldBase],
@@ -551,8 +491,6 @@ fn build_with_intrinsic_members_structural_mode(
         &owner_normalization::RetainedNormalization,
     )>,
     structural: Option<metadata_update::StructuralMetadata<'_>>,
-    mut diagnostics: Option<&mut diagnostic_declarations::DiagnosticDeclarationReceipt>,
-    authored_callables: Option<crate::owner_callable::AuthoredCallableLoan<'_>>,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -621,16 +559,11 @@ fn build_with_intrinsic_members_structural_mode(
         {
             declared.insert(*path);
             if let Some(parent) = explicit_parent {
-                if diagnostics.as_deref().is_some_and(|receipt| receipt.masks_original_sealed_parent(*path, *parent)) {
-                    continue;
+                if !by_path.contains_key(parent) {
+                    return Err(TreeError::MissingParent(*parent));
                 }
-                let effective_parent=if !by_path.contains_key(parent) {
-                    let Some(receipt)=diagnostics.as_deref_mut() else{return Err(TreeError::MissingParent(*parent))};
-                    receipt.accept_original_missing_parent(*path,*parent)?;
-                    root // Pinned objtree.rs: bad parent type falls back to the root.
-                }else{*parent};
-                if let Some(previous) = explicit.insert(*path, effective_parent) {
-                    if previous != effective_parent {
+                if let Some(previous) = explicit.insert(*path, *parent) {
+                    if previous != *parent {
                         return Err(TreeError::ConflictingParent(*path));
                     }
                 }
@@ -685,9 +618,6 @@ fn build_with_intrinsic_members_structural_mode(
         }
     }
     let mut tree = SemanticTree {
-        original_input_retention:None,
-        original_authored_client_parent: false,
-        checker_profile_validation: Default::default(),
         symbols: Arc::new(symbols),
         types: types.into(),
         members: MemberArena::default(),
@@ -755,7 +685,7 @@ fn build_with_intrinsic_members_structural_mode(
             .callables
             .collect(&tree, declarations, intrinsics)?
     } else {
-        if let Some(receipt)=diagnostics.as_deref_mut(){callable_namespace::collect_checker_diagnostic(skeletons,intrinsics,receipt,authored_callables.map(|loan| (&tree, loan)))?}else{callable_namespace::collect_view(skeletons, intrinsics)?}
+        callable_namespace::collect_view(skeletons, intrinsics)?
     };
     let local_owners = normalization.map(|(declarations, retained)| {
         retained.local.prepare(&tree, declarations, &callable_kinds)
@@ -819,7 +749,7 @@ fn build_with_intrinsic_members_structural_mode(
                                 .any(|id| modes[id.index()] == DefinitionMode::Declare)
                         })
                 };
-                if duplicate && !(diagnostics.is_some()&&matches!(kind,MemberKind::Proc|MemberKind::Verb)) {
+                if duplicate {
                     return Err(TreeError::Duplicate {
                         owner: *owner,
                         name: *name,
@@ -865,7 +795,7 @@ fn build_with_intrinsic_members_structural_mode(
             }
         }
     } else {
-        member_normalization::normalize_groups_mode(&mut tree, &mut members, &modes, groups,diagnostics.is_some());
+        member_normalization::normalize_groups(&mut tree, &mut members, &modes, groups);
     }
     drop(member_install_profile);
     drop(member_install_timer);
@@ -882,14 +812,13 @@ fn build_with_intrinsic_members_structural_mode(
         )?
     } else {
         let member_count = members.len();
-        member_normalization::resolve_previous_diagnostic(
+        member_normalization::resolve_previous(
             &tree,
             &mut members,
             &modes,
             root,
             &callable_kinds,
             0..member_count,
-            diagnostics,
         )?;
         None
     };
@@ -922,7 +851,6 @@ fn build_with_intrinsic_members_structural_mode(
     for (node, ids) in mutable_types.iter_mut().zip(owned) {
         node.members = ids.into();
     }
-    tree.checker_profile_validation.clear();
     tree.types = mutable_types.into();
     tree.members = match normalization {
         Some((_, retained)) => retained.publish_members(&members, member_projection.as_ref()),
@@ -1042,11 +970,3 @@ mod shared_indexes_tests;
 
 #[cfg(test)]
 mod declaration_chain_tests;
-
-impl SemanticTree{
- /// Resource-only traversal of the same actual parser/signature ownership.
- /// This never creates source/model authority or changes semantic identity.
- pub fn visit_original_input_retention(&self,mut visit:impl FnMut(usize,usize,usize)){
-  if let Some(owner)=&self.original_input_retention{visit(Arc::as_ptr(owner)as usize,std::mem::size_of_val(owner.as_ref()),std::mem::align_of_val(owner.as_ref()));owner.visit_resource_storage(&mut visit);}
- }
-}

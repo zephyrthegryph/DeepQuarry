@@ -41,7 +41,9 @@
 	// instead of every timed-delete type calling expire()/QDEL_IN by hand.
 	lifecycle_arm_lifetime()
 	if(proximity_tracked)
+		MOVE_COST_BEGIN(proximity_started)
 		SSproximity.member_update(src)
+		MOVE_COST_END(MOVE_COST_PROXIMITY, proximity_started)
 
 	emissive_blocker_attach()
 
@@ -49,11 +51,10 @@
 		start_blocking_light()
 	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || STATE_PEEK(src, movable_misc, icon_rotation) != DEFAULT_ICON_ROTATION)
 		update_transform()
-	switch(atom_rules_of(src).light_system)
-		if(MOVABLE_LIGHT)
-			add_overlay_lighting(src, starts_on = light_on)
-		if(MOVABLE_LIGHT_DIRECTIONAL)
-			add_overlay_lighting(src, is_directional = TRUE, starts_on = light_on)
+	// A movable light that is dark now (a hat with no lamp, a flashlight switched off) makes no overlay light: light_changed() makes it when the light first casts.
+	// The overlay light is up to three more atoms and eight observers, and most head items and flashlights are never lit.
+	if(atom_casts_light(src))
+		add_movable_light()
 
 /// World registration moved out of Initialize() (L2): radiation shielding,
 /// static lighting and recursive listening reach outside the object.
@@ -118,6 +119,7 @@
 	// Destroy() ever runs. Nothing decides that here any more; phase 3 itself
 	// checks that it released them (dq_lifecycle_check_released()).
 	emissive_blocker_detach()
+	client_flat_light_drop(src)
 	// Leave the turf's opacity_sources while loc is still valid.
 	stop_blocking_light()
 	. = ..()
@@ -156,6 +158,7 @@
 	if(!loc || !newloc)
 		return FALSE
 
+	MOVE_COST_BEGIN(move_started)
 	var/datum/act/pre_move/step = ACT_ATTEMPT(src, pre_move, direct, newloc)
 	if(ACT_REFUSED_BY(step))
 		return FALSE
@@ -222,6 +225,9 @@
 				// Multi-tile objects can't reach here, otherwise you'd need to avoid uncrossing yourself
 				// ALLOW(spatial): Move() hot path, raw Crossed loop avoids a list copy per step
 				for(var/atom/movable/thing as anything in loc)
+					// The mover is in loc now: it does not cross itself (BYOND's own Crossed never names the mover, nor does doMove()).
+					if(thing == src)
+						continue
 					// We don't call parent so we are calling this for byond
 					thing.Crossed(src, oldloc)
 
@@ -288,9 +294,12 @@
 		STATE_SET(src, movement_log, last_move, 0)
 		return
 
+	MOVE_COST_END(MOVE_COST_MOVE, move_started)
 	// If we moved, call Moved() on ourselves
 	if(.)
+		MOVE_COST_BEGIN(moved_started)
 		Moved(oldloc, direct, FALSE, movetime ? movetime : MOVE_GLIDE_CALC(glide_size, moving_diagonally) )
+		MOVE_COST_END(MOVE_COST_MOVED, moved_started)
 
 	// Update timers/cooldown stuff
 	STAMP(src, l_move_time, CLOCK_WORLD)
@@ -303,13 +312,19 @@
 	if((rx?.look_key || rel_watchers) && dir != rx?.look_seen_dir)
 		rx_of(src).look_seen_dir = dir
 		tracked_changed(src, nameof(dir))
+	MOVE_COST_BEGIN(notices_started)
 	if(STATE_PEEK(src, movable_misc, blocks_light))
+		MOVE_COST_BEGIN(blocking_started)
 		light_blocking_moved(old_loc)
+		move_cost_listener(blocking_started, "light blocking", "moved", "light_blocking_moved", src)
 	if(WANTS(src, /datum/notice/moved))
 		PUBLISH(src, move, old_loc = old_loc, direction = direction, forced = forced)
 	// A window watching this thing as its host re-checks its status (code/modules/tgui/ui_status.dm); nobody else reads this key.
 	if(rx?.observed)
+		MOVE_COST_BEGIN(loc_change_started)
 		PUBLISH_CHANGE(src, ATOM_KEY_LOC)
+		move_cost_listener(loc_change_started, "key change", "loc", "publish_key_changed", src)
+	MOVE_COST_END(MOVE_COST_NOTICES, notices_started)
 	loc_changed(old_loc)
 	// Covers Destroy() too, which moves to nullspace.
 	if(rad_insulation != RAD_NO_INSULATION)
@@ -321,31 +336,41 @@
 	if(riding_datum)
 		riding_datum.handle_vehicle_layer()
 		riding_datum.handle_vehicle_offsets()
+	MOVE_COST_BEGIN(lights_started)
 	for (var/datum/light_source/light as anything in light_sources) // Cycle through the light sources on this atom and tell them to update.
 		light.source_atom.update_light()
+	MOVE_COST_END(MOVE_COST_LIGHTS, lights_started)
+	MOVE_COST_BEGIN(heat_started)
 	if(!isnull(heat_body))
 		heat_recouple()
 	if(GLOB.heat_followers_of[src])
 		heat_followers_moved(src)
+	MOVE_COST_END(MOVE_COST_HEAT, heat_started)
 	if(proximity_tracked)
 		SSproximity.member_update(src)
-	if(refresh_queued & DEP_PARKED)
-		interest_parked_moved(src) // a draw owed and a chunk now held: it draws (engine/change/interest.dm)
-	if(length(GLOB.interest_anchors))
-		interest_anchor_moved(src) // it may carry a client's eye or mob
+	MOVE_COST_BEGIN(gaze_started)
+	if(length(GLOB.gaze_anchors))
+		gaze_anchor_moved(src) // it may carry a client's eye or mob
+	MOVE_COST_END(MOVE_COST_INTEREST, gaze_started)
 	if(lifeform_moves)
+		MOVE_COST_BEGIN(lifeform_started)
 		lifeform_moved(src, old_loc) // registry(by = REG_Z | REG_AREA) and adjacency() (code/engine/lifeforms/)
+		MOVE_COST_END(MOVE_COST_LIFEFORM, lifeform_started)
 	return TRUE
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
 	// One publish; it returns before any turf lookup while nothing is subscribed (Q12).
 	if(GLOB.mob_chunk_watches || (client && GLOB.player_chunk_watches) || length(GLOB.mob_chunks))
+		MOVE_COST_BEGIN(publish_started)
 		publish_mob_move(old_loc, src, !!client)
+		MOVE_COST_END(MOVE_COST_MOB_PUBLISH, publish_started)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
+		MOVE_COST_BEGIN(eye_started)
 		restore_remote_views()
 		SSproximity.eye_update(client)
+		MOVE_COST_END(MOVE_COST_EYE, eye_started)
 
 /atom/movable/set_dir(newdir)
 	. = ..(newdir)
@@ -534,13 +559,19 @@ ACTION(movable_bump, atom/bumped_into, FIXED, notice = /datum/notice/movable_bum
 /// write takes: the stat layer re-attaches the thing to its new container's readers (stat_hop_attach), derived() entries and on_change() hooks that
 /// read it re-evaluate, a pending operation re-resolves its watched pairs. Nothing runs while nothing reads `loc`.
 /atom/movable/proc/loc_changed(atom/old_loc)
+	MOVE_COST_BEGIN(reads_started)
 	if(GLOB.stat_input_keys?[nameof(loc)] || GLOB.derived_read_vars?[nameof(loc)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(loc))))
 		own_field_changed(src, nameof(loc))
+	MOVE_COST_END(MOVE_COST_LOC_READS, reads_started)
 	// A draw that reads `loc` (a syringe drawn upright in a case) redraws: the plan names it, and no reaction or stat has to read it for the look to follow the move.
+	MOVE_COST_BEGIN(draw_started)
 	if(plan_bits(src, nameof(loc)) & PLAN_DRAW)
 		tracked_changed(src, nameof(loc))
+	MOVE_COST_END(MOVE_COST_LOC_DRAW, draw_started)
 	// The turf and area hops: what reads get_turf(src).x or get_area(src).x, here or on anything inside this (refs/hops.dm).
+	MOVE_COST_BEGIN(hops_started)
 	hop_moved(src, old_loc)
+	MOVE_COST_END(MOVE_COST_HOPS, hops_started)
 
 /// From base of atom/movable/on_changed_z_level(): (turf/old_turf, turf/new_turf, same_z_layer)
 ACTION(movable_z_changed, old_z, new_z, FIXED, notice = /datum/notice/movable_z_changed)
@@ -908,10 +939,9 @@ CAPABILITIES(/atom/movable/overlay)
 // The throw_of relation's view field: its on_unlink() clears it.
 
 CAPABILITIES(/atom/movable)
-	section(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): airborne, cloak, latency, movable_misc, movement_log, swarm")
+	section(lazy_state, "Rare state, one lazy row per feature in an engine table (storage contract): airborne, cloak, movable_misc, movement_log, swarm")
 	lazy_state(airborne, /datum/airborne_state)
 	lazy_state(cloak, /datum/cloak_state)
-	lazy_state(latency, /datum/latency_state)
 	lazy_state(movable_misc, /datum/movable_misc_state)
 	lazy_state(movement_log, /datum/movement_log_state)
 	lazy_state(swarm, /datum/swarm_state)
@@ -932,6 +962,7 @@ CAPABILITIES(/atom/movable)
 	links(LINK_END(/obj/item/grab, LK_GRABBING), LINK_END(/mob/living, LK_GRABBED_BY), sparse = TRUE, b_many = TRUE, a_on_other_deleted = OTHER_DELETE_ME, b_on_unlink = TYPE_PROC_REF(/mob/living, grab_released))
 	// the default drag of every movable: buckle the dragged mob (code/game/objects/buckling.dm)
 	op("drag_buckle", item(/mob/living), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT), label("Buckle"), when(all_of(nameof(can_buckle), nameof(drag_buckle))), then(PROC_REF(interaction_drag_buckle)))
+	op("disconnect_hose", menu(desc = "Quickly disconnect a hose from all machines it is attached to."), label("Disconnect Hose"), needs(req_adjacent(), req_capable(), req(PROC_REF(has_hosed_socket), fails = FAILS_HIDDEN)), asks(/datum/prompt/choice, fields = list("title" = "Socket Disconnect", "question" = "Select a target hose connector.", "choices" = computed(PROC_REF(hose_socket_choices)), "timeout" = 0), step = "socket", when = PROC_REF(hose_needs_choice)), then(PROC_REF(disconnect_hose_chosen)))
 	op("vv_get_movable", topic_in(VV_TOPIC, VV_HK_GET_MOVABLE), needs(req_rights(R_ADMIN)), then(PROC_REF(vv_topic_get_movable)))
 	op("vv_edit_particles", topic_in(VV_TOPIC, VV_HK_EDIT_PARTICLES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_particles)))
 	ref_one(nameof(throwing))

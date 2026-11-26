@@ -25,9 +25,8 @@ MSG_DEF_SELF(secure_closet/inside, "You can't reach the lock from inside.")
 // and works the lock of one that is locked; only a shut locker has a lock to reach, and not from inside.
 CAPABILITIES(/obj/structure/closet/secure_closet)
 	click_order(BIND_HAND, "door", "lock.toggle_worn")
-	lock(starts_locked = nameof(locked))
+	lock(starts_locked = nameof(locked), touch = TRUE)
 	extend(CAP_LOCK, needs(req_is(nameof(opened), FALSE, because = MSG(secure_closet/close_first)), req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req(PROC_REF(actor_outside), because = MSG(secure_closet/inside))), plays(SFX_MACHINES_CLICK))
-	extend("lock.toggle_worn", binds(menu()), label("Toggle Lock"))
 	extend("door", when(not(LOCK_LOCKED)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	extend("emag.use", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))
@@ -141,9 +140,15 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 	if(owner_ref())
 		name = "Owned by [owner_ref().name]"
 		if(owner_ref().current)
-			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)
-			set_owner_picture(image(I, pixel_x = (32 - I.Width())))
-			spent(I)
+			var/datum/portrait/P = portrait_request(owner_ref().current, SOUTH, src, PROC_REF(owner_portrait_ready))
+			if(P)
+				owner_portrait_ready(P)
+
+/// The owner's portrait (the shared portrait cache) landed: it is the closet's picture.
+/obj/structure/closet/secure_closet/mind/proc/owner_portrait_ready(datum/portrait/P)
+	if(!P?.picture)
+		return
+	set_owner_picture(image(P.picture, pixel_x = (32 - P.picture.Width())))
 
 /obj/structure/closet/secure_closet/mind/closet_look(datum/look/look)
 	..()

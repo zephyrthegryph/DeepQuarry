@@ -8,10 +8,11 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
+import type { RetailScannerActions } from '../generated/RetailScanner';
 import type { Data } from './types';
 
 export const RetailScannerSettings = (model) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RetailScannerActions>();
   const { locked, linked_account } = data;
   const [accountName, setAccountName] = useState('');
   const [accountPin, setAccountPin] = useState('');

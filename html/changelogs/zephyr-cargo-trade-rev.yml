@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Trader prices now follow three standing layers (station, Cargo, and the trader's own regard earned deal by deal), shown per layer with its price effect on the Market and Trade ships tabs."
+  - rscadd: "Salvage lot and Surplus freight lot crates in the Supplies catalog: unlisted mixed lots to appraise, resell or break down."
+  - rscadd: "The recycling crusher breaks down an item and everything inside it."
+  - rscdel: "Removed the cargo appraiser, the salvage smelter and the black-market customs interdiction system."
+  - rscadd: "Station Wiki cargo guides updated for standing, lots and recycling salvage."

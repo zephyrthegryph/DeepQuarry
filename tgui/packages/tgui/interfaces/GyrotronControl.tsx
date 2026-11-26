@@ -1,7 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Knob, Section, Table } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import { EmptyState } from './common/EmptyState';
+import type {
+  GyrotronControlActions,
+  GyrotronControlData,
+} from './generated/GyrotronControl';
 
 export const GyrotronControl = () => (
   <Window width={627} height={700}>
@@ -11,24 +15,12 @@ export const GyrotronControl = () => (
   </Window>
 );
 
-type Data = {
-  gyros: {
-    name: string;
-    x: number;
-    y: number;
-    z: number;
-    active: BooleanLike;
-    deployed: BooleanLike;
-    ref: string;
-    fire_delay: number;
-    strength: number;
-  }[];
-};
+type Data = GyrotronControlData;
 
 export const GyrotronControlContent = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GyrotronControlActions>();
 
-  const { gyros } = data;
+  const { gyros = [] } = data;
 
   return (
     <Section
@@ -41,6 +33,11 @@ export const GyrotronControlContent = (props) => {
         </Button>
       }
     >
+      {gyros.length === 0 && (
+        <EmptyState>
+          No gyrotrons are linked. Set the tag to match one.
+        </EmptyState>
+      )}
       <Table>
         <Table.Row header>
           <Table.Cell>Name</Table.Cell>

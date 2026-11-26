@@ -41,7 +41,7 @@ type UpgradeEntry = {
 };
 
 export function cmdUpgrade(args: readonly string[], ctx: CommandContext): void {
-  const { gRef, setG, print, act } = ctx;
+  const { gRef, setG, print } = ctx;
   const state = gRef.current;
   if (!args[0]) {
     print('Usage: upgrade cpu|ram|stealth [--confirm]', '#ff8800');
@@ -95,7 +95,6 @@ export function cmdUpgrade(args: readonly string[], ctx: CommandContext): void {
     if (part === 'ram') return { ...updated, ram: next };
     return { ...updated, stl: next };
   });
-  act('upgrade', { part: dmPart, cost: upgrade.cost });
   print(
     `${label} upgraded to ${upgrade.name}. ${fmtMoney(upgrade.cost)} charged.`,
     '#33ff33',
@@ -158,7 +157,7 @@ export function cmdShop(args: readonly string[], ctx: CommandContext): void {
 // ── buy ───────────────────────────────────────────────────────────────────────
 
 export function cmdBuy(args: readonly string[], ctx: CommandContext): void {
-  const { gRef, setG, print, act } = ctx;
+  const { gRef, setG, print } = ctx;
   const state = gRef.current;
   if (!args[0]) {
     print('Usage: buy <item-id>', '#ff8800');
@@ -181,7 +180,6 @@ export function cmdBuy(args: readonly string[], ctx: CommandContext): void {
       wallet: prev.wallet - cost,
       hasFragHarvester: true,
     }));
-    act('buy_item', { id: 'FHVST', cost });
     print(`Fragment Harvester installed. Cost: ${fmtMoney(cost)}`, '#33ff33');
     return;
   }
@@ -202,14 +200,13 @@ export function cmdBuy(args: readonly string[], ctx: CommandContext): void {
     wallet: prev.wallet - cost,
     inv: inv as typeof state.inv,
   }));
-  act('buy_item', { id: iid, cost });
   print(`Purchased ${item.name}. Cost: ${fmtMoney(cost)}`, '#33ff33');
 }
 
 // ── use ───────────────────────────────────────────────────────────────────────
 
 export function cmdUse(args: readonly string[], ctx: CommandContext): void {
-  const { gRef, setG, print, act } = ctx;
+  const { gRef, setG, print } = ctx;
   const state = gRef.current;
   if (args.length < 2) {
     print('Usage: use <item-id> <job-id>', '#ff8800');
@@ -237,7 +234,6 @@ export function cmdUse(args: readonly string[], ctx: CommandContext): void {
     ),
     inv: { ...prev.inv, XPL: prev.inv.XPL - 1 },
   }));
-  act('use_xpl', { job_id: jid });
   print(
     `Exploit Kit applied to job ${jid}. Crack time reduced 30%.`,
     '#33ff33',

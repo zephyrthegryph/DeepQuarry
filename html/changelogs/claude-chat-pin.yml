@@ -1,0 +1,5 @@
+author: "Claude"
+delete-after: true
+changes:
+  - rscadd: "The chat is pinned to the bottom right (or top right) of the right-hand column by default, with the stat panel taking the rest; its size is remembered, and it can float in its own window you drag by a header and resize by a grip, and snaps back to the right edge"
+  - qol: "The chat input row has a channel button on the left, like the say popup, that cycles Say, Radio, Me, OOC and LOOC on click or Tab"

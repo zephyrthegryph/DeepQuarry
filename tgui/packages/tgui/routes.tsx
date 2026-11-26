@@ -4,16 +4,21 @@
  * @license MIT
  */
 
-import { useAtomValue } from 'jotai';
+import { Provider, useAtomValue } from 'jotai';
 import {
-  Component,
   type ComponentType,
-  type ErrorInfo,
   lazy,
   type ReactNode,
   Suspense,
+  useContext,
   useEffect,
 } from 'react';
+import { Button } from 'tgui-core/components';
+import {
+  type EmbeddedBackend,
+  EmbeddedContext,
+  setActiveEmbedded,
+} from './embedded';
 import { backendStateAtom, configAtom, store } from './events/store';
 import { registerInterfacePreparer } from './interfacePreparation';
 import { LoadingScreen } from './interfaces/common/LoadingScreen';
@@ -21,6 +26,7 @@ import { LobbyMenu } from './interfaces/LobbyMenu';
 import { MediaPlayer } from './interfaces/MediaPlayer';
 import { Window } from './layouts';
 import { profileStartup } from './profiling/hooks';
+import { ReloadBoundary } from './ReloadBoundary';
 import { revealIfUnclaimed } from './reveal';
 
 // EAGER interfaces — kept in the main bundle, never lazy-split. These are the
@@ -60,10 +66,13 @@ const availableKeys = new Set<string>(requireInterface.keys());
 type RoutingErrorProps = {
   type: 'notFound' | 'missingExport' | 'unknown';
   name: string;
+  /** What failed, for `unknown`. */
+  message?: string;
+  reload?: () => void;
 };
 
 export function RoutingErrorWindow(props: RoutingErrorProps) {
-  const { type, name } = props;
+  const { type, name, message, reload } = props;
 
   return (
     <Window>
@@ -78,7 +87,14 @@ export function RoutingErrorWindow(props: RoutingErrorProps) {
             Interface <b>{name}</b> is missing an export.
           </div>
         )}
-        {type === 'unknown' && <div>An unknown error has occurred.</div>}
+        {type === 'unknown' && (
+          <div>
+            <div>
+              {name} failed: {message ?? 'an unknown error has occurred.'}
+            </div>
+            {reload && <Button onClick={reload}>Reload</Button>}
+          </div>
+        )}
       </Window.Content>
     </Window>
   );
@@ -317,54 +333,56 @@ function RevealWindow({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-// Catches errors thrown while loading or rendering a routed interface — most
-// importantly a failed chunk fetch (e.g. the async chunk hadn't reached the BYOND
-// cache yet) — and shows the standard error window instead of a blank page.
-type RouteBoundaryProps = { name: string; children: ReactNode };
-type RouteBoundaryState = { hasError: boolean };
+/** Looked up on each mount, so a reload after a failed chunk fetches it again. */
+function RoutedInterface(props: { name: string }) {
+  const Routed = getRoutedComponent(props.name);
+  const content = <Routed />;
+  return SELF_MANAGED.has(props.name) ? (
+    content
+  ) : (
+    <RevealWindow>{content}</RevealWindow>
+  );
+}
 
-class RouteErrorBoundary extends Component<
-  RouteBoundaryProps,
-  RouteBoundaryState
-> {
-  constructor(props: RouteBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
+function EmbeddedInterfaceContent(props: { name: string }) {
+  const Routed = getRoutedComponent(props.name);
+  return <Routed />;
+}
 
-  static getDerivedStateFromError(): RouteBoundaryState {
-    return { hasError: true };
-  }
+/** Forgets a failed load; a resolved interface stays. */
+function forgetFailedInterface(name: string) {
+  if (resolvedComponentCache.has(name)) return;
+  componentCache.delete(name);
+  moduleCache.delete(name);
+}
 
-  componentDidUpdate(prevProps: RouteBoundaryProps) {
-    // Reset when routing to a different interface so a prior failure doesn't
-    // pin the error window for the next, unrelated interface.
-    if (prevProps.name !== this.props.name && this.state.hasError) {
-      this.setState({ hasError: false });
-    }
-  }
-
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    // Surface to the console (picked up by the tgui logging/error pipeline). This is
-    // the path a failed chunk fetch lands on, so make it visible rather than silent.
-    console.error(
-      `Interface "${this.props.name}" failed to load:`,
-      error,
-      info,
-    );
-  }
-
-  render() {
-    if (this.state.hasError) {
-      // Reveal the error window — the failed content never mounted to reveal itself.
-      return (
-        <RevealWindow>
-          <RoutingErrorWindow type="unknown" name={this.props.name} />
-        </RevealWindow>
-      );
-    }
-    return this.props.children;
-  }
+/**
+ * The window's content boundary (ReloadBoundary): a floating window's error screen must reveal itself, as the content that failed
+ * never did; an embedded one has no native window to reveal.
+ */
+function InterfaceBoundary(props: { name: string; children: ReactNode }) {
+  const { name, children } = props;
+  const embedded = !!useContext(EmbeddedContext);
+  return (
+    <ReloadBoundary
+      name={name}
+      resetKey={name}
+      onReload={() => forgetFailedInterface(name)}
+      renderError={(message, reload) => {
+        const screen = (
+          <RoutingErrorWindow
+            type="unknown"
+            name={name}
+            message={message}
+            reload={reload}
+          />
+        );
+        return embedded ? screen : <RevealWindow>{screen}</RevealWindow>;
+      }}
+    >
+      {children}
+    </ReloadBoundary>
+  );
 }
 
 export function RoutedComponent() {
@@ -407,7 +425,6 @@ export function RoutedComponent() {
     );
   }
 
-  const Component = getRoutedComponent(name);
   profileStartup('route_requested', name);
 
   // The Suspense fallback is null (not a <Window>): while the interface chunk loads,
@@ -416,18 +433,49 @@ export function RoutedComponent() {
   // mounts — except for SELF_MANAGED interfaces (Tooltip), which winset their own
   // is-visible and must not be auto-revealed (doing so flashes an empty overlay box).
   const content = (
-    <RouteErrorBoundary name={name}>
+    <InterfaceBoundary name={name}>
       <Suspense fallback={null}>
-        {SELF_MANAGED.has(name) ? (
-          <Component />
-        ) : (
-          <RevealWindow>
-            <Component />
-          </RevealWindow>
-        )}
+        <RoutedInterface name={name} />
       </Suspense>
-    </RouteErrorBoundary>
+    </InterfaceBoundary>
   );
 
   return content;
+}
+
+/**
+ * One interface embedded in a page that hosts several (the right-hand
+ * column, doc/rewrite/proposals/window_system.md section 12): its own store
+ * and channel, its own error boundary (a crash shows the error window in this
+ * window only), and no native window to reveal.
+ */
+export function EmbeddedInterface(props: { backend: EmbeddedBackend }) {
+  const { backend } = props;
+  return (
+    <Provider store={backend.store}>
+      <EmbeddedContext.Provider value={backend}>
+        <div
+          className="EmbeddedInterface"
+          onPointerDownCapture={() => setActiveEmbedded(backend)}
+        >
+          <EmbeddedRoute />
+        </div>
+      </EmbeddedContext.Provider>
+    </Provider>
+  );
+}
+
+function EmbeddedRoute() {
+  const { config } = useAtomValue(backendStateAtom);
+  const name = config?.interface?.name;
+  if (!name) {
+    return null;
+  }
+  return (
+    <InterfaceBoundary name={name}>
+      <Suspense fallback={null}>
+        <EmbeddedInterfaceContent name={name} />
+      </Suspense>
+    </InterfaceBoundary>
+  );
 }

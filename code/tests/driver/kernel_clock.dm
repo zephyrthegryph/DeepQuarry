@@ -44,8 +44,7 @@
 	// The kernel's own infrastructure systems (the inbox, requests, jobs) and the Life sweep run in the test graph while the test owns the
 	// clock; a sequence's sweep runs as in the game run level.
 	for(var/datum/work_item/W as anything in K.work_all)
-		// The periodic cadences (PERIODIC_SLOW...) are stepped on the test clock too, so an cadence_start() member ticks under test_time().
-		if((W.owner_type in GLOB.kernel_test_systems) || istype(W, /datum/work_item/cadence))
+		if(W.owner_type in GLOB.kernel_test_systems)
 			W.test_owned = TRUE
 			if(istype(W, /datum/work_item/sequence))
 				// In the game run level, and unspread: every member runs when the interval comes due (a test's few mobs all get
@@ -76,7 +75,7 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 	if(live)
 		live.world_pass_delivered = null
 	for(var/datum/work_item/W as anything in K.work_all)
-		if((W.owner_type in GLOB.kernel_test_systems) || istype(W, /datum/work_item/cadence))
+		if(W.owner_type in GLOB.kernel_test_systems)
 			W.test_owned = FALSE
 			W.test_reset()
 			if(istype(W, /datum/work_item/sequence))

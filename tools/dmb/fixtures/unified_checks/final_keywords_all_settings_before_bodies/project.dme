@@ -1,9 +1,0 @@
-/datum/z/proc/zeta()
-    set mystery_z=1
-    return missing_z
-/datum/a/proc/alpha()
-    set mystery_a=1
-    return missing_a
-/proc/root_case()
-    set mystery_root=1
-    return missing_root

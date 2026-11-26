@@ -1,6 +1,0 @@
-/datum/type_probe
-    var/missing/unused
-/proc/probe(missing/argument)
-    var/missing/local
-    var/list/list/missing/nested
-    return argument

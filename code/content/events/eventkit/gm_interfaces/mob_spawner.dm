@@ -17,15 +17,17 @@
 
 CAPABILITIES(/datum/eventkit/mob_spawner)
 	interface("MobSpawner", title = "EventKit - Mob Spawner", rights = R_ADMIN|R_EVENT|R_DEBUG)
+	ui_shape(initial_x = int(), initial_y = int(), initial_z = int(), loc_lock = bool(), use_custom_ai = bool(), ai_type = schema_text(), faction = schema_text(), intent = schema_text(), loc_x = nullable(int()), loc_y = nullable(int()), loc_z = nullable(int()), path = nullable(schema_path()), path_name = nullable(schema_text()), desc = nullable(schema_text()), flavor_text = nullable(schema_text()), max_health = nullable(num()), health = nullable(num()), melee_damage_lower = nullable(num()), melee_damage_upper = nullable(num()))
 	op("select_path", ui_act("select_path"), asks(/datum/prompt/choice/mob_spawner_setting/path, fields = list("choices" = computed(PROC_REF(mob_paths))), step = "value"), then(PROC_REF(ui_act_select_path)))
 	op("toggle_custom_ai", ui_act("toggle_custom_ai"), then(PROC_REF(ui_act_toggle_custom_ai)))
 	op("set_faction", ui_act("set_faction"), asks(/datum/prompt/text/mob_spawner_faction, fields = list("default" = computed(PROC_REF(faction_default))), step = "value"), then(PROC_REF(ui_act_set_faction)))
 	op("set_intent", ui_act("set_intent"), asks(/datum/prompt/choice/mob_spawner_setting/intent, fields = list("default" = computed(PROC_REF(intent_default))), step = "value"), then(PROC_REF(ui_act_set_intent)))
 	op("set_ai_path", ui_act("set_ai_path"), then(PROC_REF(ui_act_set_ai_path)))
 	op("loc_lock", ui_act("loc_lock"), then(PROC_REF(ui_act_loc_lock)))
-	op("start_spawn", ui_act("start_spawn", arg("amount", num()), arg("desc", schema_text(4096)), arg("flavor_text", schema_text(4096)), arg("health", num()), arg("max_health", num()), arg("melee_damage_lower", num()), arg("melee_damage_upper", num()), arg("name", schema_text(4096)), arg("size_multiplier", num()), arg("x", schema_text(4096)), arg("y", schema_text(4096)), arg("z", schema_text(4096))), asks(/datum/prompt/choice/mob_spawner_spawn, step = "confirm"), then(PROC_REF(ui_act_start_spawn)))
+	op("start_spawn", ui_act("start_spawn", arg("amount", num()), arg("desc", schema_text(4096)), arg("flavor_text", schema_text(4096)), arg("health", num()), arg("max_health", num()), arg("melee_damage_lower", num()), arg("melee_damage_upper", num()), arg("name", schema_text(4096)), arg("size_multiplier", num()), arg("x", num()), arg("y", num()), arg("z", num())), asks(/datum/prompt/choice/mob_spawner_spawn, step = "confirm"), then(PROC_REF(ui_act_start_spawn)))
 
-/datum/eventkit/mob_spawner/tgui_static_data(mob/user)
+/datum/eventkit/mob_spawner/ui_static_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["initial_x"] = user.x;
@@ -152,17 +154,16 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 		to_chat(original_actor, span_warning("Name cannot be empty."))
 		return FALSE
 
-	var/turf/T = locate(x, y, z)
+	var/turf/T = isnum(x) && isnum(y) && isnum(z) ? locate(x, y, z) : null
 	if(!T)
 		to_chat(original_actor, span_warning("Those coordinates are outside the boundaries of the map."))
 		return FALSE
 
 	for(var/i = 0, i < amount, i++)
 		if(ispath(path,/turf))
-			var/turf/TU = get_turf(locate(x, y, z))
-			TU.ChangeTurf(path)
+			T.ChangeTurf(path)
 		else
-			var/mob/M = new path(original_actor.loc)
+			var/mob/M = new path(T) // the typed coordinates, not where the admin stands
 
 			M.name = sanitize(name)
 			M.desc = sanitize(spawn_desc)

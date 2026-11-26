@@ -8,56 +8,15 @@ import {
   Section,
   Table,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  StockExchangeActions,
+  StockExchangeData,
+} from './generated/StockExchange';
 
-type Data = {
-  stationName: string;
-  balance: number;
-  screen: string;
-  viewMode: string | undefined;
-  stocks:
-    | {
-        REF: string;
-        valueChange: number;
-        bankrupt: BooleanLike;
-        ID: string;
-        Name: string;
-        Value: number;
-        Owned: number;
-        Avail: number;
-        Unification: string;
-        Products: string[];
-      }[]
-    | [];
-  logs:
-    | {
-        type: string;
-        time: number;
-        user_name: string;
-        stocks: string[];
-        shareprice: number;
-        money: number;
-        company_name: string;
-      }[]
-    | [];
-  name: string | undefined;
-  events: { current_title: string; current_desc: string }[] | undefined;
-  articles:
-    | {
-        headline: string;
-        subtitle: string;
-        article: string;
-        author: string;
-        spacetime: string;
-        outlet: string;
-      }[]
-    | undefined;
-  maxValue: number | undefined;
-  values: number[][] | undefined;
-};
+type Data = StockExchangeData;
 
 export const StockExchange = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, StockExchangeActions>();
 
   const { screen, stationName } = data;
 
@@ -82,7 +41,7 @@ export const StockExchange = (props) => {
 };
 
 const StockExchangeStockList = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { balance, stationName, viewMode } = data;
 
@@ -120,7 +79,7 @@ const StockExchangeStockList = (props) => {
 };
 
 const StockExchangeFullView = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { stocks = [] } = data;
 
@@ -129,7 +88,7 @@ const StockExchangeFullView = (props) => {
       <b>Actions:</b> + Buy, - Sell, (A)rchives, (H)istory
       <Divider />
       <Table>
-        <Table.Row>
+        <Table.Row header>
           <Table.Cell bold>&nbsp;</Table.Cell>
           <Table.Cell>ID</Table.Cell>
           <Table.Cell>Name</Table.Cell>
@@ -138,7 +97,6 @@ const StockExchangeFullView = (props) => {
           <Table.Cell>Avail</Table.Cell>
           <Table.Cell>Actions</Table.Cell>
         </Table.Row>
-        <Divider />
         {stocks.map((stock) => (
           <Table.Row key={stock.ID}>
             <Table.Cell bold>&nbsp;</Table.Cell>
@@ -179,7 +137,7 @@ const StockExchangeFullView = (props) => {
 };
 
 const StockExchangeCompactView = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { stocks = [] } = data;
 
@@ -188,7 +146,7 @@ const StockExchangeCompactView = (props) => {
       {stocks.map((stock) => (
         <Box key={stock.ID}>
           <span>{stock.Name}</span> <span>{stock.ID}</span>
-          {stock.bankrupt === 1 && <b color="red">BANKRUPT</b>}
+          {stock.bankrupt && <b color="red">BANKRUPT</b>}
           <br />
           <b>Unified shares</b> {stock.Unification} ago.
           <br />
@@ -201,7 +159,7 @@ const StockExchangeCompactView = (props) => {
           <br />
           There are {stock.Avail} purchasable shares on the market currently.
           <br />
-          {stock.bankrupt === 1 ? (
+          {stock.bankrupt ? (
             <span>You cannot buy or sell shares in a bankrupt company!</span>
           ) : (
             <span>
@@ -232,7 +190,7 @@ const StockExchangeCompactView = (props) => {
 
 // "<div><a href='byond://?src=[REF(src)];show_logs=1'>Refresh</a></div></br>"
 const StockExchangeLogs = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { logs = [] } = data;
 
@@ -279,7 +237,7 @@ const StockExchangeLogs = (props) => {
 };
 
 const StockExchangeArchive = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { name, events = [], articles = [] } = data;
 
@@ -324,7 +282,7 @@ const StockExchangeArchive = (props) => {
 };
 
 const StockExchangeGraph = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, StockExchangeActions>();
 
   const { name, maxValue, values = [] } = data;
 
@@ -335,9 +293,9 @@ const StockExchangeGraph = (props) => {
       <Section position="relative" height="100%">
         <Chart.Line
           fillPositionedParent
-          data={values}
+          data={values.map((value, i) => [i, value])}
           rangeX={[0, values.length - 1]}
-          rangeY={[0, maxValue!]}
+          rangeY={[0, maxValue]}
           strokeColor="rgba(0, 181, 173, 1)"
           fillColor="rgba(0, 181, 173, 0.25)"
         />

@@ -40,6 +40,9 @@ CAPABILITIES(/obj/item/tank/jetpack)
 		. += span_danger("The meter on \the [src] indicates you are almost out of gas!")
 		play_sfx(src, SFX_EFFECTS_ALERT)
 
+/obj/item/tank/jetpack/action_toggle_state(actiontype)
+	return on ? TRUE : FALSE
+
 /obj/item/tank/jetpack/proc/toggle_rockets_effect(mob/user, obj/item/held)
 	stabilization_on = !( stabilization_on )
 	to_chat(user, "You toggle the stabilization [stabilization_on? "on":"off"].")

@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Button, Icon, Section, Tabs } from 'tgui-core/components';
-
+import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import { GeneralRecordsViewGeneral } from './GeneralRecordsViewGeneral';
 import type { Data } from './types';
 
@@ -14,7 +14,7 @@ export const GeneralRecordsMaintenance = (props) => {
 };
 
 export const GeneralRecordsView = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GeneralRecordsActions>();
   const { general, printing } = data;
   return (
     <>
@@ -61,7 +61,7 @@ export const GeneralRecordsView = (props) => {
 };
 
 export const GeneralRecordsNavigation = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GeneralRecordsActions>();
   const { screen } = data;
   return (
     <Tabs>

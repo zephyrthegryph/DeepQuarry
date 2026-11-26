@@ -32,7 +32,6 @@ pub mod keys;
 pub mod own_decl;
 pub mod report;
 pub mod scan;
-pub(crate) mod work;
 
 use std::any::Any;
 use std::collections::{BTreeMap, BTreeSet};
@@ -40,12 +39,9 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 
-#[cfg(feature="legacy-sem")]
 use dreammaker::ast::{Expression, Statement, Term};
 
-#[cfg(feature="legacy-sem")]
 use crate::sem::ast::{stmt_blocks, stmt_exprs, walk_expr};
-#[cfg(feature="legacy-sem")]
 use crate::sem::Sem;
 use crate::tree::{Plan, Tree};
 use scan::{CallNode, Span};
@@ -115,8 +111,6 @@ pub enum Outcome {
     Rewrite(Rewrite),
     /// A site the codemod will not rewrite: a reason code from [`Codemod::reasons`] and what to do about it.
     Residue(&'static str, String),
-    /// Actual native query/admission I/O is never semantic residue.
-    Operational(std::io::Error),
 }
 
 impl Outcome {
@@ -138,19 +132,12 @@ pub struct Ctx<'a> {
     pub proc_name: &'a str,
     /// The call is a whole statement (its value is unused).
     pub stmt_level: bool,
-    pub sem: &'a dyn crate::codemod_facts::FactSource,
+    pub sem: &'a Sem,
     /// What the codemod's `prepare()` built once for the run (`()` for a codemod that has none).
     pub prep: &'a (dyn Any + Send + Sync),
-    /// Actual operation loan; None preserves old legacy allocation behavior.
-    pub work: Option<&'a dyn crate::policy_finish::admitted::Work>,
 }
 
 impl Ctx<'_> {
-    pub(crate) fn own_using(&self,text:&str)->std::io::Result<String>{work::own(self.work,text)}
-    pub(crate) fn format_using(&self,args:std::fmt::Arguments<'_>)->std::io::Result<String>{work::format(self.work,args)}
-    pub(crate) fn singleton_using<T>(&self,value:T)->std::io::Result<Vec<T>>{if let Some(work)=self.work{work.checkpoint()?;work.reserve(std::mem::size_of::<T>().checked_add(std::mem::size_of::<Vec<T>>()).ok_or_else(||work.overflow())?)?;}Ok(vec![value])}
-    pub(crate) fn row_using<T>(&self,rows:&mut Vec<T>)->std::io::Result<()>{work::row(self.work,rows)}
-    pub(crate) fn origin_using(&self)->std::io::Result<String>{self.format_using(format_args!("{}:{}",self.rel,self.line))}
     pub fn arg_text(&self, i: usize) -> &str {
         self.node.args.get(i).map(|a| a.span.text(self.text)).unwrap_or("")
     }
@@ -187,7 +174,7 @@ pub trait Codemod: Send + Sync {
         &[]
     }
     /// Facts the rewrite of every site shares, built once from the whole tree.
-    fn prepare(&self, _tree: &Tree, _sem: &dyn crate::codemod_facts::FactSource) -> Arc<dyn Any + Send + Sync> {
+    fn prepare(&self, _tree: &Tree, _sem: &Sem) -> Arc<dyn Any + Send + Sync> {
         Arc::new(())
     }
     /// TRUE for a codemod that also inserts declarations (its output adds lines, so the "no line added" gate does not apply to it).
@@ -196,15 +183,11 @@ pub trait Codemod: Send + Sync {
     }
     /// The edits that declare what the rewritten sites asked for, as (file, edits) in each file's own coordinates.
     /// The edits for the definitions the kept sites asked to follow (`Rewrite::follows`), as (file, edits).
-    fn follow_edits(&self, _root: &Path, _tree: &Tree, _sem: &dyn crate::codemod_facts::FactSource, _prep: &(dyn Any + Send + Sync), _follows: &[String]) -> Vec<(String, Vec<Edit>)> {
+    fn follow_edits(&self, _root: &Path, _tree: &Tree, _sem: &Sem, _prep: &(dyn Any + Send + Sync), _follows: &[String]) -> Vec<(String, Vec<Edit>)> {
         Vec::new()
     }
-    /// Same empty default as follow_edits; a producer that follows handlers
-    /// implements this admitted ingress over actual per-file loans as well.
-    fn follow_edits_admitted(&self,_root:&Path,_lexical:&dyn LexicalFiles,_sem:&dyn crate::codemod_facts::FactSource,_prep:&(dyn Any+Send+Sync),_follows:&[String],work:&dyn crate::policy_finish::admitted::Work)->std::io::Result<Vec<(String,Vec<Edit>)>>{work.checkpoint()?;Ok(Vec::new())}
-    fn declaration_edits_admitted(&self, _root:&Path,_sem:&dyn crate::codemod_facts::FactSource,_prep:&(dyn Any+Send+Sync),_physical:&dyn PhysicalFiles,_needs:&[Need],_work:&dyn crate::policy_finish::admitted::Work)->std::io::Result<Vec<(String,Vec<Edit>)>>{Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"codemod has no admitted declaration producer"))}
-    fn declaration_edits(&self, _root: &Path, _tree: &Tree, _sem: &dyn crate::codemod_facts::FactSource, _prep: &(dyn Any + Send + Sync), _physical:&dyn PhysicalFiles, _needs: &[Need]) -> std::io::Result<Vec<(String, Vec<Edit>)>> {
-        Ok(Vec::new())
+    fn declaration_edits(&self, _root: &Path, _tree: &Tree, _sem: &Sem, _prep: &(dyn Any + Send + Sync), _needs: &[Need]) -> Vec<(String, Vec<Edit>)> {
+        Vec::new()
     }
 }
 
@@ -243,19 +226,18 @@ pub fn find(name: &str) -> Option<Box<dyn Codemod>> {
 
 /// A call the parser reported.
 #[derive(Clone, Debug)]
-pub struct Cand {
-    pub rel: String,
-    pub line: u32,
-    pub col: u32,
-    pub callee: String,
-    pub argc: usize,
-    pub owner: String,
-    pub proc_name: String,
-    pub stmt_level: bool,
+struct Cand {
+    rel: String,
+    line: u32,
+    col: u32,
+    callee: String,
+    argc: usize,
+    owner: String,
+    proc_name: String,
+    stmt_level: bool,
 }
 
 /// Every unscoped call of one of `names` in a proc body, with where the parser saw it.
-#[cfg(feature="legacy-sem")]
 fn candidates(sem: &Sem, names: &[&str]) -> Vec<Cand> {
     let mut out: Vec<Cand> = Vec::new();
     for ty in sem.objtree.iter_types() {
@@ -285,7 +267,6 @@ fn candidates(sem: &Sem, names: &[&str]) -> Vec<Cand> {
 }
 
 /// Every expression of a block with whether it is a whole expression statement (`foo(...)` on its own).
-#[cfg(feature="legacy-sem")]
 fn walk_stmts<'a>(b: &'a dreammaker::ast::Block, f: &mut dyn FnMut(&'a Expression, bool)) {
     for st in b.iter() {
         let whole = matches!(&st.elem, Statement::Expr(e) if matches!(e, Expression::Base { follow, .. } if follow.is_empty()));
@@ -317,20 +298,6 @@ fn line_starts(text: &str) -> Vec<usize> {
     v
 }
 
-fn line_starts_using(text:&str,work:Option<&dyn crate::policy_finish::admitted::Work>)->std::io::Result<Vec<usize>>{
- let count=work::size(work,text.bytes().filter(|byte|*byte==b'\n').count().checked_add(1))?;
- let mut rows=work::vec_capacity(work,count)?;rows.push(0);
- for(index,byte)in text.bytes().enumerate(){if index%1024==0{work::checkpoint(work)?;}if byte==b'\n'{rows.push(index+1);}}
- Ok(rows)
-}
-fn residue_using(work:Option<&dyn crate::policy_finish::admitted::Work>,relative:&str,line:u32,reason:&str,text:&str,off:usize)->std::io::Result<ResidueSite>{
- let start=text[..off].rfind('\n').map_or(0,|p|p+1);let end=text[off..].find('\n').map_or(text.len(),|p|off+p);
- let mut normalized=work::string_capacity(work,end-start)?;
- for word in text[start..end].split_whitespace(){work::checkpoint(work)?;if !normalized.is_empty(){normalized.push(' ');}normalized.push_str(word);}
- let snippet=if normalized.chars().count()>160{let end=normalized.char_indices().nth(157).map_or(normalized.len(),|(byte,_)|byte);work::format(work,format_args!("{}...",&normalized[..end]))?}else{normalized};
- Ok(ResidueSite{file:work::own(work,relative)?,line,reason:work::own(work,reason)?,text:snippet})
-}
-
 fn line_end(text: &str, starts: &[usize], line: usize) -> usize {
     if line < starts.len() {
         starts[line] - 1
@@ -342,9 +309,9 @@ fn line_end(text: &str, starts: &[usize], line: usize) -> usize {
 /// The offset of the call the parser located at `(line, col)`: the column as given, or one less (the
 /// parser's columns are 1-based when it counts the token and 0-based when it counts what precedes it),
 /// else the one unclaimed call of that name on the line.
-fn locate(text: &str, clean: &str, starts: &[usize], c: &Cand, claimed: &[usize], work:Option<&dyn crate::policy_finish::admitted::Work>) -> std::io::Result<Option<usize>> {
+fn locate(text: &str, clean: &str, starts: &[usize], c: &Cand, claimed: &BTreeSet<usize>) -> Option<usize> {
     if c.line == 0 || c.line as usize > starts.len() {
-        return Ok(None);
+        return None;
     }
     let ls = starts[c.line as usize - 1];
     let le = line_end(text, starts, c.line as usize);
@@ -352,14 +319,16 @@ fn locate(text: &str, clean: &str, starts: &[usize], c: &Cand, claimed: &[usize]
     let at = |idx: usize| line_text.char_indices().nth(idx).map(|(b, _)| ls + b);
     for idx in [c.col as usize, (c.col as usize).saturating_sub(1)] {
         if let Some(off) = at(idx) {
-            if claimed.binary_search(&off).is_err() && scan::scan_call_using(text, clean, off, &c.callee,work)?.is_ok() {
-                return Ok(Some(off));
+            if !claimed.contains(&off) && scan::scan_call(text, clean, off, &c.callee).is_ok() {
+                return Some(off);
             }
         }
     }
-    let mut occurrences=scan::call_offsets_iter(&clean[ls..le],&c.callee).map(|offset|ls+offset).filter(|offset|claimed.binary_search(offset).is_err());
-    let first=occurrences.next();
-    Ok(if occurrences.next().is_none(){first}else{None})
+    let occ: Vec<usize> = scan::call_offsets(&clean[ls..le], &c.callee).into_iter().map(|o| ls + o).filter(|o| !claimed.contains(o)).collect();
+    if occ.len() == 1 {
+        return Some(occ[0]);
+    }
+    None
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -451,7 +420,6 @@ fn snippet(text: &str, off: usize) -> String {
 
 /// Runs `cm` on the tree at `root`. With `opts.apply` the changes are in the result's `changes`; nothing is
 /// written here (see [`write_changes`]).
-#[cfg(feature="legacy-sem")]
 pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, String> {
     let mut plan = Plan::default();
     plan.add("code", "dm");
@@ -463,99 +431,73 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
     let mut ast_names: Vec<&str> = names.to_vec();
     ast_names.extend(alias.iter().map(|(a, _, _)| *a));
     let mut cands = candidates(&sem, &ast_names);
-    for c in &mut cands{let(text,argc)=normalized_candidate(&c.callee,c.argc,cm.ast_alias());if text!=c.callee{c.callee=text.to_owned();}c.argc=argc;}
-    let prep = cm.prepare(&tree, sem.as_ref());
-    run_prepared(root,&tree,cm,opts,sem.as_ref(),&*prep,&LegacyPhysicalFiles(root),&cands).map_err(|actual|actual.to_string())
-}
-
-/// Exact original AST-macro-to-authored-call normalization over borrowed DATA.
-pub fn normalized_candidate<'a>(callee:&'a str,argc:usize,aliases:&'a[(&str,&str,usize)])->(&'a str,usize){
-    match aliases.iter().find(|(actual,_,count)|*actual==callee&&(*count==0||*count==argc)){
-        Some((_,text,count))=>(*text,if *count==0{usize::MAX}else{argc}),None=>(callee,argc),
+    for c in cands.iter_mut() {
+        if let Some((_, text_name, n)) = alias.iter().find(|(a, _, n)| *a == c.callee && (*n == 0 || *n == c.argc)) {
+            c.callee = text_name.to_string();
+            if *n == 0 {
+                c.argc = usize::MAX;
+            }
+        }
     }
-}
-/// Physical bytes supplied by the actual pre-final recorder loan. Implementors
-/// retain/admit returned backing through the resulting plan's lifetime. This
-/// DATA port issues no source/currentness or physical-write permission.
-pub trait PhysicalFiles{
-    fn read(&self,relative:&str)->std::io::Result<Option<Vec<u8>>>;
-    /// A native issuer must preadmit the returned copy against SAME retained
-    /// output work before allocating it. Captured inputs alone are not enough.
-    fn read_using(&self,relative:&str,work:Option<&dyn crate::policy_finish::admitted::Work>)->std::io::Result<Option<Vec<u8>>>{
-        if let Some(work)=work{work.checkpoint()?;return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"native physical copy issuer must supply explicit admission"))}
-        self.read(relative)
-    }
-}
-#[cfg(feature="legacy-sem")]
-struct LegacyPhysicalFiles<'a>(&'a Path);
-#[cfg(feature="legacy-sem")]
-impl PhysicalFiles for LegacyPhysicalFiles<'_>{
-    fn read(&self,relative:&str)->std::io::Result<Option<Vec<u8>>>{Ok(std::fs::read(self.0.join(relative)).ok())}
-}
-fn physical_text(files:&dyn PhysicalFiles,relative:&str)->std::io::Result<Option<String>>{physical_text_using(files,relative,None)}
-fn physical_text_using(files:&dyn PhysicalFiles,relative:&str,work:Option<&dyn crate::policy_finish::admitted::Work>)->std::io::Result<Option<String>>{Ok(files.read_using(relative,work)?.and_then(|bytes|String::from_utf8(bytes).ok()))}
+    let prep = cm.prepare(&tree, &sem);
 
-/// SAME original edit kernel over genuine native call DATA and captured bytes.
-/// The caller holds the model/ledger, preparation scratch, and output work; this
-/// function never crawls, parses a Model, or writes a physical file.
-pub fn run_prepared(root:&Path,tree:&Tree,cm:&dyn Codemod,opts:&RunOpts,sem:&dyn crate::codemod_facts::FactSource,prep:&(dyn Any+Send+Sync),physical:&dyn PhysicalFiles,cands:&[Cand])->std::io::Result<RunResult>{run_prepared_using(root,Some(tree),&TreeLexical(tree),cm,opts,sem,prep,physical,cands,None)}
-pub(crate) fn run_prepared_with_work(root:&Path,tree:&Tree,cm:&dyn Codemod,opts:&RunOpts,sem:&dyn crate::codemod_facts::FactSource,prep:&(dyn Any+Send+Sync),physical:&dyn PhysicalFiles,cands:&[Cand],work:&dyn crate::policy_finish::admitted::Work)->std::io::Result<RunResult>{run_prepared_using(root,Some(tree),&TreeLexical(tree),cm,opts,sem,prep,physical,cands,Some(work))}
-fn run_prepared_using(root:&Path,tree:Option<&Tree>,lexical:&dyn LexicalFiles,cm:&dyn Codemod,opts:&RunOpts,sem:&dyn crate::codemod_facts::FactSource,prep:&(dyn Any+Send+Sync),physical:&dyn PhysicalFiles,cands:&[Cand],work:Option<&dyn crate::policy_finish::admitted::Work>)->std::io::Result<RunResult>{
-    let names=cm.callees();
-    work::checkpoint(work)?;
-    let mut res = RunResult { name: work::own(work,cm.name())?, ..Default::default() };
+    let mut res = RunResult { name: cm.name().to_string(), ..Default::default() };
     // Files to look at: the parser's, and every file whose text names a callee.
-    let mut files:Vec<String>=Vec::new();
-    for candidate in cands{work::set_insert(work,&mut files,work::own(work,&candidate.rel)?)?;}
-    lexical.for_each(&mut|file|{
-        work::checkpoint(work)?;
-        if crate::tree::CODE_MAPS_DM.matches(file)&&names.iter().any(|name|file.text().contains(name)){work::set_insert(work,&mut files,work::own(work,&file.rel)?)?;}
-        Ok(())
-    })?;
-    let mut file_edits: Vec<(String,(String, Vec<Edit>, usize))> = Vec::new();
+    let mut files: BTreeSet<String> = cands.iter().map(|c| c.rel.clone()).collect();
+    for f in tree.select(&crate::tree::CODE_MAPS_DM) {
+        let t = f.text();
+        if names.iter().any(|n| t.contains(n)) {
+            files.insert(f.rel.clone());
+        }
+    }
+    let mut by_file: BTreeMap<&str, Vec<&Cand>> = BTreeMap::new();
+    for c in &cands {
+        by_file.entry(c.rel.as_str()).or_default().push(c);
+    }
+
+    let mut file_edits: BTreeMap<String, (String, Vec<Edit>, usize)> = BTreeMap::new();
     let mut needs: Vec<Need> = Vec::new();
     let mut follows: Vec<String> = Vec::new();
-    for relative in files {
-        let rel=relative.as_str();work::checkpoint(work)?;
-        let Some(bytes)=physical.read_using(rel,work)?else{continue};
+    for rel in &files {
+        let abs = root.join(rel);
+        let Ok(bytes) = std::fs::read(&abs) else { continue };
         let in_scope = !cm.excluded(rel);
         let selected = opts.paths.is_empty() || opts.paths.iter().any(|p| rel.starts_with(p.as_str()));
         let Ok(text) = String::from_utf8(bytes) else {
             if in_scope {
-                work::row(work,&mut res.residue)?;res.residue.push(ResidueSite{file:work::own(work,rel)?,line:0,reason:work::own(work,"not_utf8")?,text:String::new()});
+                res.residue.push(ResidueSite { file: rel.clone(), line: 0, reason: "not_utf8".into(), text: String::new() });
             }
             continue;
         };
-        lexical.with_physical_clean(rel,&text,&mut|clean|{
-        let starts=line_starts_using(&text,work)?;
+        let clean = crate::strip::sanitize(&text);
+        let starts = line_starts(&text);
         if !in_scope {
             for n in names {
-                res.excluded += scan::call_offsets_iter(&clean,n).count()+scan::mention_offsets_iter(&clean,n).count();
+                res.excluded += scan::call_offsets(&clean, n).len() + scan::mention_offsets(&clean, n).len();
             }
-            return Ok(());
+            continue;
         }
-        let mut file_cands=Vec::new();
-        for candidate in cands.iter().filter(|candidate|candidate.rel==rel){work::row(work,&mut file_cands)?;file_cands.push(candidate);}
+        let empty = Vec::new();
+        let file_cands = by_file.get(rel.as_str()).unwrap_or(&empty);
         let mut pending: Vec<ResidueSite> = Vec::new();
         let mut sites: Vec<(usize, Vec<Edit>, Vec<KeyUse>, Vec<Need>, Vec<String>)> = Vec::new();
-        let mut claimed:Vec<usize>=Vec::new();
-        let mut matched:Vec<(usize,(&Cand,bool))>=Vec::new();
-        let mut ordered=file_cands;
-        if let Some(work)=work{work.reserve(ordered.len().checked_mul(std::mem::size_of::<&Cand>()).ok_or_else(||work.overflow())?)?;}
-        ordered.sort_by(|a,b|(a.line,a.col,a.callee.as_str()).cmp(&(b.line,b.col,b.callee.as_str())));
+        let mut claimed: BTreeSet<usize> = BTreeSet::new();
+        let mut matched: BTreeMap<usize, (&Cand, bool)> = BTreeMap::new();
+        let mut ordered: Vec<&&Cand> = file_cands.iter().collect();
+        ordered.sort_by_key(|c| (c.line, c.col, c.callee.clone()));
         for c in ordered {
-            match locate(&text, &clean, &starts, c, &claimed,work)? {
+            match locate(&text, &clean, &starts, c, &claimed) {
                 Some(off) => {
                     // The same call reached by two expansions of a macro is one site; it is a statement only if it is one in all.
-                    work::set_insert(work,&mut claimed,off)?;
-                    if let Some((_,whole))=work::map_get_mut(&mut matched,&off){*whole &= c.stmt_level}else{work::map_insert(work,&mut matched,off,(c,c.stmt_level))?;}
+                    claimed.insert(off);
+                    matched.insert(off, (c, c.stmt_level));
                 }
                 None => {
                     // A second parse of an already claimed position (a macro expanded twice) is not residue.
                     let ls = starts[(c.line as usize).saturating_sub(1).min(starts.len() - 1)];
                     let line_has_claimed = claimed.iter().any(|o| *o >= ls && *o <= line_end(&text, &starts, c.line as usize) && text[*o..].starts_with(&c.callee));
                     if !line_has_claimed {
-                        work::row(work,&mut pending)?;pending.push(residue_using(work,rel,c.line,"location_unresolved",&text,ls)?);
+                        pending.push(ResidueSite { file: rel.clone(), line: c.line, reason: "location_unresolved".into(), text: snippet(&text, ls) });
                         res.ast_sites += 1;
                     }
                 }
@@ -564,111 +506,116 @@ fn run_prepared_using(root:&Path,tree:Option<&Tree>,lexical:&dyn LexicalFiles,cm
         for (off, (c, stmt)) in &matched {
             res.ast_sites += 1;
             let line = text[..*off].bytes().filter(|b| *b == b'\n').count() as u32 + 1;
-            let node = match scan::scan_call_using(&text,&clean,*off,&c.callee,work)? {
+            let node = match scan::scan_call(&text, &clean, *off, &c.callee) {
                 Ok(n) => n,
                 Err(_) => {
-                    work::row(work,&mut pending)?;pending.push(residue_using(work,rel,line,"scan_failed",&text,*off)?);
+                    pending.push(ResidueSite { file: rel.clone(), line, reason: "scan_failed".into(), text: snippet(&text, *off) });
                     continue;
                 }
             };
             if c.argc != usize::MAX && node.args.len() != c.argc {
-                work::row(work,&mut pending)?;pending.push(residue_using(work,rel,line,"arg_count_mismatch",&text,*off)?);
+                pending.push(ResidueSite { file: rel.clone(), line, reason: "arg_count_mismatch".into(), text: snippet(&text, *off) });
                 continue;
             }
-            let cx = Ctx { rel, line, text: &text, clean: &clean, node: &node, callee: &c.callee, owner: &c.owner, proc_name: &c.proc_name, stmt_level: *stmt, sem, prep, work };
+            let cx = Ctx { rel, line, text: &text, clean: &clean, node: &node, callee: &c.callee, owner: &c.owner, proc_name: &c.proc_name, stmt_level: *stmt, sem: &sem, prep: &*prep };
             match cm.rewrite(&cx) {
-                Outcome::Rewrite(r) => {work::row(work,&mut sites)?;sites.push((*off,r.edits,r.keys,r.needs,r.follows));},
-                Outcome::Residue(reason,_why)=>{work::row(work,&mut pending)?;pending.push(residue_using(work,rel,line,reason,&text,*off)?);},
-                Outcome::Operational(actual) => return Err(actual),
+                Outcome::Rewrite(r) => sites.push((*off, r.edits, r.keys, r.needs, r.follows)),
+                Outcome::Residue(reason, _why) => pending.push(ResidueSite { file: rel.clone(), line, reason: reason.to_string(), text: snippet(&text, *off) }),
             }
         }
         // Text the parser did not return as a call, and names used as values.
         for n in names {
-            for off in scan::call_offsets_iter(&clean,n) {
-                if claimed.binary_search(&off).is_err() {
+            for off in scan::call_offsets(&clean, n) {
+                if !claimed.contains(&off) {
                     // The definition of a macro form (`#define om_ask(...)`) is the form itself, not a use of it.
                     let ls = text[..off].rfind('\n').map(|p| p + 1).unwrap_or(0);
                     if text[ls..off].trim_start().strip_prefix("#define").map(|r| r.trim().is_empty()).unwrap_or(false) {
                         continue;
                     }
                     let line = text[..off].bytes().filter(|b| *b == b'\n').count() as u32 + 1;
-                    work::row(work,&mut pending)?;pending.push(residue_using(work,rel,line,"not_in_ast",&text,off)?);
+                    pending.push(ResidueSite { file: rel.clone(), line, reason: "not_in_ast".into(), text: snippet(&text, off) });
                 }
             }
-            for off in scan::mention_offsets_iter(&clean,n) {
+            for off in scan::mention_offsets(&clean, n) {
                 let line = text[..off].bytes().filter(|b| *b == b'\n').count() as u32 + 1;
-                work::row(work,&mut pending)?;pending.push(residue_using(work,rel,line,"reference",&text,off)?);
+                pending.push(ResidueSite { file: rel.clone(), line, reason: "reference".into(), text: snippet(&text, off) });
             }
         }
         // Overlapping edits: keep the earlier site, the later one is residue.
-        work::stable_sort_by(work,&mut sites,|a,b|a.0.cmp(&b.0))?;
+        sites.sort_by_key(|(off, _, _, _, _)| *off);
         let mut kept: Vec<(usize, Vec<Edit>, Vec<KeyUse>, Vec<Need>, Vec<String>)> = Vec::new();
         let mut taken: Vec<(usize, usize)> = Vec::new();
         for (off, edits, keys, needs, follows) in sites {
             let overlaps = edits.iter().any(|e| taken.iter().any(|(s, t)| if e.start == e.end { e.start > *s && e.start < *t } else { e.start < *t && e.end > *s }));
             if overlaps {
                 let line = text[..off].bytes().filter(|b| *b == b'\n').count() as u32 + 1;
-                work::row(work,&mut pending)?;pending.push(residue_using(work,rel,line,"edit_conflict",&text,off)?);
+                pending.push(ResidueSite { file: rel.clone(), line, reason: "edit_conflict".into(), text: snippet(&text, off) });
                 continue;
             }
             for e in &edits {
-                work::row(work,&mut taken)?;taken.push((e.start,e.end));
+                taken.push((e.start, e.end));
             }
-            work::row(work,&mut kept)?;kept.push((off,edits,keys,needs,follows));
+            kept.push((off, edits, keys, needs, follows));
         }
         if !selected {
             res.outside_filter += kept.len() + pending.len();
             // Residue and keys still count for the whole-tree report; only the edits are withheld.
-            work::extend(work,&mut res.residue,pending)?;
+            res.residue.extend(pending);
             for (_, _, k, _, _) in kept {
-                work::extend(work,&mut res.keys,k)?;
+                res.keys.extend(k);
             }
-            return Ok(());
+            continue;
         }
-        work::extend(work,&mut res.residue,pending)?;
+        res.residue.extend(pending);
         let mut all_edits: Vec<Edit> = Vec::new();
-        let kept_count=kept.len();
-        for(_,edits,keys,new_needs,new_follows)in kept{
-            work::extend(work,&mut all_edits,edits)?;
-            work::extend(work,&mut res.keys,keys)?;
-            work::extend(work,&mut needs,new_needs)?;
-            work::extend(work,&mut follows,new_follows)?;
+        for (_, e, k, n, fo) in &kept {
+            all_edits.extend(e.iter().cloned());
+            res.keys.extend(k.iter().cloned());
+            needs.extend(n.iter().cloned());
+            follows.extend(fo.iter().cloned());
         }
-        res.rewrites+=kept_count;
-        if all_edits.is_empty(){return Ok(())}
-        work::map_insert(work,&mut file_edits,work::own(work,rel)?,(work::own(work,&text)?,all_edits,kept_count))?;
-        Ok(())
-        })?;
+        res.rewrites += kept.len();
+        if all_edits.is_empty() {
+            continue;
+        }
+        file_edits.insert(rel.clone(), (text, all_edits, kept.len()));
     }
-    work::stable_sort_by(work,&mut follows,Ord::cmp)?;
+    follows.sort();
     follows.dedup();
-    if !follows.is_empty(){
-        let additions=match work{Some(work)=>cm.follow_edits_admitted(root,lexical,sem,prep,&follows,work)?,None=>cm.follow_edits(root,tree.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"legacy follow-edit context absent"))?,sem,prep,&follows)};
-        for(rel,edits)in additions{
-            work::checkpoint(work)?;if edits.is_empty(){continue}
-            match work::map_get_mut(&mut file_edits,rel.as_str()){
-                Some(entry)=>{
-                    let mut spans=Vec::new();for edit in &entry.1{work::checkpoint(work)?;if edit.end>edit.start{work::row(work,&mut spans)?;spans.push((edit.start,edit.end));}}
-                    for edit in edits{work::checkpoint(work)?;if !spans.iter().any(|(start,end)|*start<=edit.start&&edit.end<=*end&&edit.end>edit.start){work::row(work,&mut entry.1)?;entry.1.push(edit);}}
-                },None=>if let Some(text)=physical_text_using(physical,&rel,work)?{work::map_insert(work,&mut file_edits,rel,(text,edits,0))?;},
-            }
-            res.followed+=1;
-        }
-    }
-    // The declarations the rewritten sites asked for: once per (type, var), in whichever file the type's block lives.
-    work::stable_sort_by(work,&mut needs,Ord::cmp)?;
-    needs.dedup_by(|a, b| a.holder == b.holder && a.var == b.var);
-    if !needs.is_empty() {
-        let declarations=match work{Some(work)=>cm.declaration_edits_admitted(root,sem,prep,physical,&needs,work)?,None=>cm.declaration_edits(root,tree.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"legacy declaration context absent"))?,sem,prep,physical,&needs)?};
-        for(rel,edits)in declarations{
+    if !follows.is_empty() {
+        for (rel, edits) in cm.follow_edits(root, &tree, &sem, &*prep, &follows) {
             if edits.is_empty() {
                 continue;
             }
-            match work::map_get_mut(&mut file_edits,rel.as_str()) {
-                Some(entry)=>{work::extend(work,&mut entry.1,edits)?;},
+            match file_edits.get_mut(&rel) {
+                Some(entry) => {
+                    // A definition edit inside text a call-site edit already replaces (an om_ask in a handler reading the old answer) is the call
+                    // site's to translate: it would overlap.
+                    let spans: Vec<(usize, usize)> = entry.1.iter().filter(|e| e.end > e.start).map(|e| (e.start, e.end)).collect();
+                    entry.1.extend(edits.into_iter().filter(|f| !spans.iter().any(|(s, e)| *s <= f.start && f.end <= *e && f.end > f.start)));
+                }
                 None => {
-                    if let Some(text) = physical_text(physical,&rel)? {
-                        work::map_insert(work,&mut file_edits,rel,(text,edits,0))?;
+                    if let Ok(text) = std::fs::read_to_string(root.join(&rel)) {
+                        file_edits.insert(rel, (text, edits, 0));
+                    }
+                }
+            }
+            res.followed += 1;
+        }
+    }
+    // The declarations the rewritten sites asked for: once per (type, var), in whichever file the type's block lives.
+    needs.sort();
+    needs.dedup_by(|a, b| a.holder == b.holder && a.var == b.var);
+    if !needs.is_empty() {
+        for (rel, edits) in cm.declaration_edits(root, &tree, &sem, &*prep, &needs) {
+            if edits.is_empty() {
+                continue;
+            }
+            match file_edits.get_mut(&rel) {
+                Some(entry) => entry.1.extend(edits),
+                None => {
+                    if let Ok(text) = std::fs::read_to_string(root.join(&rel)) {
+                        file_edits.insert(rel, (text, edits, 0));
                     }
                 }
             }
@@ -676,65 +623,51 @@ fn run_prepared_using(root:&Path,tree:Option<&Tree>,lexical:&dyn LexicalFiles,cm
         res.declared = needs;
     }
     for (rel, (text, mut edits, n_sites)) in file_edits {
-        work::stable_sort_by(work,&mut edits,|a,b|(a.start,a.end).cmp(&(b.start,b.end)))?;
+        edits.sort_by_key(|e| (e.start, e.end));
         for w in edits.windows(2) {
             if w[1].start < w[0].end {
-                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,work::format(work,format_args!("{}: two edits overlap ({}..{} and {}..{}): a definition rewrite met a call-site rewrite",rel,w[0].start,w[0].end,w[1].start,w[1].end))?));
+                return Err(format!("{}: two edits overlap ({}..{} and {}..{}): a definition rewrite met a call-site rewrite", rel, w[0].start, w[0].end, w[1].start, w[1].end));
             }
         }
-        let (after, inverse) = apply_edits_using(&text, edits,work)?;
+        let (after, inverse) = apply_edits(&text, edits);
         if after != text {
-            work::row(work,&mut res.changes)?;res.changes.push(FileChange{rel,before:text,after,inverse,sites:n_sites});
+            res.changes.push(FileChange { rel, before: text, after, inverse, sites: n_sites });
         }
     }
-    work::stable_sort_by(work,&mut res.residue,Ord::cmp)?;
+    res.residue.sort();
     res.residue.dedup();
-    work::stable_sort_by(work,&mut res.keys,|a,b|(a.owner.as_str(),a.key.as_str(),a.origin.as_str()).cmp(&(b.owner.as_str(),b.key.as_str(),b.origin.as_str())))?;
+    res.keys.sort_by(|a, b| (a.owner.clone(), a.key.clone(), a.origin.clone()).cmp(&(b.owner.clone(), b.key.clone(), b.origin.clone())));
     Ok(res)
 }
 
 /// Applies `edits` (non-overlapping) to `text`. Returns the new text and the inverse of every edit in the
 /// new text's coordinates, in file order. Insertions at one offset keep their given order.
-pub fn apply_edits(text:&str,edits:Vec<Edit>)->(String,Vec<Inverse>){apply_edits_using(text,edits,None).expect("original codemod edits must have valid ordered spans")}
-pub fn revert_edits(after:&str,inverse:&[Inverse])->String{revert_edits_using(after,inverse,None).expect("original codemod inverse must have valid ordered spans")}
-fn apply_edits_using(text:&str,mut edits:Vec<Edit>,work:Option<&dyn crate::policy_finish::admitted::Work>)->std::io::Result<(String,Vec<Inverse>)>{
-    work::checkpoint(work)?;
-    // Stable sorting preserves same-offset insertion order. The standard
-    // slice sort's possible scratch has at most one slot per actual row.
-    if let Some(work)=work{work.reserve(edits.len().checked_mul(std::mem::size_of::<Edit>()).ok_or_else(||work.overflow())?)?;}
-    edits.sort_by_key(|e|(e.start,e.end));
-    let(mut at,mut length)=(0usize,text.len());
-    for e in &edits{
-        work::checkpoint(work)?;
-        if e.start<at||e.start>e.end||e.end>text.len()||!text.is_char_boundary(e.start)||!text.is_char_boundary(e.end){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"codemod edit spans overlap or escape the original UTF-8 text"))}
-        length=work::size(work,length.checked_sub(e.end-e.start).and_then(|n|n.checked_add(e.text.len())))?;
-        at=e.end;
-    }
-    let mut out=work::string_capacity(work,length)?;
-    let mut inverse=work::vec_capacity(work,edits.len())?;
-    at=0;
-    for e in edits{
-        work::checkpoint(work)?;
+pub fn apply_edits(text: &str, mut edits: Vec<Edit>) -> (String, Vec<Inverse>) {
+    edits.sort_by_key(|e| (e.start, e.end));
+    let mut out = String::with_capacity(text.len() + 64);
+    let mut inv = Vec::new();
+    let mut at = 0usize;
+    for e in &edits {
         out.push_str(&text[at..e.start]);
-        let original=work::own(work,&text[e.start..e.end])?;
-        inverse.push(Inverse{start:out.len(),len:e.text.len(),text:original});
-        out.push_str(&e.text);at=e.end;
+        inv.push(Inverse { start: out.len(), len: e.text.len(), text: text[e.start..e.end].to_string() });
+        out.push_str(&e.text);
+        at = e.end;
     }
     out.push_str(&text[at..]);
-    work::checkpoint(work)?;
-    Ok((out,inverse))
+    (out, inv)
 }
-pub(crate) fn revert_edits_using(after:&str,inverse:&[Inverse],work:Option<&dyn crate::policy_finish::admitted::Work>)->std::io::Result<String>{
-    work::checkpoint(work)?;
-    let(mut at,mut length)=(0usize,after.len());
-    for row in inverse{
-        let end=work::size(work,row.start.checked_add(row.len))?;
-        if row.start<at||end>after.len()||!after.is_char_boundary(row.start)||!after.is_char_boundary(end){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"codemod inverse spans overlap or escape the rewritten UTF-8 text"))}
-        length=work::size(work,length.checked_sub(row.len).and_then(|n|n.checked_add(row.text.len())))?;at=end;
+
+/// Undoes [`apply_edits`].
+pub fn revert_edits(after: &str, inverse: &[Inverse]) -> String {
+    let mut out = String::with_capacity(after.len());
+    let mut at = 0usize;
+    for i in inverse {
+        out.push_str(&after[at..i.start]);
+        out.push_str(&i.text);
+        at = i.start + i.len;
     }
-    let mut out=work::string_capacity(work,length)?;at=0;
-    for row in inverse{work::checkpoint(work)?;out.push_str(&after[at..row.start]);out.push_str(&row.text);at=row.start+row.len;}
-    out.push_str(&after[at..]);work::checkpoint(work)?;Ok(out)
+    out.push_str(&after[at..]);
+    out
 }
 
 fn hash_hex(s: &str) -> String {
@@ -750,7 +683,6 @@ pub fn codemod_dir(root: &Path, name: &str) -> PathBuf {
 }
 
 /// Writes the changed files and the revert record (`data/codemod/<name>/revert.json`).
-#[cfg(feature="legacy-sem")]
 pub fn write_changes(root: &Path, res: &RunResult) -> Result<(), String> {
     for c in &res.changes {
         std::fs::write(root.join(&c.rel), c.after.as_bytes()).map_err(|e| format!("{}: {}", c.rel, e))?;
@@ -762,7 +694,6 @@ pub fn write_changes(root: &Path, res: &RunResult) -> Result<(), String> {
 }
 
 /// Restores the files `--apply` changed, verifying each is still exactly what it wrote.
-#[cfg(feature="legacy-sem")]
 pub fn revert(root: &Path, name: &str) -> Result<usize, String> {
     let path = data_dir(root, name).join("revert.json");
     let text = std::fs::read_to_string(&path).map_err(|e| format!("{}: {} (nothing to revert: --apply writes it)", path.display(), e))?;
@@ -790,9 +721,23 @@ pub fn revert(root: &Path, name: &str) -> Result<usize, String> {
 // ---------------------------------------------------------------------------------------------------------
 // CLI
 
-pub use crate::codemod_spec::HELP;
+const HELP: &str = "analyze codemod: AST-aware rewriters (doc/rewrite/final_api.html, phase 2.5)
 
-#[cfg(feature="legacy-sem")]
+USAGE
+  analyze codemod list
+      The registered codemods, the legacy form each reads and what it becomes.
+  analyze codemod NAME [--check] [--path PREFIX...] [--write-residue] [--sites] [--root DIR]
+      Dry run on the tree: rewrites, residue by reason, the key-collision report. Exit 1 when there is
+      residue not in the committed tools/analyze/codemods/NAME/residue.json (a new site that needs a human),
+      when that file is missing, or when a key collision is unresolved. --write-residue writes
+      residue.json (and keys.json when the codemod keys anything); it refuses with --path.
+      --sites lists every residue site.
+  analyze codemod NAME --apply [--path PREFIX...]
+      Rewrite the files in place (no --path = the whole tree: phase 3 only, in a freeze window) and write
+      data/codemod/NAME/revert.json.
+  analyze codemod NAME --revert
+      Undo the last --apply (each file must still be exactly what the codemod wrote).";
+
 pub fn cli(args: &[String], root: &Path) -> ExitCode {
     let sub = args.first().map(|s| s.as_str()).unwrap_or("help");
     if sub == "help" || sub == "--help" {
@@ -922,32 +867,4 @@ pub fn cli(args: &[String], root: &Path) -> ExitCode {
     } else {
         ExitCode::SUCCESS
     }
-}
-
-/// Borrowed lexical DATA only. The caller authenticates the physical roster,
-/// source/model owner and final recorder; no parser or source grant is issued.
-pub trait LexicalFiles{
- fn for_each(&self,visit:&mut dyn FnMut(&crate::tree::SourceFile)->std::io::Result<()>)->std::io::Result<()>;
- fn with_physical_clean(&self,relative:&str,text:&str,visit:&mut dyn FnMut(&str)->std::io::Result<()>)->std::io::Result<()>;
-}
-struct TreeLexical<'a>(&'a Tree);
-impl LexicalFiles for TreeLexical<'_>{
- fn for_each(&self,visit:&mut dyn FnMut(&crate::tree::SourceFile)->std::io::Result<()>)->std::io::Result<()>{for file in &self.0.files{visit(file)?;}Ok(())}
- fn with_physical_clean(&self,_relative:&str,text:&str,visit:&mut dyn FnMut(&str)->std::io::Result<()>)->std::io::Result<()>{visit(&crate::strip::sanitize(text))}
-}
-pub(crate) fn run_prepared_streamed(root:&Path,lexical:&dyn LexicalFiles,cm:&dyn Codemod,opts:&RunOpts,sem:&dyn crate::codemod_facts::FactSource,prep:&(dyn Any+Send+Sync),physical:&dyn PhysicalFiles,cands:&[Cand],work:&dyn crate::policy_finish::admitted::Work)->std::io::Result<RunResult>{run_prepared_using(root,None,lexical,cm,opts,sem,prep,physical,cands,Some(work))}
-pub fn native_find(name:&str)->Option<&'static dyn Codemod>{
- static AFTER:crate::codemods::om_after::OmAfter=crate::codemods::om_after::OmAfter;
- static SET:crate::codemods::own_set::OwnSet=crate::codemods::own_set::OwnSet;
- static ADD:crate::codemods::own_add::OwnAdd=crate::codemods::own_add::OwnAdd;
- if name==crate::codemod_spec::OM_AFTER.name{Some(&AFTER)}else if name==crate::codemod_spec::OWN_SET.name{Some(&SET)}else if name==crate::codemod_spec::OWN_ADD.name{Some(&ADD)}else{None}
-}
-
-#[cfg(test)]mod admitted_edit_tests{
- use super::*;use crate::policy_finish::admitted::Work;use std::cell::Cell;
- struct Quota{left:Cell<usize>}
- impl Work for Quota{fn checkpoint(&self)->std::io::Result<()>{Ok(())}fn reserve(&self,n:usize)->std::io::Result<()>{let remaining=self.left.get().checked_sub(n).ok_or_else(||self.overflow())?;self.left.set(remaining);Ok(())}fn overflow(&self)->std::io::Error{std::io::ErrorKind::OutOfMemory.into()}}
- #[test]fn admitted_edit_kernel_preserves_stable_same_offset_insertions_and_utf8_inverse(){let old="\u{3b1} original \u{3a9}";let edits=vec![Edit::insert(3,"one"),Edit::insert(3,"two"),Edit::replace(Span{start:3,end:11},"new")];let expected=apply_edits(old,edits.clone());let work=Quota{left:Cell::new(65536)};let actual=apply_edits_using(old,edits,Some(&work)).unwrap();assert_eq!(actual,expected);assert_eq!(actual.0,"\u{3b1} onetwonew \u{3a9}");assert_eq!(revert_edits_using(&actual.0,&actual.1,Some(&work)).unwrap(),old);}
- #[test]fn admitted_edit_kernel_rejects_before_returning_partial_output_when_capacity_is_unfunded(){let work=Quota{left:Cell::new(0)};let error=apply_edits_using("x",vec![Edit::insert(0,"new")],Some(&work)).unwrap_err();assert_eq!(error.kind(),std::io::ErrorKind::OutOfMemory);}
- #[test]fn invalid_inverse_geometry_is_an_operational_failure_not_an_unchecked_string_slice(){let work=Quota{left:Cell::new(1024)};let error=revert_edits_using("\u{3b1}",&[Inverse{start:1,len:0,text:"x".into()}],Some(&work)).unwrap_err();assert_eq!(error.kind(),std::io::ErrorKind::InvalidData);}
 }

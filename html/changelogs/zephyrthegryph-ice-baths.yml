@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Chemistry: ice now freezes and melts with real latent heat, a tabletop ice machine freezes water, and a small beaker can stand in a larger one as an ice or warm water bath; the nitrating mix is made in an ice bath"
+  - rscdel: "The hot plate no longer cools; its dial starts at room temperature"
+  - maptweak: "Added an ice machine and a basin to the Southern Cross chemistry lab, and a box of basins to the chemistry supplies closet"

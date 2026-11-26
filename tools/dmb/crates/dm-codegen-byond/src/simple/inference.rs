@@ -114,29 +114,7 @@ impl Compiler<'_> {
         dimensions: &[&str],
         statement: &str,
     ) -> Result<(), LowerError> {
-        self.local_array_prefix(dimensions.len());
-        for size in dimensions {
-            self.expression_text(size, statement)?;
-        }
-        self.local_array_suffix(dimensions.len());
-        Ok(())
-    }
-
-    pub(super) fn local_array_primary(
-        &mut self,
-        dimensions: &[Expr],
-        statement: &str,
-    ) -> Result<(), LowerError> {
-        self.local_array_prefix(dimensions.len());
-        for size in dimensions {
-            self.expression(size, statement)?;
-        }
-        self.local_array_suffix(dimensions.len());
-        Ok(())
-    }
-
-    fn local_array_prefix(&mut self, count: usize) {
-        if count > 1 {
+        if dimensions.len() > 1 {
             let path = "/list".to_owned();
             if self.seen_classes.insert(SymbolId::of(&path)) {
                 self.result.class_paths.push(SymbolId::of(&path));
@@ -149,20 +127,22 @@ impl Compiler<'_> {
                 })],
             );
         }
-    }
-    fn local_array_suffix(&mut self, count: usize) {
+        for size in dimensions {
+            self.expression_text(size, statement)?;
+        }
         self.emit(
-            if count == 1 {
+            if dimensions.len() == 1 {
                 opcode::EMPTY_LIST
             } else {
                 opcode::NEW
             },
-            if count == 1 {
+            if dimensions.len() == 1 {
                 vec![]
             } else {
-                vec![Word::Immediate(count as u32)]
+                vec![Word::Immediate(dimensions.len() as u32)]
             },
         );
+        Ok(())
     }
 
     pub(super) fn named_arguments(
@@ -179,7 +159,7 @@ impl Compiler<'_> {
                 // A bare word before `=` is the name as text, `null` included (`list(null = x)` has the key "null").
                 let name = match &lhs.kind {
                     ExprKind::Ident(name) => Some(name.as_str()),
-                    ExprKind::Literal(value) if value.original_value().is_none() && value == "null" => Some("null"),
+                    ExprKind::Literal(value) if value == "null" => Some("null"),
                     _ => None,
                 };
                 if let Some(name) = name {
@@ -191,7 +171,7 @@ impl Compiler<'_> {
                 } else {
                     self.expression(lhs, statement)?;
                 }
-                if matches!(&rhs.kind, ExprKind::Literal(value) if value.original_value().is_none() && value == "null") {
+                if matches!(&rhs.kind, ExprKind::Literal(value) if value == "null") {
                     self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Null)]);
                 } else {
                     self.expression(rhs, statement)?;
@@ -340,7 +320,7 @@ impl Compiler<'_> {
                         else {
                             continue;
                         };
-                        let Some(radius) = literal_selection_radius(text)
+                        let Some(radius) = text.parse::<u32>().ok().filter(|value| *value <= 127)
                         else {
                             continue;
                         };
@@ -368,7 +348,7 @@ impl Compiler<'_> {
                     } else {
                         match &args[0].kind {
                             ExprKind::Literal(text) => {
-                                literal_selection_radius(text)
+                                text.parse::<u32>().ok().filter(|value| *value <= 127)
                             }
                             _ => None,
                         }
@@ -442,20 +422,4 @@ impl Compiler<'_> {
         }
         labels
     }
-}
-
-/// Original values are issued scalar facts, never reparsed display/raw spelling.
-/// Ordinary input retains its exact existing u32-spelling optimization boundary.
-fn literal_selection_radius(text:&dm_syntax::LiteralText)->Option<u32>{
- match text.original_value(){
-  Some(dm_syntax::OriginalTokenValue::Int(value))=>u32::try_from(value).ok().filter(|value|*value<=127),
-  Some(dm_syntax::OriginalTokenValue::Float(value))=>if value.is_finite()&&value>=0.0&&value<=127.0&&value.fract()==0.0{Some(value as u32)}else{None},
-  Some(_)=>None,
-  None=>text.parse::<u32>().ok().filter(|value|*value<=127),
- }
-}
-#[cfg(test)]mod original_selection_radius_tests{
- use super::*;use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission};use std::sync::{atomic::{Ordering}};
- #[test]fn original_view_radius_uses_actual_numeric_facts_not_raw_or_rounded_display(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));for (value,wanted) in [(V::Int(0),Some(0)),(V::Int(127),Some(127)),(V::Int(-1),None),(V::Int(128),None),(V::Float(1.0),Some(1)),(V::Float(-0.0),Some(0)),(V::Float(1.5),None),(V::Float(f32::NAN),None),(V::Float(f32::INFINITY),None),(V::String("7"),None),(V::Resource("7"),None)]{let text=LiteralText::from_original_value_data("0177".into(),0,value,&a).unwrap();assert_eq!(literal_selection_radius(&text),wanted);}assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
- #[test]fn ordinary_view_radius_spelling_boundary_remains_unchanged(){for(raw,wanted)in[("0",Some(0)),("127",Some(127)),("128",None),("1.0",None),("1e0",None),("-1",None),("0x7",None)]{let text:dm_syntax::LiteralText=raw.into();assert_eq!(literal_selection_radius(&text),wanted);}}
 }

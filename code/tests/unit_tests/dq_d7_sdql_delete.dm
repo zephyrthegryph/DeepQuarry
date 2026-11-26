@@ -51,9 +51,19 @@ CAPABILITIES(/obj/item/pen/dq_d7_delete_probe)
 		if("check_logs" in click_keys)
 			TEST_ASSERT(click_keys.Find("ui_open") && click_keys.Find("ui_open") < click_keys.Find("check_logs"), "A matching log click remains below opening the window")
 		var/list/menu_keys = list()
-		for(var/list/row as anything in op_menu(actor, V, null))
+		var/list/hidden = list()
+		for(var/list/row as anything in op_menu(actor, V, null, hidden))
 			menu_keys += row["key"]
-		TEST_ASSERT("ui_open" in menu_keys, "Each real actor retains the vendor window menu row")
+		if(actor_authority(actor) & AUTH_PHYSICAL)
+			TEST_ASSERT("ui_open" in menu_keys, "Each actor at the vendor retains the vendor window menu row")
+		else
+			// The vendor's window is physical only (vending.dm extends ui_open with req_on_authority(AUTH_PHYSICAL)): a remote actor's Menu hides it
+			// as a row that can never apply to who it is (FAILS_HIDDEN), rather than greying it.
+			var/hidden_by = null
+			for(var/list/hid as anything in hidden)
+				if(hid["key"] == "ui_open")
+					hidden_by = hid["hidden_by"]
+			TEST_ASSERT(!("ui_open" in menu_keys) && hidden_by == "req_on_authority", "A remote actor's Menu hides the physical-only vendor window ([actor.type]: [hidden_by])")
 		if("check_logs" in menu_keys)
 			TEST_ASSERT(menu_keys.Find("ui_open") < menu_keys.Find("check_logs"), "The real log menu row remains below opening the window")
 		if(actor == H)

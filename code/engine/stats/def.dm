@@ -187,6 +187,34 @@ PROC_SUMMARY(/proc/stat_defs_build) // vars[] / call() dispatcher: the walk cann
 		stat_defs_build()
 	return GLOB.stat_defs_by_name[name]
 
+/// The stats declared on `type` or one of its ancestors, as def -> TRUE, or null when there are none. Reads an index
+/// of declaring type -> defs, built once from the registry (rebuilt if the registry grew).
+/proc/stat_defs_declared_under(type)
+	var/static/list/by_declaring_type
+	var/static/indexed_count = -1
+	if(!GLOB.stat_defs_built)
+		stat_defs_build()
+	if(indexed_count != length(GLOB.stat_defs))
+		indexed_count = length(GLOB.stat_defs)
+		by_declaring_type = list()
+		for(var/id in GLOB.stat_defs)
+			var/datum/stat_def/def = GLOB.stat_defs[id]
+			for(var/declared in def.types)
+				var/list/defs = by_declaring_type[declared]
+				if(!defs)
+					defs = list()
+					by_declaring_type[declared] = defs
+				defs[def] = TRUE
+	// A few dozen declaring types: ispath() against each is exact (it honours parent_type) and far cheaper than asking every stat.
+	for(var/declared in by_declaring_type)
+		if(!ispath(type, declared))
+			continue
+		if(!.)
+			. = list()
+		var/list/defs = by_declaring_type[declared]
+		for(var/def in defs)
+			.[def] = TRUE
+
 /// TRUE when `type` (or an ancestor) declares the stat.
 /proc/stat_declared_on(type, datum/stat_def/def)
 	for(var/declared in def.types)

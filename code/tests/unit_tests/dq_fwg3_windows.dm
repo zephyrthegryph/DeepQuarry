@@ -34,11 +34,12 @@
 	hc_ui(H, C, "toggle_override")
 	TEST_ASSERT(!P.override_enabled, "and the listed one toggles it back")
 	var/list/data = hc_data(C, H)
-	TEST_ASSERT_EQUAL(data["internalTemplateName"], "DockingConsoleSimple", "the subtype's own window data")
+	TEST_ASSERT_EQUAL(C.ui_interface(H), "DockingConsoleSimple", "the subtype's own window")
 	TEST_ASSERT_EQUAL(data["override_enabled"], P.override_enabled, "with the port's override")
 	var/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/pod = allocate(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, T)
+	TEST_ASSERT_EQUAL(pod.ui_interface(H), "EscapePodConsole", "an escape pod opens its own window, not the docking controller's")
 	data = hc_data(pod, H)
-	TEST_ASSERT_EQUAL(data["internalTemplateName"], "EscapePodConsole", "an escape pod's data replaces the docking controller's")
+	TEST_ASSERT("can_force" in data, "with the pod's own data: [json_encode(data)]")
 
 /// An airlock controller's tag and frequency settings work only with its panel open; its program commands work with the panel shut.
 /datum/unit_test/dq_fwg3_ui/airlock_controller

@@ -42,7 +42,7 @@ CAPABILITIES(/obj/item/dq_variants_probe)
 	TEST_ASSERT_EQUAL(R.name_at_init, "red probe", "the row is applied before the type's init code reads the instance")
 
 	var/obj/item/dq_variants_probe/blank/B = allocate(/obj/item/dq_variants_probe/blank, T)
-	TEST_ASSERT_EQUAL(B.name, "variant probe", "an empty value in the row is skipped")
+	TEST_ASSERT_EQUAL(B.name, "", "a falsey value in the row is applied: a row switches a default off, and a var it leaves out is the no-override")
 	TEST_ASSERT_EQUAL(B.desc, "blank probe", "the rest of the row still applies")
 
 	var/obj/item/dq_variants_probe/unknown/U = allocate(/obj/item/dq_variants_probe/unknown, T)

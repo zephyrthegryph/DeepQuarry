@@ -41,6 +41,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	configure(uses_power(idle = 250, active = 500))
 	after_init(0, then(PROC_REF(make_controller)))
 	interface("RogueZones")
+	ui_shape(scanning = bool(), debug = int(0, 1), timeout_percent = num(), diffstep = int(), difficulty = schema_text(), occupied = int(0, 1), updated = bool(), shuttle_location = schema_text(), shuttle_at_station = int(0, 1), scan_ready = int(0, 1), can_recall_shuttle = bool())
 	op("scan_for_new", ui_act("scan_for_new"), then(PROC_REF(ui_act_scan_for_new)))
 	op("recall_shuttle", ui_act("recall_shuttle"), then(PROC_REF(ui_act_recall_shuttle)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
@@ -48,7 +49,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 
 /obj/machinery/computer/roguezones/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["scanning"] = scanning
+	data["scanning"] = scanning ? TRUE : FALSE
 	data["debug"] = debug
 	var/list/merged_1 = ui_data_obj_machinery_computer_roguezones(A.actor, null, null)
 	if(islist(merged_1))
@@ -62,11 +63,13 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	var/curZoneOccupied = GLOB.rm_controller.current_zone() ? GLOB.rm_controller.current_zone().is_occupied() : 0
 
 	var/list/data = list()
+	data["shuttle_location"] = "Unknown"
+	data["shuttle_at_station"] = 0
 	data["timeout_percent"] = chargePercent
 	data["diffstep"] = GLOB.rm_controller.diffstep
 	data["difficulty"] = GLOB.rm_controller.diffstep_strs[GLOB.rm_controller.diffstep]
 	data["occupied"] = curZoneOccupied
-	data["updated"] = ELAPSED(GLOB.rm_controller, last_scan, CLOCK_WORLD) < 20 SECONDS //Very recently scanned (20 seconds)
+	data["updated"] = ELAPSED(GLOB.rm_controller, last_scan, CLOCK_WORLD) < 20 SECONDS ? TRUE : FALSE //Very recently scanned (20 seconds)
 
 	if(!shuttle_control())
 		data["shuttle_location"] = "Unknown"
@@ -92,7 +95,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	data["scan_ready"] = can_scan
 
 	// Permit emergency recall of the shuttle if its stranded in a zone with just dead people.
-	data["can_recall_shuttle"] = (shuttle_control() && (shuttle_control().z in using_map.belter_belt_z) && !curZoneOccupied)
+	data["can_recall_shuttle"] = (shuttle_control() && (shuttle_control().z in using_map.belter_belt_z) && !curZoneOccupied) ? TRUE : FALSE
 	return data
 
 /obj/machinery/computer/roguezones/proc/ui_act_scan_for_new(datum/act/op/A)
@@ -118,7 +121,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 
 /obj/machinery/computer/roguezones/proc/finish_scan()
 	//Break the shuttle temporarily.
-	shuttle_control().shuttle_tag = null
+	shuttle_control().set_shuttle_tag(null)
 
 	//Build and get a new zone.
 	var/datum/rogue/zonemaster/ZM_target = GLOB.rm_controller.prepare_new_zone()
@@ -131,7 +134,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	rel_set(S, nameof(S.next_location), S.get_location_waypoint(!S.location))
 
 	//Re-enable shuttle.
-	shuttle_control().shuttle_tag = "Belter"
+	shuttle_control().set_shuttle_tag("Belter")
 
 	//Update rm_previous
 	rel_set(GLOB.rm_controller, nameof(/datum/controller/rogue::previous_zone), GLOB.rm_controller.current_zone())
@@ -155,20 +158,6 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	// Okay do it
 	var/datum/shuttle/autodock/ferry/S = shuttles_shuttles()["Belter"]
 	S.launch(user)
-
-/obj/item/paper/rogueminer
-	name = "R-38 Scanner Console Guide"
-	info = {"<h4>Getting Started</h4>
-	Congratulations, your station has purchased the R-38 industrial asteroid belt scanner!<br>
-	Using the R-38 is almost as simple as brain surgery! Simply press the scan button to scan for a new mineral-rich asteroid belt location!<br>
-	<b>That's all there is to it!</b><br>
-	Notice, scan may cause extreme brain damage to those present in asteroid belt, so scanning will be disabled in that case.<br>
-	Existing minerals and living creatures interfere with the scans, so the more minerals extracted and creatures 'removed'/made-not-living in the belt, the more accurate future scans will be.<br>
-	<h4>Traveling to the belt</h4>
-	When a new zone has been scanned, your station's shuttle destination will be updated to direct it to the newly discovered area automatically.<br>
-	You can then travel to the new area to mine in that location.<br>
-	<br>
-	<br> "} + span_small("This technology produced under license from Thinktronic Systems, LTD.")
 
 
 #undef OUTPOST_Z

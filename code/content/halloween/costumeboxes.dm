@@ -31,7 +31,8 @@
 /obj/item/storage/box/halloween/horrorcop
 	name = "slasher movie cop costume"
 	starts_with = list(
-		/obj/item/clothing/under/corp/pcrc{ starting_accessories=list(/obj/item/clothing/accessory/holster/hip) },
+		VARIANT(/obj/item/clothing/under/corp/pcrc),
+		/obj/item/clothing/accessory/holster/hip,
 		/obj/item/clothing/shoes/black,
 		/obj/item/clothing/gloves/black,
 		/obj/item/clothing/glasses/fakesunglasses,
@@ -56,7 +57,7 @@
 /obj/item/storage/box/halloween/lumberjack
 	name = "lumberjack costume"
 	starts_with = list(
-		/obj/item/clothing/under/pants{ starting_accessories=list(/obj/item/clothing/accessory/sweater/blackneck) },
+		/obj/item/clothing/under/pants{ starting_accessories=list(VARIANT(/obj/item/clothing/accessory/sweater/blackneck)) },
 		/obj/item/clothing/shoes/boots/workboots,
 		/obj/item/clothing/head/beanie,
 		/obj/item/clothing/gloves/fingerless,
@@ -103,7 +104,7 @@
 	name = "pirate costume"
 	starts_with = list(
 		/obj/item/clothing/under/pirate,
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/clothing/head/pirate,
 		/obj/item/clothing/suit/pirate,
 		/obj/item/clothing/glasses/eyepatch,
@@ -125,7 +126,7 @@
 	name = "ruin marine costume"
 	starts_with = list(
 		/obj/item/clothing/under/color/grey,
-		/obj/item/clothing/shoes/brown,
+		VARIANT(/obj/item/clothing/shoes/brown),
 		/obj/item/clothing/head/marine,
 		/obj/item/clothing/suit/marine,
 		/obj/item/gun/projectile/revolver/toy/sawnoff,

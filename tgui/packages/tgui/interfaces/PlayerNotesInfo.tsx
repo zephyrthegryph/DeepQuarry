@@ -11,21 +11,19 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
+import type {
+  PlayerNotesInfoActions,
+  PlayerNotesInfoData,
+} from './generated/PlayerNotesInfo';
 
-type Data = {
-  device_theme?: string;
-  age?: string;
-  ckey?: string;
-  entries?: { author: string; date: string; comment: string }[];
-};
+type Data = PlayerNotesInfoData;
 
 export const PlayerNotesInfo = (props) => {
-  const { act, data } = useBackend<Data>();
-  const { device_theme, age, ckey, entries } = data;
+  const { act, data } = useBackend<Data, PlayerNotesInfoActions>();
+  const { age, ckey, entries } = data;
   return (
     <Window
-      title={`Info on ${ckey}`}
-      theme={device_theme}
+      title={ckey ? `Info on ${ckey}` : 'Player info'}
       width={400}
       height={500}
     >
@@ -40,7 +38,7 @@ export const PlayerNotesInfo = (props) => {
             <LabeledList>
               <LabeledList.Item label="Ckey">
                 <Input
-                  value={ckey}
+                  value={ckey ?? ''}
                   fluid
                   onBlur={(value) => act('cahngekey', { ckey: value })}
                 />

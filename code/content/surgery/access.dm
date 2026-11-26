@@ -27,11 +27,15 @@
 /// Opening is harm to the tissue, not treatment: the site is created or
 /// deepened on the limb, remembering how sterile the surface was.
 /datum/surgical_step/access/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
-	var/cleanliness = target.get_surgery_cleanliness(user)
-	var/datum/affliction/surgical_incision/I = part.open_surgical_site(opens_to, isnull(cleanliness) ? 0 : cleanliness)
+	var/sterility = target.surgical_site_sterility(user, part, target.get_surgery_cleanliness(user))
+	var/datum/affliction/surgical_incision/I = part.open_surgical_site(opens_to, sterility)
 	if(I && clamps)
 		target.mend(TREAT_HEMOSTATIC, 1, part)
-	log_game("SURGERY: [key_name(user)] [name] on [key_name(target)] [part]: site at depth [part.surgical_depth()]")
+	log_game("SURGERY: [key_name(user)] [name] on [key_name(target)] [part]: site at depth [part.surgical_depth()] (sterility [sterility])")
+	// Flesh retracted, or the limb open to its organs: what is in there is now in view.
+	var/depth = part.surgical_depth()
+	if(I && (depth == FLESH_RETRACTED || depth >= part.surgical_full_access()))
+		target.reveal_surgical_findings(user, part)
 
 
 // --- Organic --------------------------------------------------------------------------

@@ -41,7 +41,9 @@
 /area/holodeck/source_picnicarea)
 "aaj" = (
 /obj/structure/table/rack/holorack,
-/obj/item/clothing/under/dress/dress_saloon,
+/obj/item/clothing/under/dress{
+	variant = "dress_saloon"
+	},
 /obj/item/clothing/head/pin/flower,
 /turf/simulated/floor/holofloor/tiled/dark,
 /area/holodeck/source_theatre)
@@ -2476,10 +2478,18 @@
 /obj/item/material/knife/tacknife/combatknife,
 /obj/item/material/knife/tacknife/combatknife,
 /obj/structure/table/reinforced,
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
 /turf/open/fixed/floor{
 	icon_state = "vault";
 	dir = 5
@@ -2818,16 +2828,22 @@
 /obj/item/clothing/suit/bio_suit/janitor,
 /obj/item/clothing/gloves/purple,
 /obj/item/clothing/glasses/science,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = 6;
 	pixel_y = 3
 	},
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	pixel_x = 6;
 	pixel_y = 3
 	},
-/obj/item/reagent_containers/spray/plantbgone,
-/obj/item/reagent_containers/spray/plantbgone,
+/obj/item/reagent_containers/spray{
+	variant = "plantbgone"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "plantbgone"
+	},
 /obj/item/storage/box/lights/mixed,
 /obj/item/storage/box/lights/mixed,
 /obj/item/grenade/chem_grenade/cleaner,
@@ -4040,10 +4056,18 @@
 /obj/item/clothing/accessory/stethoscope,
 /obj/item/packageWrap,
 /obj/item/hand_labeler,
-/obj/item/reagent_containers/spray/cleaner,
-/obj/item/reagent_containers/spray/cleaner,
-/obj/item/reagent_containers/spray/sterilizine,
-/obj/item/reagent_containers/spray/sterilizine,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "sterilizine"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "sterilizine"
+	},
 /obj/item/flashlight/pen,
 /obj/item/flashlight/pen,
 /turf/open/fixed/floor{
@@ -4583,7 +4607,9 @@
 "ajQ" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/red,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/clothing/suit/armor/tdome/red,
 /obj/item/clothing/head/helmet/thunderdome,
 /obj/item/melee/baton/loaded,
@@ -4712,7 +4738,9 @@
 	max_integrity = 1e+006
 	},
 /obj/structure/table/rack,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /turf/simulated/shuttle/plating,
 /area/centcom/evac)
 "akc" = (
@@ -4819,7 +4847,9 @@
 "aks" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/red,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/clothing/suit/armor/vest,
 /obj/item/clothing/head/helmet/swat,
 /obj/item/gun/energy/laser,
@@ -4866,7 +4896,9 @@
 "akx" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/red,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/melee/energy/axe,
 /turf/open/fixed/floor{
 	icon_state = "vault";
@@ -6799,7 +6831,9 @@
 /area/shuttle/administration/centcom)
 "apb" = (
 /obj/item/multitool,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/structure/table/reinforced,
 /turf/simulated/shuttle/floor/red,
 /area/shuttle/administration/centcom)
@@ -6978,7 +7012,9 @@
 "apC" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/green,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/clothing/suit/armor/vest,
 /obj/item/clothing/head/helmet/swat,
 /obj/item/gun/energy/laser,
@@ -7005,7 +7041,9 @@
 "apF" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/green,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/melee/energy/axe,
 /turf/open/fixed/floor{
 	icon_state = "vault";
@@ -7792,8 +7830,12 @@
 /obj/structure/table/standard,
 /obj/item/flash,
 /obj/item/flash,
-/obj/item/reagent_containers/spray/pepper,
-/obj/item/reagent_containers/spray/pepper,
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "pepper"
+	},
 /obj/item/clothing/glasses/sunglasses/sechud/tactical,
 /obj/item/clothing/glasses/sunglasses,
 /obj/item/clothing/glasses/sunglasses,
@@ -7900,7 +7942,9 @@
 "arQ" = (
 /obj/structure/table/rack,
 /obj/item/clothing/under/color/green,
-/obj/item/clothing/shoes/brown,
+/obj/item/clothing/shoes{
+	variant = "brown"
+	},
 /obj/item/clothing/suit/armor/tdome/green,
 /obj/item/clothing/head/helmet/thunderdome,
 /obj/item/melee/baton/loaded,
@@ -8923,7 +8967,8 @@
 /obj/structure/table/standard,
 /obj/item/surgical/surgicaldrill,
 /obj/item/autopsy_scanner,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the Space from Space Cleaner and written in Surgery. 'Do not remove under punishment of death!!!' is scrawled on the back.";
 	name = "Surgery Cleaner";
 	pixel_x = 2;
@@ -10937,7 +10982,9 @@
 /obj/structure/closet{
 	name = "custodial"
 	},
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/item/reagent_containers/glass/bucket,
 /obj/item/mop,
 /turf/simulated/shuttle/floor/black,
@@ -11078,16 +11125,24 @@
 "aze" = (
 /obj/structure/table/steel_reinforced,
 /obj/item/clothing/under/cheongsam,
-/obj/item/clothing/under/hosformalmale,
-/obj/item/clothing/under/hosformalfem,
+/obj/item/clothing/under{
+	variant = "hosformalmale"
+	},
+/obj/item/clothing/under{
+	variant = "hosformalfem"
+	},
 /obj/item/clothing/under/harness,
 /obj/item/clothing/under/gladiator,
 /obj/item/clothing/under/ert,
 /obj/item/clothing/under/schoolgirl,
-/obj/item/clothing/under/redcoat,
+/obj/item/clothing/under{
+	variant = "redcoat"
+	},
 /obj/item/clothing/under/sexymime,
 /obj/item/clothing/under/sexyclown,
-/obj/item/clothing/under/soviet,
+/obj/item/clothing/under{
+	variant = "soviet"
+	},
 /obj/item/clothing/under/space,
 /obj/item/clothing/under/swimsuit/stripper/mankini,
 /obj/item/clothing/under/suit_jacket/female,
@@ -11096,12 +11151,20 @@
 /obj/item/clothing/under/syndicate/combat,
 /obj/item/clothing/under/syndicate/tacticool,
 /obj/item/clothing/under/syndicate/tacticool,
-/obj/item/clothing/under/dress/sailordress,
-/obj/item/clothing/under/dress/redeveninggown,
-/obj/item/clothing/under/dress/dress_saloon,
+/obj/item/clothing/under/dress{
+	variant = "sailordress"
+	},
+/obj/item/clothing/under/dress{
+	variant = "redeveninggown"
+	},
+/obj/item/clothing/under/dress{
+	variant = "dress_saloon"
+	},
 /obj/item/clothing/under/dress/blacktango,
 /obj/item/clothing/under/dress/blacktango/alt,
-/obj/item/clothing/under/dress/dress_orange,
+/obj/item/clothing/under/dress{
+	variant = "dress_orange"
+	},
 /obj/item/clothing/under/dress/maid/janitor,
 /turf/simulated/shuttle/floor/black,
 /area/shuttle/merchant/home)
@@ -11482,9 +11545,15 @@
 /obj/item/clothing/accessory/storage/brown_vest,
 /obj/item/clothing/accessory/storage/brown_vest,
 /obj/item/clothing/accessory/scarf/white,
-/obj/item/clothing/accessory/scarf/lightblue,
-/obj/item/clothing/accessory/scarf/red,
-/obj/item/clothing/accessory/scarf/purple,
+/obj/item/clothing/accessory/scarf{
+	variant = "lightblue"
+	},
+/obj/item/clothing/accessory/scarf{
+	variant = "red"
+	},
+/obj/item/clothing/accessory/scarf{
+	variant = "purple"
+	},
 /obj/item/clothing/accessory/armband/science,
 /obj/item/clothing/accessory/armband/med,
 /obj/item/clothing/accessory/armband/engine,
@@ -18762,7 +18831,9 @@
 	name = "custodial"
 	},
 /obj/item/mop,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /obj/item/reagent_containers/glass/bucket,
 /turf/simulated/shuttle/floor/voidcraft/dark,
 /area/syndicate_station/start)

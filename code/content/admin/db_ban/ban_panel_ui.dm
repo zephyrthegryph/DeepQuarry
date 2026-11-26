@@ -29,12 +29,13 @@
 CAPABILITIES(/datum/tgui_ban_panel)
 	ref_one(nameof(admin_datum))
 	interface("BanPanel", title = "Ban Panel", rights = R_BAN)
-	op("confirmBan", ui_act("confirmBan", arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("duration", num()), arg("ip", schema_text(4096)), arg("job", schema_text(4096)), arg("reason", schema_text(4096)), arg("type", num())), then(PROC_REF(ui_act_confirmban)))
+	ui_shape(player_ckey = nullable(schema_text()), admin_ckey = nullable(schema_text()), player_ip = nullable(schema_text()), player_cid = nullable(schema_text()), bantype = nullable(int()), possible_jobs = list_of(schema_text()), database_records = nullable(list_of(row(data_list = list_of(schema_text()), auto = bool()))), min_search = bool())
+	op("confirmBan", ui_act("confirmBan", arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("duration", num()), arg("ip", schema_text(4096)), arg("job", schema_text(4096)), arg("reason", schema_text(4096)), arg("type", num())), needs(req(PROC_REF(req_ban_parameters))), then(PROC_REF(ui_act_confirmban)))
 	op("searchBans", ui_act("searchBans", arg("aCkey", schema_text(4096)), arg("banType", num()), arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("ip", schema_text(4096)), arg("minMatch", num())), then(PROC_REF(ui_act_searchbans)))
 	op("banEdit", ui_act("banEdit", arg("action", schema_text(4096)), arg("banid", num())), then(PROC_REF(ui_act_banedit)))
 	ref_one(nameof(holder))
 
-/datum/tgui_ban_panel/tgui_static_data(mob/user)
+/datum/tgui_ban_panel/ui_static_data(datum/act/eval/A)
 	var/list/bantypes = list("traitor","changeling","operative","revolutionary","cultist","wizard") //For legacy bans.
 	for(var/antag_type in antag_all_antag_types()) // Grab other bans.
 		var/datum/antagonist/antag = antag_all_antag_types()[antag_type]
@@ -59,6 +60,25 @@ CAPABILITIES(/datum/tgui_ban_panel)
 						)
 	return data
 
+/// A ban needs the fields its type requires. Null allows.
+/datum/tgui_ban_panel/proc/req_ban_parameters(datum/act/op/A)
+	var/banckey = ckey(A.args["ckey"])
+	var/banreason = A.args["reason"]
+	switch(A.args["type"])
+		if(BANTYPE_PERMA)
+			if(!banckey || !banreason)
+				return "Not enough parameters (Requires ckey and reason)"
+		if(BANTYPE_TEMP)
+			if(!banckey || !banreason || !A.args["duration"])
+				return "Not enough parameters (Requires ckey, reason and duration)"
+		if(BANTYPE_JOB_PERMA)
+			if(!banckey || !banreason || !A.args["job"])
+				return "Not enough parameters (Requires ckey, reason and job)"
+		if(BANTYPE_JOB_TEMP)
+			if(!banckey || !banreason || !A.args["job"] || !A.args["duration"])
+				return "Not enough parameters (Requires ckey, reason and job)"
+	return null
+
 /datum/tgui_ban_panel/proc/ui_act_confirmban(datum/act/op/A, cid, ckey_arg, duration, ip, job, reason, type)
 	var/mob/user = A.actor
 
@@ -72,25 +92,12 @@ CAPABILITIES(/datum/tgui_ban_panel)
 
 	switch(bantype)
 		if(BANTYPE_PERMA)
-			if(!banckey || !banreason)
-				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey and reason)"))
-				return
 			banduration = null
 			banjob = null
 		if(BANTYPE_TEMP)
-			if(!banckey || !banreason || !banduration)
-				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and duration)"))
-				return
 			banjob = null
 		if(BANTYPE_JOB_PERMA)
-			if(!banckey || !banreason || !banjob)
-				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
-				return
 			banduration = null
-		if(BANTYPE_JOB_TEMP)
-			if(!banckey || !banreason || !banjob || !banduration)
-				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
-				return
 
 	var/mob/playermob
 
@@ -117,16 +124,13 @@ CAPABILITIES(/datum/tgui_ban_panel)
 	return TRUE
 
 /datum/tgui_ban_panel/proc/ui_act_searchbans(datum/act/op/A, aCkey, banType, cid, ckey_arg, ip, minMatch)
-	var/mob/user = A.actor
-	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
-	playerckey = ckey(ckey_arg)
-	adminckey = ckey(aCkey)
-	playerip = ip
-	playercid = cid
-	dbbantype = banType
+	set_playerckey(ckey(ckey_arg))
+	set_adminckey(ckey(aCkey))
+	set_playerip(ip)
+	set_playercid(cid)
+	set_dbbantype(banType)
 	set_min_search(minMatch)
 	database_lookup()
-	update_tgui_static_data(user, ui)
 	return TRUE
 
 /datum/tgui_ban_panel/proc/ui_act_banedit(datum/act/op/A, action_arg, banid_arg)
@@ -141,7 +145,7 @@ CAPABILITIES(/datum/tgui_ban_panel)
 
 /// Starts the ban search for the current filters; the rows arrive in sql_rows_arrived().
 /datum/tgui_ban_panel/proc/database_lookup()
-	db_records = null
+	set_db_records(null)
 	if(!adminckey && !playerckey && !playerip && !playercid && !dbbantype)
 		return
 
@@ -202,8 +206,7 @@ CAPABILITIES(/datum/tgui_ban_panel)
 	var/now = time2text(world.realtime, "YYYY-MM-DD hh:mm:ss") // MUST BE the same format as SQL gives us the dates in, and MUST be least to most specific (i.e. year, month, day not day, month, year)
 	for(var/list/row as anything in rows)
 		UNTYPED_LIST_ADD(all_bans, list("auto" = ((row[3] in list("TEMPBAN", "JOB_TEMPBAN")) && now > row[7]), "data_list" = row))
-	db_records = all_bans
-	update_static_data_for_all_viewers()
+	set_db_records(all_bans)
 
 /// The admin_datum this refers to (a relation view: null once that is deleted).
 /datum/tgui_ban_panel/proc/admin_datum() as /datum/admins

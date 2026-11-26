@@ -66,21 +66,6 @@ CAPABILITIES(/obj/item/brokenbug)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 
-/obj/item/brokenbug/spy
-	name = "broken bug"
-	desc = ""	//Even when it's broken it's inconspicuous
-	icon = 'icons/obj/weapons.dmi'
-	icon_state = "eshield"
-	item_state = "nothing"
-	layer = TURF_LAYER+0.2
-	w_class = ITEMSIZE_TINY
-
-CAPABILITIES(/obj/item/brokenbug/spy)
-	configure(movable_motion(throw_range = 15, throw_speed = 3))
-	configure(item_worn(slots = SLOT_EARS))
-	configure(item_thrown(force = 5.0))
-	configure(item_combat(force = 0))
-
 /obj/item/camerabug/spy
 	name = "bug"
 	desc = ""	//Nothing to see here
@@ -218,7 +203,9 @@ CAPABILITIES(/obj/item/bug_monitor)
 	if(cameras.len == 1 && user.is_remote_viewing())
 		user.reset_perspective()
 		return
-	if(!can_use_cam(user))
+	var/refusal = cam_refusal()
+	if(refusal)
+		to_chat(user, span_warning(refusal))
 		return
 
 	if(cameras.len == 1)
@@ -257,12 +244,11 @@ CAPABILITIES(/obj/item/bug_monitor)
 		return
 	user.begin_remote_view(/datum/remote_view/item_zoom, selected_camera(), null, /datum/remote_view_config/camera_standard, src, 0, TRUE)
 
-/obj/item/bug_monitor/proc/can_use_cam(mob/user)
+/// Why the monitor cannot show a camera, or null when it can. Never prints: the view action shows it.
+/obj/item/bug_monitor/proc/cam_refusal()
 	if(!length(paired_cameras()))
-		to_chat(user, span_warning("No paired cameras detected!"))
-		to_chat(user, span_warning("Bring a camera in contact with this device to pair the camera."))
-		return FALSE
-	return TRUE
+		return "No paired cameras detected! Bring a camera in contact with this device to pair the camera."
+	return null
 
 /obj/item/bug_monitor/spy
 	name = "\improper PDA"

@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Corner lighting lights walls as the glow mode does (only on the side facing the light, per viewer), and closed doors, shutters and other opaque things block it like walls."

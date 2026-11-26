@@ -4,19 +4,10 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
 import { EmptyState } from './common/EmptyState';
+import type { MoneybagActions, MoneybagData } from './generated/Moneybag';
 
-type Counts = {
-  gold: number;
-  silver: number;
-  iron: number;
-  diamond: number;
-  phoron: number;
-  uranium: number;
-};
-
-type Data = {
-  counts: Counts;
-};
+type Data = MoneybagData;
+type Counts = Data['counts'];
 
 const COIN_LABELS: Array<{ key: keyof Counts; label: string }> = [
   { key: 'gold', label: 'Gold' },
@@ -28,8 +19,8 @@ const COIN_LABELS: Array<{ key: keyof Counts; label: string }> = [
 ];
 
 export const Moneybag = () => {
-  const { data, act } = useBackend<Data>();
-  const counts = data.counts;
+  const { data, act } = useBackend<Data, MoneybagActions>();
+  const counts = data.counts || ({} as Counts);
   const hasAny = COIN_LABELS.some((c) => counts[c.key] > 0);
   return (
     <Window width={360} height={300} title="Moneybag">

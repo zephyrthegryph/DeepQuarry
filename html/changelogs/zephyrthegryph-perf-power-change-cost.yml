@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A machine's has_power reads only the area channel it draws on, so an APC stepping one channel re-evaluates just those machines"
+  - code_imp: "Atom setup() writes count as construction: walls and floors keep their creation mark and are sampled and parked at boot instead of waiting for the post-boot drain"
+  - code_imp: "Native notices copy their record only when something listens, and log NATIVE_NOTICE_SLOW with per-phase times"

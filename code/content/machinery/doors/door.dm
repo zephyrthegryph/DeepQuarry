@@ -46,6 +46,9 @@
 
 	var/update_adjacent_tiles = TRUE
 
+	/// The chunk of the glow door index this door is filed under (client_shadow.dm glow_door_index()); null while it is on no turf.
+	var/glow_door_chunk
+
 
 MSG_DEF_SELF(door/already_reinforced, "It is already reinforced.")
 MSG_DEF_SELF(door/repair_first, "It looks broken. Repair it before reinforcing it.")
@@ -553,8 +556,17 @@ CAPABILITIES(/obj/machinery/door)
 		else
 			source.thermal_conductivity = initial(source.thermal_conductivity)
 
+/obj/machinery/door/on_materialize()
+	. = ..()
+	glow_door_index()
+
+/obj/machinery/door/on_dematerialize()
+	glow_door_unindex()
+	return ..()
+
 /obj/machinery/door/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
+	glow_door_index()
 	if(width > 1)
 		if(dir in list(EAST, WEST))
 			bound_width = width * world.icon_size

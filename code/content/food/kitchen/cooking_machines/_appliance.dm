@@ -49,6 +49,7 @@ CAPABILITIES(/obj/machinery/appliance)
 	op("remote_power", remote(), gesture(GESTURE_CTRL), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle power"),
 		wait(0), then(PROC_REF(remote_power)))
 	interface(null, window_var = nameof(tgui_id))
+	ui_shape(on = bool(), safety = bool(), selected_option = any, output_options = any, containersRemovable = bool(), our_contents = list_of())
 	without("ui_open")
 	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
 	op("toggle_safety", ui_act("toggle_safety"), then(PROC_REF(ui_act_toggle_safety)))

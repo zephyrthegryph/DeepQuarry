@@ -233,7 +233,6 @@ CAPABILITIES(/obj/machinery/vending/hydronutrients)
 			product.set_category(category)
 
 			rel_add(src, nameof(product_records), product)
-			GLOB.vending_products[entry] = 1
 
 	// Consumed, as in the base proc.
 	products = null

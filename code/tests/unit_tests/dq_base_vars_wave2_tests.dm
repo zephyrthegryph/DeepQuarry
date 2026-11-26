@@ -159,13 +159,13 @@
 	STATE_SET(H, mob_misc, suiciding, 1)
 	TEST_ASSERT(STATE_GET(H, mob_misc, suiciding), "until it does")
 
-/// A machine keeps its power setup flag and its diagnostic wake counter in slots.
+/// A machine has its power setup done after init (read from its init flag) and keeps its diagnostic wake counter in a slot.
 /datum/unit_test/dq_base_vars_wave2_machine
 
 /datum/unit_test/dq_base_vars_wave2_machine/Run()
 	var/turf/T = dq_containment_floor()
 	var/obj/machinery/light_switch/M = allocate(/obj/machinery/light_switch, T)
-	TEST_ASSERT(STATE_PEEK(M, machinery_misc, power_init_complete), "a machine has its power setup done after init")
+	TEST_ASSERT(M.power_started(), "a machine has its power setup done after init")
 	TEST_ASSERT_EQUAL(STATE_PEEK(M, machinery_misc, gas_dependency_wake_count), 0, "and has woken for no gas change")
 
 /// The object, machine, mob and atom traits (obj_rules, machine_usage, mob_nature, atom_shielding) hold what their vars held.

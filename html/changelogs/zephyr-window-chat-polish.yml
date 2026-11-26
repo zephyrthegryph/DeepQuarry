@@ -1,0 +1,9 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - qol: "A reopened window keeps its scroll position"
+  - qol: "Floating a window or docking it back keeps its size"
+  - bugfix: "A popped-out chat is no longer empty; it loads the stored log"
+  - bugfix: "The chat input opens on Say, not OOC, when the round starts"
+  - bugfix: "The last docked window in the side panel can be resized too"
+  - qol: "Chat text padding matches the tab strip, with less room under the last line"

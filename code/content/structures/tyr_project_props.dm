@@ -198,51 +198,6 @@ CAPABILITIES(/obj/random/tyroutcrop)
 
 //The following are for Base Neon
 
-/obj/item/prop/tyrlore/baseneon
-	name = "data disc"
-	desc = "A disc for storing data."
-	icon_state = "neon_disc"
-
-CAPABILITIES(/obj/item/prop/tyrlore/baseneon)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon)))
-
-/obj/item/prop/tyrlore/neonsec
-	name = "data disc"
-	desc = "A disc for storing data."
-	icon_state = "sec_disc"
-
-CAPABILITIES(/obj/item/prop/tyrlore/neonsec)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_forward)))
-
-/obj/item/prop/tyrlore/neonmedi
-	name = "data disc"
-	desc = "A disc for storing data."
-	icon_state = "medi_disc"
-
-CAPABILITIES(/obj/item/prop/tyrlore/neonmedi)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_virus)))
-
-/obj/item/prop/tyrlore/monodisc
-	name = "strange disk"
-	desc = "A disc for storing data, but it appears to have none on it"
-	icon_state = "mono_disc"
-
-/obj/item/prop/tyrlore/neonengi
-	name = "data disc"
-	desc = "A disc for storing data."
-	icon_state = "engi_disc"
-
-CAPABILITIES(/obj/item/prop/tyrlore/neonengi)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_anomalous)))
-
-/obj/item/prop/tyrlore/neonsci
-	name = "data disc"
-	desc = "A disc for storing data."
-	icon_state = "sci_disc"
-
-CAPABILITIES(/obj/item/prop/tyrlore/neonsci)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_planetary_report)))
-
 /datum/category_item/catalogue/technology/base_neon
 	name = "Goal Manifest"
 	desc = "After we activation of the seal upon sif our foundation collapsed.\
@@ -309,14 +264,6 @@ CAPABILITIES(/obj/item/prop/tyrlore/neonsci)
 	Resources: Recruitment"
 	value = CATALOGUER_REWARD_HARD
 
-/obj/item/prop/tyrlore/neonjanus
-	name = "data disc"
-	desc = "A disc for storing data."
-	icon_state = "disc_janus"
-
-CAPABILITIES(/obj/item/prop/tyrlore/neonjanus)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_janus)))
-
 /datum/category_item/catalogue/technology/base_neon_janus
 	name = "Shielding Tech"
 	desc = "Our patent, and very stable shielding technongly was one of\
@@ -330,14 +277,6 @@ CAPABILITIES(/obj/item/prop/tyrlore/neonjanus)
 	AMRL is highly recomended."
 	value = CATALOGUER_REWARD_HARD
 
-
-/obj/item/prop/tyrlore/truegoal
-	name = "data disc"
-	desc = "A disc for storing data."
-	icon_state = "disc_eclipse"
-
-CAPABILITIES(/obj/item/prop/tyrlore/truegoal)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/truegoal)))
 
 /datum/category_item/catalogue/technology/truegoal
 	name = "Success For All"
@@ -361,14 +300,6 @@ CAPABILITIES(/obj/item/prop/tyrlore/truegoal)
 	best path."
 	value = CATALOGUER_REWARD_HARD
 
-
-/obj/item/prop/tyrlore/stolenbreacher
-	name = "data disc"
-	desc = "A disc for storing data."
-	icon_state = "disc_eclipse"
-
-CAPABILITIES(/obj/item/prop/tyrlore/stolenbreacher)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/stolen_breacher)))
 
 /datum/category_item/catalogue/technology/stolen_breacher
 	name = "Reverse Breacher Suit"
@@ -397,18 +328,10 @@ CAPABILITIES(/obj/item/prop/tyrlore/fossiltank)
 	value = CATALOGUER_REWARD_HARD
 
 
-/obj/item/material/barbedwire/plastic/active
-	anchored = 1
-	icon_state = "barbedwire-out"
-
 
 /obj/item/material/barbedwire/vopal
 	name = "crystal shards"
 	default_material = MAT_VOPAL
-
-/obj/item/material/barbedwire/vopal/active
-	anchored = 1
-	icon_state = "barbedwire-out"
 
 /obj/item/prop/tyrlore/disc_one
 	name = "tyrian data disc one"
@@ -524,42 +447,3 @@ CAPABILITIES(/obj/item/prop/tyrlore/disc_eight)
 	to 60end attack60 into the a60tral 60ea, the cry60talline a22le to deflect many ranged weapon60 and the 60lime program i60<BR>\
 	60omewhat a22le to convert raw material into antling60.."
 	value = CATALOGUER_REWARD_HARD
-
-/obj/item/paper/tyr_notes/astral_a
-	name = "The Bright Future"
-	info = "We have come back from the brink of defeat! By some act of divinity, fate, or pure will we discovered devices far past the brink of civilization and begun to harvest secrets. <BR>\
-	We have begun to pave the road for the bright future, but our road ahead is a long and rocky one. We shall prevail like we always have.  <BR>\
-	Those harness resources for their own comfort and gains shall be cut down, and those that remain shall flourish."
-
-/obj/item/paper/tyr_notes/astral_b
-	name = "Natural Resources of Tyr"
-	info = "So this is draft 12 of this report, and I am giving up with being professional. This is just orange phoron. Discrediting it a bit, but it's a weird thing used for fuel, energy, and maybe other things. <BR>\
-	They made bioweapons that act as a farm. This has to be important for this fallen society. The building has also shifted and keeps on slowly shifting. Which is concerning but I am here for the natural bits. <BR>\
-	Which is nothing. There is some ore, but most of it seems manufactured. The ants are man made too. Super advanced slimes perhaps? Did NT make a time machine and go back to make orange phoron but blow themselves up?<BR>\
-	Anyway rambling aside, the energized agate as the crew has been calling it seems useful to make batteries. Scanned some guns from the nearby structures and was easy enough to make. Exporting it enmass"
-
-/obj/item/paper/tyr_notes/astral_c
-	name = "Encoded Siginals"
-	info = "Signals have been constantly emitting from the tyrian superstructure. Our scanners have a guestimate of at least 5000 meters deep but uncertain if signals from deeper within are not reaching. <BR>\
-	The base itself is falling apart slowly but surely. Unsure how wise it is to enter it, with how hostile the repair drones are it has a high lethality rate thus far. To the signals themselves, it seems to be composed of data.  <BR>\
-	I belive the base recognizes it's collapsing and trying to send out the information it has. We have seen mentions of an Astral Sea, Eon War, and End Times. The data is quite corrupted but from what we've scavanged, they <BR>\
-	seem to be aware of the rift, or bluespace. There are high doubts that the Astral Sea is anything new. We've seen countless wars, but the End Times is quite concerning. Speaking of a mass disappearance of stars. needs further study."
-
-/obj/item/paper/tyr_notes/astral_d
-	name = "Requesting Backup"
-	info = "We need serious back up if we are to stay here long term. Random folks keep stumbling upon the sivian side and blasting, unsure if they are bounty hunters, or maniacs but no SOL attention yet.<BR>\
-	The other day we had reports of masked and hooded men dq_get_hovering(src) over lava, although that may be disregarded. We found mold and mushrooms in some of our rations, and there was no physical sign of them.<BR>\
-	Although Rift Watchers may be stalking this location. The ants are also adapting to us and our gear. We need something, a simple mecha will do."
-
-/obj/item/paper/tyr_notes/astral_d
-	name = "Requesting Backup"
-	info = "We need serious back up if we are to stay here long term. Random folks keep stumbling upon the sivian side and blasting, unsure if they are bounty hunters, or maniacs but no SOL attention yet.<BR>\
-	The other day we had reports of masked and hooded men dq_get_hovering(src) over lava, although that may be disregarded. We found mold and mushrooms in some of our rations, and there was no physical sign of them.<BR>\
-	Although Rift Watchers may be stalking this location. The ants are also adapting to us and our gear. We need something, a simple mecha will do."
-
-/obj/item/paper/tyr_notes/astral_e
-	name = "The Astral Houses"
-	info = "Our orginization is split into three houses like we once had, but our foundation is firmer then before. One house for the mind, one for the soul and one for the body.<BR>\
-	The house of the mind shall focus upon our research, furthering our way torwards the bright future.<BR>\
-	The house of the soul shall focus upon us, keeping out spirits high and focus narrow.<BR>\
-	Lastly, the house of the body shall provide the most fierce of protection."

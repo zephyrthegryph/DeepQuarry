@@ -6,6 +6,7 @@ GENERAL_PROTECT_DATUM(/datum/admin_verb)
  * That means you reader.
  */
 /datum/admin_verb
+	var/id //! The ADMIN_VERB path name: the short key the verb browser and its pins use.
 	var/name //! The name of the verb.
 	var/description //! The description of the verb.
 	var/category //! The category of the verb.
@@ -16,6 +17,10 @@ GENERAL_PROTECT_DATUM(/datum/admin_verb)
 
 // Admin verbs are singletons.
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/admin_verb)
+
+/// The command that runs the verb: its name with dashes, as the verb panel sends it.
+/datum/admin_verb/proc/command()
+	return replacetext(replacetext(name, "\"", ""), " ", "-")
 
 /// Assigns the verb to the admin.
 /datum/admin_verb/proc/assign_to_client(client/admin)

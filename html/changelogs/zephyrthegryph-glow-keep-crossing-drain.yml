@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Running no longer stutters at light-glow chunk crossings: glows are kept two chunks past the view, dropped glow images are reused, and a crossing only looks at the chunks that moved."
+  - bugfix: "A large batch of objects coming into view at a walker's chunk edge is drawn nearest-first over a few ticks instead of all at once."

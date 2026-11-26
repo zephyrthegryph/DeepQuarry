@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Wrenching a filing cabinet, photocopier, seed storage, botany machine, beehive, honey extractor, bookcase or tank dispenser now goes through the shared anchor capability"
+  - refactor: "Fuel ports and record cabinets refuse through requirements instead of a message in the effect"

@@ -63,7 +63,7 @@ MSG_DEF_SELF(picnic_blanket/center, "Fold it up from the center.")
 /obj/structure/picnic_blanket_deployed/proc/pred_can_fold_up(datum/act/op/A)
 	return (blanket_type == CENTER) ? null : MSG(picnic_blanket/center)
 
-/obj/structure/picnic_blanket_deployed/proc/unfold(mob/user)
+/obj/structure/picnic_blanket_deployed/proc/unfold(mob/user = null)
 	var/dirs = GLOB.alldirs
 	var/isTableTop //Controls whether to spawn things across tables, or on ground
 	var/doWeHaveTable //Helper var set to true if ANY obj is a table

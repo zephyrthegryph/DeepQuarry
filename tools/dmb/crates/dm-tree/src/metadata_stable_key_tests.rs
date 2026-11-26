@@ -345,18 +345,18 @@ fn inherited_typed_array_metadata_structural_edit_matches_fresh() {
         };
         let value = field(&actual.snapshot.tree, "value");
         assert_eq!(
-            value.declared_type(),
+            value.declared_type,
             Some(dm_ir::SymbolId::of("/datum/item_b"))
         );
         assert_eq!(value, field(&fresh.snapshot.tree, "value"));
         assert_ne!(
-            value.declared_type(),
-            field(&old.snapshot.tree, "value").declared_type()
+            value.declared_type,
+            field(&old.snapshot.tree, "value").declared_type
         );
         let values = field(&actual.snapshot.tree, "values");
-        assert_eq!(values.declared_type(), Some(dm_ir::SymbolId::of("/list")));
+        assert_eq!(values.declared_type, Some(dm_ir::SymbolId::of("/list")));
         assert_eq!(
-            values.list_element_type(),
+            values.list_element_type,
             Some(dm_ir::SymbolId::of("/datum/item_b"))
         );
         assert_eq!(values, field(&fresh.snapshot.tree, "values"));
@@ -448,11 +448,11 @@ fn reopened_typed_array_formal_reorder_and_override_removal_match_fresh() {
         loop {
             let member = tree.member(id).unwrap();
             assert_eq!(
-                member.metadata.declared_type(),
+                member.metadata.declared_type,
                 Some(dm_ir::SymbolId::of("/list"))
             );
             assert_eq!(
-                member.metadata.list_element_type(),
+                member.metadata.list_element_type,
                 Some(dm_ir::SymbolId::of("/datum/item"))
             );
             assert_eq!(member.metadata.flags & 4, 4);

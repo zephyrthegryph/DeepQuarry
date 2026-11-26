@@ -5,8 +5,8 @@
 // once the testing freeze lifts (doc/rewrite/lifecycle.md, ledger-joint L1/L2/L3).
 //
 // Not to be confused with dq_lifecycle_tests.dm (roadmap L2, doc/rewrite/
-// state.md section 6): that file's "lifecycle" is the latent-safety
-// Initialize()/materialize() sandbox, an unrelated, pre-existing L2.
+// state.md section 6): that file's "lifecycle" is the Initialize() sandbox,
+// an unrelated, pre-existing L2.
 
 // ---- Shared log (signal handlers and hook overrides can't close over
 // unit-test locals, so they all append to this instead; each test clears it

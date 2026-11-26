@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import {
   Box,
   ColorBox,
@@ -10,14 +11,13 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
-import type { Data } from './types';
+import type { RobotactActions, RobotactData } from '../generated/Robotact';
 
 const quick_actions: {
   name: string;
   icon: string;
   icon_state: string;
-  eventName: string;
+  eventName: Extract<keyof RobotactActions, `quick_action_${string}`>;
 }[] = [
   {
     name: 'Communicator',
@@ -94,7 +94,7 @@ const quick_actions: {
 ];
 
 export const StatusScreen = (props) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<RobotactData, RobotactActions>();
 
   return (
     <Stack vertical fill height="94%">
@@ -149,7 +149,7 @@ export const StatusScreen = (props) => {
 };
 
 const Configuration = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<RobotactData, RobotactActions>();
 
   const { name, module_name, ai } = data;
   return (
@@ -166,7 +166,7 @@ const Configuration = (props) => {
 };
 
 const Status = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<RobotactData, RobotactActions>();
 
   const { charge, max_charge, health, max_health, light_color } = data;
 
@@ -190,17 +190,16 @@ const Status = (props) => {
             <NoticeBox danger>NO CELL INSTALLED</NoticeBox>
           )}
         </LabeledList.Item>
-        <LabeledList.Item label="Chassis Integrity">
-          <ProgressBar
-            value={health}
-            maxValue={max_health}
-            ranges={{
-              good: [max_health * 0.75, Number.POSITIVE_INFINITY],
-              average: [max_health * 0.3, max_health * 0.75],
-              bad: [Number.NEGATIVE_INFINITY, max_health * 0.3],
-            }}
-          />
-        </LabeledList.Item>
+        <StatBar
+          label="Chassis Integrity"
+          value={health}
+          maxValue={max_health}
+          ranges={{
+            good: [max_health * 0.75, Number.POSITIVE_INFINITY],
+            average: [max_health * 0.3, max_health * 0.75],
+            bad: [Number.NEGATIVE_INFINITY, max_health * 0.3],
+          }}
+        />
         <LabeledList.Item label="Light color">
           <Box inline>
             <ColorBox mr={1} color={light_color} />

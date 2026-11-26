@@ -10,7 +10,7 @@
 //   pre_melee_attack(): intent machine —
 //       DISARM (stun) a standing victim, with prob scaling on power_charge, or
 //         always when always_stun is set;
-//       GRAB (eat) a downed victim it can consume (juvenile + can_consume + lying);
+//       GRAB (eat) a downed victim it can consume (juvenile + no consume_refusal + lying);
 //       else HURT.
 //     The mob's apply_attack() reads input_stance() to apply the matching effect, so
 //     the behavior just calls set_use_stance() then runs the normal attack.
@@ -20,7 +20,7 @@
 //   handle_special_tactic() -> evolve_and_reproduce(): once nutrition hits the
 //     evolution point, evolve to the next form.
 //
-// can_consume(), evolve(), the is_juvenile/power_charge/nutrition/evo_point
+// consume_refusal(), evolve(), the is_juvenile/power_charge/nutrition/evo_point
 // vars, and apply_attack()'s intent dispatch all still live on the metroid mob.
 
 /mob/living/simple_mob/metroid/juvenile
@@ -102,7 +102,7 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile, get_ai_target_selectors, lis
 	// Intent selection, faithful to legacy pre_melee_attack():
 	if((!L.lying && prob(30 + (MJ.power_charge * 7))) || (!L.lying && MJ.always_stun))
 		MJ.set_use_stance(I_DISARM)           // Stun the standing target first.
-	else if(MJ.is_juvenile && MJ.can_consume(L) && L.lying)
+	else if(MJ.is_juvenile && !MJ.consume_refusal(L) && L.lying)
 		MJ.set_use_stance(I_GRAB)             // Then eat the downed target.
 	else
 		MJ.set_use_stance(I_HURT)             // Otherwise just hurt it.

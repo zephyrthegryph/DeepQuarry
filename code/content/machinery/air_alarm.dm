@@ -36,18 +36,41 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	rel_set(src, nameof(main_air_alarm), length(checks) ? pick(checks) : null)
 	air_alarms_refresh()
 
+/// Areas with an election waiting (area -> TRUE), and how many elections have run: a power loss that takes every alarm of an area down asks once per
+/// alarm, and the area elects once for all of them after the drain, not once per alarm (each election rewrites every alarm of the area).
+GLOBAL_LIST_EMPTY(air_election_pending)
+GLOBAL_VAR_INIT(air_election_runs, 0)
+
+/// The area wants a main alarm re-elected: the first ask schedules the one election, the rest of the same burst join it.
+/area/proc/request_air_election()
+	if(GLOB.air_election_pending[src])
+		return
+	GLOB.air_election_pending[src] = TRUE
+	after(src, 1 TICK, PROC_REF(run_air_election), key = "air_election")
+
+/// The scheduled election: only if the area still has no working main alarm once the burst of changes has settled.
+/area/proc/run_air_election()
+	GLOB.air_election_pending -= src
+	if(main_air_alarm_is_operating())
+		return
+	GLOB.air_election_runs++
+	elect_main_air_alarm()
+
 /area/proc/main_air_alarm_is_operating()
 	var/obj/machinery/alarm/AM = main_air_alarm
 	return AM && AM.operable()
 
 /// Every alarm of the area takes what it shows of the area: whether it is the main one, whether the main one is down, the area's alarm level.
 /area/proc/air_alarms_refresh()
-	var/obj/machinery/alarm/main = main_air_alarm
-	var/main_down = !main || main.shorted
 	for(var/obj/machinery/alarm/AA as anything in air_alarms)
-		AA.set_is_main(AA == main)
-		AA.set_main_down(main_down)
-		AA.set_area_alert(atmosalm)
+		air_alarm_refresh_one(AA)
+
+/// One alarm of the area takes what it shows of the area (an alarm joining an area whose main alarm works: the others already show it).
+/area/proc/air_alarm_refresh_one(obj/machinery/alarm/AA)
+	var/obj/machinery/alarm/main = main_air_alarm
+	AA.set_is_main(AA == main)
+	AA.set_main_down(!main || main.shorted)
+	AA.set_area_alert(atmosalm)
 
 /obj/machinery/alarm
 	name = "alarm"
@@ -78,8 +101,9 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	var/target_temperature = T0C+20
 	var/datum/radio_frequency/radio_connection
 
-	/// Its thresholds: env ("pressure", "temperature", a gas id, "other") -> list(red min, yellow min, yellow max, red max). Its own copy of its type's
-	/// default_TLV(), made when it initializes; the area's alarms are kept in step by the threshold button.
+	/// Its thresholds: env ("pressure", "temperature", a gas id, "other") -> list(red min, yellow min, yellow max, red max). A starting list: every alarm
+	/// of a type holds its type's default_TLV() table (per_type, copy on write) until the threshold button writes a band, which copies it; a band is
+	/// replaced whole (set_TLV_at()), never edited in place, since the copy is one level deep. The area's alarms are kept in step by the threshold button.
 	var/list/TLV
 	var/static/list/trace_gas = list(GAS_N2O, GAS_VOLATILE_FUEL) //list of other gases that this air alarm is able to detect
 
@@ -120,7 +144,7 @@ STAT(/obj/machinery/alarm, shorted, ANY)
 
 
 CAPABILITIES(/obj/machinery/alarm)
-	configure(movable_motion(blocks_emissive = NONE, unacidable = TRUE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE, unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_BUTTON, click_volume = 30))
 	rolls(nameof(name), PROC_REF(roll_alarm_name))
 	setup(PROC_REF(register_initial_alarm))
@@ -128,7 +152,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 80, active = 1000, channel = ENVIRON))
 	links(/area::air_alarms, /obj/machinery/alarm::alarm_area, a_many = TRUE)
-	owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm, starts = /datum/looping_sound/alarm/decompression_alarm)
+	per_type(nameof(TLV), PROC_REF(default_TLV), copy_on_write = TRUE) // bound before the sensings first arm (caps_init), so they arm on the thresholds once
+	owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm) // made the first time the alarm sounds (update_soundloop())
 	// The thermostat: a heat pump on the room's air toward the target while it works, heating resistively and cooling into the station's
 	// heat-rejection loop at no better than one joule per joule (the old rate both ways).
 	when(nameof(regulating_temperature), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(thermostat_watts), nameof(target_temperature), nameof(thermostat_mode), TRUE, 0.5, 1, reads = list("target_temperature", "thermostat_mode")))
@@ -162,6 +187,7 @@ CAPABILITIES(/obj/machinery/alarm)
 	/// whose AI control is cut (to a silicon), or a remote console that does not let the actor in, answers none.
 	section(controls, "The alarm's window and the buttons in it")
 	interface("AirAlarm")
+	ui_shape(locked = bool(), siliconUser = bool(), remoteUser = bool(), environment_data = list_of(row(name = schema_text(), value = num(), unit = schema_text(), danger_level = num())), danger_level = num(), target_temperature = schema_text(), rcon = num(), atmos_alarm = num(), fire_alarm = num(), mode = nullable(num()), thresholds = list_of(row(name = schema_text(), settings = list_of(row(env = schema_text(), val = num(), selected = num())))), scrubbers = list_of(row(id_tag = schema_text(), long_name = schema_text(), power = num(), scrubbing = num(), panic = num(), filters = list_of(row(name = schema_text(), command = schema_text(), val = num())))), vents = list_of(row(id_tag = schema_text(), long_name = schema_text(), power = num(), checks = num(), excheck = num(), incheck = num(), direction = schema_text(), external = num(), internal = num(), extdefault = num(), intdefault = num())), modes = list_of(row(name = schema_text(), mode = num(), selected = num(), danger = num())))
 	op("rcon", ui_act("rcon", arg("rcon", enum(list(RCON_NO, RCON_AUTO, RCON_YES)))), then(PROC_REF(ui_set_rcon)))
 	op("temperature", ui_act("temperature"), asks(/datum/prompt/number, fields = list(
 			"title" = "Thermostat Controls",
@@ -251,16 +277,15 @@ CAPABILITIES(/obj/machinery/alarm)
 SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 
 /obj/machinery/alarm/proc/register_initial_alarm()
-	// Its thresholds first: joining the area (the pairing below) lets the area's election and refresh reach this alarm, and they read its bands.
-	set_TLV(default_TLV())
-	sensed_rearm_all(src)
+	// Its thresholds are its type's table from preinit (per_type), so its sensings armed on them in caps_init: joining the area (the pairing below) lets
+	// the area's election and refresh reach this alarm, and they read its bands.
 	rel_set(src, nameof(alarm_area), get_area(src)) // paired: the area's air_alarms lists it
 	area_uid = alarm_area?.air_uid()
 	set_frequency(frequency)
 	if(!alarm_area?.main_air_alarm_is_operating()) // select main alarm
 		alarm_area?.elect_main_air_alarm()
 	else
-		alarm_area.air_alarms_refresh()
+		alarm_area.air_alarm_refresh_one(src) // the area's other alarms already show its working main alarm
 
 /// It goes: its area elects another main alarm.
 /obj/machinery/alarm/on_destroy(force)
@@ -275,7 +300,8 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 	set_pixel_x((dir & 3) ? 0 : (dir == 4 ? -26 : 26))
 	set_pixel_y((dir & 3) ? (dir == 1 ? -26 : 26) : 0)
 
-/// The thresholds a new alarm of this type starts with (a fresh table: each alarm keeps its own). Subtypes edit their parent's.
+/// The thresholds a new alarm of this type starts with: built once per type (per_type), shared by its alarms until one writes a band. Subtypes edit
+/// their parent's.
 /obj/machinery/alarm/proc/default_TLV()
 	. = list()
 	// breathable air according to human/Life()
@@ -460,7 +486,7 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 		contract_atmos_revision++
 		emit_contract_event(CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, list(
 			"department" = DEPARTMENT_ENGINEERING,
-			"fact_id" = "atmos-service:[handle_of(src)]",
+			"fact_id" = "atmos-service:[handle_text(handle_of(src))]",
 			"fact_revision" = contract_atmos_revision,
 			"service_id" = handle_of(src),
 			"danger_level" = danger_level,
@@ -469,7 +495,7 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 				"temperature" = S.temperature,
 			),
 			"detail" = "[alarm_area] atmospheric service reports danger level [danger_level], [round(S.pressure, 0.1)] kPa, and [round(S.temperature, 0.1)] K.",
-		), "atmos-service:[handle_of(src)]:[contract_atmos_revision]", src)
+		), "atmos-service:[handle_text(handle_of(src))]:[contract_atmos_revision]", src)
 	if(mode == AALARM_MODE_CYCLE && S.pressure < ONE_ATMOSPHERE * 0.05)
 		set_mode(AALARM_MODE_FILL)
 		apply_mode()
@@ -493,9 +519,11 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 /obj/machinery/alarm/proc/update_soundloop()
 	atmoswarn = danger_level > 0 || alarm_area?.atmosalm
 	if(operable() && atmoswarn)
+		if(!soundloop)
+			rel_set(src, nameof(soundloop), new /datum/looping_sound/alarm/decompression_alarm(src))
 		soundloop.start()
 	else
-		soundloop.stop()
+		soundloop?.stop()
 
 /// The thermostat starts or stops: it draws its power and clicks.
 /obj/machinery/alarm/proc/thermostat_changed(datum/act/A)
@@ -558,7 +586,7 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 	if(!alarm_area)
 		return
 	if(!alarm_area.main_air_alarm_is_operating())
-		alarm_area.elect_main_air_alarm()
+		alarm_area.request_air_election()
 	rescan()
 	update_soundloop()
 
@@ -704,8 +732,13 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 		"danger_level" = danger_level,
 		"target_temperature" = "[target_temperature - T0C]C",
 		"rcon" = rcon_setting,
-		"atmos_alarm" = alarm_area?.atmosalm,
-		"fire_alarm" = alarm_area?.fire,
+		"atmos_alarm" = alarm_area?.atmosalm || 0,
+		"fire_alarm" = alarm_area?.fire || 0,
+		"mode" = null,
+		"vents" = list(),
+		"scrubbers" = list(),
+		"modes" = list(),
+		"thresholds" = list(),
 	)
 	var/list/list/environment_data = list()
 	data["environment_data"] = environment_data
@@ -854,17 +887,16 @@ SCHEMA(/obj/machinery/alarm, area_uid, schema_text())
 	var/datum/prompt/number/R = A.answer
 	if(!isnum(R?.value) || !islist(TLV[env]))
 		return OP_OK
-	var/list/band = TLV[env]
+	var/list/band = TLV[env].Copy() // the alarm's table may be its type's shared one: the band is edited as a copy and written whole
 	band[index] = R.value < 0 ? -1 : round(R.value, 0.01)
-	clamp_tlv_values(env, index)
+	clamp_tlv_values(band, index)
 	for(var/obj/machinery/alarm/AA as anything in alarm_area.air_alarms)
 		AA.set_TLV_at(env, band.Copy())
 		AA.rescan()
 	return OP_OK
 
-/// Keeps the band `env` in order after `changed_threshold` moved: the others follow it.
-/obj/machinery/alarm/proc/clamp_tlv_values(env, changed_threshold)
-	var/list/selected = TLV[env]
+/// Keeps a band (a copy, list(red min, yellow min, yellow max, red max)) in order after `changed_threshold` moved: the others follow it.
+/obj/machinery/alarm/proc/clamp_tlv_values(list/selected, changed_threshold)
 	var/value = selected[changed_threshold]
 	for(var/i in 1 to 4)
 		if(i < changed_threshold && selected[i] > value)
@@ -941,6 +973,7 @@ CAPABILITIES(/datum/air_alarm_remote)
 	ref_one(nameof(alarm), /obj/machinery/alarm)
 	ref_one(nameof(console), /datum/tgui_module/atmos_control)
 	interface("AirAlarm", forwards = nameof(alarm))
+	ui_shape(locked = bool(), siliconUser = bool(), remoteUser = bool(), environment_data = list_of(row(name = schema_text(), value = num(), unit = schema_text(), danger_level = num())), danger_level = num(), target_temperature = schema_text(), rcon = num(), atmos_alarm = num(), fire_alarm = num(), mode = nullable(num()), thresholds = list_of(row(name = schema_text(), settings = list_of(row(env = schema_text(), val = num(), selected = num())))), scrubbers = list_of(row(id_tag = schema_text(), long_name = schema_text(), power = num(), scrubbing = num(), panic = num(), filters = list_of(row(name = schema_text(), command = schema_text(), val = num())))), vents = list_of(row(id_tag = schema_text(), long_name = schema_text(), power = num(), checks = num(), excheck = num(), incheck = num(), direction = schema_text(), external = num(), internal = num(), extdefault = num(), intdefault = num())), modes = list_of(row(name = schema_text(), mode = num(), selected = num(), danger = num())))
 
 /datum/air_alarm_remote/New(datum/tgui_module/atmos_control/console, obj/machinery/alarm/alarm)
 	..()

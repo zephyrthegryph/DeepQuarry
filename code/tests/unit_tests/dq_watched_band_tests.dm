@@ -34,9 +34,7 @@
 
 /datum/unit_test/dq_watched_lum_band_publishes_on_a_corner_change/Run()
 	var/turf/T = test_floor()
-	if(!T.lighting_object)
-		T.lighting_build_overlay()
-	var/datum/lighting_object/O = T.lighting_object
+	var/datum/lighting_object/O = T.lighting_ensure_object()
 	TEST_ASSERT_NOTNULL(O, "the test floor has no dynamic lighting")
 	// A floor no light ever reached has no corners yet: make the one this test lights (the lighting engine makes them the same way).
 	var/datum/lighting_corner/made

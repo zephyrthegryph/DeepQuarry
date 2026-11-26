@@ -1,0 +1,11 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Chemistry recipes now have a working temperature range and an ideal band: clean product inside the band, contaminants (and lost product when hot) off it, no reaction outside the range."
+  - rscadd: "Added a hot plate that heats a beaker toward a dial setting, and a condenser that collects the vapour boiling off it into a second container."
+  - rscadd: "Every reagent has a boiling point; a container above it loses the reagent, gradually."
+  - rscadd: "Added funnels and paper, charcoal and material sorbent filters that take contaminants out of what is poured through them."
+  - rscadd: "A sheet of catalytic material dropped into a beaker widens every recipe's ideal temperature band."
+  - rscadd: "Acid and base residues can be neutralised into salts and water."
+  - bugfix: "The chem master, the dispenser and reagent transfers can no longer pick a contaminant out of a mixture."
+  - qol: "The medical book's purity tab lists the purification methods, recipe temperatures and boiling points."

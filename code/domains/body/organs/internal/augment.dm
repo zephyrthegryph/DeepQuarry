@@ -10,7 +10,6 @@
 	robotic = ORGAN_ROBOT
 	parent_organ = BP_TORSO
 
-	organ_verbs = list(/mob/living/carbon/human/proc/augment_menu)	// Verbs added by the organ when present in the body.
 	forgiving_class = TRUE	// Will the organ give its verbs when it isn't a perfect match? I.E., assisted in organic, synthetic in organic.
 
 	butcherable = FALSE
@@ -87,12 +86,16 @@ CAPABILITIES(/obj/item/organ/internal/augment)
 
 // The next two procs simply handle the radial menu for augment activation.
 
-/mob/living/carbon/human/proc/augment_menu()
-	set name = "Open Augment Menu"
-	set desc = "Toggle your augment menu."
-	set category = VERB_CAT_AUGMENTS
+/// The Open Augment Menu menu entry shows on yourself while you carry a working augment that has a radial icon.
+/mob/living/carbon/human/proc/augment_menu_ready(datum/act/op/A)
+	for(var/obj/item/organ/internal/augment/Aug in internal_organ_list())
+		if(Aug.my_radial_icon && !Aug.is_broken() && Aug.check_verb_compatability())
+			return null
+	return MSG(req_silent)
 
+/mob/living/carbon/human/proc/augment_menu_chosen(datum/act/op/A)
 	enable_augments(src)
+	return OP_OK
 
 /mob/living/carbon/human/proc/enable_augments(mob/living/user)
 	var/list/options = list()

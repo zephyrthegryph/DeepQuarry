@@ -152,7 +152,23 @@
 		return
 
 	src.update_cell()
+	life_hud_place()
 
+	// Blindness is raised by update_senses() when the camera or stat changes.
+	if(src.stat != DEAD && !src.has_status(STAT_BLINDED))
+		src.set_fullscreen(src.status_units(STAT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+		src.set_fullscreen(src.status_units(STAT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
+
+	if(src.emagged)
+		src.throw_alert("hacked", /atom/movable/screen/alert/hacked)
+	else
+		src.clear_alert("hacked")
+
+/// The air round the robot sets its temperature alert.
+/mob/living/silicon/robot/life_hud_place()
+	. = ..()
+	if(!.)
+		return
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/environment = T?.return_air()
 	if(environment)
@@ -167,16 +183,6 @@
 				src.throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_LOW)
 			else
 				src.throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_MODERATE)
-
-	// Blindness is raised by update_senses() when the camera or stat changes.
-	if(src.stat != DEAD && !src.has_status(STAT_BLINDED))
-		src.set_fullscreen(src.status_units(STAT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
-		src.set_fullscreen(src.status_units(STAT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
-
-	if(src.emagged)
-		src.throw_alert("hacked", /atom/movable/screen/alert/hacked)
-	else
-		src.clear_alert("hacked")
 
 /mob/living/silicon/robot/life_hud_health_icons()
 	. = ..()

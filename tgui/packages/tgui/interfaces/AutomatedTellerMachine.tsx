@@ -12,37 +12,23 @@ import {
   Stack,
   Table,
 } from 'tgui-core/components';
+import type {
+  AutomatedTellerMachineActions,
+  AutomatedTellerMachineData,
+} from './generated/AutomatedTellerMachine';
 
-export type Transaction = {
-  date: string;
-  time: number;
-  target_name: string;
-  purpose: string;
-  amount: number;
-  source_terminal: string;
-};
-
-export type Account = {
-  owner_name: string;
-  money: number;
-  security_level: number;
-  transactions: Transaction[];
-};
-
-export type AutomatedTellerMachineData = {
-  machine_id: string;
-  emagged: number;
-  held_card: string | null;
-  locked_down: number;
-  suspended: boolean;
-  authenticated_account: Account;
-};
+type Transaction = NonNullable<
+  AutomatedTellerMachineData['authenticated_account']
+>['transactions'][number];
 
 export const AutomatedTellerMachine = (props) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
 
   return (
-    <Window width={680} height={550}>
+    <Window width={740} height={550}>
       <Window.Content>
         <Section title={`Automatic Teller Machine - ${data.machine_id}`} fill>
           {data.authenticated_account ? (
@@ -90,7 +76,10 @@ const MainMenu = (props: {
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
   const { setMenu } = props;
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
 
   return (
     <Stack fill fontSize={2}>
@@ -139,7 +128,10 @@ const MainMenu = (props: {
 const WithdrawMenu = (props: {
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
   const { setMenu } = props;
   const [custom, setCustom] = useState(false);
   const [useCard, setUseCard] = useState(false);
@@ -174,7 +166,7 @@ const WithdrawMenu = (props: {
       }
     >
       <Box fontSize={2} mb={1}>
-        Account Balance: ${data.authenticated_account.money}
+        Account Balance: ${data.authenticated_account?.money}
       </Box>
       <Box fontSize={2} mb={4}>
         <Stack align="center">
@@ -250,7 +242,10 @@ const CustomWithdrawal = (props: {
   setCustom: React.Dispatch<React.SetStateAction<boolean>>;
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
   const { withdrawFunction, useCard, setCustom, setMenu } = props;
   const [money, setMoney] = useState(1000);
   return (
@@ -273,7 +268,7 @@ const CustomWithdrawal = (props: {
         <Stack.Item>
           <Stack vertical>
             <Stack.Item fontSize={3}>
-              Available: ${data.authenticated_account.money}
+              Available: ${data.authenticated_account?.money}
             </Stack.Item>
             <Stack.Item>
               <Input
@@ -310,7 +305,10 @@ const CustomWithdrawal = (props: {
 const BalanceMenu = (props: {
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
   const { setMenu } = props;
   return (
     <Section
@@ -325,7 +323,7 @@ const BalanceMenu = (props: {
       <Stack justify="space-between">
         <Stack.Item>
           <Box fontSize={1.5} mb={1}>
-            Current Funds: ${data.authenticated_account.money}
+            Current Funds: ${data.authenticated_account?.money}
           </Box>
         </Stack.Item>
         <Stack.Item>
@@ -340,7 +338,9 @@ const BalanceMenu = (props: {
           </Button>
         </Stack.Item>
       </Stack>
-      <TransactionLog transactions={data.authenticated_account.transactions} />
+      <TransactionLog
+        transactions={data.authenticated_account?.transactions ?? []}
+      />
     </Section>
   );
 };
@@ -377,7 +377,10 @@ const TransactionLog = (props: { transactions: Transaction[] }) => {
 const MoreMenu = (props: {
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
   const { setMenu } = props;
   return (
     <Section
@@ -394,7 +397,7 @@ const MoreMenu = (props: {
       <Button
         fluid
         style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
-        selected={data.authenticated_account.security_level === 0}
+        selected={data.authenticated_account?.security_level === 0}
         onClick={() => act('change_security_level', { new_security_level: 0 })}
       >
         Zero - Either the account number or card is required to access this
@@ -404,7 +407,7 @@ const MoreMenu = (props: {
       <Button
         fluid
         style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
-        selected={data.authenticated_account.security_level === 1}
+        selected={data.authenticated_account?.security_level === 1}
         onClick={() => act('change_security_level', { new_security_level: 1 })}
       >
         One - An account number and pin must be manually entered to access this
@@ -413,7 +416,7 @@ const MoreMenu = (props: {
       <Button
         fluid
         style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
-        selected={data.authenticated_account.security_level === 2}
+        selected={data.authenticated_account?.security_level === 2}
         onClick={() => act('change_security_level', { new_security_level: 2 })}
       >
         Two - In addition to account number and pin, a card is required to
@@ -426,7 +429,10 @@ const MoreMenu = (props: {
 const TransferMenu = (props: {
   setMenu: React.Dispatch<React.SetStateAction<Menu>>;
 }) => {
-  const { act, data } = useBackend<AutomatedTellerMachineData>();
+  const { act, data } = useBackend<
+    AutomatedTellerMachineData,
+    AutomatedTellerMachineActions
+  >();
   const [accountNum, setAccountNum] = useState(100000);
   const updateAccountNum = (val) => {
     const newVal = parseInt(val, 10);
@@ -463,7 +469,7 @@ const TransferMenu = (props: {
     >
       <Box fontSize={2}>
         <Box fontSize={3} mb={2}>
-          Available: ${data.authenticated_account.money}
+          Available: ${data.authenticated_account?.money}
         </Box>
 
         <LabeledList>
@@ -519,7 +525,7 @@ const LoginScreen = (props: { machine_id: string; card: string | null }) => {
 
   return (
     <Stack align="flex-start" justify="space-between" fill>
-      <Stack.Item grow height="100%">
+      <Stack.Item grow height="100%" style={{ minWidth: 0 }}>
         <Stack vertical fill>
           <Stack.Item>
             <Button
@@ -581,8 +587,6 @@ const LoginScreen = (props: { machine_id: string; card: string | null }) => {
         </Stack>
       </Stack.Item>
       <Stack.Item
-        ml={-5}
-        mr={-5}
         onClick={() => act('insert_card')}
         style={{ cursor: 'pointer' }}
       >

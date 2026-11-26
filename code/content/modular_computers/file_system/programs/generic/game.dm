@@ -101,6 +101,7 @@
  */
 CAPABILITIES(/datum/computer_file/program/game)
 	interface("NtosArcade")
+	ui_shape(PC_device_theme = schema_text(), PC_batteryicon = schema_text(), PC_batterypercent = schema_text(), PC_showbatteryicon = bool(), PC_apclinkicon = nullable(schema_text()), PC_ntneticon = nullable(schema_text()), PC_programheaders = list_of(row(icon = schema_text())), PC_stationtime = schema_text(), PC_hasheader = bool(), PC_showexitprogram = bool(), Hitpoints = int(), PlayerHitpoints = int(), PlayerMP = int(), TicketCount = int(0), GameActive = bool(), PauseState = bool(), Status = schema_text(), BossID = schema_text())
 	op("Attack", ui_act("Attack"), then(PROC_REF(ui_act_attack)))
 	op("Heal", ui_act("Heal"), then(PROC_REF(ui_act_heal)))
 	op("Recharge_Power", ui_act("Recharge_Power"), then(PROC_REF(ui_act_recharge_power)))
@@ -170,16 +171,13 @@ CAPABILITIES(/datum/computer_file/program/game)
 	if(printer.stored_paper <= 0)
 		to_chat(user, span_notice("Hardware error: Printer is out of paper."))
 		return
-	else
-		computer().visible_message(span_infoplain(span_bold("\The [computer()]") + " prints out paper."))
-		if(ticket_count >= 1)
-			new /obj/item/stack/arcadeticket((get_turf(computer())), 1)
-			to_chat(user, span_notice("[src] dispenses a ticket!"))
-			set_ticket_count(ticket_count - 1)
-			printer.stored_paper -= 1
-		else
-			to_chat(user, span_notice("You don't have any stored tickets!"))
-		return TRUE
+	if(ticket_count < 1)
+		return
+	computer().visible_message(span_infoplain(span_bold("\The [computer()]") + " prints out paper."))
+	new /obj/item/stack/arcadeticket((get_turf(computer())), 1)
+	set_ticket_count(ticket_count - 1)
+	printer.stored_paper -= 1
+	return TRUE
 
 /datum/computer_file/program/game/proc/ui_act_start_game(datum/act/op/A)
 	set_game_active(TRUE)

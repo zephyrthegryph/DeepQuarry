@@ -65,52 +65,6 @@ CAPABILITIES(/obj/item/ammo_casing/macrobattery)
 
 //variants here, there's not many of them.
 
-/obj/item/ammo_casing/macrobattery/stabilize
-	name = "Macrobattery - STABILIZE"
-	icon_state = "macrobat_stabilize"
-	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
-			this fancy device recharges without an outside power source. This one alleviates oxygen loss, disinfects and closes open wounds, \
-			salves burn wounds and stabilizes the patient's heartrate. Takes approximately three \
-			seconds to charge one shot." // Clearer applied effects
-	bat_colour = "#3399ff"
-	projectile_type = /obj/item/projectile/beam/medical_cell/stabilize2
-
-/obj/item/ammo_casing/macrobattery/buff
-	name = "Macrobattery - BOOSTER"
-	icon_state = "macrobat_uber"
-	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
-			this fancy device recharges without an outside power source. This one provides patients with a 15% resistance to incoming damage \
-			and reduces stun effect times by 15% for 20 seconds. Takes approximately three seconds to charge one shot." // Clearer applied effects
-	bat_colour = "#993300"
-	projectile_type = /obj/item/projectile/beam/medical_cell/resist
-
-/obj/item/ammo_casing/macrobattery/detox
-	name = "Macrobattery - DETOX"
-	icon_state = "macrobat_purifier"
-	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
-			this fancy device recharges without an outside power source. This one removes toxins and radiation buildup from a patient. \
-			Takes approximately three seconds to charge one shot." // Clearer applied effects
-	bat_colour = "#339933"
-	projectile_type = /obj/item/projectile/beam/medical_cell/detox
-
-/obj/item/ammo_casing/macrobattery/ouchie
-	name = "Macrobattery - LETHAL"
-	icon_state = "macrobat_ouchie"
-	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
-			this fancy device recharges without an outside power source. This one deals damage. \
-			Takes approximately three seconds to charge one shot." // Clearer applied effects
-	bat_colour = "#cc3300"
-	projectile_type = /obj/item/projectile/beam/heavylaser/lessheavy
-
-/obj/item/ammo_casing/macrobattery/healie
-	name = "Macrobattery - RESTORE"
-	icon_state = "macrobat_inverseouchie"
-	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
-			this fancy device recharges without an outside power source. This one alleviates burn and brute trauma. \
-			Takes approximately three seconds to charge one shot." // Clearer applied effects
-	bat_colour = "#ff9966"
-	projectile_type = /obj/item/projectile/beam/medical_cell/phys_heal
-
 /obj/item/projectile/beam/medical_cell/phys_heal/on_hit(mob/living/carbon/human/target)
 	if(ishuman(target))
 		target.mend(TREAT_TISSUE_REPAIR, 20)

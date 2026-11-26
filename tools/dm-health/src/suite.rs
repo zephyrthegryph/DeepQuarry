@@ -48,12 +48,6 @@ const CHECKS: &[(&str, &str)] = &[
     ("Nanomap", "tools/github-actions/nanomap-renderer-invoker.sh --testing"),
 ];
 
-// The prefix runs INSIDE bash -lc, after any login-profile environment changes.
-// Keep the check body and its final exit status intact; export failure is fatal.
-fn with_cargo_policy(command: &str) -> String {
-    format!("export CARGO_INCREMENTAL=1 RUSTC_WRAPPER='' && {{\n{command}\n}}")
-}
-
 pub fn run(root: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let mut failed = Vec::new();
     let mut results = Vec::new();
@@ -62,7 +56,7 @@ pub fn run(root: &Path) -> Result<(), Box<dyn std::error::Error>> {
         let started = Instant::now();
         let status = Command::new("bash")
             .arg("-lc")
-            .arg(with_cargo_policy(command))
+            .arg(command)
             .current_dir(root)
             .status()?;
         println!("::endgroup::");
@@ -92,22 +86,5 @@ pub fn run(root: &Path) -> Result<(), Box<dyn std::error::Error>> {
         Ok(())
     } else {
         Err(format!("{} CI checks failed: {}", failed.len(), failed.join(", ")).into())
-    }
-}
-
-#[cfg(test)]
-mod incremental_policy_tests {
-    use super::*;
-
-    #[test]
-    fn actual_login_shell_enforces_incremental_preserves_workspace_wrapper_and_exit_status() {
-        let check = with_cargo_policy(r#"printf '__DQ_CARGO_POLICY__%s|%s|%s\n' "$CARGO_INCREMENTAL" "$RUSTC_WRAPPER" "$RUSTC_WORKSPACE_WRAPPER""#);
-        // Model an inherited/profile opt-out before the SAME production prefix.
-        let script = format!("export CARGO_INCREMENTAL=0 RUSTC_WRAPPER=incompatible RUSTC_WORKSPACE_WRAPPER=instrumentation; {check}");
-        let actual = Command::new("bash").args(["-lc", &script]).output().unwrap();
-        assert!(actual.status.success());
-        assert!(String::from_utf8(actual.stdout).unwrap().lines().any(|line| line == "__DQ_CARGO_POLICY__1||instrumentation"));
-        let failed = Command::new("bash").args(["-lc", &with_cargo_policy("exit 17")]).status().unwrap();
-        assert_eq!(failed.code(), Some(17));
     }
 }

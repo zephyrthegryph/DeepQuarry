@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { Icon, Section, Stack } from 'tgui-core/components';
-
+import type { DNAModifierActions } from '../../generated/DNAModifier';
 import { DNAModifierBlocks } from '../DNAModifierBlocks';
 import type { Data } from '../types';
 import { DNAModifierMainRadiationEmitter } from './DNAModifierMainRadiationEmitter';
@@ -19,7 +19,7 @@ export const DNAModifierMainSE = (props) => {
 };
 
 const DNAModifierMainBlocks = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DNAModifierActions>();
 
   const { selectedSEBlock, selectedSESubBlock, dnaBlockSize, occupant } = data;
 

@@ -1,5 +1,0 @@
-@FIXTURE@, line 3, column 23:
-error: /datum/base/proc/probe does impure operations
-- 4:5: SpacemanDMM_should_be_pure set here
-- 6:10: operator++ done on non-local var happens here
-

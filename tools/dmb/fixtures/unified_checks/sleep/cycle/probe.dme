@@ -1,8 +1,0 @@
-/proc/a()
-    b()
-/proc/b()
-    a()
-    sleep(1)
-/proc/probe()
-    set SpacemanDMM_should_not_sleep=1
-    a()

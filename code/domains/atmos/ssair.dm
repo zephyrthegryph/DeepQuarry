@@ -360,7 +360,7 @@ SYSTEM_DEF(air)
 		T.update_air_ref(0, T.air_block_mask())
 	LAZYCLEARLIST(queued_for_activation)
 
-/// Bridge the movement-multiz connection data (GLOB.z_levels, populated by
+/// Bridge the movement-multiz connection data (SSmapping.z_links_up, populated by
 /// /obj/effect/landmark/map_data during mapload) into SSmapping.multiz_levels and
 /// on to Rust, which only links turfs vertically across linked z-levels.
 /// No-op on single-z maps, where HasAbove/HasBelow return 0 for every z.
@@ -439,27 +439,27 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 /datum/system/air/proc/setup_allturfs()
 	set_times_fired(times_fired + 1)
 
-	// Round-start turf init: register every eligible turf's air in the Rust arena
-	// together with its air-block mask. Rust builds the whole adjacency graph
-	// from the masks and discovers active turfs itself; there is no DM adjacency
-	// pass. Chunked so a single FFI call can't hold the tick hostage.
+	// Round-start turf init: the Rust atmos core walks every turf itself (vg_hook_register_world_turfs(): air cell, air-block
+	// mask with the z rule from air_z_open, solid-heat cell), one call. DM is asked only for the objects that decide air
+	// passage in a proc (windows, doors, firedoors): their turfs' masks are recomputed here and republished.
+	var/list/asking = vg_hook_register_world_turfs(world.maxx, world.maxy, world.maxz)
 	var/list/turf_masks = list()
-	for(var/turf/setup as anything in ALL_TURFS())
-		if(!setup.init_air)
-			continue
-		var/turf/open/open_setup = setup
-		// Same eligibility rule as /turf/open/update_air_ref: a non-blocking
-		// tile with no air mixture must not reach the Rust register (it reads
-		// air unconditionally when blocks_air == 0).
-		if(istype(open_setup) && (open_setup.blocks_air || !isnull(open_setup.air)))
-			turf_masks[open_setup] = open_setup.air_block_mask()
-			if(length(turf_masks) >= 8192)
-				auxmos_register_turfs_bulk(turf_masks)
-				heat_register_turfs(turf_masks)
-				turf_masks = list()
+	for(var/turf/open/open_setup as anything in asking)
+		turf_masks[open_setup] = open_setup.air_block_mask()
 	if(length(turf_masks))
 		auxmos_register_turfs_bulk(turf_masks)
-		heat_register_turfs(turf_masks)
+	log_world("AIR_INIT: turfs registered by the Rust core; [length(turf_masks)] turf(s) asked their objects for air passage")
+
+/// A z-level made while the round runs (/world/proc/increment_max_z()): the atmos core registers its turfs in one call, as
+/// setup_allturfs() does the map's; DM asks only the objects that decide air passage in a proc.
+/datum/system/air/proc/register_level_turfs(z)
+	GLOB.air_bulk_levels["[z]"] = TRUE
+	var/list/asking = vg_hook_register_level_turfs(z, world.maxx, world.maxy)
+	var/list/turf_masks = list()
+	for(var/turf/open/open_setup as anything in asking)
+		turf_masks[open_setup] = open_setup.air_block_mask()
+	if(length(turf_masks))
+		auxmos_register_turfs_bulk(turf_masks)
 
 // log_active_turfs / resolve_active_graph removed — they existed only to service
 // the DM roundstart active-turf diffing pass, which is gone (auxmos discovers
@@ -473,9 +473,22 @@ GLOBAL_VAR_INIT(early_air_made, 0)
 // SSair runs after SSatoms (mapping/atoms deps), so by the time this fires
 // every atmos device exists with init_dir() done; it's safe to wire nodes.
 /datum/system/air/proc/setup_atmos_machinery()
+	var/started = REALTIMEOFDAY
+	var/count = 0
+	var/ended = 0
+	// Node links, port datums and the pipelines' members are relation writes to the same few holders over and over: their publishing waits for
+	// one commit at the end (rel_write_batch_begin(), code/engine/refs/table.dm), so each (holder, var) publishes once.
+	rel_write_batch_begin()
 	for (var/obj/machinery/atmospherics/AM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		AM.atmos_init()
+		count++
+		if(QDELETED(AM))
+			ended++
+	log_world("AIR_INIT: atmos_init (node matching) for [count] machine(s) took [(REALTIMEOFDAY - started) / 10]s; [ended] of them ended themselves (an orphan pipe with no neighbour)")
 	setup_rust_pipenets()
+	started = REALTIMEOFDAY
+	rel_write_batch_commit()
+	log_world("AIR_INIT: the batched relation writes published in [(REALTIMEOFDAY - started) / 10]s")
 
 // setup_pipenets removed — see Initialize() comment.
 
@@ -579,7 +592,8 @@ CAPABILITIES(/datum/system/air)
 	ref_many(nameof(networks), /datum/pipe_network)
 	ref_many(nameof(rust_pipe_region_networks), /datum/pipe_network)
 	interface("AtmosControlPanel", title = "Atmospherics Debug", rights = R_DEBUG)
-	op("move-to-target", ui_act("move-to-target", arg("spot")), then(PROC_REF(ui_move_to_target)))
+	ui_shape(frozen = bool(), fire_count = int(), excited_groups = list_of(row(jump_to = schema_text(), group = schema_text(), area = schema_text(), breakdown = num(), dismantle = num(), size = int(), should_show = bool(), max_share = num())), active_size = int(), hotspots_size = int(), excited_size = int(), conducting_size = int(), show_all = bool(), display_max = bool(), showing_user = bool())
+	op("move-to-target", ui_act("move-to-target", arg("spot", schema_text())), then(PROC_REF(ui_move_to_target)))
 	op("toggle-freeze", ui_act("toggle-freeze"), then(PROC_REF(ui_toggle_freeze)))
 	op("toggle_show_all", ui_act("toggle_show_all"), then(PROC_REF(ui_toggle_show_all)))
 	op("toggle_user_display", ui_act("toggle_user_display"), then(PROC_REF(ui_toggle_user_display)))
@@ -589,20 +603,20 @@ CAPABILITIES(/datum/system/air)
 /datum/system/air/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()
-	data["frozen"] = can_fire
+	data["frozen"] = can_fire ? TRUE : FALSE
 	data["fire_count"] = times_fired
 	data["excited_groups"] = list()
 	data["active_size"] = num_group_turfs_processed + num_equalize_processed
 	data["hotspots_size"] = REGISTRY_COUNT(REGISTRY_HOTSPOTS)
 	data["excited_size"] = num_group_turfs_processed
 	data["conducting_size"] = 0
-	data["show_all"] = display_all_groups
+	data["show_all"] = display_all_groups ? TRUE : FALSE
 	#ifdef TRACK_MAX_SHARE
 	data["display_max"] = TRUE
 	#else
 	data["display_max"] = FALSE
 	#endif
-	data["showing_user"] = user?.hud_used?.atmos_debug_overlays
+	data["showing_user"] = user?.hud_used?.atmos_debug_overlays ? TRUE : FALSE
 	return data
 
 /datum/system/air/proc/ui_move_to_target(datum/act/op/A, spot)
@@ -623,7 +637,7 @@ CAPABILITIES(/datum/system/air)
 
 /datum/system/air/proc/ui_toggle_user_display(datum/act/op/A)
 	var/mob/user = A.actor
-	user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays
+	user.hud_used.set_atmos_debug_overlays(!user.hud_used.atmos_debug_overlays)
 	if(user.hud_used.atmos_debug_overlays)
 		client_images_add(user.client, debug_overlay_images())
 	else

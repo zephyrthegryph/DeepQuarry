@@ -531,7 +531,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/explorer)
 	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate, /obj/item/clothing/accessory/armor/tag)
 
 /obj/item/clothing/suit/armor/pcarrier/light/nt
-	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate, /obj/item/clothing/accessory/armor/tag/nt)
+	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate, VARIANT(/obj/item/clothing/accessory/armor/tag/nt))
 
 /obj/item/clothing/suit/armor/pcarrier/medium
 	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/medium, /obj/item/clothing/accessory/storage/pouches)
@@ -540,13 +540,13 @@ CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/explorer)
 	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/medium, /obj/item/clothing/accessory/storage/pouches, /obj/item/clothing/accessory/armor/tag)
 
 /obj/item/clothing/suit/armor/pcarrier/medium/security
-	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/medium, /obj/item/clothing/accessory/storage/pouches, /obj/item/clothing/accessory/armor/tag/sec)
+	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/medium, /obj/item/clothing/accessory/storage/pouches, VARIANT(/obj/item/clothing/accessory/armor/tag/sec))
 
 /obj/item/clothing/suit/armor/pcarrier/medium/command
-	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/medium, /obj/item/clothing/accessory/storage/pouches, /obj/item/clothing/accessory/armor/tag/com)
+	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/medium, /obj/item/clothing/accessory/storage/pouches, VARIANT(/obj/item/clothing/accessory/armor/tag/com))
 
 /obj/item/clothing/suit/armor/pcarrier/medium/nt
-	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/medium, /obj/item/clothing/accessory/storage/pouches, /obj/item/clothing/accessory/armor/tag/nt)
+	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/medium, /obj/item/clothing/accessory/storage/pouches, VARIANT(/obj/item/clothing/accessory/armor/tag/nt))
 
 /obj/item/clothing/suit/armor/pcarrier/blue
 	name = "blue plate carrier"

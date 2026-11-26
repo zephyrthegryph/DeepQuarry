@@ -1,7 +1,4 @@
 /mob/proc/changeling_respec()
-	set category = VERB_CAT_CHANGELING
-	set name = "Re-adapt"
-	set desc = "Allows us to refund our purchased abilities."
 
 	var/datum/changeling/changeling = changeling_power(0,0,100)
 	if(!changeling)

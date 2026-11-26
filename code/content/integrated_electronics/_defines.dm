@@ -81,6 +81,7 @@ CAPABILITIES(/obj/item/integrated_circuit)
 	owns_many(nameof(outputs))
 	owns_many(nameof(activators))
 	interface("ICCircuit", state = nameof(GLOB.tgui_physical_state))
+	ui_shape(name = schema_text(), desc = schema_text(), displayed_name = schema_text(), removable = bool(), complexity = num(), power_draw_idle = num(), power_draw_per_use = num(), extended_desc = nullable(schema_text()), ref = num(), inputs = list_of(row(type = schema_text(), name = schema_text(), data = schema_text(), rawdata = schema_any(), ref = num(), linked = list_of(row(ref = num(), name = schema_text(), holder_ref = num(), holder_name = schema_text())))), outputs = list_of(row(type = schema_text(), name = schema_text(), data = schema_text(), rawdata = schema_any(), ref = num(), linked = list_of(row(ref = num(), name = schema_text(), holder_ref = num(), holder_name = schema_text())))), activators = list_of(row(type = schema_text(), name = schema_text(), data = schema_text(), rawdata = schema_any(), ref = num(), linked = list_of(row(ref = num(), name = schema_text(), holder_ref = num(), holder_name = schema_text()))))) // rawdata is whatever the pin holds; the window never reads it
 	without("ui_open")
 	op("rename", ui_act("rename"), then(PROC_REF(ui_act_rename)))
 	op("wire", ui_act("wire", arg("link", schema_ref(/datum/integrated_io)), arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire)))

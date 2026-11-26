@@ -1,11 +1,12 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Icon, Input } from 'tgui-core/components';
-
 import { FullscreenNotice } from '../common/FullscreenNotice';
+import type { MessageMonitorActions } from '../generated/MessageMonitor';
 import type { Data } from './types';
 
 export const MessageMonitorLogin = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, MessageMonitorActions>();
 
   const { isMalfAI } = data;
 
@@ -20,22 +21,22 @@ export const MessageMonitorLogin = (props) => {
         />
         Unauthorized
       </Box>
-      <Box color="label" my="1rem">
+      <Label my="1rem">
         Decryption Key:
         <Input
           placeholder="Decryption Key"
           ml="0.5rem"
           onBlur={(val) => act('auth', { key: val })}
         />
-      </Box>
+      </Label>
       {!!isMalfAI && (
         <Button icon="terminal" onClick={() => act('hack')}>
           Hack
         </Button>
       )}
-      <Box color="label">
+      <Label>
         Please authenticate with the server in order to show additional options.
-      </Box>
+      </Label>
     </FullscreenNotice>
   );
 };

@@ -1470,7 +1470,9 @@
 /area/expoutpost/lowersternhallway)
 "bkH" = (
 /obj/structure/closet,
-/obj/item/clothing/under/bathrobe,
+/obj/item/clothing/under{
+	variant = "bathrobe"
+	},
 /obj/item/towel/random,
 /turf/simulated/floor/tiled/white,
 /area/expoutpost/commanderroom)
@@ -6076,7 +6078,9 @@
 /obj/structure/window/basic{
 	dir = 8
 	},
-/obj/item/clothing/under/bathrobe,
+/obj/item/clothing/under{
+	variant = "bathrobe"
+	},
 /obj/item/towel/random,
 /turf/simulated/floor/tiled/white,
 /area/expoutpost/suite2)
@@ -7398,7 +7402,8 @@
 "gki" = (
 /obj/structure/table/standard,
 /obj/item/defib_kit/loaded,
-/obj/item/reagent_containers/spray/cleaner{
+/obj/item/reagent_containers/spray{
+	variant = "cleaner";
 	desc = "Someone has crossed out the Space from Space Cleaner and written in Surgery. 'Do not remove under punishment of death!!!' is scrawled on the back.";
 	name = "Surgery Cleaner";
 	pixel_x = 2;
@@ -8460,7 +8465,9 @@
 /turf/simulated/floor/tiled/techfloor,
 /area/expoutpost/secureaccess)
 "hiI" = (
-/obj/item/clothing/under/bathrobe,
+/obj/item/clothing/under{
+	variant = "bathrobe"
+	},
 /obj/structure/closet,
 /obj/item/towel/random,
 /turf/simulated/floor/tiled/white,
@@ -10726,7 +10733,9 @@
 	dir = 4
 	},
 /obj/structure/closet,
-/obj/item/clothing/under/bathrobe,
+/obj/item/clothing/under{
+	variant = "bathrobe"
+	},
 /obj/item/towel/random,
 /turf/simulated/floor/tiled/white,
 /area/expoutpost/suite1)
@@ -18041,8 +18050,12 @@
 /obj/item/grenade/chem_grenade/cleaner,
 /obj/item/grenade/chem_grenade/cleaner,
 /obj/item/grenade/chem_grenade/cleaner,
-/obj/item/reagent_containers/spray/cleaner,
-/obj/item/reagent_containers/spray/cleaner,
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
+/obj/item/reagent_containers/spray{
+	variant = "cleaner"
+	},
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/janitorial)
 "oLH" = (
@@ -27624,9 +27637,15 @@
 /area/expoutpost/starfuelstorage)
 "wpp" = (
 /obj/structure/closet,
-/obj/item/clothing/under/bathrobe,
-/obj/item/clothing/under/bathrobe,
-/obj/item/clothing/under/bathrobe,
+/obj/item/clothing/under{
+	variant = "bathrobe"
+	},
+/obj/item/clothing/under{
+	variant = "bathrobe"
+	},
+/obj/item/clothing/under{
+	variant = "bathrobe"
+	},
 /obj/item/towel/random,
 /obj/item/towel/random,
 /obj/item/towel/random,

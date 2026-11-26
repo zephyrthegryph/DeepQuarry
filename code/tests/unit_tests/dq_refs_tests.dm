@@ -53,7 +53,7 @@
 	TEST_ASSERT_EQUAL(ic_ref_resolve(r), I, "an IC ref resolves to its datum")
 	var/forged = sanitizeSafe(r, MAX_MESSAGE_LEN, 0, 0)
 	TEST_ASSERT(!ic_is_ref(forged), "sanitized pin text is never an IC ref")
-	TEST_ASSERT(!ic_is_ref("[handle_of(I)]"), "a bare handle is not an IC ref")
+	TEST_ASSERT(!ic_is_ref("[handle_text(handle_of(I))]"), "a bare handle is not an IC ref")
 	qdel(I)
 	TEST_ASSERT_NULL(ic_ref_resolve(r), "an IC ref to a deleted datum resolves to null")
 
@@ -288,3 +288,24 @@
 	TEST_ASSERT(!GLOB.shared_particles[key], "the pool forgot the key")
 	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT(!length(capture), "no lifecycle report fired: [json_encode(capture)]")
+
+// ---------------------------------------------------------------- handles in json
+
+/// Handles reach 2^24, so a window's ui_data carries numbers from 1e6 up: json_encode keeps every digit of them (not the 6-digit "1.04858e+06" form
+/// that "[h]" gives), json_decode returns the same number, and the number still names its datum.
+/datum/unit_test/dq_refs_handle_survives_json
+
+/datum/unit_test/dq_refs_handle_survives_json/Run()
+	var/text = json_encode(list("ref" = 1048577, "r2" = 16777215))
+	TEST_ASSERT(findtext(text, "1048577"), "json_encode keeps all digits of 1048577, got [text]")
+	TEST_ASSERT(findtext(text, "16777215"), "json_encode keeps all digits of 16777215, got [text]")
+	var/list/back = json_decode(text)
+	TEST_ASSERT_EQUAL(back["ref"], 1048577, "json_decode returns 1048577 whole")
+	TEST_ASSERT_EQUAL(back["r2"], 16777215, "json_decode returns 16777215 whole")
+	TEST_ASSERT_EQUAL(json_decode("16777215"), 16777215, "a bare number decodes whole")
+	var/datum/D = new
+	var/h = handle_of(D)
+	var/list/sent = json_decode(json_encode(list("ref" = h)))
+	TEST_ASSERT_EQUAL(sent["ref"], h, "a real handle survives the round trip")
+	TEST_ASSERT(handle_get(sent["ref"]) == D, "and resolves to its datum")
+	qdel_handle(h)

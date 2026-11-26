@@ -1,4 +1,5 @@
 import { useBackend, useSharedState } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -10,7 +11,7 @@ import {
   Table,
   Tabs,
 } from 'tgui-core/components';
-
+import type { GeneralRecordsActions } from '../generated/GeneralRecords';
 import type { Data, departmentFinance, financeTransaction } from './types';
 
 const wageMultipliers = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -175,9 +176,9 @@ const BudgetChart = (props: {
             </text>
           </svg>
         </Box>
-        <Box textAlign="center" color="label" fontSize="11px">
+        <Label textAlign="center" fontSize="11px">
           Inner: funding waterfall · Outer: operating split
-        </Box>
+        </Label>
       </Stack.Item>
       <Stack.Item grow>
         <LabeledList>
@@ -234,7 +235,7 @@ const TransactionTable = (props: {
     1,
   );
   if (!props.transactions.length) {
-    return <Box color="label">No transactions have been recorded.</Box>;
+    return <Label>No transactions have been recorded.</Label>;
   }
   const pageCount = Math.ceil(props.transactions.length / transactionsPerPage);
   const page = Math.min(Math.max(requestedPage, 1), pageCount);
@@ -293,7 +294,7 @@ const AllocationControl = (props: {
   department: departmentFinance;
   showAmount?: boolean;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, GeneralRecordsActions>();
   const { department } = props;
   return (
     <Stack align="center">
@@ -340,7 +341,7 @@ const AllocationControl = (props: {
 };
 
 const OneTimeTransfer = (props: { department: string }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, GeneralRecordsActions>();
   const [amount, setAmount] = useSharedState(
     `oneTimeFunding-${props.department}`,
     1000,
@@ -396,14 +397,14 @@ const DepartmentDetail = (props: {
   canAllocate: boolean;
   nextCycle: string | null;
 }) => {
-  const { act } = useBackend<Data>();
+  const { act } = useBackend<Data, GeneralRecordsActions>();
   const { department, largestBudget, canAllocate } = props;
   const monthlyNet = department.monthly_income - department.monthly_expenses;
   return (
     <Section title={`${department.department} Financial Overview`}>
       <Stack>
         <Stack.Item grow basis="48%">
-          <Box color="label">Operating Funds</Box>
+          <Label>Operating Funds</Label>
           <Box bold fontSize="24px" color="good">
             {formatMoney(department.balance)}
           </Box>
@@ -479,9 +480,9 @@ const DepartmentDetail = (props: {
       </Stack>
 
       <Section mt={2} title="Department Wage Policy">
-        <Box color="label" mb={1}>
+        <Label mb={1}>
           Percentage of each job’s base wage paid every 15-minute pay period.
-        </Box>
+        </Label>
         <Stack wrap>
           {wageMultipliers.map((multiplier) => (
             <Stack.Item key={multiplier}>
@@ -504,10 +505,10 @@ const DepartmentDetail = (props: {
       {department.department === 'Civilian' && (
         <>
           <Section mt={2} title="Service Checkout Policy">
-            <Box color="label" mb={1}>
+            <Label mb={1}>
               This subsidy applies to customers above the automatic low-income
               threshold. Customers always see the resulting quote before paying.
-            </Box>
+            </Label>
             <Stack wrap>
               {[0, 0.25, 0.5, 0.75, 1].map((subsidy) => (
                 <Stack.Item key={subsidy}>
@@ -573,18 +574,18 @@ const DepartmentDetail = (props: {
       {canAllocate && (
         <>
           <Section mt={2} title="Recurring Operating Share">
-            <Box mb={1} color="label">
+            <Label mb={1}>
               This percentage divides the station operating pool every pay
               period. Payroll is calculated separately and funded first. Next
               settlement: {props.nextCycle || '—'}.
-            </Box>
+            </Label>
             <AllocationControl department={department} />
           </Section>
           <Section mt={2} title="One-Time Funding">
-            <Box mb={1} color="label">
+            <Label mb={1}>
               Transfer station funds immediately. This does not alter future
               allocations or wages.
-            </Box>
+            </Label>
             <OneTimeTransfer department={department.department} />
           </Section>
         </>
@@ -616,7 +617,7 @@ const DepartmentDetail = (props: {
 };
 
 export const DepartmentFinances = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, GeneralRecordsActions>();
   const {
     can_allocate_station_budget,
     department_finances = [],
@@ -698,13 +699,13 @@ export const DepartmentFinances = (props) => {
         >
           <Stack mb={2}>
             <Stack.Item grow>
-              <Box color="label">Current Station Funds</Box>
+              <Label>Current Station Funds</Label>
               <Box bold fontSize="24px" color="good">
                 {formatMoney(station_balance || 0)}
               </Box>
             </Stack.Item>
             <Stack.Item grow>
-              <Box color="label">Department Operating + Savings</Box>
+              <Label>Department Operating + Savings</Label>
               <Box bold fontSize="24px">
                 {formatMoney(totalDepartmentFunds)}
               </Box>
@@ -757,7 +758,7 @@ export const DepartmentFinances = (props) => {
                     ))}
                   </Table>
                 ) : (
-                  <Box color="label">No income recorded this period.</Box>
+                  <Label>No income recorded this period.</Label>
                 )}
               </Stack.Item>
             </Stack>
@@ -766,7 +767,7 @@ export const DepartmentFinances = (props) => {
             title="Recurring Operating Plan"
             mb={2}
             buttons={
-              <Box color="label">
+              <Label>
                 {Math.max(
                   0,
                   100 -
@@ -776,15 +777,15 @@ export const DepartmentFinances = (props) => {
                     ),
                 ).toFixed(1)}
                 % unassigned
-              </Box>
+              </Label>
             }
           >
-            <Box color="label" mb={1}>
+            <Label mb={1}>
               First, payroll is funded from available station money. Then each
               department receives its share of the operating pool. Any
               unassigned share and all money left afterward remain in the
               station reserve.
-            </Box>
+            </Label>
             <Stack align="center" mb={1} wrap>
               <Stack.Item color="label">Presets</Stack.Item>
               {allocationPolicies.map(([policy, label, description]) => (

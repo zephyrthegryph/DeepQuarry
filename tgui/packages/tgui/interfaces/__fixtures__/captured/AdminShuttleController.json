@@ -1,0 +1,34 @@
+{
+	"shuttles": [
+		{
+			"name": "Overmap-Demo",
+			"ref": 1,
+			"current_location": "Minitest Station - Station Docking Point 2",
+			"status": 0
+		},
+		{
+			"name": "Ferry-Demo",
+			"ref": 2,
+			"current_location": "Station Docking Point 1",
+			"status": 0
+		},
+		{
+			"name": "Multi-Demo",
+			"ref": 3,
+			"current_location": "Multi-Demo Starting Point",
+			"status": 0
+		},
+		{
+			"name": "Web-Demo",
+			"ref": 4,
+			"current_location": "Internal Hangar",
+			"status": 0
+		}
+	],
+	"overmap_ships": [
+		{
+			"name": "VSS Overmap Demo",
+			"ref": 5
+		}
+	]
+}

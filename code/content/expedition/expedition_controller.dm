@@ -142,7 +142,7 @@ CAPABILITIES(/datum/system/expedition)
 		var/generated_destination_id = site.flight_destination_id
 		if(generated_destination_id && generated_destination_id != old_destination_id)
 			SSflight.unregister_destination(generated_destination_id)
-		destination.name = descriptor_name
+		destination.set_name(descriptor_name)
 		rel_set(destination, nameof(destination.expedition), site)
 		rel_set(destination, nameof(destination.target), site.overmap_sector())
 		SSflight.index_destination_target(destination)

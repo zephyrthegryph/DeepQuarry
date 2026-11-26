@@ -7,8 +7,7 @@
  * https://github.com/stylemistake/juke-build
  */
 
-import { execFile, spawn, spawnSync } from 'node:child_process';
-import { promisify } from 'node:util';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import net from 'node:net';
@@ -20,14 +19,14 @@ import Juke from './juke/index.js';
 import { assertBuildRoot } from './lib/build_root';
 import { bun, bunRoot } from './lib/bun';
 import { runAnalyzeTests } from './lib/analyze_test_cache';
-import { cargoSourceKey } from './lib/cargo_source_inputs';
 import { computeCompileHash } from './lib/compile_hash';
 import { pairIsByondOutput } from './lib/compiler_stamp';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { claimFreePort, shouldRetryBoot } from './lib/free_port';
 import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, slotRoleSize, withSlot } from './lib/machine_slots';
 import { measuredDurations, neverRan, packShards, parseRunLog, readDurations, recordDurations, type SalvagedRun, suiteStalenessParams } from './lib/suite_runner';
-import { dmeValidationKey, seedFromMainCheckout } from './lib/seed';
+import { seedFromMainCheckout } from './lib/seed';
+import { gitTreeKey, readKeyRecord, runCaptured, writeKeyRecord } from './lib/tree_key';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BALANCE_RESULTS_FILE,
@@ -74,11 +73,8 @@ import { suiteBatches, exactSuiteUnion, bindSuitePlan, sameSuiteRuntime, suiteRo
 import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
-import { compilerMode, nativeDefaultCompiler, nativeWorkers } from './lib/compiler_selection';
-import { enterDaemonScope } from './lib/dmbc_daemons';
-import { nativeGenerationRequest, nativeGenerationWrittenCount } from './lib/native_generation';
-import { runFullCiCompound } from './lib/native_compound_ci';
-import { createNativeRequestDirectory, currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
+import { compilerMode, nativeDefaultCompiler } from './lib/compiler_selection';
+import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
 import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 import { archiveRuntimeLogs, type RuntimeLogArchive } from './lib/runtime_log_archive';
@@ -88,7 +84,6 @@ import { copyWritableRuntimePair } from './lib/runtime_pair_copy';
 import {
   checkVerdigrisProvenance,
   installVerdigrisLibrary,
-  verdigrisInputHash,
 } from './lib/verdigris_provenance';
 import {
   dropVerdigris,
@@ -97,7 +92,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
-import { cargoIncrementalEnv, cargoWithIceRetry as runCargoWithIceRetry } from './lib/cargo_ice';
+import { cargoWithIceRetry as runCargoWithIceRetry } from './lib/cargo_ice';
 import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 import { planPrewarm, runPrewarmBuild, warmAndPromote, type PrewarmDecision } from './lib/dmbc_prewarm';
 
@@ -119,7 +114,7 @@ export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 const cargoExec = (args: string[], options?: any) =>
   withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => cargoWithIceRetry(args, options), (m) => Juke.logger.info(m));
 
-/** One cargo run under the lane incremental policy (lib/cargo_ice.ts): always incremental, a rustc panic deletes the target's incremental
+/** One cargo run under the lane incremental policy (lib/cargo_ice.ts): the profile decides, a rustc panic deletes the target's incremental
  * directories and retries once. */
 const cargoWithIceRetry = (args: string[], options?: any): Promise<void> =>
   runCargoWithIceRetry(args, options, {
@@ -133,7 +128,7 @@ const cargoWithIceRetry = (args: string[], options?: any): Promise<void> =>
 
 export const DME_NAME = 'deepquarry';
 
-/** DreamChecker inside `dm` runs only where its verdict is required: DQ_DREAMCHECKER=1 (merge gates, push), CI, or by request. */
+/** DreamChecker inside `dm` runs only where its verdict is required: DQ_DREAMCHECKER=1, CI, or by request. */
 function dreamCheckerWanted(): boolean {
   const explicit = process.env.DQ_DREAMCHECKER;
   if (explicit !== undefined && explicit !== '') return explicit !== '0';
@@ -295,10 +290,10 @@ const VALIDATE_DME_RECORD = 'data/validate-dme.json';
 export const ValidateDmeTarget = new Juke.Target({
   // Generates code/engine/_generated first (GenTarget, defined below: hence the function form).
   dependsOn: () => [GenTarget],
-  inputs: ['code/**/*.dm', `${DME_NAME}.dme`],
+  // No Juke `inputs`: without outputs Juke globbed and stat-ed all of code/**/*.dm (synchronously) only to always run the target.
   executes: async () => {
     // A .dm file is "compiled" if it is reachable from the .dme through the
-    // transitive #include graph â€” NOT just if it appears literally in the .dme.
+    // transitive #include graph — NOT just if it appears literally in the .dme.
     // Many files are pulled in by intermediate aggregators (e.g.
     // code/world/tgs/includes.dm includes its core/v5 subfiles; code/__odlint.dm
     // includes __pragmas.dm). A naive "is it in the .dme" check false-positives
@@ -341,38 +336,62 @@ export const ValidateDmeTarget = new Juke.Target({
     };
 
     const dmeText = fs.readFileSync(`${DME_NAME}.dme`, 'utf-8');
+    // Keyed by git (lib/tree_key.ts: the index already holds every file's stat), not by walking and stat-ing the 8k files here.
+    const t0 = Date.now();
+    const dmeKey = (await gitTreeKey(process.cwd(), 'validate-dme', ['code', `${DME_NAME}.dme`])) ?? `nokey-${Date.now()}`;
+    if (!process.env.DQ_FULL_CHECKS && !process.env.CI && readKeyRecord(VALIDATE_DME_RECORD) === dmeKey) {
+      Juke.logger.info(`validate-dme: up to date (key ${dmeKey.slice(0, 12)}, ${Date.now() - t0} ms); skipped`);
+      return;
+    }
     const dmFiles = Juke.glob('code/**/*.dm');
-    const statOf = (f: string): string => {
-      try {
-        const st = fs.statSync(f);
-        return `${st.size}:${st.mtimeMs}`;
-      } catch {
-        return 'missing';
-      }
-    };
-    const dmeKey = dmeValidationKey(dmeText, dmFiles, statOf);
+
+    // Reading ~8k files took 190 s on a loaded machine (a restart after a merge), so each file's include lists are kept in
+    // data/dme-gen-cache/validate-dme.json by size and mtime: only files edited since the last run are read. The result is the same as a read.
+    type IncludeFacts = { size: number; mtimeMs: number; active: string[]; commented: string[] };
+    const factsFile = 'data/dme-gen-cache/validate-dme.json';
+    let facts: Record<string, IncludeFacts> = {};
     if (!process.env.DQ_FULL_CHECKS && !process.env.CI) {
       try {
-        if (JSON.parse(fs.readFileSync(VALIDATE_DME_RECORD, 'utf-8')).key === dmeKey) {
-          Juke.logger.info(`validate-dme: up to date (hash ${dmeKey.slice(0, 12)}, ${dmFiles.length} files); skipped`);
-          return;
-        }
+        facts = JSON.parse(fs.readFileSync(factsFile, 'utf-8'));
       } catch {
-        // no record yet
+        facts = {};
       }
     }
-
+    const usedFacts: Record<string, IncludeFacts> = {};
     seed(dmeText, '.');
     while (queue.length > 0) {
       const file = queue.pop() as string;
       if (reachable.has(file)) continue;
       reachable.add(file);
-      if (!fs.existsSync(file)) continue; // missing include target: DM compile will report it
-      seed(fs.readFileSync(file, 'utf-8'), dirOf(file));
+      let st: fs.Stats;
+      try {
+        st = fs.statSync(file);
+      } catch {
+        continue; // missing include target: DM compile will report it
+      }
+      let f = facts[file];
+      if (!f || f.size !== st.size || f.mtimeMs !== st.mtimeMs) {
+        const content = fs.readFileSync(file, 'utf-8');
+        f = {
+          size: st.size,
+          mtimeMs: st.mtimeMs,
+          active: [...content.matchAll(ACTIVE_INCLUDE)].map((m) => m[1]),
+          commented: [...content.matchAll(COMMENTED_INCLUDE)].map((m) => m[1]),
+        };
+      }
+      usedFacts[file] = f;
+      for (const raw of f.active) queue.push(resolveInclude(dirOf(file), raw));
+      for (const raw of f.commented) disabled.add(resolveInclude(dirOf(file), raw));
+    }
+    try {
+      fs.mkdirSync('data/dme-gen-cache', { recursive: true });
+      fs.writeFileSync(factsFile, JSON.stringify(usedFacts));
+    } catch {
+      // the cache is optional
     }
 
     // Unit-test files are compiled only under a separate test .dme, never from
-    // deepquarry.dme â€” exclude them from the "is it wired into the build" check.
+    // deepquarry.dme — exclude them from the "is it wired into the build" check.
     const EXCLUDED_PREFIXES = [
       'code/tests/unit_tests/',
       'code/tests/unit_tests/',
@@ -415,7 +434,7 @@ export const ValidateDmeTarget = new Juke.Target({
 // artifact, so the build is responsible for producing it.
 //
 // onlyWhen gates on cargo being on PATH: DM-only contributors without rustup
-// can't build the lib (they warn-skip and run with whatever lib is present â€”
+// can't build the lib (they warn-skip and run with whatever lib is present —
 // atmos/cave-gen FFI simply isn't available without it). inputs/outputs
 // dirty-checks the ~minute cargo build against the Rust sources so untouched
 // rebuilds no-op. Source paths are enumerated rather than `verdigris/**` so
@@ -430,15 +449,15 @@ const VERDIGRIS_RUST_TARGET =
 const VERDIGRIS_PROVENANCE = `${VERDIGRIS_LIB}.provenance.json`;
 // Provenance checking (lib/verdigris_provenance.ts) proves a library was built
 // from this checkout's Rust inputs. It needs the Rust build to embed
-// VERDIGRIS_SOURCE_HASH from DQ_VERDIGRIS_INPUT_HASH, which the crates do not do
-// yet, so it is opt-in: DQ_VERDIGRIS_PROVENANCE=1. Off, the target behaves as before.
+// VERDIGRIS_SOURCE_HASH (an input hash the build would pass in), which the crates
+// do not do yet, so it is opt-in: DQ_VERDIGRIS_PROVENANCE=1. Off, the target behaves as before.
 const VERDIGRIS_PROVENANCE_ENFORCED = process.env.DQ_VERDIGRIS_PROVENANCE === '1';
 const verdigrisProvenanceMismatch = (): string | null =>
   VERDIGRIS_PROVENANCE_ENFORCED
     ? checkVerdigrisProvenance(process.cwd(), VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, process.env.RUSTFLAGS || '')
     : null;
 
-// generated DM bindings for verdigris (doc/rewrite/rust_core.md Â§9).
+// generated DM bindings for verdigris (doc/rewrite/rust_core.md §9).
 // `verdigris-bindings` rewrites code/__defines/verdigris/_bindings.dm and
 // verdigris/ffi/src/abi.rs from the #[auxmacros::bind] functions. Every DM and
 // DLL build runs the check first and fails when either file is stale.
@@ -598,7 +617,7 @@ let verdigrisPendingStore: { cache: string; key: string; commit: string } | null
 // server and benchmarks; `lane` (verdigris/Cargo.toml [profile.lane]: no LTO, line-table debug info, incremental, optimised enough
 // for gas simulations in tests) is what test targets load in a lane. A sidecar records the profile so a lane DLL is never taken
 // for a production one, and the shared cache keys the profile too.
-type VerdigrisProfile = 'release' | 'lane';
+type VerdigrisProfile = 'release' | 'lane' | 'server';
 const VERDIGRIS_PROFILE_STAMP = `${VERDIGRIS_LIB}.profile`;
 /** Test targets: `lane` unless CI, enforced provenance or DQ_VERDIGRIS_PROFILE=release asks for production. */
 const verdigrisTestProfile = (): VerdigrisProfile => {
@@ -607,6 +626,10 @@ const verdigrisTestProfile = (): VerdigrisProfile => {
   if (want === 'release' || want === 'lane') return want;
   return process.env.CI ? 'release' : 'lane';
 };
+/** The local test server (tools/dq_test_server.sh sets DQ_VERDIGRIS_PROFILE=server): `server` (verdigris/Cargo.toml [profile.server]: opt-level 3,
+ * no LTO, incremental) so a Rust edit rebuilds in minutes; anything else, and any enforced-provenance or CI build, stays `release`. */
+const verdigrisServerProfile = (): VerdigrisProfile =>
+  !VERDIGRIS_PROVENANCE_ENFORCED && !process.env.CI && process.env.DQ_VERDIGRIS_PROFILE === 'server' ? 'server' : 'release';
 const verdigrisBuiltProfile = (): string | null => {
   try {
     return fs.readFileSync(VERDIGRIS_PROFILE_STAMP, 'utf-8').trim();
@@ -684,7 +707,7 @@ const makeVerdigrisTarget = (chooseProfile: () => VerdigrisProfile) => new Juke.
         );
         throw new Juke.ExitCode(1);
       }
-      Juke.logger.info(`verdigris: DQ_PREBUILT_VERDIGRIS=1 â€” using existing ${VERDIGRIS_LIB}`);
+      Juke.logger.info(`verdigris: DQ_PREBUILT_VERDIGRIS=1 — using existing ${VERDIGRIS_LIB}`);
       // Warn now (before a long compile); DreamDaemon() refuses to boot on it.
       try {
         checkVerdigrisAbi();
@@ -709,12 +732,12 @@ const makeVerdigrisTarget = (chooseProfile: () => VerdigrisProfile) => new Juke.
       }
       if (fs.existsSync(VERDIGRIS_LIB)) {
         Juke.logger.info(
-          `verdigris: cargo not found â€” using existing ${VERDIGRIS_LIB}`,
+          `verdigris: cargo not found — using existing ${VERDIGRIS_LIB}`,
         );
       } else {
         Juke.logger.warn(
           `verdigris: cargo not found and ${VERDIGRIS_LIB} is missing. `
-            + 'Atmos/cave-gen FFI will fail at runtime â€” install rustup '
+            + 'Atmos/cave-gen FFI will fail at runtime — install rustup '
             + `(see verdigris/README.md) or obtain a prebuilt ${VERDIGRIS_LIB}.`,
         );
       }
@@ -762,10 +785,7 @@ const makeVerdigrisTarget = (chooseProfile: () => VerdigrisProfile) => new Juke.
       return;
     }
     const rustflags = process.env.RUSTFLAGS || '';
-    const cargoOptions = {
-      cwd: 'verdigris',
-      env: { ...process.env, DQ_VERDIGRIS_INPUT_HASH: verdigrisInputHash(process.cwd()) },
-    };
+    const cargoOptions = { cwd: 'verdigris' };
     // Restored source files can retain old timestamps while Cargo keeps newer
     // rlibs. Clean local crates when provenance is stale, preserving cached
     // third-party dependencies.
@@ -793,6 +813,8 @@ const makeVerdigrisTarget = (chooseProfile: () => VerdigrisProfile) => new Juke.
 /** Production, CI, the server and benchmarks: always the `release` profile. */
 export const VerdigrisTarget = makeVerdigrisTarget(() => 'release');
 /** Test targets: the `lane` profile by default (verdigrisTestProfile). */
+/** The server target: `release` unless DQ_VERDIGRIS_PROFILE=server (verdigrisServerProfile). */
+export const VerdigrisServerTarget = makeVerdigrisTarget(verdigrisServerProfile);
 export const VerdigrisLaneTarget = makeVerdigrisTarget(verdigrisTestProfile);
 
 // the analyze lint engine (tools/analyze, doc: tools/analyze/README.md). One Rust
@@ -837,11 +859,48 @@ const analyzeSharedTargetDir = (): string | null => {
   if (!env || env === 'off' || env === '0') return null;
   return path.resolve(env);
 };
-const analyzeSourceKey = (): string => cargoSourceKey(
-  process.cwd(),
-  path.resolve('tools/analyze/Cargo.toml'),
-  `analyze-v3|${ANALYZE_PROFILE}|${process.platform}|${process.arch}|`,
-);
+const analyzeWalk = (dir: string): string[] => {
+  const out: string[] = [];
+  let entries: fs.Dirent[] = [];
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    const full = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) out.push(...analyzeWalk(full));
+    else out.push(full);
+  }
+  return out;
+};
+const analyzeSourceKey = (): string => {
+  const hash = createHash('sha256').update(`analyze-v2|${ANALYZE_PROFILE}|${process.platform}|${process.arch}|`);
+  const files = [
+    'tools/analyze/Cargo.toml',
+    'tools/analyze/Cargo.lock',
+    'tools/analyze/build.rs',
+    // Every file under src/ (not only .rs) and fixtures/ (include_str! embeds them), so no source change can reuse a stale binary.
+    ...analyzeWalk('tools/analyze/src'),
+    ...analyzeWalk('tools/analyze/fixtures'),
+    // The vendored parser (tools/analyze/vendor) is compiled into the binary too.
+    ...analyzeWalk('tools/analyze/vendor'),
+  ]
+    .map((f) => f.replace(/\\/g, '/'))
+    .sort();
+  for (const file of files) {
+    hash.update(file);
+    hash.update('|');
+    try {
+      // CRLF and LF checkouts of the same source share a binary.
+      hash.update(fs.readFileSync(file, 'utf-8').replace(/\r\n/g, '\n'));
+    } catch {
+      hash.update('<missing>');
+    }
+    hash.update('|');
+  }
+  return hash.digest('hex').slice(0, 32);
+};
 let analyzePendingKey: string | null = null;
 
 export const AnalyzeBuildTarget = new Juke.Target({
@@ -912,100 +971,105 @@ export const AnalyzeBuildTarget = new Juke.Target({
 // lints DM runs this first. `analyze gen` rewrites only the files whose text changed (so an unchanged
 // tree keeps its mtimes and the .dmb caches hold) and caches its parse per file in data/analyze-cache:
 // about 3 s warm, 18 s cold. It fails on a generator diagnostic (a bad declaration) or a generated
-// file missing from deepquarry.dme. DQ_SKIP_GEN=1 skips it (the files must already exist).
+// file missing from deepquarry.dme. DQ_SKIP_GEN=1 skips it (the files must already exist); with no analyze binary the step fails unless DQ_ALLOW_STALE_GEN=1.
 // deepquarry.dme is generated (tools/build/gen_dme.py, from the .dm files on disk and the ordering spec tools/build/dme_spec.txt): every
 // target that compiles or lints DM writes it first, so adding, moving or deleting a file never needs a hand edit of the manifest.
 // The file stays committed (DreamMaker, DreamChecker and CI read it); `gen_dme.py --check` (tools/ci/check_ratchets.sh) fails when the
 // committed one is stale. DQ_DME_GEN=0 leaves the manifest alone (tools/ci/dme_order_equiv.sh compiles a reference order with it).
+const DME_GEN_RECORD = 'data/dme-gen.json';
+// What gen_dme.py and gen_mapping_dme.py read and write: the scanned trees (code, interface, maps), their own sources and specs, and
+// the manifests themselves (so a hand edit or a switch that changes them runs the generators again).
+const DME_GEN_PATHS = [
+  'code', 'interface', 'maps', `${DME_NAME}.dme`, `${DME_NAME}.mapping.dme`, 'tools/build/gen_dme.py', 'tools/build/gen_mapping_dme.py',
+  'tools/build/dme_spec.txt', 'tools/build/dme_moves.txt', 'tools/ci/check_variants.py', 'tools/ci/variant_census.py',
+];
 export const DmeTarget = new Juke.Target({
   executes: async () => {
     if (process.env.DQ_DME_GEN === '0') {
       Juke.logger.warn(`dme: DQ_DME_GEN=0, not regenerating ${DME_NAME}.dme`);
       return;
     }
+    // The two generators read every scanned .dm file (9-90 s on a loaded machine). Skipped when nothing they read or write changed
+    // since they last passed here (lib/tree_key.ts); DQ_FULL_CHECKS / CI always run them. They run as child processes awaited
+    // asynchronously: spawnSync here blocked Bun's event loop, so every target beside it (icon-repack's "95-151 s" for a 1.7 s
+    // repack, the bindings check) could not finish until both generators had.
+    const useCache = !process.env.DQ_FULL_CHECKS && !process.env.CI;
+    const t0 = Date.now();
+    if (useCache) {
+      const key = await gitTreeKey(process.cwd(), 'dme-gen', DME_GEN_PATHS, [], false);
+      if (key && readKeyRecord(DME_GEN_RECORD) === key) {
+        Juke.logger.info(`dme: inputs unchanged since the last generation (key ${key.slice(0, 12)}, ${Date.now() - t0} ms); skipped`);
+        return;
+      }
+    }
     const python = process.platform === 'win32' ? 'python' : 'python3';
-    const result = spawnSync(python, ['tools/build/gen_dme.py'], { encoding: 'utf-8' });
-    const out = `${result.stdout || ''}${result.stderr || ''}`.trim();
+    const result = await runCaptured(python, ['tools/build/gen_dme.py']);
+    const out = result.out.trim();
     if (result.error || result.status !== 0) {
       if (out) console.log(out);
       Juke.logger.error(`dme: tools/build/gen_dme.py failed${result.error ? ` (${result.error.message})` : ''}; fix tools/build/dme_spec.txt`);
       throw new Juke.ExitCode(1);
     }
     if (out) Juke.logger.info(out);
+    // deepquarry.mapping.dme is deepquarry.dme plus the variant stubs: regenerate it with the manifest so the two never drift.
+    const mapping = await runCaptured(python, ['tools/build/gen_mapping_dme.py']);
+    const mapOut = mapping.out.trim();
+    if (mapping.error || mapping.status !== 0) {
+      if (mapOut) console.log(mapOut);
+      Juke.logger.error(`dme: tools/build/gen_mapping_dme.py failed${mapping.error ? ` (${mapping.error.message})` : ''}`);
+      throw new Juke.ExitCode(1);
+    }
+    if (mapOut) Juke.logger.info(mapOut);
+    if (useCache) {
+      const after = await gitTreeKey(process.cwd(), 'dme-gen', DME_GEN_PATHS, [], false);
+      if (after) writeKeyRecord(DME_GEN_RECORD, after);
+    }
+    Juke.logger.info(`dme: generated in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   },
 });
 
 // `analyze gen` reads the gitignored `_bindings.dm` (the reads generator follows calls into the vg_* binds: without it
 // `rust_push(nameof(vg_entity))` is missing from three generated reads), so it runs after the bindings are current, never beside them.
-async function runPinnedNativeGeneration(): Promise<number> {
-  const root = process.cwd();
-  const executable = process.env.DQ_NATIVE_COMPILER;
-  const cache = process.env.DM_COMPILER_CACHE_ROOT;
-  if (compilerMode() !== 'native' || !executable || !path.isAbsolute(executable)
-      || !cache || !path.isAbsolute(cache) || process.env.DQ_NATIVE_NO_DAEMON === '1'
-      || process.env.DQ_COMPILER_FALLBACK === '1' || process.env.DQ_COMPILER_STRICT === '0') {
-    throw new Error('DQ_NATIVE_GEN=1 requires native resident compilation, an explicit absolute DQ_NATIVE_COMPILER and DM_COMPILER_CACHE_ROOT, and strict compiler selection.');
-  }
-  const compiler = fs.realpathSync.native(executable);
-  const cacheRoot = fs.realpathSync.native(cache);
-  const request = nativeGenerationRequest(root, cacheRoot, Number(nativeWorkers()));
-  return withSlot('dm_compile', 'native generation', async () => {
-    const scratch = createNativeRequestDirectory('native-gen');
-    const requestFile = path.join(scratch, 'request.json');
-    try {
-      fs.writeFileSync(requestFile, JSON.stringify(request), { flag: 'wx' });
-      const scope = enterDaemonScope(root, compiler);
-      try {
-        const { stdout, stderr } = await promisify(execFile)(
-          compiler, ['generate', requestFile, '--jsonl'],
-          { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 + 4096, timeout: 340_000, windowsHide: true },
-        );
-        if (stderr) process.stderr.write(stderr);
-        return nativeGenerationWrittenCount(stdout);
-      } catch (error) {
-        const failed = error as Error & { stdout?: string; stderr?: string };
-        if (failed.stderr) process.stderr.write(failed.stderr);
-        if (failed.stdout) process.stdout.write(failed.stdout);
-        throw error;
-      } finally {
-        scope.release();
-      }
-    } finally {
-      fs.rmSync(requestFile, { force: true });
-      fs.rmdirSync(scratch);
-    }
-  }, (message) => Juke.logger.info(message));
-}
-
+const GEN_RECORD = 'data/analyze-gen.json';
 export const GenTarget = new Juke.Target({
-  dependsOn: () => [process.env.DQ_NATIVE_GEN !== '1' && AnalyzeBuildTarget, DmeTarget, VerdigrisBindingsCheckTarget],
+  dependsOn: [AnalyzeBuildTarget, DmeTarget, VerdigrisBindingsCheckTarget],
   executes: async () => {
     if (process.env.DQ_SKIP_GEN === '1') {
       Juke.logger.warn('gen: DQ_SKIP_GEN=1, not regenerating code/engine/_generated');
       return;
     }
-    if (process.env.DQ_NATIVE_GEN === '1') {
-      const started = Date.now();
-      try {
-        const written = await runPinnedNativeGeneration();
-        Juke.logger.info(`gen: ${written} generated file(s) rewritten in ${((Date.now() - started) / 1000).toFixed(1)} s`);
-      } catch (error) {
-        Juke.logger.error(`gen: native generation failed: ${String(error instanceof Error ? error.message.split('\n', 1)[0] : error)}`);
-        throw new Juke.ExitCode(1);
-      }
-      return;
-    }
     if (!fs.existsSync(ANALYZE_BIN)) {
-      if (fs.existsSync('code/engine/_generated/declare.dm')) {
-        Juke.logger.warn(`gen: no analyze binary (${ANALYZE_BIN}); compiling the generated files already on disk, which may be stale`);
+      // The generated reads and declarations on disk may come from another branch: compiling them would build a world whose
+      // generated code disagrees with its source, and that shows up only as odd runtime behaviour. So this is an error unless
+      // the caller opts in by name.
+      const onDisk = fs.existsSync('code/engine/_generated/declare.dm');
+      if (onDisk && process.env.DQ_ALLOW_STALE_GEN === '1') {
+        Juke.logger.warn(`gen: no analyze binary (${ANALYZE_BIN}); DQ_ALLOW_STALE_GEN=1, compiling the generated files already on disk, which may be stale`);
         return;
       }
-      Juke.logger.error('gen: the generated DM is missing and the analyze engine cannot be built (install cargo, see verdigris/README.md)');
+      Juke.logger.error(
+        onDisk
+          ? `gen: no analyze binary (${ANALYZE_BIN}), so code/engine/_generated cannot be regenerated and the copy on disk may be stale. Install cargo (the analyze-build target builds it), or set DQ_ALLOW_STALE_GEN=1 to compile the files on disk anyway.`
+          : 'gen: the generated DM is missing and the analyze engine cannot be built (install cargo, see verdigris/README.md)',
+      );
       throw new Juke.ExitCode(1);
     }
     const started = Date.now();
-    const result = spawnSync(ANALYZE_BIN, ['gen'], { encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 });
-    const lines = `${result.stdout || ''}${result.stderr || ''}`.split(/\r?\n/).filter((l) => l && !l.startsWith('fresh '));
+    // Skipped when nothing `analyze gen` reads or writes changed since it last passed here (lib/tree_key.ts): the DM trees (the
+    // generated output and _bindings.dm are ignored files there, keyed by stat), the manifest, the lint scopes, the analyzer's
+    // sources and binary, and the TypeScript it writes. DQ_FULL_CHECKS / CI always run it.
+    const useCache = !process.env.DQ_FULL_CHECKS && !process.env.CI;
+    const genPaths = ['code', 'interface', 'maps', `${DME_NAME}.dme`, 'tools/ci/lint_scopes.toml', 'tools/analyze/src', 'tools/analyze/Cargo.toml', 'tgui/packages/tgui/interfaces/generated'];
+    if (useCache) {
+      const key = await gitTreeKey(process.cwd(), 'analyze-gen', genPaths, [ANALYZE_BIN]);
+      if (key && readKeyRecord(GEN_RECORD) === key) {
+        Juke.logger.info(`gen: inputs unchanged since the last run (key ${key.slice(0, 12)}, ${Date.now() - started} ms); skipped`);
+        return;
+      }
+    }
+    // Awaited, not spawnSync: a synchronous spawn blocked Bun's event loop for the whole run, stalling every target beside it.
+    const result = await runCaptured(ANALYZE_BIN, ['gen']);
+    const lines = result.out.split(/\r?\n/).filter((l) => l && !l.startsWith('fresh '));
     const written = lines.filter((l) => l.startsWith('wrote '));
     const other = lines.filter((l) => !l.startsWith('wrote '));
     if (result.error || result.status !== 0) {
@@ -1014,6 +1078,10 @@ export const GenTarget = new Juke.Target({
       throw new Juke.ExitCode(1);
     }
     for (const line of other) console.log(line);
+    if (useCache) {
+      const after = await gitTreeKey(process.cwd(), 'analyze-gen', genPaths, [ANALYZE_BIN]);
+      if (after) writeKeyRecord(GEN_RECORD, after);
+    }
     Juke.logger.info(`gen: ${written.length} generated file(s) rewritten in ${((Date.now() - started) / 1000).toFixed(1)} s`);
   },
 });
@@ -1034,26 +1102,8 @@ export const AnalyzeTestTarget = new Juke.Target({
   },
 });
 
-// Explicit opt-in qualification route. The ordinary production Analyze target
-// and cache/default binary selection remain unchanged until qualification.
-const ANALYZE_NATIVE_BIN = `${ANALYZE_DIR}/${ANALYZE_PROFILE}/${process.platform === 'win32' ? 'analyze-native.exe' : 'analyze-native'}`;
-export const AnalyzeNativeBuildTarget = new Juke.Target({
-  executes: async () => {
-    await cargoExec(['build', '--profile', ANALYZE_PROFILE, '--manifest-path', 'tools/analyze/Cargo.toml', '-p', 'dq-analyze-client', '--bin', 'analyze-native']);
-    if (!fs.existsSync(ANALYZE_NATIVE_BIN)) throw new Error('native Analyze client artifact missing after successful build');
-  },
-});
-export const AnalyzeNativeTarget = new Juke.Target({
-  dependsOn: () => [AnalyzeNativeBuildTarget, DmbcTarget],
-  executes: async ({ args }) => {
-    const compiler = dmbcBinOverride() || process.env.DQ_NATIVE_COMPILER || sharedDmbcExe('dmbc');
-    if (!path.isAbsolute(compiler) || !fs.existsSync(compiler)) throw new Error('actual resolved native compiler is not an existing absolute executable');
-    await Juke.exec(ANALYZE_NATIVE_BIN, ['ordinary', ...(args || [])], { env: { ...process.env, DQ_DMBC_BIN: compiler } });
-  },
-});
-
 export const AnalyzeTarget = new Juke.Target({
-  dependsOn: [AnalyzeBuildTarget, GenTarget], // some lints read the generated DM (sem/reads)
+  dependsOn: [GenTarget], // some lints read the generated DM (sem/reads)
   executes: async ({ args }) => {
     if (!fs.existsSync(ANALYZE_BIN)) {
       Juke.logger.warn('analyze: no binary, skipping the engine lints');
@@ -1166,13 +1216,13 @@ export const DmbcTarget = new Juke.Target({
     const target = privateBuild ? devCompilerDir() : sharedDmbcBuildTarget();
     const runCargo = (args: string[], extraEnv: Record<string, string> = {}) =>
       fs.existsSync(slots)
-        ? Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...args], { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv, ...cargoIncrementalEnv(process.env, 'lane') }, throw: false })
-        : Juke.exec(args[0], args.slice(1), { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv, ...cargoIncrementalEnv(process.env, 'lane') }, throw: false });
+        ? Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...args], { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv }, throw: false })
+        : Juke.exec(args[0], args.slice(1), { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv }, throw: false });
     let result = await runCargo(cargo);
     if (result.code !== 0 && staleCargoArtifactSignature(result.combined ?? '')) {
       // The one shared target is written by builds of different checkouts and revisions. A compile error that says a method or item
       // that exists in the source is missing ("no method named evict_to_budget") is stale incremental or fingerprint state, not a
-      // code error: drop the workspace crates' artifacts and the incremental cache and build once more with the same always-incremental policy.
+      // code error: drop the workspace crates' artifacts and the incremental cache and build once more, non-incrementally.
       Juke.logger.warn('dmbc: the cargo build failed with a stale-artifact signature; cleaning the workspace crates and retrying once');
       const meta = spawnSync('cargo', ['metadata', '--no-deps', '--format-version', '1', '--manifest-path', 'tools/dmb/Cargo.toml'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, CARGO_TARGET_DIR: target } });
       let names: string[] = [];
@@ -1183,7 +1233,7 @@ export const DmbcTarget = new Juke.Target({
       }
       fs.rmSync(`${target}/release/incremental`, { recursive: true, force: true });
       if (names.length) await runCargo(['cargo', 'clean', '--release', '--manifest-path', 'tools/dmb/Cargo.toml', ...names.flatMap((n) => ['-p', n])]);
-      result = await runCargo(cargo);
+      result = await runCargo(cargo, { CARGO_INCREMENTAL: '0' });
     }
     if (result.code !== 0) throw new Error(`dmbc: cargo build failed (exit ${result.code})`);
     if (privateBuild) {
@@ -1261,17 +1311,17 @@ export const DmTarget = new Juke.Target({
   },
   executes: async ({ get }) => {
     // Production build: no DEBUG (no runtime line numbers, ~56 MB less at world
-    // load; doc/rewrite/init_and_turfs.md Â§0.5). Pass -D DEBUG to get them back.
+    // load; doc/rewrite/init_and_turfs.md §0.5). Pass -D DEBUG to get them back.
     // DreamChecker lints the same tree while DreamMaker compiles it. Either failing fails the target, and a
     // DreamChecker failure deletes the fresh .dmb so the next run cannot skip this target as up to date.
     // SpacemanDMM's DreamChecker has no incremental mode: it always parses and checks the whole tree (2+ minutes, competing
-    // with the compile for every core). A local dm/server/test build therefore skips it; the merge gates, the push script, CI
-    // and the explicit lint target run it (DQ_DREAMCHECKER=1 does it for one build). doc/testing.md "DreamChecker policy".
+    // with the compile for every core). A local dm/server/test build therefore skips it; the merge gates, the push script
+    // and CI run it (DQ_DREAMCHECKER=1 does it for one build). doc/testing.md "DreamChecker policy".
     const checker = dreamCheckerWanted() ? findDreamChecker() : null;
     if (!dreamCheckerWanted()) {
-      Juke.logger.info('dreamchecker skipped for this local build (it checks the whole tree every time); the merge gates, CI and `build.sh lint` run it, or set DQ_DREAMCHECKER=1');
+      Juke.logger.info('dreamchecker skipped for this local build (it checks the whole tree every time); CI runs it, or set DQ_DREAMCHECKER=1');
     } else if (!checker) {
-      Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM â€” skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
+      Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
     }
     const compile = () =>
       DreamMaker(`${DME_NAME}.dme`, {
@@ -1299,29 +1349,6 @@ export const DmTarget = new Juke.Target({
       throw results[0].reason;
     }
     if (results[1].status === 'rejected') throw results[1].reason;
-  },
-});
-
-/** Explicit full CI qualification through the published resident compiler. */
-export const DmCompoundCiTarget = new Juke.Target({
-  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisBindingsCheckTarget, GenTarget, MapBoundsTarget],
-  executes: async () => {
-    if (compilerMode() !== 'native' || process.env.DQ_NATIVE_NO_DAEMON === '1'
-        || process.env.DQ_COMPILER_FALLBACK === '1' || process.env.DQ_COMPILER_STRICT === '0'
-        || process.env.DQ_NATIVE_COMPILER || dmbcBinOverride()) {
-      Juke.logger.error('dm-compound-ci requires strict native mode and the shared published compiler.');
-      throw new Juke.ExitCode(2);
-    }
-    let code: number;
-    try {
-      code = await withSlot('dm_compile', 'native full CI compound',
-        () => runFullCiCompound(process.cwd(), Number(nativeWorkers())),
-        (message) => Juke.logger.info(message));
-    } catch (error) {
-      Juke.logger.error(String(error));
-      throw new Juke.ExitCode(2);
-    }
-    if (code !== 0) throw new Juke.ExitCode(code);
   },
 });
 
@@ -2103,7 +2130,7 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
 }
 
 // DEBUG (line numbers in runtimes) is off in the production .dmb: it costs
-// ~56 MB at world load (doc/rewrite/init_and_turfs.md Â§0.5). Test, bench and
+// ~56 MB at world load (doc/rewrite/init_and_turfs.md §0.5). Test, bench and
 // autowiki builds turn it back on here; a local dev build can pass -D DEBUG.
 const TEST_DEFINES = ['CBT', 'CIBUILDING', 'CITESTING', 'DEBUG'];
 
@@ -2130,7 +2157,7 @@ const DOMAIN_PATTERNS: [RegExp, string][] = [
   [/medical|surgery|disease|genetics|\borgan\b|\bbody\b|physiology|stabilisation|diagnosis/i, 'medical'],
   [/vore|belly/i, 'vore'],
   [/\brule/i, 'rules'],
-  [/\bstate\b|latent/i, 'state'],
+  [/\bstate\b/i, 'state'],
   [/\bmob\b|\blife\b|hibernat/i, 'mobs'],
   [/tgui|\bui_|interface/i, 'ui'],
   [/construction|assembly|\bmech\b/i, 'construction'],
@@ -2227,8 +2254,8 @@ const SWEEP_HASH_CACHE_FILE = `${DMB_CACHE_DIR}/sweep-hashes.json`;
  * Every sweep here iterates `subtypesof()`/`typesof()` of some root and
  * reads `initial()` var values (or property-provider-derived values) per
  * type. That means its true input set is "every file that declares a
- * subtype of the root, anywhere in the tree" -- for dq_lifecycle_sandbox and
- * dq_state_latent_round_trip that's any /atom/movable subtype; a first
+ * subtype of the root, anywhere in the tree" -- for dq_lifecycle_sandbox
+ * that's any /atom/movable subtype; a first
  * attempt at scoping all_clothing_shall_be_valid to
  * code/modules/clothing/ and dq_property_type_values_valid to
  * code/datums/properties/ turned out to be exactly this mistake:
@@ -3300,7 +3327,7 @@ export const BenchTarget = new Juke.Target({
     for (const [scenario, metrics] of Object.entries(record.summary)) {
       console.log(`\n${scenario}`);
       for (const [name, stats] of Object.entries(metrics)) {
-        const spread = stats.n > 1 ? ` Â±${formatNumber(stats.stdev)}` : '';
+        const spread = stats.n > 1 ? ` ±${formatNumber(stats.stdev)}` : '';
         console.log(`  ${name.padEnd(40)} ${formatNumber(stats.median).padStart(10)} ${stats.unit}${spread}`);
       }
     }
@@ -3601,35 +3628,40 @@ export const AutowikiTarget = new Juke.Target({
   },
 });
 
+// The tgui install is skipped when the lockfile and the authored package.json files are what the last successful install saw: a
+// content key (lib/tree_key.ts) kept in tgui/node_modules/.dq-install-key. The old gate compared mtimes, and `git switch` (every
+// pool lease and every post-push check) rewrites package.json and bun.lock with a new mtime, so nearly every build re-ran a full
+// `bun install` (about 77 s of linking on this machine) for an unchanged lockfile. The Juke `inputs` glob went too: with no outputs it
+// never skipped anything and only walked tgui/ synchronously.
+const BUN_INSTALL_KEY = 'tgui/node_modules/.dq-install-key';
+// The workspace packages' manifests by pathspec glob (never node_modules).
+const bunInstallKey = () =>
+  gitTreeKey(process.cwd(), 'tgui-install', ['tgui/bun.lock', 'tgui/package.json', ':(glob)tgui/packages/*/package.json']);
 export const BunTarget = new Juke.Target({
   parameters: [CiParameter],
-  inputs: ['tgui/**/package.json'],
-  // skip `bun install` when tgui/node_modules is newer
-  // than every package.json + bun.lock under tgui/. Without this Juke
-  // re-runs `bun install --frozen-lockfile` on every build (~5s) even
-  // when nothing has changed; the install itself then no-ops in ~70ms
-  // but the spawn overhead is real. Same onlyWhen pattern as
-  // BiomeInstallTarget below.
-  onlyWhen: () => {
+  onlyWhen: async () => {
     if (!fs.existsSync('tgui/node_modules')) return true;
+    const key = await bunInstallKey();
+    if (!key) return true;
     try {
-      const nmMt = fs.statSync('tgui/node_modules').mtimeMs;
-      if (fs.statSync('tgui/bun.lock').mtimeMs > nmMt) return true;
-      // tgui/**/package.json matches inside tgui/node_modules/ too,
-      // where Bun's per-install file writes always look "newer" than
-      // the parent directory. Filter those out so we only watch
-      // authored workspace package.json files.
-      for (const pkg of Juke.glob('tgui/**/package.json')) {
-        if (pkg.includes('node_modules')) continue;
-        if (fs.statSync(pkg).mtimeMs > nmMt) return true;
-      }
-      return false;
+      return fs.readFileSync(BUN_INSTALL_KEY, 'utf-8').trim() !== key;
     } catch {
-      return true; // bail conservatively if any stat fails
+      // No key yet (an install from before the key): the old mtime gate decides once, and a fresh install records the key.
+      try {
+        if (fs.statSync('tgui/bun.lock').mtimeMs <= fs.statSync('tgui/node_modules').mtimeMs) {
+          fs.writeFileSync(BUN_INSTALL_KEY, key);
+          return false;
+        }
+      } catch {
+        // fall through to an install
+      }
+      return true;
     }
   },
-  executes: () => {
-    return bun('install', '--frozen-lockfile', '--ignore-scripts');
+  executes: async () => {
+    await bun('install', '--frozen-lockfile', '--ignore-scripts');
+    const key = await bunInstallKey();
+    if (key) fs.writeFileSync(BUN_INSTALL_KEY, key);
   },
 });
 
@@ -3676,10 +3708,7 @@ const TGUI_ENTRY_BUNDLES = [
   'tgui/public/tgui.bundle.css',
   'tgui/public/tgui-panel.bundle.js',
   'tgui/public/tgui-panel.bundle.css',
-  'tgui/public/tgui-say.bundle.js',
-  'tgui/public/tgui-say.bundle.css',
-  'tgui/public/tgui-statpanel.bundle.js',
-  'tgui/public/tgui-statpanel.bundle.css',
+  'tgui/public/tgui-shared.bundle.js',
 ];
 const TGUI_CHUNK_MANIFEST = 'tgui/public/tgui-chunk-manifest.json';
 const TGUI_WINDOW_MANIFEST = 'tgui/public/tgui-window-manifest.json';
@@ -3688,7 +3717,7 @@ const TGUI_WINDOW_MANIFEST = 'tgui/public/tgui-window-manifest.json';
 // are non-empty, the chunk manifest parses, and every interface chunk it references
 // is present and non-empty. The individual *.chunk.* files aren't tracked as Juke
 // outputs (they're content-hashed and numerous), so without this check an interrupted
-// or corrupt rspack emit â€” entry bundles written but some interface chunks missing â€”
+// or corrupt rspack emit — entry bundles written but some interface chunks missing —
 // passes the mtime dirty-check forever and silently serves blank/grey UI windows
 // (e.g. the lobby) until public/ is wiped by hand.
 const tguiBundleComplete = (): boolean => {
@@ -3732,36 +3761,45 @@ const tguiBundleComplete = (): boolean => {
   return true;
 };
 
+const TGUI_OUTPUTS = [
+  'tgui/public/tgui.bundle.css',
+  'tgui/public/tgui.bundle.js',
+  'tgui/public/tgui-panel.bundle.css',
+  'tgui/public/tgui-panel.bundle.js',
+  'tgui/public/tgui-shared.bundle.js',
+  'tgui/public/tgui-chunk-manifest.json',
+  'tgui/public/tgui-window-manifest.json',
+];
+const TGUI_BUILD_KEY = 'tgui/public/.dq-build-key';
+// The bundle's sources: the config, the manifests and everything under tgui/packages except node_modules (the generated interface
+// types are ignored files there and are keyed by stat).
+const tguiSourceKey = () =>
+  gitTreeKey(process.cwd(), 'tgui-build', ['tgui/rspack.config.ts', 'tgui/package.json', 'tgui/bun.lock', 'tgui/packages', ':(exclude,glob)**/node_modules/**']);
 export const TguiTarget = new Juke.Target({
   dependsOn: [BunTarget, BiomeInstallTarget],
-  inputs: [
-    'tgui/rspack.config.ts',
-    'tgui/**/package.json',
-    'tgui/packages/**/*.+(js|cjs|ts|tsx|jsx|scss|svg)',
-  ],
+  // No Juke `inputs`: an mtime glob over tgui/packages rebuilt after every `git switch` (new mtimes, same content) and walked the tree
+  // synchronously. onlyWhen compares a content key of the sources (lib/tree_key.ts) with the one the last complete build recorded.
   outputs: [
     'tgui/public/tgui.bundle.css',
     'tgui/public/tgui.bundle.js',
     'tgui/public/tgui-panel.bundle.css',
     'tgui/public/tgui-panel.bundle.js',
-    'tgui/public/tgui-say.bundle.css',
-    'tgui/public/tgui-say.bundle.js',
-    'tgui/public/tgui-statpanel.bundle.css',
-    'tgui/public/tgui-statpanel.bundle.js',
+    // The code both entries share (rspack.config.ts optimization.splitChunks).
+    'tgui/public/tgui-shared.bundle.js',
     // Code-split interface chunks are emitted alongside the entry bundles; the
     // manifest maps interface name -> chunk file (consumed by SStgui). Tracking the
     // manifest as an output makes Juke rebuild if it's missing (e.g. a public/ wipe)
     // and keeps it in sync with rspack.config.ts changes. The individual *.chunk.*
-    // files are content-id'd and numerous, so they aren't listed literally â€” instead
+    // files are content-id'd and numerous, so they aren't listed literally — instead
     // tguiBundleComplete() validates them (see onlyWhen / executes below).
     'tgui/public/tgui-chunk-manifest.json',
     'tgui/public/tgui-window-manifest.json',
   ],
   // Runs before the mtime dirty-check. If the existing bundle is incomplete (a chunk
   // the manifest references is missing/empty), drop the tracked entry bundles so the
-  // mtime check treats the outputs as missing and forces a fresh rebuild â€” otherwise
+  // mtime check treats the outputs as missing and forces a fresh rebuild — otherwise
   // a half-written bundle is skipped indefinitely and serves broken UI.
-  onlyWhen: () => {
+  onlyWhen: async () => {
     if (!tguiBundleComplete()) {
       for (const f of TGUI_ENTRY_BUNDLES) {
         try {
@@ -3770,6 +3808,14 @@ export const TguiTarget = new Juke.Target({
           /* already gone */
         }
       }
+      return true;
+    }
+    if (TGUI_OUTPUTS.some((f) => !fs.existsSync(f))) return true;
+    const key = await tguiSourceKey();
+    try {
+      if (key && fs.readFileSync(TGUI_BUILD_KEY, 'utf-8').trim() === key) return false;
+    } catch {
+      // no key yet: build once and record it
     }
     return true;
   },
@@ -3785,6 +3831,8 @@ export const TguiTarget = new Juke.Target({
           + 'tgui/public/*.{bundle,chunk}.* and rebuild.',
       );
     }
+    const key = await tguiSourceKey();
+    if (key) fs.writeFileSync(TGUI_BUILD_KEY, key);
   },
 });
 
@@ -3847,7 +3895,7 @@ export const DreamCheckerTarget = new Juke.Target({
   onlyWhen: () => {
     if (!findDreamChecker()) {
       Juke.logger.info(
-        'dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM â€” skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)',
+        'dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)',
       );
       return false;
     }
@@ -3892,16 +3940,86 @@ export const TestTarget = new Juke.Target({
 });
 
 export const LintTarget = new Juke.Target({
-  dependsOn: [TguiLintTarget, DreamCheckerTarget, AnalyzeTarget], // DM lint via SpacemanDMM if available; the analyze engine lints
+  // DreamChecker is off by the user's decision: lint runs TGUI and the analyze engine only (the DreamChecker target stays for explicit use)
+  dependsOn: [TguiLintTarget, AnalyzeTarget],
 });
 
 export const BuildTarget = new Juke.Target({
   dependsOn: [TguiTarget, DmTarget, VerdigrisTarget], // verdigris FFI lib
 });
 
+const ASSET_WEBROOT_LOG = 'data/logs/asset-webroot.log';
+const ASSET_WEBROOT_RESTART_MS = 5000;
+const ASSET_WEBROOT_RESTART_MAX_MS = 60000;
+const ASSET_WEBROOT_BIND_FAILED = 3; // exit code of tools/localhost-asset-webroot-server.py when it cannot bind
+
+/**
+ * The local asset webroot (config/example ASSET_TRANSPORT webroot). Every tgui page loads its
+ * bundles from it, so it lives as long as the server: a helper that exits is logged with its
+ * code and started again, and what it prints goes to ASSET_WEBROOT_LOG.
+ */
+function startAssetWebroot() {
+  let stopped = false;
+  let child: ReturnType<typeof spawn> | undefined;
+  let delay = ASSET_WEBROOT_RESTART_MS;
+  let bindWarned = false;
+  fs.mkdirSync('data/logs', { recursive: true });
+  const launch = () => {
+    const startedAt = Date.now();
+    const log = fs.openSync(ASSET_WEBROOT_LOG, 'a');
+    child = spawn(
+      process.platform === 'win32' ? 'python' : 'python3',
+      ['tools/localhost-asset-webroot-server.py'],
+      { stdio: ['ignore', log, log], windowsHide: true },
+    );
+    fs.closeSync(log);
+    child.on('error', (error) => {
+      Juke.logger.warn(`Could not start the local asset webroot: ${error}`);
+    });
+    child.on('exit', (code, signal) => {
+      if (stopped) return;
+      // A helper that ran a while was healthy: start the backoff over.
+      if (Date.now() - startedAt > 30000) delay = ASSET_WEBROOT_RESTART_MS;
+      if (code === ASSET_WEBROOT_BIND_FAILED) {
+        if (!bindWarned) {
+          bindWarned = true;
+          let detail = '';
+          try {
+            detail = fs.readFileSync(ASSET_WEBROOT_LOG, 'utf8').trim().split('\n').filter((l) => l.includes('cannot bind')).pop() || '';
+          } catch {}
+          Juke.logger.warn(
+            `The local asset webroot cannot bind its port, so tgui will not load: ${detail || 'see ' + ASSET_WEBROOT_LOG}. Retrying every ${ASSET_WEBROOT_RESTART_MAX_MS / 1000}s at most; change ASSET_CDN_URL in the server config to use another port.`,
+          );
+        }
+      } else {
+        Juke.logger.warn(
+          `The local asset webroot exited (code ${code}, signal ${signal}); restarting in ${delay / 1000}s. See ${ASSET_WEBROOT_LOG}.`,
+        );
+      }
+      const wait = delay;
+      delay = Math.min(delay * 2, ASSET_WEBROOT_RESTART_MAX_MS);
+      setTimeout(() => {
+        if (!stopped) launch();
+      }, wait);
+    });
+  };
+  launch();
+  return {
+    stop: () => {
+      stopped = true;
+      child?.kill();
+    },
+  };
+}
+
+// BuildTarget with the server's verdigris profile (VerdigrisServerTarget).
+const ServerBuildTarget = new Juke.Target({
+  dependsOn: [TguiTarget, DmTarget, VerdigrisServerTarget],
+});
+
 export const ServerTarget = new Juke.Target({
   parameters: [DmVersionParameter, PortParameter],
-  dependsOn: [BuildTarget],
+  dependsOn: [ServerBuildTarget],
   executes: async ({ get }) => {
     const port = get(PortParameter) || '1337';
     const options = {
@@ -3909,16 +4027,7 @@ export const ServerTarget = new Juke.Target({
       namedDmVersion: get(DmVersionParameter),
       playerFacing: true,
     };
-    const webroot = spawn(
-      process.platform === 'win32' ? 'python' : 'python3',
-      ['tools/localhost-asset-webroot-server.py'],
-      { stdio: 'ignore', windowsHide: true },
-    );
-    webroot.on('error', () => {
-      Juke.logger.warn(
-        'Could not start the local asset webroot; use the configured external webroot.',
-      );
-    });
+    const webroot = startAssetWebroot();
     try {
       await DreamDaemon(
         options,
@@ -3932,7 +4041,7 @@ export const ServerTarget = new Juke.Target({
         `config-directory=${process.env.DQ_SERVER_CONFIG_DIR || 'config/example'}&dd_log=1${process.env.DQ_WORLD_PARAMS ? `&${process.env.DQ_WORLD_PARAMS}` : ''}`,
       );
     } finally {
-      webroot.kill();
+      webroot.stop();
     }
   },
 });

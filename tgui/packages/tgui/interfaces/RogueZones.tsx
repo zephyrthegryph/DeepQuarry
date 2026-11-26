@@ -1,30 +1,13 @@
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  LabeledList,
-  ProgressBar,
-  Section,
-} from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import { Box, Button, LabeledList, Section } from 'tgui-core/components';
+import type { RogueZonesActions, RogueZonesData } from './generated/RogueZones';
 
-type Data = {
-  timeout_percent: number;
-  diffstep: number;
-  difficulty: string;
-  occupied: BooleanLike;
-  scanning: BooleanLike;
-  updated: BooleanLike;
-  debug: BooleanLike;
-  shuttle_location: string;
-  shuttle_at_station: BooleanLike;
-  scan_ready: BooleanLike;
-  can_recall_shuttle: BooleanLike;
-};
+type Data = RogueZonesData;
 
 export const RogueZones = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, RogueZonesActions>();
   const {
     timeout_percent,
     diffstep,
@@ -88,17 +71,16 @@ export const RogueZones = (props) => {
           }
         >
           <LabeledList>
-            <LabeledList.Item label="Scn Ramestat Core">
-              <ProgressBar
-                value={timeout_percent}
-                maxValue={100}
-                ranges={{
-                  good: [100, Infinity],
-                  average: [75, 100],
-                  bad: [-Infinity, 75],
-                }}
-              />
-            </LabeledList.Item>
+            <StatBar
+              label="Scn Ramestat Core"
+              value={timeout_percent}
+              maxValue={100}
+              ranges={{
+                good: [100, Infinity],
+                average: [75, 100],
+                bad: [-Infinity, 75],
+              }}
+            />
             {(scanning && (
               <LabeledList.Item label="Scanning">In progress.</LabeledList.Item>
             )) ||

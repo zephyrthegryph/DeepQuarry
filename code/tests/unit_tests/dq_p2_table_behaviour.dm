@@ -300,7 +300,7 @@
 	TEST_ASSERT(lost > 0, "the frame took damage")
 	plate(H, T)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	TEST_ASSERT_EQUAL(T.max_integrity, steel.integrity / 2, "half the steel's integrity")
+	TEST_ASSERT_EQUAL(T.max_integrity, steel.toughness * MATERIAL_HP_PER_TOUGHNESS / 2, "half the steel's integrity")
 	TEST_ASSERT_EQUAL(T.max_integrity - T.get_integrity(), lost, "the damage it had is kept")
 
 /// A plated table is not plated again: the stack is only put on it.
@@ -370,7 +370,7 @@
 	TEST_ASSERT_EQUAL(p2_table_stage(T), "reinforced", "a reinforced table")
 	var/datum/material/wood = get_material_by_name(MAT_WOOD)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	TEST_ASSERT_EQUAL(T.max_integrity, wood.integrity / 2 + steel.integrity / 2, "strength adds half the reinforcement's integrity")
+	TEST_ASSERT_EQUAL(T.max_integrity, wood.toughness * MATERIAL_HP_PER_TOUGHNESS / 2 + steel.toughness * MATERIAL_HP_PER_TOUGHNESS / 2, "strength adds half the reinforcement's integrity")
 	TEST_ASSERT_EQUAL(T.name, "reinforced [wood.display_name] table", "named for it")
 
 /// The reinforcing takes two seconds.

@@ -8,11 +8,9 @@
 // Numbers are recomputed in the test from the documented formula, independently of the code under test. Where a number changes on purpose,
 // doc/rewrite/intended_changes.md ("Power plants") records it and the pin is edited in the same commit.
 
-/// One step of a plant's periodic work: the converted step proc named `step` when the plant has it, else its periodic_step().
+/// One step of a plant's periodic work: its every() step proc named `step`.
 /proc/pp_step(datum/D, step)
-	if(step && hascall(D, step))
-		return call(D, step)(null)
-	return D.periodic_step()
+	return call(D, step)(null)
 
 /// Locks or unlocks the actual emitter controls through its lock() capability's key.
 /proc/pp_set_lock(obj/machinery/power/emitter/M, value)
@@ -52,12 +50,12 @@
 	TEST_ASSERT_NOTNULL(pair, "no room for the plant")
 	dq_atmos_test_isolate_pair(pair[1], pair[2])
 	for(var/turf/open/T as anything in pair)
-		T.air.clear()
+		T.turf_air().clear()
 		if(o2)
-			T.air.set_moles(/datum/gas/oxygen, o2)
+			T.turf_air().set_moles(/datum/gas/oxygen, o2)
 		if(n2)
-			T.air.set_moles(/datum/gas/nitrogen, n2)
-		heat_set(T.air, kelvin)
+			T.turf_air().set_moles(/datum/gas/nitrogen, n2)
+		heat_set(T.turf_air(), kelvin)
 	return pair
 
 // ============================================================================================ the supermatter
@@ -363,7 +361,7 @@
 /datum/unit_test/dq_pp/proc/pp_run(n)
 	dq_atmos_test_restore_walls()
 	for(var/turf/simulated/floor/cand in world)
-		if(!cand.air || cand.blocks_air || cand.x < 11 || cand.y < 11 || cand.x > world.maxx - 10 - n || cand.y > world.maxy - 10 - n)
+		if(!cand.turf_air() || cand.blocks_air || cand.x < 11 || cand.y < 11 || cand.x > world.maxx - 10 - n || cand.y > world.maxy - 10 - n)
 			continue
 		for(var/direction in GLOB.cardinal)
 			var/list/run = list(cand)

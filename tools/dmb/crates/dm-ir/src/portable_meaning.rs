@@ -283,8 +283,8 @@ fn procedure(value: &ProcedureMetadata) -> Procedure {
             .iter()
             .map(|arg| Argument {
                 name: arg.name,
-                declared: arg.declared_type(),
-                element: arg.list_element_type(),
+                declared: arg.declared_type,
+                element: arg.list_element_type,
                 flags: arg.flags,
                 array: arg.array.as_deref().map(array),
                 default: arg.default.as_ref().map(expression),
@@ -304,18 +304,20 @@ fn proc(value: Procedure, symbols: Names) -> Option<Arc<ProcedureMetadata>> {
             if arg.span[0] > arg.span[1] {
                 return None;
             }
-            Some(Parameter::new(
-                arg.name,
-                symbol(arg.declared, symbols)?,
-                symbol(arg.element, symbols)?,
-                arg.flags,
-                SyntaxSpan::new(arg.span[0], arg.span[1]),
-            ).with_tail(crate::ParameterTail {
-                array: arg.array.map(|value| arr(value, symbols)).transpose_option()?,
+            Some(Parameter {
+                name: arg.name,
+                declared_type: symbol(arg.declared, symbols)?,
+                list_element_type: symbol(arg.element, symbols)?,
+                flags: arg.flags,
+                array: arg
+                    .array
+                    .map(|value| arr(value, symbols))
+                    .transpose_option()?,
                 default: opt_expr(arg.default, symbols)?,
                 input_annotation: opt_expr(arg.annotation, symbols)?,
                 source_expression: opt_expr(arg.source, symbols)?,
-            }))
+                relative_span: SyntaxSpan::new(arg.span[0], arg.span[1]),
+            })
         })
         .collect::<Option<Vec<_>>>()?;
     Some(Arc::new(ProcedureMetadata {
@@ -328,7 +330,7 @@ fn proc(value: Procedure, symbols: Names) -> Option<Arc<ProcedureMetadata>> {
     }))
 }
 fn metadata(value: &DeclarationMeaning, evidence: bool) -> Option<PortableMeaning> {
-    if value.inherited_opaque().is_some() {
+    if value.inherited_opaque.is_some() {
         return None;
     }
     Some(PortableMeaning {
@@ -345,9 +347,9 @@ fn metadata(value: &DeclarationMeaning, evidence: bool) -> Option<PortableMeanin
                 })
             })
             .transpose_option()?,
-        declared: value.declared_type(),
-        element: value.list_element_type(),
-        display: value.display_name(),
+        declared: value.declared_type,
+        element: value.list_element_type,
+        display: value.display_name,
         flags: value.flags,
         array: value.array.as_deref().map(array),
         procedure: value.procedure.as_deref().map(procedure),
@@ -358,7 +360,8 @@ fn metadata(value: &DeclarationMeaning, evidence: bool) -> Option<PortableMeanin
     })
 }
 fn meta(value: PortableMeaning, symbols: Names) -> Option<DeclarationMeaning> {
-    let fields = crate::DeclarationFieldMeaning {
+    let result = DeclarationMeaning {
+        inherited_opaque: None,
         resolved_constant: value
             .constant
             .map(|constant| {
@@ -373,23 +376,22 @@ fn meta(value: PortableMeaning, symbols: Names) -> Option<DeclarationMeaning> {
                 })
             })
             .transpose_option()?,
-        types: crate::FieldTypeIds::new(symbol(value.declared, symbols)?, symbol(value.element, symbols)?, None),
+        declared_type: symbol(value.declared, symbols)?,
+        list_element_type: symbol(value.element, symbols)?,
+        display_name: symbol(value.display, symbols)?,
+        flags: value.flags,
         array: value
             .array
             .map(|value| arr(value, symbols))
             .transpose_option()?,
-        initializer: opt_expr(value.initializer, symbols)?,
-        declared_initializer: opt_expr(value.formal_initializer, symbols)?,
-    };
-    let result = DeclarationMeaning::new(
-        symbol(value.display, symbols)?,
-        value.flags,
-        value
+        procedure: value
             .procedure
             .map(|value| proc(value, symbols))
             .transpose_option()?,
-        value.canonical.into(),
-    ).with_field_tail(fields);
+        initializer: opt_expr(value.initializer, symbols)?,
+        declared_initializer: opt_expr(value.formal_initializer, symbols)?,
+        canonical: value.canonical.into(),
+    };
     (value.evidence.is_empty() || result.canonical_bytes() == value.evidence).then_some(result)
 }
 impl PortableMeaning {

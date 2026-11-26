@@ -60,9 +60,6 @@
 		if("life_supernatural")
 			var/mob/living/simple_mob/M = src
 			return M.life_supernatural(F)
-		if("life_guts")
-			var/mob/living/simple_mob/M = src
-			return M.life_guts(F)
 		if("life_simple_healing")
 			var/mob/living/simple_mob/M = src
 			return M.life_simple_healing(F)
@@ -218,9 +215,6 @@
 		if("life_supernatural_due")
 			var/mob/living/simple_mob/M = src
 			return M.life_supernatural_due()
-		if("life_guts_due")
-			var/mob/living/simple_mob/M = src
-			return M.life_guts_due()
 		if("life_simple_healing_due")
 			var/mob/living/simple_mob/M = src
 			return M.life_simple_healing_due()

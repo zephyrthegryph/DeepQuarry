@@ -183,7 +183,7 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 						"blood_type" = B.data?["blood_type"] || "unknown",
 						"amount" = amount,
 						"detail" = "Collected [amount] units of [B.data?["blood_type"] || "untyped"] blood from [T].",
-					), "blood-donation:[handle_of(beaker)]:[round(beaker.reagents.total_volume, 0.1)]", src, null, T)
+					), "blood-donation:[handle_text(handle_of(beaker))]:[round(beaker.reagents.total_volume, 0.1)]", src, null, T)
 
 /// Old attack_hand: take the container off before the machinery gate; with none, the touch goes on.
 /obj/machinery/iv_drip/proc/iv_drip_interaction_hand(datum/act/op/A)

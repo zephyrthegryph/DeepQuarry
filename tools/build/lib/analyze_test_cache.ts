@@ -124,8 +124,8 @@ function readManifest(dir: string, key: string, checkout: string): Manifest | nu
 export async function runAnalyzeTests(options: AnalyzeTestOptions): Promise<void> {
   const root = fs.realpathSync(options.root);
   const cwd = path.join(root, 'tools/analyze');
-  // Gate builds obey the same always-incremental policy after caller environment overrides.
-  const env = { ...process.env, ...options.env, ...cargoIncrementalEnv(options.env ?? process.env, 'gate'), CARGO_BUILD_JOBS: process.env.DQ_ANALYZE_TEST_JOBS || options.env?.DQ_ANALYZE_TEST_JOBS || '4' };
+  // One-shot gate builds are not incremental (lib/cargo_ice.ts): a corrupt incremental cache is what makes rustc panic.
+  const env = { ...process.env, ...cargoIncrementalEnv(), ...options.env, CARGO_BUILD_JOBS: process.env.DQ_ANALYZE_TEST_JOBS || options.env?.DQ_ANALYZE_TEST_JOBS || '4' };
   const run = options.run ?? runTestCommand;
   const log = options.log ?? console.log;
   const profile = options.profile ?? env.DQ_ANALYZE_TEST_PROFILE ?? 'dev';
@@ -143,7 +143,7 @@ export async function runAnalyzeTests(options: AnalyzeTestOptions): Promise<void
       const target = cargoTargetDir(args, env, cwd);
       const removed = clearIncremental(target);
       log(`analyze tests: rustc panicked (cargo ${args[0]}); removed ${removed.length} incremental dir(s) under ${target} and retrying once`);
-      result = await run(command, args, { cwd, env: { ...env, ...cargoIncrementalEnv(env, 'gate') }, capture });
+      result = await run(command, args, { cwd, env: { ...env, RUSTC_WRAPPER: '', CARGO_BUILD_RUSTC_WRAPPER: '' }, capture });
     }
     if (result.code !== 0) throw new Error(`analyze tests: ${command} failed (exit ${result.code})`);
     return result.stdout;

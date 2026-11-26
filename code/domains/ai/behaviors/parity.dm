@@ -49,6 +49,7 @@
 	priority_class = DQ_BEHAVIOR_PRIORITY_BACKGROUND
 	target_kind = DQ_TARGET_NONE
 	no_threat_required = TRUE
+	instant = TRUE
 	cooldown = 15 SECONDS
 
 /datum/ai_behavior/idle_speak/evaluate(datum/ai_brain/brain, atom/source)

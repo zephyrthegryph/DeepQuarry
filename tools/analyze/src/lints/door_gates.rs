@@ -18,8 +18,8 @@ use crate::pat::Pat;
 use crate::tree::{SourceFile, CODE_DM};
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::door_gates::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::door_gates::SCOPE_META_0.group,
+    name: "door_gates",
+    group: "",
     label: "door_gates",
     legacy: "",
     select: CODE_DM,
@@ -39,11 +39,10 @@ static META: Meta = Meta {
             hint: "a slot that exists only from a construction stage sits in a staged space: space(SPACE_X, from_stage = STAGE_Y, missing = MSG(...))",
         },
     ],
-    allow: crate::allow_registry_fields::door_gates::ALLOW_0,
-    lists: crate::allow_registry_fields::door_gates::SCOPE_META_0.lists,
+    allow: &["door_gates"],
+    lists: &[],
 };
 
-const DOOR_PATTERN_SOURCES:&[&str]=&[r"\bwhen\(\s*(cond_(all|any)\(\s*)?(COVER_OPEN\b|PANEL_OPEN\b|nameof\(\s*(panel_open|opened)\s*\)\s*\))",r"\breq_is\(\s*(COVER_OPEN\b|PANEL_OPEN\b|nameof\(\s*panel_open\s*\))|\breq_panel_closed\(",r"\breq_built\(",r"\.insert\b|\bput_in\("];
 struct DoorGates {
     when_door: Pat,
     req_door: Pat,
@@ -56,15 +55,36 @@ impl Lint for DoorGates {
         &META
     }
 
-    fn scan_file(&self,_cx:&Cx,f:&SourceFile,out:&mut Sink){scan_using(f,out,&self.when_door,&self.req_door,&self.req_built,&self.puts)}
+    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        if f.rel.starts_with("code/engine/_generated/") {
+            return; // the generator's copy of a declaration; the site is counted where it is written
+        }
+        for (no, line) in f.code().numbered() {
+            let rule = if self.when_door.is_match(line) {
+                Some("when_door")
+            } else if self.req_door.is_match(line) {
+                Some("req_door")
+            } else if self.req_built.is_match(line) && self.puts.is_match(f.line(no)) {
+                // The put is named by the op key, a string (`"cell_bay.cell.insert"`), which the code view blanks: read it raw.
+                Some("req_built_put")
+            } else {
+                None
+            };
+            if let Some(rule) = rule {
+                if !out.allowed(f, no, "door_gates") {
+                    out.site(rule, no);
+                }
+            }
+        }
+    }
 }
 
 pub fn register(reg: &mut Registry) {
     reg.add(DoorGates {
-        when_door: Pat::new(DOOR_PATTERN_SOURCES[0]),
-        req_door: Pat::new(DOOR_PATTERN_SOURCES[1]),
-        req_built: Pat::new(DOOR_PATTERN_SOURCES[2]),
-        puts: Pat::new(DOOR_PATTERN_SOURCES[3]),
+        when_door: Pat::new(r"\bwhen\(\s*(cond_(all|any)\(\s*)?(COVER_OPEN\b|PANEL_OPEN\b|nameof\(\s*(panel_open|opened)\s*\)\s*\))"),
+        req_door: Pat::new(r"\breq_is\(\s*(COVER_OPEN\b|PANEL_OPEN\b|nameof\(\s*panel_open\s*\))|\breq_panel_closed\("),
+        req_built: Pat::new(r"\breq_built\("),
+        puts: Pat::new(r"\.insert\b|\bput_in\("),
     });
 }
 
@@ -77,7 +97,7 @@ mod tests {
     fn counts_the_hand_written_gates() {
         let tree = Tree::from_files(vec![]);
         let scope = crate::scopes::LintScope::default();
-        let cx = Cx { fixture:None, tree: &tree, meta: &META, scope: &scope };
+        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
         let f = SourceFile::from_text(
             "code/a.dm",
             "\textend(\"cell_bay.cell.take\", when(COVER_OPEN))\n\top(\"x\", hand(), at(SPACE_PANEL))\n\tneeds(req_panel_closed())\n\textend(\"cell_bay.cell.insert\", needs(req_built(STAGE_X)))\n\tlook_layer(L, when = PANEL_OPEN)\n",
@@ -91,45 +111,3 @@ mod tests {
         assert_eq!(lines, vec![1, 3, 4]);
     }
 }
-
-fn scan_using<P:crate::raw_fixture_policy::PatternApi>(f:&SourceFile,out:&mut Sink,when_door:&P,req_door:&P,req_built:&P,puts:&P){
-        if f.rel.starts_with("code/engine/_generated/") {
-            return; // the generator's copy of a declaration; the site is counted where it is written
-        }
-        for (no, line) in f.code().numbered() {
-            let rule = if when_door.is_match(line) {
-                Some("when_door")
-            } else if req_door.is_match(line) {
-                Some("req_door")
-            } else if req_built.is_match(line) && puts.is_match(f.line(no)) {
-                // The put is named by the op key, a string (`"cell_bay.cell.insert"`), which the code view blanks: read it raw.
-                Some("req_built_put")
-            } else {
-                None
-            };
-            if let Some(rule) = rule {
-                if !out.allowed(f, no, "door_gates") {
-                    out.site(rule, no);
-                }
-            }
-        }
-
-}
-
-#[cfg(feature="native-policy")]
-struct NativeDoorGates{legacy:std::sync::OnceLock<DoorGates>}
-#[cfg(feature="native-policy")]
-impl Lint for NativeDoorGates{
- fn meta(&self)->&Meta{&META}
- fn scan_file(&self,cx:&Cx,f:&SourceFile,out:&mut Sink){
-  if let Some(fixture)=cx.fixture{
-   let when_door=fixture.pattern(DOOR_PATTERN_SOURCES[0],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(DOOR_PATTERN_SOURCES[0]));
-   let req_door=fixture.pattern(DOOR_PATTERN_SOURCES[1],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(DOOR_PATTERN_SOURCES[1]));
-   let req_built=fixture.pattern(DOOR_PATTERN_SOURCES[2],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(DOOR_PATTERN_SOURCES[2]));
-   let puts=fixture.pattern(DOOR_PATTERN_SOURCES[3],crate::raw_fixture_policy::PatternMode::Search,||crate::pat!(DOOR_PATTERN_SOURCES[3]));
-   scan_using(f,out,&when_door,&req_door,&req_built,&puts)
-  }else{self.legacy.get_or_init(||DoorGates{when_door:Pat::new(DOOR_PATTERN_SOURCES[0]),req_door:Pat::new(DOOR_PATTERN_SOURCES[1]),req_built:Pat::new(DOOR_PATTERN_SOURCES[2]),puts:Pat::new(DOOR_PATTERN_SOURCES[3])}).scan_file(cx,f,out)}
- }
-}
-#[cfg(feature="native-policy")]
-pub fn register_native(reg:&mut Registry){reg.add(NativeDoorGates{legacy:std::sync::OnceLock::new()})}

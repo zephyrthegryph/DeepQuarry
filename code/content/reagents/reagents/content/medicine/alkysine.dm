@@ -1,10 +1,11 @@
 /datum/reagent/alkysine
 	treatment_tags = list(TREAT_NEURAL_REPAIR = 0.5)
-	factors = alist(STAT_ANALGESIA = 10)
+	// Lowers the threshold at which a shock sets off a seizure.
+	factors = alist(STAT_ANALGESIA = 10, STAT_SEIZURE_PRONENESS = 8)
 	species_factors = alist(IS_DIONA = null, IS_SLIME = alist(STAT_ANALGESIA = 2.5))
 	name = REAGENT_ALKYSINE
 	id = REAGENT_ID_ALKYSINE
-	description = REAGENT_ALKYSINE + " is a drug used to lessen the damage to neurological tissue after a catastrophic injury. Can heal brain tissue."
+	description = REAGENT_ALKYSINE + " is a drug used to lessen the damage to neurological tissue after a catastrophic injury. Heals brain damage and concussion. It lowers the seizure threshold, so a shock is more likely to set off a seizure, and it can cause confusion."
 	taste_description = "bitterness"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

@@ -46,9 +46,8 @@
 /proc/p2cl_set_locked(obj/structure/closet/C, on)
 	C.force_lock(!!on)
 
-/// What the closet holds, declared contents made real first.
+/// What the closet holds.
 /proc/p2cl_contents(obj/structure/closet/C)
-	C.latent_materialize_all()
 	return C.slot_contents()
 
 /// The crate has been rigged with a cable.

@@ -94,7 +94,7 @@ CAPABILITIES(/datum/stock)
 		var/in_t = pick(ts)
 		rel_set(src, nameof(industry), new in_t)
 	for (var/i = 0, i < rand(2, 5), i++)
-		products += industry.generateProductName(name)
+		add_products(industry.generateProductName(name))
 
 /datum/stock/proc/frc(amt)
 	var/shares = available_shares + outside_shareholders * average_shares
@@ -107,10 +107,10 @@ CAPABILITIES(/datum/stock)
 
 /datum/stock/proc/supplyGrowth(amt)
 	var/fr = frc(amt)
-	available_shares += amt
+	set_available_shares(available_shares + amt)
 	if (abs(fr) < 0.0001)
 		return
-	current_value -= fr * current_value
+	set_current_value(current_value - (fr * current_value))
 
 /datum/stock/proc/supplyDrop(amt)
 	supplyGrowth(-amt)
@@ -133,7 +133,7 @@ CAPABILITIES(/datum/stock)
 
 	var/cv = last_value
 	supplyDrop(share_change)
-	available_shares += share_change // temporary
+	set_available_shares(available_shares + share_change) // temporary
 
 	if (prob(25))
 		average_optimism = max(min(average_optimism + (rand(-3, 3) - current_trend * 0.15) / 100, 1), -1)
@@ -150,14 +150,14 @@ CAPABILITIES(/datum/stock)
 				speculation += rand(-4000, 0) / 1000 * speculation
 
 	if (current_value < 5)
-		current_value = 5
+		set_current_value(5)
 
 	if (performance != 0)
 		performance = rand(900,1050) / 1000 * performance
 		if (abs(performance) < 0.2)
 			performance = 0
 
-	disp_value_change = (cv < current_value) ? 1 : ((cv > current_value) ? -1 : 0)
+	set_disp_value_change((cv < current_value) ? 1 : ((cv > current_value) ? -1 : 0))
 	last_value = current_value
 	if (values.len >= 50)
 		values.Cut(1,2)
@@ -175,9 +175,9 @@ CAPABILITIES(/datum/stock)
 		if (shr % 2)
 			sellShares(I, 1)
 		shr -= 1
-		shareholders[I] /= 2
+		set_shareholders_at(I, shareholders[I] / 2)
 		if (!LAZYACCESS(shareholders, I))
-			LAZYREMOVE(shareholders, I)
+			remove_shareholders(I)
 	for (var/datum/borrow/B in borrow_brokers)
 		B.share_amount = round(B.share_amount / 2)
 		B.share_debt = round(B.share_debt / 2)
@@ -185,8 +185,8 @@ CAPABILITIES(/datum/stock)
 		B.share_amount = round(B.share_amount / 2)
 		B.share_debt = round(B.share_debt / 2)
 	average_shares /= 2
-	available_shares /= 2
-	current_value *= 2
+	set_available_shares(available_shares / 2)
+	set_current_value(current_value * 2)
 	STAMP(src, last_unification, CLOCK_WORLD)
 
 /datum/stock/proc/stock_tick(elapsed_steps = 1)
@@ -203,14 +203,14 @@ CAPABILITIES(/datum/stock)
 			if (borrow.borrower in shareholders)
 				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
-					shareholders[borrow.borrower] -= borrow.share_debt
+					set_shareholders_at(borrow.borrower, shareholders[borrow.borrower] - borrow.share_debt)
 					if (borrow.borrower in GLOB.FrozenAccounts)
 						GLOB.FrozenAccounts[borrow.borrower] -= entity_handle_of(borrow)
 					if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
 						GLOB.FrozenAccounts -= borrow.borrower
 					rel_remove(src, nameof(borrows), borrow)
 				else
-					LAZYREMOVE(shareholders, borrow.borrower)
+					remove_shareholders(borrow.borrower)
 					borrow.share_debt -= amt
 	if (bankrupt)
 		return
@@ -266,7 +266,7 @@ CAPABILITIES(/datum/stock)
 		return 0
 	B.deposit = d_amt
 	if (!(who in shareholders))
-		LAZYSET(shareholders, who, B.share_amount)
+		set_shareholders_at(who, B.share_amount)
 	else
 		LAZYADDASSOC(shareholders, who, B.share_amount)
 	rel_move(src, nameof(borrow_brokers), src, nameof(borrows), B) // an accepted offer: still the stock's to delete
@@ -288,7 +288,7 @@ CAPABILITIES(/datum/stock)
 	if (modifyAccount(who, -loss))
 		supplyDrop(howmany)
 		if (!(who in shareholders))
-			LAZYSET(shareholders, who, howmany)
+			set_shareholders_at(who, howmany)
 		else
 			LAZYADDASSOC(shareholders, who, howmany)
 		return 1
@@ -303,9 +303,9 @@ CAPABILITIES(/datum/stock)
 		return 0
 	if (modifyAccount(whose, gain))
 		supplyGrowth(howmany)
-		shareholders[whose] -= howmany
+		set_shareholders_at(whose, shareholders[whose] - howmany)
 		if (LAZYACCESS(shareholders, whose) <= 0)
-			LAZYREMOVE(shareholders, whose)
+			remove_shareholders(whose)
 		return 1
 	return 0
 

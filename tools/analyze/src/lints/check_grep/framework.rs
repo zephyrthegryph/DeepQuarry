@@ -452,10 +452,7 @@ impl Compiled {
         }
     }
 
-    pub fn scan(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {self.scan_with(cx.scope,f,out)}
-
-    /// SAME rule/search/filter policy over an actual borrowed original file.
-    pub(crate) fn scan_with(&self, scope:&crate::scopes::LintScope, f:&SourceFile, out:&mut Sink) {
+    pub fn scan(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
         if !self.files.matches(f) {
             return;
         }
@@ -466,13 +463,11 @@ impl Compiled {
             }
         }
         let hits = self.hits(f, text);
-        self.scan_lines_with(scope, f, out, hits);
+        self.scan_lines(cx, f, out, hits);
     }
 
     /// Apply the ordinary rule filters to semantic tree-pass findings as well.
-    pub(super) fn scan_lines(&self, cx: &Cx, f: &SourceFile, out: &mut Sink, hits: Vec<usize>) {self.scan_lines_with(cx.scope,f,out,hits)}
-
-    pub(crate) fn scan_lines_with(&self,scope:&crate::scopes::LintScope,f:&SourceFile,out:&mut Sink,hits:Vec<usize>){
+    pub(super) fn scan_lines(&self, cx: &Cx, f: &SourceFile, out: &mut Sink, hits: Vec<usize>) {
         if hits.is_empty() {
             return;
         }
@@ -517,12 +512,12 @@ impl Compiled {
                         }
                     }
                     CFlt::DropPaths(key) => {
-                        if in_list(&f.rel, scope.list(key)) {
+                        if in_list(&f.rel, cx.list(key)) {
                             keep = false;
                         }
                     }
                     CFlt::KeepPaths(key) => {
-                        if !in_list(&f.rel, scope.list(key)) {
+                        if !in_list(&f.rel, cx.list(key)) {
                             keep = false;
                         }
                     }

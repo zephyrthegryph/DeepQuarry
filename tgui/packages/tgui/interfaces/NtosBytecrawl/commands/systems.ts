@@ -25,10 +25,9 @@ export function cmdTrace(ctx: CommandContext): void {
 // ── cloak ─────────────────────────────────────────────────────────────────────
 
 export function cmdCloak(args: readonly string[], ctx: CommandContext): void {
-  const { setG, print, act } = ctx;
+  const { setG, print } = ctx;
   const off = args[0] === 'off';
   setG((prev) => ({ ...prev, cloakOn: !off }));
-  act('cloak', { on: off ? 0 : 1 });
   print(
     off
       ? 'Cloak deactivated.'
@@ -40,7 +39,7 @@ export function cmdCloak(args: readonly string[], ctx: CommandContext): void {
 // ── vpn ───────────────────────────────────────────────────────────────────────
 
 export function cmdVpn(args: readonly string[], ctx: CommandContext): void {
-  const { gRef, setG, print, act } = ctx;
+  const { gRef, setG, print } = ctx;
   if (args[0] !== 'use') {
     print('Usage: vpn use <item-id>', '#ff8800');
     return;
@@ -54,14 +53,13 @@ export function cmdVpn(args: readonly string[], ctx: CommandContext): void {
     trace: 0,
     inv: { ...prev.inv, VPN: prev.inv.VPN - 1 },
   }));
-  act('use_vpn');
   print('VPN Burst consumed. Trace reset to 0%.', '#33ff33');
 }
 
 // ── launder ───────────────────────────────────────────────────────────────────
 
 export function cmdLaunder(ctx: CommandContext): void {
-  const { gRef, setG, print, act } = ctx;
+  const { gRef, setG, print } = ctx;
   const state = gRef.current;
   const cost = Math.floor(
     (400 + (state.trace / 100) * 400) * (1 + state.heat * 0.5),
@@ -71,6 +69,5 @@ export function cmdLaunder(ctx: CommandContext): void {
     return;
   }
   setG((prev) => ({ ...prev, wallet: prev.wallet - cost, trace: 0 }));
-  act('launder', { cost });
   print(`Laundered. Trace reset. Cost: ${fmtMoney(cost)}`, '#33ff33');
 }

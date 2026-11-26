@@ -80,7 +80,20 @@ pub fn rel_slash(path: &std::path::Path, root: &std::path::Path) -> String {
 /// Folds `.` and `..` segments lexically: a file reached through a relative `#include "../../x/y.dm"` is the tree's `code/x/y.dm`, the path
 /// every lint and the semantic model key it by (a path left as `code/tests/unit_tests/../../tests/y.dm` matches no tree file).
 pub fn normalize_dots(path: &str) -> String {
-    dm_preprocess::regions::normalize_slash_dots(path)
+    if !path.contains("/.") {
+        return path.to_string();
+    }
+    let mut out: Vec<&str> = Vec::new();
+    for seg in path.split('/') {
+        match seg {
+            "." => {}
+            ".." if out.last().is_some_and(|l| *l != "..") => {
+                out.pop();
+            }
+            _ => out.push(seg),
+        }
+    }
+    out.join("/")
 }
 
 /// True when `rel` starts with any of `prefixes` (`rel.startswith(tuple)`).

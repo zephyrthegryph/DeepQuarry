@@ -80,19 +80,13 @@ impl ExpansionRecord {
         }
         visit(arc_storage(&self.lines));
         visit(vector_storage(&self.lines));
+        for line in self.lines.iter() {
+        }
         // Names and chains are shared by the traces of every line, so each distinct one is visited once.
         visit(ExpansionStorageView::Buffer {
             address: self.trace_tables.sets.as_ptr() as usize,
-            payload_bytes: self
-                .trace_tables
-                .sets
-                .len()
-                .saturating_mul(size_of::<Box<[Trace]>>()),
-            capacity_bytes: self
-                .trace_tables
-                .sets
-                .len()
-                .saturating_mul(size_of::<Box<[Trace]>>()),
+            payload_bytes: self.trace_tables.sets.len().saturating_mul(size_of::<Box<[Trace]>>()),
+            capacity_bytes: self.trace_tables.sets.len().saturating_mul(size_of::<Box<[Trace]>>()),
         });
         for set in self.trace_tables.sets.iter() {
             visit(ExpansionStorageView::Buffer {

@@ -23,6 +23,10 @@
 CAPABILITIES(/obj/item/gun/energy/mouseray)
 	configure(item_combat(force = 0))
 
+/// A mouse ray harms no one: its holder may fire it at themselves in any stance.
+/obj/item/gun/energy/mouseray/self_fire_safe()
+	return TRUE
+
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): pick a type to turn things into.
 /obj/item/gun/energy/mouseray/gun_operate(datum/act/op/A, callback)
 	. = ..()

@@ -1,27 +1,8 @@
-import type { BooleanLike } from 'tgui-core/react';
+import type { ChemMasterData } from '../generated/ChemMaster';
 
-export type Data = {
-  condi: BooleanLike;
-  loaded_pill_bottle: BooleanLike;
-  loaded_pill_bottle_name: string | undefined;
-  loaded_pill_bottle_contents_len: number | undefined;
-  loaded_pill_bottle_storage_slots: number | undefined;
-  beaker: BooleanLike;
-  beaker_reagents: reagent[] | undefined;
-  buffer_reagents: reagent[] | undefined;
-  pillsprite: string;
-  bottlesprite: string;
-  mode: BooleanLike;
-  printing: BooleanLike;
-  modal: modalData;
-};
+export type Data = ChemMasterData;
 
-export type reagent = {
-  name: string;
-  volume: number;
-  description: string;
-  id: string;
-};
+export type reagent = ChemMasterData['beaker_reagents'][number];
 
 export type modalData = {
   id: string;

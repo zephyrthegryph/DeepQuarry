@@ -344,22 +344,29 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(user?.client)
 		client_images_remove(user.client, preview_render)
 
-/obj/item/survivalcapsule/proc/can_deploy(turf/deploy_location, turf/above_location)
+/// Whether the shelter fits here. A refusal goes to the user checking before deploying (private), or to the room once the capsule is already shaking on the floor (no user).
+/obj/item/survivalcapsule/proc/can_deploy(turf/deploy_location, turf/above_location, mob/user)
 	var/status = template().check_deploy(deploy_location, is_ship)
+	var/refusal
 	switch(status)
 		//Not allowed due to /area technical reasons
 		if(SHELTER_DEPLOY_BAD_AREA)
-			src.loc.visible_message(span_warning("\The [src]'s safety mechanisms prevent it from activating in this area. You'll need to find an area that would be less disruptive to activate it!"))
+			refusal = span_warning("\The [src]'s safety mechanisms prevent it from activating in this area. You'll need to find an area that would be less disruptive to activate it!")
 
 		//Anchored objects or no space
 		if(SHELTER_DEPLOY_BAD_TURFS, SHELTER_DEPLOY_ANCHORED_OBJECTS)
 			var/width = template().width
 			var/height = template().height
-			src.loc.visible_message(span_warning("\The [src] can be activated here, but doesn't have room to deploy! You need to clear a [width]x[height] area!"))
+			refusal = span_warning("\The [src] can be activated here, but doesn't have room to deploy! You need to clear a [width]x[height] area!")
 
 		if(SHELTER_DEPLOY_SHIP_SPACE)
-			src.loc.visible_message(span_warning("\The [src] can only be deployed in space."))
+			refusal = span_warning("\The [src] can only be deployed in space.")
 
+	if(refusal)
+		if(user)
+			to_chat(user, refusal)
+		else
+			loc.visible_message(refusal)
 	if(status != SHELTER_DEPLOY_ALLOWED)
 		return FALSE
 
@@ -426,7 +433,7 @@ CAPABILITIES(/obj/item/survivalcapsule)
 	get_template()
 	if(!used)
 		if(unique_id && (unique_id in GLOB.unique_deployable))
-			loc.visible_message(span_warning("There can only be one [src] deployed at a time."))
+			to_chat(user, span_warning("There can only be one [src] deployed at a time."))
 			return
 		var/turf/deploy_location = get_turf(src)
 		// Warn the user in advance if the capsule can't work from where they're standing.
@@ -434,9 +441,9 @@ CAPABILITIES(/obj/item/survivalcapsule)
 		// If there's no preview render, that means it couldn't get the bottom-left or top-right corner of the shelter template area
 		// So this is prooooobably somewhere outside the map bounds!
 		if(!preview_render)
-			loc.visible_message(span_warning("\The [src] is too close to the edge of this map to deploy!"))
+			to_chat(user, span_warning("\The [src] is too close to the edge of this map to deploy!"))
 			return
-		if(!can_deploy(get_turf(src), GetAbove(deploy_location)))
+		if(!can_deploy(get_turf(src), GetAbove(deploy_location), user))
 			after(src, 1 SECONDS, PROC_REF(remove_preview), with = list(user, preview_render))
 			return
 		// We only show where the doors will be on a successful deploy check to avoid player confusion.
@@ -455,12 +462,12 @@ CAPABILITIES(/obj/item/survivalcapsule)
 		return
 	get_template()
 	if(unique_id && (unique_id in GLOB.unique_deployable))
-		loc.visible_message(span_warning("There can only be one [src] deployed at a time."))
+		to_chat(user, span_warning("There can only be one [src] deployed at a time."))
 		remove_preview(user, request.preview_render, 0)
 		return
 	if(A.answer.value == "Yes")
 		// We might have moved since the last check, so we check again!
-		if(!can_deploy(deploy_location, GetAbove(deploy_location)))
+		if(!can_deploy(deploy_location, GetAbove(deploy_location), user))
 			used = FALSE
 			remove_preview(user, request.preview_render, 0)
 			return
@@ -508,40 +515,15 @@ CAPABILITIES(/obj/item/survivalcapsule)
 	desc = "A luxury cabin and kitchen in a capsule. There's a license for use printed on the bottom."
 	template_id = "shelter_cab_deluxe"
 
-/obj/item/survivalcapsule/luxurycafe
-	name = "luxury surfluid cafe capsule"
-	desc = "A luxury cafe in a capsule. There's a license for use printed on the bottom."
-	template_id = "shelter_cafe"
-
 /obj/item/survivalcapsule/luxuryrecroom
 	name = "luxury rec room cafe capsule"
 	desc = "A luxury rec room in a capsule. There's a license for use printed on the bottom."
 	template_id = "shelter_luxury_recroom"
 
-/obj/item/survivalcapsule/military
-	name = "military surfluid shelter capsule"
-	desc = "A prefabricated firebase in a capsule. Contains basic weapons, building materials, and combat suits. There's a license for use printed on the bottom."
-	template_id = "shelter_delta"
-
-/obj/item/survivalcapsule/escapepod
-	name = "escape surfluid shelter capsule"
-	desc = "A prefabricated escape pod in a capsule. Contains a basic escape pod for survival purposes. There's a license for use printed on the bottom."
-	template_id = "shelter_epsilon"
-	unique_id = "shelter_5"
-	is_ship = TRUE
-
 /obj/item/survivalcapsule/popcabin
 	name = "pop-out cabin shelter capsule"
 	desc = "A cozy cabin; crammed into a survival capsule."
 	template_id = "shelter_cab"
-
-/obj/item/survivalcapsule/dropship
-	name = "dropship surfluid shelter capsule"
-	desc = "A military dropship in a capsule. Contains everything an assault squad would need, minus the squad itself. This capsule is significantly larger than most. There's a license for use printed on the bottom."
-	template_id = "shelter_zeta"
-	unique_id = "shelter_6"
-	is_ship = TRUE
-	w_class = ITEMSIZE_SMALL
 
 /obj/item/survivalcapsule/recroom
 	name = "pop-out rec room shelter capsule"
@@ -565,33 +547,7 @@ CAPABILITIES(/obj/item/survivalcapsule)
 	template_id = "shelter_phi"
 	unique_id = "shelter_a"
 
-/obj/item/survivalcapsule/holly
-	name = "vaguely festive surfluid shelter capsule"
-	desc = "A \"homemade\" luxury suite crammed into a capsule. There's a license for use printed on the bottom. For some reason, the license's text is written in festive colors."
-	template_id = "shelter_chi"
-	unique_id = "shelter_h"
-
 //Stupid
-/obj/item/survivalcapsule/loss_1
-	name = "clinical surfluid shelter capsule"
-	desc = "A strange-looking shelter capsule. It looks rather crudely thrown together..."
-	template_id = "shelter_loss1"
-
-/obj/item/survivalcapsule/loss_2
-	name = "clinical surfluid shelter capsule"
-	desc = "A strange-looking shelter capsule. It looks rather crudely thrown together..."
-	template_id = "shelter_loss2"
-
-/obj/item/survivalcapsule/loss_3
-	name = "clinical surfluid shelter capsule"
-	desc = "A strange-looking shelter capsule. It looks rather crudely thrown together..."
-	template_id = "shelter_loss3"
-
-/obj/item/survivalcapsule/loss_4
-	name = "clinical surfluid shelter capsule"
-	desc = "A strange-looking shelter capsule. It looks rather crudely thrown together..."
-	template_id = "shelter_loss4"
-
 //Redspace Capsule
 //Spawns a randomized shelter from a curated selection of possibilities
 /obj/item/survivalcapsule/randomized
@@ -693,7 +649,7 @@ CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
 		rel_set(src, nameof(src.door), locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
 	if(linked_door())
 		linked_door().glass = !linked_door().glass
-		linked_door().opacity = !linked_door().opacity
+		linked_door().set_opacity(!linked_door().opacity)
 
 //Subtype that actually bolts doors!
 /obj/machinery/button/remote/airlock/survival_pod/bolts
@@ -731,14 +687,14 @@ CAPABILITIES(/obj/machinery/light_switch/survival_pod)
 		var/turf/dT = get_step(src, dir)
 		rel_set(src, nameof(target_light), locate_within(dT, /obj/machinery/light))
 	if(target_light())
-		target_light().on = on
+		target_light().set_on(on)
 		target_light().refresh_light()
 		// I'm so sorry but for some ungodly reason calling update() simply isn't
 		// enough to make the light actually set its lighting.
 		// So I guess we're doing this manually! :')
 		if(target_light().on)
 			set_glow(target_light(), GLOW(target_light().brightness_range, target_light().brightness_power, target_light().brightness_color))
-			target_light().overlay_color = target_light().brightness_color
+			target_light().set_overlay_color(target_light().brightness_color)
 		else
 			set_glow(target_light(), GLOW(0, null, null))
 

@@ -107,6 +107,22 @@ CAPABILITIES(/datum/own_test_child)
 	TEST_ASSERT(length(capture) && findtext(capture[1], "re-set during teardown"), "and reports it: [json_encode(capture)]")
 	qdel(H)
 
+/// own_scrub() skips a null ref var and still unlinks one that was re-set during teardown.
+/datum/unit_test/ownership_scrub_ref_views
+
+/datum/unit_test/ownership_scrub_ref_views/Run()
+	var/datum/own_test_holder/H = new
+	var/datum/own_test_child/seen = new
+	own_scrub(H) // every ref var null: nothing to do, and no runtime
+	TEST_ASSERT_NULL(H.view, "a null ref var stays null")
+	rel_set(H, nameof(H.view), seen)
+	TEST_ASSERT_EQUAL(H.view, seen, "the view is linked")
+	own_scrub(H)
+	TEST_ASSERT_NULL(H.view, "a ref var set at scrub time is unlinked")
+	TEST_ASSERT(!QDELETED(seen), "unlinking a view does not delete the target")
+	qdel(seen)
+	qdel(H)
+
 /datum/unit_test/ownership_orphan_audit
 
 /datum/unit_test/ownership_orphan_audit/Run()
@@ -308,19 +324,12 @@ CAPABILITIES(/datum/own_test_child)
 /datum/unit_test/ownership_identity
 
 /datum/unit_test/ownership_identity/Run()
-	// Parking and unparking a handle slot (latent collapse / re-materialize).
 	var/datum/own_test_holder/H = new
-	var/datum/own_test_child/A = new
-	rel_set(H, nameof(H.view), A)
-	var/h = handle_of(A)
-	var/id = entity_handle_park(A)
-	qdel(A)
-	TEST_ASSERT(isnull(H.view), "the view clears when the collapsed thing goes")
-	TEST_ASSERT(isnull(handle_get(h)), "a parked handle resolves to nothing")
 	var/datum/own_test_child/B = new
-	entity_handle_unpark(B, id)
-	TEST_ASSERT_EQUAL(handle_get(h), B, "the re-materialized thing takes over the old handle")
-	TEST_ASSERT_EQUAL(H.view, B, "and the dormant view re-links to it")
+	rel_set(H, nameof(H.view), B)
+	var/h = handle_of(B)
+	TEST_ASSERT_EQUAL(handle_get(h), B, "the thing owns its handle")
+	TEST_ASSERT_EQUAL(H.view, B, "and the view links to it")
 	// replace_with forwarding.
 	var/datum/own_test_child/C = new
 	rel_forward_identity(B, C)

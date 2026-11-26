@@ -1,14 +1,15 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section } from 'tgui-core/components';
+import type {
+  TankDispenserActions,
+  TankDispenserData,
+} from './generated/TankDispenser';
 
-type Data = {
-  phoron: number;
-  oxygen: number;
-};
+type Data = TankDispenserData;
 
 export const TankDispenser = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, TankDispenserActions>();
   const { phoron, oxygen } = data;
   return (
     <Window width={275} height={103}>

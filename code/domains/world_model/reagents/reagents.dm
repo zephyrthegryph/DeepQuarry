@@ -224,6 +224,8 @@
 	switch(route_class)
 		if(CHEM_BLOOD)
 			apply_species_injuries(M, species_injuries_blood, removed)
+			apply_strains(M, removed)
+			apply_drawbacks(M, removed)
 		if(CHEM_INGEST)
 			apply_species_injuries(M, species_injuries_ingest, removed * ingest_abs_mult)
 		if(CHEM_TOUCH)
@@ -273,6 +275,10 @@
 
 /datum/reagent/proc/affect_blood(mob/living/carbon/M, alien, removed)
 	return
+
+/// How a machine's listing describes this reagent (the description; a contaminant adds what grade the mixture it sits in is).
+/datum/reagent/proc/listing_description()
+	return description
 
 /datum/reagent/proc/affect_ingest(mob/living/carbon/M, alien, removed)
 	M.bloodstr.add_reagent(id, removed)
@@ -401,7 +407,7 @@ TYPE_TABLE_DECLARE(/datum/reagent, get_data_schema, null)
 	var/static/list/shared_by_type = list()
 	var/list/shared = shared_by_type[type]
 	if(!shared)
-		shared = list(treatment_tags, filtered_organs, factors, species_factors, species_strength, species_injuries_blood, species_injuries_ingest, species_injuries_touch)
+		shared = list(treatment_tags, filtered_organs, factors, species_factors, species_strength, species_injuries_blood, species_injuries_ingest, species_injuries_touch, strains, hides)
 		shared_by_type[type] = shared
 	treatment_tags = shared[1]
 	filtered_organs = shared[2]
@@ -411,6 +417,8 @@ TYPE_TABLE_DECLARE(/datum/reagent, get_data_schema, null)
 	species_injuries_blood = shared[6]
 	species_injuries_ingest = shared[7]
 	species_injuries_touch = shared[8]
+	strains = shared[9]
+	hides = shared[10]
 	return ..()
 
 

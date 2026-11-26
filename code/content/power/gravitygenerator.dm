@@ -205,6 +205,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 	ref_one(nameof(middle), /obj)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(spin_step)), when = PROC_REF(spinning))
 	interface("GravityGenerator")
+	ui_shape(breaker = bool(), charge_count = num(), charging_state = int())
 	extend("ui_open", when(req_empty_hand()))
 	op("gentoggle", ui_act("gentoggle"), then(PROC_REF(ui_act_gentoggle)))
 
@@ -295,8 +296,6 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 	data["breaker"] = breaker
 	data["charge_count"] = charge_count
 	data["charging_state"] = charging_state
-	data["on"] = on
-	data["operational"] = (broken_now()) ? FALSE : TRUE
 	return data
 
 /obj/machinery/gravity_generator/main/proc/ui_act_gentoggle(datum/act/op/A)

@@ -112,7 +112,7 @@ export const ViewCharacter = (props: {
       <Section title="Custom Link">
         <Box style={{ wordBreak: 'break-all' }} preserveWhitespace>
           {validateLink(overlay.custom_link) ? (
-            <a href={overlay.custom_link}>{overlay.custom_link}</a>
+            <a href={overlay.custom_link ?? undefined}>{overlay.custom_link}</a>
           ) : (
             'Unset.'
           )}

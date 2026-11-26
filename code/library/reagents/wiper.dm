@@ -14,7 +14,7 @@
 //
 // Wiping a person is the holder type's (a cloth may smother or set alight); `wipe_person` is the op for it, with its effect the type's own.
 
-CAPABILITY_TYPE(wiper, CAP_WIPER, /datum/capability/lib/wiper, key = NONE, soaks_from = null, burning = null, wipe_time = 30)
+CAPABILITY_TYPE(wiper, CAP_WIPER, /datum/capability/lib/wiper, key = NONE, soaks_from = null, burning = null, wipe_time = 3 SECONDS)
 
 MSG_DEF_SELF(wiper/already_soaked, "It is already soaked.")
 MSG_DEF_SELF(wiper/dry, "It is dry!")
@@ -57,7 +57,7 @@ MSG_DEF(wiper/wiped, "You finish wiping %T%!", "%U% finishes wiping %T%!")
 
 /datum/capability/lib/wiper/proc/wring_time(datum/act/op/A)
 	var/atom/holder = A.holder
-	return holder.reagents.total_volume * 5
+	return holder.reagents.total_volume * 0.5 SECONDS
 
 /datum/capability/lib/wiper/proc/wipe_wait(datum/act/op/A)
 	return wipe_time

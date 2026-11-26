@@ -1,0 +1,71 @@
+{
+	"groups": [
+		{
+			"title": "Game",
+			"actions": [
+				{
+					"id": "reenter_corpse",
+					"label": "Re-enter Corpse",
+					"desc": "Go back into your body, if you still have one.",
+					"enabled": 0,
+					"why": "You have no body to go back to."
+				},
+				{
+					"id": "dead_tele",
+					"label": "Teleport",
+					"desc": "Teleport to an area.",
+					"enabled": 1,
+					"why": null
+				}
+			]
+		},
+		{
+			"title": "Join",
+			"actions": [
+				{
+					"id": "respawn",
+					"label": "Respawn",
+					"desc": "Leave this ghost and return to the lobby.",
+					"enabled": 1,
+					"why": null
+				},
+				{
+					"id": "ghost_spawn",
+					"label": "Ghost Spawn",
+					"desc": "Open the ghost spawn menu.",
+					"enabled": 1,
+					"why": null
+				}
+			]
+		}
+	],
+	"toggles": [
+		{
+			"id": "toggle_medhud",
+			"label": "Medical HUD",
+			"desc": "See how everyone is doing.",
+			"value": 1,
+			"can": 1,
+			"why": null,
+			"text": null
+		},
+		{
+			"id": "toggle_antaghud",
+			"label": "AntagHUD",
+			"desc": "See who the antagonists are.",
+			"value": 0,
+			"can": 0,
+			"why": "Admins have disabled this for this round.",
+			"text": null
+		},
+		{
+			"id": "toggle_darkness",
+			"label": "Darkness",
+			"desc": "Cycle how much of the lighting darkness you see through.",
+			"value": 1,
+			"can": 1,
+			"why": null,
+			"text": "30% removed"
+		}
+	]
+}

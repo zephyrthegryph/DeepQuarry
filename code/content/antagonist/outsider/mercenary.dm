@@ -43,7 +43,7 @@
 	if(player.bio.backbag == 6) player.equip_to_slot_or_del(new /obj/item/storage/backpack/sport(player), SLOT_ID_BACK)
 	player.equip_to_slot_or_del(new /obj/item/reagent_containers/pill/cyanide(player), SLOT_ID_IN_BACKPACK)
 
-	player.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
+	player.mind.set_tcrystals(DEFAULT_TELECRYSTAL_AMOUNT)
 	player.mind.accept_tcrystals = 1
 
 	var/obj/item/radio/uplink/U = new(player.loc)

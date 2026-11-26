@@ -45,14 +45,13 @@ cap_keys(CAP_QUICKDRAW, DRAWS = MSG(quickdraw/is_off))
 	var/obj/item/storage/S = A.holder
 	if(!istype(H) || S.loc != H || !isnull(A.held) || H.get_active_hand())
 		return FALSE
-	if(quickdraw_draws(S) && (length(S.slot_contents(CONTAINER_SLOT_STORAGE)) || S.has_latent()))
+	if(quickdraw_draws(S) && length(S.slot_contents(CONTAINER_SLOT_STORAGE)))
 		return TRUE
 	return H.get_equipped_item(SLOT_ID_POCKET_L) == S || H.get_equipped_item(SLOT_ID_POCKET_R) == S
 
 /datum/capability/lib/quickdraw/proc/draw_or_open(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.actor
 	var/obj/item/storage/S = A.holder
-	S.make_contents_real()
 	if(quickdraw_draws(S) && length(S.slot_contents(CONTAINER_SLOT_STORAGE)))
 		var/first_item = S.slot_contents(CONTAINER_SLOT_STORAGE)[1]
 		if(first_item)

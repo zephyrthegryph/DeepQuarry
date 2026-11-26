@@ -1,42 +1,26 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
-import {
-  Box,
-  Button,
-  RestrictedInput,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { Button, RestrictedInput, Section, Stack } from 'tgui-core/components';
 import { isEscape, KEY } from 'tgui-core/keys';
-import type { BooleanLike } from 'tgui-core/react';
-
 import { InputButtons } from './common/InputButtons';
 import { Loader } from './common/Loader';
+import type {
+  NumberInputModalActions,
+  NumberInputModalData,
+} from './generated/NumberInputModal';
 
-type Data = {
-  init_value: number;
-  large_buttons: BooleanLike;
-  max_value: number;
-  message: string;
-  min_value: number;
-  round_value: BooleanLike;
-  timeout: number;
-  title: string;
-};
+type Data = NumberInputModalData;
 
 export function NumberInputModal(props) {
-  const { act, data } = useBackend<Data>();
-  const {
-    init_value,
-    large_buttons,
-    max_value = 10000,
-    message = '',
-    min_value = 0,
-    round_value,
-    timeout,
-    title,
-  } = data;
+  const { act, data } = useBackend<Data, NumberInputModalActions>();
+  const { large_buttons, round_value, timeout, title } = data;
+  const message = data.message ?? '';
+  // A bound or starting value the server leaves null reads as the default range and its minimum.
+  const max_value = data.max_value ?? 10000;
+  const min_value = data.min_value ?? 0;
+  const init_value = data.init_value ?? min_value;
 
   const [value, setValue] = useState(init_value);
   const [isValid, setIsValid] = useState(true);
@@ -57,16 +41,16 @@ export function NumberInputModal(props) {
   }
 
   return (
-    <Window fitContent title={title} width={270} height={windowHeight}>
-      {timeout && <Loader value={timeout} />}
+    <Window fitContent title={title} width={340} height={windowHeight}>
+      {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>
           <Stack fill vertical>
             <Stack.Item grow>
-              <Box color="label">{message}</Box>
+              <Label>{message}</Label>
             </Stack.Item>
             <Stack.Item>
-              <Stack fill>
+              <Stack fill align="center">
                 <Stack.Item>
                   <Button
                     disabled={value === min_value || min_value === -Infinity}

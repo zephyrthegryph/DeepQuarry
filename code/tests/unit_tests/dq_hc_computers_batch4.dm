@@ -141,7 +141,7 @@
 	var/mob/living/carbon/human/H = hc_actor()
 	var/obj/item/card/emag/E = hc_emag(H)
 	var/obj/machinery/computer/message_monitor/C = hc_monitor()
-	C.linkedServer().decryptkey = "x"
+	C.linkedServer().set_decryptkey("x")
 	test_click(H, C, E)
 	TEST_ASSERT(C.emag, "a linked working console enters its reboot state")
 	TEST_ASSERT_EQUAL(E.uses, 7, "a successful reboot spends one use")

@@ -1,0 +1,29 @@
+{
+	"giver": "Alex Reyes's ID Card (Captain)",
+	"giveName": "Visitor",
+	"reason": "Inspection of engineering",
+	"duration": 30,
+	"uid": 4217,
+	"area": [
+		{
+			"area": 10,
+			"area_name": "Engine Room",
+			"on": 1
+		},
+		{
+			"area": 24,
+			"area_name": "Atmospherics",
+			"on": 0
+		},
+		{
+			"area": 11,
+			"area_name": "Engineering",
+			"on": 1
+		}
+	],
+	"mode": 0,
+	"log": [
+		"[12:04] Pass #0042 issued by Alex Reyes (Captain) to Visitor. Reason: Inspection. Grants access to following areas: Engine Room. Expires at 13:04.",
+		"[12:40] Pass #0043 issued by Alex Reyes (Captain) to Guest. Reason: Tour. Grants access to following areas: Atmospherics. Expires at 13:10."
+	]
+}

@@ -23,6 +23,7 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
 	owns_one(nameof(contained), starts = nameof(mask_type))
 	interface("Tank")
+	ui_shape(connected = bool(), showToggle = bool(), maskConnected = bool(), tankPressure = int(), releasePressure = int(), defaultReleasePressure = int(), minReleasePressure = int(), maxReleasePressure = int())
 	op("oxygen_place", at_target(/mob/living/carbon/human), gesture(GESTURE_DRAG), label("Place mask"), when(PROC_REF(placement_actor)), needs(req(PROC_REF(placement_reason))), starts(PROC_REF(placement_started)), wait(2.5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(placement_finished)))
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
 	op("oxygen_pump_hand", hand(), ungated(), needs(req(PROC_REF(can_use_pump))), then(PROC_REF(oxygen_pump_interaction_hand)))
@@ -220,6 +221,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 /obj/machinery/oxygen_pump/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
+	data["connected"] = FALSE // the mask valve toggle is the tank item's; the pump has none
 	data["showToggle"] = FALSE
 	data["maskConnected"] = !!breather()
 
@@ -227,10 +229,10 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 	data["releasePressure"] = 0
 	data["defaultReleasePressure"] = 0
 	data["minReleasePressure"] = 0
-	data["releasePressure"] = round(tank.distribute_pressure ? tank.distribute_pressure : 0)
 	data["maxReleasePressure"] = round(TANK_MAX_RELEASE_PRESSURE)
 
 	if(tank)
+		data["releasePressure"] = round(tank.distribute_pressure ? tank.distribute_pressure : 0)
 		data["tankPressure"] = round(tank.air_contents.return_pressure() ? tank.air_contents.return_pressure() : 0)
 		data["defaultReleasePressure"] = round(TANK_DEFAULT_RELEASE_PRESSURE)
 
@@ -250,7 +252,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 	else if(isnum(pressure))
 		. = TRUE
 	if(.)
-		tank.distribute_pressure = clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE)
+		tank.set_distribute_pressure(clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE))
 
 /obj/machinery/oxygen_pump/anesthetic
 	name = "anesthetic pump"

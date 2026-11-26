@@ -306,7 +306,7 @@ CAPABILITIES(/datum/world_test_gauge)
 /datum/unit_test/dq_world_gas_watches/Run()
 	var/turf/open/T
 	for(var/turf/simulated/floor/cand in world)
-		if(cand.air && !cand.blocks_air && !cand.planetary_atmos && cand.air.arena_id() >= GAS_HANDLE_TURF_BASE)
+		if(cand.turf_air() && !cand.blocks_air && !cand.planetary_atmos && cand.turf_air().arena_id() >= GAS_HANDLE_TURF_BASE)
 			T = cand
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor whose air is a gas field cell")
@@ -323,8 +323,8 @@ CAPABILITIES(/datum/world_test_gauge)
 	heat_set(tank, T20C, HEAT_SOURCE_OTHER)
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	SSair.run_gas_frames(2)
-	var/limit = T.air.return_pressure() + 200
-	var/datum/sense_sub/turf_watch = sense_gas(turf_sub, TYPE_PROC_REF(/datum/world_test_subscriber, on_band), T.air, CH_GAS_PRESSURE, list(limit))
+	var/limit = T.turf_air().return_pressure() + 200
+	var/datum/sense_sub/turf_watch = sense_gas(turf_sub, TYPE_PROC_REF(/datum/world_test_subscriber, on_band), T.turf_air(), CH_GAS_PRESSURE, list(limit))
 	var/datum/native_watch/world/tank_watch = world_watch_changed(tank_sub, WORLD_GAS_HANDLE(tank), CH_BIT(CH_GAS_PRESSURE), WORLD_TEST_WAKE, LANE_URGENT)
 	SSair.run_gas_frames(2)
 	dq_test_ticks(3)
@@ -340,7 +340,7 @@ CAPABILITIES(/datum/world_test_gauge)
 	dq_sense_test_deliver()
 	dq_test_wait_for(turf_sub, nameof(turf_sub.wakes))
 	dq_test_wait_for(tank_sub, nameof(tank_sub.wakes))
-	TEST_ASSERT(length(turf_sub.wakes) >= 1, "turf gas pressure crossed [limit] kPa ([T.air.return_pressure()]) but the watch did not wake")
+	TEST_ASSERT(length(turf_sub.wakes) >= 1, "turf gas pressure crossed [limit] kPa ([T.turf_air().return_pressure()]) but the watch did not wake")
 	if(length(turf_sub.wakes))
 		var/list/wake = turf_sub.wakes[1]
 		TEST_ASSERT_EQUAL(wake[1], 1, "the turf gas sensing reported band [wake[1]], not the band over the limit")
@@ -349,7 +349,7 @@ CAPABILITIES(/datum/world_test_gauge)
 	// Put the turf back.
 	qdel(turf_watch)
 	qdel(tank_watch)
-	var/datum/gas_mixture/removed = T.air.remove(2000)
+	var/datum/gas_mixture/removed = T.turf_air().remove(2000)
 	qdel(removed)
 	qdel(tank)
 	dq_atmos_test_restore_walls()

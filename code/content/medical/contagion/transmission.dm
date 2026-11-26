@@ -16,9 +16,8 @@
 // and then can_contract_contagion() (immunity, required organs, species
 // carriers) decides whether it takes.
 //
-// Airborne shedding runs on a parkable periodic lane: a contagion that can
-// spread through the air starts itself on PERIODIC_SLOW when it joins a body
-// and parks when it leaves, goes dormant or loses the route. Nothing polls
+// Airborne shedding runs on a parked every() (contagion.dm): a contagion that can
+// spread through the air runs it while it is in a body, and parks when it leaves, goes dormant or loses the route. Nothing polls
 // every mob every tick. Contact and blood routes are event driven (touch,
 // bump, decals, reagents).
 

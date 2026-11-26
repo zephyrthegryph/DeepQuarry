@@ -14,7 +14,6 @@
 //! lookup. A site is `radial` only when the path is not `<prefix><anything without />.dm`.
 //! The old CI run lists at most 20 sites per kind; the engine lists them all.
 
-use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
@@ -23,8 +22,8 @@ use crate::tree::{SourceFile, CODE_DM};
 const HINT: &str = "Radials ask a typed prompt; traits are grants; diseases are afflictions (tools/ci/leftovers_lints.py)";
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::leftovers::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::leftovers::SCOPE_META_0.group,
+    name: "leftovers",
+    group: "",
     label: "leftovers",
     legacy: "tools/ci/leftovers_lints.py",
     select: CODE_DM,
@@ -35,8 +34,8 @@ static META: Meta = Meta {
         RuleMeta { name: "traits", hint: HINT },
         RuleMeta { name: "disease", hint: HINT },
     ],
-    allow: crate::allow_registry_fields::leftovers::ALLOW_0,
-    lists: crate::allow_registry_fields::leftovers::SCOPE_META_0.lists,
+    allow: &["radial"],
+    lists: &["radial_impl_prefixes"],
 };
 
 struct Leftovers;
@@ -55,24 +54,23 @@ impl Lint for Leftovers {
     }
 
     fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
         let prefixes = cx.list("radial_impl_prefixes");
         let radial_exempt = radial_impl(&f.rel, prefixes);
         for (lineno, line) in f.code().numbered() {
-            if fixture.pattern(r"(?<![\w/])show_radial_menu(?:_persistent)?\s*\(|\bnew\s*/datum/radial_menu\b",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"(?<![\w/])show_radial_menu(?:_persistent)?\s*\(|\bnew\s*/datum/radial_menu\b")).is_match(line)
+            if pat!(r"(?<![\w/])show_radial_menu(?:_persistent)?\s*\(|\bnew\s*/datum/radial_menu\b").is_match(line)
                 && !radial_exempt
                 && !out.allowed(f, lineno, "radial")
             {
                 out.site("radial", lineno);
             }
-            if fixture.pattern(r"(?<![\w/])(?:ADD_TRAIT|REMOVE_TRAIT|REMOVE_TRAITS_IN|REMOVE_TRAITS_NOT_IN|REMOVE_TRAIT_NOT_FROM|HAS_TRAIT|HAS_TRAIT_FROM|HAS_TRAIT_FROM_ONLY|HAS_TRAIT_NOT_FROM|HAS_MIND_TRAIT|GET_TRAIT_SOURCES|COUNT_TRAIT_SOURCES|TRAIT_CALLBACK_ADD|TRAIT_CALLBACK_REMOVE)\s*\(|\b_status_traits\b",crate::raw_fixture_policy::PatternMode::Search,||pat!(
+            if pat!(
                 r"(?<![\w/])(?:ADD_TRAIT|REMOVE_TRAIT|REMOVE_TRAITS_IN|REMOVE_TRAITS_NOT_IN|REMOVE_TRAIT_NOT_FROM|HAS_TRAIT|HAS_TRAIT_FROM|HAS_TRAIT_FROM_ONLY|HAS_TRAIT_NOT_FROM|HAS_MIND_TRAIT|GET_TRAIT_SOURCES|COUNT_TRAIT_SOURCES|TRAIT_CALLBACK_ADD|TRAIT_CALLBACK_REMOVE)\s*\(|\b_status_traits\b"
-            ))
+            )
             .is_match(line)
             {
                 out.site("traits", lineno);
             }
-            if fixture.pattern(r"/datum/disease\b",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"/datum/disease\b")).is_match(line) {
+            if pat!(r"/datum/disease\b").is_match(line) {
                 out.site("disease", lineno);
             }
         }

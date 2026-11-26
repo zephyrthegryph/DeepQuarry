@@ -1,10 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { ChemDispenserChemicals } from '../ChemDispenser/ChemDispenserChemicals';
+import type { BorgHypoActions } from '../generated/BorgHypo';
 import { BorgHypoSearch } from './BorgHypoSearch';
 import type { Data } from './types';
 
 export const BorgHypoChemicals = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, BorgHypoActions>();
   const {
     chemicals = [],
     isDispensingRecipe,

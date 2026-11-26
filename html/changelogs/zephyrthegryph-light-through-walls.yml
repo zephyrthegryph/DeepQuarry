@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Lights behind walls no longer flash through the wall when new area comes into view while walking"
+  - rscadd: "Characters now have a faint darkvision: a dim grey hint of the floor within 2 tiles in the dark"

@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Client glow chunk crossings test only the lights in the strips the boxes moved over, and re-stand only glows near the turfs sight gained or lost"
+  - bugfix: "A walker's edge spends its draw budget on real draws only, so clean owed items no longer use it up"

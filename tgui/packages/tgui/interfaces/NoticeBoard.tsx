@@ -1,21 +1,17 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
+import type {
+  NoticeBoardActions,
+  NoticeBoardData,
+} from './generated/NoticeBoard';
 
-type Data = {
-  notices: {
-    name: string;
-    isphoto: BooleanLike;
-    ispaper: BooleanLike;
-    ref: string;
-  }[];
-};
+type Data = NoticeBoardData;
 
 export const NoticeBoard = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NoticeBoardActions>();
 
-  const { notices } = data;
+  const { notices = [] } = data;
 
   return (
     <Window width={330} height={300}>

@@ -198,7 +198,7 @@
 	user.identity().ooc_notes_style = !user.identity().ooc_notes_style
 	snap("style toggled")
 	panel.ui_act_edit_notes(A)
-	user.identity().ooc_notes = "Open to most scenes."
+	user.identity().set_ooc_notes("Open to most scenes.")
 	cancel_open()
 	snap("notes set")
 	panel.ui_act_edit_favs(A)

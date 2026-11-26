@@ -1,8 +1,0 @@
-/proc/filter_flags()
-    filter(type="layer",flags=FILTER_OVERLAY|FILTER_UNDERLAY)
-    filter(type="color",space=0)
-    filter(type="alpha",flags=TRUE)
-    filter(type="outline",flags=~OUTLINE_SHARP)
-    filter(type="alpha",flags=MASK_INVERSE|MASK_SWAP)
-    filter(type="outline",flags=0)
-    filter(type="blur",type="outline",flags=TRUE)

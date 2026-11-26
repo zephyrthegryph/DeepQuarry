@@ -1,11 +1,11 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section } from 'tgui-core/components';
 import { decodeHtmlEntities } from 'tgui-core/string';
-
+import type { CommunicatorActions } from '../generated/Communicator';
 import type { Data } from './types';
 
 export const CommunicatorSettingsTab = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CommunicatorActions>();
 
   const {
     address,
@@ -26,9 +26,7 @@ export const CommunicatorSettingsTab = (props) => {
           </Button>
         </LabeledList.Item>
         <LabeledList.Item label="Camera Mode">
-          <Button fluid onClick={() => act('selfie_mode')}>
-            {selfie_mode ? 'Front-facing Camera' : 'Rear-facing Camera'}
-          </Button>
+          {selfie_mode ? 'Front-facing Camera' : 'Rear-facing Camera'}
         </LabeledList.Item>
         <LabeledList.Item label="Occupation">
           {decodeHtmlEntities(occupation)}

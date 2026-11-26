@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Cheaper player step: flight is a plain var read, a bare hose socket and the brig no longer listen to every step of every human, fewer hop walks on a move"

@@ -2,33 +2,22 @@
 
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type {
+  MechaSyringeGunActions,
+  MechaSyringeGunData,
+} from './generated/MechaSyringeGun';
 
-type KnownReagent = {
-  id: string;
-  name: string;
-  selected: BooleanLike;
-};
-
-type CurrentReagent = {
-  id: string;
-  name: string;
-  volume: number;
-};
-
-type Data = {
-  total_volume: number;
-  max_volume: number;
-  synth_speed: number;
-  known_reagents: KnownReagent[];
-  current_reagents: CurrentReagent[];
-};
+type KnownReagent = MechaSyringeGunData['known_reagents'][number];
 
 export const MechaSyringeGun = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<
+    MechaSyringeGunData,
+    MechaSyringeGunActions
+  >();
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const isSelected = (r: KnownReagent): boolean =>
     r.id in pending ? pending[r.id] : !!r.selected;
@@ -42,13 +31,10 @@ export const MechaSyringeGun = () => {
             <>
               <Stack vertical>
                 {data.current_reagents.map((r) => (
-                  <Stack.Item key={r.id}>
-                    <Button
-                      color="bad"
-                      onClick={() => act('purge_reagent', { id: r.id })}
-                    >
-                      Purge
-                    </Button>{' '}
+                  <Stack.Item
+                    key={r.id}
+                    color={r.contaminant ? 'grey' : undefined}
+                  >
                     {r.name}: {r.volume}
                   </Stack.Item>
                 ))}
@@ -101,10 +87,10 @@ export const MechaSyringeGun = () => {
               })}
             </Stack>
           )}
-          <Box mt={1} italic color="label" fontSize="0.85em">
+          <Label mt={1} italic fontSize="0.85em">
             Only the first {data.synth_speed} selected reagents will be added to
             production.
-          </Box>
+          </Label>
         </Section>
       </Window.Content>
     </Window>

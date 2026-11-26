@@ -9,6 +9,8 @@ import type { Box } from 'tgui-core/components';
 import { addScrollableNode, removeScrollableNode } from 'tgui-core/events';
 import { classes } from 'tgui-core/react';
 import { computeBoxClassName, computeBoxProps } from 'tgui-core/ui';
+import { resolveTheme } from './consoleTheme';
+import { useScrollMemory } from './scrollMemory';
 
 type BoxProps = React.ComponentProps<typeof Box>;
 
@@ -18,9 +20,9 @@ type Props = Partial<{
   BoxProps;
 
 export function Layout(props: Props) {
-  const { className, theme = 'nanotrasen', children, ...rest } = props;
+  const { className, theme, children, ...rest } = props;
 
-  const themeClass = `theme-${theme}`;
+  const themeClass = `theme-${resolveTheme(theme)}`;
 
   useEffect(() => {
     document.documentElement.className = themeClass;
@@ -40,12 +42,15 @@ export function Layout(props: Props) {
 
 type ContentProps = Partial<{
   scrollable: boolean;
+  /** Remember the scroll position under this name (the interface): a reopened window shows what it showed (scrollMemory.ts). */
+  scrollKey: string;
 }> &
   BoxProps;
 
 function LayoutContent(props: ContentProps) {
-  const { className, scrollable, children, ...rest } = props;
+  const { className, scrollable, scrollKey, children, ...rest } = props;
   const node = useRef<HTMLDivElement>(null);
+  useScrollMemory(node, scrollKey, !!scrollable);
 
   useEffect(() => {
     const self = node.current;

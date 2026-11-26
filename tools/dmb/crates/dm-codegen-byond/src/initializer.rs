@@ -322,14 +322,8 @@ fn admit_modified_rhs(value: &dm_syntax::Expr) -> Result<(), InitializerError> {
     match &value.kind {
         ExprKind::Ident(name) if name == "null" => (),
         ExprKind::Literal(raw) => {
-            let string=match raw.original_value(){
-                Some(dm_syntax::OriginalTokenValue::String(_))=>true,
-                Some(dm_syntax::OriginalTokenValue::Int(_)|dm_syntax::OriginalTokenValue::Float(_)|dm_syntax::OriginalTokenValue::Resource(_))=>false,
-                Some(_)=>return Err(InitializerError::Unsupported("modified initializer Original literal kind is unissued".into())),
-                None=>raw.starts_with('"') || raw.starts_with('@') || raw.starts_with("{\""),
-            };
-            if string {
-                match crate::decode_native_constant_string_literal(raw) {
+            if raw.starts_with('"') || raw.starts_with('@') || raw.starts_with("{\"") {
+                match crate::decode_constant_string_literal(raw) {
                     Ok(Some(_)) => (),
                     _ => {
                         return Err(InitializerError::Unsupported(
@@ -970,9 +964,3 @@ mod tests {
 #[cfg(test)]
 #[path = "initializer_borrowed_tests.rs"]
 mod borrowed_tests;
-
-#[cfg(test)]mod original_modified_rhs_typed_tests{
- use super::*;use dm_syntax::{Expr,ExprKind,LiteralText,OriginalTokenValue as V,SettingAdmission,Span};use std::sync::{Arc, atomic::{Ordering}};
- #[test]fn actual_original_scalar_kind_precedes_resource_quote_template_and_null_looking_spelling(){let used=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let a=SettingAdmission::new(&used,1<<20,&||Ok(()));for raw in ["\"looks[interpolated]\"","@{raw}","null","1e3"]{for value in [V::Int(0),V::Float(1000.0),V::Resource("real/path")]{let expr=Expr{span:Span::new(0,raw.len()),kind:ExprKind::Literal(LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap())};admit_modified_rhs(&expr).unwrap();}}assert_eq!(used.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());}
- #[test]fn ordinary_modified_rhs_admission_and_unissued_original_string_runtime_contract_stay_explicit(){for raw in ["1","null","'a.dmi'"]{let expr=dm_syntax::parse_expression(raw).expr.unwrap();admit_modified_rhs(&expr).unwrap();}let expr=dm_syntax::parse_expression("\"x[foo()]\"").expr.unwrap();assert!(admit_modified_rhs(&expr).is_err());}
-}

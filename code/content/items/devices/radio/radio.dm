@@ -162,11 +162,12 @@ CAPABILITIES(/obj/item/radio)
 	on_wire(WIRE_RADIO_RECEIVER, cut = PROC_REF(receiver_wire_cut), pulse = PROC_REF(receiver_wire_pulsed))
 	on_wire(WIRE_RADIO_TRANSMIT, cut = PROC_REF(transmit_wire_cut), pulse = PROC_REF(transmit_wire_pulsed))
 	interface("Radio")
+	ui_shape(theme = nullable(schema_text()), rawfreq = num(), listening = bool(), broadcasting = bool(), subspace = bool(), subspaceSwitchable = bool(), loudspeaker = bool(), mic_cut = bool(), spk_cut = bool(), chan_list = nullable(list_of(row(chan = schema_text(), display_name = schema_text(), freq = num(), secure_channel = nullable(bool()), sec_channel_listen = nullable(bool())))), useSyndMode = bool(), minFrequency = num(), maxFrequency = num())
 	without("ui_open")
 	op("setFrequency", ui_act("setFrequency", arg("freq", num())), then(PROC_REF(ui_act_setfrequency)))
 	op("broadcast", ui_act("broadcast"), then(PROC_REF(ui_act_broadcast)))
 	op("listen", ui_act("listen"), then(PROC_REF(ui_act_listen)))
-	op("channel", ui_act("channel", arg("channel", num())), then(PROC_REF(ui_act_channel)))
+	op("channel", ui_act("channel", arg("channel", schema_text(4096))), then(PROC_REF(ui_act_channel)))
 	op("specFreq", ui_act("specFreq", arg("channel", num())), then(PROC_REF(ui_act_specfreq)))
 	op("subspace", ui_act("subspace"), then(PROC_REF(ui_act_subspace)))
 	op("toggleLoudspeaker", ui_act("toggleLoudspeaker"), then(PROC_REF(ui_act_toggleloudspeaker)))
@@ -223,11 +224,11 @@ CAPABILITIES(/obj/item/radio)
 
 	return tgui_interact(user)
 
-/obj/item/radio/tgui_static_data(mob/user)
+/obj/item/radio/ui_static_data(datum/act/eval/A)
 	. = ..()
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_owner = loc
-		.["theme"] = robot_owner.get_ui_theme()
+	var/robot_theme = robot_holder_theme(src)
+	if(robot_theme)
+		.["theme"] = robot_theme
 
 /obj/item/radio/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -672,37 +673,30 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	// check if this radio can receive on the given frequency, and if so,
 	// what the range is in which mobs will hear the radio
 	// returns: -1 if can't receive, range otherwise
-	if(wire_is_cut(src, WIRE_RADIO_RECEIVER))
+	// Every radio on a frequency is asked on each message (about 900 on Common): the plain var checks come first, the wire
+	// and jamming lookups last, for the few that pass.
+	if(!on || !listening)
 		return -1
-	if(!listening)
+	if(freq)
+		var/accept = (freq == frequency)
+		if(!accept)
+			for(var/ch_name in channels)
+				var/datum/radio_frequency/RF = secure_radio_connections[ch_name]
+				if(RF && RF.frequency == freq && (channels[ch_name] & FREQ_LISTENING))
+					accept = TRUE
+					break
+		if(!accept)
+			return -1
+	if((freq in GLOB.antag_frequencies) && !syndie) // allowed on that frequency by its encryption keys
+		return -1
+	if((freq in GLOB.cent_frequencies) && !centComm)
+		return -1
+	if(!(0 in level) && !(get_z(src) in level))
+		return -1
+	if(wire_is_cut(src, WIRE_RADIO_RECEIVER))
 		return -1
 	if(is_jammed(src))
 		return -1
-	if(!(0 in level))
-		var/pos_z = get_z(src)
-		if(!(pos_z in level))
-			return -1
-	if(freq in GLOB.antag_frequencies)
-		if(!(src.syndie))//Checks to see if it's allowed on that frequency, based on the encryption keys
-			return -1
-	if(freq in GLOB.cent_frequencies)
-		if(!(src.centComm))//Checks to see if it's allowed on that frequency, based on the encryption keys
-			return -1
-	if (!on)
-		return -1
-	if (!freq) //recieved on main frequency
-		if (!listening)
-			return -1
-	else
-		var/accept = (freq==frequency && listening)
-		if (!accept)
-			for (var/ch_name in channels)
-				var/datum/radio_frequency/RF = secure_radio_connections[ch_name]
-				if (RF && RF.frequency==freq && (channels[ch_name]&FREQ_LISTENING))
-					accept = 1
-					break
-		if (!accept)
-			return -1
 	return canhear_range
 
 /obj/item/radio/proc/send_hear(freq, level)
@@ -864,56 +858,17 @@ CAPABILITIES(/obj/item/radio/borg)
 /obj/item/radio/phone/medbay/starting_channels()
 	return GLOB.default_medbay_channels.Copy()
 
-/obj/item/radio/proc/can_broadcast_to()
-	var/list/output = list()
-	var/turf/T = get_turf(src)
-	var/dnumber = canhear_range*CANBROADCAST_INNERBOX
-	for(var/cand_x = max(0, T.x - canhear_range), cand_x <= T.x + canhear_range, cand_x++)
-		for(var/cand_y = max(0, T.y - canhear_range), cand_y <= T.y + canhear_range, cand_y++)
-			var/turf/cand_turf = locate(cand_x,cand_y,T.z)
-			if(!cand_turf)
-				continue
-			if((abs(T.x - cand_x) < dnumber) || (abs(T.y - cand_y) < dnumber))
-				output += cand_turf
-				continue
-			if(sqrt((T.x - cand_x)**2 + (T.y - cand_y)**2) <= canhear_range)
-				output += cand_turf
-				continue
-	return output
-/obj/item/radio/intercom
-	var/list/broadcast_tiles
-
-// A cache of nearby turfs, rebuilt by Initialize()/forceMove() (C5); not state.
-/obj/item/radio/intercom/state_exclude()
-	return ..() + list("broadcast_tiles")
-
-/obj/item/radio/intercom/proc/update_broadcast_tiles()
-	var/list/output = list()
-	var/turf/T = get_turf(src)
-	if(!T)
-		return
-	var/dnumber = canhear_range*CANBROADCAST_INNERBOX
-	for(var/cand_x = max(0, T.x - canhear_range), cand_x <= T.x + canhear_range, cand_x++)
-		for(var/cand_y = max(0, T.y - canhear_range), cand_y <= T.y + canhear_range, cand_y++)
-			var/turf/cand_turf = locate(cand_x,cand_y,T.z)
-			if(!cand_turf)
-				continue
-			if((abs(T.x - cand_x) < dnumber) || (abs(T.y - cand_y) < dnumber))
-				output += cand_turf
-				continue
-			if(sqrt((T.x - cand_x)**2 + (T.y - cand_y)**2) <= canhear_range)
-				output += cand_turf
-				continue
-	broadcast_tiles = output
-
-/obj/item/radio/intercom/forceMove(atom/destination, direction, movetime)
-	. = ..(destination, direction, movetime)
-	update_broadcast_tiles()
-
-/obj/item/radio/intercom/can_broadcast_to()
-	if(!broadcast_tiles)
-		update_broadcast_tiles()
-	return broadcast_tiles
+/// Whether a listener standing on `listener` hears this radio from `from` (its turf): within canhear_range, the corners of the
+/// square cut to a circle. Worked out from the two turfs on each broadcast, so a radio that moves (carried, on a shuttle) needs no cache.
+/obj/item/radio/proc/reaches(turf/from, turf/listener)
+	if(from.z != listener.z)
+		return FALSE
+	var/dx = abs(from.x - listener.x)
+	var/dy = abs(from.y - listener.y)
+	if(dx > canhear_range || dy > canhear_range)
+		return FALSE
+	var/inner = canhear_range * CANBROADCAST_INNERBOX
+	return dx < inner || dy < inner || sqrt(dx * dx + dy * dy) <= canhear_range
 
 //*Subspace Radio*//
 /obj/item/radio/subspace
@@ -954,34 +909,18 @@ CAPABILITIES(/obj/item/radio/subspace)
 /obj/item/radio/emergency/starting_channels()
 	return GLOB.default_medbay_channels.Copy()
 
-/obj/item/bluespaceradio/tether_prelinked
-	name = "bluespace radio (tether)"
-	handset_path = /obj/item/radio/bluespacehandset/linked/tether_prelinked
-
 /obj/item/radio/bluespacehandset/linked/tether_prelinked
 	bs_tx_preload_id = "tether_rx" //Transmit to a receiver
 	bs_rx_preload_id = "tether_tx" //Recveive from a transmitter
-
-/obj/item/bluespaceradio/talon_prelinked
-	name = "bluespace radio (talon)"
-	handset_path = /obj/item/radio/bluespacehandset/linked/talon_prelinked
 
 /obj/item/radio/bluespacehandset/linked/talon_prelinked
 	bs_tx_preload_id = "talon_aio" //Transmit to a receiver
 	bs_rx_preload_id = "talon_aio" //Recveive from a transmitter
 
 //* Bluespace Radio *//
-/obj/item/bluespaceradio/relicbase_prelinked
-	name = "bluespace radio (forbearance)"
-	handset_path = /obj/item/radio/bluespacehandset/linked/relicbase_prelinked
-
 /obj/item/radio/bluespacehandset/linked/relicbase_prelinked // Same as Southern Cross. We use their tcomms setup after all
 	bs_tx_preload_id = "Receiver A" //Transmit to a receiver
 	bs_rx_preload_id = "Broadcaster A" //Recveive from a transmitter
-
-/obj/item/bluespaceradio/cryogaia_prelinked
-	name = "bluespace radio (Cryogaia)"
-	handset_path = /obj/item/radio/bluespacehandset/linked/cryogaia_prelinked
 
 /obj/item/radio/bluespacehandset/linked/cryogaia_prelinked
 	bs_tx_preload_id = "cryogaia_rx" //Transmit to a receiver

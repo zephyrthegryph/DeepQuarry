@@ -15,7 +15,7 @@
 	var/target_size = 1
 	on = 1
 
-/obj/item/clothing/accessory/collar/shock/bluespace/tgui_static_data(mob/user)
+/obj/item/clothing/accessory/collar/shock/bluespace/ui_static_data(datum/act/eval/A)
 	var/list/data = ..()
 	data["target_size_min"] = RESIZE_MINIMUM_DORMS
 	data["target_size_max"] = RESIZE_MAXIMUM_DORMS

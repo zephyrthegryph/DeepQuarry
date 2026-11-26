@@ -96,11 +96,34 @@
 
 
 /client/verb/attack_self()
+	set name = "Use Held Item"
 	set hidden = 1
-	if(mob)
-		mob.mode()
+	var/mob/living/L = mob
+	if(istype(L))
+		L.activate_held()
 	return
 
+
+/// The Use held module key (Ctrl+Z) of a cyborg: the module in use, multibelt aware.
+/client/verb/robot_alt_mode()
+	set name = "Use Held Module"
+	set hidden = 1
+	var/mob/living/silicon/robot/R = mob
+	if(istype(R))
+		R.alt_mode()
+	return
+
+/// The Holster key: holster or draw with the holster attached to the worn uniform, through the uniform's own op.
+/client/verb/holster_key()
+	set name = "Holster"
+	set hidden = 1
+	var/mob/living/carbon/human/H = mob
+	if(!istype(H))
+		return
+	var/obj/item/clothing/under/uniform = H.get_equipped_item(SLOT_ID_UNIFORM)
+	if(!istype(uniform))
+		return
+	perform_op(H, uniform, "under_holster_verb", null, ORIGIN_HOTKEY)
 
 /client/verb/toggle_throw_mode()
 	set hidden = 1
@@ -183,7 +206,8 @@
 				return
 
 	// We're in the middle of another move we've already decided to do
-	if(moving)
+	// (the tick it began: a runtime in a move never reaches the line clearing it, and must not freeze the player for good)
+	if(moving == TIME_NOW(CLOCK_WORLD))
 		return 0
 
 	// We're still cooling down from the last move
@@ -299,7 +323,7 @@
 			total_delay += 3
 
 	// We are now going to move
-	moving = 1
+	STAMP(src, moving, CLOCK_WORLD)
 	var/pre_move_loc = loc
 
 	// Confused direction randomization
@@ -322,7 +346,14 @@
 		var/atom/movable/_tmp_buck_31 = my_mob?.buckled_to()
 		. = _tmp_buck_31.relaymove(my_mob,direct)
 	else
+		// MOVE_COST: this step's cost by part (code/domains/world_model/atom/move_cost.dm)
+		var/turf/cost_from = get_turf(my_mob)
+		var/cost_marks = GLOB.refresh_marks_raised
+		var/cost_chunks = GLOB.gaze_chunks_entered
+		var/cost_lights = SSlighting.pending_source_count()
+		var/cost_started = move_cost_begin()
 		. = my_mob.SelfMove(n, direct, total_delay)
+		move_cost_end(cost_started, my_mob, cost_from, cost_marks, cost_chunks, cost_lights)
 
 	// If we ended up moving diagonally, increase delay.
 	if((direct & (direct - 1)) && mob.loc == n)
@@ -396,7 +427,7 @@
 	var/incorporeal_speed = 0.5
 
 /client/verb/set_incorporeal_speed()
-	set category = VERB_CAT_OOC_GAME_SETTINGS
+	set hidden = TRUE // the Menu page
 	set name = "Set Incorporeal Speed"
 
 	open_request(src, /datum/prompt/number, PROC_REF(incorporeal_speed_entered), answerer = usr, title = "Incorporeal movement speed", question = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", default = (0.5/world.tick_lag), max_value = 5, min_value = 0, timeout = 0)

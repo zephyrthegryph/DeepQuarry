@@ -11,9 +11,6 @@
 
 //Boosts the range of your next sting attack by 1
 /mob/proc/changeling_boost_range()
-	set category = VERB_CAT_CHANGELING
-	set name = "Ranged Sting (10)"
-	set desc="Your next sting ability can be used against targets 2 squares away."
 
 	var/datum/changeling/changeling = changeling_power(10,0,100)
 	if(!changeling)

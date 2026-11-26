@@ -1,6 +1,8 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Box, Button, Section, Stack } from 'tgui-core/components';
 import { PlayerIndicator } from '../ChessCheckers/PlayerMenu';
+import type { NineMenActions } from '../generated/NineMen';
 import { VorePanelTooltip } from '../VorePanel/VorePanelElements/VorePanelTooltip';
 import { gameTooltip, phastToText } from './constants';
 import { gameStateToText, stateToColor } from './functions';
@@ -8,7 +10,7 @@ import { PlayerPanel } from './PlayerPanel';
 import type { Data } from './types';
 
 export const PlayerMenu = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, NineMenActions>();
 
   const {
     game_state,
@@ -103,7 +105,7 @@ export const PlayerMenu = (props) => {
         <Stack.Item basis="33%">
           <Stack vertical textAlign="center">
             <Stack.Item>
-              <Box color="label">Status:</Box>
+              <Label>Status:</Label>
             </Stack.Item>
             <Stack.Item>
               <Box color={stateToColor(game_state, !!has_won)}>

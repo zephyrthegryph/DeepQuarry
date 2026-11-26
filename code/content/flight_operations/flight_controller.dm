@@ -36,12 +36,12 @@ CAPABILITIES(/datum/system/flight)
 	if(!has_sif)
 		new /obj/effect/overmap/visitable/planet/sif/navigation(null)
 	var/datum/flight_destination/system = new
-	system.id = "system-vir"
-	system.name = "Vir"
-	system.description = "The Vir system primary."
-	system.kind = FLIGHT_DEST_SYSTEM
-	system.body_radius = 5
-	system.body_color = "#ffd36a"
+	system.set_id("system-vir")
+	system.set_name("Vir")
+	system.set_description("The Vir system primary.")
+	system.set_kind(FLIGHT_DEST_SYSTEM)
+	system.set_body_radius(5)
+	system.set_body_color("#ffd36a")
 	rel_add(src, nameof(destinations), system, system.id)
 	for(var/obj/effect/overmap/visitable/target as anything in REGISTRY_MEMBERS(REGISTRY_OVERMAP_VISITABLES))
 		register_destination(target)
@@ -79,34 +79,34 @@ CAPABILITIES(/datum/system/flight)
 	if(existing_id)
 		return destinations?[existing_id]
 	var/datum/flight_destination/destination = new
-	destination.id = make_id("destination", target.name)
-	destination.name = target.name
-	destination.description = target.desc
+	destination.set_id(make_id("destination", target.name))
+	destination.set_name(target.name)
+	destination.set_description(target.desc)
 	rel_set(destination, nameof(destination.target), target)
 	if(istype(target, /obj/effect/overmap/visitable/planet))
-		destination.kind = FLIGHT_DEST_SURFACE
-		destination.orbit_parent_id = "system-vir"
-		destination.required_capabilities = FLIGHT_CAP_STRATEGIC
-		destination.body_radius = 3.4
-		destination.body_color = "#5f9f8b"
-		destination.orbit_radius = 64
-		destination.orbit_period = 12 HOURS
-		destination.orbit_inclination = 4
+		destination.set_kind(FLIGHT_DEST_SURFACE)
+		destination.set_orbit_parent_id("system-vir")
+		destination.set_required_capabilities(FLIGHT_CAP_STRATEGIC)
+		destination.set_body_radius(3.4)
+		destination.set_body_color("#5f9f8b")
+		destination.set_orbit_radius(64)
+		destination.set_orbit_period(12 HOURS)
+		destination.set_orbit_inclination(4)
 	else
-		destination.kind = istype(target, /obj/effect/overmap/visitable/ship) ? FLIGHT_DEST_VESSEL : (target.base ? FLIGHT_DEST_STATION : FLIGHT_DEST_ORBIT)
-		destination.orbit_parent_id = first_planet_id()
-		destination.body_radius = destination.kind == FLIGHT_DEST_STATION ? 1.8 : 1.15
-		destination.body_color = destination.kind == FLIGHT_DEST_STATION ? "#bda5ff" : "#62d5ff"
-		destination.orbit_radius = destination.kind == FLIGHT_DEST_STATION ? 14 : 19
-		destination.orbit_period = destination.kind == FLIGHT_DEST_STATION ? 45 MINUTES : 60 MINUTES
-		destination.orbit_inclination = destination.kind == FLIGHT_DEST_STATION ? -7 : 9
-	destination.orbit_phase = 35
+		destination.set_kind(istype(target, /obj/effect/overmap/visitable/ship) ? FLIGHT_DEST_VESSEL : (target.base ? FLIGHT_DEST_STATION : FLIGHT_DEST_ORBIT))
+		destination.set_orbit_parent_id(first_planet_id())
+		destination.set_body_radius(destination.kind == FLIGHT_DEST_STATION ? 1.8 : 1.15)
+		destination.set_body_color(destination.kind == FLIGHT_DEST_STATION ? "#bda5ff" : "#62d5ff")
+		destination.set_orbit_radius(destination.kind == FLIGHT_DEST_STATION ? 14 : 19)
+		destination.set_orbit_period(destination.kind == FLIGHT_DEST_STATION ? 45 MINUTES : 60 MINUTES)
+		destination.set_orbit_inclination(destination.kind == FLIGHT_DEST_STATION ? -7 : 9)
+	destination.set_orbit_phase(35)
 	if(lowertext(destination.name) == "southern cross")
-		destination.orbit_radius = 13
-		destination.orbit_phase = 210
+		destination.set_orbit_radius(13)
+		destination.set_orbit_phase(210)
 	if(istype(target, /obj/effect/overmap/visitable/ship/exploration_carrier))
-		destination.orbit_radius = 19
-		destination.orbit_phase = 42
+		destination.set_orbit_radius(19)
+		destination.set_orbit_phase(42)
 	rel_add(src, nameof(destinations), destination, destination.id)
 	var/target_ref = handle_of(target) // lookup keyed by the target's handle
 	destination_by_target[target_ref] = destination.id
@@ -138,10 +138,10 @@ CAPABILITIES(/datum/system/flight)
 	for(var/id in destinations)
 		var/datum/flight_destination/destination = destinations?[id]
 		if(destination.kind == FLIGHT_DEST_STATION)
-			destination.orbit_parent_id = sif_id
+			destination.set_orbit_parent_id(sif_id)
 		else if(destination.kind == FLIGHT_DEST_VESSEL || destination.kind == FLIGHT_DEST_ORBIT)
 			if(!destination.orbit_parent_id || destination.orbit_parent_id == "system-vir")
-				destination.orbit_parent_id = sif_id
+				destination.set_orbit_parent_id(sif_id)
 
 /datum/system/flight/proc/seed_expedition_catalog()
 	for(var/id in destinations.Copy())
@@ -175,16 +175,16 @@ CAPABILITIES(/datum/system/flight)
 		if(istype(vessel.ship(), /obj/effect/overmap/visitable/ship/exploration_carrier))
 			vessel.orbit_parent_id = sif_id
 			vessel.docked_port_id = null
-			destination.orbit_parent_id = sif_id
-			destination.orbit_radius = 19
-			destination.orbit_period = 60 MINUTES
-			destination.orbit_phase = 42
+			destination.set_orbit_parent_id(sif_id)
+			destination.set_orbit_radius(19)
+			destination.set_orbit_period(60 MINUTES)
+			destination.set_orbit_phase(42)
 		else
-			destination.orbit_parent_id = vessel.orbit_parent_id || sif_id
-			destination.orbit_radius = vessel.docked_port_id ? 0 : 11
-		destination.orbit_inclination = 0
+			destination.set_orbit_parent_id(vessel.orbit_parent_id || sif_id)
+			destination.set_orbit_radius(vessel.docked_port_id ? 0 : 11)
+		destination.set_orbit_inclination(0)
 		if(!istype(vessel.ship(), /obj/effect/overmap/visitable/ship/exploration_carrier))
-			destination.orbit_period = 600
+			destination.set_orbit_period(600)
 
 /datum/system/flight/proc/register_mapped_ports()
 	rel_clear(src, nameof(ports))

@@ -26,9 +26,8 @@
 	set_on(A?.powered(EQUIP))
 
 CAPABILITIES(/obj/item/radio/intercom)
-	configure(movable_motion(blocks_emissive = NONE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	setup(PROC_REF(start_listening_to_area))
-	setup(PROC_REF(update_broadcast_tiles))
 	configure(light_glow(color = "#00ff00", power = 0.25))
 	owns_one(nameof(circuit), starts = nameof(circuit))
 	// the AI's gestures over its link: ctrl switches the microphone, alt the AI's private channel
@@ -49,10 +48,6 @@ CAPABILITIES(/obj/item/radio/intercom)
 	frequency  = 1449
 	broadcasting = 1
 	listening = 0
-
-/obj/item/radio/intercom/interrogation/observation
-	listening = 1
-	broadcasting = 0
 
 /obj/item/radio/intercom/private
 	name = "station intercom (Private)"
@@ -237,8 +232,3 @@ CAPABILITIES(/obj/item/radio/intercom/omni)
 /obj/item/radio/intercom/locked/confessional
 	name = "confessional intercom"
 	frequency = LOCKED_COM_FREQ
-
-/obj/item/radio/intercom/locked/entertainment
-	name = "entertainment PA"
-	frequency = ENT_FREQ
-	broadcasting = TRUE

@@ -6,7 +6,9 @@
 	var/list/allowed_icons
 
 /datum/unit_test/font_awesome_icons/Run()
-	var/font_awesome_file = file('html/font-awesome/css/all.min.css')
+	// The full stylesheet: html/font-awesome/ ships only the icons the code names (tools/fontawesome/subset.py), but FA_ICON_* lists them all.
+	// A runtime path, so the file is not packed into the resource file.
+	var/font_awesome_file = file("tools/fontawesome/full/all.min.css")
 	if(isnull(font_awesome_file))
 		TEST_FAIL("Font Awesome CSS file could not be found!")
 		return

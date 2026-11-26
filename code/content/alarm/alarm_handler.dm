@@ -14,6 +14,10 @@ CAPABILITIES(/datum/alarm_handler)
 /// TRUE while any alarm is up (a raised alarm sets it); with none left it parks.
 /datum/alarm_handler/var/tmp/expiring = FALSE
 
+/// FALSE while a raised alarm has not been put in name order yet. Sorting is paid by the reader that needs the order (visible_alarms()), not by
+/// every raise: a brownout raises one alarm per APC (hundreds), and each used to sort and rewrite the whole list (about 40 ms an APC at 300 alarms).
+/datum/alarm_handler/var/tmp/alarms_in_order = TRUE
+
 /// Expires alarms every 2 s while any is up (a raised alarm starts it); with none left it parks.
 /datum/alarm_handler/proc/expire_step(datum/act/tick)
 	for(var/datum/alarm/A in alarms)
@@ -42,7 +46,7 @@ CAPABILITIES(/datum/alarm_handler)
 
 	set_expiring(TRUE)
 	if(new_alarm)
-		rel_set(src, nameof(alarms), dd_sortedObjectList(alarms))
+		alarms_in_order = FALSE
 		on_alarm_change(existing, ALARM_RAISED)
 
 	return new_alarm
@@ -138,6 +142,10 @@ CAPABILITIES(/datum/alarm_handler)
 	if(!LAZYLEN(alarms))
 		return list()
 
+	if(!alarms_in_order)
+		alarms_in_order = TRUE
+		if(length(alarms) > 1)
+			rel_set(src, nameof(alarms), dd_sortedObjectList(alarms))
 	var/list/map_levels = using_map.get_map_levels(z)
 
 	var/list/visible_alarms = new()

@@ -1,6 +1,7 @@
 
 /obj/machinery/fusion_fuel_injector
 	name = "fuel injector"
+	desc = "Injects fuel rods into an R-UST fusion field. Load a fuel assembly and link it to the fusion core's control computer."
 	icon = 'icons/obj/machines/power/fusion.dmi'
 	icon_state = "injector0"
 	density = TRUE

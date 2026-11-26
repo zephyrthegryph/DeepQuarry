@@ -140,9 +140,9 @@
 
 /// Scales the tile's air to `pressure` kPa at its own temperature and composition.
 /datum/unit_test/life_seq/breath_hazard/proc/set_pressure(pressure)
-	var/scale = pressure / T.air.return_pressure()
-	T.air.set_moles(/datum/gas/oxygen, T.air.get_moles(/datum/gas/oxygen) * scale)
-	T.air.set_moles(/datum/gas/nitrogen, T.air.get_moles(/datum/gas/nitrogen) * scale)
+	var/scale = pressure / T.turf_air().return_pressure()
+	T.turf_air().set_moles(/datum/gas/oxygen, T.turf_air().get_moles(/datum/gas/oxygen) * scale)
+	T.turf_air().set_moles(/datum/gas/nitrogen, T.turf_air().get_moles(/datum/gas/nitrogen) * scale)
 
 /// Phoron filling the room poisons a breather with no internals.
 /datum/unit_test/life_seq/breath_hazard/phoron
@@ -180,7 +180,7 @@
 /datum/unit_test/life_seq/breath_hazard/no_oxygen/run_life()
 	if(!setup_breather())
 		return
-	T.air.set_moles(/datum/gas/oxygen, 0)
+	T.turf_air().set_moles(/datum/gas/oxygen, 0)
 	assert_acts(PROC_REF(suffocating), "a human in air with no oxygen didn't fail a breath")
 
 /// CO2 building up in the room (invisible): hypercapnia worsens the breath.
@@ -199,7 +199,7 @@
 /datum/unit_test/life_seq/breath_hazard/heat/run_life()
 	if(!setup_breather())
 		return
-	heat_set(T.air, 450, HEAT_SOURCE_OTHER)
+	heat_set(T.turf_air(), 450, HEAT_SOURCE_OTHER)
 	// The breath's temperature alert is cleared again by the environment exchange while the body is still comfortable, so the
 	// exchange coupling the body to the air (which it skips inside the comfort range) is what shows it woke.
 	assert_acts(PROC_REF(body_coupled), "the environment exchange didn't couple the body to 450 K air")
@@ -211,7 +211,7 @@
 /datum/unit_test/life_seq/breath_hazard/cold/run_life()
 	if(!setup_breather())
 		return
-	heat_set(T.air, 150, HEAT_SOURCE_OTHER)
+	heat_set(T.turf_air(), 150, HEAT_SOURCE_OTHER)
 	// The breath's temperature alert is cleared again by the environment exchange while the body is still comfortable, so the
 	// exchange coupling the body to the air (which it skips inside the comfort range) is what shows it woke.
 	assert_acts(PROC_REF(body_coupled), "the environment exchange didn't couple the body to 150 K air")
@@ -372,7 +372,7 @@
 	observe(H, /datum/notice/living_injured, src, then(PROC_REF(on_injured)))
 	release(/datum/gas/plasma, 2) // about 2 kPa on the tile
 	var/took = wait_for(PROC_REF(injured_enough), 12)
-	log_world("phoron_injures_fast: [toxin_taken] toxin injury after [took || 12] s at [round(air_watch_reading(T.air, CH_GAS_PLASMA_KPA), 0.01)] kPa")
+	log_world("phoron_injures_fast: [toxin_taken] toxin injury after [took || 12] s at [round(air_watch_reading(T.turf_air(), CH_GAS_PLASMA_KPA), 0.01)] kPa")
 	TEST_ASSERT(took, "2 kPa of phoron did only [toxin_taken] toxin injury in 12 s (wanted 5+)")
 	// More phoron burns harder.
 	var/before = toxin_taken
@@ -405,9 +405,9 @@
 	if(!setup_breather())
 		return
 	// Swap the room to nitrogen and CO2 (no oxygen), then let breathing sleep again.
-	var/o2 = T.air.get_moles(/datum/gas/oxygen)
-	T.air.set_moles(/datum/gas/oxygen, 0)
-	T.air.set_moles(/datum/gas/carbon_dioxide, o2 * 1.3)
+	var/o2 = T.turf_air().get_moles(/datum/gas/oxygen)
+	T.turf_air().set_moles(/datum/gas/oxygen, 0)
+	T.turf_air().set_moles(/datum/gas/carbon_dioxide, o2 * 1.3)
 	for(var/i in 1 to 12)
 		dq_gas_level_test_deliver()
 		life_test_advance(LIFE_CYCLE_SECONDS)
@@ -417,7 +417,7 @@
 	if(!life_test_asleep(H, "life_breathing"))
 		TEST_FAIL("the alraune's breathing never slept in CO2 air (awake: [jointext(life_test_awake(H), ", ")])")
 		return
-	T.air.set_moles(/datum/gas/carbon_dioxide, 0)
+	T.turf_air().set_moles(/datum/gas/carbon_dioxide, 0)
 	assert_acts(PROC_REF(suffocating), "an alraune whose CO2 drained away (no oxygen) didn't fail a breath")
 
 /// A human in a closet: the steps that read the air sleep on a watch on the air the closet passes through, and phoron
@@ -473,7 +473,7 @@
 /datum/unit_test/life_seq/breath_hazard/door_beside_sleeper/proc/door_watch_report(obj/machinery/door/F)
 	var/list/out = list()
 	out += "door density [F.density], pass mode [F.can_atmos_pass], on [F.loc] ([N.x],[N.y],[N.z]) [N.type]"
-	out += "its tile blocks [N.blocks_air ? "all air" : "mask [N.air_block_mask()]"], has air [N.heat_has_air()], mixture arena id [N.air?.arena_id()] [N.air ? N.air.type : "none"]"
+	out += "its tile blocks [N.blocks_air ? "all air" : "mask [N.air_block_mask()]"], has air [N.heat_has_air()], mixture arena id [N.turf_air()?.arena_id()] [N.turf_air() ? N.turf_air().type : "none"]"
 	var/list/listed = list()
 	for(var/turf/other as anything in vg_atmos_adjacent_turfs(T))
 		listed += "([other.x],[other.y],[other.z])"
@@ -490,7 +490,7 @@
 /// Empties `where`'s air in place (pumped to vacuum).
 /datum/unit_test/life_seq/breath_hazard/proc/pump_to_vacuum(turf/open/where)
 	for(var/gas in list(/datum/gas/oxygen, /datum/gas/nitrogen, /datum/gas/carbon_dioxide, /datum/gas/plasma))
-		where.air.set_moles(gas, 0)
+		where.turf_air().set_moles(gas, 0)
 
 /// A human in steady air for a minute, its tile then pumped to vacuum: the oxygen alert is up within one tick, not on
 /// the next Life frame (breathing is woken by the air watch and runs at once: breath_soon()).
@@ -543,7 +543,7 @@
 /datum/unit_test/life_seq/breath_hazard/fire_at_once/run_life()
 	if(!setup_breather())
 		return
-	heat_set(T.air, 1000, HEAT_SOURCE_OTHER)
+	heat_set(T.turf_air(), 1000, HEAT_SOURCE_OTHER)
 	assert_at_once(PROC_REF(body_coupled), "the environment exchange coupled the body to 1000 K air")
 
 /// The room freezing: coupled at once.
@@ -553,7 +553,7 @@
 /datum/unit_test/life_seq/breath_hazard/cold_at_once/run_life()
 	if(!setup_breather())
 		return
-	heat_set(T.air, 150, HEAT_SOURCE_OTHER)
+	heat_set(T.turf_air(), 150, HEAT_SOURCE_OTHER)
 	assert_at_once(PROC_REF(body_coupled), "the environment exchange coupled the body to 150 K air")
 
 /// Low pressure: the pressure alert at once.
@@ -617,7 +617,7 @@
 	C.forceMove(N)
 	test_time(world.tick_lag)
 	life_test_drain()
-	TEST_ASSERT(C.alerts?["oxy"], "no oxygen alert on the cat one tick after it walked into vacuum (min_oxy [C.min_oxy]; on the vacuum tile [C.loc == N]; its O2 [N.air.get_moles(/datum/gas/oxygen)] mol; watch bands [json_encode(C.body?.air_watch_own)]; air steps last ran at [STATE_GET(C, breath_hazard, air_hazard_at)]; env step asleep [life_test_asleep(C, "life_environment")])")
+	TEST_ASSERT(C.alerts?["oxy"], "no oxygen alert on the cat one tick after it walked into vacuum (min_oxy [C.min_oxy]; on the vacuum tile [C.loc == N]; its O2 [N.turf_air().get_moles(/datum/gas/oxygen)] mol; watch bands [json_encode(C.body?.air_watch_own)]; air steps last ran at [STATE_GET(C, breath_hazard, air_hazard_at)]; env step asleep [life_test_asleep(C, "life_environment")])")
 
 #undef LIFE_HAZARD_LIMIT
 

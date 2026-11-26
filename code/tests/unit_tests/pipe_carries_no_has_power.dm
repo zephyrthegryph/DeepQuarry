@@ -7,6 +7,9 @@
 	var/area/served = get_area(vendor)
 	TEST_ASSERT_EQUAL(get_area(pipe), served, "the pipe and the vendor share an area")
 	TEST_ASSERT(vendor.power_area == served, "the vendor reads its area's channels")
+	var/was_equip = served.power_equip
+	var/was_light = served.power_light
+	var/was_environ = served.power_environ
 	served.set_channels(TRUE, TRUE, TRUE, notify = FALSE)
 	stat_drain_marked()
 	served.set_channels(FALSE, FALSE, FALSE, notify = FALSE)
@@ -16,11 +19,13 @@
 		var/datum/stat_def/def = row[2]
 		if(!def || def.name != "has_power")
 			continue
-		if(row[1] == pipe)
+		// A row names its entity by slot (SLOT(E)), not by reference.
+		var/datum/marked = slot_datum(row[1])
+		if(marked == pipe)
 			pipes_marked++
-		if(row[1] == vendor)
+		if(marked == vendor)
 			vendor_marked = TRUE
 	TEST_ASSERT(vendor_marked, "a machine that draws power is re-read when its area's channels flip")
 	TEST_ASSERT_EQUAL(pipes_marked, 0, "a pipe is not re-read when its area's channels flip")
-	served.set_channels(TRUE, TRUE, TRUE, notify = FALSE)
+	served.set_channels(was_equip, was_light, was_environ, notify = FALSE)
 	stat_drain_marked()

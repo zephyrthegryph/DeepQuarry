@@ -1,0 +1,24 @@
+{
+	"department_hours": {
+		"Engineering": 8.5,
+		"Medical": 3,
+		"Security": 0.5
+	},
+	"user_name": "Jo Park",
+	"card": "Jo Park's ID Card (Station Engineer)",
+	"assignment": "Station Engineer",
+	"card_cooldown": 0,
+	"job_datum": {
+		"title": "Station Engineer",
+		"departments": "Engineering",
+		"selection_color": "#b27a0b",
+		"economic_modifier": 1.5,
+		"timeoff_factor": 1,
+		"pto_department": "Engineering"
+	},
+	"allow_change_job": 1,
+	"job_choices": {
+		"Station Engineer": ["Station Engineer", "Maintenance Technician"],
+		"Atmospheric Technician": ["Atmospheric Technician"]
+	}
+}

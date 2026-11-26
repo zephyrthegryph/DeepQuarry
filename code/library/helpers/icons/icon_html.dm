@@ -163,6 +163,31 @@
 		return SSassets.get_asset_url(key)
 	return "<img class='[extra_classes] icon icon-[icon_state]' src='[SSassets.get_asset_url(key)]'>"
 
+/// Asset keys of states of compiled-in icon files: "file|state|dir" -> the registered asset's name (build_icon_file_asset()).
+DECLARE_SHARED_CACHE(icon_file_asset, GLOBAL_PROC_REF(build_icon_file_asset), SC_NEVER)
+
+/// Cuts state `icon_state` facing `dir` out of `icon_file`, copies it into the rsc, hashes it and registers it as an asset: what icon2html()
+/// does on every call. Returns the asset's name.
+/proc/build_icon_file_asset(icon_file, icon_state, dir)
+	var/icon_path = get_icon_dmi_path(icon_file)
+	var/list/name_and_ref = generate_and_hash_rsc_file(icon(icon_file, icon_state, dir, 1, FALSE), icon_path)
+	var/key = "[name_and_ref[3]].png"
+	if(!SSassets.cached_asset(key))
+		SSassets.register_asset(key, name_and_ref[1], name_and_ref[2], icon_path)
+	return key
+
+/// icon2html(sourceonly = TRUE) for state `icon_state` (facing `dir`) of `icon_file`: the asset's url, the asset sent to `viewer`. A
+/// compiled-in file's picture is built once for the life of the world (it never changes); a runtime /icon has no stable identity and goes
+/// through icon2html() each time.
+/proc/icon_file_asset_url(icon_file, icon_state, client/viewer, dir = SOUTH)
+	if(!viewer || !icon_file)
+		return null
+	if(!isicon(icon_file) || !isfile(icon_file))
+		return icon2html(icon(icon_file, icon_state, dir), viewer, sourceonly = TRUE)
+	var/key = CACHED3(icon_file_asset, icon_file, isnull(icon_state) ? "" : icon_state, dir || SOUTH)
+	SSassets.send_assets(viewer, key)
+	return SSassets.get_asset_url(key)
+
 /proc/icon2base64html(target, custom_classes = "")
 	if (!target)
 		return

@@ -7,10 +7,12 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 
+import type { PandemicData } from '../generated/Pandemic';
 import { getColor } from './helpers';
-import type { Threshold } from './types';
 
-export const SymptomDisplay = (props) => {
+type SymptomRow = PandemicData['viruses'][number]['symptoms'][number];
+
+export const SymptomDisplay = (props: { symptoms: SymptomRow[] }) => {
   const { symptoms = [] } = props;
   if (!symptoms?.length) {
     return <NoticeBox>No symptoms detected.</NoticeBox>;
@@ -39,9 +41,9 @@ export const SymptomDisplay = (props) => {
   );
 };
 
-const Thresholds = (props) => {
-  const { thresholds = [] } = props;
-  const convertedThresholds = Object.entries<Threshold>(thresholds);
+const Thresholds = (props: { thresholds: SymptomRow['threshold_desc'] }) => {
+  const { thresholds = {} } = props;
+  const convertedThresholds = Object.entries(thresholds);
 
   return (
     <Section mt={1} title="Thresholds">
@@ -62,7 +64,7 @@ const Thresholds = (props) => {
   );
 };
 
-const Traits = (props) => {
+const Traits = (props: { symptom: SymptomRow }) => {
   const {
     symptom: { level, resistance, stage_speed, stealth, transmission },
   } = props;

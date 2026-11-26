@@ -15,6 +15,7 @@
 	density = TRUE
 	anchored = FALSE
 	use_power = USE_POWER_OFF
+	circuit = VARIANT(/obj/item/circuitboard/icecream_vat)
 	flags = OPENCONTAINER | NOREACT
 
 	var/list/product_types
@@ -49,15 +50,18 @@ GLOBAL_LIST_INIT(icecream_ingredients, list( 	list(REAGENT_ID_MILK, REAGENT_ID_I
 		add_product_types(5)
 
 CAPABILITIES(/obj/machinery/icecream_vat)
-	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
+	tabletop()
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	default_parts()
 	setup(PROC_REF(prepare_product_selections))
 	reagents(100, starts = list(REAGENT_ID_MILK = 5, REAGENT_ID_FLOUR = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_ICE = 5))
 	interface("IcecreamVat")
+	ui_shape(current_flavor = schema_text(), icecrem_data = list_of(row(index = int(), name = schema_text(), amount_left = num(), ingredients = list_of(schema_text()))), cone_data = list_of(row(index = int(), name = schema_text(), amount_left = num(), ingredients = list_of(schema_text()))), reagent_data = list_of(row(name = schema_text(), volume = num(), id = schema_text())))
 	without("ui_open")
 	op("index_action", ui_act("index_action", arg("iceIndex", num())), then(PROC_REF(ui_act_index_action)))
 	op("make_type", ui_act("make_type", arg("amount", num()), arg("index", num())), then(PROC_REF(ui_act_make_type)))
-	op("clear_reagent", ui_act("clear_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_clear_reagent)))
-	op("icecream_vat_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(icecream_vat_interaction_item)))
+	op("clear_reagents", ui_act("clear_reagents"), then(PROC_REF(ui_act_clear_reagents)))
+	op("icecream_vat_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bolted()), then(PROC_REF(icecream_vat_interaction_item)))
 
 /obj/machinery/icecream_vat/proc/build_icecream_data(list/ice_types)
 	var/ice_data = list()
@@ -114,11 +118,9 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 	make(user, index, amount)
 	return TRUE
 
-/obj/machinery/icecream_vat/proc/ui_act_clear_reagent(datum/act/op/A, id)
-	var/reagent_id = id
-	if(!reagent_id)
-		return FALSE
-	reagents.del_reagent(reagent_id)
+/// Empties the whole vat; there is no way to drop one reagent from the mix.
+/obj/machinery/icecream_vat/proc/ui_act_clear_reagents(datum/act/op/A)
+	reagents.clear_reagents()
 	return TRUE
 
 /// Old attackby.

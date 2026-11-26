@@ -518,6 +518,11 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 /// its parent's slot (code/modules/body/parts/), so no list is written here.
 /datum/species/proc/create_organs(mob/living/carbon/human/H) //Handles creation of mob organs.
 
+	var/phase_started = TICK_USAGE_REAL
+	var/old_parts_ms = 0
+	var/limbs_ms = 0
+	var/organs_ms = 0
+	var/limb_count = 0
 	H.set_mob_size(mob_size)
 	var/obj/item/organ/old_root = H.slot_item(SLOT_ID_PART_ROOT)
 	if(old_root)
@@ -527,6 +532,8 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		replaced_by(stray, H)
 	for(var/obj/item/organ/stray as anything in H.internal_organ_list())
 		replaced_by(stray, H)
+	old_parts_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	phase_started = TICK_USAGE_REAL
 
 	// Parent first, whatever order the table lists them in.
 	var/list/pending = has_limbs.Copy()
@@ -540,7 +547,8 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 				continue
 			pending -= limb_type
 			placed++
-			var/obj/item/organ/O = new limb_path(H)
+			limb_count++
+			var/obj/item/organ/O = species_limb_new(organ_data, H)
 			// "has_children" is precomputed (resolve_limb_table); a private copy may keep the built
 			// limb's own name, a registered species' table stays untouched.
 			if(!is_registered(src))
@@ -548,6 +556,8 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		if(!placed)
 			log_runtime("PARTS: [name] has_limbs has a parent cycle or a missing parent: [jointext(pending, ", ")]")
 			break
+	limbs_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	phase_started = TICK_USAGE_REAL
 
 	for(var/organ_tag in has_organ)
 		var/organ_type = has_organ[organ_tag]
@@ -556,11 +566,17 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			WARNING("[O.type] has a default organ tag \"[O.organ_tag]\" that differs from the species' organ tag \"[organ_tag]\". Updating organ_tag to match.")
 			O.set_organ_tag(organ_tag)
 
+	organs_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	phase_started = TICK_USAGE_REAL
+
 	// set butcherable meats from species
 	for(var/obj/item/organ/O in H.organs)
 		O.set_initial_meat()
 	for(var/obj/item/organ/O in H.internal_organ_list())
 		O.set_initial_meat()
+	var/total_ms = old_parts_ms + limbs_ms + organs_ms + TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	if(total_ms >= JOIN_BODY_SLOW_MS)
+		log_world("JOIN_TIMING_HUMAN: create_organs for [name]: [round(total_ms, 0.1)] ms (clearing the old parts [round(old_parts_ms, 0.1)] ms, [limb_count] limb(s) with the organs the limbs carry [round(limbs_ms, 0.1)] ms, [length(has_organ)] organ(s) [round(organs_ms, 0.1)] ms, butcher meats [round(total_ms - old_parts_ms - limbs_ms - organs_ms, 0.1)] ms)")
 
 /datum/species/proc/hug(mob/living/carbon/human/H, mob/living/target)
 
@@ -808,24 +824,16 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		var/datum/species/S = GLOB.all_species[custom_base]
 
 		//extract default eye data from species datum
-		var/baseHeadPath = S.has_limbs[BP_HEAD]["path"] //has_limbs is a list of lists
-
-		if(!baseHeadPath)
+		var/list/base_head = S.has_limbs[BP_HEAD] //has_limbs is a list of lists
+		if(!base_head?["path"])
 			return // exit if we couldn't find a head path from the base.
-
-		var/obj/item/organ/external/head/baseHead = new baseHeadPath()
-		if(!baseHead)
-			return // exit if we didn't create the base properly
 
 		var/obj/item/organ/external/head/targetHead = H.get_organ(BP_HEAD)
 		if(!targetHead)
 			return // don't bother if target mob has no head for whatever reason
 
-		targetHead.set_eye_icon(baseHead.eye_icon)
-		targetHead.eye_icon_location = baseHead.eye_icon_location
-
-		if(!QDELETED(baseHead) && baseHead)
-			spent(baseHead, H)
+		targetHead.set_eye_icon(species_head_eye_icon(base_head))
+		targetHead.set_eye_icon_location(species_head_eye_icon_location(base_head))
 	return
 
 /// Call it on a mob's private copy (proto_private(H, "species")), never on the registered species.

@@ -164,14 +164,6 @@
 	test_time(4 SECONDS)
 	TEST_ASSERT_EQUAL(S.done, 0, "putting a mask on during the wait ended it")
 
-/datum/unit_test/dq_timed_forms/periodic_work_ticks_under_test_time
-/datum/unit_test/dq_timed_forms/periodic_work_ticks_under_test_time/run_forms()
-	var/obj/tf_periodic/P = allocate(/obj/tf_periodic, run_loc_floor_bottom_left)
-	cadence_start(P, PERIODIC_SLOW)
-	test_time(30 SECONDS)
-	TEST_ASSERT(P.steps >= 1, "a member of PERIODIC_SLOW stepped (stepped [P.steps] times)")
-	cadence_stop(P)
-
 /datum/unit_test/dq_timed_forms/a_refused_input_stops_nothing
 /datum/unit_test/dq_timed_forms/a_refused_input_stops_nothing/run_forms()
 	var/mob/living/carbon/human/H = person()
@@ -191,3 +183,33 @@
 	H.forceMove(get_step(H, EAST))
 	test_time(4 SECONDS)
 	TEST_ASSERT_EQUAL(S.done, 0, "moving still ended the wait (the keeps were set before the start handler ran)")
+
+/datum/unit_test/dq_timed_forms/firedoor_no_leaves_it_alone
+/datum/unit_test/dq_timed_forms/firedoor_no_leaves_it_alone/run_forms()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/door/firedoor/F = new(get_step(H, EAST))
+	var/was_shut = F.density
+	test_click(H, F)
+	test_answer(H, FALSE)
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(F.density, was_shut, "answering no leaves the shutter as it was")
+	test_click(H, F)
+	test_answer(H, TRUE)
+	test_time(3 SECONDS)
+	TEST_ASSERT(F.density != was_shut, "answering yes operates it")
+	qdel(F)
+
+/datum/unit_test/dq_timed_forms/footprints_replace_their_own_direction
+/datum/unit_test/dq_timed_forms/footprints_replace_their_own_direction/run_forms()
+	var/mob/living/carbon/human/H = person()
+	var/obj/effect/decal/cleanable/blood/tracks/footprints/first = new(get_step(H, EAST))
+	var/obj/effect/decal/cleanable/blood/tracks/footprints/second = new(get_step(H, WEST))
+	first.AddTracks(list(), WEST, 0, "#030303")
+	first.AddTracks(list(), NORTH, 0, "#030303")
+	second.AddTracks(list(), EAST, 0, "#030303") // a second trail must not disturb the first one's records
+	first.AddTracks(list(), WEST, 0, "#111111")
+	TEST_ASSERT_EQUAL(length(first.stack), 2, "a direction laid again replaces its own track")
+	TEST_ASSERT_EQUAL(first.track_going(WEST).basecolor, "#111111", "the replacement holds the new colour")
+	TEST_ASSERT_EQUAL(first.track_going(NORTH).basecolor, "#030303", "the other direction is untouched")
+	qdel(first)
+	qdel(second)

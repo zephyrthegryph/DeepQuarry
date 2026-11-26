@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Vapour boiled off a hot plate or bunsen burner with no condenser, for a reagent that is not an atmos gas, now lingers on the tile, spreads through open air (not past walls or airtight doors), condenses away over time, and is breathed into the blood"
+  - rscadd: "Flammable vapour (ethanol and the like) ignites from flames and hotspots into a flash fire"

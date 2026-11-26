@@ -37,21 +37,29 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 		return
 
 	if(!removed)
-		add_lightning_overlay(30 SECONDS)
-		play_sfx(owner, SFX_MACHINES_DEFIB_ZAP)
-		owner.set_emp_protection_flags(atom_rules_of(owner).emp_protection | (EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS))
-		observe(owner, /datum/notice/trait_gained, src, then(PROC_REF(on_owner_trait_gained)))
-		observe(owner, /datum/notice/atom_emp_act, src, then(PROC_REF(on_emp_act)))
+		arm_core_protection()
 
 	if(removed)
-		clear_lightning_overlay(owner)
-		unobserve(owner, /datum/notice/trait_gained, src)
-		unobserve(owner, /datum/notice/atom_emp_act, src)
-		owner.set_emp_protection_flags(atom_rules_of(owner).emp_protection & (~(EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS)))
+		disarm_core_protection()
 		tesla_zap(owner, 10, 2500, current_jumps = 5)
 		expire(0)
 
 	..(removed)
+
+/// The core is in a heart that sits in a body: the body is shielded from EMP and the heart watches for a critical condition.
+/obj/item/organ/internal/heart/machine/anomalock/proc/arm_core_protection()
+	add_lightning_overlay(30 SECONDS)
+	play_sfx(owner, SFX_MACHINES_DEFIB_ZAP)
+	owner.set_emp_protection_flags(atom_rules_of(owner).emp_protection | (EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS))
+	observe(owner, /datum/notice/trait_gained, src, then(PROC_REF(on_owner_trait_gained)))
+	observe(owner, /datum/notice/atom_emp_act, src, then(PROC_REF(on_emp_act)))
+
+/// The core is gone, or the heart is: the body loses the shield and the heart stops watching.
+/obj/item/organ/internal/heart/machine/anomalock/proc/disarm_core_protection()
+	clear_lightning_overlay(owner)
+	unobserve(owner, /datum/notice/trait_gained, src)
+	unobserve(owner, /datum/notice/atom_emp_act, src)
+	owner.set_emp_protection_flags(atom_rules_of(owner).emp_protection & (~(EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS)))
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/add_lightning_overlay(time_to_last = 10 SECONDS)
 	if(lightning_overlay)
@@ -78,6 +86,8 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 	activate_survival(source)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/activate_survival(mob/living/carbon/organ_owner)
+	if(!core)
+		return FALSE
 	if(!COOLDOWN_FINISHED(src, survival_cooldown))
 		return FALSE
 
@@ -89,7 +99,7 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/notify_cooldown(mob/living/carbon/organ_owner)
 	balloon_alert(organ_owner, "your heart strengthtens")
-	play_sfx(owner, SFX_MACHINES_DEFIB_ZAP, 0.8, vary = FALSE, extrarange = 0)
+	play_sfx(organ_owner, SFX_MACHINES_DEFIB_ZAP, 0.8, vary = FALSE, extrarange = 0)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/on_emp_act(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -115,6 +125,8 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 		return
 	if(!move_into(src, nameof(src.core), W, user))
 		return
+	if(owner)
+		arm_core_protection()
 	balloon_alert(user, "core_installed")
 	play_sfx(src, SFX_MACHINES_CLICK, volume = 0, vary = FALSE)
 
@@ -127,6 +139,8 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 		return
 	balloon_alert(user, "core removed")
 	var/obj/item/removed_core = rel_take(src, nameof(core)) // unowned before it goes to the hands
+	if(owner)
+		disarm_core_protection()
 	removed_core.forceMove(drop_location())
 	if(Adjacent(user) && !(A.authority & AUTH_REMOTE_ACCESS))
 		user.put_in_hands(removed_core)

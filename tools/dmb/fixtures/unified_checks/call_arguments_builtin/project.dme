@@ -1,2 +1,0 @@
-/proc/probe()
-    new /database(text="select")

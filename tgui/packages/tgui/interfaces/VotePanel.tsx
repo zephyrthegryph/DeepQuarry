@@ -1,19 +1,20 @@
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
+import type { VotePanelActions, VotePanelData } from './generated/VotePanel';
 
-type Data = {
-  remaining: number;
-  question: string;
-  choices: string[];
-  user_vote: string | null;
-  counts: Record<string, number>;
-  show_counts: boolean;
-};
+type Data = VotePanelData;
 
 export const VotePanel = (props, context) => {
-  const { act, data } = useBackend<Data>();
-  const { remaining, question, choices, user_vote, counts, show_counts } = data;
+  const { act, data } = useBackend<Data, VotePanelActions>();
+  const {
+    remaining = 0,
+    question,
+    choices = [],
+    user_vote,
+    counts,
+    show_counts,
+  } = data;
 
   return (
     <Window width={400} height={360}>

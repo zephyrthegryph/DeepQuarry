@@ -64,12 +64,6 @@
 CAPABILITIES(/obj/item/organ/internal/lungs/grey/colormatch)
 	after_init(0, then(PROC_REF(match_blood_color)))
 
-/// Takes its owner's blood colour, once the body has placed it.
-/obj/item/organ/internal/lungs/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
-	if(ishuman(owner)) // placed in its limb by now
-		var/mob/living/carbon/human/H = owner
-		set_color(H.species.blood_color)
-
 
 // === merged from lungs_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //TFF backport 31/12/19 - Erik's Lungs return to haunt us all!

@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -7,11 +8,11 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-
+import type { DNAModifierActions } from '../generated/DNAModifier';
 import type { buffData, Data } from './types';
 
 export const DNAModifierMainBuffers = (props) => {
-  const { data } = useBackend<Data>();
+  const { data } = useBackend<Data, DNAModifierActions>();
 
   const { buffers } = data;
 
@@ -45,7 +46,7 @@ const DNAModifierMainBuffersElement = (props: {
   name: string;
   buffer: buffData;
 }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DNAModifierActions>();
   const { id, name, buffer } = props;
   const { isInjectorReady, hasOccupant, occupant } = data;
   const realName: string = name + (buffer.data ? ` - ${buffer.label}` : '');
@@ -210,18 +211,14 @@ const DNAModifierMainBuffersElement = (props: {
             </>
           )}
         </LabeledList>
-        {!buffer.data && (
-          <Box color="label" mt="0.5rem">
-            This buffer is empty.
-          </Box>
-        )}
+        {!buffer.data && <Label mt="0.5rem">This buffer is empty.</Label>}
       </Box>
     </Section>
   );
 };
 
 const DNAModifierMainBuffersDisk = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, DNAModifierActions>();
   const { hasDisk, disk } = data;
   return (
     <Section
@@ -265,14 +262,14 @@ const DNAModifierMainBuffersDisk = (props) => {
             </LabeledList.Item>
           </LabeledList>
         ) : (
-          <Box color="label">Disk is blank.</Box>
+          <Label>Disk is blank.</Label>
         )
       ) : (
-        <Box color="label" textAlign="center" my="1rem">
+        <Label textAlign="center" my="1rem">
           <Icon name="save-o" size={4} />
           <br />
           No disk inserted.
-        </Box>
+        </Label>
       )}
     </Section>
   );

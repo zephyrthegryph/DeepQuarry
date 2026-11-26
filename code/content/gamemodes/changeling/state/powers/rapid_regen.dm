@@ -10,9 +10,6 @@
 
 //Gives a big heal, removing various injuries that might shut down normal people, like IB or fractures.
 /mob/proc/changeling_rapid_regen()
-	set category = VERB_CAT_CHANGELING
-	set name = "Rapid Regeneration (50)"
-	set desc = "Heal ourselves of most injuries instantly."
 
 	var/datum/changeling/changeling = changeling_power(50,0,100,UNCONSCIOUS)
 	if(!changeling)

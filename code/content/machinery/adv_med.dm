@@ -55,6 +55,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	on_notice(/datum/notice/pod_left, then(PROC_REF(scan)))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(scan)))
 	interface("BodyScanner", title = "Body Scanner")
+	ui_shape(occupied = bool(), occupant = nullable(row(name = schema_text(), species = schema_text(), stat = int(), fakedeath = bool(), healthBand = enum(list("uninjured", "minor", "moderate", "severe", "critical")), hasVirus = int(), paralysisSeconds = num(), hasBorer = bool(), colourblind = nullable(int()), reagents = nullable(list_of(row(name = schema_text(), amount = num(), overdose = bool(), contaminant = bool()))), ingested = nullable(list_of(row(name = schema_text(), amount = num(), overdose = bool(), contaminant = bool()))), blind = int(), nearsighted = bool(), brokenspine = int(), livingPrey = int(), humanPrey = int(), objectPrey = int(), weight = num(), husked = bool(), hasWithdrawl = bool(), hasAllergens = bool(), allergens = nullable(list_of(schema_text())), diagnosis = diagnosis_report(), worstFinding = enum(list("uninjured", "minor", "moderate", "severe", "critical"))))) // occupant is null while nobody is scanned
 	op("ejectify", ui_act("ejectify"), then(PROC_REF(eject_from_window)), logs(LOG_GAME))
 	op("print_p", ui_act("print_p"), then(PROC_REF(print_report)))
 	default_parts()
@@ -181,7 +182,8 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 			dat += "[capitalize(E.name)]: unknown body present."
 	for(var/obj/item/organ/internal/malignant/M in occupant.internal_organ_list())
 		var/obj/item/organ/external/parent = LAZYACCESS(occupant.organs_by_name, M.parent_organ)
-		dat += span_red("Unknown anatomy detected[parent ? " in the [parent.name]" : ""]!")
+		var/growth = istype(M, /obj/item/organ/internal/malignant/tumor) ? "Abnormal tissue mass" : istype(M, /obj/item/organ/internal/malignant/parasite) ? "Parasitic organism" : "Unidentified growth"
+		dat += span_red("[growth] detected[parent ? " in the [parent.name]" : ""], surgical removal indicated!")
 	for(var/organ_tag in occupant.species.has_organ)
 		if(!occupant.organ_in(organ_tag))
 			var/obj/item/organ/O = occupant.species.has_organ[organ_tag]
@@ -192,7 +194,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 		dat += span_red("Retinal misalignment detected.")
 	for(var/addic in occupant.get_all_addictions())
 		var/level = occupant.get_addiction_to_reagent(addic)
-		if(level > 0 && level < 80)
+		if(level > 0 && level < 80 && !occupant.reading_hidden(HIDE_SYMPTOM_SUPPRESSION))
 			var/datum/reagent/R = SSchemistry.ready().chemical_reagents[addic]
 			dat += span_red("Experiencing withdrawal symptoms: [R.name]")
 			break
@@ -274,6 +276,7 @@ CAPABILITIES(/obj/machinery/body_scanconsole)
 	machine_basics(repair = NONE)
 	paired_console(/obj/machinery/bodyscanner, nameof(scanner), faces = TRUE)
 	interface("BodyScanner", title = "Body Scanner", forwards = nameof(scanner))
+	ui_shape(occupied = bool(), occupant = nullable(row(name = schema_text(), species = schema_text(), stat = int(), fakedeath = bool(), healthBand = enum(list("uninjured", "minor", "moderate", "severe", "critical")), hasVirus = int(), paralysisSeconds = num(), hasBorer = bool(), colourblind = nullable(int()), reagents = nullable(list_of(row(name = schema_text(), amount = num(), overdose = bool(), contaminant = bool()))), ingested = nullable(list_of(row(name = schema_text(), amount = num(), overdose = bool(), contaminant = bool()))), blind = int(), nearsighted = bool(), brokenspine = int(), livingPrey = int(), humanPrey = int(), objectPrey = int(), weight = num(), husked = bool(), hasWithdrawl = bool(), hasAllergens = bool(), allergens = nullable(list_of(schema_text())), diagnosis = diagnosis_report(), worstFinding = enum(list("uninjured", "minor", "moderate", "severe", "critical"))))) // the scanner's data, forwarded
 	extend("ui_open", binds(item(/obj/item)), needs(req_paired(nameof(scanner)), req(PROC_REF(scanner_panel_closed))))
 	op("link_scanner", tool(TOOL_MULTITOOL), label("Link"), wait(0), then(PROC_REF(multitool_link)))
 

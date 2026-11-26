@@ -133,7 +133,7 @@ impl Compiler<'_> {
             dm_ir::ResolvedMeaning::Unsupported(opaque) if opaque == query => return Ok(()),
             dm_ir::ResolvedMeaning::DeclaredType(path) => path,
             dm_ir::ResolvedMeaning::Missing => None,
-            dm_ir::ResolvedMeaning::Member { data, .. } => data.declared_type(),
+            dm_ir::ResolvedMeaning::Member { data, .. } => data.declared_type,
             other => {
                 return self.semantic(Err(lookup.error(
                     query,

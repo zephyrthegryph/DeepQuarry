@@ -33,7 +33,6 @@
 
 /mob/living/proc/write_ambition()
 	set name = "Set Ambition"
-	set category = VERB_CAT_IC_ANTAG
 	set src = usr
 
 	if(!mind)

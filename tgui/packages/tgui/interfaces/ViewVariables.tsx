@@ -8,42 +8,18 @@
 
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 import { HtmlRenderer } from './common/HtmlRenderer';
+import type {
+  ViewVariablesActions,
+  ViewVariablesData,
+} from './generated/ViewVariables';
 
-type DropdownEntry = {
-  name: string;
-  link: string;
-  is_separator: BooleanLike;
-};
-
-type Variable = {
-  index?: number;
-  name: string;
-  value_html: string;
-};
-
-type Coords = { x: number; y: number; z: number };
-
-type Data = {
-  has_target: BooleanLike;
-  is_list?: BooleanLike;
-  type?: string;
-  ref?: string;
-  ref_for_paste?: string;
-  title?: string;
-  coords?: Coords | null;
-  marked?: BooleanLike;
-  tagged_index?: number;
-  varedited?: BooleanLike;
-  gc_destroyed?: BooleanLike;
-  header?: string[];
-  dropdown?: DropdownEntry[];
-  variables?: Variable[];
-};
+type Data = ViewVariablesData;
+type Variable = Data['variables'][number];
 
 type ActFn = (a: string, p?: Record<string, any>) => void;
 
@@ -56,9 +32,7 @@ const Header = (props: { data: Data; act: ActFn }) => {
           <Box bold inline>
             {data.type}
           </Box>{' '}
-          <Box inline color="label">
-            {data.ref_for_paste}
-          </Box>
+          <Label inline>{data.ref_for_paste}</Label>
         </Box>
       }
       buttons={
@@ -95,9 +69,9 @@ const Header = (props: { data: Data; act: ActFn }) => {
         ) : null}
       </Box>
       {data.coords ? (
-        <Box mt={1} color="label">
+        <Label mt={1}>
           x: {data.coords.x} y: {data.coords.y} z: {data.coords.z}
-        </Box>
+        </Label>
       ) : null}
     </Section>
   );
@@ -134,7 +108,7 @@ const DropdownSection = (props: { data: Data; act: ActFn }) => {
 
 const VariableLegend = () => (
   <Section>
-    <Box color="label" italic style={{ fontSize: '0.85em' }}>
+    <Label italic style={{ fontSize: '0.85em' }}>
       <Box>
         <b>E</b> — Edit, tries to determine the variable type by itself.
       </Box>
@@ -145,7 +119,7 @@ const VariableLegend = () => (
         <b>M</b> — Mass modify: changes this variable for all objects of this
         type.
       </Box>
-    </Box>
+    </Label>
   </Section>
 );
 
@@ -187,7 +161,7 @@ const Variables = (props: { variables: Variable[]; act: ActFn }) => {
 };
 
 export const ViewVariables = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<ViewVariablesData, ViewVariablesActions>();
   if (!data.has_target) {
     return (
       <Window width={680} height={400} title="Variables">

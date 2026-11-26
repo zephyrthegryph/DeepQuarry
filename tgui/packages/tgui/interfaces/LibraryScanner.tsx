@@ -5,19 +5,19 @@
 // cache or the book.
 
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import { Window } from 'tgui/layouts';
 import { Box, Button, Section } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
+import type {
+  LibraryScannerActions,
+  LibraryScannerData,
+} from './generated/LibraryScanner';
 
-type Data = {
-  has_cache: BooleanLike;
-  cache_name: string;
-  has_book: BooleanLike;
-};
+type Data = LibraryScannerData;
 
 export const LibraryScanner = () => {
-  const { data, act } = useBackend<Data>();
+  const { data, act } = useBackend<Data, LibraryScannerActions>();
   const { has_cache, cache_name, has_book } = data;
 
   return (
@@ -26,12 +26,12 @@ export const LibraryScanner = () => {
         <Section>
           <Box mb={1}>
             {has_cache ? (
-              <Box color="label">
+              <Label>
                 Data stored in memory:{' '}
                 <Box inline bold>
                   {cache_name}
                 </Box>
-              </Box>
+              </Label>
             ) : (
               <EmptyState>No data stored in memory.</EmptyState>
             )}

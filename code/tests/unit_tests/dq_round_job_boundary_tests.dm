@@ -130,3 +130,29 @@
 		table[/datum/system/emergency_shuttle] = registered
 	else
 		table -= /datum/system/emergency_shuttle
+
+/datum/unit_test/dq_ticker_state_refreshes_lobby/Run()
+	var/datum/system/ticker/original_owner = SSticker
+	var/datum/system/ticker/original_registered = system_table()[/datum/system/ticker]
+	defer_cleanup(src, PROC_REF(restore_boundary_owner), original_owner, original_registered)
+	var/datum/system/ticker/ticker = allocate(/datum/system/ticker)
+	restore_boundary_owner(original_owner, original_registered)
+	ticker.current_state = GAME_STATE_PREGAME
+	var/before = ticker.lobby_refreshes
+	ticker.set_current_state(GAME_STATE_PLAYING)
+	TEST_ASSERT_EQUAL(ticker.current_state, GAME_STATE_PLAYING, "The round state must change")
+	TEST_ASSERT_EQUAL(ticker.lobby_refreshes, before + 1, "Starting the round (auto or admin) must push every lobby window")
+	ticker.set_current_state(GAME_STATE_PLAYING)
+	TEST_ASSERT_EQUAL(ticker.lobby_refreshes, before + 1, "Setting the same state must not push again")
+	ticker.set_current_state(GAME_STATE_FINISHED)
+	TEST_ASSERT_EQUAL(ticker.lobby_refreshes, before + 2, "Ending the round must push every lobby window")
+	ticker.request_immediate_start(TRUE)
+	TEST_ASSERT_EQUAL(ticker.lobby_refreshes, before + 3, "Changing the immediate start flag must push every lobby window")
+
+/datum/unit_test/dq_ticker_state_refreshes_lobby/proc/restore_boundary_owner(datum/system/ticker/owner, datum/system/ticker/registered)
+	SSticker = owner
+	var/list/table = system_table()
+	if(registered)
+		table[/datum/system/ticker] = registered
+	else
+		table -= /datum/system/ticker

@@ -88,10 +88,6 @@ pub struct Macro {
 
 /// Borrowed lookup keeps expansion independent of a concrete snapshot storage.
 pub(crate) trait MacroLookup {
-    fn initial_environment(&self) -> InitialEnvironment { InitialEnvironment::Native5161687 }
-    /// The original directive evaluator buffers a condition; ordinary token
-    /// iteration drains its output and therefore has no defined-name guard.
-    fn condition_expansion(&self)->bool{false}
     fn get_key_value(&self, name: &str) -> Option<(&str, &Macro)>;
     fn location_read(&self, _file: bool) {}
     fn contains_key(&self, name: &str) -> bool {
@@ -150,120 +146,8 @@ pub trait SourceChanges {
     fn changes_since(&self, revision: u64) -> Option<Arc<BTreeSet<PathBuf>>>;
 }
 
-pub mod source_acquisition;
-pub use source_acquisition::{
-    AcquiredSource, SourceAcquisitionIdentity, SourceAcquisitionLease, SourceEncoding,
-    SourcePreparationDemand,
-};
-
-mod initial_environment;
-pub use initial_environment::InitialEnvironment;
-
-/// Decision on the SAME genuinely opened/captured reader, before payload
-/// size/admission/read/decode. Suppression is not absence or source EOF.
-#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalRawOpenDecision{Read,Suppress}
-pub enum OriginalRawReadOutcome{Absent,Suppressed,SourceOpenFailed(std::io::Error),Acquired(SourceAcquisitionLease)}
-/// Stack-only geometry byte loan. Its optional fast proof belongs to the
-/// provider's actual recorder and never grants a decoded or EOF authority.
-pub struct OriginalGeometryByteLoan<'a> {
-    bytes: &'a [u8],
-    epoch: Option<(&'a std::sync::atomic::AtomicUsize, std::num::NonZeroUsize)>,
-}
-impl<'a> OriginalGeometryByteLoan<'a> {
-    pub fn ordinary(bytes: &'a [u8]) -> Self { Self { bytes, epoch: None } }
-    /// The issuer has just authenticated this exact immutable byte owner
-    /// against the supplied nonzero recorder epoch.
-    pub fn for_recorder_epoch(
-        bytes: &'a [u8], current: &'a std::sync::atomic::AtomicUsize, expected: std::num::NonZeroUsize,
-    ) -> Self { Self { bytes, epoch: Some((current, expected)) } }
-    pub fn bytes(&self) -> &'a [u8] { self.bytes }
-    fn exact_epoch_for(&self, flag: &std::sync::atomic::AtomicUsize) -> Option<std::num::NonZeroUsize> {
-        let (actual, expected) = self.epoch?;
-        (std::ptr::eq(actual, flag) && self.same_current_epoch()).then_some(expected)
-    }
-    pub fn same_current_epoch(&self) -> bool {
-        self.epoch.is_some_and(|(flag, expected)| flag.load(std::sync::atomic::Ordering::SeqCst) == expected.get())
-    }
-}
-
 pub trait SourceProvider {
-    /// A genuine recording view may lend its existing issuer and revocation
-    /// flag. Keep that pair fixed for this provider and recorder attempt. This
-    /// is identity only. It cannot issue an acquisition or geometry.
-    #[doc(hidden)]
-    fn original_geometry_recorder(&self) -> Option<(&std::sync::Arc<()>, &std::sync::atomic::AtomicUsize)> {
-        None
-    }
-
-    /// Recheck any provider-local operation gate at the old byte-loan site
-    /// when an exact current epoch can supply the same bytes. No source or
-    /// geometry is issued here. Plain recorder views have no additional gate.
-    #[doc(hidden)]
-    fn checkpoint_reused_original_geometry_loan(&self) -> std::io::Result<()> {
-        Ok(())
-    }
-
-    /// Optional borrowed attempt observer. This descriptor issues no absence
-    /// witness; only a genuine opaque root-failure loan plus recorder facts can.
-    fn original_root_open_observer(&self)->Option<&dyn regions::OriginalRootOpenObserver>{None}
-
-    /// Metadata-only path presence on the SAME recorder; no payload or source grant.
-    fn path_presence_admitted(&self,_path:&Path,_work:&dyn crate::source_arena_credit::SourceArenaWork)->std::io::Result<bool>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue admitted path presence"))}
-
-    /// Opt-in loan only from a concrete statically safe Original batch issuer.
-    /// Generic and single-thread providers remain unissued; no unsafe Sync cast.
-    fn original_batch_source(&self)->std::io::Result<Option<&(dyn SourceProvider+Sync)>> { Ok(None) }
-    /// Exact initial macro dialect requested by this actual pipeline. This is
-    /// configuration only; it cannot issue a current source or completed frame.
-    fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::Native5161687}
-
     fn read(&self, path: &Path) -> Result<String, String>;
-    /// Actual Original token demand bypasses native whole-line preparation.
-    /// The caller supplies its existing input-family headroom and predecode
-    /// admission. A max scalar alone is NOT an allocation/resource grant.
-    /// Unsupported issuer is NotConnected; None is actual recorded absence.
-    /// The Original driver must never fall back to Native preparation.
-    fn original_raw_source_checked(&self,_path:&Path,_max_bytes:usize,_before_decode:&mut dyn FnMut(usize,bool,bool)->std::io::Result<()>)->std::io::Result<Option<SourceAcquisitionLease>>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue actual Original raw source"))}
-    /// Both hooks belong to the actual raw issuer. Unknown providers must not
-    /// implement this by calling an unadmitted read and funding it afterward.
-    fn original_raw_source_admitted(&self,_path:&Path,_max_bytes:usize,_before_read:&mut dyn FnMut(usize)->std::io::Result<()>,_before_decode:&mut dyn FnMut(OriginalRawAllocationPlan<'_>)->std::io::Result<()>,_acquired:&mut dyn FnMut(&SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<Option<SourceAcquisitionLease>>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue pre-allocation admitted Original raw source"))}
-    fn original_raw_source_open_admitted(&self,_path:&Path,_max_bytes:usize,_work:&dyn source_arena_credit::SourceArenaWork,_after_open:&mut dyn FnMut()->std::io::Result<OriginalRawOpenDecision>,_before_read:&mut dyn FnMut(usize)->std::io::Result<()>,_before_decode:&mut dyn FnMut(OriginalRawAllocationPlan<'_>)->std::io::Result<()>,_acquired:&mut dyn FnMut(&SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<OriginalRawReadOutcome>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue actual open-before-payload Original source"))}
-    /// The optional owned backing constructor remains subordinate to the real
-    /// open, payload, and decode callbacks. Existing providers keep their path.
-    fn original_raw_source_open_owned_admitted(
-        &self, path: &Path, max_bytes: usize, work: &dyn source_arena_credit::SourceArenaWork,
-        after_open: &mut dyn FnMut() -> std::io::Result<OriginalRawOpenDecision>,
-        before_read: &mut dyn FnMut(usize) -> std::io::Result<()>,
-        before_decode: &mut dyn FnMut(OriginalRawAllocationPlan<'_>) -> std::io::Result<()>,
-        _fund_text: &source_arena_credit::OriginalReadTextFunding<'_>,
-        acquired: &mut dyn FnMut(&SourceAcquisitionLease) -> std::io::Result<()>,
-    ) -> std::io::Result<OriginalRawReadOutcome> {
-        self.original_raw_source_open_admitted(path,max_bytes,work,after_open,before_read,before_decode,acquired)
-    }
-
-
-    /// Lend raw bytes from that SAME current acquisition. No reconstruction,
-    /// filesystem reopen, parser or PreparedSource is permitted at this seam.
-    fn original_source_bytes<'a>(&'a self,_lease:&'a SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{Ok(None)}
-
-    /// First of two synchronous geometry lends. Generic providers opt out and
-    /// the consumer must still invoke their ordinary second lend.
-    fn original_geometry_byte_loan<'a>(
-        &'a self, lease: &'a SourceAcquisitionLease,
-    ) -> std::io::Result<Option<OriginalGeometryByteLoan<'a>>> {
-        self.original_source_bytes(lease).map(|bytes| bytes.map(OriginalGeometryByteLoan::ordinary))
-    }
-
-    /// Optional primary read with original-byte provenance. Unknown providers
-    /// retain existing compiler behavior; they grant no semantic parity proof.
-    fn acquired_source(&self, _path: &Path) -> Result<Option<AcquiredSource>, String> {
-        Ok(None)
-    }
-    /// Current already-authenticated lease for this exact source owner. Must
-    /// never reread or fabricate provenance from decoded identity alone.
-    fn source_acquisition(&self, _path: &Path, _text: &SourceText) -> Option<AcquiredSource> {
-        None
-    }
 
     /// Refresh a provider-issued immutable nontext capture. A provider must
     /// validate its receipt against current input facts before returning it.
@@ -314,9 +198,41 @@ pub trait SourceProvider {
 
 /// DM sources may contain legacy Windows-1252 bytes alongside UTF-8 text.
 /// Preserve valid UTF-8 sequences and decode only invalid bytes as legacy text.
-mod source_decode;
-pub mod source_arena_credit;
-pub use source_decode::{decode_source_bytes, decode_source_bytes_admitted, visit_decoded_source, DecodedSourcePiece};
+pub fn decode_source_bytes(mut bytes: &[u8]) -> String {
+    if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
+        bytes = &bytes[3..];
+    }
+    let mut output = String::new();
+    const C1: [char; 32] = [
+        '\u{20ac}', '\u{81}', '\u{201a}', '\u{192}', '\u{201e}', '\u{2026}', '\u{2020}',
+        '\u{2021}', '\u{2c6}', '\u{2030}', '\u{160}', '\u{2039}', '\u{152}', '\u{8d}', '\u{17d}',
+        '\u{8f}', '\u{90}', '\u{2018}', '\u{2019}', '\u{201c}', '\u{201d}', '\u{2022}', '\u{2013}',
+        '\u{2014}', '\u{2dc}', '\u{2122}', '\u{161}', '\u{203a}', '\u{153}', '\u{9d}', '\u{17e}',
+        '\u{178}',
+    ];
+    while !bytes.is_empty() {
+        match std::str::from_utf8(bytes) {
+            Ok(text) => {
+                output.push_str(text);
+                break;
+            }
+            Err(error) => {
+                let valid = error.valid_up_to();
+                output.push_str(std::str::from_utf8(&bytes[..valid]).unwrap());
+                let invalid = error.error_len().unwrap_or(bytes.len() - valid);
+                for &byte in &bytes[valid..valid + invalid] {
+                    output.push(if (0x80..=0x9f).contains(&byte) {
+                        C1[(byte - 0x80) as usize]
+                    } else {
+                        char::from(byte)
+                    });
+                }
+                bytes = &bytes[valid + invalid..];
+            }
+        }
+    }
+    output
+}
 
 pub fn read_source_file(path: &Path) -> std::io::Result<String> {
     fs::read(path).map(|bytes| decode_source_bytes(&bytes))
@@ -341,7 +257,6 @@ mod source_lines;
 use source_lines::*;
 mod logical_arena;
 mod source_text;
-mod source_text_reservation;
 pub use source_text::{SourceText, SourceTextStorage, WeakSourceText};
 
 mod macro_expansion;
@@ -432,15 +347,3 @@ mod logical_state_tests {
         );
     }
 }
-
-/// Provider-issued allocation geometry over the SAME actual read buffer.
-/// Readonly DATA: constructor bytes/byte slices grant no source/model role.
-#[derive(Clone,Copy)]pub struct OriginalRawAllocationPlan<'a>{original:&'a[u8],capacity:usize,constructor_bytes:usize,decoded_bytes:usize,exceptional:bool,needs_decode:bool}
-impl<'a>OriginalRawAllocationPlan<'a>{
- pub fn new(original:&'a[u8],capacity:usize,constructor_bytes:usize,decoded_bytes:usize,exceptional:bool,needs_decode:bool)->Self{Self{original,capacity,constructor_bytes,decoded_bytes,exceptional,needs_decode}}
- pub fn original(self)->&'a[u8]{self.original}pub fn capacity(self)->usize{self.capacity}pub fn constructor_bytes(self)->usize{self.constructor_bytes}pub fn decoded_bytes(self)->usize{self.decoded_bytes}pub fn exceptional(self)->bool{self.exceptional}pub fn needs_decode(self)->bool{self.needs_decode}
-}
-
-// Shared Debug DATA projection; authentic token owners remain with each caller.
-pub mod original_expression_debug;
-#[path="regions/original_model_value.rs"]pub mod original_model_value;

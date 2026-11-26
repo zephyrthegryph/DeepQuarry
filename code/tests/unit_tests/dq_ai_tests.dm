@@ -17,12 +17,12 @@
 	var/datum/ai_brain/B = hunter.ai_brain
 	TEST_ASSERT_NOTNULL(B, "test subject has no brain")
 	TEST_ASSERT(granted(hunter, /datum/capability/ai_loop/tactical), "a new brain did not attach its loop")
-	TEST_ASSERT_EQUAL(B.action_interval(), DQ_CALM_TICK, "an idle brain's loop is not on the calm cadence")
+	TEST_ASSERT_EQUAL(B.action_interval(), DQ_CALM_TICK * DQ_CALM_UNSEEN_STRETCH, "an idle brain's loop is not on the calm cadence (no player sees this one)")
 	B.give_target(target, TRUE)
 	TEST_ASSERT(granted(hunter, /datum/capability/ai_loop/tactical), "a combat target took the loop away")
 	TEST_ASSERT(B.action_interval() <= DQ_ACTION_TICK, "a brain with a target is not on the action cadence")
 	B.lose_target()
-	TEST_ASSERT_EQUAL(B.action_interval(), DQ_CALM_TICK, "the loop stayed fast after the target was lost")
+	TEST_ASSERT_EQUAL(B.action_interval(), DQ_CALM_TICK * DQ_CALM_UNSEEN_STRETCH, "the loop stayed fast after the target was lost")
 	qdel(B)
 	TEST_ASSERT(!granted(hunter, /datum/capability/ai_loop/tactical), "a deleted brain left its loop on the mob")
 

@@ -1,4 +1,0 @@
-/abs(alpha)
-    return alpha
-/proc/probe()
-    abs(wrong=1,2)

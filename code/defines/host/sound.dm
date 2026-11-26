@@ -16,6 +16,8 @@
 #define CHANNEL_HIGHEST_AVAILABLE 1014 // EDIT - Fancy Sound Loop channel from 1015
 
 #define SOUND_MINIMUM_PRESSURE 10
+/// A pressure read of a turf with no air (space), as playsound() hands it on to playsound_local().
+#define SOUND_NO_AIR -1
 #define FALLOFF_SOUNDS 0.5
 
 #define MAX_INSTRUMENT_CHANNELS (128 * 6)

@@ -3,7 +3,7 @@
 //! this crate does not depend on BYOND encoding or lowering. Unknown/runtime/list
 //! expressions return None; they must not be cached as a negative declaration.
 //! Pure evaluation of declaration expressions. Runtime operations remain unfurled.
-use dm_syntax::{parse_expression, Expr, ExprKind, LiteralText};
+use dm_syntax::{parse_expression, Expr, ExprKind};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Constant {
@@ -67,7 +67,7 @@ pub trait PureCalls: Sync {
 pub fn evaluate_with(
     source: &str,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
+    decode: impl Fn(&str) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
 ) -> Option<Constant> {
     evaluate_with_resources(source, resolve, decode, nameof, |_| None)
@@ -83,7 +83,7 @@ pub fn procedure_literal_query(path: &str) -> Option<crate::ResolveQuery> {
 pub fn evaluate_with_resources(
     source: &str,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
+    decode: impl Fn(&str) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
 ) -> Option<Constant> {
@@ -94,14 +94,12 @@ pub fn evaluate_with_resources(
     evaluate_expr_with_resources(parsed.expr.as_ref()?, resolve, decode, nameof, resource)
 }
 /// Evaluate an already parsed expression through the same scalar interpreter.
-/// The decoder borrows the literal issued in `expression`, including its shared
-/// interpolation syntax. It must not reconstruct a literal from raw spelling.
 /// The caller owns syntax diagnostics and supplies the same captured callbacks
 /// as the string entry; this API neither reparses nor infers resource authority.
 pub fn evaluate_expr_with_resources(
     expression: &Expr,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
+    decode: impl Fn(&str) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
 ) -> Option<Constant> {
@@ -112,7 +110,7 @@ pub fn evaluate_expr_with_resources(
 pub fn evaluate_with_resources_and_calls(
     source: &str,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
+    decode: impl Fn(&str) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
     calls: Option<&dyn PureCalls>,
@@ -129,7 +127,7 @@ pub fn evaluate_with_resources_and_calls(
 pub fn evaluate_expr_with_resources_and_calls(
     expression: &Expr,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
+    decode: impl Fn(&str) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
     calls: Option<&dyn PureCalls>,
@@ -144,7 +142,7 @@ pub fn evaluate_expr_with_resources_and_calls(
 pub fn evaluate_expr_with_resources_and_calls_and_nameof_observer(
     expression: &Expr,
     resolve: impl Fn(&str) -> Option<Constant>,
-    decode: impl Fn(&LiteralText) -> Option<Vec<u8>>,
+    decode: impl Fn(&str) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
     calls: Option<&dyn PureCalls>,
@@ -161,146 +159,78 @@ pub fn evaluate_expr_with_resources_and_calls_and_nameof_observer(
 }
 #[path = "constants_reference_observer.rs"]
 mod reference_observer;
-/// A callback failure travels directly through the original scalar interpreter.
-/// Pure-call refusal retains its existing, distinct semantic policy class.
-#[derive(Debug)]
-pub enum ConstantEvaluationFailure<E>{Callback(E),PureCall(PureCallError)}
-pub fn try_evaluate_expr_with_resources_and_calls_and_nameof_observer<E>(expression:&Expr,resolve:impl Fn(&str)->Result<Option<Constant>,E>,decode:impl Fn(&LiteralText)->Result<Option<Vec<u8>>,E>,nameof:impl Fn(&Expr)->Result<Option<String>,E>,resource:impl Fn(&str)->Result<Option<crate::SymbolId>,E>,calls:Option<&dyn PureCalls>,observer:Option<&dyn Fn(&Expr)>)->Result<Option<Constant>,ConstantEvaluationFailure<E>>{
-    try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(expression,resolve,decode,nameof,resource,calls,observer,||Ok::<(),E>(()))
-}
-pub fn try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled<E,G>(expression:&Expr,resolve:impl Fn(&str)->Result<Option<Constant>,E>,decode:impl Fn(&LiteralText)->Result<Option<Vec<u8>>,E>,nameof:impl Fn(&Expr)->Result<Option<String>,E>,resource:impl Fn(&str)->Result<Option<crate::SymbolId>,E>,calls:Option<&dyn PureCalls>,observer:Option<&dyn Fn(&Expr)>,enter:impl Fn()->Result<G,E>)->Result<Option<Constant>,ConstantEvaluationFailure<E>>{
-    let error=std::cell::RefCell::new(None);
-    let value=eval_fallible(expression,&resolve,&decode,&nameof,&resource,calls,&error,observer,&|_|enter(),ScalarMode::Native).map_err(ConstantEvaluationFailure::Callback)?;
-    match error.into_inner(){Some(error)=>Err(ConstantEvaluationFailure::PureCall(error)),None=>Ok(value)}
-}
-/// Pinned DreamChecker 0290 no-tree scalar arithmetic over the SAME interpreter.
-/// Callers must supply only actual no-context lookups/decoding/pure-call policy.
-/// This grants neither compiler constant authority nor source/model membership.
-pub fn try_evaluate_original_simple_controlled<E,G>(expression:&Expr,resolve:impl Fn(&str)->Result<Option<Constant>,E>,decode:impl Fn(&LiteralText)->Result<Option<Vec<u8>>,E>,nameof:impl Fn(&Expr)->Result<Option<String>,E>,resource:impl Fn(&str)->Result<Option<crate::SymbolId>,E>,calls:Option<&dyn PureCalls>,enter:impl Fn(&Expr)->Result<G,E>)->Result<Option<Constant>,ConstantEvaluationFailure<E>>{
- let error=std::cell::RefCell::new(None);let value=eval_fallible(expression,&resolve,&decode,&nameof,&resource,calls,&error,None,&enter,ScalarMode::OriginalSimple).map_err(ConstantEvaluationFailure::Callback)?;match error.into_inner(){Some(error)=>Err(ConstantEvaluationFailure::PureCall(error)),None=>Ok(value)}
-}
 fn eval(
     expr: &Expr,
     resolve: &impl Fn(&str) -> Option<Constant>,
-    decode: &impl Fn(&LiteralText) -> Option<Vec<u8>>,
+    decode: &impl Fn(&str) -> Option<Vec<u8>>,
     nameof: &impl Fn(&Expr) -> Option<String>,
     resource: &impl Fn(&str) -> Option<crate::SymbolId>,
     calls: Option<&dyn PureCalls>,
     error: &std::cell::RefCell<Option<PureCallError>>,
     observer: Option<&dyn Fn(&Expr)>,
 ) -> Option<Constant> {
-    match eval_fallible(expr,&|name|Ok::<_,std::convert::Infallible>(resolve(name)),&|raw|Ok(decode(raw)),&|expr|Ok(nameof(expr)),&|raw|Ok(resource(raw)),calls,error,observer,&|_|Ok::<(),std::convert::Infallible>(()),ScalarMode::Native){Ok(value)=>value,Err(never)=>match never{}}
-}
-#[derive(Clone,Copy,Eq,PartialEq)]
-enum ScalarMode{Native,OriginalSimple}
-fn eval_fallible<E,G>(
-    expr: &Expr,
-    resolve: &impl Fn(&str) -> Result<Option<Constant>,E>,
-    decode: &impl Fn(&LiteralText) -> Result<Option<Vec<u8>>,E>,
-    nameof: &impl Fn(&Expr) -> Result<Option<String>,E>,
-    resource: &impl Fn(&str) -> Result<Option<crate::SymbolId>,E>,
-    calls: Option<&dyn PureCalls>,
-    error: &std::cell::RefCell<Option<PureCallError>>,
-    observer: Option<&dyn Fn(&Expr)>,
-    enter:&impl Fn(&Expr)->Result<G,E>,
-    mode:ScalarMode,
-) -> Result<Option<Constant>,E> {
-    let frame=enter(expr)?;
-    eval_admitted(expr,resolve,decode,nameof,resource,calls,error,observer,enter,frame,mode)
-}
-fn eval_admitted<E,G>(
-    expr: &Expr,
-    resolve: &impl Fn(&str) -> Result<Option<Constant>,E>,
-    decode: &impl Fn(&LiteralText) -> Result<Option<Vec<u8>>,E>,
-    nameof: &impl Fn(&Expr) -> Result<Option<String>,E>,
-    resource: &impl Fn(&str) -> Result<Option<crate::SymbolId>,E>,
-    calls: Option<&dyn PureCalls>,
-    error: &std::cell::RefCell<Option<PureCallError>>,
-    observer: Option<&dyn Fn(&Expr)>,
-    enter:&impl Fn(&Expr)->Result<G,E>,
-    _frame:G,
-    mode:ScalarMode,
-) -> Result<Option<Constant>,E> {
-    // Semantic absence and operational callback failure are separate exits.
-    macro_rules! some {($value:expr)=>{match $value{Some(value)=>value,None=>return Ok(None)}}}
     use Constant::*;
     let boolean = |value| Number(if value { 1.0 } else { 0.0 });
     let result = match &expr.kind {
         ExprKind::Ident(name) if name == "null" => Null,
-        ExprKind::Ident(name) => some!(resolve(name)?),
-        ExprKind::TypePath(path) => {if mode==ScalarMode::OriginalSimple&&!path.starts_with('/'){return Ok(None)}TypePath(path.clone())},
+        ExprKind::Ident(name) => resolve(name)?,
+        ExprKind::TypePath(path) => TypePath(path.clone()),
         ExprKind::StaticMember { object, selector } => {
-            let TypePath(path) = some!(eval_fallible(
-                object, resolve, decode, nameof, resource, calls, error, observer, enter,mode,
-            )?)
+            let TypePath(path) = eval(
+                object, resolve, decode, nameof, resource, calls, error, observer,
+            )?
             else {
-                return Ok(None);
+                return None;
             };
-            some!(resolve(&format!("{path}::{selector}"))?)
+            resolve(&format!("{path}::{selector}"))?
         }
         ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "nameof") =>
         {
             let [argument] = args.as_slice() else {
-                return Ok(None);
+                return None;
             };
-            reference_observer::try_observe_unevaluated(expr, observer,&||enter(expr))?;
-            Text(some!(nameof(argument)?))
+            reference_observer::observe_unevaluated(expr, observer);
+            Text(nameof(argument)?)
         }
         ExprKind::Call { callee, args } => {
             let ExprKind::Ident(name) = &callee.kind else {
-                reference_observer::try_observe_unevaluated(expr, observer,&||enter(expr))?;
-                return Ok(None);
+                reference_observer::observe_unevaluated(expr, observer);
+                return None;
             };
             let Some(policy) = calls.filter(|policy| policy.accepts(name)) else {
-                reference_observer::try_observe_unevaluated(expr, observer,&||enter(expr))?;
-                return Ok(None);
+                reference_observer::observe_unevaluated(expr, observer);
+                return None;
             };
             let arguments = args
                 .iter()
                 .map(|argument| {
-                    eval_fallible(
-                        argument, resolve, decode, nameof, resource, calls, error, observer, enter,mode,
+                    eval(
+                        argument, resolve, decode, nameof, resource, calls, error, observer,
                     )
                 })
-                .collect::<Result<Vec<_>,E>>()?;
+                .collect::<Vec<_>>();
             if error.borrow().is_some() {
-                return Ok(None);
+                return None;
             }
             match policy.evaluate(name, &arguments) {
                 Ok(value) => value,
                 Err(rejection) => {
                     *error.borrow_mut() = Some(rejection);
-                    return Ok(None);
+                    return None;
                 }
-            }
-        }
-        ExprKind::Literal(raw) if raw.original_value().is_some() => {
-            match raw.original_value().expect("same immutable scalar owner") {
-                dm_syntax::OriginalTokenValue::Int(value)=>Number(value as f32),
-                dm_syntax::OriginalTokenValue::Float(value)=>Number(value),
-                dm_syntax::OriginalTokenValue::Resource(_)=>Resource(some!(resource(raw)?)),
-                dm_syntax::OriginalTokenValue::String(_)=>{
-                    // BOTH roles retain the SAME caller's decoding/allocation
-                    // contract. Original lexical decoding already lends this
-                    // typed static VALUE; Native runtime lowering may refuse it.
-                    // Do not allocate a second unadmitted to_owned() here.
-                    let bytes=some!(decode(raw)?);match String::from_utf8(bytes){Ok(text)=>Text(text),Err(error)=>EncodedText(error.into_bytes())}
-                }
-                _=>return Ok(None),
             }
         }
         ExprKind::Literal(raw) if raw.starts_with('\'') && raw.ends_with('\'') => {
-            Resource(some!(resource(raw)?))
+            Resource(resource(raw)?)
         }
         ExprKind::Literal(raw) if raw == "null" => Null,
         ExprKind::Literal(raw) if raw == "1.#INF" => Number(f32::INFINITY),
-        ExprKind::Literal(raw) if mode==ScalarMode::OriginalSimple&&raw=="1.#IND" => Number(f32::NAN),
         ExprKind::Literal(raw) => {
             if (raw.starts_with('"') && raw.ends_with('"'))
                 || (raw.starts_with("{\"") && raw.ends_with("\"}"))
                 || raw.starts_with('@')
             {
-                let bytes = some!(decode(raw)?);
+                let bytes = decode(raw)?;
                 match String::from_utf8(bytes) {
                     Ok(text) => Text(text),
                     Err(error) => EncodedText(error.into_bytes()),
@@ -308,67 +238,66 @@ fn eval_admitted<E,G>(
             } else {
                 let n = if let Some(hex) = raw.strip_prefix("0x").or_else(|| raw.strip_prefix("0X"))
                 {
-                    some!(u32::from_str_radix(hex, 16).ok()) as f32
+                    u32::from_str_radix(hex, 16).ok()? as f32
                 } else {
-                    some!(raw.parse::<f32>().ok())
+                    raw.parse::<f32>().ok()?
                 };
                 Number(n)
             }
         }
-        ExprKind::Group(inner) => some!(eval_fallible(
-            inner, resolve, decode, nameof, resource, calls, error, observer, enter,mode,
-        )?),
+        ExprKind::Group(inner) => eval(
+            inner, resolve, decode, nameof, resource, calls, error, observer,
+        )?,
         ExprKind::Unary { op, value } => {
-            let value = some!(eval_fallible(
-                value, resolve, decode, nameof, resource, calls, error, observer, enter,mode,
-            )?);
+            let value = eval(
+                value, resolve, decode, nameof, resource, calls, error, observer,
+            )?;
             match op.as_str() {
                 "!" => boolean(!value.truth()),
-                "+" if mode==ScalarMode::Native => Number(some!(value.number())),
-                "-" => Number(-some!(value.number())),
-                "~" => {let value=some!(value.number());Number(((if mode==ScalarMode::OriginalSimple{!(value as u32)}else{(!(value as i32))as u32})&0xffffff)as f32)},
-                _ => return Ok(None),
+                "+" => Number(value.number()?),
+                "-" => Number(-value.number()?),
+                "~" => Number((!(value.number()? as i32) & 0xffffff) as f32),
+                _ => return None,
             }
         }
         ExprKind::Binary { op, lhs, rhs } => {
-            let Some(left) = eval_fallible(
-                lhs, resolve, decode, nameof, resource, calls, error, observer, enter,mode,
-            )? else {
-                reference_observer::try_observe_unevaluated(rhs, observer,&||enter(expr))?;
-                return Ok(None);
+            let Some(left) = eval(
+                lhs, resolve, decode, nameof, resource, calls, error, observer,
+            ) else {
+                reference_observer::observe_unevaluated(rhs, observer);
+                return None;
             };
-            if mode==ScalarMode::Native && op == "&&" {
+            if op == "&&" {
                 return if left.truth() {
-                    eval_fallible(
-                        rhs, resolve, decode, nameof, resource, calls, error, observer, enter,mode,
+                    eval(
+                        rhs, resolve, decode, nameof, resource, calls, error, observer,
                     )
                 } else {
-                    reference_observer::try_observe_unevaluated(rhs, observer,&||enter(expr))?;
-                    Ok(Some(left))
+                    reference_observer::observe_unevaluated(rhs, observer);
+                    Some(left)
                 };
             }
-            if mode==ScalarMode::Native && op == "||" {
+            if op == "||" {
                 return if left.truth() {
-                    reference_observer::try_observe_unevaluated(rhs, observer,&||enter(expr))?;
-                    Ok(Some(left))
+                    reference_observer::observe_unevaluated(rhs, observer);
+                    Some(left)
                 } else {
-                    eval_fallible(
-                        rhs, resolve, decode, nameof, resource, calls, error, observer, enter,mode,
+                    eval(
+                        rhs, resolve, decode, nameof, resource, calls, error, observer,
                     )
                 };
             }
-            let right = some!(eval_fallible(
-                rhs, resolve, decode, nameof, resource, calls, error, observer, enter,mode,
-            )?);
-            if mode==ScalarMode::OriginalSimple {match op.as_str(){"&&"=>return Ok(Some(if left.truth(){right}else{left})),"||"=>return Ok(Some(if left.truth(){left}else{right})),_=>()}}
+            let right = eval(
+                rhs, resolve, decode, nameof, resource, calls, error, observer,
+            )?;
             // Authored lookup paths are not runtime content identities. Do not
             // fold resource comparisons/arithmetic from path equality.
             if matches!(left, Resource(_)) || matches!(right, Resource(_)) {
-                return Ok(None);
+                return None;
             }
             if op == "+" {
                 if let (Text(a), Text(b)) = (&left, &right) {
-                    return Ok(Some(Text(format!("{a}{b}"))));
+                    return Some(Text(format!("{a}{b}")));
                 }
                 let bytes = |value: &Constant| match value {
                     Text(text) => Some(text.as_bytes().to_vec()),
@@ -377,28 +306,27 @@ fn eval_admitted<E,G>(
                 };
                 if let (Some(mut a), Some(b)) = (bytes(&left), bytes(&right)) {
                     a.extend(b);
-                    return Ok(Some(EncodedText(a)));
+                    return Some(EncodedText(a));
                 }
             }
             if op == "==" || op == "!=" {
-                if mode==ScalarMode::Native && std::mem::discriminant(&left) != std::mem::discriminant(&right) {
-                    return Ok(None);
+                if std::mem::discriminant(&left) != std::mem::discriminant(&right) {
+                    return None;
                 }
-                return Ok(Some(boolean(if op == "==" {
-                    left == right || mode==ScalarMode::OriginalSimple&&matches!((&left,&right),(Number(a),Number(b))if a.is_nan()&&b.is_nan())
+                return Some(boolean(if op == "==" {
+                    left == right
                 } else {
-                    !(left == right || mode==ScalarMode::OriginalSimple&&matches!((&left,&right),(Number(a),Number(b))if a.is_nan()&&b.is_nan()))
-                })));
+                    left != right
+                }));
             }
-            let a = some!(left.number());
-            let b = some!(right.number());
-            if mode==ScalarMode::OriginalSimple {let bits=|n:u32|Number((n&0xffffff)as f32);let original=match op.as_str(){"/"=>Some(Number(a/b)),"%"=>Some(Number(a%b)),"%%"=>Some(Number(a-(a/b).floor()*b)),"&"=>Some(bits((a as u32)&(b as u32))),"|"=>Some(bits((a as u32)|(b as u32))),"^"=>Some(bits((a as u32)^(b as u32))),"<<"|">>"=>{let shift=b as u32;Some(bits(if op=="<<"{(a as u32).wrapping_shl(shift)}else{(a as u32).wrapping_shr(shift)}))},_=>None};if original.is_some(){return Ok(original)}}
+            let a = left.number()?;
+            let b = right.number()?;
             match op.as_str() {
                 "+" => Number(a + b),
                 "-" => Number(a - b),
                 "*" => Number(a * b),
                 "/" if b != 0.0 => Number(a / b),
-                "%" if b != 0.0 => Number(some!((a as i32).checked_rem(b as i32)) as f32),
+                "%" if b != 0.0 => Number((a as i32).checked_rem(b as i32)? as f32),
                 "**" => Number(a.powf(b)),
                 "<" => boolean(a < b),
                 "<=" => boolean(a <= b),
@@ -409,7 +337,7 @@ fn eval_admitted<E,G>(
                 "^" => Number(((a as i32 ^ b as i32) & 0xffffff) as f32),
                 "<<" => {
                     if !a.is_finite() || !b.is_finite() || a >= 2147483648.0 || b >= 4294967296.0 {
-                        return Ok(None);
+                        return None;
                     }
                     Number(
                         ((a.max(0.0) as u32).wrapping_shl((b.max(0.0) as u32) & 31) & 0xffffff)
@@ -417,7 +345,7 @@ fn eval_admitted<E,G>(
                     )
                 }
                 ">>" => Number(((a as i32 & 0xffffff) >> ((b.max(0.0) as u32) & 31)) as f32),
-                _ => return Ok(None),
+                _ => return None,
             }
         }
         ExprKind::Conditional {
@@ -425,32 +353,32 @@ fn eval_admitted<E,G>(
             then_value,
             else_value,
         } => {
-            let Some(condition) = eval_fallible(
-                condition, resolve, decode, nameof, resource, calls, error, observer, enter,mode,
-            )? else {
-                reference_observer::try_observe_unevaluated(then_value, observer,&||enter(expr))?;
-                reference_observer::try_observe_unevaluated(else_value, observer,&||enter(expr))?;
-                return Ok(None);
+            let Some(condition) = eval(
+                condition, resolve, decode, nameof, resource, calls, error, observer,
+            ) else {
+                reference_observer::observe_unevaluated(then_value, observer);
+                reference_observer::observe_unevaluated(else_value, observer);
+                return None;
             };
             let (selected, skipped) = if condition.truth() {
                 (then_value, else_value)
             } else {
                 (else_value, then_value)
             };
-            reference_observer::try_observe_unevaluated(skipped, observer,&||enter(expr))?;
-            some!(eval_fallible(
-                selected, resolve, decode, nameof, resource, calls, error, observer, enter,mode,
-            )?)
+            reference_observer::observe_unevaluated(skipped, observer);
+            eval(
+                selected, resolve, decode, nameof, resource, calls, error, observer,
+            )?
         }
         _ => {
-            reference_observer::try_observe_unevaluated(expr, observer,&||enter(expr))?;
-            return Ok(None);
+            reference_observer::observe_unevaluated(expr, observer);
+            return None;
         }
     };
-    if mode==ScalarMode::Native && matches!(result, Number(n) if n.is_nan()) {
-        Ok(None)
+    if matches!(result, Number(n) if n.is_nan()) {
+        None
     } else {
-        Ok(Some(result))
+        Some(result)
     }
 }
 
@@ -597,7 +525,7 @@ mod tests {
                     reads.borrow_mut().push(format!("resolve:{name}"));
                     matches!(name, "seed" | "/datum::seed").then_some(Constant::Number(5.0))
                 };
-                let decode = |raw: &LiteralText| {
+                let decode = |raw: &str| {
                     reads.borrow_mut().push(format!("decode:{raw}"));
                     Some(vec![0xff, 0x80])
                 };
@@ -696,63 +624,9 @@ mod tests {
         );
     }
     #[test]
-    fn parsed_decoder_borrows_the_exact_issued_literal_and_preserves_policy() {
-        let parsed = parse_expression(r#""[unobserved()]""#);
-        assert!(parsed.diagnostics.is_empty());
-        let expression = parsed.expr.as_ref().unwrap();
-        let ExprKind::Literal(issued) = &expression.kind else {
-            panic!()
-        };
-        let parts = issued.parts().unwrap().unwrap();
-        let seen = std::cell::Cell::new(0);
-        let result = evaluate_expr_with_resources(
-            expression,
-            |_| None,
-            |received| {
-                assert!(std::ptr::eq(received, issued));
-                assert!(std::ptr::eq(received.parts().unwrap().unwrap(), parts));
-                seen.set(seen.get() + 1);
-                // The evaluator must preserve its caller's decoding contract rather
-                // than silently replace it with an additional builtin policy.
-                Some(vec![0xff, 0x80])
-            },
-            |_| None,
-            |_| None,
-        );
-        assert_eq!(seen.get(), 1);
-        assert_eq!(result, Some(Constant::EncodedText(vec![0xff, 0x80])));
-    }
-
-    #[test]
     fn unsupported_runtime_and_list_expressions_remain_unresolved() {
         assert_eq!(evaluate("list(1,2)"), None);
         assert_eq!(evaluate("rand(1,2)"), None);
         assert_eq!(evaluate("unknown"), None);
     }
-}
-
-#[cfg(test)]
-#[path="constants_try_tests.rs"]
-mod try_tests;
-
-#[cfg(test)]mod original_simple_mode_tests{
- use super::*;
- fn evaluate(source:&str,original:bool)->Option<Constant>{let parsed=dm_syntax::parse_expression(source);assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);let expression=parsed.expr.as_ref().unwrap();let result=if original{try_evaluate_original_simple_controlled(expression,|_|Ok::<_,String>(None),|_|Ok(None),|_|Ok(None),|_|Ok(None),None,|_|Ok(()))}else{try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(expression,|_|Ok::<_,String>(None),|_|Ok(None),|_|Ok(None),|_|Ok(None),None,None,||Ok(()))};result.unwrap()}
- #[test]fn original_simple_mode_preserves_float_remainder_nonfinite_and_cross_type_equality(){for(source,expected)in[("5.5 % 2",1.5),("1 == null",0.0),("1 != null",1.0),("-1 & 255",0.0),("~(-1)",16777215.0),("8 >> -1",8.0)]{assert_eq!(evaluate(source,true),Some(Constant::Number(expected)),"{source}");}assert_eq!(evaluate("5.5 % 2",false),Some(Constant::Number(1.0)));assert_eq!(evaluate("1 == null",false),None);assert_eq!(evaluate("-1 & 255",false),Some(Constant::Number(255.0)));assert!(matches!(evaluate("1 / 0",true),Some(Constant::Number(value))if value.is_infinite()));assert!(matches!(evaluate("0 / 0",true),Some(Constant::Number(value))if value.is_nan()));assert_eq!(evaluate("1 / 0",false),None);assert_eq!(evaluate("0 / 0",false),None);}
- #[test]fn original_simple_mode_requires_both_logical_operands_without_global_resolution(){assert_eq!(evaluate(":missing",true),None);assert_eq!(evaluate("! :missing",true),None);assert_eq!(evaluate("1 || unknown",true),None);assert_eq!(evaluate("0 && unknown",true),None);assert_eq!(evaluate("1 || unknown",false),Some(Constant::Number(1.0)));assert_eq!(evaluate("0 && unknown",false),Some(Constant::Number(0.0)));}
- #[test]fn original_simple_mode_propagates_actual_first_typed_callback_at_each_enter(){let parsed=dm_syntax::parse_expression("(1 + 2) * 3");let visits=std::cell::Cell::new(0);let error=try_evaluate_original_simple_controlled(parsed.expr.as_ref().unwrap(),|_|Ok(None),|_|Ok(None),|_|Ok(None),|_|Ok(None),None,|_|{visits.set(visits.get()+1);if visits.get()==4{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}}).unwrap_err();assert_eq!(visits.get(),4);assert!(matches!(error,ConstantEvaluationFailure::Callback(error)if error.raw_os_error()==Some(1450)));}
-}
-
-#[cfg(test)]mod typed_original_scalar_tests{
- use super::*;
- #[test]fn typed_original_constants_preserve_exact_number_and_static_data_without_runtime_promotion(){
-  use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission,Span};use std::sync::{Arc, atomic::{Ordering}};
-  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
-  for(raw,value,expected)in[("rounded",V::Float(f32::from_bits(0x3f9e0651)),Constant::Number(f32::from_bits(0x3f9e0651))),("invalid",V::Int(0),Constant::Number(0.0)),("\"[x]\"",V::String("[x]"),Constant::Text("[x]".into()))]{
-   let root=Expr{span:Span::new(0,raw.len()),kind:ExprKind::Literal(LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap())};
-   let decodes=std::cell::Cell::new(0);let result=try_evaluate_original_simple_controlled(&root,|_|Ok::<_,String>(None),|literal|{decodes.set(decodes.get()+1);match literal.original_value(){Some(V::String(text))=>Ok(Some(text.as_bytes().to_vec())),_=>panic!("numeric VALUE must not invoke text decoding")}},|_|Ok(None),|_|Ok(None),None,|_|Ok(())).unwrap();assert_eq!(decodes.get(),usize::from(matches!(expected,Constant::Text(_))));assert_eq!(result,Some(expected));
-  }
-  let root=Expr{span:Span::new(0,5),kind:ExprKind::Literal(LiteralText::from_original_value_data("\"[x]\"".into(),0,V::String("[x]"),&a).unwrap())};
-  let calls=std::cell::Cell::new(0);let result=try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(&root,|_|Ok::<_,String>(None),|_|{calls.set(calls.get()+1);Ok(None)},|_|Ok(None),|_|Ok(None),None,None,||Ok(())).unwrap();assert_eq!(calls.get(),1);assert_eq!(result,None);drop(root);assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
- }
 }

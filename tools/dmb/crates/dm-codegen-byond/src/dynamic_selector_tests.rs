@@ -228,10 +228,8 @@ fn authored_call_return_annotation_types_nested_field_context() {
     };
     let host = Host {
         identity,
-        metadata: Arc::new(DeclarationMeaning::new(
-            None,
-            0,
-            Some(Arc::new(ProcedureMetadata {
+        metadata: Arc::new(DeclarationMeaning {
+            procedure: Some(Arc::new(ProcedureMetadata {
                 signature: ProcedureSignature {
                     parameters: Arc::from([]),
                     variadic: false,
@@ -239,8 +237,8 @@ fn authored_call_return_annotation_types_nested_field_context() {
                 },
                 settings: Arc::from([]),
             })),
-            Default::default(),
-        )),
+            ..Default::default()
+        }),
         reads: Mutex::new(vec![]),
     };
     let parsed =

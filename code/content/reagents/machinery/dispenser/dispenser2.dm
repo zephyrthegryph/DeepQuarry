@@ -35,10 +35,10 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	owns_one(nameof(container), /obj/item/reagent_containers)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), STAT_OPERABLE))
 	interface("ChemDispenser", observe = TRUE)
+	ui_shape(amount = num(), isBeakerLoaded = bool(), glass = bool(), beakerContents = list_of(row()), beakerCurrentVolume = num(), beakerMaxVolume = num(), chemicals = list_of(row()), recipes = any, recordingRecipe = list_of(row()))
 	extend("ui_observe", needs(req(PROC_REF(not_broken), silent = TRUE)))
 	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
 	op("dispense", ui_act("dispense", arg("reagent", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
-	op("remove", ui_act("remove", arg("amount", num()), arg("reagent")), then(PROC_REF(ui_act_remove)))
 	op("ejectBeaker", ui_act("ejectBeaker"), then(PROC_REF(ui_act_ejectbeaker)))
 	op("import_config", ui_act("import_config", arg("config")), then(PROC_REF(ui_act_import_config)))
 	op("record_recipe", ui_act("record_recipe"), then(PROC_REF(ui_act_record_recipe)))
@@ -166,8 +166,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 
 	var/list/beakerContents = list()
 	if(container && container.reagents && container.reagents.reagent_list.len)
-		for(var/datum/reagent/R in container.reagents.reagent_list)
-			beakerContents.Add(list(list("name" = R.name, "id" = R.id, "volume" = R.volume))) // list in a list because Byond merges the first list...
+		beakerContents = container.reagents.ui_rows() // the contaminants last, flagged
 	data["beakerContents"] = beakerContents
 
 	if(container)
@@ -180,7 +179,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 	var/list/chemicals = list()
 	for(var/label in cartridges)
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
-		chemicals.Add(list(list("name" = label, "id" = label, "volume" = C.reagents.total_volume))) // list in a list because Byond merges the first list...
+		chemicals.Add(list(list("name" = label, "id" = label, "volume" = C.fill_volume()))) // list in a list because Byond merges the first list...
 	data["chemicals"] = chemicals
 
 	data["recipes"] = (saved_recipes || list())
@@ -212,21 +211,8 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 	else if(LAZYACCESS(cartridges, label) && container && container.is_open_container())
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
-		C.reagents.trans_to(container, amount)
+		C.dispense_to(container, amount)
 		work_start(src)
-	. = TRUE
-
-/obj/machinery/chemical_dispenser/proc/ui_act_remove(datum/act/op/A, amount_out, reagent)
-	var/mob/user = A.actor
-	add_fingerprint(user)
-	if(!container || !amount_out || recording_recipe)
-		return
-	var/datum/reagents/R = container.reagents
-	var/id = reagent
-	if(amount_out > 0)
-		R.remove_reagent(id, amount_out)
-	else if(amount_out == -1) // Isolate
-		R.isolate_reagent(id)
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_ejectbeaker(datum/act/op/A)
@@ -318,7 +304,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 
 			// Allows copying recipes
 			play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
-			var/amount_actually_dispensed = C.reagents.trans_to(container, dispense_amount)
+			var/amount_actually_dispensed = C.dispense_to(container, dispense_amount)
 			work_start(src)
 			if(dispense_amount != amount_actually_dispensed)
 				visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))

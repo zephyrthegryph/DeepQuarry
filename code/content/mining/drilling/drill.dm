@@ -218,7 +218,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 		else
 			if(!move_into(src, nameof(src.cell), O, user))
 				return TRUE
-			materialize_parts()
+			adopt_parts()
 			// The cell var owns it; it is not also a component part (one owner per entity).
 			balloon_alert(user, "you install \the [O]")
 		return TRUE

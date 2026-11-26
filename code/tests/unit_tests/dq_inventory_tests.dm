@@ -395,3 +395,45 @@
 			for(var/datum/matter_synth/MS as anything in M.synths)
 				TEST_ASSERT(MS in S.synths, "stack tools borrow actual augment synthesizers")
 	TEST_ASSERT(stacks > 0, "the real multi-tool augment exercises stack synthesizer setup")
+
+/// Swapping and selecting hands only ever lands on a hand that exists and works; losing a hand moves the selection to one that works,
+/// and with no working hand nothing is selected.
+/datum/unit_test/dq_active_hand_only_working_hands
+
+/datum/unit_test/dq_active_hand_only_working_hands/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.set_hand(FALSE)
+	H.settle_active_hand()
+	TEST_ASSERT(!isnull(H.hand) && !H.hand, "a whole body starts on the right hand")
+	H.swap_hand()
+	TEST_ASSERT(H.hand, "swap reaches the working left hand")
+
+	var/obj/item/organ/external/left = H.organs_by_name[BP_L_HAND]
+	TEST_ASSERT(left, "the test body has a left hand")
+	left.droplimb(TRUE)
+	TEST_ASSERT(!isnull(H.hand) && !H.hand, "losing the active left hand moves the selection to the right")
+	H.swap_hand()
+	TEST_ASSERT(!isnull(H.hand) && !H.hand, "swap cannot select the missing left hand")
+	H.activate_hand("left")
+	TEST_ASSERT(!isnull(H.hand) && !H.hand, "select cannot pick the missing left hand")
+
+	var/obj/item/organ/external/right = H.organs_by_name[BP_R_HAND]
+	TEST_ASSERT(right, "the test body has a right hand")
+	right.droplimb(TRUE)
+	TEST_ASSERT_NULL(H.hand, "with no working hand nothing is selected")
+	H.swap_hand()
+	TEST_ASSERT_NULL(H.hand, "swap with no working hand selects nothing")
+	qdel(left) // the dropped hands lie on the test floor
+	qdel(right)
+
+/// A body whose selected hand was never there is moved off it when a player takes it (spawn).
+/datum/unit_test/dq_active_hand_settles_on_spawn
+
+/datum/unit_test/dq_active_hand_settles_on_spawn/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/left = H.organs_by_name[BP_L_HAND]
+	left.droplimb(TRUE)
+	H.set_hand(TRUE) // as a save or an old body could leave it
+	H.settle_active_hand() // what Login() runs
+	TEST_ASSERT(!isnull(H.hand) && !H.hand, "a body with no left hand settles on the right")
+	qdel(left) // the dropped hand lies on the test floor

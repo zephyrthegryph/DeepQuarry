@@ -127,6 +127,7 @@ CAPABILITIES(/obj/item/rig)
 	on_wire(WIRE_RIG_INTERFACE_LOCK, pulse = PROC_REF(interface_lock_wire_pulsed))
 	on_wire(WIRE_RIG_INTERFACE_SHOCK, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
 	interface(null, state = nameof(GLOB.tgui_inventory_state), window_var = nameof(interface_path))
+	ui_shape(interface_intro = schema_text(), cooling = num(), sealing = any, emagged = num(), coverlock = num(), interfacelock = num(), aicontrol = num(), aioverride = num(), securitycheck = num(), malf = num(), primarysystem = nullable(schema_text()), ai = bool(), sealed = bool(), helmet = schema_text(), gauntlets = schema_text(), boots = schema_text(), chest = schema_text(), helmetDeployed = bool(), gauntletsDeployed = bool(), bootsDeployed = bool(), chestDeployed = bool(), charge = num(), maxcharge = num(), chargestatus = num(), modules = list_of())
 	without("ui_open")
 	op("toggle_seals", ui_act("toggle_seals"), then(PROC_REF(ui_act_toggle_seals)))
 	op("toggle_cooling", ui_act("toggle_cooling"), then(PROC_REF(ui_act_toggle_cooling)))
@@ -607,7 +608,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		malfunction()
 
 	for(var/obj/item/rig_module/module in installed_modules)
-		draw_power(module.periodic_step() * 10 / CELLRATE, module, partial = TRUE)
+		draw_power(module.module_tick() * 10 / CELLRATE, module, partial = TRUE)
 
 /obj/item/rig/proc/check_power_cost(mob/living/user, cost, use_unconcious, obj/item/rig_module/mod, user_is_ai)
 
@@ -1071,7 +1072,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	else
 		return null
 
-/atom/proc/get_voidsuit()
+/mob/living/carbon/proc/get_voidsuit()
 	return null
 
 /mob/living/carbon/human/get_voidsuit()

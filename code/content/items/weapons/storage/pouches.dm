@@ -252,11 +252,6 @@ CAPABILITIES(/obj/item/storage/pouch/flares)
 CAPABILITIES(/obj/item/storage/pouch/holster)
 	configure(storage(accepts = list(/obj/item/gun)))
 
-/obj/item/storage/pouch/holster/full_stunrevolver
-	starts_with = list(/obj/item/gun/energy/stunrevolver)
-/obj/item/storage/pouch/holster/full_taser
-	starts_with = list(/obj/item/gun/energy/taser)
-
 /obj/item/storage/pouch/holster/draw(datum/look/look)
 	. = ..()
 	look.overlay("pistol_layer", when = held_count())

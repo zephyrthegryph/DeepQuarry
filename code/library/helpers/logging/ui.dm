@@ -37,3 +37,7 @@
 	if(message)
 		entry += "\n[message]"
 	logger.Log(LOG_CATEGORY_HREF_TGUI, entry)
+
+/// A failure a tgui page reported (tgui/errors.ts): one context to grep, bounded whatever the page sends.
+/proc/log_tgui_client_error(user, list/payload, datum/tgui_window/window)
+	log_tgui(user, "[copytext(json_encode(payload), 1, 8001)]", context = "tgui_error", window = window)

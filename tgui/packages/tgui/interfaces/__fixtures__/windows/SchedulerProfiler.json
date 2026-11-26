@@ -1,0 +1,129 @@
+{
+	"elapsed_s": 612,
+	"last_run_ms": 4.8,
+	"error_count": 0,
+	"behind": false,
+	"shared_bucket": true,
+	"behaviours": [
+		{
+			"name": "mob_life",
+			"type": "/datum/behaviour/mob_life",
+			"lane": "sim",
+			"runs": 480,
+			"ms": 36.2,
+			"ms_per_s": 3.1,
+			"us_per_run": 75.4,
+			"call_max_ms": 1.2,
+			"late_max": 0.3,
+			"deferrals": 2,
+			"breaches": 0,
+			"errors": 0,
+			"wakes": 120,
+			"parks": 118,
+			"population": 340,
+			"parked": 120
+		},
+		{
+			"name": "machinery_process",
+			"type": "/datum/behaviour/machinery_process",
+			"lane": "world",
+			"runs": 220,
+			"ms": 12.5,
+			"ms_per_s": 3.1,
+			"us_per_run": 75.4,
+			"call_max_ms": 1.2,
+			"late_max": 0.3,
+			"deferrals": 2,
+			"breaches": 0,
+			"errors": 1,
+			"wakes": 120,
+			"parks": 118,
+			"population": 340,
+			"parked": 120
+		}
+	],
+	"lanes": [
+		{
+			"name": "sim",
+			"share": 0.6,
+			"behaviours": 14,
+			"runs": 5200,
+			"ms": 210.4,
+			"ms_per_s": 18.2,
+			"wake_queue": 3,
+			"world_queue": 1
+		},
+		{
+			"name": "world",
+			"share": 0.4,
+			"behaviours": 6,
+			"runs": 1800,
+			"ms": 90.1,
+			"ms_per_s": 7.8,
+			"wake_queue": 0,
+			"world_queue": 0
+		}
+	],
+	"stages": [
+		{
+			"key": "wake",
+			"calls": 4000,
+			"ms": 22.4,
+			"us_per_call": 5.6
+		},
+		{
+			"key": "run",
+			"calls": 3900,
+			"ms": 190.2,
+			"us_per_call": 48.8
+		}
+	],
+	"services": [
+		{
+			"name": "air",
+			"type": "/datum/system/air",
+			"initialized": true,
+			"on_demand": false,
+			"parked": false,
+			"resuming": false,
+			"steps": 612,
+			"ms": 410.3,
+			"ms_per_s": 0.67,
+			"avg_ms": 0.67,
+			"status": "running"
+		},
+		{
+			"name": "expedition",
+			"type": "/datum/system/expedition",
+			"initialized": true,
+			"on_demand": true,
+			"parked": true,
+			"resuming": false,
+			"steps": 0,
+			"ms": 0,
+			"ms_per_s": 0,
+			"avg_ms": 0,
+			"status": "parked"
+		}
+	],
+	"caches": [
+		{
+			"name": "appearance",
+			"hits": 9000,
+			"misses": 120,
+			"hit_rate": 0.987,
+			"entries": 118,
+			"max_entries": 512,
+			"evictions": 4,
+			"invalidations": 2,
+			"kb": 64,
+			"policy": "lru"
+		}
+	],
+	"world_step": {
+		"step_ms": 1.6,
+		"total_wakes": 5400,
+		"last_wakes": 8,
+		"dropped": 0
+	}
+}

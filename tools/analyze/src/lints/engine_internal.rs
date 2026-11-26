@@ -6,7 +6,6 @@
 //! `code/__defines/om.dm` (the lint's exempt prefixes in `lint_scopes.toml`) fails unless the line
 //! carries `// ALLOW(engine_internal): <reason>`. No baseline.
 
-use crate::raw_fixture_policy::PatternApi as _;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
@@ -14,16 +13,16 @@ use crate::tree::{SourceFile, CODE_MAPS_DM};
 use crate::util::before_slashes;
 
 static META: Meta = Meta {
-    name: crate::allow_registry_fields::engine_internal::SCOPE_META_0.name,
-    group: crate::allow_registry_fields::engine_internal::SCOPE_META_0.group,
+    name: "engine_internal",
+    group: "",
     label: "engine_internal",
     legacy: "tools/ci/om_internal_lint.py",
     select: CODE_MAPS_DM,
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "internal", hint: "use om_after / om_deadline / om_task_*" }],
-    allow: crate::allow_registry_fields::engine_internal::ALLOW_0,
-    lists: crate::allow_registry_fields::engine_internal::SCOPE_META_0.lists,
+    allow: &["engine_internal"],
+    lists: &[],
 };
 
 struct EngineInternal;
@@ -33,15 +32,14 @@ impl Lint for EngineInternal {
         &META
     }
 
-    fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let fallback=crate::raw_fixture_policy::Fixture::legacy();let fixture=cx.fixture.unwrap_or(&fallback);
+    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
         // The Python skipped a file with no `_om_` in it before splitting lines.
         if !f.text().contains("_om_") {
             return;
         }
         for (number, line) in f.raw().numbered() {
             let code = before_slashes(line);
-            if let Some(m) = fixture.pattern(r"(?<![\w])_om_\w+",crate::raw_fixture_policy::PatternMode::Search,||pat!(r"(?<![\w])_om_\w+")).find(code) {
+            if let Some(m) = pat!(r"(?<![\w])_om_\w+").find(code) {
                 if !out.allowed(f, number, "engine_internal") {
                     out.site_msg("internal", number, format!("{} is internal to the OM scheduler: use om_after / om_deadline / om_task_*", m.as_str()));
                 }

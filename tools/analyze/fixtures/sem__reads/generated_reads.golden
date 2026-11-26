@@ -90,3 +90,4 @@ GLOBAL_LIST_INIT(generated_read_roots, list(
 		for(var/key in chunk)
 			.[key] = chunk[key]
 GLOBAL_LIST_INIT(generated_reads_table, generated_reads_assemble())
+// Global chain reads in draws bound on their holder: 0; left unbound (a link or field written per tick): 0

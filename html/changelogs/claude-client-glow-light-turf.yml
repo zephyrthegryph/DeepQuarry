@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Client lighting: visible lights keep their glow from every viewing position."
+  - admin: "Added Cycle Client Glow Anchor, to compare how held client glows are placed."

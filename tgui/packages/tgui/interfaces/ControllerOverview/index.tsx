@@ -2,6 +2,7 @@ import { useReducer, useState } from 'react';
 import { Button, Dropdown, Input, Section, Stack } from 'tgui-core/components';
 import { useBackend } from '../../backend';
 import { Window } from '../../layouts';
+import type { ControllerOverviewActions } from '../generated/ControllerOverview';
 import { SORTING_TYPES } from './constants';
 import { FilterAction, type FilterState, filterReducer } from './filters';
 import { OverviewSection } from './OverviewSection';
@@ -20,7 +21,7 @@ export function ControllerOverview(props) {
 }
 
 export function ControllerContent(props) {
-  const { data } = useBackend<ControllerData>();
+  const { data } = useBackend<ControllerData, ControllerOverviewActions>();
   const [state, dispatch] = useReducer(filterReducer, {
     ascending: true,
     inactive: true,

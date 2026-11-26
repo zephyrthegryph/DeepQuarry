@@ -41,7 +41,7 @@
 	TEST_ASSERT_EQUAL(occupant.loc, bag, "occupied refusal preserves its unrelated physical contents")
 	TEST_ASSERT_NULL(locate(/obj/item/bodybag) in T, "all actual refusal paths create no folded duplicate")
 	occupant.forceMove(T)
-	TEST_ASSERT(!contents_count(bag) && !bag.has_latent(), "the actual empty closed bag meets both original contents preconditions")
+	TEST_ASSERT(!contents_count(bag), "the actual empty closed bag meets both original contents preconditions")
 	test_drag(actor, bag, actor)
 	test_time(5 SECONDS)
 	var/obj/item/bodybag/cryobag/folded = locate(/obj/item/bodybag/cryobag) in T

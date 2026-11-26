@@ -2,11 +2,7 @@
 use super::*;
 use std::cell::OnceCell;
 
-use dm_preprocess::regions::MacroTraceView;
-#[cfg(test)]
-use dm_preprocess::regions::MacroExpansion;
-
-type ProjectedStack = (MacroTrace, Arc<[Span]>);
+type ProjectedStack = (Arc<Vec<MacroExpansion>>, Arc<[Span]>);
 #[derive(Default)]
 pub(super) struct CurrentSourceProjection {
     stacks: RefCell<HashMap<usize, ProjectedStack>>,
@@ -16,14 +12,14 @@ pub(super) struct CurrentSourceProjection {
 impl Mapping<'_> {
     pub(super) fn expansion_stack(
         &self,
-        trace: MacroTraceView<'_>,
+        trace: &Arc<Vec<MacroExpansion>>,
     ) -> Result<Arc<[Span]>, Vec<Diagnostic>> {
         if trace.is_empty() {
             return Ok(Arc::clone(
                 self.projection.empty.get_or_init(|| Arc::from([])),
             ));
         }
-        let key = trace.owner_address();
+        let key = Arc::as_ptr(trace) as usize;
         if let Some((_, stack)) = self.projection.stacks.borrow().get(&key) {
             return Ok(Arc::clone(stack));
         }
@@ -31,7 +27,7 @@ impl Mapping<'_> {
         // projections are not installed, so the original error remains current.
         let stack: Arc<[Span]> = trace
             .iter()
-            .filter_map(|expansion| expansion.definition)
+            .filter_map(|expansion| expansion.definition.as_ref())
             .filter_map(|definition| {
                 // Definition paths are project-relative (equal in every worktree); files are keyed by their full path.
                 let file = if definition.path.is_relative() {
@@ -49,7 +45,7 @@ impl Mapping<'_> {
         self.projection
             .stacks
             .borrow_mut()
-            .insert(key, (trace.to_owned(), Arc::clone(&stack)));
+            .insert(key, (Arc::clone(trace), Arc::clone(&stack)));
         Ok(stack)
     }
     pub(super) fn include_chain(&self, occurrence: usize) -> Arc<[usize]> {
@@ -90,19 +86,19 @@ mod tests {
                 source_span: dm_syntax::Span::new(3, 7),
                 source_line: 1,
             }),
-        }].into_boxed_slice());
+        }]);
         let first_paths = HashMap::from([(path.as_ref().clone(), FileId(1))]);
         let second_paths = HashMap::from([(path.as_ref().clone(), FileId(2))]);
         let mapping = Mapping {
             projection: Default::default(),
-            plan: frontend.plan.source_geometry(),
+            plan: &frontend.plan,
             expanded: &frontend.expanded,
             files: &frontend.files,
             by_path: &first_paths,
             hints: Default::default(),
         };
-        let first = mapping.expansion_stack((&trace).into()).unwrap();
-        let same = mapping.expansion_stack((&trace).into()).unwrap();
+        let first = mapping.expansion_stack(&trace).unwrap();
+        let same = mapping.expansion_stack(&trace).unwrap();
         assert!(Arc::ptr_eq(&first, &same));
         assert_eq!(
             first[0],
@@ -112,20 +108,20 @@ mod tests {
                 end: 7
             }
         );
-        let empty = mapping.expansion_stack((&Arc::<Box<[dm_preprocess::regions::MacroExpansion]>>::default()).into()).unwrap();
+        let empty = mapping.expansion_stack(&Arc::new(Vec::new())).unwrap();
         assert!(Arc::ptr_eq(
             &empty,
-            &mapping.expansion_stack((&Arc::<Box<[dm_preprocess::regions::MacroExpansion]>>::default()).into()).unwrap()
+            &mapping.expansion_stack(&Arc::new(Vec::new())).unwrap()
         ));
         let current = Mapping {
             projection: Default::default(),
-            plan: frontend.plan.source_geometry(),
+            plan: &frontend.plan,
             expanded: &frontend.expanded,
             files: &frontend.files,
             by_path: &second_paths,
             hints: Default::default(),
         };
-        let rebound = current.expansion_stack((&trace).into()).unwrap();
+        let rebound = current.expansion_stack(&trace).unwrap();
         assert_eq!(rebound[0].file, FileId(2));
         assert!(!Arc::ptr_eq(&first, &rebound));
     }
@@ -136,7 +132,7 @@ mod tests {
         let paths = HashMap::from([(path.as_ref().clone(), FileId(0))]);
         let mapping = Mapping {
             projection: Default::default(),
-            plan: frontend.plan.source_geometry(),
+            plan: &frontend.plan,
             expanded: &frontend.expanded,
             files: &frontend.files,
             by_path: &paths,
@@ -151,27 +147,9 @@ mod tests {
                 source_span: dm_syntax::Span::new(0, usize::MAX),
                 source_line: 1,
             }),
-        }].into_boxed_slice());
-        assert!(mapping.expansion_stack((&trace).into()).is_err());
+        }]);
+        assert!(mapping.expansion_stack(&trace).is_err());
         assert!(mapping.projection.stacks.borrow().is_empty());
-        assert!(mapping.expansion_stack((&trace).into()).is_err());
+        assert!(mapping.expansion_stack(&trace).is_err());
     }
-}
-
-impl Mapping<'_>{
- /// The SAME projection cache and source_location_in producer, with actual
- /// include-chain/cache growth funded before the fatal report can retain it.
- pub(super) fn output_for_retained_report(&self,offset:usize,a:&dm_syntax::SettingAdmission<'_>,credit:&mut dm_syntax::SettingRootLease)->std::io::Result<SourceLocation>{
-  let poll=||{let result=a.checkpoint();if let Some(error)=a.take_operational_error(){return Err(error)}result};poll()?;
-  let origin=self.origin(offset).ok_or(std::io::ErrorKind::InvalidInput)?;let region=self.plan.regions.get(origin.region).ok_or(std::io::ErrorKind::InvalidInput)?;let occurrence=region.occurrence;let row=self.plan.occurrences.get(occurrence).ok_or(std::io::ErrorKind::InvalidInput)?;
-  let cached=self.projection.chains.borrow().get(&occurrence).cloned();
-  let chain=match cached{Some(chain)=>chain,None=>{
-   let mut count=1usize;let mut at=occurrence;while let Some(parent)=self.plan.occurrences.get(at).ok_or(std::io::ErrorKind::InvalidInput)?.parent{poll()?;count=count.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?;if count>self.plan.occurrences.len(){return Err(std::io::ErrorKind::InvalidData.into())}at=parent;}
-   let peak=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<usize>())).and_then(|n|n.checked_add(2*std::mem::size_of::<usize>())).ok_or(std::io::ErrorKind::OutOfMemory)?;a.grow(credit,peak).map_err(|error|a.take_operational_error().unwrap_or(error))?;
-   let mut chain=Vec::new();chain.try_reserve_exact(count).map_err(|error|std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))?;if chain.capacity()>count.checked_mul(2).ok_or(std::io::ErrorKind::OutOfMemory)?{return Err(std::io::ErrorKind::OutOfMemory.into())}let mut at=occurrence;loop{poll()?;chain.push(at);match self.plan.occurrences.get(at).ok_or(std::io::ErrorKind::InvalidInput)?.parent{Some(parent)=>at=parent,None=>break}}chain.reverse();let chain:Arc<[usize]>=chain.into();
-   let mut cache=self.projection.chains.borrow_mut();if cache.len()==cache.capacity(){let target=cache.capacity().max(2).checked_mul(2).ok_or(std::io::ErrorKind::OutOfMemory)?;let unit=std::mem::size_of::<(usize,Arc<[usize]>)>()+2*std::mem::size_of::<usize>();let peak=target.checked_mul(4).and_then(|n|n.checked_mul(unit)).ok_or(std::io::ErrorKind::OutOfMemory)?;a.grow(credit,peak).map_err(|error|a.take_operational_error().unwrap_or(error))?;let extra=target-cache.len();cache.try_reserve(extra).map_err(|error|std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))?;if cache.capacity()>target.checked_mul(4).ok_or(std::io::ErrorKind::OutOfMemory)?{return Err(std::io::ErrorKind::OutOfMemory.into())}}
-   cache.insert(occurrence,Arc::clone(&chain));chain
-  }};
-  source_export_mapping::source_location_in(self.file_of(origin.origin.path).ok_or(std::io::ErrorKind::InvalidInput)?,origin,&row.path,&row.semantic_path,region.encounter_ordinal,occurrence,chain).ok_or_else(||std::io::ErrorKind::InvalidInput.into())
- }
 }

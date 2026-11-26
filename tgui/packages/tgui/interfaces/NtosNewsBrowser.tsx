@@ -1,36 +1,26 @@
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
+import { StatBar } from 'tgui/components/StatBar';
 import { NtosWindow } from 'tgui/layouts';
 import {
   Button,
   Image,
   LabeledList,
   NoticeBox,
-  ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
-import type { BooleanLike } from 'tgui-core/react';
-
-type Data = {
-  message: string;
-  showing_archived: BooleanLike;
-  download: {
-    download_progress: number;
-    download_maxprogress: number;
-    download_rate: number;
-  } | null;
-  article: { title: string; cover: string; content: string } | null;
-  all_articles: {
-    name: string;
-    size: number;
-    uid: number;
-    archived: BooleanLike;
-  }[];
-};
+import { sanitizeText } from '../sanitize';
+import type {
+  NtosNewsBrowserActions,
+  NtosNewsBrowserData,
+} from './generated/NtosNewsBrowser';
 
 export const NtosNewsBrowser = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNewsBrowserData,
+    NtosNewsBrowserActions
+  >();
 
   const { article, download, message } = data;
 
@@ -58,7 +48,10 @@ export const NtosNewsBrowser = (props) => {
 };
 
 const SelectedArticle = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNewsBrowserData,
+    NtosNewsBrowserActions
+  >();
 
   const { article } = data;
 
@@ -89,13 +82,16 @@ const SelectedArticle = (props) => {
       {!!cover && <Image src={resolveAsset(cover)} />}
       {/** biome-ignore lint/security/noDangerouslySetInnerHtml: News articles are written in premade .html files and cannot be edited by players, so it should be
        * safe enough to use dangerouslySetInnerHTML here. */}
-      <div dangerouslySetInnerHTML={{ __html: content }} />
+      <div dangerouslySetInnerHTML={{ __html: sanitizeText(content) }} />
     </Section>
   );
 };
 
 const ViewArticles = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNewsBrowserData,
+    NtosNewsBrowserActions
+  >();
 
   const { showing_archived, all_articles } = data;
 
@@ -137,7 +133,10 @@ const ViewArticles = (props) => {
 };
 
 const ArticleDownloading = (props) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<
+    NtosNewsBrowserData,
+    NtosNewsBrowserActions
+  >();
 
   const { download_progress, download_maxprogress, download_rate } =
     data.download!;
@@ -145,16 +144,15 @@ const ArticleDownloading = (props) => {
   return (
     <Section title="Downloading...">
       <LabeledList>
-        <LabeledList.Item label="Progress">
-          <ProgressBar
-            color="good"
-            minValue={0}
-            value={download_progress}
-            maxValue={download_maxprogress}
-          >
-            {download_progress} / {download_maxprogress} GQ
-          </ProgressBar>
-        </LabeledList.Item>
+        <StatBar
+          label="Progress"
+          color="good"
+          minValue={0}
+          value={download_progress}
+          maxValue={download_maxprogress}
+        >
+          {download_progress} / {download_maxprogress} GQ
+        </StatBar>
         <LabeledList.Item label="Download Speed">
           {download_rate} GQ/s
         </LabeledList.Item>

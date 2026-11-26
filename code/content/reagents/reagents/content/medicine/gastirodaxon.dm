@@ -3,9 +3,11 @@
 
 /datum/reagent/gastirodaxon
 	treatment_tags = list(TREAT_DIGESTIVE = 1.0, TREAT_ANTITOXIN = 0.6)
+	// The gut that is mending absorbs what is swallowed more slowly.
+	factors = alist(STAT_INGEST_ABSORPTION = 0.6)
 	name = REAGENT_GASTIRODAXON
 	id = REAGENT_ID_GASTIRODAXON
-	description = "Used to repair the tissues of the digestive system."
+	description = "Used to repair the stomach and gut, and to treat appendiceal sepsis. While the gut mends it absorbs swallowed medicine more slowly, so oral doses work later and weaker."
 	taste_description = "chalk"
 	reagent_state = LIQUID
 	dermal_absorption = 0.2

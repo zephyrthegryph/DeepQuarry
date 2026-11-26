@@ -118,6 +118,7 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 	// What the search has queued, as a keyed list: `search |= x` scanned the whole queue for every node it met, which on a network of thousands of
 	// pipes made the first check of a leaking network take a second (SLOW CALL check_leaks 1038 ms).
 	var/list/queued = list()
+	var/list/visited_lines = list() // pipelines already stood for (a pipe in one counts for all its members)
 
 	// We're the leak!
 	if(!node1 || !node2)
@@ -144,6 +145,28 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 			if(L.leaking)
 				close() // Found the leak!
 				return
+			// A pipe in a pipeline stands for the whole line: every member is reachable from it through pipes alone, the line's `leaks` holds its
+			// leaking members, and the search leaves the line only through its edge pipes' nodes outside it. One step per line instead of one per
+			// pipe (a station loop of thousands of pipes made one check take 45-60 ms).
+			var/datum/pipeline/line = L.parent
+			if(line)
+				if(visited_lines[line])
+					continue
+				visited_lines[line] = TRUE
+				if(length(line.leaks))
+					close()
+					return
+				next = list()
+				for(var/obj/machinery/atmospherics/pipe/edge as anything in line.edges)
+					for(var/obj/machinery/atmospherics/node in shutoff_search_pipe_nodes(edge))
+						var/obj/machinery/atmospherics/pipe/node_pipe = node
+						if(!istype(node_pipe) || node_pipe.parent != line)
+							next += node
+				for(var/obj/machinery/atmospherics/node in next)
+					if(!queued[node])
+						queued[node] = TRUE
+						search += node
+				continue
 
 		if(istype(A, /obj/machinery/atmospherics/valve/shutoff))
 			var/obj/machinery/atmospherics/valve/shutoff/S = A
@@ -189,3 +212,19 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 	// We broke out of the loop, so we see no leaks
 	// The leaks therefore must be on the other side of another shutoff valve
 	return
+
+/// The nodes a pipe connects to, by its shape (the same per-type rule the leak search follows for a lone pipe).
+/proc/shutoff_search_pipe_nodes(obj/machinery/atmospherics/pipe/P)
+	if(istype(P, /obj/machinery/atmospherics/pipe/manifold4w))
+		var/obj/machinery/atmospherics/pipe/manifold4w/M4 = P
+		return list(M4.node1, M4.node2, M4.node3, M4.node4)
+	if(istype(P, /obj/machinery/atmospherics/pipe/manifold))
+		var/obj/machinery/atmospherics/pipe/manifold/M = P
+		return list(M.node1, M.node2, M.node3)
+	if(istype(P, /obj/machinery/atmospherics/pipe/zpipe))
+		var/obj/machinery/atmospherics/pipe/zpipe/Z = P
+		return list(Z.node1, Z.node2)
+	if(istype(P, /obj/machinery/atmospherics/pipe/simple))
+		var/obj/machinery/atmospherics/pipe/simple/S = P
+		return list(S.node1, S.node2)
+	return list()

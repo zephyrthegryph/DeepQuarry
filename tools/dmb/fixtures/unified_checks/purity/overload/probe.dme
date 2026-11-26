@@ -1,8 +1,0 @@
-/datum/counter
-    var/value=0
-/datum/counter/proc/operator++()
-    value=1
-    return src
-/proc/probe(datum/counter/C)
-    set SpacemanDMM_should_be_pure = 1
-    C++

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
+import { Label } from 'tgui/components/Label';
 import {
   Box,
   Button,
@@ -9,7 +10,7 @@ import {
   Table,
 } from 'tgui-core/components';
 import { createSearch } from 'tgui-core/string';
-
+import type { CrewMonitorActions } from '../generated/CrewMonitor';
 import {
   getConditionInfo,
   getShownCrew,
@@ -40,26 +41,22 @@ const CrewVitals = (props: { cm: Crewmember }) => {
           {condition.label}
         </Box>
       ) : null}
-      {readings.length ? (
-        <Box inline color="label">
-          ({readings.join(' | ')})
-        </Box>
-      ) : null}
+      {readings.length ? <Label inline>({readings.join(' | ')})</Label> : null}
     </Box>
   );
 };
 
 export const CrewMonitorCrew = (props: { crew: Crewmember[] }) => {
-  const { act, data } = useBackend<Data>();
+  const { act, data } = useBackend<Data, CrewMonitorActions>();
 
   const [nameSearch, setNameSearch] = useState<string>('');
   const [livingStatus, setLivingStatus] = useState<boolean>(true);
   const [unconsciousStatus, setUnconsciousStatus] = useState<boolean>(true);
   const [deceasedStatus, setDeceasedStatus] = useState<boolean>(true);
 
-  const { crew } = props;
+  const { crew = [] } = props;
 
-  const { isAI, map_levels } = data;
+  const { isAI, map_levels = [] } = data;
 
   const our_levels: number[] = [-1, ...map_levels];
 
@@ -135,20 +132,23 @@ export const CrewMonitorCrew = (props: { crew: Crewmember[] }) => {
             <Button.Checkbox
               checked={livingStatus}
               onClick={() => setLivingStatus(!livingStatus)}
+              tooltip="Show the living"
             >
-              Livin
+              Alive
             </Button.Checkbox>
             <Button.Checkbox
               checked={unconsciousStatus}
               onClick={() => setUnconsciousStatus(!unconsciousStatus)}
+              tooltip="Show the unconscious"
             >
-              Uncon
+              Down
             </Button.Checkbox>
             <Button.Checkbox
               checked={deceasedStatus}
               onClick={() => setDeceasedStatus(!deceasedStatus)}
+              tooltip="Show the deceased"
             >
-              Decea
+              Dead
             </Button.Checkbox>
             <Button
               selected={sortType === 'damage'}
@@ -194,6 +194,15 @@ export const CrewMonitorCrew = (props: { crew: Crewmember[] }) => {
             />
           </Table.Cell>
         </Table.Row>
+        {sortedCrew.length === 0 && (
+          <Table.Row>
+            <Table.Cell colSpan={3} color="label" py={1}>
+              {crew.length
+                ? 'No crew match the filters.'
+                : 'No suit sensors are reporting.'}
+            </Table.Cell>
+          </Table.Row>
+        )}
         {sortedCrew.map((cm) => (
           <Table.Row key={cm.ref}>
             <Table.Cell>

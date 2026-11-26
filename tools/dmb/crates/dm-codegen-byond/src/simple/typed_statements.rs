@@ -26,10 +26,10 @@ impl Compiler<'_> {
             self.debug_at(statement.header_span.start, &statement.raw_header)?;
             if let StatementKind::For { control, .. } = &statement.kind {
                 let declarations: &[&str] = match control {
-                    ForControl::All { declaration, .. } => &[declaration],
-                    ForControl::Each { binding, .. }
-                    | ForControl::Range { binding, .. }
-                    | ForControl::RangeImplicitArray { binding, .. } => &[binding],
+                    ForControl::All { declaration } => &[declaration],
+                    ForControl::Each { binding, .. } | ForControl::Range { binding, .. } => {
+                        &[binding]
+                    }
                     ForControl::Pair {
                         key_binding,
                         value_binding,
@@ -68,28 +68,20 @@ impl Compiler<'_> {
             }
             self.assoc_exempt_root = match &statement.kind {
                 StatementKind::Assign { value, .. } => Some(value as *const Expr),
-                StatementKind::Var {
-                    value: Some(value), ..
-                } => Some(value as *const Expr),
+                StatementKind::Var { value: Some(value), .. } => Some(value as *const Expr),
                 StatementKind::If { condition, .. }
                 | StatementKind::While { condition, .. }
                 | StatementKind::DoWhile { condition, .. } => Some(condition as *const Expr),
                 StatementKind::Switch { selector, .. } => Some(selector as *const Expr),
-                StatementKind::Spawn {
-                    delay: Some(delay), ..
-                } => Some(delay as *const Expr),
-                StatementKind::Expression(value) | StatementKind::Call(value) => {
-                    match &value.kind {
-                        ExprKind::Binary { op, rhs, .. } if op == "<<" => {
-                            Some(rhs.as_ref() as *const Expr)
-                        }
-                        _ => Some(value as *const Expr),
-                    }
-                }
+                StatementKind::Spawn { delay: Some(delay), .. } => Some(delay as *const Expr),
+                StatementKind::Expression(value) | StatementKind::Call(value) => match &value.kind {
+                    ExprKind::Binary { op, rhs, .. } if op == "<<" => Some(rhs.as_ref() as *const Expr),
+                    _ => Some(value as *const Expr),
+                },
                 _ => None,
             };
             match &statement.kind {
-                StatementKind::Set { .. } | StatementKind::ProjectedSet { .. } => {
+                StatementKind::Set { .. } => {
                     return Err(error(
                         &statement.raw_header,
                         "procedure setting was not normalized",
@@ -106,9 +98,6 @@ impl Compiler<'_> {
                 StatementKind::Throw(value) => {
                     self.expression(value, &statement.raw_header)?;
                     self.emit(0x12d, vec![]);
-                }
-                StatementKind::Delete(value) => {
-                    if self.typed_delete(value,&statement.raw_header)? { break; }
                 }
                 StatementKind::Label { name, body } => {
                     let label = self
@@ -170,12 +159,11 @@ impl Compiler<'_> {
                     {
                         return Err(protected_entry_error(&statement.raw_header, name));
                     }
-                    let label = self.user_labels.get(name).copied().ok_or_else(|| {
-                        source_error(
-                            &statement.raw_header,
-                            &format!("{}: bad link", statement.raw_header.trim()),
-                        )
-                    })?;
+                    let label = self
+                        .user_labels
+                        .get(name)
+                        .copied()
+                        .ok_or_else(|| source_error(&statement.raw_header, &format!("{}: bad link", statement.raw_header.trim())))?;
                     let depth = *self.label_try_depths.get(&label).unwrap_or(&0);
                     if depth > self.try_depth {
                         return Err(protected_entry_error(&statement.raw_header, name));
@@ -259,12 +247,9 @@ impl Compiler<'_> {
                     self.assign_expr(target, op, value, &statement.raw_header)?;
                 }
                 StatementKind::Var { declaration, value } => {
-                    let name = self
-                        .primary_local_name(statement)
-                        .or_else(|| local_name(declaration))
-                        .ok_or_else(|| {
-                            error(&statement.raw_header, "unsupported local declaration")
-                        })?;
+                    let name = local_name(declaration).ok_or_else(|| {
+                        error(&statement.raw_header, "unsupported local declaration")
+                    })?;
                     if name.is_empty() {
                         return Err(error(
                             &statement.raw_header,
@@ -283,13 +268,21 @@ impl Compiler<'_> {
                     self.locals.push(name.into());
                     self.local_slots.insert(name.into(), slot);
                     self.record_local_header(slot, statement.header_span);
-                    if self.primary_or_legacy_array(
-                        statement.header_span,
-                        slot,
-                        declaration,
-                        value.as_ref(),
-                        &statement.raw_header,
-                    )? {
+                    if let Some(dimensions) = local_array_dimensions(declaration) {
+                        self.local_array_declaration(
+                            &dimensions,
+                            slot,
+                            &statement.raw_header,
+                            value.as_ref().map(|value| {
+                                |compiler: &mut Self| {
+                                    compiler.local_declaration_initializer(
+                                        value,
+                                        declaration,
+                                        &statement.raw_header,
+                                    )
+                                }
+                            }),
+                        )?;
                         continue;
                     }
                     self.register_local_declaration_type(name, declaration);
@@ -373,16 +366,16 @@ impl Compiler<'_> {
                     self.result.code.items.push(CodeItem::Label(end));
                 }
                 StatementKind::For {
-                    control: ForControl::All { declaration, .. },
+                    control: ForControl::All { declaration },
                     body,
                 } => {
-                    let name = self
-                        .primary_local_name(statement)
-                        .or_else(|| local_name(declaration))
-                        .ok_or_else(|| {
-                            error(&statement.raw_header, "world iterator must declare a local")
-                        })?;
-                    let type_name = dm_syntax::local_type_path(declaration).ok_or_else(|| {
+                    let name = local_name(declaration).ok_or_else(|| {
+                        error(&statement.raw_header, "world iterator must declare a local")
+                    })?;
+                    let raw = declaration.strip_prefix("var/").ok_or_else(|| {
+                        error(&statement.raw_header, "world iterator requires a type")
+                    })?;
+                    let (type_name, _) = raw.rsplit_once('/').ok_or_else(|| {
                         error(&statement.raw_header, "world iterator requires a type")
                     })?;
                     let path = runtime_declaration_path(type_name);
@@ -437,9 +430,7 @@ impl Compiler<'_> {
                         vec![Word::Variable(VariableWord::Local(slot))],
                     );
                     self.emit(opcode::JZ, vec![Word::Branch(end)]);
-                    if world_mask != 0
-                        && (type_name == "obj" || type_name == "atom" || type_name.contains('/'))
-                    {
+                    if world_mask != 0 && (type_name == "obj" || type_name == "atom" || type_name.contains('/')) {
                         self.emit(
                             opcode::GET_VAR,
                             vec![Word::Variable(VariableWord::Local(slot))],
@@ -470,7 +461,7 @@ impl Compiler<'_> {
                     }
                 }
                 StatementKind::For {
-                    control: ForControl::Each { binding, iterable, .. },
+                    control: ForControl::Each { binding, iterable },
                     body,
                 } => {
                     let (binding, explicit_mask) =
@@ -500,19 +491,16 @@ impl Compiler<'_> {
                     // existing variable the loop assigns (a typed argument, local, field or global). DreamMaker skips elements
                     // of other types for both.
                     let declared_type: Option<String> = match binding.strip_prefix("var/") {
-                        Some(_) => dm_syntax::local_type_path(binding).map(str::to_owned),
+                        Some(raw) => raw.rsplit_once('/').map(|(path, _)| path.to_string()),
                         None => {
                             let parsed = dm_syntax::parse_expression(binding);
                             match parsed.expr.as_ref().map(|variable| &variable.kind) {
                                 Some(ExprKind::Ident(name)) if parsed.diagnostics.is_empty() => {
                                     self.declared_variable_type(name)
                                 }
-                                Some(ExprKind::Member {
-                                    object,
-                                    selector,
-                                    via_colon: false,
-                                }) if parsed.diagnostics.is_empty()
-                                    && matches!(&object.kind, ExprKind::Ident(base) if base == "src") =>
+                                Some(ExprKind::Member { object, selector, via_colon: false })
+                                    if parsed.diagnostics.is_empty()
+                                        && matches!(&object.kind, ExprKind::Ident(base) if base == "src") =>
                                 {
                                     self.declared_variable_type(selector)
                                 }
@@ -522,8 +510,7 @@ impl Compiler<'_> {
                     };
                     // The pre-filter DreamMaker derives from the declared type: the category bits of `as` (mob 1, obj 2,
                     // turf 32, area 256); `atom` is all four and `atom/movable` is mob and obj.
-                    let mask = explicit_mask
-                        .unwrap_or_else(|| iterator_mask(declared_type.as_deref().unwrap_or("")));
+                    let mask = explicit_mask.unwrap_or_else(|| iterator_mask(declared_type.as_deref().unwrap_or("")));
                     let binding_variable = if let Some(name) = local_name(binding) {
                         self.check_local_declaration(
                             name,
@@ -537,7 +524,10 @@ impl Compiler<'_> {
                         self.locals.push(name.into());
                         self.local_slots.insert(name.into(), slot);
                         self.record_local_header(slot, statement.header_span);
-                        if let Some(path) = dm_syntax::local_type_path(binding) {
+                        if let Some((path, _)) = binding
+                            .strip_prefix("var/")
+                            .and_then(|raw| raw.rsplit_once('/'))
+                        {
                             self.local_types
                                 .insert(name.into(), runtime_declaration_path(path));
                         }
@@ -556,11 +546,7 @@ impl Compiler<'_> {
                     // instruction (`IterLoad 13, mask` rather than `Range`, `IterLoad 5, mask`). The built-in's opcode is
                     // the last instruction only when the iterable is a direct call.
                     let mut load_mode = 5;
-                    if let Some(CodeItem::Instruction(Instruction {
-                        opcode: producer,
-                        operands,
-                    })) = self.result.code.items.last()
-                    {
+                    if let Some(CodeItem::Instruction(Instruction { opcode: producer, operands })) = self.result.code.items.last() {
                         let fused = match (*producer, operands.as_slice()) {
                             (0x1f, []) => Some(6),
                             (0x1b, []) => Some(7),
@@ -597,9 +583,9 @@ impl Compiler<'_> {
                     self.emit(opcode::JZ, vec![Word::Branch(end)]);
                     if mask == 0
                         || (explicit_mask.is_none()
-                            && declared_type.as_deref().is_some_and(|path| {
-                                path == "obj" || path == "atom" || path.contains('/')
-                            }))
+                            && declared_type
+                                .as_deref()
+                                .is_some_and(|path| path == "obj" || path == "atom" || path.contains('/')))
                     {
                         if let Some(type_name) = declared_type.as_deref() {
                             let path = runtime_declaration_path(type_name);
@@ -677,7 +663,10 @@ impl Compiler<'_> {
                             self.locals.push(name.into());
                             self.local_slots.insert(name.into(), slot);
                             self.record_local_header(slot, statement.header_span);
-                            if let Some(path) = dm_syntax::local_type_path(binding) {
+                            if let Some((path, _)) = binding
+                                .strip_prefix("var/")
+                                .and_then(|raw| raw.rsplit_once('/'))
+                            {
                                 self.local_types
                                     .insert(name.into(), runtime_declaration_path(path));
                             }
@@ -721,15 +710,6 @@ impl Compiler<'_> {
                     if self.iterator_depth > 0 {
                         self.emit(opcode::ITER_POP, vec![]);
                     }
-                }
-                StatementKind::For {
-                    control: ForControl::RangeImplicitArray { .. },
-                    ..
-                } => {
-                    return Err(error(
-                        &statement.raw_header,
-                        "implicit array range start has no native runtime lowering",
-                    ));
                 }
                 StatementKind::For {
                     control:
@@ -814,26 +794,12 @@ impl Compiler<'_> {
                     if let Some(initializer) = initializer {
                         match initializer {
                             ForInitializer::Declare { declaration, value } => {
-                                let name = self
-                                    .primary_local_name(statement)
-                                    .or_else(|| local_name(declaration))
-                                    .ok_or_else(|| {
-                                        error(
-                                            &statement.raw_header,
-                                            "unsupported for initializer declaration",
-                                        )
-                                    })?;
-                                // The original name can be available even when
-                                // dimension operators defeat legacy text projection.
-                                // Apply the SAME parameter/local collision rule.
-                                self.check_local_declaration(
-                                    name,
-                                    &statement.raw_header,
-                                    LowerSpan {
-                                        start: statement.header_span.start,
-                                        end: statement.header_span.end,
-                                    },
-                                )?;
+                                let name = local_name(declaration).ok_or_else(|| {
+                                    error(
+                                        &statement.raw_header,
+                                        "unsupported for initializer declaration",
+                                    )
+                                })?;
                                 if self.local_slots.contains_key(name) {
                                     return Err(error(
                                         &statement.raw_header,
@@ -844,17 +810,8 @@ impl Compiler<'_> {
                                 self.locals.push(name.into());
                                 self.local_slots.insert(name.into(), slot);
                                 self.record_local_header(slot, statement.header_span);
-                                let array = self.primary_or_legacy_array(
-                                    statement.header_span,
-                                    slot,
-                                    declaration,
-                                    value.as_ref(),
-                                    &statement.raw_header,
-                                )?;
-                                if !array {
-                                    self.register_local_declaration_type(name, declaration);
-                                }
-                                if let Some(value) = value.as_ref().filter(|_| !array) {
+                                self.register_local_declaration_type(name, declaration);
+                                if let Some(value) = value {
                                     self.local_declaration_initializer(
                                         value,
                                         declaration,
@@ -895,7 +852,7 @@ impl Compiler<'_> {
                 StatementKind::Switch {
                     selector,
                     cases,
-                    else_branch, ..
+                    else_branch,
                 } => {
                     if self.native_switch(selector, cases, else_branch, &statement.raw_header)? {
                         continue;
@@ -960,11 +917,9 @@ impl Compiler<'_> {
                 StatementKind::Try {
                     body,
                     catch_binding,
-                    catch_parameter_count,
                     catch_header_span,
                     catch_body,
                 } => {
-                    if *catch_parameter_count>1{return Err(error(&statement.raw_header,"multiple catch parameter lowering is not implemented"))}
                     let catch_label = self.label();
                     let end_label = self.label();
                     self.emit(0x12c, vec![Word::Branch(catch_label)]);
@@ -987,7 +942,10 @@ impl Compiler<'_> {
                         self.locals.push(name.into());
                         self.local_slots.insert(name.into(), slot);
                         self.local_declarations.insert(slot, catch_span);
-                        if let Some(path) = dm_syntax::local_type_path(binding) {
+                        if let Some((path, _)) = binding
+                            .strip_prefix("var/")
+                            .and_then(|raw| raw.rsplit_once('/'))
+                        {
                             self.local_types
                                 .insert(name.into(), runtime_declaration_path(path));
                         }
@@ -1002,9 +960,11 @@ impl Compiler<'_> {
                     self.result.code.items.push(CodeItem::Label(end_label));
                 }
                 StatementKind::Break => {
-                    let target = self.breaks.last().copied().ok_or_else(|| {
-                        source_error(&statement.raw_header, "break: not in a loop")
-                    })?;
+                    let target = self
+                        .breaks
+                        .last()
+                        .copied()
+                        .ok_or_else(|| source_error(&statement.raw_header, "break: not in a loop"))?;
                     let leaves_try = self
                         .label_try_depths
                         .get(&target)
@@ -1053,9 +1013,7 @@ impl Compiler<'_> {
                     let target = self
                         .loops
                         .last()
-                        .ok_or_else(|| {
-                            source_error(&statement.raw_header, "continue: not in a loop")
-                        })?
+                        .ok_or_else(|| source_error(&statement.raw_header, "continue: not in a loop"))?
                         .0;
                     let leaves_try = self
                         .label_try_depths

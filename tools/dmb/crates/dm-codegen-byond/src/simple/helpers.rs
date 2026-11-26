@@ -225,29 +225,13 @@ pub(super) fn parenthesized(text: &str) -> Option<&str> {
 /// Decode a quoted DM literal using the same escapes as procedure lowering.
 /// Interpolated literals require runtime evaluation and return `None`.
 pub fn decode_constant_string_literal(raw: &str) -> Result<Option<Vec<u8>>, String> {
-    // Raw-source entry points have no issued expression owner yet. Keep this
-    // compatibility boundary; AST consumers use the borrowed overload below.
-    decode_native_constant_string_literal(&dm_syntax::LiteralText::from(raw))
-}
-
-/// Decode an issued literal without re-parsing its interpolation expressions.
-/// The byte result is owned by the caller; syntax stays shared with emission.
-pub fn decode_native_constant_string_literal(
-    literal: &dm_syntax::LiteralText,
-) -> Result<Option<Vec<u8>>, String> {
-    if literal.original_value().is_some(){return literal.decode_original_static_text()}
-    Ok(literal
-        .parts()
-        .map_err(str::to_owned)?
-        .filter(|parts| parts.expressions.is_empty())
-        .map(|parts| parts.template.clone()))
+    Ok(string_literal_parts(raw)?
+        .and_then(|(bytes, expressions)| expressions.is_empty().then_some(bytes)))
 }
 
 #[path = "helpers/literal_registration.rs"]
 mod literal_registration;
-pub use literal_registration::{
-    visit_constant_string_literals, visit_native_constant_string_literals,
-};
+pub use literal_registration::visit_constant_string_literals;
 
 /// Fold only literal string concatenations through the authoritative scalar
 /// evaluator. This admits no name, call, allocation, resource or conditional
@@ -273,11 +257,7 @@ pub(super) fn fold_literal_string_expression(expr: &Expr) -> Option<Vec<u8>> {
     match dm_ir::constants::evaluate_expr_with_resources(
         root,
         |_| None,
-        |literal| {
-            decode_native_constant_string_literal(literal)
-                .ok()
-                .flatten()
-        },
+        |raw| decode_constant_string_literal(raw).ok().flatten(),
         |_| None,
         |_| None,
     )? {
@@ -287,7 +267,291 @@ pub(super) fn fold_literal_string_expression(expr: &Expr) -> Option<Vec<u8>> {
     }
 }
 
-pub(super) use dm_syntax::literal::parse_interpolated_string;
+/// One shared literal parser for emission and source registration. Expression
+/// nodes exist only for this literal's interpolation leaves, never a whole body.
+fn string_literal_parts(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>, String> {
+    // DreamMaker drops every carriage return from a literal, so a CRLF source file and a
+    // lone CR give the same text as an LF file (checked against dm.exe, 516.1681).
+    let stripped;
+    let raw = if raw.contains('\r') {
+        stripped = raw.replace('\r', "");
+        stripped.as_str()
+    } else {
+        raw
+    };
+    // Raw literals preserve escapes and brackets exactly, including multiline text.
+    let raw_value = if raw.starts_with("@{\"") && raw.ends_with("\"}") && raw.len() >= 5 {
+        Some(&raw[3..raw.len() - 2])
+    } else if ((raw.starts_with("@\"") && raw.ends_with('"'))
+        || (raw.starts_with("@'") && raw.ends_with('\'')))
+        && raw.len() >= 3
+    {
+        Some(&raw[2..raw.len() - 1])
+    } else {
+        None
+    };
+    if let Some(value) = raw_value {
+        return Ok(Some((value.as_bytes().to_vec(), Vec::new())));
+    }
+    let value = if raw.starts_with("{\"") && raw.ends_with("\"}") && raw.len() >= 4 {
+        &raw[2..raw.len() - 2]
+    } else if raw.starts_with('"') && raw.ends_with('"') && raw.len() >= 2 {
+        &raw[1..raw.len() - 1]
+    } else {
+        return Ok(None);
+    };
+    let (bytes, expressions) = parse_interpolated_string(value)?;
+    Ok(Some((bytes, expressions)))
+}
+
+pub(super) fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Expr>), String> {
+    // DreamMaker drops every carriage return from a literal (also one that stands alone in the middle of the text).
+    let stripped;
+    let value = if value.contains('\r') {
+        stripped = value.replace('\r', "");
+        stripped.as_str()
+    } else {
+        value
+    };
+    let mut template = Vec::new();
+    let mut expressions = Vec::new();
+    let mut next_marker = None;
+    let mut substituted = false;
+    let mut at = 0;
+    while at < value.len() {
+        let ch = value[at..].chars().next().unwrap();
+        if ch == '\\' {
+            at += 1;
+            let rest = &value[at..];
+            if rest.starts_with("\r\n") || rest.starts_with('\n') {
+                at += if rest.starts_with("\r\n") { 2 } else { 1 };
+                while at < value.len()
+                    && matches!(value.as_bytes()[at], b' ' | b'\t' | b'\r' | b'\n')
+                {
+                    at += 1;
+                }
+                continue;
+            }
+            if rest.starts_with(' ') {
+                at += 1;
+                continue;
+            }
+            if let Some(consumed) = numeric_escape(rest, &mut template) {
+                at += consumed;
+                continue;
+            }
+            if rest.starts_with("...") {
+                template.extend([0xff, 0x12]);
+                at += 3;
+                continue;
+            }
+            // DreamMaker reads the whole letter run after `\` as a macro name. A run
+            // that names no applicable macro falls back to a one-letter escape
+            // (`\n`, `\t`) followed by literal text, or is an error: `"\red"` is the
+            // red formatting macro and `"\redb"` is invalid, never `\r` + "ed".
+            let word_len = rest.bytes().take_while(u8::is_ascii_alphabetic).count();
+            if word_len != 0 {
+                let word = &rest[..word_len];
+                let after = &rest[word_len..];
+                if let Some(effect) = text_macro(word, after, &template, substituted)? {
+                    at += word_len;
+                    match effect {
+                        TextMacro::Emit(marker, consume_space) => {
+                            // `\font` absorbs one preceding space, not a following one.
+                            if marker == 0x1d && template.last() == Some(&b' ') {
+                                template.pop();
+                            }
+                            template.extend([0xff, marker]);
+                            if consume_space && value[at..].starts_with(' ') {
+                                at += 1;
+                            }
+                        }
+                        TextMacro::Article(marker) => {
+                            template.extend([0xff, marker]);
+                            next_marker = Some(0x03);
+                            at += 1;
+                        }
+                        TextMacro::NextExpression(marker) => next_marker = Some(marker),
+                        TextMacro::Ordinal => {
+                            let last = template.len() - 1;
+                            template[last] = 0x05;
+                        }
+                    }
+                    continue;
+                }
+            }
+            let escape = value[at..].chars().next().ok_or("trailing string escape")?;
+            let escaped = match escape {
+                'n' => "\n",
+                't' => "\t",
+                '\\' => "\\",
+                '"' => "\"",
+                '\'' => "'",
+                '[' => "[",
+                ']' => "]",
+                '<' => "&lt;",
+                '>' => "&gt;",
+                '&' => "&amp;",
+                _ if word_len != 0 => {
+                    return Err(format!(
+                        "undefined text macro or escape sequence: \\{}",
+                        &rest[..word_len]
+                    ))
+                }
+                _ => return Err(format!("unsupported string escape: \\{escape}")),
+            };
+            template.extend_from_slice(escaped.as_bytes());
+            at += escape.len_utf8();
+            continue;
+        }
+        if ch == '[' {
+            let start = at + 1;
+            let mut cursor = start;
+            let mut depth = 1usize;
+            let mut quote = false;
+            while cursor < value.len() {
+                let next = value[cursor..].chars().next().unwrap();
+                if next == '"' {
+                    quote = !quote;
+                }
+                if !quote {
+                    if next == '[' {
+                        depth += 1;
+                    }
+                    if next == ']' {
+                        depth -= 1;
+                        if depth == 0 {
+                            break;
+                        }
+                    }
+                }
+                cursor += next.len_utf8();
+            }
+            if depth != 0 {
+                return Err("unclosed string interpolation".into());
+            }
+            substituted = true;
+            if value[start..cursor].trim().is_empty() {
+                template.extend([0xff, next_marker.take().unwrap_or(1)]);
+                at = cursor + 1;
+                continue;
+            }
+            let source = dm_syntax::splice_expression_continuations(value[start..cursor].trim());
+            let expression = parse_expression(&source);
+            if !expression.diagnostics.is_empty() {
+                return Err("invalid string interpolation expression".into());
+            }
+            expressions.push(expression.expr.ok_or("empty string interpolation")?);
+            let marker = next_marker.take().unwrap_or_else(|| {
+                if interpolation_starts_sentence(&template) {
+                    2
+                } else {
+                    1
+                }
+            });
+            template.extend([0xff, marker]);
+            at = cursor + 1;
+            continue;
+        }
+        let mut bytes = [0; 4];
+        template.extend_from_slice(ch.encode_utf8(&mut bytes).as_bytes());
+        at += ch.len_utf8();
+    }
+    Ok((template, expressions))
+}
+
+enum TextMacro {
+    /// `0xff marker` in place; the flag consumes one following space.
+    Emit(u8, bool),
+    /// Article (`\the`, `\a`, ...): marker in place, the next substitution is its
+    /// noun (marker 3), and the mandatory following space is consumed.
+    Article(u8),
+    /// The next substitution is emitted with this marker (`\ref`, `\icon`, ...).
+    NextExpression(u8),
+    /// `\th` rewrites the marker of the substitution it directly follows.
+    Ordinal,
+}
+
+/// `\xHH` (two hex digits) and `\uHHHH` (four) code points, UTF-8 encoded.
+fn numeric_escape(rest: &str, template: &mut Vec<u8>) -> Option<usize> {
+    let digits = match rest.as_bytes().first()? {
+        b'x' => 2,
+        b'u' => 4,
+        _ => return None,
+    };
+    let hex = rest.get(1..1 + digits)?;
+    if !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return None;
+    }
+    let code = char::from_u32(u32::from_str_radix(hex, 16).ok()?)?;
+    let mut encoded = [0; 4];
+    template.extend_from_slice(code.encode_utf8(&mut encoded).as_bytes());
+    Some(1 + digits)
+}
+
+/// DreamMaker 516.1687 text macros by full name (oracle:
+/// `fixtures/native_compiler/text_macros`). `Ok(None)` means the word is not an
+/// applicable macro here and falls back to a one-letter escape.
+fn text_macro(
+    word: &str,
+    after: &str,
+    template: &[u8],
+    substituted: bool,
+) -> Result<Option<TextMacro>, String> {
+    let pronoun = |marker| {
+        if substituted {
+            Ok(Some(TextMacro::Emit(marker, false)))
+        } else {
+            Err(format!("macro \\{word} requires preceding expression"))
+        }
+    };
+    let article = |marker| Ok(after.starts_with(' ').then_some(TextMacro::Article(marker)));
+    match word {
+        "the" => article(0x08),
+        "The" => article(0x09),
+        "a" | "an" => article(0x06),
+        "A" | "An" => article(0x07),
+        "he" | "she" => pronoun(0x0a),
+        "He" | "She" => pronoun(0x0b),
+        "his" => pronoun(0x0c),
+        "His" => pronoun(0x0d),
+        "hers" => pronoun(0x0e),
+        "Hers" => pronoun(0x0f),
+        "him" => pronoun(0x10),
+        "himself" | "herself" => pronoun(0x11),
+        "s" => pronoun(0x14),
+        "th" => {
+            if substituted && template.len() >= 2 && template[template.len() - 2] == 0xff {
+                Ok(Some(TextMacro::Ordinal))
+            } else {
+                Err("macro \\th must follow a substituted expression (like []\\th)".into())
+            }
+        }
+        "proper" | "improper" => {
+            if template.is_empty() {
+                let marker = if word == "proper" { 0x15 } else { 0x16 };
+                Ok(Some(TextMacro::Emit(marker, true)))
+            } else {
+                Err(format!("\\{word} must be at beginning of word"))
+            }
+        }
+        "ref" => Ok(Some(TextMacro::NextExpression(0x2a))),
+        "icon" => Ok(Some(TextMacro::NextExpression(0x2b))),
+        "roman" => Ok(Some(TextMacro::NextExpression(0x2c))),
+        "Roman" => Ok(Some(TextMacro::NextExpression(0x2d))),
+        "bold" | "b" => Ok(Some(TextMacro::Emit(0x17, true))),
+        "italic" | "i" => Ok(Some(TextMacro::Emit(0x18, true))),
+        "underline" | "u" => Ok(Some(TextMacro::Emit(0x19, true))),
+        "o" => Ok(Some(TextMacro::Emit(0x1a, true))),
+        "font" => Ok(Some(TextMacro::Emit(0x1d, false))),
+        "red" => Ok(Some(TextMacro::Emit(0x1f, true))),
+        "green" => Ok(Some(TextMacro::Emit(0x20, true))),
+        "blue" => Ok(Some(TextMacro::Emit(0x21, true))),
+        "black" => Ok(Some(TextMacro::Emit(0x22, true))),
+        "white" => Ok(Some(TextMacro::Emit(0x23, true))),
+        _ => Ok(None),
+    }
+}
 
 pub(super) fn parse_text_template(value: &str) -> Result<(Vec<u8>, Vec<Option<Expr>>), String> {
     let mut expanded = String::with_capacity(value.len());
@@ -323,6 +587,28 @@ pub(super) fn parse_text_template(value: &str) -> Result<(Vec<u8>, Vec<Option<Ex
 /// DreamMaker's capitalisation test looks through text-macro marker bytes: the
 /// `0xff` lead byte is skipped like whitespace, so `"\green[x]"` (`ff 20`) starts
 /// a sentence while `"\red[x]"` (`ff 1f`) does not.
+fn interpolation_starts_sentence(mut prefix: &[u8]) -> bool {
+    loop {
+        while prefix
+            .last()
+            .is_some_and(|byte| matches!(byte, b' ' | b'\n' | b'\t' | b'\'' | b'"' | 0xff))
+        {
+            prefix = &prefix[..prefix.len() - 1];
+        }
+        match prefix.last() {
+            None | Some(b'.' | b'!' | b'?') => return true,
+            Some(b'>') => {
+                if let Some(opening) = prefix.iter().rposition(|byte| *byte == b'<') {
+                    prefix = &prefix[..opening];
+                } else {
+                    return true;
+                }
+            }
+            _ => return false,
+        }
+    }
+}
+
 /// Bits DreamMaker's constant folder sees for a number: positive values saturate at 32 bits, negative ones at `i32::MIN`
 /// (pinned 516.1687: `1.#INF | 1` is 16777215, `2147483648 | 1` is 1, `4294967296 | 1` is 16777215).
 fn fold_bits(number: f32) -> Option<u32> {
@@ -355,16 +641,6 @@ fn fold_shift_count(number: f32) -> Option<u32> {
 /// non-constant operands) or reports an error (`x % 0.5`, `0 ** -1`, `-1 ** 0.5`). Numbers are 32-bit floats.
 pub(super) fn fold_number(expr: &Expr) -> Option<f32> {
     match &expr.kind {
-        ExprKind::Literal(value) if value.original_value().is_some() => {
-            // Actual Original token VALUE precedes any spelling inference.
-            // Recovered Int0 and exact Float bits must not be reparsed as the
-            // offending/raw token. String/resource never coerce via raw text.
-            match value.original_value().expect("same immutable scalar facts") {
-                dm_syntax::OriginalTokenValue::Int(number)=>Some(number as f32),
-                dm_syntax::OriginalTokenValue::Float(number)=>Some(number),
-                _=>None,
-            }
-        }
         ExprKind::Literal(value) if value == "1.#INF" => Some(f32::INFINITY),
         ExprKind::Literal(value) if value == "TRUE" => Some(1.0),
         ExprKind::Literal(value) if value == "FALSE" => Some(0.0),
@@ -386,7 +662,7 @@ pub(super) fn fold_number(expr: &Expr) -> Option<f32> {
             if raw.starts_with("@'") {
                 return None;
             }
-            let text = decode_native_constant_string_literal(raw).ok().flatten()?;
+            let text = decode_constant_string_literal(raw).ok().flatten()?;
             Some(if text.is_empty() { 1.0 } else { 0.0 })
         }
         ExprKind::Unary { op, value } => {
@@ -490,7 +766,7 @@ pub(super) fn constant_text(expr: &Expr) -> Option<Vec<u8>> {
         root = inner;
     }
     if let ExprKind::Literal(raw) = &root.kind {
-        return decode_native_constant_string_literal(raw).ok().flatten();
+        return decode_constant_string_literal(raw).ok().flatten();
     }
     fold_literal_string_expression(root)
 }
@@ -612,47 +888,4 @@ pub(super) fn is_output_target(expr: &Expr) -> bool {
                 if matches!(&object.kind, ExprKind::Ident(name) if name == "world")
                     && selector == "log"
         )
-}
-
-#[cfg(test)]
-mod native_literal_decode_tests {
-    use super::*;
-    #[test]
-    fn native_decoder_reuses_literal_parts_and_matches_raw_boundary_bytes() {
-        for raw in [
-            r#""line\n""#,
-            r#"@"[literal]""#,
-            r#""[dynamic()]""#,
-            r#""\red text""#,
-        ] {
-            let expression = parse_expression(raw).expr.unwrap();
-            let ExprKind::Literal(issued) = &expression.kind else {
-                panic!()
-            };
-            let before = issued.parts().unwrap().unwrap();
-            let result = decode_native_constant_string_literal(issued).unwrap();
-            assert_eq!(result, decode_constant_string_literal(raw).unwrap());
-            assert!(std::ptr::eq(before, issued.parts().unwrap().unwrap()));
-            assert_eq!(
-                decode_native_constant_string_literal(issued).unwrap(),
-                result
-            );
-        }
-    }
-}
-
-#[cfg(test)]mod original_numeric_fact_fold_tests{
- use super::*;use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission};use std::sync::{atomic::{Ordering}};
- fn literal(raw:&str,value:V<&str>,a:&SettingAdmission<'_>)->Expr{Expr{span:dm_syntax::Span::new(0,raw.len()),kind:ExprKind::Literal(LiteralText::from_original_value_data(raw.to_owned(),0,value,a).unwrap())}}
- #[test]fn actual_original_numeric_facts_precede_raw_overflow_hex_boolean_and_exponent_inference(){
-  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
-  for(raw,value,bits)in[("2147483648",V::Int(0),0f32.to_bits()),("0xFFFFFFFF",V::Int(-1),(-1f32).to_bits()),("TRUE",V::Int(0),0f32.to_bits()),("1e3",V::Float(1000.0),1000f32.to_bits()),("0",V::Float(-0.0),(-0f32).to_bits()),("1.#IND",V::Float(f32::from_bits(0x7fc00111)),0x7fc00111)]{let expr=literal(raw,value,&a);assert_eq!(fold_number(&expr).unwrap().to_bits(),bits);}
-  assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
- }
- #[test]fn static_string_and_resource_that_look_numeric_are_not_coerced_or_raw_parsed(){
-  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);for value in [V::String("1"),V::Resource("1")]{let expr=literal("1",value,&a);assert!(fold_number(&expr).is_none());}assert_eq!(counter.load(Ordering::Acquire),dm_syntax::SettingChargeCounter::root_allocation_bytes());
- }
- #[test]fn typed_numeric_recursion_keeps_existing_short_circuit_and_native_paths(){
-  let counter=dm_syntax::SettingChargeCounter::try_new(dm_syntax::SettingChargeCounter::root_allocation_bytes()).unwrap();let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let left=literal("overflow text",V::Int(0),&a);let rhs=Expr{span:dm_syntax::Span::new(20,30),kind:ExprKind::Ident("dynamic".into())};let expr=Expr{span:dm_syntax::Span::new(0,30),kind:ExprKind::Binary{op:"&&".into(),lhs:Box::new(left),rhs:Box::new(rhs)}};assert_eq!(fold_number(&expr),Some(0.0));for(raw,expected)in[("1.#INF",f32::INFINITY),("0x10",16.0),("2+3",5.0)]{assert_eq!(fold_number(&parse_expression(raw).expr.unwrap()),Some(expected));}for(raw,expected)in[("TRUE",1.0),("FALSE",0.0)]{let native=Expr{span:dm_syntax::Span::new(0,raw.len()),kind:ExprKind::Literal(raw.into())};assert_eq!(fold_number(&native),Some(expected));}
- }
 }

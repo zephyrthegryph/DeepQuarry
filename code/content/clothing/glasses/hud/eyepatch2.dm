@@ -8,14 +8,8 @@
 
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
 	configure(item_worn(covers = 0))
-	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch, SLOT_ANY_CARRIED)
 	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
-/obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch()
-	set name = "Switch Eyepatch"
-	set category = VERB_CAT_OBJECT
-	set src in usr
-	perform_op(usr, src, "switch_eye", null, ORIGIN_VERB)
 
 /obj/item/clothing/glasses/hud/security/eyepatch2/proc/eye_switch_allowed(datum/act/op/A)
 	var/mob/living/user = A.actor
