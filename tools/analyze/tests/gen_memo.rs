@@ -2,6 +2,8 @@
 //! store (`DQ_GEN_STORE`): a run whose inputs and outputs are unchanged does nothing, and a tree that meets inputs the store already holds
 //! gets the files copied instead of generated. One test, because both are selected with process-wide environment variables.
 
+mod common;
+
 use std::path::{Path, PathBuf};
 
 fn mtime(p: &Path) -> std::time::SystemTime {
@@ -10,6 +12,7 @@ fn mtime(p: &Path) -> std::time::SystemTime {
 
 #[test]
 fn gen_returns_at_once_when_nothing_changed_and_restores_from_the_shared_store() {
+    common::dmbc_parse();
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let repo = manifest.parent().unwrap().parent().unwrap();
     let base = std::env::temp_dir().join(format!("dq-gen-memo-{}", std::process::id()));

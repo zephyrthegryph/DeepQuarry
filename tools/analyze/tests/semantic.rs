@@ -3,6 +3,8 @@
 //! are held by `fixtures.rs` with every other lint; these tests hold what a findings list cannot
 //! show: the exact reads a handler generates, and the generated files.
 
+mod common;
+
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
@@ -35,6 +37,7 @@ fn want(items: &[&str]) -> BTreeSet<String> {
 
 #[test]
 fn generated_reads_on_fixture_handlers_are_exact() {
+    common::dmbc_parse();
     let engine = engine_on(&fixture("sem__reads"));
     let sem = dq_analyze::sem::sem_for(&engine.tree).expect("model");
     let decls = Decls::get(&engine.tree);
@@ -70,6 +73,7 @@ fn generated_reads_on_fixture_handlers_are_exact() {
 
 #[test]
 fn requirement_protocol_preserves_reads_and_validates_each_callback_return_shape() {
+    common::dmbc_parse();
     let engine = engine_on(&fixture("sem__requirement_protocol"));
     let analysis = dq_analyze::sem::handlers::analyzed(&engine.tree).expect("requirement handlers analyzed");
     let handler = |name: &str| analysis.handlers.iter().find(|handler| handler.h.proc == name).expect("fixture callback resolved");
@@ -90,6 +94,7 @@ fn requirement_protocol_preserves_reads_and_validates_each_callback_return_shape
 
 #[test]
 fn a_cycle_is_named_and_has_no_order() {
+    common::dmbc_parse();
     let engine = engine_on(&fixture("sem__reads"));
     let sem = dq_analyze::sem::sem_for(&engine.tree).expect("model");
     let decls = Decls::get(&engine.tree);
@@ -104,6 +109,7 @@ fn a_cycle_is_named_and_has_no_order() {
 
 #[test]
 fn ranks_follow_the_golden() {
+    common::dmbc_parse();
     let dir = fixture("sem__ranks");
     let engine = engine_on(&dir);
     let sem = dq_analyze::sem::sem_for(&engine.tree).expect("model");
@@ -118,6 +124,7 @@ fn ranks_follow_the_golden() {
 
 #[test]
 fn a_handlers_rank_is_one_past_the_deepest_derived_value_it_reads() {
+    common::dmbc_parse();
     let dir = fixture("sem__ranks");
     let (text, diags) = gen_text(&dir, "reads");
     assert_eq!(diags, 0);
@@ -144,6 +151,7 @@ fn golden_or_bless(dir: &Path, file: &str, actual: &str) -> String {
 
 #[test]
 fn the_reads_generator_matches_its_golden() {
+    common::dmbc_parse();
     let dir = fixture("sem__reads");
     let (text, diags) = gen_text(&dir, "reads");
     // The fixture's unannotated/dynamic handlers are the generator's diagnostics too.
@@ -153,6 +161,7 @@ fn the_reads_generator_matches_its_golden() {
 
 #[test]
 fn the_system_accessor_generator_matches_its_golden_and_names_bad_accessors() {
+    common::dmbc_parse();
     let dir = fixture("sem__keys");
     let (text, diags) = gen_text(&dir, "system_accessors");
     assert_eq!(diags, 2, "lamps_dim (no var) and ghost_value (no system)");
@@ -161,6 +170,7 @@ fn the_system_accessor_generator_matches_its_golden_and_names_bad_accessors() {
 
 #[test]
 fn a_stale_generated_file_fails_the_check_and_a_rewrite_freshens_it() {
+    common::dmbc_parse();
     let src = fixture("sem__keys");
     let tmp = std::env::temp_dir().join(format!("dq-gen-stale-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&tmp);
@@ -201,6 +211,7 @@ fn copy_dir(from: &Path, to: &Path) {
 
 #[test]
 fn a_tree_that_declares_no_handler_is_never_parsed_by_the_semantic_lints() {
+    common::dmbc_parse();
     let tmp = std::env::temp_dir().join(format!("dq-no-handlers-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&tmp);
     std::fs::create_dir_all(tmp.join("code")).unwrap();
@@ -216,6 +227,7 @@ SOURCE_DEF(status)
 
 #[test]
 fn the_ui_types_generator_writes_the_typescript_of_a_declared_window() {
+    common::dmbc_parse();
     let dir = fixture("sem__ui");
     let engine = engine_on(&dir);
     let cx = GenCx::new(&engine.tree, &dir);

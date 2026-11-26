@@ -2,6 +2,8 @@
 //! through a typed receiver reaches the declaring type and its subtypes, and a write through a receiver that cannot be typed stays
 //! conservative (every var of that name) and is listed.
 
+mod common;
+
 use std::path::PathBuf;
 
 use dq_analyze::run::{Engine, Options};
@@ -33,6 +35,7 @@ const SOURCE: &str = "/obj/a
 
 #[test]
 fn writes_are_keyed_by_the_declaring_type() {
+    common::dmbc_parse();
     let base = std::env::temp_dir().join(format!("dq-write-index-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);
     std::fs::create_dir_all(base.join("code")).unwrap();
@@ -66,6 +69,7 @@ fn writes_are_keyed_by_the_declaring_type() {
 
 #[test]
 fn removing_the_only_writer_of_a_name_untracks_the_other_types() {
+    common::dmbc_parse();
     // The reverse direction: the tree where nothing writes /obj/a's var but an unrelated type's same-named var is written.
     let base = std::env::temp_dir().join(format!("dq-write-index-rev-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);

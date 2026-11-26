@@ -7,6 +7,8 @@
 //! Compared: an uncached run (model store, walk cache and body facts off), a fresh tree with every cache on, a second run (warm), and a
 //! tree whose cache was filled by a different version of the sources (stale).
 
+mod common;
+
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -44,7 +46,11 @@ fn make_tree(base: &Path, name: &str, repo: &Path, source: &str) -> PathBuf {
     let tree = base.join(name);
     std::fs::create_dir_all(tree.join("code")).unwrap();
     std::fs::write(tree.join("code/a.dm"), source).unwrap();
-    let mut dme = String::from("#include \"code/a.dm\"
+    // The compiler's front end reads a macro call at the top level as a declaration, so the generated files' macros are defined, as the
+    // real tree defines them.
+    std::fs::write(tree.join("code/defs.dm"), "#define GLOBAL_LIST_INIT(X, InitValue) var/global/list/X = InitValue\n#define RETURN_TYPE(X)\n").unwrap();
+    let mut dme = String::from("#include \"code/defs.dm\"
+#include \"code/a.dm\"
 ");
     for g in GENERATED {
         dme.push_str(&format!("#include \"code/engine/_generated/{g}.dm\"
@@ -80,6 +86,7 @@ fn generate(tree: &Path, cache: &Path) -> BTreeMap<String, String> {
 
 #[test]
 fn gen_output_does_not_depend_on_the_caches() {
+    common::dmbc_parse();
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let repo = manifest.parent().unwrap().parent().unwrap();
     let base = std::env::temp_dir().join(format!("dq-cache-truth-{}", std::process::id()));

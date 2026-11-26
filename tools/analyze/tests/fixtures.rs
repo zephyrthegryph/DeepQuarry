@@ -2,6 +2,8 @@
 //! fixture tree must produce exactly the recorded findings (recorded by `analyze parity --bless`
 //! from the legacy script, which is what makes this a parity test that outlives the script).
 
+mod common;
+
 use std::path::PathBuf;
 
 use dq_analyze::parity::{engine_on_fixture, fixture_dir, format_expected, read_expected};
@@ -13,6 +15,7 @@ fn repo_root() -> PathBuf {
 
 #[test]
 fn every_fixture_matches_its_expected_findings() {
+    common::dmbc_parse();
     let root = repo_root();
     let reg = dq_analyze::run::registry();
     let mut checked = 0;
@@ -44,6 +47,7 @@ fn every_fixture_matches_its_expected_findings() {
 
 #[test]
 fn every_lint_selftest_passes() {
+    common::dmbc_parse();
     let reg = dq_analyze::run::registry();
     let mut failures = Vec::new();
     for lint in &reg.lints {
@@ -56,6 +60,7 @@ fn every_lint_selftest_passes() {
 
 #[test]
 fn every_lint_declares_consistent_metadata() {
+    common::dmbc_parse();
     let reg = dq_analyze::run::registry();
     let mut names = std::collections::HashSet::new();
     for lint in &reg.lints {
@@ -71,6 +76,7 @@ fn every_lint_declares_consistent_metadata() {
 
 #[test]
 fn runtime_capability_payload_keeps_holder_identity() {
+    common::dmbc_parse();
     let root = repo_root();
     let dir = fixture_dir(&root, "sys/dx_reactive");
     let findings = engine_on_fixture(&dir, Some(&root), "sys/dx_reactive").expect("fixture engine");
@@ -82,6 +88,7 @@ fn runtime_capability_payload_keeps_holder_identity() {
 /// The `untyped` lint names every line that assigns an offending value, not only the declaration.
 #[test]
 fn untyped_findings_list_every_assigning_line() {
+    common::dmbc_parse();
     use dq_analyze::run::{Engine, Options};
     let root = repo_root();
     let dir = fixture_dir(&root, "untyped");

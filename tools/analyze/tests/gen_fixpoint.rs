@@ -3,6 +3,8 @@
 //! `tracked_lists.dm` the same pass rewrites, so this guards that no stage-1 output depends on another stage-1 file's earlier content.
 //! The shared store and the memo are off: they would hand back a good run's files and prove nothing.
 
+mod common;
+
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -47,6 +49,7 @@ fn make_tree(base: &Path, name: &str, repo: &Path) -> PathBuf {
 
 #[test]
 fn gen_output_is_the_same_fresh_seeded_and_on_a_second_run() {
+    common::dmbc_parse();
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let repo = manifest.parent().unwrap().parent().unwrap();
     let base = std::env::temp_dir().join(format!("dq-gen-fixpoint-{}", std::process::id()));
