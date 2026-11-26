@@ -118,28 +118,28 @@ type` (its parent comes from a generated file) still refuses the first model.
 
 ### Step 3, first part (2026-11-26): parallel and remembered conversion
 
-The object tree conversion () now runs on every core and remembers its work between requests:
+The object tree conversion (`analysis_tree::build_tree_in`) now runs on every core and remembers its work between requests:
 
 - Bodies, declarations (initializers, parameters, locations) and types convert in parallel (rayon, one location mapper per worker, the files
   registered up front in include order so a worker maps a path to its id with a read). Output is byte-identical to the serial build
-  ( and  compared with dreammaker's model).
-- Each converted body and each converted declaration is a  entry (, ), so inside the daemon it
+  (`dreamchecker` and `check --raw` compared with dreammaker's model).
+- Each converted body and each converted declaration is an `incr::keyed_by` entry (`tree-bodies`, `tree-declarations`), so inside the daemon it
   lives in the analysis store (and on disk standalone). The key is what decides the result: the expanded text, the item's place in its file, the
   file's path and bytes, and a digest of the file-id table. An edit converts the items of the edited file again; the rest are read back.
-- The daemon remembers the whole encoded tree () only for a checker request (encoding it costs about a second and 234 MB).
+- The daemon remembers the whole encoded tree (`analysis_model`) only for a checker request (encoding it costs about a second and 234 MB).
 
-Measured (single runs, shared machine, one daemon, ; dreammaker's own model beside it):
+Measured (single runs, shared machine, one daemon, `check --raw`; dreammaker's own model beside it):
 
 | What | Before | Now | dreammaker |
 |---|---|---|---|
-| model, cold, standalone () | 54.4 s (tree 45.3 s) | 18-19 s (front end 6.9 s, tree 9.5 s) | 7.6 s |
+| model, cold, standalone (`analyze dreamchecker`) | 54.4 s (tree 45.3 s) | 18-19 s (front end 6.9 s, tree 9.5 s) | 7.6 s |
 | model, cold, in the daemon | 49-64 s | 22 s (front end 11 s, tree 10 s) | |
-| one-line body edit, whole  through the daemon | 67-72 s | 10.8-11.6 s (model 4.5-5.0 s: front end 2.5-2.9 s, tree 1.5 s) | 5.3-9.7 s |
+| one-line body edit, whole `check --raw` through the daemon | 67-72 s | 10.8-11.6 s (model 4.5-5.0 s: front end 2.5-2.9 s, tree 1.5 s) | 5.3-9.7 s |
 | nothing changed | 2.3 s | 1.9 s | 2.3 s |
 
- output after the edit and after reverting it is byte-identical to dreammaker's. Left for the cutover: the cold model is about 2.5-3x
+`check --raw` output after the edit and after reverting it is byte-identical to dreammaker's. Left for the cutover: the cold model is about 2.5-3x
 dreammaker's (the front end is 7-11 s of it and is the compiler's own cost); an edit still pays the compiler front end (about 2.5 s) plus the
 tree-wide steps (spelling, matching, builder, finish: about 1 s), where dreammaker's model store splices one file's patch in well under a second.
-Cold  under dmbc (first model before the generated files exist) is not done. Two differences the test lane reported: columns (dmbc places an
- one column right of dreammaker; the real tree has no DreamChecker diagnostic, so no printed output changes today) and a missing included
+Cold `gen` under dmbc (first model before the generated files exist) is not done. Two differences the test lane reported: columns (dmbc places an
+`if(1)` one column right of dreammaker; the real tree has no DreamChecker diagnostic, so no printed output changes today) and a missing included
 file (dreammaker reports an error and continues, dmbc refuses the whole model, as the compile does; no tree on master has one).
