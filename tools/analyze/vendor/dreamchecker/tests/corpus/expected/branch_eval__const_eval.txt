@@ -1,0 +1,4 @@
+fixture.dm, line 2, column 7:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 2, column 7:
+error: if condition is always true [if_condition_determinate]

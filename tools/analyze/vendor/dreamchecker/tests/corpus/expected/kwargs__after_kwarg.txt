@@ -1,0 +1,2 @@
+fixture.dm, line 3, column 5:
+error: proc called with non-kwargs after kwargs: foo()

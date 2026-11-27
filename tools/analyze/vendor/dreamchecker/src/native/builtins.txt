@@ -1,0 +1,849 @@
+T /datum
+T /list
+T /alist
+T /atom
+T /atom/movable
+T /area
+T /turf
+T /obj
+T /mob
+T /world
+T /client
+T /sound
+T /icon
+T /matrix
+T /exception
+T /regex
+T /database
+T /database/query
+T /image
+T /mutable_appearance
+T /savefile
+T /dm_filter
+T /generator
+T /particles
+T /callee
+T /pixloc
+T /vector
+V / vars 2 -
+V / NORTH 2 - = f 1
+V / SOUTH 2 - = f 2
+V / EAST 2 - = f 4
+V / WEST 2 - = f 8
+V / NORTHEAST 2 - = f 5
+V / SOUTHEAST 2 - = f 6
+V / NORTHWEST 2 - = f 9
+V / SOUTHWEST 2 - = f 10
+V / UP 2 - = f 16
+V / DOWN 2 - = f 32
+V / BLIND 2 - = f 1
+V / SEE_MOBS 2 - = f 4
+V / SEE_OBJS 2 - = f 8
+V / SEE_TURFS 2 - = f 16
+V / SEE_SELF 2 - = f 32
+V / SEE_INFRA 2 - = f 64
+V / SEE_PIXELS 2 - = f 256
+V / SEE_THRU 2 - = f 512
+V / SEE_BLACKNESS 2 - = f 1024
+V / MOB_PERSPECTIVE 2 - = f 0
+V / EYE_PERSPECTIVE 2 - = f 1
+V / EDGE_PERSPECTIVE 2 - = f 2
+V / LEGACY_MOVEMENT_MODE 2 - = f 0
+V / TILE_MOVEMENT_MODE 2 - = f 1
+V / PIXEL_MOVEMENT_MODE 2 - = f 2
+V / FLOAT_LAYER 2 - = f -1
+V / AREA_LAYER 2 - = f 1
+V / TURF_LAYER 2 - = f 2
+V / OBJ_LAYER 2 - = f 3
+V / MOB_LAYER 2 - = f 4
+V / FLY_LAYER 2 - = f 5
+V / EFFECTS_LAYER 2 - = f 5000
+V / TOPDOWN_LAYER 2 - = f 10000
+V / BACKGROUND_LAYER 2 - = f 20000
+V / FLOAT_PLANE 2 - = f -32767
+V / TOPDOWN_MAP 2 - = f 0
+V / ISOMETRIC_MAP 2 - = f 1
+V / SIDE_MAP 2 - = f 2
+V / TILED_ICON_MAP 2 - = f 32768
+V / TRUE 2 -
+V / FALSE 2 -
+V / MALE 2 - = s male
+V / FEMALE 2 - = s female
+V / NEUTER 2 - = s neuter
+V / PLURAL 2 - = s plural
+V / MOUSE_INACTIVE_POINTER 2 - = f 0
+V / MOUSE_ACTIVE_POINTER 2 - = f 1
+V / MOUSE_DRAG_POINTER 2 - = f 3
+V / MOUSE_DROP_POINTER 2 - = f 4
+V / MOUSE_ARROW_POINTER 2 - = f 5
+V / MOUSE_CROSSHAIRS_POINTER 2 - = f 6
+V / MOUSE_HAND_POINTER 2 - = f 7
+V / MOUSE_LEFT_BUTTON 2 - = f 1
+V / MOUSE_RIGHT_BUTTON 2 - = f 2
+V / MOUSE_MIDDLE_BUTTON 2 - = f 4
+V / MOUSE_CTRL_KEY 2 - = f 8
+V / MOUSE_SHIFT_KEY 2 - = f 16
+V / MOUSE_ALT_KEY 2 - = f 32
+V / MS_WINDOWS 2 - = s MS Windows
+V / UNIX 2 - = s UNIX
+V / SOUND_MUTE 2 - = f 1
+V / SOUND_PAUSED 2 - = f 2
+V / SOUND_STREAM 2 - = f 4
+V / SOUND_UPDATE 2 - = f 16
+V / BLEND_DEFAULT 2 - = f 0
+V / BLEND_OVERLAY 2 - = f 1
+V / BLEND_ADD 2 - = f 2
+V / BLEND_SUBTRACT 2 - = f 3
+V / BLEND_MULTIPLY 2 - = f 4
+V / BLEND_INSET_OVERLAY 2 - = f 5
+V / MASK_INVERSE 2 - = f 1
+V / MASK_SWAP 2 - = f 2
+V / FILTER_COLOR_RGB 2 - = f 0
+V / FILTER_COLOR_HSV 2 - = f 1
+V / FILTER_COLOR_HSL 2 - = f 2
+V / FILTER_COLOR_HCY 2 - = f 3
+V / FILTER_OVERLAY 2 - = f 1
+V / FILTER_UNDERLAY 2 - = f 2
+V / WAVE_SIDEWAYS 2 - = f 1
+V / WAVE_BOUNDED 2 - = f 2
+V / OUTLINE_SHARP 2 - = f 1
+V / OUTLINE_SQUARE 2 - = f 2
+V / world 1 world
+P / ref proc A
+P / abs proc A
+P / addtext proc Arg1,Arg2
+P / alert proc Usr,Message,Title,Button1,Button2,Button3
+P / animate proc Object,time,loop,easing,flags,delay,tag,command,alpha,color,infra_luminosity,layer,maptext_width,maptext_height,maptext_x,maptext_y,luminosity,pixel_x,pixel_y,pixel_w,pixel_z,transform,dir,icon,icon_state,invisibility,maptext,suffix,appearance,dir,radius,space,size,x,y,offset,flags,repeat
+P / arccos proc X
+P / arcsin proc X
+P / arglist proc List
+P / ascii2text proc N
+P / block proc Start,End
+P / bounds proc Ref,Dist
+P / bounds_dist proc Ref,Target
+P / browse proc Body,Options
+P / browse_rsc proc File,FileName
+P / ckey proc Key
+P / ckeyEx proc Text
+P / cmptext proc T1,T2
+P / cmptextEx proc T1,T2
+P / copytext proc T,Start,End
+P / cos proc X
+P / fcopy proc Src,Dst
+P / fcopy_rsc proc File
+P / fdel proc File
+P / fexists proc File
+P / file proc Path
+P / file2text proc File
+P / filter proc type,size,color,x,y,offset,flags,border,render_source,icon,space,transform,blend_mode,density,threshold,factor,repeat,radius,falloff,alpha,name
+P / findlasttext proc Haystack,Needle,Start,End
+P / findlasttextEx proc Haystack,Needle,Start,End
+P / findtext proc Haystack,Needle,Start,End
+P / findtextEx proc Haystack,Needle,Start,End
+P / flick proc Icon,Object
+P / flist proc Path
+P / ftp proc File,Name
+P / get_dir proc Loc1,Loc2
+P / get_dist proc Loc1,Loc2
+P / get_step proc Ref,Dir
+P / get_step_away proc Ref,Trg,Max
+P / get_step_rand proc Ref
+P / get_step_to proc Ref,Trg,Min
+P / get_step_towards proc Ref,Trg
+P / gradient proc Gradient,index,space
+P / hascall proc Object,ProcName
+P / hearers proc Depth,Center
+P / html_decode proc HtmlText
+P / html_encode proc PlainText
+P / icon proc icon,icon_state,dir,frame,moving
+P / icon_states proc Icon,mode
+P / image proc icon,loc,icon_state,layer,dir,pixel_x,pixel_y,pixel_w,pixel_z
+P / initial proc Var
+P / input proc Usr,Message,Title,Default
+P / isarea proc Loc1,Loc2
+P / isfile proc File
+P / isicon proc Icon
+P / isloc proc Loc1,Loc2
+P / ismob proc Loc1,Loc2
+P / isnull proc Val
+P / isnum proc Val
+P / isobj proc Loc1,Loc2
+P / ispath proc Val,Type
+P / issaved proc Var
+P / istext proc Val
+P / isturf proc Loc1,Loc2
+P / istype proc Val,Type
+P / jointext proc List,Glue,Start,End
+P / json_decode proc JSON
+P / json_encode proc Value
+P / length proc E
+P / lentext proc T
+P / link proc url
+P / list proc A,B,C
+P / list2params proc List
+P / load_resource proc File,KeepTime
+P / locate proc Type
+P / log proc X,Y
+P / lowertext proc T
+P / matrix proc -
+P / max proc A,B,C
+P / md5 proc T
+P / min proc A,B,C
+P / missile proc Type,Start,End
+P / newlist proc A,B,C
+P / nonspantext proc Haystack,Needles,Start
+P / num2text proc N,SigFig,Radix
+P / obounds proc Ref,Dist
+P / ohearers proc Depth,Center
+P / orange proc Dist,Center
+P / output proc msg,control
+P / oview proc Dist,Center
+P / oviewers proc Depth,Center
+P / params2list proc Params
+P / pick proc Val1,Val2
+P / prob proc P
+P / rand proc L,H
+P / rand_seed proc Seed
+P / range proc Dist,Center
+P / regex proc pattern,flags
+P / REGEX_QUOTE proc text
+P / REGEX_QUOTE_REPLACEMENT proc text
+P / replacetext proc Haystack,Needle,Replacement,Start,End
+P / replacetextEx proc Haystack,Needle,Replacement,Start,End
+P / rgb proc R,G,B,A,space,red,blue,green,alpha,h,hue,s,saturation,c,chroma,v,value,l,y,luminance
+P / rgb2num proc color,space
+P / roll proc ndice,sides
+P / round proc A,B
+P / run proc File
+P / shell proc Command
+P / shutdown proc Addr,Natural
+P / sin proc X
+P / sleep proc Delay
+P / sorttext proc T1,T2
+P / sorttextEx proc T1,T2
+P / sound proc file,repeat,wait,channel,volume
+P / spantext proc Haystack,Needles,Start
+P / splicetext proc Text,Start,End,Insert
+P / splittext proc Text,Delimiter,Start,End,include_delimiters
+P / sqrt proc A
+P / startup proc File,Port,Options
+P / stat proc Name,Value
+P / statpanel proc Panel,Name,Value
+P / step proc Ref,Dir,Speed
+P / step_away proc Ref,Trg,Max,Speed
+P / step_rand proc Ref,Speed
+P / step_to proc Ref,Trg,Min,Speed
+P / step_towards proc Ref,Trg,Speed
+P / text proc FormatText,Args
+P / text2ascii proc T,pos
+P / text2file proc Text,File
+P / text2num proc T,Radix
+P / text2path proc T
+P / time2text proc timestamp,format,timezone
+P / turn proc Dir,Angle
+P / typesof proc Type1,Type2
+P / uppertext proc T
+P / url_decode proc UrlText
+P / url_encode proc PlainText,format
+P / view proc Dist,Center
+P / viewers proc Depth,Center
+P / walk proc Ref,Dir,Lag,Speed
+P / walk_away proc Ref,Trg,Max,Lag,Speed
+P / walk_rand proc Ref,Lag,Speed
+P / walk_to proc Ref,Trg,Min,Lag,Speed
+P / walk_towards proc Ref,Trg,Lag,Speed
+P / winclone proc player,window_name,clone_name
+P / winexists proc player,control_id
+P / winget proc player,control_id,params
+P / winset proc player,control_id,params
+P / winshow proc player,window,show
+P / CRASH proc message
+P / values_cut_over proc Alist,Max,inclusive
+P / values_cut_under proc Alist,Max,inclusive
+P / values_dot proc A,B
+P / values_product proc Alist
+P / values_sum proc Alist
+P / _dm_db_new_query proc -
+P / _dm_db_execute proc db_query,sql_query,db_connection,cursor_handler,unknown
+P / _dm_db_next_row proc db_query,item,conversions
+P / _dm_db_rows_affected proc db_query
+P / _dm_db_row_count proc db_query
+P / _dm_db_error_msg proc db_query
+P / _dm_db_columns proc db_query,db_column
+P / _dm_db_close proc db_query
+P / _dm_db_new_con proc -
+P / _dm_db_connect proc db_con,dbi_handler,user_handler,password_handler,cursor_handler,unknown
+P / _dm_db_quote proc db_con,_str
+P / _dm_db_is_connected proc db_con
+P / arctan proc A,B
+P / clamp proc NumberOrList,Low,High
+P / islist proc List
+P / ismovable proc Loc1,Loc2
+P / sha1 proc StringOrFile
+P / tan proc A
+P / length_char proc E
+P / text2ascii_char proc T,pos
+P / copytext_char proc T,Start,End
+P / findtext_char proc Haystack,Needle,Start,End
+P / findtextEx_char proc Haystack,Needle,Start,End
+P / findlasttext_char proc Haystack,Needle,Start,End
+P / findlasttextEx_char proc Haystack,Needle,Start,End
+P / replacetext_char proc Haystack,Needle,Replacement,Start,End
+P / replacetextEx_char proc Haystack,Needle,Replacement,Start,End
+P / spantext_char proc Haystack,Needles,Start
+P / nonspantext_char proc Haystack,Needles,Start
+P / splittext_char proc Text,Delimiter,Start,End,include_delimiters
+P / splicetext_char proc Text,Start,End,Insert
+P / generator proc type,A,B,rand
+P / ceil proc A
+P / floor proc A
+P / fract proc A
+P / ftime proc File,IsCreationTime
+P / get_steps_to proc Ref,Trg,Min
+P / isinf proc A
+P / isnan proc A
+P / ispointer proc Value
+P / nameof proc VarPathProcRef
+P / noise_hash proc param1
+P / refcount proc Object
+P / trimtext proc Text
+P / trunc proc A
+P / bound_pixloc proc Atom,Dir
+P / lerp proc A,B,factor
+P / sign proc A
+P / astype proc Val,Type
+P / alist proc A,B,C
+P / load_ext proc LibName,FuncName
+P / pixloc proc x,y,z
+P / vector proc x,y,z
+V /datum type 2 -
+V /datum parent_type 2 -
+V /datum tag 0 -
+V /datum vars 2 list
+P /datum New proc -
+P /datum Del proc -
+P /datum Read proc F
+P /datum Topic proc href,href_list
+P /datum Write proc F
+V /list type 2 -
+V /list parent_type 2 -
+V /list tag 0 -
+V /list vars 2 list
+V /list len 0 -
+P /list Add proc Item1,Item2
+P /list Copy proc Start,End
+P /list Cut proc Start,End
+P /list Find proc Elem,Start,End
+P /list Insert proc Index,Item1,Item2
+P /list Join proc Glue,Start,End
+P /list Remove proc Item1,Item2
+P /list Splice proc Start,End,Item1,Item2
+P /list Swap proc Index1,Index2
+P /list RemoveAll proc Item1
+V /alist type 2 -
+V /alist parent_type 2 -
+V /alist tag 0 -
+V /alist len 0 -
+P /alist Add proc Item1,Item2
+P /alist Copy proc Start,End
+P /alist Cut proc Start,End
+P /alist Find proc Elem,Start,End
+P /alist Insert proc Index,Item1,Item2
+P /alist Join proc Glue,Start,End
+P /alist Remove proc Item1,Item2
+P /alist Splice proc Start,End,Item1,Item2
+P /alist Swap proc Index1,Index2
+v /atom parent_type
+V /atom alpha 0 - = f 255
+V /atom appearance 4 -
+V /atom appearance_flags 0 - = f 0
+V /atom blend_mode 0 - = f 0
+V /atom bounds 0 -
+V /atom color 0 -
+V /atom contents 0 list/atom
+V /atom density 0 - = f 0
+V /atom desc 0 -
+V /atom dir 0 - = f 2
+V /atom gender 0 - = s neuter
+V /atom icon 0 icon
+V /atom icon_state 0 -
+V /atom invisibility 0 - = f 0
+V /atom infra_luminosity 0 - = f 0
+V /atom loc 4 atom
+V /atom layer 0 - = f 1
+V /atom luminosity 0 - = f 0
+V /atom maptext 0 -
+V /atom maptext_width 0 - = f 32
+V /atom maptext_height 0 - = f 32
+V /atom maptext_x 0 - = f 0
+V /atom maptext_y 0 - = f 0
+V /atom mouse_over_pointer 0 - = f 0
+V /atom mouse_drag_pointer 0 - = f 0
+V /atom mouse_drop_pointer 0 - = f 1
+V /atom mouse_drop_zone 0 - = f 0
+V /atom mouse_opacity 0 - = f 1
+V /atom name 0 -
+V /atom opacity 0 - = f 0
+V /atom overlays 4 list
+V /atom pixel_x 0 - = f 0
+V /atom pixel_y 0 - = f 0
+V /atom pixel_w 0 - = f 0
+V /atom pixel_z 0 - = f 0
+V /atom icon_w 0 - = f 0
+V /atom icon_z 0 - = f 0
+V /atom pixloc 0 pixloc
+V /atom plane 0 - = f 0
+V /atom suffix 0 -
+V /atom text 0 -
+V /atom transform 0 matrix
+V /atom underlays 4 list
+V /atom verbs 4 list
+V /atom x 4 -
+V /atom y 4 -
+V /atom z 4 -
+V /atom filters 0 list
+V /atom render_target 0 -
+V /atom render_source 0 -
+V /atom vis_flags 0 -
+P /atom Click proc location,control,params
+P /atom Cross proc O
+P /atom Crossed proc O
+P /atom DblClick proc location,control,params
+P /atom Enter proc O,oldloc
+P /atom Entered proc Obj,OldLoc
+P /atom Exit proc O,newloc
+P /atom Exited proc Obj,newloc
+P /atom MouseDown proc location,control,params
+P /atom MouseDrag proc over_object,src_location,over_location,src_control,over_control,params
+P /atom MouseDrop proc over_object,src_location,over_location,src_control,over_control,params
+P /atom MouseEntered proc location,control,params
+P /atom MouseExited proc location,control,params
+P /atom MouseMove proc location,control,params
+P /atom MouseUp proc location,control,params
+P /atom MouseWheel proc delta_x,delta_y,location,control,params
+P /atom New - loc
+P /atom Stat proc -
+P /atom Uncross proc O
+P /atom Uncrossed proc O
+V /atom/movable animate_movement 0 - = f 1
+V /atom/movable bound_x 0 - = f 0
+V /atom/movable bound_y 0 - = f 0
+V /atom/movable bound_width 0 - = f 32
+V /atom/movable bound_height 0 - = f 32
+V /atom/movable locs 4 list
+V /atom/movable screen_loc 0 -
+V /atom/movable glide_size 0 - = f 0
+V /atom/movable particles 0 particles
+V /atom/movable step_size 0 - = f 32
+V /atom/movable step_x 0 - = f 0
+V /atom/movable step_y 0 - = f 0
+V /atom/movable vis_contents 0 list
+V /atom/movable vis_locs 4 list
+P /atom/movable Bump proc Obstacle
+P /atom/movable Move proc NewLoc,Dir,step_x,step_y
+v /area parent_type
+v /area layer
+v /area luminosity
+v /turf parent_type
+v /turf layer
+V /turf vis_contents 0 list
+V /turf vis_locs 4 list
+v /obj parent_type
+v /obj layer
+v /mob parent_type
+v /mob layer
+V /mob ckey 4 -
+V /mob client 4 client
+V /mob group 0 list
+V /mob key 0 -
+V /mob see_infrared 0 -
+V /mob see_invisible 0 -
+V /mob see_in_dark 0 -
+V /mob sight 0 -
+P /mob Login proc -
+P /mob Logout proc -
+V /world vars 2 list
+V /world address 0 -
+V /world area 0 area
+V /world byond_build 0 - = f 1666
+V /world byond_version 0 - = f 516
+V /world cache_lifespan 0 - = f 30
+V /world contents 0 list/atom
+V /world cpu 0 -
+V /world executor 0 -
+V /world fps 0 - = f 10
+V /world game_state 0 - = f 0
+V /world host 0 -
+V /world hub 0 -
+V /world hub_password 0 -
+V /world icon_size 0 - = f 32
+V /world internet_address 0 -
+V /world log 0 -
+V /world loop_checks 0 - = f 1
+V /world map_cpu 0 -
+V /world map_format 0 - = f 0
+V /world maxx 0 -
+V /world maxy 0 -
+V /world maxz 0 -
+V /world mob 0 mob
+V /world name 0 - = s byond
+V /world params 0 -
+V /world port 0 -
+V /world realtime 0 -
+V /world reachable 0 -
+V /world sleep_offline 0 - = f 0
+V /world status 0 -
+V /world system_type 0 -
+V /world tick_lag 0 - = f 1
+V /world tick_usage 0 -
+V /world turf 0 turf
+V /world time 0 -
+V /world timeofday 0 -
+V /world timezone 0 -
+V /world url 0 -
+V /world version 0 - = f 0
+V /world view 0 - = f 5
+V /world visibility 0 - = f 1
+V /world movement_mode 0 - = f 0
+P /world New proc -
+P /world Del proc -
+P /world Topic proc T,Addr,Master,Keys
+P /world AddCredits proc player,credits,note
+P /world ClearMedal proc medal,player
+P /world Export proc Addr,File,Persist,Clients
+P /world GetConfig proc config_set,param
+P /world GetCredits proc player
+P /world GetMedal proc medal,player
+P /world GetScores proc key,fields,count,skip
+P /world Import proc -
+P /world IsBanned proc key,address,computer_id,type
+P /world IsSubscribed proc player
+P /world OpenPort proc port
+P /world PayCredits proc player,credits,note
+P /world Profile proc command,type,format
+P /world Reboot proc reason
+P /world Repop proc -
+P /world SetConfig proc config_set,param,value
+P /world SetMedal proc medal,player
+P /world SetScores proc key,fields
+P /world Error proc exception
+P /world Tick proc -
+V /client type 2 -
+V /client parent_type 2 -
+V /client tag 0 -
+V /client vars 2 list
+V /client address 0 -
+V /client authenticate 0 -
+V /client bounds 0 -
+V /client bound_x 0 -
+V /client bound_y 0 -
+V /client bound_width 0 -
+V /client bound_height 0 -
+V /client byond_version 0 -
+V /client byond_build 0 -
+V /client CGI 0 -
+V /client ckey 0 -
+V /client color 0 -
+V /client command_text 0 -
+V /client connection 0 -
+V /client control_freak 0 - = f 0
+V /client computer_id 0 -
+V /client default_verb_category 0 - = s Commands
+V /client dir 0 - = f 1
+V /client edge_limit 0 -
+V /client eye 0 -
+V /client fps 0 - = f 0
+V /client gender 0 -
+V /client glide_size 0 - = f 0
+V /client images 0 list
+V /client inactivity 0 -
+V /client key 0 -
+V /client lazy_eye 0 -
+V /client mob 0 mob
+V /client mouse_pointer_icon 0 -
+V /client perspective 0 - = f 0
+V /client pixel_x 0 - = f 0
+V /client pixel_y 0 - = f 0
+V /client pixel_w 0 - = f 0
+V /client pixel_z 0 - = f 0
+V /client preload_rsc 0 - = f 1
+V /client screen 0 list
+V /client script 0 -
+V /client show_map 0 - = f 1
+V /client show_popup_menus 0 - = f 1
+V /client show_verb_panel 0 - = f 1
+V /client statobj 0 -
+V /client statpanel 0 -
+V /client tick_lag 0 - = f 0
+V /client timezone 0 -
+V /client verbs 0 list
+V /client view 0 -
+V /client virtual_eye 0 -
+P /client New proc -
+P /client Del proc -
+P /client Topic proc href,href_list,hsrc
+P /client AllowUpload proc filename,filelength
+P /client Center proc -
+P /client CheckPassport proc passport_identifier
+P /client Click proc object,location,control,params
+P /client Command proc command
+P /client DblClick proc object,location,control,params
+P /client East proc -
+P /client Export proc file
+P /client GetAPI proc -
+P /client Import proc Query
+P /client IsByondMember proc -
+P /client MouseDown proc object,location,control,params
+P /client MouseDrag proc src_object,over_object,src_location,over_location,src_control,over_control,params
+P /client MouseDrop proc over_object,src_location,over_location,src_control,over_control,params
+P /client MouseEntered proc object,location,control,params
+P /client MouseExited proc object,location,control,params
+P /client MouseMove proc object,location,control,params
+P /client MouseUp proc object,location,control,params
+P /client MouseWheel proc object,delta_x,delta_y,location,control,params
+P /client Move proc loc,dir
+P /client North proc -
+P /client Northeast proc -
+P /client Northwest proc -
+P /client SendPage proc msg,recipient,options
+P /client SetAPI proc -
+P /client South proc -
+P /client Southeast proc -
+P /client Southwest proc -
+P /client Stat proc -
+P /client West proc -
+P /client MeasureText proc text,style,width
+P /client SoundQuery proc -
+P /client RenderIcon proc object
+V /sound file 0 -
+V /sound repeat 0 -
+V /sound wait 0 -
+V /sound channel 0 -
+V /sound frequency 0 - = f 0
+V /sound pan 0 - = f 0
+V /sound volume 0 - = f 100
+V /sound priority 0 - = f 0
+V /sound status 0 - = f 0
+V /sound environment 0 - = f -1
+V /sound echo 0 -
+V /sound x 0 - = f 0
+V /sound y 0 - = f 0
+V /sound z 0 - = f 0
+V /sound falloff 0 - = f 1
+V /sound offset 0 - = f 0
+V /sound len 0 - = f 0
+V /sound atom 4 atom
+V /sound transform 0 -
+V /sound params 0 -
+V /sound pitch 0 - = f 0
+P /sound New - file,repeat,wait,channel,volume
+P /icon Blend proc icon,function,x,y
+P /icon Crop proc x1,y1,x2,y2
+P /icon DrawBox proc rgb,x1,y1,x2,y2
+P /icon Flip proc dir
+P /icon GetPixel proc x,y,icon_state,dir,frame,moving
+P /icon Width proc -
+P /icon IconStates proc mode
+P /icon Insert proc new_icon,icon_state,dir,frame,moving,delay
+P /icon MapColors proc -
+P /icon New - icon,icon_state,dir,frame,moving
+P /icon Scale proc width,height
+P /icon SetIntensity proc r,g,b
+P /icon Shift proc dir,offset,wrap
+P /icon SwapColor proc old_rgba,new_rgba
+P /icon Turn proc angle
+P /icon Height proc -
+V /matrix a 0 -
+V /matrix b 0 -
+V /matrix c 0 -
+V /matrix d 0 -
+V /matrix e 0 -
+V /matrix f 0 -
+P /matrix New - -
+P /matrix Multiply proc m
+P /matrix Add proc m
+P /matrix Subtract proc m
+P /matrix Invert proc -
+P /matrix Turn proc a
+P /matrix Scale proc x,y
+P /matrix Translate proc x,y
+P /matrix Interpolate proc m2,t
+V /exception name 0 -
+V /exception desc 0 -
+V /exception file 0 -
+V /exception line 0 -
+P /exception New - name,file,line
+V /regex name 0 -
+V /regex flags 0 -
+V /regex text 0 -
+V /regex match 0 -
+V /regex group 0 list
+V /regex index 0 -
+V /regex next 0 -
+P /regex New - text,flags
+P /regex Find proc text,start,end
+P /regex Replace proc text,rep,start,end
+P /regex Find_char proc text,start,end
+P /regex Replace_char proc text,rep,start,end
+V /database _binobj 0 -
+P /database Close proc -
+P /database Error proc -
+P /database ErrorMsg proc -
+P /database Open proc filename
+P /database New proc filename
+V /database/query database 0 database
+P /database/query Add proc text,item1,item2
+P /database/query Close proc -
+P /database/query Columns proc column
+P /database/query Error proc -
+P /database/query ErrorMsg proc -
+P /database/query Execute proc database
+P /database/query GetColumn proc column
+P /database/query GetRowData proc -
+P /database/query New proc text,item1,item2
+P /database/query NextRow proc -
+P /database/query Reset proc -
+P /database/query RowsAffected proc -
+V /image alpha 0 -
+V /image appearance 0 -
+V /image appearance_flags 0 -
+V /image blend_mode 0 -
+V /image color 0 -
+V /image desc 0 -
+V /image icon 0 icon
+V /image icon_state 0 -
+V /image text 0 -
+V /image dir 0 -
+V /image underlays 0 list
+V /image overlays 0 list
+V /image loc 0 atom
+V /image layer 0 - = f 5
+V /image maptext 0 -
+V /image maptext_width 0 -
+V /image maptext_height 0 -
+V /image maptext_x 0 -
+V /image maptext_y 0 -
+V /image pixel_x 0 -
+V /image pixel_y 0 -
+V /image pixel_w 0 -
+V /image pixel_z 0 -
+V /image icon_w 0 -
+V /image icon_z 0 -
+V /image plane 0 -
+V /image render_source 0 -
+V /image render_target 0 -
+V /image x 0 -
+V /image y 0 -
+V /image z 0 -
+V /image override 0 -
+V /image transform 0 matrix
+V /image vis_contents 0 list
+V /image filters 0 list
+V /image animate_movement 0 -
+V /image density 0 -
+V /image gender 0 -
+V /image invisibility 0 -
+V /image luminosity 0 -
+V /image mouse_drag_pointer 0 -
+V /image mouse_drop_pointer 0 -
+V /image mouse_drop_zone 0 -
+V /image mouse_opacity 0 -
+V /image mouse_over_pointer 0 -
+V /image name 0 -
+V /image opacity 0 -
+V /image screen_loc 0 -
+V /image suffix 0 -
+V /image verbs 0 -
+V /image vis_flags 0 -
+P /image New - icon,loc,icon_state,layer,dir
+v /mutable_appearance parent_type
+V /savefile type 2 -
+V /savefile parent_type 2 -
+V /savefile tag 0 -
+V /savefile vars 2 list
+V /savefile cd 0 -
+V /savefile dir 0 list
+V /savefile eof 0 -
+V /savefile name 0 -
+V /savefile byond_build 0 - = f 0
+V /savefile byond_version 0 - = f 0
+P /savefile New proc filename,timeout
+P /savefile Del proc -
+P /savefile ExportText proc -
+P /savefile Flush proc -
+P /savefile ImportText proc -
+P /savefile Lock proc timeout
+P /savefile Unlock proc -
+V /dm_filter type 2 -
+V /dm_filter x 0 -
+V /dm_filter y 0 -
+V /dm_filter icon 0 -
+V /dm_filter render_source 0 -
+V /dm_filter flags 0 -
+V /dm_filter size 0 -
+V /dm_filter threshold 0 -
+V /dm_filter offset 0 -
+V /dm_filter alpha 0 -
+V /dm_filter color 0 -
+V /dm_filter space 0 -
+V /dm_filter transform 0 -
+V /dm_filter blend_mode 0 -
+V /dm_filter density 0 -
+V /dm_filter factor 0 -
+V /dm_filter repeat 0 -
+V /dm_filter radius 0 -
+V /dm_filter falloff 0 -
+V /generator _binobj 0 -
+P /generator Rand proc -
+P /generator Turn proc a
+V /particles width 0 -
+V /particles height 0 -
+V /particles spawning 0 -
+V /particles count 0 -
+V /particles bound1 0 -
+V /particles bound2 0 -
+V /particles gravity 0 -
+V /particles gradient 0 -
+V /particles transform 0 -
+V /particles lifespan 0 -
+V /particles fade 0 -
+V /particles fadein 0 -
+V /particles position 0 -
+V /particles velocity 0 -
+V /particles color 0 -
+V /particles color_change 0 -
+V /particles friction 0 -
+V /particles icon 0 -
+V /particles icon_state 0 -
+V /particles scale 0 -
+V /particles grow 0 -
+V /particles rotation 0 -
+V /particles spin 0 -
+V /particles drift 0 -
+V /callee args 0 -
+V /callee caller 0 callee
+V /callee category 0 -
+V /callee desc 0 -
+V /callee file 0 -
+V /callee name 0 -
+V /callee line 0 -
+V /callee proc 0 -
+V /callee src 0 -
+V /callee type 0 -
+V /callee usr 0 -
+V /pixloc loc 0 atom
+V /pixloc step_x 0 -
+V /pixloc step_y 0 -
+V /pixloc x 0 -
+V /pixloc y 0 -
+V /pixloc z 0 -
+V /vector len 0 -
+V /vector size 0 -
+V /vector x 0 -
+V /vector y 0 -
+V /vector z 0 -
+P /vector Cross proc B
+P /vector Dot proc B
+P /vector Interpolate proc B,t
+P /vector Normalize proc -
+P /vector Turn proc B

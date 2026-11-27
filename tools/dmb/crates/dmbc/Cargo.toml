@@ -40,6 +40,8 @@ dq-analyze = { path = "../../../analyze" }
 dq-hostio = { path = "../../../analyze/hostio" }
 # dreammaker's AST, the target of the analysis bridge (`analysis_bridge.rs`).
 dreammaker = { path = "../../../analyze/vendor/dreammaker" }
+# DreamChecker, whose native checker reads this front end's tree (`dreamchecker_input.rs`).
+dreamchecker = { path = "../../../analyze/vendor/dreamchecker" }
 
 [dev-dependencies]
 # Semantic retained-vs-fresh oracle: incremental output may assign IDs stably

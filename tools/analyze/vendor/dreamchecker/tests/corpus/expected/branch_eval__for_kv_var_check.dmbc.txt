@@ -1,0 +1,2 @@
+fixture.dm, line 4, column 22:
+error: undefined var: "k"

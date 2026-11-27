@@ -241,7 +241,7 @@ pub use expression_continuation::splice_expression_continuations;
 mod declaration_parser;
 use declaration_parser::*;
 pub use declaration_parser::{
-    parse, parse_declaration_skeleton, top_level_assignment_index, DeclarationSkeleton,
+    control_open_paren, parse, parse_declaration_skeleton, top_level_assignment_index, DeclarationSkeleton,
 };
 
 #[cfg(test)]

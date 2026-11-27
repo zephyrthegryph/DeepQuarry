@@ -1,0 +1,6 @@
+fixture.dm, line 4, column 5:
+error: loop condition is always true [loop_condition_determinate]
+fixture.dm, line 4, column 5:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 6, column 5:
+error: control flow condition is a constant evalutation [control_condition_static]

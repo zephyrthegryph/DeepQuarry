@@ -1,0 +1,6 @@
+fixture.dm, line 12, column 16:
+error: /mob/proc/test2 sets SpacemanDMM_should_be_pure but calls a /proc/impure that does impure operations [must_be_pure]
+- 13:5: SpacemanDMM_should_be_pure set here
+- 14:5: /proc/bar() called here
+- 8:5: /proc/impure() called here
+- 4:5: purity breaking << on expression happens here

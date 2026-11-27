@@ -1,0 +1,15 @@
+fixture.dm, line 5, column 21:
+error: proc overrides private parent, prohibited by /mob/proc/private [private_proc]
+- 2:5: prohibited by this private_proc annotation
+fixture.dm, line 11, column 5:
+error: /mob/subtype/proc/test2 attempting to call private proc /mob/proc/private2, types do not match [private_proc]
+- 4:5: prohibited by this private_proc annotation
+fixture.dm, line 12, column 8:
+error: /mob/subtype/proc/test2 attempting to call private proc /mob/proc/private2, types do not match [private_proc]
+- 4:5: prohibited by this private_proc annotation
+fixture.dm, line 15, column 6:
+error: /obj/proc/test attempting to call private proc /mob/proc/private2, types do not match [private_proc]
+- 4:5: prohibited by this private_proc annotation
+fixture.dm, line 17, column 6:
+error: /obj/proc/test attempting to call private proc /mob/proc/private, types do not match [private_proc]
+- 2:5: prohibited by this private_proc annotation

@@ -1,0 +1,6 @@
+fixture.dm, line 3, column 9:
+warning: proc call requires static type: "foo" [proc_call_static_type]
+- 2:5: add a type annotation after /list here
+fixture.dm, line 4, column 10:
+warning: proc call requires static type: "foo" [proc_call_static_type]
+- 2:5: add a type annotation after /list here

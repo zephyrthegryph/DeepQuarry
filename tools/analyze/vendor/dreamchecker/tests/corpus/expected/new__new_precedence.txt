@@ -1,0 +1,2 @@
+fixture.dm, line 4, column 13:
+error: got '(', expected one of: operator, field access, ';'

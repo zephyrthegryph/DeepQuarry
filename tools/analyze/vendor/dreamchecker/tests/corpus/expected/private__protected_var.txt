@@ -1,0 +1,6 @@
+fixture.dm, line 12, column 6:
+warning: field "bar" on /mob is declared as protected [protected_var]
+- 3:35: definition is here
+fixture.dm, line 14, column 6:
+warning: field "foo" on /mob/subtype is declared as protected [protected_var]
+- 2:35: definition is here

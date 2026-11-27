@@ -1,0 +1,2 @@
+fixture.dm, line 6, column 5:
+error: possible unreachable code here [unreachable_code]
