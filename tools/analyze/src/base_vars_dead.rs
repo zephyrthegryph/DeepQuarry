@@ -15,7 +15,6 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::Path;
 use std::process::ExitCode;
 
-use dreammaker::ast::VarTypeFlags;
 
 use crate::lints::base_vars::BASE_TYPES;
 use crate::sem::decls::strip_comments_keep_strings;
@@ -170,18 +169,21 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
         }
     };
     let mut vars: Vec<BaseVar> = Vec::new();
-    for ty in sem.objtree.iter_types() {
-        let owner = ty.get().path.clone();
+    for ty in sem.m().types() {
+        let owner = ty.path().to_string();
         if !BASE_TYPES.contains(&owner.as_str()) {
             continue;
         }
-        for (name, tv) in ty.get().vars.iter() {
-            let Some(decl) = &tv.declaration else { continue };
-            if decl.var_type.flags.intersects(VarTypeFlags::STATIC | VarTypeFlags::CONST) {
+        for name in ty.var_names() {
+            if !ty.declares_var(&name) {
                 continue;
             }
-            let Some(rel) = sem.file_of(decl.location) else { continue };
-            let line = crate::sem::procs::engine_line(&sem.root, rel, decl.location.line);
+            let Some(decl) = ty.var_declaration(&name) else { continue };
+            if decl.is_static() || decl.is_const() {
+                continue;
+            }
+            let Some(rel) = sem.file_of(decl.site) else { continue };
+            let line = crate::sem::procs::engine_line(&sem.root, &rel, sem.line(decl.site));
             vars.push(BaseVar { owner: owner.clone(), name: name.to_string(), rel: rel.to_string(), line });
         }
     }

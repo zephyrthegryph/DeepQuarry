@@ -6,8 +6,10 @@
 //!   `-` none, `null`, `f:<number>`, `s:<text>`, `r:<resource>`, `o` another kind).
 //! - `P <type> <name> <declares 0|1> <verb 0|1> <parameter,...>`: a proc (declares: the builtin declaration is on this type).
 //!
-//! Fields are tab-separated; `\t`, `\n` and `\\` are escaped in text. The table was written from SpacemanDMM's builtin table (the one the
-//! converted tree carries) by `analyze sem builtins-dump`, so both models answer the same.
+//! Fields are tab-separated; `\t`, `\n` and `\\` are escaped in text. The table was written once from SpacemanDMM's builtin table (the one the
+//! converted dreammaker tree carried), so the view answers BYOND's builtins as the analysis always read them.
+
+
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -79,9 +81,6 @@ fn unescape(s: &str) -> String {
     out
 }
 
-fn escape(s: &str) -> String {
-    s.replace('\\', "\\\\").replace('\t', "\\t").replace('\n', "\\n")
-}
 
 fn parse(text: &str) -> Builtins {
     let mut b = Builtins::default();
@@ -112,47 +111,4 @@ fn parse(text: &str) -> Builtins {
         }
     }
     b
-}
-
-/// The table from the converted tree's builtins (`analyze sem builtins-dump`).
-pub fn dump(sem: &crate::sem::Sem) -> String {
-    use dreammaker::constants::Constant;
-    let mut out = String::new();
-    let mut types: Vec<_> = sem.objtree.iter_types().collect();
-    types.sort_by(|a, b| a.get().path.cmp(&b.get().path));
-    for ty in types {
-        let t = ty.get();
-        let path = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
-        for (name, v) in &t.vars {
-            let builtin_value = v.value.location.is_builtins();
-            let builtin_declaration = v.declaration.as_ref().is_some_and(|d| d.location.is_builtins());
-            if !builtin_value && !builtin_declaration {
-                continue;
-            }
-            let (declares, declared, flags) = match v.declaration.as_ref().filter(|d| d.location.is_builtins()) {
-                Some(d) => {
-                    let declared = if d.var_type.type_path.is_empty() { String::new() } else { format!("/{}", d.var_type.type_path.join("/")) };
-                    (1, declared, u32::from(d.var_type.flags.is_static()) | u32::from(d.var_type.flags.is_const()) << 1 | u32::from(d.var_type.flags.is_tmp()) << 2)
-                }
-                None => (0, String::new(), 0),
-            };
-            let constant = match v.value.constant.as_ref().filter(|_| builtin_value) {
-                None => "-".to_string(),
-                Some(Constant::Null(_)) => "null".to_string(),
-                Some(Constant::Float(n)) => format!("f:{n}"),
-                Some(Constant::String(s)) => format!("s:{}", escape(s)),
-                Some(Constant::Resource(s)) => format!("r:{}", escape(s)),
-                Some(_) => "o".to_string(),
-            };
-            out.push_str(&format!("V\t{path}\t{}\t{declares}\t{declared}\t{flags}\t{constant}\n", escape(name)));
-        }
-        for (name, p) in &t.procs {
-            let Some(value) = p.value.iter().find(|v| v.location.is_builtins()) else { continue };
-            let declares = p.declaration.as_ref().is_some_and(|d| d.location.is_builtins());
-            let verb = p.declaration.as_ref().is_some_and(|d| d.kind == dreammaker::ast::ProcDeclKind::Verb);
-            let params: Vec<String> = value.parameters.iter().map(|q| escape(&q.name)).collect();
-            out.push_str(&format!("P\t{path}\t{}\t{}\t{}\t{}\n", escape(name), u8::from(declares), u8::from(verb), params.join(",")));
-        }
-    }
-    out
 }

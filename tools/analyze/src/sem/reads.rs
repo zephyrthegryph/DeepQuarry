@@ -21,12 +21,14 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
-use dreammaker::ast::{AssignOp, Block, Expression, Follow, Statement, Term, VarType};
-use dreammaker::objtree::ProcRef;
+use dm_syntax::{Expr, Statement};
 
-use super::ast::{as_ident, stmt_blocks, stmt_exprs, strip_parens};
 use super::decls::{split_args, Decls};
 use super::Sem;
+use crate::model::expr::{self as mx, as_ident, chain, form, interp_parts, literal, strip_groups, Args, Chain, Form, Hop, Lit};
+use crate::model::procs::Proc;
+use crate::model::walk::{stmt_blocks, stmt_exprs, stmts, walk_block, ForInit, Stmt, VarDecl};
+use crate::model::Site;
 
 /// Engine-internal directories the lints' walk does not enter (dispatchers that read `vars[]` by design, the tgui plumbing, the Verdigris
 /// bindings). The closed walk ([`ReadsEngine::closed`]) enters them; what it finds there or beneath them is `closed_only`.
@@ -444,7 +446,7 @@ impl Annotations {
                 }
             }
             for (ty, name) in owners {
-                if sem.ty(&ty).map(|t| t.get().procs.contains_key(&name)).unwrap_or(false) {
+                if sem.ty(&ty).map(|t| !t.proc_definitions(&name).is_empty()).unwrap_or(false) {
                     a.reads_as.insert((ty, name), (key.clone(), via.clone()));
                     break;
                 }
@@ -504,21 +506,19 @@ impl Annotations {
         // relations() declares rel_one/rel_many vars; ownership() declares owns(nameof(v), ...) vars. Both are written only through the
         // ownership accessors (rel_set/rel_add/own_take/move_into), whose own_field_changed() publishes the var's name to its readers.
         for (proc_name, calls) in [("relations", &["rel_one", "rel_many"][..]), ("ownership", &["owns", "rel_one", "rel_many"][..])] {
-        for ty in sem.objtree.iter_types() {
-            let Some(tp) = ty.get().procs.get(proc_name) else { continue };
-            let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for value in &tp.value {
-                let Some(code) = &*value.code else { continue };
-                super::ast::walk_block(code, &mut |e, _| {
-                    if let Some((n, args)) = super::ast::as_call(e) {
-                        if calls.contains(&n) {
-                            if let Some(Expression::Base { term, .. }) = args.first() {
-                                if let Term::Call(f, inner) = &term.elem {
-                                    if f.as_str() == "nameof" {
-                                        if let Some(id) = inner.first().and_then(as_ident) {
-                                            a.relations.entry(path.clone()).or_default().insert(id.to_string());
-                                        }
-                                    }
+        for ty in sem.m().types() {
+            let path = ty.path().to_string();
+            for value in ty.proc_definitions(proc_name) {
+                let Some(code) = value.body() else { continue };
+                walk_block(code, &mut |vis, _| {
+                    // `as_call`: a bare call with no hops.
+                    let Form::Chain(c) = &vis.form else { return };
+                    let (mx::Root::Call { name: n, args }, true) = (&c.root, c.hops.is_empty()) else { return };
+                    if calls.contains(n) {
+                        if let Some(first) = args.first().and_then(chain) {
+                            if let mx::Root::Call { name: "nameof", args: inner } = &first.root {
+                                if let Some(id) = inner.first().and_then(as_ident) {
+                                    a.relations.entry(path.clone()).or_default().insert(id.to_string());
                                 }
                             }
                         }
@@ -641,7 +641,7 @@ struct MemoNode {
 type MemoKey = (String, String, Root, Option<String>, Vec<(Root, Option<String>)>, bool, bool);
 
 struct Frame<'a> {
-    proc: ProcRef<'a>,
+    proc: Proc<'a>,
     rel: String,
     this: Val,
     locals: HashMap<String, Val>,
@@ -693,6 +693,9 @@ struct Walk<'a, 'e> {
     /// Greater than zero inside a proc entered on a value a call link of a global chain returned (`SSx.thing().proc()`): the walk only reaches
     /// it since chains carry declared return types. What it reads of a system's own vars is not newly an error (the read stays where it was).
     chain_call_depth: u32,
+    /// The offset an expression being walked is relative to: 0 in a proc's own body, the place of the token in the expanded text for an
+    /// expression parsed out of an interpolated string (its sites are relative to the part).
+    base: usize,
 }
 
 impl<'a> ReadsEngine<'a> {
@@ -726,11 +729,13 @@ impl<'a> ReadsEngine<'a> {
         }
         let definers = self.caches.definers.get_or_init(|| {
             let mut m: HashMap<String, Vec<String>> = HashMap::new();
-            for t in self.sem.objtree.iter_types() {
-                let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
-                for p in t.iter_self_procs() {
-                    if !p.is_builtin() && p.get().code.has_body() {
-                        m.entry(p.name().to_string()).or_default().push(path.clone());
+            for t in self.sem.m().types() {
+                let path = t.path().to_string();
+                for name in t.proc_names() {
+                    for p in t.proc_definitions(name) {
+                        if !p.is_builtin() && p.body().is_some() {
+                            m.entry(p.name().to_string()).or_default().push(path.clone());
+                        }
                     }
                 }
             }
@@ -805,7 +810,7 @@ impl<'a> ReadsEngine<'a> {
     fn analyze_uncached(&self, ty: &str, name: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new(), query_depth: 0, chain_call_depth: 0 };
+        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new(), query_depth: 0, chain_call_depth: 0, base: 0 };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false, blame: None };
         w.run_proc(p, this, &[], true);
         w.finish();
@@ -830,7 +835,7 @@ impl<'a> ReadsEngine<'a> {
     fn analyze_handler_uncached(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new(), query_depth: 0, chain_call_depth: 0 };
+        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new(), query_depth: 0, chain_call_depth: 0, base: 0 };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false, blame: None };
         w.run_proc(p, this, &[], true);
         w.finish();
@@ -918,7 +923,7 @@ impl<'a> ReadsEngine<'a> {
                 return true;
             }
             if let Some(tr) = self.sem.ty(&t) {
-                if tr.get().procs.contains_key(&format!("__setter_{}", var)) {
+                if tr.own_procs_named(&format!("__setter_{}", var)).next().is_some() {
                     return true;
                 }
             }
@@ -1041,7 +1046,12 @@ impl WriteIndex {
     }
 
     pub fn build(sem: &Sem) -> WriteIndex {
-        let procs: Vec<ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin()).collect();
+        let mut procs: Vec<Proc<'_>> = Vec::new();
+        for t in sem.m().types() {
+            for name in t.proc_names() {
+                procs.extend(t.proc_definitions(name).into_iter().filter(|p| !p.is_builtin()));
+            }
+        }
         // The facts depend on the declared types of vars, so the structure is the context.
         super::body_facts::indexed(sem, "writes-typed", sem.structure_digest(), &procs, |p| typed_writes(sem, p), WriteIndex::from_facts)
     }
@@ -1049,70 +1059,67 @@ impl WriteIndex {
 
 /// The `(declaring type, var)` pairs one proc's body writes (a constructor's writes are init and do not count); the type is [`UNTYPED_WRITE`]
 /// when the receiver has no static type. Sorted.
-pub fn typed_writes(sem: &Sem, p: ProcRef) -> Vec<(String, String)> {
+pub fn typed_writes(sem: &Sem, p: Proc<'_>) -> Vec<(String, String)> {
     let mut out: BTreeSet<(String, String)> = BTreeSet::new();
     let ctor = matches!(p.name(), "New" | "Initialize" | "initialize" | "Init");
-    let Some(code) = &*p.get().code else { return Vec::new() };
+    let Some(code) = p.body() else { return Vec::new() };
     if ctor {
         return Vec::new();
     }
-    let owner = if p.ty().get().path.is_empty() { "/".to_string() } else { p.ty().get().path.clone() };
+    let owner = p.owner().path().to_string();
     // Every local and parameter of the proc: a write of one is no write of a var. Name -> static type.
     let mut locals: HashMap<String, Option<String>> = HashMap::new();
-    for prm in p.get().parameters.iter() {
-        locals.insert(prm.name.clone(), type_str(&prm.var_type));
+    for prm in p.parameters().iter() {
+        locals.insert(prm.name.clone(), type_str(&prm.type_path));
     }
     collect_locals(code, &mut locals);
-    let mut record = |term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>]| {
-        let Some((recv, var)) = write_target(sem, &owner, &locals, term, follow) else { return };
+    let mut record = |c: &Chain<'_>, n: usize| {
+        let Some((recv, var)) = write_target(sem, &owner, &locals, c, n) else { return };
         out.insert(match recv {
             Receiver::Local => return,
             Receiver::Typed(t) => (t, var),
             Receiver::Unknown => (UNTYPED_WRITE.to_string(), var),
         });
     };
-    super::ast::walk_block(code, &mut |e, _| {
-        if let Expression::AssignOp { lhs, .. } = e {
-            if let Expression::Base { term, follow } = &**lhs {
-                record(term, follow);
+    walk_block(code, &mut |vis, _| {
+        if let Form::Assign { lhs, .. } = &vis.form {
+            if let Some(c) = chain(lhs) {
+                record(&c, c.hops.len());
             }
         }
-        if let Expression::Base { term, follow } = e {
-            if let Some(Follow::Unary(op)) = follow.last().map(|f| &f.elem) {
-                if matches!(op, dreammaker::ast::UnaryOp::PreIncr | dreammaker::ast::UnaryOp::PostIncr | dreammaker::ast::UnaryOp::PreDecr | dreammaker::ast::UnaryOp::PostDecr) {
-                    record(term, &follow[..follow.len() - 1]);
+        if let Form::Chain(c) = &vis.form {
+            if let Some(Hop::Unary { op, .. }) = c.hops.last() {
+                if is_incr(op) {
+                    record(c, c.hops.len() - 1);
                 }
             }
         }
     });
     // Writes that are calls: a tracked setter (`x.set_v(..)`, `set_v(..)`) and a relation mutator (`rel_add(E, nameof(E.v), ..)`) write `v` as an
     // assignment does. Without them a var whose every write went through its setter or the relation layer reads as never written (constant).
-    super::ast::walk_block(code, &mut |e, _| {
-        let Expression::Base { term, follow } = e else { return };
-        if let Term::Call(n, args) = &term.elem {
-            if let Some(v) = n.as_str().strip_prefix("set_") {
+    walk_block(code, &mut |vis, _| {
+        let Form::Chain(c) = &vis.form else { return };
+        if let mx::Root::Call { name: n, args } = &c.root {
+            if let Some(v) = n.strip_prefix("set_") {
                 if let Some(d) = sem.var_owner(&owner, v) {
                     out.insert((d, v.to_string()));
                 }
             }
-            for (k, v, at) in super::globals::rel_mutator_vars(n.as_str(), args) {
-                let recv = match args.get(k) {
-                    Some(Expression::Base { term: t, follow: fo }) => call_receiver_type(sem, &owner, &locals, t, fo),
-                    _ => None,
-                };
+            for (k, v, at) in super::globals::rel_mutator_vars(n, *args) {
+                let recv = args.get(k).and_then(chain).and_then(|ac| call_receiver_type(sem, &owner, &locals, &ac, ac.hops.len()));
                 match declaring(sem, at.or(recv), &v) {
                     Receiver::Typed(d) => out.insert((d, v)),
                     _ => out.insert((UNTYPED_WRITE.to_string(), v)),
                 };
             }
         }
-        for (i, fo) in follow.iter().enumerate() {
-            let Follow::Call(_, name, _) = &fo.elem else { continue };
-            let Some(v) = name.as_str().strip_prefix("set_") else { continue };
+        for (i, fo) in c.hops.iter().enumerate() {
+            let Hop::Call { name, .. } = fo else { continue };
+            let Some(v) = name.strip_prefix("set_") else { continue };
             if v.is_empty() {
                 continue;
             }
-            if let Some(t) = call_receiver_type(sem, &owner, &locals, term, &follow[..i]) {
+            if let Some(t) = call_receiver_type(sem, &owner, &locals, c, i) {
                 if let Some(d) = sem.var_owner(&t, v) {
                     out.insert((d, v.to_string()));
                 }
@@ -1122,14 +1129,20 @@ pub fn typed_writes(sem: &Sem, p: ProcRef) -> Vec<(String, String)> {
     out.into_iter().collect()
 }
 
-/// [`receiver_type`], and the declared return type of a proc call receiver (`company().set_bankrupt(1)`, `as /datum/stock`).
-fn call_receiver_type(sem: &Sem, owner: &str, locals: &HashMap<String, Option<String>>, term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>]) -> Option<String> {
-    if follow.is_empty() {
-        if let Term::Call(n, _) = &term.elem {
-            return crate::lints::image_dir_after_build::return_type(sem, owner, n.as_str());
+/// `++` and `--`, before or after.
+fn is_incr(op: &str) -> bool {
+    matches!(op, "pre++" | "post++" | "pre--" | "post--")
+}
+
+/// [`receiver_type`], and the declared return type of a proc call receiver (`company().set_bankrupt(1)`, `as /datum/stock`). The receiver is
+/// the chain's root and its first `n` hops.
+fn call_receiver_type(sem: &Sem, owner: &str, locals: &HashMap<String, Option<String>>, c: &Chain<'_>, n: usize) -> Option<String> {
+    if n == 0 {
+        if let mx::Root::Call { name, .. } = &c.root {
+            return crate::lints::image_dir_after_build::return_type(sem, owner, name);
         }
     }
-    receiver_type(sem, owner, locals, term, follow)
+    receiver_type(sem, owner, locals, c, n)
 }
 
 enum Receiver {
@@ -1140,45 +1153,41 @@ enum Receiver {
     Unknown,
 }
 
-fn collect_locals(b: &Block, out: &mut HashMap<String, Option<String>>) {
-    use dreammaker::ast::Statement;
-    for st in b.iter() {
-        match &st.elem {
-            Statement::Var(vs) => {
-                out.insert(vs.name.clone(), type_str(&vs.var_type));
-            }
-            Statement::Vars(list) => {
+fn collect_locals(b: &[Statement], out: &mut HashMap<String, Option<String>>) {
+    for st in stmts(b) {
+        match &st.stmt {
+            Stmt::Vars(list) => {
                 for vs in list.iter() {
-                    out.insert(vs.name.clone(), type_str(&vs.var_type));
+                    out.insert(vs.name.clone(), type_str(&vs.type_path));
                 }
             }
-            Statement::ForList(fl) => {
-                out.insert(fl.name.as_str().to_string(), fl.var_type.as_ref().and_then(type_str));
+            Stmt::ForList { binding, .. } => {
+                out.insert(binding.name.clone(), binding.decl.as_ref().and_then(|d| type_str(&d.type_path)));
             }
             _ => {}
         }
-        for nb in super::ast::stmt_blocks(&st.elem) {
+        for nb in stmt_blocks(&st.stmt) {
             collect_locals(nb, out);
         }
     }
 }
 
-/// What a write to the lvalue `term` `follow` reaches: the var name and where it lives.
-fn write_target(sem: &Sem, owner: &str, locals: &HashMap<String, Option<String>>, term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>]) -> Option<(Receiver, String)> {
-    match follow.last().map(|f| &f.elem) {
-        Some(Follow::Index(..)) => write_target(sem, owner, locals, term, &follow[..follow.len() - 1]),
-        Some(Follow::Field(_, n)) => {
-            let var = n.as_str().to_string();
-            let recv = receiver_type(sem, owner, locals, term, &follow[..follow.len() - 1]);
+/// What a write to the lvalue (the chain's root and its first `n` hops) reaches: the var name and where it lives.
+fn write_target(sem: &Sem, owner: &str, locals: &HashMap<String, Option<String>>, c: &Chain<'_>, n: usize) -> Option<(Receiver, String)> {
+    match c.hops[..n].last() {
+        Some(Hop::Index { .. }) => write_target(sem, owner, locals, c, n - 1),
+        Some(Hop::Field { name, .. }) => {
+            let var = name.to_string();
+            let recv = receiver_type(sem, owner, locals, c, n - 1);
             Some((declaring(sem, recv, &var), var))
         }
-        None => match &term.elem {
-            Term::Ident(n) => {
-                if locals.contains_key(n.as_str()) {
-                    return Some((Receiver::Local, n.clone()));
+        None => match &c.root {
+            mx::Root::Ident(id) => {
+                if locals.contains_key(*id) {
+                    return Some((Receiver::Local, id.to_string()));
                 }
                 // A bare name is a var of the proc's own type, or a global.
-                Some((declaring(sem, Some(owner.to_string()), n), n.clone()))
+                Some((declaring(sem, Some(owner.to_string()), id), id.to_string()))
             }
             _ => None,
         },
@@ -1197,20 +1206,21 @@ fn declaring(sem: &Sem, recv: Option<String>, var: &str) -> Receiver {
     }
 }
 
-/// The static type of `term` `follow` (`src`, a typed local or parameter, a typed var of the proc's type, a field chain of those).
-fn receiver_type(sem: &Sem, owner: &str, locals: &HashMap<String, Option<String>>, term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>]) -> Option<String> {
-    let mut cur: Option<String> = match &term.elem {
-        Term::Ident(n) if n.as_str() == "src" => Some(owner.to_string()),
-        Term::Ident(n) if n.as_str() == "usr" => None,
-        Term::Ident(n) => match locals.get(n.as_str()) {
+/// The static type of the chain's root and its first `n` hops (`src`, a typed local or parameter, a typed var of the proc's type, a field
+/// chain of those).
+fn receiver_type(sem: &Sem, owner: &str, locals: &HashMap<String, Option<String>>, c: &Chain<'_>, n: usize) -> Option<String> {
+    let mut cur: Option<String> = match &c.root {
+        mx::Root::Ident("src") => Some(owner.to_string()),
+        mx::Root::Ident("usr") => None,
+        mx::Root::Ident(id) => match locals.get(*id) {
             Some(t) => t.clone(),
-            None => sem.var_decl(owner, n).map(|v| v.declared).filter(|d| !d.is_empty()),
+            None => sem.var_decl(owner, id).map(|v| v.declared).filter(|d| !d.is_empty()),
         },
         _ => None,
     };
-    for fo in follow {
-        match &fo.elem {
-            Follow::Field(_, n) => cur = cur.and_then(|c| sem.var_decl(&c, n.as_str())).map(|v| v.declared).filter(|d| !d.is_empty()),
+    for fo in &c.hops[..n] {
+        match fo {
+            Hop::Field { name, .. } => cur = cur.and_then(|c| sem.var_decl(&c, name)).map(|v| v.declared).filter(|d| !d.is_empty()),
             _ => cur = None,
         }
     }
@@ -1218,23 +1228,23 @@ fn receiver_type(sem: &Sem, owner: &str, locals: &HashMap<String, Option<String>
 }
 
 /// The var names one proc's body writes (a constructor's writes are init and do not count).
-pub fn proc_writes(p: ProcRef) -> HashSet<String> {
+pub fn proc_writes(p: Proc<'_>) -> HashSet<String> {
     let mut s = HashSet::new();
     let name = p.name();
     let ctor = matches!(name, "New" | "Initialize" | "initialize" | "Init");
-    if let Some(code) = &*p.get().code {
+    if let Some(code) = p.body() {
         collect_writes(code, ctor, &mut s);
     }
     s
 }
 
-pub fn collect_writes_pub(code: &Block, out: &mut HashSet<String>) {
+pub fn collect_writes_pub(code: &[Statement], out: &mut HashSet<String>) {
     collect_writes(code, false, out)
 }
 
-fn collect_writes(code: &Block, ctor: bool, out: &mut HashSet<String>) {
-    super::ast::walk_block(code, &mut |e, _| {
-        if let Expression::AssignOp { lhs, .. } = e {
+fn collect_writes(code: &[Statement], ctor: bool, out: &mut HashSet<String>) {
+    walk_block(code, &mut |vis, _| {
+        if let Form::Assign { lhs, .. } = &vis.form {
             if let Some(n) = lvalue_name(lhs) {
                 // A constructor's writes are init; a var only assigned there stays constant.
                 if !ctor {
@@ -1242,11 +1252,11 @@ fn collect_writes(code: &Block, ctor: bool, out: &mut HashSet<String>) {
                 }
             }
         }
-        // `x++` / `--x` and list mutators are follows/unary; approximate: a `++`/`--` is an AssignOp in DM's AST for postfix? it is a Unary follow.
-        if let Expression::Base { term, follow } = e {
-            if let Some(Follow::Unary(op)) = follow.last().map(|f| &f.elem) {
-                if matches!(op, dreammaker::ast::UnaryOp::PreIncr | dreammaker::ast::UnaryOp::PostIncr | dreammaker::ast::UnaryOp::PreDecr | dreammaker::ast::UnaryOp::PostDecr) && !ctor {
-                    if let Some(n) = lvalue_name_of(term, &follow[..follow.len() - 1]) {
+        // `x++` / `--x` is a unary hop on its operand (not an assignment form).
+        if let Form::Chain(c) = &vis.form {
+            if let Some(Hop::Unary { op, .. }) = c.hops.last() {
+                if is_incr(op) && !ctor {
+                    if let Some(n) = lvalue_name_of(c, c.hops.len() - 1) {
                         out.insert(n);
                     }
                 }
@@ -1256,36 +1266,41 @@ fn collect_writes(code: &Block, ctor: bool, out: &mut HashSet<String>) {
 }
 
 /// The var name an lvalue assigns (`x`, `a.b.x` -> "x").
-pub fn lvalue_name(e: &Expression) -> Option<String> {
-    match e {
-        Expression::Base { term, follow } => lvalue_name_of(term, follow),
-        _ => None,
-    }
+pub fn lvalue_name(e: &Expr) -> Option<String> {
+    let c = chain(e)?;
+    lvalue_name_of(&c, c.hops.len())
 }
 
-pub(super) fn lvalue_name_of(term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>]) -> Option<String> {
-    match follow.last().map(|f| &f.elem) {
-        Some(Follow::Field(_, n)) => Some(n.as_str().to_string()),
-        Some(Follow::Index(..)) => lvalue_name_of(term, &follow[..follow.len() - 1]),
-        None => match &term.elem {
-            Term::Ident(n) => Some(n.clone()),
+/// [`lvalue_name`] of the chain's root and its first `n` hops.
+pub(super) fn lvalue_name_of(c: &Chain<'_>, n: usize) -> Option<String> {
+    match c.hops[..n].last() {
+        Some(Hop::Field { name, .. }) => Some(name.to_string()),
+        Some(Hop::Index { .. }) => lvalue_name_of(c, n - 1),
+        None => match &c.root {
+            mx::Root::Ident(id) => Some(id.to_string()),
             _ => None,
         },
         _ => None,
     }
 }
 
-fn type_str(vt: &VarType) -> Option<String> {
-    if vt.type_path.is_empty() {
+/// A declared type path as the walk spells it (`/obj/item`), none when untyped.
+fn type_str(type_path: &[String]) -> Option<String> {
+    if type_path.is_empty() {
         None
     } else {
-        Some(format!("/{}", vt.type_path.join("/")))
+        Some(format!("/{}", type_path.join("/")))
     }
 }
 
 impl<'a, 'e> Walk<'a, 'e> {
-    fn rel_of(&self, p: ProcRef<'a>) -> String {
-        self.eng.sem.rel(p.get().location).to_string()
+    fn rel_of(&self, p: Proc<'a>) -> String {
+        self.eng.sem.rel(p.site())
+    }
+
+    /// The line the chain's root term starts on (0 when it has no place).
+    fn site_line(&self, c: &Chain<'_>) -> u32 {
+        self.eng.sem.line(Some(Site((self.base + c.root_site().0 as usize) as u32)))
     }
 
     fn add_read(&mut self, mut r: Read, rel: &str, line: u32) {
@@ -1366,15 +1381,12 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     /// Walks one proc body with `this` as src. `bind` are the evaluated args for its params.
-    fn run_proc(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool) -> Option<Val> {
+    fn run_proc(&mut self, p: Proc<'a>, this: Val, bind: &[Val], first_is_ctx: bool) -> Option<Val> {
         if p.is_builtin() || self.depth > MAX_DEPTH {
             return None;
         }
         let no_act = std::mem::take(&mut self.no_act);
-        let owner = {
-            let o = &p.ty().get().path;
-            if o.is_empty() { "/".to_string() } else { o.clone() }
-        };
+        let owner = p.owner().path().to_string();
         let vkey = (owner.clone(), p.name().to_string(), this.root.clone(), this.hops.clone(), bind.iter().map(|v| (v.root.clone(), v.hops.clone())).collect());
         if !self.visited.insert(vkey) {
             return None;
@@ -1492,15 +1504,14 @@ impl<'a, 'e> Walk<'a, 'e> {
         self.out.sampled.extend(d.sampled.iter().cloned());
     }
 
-    fn enter(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool, no_act: bool, owner: &str) -> Option<Val> {
+    fn enter(&mut self, p: Proc<'a>, this: Val, bind: &[Val], first_is_ctx: bool, no_act: bool, owner: &str) -> Option<Val> {
         super::walk_cache::record(|| super::walk_cache::Dep::Proc(owner.to_string(), p.name().to_string()));
         if let Some(summary) = self.eng.ann.summaries.get(&(owner.to_string(), p.name().to_string())) {
             self.apply_summary(owner, p.name(), summary, &this, bind);
             return None;
         }
-        let value = p.get();
         if !self.eng.opaque_dirs.is_empty() {
-            let rel = self.eng.sem.rel(value.location);
+            let rel = self.eng.sem.rel(p.site());
             if self.eng.opaque_dirs.iter().any(|d| rel.starts_with(d.as_str())) {
                 if self.depth > 0 && self.mute == 0 {
                     let key = format!("{}::{}", owner, p.name());
@@ -1510,10 +1521,10 @@ impl<'a, 'e> Walk<'a, 'e> {
                 return None;
             }
         }
-        let Some(code) = &*value.code else { return None };
+        let Some(code) = p.body() else { return None };
         let mut fr = Frame { proc: p, rel: self.rel_of(p), this, locals: HashMap::new(), narrow: HashMap::new(), ret: None };
-        for (i, prm) in value.parameters.iter().enumerate() {
-            let declared = type_str(&prm.var_type);
+        for (i, prm) in p.parameters().iter().enumerate() {
+            let declared = type_str(&prm.type_path);
             let mut v = match bind.get(i) {
                 Some(b) => b.clone(),
                 None => Val::local(declared.clone()),
@@ -1540,7 +1551,10 @@ impl<'a, 'e> Walk<'a, 'e> {
         let in_engine = self.eng.virtual_dispatch && ENGINE_DIRS.iter().any(|d| fr.rel.starts_with(d));
         self.engine_depth += in_engine as u32;
         self.depth += 1;
+        // The body's own expressions are relative to the file, whatever expression the call came from.
+        let outer_base = std::mem::take(&mut self.base);
         self.block(&mut fr, code);
+        self.base = outer_base;
         self.depth -= 1;
         self.engine_depth -= in_engine as u32;
         self.rel = outer_rel;
@@ -1567,15 +1581,12 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     /// Follows `p` (the proc `name` resolves to on `ty`), and, for a closed walk, every override of it in `ty`'s subtypes.
-    fn run_virtual(&mut self, p: ProcRef<'a>, ty: &str, name: &str, this: Val, bind: &[Val]) -> Option<Val> {
+    fn run_virtual(&mut self, p: Proc<'a>, ty: &str, name: &str, this: Val, bind: &[Val]) -> Option<Val> {
         let ret = self.run_proc(p, this.clone(), bind, false);
         if !self.eng.virtual_dispatch || !this.tracked() {
             return ret;
         }
-        let declaring = {
-            let o = &p.ty().get().path;
-            if o.is_empty() { "/".to_string() } else { o.clone() }
-        };
+        let declaring = p.owner().path().to_string();
         for sub in self.eng.overrides(ty, name).iter() {
             if *sub == declaring {
                 continue;
@@ -1590,45 +1601,43 @@ impl<'a, 'e> Walk<'a, 'e> {
         ret
     }
 
-    fn block(&mut self, fr: &mut Frame<'a>, b: &Block) {
-        for st in b.iter() {
-            self.line = st.location.line;
-            self.stmt(fr, &st.elem);
+    fn block(&mut self, fr: &mut Frame<'a>, b: &[Statement]) {
+        for st in stmts(b) {
+            self.line = self.eng.sem.line(Some(st.site));
+            self.stmt(fr, &st.stmt);
         }
     }
 
-    fn stmt(&mut self, fr: &mut Frame<'a>, s: &Statement) {
+    /// A local `var/x = value` declares: it starts as the value (`var/L[3]`, with no value written, as `new /list(3)`, a term with no place
+    /// of its own), typed as declared.
+    fn declare(&mut self, fr: &mut Frame<'a>, d: &VarDecl<'_>) {
+        let declared = type_str(&d.type_path);
+        let mut v = match d.value {
+            Some(e) => self.eval(fr, e),
+            None => match d.initializer() {
+                Some(Form::Chain(c)) => self.eval_chain(fr, &c, Some(0)),
+                _ => Val::local(None),
+            },
+        };
+        if declared.is_some() {
+            v.ty = declared;
+        }
+        fr.locals.insert(d.name.clone(), v);
+    }
+
+    fn stmt(&mut self, fr: &mut Frame<'a>, s: &Stmt<'_>) {
         match s {
-            Statement::Var(vs) => {
-                let declared = type_str(&vs.var_type);
-                let mut v = match &vs.value {
+            Stmt::Vars(list) => {
+                for d in list {
+                    self.declare(fr, d);
+                }
+            }
+            Stmt::ForList { binding, in_list, body } => {
+                let it = match in_list {
                     Some(e) => self.eval(fr, e),
                     None => Val::local(None),
                 };
-                if declared.is_some() {
-                    v.ty = declared;
-                }
-                fr.locals.insert(vs.name.clone(), v);
-            }
-            Statement::Vars(list) => {
-                for vs in list {
-                    let declared = type_str(&vs.var_type);
-                    let mut v = match &vs.value {
-                        Some(e) => self.eval(fr, e),
-                        None => Val::local(None),
-                    };
-                    if declared.is_some() {
-                        v.ty = declared;
-                    }
-                    fr.locals.insert(vs.name.clone(), v);
-                }
-            }
-            Statement::ForList(fl) => {
-                let it = match &fl.in_list {
-                    Some(e) => self.eval(fr, e),
-                    None => Val::local(None),
-                };
-                let declared = fl.var_type.as_ref().and_then(type_str);
+                let declared = binding.decl.as_ref().and_then(|d| type_str(&d.type_path));
                 let mut v = if let Some(each) = self.global_each(&it, declared.clone()) {
                     each
                 } else if it.tracked() && it.list {
@@ -1645,41 +1654,47 @@ impl<'a, 'e> Walk<'a, 'e> {
                 if v.ty.is_none() {
                     v.ty = declared;
                 }
-                fr.locals.insert(fl.name.as_str().to_string(), v);
-                self.block(fr, &fl.block);
+                fr.locals.insert(binding.name.clone(), v);
+                self.block(fr, body);
             }
-            Statement::ForKeyValue(fk) => {
-                if let Some(e) = &fk.in_list {
-                    self.eval(fr, e);
-                }
-                fr.locals.insert(fk.key.as_str().to_string(), Val::local(fk.var_type.as_ref().and_then(type_str)));
-                fr.locals.insert(fk.value.as_str().to_string(), Val::local(None));
-                self.block(fr, &fk.block);
+            Stmt::ForKeyValue { binding, value, in_list, body } => {
+                self.eval(fr, in_list);
+                fr.locals.insert(binding.name.clone(), Val::local(binding.decl.as_ref().and_then(|d| type_str(&d.type_path))));
+                fr.locals.insert(value.to_string(), Val::local(None));
+                self.block(fr, body);
             }
-            Statement::ForRange(fr2) => {
-                self.eval(fr, &fr2.start);
-                self.eval(fr, &fr2.end);
-                if let Some(st) = &fr2.step {
+            Stmt::ForRange { binding, start, end, step, body } => {
+                self.eval(fr, start);
+                self.eval(fr, end);
+                if let Some(st) = step {
                     self.eval(fr, st);
                 }
-                fr.locals.insert(fr2.name.as_str().to_string(), Val::local(None));
-                self.block(fr, &fr2.block);
+                fr.locals.insert(binding.name.clone(), Val::local(None));
+                self.block(fr, body);
             }
-            Statement::ForLoop { init, test, inc, block } => {
-                if let Some(i) = init {
-                    self.stmt(fr, i);
+            Stmt::ForLoop { init, test, inc, body } => {
+                match init {
+                    Some(ForInit::Var(d)) => self.declare(fr, d),
+                    Some(ForInit::Expr(e)) => {
+                        self.eval(fr, e);
+                    }
+                    None => {}
                 }
                 if let Some(t) = test {
                     self.eval(fr, t);
                 }
                 if let Some(i) = inc {
-                    self.stmt(fr, i);
+                    self.eval(fr, i);
                 }
-                self.block(fr, block);
+                self.block(fr, body);
             }
-            Statement::Return(Some(e)) => {
+            Stmt::Return(Some(e)) => {
                 let v = self.eval(fr, e);
                 fr.note_return(&v);
+            }
+            // An expression statement (an assignment has no node of its own, so it is read from its form).
+            Stmt::Expr(f, _) => {
+                self.eval_form(fr, f.clone());
             }
             _ => {
                 for e in stmt_exprs(s) {
@@ -1692,46 +1707,27 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
     }
 
-    fn eval(&mut self, fr: &mut Frame<'a>, e: &Expression) -> Val {
-        match e {
-            Expression::Base { term, follow } => {
-                let line = term.location.line;
-                if line != 0 {
-                    self.line = line;
-                }
-                let mut v = self.term(fr, &term.elem, line);
-                for fo in follow.iter() {
-                    v = match &fo.elem {
-                        Follow::Field(_, name) => self.field(fr, v, name.as_str()),
-                        Follow::Call(_, name, args) => self.method(fr, v, name.as_str(), args),
-                        Follow::Index(_, ix) => {
-                            self.eval(fr, ix);
-                            self.index(v)
-                        }
-                        Follow::Unary(dreammaker::ast::UnaryOp::Neg) => match &v.root {
-                            Root::Scalar(LookupArgument::Literal(n)) if n != "null" => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(format!("-{n}"))), hops: Vec::new(), hop_ok: true, list: false, blame: None },
-                            _ => Val::local(None),
-                        },
-                        Follow::Unary(_) => Val::local(None),
-                        Follow::StaticField(_) | Follow::ProcReference(_) => Val::local(None),
-                    };
-                }
-                v
-            }
-            Expression::BinaryOp { lhs, rhs, .. } => {
+    fn eval(&mut self, fr: &mut Frame<'a>, e: &Expr) -> Val {
+        self.eval_form(fr, form(e))
+    }
+
+    fn eval_form(&mut self, fr: &mut Frame<'a>, f: Form<'_>) -> Val {
+        match f {
+            Form::Chain(c) => self.eval_chain(fr, &c, None),
+            Form::Binary { lhs, rhs, .. } => {
                 self.eval(fr, lhs);
                 self.eval(fr, rhs);
                 Val::local(None)
             }
-            Expression::AssignOp { op, lhs, rhs } => {
+            Form::Assign { op, lhs, rhs } => {
                 let rv = self.eval(fr, rhs);
-                self.assign(fr, lhs, *op, rv.clone());
+                self.assign(fr, lhs, op, rv.clone());
                 rv
             }
-            Expression::TernaryOp { cond, if_, else_ } => {
+            Form::Ternary { cond, then_value, else_value } => {
                 self.eval(fr, cond);
-                let a = self.eval(fr, if_);
-                let b = self.eval(fr, else_);
+                let a = self.eval(fr, then_value);
+                let b = self.eval(fr, else_value);
                 if a.tracked() && b.tracked() && a.root == b.root && a.hops == b.hops && a.ty == b.ty {
                     a
                 } else {
@@ -1741,58 +1737,88 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
     }
 
-    fn assign(&mut self, fr: &mut Frame<'a>, lhs: &Expression, op: AssignOp, rv: Val) {
-        let Expression::Base { term, follow } = lhs else {
+    /// A term and what follows it: the root, then each hop in turn. `root_line` stands in for the line of the root term when it has none of
+    /// its own.
+    fn eval_chain(&mut self, fr: &mut Frame<'a>, c: &Chain<'_>, root_line: Option<u32>) -> Val {
+        let line = match root_line {
+            Some(l) => l,
+            None => self.site_line(c),
+        };
+        if line != 0 {
+            self.line = line;
+        }
+        let mut v = self.root(fr, c, line);
+        for h in &c.hops {
+            v = match h {
+                Hop::Field { name, .. } => self.field(fr, v, name),
+                Hop::Call { name, args, .. } => self.method(fr, v, name, *args),
+                Hop::Index { index, .. } => {
+                    self.eval(fr, index);
+                    self.index(v)
+                }
+                Hop::Unary { op: "-", .. } => match &v.root {
+                    Root::Scalar(LookupArgument::Literal(n)) if n != "null" => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(format!("-{n}"))), hops: Vec::new(), hop_ok: true, list: false, blame: None },
+                    _ => Val::local(None),
+                },
+                Hop::Unary { .. } => Val::local(None),
+                Hop::Static { .. } | Hop::ProcRef { .. } => Val::local(None),
+            };
+        }
+        v
+    }
+
+    fn assign(&mut self, fr: &mut Frame<'a>, lhs: &Expr, op: &str, rv: Val) {
+        let Some(c) = chain(lhs) else {
             self.eval(fr, lhs);
             return;
         };
-        let line = term.location.line;
-        if follow.is_empty() {
-            if let Term::Ident(n) = &term.elem {
-                if n == "." && matches!(op, AssignOp::Assign) {
+        let line = self.site_line(&c);
+        if c.hops.is_empty() {
+            if let mx::Root::Ident(n) = &c.root {
+                if *n == "." && op == "=" {
                     fr.note_return(&rv);
-                    fr.locals.insert(n.clone(), rv);
+                    fr.locals.insert(n.to_string(), rv);
                     return;
                 }
-                if fr.locals.contains_key(n) {
-                    if !matches!(op, AssignOp::Assign) {
+                if fr.locals.contains_key(*n) {
+                    if op != "=" {
                         self.eval(fr, lhs);
                     }
-                    let declared = fr.locals.get(n).and_then(|v| v.ty.clone());
+                    let declared = fr.locals.get(*n).and_then(|v| v.ty.clone());
                     let mut nv = rv;
                     if nv.ty.is_none() {
                         nv.ty = declared;
                     }
-                    fr.locals.insert(n.clone(), nv);
+                    fr.locals.insert(n.to_string(), nv);
                     return;
                 }
                 // A write to a var of the holder (or an untyped global).
-                if !matches!(op, AssignOp::Assign) {
+                if op != "=" {
                     self.eval(fr, lhs);
                 }
                 let owner = fr.this.ty.clone().unwrap_or_default();
-                if !self.eng.virtual_dispatch { self.out.effects.push(Effect { kind: "assign", name: n.clone(), owner, proc: fr.proc.name().to_string(), rel: fr.rel.clone(), line }); }
+                if !self.eng.virtual_dispatch { self.out.effects.push(Effect { kind: "assign", name: n.to_string(), owner, proc: fr.proc.name().to_string(), rel: fr.rel.clone(), line }); }
                 return;
             }
         }
         // a.b.c = x: evaluate the receiver chain except the last step.
-        let mut v = self.term(fr, &term.elem, line);
-        let n = follow.len();
-        for (i, fo) in follow.iter().enumerate() {
+        let mut v = self.root(fr, &c, line);
+        let n = c.hops.len();
+        for (i, fo) in c.hops.iter().enumerate() {
             let last = i + 1 == n;
-            v = match &fo.elem {
-                Follow::Field(_, name) if last => {
-                    if !matches!(op, AssignOp::Assign) {
+            v = match fo {
+                Hop::Field { name, .. } if last => {
+                    if op != "=" {
                         // compound: the old value is read.
-                        let _ = self.field(fr, v.clone(), name.as_str());
+                        let _ = self.field(fr, v.clone(), name);
                     }
-                    if !self.eng.virtual_dispatch { self.out.effects.push(Effect { kind: "assign", name: name.as_str().to_string(), owner: v.ty.clone().unwrap_or_default(), proc: fr.proc.name().to_string(), rel: fr.rel.clone(), line }); }
+                    if !self.eng.virtual_dispatch { self.out.effects.push(Effect { kind: "assign", name: name.to_string(), owner: v.ty.clone().unwrap_or_default(), proc: fr.proc.name().to_string(), rel: fr.rel.clone(), line }); }
                     Val::local(None)
                 }
-                Follow::Field(_, name) => self.field(fr, v, name.as_str()),
-                Follow::Call(_, name, args) => self.method(fr, v, name.as_str(), args),
-                Follow::Index(_, ix) => {
-                    self.eval(fr, ix);
+                Hop::Field { name, .. } => self.field(fr, v, name),
+                Hop::Call { name, args, .. } => self.method(fr, v, name, *args),
+                Hop::Index { index, .. } => {
+                    self.eval(fr, index);
                     self.index(v)
                 }
                 _ => Val::local(None),
@@ -1800,27 +1826,37 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
     }
 
-    fn term(&mut self, fr: &mut Frame<'a>, t: &Term, line: u32) -> Val {
-        match t {
-            Term::Int(n) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(n.to_string())), hops: Vec::new(), hop_ok: true, list: false, blame: None },
-            Term::Float(n) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(n.to_string())), hops: Vec::new(), hop_ok: true, list: false, blame: None },
-            Term::Null => Val { ty: None, root: Root::Scalar(LookupArgument::Literal("null".to_string())), hops: Vec::new(), hop_ok: true, list: false, blame: None },
-            Term::Ident(name) => self.ident(fr, name, line),
-            Term::Expr(e) => self.eval(fr, e),
-            Term::Call(name, args) => self.call(fr, name.as_str(), args, line),
-            Term::GlobalCall(_, args) | Term::List(args) => {
+    /// The value of a chain's root term.
+    fn root(&mut self, fr: &mut Frame<'a>, c: &Chain<'_>, line: u32) -> Val {
+        let scalar = |text: String| Val { ty: None, root: Root::Scalar(LookupArgument::Literal(text)), hops: Vec::new(), hop_ok: true, list: false, blame: None };
+        match &c.root {
+            mx::Root::Literal(text) => match literal(text) {
+                Lit::Int(n) => scalar(n.to_string()),
+                Lit::Float(n) => scalar(n.to_string()),
+                Lit::Null => scalar("null".to_string()),
+                // An interpolated string: its embedded expressions are read (their sites are relative to the token).
+                Lit::Interp(interp) => {
+                    for (part, _) in interp_parts(&interp, self.base + c.root_expr.span.start) {
+                        if let Some((e, at)) = part {
+                            let outer = std::mem::replace(&mut self.base, at);
+                            self.eval(fr, &e);
+                            self.base = outer;
+                        }
+                    }
+                    Val::local(None)
+                }
+                Lit::String(_) | Lit::Resource(_) | Lit::Bad => Val::local(None),
+            },
+            mx::Root::Ident(name) => self.ident(fr, name, line),
+            mx::Root::Group(e) => self.eval(fr, e),
+            mx::Root::Call { name, args } => self.call(fr, name, *args, line),
+            mx::Root::List(args) | mx::Root::SelfCall(args) => {
                 for a in args.iter() {
                     self.eval(fr, a);
                 }
                 Val::local(None)
             }
-            Term::SelfCall(args) => {
-                for a in args.iter() {
-                    self.eval(fr, a);
-                }
-                Val::local(None)
-            }
-            Term::ParentCall(args) => {
+            mx::Root::ParentCall(args) => {
                 let vals: Vec<Val> = args.iter().map(|a| self.eval(fr, a)).collect();
                 if let Some(parent) = fr.proc.parent_proc() {
                     let this = fr.this.clone();
@@ -1831,15 +1867,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 }
                 Val::local(None)
             }
-            Term::InterpString(_, parts) => {
-                for (e, _) in parts.iter() {
-                    if let Some(e) = e {
-                        self.eval(fr, e);
-                    }
-                }
-                Val::local(None)
-            }
-            Term::NewImplicit { args } | Term::NewPrefab { args, .. } | Term::NewMiniExpr { args, .. } => {
+            mx::Root::NewImplicit { args } | mx::Root::NewPrefab { args, .. } | mx::Root::NewMini { args, .. } => {
                 if let Some(a) = args {
                     for x in a.iter() {
                         self.eval(fr, x);
@@ -1847,7 +1875,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 }
                 Val::local(None)
             }
-            Term::Input { args, in_list, .. } | Term::Locate { args, in_list } => {
+            mx::Root::Input { args, in_list, .. } | mx::Root::Locate { args, in_list } => {
                 for a in args.iter() {
                     self.eval(fr, a);
                 }
@@ -1856,7 +1884,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 }
                 Val::local(None)
             }
-            Term::Pick(p) => {
+            mx::Root::Pick(p) => {
                 for (w, e) in p.iter() {
                     if let Some(w) = w {
                         self.eval(fr, w);
@@ -1865,26 +1893,26 @@ impl<'a, 'e> Walk<'a, 'e> {
                 }
                 Val::local(None)
             }
-            Term::DynamicCall(a, b) => {
-                for x in a.iter().chain(b.iter()) {
+            mx::Root::DynamicCall { first, args } => {
+                for x in first.iter().chain(args.iter()) {
                     self.eval(fr, x);
                 }
                 let rel = fr.rel.clone();
                 self.diag("dynamic_read", &rel, line, "call() cannot be followed".to_string());
                 Val::local(None)
             }
-            Term::ExternalCall { args, .. } => {
+            mx::Root::ExternalCall { args, .. } => {
                 for a in args.iter() {
                     self.eval(fr, a);
                 }
                 Val::local(None)
             }
-            _ => Val::local(None),
+            mx::Root::Prefab { .. } | mx::Root::Opaque(_) => Val::local(None),
         }
     }
 
     fn current_params(&self, fr: &Frame<'a>) -> Vec<Val> {
-        fr.proc.get().parameters.iter().map(|p| fr.locals.get(&p.name).cloned().unwrap_or_else(|| Val::local(None))).collect()
+        fr.proc.parameters().iter().map(|p| fr.locals.get(&p.name).cloned().unwrap_or_else(|| Val::local(None))).collect()
     }
 
     fn ident(&mut self, fr: &mut Frame<'a>, name: &str, line: u32) -> Val {
@@ -2191,7 +2219,7 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     /// `v.name(args)`: follow the proc on the receiver's static type when the receiver is tracked.
-    fn method(&mut self, fr: &mut Frame<'a>, v: Val, name: &str, args: &[Expression]) -> Val {
+    fn method(&mut self, fr: &mut Frame<'a>, v: Val, name: &str, args: Args<'_>) -> Val {
         let argv: Vec<Val> = args.iter().map(|a| self.eval(fr, a)).collect();
         let sem = self.eng.sem;
         let line = self.line;
@@ -2217,7 +2245,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             }
             return Val::local(None);
         }
-        let Some(p) = sem.proc_ref(&ty, name).filter(|p| !p.ty().get().path.is_empty()) else {
+        let Some(p) = sem.proc_ref(&ty, name).filter(|p| p.owner().path() != "/") else {
             if v.tracked() && sem.ty(&ty).is_some() && !is_builtin_name(name) && !self.eng.sem.is_subtype(&ty, "/datum/act") {
                 self.diag("unknown_call", &rel, line, format!("{} has no proc `{}`", ty, name));
             }
@@ -2255,13 +2283,13 @@ impl<'a, 'e> Walk<'a, 'e> {
             let watch: Vec<String> = {
                 // What the call reads on its receiver: a change of one re-resolves the chain past it.
                 let mut w: Vec<String> = Vec::new();
-                if let Some(code) = &*p.get().code {
+                if let Some(code) = p.body() {
                     // A var of the receiver the body names (`return wanted_issue_owned`, `src.x`).
-                    crate::sem::ast::walk_block(code, &mut |e, _| {
-                        if let Expression::Base { term, follow } = e {
-                            let n = match (&term.elem, follow.first().map(|f| &f.elem)) {
-                                (Term::Ident(n), _) if n.as_str() != "src" => Some(n.as_str()),
-                                (Term::Ident(s), Some(Follow::Field(_, n))) if s.as_str() == "src" => Some(n.as_str()),
+                    walk_block(code, &mut |vis, _| {
+                        if let Form::Chain(c) = &vis.form {
+                            let n = match (&c.root, c.hops.first()) {
+                                (mx::Root::Ident(n), _) if *n != "src" => Some(*n),
+                                (mx::Root::Ident(s), Some(Hop::Field { name, .. })) if *s == "src" => Some(*name),
                                 _ => None,
                             };
                             if let Some(n) = n {
@@ -2286,10 +2314,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             }
             return Val::local(None);
         }
-        let owner = {
-            let o = &p.ty().get().path;
-            if o.is_empty() { "/".to_string() } else { o.clone() }
-        };
+        let owner = p.owner().path().to_string();
         // READS_AS: an accessor stands for its key; not followed.
         if let Some(k) = self.reads_as_for(&ty, name) {
             let mut hops = v.hops.clone();
@@ -2347,7 +2372,7 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     /// An unscoped call: a proc of src's type, a global with READS_FROM, or an unannotated global.
-    fn call(&mut self, fr: &mut Frame<'a>, name: &str, args: &[Expression], line: u32) -> Val {
+    fn call(&mut self, fr: &mut Frame<'a>, name: &str, args: Args<'_>, line: u32) -> Val {
         if name == "nameof" || name == "PROC_REF" || name == "TYPE_PROC_REF" || name == "GLOBAL_PROC_REF" || name == "initial" {
             return Val::local(None);
         }
@@ -2355,7 +2380,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             // A value read once when the question opens (code/engine/parts/cond.dm read_once()): never subscribed.
             self.out.sampled.insert((fr.rel.clone(), line));
             self.mute += 1;
-            for a in args {
+            for a in args.iter() {
                 self.eval(fr, a);
             }
             self.mute -= 1;
@@ -2395,7 +2420,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         // root. The pseudo segment is published by the movement choke point (`loc_changed()`), and walked by `hop_step()` / `hop_sources()`
         // (code/engine/refs/hops.dm).
         if name == "get_step" || name == "get_area" {
-            let here = name == "get_area" || matches!(args.get(1), Some(Expression::Base { term, follow }) if follow.is_empty() && matches!(term.elem, Term::Int(0)));
+            let here = name == "get_area" || args.get(1).and_then(chain).is_some_and(|c| c.hops.is_empty() && matches!(&c.root, mx::Root::Literal(t) if literal(t) == Lit::Int(0)));
             if let (true, Some(a)) = (here, argv.first()) {
                 if a.tracked() {
                     return self.pseudo_hop(a.clone(), if name == "get_area" { HOP_AREA } else { HOP_TURF }, &rel, line);
@@ -2406,9 +2431,11 @@ impl<'a, 'e> Walk<'a, 'e> {
             }
         }
         if name == "native" {
-            if let Some(Expression::Base { term, .. }) = args.first() {
-                if let Term::String(s) = &term.elem {
-                    { let r = Read { root: this.root_name(), hops: this.hops.clone(), var: s.clone(), owner: String::new(), kind: ReadKind::Native, hop_ok: true }; self.add_read(r, &rel, line); }
+            if let Some(c) = args.first().and_then(chain) {
+                if let mx::Root::Literal(t) = &c.root {
+                    if let Lit::String(s) = literal(t) {
+                        { let r = Read { root: this.root_name(), hops: this.hops.clone(), var: s, owner: String::new(), kind: ReadKind::Native, hop_ok: true }; self.add_read(r, &rel, line); }
+                    }
                 }
             }
             return Val::local(None);
@@ -2430,7 +2457,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         // A proc of src's own type (or an ancestor's).
         if let Some(ty) = this.ty.clone() {
             // A global proc is a proc of the root type: it resolves in the global branch below.
-            if let Some(p) = sem.proc_ref(&ty, name).filter(|p| !p.ty().get().path.is_empty()) {
+            if let Some(p) = sem.proc_ref(&ty, name).filter(|p| p.owner().path() != "/") {
                 if p.is_builtin() {
                     return Val::local(None);
                 }
@@ -2457,7 +2484,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             if p.is_builtin() {
                 return Val::local(None);
             }
-            if self.eng.virtual_dispatch && sem.rel(p.get().location).starts_with("code/host/helpers/logging/") {
+            if self.eng.virtual_dispatch && sem.rel(p.site()).starts_with("code/host/helpers/logging/") {
                 // The logging helpers write the world log; what they read is not an input of a value.
                 return Val::local(None);
             }
@@ -2465,14 +2492,14 @@ impl<'a, 'e> Walk<'a, 'e> {
                 self.apply_summary("/", name, summary, &Val::local(None), &argv);
                 return Val::local(None);
             }
-            if self.eng.virtual_dispatch && self.eng.sem.rel(p.get().location).starts_with("code/__defines/verdigris/") {
+            if self.eng.virtual_dispatch && self.eng.sem.rel(p.site()).starts_with("code/__defines/verdigris/") {
                 // A Verdigris FFI binding: Rust-owned state the walk cannot see. A PROC_SUMMARY on it declares what it touches.
                 self.diag("ffi_call", &rel, line, format!("`{}` is a Verdigris FFI call: declare what it reads and writes with PROC_SUMMARY(/proc/{}, ...)", name, name));
                 return Val::local(None);
             }
             if let Some(params) = self.eng.ann.reads_from.get(name) {
                 if let Some((key, via)) = self.eng.ann.reads_as.get(&("/".to_string(), name.to_string())) {
-                    for (i, parameter) in p.get().parameters.iter().enumerate() {
+                    for (i, parameter) in p.parameters().iter().enumerate() {
                         if !params.contains(&parameter.name) { continue; }
                         if let Some(value) = argv.get(i).filter(|value| value.tracked()) {
                             let mut hops = value.hops.clone();
@@ -2484,14 +2511,13 @@ impl<'a, 'e> Walk<'a, 'e> {
                     return Val::local(None);
                 }
                 // Follow the body with the named params bound to what the call passed.
-                let value = p.get();
                 let mut bind: Vec<Val> = Vec::new();
-                for (i, prm) in value.parameters.iter().enumerate() {
+                for (i, prm) in p.parameters().iter().enumerate() {
                     let a = argv.get(i).cloned().unwrap_or_else(|| Val::local(None));
                     if params.iter().any(|n| n == &prm.name) {
                         bind.push(a);
                     } else {
-                        bind.push(Val::local(type_str(&prm.var_type)));
+                        bind.push(Val::local(type_str(&prm.type_path)));
                     }
                 }
                 let g = Val::local(None);
@@ -2501,16 +2527,15 @@ impl<'a, 'e> Walk<'a, 'e> {
             } else if self.eng.virtual_dispatch {
                 // Walked like any proc, every parameter bound to what the call passed: a tracked argument keeps its root, so what the body
                 // reads of it is a read of the caller's entity. Global state the body reads is classified in `global_field`.
-                let value = p.get();
                 // (An act context does not travel into a helper: the helper declares the context type it takes, and the handler's own
                 // context fields are checked at the handler.)
-                let bind: Vec<Val> = value
-                    .parameters
+                let bind: Vec<Val> = p
+                    .parameters()
                     .iter()
                     .enumerate()
                     .map(|(i, prm)| match argv.get(i) {
                         Some(a) if a.root != Root::Act => a.clone(),
-                        _ => Val::local(type_str(&prm.var_type)),
+                        _ => Val::local(type_str(&prm.type_path)),
                     })
                     .collect();
                 self.no_act = true;
@@ -2549,12 +2574,12 @@ impl<'a> Frame<'a> {
     }
 }
 
-fn collect_narrowing(code: &Block, out: &mut HashMap<String, Vec<String>>) {
-    super::ast::walk_block(code, &mut |e, _| {
-        if let Expression::Base { term, .. } = e {
-            if let Term::Call(n, args) = &term.elem {
-                if n.as_str() == "istype" && args.len() == 2 {
-                    if let (Some(id), Some(path)) = (as_ident(strip_parens(&args[0])), prefab_path(&args[1])) {
+fn collect_narrowing(code: &[Statement], out: &mut HashMap<String, Vec<String>>) {
+    walk_block(code, &mut |vis, _| {
+        if let Form::Chain(c) = &vis.form {
+            if let mx::Root::Call { name: "istype", args } = &c.root {
+                if args.len() == 2 {
+                    if let (Some(id), Some(path)) = (as_ident(strip_groups(args.get(0).unwrap())), prefab_path(args.get(1).unwrap())) {
                         out.entry(id.to_string()).or_default().push(path);
                     }
                 }
@@ -2564,21 +2589,20 @@ fn collect_narrowing(code: &Block, out: &mut HashMap<String, Vec<String>>) {
 }
 
 /// `/obj/foo` as a prefab expression.
-pub fn prefab_path(e: &Expression) -> Option<String> {
-    if let Expression::Base { term, follow } = strip_parens(e) {
-        if follow.is_empty() {
-            if let Term::Prefab(p) = &term.elem {
-                let mut s = String::new();
-                for (op, name) in p.path.iter() {
-                    let _ = op;
-                    s.push('/');
-                    s.push_str(name);
-                }
-                return Some(s);
-            }
-        }
+pub fn prefab_path(e: &Expr) -> Option<String> {
+    let c = chain(strip_groups(e))?;
+    if !c.hops.is_empty() {
+        return None;
     }
-    None
+    match &c.root {
+        mx::Root::Prefab { path, .. } => Some(prefab_text(path)),
+        _ => None,
+    }
+}
+
+/// A prefab path with every segment after a `/`, whatever operator (`/`, `.`, `:`) separated it from the one before.
+pub(super) fn prefab_text(path: &str) -> String {
+    path.split(['/', '.', ':']).filter(|s| !s.is_empty()).map(|s| format!("/{s}")).collect()
 }
 
 /// Builtin vars/procs that an object may have without the objtree declaring them on the static type.

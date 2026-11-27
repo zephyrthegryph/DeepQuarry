@@ -12,11 +12,12 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-use dreammaker::ast::{Block, Expression, PathOp, Statement, Term};
+use dm_syntax::{Expr, Statement};
 
-use super::ast::{stmt_blocks, stmt_exprs, walk_block, walk_expr};
 use super::procs::engine_line;
 use super::Sem;
+use crate::model::expr::{as_ident, chain, literal, Form, Lit, Root};
+use crate::model::walk::{stmt_blocks, stmt_exprs, stmts, walk_block, walk_expr, ForInit, Stmt};
 
 /// A `new` that passes an argument no one takes.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -49,14 +50,14 @@ fn framework(owner: &str) -> bool {
 const CTORS: &[&str] = &["New", "Initialize"];
 
 /// Whether a body uses `name` other than as a bare argument of `..()` (which only forwards it).
-fn reads_outside_parent_call(code: &Block, name: &str) -> bool {
+fn reads_outside_parent_call(code: &[Statement], name: &str) -> bool {
     let mut uses = 0usize;
     let mut forwards = 0usize;
-    walk_block(code, &mut |e, _| {
-        if let Expression::Base { term, .. } = e {
-            match &term.elem {
-                Term::Ident(n) if n.as_str() == name => uses += 1,
-                Term::ParentCall(args) => forwards += args.iter().filter(|a| bare_ident(a) == Some(name)).count(),
+    walk_block(code, &mut |v, _| {
+        if let Form::Chain(c) = &v.form {
+            match &c.root {
+                Root::Ident(n) if *n == name => uses += 1,
+                Root::ParentCall(args) => forwards += args.iter().filter(|a| bare_ident(a) == Some(name)).count(),
                 _ => {}
             }
         }
@@ -64,14 +65,8 @@ fn reads_outside_parent_call(code: &Block, name: &str) -> bool {
     uses > forwards
 }
 
-fn bare_ident(e: &Expression) -> Option<&str> {
-    match e {
-        Expression::Base { term, follow } if follow.is_empty() => match &term.elem {
-            Term::Ident(n) => Some(n.as_str()),
-            _ => None,
-        },
-        _ => None,
-    }
+fn bare_ident(e: &Expr) -> Option<&str> {
+    as_ident(e)
 }
 
 /// The parameter at `pos` (0 is the location / mapload) of each constructor definition of `ty` and its ancestors: does one read it?
@@ -107,14 +102,13 @@ impl<'s> Ctors<'s> {
             }
             let Some(tr) = self.sem.ty(&t) else { continue };
             for name in CTORS {
-                let Some(tp) = tr.get().procs.get(*name) else { continue };
-                for def in tp.value.iter() {
-                    let Some(code) = def.code.as_ref() else { continue };
+                for def in tr.proc_definitions(name) {
+                    let Some(code) = def.body() else { continue };
                     if reads_outside_parent_call(code, "args") {
                         v = true;
                         break 'outer;
                     }
-                    if let Some(p) = def.parameters.get(pos) {
+                    if let Some(p) = def.parameters().get(pos) {
                         if reads_outside_parent_call(code, p.name.as_str()) {
                             v = true;
                             break 'outer;
@@ -128,15 +122,16 @@ impl<'s> Ctors<'s> {
     }
 }
 
-fn is_null(e: &Expression) -> bool {
-    matches!(e, Expression::Base { term, follow } if follow.is_empty() && matches!(term.elem, Term::Null))
+fn is_null(e: &Expr) -> bool {
+    matches!(chain(e), Some(c) if c.hops.is_empty() && matches!(&c.root, Root::Literal(t) if matches!(literal(t), Lit::Null)))
 }
 
-fn absolute_path(p: &dreammaker::ast::Prefab) -> Option<String> {
-    if !p.vars.is_empty() || p.path.first().map(|(op, _)| *op != PathOp::Slash).unwrap_or(true) {
+/// The absolute path of a `new /a/b` (no initializer block), the names joined by `/` whatever operator spells them.
+fn absolute_path(path: &str, has_vars: bool) -> Option<String> {
+    if has_vars || !path.starts_with('/') {
         return None;
     }
-    Some(format!("/{}", p.path.iter().map(|(_, n)| n.as_str()).collect::<Vec<_>>().join("/")))
+    Some(format!("/{}", path.split(['/', '.', ':']).filter(|s| !s.is_empty()).collect::<Vec<_>>().join("/")))
 }
 
 /// `type -> declared param(pos = N)` positions, from the CAPABILITIES blocks (see `lints::lifeforms`).
@@ -146,13 +141,14 @@ pub type ParamPositions = HashMap<String, BTreeSet<usize>>;
 pub fn dead_args(sem: &Sem, params: &ParamPositions) -> Vec<DeadArg> {
     let ctors = Ctors { sem, params: params.clone(), memo: Default::default() };
     let mut out: BTreeMap<(String, u32, String), DeadArg> = BTreeMap::new();
-    for t in sem.objtree.iter_types() {
-        for (_, tp) in t.get().procs.iter() {
-            for def in tp.value.iter() {
-                let Some(code) = def.code.as_ref() else { continue };
-                let Some(rel) = sem.file_of(def.location) else { continue };
+    for t in sem.m().types() {
+        for pname in t.proc_names() {
+            for def in t.proc_definitions(pname) {
+                let Some(code) = def.body() else { continue };
+                let Some(rel) = sem.file_of(def.site()) else { continue };
+                let rel = rel.as_str();
                 let mut sites: Vec<(u32, String, Vec<bool>)> = Vec::new();
-                news(code, &mut |line, ty, given| sites.push((line, ty, given)));
+                news(sem, code, &mut |line, ty, given| sites.push((line, ty, given)));
                 for (line, ty, given) in sites {
                     let passed = given.len();
                     if passed < 2 || !sem.is_subtype(&ty, "/atom") {
@@ -173,48 +169,50 @@ pub fn dead_args(sem: &Sem, params: &ParamPositions) -> Vec<DeadArg> {
 }
 
 /// The `new` expressions of a body: `(line, type, for each argument whether it is given (not a literal null))`, with `var/T/x = new(...)` typed by its declaration.
-fn news(code: &Block, f: &mut dyn FnMut(u32, String, Vec<bool>)) {
-    for st in code.iter() {
-        let mut exprs: Vec<&Expression> = Vec::new();
-        match &st.elem {
-            Statement::If { arms, .. } => exprs.extend(arms.iter().map(|(c, _)| &c.elem)),
-            other => exprs.extend(stmt_exprs(other)),
+fn news(sem: &Sem, code: &[Statement], f: &mut dyn FnMut(u32, String, Vec<bool>)) {
+    for st in stmts(code) {
+        let mut exprs: Vec<&Expr> = stmt_exprs(&st.stmt);
+        // An assignment statement has no node of its own: its two sides are the expressions.
+        if let Stmt::Expr(Form::Assign { lhs, rhs, .. }, None) = &st.stmt {
+            exprs.push(lhs);
+            exprs.push(rhs);
         }
-        if let Statement::ForLoop { init, inc, .. } = &st.elem {
-            for s in [init, inc].into_iter().flatten() {
-                exprs.extend(stmt_exprs(s));
+        if let Stmt::ForLoop { init, inc, .. } = &st.stmt {
+            match init {
+                Some(ForInit::Var(d)) => exprs.extend(d.value),
+                Some(ForInit::Expr(e)) => exprs.push(e),
+                None => {}
             }
+            exprs.extend(inc.iter().copied());
         }
         for e in exprs {
             walk_expr(e, &mut |x| {
-                if let Expression::Base { term, .. } = x {
-                    if let Term::NewPrefab { prefab, args: Some(args) } = &term.elem {
-                        if let Some(ty) = absolute_path(prefab) {
-                            f(term.location.line, ty, args.iter().map(|a| !is_null(a)).collect());
+                if let Form::Chain(c) = &x.form {
+                    if let Root::NewPrefab { path, vars, args: Some(args) } = &c.root {
+                        if let Some(ty) = absolute_path(path, !vars.is_empty()) {
+                            f(sem.line(Some(c.root_site())), ty, args.iter().map(|a| !is_null(a)).collect());
                         }
                     }
                 }
             });
         }
-        let typed: Vec<(&[String], &Option<Expression>)> = match &st.elem {
-            Statement::Var(v) => vec![(&v.var_type.type_path[..], &v.value)],
-            Statement::Vars(vs) => vs.iter().map(|v| (&v.var_type.type_path[..], &v.value)).collect(),
-            _ => Vec::new(),
-        };
-        for (name_type, value) in typed {
-            if name_type.is_empty() {
-                continue;
-            }
-            if let Some(Expression::Base { term, follow }) = value {
-                if follow.is_empty() {
-                    if let Term::NewImplicit { args: Some(args) } = &term.elem {
-                        f(term.location.line, format!("/{}", name_type.join("/")), args.iter().map(|a| !is_null(a)).collect());
+        if let Stmt::Vars(vs) = &st.stmt {
+            for v in vs {
+                if v.type_path.is_empty() {
+                    continue;
+                }
+                let Some(value) = v.value else { continue };
+                if let Some(c) = chain(value) {
+                    if c.hops.is_empty() {
+                        if let Root::NewImplicit { args: Some(args) } = &c.root {
+                            f(sem.line(Some(c.root_site())), format!("/{}", v.type_path.join("/")), args.iter().map(|a| !is_null(a)).collect());
+                        }
                     }
                 }
             }
         }
-        for nb in stmt_blocks(&st.elem) {
-            news(nb, f);
+        for nb in stmt_blocks(&st.stmt) {
+            news(sem, nb, f);
         }
     }
 }
@@ -222,20 +220,20 @@ fn news(code: &Block, f: &mut dyn FnMut(u32, String, Vec<bool>)) {
 /// Every `New()` / `Initialize()` override (below the framework) whose trailing extra parameters are only forwarded to `..()` or unused.
 pub fn forward_only(sem: &Sem) -> Vec<ForwardOnly> {
     let mut out = Vec::new();
-    for t in sem.objtree.iter_types() {
-        let owner = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
+    for t in sem.m().types() {
+        let owner = t.path().to_string();
         if framework(&owner) || !sem.is_subtype(&owner, "/atom") {
             continue;
         }
         for name in CTORS {
-            let Some(tp) = t.get().procs.get(*name) else { continue };
-            for def in tp.value.iter() {
-                let Some(code) = def.code.as_ref() else { continue };
-                if def.parameters.len() < 2 || reads_outside_parent_call(code, "args") {
+            for def in t.proc_definitions(name) {
+                let Some(code) = def.body() else { continue };
+                let parameters = def.parameters();
+                if parameters.len() < 2 || reads_outside_parent_call(code, "args") {
                     continue;
                 }
                 let mut drop: Vec<String> = Vec::new();
-                for p in def.parameters.iter().skip(1).rev() {
+                for p in parameters.iter().skip(1).rev() {
                     // `...` takes any further arguments and hands them on: it is the form, not a parameter to drop.
                     if p.name.as_str() == "..." || reads_outside_parent_call(code, p.name.as_str()) {
                         break;
@@ -246,8 +244,9 @@ pub fn forward_only(sem: &Sem) -> Vec<ForwardOnly> {
                     continue;
                 }
                 drop.reverse();
-                let Some(rel) = sem.file_of(def.location) else { continue };
-                out.push(ForwardOnly { rel: rel.to_string(), line: engine_line(&sem.root, rel, def.location.line), owner: owner.clone(), name: name.to_string(), params: drop });
+                let Some(rel) = sem.file_of(def.site()) else { continue };
+                let line = engine_line(&sem.root, &rel, sem.line(def.site()));
+                out.push(ForwardOnly { rel, line, owner: owner.clone(), name: name.to_string(), params: drop });
             }
         }
     }

@@ -99,7 +99,7 @@ fn compute(tree: &Tree) -> Analysis {
         };
         let b = sem.proc_body(p);
         let total = b.params.len();
-        let required = b.params.iter().rposition(|p| p.default.is_none()).map(|i| i + 1).unwrap_or(0);
+        let required = b.params.iter().rposition(|p| p.default().is_none()).map(|i| i + 1).unwrap_or(0);
         if required > r.passes {
             an.arity.push((r.rel.clone(), r.line, format!("{}() handler {}::{} needs {} parameter(s) ({} declared) but the engine calls {}: the rest arrive null", r.form, r.owner, r.proc, required, total, r.call)));
         }
@@ -156,21 +156,20 @@ fn compute(tree: &Tree) -> Analysis {
         let pr = sem.proc_ref(&on, &h.proc);
         let (proc_found, def, params, returns) = match pr {
             Some(p) if !p.is_builtin() && !lint_facts => {
-                let v = p.get();
-                let params = v.parameters.iter().map(|p| p.var_type.type_path.to_vec()).collect();
-                (true, Some((sem.rel(v.location).to_string(), v.location.line)), params, Vec::new())
+                let params = p.parameters().iter().map(|p| p.type_path.clone()).collect();
+                (true, Some((sem.rel(p.site()), sem.line(p.site()))), params, Vec::new())
             }
             Some(p) if !p.is_builtin() => {
                 let b = sem.proc_body(p);
-                let params = b.params.iter().map(|p| p.var_type.type_path.to_vec()).collect();
+                let params = b.params.iter().map(|p| p.type_path.clone()).collect();
                 let mut returns = Vec::new();
                 if h.role.boolean() {
                     if let Some(code) = b.code {
-                        super::checks::boolean_returns(code, &mut returns);
+                        super::checks::boolean_returns(&sem, code, &mut returns);
                     }
                 } else if h.role == hooks::Role::Requirement {
                     if let Some(code) = b.code {
-                        super::checks::requirement_returns(code, &mut returns);
+                        super::checks::requirement_returns(&sem, code, &mut returns);
                     }
                 }
                 (true, Some((b.file, b.line)), params, returns)

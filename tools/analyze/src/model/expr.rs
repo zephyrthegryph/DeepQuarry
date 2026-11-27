@@ -110,6 +110,28 @@ pub enum Hop<'a> {
     Unary { op: &'a str, at: &'a Expr },
 }
 
+impl<'a> Chain<'a> {
+    /// The expression the root and the first `n` hops make (what dreammaker's AST rebuilt as `term` + `follow[..n]`): the root's node
+    /// for `n == 0`, else the node of hop `n - 1`.
+    pub fn prefix_node(&self, n: usize) -> &'a Expr {
+        if n == 0 {
+            self.root_expr
+        } else {
+            self.hops[n - 1].node()
+        }
+    }
+
+    /// Where hop `i` sits: right after the expression it applies to (its `.`, `[`, `(`), as dreammaker placed a follow.
+    pub fn hop_site(&self, i: usize) -> super::Site {
+        super::Site(self.prefix_node(i).span.end as u32)
+    }
+
+    /// Where the root term starts.
+    pub fn root_site(&self) -> super::Site {
+        super::Site(self.root_expr.span.start as u32)
+    }
+}
+
 impl<'a> Hop<'a> {
     /// The node this hop was read from: its object is everything before the hop.
     pub fn node(&self) -> &'a Expr {

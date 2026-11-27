@@ -53,11 +53,12 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
-use dreammaker::ast::{AssignOp, BinaryOp, Block, Expression, Follow, Statement, Term, UnaryOp};
-use dreammaker::objtree::ProcRef;
+use dm_syntax::{Expr, Statement};
 
-use crate::lints::stored_refs::{collect_locals, path_of, ProcScope, Walker};
-use crate::sem::ast::{stmt_blocks, stmt_exprs, strip_parens, walk_expr};
+use crate::lints::stored_refs::{collect_locals, path_of, prefab_path, ProcScope, Walker};
+use crate::model::expr::{chain, form, literal, strip_groups, Args, Chain, Form, Hop, Lit, Root};
+use crate::model::procs::Proc;
+use crate::model::walk::{stmt_blocks, stmts, ForInit, Stmt, VarDecl, Visit};
 use crate::sem::Sem;
 
 /// DM builtins whose result is never an entity. Used only when the name is not a proc of the tree.
@@ -211,19 +212,20 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             }
         };
         let mut ids: HashMap<DefKey, usize> = HashMap::new();
-        let mut refs: Vec<ProcRef<'a>> = Vec::new();
+        let mut refs: Vec<Proc<'a>> = Vec::new();
         let mut finals: HashMap<String, Vec<(String, usize)>> = HashMap::new();
-        for ty in sem.objtree.iter_types() {
-            let path = type_key(&ty.get().path);
-            for (name, tp) in ty.get().procs.iter() {
-                if tp.value.is_empty() {
+        for ty in sem.m().types() {
+            let path = ty.path().to_string();
+            for name in ty.proc_names() {
+                let defined = ty.proc_definitions(name).len();
+                if defined == 0 {
                     continue;
                 }
-                let Some(mut r) = ty.get_proc(name) else { continue };
+                let Some(mut r) = ty.proc(name) else { continue };
                 loop {
                     let id = refs.len();
                     ids.insert((path.clone(), name.to_string(), r.index()), id);
-                    if r.index() + 1 == tp.value.len() {
+                    if r.index() + 1 == defined {
                         finals.entry(name.to_string()).or_default().push((path.clone(), id));
                     }
                     refs.push(r);
@@ -237,7 +239,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 }
             }
         }
-        let parent: Vec<Option<usize>> = refs.iter().map(|r| r.parent_proc().filter(|p| !p.is_builtin()).and_then(|p| ids.get(&(type_key(&p.ty().get().path), p.name().to_string(), p.index())).copied())).collect();
+        let parent: Vec<Option<usize>> = refs.iter().map(|r| r.parent_proc().filter(|p| !p.is_builtin()).and_then(|p| ids.get(&(p.owner().path().to_string(), p.name().to_string(), p.index())).copied())).collect();
         lap("definitions");
         let vars = value_var_candidates(sem);
         lap("var candidates");
@@ -254,11 +256,11 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         }
         let (params, names, proc_refs) = param_candidates(sem, &refs);
         lap("parameter candidates");
-        let tree_names: HashSet<String> = refs.iter().filter(|r| !r.is_builtin() && !r.get().location.is_builtins()).map(|r| r.name().to_string()).collect();
+        let tree_names: HashSet<String> = refs.iter().filter(|r| !r.is_builtin()).map(|r| r.name().to_string()).collect();
         let mut builtin_names: HashSet<String> = HashSet::new();
-        for ty in sem.objtree.iter_types() {
-            for (name, tp) in ty.get().procs.iter() {
-                if tp.value.iter().any(|v| v.location.is_builtins()) {
+        for ty in sem.m().types() {
+            for name in ty.proc_names() {
+                if ty.proc_definitions(name).iter().any(|v| v.is_builtin()) {
                     builtin_names.insert(name.to_string());
                 }
             }
@@ -283,8 +285,8 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         let init_params = me.params.borrow().clone();
         let keep = sem.cacheable();
         let structure = if keep { sem.structure_digest() } else { 0 };
-        let defs: Vec<DefKey> = refs.iter().map(|r| (type_key(&r.ty().get().path), r.name().to_string(), r.index())).collect();
-        let bodies: Vec<u128> = refs.iter().map(|r| sem.location_key(r.get().location)).collect();
+        let defs: Vec<DefKey> = refs.iter().map(|r| (r.owner().path().to_string(), r.name().to_string(), r.index())).collect();
+        let bodies: Vec<u128> = refs.iter().map(|r| sem.site_key(r.site())).collect();
         let stamp = crate::incr::stamp().unwrap_or_default();
         let saved = if keep { Self::load(&stamp, structure, &defs, &init_vars, &init_params) } else { None };
         let incremental = saved.is_some();
@@ -334,7 +336,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     }
 
     /// From the kept solution: put back what the changed definitions (and, in turn, what they affected) took out, evaluate those again.
-    fn solve_from(&mut self, refs: &[ProcRef<'a>], saved: Saved, bodies: &[u128]) {
+    fn solve_from(&mut self, refs: &[Proc<'a>], saved: Saved, bodies: &[u128]) {
         self.value = saved.value;
         *self.vars.borrow_mut() = saved.vars.into_iter().collect();
         *self.params.borrow_mut() = saved.params;
@@ -355,7 +357,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         let mut stack: Vec<usize> = changed.clone();
         // A changed body changes what `config_class_clean` reads of its type.
         for &d in &changed {
-            let ty = type_key(&refs[d].ty().get().path);
+            let ty = type_key(refs[d].owner().path());
             if let Some(r) = self.readers.borrow().get(&Fact::TypeBodies(ty)) {
                 stack.extend(r.iter().copied());
             }
@@ -442,7 +444,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     }
 
     /// `DQ_VALUE_PROCS_VERIFY`: the answer must be the plain repeat-until-stable fixpoint from the same start.
-    fn verify(&mut self, refs: &[ProcRef<'a>], init_vars: &HashMap<String, bool>, init_params: &[Vec<bool>], incremental: bool) {
+    fn verify(&mut self, refs: &[Proc<'a>], init_vars: &HashMap<String, bool>, init_params: &[Vec<bool>], incremental: bool) {
         let got = (self.value.clone(), self.vars.borrow().clone(), self.params.borrow().clone());
         let tables = (self.readers.borrow().clone(), self.takers.borrow().clone());
         self.value = vec![true; refs.len()];
@@ -456,7 +458,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             let count = |v: &[bool]| v.iter().filter(|b| **b).count();
             eprintln!("  values true: got {} want {}", count(&got.0), count(&want.0));
             for (i, (a, b)) in got.0.iter().zip(want.0.iter()).enumerate().filter(|(_, (a, b))| a != b).take(8) {
-                eprintln!("  def {} {}: got {} want {}", i, refs[i], a, b);
+                eprintln!("  def {} {}::{}: got {} want {}", i, refs[i].owner().path(), refs[i].name(), a, b);
             }
             for (k, b) in want.1.iter().filter(|(k, b)| got.1.get(*k) != Some(*b)).take(8) {
                 eprintln!("  var {}: got {:?} want {}", k, got.1.get(k), b);
@@ -474,12 +476,12 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     }
 
     /// The fixpoint by worklist (see the module doc).
-    fn solve_worklist(&mut self, refs: &[ProcRef<'a>]) {
+    fn solve_worklist(&mut self, refs: &[Proc<'a>]) {
         self.run_queue(refs, (0..refs.len()).collect());
     }
 
     /// Evaluates `start` (in order), then whatever their changes wake, until the queue is empty.
-    fn run_queue(&mut self, refs: &[ProcRef<'a>], start: Vec<usize>) {
+    fn run_queue(&mut self, refs: &[Proc<'a>], start: Vec<usize>) {
         {
             let mut q = self.queue.borrow_mut();
             let mut queued = self.queued.borrow_mut();
@@ -516,7 +518,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     /// The reference fixpoint for `DQ_VALUE_PROCS_VERIFY`: every definition is evaluated again, round after round, until a round changes
     /// no fact. (The loop this replaced stopped evaluating a definition once it lost the title, so the narrowing its writes and calls
     /// would make under later facts was lost and the answer depended on the order of the definitions.)
-    fn solve_rounds(&mut self, refs: &[ProcRef<'a>]) {
+    fn solve_rounds(&mut self, refs: &[Proc<'a>]) {
         loop {
             let before = (self.value.clone(), self.vars.borrow().clone(), self.params.borrow().clone());
             for id in 0..refs.len() {
@@ -573,8 +575,8 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         self.by_name.get(name).map(|v| v.as_slice()).unwrap_or(&[])
     }
 
-    fn id_of(&self, r: ProcRef<'a>) -> Option<usize> {
-        self.ids.get(&(type_key(&r.ty().get().path), r.name().to_string(), r.index())).copied()
+    fn id_of(&self, r: Proc<'a>) -> Option<usize> {
+        self.ids.get(&(r.owner().path().to_string(), r.name().to_string(), r.index())).copied()
     }
 
     /// The definitions a call of `name` on static type `ty` can run; `Builtin` when the lookup ends in a DM builtin or nothing.
@@ -596,9 +598,9 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         }
         let Some(id) = self.id_of(r) else { return Target::Builtin };
         let mut defs = vec![id];
-        if ty != "/" && type_key(&r.ty().get().path) != "/" {
+        if ty != "/" && r.owner().path() != "/" {
             for (d, fid) in self.finals.get(name).map(|v| v.as_slice()).unwrap_or(&[]) {
-                if d != &type_key(&r.ty().get().path) && self.sem.is_subtype(d, ty) {
+                if d != r.owner().path() && self.sem.is_subtype(d, ty) {
                     defs.push(*fid);
                 }
             }
@@ -625,63 +627,58 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         }
     }
 
-    fn value_expr(&self, ctx: &Ctx, e: &Expression) -> bool {
-        let e = strip_parens(e);
-        match e {
-            Expression::BinaryOp { op, lhs, rhs } => match op {
-                BinaryOp::And | BinaryOp::Or => self.value_expr(ctx, lhs) && self.value_expr(ctx, rhs),
+    fn value_expr(&self, ctx: &Ctx, e: &Expr) -> bool {
+        let e = strip_groups(e);
+        match form(e) {
+            Form::Binary { op, lhs, rhs } => match op {
+                "&&" | "||" => self.value_expr(ctx, lhs) && self.value_expr(ctx, rhs),
                 _ => true,
             },
-            Expression::AssignOp { op, rhs, .. } => match op {
-                AssignOp::Assign | AssignOp::AssignInto | AssignOp::AndAssign | AssignOp::OrAssign => self.value_expr(ctx, rhs),
+            Form::Assign { op, rhs, .. } => match op {
+                "=" | ":=" | "&&=" | "||=" => self.value_expr(ctx, rhs),
                 _ => true,
             },
-            Expression::TernaryOp { if_, else_, .. } => self.value_expr(ctx, if_) && self.value_expr(ctx, else_),
-            Expression::Base { term, follow } => {
-                if let Some(last) = follow.last() {
-                    return match &last.elem {
-                        Follow::Unary(UnaryOp::Reference | UnaryOp::Dereference) => false,
-                        Follow::Unary(_) => true,
-                        Follow::Field(_, name) if follow.len() == 1 && matches!(&term.elem, Term::Ident(n) if n == "world") => WORLD_VALUE_VARS.contains(&name.as_str()),
-                        Follow::Field(_, name) => {
-                            let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
-                            match self.w.type_of(ctx.sc, &recv) {
-                                Some(t) if !t.is_empty() => self.var_value(&t, name),
-                                _ => false,
-                            }
-                        }
-                        Follow::Call(_, name, _) if follow.len() == 1 && matches!(&term.elem, Term::Ident(n) if n == "global") => self.call_value("/", name, true),
-                        Follow::Call(_, name, args) if name == "Get" && self.config_value_get(ctx, term, &follow[..follow.len() - 1], args) => true,
-                        Follow::Call(_, name, _) => {
-                            let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
-                            match self.w.type_of(ctx.sc, &recv) {
-                                Some(t) if !t.is_empty() => self.call_value(&t, name, false) || (t == "/regex" && REGEX_VALUE_METHODS.contains(&name.as_str()) && self.sem.proc_ref("/regex", name).is_none_or(|r| r.is_builtin())) || (BUILTIN_VALUE_METHODS.contains(&name.as_str()) && !self.tree_names.contains(name.as_str())),
-                                _ => self.any_receiver_value(name),
-                            }
-                        }
+            Form::Ternary { then_value, else_value, .. } => self.value_expr(ctx, then_value) && self.value_expr(ctx, else_value),
+            Form::Chain(c) => {
+                if let Some(last) = c.hops.last() {
+                    let n = c.hops.len();
+                    return match last {
+                        Hop::Unary { op, .. } => !matches!(*op, "&" | "*"),
+                        Hop::Field { name, .. } if n == 1 && matches!(&c.root, Root::Ident("world")) => WORLD_VALUE_VARS.contains(name),
+                        Hop::Field { name, .. } => match self.w.type_of(ctx.sc, c.prefix_node(n - 1)) {
+                            Some(t) if !t.is_empty() => self.var_value(&t, name),
+                            _ => false,
+                        },
+                        Hop::Call { name, .. } if n == 1 && matches!(&c.root, Root::Ident("global")) => self.call_value("/", name, true),
+                        Hop::Call { name, args, .. } if *name == "Get" && self.config_value_get(ctx, &c, *args) => true,
+                        Hop::Call { name, .. } => match self.w.type_of(ctx.sc, c.prefix_node(n - 1)) {
+                            Some(t) if !t.is_empty() => self.call_value(&t, name, false) || (t == "/regex" && REGEX_VALUE_METHODS.contains(name) && self.sem.proc_ref("/regex", name).is_none_or(|r| r.is_builtin())) || (BUILTIN_VALUE_METHODS.contains(name) && !self.tree_names.contains(*name)),
+                            _ => self.any_receiver_value(name),
+                        },
                         _ => false,
                     };
                 }
-                match &term.elem {
-                    Term::Null | Term::Int(_) | Term::Float(_) | Term::String(_) | Term::Resource(_) | Term::InterpString(..) | Term::__PROC__ | Term::__TYPE__ => true,
+                match &c.root {
+                    Root::Literal(_) => true,
+                    Root::Ident(n) if matches!(*n, "__PROC__" | "__TYPE__") => true,
                     // A type path literal (`/datum/msg/op/busy`) names a type, never an instance (doc/rewrite/proposals/typed_values.md section 5).
-                    Term::Prefab(_) => true,
-                    Term::Expr(inner) => self.value_expr(ctx, inner),
-                    Term::Ident(n) => n == "." || ctx.locals.contains(n.as_str()) || (!ctx.sc.locals.contains_key(n.as_str()) && self.var_value(ctx.sc.owner, n)),
-                    Term::Pick(choices) => choices.iter().all(|(w, v)| w.as_ref().is_none_or(|w| self.value_expr(ctx, w)) && self.value_expr(ctx, v)),
-                    Term::Call(n, args) if (n == "pick" || n == "pickweight") && matches!(self.target(ctx.sc.owner, n), Target::Builtin) => self.pick_value(ctx, args),
-                    Term::Call(n, _) => {
+                    Root::Prefab { .. } => true,
+                    // A parenthesized expression is stripped above; a group that is its own node reads as nothing.
+                    Root::Group(inner) => !std::ptr::eq(*inner, e) && self.value_expr(ctx, inner),
+                    Root::Ident(n) => *n == "." || ctx.locals.contains(*n) || (!ctx.sc.locals.contains_key(*n) && self.var_value(ctx.sc.owner, n)),
+                    Root::Pick(choices) => choices.iter().all(|(w, v)| w.is_none_or(|w| self.value_expr(ctx, w)) && self.value_expr(ctx, v)),
+                    Root::Call { name, args } if (*name == "pick" || *name == "pickweight") && matches!(self.target(ctx.sc.owner, name), Target::Builtin) => self.pick_value(ctx, *args),
+                    Root::Call { name, .. } => {
                         let owner = if ctx.sc.owner == "/" { "/" } else { ctx.sc.owner };
-                        self.call_value(owner, n, true)
+                        self.call_value(owner, name, true)
                     }
-                    Term::GlobalCall(n, _) => self.call_value("/", n, true),
                     // `call_ext(lib, fn)(args)` hands back the external function's text (or null), never a reference.
-                    Term::ExternalCall { .. } => true,
-                    Term::ParentCall(_) => match ctx.def {
+                    Root::ExternalCall { .. } => true,
+                    Root::ParentCall(_) => match ctx.def {
                         Some(id) => self.parent_value(id),
                         None => false,
                     },
-                    Term::SelfCall(_) => match ctx.def {
+                    Root::SelfCall(_) => match ctx.def {
                         Some(id) => {
                             self.read(Fact::Value(id));
                             self.value[id]
@@ -695,42 +692,51 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     }
 
     /// `pick(a, b, c)` over value arguments, or `pick(list(...))` / `pickweight(list(...))` over a literal list of values (and value keys).
-    fn pick_value(&self, ctx: &Ctx, args: &[Expression]) -> bool {
-        let item = |e: &Expression| match strip_parens(e) {
-            Expression::AssignOp { op: AssignOp::Assign, lhs, rhs } => self.value_expr(ctx, lhs) && self.value_expr(ctx, rhs),
-            other => self.value_expr(ctx, other),
+    fn pick_value(&self, ctx: &Ctx, args: Args<'_>) -> bool {
+        let item = |e: &Expr| {
+            let e = strip_groups(e);
+            match form(e) {
+                Form::Assign { op: "=", lhs, rhs } => self.value_expr(ctx, lhs) && self.value_expr(ctx, rhs),
+                _ => self.value_expr(ctx, e),
+            }
         };
-        match args {
-            [one] => match strip_parens(one) {
-                Expression::Base { term, follow } if follow.is_empty() => match &term.elem {
-                    Term::List(items) => items.iter().all(item),
+        let all: Vec<&Expr> = args.iter().collect();
+        match all.as_slice() {
+            [one] => match chain(strip_groups(one)) {
+                Some(c) if c.hops.is_empty() => match &c.root {
+                    Root::List(items) => items.iter().all(item),
                     _ => false,
                 },
                 _ => false,
             },
-            _ => !args.is_empty() && args.iter().all(item),
+            _ => !all.is_empty() && all.iter().all(|e| item(e)),
         }
     }
 
     /// `recv.Get(/datum/config_entry/number/x)` where `recv` is the configuration controller and the entry is a number, flag or string
-    /// entry whose class is the only definer of `ValidateAndSet` on the path (no subtype stores anything else).
-    fn config_value_get(&self, ctx: &Ctx, term: &Box<dreammaker::ast::Spanned<Term>>, recv_follow: &[dreammaker::ast::Spanned<Follow>], args: &[Expression]) -> bool {
-        let [arg] = args else { return false };
-        let Expression::Base { term: at, follow: af } = strip_parens(arg) else { return false };
-        let Term::Prefab(p) = &at.elem else { return false };
-        if !af.is_empty() {
+    /// entry whose class is the only definer of `ValidateAndSet` on the path (no subtype stores anything else). `c` is the whole call
+    /// chain: its last hop is the `Get`, what precedes it the receiver.
+    fn config_value_get(&self, ctx: &Ctx, c: &Chain<'_>, args: Args<'_>) -> bool {
+        if args.len() != 1 {
             return false;
         }
-        let path: String = p.path.iter().map(|(_, n)| format!("/{n}")).collect();
-        let recv = Expression::Base { term: term.clone(), follow: recv_follow.to_vec().into_boxed_slice() };
-        let global_recv = match (&term.elem, recv_follow) {
-            (Term::Ident(g), [f]) if g == "global" => match &f.elem {
-                Follow::Field(_, n) => self.sem.var_decl("/", n).is_some_and(|d| d.declared == CONFIG_TYPE),
+        let Some(arg) = args.first() else { return false };
+        let Some(ac) = chain(strip_groups(arg)) else { return false };
+        let Root::Prefab { path: p, .. } = &ac.root else { return false };
+        if !ac.hops.is_empty() {
+            return false;
+        }
+        let path = prefab_path(p);
+        let before = c.hops.len() - 1;
+        let recv = c.prefix_node(before);
+        let global_recv = match (&c.root, before) {
+            (Root::Ident("global"), 1) => match &c.hops[0] {
+                Hop::Field { name: n, .. } => self.sem.var_decl("/", n).is_some_and(|d| d.declared == CONFIG_TYPE),
                 _ => false,
             },
             _ => false,
         };
-        if !global_recv && self.w.type_of(ctx.sc, &recv).as_deref() != Some(CONFIG_TYPE) {
+        if !global_recv && self.w.type_of(ctx.sc, recv).as_deref() != Some(CONFIG_TYPE) {
             return false;
         }
         let Some(class) = CONFIG_VALUE_CLASSES.iter().find(|c| path == **c || path.starts_with(&format!("{c}/"))) else { return false };
@@ -742,20 +748,20 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     fn config_class_clean(&self, path: &str, class: &str) -> bool {
         let Some(mut cur) = self.sem.ty(path) else { return false };
         loop {
-            if type_key(&cur.get().path) == class {
+            if type_key(cur.path()) == class {
                 return true;
             }
-            self.read(Fact::TypeBodies(type_key(&cur.get().path)));
-            for (_, tp) in cur.get().procs.iter() {
-                for v in tp.value.iter() {
-                    let Some(code) = v.code.as_ref() else { continue };
+            self.read(Fact::TypeBodies(type_key(cur.path())));
+            for name in cur.proc_names() {
+                for v in cur.proc_definitions(name) {
+                    let Some(code) = v.body() else { continue };
                     let mut writes = false;
-                    for_each_expr(code, &mut |e| {
-                        let Expression::AssignOp { lhs, .. } = e else { return };
-                        let Expression::Base { term, follow } = strip_parens(lhs) else { return };
-                        writes |= match follow.last() {
-                            Some(last) => matches!(&last.elem, Follow::Field(_, n) if n == "config_entry_value"),
-                            None => matches!(&term.elem, Term::Ident(n) if n == "config_entry_value"),
+                    for_each_expr(code, &mut |vis| {
+                        let Form::Assign { lhs, .. } = &vis.form else { return };
+                        let Some(c) = chain(strip_groups(lhs)) else { return };
+                        writes |= match c.hops.last() {
+                            Some(last) => matches!(last, Hop::Field { name, .. } if *name == "config_entry_value"),
+                            None => matches!(&c.root, Root::Ident("config_entry_value")),
                         };
                     });
                     if writes {
@@ -763,7 +769,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                     }
                 }
             }
-            match cur.parent_type() {
+            match cur.parent() {
                 Some(p) => cur = p,
                 None => return false,
             }
@@ -789,25 +795,25 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     /// Takes out of `vars` every var that `code` assigns a non-value to. A write through a receiver of known type (or to the proc's own var)
     /// takes out the one var it reaches, found by the type that declares it; a write through a receiver of unknown type takes out every
     /// var of that name.
-    fn scan_var_writes(&self, ctx: &Ctx, code: &Block) {
-        for_each_expr(code, &mut |e| {
-            let Expression::AssignOp { lhs, rhs, .. } = e else { return };
-            let Expression::Base { term, follow } = strip_parens(lhs) else { return };
-            let (name, owner): (String, Option<String>) = match follow.last() {
-                Some(last) => match &last.elem {
-                    Follow::Field(_, n) => {
-                        let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
-                        let owner = match self.w.type_of(ctx.sc, &recv) {
+    fn scan_var_writes(&self, ctx: &Ctx, code: &[Statement]) {
+        for_each_expr(code, &mut |vis| {
+            let Form::Assign { lhs, rhs, .. } = &vis.form else { return };
+            let Some(c) = chain(strip_groups(lhs)) else { return };
+            let (name, owner): (String, Option<String>) = match c.hops.last() {
+                Some(last) => match last {
+                    Hop::Field { name: n, .. } => {
+                        let recv = c.prefix_node(c.hops.len() - 1);
+                        let owner = match self.w.type_of(ctx.sc, recv) {
                             Some(t) if !t.is_empty() && t != "/" => self.sem.var_owner(&t, n),
                             _ => None,
                         };
                         (n.to_string(), owner)
                     }
-                    Follow::StaticField(n) => (n.to_string(), None),
+                    Hop::Static { name: n, .. } => (n.to_string(), None),
                     _ => return,
                 },
-                None => match &term.elem {
-                    Term::Ident(n) if !ctx.sc.locals.contains_key(n.as_str()) && n != "." => {
+                None => match &c.root {
+                    Root::Ident(n) if !ctx.sc.locals.contains_key(*n) && *n != "." => {
                         let owner = if ctx.sc.owner == "/" { None } else { self.sem.var_owner(ctx.sc.owner, n) };
                         (n.to_string(), owner)
                     }
@@ -918,7 +924,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
 
     /// One call: a position that gets a non-value, a named argument or an `arglist()` leaves `params` of the definitions the call reaches
     /// (`defs`; None: its receiver cannot be typed, so every definition of `name`).
-    fn call_site(&self, ctx: &Ctx, defs: Option<Vec<usize>>, name: &str, args: &[Expression]) {
+    fn call_site(&self, ctx: &Ctx, defs: Option<Vec<usize>>, name: &str, args: Args<'_>) {
         let ids: Vec<usize> = match defs {
             Some(d) => d,
             None => self.defs_named(name).to_vec(),
@@ -926,9 +932,9 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         if ids.is_empty() {
             return;
         }
-        let spread = args.iter().any(|a| match strip_parens(a) {
-            Expression::AssignOp { .. } => true,
-            Expression::Base { term, follow } => follow.is_empty() && matches!(&term.elem, Term::Call(n, _) if n == "arglist"),
+        let spread = args.iter().any(|a| match form(strip_groups(a)) {
+            Form::Assign { .. } => true,
+            Form::Chain(c) => c.hops.is_empty() && matches!(&c.root, Root::Call { name: "arglist", .. }),
             _ => false,
         });
         if spread {
@@ -947,36 +953,35 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     }
 
     /// Every call in `code` narrows the parameter positions of the definitions it can reach.
-    fn scan_calls(&self, ctx: &Ctx, code: &Block, me: &str) {
-        for_each_expr(code, &mut |e| {
-            let Expression::Base { term, follow } = e else { return };
-            match &term.elem {
-                Term::Call(n, args) => self.call_site(ctx, self.call_defs(ctx.sc.owner, n), n, args),
-                Term::GlobalCall(n, args) => self.call_site(ctx, self.call_defs("/", n), n, args),
-                Term::SelfCall(args) if !args.is_empty() => self.call_site(ctx, self.call_defs(ctx.sc.owner, me), me, args),
-                Term::ParentCall(args) if !args.is_empty() => {
+    fn scan_calls(&self, ctx: &Ctx, code: &[Statement], me: &str) {
+        for_each_expr(code, &mut |vis| {
+            let Form::Chain(c) = &vis.form else { return };
+            match &c.root {
+                Root::Call { name, args } => self.call_site(ctx, self.call_defs(ctx.sc.owner, name), name, *args),
+                Root::SelfCall(args) if !args.is_empty() => self.call_site(ctx, self.call_defs(ctx.sc.owner, me), me, *args),
+                Root::ParentCall(args) if !args.is_empty() => {
                     if let Some(p) = ctx.def.and_then(|id| self.parent[id]) {
-                        self.call_site(ctx, Some(vec![p]), me, args);
+                        self.call_site(ctx, Some(vec![p]), me, *args);
                     }
                 }
                 _ => {}
             }
-            for (i, fo) in follow.iter().enumerate() {
-                let Follow::Call(kind, n, args) = &fo.elem else { continue };
-                let defs = if matches!(kind, dreammaker::ast::PropertyAccessKind::Dot | dreammaker::ast::PropertyAccessKind::SafeDot) {
-                    if i == 0 && matches!(&term.elem, Term::Ident(g) if g == "global") {
-                        self.call_defs("/", n)
+            for (i, hop) in c.hops.iter().enumerate() {
+                let Hop::Call { name, args, colon, .. } = hop else { continue };
+                let defs = if !*colon {
+                    if i == 0 && matches!(&c.root, Root::Ident("global")) {
+                        self.call_defs("/", name)
                     } else {
-                        let recv = Expression::Base { term: term.clone(), follow: follow[..i].to_vec().into_boxed_slice() };
-                        match self.w.type_of(ctx.sc, &recv) {
-                            Some(t) if !t.is_empty() => self.call_defs(&t, n),
+                        let recv = c.prefix_node(i);
+                        match self.w.type_of(ctx.sc, recv) {
+                            Some(t) if !t.is_empty() => self.call_defs(&t, name),
                             _ => None,
                         }
                     }
                 } else {
                     None
                 };
-                self.call_site(ctx, defs, n, args);
+                self.call_site(ctx, defs, name, *args);
             }
         });
     }
@@ -988,19 +993,15 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         }
     }
 
-    fn eval_def(&self, id: usize, r: ProcRef<'a>) -> bool {
-        let v = r.get();
-        if !v.code.has_body() {
-            return true;
-        }
-        let Some(code) = v.code.as_ref() else { return false };
-        let path = type_key(&r.ty().get().path);
+    fn eval_def(&self, id: usize, r: Proc<'a>) -> bool {
+        let Some(code) = r.body() else { return true };
+        let path = r.owner().path().to_string();
         let mut locals: HashMap<String, (String, Option<crate::lints::stored_refs::Place>)> = HashMap::new();
         let mut bad: HashSet<String> = HashSet::new();
         let mut value_params: Vec<String> = Vec::new();
         let flags = self.params.borrow()[id].clone();
-        for (i, p) in v.parameters.iter().enumerate() {
-            locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
+        for (i, p) in r.parameters().iter().enumerate() {
+            locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
             if flags.get(i).copied().unwrap_or(false) {
                 value_params.push(p.name.to_string());
             } else {
@@ -1022,21 +1023,21 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     }
 
     /// The locals of a proc whose every assignment is a value.
-    fn value_locals(&self, sc: &ProcScope, code: &Block, bad: &mut HashSet<String>, id: usize, value_params: &[String]) -> HashSet<String> {
-        let mut assigns: HashMap<String, Vec<&Expression>> = HashMap::new();
+    fn value_locals(&self, sc: &ProcScope, code: &[Statement], bad: &mut HashSet<String>, id: usize, value_params: &[String]) -> HashSet<String> {
+        let mut assigns: HashMap<String, Vec<Rhs<'_>>> = HashMap::new();
         declared_locals(code, &mut assigns, bad, self.w);
         for n in value_params {
             assigns.entry(n.clone()).or_default();
         }
-        for_each_expr(code, &mut |e| {
-            let Expression::AssignOp { op, lhs, rhs } = e else { return };
-            let Expression::Base { term, follow } = strip_parens(lhs) else { return };
-            let Term::Ident(n) = &term.elem else { return };
-            if !follow.is_empty() {
+        for_each_expr(code, &mut |vis| {
+            let Form::Assign { op, lhs, rhs } = &vis.form else { return };
+            let Some(c) = chain(strip_groups(lhs)) else { return };
+            let Root::Ident(n) = &c.root else { return };
+            if !c.hops.is_empty() {
                 return;
             }
-            match op {
-                AssignOp::Assign | AssignOp::AssignInto | AssignOp::AndAssign | AssignOp::OrAssign => assigns.entry(n.to_string()).or_default().push(rhs),
+            match *op {
+                "=" | ":=" | "&&=" | "||=" => assigns.entry(n.to_string()).or_default().push(Rhs::Owned((*rhs).clone())),
                 _ => {}
             }
         });
@@ -1046,7 +1047,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             {
                 let ctx = Ctx { sc, locals: &set, def: Some(id) };
                 for n in set.iter() {
-                    if assigns[n].iter().any(|rhs| !self.value_expr(&ctx, rhs)) {
+                    if assigns[n].iter().any(|rhs| !rhs.expr().is_some_and(|e| self.value_expr(&ctx, e))) {
                         gone.push(n.clone());
                     }
                 }
@@ -1061,7 +1062,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     }
 
     /// Every `return expr` and every assignment to `.` is a value.
-    fn returns_ok(&self, ctx: &Ctx, code: &Block) -> bool {
+    fn returns_ok(&self, ctx: &Ctx, code: &[Statement]) -> bool {
         let mut ok = true;
         for_each_return(code, &mut |e| {
             if ok && !self.value_expr(ctx, e) {
@@ -1071,16 +1072,16 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         if !ok {
             return false;
         }
-        for_each_expr(code, &mut |e| {
+        for_each_expr(code, &mut |vis| {
             if !ok {
                 return;
             }
-            let Expression::AssignOp { op, lhs, rhs } = e else { return };
-            let Expression::Base { term, follow } = strip_parens(lhs) else { return };
-            if !follow.is_empty() || !matches!(&term.elem, Term::Ident(n) if n == ".") {
+            let Form::Assign { op, lhs, rhs } = &vis.form else { return };
+            let Some(c) = chain(strip_groups(lhs)) else { return };
+            if !c.hops.is_empty() || !matches!(&c.root, Root::Ident(".")) {
                 return;
             }
-            if matches!(op, AssignOp::Assign | AssignOp::AssignInto | AssignOp::AndAssign | AssignOp::OrAssign) && !self.value_expr(ctx, rhs) {
+            if matches!(*op, "=" | ":=" | "&&=" | "||=") && !self.value_expr(ctx, rhs) {
                 ok = false;
             }
         });
@@ -1088,7 +1089,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     }
 
     /// Whether the call `e`, at a site in a proc of type `owner`, can only return a number, text or null.
-    pub(crate) fn is_value_call(&self, sc: &ProcScope, e: &Expression) -> bool {
+    pub(crate) fn is_value_call(&self, sc: &ProcScope, e: &Expr) -> bool {
         let empty = HashSet::new();
         let ctx = Ctx { sc, locals: &empty, def: None };
         self.value_expr(&ctx, e)
@@ -1096,16 +1097,16 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
 
     /// Whether the local `name` of the proc body `code` is assigned the result of a call that is not a value, directly or through other
     /// locals (`var/x = f()`, then `y = x`): a local holds what was assigned to it, so passing it on passes the call's result on.
-    pub(crate) fn local_holds_call(&self, sc: &ProcScope, code: &Block, name: &str) -> bool {
-        let mut assigns: HashMap<String, Vec<&Expression>> = HashMap::new();
+    pub(crate) fn local_holds_call(&self, sc: &ProcScope, code: &[Statement], name: &str) -> bool {
+        let mut assigns: HashMap<String, Vec<Rhs<'_>>> = HashMap::new();
         let mut bad: HashSet<String> = HashSet::new();
         declared_locals(code, &mut assigns, &mut bad, self.w);
-        for_each_expr(code, &mut |e| {
-            let Expression::AssignOp { op, lhs, rhs } = e else { return };
-            let Expression::Base { term, follow } = strip_parens(lhs) else { return };
-            let Term::Ident(n) = &term.elem else { return };
-            if follow.is_empty() && matches!(op, AssignOp::Assign | AssignOp::AssignInto | AssignOp::AndAssign | AssignOp::OrAssign) {
-                assigns.entry(n.to_string()).or_default().push(rhs);
+        for_each_expr(code, &mut |vis| {
+            let Form::Assign { op, lhs, rhs } = &vis.form else { return };
+            let Some(c) = chain(strip_groups(lhs)) else { return };
+            let Root::Ident(n) = &c.root else { return };
+            if c.hops.is_empty() && matches!(*op, "=" | ":=" | "&&=" | "||=") {
+                assigns.entry(n.to_string()).or_default().push(Rhs::Owned((*rhs).clone()));
             }
         });
         let mut seen: HashSet<String> = HashSet::new();
@@ -1115,10 +1116,11 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 continue;
             }
             for rhs in assigns.get(&n).map(|v| v.as_slice()).unwrap_or(&[]) {
-                let r = strip_parens(rhs);
-                if let Expression::Base { term, follow } = r {
-                    if let (true, Term::Ident(l)) = (follow.is_empty(), &term.elem) {
-                        if sc.locals.contains_key(l.as_str()) {
+                let Some(r) = rhs.expr() else { continue };
+                let r = strip_groups(r);
+                if let Some(c) = chain(r) {
+                    if let (true, Root::Ident(l)) = (c.hops.is_empty(), &c.root) {
+                        if sc.locals.contains_key(*l) {
                             todo.push(l.to_string());
                             continue;
                         }
@@ -1140,28 +1142,50 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
 }
 
 /// The value is the result of a proc call (a plain, global, or method call at the end of the chain).
-pub(crate) fn is_call(e: &Expression) -> bool {
-    let e = strip_parens(e);
-    let Expression::Base { term, follow } = e else { return false };
-    if let Some(last) = follow.last() {
-        return matches!(last.elem, Follow::Call(..));
+pub(crate) fn is_call(e: &Expr) -> bool {
+    let e = strip_groups(e);
+    let Some(c) = chain(e) else { return false };
+    if let Some(last) = c.hops.last() {
+        return matches!(last, Hop::Call { .. });
     }
-    matches!(term.elem, Term::Call(..) | Term::GlobalCall(..))
+    matches!(c.root, Root::Call { .. })
 }
 
 /// A literal: a null, number or text.
-fn literal_expr(e: &Expression) -> bool {
-    matches!(strip_parens(e), Expression::Base { term, follow } if follow.is_empty() && matches!(term.elem, Term::Null | Term::Int(_) | Term::Float(_) | Term::String(_)))
+fn literal_expr(e: &Expr) -> bool {
+    chain(strip_groups(e)).is_some_and(|c| c.hops.is_empty() && matches!(&c.root, Root::Literal(t) if matches!(literal(t), Lit::Null | Lit::Int(_) | Lit::Float(_) | Lit::String(_))))
+}
+
+/// A type path's segments with the separator in front of each (`.proc/x` is `('.', "proc"), ('/', "x")`): dreammaker's `(PathOp, name)`.
+fn path_segments(text: &str) -> Vec<(char, String)> {
+    let mut out = Vec::new();
+    let mut op = '/';
+    let mut cur = String::new();
+    for ch in text.chars() {
+        if matches!(ch, '/' | '.' | ':') {
+            if !cur.is_empty() {
+                out.push((op, std::mem::take(&mut cur)));
+            }
+            op = ch;
+        } else {
+            cur.push(ch);
+        }
+    }
+    if !cur.is_empty() {
+        out.push((op, cur));
+    }
+    out
 }
 
 /// A proc reference `.proc/x`, `T.proc/x` or `/proc/x` as the type that owns the name and the name: `.proc/x` is the type of the proc it
 /// is written in, `/proc/x` the global proc (`"/"`).
-fn proc_ref_of(p: &dreammaker::ast::Prefab, own: &str) -> Option<(String, String)> {
-    let i = p.path.iter().position(|(_, n)| n == "proc")?;
-    let name = p.path.get(i + 1)?.1.to_string();
-    let owner: String = p.path[..i].iter().map(|(_, n)| format!("/{n}")).collect();
+fn proc_ref_of(path: &str, own: &str) -> Option<(String, String)> {
+    let segs = path_segments(path);
+    let i = segs.iter().position(|(_, n)| n == "proc")?;
+    let name = segs.get(i + 1)?.1.to_string();
+    let owner: String = segs[..i].iter().map(|(_, n)| format!("/{n}")).collect();
     let owner = if owner.is_empty() {
-        if matches!(p.path[i].0, dreammaker::ast::PathOp::Dot) { own.to_string() } else { "/".to_string() }
+        if segs[i].0 == '.' { own.to_string() } else { "/".to_string() }
     } else {
         owner
     };
@@ -1175,44 +1199,49 @@ fn proc_ref_of(p: &dreammaker::ast::Prefab, own: &str) -> Option<(String, String
 /// (`PROC_REF(x)`, `TYPE_PROC_REF(T, x)`, `GLOBAL_PROC_REF(x)`: called by the engine or a handler with arguments nothing here sees; the
 /// definitions that type reaches are out, definitions of the name on unrelated types are not). The call sites then narrow it (`call_site`).
 /// An input type made only of number, text and null kinds (`as text`, `as num|null`): never a reference.
-fn value_input(t: dreammaker::ast::InputType) -> bool {
-    use dreammaker::ast::InputType as I;
-    let allowed = I::TEXT | I::NUM | I::NULL | I::MESSAGE | I::PASSWORD | I::COMMAND_TEXT | I::COLOR | I::KEY;
-    !t.is_empty() && t.difference(allowed).is_empty()
+fn value_input(t: &[String]) -> bool {
+    !t.is_empty() && t.iter().all(|n| matches!(n.as_str(), "text" | "num" | "null" | "message" | "password" | "command_text" | "color" | "key"))
 }
 
 /// The proc's declaration says it returns only numbers and text (`/proc/f() as text`). A pointer-ish declared type never counts.
-fn declared_value_return(r: ProcRef) -> bool {
-    use dreammaker::ast::ProcReturnType;
-    r.get_declaration().is_some_and(|d| matches!(&d.return_type, ProcReturnType::InputType(t) if value_input(*t)))
+fn declared_value_return(r: Proc<'_>) -> bool {
+    let mut cur = Some(r);
+    while let Some(p) = cur {
+        if p.declares() {
+            return p.member().and_then(|m| m.return_input_types()).is_some_and(|t| value_input(&t));
+        }
+        cur = p.parent_proc();
+    }
+    false
 }
 
 type ParamCandidates = (Vec<Vec<bool>>, HashSet<String>, Vec<(String, String)>);
 
-fn param_candidates(sem: &Sem, refs: &[ProcRef]) -> ParamCandidates {
-    use dreammaker::constants::Constant;
+fn param_candidates(sem: &Sem, refs: &[Proc]) -> ParamCandidates {
+    use crate::model::consts::Value;
     let mut named: HashSet<String> = HashSet::new();
     // Names that reach a dynamic call (`call(o, handler)`, `hascall(o, "x")`), and the text assigned to a var of such a name.
     let mut dynamic: HashSet<String> = HashSet::new();
     let mut texts: Vec<(String, String)> = Vec::new();
-    for ty in sem.objtree.iter_types() {
-        for (n, tv) in ty.get().vars.iter() {
-            if let Some(Constant::String(s)) = &tv.value.constant {
-                texts.push((n.to_string(), s.to_string()));
+    let folded = sem.m().folded();
+    for ty in sem.m().types() {
+        for n in ty.var_names() {
+            if let Some(Some(Value::String(s))) = folded.values.get(&(ty.id, n.clone())) {
+                texts.push((n, s.to_string()));
             }
         }
     }
     let mut out: Vec<Vec<bool>> = Vec::with_capacity(refs.len());
     let mut proc_refs: Vec<(String, String)> = Vec::new();
     for r in refs {
-        let v = r.get();
-        let mut slot = vec![true; v.parameters.len()];
-        for (i, p) in v.parameters.iter().enumerate() {
-            if !p.var_type.type_path.is_empty() || p.input_type.is_some_and(|t| !value_input(t)) || p.in_list.is_some() || p.default.as_ref().is_some_and(|d| !literal_expr(d)) {
+        let params = r.parameters();
+        let mut slot = vec![true; params.len()];
+        for (i, p) in params.iter().enumerate() {
+            if !p.type_path.is_empty() || p.as_types.as_ref().is_some_and(|t| !value_input(t)) || p.in_list.is_some() || p.default().is_some_and(|d| !literal_expr(d)) {
                 slot[i] = false;
             }
         }
-        let verb = r.get_declaration().is_some_and(|d| matches!(d.kind, dreammaker::ast::ProcDeclKind::Verb));
+        let verb = r.declared_verb() == Some(true);
         let mut overrides_builtin = false;
         let mut cur = Some(*r);
         while let Some(x) = cur {
@@ -1226,8 +1255,8 @@ fn param_candidates(sem: &Sem, refs: &[ProcRef]) -> ParamCandidates {
             slot.iter_mut().for_each(|b| *b = false);
         }
         out.push(slot);
-        for p in v.parameters.iter() {
-            if let Some(t) = p.default.as_ref().and_then(literal_text) {
+        for p in params.iter() {
+            if let Some(t) = p.default().and_then(literal_text) {
                 texts.push((p.name.to_string(), t));
             }
         }
@@ -1257,24 +1286,33 @@ struct BodyNames {
     proc_refs: Vec<(String, String)>,
 }
 
-fn body_names(defs: &[(String, &dreammaker::objtree::ProcValue)]) -> BodyNames {
+fn body_names(defs: &[(String, Proc<'_>)]) -> BodyNames {
     let mut out = BodyNames::default();
     for (own, v) in defs {
-        let Some(code) = v.code.as_ref() else { continue };
+        let Some(code) = v.body() else { continue };
         for_each_var_init(code, &mut |n, e| {
             if let Some(t) = literal_text(e) {
                 out.texts.push((n.to_string(), t));
             }
         });
-        for_each_expr(code, &mut |e| {
-            if let Expression::AssignOp { op: AssignOp::Assign, lhs, rhs } = e {
+        for_each_expr(code, &mut |vis| {
+            if let Form::Assign { op: "=", lhs, rhs } = &vis.form {
                 if let (Some(n), Some(t)) = (target_name(lhs), literal_text(rhs)) {
                     out.texts.push((n, t));
                 }
             }
-            let Expression::Base { term, follow } = e else { return };
-            match &term.elem {
-                Term::DynamicCall(args, _) => {
+            let Form::Chain(c) = &vis.form else { return };
+            match &c.root {
+                Root::DynamicCall { first, .. } => {
+                    for a in first.iter() {
+                        if let Some(t) = literal_text(a) {
+                            out.named.push(t);
+                        } else if let Some(n) = target_name(a) {
+                            out.dynamic.push(n);
+                        }
+                    }
+                }
+                Root::Call { name, args } if *name == "call" || *name == "hascall" => {
                     for a in args.iter() {
                         if let Some(t) = literal_text(a) {
                             out.named.push(t);
@@ -1283,25 +1321,16 @@ fn body_names(defs: &[(String, &dreammaker::objtree::ProcValue)]) -> BodyNames {
                         }
                     }
                 }
-                Term::Call(n, args) if n == "call" || n == "hascall" => {
-                    for a in args.iter() {
-                        if let Some(t) = literal_text(a) {
-                            out.named.push(t);
-                        } else if let Some(n) = target_name(a) {
-                            out.dynamic.push(n);
-                        }
-                    }
-                }
-                Term::Prefab(p) | Term::NewPrefab { prefab: p, .. } => {
-                    if let Some(pr) = proc_ref_of(p, own) {
+                Root::Prefab { path, .. } | Root::NewPrefab { path, .. } => {
+                    if let Some(pr) = proc_ref_of(path, own) {
                         out.proc_refs.push(pr);
                     }
                 }
                 _ => {}
             }
-            for fo in follow.iter() {
-                if let Follow::ProcReference(n) = &fo.elem {
-                    out.named.push(n.to_string());
+            for hop in c.hops.iter() {
+                if let Hop::ProcRef { name, .. } = hop {
+                    out.named.push(name.to_string());
                 }
             }
         });
@@ -1310,10 +1339,14 @@ fn body_names(defs: &[(String, &dreammaker::objtree::ProcValue)]) -> BodyNames {
 }
 
 /// The text a literal string expression spells.
-fn literal_text(e: &Expression) -> Option<String> {
-    match strip_parens(e) {
-        Expression::Base { term, follow } if follow.is_empty() => match &term.elem {
-            Term::String(s) => Some(s.to_string()),
+fn literal_text(e: &Expr) -> Option<String> {
+    let c = chain(strip_groups(e))?;
+    if !c.hops.is_empty() {
+        return None;
+    }
+    match &c.root {
+        Root::Literal(t) => match literal(t) {
+            Lit::String(s) => Some(s),
             _ => None,
         },
         _ => None,
@@ -1321,39 +1354,29 @@ fn literal_text(e: &Expression) -> Option<String> {
 }
 
 /// The var an assignment writes or an expression reads, by name: `x`, `a.x`.
-fn target_name(e: &Expression) -> Option<String> {
-    let Expression::Base { term, follow } = strip_parens(e) else { return None };
-    match follow.last() {
-        Some(last) => match &last.elem {
-            Follow::Field(_, n) => Some(n.to_string()),
-            _ => None,
-        },
-        None => match &term.elem {
-            Term::Ident(n) => Some(n.to_string()),
+fn target_name(e: &Expr) -> Option<String> {
+    let c = chain(strip_groups(e))?;
+    match c.hops.last() {
+        Some(Hop::Field { name, .. }) => Some(name.to_string()),
+        Some(_) => None,
+        None => match &c.root {
+            Root::Ident(n) => Some(n.to_string()),
             _ => None,
         },
     }
 }
 
 /// Every `var/x = value` in the body with the var's name.
-fn for_each_var_init<'b>(b: &'b Block, f: &mut dyn FnMut(&str, &'b Expression)) {
-    for st in b.iter() {
-        match &st.elem {
-            Statement::Var(v) => {
-                if let Some(e) = v.value.as_ref() {
+fn for_each_var_init<'b>(b: &'b [Statement], f: &mut dyn FnMut(&str, &'b Expr)) {
+    for st in stmts(b) {
+        if let Stmt::Vars(vs) = &st.stmt {
+            for v in vs {
+                if let Some(e) = v.value {
                     f(&v.name, e);
                 }
             }
-            Statement::Vars(vs) => {
-                for v in vs {
-                    if let Some(e) = v.value.as_ref() {
-                        f(&v.name, e);
-                    }
-                }
-            }
-            _ => {}
         }
-        for nb in stmt_blocks(&st.elem) {
+        for nb in stmt_blocks(&st.stmt) {
             for_each_var_init(nb, f);
         }
     }
@@ -1367,19 +1390,23 @@ fn var_key(owner: &str, name: &str) -> String {
 /// The vars that could hold only values, by declaring type and name: every declaration or override of the var has no type and a null,
 /// number or text initial value.
 fn value_var_candidates(sem: &Sem) -> HashMap<String, bool> {
-    use dreammaker::constants::Constant;
+    use crate::model::consts::Value;
+    let folded = sem.m().folded();
     let mut out: HashMap<String, bool> = HashMap::new();
-    for ty in sem.objtree.iter_types() {
-        let path = type_key(&ty.get().path);
-        for (name, tv) in ty.get().vars.iter() {
-            let typed = tv.declaration.as_ref().map(|d| !d.var_type.type_path.is_empty()).unwrap_or(false);
-            let init_ok = match (&tv.value.constant, &tv.value.expression) {
-                (Some(Constant::Null(_) | Constant::Float(_) | Constant::String(_) | Constant::Resource(_)), _) => true,
-                (None, None) => true,
+    for ty in sem.m().types() {
+        let path = type_key(ty.path());
+        for name in ty.var_names() {
+            let typed = ty.declares_var(&name) && ty.var_declaration(&name).is_some_and(|d| !d.declared.is_empty());
+            // The type's own value of the var: its last assignment's initializer (a sized list counts as one), and what that folds to.
+            let expression = ty.own_vars_named(&name).last().is_some_and(|m| m.initializer().is_some() || m.sized_list());
+            let constant = folded.values.get(&(ty.id, name.clone())).cloned().flatten();
+            let init_ok = match (&constant, expression) {
+                (Some(Value::Null(_) | Value::Float(_) | Value::String(_) | Value::Resource(_)), _) => true,
+                (None, false) => true,
                 _ => false,
             };
-            let owner = sem.var_owner(&path, name).unwrap_or_else(|| path.clone());
-            let slot = out.entry(var_key(&owner, name)).or_insert(true);
+            let owner = sem.var_owner(&path, &name).unwrap_or_else(|| path.clone());
+            let slot = out.entry(var_key(&owner, &name)).or_insert(true);
             if typed || !init_ok {
                 *slot = false;
             }
@@ -1388,71 +1415,76 @@ fn value_var_candidates(sem: &Sem) -> HashMap<String, bool> {
     out
 }
 
-fn for_each_expr<'b>(b: &'b Block, f: &mut dyn FnMut(&'b Expression)) {
-    for st in b.iter() {
-        let mut exprs = stmt_exprs(&st.elem);
-        if let Statement::ForLoop { init, inc, .. } = &st.elem {
-            for s in [init, inc].into_iter().flatten() {
-                exprs.extend(stmt_exprs(s));
-            }
-        }
-        for e in exprs {
-            walk_expr(e, &mut |x| f(x));
-        }
-        for nb in stmt_blocks(&st.elem) {
-            for_each_expr(nb, f);
-        }
-    }
+fn for_each_expr(b: &[Statement], f: &mut dyn FnMut(&Visit<'_>)) {
+    crate::model::walk::walk_block(b, &mut |v, _| f(v));
 }
 
-fn for_each_return<'b>(b: &'b Block, f: &mut dyn FnMut(&'b Expression)) {
-    for st in b.iter() {
-        if let Statement::Return(Some(e)) = &st.elem {
-            f(e);
+fn for_each_return<'b>(b: &'b [Statement], f: &mut dyn FnMut(&'b Expr)) {
+    for st in stmts(b) {
+        if let Stmt::Return(Some(e)) = &st.stmt {
+            f(*e);
         }
-        for nb in stmt_blocks(&st.elem) {
+        for nb in stmt_blocks(&st.stmt) {
             for_each_return(nb, f);
         }
     }
 }
 
-/// The locals declared in the body with their initial values; a local of an entity type, or one a loop sets, can never be a value.
-fn declared_locals<'b>(b: &'b Block, out: &mut HashMap<String, Vec<&'b Expression>>, bad: &mut HashSet<String>, w: &Walker) {
-    fn declare<'b>(name: &str, tp: &[String], init: Option<&'b Expression>, out: &mut HashMap<String, Vec<&'b Expression>>, bad: &mut HashSet<String>, w: &Walker) {
-        if w.kinds.is_ref(&path_of(tp)) {
-            bad.insert(name.to_string());
-        }
-        let slot = out.entry(name.to_string()).or_default();
-        if let Some(i) = init {
-            slot.push(i);
+/// A value assigned to a local: a node of the body, a copy of one met while walking expressions (the walk lends a node for the visit
+/// only), or the `new /list(...)` a sized `var/L[3]` starts as.
+enum Rhs<'b> {
+    Node(&'b Expr),
+    Owned(Expr),
+    SizedList,
+}
+
+impl Rhs<'_> {
+    /// The expression; none for the sized list's `new /list(...)`, which is never a value and never a call.
+    fn expr(&self) -> Option<&Expr> {
+        match self {
+            Rhs::Node(e) => Some(e),
+            Rhs::Owned(e) => Some(e),
+            Rhs::SizedList => None,
         }
     }
-    for st in b.iter() {
-        match &st.elem {
-            Statement::Var(v) => declare(&v.name, &v.var_type.type_path, v.value.as_ref(), out, bad, w),
-            Statement::Vars(vs) => {
+}
+
+/// The locals declared in the body with their initial values; a local of an entity type, or one a loop sets, can never be a value.
+fn declared_locals<'b>(b: &'b [Statement], out: &mut HashMap<String, Vec<Rhs<'b>>>, bad: &mut HashSet<String>, w: &Walker) {
+    fn declare<'b>(d: &VarDecl<'b>, out: &mut HashMap<String, Vec<Rhs<'b>>>, bad: &mut HashSet<String>, w: &Walker) {
+        if w.kinds.is_ref(&path_of(&d.type_path)) {
+            bad.insert(d.name.clone());
+        }
+        let slot = out.entry(d.name.clone()).or_default();
+        match d.value {
+            Some(i) => slot.push(Rhs::Node(i)),
+            None if !d.suffix_args.is_empty() => slot.push(Rhs::SizedList),
+            None => {}
+        }
+    }
+    for st in stmts(b) {
+        match &st.stmt {
+            Stmt::Vars(vs) => {
                 for v in vs {
-                    declare(&v.name, &v.var_type.type_path, v.value.as_ref(), out, bad, w);
+                    declare(v, out, bad, w);
                 }
             }
-            Statement::ForList(fl) => {
-                bad.insert(fl.name.to_string());
+            Stmt::ForList { binding, .. } => {
+                bad.insert(binding.name.clone());
             }
-            Statement::ForKeyValue(fk) => {
-                bad.insert(fk.key.to_string());
-                bad.insert(fk.value.to_string());
+            Stmt::ForKeyValue { binding, value, .. } => {
+                bad.insert(binding.name.clone());
+                bad.insert(value.to_string());
             }
-            Statement::ForRange(fr) => {
-                bad.insert(fr.name.to_string());
+            Stmt::ForRange { binding, .. } => {
+                bad.insert(binding.name.clone());
             }
-            Statement::ForLoop { init: Some(init), .. } => {
-                if let Statement::Var(v) = init.as_ref() {
-                    declare(&v.name, &v.var_type.type_path, v.value.as_ref(), out, bad, w);
-                }
+            Stmt::ForLoop { init: Some(ForInit::Var(v)), .. } => {
+                declare(v, out, bad, w);
             }
             _ => {}
         }
-        for nb in stmt_blocks(&st.elem) {
+        for nb in stmt_blocks(&st.stmt) {
             declared_locals(nb, out, bad, w);
         }
     }

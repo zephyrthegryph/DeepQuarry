@@ -10,12 +10,12 @@
 
 use std::collections::{HashMap, HashSet};
 
-use dreammaker::ast::{Expression, Follow, Term};
-
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::lints::rel_write_undeclared::walk_block_pub;
 use crate::lints::stored_refs::{collect_locals, path_of, Kinds, ProcScope, Walker};
-use crate::sem::ast::walk_expr;
+use crate::model::expr::{Form, Hop, Root};
+use crate::model::walk::walk_form;
+use crate::model::Site;
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
 use crate::tree::CODE_DM;
@@ -92,62 +92,64 @@ impl Lint for WeakRawRead {
         let root = &cx.tree.root;
         let mut seen: HashSet<(String, u32, String)> = HashSet::new();
         let mut found: Vec<(String, u32, String)> = Vec::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for (_, tp) in ty.get().procs.iter() {
-                for v in tp.value.iter() {
-                    let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
-                    if cx.exempt(rel) {
+        for ty in sem.m().types() {
+            let owner = ty.path().to_string();
+            for pname in ty.proc_names() {
+                for v in ty.proc_definitions(pname) {
+                    let Some(code) = v.body() else { continue };
+                    let Some(rel) = sem.file_of(v.site()) else { continue };
+                    if cx.exempt(&rel) {
                         continue;
                     }
                     let mut locals = HashMap::new();
-                    for p in v.parameters.iter() {
-                        locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
+                    for p in v.parameters().iter() {
+                        locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
                     }
-                    collect_locals(code, rel, &mut locals);
+                    collect_locals(code, &rel, &mut locals);
                     let sc = ProcScope { owner: &owner, locals };
-                    walk_block_pub(code, &mut |e, line| {
-                        // Everything inside a nameof(...) names the var, it does not read it.
-                        let mut named: HashSet<usize> = HashSet::new();
-                        walk_expr(e, &mut |x| {
-                            if let Expression::Base { term, .. } = x {
-                                if let Term::Call(n, args) = &term.elem {
-                                    if n.as_str() == "nameof" {
-                                        for a in args.iter() {
-                                            walk_expr(a, &mut |y| {
-                                                named.insert(y as *const Expression as usize);
-                                            });
-                                        }
+                    walk_block_pub(code, &mut |top, node, site| {
+                        let line = sem.line(Some(site));
+                        // Everything inside a nameof(...) names the var, it does not read it: the expanded-offset ranges of its arguments
+                        // (an expression's address is not stable across the walk's passes, an interpolated part being parsed on the fly,
+                        // but its site is).
+                        let mut named: Vec<(usize, usize)> = Vec::new();
+                        // The walk's own site for the root: where its node starts (an assignment statement has none: the statement's).
+                        let root_site = node.map_or(site, |e| Site(e.span.start as u32));
+                        walk_form(top.clone(), node, root_site, 0, &mut |x| {
+                            if let (Form::Chain(c), Some(n)) = (&x.form, x.node) {
+                                if let Root::Call { name: "nameof", args } = &c.root {
+                                    let base = x.site.0 as usize - n.span.start;
+                                    for a in args.iter() {
+                                        named.push((base + a.span.start, base + a.span.end));
                                     }
                                 }
                             }
                         });
-                        walk_expr(e, &mut |x| {
-                            if named.contains(&(x as *const Expression as usize)) {
+                        walk_form(top, node, root_site, 0, &mut |x| {
+                            let at = x.site.0 as usize;
+                            if named.iter().any(|(s, e)| *s <= at && at < *e) {
                                 return;
                             }
-                            let Expression::Base { term, follow } = x else { return };
+                            let Form::Chain(c) = &x.form else { return };
                             let mut hits: Vec<(String, Option<String>)> = Vec::new();
-                            if let Term::Ident(n) = &term.elem {
-                                if weak.contains_key(n.as_str()) && !sc.locals.contains_key(n.as_str()) {
+                            if let Root::Ident(n) = &c.root {
+                                if weak.contains_key(*n) && !sc.locals.contains_key(*n) {
                                     hits.push((n.to_string(), Some(owner.clone())));
                                 }
                             }
-                            for (i, fo) in follow.iter().enumerate() {
-                                let Follow::Field(_, f) = &fo.elem else { continue };
-                                if !weak.contains_key(f.as_str()) {
+                            for (i, fo) in c.hops.iter().enumerate() {
+                                let Hop::Field { name: f, .. } = fo else { continue };
+                                if !weak.contains_key(*f) {
                                     continue;
                                 }
-                                let recv = Expression::Base { term: term.clone(), follow: follow[..i].to_vec().into_boxed_slice() };
-                                hits.push((f.to_string(), w.type_of(&sc, &recv)));
+                                hits.push((f.to_string(), w.type_of(&sc, c.prefix_node(i))));
                             }
                             for (var, holder) in hits {
                                 let Some(holder) = holder.filter(|t| !t.is_empty() && t != "/") else { continue };
                                 if !compatible(sem, &weak[&var], &holder) {
                                     continue;
                                 }
-                                let at = engine_line(root, rel, line) as u32;
+                                let at = engine_line(root, &rel, line) as u32;
                                 if seen.insert((rel.to_string(), at, var.clone())) {
                                     found.push((rel.to_string(), at, format!("`{}` of {} is a weak relation read raw; use {}()", var, holder, var)));
                                 }

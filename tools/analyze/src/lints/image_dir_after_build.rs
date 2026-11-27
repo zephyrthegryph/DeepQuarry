@@ -12,11 +12,12 @@
 
 use std::collections::HashMap;
 
-use dreammaker::ast::{Block, Expression, Follow, ProcReturnType, Statement, Term};
+use dm_syntax::{Expr, Statement};
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
-use crate::lints::stored_refs::{collect_locals, path_of, Place, ProcScope};
-use crate::sem::ast::{stmt_blocks, strip_parens, walk_block};
+use crate::lints::stored_refs::{collect_locals, declared_return_type, path_of, prefab_path, Place, ProcScope};
+use crate::model::expr::{chain, strip_groups, Chain, Form, Hop, Root};
+use crate::model::walk::{stmt_blocks, stmts, walk_block, Stmt};
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
 use crate::tree::CODE_DM;
@@ -47,24 +48,17 @@ fn is_image(sem: &Sem, ty: &str) -> bool {
 /// A proc's declared return type: `as /type`, else a `RETURN_TYPE(/type)` (`set SpacemanDMM_return_type = /type`) in its body.
 pub(crate) fn return_type(sem: &Sem, ty: &str, name: &str) -> Option<String> {
     let t = sem.ty(ty)?;
-    if let Some(d) = t.get_proc_declaration(name) {
-        if let ProcReturnType::TypePath(p) = &d.return_type {
-            if !p.is_empty() {
-                return Some(format!("/{}", p.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("/")));
-            }
-        }
+    if let Some(declared) = declared_return_type(t, name) {
+        return Some(declared);
     }
-    let p = t.get_proc(name)?;
-    let code = p.get().code.as_ref()?;
-    for st in code.iter() {
-        if let Statement::Setting { name, value, .. } = &st.elem {
-            if name.as_str() == "SpacemanDMM_return_type" {
-                if let Expression::Base { term, follow } = value {
-                    if follow.is_empty() {
-                        if let Term::Prefab(prefab) = &term.elem {
-                            let parts: Vec<String> = prefab.path.iter().map(|(_, n)| n.to_string()).collect();
-                            return Some(format!("/{}", parts.join("/")));
-                        }
+    let p = t.proc(name)?;
+    let code = p.body()?;
+    for st in stmts(code) {
+        if let Stmt::Setting { name, value, .. } = &st.stmt {
+            if *name == "SpacemanDMM_return_type" {
+                if let Some(Chain { root: Root::Prefab { path, .. }, hops, .. }) = chain(value) {
+                    if hops.is_empty() {
+                        return Some(prefab_path(path));
                     }
                 }
             }
@@ -97,57 +91,51 @@ impl<'a> Typer<'a> {
         }
     }
 
-    /// The static type of the chain `term` then `follow`, or None.
-    fn chain(&self, term: &Term, follow: &[dreammaker::ast::Spanned<Follow>]) -> Option<String> {
-        let mut cur: Option<String> = match term {
-            Term::Ident(n) => self.ident(n),
-            Term::NewPrefab { prefab, .. } => Some(path_of(&prefab.path.iter().map(|(_, n)| n.to_string()).collect::<Vec<_>>())),
-            Term::Expr(inner) => self.expr(inner),
-            Term::Call(n, _) => match n.as_str() {
+    /// The static type of the chain `c` read as its root and its first `n` hops, or None.
+    fn chain(&self, c: &Chain<'_>, n: usize) -> Option<String> {
+        let mut cur: Option<String> = match &c.root {
+            Root::Ident(n) => self.ident(n),
+            Root::NewPrefab { path, .. } => Some(prefab_path(path)),
+            Root::Group(inner) => self.expr(inner),
+            Root::Call { name, .. } => match *name {
                 "image" => Some("/image".to_string()),
                 "mutable_appearance" => Some("/mutable_appearance".to_string()),
-                _ => (if self.sc.owner == "/" { None } else { return_type(self.sem, self.sc.owner, n) }).or_else(|| return_type(self.sem, "/", n)),
+                _ => (if self.sc.owner == "/" { None } else { return_type(self.sem, self.sc.owner, name) }).or_else(|| return_type(self.sem, "/", name)),
             },
-            Term::GlobalCall(n, _) => return_type(self.sem, "/", n),
             _ => None,
         };
-        for fo in follow {
-            let c = cur.clone()?;
-            cur = match &fo.elem {
-                Follow::Field(_, f) => self.sem.var_decl(&c, f).map(|v| v.declared).filter(|t| !t.is_empty()),
-                Follow::Call(_, n, _) => return_type(self.sem, &c, n),
+        for fo in &c.hops[..n] {
+            let t = cur.clone()?;
+            cur = match fo {
+                Hop::Field { name, .. } => self.sem.var_decl(&t, name).map(|v| v.declared).filter(|t| !t.is_empty()),
+                Hop::Call { name, .. } => return_type(self.sem, &t, name),
                 _ => None,
             };
         }
         cur
     }
 
-    fn expr(&self, e: &Expression) -> Option<String> {
-        match strip_parens(e) {
-            Expression::Base { term, follow } => self.chain(&term.elem, follow),
-            _ => None,
-        }
+    fn expr(&self, e: &Expr) -> Option<String> {
+        let c = chain(strip_groups(e))?;
+        self.chain(&c, c.hops.len())
     }
 
     /// Untyped locals take the type of what they are initialised with, in statement order.
-    fn infer(&mut self, b: &Block) {
-        for st in b.iter() {
-            match &st.elem {
-                Statement::Var(v) => self.infer_one(&v.name, &v.var_type.type_path, v.value.as_ref()),
-                Statement::Vars(vs) => {
-                    for v in vs {
-                        self.infer_one(&v.name, &v.var_type.type_path, v.value.as_ref());
-                    }
+    fn infer(&mut self, b: &[Statement]) {
+        for st in stmts(b) {
+            // `var/a` and `var/a, b` alike: each declaration in statement order.
+            if let Stmt::Vars(vs) = &st.stmt {
+                for v in vs {
+                    self.infer_one(&v.name, &v.type_path, v.value);
                 }
-                _ => {}
             }
-            for nb in stmt_blocks(&st.elem) {
+            for nb in stmt_blocks(&st.stmt) {
                 self.infer(nb);
             }
         }
     }
 
-    fn infer_one(&mut self, name: &str, declared: &[String], value: Option<&Expression>) {
+    fn infer_one(&mut self, name: &str, declared: &[String], value: Option<&Expr>) {
         if !declared.is_empty() {
             return;
         }
@@ -170,32 +158,32 @@ impl Lint for ImageDirAfterBuild {
         let root = &cx.tree.root;
         let exempt = cx.list("exempt_files");
         let mut rows: Vec<(String, u32)> = Vec::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for (_, tp) in ty.get().procs.iter() {
-                for v in tp.value.iter() {
-                    let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
-                    if !rel.starts_with("code/") || cx.exempt(rel) || exempt.iter().any(|p| rel == p.as_str()) {
+        for ty in sem.m().types() {
+            let owner = ty.path().to_string();
+            for pname in ty.proc_names() {
+                for v in ty.proc_definitions(pname) {
+                    let Some(code) = v.body() else { continue };
+                    let Some(rel) = sem.file_of(v.site()) else { continue };
+                    if !rel.starts_with("code/") || cx.exempt(&rel) || exempt.iter().any(|p| rel == p.as_str()) {
                         continue;
                     }
                     let mut locals: HashMap<String, (String, Option<Place>)> = HashMap::new();
-                    for p in v.parameters.iter() {
-                        locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
+                    for p in v.parameters().iter() {
+                        locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
                     }
-                    collect_locals(code, rel, &mut locals);
+                    collect_locals(code, &rel, &mut locals);
                     let mut typer = Typer { sem, sc: ProcScope { owner: &owner, locals } };
                     typer.infer(code);
-                    walk_block(code, &mut |e, line| {
-                        let Expression::AssignOp { lhs, .. } = e else { return };
-                        let Expression::Base { term, follow } = strip_parens(lhs) else { return };
-                        let Some((last, rest)) = follow.split_last() else { return };
-                        let Follow::Field(_, f) = &last.elem else { return };
-                        if f.as_str() != "dir" {
+                    walk_block(code, &mut |vis, site| {
+                        let Form::Assign { lhs, .. } = &vis.form else { return };
+                        let Some(c) = chain(strip_groups(lhs)) else { return };
+                        let Some((last, _)) = c.hops.split_last() else { return };
+                        let Hop::Field { name: f, .. } = last else { return };
+                        if *f != "dir" {
                             return;
                         }
-                        if typer.chain(&term.elem, rest).is_some_and(|t| is_image(sem, &t)) {
-                            rows.push((rel.to_string(), line));
+                        if typer.chain(&c, c.hops.len() - 1).is_some_and(|t| is_image(sem, &t)) {
+                            rows.push((rel.to_string(), sem.line(Some(site))));
                         }
                     });
                 }

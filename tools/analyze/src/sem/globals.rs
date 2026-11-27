@@ -21,10 +21,12 @@
 
 use std::collections::{HashMap, HashSet};
 
-use dreammaker::ast::{Expression, Follow, Statement, Term};
+use dm_syntax::{Expr, Statement};
 
-use super::ast::walk_block;
 use super::Sem;
+use crate::model::expr::{chain, literal, Args, Chain, Form, Hop, Lit, Root};
+use crate::model::procs::Proc;
+use crate::model::walk::{stmt_blocks, stmts, walk_block, Stmt};
 
 /// The lifecycle procs of a system and a controller: the kernel calls them once, while the world boots.
 const BOOT_PROCS: &[&str] = &["New", "preinit", "initialize", "Initialize", "on_members_ready", "kernel_members_ready", "OnConfigLoad"];
@@ -54,36 +56,39 @@ const REL_MUTATORS: &[(&str, &[usize])] = &[
 ];
 
 /// The vars a relation mutator call writes: (the index of the holder argument, the var name, the type a `nameof(/type::v)` names).
-pub(crate) fn rel_mutator_vars(name: &str, args: &[Expression]) -> Vec<(usize, String, Option<String>)> {
+pub(crate) fn rel_mutator_vars(name: &str, args: Args<'_>) -> Vec<(usize, String, Option<String>)> {
     let Some((_, slots)) = REL_MUTATORS.iter().find(|(m, _)| *m == name) else { return Vec::new() };
     slots.iter().filter_map(|&k| args.get(k).and_then(rel_var_arg).map(|(v, at)| (k - 1, v, at))).collect()
 }
 
 /// The var a relation mutator's name argument names: `nameof(v)`, `nameof(x.v)`, `nameof(/type::v)` (with the type) or a string literal.
-fn rel_var_arg(e: &Expression) -> Option<(String, Option<String>)> {
-    let Expression::Base { term, follow } = e else { return None };
-    if !follow.is_empty() {
+fn rel_var_arg(e: &Expr) -> Option<(String, Option<String>)> {
+    let c = chain(e)?;
+    if !c.hops.is_empty() {
         return None;
     }
-    match &term.elem {
-        Term::String(s) => Some((s.clone(), None)),
-        Term::Call(n, args) if n.as_str() == "nameof" => {
-            let Some(Expression::Base { term: t, follow: fo }) = args.first() else { return None };
-            if let Some(f) = fo.last() {
-                return match &f.elem {
-                    Follow::Field(_, n) => Some((n.as_str().to_string(), None)),
-                    Follow::StaticField(n) => {
-                        let at = match &t.elem {
-                            Term::Prefab(p) if fo.len() == 1 => Some(p.path.iter().map(|(_, s)| format!("/{s}")).collect::<String>()),
+    match &c.root {
+        Root::Literal(text) => match literal(text) {
+            Lit::String(s) => Some((s, None)),
+            _ => None,
+        },
+        Root::Call { name: "nameof", args } => {
+            let first = chain(args.first()?)?;
+            if let Some(f) = first.hops.last() {
+                return match f {
+                    Hop::Field { name, .. } => Some((name.to_string(), None)),
+                    Hop::Static { name, .. } => {
+                        let at = match &first.root {
+                            Root::Prefab { path, .. } if first.hops.len() == 1 => Some(super::reads::prefab_text(path)),
                             _ => None,
                         };
-                        Some((n.as_str().to_string(), at))
+                        Some((name.to_string(), at))
                     }
                     _ => None,
                 };
             }
-            match &t.elem {
-                Term::Ident(n) => Some((n.clone(), None)),
+            match &first.root {
+                Root::Ident(n) => Some((n.to_string(), None)),
                 _ => None,
             }
         }
@@ -155,24 +160,27 @@ impl GlobalIndex {
     }
 
     pub fn build(sem: &Sem) -> GlobalIndex {
-                let global_vars: HashSet<String> = sem.objtree.root().get().vars.iter().filter(|(_, v)| v.declaration.is_some()).map(|(n, _)| n.clone()).collect();
-        let glob_fields: HashSet<String> = sem.ty("/datum/controller/global_vars").map(|t| t.get().vars.iter().filter(|(_, v)| v.declaration.is_some()).map(|(n, _)| n.clone()).collect()).unwrap_or_default();
+        let declared_vars = |t: crate::model::Ty<'_>| -> HashSet<String> { t.var_names().into_iter().filter(|n| t.declares_var(n)).collect() };
+        let global_vars: HashSet<String> = sem.m().ty("/").map(declared_vars).unwrap_or_default();
+        let glob_fields: HashSet<String> = sem.ty("/datum/controller/global_vars").map(declared_vars).unwrap_or_default();
         // Every body is scanned on its own: on all cores, kept in definition order.
-        let mut procs: Vec<(String, dreammaker::objtree::ProcRef)> = Vec::new();
-        for t in sem.objtree.iter_types() {
-            let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
-            for p in t.iter_self_procs() {
-                if p.is_builtin() {
-                    continue;
+        let mut procs: Vec<(String, Proc<'_>)> = Vec::new();
+        for t in sem.m().types() {
+            let path = t.path().to_string();
+            for name in t.proc_names() {
+                for p in t.proc_definitions(name) {
+                    if p.is_builtin() {
+                        continue;
+                    }
+                    // Test code is compiled out of production: it neither writes state nor calls a proc the world could run.
+                    if super::reads::is_test_code(&sem.rel(p.site())) {
+                        continue;
+                    }
+                    if p.body().is_none() {
+                        continue;
+                    }
+                    procs.push((path.clone(), p));
                 }
-                // Test code is compiled out of production: it neither writes state nor calls a proc the world could run.
-                if super::reads::is_test_code(sem.rel(p.get().location)) {
-                    continue;
-                }
-                if !p.get().code.has_body() {
-                    continue;
-                }
-                procs.push((path.clone(), p));
             }
         }
         // A scan reads the body and the global var names: kept per file between runs (`body_facts`).
@@ -184,11 +192,11 @@ impl GlobalIndex {
             let h = blake3::hash(format!("{:?}|{:?}", g, f).as_bytes());
             u128::from_le_bytes(h.as_bytes()[..16].try_into().unwrap())
         };
-        let refs: Vec<dreammaker::objtree::ProcRef> = procs.iter().map(|(_, p)| *p).collect();
+        let refs: Vec<Proc<'_>> = procs.iter().map(|(_, p)| *p).collect();
         super::body_facts::indexed(sem, "globals", ctx, &refs, |p| {
             let mut facts = Facts::default();
-            let locals: HashSet<String> = p.get().parameters.iter().map(|x| x.name.clone()).collect();
-            if let Some(code) = &*p.get().code {
+            let locals: HashSet<String> = p.parameters().iter().map(|x| x.name.clone()).collect();
+            if let Some(code) = p.body() {
                 scan(code, &locals, &global_vars, &glob_fields, &mut facts);
             }
             facts
@@ -297,117 +305,118 @@ struct Facts {
 }
 
 /// The global var an lvalue-ish expression names: `GLOB.x` (+ index steps) or a real global `x` (+ index steps), and whether anything but
-/// index steps follows it.
-fn global_of(term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>], globals: &HashSet<String>, glob_fields: &HashSet<String>, locals: &HashSet<String>) -> Option<(String, usize)> {
-    let Term::Ident(n) = &term.elem else { return None };
-    if n == "GLOB" {
-        let Some(Follow::Field(_, f)) = follow.first().map(|f| &f.elem) else { return None };
-        if !glob_fields.contains(f.as_str()) {
+/// index steps follows it. The expression is the chain's root and its first `n` hops.
+fn global_of(c: &Chain<'_>, n: usize, globals: &HashSet<String>, glob_fields: &HashSet<String>, locals: &HashSet<String>) -> Option<(String, usize)> {
+    let Root::Ident(id) = &c.root else { return None };
+    if *id == "GLOB" {
+        let Some(Hop::Field { name: f, .. }) = c.hops[..n].first() else { return None };
+        if !glob_fields.contains(*f) {
             return None;
         }
-        return Some((f.as_str().to_string(), 1));
+        return Some((f.to_string(), 1));
     }
-    if locals.contains(n) || !globals.contains(n) {
+    if locals.contains(*id) || !globals.contains(*id) {
         return None;
     }
-    Some((n.clone(), 0))
+    Some((id.to_string(), 0))
 }
 
-/// Records the var name an lvalue-ish expression writes (a bare identifier that is a local or parameter is not a var).
-fn note_field(term: &dreammaker::ast::Spanned<Term>, follow: &[dreammaker::ast::Spanned<Follow>], locals: &HashSet<String>, f: &mut Facts) {
-    let Some(name) = super::reads::lvalue_name_of(term, follow) else { return };
-    let bare = !follow.iter().any(|x| matches!(&x.elem, Follow::Field(..)));
+/// Records the var name an lvalue-ish expression writes (a bare identifier that is a local or parameter is not a var). The expression is
+/// the chain's root and its first `n` hops.
+fn note_field(c: &Chain<'_>, n: usize, locals: &HashSet<String>, f: &mut Facts) {
+    let Some(name) = super::reads::lvalue_name_of(c, n) else { return };
+    let bare = !c.hops[..n].iter().any(|x| matches!(x, Hop::Field { .. }));
     if bare && locals.contains(&name) {
         return;
     }
     f.field_writes.insert(name);
 }
 
-fn only_index(follow: &[dreammaker::ast::Spanned<Follow>]) -> bool {
-    follow.iter().all(|f| matches!(&f.elem, Follow::Index(..)) || matches!(&f.elem, Follow::Field(_, n) if n.as_str() == "len"))
+fn only_index(hops: &[Hop<'_>]) -> bool {
+    hops.iter().all(|f| matches!(f, Hop::Index { .. }) || matches!(f, Hop::Field { name: "len", .. }))
 }
 
-fn scan(code: &dreammaker::ast::Block, params: &HashSet<String>, globals: &HashSet<String>, glob_fields: &HashSet<String>, f: &mut Facts) {
+fn is_incr(op: &str) -> bool {
+    matches!(op, "pre++" | "post++" | "pre--" | "post--")
+}
+
+fn scan(code: &[Statement], params: &HashSet<String>, globals: &HashSet<String>, glob_fields: &HashSet<String>, f: &mut Facts) {
     let mut locals = params.clone();
     collect_locals(code, &mut locals);
-    walk_block(code, &mut |e, _| {
-        match e {
-            Expression::AssignOp { lhs, .. } => {
-                if let Expression::Base { term, follow } = &**lhs {
-                    note_field(term, follow, &locals, f);
-                    if let Some((g, skip)) = global_of(term, follow, globals, glob_fields, &locals) {
-                        if only_index(&follow[skip..]) {
+    walk_block(code, &mut |v, _| {
+        match &v.form {
+            Form::Assign { lhs, .. } => {
+                if let Some(c) = chain(lhs) {
+                    let n = c.hops.len();
+                    note_field(&c, n, &locals, f);
+                    if let Some((g, skip)) = global_of(&c, n, globals, glob_fields, &locals) {
+                        if only_index(&c.hops[skip..]) {
                             f.writes.insert(g);
                         }
                     }
                 }
             }
-            Expression::Base { term, follow } => {
-                if let Term::Call(n, args) = &term.elem {
-                    f.calls.insert(n.as_str().to_string());
-                    if REF_MACROS.contains(&n.as_str()) {
-                        if let Some(Expression::Base { term: t, follow: fo }) = args.last() {
-                            if let (Term::Ident(r), true) = (&t.elem, fo.is_empty()) {
-                                f.refs.insert(r.clone());
+            Form::Chain(c) => {
+                if let Root::Call { name: n, args } = &c.root {
+                    f.calls.insert(n.to_string());
+                    if REF_MACROS.contains(n) {
+                        if let Some(last) = args.iter().last().and_then(chain) {
+                            if let (Root::Ident(r), true) = (&last.root, last.hops.is_empty()) {
+                                f.refs.insert(r.to_string());
                             }
                         }
                     }
                     // A tracked setter writes its var (`set_v(x)` on src).
-                    if let Some(v) = n.as_str().strip_prefix("set_").filter(|v| !v.is_empty()) {
+                    if let Some(v) = n.strip_prefix("set_").filter(|v| !v.is_empty()) {
                         f.field_writes.insert(v.to_string());
                     }
-                    for (_, v, _) in rel_mutator_vars(n.as_str(), args) {
+                    for (_, v, _) in rel_mutator_vars(n, *args) {
                         f.field_writes.insert(v);
                     }
-                    if ARG_MUTATORS.contains(&n.as_str()) {
-                        if let Some(Expression::Base { term: t, follow: fo }) = args.first() {
-                            note_field(t, fo, &locals, f);
-                            if let Some((g, skip)) = global_of(t, fo, globals, glob_fields, &locals) {
-                                if only_index(&fo[skip..]) {
+                    if ARG_MUTATORS.contains(n) {
+                        if let Some(first) = args.first().and_then(chain) {
+                            let fo = first.hops.len();
+                            note_field(&first, fo, &locals, f);
+                            if let Some((g, skip)) = global_of(&first, fo, globals, glob_fields, &locals) {
+                                if only_index(&first.hops[skip..]) {
                                     f.writes.insert(g);
                                 }
                             }
                         }
                     }
                 }
-                if matches!(term.elem, Term::NewImplicit { .. } | Term::NewPrefab { .. } | Term::NewMiniExpr { .. }) {
+                if matches!(c.root, Root::NewImplicit { .. } | Root::NewPrefab { .. } | Root::NewMini { .. }) {
                     f.calls.insert("New".to_string());
                 }
-                if let Term::GlobalCall(n, _) = &term.elem {
-                    f.calls.insert(n.as_str().to_string());
-                }
-                let mut i = 0;
-                for fo in follow.iter() {
-                    if let Follow::Call(_, name, _) = &fo.elem {
-                        f.calls.insert(name.as_str().to_string());
+                for (i, h) in c.hops.iter().enumerate() {
+                    if let Hop::Call { name, .. } = h {
+                        f.calls.insert(name.to_string());
                         // `x.set_v(..)`: a tracked setter writes `v` on the receiver.
-                        if let Some(v) = name.as_str().strip_prefix("set_").filter(|v| !v.is_empty()) {
+                        if let Some(v) = name.strip_prefix("set_").filter(|v| !v.is_empty()) {
                             f.field_writes.insert(v.to_string());
                         }
-                        if LIST_MUTATORS.contains(&name.as_str()) {
-                            note_field(term, &follow[..i], &locals, f);
-                            if let Some((g, skip)) = global_of(term, &follow[..i], globals, glob_fields, &locals) {
-                                if i >= skip && only_index(&follow[skip..i]) {
+                        if LIST_MUTATORS.contains(name) {
+                            note_field(c, i, &locals, f);
+                            if let Some((g, skip)) = global_of(c, i, globals, glob_fields, &locals) {
+                                if i >= skip && only_index(&c.hops[skip..i]) {
                                     f.writes.insert(g);
                                 }
                             }
                         }
                     }
-                    if let Follow::ProcReference(name) = &fo.elem {
-                        f.refs.insert(name.as_str().to_string());
+                    if let Hop::ProcRef { name, .. } = h {
+                        f.refs.insert(name.to_string());
                     }
-                    if let Follow::Unary(op) = &fo.elem {
-                        use dreammaker::ast::UnaryOp::*;
-                        if matches!(op, PreIncr | PostIncr | PreDecr | PostDecr) {
-                            note_field(term, &follow[..i], &locals, f);
-                            if let Some((g, skip)) = global_of(term, &follow[..i], globals, glob_fields, &locals) {
-                                if i >= skip && only_index(&follow[skip..i]) {
+                    if let Hop::Unary { op, .. } = h {
+                        if is_incr(op) {
+                            note_field(c, i, &locals, f);
+                            if let Some((g, skip)) = global_of(c, i, globals, glob_fields, &locals) {
+                                if i >= skip && only_index(&c.hops[skip..i]) {
                                     f.writes.insert(g);
                                 }
                             }
                         }
                     }
-                    i += 1;
                 }
             }
             _ => {}
@@ -416,30 +425,27 @@ fn scan(code: &dreammaker::ast::Block, params: &HashSet<String>, globals: &HashS
 }
 
 /// The names `var/x` declares in a body: a local shadows a global of the same name.
-fn collect_locals(code: &dreammaker::ast::Block, out: &mut HashSet<String>) {
-    for st in code.iter() {
-        match &st.elem {
-            Statement::Var(v) => {
-                out.insert(v.name.clone());
-            }
-            Statement::Vars(list) => {
+fn collect_locals(code: &[Statement], out: &mut HashSet<String>) {
+    for st in stmts(code) {
+        match &st.stmt {
+            Stmt::Vars(list) => {
                 for v in list {
                     out.insert(v.name.clone());
                 }
             }
-            Statement::ForList(fl) => {
-                out.insert(fl.name.as_str().to_string());
+            Stmt::ForList { binding, .. } => {
+                out.insert(binding.name.clone());
             }
-            Statement::ForKeyValue(fk) => {
-                out.insert(fk.key.as_str().to_string());
-                out.insert(fk.value.as_str().to_string());
+            Stmt::ForKeyValue { binding, value, .. } => {
+                out.insert(binding.name.clone());
+                out.insert(value.to_string());
             }
-            Statement::ForRange(fr) => {
-                out.insert(fr.name.as_str().to_string());
+            Stmt::ForRange { binding, .. } => {
+                out.insert(binding.name.clone());
             }
             _ => {}
         }
-        for b in super::ast::stmt_blocks(&st.elem) {
+        for b in stmt_blocks(&st.stmt) {
             collect_locals(b, out);
         }
     }

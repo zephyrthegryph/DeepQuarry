@@ -46,8 +46,5 @@ pub mod util;
 pub fn prewarm(root: &std::path::Path) {
     let Ok(scopes) = scopes::Scopes::load(&root.join("tools").join("ci").join("lint_scopes.toml")) else { return };
     let _cache = cache::Cache::open(root, &scopes.hash, true);
-    std::thread::scope(|s| {
-        s.spawn(sem::walk_cache::prewarm);
-        sem::model_store::prewarm();
-    });
+    sem::walk_cache::prewarm();
 }

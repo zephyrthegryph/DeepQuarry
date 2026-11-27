@@ -262,7 +262,6 @@ pub fn run_hosted(argv: Vec<String>, env: std::collections::HashMap<String, Stri
             if held.as_deref() != Some(root.as_path()) {
                 if held.is_some() {
                     crate::host::reset_run_state();
-                    crate::sem::model_store::shed();
                 }
                 *held = None;
             }
@@ -375,7 +374,6 @@ pub fn shed_hosted() -> bool {
         return true;
     }
     crate::host::reset_run_state();
-    crate::sem::model_store::shed();
     *held = None;
     true
 }
@@ -402,7 +400,6 @@ fn run_all(argv: Vec<String>) -> u8 {
         eprintln!("analyze: {}", crate::incr::stats());
     }
     crate::shared::publish();
-    crate::sem::model_store::finish();
     crate::sem::walk_cache::finish();
     crate::util::cpu_account_report();
     if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {

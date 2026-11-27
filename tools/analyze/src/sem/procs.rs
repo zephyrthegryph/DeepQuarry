@@ -10,10 +10,10 @@
 
 use std::collections::BTreeSet;
 
-use dreammaker::ast::{Block, Expression, Statement, Term};
-
-use super::ast::{stmt_blocks, stmt_exprs, walk_expr};
 use super::Sem;
+use crate::model::expr::{Form, Root};
+use crate::model::procs::Proc;
+use crate::model::walk::walk_block;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ProcDef {
@@ -28,16 +28,16 @@ pub struct ProcDef {
 /// Every definition with a body of the procs in `names`, sorted by file and line.
 pub fn proc_defs(sem: &Sem, names: &[&str]) -> Vec<ProcDef> {
     let mut out = Vec::new();
-    for ty in sem.objtree.iter_types() {
-        let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
+    for ty in sem.m().types() {
+        let owner = ty.path().to_string();
         for name in names {
-            let Some(tp) = ty.get().procs.get(*name) else { continue };
-            for v in tp.value.iter() {
-                if !v.code.has_body() {
+            for v in ty.proc_definitions(name) {
+                if v.body().is_none() {
                     continue;
                 }
-                let Some(rel) = sem.file_of(v.location) else { continue };
-                out.push(ProcDef { rel: rel.to_string(), header: engine_line(&sem.root, rel, v.location.line), owner: owner.clone(), name: name.to_string() });
+                let Some(rel) = sem.file_of(v.site()) else { continue };
+                let header = engine_line(&sem.root, &rel, sem.line(v.site()));
+                out.push(ProcDef { rel, header, owner: owner.clone(), name: name.to_string() });
             }
         }
     }
@@ -46,48 +46,22 @@ pub fn proc_defs(sem: &Sem, names: &[&str]) -> Vec<ProcDef> {
     out
 }
 
-fn walk_calls<'a>(b: &'a Block, f: &mut dyn FnMut(&'a Expression)) {
-    for st in b.iter() {
-        if let Statement::If { arms, .. } = &st.elem {
-            for (c, _) in arms.iter() {
-                walk_expr(&c.elem, f);
-            }
-        } else {
-            for e in stmt_exprs(&st.elem) {
-                walk_expr(e, f);
-            }
-        }
-        if let Statement::ForLoop { init, inc, .. } = &st.elem {
-            for s in [init, inc].into_iter().flatten() {
-                for e in stmt_exprs(s) {
-                    walk_expr(e, f);
-                }
-            }
-        }
-        for nb in stmt_blocks(&st.elem) {
-            walk_calls(nb, f);
-        }
-    }
-}
-
-/// Every unscoped call `name(...)` (and `global.name(...)`) of a proc in `names`, in any proc body: `(file, line, name)`,
+/// Every unscoped call `name(...)` of a proc in `names`, in any proc body: `(file, line, name)`,
 /// sorted and unique.
 pub fn call_sites(sem: &Sem, names: &[&str]) -> Vec<(String, u32, String)> {
     let store = format!("call-sites-{}", names.join("-"));
     let per_file: Vec<Vec<(String, u32, String)>> = per_file(sem, &store, |_rel, defs| {
         let mut out: Vec<(String, u32, String)> = Vec::new();
         for (_, v) in defs {
-            let Some(code) = v.code.as_ref() else { continue };
-            walk_calls(code, &mut |e| {
-                if let Expression::Base { term, .. } = e {
-                    let n = match &term.elem {
-                        Term::Call(n, _) | Term::GlobalCall(n, _) => n.as_str(),
-                        _ => return,
-                    };
-                    if names.contains(&n) {
-                        if let Some(rel) = sem.file_of(term.location) {
-                            out.push((rel.to_string(), engine_line(&sem.root, rel, term.location.line), n.to_string()));
-                        }
+            let Some(code) = v.body() else { continue };
+            walk_block(code, &mut |visit, _| {
+                let Form::Chain(c) = &visit.form else { return };
+                let Root::Call { name: n, .. } = &c.root else { return };
+                if names.contains(n) {
+                    let site = c.root_site();
+                    if let Some(rel) = sem.file_of(Some(site)) {
+                        let line = engine_line(&sem.root, &rel, sem.line(Some(site)));
+                        out.push((rel, line, n.to_string()));
                     }
                 }
             });
@@ -99,29 +73,29 @@ pub fn call_sites(sem: &Sem, names: &[&str]) -> Vec<(String, u32, String)> {
 }
 
 /// `f(rel, definitions)` over every file's proc definitions, each with its type's path (a definition belongs to the file of its location), cached per file in
-/// the `incr` store `name` by the file's content in the macro environment (`Sem::location_key`): after an edit `f` runs for the edited
+/// the `incr` store `name` by the file's content in the macro environment (`Sem::site_key`): after an edit `f` runs for the edited
 /// files only, and the other files' bodies are not even decoded. A model that is not the full one (a fixture, a partial model) computes
 /// everything. Results come in path order.
-pub fn per_file<R>(sem: &Sem, name: &str, f: impl Fn(&str, &[(String, &dreammaker::objtree::ProcValue)]) -> R + Sync) -> Vec<R>
+pub fn per_file<R>(sem: &Sem, name: &str, f: impl Fn(&str, &[(String, Proc<'_>)]) -> R + Sync) -> Vec<R>
 where
     R: serde::Serialize + serde::de::DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
 {
     use std::collections::BTreeMap;
-    let mut by_file: BTreeMap<String, (u128, Vec<(String, &dreammaker::objtree::ProcValue)>)> = BTreeMap::new();
-    for ty in sem.objtree.iter_types() {
-        let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-        for (_, tp) in ty.get().procs.iter() {
-            for v in tp.value.iter() {
-                if !v.code.has_body() {
+    let mut by_file: BTreeMap<String, (u128, Vec<(String, Proc<'_>)>)> = BTreeMap::new();
+    for ty in sem.m().types() {
+        let path = ty.path().to_string();
+        for pname in ty.proc_names() {
+            for v in ty.proc_definitions(pname) {
+                if v.body().is_none() {
                     continue;
                 }
-                if let Some(rel) = sem.file_of(v.location) {
-                    by_file.entry(rel.to_string()).or_insert_with(|| (sem.location_key(v.location), Vec::new())).1.push((path.clone(), v));
+                if let Some(rel) = sem.file_of(v.site()) {
+                    by_file.entry(rel).or_insert_with(|| (sem.site_key(v.site()), Vec::new())).1.push((path.clone(), v));
                 }
             }
         }
     }
-    let groups: Vec<(&String, &(u128, Vec<(String, &dreammaker::objtree::ProcValue)>))> = by_file.iter().collect();
+    let groups: Vec<(&String, &(u128, Vec<(String, Proc<'_>)>))> = by_file.iter().collect();
     if !sem.cacheable() {
         return groups.iter().map(|(rel, (_, defs))| f(rel, defs)).collect();
     }

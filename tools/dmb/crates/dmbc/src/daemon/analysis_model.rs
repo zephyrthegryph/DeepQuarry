@@ -157,7 +157,6 @@ pub(crate) fn parse(dme: &Path, checker: bool) -> Result<dq_analyze::sem::model_
                     defines: None,
                     raw,
                     fatal: memo.fatal,
-                    native: None,
                 });
             }
         }

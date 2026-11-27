@@ -14,11 +14,12 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use dreammaker::ast::{Expression, Follow, Term};
+use dm_syntax::Expr;
 
-use super::ast::{as_call, as_ident, walk_block};
 use super::reads::ReadsEngine;
 use super::Sem;
+use crate::model::expr::{as_call, as_ident, chain, Hop};
+use crate::model::walk::walk_block;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum OKind {
@@ -92,7 +93,7 @@ impl OracleRow {
     }
 }
 
-fn nameof_var(e: &Expression) -> Option<String> {
+fn nameof_var(e: &Expr) -> Option<String> {
     let (n, args) = as_call(e)?;
     if n != "nameof" {
         return None;
@@ -102,24 +103,24 @@ fn nameof_var(e: &Expression) -> Option<String> {
         return Some(id.to_string());
     }
     // nameof(/type::var)
-    if let Expression::Base { follow, .. } = a {
-        for f in follow.iter() {
-            if let Follow::StaticField(n) = &f.elem {
-                return Some(n.as_str().to_string());
+    if let Some(c) = chain(a) {
+        for h in c.hops.iter() {
+            if let Hop::Static { name, .. } = h {
+                return Some(name.to_string());
             }
         }
     }
     None
 }
 
-fn read_of(e: &Expression, out: &mut BTreeSet<String>) {
+fn read_of(e: &Expr, out: &mut BTreeSet<String>) {
     if let Some(v) = nameof_var(e) {
         out.insert(v);
         return;
     }
     if let Some((n, args)) = as_call(e) {
         if (n == "rel" || n == "rel_each") && args.len() >= 2 {
-            if let (Some(l), Some(r)) = (nameof_var(&args[0]), nameof_var(&args[1])) {
+            if let (Some(l), Some(r)) = (nameof_var(args.get(0).unwrap()), nameof_var(args.get(1).unwrap())) {
                 let hop = if n == "rel_each" { format!("{}[]", l) } else { l };
                 out.insert(format!("{}.{}", hop, r));
             }
@@ -130,17 +131,17 @@ fn read_of(e: &Expression, out: &mut BTreeSet<String>) {
 /// Every `derived()` list on every type.
 pub fn entries(sem: &Sem) -> Vec<OracleEntry> {
     let mut out = Vec::new();
-    for ty in sem.objtree.iter_types() {
-        let Some(tp) = ty.get().procs.get("derived") else { continue };
-        let path = ty.get().path.clone();
-        if path.is_empty() {
+    for ty in sem.m().types() {
+        let path = ty.path().to_string();
+        if path == "/" {
             continue;
         }
-        for value in &tp.value {
-            let Some(code) = &*value.code else { continue };
-            let rel = sem.rel(value.location).to_string();
-            walk_block(code, &mut |e, line| {
-                let Some((n, args)) = as_call(e) else { return };
+        for value in ty.proc_definitions("derived") {
+            let Some(code) = value.body() else { continue };
+            let rel = sem.rel(value.site());
+            walk_block(code, &mut |v, site| {
+                let line = sem.line(Some(site));
+                let Some((n, args)) = v.node.and_then(as_call) else { return };
                 let kind = match n {
                     "runs_while" => OKind::Condition,
                     "drawn_from" => OKind::Draw,
@@ -286,13 +287,5 @@ impl SpikeConfig {
             }
         }
         c
-    }
-}
-
-#[allow(dead_code)]
-fn term_name(t: &Term) -> Option<&str> {
-    match t {
-        Term::Ident(n) => Some(n.as_str()),
-        _ => None,
     }
 }

@@ -394,6 +394,11 @@ impl<'m> Ty<'m> {
         out
     }
 
+    /// Whether this type declares `name` itself (a code declaration, or BYOND's builtin one).
+    pub fn declares_var(&self, name: &str) -> bool {
+        self.own_vars_named(name).any(|m| m.declares()) || super::builtins::get().var(self.path(), name).is_some_and(|b| b.declares)
+    }
+
     pub fn has_own_var(&self, name: &str) -> bool {
         self.own_vars_named(name).next().is_some() || super::builtins::get().var(self.path(), name).is_some()
     }
@@ -426,6 +431,8 @@ pub struct VarDeclaration {
     pub declared: String,
     pub flags: u32,
     pub builtin: bool,
+    /// Where the declaration is (none for a builtin).
+    pub site: Option<super::Site>,
 }
 
 impl VarDeclaration {
@@ -453,10 +460,10 @@ impl<'m> Ty<'m> {
         let mut cur = Some(*self);
         while let Some(t) = cur {
             if let Some(m) = t.own_vars_named(name).find(|m| m.declares()) {
-                return Some(VarDeclaration { declared: m.declared_type(), flags: m.flags(), builtin: false });
+                return Some(VarDeclaration { declared: m.declared_type(), flags: m.flags(), builtin: false, site: m.site() });
             }
             if let Some(b) = super::builtins::get().var(t.path(), name).filter(|b| b.declares) {
-                return Some(VarDeclaration { declared: b.declared.clone(), flags: b.flags, builtin: true });
+                return Some(VarDeclaration { declared: b.declared.clone(), flags: b.flags, builtin: true, site: None });
             }
             cur = t.parent();
         }

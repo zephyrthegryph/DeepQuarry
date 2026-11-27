@@ -2,7 +2,7 @@
 //!
 //! The global-var index and the write index (`globals.rs`, `reads::WriteIndex`) scan every proc body of the model on every run that builds
 //! it. An index is a function of its per-proc facts, and a proc's facts are a function of its body, which is a function of its file's content
-//! in the run's macro environment ([`Sem::location_key`]). So `data/analyze-cache/body-<name>.bin` keeps the index with, per file, the
+//! in the run's macro environment ([`Sem::site_key`]). So `data/analyze-cache/body-<name>.bin` keeps the index with, per file, the
 //! content key it was built from and a digest of the facts of the procs in it. A run scans only the procs of the files whose key changed:
 //! when their facts digest as before (an edit that changes no call, no global write, no written name), the stored index is the index;
 //! otherwise every body is scanned and the index built again. `ctx` names anything else the facts depend on (the global var names, for the
@@ -10,11 +10,11 @@
 
 use std::collections::HashMap;
 
-use dreammaker::objtree::ProcRef;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use super::Sem;
+use crate::model::procs::Proc;
 
 #[derive(Serialize, Deserialize)]
 struct Store<I> {
@@ -35,7 +35,7 @@ fn digest<T: Serialize>(facts: &[&T]) -> u128 {
 }
 
 /// `build(facts)` with `facts[i] = fact(procs[i])`: the stored index when the procs of every changed file have the facts they had.
-pub fn indexed<T, I>(sem: &Sem, name: &str, ctx: u128, procs: &[ProcRef], fact: impl Fn(ProcRef) -> T + Sync, build: impl FnOnce(Vec<T>) -> I) -> I
+pub fn indexed<T, I>(sem: &Sem, name: &str, ctx: u128, procs: &[Proc<'_>], fact: impl Fn(Proc<'_>) -> T + Sync, build: impl FnOnce(Vec<T>) -> I) -> I
 where
     T: Serialize + Send,
     I: Serialize + DeserializeOwned,
@@ -49,11 +49,11 @@ where
     let engine = crate::cache::ENGINE_HASH.to_string();
     let stored: Option<Store<I>> = std::fs::read(&path).ok().and_then(|b| crate::incr::de::<Store<I>>(&b).ok()).filter(|s| s.engine == engine && s.ctx == ctx);
     // Each proc's file, and each file's key and procs (in `procs` order).
-    let mut by_file: HashMap<&str, (u128, Vec<usize>)> = HashMap::new();
+    let mut by_file: HashMap<String, (u128, Vec<usize>)> = HashMap::new();
     for (i, p) in procs.iter().enumerate() {
-        let loc = p.get().location;
-        let file = sem.file_of(loc).unwrap_or("");
-        by_file.entry(file).or_insert_with(|| (sem.location_key(loc), Vec::new())).1.push(i);
+        let site = p.site();
+        let file = sem.file_of(site).unwrap_or_default();
+        by_file.entry(file).or_insert_with(|| (sem.site_key(site), Vec::new())).1.push(i);
     }
     let save = |s: &Store<I>| {
         if let Ok(bytes) = crate::incr::ser(s) {
@@ -64,19 +64,19 @@ where
         }
     };
     if let Some(mut st) = stored {
-        let same_set = st.files.len() == by_file.len() && by_file.keys().all(|f| st.files.contains_key(*f));
+        let same_set = st.files.len() == by_file.len() && by_file.keys().all(|f| st.files.contains_key(f.as_str()));
         if same_set {
-            let changed: Vec<&str> = by_file.iter().filter(|(f, (k, _))| st.files[**f].0 != *k).map(|(f, _)| *f).collect();
+            let changed: Vec<&str> = by_file.iter().filter(|(f, (k, _))| st.files[f.as_str()].0 != *k).map(|(f, _)| f.as_str()).collect();
             if changed.is_empty() {
                 return st.index;
             }
-            let idx: Vec<usize> = changed.iter().flat_map(|f| by_file[f].1.iter().copied()).collect();
+            let idx: Vec<usize> = changed.iter().flat_map(|f| by_file[*f].1.iter().copied()).collect();
             let made: Vec<T> = super::par_map(&idx, |&i| fact(procs[i]));
             let mut at = 0;
             let mut same = true;
             let mut digests: Vec<(&str, u128)> = Vec::new();
             for f in &changed {
-                let n = by_file[f].1.len();
+                let n = by_file[*f].1.len();
                 let d = digest(&made[at..at + n].iter().collect::<Vec<_>>());
                 at += n;
                 if d != st.files[*f].1 {

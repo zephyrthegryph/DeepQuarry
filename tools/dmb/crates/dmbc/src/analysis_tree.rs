@@ -1284,7 +1284,7 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
         }),
         finish: finish_errors,
     });
-    Ok(dq_analyze::sem::model_store::Parsed { objtree, files, errors, env: None, structure: None, defines: None, raw, fatal: false, native: Some(frontend) })
+    Ok(dq_analyze::sem::model_store::Parsed { objtree, files, errors, env: None, structure: None, defines: None, raw, fatal: false })
 }
 
 /// Registers [`parse_for_analysis`] as dq-analyze's parse provider (used only under `DQ_ANALYZE_PARSE=dmbc`).

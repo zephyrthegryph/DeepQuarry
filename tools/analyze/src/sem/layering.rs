@@ -1,8 +1,10 @@
 //! Engine dependency provenance. Unlike reads analysis, this walks effects and all calls too.
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
-use dreammaker::ast::{Block, Expression, Follow, Statement, Term, VarType};
-use super::{Sem, ast::{stmt_blocks, stmt_exprs, walk_expr}};
+use dm_syntax::{Expr, Statement};
+use super::Sem;
+use crate::model::expr::{Chain, Form, Hop, Root};
+use crate::model::walk::{stmt_blocks, stmt_exprs, stmts, walk_block, walk_expr, ForInit, Stmt};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Finding { pub rule: &'static str, pub file: String, pub line: u32, pub message: String }
@@ -35,19 +37,18 @@ impl Layer {
         }
     }
 }
-// Derive exact intrinsic types from DreamMaker's builtin table: reopening a
-// builtin changes its source location, but does not make its type downstream-only.
+// The exact intrinsic types are the ones BYOND's builtin table (`model::builtins`) puts a var or proc on: reopening a
+// builtin changes its source location, but does not make its type downstream-only. The root is not a type a path names.
 fn builtin_type(path: &str) -> bool {
     static TYPES: OnceLock<BTreeSet<String>> = OnceLock::new();
     TYPES.get_or_init(|| {
-        let mut builder = dreammaker::objtree::ObjectTreeBuilder::default();
-        builder.register_builtins();
-        let tree = builder.skip_finish();
-        tree.iter_types().map(|ty| ty.get().path.clone()).collect()
+        let table = crate::model::builtins::get();
+        table.vars.keys().chain(table.procs.keys()).filter(|p| p.as_str() != "/").cloned().collect()
     }).contains(path)
 }
-fn type_path(v: &VarType) -> Option<String> {
-    (!v.type_path.is_empty()).then(|| format!("/{}", v.type_path.join("/")))
+/// A declared type path (`/obj/item`), none when untyped.
+fn type_path(declared: String) -> Option<String> {
+    (!declared.is_empty()).then_some(declared)
 }
 
 struct Walker<'a> { sem: &'a Sem, file: String, owner: String, line: u32, locals: BTreeMap<String, String>, found: BTreeSet<Finding>, layer: Layer }
@@ -89,10 +90,10 @@ impl Walker<'_> {
         if p.is_builtin() { return; }
         let mut ancestor = Some(owner.to_string());
         while let Some(t) = ancestor {
-            if let Some(local) = self.sem.ty(&t).and_then(|ty| ty.get().procs.get(name)) {
-                if local.value.iter().any(|v| {
-                    let f = self.sem.rel(v.location);
-                    self.layer.lawful(f) && !generated(f)
+            if let Some(ty) = self.sem.ty(&t) {
+                if ty.proc_definitions(name).iter().any(|v| {
+                    let f = self.sem.rel(v.site());
+                    self.layer.lawful(&f) && !generated(&f)
                 }) { return; }
             }
             ancestor = self.sem.parent_of(&t);
@@ -108,40 +109,45 @@ impl Walker<'_> {
             }
         }
     }
-    fn expr(&mut self, e: &Expression) {
-        walk_expr(e, &mut |e| self.expr_one(e));
+    fn expr(&mut self, e: &Expr) {
+        walk_expr(e, &mut |v| if let Form::Chain(c) = &v.form { self.expr_one(c) });
     }
-    fn expr_one(&mut self, e: &Expression) {
-        let Expression::Base { term, follow } = e else { return; };
-        let mut receiver = match &term.elem {
-            Term::Ident(n) if n == "src" => Some(self.owner.clone()),
-            Term::Ident(n) => {
-                if let Some(local) = self.locals.get(n) { Some(local.clone()) }
+    /// A `var/L[3]` with no value starts as `new /list(3)`: its sizes are expressions of the statement.
+    fn sizes(&mut self, d: &crate::model::walk::VarDecl<'_>) {
+        if d.value.is_none() {
+            for e in &d.suffix_args { self.expr(e); }
+        }
+    }
+    fn expr_one(&mut self, c: &Chain<'_>) {
+        let mut receiver = match &c.root {
+            Root::Ident("src") => Some(self.owner.clone()),
+            Root::Ident(n) => {
+                if let Some(local) = self.locals.get(*n) { Some(local.clone()) }
                 else if let Some(v) = self.sem.var_decl(&self.owner, n) {
                     if !v.declared.is_empty() { self.ty(&v.declared); }
                     Some(v.declared)
                 } else { None }
             },
-            Term::Call(n, _) => {
+            Root::Call { name: n, .. } => {
                 if self.sem.proc_ref(&self.owner, n).is_some() { let owner = self.owner.clone(); self.method(&owner, n); }
                 else { self.global(n); }
                 None
             }
-            Term::GlobalCall(n, _) => { self.global(n); None }
-            Term::ParentCall(_) => {
+            Root::ParentCall(_) => {
                 // Parent-call target is checked by the proc walk, using its current method name.
                 None
             }
-            Term::Prefab(p) => {
-                let path = p.path.iter().map(|(_, n)| format!("/{}", n)).collect::<String>();
+            Root::Prefab { path, .. } => {
+                // The path's names, whatever operator joins them.
+                let path = path.split(['/', '.', ':']).filter(|n| !n.is_empty()).map(|n| format!("/{}", n)).collect::<String>();
                 self.ty(&path); Some(path)
             }
-            Term::DynamicCall(_, _) => None, // Dynamic callbacks have no statically provable target; not a blanket dynamic-call ban.
+            Root::DynamicCall { .. } => None, // Dynamic callbacks have no statically provable target; not a blanket dynamic-call ban.
             _ => None,
         };
-        for f in follow {
-            match &f.elem {
-                Follow::Field(_, name) => {
+        for f in &c.hops {
+            match f {
+                Hop::Field { name, .. } => {
                     if let Some(ty) = &receiver {
                         if let Some(v) = self.sem.var_decl(ty, name) {
                             if !v.declared.is_empty() { self.ty(&v.declared); }
@@ -149,48 +155,52 @@ impl Walker<'_> {
                         } else { receiver = None; }
                     }
                 }
-                Follow::Call(_, name, _) => {
+                Hop::Call { name, .. } => {
                     if let Some(ty) = receiver.as_ref().filter(|t| !t.is_empty()).cloned() { self.method(&ty, name); }
                     // Untyped dynamic receivers are outside this provenance check, not automatically unlawful.
                     receiver = None;
                 }
-                Follow::ProcReference(name) => {
-                    if let Some(ty) = receiver.as_ref().filter(|t| !t.is_empty()).cloned() { self.method(&ty, name.as_str()); }
-                    else if matches!(&term.elem, Term::Ident(n) if n == "src") { let owner = self.owner.clone(); self.method(&owner, name.as_str()); }
+                Hop::ProcRef { name, .. } => {
+                    if let Some(ty) = receiver.as_ref().filter(|t| !t.is_empty()).cloned() { self.method(&ty, name); }
+                    else if matches!(&c.root, Root::Ident("src")) { let owner = self.owner.clone(); self.method(&owner, name); }
                 }
-                Follow::Index(_, _) => { receiver = None; }
+                Hop::Index { .. } => { receiver = None; }
                 _ => {}
             }
         }
     }
-    fn block(&mut self, block: &Block) {
-        for st in block {
-            self.line = st.location.line;
-            match &st.elem {
-                Statement::Var(v) => {
-                    if let Some(t) = type_path(&v.var_type) { self.ty(&t); self.locals.insert(v.name.to_string(), t); }
-                }
-                Statement::Vars(vars) => for v in vars {
-                    if let Some(t) = type_path(&v.var_type) { self.ty(&t); self.locals.insert(v.name.to_string(), t); }
+    fn block(&mut self, block: &[Statement]) {
+        for st in stmts(block) {
+            self.line = self.sem.line(Some(st.site));
+            match &st.stmt {
+                Stmt::Vars(vars) => for v in vars {
+                    if let Some(t) = type_path(v.declared()) { self.ty(&t); self.locals.insert(v.name.to_string(), t); }
                 },
-                Statement::ForList(v) => {
-                    if let Some(t) = v.var_type.as_ref().and_then(type_path) { self.ty(&t); self.locals.insert(v.name.to_string(), t); }
+                Stmt::ForList { binding, .. } => {
+                    if let Some(t) = binding.decl.as_ref().and_then(|d| type_path(d.declared())) { self.ty(&t); self.locals.insert(binding.name.to_string(), t); }
                 }
-                Statement::ForKeyValue(v) => {
-                    if let Some(t) = v.var_type.as_ref().and_then(type_path) { self.ty(&t); self.locals.insert(v.key.to_string(), t); }
+                Stmt::ForKeyValue { binding, .. } => {
+                    if let Some(t) = binding.decl.as_ref().and_then(|d| type_path(d.declared())) { self.ty(&t); self.locals.insert(binding.name.to_string(), t); }
                 }
-                Statement::ForLoop { init, inc, .. } => {
-                    for stmt in [init, inc].into_iter().flatten() {
-                        if let Statement::Var(v) = stmt.as_ref() {
-                            if let Some(t) = type_path(&v.var_type) { self.ty(&t); self.locals.insert(v.name.to_string(), t); }
+                Stmt::ForLoop { init, inc, .. } => {
+                    match init {
+                        Some(ForInit::Var(v)) => {
+                            if let Some(t) = type_path(v.declared()) { self.ty(&t); self.locals.insert(v.name.to_string(), t); }
+                            if let Some(e) = v.value { self.expr(e); }
+                            self.sizes(v);
                         }
-                        for e in stmt_exprs(stmt) { self.expr(e); }
+                        Some(ForInit::Expr(e)) => self.expr(e),
+                        None => {}
                     }
+                    if let Some(e) = inc { self.expr(e); }
                 }
                 _ => {}
             }
-            for e in stmt_exprs(&st.elem) { self.expr(e); }
-            for b in stmt_blocks(&st.elem) { self.block(b); }
+            for e in stmt_exprs(&st.stmt) { self.expr(e); }
+            // An assignment statement has no node of its own: its two sides are the expressions.
+            if let Stmt::Expr(Form::Assign { lhs, rhs, .. }, None) = &st.stmt { self.expr(lhs); self.expr(rhs); }
+            if let Stmt::Vars(vars) = &st.stmt { for v in vars { self.sizes(v); } }
+            for b in stmt_blocks(&st.stmt) { self.block(b); }
         }
     }
 }
@@ -201,33 +211,34 @@ pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
 
 pub fn scan_in(sem: &Sem, included: &BTreeSet<String>, layer: Layer) -> Vec<Finding> {
     let mut all = BTreeSet::new();
-    for ty in std::iter::once(sem.objtree.root()).chain(sem.objtree.iter_types()) {
-        let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-        for (name, proc) in &ty.get().procs {
-            for v in &proc.value {
-                let file = sem.rel(v.location).to_string();
+    for ty in sem.m().types() {
+        let owner = ty.path().to_string();
+        for name in ty.proc_names() {
+            for v in ty.proc_definitions(name) {
+                let file = sem.rel(v.site());
                 if !included.contains(&file) { continue; }
-                let mut w = Walker { sem, file, owner: owner.clone(), line: v.location.line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
+                let mut w = Walker { sem, file, owner: owner.clone(), line: sem.line(v.site()), locals: BTreeMap::new(), found: BTreeSet::new(), layer };
                 w.ty(&owner);
-                for p in &v.parameters {
-                    if let Some(t) = type_path(&p.var_type) { w.ty(&t); w.locals.insert(p.name.clone(), t); }
+                for p in v.parameters().iter() {
+                    if let Some(t) = type_path(p.declared()) { w.ty(&t); w.locals.insert(p.name.clone(), t); }
                 }
-                if let Some(code) = &*v.code {
+                if let Some(code) = v.body() {
                     // ..() is a dependency on the nearest parent implementation, not on the overriding body.
                     let mut parent_call = false;
-                    super::ast::walk_block(code, &mut |e, _| if let Expression::Base { term, .. } = e { if matches!(term.elem, Term::ParentCall(_)) { parent_call = true; } });
+                    walk_block(code, &mut |e, _| if let Form::Chain(c) = &e.form { if matches!(c.root, Root::ParentCall(_)) { parent_call = true; } });
                     if parent_call { if let Some(parent) = sem.parent_of(&owner) { w.method(&parent, name); } }
                     w.block(code);
                 }
                 all.extend(w.found);
             }
         }
-        for (_name, var) in &ty.get().vars {
-            if let Some(d) = &var.declaration {
-                let file = sem.rel(d.location).to_string();
+        for name in ty.var_names() {
+            if !ty.declares_var(&name) { continue; }
+            if let Some(d) = ty.var_declaration(&name) {
+                let file = sem.rel(d.site);
                 if !included.contains(&file) { continue; }
-                let mut w = Walker { sem, file, owner: owner.clone(), line: d.location.line, locals: BTreeMap::new(), found: BTreeSet::new(), layer };
-                if let Some(t) = type_path(&d.var_type) { w.ty(&t); }
+                let mut w = Walker { sem, file, owner: owner.clone(), line: sem.line(d.site), locals: BTreeMap::new(), found: BTreeSet::new(), layer };
+                if let Some(t) = type_path(d.declared.clone()) { w.ty(&t); }
                 all.extend(w.found);
             }
         }
@@ -410,7 +421,7 @@ mod tests {
         assert!(found.iter().any(|f| f.message.contains("/datum/implicit_var")),
             "findings={:?}; headers={:?}; owner_defs={:?}; type={:?}", found,
             sem.layering_type_defs, sem.layering_owner_defs,
-            sem.ty("/datum/implicit_var").map(|ty| (ty.get().path.clone(), ty.get().vars.clone())));
+            sem.ty("/datum/implicit_var").map(|ty| (ty.path().to_string(), ty.var_names())));
     }
     #[test]
     fn engine_hook_does_not_authorize_downstream_item_type() {

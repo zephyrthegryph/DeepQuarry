@@ -69,10 +69,8 @@ impl<T: Send + Sync + 'static> Default for RunCell<T> {
     }
 }
 
-/// Clears what a run left behind, so the next request in this process starts as a fresh process would (the prewarmed model is
-/// kept: it is what a warm process reads first, and `crate::sem::model_store::obtain` checks it against its own root).
+/// Clears what a run left behind, so the next request in this process starts as a fresh process would.
 pub fn reset_run_state() {
-    crate::sem::model_store::reset();
     crate::cli::reset();
     crate::run::reset();
     crate::incr::reset();

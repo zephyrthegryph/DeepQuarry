@@ -407,9 +407,9 @@ pub fn run(root: &Path, tree: &Tree, names: &[String], check: bool) -> Vec<GenRe
 pub fn run_stage(root: &Path, tree: &Tree, names: &[String], check: bool, stage: Option<u8>) -> Vec<GenResult> {
     let trace = dq_hostio::var("DQ_ANALYZE_TRACE").is_ok();
     let began = std::time::Instant::now();
-    // Reading and stripping every file up front pays only when most of them are read: a cold run. A run with a stored model reads the
-    // few files whose cached facts changed.
-    if dq_hostio::var_os("DQ_PREWARM").is_some() || !super::model_store::stored(root) {
+    // Reading and stripping every file up front pays only when most of them are read: a cold run. A run with cached facts reads the
+    // few files whose facts changed.
+    if dq_hostio::var_os("DQ_PREWARM").is_some() || !crate::incr::dir().is_some_and(|d| d.join("gen-state.bin").exists()) {
         tree.prewarm_dm();
     }
     let dme = std::fs::read_to_string(root.join("deepquarry.dme")).unwrap_or_default();

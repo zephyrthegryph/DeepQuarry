@@ -5,10 +5,9 @@
 //! value the model types as a mob, or to `key` / `ckey` inside a mob's own proc, is reported. A hard ban; the choke
 //! point's file is exempt by path.
 
-use dreammaker::ast::{AssignOp, Expression, Follow, Term};
-
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::lints::stored_refs::{collect_locals, path_of, Kinds, ProcScope, Walker};
+use crate::model::expr::{chain, Form, Hop, Root};
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
 use crate::tree::CODE_DM;
@@ -50,45 +49,42 @@ impl Lint for PlayerLink {
         let w = Walker { sem, kinds: &kinds };
         let root = &cx.tree.root;
         let mut found: Vec<(String, u32)> = Vec::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
+        for ty in sem.m().types() {
+            let owner = ty.path().to_string();
             let owner_is_mob = is_mob(sem, &owner);
-            for (_, tp) in ty.get().procs.iter() {
-                for v in tp.value.iter() {
-                    let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
-                    if cx.exempt(rel) {
+            for pname in ty.proc_names() {
+                for v in ty.proc_definitions(pname) {
+                    let Some(code) = v.body() else { continue };
+                    let Some(rel) = sem.file_of(v.site()) else { continue };
+                    if cx.exempt(&rel) {
                         continue;
                     }
                     let mut locals = std::collections::HashMap::new();
-                    for p in v.parameters.iter() {
-                        locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
+                    for p in v.parameters().iter() {
+                        locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
                     }
-                    collect_locals(code, rel, &mut locals);
+                    collect_locals(code, &rel, &mut locals);
                     let sc = ProcScope { owner: &owner, locals };
-                    crate::lints::rel_write_undeclared::walk_block_pub(code, &mut |e, line| {
+                    crate::lints::rel_write_undeclared::walk_block_pub(code, &mut |top, _node, site| {
                         // Statement-level assignments only: a `key = x` inside a call's arguments is a named argument.
-                        (|x: &Expression| {
-                            let Expression::AssignOp { op: AssignOp::Assign, lhs, .. } = x else { return };
-                            let Expression::Base { term, follow } = &**lhs else { return };
-                            let hit = match follow.last() {
-                                None => match &term.elem {
-                                    Term::Ident(n) => owner_is_mob && (n.as_str() == "key" || n.as_str() == "ckey") && !sc.locals.contains_key(n.as_str()),
-                                    _ => false,
-                                },
-                                Some(last) => {
-                                    let Follow::Field(_, n) = &last.elem else { return };
-                                    if n.as_str() != "key" && n.as_str() != "ckey" {
-                                        return;
-                                    }
-                                    let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
-                                    w.type_of(&sc, &recv).map(|t| is_mob(sem, &t)).unwrap_or(false)
+                        let Form::Assign { op: "=", lhs, .. } = top else { return };
+                        let Some(c) = chain(lhs) else { return };
+                        let hit = match c.hops.last() {
+                            None => match &c.root {
+                                Root::Ident(n) => owner_is_mob && (*n == "key" || *n == "ckey") && !sc.locals.contains_key(*n),
+                                _ => false,
+                            },
+                            Some(last) => {
+                                let Hop::Field { name: n, .. } = last else { return };
+                                if *n != "key" && *n != "ckey" {
+                                    return;
                                 }
-                            };
-                            if hit {
-                                found.push((rel.to_string(), engine_line(root, rel, line) as u32));
+                                w.type_of(&sc, c.prefix_node(c.hops.len() - 1)).map(|t| is_mob(sem, &t)).unwrap_or(false)
                             }
-                        })(e);
+                        };
+                        if hit {
+                            found.push((rel.to_string(), engine_line(root, &rel, sem.line(Some(site))) as u32));
+                        }
                     });
                 }
             }

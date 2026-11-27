@@ -536,10 +536,10 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
     if let Some(sem) = crate::sem::sem_for(tree).filter(|_| tree.get(crate::gens::auto_tracked::AUTO_REL).is_some()) {
         let written = crate::gens::auto_tracked::writes_outside_setters_of(tree, &sem);
         let calls = crate::gens::auto_tracked::set_calls(tree);
-        for t in sem.objtree.iter_types() {
-            for (name, v) in &t.get().vars {
-                if v.declaration.is_some() && !written.is_written(name.as_str()) && !calls.contains(name.as_str()) {
-                    ctx.tracked.insert(name.clone());
+        for t in sem.m().types() {
+            for name in t.var_names() {
+                if t.declares_var(&name) && !written.is_written(name.as_str()) && !calls.contains(name.as_str()) {
+                    ctx.tracked.insert(name);
                 }
             }
         }

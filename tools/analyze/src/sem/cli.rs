@@ -8,6 +8,8 @@ use crate::run::{Engine, Options};
 
 use super::decls::Decls;
 use super::reads::{Annotations, ReadKind, ReadsEngine};
+use crate::model::consts::Value;
+use crate::model::expr::{form, literal, Form, Lit, Root};
 
 /// Engine-internal directories the reads walk does not enter (dispatchers that read `vars[]` by design).
 pub const DEFAULT_OPAQUE: &[&str] = &["code/library/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/library/capabilities/", "code/library/reactions/", "code/library/ownership/", "code/engine/", "code/__defines/verdigris/"];
@@ -34,28 +36,6 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
     let ann = Annotations::get(&sem, &decls);
     let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(DEFAULT_OPAQUE);
     match sub {
-        // The analysis view against the converted tree (`crate::model::parity`); needs DQ_ANALYZE_PARSE=dmbc.
-        "model-parity" => {
-            let Some(model) = sem.model() else {
-                eprintln!("analyze sem model-parity: the model did not come from the compiler front end (set DQ_ANALYZE_PARSE=dmbc)");
-                return ExitCode::from(2);
-            };
-            let differ = crate::model::parity::run(&sem, model);
-            return if differ == 0 { ExitCode::SUCCESS } else { ExitCode::from(1) };
-        }
-        // Writes the builtin declarations of the converted tree (`crate::model::builtins`' data file).
-        "builtins-dump" => {
-            let Some(out) = args.get(1) else {
-                eprintln!("usage: analyze sem builtins-dump OUT");
-                return ExitCode::from(2);
-            };
-            let text = crate::model::builtins::dump(&sem);
-            if let Err(e) = std::fs::write(out, text) {
-                eprintln!("analyze sem builtins-dump: {e}");
-                return ExitCode::from(2);
-            }
-            return ExitCode::SUCCESS;
-        }
         "reads" => {
             let (Some(ty), Some(name)) = (args.get(1), args.get(2)) else {
                 eprintln!("usage: analyze sem reads /type proc");
@@ -81,21 +61,38 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
             // One JSON object per line: every wearable type and its resolved (inherited) art vars. tools/clothing_channels reads this.
             const ROOTS: [&str; 3] = ["/obj/item/clothing", "/obj/item/storage/belt", "/obj/item/storage/backpack"];
             const VARS: [&str; 8] = ["icon", "icon_state", "item_state", "worn_state", "icon_override", "item_icons", "sprite_sheets", "item_state_slots"];
-            for t in sem.objtree.iter_types() {
-                if !ROOTS.iter().any(|r| t.path == *r || t.path.starts_with(&format!("{r}/"))) {
+            let folded = sem.m().folded();
+            for t in sem.m().types() {
+                let path = t.path();
+                if !ROOTS.iter().any(|r| path == *r || path.starts_with(&format!("{r}/"))) {
                     continue;
                 }
                 let mut vars = serde_json::Map::new();
                 for name in VARS {
-                    let Some(v) = t.get_value(name) else { continue };
-                    let text = match (&v.constant, &v.expression) {
-                        (Some(c), _) => format!("{c:?}"),
-                        (None, Some(e)) => format!("{e:?}"),
-                        (None, None) => continue,
+                    // The nearest type (this one first) that gives the var an entry, as the old tree's `get_value` found it.
+                    let mut cur = Some(t);
+                    let mut found = None;
+                    while let Some(c) = cur {
+                        if c.has_own_var(name) {
+                            found = Some(c);
+                            break;
+                        }
+                        cur = c.parent();
+                    }
+                    let Some(c) = found else { continue };
+                    let text = match folded.values.get(&(c.id, name.to_string())).cloned().flatten() {
+                        Some(Value::String(s)) => format!("String({s:?})"),
+                        Some(Value::Resource(s)) => format!("Resource({s:?})"),
+                        Some(Value::Float(f)) => format!("Float({f:?})"),
+                        Some(Value::Null(_)) => "Null".to_string(),
+                        _ => match c.own_vars_named(name).last().and_then(|m| m.initializer()) {
+                            Some(e) => dump_value(e),
+                            None => continue,
+                        },
                     };
                     vars.insert(name.to_string(), serde_json::Value::String(text));
                 }
-                println!("{}", serde_json::json!({"path": t.path, "vars": vars}));
+                println!("{}", serde_json::json!({"path": path, "vars": vars}));
             }
             ExitCode::SUCCESS
         }
@@ -149,6 +146,37 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
             println!("analyze sem reads /type proc | analyze sem oracle [--all] | analyze sem closure [--write] | analyze sem clothing-dump");
             ExitCode::SUCCESS
         }
+    }
+}
+
+/// A var's initializer as the `clothing-dump` text (`tools/clothing_channels/generate.py` reads `String("..")`, `Resource("..")` and the
+/// `Some(String(".."))` values of an association list): the literal kinds and `list(...)`, anything else as `Expr`.
+fn dump_value(e: &dm_syntax::Expr) -> String {
+    let Form::Chain(c) = form(e) else { return "Expr".to_string() };
+    if !c.hops.is_empty() {
+        return "Expr".to_string();
+    }
+    match &c.root {
+        Root::Literal(t) => match literal(t) {
+            Lit::String(s) => format!("String({s:?})"),
+            Lit::Resource(s) => format!("Resource({s:?})"),
+            Lit::Int(i) => format!("Float({:?})", i as f32),
+            Lit::Float(f) => format!("Float({f:?})"),
+            Lit::Null => "Null".to_string(),
+            _ => "Expr".to_string(),
+        },
+        Root::List(args) => {
+            let items: Vec<String> = args
+                .iter()
+                .map(|a| match form(a) {
+                    Form::Assign { op: "=", lhs, rhs } => format!("({}, Some({}))", dump_value(lhs), dump_value(rhs)),
+                    _ => format!("({}, None)", dump_value(a)),
+                })
+                .collect();
+            format!("List([{}])", items.join(", "))
+        }
+        Root::Ident(n) => format!("Ident({n:?})"),
+        _ => "Expr".to_string(),
     }
 }
 

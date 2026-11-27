@@ -28,7 +28,10 @@ use std::sync::Arc;
 use crate::sem::gen::{GenCx, GenOut, Generator};
 use crate::sem::reads::ReadsEngine;
 use crate::tree::{Tree, CODE_DM};
-use dreammaker::ast::{Expression, Follow, Term};
+use crate::model::expr::{Form, Hop, Root};
+use crate::model::procs::Proc;
+use crate::model::walk::{stmt_blocks, stmts, Stmt};
+use crate::model::Site;
 
 /// The file `analyze gen auto_tracked` writes.
 pub const AUTO_REL: &str = "code/engine/_generated/auto_tracked.dm";
@@ -94,9 +97,9 @@ fn declared_reactive(eng: &ReadsEngine, owner: &str, var: &str) -> bool {
 /// every hand-written setter): a var written only there is written by nobody who could be asked to publish.
 pub fn writes_outside_setters(sem: &crate::sem::Sem) -> crate::sem::reads::WriteIndex {
     // The generated setters and list mutators write the vars they are generated for: counting them would keep a var tracked because it was tracked.
-    let procs: Vec<dreammaker::objtree::ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin() && !matches!(sem.file_of(p.get().location), Some(AUTO_REL) | Some(TRACKED_LISTS_REL))).collect();
+    let procs: Vec<Proc<'_>> = sem.m().types().flat_map(|t| self_procs(&t)).filter(|p| !p.is_builtin() && !matches!(sem.file_of(p.site()).as_deref(), Some(AUTO_REL) | Some(TRACKED_LISTS_REL))).collect();
     // Per proc, kept between runs by file (`body_facts`); sorted, as the facts are digested. The writes carry the type that declares the var (`reads::WriteIndex`).
-    let fact = |p: dreammaker::objtree::ProcRef| -> Vec<(String, String)> {
+    let fact = |p: Proc<'_>| -> Vec<(String, String)> {
         let mut w = crate::sem::reads::typed_writes(sem, p);
         if let Some(v) = p.name().strip_prefix("set_") {
             w.retain(|(_, var)| var != v);
@@ -109,6 +112,11 @@ pub fn writes_outside_setters(sem: &crate::sem::Sem) -> crate::sem::reads::Write
 /// `writes_outside_setters`, computed once per tree.
 pub fn writes_outside_setters_of(tree: &Tree, sem: &crate::sem::Sem) -> Arc<crate::sem::reads::WriteIndex> {
     tree.memo("gen/writes-outside-setters", || writes_outside_setters(sem))
+}
+
+/// Every definition of every proc the type itself has (dreammaker's `iter_self_procs`): each name's definitions in override order.
+fn self_procs<'m>(t: &crate::model::Ty<'m>) -> Vec<Proc<'m>> {
+    t.proc_names().into_iter().flat_map(|n| t.proc_definitions(n)).collect()
 }
 
 /// A var named in a CAPABILITIES block: tracked unless a declaration already makes it reactive, or it is constant.
@@ -139,10 +147,10 @@ pub fn candidate(eng: &ReadsEngine, written: &crate::sem::reads::WriteIndex, cal
 pub fn called_candidates(tree: &Tree, sem: &crate::sem::Sem, eng: &ReadsEngine, written: &crate::sem::reads::WriteIndex, calls: &BTreeSet<String>) -> BTreeSet<(String, String)> {
     let defs = setter_defs(tree, sem);
     let mut out = BTreeSet::new();
-    for t in sem.objtree.iter_types() {
-        let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
-        for (name, v) in &t.get().vars {
-            if v.declaration.is_none() {
+    for t in sem.m().types() {
+        let path = t.path().to_string();
+        for name in &t.var_names() {
+            if !t.declares_var(name) {
                 continue;
             }
             if let Ok(want) = dq_hostio::var("DQ_AUTO_DEBUG") {
@@ -181,54 +189,54 @@ pub fn typed_set_calls(tree: &Tree) -> Arc<HashMap<String, BTreeSet<String>>> {
     tree.memo("gen/typed-set-calls", || {
         let mut out: HashMap<String, BTreeSet<String>> = HashMap::new();
         let Some(sem) = crate::sem::sem_for(tree) else { return out };
-        let mut work: Vec<(String, dreammaker::objtree::ProcRef)> = Vec::new();
-        for t in sem.objtree.iter_types() {
-            let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
-            for p in t.iter_self_procs() {
+        let mut work: Vec<(String, Proc<'_>)> = Vec::new();
+        for t in sem.m().types() {
+            let path = t.path().to_string();
+            for p in self_procs(&t) {
                 if p.is_builtin() {
                     continue;
                 }
-                let rel = p.get().location;
-                if matches!(sem.file_of(rel), Some(AUTO_REL) | Some(TRACKED_LISTS_REL)) {
+                let rel = p.site();
+                if matches!(sem.file_of(rel).as_deref(), Some(AUTO_REL) | Some(TRACKED_LISTS_REL)) {
                     continue;
                 }
                 work.push((path.clone(), p));
             }
         }
         // Per proc, kept between runs by file (`body_facts`): a hit reads the body and the declared types of vars (the structure).
-        let refs: Vec<dreammaker::objtree::ProcRef> = work.iter().map(|(_, p)| *p).collect();
-        let fact = |p: dreammaker::objtree::ProcRef| -> Vec<(String, String)> {
-            let owner = if p.ty().get().path.is_empty() { "/".to_string() } else { p.ty().get().path.clone() };
+        let refs: Vec<Proc<'_>> = work.iter().map(|(_, p)| *p).collect();
+        let fact = |p: Proc<'_>| -> Vec<(String, String)> {
+            let owner = p.owner().path().to_string();
             let owner = &owner;
             let mut hits: Vec<(String, String)> = Vec::new();
-            let Some(code) = &*p.get().code else { return hits };
+            let Some(code) = p.body() else { return hits };
             let mut locals: HashMap<String, String> = HashMap::new();
-            for prm in p.get().parameters.iter() {
-                if !prm.var_type.type_path.is_empty() {
-                    locals.insert(prm.name.clone(), format!("/{}", prm.var_type.type_path.join("/")));
+            for prm in p.parameters().iter() {
+                if !prm.type_path.is_empty() {
+                    locals.insert(prm.name.clone(), format!("/{}", prm.type_path.join("/")));
                 }
             }
             collect_local_types(code, &mut locals);
             let is_call = |n: &str| SETTER_PREFIXES.iter().any(|p| n.starts_with(p));
-            crate::sem::ast::walk_block(code, &mut |e, _| {
-                let Expression::Base { term, follow } = e else { return };
-                let mut cur: Option<String> = match &term.elem {
-                    Term::Ident(n) if n.as_str() == "src" => Some(owner.clone()),
-                    Term::Ident(n) => locals.get(n).cloned().or_else(|| sem.var_decl(owner, n).map(|v| v.declared).filter(|d| !d.is_empty())),
-                    Term::Call(n, _) => {
-                        if is_call(n) {
-                            hits.push((n.as_str().to_string(), owner.clone()));
+            crate::model::walk::walk_block(code, &mut |v, _| {
+                let Form::Chain(c) = &v.form else { return };
+                let mut cur: Option<String> = match &c.root {
+                    Root::Ident(n) if *n == "src" => Some(owner.clone()),
+                    Root::Ident(n) => locals.get(*n).cloned().or_else(|| sem.var_decl(owner, n).map(|v| v.declared).filter(|d| !d.is_empty())),
+                    Root::Call { name, .. } => {
+                        if is_call(name) {
+                            hits.push((name.to_string(), owner.clone()));
                         }
                         None
                     }
                     _ => None,
                 };
-                for fo in follow.iter() {
-                    match &fo.elem {
-                        Follow::Field(_, n) => cur = cur.and_then(|c| sem.var_decl(&c, n.as_str())).map(|v| v.declared).filter(|d| !d.is_empty()),
-                        Follow::Call(_, n, _) => {
-                            if is_call(n.as_str()) {
-                                hits.push((n.as_str().to_string(), cur.clone().unwrap_or_else(|| UNTYPED.to_string())));
+                for hop in c.hops.iter() {
+                    match hop {
+                        Hop::Field { name, .. } => cur = cur.and_then(|c| sem.var_decl(&c, name)).map(|v| v.declared).filter(|d| !d.is_empty()),
+                        Hop::Call { name, .. } => {
+                            if is_call(name) {
+                                hits.push((name.to_string(), cur.clone().unwrap_or_else(|| UNTYPED.to_string())));
                             }
                             cur = None;
                         }
@@ -247,26 +255,22 @@ pub fn typed_set_calls(tree: &Tree) -> Arc<HashMap<String, BTreeSet<String>>> {
     })
 }
 
-fn collect_local_types(b: &dreammaker::ast::Block, out: &mut HashMap<String, String>) {
-    use dreammaker::ast::Statement;
-    for st in b.iter() {
-        match &st.elem {
-            Statement::Var(vs) if !vs.var_type.type_path.is_empty() => {
-                out.insert(vs.name.clone(), format!("/{}", vs.var_type.type_path.join("/")));
-            }
-            Statement::Vars(list) => {
-                for vs in list.iter().filter(|v| !v.var_type.type_path.is_empty()) {
-                    out.insert(vs.name.clone(), format!("/{}", vs.var_type.type_path.join("/")));
+fn collect_local_types(b: &[dm_syntax::Statement], out: &mut HashMap<String, String>) {
+    for st in stmts(b) {
+        match &st.stmt {
+            Stmt::Vars(list) => {
+                for vs in list.iter().filter(|v| !v.type_path.is_empty()) {
+                    out.insert(vs.name.clone(), vs.declared());
                 }
             }
-            Statement::ForList(fl) => {
-                if let Some(vt) = fl.var_type.as_ref().filter(|v| !v.type_path.is_empty()) {
-                    out.insert(fl.name.as_str().to_string(), format!("/{}", vt.type_path.join("/")));
+            Stmt::ForList { binding, .. } => {
+                if let Some(vt) = binding.decl.as_ref().filter(|v| !v.type_path.is_empty()) {
+                    out.insert(binding.name.clone(), vt.declared());
                 }
             }
             _ => {}
         }
-        for nb in crate::sem::ast::stmt_blocks(&st.elem) {
+        for nb in stmt_blocks(&st.stmt) {
             collect_local_types(nb, out);
         }
     }
@@ -315,10 +319,10 @@ pub struct AutoSet {
 
 /// Whether a proc definition at `loc` is the expansion of a `TRACKED(T, v)` line (the macro writes `set_v` at the line of its invocation): that is
 /// the declaration the generator replaces, not a hand-written proc it would clash with.
-fn from_tracked_macro(tree: &Tree, sem: &crate::sem::Sem, loc: dreammaker::Location) -> bool {
+fn from_tracked_macro(tree: &Tree, sem: &crate::sem::Sem, loc: Option<Site>) -> bool {
     let Some(rel) = sem.file_of(loc) else { return false };
-    let Some(f) = tree.get(rel) else { return false };
-    f.raw().lines().nth((loc.line as usize).saturating_sub(1)).is_some_and(|l| {
+    let Some(f) = tree.get(&rel) else { return false };
+    f.raw().lines().nth((sem.line(loc) as usize).saturating_sub(1)).is_some_and(|l| {
         let t = l.trim_start();
         t.starts_with("TRACKED(") || t.starts_with("TRACKED_BRIDGED(") || t.starts_with("TRACKED_STATE(")
     })
@@ -327,14 +331,16 @@ fn from_tracked_macro(tree: &Tree, sem: &crate::sem::Sem, loc: dreammaker::Locat
 /// Every `set_*` proc defined outside the generated file, by name: the types that define it.
 pub fn setter_defs(tree: &Tree, sem: &crate::sem::Sem) -> HashMap<String, Vec<String>> {
     let mut out: HashMap<String, Vec<String>> = HashMap::new();
-    for t in sem.objtree.iter_types() {
-        let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
-        for (name, p) in &t.get().procs {
+    for t in sem.m().types() {
+        let path = t.path().to_string();
+        for name in t.proc_names() {
             if !["set_", "add_", "include_", "remove_", "clear_", "insert_", "swap_", "cut_"].iter().any(|p| name.starts_with(p)) {
                 continue;
             }
-            if p.declaration.is_some() && p.value.iter().any(|v| sem.file_of(v.location) != Some(AUTO_REL) && sem.file_of(v.location) != Some(TRACKED_LISTS_REL) && !from_tracked_macro(tree, sem, v.location)) {
-                out.entry(name.clone()).or_default().push(path.clone());
+            // `p.declaration` of the type's proc: the type itself declares it (`proc/x()`), not an override of a parent's declaration.
+            let defs = t.proc_definitions(name);
+            if defs.iter().any(|d| d.declares()) && defs.iter().any(|v| sem.file_of(v.site()).as_deref() != Some(AUTO_REL) && sem.file_of(v.site()).as_deref() != Some(TRACKED_LISTS_REL) && !from_tracked_macro(tree, sem, v.site())) {
+                out.entry(name.to_string()).or_default().push(path.clone());
             }
         }
     }

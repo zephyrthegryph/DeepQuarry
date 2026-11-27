@@ -7,7 +7,7 @@
 //! the legacy `owns()`/`rel_one()`/`rel_many()` tables and `OWN`/`REL` lines that still declare them on
 //! master). A weak ref is a handle (`handle_of()` / `handle_get()`): a number, never a reference.
 //!
-//! On the typed model (the full dreammaker parse, `Cx::sem()`), two rules:
+//! On the typed model (the compiler's front end, `Cx::sem()`), two rules:
 //!
 //! * `var`: a var whose declared type is an atom or datum (not a turf, an area, a client, a registry or
 //!   flyweight type, or a type in `[lint.stored_refs.lists] exempt_types`) that no relation declares.
@@ -29,11 +29,13 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use dreammaker::ast::{AssignOp, Block, Expression, Follow, Statement, Term, VarTypeFlags};
+use dm_syntax::{Expr, Statement};
 
 use crate::dm::ownership_index::Index;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
-use crate::sem::ast::{stmt_blocks, stmt_exprs, strip_parens, walk_expr};
+use crate::model::expr::{chain, form, strip_groups, Form, Hop, Root};
+use crate::model::walk::{stmt_blocks, stmts, walk_block, ForInit, Stmt};
+use crate::model::{Site, Ty};
 use crate::sem::decls::Decls;
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
@@ -152,7 +154,7 @@ pub(crate) fn declared_by_relation(sem: &Sem, rels: &HashMap<String, Vec<String>
 pub(crate) enum Place {
     /// (declaring type, var name)
     Member(String, String),
-    /// A proc's `var/static/list` (file, model line).
+    /// A proc's `var/static/list` (file, the statement's site offset: the model line is `Sem::line(Some(Site(n)))`).
     ProcStatic(String, u32),
 }
 
@@ -170,39 +172,57 @@ pub(crate) fn path_of(tp: &[String]) -> String {
     }
 }
 
-pub(crate) fn collect_locals(b: &Block, rel: &str, out: &mut HashMap<String, (String, Option<Place>)>) {
-    for st in b.iter() {
-        match &st.elem {
-            Statement::Var(v) => {
-                let ty = path_of(&v.var_type.type_path);
-                let place = if v.var_type.flags.contains(VarTypeFlags::STATIC) && (ty == "/list" || ty.starts_with("/list/") || ty == "/alist" || ty.starts_with("/alist/")) {
-                    Some(Place::ProcStatic(rel.to_string(), st.location.line))
+/// The type path of a prefab (`/obj/item`) as its segments joined: every `/`, `.` and `:` separates a segment.
+pub(crate) fn prefab_path(path: &str) -> String {
+    path_of(&path.split(['/', '.', ':']).filter(|s| !s.is_empty()).map(str::to_string).collect::<Vec<_>>())
+}
+
+/// A proc's declared return type (`proc/x() as /type`) as seen from `ty`, or None: the nearest declaring definition up the parent chain.
+pub(crate) fn declared_return_type(ty: Ty<'_>, name: &str) -> Option<String> {
+    let mut cur = Some(ty);
+    while let Some(t) = cur {
+        if let Some(d) = t.proc_definitions(name).into_iter().find(|p| p.declares()) {
+            let p = d.member()?.return_type_path()?;
+            return if p.is_empty() { None } else { Some(path_of(&p)) };
+        }
+        cur = t.parent();
+    }
+    None
+}
+
+pub(crate) fn collect_locals(b: &[Statement], rel: &str, out: &mut HashMap<String, (String, Option<Place>)>) {
+    for st in stmts(b) {
+        match &st.stmt {
+            // One declaration alone can be a proc-static list; several on one line (`var/a, b`) never are.
+            Stmt::Vars(vs) if vs.len() == 1 => {
+                let v = &vs[0];
+                let ty = path_of(&v.type_path);
+                let place = if v.is_static && (ty == "/list" || ty.starts_with("/list/") || ty == "/alist" || ty.starts_with("/alist/")) {
+                    Some(Place::ProcStatic(rel.to_string(), st.site.0))
                 } else {
                     None
                 };
-                out.insert(v.name.to_string(), (ty, place));
+                out.insert(v.name.clone(), (ty, place));
             }
-            Statement::Vars(vs) => {
+            Stmt::Vars(vs) => {
                 for v in vs {
-                    out.insert(v.name.to_string(), (path_of(&v.var_type.type_path), None));
+                    out.insert(v.name.clone(), (path_of(&v.type_path), None));
                 }
             }
-            Statement::ForList(fl) => {
-                let ty = fl.var_type.as_ref().map(|t| path_of(&t.type_path)).unwrap_or_default();
-                out.entry(fl.name.to_string()).or_insert((ty, None));
+            Stmt::ForList { binding, .. } => {
+                let ty = binding.decl.as_ref().map(|t| path_of(&t.type_path)).unwrap_or_default();
+                out.entry(binding.name.clone()).or_insert((ty, None));
             }
-            Statement::ForKeyValue(fk) => {
-                out.entry(fk.key.to_string()).or_insert((String::new(), None));
-                out.entry(fk.value.to_string()).or_insert((String::new(), None));
+            Stmt::ForKeyValue { binding, value, .. } => {
+                out.entry(binding.name.clone()).or_insert((String::new(), None));
+                out.entry(value.to_string()).or_insert((String::new(), None));
             }
-            Statement::ForLoop { init: Some(init), .. } => {
-                if let Statement::Var(v) = init.as_ref() {
-                    out.insert(v.name.to_string(), (path_of(&v.var_type.type_path), None));
-                }
+            Stmt::ForLoop { init: Some(ForInit::Var(v)), .. } => {
+                out.insert(v.name.clone(), (path_of(&v.type_path), None));
             }
             _ => {}
         }
-        for nb in stmt_blocks(&st.elem) {
+        for nb in stmt_blocks(&st.stmt) {
             collect_locals(nb, rel, out);
         }
     }
@@ -223,42 +243,36 @@ impl<'a, 'k> Walker<'a, 'k> {
     }
 
     /// The static type of `e`: a type path, or None when the model can't say.
-    pub(crate) fn type_of(&self, sc: &ProcScope, e: &Expression) -> Option<String> {
-        let e = strip_parens(e);
-        match e {
-            Expression::Base { term, follow } => {
-                let mut cur: Option<String> = match &term.elem {
-                    Term::Ident(n) => self.ident_type(sc, n),
-                    Term::NewPrefab { prefab, .. } => Some(format!("/{}", prefab.path.iter().map(|(_, n)| n.as_str()).collect::<Vec<_>>().join("/"))),
-                    Term::Expr(inner) => self.type_of(sc, inner),
-                    Term::Call(n, _) => self.return_type(if sc.owner == "/" { "/" } else { sc.owner }, n).or_else(|| self.return_type("/", n)),
-                    Term::GlobalCall(n, _) => self.return_type("/", n),
+    pub(crate) fn type_of(&self, sc: &ProcScope, e: &Expr) -> Option<String> {
+        let e = strip_groups(e);
+        match form(e) {
+            Form::Chain(c) => {
+                let mut cur: Option<String> = match &c.root {
+                    Root::Ident(n) => self.ident_type(sc, n),
+                    Root::NewPrefab { path, .. } => Some(prefab_path(path)),
+                    Root::Group(inner) => self.type_of(sc, inner),
+                    Root::Call { name, .. } => self.return_type(if sc.owner == "/" { "/" } else { sc.owner }, name).or_else(|| self.return_type("/", name)),
                     _ => None,
                 };
-                for fo in follow.iter() {
-                    let Some(c) = cur.clone() else { return None };
-                    cur = match &fo.elem {
-                        Follow::Field(_, f) => self.field_type(&c, f),
-                        Follow::Index(_, _) => c.strip_prefix("/list").filter(|r| r.starts_with('/')).map(|r| r.to_string()),
-                        Follow::Call(_, n, _) => self.return_type(&c, n),
-                        Follow::Unary(_) => return None,
+                for fo in c.hops.iter() {
+                    let Some(t) = cur.clone() else { return None };
+                    cur = match fo {
+                        Hop::Field { name, .. } => self.field_type(&t, name),
+                        Hop::Index { .. } => t.strip_prefix("/list").filter(|r| r.starts_with('/')).map(|r| r.to_string()),
+                        Hop::Call { name, .. } => self.return_type(&t, name),
                         _ => return None,
                     };
                 }
                 cur
             }
-            Expression::TernaryOp { if_, else_, .. } => self.type_of(sc, if_).filter(|t| self.kinds.is_ref(t)).or_else(|| self.type_of(sc, else_)),
+            Form::Ternary { then_value, else_value, .. } => self.type_of(sc, then_value).filter(|t| self.kinds.is_ref(t)).or_else(|| self.type_of(sc, else_value)),
             _ => None,
         }
     }
 
     /// A proc's declared return type (`proc/x() as /type`), or None.
     fn return_type(&self, ty: &str, name: &str) -> Option<String> {
-        let d = self.sem.ty(ty)?.get_proc_declaration(name)?;
-        match &d.return_type {
-            dreammaker::ast::ProcReturnType::TypePath(p) if !p.is_empty() => Some(format!("/{}", p.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("/"))),
-            _ => None,
-        }
+        declared_return_type(self.sem.ty(ty)?, name)
     }
 
     fn ident_type(&self, sc: &ProcScope, n: &str) -> Option<String> {
@@ -280,12 +294,12 @@ impl<'a, 'k> Walker<'a, 'k> {
     }
 
     /// The list `e` names, when it is a type's var, a global or a proc-static list.
-    pub(crate) fn place_of(&self, sc: &ProcScope, e: &Expression) -> Option<Place> {
-        let e = strip_parens(e);
-        let Expression::Base { term, follow } = e else { return None };
-        if follow.is_empty() {
-            let Term::Ident(n) = &term.elem else { return None };
-            if let Some((_, p)) = sc.locals.get(n.as_str()) {
+    pub(crate) fn place_of(&self, sc: &ProcScope, e: &Expr) -> Option<Place> {
+        let e = strip_groups(e);
+        let c = chain(e)?;
+        let Some(last_hop) = c.hops.last() else {
+            let Root::Ident(n) = &c.root else { return None };
+            if let Some((_, p)) = sc.locals.get(*n) {
                 return p.clone();
             }
             if sc.owner != "/" {
@@ -294,11 +308,11 @@ impl<'a, 'k> Walker<'a, 'k> {
                 }
             }
             return self.sem.var_owner("/", n).map(|o| Place::Member(o, n.to_string()));
-        }
+        };
         // a.b.c: the last follow is the field; everything before it is the receiver.
-        let Follow::Field(_, last) = &follow[follow.len() - 1].elem else { return None };
-        let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
-        let rt = self.type_of(sc, &recv)?;
+        let Hop::Field { name: last, .. } = last_hop else { return None };
+        let recv = c.prefix_node(c.hops.len() - 1);
+        let rt = self.type_of(sc, recv)?;
         if rt.is_empty() {
             return None;
         }
@@ -307,28 +321,28 @@ impl<'a, 'k> Walker<'a, 'k> {
 
     /// The list var that holds the list `e` names, when `e` is an element of a nested list (a registry's `by_key[k]`, `by_z[z][k]`): writing into the
     /// element stores into the var that holds it, so the place is that var's. Otherwise place_of().
-    pub(crate) fn container_place_of(&self, sc: &ProcScope, e: &Expression) -> Option<Place> {
-        let mut cur = strip_parens(e).clone();
+    pub(crate) fn container_place_of(&self, sc: &ProcScope, e: &Expr) -> Option<Place> {
+        let mut cur = strip_groups(e);
         loop {
-            let Expression::Base { term, follow } = &cur else { return self.place_of(sc, &cur) };
-            match follow.last().map(|f| &f.elem) {
-                Some(Follow::Index(_, _)) => {
-                    cur = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
+            let Some(c) = chain(cur) else { return self.place_of(sc, cur) };
+            match c.hops.last() {
+                Some(Hop::Index { .. }) => {
+                    cur = c.prefix_node(c.hops.len() - 1);
                 }
-                _ => return self.place_of(sc, &cur),
+                _ => return self.place_of(sc, cur),
             }
         }
     }
 
     /// The values `e` stores when added to a list: itself, or the members of a `list(...)` literal (keys and values).
-    fn stored_ref(&self, sc: &ProcScope, e: &Expression) -> bool {
-        let e = strip_parens(e);
-        if let Expression::Base { term, follow } = e {
-            if follow.is_empty() {
-                if let Term::List(args) = &term.elem {
-                    return args.iter().any(|a| match a {
-                        Expression::AssignOp { op: AssignOp::Assign, lhs, rhs } => self.stored_ref(sc, lhs) || self.stored_ref(sc, rhs),
-                        other => self.stored_ref(sc, other),
+    fn stored_ref(&self, sc: &ProcScope, e: &Expr) -> bool {
+        let e = strip_groups(e);
+        if let Some(c) = chain(e) {
+            if c.hops.is_empty() {
+                if let Root::List(args) = &c.root {
+                    return args.iter().any(|a| match form(a) {
+                        Form::Assign { op: "=", lhs, rhs } => self.stored_ref(sc, lhs) || self.stored_ref(sc, rhs),
+                        _ => self.stored_ref(sc, a),
                     });
                 }
             }
@@ -337,36 +351,35 @@ impl<'a, 'k> Walker<'a, 'k> {
     }
 
     /// Every list write in one proc body that stores a reference: (place, model line).
-    fn writes(&self, sc: &ProcScope, code: &Block, out: &mut Vec<(Place, u32)>) {
-        let visit = |e: &Expression, line: u32, out: &mut Vec<(Place, u32)>| {
-            walk_expr(e, &mut |x| match x {
-                Expression::AssignOp { op, lhs, rhs } => {
-                    let lhs = strip_parens(lhs);
+    fn writes(&self, sc: &ProcScope, code: &[Statement], out: &mut Vec<(Place, u32)>) {
+        walk_block(code, &mut |v, site| {
+            let line = self.sem.line(Some(site));
+            match &v.form {
+                Form::Assign { op, lhs, rhs } => {
+                    let lhs = strip_groups(lhs);
                     // L[k] = v
-                    if let Expression::Base { term, follow } = lhs {
-                        if let Some(last) = follow.last() {
-                            if let Follow::Index(_, key) = &last.elem {
-                                if matches!(op, AssignOp::Assign) {
-                                    let list = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
-                                    if self.stored_ref(sc, key) || self.stored_ref(sc, rhs) {
-                                        if let Some(p) = self.container_place_of(sc, &list) {
-                                            out.push((p, line));
-                                        }
-                                    }
-                                } else if matches!(op, AssignOp::AddAssign | AssignOp::BitOrAssign | AssignOp::OrAssign) && self.stored_ref(sc, rhs) {
-                                    // L[k] += x: x joins the list L[k] (a nested list: place_of() names the var that holds it).
-                                    if let Some(p) = self.container_place_of(sc, lhs) {
-                                        if self.is_list_place(&p) {
-                                            out.push((p, line));
-                                        }
+                    if let Some(c) = chain(lhs) {
+                        if let Some(Hop::Index { index: key, .. }) = c.hops.last() {
+                            if *op == "=" {
+                                let list = c.prefix_node(c.hops.len() - 1);
+                                if self.stored_ref(sc, key) || self.stored_ref(sc, rhs) {
+                                    if let Some(p) = self.container_place_of(sc, list) {
+                                        out.push((p, line));
                                     }
                                 }
-                                return;
+                            } else if matches!(*op, "+=" | "|=" | "||=") && self.stored_ref(sc, rhs) {
+                                // L[k] += x: x joins the list L[k] (a nested list: place_of() names the var that holds it).
+                                if let Some(p) = self.container_place_of(sc, lhs) {
+                                    if self.is_list_place(&p) {
+                                        out.push((p, line));
+                                    }
+                                }
                             }
+                            return;
                         }
                     }
-                    let adds = matches!(op, AssignOp::AddAssign | AssignOp::BitOrAssign | AssignOp::OrAssign);
-                    let list_literal = matches!(op, AssignOp::Assign) && matches!(strip_parens(rhs), Expression::Base { term, follow } if follow.is_empty() && matches!(term.elem, Term::List(_)));
+                    let adds = matches!(*op, "+=" | "|=" | "||=");
+                    let list_literal = *op == "=" && matches!(chain(strip_groups(rhs)), Some(c) if c.hops.is_empty() && matches!(c.root, Root::List(_)));
                     if (adds || list_literal) && self.stored_ref(sc, rhs) {
                         if let Some(p) = self.place_of(sc, lhs) {
                             if self.is_list_place(&p) {
@@ -375,17 +388,17 @@ impl<'a, 'k> Walker<'a, 'k> {
                         }
                     }
                 }
-                Expression::Base { term, follow } => {
-                    for (i, fo) in follow.iter().enumerate() {
-                        let Follow::Call(_, name, args) = &fo.elem else { continue };
-                        let skip = match name.as_str() {
+                Form::Chain(c) => {
+                    for (i, fo) in c.hops.iter().enumerate() {
+                        let Hop::Call { name, args, .. } = fo else { continue };
+                        let skip = match *name {
                             "Add" => 0,
                             "Insert" => 1,
                             _ => continue,
                         };
                         if args.iter().skip(skip).any(|a| self.stored_ref(sc, a)) {
-                            let list = Expression::Base { term: term.clone(), follow: follow[..i].to_vec().into_boxed_slice() };
-                            if let Some(p) = self.place_of(sc, &list) {
+                            let list = c.prefix_node(i);
+                            if let Some(p) = self.place_of(sc, list) {
                                 if self.is_list_place(&p) {
                                     out.push((p, line));
                                 }
@@ -394,35 +407,14 @@ impl<'a, 'k> Walker<'a, 'k> {
                     }
                 }
                 _ => {}
-            });
-        };
-        walk(code, &mut |e, line| visit(e, line, out));
+            }
+        });
     }
 
     fn is_list_place(&self, p: &Place) -> bool {
         match p {
             Place::ProcStatic(..) => true,
             Place::Member(o, v) => self.sem.var_decl(o, v).map(|s| s.is_list() || s.declared == "/alist" || s.declared.starts_with("/alist/") || s.declared.is_empty()).unwrap_or(false),
-        }
-    }
-}
-
-/// Every expression of every statement (headers of nested blocks included) with its statement's line.
-fn walk(b: &Block, f: &mut dyn FnMut(&Expression, u32)) {
-    for st in b.iter() {
-        let line = st.location.line;
-        for e in stmt_exprs(&st.elem) {
-            f(e, line);
-        }
-        if let Statement::ForLoop { init, inc, .. } = &st.elem {
-            for s in [init, inc].into_iter().flatten() {
-                for e in stmt_exprs(s) {
-                    f(e, line);
-                }
-            }
-        }
-        for nb in stmt_blocks(&st.elem) {
-            walk(nb, f);
         }
     }
 }
@@ -504,26 +496,30 @@ impl Lint for StoredRefs {
         // ---- var: declarations ----
         let mut typed_lists: Vec<(String, String, String, u32)> = Vec::new();
         let mut decls: Vec<(String, String, String, String, u32)> = Vec::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for (name, tv) in ty.get().vars.iter() {
-                let Some(d) = tv.declaration.as_ref() else { continue };
-                if d.location.is_builtins() || d.var_type.flags.contains(VarTypeFlags::CONST) {
+        for ty in sem.m().types() {
+            let owner = ty.path().to_string();
+            for name in ty.var_names() {
+                if !ty.declares_var(&name) {
                     continue;
                 }
-                let Some(rel) = sem.file_of(d.location) else { continue };
-                let declared = path_of(&d.var_type.type_path);
+                let Some(d) = ty.var_declaration(&name) else { continue };
+                if d.builtin || d.is_const() {
+                    continue;
+                }
+                let Some(rel) = sem.file_of(d.site) else { continue };
+                let declared = d.declared.clone();
                 if declared == "/list" {
                     continue;
                 }
+                let line = sem.line(d.site);
                 if let Some(elem) = declared.strip_prefix("/list").filter(|r| r.starts_with('/')) {
                     if kinds.is_ref(elem) {
-                        typed_lists.push((owner.clone(), name.to_string(), rel.to_string(), d.location.line));
+                        typed_lists.push((owner.clone(), name.to_string(), rel.to_string(), line));
                     }
                     continue;
                 }
                 if kinds.is_ref(&declared) {
-                    decls.push((owner.clone(), name.to_string(), declared, rel.to_string(), d.location.line));
+                    decls.push((owner.clone(), name.to_string(), declared, rel.to_string(), line));
                 }
             }
         }
@@ -538,20 +534,20 @@ impl Lint for StoredRefs {
         // ---- list: writes in proc bodies ----
         let w = Walker { sem, kinds: &kinds };
         let mut found: BTreeMap<Place, (String, u32)> = BTreeMap::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for (_, tp) in ty.get().procs.iter() {
-                for v in tp.value.iter() {
-                    let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
-                    if cx.exempt(rel) {
+        for ty in sem.m().types() {
+            let owner = ty.path().to_string();
+            for pname in ty.proc_names() {
+                for v in ty.proc_definitions(pname) {
+                    let Some(code) = v.body() else { continue };
+                    let Some(rel) = sem.file_of(v.site()) else { continue };
+                    if cx.exempt(&rel) {
                         continue;
                     }
                     let mut locals: HashMap<String, (String, Option<Place>)> = HashMap::new();
-                    for p in v.parameters.iter() {
-                        locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
+                    for p in v.parameters().iter() {
+                        locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
                     }
-                    collect_locals(code, rel, &mut locals);
+                    collect_locals(code, &rel, &mut locals);
                     let sc = ProcScope { owner: &owner, locals };
                     let mut writes = Vec::new();
                     w.writes(&sc, code, &mut writes);
@@ -582,7 +578,8 @@ impl Lint for StoredRefs {
                     let at = format!("{}:{}", wrel, line_of(&wrel, wline));
                     lists.push((sig.file.clone(), sig.line, format!("{}/var/{} stores atoms/datums (e.g. {})", if o == "/" { "" } else { o.as_str() }, v, at), format!("{}::{}", o, v)));
                 }
-                Place::ProcStatic(rel, line) => {
+                Place::ProcStatic(rel, offset) => {
+                    let line = sem.line(Some(Site(offset)));
                     let at = format!("{}:{}", wrel, line_of(&wrel, wline));
                     lists.push((rel, line, format!("a proc's static list stores atoms/datums (e.g. {})", at), String::new()));
                 }

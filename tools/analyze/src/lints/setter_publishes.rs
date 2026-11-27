@@ -13,9 +13,11 @@
 
 use std::collections::BTreeSet;
 
-use dreammaker::ast::{Expression, Follow, Term};
+use dm_syntax::Statement;
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::model::expr::{Form, Hop, Root};
+use crate::model::walk::walk_block;
 use crate::tree::CODE_DM;
 
 static META: Meta = Meta {
@@ -37,19 +39,19 @@ static META: Meta = Meta {
 const PUBLISHERS: &[&str] = &["tracked_changed", "publish_change", "state_changed", "record_changed", "rel_set", "rel_add", "rel_remove", "own_set", "own_add", "own_put", "own_clear", "timed_set", "vars_write"];
 
 /// Whether `code` publishes: a publisher call, another `set_*()` call (a delegation), or a chain to the parent.
-fn publishes(code: &dreammaker::ast::Block) -> bool {
+fn publishes(code: &[Statement]) -> bool {
     let mut found = false;
-    crate::sem::ast::walk_block(code, &mut |e, _| {
-        let Expression::Base { term, follow } = e else { return };
+    walk_block(code, &mut |v, _| {
+        let Form::Chain(c) = &v.form else { return };
         let named = |n: &str| PUBLISHERS.contains(&n) || n.starts_with("set_") || n.starts_with("add_") || n.starts_with("remove_") || n.starts_with("publish");
-        match &term.elem {
-            Term::ParentCall(_) => found = true,
-            Term::Call(n, _) if named(n.as_str()) => found = true,
+        match &c.root {
+            Root::ParentCall(_) => found = true,
+            Root::Call { name, .. } if named(name) => found = true,
             _ => {}
         }
-        for fo in follow.iter() {
-            if let Follow::Call(_, n, _) = &fo.elem {
-                if named(n.as_str()) {
+        for fo in c.hops.iter() {
+            if let Hop::Call { name, .. } = fo {
+                if named(name) {
                     found = true;
                 }
             }
@@ -59,13 +61,12 @@ fn publishes(code: &dreammaker::ast::Block) -> bool {
 }
 
 /// A value Rust owns (`native_write`, a heat body, a `vg_*` call) is not published from DM: it goes through `watched()`.
-fn owned_elsewhere(code: &dreammaker::ast::Block) -> bool {
+fn owned_elsewhere(code: &[Statement]) -> bool {
     let mut found = false;
-    crate::sem::ast::walk_block(code, &mut |e, _| {
-        if let Expression::Base { term, .. } = e {
-            if let Term::Call(n, _) = &term.elem {
-                let n = n.as_str();
-                if n == "native_write" || n.starts_with("heat_") || n.starts_with("vg_") {
+    walk_block(code, &mut |v, _| {
+        if let Form::Chain(c) = &v.form {
+            if let Root::Call { name: n, .. } = &c.root {
+                if *n == "native_write" || n.starts_with("heat_") || n.starts_with("vg_") {
                     found = true;
                 }
             }
@@ -98,32 +99,37 @@ impl Lint for SetterPublishes {
         let decls = crate::sem::decls::Decls::get(tree);
         for (ty, vars) in &decls.tracked_explicit {
             for var in vars {
-                if sem.ty(ty).and_then(|t| t.get().procs.get(&format!("set_{var}")).map(|_| ())).is_some() {
+                if sem.ty(ty).is_some_and(|t| !t.proc_definitions(&format!("set_{var}")).is_empty()) {
                     judged.insert((ty.clone(), format!("set_{var}"), var.clone(), false));
                 }
             }
         }
         for (definer, name, var, must) in judged {
             let Some(t) = sem.ty(&definer) else { continue };
-            let Some(tp) = t.get().procs.get(&name) else { continue };
-            for v in tp.value.iter() {
-                let Some(rel) = sem.file_of(v.location) else { continue };
+            let defs = t.proc_definitions(&name);
+            if defs.is_empty() {
+                continue;
+            }
+            // The declaration this type itself makes (a verb is no setter).
+            let is_verb = defs.iter().find(|p| p.declares()).and_then(|p| p.declared_verb()) == Some(true);
+            for v in defs.iter() {
+                let Some(rel) = sem.file_of(v.site()) else { continue };
                 if rel.starts_with("code/engine/_generated/") {
                     continue;
                 }
-                let Some(code) = &*v.code else { continue };
+                let Some(code) = v.body() else { continue };
                 let mut w = std::collections::HashSet::new();
                 crate::sem::reads::collect_writes_pub(code, &mut w);
                 let writes = w.contains(var.as_str());
                 let publishes = publishes(code) || owned_elsewhere(code);
-                if tp.declaration.as_ref().is_some_and(|d| d.kind == dreammaker::ast::ProcDeclKind::Verb) {
+                if is_verb {
                     continue;
                 }
-                let line = crate::sem::procs::engine_line(&sem.root, rel, v.location.line) as usize;
+                let line = crate::sem::procs::engine_line(&sem.root, &rel, sem.line(v.site())) as usize;
                 if writes && !publishes {
-                    out.site_in_msg("no_publish", rel, line, format!("{definer}/{name}() writes {var} and never publishes it"));
+                    out.site_in_msg("no_publish", &rel, line, format!("{definer}/{name}() writes {var} and never publishes it"));
                 } else if !writes && !publishes && must {
-                    out.site_in_msg("not_a_setter", rel, line, format!("{definer}/{name}() does not write {var}"));
+                    out.site_in_msg("not_a_setter", &rel, line, format!("{definer}/{name}() does not write {var}"));
                 }
             }
         }

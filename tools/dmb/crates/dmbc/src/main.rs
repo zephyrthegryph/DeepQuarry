@@ -56,7 +56,9 @@ fn exit_code(code: std::process::ExitCode) -> i32 {
 }
 
 fn main_inner() {
-    // Analysis inside the compiler may take its model from this front end (`DQ_ANALYZE_PARSE=dmbc`).
+    // dq-analyze's semantic model reads this front end.
+    dmbc::analysis_frontend::register_analysis_provider();
+    // DreamChecker's parse under `DQ_ANALYZE_PARSE=dmbc` (the converted tree).
     dmbc::analysis_tree::register_analysis_provider();
     // `analyze dreamchecker` checks this front end's own tree (dreamchecker::native).
     dmbc::dreamchecker_input::register_native_checker();

@@ -250,48 +250,42 @@ pub(crate) fn collect_with(sem: &Sem, with_writes: bool) -> Collected {
 
 fn collect_in(sem: &Sem, with_writes: bool, only: Option<&HashSet<String>>) -> Collected {
     // `file_of`, restricted to `only` when given: what lies outside is not collected.
-    let file_of = |loc: dreammaker::Location| -> Option<&str> { sem.file_of(loc).filter(|f| only.is_none_or(|o| o.contains(*f))) };
+    let file_of = |site: Option<crate::model::Site>| -> Option<String> { sem.file_of(site).filter(|f| only.is_none_or(|o| o.contains(f))) };
+    let folded = sem.m().folded();
     let mut c = Collected { shape: HashMap::new(), writes: HashMap::new(), types: HashMap::new() };
-    let mut procs: Vec<(dreammaker::objtree::ProcRef, &str)> = Vec::new();
-    for ty in sem.objtree.iter_types() {
-        let t = ty.get();
-        let path = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
-        if let Some(f) = file_of(t.location) {
-            c.types.entry(f.to_string()).or_default().insert(path.clone());
+    let mut procs: Vec<(crate::model::procs::Proc, String)> = Vec::new();
+    for ty in sem.m().types() {
+        let path = ty.path().to_string();
+        if let Some(f) = file_of(ty.site()) {
+            c.types.entry(f).or_default().insert(path.clone());
         }
-        for (name, v) in &t.vars {
-            if let Some(d) = &v.declaration {
-                if let Some(f) = file_of(d.location) {
-                    let mut e = format!("V|{}|{}|{:?}|{}", path, name, d.var_type.flags, d.var_type.type_path.join("/"));
+        for name in ty.var_names() {
+            let members: Vec<_> = ty.own_vars_named(&name).collect();
+            let constant = || format!("{:?}", folded.values.get(&(ty.id, name.clone())));
+            if let Some(d) = members.iter().find(|m| m.declares()) {
+                if let Some(f) = file_of(d.site()) {
+                    let mut e = format!("V|{}|{}|{}|{}", path, name, d.flags(), d.declared_type());
                     if name == "parent_type" {
-                        e.push_str(&format!("|{:?}", v.value.constant));
+                        e.push_str(&format!("|{}", constant()));
                     }
-                    c.shape.entry(f.to_string()).or_default().push(e);
-                }
-            } else if name == "parent_type" {
-                if let Some(f) = file_of(v.value.location) {
-                    c.shape.entry(f.to_string()).or_default().push(format!("PT|{}|{:?}", path, v.value.constant));
+                    c.shape.entry(f).or_default().push(e);
                 }
             }
         }
-        for (name, tp) in &t.procs {
-            if let Some(d) = &tp.declaration {
-                if let Some(f) = file_of(d.location) {
-                    c.shape.entry(f.to_string()).or_default().push(format!("D|{}|{}|{:?}", path, name, d.kind));
-                }
-            }
-            for v in &tp.value {
-                if let Some(f) = file_of(v.location) {
-                    let params: Vec<String> = v.parameters.iter().map(|p| format!("{}:{:?}:{}", p.name, p.var_type.flags, p.var_type.type_path.join("/"))).collect();
-                    c.shape.entry(f.to_string()).or_default().push(format!("P|{}|{}|{}|{}", path, name, params.join(","), v.code.has_body()));
-                }
+        // `parent_type = /x`: the type's explicit parent.
+        if let Some((parent, site)) = ty.explicit_parent() {
+            if let Some(f) = file_of(site) {
+                c.shape.entry(f).or_default().push(format!("PT|{}|{}", path, parent.path()));
             }
         }
-        for p in ty.iter_self_procs() {
-            if p.is_builtin() {
-                continue;
-            }
-            if let Some(f) = file_of(p.get().location) {
+        for name in ty.proc_names() {
+            for p in ty.proc_definitions(name) {
+                let Some(f) = file_of(p.site()) else { continue };
+                if p.declares() {
+                    c.shape.entry(f.clone()).or_default().push(format!("D|{}|{}|{:?}", path, name, p.declared_verb()));
+                }
+                let params: Vec<String> = p.parameters().iter().map(|q| format!("{}:{}", q.name, q.declared())).collect();
+                c.shape.entry(f.clone()).or_default().push(format!("P|{}|{}|{}|{}", path, name, params.join(","), p.body().is_some()));
                 procs.push((p, f));
             }
         }

@@ -132,15 +132,16 @@ impl Lint for SemHandlers {
                 match Sem::build_partial(&cx.tree.root, cx.tree, &cands) {
                     Ok(sem) => {
                         let set: BTreeSet<&str> = cands.iter().map(|s| s.as_str()).collect();
-                        for ty in sem.objtree.iter_types() {
-                            for (_name, tp) in ty.get().procs.iter() {
-                                for v in &tp.value {
-                                    let rel = sem.rel(v.location);
-                                    let (true, Some(code)) = (set.contains(rel), &*v.code) else { continue };
-                                    let (acts, locals) = act_idents(&v.parameters, code, &try_calls);
+                        for ty in sem.m().types() {
+                            for name in ty.proc_names() {
+                                for v in ty.proc_definitions(name) {
+                                    let rel = sem.rel(v.site());
+                                    let (true, Some(code)) = (set.contains(rel.as_str()), v.body()) else { continue };
+                                    let params = v.parameters();
+                                    let (acts, locals) = act_idents(&params, code, &try_calls);
                                     let mut found: Vec<Found> = Vec::new();
-                                    context_escape(code, &acts, &locals, &mut found);
-                                    act_try_pairing(code, &try_calls, &mut found);
+                                    context_escape(&sem, code, &acts, &locals, &mut found);
+                                    act_try_pairing(&sem, code, &try_calls, &mut found);
                                     for f in found {
                                         found_all.push((f.rule.to_string(), rel.to_string(), f.line, f.msg));
                                     }
@@ -239,16 +240,19 @@ fn output_signature_findings(sem: &Sem) -> Vec<(String, u32, String)> {
     for name in STD_OUTPUTS {
         let mut bases = std::collections::BTreeMap::<String, Vec<String>>::new();
         let mut defs = Vec::<(String, String, u32, Vec<String>)>::new();
-        for ty in sem.objtree.iter_types() {
-            let Some(tp) = ty.get().procs.get(*name) else { continue };
-            let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for v in &tp.value {
-                let rel = sem.rel(v.location).to_string();
-                let params: Vec<String> = v.parameters.iter().map(|p| p.name.clone()).collect();
+        for ty in sem.m().types() {
+            let definitions = ty.proc_definitions(name);
+            if definitions.is_empty() {
+                continue;
+            }
+            let path = ty.path().to_string();
+            for v in definitions {
+                let rel = sem.rel(v.site());
+                let params: Vec<String> = v.parameters().iter().map(|p| p.name.clone()).collect();
                 if rel.starts_with("code/engine/") {
                     bases.insert(path.clone(), params);
                 } else {
-                    defs.push((path.clone(), rel, v.location.line, params));
+                    defs.push((path.clone(), rel, sem.line(v.site()), params));
                 }
             }
         }

@@ -13,12 +13,12 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use dreammaker::ast::{AssignOp, Expression, Term};
+use dm_syntax::Expr;
 
 use crate::dm::value_procs::{is_call, ValueProcs};
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
-use crate::lints::stored_refs::{collect_locals, path_of, Kinds, Place, ProcScope, Walker};
-use crate::sem::ast::{stmt_blocks, stmt_exprs, strip_parens, walk_expr};
+use crate::lints::stored_refs::{collect_locals, path_of, prefab_path, Kinds, Place, ProcScope, Walker};
+use crate::model::expr::{chain, form, literal, strip_groups, Form, Lit, Root};
 use crate::sem::decls::Decls;
 use crate::sem::procs::engine_line;
 use crate::sem::value_schema::{ValueKind, ValueSchemas};
@@ -48,37 +48,17 @@ const MAX_SHOWN: usize = 8;
 
 struct Untyped;
 
-fn walk_block(b: &dreammaker::ast::Block, f: &mut dyn FnMut(&Expression, u32)) {
-    use dreammaker::ast::Statement;
-    for st in b.iter() {
-        let line = st.location.line;
-        for e in stmt_exprs(&st.elem) {
-            f(e, line);
-        }
-        if let Statement::ForLoop { init, inc, .. } = &st.elem {
-            for s in [init, inc].into_iter().flatten() {
-                for e in stmt_exprs(s) {
-                    f(e, line);
-                }
-            }
-        }
-        for nb in stmt_blocks(&st.elem) {
-            walk_block(nb, f);
-        }
-    }
-}
-
 /// The type path literals an assignment's right side is, when it is one or a ternary of them (other expressions are trusted: the declaration is the
 /// author's claim and `schema_check` backs it at run time).
-fn path_literals(e: &Expression, out: &mut Vec<String>) {
-    match strip_parens(e) {
-        Expression::TernaryOp { if_, else_, .. } => {
-            path_literals(if_, out);
-            path_literals(else_, out);
+fn path_literals(e: &Expr, out: &mut Vec<String>) {
+    match form(strip_groups(e)) {
+        Form::Ternary { then_value, else_value, .. } => {
+            path_literals(then_value, out);
+            path_literals(else_value, out);
         }
-        Expression::Base { term, follow } if follow.is_empty() => {
-            if let Term::Prefab(p) = &term.elem {
-                out.push(p.path.iter().map(|(_, n)| format!("/{n}")).collect());
+        Form::Chain(c) if c.hops.is_empty() => {
+            if let Root::Prefab { path, .. } = &c.root {
+                out.push(prefab_path(path));
             }
         }
         _ => {}
@@ -86,10 +66,10 @@ fn path_literals(e: &Expression, out: &mut Vec<String>) {
 }
 
 /// The name of the local the value is, when it is a bare local or parameter.
-fn local_name<'e>(sc: &ProcScope, e: &'e Expression) -> Option<&'e str> {
-    let Expression::Base { term, follow } = strip_parens(e) else { return None };
-    match &term.elem {
-        Term::Ident(n) if follow.is_empty() && sc.locals.contains_key(n.as_str()) => Some(n.as_str()),
+fn local_name<'e>(sc: &ProcScope, e: &'e Expr) -> Option<&'e str> {
+    let c = chain(strip_groups(e))?;
+    match c.root {
+        Root::Ident(n) if c.hops.is_empty() && sc.locals.contains_key(n) => Some(n),
         _ => None,
     }
 }
@@ -139,42 +119,52 @@ fn scan(cx: &Cx, out: &mut Sink, lits_out: &mut Lits) {
         let root = &cx.tree.root;
         // (declaring type, var) -> (rule, every "file:line" that assigns it an offending value)
         let mut found: BTreeMap<(String, String), (&'static str, Vec<String>)> = BTreeMap::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for (_, tp) in ty.get().procs.iter() {
-                for v in tp.value.iter() {
-                    let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
+        for ty in sem.m().types() {
+            let owner = ty.path().to_string();
+            for name in ty.proc_names() {
+                for v in ty.proc_definitions(name) {
+                    let Some(code) = v.body() else { continue };
+                    let Some(rel) = sem.file_of(v.site()) else { continue };
+                    let rel = rel.as_str();
                     if cx.exempt(rel) {
                         continue;
                     }
                     let mut locals: HashMap<String, (String, Option<Place>)> = HashMap::new();
-                    for p in v.parameters.iter() {
-                        locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
+                    for p in v.parameters().iter() {
+                        locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
                     }
                     collect_locals(code, rel, &mut locals);
                     let sc = ProcScope { owner: &owner, locals };
-                    walk_block(code, &mut |e, line| {
-                        walk_expr(e, &mut |x| {
-                            let Expression::AssignOp { op: AssignOp::Assign, lhs, rhs } = x else { return };
+                    crate::model::walk::walk_block(code, &mut |vis, site| {
+                        let line = sem.line(Some(site));
+                        {
+                            let Form::Assign { op: "=", lhs, rhs } = &vis.form else { return };
                             let Some(Place::Member(o, name)) = w.place_of(&sc, lhs) else { return };
                             let Some(sig) = sem.var_decl(&o, &name) else { return };
                             if !sig.declared.is_empty() || sig.is_const || sig.file.is_empty() {
                                 return;
                             }
-                            let rhs = strip_parens(rhs);
-                            if matches!(rhs, Expression::Base { term, follow } if follow.is_empty() && matches!(term.elem, Term::List(_))) {
+                            let rhs = strip_groups(rhs);
+                            let rhs_chain = chain(rhs).filter(|c| c.hops.is_empty());
+                            if rhs_chain.as_ref().is_some_and(|c| matches!(c.root, Root::List(_))) {
                                 return;
                             }
                             {
                                 let ev = lits_out.entry((o.clone(), name.clone())).or_default();
                                 let mut lits = Vec::new();
                                 path_literals(rhs, &mut lits);
-                                match rhs {
-                                    _ if !lits.is_empty() => ev.paths.extend(lits),
-                                    Expression::Base { term, follow } if follow.is_empty() && matches!(term.elem, Term::String(_) | Term::InterpString(..)) => ev.texts += 1,
-                                    Expression::Base { term, follow } if follow.is_empty() && matches!(term.elem, Term::Int(_) | Term::Float(_)) => ev.nums += 1,
-                                    _ => ev.other += 1,
+                                let lit = rhs_chain.as_ref().and_then(|c| match &c.root {
+                                    Root::Literal(text) => Some(literal(text)),
+                                    _ => None,
+                                });
+                                if !lits.is_empty() {
+                                    ev.paths.extend(lits);
+                                } else if matches!(lit, Some(Lit::String(_) | Lit::Interp(_))) {
+                                    ev.texts += 1;
+                                } else if matches!(lit, Some(Lit::Int(_) | Lit::Float(_))) {
+                                    ev.nums += 1;
+                                } else {
+                                    ev.other += 1;
                                 }
                             }
                             // A var with a value schema is a value, never an entity: its assignments are checked against the schema instead.
@@ -217,7 +207,7 @@ fn scan(cx: &Cx, out: &mut Sink, lits_out: &mut Lits) {
                             if !slot.1.contains(&at) {
                                 slot.1.push(at);
                             }
-                        });
+                        }
                     });
                 }
             }

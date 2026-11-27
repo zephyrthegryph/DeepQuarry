@@ -14,11 +14,10 @@
 
 use std::collections::{BTreeSet, HashMap};
 
-use dreammaker::ast::{Expression, Follow, Term, VarTypeFlags};
-
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
-use crate::lints::stored_refs::{collect_locals, path_of, Place, ProcScope};
-use crate::sem::ast::{strip_parens, walk_block};
+use crate::lints::stored_refs::{collect_locals, path_of, prefab_path, Place, ProcScope};
+use crate::model::expr::{chain, strip_groups, Form, Hop, Root};
+use crate::model::walk::walk_block;
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
 use crate::tree::CODE_DM;
@@ -45,12 +44,13 @@ struct UntypedMember;
 /// Every name declared `static` or `global` on any type (the root included).
 pub(crate) fn static_names(sem: &Sem) -> BTreeSet<String> {
     let mut out = BTreeSet::new();
-    for ty in sem.objtree.iter_types() {
-        for (name, v) in ty.get().vars.iter() {
-            if let Some(d) = &v.declaration {
-                if d.var_type.flags.contains(VarTypeFlags::STATIC) {
-                    out.insert(name.to_string());
-                }
+    for ty in sem.m().types() {
+        for name in ty.var_names() {
+            if !ty.declares_var(&name) {
+                continue;
+            }
+            if ty.var_declaration(&name).is_some_and(|d| d.is_static()) {
+                out.insert(name);
             }
         }
     }
@@ -85,23 +85,22 @@ fn ident_type(sem: &Sem, sc: &ProcScope, n: &str) -> Option<String> {
 
 /// The static type of a chain's head term. Only declarations type a value: a call result (RETURN_TYPE included), an index, a ternary and an
 /// operator result have none.
-fn head_type(sem: &Sem, sc: &ProcScope, term: &Term) -> Option<String> {
-    match term {
-        Term::Ident(n) => ident_type(sem, sc, n),
-        Term::GlobalIdent(n) => declared(sem, "/", n),
-        Term::NewPrefab { prefab, .. } => Some(path_of(&prefab.path.iter().map(|(_, n)| n.to_string()).collect::<Vec<_>>())),
-        Term::Expr(inner) => match strip_parens(inner) {
-            Expression::Base { term, follow } => {
-                let mut cur = head_type(sem, sc, &term.elem);
-                for fo in follow.iter() {
-                    cur = match &fo.elem {
-                        Follow::Field(_, f) => cur.and_then(|c| declared(sem, &c, f)),
+fn head_type(sem: &Sem, sc: &ProcScope, root: &Root<'_>) -> Option<String> {
+    match root {
+        Root::Ident(n) => ident_type(sem, sc, n),
+        Root::NewPrefab { path, .. } => Some(prefab_path(path)),
+        Root::Group(inner) => match chain(strip_groups(inner)) {
+            Some(c) => {
+                let mut cur = head_type(sem, sc, &c.root);
+                for fo in c.hops.iter() {
+                    cur = match fo {
+                        Hop::Field { name: f, .. } => cur.and_then(|c| declared(sem, &c, f)),
                         _ => None,
                     };
                 }
                 cur
             }
-            _ => None,
+            None => None,
         },
         _ => None,
     }
@@ -121,28 +120,29 @@ impl Lint for UntypedMember {
         let statics = static_names(sem);
         let root = &cx.tree.root;
         let mut rows: Vec<(String, u32, String)> = Vec::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for (_, tp) in ty.get().procs.iter() {
-                for v in tp.value.iter() {
-                    let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
-                    if !rel.starts_with("code/") || cx.exempt(rel) {
+        for ty in sem.m().types() {
+            let owner = ty.path().to_string();
+            for pname in ty.proc_names() {
+                for v in ty.proc_definitions(pname) {
+                    let Some(code) = v.body() else { continue };
+                    let Some(rel) = sem.file_of(v.site()) else { continue };
+                    if !rel.starts_with("code/") || cx.exempt(&rel) {
                         continue;
                     }
                     let mut locals: HashMap<String, (String, Option<Place>)> = HashMap::new();
-                    for p in v.parameters.iter() {
-                        locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
+                    for p in v.parameters().iter() {
+                        locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
                     }
-                    collect_locals(code, rel, &mut locals);
+                    collect_locals(code, &rel, &mut locals);
                     let sc = ProcScope { owner: &owner, locals };
-                    walk_block(code, &mut |e, line| {
-                        let Expression::Base { term, follow } = e else { return };
-                        let mut cur = head_type(sem, &sc, &term.elem);
-                        for fo in follow.iter() {
-                            match &fo.elem {
-                                Follow::Field(_, f) => {
-                                    if cur.is_none() && statics.contains(f.as_str()) {
+                    walk_block(code, &mut |vis, site| {
+                        let Form::Chain(c) = &vis.form else { return };
+                        let line = sem.line(Some(site));
+                        let mut cur = head_type(sem, &sc, &c.root);
+                        for fo in c.hops.iter() {
+                            match fo {
+                                Hop::Field { name: f, .. } => {
+                                    if cur.is_none() && statics.contains(*f) {
                                         rows.push((rel.to_string(), line, f.to_string()));
                                     }
                                     cur = cur.and_then(|c| declared(sem, &c, f));

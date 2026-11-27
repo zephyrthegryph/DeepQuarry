@@ -10,7 +10,7 @@
 //! analyze codemod NAME --revert
 //! ```
 //!
-//! How a rewrite is found. The dreammaker parse (through [`crate::sem::Sem`]) reports every call of
+//! How a rewrite is found. The compiler's typed bodies (through [`crate::sem::Sem`]) report every call of
 //! the codemod's legacy forms with its line and column, and how many arguments it has. That decides
 //! WHAT is a call: a name in a comment, a string or a `PROC_REF(...)` is not one, and neither is
 //! a method with the same name. [`scan`] then finds the byte spans of the callee and each argument on
@@ -39,9 +39,11 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 
-use dreammaker::ast::{Expression, Statement, Term};
+use dm_syntax::{Expr, Statement};
 
-use crate::sem::ast::{stmt_blocks, stmt_exprs, walk_expr};
+use crate::model::expr::{Chain, Form, Root};
+use crate::model::walk::{stmt_blocks, stmt_exprs, stmts, walk_expr, walk_form, ForInit, Stmt, Visit};
+use crate::model::Site;
 use crate::sem::Sem;
 use crate::tree::{Plan, Tree};
 use scan::{CallNode, Span};
@@ -240,25 +242,27 @@ struct Cand {
 /// Every unscoped call of one of `names` in a proc body, with where the parser saw it.
 fn candidates(sem: &Sem, names: &[&str]) -> Vec<Cand> {
     let mut out: Vec<Cand> = Vec::new();
-    for ty in sem.objtree.iter_types() {
-        let t = ty.get();
-        let owner = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
-        for (pname, p) in &t.procs {
-            for value in &p.value {
-                let Some(code) = &*value.code else { continue };
-                let mut found: Vec<(dreammaker::Location, String, usize, bool)> = Vec::new();
-                walk_stmts(code, &mut |e, stmt_level| {
-                    if let Expression::Base { term, .. } = e {
-                        if let Term::Call(n, args) = &term.elem {
-                            if names.contains(&n.as_str()) {
-                                found.push((term.location, n.to_string(), args.len(), stmt_level));
+    for ty in sem.m().types() {
+        let owner = ty.path().to_string();
+        for pname in ty.proc_names() {
+            for value in ty.proc_definitions(pname) {
+                let Some(code) = value.body() else { continue };
+                let mut found: Vec<(Site, String, usize, bool)> = Vec::new();
+                walk_stmts(code, &mut |v, stmt_level| {
+                    if let (Form::Chain(c), Some(n)) = (&v.form, v.node) {
+                        if let Root::Call { name, args } = &c.root {
+                            if names.contains(name) {
+                                // The visit's site is where its node starts (absolute, an interpolated part's included); the term starts
+                                // where the chain's root does.
+                                let base = v.site.0 as usize - n.span.start;
+                                found.push((Site((base + c.root_expr.span.start) as u32), name.to_string(), args.len(), stmt_level));
                             }
                         }
                     }
                 });
-                for (loc, callee, argc, stmt_level) in found {
-                    let Some(rel) = sem.file_of(loc) else { continue };
-                    out.push(Cand { rel: rel.to_string(), line: loc.line, col: loc.column as u32, callee, argc, owner: owner.clone(), proc_name: pname.clone(), stmt_level });
+                for (site, callee, argc, stmt_level) in found {
+                    let Some((rel, line, col)) = sem.m().line_column(site) else { continue };
+                    out.push(Cand { rel, line, col, callee, argc, owner: owner.clone(), proc_name: pname.to_string(), stmt_level });
                 }
             }
         }
@@ -267,21 +271,53 @@ fn candidates(sem: &Sem, names: &[&str]) -> Vec<Cand> {
 }
 
 /// Every expression of a block with whether it is a whole expression statement (`foo(...)` on its own).
-fn walk_stmts<'a>(b: &'a dreammaker::ast::Block, f: &mut dyn FnMut(&'a Expression, bool)) {
-    for st in b.iter() {
-        let whole = matches!(&st.elem, Statement::Expr(e) if matches!(e, Expression::Base { follow, .. } if follow.is_empty()));
-        for e in stmt_exprs(&st.elem) {
-            let top = e as *const Expression;
-            walk_expr(e, &mut |x| f(x, whole && std::ptr::eq(x as *const Expression, top)));
-        }
-        if let Statement::ForLoop { init, inc, .. } = &st.elem {
-            for s in [init, inc].into_iter().flatten() {
-                for e in stmt_exprs(s) {
-                    walk_expr(e, &mut |x| f(x, false));
+fn walk_stmts(b: &[Statement], f: &mut dyn FnMut(&Visit<'_>, bool)) {
+    for st in stmts(b) {
+        let at = st.site;
+        let whole = matches!(&st.stmt, Stmt::Expr(Form::Chain(c), Some(_)) if c.hops.is_empty());
+        match &st.stmt {
+            Stmt::Expr(fm @ Form::Assign { .. }, None) => walk_form(fm.clone(), None, at, 0, &mut |v| f(v, false)),
+            // `del x` reads its operand as a parenthesized expression.
+            Stmt::Del(e) => {
+                let group = Form::Chain(Chain { root: Root::Group(e), root_expr: e, hops: Vec::new() });
+                walk_form(group, None, Site(e.span.start as u32), 0, &mut |v| f(v, false));
+            }
+            // A sized list with no value starts as `new /list(...)`.
+            Stmt::Vars(vs) => {
+                for d in vs {
+                    match d.value {
+                        Some(e) => walk_expr(e, &mut |v| f(v, false)),
+                        None => {
+                            if let Some(init) = d.initializer() {
+                                walk_form(init, None, at, 0, &mut |v| f(v, false));
+                            }
+                        }
+                    }
                 }
             }
+            _ => {}
         }
-        for nb in stmt_blocks(&st.elem) {
+        if !matches!(st.stmt, Stmt::Del(_) | Stmt::Vars(_)) {
+            for e in stmt_exprs(&st.stmt) {
+                let top = e as *const Expr;
+                walk_expr(e, &mut |v| f(v, whole && v.node.is_some_and(|n| std::ptr::eq(n as *const Expr, top))));
+            }
+        }
+        if let Stmt::ForLoop { init, inc, .. } = &st.stmt {
+            match init {
+                Some(ForInit::Var(d)) => {
+                    if let Some(e) = d.value {
+                        walk_expr(e, &mut |v| f(v, false));
+                    }
+                }
+                Some(ForInit::Expr(e)) => walk_expr(e, &mut |v| f(v, false)),
+                None => {}
+            }
+            if let Some(e) = inc {
+                walk_expr(e, &mut |v| f(v, false));
+            }
+        }
+        for nb in stmt_blocks(&st.stmt) {
             walk_stmts(nb, f);
         }
     }

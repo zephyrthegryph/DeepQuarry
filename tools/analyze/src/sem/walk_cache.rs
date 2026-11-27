@@ -362,10 +362,13 @@ fn digest_dep(sem: &Sem, d: &Dep) -> u64 {
     match d {
         Dep::Proc(owner, name) => {
             let Some(t) = sem.ty(owner) else { return 2 };
-            let Some(tp) = t.get().procs.get(name.as_str()) else { return 3 };
+            let defs = t.proc_definitions(name);
+            if defs.is_empty() {
+                return 3;
+            }
             let mut h = blake3::Hasher::new();
-            for v in &tp.value {
-                h.update(&sem.location_key(v.location).to_le_bytes());
+            for v in &defs {
+                h.update(&sem.site_key(v.site()).to_le_bytes());
             }
             u64::from_le_bytes(h.finalize().as_bytes()[..8].try_into().unwrap()) | 1
         }

@@ -317,24 +317,25 @@ fn window_var_of(part: &str) -> Option<String> {
 /// Every type at or below `owner` whose `var` has a text value (its own or an ancestor's): the window each opens. A type whose value is null
 /// opens nothing (an abstract base such as the bare appliance).
 fn resolve_window_var(sem: &crate::sem::Sem, owner: &str, var: &str) -> Vec<(String, String)> {
-    use dreammaker::constants::Constant;
+    use crate::model::consts::Value;
+    let folded = sem.m().folded();
     let mut out = Vec::new();
-    for t in sem.objtree.iter_types() {
-        let path = t.get().path.clone();
-        if path.is_empty() || !sem.is_subtype(&path, owner) {
+    for t in sem.m().types() {
+        let path = t.path().to_string();
+        if path == "/" || !sem.is_subtype(&path, owner) {
             continue;
         }
         let mut cur = Some(t);
         let mut value = None;
         while let Some(c) = cur {
-            if let Some(v) = c.get().vars.get(var) {
-                value = Some(match &v.value.constant {
-                    Some(Constant::String(s)) => Some(s.to_string()),
+            if c.has_own_var(var) {
+                value = Some(match folded.values.get(&(c.id, var.to_string())).cloned().flatten() {
+                    Some(Value::String(s)) => Some(s),
                     _ => None,
                 });
                 break;
             }
-            cur = c.parent_type();
+            cur = c.parent();
         }
         if let Some(Some(name)) = value {
             out.push((path, name));

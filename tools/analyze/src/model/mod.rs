@@ -5,17 +5,15 @@
 //! offset of its item (`ColdFrontend::declaration_spans`), mapped to a file and line only when asked; a body is the compiler's own
 //! typed body (`dm_syntax::Statement`), parsed once per revision.
 //!
-//! Until the cutover the view is built beside the converted dreammaker tree (`DQ_ANALYZE_PARSE=dmbc`); [`parity`] compares the two
-//! (`analyze sem model-parity`), the converted tree being the oracle for what every lint reads today.
+//! The view was proven against the converted dreammaker tree it replaced (`analyze sem model-parity`, removed with the converter): every
+//! type, parent, declaration, site, initializer, folded constant, proc resolution and all 120472 body walks identical
+//! (doc/rewrite/proposals/lean_unified.md, 2a).
 
-pub mod body_parity;
 pub mod builtins;
 pub mod consts;
 pub mod procs;
 pub mod expr;
 pub mod walk;
-pub mod parity;
-pub mod value_parity;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -198,6 +196,19 @@ impl Model {
             }
             f
         })
+    }
+
+    /// Every source file of the revision (repo-relative), in include order, each once.
+    pub fn file_paths(&self) -> Vec<String> {
+        let mut seen = std::collections::HashSet::new();
+        let mut out = Vec::new();
+        for o in self.rev.plan.occurrences.iter() {
+            let rel = self.rel(&o.semantic_path);
+            if seen.insert(rel.clone()) {
+                out.push(rel);
+            }
+        }
+        out
     }
 
     pub fn frontend(&self) -> &ColdFrontend {
@@ -495,6 +506,15 @@ impl<'m> Member<'m> {
             out.push(Param { name: "...".into(), type_path: Vec::new(), value: None, as_types: None, in_list: None, site: Site(base as u32) });
         }
         out
+    }
+
+    /// `proc/f() as text|num`: the input types the header's return clause names (none for a type path or no clause).
+    pub fn return_input_types(&self) -> Option<Vec<String>> {
+        let text = self.item_text()?;
+        let (_, _, after) = signature_parts(text)?;
+        let after = after.lines().next().unwrap_or("");
+        let rest = after.trim().strip_prefix("as")?.trim();
+        (!rest.is_empty() && !rest.starts_with('/')).then(|| rest.split('|').map(|t| t.trim().to_owned()).filter(|t| !t.is_empty()).collect())
     }
 
     /// `proc/f() as /obj/item`: the return type path the header names.

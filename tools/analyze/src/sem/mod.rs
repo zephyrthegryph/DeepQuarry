@@ -37,11 +37,10 @@ pub mod ui_windows;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
-use dreammaker::objtree::{ObjectTree, ProcRef, TypeRef};
-use dreammaker::ast::{Block, Parameter, VarTypeFlags};
-use dreammaker::Location;
-
+use crate::model::procs::Proc;
+use crate::model::{Model, Param, Site, Ty};
 use crate::tree::{Tree, CODE_DM};
 
 /// A var's declaration as the semantic layer reports it.
@@ -79,61 +78,74 @@ pub fn is_object_type(declared: &str) -> bool {
 pub struct ProcBody<'a> {
     pub owner: String,
     pub name: String,
-    pub params: &'a [Parameter],
-    pub code: Option<&'a Block>,
+    pub params: Arc<Vec<Param>>,
+    pub code: Option<&'a [dm_syntax::Statement]>,
     pub file: String,
     pub line: u32,
     pub builtin: bool,
+    pub proc: Proc<'a>,
+}
+
+/// The compiler's front end for a `.dme`: `dmbc` registers the provider at startup (its daemon's retained session of the root, or a cold
+/// build). The semantic model reads it through [`crate::model::Model`].
+pub type FrontendProvider = fn(dme: &Path) -> Result<dm_tree::frontend::FrontendRevision, String>;
+
+static FRONTEND_PROVIDER: std::sync::OnceLock<FrontendProvider> = std::sync::OnceLock::new();
+
+/// Registers the front end the model is built from. The first registration wins.
+pub fn register_frontend_provider(provider: FrontendProvider) {
+    let _ = FRONTEND_PROVIDER.set(provider);
+}
+
+fn provided_frontend(dme: &Path) -> Result<dm_tree::frontend::FrontendRevision, String> {
+    let provider = FRONTEND_PROVIDER.get().ok_or("the semantic model needs the compiler's front end: run it as `dmbc analyze`")?;
+    let started = std::time::Instant::now();
+    let rev = provider(dme);
+    if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() || dq_hostio::var("DQ_ANALYZE_PARSE_TRACE").is_ok() {
+        eprintln!("analyze: front end for the model in {:.1?}", started.elapsed());
+    }
+    rev
 }
 
 pub struct Sem {
-    pub objtree: ObjectTree,
-    /// `FileId` -> repo-relative path (built from the locations the tree carries).
-    files: HashMap<dreammaker::FileId, String>,
+    model: Model,
     pub root: PathBuf,
-    /// Parse errors the dreammaker front end raised (not findings: informational).
+    /// Diagnostics the front end raised (not findings: informational).
     pub errors: Vec<String>,
-    /// file -> sorted (line, owner type path) of every var/proc definition, for locating the owner
-    /// of a text marker by its line.
+    /// file -> sorted (line, owner type path, name) of every var/proc definition, for locating the owner of a text marker by its line.
     def_index: HashMap<String, Vec<(u32, String, String)>>,
-    /// Files whose definitions (locations, bodies) the analysis consulted: the footprint a cached
-    /// result depends on (see `sem::incremental`). Every file-attributed answer goes through
-    /// [`Sem::rel`] or the def index, which record here.
-    /// type path -> repo-relative file of the type's location.
-    type_loc: HashMap<String, String>,
+    /// type path -> repo-relative file of the type's first block.
+    pub(crate) type_loc: HashMap<String, String>,
     pub(crate) layering_type_defs: HashMap<String, Vec<String>>,
     pub(crate) layering_owner_defs: HashMap<String, Vec<String>>,
-    touched: std::sync::Mutex<std::collections::HashSet<dreammaker::FileId>>,
+    /// Files whose definitions (locations, bodies) the analysis consulted: the footprint a cached result depends on (see
+    /// `sem::incremental`). Every file-attributed answer goes through [`Sem::rel`] or the def index, which record here.
     touched_rel: std::sync::Mutex<std::collections::HashSet<String>>,
     /// Built from the real `.dme` (not a partial or fixture model): its walks may be kept between runs (`walk_cache`).
     full: bool,
-    /// The macro environment ([`model_store::environment`]) and each file's content key: a proc body digests as its file's key.
+    /// The front end's inputs (every file's path and bytes, in include order) and each file's content key: a proc body digests as its
+    /// file's key.
     env_key: u128,
-    file_keys: HashMap<dreammaker::FileId, u128>,
+    file_keys: HashMap<String, u128>,
     structure: std::sync::OnceLock<u128>,
     globals: std::sync::OnceLock<globals::GlobalIndex>,
     writes: std::sync::OnceLock<reads::WriteIndex>,
-    /// The compiler front end the model came from (the dmbc provider), and the analysis view over it, built when first asked.
-    native: Option<dm_tree::frontend::FrontendRevision>,
-    model: std::sync::OnceLock<Option<crate::model::Model>>,
 }
 
 impl Sem {
-    /// The analysis view over the compiler's front end (`crate::model`), when the model came from it (`DQ_ANALYZE_PARSE=dmbc`).
-    pub fn model(&self) -> Option<&crate::model::Model> {
-        self.model.get_or_init(|| self.native.clone().map(|rev| crate::model::Model::new(rev, &self.root))).as_ref()
+    /// The analysis view over the compiler's front end.
+    pub fn m(&self) -> &Model {
+        &self.model
     }
 
-    /// Parses the environment. A tree with a non-empty `deepquarry.dme` uses it (include order
-    /// matters for define visibility); anything else (a fixture) gets a synthesized `.dme` that
-    /// includes every `code/**/*.dm` in path order.
+    /// Builds the model. A tree with a non-empty `deepquarry.dme` uses it (include order matters for define visibility); anything else
+    /// (a fixture) gets a synthesized `.dme` that includes every `code/**/*.dm` in path order.
     pub fn build(root: &Path, tree: &Tree) -> Result<Sem, String> {
         Sem::build_with(root, tree, None)
     }
 
-    /// A model of only `files` (repo-relative) plus every `code/__defines/**` file for macros: the
-    /// cheap model per-proc checks use when only a few files matter. Types the other files
-    /// declare are absent.
+    /// A model of only `files` (repo-relative) plus every `code/__defines/**` file for macros: the cheap model per-proc checks use when
+    /// only a few files matter. Types the other files declare are absent.
     pub fn build_partial(root: &Path, tree: &Tree, files: &[String]) -> Result<Sem, String> {
         Sem::build_with(root, tree, Some(files))
     }
@@ -181,134 +193,118 @@ impl Sem {
             (p, Some(dir))
         };
         let t_build = std::time::Instant::now();
-        let parsed = if real { model_store::obtain(root, tree, &dme_path)? } else { parse_dme(&dme_path, &[], None)? };
-        let model_store::Parsed { objtree, files: file_list, errors, env, structure, native, .. } = parsed;
-        let env_key = if real { env.unwrap_or_else(|| model_store::environment(tree, root, &dme_path, &file_list)) } else { 0 };
+        let rev = provided_frontend(&dme_path);
+        if let Some(dir) = _keep {
+            let _ = std::fs::remove_dir_all(dir);
+        }
+        let rev = rev?;
+        let model = Model::new(rev, root);
         let t_parsed = t_build.elapsed();
-        let mut files: HashMap<dreammaker::FileId, String> = HashMap::new();
+        // What a file's text says decides its key; the files in include order and their keys decide the environment.
+        let mut file_keys: HashMap<String, u128> = HashMap::new();
+        let mut env = blake3::Hasher::new();
+        for rel in model.file_paths() {
+            let key = tree.get(&rel).map(|f| f.hash).unwrap_or(0);
+            env.update(rel.as_bytes());
+            env.update(&key.to_le_bytes());
+            file_keys.insert(rel, key);
+        }
+        let env_key = if real { u128::from_le_bytes(env.finalize().as_bytes()[..16].try_into().unwrap()) } else { 0 };
+        let line = |site: Option<Site>| site.and_then(|s| model.line(s));
         let mut def_index: HashMap<String, Vec<(u32, String, String)>> = HashMap::new();
-        let rel_of = |loc: Location, files: &mut HashMap<dreammaker::FileId, String>| -> Option<String> {
-            if loc.is_builtins() {
-                return None;
-            }
-            let r = files
-                .entry(loc.file)
-                .or_insert_with(|| crate::util::rel_slash(&file_list.get_path(loc.file).to_path_buf(), root))
-                .clone();
-            Some(r)
-        };
         let mut type_loc: HashMap<String, String> = HashMap::new();
-        for ty in objtree.iter_types() {
-            let t = ty.get();
-            let path = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
-            if let Some(r) = rel_of(t.location, &mut files) {
-                type_loc.insert(path.clone(), r);
+        let mut owner_locations: Vec<(String, Vec<String>)> = Vec::new();
+        for ty in model.types() {
+            let path = ty.path().to_string();
+            if let Some((file, _)) = line(ty.site()) {
+                type_loc.insert(path.clone(), file);
             }
-            for (_n, v) in &t.vars {
-                if let Some(d) = &v.declaration {
-                    if let Some(r) = rel_of(d.location, &mut files) {
-                        def_index.entry(r).or_default().push((d.location.line, path.clone(), _n.clone()));
+            let mut owners: Vec<String> = Vec::new();
+            for name in ty.var_names() {
+                let members: Vec<_> = ty.own_vars_named(&name).collect();
+                if let Some(d) = members.iter().find(|m| m.declares()) {
+                    if let Some((file, l)) = line(d.site()) {
+                        def_index.entry(file).or_default().push((l, path.clone(), name.clone()));
+                    }
+                }
+                // The var's value (its last assignment) and its declaration on this type.
+                let value = members.last().and_then(|m| line(m.site()));
+                let declaration = members.iter().find(|m| m.declares()).and_then(|m| line(m.site()));
+                for (file, _) in value.into_iter().chain(declaration) {
+                    if tree.get(&file).is_some() {
+                        owners.push(file);
                     }
                 }
             }
-            for (_n, p) in &t.procs {
-                for value in &p.value {
-                    if let Some(r) = rel_of(value.location, &mut files) {
-                        def_index.entry(r).or_default().push((value.location.line, path.clone(), _n.clone()));
+            for name in ty.proc_names() {
+                for p in ty.proc_definitions(name) {
+                    if let Some((file, l)) = line(p.site()) {
+                        def_index.entry(file).or_default().push((l, path.clone(), name.to_string()));
                     }
                 }
             }
+            owner_locations.push((path, owners));
         }
         for v in def_index.values_mut() {
             v.sort();
         }
-        if let Some(dir) = _keep {
-            let _ = std::fs::remove_dir_all(dir);
-        }
         let t_indexed = t_build.elapsed();
-        let mut layering_type_defs: HashMap<String, Vec<String>> = HashMap::new();
-        let mut layering_owner_defs: HashMap<String, Vec<String>> = HashMap::new();
-        let capability_type = regex::Regex::new(r"^CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*)").unwrap();
-        let capability_def = regex::Regex::new(r"^CAPABILITY_DEF\s*\(\s*([A-Za-z_]\w*)\s*,").unwrap();
-        // What a file's text says (cached by content, `incr::facts`), replayed against this model in file order (the lists keep the order a
-        // sequential scan gave them): only an edited file is read and scanned again.
-        let code_files = tree.select(&CODE_DM);
-        let events: Vec<Vec<LayerEvent>> = crate::incr::facts("sem-layering", &code_files, |file| layering_events(file.code().text.as_str(), &capability_type, &capability_def));
-        let scanned: Vec<(Vec<String>, Vec<String>)> = par_map(&events, |evs| {
-            let mut owners: Vec<String> = Vec::new();
-            let mut types: Vec<String> = Vec::new();
-            let mut parents: Vec<(usize, String)> = Vec::new();
-            for e in evs {
-                match e {
-                    LayerEvent::Owner(owner) => {
-                        if objtree.find(owner).is_some() {
-                            owners.push(owner.clone());
-                        }
-                    }
-                    LayerEvent::Type(t) => types.push(t.clone()),
-                    LayerEvent::Indent(indent) => {
-                        while parents.last().is_some_and(|(n, _)| *n >= *indent as usize) { parents.pop(); }
-                    }
-                    LayerEvent::Header(indent, header) => {
-                        let path = if header.starts_with('/') { header.clone() }
-                            else if let Some((_, parent)) = parents.last() { format!("{}/{}", parent, header) }
-                            else { continue; };
-                        if path.split('/').any(|part| matches!(part, "var" | "proc" | "verb")) { continue; }
-                        if objtree.find(&path).is_some() {
-                            types.push(path.clone());
-                            parents.push((*indent as usize, path));
-                        }
-                    }
-                }
-            }
-            (owners, types)
-        });
-        for (file, (owners, types)) in code_files.iter().zip(scanned) {
-            for o in owners {
-                layering_owner_defs.entry(o).or_default().push(file.rel.clone());
-            }
-            for t in types {
-                layering_type_defs.entry(t).or_default().push(file.rel.clone());
-            }
-        }
-        for ty in objtree.iter_types() {
-            for var in ty.get().vars.values() {
-                let locations = std::iter::once(var.value.location)
-                    .chain(var.declaration.as_ref().map(|declaration| declaration.location));
-                for location in locations {
-                    if let Some(file) = rel_of(location, &mut files).filter(|file| tree.get(file).is_some()) {
-                        layering_owner_defs.entry(ty.get().path.clone()).or_default().push(file);
-                    }
-                }
+        let (layering_type_defs, mut layering_owner_defs) = layering_definitions(tree, &model);
+        for (path, files) in owner_locations {
+            if !files.is_empty() {
+                layering_owner_defs.entry(path).or_default().extend(files);
             }
         }
         // Synthetic DME locations are parser scaffolding, never type definitions.
         for (file, definitions) in &def_index {
-            if tree.get(file).is_none() { continue; }
+            if tree.get(file).is_none() {
+                continue;
+            }
             for (_, owner, _) in definitions {
                 layering_owner_defs.entry(owner.clone()).or_default().push(file.clone());
             }
         }
         if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
-            eprintln!("analyze: sem build: parse {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
+            eprintln!("analyze: sem build: front end {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
         }
-        let file_keys: HashMap<dreammaker::FileId, u128> = files.iter().filter_map(|(id, rel)| tree.get(rel).map(|f| (*id, f.hash))).collect();
-        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), globals: Default::default(), writes: Default::default(), native, model: Default::default() })
+        let errors = Vec::new();
+        Ok(Sem {
+            model,
+            root: root.to_path_buf(),
+            errors,
+            def_index,
+            type_loc,
+            layering_type_defs,
+            layering_owner_defs,
+            touched_rel: Default::default(),
+            full: real,
+            env_key,
+            file_keys,
+            structure: Default::default(),
+            globals: Default::default(),
+            writes: Default::default(),
+        })
     }
 
-    pub fn rel(&self, loc: Location) -> &str {
-        if !loc.is_builtins() {
-            self.touched.lock().unwrap().insert(loc.file);
+    /// The repo-relative file `site` is in (`""` for none), recorded in the footprint.
+    pub fn rel(&self, site: Option<Site>) -> String {
+        match site.and_then(|s| self.model.line(s)) {
+            Some((file, _)) => {
+                self.touch_rel(&file);
+                file
+            }
+            None => String::new(),
         }
-        self.files.get(&loc.file).map(|s| s.as_str()).unwrap_or("")
     }
 
-    /// The file a location is in, without recording it in the footprint.
-    pub(crate) fn file_of(&self, loc: Location) -> Option<&str> {
-        if loc.is_builtins() {
-            return None;
-        }
-        self.files.get(&loc.file).map(|s| s.as_str())
+    /// The file and line `site` is at, without recording it in the footprint.
+    pub(crate) fn file_of(&self, site: Option<Site>) -> Option<String> {
+        site.and_then(|s| self.model.line(s)).map(|(f, _)| f)
+    }
+
+    /// The line `site` is on (0 for none).
+    pub fn line(&self, site: Option<Site>) -> u32 {
+        site.and_then(|s| self.model.line(s)).map_or(0, |(_, l)| l)
     }
 
     fn touch_rel(&self, file: &str) {
@@ -317,35 +313,27 @@ impl Sem {
 
     /// Every file the analysis consulted so far (repo-relative, sorted).
     pub fn footprint(&self) -> Vec<String> {
-        let mut out: std::collections::BTreeSet<String> = self.touched_rel.lock().unwrap().iter().cloned().collect();
-        for id in self.touched.lock().unwrap().iter() {
-            if let Some(r) = self.files.get(id) {
-                out.insert(r.clone());
-            }
-        }
+        let out: std::collections::BTreeSet<String> = self.touched_rel.lock().unwrap().iter().cloned().collect();
         out.into_iter().collect()
     }
 
-    pub fn ty(&self, path: &str) -> Option<TypeRef<'_>> {
-        if path == "/" || path.is_empty() {
-            return Some(self.objtree.root());
+    pub fn ty(&self, path: &str) -> Option<Ty<'_>> {
+        if path.is_empty() {
+            return self.model.ty("/");
         }
-        self.objtree.find(path)
+        self.model.ty(path)
     }
 
     /// `child` is `parent` or one of its subtypes.
     pub fn is_subtype(&self, child: &str, parent: &str) -> bool {
         let Some(c) = self.ty(child) else { return false };
         let Some(p) = self.ty(parent) else { return false };
-        c.is_subtype_of(p.get())
+        c.is_subtype_of(&p)
     }
 
     /// The parent type's path (the `parent_type` chain, not the path nesting).
     pub fn parent_of(&self, path: &str) -> Option<String> {
-        let t = self.ty(path)?;
-        let p = t.parent_type()?;
-        let pp = &p.get().path;
-        Some(if pp.is_empty() { "/".to_string() } else { pp.clone() })
+        Some(self.ty(path)?.parent()?.path().to_string())
     }
 
     /// A var visible on `ty` (declared on it or an ancestor), with its declared type.
@@ -364,7 +352,7 @@ impl Sem {
         self.writes.get_or_init(|| reads::WriteIndex::build(self))
     }
 
-    /// The macro environment's key (`model_store::environment`; 0 for a model not built from the real `.dme`).
+    /// The front end's environment key (0 for a model not built from the real `.dme`).
     pub fn env_key(&self) -> u128 {
         self.env_key
     }
@@ -374,16 +362,14 @@ impl Sem {
         self.full && self.env_key != 0
     }
 
-    /// A digest of where `loc` is: its file's content in this macro environment (a location in an unchanged file is unchanged).
-    pub(crate) fn location_key(&self, loc: Location) -> u128 {
-        if loc.is_builtins() {
-            return 1;
-        }
-        let k = self.file_keys.get(&loc.file).copied().unwrap_or(2);
+    /// A digest of where `site` is: its file's content in this environment (a site in an unchanged file is unchanged).
+    pub(crate) fn site_key(&self, site: Option<Site>) -> u128 {
+        let Some(file) = self.file_of(site) else { return 1 };
+        let k = self.file_keys.get(&file).copied().unwrap_or(2);
         let mut h = blake3::Hasher::new();
         h.update(&self.env_key.to_le_bytes());
         h.update(&k.to_le_bytes());
-        h.update(self.files.get(&loc.file).map(|s| s.as_str()).unwrap_or("").as_bytes());
+        h.update(file.as_bytes());
         u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
     }
 
@@ -392,34 +378,34 @@ impl Sem {
     /// enters and the var declarations it looks up.
     pub fn structure_digest(&self) -> u128 {
         *self.structure.get_or_init(|| {
+            let folded = self.model.folded();
             let mut h = blake3::Hasher::new();
-            for t in self.objtree.iter_types() {
-                let ty = t.get();
-                h.update(ty.path.as_bytes());
+            for ty in self.model.types() {
+                h.update(ty.path().as_bytes());
                 h.update(b"<");
-                if let Some(p) = t.parent_type() {
-                    h.update(p.get().path.as_bytes());
+                if let Some(p) = ty.parent() {
+                    h.update(p.path().as_bytes());
                 }
-                for (name, v) in &ty.vars {
+                for name in ty.var_names() {
                     h.update(b"|v");
                     h.update(name.as_bytes());
-                    if let Some(d) = &v.declaration {
-                        h.update(format!("{}:{}:{:?}", d.var_type.flags.bits(), d.var_type.type_path.join("/"), d.var_type.input_type).as_bytes());
+                    if let Some(d) = ty.var_declaration(&name).filter(|_| ty.declares_var(&name)) {
+                        h.update(format!("{}:{}", d.flags, d.declared).as_bytes());
                     }
-                    h.update(format!("={:?}", v.value.constant).as_bytes());
+                    h.update(format!("={:?}", folded.values.get(&(ty.id, name.clone()))).as_bytes());
                 }
-                for (name, p) in &ty.procs {
+                for name in ty.proc_names() {
                     h.update(b"|p");
                     h.update(name.as_bytes());
-                    for value in &p.value {
+                    for p in ty.proc_definitions(name) {
                         h.update(b"(");
-                        for prm in value.parameters.iter() {
-                            h.update(format!("{}:{}:{}:{:?},", prm.name, prm.var_type.flags.bits(), prm.var_type.type_path.join("/"), prm.input_type).as_bytes());
+                        for prm in p.parameters().iter() {
+                            h.update(format!("{}:{}:{:?},", prm.name, prm.declared(), prm.as_types).as_bytes());
                         }
-                        h.update(if value.code.has_body() { b")b" } else { b")n" });
-                    }
-                    if let Some(d) = &p.declaration {
-                        h.update(format!("d{:?}{}{:?}", d.kind, d.flags.bits(), d.return_type).as_bytes());
+                        h.update(if p.body().is_some() { b")b" } else { b")n" });
+                        if p.declares() {
+                            h.update(format!("d{:?}{:?}", p.declared_verb(), p.member().and_then(|m| m.return_type_path())).as_bytes());
+                        }
                     }
                 }
                 h.update(b"\n");
@@ -431,57 +417,42 @@ impl Sem {
     /// [`var_decl`](Self::var_decl) without recording a walk dependency.
     pub fn var_decl_unrecorded(&self, ty: &str, name: &str) -> Option<VarSig> {
         let t = self.ty(ty)?;
-        let d = t.get_var_declaration(name)?;
-        let flags = d.var_type.flags;
-        let declared = if d.var_type.type_path.is_empty() {
-            String::new()
-        } else {
-            format!("/{}", d.var_type.type_path.join("/"))
-        };
-        Some(VarSig {
-            declared,
-            is_static: flags.contains(VarTypeFlags::STATIC),
-            is_const: flags.contains(VarTypeFlags::CONST),
-            is_tmp: flags.contains(VarTypeFlags::TMP),
-            file: self.rel(d.location).to_string(),
-            line: d.location.line,
-        })
+        let d = t.var_declaration(name)?;
+        // A builtin sits on line 1 of no file.
+        let (file, line) = if d.builtin { (String::new(), 1) } else { (self.rel(d.site), self.line(d.site)) };
+        Some(VarSig { declared: d.declared.clone(), is_static: d.is_static(), is_const: d.is_const(), is_tmp: d.is_tmp(), file, line })
     }
 
     /// The type that declares `name` (walking parents), for classification by owner.
     pub fn var_owner(&self, ty: &str, name: &str) -> Option<String> {
         let mut cur = self.ty(ty)?;
         loop {
-            if cur.get().vars.get(name).map(|v| v.declaration.is_some()).unwrap_or(false) {
-                let p = &cur.get().path;
-                return Some(if p.is_empty() { "/".to_string() } else { p.clone() });
+            if cur.declares_var(name) {
+                return Some(cur.path().to_string());
             }
-            cur = cur.parent_type()?;
+            cur = cur.parent()?;
         }
     }
 
-    pub fn proc_ref(&self, ty: &str, name: &str) -> Option<ProcRef<'_>> {
-        self.ty(ty)?.get_proc(name)
+    pub fn proc_ref(&self, ty: &str, name: &str) -> Option<Proc<'_>> {
+        self.ty(ty)?.proc(name)
     }
 
-    pub fn global_proc(&self, name: &str) -> Option<ProcRef<'_>> {
-        self.objtree.root().get_proc(name)
+    pub fn global_proc(&self, name: &str) -> Option<Proc<'_>> {
+        self.model.ty("/")?.proc(name)
     }
 
-    pub fn proc_body<'a>(&'a self, p: ProcRef<'a>) -> ProcBody<'a> {
-        let v = p.get();
-        let owner = {
-            let path = &p.ty().get().path;
-            if path.is_empty() { "/".to_string() } else { path.clone() }
-        };
+    pub fn proc_body<'a>(&'a self, p: Proc<'a>) -> ProcBody<'a> {
+        let (file, line) = if p.is_builtin() { (String::new(), 1) } else { (self.rel(p.site()), self.line(p.site())) };
         ProcBody {
-            owner,
+            owner: p.owner().path().to_string(),
             name: p.name().to_string(),
-            params: &v.parameters,
-            code: v.code.as_ref(),
-            file: self.rel(v.location).to_string(),
-            line: v.location.line,
+            params: p.parameters(),
+            code: p.body(),
+            file,
+            line,
             builtin: p.is_builtin(),
+            proc: p,
         }
     }
 
@@ -509,10 +480,69 @@ impl Sem {
 
     /// Paths of every type, sorted.
     pub fn type_paths(&self) -> Vec<String> {
-        let mut v: Vec<String> = self.objtree.iter_types().map(|t| if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() }).collect();
+        let mut v: Vec<String> = self.model.types().map(|t| t.path().to_string()).collect();
         v.sort();
         v
     }
+}
+
+/// The CAPABILITY_TYPE / CAPABILITY_DEF and type-block headers each file's text names, replayed against the model: the files that
+/// define each type (by its blocks) and each owner (by its capabilities), for the layering check.
+fn layering_definitions(tree: &Tree, model: &Model) -> (HashMap<String, Vec<String>>, HashMap<String, Vec<String>>) {
+    let mut layering_type_defs: HashMap<String, Vec<String>> = HashMap::new();
+    let mut layering_owner_defs: HashMap<String, Vec<String>> = HashMap::new();
+    let capability_type = regex::Regex::new(r"^CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*)").unwrap();
+    let capability_def = regex::Regex::new(r"^CAPABILITY_DEF\s*\(\s*([A-Za-z_]\w*)\s*,").unwrap();
+    // What a file's text says (cached by content, `incr::facts`), replayed against this model in file order (the lists keep the order a
+    // sequential scan gave them): only an edited file is read and scanned again.
+    let code_files = tree.select(&CODE_DM);
+    let events: Vec<Vec<LayerEvent>> = crate::incr::facts("sem-layering", &code_files, |file| layering_events(file.code().text.as_str(), &capability_type, &capability_def));
+    let scanned: Vec<(Vec<String>, Vec<String>)> = par_map(&events, |evs| {
+        let mut owners: Vec<String> = Vec::new();
+        let mut types: Vec<String> = Vec::new();
+        let mut parents: Vec<(usize, String)> = Vec::new();
+        for e in evs {
+            match e {
+                LayerEvent::Owner(owner) => {
+                    if model.ty(owner).is_some() {
+                        owners.push(owner.clone());
+                    }
+                }
+                LayerEvent::Type(t) => types.push(t.clone()),
+                LayerEvent::Indent(indent) => {
+                    while parents.last().is_some_and(|(n, _)| *n >= *indent as usize) {
+                        parents.pop();
+                    }
+                }
+                LayerEvent::Header(indent, header) => {
+                    let path = if header.starts_with('/') {
+                        header.clone()
+                    } else if let Some((_, parent)) = parents.last() {
+                        format!("{}/{}", parent, header)
+                    } else {
+                        continue;
+                    };
+                    if path.split('/').any(|part| matches!(part, "var" | "proc" | "verb")) {
+                        continue;
+                    }
+                    if model.ty(&path).is_some() {
+                        types.push(path.clone());
+                        parents.push((*indent as usize, path));
+                    }
+                }
+            }
+        }
+        (owners, types)
+    });
+    for (file, (owners, types)) in code_files.iter().zip(scanned) {
+        for o in owners {
+            layering_owner_defs.entry(o).or_default().push(file.rel.clone());
+        }
+        for t in types {
+            layering_type_defs.entry(t).or_default().push(file.rel.clone());
+        }
+    }
+    (layering_type_defs, layering_owner_defs)
 }
 
 /// Another front end's parse of a `.dme` into the model (`Parsed`): `dmbc` registers one at startup that builds the object tree from
@@ -704,7 +734,7 @@ fn parse_source_env(dme_path: &Path, preregister: &[PathBuf], source: Source, hi
         stream.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
         model_store::CheckerDiagnostics { stream, summary: dreammaker::parser::take_parse_summary(), finish }
     });
-    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines, raw, fatal, native: None })
+    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines, raw, fatal })
 }
 
 /// One line of a file as the layering index reads it (see `Sem::build_with`).
@@ -851,7 +881,6 @@ pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
         },
     });
     if b.sem.is_some() {
-        model_store::save_later(b.clone());
         if b.sem.as_ref().map(|s| s.full).unwrap_or(false) {
             walk_cache::set_model(b.clone());
         }

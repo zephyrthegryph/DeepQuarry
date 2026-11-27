@@ -14,34 +14,68 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-use dreammaker::ast::{AssignOp, Block, Expression, Follow, Parameter, Statement, Term};
+use dm_syntax::{Expr, Statement};
 
-use super::ast::{stmt_blocks, stmt_exprs, strip_parens, walk_expr};
 use super::Sem;
+use crate::model::expr::{as_ident, chain, form, strip_groups, Args, Chain, Form, Hop, Root};
+use crate::model::procs::Proc;
+use crate::model::walk::{stmt_blocks, stmt_exprs, stmts, walk_expr, ForInit, Stmt, Visit};
+use crate::model::{Param, Site};
 
-/// Every expression in a block with the line it is on: like `ast::walk_block`, but an `if` / `else if` arm's condition carries
+/// Where the old tree placed a control's condition: at the `(` it is read after (`if (x)`), which the condition's own span leaves out.
+fn condition_site(sem: &Sem, condition: &Expr) -> Site {
+    let text = sem.m().frontend().expanded.text.as_str();
+    Site(dm_syntax::control_open_paren(text, condition.span.start).unwrap_or(condition.span.start) as u32)
+}
+
+/// Every expression in a block with the line it is on: like `walk_block`, but an `if` / `else if` arm's condition carries
 /// its own line (a chain is one statement in the tree).
-fn walk_lines<'a>(b: &'a Block, f: &mut dyn FnMut(&'a Expression, u32)) {
-    for st in b.iter() {
-        let line = st.location.line;
-        if let Statement::If { arms, .. } = &st.elem {
-            for (c, _) in arms.iter() {
-                walk_expr(&c.elem, &mut |x| f(x, c.location.line));
+fn walk_lines(sem: &Sem, b: &[Statement], f: &mut dyn FnMut(&Visit<'_>, u32)) {
+    for st in stmts(b) {
+        let line = sem.line(Some(st.site));
+        if let Stmt::If { arms, .. } = &st.stmt {
+            for &(c, _) in arms {
+                let at = sem.line(Some(condition_site(sem, c)));
+                walk_expr(c, &mut |x| f(x, at));
             }
         } else {
-            for e in stmt_exprs(&st.elem) {
+            for e in stmt_exprs(&st.stmt) {
                 walk_expr(e, &mut |x| f(x, line));
             }
+            // An assignment statement has no node of its own: its two sides are the expressions.
+            if let Stmt::Expr(Form::Assign { lhs, rhs, .. }, None) = &st.stmt {
+                walk_expr(lhs, &mut |x| f(x, line));
+                walk_expr(rhs, &mut |x| f(x, line));
+            }
         }
-        if let Statement::ForLoop { init, inc, .. } = &st.elem {
-            for s in [init, inc].into_iter().flatten() {
-                for e in stmt_exprs(s) {
+        // A sized list with no value starts as `new /list(sizes)`: the sizes are expressions of the statement.
+        if let Stmt::Vars(vs) = &st.stmt {
+            for v in vs.iter().filter(|v| v.value.is_none()) {
+                for e in &v.suffix_args {
                     walk_expr(e, &mut |x| f(x, line));
                 }
             }
         }
-        for nb in stmt_blocks(&st.elem) {
-            walk_lines(nb, f);
+        if let Stmt::ForLoop { init, inc, .. } = &st.stmt {
+            match init {
+                Some(ForInit::Var(d)) => {
+                    if let Some(e) = d.value {
+                        walk_expr(e, &mut |x| f(x, line));
+                    } else {
+                        for e in &d.suffix_args {
+                            walk_expr(e, &mut |x| f(x, line));
+                        }
+                    }
+                }
+                Some(ForInit::Expr(e)) => walk_expr(e, &mut |x| f(x, line)),
+                None => {}
+            }
+            if let Some(e) = inc {
+                walk_expr(e, &mut |x| f(x, line));
+            }
+        }
+        for nb in stmt_blocks(&st.stmt) {
+            walk_lines(sem, nb, f);
         }
     }
 }
@@ -69,10 +103,10 @@ fn is_act(tp: &[String]) -> bool {
 }
 
 /// A handler: a `/datum/act` parameter other than a timer context, and not a prompt's `prepare()`.
-pub fn is_handler(owner: &str, name: &str, params: &[Parameter]) -> bool {
+pub fn is_handler(owner: &str, name: &str, params: &[Param]) -> bool {
     let mut any = false;
     for p in params {
-        let tp = &p.var_type.type_path;
+        let tp = &p.type_path;
         if is_act(tp) {
             if tp.len() >= 3 && tp[2] == "timer" {
                 return false;
@@ -86,13 +120,14 @@ pub fn is_handler(owner: &str, name: &str, params: &[Parameter]) -> bool {
     !(name == "prepare" && owner.starts_with("/datum/prompt/"))
 }
 
-fn prefab_path(e: &Expression) -> Option<String> {
-    if let Expression::Base { term, follow } = strip_parens(e) {
-        if follow.is_empty() {
-            if let Term::Prefab(p) = &term.elem {
-                return Some(format!("/{}", p.path.iter().map(|(_, n)| n.as_str()).collect::<Vec<_>>().join("/")));
-            }
-        }
+fn prefab_path(e: &Expr) -> Option<String> {
+    let c = chain(strip_groups(e))?;
+    if !c.hops.is_empty() {
+        return None;
+    }
+    if let Root::Prefab { path, .. } = &c.root {
+        // The path's names, whatever operator joins them.
+        return Some(format!("/{}", path.split(['/', '.', ':']).filter(|n| !n.is_empty()).collect::<Vec<_>>().join("/")));
     }
     None
 }
@@ -109,28 +144,25 @@ struct Taint {
 }
 
 impl Taint {
-    fn is_act(&self, e: &Expression) -> bool {
-        match strip_parens(e) {
-            Expression::Base { term, follow } if follow.is_empty() => matches!(&term.elem, Term::Ident(n) if self.acts.contains(n.as_str())),
-            _ => false,
-        }
+    fn is_act(&self, e: &Expr) -> bool {
+        as_ident(strip_groups(e)).is_some_and(|n| self.acts.contains(n))
     }
 
     /// `A.actor` (an act's actor), or a name holding the actor.
-    fn is_actor(&self, e: &Expression) -> bool {
-        match strip_parens(e) {
-            Expression::Base { term, follow } => match (&term.elem, follow.len()) {
-                (Term::Ident(n), 0) => self.actors.contains(n.as_str()),
-                (Term::Ident(n), 1) => self.acts.contains(n.as_str()) && matches!(&follow[0].elem, Follow::Field(_, f) if f.as_str() == "actor"),
+    fn is_actor(&self, e: &Expr) -> bool {
+        match form(strip_groups(e)) {
+            Form::Chain(c) => match (&c.root, c.hops.as_slice()) {
+                (Root::Ident(n), []) => self.actors.contains(*n),
+                (Root::Ident(n), [Hop::Field { name: "actor", .. }]) => self.acts.contains(*n),
                 _ => false,
             },
-            Expression::TernaryOp { if_, else_, .. } => self.is_actor(if_) || self.is_actor(else_),
+            Form::Ternary { then_value, else_value, .. } => self.is_actor(then_value) || self.is_actor(else_value),
             _ => false,
         }
     }
 
     /// Spreads the taint through the body's assignments until nothing changes (flow-insensitive).
-    fn close_over(&mut self, code: &Block) {
+    fn close_over(&mut self, code: &[Statement]) {
         loop {
             let before = (self.acts.len(), self.actors.len());
             self.assign_block(code);
@@ -140,7 +172,7 @@ impl Taint {
         }
     }
 
-    fn take(&mut self, name: &str, value: &Expression) {
+    fn take(&mut self, name: &str, value: &Expr) {
         if self.is_actor(value) {
             self.actors.insert(name.to_string());
         } else if self.is_act(value) {
@@ -148,34 +180,25 @@ impl Taint {
         }
     }
 
-    fn assign_block(&mut self, b: &Block) {
-        for st in b.iter() {
-            match &st.elem {
-                Statement::Var(v) => {
-                    if let Some(value) = &v.value {
-                        self.take(&v.name, value);
-                    }
-                }
-                Statement::Vars(vs) => {
+    fn assign_block(&mut self, b: &[Statement]) {
+        for st in stmts(b) {
+            match &st.stmt {
+                Stmt::Vars(vs) => {
                     for v in vs {
-                        if let Some(value) = &v.value {
+                        if let Some(value) = v.value {
                             self.take(&v.name, value);
                         }
                     }
                 }
-                Statement::Expr(Expression::AssignOp { op: AssignOp::Assign, lhs, rhs }) => {
-                    if let Expression::Base { term, follow } = strip_parens(lhs) {
-                        if follow.is_empty() {
-                            if let Term::Ident(n) = &term.elem {
-                                let n = n.to_string();
-                                self.take(&n, rhs);
-                            }
-                        }
+                Stmt::Expr(Form::Assign { op: "=", lhs, rhs }, _) => {
+                    if let Some(n) = as_ident(strip_groups(lhs)) {
+                        let n = n.to_string();
+                        self.take(&n, rhs);
                     }
                 }
                 _ => {}
             }
-            for nb in stmt_blocks(&st.elem) {
+            for nb in stmt_blocks(&st.stmt) {
                 self.assign_block(nb);
             }
         }
@@ -183,29 +206,23 @@ impl Taint {
 }
 
 /// Declared object types of a body's names (params and `var/T/x` locals), for resolving `x.proc()`.
-fn declared_types(params: &[Parameter], code: &Block) -> BTreeMap<String, String> {
+fn declared_types(params: &[Param], code: &[Statement]) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
     for p in params {
-        if !p.var_type.type_path.is_empty() {
-            out.insert(p.name.to_string(), type_path_of(&p.var_type.type_path));
+        if !p.type_path.is_empty() {
+            out.insert(p.name.to_string(), type_path_of(&p.type_path));
         }
     }
-    fn walk(b: &Block, out: &mut BTreeMap<String, String>) {
-        for st in b.iter() {
-            match &st.elem {
-                Statement::Var(v) if !v.var_type.type_path.is_empty() => {
-                    out.insert(v.name.to_string(), type_path_of(&v.var_type.type_path));
-                }
-                Statement::Vars(vs) => {
-                    for v in vs {
-                        if !v.var_type.type_path.is_empty() {
-                            out.insert(v.name.to_string(), type_path_of(&v.var_type.type_path));
-                        }
+    fn walk(b: &[Statement], out: &mut BTreeMap<String, String>) {
+        for st in stmts(b) {
+            if let Stmt::Vars(vs) = &st.stmt {
+                for v in vs {
+                    if !v.type_path.is_empty() {
+                        out.insert(v.name.to_string(), type_path_of(&v.type_path));
                     }
                 }
-                _ => {}
             }
-            for nb in stmt_blocks(&st.elem) {
+            for nb in stmt_blocks(&st.stmt) {
                 walk(nb, out);
             }
         }
@@ -215,35 +232,24 @@ fn declared_types(params: &[Parameter], code: &Block) -> BTreeMap<String, String
 }
 
 /// A call in a body and the proc it resolves to: `(callee owner, callee name, arguments)`.
-fn calls<'a>(sem: &'a Sem, owner: &str, types: &BTreeMap<String, String>, e: &'a Expression, out: &mut Vec<(String, String, &'a [Expression])>) {
+fn calls<'c>(sem: &Sem, owner: &str, types: &BTreeMap<String, String>, c: &Chain<'c>, out: &mut Vec<(String, String, Args<'c>)>) {
     let resolve_on = |ty: &str, name: &str| -> Option<String> {
         let p = sem.proc_ref(ty, name)?;
-        let path = &p.ty().get().path;
-        Some(if path.is_empty() { "/".to_string() } else { path.clone() })
+        Some(p.owner().path().to_string())
     };
-    if let Expression::Base { term, follow } = e {
-        match &term.elem {
-            Term::Call(n, args) if follow.is_empty() || !matches!(follow[0].elem, Follow::Call(..)) => {
-                if let Some(o) = resolve_on(owner, n.as_str()).or_else(|| sem.global_proc(n.as_str()).map(|_| "/".to_string())) {
-                    out.push((o, n.to_string(), args));
-                }
+    if let Root::Call { name: n, args } = &c.root {
+        if c.hops.is_empty() || !matches!(c.hops[0], Hop::Call { .. }) {
+            if let Some(o) = resolve_on(owner, n).or_else(|| sem.global_proc(n).map(|_| "/".to_string())) {
+                out.push((o, n.to_string(), *args));
             }
-            Term::GlobalCall(n, args) => {
-                if sem.global_proc(n.as_str()).is_some() {
-                    out.push(("/".to_string(), n.to_string(), args));
-                }
-            }
-            _ => {}
         }
-        // `x.foo(...)` with `x` a name of a declared type, or `src`.
-        if follow.len() == 1 {
-            if let (Term::Ident(recv), Follow::Call(_, n, args)) = (&term.elem, &follow[0].elem) {
-                let ty = if recv.as_str() == "src" { Some(owner.to_string()) } else { types.get(recv.as_str()).cloned() };
-                if let Some(ty) = ty {
-                    if let Some(o) = resolve_on(&ty, n.as_str()) {
-                        out.push((o, n.to_string(), args));
-                    }
-                }
+    }
+    // `x.foo(...)` with `x` a name of a declared type, or `src`.
+    if let (Root::Ident(recv), [Hop::Call { name: n, args, .. }]) = (&c.root, c.hops.as_slice()) {
+        let ty = if *recv == "src" { Some(owner.to_string()) } else { types.get(*recv).cloned() };
+        if let Some(ty) = ty {
+            if let Some(o) = resolve_on(&ty, n) {
+                out.push((o, n.to_string(), *args));
             }
         }
     }
@@ -258,7 +264,7 @@ struct Walker<'s> {
 }
 
 impl<'s> Walker<'s> {
-    fn body(&mut self, handler: &str, owner: &str, params: &[Parameter], code: &Block, rel: &str, taint: Taint, depth: usize) {
+    fn body(&mut self, handler: &str, owner: &str, params: &[Param], code: &[Statement], rel: &str, taint: Taint, depth: usize) {
         let mut taint = taint;
         taint.close_over(code);
         let types = declared_types(params, code);
@@ -267,11 +273,11 @@ impl<'s> Walker<'s> {
         let sem = self.sem;
         let mut found: Vec<ActorTest> = Vec::new();
         let mut macro_lines: BTreeSet<u32> = BTreeSet::new();
-        walk_lines(code, &mut |e, line| {
-            if let Expression::Base { term, follow } = e {
-                if let (Term::Call(n, args), true) = (&term.elem, follow.is_empty()) {
-                    if n.as_str() == "istype" && args.len() == 2 && taint.is_actor(&args[0]) {
-                        if let Some(p) = prefab_path(&args[1]).filter(|p| silicon_type(p)) {
+        walk_lines(sem, code, &mut |v, line| {
+            if let Form::Chain(c) = &v.form {
+                if let (Root::Call { name: "istype", args }, true) = (&c.root, c.hops.is_empty()) {
+                    if args.len() == 2 && taint.is_actor(args.get(0).unwrap()) {
+                        if let Some(p) = prefab_path(args.get(1).unwrap()).filter(|p| silicon_type(p)) {
                             found.push(ActorTest {
                                 rule: if direct { "handler_actor_istype" } else { "helper_actor_check" },
                                 rel: rel.to_string(),
@@ -287,15 +293,17 @@ impl<'s> Walker<'s> {
                 macro_lines.insert(super::procs::engine_line(&sem.root, rel, line));
             }
             if depth < MAX_DEPTH {
-                let mut cs = Vec::new();
-                calls(sem, owner, &types, e, &mut cs);
-                for (o, n, args) in cs {
-                    let actor_pos: Vec<usize> = args.iter().enumerate().filter(|(_, a)| taint.is_actor(a)).map(|(i, _)| i).collect();
-                    let act_pos: Vec<usize> = args.iter().enumerate().filter(|(_, a)| taint.is_act(a)).map(|(i, _)| i).collect();
-                    if actor_pos.is_empty() && act_pos.is_empty() {
-                        continue;
+                if let Form::Chain(c) = &v.form {
+                    let mut cs = Vec::new();
+                    calls(sem, owner, &types, c, &mut cs);
+                    for (o, n, args) in cs {
+                        let actor_pos: Vec<usize> = args.iter().enumerate().filter(|(_, a)| taint.is_actor(a)).map(|(i, _)| i).collect();
+                        let act_pos: Vec<usize> = args.iter().enumerate().filter(|(_, a)| taint.is_act(a)).map(|(i, _)| i).collect();
+                        if actor_pos.is_empty() && act_pos.is_empty() {
+                            continue;
+                        }
+                        pending.push((o, n, actor_pos, act_pos));
                     }
-                    pending.push((o, n, actor_pos, act_pos));
                 }
             }
         });
@@ -317,25 +325,25 @@ impl<'s> Walker<'s> {
             if p.is_builtin() {
                 continue;
             }
-            let v = p.get();
-            let Some(code) = v.code.as_ref() else { continue };
+            let Some(code) = p.body() else { continue };
+            let parameters = p.parameters();
             // A handler is checked on its own (as a handler); following it again would only relabel its sites.
-            if is_handler(&o, &n, &v.parameters) {
+            if is_handler(&o, &n, &parameters) {
                 continue;
             }
             let mut t = Taint::default();
             for i in actor_pos {
-                if let Some(param) = v.parameters.get(i) {
+                if let Some(param) = parameters.get(i) {
                     t.actors.insert(param.name.to_string());
                 }
             }
             for i in act_pos {
-                if let Some(param) = v.parameters.get(i) {
+                if let Some(param) = parameters.get(i) {
                     t.acts.insert(param.name.to_string());
                 }
             }
-            let callee_rel = sem.rel(v.location).to_string();
-            self.body(handler, &o, &v.parameters, code, &callee_rel, t, depth + 1);
+            let callee_rel = sem.rel(p.site());
+            self.body(handler, &o, &parameters, code, &callee_rel, t, depth + 1);
         }
     }
 }
@@ -344,31 +352,29 @@ impl<'s> Walker<'s> {
 pub fn actor_tests(sem: &Sem, lines: &dyn Fn(&str, u32) -> Option<String>) -> Vec<ActorTest> {
     let macro_re = crate::pat!(r"(?<![\w.])(?:isAI|issilicon|isrobot|ispAI)\(");
     let mut w = Walker { sem, found: Vec::new(), visited: HashSet::new(), macro_re, lines };
-    let mut handlers: Vec<(String, String, usize)> = Vec::new();
-    for ty in sem.objtree.iter_types() {
-        let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-        for (name, tp) in ty.get().procs.iter() {
-            for (i, v) in tp.value.iter().enumerate() {
-                if v.code.has_body() && is_handler(&owner, name, &v.parameters) {
-                    handlers.push((owner.clone(), name.clone(), i));
+    let mut handlers: Vec<(String, String, Proc<'_>)> = Vec::new();
+    for ty in sem.m().types() {
+        let owner = ty.path().to_string();
+        for name in ty.proc_names() {
+            for v in ty.proc_definitions(name) {
+                if v.body().is_some() && is_handler(&owner, name, &v.parameters()) {
+                    handlers.push((owner.clone(), name.to_string(), v));
                 }
             }
         }
     }
-    for (owner, name, i) in handlers {
-        let Some(ty) = sem.ty(&owner) else { continue };
-        let Some(tp) = ty.get().procs.get(name.as_str()) else { continue };
-        let v = &tp.value[i];
-        let Some(code) = v.code.as_ref() else { continue };
+    for (owner, name, v) in handlers {
+        let Some(code) = v.body() else { continue };
+        let parameters = v.parameters();
         let mut t = Taint::default();
-        for p in v.parameters.iter() {
-            if is_act(&p.var_type.type_path) {
+        for p in parameters.iter() {
+            if is_act(&p.type_path) {
                 t.acts.insert(p.name.to_string());
             }
         }
-        let rel = sem.rel(v.location).to_string();
+        let rel = sem.rel(v.site());
         let handler = format!("{}/proc/{}", if owner == "/" { "" } else { owner.as_str() }, name);
-        w.body(&handler, &owner, &v.parameters, code, &rel, t, 0);
+        w.body(&handler, &owner, &parameters, code, &rel, t, 0);
     }
     let mut out = w.found;
     out.sort();

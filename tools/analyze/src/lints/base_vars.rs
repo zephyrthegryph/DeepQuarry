@@ -238,26 +238,41 @@ struct TypedVar {
 }
 
 fn typed_vars(sem: &crate::sem::Sem) -> Vec<TypedVar> {
-    use dreammaker::ast::{Expression, Term, VarTypeFlags};
+    use crate::model::expr::{chain, Root};
     let mut out = Vec::new();
-    for ty in sem.objtree.iter_types() {
+    for ty in sem.m().types() {
         // A var at the top level of a file is a global (one value per world), not an instance var.
-        if ty.get().path.is_empty() {
+        if ty.path() == "/" {
             continue;
         }
-        let owner = ty.get().path.clone();
+        let owner = ty.path().to_string();
         let base = BASE_TYPES.contains(&owner.as_str());
-        for (name, tv) in ty.get().vars.iter() {
-            let Some(decl) = &tv.declaration else { continue };
-            // const, static and global (one flag in the model) cost no instance memory.
-            if decl.var_type.flags.intersects(VarTypeFlags::STATIC | VarTypeFlags::CONST) {
+        for name in ty.var_names() {
+            if !ty.declares_var(&name) {
                 continue;
             }
-            let Some(rel) = sem.file_of(decl.location) else { continue };
-            let list_init = matches!(&tv.value.expression, Some(Expression::Base { term, follow }) if follow.is_empty() && matches!(&term.elem, Term::List(args) if args.is_empty()));
+            let Some(decl) = ty.var_declaration(&name) else { continue };
+            // const, static and global (one flag in the model) cost no instance memory.
+            if decl.is_static() || decl.is_const() {
+                continue;
+            }
+            let Some(rel) = sem.file_of(decl.site) else { continue };
+            let list_init = ty
+                .own_vars_named(&name)
+                .last()
+                .and_then(|m| m.initializer())
+                .and_then(chain)
+                .is_some_and(|c| c.hops.is_empty() && matches!(&c.root, Root::List(args) if args.is_empty()));
             if base || list_init {
-                let vtype = if decl.var_type.type_path.is_empty() { String::new() } else { format!("/{}", decl.var_type.type_path.join("/")) };
-                out.push(TypedVar { rel: rel.to_string(), line: crate::sem::procs::engine_line(&sem.root, rel, decl.location.line), owner: owner.clone(), name: name.to_string(), vtype, base, list_init });
+                out.push(TypedVar {
+                    rel: rel.to_string(),
+                    line: crate::sem::procs::engine_line(&sem.root, &rel, sem.line(decl.site)),
+                    owner: owner.clone(),
+                    name: name.to_string(),
+                    vtype: decl.declared.clone(),
+                    base,
+                    list_init,
+                });
             }
         }
     }
@@ -268,18 +283,18 @@ fn typed_vars(sem: &crate::sem::Sem) -> Vec<TypedVar> {
 /// Procs defined on `/datum/record` and its subtypes: `(file, line, proc name)`.
 fn record_procs(sem: &crate::sem::Sem) -> Vec<(String, u32, String)> {
     let mut out = Vec::new();
-    for ty in sem.objtree.iter_types() {
-        let path = &ty.get().path;
+    for ty in sem.m().types() {
+        let path = ty.path();
         if path != "/datum/record" && !path.starts_with("/datum/record/") {
             continue;
         }
-        for (name, tp) in ty.get().procs.iter() {
-            for v in tp.value.iter() {
-                if !v.code.has_body() {
+        for name in ty.proc_names() {
+            for v in ty.proc_definitions(name) {
+                if v.body().is_none() {
                     continue;
                 }
-                let Some(rel) = sem.file_of(v.location) else { continue };
-                out.push((rel.to_string(), crate::sem::procs::engine_line(&sem.root, rel, v.location.line), name.to_string()));
+                let Some(rel) = sem.file_of(v.site()) else { continue };
+                out.push((rel.to_string(), crate::sem::procs::engine_line(&sem.root, &rel, sem.line(v.site())), name.to_string()));
             }
         }
     }

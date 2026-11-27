@@ -36,15 +36,15 @@ impl DepGraph {
     pub fn from_derives(sem: &Sem, eng: &ReadsEngine) -> DepGraph {
         let mut g = DepGraph::default();
         let mut owners: Vec<(String, String, String)> = Vec::new(); // (type, var, proc)
-        for ty in sem.objtree.iter_types() {
-            let path = ty.get().path.clone();
-            if path.is_empty() {
+        for ty in sem.m().types() {
+            let path = ty.path().to_string();
+            if path == "/" {
                 continue;
             }
-            for (name, tp) in ty.get().procs.iter() {
+            for name in ty.proc_names() {
                 if let Some(var) = name.strip_prefix("derive_") {
-                    if tp.value.iter().any(|v| v.code.has_body()) {
-                        owners.push((path.clone(), var.to_string(), name.clone()));
+                    if ty.proc_definitions(name).iter().any(|v| v.body().is_some()) {
+                        owners.push((path.clone(), var.to_string(), name.to_string()));
                     }
                 }
             }

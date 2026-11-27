@@ -55,7 +55,7 @@ fn is_generated_setter(eng: &ReadsEngine, callee: &str) -> bool {
     if !name.starts_with("set_") {
         return false;
     }
-    eng.sem.proc_ref(owner, name).is_some_and(|p| eng.sem.file_of(p.get().location) == Some(super::auto_tracked::AUTO_REL))
+    eng.sem.proc_ref(owner, name).is_some_and(|p| eng.sem.file_of(p.site()).as_deref() == Some(super::auto_tracked::AUTO_REL))
 }
 
 /// One untracked read of a consumer: what it is, and where the read sits.
@@ -592,14 +592,14 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     // Every var of a lazy owned state (owns_one(lazy = TRUE)) has a setter: a write is always `x_of(A).set_v(...)`, whether or not reactive code reads it yet.
     let lazy = super::declare::lazy_types_of(decls.markers_named("CAPABILITIES"));
     if !lazy.is_empty() {
-        for t in sem.objtree.iter_types() {
-            let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
+        for t in sem.m().types() {
+            let path = t.path().to_string();
             if !lazy.iter().any(|l| sem.is_subtype(&path, l)) {
                 continue;
             }
-            for (name, v) in &t.get().vars {
-                if v.declaration.is_some() && super::auto_tracked::named_candidate(&eng, &path, name) {
-                    candidates.insert((path.clone(), name.clone()));
+            for name in t.var_names() {
+                if t.declares_var(&name) && super::auto_tracked::named_candidate(&eng, &path, &name) {
+                    candidates.insert((path.clone(), name));
                 }
             }
         }

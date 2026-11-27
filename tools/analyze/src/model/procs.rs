@@ -59,6 +59,19 @@ impl<'m> Proc<'m> {
         }
     }
 
+    /// The parameters (a builtin's carry only their names).
+    pub fn parameters(&self) -> Arc<Vec<super::Param>> {
+        match self {
+            Proc::Code(m) => m.parameters(),
+            Proc::Builtin { proc, .. } => Arc::new(
+                proc.parameters
+                    .iter()
+                    .map(|n| super::Param { name: n.clone(), type_path: Vec::new(), value: None, as_types: None, in_list: None, site: Site(0) })
+                    .collect(),
+            ),
+        }
+    }
+
     pub fn body(&self) -> Option<&'m [Statement]> {
         self.member().and_then(|m| m.body())
     }
