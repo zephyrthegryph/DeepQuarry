@@ -344,6 +344,23 @@ needs the stable-id decision (retained_frontend.md, round 2). Proof: hosted agai
 the edit sequence, compile byte-identical (equivalent for a new var), analysis-parity 100 %, ratchets pass. The published
 `dmb-bin/dmbc.exe` at the bin root is a stale October binary; builds use `dmb-bin/v/<current>`, which matches master.
 
+Round 3 (lane `compiler/body-edit-floor`): a reusing expansion says which spans of the joined text it copied
+(`ExpandedRegions::carried`), and the declaration parse reads that instead of the bytes: the grammar check compares only receipts
+that were not carried from a proved text (prefix and suffix by piece identity), a carried chunk takes the previous request's key and
+bound contribution (no hash, no compare), the symbol catalog applies only the contributions that changed (spelling counts shared
+between requests), and bodies in interior carried chunks keep their terminations. The plan shares its terminal macros and
+dependencies with its patch, the joined text is copied in parallel without zeroing, the body index is dense, bodies find their
+declaration from a cursor, and origin and body rows are built as columns. Measured interleaved against a master daemon on the loaded
+machine (12 requests each): body edit front end 0.146 s quietest / 0.255 s median (master 0.335 / 0.474), line shift 0.133 / 0.283
+(master 0.317 / 0.706); no-op 0.007-0.032 s (median 0.013); declaration parsing 0.022 s (was 0.13-0.17). What is left is a dozen passes of 2-20 ms over flat whole-program
+arrays (origins, occurrences, bodies, regions); chunking those arrays so a revision shares unchanged chunks is the next step and
+changes every consumer of the front end's output (retained_frontend.md, round 3). Proof: `DMB_FRONTEND_VERIFY=1` clean on every
+incremental analysis and compile request (carried chunks, origins, bodies, terminations, plan, expansion); hosted against cold
+`dreamchecker --json` and `check --raw --no-cache` identical at base, body edit, line shift, new var, new proc and revert;
+analysis-parity 1168032/1168032 (tree) and 105883/105883; dm-tree, dm-preprocess and dmbc unit tests pass. A daemon patch compile is
+`dmb-equiv` EQUIVALENT to a cold one, not byte-identical (the replaced string stays in the string table); master's compiler gives the
+same bytes as this branch for that sequence, so that is older than this lane.
+
 ### Increment 3 (2026-11-27): stores held decoded, lints per file, the measurement fixed
 
 - **Fair measurement.** `tools/dmb/scripts/analysis_edit_timing.sh` times a daemon per compiler, each with its own namespace and
