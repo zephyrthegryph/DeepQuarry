@@ -222,3 +222,54 @@ additions, the view and its parity check, and the cold `gen` fix.
 
 Oracle on the branch base (820811dfc9, `DQ_ANALYZE_DAEMON=0`, shared machine, single runs): `gen` cold 4 min 40 s (model 22 s), 416 generated
 files; `check --raw --no-cache` 1606 lines, model 6.7-9.5 s per build.
+
+### 2a progress (2026-11-27)
+
+Landed on the branch, not on master:
+
+- dm-tree keeps each declaration occurrence's expanded item span (`ColdFrontend::declaration_spans`, indexed by `OccurrenceId`). The spans
+  were computed for body indexing and then dropped; analysis reads a declaration's header and site from them, with no spelling matching.
+- The dmbc provider hands the front end itself to dq-analyze (`Parsed::native`). `Sem::model()` builds `crate::model::Model` over it on
+  first use: types, each type's own members in emission order, member sites. It takes 2.2-5.2 s on the whole tree (53255 types, 321247
+  members, 120473 bodies).
+- `analyze sem model-parity` (needs `DQ_ANALYZE_PARSE=dmbc`) compares the view with the converted tree.
+
+First parity run, before the view fixes:
+
+| Category | Compared | Differ |
+|---|---|---|
+| Types present, parents | 53255 | 0 |
+| Var declaration lines, flags, value lines | 31394 / 31394 / 198518 | 0 |
+| Proc definition counts | 120417 | 0 |
+| Proc lines | 120473 | 156 |
+| Proc parameters | 120473 | 127 |
+| Proc kind | 120417 | 371 |
+| Var declared types | 31394 | 508 |
+| Var names | 199161 | 643 |
+| Var declared | 198518 | 16 |
+| Type sites | 49529 | 203 |
+
+The differences, and what each needs:
+
+- Proc parameters (127 -> 4): the variadic `...` tail was missing; the view spells it now. The 4 left, and the 156 proc lines, are procs
+  defined in several files (`/datum/__capabilities`, `/mob/set_viewsize`): their definitions come in another order than dreammaker's
+  include order, and emission order did not fix it. The next step is to order definitions by the override chain (`MemberNode::previous`).
+- Proc kind (371 -> 39): the 332 were builtin global procs, which have no code definition; the parity now skips them.
+- Var declared types (508 -> 267): typed lists, `/list` plus `list_element_type`, which the view now joins. The rest are the
+  `SpacemanDMM_private`, `_protected` and `_final` flags, which the semantic tree reads as a type path. That needs a dm-tree change: parse
+  those three as declaration flags.
+- Var names (643) and var declared (16): builtin vars (`AREA_LAYER`, `/atom/layer`, `/world/fps`) that dreammaker's builtin table declares
+  and the semantic tree does not hold as members. The view needs the builtin member catalog (the engine seed's intrinsics) to answer
+  `var_decl` for them.
+- Type sites (203): dreammaker places a type at its first type block, and the view uses the first occurrence, which can be a macro-expanded
+  member path (`MATERIAL_MIX(/obj/item/radio, ...)` one line above the `/obj/item/radio` block). The rule to adopt is the converter's
+  `type_sites` rule.
+
+After the fixes (merged master, 16cd549182): 1328 differences, from 2024.
+
+Cold `gen` on the compiler front end: master's 6b7ead2416 declares the generated-only parent types in the stub. On this branch's base, a
+model-less first pass and a bootstrap that wrote the no-model generators first both converged to the same output, and both differ from
+dreammaker's cold and warm output in `plans.dm` (about 2000 `CGK_*` keys and their rows missing, such as `ckeys_version` and the `/area`
+vars). The dmbc run's own `gen --check plans` with a fresh cache then reports that `plans.dm` stale. So inside a cold dmbc `gen`, a stage-1
+result is computed from state that no longer matches its inputs. dreammaker's cold `gen` (caches and the gen store off) matches its warm
+output exactly. Not yet re-checked after 6b7ead2416.
