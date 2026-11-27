@@ -117,6 +117,9 @@ pub fn run(sem: &Sem, model: &Model) -> usize {
             if values.len() != members.len() {
                 continue;
             }
+            if values.is_empty() {
+                continue;
+            }
             let verb = p.declaration.as_ref().map(|d| d.kind == dreammaker::ast::ProcDeclKind::Verb);
             let nverb = members.iter().find(|m| m.declares()).map(|m| m.kind() == MemberKind::Verb);
             tallies.entry("proc kind").or_default().check(verb == nverb, || format!("{path}/{name}: verb {verb:?} vs {nverb:?}"));

@@ -795,25 +795,7 @@ impl crate::lint::Cx<'_> {
 }
 
 /// The memoized semantic model of `tree`.
-/// Set while `analyze gen` bootstraps a cold tree (`sem::cli::gen`): the model is not built, and asking for it is recorded.
-static MODEL_DENIED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-static MODEL_ASKED_WHILE_DENIED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-
-/// Runs `f` with the full model unavailable; returns its result and whether anything asked for the model meanwhile.
-pub(crate) fn without_model<R>(f: impl FnOnce() -> R) -> (R, bool) {
-    use std::sync::atomic::Ordering;
-    MODEL_ASKED_WHILE_DENIED.store(false, Ordering::SeqCst);
-    MODEL_DENIED.store(true, Ordering::SeqCst);
-    let r = f();
-    MODEL_DENIED.store(false, Ordering::SeqCst);
-    (r, MODEL_ASKED_WHILE_DENIED.swap(false, Ordering::SeqCst))
-}
-
 pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
-    if MODEL_DENIED.load(std::sync::atomic::Ordering::SeqCst) {
-        MODEL_ASKED_WHILE_DENIED.store(true, std::sync::atomic::Ordering::SeqCst);
-        return None;
-    }
     let b = tree.memo("sem/model", || SemBox {
         sem: {
             walk_cache::prefetch();

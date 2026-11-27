@@ -20,10 +20,6 @@ pub const UI_TYPES_OUT: &str = "tgui/packages/tgui/interfaces/generated";
 struct UiTypes;
 
 impl Generator for UiTypes {
-    fn reads_model(&self) -> bool {
-        true
-    }
-
     fn name(&self) -> &'static str {
         "ui_types"
     }

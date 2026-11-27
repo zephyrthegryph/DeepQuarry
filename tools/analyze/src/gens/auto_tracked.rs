@@ -465,10 +465,6 @@ pub fn inferred(tree: &Tree) -> Arc<Option<AutoSet>> {
 struct AutoTracked;
 
 impl Generator for AutoTracked {
-    fn reads_model(&self) -> bool {
-        true
-    }
-
     fn name(&self) -> &'static str {
         "auto_tracked"
     }

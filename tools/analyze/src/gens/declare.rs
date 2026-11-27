@@ -446,10 +446,6 @@ fn arg_offsets(body: &str, args: &[String]) -> Vec<usize> {
 struct Declare;
 
 impl Generator for Declare {
-    fn reads_model(&self) -> bool {
-        true
-    }
-
     fn name(&self) -> &'static str {
         "declare"
     }

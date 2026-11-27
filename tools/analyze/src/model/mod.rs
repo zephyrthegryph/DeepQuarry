@@ -57,8 +57,10 @@ impl Model {
         let mut own: Vec<Vec<MemberId>> = vec![Vec::new(); paths.len()];
         let mut occurrence = HashMap::new();
         let mut type_occurrence = HashMap::new();
-        for (ordinal, target) in tree.declarations().iter().enumerate() {
-            let at = OccurrenceId(ordinal as u32);
+        // Emission order: the order the definitions take effect (include order), which is the order a proc's definitions override one another.
+        let declarations = tree.declarations();
+        for &at in rev.emission_order.iter() {
+            let Some(target) = declarations.get(at.0 as usize) else { continue };
             match *target {
                 Target::Member(id) => {
                     if let Some(member) = tree.member(id) {
@@ -207,9 +209,14 @@ impl<'m> Member<'m> {
         self.node().definition == DefinitionMode::Declare
     }
 
-    /// The declared type path (`/obj/item`), `""` when untyped or not a declaration.
-    pub fn declared_type(&self) -> &'m str {
-        self.node().metadata.declared_type.map(|t| self.m.text(t)).unwrap_or("")
+    /// The declared type path (`/obj/item`, `/list/mob` for a typed list), `""` when untyped or not a declaration.
+    pub fn declared_type(&self) -> String {
+        let meta = &self.node().metadata;
+        let base = meta.declared_type.map(|t| self.m.text(t)).unwrap_or("");
+        match meta.list_element_type.map(|t| self.m.text(t)) {
+            Some(element) if !element.is_empty() => format!("{}{}", if base.is_empty() { "/list" } else { base }, element),
+            _ => base.to_string(),
+        }
     }
 
     /// The declaration flag bits (`DeclarationMeaning::flags`: 1 static, 2 const, 4 tmp, 8 global).
@@ -220,7 +227,14 @@ impl<'m> Member<'m> {
     /// Parameter names, in order (procs and verbs).
     pub fn parameter_names(&self) -> Vec<&'m str> {
         match &self.node().metadata.procedure {
-            Some(p) => p.signature.parameters.iter().map(|q| self.m.text(q.name)).collect(),
+            Some(p) => {
+                let mut names: Vec<&'m str> = p.signature.parameters.iter().map(|q| self.m.text(q.name)).collect();
+                // `proc/f(a, ...)`: the variadic tail is spelled as a parameter.
+                if p.signature.variadic {
+                    names.push("...");
+                }
+                names
+            }
             None => Vec::new(),
         }
     }
