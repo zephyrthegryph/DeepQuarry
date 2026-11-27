@@ -191,6 +191,28 @@ impl Context {
         self.errors.borrow_mut().push(error);
     }
 
+    /// [`Self::register_error`] for each of `errors`, in order, printing what is printed in one write (a host registering a
+    /// kept run's many diagnostics at once).
+    pub fn register_errors<I: IntoIterator<Item = DMError>>(&self, errors: I) {
+        let writer = self.print_severity.map(|_| termcolor::BufferWriter::stderr(termcolor::ColorChoice::Auto));
+        let mut buffer = writer.as_ref().map(|w| w.buffer());
+        for error in errors {
+            let Some(error) = self.config.set_configured_severity(error) else { continue };
+            if !self.config.registerable_error(&error) {
+                continue;
+            }
+            if let (Some(print_severity), Some(buffer)) = (self.print_severity, buffer.as_mut()) {
+                if error.severity() <= print_severity {
+                    self.pretty_print_error(buffer, &error).expect("error writing to stderr");
+                }
+            }
+            self.errors.borrow_mut().push(error);
+        }
+        if let (Some(writer), Some(buffer)) = (writer, buffer) {
+            writer.print(&buffer).expect("error writing to stderr");
+        }
+    }
+
     /// A context for one worker of a parallel pass: the same files and config, no diagnostics, printing nothing. Its diagnostics are
     /// taken (`take_errors`) and registered on the original in a fixed order, so output does not depend on scheduling.
     pub fn fork(&self) -> Context {

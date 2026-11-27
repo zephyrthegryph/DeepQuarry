@@ -7,6 +7,9 @@
 //!   one-line edit that changes no fact leaves the key alone, so every other file's result is the one already held.
 //! * [`two_phase`]: both, wired together: facts, merge, judge.
 //! * [`cached`]: one value under one key.
+//! * [`keyed_reading`]: `f(file)` that reads an [`Index`] entry by entry through a [`Reads`] accessor: each entry it reads is recorded
+//!   with its digest, and the file's result is kept while every entry it read digests the same (an entry it found missing counts as
+//!   read too). A judgement that reads a few entries of a large index is then not re-run when other entries change.
 //!
 //! Contract for the closures: deterministic, depend only on the file (`f.raw()` etc. and `f.rel`) and on what the context key covers.
 //! A result type round-trips through bincode, and `Default` means "nothing found".
@@ -437,6 +440,137 @@ where
     F: Serialize + DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
 {
     keyed(name, 0, files, f)
+}
+
+/// An index a judgement reads entry by entry ([`keyed_reading`]): its entries and the digest of each.
+pub struct Index<K, V> {
+    map: HashMap<K, V>,
+    digests: HashMap<u128, Hash>,
+}
+
+impl<K: std::hash::Hash + Eq + Serialize, V: Serialize> Index<K, V> {
+    pub fn new(map: HashMap<K, V>) -> Self {
+        let digests = map.iter().map(|(k, v)| (ctx_key(k), ctx_key(v))).collect();
+        Index { map, digests }
+    }
+
+    /// The entries, unrecorded (for the merge that built them, not for a judgement).
+    pub fn entries(&self) -> &HashMap<K, V> {
+        &self.map
+    }
+}
+
+/// What a judgement reads of an [`Index`]: every entry it looks up is recorded with the digest it had.
+pub struct Reads<'i, K, V> {
+    idx: &'i Index<K, V>,
+    got: std::cell::RefCell<Vec<(u128, Hash)>>,
+}
+
+/// The digest recorded for an entry that was looked up and not there.
+const ABSENT: Hash = 0;
+
+impl<'i, K: std::hash::Hash + Eq + Serialize, V> Reads<'i, K, V> {
+    /// The entry of `k`, recorded.
+    pub fn get<Q>(&self, k: &Q) -> Option<&'i V>
+    where
+        K: std::borrow::Borrow<Q>,
+        Q: std::hash::Hash + Eq + Serialize + ?Sized,
+    {
+        let kh = ctx_key(k);
+        self.got.borrow_mut().push((kh, self.idx.digests.get(&kh).copied().unwrap_or(ABSENT)));
+        self.idx.map.get(k)
+    }
+}
+
+/// What a [`keyed_reading`] entry keeps: the result, its allow uses, and the entries it read with their digests.
+type Receipted<R> = (R, Vec<AllowUse>, Vec<(u128, Hash)>);
+
+/// `f(file)` for every file, cached per file under `ctx` and the [`Index`] entries `f` read through its [`Reads`] (see the module docs).
+pub fn keyed_reading<K, V, R>(name: &str, ctx: Hash, files: &[&SourceFile], idx: &Index<K, V>, f: impl Fn(&SourceFile, &Reads<K, V>) -> R + Sync) -> Vec<R>
+where
+    K: std::hash::Hash + Eq + Serialize + Sync,
+    V: Sync,
+    R: Serialize + DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
+{
+    let keys: Vec<Hash> = files.iter().map(|file| file.fkey).collect();
+    keyed_reading_by(name, ctx, &keys, idx, |i, reads| f(files[i], reads))
+}
+
+/// [`keyed_reading`] over items named by content keys: `f(i, reads)` for `keys[i]`, cached per key under `ctx` and the [`Index`]
+/// entries it read.
+pub fn keyed_reading_by<K, V, R>(name: &str, ctx: Hash, keys: &[Hash], idx: &Index<K, V>, f: impl Fn(usize, &Reads<K, V>) -> R + Sync) -> Vec<R>
+where
+    K: std::hash::Hash + Eq + Serialize + Sync,
+    V: Sync,
+    R: Serialize + DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
+{
+    let current = |receipt: &[(u128, Hash)]| receipt.iter().all(|(k, d)| idx.digests.get(k).copied().unwrap_or(ABSENT) == *d);
+    let run = |i: usize| -> Receipted<R> {
+        let reads = Reads { idx, got: std::cell::RefCell::new(Vec::new()) };
+        let before = crate::dm::sys::take_recorded();
+        let r = f(i, &reads);
+        let u = crate::dm::sys::take_recorded();
+        crate::dm::sys::restore_recorded(before);
+        let mut got = reads.got.into_inner();
+        got.sort_unstable();
+        got.dedup();
+        (r, u, got)
+    };
+    let Some(s) = session() else {
+        return (0..keys.len()).into_par_iter().map(|i| run(i).0).collect();
+    };
+    let slot = s.slot(name);
+    let computed = AtomicUsize::new(0);
+    let results: Vec<Arc<Receipted<R>>> = (0..keys.len())
+        .into_par_iter()
+        .map(|i| {
+            let key = keys[i];
+            let node = entry_node(name, ctx, key);
+            let mut fresh = |_: &mut dm_query::Ctx<'_>| -> Result<Outcome, QueryError> {
+                let persisted = slot.lock().unwrap_or_else(|e| e.into_inner()).items.get(&(ctx, key)).and_then(|it| it.bytes.clone());
+                if let Some(v) = persisted.as_ref().and_then(|b| de::<Receipted<R>>(b).ok().map(|v| (v, h(&[b])))) {
+                    if current(&v.0 .2) {
+                        return Ok(Outcome::new(v.0, v.1, 64));
+                    }
+                }
+                computed.fetch_add(1, Ordering::Relaxed);
+                let v = run(i);
+                let b = ser(&v).map_err(|_| QueryError::Missing(node))?;
+                let hash = h(&[&b]);
+                s.keep(&slot, (ctx, key), Some(b.into()));
+                Ok(Outcome::new(v, hash, 64))
+            };
+            match s.db.get_with::<Receipted<R>>(node, &mut fresh) {
+                Ok(v) if current(&v.2) => v,
+                // Held, but an entry it read changed: computed again in its place.
+                Ok(_) => {
+                    s.db.remove(node);
+                    s.db.get_with::<Receipted<R>>(node, &mut fresh).unwrap_or_else(|_| Arc::new(run(i)))
+                }
+                Err(_) => Arc::new(run(i)),
+            }
+        })
+        .collect();
+    {
+        let (run_no, lease) = (s.run.load(Ordering::Relaxed), s.lease.load(Ordering::Relaxed));
+        let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
+        for key in keys {
+            if let Some(item) = g.items.get_mut(&(ctx, *key)) {
+                item.seen = run_no;
+                item.leases |= lease;
+            }
+        }
+    }
+    let n = computed.load(Ordering::Relaxed);
+    stats_add(name, keys.len() - n, n);
+    let mut uses = Vec::new();
+    let mut out = Vec::with_capacity(results.len());
+    for r in results {
+        uses.extend(r.1.iter().cloned());
+        out.push(r.0.clone());
+    }
+    crate::dm::sys::replay_recorded(uses);
+    out
 }
 
 /// Facts, merge, judge. `merge` receives the facts in `files` order; the judge reads the merged index. The judge's results are

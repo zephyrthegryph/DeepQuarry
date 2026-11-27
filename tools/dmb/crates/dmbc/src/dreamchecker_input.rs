@@ -10,7 +10,11 @@ use std::sync::Arc;
 
 use dm_tree::frontend::{BodyArena, ColdFrontend};
 use dm_tree::DefinitionMode;
-use dreamchecker::native::input::{Body, CheckerInput, InputType, Site, Sites, Where};
+use dreamchecker::native::facts::{Diag, SettingsFacts};
+use dreamchecker::native::input::{Bodies, CheckerInput, InputType, Site, Sites, Where};
+use dreamchecker::native::model::{Precedes, ProcId};
+use dreamchecker::native::Kept;
+use dreamchecker::native::walk::ProcFacts;
 use dreamchecker::native::model::{ModelBuilder, Param, ProcDecl, ProcKind, ProcValue, ReturnType, TypeId, VarFlags};
 use dreammaker::Location;
 use std::collections::HashMap;
@@ -80,6 +84,258 @@ impl Site for FrontSite<'_> {
     }
 }
 
+/// The front end's bodies, parsed on demand.
+struct FrontBodies<'f> {
+    frontend: &'f ColdFrontend,
+    arena: &'f BodyArena<'f>,
+    /// A body is taken from the arena once; the settings and the body pass both read it.
+    parsed: Vec<std::sync::OnceLock<Option<Arc<Vec<dm_syntax::Statement>>>>>,
+}
+
+impl Bodies for FrontBodies<'_> {
+    fn start(&self, body: u32) -> usize {
+        self.frontend.bodies.get(body as usize).map_or(0, |b| b.expanded_span.start)
+    }
+
+    fn statements(&self, body: u32) -> Option<Arc<Vec<dm_syntax::Statement>>> {
+        self.parsed
+            .get(body as usize)?
+            .get_or_init(|| {
+                let parsed = self.arena.take_parsed(self.frontend.bodies.get(body as usize)?).ok()?;
+                Some(Arc::new(parsed.statement_body()?.parsed().statements.clone()))
+            })
+            .clone()
+    }
+}
+
+/// The per-proc results as entries of the analysis query database (`dq_analyze::incr::keyed_reading_by`: held in memory by the
+/// daemon, persisted standalone), so a run computes only the procs whose inputs changed.
+///
+/// What decides a result, and so its key and context, in terms an edit elsewhere does not move:
+///
+/// * the proc (`ProcId`) and its body: the body's expanded text, its file's semantic path and the source text of the lines the
+///   body spans (its *region*: a token's line and column come from them; a line added above the proc moves none of them);
+/// * the model's structure (`structure_key`): every declaration's owner, name, kind, flags and spelling, the types and their
+///   explicit parents, and the file-id table; not where the declarations are (see below);
+/// * for a body, also every proc's settings facts in the form they are stored in (below).
+///
+/// A result's places are stored so that moving its region keeps it valid: its `Where` offsets relative to the body's start in
+/// the expanded text, and each location inside its region (its own file, a line of the region) relative to the region's first
+/// line; both are rebased to the current revision when it is read back. A location outside its region (a note naming another
+/// declaration, a directive another proc set) is kept as it is and recorded as a read of its file's content
+/// (`incr::Reads`): the result is computed again when that file changed.
+pub struct QueryStore {
+    structure_key: u128,
+    /// By body occurrence.
+    regions: Vec<Region>,
+    /// Every file's content by semantic path (what a location outside a result's region reads).
+    contents: dq_analyze::incr::Index<Arc<str>, u128>,
+    /// By file id: its semantic path.
+    paths: HashMap<dreammaker::FileId, Arc<str>>,
+    /// The digest of every proc's settings in their stored form, set by `settings` for `bodies`.
+    settings_digest: std::sync::Mutex<u128>,
+}
+
+/// One body's key and the region its places are stored relative to.
+struct Region {
+    key: u128,
+    /// The body's start in the expanded text.
+    start: usize,
+    /// Its file's id, and the first and last line it spans (1-based).
+    file: Option<dreammaker::FileId>,
+    first: u32,
+    last: u32,
+}
+
+/// A result with its places stored relative to its region (see [`QueryStore`]): `own` holds the indices (in `map_locations`
+/// order) of the locations whose line is relative to the region's first line.
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+struct Rel<T> {
+    value: T,
+    own: Vec<u32>,
+}
+
+fn h(bytes: &[u8]) -> u128 {
+    xxhash_rust::xxh3::xxh3_128(bytes)
+}
+
+impl QueryStore {
+    fn new(front: &Front, m: &crate::analysis_tree::Matched<'_>) -> Self {
+        use rayon::prelude::*;
+        let frontend: &ColdFrontend = &front.frontend;
+        let by_path: HashMap<&Path, &dm_tree::frontend::SourceFile> = frontend.files.iter().map(|f| (f.path.as_path(), f)).collect();
+        let expanded = frontend.expanded.text.as_str();
+        let ids = &front.ids;
+        let regions: Vec<Region> = frontend
+            .bodies
+            .par_iter()
+            .map(|o| {
+                let text = expanded.get(o.expanded_span.start..o.expanded_span.end).unwrap_or("");
+                let (region_text, first, last) = match by_path.get(o.source.path.as_path()) {
+                    Some(f) => {
+                        let starts = &f.line_starts;
+                        let src = f.text.as_str();
+                        let row = |at: usize| starts.partition_point(|&s| s <= at).saturating_sub(1);
+                        let (start, end) = (o.source.span.start as usize, o.source.span.end as usize);
+                        let (a, b) = (row(start), row(end.saturating_sub(1).max(start)));
+                        let from = starts.get(a).copied().unwrap_or(0).min(src.len());
+                        let to = starts.get(b + 1).copied().unwrap_or(src.len()).min(src.len()).max(from);
+                        (src.get(from..to).unwrap_or(""), a as u32 + 1, b as u32 + 1)
+                    }
+                    None => ("", 0, 0),
+                };
+                let key = dq_analyze::incr::mix(&[h(text.as_bytes()), h(o.source.semantic_path.as_bytes()), h(region_text.as_bytes())]);
+                Region { key, start: o.expanded_span.start, file: ids.get(&o.source.semantic_path).copied(), first, last }
+            })
+            .collect();
+        let tree = &frontend.snapshot.tree;
+        let symbols = tree.symbols();
+        let mut decl: Vec<u8> = Vec::new();
+        decl.extend_from_slice(b"dreamchecker-native-structure-v1");
+        for node in tree.types() {
+            decl.extend_from_slice(symbols.text(node.path).unwrap_or("").as_bytes());
+            decl.extend_from_slice(&[node.explicit_parent as u8, 0xff]);
+            if let Some(parent) = node.parent.and_then(|p| tree.type_node(p)) {
+                decl.extend_from_slice(symbols.text(parent.path).unwrap_or("").as_bytes());
+            }
+            decl.extend_from_slice(&[0xfe]);
+        }
+        for item in &m.items {
+            decl.extend_from_slice(item.owner.as_bytes());
+            decl.extend_from_slice(&[0xff]);
+            decl.extend_from_slice(item.name.as_bytes());
+            decl.extend_from_slice(&[item.slot as u8, item.member.definition as u8]);
+            decl.extend_from_slice(&item.member.metadata.flags.to_le_bytes());
+            decl.extend_from_slice(item.spelling.as_ref().map_or("", |s| s.header.as_str()).as_bytes());
+            decl.extend_from_slice(&[0xfe]);
+        }
+        let mut ids: Vec<(&Arc<str>, &dreammaker::FileId)> = front.ids.iter().collect();
+        ids.sort();
+        decl.extend_from_slice(format!("{ids:?}").as_bytes());
+        let structure_key = h(&decl);
+        let paths: HashMap<dreammaker::FileId, Arc<str>> = front.ids.iter().map(|(p, id)| (*id, Arc::clone(p))).collect();
+        let contents: HashMap<Arc<str>, u128> = {
+            let by_file: HashMap<&Path, u128> =
+                frontend.files.par_iter().map(|f| (f.path.as_path(), h(f.text.as_str().as_bytes()))).collect::<Vec<_>>().into_iter().collect();
+            frontend
+                .plan
+                .occurrences
+                .iter()
+                .map(|o| (Arc::clone(&o.semantic_path), by_file.get(o.path.as_path()).copied().unwrap_or(0)))
+                .collect()
+        };
+        // DQ_DREAMCHECKER_KEY_TRACE=1: what the structure key is made of, by part (an edit that recomputes every proc shows which moved).
+        if dq_hostio::var_os("DQ_DREAMCHECKER_KEY_TRACE").is_some() {
+            for item in &m.items {
+                let header = item.spelling.as_ref().map_or("", |s| s.header.as_str());
+                dq_hostio::out(false, format_args!("dreamchecker key: item {} {} {:?} {:032x}", item.owner, item.name, item.slot, h(header.as_bytes())), true);
+            }
+            dq_hostio::out(false, format_args!("dreamchecker key: structure {structure_key:032x}"), true);
+        }
+        QueryStore {
+            structure_key,
+            regions,
+            contents: dq_analyze::incr::Index::new(contents),
+            paths,
+            settings_digest: std::sync::Mutex::new(0),
+        }
+    }
+
+    fn keys(&self, bodies: &[u32], procs: &[ProcId]) -> Vec<u128> {
+        procs
+            .iter()
+            .zip(bodies)
+            .map(|(p, b)| {
+                let body = self.regions.get(*b as usize).map_or(0, |r| r.key);
+                dq_analyze::incr::mix(&[body, (p.ty.0 as u128) << 64 | (p.slot as u128) << 32 | p.idx as u128])
+            })
+            .collect()
+    }
+
+    /// `value` with its locations inside `region` made relative to it; every other location's file recorded as read.
+    fn relative<T>(&self, mut value: T, region: Option<&Region>, reads: &dq_analyze::incr::Reads<'_, Arc<str>, u128>, map: impl Fn(&mut T, &mut dyn FnMut(&mut Location))) -> Rel<T> {
+        let mut own = Vec::new();
+        let mut i = 0u32;
+        map(&mut value, &mut |l: &mut Location| {
+            match region {
+                Some(r) if r.file == Some(l.file) && (r.first..=r.last).contains(&l.line) => {
+                    l.line -= r.first;
+                    own.push(i);
+                }
+                _ => {
+                    if let Some(path) = self.paths.get(&l.file) {
+                        reads.get(path);
+                    }
+                }
+            }
+            i += 1;
+        });
+        Rel { value, own }
+    }
+
+    /// The inverse of [`Self::relative`] at `region`'s current place.
+    fn absolute<T>(rel: &Rel<T>, region: Option<&Region>, map: impl Fn(&mut T, &mut dyn FnMut(&mut Location))) -> T
+    where
+        T: Clone,
+    {
+        let mut value = rel.value.clone();
+        let first = region.map_or(0, |r| r.first);
+        let mut i = 0u32;
+        let mut next = rel.own.iter().copied().peekable();
+        map(&mut value, &mut |l: &mut Location| {
+            if next.peek() == Some(&i) {
+                next.next();
+                l.line += first;
+            }
+            i += 1;
+        });
+        value
+    }
+}
+
+fn settings_locations(s: &mut SettingsFacts, f: &mut dyn FnMut(&mut Location)) {
+    s.map_locations(f)
+}
+
+fn facts_locations(s: &mut ProcFacts, f: &mut dyn FnMut(&mut Location)) {
+    s.map_locations(f)
+}
+
+impl dreamchecker::native::Store for QueryStore {
+    fn settings(&self, procs: &[ProcId], bodies: &[u32], compute: &(dyn Fn(usize) -> SettingsFacts + Sync)) -> Vec<SettingsFacts> {
+        let keys = self.keys(bodies, procs);
+        let ctx = dq_analyze::incr::ctx_key(&("dreamchecker-settings-v2", self.structure_key));
+        let region = |i: usize| self.regions.get(bodies[i] as usize);
+        let stored: Vec<Rel<SettingsFacts>> = dq_analyze::incr::keyed_reading_by("dreamchecker-settings", ctx, &keys, &self.contents, |i, reads| {
+            self.relative(compute(i), region(i), reads, settings_locations)
+        });
+        *self.settings_digest.lock().unwrap_or_else(|e| e.into_inner()) = dq_analyze::incr::ctx_key(&stored);
+        stored.iter().enumerate().map(|(i, r)| Self::absolute(r, region(i), settings_locations)).collect()
+    }
+    fn bodies(&self, procs: &[ProcId], bodies: &[u32], _settings: &[SettingsFacts], compute: &(dyn Fn(usize) -> ProcFacts + Sync)) -> Vec<ProcFacts> {
+        let keys = self.keys(bodies, procs);
+        let settings = *self.settings_digest.lock().unwrap_or_else(|e| e.into_inner());
+        let ctx = dq_analyze::incr::ctx_key(&("dreamchecker-bodies-v2", self.structure_key, settings));
+        let region = |i: usize| self.regions.get(bodies[i] as usize);
+        let stored: Vec<Rel<ProcFacts>> = dq_analyze::incr::keyed_reading_by("dreamchecker-bodies", ctx, &keys, &self.contents, |i, reads| {
+            let mut f = compute(i);
+            let at = region(i).map_or(0, |r| r.start);
+            f.map_places(|o| o - at);
+            self.relative(f, region(i), reads, facts_locations)
+        });
+        stored
+            .iter()
+            .enumerate()
+            .map(|(i, r)| {
+                let mut f = Self::absolute(r, region(i), facts_locations);
+                let at = region(i).map_or(0, |r| r.start);
+                f.map_places(|o| o + at);
+                f
+            })
+            .collect()
+    }
+}
+
 /// A parameter declaration's name and type (`var/mob/user = null`, `atom/A as obj in view()`).
 fn parameter(text: &str) -> (String, Vec<String>) {
     let declaration = match dm_syntax::top_level_assignment_index(text) {
@@ -145,8 +401,7 @@ fn semantic_bits(bits: u32) -> u8 {
 
 /// What the native checker reads, built from `front`; `run` then checks it.
 /// `run` also gets what registering the declarations reported (SpacemanDMM's "override precedes definition" hints), in order.
-pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<dreammaker::DMError>, &BuildStats) -> R) -> R {
-    use rayon::prelude::*;
+pub(crate) fn with_input<R>(front: &Front, run: impl FnOnce(CheckerInput<'_>, Vec<Precedes>, &BuildStats, &QueryStore) -> R) -> R {
     let frontend: &ColdFrontend = &front.frontend;
     let trace = dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some();
     let t = std::time::Instant::now();
@@ -164,25 +419,13 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     lap("matching");
     let sites = FrontSites { frontend, ids: &front.ids };
 
-    // Bodies by member, parsed on every core.
+    // A member's body is its occurrence, parsed when a result for it is computed.
     let arena = BodyArena::new_typed(frontend, |_| true);
-    let parsed: Vec<Option<Vec<dm_syntax::Statement>>> = frontend
-        .bodies
-        .par_iter()
-        .map(|o| {
-            let body = arena.take_parsed(o).ok()?;
-            Some(body.statement_body()?.parsed().statements.clone())
-        })
-        .collect();
-    let mut bodies = Vec::new();
     let mut body_of: HashMap<u32, u32> = HashMap::new();
-    for (occurrence, statements) in frontend.bodies.iter().zip(parsed) {
-        if let Some(statements) = statements {
-            body_of.insert(occurrence.member.0, bodies.len() as u32);
-            bodies.push(Body { statements });
-        }
+    for (i, occurrence) in frontend.bodies.iter().enumerate() {
+        body_of.insert(occurrence.member.0, i as u32);
     }
-
+    let bodies = FrontBodies { frontend, arena: &arena, parsed: (0..frontend.bodies.len()).map(|_| std::sync::OnceLock::new()).collect() };
     lap("bodies");
     let mut builder = ModelBuilder::with_builtins();
     let tree = &frontend.snapshot.tree;
@@ -201,68 +444,91 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
         }
     }
     let mut registered = Vec::new();
-    let mut stats = BuildStats { bodies: bodies.len(), ..Default::default() };
-    for item in &m.items {
-        let Item { owner, name, slot, member, spelling, id } = item;
-        let ty = builder.add_type_path(Where::Fixed(Location::builtins()), owner);
-        let location = spelling.as_ref().map_or(Where::Fixed(Location::builtins()), |s| Where::At(s.at));
-        match slot {
-            Slot::VarDeclare => {
-                let (type_path, spaceman) = match spelling.as_ref().and_then(|s| var_header(owner, &s.header)) {
-                    Some(v) => (v.type_parts, spaceman_bits(v.spaceman)),
-                    None => (Vec::new(), 0),
-                };
-                // SpacemanDMM places a var declaration at the token after its name: the `=`, or the end of its line.
-                let location = match spelling.as_ref() {
-                    Some(s) => match dm_syntax::top_level_assignment_index(&s.header) {
-                        Some(index) => Where::At(s.at + index),
-                        None => Where::DeclEnd(s.at),
-                    },
-                    None => location,
-                };
-                builder.declare_var(ty, name, location, VarFlags(semantic_bits(member.metadata.flags) | spaceman), type_path);
-                stats.vars += 1;
-            }
-            Slot::VarOverride => {
-                let location = match spelling.as_ref().and_then(|s| Some(s.at + dm_syntax::top_level_assignment_index(&s.header)?)) {
-                    Some(at) => Where::At(at),
-                    None => location,
-                };
-                builder.override_var(ty, name, location);
-                stats.vars += 1;
-            }
-            Slot::Proc | Slot::Verb => {
-                let mut parameters = Vec::new();
-                let mut return_type = ReturnType::None;
-                let mut location = location;
-                if let (Some(s), Some(procedure)) = (spelling.as_ref(), member.metadata.procedure.as_ref()) {
-                    if let Some((before, arguments, after)) = signature_parts(&s.header) {
-                        // SpacemanDMM places a proc at its parameter list's `(`, a parameter at the token after it.
-                        let base = s.at + before.len() + 1;
-                        location = Where::At(base - 1);
-                        for p in procedure.signature.parameters.iter() {
-                            let (start, end) = (p.relative_span.start, p.relative_span.end);
-                            if let Some(t) = arguments.get(start..end) {
-                                let (name, type_path) = parameter(t);
-                                parameters.push(Param { name, type_path, location: Where::At(base + end) });
+    let mut stats = BuildStats { bodies: frontend.bodies.len(), ..Default::default() };
+    // Each declaration's record on every core, registered in declaration order.
+    enum Prep {
+        Var(Where, VarFlags, Vec<String>),
+        Override(Where),
+        Proc(Option<ProcDecl>, ProcValue),
+    }
+    let prepared: Vec<Prep> = {
+        use rayon::prelude::*;
+        m.items
+            .par_iter()
+            .map(|item| {
+                let Item { owner, slot, member, spelling, id, .. } = item;
+                let location = spelling.as_ref().map_or(Where::Fixed(Location::builtins()), |s| Where::At(s.at));
+                match slot {
+                    Slot::VarDeclare => {
+                        let (type_path, spaceman) = match spelling.as_ref().and_then(|s| var_header(owner, &s.header)) {
+                            Some(v) => (v.type_parts, spaceman_bits(v.spaceman)),
+                            None => (Vec::new(), 0),
+                        };
+                        // SpacemanDMM places a var declaration at the token after its name: the `=`, or the end of its line.
+                        let location = match spelling.as_ref() {
+                            Some(s) => match dm_syntax::top_level_assignment_index(&s.header) {
+                                Some(index) => Where::At(s.at + index),
+                                None => Where::DeclEnd(s.at),
+                            },
+                            None => location,
+                        };
+                        Prep::Var(location, VarFlags(semantic_bits(member.metadata.flags) | spaceman), type_path)
+                    }
+                    Slot::VarOverride => Prep::Override(
+                        match spelling.as_ref().and_then(|s| Some(s.at + dm_syntax::top_level_assignment_index(&s.header)?)) {
+                            Some(at) => Where::At(at),
+                            None => location,
+                        },
+                    ),
+                    Slot::Proc | Slot::Verb => {
+                        let mut parameters = Vec::new();
+                        let mut return_type = ReturnType::None;
+                        let mut location = location;
+                        if let (Some(s), Some(procedure)) = (spelling.as_ref(), member.metadata.procedure.as_ref()) {
+                            if let Some((before, arguments, after)) = signature_parts(&s.header) {
+                                // SpacemanDMM places a proc at its parameter list's `(`, a parameter at the token after it.
+                                let base = s.at + before.len() + 1;
+                                location = Where::At(base - 1);
+                                for p in procedure.signature.parameters.iter() {
+                                    let (start, end) = (p.relative_span.start, p.relative_span.end);
+                                    if let Some(t) = arguments.get(start..end) {
+                                        let (name, type_path) = parameter(t);
+                                        parameters.push(Param { name, type_path, location: Where::At(base + end) });
+                                    }
+                                }
+                                if procedure.signature.variadic {
+                                    let at = arguments.rfind("...").map_or(base, |i| base + i);
+                                    parameters.push(Param { name: "...".into(), type_path: Vec::new(), location: Where::At(at) });
+                                }
+                                return_type = return_annotation(after);
                             }
                         }
-                        if procedure.signature.variadic {
-                            let at = arguments.rfind("...").map_or(base, |i| base + i);
-                            parameters.push(Param { name: "...".into(), type_path: Vec::new(), location: Where::At(at) });
-                        }
-                        return_type = return_annotation(after);
+                        let declaration = (member.definition == DefinitionMode::Declare).then(|| ProcDecl {
+                            kind: if *slot == Slot::Verb { ProcKind::Verb } else { ProcKind::Proc },
+                            is_final: false,
+                            location,
+                            return_type,
+                        });
+                        Prep::Proc(declaration, ProcValue { location, parameters, body: body_of.get(&id.0).copied() })
                     }
                 }
-                let declaration = (member.definition == DefinitionMode::Declare).then(|| ProcDecl {
-                    kind: if *slot == Slot::Verb { ProcKind::Verb } else { ProcKind::Proc },
-                    is_final: false,
-                    location,
-                    return_type,
-                });
-                let body = body_of.get(&id.0).copied();
-                let r = builder.add_proc(ty, name, declaration, ProcValue { location, parameters, body });
-                registered.extend(r.hint.map(|h| h.error(&*site)));
+            })
+            .collect()
+    };
+    for (item, prep) in m.items.iter().zip(prepared) {
+        let ty = builder.add_type_path(Where::Fixed(Location::builtins()), &item.owner);
+        match prep {
+            Prep::Var(location, flags, type_path) => {
+                builder.declare_var(ty, &item.name, location, flags, type_path);
+                stats.vars += 1;
+            }
+            Prep::Override(location) => {
+                builder.override_var(ty, &item.name, location);
+                stats.vars += 1;
+            }
+            Prep::Proc(declaration, value) => {
+                let r = builder.add_proc(ty, &item.name, declaration, value);
+                registered.extend(r.hint);
                 stats.procs += 1;
             }
         }
@@ -271,10 +537,12 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     let model = builder.finish(&parents);
     lap("model");
     if trace {
-        dq_hostio::out(false, format_args!("dreamchecker: native input in {:.1?} ({} types, {} bodies)", t.elapsed(), model.types.len(), bodies.len()), true);
+        dq_hostio::out(false, format_args!("dreamchecker: native input in {:.1?} ({} types, {} bodies)", t.elapsed(), model.types.len(), frontend.bodies.len()), true);
     }
-    let input = CheckerInput { model, bodies, sites: &sites };
-    run(&input, registered, &stats)
+    let input = CheckerInput { model, bodies: &bodies, sites: &sites };
+    let store = QueryStore::new(front, &m);
+    lap("keys");
+    run(input, registered, &stats, &store)
 }
 
 #[derive(Default)]
@@ -284,40 +552,266 @@ pub struct BuildStats {
     pub procs: usize,
 }
 
+/// What one run found, kept in the daemon for the front end revision it read (see [`check`]).
+struct Resident {
+    dme: std::path::PathBuf,
+    frontend: dm_tree::frontend::FrontendRevision,
+    checks: bool,
+    ids: HashMap<Arc<str>, dreammaker::FileId>,
+    /// Every file the run registered, in order (the ids its diagnostics carry).
+    files: Vec<std::path::PathBuf>,
+    /// The preprocessor's warnings.
+    macro_diags: Vec<Diag>,
+    /// The model and its "override precedes definition" hints, at this revision's places.
+    model: dreamchecker::native::model::Model,
+    hints: Vec<Precedes>,
+    /// The checks' results (`None` for `--parse-only`).
+    kept: Option<Kept>,
+    bodies: usize,
+    /// Every diagnostic, in registration order, before the config's severities and filters.
+    diagnostics: Vec<Diag>,
+}
+
+static RESIDENT: std::sync::Mutex<Option<Resident>> = std::sync::Mutex::new(None);
+
 /// `analyze dreamchecker` on the native checker: the files under the front end's ids, the preprocessor's warnings, then the checks.
+///
+/// Every diagnostic is registered on a context of its own (no config, nothing printed) and then onto `context` in the same order,
+/// so what a run found is data apart from the config. In the daemon the last run is kept ([`Resident`]) with the front end revision
+/// it read:
+///
+/// * a request whose front end is that revision (the hosted front end returns the remembered one when no source changed)
+///   registers its diagnostics again;
+/// * a request whose front end is a later revision with the same declarations (an edit inside bodies, lines added or removed)
+///   moves the kept run to it (`dreamchecker_delta`, `Kept::update`): only the changed bodies are walked again, and the override
+///   and call-tree passes only when a walk changed what they read;
+/// * anything else (a declaration added, removed or changed, no delta: more than 256 files) computes a new run, its per-proc
+///   results from the query store.
+///
+/// `DQ_DREAMCHECKER_VERIFY=1` computes every moved run again from scratch (no store) and reports any difference (debug tooling).
 pub fn check(dme: &Path, context: &dreammaker::Context, checks: bool, cli: bool, threads: usize) -> Result<(), String> {
     let trace = dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some();
     let started = std::time::Instant::now();
+    let cpu0 = dq_analyze::util::cpu_ms();
     let front = crate::analysis_tree::front(dme)?;
+    let front_time = started.elapsed();
+    let front_cpu = dq_analyze::util::cpu_ms().saturating_sub(cpu0);
     if trace {
-        dq_hostio::out(false, format_args!("dreamchecker: front end {:.1?} (built {:.1?})", started.elapsed(), front.built), true);
+        dq_hostio::out(false, format_args!("dreamchecker: front end {front_time:.1?} (built {:.1?})", front.built), true);
     }
+    let hosted = crate::daemon::hosting();
+    let mut slot = RESIDENT.lock().unwrap_or_else(|e| e.into_inner());
+    let kept = slot.take().filter(|r| hosted && r.dme == dme && r.checks == checks);
+    let resident = match kept {
+        Some(r) if r.frontend.issuance().matches(&front.frontend) => {
+            if trace {
+                dq_hostio::out(false, format_args!("dreamchecker: front end revision unchanged, {} diagnostics kept", r.diagnostics.len()), true);
+            }
+            r
+        }
+        Some(r) => match moved(dme, &front, r, threads, trace) {
+            Ok(r) => r,
+            Err(why) => {
+                dq_hostio::out(false, format_args!("dreamchecker: computing a new run ({why})"), true);
+                computed(&front, dme, checks, threads, trace, started, false)
+            }
+        },
+        None => computed(&front, dme, checks, threads, trace, started, false),
+    };
+    if trace {
+        if let Some(k) = &resident.kept {
+            dq_hostio::out(false, format_args!("dreamchecker: kept {}", k.stats()), true);
+        }
+    }
+    let replay_started = std::time::Instant::now();
+    replay(context, &resident.files, &resident.diagnostics, resident.bodies, checks, cli);
+    let replayed = replay_started.elapsed();
+    if trace {
+        let total = started.elapsed();
+        let cpu = dq_analyze::util::cpu_ms().saturating_sub(cpu0);
+        dq_hostio::out(
+            false,
+            format_args!(
+                "dreamchecker: done at {total:.1?}: front end {front_time:.1?} (process cpu {front_cpu} ms), checker {:.1?} (process cpu {} ms; registering {} diagnostics {replayed:.1?}); {}",
+                total.saturating_sub(front_time),
+                cpu.saturating_sub(front_cpu),
+                resident.diagnostics.len(),
+                dq_analyze::incr::stats()
+            ),
+            true,
+        );
+    }
+    if hosted {
+        *slot = Some(resident);
+    }
+    Ok(())
+}
+
+/// Registers a run's files and diagnostics on `context`, printing what the checker prints on the way under `cli`.
+fn replay(context: &dreammaker::Context, files: &[std::path::PathBuf], diagnostics: &[Diag], bodies: usize, checks: bool, cli: bool) {
+    for f in files {
+        context.register_file(f);
+    }
+    if cli {
+        dq_hostio::out(false, format_args!("parsed {bodies}/{bodies} proc bodies (100%)"), true);
+        if checks {
+            dreamchecker::native::print_sections();
+        }
+    }
+    context.register_errors(diagnostics.iter().map(Diag::error));
+}
+
+/// The hints' diagnostics at `sites`' places.
+fn hint_diags(hints: &[Precedes], sites: &FrontSites<'_>) -> Vec<Diag> {
+    let site = sites.site();
+    hints.iter().map(|h| Diag::of(&h.error(&*site))).collect()
+}
+
+/// A new run over `front`: every result computed, the per-proc ones from the query store (`fresh`: computed, no store).
+fn computed(front: &Front, dme: &Path, checks: bool, threads: usize, trace: bool, started: std::time::Instant, fresh: bool) -> Resident {
+    let own = dreammaker::Context::default();
     front.files_ctx.clone_file_list().for_each(|p| {
-        context.register_file(p);
+        own.register_file(p);
     });
     let mut ids = front.ids.clone();
     let mut place = |path: &str, line: usize, column: usize| {
-        let file = *ids.entry(Arc::from(path)).or_insert_with(|| context.register_file(&front.registered(path)));
+        let file = *ids.entry(Arc::from(path)).or_insert_with(|| own.register_file(&front.registered(path)));
         Location { file, line: line as u32, column: column.min(u16::MAX as usize) as u16 }
     };
-    for e in crate::analysis_tree::macro_warnings(&front.frontend, front.initial.clone(), &mut place) {
-        context.register_error(e);
-    }
+    let macro_diags: Vec<Diag> = crate::analysis_tree::macro_warnings(&front.frontend, front.initial.clone(), &mut place).iter().map(Diag::of).collect();
     if trace {
         dq_hostio::out(false, format_args!("dreamchecker: preprocessor warnings at {:.1?}", started.elapsed()), true);
     }
-    with_input(&front, |input, registered, stats| {
-        for e in registered {
-            context.register_error(e);
-        }
-        if cli {
-            dq_hostio::out(false, format_args!("parsed {}/{} proc bodies (100%)", stats.bodies, stats.bodies), true);
-        }
-        if checks {
-            dreamchecker::native::run(context, input, cli, threads);
-        }
+    let (model, hints, kept, bodies) = with_input(front, |input, hints, stats, store| {
+        let kept = checks.then(|| match fresh {
+            true => Kept::compute(&input, &dreamchecker::native::Compute { threads }, threads),
+            false => Kept::compute(&input, store, threads),
+        });
+        (input.model, hints, kept, stats.bodies)
     });
-    Ok(())
+    let sites = FrontSites { frontend: &front.frontend, ids: &front.ids };
+    let mut diagnostics = macro_diags.clone();
+    diagnostics.extend(hint_diags(&hints, &sites));
+    if let Some(k) = &kept {
+        diagnostics.extend(k.diagnostics());
+    }
+    let mut files = Vec::new();
+    own.clone_file_list().for_each(|p| files.push(p.to_path_buf()));
+    Resident {
+        dme: dme.to_path_buf(),
+        frontend: front.frontend.clone(),
+        checks,
+        ids: front.ids.clone(),
+        files,
+        macro_diags,
+        model,
+        hints,
+        kept,
+        bodies,
+        diagnostics,
+    }
+}
+
+/// `r` moved to `front`'s revision (see [`check`]), or why it cannot be.
+fn moved(dme: &Path, front: &Front, mut r: Resident, threads: usize, trace: bool) -> Result<Resident, String> {
+    let t = std::time::Instant::now();
+    let (old, new): (&ColdFrontend, &ColdFrontend) = (&r.frontend, &front.frontend);
+    let delta = match new.delta.as_ref() {
+        Some(d) if d.base == old.revision => d.clone(),
+        _ => crate::daemon::hosted_changes_since(dme, &crate::analysis_tree::front_defines(), old.revision)
+            .ok_or_else(|| format!("no delta from revision {} to {}", old.revision, new.revision))?,
+    };
+    if delta.revision != new.revision {
+        return Err(format!("the delta reaches revision {}, not {}", delta.revision, new.revision));
+    }
+    if r.ids != front.ids {
+        return Err("the files differ".into());
+    }
+    let edit = crate::dreamchecker_delta::Edit::new(old, new, &delta, &r.ids)?;
+    let mut macro_diags = std::mem::take(&mut r.macro_diags);
+    for d in &mut macro_diags {
+        let mut ok = true;
+        d.map_locations(&mut |l| ok &= edit.relocate(l));
+        if !ok {
+            return Err("a preprocessor warning sits on an edited line".into());
+        }
+    }
+    let set_up = t.elapsed();
+    let mut model = std::mem::take(&mut r.model);
+    let all_moved = {
+        use rayon::prelude::*;
+        model.types.par_iter_mut().with_min_len(256).map(|ty| ty.map_places(&|w| edit.remap(w))).reduce(|| true, |a, b| a & b)
+    };
+    if !all_moved {
+        return Err("a declaration's place cannot be moved".into());
+    }
+    let mut hints = std::mem::take(&mut r.hints);
+    if !hints.iter_mut().all(|h| h.map_places(&|w| edit.remap(w))) {
+        return Err("a hint's place cannot be moved".into());
+    }
+    let remapped = t.elapsed();
+    let sites = FrontSites { frontend: new, ids: &front.ids };
+    let arena = BodyArena::new_typed(new, |_| true);
+    let bodies = FrontBodies { frontend: new, arena: &arena, parsed: (0..new.bodies.len()).map(|_| std::sync::OnceLock::new()).collect() };
+    let input = CheckerInput { model, bodies: &bodies, sites: &sites };
+    let mut updated = None;
+    let (mut named, mut walked) = (std::time::Duration::ZERO, std::time::Duration::ZERO);
+    if let Some(kept) = r.kept.as_mut() {
+        let lap = std::time::Instant::now();
+        let occurrences = kept.body_occurrences();
+        let changed: Vec<usize> = (0..occurrences.len()).filter(|&i| edit.body_changed(occurrences[i] as usize)).collect();
+        let shifts: Vec<isize> = occurrences.iter().map(|&b| edit.shift(b as usize)).collect();
+        named = lap.elapsed();
+        let lap = std::time::Instant::now();
+        updated = Some(kept.update(&input, &changed, &|i| shifts.get(i).copied().unwrap_or(0), &|l| edit.relocate(l), threads)?);
+        walked = lap.elapsed();
+    }
+    let model = input.model;
+    let mut diagnostics = macro_diags.clone();
+    diagnostics.extend(hint_diags(&hints, &sites));
+    if let Some(k) = &r.kept {
+        diagnostics.extend(k.diagnostics());
+    }
+    if trace {
+        dq_hostio::out(
+            false,
+            format_args!(
+                "dreamchecker: moved the kept run from revision {} to {} in {:.1?} (set up {:.1?}, places {:.1?}, bodies named {:.1?}, update {:.1?}; {} edited files; {:?})",
+                old.revision,
+                new.revision,
+                t.elapsed(),
+                set_up,
+                remapped.saturating_sub(set_up),
+                named,
+                walked,
+                edit.files(),
+                updated.unwrap_or_default()
+            ),
+            true,
+        );
+    }
+    let moved = Resident { frontend: front.frontend.clone(), macro_diags, model, hints, diagnostics, ..r };
+    if dq_hostio::var_os("DQ_DREAMCHECKER_VERIFY").is_some() {
+        let again = computed(front, dme, moved.checks, threads, false, std::time::Instant::now(), true);
+        let same = again.files == moved.files && again.diagnostics == moved.diagnostics;
+        dq_hostio::out(
+            false,
+            format_args!(
+                "dreamchecker verify: the moved run {} the run computed again ({} and {} diagnostics)",
+                if same { "equals" } else { "DIFFERS from" },
+                moved.diagnostics.len(),
+                again.diagnostics.len()
+            ),
+            true,
+        );
+        if !same {
+            for (i, (a, b)) in moved.diagnostics.iter().zip(&again.diagnostics).enumerate().filter(|(_, (a, b))| a != b).take(5) {
+                dq_hostio::out(false, format_args!("dreamchecker verify: #{i}: moved {a:?}\n  computed {b:?}"), true);
+            }
+            return Ok(again);
+        }
+    }
+    Ok(moved)
 }
 
 /// Registers [`check`] as `analyze dreamchecker`'s checker.

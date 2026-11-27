@@ -1,5 +1,4 @@
 //! The values the body walk infers (SpacemanDMM DreamChecker's `StaticType`, `Assumption`, `Analysis`), over the native model.
-use dm::Location;
 
 use super::input::Where;
 use super::model::ProcId;
@@ -7,7 +6,7 @@ use foldhash::{HashSet, HashSetExt};
 
 use super::model::{Model, TypeId};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
 pub enum StaticType {
     None,
     Type(TypeId),

@@ -121,21 +121,22 @@ impl Lint for UntypedMember {
         let statics = static_names(sem);
         let root = &cx.tree.root;
         let mut rows: Vec<(String, u32, String)> = Vec::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for (_, tp) in ty.get().procs.iter() {
-                for v in tp.value.iter() {
+        // Kept per file (`procs::per_file_in`): a file's rows read its own bodies and the model's structure (declarations, which vars
+        // are static), which the context names.
+        let per_file: Vec<Vec<(String, u32, String)>> = crate::sem::procs::per_file_in(sem, "untyped_member-rows", sem.structure_digest(), |rel, defs| {
+            let mut rows: Vec<(String, u32, String)> = Vec::new();
+            if !rel.starts_with("code/") || cx.exempt(rel) {
+                return rows;
+            }
+            for (owner, v) in defs {
+                {
                     let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
-                    if !rel.starts_with("code/") || cx.exempt(rel) {
-                        continue;
-                    }
                     let mut locals: HashMap<String, (String, Option<Place>)> = HashMap::new();
                     for p in v.parameters.iter() {
                         locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
                     }
                     collect_locals(code, rel, &mut locals);
-                    let sc = ProcScope { owner: &owner, locals };
+                    let sc = ProcScope { owner, locals };
                     walk_block(code, &mut |e, line| {
                         let Expression::Base { term, follow } = e else { return };
                         let mut cur = head_type(sem, &sc, &term.elem);
@@ -153,7 +154,9 @@ impl Lint for UntypedMember {
                     });
                 }
             }
-        }
+            rows
+        });
+        rows.extend(per_file.into_iter().flatten());
         rows.sort();
         rows.dedup();
         for (rel, line, name) in rows {

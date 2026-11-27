@@ -19,7 +19,7 @@ pub struct RetainedSemanticTree {
     /// The last published frontend with the project and defines it was built for: the base the next
     /// request's plan and expansion adopt their unchanged include subtrees and regions from.
     previous: Option<(std::path::PathBuf, std::collections::BTreeMap<String, String>, super::FrontendRevision)>,
-    /// Revisions built in this state (`next_revision`).
+    /// The last revision built in this state (`next_revision`).
     revisions: u64,
     /// The deltas of the last `DELTA_LOG` remembered revisions, oldest first (`changes_since`).
     deltas: std::collections::VecDeque<super::FrontendDelta>,
@@ -63,8 +63,12 @@ impl RetainedSemanticTree {
         );
     }
     /// A number for the next revision built in this state (`ColdFrontend::revision`).
+    ///
+    /// Numbers are unique in the process, not per state: a consumer that kept a revision of an evicted session and asks a new
+    /// session for `changes_since` it (or reads a delta's `base`) must not find another lineage's revision under that number.
     pub(super) fn next_revision(&mut self) -> u64 {
-        self.revisions += 1;
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+        self.revisions = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         self.revisions
     }
     /// What changed from revision `base` to the remembered frontend (`remember_frontend`): the chained deltas of the

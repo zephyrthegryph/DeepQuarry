@@ -6,7 +6,7 @@
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::pat::Pat;
-use crate::tree::CODE_DM;
+use crate::tree::{SourceFile, CODE_DM};
 
 const HINT: &str = "stack_trace()/CRASH() throw again from inside a catch and skip what follows it under any outer try: use dq_report_caught(e, \"context\"), or throw to re-raise";
 
@@ -16,7 +16,7 @@ static META: Meta = Meta {
     label: "report_in_catch",
     legacy: "",
     select: CODE_DM,
-    scan: ScanKind::Tree,
+    scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "throwing_report", hint: HINT }],
     allow: &[],
@@ -37,10 +37,10 @@ impl Lint for ReportInCatch {
         &META
     }
 
-    fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        for f in cx.files() {
+    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        {
             if f.rel.starts_with("code/tests/") || f.rel.contains("/_generated/") {
-                continue;
+                return;
             }
             let lines: Vec<(usize, &str)> = f.code().numbered().collect();
             let mut reported: Vec<usize> = Vec::new();

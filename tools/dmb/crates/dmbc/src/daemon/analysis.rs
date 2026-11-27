@@ -164,7 +164,12 @@ pub(super) fn serve(stream: &mut transport::Stream, request: AnalyzeRequest) -> 
     dq_analyze::cli::set_launch_prefix(vec!["analyze".to_string()]);
     let (plain, view) = dq_analyze::report::View::split(&request.argv);
     let env: std::collections::HashMap<String, String> = request.env.iter().cloned().collect();
-    if dq_analyze::cli::rememberable(&plain, &env) {
+    // `dreamchecker --json` is the checker's own flag (its totals line), not the report view: its argv is asked whole.
+    if request.argv.get(1).is_some_and(|c| c == "dreamchecker") {
+        if dq_analyze::cli::rememberable(&request.argv, &env) {
+            return serve_remembered(stream, request.argv.clone(), dq_analyze::report::View::default(), env, request.cwd);
+        }
+    } else if dq_analyze::cli::rememberable(&plain, &env) {
         return serve_remembered(stream, plain, view, env, request.cwd);
     }
     let (tx, rx) = std::sync::mpsc::channel::<(bool, Vec<u8>)>();
@@ -268,6 +273,7 @@ fn serve_remembered(
     cwd: PathBuf,
 ) -> io::Result<()> {
     let started = Instant::now();
+    let cpu0 = dq_analyze::util::cpu_ms();
     *LAST_REQUEST.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
     let root = dq_analyze::cli::root_in(&argv, &cwd);
     let next = (argv.clone(), env.clone(), cwd.clone());
@@ -312,9 +318,10 @@ fn serve_remembered(
         send(protocol::Reply::Diagnostic { stdout: false, bytes: chunk.to_vec() }, &mut send_error);
     }
     super::emit_stderr(format_args!(
-        "dmbd analyze: {} in {:.1?} (revision {}, exit {})",
+        "dmbd analyze: {} in {:.1?}, cpu {} ms (revision {}, exit {})",
         if computed { "answered (computed)" } else { "answered from memory" },
         started.elapsed(),
+        dq_analyze::util::cpu_ms().saturating_sub(cpu0),
         answer.revision,
         answer.code
     ));

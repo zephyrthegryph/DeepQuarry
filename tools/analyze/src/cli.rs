@@ -253,6 +253,7 @@ pub fn root_in(argv: &[String], cwd: &Path) -> PathBuf {
 pub fn run_hosted(argv: Vec<String>, env: std::collections::HashMap<String, String>, cwd: PathBuf, sink: std::sync::Arc<dq_hostio::Sink>) -> Hosted {
     let _one = HOSTED.lock().unwrap_or_else(|e| e.into_inner());
     take_pending_reset();
+    let tail_scope = (env.clone(), cwd.clone());
     let scope = dq_hostio::Scope { env, cwd, sink };
     let worker = std::thread::Builder::new().name("analyze-request".into()).stack_size(64 << 20).spawn(move || {
         dq_hostio::with_scope(scope, || {
@@ -274,7 +275,7 @@ pub fn run_hosted(argv: Vec<String>, env: std::collections::HashMap<String, Stri
                     return Hosted::failed();
                 }
             };
-            let code = pool.install(|| std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run_all(argv))));
+            let code = pool.install(|| std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run_answer(argv))));
             drop(pool);
             let code = match code {
                 Ok(c) => c,
@@ -293,9 +294,14 @@ pub fn run_hosted(argv: Vec<String>, env: std::collections::HashMap<String, Stri
     // The request is answered now; freeing what it built (seconds for a whole-tree model, which a process that exits never pays)
     // is the start of the next request's turn, done by [`finish_hosted`] after the reply.
     *HOSTED_ROOT.lock().unwrap_or_else(|e| e.into_inner()) = None;
+    *PENDING_TAIL.lock().unwrap_or_else(|e| e.into_inner()) = Some(tail_scope);
     *PENDING_RESET.lock().unwrap_or_else(|e| e.into_inner()) = true;
     done
 }
+
+/// The environment and working directory of a hosted request whose end-of-run work ([`finish_run`]: writing the stores, publishing
+/// the caches) still has to run. It runs after the reply, before the next request or the read-ahead starts (`take_pending_reset`).
+static PENDING_TAIL: std::sync::Mutex<Option<(std::collections::HashMap<String, String>, PathBuf)>> = std::sync::Mutex::new(None);
 
 /// What one hosted request did: its exit code, the report it made (a `check`), and what it depended on beyond the files under its
 /// root: the variables it read from its environment and whether it ran a child command.
@@ -315,13 +321,44 @@ impl Hosted {
 /// Whether the answer to `argv` is a function of the files under its root and the variables it reads, so a host may give the same
 /// answer again while none of them changed: a `check` that prints no timings, compares nothing with git and keeps its caches.
 /// `DQ_ALLOW_USAGE` makes the check append to a file outside the report, so a run with it set always runs. (`gen` and `baseline`
-/// write files; `dreamchecker` and the rest are not remembered yet.)
+/// write files.) A `dreamchecker` run reads the `.dme` it is given and the files it includes, and its config (`SpacemanDMM.toml`
+/// beside the `.dme`, or `-c`): remembered when every one of them is under the root (no `-c`, an `-e` that stays inside it). Its
+/// argv is asked whole: `--json` is its own flag there, not the report view's (`report::View::split` is for `check`).
 pub fn rememberable(argv: &[String], env: &std::collections::HashMap<String, String>) -> bool {
     let a = parse(argv.to_vec());
     let has = |f: &str| a.flags.iter().any(|x| x == f);
+    if a.cmd == "dreamchecker" {
+        return dreamchecker_rememberable(argv);
+    }
     a.cmd == "check"
         && !["--changed-only", "--timing", "--no-cache", "--rehash"].iter().any(|f| has(f))
         && dq_hostio::lookup(env, "DQ_ALLOW_USAGE").is_none_or(|v| v.is_empty())
+}
+
+/// See [`rememberable`]: no `-c`, and an `-e` that is relative without `..` (it is read against the request's working directory,
+/// which is part of the answer's key).
+fn dreamchecker_rememberable(argv: &[String]) -> bool {
+    let mut it = argv.iter().skip(2);
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "-c" => return false,
+            "-e" => match it.next() {
+                Some(dme) => {
+                    let p = Path::new(dme);
+                    if p.is_absolute() || p.components().any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::Prefix(_))) {
+                        return false;
+                    }
+                }
+                None => return false,
+            },
+            "--json" | "--parse-only" => {}
+            "--threads" => {
+                it.next();
+            }
+            _ => return false,
+        }
+    }
+    true
 }
 
 /// A finished request whose run state is not yet reset.
@@ -334,6 +371,13 @@ pub fn finish_hosted() {
 }
 
 fn take_pending_reset() {
+    if let Some((env, cwd)) = PENDING_TAIL.lock().unwrap_or_else(|e| e.into_inner()).take() {
+        let t0 = Instant::now();
+        // The request's own scope again (its cache directory and variables), output to the host's stderr: the client has its answer.
+        let scope = dq_hostio::Scope { env, cwd, sink: std::sync::Arc::new(|_, b: &[u8]| eprint_host(b)) };
+        dq_hostio::with_scope(scope, finish_run);
+        eprint_host(format!("analyze: end-of-run work after the reply took {:.1?}\n", t0.elapsed()).as_bytes());
+    }
     let mut p = PENDING_RESET.lock().unwrap_or_else(|e| e.into_inner());
     if std::mem::take(&mut *p) {
         crate::host::reset_run_state();
@@ -384,6 +428,7 @@ pub fn shed_hosted() -> bool {
 /// request is running or nothing was held.
 pub fn shed_stores() -> bool {
     let Ok(_one) = HOSTED.try_lock() else { return false };
+    crate::sem::walk_cache::shed();
     crate::incr::shed() > 0
 }
 
@@ -392,18 +437,25 @@ pub fn hosted_resident() -> bool {
     HOSTED_ROOT.lock().unwrap_or_else(|e| e.into_inner()).is_some()
 }
 
+/// Writes `bytes` to the host process's own stderr (outside any request's sink).
+fn eprint_host(bytes: &[u8]) {
+    use std::io::Write;
+    let _ = std::io::stderr().lock().write_all(bytes);
+}
+
 /// One run of `argv`, with the end-of-run work.
 fn run_all(argv: Vec<String>) -> u8 {
+    let code = run_answer(argv);
+    finish_run();
+    code
+}
+
+/// One run of `argv` up to its answer (the end-of-run work is [`finish_run`]).
+fn run_answer(argv: Vec<String>) -> u8 {
     let code = real_main(argv);
-    // The query stores' changed slots go to disk (src/incr.rs), then the cache files this run rewrote to the other worktrees
-    // (src/shared.rs).
-    crate::incr::flush();
     if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {
         eprintln!("analyze: {}", crate::incr::stats());
     }
-    crate::shared::publish();
-    crate::sem::model_store::finish();
-    crate::sem::walk_cache::finish();
     crate::util::cpu_account_report();
     if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {
         eprintln!("analyze: {} stored proc bodies decoded", dreammaker::objtree::decoded_count());
@@ -415,6 +467,28 @@ fn run_all(argv: Vec<String>) -> u8 {
         eprintln!("TEXT {} {}", n, k);
     }
     exit_byte(code)
+}
+
+/// The end of a run: the query stores' changed slots go to disk (src/incr.rs), then the cache files this run rewrote to the other
+/// worktrees (src/shared.rs), and the model and walk stores finish writing. Standalone it runs before the process exits; hosted, after
+/// the reply ([`take_pending_reset`]).
+fn finish_run() {
+    let trace = dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some();
+    let t0 = Instant::now();
+    crate::incr::flush();
+    let t1 = t0.elapsed();
+    crate::shared::publish();
+    let t2 = t0.elapsed();
+    crate::sem::model_store::finish();
+    let t3 = t0.elapsed();
+    crate::sem::walk_cache::finish();
+    if crate::incr::hosted() {
+        crate::sem::walk_cache::release_model();
+        crate::sem::model_store::keep_resident();
+    }
+    if trace {
+        eprintln!("analyze: end of run: stores {:.1?}, shared {:.1?}, model store {:.1?}, walk store {:.1?}", t1, t2 - t1, t3 - t2, t0.elapsed() - t3);
+    }
 }
 
 /// The byte an `ExitCode` carries (the ones this binary returns: SUCCESS, FAILURE and `from(n)`).

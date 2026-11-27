@@ -52,6 +52,9 @@ impl Diagnostic {
 }
 
 struct Memo {
+    /// The revision of the session's sources the conversion read (`service::hosted_sources_token`): unchanged means every file
+    /// is as it was. `None` outside a hosted session; then the digests below decide.
+    token: Option<u64>,
     /// Every file the model registered (relative to the root, or absolute) and its bytes' digest.
     inputs: Vec<(PathBuf, Hash)>,
     tree: Vec<u8>,
@@ -127,10 +130,16 @@ pub(crate) fn parse(dme: &Path, checker: bool) -> Result<dq_analyze::sem::model_
     }
     let started = Instant::now();
     let root = root_of(dme);
+    // What the session's sources look like now, through the watcher (no file is read or hashed when nothing changed).
+    let token = super::service::hosted_sources_token(&root);
     let mut guard = MEMO.lock().unwrap_or_else(|e| e.into_inner());
     let memos = guard.get_or_insert_with(HashMap::new);
     if let Some(memo) = memos.get(&root) {
-        if same_inputs(&root, &memo.inputs) {
+        let same = match (token, memo.token) {
+            (Some(now), Some(then)) => now == then,
+            _ => same_inputs(&root, &memo.inputs),
+        };
+        if same {
             let compared = started.elapsed();
             if let Ok(objtree) = dq_analyze::incr::de::<dreammaker::objtree::ObjectTree>(&memo.tree) {
                 let files_ctx = dreammaker::Context::default();
@@ -171,6 +180,7 @@ pub(crate) fn parse(dme: &Path, checker: bool) -> Result<dq_analyze::sem::model_
     let raw = parsed.raw.as_ref();
     // Only a checker parse is remembered: it serves the analysis request too, and encoding the tree costs about a second a request.
     let memo = checker.then(|| dq_analyze::incr::ser(&parsed.objtree).ok()).flatten().map(|tree| Memo {
+        token,
         inputs,
         tree,
         errors: parsed.errors.clone(),

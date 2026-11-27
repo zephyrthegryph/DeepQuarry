@@ -92,21 +92,30 @@ fn variant_aliases(cx: &Cx) -> BTreeMap<String, String> {
     let row = crate::pat_match!(r#"^\t"([^"]+)" = list\("#);
     let mut parents: BTreeMap<String, String> = BTreeMap::new();
     let mut rows: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for f in cx.all_files() {
-        if !f.rel.starts_with("code/content/") || !f.rel.ends_with(".dm") {
-            continue;
-        }
+    let files: Vec<&crate::tree::SourceFile> = cx.all_files().into_iter().filter(|f| f.rel.starts_with("code/content/") && f.rel.ends_with(".dm")).collect();
+    // Each file's registry rows (table -> parent) and table rows (table, key), kept per file (`crate::incr`), folded in file order.
+    let per_file: Vec<(Vec<(String, String)>, Vec<(String, String)>)> = crate::incr::facts("map_edits-variants", &files, |f| {
+        let (mut regs, mut keys) = (Vec::new(), Vec::new());
         let mut current: Option<String> = None;
         for (_, line) in f.raw().numbered() {
             if let Some(m) = registry.captures(line) {
-                parents.insert(m.s(2).to_string(), m.s(1).to_string());
+                regs.push((m.s(2).to_string(), m.s(1).to_string()));
             } else if let Some(m) = table.captures(line) {
                 current = Some(m.s(1).to_string());
             } else if let (Some(name), Some(m)) = (&current, row.captures(line)) {
-                rows.entry(name.clone()).or_default().push(m.s(1).to_string());
+                keys.push((name.clone(), m.s(1).to_string()));
             } else if line.starts_with("))") {
                 current = None;
             }
+        }
+        (regs, keys)
+    });
+    for (regs, keys) in per_file {
+        for (t, parent) in regs {
+            parents.insert(t, parent);
+        }
+        for (t, key) in keys {
+            rows.entry(t).or_default().push(key);
         }
     }
     let mut out = BTreeMap::new();
@@ -130,10 +139,10 @@ impl Lint for MapEdits {
         // The fields of the lazy state datums (/datum/<feature>_state): a map may still edit them by name, and the loader writes them through the feature.
         let state_head = crate::pat_match!(r"^/datum/\w+_state\s*$");
         let state_var = crate::pat_match!(r"^\tvar/(?:\w+/)*(\w+)");
-        for f in cx.all_files() {
-            if !f.rel.ends_with(".dm") {
-                continue;
-            }
+        let dm_files: Vec<&crate::tree::SourceFile> = cx.all_files().into_iter().filter(|f| f.rel.ends_with(".dm")).collect();
+        // Each file's lazy state fields and type-trait vars, kept per file (`crate::incr`).
+        let per_file: Vec<(Vec<String>, Vec<String>)> = crate::incr::facts("map_edits-fields", &dm_files, |f| {
+            let (mut lazy, mut traits) = (Vec::new(), Vec::new());
             let mut in_state = false;
             for (_, line) in f.raw().numbered() {
                 if state_head.captures(line).is_some() {
@@ -142,7 +151,7 @@ impl Lint for MapEdits {
                 }
                 if in_state {
                     if let Some(m) = state_var.captures(line) {
-                        lazy_fields.insert(m.s(1).to_string());
+                        lazy.push(m.s(1).to_string());
                     } else if !line.starts_with('\t') && !line.trim().is_empty() {
                         in_state = false;
                     }
@@ -151,24 +160,38 @@ impl Lint for MapEdits {
                     let body = line.trim_start().trim_start_matches("var_names = list(");
                     for row in body.split(',') {
                         if let Some((name, _)) = row.split_once('=') {
-                            trait_vars.insert(name.trim().trim_matches('"').to_string());
+                            traits.push(name.trim().trim_matches('"').to_string());
                         }
                     }
                 }
             }
+            (lazy, traits)
+        });
+        for (lazy, traits) in per_file {
+            lazy_fields.extend(lazy);
+            trait_vars.extend(traits);
         }
         let aliases = variant_aliases(cx);
         let mut maps = Vec::new();
         dmm_files(&cx.tree.root.join("maps"), &mut maps);
         maps.sort();
-        for path in maps {
-            let rel = path.strip_prefix(&cx.tree.root).unwrap_or(&path).to_string_lossy().replace('\\', "/");
-            if SKIP.iter().any(|s| rel.starts_with(s)) || SKIP_NAMES.iter().any(|s| rel.ends_with(s)) {
-                continue;
-            }
-            let Ok(bytes) = std::fs::read(&path) else { continue };
-            let text = String::from_utf8_lossy(&bytes);
-            for ((ty, var), number) in edits(&text) {
+        // Each map's edits, kept by the map's content (`crate::incr`): the maps are read and hashed, parsed only when they changed.
+        let loaded: Vec<(String, Vec<u8>)> = maps
+            .iter()
+            .filter_map(|path| {
+                let rel = path.strip_prefix(&cx.tree.root).unwrap_or(path).to_string_lossy().replace('\\', "/");
+                if SKIP.iter().any(|s| rel.starts_with(s)) || SKIP_NAMES.iter().any(|s| rel.ends_with(s)) {
+                    return None;
+                }
+                std::fs::read(path).ok().map(|b| (rel, b))
+            })
+            .collect();
+        let keys: Vec<u128> = loaded.iter().map(|(rel, b)| crate::incr::mix(&[crate::incr::ctx_key(rel), u128::from_le_bytes(blake3::hash(b).as_bytes()[..16].try_into().unwrap())])).collect();
+        let parsed: Vec<Vec<((String, String), usize)>> =
+            crate::incr::keyed_by("map_edits-edits", 0, &keys, |i| edits(&String::from_utf8_lossy(&loaded[i].1)).into_iter().collect());
+        for ((rel, _), map_edits) in loaded.iter().zip(parsed) {
+            let rel = rel.clone();
+            for ((ty, var), number) in map_edits {
                 // A path of a collapsed variant family (code/content/variants/variant_alias.dm) loads as its parent type, so its edits are the parent's.
                 let ty = aliases.get(&ty).cloned().unwrap_or(ty);
                 if MOVED.contains(&var.as_str()) || trait_vars.contains(&var) || lazy_fields.contains(&var) || sem.var_decl(&ty, &var).is_some() {

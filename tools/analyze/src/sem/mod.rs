@@ -111,6 +111,8 @@ pub struct Sem {
     env_key: u128,
     file_keys: HashMap<dreammaker::FileId, u128>,
     structure: std::sync::OnceLock<u128>,
+    /// [`Sem::placement_digest`], once.
+    placement: std::sync::OnceLock<u128>,
     globals: std::sync::OnceLock<globals::GlobalIndex>,
     writes: std::sync::OnceLock<reads::WriteIndex>,
 }
@@ -285,7 +287,7 @@ impl Sem {
             eprintln!("analyze: sem build: parse {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
         }
         let file_keys: HashMap<dreammaker::FileId, u128> = files.iter().filter_map(|(id, rel)| tree.get(rel).map(|f| (*id, f.hash))).collect();
-        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), globals: Default::default(), writes: Default::default() })
+        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), placement: Default::default(), globals: Default::default(), writes: Default::default() })
     }
 
     pub fn rel(&self, loc: Location) -> &str {
@@ -412,6 +414,42 @@ impl Sem {
                     }
                     if let Some(d) = &p.declaration {
                         h.update(format!("d{:?}{}{:?}", d.kind, d.flags.bits(), d.return_type).as_bytes());
+                    }
+                }
+                h.update(b"\n");
+            }
+            u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+        })
+    }
+
+    /// A digest of where the structure sits: the file of every type, var declaration and proc definition (no lines). With
+    /// [`structure_digest`](Self::structure_digest) it names what a judgement may read about the rest of the model besides
+    /// declarations (`VarSig::file`, `Sem::rel` of another definition), so a judgement kept per file under both is current
+    /// while neither moves. Computed once per model.
+    pub fn placement_digest(&self) -> u128 {
+        *self.placement.get_or_init(|| {
+            let mut h = blake3::Hasher::new();
+            for t in self.objtree.iter_types() {
+                let ty = t.get();
+                h.update(ty.path.as_bytes());
+                h.update(b"@");
+                h.update(self.file_of(ty.location).unwrap_or("").as_bytes());
+                for (name, v) in &ty.vars {
+                    h.update(b"|v");
+                    h.update(name.as_bytes());
+                    h.update(b"@");
+                    h.update(self.file_of(v.value.location).unwrap_or("").as_bytes());
+                    if let Some(d) = &v.declaration {
+                        h.update(b"@d");
+                        h.update(self.file_of(d.location).unwrap_or("").as_bytes());
+                    }
+                }
+                for (name, p) in &ty.procs {
+                    h.update(b"|p");
+                    h.update(name.as_bytes());
+                    for value in &p.value {
+                        h.update(b"@");
+                        h.update(self.file_of(value.location).unwrap_or("").as_bytes());
                     }
                 }
                 h.update(b"\n");
@@ -765,6 +803,13 @@ fn tempfile_dir(root: &Path) -> PathBuf {
 /// What the memo stores: the model, or nothing when the parse failed.
 pub struct SemBox {
     sem: Option<Sem>,
+}
+
+impl SemBox {
+    /// The model's object tree, when nothing else holds the box any more (the end of a run: `model_store::keep_resident`).
+    pub(crate) fn into_objtree(b: std::sync::Arc<SemBox>) -> Option<ObjectTree> {
+        std::sync::Arc::try_unwrap(b).ok()?.sem.map(|s| s.objtree)
+    }
 }
 
 /// A shared handle to the run's semantic model; derefs to [`Sem`].

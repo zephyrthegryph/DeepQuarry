@@ -11,6 +11,7 @@ pub mod analysis_parity;
 pub mod analysis_tree;
 pub mod slot_shuffle_check;
 pub mod dreamchecker_input;
+mod dreamchecker_delta;
 pub mod cache_flush;
 pub mod cache_maintenance;
 mod callable_warnings;

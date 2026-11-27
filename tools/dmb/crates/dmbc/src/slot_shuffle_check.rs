@@ -19,19 +19,31 @@ fn lines(dme: &Path) -> Result<Lines, String> {
     let front = crate::analysis_tree::front(dme)?;
     eprintln!("slot-shuffle-check: front end in {:.1?}", started.elapsed());
     let mut checker = Vec::new();
-    crate::dreamchecker_input::with_input(&front, |input, registered, stats| {
+    crate::dreamchecker_input::with_input(&front, |input, registered, stats, _store| {
         for ty in &input.model.types {
             checker.push(format!(
                 "type {} at {:?} parent {:?}/{:?} children {:?} vars {:?} procs {:?}",
                 ty.path, ty.location, ty.parent_path, ty.parent_type, ty.children, ty.vars, ty.procs
             ));
         }
-        for (index, body) in input.bodies.iter().enumerate() {
-            checker.push(format!("body {index} {:x}", xxhash_rust::xxh3::xxh3_128(format!("{:?}", body.statements).as_bytes())));
+        // Every body a proc value names, in model order: its statements and its start.
+        for ty in &input.model.types {
+            for (name, proc) in &ty.procs {
+                for value in &proc.values {
+                    if let Some(body) = value.body {
+                        let statements = input.bodies.statements(body);
+                        checker.push(format!(
+                            "body {} {name} {body} at {} {:x}",
+                            ty.path,
+                            input.bodies.start(body),
+                            xxhash_rust::xxh3::xxh3_128(format!("{statements:?}").as_bytes())
+                        ));
+                    }
+                }
+            }
         }
-        for hint in &registered {
-            checker.push(format!("registered {hint}"));
-        }
+        // The hints themselves are made from the declarations compared above.
+        checker.push(format!("registered {} hints", registered.len()));
         checker.push(format!("stats {} bodies {} vars {} procs", stats.bodies, stats.vars, stats.procs));
     });
     let parsed = crate::analysis_tree::parse_from_front(front, true);
