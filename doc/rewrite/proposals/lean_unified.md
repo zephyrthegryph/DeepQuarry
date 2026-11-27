@@ -302,6 +302,43 @@ What landed:
 - `DQ_DREAMCHECKER_VERIFY=1` (debug tooling, kept): every moved run is computed again from scratch (fresh model, no store) and
   compared diagnostic by diagnostic; a difference is printed and the computed run is used. `DQ_ANALYZE_PARSE_TRACE=1` prints the
   front end and checker times (wall and process CPU) and what a move did.
+- Front end revision numbers are unique in the process (`RetainedSemanticTree::next_revision`): a kept run of an evicted session
+  must not find another lineage's revision under its number when it asks the new session for `changes_since` it.
+- The recorded reads of the later passes are kept in the run itself, not as `incr` entries: they are judged against the kept
+  run's own previous results (the 12.6k call-tree findings read 38.8k procs in all), so they need no store round trip; the
+  per-proc results of a new run are `incr` entries with recorded reads (`keyed_reading_by`).
+
+Measured (`analyze dreamchecker --json` through one daemon with its own namespace and analysis cache, `DQ_ANALYZE_PARSE_TRACE=1`;
+the checker's time is the request's minus the front end's; the machine was shared with other lanes, so the first numbers are
+with it at 100 % CPU and the second on a quieter stretch):
+
+| Request | master | this branch |
+|---|---|---|
+| unchanged, in the daemon | 3.6-8.5 s (checker 3-5.5 s) | 2-8 ms (the answer from memory) |
+| a change the sources do not see (a file the `.dme` does not include) | as above | 64 ms in the daemon, checker 7.5 ms (the kept revision) |
+| one-proc body edit (a string in `admission_query.dm`) | 6-20 s; checker about 5.5 s (input 2.6 s, keys 1.1 s, settings and bodies from the store 0.6 s, overrides and call tree 1 s) | checker 200-314 ms at 100 % CPU, 93-100 ms quieter (the move 50 ms: places 14, update 18 of which moving the folded places 13; 1 body walked) |
+| line added inside a proc (every later proc moves) | every proc computed again (the model key held every declaration's line) | 1 proc walked; checker 95-265 ms |
+| two lines added in two procs | as above | 2 procs walked; checker 95 ms |
+| `sleep(1)` added to a widely called proc (12.3k new findings) | full run | 11.8k of 12.6k findings judged again, 14-15 s (the findings themselves) |
+| a var or proc added, a file deleted | full run, every per-proc result computed (240k) | a new run, per-proc results from the store when its structure was seen before, else computed (structure key) |
+| front end evicted (another session) | full run | a new run (no delta: revision numbers unique) |
+
+Proof: the corpus (62 cases, serial and threaded) and the analyze gate-test suite (298 unit tests and the integration tests)
+pass; dmbc's `dreamchecker_delta` and `analysis_db` tests and dm-tree's delta tests pass. Whole tree, through the daemon,
+`analyze dreamchecker --json` stdout and stderr byte-identical to master's at every step of base, string edit, base, line added,
+base, two lines added, base, `sleep` added, base, var added, base, proc added, base, file deleted (with its include), base; with
+`DQ_DREAMCHECKER_VERIFY=1` every moved run equal to the run computed again from scratch in the same daemon (string, line, `sleep`
+and their reverts: 516 and 12307 diagnostics), and the structural edits computed as new runs.
+
+What is left:
+
+- A new run after a structural edit (a var or proc added or removed, a declaration's spelling changed) still rebuilds the input
+  (matching, model, keys: 1-2 s) and reads 240k per-proc entries; with a new structure every per-proc result is computed again
+  (about 30 CPU-s). Keeping those per proc needs each walk's reads of the model recorded (the declarations it looked up, by
+  stable key) instead of one structure key; with the stable member slots (lane `compiler/stable-member-slots`) a new member
+  no longer renumbers the model's procs, which is the other half.
+- The folded places (788k calls) move with their proc on every edit (13-24 ms); keeping them relative to their proc's body would
+  make that free.
 
 
 ## 1+3 ENGINE: analysis results as queries (2026-11-27, branch `compiler/analysis-queries`)
