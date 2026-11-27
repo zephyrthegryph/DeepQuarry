@@ -505,6 +505,77 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
         0,
     )
 }
+/// One skeleton row installed by `install_local_members`: a type row's type, or a member row's view and the key of its
+/// local predecessor.
+enum InstalledRow<'a> {
+    Type(TypeId),
+    Member(member_binding::MemberView<'a>, Option<declaration_contributions::DeclarationKey>),
+}
+/// The rows of `skeletons` (the engine prefix, then the authored rows of `declarations` in order) installed from their
+/// owners' local shapes, in parallel chunks joined in order. `None` when a member row has no local shape (the caller installs
+/// row by row); an owner's first local failure is the error, the first in row order, as the serial install reports it.
+fn install_local_members<'a>(
+    tree: &SemanticTree,
+    skeletons: skeleton_roster::SkeletonView<'a>,
+    declarations: &declaration_contributions::KeyedDeclarations,
+    local_owners: &owner_local_shape::LocalOwners,
+    executor: &dm_exec::BuildExecutor,
+) -> Option<Result<Vec<InstalledRow<'a>>, TreeError>> {
+    let prefix = skeletons.len().checked_sub(declarations.len())?;
+    let roster = declarations.roster();
+    let workers = executor.workers().max(1);
+    let step = skeletons.len().div_ceil(workers * 8).max(1);
+    let ranges: Vec<std::ops::Range<usize>> = (0..skeletons.len())
+        .step_by(step)
+        .map(|start| start..(start + step).min(skeletons.len()))
+        .collect();
+    // `Err(None)`: a row without its local shape (decline); `Err(Some(error))`: the row's validation failure.
+    let installed = frontend::parallel::chunked_map_above(executor, &ranges, 1, |_, part| {
+        let mut out = Vec::with_capacity(part.iter().map(|range| range.len()).sum());
+        for range in part {
+            for (position, skeleton) in range.clone().zip(skeletons.slice(range.clone()).iter()) {
+                match skeleton {
+                    Skeleton::Type { path, .. } => out.push(InstalledRow::Type(*tree.by_path.get(path).ok_or(None)?)),
+                    Skeleton::Member {
+                        owner,
+                        name,
+                        mode,
+                        metadata,
+                        content,
+                        ..
+                    } => {
+                        let handle = position.checked_sub(prefix).and_then(|at| roster.get(at)).ok_or(None)?;
+                        let owner_shape = local_owners.get(&handle.owner).filter(|_| handle.owner == *owner).ok_or(None)?;
+                        let local = owner_shape.rows.get(handle.row as usize).and_then(|row| row.as_ref()).ok_or(None)?;
+                        if let Some((key, failure)) = owner_shape.first_failure {
+                            if key == local.key {
+                                return Err(Some(failure.error()));
+                            }
+                        }
+                        out.push(InstalledRow::Member(
+                            member_binding::MemberView {
+                                definition: *mode,
+                                owner: *tree.by_path.get(owner).ok_or(None)?,
+                                name: *name,
+                                kind: local.kind,
+                                metadata,
+                                content: *content,
+                                previous: None,
+                            },
+                            local.previous,
+                        ));
+                    }
+                }
+            }
+        }
+        Ok(out)
+    });
+    match installed {
+        Ok(rows) => Some(Ok(rows)),
+        Err(Some(error)) => Some(Err(error)),
+        Err(None) => None,
+    }
+}
 pub(crate) fn build_with_intrinsic_members_structural(
     mut symbols: SymbolTable,
     skeletons: skeleton_roster::SkeletonView<'_>,
@@ -718,7 +789,18 @@ pub(crate) fn build_with_intrinsic_members_structural(
     let local_owners = normalization.map(|(declarations, retained)| {
         retained.local.prepare(&tree, declarations, &callable_kinds, executor)
     });
-    let local_members = local_owners.as_ref().and_then(|owners| {
+    // Retained declarations on an executor: every row's install reads only its own row, its owner's local shape and the
+    // path index, so the rows are installed in parallel chunks and joined in order (member ids, owner rosters and targets
+    // in one cheap pass); the selectors are the owners' local selectors (every member group has one). Anything else installs
+    // row by row below.
+    let parallel_install_started = std::time::Instant::now();
+    let parallel_install = match (normalization, local_owners.as_ref(), member_projection.as_ref(), executor) {
+        (Some((declarations, _)), Some(local_owners), Some(_), Some(executor)) if executor.workers() > 1 => {
+            install_local_members(&tree, skeletons, declarations, local_owners, executor)
+        }
+        _ => None,
+    };
+    let local_members = local_owners.as_ref().filter(|_| parallel_install.is_none()).and_then(|owners| {
         let (declarations, _) = normalization?;
         member_projection.as_ref()?;
         let members: Vec<_> = declarations
@@ -733,7 +815,32 @@ pub(crate) fn build_with_intrinsic_members_structural(
                 .count())
         .then_some(members)
     });
-    for skeleton in skeletons {
+    let mut previous_keys: Option<Vec<Option<declaration_contributions::DeclarationKey>>> = None;
+    if let Some(installed) = parallel_install {
+        let rows = installed?;
+        let mut keys = Vec::with_capacity(member_count);
+        for row in rows {
+            match row {
+                InstalledRow::Type(id) => targets.push(Target::Type(id)),
+                InstalledRow::Member(view, previous) => {
+                    let id =
+                        MemberId(u32::try_from(members.len()).map_err(|_| TreeError::TooManyNodes)?);
+                    modes.push(view.definition);
+                    owned[view.owner.index()].push(id);
+                    members.push(view);
+                    keys.push(previous);
+                    targets.push(Target::Member(id));
+                }
+            }
+        }
+        previous_keys = Some(keys);
+        crate::change_set::record_outcome(format!(
+            "tree members installed in parallel: {} members in {:.3}s",
+            members.len(),
+            parallel_install_started.elapsed().as_secs_f64()
+        ));
+    }
+    for skeleton in skeletons.iter().filter(|_| previous_keys.is_none()) {
         match skeleton {
             Skeleton::Type { path, .. } => targets.push(Target::Type(tree.by_path[path])),
             Skeleton::Member {
@@ -805,7 +912,25 @@ pub(crate) fn build_with_intrinsic_members_structural(
             }
         }
     }
-    if let Some(local_members) = &local_members {
+    if let Some(previous_keys) = &previous_keys {
+        let projection = &member_projection
+            .as_ref()
+            .expect("parallel install has current key projection")
+            .ids;
+        for (index, previous) in previous_keys.iter().enumerate() {
+            members.set_previous(index, previous.map(|key| projection[&key]));
+        }
+        let direct = Arc::make_mut(&mut tree.direct);
+        for (owner, local) in local_owners
+            .as_ref()
+            .expect("parallel install has its owner plan")
+        {
+            let owner_id = tree.by_path[owner];
+            for &((name, kind), key) in local.selectors.iter() {
+                direct.insert((owner_id, name, kind), projection[&key]);
+            }
+        }
+    } else if let Some(local_members) = &local_members {
         let projection = &member_projection
             .as_ref()
             .expect("local rows have current key projection")

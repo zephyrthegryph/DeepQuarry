@@ -744,3 +744,34 @@ fn parallel_owner_passes_build_the_serial_tree() {
         None
     );
 }
+
+/// The parallel member install reports a local validation failure as the serial install does: the first failing row's.
+#[test]
+fn parallel_install_reports_the_serial_first_failure() {
+    let mut source = String::from("/datum/base\n    var/value = 1\n");
+    for index in 0..1500 {
+        source.push_str(&format!("/datum/base/t{index}\n    var/own{index} = {index}\n"));
+        if index == 700 || index == 1200 {
+            source.push_str(&format!("    var/own{index} = 2\n"));
+        }
+    }
+    let source: &'static str = Box::leak(source.into_boxed_str());
+    let build_on = |workers: usize| {
+        let executor = dm_exec::BuildExecutor::new(workers).unwrap();
+        let mut state = RetainedSemanticTree::new();
+        build_with_executor_and_semantic_state(
+            Path::new("project.dme"),
+            &Source(source),
+            &BTreeMap::new(),
+            FrontendConfig { workers, engine: None, observer: None },
+            None,
+            &executor,
+            Some(&mut state),
+        )
+        .err()
+        .map(|diagnostics| format!("{diagnostics:?}"))
+    };
+    let serial = build_on(1);
+    assert!(serial.is_some(), "a duplicate declaration fails the build");
+    assert_eq!(build_on(8), serial);
+}
