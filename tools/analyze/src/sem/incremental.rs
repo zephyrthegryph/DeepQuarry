@@ -411,7 +411,7 @@ fn pending(tree: &Tree) -> Arc<Pending> {
 /// stored record describes exactly this tree already (another consumer of the model ran first) its
 /// results are kept and the footprint is widened by what this run consulted.
 /// Off for `analyze gen`: the record's footprint is every file the walks reached, nearly the whole tree, so after an edit it is never
-/// valid there; the parsed model and the walks are kept by `model_store` and `walk_cache` instead. The lints (`analyze check`) keep it.
+/// valid there; the front end and the walks are kept by the daemon's session and `walk_cache` instead. The lints (`analyze check`) keep it.
 static CAPTURE_OFF: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Whether this is an `analyze gen` run (the lints' facts are not needed).

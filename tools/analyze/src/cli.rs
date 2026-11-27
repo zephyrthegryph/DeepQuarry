@@ -403,12 +403,6 @@ fn run_all(argv: Vec<String>) -> u8 {
     crate::shared::publish();
     crate::sem::walk_cache::finish();
     crate::util::cpu_account_report();
-    if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {
-        eprintln!("analyze: {} stored proc bodies decoded", dreammaker::objtree::decoded_count());
-        for (k, n) in dreammaker::objtree::decode_probes() {
-            eprintln!("BODY {} {}", n, k);
-        }
-    }
     for (k, n) in crate::tree::TEXT_PROBE.lock().unwrap().iter() {
         eprintln!("TEXT {} {}", n, k);
     }
@@ -431,9 +425,6 @@ static RUN_ARGV: crate::host::RunCell<Vec<String>> = crate::host::RunCell::new()
 
 fn real_main(argv: Vec<String>) -> ExitCode {
     let _ = RUN_ARGV.set(argv.clone());
-    if dq_hostio::var_os("DQ_BODY_PROBE").is_some() {
-        dreammaker::objtree::PROBE.store(true, std::sync::atomic::Ordering::Relaxed);
-    }
     crate::tree::start_watchdog();
     let args = parse(argv);
     let root = find_root(args.root.clone());

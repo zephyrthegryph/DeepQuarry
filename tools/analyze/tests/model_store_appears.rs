@@ -1,6 +1,5 @@
-//! A `.dm` file the `.dme` includes that did not exist when the model store was written is part of the model the next time it is read.
-//! `analyze gen` meets this on a fresh tree: pass 1 parses a model while the generated files are missing, pass 2 runs after they were
-//! written. The store lists only the files the preprocessor registered, so a file that was never registered has no key to differ.
+//! A `.dm` file the `.dme` includes that did not exist when a model was built is part of the next model. `analyze gen` meets this on a
+//! fresh tree: pass 1 builds a model while the generated files are missing, pass 2 runs after they were written.
 
 mod common;
 
@@ -17,8 +16,6 @@ fn has_type(root: &std::path::Path, path: &str) -> bool {
     let opts = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], scopes_from: Some(repo_root()), ..Default::default() };
     let engine = Engine::new(dq_analyze::run::registry(), opts).expect("engine");
     let found = dq_analyze::sem::sem_for(&engine.tree).is_some_and(|sem| sem.ty(path).is_some());
-    // The store writes its base on a side thread.
-    dq_analyze::sem::model_store::finish();
     found
 }
 

@@ -8,8 +8,6 @@
 //! Declarations that expand to nothing in DM (`CAPABILITIES(...)`, `STAT(...)`, `READS_AS(...)`,
 //! `READS_FROM(...)`, ...) are read from source text by [`decls`]; everything that needs real
 //! structure (what a proc body reads, what a type declares) comes from the typed tree here.
-//!
-//! dreammaker's parse ([`parse_for_checker`], [`model_store`]) is left only for DreamChecker's default path.
 
 pub mod actor_tests;
 pub mod checks;
@@ -25,7 +23,6 @@ pub mod layering;
 pub mod keys;
 pub mod gen;
 pub mod incremental;
-pub mod model_store;
 pub mod value_schema;
 pub mod walk_cache;
 pub mod body_facts;
@@ -574,138 +571,6 @@ fn layering_definitions(tree: &Tree, model: &Model) -> (HashMap<String, Vec<Stri
     (layering_type_defs, layering_owner_defs)
 }
 
-
-/// A full parse as DreamChecker makes it (`crate::dreamchecker`): every body parsed (not the lean encoding), the config of
-/// `config_dme`'s directory, every diagnostic kept.
-pub fn parse_for_checker(dme_path: &Path, config_dme: &Path) -> Result<model_store::Parsed, String> {
-    model_store::ensure_codec();
-    dreammaker::objtree::set_compact_parse(false);
-    parse_source(dme_path, &[], Source::Dme(None), false, Some(config_dme))
-}
-
-/// What the preprocessor reads.
-pub(crate) enum Source {
-    /// The `.dme` (or text standing in for it: includes resolve against the real `.dme`'s directory).
-    Dme(Option<String>),
-}
-
-/// dreammaker's parse of `dme_path` (DreamChecker's default path); `history` also returns the parse's macro history (`Parsed::defines`).
-/// Makes the next full parses hold proc bodies encoded (decoded when read) instead of as syntax trees: a much lower peak for a process
-/// that parses the whole tree and reads a few bodies, slower for one that reads them all.
-pub fn set_lean_parse(on: bool) {
-    model_store::ensure_codec();
-    dreammaker::objtree::set_compact_parse(on);
-}
-
-/// `checker`: parse as DreamChecker does (`crate::dreamchecker`): both contexts read the `.dme`'s `SpacemanDMM.toml` (the parser's
-/// code-standard checks read it), body ranges are kept, and every diagnostic of every severity is returned in `Parsed::raw`.
-pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Source, history: bool, checker: Option<&Path>) -> Result<model_store::Parsed, String> {
-    parse_source_env(dme_path, preregister, source, history, checker, None)
-}
-
-/// A build environment that replaces every predefined macro of the preprocessor: (name, parameters of a function-like macro,
-/// replacement text).
-#[derive(Clone, Debug, Default)]
-pub struct ParseEnvironment {
-    pub defines: Vec<(String, Option<Vec<String>>, String)>,
-}
-
-/// [`parse_for_checker`] under a caller's predefined macros instead of dreammaker's own (`dmbc analysis-parity` parses both trees in
-/// the native compiler's environment).
-pub fn parse_for_checker_with_env(dme_path: &Path, config_dme: &Path, env: ParseEnvironment) -> Result<model_store::Parsed, String> {
-    model_store::ensure_codec();
-    dreammaker::objtree::set_compact_parse(false);
-    parse_source_env(dme_path, &[], Source::Dme(None), false, Some(config_dme), Some(env))
-}
-
-fn parse_source_env(dme_path: &Path, preregister: &[PathBuf], source: Source, history: bool, checker: Option<&Path>, env: Option<ParseEnvironment>) -> Result<model_store::Parsed, String> {
-    let config = checker.map(|p| p.to_path_buf());
-    const BATCH: usize = 8192;
-    let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<dreammaker::lexer::LocatedToken>>(64);
-    let dme_for_pp = dme_path.to_path_buf();
-    let pre: Vec<PathBuf> = preregister.to_vec();
-    let config_pp = config.clone();
-    type Out = (dreammaker::Context, Option<dreammaker::preprocessor::StoredDefineHistory>);
-    let pp_thread = std::thread::Builder::new()
-        .name("dm-preprocess".into())
-        .stack_size(64 * 1024 * 1024)
-        .spawn(move || -> Result<Out, String> {
-            let _acct = CpuGuard(std::panic::Location::caller(), if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 });
-            let mut ctx = dreammaker::Context::default();
-            if let Some(toml) = &config_pp {
-                ctx.autodetect_config(toml);
-            }
-            for p in &pre {
-                ctx.register_file(p);
-            }
-            let stored = {
-                let mut pp = match source {
-                    Source::Dme(Some(t)) => dreammaker::preprocessor::Preprocessor::from_buffer(&ctx, dme_for_pp.clone(), t),
-                    Source::Dme(None) => dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?,
-                };
-                if let Some(env) = &env {
-                    pp.replace_environment_defines(&env.defines);
-                }
-                let mut batch = Vec::with_capacity(BATCH);
-                for tok in dreammaker::indents::IndentProcessor::new(&ctx, &mut pp) {
-                    batch.push(tok);
-                    if batch.len() == BATCH {
-                        if tx.send(std::mem::replace(&mut batch, Vec::with_capacity(BATCH))).is_err() {
-                            break;
-                        }
-                    }
-                }
-                if !batch.is_empty() {
-                    let _ = tx.send(batch);
-                }
-                history.then(|| pp.finalize().to_stored())
-            };
-            Ok((ctx, stored))
-        })
-        .map_err(|e| format!("preprocessor thread: {}", e))?;
-    let mut parse_ctx = dreammaker::Context::default();
-    if let Some(dme) = &config {
-        parse_ctx.autodetect_config(dme);
-    }
-    let fatal;
-    let objtree = {
-        let mut parser = dreammaker::parser::Parser::new(&parse_ctx, rx.into_iter().flatten());
-        parser.enable_procs();
-        dreammaker::parser::hold_parse_summary(config.is_some());
-        let (fatal_errored, mut tree) = parser.parse_object_tree_2();
-        dreammaker::parser::hold_parse_summary(false);
-        fatal = fatal_errored;
-        // A proc's body range ends in whatever file came next; nothing reads it (model_store splices files parsed alone).
-        if config.is_none() {
-            tree.drop_body_ranges();
-        }
-        tree
-    };
-    let (ctx, defines) = match pp_thread.join() {
-        Ok(r) => r?,
-        Err(_) => return Err("preprocessor thread panicked".to_string()),
-    };
-    let errors = {
-        let pp_errors = ctx.errors();
-        let parse_errors = parse_ctx.errors();
-        let mut all: Vec<&dreammaker::DMError> = pp_errors.iter().chain(parse_errors.iter()).filter(|e| matches!(e.severity(), dreammaker::Severity::Error)).collect();
-        // One context interleaved them in stream order; by location is the same order.
-        all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
-        all.iter().map(|e| format!("{}", e)).collect()
-    };
-    let raw = config.is_some().then(|| {
-        // The standalone checker's one context holds them in stream order: preprocessor and parser interleaved, then the summary line,
-        // then what finishing the tree registers. Files are read whole, one after the next, and ids go in reading order, so by location
-        // is the stream order (stable: one position keeps preprocessor-then-parser order).
-        let mut finish = std::mem::take(&mut *parse_ctx.errors_mut());
-        let before = dreammaker::parser::diagnostics_before_finish().min(finish.len());
-        let mut stream: Vec<dreammaker::DMError> = finish.drain(..before).collect();
-        stream.append(&mut ctx.errors_mut());
-        stream.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
-        model_store::CheckerDiagnostics { stream, summary: dreammaker::parser::take_parse_summary(), finish }
-    });
-    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines, raw, fatal })
-}
 
 /// One line of a file as the layering index reads it (see `Sem::build_with`).
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
