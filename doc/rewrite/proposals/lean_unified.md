@@ -143,3 +143,82 @@ tree-wide steps (spelling, matching, builder, finish: about 1 s), where dreammak
 Cold `gen` under dmbc (first model before the generated files exist) is not done. Two differences the test lane reported: columns (dmbc places an
 `if(1)` one column right of dreammaker; the real tree has no DreamChecker diagnostic, so no printed output changes today) and a missing included
 file (dreammaker reports an error and continues, dmbc refuses the whole model, as the compile does; no tree on master has one).
+
+## Workstream 2a LINTS: dq-analyze on dmbc's own tree (2026-11-27)
+
+Branch `compiler/lints-native-tree`. Goal: the semantic model (`sem/`), the `dm/` helpers and every lint and generator read dmbc's front end
+(`dm_tree::frontend::ColdFrontend`: the semantic tree, the declaration occurrences, the typed bodies, the site map) through borrowed views,
+with no dreammaker-shaped intermediate. Then `analysis_tree.rs`, `analysis_bridge.rs`, the parity converter, `DQ_ANALYZE_PARSE` and analyze's
+dependency on dreammaker's parser go. `dreamchecker.rs` keeps the converter until workstream 2b ports the checker.
+
+### Inventory (what reads dreammaker shapes, and what for)
+
+31 files name `dreammaker::` (15.9 k lines). About 60 more reach the shapes through `sem`: `Sem::objtree`, `ty()`, `proc_ref()`,
+`proc_body()` and the `sem::ast` walkers. Grouped by what they need:
+
+| Group | Files | Needs from the tree | Port |
+|---|---|---|---|
+| Model hub | `sem/mod.rs` (`Sem`, `VarSig`, `ProcBody`, `rel`/`file_of`/`location_key`/`def_at`) | types and parents; own vars (declared type, static/const/tmp, initializer, line); procs (definition chain, verb or proc, parameters, body, line); the file of a location | rewrite on the view; the dreammaker parse pipeline is deleted |
+| Persistence of dreammaker's tree | `sem/model_store.rs`, `sem/incremental.rs` (shape digest), `sem/body_facts.rs` (keyed by `location_key`), `host.rs` reset, `cli.rs` decode probes, `frontend/mod.rs` `DreamMakerFrontend` | nothing: they exist because dreammaker's parse is slow and unretained | deleted; per-file and per-member keys come from the front end (`SourceFile` text, `MemberNode::content`) |
+| Shared walkers | `sem/ast.rs` (`walk_expr`, `walk_block`, `stmt_exprs`, `stmt_blocks`, `as_call`, `as_ident`, `strip_parens`, `calls_in`) | pre-order expression and statement walks, each expression with its statement's line | rewritten first, over `dm_syntax` |
+| Body interpreters and write scanners | `sem/reads.rs` (3.2 k), `dm/value_procs.rs` (1.5 k), `gens/auto_tracked.rs`, `sem/globals.rs`, `sem/checks.rs`, `lints/stored_refs.rs` | receiver chains (`term` plus `follow[..n]`); call forms (bare, method, `..()`, `global.f()`, `call()()`); `new`, `list()`; locals from `var`/`for`; literals (Int vs Float, decoded strings); statement lines. `checks.rs` also reads columns | large; the chain view below replaces every `follow` slice |
+| Pattern lints | `lints/{base_vars,untyped_refs,untyped_member,image_dir_after_build,rel_write_undeclared,weak_raw_read,setter_publishes,player_link}.rs`, `base_vars_dead.rs`, `sem/{layering,ctor_args,actor_tests,oracle,procs,ui_windows}.rs` | one shape each: an empty `list()` initializer, `nameof(x)`, `key = x` at statement level, `set SpacemanDMM_return_type`, a string constant up the type chain | small each |
+| Codemod | `codemod/mod.rs` | the start (line, column) of a bare call in the source file; the text itself is rescanned | small, needs columns |
+| DreamChecker | `dreamchecker.rs` | a real dreammaker `ObjectTree` and `Context` | workstream 2b |
+
+Precision: every lint reads lines only, except `sem/checks.rs` (two position rules) and the codemod (the call's start column). `FileId` is used
+only to map a location to its repo-relative path. No lint reads docs or body ranges. `weak_raw_read` keys nodes by address, so the view must
+hand out the same node every time (it borrows; it never rebuilds).
+
+### The view (`dq_analyze::model`)
+
+dq-analyze depends on `dm-tree`, `dm-syntax` and `dm-ir`, for their types only. dmbc still builds the front end, so there is no cycle. The
+registered provider returns the front end itself (`FrontendRevision`), from the daemon's retained session or built cold; nothing is converted.
+
+- `Model { rev: FrontendRevision, bodies, types, files }`.
+  - `bodies[member]` is the compiler's own typed body (`Arc<StatementBody>` from `BodyArena`), parsed once per revision.
+  - `types` maps a path to its `TypeId` and holds the children.
+  - `files` maps a `dm_tree::FileId` to the repo-relative path and a content key.
+  - Nothing in it copies a body, an initializer or a declaration: the handles borrow from the revision.
+- Handles, all `Copy` and borrowed:
+  - `Ty<'m>`: path, parent, own vars, own procs, `var(name)` and `proc(name)` up the chain.
+  - `Proc<'m>`: owner, name, verb or proc, definition ordinal and `parent_proc()`, parameters (`dm_ir::Parameter`, the default as a parsed
+    `dm_syntax::Expr`), `body() -> Option<&[dm_syntax::Statement]>`, `site()`.
+  - `Var<'m>`: declared type text, flags from `DeclarationMeaning::flags`, the initializer as a parsed `Expr`, the resolved constant from
+    `resolved_constant`, `site()`.
+- `Site(u32)` is an expanded-text offset. Lines and columns are computed when asked (`Model::line(site)`, one `SiteMapper` per worker), not for
+  every node. The converter's 6.6 M location lookups were most of its cost; lints ask for a line only for what they report or key.
+- Where the tree lacks something a lint reads, dm-tree gains it rather than analyze re-deriving it:
+  - each member's declaration site (the occurrence the converter recovers today by matching spellings);
+  - the initializer and parameter defaults as parsed expressions (the semantic tree keeps them lowered to `SymbolicExpression`);
+  - the SpacemanDMM flags (`SpacemanDMM_private`, `_protected`, `_final`) as declaration flags.
+- Expressions: `model::expr` gives a borrowed chain view, `Chain { root: &Expr, hops: [Hop] }` with `Hop::Field`, `Hop::Call`, `Hop::Index` and
+  `Hop::Static`, peeled once from the outermost `Member`/`Call`/`Index` node.
+  - Code written as "term, then follows" ports as "root, then hops", with `hops[..n]` slices and no rebuilt prefix.
+  - The call forms dmbc spells as calls (`new`, `list`, `locate`, `input`, `pick`, `..()`, `global.f()`, `call()()`, `.proc/x`) are classified
+    once there, by the rules `analysis_bridge.rs` encodes today.
+  - Literals decode through `dm_syntax::decode_literal`, which keeps Int vs Float.
+  - The walkers visit a chain as one unit, as dreammaker visits a `Base`, so nested `Member`/`Call` nodes are not counted twice.
+- Identities the ENGINE workstream keys queries on:
+  - a proc is `(owner path, name, definition ordinal)`, a file is its repo-relative path;
+  - a body's content key is the hash of its expanded text, its file key and its place in the file (the key the converter's `tree-bodies`
+    entries use today);
+  - a declaration's key is `MemberNode::content` plus its site.
+
+### Plan and landing
+
+1. Build the view beside the converted tree under `DQ_ANALYZE_PARSE=dmbc`, with a parity check against the converted `ObjectTree`: types,
+   parents, own vars and procs in the same order, declared types, flags, every declaration's file and line, and parameters. The converted tree
+   is the oracle for what each lint will read. The dm-tree additions land with dmbc unit tests.
+2. Port in groups: `sem::ast` first, then the hub, the interpreters, the pattern lints and the codemod. Each group is proven byte-identical
+   against master under `DQ_ANALYZE_PARSE=dmbc` (`check --raw --no-cache` and `gen`, on master and on the seeded trees).
+3. Cutover: the view becomes the only model. The converter, `DQ_ANALYZE_PARSE`, `model_store`, the dreammaker parse pipeline and the tests'
+   `set_var` go.
+
+A ported group cannot run on dreammaker's default parse. Building the front end beside it on the default path would make master slower: the
+front end alone is 7-11 s cold. So the groups are proven and pushed on the branch, with master merged into it often, and they land with the
+cutover, measured against master's cold, one-line-edit and no-op times. What lands before the cutover is what is useful on its own: the dm-tree
+additions, the view and its parity check, and the cold `gen` fix.
+
+Oracle on the branch base (820811dfc9, `DQ_ANALYZE_DAEMON=0`, shared machine, single runs): `gen` cold 4 min 40 s (model 22 s), 416 generated
+files; `check --raw --no-cache` 1606 lines, model 6.7-9.5 s per build.
