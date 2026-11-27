@@ -106,6 +106,15 @@ pub fn per_file<R>(sem: &Sem, name: &str, f: impl Fn(&str, &[(String, &dreammake
 where
     R: serde::Serialize + serde::de::DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
 {
+    per_file_in(sem, name, 0, f)
+}
+
+/// [`per_file`] for a judgement that also reads what `ctx` names (a digest of everything outside the file it consults: the model's
+/// structure, an index built from every file): a file's result is kept while its content and `ctx` are unchanged.
+pub fn per_file_in<R>(sem: &Sem, name: &str, ctx: u128, f: impl Fn(&str, &[(String, &dreammaker::objtree::ProcValue)]) -> R + Sync) -> Vec<R>
+where
+    R: serde::Serialize + serde::de::DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
+{
     use std::collections::BTreeMap;
     let mut by_file: BTreeMap<String, (u128, Vec<(String, &dreammaker::objtree::ProcValue)>)> = BTreeMap::new();
     for ty in sem.objtree.iter_types() {
@@ -126,7 +135,7 @@ where
         return groups.iter().map(|(rel, (_, defs))| f(rel, defs)).collect();
     }
     let keys: Vec<u128> = groups.iter().map(|(_, (k, _))| *k).collect();
-    crate::incr::keyed_by(name, 0, &keys, |i| f(groups[i].0, &groups[i].1 .1))
+    crate::incr::keyed_by(name, ctx, &keys, |i| f(groups[i].0, &groups[i].1 .1))
 }
 
 /// The line the lint engine numbers `model_line` of `rel` as. The engine reads files with universal newlines (a lone carriage

@@ -767,6 +767,13 @@ pub struct SemBox {
     sem: Option<Sem>,
 }
 
+impl SemBox {
+    /// The model's object tree, when nothing else holds the box any more (the end of a run: `model_store::keep_resident`).
+    pub(crate) fn into_objtree(b: std::sync::Arc<SemBox>) -> Option<ObjectTree> {
+        std::sync::Arc::try_unwrap(b).ok()?.sem.map(|s| s.objtree)
+    }
+}
+
 /// A shared handle to the run's semantic model; derefs to [`Sem`].
 #[derive(Clone)]
 pub struct SemHandle(std::sync::Arc<SemBox>);

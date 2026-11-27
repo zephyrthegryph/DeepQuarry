@@ -18,7 +18,7 @@ use crate::lints::stored_refs::{collect_locals, path_of, Kinds, ProcScope, Walke
 use crate::sem::ast::walk_expr;
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
-use crate::tree::CODE_DM;
+use crate::tree::{SourceFile, CODE_DM};
 
 const HINT: &str = "a weak relation var holds a handle, not the target: read it with its generated accessor v() and write it with rel_set / rel_add / rel_remove / rel_clear. \
 doc/rewrite/proposals/relations.md D5";
@@ -38,15 +38,14 @@ static META: Meta = Meta {
 
 struct WeakRawRead;
 
-/// Weak declarations by var name: name -> the types whose CAPABILITIES block declares it `weak = TRUE`.
+/// Weak declarations by var name: name -> the types whose CAPABILITIES block declares it `weak = TRUE`. Each file's declarations
+/// are kept per file (`crate::incr`), folded in file order.
 fn weak_index(cx: &Cx) -> HashMap<String, Vec<String>> {
     let header = crate::pat!(r"^\s*CAPABILITIES(?:_PART)?\(\s*(/[\w/]+)\s*[,)]");
     let decl = crate::pat!(r"\bref_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)[^\n]*\bweak\s*=\s*TRUE");
-    let mut out: HashMap<String, Vec<String>> = HashMap::new();
-    for f in cx.files() {
-        if !f.rel.ends_with(".dm") {
-            continue;
-        }
+    let files: Vec<&SourceFile> = cx.files().into_iter().filter(|f| f.rel.ends_with(".dm")).collect();
+    let per_file: Vec<Vec<(String, String)>> = crate::incr::facts("weak_raw_read-decls", &files, |f| {
+        let mut found = Vec::new();
         let mut owner: Option<String> = None;
         for line in f.code().lines() {
             if let Some(c) = header.captures(line) {
@@ -58,11 +57,16 @@ fn weak_index(cx: &Cx) -> HashMap<String, Vec<String>> {
             }
             let Some(o) = owner.as_ref() else { continue };
             if let Some(c) = decl.captures(line) {
-                let types = out.entry(c.s(1).to_string()).or_default();
-                if !types.contains(o) {
-                    types.push(o.clone());
-                }
+                found.push((c.s(1).to_string(), o.clone()));
             }
+        }
+        found
+    });
+    let mut out: HashMap<String, Vec<String>> = HashMap::new();
+    for (var, o) in per_file.into_iter().flatten() {
+        let types = out.entry(var).or_default();
+        if !types.contains(&o) {
+            types.push(o);
         }
     }
     out
@@ -87,26 +91,31 @@ impl Lint for WeakRawRead {
         if weak.is_empty() {
             return;
         }
-        let kinds = Kinds { sem, exempt_types: Vec::new(), registry: Vec::new(), cache: Default::default() };
-        let w = Walker { sem, kinds: &kinds };
         let root = &cx.tree.root;
         let mut seen: HashSet<(String, u32, String)> = HashSet::new();
         let mut found: Vec<(String, u32, String)> = Vec::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for (_, tp) in ty.get().procs.iter() {
-                for v in tp.value.iter() {
+        // Each file's raw reads, kept per file (`procs::per_file_in`): a judgement reads the file's own bodies, the model's
+        // structure (types, var and proc declarations) and the weak index, which the context names.
+        let mut weak_rows: Vec<(&String, &Vec<String>)> = weak.iter().collect();
+        weak_rows.sort();
+        let ctx = crate::incr::mix(&[sem.structure_digest(), crate::incr::ctx_key(&weak_rows)]);
+        let per_file: Vec<Vec<(String, u32, String, String)>> = crate::sem::procs::per_file_in(sem, "weak_raw_read-reads", ctx, |rel, defs| {
+            let mut hits_out: Vec<(String, u32, String, String)> = Vec::new();
+            if cx.exempt(rel) {
+                return hits_out;
+            }
+            // The type cache is per file (a judgement runs on many threads).
+            let kinds = Kinds { sem, exempt_types: Vec::new(), registry: Vec::new(), cache: Default::default() };
+            let w = Walker { sem, kinds: &kinds };
+            for (owner, v) in defs {
+                {
                     let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
-                    if cx.exempt(rel) {
-                        continue;
-                    }
                     let mut locals = HashMap::new();
                     for p in v.parameters.iter() {
                         locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
                     }
                     collect_locals(code, rel, &mut locals);
-                    let sc = ProcScope { owner: &owner, locals };
+                    let sc = ProcScope { owner, locals };
                     walk_block_pub(code, &mut |e, line| {
                         // Everything inside a nameof(...) names the var, it does not read it.
                         let mut named: HashSet<usize> = HashSet::new();
@@ -148,13 +157,17 @@ impl Lint for WeakRawRead {
                                     continue;
                                 }
                                 let at = engine_line(root, rel, line) as u32;
-                                if seen.insert((rel.to_string(), at, var.clone())) {
-                                    found.push((rel.to_string(), at, format!("`{}` of {} is a weak relation read raw; use {}()", var, holder, var)));
-                                }
+                                hits_out.push((rel.to_string(), at, var.clone(), format!("`{}` of {} is a weak relation read raw; use {}()", var, holder, var)));
                             }
                         });
                     });
                 }
+            }
+            hits_out
+        });
+        for (rel, at, var, msg) in per_file.into_iter().flatten() {
+            if seen.insert((rel.clone(), at, var)) {
+                found.push((rel, at, msg));
             }
         }
         found.sort();

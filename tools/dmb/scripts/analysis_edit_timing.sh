@@ -3,7 +3,9 @@
 # revert, for each compiler given. Each compiler gets its own daemon namespace and its own analysis cache directory
 # (DQ_ANALYZE_CACHE under the worktree's data/), so two compilers measured back to back never read or rewrite each other's
 # model, walk or result stores. Runs one compiler after the other (a daemon's read-ahead after a request must not compete with the
-# other's request). Output: one line per request (client wall time, exit code, stdout digest) and the daemon's own line for it.
+# other's request), and before each request waits for the daemon's read-ahead after the previous one (`freed the request and read
+# ahead`): an edit is timed as a person makes it, seconds after the last check, not queued behind that check's read-ahead. Output: one
+# line per request (client wall time, exit code, stdout digest) and the daemon's own line for it.
 #
 #   bash tools/dmb/scripts/analysis_edit_timing.sh master=E:/dq-cache/dmb-bin/v/<id>/dmbc.exe branch=tools/dmb/target/release/dmbc.exe
 #
@@ -29,6 +31,14 @@ for spec in "$@"; do
 	ns="timing-$label-$$"
 	cache="$root/data/analyze-cache-timing-$label"
 	echo "== $label: $bin (namespace $ns, cache $cache)"
+	settle() {
+		# Wait (at most 60 s) until the request logged since line $1 has finished its read-ahead (a remembered answer starts none).
+		local i
+		for i in $(seq 1 120); do
+			tail -n +"$1" "$log" 2>/dev/null | grep -qE "read ahead for the next|answered from memory" && return 0
+			sleep 0.5
+		done
+	}
 	one() {
 		local what="$1" before after start end lines
 		before=$(wc -l <"$log" 2>/dev/null || echo 0)
@@ -38,6 +48,7 @@ for spec in "$@"; do
 		end=$(ms)
 		lines=$(tail -n +"$((before + 1))" "$log" 2>/dev/null | grep -E "dmbd analyze: (answered|request finished)" | tail -1)
 		printf '%-8s %-8s %7d ms  exit %d  %s  | %s\n' "$label" "$what" "$((end - start))" "$code" "$(md5sum <"/tmp/timing-$label-$what.out" | cut -c1-8)" "$lines"
+		settle "$((before + 1))"
 	}
 	one first
 	for i in 1 2 3; do one "noop$i"; done

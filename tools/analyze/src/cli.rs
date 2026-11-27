@@ -397,6 +397,7 @@ pub fn shed_hosted() -> bool {
 /// request is running or nothing was held.
 pub fn shed_stores() -> bool {
     let Ok(_one) = HOSTED.try_lock() else { return false };
+    crate::sem::walk_cache::shed();
     crate::incr::shed() > 0
 }
 
@@ -450,6 +451,10 @@ fn finish_run() {
     crate::sem::model_store::finish();
     let t3 = t0.elapsed();
     crate::sem::walk_cache::finish();
+    if crate::incr::hosted() {
+        crate::sem::walk_cache::release_model();
+        crate::sem::model_store::keep_resident();
+    }
     if trace {
         eprintln!("analyze: end of run: stores {:.1?}, shared {:.1?}, model store {:.1?}, walk store {:.1?}", t1, t2 - t1, t3 - t2, t0.elapsed() - t3);
     }
