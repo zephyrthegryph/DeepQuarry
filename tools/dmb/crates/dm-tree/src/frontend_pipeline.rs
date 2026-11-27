@@ -621,36 +621,68 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     );
     let profile_stage = dm_profile::stage("frontend.body_indexing");
     let provenance_start = Instant::now();
-    let declarations_by_start: HashMap<_, _> = expanded_spans
-        .iter()
-        .enumerate()
-        .filter_map(|(index, span)| match snapshot.tree.declarations()[index] {
-            Target::Member(member)
-                if matches!(
-                    snapshot.tree.member(member)?.kind,
-                    MemberKind::Proc | MemberKind::Verb
-                ) =>
-            {
-                Some((span.start as usize, (OccurrenceId(index as u32), member)))
-            }
-            _ => None,
-        })
-        .collect();
+    // Declaration starts in output order: a body finds its declaration by binary search (`collect_bodies`).
+    let mut declaration_starts_now: Vec<(usize, usize)> =
+        expanded_spans.iter().enumerate().map(|(index, span)| (span.start as usize, index)).collect();
+    // Almost always already in order; a stable sort keeps declarations that start together in index order.
+    if declaration_starts_now.windows(2).any(|pair| pair[0].0 > pair[1].0) {
+        declaration_starts_now.sort_by_key(|&(start, _)| start);
+    }
+    // The previous revision's bodies stand for the bodies of declarations whose origin was reused, when the tree is the
+    // previous one (member ids are the same).
+    let body_reuse = match (origin_base, reused_origins.as_ref()) {
+        (Some(base), Some(origins)) if Arc::ptr_eq(&base.snapshot.tree, &snapshot.tree) => {
+            Some(BodyReuse { base, origins, plan: &plan })
+        }
+        _ => None,
+    };
     timings.phase("body_starts", provenance_start);
     let collect_started = Instant::now();
     let mut bodies = Vec::new();
     let mut issued_settings = Vec::new();
     let mut body_codes = Vec::new();
-    collect_bodies(
+    let reused_bodies = collect_bodies(
         &syntax,
         &snapshot.tree,
-        &declarations_by_start,
+        &declaration_starts_now,
         &mapping,
         &mut bodies,
         &mut issued_settings,
         &mut body_codes,
         executor,
+        body_reuse.as_ref(),
     )?;
+    if verify_enabled() && reused_bodies > 0 {
+        let (mut full_bodies, mut full_settings, mut full_codes) = (Vec::new(), Vec::new(), Vec::new());
+        collect_bodies(
+            &syntax,
+            &snapshot.tree,
+            &declaration_starts_now,
+            &mapping,
+            &mut full_bodies,
+            &mut full_settings,
+            &mut full_codes,
+            executor,
+            None,
+        )?;
+        let same = full_bodies.len() == bodies.len()
+            && full_bodies.iter().zip(&bodies).all(|(a, b)| {
+                a.declaration == b.declaration
+                    && a.member == b.member
+                    && a.expanded_span == b.expanded_span
+                    && a.source == b.source
+                    && a.setting_context_origins == b.setting_context_origins
+            })
+            && full_settings.iter().zip(&issued_settings).all(|(a, b)| a == b);
+        let line = if same {
+            format!("frontend verify: {reused_bodies} reused bodies equal the full indexing")
+        } else {
+            eprintln!("frontend verify: BODY MISMATCH");
+            "frontend verify: BODY MISMATCH".to_string()
+        };
+        crate::change_set::record_outcome(line);
+    }
+    crate::change_set::record_outcome(format!("frontend bodies: {reused_bodies} of {} reused", bodies.len()));
     timings.phase("collect_bodies", collect_started);
     let roster_started = Instant::now();
     let callable_roster = match semantic_state.as_deref_mut() {

@@ -233,18 +233,24 @@ impl DeclarationClaims {
         for current in &currents {
             roster.push_leaf(current.skeletons());
         }
-        let (index, _) = {
+        let (index, previous) = {
             let previous = self
                 .authored_current
                 .lock()
                 .unwrap_or_else(|error| error.into_inner());
-            KeyedDeclarations::capture_view(
+            let (index, _) = KeyedDeclarations::capture_view(
                 previous.as_ref().map(|value| &value.index),
                 roster.view(),
             )
-            .ok()?
+            .ok()?;
+            (index, previous.clone())
         };
-        let index = authored.adopt(index);
+        // Owners whose rows did not change keep the value the previous request admitted, when this lease took over its
+        // claims; the rest are replayed.
+        let index = match previous.filter(|previous| previous.admitted_by.is_some() && previous.admitted_by == self.authored_inherited) {
+            Some(previous) => authored.adopt_changed(index, &previous.index),
+            None => authored.adopt(index),
+        };
         let mut rows = index.skeletons();
         for current in &mut currents {
             let mut changed = false;

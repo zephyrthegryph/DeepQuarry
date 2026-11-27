@@ -175,6 +175,13 @@ fn same_origins(incremental: &ColdFrontend, cold: &ColdFrontend) {
         );
     }
     assert_eq!(incremental.declaration_regions, cold.declaration_regions);
+    assert_eq!(incremental.bodies.len(), cold.bodies.len());
+    for (now, fresh) in incremental.bodies.iter().zip(cold.bodies.iter()) {
+        assert_eq!(now.declaration, fresh.declaration);
+        assert_eq!(now.expanded_span, fresh.expanded_span);
+        assert_eq!(now.source, fresh.source);
+        assert_eq!(now.setting_context_origins, fresh.setting_context_origins);
+    }
     assert_eq!(incremental.region_hashes, cold.region_hashes);
 }
 
