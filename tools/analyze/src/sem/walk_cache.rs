@@ -13,6 +13,10 @@
 //! later run serves a walk from it when its context digest is unchanged and every proc body and var declaration it read digests the same
 //! (a body moved down by an edit above it digests differently: its lines are in the result). `DQ_WALK_VERIFY=1` walks everything anyway
 //! and counts the stored results that differ (it must print 0); `DQ_WALK_CACHE=off` disables it.
+//!
+//! A process that serves many runs (the dmbc daemon) keeps the store decoded between them ([`Resident`]): the end of a run folds its walks
+//! into it, and the next run of the same cache directory and engine takes it instead of reading and decoding the files. The files are
+//! still written, so a new process starts warm.
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -167,6 +171,7 @@ struct EntryRef<'a> {
 type Kept = (u128, Vec<(u64, u64)>, LazySet);
 
 /// A stored result: its encoded bytes, decoded on first use (by the walk thread that asks, so a store is read without decoding it).
+#[derive(Clone)]
 pub struct LazySet {
     raw: Option<Box<[u8]>>,
     cell: OnceLock<Arc<ReadSet>>,
@@ -224,6 +229,36 @@ struct Loaded {
     delta: HashMap<String, Kept>,
 }
 
+/// The store as the last run of a cache directory left it, kept decoded for the next run of the same directory and engine: every walk with
+/// the digests of what it read (each is validated when it is asked for, as a stored one is), and the dependency table they index.
+struct Resident {
+    dir: std::path::PathBuf,
+    engine: String,
+    deps: HashMap<u64, Dep>,
+    walks: HashMap<String, Kept>,
+}
+
+static RESIDENT: Mutex<Option<Resident>> = Mutex::new(None);
+
+/// The kept store, when it belongs to `dir` and this engine (it is moved into the run that takes it).
+fn take_resident(dir: &std::path::Path) -> Option<Resident> {
+    let mut g = RESIDENT.lock().unwrap_or_else(|e| e.into_inner());
+    if g.as_ref().is_some_and(|r| r.dir == dir && r.engine == engine()) {
+        return g.take();
+    }
+    None
+}
+
+/// Drops the kept store (the host sheds memory; the files on disk are current).
+pub fn shed() {
+    *RESIDENT.lock().unwrap_or_else(|e| e.into_inner()) = None;
+}
+
+/// Whether a host keeps stores between runs (the walks then stay decoded for the next run).
+fn keep_resident() -> bool {
+    crate::incr::hosted()
+}
+
 static LOADED: crate::host::RunCell<Option<Loaded>> = crate::host::RunCell::new();
 /// The walks this run made: key -> (context, dep ids, result).
 static FRESH: crate::host::RunCell<Mutex<HashMap<String, (u128, Vec<u64>, LazySet)>>> = crate::host::RunCell::new();
@@ -263,6 +298,18 @@ fn loaded() -> Option<&'static Loaded> {
             }
             let t0 = std::time::Instant::now();
             let dir = crate::incr::dir()?;
+            if let Some(r) = take_resident(&dir) {
+                {
+                    let mut table = deps().write().unwrap();
+                    for (id, d) in r.deps {
+                        table.entry(id).or_insert(d);
+                    }
+                }
+                if trace() {
+                    eprintln!("analyze: walk cache: took {} walks kept in memory in {:.1?}", r.walks.len(), t0.elapsed());
+                }
+                return Some(Loaded { base: r.walks, delta: HashMap::new() });
+            }
             let (base, delta) = std::thread::scope(|s| {
                 let b = s.spawn(|| read_file(&dir.join(FILE)));
                 let d = read_file(&dir.join(DELTA));
@@ -528,13 +575,20 @@ pub fn finish() {
         eprintln!("analyze: walk cache: context {} ms, lookups {} ms (validate {} ms, decode {} ms; summed over threads)", T_CTX.load(Ordering::Relaxed) / 1000, T_LOOKUP.load(Ordering::Relaxed) / 1000, T_VALIDATE.load(Ordering::Relaxed) / 1000, T_DECODE.load(Ordering::Relaxed) / 1000);
         eprintln!("analyze: walk cache: {} walks served, {} walked{}", hits, misses, if verify() { format!(", {} differed", DIFFERED.load(Ordering::Relaxed)) } else { String::new() });
     }
+    let Some(dir) = crate::incr::dir() else { return };
     if misses == 0 {
+        keep(&dir, HashMap::new());
         return;
     }
     let Some(sem) = MODEL.get().and_then(|b| b.sem.as_ref()) else { return };
-    let Some(dir) = crate::incr::dir() else { return };
     let t0 = std::time::Instant::now();
     let fresh = std::mem::take(&mut *fresh().lock().unwrap());
+    if keep_resident() {
+        let digests = digests();
+        let kept: HashMap<String, Kept> =
+            fresh.iter().map(|(k, (c, ids, set))| (k.clone(), (*c, ids.iter().map(|id| (*id, digests.get(sem, *id))).collect(), set.clone()))).collect();
+        keep(&dir, kept);
+    }
     let digests = digests();
     let empty = Loaded { base: HashMap::new(), delta: HashMap::new() };
     let l = loaded().unwrap_or(&empty);
@@ -575,6 +629,35 @@ pub fn finish() {
     if trace() {
         eprintln!("analyze: walk cache: wrote the {} ({} walks) in {:.1?}", what, n, t0.elapsed());
     }
+}
+
+/// Folds this run's walks (`fresh`, with their digests) into the store this run read and keeps it decoded for the next run of `dir`
+/// (hosted only). A stored walk is kept as it is: it is validated when a later run asks for it.
+fn keep(dir: &std::path::Path, fresh: HashMap<String, Kept>) {
+    if !keep_resident() || !enabled() {
+        return;
+    }
+    let t0 = std::time::Instant::now();
+    let mut walks: HashMap<String, Kept> = HashMap::new();
+    if let Some(l) = loaded() {
+        walks.reserve(l.base.len() + l.delta.len() + fresh.len());
+        for (k, v) in l.base.iter().chain(l.delta.iter()) {
+            walks.insert(k.clone(), v.clone());
+        }
+    }
+    let n_fresh = fresh.len();
+    walks.extend(fresh);
+    let table = deps().read().unwrap().clone();
+    let n = walks.len();
+    *RESIDENT.lock().unwrap_or_else(|e| e.into_inner()) = Some(Resident { dir: dir.to_path_buf(), engine: engine(), deps: table, walks });
+    if trace() {
+        eprintln!("analyze: walk cache: kept {} walks in memory ({} new) in {:.1?}", n, n_fresh, t0.elapsed());
+    }
+}
+
+/// Lets go of the run's model (the end of a hosted run hands it to `model_store::keep_resident`).
+pub(crate) fn release_model() {
+    crate::host::clear(&MODEL);
 }
 
 /// Run state for `crate::host::reset_run_state`.

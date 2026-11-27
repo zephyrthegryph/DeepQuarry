@@ -262,32 +262,37 @@ impl Lint for Decl {
                 typed_lifecycle_defs(&sem)
             })
         });
-        let mut by_rel: std::collections::HashMap<&str, Vec<(u32, &'static str)>> = std::collections::HashMap::new();
-        let mut manual_initialize: std::collections::HashMap<&str, BTreeSet<usize>> = std::collections::HashMap::new();
+        // Per file: its typed lifecycle definitions (header, kind) and the headers of its manual Initialize() bodies.
+        let mut per_rel: std::collections::HashMap<String, (Vec<(u32, &'static str)>, BTreeSet<usize>)> = std::collections::HashMap::new();
         if let Some(defs) = &typed {
             for (rel, header, name, lifecycle) in defs {
+                let e = per_rel.entry(rel.clone()).or_default();
                 if *lifecycle {
-                    by_rel.entry(rel.as_str()).or_default().push((*header, proc_kind(name)));
+                    e.0.push((*header, proc_kind(name)));
                 } else {
-                    manual_initialize.entry(rel.as_str()).or_default().insert(*header as usize + 1);
+                    e.1.insert(*header as usize + 1);
                 }
             }
         }
-        // A typed body depends on the model (macros from other files), so any change re-judges every file (cheap: lines only).
-        let key = incr::ctx_key(&(&refs, typed.is_some().then_some(tree_key)));
+        // A file's judgement reads the owned names and its own entry of the typed definitions (`incr::keyed_reading`): an edit
+        // elsewhere that leaves both alone keeps it.
+        let per_rel = incr::Index::new(per_rel);
+        let key = incr::ctx_key(&(&refs, typed.is_some()));
         let results = recorded_into(out, || {
-            incr::keyed("decl-judge", key, &files, |f| {
+            incr::keyed_reading("decl-judge", key, &files, &per_rel, |f, reads| {
                 if typed.is_none() {
                     return self.judge(f, &refs);
                 }
+                let entry = reads.get(f.rel.as_str());
                 let no_defs = Vec::new();
-                let defs = by_rel.get(f.rel.as_str()).unwrap_or(&no_defs);
+                let defs = entry.map(|e| &e.0).unwrap_or(&no_defs);
+                let manual = entry.map(|e| &e.1);
                 let raw = f.raw();
                 let lines: Vec<&str> = (1..=raw.num_lines()).map(|n| raw.line(n)).collect();
                 // The model's bodies, and the text rule's too: a file the model does not compile still counts as it did.
                 let mut spans: Vec<(&'static str, std::ops::Range<usize>)> = defs.iter().map(|(h, p)| (*p, crate::sem::procs::body_lines(&lines, *h))).collect();
                 spans.extend(text_spans(f).into_iter().filter(|(proc, range)| {
-                    *proc != "Initialize" || !manual_initialize.get(f.rel.as_str()).is_some_and(|headers| headers.contains(&range.start))
+                    *proc != "Initialize" || !manual.is_some_and(|headers| headers.contains(&range.start))
                 }));
                 self.judge_spans(f, &refs, &spans)
             })

@@ -170,21 +170,23 @@ impl Lint for ImageDirAfterBuild {
         let root = &cx.tree.root;
         let exempt = cx.list("exempt_files");
         let mut rows: Vec<(String, u32)> = Vec::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for (_, tp) in ty.get().procs.iter() {
-                for v in tp.value.iter() {
+        // Kept per file (`procs::per_file_in`): a file's rows read its own bodies, the model's structure (declared types) and the
+        // return types bodies declare (`return_type`), which the context names.
+        let ctx = crate::incr::mix(&[sem.structure_digest(), crate::sem::procs::return_settings_digest(sem)]);
+        let per_file: Vec<Vec<(String, u32)>> = crate::sem::procs::per_file_in(sem, "image_dir_after_build-rows", ctx, |rel, defs| {
+            let mut rows: Vec<(String, u32)> = Vec::new();
+            if !rel.starts_with("code/") || cx.exempt(rel) || exempt.iter().any(|p| rel == p.as_str()) {
+                return rows;
+            }
+            for (owner, v) in defs {
+                {
                     let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
-                    if !rel.starts_with("code/") || cx.exempt(rel) || exempt.iter().any(|p| rel == p.as_str()) {
-                        continue;
-                    }
                     let mut locals: HashMap<String, (String, Option<Place>)> = HashMap::new();
                     for p in v.parameters.iter() {
                         locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
                     }
                     collect_locals(code, rel, &mut locals);
-                    let mut typer = Typer { sem, sc: ProcScope { owner: &owner, locals } };
+                    let mut typer = Typer { sem, sc: ProcScope { owner, locals } };
                     typer.infer(code);
                     walk_block(code, &mut |e, line| {
                         let Expression::AssignOp { lhs, .. } = e else { return };
@@ -200,7 +202,9 @@ impl Lint for ImageDirAfterBuild {
                     });
                 }
             }
-        }
+            rows
+        });
+        rows.extend(per_file.into_iter().flatten());
         rows.sort();
         rows.dedup();
         for (rel, line) in rows {

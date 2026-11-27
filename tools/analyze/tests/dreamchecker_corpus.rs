@@ -1,15 +1,11 @@
-//! DreamChecker's oracle: every case under `vendor/dreamchecker/tests/corpus/cases` (the vendored crate's own test snippets and seeded
+//! DreamChecker's oracle: every case under `vendor/dreamchecker/tests/corpus/cases` (the vendored crate's old test snippets and seeded
 //! cases that make each diagnostic kind fire) is checked as `analyze dreamchecker` checks a `.dme`, and its every diagnostic (every
-//! severity, line and column, error type and notes; `dreamchecker::render`) must be the case's `expected/<case>.txt`. The checker runs
-//! serially and on three threads, which must agree.
+//! severity, line and column, error type and notes; `dreamchecker::render`) must be the case's `expected/<case>.txt`, recorded from the
+//! checker on dreammaker's parse before it was removed, or, where the compiler's front end differs on purpose, `<case>.dmbc.txt` (the
+//! reasons are in `corpus/README.md`). The checker runs serially and on three threads, which must agree.
 //!
-//! Both checkers run: the one on dreammaker's parse (`sem::parse_for_checker`, the parse the expected output was recorded from) and the
-//! native one on the compiler front end's own tree (`dmbc::dreamchecker_input`). A case whose native output differs on purpose records
-//! that output in `expected/<case>.dmbc.txt`, and the reason in `corpus/README.md`.
-//!
-//! `DQ_DC_CORPUS_BLESS=1` writes the dreammaker parse's output as the expected output (a new case); `DQ_DC_CORPUS_BLESS_NATIVE=1`
-//! writes a differing native output as the case's intended difference (give its reason in the README); `DQ_DC_CORPUS_ONLY=<substring>`
-//! runs the cases whose name contains it.
+//! `DQ_DC_CORPUS_BLESS_NATIVE=1` writes a differing output as the case's intended difference (give its reason in the README);
+//! `DQ_DC_CORPUS_ONLY=<substring>` runs the cases whose name contains it.
 
 use std::path::{Path, PathBuf};
 
@@ -27,16 +23,6 @@ fn project(name: &str, source: &str) -> PathBuf {
     dir
 }
 
-fn checked(parse: &dyn Fn(&Path) -> Result<dq_analyze::sem::model_store::Parsed, String>, dme: &Path, threads: usize) -> String {
-    let out = match parse(dme) {
-        Ok(parsed) => dq_analyze::dreamchecker::render(&dq_analyze::dreamchecker::check(parsed, dme, None, true, threads, 1, false)),
-        Err(e) => format!("parse refused: {e}\n"),
-    };
-    // The `.dme` is registered by its full path: shown relative to the project, as the other files are.
-    let dir = format!("{}/", dme.parent().unwrap().display().to_string().replace('\\', "/"));
-    out.replace(&dir, "")
-}
-
 /// The native checker (the compiler front end's own tree, `dmbc::dreamchecker_input`) on `dme`.
 fn native(dme: &Path, threads: usize) -> String {
     let context = dq_analyze::dreamchecker::context_for(dme, None, false);
@@ -46,14 +32,6 @@ fn native(dme: &Path, threads: usize) -> String {
     };
     let dir = format!("{}/", dme.parent().unwrap().display().to_string().replace('\\', "/"));
     out.replace(&dir, "")
-}
-
-/// Both thread counts must agree; the serial output is returned.
-fn output(parse: &dyn Fn(&Path) -> Result<dq_analyze::sem::model_store::Parsed, String>, dme: &Path, what: &str, name: &str) -> String {
-    let serial = checked(parse, dme, 1);
-    let parallel = checked(parse, dme, 3);
-    assert_eq!(serial, parallel, "{name} ({what}): the parallel pass must give the serial diagnostics");
-    serial
 }
 
 fn diff(expected: &str, found: &str) -> String {
@@ -70,7 +48,6 @@ fn diff(expected: &str, found: &str) -> String {
 
 #[test]
 fn corpus_cases_give_their_expected_diagnostics() {
-    let bless = std::env::var_os("DQ_DC_CORPUS_BLESS").is_some();
     let only = std::env::var("DQ_DC_CORPUS_ONLY").ok();
     let mut cases: Vec<PathBuf> = std::fs::read_dir(corpus().join("cases"))
         .expect("corpus cases")
@@ -81,23 +58,14 @@ fn corpus_cases_give_their_expected_diagnostics() {
     cases.sort();
     assert!(only.is_some() || cases.len() >= 60, "the corpus has its cases");
     let expected_dir = corpus().join("expected");
-    let dreammaker = |dme: &Path| dq_analyze::sem::parse_for_checker(dme, dme);
     let mut failures = Vec::new();
     for case in &cases {
         let name = case.file_stem().unwrap().to_string_lossy().into_owned();
         let source = std::fs::read_to_string(case).unwrap().replace("\r\n", "\n");
         let dir = project(&name, &source);
         let dme = dir.join("test.dme");
-        let from_dreammaker = output(&dreammaker, &dme, "dreammaker parse", &name);
         let expected_path = expected_dir.join(format!("{name}.txt"));
-        if bless {
-            std::fs::create_dir_all(&expected_dir).unwrap();
-            std::fs::write(&expected_path, &from_dreammaker).unwrap();
-        }
-        let expected = std::fs::read_to_string(&expected_path).unwrap_or_else(|_| panic!("{name}: no expected output (DQ_DC_CORPUS_BLESS=1)"));
-        if from_dreammaker != expected {
-            failures.push(format!("{name} (dreammaker parse):\n{}", diff(&expected, &from_dreammaker)));
-        }
+        let expected = std::fs::read_to_string(&expected_path).unwrap_or_else(|_| panic!("{name}: no expected output"));
         let intended = std::fs::read_to_string(expected_dir.join(format!("{name}.dmbc.txt"))).ok();
         let want = intended.as_deref().unwrap_or(&expected);
         let serial = native(&dme, 1);

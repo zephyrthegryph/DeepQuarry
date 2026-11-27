@@ -18,7 +18,7 @@ use crate::lints::stored_refs::{collect_locals, path_of, relation_index, Kinds, 
 use crate::sem::ast::{strip_parens, walk_expr};
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
-use crate::tree::CODE_DM;
+use crate::tree::{SourceFile, CODE_DM};
 
 const HINT: &str = "declare the var in the holder type's CAPABILITIES block: ref_one(nameof(v)) (a reference), owns_one/owns_many (an owned value), links(A::a, B::b) \
 (a pair); a write to an undeclared var is a test failure. doc/rewrite/proposals/relations.md D1";
@@ -85,26 +85,31 @@ impl Lint for RelWriteUndeclared {
         };
         let sem: &Sem = &sem;
         let rels = relation_index(cx);
-        let kinds = Kinds { sem, exempt_types: Vec::new(), registry: Vec::new(), cache: Default::default() };
-        let w = Walker { sem, kinds: &kinds };
         let root = &cx.tree.root;
         let mut seen: HashSet<(String, u32, String)> = HashSet::new();
         let mut found: Vec<(String, u32, String)> = Vec::new();
-        for ty in sem.objtree.iter_types() {
-            let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
-            for (_, tp) in ty.get().procs.iter() {
-                for v in tp.value.iter() {
+        // Kept per file (`procs::per_file_in`): a file's writes read its own bodies, the model's structure and where it sits (the message
+        // names the declaring file) and the relation index, which the context names.
+        let mut rel_rows: Vec<(&String, &Vec<String>)> = rels.iter().collect();
+        rel_rows.sort();
+        let ctx = crate::incr::mix(&[sem.structure_digest(), sem.placement_digest(), crate::incr::ctx_key(&rel_rows)]);
+        let per_file: Vec<Vec<(String, u32, String, String)>> = crate::sem::procs::per_file_in(sem, "rel_write_undeclared-writes", ctx, |rel, defs| {
+            let mut writes: Vec<(String, u32, String, String)> = Vec::new();
+            if cx.exempt(rel) {
+                return writes;
+            }
+            // The type cache is per file (a judgement runs on many threads).
+            let kinds = Kinds { sem, exempt_types: Vec::new(), registry: Vec::new(), cache: Default::default() };
+            let w = Walker { sem, kinds: &kinds };
+            for (owner, v) in defs {
+                {
                     let Some(code) = v.code.as_ref() else { continue };
-                    let Some(rel) = sem.file_of(v.location) else { continue };
-                    if cx.exempt(rel) {
-                        continue;
-                    }
                     let mut locals = std::collections::HashMap::new();
                     for p in v.parameters.iter() {
                         locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
                     }
                     collect_locals(code, rel, &mut locals);
-                    let sc = ProcScope { owner: &owner, locals };
+                    let sc = ProcScope { owner, locals };
                     walk_block(code, &mut |e, line| {
                         walk_expr(e, &mut |x| {
                             let Expression::Base { term, follow } = x else { return };
@@ -120,32 +125,46 @@ impl Lint for RelWriteUndeclared {
                                     continue;
                                 }
                                 let at = engine_line(root, rel, line) as u32;
-                                if seen.insert((rel.to_string(), at, var.clone())) {
+                                {
                                     let who = holder_ty.clone().unwrap_or_else(|| "an untyped holder".to_string());
                                     let decl = holder_ty.as_deref().and_then(|t| sem.var_owner(t, &var)).unwrap_or_default();
                                     let listy = holder_ty.as_deref().and_then(|t| sem.var_decl(t, &var)).map(|d| d.is_list()).unwrap_or(false) || matches!(name.as_str(), "rel_add" | "rel_remove" | "rel_take_all");
                                     let keyed = name.as_str() == "rel_add" && args.len() > 3;
-                                    found.push((rel.to_string(), at, format!("{} writes `{}` of {}, which no relation declares [decl {}::{} many={} keyed={} at={}]", name, var, who, decl, var, listy as u8, keyed as u8, holder_ty.as_deref().and_then(|t| sem.var_decl(t, &var)).map(|d| d.file).unwrap_or_default())));
+                                    writes.push((rel.to_string(), at, var.clone(), format!("{} writes `{}` of {}, which no relation declares [decl {}::{} many={} keyed={} at={}]", name, var, who, decl, var, listy as u8, keyed as u8, holder_ty.as_deref().and_then(|t| sem.var_decl(t, &var)).map(|d| d.file).unwrap_or_default())));
                                 }
                             }
                         });
                     });
                 }
             }
+            writes
+        });
+        for (rel, at, var, msg) in per_file.into_iter().flatten() {
+            if seen.insert((rel.clone(), at, var)) {
+                found.push((rel, at, msg));
+            }
         }
         // The path form `nameof(/type::var)`: the holder type is named in the argument, so a text scan finds it.
         let path_form = crate::pat!(r"\b(rel_(?:set|add|remove|clear|take|take_all|move))\(\s*[^,]+,\s*nameof\(\s*(/[\w/]+?)/?::(\w+)\s*\)");
-        for f in cx.files() {
-            if !f.rel.ends_with(".dm") {
-                continue;
-            }
+        let dm_files: Vec<&SourceFile> = cx.files().into_iter().filter(|f| f.rel.ends_with(".dm")).collect();
+        // Each file's path-form writes (verb, type, var, line), kept per file (`crate::incr`).
+        let path_writes: Vec<Vec<(String, String, String, u32)>> = crate::incr::facts("rel_write_undeclared-path-form", &dm_files, |f| {
+            let mut out = Vec::new();
             for (i, line) in f.code().lines().enumerate() {
                 for c in path_form.captures_iter(line).iter() {
-                    let (verb, ty, var) = (c.s(1), c.s(2), c.s(3));
+                    out.push((c.s(1).to_string(), c.s(2).to_string(), c.s(3).to_string(), (i + 1) as u32));
+                }
+            }
+            out
+        });
+        for (f, writes) in dm_files.iter().zip(path_writes) {
+            {
+                for (verb, ty, var, at) in &writes {
+                    let (verb, ty, var) = (verb.as_str(), ty.as_str(), var.as_str());
                     if is_declared(sem, &rels, Some(ty), var) {
                         continue;
                     }
-                    let at = (i + 1) as u32;
+                    let at = *at;
                     if seen.insert((f.rel.to_string(), at, var.to_string())) {
                         let decl = sem.var_owner(ty, var).unwrap_or_default();
                         let listy = sem.var_decl(ty, var).map(|d| d.is_list()).unwrap_or(false) || matches!(verb, "rel_add" | "rel_remove" | "rel_take_all");

@@ -172,8 +172,7 @@ file (dreammaker reports an error and continues, dmbc refuses the whole model, a
   them). Constants dreammaker also defines as macros (`TRUE`, `FALSE`) stay values, as dreammaker sees them. The filter, condition, range
   and static-term checks then give dreammaker's diagnostics (corpus `seed__filters`, `seed__builtin_constants`). Left as a value: a constant
   inside a larger macro's replacement (dreammaker sees the name); nothing in the corpus or the tree reads one there.
-- `DQ_DREAMCHECKER_NATIVE=1` selects the native checker in `analyze dreamchecker` while it is proved and made fast (below); the default is
-  still the checker on dreammaker's parse.
+- `DQ_DREAMCHECKER_NATIVE=1` selected it while it was proved (removed at the cutover below).
 
 ### Proof
 
@@ -214,6 +213,42 @@ request. Next, in this order: keep the input (model, parsed bodies) per front en
 **For LINTS (2a):** the checker no longer needs the converted tree: the native checker reads dmbc's tree, and the default one reads dreammaker's
 parse, never `DQ_ANALYZE_PARSE=dmbc`. The native input reuses `analysis_tree::{matched, front, Front, var_header, signature_parts,
 line_end_column, source_line, locate_in, macro_warnings}`: keep them (or move them beside `dreamchecker_input.rs`) when the converter goes.
+
+### Cutover (2026-11-27, branch `compiler/dreamchecker-native-2`): the native checker is the only one
+
+- **Per-proc results as queries.** `native::run` takes a `Store`: `settings_facts` (a proc's settings as events, `facts::SettingsFacts`)
+  and `body_facts` (`walk::ProcFacts`, its diagnostics as data, `facts::Diag`) come from it, and the override and call-tree passes read only
+  them. dmbc's `QueryStore` (`dreamchecker_input.rs`) keeps them as entries of the analysis query database (`dq_analyze::incr::keyed_by`,
+  stores `dreamchecker-settings` and `dreamchecker-bodies`): held in memory by the daemon, persisted under its analysis directory, under
+  the stamp `check` uses (one session for both commands). A result's key is the proc (`ProcId`) and its body (expanded text, its file's
+  path and bytes, its place); the context is the model key (every declaration's owner, name, kind, flags, spelling, line and column, the
+  types and parents, the file ids) and, for bodies, every proc's settings facts. A body's places are stored relative to its start. A body
+  is parsed only for a result that is computed (a body is taken from the arena once and shared by both passes).
+- **Input per revision.** The model is rebuilt each request from the front end's semantic tree: the spelling walk runs per chunk on
+  every core and the declaration records are prepared in parallel (matching 0.6-1.1 s, model 0.5-1.0 s, keys 0.2-0.4 s on a quiet run).
+  Keeping the model itself between revisions needs its places in a form an edit does not move (they are offsets in the expanded text);
+  it is the next step if the model shows up again.
+- **Removed:** upstream's checker on dreammaker's object tree (`vendor/dreamchecker/src/lib.rs`'s `AnalyzeObjectTree`, `type_expr.rs`,
+  `switch_rand_range.rs`, `test_helpers.rs`), its tests (`tests/*_tests.rs`, now the corpus), `analyze dreamchecker`'s dreammaker parse
+  (`dreamchecker::check`) and `DQ_DREAMCHECKER_NATIVE`. `analyze dreamchecker` needs the compiler (`dmbc analyze`, the analyze alias); the
+  standalone analyze binary says so. `sem::parse_for_checker` stays for dmbc's `analysis-parity`.
+- **Accepted differences** (corpus `README.md`): dreammaker's own parse diagnostics on code BYOND accepts, its `#define` doc hints, and
+  include paths spelled canonically.
+
+Measured with one daemon per run sequence, each with its own namespace and analysis directory (`DMB_DAEMON_NAMESPACE`,
+`DMB_ANALYSIS_DIR`), on a heavily shared machine (other lanes building; single runs swing 2-10x): cold daemon, unchanged, a one-proc body
+edit (a string in `code/engine/actions/admission_query.dm`), reverted.
+
+| `analyze dreamchecker --json` through the daemon | old (dreammaker parse) | native |
+|---|---|---|
+| cold daemon | 7.5, 13.3, 19.9 s | 32-197 s (the compiler front end cold: FRONTEND) |
+| unchanged | 8.4, 16.1, 15.8 s | 7.8, 9.0, 10.6 s |
+| one-proc edit | 10.5, 18.8, 111.9 s | 10.7, 15.2, 20.1 s (2 of 120480 procs recomputed) |
+| reverted | 10.5, 23.3, 33.4 s | 8.1, 9.4, 11.3 s |
+
+In a warm native run the checker itself is about 3 s (input 1.1-1.6 s, keys 0.3 s, settings and bodies read back 0.3 s, overrides and
+call tree 0.5-0.8 s); the rest is the retained front end (2.7-5 s, the FRONTEND lane's) and the request around it.
+
 
 ## 1+3 ENGINE: analysis results as queries (2026-11-27, branch `compiler/analysis-queries`)
 
@@ -308,3 +343,47 @@ declaration edit), and a cold hosted front end uses every core. Quietest runs: b
 needs the stable-id decision (retained_frontend.md, round 2). Proof: hosted against cold dreamchecker and check outputs identical over
 the edit sequence, compile byte-identical (equivalent for a new var), analysis-parity 100 %, ratchets pass. The published
 `dmb-bin/dmbc.exe` at the bin root is a stale October binary; builds use `dmb-bin/v/<current>`, which matches master.
+
+### Increment 3 (2026-11-27): stores held decoded, lints per file, the measurement fixed
+
+- **Fair measurement.** `tools/dmb/scripts/analysis_edit_timing.sh` times a daemon per compiler, each with its own namespace and
+  analysis cache (`DQ_ANALYZE_CACHE` under `data/`), one compiler after the other, and waits for a request's read-ahead before the next
+  one (an edit is timed as a person makes it). The daemon's answer line now carries the request's process CPU, the steadier number on a
+  shared machine (wall time moved 3x between identical runs while three other lanes built).
+- **Held decoded between runs.** The model of the last hosted run stays in memory (`model_store::Resident`): the next run splices only
+  the files changed since that run (the delta on disk stays relative to the base, so a new process reads a consistent store;
+  `DQ_MODEL_VERIFY` proved every update against a full parse). Walks fold into a resident store the next run takes
+  (`walk_cache::Resident`; `DQ_WALK_VERIFY`: 0 of 12850 differed). The read-ahead after a request has nothing left to read; the hosted
+  end-of-run work (writing the stores) runs after the reply. The dmbc-parse model memo asks the watched sources' token
+  (`service::hosted_sources_token`) instead of reading and hashing every file.
+- **Lints per file.** Text facts kept per file (`incr::facts`): declaration_block, notice_publisher, map_edits (the maps keyed by
+  content), weak_raw_read, rel_write_undeclared, `ui_windows::text_defines`; report_in_catch is a file lint. Proc-body judgements kept per
+  file (`procs::per_file_in`) under exactly what else they read: weak_raw_read, untyped_member, rel_write_undeclared (structure,
+  `Sem::placement_digest`: the file of every definition, and the index digests), image_dir_after_build (plus
+  `procs::return_settings_digest`, the return types bodies declare).
+- **Recording accessor.** `incr::keyed_reading` with `incr::Index` / `Reads::get`: a judge's result is kept while every index entry it
+  read (absent ones included) digests the same. decl reads its own file's typed definitions through it and no longer re-judges every file
+  on any edit.
+
+Files this touched for the LINTS lane to merge: `tools/analyze/src/lints/{declaration_block,report_in_catch,map_edits,notice_publisher,
+weak_raw_read,rel_write_undeclared,untyped_member,image_dir_after_build,decl}.rs`, `sem/{mod,procs,model_store,walk_cache,ui_windows}.rs`,
+`incr.rs`, `cli.rs`; plus `#[derive(Clone)]` on about 30 result types (increment 2). Each change is at the caching boundary: a loop body
+moved into a closure, its accumulator folded afterwards in the original order.
+
+Measured (`analysis_edit_timing.sh`-style runs; CPU is the daemon's process CPU for the request):
+
+| What | before increment 3 | after |
+|---|---|---|
+| one-line body edit, CPU | 22-25 CPU-s | 18-22 CPU-s |
+| one-line body edit, single-threaded standalone `timing` (the CPU map) | about 32 s (model and walk decode included) | about 17 s |
+| nothing changed | 46-100 ms in the daemon | the same |
+
+Proof: `check --raw` byte-identical to master's standalone answer on master and on seven seeded trees (a one-line body edit, a new var,
+a new proc, a proc moved to another file, a deleted file, restored); `check` and `analyze dreamchecker --json` identical; `analysis-parity
+--tree` 1168032 of 1168032 and `analysis-parity` 105883 of 105883 with 0 difference categories; the analyze test suite passes.
+
+What is left, and why it is not mechanical. The edit's remaining CPU is in judgements that read other files' bodies without saying so:
+`value_procs` (its `config_class_clean` reads every proc body of a type; untyped needs its verdicts), the reads walks behind
+`sem/handlers`, `gen/deps`, `untracked_inputs` and `setter_publishes` (walk results validated per run, consumers re-folded), ui_actions,
+stored_refs, the layering lints. Keeping those per file needs every body and declaration read recorded where it happens, on the model's
+accessors (the walk store already records `Proc`/`Var` reads for walks): that is the Sem API the LINTS lane is rewriting on dmbc's tree.
