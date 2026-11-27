@@ -266,11 +266,30 @@ pub(crate) struct Matched<'t> {
 
 /// Match each declaration of the semantic tree with its spelling (in declaration order: a queue per key).
 pub(crate) fn matched<'f>(frontend: &'f ColdFrontend, stats: &mut FeedStats) -> Matched<'f> {
+    use rayon::prelude::*;
+    // Each chunk's spellings on its own core, merged in chunk order (a key's queue keeps source order).
+    type Spellings = (HashMap<Key, VecDeque<Spelled>>, Vec<(String, usize)>);
+    let per_chunk: Vec<Spellings> = frontend
+        .syntax
+        .chunks()
+        .par_iter()
+        .map(|chunk| {
+            let (mut spelled, mut types, mut starts) = (HashMap::new(), HashMap::new(), Vec::new());
+            walk(chunk.items(), "/", &mut spelled, &mut types, &mut starts);
+            let mut types: Vec<(String, usize)> = types.into_iter().collect();
+            types.sort_by_key(|(_, at)| *at);
+            (spelled, types)
+        })
+        .collect();
     let mut spelled: HashMap<Key, VecDeque<Spelled>> = HashMap::new();
     let mut type_sites: HashMap<String, usize> = HashMap::new();
-    let mut starts: Vec<usize> = Vec::new();
-    for chunk in frontend.syntax.chunks().iter() {
-        walk(chunk.items(), "/", &mut spelled, &mut type_sites, &mut starts);
+    for (chunk_spelled, chunk_types) in per_chunk {
+        for (key, entries) in chunk_spelled {
+            spelled.entry(key).or_default().extend(entries);
+        }
+        for (path, at) in chunk_types {
+            type_sites.entry(path).or_insert(at);
+        }
     }
     let tree = &frontend.snapshot.tree;
     let symbols = tree.symbols();

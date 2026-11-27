@@ -395,9 +395,10 @@ fn run_all(argv: Vec<String>) -> u8 {
     let code = real_main(argv);
     // The query stores' changed slots go to disk (src/incr.rs), then the cache files this run rewrote to the other worktrees
     // (src/shared.rs).
+    let flushing = std::time::Instant::now();
     crate::incr::flush();
     if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {
-        eprintln!("analyze: {}", crate::incr::stats());
+        eprintln!("analyze: {} (flushed in {:.1?})", crate::incr::stats(), flushing.elapsed());
     }
     crate::shared::publish();
     crate::sem::walk_cache::finish();

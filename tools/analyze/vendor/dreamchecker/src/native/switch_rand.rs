@@ -63,11 +63,11 @@ pub fn check(walk: &mut Walk<'_, '_>, input: &Expr, cases: &[SwitchCase], case_l
                 if start <= rand_end && end >= rand_start {
                     ranges.push((start, end));
                 } else {
-                    walk.facts.diagnostics.push(
+                    walk.facts.diagnostics.push(super::facts::Diag::of(&
                         DMError::new(walk.reader.site.place(case_loc), format!("Case range '{start} to {end}' will never trigger as it is outside the rand() range {rand_start} to {rand_end}"))
                             .with_component(dm::Component::DreamChecker)
                             .set_severity(Severity::Warning),
-                    );
+                    ));
                 }
             }
         }
@@ -84,10 +84,10 @@ pub fn check(walk: &mut Walk<'_, '_>, input: &Expr, cases: &[SwitchCase], case_l
         first_uncovered = std::cmp::max(first_uncovered, end + 1);
     }
     if first_uncovered <= rand_end {
-        walk.facts.diagnostics.push(
+        walk.facts.diagnostics.push(super::facts::Diag::of(&
             DMError::new(walk.reader.site.place(location), format!("Switch branches on rand() with range {rand_start} to {rand_end} but no case branch triggers for {first_uncovered}"))
                 .with_component(dm::Component::DreamChecker)
                 .set_severity(Severity::Warning),
-        );
+        ));
     }
 }

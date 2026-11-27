@@ -562,6 +562,7 @@ dependencies = [
  "dq-hostio",
  "dreammaker",
  "foldhash",
+ "serde",
 ]
 
 [[package]]

@@ -19,15 +19,10 @@
 - `parser::hold_parse_summary` / `take_parse_summary` / `diagnostics_before_finish`: keep the "parsed N/M proc bodies" line and mark
   where `ObjectTree::finish`'s diagnostics start, so `analyze dreamchecker` prints the parse in the standalone's order.
 
-`dreamchecker` is the library only (no `main.rs`, no `build.rs`: the standalone binary stays the oracle). Changed here, for
-`src/dreamchecker.rs` (`analyze dreamchecker`):
+`dreamchecker` keeps DreamChecker's checks, ported (2026-11-27) to read the compiler front end's own tree instead of dreammaker's object
+tree: `src/native/` (model, body walk, settings, call tree; the builtins table `src/native/builtins.txt` is dumped from dreammaker's
+`builtins.rs`, `tests/builtins_dump.rs`). Upstream's checker on dreammaker's tree is removed; what it reported is recorded in
+`tests/corpus` (doc/rewrite/proposals/lean_unified.md, "2b DREAMCHECKER"). The `dreammaker` changes above that served it
+(`Context::fork`, the parse-summary hooks) remain for the rest of analyze until dreammaker's parser goes.
 
-- proc bodies are read through `LazyCode` (`*proc.get().code`);
-- `run_parallel` / `AnalyzeObjectTree::check_procs_parallel`: the proc-body pass on several threads, each with a forked context;
-  every body's diagnostics are registered, and its tables (`used_kwargs`, `call_tree`, sleeping/impure violators, `waitfor`)
-  merged, in the serial order;
-- `check_proc_call_tree`: each search queues a proc once (upstream queued it again per caller, cloning the call stack, and skipped it
-  when popped: 243 of 366 s on DeepQuarry), the searches run on several threads, and the directive procs are taken in source order
-  (upstream's hash order is seeded per process). The other passes are unchanged and serial.
-
-Everything else is upstream. To move to a new suite, copy the four crates over and re-apply the list above.
+Everything else in `dreammaker` is upstream. To move to a new suite, copy its crates over and re-apply the list above.

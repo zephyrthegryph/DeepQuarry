@@ -14,7 +14,7 @@ use foldhash::{HashMap, HashMapExt};
 
 use super::input::{InputType, Where};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub struct TypeId(pub u32);
 
 impl TypeId {
@@ -173,7 +173,7 @@ pub struct Model {
 }
 
 /// A proc value: the type it is on, its name and which definition on that type.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub struct ProcId {
     pub ty: TypeId,
     /// Index into the type's `procs`.

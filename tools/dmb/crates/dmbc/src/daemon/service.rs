@@ -1504,6 +1504,14 @@ mod tests {
 /// The daemon's shared state, for analysis requests that take their front end from a compile session (`hosted_frontend`).
 static HOSTED: std::sync::OnceLock<Arc<Shared>> = std::sync::OnceLock::new();
 
+/// A cold hosted front end takes every core when at least this much RAM is free (it peaks at a few GB above an edit's).
+const COLD_WIDE_FREE_BYTES: u64 = 16 << 30;
+
+/// `DQ_FRONTEND_TRACE=1` in an analysis request's environment: print the hosted front end's phases to its stderr.
+fn frontend_trace() -> bool {
+    matches!(dq_hostio::var("DQ_FRONTEND_TRACE").as_deref(), Ok("1"))
+}
+
 /// Whether this process is the daemon (it serves hosted analysis requests).
 pub(crate) fn hosting() -> bool {
     HOSTED.get().is_some()
@@ -1545,8 +1553,52 @@ pub(crate) fn hosted_frontend(
         let waited = started.elapsed();
         let engine = host
             .engine(project.clone(), defines.clone(), true, include_bytes!("../../../../fixtures/native_template.bin").to_vec())?;
-        let workers = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(shared.max_workers.max(1));
+        // The sources, brought up to date through the watcher: only the files an event named are read again.
+        let sources = host.watched_sources();
+        let refresh = sources.refresh(project.parent().unwrap_or(std::path::Path::new(".")));
+        // A first request reads the manifest's files in parallel before the (serial) planner asks for them one by one.
+        let prefetch_started = Instant::now();
+        let prefetched = sources.prefetch_manifest(&project);
+        let prefetch = prefetch_started.elapsed();
+        let trace_refresh = |outcome: &str| {
+            if frontend_trace() {
+                dq_hostio::out(
+                    false,
+                    format_args!(
+                        "dmbd analyze: sources {} files={} checked={} changed={} in {:.3}s (sync {:.3}s), prefetched {prefetched} in {:.3}s; {outcome}",
+                        refresh.mode,
+                        refresh.files,
+                        refresh.checked,
+                        refresh.changed,
+                        refresh.elapsed.as_secs_f64(),
+                        refresh.sync.as_secs_f64(),
+                        prefetch.as_secs_f64()
+                    ),
+                    true,
+                );
+            }
+        };
+        // Nothing changed since the remembered front end was built from these sources: it is this request's front end (it is a
+        // function of the source texts, the defines and the engine, all three the same).
+        let token = sources.token();
+        if let Some(previous) = host.semantic_state().and_then(|state| state.previous_frontend(&project, defines)) {
+            if previous.plan.input_revision == Some(token) {
+                trace_refresh("unchanged, the remembered front end is reused");
+                return Ok(previous);
+            }
+        }
+        trace_refresh("building");
+        let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
+        let workers = cores.min(shared.max_workers.max(1));
+        // A cold front end (nothing remembered for this define set) parses every declaration chunk and expands every region:
+        // it takes every core when the machine has the memory to spare, on an executor of its own (the daemon's shared pool
+        // holds at most `DMB_DAEMON_MAX_WORKERS` threads for every request together). An edit uses the shared pool.
+        let cold = host.semantic_state().and_then(|state| state.previous_frontend(&project, defines)).is_none();
+        let wide = (cold && cores > workers && available_memory().is_some_and(|free| free >= COLD_WIDE_FREE_BYTES))
+            .then(|| dm_exec::BuildExecutor::new(cores).ok())
+            .flatten();
         let (memo, execution, semantic) = host.execution(workers, None).map_err(|e| e.to_string())?;
+        let workers = wide.as_ref().map_or(workers, |executor| executor.workers());
         let mut one_shot = dm_tree::frontend::RetainedSemanticTree::one_shot();
         let retained = semantic.is_some();
         let semantic = match semantic {
@@ -1554,19 +1606,21 @@ pub(crate) fn hosted_frontend(
             None => &mut one_shot,
         };
         let declarations = semantic.begin_declaration_request(retained);
-        let built = execution
-            .run(|executor| {
-                dm_tree::frontend::build_with_executor_and_semantic_state(
-                    &project,
-                    &dm_preprocess::FileSystem,
-                    defines,
-                    dm_tree::frontend::FrontendConfig { workers, engine: Some(engine.frontend_seed()), observer: None },
-                    memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
-                    executor,
-                    Some(&mut *semantic),
-                )
-            })
-            .map_err(|e| format!("{e:?}"))?
+        let build = |executor: &dm_exec::BuildExecutor, semantic: &mut dm_tree::frontend::RetainedSemanticTree| {
+            dm_tree::frontend::build_with_executor_and_semantic_state(
+                &project,
+                &sources.provider(),
+                defines,
+                dm_tree::frontend::FrontendConfig { workers, engine: Some(engine.frontend_seed()), observer: None },
+                memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
+                executor,
+                Some(semantic),
+            )
+        };
+        let built = match &wide {
+            Some(executor) => build(executor, &mut *semantic),
+            None => execution.run(|executor| build(executor, &mut *semantic)).map_err(|e| format!("{e:?}"))?,
+        }
             .map_err(|d| format!("front end failed: {} diagnostic(s), first: {:?}", d.len(), d.first().map(|x| &x.message)))?;
         let revision = dm_tree::frontend::FrontendRevision::new(built);
         if retained {
@@ -1579,7 +1633,25 @@ pub(crate) fn hosted_frontend(
             started.elapsed(),
             waited
         ));
+        // The front end's own record of this request (plan reuse, expansion reuse, every phase's wall time), into the analysis
+        // request's stderr with `DQ_FRONTEND_TRACE=1`; drained either way so it does not pile up into the next compile's report.
+        let outcomes = dm_tree::change_set::take_outcomes();
+        if frontend_trace() {
+            dq_hostio::out(
+                false,
+                format_args!(
+                    "dmbd analyze: front end {:.3}s (waited {:.3}s for the session, retained={retained}, workers={workers})",
+                    started.elapsed().as_secs_f64(),
+                    waited.as_secs_f64()
+                ),
+                true,
+            );
+            for outcome in outcomes {
+                dq_hostio::out(false, format_args!("dmbd analyze: {outcome}"), true);
+            }
+        }
         Ok(revision)
     })()
     .inspect_err(|error| super::emit_stderr(format_args!("dmbd analyze: the retained session gave no front end: {error}"))))
 }
+

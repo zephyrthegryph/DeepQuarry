@@ -32,6 +32,17 @@ impl SkeletonRoster {
     pub(crate) fn len(&self) -> usize {
         self.len
     }
+    /// Row-for-row equality, leaf by leaf: a leaf the other roster shares (the declaration state hands an unchanged
+    /// chunk's leaf back to the next request) is equal without visiting its rows. Same answer as comparing `iter()`s.
+    pub(crate) fn same_rows(&self, other: &Self) -> bool {
+        if self.len != other.len {
+            return false;
+        }
+        if self.prefix != other.prefix {
+            return self.iter().eq(other.iter());
+        }
+        self.chunks.iter().zip(&other.chunks).all(|(a, b)| Arc::ptr_eq(a, b) || a == b)
+    }
     pub(crate) fn iter(&self) -> SkeletonIter<'_> {
         SkeletonView::from(self).iter()
     }
@@ -238,6 +249,25 @@ impl Eq for SkeletonRoster {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn same_rows_equals_comparing_every_row() {
+        let a = crate::Skeleton::Type { path: dm_ir::SymbolId::of("/a"), explicit_parent: None };
+        let b = crate::Skeleton::Type { path: dm_ir::SymbolId::of("/b"), explicit_parent: None };
+        let shared = Arc::new(vec![a.clone(), b.clone()]);
+        let mut one = SkeletonRoster::default();
+        one.push_leaf(Arc::clone(&shared));
+        one.push_leaf(Arc::new(vec![a.clone()]));
+        let mut two = SkeletonRoster::default();
+        two.push_leaf(shared);
+        two.push_leaf(Arc::new(vec![a.clone()]));
+        assert!(one.same_rows(&two));
+        // Other leaf boundaries, the same rows.
+        let flat = SkeletonRoster::from_owned(vec![a.clone(), b.clone(), a.clone()]);
+        assert!(one.same_rows(&flat) && flat.same_rows(&one));
+        let other = SkeletonRoster::from_owned(vec![a.clone(), b.clone(), b.clone()]);
+        assert!(!one.same_rows(&other));
+        assert_eq!(one.same_rows(&other), one.iter().eq(other.iter()));
+    }
     #[test]
     fn diagnostics_borrow_contiguous_leaves_and_copy_only_cross_leaf_views() {
         let row = |name| Skeleton::Type {
