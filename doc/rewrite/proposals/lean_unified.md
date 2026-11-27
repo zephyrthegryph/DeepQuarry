@@ -515,3 +515,13 @@ dmbc tree) identical over base, body, var, proc, line shift and reverts, with `D
 bodies); compile: daemon and one-shot outputs byte-identical to the master compiler's at every step (a new var and a new proc
 differ from a cold compile only by the append patch's table order, exactly as on master); analysis-parity 1168027/1168027 and
 105882/105882.
+
+### Workstream 4, round 4 (2026-11-27, lane `compiler/frontend-round4`)
+
+Detail, the identity decision and per-phase numbers: tools/dmb/doc/retained_frontend.md, "Round 4". A declaration edit now reads
+only what it changed: the authored capture takes the previous index and reads only the differing leaves and their owners; adoption,
+the authored index and the unchanged check compare leaves by pointer; added spellings layer over the previous table and catalog
+(counts as a base plus a difference); the tree identity (v4) combines a kept digest per owner with the handle roster (values
+differ from v3; the tag changed, so a persisted v3 value is never taken for a v4 one); a new or removed body updates the callable
+roster instead of issuing it; removals keep stable slots (the removed slot takes the arena's last member); the splice's inventory,
+callable names, delta and change set read only the changed names and owners. Cold: the member install runs in parallel chunks.

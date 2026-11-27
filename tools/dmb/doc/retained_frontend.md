@@ -1241,3 +1241,71 @@ owners. Metadata inheritance (`RetainedMetadata::resolve`) runs depth by depth: 
 ancestor, so the owners of one depth are independent once the shallower depths are applied; each owner resolves over the shared
 members through its own overlay (`OwnerOverlay`), and the overlays are applied in owner order before the next depth (above 256
 owners in a depth). Test: `parallel_owner_passes_build_the_serial_tree` (1,500 owners per depth, 8 workers against 1).
+
+## Round 4 (lane `compiler/frontend-round4`, 2026-11-27)
+
+Targets: new var and new proc at most 500 ms, body edit median under 200 ms, cold at most 6 s in the daemon. Measured with
+`tools/dmb/scripts/frontend_edit_pair.sh` (now with `EDITS="var proc body shift"`: `var/parity_probe = 0` and
+`proc/parity_probe_proc()` on `/datum/act/input`, each reverted after every round, so every revert is a removal).
+
+### What landed
+
+- **Authored capture from the changed leaves** (`KeyedDeclarations::capture_leaves`). The previous request's admitted index was
+  captured from known leaves; this request's leaves are compared with them by pointer, and only the leaves that differ and the
+  owners their rows belong to are read: one pass over the handles renumbers the affected owners' rows, every other owner keeps its
+  contribution. More than 64 changed runs, 16k changed rows or 256 owners fall back to the full capture.
+  `DMB_FRONTEND_VERIFY=1` compares it with the full capture.
+- **Adoption compares only what can differ.** `adopt_changed` steps the two owner maps together (no 25k-owner set, no rebuilt map)
+  and walks the lease's claims only when an owner left; the leaf walk that hands each leaf the admitted rows visits only new leaves
+  and leaves holding a row of an owner whose admitted value changed. The tree's authored index is taken when its leaves are the
+  adapted rows' leaves (pointer identity); the unchanged-declarations check is the leaf comparison already made, not a walk of
+  374k rows.
+- **Spellings.** A request that only adds spellings layers them over the previous table (`SymbolTable::overlay`, flattened at four
+  layers or when a spelling vanishes); the catalog applies the same change to the previous catalog (`SymbolCatalog::capture_changed`,
+  verified against a full capture); the spelling counts are a shared base and a small difference (`SpellingCounts`). Before: each
+  new spelling copied the 345k-entry table, the counts and the catalog (0.06-0.25 s).
+- **Identity v4** (decision, below). Each owner's contribution keeps the digest of its rows; the identity is the prefix rows, one
+  digest per owner and the handle roster: 0.10-0.18 s to 0.014-0.04 s on a declaration edit.
+- **Callable roster updated, not issued** (`CallableRoster::insert_after_stable_splice`): new bodies are inserted at their ordinals,
+  removed ones dropped, ordinals shifted, and only the inserted, removed and relinked callables, the chains below them and their
+  name groups are computed again (identity, selection, bindings, ABI entries). 0.22-0.29 s to 0.055-0.10 s; verified against a
+  fresh issue.
+- **Removals keep stable slots** (item 3). A removed member's slot takes the arena's last member (`MemberArena::pop`, highest
+  removed slot first); links, owner rosters, selectors, targets and the order array follow, the removed member's group is
+  renormalized by `rebind`; the dependency graph removes the rows and nodes and reissues the touched predecessors' lists; the
+  callable roster drops the body. A removal whose owner has no earlier row (its type id could move) still renumbers.
+- **Splice tails proportional to the edit**: the inventory and callable names of the changed names read only those names (no
+  per-type fact table, no copy of 320k facts); the delta steps both owner maps together and compares keys only where handles or
+  owners differ; `stable_rows` searches a sorted list of the few changed owners instead of a SipHash set per handle; the change set
+  compares type parents by position when the trees share their path index.
+- **Cold member install in parallel** (item 4, part): with retained declarations on an executor the rows are installed in
+  parallel chunks joined in order; the selectors are the owners' local selectors (every member group has one), not 346k inserts
+  overwritten afterwards. The first local validation failure in row order is the error (test
+  `parallel_install_reports_the_serial_first_failure`).
+
+### Decision: tree identity v4
+
+`SemanticTree::identity` was one xxh3 over every declaration row (v3). It is now xxh3 over the tag `dm-tree-v4`, the engine prefix
+rows, an authored digest (the roster of (owner, row within owner) handles, then each owner's digest of its own rows in owner order)
+and the field catalog. It names the same row sequence (handles and per-owner rows give it back), so equal trees have equal
+identities and an edit changes it. The values differ from v3; the tag changed with the definition, so no v3 value is reused for a
+v4 one. Every consumer compares the value for equality: query revisions, class projections and the answer world within a
+process, and the retained output records' `AnswerFacts` (`retained_output_wire.rs`), which persist it so a later process can prove
+their answers. A record written with a v3 identity never equals a v4 tree, so it fails its proof and is computed again once;
+nothing stale is taken. The persisted record format itself is unchanged. The three
+ways of computing it (a flat build with an engine prefix, a build with retained declarations, the projected identity of a splice)
+agree; `tree_identity/tests.rs` checks them against an independent reading of the definition.
+
+### Measured (hosted analysis front end, `frontend_edit_pair.sh`, one daemon per build, 3 rounds; the machine stayed at 100 % CPU from other lanes)
+
+| Edit | before (master 797d3b1a98): quietest / median | after: quietest / median (front end) | after: phases alone, quietest |
+|---|---|---|---|
+| new var | 0.97 / 1.13 s | 0.475 / 0.53 s | 0.317 s (declaration parsing 0.051, tree 0.125, collect_bodies 0.051) |
+| new proc | 1.28 s, then 4.9-6.9 s as load rose | 0.321 / 0.48 s | 0.302 s (declaration parsing 0.039, tree 0.096, callable roster 0.058) |
+| var removal (revert) | 1.9-4.2 s (renumbering) | stable path; verified (splice 0.1-0.2 s of it) | |
+| one-line body edit | 0.62-3.8 s under that load | 0.144 / 0.21 s (phases 0.109-0.30) | 0.109 s |
+
+Declaration parsing after a declaration edit: 0.37-0.50 s to 0.035-0.06 s (authored adoption 0.20 to 0.017-0.025, symbol catalog
+0.15-0.25 to 0.001-0.002). Tree after a new var: 0.35-0.51 s to 0.10-0.19 s (identity rows 0.12-0.18 to 0.014-0.03, index
+0.056 to 0.002-0.005, splice 0.09-0.15 to 0.054-0.11). Callable roster after a new proc: 0.24-0.29 s to 0.055-0.086 s.
+The "front end" figure includes the watcher sync and the delta (0.03-0.16 s under load) outside the phases.
