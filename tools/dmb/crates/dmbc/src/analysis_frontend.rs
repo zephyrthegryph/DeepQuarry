@@ -35,13 +35,47 @@ pub(crate) fn build_frontend_with(dme: &Path, defines: BTreeMap<String, String>)
     Ok(frontend)
 }
 
-/// The analysis front end of `dme`: the daemon's retained session when it hosts this request, else a cold build.
+/// The last front end this process built outside the daemon, and the `.dme` it is of: a run asks for the front end of the same tree more
+/// than once (the model, DreamChecker's input, the generators' second model), and a cold build costs every core for many seconds.
+static LAST: std::sync::Mutex<Option<(std::path::PathBuf, FrontendRevision)>> = std::sync::Mutex::new(None);
+
+/// [`LAST`] when it is of `dme` and every text it read is still what the disk holds (read the way the front end reads it). Any doubt is a
+/// rebuild.
+fn remembered(dme: &Path) -> Option<FrontendRevision> {
+    use dm_preprocess::SourceProvider;
+    let last = LAST.lock().unwrap_or_else(|e| e.into_inner()).clone()?;
+    if last.0 != dme {
+        return None;
+    }
+    let started = std::time::Instant::now();
+    let same = {
+        use rayon::prelude::*;
+        last.1.files.par_iter().all(|f| !f.captured || dm_preprocess::FileSystem.read(&f.path).is_ok_and(|now| now == f.text.as_str()))
+    };
+    if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {
+        dq_hostio::out(
+            false,
+            format_args!("analyze: dmbc front end: the last one {} (checked {} files in {:.1?})", if same { "is current, reused" } else { "is stale" }, last.1.files.len(), started.elapsed()),
+            true,
+        );
+    }
+    same.then_some(last.1)
+}
+
+/// The analysis front end of `dme`: the daemon's retained session when it hosts this request, else the process's last one while its texts are unchanged, else a cold build.
 pub fn frontend(dme: &Path) -> Result<FrontendRevision, String> {
     let defines = analysis_defines();
     let started = std::time::Instant::now();
     let revision = match crate::daemon::hosted_frontend(dme, &defines) {
         Some(revision) => revision?,
-        None => FrontendRevision::new(build_frontend_with(dme, defines).map_err(|e| e.to_string())?),
+        None => match remembered(dme) {
+            Some(revision) => revision,
+            None => {
+                let revision = FrontendRevision::new(build_frontend_with(dme, defines).map_err(|e| e.to_string())?);
+                *LAST.lock().unwrap_or_else(|e| e.into_inner()) = Some((dme.to_path_buf(), revision.clone()));
+                revision
+            }
+        },
     };
     if dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some() {
         dq_hostio::out(false, format_args!("analyze: dmbc front end {:.1?}", started.elapsed()), true);

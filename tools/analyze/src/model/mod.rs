@@ -447,8 +447,7 @@ impl Model {
             return hit.clone();
         }
         let stmts: Vec<walk::StmtAt<'m>> = walk::stmts(block);
-        let lines = stmts.iter().map(|st| self.line_no(st.site).unwrap_or(0)).collect();
-        let read = Block { stmts, lines };
+        let read = Block { stmts, lines: std::sync::OnceLock::new() };
         // SAFETY: `read` borrows from `block`, which (the contract above) lives in a body this model owns and outlives the cache: `blocks`
         // is dropped first, and the statements are handed out with the model's borrow (`'m`), never longer.
         let stored: Arc<Block<'static>> = Arc::new(unsafe { std::mem::transmute::<Block<'m>, Block<'static>>(read) });
@@ -575,7 +574,14 @@ struct Loc {
 /// A body block read as statements ([`Model::stmts`]), with each statement's line (0 for none), looked up once per block.
 pub struct Block<'a> {
     pub stmts: Vec<walk::StmtAt<'a>>,
-    pub lines: Vec<u32>,
+    lines: std::sync::OnceLock<Vec<u32>>,
+}
+
+impl Block<'_> {
+    /// Each statement's line (0 for none), looked up the first time a walk asks (a scan that reads no line never pays for them).
+    pub fn lines(&self, m: &Model) -> &[u32] {
+        self.lines.get_or_init(|| self.stmts.iter().map(|st| m.line_no(st.site).unwrap_or(0)).collect())
+    }
 }
 
 /// A type of the semantic tree.

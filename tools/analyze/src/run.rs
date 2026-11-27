@@ -226,7 +226,12 @@ impl Engine {
                 if rayon::current_thread_index().is_none() && self.tree.fresh_count() > 64 {
                     self.tree.prewarm();
                 }
+                let c0 = crate::util::cpu_accounting().then(crate::util::thread_cpu_ms);
                 lint.scan_tree(&cx, &mut sink);
+                // `DQ_CPU_ACCOUNT`: the lint's own thread time (its parallel parts are accounted where they run).
+                if let Some(c0) = c0 {
+                    crate::util::cpu_account(format!("lint {} (own thread)", meta.name), crate::util::thread_cpu_ms().saturating_sub(c0));
+                }
                 sink
             });
             timing.tree_memo_hit = !scanned;
