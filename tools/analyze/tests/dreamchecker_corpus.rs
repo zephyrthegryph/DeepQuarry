@@ -3,12 +3,13 @@
 //! severity, line and column, error type and notes; `dreamchecker::render`) must be the case's `expected/<case>.txt`. The checker runs
 //! serially and on three threads, which must agree.
 //!
-//! Both parses are checked: dreammaker's (`sem::parse_for_checker`, the parse the expected output was recorded from) and the compiler's
-//! front end (`dmbc::analysis_tree::parse_for_analysis`). A case whose compiler-front-end output differs on purpose records that output
-//! in `expected/<case>.dmbc.txt`, and the reason in `corpus/README.md`.
+//! Both checkers run: the one on dreammaker's parse (`sem::parse_for_checker`, the parse the expected output was recorded from) and the
+//! native one on the compiler front end's own tree (`dmbc::dreamchecker_input`). A case whose native output differs on purpose records
+//! that output in `expected/<case>.dmbc.txt`, and the reason in `corpus/README.md`.
 //!
-//! `DQ_DC_CORPUS_BLESS=1` writes the dreammaker parse's output as the expected output (a new case); `DQ_DC_CORPUS_ONLY=<substring>` runs
-//! the cases whose name contains it.
+//! `DQ_DC_CORPUS_BLESS=1` writes the dreammaker parse's output as the expected output (a new case); `DQ_DC_CORPUS_BLESS_NATIVE=1`
+//! writes a differing native output as the case's intended difference (give its reason in the README); `DQ_DC_CORPUS_ONLY=<substring>`
+//! runs the cases whose name contains it.
 
 use std::path::{Path, PathBuf};
 
@@ -81,7 +82,6 @@ fn corpus_cases_give_their_expected_diagnostics() {
     assert!(only.is_some() || cases.len() >= 60, "the corpus has its cases");
     let expected_dir = corpus().join("expected");
     let dreammaker = |dme: &Path| dq_analyze::sem::parse_for_checker(dme, dme);
-    let compiler = |dme: &Path| dmbc::analysis_tree::parse_for_analysis(dme, true);
     let mut failures = Vec::new();
     for case in &cases {
         let name = case.file_stem().unwrap().to_string_lossy().into_owned();
@@ -98,15 +98,13 @@ fn corpus_cases_give_their_expected_diagnostics() {
         if from_dreammaker != expected {
             failures.push(format!("{name} (dreammaker parse):\n{}", diff(&expected, &from_dreammaker)));
         }
-        let from_compiler = output(&compiler, &dme, "compiler front end", &name);
         let intended = std::fs::read_to_string(expected_dir.join(format!("{name}.dmbc.txt"))).ok();
         let want = intended.as_deref().unwrap_or(&expected);
-        if from_compiler != want {
-            failures.push(format!("{name} (compiler front end):\n{}", diff(want, &from_compiler)));
-        }
         let serial = native(&dme, 1);
         assert_eq!(serial, native(&dme, 3), "{name} (native): the parallel pass must give the serial diagnostics");
-        if serial != want {
+        if serial != want && std::env::var_os("DQ_DC_CORPUS_BLESS_NATIVE").is_some() {
+            std::fs::write(expected_dir.join(format!("{name}.dmbc.txt")), &serial).unwrap();
+        } else if serial != want {
             failures.push(format!("{name} (native):\n{}", diff(want, &serial)));
         }
         let _ = std::fs::remove_dir_all(&dir);

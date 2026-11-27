@@ -1,0 +1,2 @@
+fixture.dm, line 7, column 5:
+error: no type hint available on implicit new() [no_typehint_implicit_new]

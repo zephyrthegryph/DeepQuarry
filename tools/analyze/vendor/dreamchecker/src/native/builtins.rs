@@ -3,7 +3,8 @@
 //!
 //! - `T <path>`: a type.
 //! - `V <owner> <name> <flags> <type>`: a declared var (`<owner>` `/` is the root; `<type>` the declared type's pieces joined by `/`,
-//!   `-` for none), optionally followed by ` = <value>` for a constant (`f <number>` or `s <text>`).
+//!   `-` for none), optionally followed by ` = <value>` for a constant (`f <number>` or `s <text>`). A constant SpacemanDMM's
+//!   preprocessor also defines as a macro (`TRUE`, `FALSE`) has no value here: SpacemanDMM sees its expansion, as dmbc does.
 //! - `v <owner> <name>`: a value for a builtin var declared on a parent.
 //! - `P <owner> <name> <kind> <parameters>`: a proc value (`<kind>` `proc`, `verb` or `-` for an override; parameters joined by `,`).
 use super::model::{ModelBuilder, Param, ProcDecl, ProcKind, ProcValue, ReturnType, VarFlags};
@@ -96,6 +97,7 @@ pub fn constants() -> &'static foldhash::HashMap<String, ConstValue> {
 pub fn dump_dreammaker() -> String {
     use std::fmt::Write as _;
     let tree = dm::objtree::ObjectTree::with_builtins();
+    let macros = dm::preprocessor::DefineMap::with_builtins();
     let mut out = String::new();
     let owner = |t: dm::objtree::TypeRef| if t.is_root() { "/".to_owned() } else { t.path.clone() };
     for t in tree.iter_types() {
@@ -130,6 +132,7 @@ pub fn dump_dreammaker() -> String {
                     let ty = if decl.var_type.type_path.is_empty() { "-".to_owned() } else { decl.var_type.type_path.join("/") };
                     let _ = write!(out, "V {} {name} {bits} {ty}", owner(t));
                     match &var.value.constant {
+                        _ if t.is_root() && macros.contains_key(name) => {}
                         Some(dm::constants::Constant::Float(n)) => {
                             let _ = write!(out, " = f {n}");
                         }

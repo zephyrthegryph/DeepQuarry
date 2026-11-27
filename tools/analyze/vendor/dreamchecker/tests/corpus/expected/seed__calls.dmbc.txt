@@ -1,0 +1,40 @@
+fixture.dm, line 11, column 3:
+error: bad keyword argument "delta" to /datum/base/proc/named
+fixture.dm, line 12, column 3:
+error: proc called with non-kwargs after kwargs: named()
+fixture.dm, line 15, column 3:
+error: bad keyword argument "gamma" to /datum/base/child/proc/named
+fixture.dm, line 17, column 15:
+warning: ambiguous `!` on left side of an `in` [ambiguous_in_lhs]
+- add parentheses to fix: `!(a in b)`
+- add parentheses to disambiguate: `(!a) in b`
+fixture.dm, line 19, column 15:
+warning: Ambiguous `!` on left side of bitwise `&` operator [ambiguous_not_bitwise]
+- Did you mean `!(x & y)`?
+- Did you mean `!x && y`?
+- Did you mean `~x & y`?
+fixture.dm, line 20, column 15:
+warning: Ambiguous `!` on left side of bitwise `|` operator [ambiguous_not_bitwise]
+- Did you mean `!(x | y)`?
+- Did you mean `!x || y`?
+- Did you mean `~x | y`?
+fixture.dm, line 21, column 15:
+warning: Ambiguous `!` on left side of bitwise `^` operator [ambiguous_not_bitwise]
+- Did you mean `!(x ^ y)`?
+- Did you mean `!x != y`?
+- Did you mean `~x ^ y`?
+fixture.dm, line 38, column 16:
+error: undefined field: "nope" on /regex
+fixture.dm, line 40, column 16:
+error: undefined field: "nope" on /turf
+fixture.dm, line 42, column 6:
+error: proc has no parent: /proc/selfcalls [proc_has_no_parent]
+fixture.dm, line 48, column 3:
+error: /proc/calls_protected attempting to call protected proc /mob/proc/protected_thing [protected_proc]
+- 45:2: prohibited by this protected_proc annotation
+fixture.dm, line 52, column 16:
+error: undefined field: "nope" on /turf
+fixture.dm, line 1, column 23:
+error: an override of /datum/base/proc/named is missing keyword args [override_missing_keyword_arg]
+- 3:24: /datum/base/child is missing "beta"
+- 9:3: called with "beta" here, and 1 other places

@@ -65,8 +65,8 @@ V / TOPDOWN_MAP 2 - = f 0
 V / ISOMETRIC_MAP 2 - = f 1
 V / SIDE_MAP 2 - = f 2
 V / TILED_ICON_MAP 2 - = f 32768
-V / TRUE 2 - = f 1
-V / FALSE 2 - = f 0
+V / TRUE 2 -
+V / FALSE 2 -
 V / MALE 2 - = s male
 V / FEMALE 2 - = s female
 V / NEUTER 2 - = s neuter
