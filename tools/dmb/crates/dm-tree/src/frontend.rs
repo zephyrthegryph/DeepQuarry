@@ -1336,7 +1336,9 @@ fn collect_bodies(
     executor: &dm_exec::BuildExecutor,
     reuse: Option<&BodyReuse<'_>>,
 ) -> Result<usize, Vec<Diagnostic>> {
+    let started = std::time::Instant::now();
     let recipes: Vec<_> = syntax.body_recipes().collect();
+    let recipes_elapsed = started.elapsed();
     let parts = mapping.parts();
     let reused = std::sync::atomic::AtomicUsize::new(0);
     // Every body in parallel chunks (each with its own lookup hints), joined in body order.
@@ -1398,6 +1400,7 @@ fn collect_bodies(
         }
         Ok::<_, Vec<Diagnostic>>(rows)
     })?;
+    let rows_elapsed = started.elapsed();
     codes.reserve(rows.len());
     settings.reserve(rows.len());
     bodies.reserve(rows.len());
@@ -1406,6 +1409,12 @@ fn collect_bodies(
         settings.push(setting);
         bodies.push(body);
     }
+    crate::change_set::record_outcome(format!(
+        "frontend bodies detail: recipes={:.3}s rows={:.3}s split={:.3}s",
+        recipes_elapsed.as_secs_f64(),
+        (rows_elapsed - recipes_elapsed).as_secs_f64(),
+        (started.elapsed() - rows_elapsed).as_secs_f64(),
+    ));
     Ok(reused.into_inner())
 }
 

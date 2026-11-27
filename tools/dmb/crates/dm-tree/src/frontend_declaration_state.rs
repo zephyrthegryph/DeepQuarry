@@ -56,6 +56,12 @@ pub(super) struct CatalogDelta<'a> {
     pub(super) removed: Vec<Arc<Contribution>>,
     pub(super) added: Vec<Arc<Contribution>>,
 }
+impl Contribution {
+    /// The bytes this contribution was made from.
+    pub(super) fn source_text(&self) -> &str {
+        self.source.as_ref()
+    }
+}
 impl ChunkTable {
     pub(super) fn new(
         text: dm_preprocess::WeakSourceText,

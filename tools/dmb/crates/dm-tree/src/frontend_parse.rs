@@ -486,6 +486,26 @@ pub(super) fn parse_declarations_with_state(
     }
     adapted.origins = crate::relative_origins::OriginRoster::Bound(origin_leaves);
     let merge_elapsed = merge_start.elapsed();
+    if super::pipeline::verify_enabled() && carried_count > 0 {
+        // Every carried chunk's reused key and contribution against its bytes.
+        let mismatch = (carried_chunks.iter().enumerate())
+            .filter(|(_, old)| old.is_some())
+            .position(|(index, _)| {
+                let (offset, len) = chunks[index];
+                let text = &source[offset..offset + len];
+                retained_keys.as_ref().is_some_and(|keys| keys[index] != super::declaration_state::RetainedDeclarations::key(text))
+                    || current_contributions.get(index).is_some_and(|value| value.source_text() != text)
+            });
+        match mismatch {
+            None => crate::change_set::record_outcome(format!(
+                "frontend verify: {carried_count} carried chunks' keys and contributions equal their bytes"
+            )),
+            Some(at) => {
+                eprintln!("frontend verify: CARRIED CHUNK MISMATCH at carried chunk {at}");
+                crate::change_set::record_outcome(format!("frontend verify: CARRIED CHUNK MISMATCH at carried chunk {at}"));
+            }
+        }
+    }
     let catalog_started = Instant::now();
     let complete = declaration_errors.is_empty() && current_contributions.len() == chunks.len();
     // What joined and left the active contributions since the previous request, from the carried chunks: a carried chunk

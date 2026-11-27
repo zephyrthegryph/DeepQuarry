@@ -49,8 +49,8 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
 }
 
 /// `DMB_FRONTEND_VERIFY=1` also runs the full directive pass and the full expansion and logs any
-/// difference from the incremental ones (the full results are used). Off by default.
-fn verify_enabled() -> bool {
+/// difference from the incremental ones (on a difference the full results are used). Off by default.
+pub(super) fn verify_enabled() -> bool {
     std::env::var_os("DMB_FRONTEND_VERIFY").is_some_and(|value| value == "1")
 }
 
@@ -203,17 +203,21 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             if verify_enabled() {
                 let full = full_expansion();
                 match dm_preprocess::regions::expansions_equal(&expansion, &full) {
-                    Ok(()) => crate::change_set::record_outcome(
-                        "frontend verify: reusing expansion equals the full expansion".into(),
-                    ),
+                    // Equal: the reusing expansion goes on, so what reads its carried spans downstream is verified too.
+                    Ok(()) => {
+                        crate::change_set::record_outcome(
+                            "frontend verify: reusing expansion equals the full expansion".into(),
+                        );
+                        (expansion, Some(stats))
+                    }
                     Err(why) => {
                         eprintln!("frontend verify: EXPANSION MISMATCH: {why}");
                         crate::change_set::record_outcome(format!(
                             "frontend verify: EXPANSION MISMATCH: {why}"
                         ));
+                        (full, Some(stats))
                     }
                 }
-                (full, Some(stats))
             } else {
                 (expansion, Some(stats))
             }
@@ -453,6 +457,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let profile_stage = dm_profile::stage("frontend.declaration_origins");
     let provenance_start = Instant::now();
     let expanded_spans: Vec<_> = adapted.origins.iter().map(|origin| origin.span).collect();
+    let spans_elapsed = provenance_start.elapsed();
     // What the previous revision's origins can be reused for: its files are this revision's at the same ids (the source
     // index was reused) and the plan says which regions are verbatim copies of which previous ones.
     // A rebuilt index (the ordered pass adopted subtrees instead of patching) still qualifies when it numbers the same files
@@ -491,6 +496,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let reused_origins = origin_base
         .and_then(|base| super::origin_reuse::plan(base, &plan_reuse.regions, &expanded.receipts, &expanded_spans));
     let reused_count = reused_origins.as_ref().map_or(0, |rows| rows.iter().filter(|row| row.is_some()).count());
+    let reuse_plan_elapsed = origins_started.elapsed();
     // Every declaration's origin, in parallel chunks (each with its own lookup hints), joined in declaration order.
     let parts = mapping.parts();
     let origin_rows = super::parallel::chunked_map(executor, &expanded_spans, |first, part| {
@@ -537,6 +543,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     }
     Ok::<_, Vec<Diagnostic>>(rows)
     })?;
+    let rows_elapsed = origins_started.elapsed();
     let (declaration_regions, current_origins): (Vec<_>, Vec<_>) = origin_rows.into_iter().unzip();
     if verify_enabled() && reused_count > 0 {
         // The full lookup for every declaration: a reused origin must equal it.
@@ -562,8 +569,12 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     }
     timings.reused_origins = reused_count;
     crate::change_set::record_outcome(format!(
-        "frontend origins: {reused_count} of {} reused from the previous revision",
-        current_origins.len()
+        "frontend origins: {reused_count} of {} reused from the previous revision; spans={:.3}s reuse_plan={:.3}s rows={:.3}s unzip={:.3}s",
+        current_origins.len(),
+        spans_elapsed.as_secs_f64(),
+        reuse_plan_elapsed.as_secs_f64(),
+        (rows_elapsed - reuse_plan_elapsed).as_secs_f64(),
+        (origins_started.elapsed() - rows_elapsed).as_secs_f64(),
     ));
     adapted.origins = current_origins.into();
     timings.phase("origins", origins_started);
