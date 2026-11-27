@@ -6,16 +6,6 @@ use std::{
 };
 mod analysis;
 mod analysis_db;
-mod analysis_model;
-/// dq-analyze's parse provider (`DQ_ANALYZE_PARSE=dmbc`): in the daemon, the remembered model when its inputs are unchanged
-/// (`analysis_model`); elsewhere a cold `analysis_tree::parse_for_analysis`.
-pub(crate) fn analysis_provider(dme: &std::path::Path, checker: bool) -> Result<dq_analyze::sem::model_store::Parsed, String> {
-    if service::hosting() {
-        analysis_model::parse(dme, checker)
-    } else {
-        crate::analysis_tree::parse_for_analysis(dme, checker)
-    }
-}
 /// The `analysis_results` owner line for the shared store report (none before the first hosted analysis request).
 pub(crate) fn analysis_results_report() -> Option<String> {
     analysis::report_line()

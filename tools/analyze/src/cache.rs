@@ -48,11 +48,8 @@ struct MetaFile {
 impl Cache {
     pub fn open(root: &Path, scopes_hash: &str, enabled: bool) -> Cache {
         // `DQ_ANALYZE_CACHE` moves the cache (several engine builds, or worktrees, on one tree).
-        // A model from dmbc's front end (`DQ_ANALYZE_PARSE=dmbc`) keeps its own cache: every cached fact derives from the model.
-        let dmbc_model = crate::sem::provided_parse_selected();
-        let default_dir = if dmbc_model { "analyze-cache-dmbc" } else { "analyze-cache" };
-        let dir = dq_hostio::var_os("DQ_ANALYZE_CACHE").map(PathBuf::from).unwrap_or_else(|| root.join("data").join(default_dir));
-        let stamp = if dmbc_model { format!("{}|{}|parse=dmbc", ENGINE_HASH, scopes_hash) } else { format!("{}|{}", ENGINE_HASH, scopes_hash) };
+        let dir = dq_hostio::var_os("DQ_ANALYZE_CACHE").map(PathBuf::from).unwrap_or_else(|| root.join("data").join("analyze-cache"));
+        let stamp = format!("{}|{}", ENGINE_HASH, scopes_hash);
         // Hosted in a resident process, the stores live there (`incr::set_persist_dir`): the machine-wide disk copy is not seeded.
         if enabled && !crate::incr::hosted() {
             crate::shared::seed(root, &dir, &stamp);

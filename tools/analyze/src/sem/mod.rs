@@ -1,18 +1,17 @@
-//! The semantic layer: type, proc and var resolution on the dreammaker backend, and the queries
+//! The semantic layer: type, proc and var resolution over the compiler's front end, and the queries
 //! built on it (generated reads, key resolution, handler checks, the generator API).
 //!
-//! `Sem` owns the parsed `ObjectTree` for one tree. It is built once per run (`Cx::sem()`,
-//! memoized) and shared by every semantic lint and generator. The front end is the dreammaker
-//! parser behind [`crate::frontend`]'s trait boundary: nothing outside this module (and
-//! `frontend/`) names a dreammaker type, so the incremental compiler's analysis API can replace it
-//! by implementing the same small surface (`ty`, `var_decl`, `proc_ref`, `proc_body`).
+//! `Sem` holds the analysis view of one tree (`crate::model::Model`: dmbc's semantic tree, declaration
+//! occurrences and typed bodies, which the registered front end provider hands over). It is built once
+//! per run (`Cx::sem()`, memoized) and shared by every semantic lint and generator.
 //!
 //! Declarations that expand to nothing in DM (`CAPABILITIES(...)`, `STAT(...)`, `READS_AS(...)`,
 //! `READS_FROM(...)`, ...) are read from source text by [`decls`]; everything that needs real
-//! structure (what a proc body reads, what a type declares) comes from the AST here.
+//! structure (what a proc body reads, what a type declares) comes from the typed tree here.
+//!
+//! dreammaker's parse ([`parse_for_checker`], [`model_store`]) is left only for DreamChecker's default path.
 
 pub mod actor_tests;
-pub mod ast;
 pub mod checks;
 pub mod closure;
 pub mod ctor_args;
@@ -545,37 +544,6 @@ fn layering_definitions(tree: &Tree, model: &Model) -> (HashMap<String, Vec<Stri
     (layering_type_defs, layering_owner_defs)
 }
 
-/// Another front end's parse of a `.dme` into the model (`Parsed`): `dmbc` registers one at startup that builds the object tree from
-/// its own front end (`dmbc::analysis_tree`), so analysis that runs inside the compiler can skip dreammaker's preprocessor and parser.
-/// `checker` asks for a DreamChecker parse (diagnostics in `Parsed::raw`, body ranges kept).
-pub type ParseProvider = fn(dme: &Path, checker: bool) -> Result<model_store::Parsed, String>;
-
-static PARSE_PROVIDER: std::sync::OnceLock<ParseProvider> = std::sync::OnceLock::new();
-
-/// Registers the front end [`provided_parse`] uses. The first registration wins.
-pub fn register_parse_provider(provider: ParseProvider) {
-    let _ = PARSE_PROVIDER.set(provider);
-}
-
-/// `DQ_ANALYZE_PARSE=dmbc` with a registered provider: the model comes from it instead of dreammaker's parser.
-pub fn provided_parse_selected() -> bool {
-    matches!(dq_hostio::var("DQ_ANALYZE_PARSE").as_deref(), Ok("dmbc")) && PARSE_PROVIDER.get().is_some()
-}
-
-/// The provider's parse of `dme_path`, when [`provided_parse_selected`].
-pub fn provided_parse(dme_path: &Path, checker: bool) -> Option<Result<model_store::Parsed, String>> {
-    if !provided_parse_selected() {
-        return None;
-    }
-    let provider = PARSE_PROVIDER.get()?;
-    let started = std::time::Instant::now();
-    let parsed = provider(dme_path, checker);
-    if model_store::trace() || dq_hostio::var("DQ_ANALYZE_PARSE_TRACE").is_ok() {
-        eprintln!("analyze: model from the dmbc front end ({}) in {:.1?}", if checker { "checker" } else { "analysis" }, started.elapsed());
-    }
-    Some(parsed)
-}
-
 /// Parses `dme_path` with dreammaker: the preprocessor (lexing, macro expansion, includes: about a third of the parse) runs on its own
 /// thread and streams batches of tokens to the parser here. A `Context` is not shareable between threads, so each side has its own: the
 /// preprocessor's registers the files (every `Location` names one of its file ids), and the errors of both are kept. `preregister` names
@@ -588,9 +556,6 @@ pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<S
 /// `config_dme`'s directory, every diagnostic kept.
 pub fn parse_for_checker(dme_path: &Path, config_dme: &Path) -> Result<model_store::Parsed, String> {
     model_store::ensure_codec();
-    if let Some(parsed) = provided_parse(dme_path, true) {
-        return parsed;
-    }
     dreammaker::objtree::set_compact_parse(false);
     parse_source(dme_path, &[], Source::Dme(None), false, Some(config_dme))
 }

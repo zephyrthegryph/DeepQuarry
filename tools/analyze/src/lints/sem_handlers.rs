@@ -129,7 +129,9 @@ impl Lint for SemHandlers {
             let key = crate::incr::ctx_key(&(&cand_keys, &defines, &try_calls));
             let found_all: Vec<(String, String, u32, String)> = crate::incr::cached("sem-handlers-structural", key, || {
                 let mut found_all: Vec<(String, String, u32, String)> = Vec::new();
-                match Sem::build_partial(&cx.tree.root, cx.tree, &cands) {
+                // The full model: the compiler's front end refuses a tree with only some of its files (the types the others
+                // declare, the macros of `code/__*.dm`), and these checks read only the candidates' own bodies.
+                match cx.sem().ok_or_else(|| "the semantic model is unavailable".to_string()) {
                     Ok(sem) => {
                         let set: BTreeSet<&str> = cands.iter().map(|s| s.as_str()).collect();
                         for ty in sem.m().types() {

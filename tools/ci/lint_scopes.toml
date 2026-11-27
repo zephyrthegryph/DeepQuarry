@@ -107,6 +107,12 @@ exempt_files = ["code/defines/host/tgs.dm", "code/engine/_generated/tracked_list
 exempt_files = ["code/tests/unit_tests/dq_e0_proofs_tests.dm", "code/tests/unit_tests/dx_op_resolution_tests.dm", "code/tests/unit_tests/dq_e1_declare_tests.dm", "code/tests/engine/e1_fixtures.dm"]
 exempt_prefixes = ["code/engine/_generated/"]
 
+[lint."sem/handlers"]
+# The unit tests' bodies end on TEST_ASSERT's early return (code/tests/unit_tests/_unit_tests.dm): an act a test starts is ended by the
+# test harness, not on every path of the test proc. The structural pass once read them without the test macros (a partial model of the
+# candidate files), so it never judged them; on the full model it would, so they are exempt by path like the other lints' tests.
+exempt_prefixes = ["code/tests/unit_tests/"]
+
 [lint."sem/handlers".lists]
 try_calls = []
 

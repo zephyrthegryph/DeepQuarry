@@ -6,9 +6,7 @@
 
 pub(crate) mod artifact_publication_store;
 pub mod syntax_coverage;
-pub mod analysis_bridge;
 pub mod analysis_frontend;
-pub mod analysis_parity;
 pub mod analysis_tree;
 pub mod dreamchecker_input;
 pub mod cache_flush;

@@ -1535,7 +1535,7 @@ pub(crate) fn hosted_frontend(
         let project: std::path::PathBuf =
             project.components().filter(|c| !matches!(c, std::path::Component::CurDir)).collect();
         super::emit_stderr(format_args!("dmbd analyze: front end for {} (asked as {})", project.display(), dme.display()));
-        // dq-analyze's model is built against the engine's bootstrap catalog (`analysis_parity::build_frontend_with`), which a compile
+        // dq-analyze's model is built against the engine's bootstrap catalog (`analysis_frontend::build_frontend_with`), which a compile
         // does not admit, so analysis keeps a session of its own for the root (a bootstrap session key): asking the compile's
         // session for it would replace that session's engine and drop its patch base.
         let key = SessionKey { manifest: session_root(project.clone()), engine: None, bootstrap: true };

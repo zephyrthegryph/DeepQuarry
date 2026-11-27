@@ -6,9 +6,9 @@
 //! * [`TextFrontend`]: the engine's own line scanner (`dm::dx`), the same approximation the old
 //!   Python lints used. Instant, runs on the already-loaded tree, and what the ported lints that
 //!   need structure use today so their findings stay identical.
-//! * [`DreamMakerFrontend`]: the SpacemanDMM `dreammaker` crate (the parser DreamChecker uses),
-//!   run over `deepquarry.dme`. Exact (preprocessor, macros, `parent_type`), but a whole-program
-//!   parse, so it is opt-in (`analyze frontend-diff`, or a rule that asks for it).
+//! * [`ModelFrontend`]: the compiler's front end (the semantic model's, `crate::model`) over
+//!   `deepquarry.dme`. Exact (preprocessor, macros, `parent_type`), but a whole-program front end,
+//!   so it is opt-in (`analyze frontend-diff`, or a rule that asks for it).
 //!
 //! A future incremental compiler/analysis API plugs in by implementing [`Frontend`]; no rule
 //! changes. `analyze frontend-diff` compares two frontends on the same tree, which is how the
@@ -86,8 +86,8 @@ pub trait Frontend: Send + Sync {
 pub enum FrontendKind {
     /// The engine's own line scanner: instant, approximate (what the ported lints use).
     Text,
-    /// The SpacemanDMM parser over `deepquarry.dme`: exact, a whole-program parse (a few seconds).
-    DreamMaker,
+    /// The compiler's front end over `deepquarry.dme` (the semantic model's): exact, a whole-program front end.
+    Model,
 }
 
 impl crate::lint::Cx<'_> {
@@ -97,7 +97,7 @@ impl crate::lint::Cx<'_> {
     pub fn program(&self, kind: FrontendKind) -> std::sync::Arc<Program> {
         let (key, fe): (&str, Box<dyn Frontend>) = match kind {
             FrontendKind::Text => ("program/text", Box::new(TextFrontend)),
-            FrontendKind::DreamMaker => ("program/dreammaker", Box::new(DreamMakerFrontend::default())),
+            FrontendKind::Model => ("program/model", Box::new(ModelFrontend)),
         };
         self.tree.memo(key, || {
             fe.analyze(&self.tree.root, self.tree).unwrap_or_else(|e| Program {
@@ -140,110 +140,53 @@ impl Frontend for TextFrontend {
     }
 }
 
-// ---- dreammaker frontend -----------------------------------------------------------------------
+// ---- compiler frontend ---------------------------------------------------------------------------
 
-pub struct DreamMakerFrontend {
-    /// The environment file, relative to the repo root.
-    pub dme: String,
-}
+/// The compiler's front end over `deepquarry.dme` (`crate::model`, the semantic model's): exact (preprocessor, macros, `parent_type`), a
+/// whole-program front end.
+#[derive(Default)]
+pub struct ModelFrontend;
 
-impl Default for DreamMakerFrontend {
-    fn default() -> Self {
-        DreamMakerFrontend { dme: "deepquarry.dme".to_string() }
-    }
-}
-
-impl Frontend for DreamMakerFrontend {
+impl Frontend for ModelFrontend {
     fn name(&self) -> &'static str {
-        "dreammaker"
+        "compiler"
     }
 
-    fn analyze(&self, root: &Path, _tree: &Tree) -> Result<Program, String> {
-        use dreammaker::ast::VarTypeFlags;
-        let ctx = dreammaker::Context::default();
-        let dme = root.join(&self.dme);
-        let objtree = ctx.parse_environment(&dme).map_err(|e| format!("{}: {}", dme.display(), e))?;
-        let rel = |loc: dreammaker::Location| -> String {
-            let p = ctx.file_path(loc.file).to_path_buf();
-            crate::util::rel_slash(&p, root)
-        };
-        let mut program = Program { frontend: "dreammaker", ..Default::default() };
-        for ty in objtree.iter_types() {
-            let t = ty.get();
-            let path = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
+    fn analyze(&self, _root: &Path, tree: &Tree) -> Result<Program, String> {
+        let sem = crate::sem::sem_for(tree).ok_or("the semantic model is unavailable")?;
+        let mut program = Program { frontend: "compiler", ..Default::default() };
+        for ty in sem.m().types() {
+            let path = ty.path().to_string();
             let mut info = TypeInfo { path: path.clone(), ..Default::default() };
-            for (name, v) in &t.vars {
-                let Some(decl) = &v.declaration else { continue };
-                let flags = decl.var_type.flags;
-                let declared = decl.var_type.type_path.iter().map(|s| s.as_str()).collect::<Vec<_>>();
+            for m in ty.vars().filter(|m| m.declares()) {
+                let Some((file, line)) = m.site().and_then(|s| sem.m().line(s)) else { continue };
+                let bits = m.flags();
                 info.vars.push(VarInfo {
-                    name: name.clone(),
-                    declared: if declared.is_empty() { String::new() } else { format!("/{}", declared.join("/")) },
-                    is_static: flags.contains(VarTypeFlags::STATIC),
-                    is_const: flags.contains(VarTypeFlags::CONST),
-                    is_tmp: flags.contains(VarTypeFlags::TMP),
-                    file: rel(decl.location),
-                    line: decl.location.line,
+                    name: m.name().to_string(),
+                    declared: m.declared_type(),
+                    is_static: bits & (1 | 8) != 0,
+                    is_const: bits & 2 != 0,
+                    is_tmp: bits & 4 != 0,
+                    file,
+                    line,
                 });
             }
-            for (name, p) in &t.procs {
-                let Some(value) = p.value.first() else { continue };
+            for m in ty.procs() {
+                let Some((file, line)) = m.site().and_then(|s| sem.m().line(s)) else { continue };
                 info.procs.push(ProcInfo {
-                    name: name.clone(),
-                    is_verb: p.declaration.as_ref().map(|d| matches!(d.kind, dreammaker::ast::ProcDeclKind::Verb)).unwrap_or(false),
-                    params: value.parameters.iter().map(|p| p.name.clone()).collect(),
-                    file: rel(value.location),
-                    line: value.location.line,
+                    name: m.name().to_string(),
+                    is_verb: m.kind() == dm_tree::MemberKind::Verb,
+                    params: m.parameters().iter().map(|q| q.name.clone()).collect(),
+                    file,
+                    line,
                 });
             }
             if !info.vars.is_empty() || !info.procs.is_empty() {
                 program.types.insert(path, info);
             }
         }
-        for e in ctx.errors().iter() {
-            if matches!(e.severity(), dreammaker::Severity::Error) {
-                program.diagnostics.push(format!("{}", e));
-            }
-        }
         Ok(program)
     }
-}
-
-/// `analyze frontend-diff`: type/var/proc names the two programs disagree on (a text-scanner blind
-/// spot, or a DreamMaker parse gap). Returns human-readable lines.
-pub fn diff(a: &Program, b: &Program, limit: usize) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut push = |s: String| {
-        if out.len() < limit {
-            out.push(s);
-        }
-    };
-    for (path, ta) in &a.types {
-        let Some(tb) = b.types.get(path) else {
-            push(format!("type {} only in {}", path, a.frontend));
-            continue;
-        };
-        for p in &ta.procs {
-            if !tb.procs.iter().any(|q| q.name == p.name) {
-                push(format!("proc {}/{} only in {} ({}:{})", path, p.name, a.frontend, p.file, p.line));
-            }
-        }
-        for p in &tb.procs {
-            if p.file == "(builtins)" {
-                continue;
-            }
-            if !ta.procs.iter().any(|q| q.name == p.name) {
-                push(format!("proc {}/{} only in {} ({}:{})", path, p.name, b.frontend, p.file, p.line));
-            }
-        }
-    }
-    for (path, tb) in &b.types {
-        let builtin_only = tb.procs.iter().all(|p| p.file == "(builtins)") && tb.vars.iter().all(|v| v.file == "(builtins)");
-        if !a.types.contains_key(path) && !builtin_only {
-            push(format!("type {} only in {}", path, b.frontend));
-        }
-    }
-    out
 }
 
 #[cfg(test)]
@@ -284,23 +227,5 @@ mod tests {
         assert!(p.proc("/obj/thing", "poke").is_some());
         // memoized: the second call is the same allocation
         assert!(std::sync::Arc::ptr_eq(&p, &cx.program(FrontendKind::Text)));
-    }
-
-    #[test]
-    fn dreammaker_frontend_parses_a_small_environment() {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("t.dme"), "#include \"a.dm\"\n").unwrap();
-        std::fs::write(
-            dir.path().join("a.dm"),
-            "/obj/thing\n\tvar/a = 1\n\tvar/tmp/b = 2\n/obj/thing/proc/poke(mob/user)\n\treturn\n",
-        )
-        .unwrap();
-        let fe = DreamMakerFrontend { dme: "t.dme".to_string() };
-        let tree = Tree::from_files(vec![]);
-        let p = fe.analyze(dir.path(), &tree).unwrap();
-        let a = p.var("/obj/thing", "a").expect("var a");
-        assert_eq!(a.line, 2);
-        assert!(p.var("/obj/thing", "b").unwrap().is_tmp);
-        assert_eq!(p.proc("/obj/thing", "poke").unwrap().params, vec!["user"]);
     }
 }

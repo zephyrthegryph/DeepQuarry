@@ -58,8 +58,6 @@ fn exit_code(code: std::process::ExitCode) -> i32 {
 fn main_inner() {
     // dq-analyze's semantic model reads this front end.
     dmbc::analysis_frontend::register_analysis_provider();
-    // DreamChecker's parse under `DQ_ANALYZE_PARSE=dmbc` (the converted tree).
-    dmbc::analysis_tree::register_analysis_provider();
     // `analyze dreamchecker` checks this front end's own tree (dreamchecker::native).
     dmbc::dreamchecker_input::register_native_checker();
     if analyze_alias() && std::env::args().nth(1).as_deref() != Some("--serve-daemon") {
@@ -86,21 +84,6 @@ fn main_inner() {
         let dme = std::env::args().nth(2).unwrap_or_else(|| "deepquarry.dme".into());
         if let Err(e) = dmbc::syntax_coverage::run(std::path::Path::new(&dme)) {
             eprintln!("syntax-coverage: {e}");
-            std::process::exit(1);
-        }
-        std::process::exit(0);
-    }
-    if std::env::args().nth(1).as_deref() == Some("analysis-parity") {
-        let rest: Vec<String> = std::env::args().skip(2).collect();
-        let tree = rest.iter().any(|a| a == "--tree");
-        let dme = rest.iter().find(|a| !a.starts_with("--")).cloned().unwrap_or_else(|| "deepquarry.dme".into());
-        let result = if tree {
-            dmbc::analysis_parity::run_tree(std::path::Path::new(&dme))
-        } else {
-            dmbc::analysis_parity::run(std::path::Path::new(&dme))
-        };
-        if let Err(e) = result {
-            eprintln!("analysis-parity: {e}");
             std::process::exit(1);
         }
         std::process::exit(0);

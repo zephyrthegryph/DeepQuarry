@@ -23,6 +23,9 @@ use dm_tree::frontend::{ColdFrontend, FrontendRevision};
 use dm_ir::TypeId;
 use dm_tree::{DefinitionMode, MemberId, MemberKind, MemberNode, OccurrenceId, Target};
 
+/// Shards of the site cache (a power of two): the walks ask from every core at once.
+const SITE_SHARDS: usize = 64;
+
 /// An expanded-arena offset: where a declaration or a body node starts. [`Model::line`] maps it to its file and line.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Site(pub u32);
@@ -43,13 +46,15 @@ pub struct Model {
     /// Each type's own members in declaration order (`SemanticTree::declarations`).
     own: Vec<Vec<MemberId>>,
     /// Each type's own members by (name, is a var), in the order of `own`.
-    named: HashMap<(TypeId, Arc<str>, bool), Vec<MemberId>>,
+    named: HashMap<(TypeId, dm_ir::SymbolId, bool), Vec<MemberId>>,
     /// Each member's declaration occurrence.
     occurrence: HashMap<MemberId, OccurrenceId>,
     /// Each type's first type block (`/obj/item/radio` as an item header), in the order the declaration items come.
     type_sites: HashMap<Arc<str>, Site>,
     /// Each type's last `parent_type = /x` assignment (the semantic tree holds the parent, not the assignment).
     parent_sites: HashMap<Arc<str>, Site>,
+    /// Every site asked about so far: its file, line and column.
+    sites: Vec<std::sync::RwLock<HashMap<u32, Option<(Arc<str>, u32, u32)>>>>,
     /// Each proc's parameters, parsed from its header when first asked.
     params: std::sync::Mutex<HashMap<MemberId, Arc<Vec<Param>>>>,
     /// The repo-relative spelling of each path the site map names (resolved once per path).
@@ -109,11 +114,12 @@ impl Model {
             }
             *list = placed;
         }
-        let mut named: HashMap<(TypeId, Arc<str>, bool), Vec<MemberId>> = HashMap::new();
+        // Keyed by the name's symbol (`SymbolId::of` hashes the text, so a lookup by name allocates nothing).
+        let mut named: HashMap<(TypeId, dm_ir::SymbolId, bool), Vec<MemberId>> = HashMap::new();
         for (i, list) in own.iter().enumerate() {
             for &id in list {
                 if let Some(m) = tree.member(id) {
-                    let name: Arc<str> = Arc::from(symbols.text(m.name).unwrap_or(""));
+                    let name = dm_ir::SymbolId::of(symbols.text(m.name).unwrap_or(""));
                     named.entry((TypeId(i as u32), name, m.kind == MemberKind::Var)).or_default().push(id);
                 }
             }
@@ -127,6 +133,7 @@ impl Model {
             bodies: std::sync::OnceLock::new(),
             initializers: std::sync::OnceLock::new(),
             params: Default::default(),
+            sites: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             folded: std::sync::OnceLock::new(),
             rev,
             root: root.to_path_buf(),
@@ -233,14 +240,31 @@ impl Model {
 
     /// The file (repo-relative, `/` separated) and line of `site`; `None` for a site no source file holds.
     pub fn line(&self, site: Site) -> Option<(String, u32)> {
-        let (path, line, _) = self.rev.debug_site_column(site.0 as usize)?;
-        Some((self.rel(&path), line as u32))
+        self.located(site).map(|(f, l, _)| (f.to_string(), l))
     }
 
     /// Like [`Model::line`], with the column.
     pub fn line_column(&self, site: Site) -> Option<(String, u32, u32)> {
-        let (path, line, column) = self.rev.debug_site_column(site.0 as usize)?;
-        Some((self.rel(&path), line as u32, column as u32))
+        self.located(site).map(|(f, l, c)| (f.to_string(), l, c))
+    }
+
+    /// A site's file, line and column, remembered: the walks ask about the same terms many times.
+    fn located(&self, site: Site) -> Option<(Arc<str>, u32, u32)> {
+        let shard = &self.sites[(site.0 as usize).wrapping_mul(0x9E37_79B9) >> 26 & (SITE_SHARDS - 1)];
+        if let Some(hit) = shard.read().unwrap_or_else(|e| e.into_inner()).get(&site.0) {
+            return hit.clone();
+        }
+        let found = self.rev.debug_site_column(site.0 as usize).map(|(path, line, column)| (self.rel_arc(&path), line as u32, column as u32));
+        shard.write().unwrap_or_else(|e| e.into_inner()).insert(site.0, found.clone());
+        found
+    }
+
+    fn rel_arc(&self, path: &Arc<str>) -> Arc<str> {
+        if let Some(r) = self.rels.lock().unwrap().get(path) {
+            return r.clone();
+        }
+        let r: Arc<str> = self.rel(path).into();
+        r
     }
 
     fn rel(&self, path: &Arc<str>) -> String {
@@ -314,13 +338,13 @@ impl<'m> Ty<'m> {
     /// This type's own definitions of the var `name`, in order.
     pub fn own_vars_named(&self, name: &str) -> impl Iterator<Item = Member<'m>> + 'm {
         let m = self.m;
-        m.named.get(&(self.id, Arc::from(name), true)).into_iter().flatten().map(move |&id| Member { m, id })
+        m.named.get(&(self.id, dm_ir::SymbolId::of(name), true)).into_iter().flatten().map(move |&id| Member { m, id })
     }
 
     /// This type's own definitions of the proc `name`, in override order.
     pub fn own_procs_named(&self, name: &str) -> impl Iterator<Item = Member<'m>> + 'm {
         let m = self.m;
-        m.named.get(&(self.id, Arc::from(name), false)).into_iter().flatten().map(move |&id| Member { m, id })
+        m.named.get(&(self.id, dm_ir::SymbolId::of(name), false)).into_iter().flatten().map(move |&id| Member { m, id })
     }
 
     /// `self` is `other` or one of its subtypes.

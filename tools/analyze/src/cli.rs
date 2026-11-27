@@ -29,7 +29,7 @@ USAGE
   analyze dreamchecker [-e DME] [-c TOML] [--json] [--parse-only]
       DreamChecker on this process's own parse; same output and exit code as the standalone binary.
   analyze list                          The registered lints.
-  analyze frontend-diff                 Compare the text scanner with the dreammaker parser.
+  analyze frontend-diff                 Compare the text scanner with the compiler front end.
   analyze gen [--check] [NAME...]       Write (or check) the generated DM under code/engine/_generated/.
   analyze codemod list | NAME [--check|--apply|--revert] [--path PREFIX...] [--write-residue]
       AST-aware rewriters (phase 2.5); `analyze codemod help`.
@@ -666,12 +666,12 @@ fn real_main(argv: Vec<String>) -> ExitCode {
             let text = frontend::TextFrontend.analyze(&root, &engine.tree);
             println!("text frontend: {:?}", t.elapsed());
             let t = Instant::now();
-            let dm = frontend::DreamMakerFrontend::default().analyze(&root, &engine.tree);
-            println!("dreammaker frontend: {:?}", t.elapsed());
+            let dm = frontend::ModelFrontend.analyze(&root, &engine.tree);
+            println!("compiler frontend: {:?}", t.elapsed());
             match (text, dm) {
                 (Ok(a), Ok(b)) => {
                     println!("text: {} types, {} procs, {} vars", a.types.len(), a.proc_count(), a.var_count());
-                    println!("dreammaker: {} types, {} procs, {} vars, {} parse errors", b.types.len(), b.proc_count(), b.var_count(), b.diagnostics.len());
+                    println!("compiler: {} types, {} procs, {} vars, {} errors", b.types.len(), b.proc_count(), b.var_count(), b.diagnostics.len());
                     for l in frontend::diff(&a, &b, 60) {
                         println!("{}", l);
                     }
