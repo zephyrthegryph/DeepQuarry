@@ -128,11 +128,21 @@ impl WatchedSources {
         };
         // The candidates: with the watcher, files in a directory an event named (or one it does not cover); without it, every
         // file. A candidate is read again only when its stamp (size, modification time) moved, and its text compared.
+        // Files are kept sorted by path, so the files of one directory come together: each directory is judged once (the
+        // judgement builds a comparison key and consults the link memo), not once per file.
+        let mut judged: Option<(&Path, bool)> = None;
         let candidates: Vec<(&PathBuf, &Entry)> = state
             .files
             .iter()
             .filter(|(path, _)| match &changes {
-                Some(changes) => path.parent().is_none_or(|dir| !changes.clean(dir)),
+                Some(changes) => path.parent().is_none_or(|dir| {
+                    let dirty = match judged {
+                        Some((last, dirty)) if last == dir => dirty,
+                        _ => !changes.clean(dir),
+                    };
+                    judged = Some((dir, dirty));
+                    dirty
+                }),
                 None => true,
             })
             .collect();
