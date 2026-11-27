@@ -476,7 +476,6 @@ pub fn check(dme: &Path, context: &dreammaker::Context, checks: bool, cli: bool,
     if trace {
         dq_hostio::out(false, format_args!("dreamchecker: preprocessor warnings at {:.1?}", started.elapsed()), true);
     }
-    let _ = threads;
     with_input(&front, |input, registered, stats, store| {
         for e in registered {
             context.register_error(e);
@@ -485,9 +484,12 @@ pub fn check(dme: &Path, context: &dreammaker::Context, checks: bool, cli: bool,
             dq_hostio::out(false, format_args!("parsed {}/{} proc bodies (100%)", stats.bodies, stats.bodies), true);
         }
         if checks {
-            dreamchecker::native::run(context, input, cli, store);
+            dreamchecker::native::run(context, input, cli, store, threads);
         }
     });
+    if trace {
+        dq_hostio::out(false, format_args!("dreamchecker: done at {:.1?}", started.elapsed()), true);
+    }
     Ok(())
 }
 

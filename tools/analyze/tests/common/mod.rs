@@ -9,6 +9,8 @@ static ONCE: Once = Once::new();
 pub fn dmbc_parse() {
     ONCE.call_once(|| {
         dmbc::analysis_tree::register_analysis_provider();
+        // `analyze dreamchecker` runs on the compiler front end's tree.
+        dmbc::dreamchecker_input::register_native_checker();
         std::env::set_var("DQ_ANALYZE_PARSE", "dmbc");
     });
 }

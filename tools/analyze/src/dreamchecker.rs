@@ -1,7 +1,8 @@
-//! `analyze dreamchecker`: SpacemanDMM's DreamChecker (vendored at the same suite-1.11 pin as `dreammaker`, `vendor/README.md`)
-//! run in this process on analyze's own parse, with the standalone `dreamchecker -e <dme>` output: progress on stdout, every
-//! diagnostic at info severity or above on stderr as it is registered, the closing count, `--json` totals and exit 1 on any.
-//! The standalone binary stays the oracle (`tools/analyze/tests/dreamchecker_parity.rs`).
+//! `analyze dreamchecker`: SpacemanDMM's DreamChecker (vendored, `vendor/dreamchecker`), its checks run on the compiler front end's
+//! own tree (`dreamchecker::native`, its input built by the compiler: `dmbc/src/dreamchecker_input.rs`), with the standalone
+//! `dreamchecker -e <dme>` output: progress on stdout, every diagnostic at info severity or above on stderr as it is registered, the
+//! closing count, `--json` totals and exit 1 on any. Its oracle is the corpus (`vendor/dreamchecker/tests/corpus`), recorded from
+//! the checker on dreammaker's parse before that checker was removed.
 
 use std::path::{Path, PathBuf};
 
@@ -58,12 +59,6 @@ pub fn register_native(checker: NativeChecker) {
     let _ = NATIVE.set(checker);
 }
 
-/// The registered native checker, when `DQ_DREAMCHECKER_NATIVE=1` selects it (while it is being proved against this module's
-/// checker on dreammaker's parse).
-fn native_selected() -> Option<NativeChecker> {
-    matches!(dq_hostio::var("DQ_DREAMCHECKER_NATIVE").as_deref(), Ok("1")).then(|| NATIVE.get().copied()).flatten()
-}
-
 /// The checker's context: its config from the given file or the `.dme`'s directory, printing as the standalone does under `cli`.
 pub fn context_for(dme: &Path, config: Option<&Path>, cli: bool) -> dreammaker::Context {
     let mut context = dreammaker::Context::default();
@@ -78,34 +73,22 @@ pub fn context_for(dme: &Path, config: Option<&Path>, cli: bool) -> dreammaker::
 }
 
 pub fn run(dme: &Path, shown: &Path, config: Option<&Path>, json: bool, parse_only: bool, threads: usize) -> i32 {
-    let toml_dme = config.map(|c| c.parent().unwrap_or(Path::new(".")).join("x.dme")).unwrap_or_else(|| dme.to_path_buf());
     println!("============================================================");
     println!("Parsing {}...\n", shown.display());
-    let context = match native_selected() {
-        Some(native) => {
-            // The per-proc results live in the analysis query database (`crate::incr`), under the same stamp `check` uses, so the
-            // two commands share one session in the daemon.
-            let root = dme.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
-            let scopes = crate::scopes::Scopes::load(&root.join("tools").join("ci").join("lint_scopes.toml")).map(|s| s.hash).unwrap_or_else(|_| "dreamchecker".into());
-            let _cache = crate::cache::Cache::open(root, &scopes, true);
-            let context = context_for(dme, config, true);
-            if let Err(e) = native(dme, &context, !parse_only, true, threads) {
-                eprintln!("analyze dreamchecker: {e}");
-                return 2;
-            }
-            context
-        }
-        None => {
-            let parsed = match crate::sem::parse_for_checker(dme, &toml_dme) {
-                Ok(p) => p,
-                Err(e) => {
-                    eprintln!("analyze dreamchecker: {e}");
-                    return 2;
-                }
-            };
-            check(parsed, dme, config, !parse_only, threads, dreamchecker::BATCH, true)
-        }
+    let Some(native) = NATIVE.get().copied() else {
+        eprintln!("analyze dreamchecker: the checker reads the compiler's front end; run it as `dmbc analyze dreamchecker` (the analyze alias)");
+        return 2;
     };
+    // The per-proc results live in the analysis query database (`crate::incr`), under the same stamp `check` uses, so the two
+    // commands share one session in the daemon.
+    let root = dme.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+    let scopes = crate::scopes::Scopes::load(&root.join("tools").join("ci").join("lint_scopes.toml")).map(|s| s.hash).unwrap_or_else(|_| "dreamchecker".into());
+    let _cache = crate::cache::Cache::open(root, &scopes, true);
+    let context = context_for(dme, config, true);
+    if let Err(e) = native(dme, &context, !parse_only, true, threads) {
+        eprintln!("analyze dreamchecker: {e}");
+        return 2;
+    }
     println!("============================================================");
     // `DQ_DREAMCHECKER_LIST=1`: every counted diagnostic, one per line, on stderr (comparing two parses' outputs).
     if dq_hostio::var_os("DQ_DREAMCHECKER_LIST").is_some() {
@@ -129,34 +112,6 @@ pub fn run(dme: &Path, shown: &Path, config: Option<&Path>, json: bool, parse_on
         );
     }
     if errors > 0 { 1 } else { 0 }
-}
-
-/// The checker over a parse: the context DreamChecker registers to (the parse's files under the same ids, the `.dme`'s or the given
-/// config), the parse's own diagnostics first, then every check (`checks`, unless the parse was fatal). `cli`: print progress and the
-/// diagnostics at info severity or above as they are registered, as the standalone does. `batch`: bodies per unit of parallel work
-/// ([`dreamchecker::BATCH`]; the corpus test uses 1, so every body crosses a batch boundary).
-pub fn check(parsed: crate::sem::model_store::Parsed, dme: &Path, config: Option<&Path>, checks: bool, threads: usize, batch: usize, cli: bool) -> dreammaker::Context {
-    let context = context_for(dme, config, cli);
-    parsed.files.for_each(|p| {
-        context.register_file(p);
-    });
-    if let Some(raw) = parsed.raw {
-        for e in raw.stream {
-            context.register_error(e);
-        }
-        if let Some(line) = raw.summary {
-            if cli {
-                eprintln!("{line}");
-            }
-        }
-        for e in raw.finish {
-            context.register_error(e);
-        }
-    }
-    if checks && !parsed.fatal {
-        dreamchecker::run_parallel_batched(&context, &parsed.objtree, cli, threads, batch);
-    }
-    context
 }
 
 /// Every diagnostic the context holds, every severity, in registration order, as the standalone prints one (`file, line L, column C:`,

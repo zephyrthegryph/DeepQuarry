@@ -514,10 +514,9 @@ pub fn body_facts(model: &Model, shared: &Shared, site: &dyn Site, proc: ProcId,
 
 /// DreamChecker over the native input, registering diagnostics to `context`; `cli` prints its progress. The per-proc results come
 /// from `store`.
-pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, store: &dyn Store) {
+/// The call-tree searches run on `threads` threads.
+pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, store: &dyn Store, threads: usize) {
     let timing = dq_hostio::var_os("DQ_DREAMCHECKER_TIMING").is_some();
-    let threads = std::thread::available_parallelism().map(|n| (n.get() / 2).clamp(1, 8)).unwrap_or(1);
-    let threads = dq_hostio::var("DQ_DREAMCHECKER_THREADS").ok().and_then(|v| v.parse().ok()).unwrap_or(threads);
     let mut mark = std::time::Instant::now();
     let mut lap = |what: &str| {
         if timing {
