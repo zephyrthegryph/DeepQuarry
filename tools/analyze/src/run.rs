@@ -49,6 +49,9 @@ pub struct Outcome {
     pub name: String,
     pub failed: bool,
     pub text: String,
+    /// The sites the verdict counts against the lint, as `(file, line, rule)`; `None` when the lint judges itself (a custom or
+    /// count policy), so a site's standing is only in its text.
+    pub failing: Option<HashSet<(String, u32, String)>>,
     pub run: Run,
     pub allow_used: Vec<AllowUse>,
     pub timing: Timing,
@@ -164,54 +167,34 @@ impl Engine {
         let meta = lint.meta();
         let scope = self.scopes.for_lint(meta.name, meta.group);
         let cx = Cx { tree: &self.tree, meta, scope: &scope };
-        let t_load = Instant::now();
-        let mut lc = self.cache.load_lint(meta.name);
-        LOAD_NS.fetch_add(t_load.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
+        let version = crate::cache::lint_version(meta.name);
         let mut timing = Timing::default();
         let mut sites = Vec::new();
         let mut notes = Vec::new();
         let mut allow_used: Vec<AllowUse> = Vec::new();
-        let mut dirty = false;
 
         if matches!(meta.scan, ScanKind::File | ScanKind::Both) {
             let files = cx.files();
             timing.files = files.len();
-            let results: Vec<(Sink, bool)> = files
-                .par_iter()
-                .map(|f| {
-                    if lc.clean.contains(&f.fkey) {
-                        return (Sink::new(), false);
-                    }
-                    if let Some(s) = lc.per_file.get(&f.fkey) {
-                        return (s.clone(), false);
-                    }
-                    let mut sink = Sink::new();
-                    sink.cur = f.rel.clone();
-                    lint.scan_file(&cx, f, &mut sink);
-                    (sink, true)
-                })
-                .collect();
-            let mut per_file = HashMap::new();
-            let mut clean = HashSet::new();
-            for (f, (sink, fresh)) in files.iter().zip(results) {
-                if fresh {
-                    timing.rescanned += 1;
-                    dirty = true;
-                }
-                sites.extend(sink.sites.iter().cloned());
-                notes.extend(sink.notes.iter().cloned());
-                allow_used.extend(sink.allow_used.iter().cloned());
-                if sink.sites.is_empty() && sink.allow_used.is_empty() && sink.notes.is_empty() {
-                    clean.insert(f.fkey);
-                } else {
-                    per_file.insert(f.fkey, sink);
-                }
+            let rescanned = std::sync::atomic::AtomicUsize::new(0);
+            let t_load = Instant::now();
+            let sinks: Vec<Sink> = crate::incr::facts(&format!("lint:{}|{}", meta.name, version), &files, |f| {
+                rescanned.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let mut sink = Sink::new();
+                sink.cur = f.rel.clone();
+                lint.scan_file(&cx, f, &mut sink);
+                sink.cur.clear();
+                sink
+            });
+            timing.rescanned = rescanned.into_inner();
+            if timing.rescanned == 0 {
+                LOAD_NS.fetch_add(t_load.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
             }
-            if per_file.len() != lc.per_file.len() || clean.len() != lc.clean.len() {
-                dirty = true;
+            for sink in sinks {
+                sites.extend(sink.sites);
+                notes.extend(sink.notes);
+                allow_used.extend(sink.allow_used);
             }
-            lc.per_file = per_file;
-            lc.clean = clean;
         }
 
         if matches!(meta.scan, ScanKind::Tree | ScanKind::Both) {
@@ -233,34 +216,25 @@ impl Engine {
                 }
             }
             let key = u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap());
-            let sink = match &lc.tree {
-                Some((k, s)) if *k == key => {
-                    timing.tree_memo_hit = true;
-                    s.clone()
+            let mut scanned = false;
+            let sink: Sink = crate::incr::cached(&format!("lint-tree:{}|{}", meta.name, version), key, || {
+                scanned = true;
+                let mut sink = Sink::new();
+                // Never from a rayon worker: the prewarm's own par_iter can steal a lint job that
+                // re-enters this call and waits on the cell this thread is initializing. run_all
+                // prewarms from the main thread (`prepare`) before it fans out.
+                if rayon::current_thread_index().is_none() && self.tree.fresh_count() > 64 {
+                    self.tree.prewarm();
                 }
-                _ => {
-                    let mut sink = Sink::new();
-                    // Never from a rayon worker: the prewarm's own par_iter can steal a lint job that
-                    // re-enters this call and waits on the cell this thread is initializing. run_all
-                    // prewarms from the main thread (`prepare`) before it fans out.
-                    if rayon::current_thread_index().is_none() && self.tree.fresh_count() > 64 {
-                        self.tree.prewarm();
-                    }
-                    lint.scan_tree(&cx, &mut sink);
-                    lc.tree = Some((key, sink.clone()));
-                    dirty = true;
-                    sink
-                }
-            };
+                lint.scan_tree(&cx, &mut sink);
+                sink
+            });
+            timing.tree_memo_hit = !scanned;
             sites.extend(sink.sites);
             notes.extend(sink.notes);
             allow_used.extend(sink.allow_used);
         }
 
-        if dirty {
-            lc.dirty = true;
-            self.cache.save_lint(meta.name, &lc);
-        }
         timing.total = t0.elapsed();
         (Run { sites, notes }, allow_used, timing)
     }
@@ -272,6 +246,13 @@ impl Engine {
 
     /// `judge` with an explicit raw switch (`raw`: ignore baselines, every site is new).
     pub fn judge_with(&self, lint: &dyn Lint, run: &Run, raw: bool) -> (bool, String) {
+        let (failed, text, _) = self.judge_detail(lint, run, raw);
+        (failed, text)
+    }
+
+    /// [`Engine::judge_with`], also naming the sites the verdict counts against the lint (see [`Outcome::failing`]).
+    pub fn judge_detail(&self, lint: &dyn Lint, run: &Run, raw: bool) -> (bool, String, Option<HashSet<(String, u32, String)>>) {
+        let mut failing: Option<HashSet<(String, u32, String)>> = Some(HashSet::new());
         let meta = lint.meta();
         let scope = self.scopes.for_lint(meta.name, meta.group);
         let cx = Cx { tree: &self.tree, meta, scope: &scope };
@@ -310,6 +291,9 @@ impl Engine {
                 };
                 let _ = writeln!(text, "{} {:<19} {:>6}  (ceiling {})  {}", meta.label, rule, count, ceiling, status);
                 if count > ceiling {
+                    if let Some(f) = failing.as_mut() {
+                        f.extend(found.iter().map(|s| (s.rel.clone(), s.line, s.rule.clone())));
+                    }
                     let hint = hints(rule);
                     let suffix = if hint.is_empty() { String::new() } else { format!(" -- {}", hint) };
                     for s in found.iter().take(60) {
@@ -325,9 +309,15 @@ impl Engine {
         let failed = ceiling_failed | match meta.policy {
             Policy::Sites { baseline, banned, .. } => {
                 let path = if raw { PathBuf::from("") } else { self.baseline_path(baseline) };
-                baseline::check_sites(meta.label, &self.tree, &by_rule, &hints, &path, banned, &mut text)
+                let mut fresh = Vec::new();
+                let failed = baseline::check_sites_into(meta.label, &self.tree, &by_rule, &hints, &path, banned, &mut text, &mut fresh);
+                if let Some(f) = failing.as_mut() {
+                    f.extend(fresh);
+                }
+                failed
             }
             Policy::Ceilings { baseline, .. } => {
+                failing = None;
                 let path = if raw { PathBuf::from("") } else { self.baseline_path(baseline) };
                 let rules: Vec<&str> = meta.rules.iter().map(|r| r.name).collect();
                 baseline::check_ceilings(meta.label, &run.sites, &rules, &path, &mut text)
@@ -339,6 +329,9 @@ impl Engine {
                     let hint = hints(rule);
                     for s in found {
                         failed = true;
+                        if let Some(f) = failing.as_mut() {
+                            f.insert((s.rel.clone(), s.line, s.rule.clone()));
+                        }
                         let body = if s.msg.is_empty() { self.tree.site_text(&s.rel, s.line as usize) } else { s.msg.clone() };
                         let suffix = if hint.is_empty() { String::new() } else { format!(" -- {}", hint) };
                         let _ = writeln!(text, "{}:{}: [{}/{}] {}{}", s.rel, s.line, meta.label, rule, body, suffix);
@@ -346,10 +339,13 @@ impl Engine {
                 }
                 failed
             }
-            Policy::Custom => lint.finish_raw(&cx, run, &mut text, raw),
+            Policy::Custom => {
+                failing = None;
+                lint.finish_raw(&cx, run, &mut text, raw)
+            }
         };
         let failed = if matches!(meta.policy, Policy::Custom) { failed } else { lint.post_judge(&cx, run, &mut text) | failed };
-        (failed, text)
+        (failed, text, failing)
     }
 
     pub fn run_one(&self, lint: &dyn Lint) -> Outcome {
@@ -366,12 +362,12 @@ impl Engine {
     fn run_one_inner(&self, lint: &dyn Lint, name: String) -> Outcome {
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let (run, allow_used, timing) = self.scan(lint);
-            let (failed, text) = self.judge(lint, &run);
-            (run, allow_used, timing, failed, text)
+            let (failed, text, failing) = self.judge_detail(lint, &run, self.opts.raw);
+            (run, allow_used, timing, failed, text, failing)
         }));
         match res {
-            Ok((run, allow_used, timing, failed, text)) => {
-                Outcome { name, failed, text, run, allow_used, timing, internal_error: None }
+            Ok((run, allow_used, timing, failed, text, failing)) => {
+                Outcome { name, failed, text, failing, run, allow_used, timing, internal_error: None }
             }
             Err(e) => {
                 let msg = e
@@ -383,6 +379,7 @@ impl Engine {
                     name: name.clone(),
                     failed: true,
                     text: format!("{}: INTERNAL ERROR in the engine port: {}\n", name, msg),
+                    failing: None,
                     run: Run::default(),
                     allow_used: Vec::new(),
                     timing: Timing::default(),
@@ -417,7 +414,7 @@ impl Engine {
             self.tree.save_line_cache(&dir.join("linetext.bin"), self.cache.stamp());
         }
         if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
-            eprintln!("analyze: lint cache loads {:.1}ms (summed over threads)", LOAD_NS.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e6);
+            eprintln!("analyze: lint results served whole {:.1}ms (summed over threads)", LOAD_NS.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e6);
         }
         outcomes
     }
@@ -517,6 +514,38 @@ pub fn changed_files(root: &Path) -> HashSet<String> {
         }
     }
     out
+}
+
+/// One outcome as report data: its text (with the CI group markers around it), its sites as diagnostics and its allow uses.
+pub fn lint_report(o: &Outcome, ci: bool) -> crate::report::LintReport {
+    use crate::report::{AllowUse, Diagnostic, LintReport, Severity};
+    let mut text = String::new();
+    if ci {
+        let _ = writeln!(text, "::group::{}", o.name);
+    }
+    text.push_str(&o.text);
+    if ci {
+        let _ = writeln!(text, "::endgroup::");
+    }
+    let diagnostics = o
+        .run
+        .sites
+        .iter()
+        .map(|s| {
+            let severity = match &o.failing {
+                None => Severity::Note,
+                Some(f) if f.contains(&(s.rel.clone(), s.line, s.rule.clone())) => Severity::Error,
+                Some(_) => Severity::Baselined,
+            };
+            Diagnostic { lint: o.name.clone(), rule: s.rule.clone(), file: s.rel.clone(), line: s.line, column: 0, message: s.msg.clone(), severity }
+        })
+        .collect();
+    let allow_uses = o
+        .allow_used
+        .iter()
+        .map(|u| AllowUse { lint: o.name.clone(), file: u.rel.clone(), line: u.line, name: u.name.clone(), code: u.code.clone() })
+        .collect();
+    LintReport { name: o.name.clone(), failed: o.failed, diagnostics, allow_uses, text }
 }
 
 /// Prints outcomes the way `check_ratchets.sh` did. Returns the names of failed lints.

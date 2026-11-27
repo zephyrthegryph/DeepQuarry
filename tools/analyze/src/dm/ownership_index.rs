@@ -320,7 +320,7 @@ fn shard_of(rel: &str) -> usize {
 /// through `sys::kept_recorded` are carried back to the calling thread.
 pub fn sharded_keyed<R>(name: &str, ctx: u128, files: &[&SourceFile], f: impl Fn(&SourceFile) -> R + Sync) -> Vec<R>
 where
-    R: Serialize + DeserializeOwned + Default + PartialEq + Send,
+    R: Serialize + DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
 {
     let mut groups: Vec<Vec<usize>> = vec![Vec::new(); SHARDS];
     for (i, file) in files.iter().enumerate() {
@@ -354,13 +354,13 @@ where
 /// [`incr::facts`], sharded (see [`sharded_keyed`]).
 pub fn sharded_facts<F>(name: &str, files: &[&SourceFile], f: impl Fn(&SourceFile) -> F + Sync) -> Vec<F>
 where
-    F: Serialize + DeserializeOwned + Default + PartialEq + Send,
+    F: Serialize + DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
 {
     sharded_keyed(name, 0, files, f)
 }
 
 /// One file's index facts and the keys of what a judgement reads of them (0 when it has none).
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct FileIdx {
     events: Vec<IdxEv>,
     h_members: u128,

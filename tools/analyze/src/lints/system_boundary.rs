@@ -167,7 +167,7 @@ impl<'g> Tarjan<'g> {
 }
 
 /// One file's contribution to the cross-file index.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     /// `SUBSYSTEM_DEF(x)` / `SYSTEM_DEF(x)` names declared in the file, in order.
     ss_defs: Vec<String>,
@@ -243,7 +243,7 @@ struct Ctx {
 
 /// One file's findings: B1..B4 hits in line order, the systems it calls from outside, and its
 /// would-be B6 emits `(system index, line, event type)`.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct FileOut {
     /// `(rule 0..=3 for B1..B4, line, key, text)`.
     hits: Vec<(u8, u32, String, String)>,

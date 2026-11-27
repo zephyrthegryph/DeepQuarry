@@ -151,8 +151,8 @@ pub fn seed(repo: &Path, local: &Path, stamp: &str) {
 
 /// Called once when the process ends: copies the cache files this run wrote into the shared directory, then applies the caps.
 pub fn publish() {
-    // Hosted: results live in the resident process (incr::Provider); nothing goes to the machine-wide disk copy.
-    if crate::incr::provider_registered() {
+    // Hosted: the stores live in the resident process (`incr::set_persist_dir`); nothing goes to the machine-wide disk copy.
+    if crate::incr::hosted() {
         return;
     }
     let Some(a) = ACTIVE.lock().unwrap().take() else { return };

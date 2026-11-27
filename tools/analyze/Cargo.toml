@@ -17,6 +17,8 @@ path = "src/lib.rs"
 [dependencies]
 # Output and environment per request (dmbc daemon hosting): hostio/src/lib.rs.
 dq-hostio = { path = "hostio" }
+# The query database the analysis results live in (src/incr.rs), shared with the compiler.
+dm-query = { path = "../dmb/crates/dm-query" }
 # The model, the walk store and every walk allocate millions of small values: a faster allocator is most of a warm run's CPU.
 mimalloc = { version = "0.1", default-features = false }
 # Parse-aware frontend: SpacemanDMM suite-1.11 dreammaker, vendored (vendor/README.md) to add model persistence.

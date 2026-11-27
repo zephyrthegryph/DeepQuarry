@@ -455,7 +455,7 @@ fn judge(f: &SourceFile, rows: &ByHandler, helpers: &BTreeMap<String, BTreeSet<S
     out
 }
 
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     rows: Vec<DeclRow>,
     cands: Vec<Cand>,

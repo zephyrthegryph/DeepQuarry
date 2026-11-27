@@ -47,7 +47,7 @@ static META: Meta = Meta {
     lists: &["step_exempt_prefixes"],
 };
 
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Steps {
     steps: Vec<(u32, String)>,
 }

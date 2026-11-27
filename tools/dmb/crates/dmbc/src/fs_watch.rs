@@ -263,6 +263,33 @@ pub fn changes_since(since: WatchToken, now: WatchToken) -> Option<Changes> {
     Some(changes)
 }
 
+/// The entries an event named after `since` (seen from `now`), without the directories logged beside them: each event logs its
+/// directory and then the entry under one sequence number (`log_change`), so the last key of each number is the entry. Each with
+/// whether everything below it changed too. `None` when the tokens prove nothing (another epoch, a loss, the watcher off).
+pub fn changed_entries_since(since: WatchToken, now: WatchToken) -> Option<Vec<(String, bool)>> {
+    if !enabled() || since.epoch != now.epoch || since.seq > now.seq {
+        return None;
+    }
+    let log = change_log();
+    if log.epoch != since.epoch {
+        return None;
+    }
+    let start = log.entries.partition_point(|(seq, _, _)| *seq <= since.seq);
+    let rest = &log.entries[start..];
+    let mut out = Vec::new();
+    for (i, (seq, key, subtree)) in rest.iter().enumerate() {
+        if rest.get(i + 1).is_none_or(|(next, _, _)| next != seq) {
+            out.push((key.clone(), *subtree));
+        }
+    }
+    Some(out)
+}
+
+/// The comparison key `path` has in the change log (lower case, `\` separators), if it can have one.
+pub fn watch_key(path: &Path) -> Option<String> {
+    key(path)
+}
+
 /// The cached proof of `path`, or a fresh capture that is cached when no event interfered.
 pub(crate) fn shared_proof(
     path: &Path,

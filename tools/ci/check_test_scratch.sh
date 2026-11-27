@@ -5,7 +5,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 allow='dmb-bin|session-output-fixture|worktree-specific-cache|unused-resident-map-fixture|dmbd/cache|dmbd/publication-leases|dmb-daemon|dmb-native-v2\)|^[^:]*:[0-9]+:\s*//'
-hits="$(grep -rnE 'E:/dq-cache' tools/dmb/crates tools/dmb/src --include=*.rs 2>/dev/null | grep -vE "$allow" | grep -vE 'daemon/(resident|analysis_store)\.rs' || true)"
+hits="$(grep -rnE 'E:/dq-cache' tools/dmb/crates tools/dmb/src --include=*.rs 2>/dev/null | grep -vE "$allow" | grep -vE 'daemon/(resident|analysis)\.rs' || true)"
 if [ -n "$hits" ]; then
 	echo "check_test_scratch: scratch under E:/dq-cache outside the shared guard (use crate::test_scratch::root() or dir()):"
 	echo "$hits"

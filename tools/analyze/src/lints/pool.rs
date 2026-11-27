@@ -49,7 +49,7 @@ const TAKE_LEAK: u8 = 1;
 const RULE_NAMES: [&str; 2] = ["new_pooled", "take_leak"];
 
 /// One file's contribution to the pooled-type index: the types it declares pooled (sorted, unique).
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     pooled: Vec<String>,
 }

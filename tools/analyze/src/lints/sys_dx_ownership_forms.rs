@@ -34,7 +34,7 @@ fn related(a: &str, b: &str) -> bool {
 
 /// One file's contribution: its own sites (rule index into `RULES`), the vars its capabilities()
 /// own (`(var, holder type)`) and the vars its ownership() owns (`(holder type, var, line)`).
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     sites: Vec<(u8, u32)>,
     cap: Vec<(String, String)>,

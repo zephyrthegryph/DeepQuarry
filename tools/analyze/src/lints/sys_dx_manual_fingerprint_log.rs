@@ -39,14 +39,14 @@ fn handler_index(name: &str) -> usize {
 
 /// One file's contribution: the handlers its constructor calls name, and the procs it holds that call a manual
 /// fingerprint/log function (with the lines), in proc order.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     /// (kind 0 src / 1 type / 2 global, the type for "type", the proc name, the calling type)
     refs: Vec<(u8, Option<String>, String, String)>,
     manual: Vec<ManualProc>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 struct ManualProc {
     name: String,
     path: String,

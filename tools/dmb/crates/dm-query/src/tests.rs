@@ -334,3 +334,48 @@ fn million_queries_revalidate_in_parallel() {
     eprintln!("million: cold {cold:?}, revalidate after one change {warm:?}");
     assert_eq!(db.stats(PARITY).computed, N as u64 + 1);
 }
+
+const LOCAL: Kind = Kind(7);
+
+/// A local kind runs the function its read passes; a later read revalidates it through what it read (early cutoff included), and a
+/// dependant that finds it red with no function at hand runs itself instead.
+#[test]
+fn local_kinds_run_the_function_their_read_passes() {
+    let counts = counters();
+    let db = database(&counts);
+    db.define_local(LOCAL, "local");
+    const READER: Kind = Kind(8);
+    db.define(READER, "reader", |ctx, _| {
+        let v = *ctx.get::<u64>(key(LOCAL, 1), Arc::new(()))?;
+        outcome(v + 1)
+    });
+    set(&db, 1, 3);
+    set(&db, BASE, 0);
+    let runs_local = AtomicUsize::new(0);
+    let mut read = |db: &Db| {
+        *db.get_with::<u64>(key(LOCAL, 1), &mut |ctx| {
+            runs_local.fetch_add(1, Ordering::SeqCst);
+            let p = *ctx.get::<u64>(key(PARITY, 1), param(1))?;
+            outcome(p * 10)
+        })
+        .unwrap()
+    };
+    assert_eq!(read(&db), 10);
+    assert_eq!(read(&db), 10);
+    assert_eq!(runs_local.load(Ordering::SeqCst), 1);
+    // Same parity: the parity reruns, is cut off, and the local query stays green.
+    set(&db, 1, 5);
+    assert_eq!(read(&db), 10);
+    assert_eq!(runs_local.load(Ordering::SeqCst), 1);
+    // A dependant reads it while it is current.
+    assert_eq!(*db.get::<u64>(key(READER, 0), Arc::new(())).unwrap(), 11);
+    // Parity changes: the local query is red; the dependant cannot rerun it, so it fails as missing, and the next read with a
+    // function runs it.
+    set(&db, 1, 4);
+    assert!(matches!(db.get::<u64>(key(READER, 0), Arc::new(())), Err(QueryError::Missing(_))));
+    assert_eq!(read(&db), 0);
+    assert_eq!(runs_local.load(Ordering::SeqCst), 2);
+    assert_eq!(*db.get::<u64>(key(READER, 0), Arc::new(())).unwrap(), 1);
+    // A first read with no function is missing.
+    assert!(matches!(db.get::<u64>(key(LOCAL, 2), Arc::new(())), Err(QueryError::Missing(_))));
+}
