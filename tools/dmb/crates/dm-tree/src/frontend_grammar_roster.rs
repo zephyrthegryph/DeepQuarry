@@ -31,16 +31,33 @@ struct CurrentPieces {
     length: usize,
 }
 impl CurrentPieces {
-    fn capture(expanded: &ExpandedRegions) -> Option<Self> {
+    /// The joined text as its regions' output pieces, when it is exactly their concatenation. A receipt the expansion carried
+    /// over from a text this roster already proved (`Proven`) is not compared again: its bytes are a copy of bytes that were
+    /// compared with the same record. Every other receipt is compared byte for byte.
+    fn capture(expanded: &ExpandedRegions, proven: &Proven) -> Option<Self> {
+        let carried = expanded
+            .carried
+            .as_deref()
+            .filter(|carried| carried.text.is_view_of(&expanded.text) && proven.holds(&carried.previous));
+        let runs = carried.map_or(&[][..], |carried| carried.runs.as_slice());
+        let mut run = 0usize;
         let mut cursor = 0usize;
         let mut records = Vec::with_capacity(expanded.receipts.len());
-        for receipt in &expanded.receipts {
+        for (index, receipt) in expanded.receipts.iter().enumerate() {
             let span = receipt.output_span();
-            if span.start != cursor || expanded.text.get(span.range())? != receipt.record().text() {
+            while run < runs.len() && runs[run].receipts.1 <= index {
+                run += 1;
+            }
+            let copied = runs.get(run).is_some_and(|run| run.receipts.0 <= index);
+            let record = receipt.record();
+            if span.start != cursor
+                || span.end - span.start != record.text().len()
+                || (!copied && expanded.text.get(span.range())? != record.text())
+            {
                 return None;
             }
             cursor = span.end;
-            records.push(receipt.record().shared_output_text());
+            records.push(record.shared_output_text());
         }
         if cursor != expanded.text.len() {
             return None;
@@ -49,6 +66,27 @@ impl CurrentPieces {
             answer: GrammarAnswer(Some(records.into())),
             length: cursor,
         })
+    }
+}
+/// Joined texts this roster proved to be their pieces' concatenation (a few: the variants of a root share the store).
+#[derive(Default)]
+struct Proven(std::sync::Mutex<Vec<dm_preprocess::WeakSourceText>>);
+impl Proven {
+    const KEPT: usize = 4;
+    fn holds(&self, text: &dm_preprocess::WeakSourceText) -> bool {
+        self.0.lock().unwrap_or_else(|e| e.into_inner()).iter().any(|proven| proven.same_storage(text))
+    }
+    fn record(&self, text: &SourceText) {
+        let mut proven = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        // A text nobody holds any more is no previous text of a later expansion.
+        proven.retain(|weak| weak.upgrade().is_some());
+        if proven.iter().any(|weak| weak.is_view_of(text)) {
+            return;
+        }
+        if proven.len() >= Self::KEPT {
+            proven.remove(0);
+        }
+        proven.push(text.downgrade());
     }
 }
 impl ObservationHost<GrammarQuery, GrammarAnswer, ()> for CurrentPieces {
@@ -79,6 +117,7 @@ impl GrammarDescriptors {
 }
 pub(super) struct RetainedGrammar {
     values: Arc<ObservedArtifactStore<GrammarDescriptors, GrammarQuery, GrammarAnswer, ()>>,
+    proven: Arc<Proven>,
     lease: dm_session::ObservedArtifactLease<GrammarDescriptors, GrammarQuery, GrammarAnswer, ()>,
     hits: AtomicUsize,
 }
@@ -88,6 +127,7 @@ impl Default for RetainedGrammar {
         Self {
             lease: values.lease(),
             values,
+            proven: Arc::default(),
             hits: AtomicUsize::new(0),
         }
     }
@@ -97,8 +137,14 @@ impl RetainedGrammar {
         Self {
             values: Arc::clone(&self.values),
             lease: self.values.lease(),
+            proven: Arc::clone(&self.proven),
             hits: AtomicUsize::new(0),
         }
+    }
+    fn capture(&self, expanded: &ExpandedRegions) -> Option<CurrentPieces> {
+        let host = CurrentPieces::capture(expanded, &self.proven)?;
+        self.proven.record(&expanded.text);
+        Some(host)
     }
     fn key() -> Vec<u8> {
         let mut key = b"joined-grammar-descriptors-v2".to_vec();
@@ -108,7 +154,7 @@ impl RetainedGrammar {
     }
     #[cfg(test)]
     pub(super) fn lookup(&self, expanded: &ExpandedRegions) -> Option<Arc<GrammarDescriptors>> {
-        let host = CurrentPieces::capture(expanded)?;
+        let host = self.capture(expanded)?;
         let descriptors = self
             .lease
             .visit_explained(&Self::key(), &host, &mut |_| true)
@@ -129,7 +175,7 @@ impl RetainedGrammar {
         &self,
         expanded: &ExpandedRegions,
     ) -> Result<Arc<GrammarDescriptors>, &'static str> {
-        let host = CurrentPieces::capture(expanded);
+        let host = self.capture(expanded);
         let key = Self::key();
         if let Some(host) = &host {
             if let Some(value) = self.lease.visit_explained(&key, host, &mut |_| true).0 {
@@ -160,6 +206,7 @@ impl RetainedGrammar {
         }
         let built = convergence::build(
             &expanded.text,
+            host.as_ref().map(|host| &host.answer),
             previous
                 .as_ref()
                 .map(|(value, answer)| (value.as_ref(), answer)),

@@ -35,6 +35,44 @@ struct DeclarationClaims {
     keys: AtomicUsize,
     hits: AtomicUsize,
     symbols: std::sync::Mutex<Arc<ActiveSymbols>>,
+    /// This request's grammar chunks (or, until it records its own, the previous published request's): a later request reuses
+    /// the key and the bound contribution of a chunk whose bytes its expansion copied (`ChunkTable`).
+    chunks: std::sync::Mutex<Option<Arc<ChunkTable>>>,
+}
+/// Every grammar chunk of one request's joined text: where it was, its retained key and the contribution it was bound to (whose
+/// source equals the chunk's bytes: the binding compared them, or the contribution was made from them).
+pub(super) struct ChunkTable {
+    pub(super) text: dm_preprocess::WeakSourceText,
+    pub(super) spans: Vec<(usize, usize)>,
+    pub(super) keys: Vec<Vec<u8>>,
+    pub(super) values: Vec<Arc<Contribution>>,
+    /// The spelling state the same request left (`DeclarationClaims::symbols` after its catalog): its contribution set is
+    /// the set of `values`, so a later request can apply only the difference (`CatalogDelta`).
+    symbols: std::sync::Weak<ActiveSymbols>,
+}
+/// The contributions that leave and join the active set since the request that recorded `table` (each once).
+pub(super) struct CatalogDelta<'a> {
+    pub(super) table: &'a ChunkTable,
+    pub(super) removed: Vec<Arc<Contribution>>,
+    pub(super) added: Vec<Arc<Contribution>>,
+}
+impl ChunkTable {
+    pub(super) fn new(
+        text: dm_preprocess::WeakSourceText,
+        spans: Vec<(usize, usize)>,
+        keys: Vec<Vec<u8>>,
+        values: Vec<Arc<Contribution>>,
+    ) -> Self {
+        Self { text, spans, keys, values, symbols: std::sync::Weak::new() }
+    }
+    /// The chunk of this table at `previous_offset` with length `len`.
+    pub(super) fn chunk_at(&self, previous_offset: usize, len: usize) -> Option<usize> {
+        let index = self.spans.binary_search_by_key(&previous_offset, |&(offset, _)| offset).ok()?;
+        (self.spans[index].1 == len).then_some(index)
+    }
+    pub(super) fn source(&self, index: usize) -> &dm_preprocess::SourceText {
+        &self.values[index].source
+    }
 }
 impl Default for DeclarationClaims {
     fn default() -> Self {
@@ -47,6 +85,7 @@ impl Default for DeclarationClaims {
             keys: AtomicUsize::new(0),
             hits: AtomicUsize::new(0),
             symbols: std::sync::Mutex::new(Arc::new(ActiveSymbols::default())),
+            chunks: std::sync::Mutex::new(None),
         }
     }
 }
@@ -159,13 +198,18 @@ impl DeclarationClaims {
         self.values.retain(keys);
         self.keys.store(keys.len(), Ordering::Relaxed);
     }
-    pub(super) fn get_shared(
+    pub(super) fn get_shared(&self, key: &[u8], text: &str, offset: usize) -> Option<CurrentContribution> {
+        self.get_shared_known(key, text, offset, None)
+    }
+    /// `get_shared`, where `known` is a source the chunk's bytes are known to equal (see `shared::Host`).
+    pub(super) fn get_shared_known(
         &self,
         key: &[u8],
         text: &str,
         offset: usize,
+        known: Option<&dm_preprocess::SourceText>,
     ) -> Option<CurrentContribution> {
-        let bound = self.values.get(key, text, offset)?;
+        let bound = self.values.get(key, text, offset, known)?;
         self.hits.fetch_add(1, Ordering::Relaxed);
         Some(bound)
     }
@@ -230,18 +274,36 @@ impl DeclarationClaims {
         &self,
         current: &[Arc<Contribution>],
         engine: Option<&SymbolTable>,
+        delta: Option<&CatalogDelta<'_>>,
     ) -> Result<Arc<super::symbol_catalog::SymbolCatalog>, dm_ir::SymbolCollision> {
         let mut active = self
             .symbols
             .lock()
             .unwrap_or_else(|error| error.into_inner());
-        let source = if active.matches(current) {
+        let started = std::time::Instant::now();
+        // The difference applies only to the state the recording request left (the same allocation: nothing replaced it).
+        let delta = delta.filter(|delta| std::ptr::eq(delta.table.symbols.as_ptr(), Arc::as_ptr(&active)));
+        let known = delta.is_some();
+        let matched = delta.is_none() && active.matches(current);
+        let matching = started.elapsed();
+        let source = if matched {
             Arc::clone(&active.symbols)
         } else {
-            Arc::make_mut(&mut active).update(current)?
+            match delta.and_then(|delta| Arc::make_mut(&mut active).update_known(&delta.removed, &delta.added)) {
+                Some(result) => result?,
+                None => Arc::make_mut(&mut active).update(current)?,
+            }
         };
+        let updated = started.elapsed();
         let catalog =
             super::symbol_catalog::SymbolCatalog::capture(active.catalog.as_ref(), source, engine)?;
+        crate::change_set::record_outcome(format!(
+            "frontend symbol catalog: contributions={} matched={matched} known_delta={known} match={:.3}s update={:.3}s capture={:.3}s",
+            current.len(),
+            matching.as_secs_f64(),
+            (updated - matching).as_secs_f64(),
+            (started.elapsed() - updated).as_secs_f64(),
+        ));
         if !active
             .catalog
             .as_ref()
@@ -556,13 +618,13 @@ mod tests {
         assert!(a.same_relative_node(b));
         assert_eq!(b.span().start, a.span().start + 80);
         let catalog = store
-            .current_catalog(&[Arc::clone(&first.value)], None)
+            .current_catalog(&[Arc::clone(&first.value)], None, None)
             .unwrap();
         let shifted_catalog = store
-            .current_catalog(&[Arc::clone(&shifted.value)], None)
+            .current_catalog(&[Arc::clone(&shifted.value)], None, None)
             .unwrap();
         assert!(Arc::ptr_eq(&catalog, &shifted_catalog));
-        let empty_catalog = store.current_catalog(&[], None).unwrap();
+        let empty_catalog = store.current_catalog(&[], None, None).unwrap();
         assert!(!Arc::ptr_eq(&catalog, &empty_catalog));
         assert!(empty_catalog.symbols.text(name).is_none());
         assert_eq!(catalog.symbols.text(name), Some("unique_name"));
@@ -640,7 +702,18 @@ impl CurrentContribution {
             .map_or_else(|| Arc::from(self.value.source.as_ref()), Arc::clone)
     }
     fn bind(value: Arc<Contribution>, text: &str, offset: usize) -> Option<Self> {
-        if value.source.as_ref() != text {
+        Self::bind_known(value, text, offset, None)
+    }
+    /// `bind`, where `known` (when given) is a source `text` is known to equal: a value whose source is that same storage is
+    /// bound without comparing the bytes again.
+    fn bind_known(
+        value: Arc<Contribution>,
+        text: &str,
+        offset: usize,
+        known: Option<&dm_preprocess::SourceText>,
+    ) -> Option<Self> {
+        let same = known.is_some_and(|known| known.same_view(&value.source) && known.len() == text.len());
+        if !same && value.source.as_ref() != text {
             return None;
         }
         let syntax = value.syntax.bind(text.len(), offset).ok()?;
@@ -855,6 +928,38 @@ impl ActiveSymbols {
         }
         self.contributions = next;
         Ok(self.symbols.clone())
+    }
+    /// `update`, when the caller knows the difference from `contributions` (`removed` leave, `added` join, each once): no pass
+    /// over every contribution. `None` when the difference does not fit what this holds, or is large (the caller runs
+    /// `update`).
+    fn update_known(
+        &mut self,
+        removed: &[Arc<Contribution>],
+        added: &[Arc<Contribution>],
+    ) -> Option<Result<Arc<SymbolTable>, dm_ir::SymbolCollision>> {
+        let address = |value: &Arc<Contribution>| Arc::as_ptr(value) as usize;
+        if removed.len() + added.len() > SMALL_SPELLING_DELTA
+            || !removed
+                .iter()
+                .all(|value| self.contributions.get(&address(value)).is_some_and(|old| Arc::ptr_eq(old, value)))
+            || added.iter().any(|value| self.contributions.contains_key(&address(value)))
+        {
+            return None;
+        }
+        if removed.is_empty() && added.is_empty() {
+            return Some(Ok(self.symbols.clone()));
+        }
+        let symbols = match self.update_delta(removed, added) {
+            Ok(symbols) => symbols,
+            Err(collision) => return Some(Err(collision)),
+        };
+        for value in removed {
+            self.contributions.remove(&address(value));
+        }
+        for value in added {
+            self.contributions.insert(address(value), Arc::clone(value));
+        }
+        Some(Ok(symbols))
     }
     /// A few contributions replaced: count their spellings in place and touch the table only for
     /// spellings that appeared or vanished. A collision restores the counts and changes nothing.

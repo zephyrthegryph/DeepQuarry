@@ -72,11 +72,35 @@ pub(super) fn parse_declarations_with_state(
     drop(profile_scan);
     let keys_started = Instant::now();
     let keys_timer = dm_profile::detail_timer("decl.retained_keys");
+    // A chunk whose bytes the expansion copied from the previous revision's text, where the previous request had a chunk of
+    // the same length: its key is that chunk's key (the key is a function of the bytes), and the contribution it was bound to
+    // has a source equal to these bytes, so the lookup below need not compare them.
+    let previous_chunks = retained
+        .and_then(|state| state.chunk_table())
+        .filter(|table| {
+            expanded
+                .carried
+                .as_deref()
+                .is_some_and(|carried| carried.describes(&expanded.text, &table.text))
+        });
+    let carried_chunks: Vec<Option<usize>> = match (&previous_chunks, expanded.carried.as_deref()) {
+        (Some(table), Some(carried)) => chunks
+            .iter()
+            .map(|&(offset, len)| {
+                let run = carried.run_holding(offset, len)?;
+                table.chunk_at(dm_preprocess::regions::CarriedText::previous_offset(run, offset), len)
+            })
+            .collect(),
+        _ => Vec::new(),
+    };
+    let carried_count = carried_chunks.iter().filter(|chunk| chunk.is_some()).count();
     let retained_keys = retained.map(|state| {
         let keys: Vec<_> = chunks
             .iter()
-            .map(|&(offset, len)| {
-                super::declaration_state::RetainedDeclarations::key(&source[offset..offset + len])
+            .enumerate()
+            .map(|(index, &(offset, len))| match (carried_chunks.get(index).copied().flatten(), &previous_chunks) {
+                (Some(old), Some(table)) => table.keys[old].clone(),
+                _ => super::declaration_state::RetainedDeclarations::key(&source[offset..offset + len]),
             })
             .collect();
         state.retain(&keys);
@@ -106,6 +130,7 @@ pub(super) fn parse_declarations_with_state(
                     let sender = sender.clone();
                     let chunks = &chunks;
                     let retained_keys = &retained_keys;
+                    let (carried_chunks, previous_chunks) = (&carried_chunks, &previous_chunks);
                     let next = &next;
                     let (
                         region_hits,
@@ -133,8 +158,14 @@ pub(super) fn parse_declarations_with_state(
                             };
                             let text = &source[offset..offset + len];
                             let shared_started = Instant::now();
+                            let known = carried_chunks
+                                .get(index)
+                                .copied()
+                                .flatten()
+                                .zip(previous_chunks.as_ref())
+                                .map(|(old, table)| table.source(old));
                             let shared = retained.zip(retained_keys.as_ref())
-                                .and_then(|(state, keys)| state.get_shared(&keys[index], text, offset));
+                                .and_then(|(state, keys)| state.get_shared_known(&keys[index], text, offset, known));
                             shared_ns.fetch_add(
                                 shared_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
                                 std::sync::atomic::Ordering::Relaxed,
@@ -456,15 +487,64 @@ pub(super) fn parse_declarations_with_state(
     adapted.origins = crate::relative_origins::OriginRoster::Bound(origin_leaves);
     let merge_elapsed = merge_start.elapsed();
     let catalog_started = Instant::now();
+    let complete = declaration_errors.is_empty() && current_contributions.len() == chunks.len();
+    // What joined and left the active contributions since the previous request, from the carried chunks: a carried chunk
+    // bound to the previous chunk's own contribution keeps it; every other chunk may add one, every unkept previous one may
+    // leave (each checked against the whole other side, so a contribution shared by two chunks is counted once).
+    let delta = previous_chunks.as_deref().filter(|_| complete && !carried_chunks.is_empty()).and_then(|table| {
+        let mut kept = vec![false; table.values.len()];
+        let mut added = Vec::new();
+        for (index, value) in current_contributions.iter().enumerate() {
+            match carried_chunks[index] {
+                Some(old) if Arc::ptr_eq(value, &table.values[old]) => kept[old] = true,
+                _ => {
+                    added.push(Arc::clone(value));
+                    if added.len() > 256 {
+                        return None;
+                    }
+                }
+            }
+        }
+        let removed: Vec<_> = table.values.iter().zip(&kept).filter(|(_, kept)| !**kept).map(|(value, _)| value).collect();
+        if removed.len() > 256 {
+            return None;
+        }
+        let once = |values: Vec<&Arc<super::declaration_state::Contribution>>, other: &[Arc<super::declaration_state::Contribution>]| {
+            let mut out: Vec<Arc<super::declaration_state::Contribution>> = Vec::new();
+            for value in values {
+                if !other.iter().any(|o| Arc::ptr_eq(o, value)) && !out.iter().any(|o| Arc::ptr_eq(o, value)) {
+                    out.push(Arc::clone(value));
+                }
+            }
+            out
+        };
+        Some(super::declaration_state::CatalogDelta {
+            table,
+            removed: once(removed, &current_contributions),
+            added: once(added.iter().collect(), &table.values),
+        })
+    });
     if let Some(state) = retained {
         let catalog = state
             .current_catalog(
                 &current_contributions,
                 config.engine.map(|engine| &engine.symbols),
+                delta.as_ref(),
             )
             .map_err(|error| vec![internal(&error.to_string())])?;
         adapted.symbols = SymbolTable::overlay(Arc::clone(&catalog.symbols));
         adapted.symbol_catalog = Some(catalog);
+    }
+    drop(delta);
+    if let (Some(state), Some(keys)) = (retained, retained_keys.as_ref()) {
+        if complete {
+            state.record_chunk_table(super::declaration_state::ChunkTable::new(
+                expanded.text.downgrade(),
+                chunks.to_vec(),
+                keys.clone(),
+                current_contributions.clone(),
+            ));
+        }
     }
     let catalog_elapsed = catalog_started.elapsed();
     let publish_started = Instant::now();
@@ -478,8 +558,9 @@ pub(super) fn parse_declarations_with_state(
     let declaration_syntax = DeclarationSyntax::new(syntax_chunks)
         .map_err(|error| vec![internal(&format!("relative syntax roster: {error:?}"))])?;
     crate::change_set::record_outcome(format!(
-        "frontend parse detail: chunks={} worker_get_shared_sum={:.3}s scan={:.3}s keys={:.3}s workers={:.3}s adopt={:.3}s merge={:.3}s catalog={:.3}s memo_publish={:.3}s syntax_roster={:.3}s total={:.3}s",
+        "frontend parse detail: chunks={} carried={} worker_get_shared_sum={:.3}s scan={:.3}s keys={:.3}s workers={:.3}s adopt={:.3}s merge={:.3}s catalog={:.3}s memo_publish={:.3}s syntax_roster={:.3}s total={:.3}s",
         chunks.len(),
+        carried_count,
         Duration::from_nanos(shared_ns.load(std::sync::atomic::Ordering::Relaxed)).as_secs_f64(),
         descriptor_scan.as_secs_f64(),
         keys_elapsed.as_secs_f64(),
@@ -510,6 +591,7 @@ pub(super) fn parse_declarations_with_state(
             independent_hits: independent_hits.load(std::sync::atomic::Ordering::Relaxed),
             facts_hits: facts_hits.load(std::sync::atomic::Ordering::Relaxed),
             parsed_chunks: parsed_chunks.load(std::sync::atomic::Ordering::Relaxed),
+            carried_chunks: carried_count,
             descriptor_scan,
             worker_lookup_decode_and_parse: Duration::from_nanos(
                 lookup_ns.load(std::sync::atomic::Ordering::Relaxed),

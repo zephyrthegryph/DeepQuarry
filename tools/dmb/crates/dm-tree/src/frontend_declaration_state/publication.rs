@@ -56,7 +56,9 @@ impl DeclarationClaims {
             }
             _ => None,
         };
+        let chunks = previous.and_then(|old| old.chunks.lock().unwrap_or_else(|e| e.into_inner()).clone());
         Self {
+            chunks: Mutex::new(chunks),
             grammar: self.grammar.fork(),
             values: self.values.fork(),
             authored,
@@ -173,6 +175,30 @@ impl RetainedDeclarations {
             .with_pending(|claims| claims.get_shared(key, text, offset))
             .flatten()
     }
+    pub(in crate::frontend) fn get_shared_known(
+        &self,
+        key: &[u8],
+        text: &str,
+        offset: usize,
+        known: Option<&dm_preprocess::SourceText>,
+    ) -> Option<CurrentContribution> {
+        self.access
+            .with_pending(|claims| claims.get_shared_known(key, text, offset, known))
+            .flatten()
+    }
+    /// The chunk table of the request this one was forked from (or this request's own, once recorded).
+    pub(in crate::frontend) fn chunk_table(&self) -> Option<Arc<super::ChunkTable>> {
+        self.access
+            .with_pending(|claims| claims.chunks.lock().unwrap_or_else(|e| e.into_inner()).clone())
+            .flatten()
+    }
+    /// Records this request's chunk table, after its catalog: the table names the spelling state the catalog left.
+    pub(in crate::frontend) fn record_chunk_table(&self, mut table: super::ChunkTable) {
+        self.access.with_pending(|claims| {
+            table.symbols = Arc::downgrade(&claims.symbols.lock().unwrap_or_else(|e| e.into_inner()));
+            *claims.chunks.lock().unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(table));
+        });
+    }
     pub(in crate::frontend) fn capture(
         &self,
         key: &[u8],
@@ -203,12 +229,13 @@ impl RetainedDeclarations {
         &self,
         current: &[Arc<Contribution>],
         engine: Option<&SymbolTable>,
+        delta: Option<&super::CatalogDelta<'_>>,
     ) -> Result<Arc<super::super::symbol_catalog::SymbolCatalog>, dm_ir::SymbolCollision> {
         // Calls belong to active frontend requests. After sealing, standalone
         // compatibility obtains a fresh catalog without mutating retained data.
         self.access
-            .with_pending(|claims| claims.current_catalog(current, engine))
-            .unwrap_or_else(|| DeclarationClaims::default().current_catalog(current, engine))
+            .with_pending(|claims| claims.current_catalog(current, engine, delta))
+            .unwrap_or_else(|| DeclarationClaims::default().current_catalog(current, engine, None))
     }
     pub(crate) fn take_authored_index(
         &self,

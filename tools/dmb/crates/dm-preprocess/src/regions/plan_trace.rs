@@ -167,6 +167,10 @@ pub struct PlanTimings {
     /// Patching: planning the changed subtrees, then assembling the plan around them.
     pub replan: std::time::Duration,
     pub assemble: std::time::Duration,
+    /// Of `assemble`: copying the previous occurrences, regions and items; the trace entries; the source maps.
+    pub assemble_copy: std::time::Duration,
+    pub assemble_trace: std::time::Duration,
+    pub assemble_maps: std::time::Duration,
 }
 
 #[derive(Clone, Copy, Debug, Default)]

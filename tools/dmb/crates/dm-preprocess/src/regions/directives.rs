@@ -42,7 +42,7 @@ pub(super) fn plan_incremental<P: SourceProvider>(
     );
     pass.plan.defines = defines.clone();
     for (name, replacement) in FUNCTION_PREDEFINES.iter().copied() {
-        pass.plan.final_macros.insert(
+        Arc::make_mut(&mut pass.plan.final_macros).insert(
             name.into(),
             Macro {
                 parameters: Some(vec!["message".into()]),
@@ -56,7 +56,7 @@ pub(super) fn plan_incremental<P: SourceProvider>(
     // Install them before caller definitions; source define/undef effects then
     // apply through the same ordered environment as every other macro.
     for (name, replacement) in OBJECT_PREDEFINES.iter().copied() {
-        pass.plan.final_macros.insert(
+        Arc::make_mut(&mut pass.plan.final_macros).insert(
             name.into(),
             Macro {
                 parameters: None,
@@ -75,9 +75,9 @@ pub(super) fn plan_incremental<P: SourceProvider>(
             pass.push_file_dir(&definition);
             pass.file_dir_origins.push(None);
         }
-        pass.plan.final_macros.insert(name.clone(), definition);
+        Arc::make_mut(&mut pass.plan.final_macros).insert(name.clone(), definition);
     }
-    for (name, definition) in &pass.plan.final_macros {
+    for (name, definition) in pass.plan.final_macros.iter() {
         pass.environment.insert(name, definition.clone(), None);
     }
     let occurrence = pass.occurrence(project, None, None, Span::default(), 1);
@@ -96,7 +96,7 @@ pub(super) fn plan_incremental<P: SourceProvider>(
             .visit_storage(|name, _, _, definition, _| {
                 finals.insert(name.to_string(), (**definition).clone());
             });
-        pass.plan.final_macros = finals;
+        pass.plan.final_macros = Arc::new(finals);
     }
     #[cfg(test)]
     {
@@ -105,7 +105,7 @@ pub(super) fn plan_incremental<P: SourceProvider>(
             .visit_storage(|name, _, _, definition, _| {
                 finals.insert(name.to_string(), (**definition).clone());
             });
-        assert_eq!(finals, pass.plan.final_macros, "the environment and the terminal macros differ");
+        assert_eq!(finals, *pass.plan.final_macros, "the environment and the terminal macros differ");
     }
     if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1") {
         let d = &pass.detail;
@@ -390,7 +390,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         });
         self.environment
             .insert(&name, definition.clone(), Some(origin));
-        self.plan.final_macros.insert(name, definition);
+        Arc::make_mut(&mut self.plan.final_macros).insert(name, definition);
     }
     /// Where a definition in `occurrence`'s file is reported: the file's path relative to the project directory (the
     /// absolute path when the file lies outside it). Consumers resolve it against `DirectivePlan::project_dir`.
@@ -423,7 +423,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         Arc::make_mut(&mut self.plan.regions[region].effects).push(MacroEffect::Undef {
             name: name.to_owned(),
         });
-        self.plan.final_macros.remove(name);
+        Arc::make_mut(&mut self.plan.final_macros).remove(name);
         self.environment.remove(name);
         if name == "FILE_DIR" {
             self.plan.file_dirs.pop();
@@ -431,9 +431,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             self.file_dir_origins.pop();
             Arc::make_mut(&mut self.plan.regions[region].effects).push(MacroEffect::PopFileDir);
             if let Some(restored) = self.file_dir_definitions.last() {
-                self.plan
-                    .final_macros
-                    .insert(name.to_owned(), restored.clone());
+                Arc::make_mut(&mut self.plan.final_macros).insert(name.to_owned(), restored.clone());
             }
             if let Some(restored) = self.file_dir_definitions.last() {
                 let origin = self.file_dir_origins.last().cloned().flatten();
@@ -622,7 +620,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
     }
 
     fn depend(&mut self, path: &Path) {
-        self.plan.dependencies.insert(path.to_path_buf());
+        Arc::make_mut(&mut self.plan.dependencies).insert(path.to_path_buf());
         self.dependency_log.push(path.to_path_buf());
     }
     fn snapshot(&self) -> PassState {

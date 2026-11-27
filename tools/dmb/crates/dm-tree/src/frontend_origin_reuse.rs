@@ -10,15 +10,17 @@
 //! declaration that starts in it changed, or a declaration from the edited region runs into it) is looked up as before.
 use super::*;
 
-/// For every declaration (by index, `starts` in output order): `Some((region, previous declaration))` when its origin is the
+/// For every declaration (by index, `spans` in output order): `Some((region, previous declaration))` when its origin is the
 /// previous revision's. `None` overall when the starts are not in output order.
 pub(super) fn plan(
     base: &ColdFrontend,
     copies: &[Option<usize>],
     receipts: &[dm_preprocess::regions::region_memo::RegionReceipt],
-    starts: &[usize],
+    spans: &[dm_ir::Span],
 ) -> Option<Vec<Option<(usize, u32)>>> {
-    if starts.windows(2).any(|pair| pair[0] > pair[1]) || base.declaration_starts.len() != base.declaration_regions.len() {
+    if spans.windows(2).any(|pair| pair[0].start > pair[1].start)
+        || base.declaration_starts.len() != base.declaration_regions.len()
+    {
         return None;
     }
     // The previous revision: where each region's output starts, and its declarations (contiguous, in output order).
@@ -37,10 +39,10 @@ pub(super) fn plan(
     }
     // This revision: each declaration's region (the first output that ends after its start, as the origin rows answer),
     // its ordinal inside the region and its offset from the region's output start.
-    let mut placed = Vec::with_capacity(starts.len());
+    let mut placed = Vec::with_capacity(spans.len());
     let mut count = vec![0u32; copies.len()];
     let mut receipt = 0usize;
-    for &start in starts {
+    for start in spans.iter().map(|span| span.start as usize) {
         while receipt + 1 < receipts.len() && receipts[receipt].output_span().end <= start {
             receipt += 1;
         }

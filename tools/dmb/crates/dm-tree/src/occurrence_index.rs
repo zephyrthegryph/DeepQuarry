@@ -73,16 +73,17 @@ impl OccurrenceTable {
         let index = prior
             .filter(|index| index.admits(tree))
             .map_or_else(|| TargetOccurrenceIndex::capture(tree), Arc::clone);
-        let occurrences = tree
+        // Collected straight into the shared slice (an exact-length iterator: one allocation, no second copy of 20 MB).
+        let occurrences: Arc<[Occurrence]> = tree
             .declarations()
             .iter()
             .copied()
             .zip(origins)
             .map(|(target, provenance)| Occurrence { target, provenance })
-            .collect::<Vec<_>>();
+            .collect();
         Ok(Self {
             tree_identity: tree.identity(),
-            occurrences: occurrences.into(),
+            occurrences,
             index,
         })
     }

@@ -18,14 +18,22 @@ pub(super) enum DeclarationValues {
     Local(Arc<SharedContributionStore>, Lease),
     Shared(Arc<SharedContributionStore>, Lease),
 }
-struct Host<'a>(&'a str);
+/// The live chunk text, and the source its bytes are known to equal (`known`: the source of the contribution the same bytes
+/// were bound to in the previous revision; the chunk lies in text the expansion copied from it). Stored bytes that are that
+/// same storage are equal without a compare; anything else is compared byte for byte.
+struct Host<'a> {
+    text: &'a str,
+    known: Option<&'a dm_preprocess::SourceText>,
+}
 impl ObservationHost<(), ChunkSourceAnswer, ()> for Host<'_> {
     fn answer(&self, _: &()) -> ChunkSourceAnswer {
-        ChunkSourceAnswer::Live(self.0.len())
+        ChunkSourceAnswer::Live(self.text.len())
     }
     fn equivalent(&self, current: &ChunkSourceAnswer, previous: &ChunkSourceAnswer) -> bool {
         matches!((current, previous), (ChunkSourceAnswer::Live(length), ChunkSourceAnswer::Owned(bytes))
-            if *length == self.0.len() && bytes.as_ref() == self.0)
+            if *length == self.text.len()
+                && (self.known.is_some_and(|known| known.same_view(bytes) && known.len() == self.text.len())
+                    || bytes.as_ref() == self.text))
     }
 }
 impl Default for DeclarationValues {
@@ -56,13 +64,19 @@ impl DeclarationValues {
             Self::Shared(_, lease) => lease.retain_current_keys(keys.iter().map(Vec::as_slice)),
         }
     }
-    pub(super) fn get(&self, key: &[u8], text: &str, offset: usize) -> Option<CurrentContribution> {
+    pub(super) fn get(
+        &self,
+        key: &[u8],
+        text: &str,
+        offset: usize,
+        known: Option<&dm_preprocess::SourceText>,
+    ) -> Option<CurrentContribution> {
         match self {
             Self::Local(_, lease) | Self::Shared(_, lease) => {
                 let mut bound = None;
                 let admitted = lease
-                    .visit_explained(key, &Host(text), &mut |value| {
-                        bound = CurrentContribution::bind(Arc::clone(value), text, offset);
+                    .visit_explained(key, &Host { text, known }, &mut |value| {
+                        bound = CurrentContribution::bind_known(Arc::clone(value), text, offset, known);
                         bound.is_some()
                     })
                     .0?;

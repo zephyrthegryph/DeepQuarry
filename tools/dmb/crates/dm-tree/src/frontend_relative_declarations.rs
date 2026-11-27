@@ -91,6 +91,13 @@ impl CurrentBodyRecipe<'_> {
         path[0] += self.root_prefix;
         path.into()
     }
+    /// Whether `path` is this body's `path()` (without building it).
+    pub(crate) fn has_path(&self, path: &[usize]) -> bool {
+        let relative = &self.relative.path;
+        path.len() == relative.len()
+            && path.first().copied() == relative.first().map(|first| first + self.root_prefix)
+            && path[1..] == relative[1..]
+    }
     pub(crate) fn settings(&self) -> impl Iterator<Item = Span> + '_ {
         self.relative
             .settings

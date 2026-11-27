@@ -11,7 +11,7 @@ pub struct BodyArchive {
     tree: Arc<SemanticTree>,
     mapping: Arc<SourceExportMapping>,
     callables: Arc<CallableRoster>,
-    body_indices: Arc<HashMap<OccurrenceId, usize>>,
+    body_indices: Arc<super::BodyIndex>,
 }
 pub struct ArchivedBody<'a> {
     archive: &'a BodyArchive,
@@ -108,7 +108,7 @@ impl BodyArchive {
             header: item,
         })
     }
-    pub fn binding_storage(&self) -> (&Arc<CallableRoster>, &Arc<HashMap<OccurrenceId, usize>>) {
+    pub fn binding_storage(&self) -> (&Arc<CallableRoster>, &Arc<super::BodyIndex>) {
         (&self.callables, &self.body_indices)
     }
     pub fn visit_storage(

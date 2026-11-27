@@ -6,14 +6,14 @@ impl HeapCensus {
             let (callables, indices) = archive.binding_storage();
             self.callable_roster(callables);
             if self.arc_object("query_snapshot.body_archive.indices", indices) {
-                self.collection_entries::<(dm_tree::OccurrenceId, usize)>(
+                self.collection_entries::<usize>(
                     "query_snapshot.body_archive.indices",
                     Arc::as_ptr(indices) as usize,
-                    indices.len(),
+                    indices.capacity(),
                 );
                 self.unknown(
                     "query_snapshot.body_archive.indices",
-                    "private HashMap backing and Arc control block",
+                    "Arc control block",
                 );
             }
             archive.visit_storage(|source, syntax, bodies| {

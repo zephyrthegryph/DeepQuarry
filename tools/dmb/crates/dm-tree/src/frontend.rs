@@ -150,6 +150,9 @@ pub struct DeclarationReuseStats {
     pub independent_hits: usize,
     pub facts_hits: usize,
     pub parsed_chunks: usize,
+    /// Chunks whose bytes the expansion copied from the previous revision: their key and bound contribution were taken
+    /// from the previous request's chunk table instead of hashing and comparing the bytes.
+    pub carried_chunks: usize,
     pub descriptor_scan: Duration,
     pub worker_lookup_decode_and_parse: Duration,
     pub worker_fresh_facts: Duration,
@@ -253,7 +256,7 @@ pub struct ColdFrontend {
     pub bodies: Arc<[BodyOccurrence]>,
     callable_roster: Arc<CallableRoster>,
     abi_settings_complete: bool,
-    body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,
+    body_by_declaration: Arc<BodyIndex>,
     issued_bodies: Arc<[BodyOccurrence]>,
     issued_body_codes: Arc<[body_code::BodyCodeOwner]>,
     issued_settings: Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]>,
@@ -1235,7 +1238,13 @@ struct BodyReuse<'a> {
 impl BodyReuse<'_> {
     /// The source location of declaration `index`'s body, from the previous revision's body of the same declaration, with
     /// this plan's place: when the member and the body length are the same.
-    fn source(&self, index: usize, member: MemberId, span: dm_syntax::Span, mapping: &Mapping<'_>) -> Option<SourceLocation> {
+    fn source<'b>(
+        &'b self,
+        index: usize,
+        member: MemberId,
+        span: dm_syntax::Span,
+        mapping: &Mapping<'_>,
+    ) -> Option<(SourceLocation, &'b BodyOccurrence)> {
         let (region, previous) = (*self.origins.get(index)?)?;
         let at = *self.base.body_by_declaration.get(&OccurrenceId(previous))?;
         let old = self.base.bodies.get(at)?;
@@ -1252,7 +1261,7 @@ impl BodyReuse<'_> {
             source.semantic_path = Arc::clone(&self.plan.occurrences[occurrence].semantic_path);
             source.include_chain = mapping.include_chain(occurrence);
         }
-        Some(source)
+        Some((source, old))
     }
 }
 
@@ -1272,6 +1281,47 @@ fn body_declaration(tree: &crate::SemanticTree, starts: &[(usize, usize)], start
         }
     }
     found
+}
+
+/// Each declaration's body ordinal, by declaration id: a dense table (one slot per declaration up to the last with a body), so
+/// building it is a fill, not 120k hashed inserts.
+#[derive(Debug, Default)]
+pub struct BodyIndex {
+    slots: Vec<usize>,
+    len: usize,
+}
+impl BodyIndex {
+    const NONE: usize = usize::MAX;
+    pub(crate) fn new(bodies: &[BodyOccurrence]) -> Self {
+        let size = bodies.iter().map(|body| body.declaration.0 as usize + 1).max().unwrap_or(0);
+        let mut slots = vec![Self::NONE; size];
+        for (index, body) in bodies.iter().enumerate() {
+            // A declaration with two bodies keeps the last, as the map this replaces did.
+            slots[body.declaration.0 as usize] = index;
+        }
+        let len = slots.iter().filter(|&&slot| slot != Self::NONE).count();
+        Self { slots, len }
+    }
+    pub fn get(&self, declaration: &OccurrenceId) -> Option<&usize> {
+        self.slots.get(declaration.0 as usize).filter(|&&slot| slot != Self::NONE)
+    }
+    /// How many declarations have a body.
+    pub fn len(&self) -> usize {
+        self.len
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+    /// The table's slots (for the heap census).
+    pub fn capacity(&self) -> usize {
+        self.slots.capacity()
+    }
+}
+impl std::ops::Index<&OccurrenceId> for BodyIndex {
+    type Output = usize;
+    fn index(&self, declaration: &OccurrenceId) -> &usize {
+        self.get(declaration).expect("declaration has a body")
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1307,8 +1357,13 @@ fn collect_bodies(
             if reused_source.is_some() {
                 reused.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             }
+            // The previous body's path, when it is this body's (no new allocation for an unchanged body).
+            let ast_path = match &reused_source {
+                Some((_, old)) if recipe.has_path(&old.ast_path) => Arc::clone(&old.ast_path),
+                _ => recipe.path(),
+            };
             let source = match reused_source {
-                Some(source) => source,
+                Some((source, _)) => source,
                 None => mapping
                     .output(span.start)
                     .ok_or_else(|| vec![internal("procedure body has no source origin")])?,
@@ -1334,7 +1389,7 @@ fn collect_bodies(
                     stored_candidates: recipe.stored_candidates(),
                     declaration: declaration.0,
                     member: declaration.1,
-                    ast_path: recipe.path(),
+                    ast_path,
                     expanded_span: span,
                     source,
                     setting_context_origins: setting_context_origins.into(),
