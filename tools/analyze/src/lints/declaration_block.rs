@@ -58,13 +58,12 @@ impl DeclarationBlock {
     fn two_blocks(&self, cx: &Cx, out: &mut Sink) {
         let head = crate::pat_match!(r"^CAPABILITIES\((/[\w/]+)\)");
         let mut first: std::collections::HashMap<String, (String, usize)> = std::collections::HashMap::new();
-        for f in cx.all_files() {
-            if !f.rel.ends_with(".dm") || f.rel.starts_with("code/engine/_generated/") {
-                continue;
-            }
-            for (number, line) in f.code().numbered() {
-                let Some(m) = head.captures(line) else { continue };
-                let ty = m.s(1).to_string();
+        let files: Vec<&SourceFile> = cx.all_files().into_iter().filter(|f| f.rel.ends_with(".dm") && !f.rel.starts_with("code/engine/_generated/")).collect();
+        // Each file's CAPABILITIES heads, kept per file (crate::incr): an edit reads only the edited file.
+        let heads: Vec<Vec<(String, usize)>> =
+            crate::incr::facts("declaration_block-heads", &files, |f| f.code().numbered().filter_map(|(n, line)| head.captures(line).map(|m| (m.s(1).to_string(), n))).collect());
+        for (f, heads) in files.iter().zip(heads) {
+            for (ty, number) in heads {
                 match first.get(&ty) {
                     None => {
                         first.insert(ty, (f.rel.clone(), number));

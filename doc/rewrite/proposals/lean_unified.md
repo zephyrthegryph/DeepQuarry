@@ -472,3 +472,47 @@ declaration edit), and a cold hosted front end uses every core. Quietest runs: b
 needs the stable-id decision (retained_frontend.md, round 2). Proof: hosted against cold dreamchecker and check outputs identical over
 the edit sequence, compile byte-identical (equivalent for a new var), analysis-parity 100 %, ratchets pass. The published
 `dmb-bin/dmbc.exe` at the bin root is a stale October binary; builds use `dmb-bin/v/<current>`, which matches master.
+
+### Increment 3 (2026-11-27): stores held decoded, lints per file, the measurement fixed
+
+- **Fair measurement.** `tools/dmb/scripts/analysis_edit_timing.sh` times a daemon per compiler, each with its own namespace and
+  analysis cache (`DQ_ANALYZE_CACHE` under `data/`), one compiler after the other, and waits for a request's read-ahead before the next
+  one (an edit is timed as a person makes it). The daemon's answer line now carries the request's process CPU, the steadier number on a
+  shared machine (wall time moved 3x between identical runs while three other lanes built).
+- **Held decoded between runs.** The model of the last hosted run stays in memory (`model_store::Resident`): the next run splices only
+  the files changed since that run (the delta on disk stays relative to the base, so a new process reads a consistent store;
+  `DQ_MODEL_VERIFY` proved every update against a full parse). Walks fold into a resident store the next run takes
+  (`walk_cache::Resident`; `DQ_WALK_VERIFY`: 0 of 12850 differed). The read-ahead after a request has nothing left to read; the hosted
+  end-of-run work (writing the stores) runs after the reply. The dmbc-parse model memo asks the watched sources' token
+  (`service::hosted_sources_token`) instead of reading and hashing every file.
+- **Lints per file.** Text facts kept per file (`incr::facts`): declaration_block, notice_publisher, map_edits (the maps keyed by
+  content), weak_raw_read, rel_write_undeclared, `ui_windows::text_defines`; report_in_catch is a file lint. Proc-body judgements kept per
+  file (`procs::per_file_in`) under exactly what else they read: weak_raw_read, untyped_member, rel_write_undeclared (structure,
+  `Sem::placement_digest`: the file of every definition, and the index digests), image_dir_after_build (plus
+  `procs::return_settings_digest`, the return types bodies declare).
+- **Recording accessor.** `incr::keyed_reading` with `incr::Index` / `Reads::get`: a judge's result is kept while every index entry it
+  read (absent ones included) digests the same. decl reads its own file's typed definitions through it and no longer re-judges every file
+  on any edit.
+
+Files this touched for the LINTS lane to merge: `tools/analyze/src/lints/{declaration_block,report_in_catch,map_edits,notice_publisher,
+weak_raw_read,rel_write_undeclared,untyped_member,image_dir_after_build,decl}.rs`, `sem/{mod,procs,model_store,walk_cache,ui_windows}.rs`,
+`incr.rs`, `cli.rs`; plus `#[derive(Clone)]` on about 30 result types (increment 2). Each change is at the caching boundary: a loop body
+moved into a closure, its accumulator folded afterwards in the original order.
+
+Measured (`analysis_edit_timing.sh`-style runs; CPU is the daemon's process CPU for the request):
+
+| What | before increment 3 | after |
+|---|---|---|
+| one-line body edit, CPU | 22-25 CPU-s | 18-22 CPU-s |
+| one-line body edit, single-threaded standalone `timing` (the CPU map) | about 32 s (model and walk decode included) | about 17 s |
+| nothing changed | 46-100 ms in the daemon | the same |
+
+Proof: `check --raw` byte-identical to master's standalone answer on master and on seven seeded trees (a one-line body edit, a new var,
+a new proc, a proc moved to another file, a deleted file, restored); `check` and `analyze dreamchecker --json` identical; `analysis-parity
+--tree` 1168032 of 1168032 and `analysis-parity` 105883 of 105883 with 0 difference categories; the analyze test suite passes.
+
+What is left, and why it is not mechanical. The edit's remaining CPU is in judgements that read other files' bodies without saying so:
+`value_procs` (its `config_class_clean` reads every proc body of a type; untyped needs its verdicts), the reads walks behind
+`sem/handlers`, `gen/deps`, `untracked_inputs` and `setter_publishes` (walk results validated per run, consumers re-folded), ui_actions,
+stored_refs, the layering lints. Keeping those per file needs every body and declaration read recorded where it happens, on the model's
+accessors (the walk store already records `Proc`/`Var` reads for walks): that is the Sem API the LINTS lane is rewriting on dmbc's tree.

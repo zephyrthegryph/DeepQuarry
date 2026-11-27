@@ -62,10 +62,13 @@ pub fn text_defines(tree: &Tree) -> std::sync::Arc<HashMap<String, String>> {
     tree.memo("ui_windows/text_defines", || {
         let mut out = HashMap::new();
         static SEL: Select = Select { roots: &[("code", "dm")], hidden: false };
-        for f in tree.select(&SEL) {
+        // Each file's text defines, kept per file (`crate::incr`), folded in file order (a later define of a name wins).
+        let files = tree.select(&SEL);
+        let per_file: Vec<Vec<(String, String)>> = crate::incr::facts("ui_windows-text-defines", &files, |f| {
+            let mut found = Vec::new();
             let text = f.text();
             if !text.contains("#define") {
-                continue;
+                return found;
             }
             for line in text.lines() {
                 let l = line.trim_start();
@@ -77,9 +80,13 @@ pub fn text_defines(tree: &Tree) -> std::sync::Arc<HashMap<String, String>> {
                 }
                 let v = value.split("//").next().unwrap_or("").trim();
                 if v.len() >= 2 && v.starts_with('"') && v.ends_with('"') && !v[1..v.len() - 1].contains('"') && !v.contains('[') {
-                    out.insert(name.to_string(), v[1..v.len() - 1].to_string());
+                    found.push((name.to_string(), v[1..v.len() - 1].to_string()));
                 }
             }
+            found
+        });
+        for (name, value) in per_file.into_iter().flatten() {
+            out.insert(name, value);
         }
         out
     })
