@@ -83,6 +83,11 @@ pub fn run(dme: &Path, shown: &Path, config: Option<&Path>, json: bool, parse_on
     println!("Parsing {}...\n", shown.display());
     let context = match native_selected() {
         Some(native) => {
+            // The per-proc results live in the analysis query database (`crate::incr`), under the same stamp `check` uses, so the
+            // two commands share one session in the daemon.
+            let root = dme.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+            let scopes = crate::scopes::Scopes::load(&root.join("tools").join("ci").join("lint_scopes.toml")).map(|s| s.hash).unwrap_or_else(|_| "dreamchecker".into());
+            let _cache = crate::cache::Cache::open(root, &scopes, true);
             let context = context_for(dme, config, true);
             if let Err(e) = native(dme, &context, !parse_only, true, threads) {
                 eprintln!("analyze dreamchecker: {e}");

@@ -87,12 +87,19 @@ impl Site for FrontSite<'_> {
 struct FrontBodies<'f> {
     frontend: &'f ColdFrontend,
     arena: &'f BodyArena<'f>,
+    /// A body is taken from the arena once; the settings and the body pass both read it.
+    parsed: Vec<std::sync::OnceLock<Option<Arc<Vec<dm_syntax::Statement>>>>>,
 }
 
 impl Bodies for FrontBodies<'_> {
-    fn statements(&self, body: u32) -> Option<Vec<dm_syntax::Statement>> {
-        let parsed = self.arena.take_parsed(self.frontend.bodies.get(body as usize)?).ok()?;
-        Some(parsed.statement_body()?.parsed().statements.clone())
+    fn statements(&self, body: u32) -> Option<Arc<Vec<dm_syntax::Statement>>> {
+        self.parsed
+            .get(body as usize)?
+            .get_or_init(|| {
+                let parsed = self.arena.take_parsed(self.frontend.bodies.get(body as usize)?).ok()?;
+                Some(Arc::new(parsed.statement_body()?.parsed().statements.clone()))
+            })
+            .clone()
     }
 }
 
@@ -103,9 +110,8 @@ impl Bodies for FrontBodies<'_> {
 ///
 /// * the proc (`ProcId`) and its body: the body's expanded text, the path and bytes of its file and its place there (a token's
 ///   line and column come from them);
-/// * the model's declarations (`model_key`): every declaration's owner, name, kind, flags and spelling, the types and their
-///   explicit parents, the file-id table, and every file's line layout (a diagnostic of one proc names another's place, which an
-///   edit elsewhere moves only by changing a line count);
+/// * the model's declarations (`model_key`): every declaration's owner, name, kind, flags, spelling and place (its line, its
+///   column), the types and their explicit parents, and the file-id table (a diagnostic of one proc names another's place);
 /// * for a body, also every proc's settings facts (the tables a walk reads).
 ///
 /// A body's places (`Where` offsets in the expanded text) are kept relative to the body's start, so a result is valid wherever the
@@ -125,16 +131,8 @@ impl<'f> QueryStore<'f> {
     fn new(front: &'f Front, m: &crate::analysis_tree::Matched<'_>) -> Self {
         use rayon::prelude::*;
         let frontend: &ColdFrontend = &front.frontend;
-        let files: HashMap<&Path, (u128, u128)> = frontend
-            .files
-            .par_iter()
-            .map(|f| {
-                let starts: Vec<u8> = f.line_starts.iter().flat_map(|s| (*s as u64).to_le_bytes()).collect();
-                (f.path.as_path(), (h(f.text.as_str().as_bytes()), h(&starts)))
-            })
-            .collect::<Vec<_>>()
-            .into_iter()
-            .collect();
+        let files: HashMap<&Path, u128> =
+            frontend.files.par_iter().map(|f| (f.path.as_path(), h(f.text.as_str().as_bytes()))).collect::<Vec<_>>().into_iter().collect();
         let expanded = frontend.expanded.text.as_str();
         let body_keys: Vec<(u128, usize)> = frontend
             .bodies
@@ -142,7 +140,7 @@ impl<'f> QueryStore<'f> {
             .map(|o| {
                 let text = expanded.get(o.expanded_span.start..o.expanded_span.end).unwrap_or("");
                 let path: &Path = o.source.path.as_path();
-                let content = files.get(path).map_or(0, |(c, _)| *c);
+                let content = files.get(path).copied().unwrap_or(0);
                 let key = dq_analyze::incr::mix(&[
                     h(text.as_bytes()),
                     h(o.source.semantic_path.as_bytes()),
@@ -164,25 +162,43 @@ impl<'f> QueryStore<'f> {
             }
             decl.extend_from_slice(&[0xfe]);
         }
-        for item in &m.items {
+        // Each declaration with its place: the line it maps to and its column in the expanded text (a diagnostic of one proc names
+        // another's place, which an edit elsewhere moves only by moving that line).
+        let places: Vec<(usize, usize)> = m
+            .items
+            .par_iter()
+            .map(|item| match &item.spelling {
+                Some(s) => {
+                    let line = frontend.debug_site(s.at).map_or(0, |(_, line)| line);
+                    let column = s.at - expanded[..s.at.min(expanded.len())].rfind('\n').map_or(0, |i| i + 1);
+                    (line, column)
+                }
+                None => (0, 0),
+            })
+            .collect();
+        for (item, (line, column)) in m.items.iter().zip(places) {
             decl.extend_from_slice(item.owner.as_bytes());
             decl.extend_from_slice(&[0xff]);
             decl.extend_from_slice(item.name.as_bytes());
             decl.extend_from_slice(&[item.slot as u8, item.member.definition as u8]);
             decl.extend_from_slice(&item.member.metadata.flags.to_le_bytes());
+            decl.extend_from_slice(&(line as u64).to_le_bytes());
+            decl.extend_from_slice(&(column as u64).to_le_bytes());
             decl.extend_from_slice(item.spelling.as_ref().map_or("", |s| s.header.as_str()).as_bytes());
             decl.extend_from_slice(&[0xfe]);
         }
         let mut ids: Vec<(&Arc<str>, &dreammaker::FileId)> = front.ids.iter().collect();
         ids.sort();
         decl.extend_from_slice(format!("{ids:?}").as_bytes());
-        let mut layouts: Vec<(&Path, u128)> = files.iter().map(|(p, (_, l))| (*p, *l)).collect();
-        layouts.sort();
-        for (path, layout) in layouts {
-            decl.extend_from_slice(path.to_string_lossy().as_bytes());
-            decl.extend_from_slice(&layout.to_le_bytes());
-        }
         let model_key = h(&decl);
+        // DQ_DREAMCHECKER_KEY_TRACE=1: what the model key is made of, by part (an edit that recomputes every proc shows which moved).
+        if dq_hostio::var_os("DQ_DREAMCHECKER_KEY_TRACE").is_some() {
+            for item in &m.items {
+                let header = item.spelling.as_ref().map_or("", |s| s.header.as_str());
+                dq_hostio::out(false, format_args!("dreamchecker key: item {} {} {:?} {:032x}", item.owner, item.name, item.slot, h(header.as_bytes())), true);
+            }
+            dq_hostio::out(false, format_args!("dreamchecker key: model {model_key:032x}"), true);
+        }
         QueryStore { frontend, model_key, body_keys }
     }
 
@@ -311,7 +327,7 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     for (i, occurrence) in frontend.bodies.iter().enumerate() {
         body_of.insert(occurrence.member.0, i as u32);
     }
-    let bodies = FrontBodies { frontend, arena: &arena };
+    let bodies = FrontBodies { frontend, arena: &arena, parsed: (0..frontend.bodies.len()).map(|_| std::sync::OnceLock::new()).collect() };
     lap("bodies");
     let mut builder = ModelBuilder::with_builtins();
     let tree = &frontend.snapshot.tree;
@@ -331,66 +347,89 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     }
     let mut registered = Vec::new();
     let mut stats = BuildStats { bodies: frontend.bodies.len(), ..Default::default() };
-    for item in &m.items {
-        let Item { owner, name, slot, member, spelling, id } = item;
-        let ty = builder.add_type_path(Where::Fixed(Location::builtins()), owner);
-        let location = spelling.as_ref().map_or(Where::Fixed(Location::builtins()), |s| Where::At(s.at));
-        match slot {
-            Slot::VarDeclare => {
-                let (type_path, spaceman) = match spelling.as_ref().and_then(|s| var_header(owner, &s.header)) {
-                    Some(v) => (v.type_parts, spaceman_bits(v.spaceman)),
-                    None => (Vec::new(), 0),
-                };
-                // SpacemanDMM places a var declaration at the token after its name: the `=`, or the end of its line.
-                let location = match spelling.as_ref() {
-                    Some(s) => match dm_syntax::top_level_assignment_index(&s.header) {
-                        Some(index) => Where::At(s.at + index),
-                        None => Where::DeclEnd(s.at),
-                    },
-                    None => location,
-                };
-                builder.declare_var(ty, name, location, VarFlags(semantic_bits(member.metadata.flags) | spaceman), type_path);
-                stats.vars += 1;
-            }
-            Slot::VarOverride => {
-                let location = match spelling.as_ref().and_then(|s| Some(s.at + dm_syntax::top_level_assignment_index(&s.header)?)) {
-                    Some(at) => Where::At(at),
-                    None => location,
-                };
-                builder.override_var(ty, name, location);
-                stats.vars += 1;
-            }
-            Slot::Proc | Slot::Verb => {
-                let mut parameters = Vec::new();
-                let mut return_type = ReturnType::None;
-                let mut location = location;
-                if let (Some(s), Some(procedure)) = (spelling.as_ref(), member.metadata.procedure.as_ref()) {
-                    if let Some((before, arguments, after)) = signature_parts(&s.header) {
-                        // SpacemanDMM places a proc at its parameter list's `(`, a parameter at the token after it.
-                        let base = s.at + before.len() + 1;
-                        location = Where::At(base - 1);
-                        for p in procedure.signature.parameters.iter() {
-                            let (start, end) = (p.relative_span.start, p.relative_span.end);
-                            if let Some(t) = arguments.get(start..end) {
-                                let (name, type_path) = parameter(t);
-                                parameters.push(Param { name, type_path, location: Where::At(base + end) });
+    // Each declaration's record on every core, registered in declaration order.
+    enum Prep {
+        Var(Where, VarFlags, Vec<String>),
+        Override(Where),
+        Proc(Option<ProcDecl>, ProcValue),
+    }
+    let prepared: Vec<Prep> = {
+        use rayon::prelude::*;
+        m.items
+            .par_iter()
+            .map(|item| {
+                let Item { owner, slot, member, spelling, id, .. } = item;
+                let location = spelling.as_ref().map_or(Where::Fixed(Location::builtins()), |s| Where::At(s.at));
+                match slot {
+                    Slot::VarDeclare => {
+                        let (type_path, spaceman) = match spelling.as_ref().and_then(|s| var_header(owner, &s.header)) {
+                            Some(v) => (v.type_parts, spaceman_bits(v.spaceman)),
+                            None => (Vec::new(), 0),
+                        };
+                        // SpacemanDMM places a var declaration at the token after its name: the `=`, or the end of its line.
+                        let location = match spelling.as_ref() {
+                            Some(s) => match dm_syntax::top_level_assignment_index(&s.header) {
+                                Some(index) => Where::At(s.at + index),
+                                None => Where::DeclEnd(s.at),
+                            },
+                            None => location,
+                        };
+                        Prep::Var(location, VarFlags(semantic_bits(member.metadata.flags) | spaceman), type_path)
+                    }
+                    Slot::VarOverride => Prep::Override(
+                        match spelling.as_ref().and_then(|s| Some(s.at + dm_syntax::top_level_assignment_index(&s.header)?)) {
+                            Some(at) => Where::At(at),
+                            None => location,
+                        },
+                    ),
+                    Slot::Proc | Slot::Verb => {
+                        let mut parameters = Vec::new();
+                        let mut return_type = ReturnType::None;
+                        let mut location = location;
+                        if let (Some(s), Some(procedure)) = (spelling.as_ref(), member.metadata.procedure.as_ref()) {
+                            if let Some((before, arguments, after)) = signature_parts(&s.header) {
+                                // SpacemanDMM places a proc at its parameter list's `(`, a parameter at the token after it.
+                                let base = s.at + before.len() + 1;
+                                location = Where::At(base - 1);
+                                for p in procedure.signature.parameters.iter() {
+                                    let (start, end) = (p.relative_span.start, p.relative_span.end);
+                                    if let Some(t) = arguments.get(start..end) {
+                                        let (name, type_path) = parameter(t);
+                                        parameters.push(Param { name, type_path, location: Where::At(base + end) });
+                                    }
+                                }
+                                if procedure.signature.variadic {
+                                    let at = arguments.rfind("...").map_or(base, |i| base + i);
+                                    parameters.push(Param { name: "...".into(), type_path: Vec::new(), location: Where::At(at) });
+                                }
+                                return_type = return_annotation(after);
                             }
                         }
-                        if procedure.signature.variadic {
-                            let at = arguments.rfind("...").map_or(base, |i| base + i);
-                            parameters.push(Param { name: "...".into(), type_path: Vec::new(), location: Where::At(at) });
-                        }
-                        return_type = return_annotation(after);
+                        let declaration = (member.definition == DefinitionMode::Declare).then(|| ProcDecl {
+                            kind: if *slot == Slot::Verb { ProcKind::Verb } else { ProcKind::Proc },
+                            is_final: false,
+                            location,
+                            return_type,
+                        });
+                        Prep::Proc(declaration, ProcValue { location, parameters, body: body_of.get(&id.0).copied() })
                     }
                 }
-                let declaration = (member.definition == DefinitionMode::Declare).then(|| ProcDecl {
-                    kind: if *slot == Slot::Verb { ProcKind::Verb } else { ProcKind::Proc },
-                    is_final: false,
-                    location,
-                    return_type,
-                });
-                let body = body_of.get(&id.0).copied();
-                let r = builder.add_proc(ty, name, declaration, ProcValue { location, parameters, body });
+            })
+            .collect()
+    };
+    for (item, prep) in m.items.iter().zip(prepared) {
+        let ty = builder.add_type_path(Where::Fixed(Location::builtins()), &item.owner);
+        match prep {
+            Prep::Var(location, flags, type_path) => {
+                builder.declare_var(ty, &item.name, location, flags, type_path);
+                stats.vars += 1;
+            }
+            Prep::Override(location) => {
+                builder.override_var(ty, &item.name, location);
+                stats.vars += 1;
+            }
+            Prep::Proc(declaration, value) => {
+                let r = builder.add_proc(ty, &item.name, declaration, value);
                 registered.extend(r.hint.map(|h| h.error(&*site)));
                 stats.procs += 1;
             }

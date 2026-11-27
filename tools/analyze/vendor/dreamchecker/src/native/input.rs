@@ -143,7 +143,7 @@ pub trait Sites: Sync {
 /// The proc bodies (`ProcValue::body` indexes them), read when a result for one is computed.
 pub trait Bodies: Sync {
     /// The body's typed statements (`None`: the front end has none for it).
-    fn statements(&self, body: u32) -> Option<Vec<dm_syntax::Statement>>;
+    fn statements(&self, body: u32) -> Option<std::sync::Arc<Vec<dm_syntax::Statement>>>;
 }
 
 /// Everything the native checker reads.
