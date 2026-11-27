@@ -29,6 +29,9 @@ struct DeclarationClaims {
     values: DeclarationValues,
     authored: Option<crate::declaration_contributions::authored::AuthoredLease>,
     authored_current: Arc<std::sync::Mutex<Option<Arc<authored::AdmittedAuthored>>>>,
+    /// The lease whose claims `authored` took over when this request was forked (`AuthoredLease::inherit`): an admitted
+    /// set that lease admitted is already claimed here.
+    authored_inherited: Option<u64>,
     keys: AtomicUsize,
     hits: AtomicUsize,
     symbols: std::sync::Mutex<Arc<ActiveSymbols>>,
@@ -40,6 +43,7 @@ impl Default for DeclarationClaims {
             values: DeclarationValues::default(),
             authored: None,
             authored_current: Arc::new(std::sync::Mutex::new(None)),
+            authored_inherited: None,
             keys: AtomicUsize::new(0),
             hits: AtomicUsize::new(0),
             symbols: std::sync::Mutex::new(Arc::new(ActiveSymbols::default())),

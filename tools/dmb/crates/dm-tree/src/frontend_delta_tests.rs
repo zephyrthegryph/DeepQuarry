@@ -92,3 +92,115 @@ fn deltas_name_the_edited_files_declarations_and_bodies() {
     assert!(state.changes_since(fifth.revision).unwrap().is_empty());
     assert!(state.changes_since(fifth.revision + 1).is_none());
 }
+
+/// A provider that names the files changed since the last revision, so the plan patches and the source index is reused (the
+/// conditions under which origins are taken from the previous revision).
+struct Revised<'a> {
+    files: &'a Files,
+    revision: u64,
+    changed: std::collections::BTreeSet<std::path::PathBuf>,
+}
+impl dm_preprocess::SourceProvider for Revised<'_> {
+    fn read(&self, path: &Path) -> Result<String, String> {
+        self.files.read(path)
+    }
+    fn revision(&self) -> Option<u64> {
+        Some(self.revision)
+    }
+    fn changes_since(&self, revision: u64) -> Option<Arc<std::collections::BTreeSet<std::path::PathBuf>>> {
+        (revision + 1 == self.revision).then(|| Arc::new(self.changed.clone()))
+    }
+}
+
+/// An in-memory expansion memo (region records, so the expansion carries receipts as the daemon's does).
+#[derive(Default)]
+struct Memo {
+    inputs: dm_preprocess::regions::ExpansionInputs,
+    records: std::sync::Mutex<BTreeMap<u128, Vec<Arc<dm_preprocess::regions::ExpansionRecord>>>>,
+}
+impl dm_preprocess::regions::ExpansionMemo for Memo {
+    fn input_admissions(&self) -> Option<&dm_preprocess::regions::ExpansionInputs> {
+        Some(&self.inputs)
+    }
+    fn candidates(&self, key: u128) -> Vec<Arc<dm_preprocess::regions::ExpansionRecord>> {
+        self.records.lock().unwrap().get(&key).cloned().unwrap_or_default()
+    }
+    fn insert(&self, record: Arc<dm_preprocess::regions::ExpansionRecord>) {
+        self.records.lock().unwrap().entry(record.key()).or_default().push(record);
+    }
+}
+
+fn build_revised(state: Option<(&mut RetainedSemanticTree, &Memo)>, files: &Files, revision: u64, changed: &[&str]) -> FrontendRevision {
+    let executor = dm_exec::BuildExecutor::new(2).unwrap();
+    let project = Path::new("delta.dme");
+    let defines = BTreeMap::new();
+    let provider = Revised {
+        files,
+        revision,
+        changed: changed.iter().map(|name| dm_preprocess::regions::canonical_path(Path::new(name))).collect(),
+    };
+    let mut one_shot = RetainedSemanticTree::new();
+    let cold_memo = Memo::default();
+    let retained = state.is_some();
+    let (state, memo) = match state {
+        Some((state, memo)) => (state, memo),
+        None => (&mut one_shot, &cold_memo),
+    };
+    let built = build_with_executor_and_semantic_state(
+        project,
+        &provider,
+        &defines,
+        FrontendConfig { workers: 2, engine: None, observer: None },
+        Some(memo as &dyn dm_preprocess::regions::ExpansionMemo),
+        &executor,
+        Some(&mut *state),
+    )
+    .unwrap();
+    let revision = FrontendRevision::new(built);
+    if retained {
+        state.remember_frontend(project, &defines, revision.clone());
+    }
+    revision
+}
+
+fn same_origins(incremental: &ColdFrontend, cold: &ColdFrontend) {
+    let count = incremental.snapshot.tree.declarations().len();
+    assert_eq!(count, cold.snapshot.tree.declarations().len());
+    for index in 0..count {
+        let id = OccurrenceId(index as u32);
+        assert_eq!(
+            incremental.snapshot.occurrences.get(id).map(|o| &o.provenance),
+            cold.snapshot.occurrences.get(id).map(|o| &o.provenance),
+            "declaration {index}"
+        );
+    }
+    assert_eq!(incremental.declaration_regions, cold.declaration_regions);
+    assert_eq!(incremental.region_hashes, cold.region_hashes);
+}
+
+#[test]
+fn reused_origins_equal_a_cold_build_through_edits() {
+    let many: String = (0..40).map(|i| format!("/datum/b{i}\n/datum/b{i}/proc/p()\n    return {i}\n")).collect();
+    let mut state = RetainedSemanticTree::new();
+    let memo = Memo::default();
+    let mut files = Files { a: A.into(), b: many.clone() };
+    build_revised(Some((&mut state, &memo)), &files, 1, &[]);
+    let steps: Vec<(String, String, Vec<&str>)> = vec![
+        (A.replace("return 1", "return 7"), many.clone(), vec!["a.dm"]),
+        (A.replace("return 1", "return 7").replace("/datum/a/proc/other()", "// shift\n/datum/a/proc/other()"), many.clone(), vec!["a.dm"]),
+        (A.replace("return 1", "return 7"), format!("// top\n{many}"), vec!["a.dm", "b.dm"]),
+        (A.into(), format!("// top\n{many}/datum/b0/var/added = 1\n"), vec!["a.dm", "b.dm"]),
+        (A.into(), format!("// top\n{}/datum/b0/var/added = 1\n", many.replace("return 5", "return 55")), vec!["b.dm"]),
+    ];
+    let mut reused = 0;
+    for (revision, (a, b, changed)) in steps.into_iter().enumerate() {
+        files = Files { a, b };
+        let revision = revision as u64 + 2;
+        let incremental = build_revised(Some((&mut state, &memo)), &files, revision, &changed);
+        reused += incremental.timings.reused_origins;
+        let cold = build_revised(None, &files, revision, &[]);
+        same_origins(&incremental, &cold);
+    }
+    // The reuse ran: an unchanged file's origins came from the previous revision.
+    assert!(reused > 0);
+}

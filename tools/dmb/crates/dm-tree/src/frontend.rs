@@ -8,6 +8,8 @@ mod callable_roster;
 mod parallel;
 #[path = "frontend_delta.rs"]
 mod delta;
+#[path = "frontend_origin_reuse.rs"]
+mod origin_reuse;
 pub use delta::{Change, DeclarationKey, FrontendDelta};
 #[cfg(test)]
 #[path = "frontend_delta_tests.rs"]
@@ -121,6 +123,8 @@ pub struct FrontendTimings {
     /// Every step of the build in order, each with its own wall time (the stages above group several of them). The daemon
     /// and `dmbc analyze` print it (`phase_summary`) so a request shows which tree-wide step an edit still pays for.
     pub phases: Vec<(&'static str, Duration)>,
+    /// Declarations whose origin was taken from the previous revision (`frontend_origin_reuse.rs`).
+    pub reused_origins: usize,
 }
 impl FrontendTimings {
     pub(crate) fn phase(&mut self, name: &'static str, started: Instant) {
@@ -259,8 +263,12 @@ pub struct ColdFrontend {
     /// or reorders origins independently from their declaration targets.
     pub emission_order: Arc<[OccurrenceId]>,
     source_export_mapping: Arc<source_export_mapping::SourceExportMapping>,
-    /// The plan region of every declaration (by declaration index), for the delta of the next revision.
+    /// The plan region of every declaration (by declaration index), for the delta and the origin reuse of the next revision.
     declaration_regions: Arc<[u32]>,
+    /// The expanded offset every declaration starts at, for the origin reuse of the next revision.
+    declaration_starts: Arc<[u32]>,
+    /// The source text hash of every plan region (`Provenance::region`).
+    region_hashes: Arc<[u128]>,
     /// This revision's number in its session (`RetainedSemanticTree`), 0 for a one-shot build.
     pub revision: u64,
     /// What changed against the revision this one was built from; `None` when it was built without one (or its plan

@@ -4,6 +4,8 @@ use crate::declaration_contributions::KeyedDeclarations;
 pub(super) struct AdmittedAuthored {
     index: KeyedDeclarations,
     pub(super) leaves: Vec<Arc<Vec<crate::Skeleton>>>,
+    /// The lease (`AuthoredLease::id`) that admitted `index` and claims its variants.
+    admitted_by: Option<u64>,
 }
 
 #[cfg(test)]
@@ -198,9 +200,9 @@ impl DeclarationClaims {
             previous
                 .as_ref()
                 .filter(|previous| same_leaves(&previous.leaves, &leaves))
-                .map(|previous| (previous.index.clone(), previous.leaves.clone()))
+                .map(|previous| (previous.index.clone(), previous.leaves.clone(), previous.admitted_by))
         };
-        if let Some((index, admitted_leaves)) = reused {
+        if let Some((index, admitted_leaves, admitted_by)) = reused {
             for (current, skeletons) in currents.iter_mut().zip(admitted_leaves) {
                 if !Arc::ptr_eq(&current.value.skeletons, &skeletons) {
                     let mut replacement = current.value.as_ref().clone();
@@ -212,11 +214,15 @@ impl DeclarationClaims {
             // Sharing the previous leaf backing does not transfer its lease.
             // Replay and claim the exact rows for this pending request as well.
             let compared = started.elapsed();
-            let index = authored.adopt(index);
+            // The previous request admitted exactly this index, and this request's lease took over its claims when it
+            // was forked: the replay would claim the same variants again. Otherwise replay as before.
+            let inherited = admitted_by.is_some() && admitted_by == self.authored_inherited;
+            let index = if inherited { index } else { authored.adopt(index) };
             let adopted = started.elapsed();
             let published = self.publish_authored(currents, index);
             crate::change_set::record_outcome(format!(
-                "frontend authored (same leaves): compare={:.3}s adopt={:.3}s publish={:.3}s",
+                "frontend authored (same leaves, {}): compare={:.3}s adopt={:.3}s publish={:.3}s",
+                if inherited { "claims inherited" } else { "replayed" },
                 compared.as_secs_f64(),
                 (adopted - compared).as_secs_f64(),
                 (started.elapsed() - adopted).as_secs_f64()
@@ -297,7 +303,7 @@ impl DeclarationClaims {
             .authored_current
             .lock()
             .unwrap_or_else(|error| error.into_inner()) =
-            Some(Arc::new(AdmittedAuthored { index, leaves }));
+            Some(Arc::new(AdmittedAuthored { index, leaves, admitted_by: self.authored.as_ref().map(|lease| lease.id()) }));
         Some(())
     }
 }

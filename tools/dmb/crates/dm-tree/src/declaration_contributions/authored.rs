@@ -16,12 +16,19 @@ impl SharedAuthored {
         AuthoredLease {
             store: Arc::clone(&self.store),
             lease: self.store.lease(),
+            id: next_lease_id(),
         }
     }
 }
 pub(crate) struct AuthoredLease {
     store: Arc<Store>,
     lease: ObservedArtifactLease<TypeContribution, SymbolId, Answer, ()>,
+    /// Names this lease in the `AdmittedAuthored` it admits, so the next request knows whose claims it inherited.
+    id: u64,
+}
+fn next_lease_id() -> u64 {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+    NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
 }
 struct Host<'a>(&'a KeyedDeclarations);
 impl ObservationHost<SymbolId, Answer, ()> for Host<'_> {
@@ -39,7 +46,19 @@ impl AuthoredLease {
         Self {
             store: Arc::clone(&self.store),
             lease: self.store.lease(),
+            id: next_lease_id(),
         }
+    }
+    pub(crate) fn id(&self) -> u64 {
+        self.id
+    }
+    /// Take over every claim `previous` holds (one pass, no replay); see `ObservedArtifactLease::claim_all_held_by`.
+    pub(crate) fn inherit(&self, previous: &Self) -> usize {
+        self.lease.claim_all_held_by(&previous.lease)
+    }
+    #[cfg(test)]
+    pub(crate) fn claimed(&self) -> usize {
+        self.lease.claimed()
     }
     pub(crate) fn visit_storage(
         &self,
