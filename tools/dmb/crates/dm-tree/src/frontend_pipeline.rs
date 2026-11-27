@@ -452,9 +452,16 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let expanded_spans: Vec<_> = adapted.origins.iter().map(|origin| origin.span).collect();
     // What the previous revision's origins can be reused for: its files are this revision's at the same ids (the source
     // index was reused) and the plan says which regions are verbatim copies of which previous ones.
-    let origin_base = previous
-        .as_ref()
-        .filter(|_| source_index_reused && plan_reuse.regions.len() == plan.regions.len());
+    // A rebuilt index (the ordered pass adopted subtrees instead of patching) still qualifies when it numbers the same files
+    // the same way.
+    let origin_base = previous.as_ref().filter(|previous| {
+        plan_reuse.regions.len() == plan.regions.len()
+            && (source_index_reused
+                || (previous.files.len() == files.len()
+                    && previous.files.iter().zip(files.iter()).all(|(was, now)| {
+                        Arc::ptr_eq(&was.path, &now.path) || was.path == now.path
+                    })))
+    });
     // Hash each original region once, not once for every declaration in it; a copied region's hash is the previous one.
     let region_hashes: Vec<_> = plan
         .regions

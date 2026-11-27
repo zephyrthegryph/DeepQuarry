@@ -187,11 +187,22 @@ fn same_origins(incremental: &ColdFrontend, cold: &ColdFrontend) {
 
 #[test]
 fn reused_origins_equal_a_cold_build_through_edits() {
+    reused_origins_through_edits(1);
+}
+
+/// Revisions the provider cannot relate (no change log): the ordered pass adopts the unchanged subtrees instead of
+/// patching, and the source index is rebuilt with the same numbering.
+#[test]
+fn reused_origins_equal_a_cold_build_after_adoption() {
+    reused_origins_through_edits(10);
+}
+
+fn reused_origins_through_edits(stride: u64) {
     let many: String = (0..40).map(|i| format!("/datum/b{i}\n/datum/b{i}/proc/p()\n    return {i}\n")).collect();
     let mut state = RetainedSemanticTree::new();
     let memo = Memo::default();
     let mut files = Files { a: A.into(), b: many.clone() };
-    build_revised(Some((&mut state, &memo)), &files, 1, &[]);
+    build_revised(Some((&mut state, &memo)), &files, stride, &[]);
     let steps: Vec<(String, String, Vec<&str>)> = vec![
         (A.replace("return 1", "return 7"), many.clone(), vec!["a.dm"]),
         (A.replace("return 1", "return 7").replace("/datum/a/proc/other()", "// shift\n/datum/a/proc/other()"), many.clone(), vec!["a.dm"]),
@@ -202,7 +213,7 @@ fn reused_origins_equal_a_cold_build_through_edits() {
     let mut reused = 0;
     for (revision, (a, b, changed)) in steps.into_iter().enumerate() {
         files = Files { a, b };
-        let revision = revision as u64 + 2;
+        let revision = (revision as u64 + 2) * stride;
         let incremental = build_revised(Some((&mut state, &memo)), &files, revision, &changed);
         reused += incremental.timings.reused_origins;
         let cold = build_revised(None, &files, revision, &[]);
