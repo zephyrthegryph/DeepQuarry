@@ -142,7 +142,7 @@ impl RetainedDeclarations {
             .is_some();
         (!external).then(|| self.begin_request(true))
     }
-    pub(in crate::frontend) fn retain(&self, keys: &[Vec<u8>]) {
+    pub(in crate::frontend) fn retain<K: AsRef<[u8]>>(&self, keys: &[K]) {
         self.access.with_pending(|claims| claims.retain(keys));
     }
     pub(in crate::frontend) fn clear(&self) {

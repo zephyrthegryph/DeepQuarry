@@ -44,7 +44,7 @@ struct DeclarationClaims {
 pub(super) struct ChunkTable {
     pub(super) text: dm_preprocess::WeakSourceText,
     pub(super) spans: Vec<(usize, usize)>,
-    pub(super) keys: Vec<Vec<u8>>,
+    pub(super) keys: Vec<Arc<[u8]>>,
     pub(super) values: Vec<Arc<Contribution>>,
     /// The spelling state the same request left (`DeclarationClaims::symbols` after its catalog): its contribution set is
     /// the set of `values`, so a later request can apply only the difference (`CatalogDelta`).
@@ -66,7 +66,7 @@ impl ChunkTable {
     pub(super) fn new(
         text: dm_preprocess::WeakSourceText,
         spans: Vec<(usize, usize)>,
-        keys: Vec<Vec<u8>>,
+        keys: Vec<Arc<[u8]>>,
         values: Vec<Arc<Contribution>>,
     ) -> Self {
         Self { text, spans, keys, values, symbols: std::sync::Weak::new() }
@@ -200,7 +200,7 @@ impl DeclarationClaims {
         key.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(text.as_bytes()).to_le_bytes());
         key
     }
-    pub(super) fn retain(&self, keys: &[Vec<u8>]) {
+    pub(super) fn retain<K: AsRef<[u8]>>(&self, keys: &[K]) {
         self.values.retain(keys);
         self.keys.store(keys.len(), Ordering::Relaxed);
     }
@@ -671,7 +671,7 @@ mod tests {
         assert_eq!(symbols.text(name), Some("unique_name"));
         assert!(store.current_symbols(&[]).unwrap().text(name).is_none());
         // Previously issued bindings remain immutable after current-roster pruning.
-        store.retain(&[]);
+        store.retain::<Vec<u8>>(&[]);
         assert_eq!(b.header(), "/obj/probe");
     }
     #[test]
@@ -717,7 +717,7 @@ mod tests {
         assert!(store
             .get(&RetainedDeclarations::key("var/changed=2\n"), text, 0)
             .is_none());
-        store.retain(&[]);
+        store.retain::<Vec<u8>>(&[]);
         assert!(store.get(&key, text, 0).is_none());
     }
 }

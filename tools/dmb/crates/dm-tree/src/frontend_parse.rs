@@ -104,8 +104,8 @@ pub(super) fn parse_declarations_with_state(
             .iter()
             .enumerate()
             .map(|(index, &(offset, len))| match (carried_chunks.get(index).copied().flatten(), &previous_chunks) {
-                (Some(old), Some(table)) => table.keys[old].clone(),
-                _ => super::declaration_state::RetainedDeclarations::key(&source[offset..offset + len]),
+                (Some(old), Some(table)) => Arc::clone(&table.keys[old]),
+                _ => Arc::<[u8]>::from(super::declaration_state::RetainedDeclarations::key(&source[offset..offset + len])),
             })
             .collect();
         state.retain(&keys);
@@ -170,7 +170,7 @@ pub(super) fn parse_declarations_with_state(
                                 .zip(previous_chunks.as_ref())
                                 .map(|(old, table)| table.source(old));
                             let shared = retained.zip(retained_keys.as_ref())
-                                .and_then(|(state, keys)| state.get_shared_known(&keys[index], text, offset, known));
+                                .and_then(|(state, keys)| state.get_shared_known(&keys[index][..], text, offset, known));
                             shared_ns.fetch_add(
                                 shared_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
                                 std::sync::atomic::Ordering::Relaxed,
@@ -361,9 +361,9 @@ pub(super) fn parse_declarations_with_state(
                             let current = facts.and_then(|(facts,ledger)| {
                                 let current = if let (Some(state),Some(keys))=(retained,retained_keys.as_ref()) {
                                     if let Some(owner) = source_owner {
-                                        state.capture_source(&keys[index],owner,offset,parsed,facts,ledger)
+                                        state.capture_source(&keys[index][..],owner,offset,parsed,facts,ledger)
                                     } else {
-                                        state.capture(&keys[index],text,offset,parsed,facts,ledger)
+                                        state.capture(&keys[index][..],text,offset,parsed,facts,ledger)
                                     }
                                 } else {
                                     if let Some(owner) = source_owner {
@@ -498,7 +498,7 @@ pub(super) fn parse_declarations_with_state(
             .position(|(index, _)| {
                 let (offset, len) = chunks[index];
                 let text = &source[offset..offset + len];
-                retained_keys.as_ref().is_some_and(|keys| keys[index] != super::declaration_state::RetainedDeclarations::key(text))
+                retained_keys.as_ref().is_some_and(|keys| *keys[index] != *super::declaration_state::RetainedDeclarations::key(text))
                     || current_contributions.get(index).is_some_and(|value| value.source_text() != text)
             });
         match mismatch {

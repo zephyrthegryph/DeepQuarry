@@ -1269,8 +1269,28 @@ impl BodyReuse<'_> {
 
 /// The declaration whose expanded span starts at `start` and is a proc or verb (the last such one, by index, when several
 /// start there), by binary search over `(start, declaration)` sorted by start and then index.
-fn body_declaration(tree: &crate::SemanticTree, starts: &[(usize, usize)], start: usize) -> Option<(OccurrenceId, MemberId)> {
-    let first = starts.partition_point(|&(at, _)| at < start);
+/// For bodies asked in ascending order, `cursor` remembers where the previous search ended, and the next
+/// one walks forward from there (a few declarations lie between two bodies) instead of searching all 374k starts again, whose
+/// cache misses were most of body indexing.
+fn body_declaration_from(
+    tree: &crate::SemanticTree,
+    starts: &[(usize, usize)],
+    start: usize,
+    cursor: &mut Option<usize>,
+) -> Option<(OccurrenceId, MemberId)> {
+    const WALK: usize = 64;
+    let first = match *cursor {
+        Some(from) if from <= starts.len() && (from == 0 || starts[from - 1].0 < start) => {
+            let window = &starts[from..(from + WALK).min(starts.len())];
+            match window.iter().position(|&(at, _)| at >= start) {
+                Some(offset) => from + offset,
+                None if from + WALK >= starts.len() => starts.len(),
+                None => from + WALK + starts[from + WALK..].partition_point(|&(at, _)| at < start),
+            }
+        }
+        _ => starts.partition_point(|&(at, _)| at < start),
+    };
+    *cursor = Some(first);
     let mut found = None;
     for &(at, index) in &starts[first..] {
         if at != start {
@@ -1348,10 +1368,11 @@ fn collect_bodies(
     let rows = parallel::chunked_map(executor, &recipes, |_, part| {
         let mapping = parts.mapping();
         let mut rows = Vec::with_capacity(part.len());
+        let mut cursor = None;
         for recipe in part {
             let code = recipe.code_identity();
             let span = recipe.span();
-            let declaration = body_declaration(tree, starts, span.start)
+            let declaration = body_declaration_from(tree, starts, span.start, &mut cursor)
                 .ok_or_else(|| vec![internal("procedure body has no resolved declaration")])?;
             // A body without setting origins in a reused declaration takes its source location from the previous body.
             let reused_source = if recipe.settings().next().is_none() {

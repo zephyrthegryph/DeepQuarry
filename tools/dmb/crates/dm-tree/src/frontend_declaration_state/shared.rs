@@ -58,10 +58,10 @@ impl DeclarationValues {
     pub(super) fn is_shared(&self) -> bool {
         matches!(self, Self::Shared(..))
     }
-    pub(super) fn retain(&self, keys: &[Vec<u8>]) {
+    pub(super) fn retain<K: AsRef<[u8]>>(&self, keys: &[K]) {
         match self {
-            Self::Local(_, lease) => lease.retain_current_keys(keys.iter().map(Vec::as_slice)),
-            Self::Shared(_, lease) => lease.retain_current_keys(keys.iter().map(Vec::as_slice)),
+            Self::Local(_, lease) => lease.retain_current_keys(keys.iter().map(AsRef::as_ref)),
+            Self::Shared(_, lease) => lease.retain_current_keys(keys.iter().map(AsRef::as_ref)),
         }
     }
     pub(super) fn get(

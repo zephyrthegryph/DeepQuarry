@@ -457,7 +457,31 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     );
     let profile_stage = dm_profile::stage("frontend.declaration_origins");
     let provenance_start = Instant::now();
-    let expanded_spans: Vec<_> = adapted.origins.iter().map(|origin| origin.span).collect();
+    // Every declaration's span in the joined text (`OriginRoster::iter`), leaf by leaf in parallel.
+    let expanded_spans: Vec<dm_ir::Span> = match adapted.origins.bound_leaves() {
+        Some(leaves) => {
+            let spans = super::parallel::chunked_map(executor, leaves, |_, part| {
+                Ok::<_, std::convert::Infallible>(
+                    part.iter()
+                        .flat_map(|(leaf, offset)| {
+                            let shift = *offset as u32;
+                            leaf.relative_origins().iter().map(move |origin| {
+                                let mut span = origin.span;
+                                span.start += shift;
+                                span.end += shift;
+                                span
+                            })
+                        })
+                        .collect(),
+                )
+            });
+            match spans {
+                Ok(spans) => spans,
+                Err(never) => match never {},
+            }
+        }
+        None => adapted.origins.iter().map(|origin| origin.span).collect(),
+    };
     let spans_elapsed = provenance_start.elapsed();
     // What the previous revision's origins can be reused for: its files are this revision's at the same ids (the source
     // index was reused) and the plan says which regions are verbatim copies of which previous ones.
