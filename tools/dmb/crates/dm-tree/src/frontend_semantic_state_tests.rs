@@ -690,6 +690,10 @@ fn stable_splice_updates_the_dependency_graph_like_a_fresh_capture() {
         "/datum/base\n    var/value=1\n    var/added=3\n    proc/run()\n        return 1\n/datum/child\n    parent_type=/datum/base\n    value=2\n    run()\n        return 2\n",
         "/datum/base\n    var/value=1\n    var/added=3\n    proc/run()\n        return 1\n/datum/mid\n    parent_type=/datum/base\n/datum/child\n    parent_type=/datum/base\n    value=2\n    run()\n        return 2\n    added=4\n",
         "/datum/base\n    var/value=1\n    var/added=3\n    proc/run()\n        return 1\n    proc/more()\n        return 5\n/datum/child\n    parent_type=/datum/base\n    value=2\n    run()\n        return 2\n    added=4\n    more()\n        return ..()\n",
+        // Removals: the last added member (no slot moves), then an earlier one (the arena's last member takes its slot).
+        "/datum/base\n    var/value=1\n    var/added=3\n    proc/run()\n        return 1\n    proc/more()\n        return 5\n/datum/child\n    parent_type=/datum/base\n    value=2\n    run()\n        return 2\n    added=4\n",
+        "/datum/base\n    var/value=1\n    var/added=3\n    proc/more()\n        return 5\n/datum/child\n    parent_type=/datum/base\n    value=2\n    added=4\n",
+        "/datum/base\n    var/value=1\n    proc/more()\n        return 5\n/datum/child\n    parent_type=/datum/base\n    value=2\n",
     ];
     let mut retained = RetainedSemanticTree::new();
     for source in sources {

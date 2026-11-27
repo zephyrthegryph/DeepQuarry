@@ -10,7 +10,7 @@ pub struct RetainedSemanticTree {
     callable_roster: Option<Arc<super::CallableRoster>>,
     /// The roster of the tree before a stable-slot splice that added callables, and the slots the splice touched: the
     /// next `bind_callable_roster` inserts the new bodies into it instead of issuing every callable again.
-    roster_before_splice: Option<(Arc<super::CallableRoster>, Vec<MemberId>)>,
+    roster_before_splice: Option<(Arc<super::CallableRoster>, super::SpliceSlots)>,
     normalization: crate::owner_normalization::RetainedNormalization,
     hits: u64,
     rebuilds: u64,
@@ -108,20 +108,22 @@ impl RetainedSemanticTree {
     }
     /// As `discard_foreign_callable_roster`; after a stable-slot splice that
     /// touched only `touched` (vars), the roster is kept for the new tree.
-    fn discard_foreign_callable_roster_after(&mut self, tree: &Arc<SemanticTree>, touched: Option<&[MemberId]>) {
+    fn discard_foreign_callable_roster_after(&mut self, tree: &Arc<SemanticTree>, touched: Option<&super::SpliceSlots>) {
         self.roster_before_splice = None;
         if let Some(roster) = &self.callable_roster {
             if !roster.authenticates_tree(tree) {
                 let rebound = touched.and_then(|touched| roster.rebind_after_stable_splice(tree, touched));
                 if let Some(touched) = touched {
                     crate::change_set::record_outcome(format!(
-                        "callable roster after stable splice ({} touched): {}",
-                        touched.len(),
-                        if rebound.is_some() { "kept" } else { "insertion pending" }
+                        "callable roster after stable splice ({} touched, {} removed, {} moved): {}",
+                        touched.touched.len(),
+                        touched.removed.len(),
+                        touched.moved.len(),
+                        if rebound.is_some() { "kept" } else { "update pending" }
                     ));
                     if rebound.is_none() {
-                        // The bodies are not indexed yet: `bind_callable_roster` inserts the new ones into this roster.
-                        self.roster_before_splice = Some((Arc::clone(roster), touched.to_vec()));
+                        // The bodies are not indexed yet: `bind_callable_roster` updates this roster for them.
+                        self.roster_before_splice = Some((Arc::clone(roster), touched.clone()));
                     }
                 }
                 self.callable_roster = rebound.or_else(|| roster.rebind_semantic_owner(tree));
@@ -154,8 +156,8 @@ impl RetainedSemanticTree {
                     });
                 }
                 crate::change_set::record_outcome(format!(
-                    "callable roster: {} bodies inserted into the previous roster in {:.3}s",
-                    roster.members().len().saturating_sub(previous.members().len()),
+                    "callable roster: {} bodies, previous roster updated in {:.3}s",
+                    roster.members().len(),
                     inserted.as_secs_f64()
                 ));
                 self.callable_roster = Some(Arc::clone(&roster));
@@ -662,16 +664,19 @@ impl RetainedSemanticTree {
             entry.symbols = symbol_owner;
             // Body indexing follows this return and may fail. Do not keep the
             // previous tree rooted through its now-foreign callable roster.
-            let touched: Option<Vec<MemberId>> = stable_splice.as_ref().map(|stable| {
-                stable
+            let touched: Option<super::SpliceSlots> = stable_splice.as_ref().map(|stable| super::SpliceSlots {
+                touched: stable
                     .relinked
                     .iter()
                     .copied()
                     .chain(stable.added.iter().map(|added| added.1))
                     .chain(stable.changed.iter().map(|changed| changed.0))
-                    .collect()
+                    .chain(stable.moved.iter().map(|moved| moved.1))
+                    .collect(),
+                removed: stable.removed.iter().map(|removed| removed.1).collect(),
+                moved: stable.moved.clone(),
             });
-            self.discard_foreign_callable_roster_after(&tree, touched.as_deref());
+            self.discard_foreign_callable_roster_after(&tree, touched.as_ref());
             self.normalization.release_publication();
             self.metadata_updates += 1;
             if unchanged_declarations {

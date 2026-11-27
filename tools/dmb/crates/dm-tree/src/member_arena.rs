@@ -77,6 +77,27 @@ impl MemberArena {
                 .all(|(index, &start)| start == index * CHUNK);
         slot
     }
+    /// Remove the last slot and return its node. Only the last chunk is copied (or dropped when it held just that node).
+    pub(crate) fn pop(&mut self) -> Option<MemberNode> {
+        let last = self.chunks.len().checked_sub(1)?;
+        let node = self.chunks[last].last()?.clone();
+        if self.chunks[last].len() == 1 {
+            self.chunks.pop();
+            let mut offsets = self.offsets.to_vec();
+            offsets.pop();
+            self.offsets = offsets.into();
+        } else {
+            let rows = &self.chunks[last];
+            self.chunks[last] = rows[..rows.len() - 1].into();
+        }
+        self.len -= 1;
+        self.fixed = self
+            .offsets
+            .iter()
+            .enumerate()
+            .all(|(index, &start)| start == index * CHUNK);
+        Some(node)
+    }
     /// Arena from `nodes` that shares the previous arena's longest prefix of
     /// equal chunks (same boundaries and nodes), then fixed-size chunks.
     /// Dense IDs shift after the first inserted or removed member, so only the

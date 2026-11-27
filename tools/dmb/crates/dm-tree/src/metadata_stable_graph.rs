@@ -18,14 +18,21 @@ impl MetadataDependencies {
     ) -> Option<Self> {
         if self.by_slot.len() != previous_tree.members.len()
             || self.nodes.len() != previous_tree.member_count()
-            || current.len() != self.roster.len() + stable.added.len()
+            || current.len() + stable.removed.len() != self.roster.len() + stable.added.len()
         {
             return None;
         }
         let rows = current.roster();
         let row_of = |declaration: usize| current.row(*rows.get(declaration)?);
-        // Rows: insert the added ones at their (final, ascending) row indices, then the changed shapes.
+        // Rows: remove the removed ones (previous row indices, last first), insert the added ones at their (final,
+        // ascending) row indices, then the changed shapes.
         let mut roster = self.roster.clone();
+        for &(_, _, _, declaration) in stable.removed.iter().rev() {
+            if declaration >= roster.len() {
+                return None;
+            }
+            roster.remove(declaration);
+        }
         for &(_, _, _, declaration) in &stable.added {
             roster.insert(declaration, shape(&row_of(declaration)?.skeleton));
         }
@@ -33,25 +40,43 @@ impl MetadataDependencies {
             *roster.get_mut(declaration)? = shape(&row_of(declaration)?.skeleton);
         }
         // Nodes in declaration order: the added ones at their final member positions.
+        // Nodes in declaration order: the removed ones out, the moved ones at their current slots, the added ones at their
+        // final member positions.
         let mut nodes: Vec<DependencyNode> = self
             .nodes
             .iter()
             .map(|node| DependencyNode {
                 key: node.key,
-                member: node.member,
+                member: stable
+                    .moved
+                    .iter()
+                    .find(|pair| pair.0 == node.member)
+                    .map_or(node.member, |pair| pair.1),
                 dependants: node.dependants.clone(),
             })
             .collect();
-        let mut old_to_new: Vec<u32> = Vec::with_capacity(self.nodes.len());
+        for &(_, _, position, _) in stable.removed.iter().rev() {
+            if position >= nodes.len() {
+                return None;
+            }
+            nodes.remove(position);
+        }
+        let mut old_to_new: Vec<Option<u32>> = Vec::with_capacity(self.nodes.len());
         {
             let mut inserted = stable.added.iter().map(|added| added.2).peekable();
+            let mut removed = stable.removed.iter().map(|removed| removed.2).peekable();
             let mut new_index = 0usize;
-            for _ in 0..self.nodes.len() {
+            for old in 0..self.nodes.len() {
+                if removed.peek() == Some(&old) {
+                    removed.next();
+                    old_to_new.push(None);
+                    continue;
+                }
                 while inserted.peek() == Some(&new_index) {
                     inserted.next();
                     new_index += 1;
                 }
-                old_to_new.push(new_index as u32);
+                old_to_new.push(Some(new_index as u32));
                 new_index += 1;
             }
         }
@@ -85,7 +110,7 @@ impl MetadataDependencies {
         let mut projection: Vec<usize> = self
             .projection
             .iter()
-            .map(|&old| old_to_new[old] as usize)
+            .filter_map(|&old| old_to_new[old].map(|new| new as usize))
             .collect();
         for &(key, _, position, _) in &stable.added {
             let order = key_order(key);
@@ -100,19 +125,33 @@ impl MetadataDependencies {
             let node = *by_slot.get(id.index())?;
             (node != u32::MAX).then(|| keys[node as usize])
         };
-        // Dependants: every predecessor whose dependant list can differ gets its list again, in declaration order.
-        let moved: HashSet<MemberId> = stable
-            .relinked
-            .iter()
-            .copied()
-            .chain(stable.added.iter().map(|added| added.1))
-            .collect();
+        // Dependants: every predecessor whose dependant list can differ gets its list again, in declaration order. Slots
+        // of the previous tree are taken to current slots (a removed member has none).
+        let added: HashSet<MemberId> = stable.added.iter().map(|added| added.1).collect();
+        let moved: HashSet<MemberId> = stable.relinked.iter().copied().chain(added.iter().copied()).collect();
         let mut predecessors: HashSet<MemberId> = HashSet::new();
         for &id in &moved {
-            if let Some(previous) = previous_tree.members.get(id.index()).and_then(|node| node.previous) {
-                predecessors.insert(previous);
+            if !added.contains(&id) {
+                if let Some(previous) = previous_tree
+                    .members
+                    .get(stable.previous_slot(id).index())
+                    .and_then(|node| node.previous)
+                    .and_then(|previous| stable.current_slot(previous))
+                {
+                    predecessors.insert(previous);
+                }
             }
             if let Some(previous) = tree.members.get(id.index())?.previous {
+                predecessors.insert(previous);
+            }
+        }
+        for removed in &stable.removed {
+            if let Some(previous) = previous_tree
+                .members
+                .get(removed.1.index())
+                .and_then(|node| node.previous)
+                .and_then(|previous| stable.current_slot(previous))
+            {
                 predecessors.insert(previous);
             }
         }
@@ -123,7 +162,9 @@ impl MetadataDependencies {
                 let mut dependants: Vec<MemberId> = Vec::new();
                 for key in nodes[node].dependants.as_deref().into_iter().flatten() {
                     let index = self.slot(*key)?;
-                    let id = self.nodes[index].member;
+                    let Some(id) = stable.current_slot(self.nodes[index].member) else {
+                        continue;
+                    };
                     if !moved.contains(&id) {
                         dependants.push(id);
                     }

@@ -22,6 +22,7 @@ mod read_delta;
 pub use read_delta::FrontendReadHost;
 #[path = "frontend_compile_only.rs"]
 mod compile_only;
+pub(crate) use callable_roster::SpliceSlots;
 pub use callable_roster::{
     CallableAbiEntry, CallableAbiGraph, CallableAbiMeaning, CallableAbiRoster, CallableRoster,
     CallableRosterStorage,

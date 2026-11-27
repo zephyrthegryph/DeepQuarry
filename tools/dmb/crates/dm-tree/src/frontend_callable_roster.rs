@@ -10,6 +10,23 @@ use std::{
 #[path = "frontend_callable_abi_roster.rs"]
 mod abi;
 pub use abi::{CallableAbiEntry, CallableAbiGraph, CallableAbiMeaning, CallableAbiRoster};
+/// What a stable-slot splice did to the member slots, for the callable roster to follow: the slots it touched (current
+/// slots), the previous slots of removed members, and the members that moved (previous slot, current slot).
+#[derive(Clone, Debug, Default)]
+pub(crate) struct SpliceSlots {
+    pub touched: Vec<MemberId>,
+    pub removed: Vec<MemberId>,
+    pub moved: Vec<(MemberId, MemberId)>,
+}
+impl SpliceSlots {
+    /// The current slot of a previous slot (`None` for a removed member).
+    fn current(&self, previous: MemberId) -> Option<MemberId> {
+        if self.removed.contains(&previous) {
+            return None;
+        }
+        Some(self.moved.iter().find(|pair| pair.0 == previous).map_or(previous, |pair| pair.1))
+    }
+}
 #[derive(Clone, Debug)]
 pub struct CallableRoster {
     tree: Arc<SemanticTree>,
@@ -193,9 +210,19 @@ impl CallableRoster {
     pub(super) fn rebind_after_stable_splice(
         &self,
         tree: &Arc<SemanticTree>,
-        touched: &[MemberId],
+        slots: &SpliceSlots,
     ) -> Option<Arc<Self>> {
+        let touched = &slots.touched;
         let old = &self.tree;
+        // A removed or moved callable changes the roster (`update_after_stable_splice`); removed or moved vars do not.
+        if slots
+            .removed
+            .iter()
+            .chain(slots.moved.iter().map(|pair| &pair.0))
+            .any(|id| old.member(*id).is_none_or(|node| node.kind != MemberKind::Var))
+        {
+            return None;
+        }
         if !Arc::ptr_eq(&old.owner_ancestry, &tree.owner_ancestry)
             || old.types.len() != tree.types.len()
             || old
@@ -237,9 +264,10 @@ impl CallableRoster {
         &self,
         tree: &Arc<SemanticTree>,
         bodies: &[BodyOccurrence],
-        touched: &[MemberId],
+        slots: &SpliceSlots,
     ) -> Option<Arc<Self>> {
         const MAX_INSERTED: usize = 64;
+        let touched = &slots.touched;
         let old = &self.tree;
         if !Arc::ptr_eq(&old.owner_ancestry, &tree.owner_ancestry)
             || old.types.len() != tree.types.len()
@@ -254,17 +282,27 @@ impl CallableRoster {
         let started = std::time::Instant::now();
         let mut laps: Vec<(&'static str, f64)> = Vec::new();
         let lap = |name: &'static str, laps: &mut Vec<(&'static str, f64)>| laps.push((name, started.elapsed().as_secs_f64()));
-        let old_slots = old.members().len();
         let previous = &self.index;
-        // The new body roster is the previous one with new slots inserted.
+        // A new slot: not a previous slot that a retained member still holds (a removed member's slot may be issued again).
+        let retained_slots = old.members().len() - slots.removed.len();
+        // The new body roster is the previous one with the removed bodies out and new slots inserted; a previous ordinal
+        // maps to its new one, or to none for a removed body.
         let mut members = Vec::with_capacity(bodies.len());
-        let mut old_to_new = Vec::with_capacity(previous.members.len());
+        let mut old_to_new: Vec<Option<usize>> = Vec::with_capacity(previous.members.len());
         let mut inserted = Vec::new();
+        let mut removed_ordinals = Vec::new();
         for (ordinal, body) in bodies.iter().enumerate() {
             let member = body.member;
-            if previous.members.get(old_to_new.len()) == Some(&member) {
-                old_to_new.push(ordinal);
-            } else if member.index() >= old_slots {
+            while let Some(&old_member) = previous.members.get(old_to_new.len()) {
+                if slots.current(old_member).is_some() {
+                    break;
+                }
+                removed_ordinals.push(old_to_new.len());
+                old_to_new.push(None);
+            }
+            if previous.members.get(old_to_new.len()).and_then(|&old_member| slots.current(old_member)) == Some(member) {
+                old_to_new.push(Some(ordinal));
+            } else if member.index() >= retained_slots {
                 inserted.push(ordinal);
                 if inserted.len() > MAX_INSERTED {
                     return None;
@@ -274,18 +312,27 @@ impl CallableRoster {
             }
             members.push(member);
         }
-        if old_to_new.len() != previous.members.len() || inserted.is_empty() {
+        while let Some(&old_member) = previous.members.get(old_to_new.len()) {
+            if slots.current(old_member).is_some() {
+                return None;
+            }
+            removed_ordinals.push(old_to_new.len());
+            old_to_new.push(None);
+        }
+        if old_to_new.len() != previous.members.len() || (inserted.is_empty() && removed_ordinals.is_empty()) {
             return None;
         }
         // A touched new slot is a var or one of the inserted bodies; a retained callable keeps its node apart from `previous`.
-        for &id in touched {
-            if id.index() >= old_slots && tree.member(id)?.kind != MemberKind::Var && !inserted.iter().any(|&o| members[o] == id) {
+        for &id in touched.iter() {
+            if id.index() >= retained_slots && tree.member(id)?.kind != MemberKind::Var && !inserted.iter().any(|&o| members[o] == id) {
                 return None;
             }
         }
         let mut relinked = Vec::new();
-        for (old_ordinal, &member) in previous.members.iter().enumerate() {
-            let (before, now) = (old.member(member)?, tree.member(member)?);
+        for (old_ordinal, &previous_member) in previous.members.iter().enumerate() {
+            let Some(new_ordinal) = old_to_new[old_ordinal] else { continue };
+            let member = members[new_ordinal];
+            let (before, now) = (old.member(previous_member)?, tree.member(member)?);
             if before.owner != now.owner
                 || before.name != now.name
                 || before.kind != now.kind
@@ -295,14 +342,23 @@ impl CallableRoster {
             {
                 return None;
             }
-            if before.previous != now.previous {
-                relinked.push(old_to_new[old_ordinal]);
+            if before.previous.map(|id| slots.current(id)) != now.previous.map(Some) {
+                relinked.push(new_ordinal);
             }
         }
         lap("walk", &mut laps);
-        let mut ordinals = previous.ordinals.clone();
-        for ordinal in ordinals.values_mut() {
-            *ordinal = old_to_new[*ordinal];
+        let mut ordinals: HashMap<MemberId, usize> = HashMap::with_capacity(members.len());
+        if removed_ordinals.is_empty() && slots.moved.is_empty() {
+            ordinals = previous.ordinals.clone();
+            for ordinal in ordinals.values_mut() {
+                *ordinal = old_to_new[*ordinal].expect("nothing removed");
+            }
+        } else {
+            for (ordinal, &member) in members.iter().enumerate() {
+                if !inserted.contains(&ordinal) {
+                    ordinals.insert(member, ordinal);
+                }
+            }
         }
         for &ordinal in &inserted {
             if ordinals.insert(members[ordinal], ordinal).is_some() {
@@ -326,6 +382,19 @@ impl CallableRoster {
         // The callables whose identity, chain or ABI entry may differ: the inserted and relinked ones and every chain below.
         let mut dirty = vec![false; members.len()];
         let mut stack: Vec<usize> = inserted.iter().chain(&relinked).copied().collect();
+        // A removed callable's group selects again: its remaining callables are recomputed (bindings and selection).
+        for &old_ordinal in &removed_ordinals {
+            let node = old.member(previous.members[old_ordinal])?;
+            let owner = tree.lookup_type(old.type_node(node.owner)?.path)?;
+            for &other in tree.type_node(owner)?.members.iter() {
+                let other_node = tree.member(other)?;
+                if other_node.name == node.name && other_node.kind == node.kind {
+                    if let Some(&ordinal) = ordinals.get(&other) {
+                        stack.push(ordinal);
+                    }
+                }
+            }
+        }
         let mut recompute = Vec::new();
         while let Some(ordinal) = stack.pop() {
             if std::mem::replace(&mut dirty[ordinal], true) {
@@ -349,8 +418,10 @@ impl CallableRoster {
             })
         };
         let mut identities = vec![None; members.len()];
-        for (old_ordinal, &new) in old_to_new.iter().enumerate() {
-            identities[new] = Some(previous.identities[old_ordinal]);
+        for (old_ordinal, new) in old_to_new.iter().enumerate() {
+            if let Some(new) = *new {
+                identities[new] = Some(previous.identities[old_ordinal]);
+            }
         }
         for &ordinal in &recompute {
             identities[ordinal] = Some(identity_of(members[ordinal])?);
@@ -372,8 +443,10 @@ impl CallableRoster {
         lap("identities", &mut laps);
         // Selection changes only within the (owner, name, kind) groups of the recomputed callables.
         let mut effective = vec![false; members.len()];
-        for (old_ordinal, &new) in old_to_new.iter().enumerate() {
-            effective[new] = previous.effective[old_ordinal];
+        for (old_ordinal, new) in old_to_new.iter().enumerate() {
+            if let Some(new) = *new {
+                effective[new] = previous.effective[old_ordinal];
+            }
         }
         let mut reselect: Vec<usize> = Vec::new();
         for &ordinal in &recompute {
@@ -397,10 +470,16 @@ impl CallableRoster {
             }
         };
         let mut bindings = previous.bindings.clone();
-        let new_to_old: HashMap<usize, usize> = reselect
+        for &old_ordinal in &removed_ordinals {
+            if previous.effective[old_ordinal] {
+                bindings.remove(&binding(&previous.identities[old_ordinal]));
+            }
+        }
+        let new_to_old: HashMap<usize, usize> = old_to_new
             .iter()
-            .chain(&recompute)
-            .filter_map(|&new| old_to_new.binary_search(&new).ok().map(|old| (new, old)))
+            .enumerate()
+            .filter_map(|(old, new)| new.map(|new| (new, old)))
+            .filter(|(new, _)| reselect.binary_search(new).is_ok() || recompute.binary_search(new).is_ok())
             .collect();
         let mut touched_ordinals: Vec<usize> = reselect.iter().chain(&recompute).copied().collect();
         touched_ordinals.sort_unstable();
@@ -426,7 +505,7 @@ impl CallableRoster {
             let b = &bodies[i];
             (b.source.encounter_ordinal, b.expanded_span.start, b.declaration.0)
         };
-        let mut source_order: Vec<usize> = previous.source_order.iter().map(|&old| old_to_new[old]).collect();
+        let mut source_order: Vec<usize> = previous.source_order.iter().filter_map(|&old| old_to_new[old]).collect();
         for &ordinal in &inserted {
             let at = source_order.partition_point(|&other| key(other) < key(ordinal));
             source_order.insert(at, ordinal);
@@ -439,12 +518,13 @@ impl CallableRoster {
         let abi = self
             .abi
             .as_ref()
-            .and_then(|abi| abi.after_insert(tree, &members, &identities, &old_to_new, &recompute).ok());
+            .and_then(|abi| abi.after_insert(tree, &members, &identities, &old_to_new, &recompute, &slots.moved).ok());
         lap("abi", &mut laps);
         let mut at = 0.0;
         crate::change_set::record_outcome(format!(
-            "callable roster insertion ({} inserted, {} recomputed): {}",
+            "callable roster update ({} inserted, {} removed, {} recomputed): {}",
             inserted.len(),
+            removed_ordinals.len(),
             recompute.len(),
             laps.iter()
                 .map(|(name, end)| {

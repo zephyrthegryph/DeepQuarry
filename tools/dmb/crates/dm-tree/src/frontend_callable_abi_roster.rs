@@ -89,13 +89,19 @@ impl CallableAbiRoster {
         tree: &SemanticTree,
         members: &[MemberId],
         identities: &[ProcedureIdentity],
-        old_to_new: &[usize],
+        old_to_new: &[Option<usize>],
         recompute: &[usize],
+        moved: &[(MemberId, MemberId)],
     ) -> Result<Arc<Self>, String> {
         let mut entries: Vec<Option<CallableAbiEntry>> = vec![None; members.len()];
         let mut meanings: Vec<Option<CallableAbiMeaning>> = vec![None; members.len()];
-        for (old, &new) in old_to_new.iter().enumerate() {
-            entries[new] = Some(self.entries.get(old).ok_or("ABI entry missing")?.clone());
+        let slot = |id: MemberId| moved.iter().find(|pair| pair.0 == id).map_or(id, |pair| pair.1);
+        for (old, new) in old_to_new.iter().enumerate() {
+            let Some(new) = *new else { continue };
+            let mut entry = self.entries.get(old).ok_or("ABI entry missing")?.clone();
+            entry.member = slot(entry.member);
+            entry.predecessor = entry.predecessor.map(slot);
+            entries[new] = Some(entry);
             meanings[new] = Some(self.graph.entries.get(old).ok_or("ABI meaning missing")?.clone());
         }
         let mut ancestry: BTreeMap<SymbolId, Arc<[SymbolId]>> = self.graph.ancestry.iter().cloned().collect();

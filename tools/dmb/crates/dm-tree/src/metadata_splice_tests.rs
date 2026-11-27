@@ -174,3 +174,36 @@ fn added_members_take_new_slots_and_keep_retained_ones() {
     }
     assert_eq!(state.splices(), 3);
 }
+
+/// Removed members take the stable-slot path (a removed slot takes the arena's last member) and the tree equals a fresh
+/// build at each step (members, chains, selectors, targets by declaration position).
+#[test]
+fn removed_members_keep_slots_and_match_fresh() {
+    let mut state = RetainedSemanticTree::new();
+    let base = frontend(&mut state, BASE);
+    let base_tree = std::sync::Arc::clone(&base.snapshot.tree);
+    let mut source = BASE.to_string();
+    let mut stable = 0;
+    for (before, after) in [
+        // An earlier member (not the last slot): the last member moves into its slot.
+        ("    proc/helper()\n        return 1\n", ""),
+        // A var of the child and the override that read it.
+        ("    var/own = 2\n", ""),
+        ("        return own\n", "        return 2\n"),
+        // An override whose chain heads a descendant type's.
+        ("    result()\n        return 2\n", ""),
+    ] {
+        source = source.replacen(before, after, 1);
+        let _ = crate::change_set::take_outcomes();
+        let changed = frontend(&mut state, &source);
+        let outcomes = crate::change_set::take_outcomes();
+        stable += outcomes.iter().filter(|line| line.contains("stable slots") && !line.contains(" 0 removed")).count();
+        let tree = &changed.snapshot.tree;
+        same_as_fresh(tree, &source);
+        assert!(tree.members().len() < base_tree.members().len());
+    }
+    assert!(stable >= 3, "removals took the stable-slot path ({stable})");
+    // Reverting to the base adds them back on top.
+    let reverted = frontend(&mut state, BASE);
+    same_as_fresh(&reverted.snapshot.tree, BASE);
+}

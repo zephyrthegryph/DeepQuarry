@@ -26,9 +26,11 @@ pub(crate) struct Spliced {
     pub stable: Option<StableSplice>,
 }
 
-/// A splice that kept every retained member slot: rows were only added (new
-/// slots at the end of the arena) or changed in place, the type roster and the
-/// order of the retained rows are the same.
+/// A splice that kept the retained member slots: rows were added (new slots at
+/// the end of the arena), changed in place or removed, the type roster and the
+/// order of the retained rows are the same. A removed member's slot takes the
+/// arena's last member (the arena stays dense), so a few retained members move:
+/// `moved` says which.
 pub(crate) struct StableSplice {
     /// Each added member: its key, new slot, declaration position among the
     /// members and index among all declaration rows, in declaration order.
@@ -37,6 +39,24 @@ pub(crate) struct StableSplice {
     pub changed: Vec<(MemberId, usize)>,
     /// Retained slots in the dirty cone (their `previous` link or metadata may differ).
     pub relinked: Vec<MemberId>,
+    /// Each removed member: its key, its slot in the previous tree, its declaration position among the previous members
+    /// and its index among the previous declaration rows, in declaration order.
+    pub removed: Vec<(DeclarationKey, MemberId, usize, usize)>,
+    /// Retained members whose slot changed (previous slot, current slot): each filled a removed member's slot.
+    pub moved: Vec<(MemberId, MemberId)>,
+}
+impl StableSplice {
+    /// The current slot of a previous slot (`None` for a removed member).
+    pub(crate) fn current_slot(&self, previous: MemberId) -> Option<MemberId> {
+        if self.removed.iter().any(|removed| removed.1 == previous) {
+            return None;
+        }
+        Some(self.moved.iter().find(|moved| moved.0 == previous).map_or(previous, |moved| moved.1))
+    }
+    /// The previous slot of a current slot that existed before (an added slot answers itself).
+    pub(crate) fn previous_slot(&self, current: MemberId) -> MemberId {
+        self.moved.iter().find(|moved| moved.1 == current).map_or(current, |moved| moved.0)
+    }
 }
 
 type Group = (TypeId, SymbolId, MemberKind);
@@ -207,8 +227,60 @@ impl MetadataDependencies {
         if !types_changed {
             if let Some(rows) = stable_rows {
                 let mut nodes = std::mem::take(&mut tree.members);
-                let old_len = nodes.len();
                 let mut targets = rows.targets;
+                // Removals: each removed slot takes the arena's last member (highest removed slot first), so the arena
+                // stays dense and only those members change slot.
+                let mut removed_slots: Vec<MemberId> = rows.removed.iter().map(|removed| removed.slot).collect();
+                removed_slots.sort_unstable_by_key(|slot| std::cmp::Reverse(slot.0));
+                let mut origin: HashMap<usize, usize> = HashMap::new();
+                for &slot in &removed_slots {
+                    let last = nodes.len().checked_sub(1).ok_or("removal from an empty arena")?;
+                    let node = nodes.pop().ok_or("removal from an empty arena")?;
+                    let was = origin.remove(&last).unwrap_or(last);
+                    if slot.index() != last {
+                        nodes[slot.index()] = node;
+                        origin.insert(slot.index(), was);
+                    }
+                }
+                let mut moved: Vec<(MemberId, MemberId)> = origin
+                    .iter()
+                    .map(|(&now, &was)| (MemberId(was as u32), MemberId(now as u32)))
+                    .collect();
+                moved.sort_unstable_by_key(|pair| pair.0 .0);
+                let removed_set: HashSet<MemberId> = removed_slots.iter().copied().collect();
+                let current_slot = |previous: MemberId| -> Option<MemberId> {
+                    if removed_set.contains(&previous) {
+                        return None;
+                    }
+                    Some(moved.iter().find(|pair| pair.0 == previous).map_or(previous, |pair| pair.1))
+                };
+                let previous_slot = |current: MemberId| -> MemberId {
+                    moved.iter().find(|pair| pair.1 == current).map_or(current, |pair| pair.0)
+                };
+                if !removed_slots.is_empty() {
+                    // Links into a removed slot are dropped (the removed member's group and the groups below it are
+                    // renormalized by `rebind`); links into a moved member follow it.
+                    let relink: Vec<(usize, Option<MemberId>)> = nodes
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(index, node)| {
+                            let previous = node.previous?;
+                            let now = current_slot(previous);
+                            (now != Some(previous)).then_some((index, now))
+                        })
+                        .collect();
+                    for (index, previous) in relink {
+                        nodes[index].previous = previous;
+                    }
+                    for target in &mut targets {
+                        if let Target::Member(id) = target {
+                            if id.0 != u32::MAX {
+                                *id = current_slot(*id).ok_or("removed member kept a declaration target")?;
+                            }
+                        }
+                    }
+                }
+                let old_len = nodes.len();
                 let by_path = Arc::clone(&tree.by_path);
                 let fresh_node = |row: &crate::declaration_contributions::DeclarationRow| -> Result<MemberNode, &'static str> {
                     let Skeleton::Member { owner, name, kind, mode, metadata, content } = &row.skeleton else {
@@ -225,10 +297,13 @@ impl MetadataDependencies {
                     })
                 };
                 let mut fresh_rows: Vec<(usize, MemberId, DefinitionMode)> = Vec::new();
+                let mut changed_slots = Vec::with_capacity(rows.changed.len());
                 for changed in &rows.changed {
+                    let slot = current_slot(changed.slot).ok_or("changed member removed")?;
                     let node = fresh_node(changed.row)?;
-                    fresh_rows.push((changed.declaration, changed.slot, node.definition));
-                    nodes[changed.slot.index()] = node;
+                    fresh_rows.push((changed.declaration, slot, node.definition));
+                    nodes[slot.index()] = node;
+                    changed_slots.push(slot);
                 }
                 let mut added_slots = Vec::with_capacity(rows.added.len());
                 for added in &rows.added {
@@ -241,8 +316,23 @@ impl MetadataDependencies {
                 }
                 fresh_rows.sort_unstable_by_key(|row| row.0);
                 let fresh: Vec<(MemberId, DefinitionMode)> = fresh_rows.iter().map(|row| (row.1, row.2)).collect();
-                // Owner rosters: each added slot at its place among its owner's members.
+                // Owner rosters: removed slots out, moved ones renamed, each added slot at its place among its owner's members.
                 let mut owned: Vec<Arc<[MemberId]>> = tree.types.iter().map(|node| Arc::clone(&node.members)).collect();
+                {
+                    let mut owners: Vec<TypeId> = rows
+                        .removed
+                        .iter()
+                        .map(|removed| previous_tree.members[removed.slot.index()].owner)
+                        .chain(moved.iter().map(|pair| previous_tree.members[pair.0.index()].owner))
+                        .collect();
+                    owners.sort_unstable();
+                    owners.dedup();
+                    for owner in owners {
+                        let ids: Vec<MemberId> =
+                            owned[owner.index()].iter().filter_map(|id| current_slot(*id)).collect();
+                        owned[owner.index()] = ids.into();
+                    }
+                }
                 let mut by_owner: HashMap<TypeId, Vec<(u32, MemberId)>> = HashMap::new();
                 for (added, &slot) in rows.added.iter().zip(&added_slots) {
                     by_owner.entry(nodes[slot.index()].owner).or_default().push((added.in_owner, slot));
@@ -260,13 +350,24 @@ impl MetadataDependencies {
                 let previous_groups: Vec<Group> = rows
                     .changed
                     .iter()
-                    .map(|changed| {
-                        let node = &previous_tree.members[changed.slot.index()];
+                    .map(|changed| changed.slot)
+                    .chain(rows.removed.iter().map(|removed| removed.slot))
+                    .map(|slot| {
+                        let node = &previous_tree.members[slot.index()];
                         (node.owner, node.name, node.kind)
                     })
                     .collect();
                 laps.lap("arena");
                 let mut direct: HashMap<Group, MemberId> = (*previous_tree.direct).clone();
+                if !removed_slots.is_empty() {
+                    // A removed member's group is renormalized by `rebind`; a moved member keeps its selection.
+                    direct.retain(|_, id| !removed_set.contains(id));
+                    for (_, id) in direct.iter_mut() {
+                        if let Some(pair) = moved.iter().find(|pair| pair.0 == *id) {
+                            *id = pair.1;
+                        }
+                    }
+                }
                 laps.lap("direct");
                 let added_rows: HashMap<MemberId, &Arc<MemberMetadata>> = rows
                     .added
@@ -282,7 +383,7 @@ impl MetadataDependencies {
                     if let Some(metadata) = added_rows.get(&id) {
                         return Arc::clone(metadata);
                     }
-                    let key = self.key_of_slot(id).expect("retained slot has its stable key");
+                    let key = self.key_of_slot(previous_slot(id)).expect("retained slot has its stable key");
                     let row = current
                         .owner(key.owner)
                         .and_then(|owner| owner.rows().iter().find(|row| row.key == key))
@@ -312,6 +413,16 @@ impl MetadataDependencies {
                 tree.declaration_targets = targets.into();
                 crate::metadata_update::resolve_metadata(&tree, &mut nodes, &order);
                 tree.members = nodes;
+                // Declaration order: moved members renamed in place, removed ones out (previous positions, last first),
+                // then the added ones at their current positions.
+                for pair in &moved {
+                    let position = previous_tree.member_order.position_of(pair.0).ok_or("moved member has no position")?;
+                    tree.member_order.remove(position);
+                    tree.member_order.insert(position, pair.1);
+                }
+                for removed in rows.removed.iter().rev() {
+                    tree.member_order.remove(removed.position);
+                }
                 for (added, &slot) in rows.added.iter().zip(&added_slots) {
                     tree.member_order.insert(added.position, slot);
                 }
@@ -323,16 +434,24 @@ impl MetadataDependencies {
                         .zip(&added_slots)
                         .map(|(added, &slot)| (added.row.key, slot, added.position, added.declaration))
                         .collect(),
-                    changed: rows.changed.iter().map(|changed| (changed.slot, changed.declaration)).collect(),
+                    changed: changed_slots.iter().zip(&rows.changed).map(|(&slot, changed)| (slot, changed.declaration)).collect(),
                     relinked: order.iter().copied().filter(|id| id.index() < old_len).collect(),
+                    removed: rows
+                        .removed
+                        .iter()
+                        .map(|removed| (removed.key, removed.slot, removed.position, removed.declaration))
+                        .collect(),
+                    moved: moved.clone(),
                 };
                 laps.lap("publish");
                 let spliced = finish(tree, &affected, order, &names, executor, types_changed, appended, previous_identity, Some(stable), &mut laps);
                 let stable = spliced.stable.as_ref().expect("stable splice");
                 crate::change_set::record_outcome(format!(
-                    "tree splice: stable slots ({} added, {} changed, {} slots): {}",
+                    "tree splice: stable slots ({} added, {} changed, {} removed, {} moved, {} slots): {}",
                     stable.added.len(),
                     stable.changed.len(),
+                    stable.removed.len(),
+                    stable.moved.len(),
                     spliced.tree.members.len(),
                     laps.report()
                 ));
@@ -1022,11 +1141,22 @@ struct ChangedRow<'a> {
     row: &'a crate::declaration_contributions::DeclarationRow,
     declaration: usize,
 }
+/// A member row of the previous roster that the current one does not hold.
+struct RemovedRow {
+    key: DeclarationKey,
+    /// Its slot in the previous tree.
+    slot: MemberId,
+    /// Declaration position among the previous members.
+    position: usize,
+    /// Index among all previous declaration rows.
+    declaration: usize,
+}
 struct StableRows<'a> {
-    /// The current declaration targets; an added row's entry is filled when its slot is issued.
+    /// The current declaration targets (previous slots); an added row's entry is filled when its slot is issued.
     targets: Vec<Target>,
     added: Vec<AddedRow<'a>>,
     changed: Vec<ChangedRow<'a>>,
+    removed: Vec<RemovedRow>,
 }
 
 impl MetadataDependencies {
@@ -1048,6 +1178,7 @@ impl MetadataDependencies {
     ) -> Option<StableRows<'a>> {
         let mut added_keys = HashSet::new();
         let mut changed_keys = HashSet::new();
+        let mut removed_keys = HashSet::new();
         for change in &delta.changes {
             match (change.previous, change.current) {
                 (None, Some(_)) => {
@@ -1055,6 +1186,9 @@ impl MetadataDependencies {
                 }
                 (Some(_), Some(_)) => {
                     changed_keys.insert(change.key);
+                }
+                (Some(row), None) if matches!(row.skeleton, Skeleton::Member { .. }) => {
+                    removed_keys.insert(change.key);
                 }
                 _ => return None,
             }
@@ -1085,9 +1219,41 @@ impl MetadataDependencies {
             return None;
         }
         let mut owners_seen: HashSet<SymbolId> = HashSet::new();
+        // Owners of a removed row that a retained row of their own preceded (so their first encounter, and type id, stays).
+        let removed_owners: HashSet<SymbolId> = removed_keys.iter().map(|key| key.owner).collect();
+        let mut removed_owners_seen: HashSet<SymbolId> = HashSet::new();
+        let mut removed = Vec::new();
         let mut position = 0usize;
+        let mut previous_position = 0usize;
         let mut cursor = 0usize;
+        // Skip the removed rows at the previous cursor (each a member row of a changed owner seen before).
+        let skip_removed = |cursor: &mut usize,
+                                previous_position: &mut usize,
+                                removed: &mut Vec<RemovedRow>,
+                                removed_owners_seen: &HashSet<SymbolId>|
+         -> Option<()> {
+            while let Some(old_handle) = before.get(*cursor) {
+                if removed_keys.is_empty() || !changed_owner(&old_handle.owner) {
+                    break;
+                }
+                let old = previous.row(*old_handle)?;
+                if !removed_keys.contains(&old.key) {
+                    break;
+                }
+                if !removed_owners_seen.contains(&old_handle.owner) {
+                    return None;
+                }
+                let Target::Member(slot) = previous_targets[*cursor] else {
+                    return None;
+                };
+                removed.push(RemovedRow { key: old.key, slot, position: *previous_position, declaration: *cursor });
+                *previous_position += 1;
+                *cursor += 1;
+            }
+            Some(())
+        };
         for (declaration, handle) in after.iter().enumerate() {
+            skip_removed(&mut cursor, &mut previous_position, &mut removed, &removed_owners_seen)?;
             if changed_owner(&handle.owner) {
                 let row = current.row(*handle)?;
                 let member = matches!(row.skeleton, Skeleton::Member { .. });
@@ -1115,6 +1281,9 @@ impl MetadataDependencies {
                 if added_owners.contains(&handle.owner) {
                     owners_seen.insert(handle.owner);
                 }
+                if removed_owners.contains(&handle.owner) {
+                    removed_owners_seen.insert(handle.owner);
+                }
                 if changed_keys.contains(&row.key) {
                     let Target::Member(slot) = previous_targets[cursor] else {
                         return None;
@@ -1127,12 +1296,17 @@ impl MetadataDependencies {
             let target = previous_targets[cursor];
             if matches!(target, Target::Member(_)) {
                 position += 1;
+                previous_position += 1;
             }
             targets.push(target);
             cursor += 1;
         }
-        (cursor == before.len() && added.len() == added_keys.len() && changed.len() == changed_keys.len())
-            .then_some(StableRows { targets, added, changed })
+        skip_removed(&mut cursor, &mut previous_position, &mut removed, &removed_owners_seen)?;
+        (cursor == before.len()
+            && added.len() == added_keys.len()
+            && changed.len() == changed_keys.len()
+            && removed.len() == removed_keys.len())
+        .then_some(StableRows { targets, added, changed, removed })
     }
 }
 

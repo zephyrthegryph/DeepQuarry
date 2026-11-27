@@ -237,16 +237,21 @@ fn inserted_bodies_equal_a_fresh_issue_through_declaration_edits() {
         "/datum/a/proc/p()\n    return 1\n/datum/a/proc/q()\n    return 2\n/datum/a/p()\n    return ..() + 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n/datum/b/proc/s()\n    return 3\n",
         // A new proc and a new var at the end.
         "/datum/a/proc/p()\n    return 1\n/datum/a/proc/q()\n    return 2\n/datum/a/p()\n    return ..() + 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n    var/y = 2\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n",
+        // The middle override removed (the chain below relinks to the declaration again), then the first new proc.
+        "/datum/a/proc/p()\n    return 1\n/datum/a/proc/q()\n    return 2\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n    var/y = 2\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n",
+        "/datum/a/proc/p()\n    return 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n    var/y = 2\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n",
+        // A var removed (only vars: the roster is kept).
+        "/datum/a/proc/p()\n    return 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n",
     ];
     let mut inserted = 0;
     for (step, source) in sources.iter().enumerate() {
         let _ = crate::change_set::take_outcomes();
         let current = build(&mut state, source);
         let outcomes = crate::change_set::take_outcomes();
-        inserted += outcomes.iter().filter(|line| line.contains("inserted into the previous roster")).count();
+        inserted += outcomes.iter().filter(|line| line.contains("previous roster updated")).count();
         let roster = current.callable_roster().unwrap();
         let fresh = CallableRoster::issue(&current.snapshot.tree, &current.bodies).unwrap();
         assert_eq!(roster.first_difference(&fresh), None, "step {step}: {outcomes:?}");
     }
-    assert!(inserted >= 2, "the insertion ran ({inserted} of 3 edits)");
+    assert!(inserted >= 4, "the update ran ({inserted} of 5 callable edits)");
 }
