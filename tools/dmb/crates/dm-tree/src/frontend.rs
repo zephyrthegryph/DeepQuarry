@@ -277,6 +277,10 @@ pub struct ColdFrontend {
 }
 
 impl ColdFrontend {
+    /// The expanded offset every declaration starts at, by declaration index (`TreeSnapshot::declarations` order).
+    pub fn declaration_starts(&self) -> &[u32] {
+        &self.declaration_starts
+    }
     pub fn settings_owner_storage(&self) -> &Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]> {
         &self.issued_settings
     }

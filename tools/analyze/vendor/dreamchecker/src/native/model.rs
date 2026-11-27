@@ -148,6 +148,29 @@ pub struct Type {
 }
 
 impl Type {
+    /// This type's places through `f` (see [`Model::map_places`]).
+    pub fn map_places(&mut self, f: &dyn Fn(&mut Where) -> bool) -> bool {
+        let mut ok = f(&mut self.location);
+        for (_, v) in &mut self.vars {
+            ok &= f(&mut v.value_location);
+            if let Some(d) = &mut v.declaration {
+                ok &= f(&mut d.location);
+            }
+        }
+        for (_, p) in &mut self.procs {
+            for v in &mut p.values {
+                ok &= f(&mut v.location);
+                for param in &mut v.parameters {
+                    ok &= f(&mut param.location);
+                }
+            }
+            if let Some(d) = &mut p.declaration {
+                ok &= f(&mut d.location);
+            }
+        }
+        ok
+    }
+
     pub fn is_root(&self) -> bool {
         self.path.is_empty()
     }
@@ -182,6 +205,13 @@ pub struct ProcId {
 }
 
 impl Model {
+    /// Every place of every declaration through `f` (a host moves a kept model's places to an edited revision's; [`Type::map_places`]
+    /// does one type, for a host that moves them in parallel); `false` when `f` refuses one (the model is then partly moved and is
+    /// not to be used).
+    pub fn map_places(&mut self, f: &dyn Fn(&mut Where) -> bool) -> bool {
+        self.types.iter_mut().all(|t| t.map_places(f))
+    }
+
     pub fn root(&self) -> TypeId {
         TypeId::ROOT
     }
@@ -373,6 +403,11 @@ pub struct Precedes {
 }
 
 impl Precedes {
+    /// Both places through `f`; `false` when `f` refuses one.
+    pub fn map_places(&mut self, f: &dyn Fn(&mut Where) -> bool) -> bool {
+        f(&mut self.at) & f(&mut self.defined)
+    }
+
     /// SpacemanDMM's hint, placed by `site`.
     pub fn error(&self, site: &dyn super::input::Site) -> dm::DMError {
         let (path, kind, name) = (&self.path, self.kind, &self.name);

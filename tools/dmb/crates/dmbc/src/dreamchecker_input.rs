@@ -12,7 +12,8 @@ use dm_tree::frontend::{BodyArena, ColdFrontend};
 use dm_tree::DefinitionMode;
 use dreamchecker::native::facts::{Diag, SettingsFacts};
 use dreamchecker::native::input::{Bodies, CheckerInput, InputType, Site, Sites, Where};
-use dreamchecker::native::model::ProcId;
+use dreamchecker::native::model::{Precedes, ProcId};
+use dreamchecker::native::Kept;
 use dreamchecker::native::walk::ProcFacts;
 use dreamchecker::native::model::{ModelBuilder, Param, ProcDecl, ProcKind, ProcValue, ReturnType, TypeId, VarFlags};
 use dreammaker::Location;
@@ -396,7 +397,7 @@ fn semantic_bits(bits: u32) -> u8 {
 
 /// What the native checker reads, built from `front`; `run` then checks it.
 /// `run` also gets what registering the declarations reported (SpacemanDMM's "override precedes definition" hints), in order.
-pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<dreammaker::DMError>, &BuildStats, &QueryStore) -> R) -> R {
+pub fn with_input<R>(front: &Front, run: impl FnOnce(CheckerInput<'_>, Vec<Precedes>, &BuildStats, &QueryStore) -> R) -> R {
     let frontend: &ColdFrontend = &front.frontend;
     let trace = dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some();
     let t = std::time::Instant::now();
@@ -523,7 +524,7 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
             }
             Prep::Proc(declaration, value) => {
                 let r = builder.add_proc(ty, &item.name, declaration, value);
-                registered.extend(r.hint.map(|h| h.error(&*site)));
+                registered.extend(r.hint);
                 stats.procs += 1;
             }
         }
@@ -537,7 +538,7 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     let input = CheckerInput { model, bodies: &bodies, sites: &sites };
     let store = QueryStore::new(front, &m);
     lap("keys");
-    run(&input, registered, &stats, &store)
+    run(input, registered, &stats, &store)
 }
 
 #[derive(Default)]
@@ -547,59 +548,97 @@ pub struct BuildStats {
     pub procs: usize,
 }
 
-/// What one run registered, kept in the daemon for the front end revision it read (see [`check`]).
-struct Remembered {
+/// What one run found, kept in the daemon for the front end revision it read (see [`check`]).
+struct Resident {
     dme: std::path::PathBuf,
-    frontend: dm_tree::frontend::FrontendIssuance,
+    frontend: dm_tree::frontend::FrontendRevision,
     checks: bool,
+    ids: HashMap<Arc<str>, dreammaker::FileId>,
     /// Every file the run registered, in order (the ids its diagnostics carry).
     files: Vec<std::path::PathBuf>,
+    /// The preprocessor's warnings.
+    macro_diags: Vec<Diag>,
+    /// The model and its "override precedes definition" hints, at this revision's places.
+    model: dreamchecker::native::model::Model,
+    hints: Vec<Precedes>,
+    /// The checks' results (`None` for `--parse-only`).
+    kept: Option<Kept>,
+    bodies: usize,
     /// Every diagnostic, in registration order, before the config's severities and filters.
     diagnostics: Vec<Diag>,
-    bodies: usize,
 }
 
-static REMEMBERED: std::sync::Mutex<Option<Remembered>> = std::sync::Mutex::new(None);
+static RESIDENT: std::sync::Mutex<Option<Resident>> = std::sync::Mutex::new(None);
 
 /// `analyze dreamchecker` on the native checker: the files under the front end's ids, the preprocessor's warnings, then the checks.
 ///
 /// Every diagnostic is registered on a context of its own (no config, nothing printed) and then onto `context` in the same order,
-/// so what a run found is data apart from the config. In the daemon the last run's files and diagnostics are kept for the front
-/// end revision they came from: a request whose front end is that revision (the hosted front end returns the remembered one
-/// when no source changed) registers them again without checking anything.
+/// so what a run found is data apart from the config. In the daemon the last run is kept ([`Resident`]) with the front end revision
+/// it read:
+///
+/// * a request whose front end is that revision (the hosted front end returns the remembered one when no source changed)
+///   registers its diagnostics again;
+/// * a request whose front end is a later revision with the same declarations (an edit inside bodies, lines added or removed)
+///   moves the kept run to it (`dreamchecker_delta`, `Kept::update`): only the changed bodies are walked again, and the override
+///   and call-tree passes only when a walk changed what they read;
+/// * anything else (a declaration added, removed or changed, no delta: more than 256 files) computes a new run, its per-proc
+///   results from the query store.
+///
+/// `DQ_DREAMCHECKER_VERIFY=1` computes every moved run again from scratch (no store) and reports any difference (debug tooling).
 pub fn check(dme: &Path, context: &dreammaker::Context, checks: bool, cli: bool, threads: usize) -> Result<(), String> {
     let trace = dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some();
     let started = std::time::Instant::now();
+    let cpu0 = dq_analyze::util::cpu_ms();
     let front = crate::analysis_tree::front(dme)?;
+    let front_time = started.elapsed();
+    let front_cpu = dq_analyze::util::cpu_ms().saturating_sub(cpu0);
     if trace {
-        dq_hostio::out(false, format_args!("dreamchecker: front end {:.1?} (built {:.1?})", started.elapsed(), front.built), true);
+        dq_hostio::out(false, format_args!("dreamchecker: front end {front_time:.1?} (built {:.1?})", front.built), true);
     }
     let hosted = crate::daemon::hosting();
-    if hosted {
-        let kept = REMEMBERED.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(r) = kept.as_ref().filter(|r| r.dme == dme && r.checks == checks && r.frontend.matches(&front.frontend)) {
-            replay(context, &r.files, &r.diagnostics, r.bodies, checks, cli);
+    let mut slot = RESIDENT.lock().unwrap_or_else(|e| e.into_inner());
+    let kept = slot.take().filter(|r| hosted && r.dme == dme && r.checks == checks);
+    let resident = match kept {
+        Some(r) if r.frontend.issuance().matches(&front.frontend) => {
             if trace {
-                dq_hostio::out(false, format_args!("dreamchecker: front end revision unchanged, {} diagnostics replayed at {:.1?}", r.diagnostics.len(), started.elapsed()), true);
+                dq_hostio::out(false, format_args!("dreamchecker: front end revision unchanged, {} diagnostics kept", r.diagnostics.len()), true);
             }
-            return Ok(());
+            r
+        }
+        Some(r) => match moved(dme, &front, r, threads, trace) {
+            Ok(r) => r,
+            Err(why) => {
+                dq_hostio::out(false, format_args!("dreamchecker: computing a new run ({why})"), true);
+                computed(&front, dme, checks, threads, trace, started, false)
+            }
+        },
+        None => computed(&front, dme, checks, threads, trace, started, false),
+    };
+    if trace {
+        if let Some(k) = &resident.kept {
+            dq_hostio::out(false, format_args!("dreamchecker: kept {}", k.stats()), true);
         }
     }
-    let own = dreammaker::Context::default();
-    let bodies = check_into(&front, &own, checks, threads, trace, started);
-    let files: Vec<std::path::PathBuf> = {
-        let mut v = Vec::new();
-        own.clone_file_list().for_each(|p| v.push(p.to_path_buf()));
-        v
-    };
-    let diagnostics: Vec<Diag> = own.take_errors().iter().map(Diag::of).collect();
-    replay(context, &files, &diagnostics, bodies, checks, cli);
-    if hosted {
-        *REMEMBERED.lock().unwrap_or_else(|e| e.into_inner()) =
-            Some(Remembered { dme: dme.to_path_buf(), frontend: front.frontend.issuance(), checks, files, diagnostics, bodies });
-    }
+    let replay_started = std::time::Instant::now();
+    replay(context, &resident.files, &resident.diagnostics, resident.bodies, checks, cli);
+    let replayed = replay_started.elapsed();
     if trace {
-        dq_hostio::out(false, format_args!("dreamchecker: done at {:.1?}; {}", started.elapsed(), dq_analyze::incr::stats()), true);
+        let total = started.elapsed();
+        let cpu = dq_analyze::util::cpu_ms().saturating_sub(cpu0);
+        dq_hostio::out(
+            false,
+            format_args!(
+                "dreamchecker: done at {total:.1?}: front end {front_time:.1?} (process cpu {front_cpu} ms), checker {:.1?} (process cpu {} ms; registering {} diagnostics {replayed:.1?}); {}",
+                total.saturating_sub(front_time),
+                cpu.saturating_sub(front_cpu),
+                resident.diagnostics.len(),
+                dq_analyze::incr::stats()
+            ),
+            true,
+        );
+    }
+    if hosted {
+        *slot = Some(resident);
     }
     Ok(())
 }
@@ -615,36 +654,160 @@ fn replay(context: &dreammaker::Context, files: &[std::path::PathBuf], diagnosti
             dreamchecker::native::print_sections();
         }
     }
-    for d in diagnostics {
-        context.register_error(d.error());
-    }
+    context.register_errors(diagnostics.iter().map(Diag::error));
 }
 
-/// The checks of `front` onto `context` (a context of the run's own); the number of bodies.
-fn check_into(front: &Front, context: &dreammaker::Context, checks: bool, threads: usize, trace: bool, started: std::time::Instant) -> usize {
+/// The hints' diagnostics at `sites`' places.
+fn hint_diags(hints: &[Precedes], sites: &FrontSites<'_>) -> Vec<Diag> {
+    let site = sites.site();
+    hints.iter().map(|h| Diag::of(&h.error(&*site))).collect()
+}
+
+/// A new run over `front`: every result computed, the per-proc ones from the query store (`fresh`: computed, no store).
+fn computed(front: &Front, dme: &Path, checks: bool, threads: usize, trace: bool, started: std::time::Instant, fresh: bool) -> Resident {
+    let own = dreammaker::Context::default();
     front.files_ctx.clone_file_list().for_each(|p| {
-        context.register_file(p);
+        own.register_file(p);
     });
     let mut ids = front.ids.clone();
     let mut place = |path: &str, line: usize, column: usize| {
-        let file = *ids.entry(Arc::from(path)).or_insert_with(|| context.register_file(&front.registered(path)));
+        let file = *ids.entry(Arc::from(path)).or_insert_with(|| own.register_file(&front.registered(path)));
         Location { file, line: line as u32, column: column.min(u16::MAX as usize) as u16 }
     };
-    for e in crate::analysis_tree::macro_warnings(&front.frontend, front.initial.clone(), &mut place) {
-        context.register_error(e);
-    }
+    let macro_diags: Vec<Diag> = crate::analysis_tree::macro_warnings(&front.frontend, front.initial.clone(), &mut place).iter().map(Diag::of).collect();
     if trace {
         dq_hostio::out(false, format_args!("dreamchecker: preprocessor warnings at {:.1?}", started.elapsed()), true);
     }
-    with_input(front, |input, registered, stats, store| {
-        for e in registered {
-            context.register_error(e);
+    let (model, hints, kept, bodies) = with_input(front, |input, hints, stats, store| {
+        let kept = checks.then(|| match fresh {
+            true => Kept::compute(&input, &dreamchecker::native::Compute { threads }, threads),
+            false => Kept::compute(&input, store, threads),
+        });
+        (input.model, hints, kept, stats.bodies)
+    });
+    let sites = FrontSites { frontend: &front.frontend, ids: &front.ids };
+    let mut diagnostics = macro_diags.clone();
+    diagnostics.extend(hint_diags(&hints, &sites));
+    if let Some(k) = &kept {
+        diagnostics.extend(k.diagnostics());
+    }
+    let mut files = Vec::new();
+    own.clone_file_list().for_each(|p| files.push(p.to_path_buf()));
+    Resident {
+        dme: dme.to_path_buf(),
+        frontend: front.frontend.clone(),
+        checks,
+        ids: front.ids.clone(),
+        files,
+        macro_diags,
+        model,
+        hints,
+        kept,
+        bodies,
+        diagnostics,
+    }
+}
+
+/// `r` moved to `front`'s revision (see [`check`]), or why it cannot be.
+fn moved(dme: &Path, front: &Front, mut r: Resident, threads: usize, trace: bool) -> Result<Resident, String> {
+    let t = std::time::Instant::now();
+    let (old, new): (&ColdFrontend, &ColdFrontend) = (&r.frontend, &front.frontend);
+    let delta = match new.delta.as_ref() {
+        Some(d) if d.base == old.revision => d.clone(),
+        _ => crate::daemon::hosted_changes_since(dme, &crate::analysis_tree::front_defines(), old.revision)
+            .ok_or_else(|| format!("no delta from revision {} to {}", old.revision, new.revision))?,
+    };
+    if delta.revision != new.revision {
+        return Err(format!("the delta reaches revision {}, not {}", delta.revision, new.revision));
+    }
+    if r.ids != front.ids {
+        return Err("the files differ".into());
+    }
+    let edit = crate::dreamchecker_delta::Edit::new(old, new, &delta, &r.ids)?;
+    let mut macro_diags = std::mem::take(&mut r.macro_diags);
+    for d in &mut macro_diags {
+        let mut ok = true;
+        d.map_locations(&mut |l| ok &= edit.relocate(l));
+        if !ok {
+            return Err("a preprocessor warning sits on an edited line".into());
         }
-        if checks {
-            dreamchecker::native::run(context, input, false, store, threads);
+    }
+    let set_up = t.elapsed();
+    let mut model = std::mem::take(&mut r.model);
+    let all_moved = {
+        use rayon::prelude::*;
+        model.types.par_iter_mut().with_min_len(256).map(|ty| ty.map_places(&|w| edit.remap(w))).reduce(|| true, |a, b| a & b)
+    };
+    if !all_moved {
+        return Err("a declaration's place cannot be moved".into());
+    }
+    let mut hints = std::mem::take(&mut r.hints);
+    if !hints.iter_mut().all(|h| h.map_places(&|w| edit.remap(w))) {
+        return Err("a hint's place cannot be moved".into());
+    }
+    let remapped = t.elapsed();
+    let sites = FrontSites { frontend: new, ids: &front.ids };
+    let arena = BodyArena::new_typed(new, |_| true);
+    let bodies = FrontBodies { frontend: new, arena: &arena, parsed: (0..new.bodies.len()).map(|_| std::sync::OnceLock::new()).collect() };
+    let input = CheckerInput { model, bodies: &bodies, sites: &sites };
+    let mut updated = None;
+    let (mut named, mut walked) = (std::time::Duration::ZERO, std::time::Duration::ZERO);
+    if let Some(kept) = r.kept.as_mut() {
+        let lap = std::time::Instant::now();
+        let occurrences = kept.body_occurrences();
+        let changed: Vec<usize> = (0..occurrences.len()).filter(|&i| edit.body_changed(occurrences[i] as usize)).collect();
+        let shifts: Vec<isize> = occurrences.iter().map(|&b| edit.shift(b as usize)).collect();
+        named = lap.elapsed();
+        let lap = std::time::Instant::now();
+        updated = Some(kept.update(&input, &changed, &|i| shifts.get(i).copied().unwrap_or(0), &|l| edit.relocate(l), threads)?);
+        walked = lap.elapsed();
+    }
+    let model = input.model;
+    let mut diagnostics = macro_diags.clone();
+    diagnostics.extend(hint_diags(&hints, &sites));
+    if let Some(k) = &r.kept {
+        diagnostics.extend(k.diagnostics());
+    }
+    if trace {
+        dq_hostio::out(
+            false,
+            format_args!(
+                "dreamchecker: moved the kept run from revision {} to {} in {:.1?} (set up {:.1?}, places {:.1?}, bodies named {:.1?}, update {:.1?}; {} edited files; {:?})",
+                old.revision,
+                new.revision,
+                t.elapsed(),
+                set_up,
+                remapped.saturating_sub(set_up),
+                named,
+                walked,
+                edit.files(),
+                updated.unwrap_or_default()
+            ),
+            true,
+        );
+    }
+    let moved = Resident { frontend: front.frontend.clone(), macro_diags, model, hints, diagnostics, ..r };
+    if dq_hostio::var_os("DQ_DREAMCHECKER_VERIFY").is_some() {
+        let again = computed(front, dme, moved.checks, threads, false, std::time::Instant::now(), true);
+        let same = again.files == moved.files && again.diagnostics == moved.diagnostics;
+        dq_hostio::out(
+            false,
+            format_args!(
+                "dreamchecker verify: the moved run {} the run computed again ({} and {} diagnostics)",
+                if same { "equals" } else { "DIFFERS from" },
+                moved.diagnostics.len(),
+                again.diagnostics.len()
+            ),
+            true,
+        );
+        if !same {
+            for (i, (a, b)) in moved.diagnostics.iter().zip(&again.diagnostics).enumerate().filter(|(_, (a, b))| a != b).take(5) {
+                dq_hostio::out(false, format_args!("dreamchecker verify: #{i}: moved {a:?}\n  computed {b:?}"), true);
+            }
+            return Ok(again);
         }
-        stats.bodies
-    })
+    }
+    Ok(moved)
 }
 
 /// Registers [`check`] as `analyze dreamchecker`'s checker.

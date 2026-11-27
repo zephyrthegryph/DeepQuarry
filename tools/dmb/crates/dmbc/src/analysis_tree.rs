@@ -1145,16 +1145,15 @@ impl Front {
 fn registered_in(root: &Path, root_abs: &Path, path: &str) -> PathBuf {
     // Canonicalizing is a file-system call per path (8.5k per request, most of a warm request's file registration on Windows);
     // a path's registered spelling is kept for the process (the front end names only files it read, and their spelling on disk
-    // does not change while they are there).
-    type Seen = std::sync::Mutex<HashMap<(PathBuf, PathBuf, String), PathBuf>>;
+    // does not change while they are there), per canonical root (another spelling of the root names the same files).
+    type Seen = std::sync::RwLock<HashMap<PathBuf, HashMap<String, PathBuf>>>;
     static SEEN: std::sync::OnceLock<Seen> = std::sync::OnceLock::new();
     let seen = SEEN.get_or_init(Default::default);
-    let key = (root.to_path_buf(), root_abs.to_path_buf(), path.to_owned());
-    let p = Path::new(path);
-    let abs = if p.is_absolute() { p.to_path_buf() } else { root.join(p) };
-    if let Some(known) = seen.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
+    if let Some(known) = seen.read().unwrap_or_else(|e| e.into_inner()).get(root_abs).and_then(|m| m.get(path)) {
         return known.clone();
     }
+    let p = Path::new(path);
+    let abs = if p.is_absolute() { p.to_path_buf() } else { root.join(p) };
     let found = std::fs::canonicalize(&abs);
     let canonical = found.as_ref().map_or(&abs, |c| c);
     let out = match canonical.strip_prefix(root_abs) {
@@ -1162,7 +1161,7 @@ fn registered_in(root: &Path, root_abs: &Path, path: &str) -> PathBuf {
         Err(_) => canonical.clone(),
     };
     if found.is_ok() {
-        seen.lock().unwrap_or_else(|e| e.into_inner()).insert(key, out.clone());
+        seen.write().unwrap_or_else(|e| e.into_inner()).entry(root_abs.to_path_buf()).or_default().insert(path.to_owned(), out.clone());
     }
     out
 }
@@ -1188,13 +1187,18 @@ pub(crate) fn locate_in(
     }
 }
 
+/// The defines analysis builds its front end under: dq-analyze reads the tree as SpacemanDMM tools do, `SPACEMAN_DMM` defined (code
+/// under `#if defined(SPACEMAN_DMM)`, the test fixtures among it, is part of the model).
+pub(crate) fn front_defines() -> std::collections::BTreeMap<String, String> {
+    let mut defines = crate::analysis_parity::native_defines();
+    defines.insert("SPACEMAN_DMM".into(), "1".into());
+    defines
+}
+
 /// The front end of `dme` as analysis reads it: `SPACEMAN_DMM` defined, from the daemon's retained session when there is one.
 pub(crate) fn front(dme: &Path) -> Result<Front, String> {
     let started = std::time::Instant::now();
-    // dq-analyze reads the tree as SpacemanDMM tools do: `SPACEMAN_DMM` is defined (code under `#if defined(SPACEMAN_DMM)`, the
-    // test fixtures among it, is part of the model).
-    let mut defines = crate::analysis_parity::native_defines();
-    defines.insert("SPACEMAN_DMM".into(), "1".into());
+    let defines = front_defines();
     let initial: Vec<String> =
         dm_preprocess::regions::predefined_macros().into_iter().map(|(n, _, _)| n).chain(defines.keys().cloned())
             // dreammaker's builtin function macros (its `builtins::default_defines`): an `#undef` of one is no warning there.

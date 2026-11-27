@@ -39,7 +39,7 @@ impl ProcFacts {
         for d in &mut self.diagnostics {
             d.map_locations(f);
         }
-        let mut g = |w: &mut Where, f: &mut dyn FnMut(&mut Location)| {
+        let g = |w: &mut Where, f: &mut dyn FnMut(&mut Location)| {
             if let Where::Fixed(l) = w {
                 f(l);
             }
