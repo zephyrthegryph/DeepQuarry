@@ -73,6 +73,9 @@ pub struct Model {
     loc_files: std::sync::RwLock<(Vec<Arc<str>>, HashMap<Arc<str>, u32>)>,
     /// This model's identity among the models of the process (never 0), for the per-thread site cache.
     id: u64,
+    /// Each own member's node and name, by member index: the tree's accessors go through a chunked arena and a symbol table that a
+    /// retained session layers revision over revision, and the walks ask for a member's name and kind millions of times.
+    minfo: Vec<Option<(&'static MemberNode, &'static str)>>,
     /// Each proc's parameters, parsed from its header when first asked.
     params: Vec<std::sync::RwLock<HashMap<MemberId, Arc<Vec<Param>>>>>,
     /// The repo-relative spelling of each path the site map names: every included file's resolved when the model is made (the site
@@ -116,7 +119,7 @@ impl Model {
         let start = |id: &MemberId| occurrence.get(id).and_then(|at: &OccurrenceId| rev.declaration_spans.get(at.0 as usize)).map_or(u32::MAX, |s| s.start);
         let declares = |id: &MemberId| tree.member(*id).is_some_and(|m| m.kind != MemberKind::Var && m.definition == DefinitionMode::Declare);
         for list in own.iter_mut() {
-            list.sort_by_key(|id| start(id));
+            list.sort_by_cached_key(|id| start(id));
             // Stable: move each proc's declaration before the definitions of the same name that precede it (before the first one placed
             // so far). A linked list with each name's first node, so a type with thousands of members places them in linear time.
             if list.iter().any(|id| declares(id)) {
@@ -176,7 +179,8 @@ impl Model {
         for (i, list) in own.iter().enumerate() {
             for &id in list {
                 if let Some(m) = tree.member(id) {
-                    let name = dm_ir::SymbolId::of(symbols.text(m.name).unwrap_or(""));
+                    // The member's symbol is the hash of its spelling (`SymbolId::of`): the key a lookup by name computes.
+                    let name = m.name;
                     named.entry((TypeId(i as u32), name, m.kind == MemberKind::Var)).or_default().push(id);
                 }
             }
@@ -188,7 +192,18 @@ impl Model {
             type_blocks(chunk.items(), "/", &mut sites);
         }
         let t_sites = started.elapsed();
+        let max_id = own.iter().flatten().map(|id| id.index()).max().map_or(0, |m| m + 1);
+        let mut minfo: Vec<Option<(&'static MemberNode, &'static str)>> = vec![None; max_id];
+        for &id in own.iter().flatten() {
+            if let Some(m) = tree.member(id) {
+                let name = symbols.text(m.name).unwrap_or("");
+                // SAFETY: both borrow from the revision's semantic tree and symbol table, which the model owns (`rev`, an `Arc`) and never
+                // changes; the references are handed out only with the model's borrow (`Model::node`, `Member::name`).
+                minfo[id.index()] = Some(unsafe { (std::mem::transmute::<&MemberNode, &'static MemberNode>(m), std::mem::transmute::<&str, &'static str>(name)) });
+            }
+        }
         let model = Model {
+            minfo,
             blocks: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             bodies: std::sync::OnceLock::new(),
             initializers: std::sync::OnceLock::new(),
@@ -384,7 +399,17 @@ impl Model {
     }
 
     fn node(&self, id: MemberId) -> &MemberNode {
-        self.rev.snapshot.tree.member(id).expect("a member of this revision")
+        match self.minfo.get(id.index()) {
+            Some(Some((node, _))) => node,
+            _ => self.rev.snapshot.tree.member(id).expect("a member of this revision"),
+        }
+    }
+
+    fn member_name(&self, id: MemberId) -> &str {
+        match self.minfo.get(id.index()) {
+            Some(Some((_, name))) => name,
+            _ => self.text(self.node(id).name),
+        }
     }
 
     fn text(&self, id: dm_ir::SymbolId) -> &str {
@@ -657,7 +682,7 @@ impl<'m> Member<'m> {
     }
 
     pub fn name(&self) -> &'m str {
-        self.m.text(self.node().name)
+        self.m.member_name(self.id)
     }
 
     pub fn kind(&self) -> MemberKind {
