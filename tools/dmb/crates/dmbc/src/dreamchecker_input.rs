@@ -93,6 +93,10 @@ struct FrontBodies<'f> {
 }
 
 impl Bodies for FrontBodies<'_> {
+    fn start(&self, body: u32) -> usize {
+        self.frontend.bodies.get(body as usize).map_or(0, |b| b.expanded_span.start)
+    }
+
     fn statements(&self, body: u32) -> Option<Arc<Vec<dm_syntax::Statement>>> {
         self.parsed
             .get(body as usize)?
@@ -397,7 +401,7 @@ fn semantic_bits(bits: u32) -> u8 {
 
 /// What the native checker reads, built from `front`; `run` then checks it.
 /// `run` also gets what registering the declarations reported (SpacemanDMM's "override precedes definition" hints), in order.
-pub fn with_input<R>(front: &Front, run: impl FnOnce(CheckerInput<'_>, Vec<Precedes>, &BuildStats, &QueryStore) -> R) -> R {
+pub(crate) fn with_input<R>(front: &Front, run: impl FnOnce(CheckerInput<'_>, Vec<Precedes>, &BuildStats, &QueryStore) -> R) -> R {
     let frontend: &ColdFrontend = &front.frontend;
     let trace = dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some();
     let t = std::time::Instant::now();

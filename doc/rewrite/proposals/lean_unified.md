@@ -291,8 +291,8 @@ What landed:
     impure operations or `waitfor` (a walk's shape), other override lists, or entered or left a reach set (the reach sets are
     computed again then, from one callers map each instead of three passes). The violations up the inheritance chains are
     computed again from the violators only; the keyword-argument check runs again only when some proc's keyword arguments
-    changed. A walk whose shape is unchanged moves nothing in those passes but places, and the fold tables' places move with
-    their proc's body.
+    changed. A walk whose shape is unchanged moves nothing in those passes but places, and the fold tables' places are kept
+    relative to their proc's body (`Bodies::start`), so they move with it for free.
 - **Shift-stable keys for a new run** (the fallback path, and a restarted daemon): a per-proc result's key is its body's
   expanded text, its file's semantic path and the source text of the lines it spans (not the file's bytes and span); the context is
   the model's structure (owners, names, kinds, flags, spellings, types, file ids; no declaration lines). A result's places are
@@ -316,7 +316,7 @@ with it at 100 % CPU and the second on a quieter stretch):
 |---|---|---|
 | unchanged, in the daemon | 3.6-8.5 s (checker 3-5.5 s) | 2-8 ms (the answer from memory) |
 | a change the sources do not see (a file the `.dme` does not include) | as above | 64 ms in the daemon, checker 7.5 ms (the kept revision) |
-| one-proc body edit (a string in `admission_query.dm`) | 6-20 s; checker about 5.5 s (input 2.6 s, keys 1.1 s, settings and bodies from the store 0.6 s, overrides and call tree 1 s) | checker 200-314 ms at 100 % CPU, 93-100 ms quieter (the move 50 ms: places 14, update 18 of which moving the folded places 13; 1 body walked) |
+| one-proc body edit (a string in `admission_query.dm`) | 6-20 s; checker about 5.5 s (input 2.6 s, keys 1.1 s, settings and bodies from the store 0.6 s, overrides and call tree 1 s) | checker 200-314 ms at 100 % CPU, 93-100 ms quieter (the move 50 ms: set up 12, places 14, update 18 of which moving the folded places 13, now 0.3; 1 body walked) |
 | line added inside a proc (every later proc moves) | every proc computed again (the model key held every declaration's line) | 1 proc walked; checker 95-265 ms |
 | two lines added in two procs | as above | 2 procs walked; checker 95 ms |
 | `sleep(1)` added to a widely called proc (12.3k new findings) | full run | 11.8k of 12.6k findings judged again, 14-15 s (the findings themselves) |
@@ -337,8 +337,8 @@ What is left:
   (about 30 CPU-s). Keeping those per proc needs each walk's reads of the model recorded (the declarations it looked up, by
   stable key) instead of one structure key; with the stable member slots (lane `compiler/stable-member-slots`) a new member
   no longer renumbers the model's procs, which is the other half.
-- The folded places (788k calls) move with their proc on every edit (13-24 ms); keeping them relative to their proc's body would
-  make that free.
+- (Done after the first landing.) The folded places (788k calls, the violations, the keyword arguments) are kept relative to their
+  proc's body; an edit moves only the 120k body starts (0.3 ms, was 13-24 ms of the update).
 
 
 ## 1+3 ENGINE: analysis results as queries (2026-11-27, branch `compiler/analysis-queries`)
