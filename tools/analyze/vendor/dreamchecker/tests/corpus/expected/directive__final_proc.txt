@@ -1,0 +1,3 @@
+fixture.dm, line 4, column 18:
+error: proc overrides parent, prohibited by /mob/proc/test [must_not_override]
+- 1:21: prohibited by this must_not_override annotation

@@ -1,0 +1,3 @@
+fixture.dm, line 5, column 5:
+error: call to pure proc test discards return value
+- 2:5: prohibited by this must_be_pure annotation

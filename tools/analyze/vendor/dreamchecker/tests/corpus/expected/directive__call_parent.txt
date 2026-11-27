@@ -1,0 +1,3 @@
+fixture.dm, line 4, column 18:
+error: proc never calls parent, required by /mob/proc/test [must_call_parent]
+- 2:5: required by this must_call_parent annotation

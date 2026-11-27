@@ -1,0 +1,21 @@
+/mob/proc/test1()
+    set SpacemanDMM_should_not_sleep = TRUE
+    world.Export()
+    world.Import()
+    var/client/C = new /client
+    test2()
+    C.checksoundquery()
+    C.checkmeasuretext()
+    world.checkimport()
+    world.checkexport()
+/client/proc/checksoundquery()
+    SoundQuery()
+/client/proc/checkmeasuretext()
+    MeasureText()
+/world/proc/checkimport()
+    Import()
+/world/proc/checkexport()
+    Export()
+/mob/proc/test2()
+    var/client/C = new /client
+    C.MeasureText()

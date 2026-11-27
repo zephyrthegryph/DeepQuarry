@@ -746,11 +746,19 @@ mod source_export_mapping;
 pub use source_export_mapping::SourceExportMapping;
 #[path = "frontend_source_projection.rs"]
 mod source_projection;
+#[path = "frontend_expansion_site.rs"]
+mod expansion_site;
+pub use expansion_site::InvocationOutput;
 /// See [`ColdFrontend::site_mapper`].
 pub struct SiteMapper<'a>(Mapping<'a>);
 impl SiteMapper<'_> {
     pub fn debug_site_column(&self, expanded_offset: usize) -> Option<(Arc<str>, usize, usize)> {
         self.0.debug_site_column(expanded_offset)
+    }
+    /// The macro invocation written in the source whose expansion holds the expanded byte at `expanded_offset`
+    /// (`frontend_expansion_site.rs`); `None` for a byte copied from the source or a row it cannot align.
+    pub fn invocation_output(&self, expanded_offset: usize) -> Option<InvocationOutput<'_>> {
+        self.0.invocation_output(expanded_offset)
     }
 }
 struct Mapping<'a> {

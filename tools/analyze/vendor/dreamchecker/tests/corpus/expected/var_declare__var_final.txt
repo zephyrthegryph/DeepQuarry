@@ -1,0 +1,3 @@
+fixture.dm, line 5, column 9:
+error: /mob/subtype overrides final var "foo" [final_var]
+- 2:19: declared final on /mob here

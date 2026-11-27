@@ -1,0 +1,15 @@
+fixture.dm, line 2, column 8:
+warning: Ambiguous `!` on left side of bitwise `&` operator [ambiguous_not_bitwise]
+- Did you mean `!(x & y)`?
+- Did you mean `!x && y`?
+- Did you mean `~x & y`?
+fixture.dm, line 4, column 8:
+warning: Ambiguous `!` on left side of bitwise `|` operator [ambiguous_not_bitwise]
+- Did you mean `!(x | y)`?
+- Did you mean `!x || y`?
+- Did you mean `~x | y`?
+fixture.dm, line 6, column 8:
+warning: Ambiguous `!` on left side of bitwise `^` operator [ambiguous_not_bitwise]
+- Did you mean `!(x ^ y)`?
+- Did you mean `!x != y`?
+- Did you mean `~x ^ y`?

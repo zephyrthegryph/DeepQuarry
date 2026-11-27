@@ -1,0 +1,6 @@
+fixture.dm, line 7, column 9:
+error: undefined var: "bar"
+fixture.dm, line 9, column 5:
+error: undefined var: "bar"
+fixture.dm, line 13, column 5:
+error: undefined var: "bar"

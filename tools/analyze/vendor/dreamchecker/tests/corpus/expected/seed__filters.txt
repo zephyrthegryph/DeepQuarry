@@ -1,0 +1,25 @@
+fixture.dm, line 4, column 15:
+error: filter(type="wave") called with invalid 'flags' flag 'NORTH'
+- See: http://www.byond.com/docs/ref/#/{notes}/filters/wave for the permitted arguments
+fixture.dm, line 6, column 15:
+error: filter(type="wave") called with invalid 'flags' value 'Int(64)'
+- See: http://www.byond.com/docs/ref/#/{notes}/filters/wave for the permitted arguments
+fixture.dm, line 7, column 15:
+error: filter() flag fields cannot have unary ops or field accesses
+fixture.dm, line 8, column 15:
+error: filter(type="wave"), extremely invalid value passed to 'flags' field
+- See: http://www.byond.com/docs/ref/#/{notes}/filters/wave for the permitted arguments
+fixture.dm, line 10, column 15:
+error: bad keyword argument "bogus" to /proc/filter
+fixture.dm, line 10, column 15:
+error: filter(type="blur") called with invalid keyword parameter 'bogus'
+- See: http://www.byond.com/docs/ref/#/{notes}/filters/blur for the permitted arguments
+fixture.dm, line 11, column 15:
+error: filter() called with invalid type keyword parameter value 'nope'
+fixture.dm, line 12, column 15:
+error: filter() called with non-string type keyword parameter value 'Some(Float(5.0))'
+fixture.dm, line 13, column 15:
+error: filter() called without mandatory keyword parameter 'type'
+fixture.dm, line 20, column 15:
+error: filter(type="outline") called with invalid 'flags' flag 'NORTH'
+- See: http://www.byond.com/docs/ref/#/{notes}/filters/outline for the permitted arguments

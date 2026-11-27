@@ -1,0 +1,5 @@
+fixture.dm, line 8, column 21:
+error: /mob/living/proc/bar calls /mob/living/proc/foo which has override child proc that sleeps /mob/living/carbon/proc/foo [must_not_sleep]
+- 9:5: SpacemanDMM_should_not_sleep set here
+- 10:5: /mob/living/proc/foo() called here
+- 7:5: sleep() called here
