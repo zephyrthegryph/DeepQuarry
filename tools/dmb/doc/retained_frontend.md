@@ -932,3 +932,89 @@ Design points that were not obvious:
 * Equivalence: every pair id is identical before and after (`182229f7...` cold, `4dc6c1cd...` for the edit), so DMB and RSC are byte
   identical; segments are a cache format, covered by the byte-identity test of the streaming writer against the in-memory encoder (compressed,
   framed and verbatim records) and the format 1 read test.
+
+## Front end edit floor (lane `compiler/frontend-edit-floor`, 2026-11-27)
+
+Goal (lean_unified.md, workstream 4): the front end's cost proportional to the edit, for compiles and for the analysis model
+(`service::hosted_frontend`). Targets: one-line body edit at most 200 ms, new var or proc at most 500 ms, no-op at most 20 ms,
+cold at most 6 s in the daemon.
+
+### Durable trace
+
+Every build records each step's wall time in `FrontendTimings::phases` and one `frontend phases:` outcome line (plan, expansion,
+source_index, preprocess_diagnostics, declaration_parsing, region_hashes, origins, tree, body_starts, collect_bodies,
+callable_roster, emission_order, body_codes, export_mapping, body_by_declaration), beside the existing plan, expansion, parse and
+tree detail lines and two new ones (`frontend authored (same leaves)`, `frontend delta`). A compile prints them under `--progress`
+(`native change set: ...`); an analysis request prints them, and its source revalidation, with `DQ_FRONTEND_TRACE=1` in its
+environment (`dmbd analyze: ...`). The hosted path now drains the outcomes it records (they used to pile up into the next compile's
+report).
+
+### What an analysis edit paid, and why
+
+The hosted analysis front end read every source through `dm_preprocess::FileSystem`: 8.5k files and 65 MB per request, and that
+provider has neither a revision nor `prepared_source`, so the planner could not patch (no change log) and its adoption path
+declined every file (it adopts only a file whose prepared source it is handed). A one-line body edit therefore re-ran the whole
+ordered directive pass, rebuilt the source index and compared the whole tree: 6.5 s on the shared machine (plan 4.7 s,
+`declined files=8498`), 2.1-2.9 s on a quieter one. The compile path did not pay this: its sources come from the input capture and
+the query database's change log, so its plan patches (0.01 s).
+
+### What landed
+
+- `dmbc::watched_sources` (session side): per analysis session (`BuildHost::watched_sources`, shared by its variants), every
+  source it served, kept as the prepared source with its stamp. At the start of a request `refresh` syncs the directory watcher
+  (`fs_watch`) and re-checks only the files in a directory an event named (or any file the watcher does not cover); a candidate is
+  read again only when its size or modification time moved, and its text compared. Without a healthy watcher every kept file is
+  stat'ed (a sweep). Changed paths go into a 64-revision change log, so the provider implements `revision`/`changes_since` (the
+  planner patches the edited subtree, `plan_patch`) and `prepared_source` (an unchanged file is the same allocation, so a
+  `#define` edit adopts the unchanged subtrees again). A first request reads the manifest's direct includes in parallel
+  (`prefetch_manifest`) before the serial planner asks for them.
+- No-op: when the remembered front end was built at the provider's current token, it is returned as is (the front end is a
+  function of the source texts, the defines and the engine).
+- Origins, body indexing (`collect_bodies`) and body terminations run in order-preserving parallel chunks
+  (`frontend_parallel.rs`, each chunk with its own lookup hints; an error is the first in item order).
+- Tree reuse compares the authored skeleton leaves pointer by pointer (`SkeletonRoster::same_rows`; the declaration state hands
+  an unchanged chunk's leaf back) instead of 346k hashed row lookups.
+- The delta (below).
+
+### The delta: what changed since revision N
+
+`ColdFrontend::revision` numbers each revision a session builds; `ColdFrontend::delta` is the change against the revision it was
+built from, and `RetainedSemanticTree::changes_since(n)` chains the last 64 deltas (`None` when the chain does not reach back to
+`n`: recompute). Identities that hold across edits: a file is its semantic path; a declaration is (file, owner type path, member
+name and kind, ordinal among the same owner, name and kind in that file); a body is its declaration's key. Each entry is `Added`,
+`Removed`, `Changed` (other content: the member's content digest, the body's expanded text) or `Moved` (same content, other
+position). Only the files holding a region the plan did not copy verbatim are compared, so the work is the edited files'; an edit
+that reaches more than 256 files (a widely read `#define`) has no delta. Cost 0.007-0.02 s per edit. Test:
+`frontend_delta_tests.rs` (body edit, line shift, new var, new proc, chaining).
+
+### Measured (hosted analysis front end, `dreamchecker --json`, `DQ_ANALYZE_MODEL_MEMO=0`, `deepquarry.dme` with `SPACEMAN_DMM`)
+
+The machine was at 100 % CPU from other lanes during every run (below-normal priority); single runs, so read them as upper bounds.
+
+| Edit | Before (FileSystem provider) | After: sources | After: front end | Largest steps left |
+|---|---|---|---|---|
+| no-op | a full rebuild | 0.007-0.37 s | 0 (remembered revision returned) | the watcher sync |
+| one-line body edit | 6.5 s (2.1-2.9 s quiet) | 0.01-0.02 s | 0.45 s | declaration parsing 0.16 (authored adoption 0.08), origins 0.05-0.07, collect_bodies 0.03-0.05, body_starts 0.02 |
+| line-shifting edit | as above | 0.01 s | 0.45 s | as above |
+| new var | as above | 0.015 s | 2.6 s | tree splice 0.7 + dependency capture 0.38, declaration parsing 0.62, callable roster 0.23 |
+| new proc | as above | 0.01 s | 1.9 s | tree splice 0.5 + dependency capture 0.3, declaration parsing 0.45, callable roster 0.18 |
+| `#define SECONDS` edit | every file declined | 0.013 s | 14.7 s (6862 subtrees adopted now) | declaration parsing 4.5, expansion 1.5, the delta compare (now skipped) |
+| cold (new daemon) | plan 22-192 s under load (8.5k serial reads) | prefetch 0.74 s | 24 s | declaration parsing 13 s, tree 4.9 s, expansion 2.5 s, plan 2.3 s |
+
+Equivalence: hosted (incremental) against a cold front end built in the same daemon (`DQ_ANALYZE_HOSTED_FRONTEND=0`) at every
+step of base, body edit, line shift, new var, new proc, revert: `analyze dreamchecker --json` and `analyze check --raw --no-cache`
+byte-identical (lean_unified.md, workstream 4). dm-tree 312, dm-preprocess 165 and dmbc 1135 unit tests pass.
+
+### Not done, and why
+
+- **Body edit at 200 ms.** What is left is O(declarations) work, cheap per item but over all 346k: the authored adoption
+  replays every owner's claim against the declaration lease (`DeclarationClaims::adopt_authored` -> `authored.adopt`, 0.08 s),
+  origins and body indexing (parallel now), the body-start map. Each needs a per-chunk result reused by offset: the provenance
+  and body rows of a chunk the plan copied are the previous revision's with the chunk's region rebased, which needs the
+  declaration -> region table per chunk (`declaration_regions` is kept now, for the delta) and a lease that accepts a whole
+  previous claim set at once.
+- **New var or proc at 500 ms.** The tree splice and the dependency graph capture renumber dense member ids (the "Not done" of
+  incremental_core.md, frontend queries step 3): 0.5-0.7 s plus 0.3-0.4 s. It needs the stable-id tables of step 5.
+- **Cold at 6 s.** With the serial reads gone the plan is 2.3 s; the rest is declaration parsing with the resident memo and the
+  retained declaration state (13 s under load against 5-6 s standalone with 16 workers; a daemon request is capped at
+  `DMB_DAEMON_MAX_WORKERS` = 8) and the tree rebuild (4.9 s, one thread). Not re-measured on a quiet machine.

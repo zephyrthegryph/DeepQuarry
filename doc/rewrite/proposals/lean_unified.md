@@ -143,3 +143,32 @@ tree-wide steps (spelling, matching, builder, finish: about 1 s), where dreammak
 Cold `gen` under dmbc (first model before the generated files exist) is not done. Two differences the test lane reported: columns (dmbc places an
 `if(1)` one column right of dreammaker; the real tree has no DreamChecker diagnostic, so no printed output changes today) and a missing included
 file (dreammaker reports an error and continues, dmbc refuses the whole model, as the compile does; no tree on master has one).
+
+### Workstream 4, front end edit floor (2026-11-27, lane `compiler/frontend-edit-floor`)
+
+Detail and the per-phase table: tools/dmb/doc/retained_frontend.md, "Front end edit floor".
+
+- The hosted analysis front end read every source from disk on every request (no change log, no prepared sources), so its plan
+  never patched and its adoption declined every file. It now reads through `dmbc::watched_sources`: kept prepared sources,
+  revalidated through the directory watcher (only files in a changed directory are stat'ed, only moved stamps re-read), with a
+  change log the planner patches from. A request whose sources did not change gets the remembered front end back.
+- Per-phase wall times on every build (`frontend phases:`; analysis requests print them with `DQ_FRONTEND_TRACE=1`).
+- Origins, body indexing and body terminations are parallel; tree reuse compares skeleton leaves by pointer.
+- Every revision carries a delta (files, declarations, bodies under stable keys: semantic path; owner, member, kind and per-file
+  ordinal) and `RetainedSemanticTree::changes_since(n)` chains them, for the analysis queries to key on.
+
+Measured on a machine at 100 % CPU (upper bounds): front end of a one-line body edit 6.5 s before (2.1-2.9 s on a quieter machine)
+to 0.45 s; no-op to the watcher sync (0.007 s, front end not built); new var 2.6 s and new proc 1.9 s (tree splice and dependency
+capture); a `#define SECONDS` edit adopts 6862 subtrees again (it declined all 8498 files); cold plan 22-192 s under load to 2.3 s
+(parallel prefetch), cold front end 24 s under load. Targets met: no-op. Not met: body edit 200 ms (the O(declarations) adoption,
+origin and body passes), var/proc 500 ms (dense-id tree splice, needs stable ids), cold 6 s (declaration parsing with the memo and
+the 8-worker cap, single-threaded tree rebuild); retained_frontend.md says what each needs.
+
+Proof: hosted (incremental) against a cold front end in the same daemon (`DQ_ANALYZE_HOSTED_FRONTEND=0`) over base, body edit,
+line shift, new var, new proc and revert: `analyze dreamchecker --json` and `analyze check --raw --no-cache` byte-identical at
+every step. dm-tree (312), dm-preprocess (165) and dmbc (1135) unit tests pass; new tests for the watched provider, the prefetch, the parallel map, leaf
+comparison and the delta.
+
+For the ENGINE workstream: the analysis model memo (`daemon/analysis_model.rs`) still reads and hashes every model file on every
+request (`same_inputs`) before the front end runs; the watched provider's token (`WatchedSources::token`) answers "did any source
+change" without reading them.
