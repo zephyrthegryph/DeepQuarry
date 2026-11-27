@@ -10,7 +10,10 @@ use std::sync::Arc;
 
 use dm_tree::frontend::{BodyArena, ColdFrontend};
 use dm_tree::DefinitionMode;
-use dreamchecker::native::input::{Body, CheckerInput, InputType, Site, Sites, Where};
+use dreamchecker::native::facts::SettingsFacts;
+use dreamchecker::native::input::{Bodies, CheckerInput, InputType, Site, Sites, Where};
+use dreamchecker::native::model::ProcId;
+use dreamchecker::native::walk::ProcFacts;
 use dreamchecker::native::model::{ModelBuilder, Param, ProcDecl, ProcKind, ProcValue, ReturnType, TypeId, VarFlags};
 use dreammaker::Location;
 use std::collections::HashMap;
@@ -80,6 +83,145 @@ impl Site for FrontSite<'_> {
     }
 }
 
+/// The front end's bodies, parsed on demand.
+struct FrontBodies<'f> {
+    frontend: &'f ColdFrontend,
+    arena: &'f BodyArena<'f>,
+}
+
+impl Bodies for FrontBodies<'_> {
+    fn statements(&self, body: u32) -> Option<Vec<dm_syntax::Statement>> {
+        let parsed = self.arena.take_parsed(self.frontend.bodies.get(body as usize)?).ok()?;
+        Some(parsed.statement_body()?.parsed().statements.clone())
+    }
+}
+
+/// The per-proc results as entries of the analysis query database (`dq_analyze::incr::keyed_by`: held in memory by the daemon,
+/// persisted standalone), so a run computes only the procs whose inputs changed.
+///
+/// What decides a result, and so its key:
+///
+/// * the proc (`ProcId`) and its body: the body's expanded text, the path and bytes of its file and its place there (a token's
+///   line and column come from them);
+/// * the model's declarations (`model_key`): every declaration's owner, name, kind, flags and spelling, the types and their
+///   explicit parents, the file-id table, and every file's line layout (a diagnostic of one proc names another's place, which an
+///   edit elsewhere moves only by changing a line count);
+/// * for a body, also every proc's settings facts (the tables a walk reads).
+///
+/// A body's places (`Where` offsets in the expanded text) are kept relative to the body's start, so a result is valid wherever the
+/// body moved in the expanded text.
+pub struct QueryStore<'f> {
+    frontend: &'f ColdFrontend,
+    model_key: u128,
+    /// By body occurrence: its key and its start in the expanded text.
+    body_keys: Vec<(u128, usize)>,
+}
+
+fn h(bytes: &[u8]) -> u128 {
+    xxhash_rust::xxh3::xxh3_128(bytes)
+}
+
+impl<'f> QueryStore<'f> {
+    fn new(front: &'f Front, m: &crate::analysis_tree::Matched<'_>) -> Self {
+        use rayon::prelude::*;
+        let frontend: &ColdFrontend = &front.frontend;
+        let files: HashMap<&Path, (u128, u128)> = frontend
+            .files
+            .par_iter()
+            .map(|f| {
+                let starts: Vec<u8> = f.line_starts.iter().flat_map(|s| (*s as u64).to_le_bytes()).collect();
+                (f.path.as_path(), (h(f.text.as_str().as_bytes()), h(&starts)))
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .collect();
+        let expanded = frontend.expanded.text.as_str();
+        let body_keys: Vec<(u128, usize)> = frontend
+            .bodies
+            .par_iter()
+            .map(|o| {
+                let text = expanded.get(o.expanded_span.start..o.expanded_span.end).unwrap_or("");
+                let path: &Path = o.source.path.as_path();
+                let content = files.get(path).map_or(0, |(c, _)| *c);
+                let key = dq_analyze::incr::mix(&[
+                    h(text.as_bytes()),
+                    h(o.source.semantic_path.as_bytes()),
+                    content,
+                    o.source.span.start as u128 | (o.source.span.end as u128) << 64,
+                ]);
+                (key, o.expanded_span.start)
+            })
+            .collect();
+        let tree = &frontend.snapshot.tree;
+        let symbols = tree.symbols();
+        let mut decl: Vec<u8> = Vec::new();
+        decl.extend_from_slice(b"dreamchecker-native-model-v1");
+        for node in tree.types() {
+            decl.extend_from_slice(symbols.text(node.path).unwrap_or("").as_bytes());
+            decl.extend_from_slice(&[node.explicit_parent as u8, 0xff]);
+            if let Some(parent) = node.parent.and_then(|p| tree.type_node(p)) {
+                decl.extend_from_slice(symbols.text(parent.path).unwrap_or("").as_bytes());
+            }
+            decl.extend_from_slice(&[0xfe]);
+        }
+        for item in &m.items {
+            decl.extend_from_slice(item.owner.as_bytes());
+            decl.extend_from_slice(&[0xff]);
+            decl.extend_from_slice(item.name.as_bytes());
+            decl.extend_from_slice(&[item.slot as u8, item.member.definition as u8]);
+            decl.extend_from_slice(&item.member.metadata.flags.to_le_bytes());
+            decl.extend_from_slice(item.spelling.as_ref().map_or("", |s| s.header.as_str()).as_bytes());
+            decl.extend_from_slice(&[0xfe]);
+        }
+        let mut ids: Vec<(&Arc<str>, &dreammaker::FileId)> = front.ids.iter().collect();
+        ids.sort();
+        decl.extend_from_slice(format!("{ids:?}").as_bytes());
+        let mut layouts: Vec<(&Path, u128)> = files.iter().map(|(p, (_, l))| (*p, *l)).collect();
+        layouts.sort();
+        for (path, layout) in layouts {
+            decl.extend_from_slice(path.to_string_lossy().as_bytes());
+            decl.extend_from_slice(&layout.to_le_bytes());
+        }
+        let model_key = h(&decl);
+        QueryStore { frontend, model_key, body_keys }
+    }
+
+    fn keys(&self, bodies: &[u32], procs: &[ProcId]) -> Vec<u128> {
+        procs
+            .iter()
+            .zip(bodies)
+            .map(|(p, b)| {
+                let body = self.body_keys.get(*b as usize).map_or(0, |(k, _)| *k);
+                dq_analyze::incr::mix(&[body, (p.ty.0 as u128) << 64 | (p.slot as u128) << 32 | p.idx as u128])
+            })
+            .collect()
+    }
+}
+
+impl dreamchecker::native::Store for QueryStore<'_> {
+    fn settings(&self, procs: &[ProcId], bodies: &[u32], compute: &(dyn Fn(usize) -> SettingsFacts + Sync)) -> Vec<SettingsFacts> {
+        let keys = self.keys(bodies, procs);
+        let ctx = dq_analyze::incr::ctx_key(&("dreamchecker-settings-v1", self.model_key));
+        dq_analyze::incr::keyed_by("dreamchecker-settings", ctx, &keys, compute)
+    }
+    fn bodies(&self, procs: &[ProcId], bodies: &[u32], settings: &[SettingsFacts], compute: &(dyn Fn(usize) -> ProcFacts + Sync)) -> Vec<ProcFacts> {
+        let keys = self.keys(bodies, procs);
+        let ctx = dq_analyze::incr::ctx_key(&("dreamchecker-bodies-v1", self.model_key, dq_analyze::incr::ctx_key(settings)));
+        let base = |i: usize| self.body_keys.get(bodies[i] as usize).map_or(0, |(_, s)| *s);
+        let mut out = dq_analyze::incr::keyed_by("dreamchecker-bodies", ctx, &keys, |i| {
+            let mut f = compute(i);
+            let at = base(i);
+            f.map_places(|o| o - at);
+            f
+        });
+        for (i, f) in out.iter_mut().enumerate() {
+            let at = base(i);
+            f.map_places(|o| o + at);
+        }
+        out
+    }
+}
+
 /// A parameter declaration's name and type (`var/mob/user = null`, `atom/A as obj in view()`).
 fn parameter(text: &str) -> (String, Vec<String>) {
     let declaration = match dm_syntax::top_level_assignment_index(text) {
@@ -145,8 +287,7 @@ fn semantic_bits(bits: u32) -> u8 {
 
 /// What the native checker reads, built from `front`; `run` then checks it.
 /// `run` also gets what registering the declarations reported (SpacemanDMM's "override precedes definition" hints), in order.
-pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<dreammaker::DMError>, &BuildStats) -> R) -> R {
-    use rayon::prelude::*;
+pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<dreammaker::DMError>, &BuildStats, &QueryStore<'_>) -> R) -> R {
     let frontend: &ColdFrontend = &front.frontend;
     let trace = dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some();
     let t = std::time::Instant::now();
@@ -164,25 +305,13 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     lap("matching");
     let sites = FrontSites { frontend, ids: &front.ids };
 
-    // Bodies by member, parsed on every core.
+    // A member's body is its occurrence, parsed when a result for it is computed.
     let arena = BodyArena::new_typed(frontend, |_| true);
-    let parsed: Vec<Option<Vec<dm_syntax::Statement>>> = frontend
-        .bodies
-        .par_iter()
-        .map(|o| {
-            let body = arena.take_parsed(o).ok()?;
-            Some(body.statement_body()?.parsed().statements.clone())
-        })
-        .collect();
-    let mut bodies = Vec::new();
     let mut body_of: HashMap<u32, u32> = HashMap::new();
-    for (occurrence, statements) in frontend.bodies.iter().zip(parsed) {
-        if let Some(statements) = statements {
-            body_of.insert(occurrence.member.0, bodies.len() as u32);
-            bodies.push(Body { statements });
-        }
+    for (i, occurrence) in frontend.bodies.iter().enumerate() {
+        body_of.insert(occurrence.member.0, i as u32);
     }
-
+    let bodies = FrontBodies { frontend, arena: &arena };
     lap("bodies");
     let mut builder = ModelBuilder::with_builtins();
     let tree = &frontend.snapshot.tree;
@@ -201,7 +330,7 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
         }
     }
     let mut registered = Vec::new();
-    let mut stats = BuildStats { bodies: bodies.len(), ..Default::default() };
+    let mut stats = BuildStats { bodies: frontend.bodies.len(), ..Default::default() };
     for item in &m.items {
         let Item { owner, name, slot, member, spelling, id } = item;
         let ty = builder.add_type_path(Where::Fixed(Location::builtins()), owner);
@@ -271,10 +400,12 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     let model = builder.finish(&parents);
     lap("model");
     if trace {
-        dq_hostio::out(false, format_args!("dreamchecker: native input in {:.1?} ({} types, {} bodies)", t.elapsed(), model.types.len(), bodies.len()), true);
+        dq_hostio::out(false, format_args!("dreamchecker: native input in {:.1?} ({} types, {} bodies)", t.elapsed(), model.types.len(), frontend.bodies.len()), true);
     }
-    let input = CheckerInput { model, bodies, sites: &sites };
-    run(&input, registered, &stats)
+    let input = CheckerInput { model, bodies: &bodies, sites: &sites };
+    let store = QueryStore::new(front, &m);
+    lap("keys");
+    run(&input, registered, &stats, &store)
 }
 
 #[derive(Default)]
@@ -306,7 +437,8 @@ pub fn check(dme: &Path, context: &dreammaker::Context, checks: bool, cli: bool,
     if trace {
         dq_hostio::out(false, format_args!("dreamchecker: preprocessor warnings at {:.1?}", started.elapsed()), true);
     }
-    with_input(&front, |input, registered, stats| {
+    let _ = threads;
+    with_input(&front, |input, registered, stats, store| {
         for e in registered {
             context.register_error(e);
         }
@@ -314,7 +446,7 @@ pub fn check(dme: &Path, context: &dreammaker::Context, checks: bool, cli: bool,
             dq_hostio::out(false, format_args!("parsed {}/{} proc bodies (100%)", stats.bodies, stats.bodies), true);
         }
         if checks {
-            dreamchecker::native::run(context, input, cli, threads);
+            dreamchecker::native::run(context, input, cli, store);
         }
     });
     Ok(())

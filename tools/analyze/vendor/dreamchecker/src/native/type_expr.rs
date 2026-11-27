@@ -20,7 +20,7 @@ impl TypeExprContext<'_> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum TypeExpr {
     Static(StaticType),
     ParamTypepath { name: String, p_idx: usize, index_ct: usize },

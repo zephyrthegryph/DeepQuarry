@@ -15,3 +15,5 @@ dreammaker = { path = "../dreammaker" }
 # The compiler front end's typed statements, which the native checker (src/native) reads.
 dm-syntax = { path = "../../../dmb/crates/dm-syntax" }
 foldhash = "0.2.0"
+# The per-proc results (src/native/facts.rs) encode, so they can be kept between runs.
+serde = { version = "1", features = ["derive"] }

@@ -91,7 +91,7 @@ impl InputType {
 
 /// A place not located yet: SpacemanDMM's place of the token at an offset, the end of an offset's source line, or a location. The
 /// walk keeps places as offsets and locates only those a diagnostic prints (locating is the costly part of reading the tree).
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum Where {
     At(usize),
     LineEnd(usize),
@@ -140,14 +140,15 @@ pub trait Sites: Sync {
     fn site(&self) -> Box<dyn Site + '_>;
 }
 
-/// One proc body: the front end's typed statements.
-pub struct Body {
-    pub statements: Vec<dm_syntax::Statement>,
+/// The proc bodies (`ProcValue::body` indexes them), read when a result for one is computed.
+pub trait Bodies: Sync {
+    /// The body's typed statements (`None`: the front end has none for it).
+    fn statements(&self, body: u32) -> Option<Vec<dm_syntax::Statement>>;
 }
 
 /// Everything the native checker reads.
 pub struct CheckerInput<'s> {
     pub model: super::model::Model,
-    pub bodies: Vec<Body>,
+    pub bodies: &'s dyn Bodies,
     pub sites: &'s dyn Sites,
 }
