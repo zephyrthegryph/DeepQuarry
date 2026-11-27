@@ -253,6 +253,8 @@ modified-initializer source recipes, among others.
 **Equivalence.** `dmb-equiv` of the patched output against a fresh one-shot native compile (`DMB_BODY_PATCH=0 --no-cache --no-daemon`):
 EQUIVALENT with `--strict-order` and debug lines for a body edit, a comment line and a `#define` line; for a new var and a new proc the
 only difference is the order entry of the new member (`order.var_name_strings`, `order.proc_table`: appended numbering, by design).
+(Corrected 2026-11-27: that order entry is a behaviour difference a DM program sees, so those outputs were NOT EQUIVALENT; the append
+patch is retired, see "Incremental numbering" below.)
 Each scenario's differences against a DreamMaker build (`dm.exe`, same source) are identical for the patched and the fresh output in
 all categories. `six_session_contract_tests` gained `code_motion_edits_patch_and_match_fresh_bytes` (byte-identical to fresh through
 comment, blank-line, doc-block and directive edits and back) and `appends_after_body_patches_edit_the_model_with_those_patches_applied`.
@@ -427,3 +429,62 @@ exit records beside them; the compiler attempt evidence is `data/compiler-attemp
 it needs (the pair's store entry, the slots root, or the receipt directory) is missing when the replaying world asks for it, which looks like world 0's pair being released or evicted
 (`DMB_PAIR_BUDGET_GB` / `dq_disk_budget.sh enforce`, run at lease, release and daemon start) between its compile and the replays. Name the missing path in the error, and keep the pair
 leased until the last replaying world has acquired it.
+
+## Fixed 2026-11-27: incremental numbering (lane `compiler/patch-compile-equiv`)
+
+Two lanes reported the daemon's incremental production compile differing from a one-shot cold compile of the same source:
+(A) a one-line string edit gave a `.dmb` 42-43 bytes longer, `dmb-equiv` EQUIVALENT; (B) a new var or proc gave NOT EQUIVALENT
+(variable-name string order, procedure table order), while the 2026-10-16 note above called the same outputs equivalent.
+
+**Reproduction** (master `797d3b1a98`, its published compiler `E:/dq-cache/dmb-bin/v/478a60c952d0d838/dmbc.exe`, private daemon
+`DMB_DAEMON_AUTOSTART=1 DMB_DAEMON_NAMESPACE=peq-pub DMB_CACHE_DIR=<worktree>/data/peq/cache-pub`): `dmbc compile deepquarry.dme
+--workers 8` through the daemon, edit, compile again; cold = `dmbc compile deepquarry.dme --workers 8 --no-daemon --no-cache` with a
+fresh `DMB_CACHE_DIR`; compare with `sha256sum` and `dmb-equiv A.dmb B.dmb --rsc A.rsc B.rsc --all [--strict-order]`. The script that
+does exactly this is `tools/dmb/scripts/incremental_equiv_sequence.sh`.
+
+| Edit | daemon | cold | verdict |
+|---|---|---|---|
+| base | `b4e3e01c...` 74,110,967 B | same | identical |
+| literal `"query options must be a named scalar map"` + `!` (admission_query.dm) | `676217c6...` 74,111,010 B | `df7a8859...` 74,110,968 B | EQUIVALENT (strict too) |
+| `var/parity_probe = 0` on /datum/act/input | 74,111,083 B | 74,110,998 B | NOT EQUIVALENT: `order.var_name_strings` (`parity_probe` at 21,336 vs 7,052) |
+| `/datum/act/input/proc/parity_probe_proc()` | 74,111,086 B | 74,111,086 B | NOT EQUIVALENT: `order.proc_table` (105,950 vs 10,883) |
+| each revert | identical to base (a removal took the whole-program path) | | |
+
+**What differed and why.**
+
+- (A) A body patch links the relowered body against the retained tables extended append-only: the new literal takes the next free
+  string id (418,678), and the old one stays in the table unreferenced. A cold compile puts the new literal where the old one was
+  (117,909). Not observable: only the relative order of variable-name strings is (`vars` iterates by name string id), and a body
+  patch can neither add a variable name nor move one (the first root procedure, whose literals register strings with the
+  declarations, never patches). Strict-order `dmb-equiv` agrees. Left as it is: making it byte-identical needs to know that no other
+  unit, class record or default still names the old string and that the new one's first reference falls in the same place, i.e. the
+  whole-program string inventory a body patch exists to avoid. (A `\ref[]` of a string constant prints its id; nothing relies on
+  that, and native ids already differ from DreamMaker's everywhere.)
+- (B) Two places kept history-dependent numbering. The append patch (`retained_output_append.rs`) gave a new var's name string and
+  a new proc the next free index; and every whole-program link inside the daemon pinned the previous build's indexes and appended
+  new keys (dm-link `stabilize`). **This is a real behaviour difference, so dmb-equiv's verdict was right** and the "EQUIVALENT"
+  claims were wrong (the six-session tests had been written to accept exactly these order categories). Shown at runtime: the
+  `order_probe` fixture (`tools/dmb/crates/dmb-equiv/tests/fixtures/order_probe.dme`) with `var/bb` added between two vars and a
+  proc added between two procs, compiled through the daemon and cold and run in DreamDaemon 516: `M.vars` listed `bb` last instead of
+  second and `typesof(/datum/mid/proc)` listed the new proc after `z_late`. dmb-equiv is not over-strict here; it is unchanged.
+
+**Fix** (`decb7be463`). dm-link numbers every build in fresh order (`stabilize` removed; equal numbering still keeps the previous
+owner). The append patch is retired with its dm-tree producer (`SemanticTree::appended_callables`) and its helpers
+(`freeze_appended`, `emit_procedures`, `extend_field_records`): an added var, proc, verb or override composes the whole program,
+byte-identical to a cold compile. Renumbering inside the patch instead would mean relinking almost every unit (variable-name
+strings are referenced by nearly every body), i.e. the whole-program link, against the "no special patchers" rule. Body patches,
+code motion and the numeric default patch are unchanged. Cold output is unchanged (production `b4e3e01c...` with both compilers;
+the probe's cold `.dmb` identical too).
+
+**Cost.** The append patch answered a new var or proc in about 8 s on this loaded machine; the whole-program path takes what a
+removal already took, 32-36 s (same session, same load; d-var-revert 32.0 s, d-proc-revert 36.4 s). Getting it back belongs to the
+general path (dirty-set visiting, incremental link with relocation to fresh order; `tools/dmb/doc/incremental_core.md`), not to a
+patcher.
+
+**Tests.** `six_session_contract_tests::assert_equivalent_outputs` no longer tolerates `order.*` categories;
+`compare_revision_identical` requires byte identity; `structural_change::added_callables_and_vars_compose_in_fresh_order_and_revert`,
+`body_patches_resume_after_declaration_adds_that_compose_fresh` and the new `edit_sequence_matches_a_fresh_compile_at_every_step`
+(body edit, line shift, literal, new var between vars, new proc above bodies, removed var, removed proc, every revert; identical
+unless a literal was appended since the last whole-program compose, EQUIVALENT always); dm-link
+`a_build_with_previous_bindings_numbers_an_added_key_where_a_fresh_build_does`. Real tree:
+`bash tools/dmb/scripts/incremental_equiv_sequence.sh <dmbc.exe> <out> [production|test]` (not in any gate: six cold compiles).

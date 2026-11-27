@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Edit-sequence check of the native compiler's incremental output against a cold compile, on the real tree.
 #
-#   bash tools/dmb/scripts/incremental_equiv_sequence.sh <dmbc.exe> <out dir> [dme] [steps...]
+#   bash tools/dmb/scripts/incremental_equiv_sequence.sh <dmbc.exe> <out dir> [production|test] [steps...]
 #
-# A private daemon (its own DMB_DAEMON_NAMESPACE and DMB_CACHE_DIR under <out dir>) compiles the tree once, then each step
+# `production` (default) compiles deepquarry.dme as `build.sh dm` does; `test` compiles deepquarry.test.dme (a copy of it)
+# with the unit-test defines (CBT CIBUILDING CITESTING DEBUG), as a focused test run does. A private daemon (its own DMB_DAEMON_NAMESPACE and DMB_CACHE_DIR under <out dir>) compiles the tree once, then each step
 # edits the tree, compiles it on the daemon (the incremental path: a body patch, code motion, or the whole-program path
 # for a declaration edit) and compares the output with a one-shot cold compile of the same source (`--no-daemon
 # --no-cache`, a fresh cache dir) by sha256 and with dmb-equiv (default options: the class table, named procedures and
@@ -19,11 +20,12 @@
 # the bytes are identical. Cold compiles of a source state already compiled are reused (the reverts share the base's).
 # Needs a dmb-equiv binary (DMB_EQUIV, default the dq_cargo_target.sh dmb-equiv release build) and the generated files
 # (`tools/build/build.sh gen`). It restores both edited files from HEAD when it exits, and retires its daemon.
-# Writes <out dir>/summary.txt. Takes about 3 min per cold compile on a loaded machine: run it in the background.
+# Writes (appends to) <out dir>/summary.txt. A cold compile takes 1.5-6 min on a loaded machine: run it in the background, and
+# split the steps over several runs with the same <out dir> to stay under a 30-minute shell limit (cold outputs are reused).
 set -u
-DMBC="${1:?usage: incremental_equiv_sequence.sh <dmbc.exe> <out dir> [dme] [steps...]}"
+DMBC="${1:?usage: incremental_equiv_sequence.sh <dmbc.exe> <out dir> [production|test] [steps...]}"
 OUT="${2:?out dir}"
-DME="${3:-deepquarry.dme}"
+FLAVOR="${3:-production}"
 shift 2; [ $# -gt 0 ] && shift
 STEPS=("$@")
 [ ${#STEPS[@]} -eq 0 ] && STEPS=(body body-revert shift shift-revert var var-revert proc proc-revert)
@@ -37,11 +39,16 @@ WORKERS="${DQ_EQUIV_WORKERS:-8}"
 NS="equivseq-$(basename "$ROOT")-$$"
 export DMB_DAEMON_AUTOSTART=1 DMB_DAEMON_NAMESPACE="$NS" DMB_CACHE_DIR="$OUT/cache-daemon"
 unset DQ_NATIVE_NO_DAEMON
+case "$FLAVOR" in
+  production) DME=deepquarry.dme; DEFINES=() ;;
+  test) DME=deepquarry.test.dme; DEFINES=(-DCBT -DCIBUILDING -DCITESTING -DDEBUG); cp deepquarry.dme "$DME" ;;
+  *) echo "flavor must be production or test" >&2; exit 2 ;;
+esac
 STEM="${DME%.dme}"
 F_BODY=code/engine/actions/admission_query.dm
 F_DECL=code/engine/lifeforms/input.dm
 restore() { git show "HEAD:$F_BODY" > "$F_BODY"; git show "HEAD:$F_DECL" > "$F_DECL"; }
-finish() { restore; "$DMBC" --daemon-retire >> "$OUT/retire.log" 2>&1; }
+finish() { restore; [ "$FLAVOR" = test ] && rm -f "$DME"; "$DMBC" --daemon-retire >> "$OUT/retire.log" 2>&1; }
 trap finish EXIT
 status=0
 log() { echo "$*" | tee -a "$OUT/summary.txt" >&2; }
@@ -50,7 +57,7 @@ compile() { # name [extra args]
   rm -f "$STEM.dmb" "$STEM.rsc"
   local start=$SECONDS
   bash tools/dq_machine_slots.sh run dm_compile --label "equivseq $name" -- \
-    "$DMBC" compile "$DME" --workers "$WORKERS" "$@" > "$OUT/$name.log" 2>&1
+    "$DMBC" compile "$DME" --workers "$WORKERS" "${DEFINES[@]}" "$@" > "$OUT/$name.log" 2>&1
   local rc=$?
   [ $rc -eq 0 ] || { log "$name: compile failed (rc=$rc, $OUT/$name.log)"; exit 1; }
   cp "$STEM.dmb" "$OUT/$name.dmb"; cp "$STEM.rsc" "$OUT/$name.rsc"

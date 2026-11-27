@@ -50,6 +50,15 @@ order. A class inserted mid-table moves class IDs: those are fixed by a relocati
 class, no relowering. This reverses decision D10 in `DESIGN.md` (no history-dependent IDs); the 2026-10-14 decision already
 accepts it, and a cold compile still gives canonical numbering.
 
+**Overruled 2026-11-27 (lane `compiler/patch-compile-equiv`).** History-dependent numbering is not acceptable for the tables
+whose order a DM program iterates: `vars` follows the variable-name string ids and `typesof(/T/proc)` the procedure table, so the
+stable-numbering append (a new var's name string and a new proc at the end of their tables) published a world that lists them
+in a different place than a cold compile (shown in DreamDaemon; doc/rewrite/native_compiler_issues.md, "Incremental numbering").
+The link numbers every build in fresh order (dm-link `stabilize` is gone) and the append patch (`retained_output_append.rs`) is
+retired: an added var or proc composes the whole program, byte-identical to a cold compile. Stable ids for those tables are only
+possible behind a relocation that renumbers to fresh order before publication; body patches still append literal strings, whose
+ids nothing observes.
+
 ## Incremental link and publication
 
 Linking is per unit: a changed `link_entries` updates its slot entries and rewrites its words from relocations; unchanged units
