@@ -10,9 +10,12 @@
 
 pub mod body_parity;
 pub mod builtins;
+pub mod consts;
+pub mod procs;
 pub mod expr;
 pub mod walk;
 pub mod parity;
+pub mod value_parity;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -29,6 +32,10 @@ pub struct Site(pub u32);
 /// The front end's declarations, typed bodies and sites, indexed for analysis.
 pub struct Model {
     rev: FrontendRevision,
+    /// Each var's initializer, parsed from its declaration item, with the expanded offset its spans are relative to.
+    initializers: std::sync::OnceLock<HashMap<MemberId, (dm_syntax::Expr, usize)>>,
+    /// Each var's folded constant (`consts::fold_all`), built when first asked.
+    folded: std::sync::OnceLock<consts::Folded>,
     /// Each proc's typed body (the compiler's own parse, once per revision), by member.
     bodies: std::sync::OnceLock<HashMap<MemberId, Arc<dm_tree::frontend::StatementBody>>>,
     root: PathBuf,
@@ -37,12 +44,16 @@ pub struct Model {
     by_path: HashMap<Arc<str>, TypeId>,
     /// Each type's own members in declaration order (`SemanticTree::declarations`).
     own: Vec<Vec<MemberId>>,
+    /// Each type's own members by (name, is a var), in the order of `own`.
+    named: HashMap<(TypeId, Arc<str>, bool), Vec<MemberId>>,
     /// Each member's declaration occurrence.
     occurrence: HashMap<MemberId, OccurrenceId>,
     /// Each type's first type block (`/obj/item/radio` as an item header), in the order the declaration items come.
     type_sites: HashMap<Arc<str>, Site>,
     /// Each type's last `parent_type = /x` assignment (the semantic tree holds the parent, not the assignment).
     parent_sites: HashMap<Arc<str>, Site>,
+    /// Each proc's parameters, parsed from its header when first asked.
+    params: std::sync::Mutex<HashMap<MemberId, Arc<Vec<Param>>>>,
     /// The repo-relative spelling of each path the site map names (resolved once per path).
     rels: std::sync::Mutex<HashMap<Arc<str>, Arc<str>>>,
     root_abs: PathBuf,
@@ -100,6 +111,15 @@ impl Model {
             }
             *list = placed;
         }
+        let mut named: HashMap<(TypeId, Arc<str>, bool), Vec<MemberId>> = HashMap::new();
+        for (i, list) in own.iter().enumerate() {
+            for &id in list {
+                if let Some(m) = tree.member(id) {
+                    let name: Arc<str> = Arc::from(symbols.text(m.name).unwrap_or(""));
+                    named.entry((TypeId(i as u32), name, m.kind == MemberKind::Var)).or_default().push(id);
+                }
+            }
+        }
         let root_abs = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
         let mut sites = TypeSites::default();
         for chunk in rev.syntax.chunks().iter() {
@@ -107,11 +127,15 @@ impl Model {
         }
         let model = Model {
             bodies: std::sync::OnceLock::new(),
+            initializers: std::sync::OnceLock::new(),
+            params: Default::default(),
+            folded: std::sync::OnceLock::new(),
             rev,
             root: root.to_path_buf(),
             paths,
             by_path,
             own,
+            named,
             occurrence,
             type_sites: sites.blocks,
             parent_sites: sites.parents,
@@ -146,6 +170,33 @@ impl Model {
                 eprintln!("analyze: model view: {} typed bodies parsed in {:.1?}", map.len(), started.elapsed());
             }
             map
+        })
+    }
+
+    fn initializers(&self) -> &HashMap<MemberId, (dm_syntax::Expr, usize)> {
+        self.initializers.get_or_init(|| {
+            use rayon::prelude::*;
+            let started = std::time::Instant::now();
+            let vars: Vec<MemberId> = self.own.iter().flatten().copied().filter(|id| self.node(*id).kind == MemberKind::Var).collect();
+            let parsed: Vec<(MemberId, Option<(dm_syntax::Expr, usize)>)> =
+                vars.par_iter().map(|&id| (id, Member { m: self, id }.parse_initializer())).collect();
+            let map: HashMap<_, _> = parsed.into_iter().filter_map(|(id, e)| e.map(|e| (id, e))).collect();
+            if trace() {
+                eprintln!("analyze: model view: {} var initializers parsed in {:.1?}", map.len(), started.elapsed());
+            }
+            map
+        })
+    }
+
+    /// Every var's folded constant.
+    pub fn folded(&self) -> &consts::Folded {
+        self.folded.get_or_init(|| {
+            let started = std::time::Instant::now();
+            let f = consts::fold_all(self);
+            if trace() {
+                eprintln!("analyze: model view: {} vars folded in {:.1?}", f.values.len(), started.elapsed());
+            }
+            f
         })
     }
 
@@ -247,6 +298,30 @@ impl<'m> Ty<'m> {
 
     pub fn procs(&self) -> impl Iterator<Item = Member<'m>> + 'm {
         self.members().filter(|x| x.kind() != MemberKind::Var)
+    }
+
+    /// This type's own definitions of the var `name`, in order.
+    pub fn own_vars_named(&self, name: &str) -> impl Iterator<Item = Member<'m>> + 'm {
+        let m = self.m;
+        m.named.get(&(self.id, Arc::from(name), true)).into_iter().flatten().map(move |&id| Member { m, id })
+    }
+
+    /// This type's own definitions of the proc `name`, in override order.
+    pub fn own_procs_named(&self, name: &str) -> impl Iterator<Item = Member<'m>> + 'm {
+        let m = self.m;
+        m.named.get(&(self.id, Arc::from(name), false)).into_iter().flatten().map(move |&id| Member { m, id })
+    }
+
+    /// `self` is `other` or one of its subtypes.
+    pub fn is_subtype_of(&self, other: &Ty<'_>) -> bool {
+        let mut cur = Some(*self);
+        while let Some(t) = cur {
+            if t.id == other.id {
+                return true;
+            }
+            cur = t.parent();
+        }
+        false
     }
 }
 
@@ -362,6 +437,96 @@ impl<'m> Member<'m> {
         self.m.bodies().get(&self.id).map(|b| &b.parsed().statements[..])
     }
 
+    /// Whether the var is given a value: an initializer, or a size (`var/L[3]`, which starts as `new /list(3)`).
+    pub fn has_value(&self) -> bool {
+        self.initializer().is_some() || self.sized_list()
+    }
+
+    /// `var/L[3]` with no value written: a list of that size.
+    pub fn sized_list(&self) -> bool {
+        if self.kind() != MemberKind::Var || self.initializer().is_some() {
+            return false;
+        }
+        let Some(text) = self.item_text() else { return false };
+        let header = text.lines().next().unwrap_or("");
+        let header = match dm_syntax::top_level_assignment_index(header) {
+            Some(i) => &header[..i],
+            None => header,
+        };
+        // A written size: `[3]` (or `[2][][3]`), not only `[]`.
+        let name = header.rsplit('/').next().unwrap_or(header);
+        !walk::declaration(name, None).suffix_args.is_empty()
+    }
+
+    /// A var's initializer as written (`= value`), parsed by the compiler's expression parser; none without a value.
+    pub fn initializer(&self) -> Option<&'m dm_syntax::Expr> {
+        self.m.initializers().get(&self.id).map(|(e, _)| expr::specified(e).0)
+    }
+
+    /// The initializer with the expanded offset its spans are relative to (add it to a node's span for a [`Site`]).
+    pub fn initializer_at(&self) -> Option<(&'m dm_syntax::Expr, usize)> {
+        self.m.initializers().get(&self.id).map(|(e, base)| (expr::specified(e).0, *base))
+    }
+
+    /// The parameters (procs and verbs), as the header spells them.
+    pub fn parameters(&self) -> Arc<Vec<Param>> {
+        if let Some(p) = self.m.params.lock().unwrap().get(&self.id) {
+            return p.clone();
+        }
+        let p = Arc::new(self.parse_parameters());
+        self.m.params.lock().unwrap().insert(self.id, p.clone());
+        p
+    }
+
+    fn parse_parameters(&self) -> Vec<Param> {
+        let mut out = Vec::new();
+        let Some(procedure) = self.node().metadata.procedure.as_ref() else { return out };
+        let (Some(at), Some(text)) = (self.m.occurrence.get(&self.id), self.item_text()) else { return out };
+        let start = self.m.rev.declaration_spans[at.0 as usize].start as usize;
+        let Some((before, arguments, _)) = signature_parts(text) else { return out };
+        let base = start + before.len() + 1;
+        for p in procedure.signature.parameters.iter() {
+            let (s, e) = (p.relative_span.start as usize, p.relative_span.end as usize);
+            if let Some(t) = arguments.get(s..e) {
+                out.push(Param::parse(t, base + s));
+            }
+        }
+        if procedure.signature.variadic {
+            out.push(Param { name: "...".into(), type_path: Vec::new(), value: None, as_types: None, in_list: None, site: Site(base as u32) });
+        }
+        out
+    }
+
+    /// `proc/f() as /obj/item`: the return type path the header names.
+    pub fn return_type_path(&self) -> Option<Vec<String>> {
+        let text = self.item_text()?;
+        let (_, _, after) = signature_parts(text)?;
+        let after = after.lines().next().unwrap_or("");
+        let rest = after.trim().strip_prefix("as")?.trim();
+        rest.starts_with('/').then(|| rest.split('/').map(str::trim).filter(|p| !p.is_empty()).map(str::to_owned).collect())
+    }
+
+    fn parse_initializer(&self) -> Option<(dm_syntax::Expr, usize)> {
+        let at = *self.m.occurrence.get(&self.id)?;
+        let span = self.m.rev.declaration_spans.get(at.0 as usize)?;
+        let text = self.m.rev.expanded.text.as_str().get(span.start as usize..span.end as usize)?;
+        let eq = dm_syntax::top_level_assignment_index(text)?;
+        let rest = &text[eq + 1..];
+        let lead = rest.len() - rest.trim_start().len();
+        let value = rest.trim();
+        let base = span.start as usize + eq + 1 + lead;
+        let parsed = dm_syntax::parse_expression(value);
+        match parsed.expr {
+            Some(e) if parsed.diagnostics.is_empty() => Some((e, base)),
+            _ => {
+                // A value followed by more lines of the item: the first line alone.
+                let first = value.lines().next()?.trim_end();
+                let parsed = dm_syntax::parse_expression(first);
+                parsed.expr.filter(|_| parsed.diagnostics.is_empty()).map(|e| (e, base))
+            }
+        }
+    }
+
     /// The member's expanded header text (its declaration item, the body excluded).
     pub fn item_text(&self) -> Option<&'m str> {
         let at = *self.m.occurrence.get(&self.id)?;
@@ -428,5 +593,107 @@ fn type_blocks<'a>(items: impl Iterator<Item = dm_tree::frontend::ItemView<'a>>,
             },
             _ => {}
         }
+    }
+}
+
+/// `(before, arguments, after)` of a proc header: the first top-level parenthesis group.
+fn signature_parts(header: &str) -> Option<(&str, &str, &str)> {
+    let mut open = None;
+    let mut depth = 0usize;
+    for token in dm_syntax::lex(header).tokens {
+        match token.text.as_str() {
+            "(" => {
+                if depth == 0 {
+                    open = Some(token.span.start);
+                }
+                depth += 1;
+            }
+            ")" => {
+                depth = depth.checked_sub(1)?;
+                if depth == 0 {
+                    let start = open?;
+                    return Some((&header[..start], &header[start + 1..token.span.start], &header[token.span.end..]));
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// One parameter as its declaration spells it (`var/mob/user = null`, `atom/A as obj in view()`).
+#[derive(Clone, Debug)]
+pub struct Param {
+    pub name: String,
+    /// The declared type path segments, flags removed; a size suffix puts `list` first.
+    pub type_path: Vec<String>,
+    /// The default value as written (with its specifiers), with the expanded offset its spans are relative to.
+    pub value: Option<(dm_syntax::Expr, usize)>,
+    /// `as obj|mob`, from the default or the declaration.
+    pub as_types: Option<Vec<String>>,
+    /// `in L`, from the default or the declaration, with its offset.
+    pub in_list: Option<(dm_syntax::Expr, usize)>,
+    pub site: Site,
+}
+
+impl Param {
+    /// `/mob`, empty when untyped.
+    pub fn declared(&self) -> String {
+        if self.type_path.is_empty() {
+            String::new()
+        } else {
+            format!("/{}", self.type_path.join("/"))
+        }
+    }
+
+    /// The default value without its specifiers.
+    pub fn default(&self) -> Option<&dm_syntax::Expr> {
+        self.value.as_ref().map(|(e, _)| expr::specified(e).0)
+    }
+
+    fn parse(text: &str, at: usize) -> Param {
+        let (declaration, default) = match dm_syntax::top_level_assignment_index(text) {
+            Some(index) => {
+                let rest = &text[index + 1..];
+                let lead = rest.len() - rest.trim_start().len();
+                (text[..index].trim(), Some((rest.trim(), at + index + 1 + lead)))
+            }
+            None => (text.trim(), None),
+        };
+        let mut in_list = None;
+        if let Some(index) = declaration.find(" in ") {
+            let rest = &declaration[index + 4..];
+            let lead = rest.len() - rest.trim_start().len();
+            let parsed = dm_syntax::parse_expression(rest.trim());
+            in_list = parsed.expr.filter(|_| parsed.diagnostics.is_empty()).map(|e| (e, at + index + 4 + lead));
+        }
+        let declaration = declaration.split(" in ").next().unwrap_or(declaration);
+        let mut as_types = declaration.split_once(" as ").map(|(_, t)| t.split('|').map(|x| x.trim().to_owned()).collect::<Vec<_>>());
+        let declaration = declaration.split(" as ").next().unwrap_or(declaration).trim();
+        let suffixed = declaration.contains('[');
+        let declaration = declaration.split('[').next().unwrap_or(declaration).trim();
+        let declaration = declaration.strip_prefix("var/").unwrap_or(declaration);
+        let pieces: Vec<&str> = declaration.split('/').filter(|p| !p.is_empty()).collect();
+        let name = pieces.last().copied().unwrap_or("").to_owned();
+        let flags = ["static", "global", "const", "tmp", "SpacemanDMM_private", "SpacemanDMM_protected", "SpacemanDMM_final"];
+        let mut type_path: Vec<String> =
+            pieces[..pieces.len().saturating_sub(1)].iter().filter(|p| !flags.contains(*p)).map(|p| p.to_string()).collect();
+        if suffixed {
+            type_path.insert(0, "list".to_owned());
+        }
+        let value = default.and_then(|(t, a)| {
+            let parsed = dm_syntax::parse_expression(t);
+            parsed.expr.filter(|_| parsed.diagnostics.is_empty()).map(|e| (e, a))
+        });
+        if let Some((e, a)) = &value {
+            let (_, types, list) = expr::specified(e);
+            if let Some(t) = types {
+                as_types = Some(t.to_vec());
+            }
+            if let Some(l) = list {
+                in_list = Some((l.clone(), *a));
+            }
+        }
+        Param { name, type_path, value, as_types, in_list, site: Site(at as u32) }
     }
 }

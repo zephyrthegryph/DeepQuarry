@@ -440,3 +440,28 @@ pub fn as_call(e: &Expr) -> Option<(&str, Args<'_>)> {
         _ => None,
     }
 }
+
+fn is_input_call(e: &Expr) -> bool {
+    matches!(&e.kind, ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(n) if n == "input"))
+}
+
+/// A declared value (a var initializer, a parameter default) without its specifiers: `x as num in L` is `x`. Returns the value, the
+/// `as` types and the `in` list, as written.
+pub fn specified(e: &Expr) -> (&Expr, Option<&[String]>, Option<&Expr>) {
+    let mut value = e;
+    let mut in_list = None;
+    if let ExprKind::Binary { op, lhs, rhs } = &value.kind {
+        if op == "in" && matches!(&lhs.kind, ExprKind::TypeFilter { value, .. } if !is_input_call(value)) {
+            in_list = Some(&**rhs);
+            value = lhs;
+        }
+    }
+    let mut types = None;
+    if let ExprKind::TypeFilter { value: inner, types: t } = &value.kind {
+        if !is_input_call(inner) {
+            types = Some(&t[..]);
+            value = inner;
+        }
+    }
+    (value, types, in_list)
+}
