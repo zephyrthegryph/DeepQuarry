@@ -123,7 +123,8 @@ mod tests {
     #[test]
     fn copied_text_bounds_each_expansion() {
         let out = b"flags = 1 | 4)";
-        assert_eq!(match_at(out, 0, b"flags = "), Some(8));
+        // Blanks are not compared: the match ends after the chunk's last non-blank byte.
+        assert_eq!(match_at(out, 0, b"flags = "), Some(7));
         assert_eq!(find_from(out, 8, b" | "), Some((10, 11)));
         assert_eq!(find_from(out, 11, b")"), Some((13, 14)));
         assert_eq!(trimmed(out, 8..10), 8..9);
