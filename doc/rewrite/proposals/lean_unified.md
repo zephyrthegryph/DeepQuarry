@@ -166,7 +166,7 @@ the 8-worker cap, single-threaded tree rebuild); retained_frontend.md says what 
 
 Proof: hosted (incremental) against a cold front end in the same daemon (`DQ_ANALYZE_HOSTED_FRONTEND=0`) over base, body edit,
 line shift, new var, new proc and revert: `analyze dreamchecker --json` and `analyze check --raw --no-cache` byte-identical at
-every step. dm-tree (312), dm-preprocess (165) and dmbc (1135) unit tests pass; new tests for the watched provider, the prefetch, the parallel map, leaf
+every step. dm-tree (312), dm-preprocess (165) and dmbc (1135) unit tests pass; a production compile is byte-identical to one by the compiler built from its master base; new tests for the watched provider, the prefetch, the parallel map, leaf
 comparison and the delta.
 
 For the ENGINE workstream: the analysis model memo (`daemon/analysis_model.rs`) still reads and hashes every model file on every

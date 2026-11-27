@@ -1003,7 +1003,7 @@ The machine was at 100 % CPU from other lanes during every run (below-normal pri
 
 Equivalence: hosted (incremental) against a cold front end built in the same daemon (`DQ_ANALYZE_HOSTED_FRONTEND=0`) at every
 step of base, body edit, line shift, new var, new proc, revert: `analyze dreamchecker --json` and `analyze check --raw --no-cache`
-byte-identical (lean_unified.md, workstream 4). dm-tree 312, dm-preprocess 165 and dmbc 1135 unit tests pass.
+byte-identical (lean_unified.md, workstream 4). dm-tree 312, dm-preprocess 165 and dmbc 1135 unit tests pass. Compile: a one-shot `--no-daemon --no-cache` production compile with this branch's compiler is byte-identical (same `.dmb` sha256, `dmb-equiv` EQUIVALENT) to one with a compiler built from the master it is based on (9645e6f2c7).
 
 ### Not done, and why
 
