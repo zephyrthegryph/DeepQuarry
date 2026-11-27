@@ -1,6 +1,6 @@
-//! Reusing the semantic results across runs, so a one-file edit does not re-parse the tree.
+//! Reusing the semantic results across runs, so a one-file edit does not re-run the semantic lints.
 //!
-//! The full model (dreammaker over every included file) takes 7 to 8 s. What the semantic lints
+//! What the semantic lints
 //! derive from it depends on very little of it: the type, var and proc *structure* of the tree,
 //! the bodies and declarations of the few procs the analysis actually walked (the **footprint**,
 //! recorded by [`Sem`](super::Sem) as it answers), and which var names any body writes. So after a
@@ -18,12 +18,12 @@
 //!    `#include`d `.dm` the tree does not hold, and every file under `code/__defines/`;
 //! 2. the file set; and every file whose content changed is
 //! 3. outside the footprint, free of `#define`/`#undef`/`#include` (before and after), and its shape and
-//!    written names, read back from a parse of just that file plus the defines, equal the stored
+//!    written names, read back from the model of the tree as it is now, equal the stored
 //!    ones, and the set of types it creates neither gains an unknown type nor loses one it was the
 //!    location of.
 //!
-//! Any doubt is a miss, never a stale hit: a changed file the partial parse reads differently
-//! (a macro from some other file, an `#ifdef`) simply fails step 3 and the full model runs.
+//! Any doubt is a miss, never a stale hit. Step 3 reads the full model (the compiler's front end refuses a tree of only the
+//! changed files and the defines); the run's other consumers share it, and a hit spares the semantic lints' walks.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
@@ -364,8 +364,12 @@ fn validate(tree: &Tree) -> Option<Record> {
     }
     let Some(type_loc) = load_types(&rec.stamp, rec.env) else { return miss(10) };
     rec.type_loc = type_loc;
-    let sem = Sem::build_partial(&tree.root, tree, &changed).ok()?;
-    let got = collect(&sem);
+    // The changed files' facts, read off the full model: the compiler's front end refuses a tree of only the changed files and the
+    // defines (an override of a var another file declares), so there is no cheaper partial parse; the full model is the one the
+    // run's other consumers share, and its facts of a file are exactly the ones the record was made from.
+    let Some(model) = super::sem_for(tree) else { return miss(11) };
+    let only: HashSet<String> = changed.iter().cloned().collect();
+    let got = collect_files(&model, &only);
     for rel in &changed {
         let old = &rec.files[rel];
         if shape_hash(got.shape.get(rel)) != old.shape {

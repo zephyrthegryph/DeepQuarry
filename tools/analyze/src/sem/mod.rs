@@ -140,49 +140,21 @@ impl Sem {
     /// Builds the model. A tree with a non-empty `deepquarry.dme` uses it (include order matters for define visibility); anything else
     /// (a fixture) gets a synthesized `.dme` that includes every `code/**/*.dm` in path order.
     pub fn build(root: &Path, tree: &Tree) -> Result<Sem, String> {
-        Sem::build_with(root, tree, None)
+        Sem::build_with(root, tree)
     }
 
-    /// A model of only `files` (repo-relative) plus every `code/__defines/**` file for macros: the cheap model per-proc checks use when
-    /// only a few files matter. Types the other files declare are absent.
-    pub fn build_partial(root: &Path, tree: &Tree, files: &[String]) -> Result<Sem, String> {
-        Sem::build_with(root, tree, Some(files))
-    }
-
-    fn build_with(root: &Path, tree: &Tree, only: Option<&[String]>) -> Result<Sem, String> {
+    fn build_with(root: &Path, tree: &Tree) -> Result<Sem, String> {
         // The synthesized .dme lives in a temp dir, so every path it names must be absolute.
         let abs_root: PathBuf = if root.is_absolute() { root.to_path_buf() } else { dq_hostio::current_dir().map_err(|e| e.to_string())?.join(root) };
         let root = abs_root.as_path();
         let dme = root.join("deepquarry.dme");
-        let real = only.is_none() && std::fs::read_to_string(&dme).map(|t| t.contains("#include")).unwrap_or(false);
+        let real = std::fs::read_to_string(&dme).map(|t| t.contains("#include")).unwrap_or(false);
         let (dme_path, _keep) = if real {
             (dme, None)
         } else {
             let dir = tempfile_dir(root);
             let mut text = String::new();
-            let mut list: Vec<String> = Vec::new();
-            match only {
-                None => list.extend(tree.select(&CODE_DM).iter().map(|f| f.rel.clone())),
-                Some(files) => {
-                    list.extend(tree.select(&CODE_DM).iter().filter(|f| crate::scopes::is_defines(&f.rel)).map(|f| f.rel.clone()));
-                    // Macros are order sensitive: the defines compile in deepquarry.dme's order (their folders no longer sort the same
-                    // way), not path order. A file the manifest does not name keeps its place after the named ones.
-                    if let Ok(text) = std::fs::read_to_string(&dme) {
-                        let slot: HashMap<String, usize> = text
-                            .lines()
-                            .filter_map(|l| l.trim().strip_prefix("#include \"").and_then(|r| r.strip_suffix('"')).map(|r| r.replace('\\', "/")))
-                            .enumerate()
-                            .map(|(i, r)| (r, i))
-                            .collect();
-                        list.sort_by_key(|r| slot.get(r).copied().unwrap_or(usize::MAX));
-                    }
-                    for f in files {
-                        if !list.contains(f) {
-                            list.push(f.clone());
-                        }
-                    }
-                }
-            }
+            let list: Vec<String> = tree.select(&CODE_DM).iter().map(|f| f.rel.clone()).collect();
             for rel in &list {
                 let abs = root.join(rel);
                 text.push_str(&format!("#include \"{}\"\n", abs.display().to_string().replace('\\', "/")));
@@ -200,13 +172,25 @@ impl Sem {
         let model = Model::new(rev, root);
         model.prewarm();
         let t_parsed = t_build.elapsed();
-        // What a file's text says decides its key; the files in include order and their keys decide the environment.
+        // What a file's text says decides its key. The macro environment is the `.dme` and every included file that holds a `#define`,
+        // `#undef` or `#include` (with its key): two models of one environment read a file's text the same way, so what a definition
+        // says is a function of its own file's content (`site_key`, `walk_cache`, `body_facts`). An edit to any other file keeps it.
         let mut file_keys: HashMap<String, u128> = HashMap::new();
         let mut env = blake3::Hasher::new();
+        env.update(&std::fs::read(&dme_path).map(|b| u128::from_le_bytes(blake3::hash(&b).as_bytes()[..16].try_into().unwrap())).unwrap_or(0).to_le_bytes());
         for rel in model.file_paths() {
-            let key = tree.get(&rel).map(|f| f.hash).unwrap_or(0);
-            env.update(rel.as_bytes());
-            env.update(&key.to_le_bytes());
+            let (key, directive) = match tree.get(&rel) {
+                Some(f) => (f.hash, incremental::has_directive(&f.code().text)),
+                None => {
+                    let text = std::fs::read(root.join(&rel)).unwrap_or_default();
+                    let key = u128::from_le_bytes(blake3::hash(&text).as_bytes()[..16].try_into().unwrap());
+                    (key, incremental::has_directive(&String::from_utf8_lossy(&text)))
+                }
+            };
+            if directive {
+                env.update(rel.as_bytes());
+                env.update(&key.to_le_bytes());
+            }
             file_keys.insert(rel, key);
         }
         let env_key = if real { u128::from_le_bytes(env.finalize().as_bytes()[..16].try_into().unwrap()) } else { 0 };

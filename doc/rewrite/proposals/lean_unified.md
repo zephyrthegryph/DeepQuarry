@@ -298,8 +298,49 @@ Two behaviour points, both kept byte-identical:
   `code/__*.dm`, types the other files declare), so the pass reads the full model. The partial model never expanded the test macros
   (`TEST_ASSERT` returns early), so it never judged the unit tests; they are exempt by path in `tools/ci/lint_scopes.toml` (master had 0
   findings there).
-- `sem/incremental`'s record validation still builds a partial model; under dmbc it is refused and the record misses (the full model is
-  built), which is correct and costs only the skip.
+- `sem/incremental`'s record validation read a changed file's facts off a partial model (the file and the defines); dmbc refuses that
+  tree too (an override of a var another file declares), and the record then always missed: a one-line edit re-ran every semantic
+  lint (87 s against master's 29 s, measured below). The validation now reads the changed files' facts off the full model, which the
+  run's other consumers share (`Sem::build_partial` is gone).
+- Fixtures: a tree the compiler's front end reads must be valid DM. Fixtures that wrote `GLOBAL_LIST_INIT(...)` with no macro, or a
+  var only a subtype declared, define the macro (`code/__defines/...`) or declare the var; `tests/common` registers dmbc's front end
+  and the native DreamChecker input for every test, and the unit tests register it under `cfg(test)`.
+
+#### Performance of the view (2026-11-27)
+
+The first port was correct and slow (a cold `gen --check deps` 127 s against master's 36 s). Sampling the run (`cdb -pv` attached a
+few dozen times, stacks aggregated; there is no ETW without admin) found three causes, all fixed:
+
+- A proc's site (its parameter list `(`) lexed the whole item, body included, on every first ask: two thirds of the busy samples.
+  It is now a byte scan for the first `(` (the lexer only when a quote or comment comes first, never in a header the compiler accepted).
+- The typed bodies, var initializers and folded constants were built lazily in a `OnceLock` that the first parallel walk reached:
+  the one thread building it ran its `par_iter` while every other rayon worker blocked on the lock, so 120 k bodies parsed on one
+  core. `Model::prewarm` builds them when the model is made (bodies and initializers side by side).
+- Smaller: proc parameter and site caches sharded (`RwLock` per shard, was one `Mutex`), every included path resolved to its
+  repo-relative spelling once when the model is made (each site miss took a global `Mutex`), and statement lines looked up once per
+  block (`model::Block`) instead of on every visit.
+
+Measured (`DQ_ANALYZE_DAEMON=0`, caches and the gen store off, single runs on a machine other lanes kept at 60-100 % CPU, so wall times
+swing 2x between runs; CPU time is the steadier figure):
+
+| Run | master (dreammaker parse) | branch |
+|---|---|---|
+| cold `gen --check deps` | 36 s | 47 s (127 s before the fixes) |
+| cold `gen` (3 model builds), wall | 128 s, 260 s, 215 s | 302 s |
+| cold `gen`, CPU | 125 s, 129 s | 280 s |
+| model build per round, wall | 29 s / 82 s / 59 s | 67 s (two front ends) / 26 s / 25 s |
+| `check --raw --no-cache` | 149 s, 304 s | 171 s, 235 s |
+
+The front end is parallel where dreammaker's parse is one thread: under load a model build is faster on the branch (rounds 2 and 3
+above), and it costs about twice the CPU (about 46 s per build against 22 s, the front end's own share). The rest of the extra CPU is
+the walks (`sem/handlers` 13-17 s against 3-6 s): the view builds a chain (`model::expr::chain`, a root and a `Vec` of hops) on every
+visit where dreammaker's AST was matched in place. A cold `gen` from nothing builds the front end twice in its first round: the first
+build fails on the parent types the generated files declare (`build_bootstrapping` then declares them in the stub and builds again).
+
+Tried and dropped: keeping a retained front end session in the analysis process (the daemon's `hosted_frontend` path on a
+process-local `BuildHost`), so a `gen`'s second and third model builds would be incremental. The retained cold build took 206 s (the
+one-shot cold build 15-20 s) and the incremental ones 11-23 s after the generated files changed, so it was reverted.
+
 
 Proof: master's `dmbc` (merge base) against the branch, `DQ_ANALYZE_DAEMON=0`, caches and the gen store off: a cold `gen` (all three
 generated directories deleted first) writes identical files (410), and `check --raw --no-cache` is identical (1604 lines).
