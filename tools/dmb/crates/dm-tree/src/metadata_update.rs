@@ -457,7 +457,6 @@ impl MetadataDependencies {
     ) -> Option<SemanticTree> {
         let dirty = self.changed(previous.clone(), current.clone())?;
         let mut tree = previous_tree.clone();
-        tree.appended_callables = None;
         tree.default_edits = default_edits(previous, current.clone(), &previous_tree.symbols, &symbols).map(|edits| {
             Arc::new(crate::DefaultEdits {
                 from_identity: previous_tree.identity,

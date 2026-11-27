@@ -292,20 +292,6 @@ impl RetainedGeneration {
         let slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
         slot.fields.as_ref()?.0.get(&(owner, name)).copied()
     }
-    /// Record the Variables-table records of vars a structural patch added, so
-    /// the next numeric-default admission can find them.
-    pub(crate) fn extend_field_records(&self, added: &[(dm_ir::SymbolId, dm_ir::SymbolId, u32)]) {
-        if added.is_empty() {
-            return;
-        }
-        let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(fields) = slot.fields.as_mut() {
-            let map = Arc::make_mut(&mut fields.0);
-            for &(owner, name, record) in added {
-                map.insert((owner, name), record);
-            }
-        }
-    }
     /// Make the retained model the one of the published image `base_hash`: kept when it is, else decoded from the patch
     /// slot's image (which a body patch, a restored base or a released model leaves as the only description of the
     /// output). The decode is accepted only when it re-encodes to exactly those bytes.

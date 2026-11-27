@@ -214,3 +214,35 @@ fn restored_tables_keep_the_numbering_and_strings_and_refuse_what_they_cannot_pr
         Err(LinkError::ContentCollision(_))
     ));
 }
+
+#[test]
+fn a_build_with_previous_bindings_numbers_an_added_key_where_a_fresh_build_does() {
+    // The String and Procedure table orders are what `vars` and `typesof(/T/proc)` iterate: a key added between two
+    // retained ones must take its fresh index, never the next free one (doc/rewrite/native_compiler_issues.md).
+    let strings = |names: &[&str]| {
+        let keys: Vec<Key> = names.iter().map(|name| Key::String(SymbolId::of(name))).collect();
+        let mut inventory = LinkInventory {
+            entries: names
+                .iter()
+                .map(|name| Entry {
+                    key: Key::String(SymbolId::of(name)),
+                    content: name.as_bytes().to_vec().into(),
+                })
+                .collect(),
+            spellings: names.iter().map(|name| (SymbolId::of(name), Arc::from(name.as_bytes()))).collect(),
+            ..Default::default()
+        };
+        inventory.append_orders.insert(crate::Table::String, keys);
+        inventory
+    };
+    let previous = LinkTables::build(strings(&["zz", "aa"])).unwrap().binding_tables();
+    let current = strings(&["zz", "bb", "aa"]);
+    let fresh = LinkTables::build(current.clone()).unwrap();
+    let retained = LinkTables::build_with_bindings(current, Some(&previous)).unwrap();
+    assert_eq!(retained.assignments(), fresh.assignments());
+    let bb = retained.index(Key::String(SymbolId::of("bb"))).unwrap();
+    assert!(bb < retained.index(Key::String(SymbolId::of("aa"))).unwrap());
+    // Equal numbering keeps the previous owner.
+    let again = LinkTables::build_with_bindings(strings(&["zz", "bb", "aa"]), Some(&retained.binding_tables())).unwrap();
+    assert!(again.binding_tables().same_owner(&retained.binding_tables()));
+}

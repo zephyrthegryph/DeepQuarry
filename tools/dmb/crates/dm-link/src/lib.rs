@@ -194,80 +194,6 @@ fn link_lap(lap: &mut std::time::Instant, label: &str) {
     }
     *lap = std::time::Instant::now();
 }
-/// Stable numbering for additions. A table whose previous keys all survive pins
-/// them at their previous indexes and appends its fresh keys in the current
-/// order; a table that lost a key keeps the fresh full order (it renumbers).
-/// Output is then equivalent to, not byte-identical with, a fresh build. A table
-/// whose complete order is supplied (`orders`: the class table, whose order
-/// `typesof()` observes) always takes that order: pinning would change what the
-/// game sees.
-pub(crate) fn stabilize(
-    inventory: &mut LinkInventory,
-    present: impl Fn(&Key) -> bool,
-    previous: &BindingTables,
-) {
-    let pinned: BTreeSet<Key> = inventory.fixed.iter().map(|(key, _)| *key).collect();
-    let mut by_table: BTreeMap<Table, Vec<(Key, u32)>> = BTreeMap::new();
-    for (key, index) in previous.assignments() {
-        if !pinned.contains(key) {
-            by_table.entry(key.table()).or_default().push((*key, *index));
-        }
-    }
-    for (table, rows) in by_table {
-        if inventory.orders.contains_key(&table)
-            || rows.iter().any(|(key, _)| !present(key))
-            || inventory
-                .reserved_prefixes
-                .get(&table)
-                .is_some_and(|prefix| rows.iter().any(|(_, index)| index < prefix))
-        {
-            continue;
-        }
-        let highest = rows.iter().map(|(_, index)| *index).max().unwrap_or(0);
-        let used: BTreeSet<u32> = rows.iter().map(|(_, index)| *index).collect();
-        if inventory
-            .fixed
-            .iter()
-            .any(|(key, index)| key.table() == table && (*index > highest || used.contains(index)))
-        {
-            continue;
-        }
-        // Keep a table only when its previous rows and pins fill the authored range
-        // without holes; composition requires contiguous procedure/type tables.
-        let start = inventory.reserved_prefixes.get(&table).copied().unwrap_or(0);
-        let mut filled = used.clone();
-        filled.extend(
-            inventory
-                .fixed
-                .iter()
-                .filter(|(key, index)| key.table() == table && *index >= start)
-                .map(|(_, index)| *index),
-        );
-        let holes = (start..=highest)
-            .filter(|index| !is_reserved_table_index(table, *index) && !filled.contains(index))
-            .count();
-        if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1") {
-            eprintln!(
-                "detail stable link {table:?}: rows={} start={start} highest={highest} holes={holes}",
-                rows.len()
-            );
-        }
-        if holes != 0 {
-            continue;
-        }
-        let kept: BTreeSet<Key> = rows.iter().map(|(key, _)| *key).collect();
-        if let Some(order) = inventory
-            .orders
-            .remove(&table)
-            .or_else(|| inventory.append_orders.remove(&table))
-        {
-            inventory
-                .append_orders
-                .insert(table, order.into_iter().filter(|key| !kept.contains(key)).collect());
-        }
-        inventory.fixed.extend(rows);
-    }
-}
 impl LinkTables {
     pub fn index(&self, key: Key) -> Option<u32> {
         self.bindings.assignments().get(&key).copied()
@@ -461,13 +387,12 @@ impl LinkTables {
         link_lap(&mut lap, "link.assign.slots_and_reuse");
         let captured =
             retain_recipe.then(|| assignment_recipe::AssignmentRecipe::capture(&inventory));
-        let mut inventory = inventory;
-        // A retained link keeps every surviving index and appends new keys; a fresh build
-        // (no previous bindings) numbers in source order.
-        if let Some(previous) = previous {
-            stabilize(&mut inventory, |key| content.contains_key(key), previous);
-        }
-        link_lap(&mut lap, "link.assign.capture_and_stabilize");
+        // Every build numbers in fresh source order, whatever the previous bindings were: the orders of the class,
+        // procedure and variable-name string tables are what `typesof()` and `vars` iterate, so a retained link that
+        // kept surviving indexes and appended new keys published a world that behaves differently from a cold
+        // compile of the same source (doc/rewrite/native_compiler_issues.md, "Incremental numbering"). The previous
+        // bindings only keep their owner identity when the numbering comes out equal (`BindingTables::validated`).
+        link_lap(&mut lap, "link.assign.capture");
         let mut indexes = BTreeMap::new();
         let mut occupied: BTreeMap<Table, BTreeSet<u32>> = BTreeMap::new();
         for (key, index) in inventory.fixed {

@@ -105,24 +105,25 @@ fn assert_equivalent_outputs(
     context: &str,
 ) {
     if retained.0 != fresh.0 {
-        // An append patch gives a new proc or var the next free table index and
-        // string, so only its own position in the two order-gated tables
-        // (`typesof(/T/proc)`, `vars` name-string order) may differ from a fresh
-        // build (documented in retained_output_append.rs). Anything else is a failure.
+        // Only a body patch that appended a relowered body's new string literals may differ in bytes (the literal ids;
+        // `retained_output.rs`). Every observable order (class table, named procedures, variable-name strings) must be
+        // the fresh one: `dmb-equiv` with incremental-vs-fresh options (orders strict) must call the outputs equivalent.
         let report = dmb_equiv::compare_bytes(&retained.1, Some(&retained.2), &fresh.1, Some(&fresh.2), &dmb_equiv::Options::default())
             .unwrap_or_else(|error| panic!("{context}: decode failed: {error}"));
-        if report.equivalent() {
-            return;
-        }
-        let text = report.render_text();
-        // Stable link numbering appends every re-added or added row: only table order differs.
-        let appended_only = report.categories.keys().all(|name| matches!(name.as_str(), "order.proc_table" | "order.var_name_strings" | "order.type_table"));
-        assert!(appended_only, "{context}: outputs are not semantically equivalent
-{text}");
+        assert!(report.equivalent(), "{context}: outputs are not equivalent\n{}", report.render_text());
     }
 }
 
 fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::OutputPair> {
+    compare_revision_as(shared, roots, false)
+}
+
+/// `compare_revision`, and every retained output must be byte-identical to its fresh compile.
+fn compare_revision_identical(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::OutputPair> {
+    compare_revision_as(shared, roots, true)
+}
+
+fn compare_revision_as(shared: &Arc<Shared>, roots: &Roots, identical: bool) -> Vec<crate::publish::OutputPair> {
     let mut pairs = Vec::with_capacity(6);
     // Exactly two requests can be active, including their independent fresh
     // oracles. No detached workers or executor/store implementation is added.
@@ -176,6 +177,12 @@ fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::
                             &fresh_destination,
                         );
                         assert_equivalent_outputs(&a, &b, &format!("root {index} retained vs fresh"));
+                        if identical && a.0 != b.0 {
+                            let report = dmb_equiv::compare_bytes(&a.1, Some(&a.2), &b.1, Some(&b.2), &dmb_equiv::Options { strict_order: true, ..Default::default() })
+                                .map(|report| report.render_text())
+                                .unwrap_or_else(|error| format!("decode failed: {error}"));
+                            panic!("root {index}: retained output is not byte-identical to a fresh compile\n{report}");
+                        }
                         a.0
                     })
                 })

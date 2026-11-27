@@ -131,63 +131,6 @@ impl MetadataDependencies {
         laps.lap("types");
         let mut tree = previous_tree.clone();
         tree.default_edits = None;
-        tree.appended_callables = None;
-        let appended: Option<(Vec<(SymbolId, SymbolId, MemberKind)>, Vec<crate::AppendedField>)> = {
-            let mut callables = Vec::new();
-            let mut fields = Vec::new();
-            let mut ok = true;
-            for change in &delta.changes {
-                match (change.previous, change.current, change.key.family) {
-                    (None, Some(_), DeclarationFamily::Member { name, kind })
-                        if matches!(kind, MemberKind::Proc | MemberKind::Verb)
-                            && previous_tree.lookup_type(change.key.owner).is_some() =>
-                    {
-                        callables.push((change.key.owner, name, kind));
-                    }
-                    (None, Some(row), DeclarationFamily::Member { name, kind: MemberKind::Var })
-                        if previous_tree.lookup_type(change.key.owner).is_some()
-                            && change.key.owner != SymbolId::of("/") =>
-                    {
-                        let Skeleton::Member { mode: DefinitionMode::Declare, metadata, .. } = &row.skeleton
-                        else {
-                            ok = false;
-                            break;
-                        };
-                        let default_bits = if metadata.declared_initializer.is_none() {
-                            None
-                        } else {
-                            match crate::metadata_update::numeric_literal(&metadata.declared_initializer, &symbols) {
-                                Some(bits) => Some(bits),
-                                None => {
-                                    ok = false;
-                                    break;
-                                }
-                            }
-                        };
-                        if !matches!(metadata.flags, 0 | 4)
-                            || metadata.array.is_some()
-                            || metadata.inherited_opaque.is_some()
-                            || metadata.initializer.is_some() != metadata.declared_initializer.is_some()
-                        {
-                            ok = false;
-                            break;
-                        }
-                        fields.push(crate::AppendedField {
-                            owner: change.key.owner,
-                            name,
-                            flags: metadata.flags,
-                            default_bits,
-                        });
-                    }
-                    _ => {
-                        ok = false;
-                        break;
-                    }
-                }
-            }
-            (ok && !(callables.is_empty() && fields.is_empty())).then_some((callables, fields))
-        };
-        let previous_identity = previous_tree.identity;
         tree.symbols = Arc::new(symbols);
         let type_remap: Vec<Option<TypeId>> = match roster {
             Some(roster) => {
@@ -327,7 +270,7 @@ impl MetadataDependencies {
                     relinked: order.iter().copied().filter(|id| id.index() < old_len).collect(),
                 };
                 laps.lap("publish");
-                let spliced = finish(tree, &affected, order, &names, executor, types_changed, appended, previous_identity, Some(stable), &mut laps);
+                let spliced = finish(tree, &affected, order, &names, executor, types_changed, Some(stable), &mut laps);
                 let stable = spliced.stable.as_ref().expect("stable splice");
                 crate::change_set::record_outcome(format!(
                     "tree splice: stable slots ({} added, {} changed, {} slots): {}",
@@ -442,7 +385,7 @@ impl MetadataDependencies {
         crate::metadata_update::resolve_metadata(&tree, &mut nodes, &order);
         tree.members = crate::member_arena::MemberArena::from_reusing(nodes, &previous_tree.members);
         tree.member_order = crate::MemberOrder::identity(tree.members.len());
-        Ok(finish(tree, &affected, order, &names, executor, types_changed, appended, previous_identity, None, &mut laps))
+        Ok(finish(tree, &affected, order, &names, executor, types_changed, None, &mut laps))
     }
 }
 
@@ -456,8 +399,6 @@ fn finish(
     names: &HashSet<SymbolId>,
     executor: &dm_exec::BuildExecutor,
     types_changed: bool,
-    appended: Option<(Vec<(SymbolId, SymbolId, MemberKind)>, Vec<crate::AppendedField>)>,
-    previous_identity: u128,
     stable: Option<StableSplice>,
     laps: &mut Laps,
 ) -> Spliced {
@@ -493,13 +434,6 @@ fn finish(
         Arc::make_mut(&mut tree.host_selections).retain(|path, _| by_path.contains_key(path));
         tree.rebuild_owner_ancestry();
     }
-    tree.appended_callables = appended.map(|(members, fields)| {
-        Arc::new(crate::AppendedCallables {
-            from_identity: previous_identity,
-            members,
-            fields,
-        })
-    });
     Spliced {
         tree,
         dirty: order.len(),

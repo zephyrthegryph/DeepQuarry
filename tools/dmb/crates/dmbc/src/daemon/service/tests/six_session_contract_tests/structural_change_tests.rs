@@ -65,11 +65,9 @@ fn structural_scenarios_edit_and_revert_match_fresh_bytes() {
         let edited = compare_revision(&shared, &roots);
         assert_ne!(edited[0], initial[0], "{label} edit must publish new content");
         edit_all(&roots, TREE);
-        compare_revision(&shared, &roots);
-        // Reverting a removed var adds it back, an append patch with stable
-        // numbering: equivalent to a fresh build (compare_revision), not identical.
-        if label != "removed var" {
-        }
+        // Every table is numbered in fresh order, so the revert reproduces the initial bytes.
+        let reverted = compare_revision_identical(&shared, &roots);
+        assert_eq!(reverted[0], initial[0], "{label}: revert must reproduce the initial bytes");
     }
 }
 
@@ -146,23 +144,23 @@ fn numeric_default_edits_on_the_general_path_match_fresh() {
 }
 
 #[test]
-fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
-    // Added procs/verbs/overrides append to the retained model (semantic
-    // equivalence is asserted by compare_revision); a referenced new name
-    // must decline. Reverting is a removal and rebuilds fresh numbering.
-    let cases: [(&str, String, bool); 9] = [
+fn added_callables_and_vars_compose_in_fresh_order_and_revert() {
+    // An added proc, verb, override or var composes the whole program: its new keys take their fresh positions in the
+    // procedure and string tables (`typesof(/T/proc)` and `vars` iterate those orders), so the retained output is
+    // byte-identical to a fresh compile, never appended at the end of the tables. Reverting reproduces the initial bytes.
+    let cases: [(&str, String); 9] = [
         ("new var", TREE.replace("    var/own = 2
 ", "    var/own = 2
     var/added_probe = 5
-"), true),
+")),
         ("new null var", TREE.replace("    var/own = 2
 ", "    var/own = 2
     var/added_nil
-"), true),
+")),
         ("new tmp var", TREE.replace("    var/own = 2
 ", "    var/own = 2
     var/tmp/added_tmp = 6
-"), true),
+")),
         (
             "new var between declared vars",
             TREE.replace("    var/value = 7
@@ -170,7 +168,6 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
     var/added_mid = 9
     var/added_two
 "),
-            true,
         ),
         (
             "referenced new var",
@@ -180,25 +177,22 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
 ").replace("return item.value
 ", "return item.value + item.added_ref
 "),
-            true,
         ),
-        ("new proc", format!("{TREE}/datum/base/proc/added_probe()\n    return 41\n"), true),
+        ("new proc", format!("{TREE}/datum/base/proc/added_probe()\n    return 41\n")),
         (
             "new proc above existing bodies",
             TREE.replace("/proc/other()", "/datum/base/proc/early_probe()
     return 7
 
 /proc/other()"),
-            true,
         ),
-        ("new override of a called proc", format!("{TREE}/datum/base/child/result()\n    return own\n"), true),
+        ("new override of a called proc", format!("{TREE}/datum/base/child/result()\n    return own\n")),
         (
-            "referenced new proc with a new caller that constructs (declines: required types)",
+            "referenced new proc with a new caller that constructs",
             format!("{TREE}/datum/base/proc/used_probe()\n    return 2\n/proc/caller()\n    var/datum/base/item = new\n    return item.used_probe()\n"),
-            false,
         ),
     ];
-    for (label, edited, patches) in cases {
+    for (label, edited) in cases {
         let roots = Roots::new();
         let mut shared = shared();
         Arc::get_mut(&mut shared).unwrap().max_workers = 2;
@@ -206,21 +200,20 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
         let initial = compare_revision(&shared, &roots);
         let before = crate::retained_output::applied(&roots.manifest(0));
         edit_all(&roots, &edited);
-        let current = compare_revision(&shared, &roots);
+        let current = compare_revision_identical(&shared, &roots);
         assert_ne!(current, initial, "{label} must publish new content");
         let applied = crate::retained_output::applied(&roots.manifest(0)) - before;
-        assert_eq!(applied, u64::from(patches), "{label}: append patch applied");
+        assert_eq!(applied, 0, "{label}: a declaration add never patches the retained output");
         edit_all(&roots, TREE);
-        compare_revision(&shared, &roots);
+        let reverted = compare_revision_identical(&shared, &roots);
+        assert_eq!(reverted, initial, "{label}: revert must reproduce the initial bytes");
     }
 }
 
 #[test]
-fn appends_after_body_patches_edit_the_model_with_those_patches_applied() {
-    // A body patch splices code rows into the retained image but leaves the retained composed
-    // model alone. A structural append that follows must edit the model plus those rows, not
-    // fall back to a full compile, and the output must still equal a fresh compile (the
-    // patched bodies must not revert).
+fn body_patches_resume_after_declaration_adds_that_compose_fresh() {
+    // Body patches splice code rows into the retained image; an added var or proc between them composes the whole
+    // program in fresh order (byte-identical to a fresh compile), and the next body edit patches against that output.
     let roots = Roots::new();
     let mut shared = shared();
     Arc::get_mut(&mut shared).unwrap().max_workers = 2;
@@ -233,17 +226,17 @@ fn appends_after_body_patches_edit_the_model_with_those_patches_applied() {
     let body_after = appended_var.replace("        return value + 2\n", "        return value + 3\n");
     let appended_proc = format!("{body_after}/datum/base/proc/added_probe_proc()\n    return 41\n");
     let mut count = applied(&roots);
-    for (label, source) in [
-        ("first body patch", body_one.as_str()),
-        ("second body patch", body_two.as_str()),
-        ("append a var after body patches", appended_var.as_str()),
-        ("body patch after the append", body_after.as_str()),
-        ("append a proc after body and append patches", appended_proc.as_str()),
+    for (label, source, patches) in [
+        ("first body patch", body_one.as_str(), true),
+        ("second body patch", body_two.as_str(), true),
+        ("add a var after body patches", appended_var.as_str(), false),
+        ("body patch after the add", body_after.as_str(), true),
+        ("add a proc after body patches", appended_proc.as_str(), false),
     ] {
         edit_all(&roots, source);
-        compare_revision(&shared, &roots);
-        assert_eq!(applied(&roots), count + 1, "{label}: did not patch");
-        count += 1;
+        compare_revision_identical(&shared, &roots);
+        count += u64::from(patches);
+        assert_eq!(applied(&roots), count, "{label}: patched {patches}");
     }
 }
 
@@ -300,9 +293,9 @@ fn alternating_skeletons_patch_string_literal_edits_and_match_fresh_bytes() {
 }
 
 #[test]
-fn appended_callables_referenced_by_edited_bodies_match_fresh_bytes() {
-    // A new proc or verb that existing bodies call: the mentioning bodies are relowered and linked
-    // against the appended table entries. Every revision must be equivalent to a fresh compile.
+fn added_callables_referenced_by_edited_bodies_match_fresh_bytes() {
+    // A new proc that existing bodies call composes the whole program (fresh procedure order); a later string literal
+    // added to a calling body is a body patch. Every revision must be equivalent to a fresh compile.
     let roots = Roots::new();
     let mut shared = shared();
     Arc::get_mut(&mut shared).unwrap().max_workers = 2;
@@ -311,7 +304,7 @@ fn appended_callables_referenced_by_edited_bodies_match_fresh_bytes() {
     let mut source = TREE.to_string();
     // The first root procedure (probe) registers its literals first and never patches; the edits
     // touch the other bodies.
-    let steps: [(&str, &str, &str); 3] = [
+    let steps: [(&str, &str, &str, bool); 3] = [
         (
             "member proc called by an edited body",
             "/proc/other()
@@ -324,6 +317,7 @@ fn appended_callables_referenced_by_edited_bodies_match_fresh_bytes() {
     var/datum/base/item = new
     return item.value + item.added_bonus()
 ",
+            false,
         ),
         (
             "global proc called by an edited body",
@@ -333,52 +327,30 @@ fn appended_callables_referenced_by_edited_bodies_match_fresh_bytes() {
 /proc/added_twice(x)
     return x * 2
 ",
+            false,
         ),
         (
             "new string in the calling body",
             "return added_twice(item.value)",
             "return added_twice(item.value) + length(\"fresh text\")",
+            true,
         ),
     ];
-    for (label, before, after) in steps {
+    for (label, before, after, patches) in steps {
         assert!(source.contains(before), "{label} anchor");
         source = source.replacen(before, after, 1);
         let applied = crate::retained_output::applied(&roots.manifest(0));
         edit_all(&roots, &source);
-        compare_revision(&shared, &roots);
+        if patches {
+            compare_revision(&shared, &roots);
+        } else {
+            compare_revision_identical(&shared, &roots);
+        }
         assert_eq!(
             crate::retained_output::applied(&roots.manifest(0)),
-            applied + 1,
-            "{label}: did not patch"
+            applied + u64::from(patches),
+            "{label}: patched {patches}"
         );
-    }
-}
-
-#[test]
-fn appends_after_a_memory_pressure_release_recover_the_model_and_match_fresh_bytes() {
-    // Memory pressure releases the retained composed model. The next structural patch rebuilds it
-    // from the retained image instead of falling back to a full compile.
-    let roots = Roots::new();
-    let mut shared = shared();
-    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
-    edit_all(&roots, TREE);
-    compare_revision(&shared, &roots);
-    let applied = |roots: &Roots| crate::retained_output::applied(&roots.manifest(0));
-    let appended_var = TREE.replace("    var/own = 2\n", "    var/own = 2\n    var/added_probe = 5\n");
-    let appended_proc = format!("{appended_var}/datum/base/proc/added_probe_proc()\n    return 41\n");
-    let mut count = applied(&roots);
-    for (label, source) in [("append a var", appended_var.as_str()), ("append a proc after a release", appended_proc.as_str())] {
-        if label.ends_with("release") {
-            for index in 0..6 {
-                let request = request(&roots, index, false);
-                let slot = shared.slot(request.project.clone(), Some(&request));
-                slot.lock_host().unwrap().release_idle_artifacts();
-            }
-        }
-        edit_all(&roots, source);
-        compare_revision(&shared, &roots);
-        assert_eq!(applied(&roots), count + 1, "{label}: did not patch");
-        count += 1;
     }
 }
 
@@ -403,8 +375,7 @@ fn shadowing_moving_and_removing_a_callable_name_match_fresh_bytes() {
 
 #[test]
 fn types_added_between_existing_types_match_fresh_structurally() {
-    // The added type takes the next class index instead of its source position (stable link
-    // numbering); compare_revision gates the output on structural equivalence with a fresh build.
+    // The added type takes its source position in the class table (`typesof()` order), as a fresh build numbers it.
     let roots = Roots::new();
     let mut shared = shared();
     Arc::get_mut(&mut shared).unwrap().max_workers = 2;
@@ -418,4 +389,85 @@ fn types_added_between_existing_types_match_fresh_structurally() {
     compare_revision(&shared, &roots);
     edit_all(&roots, TREE);
     compare_revision(&shared, &roots);
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Step {
+    /// A body edit that keeps every string: a body patch, byte-identical while no literal was appended before.
+    Body,
+    /// A body edit that changes a string literal: the patch appends the new string (equivalent, not identical).
+    Literal,
+    /// A declaration edit (var or proc added or removed): composes the whole program in fresh order.
+    Declaration,
+}
+
+#[test]
+fn edit_sequence_matches_a_fresh_compile_at_every_step() {
+    // The edit kinds of tools/dmb/scripts/incremental_equiv_sequence.sh on a small tree, forward and reverted: every
+    // retained output is dmb-equiv equivalent to a fresh compile (orders strict: class table, named procedures and
+    // variable-name strings in fresh order), and byte-identical unless a body patch appended a literal since the
+    // last whole-program compose. A declaration add or removal never patches.
+    let base = format!("{TREE}/proc/words()\n    return \"alpha\"\n");
+    let steps: Vec<(&str, Step, Box<dyn Fn(&str) -> String>)> = vec![
+        ("body edit", Step::Body, Box::new(|s: &str| s.replacen("        return 1\n", "        return 5\n", 1))),
+        ("line shift", Step::Body, Box::new(|s: &str| s.replacen("/datum/base\n", "\n\n/datum/base\n", 1))),
+        ("string literal", Step::Literal, Box::new(|s: &str| s.replacen("\"alpha\"", "\"beta\"", 1))),
+        (
+            "new var between declared vars",
+            Step::Declaration,
+            Box::new(|s: &str| s.replacen("    var/value = 7\n", "    var/value = 7\n    var/added_mid = 9\n", 1)),
+        ),
+        (
+            "new proc above existing bodies",
+            Step::Declaration,
+            Box::new(|s: &str| s.replacen("/proc/other()", "/datum/base/proc/early_probe()\n    return 7\n/proc/other()", 1)),
+        ),
+        ("removed var", Step::Declaration, Box::new(|s: &str| s.replacen("    var/own = 2\n", "", 1))),
+        (
+            "removed proc",
+            Step::Declaration,
+            Box::new(|s: &str| s.replacen("    proc/helper()\n        return 5\n", "", 1).replacen(" + item.helper()", "", 1)),
+        ),
+    ];
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    edit_all(&roots, &base);
+    let initial = compare_revision_identical(&shared, &roots);
+    let mut states = vec![base.clone()];
+    for (_, _, edit) in &steps {
+        let next = edit(states.last().unwrap());
+        assert_ne!(&next, states.last().unwrap(), "every step edits the tree");
+        states.push(next);
+    }
+    let applied = |roots: &Roots| crate::retained_output::applied(&roots.manifest(0));
+    let mut appended = false;
+    let mut run = |label: String, kind: Step, source: &str, appended: &mut bool| {
+        let before = applied(&roots);
+        edit_all(&roots, source);
+        match kind {
+            Step::Literal => *appended = true,
+            Step::Declaration => *appended = false,
+            Step::Body => {}
+        }
+        let outputs = if *appended {
+            compare_revision(&shared, &roots)
+        } else {
+            compare_revision_identical(&shared, &roots)
+        };
+        if kind == Step::Declaration {
+            assert_eq!(applied(&roots), before, "{label}: a declaration edit never patches");
+        }
+        outputs
+    };
+    for (index, (label, kind, _)) in steps.iter().enumerate() {
+        run(format!("{label}"), *kind, &states[index + 1], &mut appended);
+    }
+    for (index, (label, kind, _)) in steps.iter().enumerate().rev() {
+        run(format!("revert {label}"), *kind, &states[index], &mut appended);
+    }
+    // One more declaration edit and its revert compose fresh: the initial bytes come back.
+    run("new var again".into(), Step::Declaration, &states[4], &mut appended);
+    let last = run("revert to the initial tree".into(), Step::Declaration, &base, &mut appended);
+    assert_eq!(last, initial, "the initial tree must reproduce the initial bytes");
 }
