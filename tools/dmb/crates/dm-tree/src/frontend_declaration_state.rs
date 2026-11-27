@@ -466,8 +466,37 @@ mod tests {
         ];
         for (index, step) in steps.iter().enumerate() {
             let before = Arc::clone(&active.symbols);
+            let previous = roster.clone();
             step(&mut roster);
+            // The known difference applied to a fork of the same state gives the same result as the full update.
+            let difference = |from: &[Arc<Contribution>], to: &[Arc<Contribution>]| {
+                let mut out: Vec<Arc<Contribution>> = Vec::new();
+                for value in from {
+                    if !to.iter().any(|other| Arc::ptr_eq(other, value)) && !out.iter().any(|other| Arc::ptr_eq(other, value)) {
+                        out.push(Arc::clone(value));
+                    }
+                }
+                out
+            };
+            let mut known = active.clone();
+            let shared_counts = Arc::clone(&known.counts);
+            let by_delta = known
+                .update_known(&difference(&previous, &roster), &difference(&roster, &previous))
+                .expect("a small known difference applies")
+                .unwrap();
+            if index == 0 {
+                // Equal spellings: neither the table nor the shared counts were copied.
+                assert!(Arc::ptr_eq(&before, &by_delta));
+                assert!(Arc::ptr_eq(&shared_counts, &known.counts));
+            }
             let delta = active.update(&roster).unwrap();
+            assert_eq!(ordered(&by_delta), ordered(&delta), "known step {index}");
+            assert_eq!(known.counts, active.counts, "known step {index}");
+            assert_eq!(
+                known.contributions.keys().collect::<Vec<_>>(),
+                active.contributions.keys().collect::<Vec<_>>(),
+                "known step {index}"
+            );
             let mut fresh = ActiveSymbols::default();
             let expected = fresh.update(&roster).unwrap();
             assert_eq!(ordered(&delta), ordered(&expected), "step {index}");
@@ -858,10 +887,12 @@ impl Contribution {
     }
 }
 
+/// Each request forks the previous request's state (copy on write): the two maps are shared, so a request that changes
+/// a few contributions copies only the contribution map, and the spelling counts only when the spellings change.
 #[derive(Default, Clone)]
 struct ActiveSymbols {
-    contributions: std::collections::BTreeMap<usize, Arc<Contribution>>,
-    counts: std::collections::BTreeMap<dm_ir::SymbolId, usize>,
+    contributions: Arc<std::collections::BTreeMap<usize, Arc<Contribution>>>,
+    counts: Arc<std::collections::BTreeMap<dm_ir::SymbolId, usize>>,
     symbols: Arc<SymbolTable>,
     catalog: Option<Arc<super::symbol_catalog::SymbolCatalog>>,
 }
@@ -903,12 +934,12 @@ impl ActiveSymbols {
             .collect();
         if removed.len() + added.len() <= SMALL_SPELLING_DELTA {
             let symbols = self.update_delta(&removed, &added)?;
-            self.contributions = next;
+            self.contributions = Arc::new(next);
             return Ok(symbols);
         }
         // Precheck every added leaf against a shallow transaction before committing.
         let mut symbols = self.symbols.as_ref().clone();
-        let mut counts = self.counts.clone();
+        let mut counts = self.counts.as_ref().clone();
         for value in &removed {
             for (id, _) in value.facts.symbols.ordered() {
                 if let Some(count) = counts.get_mut(&id) {
@@ -928,11 +959,11 @@ impl ActiveSymbols {
         for value in &added {
             symbols.merge_from(&value.facts.symbols)?;
         }
-        self.counts = counts;
+        self.counts = Arc::new(counts);
         if self.symbols.ordered() != symbols.ordered() {
             self.symbols = Arc::new(symbols);
         }
-        self.contributions = next;
+        self.contributions = Arc::new(next);
         Ok(self.symbols.clone())
     }
     /// `update`, when the caller knows the difference from `contributions` (`removed` leave, `added` join, each once): no pass
@@ -959,11 +990,12 @@ impl ActiveSymbols {
             Ok(symbols) => symbols,
             Err(collision) => return Some(Err(collision)),
         };
+        let contributions = Arc::make_mut(&mut self.contributions);
         for value in removed {
-            self.contributions.remove(&address(value));
+            contributions.remove(&address(value));
         }
         for value in added {
-            self.contributions.insert(address(value), Arc::clone(value));
+            contributions.insert(address(value), Arc::clone(value));
         }
         Some(Ok(symbols))
     }
@@ -974,13 +1006,36 @@ impl ActiveSymbols {
         removed: &[Arc<Contribution>],
         added: &[Arc<Contribution>],
     ) -> Result<Arc<SymbolTable>, dm_ir::SymbolCollision> {
-        let mut vanished = Vec::new();
+        // The removed and added leaves spell the same symbols as often (a body edit): every count ends where it was, the
+        // same spellings stay active, and only the collision check below remains; the shared counts are not copied.
+        let mut net: std::collections::BTreeMap<dm_ir::SymbolId, isize> = std::collections::BTreeMap::new();
         for value in removed {
             for (id, _) in value.facts.symbols.ordered() {
-                if let Some(count) = self.counts.get_mut(&id) {
+                *net.entry(id).or_default() -= 1;
+            }
+        }
+        for value in added {
+            for (id, _) in value.facts.symbols.ordered() {
+                *net.entry(id).or_default() += 1;
+            }
+        }
+        if net.values().all(|change| *change == 0)
+            && removed.iter().all(|value| value.facts.symbols.ordered().iter().all(|(id, _)| self.counts.contains_key(id)))
+        {
+            for value in added {
+                let mut probe = SymbolTable::overlay(Arc::clone(&self.symbols));
+                probe.merge_from(&value.facts.symbols)?;
+            }
+            return Ok(self.symbols.clone());
+        }
+        let mut vanished = Vec::new();
+        let counts = Arc::make_mut(&mut self.counts);
+        for value in removed {
+            for (id, _) in value.facts.symbols.ordered() {
+                if let Some(count) = counts.get_mut(&id) {
                     *count -= 1;
                     if *count == 0 {
-                        self.counts.remove(&id);
+                        counts.remove(&id);
                         vanished.push(id);
                     }
                 }
@@ -989,7 +1044,7 @@ impl ActiveSymbols {
         let mut appeared = Vec::new();
         for value in added {
             for (id, _) in value.facts.symbols.ordered() {
-                let count = self.counts.entry(id).or_default();
+                let count = counts.entry(id).or_default();
                 *count += 1;
                 if *count == 1 {
                     appeared.push(id);
@@ -997,19 +1052,20 @@ impl ActiveSymbols {
             }
         }
         let restore = |this: &mut Self| {
+            let counts = Arc::make_mut(&mut this.counts);
             for value in added {
                 for (id, _) in value.facts.symbols.ordered() {
-                    if let Some(count) = this.counts.get_mut(&id) {
+                    if let Some(count) = counts.get_mut(&id) {
                         *count -= 1;
                         if *count == 0 {
-                            this.counts.remove(&id);
+                            counts.remove(&id);
                         }
                     }
                 }
             }
             for value in removed {
                 for (id, _) in value.facts.symbols.ordered() {
-                    *this.counts.entry(id).or_default() += 1;
+                    *counts.entry(id).or_default() += 1;
                 }
             }
         };

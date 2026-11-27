@@ -140,9 +140,12 @@ fn items_of(
         keys.insert(index, key.clone());
         declarations.insert(key, Item { content, line });
     }
+    // Only the bodies of the declarations above, through the body index (a declaration's last body, as walking every body
+    // in order and keeping the last insert under its key did).
     let mut bodies = BTreeMap::new();
-    for body in frontend.bodies.iter() {
-        let Some(key) = keys.get(&(body.declaration.0 as usize)) else {
+    for (&index, key) in &keys {
+        let Some(body) = frontend.body_by_declaration.get(&OccurrenceId(index as u32)).and_then(|&at| frontend.bodies.get(at))
+        else {
             continue;
         };
         let span = body.expanded_span;
