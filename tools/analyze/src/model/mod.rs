@@ -62,12 +62,15 @@ pub struct Model {
     parent_sites: HashMap<Arc<str>, Site>,
     /// Each (type, var name)'s nearest declaration, once asked.
     declarations: Vec<std::sync::RwLock<HashMap<(TypeId, dm_ir::SymbolId), Option<consts::VarDeclaration>>>>,
+    /// Each proc's site (its parameter list), found once.
+    proc_sites: Vec<std::sync::RwLock<HashMap<MemberId, Option<Site>>>>,
     /// Every site asked about so far: its file, line and column.
     sites: Vec<std::sync::RwLock<HashMap<u32, Option<(Arc<str>, u32, u32)>>>>,
     /// Each proc's parameters, parsed from its header when first asked.
-    params: std::sync::Mutex<HashMap<MemberId, Arc<Vec<Param>>>>,
-    /// The repo-relative spelling of each path the site map names (resolved once per path).
-    rels: std::sync::Mutex<HashMap<Arc<str>, Arc<str>>>,
+    params: Vec<std::sync::RwLock<HashMap<MemberId, Arc<Vec<Param>>>>>,
+    /// The repo-relative spelling of each path the site map names: every included file's resolved when the model is made (the site
+    /// lookups of parallel walks then only read it), any other path once when first asked.
+    rels: std::sync::RwLock<HashMap<Arc<str>, Arc<str>>>,
     root_abs: PathBuf,
 }
 
@@ -143,8 +146,9 @@ impl Model {
             bodies: std::sync::OnceLock::new(),
             initializers: std::sync::OnceLock::new(),
             keys: std::sync::OnceLock::new(),
-            params: Default::default(),
+            params: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             sites: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
+            proc_sites: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             declarations: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             folded: std::sync::OnceLock::new(),
             rev,
@@ -159,6 +163,7 @@ impl Model {
             rels: Default::default(),
             root_abs,
         };
+        model.file_paths();
         if trace() {
             eprintln!(
                 "analyze: model view: {} types, {} members, {} bodies in {:.1?}",
@@ -203,6 +208,14 @@ impl Model {
             }
             map
         })
+    }
+
+    /// Builds the typed bodies, the var initializers and the folded constants now, on every core. They are built once per model and
+    /// read from inside parallel walks: a lazy build there runs on the one thread that got there first while every other worker waits on
+    /// it, so the model builds them up front.
+    pub fn prewarm(&self) {
+        rayon::join(|| self.bodies().len(), || self.initializers().len());
+        self.folded();
     }
 
     /// Every var's folded constant.
@@ -317,7 +330,7 @@ impl Model {
     }
 
     fn rel_arc(&self, path: &Arc<str>) -> Arc<str> {
-        if let Some(r) = self.rels.lock().unwrap().get(path) {
+        if let Some(r) = self.rels.read().unwrap_or_else(|e| e.into_inner()).get(path) {
             return r.clone();
         }
         let r: Arc<str> = self.rel(path).into();
@@ -325,7 +338,7 @@ impl Model {
     }
 
     fn rel(&self, path: &Arc<str>) -> String {
-        if let Some(r) = self.rels.lock().unwrap().get(path) {
+        if let Some(r) = self.rels.read().unwrap_or_else(|e| e.into_inner()).get(path) {
             return r.to_string();
         }
         let p = Path::new(&**path);
@@ -335,7 +348,7 @@ impl Model {
             Ok(rel) => rel.to_string_lossy().replace('\\', "/").into(),
             Err(_) => path.replace('\\', "/").into(),
         };
-        self.rels.lock().unwrap().insert(path.clone(), r.clone());
+        self.rels.write().unwrap_or_else(|e| e.into_inner()).insert(path.clone(), r.clone());
         r.to_string()
     }
 
@@ -533,13 +546,36 @@ impl<'m> Member<'m> {
         if self.kind() == MemberKind::Var {
             return Some(start);
         }
+        let shard = &self.m.proc_sites[(self.id.0 as usize).wrapping_mul(0x9E37_79B9) >> 26 & (SITE_SHARDS - 1)];
+        if let Some(hit) = shard.read().unwrap_or_else(|e| e.into_inner()).get(&self.id) {
+            return *hit;
+        }
+        let found = self.paren_site(start);
+        shard.write().unwrap_or_else(|e| e.into_inner()).insert(self.id, found);
+        found
+    }
+
+    /// A proc's parameter list `(`: the first `(` of its item. Before it a header holds only its path, so a plain scan finds it; a quote
+    /// or a comment before any `(` (never in a header the compiler accepted, kept for safety) sends it to the lexer.
+    fn paren_site(&self, start: Site) -> Option<Site> {
         let text = self.item_text()?;
-        let mut depth = 0usize;
-        for token in dm_syntax::lex(text).tokens {
-            match token.text.as_str() {
-                "(" if depth == 0 => return Some(Site(start.0 + token.span.start as u32)),
-                "(" => depth += 1,
+        let bytes = text.as_bytes();
+        let mut i = 0;
+        while i < bytes.len() {
+            match bytes[i] {
+                b'(' => return Some(Site(start.0 + i as u32)),
+                b'"' | b'\'' | b'{' => break,
+                b'/' if matches!(bytes.get(i + 1), Some(b'/') | Some(b'*')) => break,
                 _ => {}
+            }
+            i += 1;
+        }
+        if i == bytes.len() {
+            return Some(start);
+        }
+        for token in dm_syntax::lex(text).tokens {
+            if token.text == "(" {
+                return Some(Site(start.0 + token.span.start as u32));
             }
         }
         Some(start)
@@ -597,11 +633,12 @@ impl<'m> Member<'m> {
     /// The parameters (procs and verbs), as the header spells them.
     pub fn parameters(&self) -> Arc<Vec<Param>> {
         self.note_declaration();
-        if let Some(p) = self.m.params.lock().unwrap().get(&self.id) {
+        let shard = &self.m.params[(self.id.0 as usize).wrapping_mul(0x9E37_79B9) >> 26 & (SITE_SHARDS - 1)];
+        if let Some(p) = shard.read().unwrap_or_else(|e| e.into_inner()).get(&self.id) {
             return p.clone();
         }
         let p = Arc::new(self.parse_parameters());
-        self.m.params.lock().unwrap().insert(self.id, p.clone());
+        shard.write().unwrap_or_else(|e| e.into_inner()).insert(self.id, p.clone());
         p
     }
 
@@ -732,8 +769,20 @@ fn type_blocks<'a>(items: impl Iterator<Item = dm_tree::frontend::ItemView<'a>>,
     }
 }
 
-/// `(before, arguments, after)` of a proc header: the first top-level parenthesis group.
+/// `(before, arguments, after)` of a proc header: the first top-level parenthesis group. The header's first line is read first (an item's
+/// text holds its whole body).
 fn signature_parts(header: &str) -> Option<(&str, &str, &str)> {
+    if let Some(line_end) = header.find('\n') {
+        if let Some(parts) = signature_parts_in(&header[..line_end]) {
+            let (before, arguments, _) = parts;
+            let after_start = before.len() + 1 + arguments.len() + 1;
+            return Some((before, arguments, &header[after_start..]));
+        }
+    }
+    signature_parts_in(header)
+}
+
+fn signature_parts_in(header: &str) -> Option<(&str, &str, &str)> {
     let mut open = None;
     let mut depth = 0usize;
     for token in dm_syntax::lex(header).tokens {

@@ -198,6 +198,7 @@ impl Sem {
         }
         let rev = rev?;
         let model = Model::new(rev, root);
+        model.prewarm();
         let t_parsed = t_build.elapsed();
         // What a file's text says decides its key; the files in include order and their keys decide the environment.
         let mut file_keys: HashMap<String, u128> = HashMap::new();
