@@ -189,6 +189,44 @@ impl Frontend for ModelFrontend {
     }
 }
 
+/// `analyze frontend-diff`: type/var/proc names the two programs disagree on (a text-scanner blind
+/// spot, or a front end gap). Returns human-readable lines.
+pub fn diff(a: &Program, b: &Program, limit: usize) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut push = |s: String| {
+        if out.len() < limit {
+            out.push(s);
+        }
+    };
+    for (path, ta) in &a.types {
+        let Some(tb) = b.types.get(path) else {
+            push(format!("type {} only in {}", path, a.frontend));
+            continue;
+        };
+        for p in &ta.procs {
+            if !tb.procs.iter().any(|q| q.name == p.name) {
+                push(format!("proc {}/{} only in {} ({}:{})", path, p.name, a.frontend, p.file, p.line));
+            }
+        }
+        for p in &tb.procs {
+            if p.file == "(builtins)" {
+                continue;
+            }
+            if !ta.procs.iter().any(|q| q.name == p.name) {
+                push(format!("proc {}/{} only in {} ({}:{})", path, p.name, b.frontend, p.file, p.line));
+            }
+        }
+    }
+    for (path, tb) in &b.types {
+        let builtin_only = tb.procs.iter().all(|p| p.file == "(builtins)") && tb.vars.iter().all(|v| v.file == "(builtins)");
+        if !a.types.contains_key(path) && !builtin_only {
+            push(format!("type {} only in {}", path, b.frontend));
+        }
+    }
+    out
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;

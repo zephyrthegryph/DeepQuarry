@@ -354,7 +354,7 @@ pub fn walk_form<'v>(fm: Form<'v>, node: Option<&'v Expr>, at: Site, base: usize
 }
 
 fn walk_chain(c: &Chain<'_>, base: usize, f: &mut dyn FnMut(&Visit<'_>)) {
-    let mut each = |args: &Args<'_>, f: &mut dyn FnMut(&Visit<'_>)| {
+    let each = |args: &Args<'_>, f: &mut dyn FnMut(&Visit<'_>)| {
         for a in args.iter() {
             walk_expr_at(a, base, f);
         }

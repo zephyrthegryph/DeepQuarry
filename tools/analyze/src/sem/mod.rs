@@ -544,13 +544,6 @@ fn layering_definitions(tree: &Tree, model: &Model) -> (HashMap<String, Vec<Stri
     (layering_type_defs, layering_owner_defs)
 }
 
-/// Parses `dme_path` with dreammaker: the preprocessor (lexing, macro expansion, includes: about a third of the parse) runs on its own
-/// thread and streams batches of tokens to the parser here. A `Context` is not shareable between threads, so each side has its own: the
-/// preprocessor's registers the files (every `Location` names one of its file ids), and the errors of both are kept. `preregister` names
-/// files to register first, in order, so they get the same ids as in the parse that produced that list (`model_store`).
-pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<String>) -> Result<model_store::Parsed, String> {
-    parse_source(dme_path, preregister, Source::Dme(text), false, None)
-}
 
 /// A full parse as DreamChecker makes it (`crate::dreamchecker`): every body parsed (not the lean encoding), the config of
 /// `config_dme`'s directory, every diagnostic kept.
@@ -564,12 +557,9 @@ pub fn parse_for_checker(dme_path: &Path, config_dme: &Path) -> Result<model_sto
 pub(crate) enum Source {
     /// The `.dme` (or text standing in for it: includes resolve against the real `.dme`'s directory).
     Dme(Option<String>),
-    /// Files read one after the other, starting with the macro state the stored history had at the start of the first: (registered path,
-    /// path on disk). See `model_store`.
-    Alone(std::sync::Arc<dreammaker::preprocessor::StoredDefineHistory>, Vec<(PathBuf, PathBuf)>),
 }
 
-/// [`parse_dme`] with the source spelled out; `history` also returns the parse's macro history (`Parsed::defines`).
+/// dreammaker's parse of `dme_path` (DreamChecker's default path); `history` also returns the parse's macro history (`Parsed::defines`).
 /// Makes the next full parses hold proc bodies encoded (decoded when read) instead of as syntax trees: a much lower peak for a process
 /// that parses the whole tree and reads a few bodies, slower for one that reads them all.
 pub fn set_lean_parse(on: bool) {
@@ -622,21 +612,6 @@ fn parse_source_env(dme_path: &Path, preregister: &[PathBuf], source: Source, hi
                 let mut pp = match source {
                     Source::Dme(Some(t)) => dreammaker::preprocessor::Preprocessor::from_buffer(&ctx, dme_for_pp.clone(), t),
                     Source::Dme(None) => dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?,
-                    Source::Alone(hist, files) => {
-                        let Some((first, _)) = files.first() else { return Err("nothing to parse".to_string()) };
-                        let fid = ctx.get_file(first).ok_or("the first file is not registered")?;
-                        let mut pp = dreammaker::preprocessor::DefineHistory::from_stored(&hist).branch_at_file(fid, &ctx);
-                        // An include stack: the first file is read first.
-                        // Registered under its relative path, `__FILE__` the path an include from the .dme resolves to (the .dme's directory
-                        // joined with the include text), as in the full parse.
-                        let env_dir = dme_for_pp.parent().map(|p| p.to_path_buf()).unwrap_or_default();
-                        for (reg, abs) in files.iter().rev() {
-                            let f = std::fs::File::open(abs).map_err(|e| format!("{}: {}", abs.display(), e))?;
-                            let shown = if reg.is_absolute() { reg.clone() } else { env_dir.join(reg.to_string_lossy().replace('\\', "/")) };
-                            pp.push_file_as(reg, shown, f).map_err(|e| e.to_string())?;
-                        }
-                        pp
-                    }
                 };
                 if let Some(env) = &env {
                     pp.replace_environment_defines(&env.defines);

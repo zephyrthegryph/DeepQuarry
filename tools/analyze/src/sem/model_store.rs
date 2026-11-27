@@ -32,10 +32,6 @@ pub struct Parsed {
     pub fatal: bool,
 }
 
-pub(crate) fn trace() -> bool {
-    dq_hostio::var("DQ_ANALYZE_TRACE").is_ok()
-}
-
 /// The tree stores proc bodies encoded and decodes one when something reads it (`dreammaker::objtree::LazyCode`): bincode both ways.
 pub fn ensure_codec() {
     fn enc(c: &Option<dreammaker::ast::Block>) -> Vec<u8> {

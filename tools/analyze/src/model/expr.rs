@@ -320,7 +320,7 @@ fn new_chain<'a>(new_node: &'a Expr, value: &'a Expr, outer: Vec<Hop<'a>>) -> Ch
         None => (&posts[..], &posts[posts.len()..]),
     };
     let (args, rest) = match rest.split_first() {
-        Some((Post::Call(a, _), tail)) => (Some(Args(a)), tail),
+        Some((Post::Call(a), tail)) => (Some(Args(a)), tail),
         _ => (None, rest),
     };
     let root = match &core.kind {
@@ -359,7 +359,7 @@ fn new_chain<'a>(new_node: &'a Expr, value: &'a Expr, outer: Vec<Hop<'a>>) -> Ch
 
 enum Post<'a> {
     Hop(Hop<'a>),
-    Call(&'a [Expr], &'a Expr),
+    Call(&'a [Expr]),
     Init(&'a [(String, Expr)]),
 }
 
@@ -373,7 +373,7 @@ fn chain_of_posts(mut e: &Expr) -> (&Expr, Vec<Post<'_>>) {
             ExprKind::StaticMember { object, selector } => (&**object, Post::Hop(Hop::Static { name: selector, at: e })),
             ExprKind::Index { object, index } => (&**object, Post::Hop(Hop::Index { index, safe: false, at: e })),
             ExprKind::SafeIndex { object, index } => (&**object, Post::Hop(Hop::Index { index, safe: true, at: e })),
-            ExprKind::Call { callee, args } => (&**callee, Post::Call(args, e)),
+            ExprKind::Call { callee, args } => (&**callee, Post::Call(args)),
             ExprKind::ObjectInitializer { object, fields } => (&**object, Post::Init(fields)),
             ExprKind::Unary { op, value } if op.starts_with("post") => (&**value, Post::Hop(Hop::Unary { op, at: e })),
             _ => break,
