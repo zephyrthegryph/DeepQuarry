@@ -9,7 +9,7 @@ use foldhash::{HashMap, HashMapExt};
 
 use super::analysis::{assumption_set, Analysis, Assumption, StaticType, Value};
 use super::directives::{error, lookup, Directives, FILTER_FLAG_VALUES, VALID_FILTER_FLAGS, VALID_FILTER_TYPES};
-use super::input::{InputType, Site};
+use super::input::{InputType, Site, Where};
 use super::model::{Model, ProcId, TypeId, VarFlags};
 use super::type_expr::{TypeExpr, TypeExprContext};
 use super::view::{Base, Follow, Part, Reader, Shape, Term, UnaryOp};
@@ -25,12 +25,12 @@ pub struct Shared {
 pub struct ProcFacts {
     pub diagnostics: Vec<DMError>,
     /// (callee, where, inside a new context).
-    pub calls: Vec<(ProcId, Location, bool)>,
-    pub sleeps: Vec<(String, Location)>,
-    pub impure: Vec<(String, Location)>,
+    pub calls: Vec<(ProcId, Where, bool)>,
+    pub sleeps: Vec<(String, Where)>,
+    pub impure: Vec<(String, Where)>,
     pub waitfor: bool,
     /// (`src/proc/name` key, the callee's location, keyword, where): an inexact call's keyword argument.
-    pub kwargs: Vec<(String, Location, String, Location)>,
+    pub kwargs: Vec<(String, Location, String, Where)>,
 }
 
 #[derive(Debug)]
@@ -105,13 +105,13 @@ impl ControlFlow {
 
 #[derive(Debug, Clone)]
 struct LocalVar {
-    location: Location,
+    location: Where,
     analysis: Analysis,
 }
 
 impl From<Analysis> for LocalVar {
     fn from(analysis: Analysis) -> Self {
-        LocalVar { location: Location::default(), analysis }
+        LocalVar { location: Where::none(), analysis }
     }
 }
 
@@ -200,7 +200,7 @@ pub struct Walk<'a, 's> {
 }
 
 impl<'a, 's> Walk<'a, 's> {
-    pub fn new(model: &'a Model, shared: &'a Shared, site: &'s mut (dyn Site + 'a), proc: ProcId) -> Self {
+    pub fn new(model: &'a Model, shared: &'a Shared, site: &'s (dyn Site + 'a), proc: ProcId) -> Self {
         Walk { model, shared, reader: Reader { site, shift: 0 }, ty: proc.ty, proc, facts: ProcFacts::default(), calls_parent: false, inside_newcontext: 0 }
     }
 
@@ -208,13 +208,16 @@ impl<'a, 's> Walk<'a, 's> {
         self.facts.diagnostics.push(e);
     }
 
-    fn loc(&mut self, offset: usize) -> Location {
-        let at = self.reader.shift + offset;
-        self.reader.site.locate(at)
+    fn loc(&self, offset: usize) -> Where {
+        Where::At(self.reader.shift + offset)
     }
 
-    fn static_type_of(&mut self, location: Location, of: &[String]) -> StaticType {
-        match static_type(self.model, location, of) {
+    fn place(&self, at: Where) -> Location {
+        self.reader.site.place(at)
+    }
+
+    fn static_type_of(&mut self, location: Where, of: &[String]) -> StaticType {
+        match static_type(self.model, self.place(location), of) {
             Ok(s) => s,
             Err(e) => {
                 self.register(e);
@@ -223,7 +226,7 @@ impl<'a, 's> Walk<'a, 's> {
         }
     }
 
-    fn static_type(&mut self, location: Location, of: &[String]) -> Analysis {
+    fn static_type(&mut self, location: Where, of: &[String]) -> Analysis {
         Analysis::from(self.static_type_of(location, of))
     }
 
@@ -259,6 +262,7 @@ impl<'a, 's> Walk<'a, 's> {
         self.visit_block(body, &mut locals, true);
 
         let d = &self.shared.directives;
+        let proc_location = self.place(proc_location);
         if let Some(parent) = m.parent_proc(self.proc) {
             if let Some((proc, true, location)) = d.private.get_self_or_parent(m, self.proc) {
                 if proc != self.proc {
@@ -287,7 +291,7 @@ impl<'a, 's> Walk<'a, 's> {
             if !m.is_builtin(parent) && self.proc.ty == parent.ty && d.can_be_redefined.get_self_or_parent(m, self.proc).is_none() {
                 let e = error(proc_location, format!("redefining proc {}/{}", m.ty(self.ty).pretty_path(), m.proc_name(self.proc)))
                     .with_errortype("redefined_proc")
-                    .with_note(m.value(parent).location, "previous definition is here")
+                    .with_note(self.place(m.value(parent).location), "previous definition is here")
                     .set_severity(Severity::Hint);
                 self.register(e);
             }
@@ -295,14 +299,14 @@ impl<'a, 's> Walk<'a, 's> {
     }
 
     /// The statements of a block grouped as SpacemanDMM's parser groups them, each at its place.
-    fn logical<'b>(&mut self, block: &'b [Statement]) -> Vec<(Location, Logical<'b>)> {
-        let mut out: Vec<(Location, Logical<'b>)> = Vec::new();
+    fn logical<'b>(&mut self, block: &'b [Statement]) -> Vec<(Where, Logical<'b>)> {
+        let mut out: Vec<(Where, Logical<'b>)> = Vec::new();
         for s in block {
             let location = self.loc(s.header_span.start);
             if let StatementKind::Var { .. } = &s.kind {
                 if !s.raw_header.trim_start().starts_with("var") {
                     if let Some((prev_loc, prev)) = out.last_mut() {
-                        if prev_loc.line == location.line {
+                        if self.place(*prev_loc).line == self.place(location).line {
                             match prev {
                                 Logical::One(p) if matches!(p.kind, StatementKind::Var { .. }) => {
                                     *prev = Logical::Vars(vec![p, s]);
@@ -327,13 +331,13 @@ impl<'a, 's> Walk<'a, 's> {
         let mut term = ControlFlow::allfalse();
         for (location, stmt) in self.logical(block) {
             if term.terminates() {
-                self.register(error(location, "possible unreachable code here").with_errortype("unreachable_code"));
+                self.register(error(self.place(location), "possible unreachable code here").with_errortype("unreachable_code"));
                 return term;
             }
             match &stmt {
                 Logical::One(Statement { kind: StatementKind::Set { attribute, .. }, .. }) => {
                     if !setting_allowed && attribute.starts_with("SpacemanDMM_") {
-                        self.register(error(location, "set statement not at the top of the proc").with_errortype("set_has_no_effect"));
+                        self.register(error(self.place(location), "set statement not at the top of the proc").with_errortype("set_has_no_effect"));
                     }
                 }
                 _ => setting_allowed = false,
@@ -344,7 +348,7 @@ impl<'a, 's> Walk<'a, 's> {
         term
     }
 
-    fn visit_logical(&mut self, location: Location, stmt: &Logical<'_>, locals: &mut Locals) -> ControlFlow {
+    fn visit_logical(&mut self, location: Where, stmt: &Logical<'_>, locals: &mut Locals) -> ControlFlow {
         match stmt {
             Logical::One(s) => self.visit_statement(location, s, locals),
             Logical::Vars(list) => {
@@ -358,24 +362,24 @@ impl<'a, 's> Walk<'a, 's> {
         }
     }
 
-    fn loop_condition_check(&mut self, location: Location, e: &Expr) {
+    fn loop_condition_check(&mut self, location: Where, e: &Expr) {
         match self.is_truthy(e) {
-            Some(true) => self.register(error(location, "loop condition is always true").with_errortype("loop_condition_determinate")),
-            Some(false) => self.register(error(location, "loop condition is always false").with_errortype("loop_condition_determinate")),
+            Some(true) => self.register(error(self.place(location), "loop condition is always true").with_errortype("loop_condition_determinate")),
+            Some(false) => self.register(error(self.place(location), "loop condition is always false").with_errortype("loop_condition_determinate")),
             None => {}
         }
     }
 
-    fn visit_control_condition(&mut self, location: Location, e: &Expr) {
+    fn visit_control_condition(&mut self, location: Where, e: &Expr) {
         if self.is_const_eval(e) {
-            self.register(error(location, "control flow condition is a constant evalutation").with_errortype("control_condition_static"));
+            self.register(error(self.place(location), "control flow condition is a constant evalutation").with_errortype("control_condition_static"));
         } else if self.as_term(e).is_some_and(|t| t.is_static()) {
-            self.register(error(location, "control flow condition is a static term").with_errortype("control_condition_static"));
+            self.register(error(self.place(location), "control flow condition is a static term").with_errortype("control_condition_static"));
         }
     }
 
     /// A control's condition as SpacemanDMM places it: at the `(` it is read after.
-    fn condition_loc(&mut self, condition: &Expr) -> Location {
+    fn condition_loc(&mut self, condition: &Expr) -> Where {
         let at = dm_syntax::control_open_paren(self.reader.site.text(), condition.span.start).unwrap_or(condition.span.start);
         self.loc(at)
     }
@@ -459,7 +463,7 @@ impl<'a, 's> Walk<'a, 's> {
         }
     }
 
-    fn visit_statement(&mut self, location: Location, s: &Statement, locals: &mut Locals) -> ControlFlow {
+    fn visit_statement(&mut self, location: Where, s: &Statement, locals: &mut Locals) -> ControlFlow {
         match &s.kind {
             StatementKind::Call(e) | StatementKind::Expression(e) => {
                 if let dm_syntax::ExprKind::Call { callee, args } = &e.kind {
@@ -487,7 +491,7 @@ impl<'a, 's> Walk<'a, 's> {
             }
             StatementKind::Return(Some(e)) => {
                 if self.inside_newcontext > 0 {
-                    self.register(error(location, "returning a value in a spawn has no effect").set_severity(Severity::Warning));
+                    self.register(error(self.place(location), "returning a value in a spawn has no effect").set_severity(Severity::Warning));
                 }
                 let return_type = self.visit_expression(location, e, None, locals);
                 locals.get_mut(".").unwrap().analysis = return_type;
@@ -508,7 +512,7 @@ impl<'a, 's> Walk<'a, 's> {
                 let mut scoped = locals.clone();
                 let mut state = self.visit_block(body, &mut scoped, false);
                 if state.terminates_loop() {
-                    self.register(error(location, "do while terminates without ever reaching condition"));
+                    self.register(error(self.place(location), "do while terminates without ever reaching condition"));
                     return state;
                 }
                 let cl = self.condition_loc(condition);
@@ -542,18 +546,18 @@ impl<'a, 's> Walk<'a, 's> {
                     self.visit_control_condition(cl, condition);
                     if alwaystrue {
                         self.register(
-                            error(cl, "unreachable if block, preceeding if/elseif condition(s) are always true").with_errortype("unreachable_code"),
+                            error(self.place(cl), "unreachable if block, preceeding if/elseif condition(s) are always true").with_errortype("unreachable_code"),
                         );
                     }
                     self.visit_expression(cl, condition, None, &mut scoped);
                     let state = self.visit_block(block, &mut scoped, false);
                     match self.is_truthy(condition) {
                         Some(true) => {
-                            self.register(error(cl, "if condition is always true").with_errortype("if_condition_determinate"));
+                            self.register(error(self.place(cl), "if condition is always true").with_errortype("if_condition_determinate"));
                             allterm.merge_false(state);
                             alwaystrue = true;
                         }
-                        Some(false) => self.register(error(cl, "if condition is always false").with_errortype("if_condition_determinate")),
+                        Some(false) => self.register(error(self.place(cl), "if condition is always false").with_errortype("if_condition_determinate")),
                         None => allterm.merge_false(state),
                     }
                 }
@@ -563,7 +567,7 @@ impl<'a, 's> Walk<'a, 's> {
                             if let Some(first) = else_arm.first() {
                                 let at = self.loc(first.header_span.start);
                                 self.register(
-                                    error(at, "unreachable else block, preceeding if/elseif condition(s) are always true").with_errortype("unreachable_code"),
+                                    error(self.place(at), "unreachable else block, preceeding if/elseif condition(s) are always true").with_errortype("unreachable_code"),
                                 );
                             }
                         }
@@ -609,8 +613,7 @@ impl<'a, 's> Walk<'a, 's> {
                         SwitchAlternative::Range(_, b) => b.span.end,
                     });
                     let last = case.body.iter().map(|s| s.span.end).max().or(end).unwrap_or(0);
-                    let at = self.reader.shift + last.saturating_sub(1);
-                    case_locs.push(self.reader.site.line_end(at));
+                    case_locs.push(Where::LineEnd(self.reader.shift + last.saturating_sub(1)));
                 }
                 let default = if else_branch.is_empty() { None } else { Some(else_branch.as_slice()) };
                 super::switch_rand::check(self, selector, cases, &case_locs, default.is_some(), location);
@@ -622,7 +625,7 @@ impl<'a, 's> Walk<'a, 's> {
                     if let [SwitchAlternative::Exact(e)] = case.alternatives.as_slice() {
                         if matches!(self.reader.shape(e), Shape::Binary { op: "||", .. }) {
                             self.register(
-                                error(case_loc, "Elements in a switch-case branch separated by ||, this is likely in error and should be replaced by a comma")
+                                error(self.place(case_loc), "Elements in a switch-case branch separated by ||, this is likely in error and should be replaced by a comma")
                                     .set_severity(Severity::Warning),
                             );
                         }
@@ -687,14 +690,14 @@ impl<'a, 's> Walk<'a, 's> {
     }
 
     /// An expression statement: a discarded call to a pure proc, a `<<` onto an impure value, then the expression.
-    fn visit_expr_statement(&mut self, location: Location, e: &Expr, locals: &mut Locals) {
+    fn visit_expr_statement(&mut self, location: Where, e: &Expr, locals: &mut Locals) {
         match self.reader.shape(e) {
             Shape::Base(Base { term: Term::Call { name, .. }, follows, .. }) => {
                 if !follows.iter().any(|(f, _)| matches!(f, Follow::Call(..))) {
                     if let Some(proc) = self.model.get_proc(self.ty, name) {
                         if let Some((_, _, loc)) = self.shared.directives.must_be_pure.get_self_or_parent(self.model, proc) {
                             self.register(
-                                error(location, format!("call to pure proc {name} discards return value"))
+                                error(self.place(location), format!("call to pure proc {name} discards return value"))
                                     .with_note(loc, "prohibited by this must_be_pure annotation"),
                             );
                         }
@@ -712,7 +715,7 @@ impl<'a, 's> Walk<'a, 's> {
         self.visit_expression(location, e, None, locals);
     }
 
-    fn visit_for(&mut self, location: Location, s: &Statement, control: &ForControl, body: &[Statement], locals: &mut Locals) -> ControlFlow {
+    fn visit_for(&mut self, location: Where, s: &Statement, control: &ForControl, body: &[Statement], locals: &mut Locals) -> ControlFlow {
         let mut scoped = locals.clone();
         match control {
             ForControl::CStyle { initializer, condition, step } => {
@@ -796,7 +799,7 @@ impl<'a, 's> Walk<'a, 's> {
                         }
                     };
                     if !validity {
-                        self.register(error(location, "for range loop body is never reached due to invalid range"));
+                        self.register(error(self.place(location), "for range loop body is never reached due to invalid range"));
                     } else {
                         return state;
                     }
@@ -807,7 +810,7 @@ impl<'a, 's> Walk<'a, 's> {
         }
     }
 
-    fn check_iterable(&mut self, location: Location, st: &StaticType) {
+    fn check_iterable(&mut self, location: Where, st: &StaticType) {
         let m = self.model;
         match st {
             StaticType::None | StaticType::List { .. } => {}
@@ -817,17 +820,17 @@ impl<'a, 's> Walk<'a, 's> {
                     let atom = m.expect("/atom");
                     if m.is_subtype_of(ty, atom) {
                     } else if m.is_subtype_of(atom, ty) {
-                        self.register(error(location, "iterating over a /datum which might not be an /atom").set_severity(Severity::Hint));
+                        self.register(error(self.place(location), "iterating over a /datum which might not be an /atom").set_severity(Severity::Hint));
                     } else {
-                        self.register(error(location, format!("iterating over a {} which cannot be iterated", m.ty(ty).path)));
+                        self.register(error(self.place(location), format!("iterating over a {} which cannot be iterated", m.ty(ty).path)));
                     }
                 }
             }
-            StaticType::Proc => self.register(error(location, "iterating over a procpath which cannot be iterated")),
+            StaticType::Proc => self.register(error(self.place(location), "iterating over a procpath which cannot be iterated")),
         }
     }
 
-    fn visit_var_decl(&mut self, location: Location, declaration: &str, value: Option<&Expr>, locals: &mut Locals) {
+    fn visit_var_decl(&mut self, location: Where, declaration: &str, value: Option<&Expr>, locals: &mut Locals) {
         let d = declared(declaration);
         match value {
             Some(v) => self.visit_var(location, &d.type_path, &d.name, Some(v), locals),
@@ -835,7 +838,7 @@ impl<'a, 's> Walk<'a, 's> {
                 // `var/L[10]` is `var/list/L = new /list(10)`: SpacemanDMM's term carries no place.
                 let static_type = self.static_type_of(location, &d.type_path);
                 let list = self.model.expect("/list");
-                let mut analysis = self.visit_new(Location::default(), list, &[], locals);
+                let mut analysis = self.visit_new(Where::none(), list, &[], locals);
                 analysis.static_ty = static_type;
                 locals.insert(d.name.clone(), LocalVar { location, analysis });
             }
@@ -843,7 +846,7 @@ impl<'a, 's> Walk<'a, 's> {
         }
     }
 
-    fn visit_var(&mut self, location: Location, type_path: &[String], name: &str, value: Option<&Expr>, locals: &mut Locals) {
+    fn visit_var(&mut self, location: Where, type_path: &[String], name: &str, value: Option<&Expr>, locals: &mut Locals) {
         let static_type = self.static_type_of(location, type_path);
         let mut analysis = match value {
             Some(expr) => self.visit_expression(location, expr, static_type.basic_type(), locals),
@@ -853,7 +856,7 @@ impl<'a, 's> Walk<'a, 's> {
         locals.insert(name.to_owned(), LocalVar { location, analysis });
     }
 
-    fn visit_assign(&mut self, location: Location, _op: &str, lhs: &Expr, rhs: &Expr, _hint: Option<TypeId>, locals: &mut Locals) -> Analysis {
+    fn visit_assign(&mut self, location: Where, _op: &str, lhs: &Expr, rhs: &Expr, _hint: Option<TypeId>, locals: &mut Locals) -> Analysis {
         let l = self.visit_expression(location, lhs, None, locals);
         if l.is_impure == Some(true) {
             self.facts.impure.push(("Assignment on purity breaking expression".into(), location));
@@ -861,7 +864,7 @@ impl<'a, 's> Walk<'a, 's> {
         self.visit_expression(location, rhs, l.static_ty.basic_type(), locals)
     }
 
-    fn visit_expression(&mut self, location: Location, e: &Expr, type_hint: Option<TypeId>, locals: &mut Locals) -> Analysis {
+    fn visit_expression(&mut self, location: Where, e: &Expr, type_hint: Option<TypeId>, locals: &mut Locals) -> Analysis {
         match self.reader.shape(e) {
             Shape::Base(b) => {
                 let base_hint = if b.follows.is_empty() { type_hint } else { None };
@@ -892,11 +895,11 @@ impl<'a, 's> Walk<'a, 's> {
                         for (f, _) in &b.follows {
                             if let Follow::Unary(unary) = f {
                                 self.register(
-                                    error(location, format!("ambiguous `{}` on left side of an `in`", unary.name()))
+                                    error(self.place(location), format!("ambiguous `{}` on left side of an `in`", unary.name()))
                                         .set_severity(Severity::Warning)
                                         .with_errortype("ambiguous_in_lhs")
-                                        .with_note(location, format!("add parentheses to fix: `{}`", unary.around("(a in b)")))
-                                        .with_note(location, format!("add parentheses to disambiguate: `({}) in b`", unary.around("a"))),
+                                        .with_note(self.place(location), format!("add parentheses to fix: `{}`", unary.around("(a in b)")))
+                                        .with_note(self.place(location), format!("add parentheses to disambiguate: `({}) in b`", unary.around("a"))),
                                 );
                                 break;
                             }
@@ -904,20 +907,20 @@ impl<'a, 's> Walk<'a, 's> {
                     }
                     Shape::Binary { op, .. } | Shape::Assign { op, .. } => {
                         self.register(
-                            error(location, format!("ambiguous `{op}` on left side of an `in`"))
+                            error(self.place(location), format!("ambiguous `{op}` on left side of an `in`"))
                                 .set_severity(Severity::Warning)
                                 .with_errortype("ambiguous_in_lhs")
-                                .with_note(location, format!("add parentheses to fix: `a {op} (b in c)`"))
-                                .with_note(location, format!("add parentheses to disambiguate: `(a {op} b) in c`")),
+                                .with_note(self.place(location), format!("add parentheses to fix: `a {op} (b in c)`"))
+                                .with_note(self.place(location), format!("add parentheses to disambiguate: `(a {op} b) in c`")),
                         );
                     }
                     Shape::Ternary { .. } => {
                         self.register(
-                            error(location, "ambiguous ternary on left side of an `in`")
+                            error(self.place(location), "ambiguous ternary on left side of an `in`")
                                 .set_severity(Severity::Warning)
                                 .with_errortype("ambiguous_in_lhs")
-                                .with_note(location, "add parentheses to fix: `a ? b : (c in d)`")
-                                .with_note(location, "add parentheses to disambiguate: `(a ? b : c) in d`"),
+                                .with_note(self.place(location), "add parentheses to fix: `a ? b : (c in d)`")
+                                .with_note(self.place(location), "add parentheses to disambiguate: `(a ? b : c) in d`"),
                         );
                     }
                     Shape::Unread => {}
@@ -954,7 +957,7 @@ impl<'a, 's> Walk<'a, 's> {
     }
 
     /// `term` at `location`; `at` is its offset (an interpolated string's parts are placed from it).
-    fn visit_term(&mut self, location: Location, at: usize, term: &Term<'_>, type_hint: Option<TypeId>, locals: &mut Locals) -> Analysis {
+    fn visit_term(&mut self, location: Where, at: usize, term: &Term<'_>, type_hint: Option<TypeId>, locals: &mut Locals) -> Analysis {
         let m = self.model;
         match term {
             Term::Null => Analysis::null(),
@@ -980,7 +983,7 @@ impl<'a, 's> Walk<'a, 's> {
                     ana.is_impure = Some(true);
                     ana
                 } else {
-                    self.register(error(location, format!("undefined var: {name:?}")));
+                    self.register(error(self.place(location), format!("undefined var: {name:?}")));
                     Analysis::empty()
                 }
             }
@@ -996,7 +999,7 @@ impl<'a, 's> Walk<'a, 's> {
                         is_impure: None,
                     },
                     None => {
-                        self.register(error(location, format!("failed to resolve path {}", format_type_path(&pieces))));
+                        self.register(error(self.place(location), format!("failed to resolve path {}", format_type_path(&pieces))));
                         Analysis::empty()
                     }
                 }
@@ -1033,7 +1036,7 @@ impl<'a, 's> Walk<'a, 's> {
                     }
                     Analysis::empty()
                 } else {
-                    self.register(error(location, format!("undefined proc: {:?} on {}", name, m.ty(self.ty).pretty_path())));
+                    self.register(error(self.place(location), format!("undefined proc: {:?} on {}", name, m.ty(self.ty).pretty_path())));
                     Analysis::empty()
                 }
             }
@@ -1048,7 +1051,7 @@ impl<'a, 's> Walk<'a, 's> {
                     let src = self.ty;
                     self.visit_call(location, src, proc, args, true, locals)
                 } else {
-                    self.register(error(location, format!("proc has no parent: {}", m.proc_display(self.proc))).with_errortype("proc_has_no_parent"));
+                    self.register(error(self.place(location), format!("proc has no parent: {}", m.proc_display(self.proc))).with_errortype("proc_has_no_parent"));
                     Analysis::empty()
                 }
             }
@@ -1058,7 +1061,7 @@ impl<'a, 's> Walk<'a, 's> {
                     self.visit_new(location, hint, args.as_ref().unwrap_or(&empty), locals)
                 }
                 None => {
-                    self.register(error(location, "no type hint available on implicit new()").with_errortype("no_typehint_implicit_new"));
+                    self.register(error(self.place(location), "no type hint available on implicit new()").with_errortype("no_typehint_implicit_new"));
                     Analysis::empty()
                 }
             },
@@ -1070,7 +1073,7 @@ impl<'a, 's> Walk<'a, 's> {
                         self.visit_new(location, ty, args.as_ref().unwrap_or(&empty), locals)
                     }
                     None => {
-                        self.register(error(location, format!("failed to resolve path {}", format_type_path(&pieces))));
+                        self.register(error(self.place(location), format!("failed to resolve path {}", format_type_path(&pieces))));
                         Analysis::empty()
                     }
                 }
@@ -1169,17 +1172,17 @@ impl<'a, 's> Walk<'a, 's> {
         }
     }
 
-    fn visit_new(&mut self, location: Location, ty: TypeId, args: &[&Expr], locals: &mut Locals) -> Analysis {
+    fn visit_new(&mut self, location: Where, ty: TypeId, args: &[&Expr], locals: &mut Locals) -> Analysis {
         let m = self.model;
         if let Some(new_proc) = m.get_proc(ty, "New") {
             self.visit_call(location, ty, new_proc, args, true, locals);
         } else if !["/list", "/alist", "/vector", "/pixloc"].contains(&m.ty(ty).path.as_str()) {
-            self.register(error(location, format!("couldn't find {}/proc/New", m.ty(ty).path)));
+            self.register(error(self.place(location), format!("couldn't find {}/proc/New", m.ty(ty).path)));
         }
         assumption_set![Assumption::IsType(true, ty)].into()
     }
 
-    fn check_type_sleepers(&mut self, ty: TypeId, location: Location, name: &str) {
+    fn check_type_sleepers(&mut self, ty: TypeId, location: Where, name: &str) {
         match self.model.ty(ty).path.as_str() {
             "/client" if self.inside_newcontext == 0 && matches!(name, "SoundQuery" | "MeasureText") => {
                 self.facts.sleeps.push((format!("client.{name}"), location));
@@ -1191,7 +1194,7 @@ impl<'a, 's> Walk<'a, 's> {
         }
     }
 
-    fn visit_follow(&mut self, location: Location, lhs: Analysis, rhs: &Follow<'_>, locals: &mut Locals) -> Analysis {
+    fn visit_follow(&mut self, location: Where, lhs: Analysis, rhs: &Follow<'_>, locals: &mut Locals) -> Analysis {
         let m = self.model;
         match rhs {
             Follow::Unary(op) => self.visit_unary(lhs, *op, location, locals),
@@ -1209,7 +1212,7 @@ impl<'a, 's> Walk<'a, 's> {
                     StaticType::List { keys, .. } => {
                         let mut res = Analysis::from(*keys);
                         if let Some((loc, _)) = lhs.fix_hint {
-                            res.fix_hint = Some((loc, "add a type annotation after /list here".to_owned()));
+                            res.fix_hint = Some((loc, super::analysis::Hint::Text("add a type annotation after /list here".to_owned())));
                         }
                         res
                     }
@@ -1219,7 +1222,7 @@ impl<'a, 's> Walk<'a, 's> {
             Follow::Field(_, name) => {
                 if let StaticType::Proc = lhs.static_ty {
                     if !matches!(*name, "type" | "name" | "desc" | "category" | "invisibility") {
-                        self.register(error(location, format!("undefined field: {name:?} on procpath")));
+                        self.register(error(self.place(location), format!("undefined field: {name:?} on procpath")));
                     }
                     Analysis::empty()
                 } else if let Some(ty) = lhs.static_ty.basic_type() {
@@ -1229,31 +1232,32 @@ impl<'a, 's> Walk<'a, 's> {
                         let (path, decl_location, flags) = (decl.type_path.clone(), decl.location, decl.flags);
                         if ty != self.ty && flags.is_private() {
                             self.register(
-                                error(location, format!("field {name:?} on {} is declared as private", m.ty(ty).pretty_path()))
+                                error(self.place(location), format!("field {name:?} on {} is declared as private", m.ty(ty).pretty_path()))
                                     .with_errortype("private_var")
                                     .set_severity(Severity::Warning)
-                                    .with_note(decl_location, "definition is here"),
+                                    .with_note(self.place(decl_location), "definition is here"),
                             );
                         } else if !m.is_subtype_of(self.ty, ty) && flags.is_protected() {
                             self.register(
-                                error(location, format!("field {name:?} on {} is declared as protected", m.ty(ty).pretty_path()))
+                                error(self.place(location), format!("field {name:?} on {} is declared as protected", m.ty(ty).pretty_path()))
                                     .with_errortype("protected_var")
                                     .set_severity(Severity::Warning)
-                                    .with_note(decl_location, "definition is here"),
+                                    .with_note(self.place(decl_location), "definition is here"),
                             );
                         }
                         self.static_type(location, &path).with_fix_hint(decl_location, "add additional type info here")
                     } else {
-                        self.register(error(location, format!("undefined field: {name:?} on {}", m.ty(ty).pretty_path())));
+                        self.register(error(self.place(location), format!("undefined field: {name:?} on {}", m.ty(ty).pretty_path())));
                         Analysis::empty()
                     }
                 } else {
-                    let mut e = error(location, format!("field access requires static type: {name:?}"))
+                    let mut e = error(self.place(location), format!("field access requires static type: {name:?}"))
                         .set_severity(Severity::Warning)
                         .with_errortype("field_access_static_type");
                     if let Some((loc, desc)) = lhs.fix_hint.clone() {
+                        let loc = self.place(loc);
                         if !loc.is_builtins() {
-                            e.add_note(loc, desc);
+                            e.add_note(loc, desc.text(m));
                         }
                     }
                     self.register(e);
@@ -1269,7 +1273,7 @@ impl<'a, 's> Walk<'a, 's> {
                     },
                 };
                 let Some(decl) = m.get_var_declaration(real_type, name) else {
-                    self.register(error(location, format!("undefined field: {name:?} on {}", m.ty(real_type).pretty_path())));
+                    self.register(error(self.place(location), format!("undefined field: {name:?} on {}", m.ty(real_type).pretty_path())));
                     return Analysis::empty();
                 };
                 let (path, decl_location) = (decl.type_path.clone(), decl.location);
@@ -1283,7 +1287,7 @@ impl<'a, 's> Walk<'a, 's> {
                         if let Some((privateproc, true, decl_location)) = d.private.get_self_or_parent(m, proc) {
                             if ty != privateproc.ty {
                                 self.register(
-                                    error(location, format!("{} attempting to call private proc {}, types do not match", m.proc_display(self.proc), m.proc_display(privateproc)))
+                                    error(self.place(location), format!("{} attempting to call private proc {}, types do not match", m.proc_display(self.proc), m.proc_display(privateproc)))
                                         .with_errortype("private_proc")
                                         .with_note(decl_location, "prohibited by this private_proc annotation"),
                                 );
@@ -1293,7 +1297,7 @@ impl<'a, 's> Walk<'a, 's> {
                         if let Some((protectedproc, true, decl_location)) = d.protected.get_self_or_parent(m, proc) {
                             if !m.is_subtype_of(self.ty, protectedproc.ty) {
                                 self.register(
-                                    error(location, format!("{} attempting to call protected proc {}", m.proc_display(self.proc), m.proc_display(protectedproc)))
+                                    error(self.place(location), format!("{} attempting to call protected proc {}", m.proc_display(self.proc), m.proc_display(protectedproc)))
                                         .with_errortype("protected_proc")
                                         .with_note(decl_location, "prohibited by this protected_proc annotation"),
                                 );
@@ -1301,16 +1305,17 @@ impl<'a, 's> Walk<'a, 's> {
                         }
                         self.visit_call(location, ty, proc, args, false, locals)
                     } else {
-                        self.register(error(location, format!("undefined proc: {name:?} on {}", m.ty(ty).pretty_path())));
+                        self.register(error(self.place(location), format!("undefined proc: {name:?} on {}", m.ty(ty).pretty_path())));
                         Analysis::empty()
                     }
                 } else {
-                    let mut e = error(location, format!("proc call requires static type: {name:?}"))
+                    let mut e = error(self.place(location), format!("proc call requires static type: {name:?}"))
                         .set_severity(Severity::Warning)
                         .with_errortype("proc_call_static_type");
                     if let Some((loc, desc)) = lhs.fix_hint.clone() {
+                        let loc = self.place(loc);
                         if !loc.is_builtins() {
-                            e.add_note(loc, desc);
+                            e.add_note(loc, desc.text(m));
                         }
                     }
                     self.register(e);
@@ -1326,7 +1331,7 @@ impl<'a, 's> Walk<'a, 's> {
                     },
                 };
                 let Some(decl) = m.get_proc(real_type, name) else {
-                    self.register(error(location, format!("undefined proc: {name:?} on {}", m.ty(real_type).pretty_path())));
+                    self.register(error(self.place(location), format!("undefined proc: {name:?} on {}", m.ty(real_type).pretty_path())));
                     return Analysis::empty();
                 };
                 let mut path: Vec<String> = m.ty(real_type).path.split('/').filter(|e| !e.is_empty()).map(str::to_owned).collect();
@@ -1346,26 +1351,26 @@ impl<'a, 's> Walk<'a, 's> {
     }
 
     /// The type a `X::y` reads when `X` has no static type: its value must be a type path that names a type.
-    fn static_typepath(&mut self, location: Location, lhs: &Analysis, name: &str, what: &str) -> Option<TypeId> {
+    fn static_typepath(&mut self, location: Where, lhs: &Analysis, name: &str, what: &str) -> Option<TypeId> {
         let Some(value) = lhs.value.as_ref() else {
-            self.register(error(location, format!("no typepath found for: {name:?}")));
+            self.register(error(self.place(location), format!("no typepath found for: {name:?}")));
             return None;
         };
         let Value::Prefab(path) = value else {
-            self.register(error(location, format!("{what} requires a static typepath, {} found instead", value.display())));
+            self.register(error(self.place(location), format!("{what} requires a static typepath, {} found instead", value.display())));
             return None;
         };
         let typepath: String = path.iter().map(|p| format!("/{p}")).collect();
         match self.model.find(&typepath) {
             Some(t) => Some(t),
             None => {
-                self.register(error(location, format!("{what} requires an existing typepath, {typepath} found instead")));
+                self.register(error(self.place(location), format!("{what} requires an existing typepath, {typepath} found instead")));
                 None
             }
         }
     }
 
-    fn check_operator_overload(&mut self, rhs: Analysis, location: Location, operator: &str, locals: &mut Locals) -> Analysis {
+    fn check_operator_overload(&mut self, rhs: Analysis, location: Where, operator: &str, locals: &mut Locals) -> Analysis {
         let m = self.model;
         if rhs.is_impure == Some(true) {
             self.facts.impure.push((format!("{operator} done on non-local var"), location));
@@ -1380,11 +1385,11 @@ impl<'a, 's> Walk<'a, 's> {
             }
             StaticType::List { .. } => "list".to_owned(),
         };
-        self.register(error(location, format!("Attempting {operator} on a {typeerror} which does not overload {operator}")));
+        self.register(error(self.place(location), format!("Attempting {operator} on a {typeerror} which does not overload {operator}")));
         Analysis::empty()
     }
 
-    fn visit_unary(&mut self, rhs: Analysis, op: UnaryOp, location: Location, locals: &mut Locals) -> Analysis {
+    fn visit_unary(&mut self, rhs: Analysis, op: UnaryOp, location: Where, locals: &mut Locals) -> Analysis {
         match op {
             UnaryOp::Not => Analysis::from(assumption_set![Assumption::IsNum(true)]),
             UnaryOp::PreIncr | UnaryOp::PostIncr => self.check_operator_overload(rhs, location, "operator++", locals),
@@ -1393,16 +1398,16 @@ impl<'a, 's> Walk<'a, 's> {
         }
     }
 
-    fn check_negated_bitwise(&mut self, lhs: &Expr, location: Location, bit_op: &str, bool_op: &str) {
+    fn check_negated_bitwise(&mut self, lhs: &Expr, location: Where, bit_op: &str, bool_op: &str) {
         let Shape::Base(b) = self.reader.shape(lhs) else { return };
         if b.follows.iter().any(|(f, _)| matches!(f, Follow::Unary(UnaryOp::Not))) {
             self.register(
-                error(location, format!("Ambiguous `!` on left side of bitwise `{bit_op}` operator"))
+                error(self.place(location), format!("Ambiguous `!` on left side of bitwise `{bit_op}` operator"))
                     .with_errortype("ambiguous_not_bitwise")
                     .set_severity(Severity::Warning)
-                    .with_note(location, format!("Did you mean `!(x {bit_op} y)`?"))
-                    .with_note(location, format!("Did you mean `!x {bool_op} y`?"))
-                    .with_note(location, format!("Did you mean `~x {bit_op} y`?")),
+                    .with_note(self.place(location), format!("Did you mean `!(x {bit_op} y)`?"))
+                    .with_note(self.place(location), format!("Did you mean `!x {bool_op} y`?"))
+                    .with_note(self.place(location), format!("Did you mean `~x {bit_op} y`?")),
             );
         }
     }
@@ -1425,13 +1430,13 @@ impl<'a, 's> Walk<'a, 's> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn check_filter_flag(&mut self, e: &Expr, can_be_zero: bool, location: Location, typevalue: &str, valid_flags: &[&str], field: &str, exclusive: bool) {
+    fn check_filter_flag(&mut self, e: &Expr, can_be_zero: bool, location: Where, typevalue: &str, valid_flags: &[&str], field: &str, exclusive: bool) {
         let note = format!("See: http://www.byond.com/docs/ref/#/{{notes}}/filters/{typevalue} for the permitted arguments");
         match self.reader.shape(e) {
             Shape::Binary { op: "|", lhs, rhs } => {
                 if exclusive {
                     self.register(
-                        error(location, format!("filter(type=\"{typevalue}\") '{field}' parameter must have one value, found bitwise OR")).with_note(location, note),
+                        error(self.place(location), format!("filter(type=\"{typevalue}\") '{field}' parameter must have one value, found bitwise OR")).with_note(self.place(location), note),
                     );
                     return;
                 }
@@ -1440,14 +1445,14 @@ impl<'a, 's> Walk<'a, 's> {
             }
             Shape::Base(b) => {
                 if !b.follows.is_empty() {
-                    self.register(error(location, "filter() flag fields cannot have unary ops or field accesses"));
+                    self.register(error(self.place(location), "filter() flag fields cannot have unary ops or field accesses"));
                     return;
                 }
                 match &b.term {
                     Term::Ident(flag) => {
                         if !valid_flags.iter().any(|x| x == flag) {
                             self.register(
-                                error(location, format!("filter(type=\"{typevalue}\") called with invalid '{field}' flag '{flag}'")).with_note(location, note),
+                                error(self.place(location), format!("filter(type=\"{typevalue}\") called with invalid '{field}' flag '{flag}'")).with_note(self.place(location), note),
                             );
                         }
                     }
@@ -1458,27 +1463,27 @@ impl<'a, 's> Walk<'a, 's> {
                     } => {}
                     other => {
                         self.register(
-                            error(location, format!("filter(type=\"{typevalue}\") called with invalid '{field}' value '{}'", other.debug()))
-                                .with_note(location, note),
+                            error(self.place(location), format!("filter(type=\"{typevalue}\") called with invalid '{field}' value '{}'", other.debug()))
+                                .with_note(self.place(location), note),
                         );
                     }
                 }
             }
             _ => {
                 self.register(
-                    error(location, format!("filter(type=\"{typevalue}\"), extremely invalid value passed to '{field}' field")).with_note(location, note),
+                    error(self.place(location), format!("filter(type=\"{typevalue}\"), extremely invalid value passed to '{field}' field")).with_note(self.place(location), note),
                 );
             }
         }
     }
 
-    fn visit_call(&mut self, location: Location, src: TypeId, proc: ProcId, args: &[&Expr], is_exact: bool, locals: &mut Locals) -> Analysis {
+    fn visit_call(&mut self, location: Where, src: TypeId, proc: ProcId, args: &[&Expr], is_exact: bool, locals: &mut Locals) -> Analysis {
         let m = self.model;
         self.facts.calls.push((proc, location, self.inside_newcontext != 0));
         if let Some((privateproc, true, decl_location)) = self.shared.directives.private.get_self_or_parent(m, proc) {
             if self.ty != privateproc.ty {
                 self.register(
-                    error(location, format!("{} attempting to call private proc {}, types do not match", m.proc_display(self.proc), m.proc_display(privateproc)))
+                    error(self.place(location), format!("{} attempting to call private proc {}, types do not match", m.proc_display(self.proc), m.proc_display(privateproc)))
                         .with_errortype("private_proc")
                         .with_note(decl_location, "prohibited by this private_proc annotation"),
                 );
@@ -1499,18 +1504,18 @@ impl<'a, 's> Walk<'a, 's> {
                     any_kwargs_yet = true;
                     argument_value = value;
                     if !params.iter().any(|p| p.name == name) {
-                        let mut e = error(location, format!("bad keyword argument {name:?} to {}", m.proc_display(proc)));
+                        let mut e = error(self.place(location), format!("bad keyword argument {name:?} to {}", m.proc_display(proc)));
                         m.recurse_children(proc, &mut |child| {
                             if child.ty == proc.ty {
                                 return;
                             }
                             if m.value(child).parameters.iter().any(|p| p.name == name) {
-                                e.add_note(m.value(child).location, format!("an override has this parameter: {}", m.proc_display(child)));
+                                e.add_note(self.reader.site.place(m.value(child).location), format!("an override has this parameter: {}", m.proc_display(child)));
                             }
                         });
                         self.register(e);
                     } else if !is_exact {
-                        self.facts.kwargs.push((format!("{}/proc/{}", m.ty(src).pretty_path(), m.proc_name(proc)), m.value(proc).location, name.clone(), location));
+                        self.facts.kwargs.push((format!("{}/proc/{}", m.ty(src).pretty_path(), m.proc_name(proc)), self.place(m.value(proc).location), name.clone(), location));
                     }
                     this_kwarg = Some(name);
                 }
@@ -1523,7 +1528,7 @@ impl<'a, 's> Walk<'a, 's> {
                 }
             }
             if any_kwargs_yet && this_kwarg.is_none() && !(m.ty(proc.ty).is_root() && m.proc_name(proc) == "animate") {
-                self.register(error(location, format!("proc called with non-kwargs after kwargs: {}()", m.proc_name(proc))));
+                self.register(error(self.place(location), format!("proc called with non-kwargs after kwargs: {}()", m.proc_name(proc))));
             }
             let analysis = self.visit_expression(location, argument_value, None, locals);
             match this_kwarg {
@@ -1554,7 +1559,7 @@ impl<'a, 's> Walk<'a, 's> {
         if is_global && m.proc_name(proc) == "filter" {
             let Some(typename) = param_name_map.get("type") else {
                 if !arglist_used {
-                    self.register(error(location, "filter() called without mandatory keyword parameter 'type'"));
+                    self.register(error(self.place(location), "filter() called without mandatory keyword parameter 'type'"));
                 }
                 return Analysis::empty();
             };
@@ -1563,12 +1568,12 @@ impl<'a, 's> Walk<'a, 's> {
                     Some(v) => format!("Some({})", v.debug()),
                     None => "None".to_owned(),
                 };
-                self.register(error(location, format!("filter() called with non-string type keyword parameter value '{shown}'")));
+                self.register(error(self.place(location), format!("filter() called with non-string type keyword parameter value '{shown}'")));
                 return Analysis::empty();
             };
             let typevalue = typevalue.clone();
             let Some(arglist) = lookup(VALID_FILTER_TYPES, &typevalue) else {
-                self.register(error(location, format!("filter() called with invalid type keyword parameter value '{typevalue}'")));
+                self.register(error(self.place(location), format!("filter() called with invalid type keyword parameter value '{typevalue}'")));
                 return Analysis::empty();
             };
             // In name order (SpacemanDMM walks its hash map, whose order is not fixed).
@@ -1578,7 +1583,7 @@ impl<'a, 's> Walk<'a, 's> {
                 if arg != "type" && arg != "name" && !arglist.contains(&arg.as_str()) {
                     let note = format!("See: http://www.byond.com/docs/ref/#/{{notes}}/filters/{typevalue} for the permitted arguments");
                     self.register(
-                        error(location, format!("filter(type=\"{typevalue}\") called with invalid keyword parameter '{arg}'")).with_note(location, note),
+                        error(self.place(location), format!("filter(type=\"{typevalue}\") called with invalid keyword parameter '{arg}'")).with_note(self.place(location), note),
                     );
                 }
             }
@@ -1594,7 +1599,7 @@ impl<'a, 's> Walk<'a, 's> {
             Analysis::from(global_builtin_returntype(m, m.proc_name(proc)))
         } else if let Some(return_type) = self.shared.return_type.get(&proc) {
             let ec = TypeExprContext { model: m, param_name_map, param_idx_map };
-            match return_type.evaluate(location, &ec) {
+            match return_type.evaluate(self.place(location), &ec) {
                 Ok(st) => {
                     let hint = format!("return type evaluated to {}", st.debug(m));
                     Analysis::from(st).with_fix_hint(location, hint)
@@ -1605,11 +1610,11 @@ impl<'a, 's> Walk<'a, 's> {
                 }
             }
         } else {
-            Analysis::empty().with_fix_hint(m.value(proc).location, format!("add a return type annotation to {}", m.proc_display(proc)))
+            Analysis::empty().with_fix_hint_for(m.value(proc).location, proc)
         }
     }
 
-    fn visit_arguments(&mut self, location: Location, args: &[&Expr], locals: &mut Locals) {
+    fn visit_arguments(&mut self, location: Where, args: &[&Expr], locals: &mut Locals) {
         for &arg in args {
             let value = self.kwarg_value(arg).map_or(arg, |(_, v)| v);
             self.visit_expression(location, value, None, locals);

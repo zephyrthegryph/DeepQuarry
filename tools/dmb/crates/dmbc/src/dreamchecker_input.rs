@@ -10,12 +10,12 @@ use std::sync::Arc;
 
 use dm_tree::frontend::{BodyArena, ColdFrontend};
 use dm_tree::DefinitionMode;
-use dreamchecker::native::input::{Body, CheckerInput, InputType, Site, Sites};
+use dreamchecker::native::input::{Body, CheckerInput, InputType, Site, Sites, Where};
 use dreamchecker::native::model::{ModelBuilder, Param, ProcDecl, ProcKind, ProcValue, ReturnType, TypeId, VarFlags};
 use dreammaker::Location;
 use std::collections::HashMap;
 
-use crate::analysis_tree::{line_end_column, locate_in, matched, signature_parts, var_header, FeedStats, Front, Item, Slot};
+use crate::analysis_tree::{line_end_column, locate_in, source_line, matched, signature_parts, var_header, FeedStats, Front, Item, Slot};
 
 struct FrontSites<'f> {
     frontend: &'f ColdFrontend,
@@ -26,8 +26,8 @@ struct FrontSite<'f> {
     frontend: &'f ColdFrontend,
     ids: &'f HashMap<Arc<str>, dreammaker::FileId>,
     mapper: dm_tree::frontend::SiteMapper<'f>,
-    cache: HashMap<usize, Location>,
-    line_files: HashMap<Arc<str>, usize>,
+    cache: std::cell::RefCell<HashMap<usize, Location>>,
+    line_files: std::cell::RefCell<HashMap<Arc<str>, usize>>,
     unregistered: std::sync::atomic::AtomicUsize,
 }
 
@@ -37,33 +37,44 @@ impl Sites for FrontSites<'_> {
             frontend: self.frontend,
             ids: self.ids,
             mapper: self.frontend.site_mapper(),
-            cache: HashMap::new(),
-            line_files: HashMap::new(),
+            cache: Default::default(),
+            line_files: Default::default(),
             unregistered: Default::default(),
         })
     }
 }
 
 impl Site for FrontSite<'_> {
-    fn locate(&mut self, offset: usize) -> Location {
-        if let Some(l) = self.cache.get(&offset) {
+    fn locate(&self, offset: usize) -> Location {
+        if let Some(l) = self.cache.borrow().get(&offset) {
             return *l;
         }
         let l = locate_in(self.ids, &self.mapper, offset, &self.unregistered);
-        self.cache.insert(offset, l);
+        self.cache.borrow_mut().insert(offset, l);
         l
     }
-    fn line_end(&mut self, offset: usize) -> Location {
+    fn line_end(&self, offset: usize) -> Location {
         let at = self.locate(offset);
-        match line_end_column(self.frontend, offset, &mut self.line_files) {
+        match line_end_column(self.frontend, offset, &mut self.line_files.borrow_mut()) {
             Some(column) if at.line != 0 => Location { column, ..at },
             _ => at,
+        }
+    }
+    fn decl_end(&self, offset: usize) -> Location {
+        // A header its source line does not spell (`GLOBAL_RAW(/list/x)` writes `var/global/list/x`) comes from a macro.
+        let text = self.text();
+        let header = text.get(offset..).map(|r| r.split('\n').next().unwrap_or("").trim()).unwrap_or("");
+        let spelled = source_line(self.frontend, offset, &mut self.line_files.borrow_mut()).is_some_and(|l| l.contains(header));
+        if spelled {
+            self.line_end(offset)
+        } else {
+            self.locate(offset)
         }
     }
     fn text(&self) -> &str {
         self.frontend.expanded.text.as_str()
     }
-    fn invocation(&mut self, offset: usize) -> Option<(Range<usize>, String, Vec<String>)> {
+    fn invocation(&self, offset: usize) -> Option<(Range<usize>, String, Vec<String>)> {
         let found = self.mapper.invocation_output(offset)?;
         Some((found.output, found.name.to_owned(), found.nested.into_iter().map(str::to_owned).collect()))
     }
@@ -140,7 +151,17 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     let trace = dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some();
     let t = std::time::Instant::now();
     let mut feed = FeedStats::default();
+    let mut lap = {
+        let mut mark = std::time::Instant::now();
+        move |what: &str| {
+            if trace {
+                dq_hostio::out(false, format_args!("dreamchecker: native input {what} {:.1?}", mark.elapsed()), true);
+            }
+            mark = std::time::Instant::now();
+        }
+    };
     let m = matched(frontend, &mut feed);
+    lap("matching");
     let sites = FrontSites { frontend, ids: &front.ids };
 
     // Bodies by member, parsed on every core.
@@ -162,16 +183,16 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
         }
     }
 
+    lap("bodies");
     let mut builder = ModelBuilder::with_builtins();
     let tree = &frontend.snapshot.tree;
     let symbols = tree.symbols();
     let text = |id| symbols.text(id).unwrap_or("").to_owned();
-    let mut site = sites.site();
-    let mut line_files = HashMap::new();
+    let site = sites.site();
     let mut parents: HashMap<TypeId, String> = HashMap::new();
     for node in tree.types() {
         let path = text(node.path);
-        let location = m.type_sites.get(&path).map(|&at| site.locate(at)).unwrap_or_else(Location::builtins);
+        let location = m.type_sites.get(&path).map_or(Where::Fixed(Location::builtins()), |&at| Where::At(at));
         let ty = builder.add_type_path(location, &path);
         if node.explicit_parent {
             if let Some(parent) = node.parent.and_then(|p| tree.type_node(p)) {
@@ -183,8 +204,8 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     let mut stats = BuildStats { bodies: bodies.len(), ..Default::default() };
     for item in &m.items {
         let Item { owner, name, slot, member, spelling, id } = item;
-        let ty = builder.add_type_path(Location::builtins(), owner);
-        let location = spelling.as_ref().map(|s| site.locate(s.at)).unwrap_or_else(Location::builtins);
+        let ty = builder.add_type_path(Where::Fixed(Location::builtins()), owner);
+        let location = spelling.as_ref().map_or(Where::Fixed(Location::builtins()), |s| Where::At(s.at));
         match slot {
             Slot::VarDeclare => {
                 let (type_path, spaceman) = match spelling.as_ref().and_then(|s| var_header(owner, &s.header)) {
@@ -194,11 +215,8 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
                 // SpacemanDMM places a var declaration at the token after its name: the `=`, or the end of its line.
                 let location = match spelling.as_ref() {
                     Some(s) => match dm_syntax::top_level_assignment_index(&s.header) {
-                        Some(index) => site.locate(s.at + index),
-                        None => match line_end_column(frontend, s.at, &mut line_files) {
-                            Some(column) if location.line != 0 => Location { column, ..location },
-                            _ => location,
-                        },
+                        Some(index) => Where::At(s.at + index),
+                        None => Where::DeclEnd(s.at),
                     },
                     None => location,
                 };
@@ -207,7 +225,7 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
             }
             Slot::VarOverride => {
                 let location = match spelling.as_ref().and_then(|s| Some(s.at + dm_syntax::top_level_assignment_index(&s.header)?)) {
-                    Some(at) => site.locate(at),
+                    Some(at) => Where::At(at),
                     None => location,
                 };
                 builder.override_var(ty, name, location);
@@ -221,17 +239,17 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
                     if let Some((before, arguments, after)) = signature_parts(&s.header) {
                         // SpacemanDMM places a proc at its parameter list's `(`, a parameter at the token after it.
                         let base = s.at + before.len() + 1;
-                        location = site.locate(base - 1);
+                        location = Where::At(base - 1);
                         for p in procedure.signature.parameters.iter() {
                             let (start, end) = (p.relative_span.start, p.relative_span.end);
                             if let Some(t) = arguments.get(start..end) {
                                 let (name, type_path) = parameter(t);
-                                parameters.push(Param { name, type_path, location: site.locate(base + end) });
+                                parameters.push(Param { name, type_path, location: Where::At(base + end) });
                             }
                         }
                         if procedure.signature.variadic {
                             let at = arguments.rfind("...").map_or(base, |i| base + i);
-                            parameters.push(Param { name: "...".into(), type_path: Vec::new(), location: site.locate(at) });
+                            parameters.push(Param { name: "...".into(), type_path: Vec::new(), location: Where::At(at) });
                         }
                         return_type = return_annotation(after);
                     }
@@ -244,13 +262,14 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
                 });
                 let body = body_of.get(&id.0).copied();
                 let r = builder.add_proc(ty, name, declaration, ProcValue { location, parameters, body });
-                registered.extend(r.hint);
+                registered.extend(r.hint.map(|h| h.error(&*site)));
                 stats.procs += 1;
             }
         }
     }
     drop(site);
     let model = builder.finish(&parents);
+    lap("model");
     if trace {
         dq_hostio::out(false, format_args!("dreamchecker: native input in {:.1?} ({} types, {} bodies)", t.elapsed(), model.types.len(), bodies.len()), true);
     }
@@ -267,7 +286,12 @@ pub struct BuildStats {
 
 /// `analyze dreamchecker` on the native checker: the files under the front end's ids, the preprocessor's warnings, then the checks.
 pub fn check(dme: &Path, context: &dreammaker::Context, checks: bool, cli: bool, threads: usize) -> Result<(), String> {
+    let trace = dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some();
+    let started = std::time::Instant::now();
     let front = crate::analysis_tree::front(dme)?;
+    if trace {
+        dq_hostio::out(false, format_args!("dreamchecker: front end {:.1?} (built {:.1?})", started.elapsed(), front.built), true);
+    }
     front.files_ctx.clone_file_list().for_each(|p| {
         context.register_file(p);
     });
@@ -278,6 +302,9 @@ pub fn check(dme: &Path, context: &dreammaker::Context, checks: bool, cli: bool,
     };
     for e in crate::analysis_tree::macro_warnings(&front.frontend, front.initial.clone(), &mut place) {
         context.register_error(e);
+    }
+    if trace {
+        dq_hostio::out(false, format_args!("dreamchecker: preprocessor warnings at {:.1?}", started.elapsed()), true);
     }
     with_input(&front, |input, registered, stats| {
         for e in registered {

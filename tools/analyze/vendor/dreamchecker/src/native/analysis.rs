@@ -1,5 +1,8 @@
 //! The values the body walk infers (SpacemanDMM DreamChecker's `StaticType`, `Assumption`, `Analysis`), over the native model.
 use dm::Location;
+
+use super::input::Where;
+use super::model::ProcId;
 use foldhash::{HashSet, HashSetExt};
 
 use super::model::{Model, TypeId};
@@ -139,12 +142,28 @@ impl AssumptionSet {
     }
 }
 
+/// A fix hint's text, spelled when a diagnostic prints it.
+#[derive(Debug, Clone)]
+pub enum Hint {
+    Text(String),
+    ReturnAnnotation(ProcId),
+}
+
+impl Hint {
+    pub fn text(&self, m: &Model) -> String {
+        match self {
+            Hint::Text(t) => t.clone(),
+            Hint::ReturnAnnotation(p) => format!("add a return type annotation to {}", m.proc_display(*p)),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Analysis {
     pub static_ty: StaticType,
     pub aset: AssumptionSet,
     pub value: Option<Value>,
-    pub fix_hint: Option<(Location, String)>,
+    pub fix_hint: Option<(Where, Hint)>,
     pub is_impure: Option<bool>,
 }
 
@@ -166,9 +185,16 @@ impl Analysis {
     pub fn from_value(m: &Model, value: Value) -> Analysis {
         Analysis { static_ty: StaticType::None, aset: AssumptionSet::from_value(m, &value), value: Some(value), fix_hint: None, is_impure: None }
     }
-    pub fn with_fix_hint<S: Into<String>>(mut self, location: Location, desc: S) -> Self {
-        if location != Location::default() {
-            self.fix_hint = Some((location, desc.into()));
+    pub fn with_fix_hint<S: Into<String>>(mut self, location: Where, desc: S) -> Self {
+        if location != Where::none() {
+            self.fix_hint = Some((location, Hint::Text(desc.into())));
+        }
+        self
+    }
+    /// "add a return type annotation to `proc`", at `location`.
+    pub fn with_fix_hint_for(mut self, location: Where, proc: ProcId) -> Self {
+        if location != Where::none() {
+            self.fix_hint = Some((location, Hint::ReturnAnnotation(proc)));
         }
         self
     }

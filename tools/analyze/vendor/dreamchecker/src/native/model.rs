@@ -12,7 +12,7 @@ use std::fmt;
 use dm::Location;
 use foldhash::{HashMap, HashMapExt};
 
-use super::input::InputType;
+use super::input::{InputType, Where};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct TypeId(pub u32);
@@ -63,13 +63,13 @@ pub struct VarDecl {
     pub flags: VarFlags,
     /// The declared type's pieces (`list`, `mob`), flags left out.
     pub type_path: Vec<String>,
-    pub location: Location,
+    pub location: Where,
 }
 
 #[derive(Clone, Debug)]
 pub struct TypeVar {
     /// Where its value was last set (a declaration or an override).
-    pub value_location: Location,
+    pub value_location: Where,
     pub declaration: Option<VarDecl>,
 }
 
@@ -107,7 +107,7 @@ pub enum ReturnType {
 pub struct ProcDecl {
     pub kind: ProcKind,
     pub is_final: bool,
-    pub location: Location,
+    pub location: Where,
     pub return_type: ReturnType,
 }
 
@@ -115,12 +115,12 @@ pub struct ProcDecl {
 pub struct Param {
     pub name: String,
     pub type_path: Vec<String>,
-    pub location: Location,
+    pub location: Where,
 }
 
 #[derive(Clone, Debug)]
 pub struct ProcValue {
-    pub location: Location,
+    pub location: Where,
     pub parameters: Vec<Param>,
     /// The body (an index into the input's bodies), when the definition has one.
     pub body: Option<u32>,
@@ -136,7 +136,7 @@ pub struct TypeProc {
 pub struct Type {
     /// `""` for the root, else `/a/b`.
     pub path: String,
-    pub location: Location,
+    pub location: Where,
     location_specificity: usize,
     pub parent_path: Option<TypeId>,
     pub parent_type: Option<TypeId>,
@@ -277,7 +277,7 @@ impl Model {
         &self.type_proc(p).values[p.idx as usize]
     }
     pub fn is_builtin(&self, p: ProcId) -> bool {
-        self.value(p).location.is_builtins()
+        matches!(self.value(p).location, Where::Fixed(l) if l.is_builtins())
     }
     pub fn parent_proc(&self, p: ProcId) -> Option<ProcId> {
         if p.idx > 0 {
@@ -360,7 +360,27 @@ impl Model {
 
 /// What registering a declaration reports, as SpacemanDMM's object tree does (a hint when a definition follows an override).
 pub struct Registered {
-    pub hint: Option<dm::DMError>,
+    pub hint: Option<Precedes>,
+}
+
+/// A definition registered after an override of the same proc.
+pub struct Precedes {
+    at: Where,
+    defined: Where,
+    path: String,
+    kind: ProcKind,
+    name: String,
+}
+
+impl Precedes {
+    /// SpacemanDMM's hint, placed by `site`.
+    pub fn error(&self, site: &dyn super::input::Site) -> dm::DMError {
+        let (path, kind, name) = (&self.path, self.kind, &self.name);
+        dm::DMError::new(site.place(self.at), format!("override of {path}/{name} precedes definition"))
+            .set_severity(dm::Severity::Hint)
+            .with_errortype("override_precedes_definition")
+            .with_note(site.place(self.defined), format!("{path}/{kind}/{name} is defined here"))
+    }
 }
 
 /// Builds a [`Model`]: types, vars and procs in the order the caller registers them.
@@ -373,7 +393,7 @@ impl Default for ModelBuilder {
         let mut model = Model::default();
         model.types.push(Type {
             path: String::new(),
-            location: Location::builtins(),
+            location: Where::Fixed(Location::builtins()),
             location_specificity: 0,
             parent_path: None,
             parent_type: None,
@@ -399,7 +419,7 @@ impl ModelBuilder {
         &self.model
     }
 
-    fn subtype_or_add(&mut self, location: Location, parent: TypeId, child: &str, len: usize) -> TypeId {
+    fn subtype_or_add(&mut self, location: Where, parent: TypeId, child: &str, len: usize) -> TypeId {
         if let Some(&target) = self.model.ty(parent).children.get(child) {
             let node = &mut self.model.types[target.index()];
             if node.location_specificity > len {
@@ -428,7 +448,7 @@ impl ModelBuilder {
     }
 
     /// The type at an absolute path, adding every missing step.
-    pub fn add_type_path(&mut self, location: Location, path: &str) -> TypeId {
+    pub fn add_type_path(&mut self, location: Where, path: &str) -> TypeId {
         let pieces: Vec<&str> = path.split('/').filter(|p| !p.is_empty()).collect();
         let len = pieces.len() + 1;
         let mut current = TypeId::ROOT;
@@ -438,7 +458,7 @@ impl ModelBuilder {
         current
     }
 
-    fn insert_var(&mut self, ty: TypeId, name: &str, value_location: Location, declaration: Option<VarDecl>) {
+    fn insert_var(&mut self, ty: TypeId, name: &str, value_location: Where, declaration: Option<VarDecl>) {
         let t = &mut self.model.types[ty.index()];
         match t.var_index.get(name) {
             Some(&i) => {
@@ -455,11 +475,11 @@ impl ModelBuilder {
         }
     }
 
-    pub fn declare_var(&mut self, ty: TypeId, name: &str, location: Location, flags: VarFlags, type_path: Vec<String>) {
+    pub fn declare_var(&mut self, ty: TypeId, name: &str, location: Where, flags: VarFlags, type_path: Vec<String>) {
         self.insert_var(ty, name, location, Some(VarDecl { flags, type_path, location }));
     }
 
-    pub fn override_var(&mut self, ty: TypeId, name: &str, location: Location) {
+    pub fn override_var(&mut self, ty: TypeId, name: &str, location: Where) {
         self.insert_var(ty, name, location, None);
     }
 
@@ -469,7 +489,7 @@ impl ModelBuilder {
         if t.var_index.contains_key(name) {
             return;
         }
-        let location = Location::builtins();
+        let location = Where::Fixed(Location::builtins());
         t.var_index.insert(name.to_owned(), t.vars.len());
         t.vars.push((
             name.to_owned(),
@@ -501,12 +521,7 @@ impl ModelBuilder {
         }
         match kind {
             Some(kind) if !proc.values.is_empty() => {
-                hint = Some(
-                    dm::DMError::new(proc.values[0].location, format!("override of {path}/{name} precedes definition"))
-                        .set_severity(dm::Severity::Hint)
-                        .with_errortype("override_precedes_definition")
-                        .with_note(location, format!("{path}/{kind}/{name} is defined here")),
-                );
+                hint = Some(Precedes { at: proc.values[0].location, defined: location, path, kind, name: name.to_owned() });
                 proc.values.insert(0, value);
             }
             _ => proc.values.push(value),

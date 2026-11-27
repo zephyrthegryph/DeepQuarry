@@ -68,9 +68,8 @@ struct Compiler<'c, 'r, 's, 'a> {
 }
 
 impl Compiler<'_, '_, '_, '_> {
-    fn loc(&mut self, offset: usize) -> Location {
-        let at = self.reader.shift + offset;
-        self.reader.site.locate(at)
+    fn loc(&self, offset: usize) -> Location {
+        self.reader.site.locate(self.reader.shift + offset)
     }
 
     fn expression(&mut self, location: Location, e: &Expr) -> Result<TypeExpr, DMError> {

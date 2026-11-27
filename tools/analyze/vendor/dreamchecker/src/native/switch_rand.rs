@@ -1,7 +1,9 @@
 //! `switch(rand(L, H))` whose cases miss the range or leave part of it uncovered (SpacemanDMM DreamChecker's
 //! `switch_rand_range.rs`). A case value is evaluated as SpacemanDMM's `simple_evaluate` does for the numbers such cases use:
 //! number literals, parentheses, unary minus and arithmetic.
-use dm::{DMError, Location, Severity};
+use dm::{DMError, Severity};
+
+use super::input::Where;
 use dm_syntax::{Expr, ExprKind, SwitchAlternative, SwitchCase};
 
 use super::view::{literal, Term};
@@ -47,7 +49,7 @@ fn rand_range(walk: &mut Walk<'_, '_>, input: &Expr) -> Option<(i32, i32)> {
     Some((min.ceil() as i32, max.floor() as i32))
 }
 
-pub fn check(walk: &mut Walk<'_, '_>, input: &Expr, cases: &[SwitchCase], case_locs: &[Location], has_default: bool, location: Location) {
+pub fn check(walk: &mut Walk<'_, '_>, input: &Expr, cases: &[SwitchCase], case_locs: &[Where], has_default: bool, location: Where) {
     let Some((rand_start, rand_end)) = rand_range(walk, input) else { return };
     let mut ranges = Vec::with_capacity(cases.len());
     for (case, &case_loc) in cases.iter().zip(case_locs) {
@@ -62,7 +64,7 @@ pub fn check(walk: &mut Walk<'_, '_>, input: &Expr, cases: &[SwitchCase], case_l
                     ranges.push((start, end));
                 } else {
                     walk.facts.diagnostics.push(
-                        DMError::new(case_loc, format!("Case range '{start} to {end}' will never trigger as it is outside the rand() range {rand_start} to {rand_end}"))
+                        DMError::new(walk.reader.site.place(case_loc), format!("Case range '{start} to {end}' will never trigger as it is outside the rand() range {rand_start} to {rand_end}"))
                             .with_component(dm::Component::DreamChecker)
                             .set_severity(Severity::Warning),
                     );
@@ -83,7 +85,7 @@ pub fn check(walk: &mut Walk<'_, '_>, input: &Expr, cases: &[SwitchCase], case_l
     }
     if first_uncovered <= rand_end {
         walk.facts.diagnostics.push(
-            DMError::new(location, format!("Switch branches on rand() with range {rand_start} to {rand_end} but no case branch triggers for {first_uncovered}"))
+            DMError::new(walk.reader.site.place(location), format!("Switch branches on rand() with range {rand_start} to {rand_end} but no case branch triggers for {first_uncovered}"))
                 .with_component(dm::Component::DreamChecker)
                 .set_severity(Severity::Warning),
         );

@@ -761,6 +761,45 @@ impl SiteMapper<'_> {
         self.0.invocation_output(expanded_offset)
     }
 }
+/// Where an invocation whose name ends at `name_end` ends in `source`: after its parenthesized arguments when it has them (strings and
+/// nested parentheses skipped), else at its name.
+fn invocation_end(source: &[u8], name_end: usize) -> usize {
+    let mut i = name_end;
+    while i < source.len() && matches!(source[i], b' ' | b'\t') {
+        i += 1;
+    }
+    if source.get(i) != Some(&b'(') {
+        return name_end;
+    }
+    let mut depth = 0usize;
+    let mut quote: Option<u8> = None;
+    while i < source.len() {
+        let b = source[i];
+        match quote {
+            Some(q) => {
+                if b == b'\\' {
+                    i += 1;
+                } else if b == q {
+                    quote = None;
+                }
+            }
+            None => match b {
+                b'"' | b'\'' => quote = Some(b),
+                b'(' | b'[' => depth += 1,
+                b')' | b']' => {
+                    depth = depth.saturating_sub(1);
+                    if depth == 0 {
+                        return i + 1;
+                    }
+                }
+                _ => {}
+            },
+        }
+        i += 1;
+    }
+    name_end
+}
+
 struct Mapping<'a> {
     projection: source_projection::CurrentSourceProjection,
     plan: &'a DirectivePlan,
@@ -965,6 +1004,15 @@ impl Mapping<'_> {
                 eprintln!("site {offset} {path}:{line}: output {:?} source {:?} found {found:?}", origin.output_span, origin.source_span);
             }
         }
+        // A position inside an invocation written in the source (a function-like macro's argument, copied into its expansion): dreammaker
+        // places every token of an expansion at the invocation.
+        let found = found.map(|pos| {
+            expansions
+                .iter()
+                .map(|e| (src.start + e.invocation_span.start, invocation_end(source, src.start + e.invocation_span.end)))
+                .find(|&(start, end)| start < pos && pos < end)
+                .map_or(pos, |(start, _)| start)
+        });
         // Found: the physical line and column. Otherwise (inside an expansion) dreammaker places the token at the invocation: the
         // nearest invocation start before the position, on `debug_site`'s line.
         let (line, column) = match found {

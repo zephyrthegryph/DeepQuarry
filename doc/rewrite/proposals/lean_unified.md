@@ -143,3 +143,74 @@ tree-wide steps (spelling, matching, builder, finish: about 1 s), where dreammak
 Cold `gen` under dmbc (first model before the generated files exist) is not done. Two differences the test lane reported: columns (dmbc places an
 `if(1)` one column right of dreammaker; the real tree has no DreamChecker diagnostic, so no printed output changes today) and a missing included
 file (dreammaker reports an error and continues, dmbc refuses the whole model, as the compile does; no tree on master has one).
+
+## 2b DREAMCHECKER: the checker on dmbc's own tree (2026-11-27, branch `compiler/dreamchecker-native`)
+
+### What landed
+
+- **Oracle.** `tools/analyze/vendor/dreamchecker/tests/corpus`: 62 cases (the vendored crate's 55 test snippets, extracted, plus 7 seeded files
+  that make every other diagnostic kind fire: control flow, settings and directives, static types and fields, sleep and purity call trees,
+  filters, keyword arguments, BYOND constants). `expected/<case>.txt` is every diagnostic on dreammaker's parse, every severity, with line,
+  column, error type and notes (`dq_analyze::dreamchecker::render`); the extracted ones agree with the old tests' (line, column, text) lists
+  except where the old harness parsed a buffer instead of a `.dme` (end-of-file token places). `tools/analyze/tests/dreamchecker_corpus.rs`
+  runs both checkers, serial and on three threads (one body per batch). The intended differences (13 cases, every one a parse: dreammaker's
+  grammar, or a tree BYOND refuses) are `expected/<case>.dmbc.txt`, with the reasons in the corpus `README.md`.
+- **Native checker.** `dreamchecker::native` (vendored crate, `src/native/`): DreamChecker's passes (var definitions, settings, bodies,
+  override validity, call tree) over its own model of BYOND types (`model.rs`: the builtins as SpacemanDMM knows them, `builtins.txt`, dumped
+  from dreammaker's table and checked against it by `tests/builtins_dump.rs`; the project's declarations registered by dreammaker's rules)
+  and the front end's typed statements (`dm_syntax::Statement`/`Expr`, read in SpacemanDMM's terms by `view.rs`). dmbc builds the input
+  (`dmbc/src/dreamchecker_input.rs`, from `analysis_tree::matched` and `front`); no dreammaker tree or AST is built for it. What it still
+  uses of the `dreammaker` crate: `Context`, `DMError`, `Location`, `Severity` (the output) and `FormatFloat`/`Quote` (two messages' spelling).
+- **Places.** A place is a `Where` (an offset, a line end, a declaration end, or a location) and is located only when a diagnostic prints it:
+  locating was most of the cost (model 60 s and bodies 11 s eager; about 2 s each lazy). Fixed at the source so columns match dreammaker:
+  a condition sits at its `(` (`dm_syntax::control_open_paren`), a switch case where its block ends, an override at its `=`, a token of a
+  function-like macro's argument at the invocation (`dm-tree` `debug_site_column`; it had placed it at the argument), a var a macro declares
+  at the invocation. The converted tree (`analysis_bridge`, `analysis_tree`) got the first four too.
+- **BYOND constants.** dmbc predefines `NORTH`, `WAVE_SIDEWAYS`, `FLOAT_LAYER` as macros; dreammaker reads them as global vars. An expression
+  that is exactly the expansion of such a macro written in the source, or of a macro whose expansion is only one of them, is read as the
+  constant's name (`dm-tree` `SiteMapper::invocation_output`, new: it aligns a row's invocations with its output by the text copied between
+  them). Constants dreammaker also defines as macros (`TRUE`, `FALSE`) stay values, as dreammaker sees them. The filter, condition, range
+  and static-term checks then give dreammaker's diagnostics (corpus `seed__filters`, `seed__builtin_constants`). Left as a value: a constant
+  inside a larger macro's replacement (dreammaker sees the name); nothing in the corpus or the tree reads one there.
+- `DQ_DREAMCHECKER_NATIVE=1` selects the native checker in `analyze dreamchecker` while it is proved and made fast (below); the default is
+  still the checker on dreammaker's parse.
+
+### Proof
+
+- Corpus: every case passes on both checkers (49 identical to dreammaker, 13 intended differences).
+- Whole tree (`analyze dreamchecker --json` in a worktree with its generated files, whose unit-test fixtures fire 131 diagnostics), and the
+  same tree plus a seeded file (17 more diagnostics of 12 kinds: unreachable code, determinate conditions, a bad range, `NORTH` as a condition
+  and as filter flags, `||` in a case, `!x & 1`, static-type fields and calls, a private var, keyword arguments, sleep and purity call trees):
+  every DreamChecker diagnostic identical (line, column, text, notes, order). The three other differences are dreammaker's own parse, not
+  checks: a parse error at `new L[1](...)` (`code/tests/benchmarks/map_plan_cost.dm:49`, a form BYOND accepts) and two constant-evaluation
+  errors of dreammaker's tree finish (`unknown variable: GAS_ID_CHLORINE` and `GAS_ID_AMMONIA`, `code/domains/atmos/methane_and_fuel_gases.dm`,
+  which BYOND compiles). So natively `Found 131 diagnostics` is 128, the hint count is 390 (the known `#define` doc hints), and include paths
+  are canonical (`code/tests/unit_tests/x.dm` where dreammaker keeps the include's `unit_tests\x.dm`).
+
+### Step 3 shape (for the ENGINE workstream)
+
+Per-proc results are pure functions with stable identities (`model::ProcId`: type, proc slot, definition index):
+
+- `native::settings_of(model, settings, context, site, proc, body)`: a proc's declared return type, final flag and leading `set` statements.
+  Reads only its own declaration and leading statements.
+- `native::body_facts(input, shared, site, proc) -> walk::ProcFacts`: one body's diagnostics, calls (callee, place, new context), blocking
+  and impure operations, `waitfor`, keyword arguments. Reads its body, the model and the settings table (`walk::Shared`), nothing else.
+- The rest of `native::run` folds the facts in source order and runs the override and call-tree passes (`CallTables`) over them only.
+
+An edit then needs the model (rebuilt from the semantic tree, about 2 s, or spliced), the settings of the edited procs, and the body facts of
+the procs whose body or read declarations changed; the call-tree pass reruns over the kept facts (under a second).
+
+### Measured (single runs on a heavily shared machine; numbers swing 2-4x between runs)
+
+| What | dreammaker parse (default) | native |
+|---|---|---|
+| whole tree, standalone, cold | 8.2-11.9 s | 23-35 s: the compiler front end 15-28 s (its own cold cost), input 3-8 s (matching 1-2.5 s, body parse 2-3 s, model 1.4-2 s), checks 2.5-8 s |
+| whole tree through the daemon, warm | (no daemon path) | 22 s: front end 4.3 s (retained session), input 4.3 s, checks 3 s, the rest request overhead |
+
+So the native checker is not yet the only path: cold it pays the compiler's front end, and warm the daemon still rebuilds the input on each
+request. Next, in this order: keep the input (model, parsed bodies) per front end revision in the daemon; per-proc facts as dm-query queries
+(ENGINE); then make it the only path and delete `lib.rs`'s checker on dreammaker's tree, its tests and `DQ_DREAMCHECKER_NATIVE`.
+
+**For LINTS (2a):** the checker no longer needs the converted tree: the native checker reads dmbc's tree, and the default one reads dreammaker's
+parse, never `DQ_ANALYZE_PARSE=dmbc`. The native input reuses `analysis_tree::{matched, front, Front, var_header, signature_parts,
+line_end_column, source_line, locate_in, macro_warnings}`: keep them (or move them beside `dreamchecker_input.rs`) when the converter goes.

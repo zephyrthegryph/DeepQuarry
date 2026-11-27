@@ -226,6 +226,25 @@ fn walk<'a>(
     }
 }
 
+/// The source line `offset` maps to, without its line break.
+pub(crate) fn source_line<'f>(frontend: &'f ColdFrontend, offset: usize, files: &mut HashMap<Arc<str>, usize>) -> Option<&'f str> {
+    let (path, line, _) = frontend.debug_site_column(offset)?;
+    if files.is_empty() {
+        for (i, f) in frontend.files.iter().enumerate() {
+            files.insert(Arc::from(f.path.to_string_lossy().as_ref()), i);
+        }
+    }
+    let file = frontend.files.get(*files.get(&path).or_else(|| {
+        let p = Path::new(&*path);
+        files.iter().find(|(k, _)| Path::new(&**k as &str).ends_with(p)).map(|(_, v)| v)
+    })?)?;
+    let text = file.text.as_str();
+    let start = *file.line_starts.get(line.checked_sub(1)?)?;
+    let rest = &text[start.min(text.len())..];
+    let len = rest.find('\n').unwrap_or(rest.len());
+    Some(rest[..len].strip_suffix('\r').unwrap_or(&rest[..len]))
+}
+
 /// The column one past the end of the source line `offset` maps to (its comments included), as dreammaker's newline token sits.
 pub(crate) fn line_end_column(frontend: &ColdFrontend, offset: usize, files: &mut HashMap<Arc<str>, usize>) -> Option<u16> {
     let (path, line, _) = frontend.debug_site_column(offset)?;

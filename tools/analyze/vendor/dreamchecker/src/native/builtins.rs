@@ -10,6 +10,8 @@
 use super::model::{ModelBuilder, Param, ProcDecl, ProcKind, ProcValue, ReturnType, VarFlags};
 use dm::Location;
 
+use super::input::Where;
+
 const TEXT: &str = include_str!("builtins.txt");
 
 /// A builtin constant's value: what BYOND's predefined macro for it expands to.
@@ -34,36 +36,36 @@ pub fn register(b: &mut ModelBuilder) {
         let (Some(tag), Some(rest)) = (parts.next(), parts.next()) else { continue };
         match tag {
             "T" => {
-                b.add_type_path(Location::builtins(), rest);
+                b.add_type_path(Where::Fixed(Location::builtins()), rest);
             }
             "V" => {
                 let (decl, _value) = rest.split_once(" = ").map_or((rest, None), |(d, v)| (d, Some(v)));
                 let f: Vec<&str> = decl.split(' ').collect();
-                let ty = b.add_type_path(Location::builtins(), owner_path(f[0]));
+                let ty = b.add_type_path(Where::Fixed(Location::builtins()), owner_path(f[0]));
                 let flags = VarFlags(f[2].parse().unwrap_or(0));
                 let type_path = if f[3] == "-" { Vec::new() } else { f[3].split('/').map(str::to_owned).collect() };
                 b.builtin_var(ty, f[1], Some((flags, type_path)));
             }
             "v" => {
                 let f: Vec<&str> = rest.split(' ').collect();
-                let ty = b.add_type_path(Location::builtins(), owner_path(f[0]));
+                let ty = b.add_type_path(Where::Fixed(Location::builtins()), owner_path(f[0]));
                 b.builtin_var(ty, f[1], None);
             }
             "P" => {
                 let f: Vec<&str> = rest.splitn(4, ' ').collect();
-                let ty = b.add_type_path(Location::builtins(), owner_path(f[0]));
+                let ty = b.add_type_path(Where::Fixed(Location::builtins()), owner_path(f[0]));
                 let declaration = match f[2] {
                     "proc" => Some(ProcKind::Proc),
                     "verb" => Some(ProcKind::Verb),
                     _ => None,
                 }
-                .map(|kind| ProcDecl { kind, is_final: false, location: Location::builtins(), return_type: ReturnType::None });
+                .map(|kind| ProcDecl { kind, is_final: false, location: Where::Fixed(Location::builtins()), return_type: ReturnType::None });
                 let parameters = f
                     .get(3)
                     .filter(|p| !p.is_empty() && **p != "-")
-                    .map(|p| p.split(',').map(|n| Param { name: n.to_owned(), type_path: Vec::new(), location: Location::default() }).collect())
+                    .map(|p| p.split(',').map(|n| Param { name: n.to_owned(), type_path: Vec::new(), location: Where::none() }).collect())
                     .unwrap_or_default();
-                b.add_proc(ty, f[1], declaration, ProcValue { location: Location::builtins(), parameters, body: None });
+                b.add_proc(ty, f[1], declaration, ProcValue { location: Where::Fixed(Location::builtins()), parameters, body: None });
             }
             _ => {}
         }
@@ -90,6 +92,25 @@ pub fn constants() -> &'static foldhash::HashMap<String, ConstValue> {
             }
         }
         out
+    })
+}
+
+/// The values the builtin constants have: numbers (as `f32` bits) and texts.
+pub fn constant_values() -> &'static (foldhash::HashSet<u32>, foldhash::HashSet<String>) {
+    static VALUES: std::sync::OnceLock<(foldhash::HashSet<u32>, foldhash::HashSet<String>)> = std::sync::OnceLock::new();
+    VALUES.get_or_init(|| {
+        let (mut numbers, mut texts) = (foldhash::HashSet::default(), foldhash::HashSet::default());
+        for value in constants().values() {
+            match value {
+                ConstValue::Number(n) => {
+                    numbers.insert(n.to_bits());
+                }
+                ConstValue::Text(t) => {
+                    texts.insert(t.clone());
+                }
+            }
+        }
+        (numbers, texts)
     })
 }
 

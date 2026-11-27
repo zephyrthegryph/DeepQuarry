@@ -26,7 +26,7 @@ use foldhash::{HashMap, HashMapExt, HashSet, HashSetExt};
 
 use analysis::StaticType;
 use directives::{error, Directives, ProcDirective, KNOWN_SETTING_NAMES};
-use input::{CheckerInput, Site};
+use input::{CheckerInput, Site, Sites, Where};
 use model::{Model, ProcId};
 use type_expr::TypeExpr;
 use view::{Reader, Shape, Term};
@@ -39,7 +39,7 @@ macro_rules! cli_println {
 }
 
 /// Examines the model for var definitions that are invalid (a redeclaration, an override of a final or private var).
-pub fn check_var_defs(m: &Model, context: &Context) {
+pub fn check_var_defs(m: &Model, context: &Context, site: &dyn Site) {
     for t in m.type_ids() {
         let ty = m.ty(t);
         let path = &ty.path;
@@ -60,23 +60,23 @@ pub fn check_var_defs(m: &Model, context: &Context) {
                 let Some(parentvar) = pt.var(varname) else { continue };
                 let Some(decl) = &parentvar.declaration else { continue };
                 if let Some(mydecl) = &typevar.declaration {
-                    if typevar.value_location.is_builtins() {
+                    if matches!(typevar.value_location, Where::Fixed(l) if l.is_builtins()) {
                         continue;
                     }
-                    DMError::new(mydecl.location, format!("{path} redeclares var {varname:?}"))
-                        .with_note(decl.location, format!("declared on {} here", pt.path))
+                    DMError::new(site.place(mydecl.location), format!("{path} redeclares var {varname:?}"))
+                        .with_note(site.place(decl.location), format!("declared on {} here", pt.path))
                         .register(context);
                 }
                 if decl.flags.is_final() {
-                    DMError::new(typevar.value_location, format!("{path} overrides final var {varname:?}"))
+                    DMError::new(site.place(typevar.value_location), format!("{path} overrides final var {varname:?}"))
                         .with_errortype("final_var")
-                        .with_note(decl.location, format!("declared final on {} here", pt.path))
+                        .with_note(site.place(decl.location), format!("declared final on {} here", pt.path))
                         .register(context);
                 }
                 if decl.flags.is_private() {
-                    DMError::new(typevar.value_location, format!("{path} overrides private var {varname:?}"))
+                    DMError::new(site.place(typevar.value_location), format!("{path} overrides private var {varname:?}"))
                         .with_errortype("private_var")
-                        .with_note(decl.location, format!("declared private on {} here", pt.path))
+                        .with_note(site.place(decl.location), format!("declared private on {} here", pt.path))
                         .register(context);
                 }
             }
@@ -124,8 +124,8 @@ pub struct Settings {
 
 /// One proc's settings: its final flag, declared return type and leading `set` statements, into `settings`; what is wrong with them
 /// is registered to `context`.
-pub fn settings_of(m: &Model, settings: &mut Settings, context: &Context, site: &mut dyn Site, proc: ProcId, body: &[Statement]) {
-    let proc_location = m.value(proc).location;
+pub fn settings_of(m: &Model, settings: &mut Settings, context: &Context, site: &dyn Site, proc: ProcId, body: &[Statement]) {
+    let proc_location = site.place(m.value(proc).location);
     if let Some(decl) = m.ty(proc.ty).proc(m.proc_name(proc)).and_then(|p| p.declaration.as_ref()) {
         if decl.is_final {
             if let Err(e) = settings.directives.must_not_override.insert(m, proc, true, proc_location) {
@@ -249,7 +249,7 @@ fn add_directive(m: &Model, settings: &mut Settings, context: &Context, reader: 
 /// Procs that call through `..()` chains or call sites keep violations as (what, where).
 #[derive(Default)]
 pub struct Violations {
-    pub violators: HashMap<ProcId, Vec<(String, Location)>>,
+    pub violators: HashMap<ProcId, Vec<(String, Where)>>,
 }
 
 struct BadOverride {
@@ -258,7 +258,7 @@ struct BadOverride {
 }
 
 struct CalledAt {
-    location: Location,
+    location: Where,
     others: u32,
 }
 
@@ -272,7 +272,8 @@ struct KwargInfo {
 /// The tables the call-tree checks read, all built from the per-proc facts before they start.
 pub struct CallTables<'a> {
     model: &'a Model,
-    call_tree: &'a HashMap<ProcId, Vec<(ProcId, Location, bool)>>,
+    sites: &'a dyn Sites,
+    call_tree: &'a HashMap<ProcId, Vec<(ProcId, Where, bool)>>,
     waitfor_procs: &'a HashSet<ProcId>,
     sleep_exempt: &'a ProcDirective,
     sleeping_procs: &'a Violations,
@@ -286,12 +287,12 @@ pub struct CallTables<'a> {
 
 struct Step {
     proc: ProcId,
-    location: Location,
+    location: Where,
     new_context: bool,
     parent: Option<usize>,
 }
 
-fn reaching(call_tree: &HashMap<ProcId, Vec<(ProcId, Location, bool)>>, targets: impl Iterator<Item = ProcId>, expands: impl Fn(ProcId) -> bool, same_context_only: bool) -> HashSet<ProcId> {
+fn reaching(call_tree: &HashMap<ProcId, Vec<(ProcId, Where, bool)>>, targets: impl Iterator<Item = ProcId>, expands: impl Fn(ProcId) -> bool, same_context_only: bool) -> HashSet<ProcId> {
     let mut callers: HashMap<ProcId, Vec<ProcId>> = HashMap::new();
     for (caller, calls) in call_tree {
         for (callee, _, new_context) in calls {
@@ -340,7 +341,7 @@ impl CallTables<'_> {
         }
     }
 
-    fn with_callstack(&self, mut e: DMError, steps: &[Step], at: usize) -> DMError {
+    fn with_callstack(&self, site: &dyn Site, mut e: DMError, steps: &[Step], at: usize) -> DMError {
         let mut path = VecDeque::new();
         let mut cur = Some(at);
         while let Some(i) = cur {
@@ -348,24 +349,25 @@ impl CallTables<'_> {
             cur = steps[i].parent;
         }
         for i in path {
-            e.add_note(steps[i].location, format!("{}() called here", self.model.proc_display(steps[i].proc)));
+            e.add_note(site.place(steps[i].location), format!("{}() called here", self.model.proc_display(steps[i].proc)));
         }
         e
     }
 
-    fn with_list(mut e: DMError, list: &[(String, Location)], what: &str) -> DMError {
+    fn with_list(site: &dyn Site, mut e: DMError, list: &[(String, Where)], what: &str) -> DMError {
         for (name, location) in list {
-            e.add_note(*location, format!("{name}{what}"));
+            e.add_note(site.place(*location), format!("{name}{what}"));
         }
         e
     }
 
     fn sleep_findings(&self, procref: ProcId, location: Location) -> Vec<DMError> {
         let m = self.model;
-        let at = m.value(procref).location;
+        let site = self.sites.site();
+        let at = site.place(m.value(procref).location);
         let mut out = Vec::new();
         if let Some(sleepvec) = self.sleeping_procs.violators.get(&procref) {
-            out.push(Self::with_list(
+            out.push(Self::with_list(&*site, 
                 error(at, format!("{} sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)", m.proc_display(procref)))
                     .with_note(location, "SpacemanDMM_should_not_sleep set here")
                     .with_errortype("must_not_sleep"),
@@ -386,7 +388,7 @@ impl CallTables<'_> {
                 let e = error(at, format!("{} sets SpacemanDMM_should_not_sleep but calls blocking proc {}", m.proc_display(procref), m.proc_display(nextproc)))
                     .with_note(location, "SpacemanDMM_should_not_sleep set here")
                     .with_errortype("must_not_sleep");
-                out.push(Self::with_list(self.with_callstack(e, steps, i), sleepvec, "() called here"));
+                out.push(Self::with_list(&*site, self.with_callstack(&*site, e, steps, i), sleepvec, "() called here"));
             } else if let Some(children) = self.sleeping_overrides.get(&nextproc) {
                 for child in children {
                     if m.is_subtype_of(procref.ty, nextproc.ty) && !m.is_subtype_of(child.ty, procref.ty) {
@@ -395,7 +397,7 @@ impl CallTables<'_> {
                     let e = error(at, format!("{} calls {} which has override child proc that sleeps {}", m.proc_display(procref), m.proc_display(nextproc), m.proc_display(*child)))
                         .with_note(location, "SpacemanDMM_should_not_sleep set here")
                         .with_errortype("must_not_sleep");
-                    out.push(Self::with_list(self.with_callstack(e, steps, i), &self.sleeping_procs.violators[child], "() called here"));
+                    out.push(Self::with_list(&*site, self.with_callstack(&*site, e, steps, i), &self.sleeping_procs.violators[child], "() called here"));
                 }
             }
             true
@@ -405,10 +407,11 @@ impl CallTables<'_> {
 
     fn pure_findings(&self, procref: ProcId, location: Location) -> Vec<DMError> {
         let m = self.model;
-        let at = m.value(procref).location;
+        let site = self.sites.site();
+        let at = site.place(m.value(procref).location);
         let mut out = Vec::new();
         if let Some(impurevec) = self.impure_procs.violators.get(&procref) {
-            out.push(Self::with_list(
+            out.push(Self::with_list(&*site, 
                 error(at, format!("{} does impure operations", m.proc_display(procref)))
                     .with_errortype("must_be_pure")
                     .with_note(location, "SpacemanDMM_should_be_pure set here"),
@@ -422,7 +425,7 @@ impl CallTables<'_> {
                 let e = error(at, format!("{} sets SpacemanDMM_should_be_pure but calls a {} that does impure operations", m.proc_display(procref), m.proc_display(nextproc)))
                     .with_note(location, "SpacemanDMM_should_be_pure set here")
                     .with_errortype("must_be_pure");
-                out.push(Self::with_list(self.with_callstack(e, steps, i), impurevec, " happens here"));
+                out.push(Self::with_list(&*site, self.with_callstack(&*site, e, steps, i), impurevec, " happens here"));
             } else if let Some(children) = self.impure_overrides.get(&nextproc) {
                 for child in children {
                     if m.is_subtype_of(procref.ty, nextproc.ty) && !m.is_subtype_of(child.ty, procref.ty) {
@@ -431,7 +434,7 @@ impl CallTables<'_> {
                     let e = error(at, format!("{} calls {} which has override child proc that does impure operations {}", m.proc_display(procref), m.proc_display(nextproc), m.proc_display(*child)))
                         .with_note(location, "SpacemanDMM_should_not_pure set here")
                         .with_errortype("must_be_pure");
-                    out.push(Self::with_list(self.with_callstack(e, steps, i), &self.impure_procs.violators[child], "() called here"));
+                    out.push(Self::with_list(&*site, self.with_callstack(&*site, e, steps, i), &self.impure_procs.violators[child], "() called here"));
                 }
             }
             true
@@ -465,7 +468,7 @@ fn parallel_map<T: Sync, R: Send>(items: &[T], threads: usize, f: impl Fn(&T) ->
 }
 
 /// One proc's body facts, as the body pass computes them: the entry point an incremental store keeps per proc.
-pub fn body_facts(input: &CheckerInput<'_>, shared: &Shared, site: &mut dyn Site, proc: ProcId) -> ProcFacts {
+pub fn body_facts(input: &CheckerInput<'_>, shared: &Shared, site: &dyn Site, proc: ProcId) -> ProcFacts {
     let m = &input.model;
     let Some(body) = m.value(proc).body else { return ProcFacts::default() };
     let mut walk = Walk::new(m, shared, site, proc);
@@ -486,7 +489,7 @@ pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, threads: usiz
     let m = &input.model;
     cli_println!(cli, "============================================================");
     cli_println!(cli, "Analyzing variables...\n");
-    check_var_defs(m, context);
+    check_var_defs(m, context, &*input.sites.site());
     lap("variables");
 
     cli_println!(cli, "============================================================");
@@ -496,10 +499,10 @@ pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, threads: usiz
     let mut settings = Settings::default();
     settings.return_type.insert(m.get_proc(m.root(), "get_step").expect("builtin get_step"), StaticType::Type(m.expect("/turf")).into());
     {
-        let mut site = input.sites.site();
+        let site = input.sites.site();
         for &p in &procs {
             if let Some(body) = m.value(p).body {
-                settings_of(m, &mut settings, context, &mut *site, p, &input.bodies[body as usize].statements);
+                settings_of(m, &mut settings, context, &*site, p, &input.bodies[body as usize].statements);
             }
         }
     }
@@ -518,14 +521,14 @@ pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, threads: usiz
         let chunk = 64;
         let batches: Vec<&[ProcId]> = bodies.chunks(chunk).collect();
         parallel_map(&batches, threads, |batch| {
-            let mut site = input.sites.site();
-            batch.iter().map(|&p| body_facts(input, &shared, &mut *site, p)).collect::<Vec<_>>()
+            let site = input.sites.site();
+            batch.iter().map(|&p| body_facts(input, &shared, &*site, p)).collect::<Vec<_>>()
         })
         .into_iter()
         .flatten()
         .collect()
     };
-    let mut call_tree: HashMap<ProcId, Vec<(ProcId, Location, bool)>> = HashMap::new();
+    let mut call_tree: HashMap<ProcId, Vec<(ProcId, Where, bool)>> = HashMap::new();
     let mut sleeping = Violations::default();
     let mut impure = Violations::default();
     let mut waitfor: HashSet<ProcId> = HashSet::new();
@@ -560,6 +563,7 @@ pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, threads: usiz
 
     cli_println!(cli, "============================================================");
     cli_println!(cli, "Analyzing proc override validity...\n");
+    let kw_site = input.sites.site();
     let mut sleeping_overrides: HashMap<ProcId, Vec<ProcId>> = HashMap::new();
     let mut impure_overrides: HashMap<ProcId, Vec<ProcId>> = HashMap::new();
     for &p in &procs {
@@ -570,7 +574,7 @@ pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, threads: usiz
             if let Some(kwargs) = used_kwargs.get_mut(&m.proc_display(current)) {
                 let missing: Vec<String> = kwargs.called_at.keys().filter(|k| !names.contains(k.as_str())).cloned().collect();
                 if !missing.is_empty() {
-                    kwargs.bad_overrides_at.insert(m.ty(p.ty).path.clone(), BadOverride { missing, location: m.value(p).location });
+                    kwargs.bad_overrides_at.insert(m.ty(p.ty).path.clone(), BadOverride { missing, location: kw_site.place(m.value(p).location) });
                 }
             }
             next = m.parent_proc(current);
@@ -607,9 +611,9 @@ pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, threads: usiz
                 continue;
             }
             if called.others > 0 {
-                e.add_note(called.location, format!("called with {:?} here, and {} other places", arg, called.others));
+                e.add_note(kw_site.place(called.location), format!("called with {:?} here, and {} other places", arg, called.others));
             } else {
-                e.add_note(called.location, format!("called with {arg:?} here"));
+                e.add_note(kw_site.place(called.location), format!("called with {arg:?} here"));
             }
         }
         e.register(context);
@@ -622,6 +626,7 @@ pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, threads: usiz
     let exempt = |p: ProcId| !waitfor.contains(&p) && d.sleep_exempt.get(p).is_none();
     let tables = CallTables {
         model: m,
+        sites: input.sites,
         call_tree: &call_tree,
         waitfor_procs: &waitfor,
         sleep_exempt: &d.sleep_exempt,
@@ -633,9 +638,10 @@ pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, threads: usiz
         sleeps_in_context: reaching(&call_tree, sleeping.violators.keys().chain(sleeping_overrides.keys()).copied().filter(|p| exempt(*p)), exempt, true),
         can_be_impure: reaching(&call_tree, impure.violators.keys().chain(impure_overrides.keys()).copied(), |_| true, false),
     };
+    let order_site = input.sites.site();
     let in_order = |table: &ProcDirective| {
         let mut v: Vec<(ProcId, Location)> = table.directive.iter().map(|(p, &(_, l))| (*p, l)).collect();
-        v.sort_by_key(|(p, l)| (m.value(*p).location, *l, m.proc_display(*p)));
+        v.sort_by_key(|(p, l)| (order_site.place(m.value(*p).location), *l, m.proc_display(*p)));
         v
     };
     let sleep = in_order(&d.must_not_sleep);

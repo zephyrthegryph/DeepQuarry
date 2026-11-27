@@ -89,18 +89,50 @@ impl InputType {
     }
 }
 
+/// A place not located yet: SpacemanDMM's place of the token at an offset, the end of an offset's source line, or a location. The
+/// walk keeps places as offsets and locates only those a diagnostic prints (locating is the costly part of reading the tree).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Where {
+    At(usize),
+    LineEnd(usize),
+    /// Where SpacemanDMM places a var declaration with no value that starts at the offset: the end of its line, or (a declaration a
+    /// macro wrote) the invocation.
+    DeclEnd(usize),
+    Fixed(Location),
+}
+
+impl Where {
+    /// No place (SpacemanDMM's default location).
+    pub fn none() -> Where {
+        Where::Fixed(Location::default())
+    }
+}
+
 /// Places offsets of the front end's expanded text, for one worker thread.
 pub trait Site {
     /// Where SpacemanDMM places the token starting at `offset`.
-    fn locate(&mut self, offset: usize) -> Location;
+    fn locate(&self, offset: usize) -> Location;
     /// One column past the end of the source line holding `offset` (its comments included): where SpacemanDMM's newline token
     /// after that line sits.
-    fn line_end(&mut self, offset: usize) -> Location;
+    fn line_end(&self, offset: usize) -> Location;
+    /// See [`Where::DeclEnd`].
+    fn decl_end(&self, offset: usize) -> Location {
+        self.line_end(offset)
+    }
     /// The expanded text the offsets index.
     fn text(&self) -> &str;
     /// The macro invocation written in the source whose expansion holds `offset`: the expansion's output, the macro's name and the
     /// names expanded inside it.
-    fn invocation(&mut self, offset: usize) -> Option<(Range<usize>, String, Vec<String>)>;
+    fn invocation(&self, offset: usize) -> Option<(Range<usize>, String, Vec<String>)>;
+    /// A [`Where`]'s location.
+    fn place(&self, at: Where) -> Location {
+        match at {
+            Where::At(offset) => self.locate(offset),
+            Where::LineEnd(offset) => self.line_end(offset),
+            Where::DeclEnd(offset) => self.decl_end(offset),
+            Where::Fixed(location) => location,
+        }
+    }
 }
 
 /// Makes a [`Site`] for each worker thread.

@@ -513,6 +513,7 @@ dependencies = [
  "dmb-equiv",
  "dq-analyze",
  "dq-hostio",
+ "dreamchecker",
  "dreammaker",
  "fs2",
  "memchr",
@@ -553,6 +554,7 @@ version = "0.1.0"
 name = "dreamchecker"
 version = "1.11.0"
 dependencies = [
+ "dm-syntax",
  "dq-hostio",
  "dreammaker",
  "foldhash",

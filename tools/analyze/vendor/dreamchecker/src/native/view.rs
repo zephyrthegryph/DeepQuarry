@@ -210,14 +210,14 @@ pub fn args(args: &[Expr]) -> Vec<&Expr> {
 
 /// Reads expressions; `shift` is added to every offset (an interpolated string's parts are parsed on their own).
 pub struct Reader<'s, 'a> {
-    pub site: &'s mut (dyn Site + 'a),
+    pub site: &'s (dyn Site + 'a),
     pub shift: usize,
 }
 
 impl Reader<'_, '_> {
     /// The BYOND constant an expression is exactly the expansion of, if any.
     fn constant_name(&mut self, e: &Expr) -> Option<String> {
-        if self.shift != 0 {
+        if self.shift != 0 || !could_be_constant(e) {
             return None;
         }
         let (range, name, nested) = self.site.invocation(e.span.start)?;
@@ -455,6 +455,32 @@ impl Reader<'_, '_> {
             follows.push((f, *place));
         }
         Base { term, term_at: at, follows }
+    }
+}
+
+/// Whether `e` is a value some BYOND constant has (`1`, `(-1)`, `"male"`): only then can it be one's expansion.
+fn could_be_constant(e: &Expr) -> bool {
+    use super::builtins::constant_values;
+    let (numbers, texts) = constant_values();
+    match &e.kind {
+        ExprKind::Literal(text) => match literal(text) {
+            Term::Int(n) => numbers.contains(&(n as f32).to_bits()),
+            Term::Float(n) => numbers.contains(&n.to_bits()),
+            Term::Str(s) => texts.contains(&s),
+            _ => false,
+        },
+        ExprKind::Group(inner) => match &inner.kind {
+            ExprKind::Unary { op, value } if op == "-" => match &value.kind {
+                ExprKind::Literal(text) => match literal(text) {
+                    Term::Int(n) => numbers.contains(&(-(n as f32)).to_bits()),
+                    Term::Float(n) => numbers.contains(&(-n).to_bits()),
+                    _ => false,
+                },
+                _ => false,
+            },
+            _ => could_be_constant(inner),
+        },
+        _ => false,
     }
 }
 
