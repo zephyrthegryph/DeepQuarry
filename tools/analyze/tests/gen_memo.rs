@@ -23,6 +23,10 @@ fn gen_returns_at_once_when_nothing_changed_and_restores_from_the_shared_store()
     std::fs::write(tree.join("code/a.dm"), "/obj/thing
 	name = \"thing\"
 ").unwrap();
+    // The generated files declare their globals with GLOBAL_LIST_INIT: the compiler's front end reads an undefined macro call at the
+    // top level as a proc header, so the tree defines it as the game does.
+    std::fs::create_dir_all(tree.join("code/__defines")).unwrap();
+    std::fs::write(tree.join("code/__defines/macros.dm"), "#define GLOBAL_LIST_INIT(X, V) var/global/list/X = V\n").unwrap();
     std::fs::create_dir_all(tree.join("tools/ci")).unwrap();
     std::fs::copy(repo.join("tools/ci/lint_scopes.toml"), tree.join("tools/ci/lint_scopes.toml")).unwrap();
     let (store, cache) = (base.join("store"), base.join("cache"));

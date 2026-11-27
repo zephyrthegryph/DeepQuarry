@@ -1603,8 +1603,8 @@ impl<'a, 'e> Walk<'a, 'e> {
 
     fn block(&mut self, fr: &mut Frame<'a>, b: &[Statement]) {
         let read = self.eng.sem.m().stmts(b);
-        for st in read.iter() {
-            self.line = self.eng.sem.line(Some(st.site));
+        for (st, line) in read.stmts.iter().zip(&read.lines) {
+            self.line = *line;
             self.stmt(fr, &st.stmt);
         }
     }

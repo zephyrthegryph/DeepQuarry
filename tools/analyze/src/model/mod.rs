@@ -36,7 +36,7 @@ pub struct Site(pub u32);
 pub struct Model {
     /// Each body block read as statements (`walk::stmts`), by its address: the walks read the same blocks over and over. Declared first so
     /// it is dropped before the bodies it borrows from (see [`Model::stmts`]).
-    blocks: Vec<std::sync::RwLock<HashMap<(usize, usize), Arc<Vec<walk::StmtAt<'static>>>>>>,
+    blocks: Vec<std::sync::RwLock<HashMap<(usize, usize), Arc<Block<'static>>>>>,
     rev: FrontendRevision,
     /// Each declaration occurrence's stable identity (`dm_tree::frontend::declaration_keys`), built when a recording first asks.
     keys: std::sync::OnceLock<Vec<Option<dm_tree::frontend::DeclarationKey>>>,
@@ -290,16 +290,18 @@ impl Model {
     ///
     /// `block` must be part of a body of this model (a proc's [`Member::body`] or a block nested in one): the remembered statements borrow
     /// from it, and the model keeps every body alive (and unmoved: each is an `Arc`) for as long as the remembered statements exist.
-    pub fn stmts<'m>(&'m self, block: &'m [dm_syntax::Statement]) -> Arc<Vec<walk::StmtAt<'m>>> {
+    pub fn stmts<'m>(&'m self, block: &'m [dm_syntax::Statement]) -> Arc<Block<'m>> {
         let key = (block.as_ptr() as usize, block.len());
         let shard = &self.blocks[key.0.wrapping_mul(0x9E37_79B9) >> 26 & (SITE_SHARDS - 1)];
         if let Some(hit) = shard.read().unwrap_or_else(|e| e.into_inner()).get(&key) {
             return hit.clone();
         }
-        let read: Vec<walk::StmtAt<'m>> = walk::stmts(block);
+        let stmts: Vec<walk::StmtAt<'m>> = walk::stmts(block);
+        let lines = stmts.iter().map(|st| self.line_no(st.site).unwrap_or(0)).collect();
+        let read = Block { stmts, lines };
         // SAFETY: `read` borrows from `block`, which (the contract above) lives in a body this model owns and outlives the cache: `blocks`
         // is dropped first, and the statements are handed out with the model's borrow (`'m`), never longer.
-        let stored: Arc<Vec<walk::StmtAt<'static>>> = Arc::new(unsafe { std::mem::transmute::<Vec<walk::StmtAt<'m>>, Vec<walk::StmtAt<'static>>>(read) });
+        let stored: Arc<Block<'static>> = Arc::new(unsafe { std::mem::transmute::<Block<'m>, Block<'static>>(read) });
         shard.write().unwrap_or_else(|e| e.into_inner()).insert(key, stored.clone());
         stored
     }
@@ -355,6 +357,12 @@ impl Model {
     fn occurrence_site(&self, at: OccurrenceId) -> Option<Site> {
         self.rev.declaration_spans.get(at.0 as usize).map(|span| Site(span.start))
     }
+}
+
+/// A body block read as statements ([`Model::stmts`]), with each statement's line (0 for none), looked up once per block.
+pub struct Block<'a> {
+    pub stmts: Vec<walk::StmtAt<'a>>,
+    pub lines: Vec<u32>,
 }
 
 /// A type of the semantic tree.
