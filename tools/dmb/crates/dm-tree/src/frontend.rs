@@ -4,6 +4,14 @@
 
 #[path = "frontend_callable_roster.rs"]
 mod callable_roster;
+#[path = "frontend_parallel.rs"]
+mod parallel;
+#[path = "frontend_delta.rs"]
+mod delta;
+pub use delta::{Change, DeclarationKey, FrontendDelta};
+#[cfg(test)]
+#[path = "frontend_delta_tests.rs"]
+mod delta_tests;
 #[path = "frontend_procedure_delta.rs"]
 mod procedure_delta;
 pub use procedure_delta::ProcedureInputDelta;
@@ -110,6 +118,25 @@ pub struct FrontendTimings {
     pub provenance_and_body_indexing: Duration,
     pub total: Duration,
     pub declaration_reuse: DeclarationReuseStats,
+    /// Every step of the build in order, each with its own wall time (the stages above group several of them). The daemon
+    /// and `dmbc analyze` print it (`phase_summary`) so a request shows which tree-wide step an edit still pays for.
+    pub phases: Vec<(&'static str, Duration)>,
+}
+impl FrontendTimings {
+    pub(crate) fn phase(&mut self, name: &'static str, started: Instant) {
+        self.phases.push((name, started.elapsed()));
+    }
+    /// `name=0.012s name=...` in build order.
+    pub fn phase_summary(&self) -> String {
+        let mut out = String::new();
+        for (name, elapsed) in &self.phases {
+            if !out.is_empty() {
+                out.push(' ');
+            }
+            out.push_str(&format!("{name}={:.3}s", elapsed.as_secs_f64()));
+        }
+        out
+    }
 }
 /// Worker durations are summed across workers, not stage elapsed.
 #[derive(Clone, Debug, Default)]
@@ -232,6 +259,13 @@ pub struct ColdFrontend {
     /// or reorders origins independently from their declaration targets.
     pub emission_order: Arc<[OccurrenceId]>,
     source_export_mapping: Arc<source_export_mapping::SourceExportMapping>,
+    /// The plan region of every declaration (by declaration index), for the delta of the next revision.
+    declaration_regions: Arc<[u32]>,
+    /// This revision's number in its session (`RetainedSemanticTree`), 0 for a one-shot build.
+    pub revision: u64,
+    /// What changed against the revision this one was built from; `None` when it was built without one (or its plan
+    /// copied nothing), so a consumer recomputes everything.
+    pub delta: Option<FrontendDelta>,
 }
 
 impl ColdFrontend {
@@ -746,13 +780,79 @@ mod source_export_mapping;
 pub use source_export_mapping::SourceExportMapping;
 #[path = "frontend_source_projection.rs"]
 mod source_projection;
+#[path = "frontend_expansion_site.rs"]
+mod expansion_site;
+pub use expansion_site::InvocationOutput;
 /// See [`ColdFrontend::site_mapper`].
 pub struct SiteMapper<'a>(Mapping<'a>);
 impl SiteMapper<'_> {
     pub fn debug_site_column(&self, expanded_offset: usize) -> Option<(Arc<str>, usize, usize)> {
         self.0.debug_site_column(expanded_offset)
     }
+    /// The macro invocation written in the source whose expansion holds the expanded byte at `expanded_offset`
+    /// (`frontend_expansion_site.rs`); `None` for a byte copied from the source or a row it cannot align.
+    pub fn invocation_output(&self, expanded_offset: usize) -> Option<InvocationOutput<'_>> {
+        self.0.invocation_output(expanded_offset)
+    }
 }
+#[derive(Clone, Copy)]
+struct MappingParts<'a> {
+    plan: &'a DirectivePlan,
+    expanded: &'a ExpandedRegions,
+    files: &'a [SourceFile],
+    by_path: &'a HashMap<PathBuf, FileId>,
+}
+impl<'a> MappingParts<'a> {
+    fn mapping(self) -> Mapping<'a> {
+        Mapping {
+            projection: Default::default(),
+            plan: self.plan,
+            expanded: self.expanded,
+            files: self.files,
+            by_path: self.by_path,
+            hints: Default::default(),
+        }
+    }
+}
+/// Where an invocation whose name ends at `name_end` ends in `source`: after its parenthesized arguments when it has them (strings and
+/// nested parentheses skipped), else at its name.
+fn invocation_end(source: &[u8], name_end: usize) -> usize {
+    let mut i = name_end;
+    while i < source.len() && matches!(source[i], b' ' | b'\t') {
+        i += 1;
+    }
+    if source.get(i) != Some(&b'(') {
+        return name_end;
+    }
+    let mut depth = 0usize;
+    let mut quote: Option<u8> = None;
+    while i < source.len() {
+        let b = source[i];
+        match quote {
+            Some(q) => {
+                if b == b'\\' {
+                    i += 1;
+                } else if b == q {
+                    quote = None;
+                }
+            }
+            None => match b {
+                b'"' | b'\'' => quote = Some(b),
+                b'(' | b'[' => depth += 1,
+                b')' | b']' => {
+                    depth = depth.saturating_sub(1);
+                    if depth == 0 {
+                        return i + 1;
+                    }
+                }
+                _ => {}
+            },
+        }
+        i += 1;
+    }
+    name_end
+}
+
 struct Mapping<'a> {
     projection: source_projection::CurrentSourceProjection,
     plan: &'a DirectivePlan,
@@ -769,7 +869,12 @@ struct MappingHints {
     row: std::cell::Cell<usize>,
 }
 
-impl Mapping<'_> {
+impl<'a> Mapping<'a> {
+    /// What the mapping reads, without its lookup hints and projection cache: a worker of a parallel pass makes its own
+    /// mapping from it (`MappingParts::mapping`).
+    fn parts(&self) -> MappingParts<'a> {
+        MappingParts { plan: self.plan, expanded: self.expanded, files: self.files, by_path: self.by_path }
+    }
     fn origin(&self, offset: usize) -> Option<ExpandedOriginView<'_>> {
         let index = self
             .expanded
@@ -957,6 +1062,15 @@ impl Mapping<'_> {
                 eprintln!("site {offset} {path}:{line}: output {:?} source {:?} found {found:?}", origin.output_span, origin.source_span);
             }
         }
+        // A position inside an invocation written in the source (a function-like macro's argument, copied into its expansion): dreammaker
+        // places every token of an expansion at the invocation.
+        let found = found.map(|pos| {
+            expansions
+                .iter()
+                .map(|e| (src.start + e.invocation_span.start, invocation_end(source, src.start + e.invocation_span.end)))
+                .find(|&(start, end)| start < pos && pos < end)
+                .map_or(pos, |(start, _)| start)
+        });
         // Found: the physical line and column. Otherwise (inside an expansion) dreammaker places the token at the invocation: the
         // nearest invocation start before the position, on `debug_site`'s line.
         let (line, column) = match found {
@@ -1103,6 +1217,7 @@ fn resolution_error(
 mod resolution_messages;
 use resolution_messages::{authored_ancestry, plain_datum_owner, resolution_message};
 
+#[allow(clippy::too_many_arguments)]
 fn collect_bodies(
     syntax: &DeclarationSyntax,
     tree: &crate::SemanticTree,
@@ -1111,40 +1226,61 @@ fn collect_bodies(
     bodies: &mut Vec<BodyOccurrence>,
     settings: &mut Vec<Option<Arc<dm_ir::ProcedureMetadata>>>,
     codes: &mut Vec<Arc<BodyCodeIdentity>>,
+    executor: &dm_exec::BuildExecutor,
 ) -> Result<(), Vec<Diagnostic>> {
-    for recipe in syntax.body_recipes() {
-        codes.push(recipe.code_identity());
-        let span = recipe.span();
-        let declaration = declarations
-            .get(&span.start)
-            .copied()
-            .ok_or_else(|| vec![internal("procedure body has no resolved declaration")])?;
-        let source = mapping
-            .output(span.start)
-            .ok_or_else(|| vec![internal("procedure body has no source origin")])?;
-        let setting_context_origins = recipe
-            .settings()
-            .map(|span| {
-                mapping
-                    .output(span.start)
-                    .ok_or_else(|| vec![internal("procedure setting has no current source origin")])
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        settings.push(recipe.settings_owner().and_then(|issued| {
-            let current = tree.member(declaration.1)?.metadata.procedure.as_ref()?;
-            (Arc::ptr_eq(&issued.settings, &current.settings)
-                || issued.settings.as_ref() == current.settings.as_ref())
-            .then(|| Arc::clone(current))
-        }));
-        bodies.push(BodyOccurrence {
-            stored_candidates: recipe.stored_candidates(),
-            declaration: declaration.0,
-            member: declaration.1,
-            ast_path: recipe.path(),
-            expanded_span: span,
-            source,
-            setting_context_origins: setting_context_origins.into(),
-        });
+    let recipes: Vec<_> = syntax.body_recipes().collect();
+    let parts = mapping.parts();
+    // Every body in parallel chunks (each with its own lookup hints), joined in body order.
+    let rows = parallel::chunked_map(executor, &recipes, |_, part| {
+        let mapping = parts.mapping();
+        let mut rows = Vec::with_capacity(part.len());
+        for recipe in part {
+            let code = recipe.code_identity();
+            let span = recipe.span();
+            let declaration = declarations
+                .get(&span.start)
+                .copied()
+                .ok_or_else(|| vec![internal("procedure body has no resolved declaration")])?;
+            let source = mapping
+                .output(span.start)
+                .ok_or_else(|| vec![internal("procedure body has no source origin")])?;
+            let setting_context_origins = recipe
+                .settings()
+                .map(|span| {
+                    mapping
+                        .output(span.start)
+                        .ok_or_else(|| vec![internal("procedure setting has no current source origin")])
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let setting = recipe.settings_owner().and_then(|issued| {
+                let current = tree.member(declaration.1)?.metadata.procedure.as_ref()?;
+                (Arc::ptr_eq(&issued.settings, &current.settings)
+                    || issued.settings.as_ref() == current.settings.as_ref())
+                .then(|| Arc::clone(current))
+            });
+            rows.push((
+                code,
+                setting,
+                BodyOccurrence {
+                    stored_candidates: recipe.stored_candidates(),
+                    declaration: declaration.0,
+                    member: declaration.1,
+                    ast_path: recipe.path(),
+                    expanded_span: span,
+                    source,
+                    setting_context_origins: setting_context_origins.into(),
+                },
+            ));
+        }
+        Ok::<_, Vec<Diagnostic>>(rows)
+    })?;
+    codes.reserve(rows.len());
+    settings.reserve(rows.len());
+    bodies.reserve(rows.len());
+    for (code, setting, body) in rows {
+        codes.push(code);
+        settings.push(setting);
+        bodies.push(body);
     }
     Ok(())
 }

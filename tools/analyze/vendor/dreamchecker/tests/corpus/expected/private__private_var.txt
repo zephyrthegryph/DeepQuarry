@@ -1,0 +1,9 @@
+fixture.dm, line 5, column 9:
+error: /mob/subtype overrides private var "foo" [private_var]
+- 2:33: declared private on /mob here
+fixture.dm, line 12, column 6:
+warning: field "bar" on /mob is declared as private [private_var]
+- 3:33: definition is here
+fixture.dm, line 14, column 6:
+warning: field "foo" on /mob/subtype is declared as private [private_var]
+- 2:33: definition is here

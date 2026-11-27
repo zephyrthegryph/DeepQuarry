@@ -1,0 +1,5 @@
+/proc/test()
+    var/list/L = list()
+    L[1].foo()
+    L?[1].foo()
+/mob/proc/foo()

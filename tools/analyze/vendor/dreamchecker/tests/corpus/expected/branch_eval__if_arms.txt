@@ -1,0 +1,8 @@
+fixture.dm, line 2, column 7:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 2, column 7:
+error: if condition is always true [if_condition_determinate]
+fixture.dm, line 4, column 12:
+error: unreachable if block, preceeding if/elseif condition(s) are always true [unreachable_code]
+fixture.dm, line 7, column 9:
+error: unreachable else block, preceeding if/elseif condition(s) are always true [unreachable_code]

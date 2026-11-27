@@ -1,0 +1,6 @@
+fixture.dm, line 10, column 4:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 10, column 4:
+error: if condition is always true [if_condition_determinate]
+fixture.dm, line 18, column 10:
+warning: Elements in a switch-case branch separated by ||, this is likely in error and should be replaced by a comma

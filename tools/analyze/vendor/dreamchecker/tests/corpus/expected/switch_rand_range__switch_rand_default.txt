@@ -1,0 +1,2 @@
+fixture.dm, line 4, column 19:
+warning: Case range '5 to 5' will never trigger as it is outside the rand() range 1 to 4

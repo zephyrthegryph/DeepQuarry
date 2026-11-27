@@ -1,0 +1,6 @@
+fixture.dm, line 7, column 19:
+error: /datum/sub/proc/checker sets SpacemanDMM_should_not_sleep but calls blocking proc /proc/sleeper [must_not_sleep]
+- 2:9: SpacemanDMM_should_not_sleep set here
+- 8:9: /datum/proc/proxy() called here
+- 5:9: /proc/sleeper() called here
+- 11:9: sleep() called here

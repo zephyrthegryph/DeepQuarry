@@ -29,6 +29,8 @@ use switch_rand_range::check_switch_rand_range;
 #[doc(hidden)]  // Intended for the tests only.
 pub mod test_helpers;
 
+pub mod native;
+
 // ----------------------------------------------------------------------------
 // Helper structures
 
@@ -324,11 +326,14 @@ pub fn run_cli(context: &Context, objtree: &ObjectTree) {
 /// [`run_cli`] (with `cli`) or [`run`], with proc bodies checked on `threads` threads. The diagnostics and every table the later
 /// passes read are the serial run's: each body's diagnostics are registered in the serial order and the per-body tables merged in it.
 pub fn run_parallel(context: &Context, objtree: &ObjectTree, cli: bool, threads: usize) {
-    run_parallel_batched(context, objtree, cli, threads, 128)
+    run_parallel_batched(context, objtree, cli, threads, BATCH)
 }
 
+/// Bodies per unit of parallel work.
+pub const BATCH: usize = 128;
+
 /// [`run_parallel`] with `batch` bodies per unit of work (the tests use 1, so every body crosses a batch boundary).
-pub(crate) fn run_parallel_batched(context: &Context, objtree: &ObjectTree, cli: bool, threads: usize, batch: usize) {
+pub fn run_parallel_batched(context: &Context, objtree: &ObjectTree, cli: bool, threads: usize, batch: usize) {
     if threads <= 1 {
         return run_inner(context, objtree, cli);
     }

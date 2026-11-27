@@ -1,0 +1,2 @@
+fixture.dm, line 3, column 16:
+error: undefined proc: "foo" on /atom

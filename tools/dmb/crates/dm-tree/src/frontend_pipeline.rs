@@ -165,6 +165,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     ));
     dm_profile::request_mark("frontend.plan_done");
     timings.directive_planning = stage_start.elapsed();
+    timings.phase("plan", stage_start);
     observe(
         config,
         FrontendStage::DirectivePlanning,
@@ -219,6 +220,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         None => (full_expansion(), None),
     };
     timings.expansion = stage_start.elapsed();
+    timings.phase("expansion", stage_start);
     crate::change_set::record_outcome(match expansion_reuse {
         Some(stats) => format!(
             "frontend expansion: {} regions reused ({} rows moved), {} expanded; prepare={:.3}s expand={:.3}s text={:.3}s rows={:.3}s; {:.3}s",
@@ -296,6 +298,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         Some(index) => index,
         None => build_source_index(&plan, &sources)?,
     };
+    timings.phase("source_index", index_started);
     crate::change_set::record_outcome(format!(
         "frontend source index {}: {:.3}s",
         if source_index_reused { "reused" } else { "built" },
@@ -309,6 +312,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         by_path: &by_path,
         hints: Default::default(),
     };
+    let diagnostics_started = Instant::now();
     let mut text_expression_files = std::collections::HashSet::new();
     let mut diagnostics: Vec<_> = expanded
         .diagnostics
@@ -345,6 +349,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             }]
         })
         .collect();
+    timings.phase("preprocess_diagnostics", diagnostics_started);
     // Chunk the joined encounter stream at grammar-safe top-level boundaries,
     // not include boundaries. Every declaration is accepted regardless of size;
     // a large declaration consumes its own chunk rather than changing algorithms.
@@ -424,6 +429,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             .collect());
     }
     timings.declaration_parsing = parse_start.elapsed();
+    timings.phase("declaration_parsing", parse_start);
     observe(
         config,
         FrontendStage::DeclarationParsing,
@@ -459,11 +465,16 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 .ok_or_else(|| vec![internal("include region lies outside captured source")])
         })
         .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
-    let mut declaration_regions = Vec::with_capacity(adapted.origins.len());
-    let mut current_origins = Vec::with_capacity(adapted.origins.len());
-    for origin in adapted.origins.iter() {
+    timings.phase("region_hashes", provenance_start);
+    let origins_started = Instant::now();
+    // Every declaration's origin, in parallel chunks (each with its own lookup hints), joined in declaration order.
+    let parts = mapping.parts();
+    let origin_rows = super::parallel::chunked_map(executor, &expanded_spans, |_, spans| {
+    let mapping = parts.mapping();
+    let mut rows = Vec::with_capacity(spans.len());
+    for origin_span in spans {
         let expanded_origin = mapping
-            .origin(origin.span.start as usize)
+            .origin(origin_span.start as usize)
             .ok_or_else(|| vec![internal("declaration has no current expansion origin")])?;
         // Declaration provenance needs the source span and occurrence, not a
         // complete diagnostic location (which also allocates an include chain).
@@ -471,20 +482,26 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         let file = mapping
             .file_of(expanded_origin.origin.path)
             .ok_or_else(|| vec![internal("declaration has no captured source file")])?;
-        declaration_regions.push(expanded_origin.region);
         let span = source_span(file, expanded_origin.source_span)?;
         let include_occurrence = u32::try_from(plan.regions[expanded_origin.region].occurrence)
             .map_err(|_| vec![internal("too many include occurrences")])?;
         let region = region_hashes[expanded_origin.region];
         let expansion_stack = mapping.expansion_stack(expanded_origin.macro_expansions)?;
-        current_origins.push(crate::Provenance {
-            span,
-            include_occurrence,
-            region,
-            expansion_stack,
-        });
+        rows.push((
+            expanded_origin.region,
+            crate::Provenance {
+                span,
+                include_occurrence,
+                region,
+                expansion_stack,
+            },
+        ));
     }
+    Ok::<_, Vec<Diagnostic>>(rows)
+    })?;
+    let (declaration_regions, current_origins): (Vec<_>, Vec<_>) = origin_rows.into_iter().unzip();
     adapted.origins = current_origins.into();
+    timings.phase("origins", origins_started);
     timings.provenance_and_body_indexing += provenance_start.elapsed();
     observe(
         config,
@@ -525,6 +542,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     }
     .map_err(|_| resolution_diagnostic.expect("resolution failure must notify observer"))?;
     timings.tree_resolution = resolution_start.elapsed();
+    timings.phase("tree", resolution_start);
     observe(
         config,
         FrontendStage::TreeResolution,
@@ -559,6 +577,8 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             _ => None,
         })
         .collect();
+    timings.phase("body_starts", provenance_start);
+    let collect_started = Instant::now();
     let mut bodies = Vec::new();
     let mut issued_settings = Vec::new();
     let mut body_codes = Vec::new();
@@ -570,8 +590,11 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         &mut bodies,
         &mut issued_settings,
         &mut body_codes,
+        executor,
     )?;
-    let callable_roster = match semantic_state {
+    timings.phase("collect_bodies", collect_started);
+    let roster_started = Instant::now();
+    let callable_roster = match semantic_state.as_deref_mut() {
         Some(state) => state.bind_callable_roster(&snapshot.tree, &bodies),
         None => CallableRoster::issue(&snapshot.tree, &bodies),
     }
@@ -589,11 +612,14 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                     })
                 })
     });
+    timings.phase("callable_roster", roster_started);
+    let order_started = Instant::now();
     let mut ranks = vec![0; plan.regions.len()];
     for (rank, region) in expanded.emission_regions.iter().enumerate() {
         ranks[*region] = rank;
     }
     let emission_order = emission_order::ordered_occurrences(&declaration_regions, &ranks);
+    timings.phase("emission_order", order_started);
     timings.provenance_and_body_indexing += provenance_start.elapsed();
     observe(
         config,
@@ -604,23 +630,35 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         bodies.len(),
     );
     drop(profile_stage);
-    timings.total = total_start.elapsed();
+    let codes_started = Instant::now();
     let bodies: Arc<[BodyOccurrence]> = bodies.into();
     if let Some(request) = &declaration_request {
         request.publish_successful();
     }
-    let issued_body_codes = bodies
-        .iter()
-        .zip(body_codes)
-        .map(|(body, identity)| body_code::BodyCodeOwner {
-            identity,
-            termination: dm_syntax::termination_after_with_context(
-                &expanded.text,
-                body.expanded_span.end,
-                &|offset| syntax.declaration_header_at(offset),
-            ),
-        })
+    let terminations = super::parallel::chunked_map(executor, &bodies, |_, part| {
+        Ok::<_, std::convert::Infallible>(
+            part.iter()
+                .map(|body| {
+                    dm_syntax::termination_after_with_context(
+                        &expanded.text,
+                        body.expanded_span.end,
+                        &|offset| syntax.declaration_header_at(offset),
+                    )
+                })
+                .collect(),
+        )
+    });
+    let terminations = match terminations {
+        Ok(terminations) => terminations,
+        Err(never) => match never {},
+    };
+    let issued_body_codes = body_codes
+        .into_iter()
+        .zip(terminations)
+        .map(|(identity, termination)| body_code::BodyCodeOwner { identity, termination })
         .collect();
+    timings.phase("body_codes", codes_started);
+    let export_started = Instant::now();
     let files: Arc<[SourceFile]> = files.into();
     let source_by_path = by_path;
     let source_export_mapping = Arc::new(source_export_mapping::SourceExportMapping::capture(
@@ -631,7 +669,27 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         &snapshot.occurrences,
         &snapshot.tree,
     ));
-    Ok(ColdFrontend {
+    timings.phase("export_mapping", export_started);
+    let body_index_started = Instant::now();
+    let body_by_declaration = Arc::new(
+        bodies
+            .iter()
+            .enumerate()
+            .map(|(index, body)| (body.declaration, index))
+            .collect(),
+    );
+    timings.phase("body_by_declaration", body_index_started);
+    timings.total = total_start.elapsed();
+    crate::change_set::record_outcome(format!(
+        "frontend phases: {} total={:.3}s",
+        timings.phase_summary(),
+        timings.total.as_secs_f64()
+    ));
+    let declaration_regions: Arc<[u32]> = declaration_regions.iter().map(|&region| region as u32).collect();
+    let mut frontend = ColdFrontend {
+        declaration_regions,
+        revision: 0,
+        delta: None,
         source_export_mapping,
         callable_roster,
         abi_settings_complete,
@@ -653,19 +711,33 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         snapshot,
         files,
         source_by_path,
-        body_by_declaration: Arc::new(
-            bodies
-                .iter()
-                .enumerate()
-                .map(|(index, body)| (body.declaration, index))
-                .collect(),
-        ),
+        body_by_declaration,
         issued_bodies: Arc::clone(&bodies),
         issued_body_codes,
         issued_settings: issued_settings.into(),
         bodies,
         emission_order: emission_order.into(),
-    })
+    };
+    if let Some(state) = semantic_state {
+        let delta_started = Instant::now();
+        frontend.revision = state.next_revision();
+        frontend.delta = previous.as_ref().and_then(|previous| {
+            delta::compute(previous, &frontend, &plan_reuse.regions, previous.revision, frontend.revision)
+        });
+        crate::change_set::record_outcome(match &frontend.delta {
+            Some(delta) => format!(
+                "frontend delta {}->{}: files={} declarations={} bodies={} in {:.3}s",
+                delta.base,
+                delta.revision,
+                delta.files.len(),
+                delta.declarations.len(),
+                delta.bodies.len(),
+                delta_started.elapsed().as_secs_f64()
+            ),
+            None => format!("frontend delta: none (revision {})", frontend.revision),
+        });
+    }
+    Ok(frontend)
 }
 
 /// Every distinct file of the plan, in the order its first occurrence appears, with the text the

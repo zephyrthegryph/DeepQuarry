@@ -23,6 +23,11 @@ use std::str::FromStr;
 /// Maps an offset in the expanded arena (a `dm_syntax::Span` bound) to a dreammaker location.
 pub trait Locate {
     fn locate(&mut self, offset: usize) -> Location;
+    /// Where dreammaker's newline token after the source line holding `offset` sits: one column past the line's end (its comments
+    /// included). Without a line map, `offset`'s own place.
+    fn line_end(&mut self, offset: usize) -> Location {
+        self.locate(offset)
+    }
 }
 
 impl<F: FnMut(usize) -> Location> Locate for F {
@@ -51,13 +56,13 @@ pub fn convert_body(frontend: &dm_tree::frontend::ColdFrontend, statements: &[SS
 
 /// Convert a typed body to dreammaker's AST with the caller's location mapper.
 pub fn convert_body_with(statements: &[SStatement], locate: &mut dyn Locate) -> Block {
-    Converter { locate, parse_error: None }.block(statements)
+    Converter { locate, parse_error: None, text: "" }.block(statements)
 }
 
 /// Convert a typed body, or report where dreammaker's parser rejects it (a form BYOND accepts and dreammaker does not, such as
 /// `new L[1](at)`): its location and dreammaker's message.
-pub fn convert_body_checked(statements: &[SStatement], locate: &mut dyn Locate) -> Result<Block, (Location, String)> {
-    let mut c = Converter { locate, parse_error: None };
+pub fn convert_body_checked(statements: &[SStatement], locate: &mut dyn Locate, text: &str) -> Result<Block, (Location, String)> {
+    let mut c = Converter { locate, parse_error: None, text };
     let block = c.block(statements);
     match c.parse_error.take() {
         Some((at, message)) => Err((c.locate.locate(at), message)),
@@ -67,13 +72,15 @@ pub fn convert_body_checked(statements: &[SStatement], locate: &mut dyn Locate) 
 
 /// Convert one typed expression (a var initializer, a parameter default) with the caller's location mapper.
 pub fn convert_expression_with(expression: &Expr, locate: &mut dyn Locate) -> Expression {
-    Converter { locate, parse_error: None }.expr(expression)
+    Converter { locate, parse_error: None, text: "" }.expr(expression)
 }
 
 struct Converter<'a> {
     locate: &'a mut dyn Locate,
     /// The first form dreammaker's parser rejects (where it stops, and its message): the body is then a parse failure, as dreammaker's.
     parse_error: Option<(usize, String)>,
+    /// The expanded text the statements' offsets index (empty when the caller has none: a place read from it falls back to the node's).
+    text: &'a str,
 }
 
 /// Marker for a statement or expression dm-syntax kept unsupported, or a form the converter has no mapping for.
@@ -249,7 +256,7 @@ impl Converter<'_> {
                                     let outer = &mut *self.locate;
                                     let base_at = at + offset;
                                     let mut shifted = |o: usize| outer.locate(base_at + o);
-                                    Converter { locate: &mut shifted, parse_error: None }.expr(&e)
+                                    Converter { locate: &mut shifted, parse_error: None, text: "" }.expr(&e)
                                 }
                                 _ => {
                                     if std::env::var_os("DQ_BRIDGE_TRACE_LITERALS").is_some() {
@@ -270,6 +277,12 @@ impl Converter<'_> {
 
     fn loc(&mut self, offset: usize) -> Location {
         self.locate.locate(offset)
+    }
+
+    /// A control's condition as dreammaker places it: at the `(` it is read after (`if (x)`), which dm-syntax's condition span leaves out.
+    fn condition_loc(&mut self, condition: &Expr) -> Location {
+        let at = dm_syntax::control_open_paren(self.text, condition.span.start).unwrap_or(condition.span.start);
+        self.loc(at)
     }
 
     fn block(&mut self, statements: &[SStatement]) -> Block {
@@ -380,7 +393,7 @@ impl Converter<'_> {
         match &s.kind {
             StatementKind::If { condition, then_branch, else_branch, has_else } => {
                 let mut arms = Vec::new();
-                let cl = self.loc(condition.span.start);
+                let cl = self.condition_loc(condition);
                 arms.push((Spanned::new(cl, self.expr(condition)), self.block(then_branch)));
                 let mut else_arm = None;
                 let mut rest: &[SStatement] = else_branch;
@@ -390,7 +403,7 @@ impl Converter<'_> {
                     if let [only] = rest {
                         if let StatementKind::If { condition, then_branch, else_branch, has_else } = &only.kind {
                             if only.span.start < only.header_span.start {
-                                let cl = self.loc(condition.span.start);
+                                let cl = self.condition_loc(condition);
                                 arms.push((Spanned::new(cl, self.expr(condition)), self.block(then_branch)));
                                 rest = else_branch;
                                 rest_has_else = *has_else;
@@ -409,7 +422,7 @@ impl Converter<'_> {
             StatementKind::While { condition, body } => Statement::While { condition: self.expr(condition), block: self.block(body) },
             StatementKind::DoWhile { body, condition } => {
                 let block = self.block(body);
-                let cl = self.loc(condition.span.start);
+                let cl = self.condition_loc(condition);
                 Statement::DoWhile { block, condition: Box::new(Spanned::new(cl, self.expr(condition))) }
             }
             StatementKind::Spawn { delay, body } => {
@@ -426,20 +439,22 @@ impl Converter<'_> {
                 let mut out = Vec::new();
                 for case in cases {
                     let mut alts = Vec::new();
-                    let mut at = 0;
+                    let mut end = 0;
                     for alt in &case.alternatives {
                         alts.push(match alt {
                             SwitchAlternative::Exact(e) => {
-                                at = e.span.start;
+                                end = e.span.end;
                                 Case::Exact(self.expr(e))
                             }
                             SwitchAlternative::Range(a, b) => {
-                                at = a.span.start;
+                                end = b.span.end;
                                 Case::Range(self.expr(a), self.expr(b))
                             }
                         });
                     }
-                    let l = self.loc(at);
+                    // dreammaker places a case where its block ends: the newline after the block's last line.
+                    let last = case.body.iter().map(|s| s.span.end).max().unwrap_or(end);
+                    let l = self.locate.line_end(last.saturating_sub(1));
                     out.push((Spanned::new(l, alts), self.block(&case.body)));
                 }
                 let default = if else_branch.is_empty() { None } else { Some(self.block(else_branch)) };
@@ -856,7 +871,7 @@ mod literal_tests {
     fn multi_line_interpolation_converts() {
         let text = "\"[pick(\n\t\t\t\"a\",\n\t\t\t\"b\")] end\"";
         let mut locate = |_: usize| Location::default();
-        let e = Converter { locate: &mut locate, parse_error: None }.literal(text, 0);
+        let e = Converter { locate: &mut locate, parse_error: None, text: "" }.literal(text, 0);
         let s = format!("{e:?}");
         assert!(!s.contains(UNCONVERTED), "{s}");
         assert!(s.contains("Pick"), "{s}");

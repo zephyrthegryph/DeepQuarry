@@ -84,6 +84,9 @@ pub struct BuildHost {
     /// The session's query database (doc/incremental_core.md). Shared by every variant: a variant
     /// is another value of the `project` input.
     query_db: Arc<crate::query_db::QueryDb>,
+    /// The source texts a hosted analysis request reads (`daemon::hosted_frontend`), revalidated through the watcher. Define
+    /// independent, so shared by every variant.
+    watched_sources: Arc<crate::watched_sources::WatchedSources>,
 }
 
 /// Everything `BuildHost::engine` used to discard when only the project path or the defines changed.
@@ -141,6 +144,7 @@ impl Default for BuildHost {
         Self {
             session_id: next_session_id(),
             query_db: Default::default(),
+            watched_sources: Default::default(),
             engine_generation: 0,
             rich_generation: 0,
             procedure_generation: 0,
@@ -234,6 +238,12 @@ impl BuildHost {
             census.finish()
         })
     }
+    pub(crate) fn semantic_state(&self) -> Option<&dm_tree::frontend::RetainedSemanticTree> {
+        self.semantic.as_ref()
+    }
+    pub(crate) fn watched_sources(&self) -> Arc<crate::watched_sources::WatchedSources> {
+        Arc::clone(&self.watched_sources)
+    }
     pub(crate) fn prepared_sources(
         &self,
     ) -> Option<Arc<crate::input_snapshot::PreparedInputArtifacts>> {
@@ -274,6 +284,7 @@ impl BuildHost {
         Self {
             session_id: next_session_id(),
             query_db: Default::default(),
+            watched_sources: Default::default(),
             engine_generation: 0,
             rich_generation: 0,
             procedure_generation: 0,

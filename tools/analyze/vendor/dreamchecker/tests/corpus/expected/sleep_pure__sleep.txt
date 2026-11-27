@@ -1,0 +1,7 @@
+fixture.dm, line 16, column 16:
+error: /mob/proc/test3 sets SpacemanDMM_should_not_sleep but calls blocking proc /proc/sleepingproc [must_not_sleep]
+- 17:5: SpacemanDMM_should_not_sleep set here
+- 18:5: /proc/foo() called here
+- 10:5: /proc/sleepingproc() called here
+- 2:5: sleep() called here
+- 3:5: input() called here

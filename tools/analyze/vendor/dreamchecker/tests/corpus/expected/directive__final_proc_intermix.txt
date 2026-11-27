@@ -1,0 +1,5 @@
+fixture.dm, line 5, column 5:
+warning: /mob/subtype/proc/test sets SpacemanDMM_should_not_override false, but it cannot be disabled. [disabled_directive]
+fixture.dm, line 4, column 18:
+error: proc overrides parent, prohibited by /mob/proc/test [must_not_override]
+- 1:21: prohibited by this must_not_override annotation

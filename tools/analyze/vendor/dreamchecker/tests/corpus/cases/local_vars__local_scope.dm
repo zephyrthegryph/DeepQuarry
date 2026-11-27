@@ -1,0 +1,13 @@
+/proc/test()
+    var/foo
+    if(prob(50))
+        var/bar
+        foo++
+    else
+        bar++
+        foo++
+    bar++
+    foo++
+    alabel:
+        var/bar
+    bar++

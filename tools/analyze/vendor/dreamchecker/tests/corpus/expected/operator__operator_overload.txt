@@ -1,0 +1,2 @@
+fixture.dm, line 6, column 6:
+error: Attempting operator++ on a /mob which does not overload operator++

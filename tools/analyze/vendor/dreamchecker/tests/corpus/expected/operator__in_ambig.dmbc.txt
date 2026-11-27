@@ -1,0 +1,8 @@
+fixture.dm, line 2, column 7:
+warning: ambiguous `!` on left side of an `in` [ambiguous_in_lhs]
+- add parentheses to fix: `!(a in b)`
+- add parentheses to disambiguate: `(!a) in b`
+fixture.dm, line 6, column 7:
+warning: ambiguous `&&` on left side of an `in` [ambiguous_in_lhs]
+- add parentheses to fix: `a && (b in c)`
+- add parentheses to disambiguate: `(a && b) in c`

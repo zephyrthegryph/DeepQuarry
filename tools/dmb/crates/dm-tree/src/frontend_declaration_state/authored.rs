@@ -187,6 +187,7 @@ impl DeclarationClaims {
         let Some(authored) = &self.authored else {
             return Some(());
         };
+        let started = std::time::Instant::now();
         let mut currents: Vec<_> = currents.into_iter().collect();
         let leaves: Vec<_> = currents.iter().map(|current| current.skeletons()).collect();
         let reused = {
@@ -210,8 +211,17 @@ impl DeclarationClaims {
             }
             // Sharing the previous leaf backing does not transfer its lease.
             // Replay and claim the exact rows for this pending request as well.
+            let compared = started.elapsed();
             let index = authored.adopt(index);
-            return self.publish_authored(currents, index);
+            let adopted = started.elapsed();
+            let published = self.publish_authored(currents, index);
+            crate::change_set::record_outcome(format!(
+                "frontend authored (same leaves): compare={:.3}s adopt={:.3}s publish={:.3}s",
+                compared.as_secs_f64(),
+                (adopted - compared).as_secs_f64(),
+                (started.elapsed() - adopted).as_secs_f64()
+            ));
+            return published;
         }
         let mut roster = crate::skeleton_roster::SkeletonRoster::default();
         for current in &currents {

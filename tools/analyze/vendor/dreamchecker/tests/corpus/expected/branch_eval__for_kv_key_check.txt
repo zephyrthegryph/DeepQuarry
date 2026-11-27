@@ -1,0 +1,2 @@
+fixture.dm, line 3, column 27:
+error: cannot assigned a value to var/key in a for(var/key, value) statement

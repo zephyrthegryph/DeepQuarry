@@ -1,0 +1,30 @@
+fixture.dm, line 1, column 16:
+error: /mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking built-in(s) [must_not_sleep]
+- 2:5: SpacemanDMM_should_not_sleep set here
+- 3:10: world.Export() called here
+- 4:10: world.Import() called here
+fixture.dm, line 1, column 16:
+error: /mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /mob/proc/test2 [must_not_sleep]
+- 2:5: SpacemanDMM_should_not_sleep set here
+- 6:5: /mob/proc/test2() called here
+- 21:6: client.MeasureText() called here
+fixture.dm, line 1, column 16:
+error: /mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /client/proc/checksoundquery [must_not_sleep]
+- 2:5: SpacemanDMM_should_not_sleep set here
+- 7:6: /client/proc/checksoundquery() called here
+- 12:5: client.SoundQuery() called here
+fixture.dm, line 1, column 16:
+error: /mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /client/proc/checkmeasuretext [must_not_sleep]
+- 2:5: SpacemanDMM_should_not_sleep set here
+- 8:6: /client/proc/checkmeasuretext() called here
+- 14:5: client.MeasureText() called here
+fixture.dm, line 1, column 16:
+error: /mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /world/proc/checkimport [must_not_sleep]
+- 2:5: SpacemanDMM_should_not_sleep set here
+- 9:10: /world/proc/checkimport() called here
+- 16:5: world.Import() called here
+fixture.dm, line 1, column 16:
+error: /mob/proc/test1 sets SpacemanDMM_should_not_sleep but calls blocking proc /world/proc/checkexport [must_not_sleep]
+- 2:5: SpacemanDMM_should_not_sleep set here
+- 10:10: /world/proc/checkexport() called here
+- 18:5: world.Export() called here

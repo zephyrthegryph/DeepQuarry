@@ -1,0 +1,52 @@
+fixture.dm, line 3, column 2:
+error: possible unreachable code here [unreachable_code]
+fixture.dm, line 5, column 2:
+error: loop condition is always false [loop_condition_determinate]
+fixture.dm, line 5, column 2:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 8, column 2:
+error: loop condition is always true [loop_condition_determinate]
+fixture.dm, line 8, column 2:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 11, column 4:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 11, column 4:
+error: if condition is always true [if_condition_determinate]
+fixture.dm, line 13, column 9:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 13, column 9:
+error: unreachable if block, preceeding if/elseif condition(s) are always true [unreachable_code]
+fixture.dm, line 13, column 9:
+error: if condition is always false [if_condition_determinate]
+fixture.dm, line 16, column 3:
+error: unreachable else block, preceeding if/elseif condition(s) are always true [unreachable_code]
+fixture.dm, line 18, column 4:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 18, column 4:
+error: if condition is always false [if_condition_determinate]
+fixture.dm, line 24, column 4:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 24, column 4:
+error: if condition is always true [if_condition_determinate]
+fixture.dm, line 27, column 2:
+error: do while terminates without ever reaching condition
+fixture.dm, line 31, column 2:
+error: for range loop body is never reached due to invalid range
+fixture.dm, line 38, column 3:
+warning: returning a value in a spawn has no effect
+fixture.dm, line 49, column 2:
+error: possible unreachable code here [unreachable_code]
+fixture.dm, line 53, column 10:
+warning: Elements in a switch-case branch separated by ||, this is likely in error and should be replaced by a comma
+fixture.dm, line 55, column 2:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 63, column 2:
+error: possible unreachable code here [unreachable_code]
+fixture.dm, line 70, column 2:
+error: possible unreachable code here [unreachable_code]
+fixture.dm, line 72, column 4:
+error: if condition is always true [if_condition_determinate]
+fixture.dm, line 76, column 5:
+error: control flow condition is a static term [control_condition_static]
+fixture.dm, line 76, column 5:
+error: if condition is always false [if_condition_determinate]
