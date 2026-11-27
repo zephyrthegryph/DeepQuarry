@@ -264,7 +264,7 @@ impl RetainedMetadata {
             }
         });
     }
-    pub(crate) fn resolve<M: crate::member_binding::MemberWrite + ?Sized>(
+    pub(crate) fn resolve<M: crate::member_binding::MemberWrite + Sync + ?Sized>(
         &self,
         tree: &SemanticTree,
         members: &mut M,
@@ -275,6 +275,7 @@ impl RetainedMetadata {
             crate::metadata_update::StructuralMetadata<'_>,
             &KeyedDeclarations,
         )>,
+        executor: Option<&dm_exec::BuildExecutor>,
     ) -> crate::host_declaration_selection::Selections {
         let mut selections = crate::host_declaration_selection::Selections::new();
         let projection = &current_projection.ids;
@@ -315,95 +316,135 @@ impl RetainedMetadata {
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         drop(keys_timer);
         let _owner_loop_timer = dm_profile::detail_timer("tree.metadata.owner_loop");
+        // Owners by depth below the root: a member's predecessor is in its own
+        // owner or an ancestor, so the owners of one depth are independent once
+        // the shallower ones are applied. Each owner resolves over the shared
+        // members with its own overlay, on every core when a depth has many;
+        // the overlays are applied in owner order before the next depth.
         let owners = crate::metadata_update::dependency_order(tree.types.len(), |index| {
             tree.types[index].parent.map(|id| id.index())
         });
+        let mut depths = vec![0usize; tree.types.len()];
+        let mut levels = BTreeMap::<usize, Vec<SymbolId>>::new();
         for owner_index in owners {
+            depths[owner_index] = tree.types[owner_index].parent.map_or(0, |id| depths[id.index()] + 1);
             let owner = tree.types[owner_index].path;
-            let Some(ids) = by_owner.get(&owner) else {
-                continue;
-            };
-            let (accepted, reads) = {
-                let host = Host {
-                    tree,
-                    normalized,
-                    members: &*members,
-                    projection,
-                };
-                let accepted = self
-                    .store
-                    .visit_explained(&key(owner), &host, &mut |value| match value.as_ref() {
-                        EffectiveOwner::Members { values, .. } => values
-                            .iter()
-                            .all(|(key, _)| key.owner == owner && projection.contains_key(key)),
-                        _ => false,
-                    })
-                    .0;
-                let ledger = ObservationLedger::default();
-                if accepted.is_none() {
-                    let query = MetadataQuery::NormalizedOwner(owner);
-                    ledger.record(query, host.answer(&query), query.domain());
-                    for &id in ids {
-                        let member = members.member(id.index());
-                        if member.definition == DefinitionMode::Override
-                            && member.kind == MemberKind::Var
-                        {
-                            if let Some(previous) = member.previous {
-                                if members.member(previous.index()).owner != member.owner {
-                                    let query =
-                                        MetadataQuery::Effective(keys_by_id[previous.index()]);
-                                    ledger.record(query, host.answer(&query), query.domain());
+            if by_owner.contains_key(&owner) {
+                levels.entry(depths[owner_index]).or_default().push(owner);
+            }
+        }
+        for level in levels.into_values() {
+            let outcomes: Vec<OwnerOutcome> = {
+                let members: &M = &*members;
+                let resolve_owner = |owner: SymbolId| -> OwnerOutcome {
+                    let ids = &by_owner[&owner];
+                    let (accepted, reads) = {
+                        let host = Host {
+                            tree,
+                            normalized,
+                            members,
+                            projection,
+                        };
+                        let accepted = self
+                            .store
+                            .visit_explained(&key(owner), &host, &mut |value| match value.as_ref() {
+                                EffectiveOwner::Members { values, .. } => values
+                                    .iter()
+                                    .all(|(key, _)| key.owner == owner && projection.contains_key(key)),
+                                _ => false,
+                            })
+                            .0;
+                        let ledger = ObservationLedger::default();
+                        if accepted.is_none() {
+                            let query = MetadataQuery::NormalizedOwner(owner);
+                            ledger.record(query, host.answer(&query), query.domain());
+                            for &id in ids {
+                                let member = members.member(id.index());
+                                if member.definition == DefinitionMode::Override
+                                    && member.kind == MemberKind::Var
+                                {
+                                    if let Some(previous) = member.previous {
+                                        if members.member(previous.index()).owner != member.owner {
+                                            let query =
+                                                MetadataQuery::Effective(keys_by_id[previous.index()]);
+                                            ledger.record(query, host.answer(&query), query.domain());
+                                        }
+                                    }
                                 }
                             }
                         }
+                        (accepted, ledger.reads())
+                    };
+                    if let Some(value) = accepted {
+                        let EffectiveOwner::Members { selection, values } = value.as_ref() else {
+                            unreachable!("member payload admitted above")
+                        };
+                        self.hits.fetch_add(1, Ordering::Relaxed);
+                        // Current exact normalized observations, not old dense IDs,
+                        // supply every unchanged local field before applying deltas.
+                        // Namespace admission installed the exact current immutable local
+                        // owner before this pass. Only effective deltas need rebinding.
+                        OwnerOutcome {
+                            owner,
+                            selection: Arc::clone(selection),
+                            metadata: values
+                                .iter()
+                                .map(|(key, metadata)| (projection[key].index(), Arc::clone(metadata)))
+                                .collect(),
+                            previous: Vec::new(),
+                        }
+                    } else {
+                        let dirty_ids;
+                        let resolve_ids = if let Some(dirty) = &structural_dirty {
+                            dirty_ids = ids
+                                .iter()
+                                .copied()
+                                .filter(|id| dirty.contains(&keys_by_id[id.index()]))
+                                .collect::<Vec<_>>();
+                            dirty_ids.as_slice()
+                        } else {
+                            ids.as_slice()
+                        };
+                        Self::count(&self.common_resolved_members, resolve_ids.len());
+                        let mut overlay = OwnerOverlay::new(members);
+                        crate::metadata_update::resolve_metadata(tree, &mut overlay, resolve_ids);
+                        let values: Arc<[_]> = normalized[&owner]
+                            .iter()
+                            .filter_map(|input| {
+                                let effective = overlay.member(projection[&input.key].index()).metadata;
+                                (!(Arc::ptr_eq(effective, &input.metadata) || effective == &input.metadata))
+                                    .then(|| (input.key, Arc::clone(effective)))
+                            })
+                            .collect::<Vec<_>>()
+                            .into();
+                        // Full-current-roster retention has no fabricated byte weight;
+                        // exact retained owners are exposed to the diagnostic census.
+                        let selection =
+                            crate::host_declaration_selection::select(owner, &overlay, ids.iter().copied());
+                        self.store.insert_with(key(owner), reads,0, || {
+                            EffectiveOwner::Members { values, selection: Arc::clone(&selection) }
+                        });
+                        let (metadata, previous) = overlay.into_writes();
+                        OwnerOutcome { owner, selection, metadata, previous }
                     }
-                }
-                (accepted, ledger.reads())
-            };
-            if let Some(value) = accepted {
-                let EffectiveOwner::Members { selection, values } = value.as_ref() else {
-                    unreachable!("member payload admitted above")
+
                 };
-                self.hits.fetch_add(1, Ordering::Relaxed);
-                selections.insert(owner, Arc::clone(selection));
-                // Current exact normalized observations, not old dense IDs,
-                // supply every unchanged local field before applying deltas.
-                // Namespace admission installed the exact current immutable local
-                // owner before this pass. Only effective deltas need rebinding.
-                for (key, metadata) in values.iter() {
-                    members.set_metadata(projection[key].index(), Arc::clone(metadata));
-                }
-            } else {
-                let dirty_ids;
-                let resolve_ids = if let Some(dirty) = &structural_dirty {
-                    dirty_ids = ids
-                        .iter()
-                        .copied()
-                        .filter(|id| dirty.contains(&keys_by_id[id.index()]))
-                        .collect::<Vec<_>>();
-                    dirty_ids.as_slice()
-                } else {
-                    ids.as_slice()
-                };
-                Self::count(&self.common_resolved_members, resolve_ids.len());
-                crate::metadata_update::resolve_metadata(tree, members, resolve_ids);
-                let values: Arc<[_]> = normalized[&owner]
-                    .iter()
-                    .filter_map(|input| {
-                        let effective = members.member(projection[&input.key].index()).metadata;
-                        (!(Arc::ptr_eq(effective, &input.metadata) || effective == &input.metadata))
-                            .then(|| (input.key, Arc::clone(effective)))
+                match executor {
+                    Some(executor) => crate::frontend::parallel::chunked_map_above(executor, &level, 256, |_, part| {
+                        Ok::<_, std::convert::Infallible>(part.iter().map(|&owner| resolve_owner(owner)).collect())
                     })
-                    .collect::<Vec<_>>()
-                    .into();
-                // Full-current-roster retention has no fabricated byte weight;
-                // exact retained owners are exposed to the diagnostic census.
-                let selection =
-                    crate::host_declaration_selection::select(owner, members, ids.iter().copied());
-                selections.insert(owner, Arc::clone(&selection));
-                self.store.insert_with(key(owner), reads,0, || {
-                    EffectiveOwner::Members { values, selection }
-                });
+                    .unwrap_or_else(|never| match never {}),
+                    None => level.iter().map(|&owner| resolve_owner(owner)).collect(),
+                }
+            };
+            for outcome in outcomes {
+                for (index, metadata) in outcome.metadata {
+                    members.set_metadata(index, metadata);
+                }
+                for (index, previous) in outcome.previous {
+                    members.set_previous(index, previous);
+                }
+                selections.insert(outcome.owner, outcome.selection);
             }
         }
         selections
@@ -413,5 +454,59 @@ impl RetainedMetadata {
 impl std::fmt::Debug for RetainedMetadata {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RetainedMetadata").finish_non_exhaustive()
+    }
+}
+
+/// One owner's effective metadata, computed over the shared current members.
+struct OwnerOutcome {
+    owner: SymbolId,
+    selection: Arc<crate::host_declaration_selection::HostDeclarationSelection>,
+    metadata: Vec<(usize, Arc<MemberMetadata>)>,
+    previous: Vec<(usize, Option<MemberId>)>,
+}
+
+/// One owner's writes over shared current members: reads see the writes first.
+struct OwnerOverlay<'a, M: ?Sized> {
+    base: &'a M,
+    metadata: std::collections::HashMap<usize, Arc<MemberMetadata>>,
+    previous: std::collections::HashMap<usize, Option<MemberId>>,
+}
+impl<'a, M: crate::member_binding::MemberRead + ?Sized> OwnerOverlay<'a, M> {
+    fn new(base: &'a M) -> Self {
+        Self { base, metadata: Default::default(), previous: Default::default() }
+    }
+    /// The writes in index order (the order the members are later written in does not matter).
+    #[allow(clippy::type_complexity)]
+    fn into_writes(self) -> (Vec<(usize, Arc<MemberMetadata>)>, Vec<(usize, Option<MemberId>)>) {
+        let mut metadata: Vec<_> = self.metadata.into_iter().collect();
+        metadata.sort_unstable_by_key(|write| write.0);
+        let mut previous: Vec<_> = self.previous.into_iter().collect();
+        previous.sort_unstable_by_key(|write| write.0);
+        (metadata, previous)
+    }
+}
+impl<M: crate::member_binding::MemberRead + ?Sized> crate::member_binding::MemberRead for OwnerOverlay<'_, M> {
+    fn member(&self, index: usize) -> crate::member_binding::MemberView<'_> {
+        let mut row = self.base.member(index);
+        if let Some(metadata) = self.metadata.get(&index) {
+            row.metadata = metadata;
+        }
+        if let Some(previous) = self.previous.get(&index) {
+            row.previous = *previous;
+        }
+        row
+    }
+}
+impl<M: crate::member_binding::MemberRead + ?Sized> crate::member_binding::MemberWrite for OwnerOverlay<'_, M> {
+    fn set_previous(&mut self, index: usize, previous: Option<MemberId>) {
+        if self.member(index).previous != previous {
+            self.previous.insert(index, previous);
+        }
+    }
+    fn set_metadata(&mut self, index: usize, metadata: Arc<MemberMetadata>) {
+        let current = self.member(index).metadata;
+        if !(Arc::ptr_eq(current, &metadata) || current == &metadata) {
+            self.metadata.insert(index, metadata);
+        }
     }
 }

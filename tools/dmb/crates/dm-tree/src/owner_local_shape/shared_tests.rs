@@ -116,16 +116,16 @@ fn asymmetric_shape_edits_keep_sibling_variant_and_release_last_lease() {
     let kinds = callable_namespace::CallableKinds::default();
     let original = vec![member(owner, count)];
     let (declarations, _) = KeyedDeclarations::capture(None, &original).unwrap();
-    let first = a.prepare(&tree, &declarations, &kinds);
-    let sibling = b.prepare(&tree, &declarations, &kinds);
+    let first = a.prepare(&tree, &declarations, &kinds, None);
+    let sibling = b.prepare(&tree, &declarations, &kinds, None);
     assert!(Arc::ptr_eq(&first[&owner], &sibling[&owner]));
     let previous = Arc::downgrade(&first[&owner]);
     let changed = vec![original[0].clone(), member(owner, extra)];
     let (edited, _) = KeyedDeclarations::capture(Some(&declarations), &changed).unwrap();
-    let current = b.prepare(&tree, &edited, &kinds);
+    let current = b.prepare(&tree, &edited, &kinds, None);
     assert!(!Arc::ptr_eq(&first[&owner], &current[&owner]));
     assert_eq!(current[&owner].rows.len(), 2);
-    let unchanged = a.prepare(&tree, &declarations, &kinds);
+    let unchanged = a.prepare(&tree, &declarations, &kinds, None);
     assert!(Arc::ptr_eq(&first[&owner], &unchanged[&owner]));
     let latest = Arc::downgrade(&current[&owner]);
     drop(first);
@@ -161,17 +161,17 @@ fn shared_shape_negative_name_reads_replay_each_current_catalog() {
     let (declarations, _) = KeyedDeclarations::capture(None, &[member(owner, absent)]).unwrap();
     let before = crate::build(symbols.clone(), &[]).unwrap();
     let kinds = callable_namespace::CallableKinds::default();
-    let first = a.prepare(&before, &declarations, &kinds);
-    let sibling = b.prepare(&before, &declarations, &kinds);
+    let first = a.prepare(&before, &declarations, &kinds, None);
+    let sibling = b.prepare(&before, &declarations, &kinds, None);
     assert!(Arc::ptr_eq(&first[&owner], &sibling[&owner]));
     assert!(matches!(first[&owner].first_failure,
         Some((_, LocalValidationFailure::UnknownSymbol(name))) if name == absent));
     symbols.intern("missing").unwrap();
     let changed = crate::build(symbols, &[]).unwrap();
-    let repaired = b.prepare(&changed, &declarations, &kinds);
+    let repaired = b.prepare(&changed, &declarations, &kinds, None);
     assert!(repaired[&owner].first_failure.is_none());
     assert!(!Arc::ptr_eq(&first[&owner], &repaired[&owner]));
-    let untouched = a.prepare(&before, &declarations, &kinds);
+    let untouched = a.prepare(&before, &declarations, &kinds, None);
     assert!(Arc::ptr_eq(&first[&owner], &untouched[&owner]));
     assert!(matches!(untouched[&owner].first_failure,
         Some((_, LocalValidationFailure::UnknownSymbol(name))) if name == absent));

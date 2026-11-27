@@ -1152,3 +1152,13 @@ update and logs `frontend verify: stable-slot dependency graph equals a fresh ca
 
 The callable roster survives a stable splice that touched only vars (`CallableRoster::rebind_after_stable_splice`: same types and
 ancestry, every indexed callable the same node): the outcome line says `callable roster after stable splice (N touched): kept`.
+
+### Increment 4 (started): cold tree passes on every core
+
+`build_with_intrinsic_members_structural` takes the request's executor (`adapter::finish_execution` passes it). The per-owner
+passes that read only their own rows run in order-preserving parallel chunks (`frontend::parallel::chunked_map_above`, results
+joined in owner order): callable anchors (`RetainedCallables::collect`) and local shapes (`RetainedLocal::prepare`), above 1,024
+owners. Metadata inheritance (`RetainedMetadata::resolve`) runs depth by depth: a member's predecessor is in its own owner or an
+ancestor, so the owners of one depth are independent once the shallower depths are applied; each owner resolves over the shared
+members through its own overlay (`OwnerOverlay`), and the overlays are applied in owner order before the next depth (above 256
+owners in a depth). Test: `parallel_owner_passes_build_the_serial_tree` (1,500 owners per depth, 8 workers against 1).

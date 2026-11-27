@@ -7,7 +7,7 @@
 const SERIAL_BELOW: usize = 8192;
 
 /// `f(start, items[start..end])` for contiguous chunks of `items`, concatenated in order.
-pub(super) fn chunked_map<T, R, E>(
+pub(crate) fn chunked_map<T, R, E>(
     executor: &dm_exec::BuildExecutor,
     items: &[T],
     f: impl Fn(usize, &[T]) -> Result<Vec<R>, E> + Sync,
@@ -17,8 +17,24 @@ where
     R: Send,
     E: Send,
 {
+    chunked_map_above(executor, items, SERIAL_BELOW, f)
+}
+
+/// [`chunked_map`] for items that each cost more (a whole owner): mapped on
+/// the calling thread below `serial_below` items.
+pub(crate) fn chunked_map_above<T, R, E>(
+    executor: &dm_exec::BuildExecutor,
+    items: &[T],
+    serial_below: usize,
+    f: impl Fn(usize, &[T]) -> Result<Vec<R>, E> + Sync,
+) -> Result<Vec<R>, E>
+where
+    T: Sync,
+    R: Send,
+    E: Send,
+{
     let workers = executor.workers().max(1);
-    if workers == 1 || items.len() < SERIAL_BELOW {
+    if workers == 1 || items.len() < serial_below {
         return f(0, items);
     }
     // A few chunks per worker, so one slow chunk (a large file's declarations) does not hold the pass.

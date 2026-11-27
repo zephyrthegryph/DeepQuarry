@@ -755,6 +755,7 @@ impl SharedAdaptedDeclarations {
             seed.is_none(),
             normalization,
             structural,
+            executor,
         )
         .map_err(|error| {
             let error = SnapshotError::Tree(error);

@@ -706,3 +706,37 @@ fn stable_splice_updates_the_dependency_graph_like_a_fresh_capture() {
         assert_eq!(graph.first_difference(&captured), None, "{source}");
     }
 }
+
+/// The cold tree's per-owner passes (callable anchors, local shapes, metadata
+/// inheritance by depth) run on every core above their thresholds; the tree
+/// must be the one a single worker builds.
+#[test]
+fn parallel_owner_passes_build_the_serial_tree() {
+    let mut source = String::from("/datum/base\n    var/value = 1\n    var/list/items[2]\n    proc/act()\n        return 1\n");
+    for index in 0..1500 {
+        source.push_str(&format!(
+            "/datum/base/t{index}\n    value = {index}\n    var/own{index} = {index}\n    act()\n        return {index}\n/datum/base/t{index}/leaf\n    own{index} = 2\n    var/static/shared = 3\n"
+        ));
+    }
+    let source: &'static str = Box::leak(source.into_boxed_str());
+    let build_on = |workers: usize| {
+        let executor = dm_exec::BuildExecutor::new(workers).unwrap();
+        let mut state = RetainedSemanticTree::new();
+        build_with_executor_and_semantic_state(
+            Path::new("project.dme"),
+            &Source(source),
+            &BTreeMap::new(),
+            FrontendConfig { workers, engine: None, observer: None },
+            None,
+            &executor,
+            Some(&mut state),
+        )
+        .unwrap()
+    };
+    let serial = build_on(1);
+    let parallel = build_on(8);
+    assert_eq!(
+        crate::metadata_update::splice::first_difference(&parallel.snapshot.tree, &serial.snapshot.tree),
+        None
+    );
+}

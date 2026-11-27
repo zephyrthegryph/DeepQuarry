@@ -143,6 +143,7 @@ impl RetainedOwnerShapes {
         tree: &SemanticTree,
         declarations: &KeyedDeclarations,
         callable_kinds: &callable_namespace::CallableKinds,
+        executor: Option<&dm_exec::BuildExecutor>,
     ) -> LocalOwners {
         let keys: Vec<_> = declarations
             .owners()
@@ -156,12 +157,11 @@ impl RetainedOwnerShapes {
             member_keys: &[],
             callable_kinds,
         };
-        let mut result = LocalOwners::new();
-        for (owner, contribution) in declarations.owners() {
+        // Each owner's local shape reads only its own rows and the shared host: per owner, on every core when there are many.
+        let compute = |owner: &SymbolId, contribution: &Arc<crate::declaration_contributions::TypeContribution>| -> Arc<LocalOwner> {
             if let Some(payload) = self.store.lookup(&key(*owner), &host) {
                 self.hits.fetch_add(1, Ordering::Relaxed);
-                result.insert(*owner, payload);
-                continue;
+                return payload;
             }
             let ledger = ObservationLedger::default();
             crate::owner_normalization::observe(
@@ -249,8 +249,17 @@ impl RetainedOwnerShapes {
                     first_failure,
                 },
             );
-            result.insert(*owner, payload.expect("current roster is not budgeted"));
-        }
+            payload.expect("current roster is not budgeted")
+        };
+        let listed: Vec<_> = declarations.owners().collect();
+        let values: Vec<Arc<LocalOwner>> = match executor {
+            Some(executor) => crate::frontend::parallel::chunked_map_above(executor, &listed, 1024, |_, part| {
+                Ok::<_, std::convert::Infallible>(part.iter().map(|(owner, contribution)| compute(owner, contribution)).collect())
+            })
+            .unwrap_or_else(|never| match never {}),
+            None => listed.iter().map(|(owner, contribution)| compute(owner, contribution)).collect(),
+        };
+        let result: LocalOwners = listed.iter().map(|(owner, _)| **owner).zip(values).collect();
         result
     }
 }

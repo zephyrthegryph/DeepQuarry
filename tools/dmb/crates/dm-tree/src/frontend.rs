@@ -5,7 +5,7 @@
 #[path = "frontend_callable_roster.rs"]
 mod callable_roster;
 #[path = "frontend_parallel.rs"]
-mod parallel;
+pub(crate) mod parallel;
 #[path = "frontend_delta.rs"]
 mod delta;
 #[path = "frontend_origin_reuse.rs"]

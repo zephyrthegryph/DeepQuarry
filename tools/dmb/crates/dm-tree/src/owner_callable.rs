@@ -66,6 +66,7 @@ impl RetainedCallableOwners {
         tree: &SemanticTree,
         declarations: &KeyedDeclarations,
         intrinsics: &[IntrinsicMember],
+        executor: Option<&dm_exec::BuildExecutor>,
     ) -> Result<CallableKinds, TreeError> {
         let keys: Vec<_> = declarations
             .owners()
@@ -80,12 +81,11 @@ impl RetainedCallableOwners {
             member_keys: &[],
             callable_kinds: &empty,
         };
-        let mut owners = BTreeMap::new();
-        for (owner, contribution) in declarations.owners() {
+        // Each owner's anchors depend on its own rows only: computed per owner, on every core when there are many.
+        let compute = |owner: &SymbolId, contribution: &Arc<crate::declaration_contributions::TypeContribution>| -> Arc<CallableOwner> {
             if let Some(value) = self.store.lookup(&key(*owner), &host) {
                 self.hits.fetch_add(1, Ordering::Relaxed);
-                owners.insert(*owner, value);
-                continue;
+                return value;
             }
             let ledger = ObservationLedger::default();
             crate::owner_normalization::observe(
@@ -126,8 +126,18 @@ impl RetainedCallableOwners {
                 0,
                 || CallableOwner { anchors, duplicate },
             );
-            owners.insert(*owner, payload.expect("current roster is not budgeted"));
-        }
+            payload.expect("current roster is not budgeted")
+        };
+        let listed: Vec<_> = declarations.owners().collect();
+        let values: Vec<Arc<CallableOwner>> = match executor {
+            Some(executor) => crate::frontend::parallel::chunked_map_above(executor, &listed, 1024, |_, part| {
+                Ok::<_, std::convert::Infallible>(part.iter().map(|(owner, contribution)| compute(owner, contribution)).collect())
+            })
+            .unwrap_or_else(|never| match never {}),
+            None => listed.iter().map(|(owner, contribution)| compute(owner, contribution)).collect(),
+        };
+        let owners: BTreeMap<SymbolId, Arc<CallableOwner>> =
+            listed.iter().map(|(owner, _)| **owner).zip(values).collect();
         // Validation retains global authored encounter order even though independent
         // owner contributions were computed in symbol order.
         if owners.values().any(|owner| owner.duplicate.is_some()) {
@@ -201,7 +211,7 @@ mod tests {
             instance_storage_proven: false,
         };
         let first = retained
-            .collect(&tree, &index, std::slice::from_ref(&intrinsic))
+            .collect(&tree, &index, std::slice::from_ref(&intrinsic), None)
             .unwrap();
         assert_eq!(
             first,
@@ -223,7 +233,7 @@ mod tests {
             DefinitionMode::Implicit,
         ));
         let (index, _) = KeyedDeclarations::capture(Some(&index), &changed).unwrap();
-        let next = retained.collect(&tree, &index, &[]).unwrap();
+        let next = retained.collect(&tree, &index, &[], None).unwrap();
         assert_eq!(next, callable_namespace::collect(&changed, &[]).unwrap());
         assert_eq!(
             retained.hits(),
@@ -232,7 +242,7 @@ mod tests {
         );
         // Engine-only anchors always come from this invocation, never old cache.
         let empty = KeyedDeclarations::capture(None, &[]).unwrap().0;
-        assert!(retained.collect(&tree, &empty, &[]).unwrap().is_empty());
+        assert!(retained.collect(&tree, &empty, &[], None).unwrap().is_empty());
     }
     #[test]
     fn duplicate_diagnostic_preserves_global_authored_order_across_owners() {
@@ -258,8 +268,8 @@ mod tests {
             callable_namespace::collect(&rows, &[]),
             Err(expected.clone())
         );
-        assert_eq!(retained.collect(&tree, &index, &[]), Err(expected.clone()));
-        assert_eq!(retained.collect(&tree, &index, &[]), Err(expected));
+        assert_eq!(retained.collect(&tree, &index, &[], None), Err(expected.clone()));
+        assert_eq!(retained.collect(&tree, &index, &[], None), Err(expected));
         assert_eq!(retained.hits(), 2);
     }
 }

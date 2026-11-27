@@ -501,6 +501,7 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
         rebuild_inventory,
         normalization,
         None,
+        None,
     )
 }
 pub(crate) fn build_with_intrinsic_members_structural(
@@ -514,6 +515,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         &owner_normalization::RetainedNormalization,
     )>,
     structural: Option<metadata_update::StructuralMetadata<'_>>,
+    executor: Option<&dm_exec::BuildExecutor>,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -707,12 +709,12 @@ pub(crate) fn build_with_intrinsic_members_structural(
     let callable_kinds = if let Some((declarations, retained)) = normalization {
         retained
             .callables
-            .collect(&tree, declarations, intrinsics)?
+            .collect(&tree, declarations, intrinsics, executor)?
     } else {
         callable_namespace::collect_view(skeletons, intrinsics)?
     };
     let local_owners = normalization.map(|(declarations, retained)| {
-        retained.local.prepare(&tree, declarations, &callable_kinds)
+        retained.local.prepare(&tree, declarations, &callable_kinds, executor)
     });
     let local_members = local_owners.as_ref().and_then(|owners| {
         let (declarations, _) = normalization?;
@@ -862,6 +864,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
                     .as_ref()
                     .expect("normalized rows have current projection"),
                 structural.map(|prior| (prior, normalization.unwrap().0)),
+                executor,
             )
         } else {
             metadata_update::resolve_metadata(&tree, &mut members, &order);

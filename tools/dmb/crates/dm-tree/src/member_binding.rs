@@ -134,7 +134,7 @@ pub(crate) struct MemberBindings<'a> {
     deltas: HashMap<usize, Arc<MemberMetadata>>,
     previous_deltas: HashMap<usize, Option<MemberId>>,
     #[cfg(test)]
-    bound_nodes: std::cell::Cell<usize>,
+    bound_nodes: std::sync::atomic::AtomicUsize,
 }
 impl<'a> MemberBindings<'a> {
     pub(crate) fn new(projection: Option<&'a CurrentProjection>) -> Self {
@@ -145,7 +145,7 @@ impl<'a> MemberBindings<'a> {
             deltas: HashMap::new(),
             previous_deltas: HashMap::new(),
             #[cfg(test)]
-            bound_nodes: std::cell::Cell::new(0),
+            bound_nodes: std::sync::atomic::AtomicUsize::new(0),
         }
     }
     pub(crate) fn len(&self) -> usize {
@@ -156,7 +156,7 @@ impl<'a> MemberBindings<'a> {
     }
     pub(crate) fn bind_node(&self, index: usize) -> MemberNode {
         #[cfg(test)]
-        self.bound_nodes.set(self.bound_nodes.get() + 1);
+        self.bound_nodes.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         self.member(index).bind()
     }
     pub(crate) fn bind_all(&self) -> MemberArena {
@@ -167,7 +167,7 @@ impl<'a> MemberBindings<'a> {
     }
     #[cfg(test)]
     pub(crate) fn constructed_nodes(&self) -> usize {
-        self.bound_nodes.get()
+        self.bound_nodes.load(std::sync::atomic::Ordering::Relaxed)
     }
 }
 impl MemberRead for MemberBindings<'_> {

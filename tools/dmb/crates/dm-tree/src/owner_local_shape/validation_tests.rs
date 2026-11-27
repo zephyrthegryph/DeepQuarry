@@ -19,14 +19,14 @@ fn negative_name_receipt_replays_and_rejects_changed_catalog() {
     let tree = crate::build(symbols.clone(), &[]).unwrap();
     let store = RetainedOwnerShapes::default();
     let kinds = callable_namespace::CallableKinds::default();
-    let first = store.prepare(&tree, &declarations, &kinds);
+    let first = store.prepare(&tree, &declarations, &kinds, None);
     assert!(matches!(first[&owner].first_failure,
         Some((_, LocalValidationFailure::UnknownSymbol(actual))) if actual == name));
-    let repeated = store.prepare(&tree, &declarations, &kinds);
+    let repeated = store.prepare(&tree, &declarations, &kinds, None);
     assert!(Arc::ptr_eq(&first[&owner], &repeated[&owner]));
     symbols.intern("missing").unwrap();
     let changed = crate::build(symbols, &[]).unwrap();
-    let repaired = store.prepare(&changed, &declarations, &kinds);
+    let repaired = store.prepare(&changed, &declarations, &kinds, None);
     assert!(repaired[&owner].first_failure.is_none());
     assert!(!Arc::ptr_eq(&repeated[&owner], &repaired[&owner]));
 }
