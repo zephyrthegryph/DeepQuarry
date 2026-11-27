@@ -220,6 +220,9 @@ pub struct ColdFrontend {
     pub files: Arc<[SourceFile]>,
     source_by_path: Arc<HashMap<PathBuf, FileId>>,
     pub bodies: Arc<[BodyOccurrence]>,
+    /// Each declaration occurrence's item in the expanded arena (indexed by `OccurrenceId`): where analysis reads a declaration's
+    /// header (its initializer, parameters and site) without matching spellings again. The provenance spans are the source spans.
+    pub declaration_spans: Arc<[dm_ir::Span]>,
     callable_roster: Arc<CallableRoster>,
     abi_settings_complete: bool,
     body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,

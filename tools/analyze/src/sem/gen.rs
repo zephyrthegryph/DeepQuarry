@@ -323,6 +323,13 @@ pub trait Generator: Send + Sync {
         0
     }
 
+    /// Whether this generator reads the full model (`cx.sem()`, `sem_for`, or a memo built on it). A cold `analyze gen` on the compiler's
+    /// front end first writes the outputs of the generators that do not (`gen`'s bootstrap): the front end refuses a tree whose generated
+    /// types are missing, where dreammaker's parse only reported them.
+    fn reads_model(&self) -> bool {
+        self.stage() == 1
+    }
+
     /// The name `analyze gen NAME` takes (and the `[gen/NAME]` tag on its diagnostics).
     fn name(&self) -> &'static str;
     /// The file written, relative to `code/engine/_generated/`; empty for a generator that writes only `files()`.

@@ -23,6 +23,10 @@ mimalloc = { version = "0.1", default-features = false }
 dreammaker = { path = "vendor/dreammaker" }
 # DreamChecker at the same pin (vendor/README.md): `analyze dreamchecker` runs it on this parse.
 dreamchecker = { path = "vendor/dreamchecker" }
+# The compiler's front end (types only; dmbc builds it): the analysis view `src/model` reads its semantic tree, occurrences and bodies.
+dm-tree = { path = "../dmb/crates/dm-tree" }
+dm-syntax = { path = "../dmb/crates/dm-syntax" }
+dm-ir = { path = "../dmb/crates/dm-ir" }
 regex = "1"
 fancy-regex = "0.14"
 rayon = "1"

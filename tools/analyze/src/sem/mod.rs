@@ -113,9 +113,17 @@ pub struct Sem {
     structure: std::sync::OnceLock<u128>,
     globals: std::sync::OnceLock<globals::GlobalIndex>,
     writes: std::sync::OnceLock<reads::WriteIndex>,
+    /// The compiler front end the model came from (the dmbc provider), and the analysis view over it, built when first asked.
+    native: Option<dm_tree::frontend::FrontendRevision>,
+    model: std::sync::OnceLock<Option<crate::model::Model>>,
 }
 
 impl Sem {
+    /// The analysis view over the compiler's front end (`crate::model`), when the model came from it (`DQ_ANALYZE_PARSE=dmbc`).
+    pub fn model(&self) -> Option<&crate::model::Model> {
+        self.model.get_or_init(|| self.native.clone().map(|rev| crate::model::Model::new(rev, &self.root))).as_ref()
+    }
+
     /// Parses the environment. A tree with a non-empty `deepquarry.dme` uses it (include order
     /// matters for define visibility); anything else (a fixture) gets a synthesized `.dme` that
     /// includes every `code/**/*.dm` in path order.
@@ -174,7 +182,7 @@ impl Sem {
         };
         let t_build = std::time::Instant::now();
         let parsed = if real { model_store::obtain(root, tree, &dme_path)? } else { parse_dme(&dme_path, &[], None)? };
-        let model_store::Parsed { objtree, files: file_list, errors, env, structure, .. } = parsed;
+        let model_store::Parsed { objtree, files: file_list, errors, env, structure, native, .. } = parsed;
         let env_key = if real { env.unwrap_or_else(|| model_store::environment(tree, root, &dme_path, &file_list)) } else { 0 };
         let t_parsed = t_build.elapsed();
         let mut files: HashMap<dreammaker::FileId, String> = HashMap::new();
@@ -285,7 +293,7 @@ impl Sem {
             eprintln!("analyze: sem build: parse {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
         }
         let file_keys: HashMap<dreammaker::FileId, u128> = files.iter().filter_map(|(id, rel)| tree.get(rel).map(|f| (*id, f.hash))).collect();
-        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), globals: Default::default(), writes: Default::default() })
+        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), globals: Default::default(), writes: Default::default(), native, model: Default::default() })
     }
 
     pub fn rel(&self, loc: Location) -> &str {
@@ -696,7 +704,7 @@ fn parse_source_env(dme_path: &Path, preregister: &[PathBuf], source: Source, hi
         stream.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
         model_store::CheckerDiagnostics { stream, summary: dreammaker::parser::take_parse_summary(), finish }
     });
-    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines, raw, fatal })
+    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines, raw, fatal, native: None })
 }
 
 /// One line of a file as the layering index reads it (see `Sem::build_with`).
@@ -787,7 +795,25 @@ impl crate::lint::Cx<'_> {
 }
 
 /// The memoized semantic model of `tree`.
+/// Set while `analyze gen` bootstraps a cold tree (`sem::cli::gen`): the model is not built, and asking for it is recorded.
+static MODEL_DENIED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static MODEL_ASKED_WHILE_DENIED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Runs `f` with the full model unavailable; returns its result and whether anything asked for the model meanwhile.
+pub(crate) fn without_model<R>(f: impl FnOnce() -> R) -> (R, bool) {
+    use std::sync::atomic::Ordering;
+    MODEL_ASKED_WHILE_DENIED.store(false, Ordering::SeqCst);
+    MODEL_DENIED.store(true, Ordering::SeqCst);
+    let r = f();
+    MODEL_DENIED.store(false, Ordering::SeqCst);
+    (r, MODEL_ASKED_WHILE_DENIED.swap(false, Ordering::SeqCst))
+}
+
 pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
+    if MODEL_DENIED.load(std::sync::atomic::Ordering::SeqCst) {
+        MODEL_ASKED_WHILE_DENIED.store(true, std::sync::atomic::Ordering::SeqCst);
+        return None;
+    }
     let b = tree.memo("sem/model", || SemBox {
         sem: {
             walk_cache::prefetch();

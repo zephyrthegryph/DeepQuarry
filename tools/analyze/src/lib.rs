@@ -28,6 +28,7 @@ pub mod gens;
 pub mod host;
 pub mod lint;
 pub mod lints;
+pub mod model;
 pub mod base_vars_dead;
 pub mod parity;
 pub mod pat;

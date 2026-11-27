@@ -34,6 +34,15 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
     let ann = Annotations::get(&sem, &decls);
     let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(DEFAULT_OPAQUE);
     match sub {
+        // The analysis view against the converted tree (`crate::model::parity`); needs DQ_ANALYZE_PARSE=dmbc.
+        "model-parity" => {
+            let Some(model) = sem.model() else {
+                eprintln!("analyze sem model-parity: the model did not come from the compiler front end (set DQ_ANALYZE_PARSE=dmbc)");
+                return ExitCode::from(2);
+            };
+            let differ = crate::model::parity::run(&sem, model);
+            return if differ == 0 { ExitCode::SUCCESS } else { ExitCode::from(1) };
+        }
         "reads" => {
             let (Some(ty), Some(name)) = (args.get(1), args.get(2)) else {
                 eprintln!("usage: analyze sem reads /type proc");
@@ -362,8 +371,10 @@ fn gen_memo_store(tree: &crate::tree::Tree, root: &Path, results: &[super::gen::
 /// The generated files the `.dme` includes (`_generated/` directories) exist before the model is built: a fresh worktree has none, and
 /// the compiler's front end refuses a missing include. An empty file is what the generators then overwrite (they are gitignored build
 /// output, never committed).
-fn ensure_generated_includes(root: &Path) {
-    let Ok(entries) = std::fs::read_dir(root) else { return };
+/// Returns whether it created any.
+fn ensure_generated_includes(root: &Path) -> bool {
+    let mut created = false;
+    let Ok(entries) = std::fs::read_dir(root) else { return false };
     for entry in entries.flatten() {
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) != Some("dme") {
@@ -381,20 +392,48 @@ fn ensure_generated_includes(root: &Path) {
                 if let Some(dir) = file.parent() {
                     let _ = std::fs::create_dir_all(dir);
                 }
-                let _ = std::fs::write(&file, "");
+                created |= std::fs::write(&file, "").is_ok();
             }
         }
+    }
+    created
+}
+
+/// A cold tree on the compiler's front end: the generated files are empty stubs, and the front end refuses the tree while the types
+/// they will declare are missing (`/datum/act/admission_query: invalid parent type`), where dreammaker's parse only reported them and
+/// still gave the first pass a model. So the stage 0 generators that need no model write their files first, with the model withheld;
+/// the passes then start from a tree the front end accepts, and converge to what a cold run on dreammaker's parse writes.
+fn gen_bootstrap(root: &Path, names: &[String], trace: bool) {
+    let boot: Vec<String> = super::gen::registry()
+        .iter()
+        .filter(|g| g.stage() == 0 && !g.reads_model())
+        .filter(|g| names.is_empty() || names.iter().any(|n| n == g.name()))
+        .map(|g| g.name().to_string())
+        .collect();
+    if boot.is_empty() {
+        return;
+    }
+    let o = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
+    let Ok(engine) = Engine::new(crate::run::registry(), o) else { return };
+    let (results, asked) = super::without_model(|| super::gen::run_stage(root, &engine.tree, &boot, false, Some(0)));
+    let wrote = results.iter().filter(|r| r.state == super::gen::State::Written).count();
+    if trace {
+        eprintln!("analyze: gen bootstrap (cold tree, compiler front end): {} generator(s) without the model wrote {} file(s)", boot.len(), wrote);
+    }
+    if asked {
+        eprintln!("analyze: gen bootstrap: a generator not declared `reads_model()` asked for the model; its file is written again by the passes");
     }
 }
 
 pub fn gen(args: &[String], root: &Path) -> ExitCode {
     super::incremental::disable_capture();
-    if !args.iter().any(|a| a == "--check") {
-        ensure_generated_includes(root);
-    }
+    let stubbed = !args.iter().any(|a| a == "--check") && ensure_generated_includes(root);
     let check = args.iter().any(|a| a == "--check");
     let names: Vec<String> = args.iter().filter(|a| !a.starts_with("--")).cloned().collect();
     let trace = dq_hostio::var("DQ_ANALYZE_TRACE").is_ok();
+    if stubbed && super::provided_parse_selected() {
+        gen_bootstrap(root, &names, trace);
+    }
     let mut written: Vec<std::path::PathBuf> = Vec::new();
     let mut results = Vec::new();
     let mut last_tree: Option<Engine> = None;

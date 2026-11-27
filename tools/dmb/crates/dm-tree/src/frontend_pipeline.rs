@@ -632,6 +632,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         &snapshot.tree,
     ));
     Ok(ColdFrontend {
+        declaration_spans: expanded_spans.into(),
         source_export_mapping,
         callable_roster,
         abi_settings_complete,

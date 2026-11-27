@@ -62,6 +62,8 @@ pub struct Parsed {
     pub raw: Option<CheckerDiagnostics>,
     /// The parser stopped on a fatal error.
     pub fatal: bool,
+    /// The compiler front end the model was converted from (the dmbc provider): what the analysis view (`crate::model`) reads.
+    pub native: Option<dm_tree::frontend::FrontendRevision>,
 }
 
 #[derive(Serialize)]
@@ -508,7 +510,7 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<
         std::mem::forget(patches);
     }
     let structure = s.structure;
-    Ok((Parsed { objtree: s.objtree, files, errors: s.errors, env: Some(env), structure: Some(structure), defines: None, raw: None, fatal: false }, parsed, patched))
+    Ok((Parsed { objtree: s.objtree, files, errors: s.errors, env: Some(env), structure: Some(structure), defines: None, raw: None, fatal: false, native: None }, parsed, patched))
 }
 
 /// Called once the model is in the memo: writes a new base on a side thread when this run parsed the tree or folded the delta.
