@@ -102,6 +102,18 @@ impl<'a> SkeletonView<'a> {
     pub(crate) fn to_vec(self) -> Vec<Skeleton> {
         self.iter().cloned().collect()
     }
+    /// `true` when this whole roster view is exactly these leaves (the same allocations, empty ones aside): its rows are
+    /// theirs without comparing a row. `false` says nothing (compare the rows).
+    pub(crate) fn is_leaves(self, leaves: &[Arc<Vec<Skeleton>>]) -> bool {
+        let Backing::Shared(roster) = self.backing else {
+            return false;
+        };
+        let mut leaves = leaves.iter().filter(|leaf| !leaf.is_empty());
+        self.begin == 0
+            && self.len == roster.len
+            && roster.chunks.iter().all(|chunk| leaves.next().is_some_and(|leaf| Arc::ptr_eq(leaf, chunk)))
+            && leaves.next().is_none()
+    }
     pub(crate) fn borrowed_slice(self) -> Option<&'a [Skeleton]> {
         match self.backing {
             Backing::Flat(rows) => Some(&rows[self.begin..self.begin + self.len]),

@@ -756,6 +756,7 @@ impl SharedAdaptedDeclarations {
             normalization,
             structural,
             executor,
+            engine_count,
         )
         .map_err(|error| {
             let error = SnapshotError::Tree(error);
@@ -890,7 +891,13 @@ pub(crate) fn projected_identity_indexed(
     index: &crate::declaration_contributions::KeyedDeclarations,
     seed: Option<&crate::frontend::EngineSeed>,
 ) -> Result<(u128, Option<crate::EngineHierarchy>), crate::TreeError> {
-    let hierarchy = seed_hierarchy_rows(index.skeletons(), seed)?;
+    // A type row is in its own path's contribution: walking the owners finds every authored parent without a roster lookup per
+    // row. A conflict walks the roster as before, so the error names the path the authored order reaches first.
+    let type_rows = index.owners().flat_map(|(_, value)| value.rows().iter().map(|row| &row.skeleton));
+    let hierarchy = match seed_hierarchy_rows(type_rows, seed) {
+        Ok(hierarchy) => hierarchy,
+        Err(_) => seed_hierarchy_rows(index.skeletons(), seed)?,
+    };
     let identity = crate::tree_identity::retained_projected_identity(
         hierarchy
             .as_ref()

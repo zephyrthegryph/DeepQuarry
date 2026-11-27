@@ -152,6 +152,22 @@ impl SymbolTable {
         Ok(())
     }
 
+    /// Insert one certified spelling this table may already hold (sharing the caller's text); a different text under the
+    /// same id, here or in an ancestor, is a collision and changes nothing.
+    pub fn insert_shared(&mut self, id: SymbolId, text: &Arc<str>) -> Result<(), SymbolCollision> {
+        if let Some(existing) = self.text(id) {
+            if existing != text.as_ref() {
+                return Err(SymbolCollision {
+                    id,
+                    existing: Arc::from(existing),
+                    incoming: Arc::clone(text),
+                });
+            }
+            return Ok(());
+        }
+        self.texts.insert(id, Arc::clone(text));
+        Ok(())
+    }
     /// Remove inactive local entries while preserving immutable parent backing.
     pub fn retain_local(&mut self, mut keep: impl FnMut(SymbolId) -> bool) {
         self.texts.retain(|&id, _| keep(id));

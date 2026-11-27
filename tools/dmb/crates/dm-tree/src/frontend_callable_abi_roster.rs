@@ -64,84 +64,51 @@ impl CallableAbiRoster {
         if members.len() != identities.len() {
             return Err("ABI identity/member roster length differs".into());
         }
-        let identity_for = |member: MemberId| -> Result<ProcedureIdentity, String> {
-            let node = tree.member(member).ok_or("ABI predecessor member absent")?;
-            let owner = tree
-                .type_node(node.owner)
-                .ok_or("ABI predecessor owner absent")?
-                .path;
-            Ok(ProcedureIdentity {
-                owner,
-                name: node.name,
-                verb: node.kind == crate::MemberKind::Verb,
-                occurrence: tree
-                    .member_occurrence(member)
-                    .ok_or("ABI predecessor occurrence absent")?,
-            })
-        };
         let mut entries = Vec::with_capacity(members.len());
         let mut meanings = Vec::with_capacity(members.len());
         let mut ancestry = BTreeMap::new();
         for (&member, &identity) in members.iter().zip(identities) {
-            let node = tree.member(member).ok_or("ABI member missing")?;
-            let first = node.previous;
-            let mut cursor = first;
-            let mut formal = None;
-            for _ in 0..tree.members().len() {
-                let Some(id) = cursor else { break };
-                let previous = tree.member(id).ok_or("ABI predecessor missing")?;
-                if previous.definition == DefinitionMode::Declare {
-                    formal = Some(id);
-                    break;
-                }
-                cursor = previous.previous;
-            }
-            if !ancestry.contains_key(&identity.owner) {
-                let paths = match tree.owner_ancestry.get(&identity.owner) {
-                    Some(paths) => paths.clone(),
-                    None => {
-                        let mut paths = Vec::new();
-                        let mut owner = Some(node.owner);
-                        while let Some(id) = owner {
-                            if paths.len() >= tree.types().len() {
-                                return Err("ABI owner ancestry cycle".into());
-                            }
-                            let ty = tree.type_node(id).ok_or("ABI owner ancestry absent")?;
-                            paths.push(ty.path);
-                            owner = ty.parent;
-                        }
-                        Arc::from(paths)
-                    }
-                };
-                ancestry.insert(identity.owner, paths);
-            }
-            meanings.push(CallableAbiMeaning {
-                identity,
-                definition: node.definition,
-                metadata: node
-                    .metadata
-                    .procedure
-                    .clone()
-                    .ok_or("ABI metadata missing")?,
-                immediate_predecessor: first.map(&identity_for).transpose()?,
-                predecessor: formal.or(first).map(&identity_for).transpose()?,
-            });
-            entries.push(CallableAbiEntry {
-                member,
-                identity,
-                metadata: node
-                    .metadata
-                    .procedure
-                    .clone()
-                    .ok_or("ABI metadata missing")?,
-                predecessor: formal.or(first),
-            });
+            let (entry, meaning) = entry_of(tree, member, identity, &mut ancestry)?;
+            entries.push(entry);
+            meanings.push(meaning);
         }
         Ok(Arc::new(Self {
             entries,
             types: tree.shared_types(),
             graph: Arc::new(CallableAbiGraph {
                 entries: meanings,
+                ancestry: ancestry.into_iter().collect(),
+            }),
+        }))
+    }
+    /// The roster after callables were inserted (a stable-slot splice): `members` and `identities` are the new roster's,
+    /// `old_to_new` maps each previous ordinal to its new one, and `recompute` lists the new ordinals whose entry may differ
+    /// (the inserted callables and every chain below an inserted or relinked one). Every other entry is the previous one.
+    pub(super) fn after_insert(
+        &self,
+        tree: &SemanticTree,
+        members: &[MemberId],
+        identities: &[ProcedureIdentity],
+        old_to_new: &[usize],
+        recompute: &[usize],
+    ) -> Result<Arc<Self>, String> {
+        let mut entries: Vec<Option<CallableAbiEntry>> = vec![None; members.len()];
+        let mut meanings: Vec<Option<CallableAbiMeaning>> = vec![None; members.len()];
+        for (old, &new) in old_to_new.iter().enumerate() {
+            entries[new] = Some(self.entries.get(old).ok_or("ABI entry missing")?.clone());
+            meanings[new] = Some(self.graph.entries.get(old).ok_or("ABI meaning missing")?.clone());
+        }
+        let mut ancestry: BTreeMap<SymbolId, Arc<[SymbolId]>> = self.graph.ancestry.iter().cloned().collect();
+        for &ordinal in recompute {
+            let (entry, meaning) = entry_of(tree, members[ordinal], identities[ordinal], &mut ancestry)?;
+            entries[ordinal] = Some(entry);
+            meanings[ordinal] = Some(meaning);
+        }
+        Ok(Arc::new(Self {
+            entries: entries.into_iter().map(|entry| entry.ok_or("ABI entry not placed")).collect::<Result<_, _>>()?,
+            types: tree.shared_types(),
+            graph: Arc::new(CallableAbiGraph {
+                entries: meanings.into_iter().map(|meaning| meaning.ok_or("ABI meaning not placed")).collect::<Result<_, _>>()?,
                 ancestry: ancestry.into_iter().collect(),
             }),
         }))
@@ -181,6 +148,78 @@ impl CallableAbiRoster {
     pub fn visit_storage(&self, mut visit: impl FnMut(&Vec<CallableAbiEntry>, &Arc<[TypeNode]>)) {
         visit(&self.entries, &self.types);
     }
+}
+
+/// One callable's ABI entry and meaning; `ancestry` collects its owner's path chain (once per owner).
+fn entry_of(
+    tree: &SemanticTree,
+    member: MemberId,
+    identity: ProcedureIdentity,
+    ancestry: &mut BTreeMap<SymbolId, Arc<[SymbolId]>>,
+) -> Result<(CallableAbiEntry, CallableAbiMeaning), String> {
+    let identity_for = |member: MemberId| -> Result<ProcedureIdentity, String> {
+        let node = tree.member(member).ok_or("ABI predecessor member absent")?;
+        let owner = tree
+            .type_node(node.owner)
+            .ok_or("ABI predecessor owner absent")?
+            .path;
+        Ok(ProcedureIdentity {
+            owner,
+            name: node.name,
+            verb: node.kind == crate::MemberKind::Verb,
+            occurrence: tree
+                .member_occurrence(member)
+                .ok_or("ABI predecessor occurrence absent")?,
+        })
+    };
+    let node = tree.member(member).ok_or("ABI member missing")?;
+    let first = node.previous;
+    let mut cursor = first;
+    let mut formal = None;
+    for _ in 0..tree.members().len() {
+        let Some(id) = cursor else { break };
+        let previous = tree.member(id).ok_or("ABI predecessor missing")?;
+        if previous.definition == DefinitionMode::Declare {
+            formal = Some(id);
+            break;
+        }
+        cursor = previous.previous;
+    }
+    if !ancestry.contains_key(&identity.owner) {
+        let paths = match tree.owner_ancestry.get(&identity.owner) {
+            Some(paths) => paths.clone(),
+            None => {
+                let mut paths = Vec::new();
+                let mut owner = Some(node.owner);
+                while let Some(id) = owner {
+                    if paths.len() >= tree.types().len() {
+                        return Err("ABI owner ancestry cycle".into());
+                    }
+                    let ty = tree.type_node(id).ok_or("ABI owner ancestry absent")?;
+                    paths.push(ty.path);
+                    owner = ty.parent;
+                }
+                Arc::from(paths)
+            }
+        };
+        ancestry.insert(identity.owner, paths);
+    }
+    let metadata = node.metadata.procedure.clone().ok_or("ABI metadata missing")?;
+    Ok((
+        CallableAbiEntry {
+            member,
+            identity,
+            metadata: metadata.clone(),
+            predecessor: formal.or(first),
+        },
+        CallableAbiMeaning {
+            identity,
+            definition: node.definition,
+            metadata,
+            immediate_predecessor: first.map(&identity_for).transpose()?,
+            predecessor: formal.or(first).map(&identity_for).transpose()?,
+        },
+    ))
 }
 
 #[cfg(test)]

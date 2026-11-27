@@ -31,6 +31,45 @@ impl SymbolCatalog {
             engine: engine.cloned(),
         }))
     }
+    /// `capture` after a known change of the source table: `previous` was captured from `before`, and `source` is `before`
+    /// with the spellings `gone` removed and `new` added. The catalog is the previous one with those applied (no merge of
+    /// every spelling again); the same table `capture` builds. `None` when the change does not apply (another source, another
+    /// engine, a collision): the caller captures in full, which reports a collision exactly.
+    pub(super) fn capture_changed(
+        previous: &Arc<Self>,
+        before: &Arc<SymbolTable>,
+        source: Arc<SymbolTable>,
+        engine: Option<&SymbolTable>,
+        gone: &[dm_ir::SymbolId],
+        new: &[dm_ir::SymbolId],
+    ) -> Option<Arc<Self>> {
+        if !Arc::ptr_eq(&previous.source, before) {
+            return None;
+        }
+        let same_engine = match (&previous.engine, engine) {
+            (None, None) => true,
+            (Some(old), Some(current)) => old.ordered() == current.ordered(),
+            _ => false,
+        };
+        if !same_engine {
+            return None;
+        }
+        let mut symbols = previous.symbols.as_ref().clone();
+        for &id in gone {
+            // A spelling the engine also has stays (the catalog is the engine's spellings and the source's).
+            if engine.is_none_or(|engine| engine.text(id).is_none()) {
+                symbols.remove_local(id);
+            }
+        }
+        for &id in new {
+            symbols.insert_shared(id, source.shared_text(id)?).ok()?;
+        }
+        Some(Arc::new(Self {
+            symbols: Arc::new(symbols),
+            source,
+            engine: previous.engine.clone(),
+        }))
+    }
 }
 #[cfg(test)]
 mod tests {

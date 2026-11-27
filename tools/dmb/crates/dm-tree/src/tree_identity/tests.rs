@@ -1,9 +1,12 @@
 use super::*;
 
 pub(crate) fn legacy_identity(skeletons: &[Skeleton], fields: &[dm_ir::OpaqueFieldBase]) -> u128 {
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(b"dm-tree-v3\0");
-    for skeleton in skeletons {
+    legacy_identity_split(skeletons, 0, fields)
+}
+/// An independent reading of the v4 definition: the prefix rows, then the authored digest (handles, then each owner's rows in
+/// owner order), then the field catalog.
+pub(crate) fn legacy_identity_split(skeletons: &[Skeleton], prefix: usize, fields: &[dm_ir::OpaqueFieldBase]) -> u128 {
+    fn row(bytes: &mut Vec<u8>, skeleton: &Skeleton) {
         match skeleton {
             Skeleton::Type {
                 path,
@@ -37,6 +40,42 @@ pub(crate) fn legacy_identity(skeletons: &[Skeleton], fields: &[dm_ir::OpaqueFie
             }
         }
     }
+    let owner_of = |skeleton: &Skeleton| match skeleton {
+        Skeleton::Type { path, .. } => *path,
+        Skeleton::Member { owner, .. } => *owner,
+    };
+    let authored = &skeletons[prefix..];
+    let mut owners: Vec<SymbolId> = authored.iter().map(owner_of).collect();
+    owners.sort();
+    owners.dedup();
+    let mut digest = Vec::new();
+    digest.extend_from_slice(b"authored\0");
+    digest.extend_from_slice(&(authored.len() as u64).to_le_bytes());
+    for (index, skeleton) in authored.iter().enumerate() {
+        let owner = owner_of(skeleton);
+        let before = authored[..index].iter().filter(|other| owner_of(other) == owner).count();
+        digest.extend_from_slice(&owner.bits().to_le_bytes());
+        digest.extend_from_slice(&(before as u32).to_le_bytes());
+    }
+    digest.extend_from_slice(&(owners.len() as u64).to_le_bytes());
+    for owner in owners {
+        let mut rows = Vec::new();
+        rows.extend_from_slice(b"owner\0");
+        let mine: Vec<_> = authored.iter().filter(|skeleton| owner_of(skeleton) == owner).collect();
+        for skeleton in &mine {
+            row(&mut rows, skeleton);
+        }
+        rows.extend_from_slice(&(mine.len() as u64).to_le_bytes());
+        digest.extend_from_slice(&owner.bits().to_le_bytes());
+        digest.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(&rows).to_le_bytes());
+    }
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(b"dm-tree-v4\0");
+    for skeleton in &skeletons[..prefix] {
+        row(&mut bytes, skeleton);
+    }
+    bytes.extend_from_slice(b"\0authored");
+    bytes.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(&digest).to_le_bytes());
     let mut catalog = fields.iter().collect::<Vec<_>>();
     catalog.sort_by_key(|field| (field.owner, field.name));
     catalog.dedup();
@@ -283,7 +322,7 @@ fn retained_authored_fingerprints_match_legacy_after_order_metadata_and_content_
                 .0;
         let mut full = prefix.clone();
         full.extend(rows.iter().cloned());
-        let expected = legacy_identity(&full, &[]);
+        let expected = legacy_identity_split(&full, prefix.len(), &[]);
         assert_eq!(
             retained_declaration_identity(&prefix, &index, &[]),
             expected,

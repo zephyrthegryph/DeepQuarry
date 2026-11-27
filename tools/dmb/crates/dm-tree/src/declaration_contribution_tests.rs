@@ -180,3 +180,84 @@ fn scalar_owner_shape_is_shared_across_metadata_content_changes() {
         third.owner(path("/a")).unwrap().shared_shape().as_ref()
     );
 }
+#[test]
+fn leaf_capture_equals_a_full_capture_through_edits() {
+    let leaf = |rows: Vec<Skeleton>| Arc::new(rows);
+    let flat = |leaves: &[Arc<Vec<Skeleton>>]| leaves.iter().flat_map(|leaf| leaf.iter().cloned()).collect::<Vec<_>>();
+    let same = |a: &KeyedDeclarations, b: &KeyedDeclarations| {
+        a.roster() == b.roster()
+            && a.owners().len() == b.owners().len()
+            && a.owners().zip(b.owners()).all(|((ao, av), (bo, bv))| {
+                ao == bo && av.digest() == bv.digest() && av.rows() == bv.rows() && av.shared_shape() == bv.shared_shape()
+            })
+    };
+    let mut leaves = vec![
+        leaf(vec![ty("/a"), member("/a", "p", MemberKind::Proc, DefinitionMode::Declare, 1)]),
+        leaf(vec![ty("/b"), member("/b", "v", MemberKind::Var, DefinitionMode::Declare, 2)]),
+        leaf(vec![member("/a", "q", MemberKind::Proc, DefinitionMode::Declare, 3), member("/b", "w", MemberKind::Var, DefinitionMode::Declare, 4)]),
+        leaf(vec![]),
+        leaf(vec![ty("/c"), member("/a", "p", MemberKind::Proc, DefinitionMode::Override, 5)]),
+    ];
+    let (mut previous, _) = KeyedDeclarations::capture(None, &flat(&leaves)).unwrap();
+    let edits: Vec<Box<dyn Fn(&mut Vec<Arc<Vec<Skeleton>>>)>> = vec![
+        // A new var in the middle leaf.
+        Box::new(|leaves| {
+            let mut rows = leaves[1].as_ref().clone();
+            rows.push(member("/b", "probe", MemberKind::Var, DefinitionMode::Declare, 9));
+            leaves[1] = Arc::new(rows);
+        }),
+        // Its removal.
+        Box::new(|leaves| {
+            let mut rows = leaves[1].as_ref().clone();
+            rows.pop();
+            leaves[1] = Arc::new(rows);
+        }),
+        // A new proc on /a before its other rows' later occurrences, and a content edit elsewhere (two runs).
+        Box::new(|leaves| {
+            let mut rows = leaves[0].as_ref().clone();
+            rows.push(member("/a", "p", MemberKind::Proc, DefinitionMode::Override, 7));
+            leaves[0] = Arc::new(rows);
+            let mut rows = leaves[4].as_ref().clone();
+            if let Skeleton::Member { content, .. } = &mut rows[1] {
+                *content = 55;
+            }
+            leaves[4] = Arc::new(rows);
+        }),
+        // A row moves to another owner.
+        Box::new(|leaves| {
+            let mut rows = leaves[2].as_ref().clone();
+            rows[0] = member("/c", "q", MemberKind::Proc, DefinitionMode::Declare, 3);
+            leaves[2] = Arc::new(rows);
+        }),
+        // A new leaf with a new owner, then an owner's last rows removed with their leaf.
+        Box::new(|leaves| leaves.insert(2, Arc::new(vec![ty("/d"), member("/d", "x", MemberKind::Var, DefinitionMode::Declare, 8)]))),
+        Box::new(|leaves| {
+            leaves.remove(2);
+        }),
+        Box::new(|leaves| {
+            leaves.remove(4);
+            leaves.remove(2);
+        }),
+        // Equal content in another allocation: nothing changes.
+        Box::new(|leaves| leaves[0] = Arc::new(leaves[0].as_ref().clone())),
+    ];
+    for (step, edit) in edits.iter().enumerate() {
+        let before = leaves.clone();
+        edit(&mut leaves);
+        let (full, full_changes) = KeyedDeclarations::capture(Some(&previous), &flat(&leaves)).unwrap();
+        let (incremental, changes) = KeyedDeclarations::capture_leaves(&previous, &before, &leaves)
+            .expect("a small edit is captured from its leaves")
+            .unwrap();
+        assert!(same(&incremental, &full), "step {step}");
+        assert_eq!(changes, full_changes, "step {step}");
+        for (owner, value) in full.owners() {
+            assert_eq!(
+                Arc::ptr_eq(value, previous.owner(*owner).unwrap_or(value)),
+                Arc::ptr_eq(incremental.owner(*owner).unwrap(), previous.owner(*owner).unwrap_or(incremental.owner(*owner).unwrap())),
+                "step {step}: sharing of {owner:?}"
+            );
+        }
+        assert_eq!(Arc::ptr_eq(full.shared_roster(), previous.shared_roster()), Arc::ptr_eq(incremental.shared_roster(), previous.shared_roster()), "step {step}");
+        previous = incremental;
+    }
+}

@@ -144,6 +144,47 @@ fn same_leaves(
             .zip(current)
             .all(|(a, b)| Arc::ptr_eq(a, b) || a == b)
 }
+/// Which current leaves can hold a row whose admitted value differs from the leaf's own: a leaf not among the previous request's
+/// (pointer identity), and every leaf holding a row of an owner whose admitted contribution is not the previous one.
+fn leaves_to_check(
+    previous: &KeyedDeclarations,
+    previous_leaves: &[Arc<Vec<crate::Skeleton>>],
+    index: &KeyedDeclarations,
+    leaves: &[Arc<Vec<crate::Skeleton>>],
+) -> Vec<bool> {
+    let known: std::collections::HashSet<usize> =
+        previous_leaves.iter().map(|leaf| Arc::as_ptr(leaf) as usize).collect();
+    let mut check: Vec<bool> = leaves.iter().map(|leaf| !known.contains(&(Arc::as_ptr(leaf) as usize))).collect();
+    let mut moved: Vec<dm_ir::SymbolId> = index
+        .owners()
+        .filter(|(owner, value)| !previous.owner(**owner).is_some_and(|before| Arc::ptr_eq(before, value)))
+        .map(|(owner, _)| *owner)
+        .collect();
+    moved.sort_unstable();
+    if moved.is_empty() {
+        return check;
+    }
+    let mut leaf = 0;
+    let mut end = leaves.first().map_or(0, |leaf| leaf.len());
+    for (position, handle) in index.roster().iter().enumerate() {
+        while position >= end && leaf + 1 < leaves.len() {
+            leaf += 1;
+            end += leaves[leaf].len();
+        }
+        if moved.binary_search(&handle.owner).is_ok() {
+            check[leaf] = true;
+        }
+    }
+    check
+}
+/// Two captures name the same rows, keys, fingerprints, digests and handles.
+fn same_index(a: &KeyedDeclarations, b: &KeyedDeclarations) -> bool {
+    a.roster() == b.roster()
+        && a.owners().len() == b.owners().len()
+        && a.owners().zip(b.owners()).all(|((ao, av), (bo, bv))| {
+            ao == bo && av.digest() == bv.digest() && av.rows() == bv.rows() && av.shared_shape() == bv.shared_shape()
+        })
+}
 impl DeclarationClaims {
     pub(crate) fn with_shared_authored(owner: Arc<crate::SharedNormalizedDeclarations>) -> Self {
         Self {
@@ -172,15 +213,14 @@ impl DeclarationClaims {
         &self,
         skeletons: crate::skeleton_roster::SkeletonView<'_>,
     ) -> Option<KeyedDeclarations> {
-        let index = self
+        let current = self
             .authored_current
             .lock()
             .unwrap_or_else(|error| error.into_inner())
-            .as_ref()?
-            .index
-            .clone();
-        // Public compatibility overlays cannot reuse a receipt for different rows.
-        index.skeletons().eq(skeletons.iter()).then_some(index)
+            .clone()?;
+        // Public compatibility overlays cannot reuse a receipt for different rows. The leaves the index was admitted from are
+        // its rows: a view of exactly those leaves needs no row compared.
+        (skeletons.is_leaves(&current.leaves) || current.index.skeletons().eq(skeletons.iter())).then(|| current.index.clone())
     }
     pub(crate) fn adopt_authored<'a>(
         &self,
@@ -229,34 +269,69 @@ impl DeclarationClaims {
             ));
             return published;
         }
-        let mut roster = crate::skeleton_roster::SkeletonRoster::default();
-        for current in &currents {
-            roster.push_leaf(current.skeletons());
-        }
-        let (index, previous) = {
-            let previous = self
-                .authored_current
-                .lock()
-                .unwrap_or_else(|error| error.into_inner());
-            let (index, _) = KeyedDeclarations::capture_view(
-                previous.as_ref().map(|value| &value.index),
-                roster.view(),
-            )
-            .ok()?;
-            (index, previous.clone())
+        let previous = self
+            .authored_current
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clone();
+        let full_capture = |previous: Option<&KeyedDeclarations>| {
+            let mut roster = crate::skeleton_roster::SkeletonRoster::default();
+            for current in &currents {
+                roster.push_leaf(current.skeletons());
+            }
+            KeyedDeclarations::capture_view(previous, roster.view()).ok().map(|(index, _)| index)
         };
+        // The leaves that differ from the previous request's, and the owners they touch, are all a capture reads.
+        let incremental = previous
+            .as_ref()
+            .and_then(|previous| KeyedDeclarations::capture_leaves(&previous.index, &previous.leaves, &leaves));
+        let used_incremental = incremental.is_some();
+        let index = match incremental {
+            Some(captured) => {
+                let (index, _) = captured.ok()?;
+                if crate::frontend_verify_enabled() {
+                    let full = full_capture(previous.as_ref().map(|value| &value.index))?;
+                    crate::change_set::record_outcome(if same_index(&index, &full) {
+                        "frontend verify: incremental authored capture equals the full capture".to_string()
+                    } else {
+                        eprintln!("frontend verify: INCREMENTAL AUTHORED CAPTURE MISMATCH");
+                        "frontend verify: INCREMENTAL AUTHORED CAPTURE MISMATCH".to_string()
+                    });
+                }
+                index
+            }
+            None => full_capture(previous.as_ref().map(|value| &value.index))?,
+        };
+        let captured = started.elapsed();
         // Owners whose rows did not change keep the value the previous request admitted, when this lease took over its
         // claims; the rest are replayed.
-        let index = match previous.filter(|previous| previous.admitted_by.is_some() && previous.admitted_by == self.authored_inherited) {
+        let inherited = previous
+            .as_ref()
+            .filter(|previous| previous.admitted_by.is_some() && previous.admitted_by == self.authored_inherited);
+        let index = match inherited {
             Some(previous) => authored.adopt_changed(index, &previous.index),
             None => authored.adopt(index),
         };
-        let mut rows = index.skeletons();
-        for current in &mut currents {
+        let adopted = started.elapsed();
+        // Each leaf takes the admitted rows (the lease may answer an owner with an equal earlier value). A leaf the previous
+        // request admitted holds the previous admitted rows already, so only a new leaf, or a leaf holding a row of an owner
+        // whose admitted value changed, is compared; without a previous request every leaf is.
+        let check = previous.as_ref().map(|previous| leaves_to_check(&previous.index, &previous.leaves, &index, &leaves));
+        let mut checked = 0;
+        let mut at = 0;
+        for (position, current) in currents.iter_mut().enumerate() {
+            let len = current.value.skeletons.len();
+            let start = at;
+            at += len;
+            if check.as_ref().is_some_and(|check| !check[position]) {
+                continue;
+            }
+            checked += 1;
+            let shared_rows = || index.roster().get(start..start + len).into_iter().flatten().map(|handle| index.row(*handle));
             let mut changed = false;
-            let start = rows.clone();
+            let mut rows = shared_rows();
             for original in current.value.skeletons.iter() {
-                let shared = rows.next()?;
+                let shared = &rows.next()??.skeleton;
                 if original != shared {
                     return None;
                 }
@@ -271,7 +346,10 @@ impl DeclarationClaims {
             if !changed {
                 continue;
             }
-            let replacement = start.take(current.value.skeletons.len()).cloned().collect();
+            let mut replacement = Vec::with_capacity(len);
+            for row in shared_rows() {
+                replacement.push(row?.skeleton.clone());
+            }
             let old = &current.value;
             let replacement = Contribution {
                 source: old.source.clone(),
@@ -285,11 +363,21 @@ impl DeclarationClaims {
             current.value = Arc::new(replacement);
             current.stored = false;
         }
-        if rows.next().is_some() {
+        if at != index.len() {
             return None;
         }
-        drop(rows);
-        self.publish_authored(currents, index)
+        let walked = started.elapsed();
+        let published = self.publish_authored(currents, index);
+        crate::change_set::record_outcome(format!(
+            "frontend authored (changed leaves, {}, {}): capture={:.3}s adopt={:.3}s leaves={:.3}s ({checked} compared) publish={:.3}s",
+            if used_incremental { "incremental capture" } else { "full capture" },
+            if inherited.is_some() { "changed owners replayed" } else { "replayed" },
+            captured.as_secs_f64(),
+            (adopted - captured).as_secs_f64(),
+            (walked - adopted).as_secs_f64(),
+            (started.elapsed() - walked).as_secs_f64()
+        ));
+        published
     }
     fn publish_authored(
         &self,

@@ -229,6 +229,256 @@ impl CallableRoster {
         rebound.tree = Arc::clone(tree);
         Some(Arc::new(rebound))
     }
+    /// The roster for `tree` and `bodies` after a stable-slot splice of this roster's tree that added callables (new slots)
+    /// and touched `touched`: the previous indexes with the new bodies inserted at their ordinals, every later ordinal
+    /// shifted, and only the inserted callables, the relinked ones and the chains below them computed again. `None` when the
+    /// splice did anything else (types, removals, a reordered body roster): the caller issues the roster afresh.
+    pub(super) fn insert_after_stable_splice(
+        &self,
+        tree: &Arc<SemanticTree>,
+        bodies: &[BodyOccurrence],
+        touched: &[MemberId],
+    ) -> Option<Arc<Self>> {
+        const MAX_INSERTED: usize = 64;
+        let old = &self.tree;
+        if !Arc::ptr_eq(&old.owner_ancestry, &tree.owner_ancestry)
+            || old.types.len() != tree.types.len()
+            || old
+                .types
+                .iter()
+                .zip(tree.types.iter())
+                .any(|(a, b)| a.path != b.path || a.parent != b.parent)
+        {
+            return None;
+        }
+        let old_slots = old.members().len();
+        let previous = &self.index;
+        // The new body roster is the previous one with new slots inserted.
+        let mut members = Vec::with_capacity(bodies.len());
+        let mut old_to_new = Vec::with_capacity(previous.members.len());
+        let mut inserted = Vec::new();
+        for (ordinal, body) in bodies.iter().enumerate() {
+            let member = body.member;
+            if previous.members.get(old_to_new.len()) == Some(&member) {
+                old_to_new.push(ordinal);
+            } else if member.index() >= old_slots {
+                inserted.push(ordinal);
+                if inserted.len() > MAX_INSERTED {
+                    return None;
+                }
+            } else {
+                return None;
+            }
+            members.push(member);
+        }
+        if old_to_new.len() != previous.members.len() || inserted.is_empty() {
+            return None;
+        }
+        // A touched new slot is a var or one of the inserted bodies; a retained callable keeps its node apart from `previous`.
+        for &id in touched {
+            if id.index() >= old_slots && tree.member(id)?.kind != MemberKind::Var && !inserted.iter().any(|&o| members[o] == id) {
+                return None;
+            }
+        }
+        let mut relinked = Vec::new();
+        for (old_ordinal, &member) in previous.members.iter().enumerate() {
+            let (before, now) = (old.member(member)?, tree.member(member)?);
+            if before.owner != now.owner
+                || before.name != now.name
+                || before.kind != now.kind
+                || before.definition != now.definition
+                || !(Arc::ptr_eq(&before.metadata, &now.metadata)
+                    || before.metadata.procedure == now.metadata.procedure)
+            {
+                return None;
+            }
+            if before.previous != now.previous {
+                relinked.push(old_to_new[old_ordinal]);
+            }
+        }
+        let mut ordinals = previous.ordinals.clone();
+        for ordinal in ordinals.values_mut() {
+            *ordinal = old_to_new[*ordinal];
+        }
+        for &ordinal in &inserted {
+            if ordinals.insert(members[ordinal], ordinal).is_some() {
+                return None;
+            }
+        }
+        let mut dependents = vec![Vec::new(); members.len()];
+        let mut ready = Vec::new();
+        for (ordinal, member) in members.iter().enumerate() {
+            match tree.member(*member)?.previous {
+                None => ready.push(ordinal),
+                Some(previous) => {
+                    if let Some(predecessor) = ordinals.get(&previous) {
+                        dependents[*predecessor].push(ordinal);
+                    }
+                }
+            }
+        }
+        // The callables whose identity, chain or ABI entry may differ: the inserted and relinked ones and every chain below.
+        let mut dirty = vec![false; members.len()];
+        let mut stack: Vec<usize> = inserted.iter().chain(&relinked).copied().collect();
+        let mut recompute = Vec::new();
+        while let Some(ordinal) = stack.pop() {
+            if std::mem::replace(&mut dirty[ordinal], true) {
+                continue;
+            }
+            recompute.push(ordinal);
+            stack.extend(dependents[ordinal].iter().copied());
+        }
+        recompute.sort_unstable();
+        let identity_of = |member: MemberId| -> Option<ProcedureIdentity> {
+            let node = tree.member(member)?;
+            Some(ProcedureIdentity {
+                owner: tree.type_node(node.owner)?.path,
+                name: node.name,
+                verb: match node.kind {
+                    MemberKind::Proc => false,
+                    MemberKind::Verb => true,
+                    MemberKind::Var => return None,
+                },
+                occurrence: tree.member_occurrence(member)?,
+            })
+        };
+        let mut identities = vec![None; members.len()];
+        for (old_ordinal, &new) in old_to_new.iter().enumerate() {
+            identities[new] = Some(previous.identities[old_ordinal]);
+        }
+        for &ordinal in &recompute {
+            identities[ordinal] = Some(identity_of(members[ordinal])?);
+        }
+        let identities: Vec<ProcedureIdentity> = identities.into_iter().collect::<Option<_>>()?;
+        // An identity names one callable: check the recomputed ones against the callables of their owner and name.
+        for &ordinal in &recompute {
+            let node = tree.member(members[ordinal])?;
+            for &other in tree.type_node(node.owner)?.members.iter() {
+                if other == members[ordinal] {
+                    continue;
+                }
+                let Some(&other_ordinal) = ordinals.get(&other) else { continue };
+                if identities[other_ordinal] == identities[ordinal] {
+                    return None;
+                }
+            }
+        }
+        // Selection changes only within the (owner, name, kind) groups of the recomputed callables.
+        let mut effective = vec![false; members.len()];
+        for (old_ordinal, &new) in old_to_new.iter().enumerate() {
+            effective[new] = previous.effective[old_ordinal];
+        }
+        let mut reselect: Vec<usize> = Vec::new();
+        for &ordinal in &recompute {
+            let node = tree.member(members[ordinal])?;
+            for &other in tree.type_node(node.owner)?.members.iter() {
+                let other_node = tree.member(other)?;
+                if other_node.name == node.name && other_node.kind == node.kind {
+                    if let Some(&other_ordinal) = ordinals.get(&other) {
+                        reselect.push(other_ordinal);
+                    }
+                }
+            }
+        }
+        reselect.sort_unstable();
+        reselect.dedup();
+        let binding = |identity: &ProcedureIdentity| {
+            if identity.verb {
+                dm_ir::SymRef::Verb { owner: identity.owner, name: identity.name, occurrence: identity.occurrence }
+            } else {
+                dm_ir::SymRef::Proc { owner: identity.owner, name: identity.name, occurrence: identity.occurrence }
+            }
+        };
+        let mut bindings = previous.bindings.clone();
+        let new_to_old: HashMap<usize, usize> = reselect
+            .iter()
+            .chain(&recompute)
+            .filter_map(|&new| old_to_new.binary_search(&new).ok().map(|old| (new, old)))
+            .collect();
+        let mut touched_ordinals: Vec<usize> = reselect.iter().chain(&recompute).copied().collect();
+        touched_ordinals.sort_unstable();
+        touched_ordinals.dedup();
+        for &ordinal in &touched_ordinals {
+            if let Some(&old_ordinal) = new_to_old.get(&ordinal) {
+                if previous.effective[old_ordinal] {
+                    bindings.remove(&binding(&previous.identities[old_ordinal]));
+                }
+            }
+        }
+        for &ordinal in &touched_ordinals {
+            let node = tree.member(members[ordinal])?;
+            effective[ordinal] = tree.resolve(node.owner, node.name, node.kind) == Some(members[ordinal]);
+        }
+        for &ordinal in &touched_ordinals {
+            if effective[ordinal] {
+                bindings.insert(binding(&identities[ordinal]));
+            }
+        }
+        let key = |i: usize| {
+            let b = &bodies[i];
+            (b.source.encounter_ordinal, b.expanded_span.start, b.declaration.0)
+        };
+        let mut source_order: Vec<usize> = previous.source_order.iter().map(|&old| old_to_new[old]).collect();
+        for &ordinal in &inserted {
+            let at = source_order.partition_point(|&other| key(other) < key(ordinal));
+            source_order.insert(at, ordinal);
+        }
+        if !source_order.windows(2).all(|pair| key(pair[0]) <= key(pair[1])) {
+            source_order = (0..bodies.len()).collect();
+            source_order.sort_by_key(|&i| key(i));
+        }
+        let abi = self
+            .abi
+            .as_ref()
+            .and_then(|abi| abi.after_insert(tree, &members, &identities, &old_to_new, &recompute).ok());
+        Some(Arc::new(Self {
+            tree: Arc::clone(tree),
+            index: Arc::new(CallableIndexRecipe {
+                members,
+                identities,
+                ordinals,
+                dependents,
+                ready,
+                source_order,
+                effective,
+                bindings,
+            }),
+            abi,
+        }))
+    }
+    /// Every index, the ABI entries and its graph equal another roster's (the insertion proof against a fresh issue).
+    pub(super) fn first_difference(&self, other: &Self) -> Option<&'static str> {
+        let (a, b) = (&self.index, &other.index);
+        if a.members != b.members {
+            return Some("members");
+        }
+        if a.identities != b.identities {
+            return Some("identities");
+        }
+        if a.ordinals != b.ordinals {
+            return Some("ordinals");
+        }
+        if a.dependents != b.dependents {
+            return Some("dependents");
+        }
+        if a.ready != b.ready {
+            return Some("ready");
+        }
+        if a.source_order != b.source_order {
+            return Some("source order");
+        }
+        if a.effective != b.effective {
+            return Some("effective");
+        }
+        if a.bindings != b.bindings {
+            return Some("bindings");
+        }
+        match (&self.abi, &other.abi) {
+            (None, None) => None,
+            (Some(x), Some(y)) if x == y => None,
+            _ => Some("abi"),
+        }
+    }
     pub(super) fn matches(&self, tree: &Arc<SemanticTree>, bodies: &[BodyOccurrence]) -> bool {
         self.authenticates_tree(tree)
             && self.index.source_order.windows(2).all(|pair| {

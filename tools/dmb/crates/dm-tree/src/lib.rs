@@ -502,6 +502,7 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
         normalization,
         None,
         None,
+        0,
     )
 }
 pub(crate) fn build_with_intrinsic_members_structural(
@@ -516,6 +517,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
     )>,
     structural: Option<metadata_update::StructuralMetadata<'_>>,
     executor: Option<&dm_exec::BuildExecutor>,
+    engine_prefix: usize,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -910,7 +912,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
             .eq(skeletons.slice(prefix..skeletons.len()).iter()));
         tree_identity::retained_declaration_identity_view(skeletons.slice(0..prefix), index, fields)
     } else {
-        tree_identity::declaration_identity_view(skeletons, fields)
+        tree_identity::declaration_identity_view(skeletons, engine_prefix, fields)
     };
     drop(identity_profile);
     let _ancestry_timer = dm_profile::detail_timer("tree.owner_ancestry");

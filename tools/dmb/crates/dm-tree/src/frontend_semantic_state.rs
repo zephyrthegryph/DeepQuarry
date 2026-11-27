@@ -8,6 +8,9 @@ pub struct RetainedSemanticTree {
     pub(super) declarations: super::declaration_state::RetainedDeclarations,
     entry: Option<Entry>,
     callable_roster: Option<Arc<super::CallableRoster>>,
+    /// The roster of the tree before a stable-slot splice that added callables, and the slots the splice touched: the
+    /// next `bind_callable_roster` inserts the new bodies into it instead of issuing every callable again.
+    roster_before_splice: Option<(Arc<super::CallableRoster>, Vec<MemberId>)>,
     normalization: crate::owner_normalization::RetainedNormalization,
     hits: u64,
     rebuilds: u64,
@@ -106,6 +109,7 @@ impl RetainedSemanticTree {
     /// As `discard_foreign_callable_roster`; after a stable-slot splice that
     /// touched only `touched` (vars), the roster is kept for the new tree.
     fn discard_foreign_callable_roster_after(&mut self, tree: &Arc<SemanticTree>, touched: Option<&[MemberId]>) {
+        self.roster_before_splice = None;
         if let Some(roster) = &self.callable_roster {
             if !roster.authenticates_tree(tree) {
                 let rebound = touched.and_then(|touched| roster.rebind_after_stable_splice(tree, touched));
@@ -113,8 +117,12 @@ impl RetainedSemanticTree {
                     crate::change_set::record_outcome(format!(
                         "callable roster after stable splice ({} touched): {}",
                         touched.len(),
-                        if rebound.is_some() { "kept" } else { "issued again" }
+                        if rebound.is_some() { "kept" } else { "insertion pending" }
                     ));
+                    if rebound.is_none() {
+                        // The bodies are not indexed yet: `bind_callable_roster` inserts the new ones into this roster.
+                        self.roster_before_splice = Some((Arc::clone(roster), touched.to_vec()));
+                    }
                 }
                 self.callable_roster = rebound.or_else(|| roster.rebind_semantic_owner(tree));
             }
@@ -127,8 +135,33 @@ impl RetainedSemanticTree {
     ) -> Result<Arc<super::CallableRoster>, String> {
         if let Some(roster) = &self.callable_roster {
             if roster.matches(tree, bodies) {
+                self.roster_before_splice = None;
                 return Ok(Arc::clone(roster));
             }
+        }
+        if let Some((previous, touched)) = self.roster_before_splice.take() {
+            let started = std::time::Instant::now();
+            if let Some(roster) = previous.insert_after_stable_splice(tree, bodies, &touched) {
+                let inserted = started.elapsed();
+                if crate::frontend_verify_enabled() {
+                    let fresh = super::CallableRoster::issue(tree, bodies)?;
+                    crate::change_set::record_outcome(match roster.first_difference(&fresh) {
+                        None => "frontend verify: inserted callable roster equals a fresh issue".to_string(),
+                        Some(what) => {
+                            eprintln!("frontend verify: INSERTED CALLABLE ROSTER DIFFERS ({what})");
+                            format!("frontend verify: INSERTED CALLABLE ROSTER DIFFERS ({what})")
+                        }
+                    });
+                }
+                crate::change_set::record_outcome(format!(
+                    "callable roster: {} bodies inserted into the previous roster in {:.3}s",
+                    roster.members().len().saturating_sub(previous.members().len()),
+                    inserted.as_secs_f64()
+                ));
+                self.callable_roster = Some(Arc::clone(&roster));
+                return Ok(roster);
+            }
+            crate::change_set::record_outcome("callable roster: insertion declined; issued again".to_string());
         }
         let roster = super::CallableRoster::issue(tree, bodies)?;
         self.callable_roster = Some(Arc::clone(&roster));
@@ -331,6 +364,7 @@ impl RetainedSemanticTree {
     pub fn clear(&mut self) {
         self.entry = None;
         self.callable_roster = None;
+        self.roster_before_splice = None;
         self.normalization = self.normalization.fresh();
         self.declarations.clear();
     }
@@ -396,13 +430,11 @@ impl RetainedSemanticTree {
                 .zip(adapted.symbol_catalog.as_ref())
                 .is_some_and(|(previous, current)| Arc::ptr_eq(previous, current))
         });
-        let symbols = (self.entry.is_some() && !shared_catalog).then(|| adapted.symbols.ordered());
+        // The rows first (leaf by leaf): the spelling tables are sorted and compared only for the same rows.
+        let same_rows = self.entry.as_ref().is_some_and(|entry| entry.leaves.same_rows(&adapted.skeletons));
         let reusable = self.entry.as_ref().filter(|entry| {
-            entry.leaves.same_rows(&adapted.skeletons)
-                && (shared_catalog
-                    || symbols
-                        .as_ref()
-                        .is_some_and(|symbols| entry.symbols.ordered() == *symbols))
+            same_rows
+                && (shared_catalog || entry.symbols.ordered() == adapted.symbols.ordered())
                 && same_engine(entry.engine.as_ref(), engine)
         });
         tick!("prepare");
@@ -426,7 +458,6 @@ impl RetainedSemanticTree {
                 occurrences: Arc::new(occurrences),
             });
         }
-        drop(symbols);
         // The catalog has already passed the empty-overlay check above. Its
         // immutable owner is the exact admission input, not a pointer-only key.
         // Standalone adapters clone map descriptors while sharing every Arcstr.
@@ -448,9 +479,9 @@ impl RetainedSemanticTree {
                 .map(|(index, _)| index)
             });
         tick!("index");
+        // `entry.leaves` are the rows of `entry.index`: compared leaf by leaf (a shared leaf without visiting its rows).
         let unchanged_declarations = self.entry.as_ref().is_some_and(|entry| {
-            same_engine(entry.engine.as_ref(), engine)
-                && entry.index.skeletons().eq(adapted.skeletons.iter())
+            same_engine(entry.engine.as_ref(), engine) && same_rows
         });
         let update_timer = dm_profile::detail_timer("tree.metadata_update_attempt");
         let updated = self.entry.as_ref().and_then(|entry| {

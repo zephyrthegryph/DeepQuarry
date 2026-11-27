@@ -292,6 +292,9 @@ impl DeclarationClaims {
         let known = delta.is_some();
         let matched = delta.is_none() && active.matches(current);
         let matching = started.elapsed();
+        if active.last_change.is_some() {
+            Arc::make_mut(&mut active).last_change = None;
+        }
         let source = if matched {
             Arc::clone(&active.symbols)
         } else {
@@ -301,11 +304,33 @@ impl DeclarationClaims {
             }
         };
         let updated = started.elapsed();
-        let catalog =
-            super::symbol_catalog::SymbolCatalog::capture(active.catalog.as_ref(), source, engine)?;
+        // A known change of a few spellings applies to the previous catalog; anything else captures in full.
+        let changed = match (active.catalog.as_ref(), active.last_change.as_ref()) {
+            (Some(previous), Some((before, gone, new))) if Arc::ptr_eq(&source, &active.symbols) => {
+                super::symbol_catalog::SymbolCatalog::capture_changed(previous, before, Arc::clone(&source), engine, gone, new)
+            }
+            _ => None,
+        };
+        let incremental = changed.is_some();
+        let catalog = match changed {
+            Some(catalog) => {
+                if crate::frontend_verify_enabled() {
+                    let full = super::symbol_catalog::SymbolCatalog::capture(None, Arc::clone(&source), engine)?;
+                    crate::change_set::record_outcome(if full.symbols.ordered() == catalog.symbols.ordered() {
+                        "frontend verify: changed symbol catalog equals a full capture".to_string()
+                    } else {
+                        eprintln!("frontend verify: CHANGED SYMBOL CATALOG MISMATCH");
+                        "frontend verify: CHANGED SYMBOL CATALOG MISMATCH".to_string()
+                    });
+                }
+                catalog
+            }
+            None => super::symbol_catalog::SymbolCatalog::capture(active.catalog.as_ref(), source, engine)?,
+        };
         crate::change_set::record_outcome(format!(
-            "frontend symbol catalog: contributions={} matched={matched} known_delta={known} match={:.3}s update={:.3}s capture={:.3}s",
+            "frontend symbol catalog: contributions={} matched={matched} known_delta={known} changed_catalog={incremental} symbols={} match={:.3}s update={:.3}s capture={:.3}s",
             current.len(),
+            catalog.symbols.len(),
             matching.as_secs_f64(),
             (updated - matching).as_secs_f64(),
             (started.elapsed() - updated).as_secs_f64(),
@@ -895,6 +920,9 @@ struct ActiveSymbols {
     counts: Arc<std::collections::BTreeMap<dm_ir::SymbolId, usize>>,
     symbols: Arc<SymbolTable>,
     catalog: Option<Arc<super::symbol_catalog::SymbolCatalog>>,
+    /// The spellings the last delta update removed and added (`symbols` before it, gone, new), for the catalog to apply the
+    /// same change; `None` after a full update.
+    last_change: Option<(Arc<SymbolTable>, Vec<dm_ir::SymbolId>, Vec<dm_ir::SymbolId>)>,
 }
 /// Contributions added plus removed at most this many are applied to the spelling table as a
 /// delta; a larger change rebuilds the table (a cold request adds every contribution).
@@ -1100,7 +1128,8 @@ impl ActiveSymbols {
                 return Err(collision);
             }
         }
-        self.symbols = Arc::new(symbols);
+        let before = std::mem::replace(&mut self.symbols, Arc::new(symbols));
+        self.last_change = Some((before, gone, new));
         Ok(self.symbols.clone())
     }
 }

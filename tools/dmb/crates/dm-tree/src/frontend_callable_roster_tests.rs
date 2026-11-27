@@ -225,3 +225,28 @@ fn callable_source_recipe_reuses_exact_bindings_and_order_across_body_shifts() {
     assert!(!Arc::ptr_eq(&current.index, &replacement.index));
     assert_ne!(current.source_bindings(), replacement.source_bindings());
 }
+
+#[test]
+fn inserted_bodies_equal_a_fresh_issue_through_declaration_edits() {
+    let mut state = RetainedSemanticTree::default();
+    let sources = [
+        "/datum/a/proc/p()\n    return 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n/datum/b/proc/s()\n    return 3\n",
+        // A new proc in the middle (every later ordinal shifts).
+        "/datum/a/proc/p()\n    return 1\n/datum/a/proc/q()\n    return 2\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n/datum/b/proc/s()\n    return 3\n",
+        // An override inserted between a declaration and its existing override (the chain below relinks).
+        "/datum/a/proc/p()\n    return 1\n/datum/a/proc/q()\n    return 2\n/datum/a/p()\n    return ..() + 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n/datum/b/proc/s()\n    return 3\n",
+        // A new proc and a new var at the end.
+        "/datum/a/proc/p()\n    return 1\n/datum/a/proc/q()\n    return 2\n/datum/a/p()\n    return ..() + 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n    var/y = 2\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n",
+    ];
+    let mut inserted = 0;
+    for (step, source) in sources.iter().enumerate() {
+        let _ = crate::change_set::take_outcomes();
+        let current = build(&mut state, source);
+        let outcomes = crate::change_set::take_outcomes();
+        inserted += outcomes.iter().filter(|line| line.contains("inserted into the previous roster")).count();
+        let roster = current.callable_roster().unwrap();
+        let fresh = CallableRoster::issue(&current.snapshot.tree, &current.bodies).unwrap();
+        assert_eq!(roster.first_difference(&fresh), None, "step {step}: {outcomes:?}");
+    }
+    assert!(inserted >= 2, "the insertion ran ({inserted} of 3 edits)");
+}
