@@ -11,6 +11,7 @@
 pub mod analysis;
 pub mod builtins;
 pub mod directives;
+pub mod facts;
 pub mod input;
 pub mod model;
 mod switch_rand;
@@ -26,6 +27,7 @@ use foldhash::{HashMap, HashMapExt, HashSet, HashSetExt};
 
 use analysis::StaticType;
 use directives::{error, Directives, ProcDirective, KNOWN_SETTING_NAMES};
+use facts::{Diag, SettingEvent, SettingsFacts};
 use input::{CheckerInput, Site, Sites, Where};
 use model::{Model, ProcId};
 use type_expr::TypeExpr;
@@ -122,27 +124,27 @@ pub struct Settings {
     pub directives: Directives,
 }
 
-/// One proc's settings: its final flag, declared return type and leading `set` statements, into `settings`; what is wrong with them
-/// is registered to `context`.
-pub fn settings_of(m: &Model, settings: &mut Settings, context: &Context, site: &dyn Site, proc: ProcId, body: &[Statement]) {
+/// One proc's settings as events: its final flag, its declared return type and its leading `set` statements. A pure function of the
+/// proc's declaration, its leading statements and the model.
+pub fn settings_facts(m: &Model, site: &dyn Site, proc: ProcId, body: &[Statement]) -> SettingsFacts {
+    let mut events = Vec::new();
+    let diag = |events: &mut Vec<SettingEvent>, e: DMError| events.push(SettingEvent::Diag(Diag::of(&e)));
     let proc_location = site.place(m.value(proc).location);
     if let Some(decl) = m.ty(proc.ty).proc(m.proc_name(proc)).and_then(|p| p.declaration.as_ref()) {
         if decl.is_final {
-            if let Err(e) = settings.directives.must_not_override.insert(m, proc, true, proc_location) {
-                context.register_error(e);
-            }
+            events.push(SettingEvent::Final(proc_location));
         }
     }
     if let Some(decl) = m.get_declaration(proc) {
         match &decl.return_type {
             model::ReturnType::Input(input) => {
                 if let Some(t) = input.to_typepath().and_then(|p| m.find(p)) {
-                    settings.return_type.insert(proc, TypeExpr::from(StaticType::Type(t)));
+                    events.push(SettingEvent::ReturnType(TypeExpr::from(StaticType::Type(t))));
                 }
             }
             model::ReturnType::TypePath(bits) => {
                 if let Ok(ty) = walk::static_type(m, proc_location, bits) {
-                    settings.return_type.insert(proc, TypeExpr::from(ty));
+                    events.push(SettingEvent::ReturnType(TypeExpr::from(ty)));
                 }
             }
             model::ReturnType::None => {}
@@ -150,9 +152,8 @@ pub fn settings_of(m: &Model, settings: &mut Settings, context: &Context, site: 
     }
     let mut reader = Reader { site, shift: 0 };
     for statement in body {
-        let StatementKind::Set { attribute: name, relation, value } = &statement.kind else { break };
+        let StatementKind::Set { attribute: name, value, .. } = &statement.kind else { break };
         let location = reader.site.locate(statement.header_span.start);
-        let _ = relation;
         if name == "SpacemanDMM_return_type" {
             let prefab = match reader.shape(value) {
                 Shape::Base(b) if b.follows.is_empty() => match b.term {
@@ -166,23 +167,40 @@ pub fn settings_of(m: &Model, settings: &mut Settings, context: &Context, site: 
                 let ty = match walk::static_type(m, location, &bits) {
                     Ok(s) => s,
                     Err(e) => {
-                        e.register(context);
+                        diag(&mut events, e);
                         StaticType::None
                     }
                 };
-                settings.return_type.insert(proc, TypeExpr::from(ty));
+                events.push(SettingEvent::ReturnType(TypeExpr::from(ty)));
             } else {
                 match TypeExpr::compile(m, &m.value(proc).parameters, &mut reader, location, value) {
-                    Ok(expr) => {
-                        settings.return_type.insert(proc, expr);
-                    }
-                    Err(e) => e.with_component(dm::Component::DreamChecker).register(context),
+                    Ok(expr) => events.push(SettingEvent::ReturnType(expr)),
+                    Err(e) => diag(&mut events, e.with_component(dm::Component::DreamChecker)),
                 }
             }
         } else if name.starts_with("SpacemanDMM_") {
-            add_directive(m, settings, context, &mut reader, proc, name, value, location);
+            let mut tables = Directives::default();
+            let Some(table) = tables.by_name(name) else {
+                diag(
+                    &mut events,
+                    error(location, format!("unknown linter setting {name:?}")).with_errortype("unknown_linter_setting").set_severity(Severity::Warning),
+                );
+                continue;
+            };
+            if table.set_at_definition {
+                if let Some(decl) = m.get_declaration(proc) {
+                    if decl.location != m.value(proc).location {
+                        diag(&mut events, error(location, format!("Can't define procs {name} outside their initial definition")).set_severity(Severity::Warning));
+                        continue;
+                    }
+                }
+            }
+            match directive_value(&mut reader, value, location) {
+                Ok(enable) => events.push(SettingEvent::Directive { name: name.clone(), enable, location }),
+                Err(e) => diag(&mut events, e.with_errortype("invalid_lint_directive_value")),
+            }
         } else if !KNOWN_SETTING_NAMES.contains(&name.as_str()) {
-            error(location, format!("unknown setting {name:?}")).set_severity(Severity::Warning).register(context);
+            diag(&mut events, error(location, format!("unknown setting {name:?}")).set_severity(Severity::Warning));
         } else {
             let term = match reader.shape(value) {
                 Shape::Base(b) if b.follows.is_empty() => Some(b.term),
@@ -191,58 +209,78 @@ pub fn settings_of(m: &Model, settings: &mut Settings, context: &Context, site: 
             match name.as_str() {
                 "background" | "waitfor" | "hidden" | "instant" | "popup_menu" => {
                     if directive_value(&mut reader, value, location).is_err() {
-                        error(location, format!("set {name} must be 0/1/TRUE/FALSE"))
-                            .set_severity(Severity::Warning)
-                            .with_errortype("invalid_set_value")
-                            .register(context);
+                        diag(
+                            &mut events,
+                            error(location, format!("set {name} must be 0/1/TRUE/FALSE")).set_severity(Severity::Warning).with_errortype("invalid_set_value"),
+                        );
                     }
                 }
                 "name" | "category" | "desc" => match term {
                     Some(Term::Str(_)) | Some(Term::Interp { .. }) | None => {}
                     Some(Term::Null) if name == "category" => {}
-                    Some(_) => {
-                        error(location, format!("set {name} must have a string value"))
-                            .set_severity(Severity::Warning)
-                            .with_errortype("invalid_set_value")
-                            .register(context);
-                    }
+                    Some(_) => diag(
+                        &mut events,
+                        error(location, format!("set {name} must have a string value")).set_severity(Severity::Warning).with_errortype("invalid_set_value"),
+                    ),
                 },
                 "invisibility" => {
                     if !matches!(term, Some(Term::Int(i)) if (0..=100).contains(&i)) {
-                        error(location, "set invisibility must be 0-100").set_severity(Severity::Warning).with_errortype("invalid_set_value").register(context);
+                        diag(&mut events, error(location, "set invisibility must be 0-100").set_severity(Severity::Warning).with_errortype("invalid_set_value"));
                     }
                 }
                 _ => {}
             }
         }
     }
+    SettingsFacts { events }
 }
 
-#[allow(clippy::too_many_arguments)]
-fn add_directive(m: &Model, settings: &mut Settings, context: &Context, reader: &mut Reader<'_, '_>, proc: ProcId, directive: &str, value: &dm_syntax::Expr, location: Location) {
-    let Some(table) = settings.directives.by_name(directive) else {
-        error(location, format!("unknown linter setting {directive:?}"))
-            .with_errortype("unknown_linter_setting")
-            .set_severity(Severity::Warning)
-            .register(context);
-        return;
-    };
-    if table.set_at_definition {
-        if let Some(decl) = m.get_declaration(proc) {
-            if decl.location != m.value(proc).location {
-                error(location, format!("Can't define procs {directive} outside their initial definition")).set_severity(Severity::Warning).register(context);
-                return;
+/// One proc's settings into the tables, in order; what the tables refuse (a directive set twice, one that cannot be set there) and
+/// what the settings reported are registered to `context`.
+pub fn apply_settings(m: &Model, settings: &mut Settings, context: &Context, proc: ProcId, facts: &SettingsFacts) {
+    for event in &facts.events {
+        match event {
+            SettingEvent::Diag(d) => context.register_error(d.error()),
+            SettingEvent::Final(location) => {
+                if let Err(e) = settings.directives.must_not_override.insert(m, proc, true, *location) {
+                    context.register_error(e);
+                }
+            }
+            SettingEvent::ReturnType(expr) => {
+                settings.return_type.insert(proc, expr.clone());
+            }
+            SettingEvent::Directive { name, enable, location } => {
+                let table = settings.directives.by_name(name).expect("a known directive");
+                if let Err(e) = table.insert(m, proc, *enable, *location) {
+                    context.register_error(e);
+                }
             }
         }
     }
-    match directive_value(reader, value, location) {
-        Ok(truthy) => {
-            let table = settings.directives.by_name(directive).expect("known directive");
-            if let Err(e) = table.insert(m, proc, truthy, location) {
-                context.register_error(e);
-            }
-        }
-        Err(e) => context.register_error(e.with_errortype("invalid_lint_directive_value")),
+}
+
+/// Where the per-proc results come from: computed, or kept between runs (dmbc keeps them as queries, `dreamchecker_input.rs`).
+/// `compute(i)` is the result for `procs[i]`; a store returns one result per proc, in order, equal to what `compute` gives.
+pub trait Store: Sync {
+    /// `bodies[i]` is `procs[i]`'s body (`ProcValue::body`).
+    fn settings(&self, procs: &[ProcId], bodies: &[u32], compute: &(dyn Fn(usize) -> SettingsFacts + Sync)) -> Vec<SettingsFacts>;
+    /// `settings` is every proc's settings facts (the tables a body walk reads are made of them).
+    fn bodies(&self, procs: &[ProcId], bodies: &[u32], settings: &[SettingsFacts], compute: &(dyn Fn(usize) -> ProcFacts + Sync)) -> Vec<ProcFacts>;
+}
+
+/// A store that computes every result, on `threads` threads.
+pub struct Compute {
+    pub threads: usize,
+}
+
+impl Store for Compute {
+    fn settings(&self, procs: &[ProcId], _bodies: &[u32], compute: &(dyn Fn(usize) -> SettingsFacts + Sync)) -> Vec<SettingsFacts> {
+        let ix: Vec<usize> = (0..procs.len()).collect();
+        parallel_map(&ix, self.threads, |&i| compute(i))
+    }
+    fn bodies(&self, procs: &[ProcId], _bodies: &[u32], _settings: &[SettingsFacts], compute: &(dyn Fn(usize) -> ProcFacts + Sync)) -> Vec<ProcFacts> {
+        let ix: Vec<usize> = (0..procs.len()).collect();
+        parallel_map(&ix, self.threads, |&i| compute(i))
     }
 }
 
@@ -467,17 +505,17 @@ fn parallel_map<T: Sync, R: Send>(items: &[T], threads: usize, f: impl Fn(&T) ->
     slots.into_inner().unwrap().into_iter().map(|r| r.expect("every item mapped")).collect()
 }
 
-/// One proc's body facts, as the body pass computes them: the entry point an incremental store keeps per proc.
-pub fn body_facts(input: &CheckerInput<'_>, shared: &Shared, site: &dyn Site, proc: ProcId) -> ProcFacts {
-    let m = &input.model;
-    let Some(body) = m.value(proc).body else { return ProcFacts::default() };
-    let mut walk = Walk::new(m, shared, site, proc);
-    walk.run(&input.bodies[body as usize].statements);
+/// One proc's body facts: a pure function of its body, the model and the settings tables.
+pub fn body_facts(model: &Model, shared: &Shared, site: &dyn Site, proc: ProcId, body: &[Statement]) -> ProcFacts {
+    let mut walk = Walk::new(model, shared, site, proc);
+    walk.run(body);
     walk.facts
 }
 
-/// DreamChecker over the native input, registering diagnostics to `context`; `cli` prints its progress.
-pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, threads: usize) {
+/// DreamChecker over the native input, registering diagnostics to `context`; `cli` prints its progress. The per-proc results come
+/// from `store`.
+/// The call-tree searches run on `threads` threads.
+pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, store: &dyn Store, threads: usize) {
     let timing = dq_hostio::var_os("DQ_DREAMCHECKER_TIMING").is_some();
     let mut mark = std::time::Instant::now();
     let mut lap = |what: &str| {
@@ -496,46 +534,39 @@ pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, threads: usiz
     cli_println!(cli, "Gathering proc settings...\n");
     let mut procs: Vec<ProcId> = Vec::new();
     m.recurse(m.root(), &mut |t| procs.extend(m.self_procs(t)));
+    let bodies: Vec<ProcId> = procs.iter().copied().filter(|&p| m.value(p).body.is_some()).collect();
+    let statements = |p: ProcId| m.value(p).body.and_then(|b| input.bodies.statements(b)).unwrap_or_default();
+    let body_ix: Vec<u32> = bodies.iter().map(|&p| m.value(p).body.expect("a proc with a body")).collect();
+    let settings_facts: Vec<SettingsFacts> = store.settings(&bodies, &body_ix, &|i| {
+        let site = input.sites.site();
+        settings_facts(m, &*site, bodies[i], &statements(bodies[i]))
+    });
     let mut settings = Settings::default();
     settings.return_type.insert(m.get_proc(m.root(), "get_step").expect("builtin get_step"), StaticType::Type(m.expect("/turf")).into());
-    {
-        let site = input.sites.site();
-        for &p in &procs {
-            if let Some(body) = m.value(p).body {
-                settings_of(m, &mut settings, context, &*site, p, &input.bodies[body as usize].statements);
-            }
-        }
+    for (&p, f) in bodies.iter().zip(&settings_facts) {
+        apply_settings(m, &mut settings, context, p, f);
     }
     lap("settings");
 
     cli_println!(cli, "============================================================");
     cli_println!(cli, "Analyzing proc bodies...\n");
-    let bodies: Vec<ProcId> = procs.iter().copied().filter(|&p| m.value(p).body.is_some()).collect();
     for &p in &bodies {
         settings.directives.must_not_sleep.try_copy_from_parent(m, p);
         settings.directives.must_be_pure.try_copy_from_parent(m, p);
     }
     let shared = Shared { return_type: settings.return_type, directives: settings.directives };
-    let facts: Vec<ProcFacts> = {
-        // One site per worker thread, kept for its batch of bodies.
-        let chunk = 64;
-        let batches: Vec<&[ProcId]> = bodies.chunks(chunk).collect();
-        parallel_map(&batches, threads, |batch| {
-            let site = input.sites.site();
-            batch.iter().map(|&p| body_facts(input, &shared, &*site, p)).collect::<Vec<_>>()
-        })
-        .into_iter()
-        .flatten()
-        .collect()
-    };
+    let facts: Vec<ProcFacts> = store.bodies(&bodies, &body_ix, &settings_facts, &|i| {
+        let site = input.sites.site();
+        body_facts(m, &shared, &*site, bodies[i], &statements(bodies[i]))
+    });
     let mut call_tree: HashMap<ProcId, Vec<(ProcId, Where, bool)>> = HashMap::new();
     let mut sleeping = Violations::default();
     let mut impure = Violations::default();
     let mut waitfor: HashSet<ProcId> = HashSet::new();
     let mut used_kwargs: BTreeMap<String, KwargInfo> = BTreeMap::new();
     for (&p, f) in bodies.iter().zip(facts) {
-        for e in f.diagnostics {
-            context.register_error(e);
+        for d in f.diagnostics {
+            context.register_error(d.error());
         }
         if !f.calls.is_empty() {
             call_tree.entry(p).or_default().extend(f.calls);

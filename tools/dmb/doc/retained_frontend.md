@@ -1018,3 +1018,70 @@ byte-identical (lean_unified.md, workstream 4). dm-tree 312, dm-preprocess 165 a
 - **Cold at 6 s.** With the serial reads gone the plan is 2.3 s; the rest is declaration parsing with the resident memo and the
   retained declaration state (13 s under load against 5-6 s standalone with 16 workers; a daemon request is capped at
   `DMB_DAEMON_MAX_WORKERS` = 8) and the tree rebuild (4.9 s, one thread). Not re-measured on a quiet machine.
+
+### Round 2 (lane `compiler/frontend-edit-floor-2`, 2026-11-27)
+
+What landed:
+
+- **Origins by region copy** (`frontend_origin_reuse.rs`). A region the plan copied verbatim has the previous region's text, span,
+  file and macro environment, so its declarations are the previous region's, in the same order at the same offsets inside the
+  region's output. Declarations are assigned to regions by walking their starts beside the region receipts (both in output
+  order: no origin row lookup), and each declaration of a copied region whose count and offsets line up takes the previous
+  revision's `Provenance` with this plan's include occurrence. A copied region also keeps its previous hash. Works after a patch
+  and after an adoption, whenever the source index numbers the same files the same way.
+- **Body locations by reuse.** A body of a declaration whose origin was reused takes its `SourceLocation` from the previous
+  revision's body (same tree, same member, same length; encounter ordinal and occurrence from this plan). Bodies find their
+  declaration by binary search over the declaration starts instead of a map built over every declaration.
+- **Inherited authored claims** (dm-session `ObservedArtifactLease::claim_all_held_by`). Each request forks a new authored lease;
+  it now takes over the previous request's claims in one pass under the read lock. When the skeleton leaves are unchanged the
+  replay of every owner (25k observation checks) is skipped; after a declaration edit only the owners whose rows changed are
+  replayed (`AuthoredLease::adopt_changed`), the rest keep the value the previous request admitted.
+- **Cold on every core.** A cold hosted analysis front end (nothing remembered for the define set) runs on an executor of its own
+  with every core when 16 GB are free; the daemon's shared pool (8 workers for every request together) serves edits.
+
+Proof: `DMB_FRONTEND_VERIFY=1` compares the reused origins and bodies with the full lookup (`frontend verify: N reused origins
+equal the full lookup`, `... reused bodies equal the full indexing`); dm-tree tests `reused_origins_equal_a_cold_build_through_edits`
+(patch path) and `..._after_adoption` compare origins, region hashes and body rows with a cold build at every step. Compile path:
+daemon compiles with `DMB_FRONTEND_VERIFY=1` (0 mismatches; 346,497 origins and 105,144 bodies verified) against one-shot cold
+compiles of the same source: body edit and line shift byte-identical, new var `dmb-equiv` EQUIVALENT (table order, as before),
+revert byte-identical. Analysis: hosted against cold in the same daemon, `dreamchecker --json` identical at base, body, line
+shift, new var, new proc and revert; `check --raw --no-cache` identical at base and new var, and on master `analysis-parity --tree` 1168027 of 1168027 and `analysis-parity` 105882 of 105882 with this compiler; `check_ratchets.sh --changed-only` passes.
+
+Measured (hosted analysis front end; the machine stayed busy with other lanes, so single runs vary by 2-3x):
+
+| Edit | Round 1 | Round 2, quietest runs | Round 2, machine at 80-100 % |
+|---|---|---|---|
+| no-op | 0.007-0.37 s (front end skipped) | 0.008-0.08 s | |
+| one-line body edit | 0.45 s | 0.21-0.25 s (declaration parsing 0.06-0.07, body indexing 0.02-0.04, origins 0.016-0.02) | 0.46-3.6 s |
+| line-shifting edit | 0.45 s | 0.21-0.29 s | 0.85 s |
+| new var | 2.6 s | 2.0 s (tree splice 0.56, dependency capture 0.34, callable roster 0.29, declaration parsing 0.42) | 4.7 s |
+| new proc | 1.9 s | 2.2 s | 4.0 s |
+|  edit | 14.7 s | 10.1 s (expansion 2.8, declaration parsing 3.5, plan 2.2) | 9.2 s |
+| cold | 24 s | 15.4 s (8 workers) | 23.8-36 s (16 workers) |
+
+Targets: no-op met; body edit within 5-25 % of 200 ms on the quietest runs and far above it under load (every phase scales with
+the load); new var/proc and cold not met (below).
+
+Published compiler finding: `E:/dq-cache/dmb-bin/dmbc.exe` (the root of the bin dir) is a stale 2026-10-17 binary left from the
+layout before versioned publication; builds resolve `dmb-bin/v/<current>/dmbc.exe`, whose output is byte-identical to a
+compiler built from master (`73b28f1b...` both). The difference reported in round 1 came from invoking that stale root binary
+directly; no wrong output.
+
+What is left, and why:
+
+- **Body edit.** What remains per request is the declaration grammar check (`CurrentPieces::capture` compares the joined text with
+  every region receipt, 0.03 s), the per-chunk shared lookups and keys (0.05 s summed), body terminations (0.01-0.02 s) and the
+  O(regions) plan and expansion copies.
+- **New var or proc (needs a decision).** The tree splice (0.56-0.58 s), the dependency graph capture (0.34-0.49 s), identity rows
+  (0.12-0.19 s), the callable roster (0.28 s) and body indexing all renumber or re-key dense `MemberId`/`TypeId`s: members are
+  numbered in declaration order, so one new member moves every later id. Stable ids (slots that never move, a separate declaration
+  order array) are the fix, but members' id order is read as declaration order by the override chains, the tree iteration the
+  analysis conversion and DreamChecker see, and the compile's table order. Switching needs a decision on which of those take the
+  order array and whether a warm daemon may emit a different (equivalent) table order than a cold compile for the analysis side
+  too.
+- **Cold.** The tree rebuild (`build_with_intrinsic_members_structural`, 3.4-4.1 s) is one serial pass of hash-map building over
+  every skeleton; parallelizing it means splitting member installation by owner with a deterministic merge, a rewrite of that
+  function. Declaration parsing and expansion now use every core when cold.
+- **`#define` edit.** A widely read macro (`SECONDS`) re-expands every region that reads it and re-parses their chunks: expansion
+  2.8 s, declaration parsing 3.5 s (grammar scan 1.0 s), plan 2.2 s (6,862 unchanged subtrees adopted, the rest replayed). That is
+  work the edit causes; the cheap cuts were the delta compare (skipped above 256 files) and the origin reuse after adoption.

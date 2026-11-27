@@ -179,6 +179,29 @@ impl<T, Q, A, D> Drop for ObservedArtifactLease<T, Q, A, D> {
     }
 }
 impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
+    /// Claim every variant `other` claims, in one pass under the shared read lock, with no observation replayed: the
+    /// caller's next request starts from exactly the previous request's admitted set (a session's request leases follow
+    /// each other). This lease's later admission releases what it does not need (`retain_current_keys`, `assign`), so the
+    /// result is the replayed one whenever the caller goes on to admit. Returns the variants claimed; 0 for another store.
+    pub fn claim_all_held_by(&self, other: &Self) -> usize {
+        if !Arc::ptr_eq(&self.store, &other.store) || self.slot == other.slot {
+            return 0;
+        }
+        let state = self.store.state.read().unwrap_or_else(|error| error.into_inner());
+        let mut claimed = 0;
+        for entry in state.buckets.values().flatten() {
+            if entry.holders.has(other.slot) {
+                entry.holders.set(self.slot);
+                claimed += 1;
+            }
+        }
+        claimed
+    }
+    /// Variants this lease claims.
+    pub fn claimed(&self) -> usize {
+        let state = self.store.state.read().unwrap_or_else(|error| error.into_inner());
+        state.buckets.values().flatten().filter(|entry| entry.holders.has(self.slot)).count()
+    }
     pub fn retain_current_keys<'a>(&self, keys: impl IntoIterator<Item = &'a [u8]>) {
         let keys: std::collections::BTreeSet<_> = keys.into_iter().collect();
         let mut state = self

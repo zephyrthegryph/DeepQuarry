@@ -46,10 +46,21 @@ impl DeclarationClaims {
         let symbols = previous
             .map(|old| Arc::clone(&old.symbols.lock().unwrap_or_else(|e| e.into_inner())))
             .unwrap_or_default();
+        let authored = self.authored.as_ref().map(|lease| lease.fork());
+        // The previous request's authored claims, taken over whole: when this request's leaves are that request's, its
+        // admission is already done (`DeclarationClaims::adopt_authored`).
+        let authored_inherited = match (&authored, previous.and_then(|old| old.authored.as_ref())) {
+            (Some(lease), Some(old)) => {
+                lease.inherit(old);
+                Some(old.id())
+            }
+            _ => None,
+        };
         Self {
             grammar: self.grammar.fork(),
             values: self.values.fork(),
-            authored: self.authored.as_ref().map(|lease| lease.fork()),
+            authored,
+            authored_inherited,
             authored_current: Arc::new(Mutex::new(authored_current)),
             symbols: Mutex::new(symbols),
             keys: AtomicUsize::new(0),

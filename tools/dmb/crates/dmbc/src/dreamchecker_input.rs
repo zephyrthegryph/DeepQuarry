@@ -10,7 +10,10 @@ use std::sync::Arc;
 
 use dm_tree::frontend::{BodyArena, ColdFrontend};
 use dm_tree::DefinitionMode;
-use dreamchecker::native::input::{Body, CheckerInput, InputType, Site, Sites, Where};
+use dreamchecker::native::facts::SettingsFacts;
+use dreamchecker::native::input::{Bodies, CheckerInput, InputType, Site, Sites, Where};
+use dreamchecker::native::model::ProcId;
+use dreamchecker::native::walk::ProcFacts;
 use dreamchecker::native::model::{ModelBuilder, Param, ProcDecl, ProcKind, ProcValue, ReturnType, TypeId, VarFlags};
 use dreammaker::Location;
 use std::collections::HashMap;
@@ -80,6 +83,161 @@ impl Site for FrontSite<'_> {
     }
 }
 
+/// The front end's bodies, parsed on demand.
+struct FrontBodies<'f> {
+    frontend: &'f ColdFrontend,
+    arena: &'f BodyArena<'f>,
+    /// A body is taken from the arena once; the settings and the body pass both read it.
+    parsed: Vec<std::sync::OnceLock<Option<Arc<Vec<dm_syntax::Statement>>>>>,
+}
+
+impl Bodies for FrontBodies<'_> {
+    fn statements(&self, body: u32) -> Option<Arc<Vec<dm_syntax::Statement>>> {
+        self.parsed
+            .get(body as usize)?
+            .get_or_init(|| {
+                let parsed = self.arena.take_parsed(self.frontend.bodies.get(body as usize)?).ok()?;
+                Some(Arc::new(parsed.statement_body()?.parsed().statements.clone()))
+            })
+            .clone()
+    }
+}
+
+/// The per-proc results as entries of the analysis query database (`dq_analyze::incr::keyed_by`: held in memory by the daemon,
+/// persisted standalone), so a run computes only the procs whose inputs changed.
+///
+/// What decides a result, and so its key:
+///
+/// * the proc (`ProcId`) and its body: the body's expanded text, the path and bytes of its file and its place there (a token's
+///   line and column come from them);
+/// * the model's declarations (`model_key`): every declaration's owner, name, kind, flags, spelling and place (its line, its
+///   column), the types and their explicit parents, and the file-id table (a diagnostic of one proc names another's place);
+/// * for a body, also every proc's settings facts (the tables a walk reads).
+///
+/// A body's places (`Where` offsets in the expanded text) are kept relative to the body's start, so a result is valid wherever the
+/// body moved in the expanded text.
+pub struct QueryStore<'f> {
+    frontend: &'f ColdFrontend,
+    model_key: u128,
+    /// By body occurrence: its key and its start in the expanded text.
+    body_keys: Vec<(u128, usize)>,
+}
+
+fn h(bytes: &[u8]) -> u128 {
+    xxhash_rust::xxh3::xxh3_128(bytes)
+}
+
+impl<'f> QueryStore<'f> {
+    fn new(front: &'f Front, m: &crate::analysis_tree::Matched<'_>) -> Self {
+        use rayon::prelude::*;
+        let frontend: &ColdFrontend = &front.frontend;
+        let files: HashMap<&Path, u128> =
+            frontend.files.par_iter().map(|f| (f.path.as_path(), h(f.text.as_str().as_bytes()))).collect::<Vec<_>>().into_iter().collect();
+        let expanded = frontend.expanded.text.as_str();
+        let body_keys: Vec<(u128, usize)> = frontend
+            .bodies
+            .par_iter()
+            .map(|o| {
+                let text = expanded.get(o.expanded_span.start..o.expanded_span.end).unwrap_or("");
+                let path: &Path = o.source.path.as_path();
+                let content = files.get(path).copied().unwrap_or(0);
+                let key = dq_analyze::incr::mix(&[
+                    h(text.as_bytes()),
+                    h(o.source.semantic_path.as_bytes()),
+                    content,
+                    o.source.span.start as u128 | (o.source.span.end as u128) << 64,
+                ]);
+                (key, o.expanded_span.start)
+            })
+            .collect();
+        let tree = &frontend.snapshot.tree;
+        let symbols = tree.symbols();
+        let mut decl: Vec<u8> = Vec::new();
+        decl.extend_from_slice(b"dreamchecker-native-model-v1");
+        for node in tree.types() {
+            decl.extend_from_slice(symbols.text(node.path).unwrap_or("").as_bytes());
+            decl.extend_from_slice(&[node.explicit_parent as u8, 0xff]);
+            if let Some(parent) = node.parent.and_then(|p| tree.type_node(p)) {
+                decl.extend_from_slice(symbols.text(parent.path).unwrap_or("").as_bytes());
+            }
+            decl.extend_from_slice(&[0xfe]);
+        }
+        // Each declaration with its place: the line it maps to and its column in the expanded text (a diagnostic of one proc names
+        // another's place, which an edit elsewhere moves only by moving that line).
+        let places: Vec<(usize, usize)> = m
+            .items
+            .par_iter()
+            .map(|item| match &item.spelling {
+                Some(s) => {
+                    let line = frontend.debug_site(s.at).map_or(0, |(_, line)| line);
+                    let column = s.at - expanded[..s.at.min(expanded.len())].rfind('\n').map_or(0, |i| i + 1);
+                    (line, column)
+                }
+                None => (0, 0),
+            })
+            .collect();
+        for (item, (line, column)) in m.items.iter().zip(places) {
+            decl.extend_from_slice(item.owner.as_bytes());
+            decl.extend_from_slice(&[0xff]);
+            decl.extend_from_slice(item.name.as_bytes());
+            decl.extend_from_slice(&[item.slot as u8, item.member.definition as u8]);
+            decl.extend_from_slice(&item.member.metadata.flags.to_le_bytes());
+            decl.extend_from_slice(&(line as u64).to_le_bytes());
+            decl.extend_from_slice(&(column as u64).to_le_bytes());
+            decl.extend_from_slice(item.spelling.as_ref().map_or("", |s| s.header.as_str()).as_bytes());
+            decl.extend_from_slice(&[0xfe]);
+        }
+        let mut ids: Vec<(&Arc<str>, &dreammaker::FileId)> = front.ids.iter().collect();
+        ids.sort();
+        decl.extend_from_slice(format!("{ids:?}").as_bytes());
+        let model_key = h(&decl);
+        // DQ_DREAMCHECKER_KEY_TRACE=1: what the model key is made of, by part (an edit that recomputes every proc shows which moved).
+        if dq_hostio::var_os("DQ_DREAMCHECKER_KEY_TRACE").is_some() {
+            for item in &m.items {
+                let header = item.spelling.as_ref().map_or("", |s| s.header.as_str());
+                dq_hostio::out(false, format_args!("dreamchecker key: item {} {} {:?} {:032x}", item.owner, item.name, item.slot, h(header.as_bytes())), true);
+            }
+            dq_hostio::out(false, format_args!("dreamchecker key: model {model_key:032x}"), true);
+        }
+        QueryStore { frontend, model_key, body_keys }
+    }
+
+    fn keys(&self, bodies: &[u32], procs: &[ProcId]) -> Vec<u128> {
+        procs
+            .iter()
+            .zip(bodies)
+            .map(|(p, b)| {
+                let body = self.body_keys.get(*b as usize).map_or(0, |(k, _)| *k);
+                dq_analyze::incr::mix(&[body, (p.ty.0 as u128) << 64 | (p.slot as u128) << 32 | p.idx as u128])
+            })
+            .collect()
+    }
+}
+
+impl dreamchecker::native::Store for QueryStore<'_> {
+    fn settings(&self, procs: &[ProcId], bodies: &[u32], compute: &(dyn Fn(usize) -> SettingsFacts + Sync)) -> Vec<SettingsFacts> {
+        let keys = self.keys(bodies, procs);
+        let ctx = dq_analyze::incr::ctx_key(&("dreamchecker-settings-v1", self.model_key));
+        dq_analyze::incr::keyed_by("dreamchecker-settings", ctx, &keys, compute)
+    }
+    fn bodies(&self, procs: &[ProcId], bodies: &[u32], settings: &[SettingsFacts], compute: &(dyn Fn(usize) -> ProcFacts + Sync)) -> Vec<ProcFacts> {
+        let keys = self.keys(bodies, procs);
+        let ctx = dq_analyze::incr::ctx_key(&("dreamchecker-bodies-v1", self.model_key, dq_analyze::incr::ctx_key(settings)));
+        let base = |i: usize| self.body_keys.get(bodies[i] as usize).map_or(0, |(_, s)| *s);
+        let mut out = dq_analyze::incr::keyed_by("dreamchecker-bodies", ctx, &keys, |i| {
+            let mut f = compute(i);
+            let at = base(i);
+            f.map_places(|o| o - at);
+            f
+        });
+        for (i, f) in out.iter_mut().enumerate() {
+            let at = base(i);
+            f.map_places(|o| o + at);
+        }
+        out
+    }
+}
+
 /// A parameter declaration's name and type (`var/mob/user = null`, `atom/A as obj in view()`).
 fn parameter(text: &str) -> (String, Vec<String>) {
     let declaration = match dm_syntax::top_level_assignment_index(text) {
@@ -145,8 +303,7 @@ fn semantic_bits(bits: u32) -> u8 {
 
 /// What the native checker reads, built from `front`; `run` then checks it.
 /// `run` also gets what registering the declarations reported (SpacemanDMM's "override precedes definition" hints), in order.
-pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<dreammaker::DMError>, &BuildStats) -> R) -> R {
-    use rayon::prelude::*;
+pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<dreammaker::DMError>, &BuildStats, &QueryStore<'_>) -> R) -> R {
     let frontend: &ColdFrontend = &front.frontend;
     let trace = dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some();
     let t = std::time::Instant::now();
@@ -164,25 +321,13 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     lap("matching");
     let sites = FrontSites { frontend, ids: &front.ids };
 
-    // Bodies by member, parsed on every core.
+    // A member's body is its occurrence, parsed when a result for it is computed.
     let arena = BodyArena::new_typed(frontend, |_| true);
-    let parsed: Vec<Option<Vec<dm_syntax::Statement>>> = frontend
-        .bodies
-        .par_iter()
-        .map(|o| {
-            let body = arena.take_parsed(o).ok()?;
-            Some(body.statement_body()?.parsed().statements.clone())
-        })
-        .collect();
-    let mut bodies = Vec::new();
     let mut body_of: HashMap<u32, u32> = HashMap::new();
-    for (occurrence, statements) in frontend.bodies.iter().zip(parsed) {
-        if let Some(statements) = statements {
-            body_of.insert(occurrence.member.0, bodies.len() as u32);
-            bodies.push(Body { statements });
-        }
+    for (i, occurrence) in frontend.bodies.iter().enumerate() {
+        body_of.insert(occurrence.member.0, i as u32);
     }
-
+    let bodies = FrontBodies { frontend, arena: &arena, parsed: (0..frontend.bodies.len()).map(|_| std::sync::OnceLock::new()).collect() };
     lap("bodies");
     let mut builder = ModelBuilder::with_builtins();
     let tree = &frontend.snapshot.tree;
@@ -201,67 +346,90 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
         }
     }
     let mut registered = Vec::new();
-    let mut stats = BuildStats { bodies: bodies.len(), ..Default::default() };
-    for item in &m.items {
-        let Item { owner, name, slot, member, spelling, id } = item;
-        let ty = builder.add_type_path(Where::Fixed(Location::builtins()), owner);
-        let location = spelling.as_ref().map_or(Where::Fixed(Location::builtins()), |s| Where::At(s.at));
-        match slot {
-            Slot::VarDeclare => {
-                let (type_path, spaceman) = match spelling.as_ref().and_then(|s| var_header(owner, &s.header)) {
-                    Some(v) => (v.type_parts, spaceman_bits(v.spaceman)),
-                    None => (Vec::new(), 0),
-                };
-                // SpacemanDMM places a var declaration at the token after its name: the `=`, or the end of its line.
-                let location = match spelling.as_ref() {
-                    Some(s) => match dm_syntax::top_level_assignment_index(&s.header) {
-                        Some(index) => Where::At(s.at + index),
-                        None => Where::DeclEnd(s.at),
-                    },
-                    None => location,
-                };
-                builder.declare_var(ty, name, location, VarFlags(semantic_bits(member.metadata.flags) | spaceman), type_path);
-                stats.vars += 1;
-            }
-            Slot::VarOverride => {
-                let location = match spelling.as_ref().and_then(|s| Some(s.at + dm_syntax::top_level_assignment_index(&s.header)?)) {
-                    Some(at) => Where::At(at),
-                    None => location,
-                };
-                builder.override_var(ty, name, location);
-                stats.vars += 1;
-            }
-            Slot::Proc | Slot::Verb => {
-                let mut parameters = Vec::new();
-                let mut return_type = ReturnType::None;
-                let mut location = location;
-                if let (Some(s), Some(procedure)) = (spelling.as_ref(), member.metadata.procedure.as_ref()) {
-                    if let Some((before, arguments, after)) = signature_parts(&s.header) {
-                        // SpacemanDMM places a proc at its parameter list's `(`, a parameter at the token after it.
-                        let base = s.at + before.len() + 1;
-                        location = Where::At(base - 1);
-                        for p in procedure.signature.parameters.iter() {
-                            let (start, end) = (p.relative_span.start, p.relative_span.end);
-                            if let Some(t) = arguments.get(start..end) {
-                                let (name, type_path) = parameter(t);
-                                parameters.push(Param { name, type_path, location: Where::At(base + end) });
+    let mut stats = BuildStats { bodies: frontend.bodies.len(), ..Default::default() };
+    // Each declaration's record on every core, registered in declaration order.
+    enum Prep {
+        Var(Where, VarFlags, Vec<String>),
+        Override(Where),
+        Proc(Option<ProcDecl>, ProcValue),
+    }
+    let prepared: Vec<Prep> = {
+        use rayon::prelude::*;
+        m.items
+            .par_iter()
+            .map(|item| {
+                let Item { owner, slot, member, spelling, id, .. } = item;
+                let location = spelling.as_ref().map_or(Where::Fixed(Location::builtins()), |s| Where::At(s.at));
+                match slot {
+                    Slot::VarDeclare => {
+                        let (type_path, spaceman) = match spelling.as_ref().and_then(|s| var_header(owner, &s.header)) {
+                            Some(v) => (v.type_parts, spaceman_bits(v.spaceman)),
+                            None => (Vec::new(), 0),
+                        };
+                        // SpacemanDMM places a var declaration at the token after its name: the `=`, or the end of its line.
+                        let location = match spelling.as_ref() {
+                            Some(s) => match dm_syntax::top_level_assignment_index(&s.header) {
+                                Some(index) => Where::At(s.at + index),
+                                None => Where::DeclEnd(s.at),
+                            },
+                            None => location,
+                        };
+                        Prep::Var(location, VarFlags(semantic_bits(member.metadata.flags) | spaceman), type_path)
+                    }
+                    Slot::VarOverride => Prep::Override(
+                        match spelling.as_ref().and_then(|s| Some(s.at + dm_syntax::top_level_assignment_index(&s.header)?)) {
+                            Some(at) => Where::At(at),
+                            None => location,
+                        },
+                    ),
+                    Slot::Proc | Slot::Verb => {
+                        let mut parameters = Vec::new();
+                        let mut return_type = ReturnType::None;
+                        let mut location = location;
+                        if let (Some(s), Some(procedure)) = (spelling.as_ref(), member.metadata.procedure.as_ref()) {
+                            if let Some((before, arguments, after)) = signature_parts(&s.header) {
+                                // SpacemanDMM places a proc at its parameter list's `(`, a parameter at the token after it.
+                                let base = s.at + before.len() + 1;
+                                location = Where::At(base - 1);
+                                for p in procedure.signature.parameters.iter() {
+                                    let (start, end) = (p.relative_span.start, p.relative_span.end);
+                                    if let Some(t) = arguments.get(start..end) {
+                                        let (name, type_path) = parameter(t);
+                                        parameters.push(Param { name, type_path, location: Where::At(base + end) });
+                                    }
+                                }
+                                if procedure.signature.variadic {
+                                    let at = arguments.rfind("...").map_or(base, |i| base + i);
+                                    parameters.push(Param { name: "...".into(), type_path: Vec::new(), location: Where::At(at) });
+                                }
+                                return_type = return_annotation(after);
                             }
                         }
-                        if procedure.signature.variadic {
-                            let at = arguments.rfind("...").map_or(base, |i| base + i);
-                            parameters.push(Param { name: "...".into(), type_path: Vec::new(), location: Where::At(at) });
-                        }
-                        return_type = return_annotation(after);
+                        let declaration = (member.definition == DefinitionMode::Declare).then(|| ProcDecl {
+                            kind: if *slot == Slot::Verb { ProcKind::Verb } else { ProcKind::Proc },
+                            is_final: false,
+                            location,
+                            return_type,
+                        });
+                        Prep::Proc(declaration, ProcValue { location, parameters, body: body_of.get(&id.0).copied() })
                     }
                 }
-                let declaration = (member.definition == DefinitionMode::Declare).then(|| ProcDecl {
-                    kind: if *slot == Slot::Verb { ProcKind::Verb } else { ProcKind::Proc },
-                    is_final: false,
-                    location,
-                    return_type,
-                });
-                let body = body_of.get(&id.0).copied();
-                let r = builder.add_proc(ty, name, declaration, ProcValue { location, parameters, body });
+            })
+            .collect()
+    };
+    for (item, prep) in m.items.iter().zip(prepared) {
+        let ty = builder.add_type_path(Where::Fixed(Location::builtins()), &item.owner);
+        match prep {
+            Prep::Var(location, flags, type_path) => {
+                builder.declare_var(ty, &item.name, location, flags, type_path);
+                stats.vars += 1;
+            }
+            Prep::Override(location) => {
+                builder.override_var(ty, &item.name, location);
+                stats.vars += 1;
+            }
+            Prep::Proc(declaration, value) => {
+                let r = builder.add_proc(ty, &item.name, declaration, value);
                 registered.extend(r.hint.map(|h| h.error(&*site)));
                 stats.procs += 1;
             }
@@ -271,10 +439,12 @@ pub fn with_input<R>(front: &Front, run: impl FnOnce(&CheckerInput<'_>, Vec<drea
     let model = builder.finish(&parents);
     lap("model");
     if trace {
-        dq_hostio::out(false, format_args!("dreamchecker: native input in {:.1?} ({} types, {} bodies)", t.elapsed(), model.types.len(), bodies.len()), true);
+        dq_hostio::out(false, format_args!("dreamchecker: native input in {:.1?} ({} types, {} bodies)", t.elapsed(), model.types.len(), frontend.bodies.len()), true);
     }
-    let input = CheckerInput { model, bodies, sites: &sites };
-    run(&input, registered, &stats)
+    let input = CheckerInput { model, bodies: &bodies, sites: &sites };
+    let store = QueryStore::new(front, &m);
+    lap("keys");
+    run(&input, registered, &stats, &store)
 }
 
 #[derive(Default)]
@@ -306,7 +476,7 @@ pub fn check(dme: &Path, context: &dreammaker::Context, checks: bool, cli: bool,
     if trace {
         dq_hostio::out(false, format_args!("dreamchecker: preprocessor warnings at {:.1?}", started.elapsed()), true);
     }
-    with_input(&front, |input, registered, stats| {
+    with_input(&front, |input, registered, stats, store| {
         for e in registered {
             context.register_error(e);
         }
@@ -314,9 +484,12 @@ pub fn check(dme: &Path, context: &dreammaker::Context, checks: bool, cli: bool,
             dq_hostio::out(false, format_args!("parsed {}/{} proc bodies (100%)", stats.bodies, stats.bodies), true);
         }
         if checks {
-            dreamchecker::native::run(context, input, cli, threads);
+            dreamchecker::native::run(context, input, cli, store, threads);
         }
     });
+    if trace {
+        dq_hostio::out(false, format_args!("dreamchecker: done at {:.1?}", started.elapsed()), true);
+    }
     Ok(())
 }
 

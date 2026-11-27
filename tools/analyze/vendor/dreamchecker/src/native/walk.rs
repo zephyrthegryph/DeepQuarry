@@ -21,9 +21,9 @@ pub struct Shared {
 }
 
 /// What one proc's walk found.
-#[derive(Default)]
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProcFacts {
-    pub diagnostics: Vec<DMError>,
+    pub diagnostics: Vec<super::facts::Diag>,
     /// (callee, where, inside a new context).
     pub calls: Vec<(ProcId, Where, bool)>,
     pub sleeps: Vec<(String, Where)>,
@@ -31,6 +31,26 @@ pub struct ProcFacts {
     pub waitfor: bool,
     /// (`src/proc/name` key, the callee's location, keyword, where): an inexact call's keyword argument.
     pub kwargs: Vec<(String, Location, String, Where)>,
+}
+
+impl ProcFacts {
+    /// Every place's offset through `f` (`At`, `LineEnd` and `DeclEnd` places; a location stays): a store keeps them relative to the
+    /// body's start.
+    pub fn map_places(&mut self, f: impl Fn(usize) -> usize) {
+        let g = |w: &mut Where| match w {
+            Where::At(o) | Where::LineEnd(o) | Where::DeclEnd(o) => *o = f(*o),
+            Where::Fixed(_) => {}
+        };
+        for (_, w, _) in &mut self.calls {
+            g(w);
+        }
+        for (_, w) in self.sleeps.iter_mut().chain(self.impure.iter_mut()) {
+            g(w);
+        }
+        for (_, _, _, w) in &mut self.kwargs {
+            g(w);
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -205,7 +225,7 @@ impl<'a, 's> Walk<'a, 's> {
     }
 
     fn register(&mut self, e: DMError) {
-        self.facts.diagnostics.push(e);
+        self.facts.diagnostics.push(super::facts::Diag::of(&e));
     }
 
     fn loc(&self, offset: usize) -> Where {
