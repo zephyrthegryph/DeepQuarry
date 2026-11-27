@@ -138,6 +138,28 @@ where
     crate::incr::keyed_by(name, ctx, &keys, |i| f(groups[i].0, &groups[i].1 .1))
 }
 
+/// A digest of every `set SpacemanDMM_return_type = /type` a proc body declares (the return type `image_dir_after_build::return_type`
+/// reads from a body), kept per file: with [`Sem::structure_digest`] (which holds the `as /type` declarations) it names every return
+/// type a judgement can look up.
+pub fn return_settings_digest(sem: &Sem) -> u128 {
+    use dreammaker::ast::Statement;
+    let per: Vec<Vec<(String, String)>> = per_file(sem, "procs-return-settings", |_rel, defs| {
+        let mut out = Vec::new();
+        for (owner, v) in defs {
+            let Some(code) = v.code.as_ref() else { continue };
+            for st in code.iter() {
+                if let Statement::Setting { name, value, .. } = &st.elem {
+                    if name.as_str() == "SpacemanDMM_return_type" {
+                        out.push((owner.clone(), format!("{:?}", value)));
+                    }
+                }
+            }
+        }
+        out
+    });
+    crate::incr::ctx_key(&per)
+}
+
 /// The line the lint engine numbers `model_line` of `rel` as. The engine reads files with universal newlines (a lone carriage
 /// return ends a line, as in Python); the parser does not, so after a lone carriage return the two count differently. Read once per file.
 pub fn engine_line(root: &std::path::Path, rel: &str, model_line: u32) -> u32 {
