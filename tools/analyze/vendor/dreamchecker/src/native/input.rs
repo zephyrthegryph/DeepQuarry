@@ -144,6 +144,8 @@ pub trait Sites: Sync {
 pub trait Bodies: Sync {
     /// The body's typed statements (`None`: the front end has none for it).
     fn statements(&self, body: u32) -> Option<std::sync::Arc<Vec<dm_syntax::Statement>>>;
+    /// Where the body starts in the expanded text its places index (the folded facts keep their places relative to it).
+    fn start(&self, body: u32) -> usize;
 }
 
 /// Everything the native checker reads.

@@ -34,6 +34,28 @@ pub struct ProcFacts {
 }
 
 impl ProcFacts {
+    /// Every location (the diagnostics', the keyword arguments' callee locations, the `Fixed` places), in order, through `f`.
+    pub fn map_locations(&mut self, f: &mut dyn FnMut(&mut Location)) {
+        for d in &mut self.diagnostics {
+            d.map_locations(f);
+        }
+        let g = |w: &mut Where, f: &mut dyn FnMut(&mut Location)| {
+            if let Where::Fixed(l) = w {
+                f(l);
+            }
+        };
+        for (_, w, _) in &mut self.calls {
+            g(w, f);
+        }
+        for (_, w) in self.sleeps.iter_mut().chain(self.impure.iter_mut()) {
+            g(w, f);
+        }
+        for (_, l, _, w) in &mut self.kwargs {
+            f(l);
+            g(w, f);
+        }
+    }
+
     /// Every place's offset through `f` (`At`, `LineEnd` and `DeclEnd` places; a location stays): a store keeps them relative to the
     /// body's start.
     pub fn map_places(&mut self, f: impl Fn(usize) -> usize) {

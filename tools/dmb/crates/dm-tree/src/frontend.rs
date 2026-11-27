@@ -125,6 +125,8 @@ pub struct FrontendTimings {
     pub phases: Vec<(&'static str, Duration)>,
     /// Declarations whose origin was taken from the previous revision (`frontend_origin_reuse.rs`).
     pub reused_origins: usize,
+    /// Procedure body terminations taken from the previous revision (interior carried chunks).
+    pub reused_terminations: usize,
 }
 impl FrontendTimings {
     pub(crate) fn phase(&mut self, name: &'static str, started: Instant) {
@@ -150,6 +152,9 @@ pub struct DeclarationReuseStats {
     pub independent_hits: usize,
     pub facts_hits: usize,
     pub parsed_chunks: usize,
+    /// Chunks whose bytes the expansion copied from the previous revision: their key and bound contribution were taken
+    /// from the previous request's chunk table instead of hashing and comparing the bytes.
+    pub carried_chunks: usize,
     pub descriptor_scan: Duration,
     pub worker_lookup_decode_and_parse: Duration,
     pub worker_fresh_facts: Duration,
@@ -256,7 +261,7 @@ pub struct ColdFrontend {
     pub declaration_spans: Arc<[dm_ir::Span]>,
     callable_roster: Arc<CallableRoster>,
     abi_settings_complete: bool,
-    body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,
+    body_by_declaration: Arc<BodyIndex>,
     issued_bodies: Arc<[BodyOccurrence]>,
     issued_body_codes: Arc<[body_code::BodyCodeOwner]>,
     issued_settings: Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]>,
@@ -280,6 +285,10 @@ pub struct ColdFrontend {
 }
 
 impl ColdFrontend {
+    /// The expanded offset every declaration starts at, by declaration index (`TreeSnapshot::declarations` order).
+    pub fn declaration_starts(&self) -> &[u32] {
+        &self.declaration_starts
+    }
     pub fn settings_owner_storage(&self) -> &Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]> {
         &self.issued_settings
     }
@@ -1238,7 +1247,13 @@ struct BodyReuse<'a> {
 impl BodyReuse<'_> {
     /// The source location of declaration `index`'s body, from the previous revision's body of the same declaration, with
     /// this plan's place: when the member and the body length are the same.
-    fn source(&self, index: usize, member: MemberId, span: dm_syntax::Span, mapping: &Mapping<'_>) -> Option<SourceLocation> {
+    fn source<'b>(
+        &'b self,
+        index: usize,
+        member: MemberId,
+        span: dm_syntax::Span,
+        mapping: &Mapping<'_>,
+    ) -> Option<(SourceLocation, &'b BodyOccurrence, usize)> {
         let (region, previous) = (*self.origins.get(index)?)?;
         let at = *self.base.body_by_declaration.get(&OccurrenceId(previous))?;
         let old = self.base.bodies.get(at)?;
@@ -1255,14 +1270,34 @@ impl BodyReuse<'_> {
             source.semantic_path = Arc::clone(&self.plan.occurrences[occurrence].semantic_path);
             source.include_chain = mapping.include_chain(occurrence);
         }
-        Some(source)
+        Some((source, old, at))
     }
 }
 
 /// The declaration whose expanded span starts at `start` and is a proc or verb (the last such one, by index, when several
 /// start there), by binary search over `(start, declaration)` sorted by start and then index.
-fn body_declaration(tree: &crate::SemanticTree, starts: &[(usize, usize)], start: usize) -> Option<(OccurrenceId, MemberId)> {
-    let first = starts.partition_point(|&(at, _)| at < start);
+/// For bodies asked in ascending order, `cursor` remembers where the previous search ended, and the next
+/// one walks forward from there (a few declarations lie between two bodies) instead of searching all 374k starts again, whose
+/// cache misses were most of body indexing.
+fn body_declaration_from(
+    tree: &crate::SemanticTree,
+    starts: &[(usize, usize)],
+    start: usize,
+    cursor: &mut Option<usize>,
+) -> Option<(OccurrenceId, MemberId)> {
+    const WALK: usize = 64;
+    let first = match *cursor {
+        Some(from) if from <= starts.len() && (from == 0 || starts[from - 1].0 < start) => {
+            let window = &starts[from..(from + WALK).min(starts.len())];
+            match window.iter().position(|&(at, _)| at >= start) {
+                Some(offset) => from + offset,
+                None if from + WALK >= starts.len() => starts.len(),
+                None => from + WALK + starts[from + WALK..].partition_point(|&(at, _)| at < start),
+            }
+        }
+        _ => starts.partition_point(|&(at, _)| at < start),
+    };
+    *cursor = Some(first);
     let mut found = None;
     for &(at, index) in &starts[first..] {
         if at != start {
@@ -1277,6 +1312,47 @@ fn body_declaration(tree: &crate::SemanticTree, starts: &[(usize, usize)], start
     found
 }
 
+/// Each declaration's body ordinal, by declaration id: a dense table (one slot per declaration up to the last with a body), so
+/// building it is a fill, not 120k hashed inserts.
+#[derive(Debug, Default)]
+pub struct BodyIndex {
+    slots: Vec<usize>,
+    len: usize,
+}
+impl BodyIndex {
+    const NONE: usize = usize::MAX;
+    pub(crate) fn new(bodies: &[BodyOccurrence]) -> Self {
+        let size = bodies.iter().map(|body| body.declaration.0 as usize + 1).max().unwrap_or(0);
+        let mut slots = vec![Self::NONE; size];
+        for (index, body) in bodies.iter().enumerate() {
+            // A declaration with two bodies keeps the last, as the map this replaces did.
+            slots[body.declaration.0 as usize] = index;
+        }
+        let len = slots.iter().filter(|&&slot| slot != Self::NONE).count();
+        Self { slots, len }
+    }
+    pub fn get(&self, declaration: &OccurrenceId) -> Option<&usize> {
+        self.slots.get(declaration.0 as usize).filter(|&&slot| slot != Self::NONE)
+    }
+    /// How many declarations have a body.
+    pub fn len(&self) -> usize {
+        self.len
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+    /// The table's slots (for the heap census).
+    pub fn capacity(&self) -> usize {
+        self.slots.capacity()
+    }
+}
+impl std::ops::Index<&OccurrenceId> for BodyIndex {
+    type Output = usize;
+    fn index(&self, declaration: &OccurrenceId) -> &usize {
+        self.get(declaration).expect("declaration has a body")
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn collect_bodies(
     syntax: &DeclarationSyntax,
@@ -1288,18 +1364,23 @@ fn collect_bodies(
     codes: &mut Vec<Arc<BodyCodeIdentity>>,
     executor: &dm_exec::BuildExecutor,
     reuse: Option<&BodyReuse<'_>>,
+    previous_bodies: &mut Vec<Option<usize>>,
 ) -> Result<usize, Vec<Diagnostic>> {
+    let started = std::time::Instant::now();
     let recipes: Vec<_> = syntax.body_recipes().collect();
+    let recipes_elapsed = started.elapsed();
     let parts = mapping.parts();
     let reused = std::sync::atomic::AtomicUsize::new(0);
     // Every body in parallel chunks (each with its own lookup hints), joined in body order.
-    let rows = parallel::chunked_map(executor, &recipes, |_, part| {
+    let (previous, codes_out, settings_out, bodies_out): (Vec<_>, Vec<_>, Vec<_>, Vec<_>) =
+        parallel::chunked_columns(executor, &recipes, |_, part| {
         let mapping = parts.mapping();
-        let mut rows = Vec::with_capacity(part.len());
+        let mut rows: (Vec<_>, Vec<_>, Vec<_>, Vec<_>) = parallel::Columns::with_capacity(part.len());
+        let mut cursor = None;
         for recipe in part {
             let code = recipe.code_identity();
             let span = recipe.span();
-            let declaration = body_declaration(tree, starts, span.start)
+            let declaration = body_declaration_from(tree, starts, span.start, &mut cursor)
                 .ok_or_else(|| vec![internal("procedure body has no resolved declaration")])?;
             // A body without setting origins in a reused declaration takes its source location from the previous body.
             let reused_source = if recipe.settings().next().is_none() {
@@ -1310,8 +1391,14 @@ fn collect_bodies(
             if reused_source.is_some() {
                 reused.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             }
+            // The previous body's path, when it is this body's (no new allocation for an unchanged body).
+            let ast_path = match &reused_source {
+                Some((_, old, _)) if recipe.has_path(&old.ast_path) => Arc::clone(&old.ast_path),
+                _ => recipe.path(),
+            };
+            let previous = reused_source.as_ref().map(|(_, _, at)| *at);
             let source = match reused_source {
-                Some(source) => source,
+                Some((source, _, _)) => source,
                 None => mapping
                     .output(span.start)
                     .ok_or_else(|| vec![internal("procedure body has no source origin")])?,
@@ -1330,30 +1417,34 @@ fn collect_bodies(
                     || issued.settings.as_ref() == current.settings.as_ref())
                 .then(|| Arc::clone(current))
             });
-            rows.push((
-                code,
-                setting,
+            rows.0.push(previous);
+            rows.1.push(code);
+            rows.2.push(setting);
+            rows.3.push(
                 BodyOccurrence {
                     stored_candidates: recipe.stored_candidates(),
                     declaration: declaration.0,
                     member: declaration.1,
-                    ast_path: recipe.path(),
+                    ast_path,
                     expanded_span: span,
                     source,
                     setting_context_origins: setting_context_origins.into(),
                 },
-            ));
+            );
         }
         Ok::<_, Vec<Diagnostic>>(rows)
     })?;
-    codes.reserve(rows.len());
-    settings.reserve(rows.len());
-    bodies.reserve(rows.len());
-    for (code, setting, body) in rows {
-        codes.push(code);
-        settings.push(setting);
-        bodies.push(body);
-    }
+    let rows_elapsed = started.elapsed();
+    *previous_bodies = previous;
+    *codes = codes_out;
+    *settings = settings_out;
+    *bodies = bodies_out;
+    crate::change_set::record_outcome(format!(
+        "frontend bodies detail: recipes={:.3}s rows={:.3}s split={:.3}s",
+        recipes_elapsed.as_secs_f64(),
+        (rows_elapsed - recipes_elapsed).as_secs_f64(),
+        (started.elapsed() - rows_elapsed).as_secs_f64(),
+    ));
     Ok(reused.into_inner())
 }
 

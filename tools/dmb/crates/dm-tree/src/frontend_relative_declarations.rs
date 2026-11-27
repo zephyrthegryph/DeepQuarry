@@ -91,6 +91,13 @@ impl CurrentBodyRecipe<'_> {
         path[0] += self.root_prefix;
         path.into()
     }
+    /// Whether `path` is this body's `path()` (without building it).
+    pub(crate) fn has_path(&self, path: &[usize]) -> bool {
+        let relative = &self.relative.path;
+        path.len() == relative.len()
+            && path.first().copied() == relative.first().map(|first| first + self.root_prefix)
+            && path[1..] == relative[1..]
+    }
     pub(crate) fn settings(&self) -> impl Iterator<Item = Span> + '_ {
         self.relative
             .settings
@@ -383,6 +390,10 @@ impl DeclarationSyntax {
                         root_prefix,
                     })
             })
+    }
+    /// How many procedure bodies each chunk holds, in chunk order (`body_recipes` walks them in this order).
+    pub(crate) fn body_counts(&self) -> impl Iterator<Item = usize> + '_ {
+        self.chunks.iter().map(|chunk| chunk.relative.bodies.len())
     }
     pub(crate) fn new(chunks: Vec<CurrentSyntaxChunk>) -> Result<Self, BindingError> {
         // Public compatibility binding may supply unsorted/overlapping chunks.

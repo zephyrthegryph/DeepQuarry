@@ -49,8 +49,8 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
 }
 
 /// `DMB_FRONTEND_VERIFY=1` also runs the full directive pass and the full expansion and logs any
-/// difference from the incremental ones (the full results are used). Off by default.
-fn verify_enabled() -> bool {
+/// difference from the incremental ones (on a difference the full results are used). Off by default.
+pub(super) fn verify_enabled() -> bool {
     std::env::var_os("DMB_FRONTEND_VERIFY").is_some_and(|value| value == "1")
 }
 
@@ -129,11 +129,9 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     }
     // Files a patched or adopted plan did not request from the provider are the previous plan's.
     let seed_started = Instant::now();
-    if plan_reuse.replanned > 0 || plan_reuse.subtrees > 0 {
-        // The plan holds the text of every file it read, whether it asked the provider again or
-        // adopted the previous plan's reads; a clone has no path comparisons to make.
-        *captured.sources.borrow_mut() = plan.source_texts.clone();
-    }
+    // The plan holds the text of every file it read, whether it asked the provider again or adopted the previous plan's
+    // reads: a patched or adopted plan's own map is the capture (no copy of 8k paths).
+    let sources_from_plan = plan_reuse.replanned > 0 || plan_reuse.subtrees > 0;
     let seeded = seed_started.elapsed();
     crate::change_set::record_outcome(format!(
         "frontend plan: {} replanned, {} subtrees adopted ({} occurrences, {} regions of {} copied, {} more matched); declined files={} state={} context={} visits={}; {:.3}s",
@@ -151,7 +149,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     ));
     let t = plan_reuse.timings;
     crate::change_set::record_outcome(format!(
-        "frontend plan detail: seed={:.3}s adopt={:.3}s (touch={:.3}s state={:.3}s copy={:.3}s) occurrences={:.3}s visit={:.3}s matching={:.3}s patch (replan={:.3}s assemble={:.3}s)",
+        "frontend plan detail: seed={:.3}s adopt={:.3}s (touch={:.3}s state={:.3}s copy={:.3}s) occurrences={:.3}s visit={:.3}s matching={:.3}s patch (replan={:.3}s assemble={:.3}s: copy={:.3}s trace={:.3}s maps={:.3}s)",
         seeded.as_secs_f64(),
         t.adopt.as_secs_f64(),
         t.touch.as_secs_f64(),
@@ -162,6 +160,9 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         t.matching.as_secs_f64(),
         t.replan.as_secs_f64(),
         t.assemble.as_secs_f64(),
+        t.assemble_copy.as_secs_f64(),
+        t.assemble_trace.as_secs_f64(),
+        t.assemble_maps.as_secs_f64(),
     ));
     dm_profile::request_mark("frontend.plan_done");
     timings.directive_planning = stage_start.elapsed();
@@ -202,17 +203,21 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             if verify_enabled() {
                 let full = full_expansion();
                 match dm_preprocess::regions::expansions_equal(&expansion, &full) {
-                    Ok(()) => crate::change_set::record_outcome(
-                        "frontend verify: reusing expansion equals the full expansion".into(),
-                    ),
+                    // Equal: the reusing expansion goes on, so what reads its carried spans downstream is verified too.
+                    Ok(()) => {
+                        crate::change_set::record_outcome(
+                            "frontend verify: reusing expansion equals the full expansion".into(),
+                        );
+                        (expansion, Some(stats))
+                    }
                     Err(why) => {
                         eprintln!("frontend verify: EXPANSION MISMATCH: {why}");
                         crate::change_set::record_outcome(format!(
                             "frontend verify: EXPANSION MISMATCH: {why}"
                         ));
+                        (full, Some(stats))
                     }
                 }
-                (full, Some(stats))
             } else {
                 (expansion, Some(stats))
             }
@@ -223,13 +228,14 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     timings.phase("expansion", stage_start);
     crate::change_set::record_outcome(match expansion_reuse {
         Some(stats) => format!(
-            "frontend expansion: {} regions reused ({} rows moved), {} expanded; prepare={:.3}s expand={:.3}s text={:.3}s rows={:.3}s; {:.3}s",
+            "frontend expansion: {} regions reused ({} rows moved), {} expanded; prepare={:.3}s expand={:.3}s text={:.3}s ({} bytes) rows={:.3}s; {:.3}s",
             stats.reused,
             stats.rows_moved,
             stats.expanded,
             stats.prepare.as_secs_f64(),
             stats.expand.as_secs_f64(),
             stats.text.as_secs_f64(),
+            expanded.text.len(),
             stats.rows.as_secs_f64(),
             timings.expansion.as_secs_f64()
         ),
@@ -258,7 +264,8 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         plan.occurrences.len(),
     );
     let profile_stage = dm_profile::stage("frontend.source_indexing");
-    let sources = captured.sources.into_inner();
+    let captured_sources = captured.sources.into_inner();
+    let sources = if sources_from_plan { &plan.source_texts } else { &captured_sources };
     // A patched plan has the previous plan's occurrences at the same places, so the previous
     // source index stands except for the files that were requested again.
     let index_started = Instant::now();
@@ -296,7 +303,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let source_index_reused = reused_index.is_some();
     let (files, by_path) = match reused_index {
         Some(index) => index,
-        None => build_source_index(&plan, &sources)?,
+        None => build_source_index(&plan, sources)?,
     };
     timings.phase("source_index", index_started);
     crate::change_set::record_outcome(format!(
@@ -375,6 +382,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let profile_stage = dm_profile::stage("frontend.declaration_parsing");
     let ParsedDeclarations {
         syntax,
+        interior_chunks,
         diagnostics: syntax_diagnostics,
         mut adapted,
         allocation_ledger,
@@ -449,7 +457,32 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     );
     let profile_stage = dm_profile::stage("frontend.declaration_origins");
     let provenance_start = Instant::now();
-    let expanded_spans: Vec<_> = adapted.origins.iter().map(|origin| origin.span).collect();
+    // Every declaration's span in the joined text (`OriginRoster::iter`), leaf by leaf in parallel.
+    let expanded_spans: Vec<dm_ir::Span> = match adapted.origins.bound_leaves() {
+        Some(leaves) => {
+            let spans = super::parallel::chunked_map(executor, leaves, |_, part| {
+                Ok::<_, std::convert::Infallible>(
+                    part.iter()
+                        .flat_map(|(leaf, offset)| {
+                            let shift = *offset as u32;
+                            leaf.relative_origins().iter().map(move |origin| {
+                                let mut span = origin.span;
+                                span.start += shift;
+                                span.end += shift;
+                                span
+                            })
+                        })
+                        .collect(),
+                )
+            });
+            match spans {
+                Ok(spans) => spans,
+                Err(never) => match never {},
+            }
+        }
+        None => adapted.origins.iter().map(|origin| origin.span).collect(),
+    };
+    let spans_elapsed = provenance_start.elapsed();
     // What the previous revision's origins can be reused for: its files are this revision's at the same ids (the source
     // index was reused) and the plan says which regions are verbatim copies of which previous ones.
     // A rebuilt index (the ordered pass adopted subtrees instead of patching) still qualifies when it numbers the same files
@@ -485,18 +518,16 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let origins_started = Instant::now();
     // A declaration in a copied region has the previous revision's origin (same file, span, region text and macro
     // trace) with this plan's occurrence; only the others are looked up.
-    let reused_origins = origin_base.and_then(|base| {
-        let starts: Vec<usize> = expanded_spans.iter().map(|span| span.start as usize).collect();
-        super::origin_reuse::plan(base, &plan_reuse.regions, &expanded.receipts, &starts)
-    });
+    let reused_origins = origin_base
+        .and_then(|base| super::origin_reuse::plan(base, &plan_reuse.regions, &expanded.receipts, &expanded_spans));
     let reused_count = reused_origins.as_ref().map_or(0, |rows| rows.iter().filter(|row| row.is_some()).count());
+    let reuse_plan_elapsed = origins_started.elapsed();
     // Every declaration's origin, in parallel chunks (each with its own lookup hints), joined in declaration order.
     let parts = mapping.parts();
-    let indices: Vec<usize> = (0..expanded_spans.len()).collect();
-    let origin_rows = super::parallel::chunked_map(executor, &indices, |_, part| {
+    let (declaration_regions, current_origins): (Vec<usize>, Vec<crate::Provenance>) = super::parallel::chunked_columns(executor, &expanded_spans, |first, part| {
     let mapping = parts.mapping();
-    let mut rows = Vec::with_capacity(part.len());
-    for &index in part {
+    let (mut regions, mut rows) = (Vec::with_capacity(part.len()), Vec::with_capacity(part.len()));
+    for (index, origin_span) in (first..).zip(part) {
         if let Some((region, old)) = reused_origins.as_ref().and_then(|rows| rows[index]) {
             let base = origin_base.expect("reused origins have a base");
             let mut provenance = base
@@ -508,10 +539,10 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 .clone();
             provenance.include_occurrence = u32::try_from(plan.regions[region].occurrence)
                 .map_err(|_| vec![internal("too many include occurrences")])?;
-            rows.push((region, provenance));
+            regions.push(region);
+            rows.push(provenance);
             continue;
         }
-        let origin_span = &expanded_spans[index];
         let expanded_origin = mapping
             .origin(origin_span.start as usize)
             .ok_or_else(|| vec![internal("declaration has no current expansion origin")])?;
@@ -526,19 +557,17 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             .map_err(|_| vec![internal("too many include occurrences")])?;
         let region = region_hashes[expanded_origin.region];
         let expansion_stack = mapping.expansion_stack(expanded_origin.macro_expansions)?;
-        rows.push((
-            expanded_origin.region,
-            crate::Provenance {
-                span,
-                include_occurrence,
-                region,
-                expansion_stack,
-            },
-        ));
+        regions.push(expanded_origin.region);
+        rows.push(crate::Provenance {
+            span,
+            include_occurrence,
+            region,
+            expansion_stack,
+        });
     }
-    Ok::<_, Vec<Diagnostic>>(rows)
+    Ok::<_, Vec<Diagnostic>>((regions, rows))
     })?;
-    let (declaration_regions, current_origins): (Vec<_>, Vec<_>) = origin_rows.into_iter().unzip();
+    let rows_elapsed = origins_started.elapsed();
     if verify_enabled() && reused_count > 0 {
         // The full lookup for every declaration: a reused origin must equal it.
         let full = mapping.parts().mapping();
@@ -563,8 +592,12 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     }
     timings.reused_origins = reused_count;
     crate::change_set::record_outcome(format!(
-        "frontend origins: {reused_count} of {} reused from the previous revision",
-        current_origins.len()
+        "frontend origins: {reused_count} of {} reused from the previous revision; spans={:.3}s reuse_plan={:.3}s rows={:.3}s rest={:.3}s",
+        current_origins.len(),
+        spans_elapsed.as_secs_f64(),
+        reuse_plan_elapsed.as_secs_f64(),
+        (rows_elapsed - reuse_plan_elapsed).as_secs_f64(),
+        (origins_started.elapsed() - rows_elapsed).as_secs_f64(),
     ));
     adapted.origins = current_origins.into();
     timings.phase("origins", origins_started);
@@ -648,6 +681,8 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let mut bodies = Vec::new();
     let mut issued_settings = Vec::new();
     let mut body_codes = Vec::new();
+    // For each body: the previous revision's body it took its location from (`BodyReuse`).
+    let mut previous_bodies = Vec::new();
     let reused_bodies = collect_bodies(
         &syntax,
         &snapshot.tree,
@@ -658,6 +693,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         &mut body_codes,
         executor,
         body_reuse.as_ref(),
+        &mut previous_bodies,
     )?;
     if verify_enabled() && reused_bodies > 0 {
         let (mut full_bodies, mut full_settings, mut full_codes) = (Vec::new(), Vec::new(), Vec::new());
@@ -671,6 +707,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             &mut full_codes,
             executor,
             None,
+            &mut Vec::new(),
         )?;
         let same = full_bodies.len() == bodies.len()
             && full_bodies.iter().zip(&bodies).all(|(a, b)| {
@@ -733,19 +770,73 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     if let Some(request) = &declaration_request {
         request.publish_successful();
     }
-    let terminations = super::parallel::chunked_map(executor, &bodies, |_, part| {
+    // A body in an interior carried chunk (`ParsedDeclarations::interior_chunks`) whose previous body ended at the same
+    // place in the copied text has the previous body's termination: what follows its end up to the next chunk's first
+    // declaration, and the syntax there, are the previous revision's.
+    let previous_terminations: Vec<Option<dm_syntax::BodyTermination>> = match (origin_base, interior_chunks.is_empty()) {
+        (Some(base), false) if previous_bodies.len() == bodies.len() => {
+            let carried = expanded.carried.as_deref();
+            let mut out = Vec::with_capacity(bodies.len());
+            let mut body = 0usize;
+            for (chunk, count) in syntax.body_counts().enumerate() {
+                for _ in 0..count {
+                    let reused = (interior_chunks.get(chunk) == Some(&true))
+                        .then_some(())
+                        .and(previous_bodies.get(body).copied().flatten())
+                        .and_then(|at| {
+                            let (old, owner) = (base.bodies.get(at)?, base.issued_body_codes.get(at)?);
+                            let end = bodies[body].expanded_span.end;
+                            let run = carried?.run_holding(end, 0)?;
+                            (dm_preprocess::regions::CarriedText::previous_offset(run, end) == old.expanded_span.end)
+                                .then_some(owner.termination)
+                        });
+                    out.push(reused);
+                    body += 1;
+                }
+            }
+            if body == bodies.len() { out } else { Vec::new() }
+        }
+        _ => Vec::new(),
+    };
+    let reused_terminations = previous_terminations.iter().filter(|termination| termination.is_some()).count();
+    let terminations = super::parallel::chunked_map(executor, &bodies, |first, part| {
         Ok::<_, std::convert::Infallible>(
-            part.iter()
-                .map(|body| {
-                    dm_syntax::termination_after_with_context(
-                        &expanded.text,
-                        body.expanded_span.end,
-                        &|offset| syntax.declaration_header_at(offset),
-                    )
+            (first..)
+                .zip(part)
+                .map(|(index, body)| {
+                    previous_terminations.get(index).copied().flatten().unwrap_or_else(|| {
+                        dm_syntax::termination_after_with_context(
+                            &expanded.text,
+                            body.expanded_span.end,
+                            &|offset| syntax.declaration_header_at(offset),
+                        )
+                    })
                 })
                 .collect(),
         )
     });
+    if verify_enabled() && reused_terminations > 0 {
+        let mismatch = previous_terminations.iter().zip(bodies.iter()).position(|(reused, body)| {
+            reused.is_some_and(|reused| {
+                reused
+                    != dm_syntax::termination_after_with_context(&expanded.text, body.expanded_span.end, &|offset| {
+                        syntax.declaration_header_at(offset)
+                    })
+            })
+        });
+        crate::change_set::record_outcome(match mismatch {
+            None => format!("frontend verify: {reused_terminations} reused body terminations equal the lexed ones"),
+            Some(index) => {
+                eprintln!("frontend verify: TERMINATION MISMATCH at body {index}");
+                format!("frontend verify: TERMINATION MISMATCH at body {index}")
+            }
+        });
+    }
+    timings.reused_terminations = reused_terminations;
+    crate::change_set::record_outcome(format!(
+        "frontend body terminations: {reused_terminations} of {} reused",
+        bodies.len()
+    ));
     let terminations = match terminations {
         Ok(terminations) => terminations,
         Err(never) => match never {},
@@ -769,13 +860,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     ));
     timings.phase("export_mapping", export_started);
     let body_index_started = Instant::now();
-    let body_by_declaration = Arc::new(
-        bodies
-            .iter()
-            .enumerate()
-            .map(|(index, body)| (body.declaration, index))
-            .collect(),
-    );
+    let body_by_declaration = Arc::new(BodyIndex::new(&bodies));
     timings.phase("body_by_declaration", body_index_started);
     timings.total = total_start.elapsed();
     crate::change_set::record_outcome(format!(

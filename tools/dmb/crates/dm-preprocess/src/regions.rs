@@ -50,7 +50,7 @@ mod tests;
 
 pub use expansion::{
     expand_regions, expand_regions_text, expand_regions_text_with_executor,
-    expand_regions_text_with_memo, expand_regions_with_executor, ExpandedRegions,
+    expand_regions_text_with_memo, expand_regions_with_executor, CarriedRun, CarriedText, ExpandedRegions,
 };
 
 /// An accepted or suppressed include directive, including its parent chain.
@@ -184,7 +184,8 @@ pub struct DirectivePlan {
     pub occurrences: Vec<IncludeOccurrence>,
     pub regions: Vec<IncludeRegion>,
     pub items: Vec<OrderedItem>,
-    pub dependencies: BTreeSet<PathBuf>,
+    /// Shared: a patched plan keeps the previous plan's set (a pointer copy, not 8k paths).
+    pub dependencies: Arc<BTreeSet<PathBuf>>,
     /// Original decoded-source line starts, reused from lexical preparation.
     pub source_line_starts: BTreeMap<PathBuf, Arc<[usize]>>,
     pub diagnostics: Vec<Diagnostic>,
@@ -192,7 +193,8 @@ pub struct DirectivePlan {
     pub warnings: Vec<Diagnostic>,
     /// Parallel vector identifying each directive diagnostic's encounter item.
     pub diagnostic_ordinals: Vec<usize>,
-    pub final_macros: BTreeMap<String, Macro>,
+    /// Shared: a patched plan keeps the previous plan's terminal macros (a pointer copy, not 20k definitions).
+    pub final_macros: Arc<BTreeMap<String, Macro>>,
     /// Terminal resource domain; resource literals do not use token encounter
     /// FILE_DIR snapshots (see the unique-name paired fixtures).
     pub file_dirs: Vec<PathBuf>,

@@ -46,6 +46,8 @@ pub(super) struct Answer {
     pub revision: u64,
     /// What the run read, for its persisted copy (`None`: read back from one, or not to be persisted).
     persist: Option<Persisted>,
+    /// The walk taking the root's fingerprint for `persist`, started with the run; joined after the reply (`answer`).
+    walk: Mutex<Option<std::thread::JoinHandle<Option<Hash>>>>,
 }
 
 /// An answer on disk with what it read.
@@ -67,6 +69,9 @@ struct Params {
     argv: Vec<String>,
     env: HashMap<String, String>,
     cwd: PathBuf,
+    /// The first `TREE` revision of the root in this process: only then can an answer on disk be newer than what memory holds
+    /// (a restarted daemon). Later the database knows every answer it gave, and a recomputed one is not read back.
+    fresh: bool,
 }
 
 /// One project root's database and what the watcher last proved for it.
@@ -118,7 +123,7 @@ fn define(db: &Db, current_revision: Arc<Mutex<u64>>) {
         let revision = *current_revision.lock().unwrap_or_else(|e| e.into_inner());
         let root = p.root.clone();
         let walker = std::thread::Builder::new().name("analyze-fingerprint".into()).spawn(move || fingerprint(&root));
-        let stored = load(&p.root, &p.argv, &p.cwd);
+        let stored = if p.fresh { load(&p.root, &p.argv, &p.cwd) } else { None };
         let join = |w: std::io::Result<std::thread::JoinHandle<Option<Hash>>>| w.ok().and_then(|h| h.join().ok()).flatten();
         if let Some(rec) = stored {
             let fp = join(walker);
@@ -130,17 +135,25 @@ fn define(db: &Db, current_revision: Arc<Mutex<u64>>) {
                 super::emit_stderr(format_args!("dmbd analyze: answer read back from disk (nothing it read changed)"));
                 let hash = answer_hash(rec.code, &rec.stdout, &rec.stderr, rec.report.as_ref());
                 let bytes = rec.stdout.len() + rec.stderr.len();
-                let answer = Answer { code: rec.code, report: rec.report, stdout: rec.stdout, stderr: rec.stderr, revision, persist: None };
+                let answer = Answer {
+                    code: rec.code,
+                    report: rec.report,
+                    stdout: rec.stdout,
+                    stderr: rec.stderr,
+                    revision,
+                    persist: None,
+                    walk: Mutex::new(None),
+                };
                 return Ok(Outcome::new(answer, hash, bytes));
             }
             return compute_now(ctx, p, revision, fp);
         }
+        // The fingerprint is for the persisted copy only: the reply does not wait for the walk (`answer` joins it afterwards).
         let mut outcome = compute_now(ctx, p, revision, None);
-        let fp = join(walker);
-        if let (Ok(o), Some(fp)) = (&mut outcome, fp) {
+        if let (Ok(o), Ok(walker)) = (&mut outcome, walker) {
             if let Some(a) = Arc::get_mut(&mut o.value).and_then(|v| v.downcast_mut::<Answer>()) {
-                if let Some(rec) = a.persist.as_mut() {
-                    rec.fingerprint = fp;
+                if a.persist.is_some() {
+                    *a.walk.get_mut().unwrap_or_else(|e| e.into_inner()) = Some(walker);
                 }
             }
         }
@@ -181,7 +194,7 @@ fn compute_now(ctx: &mut dm_query::Ctx<'_>, p: &Params, revision: u64, fp: Optio
             stdout: Vec::new(),
             stderr: Vec::new(),
         });
-        let mut answer = Answer { code: done.code, report: done.report, stdout, stderr, revision, persist };
+        let mut answer = Answer { code: done.code, report: done.report, stdout, stderr, revision, persist, walk: Mutex::new(None) };
         if let Some(r) = &answer.report {
             if r.render().as_bytes() == answer.stdout.as_slice() {
                 answer.stdout = Vec::new();
@@ -345,7 +358,7 @@ pub(super) fn answer(
     let key = answer_key(&argv, &cwd);
     let before = entry.db.stats(ANSWER).computed;
     let (argv_kept, cwd_kept) = (argv.clone(), cwd.clone());
-    let params: Value = Arc::new(Params { root: root.to_path_buf(), argv, env, cwd });
+    let params: Value = Arc::new(Params { root: root.to_path_buf(), argv, env, cwd, fresh: entry.revision == 1 });
     let got = entry.db.get::<Answer>(key, params);
     let computed = entry.db.stats(ANSWER).computed > before;
     let answer = match got {
@@ -359,23 +372,36 @@ pub(super) fn answer(
                 stderr: b"analyze: the daemon could not answer\n".to_vec(),
                 revision: entry.revision,
                 persist: None,
+                walk: Mutex::new(None),
             })
         }
     };
     // Persist what was just computed, unless the watcher saw a relevant change while it ran (its fingerprint could be newer than
     // what it read) or it read something the record cannot name.
+    // The fingerprint walk of a computed answer (started with its run) is joined on a thread of its own, so the reply does not wait
+    // for it; "quiet" is judged when the walk has ended.
     if computed {
-        if let (Some(rec), Some(start), Some(rk)) = (&answer.persist, now, &root_key) {
-            let quiet = crate::fs_watch::token()
-                .and_then(|end| crate::fs_watch::changed_entries_since(start, end))
-                .is_some_and(|entries| !entries.iter().any(|(k, subtree)| relevant(rk, k, *subtree)));
-            if quiet && rec.fingerprint != 0 {
-                let mut rec = rec.clone();
-                rec.code = answer.code;
-                rec.report = answer.report.clone();
-                rec.stdout = answer.stdout.clone();
-                rec.stderr = answer.stderr.clone();
-                save(root, &argv_kept, &cwd_kept, &rec);
+        if let (Some(rec), Some(start), Some(rk)) = (&answer.persist, now, root_key.clone()) {
+            let walk = answer.walk.lock().unwrap_or_else(|e| e.into_inner()).take();
+            let mut rec = rec.clone();
+            rec.code = answer.code;
+            rec.report = answer.report.clone();
+            rec.stdout = answer.stdout.clone();
+            rec.stderr = answer.stderr.clone();
+            let root = root.to_path_buf();
+            let persist = move || {
+                if let Some(fp) = walk.and_then(|w| w.join().ok()).flatten() {
+                    rec.fingerprint = fp;
+                }
+                let quiet = crate::fs_watch::token()
+                    .and_then(|end| crate::fs_watch::changed_entries_since(start, end))
+                    .is_some_and(|entries| !entries.iter().any(|(k, subtree)| relevant(&rk, k, *subtree)));
+                if quiet && rec.fingerprint != 0 {
+                    save(&root, &argv_kept, &cwd_kept, &rec);
+                }
+            };
+            if std::thread::Builder::new().name("analyze-persist-answer".into()).spawn(persist).is_err() {
+                super::emit_stderr(format_args!("dmbd analyze: could not start the thread that persists the answer"));
             }
         }
     }

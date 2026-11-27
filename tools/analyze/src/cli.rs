@@ -320,13 +320,44 @@ impl Hosted {
 /// Whether the answer to `argv` is a function of the files under its root and the variables it reads, so a host may give the same
 /// answer again while none of them changed: a `check` that prints no timings, compares nothing with git and keeps its caches.
 /// `DQ_ALLOW_USAGE` makes the check append to a file outside the report, so a run with it set always runs. (`gen` and `baseline`
-/// write files; `dreamchecker` and the rest are not remembered yet.)
+/// write files.) A `dreamchecker` run reads the `.dme` it is given and the files it includes, and its config (`SpacemanDMM.toml`
+/// beside the `.dme`, or `-c`): remembered when every one of them is under the root (no `-c`, an `-e` that stays inside it). Its
+/// argv is asked whole: `--json` is its own flag there, not the report view's (`report::View::split` is for `check`).
 pub fn rememberable(argv: &[String], env: &std::collections::HashMap<String, String>) -> bool {
     let a = parse(argv.to_vec());
     let has = |f: &str| a.flags.iter().any(|x| x == f);
+    if a.cmd == "dreamchecker" {
+        return dreamchecker_rememberable(argv);
+    }
     a.cmd == "check"
         && !["--changed-only", "--timing", "--no-cache", "--rehash"].iter().any(|f| has(f))
         && dq_hostio::lookup(env, "DQ_ALLOW_USAGE").is_none_or(|v| v.is_empty())
+}
+
+/// See [`rememberable`]: no `-c`, and an `-e` that is relative without `..` (it is read against the request's working directory,
+/// which is part of the answer's key).
+fn dreamchecker_rememberable(argv: &[String]) -> bool {
+    let mut it = argv.iter().skip(2);
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "-c" => return false,
+            "-e" => match it.next() {
+                Some(dme) => {
+                    let p = Path::new(dme);
+                    if p.is_absolute() || p.components().any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::Prefix(_))) {
+                        return false;
+                    }
+                }
+                None => return false,
+            },
+            "--json" | "--parse-only" => {}
+            "--threads" => {
+                it.next();
+            }
+            _ => return false,
+        }
+    }
+    true
 }
 
 /// A finished request whose run state is not yet reset.

@@ -54,6 +54,15 @@ fn errortype(name: &str) -> &'static str {
 }
 
 impl Diag {
+    /// Every location (the diagnostic's, then its notes'), in order, through `f` (a store keeps the ones inside a proc relative
+    /// to it; see `SettingsFacts::map_locations`).
+    pub fn map_locations(&mut self, f: &mut dyn FnMut(&mut Location)) {
+        f(&mut self.location);
+        for (l, _) in &mut self.notes {
+            f(l);
+        }
+    }
+
     pub fn of(e: &DMError) -> Diag {
         Diag {
             location: e.location(),
@@ -90,6 +99,20 @@ impl Diag {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct SettingsFacts {
     pub events: Vec<SettingEvent>,
+}
+
+impl SettingsFacts {
+    /// Every location of every event, in order, through `f`.
+    pub fn map_locations(&mut self, f: &mut dyn FnMut(&mut Location)) {
+        for e in &mut self.events {
+            match e {
+                SettingEvent::Diag(d) => d.map_locations(f),
+                SettingEvent::Final(l) => f(l),
+                SettingEvent::ReturnType(_) => {}
+                SettingEvent::Directive { location, .. } => f(location),
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -21,6 +21,48 @@ pub struct ExpandedRegions {
     pub diagnostics: Vec<Diagnostic>,
     pub receipts: Vec<region_memo::RegionReceipt>,
     pub lexical_diagnostics: Vec<dm_syntax::Diagnostic>,
+    /// The spans of `text` that `expand_regions_reusing` copied byte for byte from the previous expansion's text; `None` for a
+    /// full expansion. Consumers that keep per-offset results of the previous revision reuse them for these spans instead of
+    /// comparing or hashing the bytes again.
+    pub carried: Option<Arc<CarriedText>>,
+}
+
+/// Which bytes of an expansion's text are copies of the previous expansion's (`ExpandedRegions::carried`). The claim is about two
+/// exact storages: a consumer uses it only when `text` is a view of the expansion's own `text` and `previous` of the text its
+/// remembered results were made from, so a text replaced after the fact (or a stale previous) falls back to the bytes.
+#[derive(Clone, Debug)]
+pub struct CarriedText {
+    pub text: crate::WeakSourceText,
+    pub previous: crate::WeakSourceText,
+    /// Ascending, disjoint runs.
+    pub runs: Vec<CarriedRun>,
+}
+
+/// `len` bytes at `start` of this text are the bytes at `previous_start` of the previous text, and the receipts `receipts` of
+/// this expansion are the previous expansion's receipts from `previous_receipt` on (same records, same lengths, spans shifted).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CarriedRun {
+    pub start: usize,
+    pub previous_start: usize,
+    pub len: usize,
+    pub receipts: (usize, usize),
+    pub previous_receipt: usize,
+}
+
+impl CarriedText {
+    /// Whether this claim describes `text` (copied from `previous`).
+    pub fn describes(&self, text: &crate::SourceText, previous: &crate::WeakSourceText) -> bool {
+        self.text.is_view_of(text) && self.previous.same_storage(previous)
+    }
+    /// The run that holds all of `start..start + len`, if any.
+    pub fn run_holding(&self, start: usize, len: usize) -> Option<&CarriedRun> {
+        let index = self.runs.partition_point(|run| run.start + run.len <= start);
+        self.runs.get(index).filter(|run| run.start <= start && start + len <= run.start + run.len)
+    }
+    /// The previous text's offset of `offset` in a run.
+    pub fn previous_offset(run: &CarriedRun, offset: usize) -> usize {
+        offset - run.start + run.previous_start
+    }
 }
 
 pub(super) struct RegionOutput {

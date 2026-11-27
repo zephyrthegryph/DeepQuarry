@@ -164,7 +164,12 @@ pub(super) fn serve(stream: &mut transport::Stream, request: AnalyzeRequest) -> 
     dq_analyze::cli::set_launch_prefix(vec!["analyze".to_string()]);
     let (plain, view) = dq_analyze::report::View::split(&request.argv);
     let env: std::collections::HashMap<String, String> = request.env.iter().cloned().collect();
-    if dq_analyze::cli::rememberable(&plain, &env) {
+    // `dreamchecker --json` is the checker's own flag (its totals line), not the report view: its argv is asked whole.
+    if request.argv.get(1).is_some_and(|c| c == "dreamchecker") {
+        if dq_analyze::cli::rememberable(&request.argv, &env) {
+            return serve_remembered(stream, request.argv.clone(), dq_analyze::report::View::default(), env, request.cwd);
+        }
+    } else if dq_analyze::cli::rememberable(&plain, &env) {
         return serve_remembered(stream, plain, view, env, request.cwd);
     }
     let (tx, rx) = std::sync::mpsc::channel::<(bool, Vec<u8>)>();

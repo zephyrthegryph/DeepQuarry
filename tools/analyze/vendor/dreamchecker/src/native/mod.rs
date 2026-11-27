@@ -310,6 +310,8 @@ struct KwargInfo {
 /// The tables the call-tree checks read, all built from the per-proc facts before they start.
 pub struct CallTables<'a> {
     model: &'a Model,
+    /// The folded facts, for their places (relative to each proc's body).
+    fold: &'a Fold,
     sites: &'a dyn Sites,
     call_tree: &'a HashMap<ProcId, Vec<(ProcId, Where, bool)>>,
     waitfor_procs: &'a HashSet<ProcId>,
@@ -318,6 +320,12 @@ pub struct CallTables<'a> {
     impure_procs: &'a Violations,
     sleeping_overrides: &'a HashMap<ProcId, Vec<ProcId>>,
     impure_overrides: &'a HashMap<ProcId, Vec<ProcId>>,
+    reach: &'a Reach,
+}
+
+/// The procs that can reach a blocking or impure operation through calls (each set closed over callers).
+#[derive(Default, PartialEq)]
+struct Reach {
     can_sleep: HashSet<ProcId>,
     sleeps_in_context: HashSet<ProcId>,
     can_be_impure: HashSet<ProcId>,
@@ -325,20 +333,15 @@ pub struct CallTables<'a> {
 
 struct Step {
     proc: ProcId,
+    /// The call's place, in its caller's folded facts.
+    caller: ProcId,
     location: Where,
     new_context: bool,
     parent: Option<usize>,
 }
 
-fn reaching(call_tree: &HashMap<ProcId, Vec<(ProcId, Where, bool)>>, targets: impl Iterator<Item = ProcId>, expands: impl Fn(ProcId) -> bool, same_context_only: bool) -> HashSet<ProcId> {
-    let mut callers: HashMap<ProcId, Vec<ProcId>> = HashMap::new();
-    for (caller, calls) in call_tree {
-        for (callee, _, new_context) in calls {
-            if !(same_context_only && *new_context) {
-                callers.entry(*callee).or_default().push(*caller);
-            }
-        }
-    }
+/// Every proc that reaches one of `targets` through `callers`, expanding only through callers `expands` admits.
+fn reaching(callers: &HashMap<ProcId, Vec<ProcId>>, targets: impl Iterator<Item = ProcId>, expands: impl Fn(ProcId) -> bool) -> HashSet<ProcId> {
     let mut seen = HashSet::new();
     let mut stack: Vec<ProcId> = targets.collect();
     while let Some(p) = stack.pop() {
@@ -351,28 +354,66 @@ fn reaching(call_tree: &HashMap<ProcId, Vec<(ProcId, Where, bool)>>, targets: im
     seen
 }
 
+impl Reach {
+    fn compute(fold: &Fold, overrides: &Overrides, d: &Directives) -> Reach {
+        // Callers of each proc: through every call, and through calls in the same context only.
+        let mut all: HashMap<ProcId, Vec<ProcId>> = HashMap::new();
+        let mut same: HashMap<ProcId, Vec<ProcId>> = HashMap::new();
+        for (caller, calls) in &fold.call_tree {
+            for (callee, _, new_context) in calls {
+                all.entry(*callee).or_default().push(*caller);
+                if !*new_context {
+                    same.entry(*callee).or_default().push(*caller);
+                }
+            }
+        }
+        let exempt = |p: ProcId| !fold.waitfor.contains(&p) && d.sleep_exempt.get(p).is_none();
+        let sleepers = || fold.sleeping.violators.keys().chain(overrides.sleeping.keys()).copied();
+        Reach {
+            can_sleep: reaching(&all, sleepers(), exempt),
+            sleeps_in_context: reaching(&same, sleepers().filter(|p| exempt(*p)), exempt),
+            can_be_impure: reaching(&all, fold.impure.violators.keys().chain(overrides.impure.keys()).copied(), |_| true),
+        }
+    }
+
+    /// The procs whose membership differs between the two.
+    fn changed(&self, other: &Reach, into: &mut HashSet<ProcId>) {
+        for (a, b) in [(&self.can_sleep, &other.can_sleep), (&self.sleeps_in_context, &other.sleeps_in_context), (&self.can_be_impure, &other.can_be_impure)] {
+            into.extend(a.symmetric_difference(b).copied());
+        }
+    }
+}
+
+/// Every proc a finding's search looked up in a table (the reads that decide it: a later run judges it again only when one of
+/// them changed).
+type Reads = Vec<ProcId>;
+
 impl CallTables<'_> {
-    fn search(&self, root: ProcId, within: &HashSet<ProcId>, mut visit: impl FnMut(&[Step], usize) -> bool) {
+    fn search(&self, root: ProcId, within: &HashSet<ProcId>, reads: &mut Reads, mut visit: impl FnMut(&[Step], usize, &mut Reads) -> bool) {
         let mut steps: Vec<Step> = Vec::new();
         let mut visited = HashSet::new();
         let mut next = 0;
+        reads.push(root);
         if let Some(called) = self.call_tree.get(&root) {
             for (proc, location, new_context) in called {
+                reads.push(*proc);
                 if within.contains(proc) && visited.insert(*proc) {
-                    steps.push(Step { proc: *proc, location: *location, new_context: *new_context, parent: None });
+                    steps.push(Step { proc: *proc, caller: root, location: *location, new_context: *new_context, parent: None });
                 }
             }
         }
         while next < steps.len() {
             let at = next;
             next += 1;
-            if !visit(&steps, at) {
+            if !visit(&steps, at, reads) {
                 continue;
             }
-            if let Some(called) = self.call_tree.get(&steps[at].proc) {
+            let caller = steps[at].proc;
+            if let Some(called) = self.call_tree.get(&caller) {
                 for (proc, location, new_context) in called {
+                    reads.push(*proc);
                     if within.contains(proc) && visited.insert(*proc) {
-                        steps.push(Step { proc: *proc, location: *location, new_context: *new_context, parent: Some(at) });
+                        steps.push(Step { proc: *proc, caller, location: *location, new_context: *new_context, parent: Some(at) });
                     }
                 }
             }
@@ -387,37 +428,45 @@ impl CallTables<'_> {
             cur = steps[i].parent;
         }
         for i in path {
-            e.add_note(site.place(steps[i].location), format!("{}() called here", self.model.proc_display(steps[i].proc)));
+            e.add_note(site.place(self.fold.at(steps[i].caller, steps[i].location)), format!("{}() called here", self.model.proc_display(steps[i].proc)));
         }
         e
     }
 
-    fn with_list(site: &dyn Site, mut e: DMError, list: &[(String, Where)], what: &str) -> DMError {
+    /// `owner`'s violations as notes.
+    fn with_list(&self, site: &dyn Site, mut e: DMError, owner: ProcId, list: &[(String, Where)], what: &str) -> DMError {
         for (name, location) in list {
-            e.add_note(site.place(*location), format!("{name}{what}"));
+            e.add_note(site.place(self.fold.at(owner, *location)), format!("{name}{what}"));
         }
         e
     }
 
-    fn sleep_findings(&self, procref: ProcId, location: Location) -> Vec<DMError> {
+    fn sleep_findings(&self, procref: ProcId, location: Location, reads: &mut Reads) -> Vec<DMError> {
         let m = self.model;
         let site = self.sites.site();
         let at = site.place(m.value(procref).location);
         let mut out = Vec::new();
+        reads.push(procref);
         if let Some(sleepvec) = self.sleeping_procs.violators.get(&procref) {
-            out.push(Self::with_list(&*site, 
+            out.push(self.with_list(&*site,
                 error(at, format!("{} sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)", m.proc_display(procref)))
                     .with_note(location, "SpacemanDMM_should_not_sleep set here")
                     .with_errortype("must_not_sleep"),
+                procref,
                 sleepvec,
                 "() called here",
             ));
         }
-        let reaches = self.call_tree.get(&procref).is_some_and(|c| c.iter().any(|(p, _, nc)| !nc && self.sleeps_in_context.contains(p)));
+        let reaches = self.call_tree.get(&procref).is_some_and(|c| {
+            c.iter().any(|(p, _, nc)| {
+                reads.push(*p);
+                !nc && self.reach.sleeps_in_context.contains(p)
+            })
+        });
         if !reaches {
             return out;
         }
-        self.search(procref, &self.can_sleep, |steps, i| {
+        self.search(procref, &self.reach.can_sleep, reads, |steps, i, reads| {
             let nextproc = steps[i].proc;
             if self.waitfor_procs.contains(&nextproc) || self.sleep_exempt.get(nextproc).is_some() || steps[i].new_context {
                 return false;
@@ -426,16 +475,17 @@ impl CallTables<'_> {
                 let e = error(at, format!("{} sets SpacemanDMM_should_not_sleep but calls blocking proc {}", m.proc_display(procref), m.proc_display(nextproc)))
                     .with_note(location, "SpacemanDMM_should_not_sleep set here")
                     .with_errortype("must_not_sleep");
-                out.push(Self::with_list(&*site, self.with_callstack(&*site, e, steps, i), sleepvec, "() called here"));
+                out.push(self.with_list(&*site, self.with_callstack(&*site, e, steps, i), nextproc, sleepvec, "() called here"));
             } else if let Some(children) = self.sleeping_overrides.get(&nextproc) {
                 for child in children {
                     if m.is_subtype_of(procref.ty, nextproc.ty) && !m.is_subtype_of(child.ty, procref.ty) {
                         continue;
                     }
+                    reads.push(*child);
                     let e = error(at, format!("{} calls {} which has override child proc that sleeps {}", m.proc_display(procref), m.proc_display(nextproc), m.proc_display(*child)))
                         .with_note(location, "SpacemanDMM_should_not_sleep set here")
                         .with_errortype("must_not_sleep");
-                    out.push(Self::with_list(&*site, self.with_callstack(&*site, e, steps, i), &self.sleeping_procs.violators[child], "() called here"));
+                    out.push(self.with_list(&*site, self.with_callstack(&*site, e, steps, i), *child, &self.sleeping_procs.violators[child], "() called here"));
                 }
             }
             true
@@ -443,36 +493,39 @@ impl CallTables<'_> {
         out
     }
 
-    fn pure_findings(&self, procref: ProcId, location: Location) -> Vec<DMError> {
+    fn pure_findings(&self, procref: ProcId, location: Location, reads: &mut Reads) -> Vec<DMError> {
         let m = self.model;
         let site = self.sites.site();
         let at = site.place(m.value(procref).location);
         let mut out = Vec::new();
+        reads.push(procref);
         if let Some(impurevec) = self.impure_procs.violators.get(&procref) {
-            out.push(Self::with_list(&*site, 
+            out.push(self.with_list(&*site,
                 error(at, format!("{} does impure operations", m.proc_display(procref)))
                     .with_errortype("must_be_pure")
                     .with_note(location, "SpacemanDMM_should_be_pure set here"),
+                procref,
                 impurevec,
                 " happens here",
             ));
         }
-        self.search(procref, &self.can_be_impure, |steps, i| {
+        self.search(procref, &self.reach.can_be_impure, reads, |steps, i, reads| {
             let nextproc = steps[i].proc;
             if let Some(impurevec) = self.impure_procs.violators.get(&nextproc) {
                 let e = error(at, format!("{} sets SpacemanDMM_should_be_pure but calls a {} that does impure operations", m.proc_display(procref), m.proc_display(nextproc)))
                     .with_note(location, "SpacemanDMM_should_be_pure set here")
                     .with_errortype("must_be_pure");
-                out.push(Self::with_list(&*site, self.with_callstack(&*site, e, steps, i), impurevec, " happens here"));
+                out.push(self.with_list(&*site, self.with_callstack(&*site, e, steps, i), nextproc, impurevec, " happens here"));
             } else if let Some(children) = self.impure_overrides.get(&nextproc) {
                 for child in children {
                     if m.is_subtype_of(procref.ty, nextproc.ty) && !m.is_subtype_of(child.ty, procref.ty) {
                         continue;
                     }
+                    reads.push(*child);
                     let e = error(at, format!("{} calls {} which has override child proc that does impure operations {}", m.proc_display(procref), m.proc_display(nextproc), m.proc_display(*child)))
                         .with_note(location, "SpacemanDMM_should_not_pure set here")
                         .with_errortype("must_be_pure");
-                    out.push(Self::with_list(&*site, self.with_callstack(&*site, e, steps, i), &self.impure_procs.violators[child], "() called here"));
+                    out.push(self.with_list(&*site, self.with_callstack(&*site, e, steps, i), *child, &self.impure_procs.violators[child], "() called here"));
                 }
             }
             true
@@ -505,6 +558,23 @@ fn parallel_map<T: Sync, R: Send>(items: &[T], threads: usize, f: impl Fn(&T) ->
     slots.into_inner().unwrap().into_iter().map(|r| r.expect("every item mapped")).collect()
 }
 
+/// The section headers [`run`] prints under `cli`, in order (a host that registers a kept run again prints them itself).
+pub const SECTIONS: [&str; 5] = [
+    "Analyzing variables...\n",
+    "Gathering proc settings...\n",
+    "Analyzing proc bodies...\n",
+    "Analyzing proc override validity...\n",
+    "Analyzing proc call tree...\n",
+];
+
+/// Prints [`SECTIONS`] as [`run`] does.
+pub fn print_sections() {
+    for s in SECTIONS {
+        cli_println!(true, "============================================================");
+        cli_println!(true, "{s}");
+    }
+}
+
 /// One proc's body facts: a pure function of its body, the model and the settings tables.
 pub fn body_facts(model: &Model, shared: &Shared, site: &dyn Site, proc: ProcId, body: &[Statement]) -> ProcFacts {
     let mut walk = Walk::new(model, shared, site, proc);
@@ -516,103 +586,473 @@ pub fn body_facts(model: &Model, shared: &Shared, site: &dyn Site, proc: ProcId,
 /// from `store`.
 /// The call-tree searches run on `threads` threads.
 pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, store: &dyn Store, threads: usize) {
-    let timing = dq_hostio::var_os("DQ_DREAMCHECKER_TIMING").is_some();
-    let mut mark = std::time::Instant::now();
-    let mut lap = |what: &str| {
-        if timing {
-            dq_hostio::out(false, format_args!("dreamchecker timing: {what} {:.1} s", mark.elapsed().as_secs_f64()), true);
+    let kept = Kept::compute(input, store, threads);
+    if cli {
+        print_sections();
+    }
+    kept.register(context);
+}
+
+/// What one proc's walk hands the passes after it, without its places: what the call-tree pass reads (calls, blocking and impure
+/// operations, `waitfor`) and what the keyword-argument check reads. A recomputed proc whose shape is the one it had moves nothing
+/// in those passes but places.
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
+struct FactsShape {
+    calls: u64,
+    kwargs: u64,
+}
+
+fn shape_of(f: &ProcFacts) -> FactsShape {
+    use std::hash::{Hash, Hasher};
+    let mut h = std::hash::DefaultHasher::new();
+    for (callee, _, new_context) in &f.calls {
+        (callee, new_context).hash(&mut h);
+    }
+    0xffu8.hash(&mut h);
+    for (name, _) in &f.sleeps {
+        name.hash(&mut h);
+    }
+    0xfeu8.hash(&mut h);
+    for (name, _) in &f.impure {
+        name.hash(&mut h);
+    }
+    0xfdu8.hash(&mut h);
+    f.waitfor.hash(&mut h);
+    let calls = h.finish();
+    let mut h = std::hash::DefaultHasher::new();
+    for (key, _, name, _) in &f.kwargs {
+        (key, name).hash(&mut h);
+    }
+    FactsShape { calls, kwargs: h.finish() }
+}
+
+/// Everything one run found, kept so that a later run over an edited tree with the same declarations computes only what the edit
+/// reaches ([`Kept::update`]). Its places are the revision's it was last computed or updated for: `Where`s are offsets into that
+/// revision's expanded text, locations are that revision's lines.
+pub struct Kept {
+    /// Every proc in model order, and the procs with a body (with their body occurrence).
+    procs: Vec<ProcId>,
+    bodies: Vec<ProcId>,
+    body_ix: Vec<u32>,
+    var_defs: Vec<Diag>,
+    settings_facts: Vec<SettingsFacts>,
+    /// What applying the settings registered, in order.
+    settings_diags: Vec<Diag>,
+    shared: Shared,
+    /// By body position: its walk's diagnostics and its shape ([`shape_of`]).
+    diags: Vec<Vec<Diag>>,
+    shapes: Vec<FactsShape>,
+    fold: Fold,
+    overrides: Overrides,
+    call_tree: CallTree,
+}
+
+/// One proc's call-tree findings (a `SpacemanDMM_should_not_sleep` or `SpacemanDMM_should_be_pure` proc) and the procs its search
+/// read: judged again only when one of them changed.
+struct Unit {
+    proc: ProcId,
+    location: Location,
+    pure: bool,
+    diags: Vec<Diag>,
+    reads: Vec<ProcId>,
+}
+
+#[derive(Default)]
+struct CallTree {
+    reach: Reach,
+    units: Vec<Unit>,
+}
+
+/// The per-proc facts the override and call-tree passes read, folded.
+#[derive(Default)]
+///
+/// Its places are kept relative to their proc's body (`starts`), so an edit that moves bodies moves only the starts.
+struct Fold {
+    call_tree: HashMap<ProcId, Vec<(ProcId, Where, bool)>>,
+    sleeping: Violations,
+    impure: Violations,
+    waitfor: HashSet<ProcId>,
+    /// By body position: an inexact call's keyword arguments (`ProcFacts::kwargs`).
+    kwargs: BTreeMap<usize, Vec<(String, Location, String, Where)>>,
+    /// By body position: where its body starts in the expanded text; and each proc's body position.
+    starts: Vec<usize>,
+    position: HashMap<ProcId, usize>,
+}
+
+/// `w` moved by `by` (an offset place; a location stays).
+fn moved_by(w: Where, by: isize) -> Where {
+    match w {
+        Where::At(o) => Where::At(o.wrapping_add_signed(by)),
+        Where::LineEnd(o) => Where::LineEnd(o.wrapping_add_signed(by)),
+        Where::DeclEnd(o) => Where::DeclEnd(o.wrapping_add_signed(by)),
+        Where::Fixed(l) => Where::Fixed(l),
+    }
+}
+
+#[derive(Default)]
+struct Overrides {
+    /// The keyword-argument diagnostics.
+    diags: Vec<Diag>,
+    sleeping: HashMap<ProcId, Vec<ProcId>>,
+    impure: HashMap<ProcId, Vec<ProcId>>,
+}
+
+/// The diagnostics `f` registers, as data, in order.
+fn captured(f: impl FnOnce(&Context)) -> Vec<Diag> {
+    let context = Context::default();
+    f(&context);
+    context.take_errors().iter().map(Diag::of).collect()
+}
+
+fn statements_of(input: &CheckerInput<'_>, p: ProcId) -> std::sync::Arc<Vec<Statement>> {
+    input.model.value(p).body.and_then(|b| input.bodies.statements(b)).unwrap_or_default()
+}
+
+/// What [`Kept::update`] did, for its trace.
+#[derive(Debug, Default)]
+pub struct Updated {
+    pub recomputed: usize,
+    pub var_defs: bool,
+    /// The keyword-argument check ran again.
+    pub kwargs: bool,
+    /// The call-tree findings judged again, of all.
+    pub units: usize,
+    pub of_units: usize,
+    /// Where the time went: moving the kept locations, moving the folded places, the walks, the later passes.
+    pub relocate: std::time::Duration,
+    pub shift: std::time::Duration,
+    pub walks: std::time::Duration,
+    pub passes: std::time::Duration,
+}
+
+impl Kept {
+    /// Every pass over `input`, the per-proc results from `store`.
+    pub fn compute(input: &CheckerInput<'_>, store: &dyn Store, threads: usize) -> Kept {
+        let timing = dq_hostio::var_os("DQ_DREAMCHECKER_TIMING").is_some();
+        let mut mark = std::time::Instant::now();
+        let mut lap = |what: &str| {
+            if timing {
+                dq_hostio::out(false, format_args!("dreamchecker timing: {what} {:.1} s", mark.elapsed().as_secs_f64()), true);
+            }
+            mark = std::time::Instant::now();
+        };
+        let m = &input.model;
+        let var_defs = captured(|c| check_var_defs(m, c, &*input.sites.site()));
+        lap("variables");
+
+        let mut procs: Vec<ProcId> = Vec::new();
+        m.recurse(m.root(), &mut |t| procs.extend(m.self_procs(t)));
+        let bodies: Vec<ProcId> = procs.iter().copied().filter(|&p| m.value(p).body.is_some()).collect();
+        let body_ix: Vec<u32> = bodies.iter().map(|&p| m.value(p).body.expect("a proc with a body")).collect();
+        let position: HashMap<ProcId, usize> = bodies.iter().enumerate().map(|(i, &p)| (p, i)).collect();
+        let settings_facts: Vec<SettingsFacts> = store.settings(&bodies, &body_ix, &|i| {
+            let site = input.sites.site();
+            settings_facts(m, &*site, bodies[i], &statements_of(input, bodies[i]))
+        });
+        let mut settings = Settings::default();
+        let settings_diags = captured(|c| {
+            settings.return_type.insert(m.get_proc(m.root(), "get_step").expect("builtin get_step"), StaticType::Type(m.expect("/turf")).into());
+            for (&p, f) in bodies.iter().zip(&settings_facts) {
+                apply_settings(m, &mut settings, c, p, f);
+            }
+        });
+        lap("settings");
+
+        for &p in &bodies {
+            settings.directives.must_not_sleep.try_copy_from_parent(m, p);
+            settings.directives.must_be_pure.try_copy_from_parent(m, p);
         }
-        mark = std::time::Instant::now();
-    };
-    let m = &input.model;
-    cli_println!(cli, "============================================================");
-    cli_println!(cli, "Analyzing variables...\n");
-    check_var_defs(m, context, &*input.sites.site());
-    lap("variables");
+        let shared = Shared { return_type: settings.return_type, directives: settings.directives };
+        let facts: Vec<ProcFacts> = store.bodies(&bodies, &body_ix, &settings_facts, &|i| {
+            let site = input.sites.site();
+            body_facts(m, &shared, &*site, bodies[i], &statements_of(input, bodies[i]))
+        });
+        let mut fold = Fold {
+            starts: body_ix.iter().map(|&b| input.bodies.start(b)).collect(),
+            position,
+            ..Default::default()
+        };
+        let mut diags = Vec::with_capacity(facts.len());
+        let mut shapes = Vec::with_capacity(facts.len());
+        for (i, (&p, f)) in bodies.iter().zip(facts).enumerate() {
+            shapes.push(shape_of(&f));
+            fold.put(i, p, f.calls, f.sleeps, f.impure, f.waitfor, f.kwargs);
+            diags.push(f.diagnostics);
+        }
+        lap("bodies");
 
-    cli_println!(cli, "============================================================");
-    cli_println!(cli, "Gathering proc settings...\n");
-    let mut procs: Vec<ProcId> = Vec::new();
-    m.recurse(m.root(), &mut |t| procs.extend(m.self_procs(t)));
-    let bodies: Vec<ProcId> = procs.iter().copied().filter(|&p| m.value(p).body.is_some()).collect();
-    let statements = |p: ProcId| m.value(p).body.and_then(|b| input.bodies.statements(b)).unwrap_or_default();
-    let body_ix: Vec<u32> = bodies.iter().map(|&p| m.value(p).body.expect("a proc with a body")).collect();
-    let settings_facts: Vec<SettingsFacts> = store.settings(&bodies, &body_ix, &|i| {
-        let site = input.sites.site();
-        settings_facts(m, &*site, bodies[i], &statements(bodies[i]))
-    });
-    let mut settings = Settings::default();
-    settings.return_type.insert(m.get_proc(m.root(), "get_step").expect("builtin get_step"), StaticType::Type(m.expect("/turf")).into());
-    for (&p, f) in bodies.iter().zip(&settings_facts) {
-        apply_settings(m, &mut settings, context, p, f);
+        let (sleeping, impure) = Overrides::violations(m, &procs, &fold);
+        let overrides = Overrides { diags: Overrides::kwargs(m, &procs, &fold, &*input.sites.site()), sleeping, impure };
+        lap("overrides");
+        let call_tree = CallTree::compute(m, input.sites, &fold, &overrides, &shared.directives, threads);
+        lap("call tree");
+        Kept { procs, bodies, body_ix, var_defs, settings_facts, settings_diags, shared, diags, shapes, fold, overrides, call_tree }
     }
-    lap("settings");
 
-    cli_println!(cli, "============================================================");
-    cli_println!(cli, "Analyzing proc bodies...\n");
-    for &p in &bodies {
-        settings.directives.must_not_sleep.try_copy_from_parent(m, p);
-        settings.directives.must_be_pure.try_copy_from_parent(m, p);
-    }
-    let shared = Shared { return_type: settings.return_type, directives: settings.directives };
-    let facts: Vec<ProcFacts> = store.bodies(&bodies, &body_ix, &settings_facts, &|i| {
-        let site = input.sites.site();
-        body_facts(m, &shared, &*site, bodies[i], &statements(bodies[i]))
-    });
-    let mut call_tree: HashMap<ProcId, Vec<(ProcId, Where, bool)>> = HashMap::new();
-    let mut sleeping = Violations::default();
-    let mut impure = Violations::default();
-    let mut waitfor: HashSet<ProcId> = HashSet::new();
-    let mut used_kwargs: BTreeMap<String, KwargInfo> = BTreeMap::new();
-    for (&p, f) in bodies.iter().zip(facts) {
-        for d in f.diagnostics {
+    /// Registers what the passes found to `context`, in the order DreamChecker registers it.
+    pub fn register(&self, context: &Context) {
+        for d in self.var_defs.iter().chain(&self.settings_diags).chain(self.diags.iter().flatten()).chain(&self.overrides.diags).chain(self.call_tree.diags()) {
             context.register_error(d.error());
         }
-        if !f.calls.is_empty() {
-            call_tree.entry(p).or_default().extend(f.calls);
-        }
-        if !f.sleeps.is_empty() {
-            sleeping.violators.entry(p).or_default().extend(f.sleeps);
-        }
-        if !f.impure.is_empty() {
-            impure.violators.entry(p).or_default().extend(f.impure);
-        }
-        if f.waitfor {
-            waitfor.insert(p);
-        }
-        for (key, proc_location, name, location) in f.kwargs {
-            used_kwargs
-                .entry(key)
-                .or_insert_with(|| KwargInfo { location: proc_location, ..Default::default() })
-                .called_at
-                .entry(name)
-                .and_modify(|c| c.others += 1)
-                .or_insert(CalledAt { location, others: 0 });
-        }
     }
-    lap("bodies");
 
-    cli_println!(cli, "============================================================");
-    cli_println!(cli, "Analyzing proc override validity...\n");
-    let kw_site = input.sites.site();
-    let mut sleeping_overrides: HashMap<ProcId, Vec<ProcId>> = HashMap::new();
-    let mut impure_overrides: HashMap<ProcId, Vec<ProcId>> = HashMap::new();
-    for &p in &procs {
-        // Keyword arguments an override is missing.
-        let names: HashSet<&str> = m.value(p).parameters.iter().map(|x| x.name.as_str()).collect();
-        let mut next = m.parent_proc(p);
-        while let Some(current) = next {
-            if let Some(kwargs) = used_kwargs.get_mut(&m.proc_display(current)) {
-                let missing: Vec<String> = kwargs.called_at.keys().filter(|k| !names.contains(k.as_str())).cloned().collect();
-                if !missing.is_empty() {
-                    kwargs.bad_overrides_at.insert(m.ty(p.ty).path.clone(), BadOverride { missing, location: kw_site.place(m.value(p).location) });
+    /// Every diagnostic, in registration order.
+    pub fn diagnostics(&self) -> Vec<Diag> {
+        self.var_defs.iter().chain(&self.settings_diags).chain(self.diags.iter().flatten()).chain(&self.overrides.diags).chain(self.call_tree.diags()).cloned().collect()
+    }
+
+    /// What is kept, by size (for the traces).
+    pub fn stats(&self) -> String {
+        let calls: usize = self.fold.call_tree.values().map(Vec::len).sum();
+        let reads: usize = self.call_tree.units.iter().map(|u| u.reads.len()).sum();
+        format!(
+            "{} procs, {} bodies, {} calls folded, {} call-tree findings reading {} procs, reach sets {}/{}/{}",
+            self.procs.len(),
+            self.bodies.len(),
+            calls,
+            self.call_tree.units.len(),
+            reads,
+            self.call_tree.reach.can_sleep.len(),
+            self.call_tree.reach.sleeps_in_context.len(),
+            self.call_tree.reach.can_be_impure.len()
+        )
+    }
+
+    /// The body occurrences of the procs with bodies, in order (a host maps an edit's bodies to positions with it).
+    pub fn body_occurrences(&self) -> &[u32] {
+        &self.body_ix
+    }
+
+    /// Brings a kept run up to `input`, a revision with the same declarations (the same model but for places) whose bodies at the
+    /// positions `changed` changed. `shift(i)` is how far body position `i` moved in the expanded text; `relocate` moves a location
+    /// of the kept revision to this one, or refuses (`false`: a line the edit changed). What a refused location belongs to is
+    /// computed again: a proc's settings and walk, the var definitions, the override or call-tree pass. `Err` when the edit reaches
+    /// what this does not update (a proc's settings changed, a setting's place cannot be moved): the caller computes a new run.
+    pub fn update(
+        &mut self,
+        input: &CheckerInput<'_>,
+        changed: &[usize],
+        shift: &(dyn Fn(usize) -> isize + Sync),
+        relocate: &(dyn Fn(&mut Location) -> bool + Sync),
+        threads: usize,
+    ) -> Result<Updated, String> {
+        let m = &input.model;
+        let mut out = Updated::default();
+        let mut lap = std::time::Instant::now();
+        let mut took = move || {
+            let t = lap.elapsed();
+            lap = std::time::Instant::now();
+            t
+        };
+        let moved = |l: &mut Location| relocate(l);
+        let all_moved = |d: &mut [Diag]| {
+            let mut ok = true;
+            for x in d.iter_mut() {
+                x.map_locations(&mut |l| ok &= moved(l));
+            }
+            ok
+        };
+        // What is kept apart from any one proc.
+        if !all_moved(&mut self.settings_diags) {
+            return Err("a settings diagnostic sits on an edited line".into());
+        }
+        let mut directives_ok = true;
+        self.shared.directives.map_locations(&mut |l| directives_ok &= moved(l));
+        if !directives_ok {
+            return Err("a directive sits on an edited line".into());
+        }
+        out.var_defs = !all_moved(&mut self.var_defs);
+        out.kwargs = !all_moved(&mut self.overrides.diags);
+        // A finding holding a location the edit changed is judged again.
+        let mut unmoved: Vec<bool> = self.call_tree.units.iter_mut().map(|u| !moved(&mut u.location) | !all_moved(&mut u.diags)).collect();
+        // The procs whose results must be computed again: the changed ones and those holding a location the edit changed.
+        let mut again: Vec<bool> = vec![false; self.bodies.len()];
+        for &i in changed {
+            if let Some(a) = again.get_mut(i) {
+                *a = true;
+            }
+        }
+        for i in 0..self.bodies.len() {
+            let mut ok = true;
+            self.settings_facts[i].map_locations(&mut |l| ok &= moved(l));
+            ok &= all_moved(&mut self.diags[i]);
+            if !ok {
+                again[i] = true;
+            }
+        }
+        for (&i, list) in self.fold.kwargs.iter_mut() {
+            for (_, l, _, _) in list.iter_mut() {
+                if !moved(l) {
+                    again[i] = true;
                 }
             }
-            next = m.parent_proc(current);
         }
-        // Violations up the inheritance chain (New() propagates through ..() and is left out).
-        if m.proc_name(p) != "New" {
-            for (violations, overrides) in [(&sleeping, &mut sleeping_overrides), (&impure, &mut impure_overrides)] {
+        out.relocate = took();
+        // The folded places are relative to their proc's body: only the starts move.
+        for (i, start) in self.fold.starts.iter_mut().enumerate() {
+            *start = start.wrapping_add_signed(shift(i));
+        }
+        out.shift = took();
+        // Computed again: settings first (a changed one ends the update), then the walks.
+        let positions: Vec<usize> = (0..self.bodies.len()).filter(|&i| again[i]).collect();
+        out.recomputed = positions.len();
+        let bodies = &self.bodies;
+        let fresh: Vec<SettingsFacts> = parallel_map(&positions, threads, |&i| {
+            let site = input.sites.site();
+            settings_facts(m, &*site, bodies[i], &statements_of(input, bodies[i]))
+        });
+        for (&i, f) in positions.iter().zip(&fresh) {
+            if *f != self.settings_facts[i] {
+                return Err(format!("the settings of {} changed", m.proc_display(bodies[i])));
+            }
+        }
+        let shared = &self.shared;
+        let walked: Vec<ProcFacts> = parallel_map(&positions, threads, |&i| {
+            let site = input.sites.site();
+            body_facts(m, shared, &*site, bodies[i], &statements_of(input, bodies[i]))
+        });
+        // The procs whose calls, blocking or impure operations or `waitfor` changed (what the call-tree findings read), and whether
+        // any keyword arguments did.
+        let mut changed_calls: HashSet<ProcId> = HashSet::new();
+        for (&i, f) in positions.iter().zip(walked) {
+            let shape = shape_of(&f);
+            let p = self.bodies[i];
+            if shape.calls != self.shapes[i].calls {
+                changed_calls.insert(p);
+            }
+            out.kwargs |= shape.kwargs != self.shapes[i].kwargs;
+            self.shapes[i] = shape;
+            self.fold.put(i, p, f.calls, f.sleeps, f.impure, f.waitfor, f.kwargs);
+            self.diags[i] = f.diagnostics;
+        }
+        out.walks = took();
+        if out.var_defs {
+            self.var_defs = captured(|c| check_var_defs(m, c, &*input.sites.site()));
+        }
+        // Keyword arguments: the check reads every override chain, so it runs again when any proc's keyword arguments changed (or a
+        // diagnostic of it sat on an edited line); else it found the same, at the places relocated above.
+        if out.kwargs {
+            self.overrides.diags = Overrides::kwargs(m, &self.procs, &self.fold, &*input.sites.site());
+        }
+        // Violations up the inheritance chains (cheap: only the violators' chains), then the call-tree findings whose reads changed:
+        // a proc with other calls or violations, one whose override lists changed, one that entered or left a reach set.
+        if !changed_calls.is_empty() {
+            let (sleeping, impure) = Overrides::violations(m, &self.procs, &self.fold);
+            for (old, new) in [(&self.overrides.sleeping, &sleeping), (&self.overrides.impure, &impure)] {
+                for (p, list) in old.iter() {
+                    if new.get(p) != Some(list) {
+                        changed_calls.insert(*p);
+                    }
+                }
+                for p in new.keys() {
+                    if !old.contains_key(p) {
+                        changed_calls.insert(*p);
+                    }
+                }
+            }
+            self.overrides.sleeping = sleeping;
+            self.overrides.impure = impure;
+            let reach = Reach::compute(&self.fold, &self.overrides, &self.shared.directives);
+            reach.changed(&self.call_tree.reach, &mut changed_calls);
+            self.call_tree.reach = reach;
+        }
+        for (i, u) in self.call_tree.units.iter().enumerate() {
+            if changed_calls.contains(&u.proc) || u.reads.iter().any(|p| changed_calls.contains(p)) {
+                unmoved[i] = true;
+            }
+        }
+        let again: Vec<usize> = (0..unmoved.len()).filter(|&i| unmoved[i]).collect();
+        out.units = again.len();
+        out.of_units = unmoved.len();
+        self.call_tree.judge(m, input.sites, &self.fold, &self.overrides, &self.shared.directives, &again, threads);
+        out.passes = took();
+        Ok(out)
+    }
+}
+
+impl Fold {
+    /// A place of `owner`'s folded facts in the expanded text.
+    fn at(&self, owner: ProcId, w: Where) -> Where {
+        match self.position.get(&owner) {
+            Some(&i) => moved_by(w, self.starts[i] as isize),
+            None => w,
+        }
+    }
+
+    /// Body position `i` (proc `p`)'s facts, in place of what it held; their places are stored relative to its body.
+    #[allow(clippy::too_many_arguments)]
+    fn put(
+        &mut self,
+        i: usize,
+        p: ProcId,
+        calls: Vec<(ProcId, Where, bool)>,
+        sleeps: Vec<(String, Where)>,
+        impure: Vec<(String, Where)>,
+        waitfor: bool,
+        mut kwargs: Vec<(String, Location, String, Where)>,
+    ) {
+        let back = -(self.starts[i] as isize);
+        let mut calls = calls;
+        calls.iter_mut().for_each(|(_, w, _)| *w = moved_by(*w, back));
+        let relative = |mut v: Vec<(String, Where)>| {
+            v.iter_mut().for_each(|(_, w)| *w = moved_by(*w, back));
+            v
+        };
+        let (sleeps, impure) = (relative(sleeps), relative(impure));
+        kwargs.iter_mut().for_each(|(_, _, _, w)| *w = moved_by(*w, back));
+        let set = |map: &mut HashMap<ProcId, Vec<(String, Where)>>, v: Vec<(String, Where)>| {
+            if v.is_empty() {
+                map.remove(&p);
+            } else {
+                map.insert(p, v);
+            }
+        };
+        set(&mut self.sleeping.violators, sleeps);
+        set(&mut self.impure.violators, impure);
+        if calls.is_empty() {
+            self.call_tree.remove(&p);
+        } else {
+            self.call_tree.insert(p, calls);
+        }
+        if waitfor {
+            self.waitfor.insert(p);
+        } else {
+            self.waitfor.remove(&p);
+        }
+        if kwargs.is_empty() {
+            self.kwargs.remove(&i);
+        } else {
+            self.kwargs.insert(i, kwargs);
+        }
+    }
+
+    /// The keyword arguments by callee key, folded in body order (the first call names the place).
+    fn used_kwargs(&self) -> BTreeMap<String, KwargInfo> {
+        let mut used: BTreeMap<String, KwargInfo> = BTreeMap::new();
+        for (&i, list) in self.kwargs.iter() {
+            for (key, proc_location, name, location) in list {
+                used.entry(key.clone())
+                    .or_insert_with(|| KwargInfo { location: *proc_location, ..Default::default() })
+                    .called_at
+                    .entry(name.clone())
+                    .and_modify(|c| c.others += 1)
+                    .or_insert(CalledAt { location: moved_by(*location, self.starts[i] as isize), others: 0 });
+            }
+        }
+        used
+    }
+}
+
+impl Overrides {
+    /// The violations up each inheritance chain (`New()` propagates through `..()` and is left out), each list in proc order.
+    fn violations(m: &Model, procs: &[ProcId], fold: &Fold) -> (HashMap<ProcId, Vec<ProcId>>, HashMap<ProcId, Vec<ProcId>>) {
+        let mut sleeping: HashMap<ProcId, Vec<ProcId>> = HashMap::new();
+        let mut impure: HashMap<ProcId, Vec<ProcId>> = HashMap::new();
+        for &p in procs {
+            if m.proc_name(p) == "New" {
+                continue;
+            }
+            for (violations, overrides) in [(&fold.sleeping, &mut sleeping), (&fold.impure, &mut impure)] {
                 if violations.violators.contains_key(&p) {
                     let mut next = m.parent_proc(p);
                     while let Some(current) = next {
@@ -622,66 +1062,111 @@ pub fn run(context: &Context, input: &CheckerInput<'_>, cli: bool, store: &dyn S
                 }
             }
         }
+        (sleeping, impure)
     }
-    for (base, info) in used_kwargs.iter() {
-        if info.bad_overrides_at.is_empty() {
-            continue;
-        }
-        let msg = match info.bad_overrides_at.len() {
-            1 => format!("an override of {base} is missing keyword args"),
-            len => format!("{len} overrides of {base} are missing keyword args"),
-        };
-        let mut e = error(info.location, msg).with_errortype("override_missing_keyword_arg");
-        let mut missing = HashSet::new();
-        for (child, bad) in info.bad_overrides_at.iter() {
-            e.add_note(bad.location, format!("{} is missing \"{}\"", child, bad.missing.join("\", \"")));
-            missing.extend(bad.missing.iter());
-        }
-        for (arg, called) in info.called_at.iter() {
-            if !missing.contains(arg) {
-                continue;
-            }
-            if called.others > 0 {
-                e.add_note(kw_site.place(called.location), format!("called with {:?} here, and {} other places", arg, called.others));
-            } else {
-                e.add_note(kw_site.place(called.location), format!("called with {arg:?} here"));
-            }
-        }
-        e.register(context);
-    }
-    lap("overrides");
 
-    cli_println!(cli, "============================================================");
-    cli_println!(cli, "Analyzing proc call tree...\n");
-    let d = &shared.directives;
-    let exempt = |p: ProcId| !waitfor.contains(&p) && d.sleep_exempt.get(p).is_none();
-    let tables = CallTables {
-        model: m,
-        sites: input.sites,
-        call_tree: &call_tree,
-        waitfor_procs: &waitfor,
-        sleep_exempt: &d.sleep_exempt,
-        sleeping_procs: &sleeping,
-        impure_procs: &impure,
-        sleeping_overrides: &sleeping_overrides,
-        impure_overrides: &impure_overrides,
-        can_sleep: reaching(&call_tree, sleeping.violators.keys().chain(sleeping_overrides.keys()).copied(), exempt, false),
-        sleeps_in_context: reaching(&call_tree, sleeping.violators.keys().chain(sleeping_overrides.keys()).copied().filter(|p| exempt(*p)), exempt, true),
-        can_be_impure: reaching(&call_tree, impure.violators.keys().chain(impure_overrides.keys()).copied(), |_| true, false),
-    };
-    let order_site = input.sites.site();
-    let in_order = |table: &ProcDirective| {
-        let mut v: Vec<(ProcId, Location)> = table.directive.iter().map(|(p, &(_, l))| (*p, l)).collect();
-        v.sort_by_key(|(p, l)| (order_site.place(m.value(*p).location), *l, m.proc_display(*p)));
-        v
-    };
-    let sleep = in_order(&d.must_not_sleep);
-    let pure = in_order(&d.must_be_pure);
-    for e in parallel_map(&sleep, threads, |&(p, l)| tables.sleep_findings(p, l)).into_iter().flatten() {
-        e.register(context);
+    /// The keyword arguments overrides are missing, as diagnostics.
+    fn kwargs(m: &Model, procs: &[ProcId], fold: &Fold, kw_site: &dyn Site) -> Vec<Diag> {
+        let mut used_kwargs = fold.used_kwargs();
+        if used_kwargs.is_empty() {
+            return Vec::new();
+        }
+        for &p in procs {
+            let names: HashSet<&str> = m.value(p).parameters.iter().map(|x| x.name.as_str()).collect();
+            let mut next = m.parent_proc(p);
+            while let Some(current) = next {
+                if let Some(kwargs) = used_kwargs.get_mut(&m.proc_display(current)) {
+                    let missing: Vec<String> = kwargs.called_at.keys().filter(|k| !names.contains(k.as_str())).cloned().collect();
+                    if !missing.is_empty() {
+                        kwargs.bad_overrides_at.insert(m.ty(p.ty).path.clone(), BadOverride { missing, location: kw_site.place(m.value(p).location) });
+                    }
+                }
+                next = m.parent_proc(current);
+            }
+        }
+        captured(|context| {
+            for (base, info) in used_kwargs.iter() {
+                if info.bad_overrides_at.is_empty() {
+                    continue;
+                }
+                let msg = match info.bad_overrides_at.len() {
+                    1 => format!("an override of {base} is missing keyword args"),
+                    len => format!("{len} overrides of {base} are missing keyword args"),
+                };
+                let mut e = error(info.location, msg).with_errortype("override_missing_keyword_arg");
+                let mut missing = HashSet::new();
+                for (child, bad) in info.bad_overrides_at.iter() {
+                    e.add_note(bad.location, format!("{} is missing \"{}\"", child, bad.missing.join("\", \"")));
+                    missing.extend(bad.missing.iter());
+                }
+                for (arg, called) in info.called_at.iter() {
+                    if !missing.contains(arg) {
+                        continue;
+                    }
+                    if called.others > 0 {
+                        e.add_note(kw_site.place(called.location), format!("called with {:?} here, and {} other places", arg, called.others));
+                    } else {
+                        e.add_note(kw_site.place(called.location), format!("called with {arg:?} here"));
+                    }
+                }
+                e.register(context);
+            }
+        })
     }
-    for e in parallel_map(&pure, threads, |&(p, l)| tables.pure_findings(p, l)).into_iter().flatten() {
-        e.register(context);
-    }
-    lap("call tree");
 }
+
+impl CallTree {
+    fn diags(&self) -> impl Iterator<Item = &Diag> {
+        self.units.iter().flat_map(|u| u.diags.iter())
+    }
+
+    /// The call-tree pass: what each `SpacemanDMM_should_not_sleep` and `SpacemanDMM_should_be_pure` proc reaches.
+    fn compute(m: &Model, sites: &dyn Sites, fold: &Fold, overrides: &Overrides, d: &Directives, threads: usize) -> CallTree {
+        let order_site = sites.site();
+        let in_order = |table: &ProcDirective, pure: bool| {
+            let mut v: Vec<(ProcId, Location)> = table.directive.iter().map(|(p, &(_, l))| (*p, l)).collect();
+            v.sort_by_key(|(p, l)| (order_site.place(m.value(*p).location), *l, m.proc_display(*p)));
+            v.into_iter().map(move |(proc, location)| Unit { proc, location, pure, diags: Vec::new(), reads: Vec::new() })
+        };
+        let units: Vec<Unit> = in_order(&d.must_not_sleep, false).chain(in_order(&d.must_be_pure, true)).collect();
+        let mut tree = CallTree { reach: Reach::compute(fold, overrides, d), units };
+        let all: Vec<usize> = (0..tree.units.len()).collect();
+        tree.judge(m, sites, fold, overrides, d, &all, threads);
+        tree
+    }
+
+    /// Judges the units at `which` again.
+    #[allow(clippy::too_many_arguments)]
+    fn judge(&mut self, m: &Model, sites: &dyn Sites, fold: &Fold, overrides: &Overrides, d: &Directives, which: &[usize], threads: usize) {
+        if which.is_empty() {
+            return;
+        }
+        let tables = CallTables {
+            model: m,
+            fold,
+            sites,
+            call_tree: &fold.call_tree,
+            waitfor_procs: &fold.waitfor,
+            sleep_exempt: &d.sleep_exempt,
+            sleeping_procs: &fold.sleeping,
+            impure_procs: &fold.impure,
+            sleeping_overrides: &overrides.sleeping,
+            impure_overrides: &overrides.impure,
+            reach: &self.reach,
+        };
+        let units = &self.units;
+        let judged: Vec<(Vec<Diag>, Vec<ProcId>)> = parallel_map(which, threads, |&i| {
+            let u = &units[i];
+            let mut reads = Vec::new();
+            let found = if u.pure { tables.pure_findings(u.proc, u.location, &mut reads) } else { tables.sleep_findings(u.proc, u.location, &mut reads) };
+            reads.sort_unstable();
+            reads.dedup();
+            (found.iter().map(Diag::of).collect(), reads)
+        });
+        for (&i, (diags, reads)) in which.iter().zip(judged) {
+            self.units[i].diags = diags;
+            self.units[i].reads = reads;
+        }
+    }
+}
+

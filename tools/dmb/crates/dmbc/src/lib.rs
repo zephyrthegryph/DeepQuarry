@@ -9,6 +9,7 @@ pub mod syntax_coverage;
 pub mod analysis_frontend;
 pub mod analysis_tree;
 pub mod dreamchecker_input;
+mod dreamchecker_delta;
 pub mod cache_flush;
 pub mod cache_maintenance;
 mod callable_warnings;

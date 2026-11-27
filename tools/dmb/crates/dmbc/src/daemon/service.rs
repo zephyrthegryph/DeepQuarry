@@ -1532,6 +1532,25 @@ pub(crate) fn hosted_sources_token(project: &std::path::Path) -> Option<u64> {
     Some(sources.token())
 }
 
+/// What changed in the analysis session of `dme` under `defines` from front end revision `base` to the one it remembers
+/// (`RetainedSemanticTree::changes_since`): `None` outside a daemon, or when the chain of deltas does not reach back to `base`.
+pub(crate) fn hosted_changes_since(
+    dme: &std::path::Path,
+    defines: &BTreeMap<String, String>,
+    base: u64,
+) -> Option<dm_tree::frontend::FrontendDelta> {
+    let shared = HOSTED.get()?;
+    let project = if dme.is_absolute() { dme.to_path_buf() } else { dq_hostio::current_dir().ok()?.join(dme) };
+    let project: std::path::PathBuf = project.components().filter(|c| !matches!(c, std::path::Component::CurDir)).collect();
+    let key = SessionKey { manifest: session_root(project.clone()), engine: None, bootstrap: true };
+    let slot = shared.slot_keyed(key);
+    let _serial = slot.request_serial.lock().unwrap_or_else(|e| e.into_inner());
+    let host = slot.host.lock().unwrap_or_else(|e| e.into_inner());
+    let state = host.semantic_state()?;
+    state.previous_frontend(&project, defines)?;
+    state.changes_since(base)
+}
+
 /// The front end of `dme` under `defines`, from the retained session compiles of that root use (`Slot::host`): the session keeps
 /// the analysis define set as one more variant, so an analysis request after a body edit adopts the previous revision's unchanged
 /// include subtrees and regions and splices the declarations instead of building the front end from scratch. `None` outside a

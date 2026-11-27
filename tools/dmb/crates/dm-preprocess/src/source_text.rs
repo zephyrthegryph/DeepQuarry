@@ -43,12 +43,26 @@ pub struct WeakSourceText {
     backing: Weak<Backing>,
     range: Range<usize>,
 }
+impl fmt::Debug for WeakSourceText {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "WeakSourceText({:p}, {:?})", Weak::as_ptr(&self.backing), self.range)
+    }
+}
 impl WeakSourceText {
     pub fn upgrade(&self) -> Option<SourceText> {
         Some(SourceText {
             backing: self.backing.upgrade()?,
             range: self.range.clone(),
         })
+    }
+    /// Whether `text` is this exact view of the same storage (`SourceText::same_view`), without upgrading. A weak reference keeps
+    /// its allocation, so the address cannot have been reused by other text while this exists.
+    pub fn is_view_of(&self, text: &SourceText) -> bool {
+        std::ptr::eq(Weak::as_ptr(&self.backing), Arc::as_ptr(&text.backing)) && self.range == text.range
+    }
+    /// Whether both are the same view of the same storage.
+    pub fn same_storage(&self, other: &Self) -> bool {
+        Weak::ptr_eq(&self.backing, &other.backing) && self.range == other.range
     }
 }
 /// Borrow actual backing allocations for a deduplicated retained-owner census.
@@ -214,7 +228,9 @@ impl fmt::Debug for SourceText {
 }
 impl PartialEq for SourceText {
     fn eq(&self, other: &Self) -> bool {
-        self.as_str() == other.as_str()
+        // The same view of the same storage is the same text: no byte compare (an unchanged region's output piece is shared
+        // between revisions, so the grammar roster's answer compare is O(pieces), not O(bytes)).
+        self.same_view(other) || self.as_str() == other.as_str()
     }
 }
 impl Eq for SourceText {}
