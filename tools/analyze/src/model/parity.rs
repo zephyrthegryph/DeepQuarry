@@ -174,7 +174,7 @@ pub fn run(sem: &Sem, model: &Model) -> usize {
             tallies.entry("type present").or_default().check(false, || format!("{}: only native (synthetic {})", ty.path(), ty.synthetic()));
         }
     }
-    let mut total = 0;
+    let mut total = super::body_parity::run(sem, model, examples_per());
     for (name, t) in &tallies {
         total += t.differ;
         println!("{name:<22} {:>8} compared {:>7} differ", t.compared, t.differ);

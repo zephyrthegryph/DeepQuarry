@@ -8,7 +8,10 @@
 //! Until the cutover the view is built beside the converted dreammaker tree (`DQ_ANALYZE_PARSE=dmbc`); [`parity`] compares the two
 //! (`analyze sem model-parity`), the converted tree being the oracle for what every lint reads today.
 
+pub mod body_parity;
 pub mod builtins;
+pub mod expr;
+pub mod walk;
 pub mod parity;
 
 use std::collections::HashMap;
@@ -26,6 +29,8 @@ pub struct Site(pub u32);
 /// The front end's declarations, typed bodies and sites, indexed for analysis.
 pub struct Model {
     rev: FrontendRevision,
+    /// Each proc's typed body (the compiler's own parse, once per revision), by member.
+    bodies: std::sync::OnceLock<HashMap<MemberId, Arc<dm_tree::frontend::StatementBody>>>,
     root: PathBuf,
     /// Type path text by `TypeId` (`/` for the root).
     paths: Vec<Arc<str>>,
@@ -101,6 +106,7 @@ impl Model {
             type_blocks(chunk.items(), "/", &mut sites);
         }
         let model = Model {
+            bodies: std::sync::OnceLock::new(),
             rev,
             root: root.to_path_buf(),
             paths,
@@ -122,6 +128,25 @@ impl Model {
             );
         }
         model
+    }
+
+    fn bodies(&self) -> &HashMap<MemberId, Arc<dm_tree::frontend::StatementBody>> {
+        self.bodies.get_or_init(|| {
+            use rayon::prelude::*;
+            let started = std::time::Instant::now();
+            let arena = dm_tree::frontend::BodyArena::new_typed(&self.rev, |_| true);
+            let parsed: Vec<(MemberId, Option<Arc<dm_tree::frontend::StatementBody>>)> = self
+                .rev
+                .bodies
+                .par_iter()
+                .map(|o| (o.member, arena.take_parsed(o).ok().and_then(|b| b.shared_statement_body())))
+                .collect();
+            let map: HashMap<_, _> = parsed.into_iter().filter_map(|(m, b)| b.map(|b| (m, b))).collect();
+            if trace() {
+                eprintln!("analyze: model view: {} typed bodies parsed in {:.1?}", map.len(), started.elapsed());
+            }
+            map
+        })
     }
 
     pub fn frontend(&self) -> &ColdFrontend {
@@ -330,6 +355,11 @@ impl<'m> Member<'m> {
             }
         }
         Some(start)
+    }
+
+    /// The proc's typed body: none for a var, a builtin, or a body the compiler's parser rejected.
+    pub fn body(&self) -> Option<&'m [dm_syntax::Statement]> {
+        self.m.bodies().get(&self.id).map(|b| &b.parsed().statements[..])
     }
 
     /// The member's expanded header text (its declaration item, the body excluded).
