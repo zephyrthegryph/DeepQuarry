@@ -25,7 +25,7 @@ use dm_syntax::{Expr, Statement};
 
 use super::decls::{split_args, Decls};
 use super::Sem;
-use crate::model::expr::{self as mx, as_ident, chain, form, interp_parts, literal, strip_groups, Args, Chain, Form, Hop, Lit};
+use crate::model::expr::{self as mx, as_ident, chain, form, literal, strip_groups, Args, Chain, Form, Hop, Lit};
 use crate::model::procs::Proc;
 use crate::model::walk::{stmt_blocks, stmt_exprs, stmts, walk_block, ForInit, Stmt, VarDecl};
 use crate::model::Site;
@@ -1836,12 +1836,15 @@ impl<'a, 'e> Walk<'a, 'e> {
                 Lit::Float(n) => scalar(n.to_string()),
                 Lit::Null => scalar("null".to_string()),
                 // An interpolated string: its embedded expressions are read (their sites are relative to the token).
-                Lit::Interp(interp) => {
-                    for (part, _) in interp_parts(&interp, self.base + c.root_expr.span.start) {
-                        if let Some((e, at)) = part {
-                            let outer = std::mem::replace(&mut self.base, at);
-                            self.eval(fr, &e);
-                            self.base = outer;
+                Lit::Interp(_) => {
+                    if let Some(parts) = crate::model::expr::interpolation(text) {
+                        for part in parts.iter() {
+                            if let Some((e, at)) = &part.expr {
+                                let inner = self.base + c.root_expr.span.start + at;
+                                let outer = std::mem::replace(&mut self.base, inner);
+                                self.eval(fr, e);
+                                self.base = outer;
+                            }
                         }
                     }
                     Val::local(None)

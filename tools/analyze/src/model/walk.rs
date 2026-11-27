@@ -8,7 +8,7 @@
 
 use dm_syntax::{Expr, ExprKind, ForControl, ForInitializer, Statement, StatementKind, SwitchAlternative};
 
-use super::expr::{form, interp_parts, literal, Args, Chain, Form, Hop, Lit, Root};
+use super::expr::{form, Args, Chain, Form, Hop, Root};
 use super::Site;
 
 /// A `var/...` declaration: a local, a `for` binding, a C-style `for` initializer.
@@ -370,10 +370,10 @@ fn walk_chain(c: &Chain<'_>, base: usize, f: &mut dyn FnMut(&Visit<'_>)) {
             if !text.contains('[') {
                 return walk_hops(c, base, f);
             }
-            if let Lit::Interp(interp) = literal(text) {
-                for (part, _) in interp_parts(&interp, base + c.root_expr.span.start) {
-                    if let Some((e, at)) = part {
-                        walk_expr_at(&e, at, f);
+            if let Some(parts) = super::expr::interpolation(text) {
+                for part in parts.iter() {
+                    if let Some((e, at)) = &part.expr {
+                        walk_expr_at(e, base + c.root_expr.span.start + at, f);
                     }
                 }
             }

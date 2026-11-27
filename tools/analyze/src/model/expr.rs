@@ -460,6 +460,37 @@ pub fn interp_parts(interp: &dm_syntax::InterpString, at: usize) -> Vec<(Option<
         .collect()
 }
 
+/// One part of an interpolated string: its embedded expression (none for an empty or unparsable part) with the offset in the token its
+/// spans are relative to, and the text after it.
+pub struct InterpPart {
+    pub expr: Option<(Expr, usize)>,
+    pub text: String,
+}
+
+const INTERP_SHARDS: usize = 32;
+
+/// Every interpolated string token read so far, by its text: decoding the token and parsing its parts is a function of the text, and the
+/// walks meet the same tokens again and again (and the next model of the process the same ones).
+static INTERPOLATIONS: std::sync::LazyLock<Vec<std::sync::RwLock<std::collections::HashMap<Box<str>, Option<std::sync::Arc<Vec<InterpPart>>>>>>> =
+    std::sync::LazyLock::new(|| (0..INTERP_SHARDS).map(|_| Default::default()).collect());
+
+/// The parts of the string token `text` when it is an interpolated string (`"a[b]c"`), none for any other literal. Offsets are relative to
+/// the token's start.
+pub fn interpolation(text: &str) -> Option<std::sync::Arc<Vec<InterpPart>>> {
+    let shard = &INTERPOLATIONS[text.bytes().fold(0usize, |h, b| h.wrapping_mul(31).wrapping_add(b as usize)) & (INTERP_SHARDS - 1)];
+    if let Some(hit) = shard.read().unwrap_or_else(|e| e.into_inner()).get(text) {
+        return hit.clone();
+    }
+    let made = match literal(text) {
+        Lit::Interp(interp) => Some(std::sync::Arc::new(
+            interp_parts(&interp, 0).into_iter().map(|(expr, text)| InterpPart { expr, text }).collect::<Vec<_>>(),
+        )),
+        _ => None,
+    };
+    shard.write().unwrap_or_else(|e| e.into_inner()).insert(text.into(), made.clone());
+    made
+}
+
 /// `(e)` with every pair of parentheses taken off.
 pub fn strip_groups(mut e: &Expr) -> &Expr {
     while let ExprKind::Group(inner) = &e.kind {
