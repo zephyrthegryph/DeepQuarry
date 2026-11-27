@@ -794,12 +794,54 @@ impl crate::lint::Cx<'_> {
     }
 }
 
+/// The empty stubs a cold `gen` created for the generated includes (the generators overwrite every one of them).
+static BOOTSTRAP_STUBS: std::sync::Mutex<Vec<PathBuf>> = std::sync::Mutex::new(Vec::new());
+
+/// Names the stubs [`build_bootstrapping`] may declare missing types in (`analyze gen` sets them; empty for every other command).
+pub(crate) fn set_bootstrap_stubs(stubs: Vec<PathBuf>) {
+    *BOOTSTRAP_STUBS.lock().unwrap_or_else(|e| e.into_inner()) = stubs;
+}
+
+/// The type a refused model names as an invalid parent type (`"<path>: invalid parent type"` in the front end's refusal).
+fn missing_parent_type(error: &str) -> Option<String> {
+    let end = error.find(": invalid parent type")?;
+    let start = error[..end].rfind(|c: char| c == '"' || c.is_whitespace()).map_or(0, |i| i + 1);
+    let path = &error[start..end];
+    path.starts_with('/').then(|| path.to_string())
+}
+
+/// [`Sem::build`] for a cold `gen`: the generated files are still empty stubs, and a type only a generated file declares (an `ACTION()`
+/// type, an affliction family) is the `parent_type` of hand-written code, which the compiler's front end refuses as an invalid parent
+/// type. Each such type is declared bare in a stub (the generators overwrite every stub) and the model is built again.
+fn build_bootstrapping(root: &Path, tree: &Tree) -> Result<Sem, String> {
+    let mut declared: Vec<String> = Vec::new();
+    loop {
+        match Sem::build(root, tree) {
+            Err(e) => {
+                let stub = BOOTSTRAP_STUBS.lock().unwrap_or_else(|e| e.into_inner()).first().cloned();
+                let (Some(path), Some(stub)) = (missing_parent_type(&e), stub) else { return Err(e) };
+                if declared.contains(&path) {
+                    return Err(e);
+                }
+                if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
+                    eprintln!("analyze: gen: the generated files are not there yet; declaring {path} in {} for the first model", stub.display());
+                }
+                let mut text = std::fs::read_to_string(&stub).unwrap_or_default();
+                text.push_str(&format!("{path}\n"));
+                std::fs::write(&stub, text).map_err(|w| format!("{}: {w}", stub.display()))?;
+                declared.push(path);
+            }
+            ok => return ok,
+        }
+    }
+}
+
 /// The memoized semantic model of `tree`.
 pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
     let b = tree.memo("sem/model", || SemBox {
         sem: {
             walk_cache::prefetch();
-            match Sem::build(&tree.root, tree) {
+            match build_bootstrapping(&tree.root, tree) {
                 Ok(s) => Some(s),
                 Err(e) => {
                     eprintln!("analyze: semantic model unavailable: {}", e);
