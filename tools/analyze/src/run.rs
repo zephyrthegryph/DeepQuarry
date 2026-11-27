@@ -167,54 +167,34 @@ impl Engine {
         let meta = lint.meta();
         let scope = self.scopes.for_lint(meta.name, meta.group);
         let cx = Cx { tree: &self.tree, meta, scope: &scope };
-        let t_load = Instant::now();
-        let mut lc = self.cache.load_lint(meta.name);
-        LOAD_NS.fetch_add(t_load.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
+        let version = crate::cache::lint_version(meta.name);
         let mut timing = Timing::default();
         let mut sites = Vec::new();
         let mut notes = Vec::new();
         let mut allow_used: Vec<AllowUse> = Vec::new();
-        let mut dirty = false;
 
         if matches!(meta.scan, ScanKind::File | ScanKind::Both) {
             let files = cx.files();
             timing.files = files.len();
-            let results: Vec<(Sink, bool)> = files
-                .par_iter()
-                .map(|f| {
-                    if lc.clean.contains(&f.fkey) {
-                        return (Sink::new(), false);
-                    }
-                    if let Some(s) = lc.per_file.get(&f.fkey) {
-                        return (s.clone(), false);
-                    }
-                    let mut sink = Sink::new();
-                    sink.cur = f.rel.clone();
-                    lint.scan_file(&cx, f, &mut sink);
-                    (sink, true)
-                })
-                .collect();
-            let mut per_file = HashMap::new();
-            let mut clean = HashSet::new();
-            for (f, (sink, fresh)) in files.iter().zip(results) {
-                if fresh {
-                    timing.rescanned += 1;
-                    dirty = true;
-                }
-                sites.extend(sink.sites.iter().cloned());
-                notes.extend(sink.notes.iter().cloned());
-                allow_used.extend(sink.allow_used.iter().cloned());
-                if sink.sites.is_empty() && sink.allow_used.is_empty() && sink.notes.is_empty() {
-                    clean.insert(f.fkey);
-                } else {
-                    per_file.insert(f.fkey, sink);
-                }
+            let rescanned = std::sync::atomic::AtomicUsize::new(0);
+            let t_load = Instant::now();
+            let sinks: Vec<Sink> = crate::incr::facts(&format!("lint:{}|{}", meta.name, version), &files, |f| {
+                rescanned.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let mut sink = Sink::new();
+                sink.cur = f.rel.clone();
+                lint.scan_file(&cx, f, &mut sink);
+                sink.cur.clear();
+                sink
+            });
+            timing.rescanned = rescanned.into_inner();
+            if timing.rescanned == 0 {
+                LOAD_NS.fetch_add(t_load.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
             }
-            if per_file.len() != lc.per_file.len() || clean.len() != lc.clean.len() {
-                dirty = true;
+            for sink in sinks {
+                sites.extend(sink.sites);
+                notes.extend(sink.notes);
+                allow_used.extend(sink.allow_used);
             }
-            lc.per_file = per_file;
-            lc.clean = clean;
         }
 
         if matches!(meta.scan, ScanKind::Tree | ScanKind::Both) {
@@ -236,34 +216,25 @@ impl Engine {
                 }
             }
             let key = u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap());
-            let sink = match &lc.tree {
-                Some((k, s)) if *k == key => {
-                    timing.tree_memo_hit = true;
-                    s.clone()
+            let mut scanned = false;
+            let sink: Sink = crate::incr::cached(&format!("lint-tree:{}|{}", meta.name, version), key, || {
+                scanned = true;
+                let mut sink = Sink::new();
+                // Never from a rayon worker: the prewarm's own par_iter can steal a lint job that
+                // re-enters this call and waits on the cell this thread is initializing. run_all
+                // prewarms from the main thread (`prepare`) before it fans out.
+                if rayon::current_thread_index().is_none() && self.tree.fresh_count() > 64 {
+                    self.tree.prewarm();
                 }
-                _ => {
-                    let mut sink = Sink::new();
-                    // Never from a rayon worker: the prewarm's own par_iter can steal a lint job that
-                    // re-enters this call and waits on the cell this thread is initializing. run_all
-                    // prewarms from the main thread (`prepare`) before it fans out.
-                    if rayon::current_thread_index().is_none() && self.tree.fresh_count() > 64 {
-                        self.tree.prewarm();
-                    }
-                    lint.scan_tree(&cx, &mut sink);
-                    lc.tree = Some((key, sink.clone()));
-                    dirty = true;
-                    sink
-                }
-            };
+                lint.scan_tree(&cx, &mut sink);
+                sink
+            });
+            timing.tree_memo_hit = !scanned;
             sites.extend(sink.sites);
             notes.extend(sink.notes);
             allow_used.extend(sink.allow_used);
         }
 
-        if dirty {
-            lc.dirty = true;
-            self.cache.save_lint(meta.name, &lc);
-        }
         timing.total = t0.elapsed();
         (Run { sites, notes }, allow_used, timing)
     }
@@ -443,7 +414,7 @@ impl Engine {
             self.tree.save_line_cache(&dir.join("linetext.bin"), self.cache.stamp());
         }
         if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
-            eprintln!("analyze: lint cache loads {:.1}ms (summed over threads)", LOAD_NS.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e6);
+            eprintln!("analyze: lint results served whole {:.1}ms (summed over threads)", LOAD_NS.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e6);
         }
         outcomes
     }

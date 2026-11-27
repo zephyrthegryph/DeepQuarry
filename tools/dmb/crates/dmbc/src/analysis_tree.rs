@@ -387,7 +387,7 @@ pub struct FeedStats {
 pub type Locator<'a> = dyn Fn() -> Box<dyn FnMut(usize) -> Location + 'a> + Sync + 'a;
 
 /// What one declaration contributes to the tree, computed away from the builder so the work runs on many threads.
-#[derive(PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 enum Prepared {
     Var { location: Location, type_parts: Vec<String>, value: Option<Expression>, input: Option<InputType>, spaceman: VarTypeFlags },
     Override { location: Location, value: Option<Expression> },
@@ -407,14 +407,14 @@ pub struct CacheKeys {
 }
 
 /// One converted declaration as it is remembered.
-#[derive(Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 struct DeclarationResult {
     prepared: Option<Prepared>,
     failures: usize,
 }
 
 /// One converted body as it is remembered.
-#[derive(Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 struct BodyResult {
     block: Option<Block>,
     error: Option<(Location, String)>,

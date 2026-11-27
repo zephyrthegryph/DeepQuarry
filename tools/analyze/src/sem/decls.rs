@@ -321,7 +321,7 @@ impl Decls {
 }
 
 /// The on-disk form of a [`FileDecls`] (a marker's shared line table is stored once per file).
-#[derive(serde::Serialize, serde::Deserialize, Default, PartialEq)]
+#[derive(Clone, serde::Serialize, serde::Deserialize, Default, PartialEq)]
 struct Stored {
     key_refs: Vec<(u8, String, String, String, u32)>,
     bad_sources: Vec<(String, u32, String)>,

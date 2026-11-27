@@ -123,7 +123,7 @@ fn owned_vars_of(f: &SourceFile) -> Vec<String> {
     names.into_iter().collect()
 }
 
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Owned {
     names: Vec<String>,
 }

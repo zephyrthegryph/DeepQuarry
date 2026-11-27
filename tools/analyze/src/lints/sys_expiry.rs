@@ -131,7 +131,7 @@ fn pass_compares(f: &SourceFile, stamp: Option<&Pat>) -> Vec<usize> {
     out
 }
 
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Writes {
     declared: Vec<String>,
     writes: Vec<usize>,

@@ -380,6 +380,13 @@ pub fn shed_hosted() -> bool {
     true
 }
 
+/// Drops the analysis stores held in memory (idle, or short of memory; their slots are on disk after every run). False when a
+/// request is running or nothing was held.
+pub fn shed_stores() -> bool {
+    let Ok(_one) = HOSTED.try_lock() else { return false };
+    crate::incr::shed() > 0
+}
+
 /// Whether anything is read ahead.
 pub fn hosted_resident() -> bool {
     HOSTED_ROOT.lock().unwrap_or_else(|e| e.into_inner()).is_some()
@@ -388,7 +395,12 @@ pub fn hosted_resident() -> bool {
 /// One run of `argv`, with the end-of-run work.
 fn run_all(argv: Vec<String>) -> u8 {
     let code = real_main(argv);
-    // Hand the cache files this run rewrote to the other worktrees (src/shared.rs).
+    // The query stores' changed slots go to disk (src/incr.rs), then the cache files this run rewrote to the other worktrees
+    // (src/shared.rs).
+    crate::incr::flush();
+    if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {
+        eprintln!("analyze: {}", crate::incr::stats());
+    }
     crate::shared::publish();
     crate::sem::model_store::finish();
     crate::sem::walk_cache::finish();

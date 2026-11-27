@@ -42,14 +42,14 @@ static META: Meta = Meta {
 struct CapBits;
 
 /// What one line of a file contributes: a `#define CAP_x (1<<n)` and/or a raw `cap_state` write.
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 struct Ev {
     line: u32,
     define: Option<(String, u128)>,
     raw_write: bool,
 }
 
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     events: Vec<Ev>,
 }

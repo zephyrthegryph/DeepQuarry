@@ -129,7 +129,7 @@ struct Problem {
 const LINE_CHECKS: [&str; 3] = ["removed", "callback", "handle"];
 
 /// What the accessor-usage pass finds in one file (kinds: 0 OWN, 1 REL link, 2 PROTO, 3 SHARED, 4 REL writer).
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct UsageScan {
     /// `(var name, kind index, receiver type or "", line)` in discovery order
     events: Vec<(String, u8, String, u32)>,
@@ -138,7 +138,7 @@ struct UsageScan {
 }
 
 /// One file's index-independent per-line results (`string_name`, `removed`, `callback`, `handle`).
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Content {
     string_name: Vec<(u32, String)>,
     /// `(LINE_CHECKS index, line, message)`
@@ -147,7 +147,7 @@ struct Content {
 }
 
 /// One file's `raw_write` results.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct RawOut {
     lines: Vec<(u32, String)>,
     uses: Vec<AllowUse>,

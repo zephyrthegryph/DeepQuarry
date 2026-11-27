@@ -167,7 +167,7 @@ fn scan_file(f: &SourceFile, fed: &HashSet<String>, named: &HashSet<String>, out
 
 /// One file's contribution to the shared context: the names it feeds to a sound call, and (for
 /// `code/defines/host/sfx.dm` only) the named-set ids.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     fed: Vec<String>,
     named: Vec<String>,

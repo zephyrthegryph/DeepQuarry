@@ -74,8 +74,9 @@ age_days = 14
 mtime_file = .used
 
 [cache.analysis]
-# The dmbc daemon's analysis_results slots (tools/dmb/crates/dmbc/src/daemon/analysis_store.rs): one file per (lint store, version
-# stamp), rewritten after a hosted request that changed it, read back by a restarted daemon. Content-keyed; a lost file is a miss.
+# The dmbc daemon's analysis stores, one directory per binary image: the query stores' slots (tools/analyze/src/incr.rs, one
+# persist-*.bin per (store, stamp), rewritten after a hosted run that changed it) and remembered answers (answer-*.bin,
+# tools/dmb/crates/dmbc/src/daemon/analysis_db.rs), read back by a restarted daemon. Content-keyed; a lost file is a miss.
 squeeze = no
 policy = files-lru
 cap_gb = 2

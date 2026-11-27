@@ -15,7 +15,7 @@
 use super::{lifecycle_deadline, protocol, transport};
 use serde::{Deserialize, Serialize};
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 #[derive(Serialize, Deserialize)]
@@ -179,12 +179,10 @@ pub(super) fn serve(stream: &mut transport::Stream, request: AnalyzeRequest) -> 
     let runner = std::thread::Builder::new()
         .name("analyze-host".into())
         .spawn(move || {
-            // The daemon-wide analysis store backs `incr` on this hosted path (analysis_store.rs).
-            let store = super::analysis_store::started();
-            store.begin(std::path::Path::new(&cwd));
+            host_stores();
             let shown = std::path::Path::new(&cwd).display().to_string();
             let code = dq_analyze::cli::run_hosted(argv, env, cwd, sink).code;
-            eprintln!("dmbc pid={} root={}: {}", std::process::id(), shown, store.end());
+            eprintln!("dmbc pid={} root={}: {}", std::process::id(), shown, dq_analyze::incr::stats());
             code
         })
         .map_err(io::Error::other)?;
@@ -253,11 +251,10 @@ pub(super) fn run_request(
             c.1.extend_from_slice(bytes)
         }
     });
-    let store = super::analysis_store::started();
-    store.begin(&cwd);
+    host_stores();
     let shown = cwd.display().to_string();
     let done = dq_analyze::cli::run_hosted(argv, env, cwd, sink);
-    eprintln!("dmbc pid={} root={}: {}", std::process::id(), shown, store.end());
+    eprintln!("dmbc pid={} root={}: {}", std::process::id(), shown, dq_analyze::incr::stats());
     let (out, err) = std::mem::take(&mut *collected.lock().unwrap_or_else(|e| e.into_inner()));
     (done, out, err)
 }
@@ -342,6 +339,44 @@ fn serve_remembered(
     answered
 }
 
+/// Where the analysis stores persist inside the daemon (`dq_analyze::incr`): one directory per binary image under
+/// `E:/dq-cache/analysis` (`DMB_ANALYSIS_DIR` moves it; `off`: the worktree's own cache directory, as standalone), bounded by
+/// `[cache.analysis]` in tools/ci/disk_budget.toml. Each image keeps its own: a persisted entry is valid only for the binary that
+/// wrote it (its stamp names the analyzer's sources, not the front end that builds the model). Answers persist there too
+/// (`analysis_db`).
+pub(super) fn stores_dir() -> Option<&'static Path> {
+    static DIR: std::sync::OnceLock<Option<PathBuf>> = std::sync::OnceLock::new();
+    DIR.get_or_init(|| {
+        let dir = match std::env::var("DMB_ANALYSIS_DIR") {
+            Ok(v) if v == "off" => None,
+            Ok(v) => Some(PathBuf::from(v)),
+            Err(_) => Some(PathBuf::from("E:/dq-cache/analysis")).filter(|p| p.parent().is_some_and(|d| d.is_dir())),
+        };
+        dir.map(|d| d.join(image_id()))
+    })
+    .as_deref()
+}
+
+/// A content hash of this executable (read once per process).
+fn image_id() -> String {
+    let bytes = std::env::current_exe().and_then(std::fs::read).unwrap_or_default();
+    format!("{:032x}", xxhash_rust::xxh3::xxh3_128(&bytes))
+}
+
+static STORES_HOSTED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
+
+/// The first hosted request makes the daemon the stores' host (they then persist in [`stores_dir`]).
+fn host_stores() {
+    STORES_HOSTED.get_or_init(|| dq_analyze::incr::set_persist_dir(stores_dir().map(Path::to_path_buf)));
+}
+
+/// The stores' usage for `SharedStore::report` (none before the first hosted request).
+pub(super) fn report_line() -> Option<String> {
+    STORES_HOSTED.get()?;
+    let (entries, bytes) = dq_analyze::incr::usage();
+    Some(format!("; analysis_results: entries={entries} ({bytes} B)"))
+}
+
 /// When the last analysis request started or finished.
 static LAST_REQUEST: std::sync::Mutex<Option<Instant>> = std::sync::Mutex::new(None);
 
@@ -362,6 +397,9 @@ fn start_shedder() {
                 let freed = super::analysis_model::shed();
                 if freed > 0 {
                     super::emit_stderr(format_args!("dmbd analyze: dropped the remembered models ({} MB)", freed >> 20));
+                }
+                if dq_analyze::cli::shed_stores() {
+                    super::emit_stderr(format_args!("dmbd analyze: dropped the analysis stores from memory (their slots stay on disk)"));
                 }
             }
             if !dq_analyze::cli::hosted_resident() {

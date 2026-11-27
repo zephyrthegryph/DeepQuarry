@@ -52,7 +52,7 @@ pub struct AllowUse {
 }
 
 /// What a scan produces.
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Sink {
     pub sites: Vec<Site>,
     pub allow_used: Vec<AllowUse>,
