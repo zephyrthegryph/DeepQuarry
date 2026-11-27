@@ -154,7 +154,8 @@ pub(super) fn write_member_queries(
     writer: &mut impl Write,
 ) -> Result<usize, ExportError> {
     let mut count = 0;
-    for (member, key) in tree.members().iter().zip(keys) {
+    // `keys` are in declaration order (tree_export).
+    for ((_, member), key) in tree.members_in_order().zip(keys) {
         let owner = tree
             .type_node(member.owner)
             .ok_or(ExportError::InvalidModel("unknown member owner"))?

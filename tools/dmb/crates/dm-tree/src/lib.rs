@@ -19,6 +19,8 @@ mod host_declaration_selection;
 pub mod initializers;
 pub mod maps;
 mod member_arena;
+pub mod member_order;
+pub use member_order::MemberOrder;
 mod member_binding;
 use member_binding::{MemberRead, MemberWrite};
 mod member_normalization;
@@ -130,7 +132,10 @@ pub enum Target {
 pub struct SemanticTree {
     symbols: Arc<SymbolTable>,
     types: Arc<[TypeNode]>,
+    /// Member storage by slot (`MemberId`); slot numbers are not declaration order.
     members: MemberArena,
+    /// Slots in declaration order: the one source of member declaration order.
+    member_order: MemberOrder,
     host_selections: Arc<host_declaration_selection::Selections>,
     member_callable_names: Arc<std::collections::BTreeMap<SymbolId, u8>>,
     owner_ancestry: Arc<std::collections::BTreeMap<SymbolId, Arc<[SymbolId]>>>,
@@ -275,8 +280,26 @@ impl SemanticTree {
     pub fn shared_types(&self) -> Arc<[TypeNode]> {
         Arc::clone(&self.types)
     }
+    /// Member storage by slot. Iterating it gives slot order, which is not
+    /// declaration order: walk `member_order()` (or `members_in_order()`) for that.
     pub fn members(&self) -> &MemberArena {
         &self.members
+    }
+    /// Member slots in declaration order.
+    pub fn member_order(&self) -> &MemberOrder {
+        &self.member_order
+    }
+    /// Number of declared members.
+    pub fn member_count(&self) -> usize {
+        self.member_order.len()
+    }
+    /// Members in declaration order, with their slots.
+    pub fn members_in_order(
+        &self,
+    ) -> impl DoubleEndedIterator<Item = (MemberId, &MemberNode)> + ExactSizeIterator + '_ {
+        self.member_order
+            .iter()
+            .map(|id| (id, &self.members[id.index()]))
     }
     pub fn type_node(&self, id: TypeId) -> Option<&TypeNode> {
         self.types.get(id.index())
@@ -621,6 +644,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         symbols: Arc::new(symbols),
         types: types.into(),
         members: MemberArena::default(),
+        member_order: MemberOrder::default(),
         host_selections: Arc::new(Default::default()),
         member_callable_names: Arc::new(Default::default()),
         owner_ancestry: Arc::new(Default::default()),
@@ -856,6 +880,13 @@ pub(crate) fn build_with_intrinsic_members_structural(
         Some((_, retained)) => retained.publish_members(&members, member_projection.as_ref()),
         None => members.bind_all(),
     };
+    tree.member_order = MemberOrder::identity(tree.members.len());
+    tree.declaration_targets = targets.into();
+    if let Some(seed) = member_order::shuffle::seed() {
+        tree.shuffle_member_slots(seed);
+        // Verification mode only (DMB_MEMBER_SLOT_SHUFFLE): say that it is in force.
+        eprintln!("dm-tree: member slots shuffled (seed {seed}, {} members)", tree.members.len());
+    }
     tree.refresh_member_callable_names();
     if rebuild_inventory {
         if let Some((index, retained)) = normalization {
@@ -864,7 +895,6 @@ pub(crate) fn build_with_intrinsic_members_structural(
             tree.rebuild_inventory();
         }
     }
-    tree.declaration_targets = targets.into();
     drop(publish_timer);
     let identity_profile = dm_profile::stage("frontend.tree.identity");
     tree.identity = if let Some((index, _)) = normalization {

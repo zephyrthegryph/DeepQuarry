@@ -20,7 +20,7 @@ pub fn write_roster_page(
     }
     let total = match roster {
         SemanticRoster::Types => tree.types().len(),
-        SemanticRoster::Members => tree.members().len(),
+        SemanticRoster::Members => tree.member_count(),
         SemanticRoster::Intrinsics => tree.intrinsic_members().len(),
     };
     let total = u32::try_from(total)
@@ -54,7 +54,8 @@ pub fn write_roster_page(
                     "storage_status":if member.shared_owner.is_some() {"shared"} else if member.instance_storage_proven {"instance"} else {"unknown"}})
             }
             SemanticRoster::Members => {
-                let id=dm_tree::MemberId(ordinal);
+                // The ordinal is the declaration position (the member order array), not the slot.
+                let id=tree.member_order().get(ordinal as usize).ok_or(ExportError::InvalidModel("unknown page member"))?;
                 let member=tree.member(id).ok_or(ExportError::InvalidModel("unknown page member"))?;
                 let owner=tree.type_node(member.owner).ok_or(ExportError::InvalidModel("unknown page member owner"))?.path;
                 let mut row=member_row::member_row(tree,id)?;
@@ -64,7 +65,7 @@ pub fn write_roster_page(
                 fields.insert("owner_symbol".into(),json!(format!("{:016x}",owner.bits())));
                 fields.insert("name_symbol".into(),json!(format!("{:016x}",member.name.bits())));
                 fields.insert("occurrence".into(),json!(tree.member_occurrence(id).ok_or(ExportError::InvalidModel("unknown page member occurrence"))?));
-                fields.insert("previous_ordinal".into(),json!(member.previous.map(|id|id.0)));
+                fields.insert("previous_ordinal".into(),json!(member.previous.and_then(|id|tree.member_order().position_of(id))));
                 row
             }
         });

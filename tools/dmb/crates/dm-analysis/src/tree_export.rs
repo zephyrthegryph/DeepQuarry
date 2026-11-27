@@ -266,8 +266,10 @@ pub fn write_jsonl(
         "unsupported_domains":["resource_resolution","executable_reference_resolution","opaque_intrinsic_metadata"],
         "query_schema":"dm-resolved-query-v1", "member_occurrence":"normalized_owner_local_override_depth"}),
     )?;
-    let mut member_keys = Vec::with_capacity(tree.members().len());
-    for (index, member) in tree.members().iter().enumerate() {
+    // Declaration order (the member order array), never slot order.
+    let mut member_keys = Vec::with_capacity(tree.member_count());
+    let mut member_ids = Vec::with_capacity(tree.member_count());
+    for (id, member) in tree.members_in_order() {
         let owner = tree
             .type_node(member.owner)
             .ok_or(ExportError::InvalidModel("unknown member owner"))?
@@ -278,14 +280,11 @@ pub fn write_jsonl(
             kind(member.kind),
             member.name.bits()
         );
-        let id = dm_tree::MemberId(
-            u32::try_from(index)
-                .map_err(|_| ExportError::InvalidModel("member index exceeds u32"))?,
-        );
         let ordinal = tree
             .member_occurrence(id)
             .ok_or(ExportError::InvalidModel("member occurrence unavailable"))?;
         member_keys.push(format!("{base}:{ordinal}"));
+        member_ids.push(id);
     }
     for id in tree.lexical_types() {
         let node = tree
@@ -299,12 +298,12 @@ pub fn write_jsonl(
         )?;
         counts.semantic_rows += 1;
     }
-    let mut members: Vec<_> = (0..tree.members().len()).collect();
+    let mut members: Vec<_> = (0..member_keys.len()).collect();
     members.sort_by_key(|index| &member_keys[*index]);
     for index in members {
         emit(
             writer,
-            member_row::member_row(tree, dm_tree::MemberId(index as u32))?,
+            member_row::member_row(tree, member_ids[index])?,
         )?;
         counts.semantic_rows += 1;
     }

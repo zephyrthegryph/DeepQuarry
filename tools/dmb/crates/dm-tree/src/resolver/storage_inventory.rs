@@ -218,27 +218,32 @@ impl RetainedStorage {
         declarations: &KeyedDeclarations,
         executor: Option<&dm_exec::BuildExecutor>,
     ) -> Option<Vec<Option<StorageFact>>> {
-        let member_keys: Vec<_> = declarations
+        let declared: Vec<_> = declarations
             .ordered()
             .filter_map(|row| matches!(row.skeleton, Skeleton::Member { .. }).then_some(row.key))
             .collect();
-        if member_keys.len() != tree.members.len() {
+        if declared.len() != tree.member_count() || tree.members.len() != tree.member_count() {
             return None;
+        }
+        // Keys by slot: the n-th declared key belongs to the n-th slot of the order array.
+        let mut member_keys = declared.clone();
+        for (position, id) in tree.member_order().iter().enumerate() {
+            member_keys[id.index()] = declared[position];
         }
         let mut ids = BTreeMap::<SymbolId, Vec<MemberId>>::new();
         let mut inputs = BTreeMap::<SymbolId, Vec<StorageInput>>::new();
-        for (index, member) in tree.members.iter().enumerate() {
+        for (id, member) in tree.members_in_order() {
             if member.kind != MemberKind::Var {
                 continue;
             }
             let owner = tree.types[member.owner.index()].path;
-            let key = member_keys[index];
+            let key = member_keys[id.index()];
             if key.owner != owner
                 || !matches!(key.family,crate::declaration_contributions::DeclarationFamily::Member {name,kind:MemberKind::Var} if name==member.name)
             {
                 return None;
             }
-            ids.entry(owner).or_default().push(MemberId(index as u32));
+            ids.entry(owner).or_default().push(id);
             inputs.entry(owner).or_default().push(StorageInput {
                 key,
                 definition: member.definition,

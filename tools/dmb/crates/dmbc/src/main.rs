@@ -88,6 +88,16 @@ fn main_inner() {
         }
         std::process::exit(0);
     }
+    if std::env::args().nth(1).as_deref() == Some("slot-shuffle-check") {
+        let rest: Vec<String> = std::env::args().skip(2).collect();
+        let dme = rest.iter().find(|a| a.ends_with(".dme")).cloned().unwrap_or_else(|| "deepquarry.dme".into());
+        let seed = rest.iter().find_map(|a| a.parse::<u64>().ok()).unwrap_or(7);
+        if let Err(e) = dmbc::slot_shuffle_check::run(std::path::Path::new(&dme), seed) {
+            eprintln!("slot-shuffle-check: {e}");
+            std::process::exit(1);
+        }
+        std::process::exit(0);
+    }
     if std::env::args().nth(1).as_deref() == Some("analysis-parity") {
         let rest: Vec<String> = std::env::args().skip(2).collect();
         let tree = rest.iter().any(|a| a == "--tree");

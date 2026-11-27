@@ -14,9 +14,10 @@ pub(super) fn bind(
     let absent = usize::MAX;
     let mut first = vec![absent; nodes.len()];
     let mut next = vec![absent; keys.len()];
-    // Prepending in reverse reproduces the ordinary producer's dense encounter
-    // order exactly, without constructing any candidate edge Vec or Arc.
-    for index in (0..tree.members.len()).rev() {
+    // Prepending in reverse declaration order reproduces the ordinary
+    // producer's edge order exactly, without constructing any candidate edge Vec or Arc.
+    for id in tree.member_order().iter().rev() {
+        let index = id.index();
         if let Some(parent) = tree.members[index].previous {
             let parent = *projection.get(keys.get(parent.index())?)?;
             next[index] = first[parent];

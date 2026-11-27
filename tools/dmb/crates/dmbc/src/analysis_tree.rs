@@ -1194,7 +1194,12 @@ pub(crate) fn front(dme: &Path) -> Result<Front, String> {
 }
 
 pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::model_store::Parsed, String> {
-    let Front { frontend, files_ctx, mut ids, initial, built, root, root_abs } = front(dme)?;
+    Ok(parse_from_front(front(dme)?, checker))
+}
+
+/// [`parse_for_analysis`] of an already built front end.
+pub(crate) fn parse_from_front(front: Front, checker: bool) -> dq_analyze::sem::model_store::Parsed {
+    let Front { frontend, files_ctx, mut ids, initial, built, root, root_abs } = front;
     let registered = |path: &str| -> PathBuf {
         let p = Path::new(path);
         let abs = if p.is_absolute() { p.to_path_buf() } else { root.join(p) };
@@ -1284,7 +1289,7 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
         }),
         finish: finish_errors,
     });
-    Ok(dq_analyze::sem::model_store::Parsed { objtree, files, errors, env: None, structure: None, defines: None, raw, fatal: false })
+    dq_analyze::sem::model_store::Parsed { objtree, files, errors, env: None, structure: None, defines: None, raw, fatal: false }
 }
 
 /// Registers [`parse_for_analysis`] as dq-analyze's parse provider (used only under `DQ_ANALYZE_PARSE=dmbc`).

@@ -321,7 +321,7 @@ pub(crate) fn write_bodies(
                     &mut *writer,
                     &serde_json::json!({
                         "schema": dm_analysis::typed_body_jsonl::SCHEMA,
-                        "row":"unsupported_body", "member":occurrence.member.0,
+                        "row":"unsupported_body", "member":frontend.snapshot.tree.member_order().position_of(occurrence.member),
                         "declaration":occurrence.declaration.0,
                         "semantic_resolution_complete":false,"reason":error.to_string()
                     }),
@@ -339,7 +339,7 @@ pub(crate) fn write_bodies(
                     &mut *writer,
                     &serde_json::json!({
                         "schema":"dm-lexical-body-analysis-v1", "row":"unsupported_body",
-                        "member":occurrence.member.0,"declaration":occurrence.declaration.0,
+                        "member":frontend.snapshot.tree.member_order().position_of(occurrence.member),"declaration":occurrence.declaration.0,
                         "semantic_resolution_complete":false,"reason":error.to_string()
                     }),
                 )?;

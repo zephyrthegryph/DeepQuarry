@@ -635,47 +635,11 @@ fn structural_declaration_delta_remaps_current_graph_and_matches_fresh() {
     for source in sources {
         let actual = build(&mut retained, source);
         let fresh = build(&mut RetainedSemanticTree::new(), source);
+        // Types, owner rosters and members by declaration position (slots may differ).
         assert_eq!(
-            actual.snapshot.tree.types().len(),
-            fresh.snapshot.tree.types().len()
+            crate::metadata_update::splice::first_difference(&actual.snapshot.tree, &fresh.snapshot.tree),
+            None
         );
-        for (actual, fresh) in actual
-            .snapshot
-            .tree
-            .types()
-            .iter()
-            .zip(fresh.snapshot.tree.types())
-        {
-            assert_eq!(
-                (
-                    actual.path,
-                    actual.parent,
-                    actual.explicit_parent,
-                    actual.synthetic,
-                    &actual.members
-                ),
-                (
-                    fresh.path,
-                    fresh.parent,
-                    fresh.explicit_parent,
-                    fresh.synthetic,
-                    &fresh.members
-                )
-            );
-        }
-        assert_eq!(
-            actual.snapshot.tree.members.len(),
-            fresh.snapshot.tree.members.len()
-        );
-        for (actual, fresh) in actual
-            .snapshot
-            .tree
-            .members
-            .iter()
-            .zip(fresh.snapshot.tree.members.iter())
-        {
-            assert_eq!(actual, fresh);
-        }
         let entry = retained.entry.as_ref().unwrap();
         let graph = entry.metadata_dependencies.as_ref().unwrap();
         let fresh_graph = crate::metadata_update::MetadataDependencies::capture(

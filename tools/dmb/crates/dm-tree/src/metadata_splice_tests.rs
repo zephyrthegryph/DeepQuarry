@@ -31,12 +31,7 @@ fn same_as_fresh(spliced: &crate::SemanticTree, source: &str) {
     let fresh = frontend(&mut RetainedSemanticTree::new(), source);
     let fresh = &fresh.snapshot.tree;
     assert_eq!(spliced.identity(), fresh.identity(), "identity for {source}");
-    assert_eq!(spliced.declarations(), fresh.declarations());
-    assert!(spliced.members().iter().eq(fresh.members().iter()), "members for {source}");
-    assert_eq!(spliced.types().len(), fresh.types().len());
-    for (a, b) in spliced.types().iter().zip(fresh.types().iter()) {
-        assert_eq!((a.path, a.parent, a.members.as_ref()), (b.path, b.parent, b.members.as_ref()));
-    }
+    // Declaration order, members, owner rosters, selectors and targets, by declaration position (slots may differ).
     assert_eq!(
         crate::metadata_update::splice::first_difference(spliced, fresh),
         None

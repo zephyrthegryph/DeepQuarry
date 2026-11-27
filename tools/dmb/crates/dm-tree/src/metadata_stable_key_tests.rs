@@ -322,19 +322,11 @@ fn inherited_typed_array_metadata_structural_edit_matches_fresh() {
         2,
         "insertion must enter structural constructor"
     );
+    // By declaration order: retained and fresh trees may number member slots differently.
     assert_eq!(
-        actual.snapshot.tree.members().len(),
-        fresh.snapshot.tree.members().len()
+        crate::metadata_update::splice::first_difference(&actual.snapshot.tree, &fresh.snapshot.tree),
+        None
     );
-    for (actual, fresh) in actual
-        .snapshot
-        .tree
-        .members()
-        .iter()
-        .zip(fresh.snapshot.tree.members().iter())
-    {
-        assert_eq!(actual, fresh);
-    }
     for path in ["/datum/base", "/datum/child", "/datum/grandchild"] {
         let field = |tree: &SemanticTree, name: &str| {
             let owner = tree.lookup_type(dm_ir::SymbolId::of(path)).unwrap();
@@ -421,22 +413,11 @@ fn reopened_typed_array_formal_reorder_and_override_removal_match_fresh() {
     for source in sources {
         let actual = frontend(&mut state, source);
         let fresh = frontend(&mut RetainedSemanticTree::new(), source);
-        assert_eq!(
-            actual.snapshot.tree.members().len(),
-            fresh.snapshot.tree.members().len()
-        );
-        for (actual, fresh) in actual
-            .snapshot
-            .tree
-            .members()
-            .iter()
-            .zip(fresh.snapshot.tree.members().iter())
-        {
-            assert_eq!(
-                actual, fresh,
-                "formal/override ordering must rebind the entire current chain"
-            );
-        }
+        // By declaration order: retained and fresh trees may number member slots differently.
+    assert_eq!(
+        crate::metadata_update::splice::first_difference(&actual.snapshot.tree, &fresh.snapshot.tree),
+        None
+    );
         let tree = &actual.snapshot.tree;
         let owner = tree
             .lookup_type(dm_ir::SymbolId::of("/datum/child"))

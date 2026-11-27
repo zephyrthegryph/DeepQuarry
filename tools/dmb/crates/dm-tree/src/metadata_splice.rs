@@ -481,6 +481,7 @@ impl MetadataDependencies {
         tree.declaration_targets = targets.into();
         crate::metadata_update::resolve_metadata(&tree, &mut nodes, &order);
         tree.members = crate::member_arena::MemberArena::from_reusing(nodes, &previous_tree.members);
+        tree.member_order = crate::MemberOrder::identity(tree.members.len());
         tree.refresh_member_callable_names();
         let owners: HashSet<TypeId> = affected.iter().map(|group| group.0).chain(
             order.iter().map(|id| tree.members[id.index()].owner),
@@ -697,32 +698,59 @@ fn splice_types(
 pub(crate) fn verify_enabled() -> bool {
     std::env::var_os("DMB_SPLICE_VERIFY").is_some_and(|value| value == "1")
 }
+/// The first difference between two trees, compared by declaration order:
+/// member slots may differ (a spliced tree keeps its slots, a full build
+/// numbers them afresh), so every member reference is compared as the
+/// declaration position of the slot it names.
 pub(crate) fn first_difference(spliced: &SemanticTree, full: &SemanticTree) -> Option<String> {
     if spliced.types.len() != full.types.len() {
         return Some("type count".into());
     }
+    if spliced.member_count() != full.member_count() {
+        return Some("member count".into());
+    }
+    let position_a = spliced.member_order.positions(spliced.members.len());
+    let position_b = full.member_order.positions(full.members.len());
+    let a_at = |id: MemberId| position_a[id.index()];
+    let b_at = |id: MemberId| position_b[id.index()];
     for (index, (a, b)) in spliced.types.iter().zip(full.types.iter()).enumerate() {
         if a.path != b.path
             || a.parent != b.parent
-            || a.members != b.members
+            || !a.members.iter().map(|id| a_at(*id)).eq(b.members.iter().map(|id| b_at(*id)))
             || a.explicit_parent != b.explicit_parent
             || a.synthetic != b.synthetic
         {
             return Some(format!("type {index}"));
         }
     }
-    if spliced.members.len() != full.members.len() {
-        return Some("member count".into());
-    }
-    for (index, (a, b)) in spliced.members.iter().zip(full.members.iter()).enumerate() {
-        if a != b {
-            return Some(format!("member {index}: {a:?} vs {b:?}"));
+    for (index, ((_, a), (_, b))) in spliced.members_in_order().zip(full.members_in_order()).enumerate() {
+        let mut a = a.clone();
+        let mut b = b.clone();
+        let (pa, pb) = (a.previous.map(a_at), b.previous.map(b_at));
+        a.previous = None;
+        b.previous = None;
+        if a != b || pa != pb {
+            return Some(format!("member {index}: {a:?} (previous {pa:?}) vs {b:?} (previous {pb:?})"));
         }
     }
-    if spliced.direct != full.direct {
+    let direct = |tree: &SemanticTree, at: &dyn Fn(MemberId) -> u32| {
+        let mut rows: Vec<_> = tree.direct.iter().map(|((owner, name, kind), id)| (owner.0, name.bits(), *kind, at(*id))).collect();
+        rows.sort_unstable();
+        rows
+    };
+    if direct(spliced, &a_at) != direct(full, &b_at) {
         return Some("direct".into());
     }
-    if spliced.declaration_targets != full.declaration_targets {
+    let targets = |tree: &SemanticTree, at: &dyn Fn(MemberId) -> u32| {
+        tree.declaration_targets
+            .iter()
+            .map(|target| match target {
+                Target::Type(id) => (false, id.0),
+                Target::Member(id) => (true, at(*id)),
+            })
+            .collect::<Vec<_>>()
+    };
+    if targets(spliced, &a_at) != targets(full, &b_at) {
         return Some("declaration targets".into());
     }
     if spliced.host_selections != full.host_selections {

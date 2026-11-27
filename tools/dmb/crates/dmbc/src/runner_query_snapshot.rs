@@ -523,7 +523,7 @@ impl SourceSnapshot {
         serde_json::to_writer(&mut *output, &serde_json::json!({
             "row":"source_body_model", "schema":"dm-session-source-query-v1",
             "source_revision":format!("{:032x}",self.source_revision), "ordinal":ordinal,
-            "member":body.occurrence().member.0,"declaration":body.occurrence().declaration.0,
+            "member":tree.member_order().position_of(body.occurrence().member),"declaration":body.occurrence().declaration.0,
             "typed_jsonl":String::from_utf8(syntax.0).map_err(io::Error::other)?,
             "lexical_jsonl":String::from_utf8(bindings.0).map_err(io::Error::other)?,
             "semantic_resolution_complete":false,

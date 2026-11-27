@@ -151,12 +151,13 @@ impl MetadataDependencies {
         if let Some((previous, changed)) = previous {
             adjacency::bind(tree, &keys, &projection, &mut nodes, previous, changed)?;
         } else {
-            for (index, member) in tree.members.iter().enumerate() {
+            // Dependants in declaration order.
+            for (id, member) in tree.members_in_order() {
                 if let Some(previous) = member.previous {
                     let edges = nodes[*projection.get(&keys[previous.index()])?]
                         .dependants
                         .get_or_insert_with(|| Arc::new(Vec::new()));
-                    Arc::make_mut(edges).push(keys[index]);
+                    Arc::make_mut(edges).push(keys[id.index()]);
                 }
             }
         }

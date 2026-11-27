@@ -1085,3 +1085,43 @@ What is left, and why:
 - **`#define` edit.** A widely read macro (`SECONDS`) re-expands every region that reads it and re-parses their chunks: expansion
   2.8 s, declaration parsing 3.5 s (grammar scan 1.0 s), plan 2.2 s (6,862 unchanged subtrees adopted, the rest replayed). That is
   work the edit causes; the cheap cuts were the delta compare (skipped above 256 files) and the origin reuse after adoption.
+
+## Stable member slots (lane `compiler/stable-member-slots`, 2026-11-27)
+
+Decided design (round 2's open decision): a `MemberId` is a storage slot that never moves; declaration order is a separate array,
+`SemanticTree::member_order()` (`dm-tree/src/member_order.rs`, `MemberOrder`: chunks of 256 slots with a chunk start table, so an
+insert or removal copies one chunk; `position_of` answers a slot's declaration position from a table built on first use). Readers
+that need declaration order walk `members_in_order()`; `members()` is slot storage and its iteration order means nothing. Analysis
+output must be byte-identical warm and cold; the compile keeps today's guarantee (byte-identical, or `dmb-equiv` EQUIVALENT where
+table order already differed).
+
+### Increments 1 and 2: the order array, the guard, the readers (landed together)
+
+- `MemberOrder` beside the arena; a tree built whole numbers slots in declaration order (order = identity), the splice too (for now).
+- The guard: `DMB_MEMBER_SLOT_SHUFFLE=<seed>` (or `member_order::shuffle::with_shuffled_slots` on one thread, or
+  `shuffle::set_process_seed`) makes every whole tree build move its members to a seeded permutation of the slots
+  (`SemanticTree::shuffle_member_slots`: arena, `previous` links, owner rosters, selectors, declaration targets, order array),
+  before anything derived from slots is built, and says so on stderr (`dm-tree: member slots shuffled (seed N, M members)`).
+  `dmbc slot-shuffle-check [dme] [seed]` builds the analysis front end cold both ways in one process and compares, line by line,
+  the object tree dq-analyze's model is built from (every type serialized, plus the conversion diagnostics) and DreamChecker's
+  native input (types, vars, proc values, body indexes, body statements); a compile with the variable set must give the same
+  `.dmb`. The dm-tree test `shuffled_slots_keep_every_declaration_order_view` checks the tree's own views (members, owner rosters,
+  selectors, targets, inventory answers) by declaration position.
+- Readers switched to the order array: the dm-analysis tree export (member keys, member rows, member queries), the paged member
+  roster (`ordinal` is the declaration position; `previous_ordinal` too), the `"member"` fields of `dmbc analyze` body rows and the
+  source body model query (declaration position, not slot); retained storage facts (`storage_inventory.rs` zipped declaration-order
+  keys with slot order: under shuffled slots it silently fell back to a full fact pass, now keys are mapped by slot); the dependency
+  graph's dependant edges (`MetadataDependencies::capture` and `adjacency::bind`, declaration order); `DMB_SPLICE_VERIFY`'s
+  `first_difference` and the tests that compared trees slot by slot now compare by declaration position.
+- Readers checked and left alone: the inventory reduce, callable names, `source_checks`, the census, counts (order-free); the
+  callable roster (body order); `analysis_tree::matched` and DreamChecker input (they walk `declarations()`); `retained_output`'s
+  body cache key keeps the slot (a stable key is what a cache key wants).
+- dm-tree tests that still fail under `DMB_MEMBER_SLOT_SHUFFLE` assert chunk sharing of the arena (copy-on-write tests), which a
+  shuffled arena does not have by construction.
+
+Proof: `slot-shuffle-check` equal (53,281 object tree lines, 173,754 DreamChecker input lines); production compile with slots
+shuffled (seed 7, 301,960 members) byte-identical to an ordinary one and to the published master compiler's (`afb48125...`), same
+warnings; `analyze check --raw --no-cache` and `analyze dreamchecker --json` (in process) identical shuffled and plain (one shuffled
+`check` run once reported three `ALLOW(decl)` annotations as unused; a second shuffled run and two plain runs did not, and the object
+tree is identical, so it is a flake of that lint's unused-annotation accounting, not slot order); `analysis-parity --tree` 1168027 of
+1168027, `analysis-parity` 105882 of 105882; dm-tree 318, dm-analysis 18 and dmbc 1135 unit tests pass.
