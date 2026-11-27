@@ -505,6 +505,23 @@ fn parallel_map<T: Sync, R: Send>(items: &[T], threads: usize, f: impl Fn(&T) ->
     slots.into_inner().unwrap().into_iter().map(|r| r.expect("every item mapped")).collect()
 }
 
+/// The section headers [`run`] prints under `cli`, in order (a host that registers a kept run again prints them itself).
+pub const SECTIONS: [&str; 5] = [
+    "Analyzing variables...\n",
+    "Gathering proc settings...\n",
+    "Analyzing proc bodies...\n",
+    "Analyzing proc override validity...\n",
+    "Analyzing proc call tree...\n",
+];
+
+/// Prints [`SECTIONS`] as [`run`] does.
+pub fn print_sections() {
+    for s in SECTIONS {
+        cli_println!(true, "============================================================");
+        cli_println!(true, "{s}");
+    }
+}
+
 /// One proc's body facts: a pure function of its body, the model and the settings tables.
 pub fn body_facts(model: &Model, shared: &Shared, site: &dyn Site, proc: ProcId, body: &[Statement]) -> ProcFacts {
     let mut walk = Walk::new(model, shared, site, proc);

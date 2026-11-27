@@ -1143,13 +1143,28 @@ impl Front {
 }
 
 fn registered_in(root: &Path, root_abs: &Path, path: &str) -> PathBuf {
+    // Canonicalizing is a file-system call per path (8.5k per request, most of a warm request's file registration on Windows);
+    // a path's registered spelling is kept for the process (the front end names only files it read, and their spelling on disk
+    // does not change while they are there).
+    type Seen = std::sync::Mutex<HashMap<(PathBuf, PathBuf, String), PathBuf>>;
+    static SEEN: std::sync::OnceLock<Seen> = std::sync::OnceLock::new();
+    let seen = SEEN.get_or_init(Default::default);
+    let key = (root.to_path_buf(), root_abs.to_path_buf(), path.to_owned());
     let p = Path::new(path);
     let abs = if p.is_absolute() { p.to_path_buf() } else { root.join(p) };
-    let abs = std::fs::canonicalize(&abs).unwrap_or(abs);
-    match abs.strip_prefix(root_abs) {
-        Ok(rel) => PathBuf::from(rel.to_string_lossy().replace('\\', "/")),
-        Err(_) => abs,
+    if let Some(known) = seen.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
+        return known.clone();
     }
+    let found = std::fs::canonicalize(&abs);
+    let canonical = found.as_ref().map_or(&abs, |c| c);
+    let out = match canonical.strip_prefix(root_abs) {
+        Ok(rel) => PathBuf::from(rel.to_string_lossy().replace('\\', "/")),
+        Err(_) => canonical.clone(),
+    };
+    if found.is_ok() {
+        seen.lock().unwrap_or_else(|e| e.into_inner()).insert(key, out.clone());
+    }
+    out
 }
 
 /// An expanded offset's location through `mapper`: dreammaker's file ids (`ids`), the line and column dreammaker gives the token.

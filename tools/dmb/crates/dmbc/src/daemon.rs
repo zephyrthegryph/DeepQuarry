@@ -36,7 +36,7 @@ mod protocol;
 pub mod query;
 pub mod resident;
 mod service;
-pub(crate) use service::hosted_frontend;
+pub(crate) use service::{hosted_frontend, hosting};
 mod transport;
 
 type OutputSink = Box<dyn Fn(bool, &[u8]) -> io::Result<()>>;

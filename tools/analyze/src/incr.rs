@@ -492,11 +492,23 @@ where
     V: Sync,
     R: Serialize + DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
 {
+    let keys: Vec<Hash> = files.iter().map(|file| file.fkey).collect();
+    keyed_reading_by(name, ctx, &keys, idx, |i, reads| f(files[i], reads))
+}
+
+/// [`keyed_reading`] over items named by content keys: `f(i, reads)` for `keys[i]`, cached per key under `ctx` and the [`Index`]
+/// entries it read.
+pub fn keyed_reading_by<K, V, R>(name: &str, ctx: Hash, keys: &[Hash], idx: &Index<K, V>, f: impl Fn(usize, &Reads<K, V>) -> R + Sync) -> Vec<R>
+where
+    K: std::hash::Hash + Eq + Serialize + Sync,
+    V: Sync,
+    R: Serialize + DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
+{
     let current = |receipt: &[(u128, Hash)]| receipt.iter().all(|(k, d)| idx.digests.get(k).copied().unwrap_or(ABSENT) == *d);
-    let run = |file: &SourceFile| -> Receipted<R> {
+    let run = |i: usize| -> Receipted<R> {
         let reads = Reads { idx, got: std::cell::RefCell::new(Vec::new()) };
         let before = crate::dm::sys::take_recorded();
-        let r = f(file, &reads);
+        let r = f(i, &reads);
         let u = crate::dm::sys::take_recorded();
         crate::dm::sys::restore_recorded(before);
         let mut got = reads.got.into_inner();
@@ -505,26 +517,27 @@ where
         (r, u, got)
     };
     let Some(s) = session() else {
-        return files.par_iter().map(|file| run(file).0).collect();
+        return (0..keys.len()).into_par_iter().map(|i| run(i).0).collect();
     };
     let slot = s.slot(name);
     let computed = AtomicUsize::new(0);
-    let results: Vec<Arc<Receipted<R>>> = files
-        .par_iter()
-        .map(|file| {
-            let node = entry_node(name, ctx, file.fkey);
+    let results: Vec<Arc<Receipted<R>>> = (0..keys.len())
+        .into_par_iter()
+        .map(|i| {
+            let key = keys[i];
+            let node = entry_node(name, ctx, key);
             let mut fresh = |_: &mut dm_query::Ctx<'_>| -> Result<Outcome, QueryError> {
-                let persisted = slot.lock().unwrap_or_else(|e| e.into_inner()).items.get(&(ctx, file.fkey)).and_then(|it| it.bytes.clone());
+                let persisted = slot.lock().unwrap_or_else(|e| e.into_inner()).items.get(&(ctx, key)).and_then(|it| it.bytes.clone());
                 if let Some(v) = persisted.as_ref().and_then(|b| de::<Receipted<R>>(b).ok().map(|v| (v, h(&[b])))) {
                     if current(&v.0 .2) {
                         return Ok(Outcome::new(v.0, v.1, 64));
                     }
                 }
                 computed.fetch_add(1, Ordering::Relaxed);
-                let v = run(file);
+                let v = run(i);
                 let b = ser(&v).map_err(|_| QueryError::Missing(node))?;
                 let hash = h(&[&b]);
-                s.keep(&slot, (ctx, file.fkey), Some(b.into()));
+                s.keep(&slot, (ctx, key), Some(b.into()));
                 Ok(Outcome::new(v, hash, 64))
             };
             match s.db.get_with::<Receipted<R>>(node, &mut fresh) {
@@ -532,24 +545,24 @@ where
                 // Held, but an entry it read changed: computed again in its place.
                 Ok(_) => {
                     s.db.remove(node);
-                    s.db.get_with::<Receipted<R>>(node, &mut fresh).unwrap_or_else(|_| Arc::new(run(file)))
+                    s.db.get_with::<Receipted<R>>(node, &mut fresh).unwrap_or_else(|_| Arc::new(run(i)))
                 }
-                Err(_) => Arc::new(run(file)),
+                Err(_) => Arc::new(run(i)),
             }
         })
         .collect();
     {
         let (run_no, lease) = (s.run.load(Ordering::Relaxed), s.lease.load(Ordering::Relaxed));
         let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
-        for file in files {
-            if let Some(item) = g.items.get_mut(&(ctx, file.fkey)) {
+        for key in keys {
+            if let Some(item) = g.items.get_mut(&(ctx, *key)) {
                 item.seen = run_no;
                 item.leases |= lease;
             }
         }
     }
     let n = computed.load(Ordering::Relaxed);
-    stats_add(name, files.len() - n, n);
+    stats_add(name, keys.len() - n, n);
     let mut uses = Vec::new();
     let mut out = Vec::with_capacity(results.len());
     for r in results {
