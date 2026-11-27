@@ -69,6 +69,26 @@ impl ProcDirective {
     }
 }
 
+impl Directives {
+    /// Every directive's location, through `f`.
+    pub fn map_locations(&mut self, f: &mut dyn FnMut(&mut Location)) {
+        for table in [
+            &mut self.must_call_parent,
+            &mut self.must_not_override,
+            &mut self.private,
+            &mut self.protected,
+            &mut self.must_not_sleep,
+            &mut self.sleep_exempt,
+            &mut self.must_be_pure,
+            &mut self.can_be_redefined,
+        ] {
+            for (_, l) in table.directive.values_mut() {
+                f(l);
+            }
+        }
+    }
+}
+
 /// The eight directive tables, by name.
 #[derive(Clone)]
 pub struct Directives {

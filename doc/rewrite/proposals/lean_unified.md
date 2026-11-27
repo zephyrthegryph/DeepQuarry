@@ -250,6 +250,97 @@ In a warm native run the checker itself is about 3 s (input 1.1-1.6 s, keys 0.3 
 call tree 0.5-0.8 s); the rest is the retained front end (2.7-5 s, the FRONTEND lane's) and the request around it.
 
 
+### Proportional work (2026-11-27, branch `compiler/dreamchecker-proportional`)
+
+Goal: a request's checker work proportional to the edit (inside the daemon, front end excluded): unchanged under 100 ms, a one-proc
+body edit under 300 ms, a line-shifting edit recomputing only the edited proc.
+
+**Why an unchanged run cost 3 s.** Nothing about the answer was remembered: `analyze dreamchecker` was not asked through the
+analysis database (only `check` was), so every request re-registered the front end's 8.5k files (a `canonicalize` each, about
+0.6 s on Windows), rebuilt the input (matching 0.8-1.3 s, model 0.5-1.3 s, keys 0.6-1.1 s: every body's expanded text and every
+file's bytes hashed) and asked the query store for 240k per-proc entries (0.3 s) before folding them and running the override and
+call-tree passes again (1 s). A computed answer also waited for the fingerprint walk of the whole root (4 s of a 4.7 s request on
+this machine) before replying.
+
+What landed:
+
+- **The answer is a top query.** `dq_analyze::cli::rememberable` names `dreamchecker` (no `-c`, an `-e` inside the root); the
+  daemon asks it whole through `ANSWER` (its `--json` is the checker's flag, not the report view's). The persisted copy no longer
+  makes the reply wait: the fingerprint walk runs beside the computation and is joined on a thread after the reply, and an answer on
+  disk is read back only on a root's first revision in the process (a restarted daemon), when it can be newer than memory.
+- **A run is data.** Every diagnostic is registered on a context of the run's own (no config, nothing printed) and then onto the
+  command's context in order, so the run's files and diagnostics are kept apart from the config. The registered spelling of a path
+  is kept per canonical root (one `canonicalize` per file per process).
+- **Kept per front end revision** (`dreamchecker_input::Resident`): the files, the preprocessor warnings, the model and its
+  hints, and `native::Kept` (every pass's results: per-proc settings and walk diagnostics, the settings tables, the folded call
+  tree, violations and keyword arguments, the override results, the call-tree findings). A request whose front end is the kept
+  revision registers the kept diagnostics again.
+- **Moved to an edited revision** (`dreamchecker_delta.rs`, `Kept::update`) when the front end's delta (`ColdFrontend::delta`,
+  or `RetainedSemanticTree::changes_since` when other requests came between) keeps every declaration (each at most `Moved`) and
+  every body occurrence:
+  - model places (expanded offsets) move with their declaration (`ColdFrontend::declaration_starts`, new accessor): a place with
+    no edited-file output between its declaration's start and itself moves by the declaration's shift; otherwise the
+    declaration's text through the end of the place's line must read the same in both revisions;
+  - locations move by a per-file `LineMap` of each edited file (common first and last lines): unchanged lines move by the edit's
+    line difference, a location on a changed line is refused and whatever holds it is computed again (a proc's settings and walk,
+    the var definitions, the keyword-argument check, one call-tree finding); a changed line that is a preprocessor directive, a
+    setting that changed, or a place that cannot be moved computes a new run;
+  - a body changed when its expanded text or a line of its source changed; only those are walked again;
+  - **recorded reads in the later passes:** each call-tree finding (one per `should_not_sleep` / `should_be_pure` proc) records
+    every proc its search looked up; after an edit it is judged again only when one of those procs got other calls, blocking or
+    impure operations or `waitfor` (a walk's shape), other override lists, or entered or left a reach set (the reach sets are
+    computed again then, from one callers map each instead of three passes). The violations up the inheritance chains are
+    computed again from the violators only; the keyword-argument check runs again only when some proc's keyword arguments
+    changed. A walk whose shape is unchanged moves nothing in those passes but places, and the fold tables' places are kept
+    relative to their proc's body (`Bodies::start`), so they move with it for free.
+- **Shift-stable keys for a new run** (the fallback path, and a restarted daemon): a per-proc result's key is its body's
+  expanded text, its file's semantic path and the source text of the lines it spans (not the file's bytes and span); the context is
+  the model's structure (owners, names, kinds, flags, spellings, types, file ids; no declaration lines). A result's places are
+  stored relative to its body and its locations inside its lines relative to its first line; a location elsewhere (a note naming
+  another declaration, another proc's directive) is a recorded read of its file's content (`incr::keyed_reading_by`, new: the
+  keyed form of `keyed_reading`), so the result is computed again only when that file changed.
+- `DQ_DREAMCHECKER_VERIFY=1` (debug tooling, kept): every moved run is computed again from scratch (fresh model, no store) and
+  compared diagnostic by diagnostic; a difference is printed and the computed run is used. `DQ_ANALYZE_PARSE_TRACE=1` prints the
+  front end and checker times (wall and process CPU) and what a move did.
+- Front end revision numbers are unique in the process (`RetainedSemanticTree::next_revision`): a kept run of an evicted session
+  must not find another lineage's revision under its number when it asks the new session for `changes_since` it.
+- The recorded reads of the later passes are kept in the run itself, not as `incr` entries: they are judged against the kept
+  run's own previous results (the 12.6k call-tree findings read 38.8k procs in all), so they need no store round trip; the
+  per-proc results of a new run are `incr` entries with recorded reads (`keyed_reading_by`).
+
+Measured (`analyze dreamchecker --json` through one daemon with its own namespace and analysis cache, `DQ_ANALYZE_PARSE_TRACE=1`;
+the checker's time is the request's minus the front end's; the machine was shared with other lanes, so the first numbers are
+with it at 100 % CPU and the second on a quieter stretch):
+
+| Request | master | this branch |
+|---|---|---|
+| unchanged, in the daemon | 3.6-8.5 s (checker 3-5.5 s) | 2-8 ms (the answer from memory) |
+| a change the sources do not see (a file the `.dme` does not include) | as above | 64 ms in the daemon, checker 7.5 ms (the kept revision) |
+| one-proc body edit (a string in `admission_query.dm`) | 6-20 s; checker about 5.5 s (input 2.6 s, keys 1.1 s, settings and bodies from the store 0.6 s, overrides and call tree 1 s) | checker 200-314 ms at 100 % CPU, 93-100 ms quieter (the move 50 ms: set up 12, places 14, update 18 of which moving the folded places 13, now 0.3; 1 body walked) |
+| line added inside a proc (every later proc moves) | every proc computed again (the model key held every declaration's line) | 1 proc walked; checker 95-265 ms |
+| two lines added in two procs | as above | 2 procs walked; checker 95 ms |
+| `sleep(1)` added to a widely called proc (12.3k new findings) | full run | 11.8k of 12.6k findings judged again, 14-15 s (the findings themselves) |
+| a var or proc added, a file deleted | full run, every per-proc result computed (240k) | a new run, per-proc results from the store when its structure was seen before, else computed (structure key) |
+| front end evicted (another session) | full run | a new run (no delta: revision numbers unique) |
+
+Proof: the corpus (62 cases, serial and threaded) and the analyze gate-test suite (298 unit tests and the integration tests)
+pass; dmbc's `dreamchecker_delta` and `analysis_db` tests and dm-tree's delta tests pass. Whole tree, through the daemon,
+`analyze dreamchecker --json` stdout and stderr byte-identical to master's at every step of base, string edit, base, line added,
+base, two lines added, base, `sleep` added, base, var added, base, proc added, base, file deleted (with its include), base; with
+`DQ_DREAMCHECKER_VERIFY=1` every moved run equal to the run computed again from scratch in the same daemon (string, line, `sleep`
+and their reverts: 516 and 12307 diagnostics), and the structural edits computed as new runs.
+
+What is left:
+
+- A new run after a structural edit (a var or proc added or removed, a declaration's spelling changed) still rebuilds the input
+  (matching, model, keys: 1-2 s) and reads 240k per-proc entries; with a new structure every per-proc result is computed again
+  (about 30 CPU-s). Keeping those per proc needs each walk's reads of the model recorded (the declarations it looked up, by
+  stable key) instead of one structure key; with the stable member slots (lane `compiler/stable-member-slots`) a new member
+  no longer renumbers the model's procs, which is the other half.
+- (Done after the first landing.) The folded places (788k calls, the violations, the keyword arguments) are kept relative to their
+  proc's body; an edit moves only the 120k body starts (0.3 ms, was 13-24 ms of the update).
+
+
 ## 1+3 ENGINE: analysis results as queries (2026-11-27, branch `compiler/analysis-queries`)
 
 ### Increment 1: the answer is the top query; results as data
