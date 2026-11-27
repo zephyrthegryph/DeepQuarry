@@ -273,6 +273,65 @@ dreammaker's cold and warm output in `plans.dm` (about 2000 `CGK_*` keys and the
 vars). The dmbc run's own `gen --check plans` with a fresh cache then reports that `plans.dm` stale. So inside a cold dmbc `gen`, a stage-1
 result is computed from state that no longer matches its inputs. dreammaker's cold `gen` (caches and the gen store off) matches its warm
 output exactly. Not yet re-checked after 6b7ead2416.
+### 2a cutover (2026-11-27): the lints read dmbc's tree, the converter is gone
+
+The view reached parity 0 before the port (`analyze sem model-parity`, since removed with the converter): every type, parent and site,
+every declaration (lines, flags, declared types, builtin members), every var initializer and folded constant, proc resolution and
+override chains, and the expression walk of all 120472 proc bodies identical to the converted tree. What that took:
+
+- dm-tree: each declaration occurrence's expanded span is kept (`ColdFrontend::declaration_spans`), and `SpacemanDMM_private`,
+  `_protected` and `_final` are declaration flags (bits 8-10), not type path segments (only analysis builds define `SPACEMAN_DMM`).
+- The view: a type's definitions in the order dreammaker listed them (the declaring definition first, then source order); a proc placed
+  at its parameter list; type sites from the first type block; `parent_type` assignments; nested and sized list types; BYOND's builtin
+  members from `tools/analyze/src/model/builtins.tsv` (written once from SpacemanDMM's table); a constant folder with SpacemanDMM's
+  rules (`model::consts`); `model::expr` (a chain as a root and hops, borrowed) and `model::walk` (statements and walks).
+
+Then `sem/mod.rs` was rewritten on the view (`Sem::m()`), and every file that read dreammaker shapes was ported (sem, dm, lints, gens,
+codemod, frontend). Deleted: `dmbc::analysis_bridge`, `analysis_parity`, `daemon/analysis_model`, the converted-tree half of
+`analysis_tree` (what DreamChecker's native input reads stays), `DQ_ANALYZE_PARSE` and the provided-parse hook, `sem::ast`,
+`sem/model_store.rs` (the stored dreammaker model), the dreammaker parse pipeline in `sem/mod.rs`, `DreamMakerFrontend` (frontend-diff
+compares the text scanner with the compiler front end). The dreammaker crate stays only for DreamChecker's diagnostics types.
+
+Two behaviour points, both kept byte-identical:
+
+- `sem/handlers`' structural pass built a partial model (the candidate files and `code/__defines`); dmbc refuses a partial tree (macros of
+  `code/__*.dm`, types the other files declare), so the pass reads the full model. The partial model never expanded the test macros
+  (`TEST_ASSERT` returns early), so it never judged the unit tests; they are exempt by path in `tools/ci/lint_scopes.toml` (master had 0
+  findings there).
+- `sem/incremental`'s record validation still builds a partial model; under dmbc it is refused and the record misses (the full model is
+  built), which is correct and costs only the skip.
+
+Proof: master's `dmbc` (merge base) against the branch, `DQ_ANALYZE_DAEMON=0`, caches and the gen store off: a cold `gen` (all three
+generated directories deleted first) writes identical files (410), and `check --raw --no-cache` is identical (1604 lines).
+
+#### Read recording (the contract for per-file and per-proc queries)
+
+`dq_analyze::model::reads` (branch `compiler/lints-native-tree`). A judgement (one file's findings, one proc's walk) runs under
+`reads::recording(|| ...)` and gets back its result and a `Receipt`: the set of `Read`s it made. Every accessor of the view that answers
+from the model notes one read when a recording is open on the thread; with none open, a note is one thread-local check and builds nothing.
+
+Keys are the front end delta's stable identities (`dm_tree::frontend::DeclarationKey`: file semantic path, owner type path, member name
+and kind, ordinal among the same owner, name and kind in the file; `dm_tree::frontend::declaration_keys` gives every occurrence's key in
+a revision), so a receipt made on one revision is judged against the next revision's `FrontendDelta` (`RetainedSemanticTree::changes_since`).
+
+| Read | Noted by | Stale when the delta has |
+|---|---|---|
+| `Declaration(key)` | `Member::initializer`, `initializer_at`, `parameters`, `declared_type`, `flags` | the key `Added`/`Removed`/`Changed` |
+| `Body(key)` | `Member::body` (and `Proc::body`) | the body's key `Added`/`Removed`/`Changed` |
+| `Site(key)` | `Member::site` (any file or line answer about a definition) | the key in the declarations or the bodies, `Moved` included |
+| `Lookup { owner, name, kind }` | `Ty::var_declaration`, `Ty::proc`, `Ty::proc_definitions`, `own_vars_named`, `own_procs_named` | any declaration of `name` of that kind `Added`/`Removed`/`Changed`, or any type declaration changed |
+| `Parents(owner)` | `Ty::parent` (so `is_subtype_of`, every walk up the chain) | any type declaration changed |
+| `Everything` | `Model::types`, `Ty::members`/`vars`/`procs` (listings), `Model::folded` | any declaration added or removed, or any type declaration changed |
+
+- A miss is a read: a lookup that finds nothing notes the same `Lookup` it would have noted on a hit, so a declaration that appears later
+  invalidates it. A member without a key (none in the tree) notes `Everything`.
+- Lookups are judged by name (any owner): a declaration of `name` anywhere invalidates, which is conservative and needs no ancestry walk.
+- Work a recorded judgement hands to other threads is not recorded: a recorded judgement reads on its own thread (rayon inside it must be
+  avoided or its reads noted by the caller).
+- The view's own caches (sites, declarations, statements, folded constants) are pure functions of the revision; they note on every
+  access, hit or miss, so caching never hides a read.
+- `Receipt::holds(&delta)` is the reuse test; an empty delta holds everything, and no delta (a cold revision) means recompute.
+
 ## 2b DREAMCHECKER: the checker on dmbc's own tree (2026-11-27, branch `compiler/dreamchecker-native`)
 
 ### What landed
