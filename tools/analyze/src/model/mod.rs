@@ -8,6 +8,7 @@
 //! Until the cutover the view is built beside the converted dreammaker tree (`DQ_ANALYZE_PARSE=dmbc`); [`parity`] compares the two
 //! (`analyze sem model-parity`), the converted tree being the oracle for what every lint reads today.
 
+pub mod builtins;
 pub mod parity;
 
 use std::collections::HashMap;
@@ -33,8 +34,10 @@ pub struct Model {
     own: Vec<Vec<MemberId>>,
     /// Each member's declaration occurrence.
     occurrence: HashMap<MemberId, OccurrenceId>,
-    /// Each type's first declaration occurrence (types have no site of their own when only implied by a path).
-    type_occurrence: HashMap<TypeId, OccurrenceId>,
+    /// Each type's first type block (`/obj/item/radio` as an item header), in the order the declaration items come.
+    type_sites: HashMap<Arc<str>, Site>,
+    /// Each type's last `parent_type = /x` assignment (the semantic tree holds the parent, not the assignment).
+    parent_sites: HashMap<Arc<str>, Site>,
     /// The repo-relative spelling of each path the site map names (resolved once per path).
     rels: std::sync::Mutex<HashMap<Arc<str>, Arc<str>>>,
     root_abs: PathBuf,
@@ -56,11 +59,8 @@ impl Model {
         let by_path: HashMap<Arc<str>, TypeId> = paths.iter().enumerate().map(|(i, p)| (p.clone(), TypeId(i as u32))).collect();
         let mut own: Vec<Vec<MemberId>> = vec![Vec::new(); paths.len()];
         let mut occurrence = HashMap::new();
-        let mut type_occurrence = HashMap::new();
-        // Emission order: the order the definitions take effect (include order), which is the order a proc's definitions override one another.
-        let declarations = tree.declarations();
-        for &at in rev.emission_order.iter() {
-            let Some(target) = declarations.get(at.0 as usize) else { continue };
+        for (ordinal, target) in tree.declarations().iter().enumerate() {
+            let at = OccurrenceId(ordinal as u32);
             match *target {
                 Target::Member(id) => {
                     if let Some(member) = tree.member(id) {
@@ -70,13 +70,48 @@ impl Model {
                         occurrence.entry(id).or_insert(at);
                     }
                 }
-                Target::Type(id) => {
-                    type_occurrence.entry(id).or_insert(at);
-                }
+                Target::Type(_) => {}
             }
         }
+        // Source order (the expanded arena is in include order), except that a proc's declaring definition (`proc/x()`) comes first among
+        // its definitions on the type, wherever it is written: the order a type's definitions of one proc are listed in.
+        let start = |id: &MemberId| occurrence.get(id).and_then(|at: &OccurrenceId| rev.declaration_spans.get(at.0 as usize)).map_or(u32::MAX, |s| s.start);
+        let declares = |id: &MemberId| tree.member(*id).is_some_and(|m| m.kind != MemberKind::Var && m.definition == DefinitionMode::Declare);
+        for list in own.iter_mut() {
+            list.sort_by_key(|id| start(id));
+            // Stable: move each proc's declaration before the definitions of the same name that precede it.
+            let mut placed: Vec<MemberId> = Vec::with_capacity(list.len());
+            for &id in list.iter() {
+                if declares(&id) {
+                    let name = tree.member(id).map(|m| (m.name, m.kind));
+                    let first = placed.iter().position(|p| tree.member(*p).map(|m| (m.name, m.kind)) == name);
+                    match first {
+                        Some(i) => placed.insert(i, id),
+                        None => placed.push(id),
+                    }
+                } else {
+                    placed.push(id);
+                }
+            }
+            *list = placed;
+        }
         let root_abs = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
-        let model = Model { rev, root: root.to_path_buf(), paths, by_path, own, occurrence, type_occurrence, rels: Default::default(), root_abs };
+        let mut sites = TypeSites::default();
+        for chunk in rev.syntax.chunks().iter() {
+            type_blocks(chunk.items(), "/", &mut sites);
+        }
+        let model = Model {
+            rev,
+            root: root.to_path_buf(),
+            paths,
+            by_path,
+            own,
+            occurrence,
+            type_sites: sites.blocks,
+            parent_sites: sites.parents,
+            rels: Default::default(),
+            root_abs,
+        };
         if trace() {
             eprintln!(
                 "analyze: model view: {} types, {} members, {} bodies in {:.1?}",
@@ -161,9 +196,18 @@ impl<'m> Ty<'m> {
         self.m.rev.snapshot.tree.type_node(self.id).is_some_and(|n| n.synthetic)
     }
 
-    /// Where the type is first declared (a type block or a path that names it), when it has a declaration of its own.
+    /// Where the type's first block is (`/obj/item/radio` as an item header); none for a type only implied by a member's path.
     pub fn site(&self) -> Option<Site> {
-        self.m.occurrence_site(*self.m.type_occurrence.get(&self.id)?)
+        self.m.type_sites.get(self.path()).copied()
+    }
+
+    /// The type's explicit parent (`parent_type = /x`) and where it is last assigned.
+    pub fn explicit_parent(&self) -> Option<(Ty<'m>, Option<Site>)> {
+        let node = self.m.rev.snapshot.tree.type_node(self.id)?;
+        if !node.explicit_parent {
+            return None;
+        }
+        Some((self.parent()?, self.m.parent_sites.get(self.path()).copied()))
     }
 
     /// This type's own members (declarations and overrides), in declaration order.
@@ -213,10 +257,40 @@ impl<'m> Member<'m> {
     pub fn declared_type(&self) -> String {
         let meta = &self.node().metadata;
         let base = meta.declared_type.map(|t| self.m.text(t)).unwrap_or("");
+        // `var/list/list/x`, `var/list/T/x[3]`: the semantic tree keeps the runtime type (`/list`) and at most one element type; the
+        // declaration spells the nesting.
+        if base == "/list" {
+            if let Some(authored) = self.authored_list_type() {
+                return authored;
+            }
+        }
         match meta.list_element_type.map(|t| self.m.text(t)) {
             Some(element) if !element.is_empty() => format!("{}{}", if base.is_empty() { "/list" } else { base }, element),
             _ => base.to_string(),
         }
+    }
+
+    /// The type path a `var/list/.../name` declaration spells (flags removed), when it starts with `list/`.
+    fn authored_list_type(&self) -> Option<String> {
+        let text = self.item_text()?;
+        let header = text.lines().next()?;
+        let header = match dm_syntax::top_level_assignment_index(header) {
+            Some(i) => &header[..i],
+            None => header,
+        };
+        let tail = header.rfind("var/").map_or(header, |at| &header[at + 4..]).trim();
+        let parts: Vec<&str> = tail.split('/').collect();
+        let (name, types) = parts.split_last()?;
+        let mut types: Vec<&str> = types
+            .iter()
+            .copied()
+            .filter(|p| !matches!(*p, "static" | "const" | "tmp" | "global" | "SpacemanDMM_private" | "SpacemanDMM_protected" | "SpacemanDMM_final"))
+            .collect();
+        // `var/list/L[10]`: the size suffix makes the declared type a list of the spelled type.
+        if name.contains('[') && !types.is_empty() {
+            types.insert(0, "list");
+        }
+        (types.first() == Some(&"list") && types.len() > 1).then(|| format!("/{}", types.join("/")))
     }
 
     /// The declaration flag bits (`DeclarationMeaning::flags`: 1 static, 2 const, 4 tmp, 8 global).
@@ -239,9 +313,23 @@ impl<'m> Member<'m> {
         }
     }
 
-    /// The expanded offset of the declaration item.
+    /// Where the declaration is: a var's item; a proc's parameter list (its `(`), where dreammaker places a proc and which is the line
+    /// of the name in a macro that writes the header over several lines.
     pub fn site(&self) -> Option<Site> {
-        self.m.occurrence_site(*self.m.occurrence.get(&self.id)?)
+        let start = self.m.occurrence_site(*self.m.occurrence.get(&self.id)?)?;
+        if self.kind() == MemberKind::Var {
+            return Some(start);
+        }
+        let text = self.item_text()?;
+        let mut depth = 0usize;
+        for token in dm_syntax::lex(text).tokens {
+            match token.text.as_str() {
+                "(" if depth == 0 => return Some(Site(start.0 + token.span.start as u32)),
+                "(" => depth += 1,
+                _ => {}
+            }
+        }
+        Some(start)
     }
 
     /// The member's expanded header text (its declaration item, the body excluded).
@@ -254,4 +342,61 @@ impl<'m> Member<'m> {
 
 pub(crate) fn trace() -> bool {
     dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() || dq_hostio::var("DQ_ANALYZE_PARSE_TRACE").is_ok()
+}
+
+fn absolute(owner: &str, path: &str) -> String {
+    let path = path.trim_end_matches('/');
+    if path.is_empty() {
+        owner.into()
+    } else if path.starts_with('/') {
+        path.into()
+    } else if owner == "/" {
+        format!("/{path}")
+    } else {
+        format!("{owner}/{path}")
+    }
+}
+
+/// The first type block of each path, walking the declaration items as dm-tree's adapter does: the owner a type item names carries to
+/// its children and to the items after it (members take the block they are written in).
+#[derive(Default)]
+struct TypeSites {
+    blocks: HashMap<Arc<str>, Site>,
+    parents: HashMap<Arc<str>, Site>,
+}
+
+fn type_blocks<'a>(items: impl Iterator<Item = dm_tree::frontend::ItemView<'a>>, owner: &str, out: &mut TypeSites) {
+    use dm_syntax::ItemKind;
+    let mut containing = owner.to_owned();
+    for item in items {
+        let raw = item.header();
+        let header = raw.trim();
+        let at = item.header_span().start + (raw.len() - raw.trim_start().len());
+        match item.kind() {
+            ItemKind::Type => {
+                let path = absolute(&containing, header);
+                out.blocks.entry(Arc::from(path.as_str())).or_insert(Site(at as u32));
+                // A bare relative word with no block declares the child type only: the items after it stay on the enclosing type.
+                if header.starts_with('/') || item.children().next().is_some() {
+                    containing = path.clone();
+                }
+                type_blocks(item.children(), &path, out);
+            }
+            ItemKind::Unknown | ItemKind::Statement => match dm_syntax::top_level_assignment_index(header) {
+                None => type_blocks(item.children(), &containing, out),
+                Some(index) => {
+                    let target = header[..index].trim();
+                    let owner = match target.rsplit_once('/') {
+                        Some(("", name)) => ("/".to_owned(), name),
+                        Some((prefix, name)) => (absolute(&containing, prefix), name),
+                        None => (containing.clone(), target),
+                    };
+                    if owner.1 == "parent_type" {
+                        out.parents.insert(Arc::from(owner.0.as_str()), Site(at as u32));
+                    }
+                }
+            },
+            _ => {}
+        }
+    }
 }

@@ -61,7 +61,8 @@ pub fn run(sem: &Sem, model: &Model) -> usize {
         let parent = ty.parent_type().map(|p| if p.get().path.is_empty() { "/".to_string() } else { p.get().path.clone() });
         let nparent = native.parent().map(|p| p.path().to_string());
         tallies.entry("type parent").or_default().check(parent == nparent, || format!("{path}: parent {parent:?} vs {nparent:?}"));
-        if !t.location.is_builtins() {
+        // The root's location is the `.dme`'s own file in dreammaker's tree; the view has none (nothing reads it).
+        if !t.location.is_builtins() && path != "/" {
             let line = at(sem, t.location);
             let nline = native.site().and_then(|s| model.line(s));
             tallies.entry("type site").or_default().check(line == nline, || format!("{path}: {line:?} vs {nline:?}"));
@@ -72,19 +73,37 @@ pub fn run(sem: &Sem, model: &Model) -> usize {
         for m in native.vars() {
             nvars.entry(m.name()).or_default().push(m);
         }
+        let builtins = super::builtins::get();
+        let bvars = builtins.vars.get(path.as_str());
         let dnames: BTreeSet<&str> = t.vars.keys().map(|k| k.as_str()).collect();
-        let nnames: BTreeSet<&str> = nvars.keys().copied().collect();
+        let mut nnames: BTreeSet<&str> = nvars.keys().copied().collect();
+        nnames.extend(bvars.into_iter().flatten().map(|(n, _)| n.as_str()));
+        // `parent_type = /x` is the type's explicit parent in the semantic tree, a var override in dreammaker's.
+        let explicit = native.explicit_parent();
+        if explicit.is_some_and(|(_, site)| site.is_some()) {
+            nnames.insert("parent_type");
+        }
         for name in dnames.symmetric_difference(&nnames) {
             let builtin = t.vars.get(*name).is_some_and(|v| v.value.location.is_builtins());
             tallies.entry("var names").or_default().check(false, || format!("{path}/{name}: only {} (builtin {builtin})", if dnames.contains(name) { "converted" } else { "native" }));
         }
         for (name, v) in &t.vars {
-            let Some(members) = nvars.get(name.as_str()) else { continue };
+            let builtin = builtins.var(&path, name);
+            if !nnames.contains(name.as_str()) {
+                continue;
+            }
             tallies.entry("var names").or_default().check(true, String::new);
+            let empty = Vec::new();
+            let members = nvars.get(name.as_str()).unwrap_or(&empty);
             let declaration = members.iter().find(|m| m.declares());
-            tallies.entry("var declared").or_default().check(v.declaration.is_some() == declaration.is_some(), || {
-                format!("{path}/{name}: converted declares {} native {}", v.declaration.is_some(), declaration.is_some())
+            let declares = declaration.is_some() || builtin.is_some_and(|b| b.declares);
+            tallies.entry("var declared").or_default().check(v.declaration.is_some() == declares, || {
+                format!("{path}/{name}: converted declares {} native {}", v.declaration.is_some(), declares)
             });
+            if let (Some(d), None, Some(b)) = (&v.declaration, declaration, builtin) {
+                let dt = declared_text(&d.var_type.type_path);
+                tallies.entry("var builtin type").or_default().check(dt == b.declared, || format!("{path}/{name}: {dt:?} vs {:?}", b.declared));
+            }
             if let (Some(d), Some(n)) = (&v.declaration, declaration) {
                 let dt = declared_text(&d.var_type.type_path);
                 tallies.entry("var declared type").or_default().check(dt == n.declared_type(), || format!("{path}/{name}: {dt:?} vs {:?}", n.declared_type()));
@@ -98,7 +117,11 @@ pub fn run(sem: &Sem, model: &Model) -> usize {
             }
             if !v.value.location.is_builtins() {
                 let line = at(sem, v.value.location);
-                let nline = members.last().and_then(|m| m.site()).and_then(|s| model.line(s));
+                let nline = if name == "parent_type" {
+                    explicit.and_then(|(_, site)| site).and_then(|s| model.line(s))
+                } else {
+                    members.last().and_then(|m| m.site()).and_then(|s| model.line(s))
+                };
                 tallies.entry("var value line").or_default().check(line == nline, || format!("{path}/{name}: {line:?} vs {nline:?}"));
             }
         }
@@ -109,6 +132,14 @@ pub fn run(sem: &Sem, model: &Model) -> usize {
             nprocs.entry(m.name()).or_default().push(m);
         }
         for (name, p) in &t.procs {
+            if p.value.iter().any(|v| v.location.is_builtins()) {
+                let b = builtins.proc(&path, name);
+                let same = b.is_some_and(|b| {
+                    let params: Vec<&str> = p.value.iter().find(|v| v.location.is_builtins()).map(|v| v.parameters.iter().map(|q| q.name.as_str()).collect()).unwrap_or_default();
+                    params == b.parameters.iter().map(String::as_str).collect::<Vec<_>>()
+                });
+                tallies.entry("proc builtin").or_default().check(same, || format!("{path}/{name}: builtin missing or parameters differ"));
+            }
             let values: Vec<_> = p.value.iter().filter(|v| !v.location.is_builtins()).collect();
             let members = nprocs.get(name.as_str()).cloned().unwrap_or_default();
             tallies.entry("proc definitions").or_default().check(values.len() == members.len(), || {
@@ -121,7 +152,7 @@ pub fn run(sem: &Sem, model: &Model) -> usize {
                 continue;
             }
             let verb = p.declaration.as_ref().map(|d| d.kind == dreammaker::ast::ProcDeclKind::Verb);
-            let nverb = members.iter().find(|m| m.declares()).map(|m| m.kind() == MemberKind::Verb);
+            let nverb = members.iter().find(|m| m.declares()).map(|m| m.kind() == MemberKind::Verb).or_else(|| builtins.proc(&path, name).filter(|b| b.declares).map(|b| b.verb));
             tallies.entry("proc kind").or_default().check(verb == nverb, || format!("{path}/{name}: verb {verb:?} vs {nverb:?}"));
             for (v, m) in values.iter().zip(&members) {
                 let line = at(sem, v.location);

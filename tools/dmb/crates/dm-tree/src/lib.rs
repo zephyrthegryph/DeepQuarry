@@ -65,6 +65,12 @@ impl MemberId {
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub struct OccurrenceId(pub u32);
+/// Declaration flag bits beyond BYOND's (1 static, 2 const, 4 tmp, 8 global): the SpacemanDMM access flags a var declaration spells
+/// as path segments (`var/SpacemanDMM_private/x`) when `SPACEMAN_DMM` is defined, which only analysis builds define.
+pub const VAR_SPACEMAN_PRIVATE: u32 = 1 << 8;
+pub const VAR_SPACEMAN_PROTECTED: u32 = 1 << 9;
+pub const VAR_SPACEMAN_FINAL: u32 = 1 << 10;
+
 #[derive(
     Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]

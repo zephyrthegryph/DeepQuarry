@@ -43,6 +43,19 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
             let differ = crate::model::parity::run(&sem, model);
             return if differ == 0 { ExitCode::SUCCESS } else { ExitCode::from(1) };
         }
+        // Writes the builtin declarations of the converted tree (`crate::model::builtins`' data file).
+        "builtins-dump" => {
+            let Some(out) = args.get(1) else {
+                eprintln!("usage: analyze sem builtins-dump OUT");
+                return ExitCode::from(2);
+            };
+            let text = crate::model::builtins::dump(&sem);
+            if let Err(e) = std::fs::write(out, text) {
+                eprintln!("analyze sem builtins-dump: {e}");
+                return ExitCode::from(2);
+            }
+            return ExitCode::SUCCESS;
+        }
         "reads" => {
             let (Some(ty), Some(name)) = (args.get(1), args.get(2)) else {
                 eprintln!("usage: analyze sem reads /type proc");

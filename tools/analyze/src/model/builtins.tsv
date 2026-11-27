@@ -1,0 +1,818 @@
+V	/	vars	1		2	null
+V	/	NORTH	1		2	f:1
+V	/	SOUTH	1		2	f:2
+V	/	EAST	1		2	f:4
+V	/	WEST	1		2	f:8
+V	/	NORTHEAST	1		2	f:5
+V	/	SOUTHEAST	1		2	f:6
+V	/	NORTHWEST	1		2	f:9
+V	/	SOUTHWEST	1		2	f:10
+V	/	UP	1		2	f:16
+V	/	DOWN	1		2	f:32
+V	/	BLIND	1		2	f:1
+V	/	SEE_MOBS	1		2	f:4
+V	/	SEE_OBJS	1		2	f:8
+V	/	SEE_TURFS	1		2	f:16
+V	/	SEE_SELF	1		2	f:32
+V	/	SEE_INFRA	1		2	f:64
+V	/	SEE_PIXELS	1		2	f:256
+V	/	SEE_THRU	1		2	f:512
+V	/	SEE_BLACKNESS	1		2	f:1024
+V	/	MOB_PERSPECTIVE	1		2	f:0
+V	/	EYE_PERSPECTIVE	1		2	f:1
+V	/	EDGE_PERSPECTIVE	1		2	f:2
+V	/	LEGACY_MOVEMENT_MODE	1		2	f:0
+V	/	TILE_MOVEMENT_MODE	1		2	f:1
+V	/	PIXEL_MOVEMENT_MODE	1		2	f:2
+V	/	FLOAT_LAYER	1		2	f:-1
+V	/	AREA_LAYER	1		2	f:1
+V	/	TURF_LAYER	1		2	f:2
+V	/	OBJ_LAYER	1		2	f:3
+V	/	MOB_LAYER	1		2	f:4
+V	/	FLY_LAYER	1		2	f:5
+V	/	EFFECTS_LAYER	1		2	f:5000
+V	/	TOPDOWN_LAYER	1		2	f:10000
+V	/	BACKGROUND_LAYER	1		2	f:20000
+V	/	FLOAT_PLANE	1		2	f:-32767
+V	/	TOPDOWN_MAP	1		2	f:0
+V	/	ISOMETRIC_MAP	1		2	f:1
+V	/	SIDE_MAP	1		2	f:2
+V	/	TILED_ICON_MAP	1		2	f:32768
+V	/	TRUE	1		2	f:1
+V	/	FALSE	1		2	f:0
+V	/	MALE	1		2	s:male
+V	/	FEMALE	1		2	s:female
+V	/	NEUTER	1		2	s:neuter
+V	/	PLURAL	1		2	s:plural
+V	/	MOUSE_INACTIVE_POINTER	1		2	f:0
+V	/	MOUSE_ACTIVE_POINTER	1		2	f:1
+V	/	MOUSE_DRAG_POINTER	1		2	f:3
+V	/	MOUSE_DROP_POINTER	1		2	f:4
+V	/	MOUSE_ARROW_POINTER	1		2	f:5
+V	/	MOUSE_CROSSHAIRS_POINTER	1		2	f:6
+V	/	MOUSE_HAND_POINTER	1		2	f:7
+V	/	MOUSE_LEFT_BUTTON	1		2	f:1
+V	/	MOUSE_RIGHT_BUTTON	1		2	f:2
+V	/	MOUSE_MIDDLE_BUTTON	1		2	f:4
+V	/	MOUSE_CTRL_KEY	1		2	f:8
+V	/	MOUSE_SHIFT_KEY	1		2	f:16
+V	/	MOUSE_ALT_KEY	1		2	f:32
+V	/	MS_WINDOWS	1		2	s:MS Windows
+V	/	UNIX	1		2	s:UNIX
+V	/	SOUND_MUTE	1		2	f:1
+V	/	SOUND_PAUSED	1		2	f:2
+V	/	SOUND_STREAM	1		2	f:4
+V	/	SOUND_UPDATE	1		2	f:16
+V	/	BLEND_DEFAULT	1		2	f:0
+V	/	BLEND_OVERLAY	1		2	f:1
+V	/	BLEND_ADD	1		2	f:2
+V	/	BLEND_SUBTRACT	1		2	f:3
+V	/	BLEND_MULTIPLY	1		2	f:4
+V	/	BLEND_INSET_OVERLAY	1		2	f:5
+V	/	MASK_INVERSE	1		2	f:1
+V	/	MASK_SWAP	1		2	f:2
+V	/	FILTER_COLOR_RGB	1		2	f:0
+V	/	FILTER_COLOR_HSV	1		2	f:1
+V	/	FILTER_COLOR_HSL	1		2	f:2
+V	/	FILTER_COLOR_HCY	1		2	f:3
+V	/	FILTER_OVERLAY	1		2	f:1
+V	/	FILTER_UNDERLAY	1		2	f:2
+V	/	WAVE_SIDEWAYS	1		2	f:1
+V	/	WAVE_BOUNDED	1		2	f:2
+V	/	OUTLINE_SHARP	1		2	f:1
+V	/	OUTLINE_SQUARE	1		2	f:2
+V	/	world	1	/world	1	-
+P	/	ref	1	0	A
+P	/	abs	1	0	A
+P	/	addtext	1	0	Arg1,Arg2
+P	/	alert	1	0	Usr,Message,Title,Button1,Button2,Button3
+P	/	animate	1	0	Object,time,loop,easing,flags,delay,tag,command,alpha,color,infra_luminosity,layer,maptext_width,maptext_height,maptext_x,maptext_y,luminosity,pixel_x,pixel_y,pixel_w,pixel_z,transform,dir,icon,icon_state,invisibility,maptext,suffix,appearance,dir,radius,space,size,x,y,offset,flags,repeat
+P	/	arccos	1	0	X
+P	/	arcsin	1	0	X
+P	/	arglist	1	0	List
+P	/	ascii2text	1	0	N
+P	/	block	1	0	Start,End
+P	/	bounds	1	0	Ref,Dist
+P	/	bounds_dist	1	0	Ref,Target
+P	/	browse	1	0	Body,Options
+P	/	browse_rsc	1	0	File,FileName
+P	/	ckey	1	0	Key
+P	/	ckeyEx	1	0	Text
+P	/	cmptext	1	0	T1,T2
+P	/	cmptextEx	1	0	T1,T2
+P	/	copytext	1	0	T,Start,End
+P	/	cos	1	0	X
+P	/	fcopy	1	0	Src,Dst
+P	/	fcopy_rsc	1	0	File
+P	/	fdel	1	0	File
+P	/	fexists	1	0	File
+P	/	file	1	0	Path
+P	/	file2text	1	0	File
+P	/	filter	1	0	type,size,color,x,y,offset,flags,border,render_source,icon,space,transform,blend_mode,density,threshold,factor,repeat,radius,falloff,alpha,name
+P	/	findlasttext	1	0	Haystack,Needle,Start,End
+P	/	findlasttextEx	1	0	Haystack,Needle,Start,End
+P	/	findtext	1	0	Haystack,Needle,Start,End
+P	/	findtextEx	1	0	Haystack,Needle,Start,End
+P	/	flick	1	0	Icon,Object
+P	/	flist	1	0	Path
+P	/	ftp	1	0	File,Name
+P	/	get_dir	1	0	Loc1,Loc2
+P	/	get_dist	1	0	Loc1,Loc2
+P	/	get_step	1	0	Ref,Dir
+P	/	get_step_away	1	0	Ref,Trg,Max
+P	/	get_step_rand	1	0	Ref
+P	/	get_step_to	1	0	Ref,Trg,Min
+P	/	get_step_towards	1	0	Ref,Trg
+P	/	gradient	1	0	Gradient,index,space
+P	/	hascall	1	0	Object,ProcName
+P	/	hearers	1	0	Depth,Center
+P	/	html_decode	1	0	HtmlText
+P	/	html_encode	1	0	PlainText
+P	/	icon	1	0	icon,icon_state,dir,frame,moving
+P	/	icon_states	1	0	Icon,mode
+P	/	image	1	0	icon,loc,icon_state,layer,dir,pixel_x,pixel_y,pixel_w,pixel_z
+P	/	initial	1	0	Var
+P	/	input	1	0	Usr,Message,Title,Default
+P	/	isarea	1	0	Loc1,Loc2
+P	/	isfile	1	0	File
+P	/	isicon	1	0	Icon
+P	/	isloc	1	0	Loc1,Loc2
+P	/	ismob	1	0	Loc1,Loc2
+P	/	isnull	1	0	Val
+P	/	isnum	1	0	Val
+P	/	isobj	1	0	Loc1,Loc2
+P	/	ispath	1	0	Val,Type
+P	/	issaved	1	0	Var
+P	/	istext	1	0	Val
+P	/	isturf	1	0	Loc1,Loc2
+P	/	istype	1	0	Val,Type
+P	/	jointext	1	0	List,Glue,Start,End
+P	/	json_decode	1	0	JSON
+P	/	json_encode	1	0	Value
+P	/	length	1	0	E
+P	/	lentext	1	0	T
+P	/	link	1	0	url
+P	/	list	1	0	A,B,C
+P	/	list2params	1	0	List
+P	/	load_resource	1	0	File,KeepTime
+P	/	locate	1	0	Type
+P	/	log	1	0	X,Y
+P	/	lowertext	1	0	T
+P	/	matrix	1	0	
+P	/	max	1	0	A,B,C
+P	/	md5	1	0	T
+P	/	min	1	0	A,B,C
+P	/	missile	1	0	Type,Start,End
+P	/	newlist	1	0	A,B,C
+P	/	nonspantext	1	0	Haystack,Needles,Start
+P	/	num2text	1	0	N,SigFig,Radix
+P	/	obounds	1	0	Ref,Dist
+P	/	ohearers	1	0	Depth,Center
+P	/	orange	1	0	Dist,Center
+P	/	output	1	0	msg,control
+P	/	oview	1	0	Dist,Center
+P	/	oviewers	1	0	Depth,Center
+P	/	params2list	1	0	Params
+P	/	pick	1	0	Val1,Val2
+P	/	prob	1	0	P
+P	/	rand	1	0	L,H
+P	/	rand_seed	1	0	Seed
+P	/	range	1	0	Dist,Center
+P	/	regex	1	0	pattern,flags
+P	/	REGEX_QUOTE	1	0	text
+P	/	REGEX_QUOTE_REPLACEMENT	1	0	text
+P	/	replacetext	1	0	Haystack,Needle,Replacement,Start,End
+P	/	replacetextEx	1	0	Haystack,Needle,Replacement,Start,End
+P	/	rgb	1	0	R,G,B,A,space,red,blue,green,alpha,h,hue,s,saturation,c,chroma,v,value,l,y,luminance
+P	/	rgb2num	1	0	color,space
+P	/	roll	1	0	ndice,sides
+P	/	round	1	0	A,B
+P	/	run	1	0	File
+P	/	shell	1	0	Command
+P	/	shutdown	1	0	Addr,Natural
+P	/	sin	1	0	X
+P	/	sleep	1	0	Delay
+P	/	sorttext	1	0	T1,T2
+P	/	sorttextEx	1	0	T1,T2
+P	/	sound	1	0	file,repeat,wait,channel,volume
+P	/	spantext	1	0	Haystack,Needles,Start
+P	/	splicetext	1	0	Text,Start,End,Insert
+P	/	splittext	1	0	Text,Delimiter,Start,End,include_delimiters
+P	/	sqrt	1	0	A
+P	/	startup	1	0	File,Port,Options
+P	/	stat	1	0	Name,Value
+P	/	statpanel	1	0	Panel,Name,Value
+P	/	step	1	0	Ref,Dir,Speed
+P	/	step_away	1	0	Ref,Trg,Max,Speed
+P	/	step_rand	1	0	Ref,Speed
+P	/	step_to	1	0	Ref,Trg,Min,Speed
+P	/	step_towards	1	0	Ref,Trg,Speed
+P	/	text	1	0	FormatText,Args
+P	/	text2ascii	1	0	T,pos
+P	/	text2file	1	0	Text,File
+P	/	text2num	1	0	T,Radix
+P	/	text2path	1	0	T
+P	/	time2text	1	0	timestamp,format,timezone
+P	/	turn	1	0	Dir,Angle
+P	/	typesof	1	0	Type1,Type2
+P	/	uppertext	1	0	T
+P	/	url_decode	1	0	UrlText
+P	/	url_encode	1	0	PlainText,format
+P	/	view	1	0	Dist,Center
+P	/	viewers	1	0	Depth,Center
+P	/	walk	1	0	Ref,Dir,Lag,Speed
+P	/	walk_away	1	0	Ref,Trg,Max,Lag,Speed
+P	/	walk_rand	1	0	Ref,Lag,Speed
+P	/	walk_to	1	0	Ref,Trg,Min,Lag,Speed
+P	/	walk_towards	1	0	Ref,Trg,Lag,Speed
+P	/	winclone	1	0	player,window_name,clone_name
+P	/	winexists	1	0	player,control_id
+P	/	winget	1	0	player,control_id,params
+P	/	winset	1	0	player,control_id,params
+P	/	winshow	1	0	player,window,show
+P	/	CRASH	1	0	message
+P	/	values_cut_over	1	0	Alist,Max,inclusive
+P	/	values_cut_under	1	0	Alist,Max,inclusive
+P	/	values_dot	1	0	A,B
+P	/	values_product	1	0	Alist
+P	/	values_sum	1	0	Alist
+P	/	_dm_db_new_query	1	0	
+P	/	_dm_db_execute	1	0	db_query,sql_query,db_connection,cursor_handler,unknown
+P	/	_dm_db_next_row	1	0	db_query,item,conversions
+P	/	_dm_db_rows_affected	1	0	db_query
+P	/	_dm_db_row_count	1	0	db_query
+P	/	_dm_db_error_msg	1	0	db_query
+P	/	_dm_db_columns	1	0	db_query,db_column
+P	/	_dm_db_close	1	0	db_query
+P	/	_dm_db_new_con	1	0	
+P	/	_dm_db_connect	1	0	db_con,dbi_handler,user_handler,password_handler,cursor_handler,unknown
+P	/	_dm_db_quote	1	0	db_con,_str
+P	/	_dm_db_is_connected	1	0	db_con
+P	/	arctan	1	0	A,B
+P	/	clamp	1	0	NumberOrList,Low,High
+P	/	islist	1	0	List
+P	/	ismovable	1	0	Loc1,Loc2
+P	/	sha1	1	0	StringOrFile
+P	/	tan	1	0	A
+P	/	length_char	1	0	E
+P	/	text2ascii_char	1	0	T,pos
+P	/	copytext_char	1	0	T,Start,End
+P	/	findtext_char	1	0	Haystack,Needle,Start,End
+P	/	findtextEx_char	1	0	Haystack,Needle,Start,End
+P	/	findlasttext_char	1	0	Haystack,Needle,Start,End
+P	/	findlasttextEx_char	1	0	Haystack,Needle,Start,End
+P	/	replacetext_char	1	0	Haystack,Needle,Replacement,Start,End
+P	/	replacetextEx_char	1	0	Haystack,Needle,Replacement,Start,End
+P	/	spantext_char	1	0	Haystack,Needles,Start
+P	/	nonspantext_char	1	0	Haystack,Needles,Start
+P	/	splittext_char	1	0	Text,Delimiter,Start,End,include_delimiters
+P	/	splicetext_char	1	0	Text,Start,End,Insert
+P	/	generator	1	0	type,A,B,rand
+P	/	ceil	1	0	A
+P	/	floor	1	0	A
+P	/	fract	1	0	A
+P	/	ftime	1	0	File,IsCreationTime
+P	/	get_steps_to	1	0	Ref,Trg,Min
+P	/	isinf	1	0	A
+P	/	isnan	1	0	A
+P	/	ispointer	1	0	Value
+P	/	nameof	1	0	VarPathProcRef
+P	/	noise_hash	1	0	param1
+P	/	refcount	1	0	Object
+P	/	trimtext	1	0	Text
+P	/	trunc	1	0	A
+P	/	bound_pixloc	1	0	Atom,Dir
+P	/	lerp	1	0	A,B,factor
+P	/	sign	1	0	A
+P	/	astype	1	0	Val,Type
+P	/	alist	1	0	A,B,C
+P	/	load_ext	1	0	LibName,FuncName
+P	/	pixloc	1	0	x,y,z
+P	/	vector	1	0	x,y,z
+V	/alist	type	1		2	null
+V	/alist	parent_type	1		2	null
+V	/alist	tag	1		0	null
+V	/alist	len	1		0	null
+P	/alist	Add	1	0	Item1,Item2
+P	/alist	Copy	1	0	Start,End
+P	/alist	Cut	1	0	Start,End
+P	/alist	Find	1	0	Elem,Start,End
+P	/alist	Insert	1	0	Index,Item1,Item2
+P	/alist	Join	1	0	Glue,Start,End
+P	/alist	Remove	1	0	Item1,Item2
+P	/alist	Splice	1	0	Start,End,Item1,Item2
+P	/alist	Swap	1	0	Index1,Index2
+V	/area	parent_type	0		0	o
+V	/area	layer	0		0	f:1
+V	/atom	parent_type	0		0	o
+V	/atom	alpha	1		0	f:255
+V	/atom	appearance	1		4	null
+V	/atom	appearance_flags	1		0	f:0
+V	/atom	blend_mode	1		0	f:0
+V	/atom	bounds	1		0	null
+V	/atom	color	1		0	null
+V	/atom	contents	1	/list/atom	0	null
+V	/atom	density	1		0	f:0
+V	/atom	desc	1		0	null
+V	/atom	dir	1		0	f:2
+V	/atom	gender	1		0	s:neuter
+V	/atom	icon	1	/icon	0	null
+V	/atom	icon_state	1		0	null
+V	/atom	invisibility	1		0	f:0
+V	/atom	infra_luminosity	1		0	f:0
+V	/atom	loc	1	/atom	4	null
+V	/atom	layer	1		0	-
+V	/atom	luminosity	1		0	f:0
+V	/atom	maptext	1		0	null
+V	/atom	maptext_width	1		0	f:32
+V	/atom	maptext_height	1		0	f:32
+V	/atom	maptext_x	1		0	f:0
+V	/atom	maptext_y	1		0	f:0
+V	/atom	mouse_over_pointer	1		0	f:0
+V	/atom	mouse_drag_pointer	1		0	f:0
+V	/atom	mouse_drop_pointer	1		0	f:1
+V	/atom	mouse_drop_zone	1		0	f:0
+V	/atom	mouse_opacity	1		0	f:1
+V	/atom	name	1		0	null
+V	/atom	opacity	1		0	f:0
+V	/atom	overlays	1	/list	4	null
+V	/atom	pixel_x	1		0	f:0
+V	/atom	pixel_y	1		0	f:0
+V	/atom	pixel_w	1		0	f:0
+V	/atom	pixel_z	1		0	f:0
+V	/atom	icon_w	1		0	f:0
+V	/atom	icon_z	1		0	f:0
+V	/atom	pixloc	1	/pixloc	0	null
+V	/atom	plane	1		0	f:0
+V	/atom	suffix	1		0	null
+V	/atom	text	1		0	null
+V	/atom	transform	1	/matrix	0	null
+V	/atom	underlays	1	/list	4	null
+V	/atom	verbs	1	/list	4	null
+V	/atom	x	1		4	null
+V	/atom	y	1		4	null
+V	/atom	z	1		4	null
+V	/atom	filters	1	/list	0	null
+V	/atom	render_target	1		0	null
+V	/atom	render_source	1		0	null
+V	/atom	vis_flags	1		0	null
+P	/atom	Click	1	0	location,control,params
+P	/atom	Cross	1	0	O
+P	/atom	Crossed	1	0	O
+P	/atom	DblClick	1	0	location,control,params
+P	/atom	Enter	1	0	O,oldloc
+P	/atom	Entered	1	0	Obj,OldLoc
+P	/atom	Exit	1	0	O,newloc
+P	/atom	Exited	1	0	Obj,newloc
+P	/atom	MouseDown	1	0	location,control,params
+P	/atom	MouseDrag	1	0	over_object,src_location,over_location,src_control,over_control,params
+P	/atom	MouseDrop	1	0	over_object,src_location,over_location,src_control,over_control,params
+P	/atom	MouseEntered	1	0	location,control,params
+P	/atom	MouseExited	1	0	location,control,params
+P	/atom	MouseMove	1	0	location,control,params
+P	/atom	MouseUp	1	0	location,control,params
+P	/atom	MouseWheel	1	0	delta_x,delta_y,location,control,params
+P	/atom	New	0	0	loc
+P	/atom	Stat	1	0	
+P	/atom	Uncross	1	0	O
+P	/atom	Uncrossed	1	0	O
+V	/atom/movable	animate_movement	1		0	f:1
+V	/atom/movable	bound_x	1		0	f:0
+V	/atom/movable	bound_y	1		0	f:0
+V	/atom/movable	bound_width	1		0	f:32
+V	/atom/movable	bound_height	1		0	f:32
+V	/atom/movable	locs	1	/list	4	null
+V	/atom/movable	screen_loc	1		0	null
+V	/atom/movable	glide_size	1		0	-
+V	/atom/movable	particles	1	/particles	0	null
+V	/atom/movable	step_size	1		0	f:32
+V	/atom/movable	step_x	1		0	f:0
+V	/atom/movable	step_y	1		0	f:0
+V	/atom/movable	vis_contents	1	/list	0	null
+V	/atom/movable	vis_locs	1	/list	4	null
+P	/atom/movable	Bump	1	0	Obstacle
+P	/atom/movable	Move	1	0	NewLoc,Dir,step_x,step_y
+V	/callee	args	1		0	null
+V	/callee	caller	1	/callee	0	null
+V	/callee	category	1		0	null
+V	/callee	desc	1		0	null
+V	/callee	file	1		0	null
+V	/callee	name	1		0	null
+V	/callee	line	1		0	null
+V	/callee	proc	1		0	null
+V	/callee	src	1		0	null
+V	/callee	type	1		0	null
+V	/callee	usr	1		0	null
+V	/client	type	1		2	null
+V	/client	parent_type	1		2	-
+V	/client	tag	1		0	null
+V	/client	vars	1	/list	2	null
+V	/client	address	1		0	null
+V	/client	authenticate	1		0	null
+V	/client	bounds	1		0	null
+V	/client	bound_x	1		0	null
+V	/client	bound_y	1		0	null
+V	/client	bound_width	1		0	null
+V	/client	bound_height	1		0	null
+V	/client	byond_version	1		0	null
+V	/client	byond_build	1		0	null
+V	/client	CGI	1		0	null
+V	/client	ckey	1		0	null
+V	/client	color	1		0	null
+V	/client	command_text	1		0	null
+V	/client	connection	1		0	null
+V	/client	control_freak	1		0	-
+V	/client	computer_id	1		0	null
+V	/client	default_verb_category	1		0	s:Commands
+V	/client	dir	1		0	f:1
+V	/client	edge_limit	1		0	null
+V	/client	eye	1		0	null
+V	/client	fps	1		0	f:0
+V	/client	gender	1		0	null
+V	/client	glide_size	1		0	f:0
+V	/client	images	1	/list	0	null
+V	/client	inactivity	1		0	null
+V	/client	key	1		0	null
+V	/client	lazy_eye	1		0	null
+V	/client	mob	1	/mob	0	null
+V	/client	mouse_pointer_icon	1		0	null
+V	/client	perspective	1		0	f:0
+V	/client	pixel_x	1		0	f:0
+V	/client	pixel_y	1		0	f:0
+V	/client	pixel_w	1		0	f:0
+V	/client	pixel_z	1		0	f:0
+V	/client	preload_rsc	1		0	-
+V	/client	screen	1	/list	0	null
+V	/client	script	1		0	-
+V	/client	show_map	1		0	f:1
+V	/client	show_popup_menus	1		0	f:1
+V	/client	show_verb_panel	1		0	-
+V	/client	statobj	1		0	null
+V	/client	statpanel	1		0	null
+V	/client	tick_lag	1		0	f:0
+V	/client	timezone	1		0	null
+V	/client	verbs	1	/list	0	null
+V	/client	view	1		0	null
+V	/client	virtual_eye	1		0	null
+P	/client	New	1	0	
+P	/client	Del	1	0	
+P	/client	Topic	1	0	href,href_list,hsrc
+P	/client	AllowUpload	1	0	filename,filelength
+P	/client	Center	1	0	
+P	/client	CheckPassport	1	0	passport_identifier
+P	/client	Click	1	0	object,location,control,params
+P	/client	Command	1	0	command
+P	/client	DblClick	1	0	object,location,control,params
+P	/client	East	1	0	
+P	/client	Export	1	0	file
+P	/client	GetAPI	1	0	
+P	/client	Import	1	0	Query
+P	/client	IsByondMember	1	0	
+P	/client	MouseDown	1	0	object,location,control,params
+P	/client	MouseDrag	1	0	src_object,over_object,src_location,over_location,src_control,over_control,params
+P	/client	MouseDrop	1	0	over_object,src_location,over_location,src_control,over_control,params
+P	/client	MouseEntered	1	0	object,location,control,params
+P	/client	MouseExited	1	0	object,location,control,params
+P	/client	MouseMove	1	0	object,location,control,params
+P	/client	MouseUp	1	0	object,location,control,params
+P	/client	MouseWheel	1	0	object,delta_x,delta_y,location,control,params
+P	/client	Move	1	0	loc,dir
+P	/client	North	1	0	
+P	/client	Northeast	1	0	
+P	/client	Northwest	1	0	
+P	/client	SendPage	1	0	msg,recipient,options
+P	/client	SetAPI	1	0	
+P	/client	South	1	0	
+P	/client	Southeast	1	0	
+P	/client	Southwest	1	0	
+P	/client	Stat	1	0	
+P	/client	West	1	0	
+P	/client	MeasureText	1	0	text,style,width
+P	/client	SoundQuery	1	0	
+P	/client	RenderIcon	1	0	object
+V	/database	_binobj	1		0	null
+P	/database	Close	1	0	
+P	/database	Error	1	0	
+P	/database	ErrorMsg	1	0	
+P	/database	Open	1	0	filename
+P	/database	New	1	0	filename
+V	/database/query	database	1	/database	0	null
+P	/database/query	Add	1	0	text,item1,item2
+P	/database/query	Close	1	0	
+P	/database/query	Columns	1	0	column
+P	/database/query	Error	1	0	
+P	/database/query	ErrorMsg	1	0	
+P	/database/query	Execute	1	0	database
+P	/database/query	GetColumn	1	0	column
+P	/database/query	GetRowData	1	0	
+P	/database/query	New	1	0	text,item1,item2
+P	/database/query	NextRow	1	0	
+P	/database/query	Reset	1	0	
+P	/database/query	RowsAffected	1	0	
+V	/datum	type	1		2	null
+V	/datum	parent_type	1		2	null
+V	/datum	tag	1		0	null
+V	/datum	vars	1	/list	2	null
+P	/datum	New	1	0	
+P	/datum	Del	1	0	
+P	/datum	Read	1	0	F
+P	/datum	Topic	1	0	href,href_list
+P	/datum	Write	1	0	F
+V	/dm_filter	type	1		2	null
+V	/dm_filter	x	1		0	null
+V	/dm_filter	y	1		0	null
+V	/dm_filter	icon	1		0	null
+V	/dm_filter	render_source	1		0	null
+V	/dm_filter	flags	1		0	null
+V	/dm_filter	size	1		0	null
+V	/dm_filter	threshold	1		0	null
+V	/dm_filter	offset	1		0	null
+V	/dm_filter	alpha	1		0	null
+V	/dm_filter	color	1		0	null
+V	/dm_filter	space	1		0	null
+V	/dm_filter	transform	1		0	null
+V	/dm_filter	blend_mode	1		0	null
+V	/dm_filter	density	1		0	null
+V	/dm_filter	factor	1		0	null
+V	/dm_filter	repeat	1		0	null
+V	/dm_filter	radius	1		0	null
+V	/dm_filter	falloff	1		0	null
+V	/exception	name	1		0	null
+V	/exception	desc	1		0	null
+V	/exception	file	1		0	null
+V	/exception	line	1		0	null
+P	/exception	New	0	0	name,file,line
+V	/generator	_binobj	1		0	null
+P	/generator	Rand	1	0	
+P	/generator	Turn	1	0	a
+P	/icon	Blend	1	0	icon,function,x,y
+P	/icon	Crop	1	0	x1,y1,x2,y2
+P	/icon	DrawBox	1	0	rgb,x1,y1,x2,y2
+P	/icon	Flip	1	0	dir
+P	/icon	GetPixel	1	0	x,y,icon_state,dir,frame,moving
+P	/icon	Width	1	0	
+P	/icon	IconStates	1	0	mode
+P	/icon	Insert	1	0	new_icon,icon_state,dir,frame,moving,delay
+P	/icon	MapColors	1	0	
+P	/icon	New	0	0	icon,icon_state,dir,frame,moving
+P	/icon	Scale	1	0	width,height
+P	/icon	SetIntensity	1	0	r,g,b
+P	/icon	Shift	1	0	dir,offset,wrap
+P	/icon	SwapColor	1	0	old_rgba,new_rgba
+P	/icon	Turn	1	0	angle
+P	/icon	Height	1	0	
+V	/image	alpha	1		0	null
+V	/image	appearance	1		0	null
+V	/image	appearance_flags	1		0	null
+V	/image	blend_mode	1		0	null
+V	/image	color	1		0	null
+V	/image	desc	1		0	null
+V	/image	icon	1	/icon	0	null
+V	/image	icon_state	1		0	null
+V	/image	text	1		0	null
+V	/image	dir	1		0	null
+V	/image	underlays	1	/list	0	null
+V	/image	overlays	1	/list	0	null
+V	/image	loc	1	/atom	0	null
+V	/image	layer	1		0	f:5
+V	/image	maptext	1		0	null
+V	/image	maptext_width	1		0	null
+V	/image	maptext_height	1		0	null
+V	/image	maptext_x	1		0	null
+V	/image	maptext_y	1		0	null
+V	/image	pixel_x	1		0	null
+V	/image	pixel_y	1		0	null
+V	/image	pixel_w	1		0	null
+V	/image	pixel_z	1		0	null
+V	/image	icon_w	1		0	null
+V	/image	icon_z	1		0	null
+V	/image	plane	1		0	null
+V	/image	render_source	1		0	null
+V	/image	render_target	1		0	null
+V	/image	x	1		0	null
+V	/image	y	1		0	null
+V	/image	z	1		0	null
+V	/image	override	1		0	null
+V	/image	transform	1	/matrix	0	null
+V	/image	vis_contents	1	/list	0	null
+V	/image	filters	1	/list	0	null
+V	/image	animate_movement	1		0	null
+V	/image	density	1		0	null
+V	/image	gender	1		0	null
+V	/image	invisibility	1		0	null
+V	/image	luminosity	1		0	null
+V	/image	mouse_drag_pointer	1		0	null
+V	/image	mouse_drop_pointer	1		0	null
+V	/image	mouse_drop_zone	1		0	null
+V	/image	mouse_opacity	1		0	null
+V	/image	mouse_over_pointer	1		0	null
+V	/image	name	1		0	null
+V	/image	opacity	1		0	null
+V	/image	screen_loc	1		0	null
+V	/image	suffix	1		0	null
+V	/image	verbs	1		0	null
+V	/image	vis_flags	1		0	null
+P	/image	New	0	0	icon,loc,icon_state,layer,dir
+V	/list	type	1		2	null
+V	/list	parent_type	1		2	null
+V	/list	tag	1		0	null
+V	/list	vars	1	/list	2	null
+V	/list	len	1		0	null
+P	/list	Add	1	0	Item1,Item2
+P	/list	Copy	1	0	Start,End
+P	/list	Cut	1	0	Start,End
+P	/list	Find	1	0	Elem,Start,End
+P	/list	Insert	1	0	Index,Item1,Item2
+P	/list	Join	1	0	Glue,Start,End
+P	/list	Remove	1	0	Item1,Item2
+P	/list	Splice	1	0	Start,End,Item1,Item2
+P	/list	Swap	1	0	Index1,Index2
+P	/list	RemoveAll	1	0	Item1
+V	/matrix	a	1		0	null
+V	/matrix	b	1		0	null
+V	/matrix	c	1		0	null
+V	/matrix	d	1		0	null
+V	/matrix	e	1		0	null
+V	/matrix	f	1		0	null
+P	/matrix	New	0	0	
+P	/matrix	Multiply	1	0	m
+P	/matrix	Add	1	0	m
+P	/matrix	Subtract	1	0	m
+P	/matrix	Invert	1	0	
+P	/matrix	Turn	1	0	a
+P	/matrix	Scale	1	0	x,y
+P	/matrix	Translate	1	0	x,y
+P	/matrix	Interpolate	1	0	m2,t
+V	/mob	parent_type	0		0	o
+V	/mob	ckey	1		4	null
+V	/mob	client	1	/client	4	null
+V	/mob	group	1	/list	0	null
+V	/mob	key	1		0	null
+V	/mob	see_infrared	1		0	null
+V	/mob	see_invisible	1		0	null
+V	/mob	see_in_dark	1		0	null
+V	/mob	sight	1		0	null
+P	/mob	Login	1	0	
+P	/mob	Logout	1	0	
+V	/mutable_appearance	parent_type	0		0	o
+V	/obj	parent_type	0		0	o
+V	/particles	width	1		0	null
+V	/particles	height	1		0	null
+V	/particles	spawning	1		0	null
+V	/particles	count	1		0	null
+V	/particles	bound1	1		0	null
+V	/particles	bound2	1		0	null
+V	/particles	gravity	1		0	null
+V	/particles	gradient	1		0	null
+V	/particles	transform	1		0	null
+V	/particles	lifespan	1		0	null
+V	/particles	fade	1		0	null
+V	/particles	fadein	1		0	null
+V	/particles	position	1		0	null
+V	/particles	velocity	1		0	null
+V	/particles	color	1		0	null
+V	/particles	color_change	1		0	null
+V	/particles	friction	1		0	null
+V	/particles	icon	1		0	null
+V	/particles	icon_state	1		0	null
+V	/particles	scale	1		0	null
+V	/particles	grow	1		0	null
+V	/particles	rotation	1		0	null
+V	/particles	spin	1		0	null
+V	/particles	drift	1		0	null
+V	/pixloc	loc	1	/atom	0	null
+V	/pixloc	step_x	1		0	null
+V	/pixloc	step_y	1		0	null
+V	/pixloc	x	1		0	null
+V	/pixloc	y	1		0	null
+V	/pixloc	z	1		0	null
+V	/regex	name	1		0	null
+V	/regex	flags	1		0	null
+V	/regex	text	1		0	null
+V	/regex	match	1		0	null
+V	/regex	group	1	/list	0	null
+V	/regex	index	1		0	null
+V	/regex	next	1		0	null
+P	/regex	New	0	0	text,flags
+P	/regex	Find	1	0	text,start,end
+P	/regex	Replace	1	0	text,rep,start,end
+P	/regex	Find_char	1	0	text,start,end
+P	/regex	Replace_char	1	0	text,rep,start,end
+V	/savefile	type	1		2	null
+V	/savefile	parent_type	1		2	null
+V	/savefile	tag	1		0	null
+V	/savefile	vars	1	/list	2	null
+V	/savefile	cd	1		0	null
+V	/savefile	dir	1	/list	0	null
+V	/savefile	eof	1		0	null
+V	/savefile	name	1		0	null
+V	/savefile	byond_build	1		0	f:0
+V	/savefile	byond_version	1		0	-
+P	/savefile	New	1	0	filename,timeout
+P	/savefile	Del	1	0	
+P	/savefile	ExportText	1	0	
+P	/savefile	Flush	1	0	
+P	/savefile	ImportText	1	0	
+P	/savefile	Lock	1	0	timeout
+P	/savefile	Unlock	1	0	
+V	/sound	file	1		0	null
+V	/sound	repeat	1		0	null
+V	/sound	wait	1		0	null
+V	/sound	channel	1		0	null
+V	/sound	frequency	1		0	f:0
+V	/sound	pan	1		0	f:0
+V	/sound	volume	1		0	f:100
+V	/sound	priority	1		0	f:0
+V	/sound	status	1		0	f:0
+V	/sound	environment	1		0	f:-1
+V	/sound	echo	1		0	null
+V	/sound	x	1		0	f:0
+V	/sound	y	1		0	f:0
+V	/sound	z	1		0	f:0
+V	/sound	falloff	1		0	f:1
+V	/sound	offset	1		0	f:0
+V	/sound	len	1		0	f:0
+V	/sound	atom	1	/atom	4	null
+V	/sound	transform	1		0	null
+V	/sound	params	1		0	null
+V	/sound	pitch	1		0	f:0
+P	/sound	New	0	0	file,repeat,wait,channel,volume
+V	/turf	parent_type	0		0	o
+V	/turf	vis_contents	1	/list	0	null
+V	/turf	vis_locs	1	/list	4	null
+V	/vector	len	1		0	null
+V	/vector	size	1		0	null
+V	/vector	x	1		0	null
+V	/vector	y	1		0	null
+V	/vector	z	1		0	null
+P	/vector	Cross	1	0	B
+P	/vector	Dot	1	0	B
+P	/vector	Interpolate	1	0	B,t
+P	/vector	Normalize	1	0	
+P	/vector	Turn	1	0	B
+V	/world	vars	1	/list	2	null
+V	/world	address	1		0	null
+V	/world	area	1	/area	0	-
+V	/world	byond_build	1		0	f:1666
+V	/world	byond_version	1		0	f:516
+V	/world	cache_lifespan	1		0	-
+V	/world	contents	1	/list/atom	0	null
+V	/world	cpu	1		0	null
+V	/world	executor	1		0	null
+V	/world	fps	1		0	-
+V	/world	game_state	1		0	f:0
+V	/world	host	1		0	null
+V	/world	hub	1		0	-
+V	/world	hub_password	1		0	-
+V	/world	icon_size	1		0	f:32
+V	/world	internet_address	1		0	null
+V	/world	log	1		0	null
+V	/world	loop_checks	1		0	f:1
+V	/world	map_cpu	1		0	null
+V	/world	map_format	1		0	f:0
+V	/world	maxx	1		0	null
+V	/world	maxy	1		0	null
+V	/world	maxz	1		0	null
+V	/world	mob	1	/mob	0	-
+V	/world	name	1		0	-
+V	/world	params	1		0	null
+V	/world	port	1		0	null
+V	/world	realtime	1		0	null
+V	/world	reachable	1		0	null
+V	/world	sleep_offline	1		0	f:0
+V	/world	status	1		0	null
+V	/world	system_type	1		0	null
+V	/world	tick_lag	1		0	f:1
+V	/world	tick_usage	1		0	null
+V	/world	turf	1	/turf	0	-
+V	/world	time	1		0	null
+V	/world	timeofday	1		0	null
+V	/world	timezone	1		0	null
+V	/world	url	1		0	null
+V	/world	version	1		0	f:0
+V	/world	view	1		0	-
+V	/world	visibility	1		0	f:1
+V	/world	movement_mode	1		0	f:0
+P	/world	New	1	0	
+P	/world	Del	1	0	
+P	/world	Topic	1	0	T,Addr,Master,Keys
+P	/world	AddCredits	1	0	player,credits,note
+P	/world	ClearMedal	1	0	medal,player
+P	/world	Export	1	0	Addr,File,Persist,Clients
+P	/world	GetConfig	1	0	config_set,param
+P	/world	GetCredits	1	0	player
+P	/world	GetMedal	1	0	medal,player
+P	/world	GetScores	1	0	key,fields,count,skip
+P	/world	Import	1	0	
+P	/world	IsBanned	1	0	key,address,computer_id,type
+P	/world	IsSubscribed	1	0	player
+P	/world	OpenPort	1	0	port
+P	/world	PayCredits	1	0	player,credits,note
+P	/world	Profile	1	0	command,type,format
+P	/world	Reboot	1	0	reason
+P	/world	Repop	1	0	
+P	/world	SetConfig	1	0	config_set,param,value
+P	/world	SetMedal	1	0	medal,player
+P	/world	SetScores	1	0	key,fields
+P	/world	Error	1	0	exception
+P	/world	Tick	1	0	

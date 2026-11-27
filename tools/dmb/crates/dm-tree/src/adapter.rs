@@ -1,6 +1,6 @@
 //! Structural AST adapter. Unsupported declaration forms are explicit errors;
 //! executable bodies stay in the syntax layer and never enter tree identity.
-use crate::{DefinitionMode, MemberKind, MemberMetadata, Provenance, Skeleton};
+use crate::{DefinitionMode, MemberKind, MemberMetadata, Provenance, Skeleton, VAR_SPACEMAN_FINAL, VAR_SPACEMAN_PRIVATE, VAR_SPACEMAN_PROTECTED};
 use dm_ir::{FileId, Span, SymbolId, SymbolTable, TypePath};
 use dm_syntax::{AstFile, Item, ItemKind, TokenKind};
 use std::sync::Arc;
@@ -276,13 +276,29 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                             "const" => Some(2),
                             "tmp" => Some(4),
                             "global" => Some(8),
+                            // The SpacemanDMM access flags (`var/SpacemanDMM_private/x`: what VAR_PRIVATE and friends expand to when
+                            // SPACEMAN_DMM is defined, as analysis builds the tree). Flags, not type path segments.
+                            "SpacemanDMM_private" => Some(VAR_SPACEMAN_PRIVATE),
+                            "SpacemanDMM_protected" => Some(VAR_SPACEMAN_PROTECTED),
+                            "SpacemanDMM_final" => Some(VAR_SPACEMAN_FINAL),
                             _ => None,
                         })
                         .fold(0, |flags, flag| flags | flag);
                     let type_parts: Vec<_> = parts[..parts.len() - 1]
                         .iter()
                         .copied()
-                        .filter(|part| !matches!(*part, "static" | "const" | "tmp" | "global"))
+                        .filter(|part| {
+                            !matches!(
+                                *part,
+                                "static"
+                                    | "const"
+                                    | "tmp"
+                                    | "global"
+                                    | "SpacemanDMM_private"
+                                    | "SpacemanDMM_protected"
+                                    | "SpacemanDMM_final"
+                            )
+                        })
                         .collect();
                     let authored_type = format!("/{}", type_parts.join("/"));
                     let projection = dm_syntax::project_declaration_type(&authored_type);
