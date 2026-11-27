@@ -12,8 +12,8 @@
 //! revision are compared (every declaration and body of a copied region is the previous revision's, at the same place in
 //! the same file). Items of those files are matched by identity on both sides; an item in both whose content (the
 //! declaration's own content digest, the body's expanded text) differs is `Changed`, one whose content is the same but
-//! whose line moved is `Moved`. A revision built without a usable previous one has no delta (`FrontendRevision::delta`
-//! is `None`): every consumer recomputes.
+//! whose line moved is `Moved`. A revision built without a usable previous one, or whose edit reaches more than
+//! `DELTA_FILE_LIMIT` files, has no delta (`ColdFrontend::delta` is `None`): every consumer recomputes.
 use super::*;
 use std::collections::BTreeSet;
 
@@ -176,6 +176,10 @@ fn diff(before: &BTreeMap<DeclarationKey, Item>, after: &BTreeMap<DeclarationKey
     out
 }
 
+/// Above this many files a revision has no delta: comparing them would cost seconds (a widely read `#define`), and a consumer
+/// that recomputes pays no more.
+const DELTA_FILE_LIMIT: usize = 256;
+
 /// The delta of `current` against `previous`, given which current regions are verbatim copies of which previous ones
 /// (`PlanReuse::regions`). `None` when the plan copied nothing (a cold or fully re-planned revision: no delta is cheaper
 /// than recomputing).
@@ -204,6 +208,10 @@ pub(super) fn compute(
         if !copied {
             files.insert(Arc::clone(&previous.plan.occurrences[previous.plan.regions[region].occurrence].semantic_path));
         }
+    }
+    // An edit that reaches this many files (a `#define` most of the tree reads) is cheaper to recompute than to compare.
+    if files.len() > DELTA_FILE_LIMIT {
+        return None;
     }
     let in_files = |frontend: &ColdFrontend| -> Vec<bool> {
         frontend

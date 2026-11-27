@@ -1578,10 +1578,7 @@ pub(crate) fn hosted_frontend(
         // Nothing changed since the remembered front end was built from these sources: it is this request's front end (it is a
         // function of the source texts, the defines and the engine, all three the same).
         let token = sources.token();
-        // TEMPORARY (measurement only, removed before landing): the old provider, for before/after timings.
-        let legacy = matches!(dq_hostio::var("DQ_FRONTEND_SOURCES").as_deref(), Ok("filesystem"));
-        if legacy {
-        } else if let Some(previous) = host.semantic_state().and_then(|state| state.previous_frontend(&project, defines)) {
+        if let Some(previous) = host.semantic_state().and_then(|state| state.previous_frontend(&project, defines)) {
             if previous.plan.input_revision == Some(token) {
                 trace_refresh("unchanged, the remembered front end is reused");
                 return Ok(previous);
@@ -1601,7 +1598,7 @@ pub(crate) fn hosted_frontend(
             .run(|executor| {
                 dm_tree::frontend::build_with_executor_and_semantic_state(
                     &project,
-                    &LegacyOr(legacy, sources.provider()),
+                    &sources.provider(),
                     defines,
                     dm_tree::frontend::FrontendConfig { workers, engine: Some(engine.frontend_seed()), observer: None },
                     memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
@@ -1644,16 +1641,3 @@ pub(crate) fn hosted_frontend(
     .inspect_err(|error| super::emit_stderr(format_args!("dmbd analyze: the retained session gave no front end: {error}"))))
 }
 
-/// TEMPORARY (measurement only, removed before landing).
-struct LegacyOr<'a>(bool, crate::watched_sources::Provider<'a>);
-impl dm_preprocess::SourceProvider for LegacyOr<'_> {
-    fn read(&self, path: &std::path::Path) -> Result<String, String> {
-        if self.0 { dm_preprocess::FileSystem.read(path) } else { self.1.read(path) }
-    }
-    fn revision(&self) -> Option<u64> {
-        if self.0 { None } else { self.1.revision() }
-    }
-    fn changes_since(&self, revision: u64) -> Option<Arc<std::collections::BTreeSet<std::path::PathBuf>>> {
-        if self.0 { None } else { self.1.changes_since(revision) }
-    }
-}

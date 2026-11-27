@@ -15,13 +15,16 @@
 //! that changed (`dm_preprocess::regions::plan_patch`), and a request that changed nothing is recognised by its token.
 use std::collections::{BTreeSet, HashMap, VecDeque};
 use std::path::{Path, PathBuf};
+use dm_preprocess::regions::prepared_source::PreparedSource;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime};
 
-/// What a file looked like when it was last read: its decoded text (or the read error) and its stamp.
+/// What a file looked like when it was last read: its decoded and lexically prepared text (or the read error) and its stamp.
+/// The prepared source is served as is (`SourceProvider::prepared_source`), so the planner sees the same allocation as last
+/// time for an unchanged file and adopts its include subtree without comparing text.
 #[derive(Clone)]
 struct Entry {
-    text: Result<Arc<str>, String>,
+    text: Result<Arc<PreparedSource>, String>,
     stamp: Option<(u64, SystemTime)>,
 }
 
@@ -34,13 +37,15 @@ fn read_entry(path: &Path) -> Entry {
     // The stamp is taken before the bytes: a write between the two leaves a stamp older than the text, so a later stat sweep
     // reads the file again rather than keeping a text older than its stamp.
     let stamp = stamp(path);
-    let text = dm_preprocess::read_source_file(path).map(Arc::from).map_err(|error| error.to_string());
+    let text = dm_preprocess::read_source_file(path)
+        .map(|text| dm_preprocess::regions::prepared_source::shared_prepared(text.into()))
+        .map_err(|error| error.to_string());
     Entry { text, stamp }
 }
 
 fn same_text(a: &Entry, b: &Entry) -> bool {
     match (&a.text, &b.text) {
-        (Ok(a), Ok(b)) => a == b,
+        (Ok(a), Ok(b)) => Arc::ptr_eq(a, b) || a.original().as_str() == b.original().as_str(),
         (Err(_), Err(_)) => true,
         _ => false,
     }
@@ -224,16 +229,25 @@ pub struct Provider<'a> {
     sources: &'a WatchedSources,
 }
 
-impl dm_preprocess::SourceProvider for Provider<'_> {
-    fn read(&self, path: &Path) -> Result<String, String> {
+impl Provider<'_> {
+    fn entry(&self, path: &Path) -> Result<Arc<PreparedSource>, String> {
         if let Some(entry) = self.sources.lock().files.get(path) {
-            return entry.text.as_deref().map(str::to_owned).map_err(Clone::clone);
+            return entry.text.clone();
         }
         let entry = read_entry(path);
-        let result = entry.text.as_deref().map(str::to_owned).map_err(Clone::clone);
         // A file first read in this revision is part of it: its later edits are what the next refresh reports.
-        self.sources.lock().files.entry(path.to_path_buf()).or_insert(entry);
-        result
+        self.sources.lock().files.entry(path.to_path_buf()).or_insert(entry).text.clone()
+    }
+}
+
+impl dm_preprocess::SourceProvider for Provider<'_> {
+    fn read(&self, path: &Path) -> Result<String, String> {
+        self.entry(path).map(|prepared| prepared.original().as_str().to_owned())
+    }
+
+    fn prepared_source(&self, path: &Path) -> Option<Arc<PreparedSource>> {
+        // An unreadable file is reported through `read`, which the planner asks when this declines.
+        self.entry(path).ok()
     }
 
     fn revision(&self) -> Option<u64> {
