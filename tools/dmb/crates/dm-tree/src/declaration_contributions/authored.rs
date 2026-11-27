@@ -80,18 +80,59 @@ impl AuthoredLease {
     /// previous request's (the same allocation: `KeyedDeclarations::capture_view` shares an unchanged owner's
     /// contribution) keeps the previous admitted value, which this lease already claims; only the other owners are
     /// replayed. Owners no longer present release their claim, as `adopt`'s `retain_current_keys` does.
+    ///
+    /// The claims this lease inherited are the previous request's, which held exactly `previous`'s owners: releasing the
+    /// owners that left keeps exactly the current ones, and with none gone the claims are not walked at all.
     pub(crate) fn adopt_changed(&self, mut index: KeyedDeclarations, previous: &KeyedDeclarations) -> KeyedDeclarations {
-        let current: std::collections::HashSet<u64> = index.owners.keys().map(|owner| owner.bits()).collect();
-        self.lease.retain_where(|stored| owner_bits(stored).is_none_or(|bits| current.contains(&bits)));
-        let mut admitted = BTreeMap::new();
-        for (&owner, candidate) in &index.owners {
-            if let Some(kept) = previous.owners.get(&owner).filter(|kept| Arc::ptr_eq(&kept.rows, &candidate.rows)) {
-                admitted.insert(owner, Arc::clone(kept));
-                continue;
+        let started = std::time::Instant::now();
+        // One step over both owner maps (both in owner order): the owners that left, and the owners whose rows are not the
+        // previous allocation. An owner whose contribution is the previous one is already admitted and claimed.
+        let mut removed = Vec::new();
+        let mut replayed = Vec::new();
+        let mut kept_rows = Vec::new();
+        {
+            let mut before = previous.owners.iter().peekable();
+            for (&owner, candidate) in &index.owners {
+                while before.peek().is_some_and(|(old, _)| **old < owner) {
+                    removed.push(before.next().expect("peeked").0.bits());
+                }
+                match before.peek() {
+                    Some((old, kept)) if **old == owner => {
+                        if !Arc::ptr_eq(kept, candidate) {
+                            if Arc::ptr_eq(&kept.rows, &candidate.rows) {
+                                kept_rows.push((owner, Arc::clone(kept)));
+                            } else {
+                                replayed.push(owner);
+                            }
+                        }
+                        before.next();
+                    }
+                    _ => replayed.push(owner),
+                }
             }
-            admitted.insert(owner, self.admit(&index, owner, candidate));
+            removed.extend(before.map(|(owner, _)| owner.bits()));
         }
-        index.owners = admitted;
+        let compared = started.elapsed();
+        if !removed.is_empty() {
+            removed.sort_unstable();
+            self.lease.retain_where(|stored| owner_bits(stored).is_none_or(|bits| removed.binary_search(&bits).is_err()));
+        }
+        let released = started.elapsed();
+        let admitted: Vec<_> = replayed
+            .iter()
+            .map(|&owner| (owner, self.admit(&index, owner, &index.owners[&owner])))
+            .collect();
+        for (owner, value) in kept_rows.into_iter().chain(admitted) {
+            index.owners.insert(owner, value);
+        }
+        crate::change_set::record_outcome(format!(
+            "authored adoption: {} owners replayed, {} left: compare={:.3}s release={:.3}s admit={:.3}s",
+            replayed.len(),
+            removed.len(),
+            compared.as_secs_f64(),
+            (released - compared).as_secs_f64(),
+            (started.elapsed() - released).as_secs_f64()
+        ));
         index
     }
     fn admit(&self, index: &KeyedDeclarations, owner: SymbolId, candidate: &Arc<TypeContribution>) -> Arc<TypeContribution> {

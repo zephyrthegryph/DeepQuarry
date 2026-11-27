@@ -251,6 +251,9 @@ impl CallableRoster {
         {
             return None;
         }
+        let started = std::time::Instant::now();
+        let mut laps: Vec<(&'static str, f64)> = Vec::new();
+        let lap = |name: &'static str, laps: &mut Vec<(&'static str, f64)>| laps.push((name, started.elapsed().as_secs_f64()));
         let old_slots = old.members().len();
         let previous = &self.index;
         // The new body roster is the previous one with new slots inserted.
@@ -296,6 +299,7 @@ impl CallableRoster {
                 relinked.push(old_to_new[old_ordinal]);
             }
         }
+        lap("walk", &mut laps);
         let mut ordinals = previous.ordinals.clone();
         for ordinal in ordinals.values_mut() {
             *ordinal = old_to_new[*ordinal];
@@ -305,6 +309,7 @@ impl CallableRoster {
                 return None;
             }
         }
+        lap("ordinals", &mut laps);
         let mut dependents = vec![Vec::new(); members.len()];
         let mut ready = Vec::new();
         for (ordinal, member) in members.iter().enumerate() {
@@ -317,6 +322,7 @@ impl CallableRoster {
                 }
             }
         }
+        lap("dependents", &mut laps);
         // The callables whose identity, chain or ABI entry may differ: the inserted and relinked ones and every chain below.
         let mut dirty = vec![false; members.len()];
         let mut stack: Vec<usize> = inserted.iter().chain(&relinked).copied().collect();
@@ -363,6 +369,7 @@ impl CallableRoster {
                 }
             }
         }
+        lap("identities", &mut laps);
         // Selection changes only within the (owner, name, kind) groups of the recomputed callables.
         let mut effective = vec![false; members.len()];
         for (old_ordinal, &new) in old_to_new.iter().enumerate() {
@@ -414,6 +421,7 @@ impl CallableRoster {
                 bindings.insert(binding(&identities[ordinal]));
             }
         }
+        lap("bindings", &mut laps);
         let key = |i: usize| {
             let b = &bodies[i];
             (b.source.encounter_ordinal, b.expanded_span.start, b.declaration.0)
@@ -427,10 +435,26 @@ impl CallableRoster {
             source_order = (0..bodies.len()).collect();
             source_order.sort_by_key(|&i| key(i));
         }
+        lap("source_order", &mut laps);
         let abi = self
             .abi
             .as_ref()
             .and_then(|abi| abi.after_insert(tree, &members, &identities, &old_to_new, &recompute).ok());
+        lap("abi", &mut laps);
+        let mut at = 0.0;
+        crate::change_set::record_outcome(format!(
+            "callable roster insertion ({} inserted, {} recomputed): {}",
+            inserted.len(),
+            recompute.len(),
+            laps.iter()
+                .map(|(name, end)| {
+                    let line = format!("{name}={:.3}s", end - at);
+                    at = *end;
+                    line
+                })
+                .collect::<Vec<_>>()
+                .join(" ")
+        ));
         Some(Arc::new(Self {
             tree: Arc::clone(tree),
             index: Arc::new(CallableIndexRecipe {

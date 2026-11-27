@@ -88,6 +88,17 @@ pub(super) fn rebuild_selected(
     executor: Option<&dm_exec::BuildExecutor>,
     selected: Option<&HashSet<SymbolId>>,
 ) {
+    // A few names (a splice): one pass over the members comparing names, no per-type work or whole-arena fact table. The
+    // reduction does not depend on the order of the facts.
+    if let Some(names) = selected.filter(|names| names.len() <= 64) {
+        let names: Vec<SymbolId> = names.iter().copied().collect();
+        let facts = (0..tree.members.len())
+            .filter(|&index| names.contains(&tree.members[index].name))
+            .map(|index| fact(tree, MemberId(index as u32)))
+            .collect();
+        reduce(tree, facts, selected);
+        return;
+    }
     let facts = facts(tree, executor, selected);
     reduce(tree, facts, selected);
 }
@@ -163,8 +174,10 @@ fn reduce(tree: &mut SemanticTree, facts: Vec<Option<Fact>>, selected: Option<&H
     }
     let inventory = Arc::make_mut(&mut tree.inventory);
     if let Some(selected) = selected {
-        inventory.unique.retain(|name, _| !selected.contains(name));
-        inventory.non_unique.retain(|name| !selected.contains(name));
+        for name in selected {
+            inventory.unique.remove(name);
+            inventory.non_unique.remove(name);
+        }
         inventory.unique.extend(unique);
         inventory.non_unique.extend(non_unique);
     } else {

@@ -9,7 +9,7 @@ use crate::declaration_contributions::{DeclarationFamily, KeyedDeclarations};
 use crate::SemanticTree;
 use dm_ir::SymbolId;
 use std::collections::HashSet;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Default)]
 pub struct StructuralChangeSet {
@@ -68,8 +68,16 @@ impl StructuralChangeSet {
                 }
             }
         }
-        // Implicit types have no Type row: compare the type rosters directly.
-        for node in current_tree.types.iter() {
+        // Implicit types have no Type row: compare the type rosters directly. Trees that share their path index (a splice
+        // that kept the type roster) number the same paths the same way: compare paths and parents position by position.
+        let same_numbering = Arc::ptr_eq(&previous_tree.by_path, &current_tree.by_path)
+            && previous_tree.types.len() == current_tree.types.len()
+            && previous_tree
+                .types
+                .iter()
+                .zip(current_tree.types.iter())
+                .all(|(before, now)| before.path == now.path && before.parent == now.parent);
+        for node in current_tree.types.iter().filter(|_| !same_numbering) {
             let parent = node.parent.map(|id| current_tree.types[id.index()].path);
             let before = previous_tree.lookup_type(node.path).map(|id| {
                 previous_tree.types[id.index()]
@@ -80,7 +88,7 @@ impl StructuralChangeSet {
                 set.hierarchy.insert(node.path);
             }
         }
-        for node in previous_tree.types.iter() {
+        for node in previous_tree.types.iter().filter(|_| !same_numbering) {
             if current_tree.lookup_type(node.path).is_none() {
                 set.hierarchy.insert(node.path);
             }

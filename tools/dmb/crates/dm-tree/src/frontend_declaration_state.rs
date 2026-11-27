@@ -504,7 +504,7 @@ mod tests {
                 out
             };
             let mut known = active.clone();
-            let shared_counts = Arc::clone(&known.counts);
+            let shared_counts = known.counts.clone();
             let by_delta = known
                 .update_known(&difference(&previous, &roster), &difference(&roster, &previous))
                 .expect("a small known difference applies")
@@ -512,7 +512,7 @@ mod tests {
             if index == 0 {
                 // Equal spellings: neither the table nor the shared counts were copied.
                 assert!(Arc::ptr_eq(&before, &by_delta));
-                assert!(Arc::ptr_eq(&shared_counts, &known.counts));
+                assert!(shared_counts.same_storage(&known.counts));
             }
             let delta = active.update(&roster).unwrap();
             assert_eq!(ordered(&by_delta), ordered(&delta), "known step {index}");
@@ -917,16 +917,87 @@ impl Contribution {
 #[derive(Default, Clone)]
 struct ActiveSymbols {
     contributions: Arc<std::collections::BTreeMap<usize, Arc<Contribution>>>,
-    counts: Arc<std::collections::BTreeMap<dm_ir::SymbolId, usize>>,
+    counts: SpellingCounts,
     symbols: Arc<SymbolTable>,
     catalog: Option<Arc<super::symbol_catalog::SymbolCatalog>>,
     /// The spellings the last delta update removed and added (`symbols` before it, gone, new), for the catalog to apply the
     /// same change; `None` after a full update.
     last_change: Option<(Arc<SymbolTable>, Vec<dm_ir::SymbolId>, Vec<dm_ir::SymbolId>)>,
 }
+/// How many active contributions spell each symbol: a shared base and the few counts the requests since it changed (0: the
+/// spelling is gone), so a request that adds or removes a spelling copies only that difference, not every count. The
+/// difference is folded into a new base when it grows large.
+#[derive(Clone, Default, Debug)]
+struct SpellingCounts {
+    base: Arc<std::collections::BTreeMap<dm_ir::SymbolId, usize>>,
+    delta: std::collections::BTreeMap<dm_ir::SymbolId, usize>,
+}
+const SPELLING_COUNT_DELTA: usize = 4096;
+impl SpellingCounts {
+    fn from_flat(counts: std::collections::BTreeMap<dm_ir::SymbolId, usize>) -> Self {
+        Self { base: Arc::new(counts), delta: Default::default() }
+    }
+    fn get(&self, id: &dm_ir::SymbolId) -> Option<usize> {
+        match self.delta.get(id) {
+            Some(0) => None,
+            Some(count) => Some(*count),
+            None => self.base.get(id).copied(),
+        }
+    }
+    fn contains_key(&self, id: &dm_ir::SymbolId) -> bool {
+        self.get(id).is_some()
+    }
+    /// Set a count (0 removes the spelling).
+    fn set(&mut self, id: dm_ir::SymbolId, count: usize) {
+        if self.base.get(&id).copied().unwrap_or(0) == count {
+            self.delta.remove(&id);
+        } else {
+            self.delta.insert(id, count);
+        }
+    }
+    fn len(&self) -> usize {
+        let mut len = self.base.len();
+        for (id, count) in &self.delta {
+            match (self.base.contains_key(id), *count != 0) {
+                (true, false) => len -= 1,
+                (false, true) => len += 1,
+                _ => {}
+            }
+        }
+        len
+    }
+    fn flattened(&self) -> std::collections::BTreeMap<dm_ir::SymbolId, usize> {
+        let mut flat = self.base.as_ref().clone();
+        for (id, count) in &self.delta {
+            if *count == 0 {
+                flat.remove(id);
+            } else {
+                flat.insert(*id, *count);
+            }
+        }
+        flat
+    }
+    fn fold_if_large(&mut self) {
+        if self.delta.len() > SPELLING_COUNT_DELTA {
+            *self = Self::from_flat(self.flattened());
+        }
+    }
+    #[cfg(test)]
+    fn same_storage(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.base, &other.base) && self.delta == other.delta
+    }
+}
+impl PartialEq for SpellingCounts {
+    fn eq(&self, other: &Self) -> bool {
+        self.flattened() == other.flattened()
+    }
+}
 /// Contributions added plus removed at most this many are applied to the spelling table as a
 /// delta; a larger change rebuilds the table (a cold request adds every contribution).
 const SMALL_SPELLING_DELTA: usize = 256;
+/// A request that only adds spellings layers them over the previous table; at this many layers the next one flattens (a
+/// lookup walks every layer).
+pub(super) const MAX_SPELLING_LAYERS: usize = 4;
 
 impl ActiveSymbols {
     fn matches(&self, current: &[Arc<Contribution>]) -> bool {
@@ -965,9 +1036,10 @@ impl ActiveSymbols {
             self.contributions = Arc::new(next);
             return Ok(symbols);
         }
-        // Precheck every added leaf against a shallow transaction before committing.
-        let mut symbols = self.symbols.as_ref().clone();
-        let mut counts = self.counts.as_ref().clone();
+        // Precheck every added leaf against a shallow transaction before committing. (Flat: `retain_local` below reaches
+        // every spelling.)
+        let mut symbols = self.symbols.flattened();
+        let mut counts = self.counts.flattened();
         for value in &removed {
             for (id, _) in value.facts.symbols.ordered() {
                 if let Some(count) = counts.get_mut(&id) {
@@ -987,7 +1059,7 @@ impl ActiveSymbols {
         for value in &added {
             symbols.merge_from(&value.facts.symbols)?;
         }
-        self.counts = Arc::new(counts);
+        self.counts = SpellingCounts::from_flat(counts);
         if self.symbols.ordered() != symbols.ordered() {
             self.symbols = Arc::new(symbols);
         }
@@ -1057,13 +1129,15 @@ impl ActiveSymbols {
             return Ok(self.symbols.clone());
         }
         let mut vanished = Vec::new();
-        let counts = Arc::make_mut(&mut self.counts);
+        let copy_started = std::time::Instant::now();
+        let saved = self.counts.clone();
+        let counts = &mut self.counts;
+        let counts_copied = copy_started.elapsed();
         for value in removed {
             for (id, _) in value.facts.symbols.ordered() {
-                if let Some(count) = counts.get_mut(&id) {
-                    *count -= 1;
-                    if *count == 0 {
-                        counts.remove(&id);
+                if let Some(count) = counts.get(&id) {
+                    counts.set(id, count - 1);
+                    if count == 1 {
                         vanished.push(id);
                     }
                 }
@@ -1072,30 +1146,16 @@ impl ActiveSymbols {
         let mut appeared = Vec::new();
         for value in added {
             for (id, _) in value.facts.symbols.ordered() {
-                let count = counts.entry(id).or_default();
-                *count += 1;
-                if *count == 1 {
+                let count = counts.get(&id).unwrap_or(0) + 1;
+                counts.set(id, count);
+                if count == 1 {
                     appeared.push(id);
                 }
             }
         }
+        counts.fold_if_large();
         let restore = |this: &mut Self| {
-            let counts = Arc::make_mut(&mut this.counts);
-            for value in added {
-                for (id, _) in value.facts.symbols.ordered() {
-                    if let Some(count) = counts.get_mut(&id) {
-                        *count -= 1;
-                        if *count == 0 {
-                            counts.remove(&id);
-                        }
-                    }
-                }
-            }
-            for value in removed {
-                for (id, _) in value.facts.symbols.ordered() {
-                    *counts.entry(id).or_default() += 1;
-                }
-            }
+            this.counts = saved.clone();
         };
         let gone: Vec<_> = vanished
             .iter()
@@ -1118,7 +1178,20 @@ impl ActiveSymbols {
             }
             return Ok(self.symbols.clone());
         }
-        let mut symbols = self.symbols.as_ref().clone();
+        let table_started = std::time::Instant::now();
+        // Spellings only added: a layer over the previous table (no copy of every spelling); a removal needs one flat table.
+        let mut symbols = if gone.is_empty() && self.symbols.overlay_depth() < MAX_SPELLING_LAYERS {
+            SymbolTable::overlay(Arc::clone(&self.symbols))
+        } else {
+            self.symbols.flattened()
+        };
+        crate::change_set::record_outcome(format!(
+            "spelling delta: {} gone, {} new: counts copy={:.3}s table copy={:.3}s",
+            gone.len(),
+            new.len(),
+            counts_copied.as_secs_f64(),
+            table_started.elapsed().as_secs_f64()
+        ));
         for id in &gone {
             symbols.remove_local(*id);
         }

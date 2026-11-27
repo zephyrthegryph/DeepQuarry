@@ -461,7 +461,20 @@ fn finish(
     stable: Option<StableSplice>,
     laps: &mut Laps,
 ) -> Spliced {
-    tree.refresh_member_callable_names();
+    if types_changed {
+        tree.refresh_member_callable_names();
+    } else {
+        // Only the changed names' members differ (the type roster is the previous one).
+        tree.refresh_member_callable_names_for(names);
+        if verify_enabled() || crate::frontend_verify_enabled() {
+            let incremental = Arc::clone(&tree.member_callable_names);
+            tree.refresh_member_callable_names();
+            if incremental != tree.member_callable_names {
+                eprintln!("frontend verify: SPLICED CALLABLE NAMES DIFFER from a full refresh");
+                crate::change_set::record_outcome("frontend verify: SPLICED CALLABLE NAMES DIFFER from a full refresh".to_string());
+            }
+        }
+    }
     laps.lap("callable_names");
     let owners: HashSet<TypeId> = affected.iter().map(|group| group.0).chain(
         order.iter().map(|id| tree.members[id.index()].owner),
@@ -1046,7 +1059,8 @@ impl MetadataDependencies {
                 _ => return None,
             }
         }
-        let changed_owners: HashSet<SymbolId> = current
+        // The changed owners are few: a sorted list, searched for each of the roster's handles.
+        let changed_owners: Vec<SymbolId> = current
             .owners()
             .filter(|(owner, contribution)| {
                 previous
@@ -1055,6 +1069,7 @@ impl MetadataDependencies {
             })
             .map(|(owner, _)| *owner)
             .collect();
+        let changed_owner = |owner: &SymbolId| changed_owners.binary_search(owner).is_ok();
         let (before, after) = (previous.roster(), current.roster());
         let previous_targets = previous_tree.declarations();
         if previous_targets.len() != before.len() || self.by_slot.len() != previous_tree.members.len() {
@@ -1073,7 +1088,7 @@ impl MetadataDependencies {
         let mut position = 0usize;
         let mut cursor = 0usize;
         for (declaration, handle) in after.iter().enumerate() {
-            if changed_owners.contains(&handle.owner) {
+            if changed_owner(&handle.owner) {
                 let row = current.row(*handle)?;
                 let member = matches!(row.skeleton, Skeleton::Member { .. });
                 let ordinal = if member {

@@ -152,6 +152,22 @@ impl SymbolTable {
         Ok(())
     }
 
+    /// How many tables lie under this one (0 for a flat table).
+    pub fn overlay_depth(&self) -> usize {
+        self.parent.as_ref().map_or(0, |parent| 1 + parent.overlay_depth())
+    }
+    /// The same spellings in one flat table (no parent); a flat table is copied.
+    pub fn flattened(&self) -> SymbolTable {
+        let Some(parent) = &self.parent else {
+            return self.clone();
+        };
+        let mut flat = parent.flattened();
+        flat.texts.reserve(self.texts.len());
+        for (&id, text) in &self.texts {
+            flat.texts.insert(id, Arc::clone(text));
+        }
+        flat
+    }
     /// Insert one certified spelling this table may already hold (sharing the caller's text); a different text under the
     /// same id, here or in an ancestor, is a collision and changes nothing.
     pub fn insert_shared(&mut self, id: SymbolId, text: &Arc<str>) -> Result<(), SymbolCollision> {

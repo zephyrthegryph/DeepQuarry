@@ -54,7 +54,14 @@ impl SymbolCatalog {
         if !same_engine {
             return None;
         }
-        let mut symbols = previous.symbols.as_ref().clone();
+        // Only added spellings: a layer over the previous catalog (no copy of every spelling); a removal needs one flat table.
+        let mut symbols = if gone.is_empty()
+            && previous.symbols.overlay_depth() < super::declaration_state::MAX_SPELLING_LAYERS
+        {
+            SymbolTable::overlay(Arc::clone(&previous.symbols))
+        } else {
+            previous.symbols.flattened()
+        };
         for &id in gone {
             // A spelling the engine also has stays (the catalog is the engine's spellings and the source's).
             if engine.is_none_or(|engine| engine.text(id).is_none()) {
