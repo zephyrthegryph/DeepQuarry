@@ -1365,9 +1365,10 @@ fn collect_bodies(
     let parts = mapping.parts();
     let reused = std::sync::atomic::AtomicUsize::new(0);
     // Every body in parallel chunks (each with its own lookup hints), joined in body order.
-    let rows = parallel::chunked_map(executor, &recipes, |_, part| {
+    let (previous, codes_out, settings_out, bodies_out): (Vec<_>, Vec<_>, Vec<_>, Vec<_>) =
+        parallel::chunked_columns(executor, &recipes, |_, part| {
         let mapping = parts.mapping();
-        let mut rows = Vec::with_capacity(part.len());
+        let mut rows: (Vec<_>, Vec<_>, Vec<_>, Vec<_>) = parallel::Columns::with_capacity(part.len());
         let mut cursor = None;
         for recipe in part {
             let code = recipe.code_identity();
@@ -1409,10 +1410,10 @@ fn collect_bodies(
                     || issued.settings.as_ref() == current.settings.as_ref())
                 .then(|| Arc::clone(current))
             });
-            rows.push((
-                previous,
-                code,
-                setting,
+            rows.0.push(previous);
+            rows.1.push(code);
+            rows.2.push(setting);
+            rows.3.push(
                 BodyOccurrence {
                     stored_candidates: recipe.stored_candidates(),
                     declaration: declaration.0,
@@ -1422,21 +1423,15 @@ fn collect_bodies(
                     source,
                     setting_context_origins: setting_context_origins.into(),
                 },
-            ));
+            );
         }
         Ok::<_, Vec<Diagnostic>>(rows)
     })?;
     let rows_elapsed = started.elapsed();
-    codes.reserve(rows.len());
-    settings.reserve(rows.len());
-    bodies.reserve(rows.len());
-    previous_bodies.reserve(rows.len());
-    for (previous, code, setting, body) in rows {
-        previous_bodies.push(previous);
-        codes.push(code);
-        settings.push(setting);
-        bodies.push(body);
-    }
+    *previous_bodies = previous;
+    *codes = codes_out;
+    *settings = settings_out;
+    *bodies = bodies_out;
     crate::change_set::record_outcome(format!(
         "frontend bodies detail: recipes={:.3}s rows={:.3}s split={:.3}s",
         recipes_elapsed.as_secs_f64(),

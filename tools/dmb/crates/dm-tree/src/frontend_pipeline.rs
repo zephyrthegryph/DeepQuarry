@@ -524,9 +524,9 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let reuse_plan_elapsed = origins_started.elapsed();
     // Every declaration's origin, in parallel chunks (each with its own lookup hints), joined in declaration order.
     let parts = mapping.parts();
-    let origin_rows = super::parallel::chunked_map(executor, &expanded_spans, |first, part| {
+    let (declaration_regions, current_origins): (Vec<usize>, Vec<crate::Provenance>) = super::parallel::chunked_columns(executor, &expanded_spans, |first, part| {
     let mapping = parts.mapping();
-    let mut rows = Vec::with_capacity(part.len());
+    let (mut regions, mut rows) = (Vec::with_capacity(part.len()), Vec::with_capacity(part.len()));
     for (index, origin_span) in (first..).zip(part) {
         if let Some((region, old)) = reused_origins.as_ref().and_then(|rows| rows[index]) {
             let base = origin_base.expect("reused origins have a base");
@@ -539,7 +539,8 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 .clone();
             provenance.include_occurrence = u32::try_from(plan.regions[region].occurrence)
                 .map_err(|_| vec![internal("too many include occurrences")])?;
-            rows.push((region, provenance));
+            regions.push(region);
+            rows.push(provenance);
             continue;
         }
         let expanded_origin = mapping
@@ -556,20 +557,17 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             .map_err(|_| vec![internal("too many include occurrences")])?;
         let region = region_hashes[expanded_origin.region];
         let expansion_stack = mapping.expansion_stack(expanded_origin.macro_expansions)?;
-        rows.push((
-            expanded_origin.region,
-            crate::Provenance {
-                span,
-                include_occurrence,
-                region,
-                expansion_stack,
-            },
-        ));
+        regions.push(expanded_origin.region);
+        rows.push(crate::Provenance {
+            span,
+            include_occurrence,
+            region,
+            expansion_stack,
+        });
     }
-    Ok::<_, Vec<Diagnostic>>(rows)
+    Ok::<_, Vec<Diagnostic>>((regions, rows))
     })?;
     let rows_elapsed = origins_started.elapsed();
-    let (declaration_regions, current_origins): (Vec<_>, Vec<_>) = origin_rows.into_iter().unzip();
     if verify_enabled() && reused_count > 0 {
         // The full lookup for every declaration: a reused origin must equal it.
         let full = mapping.parts().mapping();
@@ -594,7 +592,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     }
     timings.reused_origins = reused_count;
     crate::change_set::record_outcome(format!(
-        "frontend origins: {reused_count} of {} reused from the previous revision; spans={:.3}s reuse_plan={:.3}s rows={:.3}s unzip={:.3}s",
+        "frontend origins: {reused_count} of {} reused from the previous revision; spans={:.3}s reuse_plan={:.3}s rows={:.3}s rest={:.3}s",
         current_origins.len(),
         spans_elapsed.as_secs_f64(),
         reuse_plan_elapsed.as_secs_f64(),

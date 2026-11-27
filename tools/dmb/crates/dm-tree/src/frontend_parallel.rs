@@ -39,6 +39,64 @@ where
     Ok(out)
 }
 
+/// Several output vectors filled side by side (one value per item in each), appended chunk by chunk.
+pub(super) trait Columns: Send {
+    fn with_capacity(capacity: usize) -> Self;
+    fn append(&mut self, other: Self);
+}
+impl<A: Send, B: Send> Columns for (Vec<A>, Vec<B>) {
+    fn with_capacity(capacity: usize) -> Self {
+        (Vec::with_capacity(capacity), Vec::with_capacity(capacity))
+    }
+    fn append(&mut self, other: Self) {
+        self.0.extend(other.0);
+        self.1.extend(other.1);
+    }
+}
+impl<A: Send, B: Send, C: Send, D: Send> Columns for (Vec<A>, Vec<B>, Vec<C>, Vec<D>) {
+    fn with_capacity(capacity: usize) -> Self {
+        (Vec::with_capacity(capacity), Vec::with_capacity(capacity), Vec::with_capacity(capacity), Vec::with_capacity(capacity))
+    }
+    fn append(&mut self, other: Self) {
+        self.0.extend(other.0);
+        self.1.extend(other.1);
+        self.2.extend(other.2);
+        self.3.extend(other.3);
+    }
+}
+
+/// `chunked_map` for a map that yields several values per item, returned as columns (no vector of tuples to split again).
+pub(super) fn chunked_columns<T, C, E>(
+    executor: &dm_exec::BuildExecutor,
+    items: &[T],
+    f: impl Fn(usize, &[T]) -> Result<C, E> + Sync,
+) -> Result<C, E>
+where
+    T: Sync,
+    C: Columns,
+    E: Send,
+{
+    let workers = executor.workers().max(1);
+    if workers == 1 || items.len() < SERIAL_BELOW {
+        return f(0, items);
+    }
+    let chunk = items.len().div_ceil(workers * 4).max(1);
+    let mut slots: Vec<Option<Result<C, E>>> = (0..items.len().div_ceil(chunk)).map(|_| None).collect();
+    executor.scope(|scope| {
+        for (index, slot) in slots.iter_mut().enumerate() {
+            let f = &f;
+            let start = index * chunk;
+            let part = &items[start..(start + chunk).min(items.len())];
+            scope.spawn(move |_| *slot = Some(f(start, part)));
+        }
+    });
+    let mut out = C::with_capacity(items.len());
+    for slot in slots {
+        out.append(slot.expect("every chunk of a scoped map runs")?);
+    }
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -58,5 +116,11 @@ mod tests {
             part.iter().map(|x| if x % 9000 == 8999 { Err(*x) } else { Ok(*x) }).collect::<Result<Vec<_>, _>>()
         });
         assert_eq!(first, Err(8999));
+        let (doubled, tripled): (Vec<_>, Vec<_>) = super::chunked_columns(&executor, &items, |_, part| {
+            Ok::<_, ()>((part.iter().map(|x| x * 2).collect(), part.iter().map(|x| x * 3).collect()))
+        })
+        .unwrap();
+        assert_eq!(doubled, items.iter().map(|x| x * 2).collect::<Vec<_>>());
+        assert_eq!(tripled, serial);
     }
 }
